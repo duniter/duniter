@@ -30,7 +30,7 @@ function GenericParser (captures, multipleLinesFields, rawerFunc) {
     {
       const lines = fieldValue[1].split(/\n/);
       if(lines[lines.length - 1].match(/^$/)){
-        for (var i = 0; i < lines.length - 1; i++) {
+        for (let i = 0; i < lines.length - 1; i++) {
           line = lines[i];
           let fprChange = line.match(/([+-][A-Z\d]{40})/);
           if(fprChange && fprChange.length == 2){

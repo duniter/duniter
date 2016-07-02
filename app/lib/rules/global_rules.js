@@ -1,17 +1,17 @@
 "use strict";
 
-var Q              = require('q');
-var co             = require('co');
-var _              = require('underscore');
-var constants      = require('../constants');
-var keyring         = require('../crypto/keyring');
-var rawer          = require('../ucp/rawer');
-var Identity       = require('../entity/identity');
-var Membership     = require('../entity/membership');
-var Certification  = require('../entity/certification');
-var logger         = require('../logger')('globr');
-var unlock         = require('../ucp/txunlock');
-var local_rules    = require('./local_rules');
+const Q              = require('q');
+const co             = require('co');
+const _              = require('underscore');
+const constants      = require('../constants');
+const keyring         = require('../crypto/keyring');
+const rawer          = require('../ucp/rawer');
+const Identity       = require('../entity/identity');
+const Membership     = require('../entity/membership');
+const Certification  = require('../entity/certification');
+const logger         = require('../logger')('globr');
+const unlock         = require('../ucp/txunlock');
+const local_rules    = require('./local_rules');
 
 let rules = {};
 
@@ -47,13 +47,13 @@ rules.FUNCTIONS = {
   checkProofOfWork: (block, conf, dal) => co(function *() {
     // Compute exactly how much zeros are required for this block's issuer
     let difficulty = yield getTrialLevel(block.issuer, conf, dal);
-    var remainder = difficulty % 16;
-    var nbZerosReq = Math.max(0, (difficulty - remainder) / 16);
-    var highMark = constants.PROOF_OF_WORK.UPPER_BOUND[remainder];
-    var powRegexp = new RegExp('^0{' + nbZerosReq + '}' + '[0-' + highMark + ']');
+    const remainder = difficulty % 16;
+    const nbZerosReq = Math.max(0, (difficulty - remainder) / 16);
+    const highMark = constants.PROOF_OF_WORK.UPPER_BOUND[remainder];
+    const powRegexp = new RegExp('^0{' + nbZerosReq + '}' + '[0-' + highMark + ']');
     if (!block.hash.match(powRegexp)) {
-      var givenZeros = Math.max(0, Math.min(nbZerosReq, block.hash.match(/^0*/)[0].length));
-      var c = block.hash.substr(givenZeros, 1);
+      const givenZeros = Math.max(0, Math.min(nbZerosReq, block.hash.match(/^0*/)[0].length));
+      const c = block.hash.substr(givenZeros, 1);
       throw Error('Wrong proof-of-work level: given ' + givenZeros + ' zeros and \'' + c + '\', required was ' + nbZerosReq + ' zeros and an hexa char between [0-' + highMark + ']');
     }
     return true;
@@ -63,13 +63,13 @@ rules.FUNCTIONS = {
     let current = yield dal.getCurrentBlockOrNull();
     let lastUDBlock = yield dal.lastUDBlock();
     let root = yield dal.getBlock(0);
-    var lastUDTime = lastUDBlock ? lastUDBlock.UDTime : (root != null ? root.medianTime : 0);
-    var UD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
-    var UB = lastUDBlock ? lastUDBlock.unitbase : 0;
-    var M = lastUDBlock ? lastUDBlock.monetaryMass : 0;
-    var Nt1 = block.membersCount;
-    var c = conf.c;
-    var UDt1 = Nt1 > 0 ? Math.ceil(Math.max(UD, c * M / Math.pow(10,UB) / Nt1)) : 0;
+    const lastUDTime = lastUDBlock ? lastUDBlock.UDTime : (root != null ? root.medianTime : 0);
+    const UD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
+    const UB = lastUDBlock ? lastUDBlock.unitbase : 0;
+    const M = lastUDBlock ? lastUDBlock.monetaryMass : 0;
+    const Nt1 = block.membersCount;
+    const c = conf.c;
+    let UDt1 = Nt1 > 0 ? Math.ceil(Math.max(UD, c * M / Math.pow(10,UB) / Nt1)) : 0;
     let UBt1 = UB;
     if (UDt1 >= Math.pow(10, constants.NB_DIGITS_UD)) {
       UDt1 = Math.ceil(UDt1 / 10.0);
@@ -111,9 +111,9 @@ rules.FUNCTIONS = {
 
   checkMembersCountIsGood: (block, dal) => co(function *() {
     let current = yield dal.getCurrentBlockOrNull();
-    var currentCount = current ? current.membersCount : 0;
-    var variation = block.joiners.length - block.excluded.length;
-    if (block.membersCount != currentCount + variation) {
+    const currentCount = current ? current.membersCount : 0;
+    const constiation = block.joiners.length - block.excluded.length;
+    if (block.membersCount != currentCount + constiation) {
       throw Error('Wrong members count');
     }
     return true;
@@ -375,7 +375,7 @@ rules.FUNCTIONS = {
 
   checkJoinersHaveEnoughCertifications: (block, conf, dal) => co(function *() {
     if (block.number > 0) {
-      var newLinks = getNewLinks(block);
+      const newLinks = getNewLinks(block);
       for (let i = 0, len = block.joiners.length; i < len; i++) {
         let ms = Membership.statics.fromInline(block.joiners[i]);
         let links = yield dal.getValidLinksTo(ms.issuer);
@@ -627,7 +627,7 @@ function checkCertificationIsValid (block, cert, findIdtyFunc, conf, dal) {
       else if (cert.from == idty.pubkey)
         throw Error('Rejected certification: certifying its own self-certification has no meaning');
       else {
-        var buid = [cert.block_number, basedBlock.hash].join('-');
+        const buid = [cert.block_number, basedBlock.hash].join('-');
         idty.currency = conf.currency;
         let verified = keyring.isValidCertification(new Identity(idty), cert.from, cert.sig, buid, block.currency);
         if (!verified) {
@@ -717,8 +717,8 @@ function getTrialLevel (issuer, conf, dal) {
       // So we can have nbPreviousIssuers = 0 & nbBlocksSince = 0 for someone who has never written any block
       last = { number: current.number };
     }
-    var nbPreviousIssuers = _(_(issuers).uniq()).without(issuer).length;
-    var nbBlocksSince = current.number - last.number;
+    const nbPreviousIssuers = _(_(issuers).uniq()).without(issuer).length;
+    const nbBlocksSince = current.number - last.number;
     let personal_diff = Math.max(powMin, powMin * Math.floor(percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
     if (personal_diff + 1 % 16 == 0) {
       personal_diff++;
@@ -736,7 +736,7 @@ function getPoWMinFor (blockNumber, conf, dal) {
       reject('Cannot deduce PoWMin for block#0');
     } else if (blockNumber % conf.dtDiffEval != 0) {
       co(function *() {
-        var previous = yield dal.getBlock(blockNumber - 1);
+        const previous = yield dal.getBlock(blockNumber - 1);
         return previous.powMin;
       })
         .then(resolve)
@@ -746,17 +746,17 @@ function getPoWMinFor (blockNumber, conf, dal) {
         });
     } else {
       co(function *() {
-        var previous = yield dal.getBlock(blockNumber - 1);
-        var medianTime = yield getMedianTime(blockNumber, conf, dal);
-        var speedRange = Math.min(conf.dtDiffEval, blockNumber);
-        var lastDistant = yield dal.getBlock(Math.max(0, blockNumber - speedRange));
+        const previous = yield dal.getBlock(blockNumber - 1);
+        const medianTime = yield getMedianTime(blockNumber, conf, dal);
+        const speedRange = Math.min(conf.dtDiffEval, blockNumber);
+        const lastDistant = yield dal.getBlock(Math.max(0, blockNumber - speedRange));
         // Compute PoWMin value
-        var duration = medianTime - lastDistant.medianTime;
-        var speed = speedRange / duration;
-        var maxGenTime = Math.ceil(conf.avgGenTime * Math.sqrt(1.066));
-        var minGenTime = Math.floor(conf.avgGenTime / Math.sqrt(1.066));
-        var maxSpeed = 1.0 / minGenTime;
-        var minSpeed = 1.0 / maxGenTime;
+        const duration = medianTime - lastDistant.medianTime;
+        const speed = speedRange / duration;
+        const maxGenTime = Math.ceil(conf.avgGenTime * Math.sqrt(1.066));
+        const minGenTime = Math.floor(conf.avgGenTime / Math.sqrt(1.066));
+        const maxSpeed = 1.0 / minGenTime;
+        const minSpeed = 1.0 / maxGenTime;
         // logger.debug('Current speed is', speed, '(' + conf.dtDiffEval + '/' + duration + ')', 'and must be [', minSpeed, ';', maxSpeed, ']');
         if (speed >= maxSpeed) {
           // Must increase difficulty
@@ -813,9 +813,9 @@ function getMedianTime (blockNumber, conf, dal) {
 }
 
 function getNewLinks (block) {
-  var newLinks = {};
+  const newLinks = {};
   block.certifications.forEach(function(inlineCert){
-    var cert = Certification.statics.fromInline(inlineCert);
+    const cert = Certification.statics.fromInline(inlineCert);
     newLinks[cert.to] = newLinks[cert.to] || [];
     newLinks[cert.to].push(cert.from);
   });

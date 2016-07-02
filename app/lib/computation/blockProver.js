@@ -21,7 +21,7 @@ function BlockGenerator() {
     logger = require('../logger')(dal.profile);
   };
 
-  var cancels = [];
+  const cancels = [];
 
   const debug = process.execArgv.toString().indexOf('--debug') !== -1;
   if(debug) {
@@ -60,7 +60,7 @@ function BlockGenerator() {
   };
 
   this.waitBeforePoW = () => Q.Promise(function(resolve, reject){
-    var timeoutToClear = setTimeout(function() {
+    const timeoutToClear = setTimeout(function() {
       clearTimeout(timeoutToClear);
       computeNextCallback = null;
       resolve();

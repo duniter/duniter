@@ -1,28 +1,28 @@
 "use strict";
-var Q          = require('q');
-var co          = require('co');
-var _           = require('underscore');
-var nacl        = require('tweetnacl');
-var scrypt      = require('scryptb');
-var base58      = require('./base58');
-var rawer       = require('../ucp/rawer');
-var naclBinding = require('naclb');
+const Q          = require('q');
+const co          = require('co');
+const _           = require('underscore');
+const nacl        = require('tweetnacl');
+const scrypt      = require('scryptb');
+const base58      = require('./base58');
+const rawer       = require('../ucp/rawer');
+const naclBinding = require('naclb');
 
 nacl.util = require('./nacl-util');
 
-var crypto_sign_BYTES = 64;
-var SEED_LENGTH = 32; // Length of the key
+const crypto_sign_BYTES = 64;
+const SEED_LENGTH = 32; // Length of the key
 // TODO: change key parameters
-var TEST_PARAMS = {
+const TEST_PARAMS = {
   "N":4096,
   "r":16,
   "p":1
 };
 
-var enc = nacl.util.encodeBase64,
+const enc = nacl.util.encodeBase64,
     dec = nacl.util.decodeBase64;
 
-var that = module.exports;
+const that = module.exports;
 
 module.exports = {
 

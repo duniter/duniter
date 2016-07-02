@@ -1,10 +1,10 @@
 "use strict";
 
-var _ = require('underscore');
-var co          = require('co');
-var Block = require('../entity/block');
-var local_rules = require('./local_rules');
-var global_rules = require('./global_rules');
+const _ = require('underscore');
+const co          = require('co');
+const Block = require('../entity/block');
+const local_rules = require('./local_rules');
+const global_rules = require('./global_rules');
 
 let rules = {};
 
@@ -150,7 +150,7 @@ rules.CHECK = {
 function checkLocal(contract) {
   return (b, conf, done) => {
     return co(function *() {
-      var block = new Block(b);
+      const block = new Block(b);
       yield contract(block, conf);
       done && done();
     })
@@ -164,7 +164,7 @@ function checkLocal(contract) {
 function check(contract) {
   return (b, conf, dal, done) => {
     return co(function *() {
-      var block = new Block(b);
+      const block = new Block(b);
       yield contract(block, conf, dal);
       done && done();
     })

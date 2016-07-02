@@ -106,8 +106,8 @@ function BlockchainContext() {
   });
 
   const matchesList = (regexp, list) => {
-    var i = 0;
-    var found = "";
+    let i = 0;
+    let found = "";
     while (!found && i < list.length) {
       found = list[i].match(regexp) ? list[i] : "";
       i++;
@@ -482,21 +482,21 @@ function BlockchainContext() {
    * @returns {*}
    */
   this.updateMembershipsForBlocks = (blocks) => co(function *() {
-    let memberships = [];
-    let types = {
+    const memberships = [];
+    const types = {
       'join': 'joiners',
       'active': 'actives',
       'leave': 'leavers'
     };
     for (let i = 0, len = blocks.length; i < len; i++) {
-      let block = blocks[i];
+      const block = blocks[i];
       _.keys(types).forEach(function(type){
-        let msType = type == 'leave' ? 'out' : 'in';
-        let field = types[type];
-        let mss = block[field];
+        const msType = type == 'leave' ? 'out' : 'in';
+        const field = types[type];
+        const mss = block[field];
         for (let j = 0, len2 = mss.length; j < len2; j++) {
-          let msRaw = mss[j];
-          var ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', block.currency);
+          const msRaw = mss[j];
+          const ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', block.currency);
           ms.membership = msType.toUpperCase();
           ms.written = true;
           ms.written_number = block.number;
@@ -576,18 +576,18 @@ function BlockchainContext() {
    * @returns {*}
    */
   this.updateCertificationsForBlocks = (blocks) => co(function *() {
-    let certs = [];
+    const certs = [];
     for (let i = 0, len = blocks.length; i < len; i++) {
-      let block = blocks[i];
+      const block = blocks[i];
       for (let j = 0, len2 = block.certifications.length; j < len2; j++) {
-        let inlineCert = block.certifications[j];
-        var cert = Certification.statics.fromInline(inlineCert);
-        let to = yield dal.getWrittenIdtyByPubkey(cert.to);
-        let to_uid = to.uid;
+        const inlineCert = block.certifications[j];
+        let cert = Certification.statics.fromInline(inlineCert);
+        const to = yield dal.getWrittenIdtyByPubkey(cert.to);
+        const to_uid = to.uid;
         cert.target = new Identity(to).getTargetHash();
-        let from = yield dal.getWrittenIdtyByPubkey(cert.from);
-        let from_uid = from.uid;
-        let existing = yield dal.existsCert(cert);
+        const from = yield dal.getWrittenIdtyByPubkey(cert.from);
+        const from_uid = from.uid;
+        const existing = yield dal.existsCert(cert);
         if (existing) {
           cert = existing;
         }
@@ -649,12 +649,12 @@ function BlockchainContext() {
 
   this.deleteTransactions = (block) => co(function*() {
     for (const t in block.transactions) {
-      var obj = block.transactions[t];
+      const obj = block.transactions[t];
       obj.version = constants.DOCUMENTS_VERSION;
       obj.currency = block.currency;
       obj.issuers = obj.signatories;
-      var tx = new Transaction(obj);
-      var txHash = tx.getHash();
+      const tx = new Transaction(obj);
+      const txHash = tx.getHash();
       yield dal.removeTxByHash(txHash);
     }
   });

@@ -74,7 +74,7 @@ function IdentityDAL(db, wotb) {
 
   this.revokeIdentity = (pubkey) => {
     return co(function *() {
-      var idty = yield that.getFromPubkey(pubkey);
+      const idty = yield that.getFromPubkey(pubkey);
       idty.revoked = true;
       return that.saveIdentity(idty);
     });

@@ -1,18 +1,18 @@
 "use strict";
-var util       = require('util');
-var stream     = require('stream');
-var co         = require('co');
-var _          = require('underscore');
-var Q          = require('q');
-var moment     = require('moment');
-var vucoin     = require('vucoin');
-var hashf      = require('./ucp/hashf');
-var dos2unix   = require('./system/dos2unix');
-var logger     = require('./logger')('sync');
-var rawer      = require('./ucp/rawer');
-var constants  = require('../lib/constants');
-var Peer       = require('../lib/entity/peer');
-var multimeter = require('multimeter');
+const util       = require('util');
+const stream     = require('stream');
+const co         = require('co');
+const _          = require('underscore');
+const Q          = require('q');
+const moment     = require('moment');
+const vucoin     = require('vucoin');
+const hashf      = require('./ucp/hashf');
+const dos2unix   = require('./system/dos2unix');
+const logger     = require('./logger')('sync');
+const rawer      = require('./ucp/rawer');
+const constants  = require('../lib/constants');
+const Peer       = require('../lib/entity/peer');
+const multimeter = require('multimeter');
 
 const CONST_BLOCKS_CHUNK = 500;
 const EVAL_REMAINING_INTERVAL = 1000;
@@ -56,12 +56,12 @@ function Synchroniser (server, host, port, conf, interactive) {
   }
 
   // Services
-  var PeeringService     = server.PeeringService;
-  var BlockchainService  = server.BlockchainService;
+  const PeeringService     = server.PeeringService;
+  const BlockchainService  = server.BlockchainService;
 
-  var dal = server.dal;
+  const dal = server.dal;
 
-  var vucoinOptions = {
+  const vucoinOptions = {
     timeout: constants.NETWORK.SYNC_LONG_TIMEOUT
   };
 
@@ -91,39 +91,39 @@ function Synchroniser (server, host, port, conf, interactive) {
       }
 
       try {
-        var node = yield getVucoin(host, port, vucoinOptions);
+        const node = yield getVucoin(host, port, vucoinOptions);
         logger.info('Sync started.');
 
-        var lCurrent = yield dal.getCurrentBlockOrNull();
+        const lCurrent = yield dal.getCurrentBlockOrNull();
 
         //============
         // Blockchain
         //============
         logger.info('Downloading Blockchain...');
         watcher.writeStatus('Connecting to ' + host + '...');
-        var rCurrent = yield Q.nbind(node.blockchain.current, node)();
-        var remoteVersion = rCurrent.version;
+        const rCurrent = yield Q.nbind(node.blockchain.current, node)();
+        const remoteVersion = rCurrent.version;
         if (remoteVersion < 2) {
           throw Error("Could not sync with remote host. UCP version is " + remoteVersion + " (Must be >= 2)")
         }
-        var localNumber = lCurrent ? lCurrent.number : -1;
-        var remoteNumber = Math.min(rCurrent.number, to || rCurrent.number);
+        const localNumber = lCurrent ? lCurrent.number : -1;
+        const remoteNumber = Math.min(rCurrent.number, to || rCurrent.number);
 
         // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
-        var cautious = (askedCautious === true || (askedCautious === undefined && localNumber >= 0));
+        const cautious = (askedCautious === true || (askedCautious === undefined && localNumber >= 0));
 
         // Recurrent checking
         logInterval = setInterval(() => {
           if (remoteNumber > 1 && speed > 0) {
-            var remain = (remoteNumber - (localNumber + 1 + blocksApplied));
-            var secondsLeft = remain / speed;
-            var momDuration = moment.duration(secondsLeft*1000);
+            const remain = (remoteNumber - (localNumber + 1 + blocksApplied));
+            const secondsLeft = remain / speed;
+            const momDuration = moment.duration(secondsLeft*1000);
             watcher.writeStatus('Remaining ' + momDuration.humanize() + '');
           }
         }, EVAL_REMAINING_INTERVAL);
 
         // Prepare chunks of blocks to be downloaded
-        var chunks = [];
+        const chunks = [];
         for (let i = localNumber + 1; i <= remoteNumber; i = i + chunkLen) {
           chunks.push([i, Math.min(i + chunkLen - 1, remoteNumber)]);
         }
@@ -140,7 +140,7 @@ function Synchroniser (server, host, port, conf, interactive) {
             co(function *() {
               // Download blocks and save them
               watcher.downloadPercent(Math.floor(chunk[0] / remoteNumber * 100));
-              var blocks = yield Q.nfcall(node.blockchain.blocks, chunk[1] - chunk[0] + 1, chunk[0]);
+              const blocks = yield Q.nfcall(node.blockchain.blocks, chunk[1] - chunk[0] + 1, chunk[0]);
               watcher.downloadPercent(Math.floor(chunk[1] / remoteNumber * 100));
               chunk[2] = blocks;
             })
@@ -154,10 +154,10 @@ function Synchroniser (server, host, port, conf, interactive) {
           ));
 
         // Do not use the first which stands for blocks applied before sync
-        let toApplyNoCautious = toApply.slice(1);
+        const toApplyNoCautious = toApply.slice(1);
         for (let i = 0; i < toApplyNoCautious.length; i++) {
           // Wait for download chunk to be completed
-          let chunk = yield toApplyNoCautious[i].promise;
+          const chunk = yield toApplyNoCautious[i].promise;
           let blocks = chunk[2];
           blocks = _.sortBy(blocks, 'number');
           if (cautious) {
@@ -181,9 +181,9 @@ function Synchroniser (server, host, port, conf, interactive) {
 
         // Specific treatment for nocautious
         if (!cautious && toApply.length > 1) {
-          let lastChunk = yield toApplyNoCautious[toApplyNoCautious.length - 1].promise;
-          let lastBlocks = lastChunk[2];
-          let lastBlock = lastBlocks[lastBlocks.length - 1];
+          const lastChunk = yield toApplyNoCautious[toApplyNoCautious.length - 1].promise;
+          const lastBlocks = lastChunk[2];
+          const lastBlock = lastBlocks[lastBlocks.length - 1];
           yield BlockchainService.obsoleteInMainBranch(lastBlock);
         }
 
@@ -191,7 +191,7 @@ function Synchroniser (server, host, port, conf, interactive) {
         yield Q.all(toApply).then(() => watcher.appliedPercent(100.0));
 
         // Save currency parameters given by root block
-        let rootBlock = yield server.dal.getBlock(0);
+        const rootBlock = yield server.dal.getBlock(0);
         yield BlockchainService.saveParametersForRootBlock(rootBlock);
 
         //=======
@@ -200,24 +200,24 @@ function Synchroniser (server, host, port, conf, interactive) {
         if (!nopeers) {
           watcher.writeStatus('Peers...');
           yield syncPeer(node);
-          var merkle = yield dal.merkleForPeers();
-          var getPeers = Q.nbind(node.network.peering.peers.get, node);
-          var json2 = yield getPeers({});
-          var rm = new NodesMerkle(json2);
+          const merkle = yield dal.merkleForPeers();
+          const getPeers = Q.nbind(node.network.peering.peers.get, node);
+          const json2 = yield getPeers({});
+          const rm = new NodesMerkle(json2);
           if(rm.root() != merkle.root()){
-            var leavesToAdd = [];
-            var json = yield getPeers({ leaves: true });
+            const leavesToAdd = [];
+            const json = yield getPeers({ leaves: true });
             _(json.leaves).forEach((leaf) => {
               if(merkle.leaves().indexOf(leaf) == -1){
                 leavesToAdd.push(leaf);
               }
             });
             for (let i = 0; i < leavesToAdd.length; i++) {
-              var leaf = leavesToAdd[i];
-              var json3 = yield getPeers({ "leaf": leaf });
-              var jsonEntry = json3.leaf.value;
-              var sign = json3.leaf.value.signature;
-              var entry = {};
+              const leaf = leavesToAdd[i];
+              const json3 = yield getPeers({ "leaf": leaf });
+              const jsonEntry = json3.leaf.value;
+              const sign = json3.leaf.value.signature;
+              const entry = {};
               ["version", "currency", "pubkey", "endpoints", "block"].forEach((key) => {
                 entry[key] = jsonEntry[key];
               });
@@ -261,9 +261,9 @@ function Synchroniser (server, host, port, conf, interactive) {
   }
 
   function applyGivenBlock(cautious, remoteCurrentNumber) {
-    return function (block) {
+    return (block) => {
       // Rawification of transactions
-      block.transactions.forEach(function (tx) {
+      block.transactions.forEach( (tx) => {
         tx.version = constants.DOCUMENTS_VERSION;
         tx.currency = conf.currency;
         tx.issuers = tx.signatories;
@@ -287,14 +287,14 @@ function Synchroniser (server, host, port, conf, interactive) {
   function syncPeer (node) {
 
     // Global sync vars
-    var remotePeer = new Peer({});
-    var remoteJsonPeer = {};
+    const remotePeer = new Peer({});
+    let remoteJsonPeer = {};
 
     return co(function *() {
-      let json = yield Q.nfcall(node.network.peering.get);
+      const json = yield Q.nfcall(node.network.peering.get);
       remotePeer.copyValuesFrom(json);
-      var entry = remotePeer.getRaw();
-      var signature = dos2unix(remotePeer.signature);
+      const entry = remotePeer.getRaw();
+      const signature = dos2unix(remotePeer.signature);
       // Parameters
       if(!(entry && signature)){
         throw 'Requires a peering entry + signature';

@@ -11,16 +11,16 @@
 }(this, function() {
   'use strict';
 
-  var util = {};
+  let util = {};
 
   util.decodeUTF8 = function(s) {
-    var i, d = unescape(encodeURIComponent(s)), b = new Uint8Array(d.length);
+    let i, d = unescape(encodeURIComponent(s)), b = new Uint8Array(d.length);
     for (i = 0; i < d.length; i++) b[i] = d.charCodeAt(i);
     return b;
   };
 
   util.encodeUTF8 = function(arr) {
-    var i, s = [];
+    let i, s = [];
     for (i = 0; i < arr.length; i++) s.push(String.fromCharCode(arr[i]));
     return decodeURIComponent(escape(s.join('')));
   };
@@ -29,7 +29,7 @@
     if (typeof btoa === 'undefined' || !window) {
       return (new Buffer(arr)).toString('base64');
     } else {
-      var i, s = [], len = arr.length;
+      let i, s = [], len = arr.length;
       for (i = 0; i < len; i++) s.push(String.fromCharCode(arr[i]));
       return btoa(s.join(''));
     }
@@ -39,7 +39,7 @@
     if (typeof atob === 'undefined' || !window) {
       return new Uint8Array(Array.prototype.slice.call(new Buffer(s, 'base64'), 0));
     } else {
-      var i, d = atob(s), b = new Uint8Array(d.length);
+      let i, d = atob(s), b = new Uint8Array(d.length);
       for (i = 0; i < d.length; i++) b[i] = d.charCodeAt(i);
       return b;
     }

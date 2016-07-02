@@ -1,6 +1,6 @@
 "use strict";
-var util     = require('util');
-var stream   = require('stream');
+const util     = require('util');
+const stream   = require('stream');
 
 module.exports = function () {
   return new JSONer();
@@ -10,7 +10,7 @@ function JSONer () {
 
   stream.Transform.call(this, { objectMode: true });
 
-  var that = this;
+  const that = this;
 
   this._write = function (entity, enc, done) {
     that.push(entity.json());

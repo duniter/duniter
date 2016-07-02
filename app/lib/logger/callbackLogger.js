@@ -1,9 +1,9 @@
 "use strict";
 
-let util = require('util');
-let winston = require('winston');
+const util = require('util');
+const winston = require('winston');
 
-var CallbackLogger = winston.transports.CallbackLogger = function (options) {
+const CallbackLogger = winston.transports.CallbackLogger = function (options) {
   
   this.name = 'customLogger';
   this.level = options.level || 'info';

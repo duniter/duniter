@@ -1,11 +1,11 @@
 "use strict";
-var moment = require('moment');
-var path = require('path');
-var winston = require('winston');
-var cbLogger = require('./callbackLogger');
-var directory = require('../system/directory');
+const moment = require('moment');
+const path = require('path');
+const winston = require('winston');
+const cbLogger = require('./callbackLogger');
+const directory = require('../system/directory');
 
-var customLevels = {
+const customLevels = {
   levels: {
     error: 0,
     warn: 1,
@@ -25,7 +25,7 @@ var customLevels = {
 };
 
 // create the logger
-var logger = new (winston.Logger)({
+const logger = new (winston.Logger)({
   level: 'trace',
   levels: customLevels.levels,
   handleExceptions: false,

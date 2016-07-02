@@ -1,12 +1,12 @@
 "use strict";
-var co        = require('co');
-var Q         = require('q');
-var constants = require('./constants');
-var network   = require('./system/network');
-var async     = require('async');
-var _         = require('underscore');
-var inquirer  = require('inquirer');
-var logger    = require('logger/logger')('wizard');
+const co        = require('co');
+const Q         = require('q');
+const constants = require('./constants');
+const network   = require('./system/network');
+const async     = require('async');
+const _         = require('underscore');
+const inquirer  = require('inquirer');
+const logger    = require('logger/logger')('wizard');
 
 module.exports = function () {
   return new Wizard();
@@ -83,7 +83,7 @@ function doTasks (todos, conf, done) {
   }, done);
 }
 
-var tasks = {
+const tasks = {
 
   currency: function (conf, done) {
     async.waterfall([

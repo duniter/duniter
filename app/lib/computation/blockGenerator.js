@@ -376,7 +376,7 @@ function BlockGenerator(mainContext, prover) {
             const isMember = yield dal.isMember(cert.from);
             const doubleSignature = ~certifiers.indexOf(cert.from) ? true : false;
             if (isMember && !doubleSignature) {
-              var isValid = yield rules.HELPERS.checkCertificationIsValidForBlock(cert, { number: current.number + 1, currency: current.currency }, identity, conf, dal);
+              const isValid = yield rules.HELPERS.checkCertificationIsValidForBlock(cert, { number: current.number + 1, currency: current.currency }, identity, conf, dal);
               if (isValid) {
                 certifiers.push(cert.from);
                 foundCerts.push(cert);
@@ -465,7 +465,7 @@ function BlockGenerator(mainContext, prover) {
     block.leavers = [];
     const leavers = _(leaveData).keys();
     leavers.forEach((leaver) => {
-      var data = leaveData[leaver];
+      const data = leaveData[leaver];
       // Join only for non-members
       if (data.identity.member) {
         block.leavers.push(new Membership(data.ms).inline());
@@ -487,7 +487,7 @@ function BlockGenerator(mainContext, prover) {
     });
     // Certifications from the WoT, to the WoT
     _(updates).keys().forEach((certifiedMember) => {
-      var certs = updates[certifiedMember] || [];
+      const certs = updates[certifiedMember] || [];
       certs.forEach((cert) => block.certifications.push(new Certification(cert).inline()));
     });
     // Transactions
@@ -550,7 +550,7 @@ function NextBlockGenerator(conf, dal) {
     const certs = yield dal.certsFindNew();
     // The block above which (above from current means blocks with number < current)
     const blockOfChainability = current ? (yield dal.getChainabilityBlock(current.medianTime, conf.sigPeriod)) : null;
-    for (var i = 0; i < certs.length; i++) {
+    for (let i = 0; i < certs.length; i++) {
       const cert = certs[i];
       let exists = false;
       if (current) {

@@ -48,10 +48,10 @@ function PeeringService(server) {
   });
 
   this.checkPeerSignature = function (p) {
-    var raw = rawer.getPeerWithoutSignature(p);
-    var sig = p.signature;
-    var pub = p.pubkey;
-    var signaturesMatching = keyring.verify(raw, sig, pub);
+    const raw = rawer.getPeerWithoutSignature(p);
+    const sig = p.signature;
+    const pub = p.pubkey;
+    const signaturesMatching = keyring.verify(raw, sig, pub);
     return !!signaturesMatching;
   };
 
@@ -86,11 +86,11 @@ function PeeringService(server) {
       sigTime = block ? block.medianTime : 0;
       thePeer.statusTS = sigTime;
       let found = yield dal.getPeerOrNull(thePeer.pubkey);
-      var peerEntity = Peer.statics.peerize(found || thePeer);
+      let peerEntity = Peer.statics.peerize(found || thePeer);
       if(found){
         // Already existing peer
-        var sp2 = found.block.split('-');
-        var previousBlockNumber = parseInt(sp2[0]);
+        const sp2 = found.block.split('-');
+        const previousBlockNumber = parseInt(sp2[0]);
         if(blockNumber <= previousBlockNumber && !eraseIfAlreadyRecorded){
           throw constants.ERROR.PEER.ALREADY_RECORDED;
         }

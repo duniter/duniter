@@ -1,7 +1,7 @@
 "use strict";
 
-var wotb = require('wotb');
-var logger = require('./logger')('wot');
+const wotb = require('wotb');
+const logger = require('./logger')('wot');
 
 module.exports = {
 

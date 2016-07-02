@@ -1,9 +1,9 @@
-var upnp = require('nnupnp');
-var async = require('async');
-var constants  = require('../constants');
-var logger = require('../logger')('upnp');
-var co = require('co');
-var Q = require('q');
+const upnp = require('nnupnp');
+const async = require('async');
+const constants  = require('../constants');
+const logger = require('../logger')('upnp');
+const co = require('co');
+const Q = require('q');
 
 module.exports = function (localPort, remotePort) {
   "use strict";
@@ -13,7 +13,7 @@ module.exports = function (localPort, remotePort) {
       try {
         yield openPort(localPort, remotePort);
       } catch (e) {
-        var client = upnp.createClient();
+        const client = upnp.createClient();
         yield Q.nbind(client.externalIp, client)()
           .catch(function(err){
             if (err && err.message == 'timeout') {
@@ -49,7 +49,7 @@ function openPort (localPort, remotePort) {
   "use strict";
   return Q.Promise(function(resolve, reject){
     logger.trace('UPnP: mapping external port %s to local %s...', remotePort, localPort);
-    var client = upnp.createClient();
+    const client = upnp.createClient();
     client.portMapping({
       'public': parseInt(remotePort),
       'private': parseInt(localPort),

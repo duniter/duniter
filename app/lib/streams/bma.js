@@ -1,10 +1,10 @@
 "use strict";
 
-var co = require('co');
-var es = require('event-stream');
-var network = require('../system/network');
-var dtos = require('./dtos');
-var sanitize = require('./sanitize');
+const co = require('co');
+const es = require('event-stream');
+const network = require('../system/network');
+const dtos = require('./dtos');
+const sanitize = require('./sanitize');
 
 let WebSocketServer = require('ws').Server;
 
@@ -28,12 +28,12 @@ module.exports = function(server, interfaces, httpLogs) {
 
   return network.createServersAndListen('Duniter server', interfaces, httpLogs, null, (app, httpMethods) => {
 
-    var node         = require('../../controllers/node')(server);
-    var blockchain   = require('../../controllers/blockchain')(server);
-    var net          = require('../../controllers/network')(server, server.conf);
-    var wot          = require('../../controllers/wot')(server);
-    var transactions = require('../../controllers/transactions')(server);
-    var dividend     = require('../../controllers/uds')(server);
+    const node         = require('../../controllers/node')(server);
+    const blockchain   = require('../../controllers/blockchain')(server);
+    const net          = require('../../controllers/network')(server, server.conf);
+    const wot          = require('../../controllers/wot')(server);
+    const transactions = require('../../controllers/transactions')(server);
+    const dividend     = require('../../controllers/uds')(server);
     httpMethods.httpGET(  '/node/summary',                          node.summary,                         dtos.Summary);
     httpMethods.httpGET(  '/blockchain/parameters',                 blockchain.parameters,                dtos.Parameters);
     httpMethods.httpPOST( '/blockchain/membership',                 blockchain.parseMembership,           dtos.Membership);

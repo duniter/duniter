@@ -17,7 +17,7 @@
  * @module encoding/base64
  */
 
-var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+let b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 /**
  * Convert binary string to radix-64
@@ -26,11 +26,11 @@ var b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
  * @static
  */
 function s2r(t) {
-  var a, c, n;
-  var r = '',
+  let a, c, n;
+  let r = '',
     l = 0,
     s = 0;
-  var tl = t.length;
+  let tl = t.length;
 
   for (n = 0; n < tl; n++) {
     c = t.charCodeAt(n);
@@ -79,11 +79,11 @@ function s2r(t) {
  * @static
  */
 function r2s(t) {
-  var c, n;
-  var r = '',
+  let c, n;
+  let r = '',
     s = 0,
     a = 0;
-  var tl = t.length;
+  let tl = t.length;
 
   for (n = 0; n < tl; n++) {
     c = b64s.indexOf(t.charAt(n));

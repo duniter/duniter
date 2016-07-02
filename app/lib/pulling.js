@@ -1,10 +1,10 @@
 "use strict";
 
-var Q = require('q');
-var co = require('co');
-var _ = require('underscore');
-var constant = require('./constants');
-var logger = require('./logger')('pulling');
+const Q = require('q');
+const co = require('co');
+const _ = require('underscore');
+const constant = require('./constants');
+const logger = require('./logger')('pulling');
 
 module.exports = {
 

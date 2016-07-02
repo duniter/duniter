@@ -1,7 +1,6 @@
 "use strict";
-var async     = require('async');
-var Q = require('q');
-var constants = require('../constants');
+const Q = require('q');
+const constants = require('../constants');
 
 module.exports = function () {
   return new ParameterNamespace();
@@ -26,11 +25,11 @@ function ParameterNamespace () {
     if(!req.params.count){
       throw "Count is required";
     }
-    var matches = req.params.from.match(/^(\d+)$/);
+    const matches = req.params.from.match(/^(\d+)$/);
     if(!matches){
       throw "From format is incorrect, must be a positive integer";
     }
-    var matches2 = req.params.count.match(/^(\d+)$/);
+    const matches2 = req.params.count.match(/^(\d+)$/);
     if(!matches){
       throw "Count format is incorrect, must be a positive integer";
     }
@@ -45,7 +44,7 @@ function ParameterNamespace () {
       callback('Parameter `pubkey` is required');
       return;
     }
-    var matches = req.params.pubkey.match(constants.PUBLIC_KEY);
+    const matches = req.params.pubkey.match(constants.PUBLIC_KEY);
     if(!matches){
       callback("Pubkey format is incorrect, must be a Base58 string");
       return;
@@ -60,7 +59,7 @@ function ParameterNamespace () {
       callback('Parameter `from` is required');
       return;
     }
-    var matches = req.params.from.match(/^(\d+)$/);
+    const matches = req.params.from.match(/^(\d+)$/);
     if(!matches){
       callback("From format is incorrect, must be a positive or zero integer");
       return;
@@ -75,7 +74,7 @@ function ParameterNamespace () {
       callback('Parameter `to` is required');
       return;
     }
-    var matches = req.params.to.match(/^(\d+)$/);
+    const matches = req.params.to.match(/^(\d+)$/);
     if(!matches){
       callback("To format is incorrect, must be a positive or zero integer");
       return;
@@ -90,7 +89,7 @@ function ParameterNamespace () {
       callback("Number is required");
       return;
     }
-    var matches = req.params.number.match(/^(\d+)$/);
+    const matches = req.params.number.match(/^(\d+)$/);
     if(!matches){
       callback("Number format is incorrect, must be a positive integer");
       return;

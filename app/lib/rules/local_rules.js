@@ -1,11 +1,11 @@
 "use strict";
 
-var co         = require('co');
-var hashf      = require('../ucp/hashf');
-var keyring     = require('../crypto/keyring');
-var rawer      = require('../ucp/rawer');
-var Identity   = require('../entity/identity');
-var Membership = require('../entity/membership');
+const co         = require('co');
+const hashf      = require('../ucp/hashf');
+const keyring     = require('../crypto/keyring');
+const rawer      = require('../ucp/rawer');
+const Identity   = require('../entity/identity');
+const Membership = require('../entity/membership');
 
 let rules = {};
 
@@ -24,7 +24,7 @@ rules.FUNCTIONS = {
   checkProofOfWork: (block) => co(function *() {
     let remainder = block.powMin % 16;
     let nb_zeros = (block.powMin - remainder) / 16;
-    var powRegexp = new RegExp('^0{' + nb_zeros + '}');
+    const powRegexp = new RegExp('^0{' + nb_zeros + '}');
     if (!block.hash.match(powRegexp)) {
       throw Error('Not a proof-of-work');
     }
@@ -70,8 +70,8 @@ rules.FUNCTIONS = {
   }),
 
   checkBlockTimes: (block, conf) => co(function *() {
-    var time = parseInt(block.time);
-    var medianTime = parseInt(block.medianTime);
+    const time = parseInt(block.time);
+    const medianTime = parseInt(block.medianTime);
     if (block.number > 0 && (time < medianTime || time > medianTime + maxAcceleration(conf)))
       throw Error('A block must have its Time between MedianTime and MedianTime + ' + maxAcceleration(conf));
     else if (block.number == 0 && time != medianTime)
@@ -80,10 +80,10 @@ rules.FUNCTIONS = {
   }),
 
   checkIdentitiesSignature: (block) => co(function *() {
-    var i = 0;
-    var wrongSig = false;
+    let i = 0;
+    let wrongSig = false;
     while (!wrongSig && i < block.identities.length) {
-      var idty = Identity.statics.fromInline(block.identities[i]);
+      const idty = Identity.statics.fromInline(block.identities[i]);
       idty.currency = block.currency;
       wrongSig = !keyring.verify(idty.rawWithoutSig(), idty.sig, idty.pubkey);
       if (wrongSig) {
@@ -95,11 +95,11 @@ rules.FUNCTIONS = {
   }),
 
   checkIdentitiesUserIDConflict: (block) => co(function *() {
-    var uids = [];
-    var i = 0;
-    var conflict = false;
+    const uids = [];
+    let i = 0;
+    let conflict = false;
     while (!conflict && i < block.identities.length) {
-      var uid = block.identities[i].split(':')[3];
+      const uid = block.identities[i].split(':')[3];
       conflict = ~uids.indexOf(uid);
       uids.push(uid);
       i++;
@@ -111,11 +111,11 @@ rules.FUNCTIONS = {
   }),
 
   checkIdentitiesPubkeyConflict: (block) => co(function *() {
-    var pubkeys = [];
-    var i = 0;
-    var conflict = false;
+    const pubkeys = [];
+    let i = 0;
+    let conflict = false;
     while (!conflict && i < block.identities.length) {
-      var pubk = block.identities[i].split(':')[0];
+      const pubk = block.identities[i].split(':')[0];
       conflict = ~pubkeys.indexOf(pubk);
       pubkeys.push(pubk);
       i++;
@@ -129,14 +129,14 @@ rules.FUNCTIONS = {
   checkIdentitiesMatchJoin: (block) => co(function *() {
     // N.B.: this function does not test for potential duplicates in
     // identities and/or joiners, this is another test responsibility
-    var pubkeys = [];
+    const pubkeys = [];
     block.identities.forEach(function(inline){
       let sp = inline.split(':');
       let pubk = sp[0], ts = sp[2], uid = sp[3];
       pubkeys.push([pubk, uid, ts].join('-'));
     });
-    var matchCount = 0;
-    var i = 0;
+    let matchCount = 0;
+    let i = 0;
     while (i < block.joiners.length) {
       let sp = block.joiners[i].split(':');
       let pubk = sp[0], ts = sp[3], uid = sp[4];
@@ -154,14 +154,14 @@ rules.FUNCTIONS = {
   checkRevokedAreExcluded: (block) => co(function *() {
     // N.B.: this function does not test for potential duplicates in Revoked,
     // this is another test responsability
-    var pubkeys = [];
+    const pubkeys = [];
     block.revoked.forEach(function(inline){
       let sp = inline.split(':');
       let pubk = sp[0];
       pubkeys.push(pubk);
     });
-    var matchCount = 0;
-    var i = 0;
+    let matchCount = 0;
+    let i = 0;
     while (i < block.excluded.length) {
       if (~pubkeys.indexOf(block.excluded[i])) matchCount++;
       i++;
@@ -190,8 +190,8 @@ rules.FUNCTIONS = {
   }),
 
   checkRevokedNotInMemberships: (block) => co(function *() {
-    var i = 0;
-    var conflict = false;
+    let i = 0;
+    let conflict = false;
     while (!conflict && i < block.revoked.length) {
       let pubk = block.revoked[i].split(':')[0];
       conflict = existsPubkeyIn(pubk, block.joiners)
@@ -206,8 +206,8 @@ rules.FUNCTIONS = {
   }),
 
   checkMembershipsSignature: (block) => co(function *() {
-    var i = 0;
-    var wrongSig = false, ms;
+    let i = 0;
+    let wrongSig = false, ms;
     // Joiners
     while (!wrongSig && i < block.joiners.length) {
       ms = Membership.statics.fromInline(block.joiners[i], 'IN', block.currency);
@@ -235,11 +235,11 @@ rules.FUNCTIONS = {
   }),
 
   checkPubkeyUnicity: (block) => co(function *() {
-    var pubkeys = [];
-    var conflict = false;
-    var pubk;
+    const pubkeys = [];
+    let conflict = false;
+    let pubk;
     // Joiners
-    var i = 0;
+    let i = 0;
     while (!conflict && i < block.joiners.length) {
       pubk = block.joiners[i].split(':')[0];
       conflict = ~pubkeys.indexOf(pubk);
@@ -277,12 +277,12 @@ rules.FUNCTIONS = {
   }),
 
   checkCertificationOneByIssuer: (block) => co(function *() {
-    var conflict = false;
+    let conflict = false;
     if (block.number > 0) {
-      var issuers = [];
-      var i = 0;
+      const issuers = [];
+      let i = 0;
       while (!conflict && i < block.certifications.length) {
-        var issuer = block.certifications[i].split(':')[0];
+        const issuer = block.certifications[i].split(':')[0];
         conflict = ~issuers.indexOf(issuer);
         issuers.push(issuer);
         i++;
@@ -295,11 +295,11 @@ rules.FUNCTIONS = {
   }),
 
   checkCertificationUnicity: (block) => co(function *() {
-    var certs = [];
-    var i = 0;
-    var conflict = false;
+    const certs = [];
+    let i = 0;
+    let conflict = false;
     while (!conflict && i < block.certifications.length) {
-      var cert = block.certifications[i].split(':').slice(0,2).join(':');
+      const cert = block.certifications[i].split(':').slice(0,2).join(':');
       conflict = ~certs.indexOf(cert);
       certs.push(cert);
       i++;
@@ -311,20 +311,20 @@ rules.FUNCTIONS = {
   }),
 
   checkCertificationIsntForLeaverOrExcluded: (block) => co(function *() {
-    var pubkeys = [];
+    const pubkeys = [];
     block.leavers.forEach(function(leaver){
-      var pubk = leaver.split(':')[0];
+      const pubk = leaver.split(':')[0];
       pubkeys.push(pubk);
     });
     block.excluded.forEach(function(excluded){
       pubkeys.push(excluded);
     });
     // Certifications
-    var conflict = false;
-    var i = 0;
+    let conflict = false;
+    let i = 0;
     while (!conflict && i < block.certifications.length) {
-      var sp = block.certifications[i].split(':');
-      var pubkFrom = sp[0], pubkTo = sp[1];
+      const sp = block.certifications[i].split(':');
+      const pubkFrom = sp[0], pubkTo = sp[1];
       conflict = ~pubkeys.indexOf(pubkFrom) || ~pubkeys.indexOf(pubkTo);
       i++;
     }
@@ -335,7 +335,7 @@ rules.FUNCTIONS = {
   }),
 
   checkTxIssuers: (block) => co(function *() {
-    var txs = block.getTransactions();
+    const txs = block.getTransactions();
     // Check rule against each transaction
     for (let i = 0, len = txs.length; i < len; i++) {
       let tx = txs[i];
@@ -347,12 +347,12 @@ rules.FUNCTIONS = {
   }),
 
   checkTxSources: (block) => co(function *() {
-    var txs = block.getTransactions();
-    var sources = [];
-    var i = 0;
-    var existsIdenticalSource = false;
+    const txs = block.getTransactions();
+    const sources = [];
+    let i = 0;
+    let existsIdenticalSource = false;
     while (!existsIdenticalSource && i < txs.length) {
-      var tx = txs[i];
+      const tx = txs[i];
       if (!tx.inputs || tx.inputs.length == 0) {
         throw Error('A transaction must have at least 1 source');
       }
@@ -372,7 +372,7 @@ rules.FUNCTIONS = {
   }),
 
   checkTxRecipients: (block) => co(function *() {
-    var txs = block.getTransactions();
+    const txs = block.getTransactions();
     // Check rule against each transaction
     for (let i = 0, len = txs.length; i < len; i++) {
       let tx = txs[i];
@@ -381,8 +381,8 @@ rules.FUNCTIONS = {
       }
       else {
         // Cannot have 2 identical pubkeys in outputs
-        var existsIdenticalRecipient = false;
-        var recipients = [];
+        let existsIdenticalRecipient = false;
+        const recipients = [];
         tx.outputs.forEach(function (output) {
           if (~recipients.indexOf(output.raw)) {
             existsIdenticalRecipient = true;
@@ -399,7 +399,7 @@ rules.FUNCTIONS = {
   }),
 
   checkTxSignature: (block) => co(function *() {
-    var txs = block.getTransactions();
+    const txs = block.getTransactions();
     // Check rule against each transaction
     for (let i = 0, len = txs.length; i < len; i++) {
       let tx = txs[i];
@@ -442,12 +442,12 @@ function getSigResult(tx) {
     json.outputs.push(output.raw);
   });
   json.unlocks = tx.unlocks;
-  var i = 0;
-  var signaturesMatching = true;
-  var raw = rawer.getTransaction(json);
+  let i = 0;
+  let signaturesMatching = true;
+  const raw = rawer.getTransaction(json);
   while (signaturesMatching && i < tx.signatures.length) {
-    var sig = tx.signatures[i];
-    var pub = tx.issuers[i];
+    const sig = tx.signatures[i];
+    const pub = tx.issuers[i];
     signaturesMatching = keyring.verify(raw, sig, pub);
     sigResult.sigs[pub] = {
       matching: signaturesMatching,
@@ -460,7 +460,7 @@ function getSigResult(tx) {
 }
 
 function checkBunchOfTransactions(txs, done){
-  var block = {
+  const block = {
     getTransactions: function () {
       return txs;
     }

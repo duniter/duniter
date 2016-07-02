@@ -114,7 +114,7 @@ function hash(str) {
 function computeSpeed(block, sigFunc) {
   const start = new Date();
   const raw = rawer.getBlockInnerHashAndNonce(block);
-  for (var i = 0; i < constants.PROOF_OF_WORK.EVALUATION; i++) {
+  for (let i = 0; i < constants.PROOF_OF_WORK.EVALUATION; i++) {
     // Signature
     const sig = dos2unix(sigFunc(raw));
     // Hash

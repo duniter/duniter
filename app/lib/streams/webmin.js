@@ -1,19 +1,19 @@
 "use strict";
 
-var path = require('path');
-var es = require('event-stream');
-var constants = require('../../lib/constants');
-var network = require('../system/network');
-var dtos = require('../../lib/streams/dtos');
-var logger = require('../logger')('webmin');
+const path = require('path');
+const es = require('event-stream');
+const constants = require('../../lib/constants');
+const network = require('../system/network');
+const dtos = require('../../lib/streams/dtos');
+const logger = require('../logger')('webmin');
 
 let WebSocketServer = require('ws').Server;
 
 module.exports = function(dbConf, overConf, interfaces, httpLogs) {
 
-  var webminCtrl = require('../../controllers/webmin.controller')(dbConf, overConf);
+  const webminCtrl = require('../../controllers/webmin.controller')(dbConf, overConf);
 
-  var fullPath = path.join(__dirname, '../../../web-ui/public');
+  const fullPath = path.join(__dirname, '../../../web-ui/public');
 
   let httpLayer = network.createServersAndListen('Duniter web admin', interfaces, httpLogs, fullPath, (app, httpMethods) => {
 

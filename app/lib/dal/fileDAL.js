@@ -704,8 +704,8 @@ function FileDAL(params) {
 
   this.merkleForPeers = () => co(function *() {
     let peers = yield that.listAllPeersWithStatusNewUP();
-    var leaves = peers.map((peer) => peer.hash);
-    var merkle = new Merkle();
+    const leaves = peers.map((peer) => peer.hash);
+    const merkle = new Merkle();
     merkle.initialize(leaves);
     return merkle;
   });

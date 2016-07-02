@@ -1,17 +1,17 @@
 "use strict";
-var Q       = require('q');
-var stream  = require('stream');
-var util    = require('util');
-var request = require('request');
-var co      = require('co');
-var constants = require('../../lib/constants');
-var Peer    = require('../../lib/entity/peer');
-var Identity = require('../../lib/entity/identity');
-var Revocation = require('../../lib/entity/revocation');
-var Membership = require('../../lib/entity/membership');
-var Block = require('../../lib/entity/block');
-var Transaction = require('../../lib/entity/transaction');
-var logger  = require('../logger')('multicaster');
+const Q       = require('q');
+const stream  = require('stream');
+const util    = require('util');
+const request = require('request');
+const co      = require('co');
+const constants = require('../../lib/constants');
+const Peer    = require('../../lib/entity/peer');
+const Identity = require('../../lib/entity/identity');
+const Revocation = require('../../lib/entity/revocation');
+const Membership = require('../../lib/entity/membership');
+const Block = require('../../lib/entity/block');
+const Transaction = require('../../lib/entity/transaction');
+const logger  = require('../logger')('multicaster');
 
 const WITH_ISOLATION = true;
 
@@ -23,7 +23,7 @@ function Multicaster (conf, timeout) {
 
   stream.Transform.call(this, { objectMode: true });
 
-  var that = this;
+  const that = this;
 
   let blockForward = forward({
     transform: Block.statics.fromJSON,
@@ -159,7 +159,7 @@ function Multicaster (conf, timeout) {
       return Q();
     }
     return Q.Promise(function(resolve){
-      var postReq = request.post({
+      const postReq = request.post({
         "uri": 'http://' + peer.getURL() + url,
         "timeout": timeout || constants.NETWORK.DEFAULT_TIMEOUT
       }, function (err, res) {

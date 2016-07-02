@@ -1,12 +1,12 @@
 "use strict";
 
-var co = require('co');
-var _ = require('underscore');
-var async    = require('async');
-var util     = require('util');
-var stream   = require('stream');
-var Peer     = require('../entity/peer');
-var constants = require('../constants');
+const co = require('co');
+const _ = require('underscore');
+const async    = require('async');
+const util     = require('util');
+const stream   = require('stream');
+const Peer     = require('../entity/peer');
+const constants = require('../constants');
 
 module.exports = function (PeeringService, conf, dal) {
   return new Router(PeeringService, conf, dal);
@@ -18,7 +18,7 @@ function Router (PeeringService, conf, dal) {
     dal = theDAL;
   };
 
-  var logger   = require('../logger')(dal.profile);
+  const logger   = require('../logger')(dal.profile);
 
   stream.Transform.call(this, { objectMode: true });
 
@@ -26,7 +26,7 @@ function Router (PeeringService, conf, dal) {
 
   this.setActive = (shouldBeActive) => active = shouldBeActive;
 
-  var that = this;
+  const that = this;
 
   this._write = function (obj, enc, done) {
          if (obj.joiners) {                      route('block',       obj, getRandomInUPPeers(),                        done); }
@@ -115,10 +115,10 @@ function Router (PeeringService, conf, dal) {
   }
 
   function chooseXin (peers, max) {
-    var chosen = [];
-    var nbPeers = peers.length;
-    for (var i = 0; i < Math.min(nbPeers, max); i++) {
-      var randIndex = Math.max(Math.floor(Math.random() * 10) - (10 - nbPeers) - i, 0);
+    const chosen = [];
+    const nbPeers = peers.length;
+    for (const i = 0; i < Math.min(nbPeers, max); i++) {
+      const randIndex = Math.max(Math.floor(Math.random() * 10) - (10 - nbPeers) - i, 0);
       chosen.push(peers[randIndex]);
       peers.splice(randIndex, 1);
     }

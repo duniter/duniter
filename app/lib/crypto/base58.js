@@ -7,24 +7,24 @@
 
 "use strict";
 
-var Base58 = {}
+let Base58 = {}
 
 Base58.alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 Base58.alphabetMap = {}
 
-for(var i = 0; i < Base58.alphabet.length; i++) {
+for(let i = 0; i < Base58.alphabet.length; i++) {
   Base58.alphabetMap[Base58.alphabet.charAt(i)] = i
 }
 
 Base58.encode = function(buffer) {
   if (buffer.length === 0) return ''
 
-  var i, j, digits = [0]
+  let i, j, digits = [0]
   for (i = 0; i < buffer.length; i++) {
     for (j = 0; j < digits.length; j++) digits[j] <<= 8
     digits[digits.length - 1] += buffer[i]
 
-    var carry = 0
+    let carry = 0
     for (j = digits.length - 1; j >= 0; j--){
       digits[j] += carry
       carry = (digits[j] / 58) | 0
@@ -47,16 +47,16 @@ Base58.encode = function(buffer) {
 Base58.decode = function(string) {
   if (string.length === 0) return (new Uint8Array())
 
-  var input = string.split('').map(function(c){
+  let input = string.split('').map(function(c){
     return Base58.alphabetMap[c]
   })
 
-  var i, j, bytes = [0]
+  let i, j, bytes = [0]
   for (i = 0; i < input.length; i++) {
     for (j = 0; j < bytes.length; j++) bytes[j] *= 58
     bytes[bytes.length - 1] += input[i]
 
-    var carry = 0
+    let carry = 0
     for (j = bytes.length - 1; j >= 0; j--){
       bytes[j] += carry
       carry = bytes[j] >> 8

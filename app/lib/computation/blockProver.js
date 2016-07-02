@@ -1,18 +1,18 @@
 "use strict";
-var async           = require('async');
-var co              = require('co');
-var Q               = require('q');
-var constants       = require('../constants');
-var base58          = require('../crypto/base58');
-var childProcess    = require('child_process');
-var path            = require('path');
-var Block           = require('../entity/block');
+const async           = require('async');
+const co              = require('co');
+const Q               = require('q');
+const constants       = require('../constants');
+const base58          = require('../crypto/base58');
+const childProcess    = require('child_process');
+const path            = require('path');
+const Block           = require('../entity/block');
 
 module.exports = () => new BlockGenerator();
 
 function BlockGenerator() {
 
-  var conf, dal, pair, logger;
+  let conf, dal, pair, logger;
 
   this.setConfDAL = (newConf, newDAL, newPair) => {
     dal = newDAL;
@@ -23,22 +23,22 @@ function BlockGenerator() {
 
   var cancels = [];
 
-  var debug = process.execArgv.toString().indexOf('--debug') !== -1;
+  const debug = process.execArgv.toString().indexOf('--debug') !== -1;
   if(debug) {
     //Set an unused port number.
     process.execArgv = [];
   }
-  var powWorker;
+  let powWorker;
 
-  var powFifo = async.queue(function (task, callback) {
+  const powFifo = async.queue(function (task, callback) {
     task(callback);
   }, 1);
 
   // Callback used to start again computation of next PoW
-  var computeNextCallback = null;
+  let computeNextCallback = null;
 
   // Flag indicating the PoW has begun
-  var computing = false;
+  let computing = false;
 
   this.computing = () => computing = true;
 
@@ -109,16 +109,16 @@ function BlockGenerator() {
 
   function Worker() {
 
-    var stopped = true;
-    var that = this;
-    var onPoWFound = function() { throw 'Proof-of-work found, but no listener is attached.'; };
-    var onPoWError = function() { throw 'Proof-of-work error, but no listener is attached.'; };
+    let stopped = true;
+    const that = this;
+    let onPoWFound = function() { throw 'Proof-of-work found, but no listener is attached.'; };
+    let onPoWError = function() { throw 'Proof-of-work error, but no listener is attached.'; };
     that.powProcess = childProcess.fork(path.join(__dirname, '../proof.js'));
-    var start = null;
-    var speedMesured = false;
+    let start = null;
+    let speedMesured = false;
 
     that.powProcess.on('message', function(msg) {
-      var block = msg.block;
+      const block = msg.block;
       if (msg.error) {
         onPoWError(msg.error);
         stopped = true;
@@ -129,9 +129,9 @@ function BlockGenerator() {
         stopped = false;
       }
       if (!stopped && msg.found) {
-        var end = new Date();
-        var duration = (end.getTime() - start.getTime());
-        var testsPerSecond = (1000 / duration * msg.testsCount).toFixed(2);
+        const end = new Date();
+        const duration = (end.getTime() - start.getTime());
+        const testsPerSecond = (1000 / duration * msg.testsCount).toFixed(2);
         logger.info('Done: %s in %ss (%s tests, ~%s tests/s)', msg.pow, (duration / 1000).toFixed(2), msg.testsCount, testsPerSecond);
         stopped = true;
         start = null;
@@ -154,9 +154,9 @@ function BlockGenerator() {
       } else if (!stopped) {
 
         if (!msg.found) {
-          var pow = msg.pow;
+          const pow = msg.pow;
           for (let i = 5; i >= 3; i--) {
-            var lowPowRegexp = new RegExp('^0{' + (i) + '}[^0]');
+            const lowPowRegexp = new RegExp('^0{' + (i) + '}[^0]');
             if (pow.match(lowPowRegexp)) {
               logger.info('Matched %s zeros %s with Nonce = %s for block#%s', i, pow, msg.block.nonce, msg.block.number);
               break;
@@ -175,7 +175,7 @@ function BlockGenerator() {
           onPoWFound();
           logger.debug('Proof-of-work computation canceled.');
           start = null;
-          var cancelConfirm = cancels.shift();
+          const cancelConfirm = cancels.shift();
           cancelConfirm();
         }
       }

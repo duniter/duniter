@@ -117,7 +117,7 @@ function Router (PeeringService, conf, dal) {
   function chooseXin (peers, max) {
     const chosen = [];
     const nbPeers = peers.length;
-    for (const i = 0; i < Math.min(nbPeers, max); i++) {
+    for (let i = 0; i < Math.min(nbPeers, max); i++) {
       const randIndex = Math.max(Math.floor(Math.random() * 10) - (10 - nbPeers) - i, 0);
       chosen.push(peers[randIndex]);
       peers.splice(randIndex, 1);

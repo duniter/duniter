@@ -1,9 +1,9 @@
 "use strict";
 
-var Q = require('q');
-var _ = require('underscore');
-var co = require('co');
-var path = require('path');
+const Q = require('q');
+const _ = require('underscore');
+const co = require('co');
+const path = require('path');
 
 const LOCAL_LEVEL = true;
 const DEEP_WRITE = true;
@@ -14,11 +14,11 @@ module.exports = function(rootPath, qfs, parent) {
 
 function CFSCore(rootPath, qfs, parent) {
 
-  var that = this;
+  const that = this;
 
   this.parent = parent;
-  var deletedFolder = path.join(rootPath, '.deleted');
-  var deletionFolderPromise;
+  const deletedFolder = path.join(rootPath, '.deleted');
+  let deletionFolderPromise;
 
   this.changeParent = (newParent) => this.parent = newParent;
 
@@ -26,9 +26,7 @@ function CFSCore(rootPath, qfs, parent) {
    * Creates the deletion folder before effective deletion.
    * @returns {*|any|Q.Promise<void>} Promise of creation.
    */
-  function createDeletionFolder() {
-    return deletionFolderPromise || (deletionFolderPromise = that.makeTree('.deleted'));
-  }
+  const createDeletionFolder = () => deletionFolderPromise || (deletionFolderPromise = that.makeTree('.deleted'));
 
   /**
    * READ operation of CFS. Reads given file. May lead to tree traversal if file is not found.
@@ -38,7 +36,7 @@ function CFSCore(rootPath, qfs, parent) {
   this.read = (filePath) => {
     return co(function *() {
       try {
-        var isDeleted = yield qfs.exists(path.join(deletedFolder, toRemoveFileName(filePath)));
+        const isDeleted = yield qfs.exists(path.join(deletedFolder, toRemoveFileName(filePath)));
         if (isDeleted) {
           // A deleted file must be considered non-existant
           return null;
@@ -59,12 +57,12 @@ function CFSCore(rootPath, qfs, parent) {
   this.exists = (filePath) => {
     return co(function *() {
       try {
-        var isDeleted = yield qfs.exists(path.join(deletedFolder, toRemoveFileName(filePath)));
+        const isDeleted = yield qfs.exists(path.join(deletedFolder, toRemoveFileName(filePath)));
         if (isDeleted) {
           // A deleted file must be considered non-existant
           return false;
         }
-        var exists = yield qfs.exists(path.join(rootPath, filePath));
+        let exists = yield qfs.exists(path.join(rootPath, filePath));
         if (!exists && that.parent) {
           exists = that.parent.exists(filePath);
         }
@@ -83,21 +81,22 @@ function CFSCore(rootPath, qfs, parent) {
    * @returns {*} Promise of file names.
    */
   this.list = (ofPath, localLevel) => {
-    var dirPath = path.normalize(ofPath);
+    const dirPath = path.normalize(ofPath);
     return co(function *() {
-      var files = [], folder = path.join(rootPath, dirPath);
+      let files = [], folder = path.join(rootPath, dirPath);
       if (that.parent && !localLevel) {
         files = yield that.parent.list(dirPath);
       }
-      var hasDir = yield qfs.exists(folder);
+      const hasDir = yield qfs.exists(folder);
       if (hasDir) {
         files = files.concat(yield qfs.list(folder));
       }
-      var hasDeletedFiles = yield qfs.exists(deletedFolder);
+      const hasDeletedFiles = yield qfs.exists(deletedFolder);
       if (hasDeletedFiles) {
-        var deletedFiles = yield qfs.list(deletedFolder);
-        var deletedOfThisPath = deletedFiles.filter((f) => f.match(new RegExp('^' + toRemoveDirName(dirPath))));
-        var locallyDeletedFiles = deletedOfThisPath.map((f) => f.replace(toRemoveDirName(dirPath), '').replace(/^__/, ''));
+        const deletedFiles = yield qfs.list(deletedFolder);
+        const deletedOfThisPath = deletedFiles.filter((f) => f.match(new RegExp('^' + toRemoveDirName(dirPath))));
+        const locallyDeletedFiles = deletedOfThisPath.map((f) => f.replace(toRemoveDirName(dirPath), '')
+                                                                    .replace(/^__/, ''));
         files = _.difference(files, locallyDeletedFiles);
       }
       return _.uniq(files);

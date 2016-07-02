@@ -2,11 +2,11 @@
  * Created by cgeek on 22/08/15.
  */
 
-var Q = require('q');
-var _ = require('underscore');
-var co = require('co');
-var colors = require('colors');
-var logger = require('../../logger')('sqlite');
+const Q = require('q');
+const _ = require('underscore');
+const co = require('co');
+const colors = require('colors');
+const logger = require('../../logger')('sqlite');
 
 module.exports = AbstractSQLite;
 

@@ -1,28 +1,28 @@
 "use strict";
 
-var CURRENCY     = "[a-zA-Z0-9-_ ]+";
-var UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\d{2}\\.\\d{2}(\\+|-)\\d{3}\\.\\d{2});(\\d+)(;?)";
-var USER_ID      = "[A-Za-z0-9_-]*";
-var BASE58       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+";
-var PUBKEY       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}";
-var TIMESTAMP    = "[1-9][0-9]*";
-var POSITIVE_INT = "[1-9][0-9]*";
-var DIVIDEND     = "[1-9][0-9]{0,5}";
-var ZERO_OR_POSITIVE_INT = "0|[1-9][0-9]*";
-var INTEGER      = "(0|[1-9]\\d*)";
-var FLOAT        = "\\d+\.\\d+";
-var BOOLEAN      = "[01]";
-var SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
-var FINGERPRINT  = "[A-F0-9]{64}";
-var COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}";
-var UNLOCK       = "(SIG\\(" + INTEGER + "\\)|XHX\\(" + INTEGER + "\\))";
-var CONDITIONS   = "(&&|\\|\\|| |[()]|(SIG\\([0-9a-zA-Z]{43,44}\\)|(XHX\\([A-F0-9]{64}\\))))*";
-//var CONDITIONS   = "(&&|\|\|| |[()]|(SIG\\(\\da-zA-Z\\))|(XHX\\(" + FINGERPRINT + "\\)))*";
-var BLOCK_UID    = INTEGER + "-" + FINGERPRINT;
-var META_TS      = "META:TS:" + BLOCK_UID;
+const CURRENCY     = "[a-zA-Z0-9-_ ]+";
+const UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\d{2}\\.\\d{2}(\\+|-)\\d{3}\\.\\d{2});(\\d+)(;?)";
+const USER_ID      = "[A-Za-z0-9_-]*";
+const BASE58       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+";
+const PUBKEY       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}";
+const TIMESTAMP    = "[1-9][0-9]*";
+const POSITIVE_INT = "[1-9][0-9]*";
+const DIVIDEND     = "[1-9][0-9]{0,5}";
+const ZERO_OR_POSITIVE_INT = "0|[1-9][0-9]*";
+const INTEGER      = "(0|[1-9]\\d*)";
+const FLOAT        = "\\d+\.\\d+";
+const BOOLEAN      = "[01]";
+const SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
+const FINGERPRINT  = "[A-F0-9]{64}";
+const COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}";
+const UNLOCK       = "(SIG\\(" + INTEGER + "\\)|XHX\\(" + INTEGER + "\\))";
+const CONDITIONS   = "(&&|\\|\\|| |[()]|(SIG\\([0-9a-zA-Z]{43,44}\\)|(XHX\\([A-F0-9]{64}\\))))*";
+//const CONDITIONS   = "(&&|\|\|| |[()]|(SIG\\(\\da-zA-Z\\))|(XHX\\(" + FINGERPRINT + "\\)))*";
+const BLOCK_UID    = INTEGER + "-" + FINGERPRINT;
+const META_TS      = "META:TS:" + BLOCK_UID;
 
-var IPV4_REGEXP = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
-var IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/;
+const IPV4_REGEXP = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
+const IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/;
 
 module.exports = {
 

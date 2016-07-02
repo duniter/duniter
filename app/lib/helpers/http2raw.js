@@ -1,6 +1,6 @@
 "use strict";
 
-var constants = require('../constants');
+const constants = require('../constants');
 
 module.exports = {
   identity:      requiresParameter('identity',    constants.ERRORS.HTTP_PARAM_IDENTITY_REQUIRED),

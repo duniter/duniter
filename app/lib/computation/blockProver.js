@@ -72,11 +72,11 @@ function BlockGenerator() {
     };
   });
 
-  this.prove = function (block, sigFunc, difficulty, forcedTime) {
+  this.prove = function (block, difficulty, forcedTime) {
 
-    var remainder = difficulty % 16;
-    var nbZeros = (difficulty - remainder) / 16;
-    var highMark = constants.PROOF_OF_WORK.UPPER_BOUND[remainder];
+    const remainder = difficulty % 16;
+    const nbZeros = (difficulty - remainder) / 16;
+    const highMark = constants.PROOF_OF_WORK.UPPER_BOUND[remainder];
 
     return Q.Promise(function(resolve, reject){
       if (!powWorker) {
@@ -88,7 +88,7 @@ function BlockGenerator() {
       }
       // Start
       powWorker.setOnPoW(function(err, powBlock) {
-        var theBlock = (powBlock && new Block(powBlock)) || null;
+        const theBlock = (powBlock && new Block(powBlock)) || null;
         resolve(theBlock);
       });
 
@@ -97,6 +97,7 @@ function BlockGenerator() {
       });
 
       block.nonce = 0;
+      console.log("Prover send");
       powWorker.powProcess.send({ conf: conf, block: block, zeros: nbZeros, highMark: highMark, forcedTime: forcedTime,
         pair: {
           secretKeyEnc: base58.encode(pair.secretKey)

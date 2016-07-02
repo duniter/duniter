@@ -1,5 +1,5 @@
 "use strict";
-var logger = require('../logger')('http');
+const logger = require('../logger')('http');
 
 module.exports = function http400 (res) {
   return function (err) {

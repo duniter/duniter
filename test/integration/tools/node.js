@@ -138,10 +138,14 @@ function Node (dbName, options) {
         function(next) {
           async.parallel({
             block: function(callback){
-              that.server.BlockchainService.generateNext().then((block) => callback(null, block)).catch(callback);
+              that.server.BlockchainService.generateNext()
+                  .then((block) => callback(null, block))
+                  .catch(callback);
             },
             sigFunc: function(callback){
-              require('../../../app/lib/crypto/signature').sync(that.server.pair, callback);
+              require('../../../app/lib/crypto/signature').sync(that.server.pair)
+                  .then((sigF) => callback(null, sigF))
+                  .catch(callback);
             }
           }, next);
         },
@@ -162,7 +166,7 @@ function Node (dbName, options) {
     async.waterfall([
       function (next){
         block.issuer = issuer;
-        BlockchainService.prove(block, sigFunc, difficulty).then((proven) => next(null, proven)).catch(next);
+        BlockchainService.prove(block, difficulty).then((proven) => next(null, proven)).catch(next);
       },
       function (provenBlock, next){
         if (provenBlock) {

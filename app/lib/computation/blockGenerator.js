@@ -51,9 +51,8 @@ function BlockGenerator(mainContext, prover) {
 
   this.makeNextBlock = (block, sigFunc, trial, manualValues) => co(function *() {
     const unsignedBlock = block || (yield that.nextBlock());
-    const sigF = sigFunc || signature.sync(pair);
     const trialLevel = trial || (yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal));
-    return prover.prove(unsignedBlock, sigF, trialLevel, (manualValues && manualValues.time) || null);
+    return prover.prove(unsignedBlock, trialLevel, (manualValues && manualValues.time) || null);
   });
 
   /**

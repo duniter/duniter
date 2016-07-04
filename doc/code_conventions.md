@@ -8,7 +8,7 @@ We enumerate here the conventions we try to follow *as much as possible* to have
 
 `const` is the default variable declaration. Because most of the time we do not need to reassign a variable, so using `const` warns you if, by error, you try to reassign it. If reassignment was not an error and you do need to change the variable value, then modify `const` by `let` in this case.
 
-> We know, `const` if 5 characters and `let` is only 3. But these 2 more characters may be what makes the difference between robust and weak code.
+> We know, `const` is 5 characters and `let` is only 3. But these 2 more characters may be what makes the difference between robust and weak code.
 
 `var` is to be avoided, anytime. Prefer `const` or even `let`, everywhere.
 

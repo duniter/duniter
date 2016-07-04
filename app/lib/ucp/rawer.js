@@ -97,35 +97,35 @@ module.exports = new function() {
       raw += "Parameters: " + json.parameters + "\n";
     raw += "MembersCount: " + json.membersCount + "\n";
     raw += "Identities:\n";
-    for(let i = 0; i < json.identities.length; i++){
+    for (let i = 0; i < json.identities.length; i++){
       raw += json.identities[i] + "\n";
     }
     raw += "Joiners:\n";
-    for(let i = 0; i < json.joiners.length; i++){
+    for (let i = 0; i < json.joiners.length; i++){
       raw += json.joiners[i] + "\n";
     }
     raw += "Actives:\n";
-    for(let i = 0; i < json.actives.length; i++){
+    for (let i = 0; i < json.actives.length; i++){
       raw += json.actives[i] + "\n";
     }
     raw += "Leavers:\n";
-    for(let i = 0; i < json.leavers.length; i++){
+    for (let i = 0; i < json.leavers.length; i++){
       raw += json.leavers[i] + "\n";
     }
     raw += "Revoked:\n";
-    for(let i = 0; i < json.revoked.length; i++){
+    for (let i = 0; i < json.revoked.length; i++){
       raw += json.revoked[i] + "\n";
     }
     raw += "Excluded:\n";
-    for(let i = 0; i < json.excluded.length; i++){
+    for (let i = 0; i < json.excluded.length; i++){
       raw += json.excluded[i] + "\n";
     }
     raw += "Certifications:\n";
-    for(let i = 0; i < json.certifications.length; i++){
+    for (let i = 0; i < json.certifications.length; i++){
       raw += json.certifications[i] + "\n";
     }
     raw += "Transactions:\n";
-    for(let i = 0; i < json.transactions.length; i++){
+    for (let i = 0; i < json.transactions.length; i++){
       raw += json.transactions[i].raw || this.getCompactTransaction(json.transactions[i]);
     }
     return dos2unix(raw);

@@ -106,9 +106,15 @@ module.exports = {
     // Try to get new legit blocks for local blockchain
     for (const peer of peers) {
       let shortPubkey = peer.pubkey.substr(0, 6);
-      let remoteNext = yield dao.getRemoteBlock(peer, localCurrent.number + 1);
+      let remoteNext;
+      if (localCurrent) {
+        remoteNext = yield dao.getRemoteBlock(peer, localCurrent.number + 1);
+      } else {
+        remoteNext = yield dao.getRemoteBlock(peer, 0);
+      }
       if (remoteNext) {
-        let isFork = !(remoteNext.previousHash == localCurrent.hash && remoteNext.number == localCurrent.number + 1);
+        let isFork = localCurrent
+            && !(remoteNext.previousHash == localCurrent.hash && remoteNext.number == localCurrent.number + 1);
         if (!isFork) {
           logger.debug('Peer %s is on same blockchain', shortPubkey);
           let appliedSuccessfully;

@@ -1,17 +1,20 @@
 "use strict";
-const util       = require('util');
-const stream     = require('stream');
-const co         = require('co');
-const _          = require('underscore');
-const moment     = require('moment');
-const hashf      = require('./ucp/hashf');
-const dos2unix   = require('./system/dos2unix');
-const logger     = require('./logger')('sync');
-const rawer      = require('./ucp/rawer');
-const constants  = require('../lib/constants');
-const Peer       = require('../lib/entity/peer');
-const multimeter = require('multimeter');
-const pulling        = require('../lib/pulling');
+const util         = require('util');
+const stream       = require('stream');
+const co           = require('co');
+const Q            = require('q');
+const _            = require('underscore');
+const moment       = require('moment');
+const vucoin       = require('vucoin');
+const hashf        = require('./ucp/hashf');
+const dos2unix     = require('./system/dos2unix');
+const logger       = require('./logger')('sync');
+const rawer        = require('./ucp/rawer');
+const constants    = require('../lib/constants');
+const Peer         = require('../lib/entity/peer');
+const Transaction  = require('../lib/entity/transaction');
+const multimeter   = require('multimeter');
+const pulling      = require('../lib/pulling');
 
 const CONST_BLOCKS_CHUNK = 500;
 const EVAL_REMAINING_INTERVAL = 1000;
@@ -58,29 +61,32 @@ function Synchroniser (server, host, port, conf, interactive) {
   const PeeringService     = server.PeeringService;
   const BlockchainService  = server.BlockchainService;
 
+  const vucoinOptions = {
+    timeout: constants.NETWORK.SYNC_LONG_TIMEOUT
+  };
+
   const dal = server.dal;
 
   this.sync = (to, chunkLen, askedCautious, nopeers) => co(function*() {
-    const node = yield getVucoin(host, port, vucoinOptions);
+
+    const vucoin = yield getVucoin(host, port, vucoinOptions);
+    const peering = yield Q.nfcall(vucoin.network.peering.get);
+
+    let peer = new Peer(peering);
+    logger.info("Try with %s %s", peer.getURL(), peer.pubkey.substr(0, 6));
+    let node = yield peer.connect();
+    node.pubkey = peer.pubkey;
     logger.info('Sync started.');
     //============
     // Blockchain
     //============
     logger.info('Downloading Blockchain...');
     watcher.writeStatus('Connecting to ' + host + '...');
-    const lCurrent = yield dal.getCurrentBlockOrNull();
-    const localNumber = lCurrent ? lCurrent.number : -1;
-
-    const rCurrent = yield Q.nbind(node.blockchain.current, node);
-    const remoteVersion = rCurrent.version;
+    let lCurrent = yield dal.getCurrentBlockOrNull();
+    let localNumber = lCurrent ? lCurrent.number : -1;
 
     // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
     const cautious = (askedCautious === true || (askedCautious === undefined && localNumber >= 0));
-
-    if (remoteVersion < 2) {
-      throw Error("Could not sync with remote host. UCP version is " + remoteVersion + " (Must be >= 2)")
-    }
-
     let dao = pulling.abstractDao({
       lastBlock: null,
 
@@ -91,41 +97,40 @@ function Synchroniser (server, host, port, conf, interactive) {
       remoteCurrent: (thePeer) => Q.nfcall(thePeer.blockchain.current),
 
       // Get the remote peers to be pulled
-      remotePeers: () => Promise([node]),
+      remotePeers: () => co(function*() {
+        return [node];
+      }),
 
       // Get block of given peer with given block number
       getLocalBlock: (number) => dal.getBlockOrNull(number),
 
       // Get block of given peer with given block number
       getRemoteBlock: (thePeer, number) => co(function *() {
-        let block = null;
-        try {
-          block = yield Q.nfcall(thePeer.blockchain.block, number);
-          Transaction.statics.setIssuers(block.transactions);
-          return block;
-        } catch (e) {
-          if (e.httpCode != 404) {
-            throw e;
+        if (number <= to) {
+          let block = null;
+          try {
+            block = yield Q.nfcall(thePeer.blockchain.block, number);
+            Transaction.statics.setIssuers(block.transactions);
+            return block;
+          } catch (e) {
+            if (e.httpCode != 404) {
+              throw e;
+            }
           }
+          return block;
+        } else {
+          return null;
         }
-        return block;
       }),
 
       applyMainBranch: (block) => co(function *() {
-        if (cautious) {
-          let addedBlock = yield server.BlockchainService.submitBlock(block, true, constants.FORK_ALLOWED);
+          let addedBlock = yield server.BlockchainService.submitBlock(block, cautious, constants.FORK_ALLOWED);
           server.streamPush(addedBlock);
-        } else {
-          yield server.BlockchainService.saveBlocksInMainBranch([block], remoteNumber);
-          if (this.lastBlock) {
-            yield server.BlockchainService.obsoleteInMainBranch(this.lastBlock);
-          }
           this.lastBlock = block;
-        }
       }),
 
       // Eventually remove forks later on
-      removeForks: () => Promise(),
+      removeForks: () => co(function*() {}),
 
       // Tells wether given peer is a member peer
       isMemberPeer: (thePeer) => co(function *() {
@@ -147,7 +152,7 @@ function Synchroniser (server, host, port, conf, interactive) {
   });
 
   function getVucoin(theHost, thePort, options) {
-    return Promise(function (resolve, reject) {
+    return new Promise(function (resolve, reject) {
       vucoin(theHost, thePort, function (err, node) {
         if (err) {
           return reject('Cannot sync: ' + err);

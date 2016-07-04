@@ -139,7 +139,7 @@ function BlockchainService () {
       if (doCheck) {
         yield mainContext.checkBlock(obj, constants.WITH_SIGNATURES_AND_POW);
       }
-      let res = yield mainContext.addBlock(obj, doCheck);
+      let res = yield mainContext.addBlock(obj);
       yield pushStatsForBlocks([res]);
       that.stopPoWThenProcessAndRestartPoW();
       return res;
@@ -392,7 +392,7 @@ function BlockchainService () {
     return mainFork.saveParametersForRootBlock(rootBlock);
   });
 
-  this.saveBlocksInMainBranch = (blocks, targetLastNumber) => co(function *() {
+  this.saveBlocksInMainBranch = (blocks) => co(function *() {
     // VERY FIRST: parameters, otherwise we compute wrong variables such as UDTime
     if (blocks[0].number == 0) {
       yield that.saveParametersForRootBlock(blocks[0]);
@@ -463,6 +463,7 @@ function BlockchainService () {
     yield mainContext.updateCertificationsForBlocks(blocks);
     // Create / Update sources
     yield mainContext.updateTransactionSourcesForBlocks(blocks, dividends);
+    logger.debug(blocks[0].number);
     yield dal.blockDAL.saveBunch(blocks);
     yield pushStatsForBlocks(blocks);
   });

@@ -339,8 +339,7 @@ function BlockchainContext() {
    * @param done
    */
   this.updateCertifications = (block) => co(function*() {
-    for (let c in block.certifications) {
-      const inlineCert = block.certifications[c];
+    for (let inlineCert of block.certifications) {
       let cert = Certification.statics.fromInline(inlineCert);
       let idty = yield dal.getWritten(cert.to);
       cert.target = new Identity(idty).getTargetHash();
@@ -392,8 +391,7 @@ function BlockchainContext() {
   this.computeObsoleteLinks = (block) => co(function*() {
     yield dal.obsoletesLinks(block.medianTime - conf.sigValidity);
     const members = yield dal.getMembers();
-    for (const m in members) {
-      const idty = members[m];
+    for (const idty of members) {
       try {
         yield that.checkHaveEnoughLinks(idty.pubkey, {});
       } catch (notEnoughLinks) {
@@ -426,8 +424,7 @@ function BlockchainContext() {
   this.updateSources = (block) => co(function*() {
     if (block.dividend) {
       const idties = yield dal.getMembers();
-      for (const i in idties) {
-        const idty = idties[i];
+      for (const idty of idties) {
         yield dal.saveSource(new Source({
           'type': 'D',
           'number': block.number,
@@ -442,22 +439,19 @@ function BlockchainContext() {
         }));
       }
 
-      for (const t in block.transactions) {
-        const obj = block.transactions[t];
+      for (const obj of block.transactions) {
         obj.version = constants.DOCUMENTS_VERSION;
         obj.currency = block.currency;
         obj.issuers = obj.signatories;
         const tx = new Transaction(obj);
         const txObj = tx.getTransaction();
         const txHash = tx.getHash(true);
-        for (const i in txObj.inputs) {
-          const input = txObj.inputs[i];
+        for (const input of txObj.inputs) {
           yield dal.setConsumedSource(input.identifier, input.noffset);
         }
 
         let index = 0;
-        for (const o in txObj.outputs) {
-          const output = txObj.outputs[o];
+        for (const output of txObj.outputs) {
           yield dal.saveSource(new Source({
             'type': 'T',
             'number': block.number,
@@ -648,8 +642,7 @@ function BlockchainContext() {
   });
 
   this.deleteTransactions = (block) => co(function*() {
-    for (const t in block.transactions) {
-      const obj = block.transactions[t];
+    for (const obj of block.transactions) {
       obj.version = constants.DOCUMENTS_VERSION;
       obj.currency = block.currency;
       obj.issuers = obj.signatories;

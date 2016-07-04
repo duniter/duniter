@@ -107,8 +107,8 @@ function BlockGenerator(mainContext, prover) {
     const txs = yield dal.getTransactionsPending();
     const transactions = [];
     const passingTxs = [];
-    for(const t in txs) {
-      const tx = new Transaction(txs[t], conf.currency);
+    for(const obj of txs) {
+      const tx = new Transaction(obj, conf.currency);
       const extractedTX = tx.getTransaction();
       try {
         yield Q.nbind(rules.HELPERS.checkBunchOfTransactions, rules, passingTxs.concat(extractedTX));
@@ -129,8 +129,7 @@ function BlockGenerator(mainContext, prover) {
     const memberships = yield dal.findLeavers();
     const leavers = [];
     memberships.forEach((ms) => leavers.push(ms.issuer));
-    for (const m in memberships) {
-      const ms = memberships[m];
+    for (const ms of memberships) {
       const leave = { identity: null, ms: ms, key: null, idHash: '' };
       leave.idHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
       let block;
@@ -223,10 +222,9 @@ function BlockGenerator(mainContext, prover) {
   });
 
   const iteratedChecking = (newcomers, checkWoTForNewcomers) => co(function*() {
-    const passingNewcomers = []
+    const passingNewcomers = [];
     let hadError = false;
-    for (const n in newcomers) {
-      const newcomer = newcomers[n];
+    for (const newcomer of newcomers) {
       try {
         yield checkWoTForNewcomers(passingNewcomers.concat(newcomer));
         passingNewcomers.push(newcomer);
@@ -246,9 +244,8 @@ function BlockGenerator(mainContext, prover) {
     const memberships = yield dal.findNewcomers();
     const joiners = [];
     memberships.forEach((ms) =>joiners.push(ms.issuer));
-    for (const m in memberships) {
+    for (const ms of memberships) {
       try {
-        const ms = memberships[m];
         if (ms.block != constants.BLOCK.SPECIAL_BLOCK) {
           let msBasedBlock = yield dal.getBlock(ms.block);
           let age = current.medianTime - msBasedBlock.medianTime;

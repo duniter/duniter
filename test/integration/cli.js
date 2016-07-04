@@ -8,14 +8,18 @@ const cli    = require('../../app/cli');
 
 describe("CLI", function() {
 
-  describe("Initializing", () => {
+  it('reset data', () => co(function*() {
+    yield execute(['reset', 'data']);
+    const res = yield execute(['export-bc']);
+    JSON.parse(res).should.have.length(0);
+  }));
 
-    it('reset data', () => co(function*() {
-      yield execute(['reset', 'data']);
-      const res = yield execute(['export-bc']);
-      JSON.parse(res).should.have.length(0);
-    }));
-  });
+  it('sync 10 blocks', () => co(function*() {
+    yield execute(['reset', 'data']);
+    yield execute(['sync', 'duniter.org', '8999', '9', '--nointeractive']);
+    const res = yield execute(['export-bc']);
+    JSON.parse(res).should.have.length(10);
+  }));
 });
 
 /**
@@ -31,7 +35,9 @@ function execute(command) {
       duniter.stdout.on('data', (data) => {
         res += data.toString('utf8').replace(/\n/, '');
       });
-      duniter.stderr.on('data', (err) => reject(err.toString('utf8')));
+      duniter.stderr.on('data', (err) => {
+        console.log(err.toString('utf8').replace(/\n/, ''));
+      });
       duniter.on('close', (code) => code ? reject(code) : resolve(res) );
     });
   });

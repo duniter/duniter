@@ -30,7 +30,7 @@ describe("Forwarding", function() {
           .startTesting();
       }))
         .then(function() {
-          return Promise(function(resolve, reject){
+          return new Promise(function(resolve, reject){
             async.waterfall([
               function(next) {
                 node2.peering(next);
@@ -76,8 +76,7 @@ describe("Forwarding", function() {
         })
         .catch(function(err){
           done(err);
-        })
-        .done();
+        });
     });
 
     describe("Testing technical API", function(){

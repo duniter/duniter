@@ -472,7 +472,7 @@ function BlockchainContext() {
         const msType = type == 'leave' ? 'out' : 'in';
         const field = types[type];
         const mss = block[field];
-        for (const msRaw of mss.length) {
+        for (const msRaw of mss) {
           const ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', block.currency);
           ms.membership = msType.toUpperCase();
           ms.written = true;

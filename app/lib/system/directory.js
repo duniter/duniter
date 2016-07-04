@@ -6,6 +6,7 @@ const path = require('path');
 const cfs  = require('../cfs');
 const Q    = require('q');
 const qfs  = require('q-io/fs');
+const fs   = require('fs');
 const sqlite3 = require("sqlite3b").verbose();
 
 const DEFAULT_DOMAIN = "duniter_default";
@@ -54,7 +55,12 @@ const dir = module.exports = {
     } else {
       const sqlitePath = path.join(home, dir.UCOIN_DB_NAME + '.db');
       params.dbf = () => new sqlite3.Database(sqlitePath);
-      params.wotb = require('../wot').fileInstance(path.join(home, dir.WOTB_FILE));
+      const wotbFilePath = path.join(home, dir.WOTB_FILE);
+      let existsFile = yield qfs.exists(wotbFilePath);
+      if (!existsFile) {
+        fs.closeSync(fs.openSync(wotbFilePath, 'w'));
+      }
+      params.wotb = require('../wot').fileInstance(wotbFilePath);
     }
     return params;
   }),

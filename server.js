@@ -125,7 +125,7 @@ function Server (dbConf, overrideConf) {
       keyPair = yield keyring.scryptKeyPair(that.conf.salt, that.conf.passwd);
     }
     else {
-      keyPair = yield keyring.Key(constants.CRYPTO.DEFAULT_KEYPAIR.pub,
+      keyPair = keyring.Key(constants.CRYPTO.DEFAULT_KEYPAIR.pub,
           constants.CRYPTO.DEFAULT_KEYPAIR.sec);
     }
     if (!keyPair) {

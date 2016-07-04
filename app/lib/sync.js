@@ -3,9 +3,7 @@ const util       = require('util');
 const stream     = require('stream');
 const co         = require('co');
 const _          = require('underscore');
-const Q          = require('q');
 const moment     = require('moment');
-const vucoin     = require('vucoin');
 const hashf      = require('./ucp/hashf');
 const dos2unix   = require('./system/dos2unix');
 const logger     = require('./logger')('sync');
@@ -22,13 +20,13 @@ module.exports = Synchroniser;
 
 function Synchroniser (server, host, port, conf, interactive) {
 
-  let that = this;
+  const that = this;
 
-  var speed = 0, syncStart = new Date(), times = [syncStart], blocksApplied = 0;
-  var baseWatcher = interactive ? new MultimeterWatcher() : new LoggerWatcher();
+  let speed = 0, syncStart = new Date(), times = [syncStart], blocksApplied = 0;
+  const baseWatcher = interactive ? new MultimeterWatcher() : new LoggerWatcher();
 
   // Wrapper to also push event stream
-  let watcher = {
+  const watcher = {
     writeStatus: baseWatcher.writeStatus,
     downloadPercent: (pct) => {
       if (pct !== undefined && baseWatcher.downloadPercent() < pct) {
@@ -60,10 +58,6 @@ function Synchroniser (server, host, port, conf, interactive) {
   const BlockchainService  = server.BlockchainService;
 
   const dal = server.dal;
-
-  const vucoinOptions = {
-    timeout: constants.NETWORK.SYNC_LONG_TIMEOUT
-  };
 
   this.sync = (to, chunkLen, askedCautious, nopeers) => {
     let logInterval;
@@ -188,7 +182,7 @@ function Synchroniser (server, host, port, conf, interactive) {
         }
 
         // Finished blocks
-        yield Q.all(toApply).then(() => watcher.appliedPercent(100.0));
+        yield Promise.all(toApply).then(() => watcher.appliedPercent(100.0));
 
         // Save currency parameters given by root block
         const rootBlock = yield server.dal.getBlock(0);
@@ -249,7 +243,7 @@ function Synchroniser (server, host, port, conf, interactive) {
   };
 
   function getVucoin(theHost, thePort, options) {
-    return Q.Promise(function(resolve, reject){
+    return Promise(function(resolve, reject){
       vucoin(theHost, thePort, function (err, node) {
         if(err){
           return reject('Cannot sync: ' + err);
@@ -262,7 +256,7 @@ function Synchroniser (server, host, port, conf, interactive) {
   function applyGivenBlock(cautious, remoteCurrentNumber) {
     return (block) => {
       // Rawification of transactions
-      block.transactions.forEach( (tx) => {
+      for (const tx of block.transactions) {
         tx.version = constants.DOCUMENTS_VERSION;
         tx.currency = conf.currency;
         tx.issuers = tx.signatories;
@@ -270,7 +264,7 @@ function Synchroniser (server, host, port, conf, interactive) {
         // Rawification
         tx.raw = rawer.getCompactTransaction(tx);
         tx.hash = ("" + hashf(rawer.getTransaction(tx))).toUpperCase();
-      });
+      }
       blocksApplied++;
       speed = blocksApplied / Math.round(Math.max((new Date() - syncStart) / 1000, 1));
       if (watcher.appliedPercent() != Math.floor(block.number / remoteCurrentNumber * 100)) {
@@ -318,7 +312,7 @@ function Synchroniser (server, host, port, conf, interactive) {
 
 function NodesMerkle (json) {
   
-  var that = this;
+  const that = this;
   ["depth", "nodesCount", "leavesCount"].forEach(function (key) {
     that[key] = json[key];
   });
@@ -339,15 +333,15 @@ function NodesMerkle (json) {
 
 function MultimeterWatcher() {
 
-  var multi = multimeter(process);
-  var charm = multi.charm;
+  const multi = multimeter(process);
+  const charm = multi.charm;
   charm.on('^C', process.exit);
   charm.reset();
 
   multi.write('Progress:\n\n');
 
   multi.write("Download: \n");
-  var downloadBar = multi("Download: \n".length, 3, {
+  const downloadBar = multi("Download: \n".length, 3, {
     width : 20,
     solid : {
       text : '|',
@@ -358,7 +352,7 @@ function MultimeterWatcher() {
   });
 
   multi.write("Apply:    \n");
-  var appliedBar = multi("Apply:    \n".length, 4, {
+  const appliedBar = multi("Apply:    \n".length, 4, {
     width : 20,
     solid : {
       text : '|',
@@ -370,14 +364,14 @@ function MultimeterWatcher() {
 
   multi.write('\nStatus: ');
 
-  var xPos, yPos;
-  charm.position(function (x, y) {
+  let xPos, yPos;
+  charm.position( (x, y) => {
     xPos = x;
     yPos = y;
   });
 
-  var writtens = [];
-  this.writeStatus = function(str) {
+  const writtens = [];
+  this.writeStatus = (str) => {
     writtens.push(str);
     //require('fs').writeFileSync('writtens.json', JSON.stringify(writtens));
     charm
@@ -387,15 +381,11 @@ function MultimeterWatcher() {
     ;
   };
 
-  this.downloadPercent = function(pct) {
-    return downloadBar.percent(pct);
-  };
+  this.downloadPercent = (pct) => downloadBar.percent(pct);
 
-  this.appliedPercent = function(pct) {
-    return appliedBar.percent(pct);
-  };
+  this.appliedPercent = (pct) => appliedBar.percent(pct);
 
-  this.end = function() {
+  this.end = () => {
     multi.write('\nAll done.\n');
     multi.destroy();
   };
@@ -406,20 +396,18 @@ function MultimeterWatcher() {
 
 function LoggerWatcher() {
 
-  var downPct = 0, appliedPct = 0, lastMsg;
+  let downPct = 0, appliedPct = 0, lastMsg;
 
-  this.showProgress = function() {
-    logger.info('Downloaded %s%, Applied %s%', downPct, appliedPct);
-  };
+  this.showProgress = () => logger.info('Downloaded %s%, Applied %s%', downPct, appliedPct);
 
-  this.writeStatus = function(str) {
+  this.writeStatus = (str) => {
     if (str != lastMsg) {
       lastMsg = str;
       logger.info(str);
     }
   };
 
-  this.downloadPercent = function(pct) {
+  this.downloadPercent = (pct) => {
     if (pct !== undefined) {
       let changed = pct > downPct;
       downPct = pct;
@@ -428,7 +416,7 @@ function LoggerWatcher() {
     return downPct;
   };
 
-  this.appliedPercent = function(pct) {
+  this.appliedPercent = (pct) => {
     if (pct !== undefined) {
       let changed = pct > appliedPct;
       appliedPct = pct;
@@ -437,7 +425,7 @@ function LoggerWatcher() {
     return appliedPct;
   };
 
-  this.end = function() {
+  this.end = () => {
   };
 
 }

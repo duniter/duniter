@@ -66,7 +66,9 @@ function Key(pub, sec) {
     const m = nacl.util.decodeUTF8(msg);
     const signedMsg = naclBinding.sign(m, rawSec()); // TODO: super weird
     const sig = new Uint8Array(crypto_sign_BYTES);
-    for (var i = 0; i < sig.length; i++) sig[i] = signedMsg[i];
+    for (let i = 0; i < sig.length; i++) {
+      sig[i] = signedMsg[i];
+    }
     return nacl.util.encodeBase64(sig);
   };
 }

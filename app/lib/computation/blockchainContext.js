@@ -210,6 +210,7 @@ function BlockchainContext() {
         dal.excludeIdentity(excluded);
       }
     });
+  });
 
   function undoMembersUpdate (block) {
     return co(function *() {
@@ -495,7 +496,7 @@ function BlockchainContext() {
    */
   this.updateLinksForBlocks = (blocks, getBlockOrNull) => co(function *() {
     let links = [];
-    for (const block of blocks.length) {
+    for (const block of blocks) {
       for (const inlineCert of block.certifications) {
         let cert = Certification.statics.fromInline(inlineCert);
         let tagBlock = block;
@@ -527,7 +528,7 @@ function BlockchainContext() {
    */
   this.updateTransactionsForBlocks = (blocks) => co(function *() {
     let txs = [];
-    for (const block of blocks.length) {
+    for (const block of blocks) {
       txs = txs.concat(block.transactions.map((tx) => {
         _.extend(tx, {
           block_number: block.number,
@@ -581,7 +582,7 @@ function BlockchainContext() {
    */
   this.updateTransactionSourcesForBlocks = (blocks, dividends) => co(function *() {
     let sources = dividends;
-    for (const block of blocks.length) {
+    for (const block of blocks) {
       // Transactions
       for (const json of block.transactions) {
         let obj = json;

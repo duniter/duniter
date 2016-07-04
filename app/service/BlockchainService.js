@@ -91,7 +91,8 @@ function BlockchainService () {
     let branches = forkables.map((fork) => [fork]);
     // For each "pending" block, we try to add it to all branches
     for (const other of others) {
-      for (const branch of branches) {
+      for (let j = 0, len2 = branches.length; j < len2; j++) {
+        const branch = branches[j];
         const last = branch[branch.length - 1];
         if (other.number == last.number + 1 && other.previousHash == last.hash) {
           branch.push(other);

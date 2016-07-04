@@ -432,7 +432,8 @@ rules.FUNCTIONS = {
         let index = parseInt(sp[0]);
         unlocks[index] = sp[1];
       }
-      for (const src of tx.inputs) {
+      for (let k = 0, len2 = tx.inputs.length; k < len2; k++) {
+        let src = tx.inputs[k];
         let dbSrc = yield dal.getSource(src.identifier, src.noffset);
         logger.debug('Source %s:%s = %s', src.identifier, src.noffset, dbSrc && dbSrc.consumed);
         if (!dbSrc || dbSrc.consumed) {

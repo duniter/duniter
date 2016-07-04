@@ -106,7 +106,8 @@ function BlockDAL(db) {
 
   this.saveBunch = (blocks) => co(function *() {
     let queries = "INSERT INTO block (" + that.fields.join(',') + ") VALUES ";
-    for (const block of blocks) {
+    for (let i = 0, len = blocks.length; i < len; i++) {
+      let block = blocks[i];
       queries += that.toInsertValues(block);
       if (i + 1 < len) {
         queries += ",\n";

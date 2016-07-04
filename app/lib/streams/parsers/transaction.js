@@ -51,7 +51,7 @@ function extractIssuers(raw) {
       issuers.push(line);
     } else {
       // Not a pubkey, stop reading
-      i = lines.length;
+      break;
     }
   }
   return issuers;
@@ -65,7 +65,7 @@ function extractInputs(raw) {
       inputs.push(line);
     } else {
       // Not a transaction input, stop reading
-      i = lines.length;
+      break;
     }
   }
   return inputs;
@@ -79,7 +79,7 @@ function extractUnlocks(raw) {
       unlocks.push(line);
     } else {
       // Not a transaction unlock, stop reading
-      i = lines.length;
+      break;
     }
   }
   return unlocks;
@@ -93,7 +93,7 @@ function extractOutputs(raw) {
       outputs.push(line);
     } else {
       // Not a transaction input, stop reading
-      i = lines.length;
+      break;
     }
   }
   return outputs;

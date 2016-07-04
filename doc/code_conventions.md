@@ -66,3 +66,13 @@ if (a = 2) {
 ```js
 if (a = 2) console.log('This is INCORRECT block, it misses the braces');
 ```
+
+## Use `Promise` API instead of `Q` library
+
+Whenever possible, please prefer native [JS Promise API](https://developer.mozilla.org/fr/docs/Web/JavaScript/Reference/Objets_globaux/Promise). We used to use [Q API](https://github.com/kriskowal/q/wiki/API-Reference) while we were coding using ES5 JavaScript, but we may want to switch to faster promise library like [BlueBird](http://bluebirdjs.com/docs/getting-started.html).
+
+To reach this goal, we should avoid using Q specific API and use Promise instead. If we want in the future to change our Promise reference from native `Promise` to Bluebird (for example), we would just need to do the following:
+
+```js
+const Promise = require("bluebird");
+```

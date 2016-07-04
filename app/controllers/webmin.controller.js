@@ -60,14 +60,14 @@ function WebAdmin (dbConf, overConf) {
       "version": server.version,
       "host": host,
       "current": current,
-      "pubkey": base58.encode(server.pair.publicKey),
+      "pubkey": server.keyPair.publicKey,
       "parameters": parameters
     };
   });
 
   this.previewPubkey = (req) => co(function *() {
     const conf = http2raw.conf(req);
-    const pair = yield Q.nbind(keyring.getKeyPair, keyring)(conf.idty_entropy, conf.idty_password);
+    const pair = yield keyring.scryptKeyPair(conf.idty_entropy, conf.idty_password);
     return {
       "pubkey": base58.encode(pair.publicKey)
     };
@@ -118,9 +118,7 @@ function WebAdmin (dbConf, overConf) {
   this.sendConf = (req) => co(function *() {
     yield pluggedConfP;
     const conf = http2raw.conf(req);
-    const pair = yield Q.nbind(keyring.getKeyPair, keyring)(conf.idty_entropy, conf.idty_password);
-    const publicKey = base58.encode(pair.publicKey);
-    const secretKey = pair.secretKey;
+    const pair = yield keyring.scryptKeyPair(conf.idty_entropy, conf.idty_password);
     yield server.dal.saveConf({
       routing: true,
       createNext: true,
@@ -134,10 +132,7 @@ function WebAdmin (dbConf, overConf) {
       upnp: conf.upnp,
       salt: conf.idty_entropy,
       passwd: conf.idty_password,
-      pair: {
-        pub: publicKey,
-        sec: base58.encode(secretKey)
-      },
+      pair: pair.json(),
       avgGenTime: conf.avgGenTime,
       blocksRot: conf.blocksRot,
       c: conf.c,
@@ -170,13 +165,13 @@ function WebAdmin (dbConf, overConf) {
     const entity = Identity.statics.fromJSON({
       buid: buid,
       uid: conf.idty_uid,
-      issuer: publicKey,
+      issuer: pair.publicKey,
       currency: conf.currency
     });
     let found = yield server.dal.getIdentityByHashOrNull(entity.getTargetHash());
     if (!found) {
       let selfCert = rawer.getOfficialIdentity(entity);
-      selfCert += keyring.signSync(selfCert, secretKey) + '\n';
+      selfCert += pair.signSync(selfCert) + '\n';
       found = yield that.pushEntity({ body: { identity: selfCert }}, http2raw.identity, constants.ENTITY_IDENTITY);
     }
     yield server.dal.fillInMembershipsOfIdentity(Q(found));
@@ -185,13 +180,13 @@ function WebAdmin (dbConf, overConf) {
       let join = rawer.getMembershipWithoutSignature({
         "version": constants.DOCUMENTS_VERSION,
         "currency": conf.currency,
-        "issuer": publicKey,
+        "issuer": pair.publicKey,
         "block": block,
         "membership": "IN",
         "userid": conf.idty_uid,
         "certts": block
       });
-      join += keyring.signSync(join, secretKey) + '\n';
+      join += pair.signSync(join) + '\n';
       yield that.pushEntity({ body: { membership: join }}, http2raw.membership, constants.ENTITY_MEMBERSHIP);
       yield server.recomputeSelfPeer();
     }
@@ -226,9 +221,9 @@ function WebAdmin (dbConf, overConf) {
   this.applyNewKeyConf = (req) => co(function *() {
     yield pluggedConfP;
     const conf = http2raw.conf(req);
-    const pair = yield Q.nbind(keyring.getKeyPair, keyring)(conf.idty_entropy, conf.idty_password);
-    const publicKey = base58.encode(pair.publicKey);
-    const secretKey = pair.secretKey;
+    const keyPair = yield keyring.scryptKeyPair(conf.idty_entropy, conf.idty_password);
+    const publicKey = keyPair.publicKey;
+    const secretKey = keyPair.secretKey;
     yield server.dal.saveConf(_.extend(server.conf, {
       salt: conf.idty_entropy,
       passwd: conf.idty_password,

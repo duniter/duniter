@@ -143,9 +143,9 @@ function Node (dbName, options) {
                   .catch(callback);
             },
             sigFunc: function(callback){
-              require('../../../app/lib/crypto/signature').sync(that.server.pair)
-                  .then((sigF) => callback(null, sigF))
-                  .catch(callback);
+              callback(null, require('../../../app/lib/crypto/keyring')
+                  .Key(that.server.keyPair.pub, that.server.keyPair.sec)
+                  .sign)
             }
           }, next);
         },

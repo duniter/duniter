@@ -12,8 +12,7 @@ const fileDAL     = require('./app/lib/dal/fileDAL');
 const jsonpckg    = require('./package.json');
 const router      = require('./app/lib/streams/router');
 const base58      = require('./app/lib/crypto/base58');
-const crypto      = require('./app/lib/crypto/keyring');
-const signature   = require('./app/lib/crypto/signature');
+const keyring      = require('./app/lib/crypto/keyring');
 const directory   = require('./app/lib/system/directory');
 const dos2unix    = require('./app/lib/system/dos2unix');
 const Synchroniser = require('./app/lib/sync');
@@ -118,30 +117,25 @@ function Server (dbConf, overrideConf) {
     });
     logger.debug('Loading crypto functions...');
     // Extract key pair
-    let pair = null;
+    let keyPair = null;
     if (that.conf.pair) {
-      pair = {
-        publicKey: base58.decode(that.conf.pair.pub),
-        secretKey: base58.decode(that.conf.pair.sec)
-      };
+      keyPair = keyring.Key(that.conf.pair.pub, that.conf.pair.sec);
     }
     else if (that.conf.passwd || that.conf.salt) {
-      pair = yield crypto.getKeyPair(that.conf.salt, that.conf.passwd);
+      keyPair = yield keyring.scryptKeyPair(that.conf.salt, that.conf.passwd);
     }
     else {
-      pair = {
-        publicKey: base58.decode(constants.CRYPTO.DEFAULT_KEYPAIR.pub),
-        secretKey: base58.decode(constants.CRYPTO.DEFAULT_KEYPAIR.sec)
-      };
+      keyPair = yield keyring.Key(constants.CRYPTO.DEFAULT_KEYPAIR.pub,
+          constants.CRYPTO.DEFAULT_KEYPAIR.sec);
     }
-    if (!pair) {
+    if (!keyPair) {
       throw Error('This node does not have a keypair. Use `ucoind wizard key` to fix this.');
     }
-    that.pair = pair;
-    that.sign = signature.asyncSig(pair);
+    that.keyPair = keyPair;
+    that.sign = keyPair.sign;
     // Update services
     [that.IdentityService, that.MembershipService, that.PeeringService, that.BlockchainService, that.TransactionsService].map((service) => {
-      service.setConfDAL(that.conf, that.dal, that.pair);
+      service.setConfDAL(that.conf, that.dal, that.keyPair);
     });
     that.router().setConfDAL(that.conf, that.dal);
     return that.conf;
@@ -359,7 +353,7 @@ function Server (dbConf, overrideConf) {
 
   this.pullBlocks = that.PeeringService.pullBlocks;
 
-  this.doMakeNextBlock = (manualValues) => that.BlockchainService.makeNextBlock(null, null, null, manualValues);
+  this.doMakeNextBlock = (manualValues) => that.BlockchainService.makeNextBlock(null, null, manualValues);
 
   this.doCheckBlock = (block) => {
     const parsed = parsers.parseBlock.syncWrite(block.getRawSigned());

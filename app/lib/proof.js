@@ -6,7 +6,7 @@ const hashf = require('./ucp/hashf');
 const rules = require('./rules');
 const constants = require('./constants');
 const dos2unix = require('./system/dos2unix');
-const signature = require('./crypto/signature');
+const keyring = require('./crypto/keyring');
 const rawer = require('./ucp/rawer');
 
 let signatureFunc, lastSecret;
@@ -29,12 +29,12 @@ process.on('message', (stuff) => co(function*() {
   const cpu = conf.cpu || constants.DEFAULT_CPU;
   const highMark = stuff.highMark;
   let sigFunc = null;
-  if (signatureFunc && lastSecret == pair.secretKeyEnc) {
+  if (signatureFunc && lastSecret == pair.sec) {
     sigFunc = signatureFunc;
   }
   else {
-    lastSecret = pair.secretKeyEnc;
-    sigFunc = yield signature.sync(pair);
+    lastSecret = pair.sec;
+    sigFunc = keyring.Key(pair.pub, pair.sec).sign;
   }
   signatureFunc = sigFunc;
   let pow = "", sig = "", raw = "";
@@ -42,7 +42,7 @@ process.on('message', (stuff) => co(function*() {
   block.time = getBlockTime(block, conf, forcedTime);
   // Test CPU speed
   if ((nbZeros > 0 || highMark != '9A-F') && speed == 1) {
-    speed = computeSpeed(block, sigFunc);
+    speed = yield computeSpeed(block, sigFunc);
   }
   const testsPerSecond = speed;
   const testsPerRound = Math.max(Math.round(testsPerSecond * cpu), 1) / SAMPLES_PER_SECOND; // We make a sample every Xms
@@ -68,7 +68,7 @@ process.on('message', (stuff) => co(function*() {
     while(!found && i < testsPerRound) {
       block.nonce++;
       raw = rawer.getBlockInnerHashAndNonce(block);
-      sig = dos2unix(sigFunc(raw));
+      sig = dos2unix(yield sigFunc(raw));
       pow = hash(raw + sig + '\n');
       //found = pow.match(powRegexp);
       let j = 0, charOK = true;
@@ -111,18 +111,18 @@ function hash(str) {
   return hashf(str).toUpperCase();
 }
 
-function computeSpeed(block, sigFunc) {
+const computeSpeed = (block, sigFunc) => co(function*() {
   const start = new Date();
   const raw = rawer.getBlockInnerHashAndNonce(block);
   for (let i = 0; i < constants.PROOF_OF_WORK.EVALUATION; i++) {
     // Signature
-    const sig = dos2unix(sigFunc(raw));
+    const sig = dos2unix(yield sigFunc(raw));
     // Hash
     hash(raw + sig + '\n');
   }
   const duration = (new Date().getTime() - start.getTime());
   return Math.round(constants.PROOF_OF_WORK.EVALUATION * 1000 / duration);
-}
+});
 
 function getBlockTime (block, conf, forcedTime) {
   const now = forcedTime || moment.utc().unix();

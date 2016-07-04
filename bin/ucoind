@@ -20,8 +20,7 @@ var vucoin      = require('vucoin');
 var directory   = require('../app/lib/system/directory');
 var wizard      = require('../app/lib/wizard');
 var multicaster = require('../app/lib/streams/multicaster');
-var signature   = require('../app/lib/crypto/signature');
-var crypto      = require('../app/lib/crypto/keyring');
+var keyring      = require('../app/lib/crypto/keyring');
 var base58      = require('../app/lib/crypto/base58');
 var pjson       = require('../package.json');
 var ucoin       = require('../index');
@@ -310,16 +309,14 @@ function generateAndSend (generationMethod) {
             },
             function (next){
               // Extract key pair
-              crypto.getKeyPair(conf.salt, conf.passwd, next);
+              keyring.scryptKeyPair(conf.salt, conf.passwd).then((pair) => next(null, pair)).catch(next);
             },
             function (pair, next){
-              signature.sync(pair, function(err, sigFunc) {
-                doSign = sigFunc;
-                next(err, pair);
-              });
+              doSign = pair.sign;
+              next(null, pair)
             },
             function (pair, next){
-              proveAndSend(server, block, doSign, base58.encode(pair.publicKey), difficulty, host, port, next);
+              proveAndSend(server, block, doSign, pair.publicKey, difficulty, host, port, next);
             }
           ], next);
         }

@@ -6,7 +6,7 @@ const co              = require('co');
 const Q               = require('q');
 const rules           = require('../lib/rules');
 const base58          = require('../lib/crypto/base58');
-const signature       = require('../lib/crypto/signature');
+const keyring       = require('../lib/crypto/keyring');
 const constants       = require('../lib/constants');
 const blockchainCtx   = require('../lib/computation/blockchainContext');
 const blockGenerator  = require('../lib/computation/blockGenerator');
@@ -29,16 +29,16 @@ function BlockchainService () {
   const mainContext = blockchainCtx();
   const prover = blockProver();
   const generator = blockGenerator(mainContext, prover);
-  let conf, dal, pair, logger, selfPubkey;
+  let conf, dal, keyPair, logger, selfPubkey;
 
-  this.setConfDAL = (newConf, newDAL, newPair) => {
+  this.setConfDAL = (newConf, newDAL, newKeyPair) => {
     dal = newDAL;
     conf = newConf;
-    pair = newPair;
+    keyPair = newKeyPair;
     mainContext.setConfDAL(conf, dal);
-    prover.setConfDAL(conf, dal, pair);
-    generator.setConfDAL(conf, dal, pair);
-    selfPubkey = base58.encode(pair.publicKey);
+    prover.setConfDAL(conf, dal, newKeyPair);
+    generator.setConfDAL(conf, dal, newKeyPair);
+    selfPubkey = newKeyPair.publicKey;
     logger = require('../lib/logger')(dal.profile);
   };
 
@@ -375,10 +375,9 @@ function BlockchainService () {
           const block2 = lastGeneratedWasWrong ?
             yield generator.nextEmptyBlock() :
             yield generator.nextBlock();
-          const signature2 = signature.sync(pair);
           const trial2 = yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal);
           prover.computing();
-          return yield generator.makeNextBlock(block2, signature2, trial2);
+          return yield generator.makeNextBlock(block2, trial2);
         }
       }
     }

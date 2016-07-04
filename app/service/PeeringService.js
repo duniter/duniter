@@ -28,7 +28,7 @@ function PeeringService(server) {
     dal = newDAL;
     conf = newConf;
     pair = newPair;
-    this.pubkey = base58.encode(pair.publicKey);
+    this.pubkey = pair.publicKey;
     selfPubkey = this.pubkey;
     SYNC_BLOCK_INTERVAL = conf.avgGenTime * constants.NETWORK.SYNC_BLOCK_INTERVAL;
   };
@@ -219,7 +219,7 @@ function PeeringService(server) {
     const raw2 = dos2unix(new Peer(p2).getRaw());
     logger.info('External access:', new Peer(p2).getURL());
     logger.debug('Generating server\'s peering entry based on block#%s...', p2.block.split('-')[0]);
-    p2.signature = yield Q.nfcall(server.sign, raw2);
+    p2.signature = yield server.sign(raw2);
     p2.pubkey = selfPubkey;
     p2.documentType = 'peer';
     // Submit & share with the network

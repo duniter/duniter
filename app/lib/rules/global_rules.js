@@ -629,7 +629,16 @@ function checkCertificationIsValid (block, cert, findIdtyFunc, conf, dal) {
       else {
         const buid = [cert.block_number, basedBlock.hash].join('-');
         idty.currency = conf.currency;
-        let verified = keyring.isValidCertification(new Identity(idty), cert.from, cert.sig, buid, block.currency);
+        const raw = rawer.getOfficialCertification(_.extend(idty, {
+          idty_issuer: idty.pubkey,
+          idty_uid: idty.uid,
+          idty_buid: idty.buid,
+          idty_sig: idty.sig,
+          issuer: cert.from,
+          buid: buid,
+          sig: ''
+        }));
+        const verified = keyring.verify(raw, cert.sig, cert.from);
         if (!verified) {
           throw Error('Wrong signature for certification');
         }

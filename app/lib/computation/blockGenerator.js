@@ -9,7 +9,6 @@ const hashf           = require('../ucp/hashf');
 const constants       = require('../constants');
 const base58          = require('../crypto/base58');
 const rules           = require('../rules/index');
-const signature       = require('../crypto/signature');
 const keyring          = require('../crypto/keyring');
 const Identity        = require('../entity/identity');
 const Certification   = require('../entity/certification');
@@ -22,13 +21,13 @@ module.exports = (mainContext, prover) => new BlockGenerator(mainContext, prover
 function BlockGenerator(mainContext, prover) {
 
   const that = this;
-  let conf, dal, pair, selfPubkey, logger;
+  let conf, dal, keyPair, selfPubkey, logger;
 
-  this.setConfDAL = (newConf, newDAL, newPair) => {
+  this.setConfDAL = (newConf, newDAL, newKeyPair) => {
     dal = newDAL;
     conf = newConf;
-    pair = newPair;
-    selfPubkey = base58.encode(pair.publicKey);
+    keyPair = newKeyPair;
+    selfPubkey = newKeyPair.publicKey;
     logger = require('../logger')(dal.profile);
   };
 
@@ -49,7 +48,7 @@ function BlockGenerator(mainContext, prover) {
     return generateNextBlock(new ManualRootGenerator());
   });
 
-  this.makeNextBlock = (block, sigFunc, trial, manualValues) => co(function *() {
+  this.makeNextBlock = (block, trial, manualValues) => co(function *() {
     const unsignedBlock = block || (yield that.nextBlock());
     const trialLevel = trial || (yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal));
     return prover.prove(unsignedBlock, trialLevel, (manualValues && manualValues.time) || null);

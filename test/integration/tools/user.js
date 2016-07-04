@@ -6,7 +6,7 @@ var request	= require('request');
 var vucoin	= require('vucoin');
 var ucp     = require('../../../app/lib/ucp/buid');
 var parsers = require('../../../app/lib/streams/parsers');
-var crypto	= require('../../../app/lib/crypto/keyring');
+var keyring	= require('../../../app/lib/crypto/keyring');
 var rawer		= require('../../../app/lib/ucp/rawer');
 var base58	= require('../../../app/lib/crypto/base58');
 var constants = require('../../../app/lib/constants');
@@ -26,24 +26,24 @@ function User (uid, options, node) {
   // For sync code
   if (options.pub && options.sec) {
     pub = that.pub = options.pub;
-    sec = that.sec = base58.decode(options.sec);
+    sec = that.sec = options.sec;
   }
 
   function init(done) {
     if (options.salt && options.passwd) {
       async.waterfall([
         function (next) {
-          crypto.getKeyPair(options.salt, options.passwd, next);
+          keyring.scryptKeyPair(options.salt, options.passwd).then((pair) => next(null, pair)).catch(next);
         },
         function (pair, next) {
-          pub = that.pub = base58.encode(pair.publicKey);
+          pub = that.pub = pair.publicKey;
           sec = that.sec = pair.secretKey;
           next();
         }
       ], done);
     } else if (options.pub && options.sec) {
       pub = that.pub = options.pub;
-      sec = that.sec = base58.decode(options.sec);
+      sec = that.sec = options.sec;
       done();
     } else {
       throw 'Not keypair information given for testing user ' + uid;
@@ -61,7 +61,7 @@ function User (uid, options, node) {
       issuer: pub,
       currency: node.server.conf.currency
     });
-    selfCert += crypto.signSync(selfCert, sec) + '\n';
+    selfCert += keyring.Key(pub, sec).signSync(selfCert) + '\n';
     yield Q.nfcall(post, '/wot/add', {
       "identity": selfCert
     });
@@ -82,7 +82,7 @@ function User (uid, options, node) {
       "idty_sig": idty.self,
       "buid": buid
     });
-    const sig = crypto.signSync(cert, sec);
+    const sig = keyring.Key(pub, sec).signSync(cert, sec);
     yield Q.nfcall(post, '/wot/certify', {
       "cert": cert + sig + "\n"
     });
@@ -113,7 +113,7 @@ function User (uid, options, node) {
       "revocation": ''
     });
 
-    var sig = crypto.signSync(revocation, sec);
+    var sig = keyring.Key(pub, sec).signSync(revocation);
     return Q.nfcall(post, '/wot/revoke', {
       "revocation": revocation + sig + '\n'
     });
@@ -133,7 +133,7 @@ function User (uid, options, node) {
         "userid": uid,
         "certts": idty.meta.timestamp
       });
-    const sig = crypto.signSync(join, sec);
+    const sig = keyring.Key(pub, sec).signSync(join);
     yield Q.nfcall(post, '/blockchain/membership', {
       "membership": join + sig + '\n'
     });
@@ -243,9 +243,9 @@ function User (uid, options, node) {
   });
 
   function signed(raw, user2) {
-    let signatures = [crypto.signSync(raw, sec)];
+    let signatures = [keyring.Key(pub, sec).signSync(raw)];
     if (user2) {
-      signatures.push(crypto.signSync(raw, user2.sec));
+      signatures.push(keyring.Key(user2.pub, user2.sec).signSync(raw));
     }
     return raw + signatures.join('\n') + '\n';
   }

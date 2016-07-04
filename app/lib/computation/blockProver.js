@@ -97,11 +97,8 @@ function BlockGenerator() {
       });
 
       block.nonce = 0;
-      console.log("Prover send");
       powWorker.powProcess.send({ conf: conf, block: block, zeros: nbZeros, highMark: highMark, forcedTime: forcedTime,
-        pair: {
-          secretKeyEnc: base58.encode(pair.secretKey)
-        }
+        pair: pair.json()
       });
       logger.info('Generating proof-of-work with %s leading zeros followed by [0-' + highMark + ']... (CPU usage set to %s%)', nbZeros, (conf.cpu * 100).toFixed(0));
     });
@@ -147,10 +144,7 @@ function BlockGenerator() {
         speedMesured = false;
         that.powProcess.kill();
         powWorker = new Worker();
-        that.powProcess.send({ conf: conf, block: block, zeros: msg.nbZeros, pair: {
-          secretKeyEnc: base58.encode(pair.secretKey)
-        }
-        });
+        that.powProcess.send({ conf: conf, block: block, zeros: msg.nbZeros, pair: pair.json()});
       } else if (!stopped) {
 
         if (!msg.found) {

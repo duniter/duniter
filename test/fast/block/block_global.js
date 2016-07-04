@@ -13,6 +13,7 @@ var Block         = require('../../../app/lib/entity/block');
 var Identity      = require('../../../app/lib/entity/identity');
 
 var conf = {
+  currency: 'bb',
   msValidity: 365.25 * 24 * 3600, // 1 year
   sigValidity: 365.25 * 24 * 3600, // 1 year
   sigQty: 1,

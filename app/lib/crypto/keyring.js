@@ -22,108 +22,75 @@ const TEST_PARAMS = {
 const enc = nacl.util.encodeBase64,
     dec = nacl.util.decodeBase64;
 
-const that = module.exports;
+/**
+ * Verify a signature against data & public key.
+ * Return true of false as callback argument.
+ */
+const verify = (rawMsg, rawSig, rawPub) => {
+  const msg = nacl.util.decodeUTF8(rawMsg);
+  const sig = nacl.util.decodeBase64(rawSig);
+  const pub = base58.decode(rawPub);
+  const m = new Uint8Array(crypto_sign_BYTES + msg.length);
+  const sm = new Uint8Array(crypto_sign_BYTES + msg.length);
+  let i;
+  for (i = 0; i < crypto_sign_BYTES; i++) sm[i] = sig[i];
+  for (i = 0; i < msg.length; i++) sm[i+crypto_sign_BYTES] = msg[i];
 
-module.exports = {
+  // Call to verification lib...
+  const verified = naclBinding.verify(m, sm, pub);
+  return verified;
+};
 
+function Key(pub, sec) {
   /*****************************
   *
   *      GENERAL CRYPTO
   *
   *****************************/
 
-  sign: function (msg, sec, done) {
-    done(null, this.signSync(msg, sec));
-  },
+  this.publicKey = pub;
+  this.secretKey = sec;
 
-  signSync: function (msg, sec) {
-    var m = nacl.util.decodeUTF8(msg);
-    var signedMsg = naclBinding.sign(m, base58.decode(base58.encode(sec))); // TODO: super weird
-    var sig = new Uint8Array(crypto_sign_BYTES);
+  const rawSec = () => base58.decode(this.secretKey);
+
+  this.json = () => { return {
+    pub: this.publicKey,
+    sec: this.secretKey
+  }};
+
+  this.sign = (msg) => {
+    return Q.fcall(this.signSync, msg)
+  };
+
+  this.signSync = (msg) => {
+    const m = nacl.util.decodeUTF8(msg);
+    const signedMsg = naclBinding.sign(m, rawSec()); // TODO: super weird
+    const sig = new Uint8Array(crypto_sign_BYTES);
     for (var i = 0; i < sig.length; i++) sig[i] = signedMsg[i];
     return nacl.util.encodeBase64(sig);
-  },
-
-  sign2: function (msg, sec, done) {
-    var sig = nacl.sign.detached(nacl.util.decodeUTF8(msg), sec);
-    done(null, nacl.util.encodeBase64(sig));
-  },
-
-  /**
-  * Verify a signature against data & public key.
-  * Return true of false as callback argument.
-  */
-  verifyOld: function (msg, sig, pub, done) {
-    var dMsg = nacl.util.decodeUTF8(msg);
-    var dSig = nacl.util.decodeBase64(sig);
-    var dPub = base58.decode(pub);
-    var verified = nacl.sign.detached.verify(dMsg, dSig, dPub);
-    if (typeof done == 'function') done(null, verified);
-    return verified;
-  },
-
-  /**
-  * Verify a signature against data & public key.
-  * Return true of false as callback argument.
-  */
-  verify: function (rawMsg, rawSig, rawPub, done) {
-    var msg = nacl.util.decodeUTF8(rawMsg);
-    var sig = nacl.util.decodeBase64(rawSig);
-    var pub = base58.decode(rawPub);
-    var m = new Uint8Array(crypto_sign_BYTES + msg.length);
-    var sm = new Uint8Array(crypto_sign_BYTES + msg.length);
-    var i;
-    for (i = 0; i < crypto_sign_BYTES; i++) sm[i] = sig[i];
-    for (i = 0; i < msg.length; i++) sm[i+crypto_sign_BYTES] = msg[i];
-
-    // Call to verification lib...
-    var verified = naclBinding.verify(m, sm, pub);
-    if (typeof done == 'function') done(null, verified);
-    return verified;
-  },
-
-  /**
-  * Verify a signature against data & public key.
-  * Return a callback error if signature fails, nothing otherwise.
-  */
-  verifyCbErr: function (msg, sig, pub, done) {
-    var verified = module.exports.verify(msg, sig, pub);
-    if (typeof done == 'function') done(verified ? null : 'Signature does not match');
-    return verified;
-  },
-
-  /**
-  * Generates a new keypair object from salt + password strings.
-  * Returns: { publicKey: pubkeyObject, secretKey: secretkeyObject }.
-  */
-  getKeyPair: (salt, key) => co(function*() {
-    const keyBytes = yield getScryptKey(key, salt);
-    return nacl.sign.keyPair.fromSeed(keyBytes);
-  }),
-
-  /*****************************
-  *
-  *     FUNCTIONAL CRYPTO
-  *
-  *****************************/
-
-  isValidCertification: function (idty, from, sig, blockID, currency, done) {
-    var raw = rawer.getOfficialCertification(_.extend(idty, {
-      currency: currency,
-      idty_issuer: idty.pubkey,
-      idty_uid: idty.uid,
-      idty_buid: idty.buid,
-      idty_sig: idty.sig,
-      issuer: from,
-      buid: blockID,
-      sig: ''
-    }));
-    return this.verify(raw, sig, from);
-  }
-};
+  };
+}
 
 const getScryptKey = (key, salt) => co(function*() {
   // console.log('Derivating the key...');
   const res = yield Q.nbind(scrypt.hash, scrypt, key, TEST_PARAMS, SEED_LENGTH, salt);
   return dec(res.toString("base64"));
 });
+
+/**
+ * Generates a new keypair object from salt + password strings.
+ * Returns: { publicKey: pubkeyObject, secretKey: secretkeyObject }.
+ */
+const getScryptKeyPair = (salt, key) => co(function*() {
+  const keyBytes = yield getScryptKey(key, salt);
+  const pair = nacl.sign.keyPair.fromSeed(keyBytes);
+  return new Key(base58.encode(pair.publicKey),
+      base58.encode(pair.secretKey));
+});
+
+
+module.exports ={
+  scryptKeyPair: getScryptKeyPair,
+  Key: (pub, sec) => new Key(pub, sec),
+  verify: verify
+};

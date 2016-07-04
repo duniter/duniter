@@ -72,7 +72,7 @@ function Synchroniser (server, host, port, conf, interactive) {
     return co(function *() {
       let toApply = [];
 
-      function incrementBlocks(increment) {
+      const incrementBlocks = (increment, localNumber, remoteNumber) => {
         blocksApplied += increment;
         let now = new Date();
         if (times.length == COMPUTE_SPEED_ON_COUNT_CHUNKS) {
@@ -88,7 +88,7 @@ function Synchroniser (server, host, port, conf, interactive) {
         if (watcher.appliedPercent() != Math.floor((blocksApplied + localNumber) / remoteNumber * 100)) {
           watcher.appliedPercent(Math.floor((blocksApplied + localNumber) / remoteNumber * 100));
         }
-      }
+      };
 
       try {
         const node = yield getVucoin(host, port, vucoinOptions);
@@ -163,11 +163,11 @@ function Synchroniser (server, host, port, conf, interactive) {
           if (cautious) {
             for (let j = 0, len = blocks.length; j < len; j++) {
               yield applyGivenBlock(cautious, remoteNumber)(blocks[j]);
-              incrementBlocks(1);
+              incrementBlocks(1, localNumber, remoteNumber);
             }
           } else {
             yield BlockchainService.saveBlocksInMainBranch(blocks, remoteNumber);
-            incrementBlocks(blocks.length);
+            incrementBlocks(blocks.length, localNumber, remoteNumber);
             // Free memory
             if (i >= 0 && i < toApplyNoCautious.length - 1) {
               blocks.splice(0, blocks.length);

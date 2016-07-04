@@ -6,7 +6,7 @@ const network   = require('./system/network');
 const async     = require('async');
 const _         = require('underscore');
 const inquirer  = require('inquirer');
-const logger    = require('logger/logger')('wizard');
+const logger    = require('./logger')('wizard');
 
 module.exports = function () {
   return new Wizard();

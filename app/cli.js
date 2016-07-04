@@ -169,7 +169,6 @@ function DuniterCommand(programArgs) {
             logger.error(err.stack || err.message);
           }
           yield ((server && server.disconnect()) || Q()).catch(() => null);
-          throw Error("Exiting");
         });
       })));
 

@@ -3,7 +3,9 @@ const util       = require('util');
 const stream     = require('stream');
 const co         = require('co');
 const _          = require('underscore');
+const Q          = require('q');
 const moment     = require('moment');
+const vucoin     = require('vucoin');
 const hashf      = require('./ucp/hashf');
 const dos2unix   = require('./system/dos2unix');
 const logger     = require('./logger')('sync');
@@ -20,7 +22,7 @@ module.exports = Synchroniser;
 
 function Synchroniser (server, host, port, conf, interactive) {
 
-  const that = this;
+  let that = this;
 
   let speed = 0, syncStart = new Date(), times = [syncStart], blocksApplied = 0;
   const baseWatcher = interactive ? new MultimeterWatcher() : new LoggerWatcher();
@@ -58,6 +60,10 @@ function Synchroniser (server, host, port, conf, interactive) {
   const BlockchainService  = server.BlockchainService;
 
   const dal = server.dal;
+
+  const vucoinOptions = {
+    timeout: constants.NETWORK.SYNC_LONG_TIMEOUT
+  };
 
   this.sync = (to, chunkLen, askedCautious, nopeers) => {
     let logInterval;

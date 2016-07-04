@@ -1,5 +1,6 @@
 "use strict";
 
+const co        = require('co');
 const _         = require('underscore');
 const should    = require('should');
 const assert    = require('assert');
@@ -31,32 +32,25 @@ const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', s
 
 describe("HTTP API", function() {
 
-  before(function() {
+  before(() => co(function*(){
 
     const commit = makeBlockAndPost(server);
 
-    return server.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections())
-
-      .then(function(){
-        return Promise()
-          .then(function() {
-            return cat.selfCert();
-          })
-          .then(function() {
-            return toc.selfCert();
-          })
-          .then(_.partial(toc.cert, cat))
-          .then(_.partial(cat.cert, toc))
-          .then(cat.join)
-          .then(toc.join)
-          .then(commit)
-          .then(commit)
-          .then(commit)
-          .then(commit)
-          .then(commit);
-      })
-      ;
-  });
+    let s = yield server.initWithDAL();
+    let bmapi = yield bma(s);
+    yield bmapi.openConnections();
+    yield cat.selfCert();
+    yield toc.selfCert();
+    yield toc.cert(cat);
+    yield cat.cert(toc);
+    yield cat.join();
+    yield toc.join();
+    yield commit();
+    yield commit();
+    yield commit();
+    yield commit();
+    yield commit();
+  }));
 
   function makeBlockAndPost(theServer) {
     return function() {

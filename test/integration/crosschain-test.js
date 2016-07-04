@@ -226,8 +226,13 @@ describe("Crosschain transactions", function() {
     before(function() {
 
       return co(function *() {
-        yield sB.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-        yield sM.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+        let server = yield sB.initWithDAL();
+        let bmapi = yield bma(server);
+        yield bmapi.openConnections();
+
+        server = yield sM.initWithDAL();
+        bmapi = yield bma(server);
+        yield bmapi.openConnections();
 
         // Initialize BETA
         yield ticB.selfCert();

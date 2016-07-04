@@ -53,3 +53,16 @@ When you have code in a loop dealing with promises, you *cannot* use `forEach`, 
 
 > `for (.. in ..)` loops also works, but as we said earlier we do not use this syntax here.
 
+## Rule 3: always put braces
+
+Although JS do not care if you omit braces for a one line statement (for example in a `if`), **please add the embraces and adapted indentation anyway**. We prefer to see the explicit block of code concerned by a `if`. Example:
+
+```js
+if (a = 2) {
+    console.log('This is correct block');
+}
+```
+
+```js
+if (a = 2) console.log('This is INCORRECT block, it misses the braces');
+```

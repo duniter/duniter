@@ -79,8 +79,8 @@ function FileDAL(params) {
 
   this.init = () => co(function *() {
     const dalNames = _.keys(that.newDals);
-    for (let i = 0; i < dalNames.length; i++) {
-      const dal = that.newDals[dalNames[i]];
+    for (const dalName of dalNames) {
+      const dal = that.newDals[dalName];
       yield dal.init();
     }
     logger.debug("Upgrade database...");

@@ -107,7 +107,7 @@ function BlockGenerator(mainContext, prover) {
     const txs = yield dal.getTransactionsPending();
     const transactions = [];
     const passingTxs = [];
-    for(const obj of txs) {
+    for (const obj of txs) {
       const tx = new Transaction(obj, conf.currency);
       const extractedTX = tx.getTransaction();
       try {
@@ -202,8 +202,7 @@ function BlockGenerator(mainContext, prover) {
     }
     const newcomers = block.joiners.map((inlineMS) => inlineMS.split(':')[0]);
     const realNewcomers = block.identities;
-    for (let i = 0, len = newcomers.length; i < len; i++) {
-      let newcomer = newcomers[i];
+    for (const newcomer of newcomers) {
       if (block.number > 0) {
         try {
           // Will throw an error if not enough links
@@ -286,13 +285,11 @@ function BlockGenerator(mainContext, prover) {
   this.computeNewCerts = (forBlock, theNewcomers, joinData) => co(function *() {
     const newCerts = {}, certifiers = [];
     const certsByKey = _.mapObject(joinData, function(val){ return val.certs; });
-    for (let i = 0, len = theNewcomers.length; i < len; i++) {
-      const newcomer = theNewcomers[i];
+    for (const newcomer of theNewcomers) {
       // New array of certifiers
       newCerts[newcomer] = newCerts[newcomer] || [];
       // Check wether each certification of the block is from valid newcomer/member
-      for (let j = 0, len2 = certsByKey[newcomer].length; j < len2; j++) {
-        const cert = certsByKey[newcomer][j];
+      for (const cert of certsByKey[newcomer]) {
         const isAlreadyCertifying = certifiers.indexOf(cert.from) !== -1;
         if (!(isAlreadyCertifying && forBlock > 0)) {
           if (~theNewcomers.indexOf(cert.from)) {
@@ -346,8 +343,7 @@ function BlockGenerator(mainContext, prover) {
         // Look for certifications from WoT members
         let certs = yield dal.certsNotLinkedToTarget(idHash);
         const certifiers = [];
-        for (let i = 0; i < certs.length; i++) {
-          const cert = certs[i];
+        for (const cert of certs) {
           try {
             const basedBlock = yield dal.getBlock(cert.block_number);
             if (!basedBlock) {
@@ -546,8 +542,7 @@ function NextBlockGenerator(conf, dal) {
     const certs = yield dal.certsFindNew();
     // The block above which (above from current means blocks with number < current)
     const blockOfChainability = current ? (yield dal.getChainabilityBlock(current.medianTime, conf.sigPeriod)) : null;
-    for (let i = 0; i < certs.length; i++) {
-      const cert = certs[i];
+    for (const cert of certs) {
       let exists = false;
       if (current) {
         // Already exists a link not replayable yet?

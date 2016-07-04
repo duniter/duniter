@@ -239,8 +239,7 @@ function IdentityDAL(db, wotb) {
       kick: false,
       member: true
     });
-    for (let i = 0; i < toKick.length; i++) {
-      const idty = toKick[i];
+    for (const idty of toKick) {
       logger.trace('Kick %s for currentINN <= %s', idty.uid, maxNumber);
       idty.kick = true;
       yield that.saveEntity(idty);
@@ -253,8 +252,7 @@ function IdentityDAL(db, wotb) {
       kick: false,
       member: true
     });
-    for (let i = 0; i < toKick.length; i++) {
-      const idty = toKick[i];
+    for (const idty of toKick) {
       logger.trace('Revoke %s for currentINN <= %s', idty.uid, maxNumber);
       idty.revoked = true;
       yield that.saveEntity(idty);

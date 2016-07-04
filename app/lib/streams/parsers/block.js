@@ -170,8 +170,7 @@ function extractTransactions(raw) {
   };
   const transactions = [];
   const lines = raw.split(/\n/);
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  for (const line of lines) {
     // On each header
     if (line.match(constants.TRANSACTION.HEADER)) {
       // Parse the transaction

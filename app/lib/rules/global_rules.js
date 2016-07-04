@@ -138,8 +138,8 @@ rules.FUNCTIONS = {
   }),
 
   checkCertificationsAreMadeByMembers: (block, dal) => co(function *() {
-    for (let i = 0, len = block.certifications.length; i < len; i++) {
-      let cert = Certification.statics.fromInline(block.certifications[i]);
+    for (const obj of block.certifications) {
+      let cert = Certification.statics.fromInline(obj);
       let isMember = yield isAMember(cert.from, block, dal);
       if (!isMember) {
         throw Error('Certification from non-member');
@@ -149,8 +149,8 @@ rules.FUNCTIONS = {
   }),
 
   checkCertificationsAreValid: (block, conf, dal) => co(function *() {
-    for (let i = 0, len = block.certifications.length; i < len; i++) {
-      let cert = Certification.statics.fromInline(block.certifications[i]);
+    for (const obj of block.certifications) {
+      let cert = Certification.statics.fromInline(obj);
       yield checkCertificationIsValid(block, cert, (b, pub) => {
         return getGlobalIdentity(b, pub, dal);
       }, conf, dal);
@@ -159,8 +159,8 @@ rules.FUNCTIONS = {
   }),
 
   checkCertificationsAreMadeToMembers: (block, dal) => co(function *() {
-    for (let i = 0, len = block.certifications.length; i < len; i++) {
-      let cert = Certification.statics.fromInline(block.certifications[i]);
+    for (const obj of block.certifications) {
+      let cert = Certification.statics.fromInline(obj);
       let isMember = yield isMemberOrJoiner(cert.to, block, dal);
       if (!isMember) {
         throw Error('Certification to non-member');
@@ -170,8 +170,8 @@ rules.FUNCTIONS = {
   }),
 
   checkCertificationsAreMadeToNonLeaver: (block, dal) => co(function *() {
-    for (let i = 0, len = block.certifications.length; i < len; i++) {
-      let cert = Certification.statics.fromInline(block.certifications[i]);
+    for (const obj of block.certifications) {
+      let cert = Certification.statics.fromInline(obj);
       let isLeaving = yield dal.isLeaving(cert.to);
       if (isLeaving) {
         throw Error('Certification to leaver');
@@ -181,8 +181,8 @@ rules.FUNCTIONS = {
   }),
 
   checkCertificationsDelayIsRespected: (block, conf, dal) => co(function *() {
-    for (let i = 0, len = block.certifications.length; i < len; i++) {
-      let cert = Certification.statics.fromInline(block.certifications[i]);
+    for (const obj of block.certifications) {
+      let cert = Certification.statics.fromInline(obj);
       let previous = yield dal.getPreviousLinks(cert.from, cert.to);
       let duration = previous && (block.medianTime - parseInt(previous.timestamp));
       if (previous && (duration <= conf.sigValidity)) {
@@ -194,8 +194,8 @@ rules.FUNCTIONS = {
 
   checkCertificationsPeriodIsRespected: (block, conf, dal) => co(function *() {
     let current = yield dal.getCurrentBlockOrNull();
-    for (let i = 0, len = block.certifications.length; i < len; i++) {
-      let cert = Certification.statics.fromInline(block.certifications[i]);
+    for (const obj of block.certifications) {
+      let cert = Certification.statics.fromInline(obj);
       let previous = yield dal.getLastValidFrom(cert.from);
       if (previous) {
         let duration = current.medianTime - parseInt(previous.timestamp);
@@ -213,8 +213,8 @@ rules.FUNCTIONS = {
 
   checkIdentitiesAreWritable: (block, conf, dal) => co(function *() {
     let current = yield dal.getCurrentBlockOrNull();
-    for (let i = 0, len = block.identities.length; i < len; i++) {
-      let idty = Identity.statics.fromInline(block.identities[i]);
+    for (const obj of block.identities) {
+      let idty = Identity.statics.fromInline(obj);
       let found = yield dal.getWrittenIdtyByUID(idty.uid);
       if (found) {
         throw Error('Identity already used');
@@ -234,8 +234,8 @@ rules.FUNCTIONS = {
 
   checkCertificationsAreWritable: (block, conf, dal) => co(function *() {
     let current = yield dal.getCurrentBlockOrNull();
-    for (let i = 0, len = block.certifications.length; i < len; i++) {
-      let cert = Certification.statics.fromInline(block.certifications[i]);
+    for (const obj of block.certifications) {
+      let cert = Certification.statics.fromInline(obj);
       if (current) {
         // Because the window rule does not apply on initial certifications
         let basedBlock = yield dal.getBlock(cert.block_number);
@@ -252,10 +252,9 @@ rules.FUNCTIONS = {
   checkMembershipsAreWritable: (block, conf, dal) => co(function *() {
     let current = yield dal.getCurrentBlockOrNull();
     let fields = ['joiners', 'actives', 'leavers'];
-    for (let m = 0, len2 = fields.length; m < len2; m++) {
-      let field = fields[m];
-      for (let i = 0, len = block[field].length; i < len; i++) {
-        let ms = Membership.statics.fromInline(block[field][i]);
+    for (const field of fields) {
+      for (const obj of block[field]) {
+        let ms = Membership.statics.fromInline(obj);
         if (ms.block != constants.BLOCK.SPECIAL_BLOCK) {
           let msBasedBlock = yield dal.getBlock(ms.block);
           let age = current.medianTime - msBasedBlock.medianTime;
@@ -269,8 +268,8 @@ rules.FUNCTIONS = {
   }),
 
   checkIdentityUnicity: (block, conf, dal) => co(function *() {
-    for (let i = 0, len = block.identities.length; i < len; i++) {
-      let idty = Identity.statics.fromInline(block.identities[i]);
+    for (const obj of block.identities) {
+      let idty = Identity.statics.fromInline(obj);
       let found = yield dal.getWrittenIdtyByUID(idty.uid);
       if (found) {
         throw Error('Identity already used');
@@ -280,8 +279,8 @@ rules.FUNCTIONS = {
   }),
 
   checkPubkeyUnicity: (block, conf, dal) => co(function *() {
-    for (let i = 0, len = block.identities.length; i < len; i++) {
-      let idty = Identity.statics.fromInline(block.identities[i]);
+    for (const obj of block.identities) {
+      let idty = Identity.statics.fromInline(obj);
       let found = yield dal.getWrittenIdtyByPubkey(idty.pubkey);
       if (found) {
         throw Error('Pubkey already used');
@@ -291,8 +290,8 @@ rules.FUNCTIONS = {
   }),
 
   checkJoiners: (block, conf, dal) => co(function *() {
-    for (let i = 0, len = block.joiners.length; i < len; i++) {
-      let ms = Membership.statics.fromInline(block.joiners[i]);
+    for (const obj of block.joiners) {
+      let ms = Membership.statics.fromInline(obj);
       yield checkMSTarget(ms, block, conf, dal);
       let idty = yield dal.getWrittenIdtyByPubkey(ms.issuer);
       if (idty && idty.currentMSN != -1 && idty.currentMSN >= ms.number) {
@@ -306,8 +305,8 @@ rules.FUNCTIONS = {
   }),
 
   checkActives: (block, conf, dal) => co(function *() {
-    for (let i = 0, len = block.actives.length; i < len; i++) {
-      let ms = Membership.statics.fromInline(block.actives[i]);
+    for (const obj of block.actives) {
+      let ms = Membership.statics.fromInline(obj);
       yield checkMSTarget(ms, block, conf, dal);
       let idty = yield dal.getWrittenIdtyByPubkey(ms.issuer);
       if (idty && idty.currentMSN != -1 && idty.currentMSN >= ms.number) {
@@ -321,8 +320,8 @@ rules.FUNCTIONS = {
   }),
 
   checkLeavers: (block, conf, dal) => co(function *() {
-    for (let i = 0, len = block.leavers.length; i < len; i++) {
-      let ms = Membership.statics.fromInline(block.leavers[i]);
+    for (const obj of block.leavers) {
+      let ms = Membership.statics.fromInline(obj);
       yield checkMSTarget(ms, block, conf, dal);
       let idty = yield dal.getWrittenIdtyByPubkey(ms.issuer);
       if (idty && idty.currentMSN != -1 && idty.currentMSN >= ms.number) {
@@ -336,8 +335,8 @@ rules.FUNCTIONS = {
   }),
 
   checkRevoked: (block, conf, dal) => co(function *() {
-    for (let i = 0, len = block.revoked.length; i < len; i++) {
-      let sp = block.revoked[i].split(':');
+    for (const revoked of block.revoked) {
+      let sp = revoked.split(':');
       let pubkey = sp[0], sig = sp[1];
       let idty = yield dal.getWrittenIdtyByPubkey(pubkey);
       if (!idty) {
@@ -363,8 +362,7 @@ rules.FUNCTIONS = {
   }),
 
   checkExcluded: (block, conf, dal) => co(function *() {
-    for (let i = 0, len = block.excluded.length; i < len; i++) {
-      let pubkey = block.excluded[i];
+    for (const pubkey of block.excluded) {
       let idty = yield dal.getWrittenIdtyByPubkey(pubkey);
       if (!idty) {
         throw Error("Cannot be in excluded if not a member");
@@ -376,8 +374,8 @@ rules.FUNCTIONS = {
   checkJoinersHaveEnoughCertifications: (block, conf, dal) => co(function *() {
     if (block.number > 0) {
       const newLinks = getNewLinks(block);
-      for (let i = 0, len = block.joiners.length; i < len; i++) {
-        let ms = Membership.statics.fromInline(block.joiners[i]);
+      for (const obj of block.joiners) {
+        let ms = Membership.statics.fromInline(obj);
         let links = yield dal.getValidLinksTo(ms.issuer);
         let nbCerts = links.length + (newLinks[ms.issuer] || []).length;
         if (nbCerts < conf.sigQty) {
@@ -413,8 +411,8 @@ rules.FUNCTIONS = {
   }),
 
   checkJoinersAreNotRevoked: (block, conf, dal) => co(function *() {
-    for (let i = 0, len = block.joiners.length; i < len; i++) {
-      let ms = Membership.statics.fromInline(block.joiners[i]);
+    for (const obj of block.joiners) {
+      let ms = Membership.statics.fromInline(obj);
       let idty = yield dal.getWrittenIdtyByPubkey(ms.issuer);
       if (idty && idty.revoked) {
         throw Error('Revoked pubkeys cannot join');
@@ -425,18 +423,16 @@ rules.FUNCTIONS = {
 
   checkSourcesAvailability: (block, conf, dal) => co(function *() {
     let txs = block.getTransactions();
-    for (let i = 0, len = txs.length; i < len; i++) {
-      let tx = txs[i];
+    for (const tx of txs) {
       let unlocks = {};
       let sumOfInputs = 0;
       let maxInputBase = null;
-      for (let k = 0, len2 = tx.unlocks.length; k < len2; k++) {
-        let sp = tx.unlocks[k].split(':');
+      for (const unlock of tx.unlocks) {
+        let sp = unlock.split(':');
         let index = parseInt(sp[0]);
         unlocks[index] = sp[1];
       }
-      for (let k = 0, len2 = tx.inputs.length; k < len2; k++) {
-        let src = tx.inputs[k];
+      for (const src of tx.inputs) {
         let dbSrc = yield dal.getSource(src.identifier, src.noffset);
         logger.debug('Source %s:%s = %s', src.identifier, src.noffset, dbSrc && dbSrc.consumed);
         if (!dbSrc || dbSrc.consumed) {
@@ -458,8 +454,7 @@ rules.FUNCTIONS = {
           if (unlockValues) {
             // Evaluate unlock values
             let sp = unlockValues.split(' ');
-            for (let j = 0, len3 = sp.length; j < len3; j++) {
-              let func = sp[j];
+            for (const func of sp) {
               let param = func.match(/\((.+)\)/)[1];
               if (func.match(/^SIG/)) {
                 let pubkey = tx.issuers[parseInt(param)];
@@ -664,11 +659,9 @@ function checkPeopleAreNotOudistanced (pubkeys, newLinks, newcomers, conf, dal) 
     // Add temporarily the links to the WoT
     let tempLinks = [];
     let toKeys = _.keys(newLinks);
-    for (let i = 0, len = toKeys.length; i < len; i++) {
-      let toKey = toKeys[i];
+    for (const toKey of toKeys) {
       let toNode = yield getNodeIDfromPubkey(nodesCache, toKey, dal);
-      for (let j = 0, len2 = newLinks[toKey].length; j < len2; j++) {
-        let fromKey = newLinks[toKey][j];
+      for (const fromKey of newLinks[toKey]) {
         let fromNode = yield getNodeIDfromPubkey(nodesCache, fromKey, dal);
         tempLinks.push({ from: fromNode, to: toNode });
       }
@@ -676,8 +669,7 @@ function checkPeopleAreNotOudistanced (pubkeys, newLinks, newcomers, conf, dal) 
     tempLinks.forEach((link) => wotb.addLink(link.from, link.to));
     // Checking distance of each member against them
     let error;
-    for (let i = 0, len = pubkeys.length; i < len; i++) {
-      let pubkey = pubkeys[i];
+    for (const pubkey of pubkeys) {
       let nodeID = yield getNodeIDfromPubkey(nodesCache, pubkey, dal);
       let dSen = Math.ceil(constants.CONTRACT.DSEN_P * Math.exp(Math.log(membersCount) / conf.stepMax));
       let isOutdistanced = wotb.isOutdistanced(nodeID, dSen, conf.stepMax, conf.xpercent);
@@ -809,8 +801,8 @@ function getMedianTime (blockNumber, conf, dal) {
     let timeValues = _.pluck(blocksBetween, 'time');
     timeValues.sort();
     let sum = 0;
-    for (let i = 0, len = timeValues.length; i < len; i++) {
-      sum += timeValues[i];
+    for (const timeValue of timeValues) {
+      sum += timeValue;
     }
     if (timeValues.length) {
       return Math.floor(sum / timeValues.length);

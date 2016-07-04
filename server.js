@@ -317,8 +317,7 @@ function Server (dbConf, overrideConf) {
       const params = yield paramsP;
       const myFS = params.fs;
       const rootPath = params.home;
-      for (let i = 0, len = files.length; i < len; i++) {
-        let fName = files[i];
+      for (const fName of files) {
         // JSON file?
         const existsJSON = yield myFS.exists(rootPath + '/' + fName + '.json');
         if (existsJSON) {
@@ -332,8 +331,7 @@ function Server (dbConf, overrideConf) {
           }
         }
       }
-      for (let i = 0, len = dirs.length; i < len; i++) {
-        const dirName = dirs[i];
+      for (const dirName of dirs) {
         const existsDir = yield myFS.exists(rootPath + '/' + dirName);
         if (existsDir) {
           yield myFS.removeTree(rootPath + '/' + dirName);

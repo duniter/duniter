@@ -337,8 +337,7 @@ rules.FUNCTIONS = {
   checkTxIssuers: (block) => co(function *() {
     const txs = block.getTransactions();
     // Check rule against each transaction
-    for (let i = 0, len = txs.length; i < len; i++) {
-      let tx = txs[i];
+    for (const tx of txs) {
       if (tx.issuers.length == 0) {
         throw Error('A transaction must have at least 1 issuer');
       }
@@ -374,8 +373,7 @@ rules.FUNCTIONS = {
   checkTxRecipients: (block) => co(function *() {
     const txs = block.getTransactions();
     // Check rule against each transaction
-    for (let i = 0, len = txs.length; i < len; i++) {
-      let tx = txs[i];
+    for (const tx of txs) {
       if (!tx.outputs || tx.outputs.length == 0) {
         throw Error('A transaction must have at least 1 recipient');
       }
@@ -401,8 +399,7 @@ rules.FUNCTIONS = {
   checkTxSignature: (block) => co(function *() {
     const txs = block.getTransactions();
     // Check rule against each transaction
-    for (let i = 0, len = txs.length; i < len; i++) {
-      let tx = txs[i];
+    for (const tx of txs) {
       let sigResult = getSigResult(tx);
       if (!sigResult.matching) {
         throw Error('Signature from a transaction must match');

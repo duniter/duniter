@@ -339,8 +339,8 @@ function checkHaveSources(theUser, sourcesCount, sourcesTotalAmount) {
       var txRes = _.filter(res.sources, { type: 'T' });
       txRes.should.have.length(sourcesCount);
       let sum = 0;
-      for (let i = 0, len = txRes.length; i < len; i++) {
-        sum += txRes[i].amount;
+      for (const res of txRes) {
+        sum += res.amount;
       }
       assert.equal(sum, sourcesTotalAmount);
     });

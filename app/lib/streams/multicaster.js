@@ -138,8 +138,7 @@ function Multicaster (conf, timeout) {
             } else {
               logger.info('POST %s', params.type);
             }
-            for (let i = 0, len = peers.length; i < len; i++) {
-              let p = peers[i];
+            for (const p of peers) {
               let peer = Peer.statics.peerize(p);
               logger.debug(' `--> to peer %s [%s] (%s)', peer.keyID(), peer.member ? 'member' : '------', peer.getNamedURL());
               yield post(peer, params.uri, params.getObj(theDoc));

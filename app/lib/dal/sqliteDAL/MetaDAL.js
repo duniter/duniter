@@ -35,8 +35,8 @@ function MetaDAL(db) {
       const txsDAL = new (require('./TxsDAL'))(db);
       const txs = yield txsDAL.sqlListAll();
       Transaction.statics.setRecipients(txs);
-      for (let i = 0; i < txs.length; i++) {
-        yield txsDAL.saveEntity(txs[i]);
+      for (const tx of txs) {
+        yield txsDAL.saveEntity(tx);
       }
     })
   };

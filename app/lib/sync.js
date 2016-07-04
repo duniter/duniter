@@ -161,8 +161,8 @@ function Synchroniser (server, host, port, conf, interactive) {
           let blocks = chunk[2];
           blocks = _.sortBy(blocks, 'number');
           if (cautious) {
-            for (let j = 0, len = blocks.length; j < len; j++) {
-              yield applyGivenBlock(cautious, remoteNumber)(blocks[j]);
+            for (const block of blocks) {
+              yield applyGivenBlock(cautious, remoteNumber)(block);
               incrementBlocks(1, localNumber, remoteNumber);
             }
           } else {
@@ -212,8 +212,7 @@ function Synchroniser (server, host, port, conf, interactive) {
                 leavesToAdd.push(leaf);
               }
             });
-            for (let i = 0; i < leavesToAdd.length; i++) {
-              const leaf = leavesToAdd[i];
+            for (const leaf of leavesToAdd) {
               const json3 = yield getPeers({ "leaf": leaf });
               const jsonEntry = json3.leaf.value;
               const sign = json3.leaf.value.signature;

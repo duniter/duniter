@@ -69,8 +69,7 @@ describe("Generation", function() {
 
     return co(function *() {
       let servers = [s1, s2];
-      for (let i = 0; i < servers.length; i++) {
-        let server = servers[i];
+      for (const server of servers) {
         yield server.initWithDAL();
         server.bma = yield bma(server);
         yield server.bma.openConnections();

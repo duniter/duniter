@@ -97,36 +97,36 @@ module.exports = new function() {
       raw += "Parameters: " + json.parameters + "\n";
     raw += "MembersCount: " + json.membersCount + "\n";
     raw += "Identities:\n";
-    for (let i = 0; i < json.identities.length; i++){
-      raw += json.identities[i] + "\n";
+    for (const idty of json.identities){
+      raw += idty + "\n";
     }
     raw += "Joiners:\n";
-    for (let i = 0; i < json.joiners.length; i++){
-      raw += json.joiners[i] + "\n";
+    for (const joiner of json.joiners){
+      raw += joiner + "\n";
     }
     raw += "Actives:\n";
-    for (let i = 0; i < json.actives.length; i++){
-      raw += json.actives[i] + "\n";
+    for (const active of json.actives){
+      raw += active + "\n";
     }
     raw += "Leavers:\n";
-    for (let i = 0; i < json.leavers.length; i++){
-      raw += json.leavers[i] + "\n";
+    for (const leaver of json.leavers){
+      raw += leaver + "\n";
     }
     raw += "Revoked:\n";
-    for (let i = 0; i < json.revoked.length; i++){
-      raw += json.revoked[i] + "\n";
+    for (const revoked of json.revoked){
+      raw += revoked + "\n";
     }
     raw += "Excluded:\n";
-    for (let i = 0; i < json.excluded.length; i++){
-      raw += json.excluded[i] + "\n";
+    for (const excluded of json.excluded){
+      raw += excluded + "\n";
     }
     raw += "Certifications:\n";
-    for (let i = 0; i < json.certifications.length; i++){
-      raw += json.certifications[i] + "\n";
+    for (const cert of json.certifications){
+      raw += cert + "\n";
     }
     raw += "Transactions:\n";
-    for (let i = 0; i < json.transactions.length; i++){
-      raw += json.transactions[i].raw || this.getCompactTransaction(json.transactions[i]);
+    for (const tx of json.transactions){
+      raw += tx.raw || this.getCompactTransaction(tx);
     }
     return dos2unix(raw);
   };

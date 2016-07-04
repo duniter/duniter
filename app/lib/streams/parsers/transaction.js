@@ -46,8 +46,7 @@ function TransactionParser (onError) {
 function extractIssuers(raw) {
   const issuers = [];
   const lines = raw.split(/\n/);
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  for (const line of lines) {
     if (line.match(constants.TRANSACTION.SENDER)) {
       issuers.push(line);
     } else {
@@ -61,8 +60,7 @@ function extractIssuers(raw) {
 function extractInputs(raw) {
   const inputs = [];
   const lines = raw.split(/\n/);
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  for (const line of lines) {
     if (line.match(constants.TRANSACTION.SOURCE)) {
       inputs.push(line);
     } else {
@@ -76,8 +74,7 @@ function extractInputs(raw) {
 function extractUnlocks(raw) {
   const unlocks = [];
   const lines = raw.split(/\n/);
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  for (const line of lines) {
     if (line.match(constants.TRANSACTION.UNLOCK)) {
       unlocks.push(line);
     } else {
@@ -91,8 +88,7 @@ function extractUnlocks(raw) {
 function extractOutputs(raw) {
   const outputs = [];
   const lines = raw.split(/\n/);
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  for (const line of lines) {
     if (line.match(constants.TRANSACTION.TARGET)) {
       outputs.push(line);
     } else {
@@ -106,8 +102,7 @@ function extractOutputs(raw) {
 function extractSignatures(raw) {
   const signatures = [];
   const lines = raw.split(/\n/);
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  for (const line of lines) {
     if (line.match(constants.SIG)) {
       signatures.push(line);
     }

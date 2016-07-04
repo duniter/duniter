@@ -25,12 +25,10 @@ function WOTBinding (server) {
     const identities = yield IdentityService.searchIdentities(search);
     identities.forEach((idty, index) => identities[index] = new Identity(idty));
     const excluding = yield BlockchainService.getCertificationsExludingBlock();
-    for (let i = 0; i < identities.length; i++) {
-      const idty = identities[i];
+      for (const idty of identities) {
       const certs = yield server.dal.certsToTarget(idty.getTargetHash());
       const validCerts = [];
-      for (let j = 0; j < certs.length; j++) {
-        const cert = certs[j];
+      for (const cert of certs) {
         if (!(excluding && cert.block <= excluding.number)) {
           const member = yield IdentityService.getWrittenByPubkey(cert.from);
           if (member) {
@@ -90,8 +88,7 @@ function WOTBinding (server) {
     const excluding = yield BlockchainService.getCertificationsExludingBlock();
     const certs = yield server.dal.certsToTarget(idty.getTargetHash());
     idty.certs = [];
-    for (let i = 0; i < certs.length; i++) {
-      const cert = certs[i];
+    for (const cert of certs) {
       if (!(excluding && cert.block <= excluding.number)) {
         const certifier = yield server.dal.getWrittenIdtyByPubkey(cert.from);
         if (certifier) {
@@ -154,8 +151,7 @@ function WOTBinding (server) {
     const excluding = yield BlockchainService.getCertificationsExludingBlock();
     const certs = yield server.dal.certsFrom(idty.pubkey);
     idty.certs = [];
-    for (let i = 0; i < certs.length; i++) {
-      const cert = certs[i];
+    for (const cert of certs) {
       if (!(excluding && cert.block <= excluding.number)) {
         const certified = yield server.dal.getWrittenIdtyByPubkey(cert.to);
         if (certified) {

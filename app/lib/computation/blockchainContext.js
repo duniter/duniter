@@ -175,84 +175,73 @@ function BlockchainContext() {
   });
 
   this.updateMembers = (block) => co(function *() {
-    // Newcomers
-    for (let i = 0, len = block.identities.length; i < len; i++) {
-      let identity = block.identities[i];
-      let idty = Identity.statics.fromInline(identity);
-      // Computes the hash if not done yet
-      if (!idty.hash)
-        idty.hash = (hashf(rawer.getOfficialIdentity(idty)) + "").toUpperCase();
-      yield dal.newIdentity(idty);
-      yield cleanRejectedIdentities(idty);
-    }
-    // Joiners (come back)
-    for (let i = 0, len = block.joiners.length; i < len; i++) {
-      let inlineMS = block.joiners[i];
-      let ms = Membership.statics.fromInline(inlineMS);
-      yield dal.joinIdentity(ms.issuer, ms.number);
-    }
-    // Actives
-    for (let i = 0, len = block.actives.length; i < len; i++) {
-      let inlineMS = block.actives[i];
-      let ms = Membership.statics.fromInline(inlineMS);
-      yield dal.activeIdentity(ms.issuer, ms.number);
-    }
-    // Leavers
-    for (let i = 0, len = block.leavers.length; i < len; i++) {
-      let inlineMS = block.leavers[i];
-      let ms = Membership.statics.fromInline(inlineMS);
-      yield dal.leaveIdentity(ms.issuer, ms.number);
-    }
-    // Revoked
-    for (let i = 0, len = block.revoked.length; i < len; i++) {
-      let inlineRevocation = block.revoked[i];
-      let revocation = Identity.statics.revocationFromInline(inlineRevocation);
-      yield dal.revokeIdentity(revocation.pubkey);
-    }
-    // Excluded
-    for (let i = 0, len = block.excluded.length; i < len; i++) {
-      let excluded = block.excluded[i];
-      dal.excludeIdentity(excluded);
-    }
-  });
+    return co(function *() {
+      // Newcomers
+      for (const identity of block.identities) {
+        let idty = Identity.statics.fromInline(identity);
+        // Computes the hash if not done yet
+        if (!idty.hash)
+          idty.hash = (hashf(rawer.getOfficialIdentity(idty)) + "").toUpperCase();
+        yield dal.newIdentity(idty);
+        yield cleanRejectedIdentities(idty);
+      }
+      // Joiners (come back)
+      for (const inlineMS of block.joiners) {
+        let ms = Membership.statics.fromInline(inlineMS);
+        yield dal.joinIdentity(ms.issuer, ms.number);
+      }
+      // Actives
+      for (const inlineMS of block.actives) {
+        let ms = Membership.statics.fromInline(inlineMS);
+        yield dal.activeIdentity(ms.issuer, ms.number);
+      }
+      // Leavers
+      for (const inlineMS of block.leavers) {
+        let ms = Membership.statics.fromInline(inlineMS);
+        yield dal.leaveIdentity(ms.issuer, ms.number);
+      }
+      // Revoked
+      for (const inlineRevocation of block.revoked) {
+        let revocation = Identity.statics.revocationFromInline(inlineRevocation);
+        yield dal.revokeIdentity(revocation.pubkey);
+      }
+      // Excluded
+      for (const excluded of block.excluded) {
+        dal.excludeIdentity(excluded);
+      }
+    });
 
   function undoMembersUpdate (block) {
     return co(function *() {
       // Undo 'join' which can be either newcomers or comebackers
-      for (let i = 0, len = block.joiners.length; i < len; i++) {
-        let msRaw = block.joiners[i];
+      for (const msRaw of block.joiners) {
         let ms = Membership.statics.fromInline(msRaw, 'IN', conf.currency);
         yield dal.unJoinIdentity(ms);
       }
       // Undo newcomers (may strengthen the undo 'join')
-      for (let i = 0, len = block.identities.length; i < len; i++) {
-        let identity = block.identities[i];
+      for (const identity of block.identities) {
         let idty = Identity.statics.fromInline(identity);
         yield dal.unacceptIdentity(idty.pubkey);
       }
       // Undo renew (only remove last membership IN document)
-      for (let i = 0, len = block.actives.length; i < len; i++) {
-        let msRaw = block.actives[i];
+      for (const msRaw of block.actives) {
         let ms = Membership.statics.fromInline(msRaw, 'IN', conf.currency);
         yield dal.unRenewIdentity(ms.issuer);
       }
       // Undo leavers (forget about their last membership OUT document)
-      for (let i = 0, len = block.leavers.length; i < len; i++) {
-        let msRaw = block.leavers[i];
+      for (const msRaw of block.leavers) {
         let ms = Membership.statics.fromInline(msRaw, 'OUT', conf.currency);
         yield dal.unLeaveIdentity(ms.issuer);
       }
       // Undo revoked (make them non-revoked)
       let revokedPubkeys = [];
-      for (let i = 0, len = block.revoked.length; i < len; i++) {
-        let inlineRevocation = block.revoked[i];
+      for (const inlineRevocation of block.revoked) {
         let revocation = Identity.statics.revocationFromInline(inlineRevocation);
         revokedPubkeys.push(revocation.pubkey);
         yield dal.unrevokeIdentity(revocation.pubkey);
       }
       // Undo excluded (make them become members again, but set them as 'to be kicked')
-      for (let i = 0, len = block.excluded.length; i < len; i++) {
-        let pubkey = block.excluded[i];
+      for (const pubkey of block.excluded) {
         yield dal.unExcludeIdentity(pubkey, revokedPubkeys.indexOf(pubkey) !== -1);
       }
     });
@@ -260,8 +249,7 @@ function BlockchainContext() {
 
   function undoCertifications(block) {
     return co(function *() {
-      for (let i = 0, len = block.certifications.length; i < len; i++) {
-        let inlineCert = block.certifications[i];
+      for (const inlineCert of block.certifications) {
         let cert = Certification.statics.fromInline(inlineCert);
         let toIdty = yield dal.getWrittenIdtyByPubkey(cert.to);
         cert.target = new Identity(toIdty).getTargetHash();
@@ -277,8 +265,7 @@ function BlockchainContext() {
 
   function undoLinks(block) {
     return co(function *() {
-      for (let i = 0, len = block.certifications.length; i < len; i++) {
-        let inlineCert = block.certifications[i];
+      for (const inlineCert of block.certifications) {
         let cert = Certification.statics.fromInline(inlineCert);
         let fromIdty = yield dal.getWrittenIdtyByPubkey(cert.from);
         let toIdty = yield dal.getWrittenIdtyByPubkey(cert.to);
@@ -301,15 +288,13 @@ function BlockchainContext() {
     return co(function *() {
       // Remove any source created for this block (both Dividend and Transaction)
       dal.removeAllSourcesOfBlock(block.number);
-      for (let i = 0, len = block.transactions.length; i < len; i++) {
-        let obj = block.transactions[i];
+      for (const obj of block.transactions) {
         obj.version = constants.DOCUMENTS_VERSION;
         obj.currency = block.currency;
         obj.issuers = obj.signatories;
         let tx = new Transaction(obj);
         let txObj = tx.getTransaction();
-        for (let j = 0, len2 = txObj.inputs.length; j < len2; j++) {
-          let input = txObj.inputs[j];
+        for (const input of txObj.inputs) {
           yield dal.unConsumeSource(input.identifier, input.noffset);
         }
       }
@@ -318,8 +303,7 @@ function BlockchainContext() {
 
   function undoDeleteTransactions(block) {
     return co(function *() {
-      for (let i = 0, len = block.transactions.length; i < len; i++) {
-        let obj = block.transactions[i];
+      for (const obj of block.transactions) {
         obj.version = constants.DOCUMENTS_VERSION;
         obj.currency = block.currency;
         obj.issuers = obj.signatories;
@@ -482,14 +466,12 @@ function BlockchainContext() {
       'active': 'actives',
       'leave': 'leavers'
     };
-    for (let i = 0, len = blocks.length; i < len; i++) {
-      const block = blocks[i];
+    for (const block of blocks) {
       _.keys(types).forEach(function(type){
         const msType = type == 'leave' ? 'out' : 'in';
         const field = types[type];
         const mss = block[field];
-        for (let j = 0, len2 = mss.length; j < len2; j++) {
-          const msRaw = mss[j];
+        for (const msRaw of mss.length) {
           const ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', block.currency);
           ms.membership = msType.toUpperCase();
           ms.written = true;
@@ -513,10 +495,8 @@ function BlockchainContext() {
    */
   this.updateLinksForBlocks = (blocks, getBlockOrNull) => co(function *() {
     let links = [];
-    for (let i = 0, len = blocks.length; i < len; i++) {
-      let block = blocks[i];
-      for (let j = 0, len2 = block.certifications.length; j < len2; j++) {
-        let inlineCert = block.certifications[j];
+    for (const block of blocks.length) {
+      for (const inlineCert of block.certifications) {
         let cert = Certification.statics.fromInline(inlineCert);
         let tagBlock = block;
         if (block.number > 0) {
@@ -547,8 +527,7 @@ function BlockchainContext() {
    */
   this.updateTransactionsForBlocks = (blocks) => co(function *() {
     let txs = [];
-    for (let i = 0, len = blocks.length; i < len; i++) {
-      let block = blocks[i];
+    for (const block of blocks.length) {
       txs = txs.concat(block.transactions.map((tx) => {
         _.extend(tx, {
           block_number: block.number,
@@ -571,10 +550,8 @@ function BlockchainContext() {
    */
   this.updateCertificationsForBlocks = (blocks) => co(function *() {
     const certs = [];
-    for (let i = 0, len = blocks.length; i < len; i++) {
-      const block = blocks[i];
-      for (let j = 0, len2 = block.certifications.length; j < len2; j++) {
-        const inlineCert = block.certifications[j];
+    for (const block of blocks) {
+      for (const inlineCert of block.certifications) {
         let cert = Certification.statics.fromInline(inlineCert);
         const to = yield dal.getWrittenIdtyByPubkey(cert.to);
         const to_uid = to.uid;
@@ -604,11 +581,9 @@ function BlockchainContext() {
    */
   this.updateTransactionSourcesForBlocks = (blocks, dividends) => co(function *() {
     let sources = dividends;
-    for (let i = 0, len = blocks.length; i < len; i++) {
-      let block = blocks[i];
+    for (const block of blocks.length) {
       // Transactions
-      for (let j = 0, len2 = block.transactions.length; j < len2; j++) {
-        let json = block.transactions[j];
+      for (const json of block.transactions) {
         let obj = json;
         obj.version = constants.DOCUMENTS_VERSION;
         obj.currency = block.currency;

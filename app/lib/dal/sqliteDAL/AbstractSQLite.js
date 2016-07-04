@@ -273,40 +273,34 @@ function AbstractSQLite(db) {
 
   const getField = (f) => that.translated[f] || f;
 
-  const toEntity = (row) => {
-    for (let i = 0, len = that.arrays.length; i < len; i++) {
-      const arr = that.arrays[i];
+  function toEntity(row) {
+    for (const arr of that.arrays) {
       row[arr] = JSON.parse(row[arr]);
     }
     // Big integers are stored as strings to avoid data loss
-    for (let i = 0, len = that.bigintegers.length; i < len; i++) {
-      const bigint = that.bigintegers[i];
+    for (const bigint of that.bigintegers) {
       row[bigint] = parseInt(row[bigint], 10);
     }
     // Translate some DB fields to obj fields
-    const toTranslate = that.translated || {};
-    const toDBFields = _.keys(toTranslate);
-    for (let i = 0, len = toDBFields.length; i < len; i++) {
-      const objField = toDBFields[i];
+    let toTranslate = that.translated || {};
+    let toDBFields = _.keys(toTranslate);
+    for (const objField of toDBFields) {
       row[objField] = row[toTranslate[objField]];
     }
     // Booleans
-    for (let i = 0, len = that.booleans.length; i < len; i++) {
-      const f = that.booleans[i];
+    for (const f of that.booleans) {
       row[f] = Boolean(row[f]);
     }
     return row;
   };
 
-  const toRow = (entity) => {
-    const row = _.clone(entity);
-    for (let i = 0, len = that.arrays.length; i < len; i++) {
-      let arr = that.arrays[i];
+  function toRow(entity) {
+    let row = _.clone(entity);
+    for (const arr of that.arrays) {
       row[arr] = JSON.stringify(row[arr] || []);
     }
     // Big integers are stored as strings to avoid data loss
-    for (let i = 0, len = that.bigintegers.length; i < len; i++) {
-      const bigint = that.bigintegers[i];
+    for (const bigint of that.bigintegers) {
       if (entity[bigint] === null || entity[bigint] === undefined) {
         row[bigint] = null;
       } else {
@@ -314,10 +308,9 @@ function AbstractSQLite(db) {
       }
     }
     // Translate some obj fields to DB field name (because of DB keywords)
-    const toTranslate = that.translated || {};
-    const toDBFields = _.keys(toTranslate);
-    for (let i = 0, len = toDBFields.length; i < len; i++) {
-      const objField = toDBFields[i];
+    let toTranslate = that.translated || {};
+    let toDBFields = _.keys(toTranslate);
+    for (const objField of toDBFields) {
       row[toTranslate[objField]] = row[objField];
     }
     return row;

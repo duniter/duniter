@@ -74,8 +74,7 @@ function BlockchainService () {
     forkBlocks = _.sortBy(forkBlocks, 'number');
     // Get the blocks refering current blockchain
     const forkables = [];
-    for (let i = 0; i < forkBlocks.length; i++) {
-      const block = forkBlocks[i];
+    for (const block of forkBlocks) {
       const refered = yield dal.getBlockByNumberAndHashOrNull(block.number - 1, block.previousHash);
       if (refered) {
         forkables.push(block);
@@ -91,10 +90,8 @@ function BlockchainService () {
     // All starting branches
     let branches = forkables.map((fork) => [fork]);
     // For each "pending" block, we try to add it to all branches
-    for (let i = 0, len = others.length; i < len; i++) {
-      const other = others[i];
-      for (let j = 0, len2 = branches.length; j < len2; j++) {
-        const branch = branches[j];
+    for (const other of others) {
+      for (const branch of branches) {
         const last = branch[branch.length - 1];
         if (other.number == last.number + 1 && other.previousHash == last.hash) {
           branch.push(other);
@@ -116,8 +113,7 @@ function BlockchainService () {
     if (branches.length) {
       const maxSize = branches[0].length;
       const longestsBranches = [];
-      for (let i = 0, len = branches.length; i < len; i++) {
-        const branch = branches[i];
+      for (const branch of branches) {
         if (branch.length == maxSize) {
           longestsBranches.push(branch);
         }
@@ -183,8 +179,7 @@ function BlockchainService () {
                                   && p.medianTime - current.medianTime >= timeAdvance);
     logger.trace('SWITCH: %s branches...', branches.length);
     logger.trace('SWITCH: %s potential side chains...', potentials.length);
-    for (let i = 0, len = potentials.length; i < len; i++) {
-      const potential = potentials[i];
+    for (const potential of potentials) {
       logger.info('SWITCH: get side chain #%s-%s...', potential.number, potential.hash);
       const sideChain = yield getWholeForkBranch(potential);
       logger.info('SWITCH: revert main chain to block #%s...', sideChain[0].number - 1);
@@ -229,16 +224,14 @@ function BlockchainService () {
   });
 
   const applySideChain = (chain) => co(function *() {
-    for (let i = 0, len = chain.length; i < len; i++) {
-      let block = chain[i];
+    for (const block of chain) {
       logger.trace('SWITCH: apply side block #%s-%s -> #%s-%s...', block.number, block.hash, block.number - 1, block.previousHash);
       yield checkAndAddBlock(block, CHECK_ALL_RULES);
     }
   });
 
   const markSideChainAsWrong = (chain) => co(function *() {
-    for (let i = 0, len = chain.length; i < len; i++) {
-      const block = chain[i];
+    for (const block of chain) {
       block.wrong = true;
       // Saves the block (DAL)
       yield dal.saveSideBlockInFile(block);
@@ -262,8 +255,8 @@ function BlockchainService () {
   this.requirementsOfIdentities = (identities) => co(function *() {
     let all = [];
     let current = yield dal.getCurrentBlockOrNull();
-    for (let i = 0, len = identities.length; i < len; i++) {
-      let idty = new Identity(identities[i]);
+    for (const obj of identities) {
+      let idty = new Identity(obj);
       let reqs = yield that.requirementsOfIdentity(idty, current);
       all.push(reqs);
     }
@@ -299,8 +292,7 @@ function BlockchainService () {
       expiresPending = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
     }
     // Expiration of certifications
-    for (let i = 0, len = certs.length; i < len; i++) {
-      const cert = certs[i];
+    for (const cert of certs) {
       cert.expiresIn = Math.max(0, cert.timestamp + conf.sigValidity - currentTime);
     }
     return {
@@ -321,8 +313,7 @@ function BlockchainService () {
     const certsFromLinks = links.map((lnk) => { return { from: lnk.source, to: lnk.target, timestamp: lnk.timestamp }; });
     const certsFromCerts = [];
     const certs = newCerts[newcomer] || [];
-    for (let i = 0, len = certs.length; i < len; i++) {
-      const cert = certs[i];
+    for (const cert of certs) {
       const block = yield dal.getBlockOrNull(cert.block_number);
       certsFromCerts.push({
         from: cert.from,
@@ -442,8 +433,7 @@ function BlockchainService () {
       if (block.dividend) {
         // Get the members at THAT moment (only them should have the UD)
         let idties = yield dal.getMembers();
-        for (let j = 0, len2 = idties.length; j < len2; j++) {
-          let idty = idties[j];
+        for (const idty of idties) {
           dividends.push({
             'pubkey': idty.pubkey,
             'identifier': idty.pubkey,
@@ -479,10 +469,8 @@ function BlockchainService () {
   function pushStatsForBlocks(blocks) {
     const stats = {};
     // Stats
-    for (let i = 0; i < blocks.length; i++) {
-      const block = blocks[i];
-      for (let j = 0; j < statNames.length; j++) {
-        let statName = statNames[j];
+    for (const block of blocks) {
+      for (const statName of statNames) {
         if (!stats[statName]) {
           stats[statName] = { blocks: [] };
         }

@@ -26,8 +26,7 @@ module.exports = {
     const netInterfaces = os.networkInterfaces();
     const keys = _.keys(netInterfaces);
     const res = [];
-    for (let i = 0, len = keys.length; i < len; i++) {
-      let name = keys[i];
+    for (const name of keys) {
       res.push({
         name: name,
         addresses: netInterfaces[name]
@@ -249,11 +248,9 @@ function getBestLocal(family) {
   let netInterfaces = os.networkInterfaces();
   let keys = _.keys(netInterfaces);
   let res = [];
-  for (let i = 0, len = keys.length; i < len; i++) {
-    let name = keys[i];
+  for (const name of keys) {
     let addresses = netInterfaces[name];
-    for (let j = 0, len2 = addresses.length; j < len2; j++) {
-      let addr = addresses[j];
+    for (const addr of addresses) {
       if (!family || addr.family == family) {
         res.push({
           name: name,
@@ -279,11 +276,9 @@ function getLAN(family) {
   let netInterfaces = os.networkInterfaces();
   let keys = _.keys(netInterfaces);
   let res = [];
-  for (let i = 0, len = keys.length; i < len; i++) {
-    let name = keys[i];
+  for (const name of keys) {
     let addresses = netInterfaces[name];
-    for (let j = 0, len2 = addresses.length; j < len2; j++) {
-      let addr = addresses[j];
+    for (const addr of addresses) {
       if ((addr.family == "IPv4" && family == "IPv4"
           && addr.address != "127.0.0.1" && addr.address != "lo" && addr.address != "localhost")
           || (addr.family == "IPv6" && family == "IPv6"

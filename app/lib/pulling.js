@@ -17,8 +17,8 @@ module.exports = {
      * @param blocks
      */
     dao.applyBranch = (blocks) => co(function *() {
-      for (let i = 0, len = blocks.length; i < len; i++) {
-        yield dao.applyMainBranch(blocks[i]);
+      for (const block of blocks) {
+        yield dao.applyMainBranch(block);
       }
       return true;
     });
@@ -104,8 +104,7 @@ module.exports = {
     let localCurrent = yield dao.localCurrent();
     let peers = yield dao.remotePeers();
     // Try to get new legit blocks for local blockchain
-    for (let i = 0, len = peers.length; i < len; i++) {
-      let peer = peers[i];
+    for (const peer of peers) {
       let shortPubkey = peer.pubkey.substr(0, 6);
       let remoteNext = yield dao.getRemoteBlock(peer, localCurrent.number + 1);
       if (remoteNext) {
@@ -134,8 +133,7 @@ module.exports = {
     }
     // Filter forks: do not include mirror peers (non-member peers)
     let memberForks = [];
-    for (let i = 0, len = forks.length; i < len; i++) {
-      let fork = forks[i];
+    for (const fork of forks) {
       let isMember = yield dao.isMemberPeer(fork.peer);
       if (isMember) {
         memberForks.push(fork);

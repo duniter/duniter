@@ -86,8 +86,7 @@ function Router (PeeringService, conf, dal) {
         let members = [];
         let nonmembers = [];
         let peers = yield dal.getRandomlyUPsWithout(without); // Peers with status UP
-        for (let i = 0, len = peers.length; i < len; i++) {
-          let p = peers[i];
+        for (const p of peers) {
           let isMember = yield dal.isMember(p.pubkey);
           isMember ? members.push(p) : nonmembers.push(p);
         }

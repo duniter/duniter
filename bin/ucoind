@@ -366,8 +366,7 @@ program
       if (lastNumber > chunksCount * CHUNK_SIZE) {
         chunks.push({ start: chunksCount * CHUNK_SIZE, to: lastNumber });
       }
-      for (let j = 0, len = chunks.length; j < len; j++) {
-        let chunk = chunks[j];
+      for (const chunk of chunks) {
         let blocks = yield server.dal.getBlocksBetween(chunk.start, chunk.to);
         blocks.forEach(function (block) {
           jsoned.push(_(new Block(block).json()).omit('raw'));

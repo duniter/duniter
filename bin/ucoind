@@ -299,7 +299,6 @@ function generateAndSend (generationMethod) {
         else {
           logger.debug('Block to be sent: %s', block.quickDescription());
           var wiz = wizard(server);
-          var doSign = null;
           async.waterfall([
             function (next){
               if (!conf.salt && !conf.passwd)
@@ -312,11 +311,7 @@ function generateAndSend (generationMethod) {
               keyring.scryptKeyPair(conf.salt, conf.passwd).then((pair) => next(null, pair)).catch(next);
             },
             function (pair, next){
-              doSign = pair.sign;
-              next(null, pair)
-            },
-            function (pair, next){
-              proveAndSend(server, block, doSign, pair.publicKey, difficulty, host, port, next);
+              proveAndSend(server, block, pair.publicKey, parseInt(difficulty), host, parseInt(port), next);
             }
           ], next);
         }
@@ -325,13 +320,13 @@ function generateAndSend (generationMethod) {
   };
 }
 
-function proveAndSend (server, block, sigFunc, issuer, difficulty, host, port, done) {
+function proveAndSend (server, block, issuer, difficulty, host, port, done) {
   var BlockchainService = server.BlockchainService;
   async.waterfall([
     function (next){
       block.issuer = issuer;
       program.show && console.log(block.getRawSigned());
-      BlockchainService.prove(block, sigFunc, difficulty).then((proven) => next(null, proven)).catch(next);
+      BlockchainService.prove(block, difficulty).then((proven) => next(null, proven)).catch(next);
     },
     function (block, next){
       var peer = new Peer({

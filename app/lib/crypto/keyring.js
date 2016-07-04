@@ -26,7 +26,7 @@ const enc = nacl.util.encodeBase64,
  * Verify a signature against data & public key.
  * Return true of false as callback argument.
  */
-const verify = (rawMsg, rawSig, rawPub) => {
+function verify(rawMsg, rawSig, rawPub) {
   const msg = nacl.util.decodeUTF8(rawMsg);
   const sig = nacl.util.decodeBase64(rawSig);
   const pub = base58.decode(rawPub);
@@ -37,9 +37,8 @@ const verify = (rawMsg, rawSig, rawPub) => {
   for (i = 0; i < msg.length; i++) sm[i+crypto_sign_BYTES] = msg[i];
 
   // Call to verification lib...
-  const verified = naclBinding.verify(m, sm, pub);
-  return verified;
-};
+  return naclBinding.verify(m, sm, pub);
+}
 
 function Key(pub, sec) {
   /*****************************
@@ -58,9 +57,7 @@ function Key(pub, sec) {
     sec: this.secretKey
   }};
 
-  this.sign = (msg) => {
-    return Q.fcall(this.signSync, msg)
-  };
+  this.sign = (msg) => Promise.resolve(this.signSync(msg));
 
   this.signSync = (msg) => {
     const m = nacl.util.decodeUTF8(msg);

@@ -1,28 +1,28 @@
 "use strict";
 
-var co        = require('co');
-var Q         = require('q');
-var _         = require('underscore');
-var should    = require('should');
-var ucoin     = require('../../index');
-var bma       = require('../../app/lib/streams/bma');
-var user      = require('./tools/user');
-var constants = require('../../app/lib/constants');
-var rp        = require('request-promise');
-var httpTest  = require('./tools/http');
-var commit    = require('./tools/commit');
-var sync      = require('./tools/sync');
-var vucoin_p  = require('./tools/vucoin_p');
-var until     = require('./tools/until');
-var multicaster = require('../../app/lib/streams/multicaster');
-var Peer = require('../../app/lib/entity/peer');
+const co        = require('co');
+const Q         = require('q');
+const _         = require('underscore');
+const should    = require('should');
+const ucoin     = require('../../index');
+const bma       = require('../../app/lib/streams/bma');
+const user      = require('./tools/user');
+const constants = require('../../app/lib/constants');
+const rp        = require('request-promise');
+const httpTest  = require('./tools/http');
+const commit    = require('./tools/commit');
+const sync      = require('./tools/sync');
+const vucoin_p  = require('./tools/vucoin_p');
+const until     = require('./tools/until');
+const multicaster = require('../../app/lib/streams/multicaster');
+const Peer = require('../../app/lib/entity/peer');
 
-var expectJSON     = httpTest.expectJSON;
-var expectAnswer   = httpTest.expectAnswer;
-var expectHttpCode = httpTest.expectHttpCode;
+const expectJSON     = httpTest.expectJSON;
+const expectAnswer   = httpTest.expectAnswer;
+const expectHttpCode = httpTest.expectHttpCode;
 
-var MEMORY_MODE = true;
-var commonConf = {
+const MEMORY_MODE = true;
+const commonConf = {
   ipv4: '127.0.0.1',
   remoteipv4: '127.0.0.1',
   currency: 'bb',
@@ -32,7 +32,7 @@ var commonConf = {
   sigQty: 1
 };
 
-var s1 = ucoin({
+const s1 = ucoin({
   memory: MEMORY_MODE,
   name: 'bb_net1'
 }, _.extend({
@@ -43,7 +43,7 @@ var s1 = ucoin({
   }
 }, commonConf));
 
-var s2 = ucoin({
+const s2 = ucoin({
   memory: MEMORY_MODE,
   name: 'bb_net2'
 }, _.extend({
@@ -54,7 +54,7 @@ var s2 = ucoin({
   }
 }, commonConf));
 
-var s3 = ucoin({
+const s3 = ucoin({
   memory: MEMORY_MODE,
   name: 'bb_net3'
 }, _.extend({
@@ -65,21 +65,21 @@ var s3 = ucoin({
   }
 }, commonConf));
 
-var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
-var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
-var tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
+const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
+const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+const tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
 
-var nodeS1;
-var nodeS2;
-var nodeS3;
+let nodeS1;
+let nodeS2;
+let nodeS3;
 
 describe("Network", function() {
 
   before(function() {
 
-    var commitS1 = commit(s1);
-    var commitS2 = commit(s2);
-    var commitS3 = commit(s3);
+    const commitS1 = commit(s1);
+    const commitS2 = commit(s2);
+    const commitS3 = commit(s3);
 
     return [s1, s2, s3].reduce(function(p, server) {
       return p

@@ -1,20 +1,20 @@
 "use strict";
 
-var _         = require('underscore');
-var co        = require('co');
-var should    = require('should');
-var ucoin     = require('../../index');
-var bma       = require('../../app/lib/streams/bma');
-var user      = require('./tools/user');
-var constants = require('../../app/lib/constants');
-var rp        = require('request-promise');
-var httpTest  = require('./tools/http');
-var commit    = require('./tools/commit');
+const _         = require('underscore');
+const co        = require('co');
+const should    = require('should');
+const ucoin     = require('../../index');
+const bma       = require('../../app/lib/streams/bma');
+const user      = require('./tools/user');
+const constants = require('../../app/lib/constants');
+const rp        = require('request-promise');
+const httpTest  = require('./tools/http');
+const commit    = require('./tools/commit');
 
-var expectAnswer   = httpTest.expectAnswer;
+const expectAnswer   = httpTest.expectAnswer;
 
-var MEMORY_MODE = true;
-var commonConf = {
+const MEMORY_MODE = true;
+const commonConf = {
   ipv4: '127.0.0.1',
   currency: 'bb',
   httpLogs: true,
@@ -25,7 +25,7 @@ var commonConf = {
   sigQty: 1
 };
 
-var s1 = ucoin({
+const s1 = ucoin({
   memory: MEMORY_MODE,
   name: 'bb11'
 }, _.extend({
@@ -36,20 +36,20 @@ var s1 = ucoin({
   }
 }, commonConf));
 
-var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
-var tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: s1 });
-var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
-var tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
-var tic2 = user('tic', { pub: '4KEA63RCFF7AXUePPg5Q7JX9RtzXjywai1iKmE7LcoEC', sec: '48vHGE2xkhnC81ChSu7dHaNv8JqnYubyyHRbkmkeAPKNg8Tv2BE7kVi3voh2ZhfVpQhEJLzceufzqpJ2dqnyXNSp'}, { server: s1 });
-var man1 = user('man1', { pub: '12AbjvYY5hxV4v2KrN9pnGzgFxogwrzgYyncYHHsyFDK', sec: '2h8UNKE4YRnjmTGQTrgf4DZp2h3F5LqjnecxP8AgU6aH1x4dvbNVirsNeBiSR2UQfExuLAbdXiyM465hb5qUxYC1'}, { server: s1 });
-var man2 = user('man2', { pub: 'E44RxG9jKZQsaPLFSw2ZTJgW7AVRqo1NGy6KGLbKgtNm', sec: 'pJRwpaCWshKZNWsbDxAHFQbVjk6X8gz9eBy9jaLnVY9gUZRqotrZLZPZe68ag4vEX1Y8mX77NhPXV2hj9F1UkX3'}, { server: s1 });
-var man3 = user('man3', { pub: '5bfpAfZJ4xYspUBYseASJrofhRm6e6JMombt43HBaRzW', sec: '2VFQtEcYZRwjoc8Lxwfzcejtw9VP8VAi47WjwDDjCJCXu7g1tXUAbVZN3QmvG6NJqaSuLCuYP7WDHWkFmTrUEMaE'}, { server: s1 });
+const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
+const tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: s1 });
+const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+const tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
+const tic2 = user('tic', { pub: '4KEA63RCFF7AXUePPg5Q7JX9RtzXjywai1iKmE7LcoEC', sec: '48vHGE2xkhnC81ChSu7dHaNv8JqnYubyyHRbkmkeAPKNg8Tv2BE7kVi3voh2ZhfVpQhEJLzceufzqpJ2dqnyXNSp'}, { server: s1 });
+const man1 = user('man1', { pub: '12AbjvYY5hxV4v2KrN9pnGzgFxogwrzgYyncYHHsyFDK', sec: '2h8UNKE4YRnjmTGQTrgf4DZp2h3F5LqjnecxP8AgU6aH1x4dvbNVirsNeBiSR2UQfExuLAbdXiyM465hb5qUxYC1'}, { server: s1 });
+const man2 = user('man2', { pub: 'E44RxG9jKZQsaPLFSw2ZTJgW7AVRqo1NGy6KGLbKgtNm', sec: 'pJRwpaCWshKZNWsbDxAHFQbVjk6X8gz9eBy9jaLnVY9gUZRqotrZLZPZe68ag4vEX1Y8mX77NhPXV2hj9F1UkX3'}, { server: s1 });
+const man3 = user('man3', { pub: '5bfpAfZJ4xYspUBYseASJrofhRm6e6JMombt43HBaRzW', sec: '2VFQtEcYZRwjoc8Lxwfzcejtw9VP8VAi47WjwDDjCJCXu7g1tXUAbVZN3QmvG6NJqaSuLCuYP7WDHWkFmTrUEMaE'}, { server: s1 });
 
 describe("Identities collision", function() {
 
   before(function() {
 
-    var commitS1 = commit(s1);
+    const commitS1 = commit(s1);
 
     return co(function *() {
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());

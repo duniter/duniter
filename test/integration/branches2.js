@@ -1,24 +1,23 @@
 "use strict";
 
-var Q         = require('q');
-var co        = require('co');
-var _         = require('underscore');
-var ucoin     = require('../../index');
-var bma       = require('../../app/lib/streams/bma');
-var user      = require('./tools/user');
-var constants = require('../../app/lib/constants');
-var rp        = require('request-promise');
-var httpTest  = require('./tools/http');
-var commit    = require('./tools/commit');
-var sync      = require('./tools/sync');
+const co        = require('co');
+const _         = require('underscore');
+const ucoin     = require('../../index');
+const bma       = require('../../app/lib/streams/bma');
+const user      = require('./tools/user');
+const constants = require('../../app/lib/constants');
+const rp        = require('request-promise');
+const httpTest  = require('./tools/http');
+const commit    = require('./tools/commit');
+const sync      = require('./tools/sync');
 
-var expectJSON     = httpTest.expectJSON;
-var expectHttpCode = httpTest.expectHttpCode;
+const expectJSON     = httpTest.expectJSON;
+const expectHttpCode = httpTest.expectHttpCode;
 
 require('../../app/lib/logger')().mute();
 
-var MEMORY_MODE = true;
-var commonConf = {
+const MEMORY_MODE = true;
+const commonConf = {
   ipv4: '127.0.0.1',
   currency: 'bb',
   httpLogs: true,
@@ -28,7 +27,7 @@ var commonConf = {
   sigQty: 1
 };
 
-var s1 = ucoin({
+const s1 = ucoin({
   memory: MEMORY_MODE,
   name: 'bb4'
 }, _.extend({
@@ -39,7 +38,7 @@ var s1 = ucoin({
   }
 }, commonConf));
 
-var s2 = ucoin({
+const s2 = ucoin({
   memory: MEMORY_MODE,
   name: 'bb5'
 }, _.extend({
@@ -50,16 +49,16 @@ var s2 = ucoin({
   }
 }, commonConf));
 
-var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
-var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
+const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
 
-var now = Math.round(new Date().getTime() / 1000);
+const now = Math.round(new Date().getTime() / 1000);
 
 describe("SelfFork", function() {
 
   before(() => co(function *() {
-    var commitS1 = commit(s1);
-    var commitS2 = commit(s2, {
+    const commitS1 = commit(s1);
+    const commitS2 = commit(s2, {
       time: now + 10000000
     });
 
@@ -67,17 +66,12 @@ describe("SelfFork", function() {
     yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
 
     // Server 1
-    yield Q()
-      .then(function() {
-        return cat.selfCert();
-      })
-      .then(function() {
-        return toc.selfCert();
-      })
-      .then(_.partial(toc.cert, cat))
-      .then(_.partial(cat.cert, toc))
-      .then(cat.join)
-      .then(toc.join);
+    yield cat.selfCert();
+    yield toc.selfCert();
+    yield toc.cert(cat);
+    yield cat.cert(toc);
+    yield cat.join();
+    yield toc.join();
 
     yield commitS1({
       time: now
@@ -87,14 +81,10 @@ describe("SelfFork", function() {
     yield commitS1();
 
     // Server 2
-    yield Q()
-      .then(function(){
-        return sync(0, 2, s1, s2);
-      })
-      .then(function() {
-        return Q.delay(1000);
-      });
-
+    yield sync(0, 2, s1, s2);
+    yield function*() {
+      yield (cb) => setTimeout(cb, 1000);
+    };
     let s2p = yield s2.PeeringService.peer();
 
     yield commitS2();
@@ -165,11 +155,9 @@ describe("SelfFork", function() {
       });
     });
 
-    it('should have 1 branch', function() {
-      return s2.BlockchainService.branches()
-        .then(function(branches){
-          branches.should.have.length(1);
-        });
-    });
+    it('should have 1 branch', () => co(function*() {
+      const branches = yield s2.BlockchainService.branches();
+      branches.should.have.length(1);
+    }));
   });
 });

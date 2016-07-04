@@ -1,12 +1,12 @@
 "use strict";
 
-var co = require('co');
-var _ = require('underscore');
-var should = require('should');
-var assert = require('assert');
-var constants = require('../../app/lib/constants');
-var node   = require('./tools/node');
-var unit   = require('./tools/unit');
+const co = require('co');
+const _ = require('underscore');
+const should = require('should');
+const assert = require('assert');
+const constants = require('../../app/lib/constants');
+const node   = require('./tools/node');
+const unit   = require('./tools/unit');
 
 describe("Migration", function() {
 

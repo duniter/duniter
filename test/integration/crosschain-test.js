@@ -1,21 +1,21 @@
 "use strict";
 
-var co = require('co');
-var _ = require('underscore');
-var assert = require('assert');
-var should = require('should');
-var rp        = require('request-promise');
-var bma       = require('../../app/lib/streams/bma');
-var commit    = require('./tools/commit');
-var ucoin  = require('../../index');
-var user   = require('./tools/user');
-var unit   = require('./tools/unit');
-var httpTest  = require('./tools/http');
+const co = require('co');
+const _ = require('underscore');
+const assert = require('assert');
+const should = require('should');
+const rp        = require('request-promise');
+const bma       = require('../../app/lib/streams/bma');
+const commit    = require('./tools/commit');
+const ucoin  = require('../../index');
+const user   = require('./tools/user');
+const unit   = require('./tools/unit');
+const httpTest  = require('./tools/http');
 
 describe("Crosschain transactions", function() {
 
-  var MEMORY_MODE = true;
-  var commonConf = {
+  const MEMORY_MODE = true;
+  const commonConf = {
     ipv4: '127.0.0.1',
     httpLogs: true,
     forksize: 3,
@@ -26,7 +26,7 @@ describe("Crosschain transactions", function() {
 
   describe('Successfull transaction', () => {
 
-    var sB = ucoin({
+    const sB = ucoin({
       memory: MEMORY_MODE,
       name: 'bb11'
     }, _.extend({
@@ -38,7 +38,7 @@ describe("Crosschain transactions", function() {
       }
     }, commonConf));
 
-    var sM = ucoin({
+    const sM = ucoin({
       memory: MEMORY_MODE,
       name: 'bb12'
     }, _.extend({
@@ -51,17 +51,15 @@ describe("Crosschain transactions", function() {
     }, commonConf));
 
     // toc is on 2 currencies
-    var tocB = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: sB });
-    var tocM = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: sM });
+    const tocB = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: sB });
+    const tocM = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: sM });
     // tic is on 2 currencies
-    var ticB = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: sB });
-    var ticM = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: sM });
+    const ticB = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: sB });
+    const ticM = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: sM });
 
     let btx0, mtx0; // Source transactions for coins
 
-    before(function() {
-
-      return co(function *() {
+    before(() => co(function *() {
         yield sB.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
         yield sM.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
 
@@ -96,8 +94,8 @@ describe("Crosschain transactions", function() {
         yield ticM.sendTX(mtx0);
         // Written
         yield commit(sM)();
-      });
-    });
+      })
+    );
 
     describe("check initial sources", function(){
       it('toc should now have 120 BETA_BROUZOUF from Transaction sources due to initial TX', checkHaveSources(tocB, 1, 120));
@@ -160,14 +158,14 @@ describe("Crosschain transactions", function() {
 
       it('toc should now have 0 BETA_BROUZOUF from Transaction sources due to COMMIT', function() {
         return httpTest.expectAnswer(rp('http://127.0.0.1:8588/tx/sources/' + tocB.pub, { json: true }), (res) => {
-          var txRes = _.filter(res.sources, { type: 'T' });
+          const txRes = _.filter(res.sources, { type: 'T' });
           txRes.should.have.length(0);
         });
       });
 
       it('toc should now have 120 META_BROUZOUF from Transaction sources due to COMMIT', function() {
         return httpTest.expectAnswer(rp('http://127.0.0.1:8599/tx/sources/' + tocB.pub, { json: true }), (res) => {
-          var txRes = _.filter(res.sources, { type: 'T' });
+          const txRes = _.filter(res.sources, { type: 'T' });
           txRes.should.have.length(1);
           assert.equal(txRes[0].amount, 120);
         });
@@ -175,14 +173,14 @@ describe("Crosschain transactions", function() {
 
       it('tic should now have 0 META_BROUZOUF from Transaction sources due to COMMMIT', function() {
         return httpTest.expectAnswer(rp('http://127.0.0.1:8599/tx/sources/' + ticM.pub, { json: true }), (res) => {
-          var txRes = _.filter(res.sources, { type: 'T' });
+          const txRes = _.filter(res.sources, { type: 'T' });
           txRes.should.have.length(0);
         });
       });
 
       it('tic should have 120 BETA_BROUZOUF from Transaction sources due to COMMIT', function() {
         return httpTest.expectAnswer(rp('http://127.0.0.1:8588/tx/sources/' + ticM.pub, { json: true }), (res) => {
-          var txRes = _.filter(res.sources, { type: 'T' });
+          const txRes = _.filter(res.sources, { type: 'T' });
           txRes.should.have.length(1);
           assert.equal(txRes[0].amount, 120);
         });
@@ -192,7 +190,7 @@ describe("Crosschain transactions", function() {
 
   describe('Rollbacked transaction', () => {
 
-    var sB = ucoin({
+    const sB = ucoin({
       memory: MEMORY_MODE,
       name: 'bb11'
     }, _.extend({
@@ -204,7 +202,7 @@ describe("Crosschain transactions", function() {
       }
     }, commonConf));
 
-    var sM = ucoin({
+    const sM = ucoin({
       memory: MEMORY_MODE,
       name: 'bb12'
     }, _.extend({
@@ -217,11 +215,11 @@ describe("Crosschain transactions", function() {
     }, commonConf));
 
     // toc is on 2 currencies
-    var tocB = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: sB });
-    var tocM = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: sM });
+    const tocB = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: sB });
+    const tocM = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: sM });
     // tic is on 2 currencies
-    var ticB = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: sB });
-    var ticM = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: sM });
+    const ticB = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: sB });
+    const ticM = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: sM });
 
     let btx0, mtx0; // Source transactions for coins
 
@@ -336,7 +334,7 @@ describe("Crosschain transactions", function() {
 function checkHaveSources(theUser, sourcesCount, sourcesTotalAmount) {
   return function() {
     return httpTest.expectAnswer(rp('http://' + theUser.node.server.conf.ipv4 + ':' + theUser.node.server.conf.port + '/tx/sources/' + theUser.pub, { json: true }), (res) => {
-      var txRes = _.filter(res.sources, { type: 'T' });
+      const txRes = _.filter(res.sources, { type: 'T' });
       txRes.should.have.length(sourcesCount);
       let sum = 0;
       for (const res of txRes) {

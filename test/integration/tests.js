@@ -1,27 +1,27 @@
 "use strict";
 
-var co = require('co');
-var _ = require('underscore');
-var should = require('should');
-var assert = require('assert');
-var bma       = require('../../app/lib/streams/bma');
-var constants = require('../../app/lib/constants');
-var node   = require('./tools/node');
-var ucoin     = require('../../index');
-var user   = require('./tools/user');
-var jspckg = require('../../package');
-var commit    = require('./tools/commit');
-var httpTest  = require('./tools/http');
-var rp        = require('request-promise');
+const co = require('co');
+const _ = require('underscore');
+const should = require('should');
+const assert = require('assert');
+const bma       = require('../../app/lib/streams/bma');
+const constants = require('../../app/lib/constants');
+const node   = require('./tools/node');
+const ucoin     = require('../../index');
+const user   = require('./tools/user');
+const jspckg = require('../../package');
+const commit    = require('./tools/commit');
+const httpTest  = require('./tools/http');
+const rp        = require('request-promise');
 
-var expectAnswer   = httpTest.expectAnswer;
-var MEMORY_MODE = true;
+const expectAnswer   = httpTest.expectAnswer;
+const MEMORY_MODE = true;
 
 describe("Integration", function() {
 
   describe("Node 1", function() {
 
-    var node1 = node('db1', { currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, upnp: false, httplogs: false,
+    const node1 = node('db1', { currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, upnp: false, httplogs: false,
       participate: false, rootoffset: 0,
       sigQty: 1,
       pair: {
@@ -30,10 +30,10 @@ describe("Integration", function() {
       }
     });
 
-    var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, node1);
-    var tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, node1);
-    var tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, node1);
-    var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, node1);
+    const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, node1);
+    const tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, node1);
+    const tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, node1);
+    const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, node1);
 
     before(function(done) {
       node1.startTesting()
@@ -169,16 +169,16 @@ describe("Integration", function() {
 
   describe("Testing leavers", function(){
 
-    var node3 = ucoin({ name: 'db3', memory: MEMORY_MODE }, {
+    const node3 = ucoin({ name: 'db3', memory: MEMORY_MODE }, {
       currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, upnp: false, httplogs: false,
       salt: 'abc', passwd: 'abc', participate: false, rootoffset: 0,
       sigQty: 1, sigPeriod: 0
     });
 
-    var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: node3 });
-    var tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: node3 });
-    var tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: node3 });
-    var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: node3 });
+    const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: node3 });
+    const tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: node3 });
+    const tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: node3 });
+    const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: node3 });
 
     before(function() {
       return co(function *() {
@@ -231,16 +231,16 @@ describe("Integration", function() {
 
     it('tic should give only 1 results', () => expectAnswer(rp('http://127.0.0.1:9997/wot/lookup/tic', { json: true }), function(res) {
       should.exists(res);
-      var uids = _.pluck(res.results[0].signed, 'uid');
-      var uidsShould = ["cat", "tac", "toc"];
+      const uids = _.pluck(res.results[0].signed, 'uid');
+      const uidsShould = ["cat", "tac", "toc"];
       uids.sort();
       uidsShould.sort();
       assert.deepEqual(uids, uidsShould);
       assert.equal(res.results.length, 1);
       assert.equal(res.results[0].signed.length, 3);
-      var cat_signed = _.findWhere(res.results[0].signed, { uid: 'cat'});
-      var tac_signed = _.findWhere(res.results[0].signed, { uid: 'tac'});
-      var toc_signed = _.findWhere(res.results[0].signed, { uid: 'toc'});
+      const cat_signed = _.findWhere(res.results[0].signed, { uid: 'cat'});
+      const tac_signed = _.findWhere(res.results[0].signed, { uid: 'tac'});
+      const toc_signed = _.findWhere(res.results[0].signed, { uid: 'toc'});
       assert.equal(cat_signed.uid, "cat");
       assert.equal(cat_signed.isMember, true);
       assert.equal(cat_signed.wasMember, true);

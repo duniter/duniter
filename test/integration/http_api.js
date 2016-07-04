@@ -1,18 +1,17 @@
 "use strict";
 
-var Q         = require('q');
-var _         = require('underscore');
-var should    = require('should');
-var assert    = require('assert');
-var ucoin     = require('../../index');
-var bma       = require('../../app/lib/streams/bma');
-var user      = require('./tools/user');
-var http      = require('./tools/http');
-var constants = require('../../app/lib/constants');
-var rp        = require('request-promise');
-var ws        = require('ws');
+const _         = require('underscore');
+const should    = require('should');
+const assert    = require('assert');
+const ucoin     = require('../../index');
+const bma       = require('../../app/lib/streams/bma');
+const user      = require('./tools/user');
+const http      = require('./tools/http');
+const constants = require('../../app/lib/constants');
+const rp        = require('request-promise');
+const ws        = require('ws');
 
-var server = ucoin({
+const server = ucoin({
   memory: true
 }, {
   ipv4: '127.0.0.1',
@@ -27,19 +26,19 @@ var server = ucoin({
   }
 });
 
-var cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: server });
-var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: server });
+const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: server });
+const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: server });
 
 describe("HTTP API", function() {
 
   before(function() {
 
-    var commit = makeBlockAndPost(server);
+    const commit = makeBlockAndPost(server);
 
     return server.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections())
 
       .then(function(){
-        return Q()
+        return Promise()
           .then(function() {
             return cat.selfCert();
           })
@@ -148,7 +147,7 @@ describe("HTTP API", function() {
   describe("/ws", function() {
 
     it('/block should exist', function(done) {
-      var client = new ws('ws://127.0.0.1:7777/ws/block');
+      const client = new ws('ws://127.0.0.1:7777/ws/block');
       client.on('open', function open() {
         client.terminate();
         done();
@@ -156,10 +155,10 @@ describe("HTTP API", function() {
     });
 
     it('/block should send a block', function(done) {
-      var completed = false
-      var client = new ws('ws://127.0.0.1:7777/ws/block');
+      let completed = false
+      const client = new ws('ws://127.0.0.1:7777/ws/block');
       client.on('message', function message(data) {
-        var block = JSON.parse(data);
+        const block = JSON.parse(data);
         should(block).have.property('number', 4);
         should(block).have.property('dividend', null);
         if (!completed) {
@@ -170,7 +169,7 @@ describe("HTTP API", function() {
     });
 
     it('/block should answer to pings', function(done) {
-      var client = new ws('ws://127.0.0.1:7777/ws/block');
+      const client = new ws('ws://127.0.0.1:7777/ws/block');
       client.on('pong', function message(data, flags) {
         client.terminate();
         done();

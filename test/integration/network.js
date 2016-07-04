@@ -1,16 +1,16 @@
 "use strict";
 
-var co = require('co');
-var _         = require('underscore');
-var rp        = require('request-promise');
-var httpTest  = require('./tools/http');
-var node      = require('./tools/node');
+const co = require('co');
+const _         = require('underscore');
+const rp        = require('request-promise');
+const httpTest  = require('./tools/http');
+const node      = require('./tools/node');
 
-var expectHttpCode = httpTest.expectHttpCode;
-var expectAnswer = httpTest.expectAnswer;
+const expectHttpCode = httpTest.expectHttpCode;
+const expectAnswer = httpTest.expectAnswer;
 
-var MEMORY_MODE = true;
-var commonConf = {
+const MEMORY_MODE = true;
+const commonConf = {
   ipv4: '127.0.0.1',
   remoteipv4: '127.0.0.1',
   currency: 'bb',
@@ -20,7 +20,7 @@ var commonConf = {
   sigQty: 1
 };
 
-var s1 = node({
+const s1 = node({
   memory: MEMORY_MODE,
   name: 'bb33'
 }, _.extend({
@@ -34,7 +34,7 @@ var s1 = node({
   sigQty: 1, dt: 0, ud0: 120
 }, commonConf));
 
-var s2 = node({
+const s2 = node({
   memory: MEMORY_MODE,
   name: 'bb12'
 }, _.extend({

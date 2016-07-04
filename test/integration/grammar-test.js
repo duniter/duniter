@@ -1,6 +1,6 @@
 "use strict";
 
-var unlock    = require('../../app/lib/ucp/txunlock');
+const unlock    = require('../../app/lib/ucp/txunlock');
 
 describe('Grammar', () => {
 

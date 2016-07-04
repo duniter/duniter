@@ -1,16 +1,17 @@
 "use strict";
 
-var _         = require('underscore');
-var should    = require('should');
-var ucoin     = require('../../index');
-var bma       = require('../../app/lib/streams/bma');
-var rp        = require('request-promise');
-var httpTest  = require('./tools/http');
+const _         = require('underscore');
+const co        = require('co');
+const should    = require('should');
+const ucoin     = require('../../index');
+const bma       = require('../../app/lib/streams/bma');
+const rp        = require('request-promise');
+const httpTest  = require('./tools/http');
 
-var expectAnswer   = httpTest.expectAnswer;
+const expectAnswer   = httpTest.expectAnswer;
 
-var MEMORY_MODE = true;
-var commonConf = {
+const MEMORY_MODE = true;
+const commonConf = {
   ipv4: '127.0.0.1',
   currency: 'bb',
   httpLogs: true,
@@ -19,7 +20,7 @@ var commonConf = {
   sigQty: 1
 };
 
-var s1 = ucoin({
+const s1 = ucoin({
   memory: MEMORY_MODE,
   name: 'bb1'
 }, _.extend({
@@ -30,9 +31,13 @@ var s1 = ucoin({
   }
 }, commonConf));
 
-describe("Branches", function() {
+describe("Branches", () => co(function*() {
 
-  before(() => s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections()));
+  before(() => co(function*() {
+    const server = yield s1.initWithDAL();
+    const bmapi = yield bma(server);
+    yield bmapi.openConnections();
+  }));
 
   describe("Server 1 /blockchain", function() {
 
@@ -44,4 +49,4 @@ describe("Branches", function() {
       });
     });
   });
-});
+}));

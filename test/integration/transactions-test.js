@@ -1,20 +1,20 @@
 "use strict";
 
-var co = require('co');
-var _ = require('underscore');
-var should = require('should');
-var assert = require('assert');
-var constants = require('../../app/lib/constants');
-var node   = require('./tools/node');
-var user   = require('./tools/user');
-var unit   = require('./tools/unit');
-var http   = require('./tools/http');
-var rp     = require('request-promise');
-var MEMORY_MODE = true;
+const co = require('co');
+const _ = require('underscore');
+const should = require('should');
+const assert = require('assert');
+const constants = require('../../app/lib/constants');
+const node   = require('./tools/node');
+const user   = require('./tools/user');
+const unit   = require('./tools/unit');
+const http   = require('./tools/http');
+const rp     = require('request-promise');
+const MEMORY_MODE = true;
 
 describe("Testing transactions", function() {
 
-  var node2 = node({ name: 'db2', memory: MEMORY_MODE }, { currency: 'cc', ipv4: 'localhost', port: 9998, remoteipv4: 'localhost', remoteport: 9998, upnp: false, httplogs: false,
+  const node2 = node({ name: 'db2', memory: MEMORY_MODE }, { currency: 'cc', ipv4: 'localhost', port: 9998, remoteipv4: 'localhost', remoteport: 9998, upnp: false, httplogs: false,
     pair: {
       pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
       sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
@@ -24,8 +24,8 @@ describe("Testing transactions", function() {
     sigQty: 1, dt: 0, ud0: 120
   });
 
-  var tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, node2);
-  var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, node2);
+  const tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, node2);
+  const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, node2);
 
   before(function() {
     return node2.startTesting()
@@ -65,8 +65,8 @@ describe("Testing transactions", function() {
     it('tic should be able to send 51 to toc', node2.sourcesOf('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', function(res, done){
       should.exists(res);
       assert.equal(res.sources.length, 2);
-      var txSrc = _.findWhere(res.sources, { type: 'T' });
-      var udSrc = _.findWhere(res.sources, { type: 'D' });
+      const txSrc = _.findWhere(res.sources, { type: 'T' });
+      const udSrc = _.findWhere(res.sources, { type: 'D' });
       assert.equal(txSrc.amount, 69);
       assert.equal(udSrc.amount, 120);
       done();
@@ -75,8 +75,8 @@ describe("Testing transactions", function() {
     it('toc should have 151 of sources', node2.sourcesOf('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', function(res, done){
       should.exists(res);
       assert.equal(res.sources.length, 3);
-      var txRes = _.findWhere(res.sources, { type: 'T' });
-      var duRes = _.filter(res.sources, { type: 'D' });
+      const txRes = _.findWhere(res.sources, { type: 'T' });
+      const duRes = _.filter(res.sources, { type: 'D' });
       assert.equal(txRes.type, 'T');
       assert.equal(txRes.amount, 51);
       assert.equal(duRes[0].type, 'D');
@@ -93,7 +93,7 @@ describe("Testing transactions", function() {
       let res = yield node2.sourcesOfP('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
       should.exists(res);
       assert.equal(res.sources.length, 1);
-      var duRes = _.filter(res.sources, { type: 'D' });
+      const duRes = _.filter(res.sources, { type: 'D' });
       assert.equal(duRes[0].type, 'D');
       assert.equal(duRes[0].amount, 120);
     }));

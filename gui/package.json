@@ -1,7 +1,7 @@
 {
   "name": "v0.20.0a85",
   "main": "index.html",
-  "node-main": "../sources/bin/ucoind",
+  "node-main": "../sources/bin/duniter",
   "window": {
     "icon": "duniter.png",
     "title": "v0.20.0a85",

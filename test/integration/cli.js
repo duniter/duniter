@@ -54,7 +54,7 @@ function execute(args) {
  */
 function executeSpawn(command) {
   return co(function*() {
-    const duniter = spawn(process.argv[0], [path.join(__dirname, '../../bin/ucoind')].concat(command));
+    const duniter = spawn(process.argv[0], [path.join(__dirname, '../../bin/duniter')].concat(command));
     return new Promise((resolve, reject) => {
       let res = "";
       duniter.stdout.on('data', (data) => {

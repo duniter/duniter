@@ -40,7 +40,7 @@ module.exports = (programArgs) => {
 
       if (programArgs.length <= 2) {
 
-        console.log('No command given, using default: ucoind webwait');
+        console.log('No command given, using default: duniter webwait');
         return co(function *() {
           try {
             yield webWait();

@@ -5,7 +5,7 @@ var lint = require('mocha-eslint');
 // matches a glob pattern
 var paths = [
   'app',
-  'bin/ucoind',
+  'bin/duniter',
   'test'
 ];
 

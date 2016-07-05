@@ -196,7 +196,7 @@ function PeeringService(server) {
     if (!currency || endpoint == 'BASIC_MERKLED_API') {
       logger.error('It seems there is an issue with your configuration.');
       logger.error('Please restart your node with:');
-      logger.error('$ ucoind restart');
+      logger.error('$ duniter restart');
       return Q.Promise((resolve) => null);
     }
     // Choosing next based-block for our peer record: we basically want the most distant possible from current

@@ -230,7 +230,7 @@ Technical informations about the node.
 ```json
 {
   "ucoin": {
-    "software": "ucoind",
+    "software": "duniter",
     "version": "0.10.3",
     "forkWindowSize": 10
   }

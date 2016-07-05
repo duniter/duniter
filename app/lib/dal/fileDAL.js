@@ -880,7 +880,18 @@ function FileDAL(params) {
 
   this.close = () => co(function *() {
     yield _.values(that.newDals).map((dal) => dal.cleanCache && dal.cleanCache());
-    return Q.nbind(sqlite.close, sqlite);
+    return new Promise((resolve, reject) => {
+      if (!sqlite.open) {
+        return resolve();
+      }
+      logger.debug('Trying to close SQLite...');
+      sqlite.on('close', () => {
+        logger.info('Database closed.');
+        resolve();
+      });
+      sqlite.on('error', (err) => reject(err));
+      sqlite.close();
+    });
   });
 
   this.resetPeers = () => co(function *() {

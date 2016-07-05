@@ -11,23 +11,42 @@ describe("CLI", function() {
   it('reset data', () => co(function*() {
     yield execute(['reset', 'data']);
     const res = yield execute(['export-bc']);
-    JSON.parse(res).should.have.length(0);
+    res.should.have.length(0);
   }));
 
   it('sync 10 blocks', () => co(function*() {
     yield execute(['reset', 'data']);
     yield execute(['sync', 'duniter.org', '8999', '9', '--nointeractive']);
     const res = yield execute(['export-bc']);
-    JSON.parse(res).should.have.length(10);
+    res.should.have.length(10);
+  }));
+
+  it('[spawn] reset data', () => co(function*() {
+    yield executeSpawn(['reset', 'data']);
+    const res = yield executeSpawn(['export-bc']);
+    JSON.parse(res).should.have.length(0);
   }));
 });
+
+/**
+ * Executes a duniter command, as a command line utility.
+ * @param args Array of arguments.
+ * @returns {*|Promise} Returns the command output.
+ */
+function execute(args) {
+  return co(function*() {
+    const command = cli([process.argv[0], __filename].concat(args));
+    // Executes the command
+    return command.execute();
+  });
+}
 
 /**
  * Executes a duniter command, as a command line utility.
  * @param command Array of arguments.
  * @returns {*|Promise} Returns the command output.
  */
-function execute(command) {
+function executeSpawn(command) {
   return co(function*() {
     const duniter = spawn(process.argv[0], [path.join(__dirname, '../../bin/ucoind')].concat(command));
     return new Promise((resolve, reject) => {

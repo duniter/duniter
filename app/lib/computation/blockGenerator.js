@@ -375,7 +375,7 @@ function BlockGenerator(mainContext, prover) {
               }
             }
           } catch (e) {
-            console.error(e.stack);
+            logger.warn(e.stack || e.message || e);
             // Go on
           }
         }

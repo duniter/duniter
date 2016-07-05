@@ -345,9 +345,7 @@ function Server (dbConf, overrideConf) {
         });
   }
 
-  this.disconnect = () => {
-    return that.dal && that.dal.close();
-  };
+  this.disconnect = () => Promise.resolve(that.dal && that.dal.close());
 
   this.pullBlocks = that.PeeringService.pullBlocks;
 

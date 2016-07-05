@@ -44,7 +44,7 @@ const logger = new (winston.Logger)({
   ]
 });
 
-// Singleton
+// Singletons
 let loggerAttached = false;
 logger.addCallbackLogs = (callbackForLog) => {
   if (!loggerAttached) {
@@ -62,26 +62,35 @@ logger.addCallbackLogs = (callbackForLog) => {
   }
 };
 
+// Singletons
+let loggerHomeAttached = false;
 logger.addHomeLogs = (home) => {
-  logger.add(winston.transports.File, {
-    level: 'info',
-    levels: customLevels.levels,
-    handleExceptions: false,
-    colorize: true,
-    tailable: true,
-    maxsize: 50 * 1024 * 1024, // 50 MB
-    maxFiles: 3,
-    //zippedArchive: true,
-    json: false,
-    filename: path.join(home, 'duniter.log'),
-    timestamp: function() {
-      return moment().format();
-    }
-  });
+  if (!loggerHomeAttached) {
+    loggerHomeAttached = true;
+    logger.add(winston.transports.File, {
+      level: 'info',
+      levels: customLevels.levels,
+      handleExceptions: false,
+      colorize: true,
+      tailable: true,
+      maxsize: 50 * 1024 * 1024, // 50 MB
+      maxFiles: 3,
+      //zippedArchive: true,
+      json: false,
+      filename: path.join(home, 'duniter.log'),
+      timestamp: function () {
+        return moment().format();
+      }
+    });
+  }
 };
 
+let muted = false;
 logger.mute = () => {
-  logger.remove(winston.transports.Console);
+  if (!muted) {
+    logger.remove(winston.transports.Console);
+    muted = true;
+  }
 };
 
 /**

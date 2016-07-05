@@ -19,7 +19,12 @@ return co(function*() {
     // Prepare the command
     const command = cli(process.argv);
     // If ever the process gets interrupted
-    process.on('SIGINT', command.closeCommand);
+    process.on('SIGINT', () => {
+      co(function*() {
+        yield command.closeCommand();
+        process.exit();
+      });
+    });
     // Executes the command
     yield command.execute();
     process.exit();

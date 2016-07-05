@@ -10,14 +10,14 @@ describe("CLI", function() {
 
   it('reset data', () => co(function*() {
     yield execute(['reset', 'data']);
-    const res = yield execute(['export-bc']);
+    const res = yield execute(['export-bc', '--nostdout']);
     res.should.have.length(0);
   }));
 
   it('sync 10 blocks', () => co(function*() {
     yield execute(['reset', 'data']);
     yield execute(['sync', 'duniter.org', '8999', '9', '--nointeractive']);
-    const res = yield execute(['export-bc']);
+    const res = yield execute(['export-bc', '--nostdout']);
     res.should.have.length(10);
   }));
 

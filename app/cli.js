@@ -129,6 +129,7 @@ program
   .option('--nocautious', 'Do not check blocks validity during sync')
   .option('--cautious', 'Check blocks validity during sync (overrides --nocautious option)')
   .option('--nopeers', 'Do not retrieve peers during sync')
+  .option('--nostdout', 'Disable stdout printing for `export-bc` command')
 
   .option('--timeout <milliseconds>', 'Timeout to use when contacting peers', parseInt)
   .option('--httplogs', 'Enable HTTP logs')
@@ -427,7 +428,9 @@ program
           jsoned.push(_(new Block(block).json()).omit('raw'));
         });
       }
-      console.log(JSON.stringify(jsoned, null, "  "));
+      if (!program.nostdout) {
+        console.log(JSON.stringify(jsoned, null, "  "));
+      }
       yield server.disconnect();
       return jsoned;
     })

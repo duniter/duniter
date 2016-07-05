@@ -14,11 +14,17 @@ describe("CLI", function() {
     res.should.have.length(0);
   }));
 
-  it('sync 10 blocks', () => co(function*() {
+  it('sync 2200 blocks (fast)', () => co(function*() {
     yield execute(['reset', 'data']);
-    yield execute(['sync', 'duniter.org', '8999', '9', '--nointeractive']);
+    yield execute(['sync', 'duniter.org', '8999', '2200', '--nointeractive']);
     const res = yield execute(['export-bc', '--nostdout']);
-    res.should.have.length(10);
+    res.should.have.length(2200 + 1);
+  }));
+
+  it('sync 5 blocks (cautious)', () => co(function*() {
+    yield execute(['sync', 'duniter.org', '8999', '2204', '--nointeractive']);
+    const res = yield execute(['export-bc', '--nostdout']);
+    res.should.have.length(2204 + 1);
   }));
 
   it('[spawn] reset data', () => co(function*() {

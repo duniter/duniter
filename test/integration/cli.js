@@ -5,8 +5,15 @@ const path   = require('path');
 const co     = require('co');
 const should = require('should');
 const cli    = require('../../app/cli');
+const constants = require('../../app/lib/constants');
 
 describe("CLI", function() {
+
+  it('config --autoconf', () => co(function*() {
+    let res = yield execute(['config', '--autoconf']);
+    res.should.have.property("ipv4").not.equal("a wrong string");
+    res.should.have.property("ipv4").match(constants.IPV4_REGEXP);
+  }));
 
   it('reset data', () => co(function*() {
     yield execute(['reset', 'data']);

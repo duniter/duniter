@@ -475,13 +475,11 @@ program
       return server.dal.saveConf(conf)
         .then(function () {
           logger.debug("Configuration saved.");
-          server.disconnect();
-          throw Error("Exiting");
+          return conf;
         })
         .catch(function (err) {
           logger.error("Configuration could not be saved: " + err);
-          server.disconnect();
-          throw Error("Exiting");
+          throw Error(err);
         });
     });
   })));

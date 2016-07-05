@@ -16,7 +16,7 @@ describe("CLI", function() {
 
   it('sync 2200 blocks (fast)', () => co(function*() {
     yield execute(['reset', 'data']);
-    yield execute(['sync', 'duniter.org', '8999', '2200', '--nointeractive']);
+    yield execute(['sync', 'duniter.org', '8999', '2200']);
     const res = yield execute(['export-bc', '--nostdout']);
     res.should.have.length(2200 + 1);
   }));

@@ -249,7 +249,7 @@ function Synchroniser (server, host, port, conf, interactive) {
   };
 
   function getVucoin(theHost, thePort, options) {
-    return Promise(function(resolve, reject){
+    return new Promise(function(resolve, reject){
       vucoin(theHost, thePort, function (err, node) {
         if(err){
           return reject('Cannot sync: ' + err);

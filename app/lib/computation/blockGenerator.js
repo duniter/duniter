@@ -260,7 +260,6 @@ function BlockGenerator(mainContext, prover) {
         }
       } catch (err) {
         logger.warn(err);
-        throw err;
       }
     }
     return preJoinData;
@@ -317,11 +316,14 @@ function BlockGenerator(mainContext, prover) {
     if (!identity) {
       throw 'Identity with hash \'' + idHash + '\' not found';
     }
-    if (!identity.wasMember && identity.buid != constants.BLOCK.SPECIAL_BLOCK) {
+    if (current && identity.buid == constants.BLOCK.SPECIAL_BLOCK && !identity.wasMember) {
+      throw constants.ERRORS.TOO_OLD_IDENTITY;
+    }
+    else if (!identity.wasMember && identity.buid != constants.BLOCK.SPECIAL_BLOCK) {
       const idtyBasedBlock = yield dal.getBlock(identity.buid);
       const age = current.medianTime - idtyBasedBlock.medianTime;
       if (age > conf.idtyWindow) {
-        throw 'Too old identity';
+        throw constants.ERRORS.TOO_OLD_IDENTITY;
       }
     }
     const idty = new Identity(identity);

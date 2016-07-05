@@ -85,7 +85,9 @@ module.exports = {
     WRONG_AMOUNTS:                        { httpCode: 400, uerr: { ucode: 2016, message: "Sum of inputs must equal sum of outputs" }},
     WRONG_OUTPUT_BASE:                    { httpCode: 400, uerr: { ucode: 2017, message: "Wrong unit base for outputs" }},
     CANNOT_ROOT_BLOCK_NO_MEMBERS:         { httpCode: 400, uerr: { ucode: 2018, message: "Wrong new block: cannot make a root block without members" }},
-    IDENTITY_WRONGLY_SIGNED:              { httpCode: 400, uerr: { ucode: 2019, message: "Weird, the signature is wrong and in the database." }}
+    IDENTITY_WRONGLY_SIGNED:              { httpCode: 400, uerr: { ucode: 2019, message: "Weird, the signature is wrong and in the database." }},
+    TOO_OLD_IDENTITY:                     { httpCode: 400, uerr: { ucode: 2020, message: "Identity has expired and cannot be written in the blockchain anymore." }},
+    NO_IDTY_MATCHING_PUB_OR_UID:          { httpCode: 404, uerr: { ucode: 2021, message: "No identity matching this pubkey or uid" }}
   },
 
   DEBUG: {
@@ -314,7 +316,9 @@ module.exports = {
 
   MEMORY_CLEAN_INTERVAL: 60 * 60, // hourly
   SAFE_FACTOR: 3,
-  BLOCKS_COLLECT_THRESHOLD: 30 // Blocks to collect from memory and persist
+  BLOCKS_COLLECT_THRESHOLD: 30, // Blocks to collect from memory and persist
+
+  MUTE_LOGS_DURING_UNIT_TESTS: true
 };
 
 function exact (regexpContent) {

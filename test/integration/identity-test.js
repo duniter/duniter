@@ -215,6 +215,7 @@ describe("Identities collision", function() {
       res.identities[0].should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
       res.identities[0].should.have.property('uid').equal('cat');
       res.identities[0].should.have.property('meta').property('timestamp');
+      res.identities[0].should.have.property('expired').equal(false); // Because it has been a member once! So its identity will exist forever.
       res.identities[0].should.have.property('outdistanced').equal(false);
       res.identities[0].should.have.property('certifications').have.length(1);
       res.identities[0].should.have.property('membershipPendingExpiresIn').equal(0);
@@ -229,6 +230,7 @@ describe("Identities collision", function() {
       res.identities[0].should.have.property('pubkey').equal('12AbjvYY5hxV4v2KrN9pnGzgFxogwrzgYyncYHHsyFDK');
       res.identities[0].should.have.property('uid').equal('man1');
       res.identities[0].should.have.property('meta').property('timestamp');
+      res.identities[0].should.have.property('expired').equal(false);
       res.identities[0].should.have.property('outdistanced').equal(false);
       res.identities[0].should.have.property('certifications').length(1);
       res.identities[0].certifications[0].should.have.property('from').equal('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc');
@@ -308,6 +310,7 @@ describe("Identities collision", function() {
       res.identities[0].should.have.property('pubkey').equal('E44RxG9jKZQsaPLFSw2ZTJgW7AVRqo1NGy6KGLbKgtNm');
       res.identities[0].should.have.property('uid').equal('man2');
       res.identities[0].should.have.property('meta').property('timestamp');
+      res.identities[0].should.have.property('expired').equal(false);
       res.identities[0].should.have.property('outdistanced').equal(true);
       res.identities[0].should.have.property('certifications').length(0);
       res.identities[0].should.have.property('membershipPendingExpiresIn').greaterThan(9000);
@@ -322,6 +325,7 @@ describe("Identities collision", function() {
       res.identities[0].should.have.property('pubkey').equal('5bfpAfZJ4xYspUBYseASJrofhRm6e6JMombt43HBaRzW');
       res.identities[0].should.have.property('uid').equal('man3');
       res.identities[0].should.have.property('meta').property('timestamp');
+      res.identities[0].should.have.property('expired').equal(false);
       res.identities[0].should.have.property('outdistanced').equal(true);
       res.identities[0].should.have.property('certifications').length(0);
       res.identities[0].should.have.property('membershipPendingExpiresIn').equal(0);

@@ -256,6 +256,7 @@ dtos.Requirements = {
     meta: {
       timestamp: String
     },
+    expired: Boolean,
     outdistanced: Boolean,
     certifications: [dtos.RequirementsCert],
     membershipPendingExpiresIn: Number,

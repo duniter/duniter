@@ -258,50 +258,67 @@ function BlockchainService () {
     let current = yield dal.getCurrentBlockOrNull();
     for (const obj of identities) {
       let idty = new Identity(obj);
-      let reqs = yield that.requirementsOfIdentity(idty, current);
-      all.push(reqs);
+      try {
+        let reqs = yield that.requirementsOfIdentity(idty, current);
+        all.push(reqs);
+      } catch (e) {
+        logger.warn(e);
+      }
     }
     return all;
   });
 
   this.requirementsOfIdentity = (idty, current) => co(function *() {
     // TODO: this is not clear
-    const join = yield generator.getSinglePreJoinData(current, idty.hash);
-    const pubkey = join.identity.pubkey;
-    // Check WoT stability
-    const someNewcomers = join.identity.wasMember ? [] : [join.identity.pubkey];
-    const nextBlockNumber = current ? current.number + 1 : 0;
-    const joinData = {};
-    joinData[join.identity.pubkey] = join;
-    const updates = {};
-    const newCerts = yield generator.computeNewCerts(nextBlockNumber, [join.identity.pubkey], joinData, updates);
-    const newLinks = generator.newCertsToLinks(newCerts, updates);
-    const certs = yield that.getValidCerts(pubkey, newCerts);
-    const outdistanced = yield rules.HELPERS.isOver3Hops(pubkey, newLinks, someNewcomers, current, conf, dal);
-    const currentTime = current ? current.medianTime : 0;
+    let expired = false;
+    let outdistanced = false;
     let expiresMS = 0;
-    // Expiration of current membershship
-    if (join.identity.currentMSN >= 0) {
-      const msBlock = yield dal.getBlockOrNull(join.identity.currentMSN);
-      expiresMS = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
-    }
-    // Expiration of pending membership
-    const lastJoin = yield dal.lastJoinOfIdentity(idty.hash);
     let expiresPending = 0;
-    if (lastJoin) {
-      const msBlock = yield dal.getBlockOrNull(lastJoin.blockNumber);
-      expiresPending = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
-    }
-    // Expiration of certifications
-    for (const cert of certs) {
-      cert.expiresIn = Math.max(0, cert.timestamp + conf.sigValidity - currentTime);
+    let certs = [];
+    try {
+      const join = yield generator.getSinglePreJoinData(current, idty.hash);
+      const pubkey = join.identity.pubkey;
+      // Check WoT stability
+      const someNewcomers = join.identity.wasMember ? [] : [join.identity.pubkey];
+      const nextBlockNumber = current ? current.number + 1 : 0;
+      const joinData = {};
+      joinData[join.identity.pubkey] = join;
+      const updates = {};
+      const newCerts = yield generator.computeNewCerts(nextBlockNumber, [join.identity.pubkey], joinData, updates);
+      const newLinks = generator.newCertsToLinks(newCerts, updates);
+      const currentTime = current ? current.medianTime : 0;
+      certs = yield that.getValidCerts(pubkey, newCerts);
+      outdistanced = yield rules.HELPERS.isOver3Hops(pubkey, newLinks, someNewcomers, current, conf, dal);
+      // Expiration of current membershship
+      if (join.identity.currentMSN >= 0) {
+        const msBlock = yield dal.getBlockOrNull(join.identity.currentMSN);
+        expiresMS = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
+      }
+      // Expiration of pending membership
+      const lastJoin = yield dal.lastJoinOfIdentity(idty.hash);
+      if (lastJoin) {
+        const msBlock = yield dal.getBlockOrNull(lastJoin.blockNumber);
+        expiresPending = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
+      }
+      // Expiration of certifications
+      for (const cert of certs) {
+        cert.expiresIn = Math.max(0, cert.timestamp + conf.sigValidity - currentTime);
+      }
+    } catch (e) {
+      // We throw whatever isn't "Too old identity" error
+      if (!(e && e.uerr && e.uerr.ucode == constants.ERRORS.TOO_OLD_IDENTITY.uerr.ucode)) {
+        throw e;
+      } else {
+        expired = true;
+      }
     }
     return {
-      pubkey: join.identity.pubkey,
-      uid: join.identity.uid,
+      pubkey: idty.pubkey,
+      uid: idty.uid,
       meta: {
-        timestamp: join.identity.buid
+        timestamp: idty.buid
       },
+      expired: expired,
       outdistanced: outdistanced,
       certifications: certs,
       membershipPendingExpiresIn: expiresPending,

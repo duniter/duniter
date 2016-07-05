@@ -237,8 +237,14 @@ function getResultingError(e) {
     if (e.uerr) {
       error = e;
     } else {
-      error = _.clone(constants.ERRORS.UNHANDLED);
-      error.uerr.message = e.message || error.uerr.message;
+      const cp = constants.ERRORS.UNHANDLED;
+      error = {
+        httpCode: cp.httpCode,
+        uerr: {
+          ucode: cp.uerr.ucode,
+          message: e.message || e || error.uerr.message
+        }
+      };
     }
   }
   return error;

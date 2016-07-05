@@ -7,6 +7,8 @@ const should = require('should');
 const cli    = require('../../app/cli');
 const constants = require('../../app/lib/constants');
 
+const DB_NAME = "unit_tests";
+
 describe("CLI", function() {
 
   it('config --autoconf', () => co(function*() {
@@ -47,8 +49,9 @@ describe("CLI", function() {
  * @returns {*|Promise} Returns the command output.
  */
 function execute(args) {
+  const finalArgs = [process.argv[0], __filename].concat(args).concat(['--mdb', DB_NAME]);
   return co(function*() {
-    const command = cli([process.argv[0], __filename].concat(args));
+    const command = cli(finalArgs);
     // Executes the command
     return command.execute();
   });
@@ -61,7 +64,8 @@ function execute(args) {
  */
 function executeSpawn(command) {
   return co(function*() {
-    const duniter = spawn(process.argv[0], [path.join(__dirname, '../../bin/duniter')].concat(command));
+    const finalArgs = [path.join(__dirname, '../../bin/duniter')].concat(command).concat(['--mdb', DB_NAME]);
+    const duniter = spawn(process.argv[0], finalArgs);
     return new Promise((resolve, reject) => {
       let res = "";
       duniter.stdout.on('data', (data) => {

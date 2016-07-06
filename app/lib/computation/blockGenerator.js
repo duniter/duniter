@@ -16,7 +16,9 @@ const Membership      = require('../entity/membership');
 const Block           = require('../entity/block');
 const Transaction     = require('../entity/transaction');
 
-module.exports = (mainContext, prover) => new BlockGenerator(mainContext, prover);
+module.exports = (mainContext, prover) => {
+  return new BlockGenerator(mainContext, prover);
+};
 
 function BlockGenerator(mainContext, prover) {
 

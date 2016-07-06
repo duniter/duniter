@@ -67,6 +67,18 @@ function Synchroniser (server, host, port, conf, interactive) {
 
   const dal = server.dal;
 
+  const logRemaining = (to) => co(function*() {
+    const lCurrent = yield dal.getCurrentBlockOrNull();
+    const localNumber = lCurrent ? lCurrent.number : -1;
+
+    if (to > 1 && speed > 0) {
+      const remain = (to - (localNumber + 1 + blocksApplied));
+      const secondsLeft = remain / speed;
+      const momDuration = moment.duration(secondsLeft*1000);
+      watcher.writeStatus('Remaining ' + momDuration.humanize() + '');
+    }
+  });
+
   this.sync = (to, chunkLen, askedCautious, nopeers) => co(function*() {
 
     const vucoin = yield getVucoin(host, port, vucoinOptions);
@@ -82,8 +94,8 @@ function Synchroniser (server, host, port, conf, interactive) {
     //============
     logger.info('Downloading Blockchain...');
     watcher.writeStatus('Connecting to ' + host + '...');
-    let lCurrent = yield dal.getCurrentBlockOrNull();
-    let localNumber = lCurrent ? lCurrent.number : -1;
+    const lCurrent = yield dal.getCurrentBlockOrNull();
+    const localNumber = lCurrent ? lCurrent.number : -1;
 
     // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
     const cautious = (askedCautious === true || (askedCautious === undefined && localNumber >= 0));
@@ -94,7 +106,7 @@ function Synchroniser (server, host, port, conf, interactive) {
       localCurrent: () => dal.getCurrentBlockOrNull(),
 
       // Get the remote blockchain (bc) current block
-      remoteCurrent: (thePeer) => Q.nfcall(thePeer.blockchain.current),
+      remoteCurrent: (peer) => Q.nfcall(peer.blockchain.current),
 
       // Get the remote peers to be pulled
       remotePeers: () => co(function*() {
@@ -111,6 +123,7 @@ function Synchroniser (server, host, port, conf, interactive) {
           try {
             block = yield Q.nfcall(thePeer.blockchain.block, number);
             Transaction.statics.setIssuers(block.transactions);
+            watcher.downloadPercent(Math.floor(number / to * 100));
             return block;
           } catch (e) {
             if (e.httpCode != 404) {
@@ -124,9 +137,10 @@ function Synchroniser (server, host, port, conf, interactive) {
       }),
 
       applyMainBranch: (block) => co(function *() {
-          let addedBlock = yield server.BlockchainService.submitBlock(block, cautious, constants.FORK_ALLOWED);
-          server.streamPush(addedBlock);
-          this.lastBlock = block;
+        let addedBlock = yield server.BlockchainService.submitBlock(block, cautious, constants.FORK_ALLOWED);
+        server.streamPush(addedBlock);
+        this.lastBlock = block;
+        watcher.appliedPercent(Math.floor(block.number / to * 100));
       }),
 
       // Eventually remove forks later on
@@ -141,10 +155,16 @@ function Synchroniser (server, host, port, conf, interactive) {
       downloadBlocks: (thePeer, fromNumber, count) => Q.nfcall(thePeer.blockchain.blocks, count, fromNumber)
     });
 
+    const logInterval = setInterval(() => logRemaining(to), EVAL_REMAINING_INTERVAL);
     yield pulling.pull(conf, dao);
 
     // Finished blocks
+    watcher.downloadPercent(100.0);
     watcher.appliedPercent(100.0);
+
+    if (logInterval) {
+      clearInterval(logInterval);
+    }
 
     // Save currency parameters given by root block
     const rootBlock = yield server.dal.getBlock(0);

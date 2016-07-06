@@ -7,7 +7,9 @@ const rules           = require('../lib/rules');
 const Transaction     = require('../lib/entity/transaction');
 const AbstractService = require('./AbstractService');
 
-module.exports = () => new TransactionService();
+module.exports = () => {
+  return new TransactionService();
+};
 
 function TransactionService () {
 

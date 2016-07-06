@@ -10,7 +10,9 @@ const Revocation      = require('../../app/lib/entity/revocation');
 const AbstractService = require('./AbstractService');
 const co              = require('co');
 
-module.exports = () => new IdentityService();
+module.exports = () => {
+  return new IdentityService();
+};
 
 function IdentityService () {
 

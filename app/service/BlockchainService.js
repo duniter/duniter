@@ -17,7 +17,7 @@ const AbstractService = require('./AbstractService');
 
 const CHECK_ALL_RULES = true;
 
-module.exports = function() {
+module.exports = () => {
   return new BlockchainService();
 };
 

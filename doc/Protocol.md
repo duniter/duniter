@@ -1348,7 +1348,8 @@ So if a transaction only carries amounts with the same `AmountBase`, no conversi
 
 * input_0 of value 45 with `AmountBase = 5`
 * input_1 of value 75 with `AmountBase = 5`
-* output_0 of value 12 with `AmountBase = 6`
+* input_2 of value 3 with `AmountBase = 6`
+* output_0 of value 15 with `AmountBase = 6`
 
 Then the output value has to be converted before being compared:
 
@@ -1358,25 +1359,32 @@ CommonBase = 5
 output_0(5) = output_0(6) x POW(10, 6 - 5)
 output_0(5) = output_0(6) x POW(10, 1)
 output_0(5) = output_0(6) x 10
-output_0(5) = 12 x 10
-output_0(5) = 120
+output_0(5) = 15 x 10
+output_0(5) = 150
 
 input_0(5) = input_0(5)
 input_0(5) = 45
 
 input_1(5) = input_1(5)
 input_1(5) = 75
+
+input_2(5) = input_2(6) x POW(10, 6 - 5)
+input_2(5) = input_2(6) x POW(10, 1)
+input_2(5) = input_2(6) x 10
+input_2(5) = 3 x 10
+input_2(5) = 30
 ```
 
 The equality of inputs and outputs is then verified because:
 
 ```
-output_0(5) = 120
+output_0(5) = 150
 input_0(5) = 45
 input_1(5) = 75
+input_2(5) = 30
 
-output_0(5) = input_0(5) + input_1(5)
-120 = 45 + 75
+output_0(5) = input_0(5) + input_1(5) + input_2(5)
+150 = 45 + 75 + 30
 TRUE
 ```
 

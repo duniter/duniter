@@ -3,7 +3,7 @@
 
 const co = require('co');
 const cli = require('../app/cli');
-const logger = require('../app/lib/logger')('ucoind');
+const logger = require('../app/lib/logger')('duniter');
 
 // Specific errors handling
 process.on('uncaughtException', (err) => {
@@ -19,7 +19,12 @@ return co(function*() {
     // Prepare the command
     const command = cli(process.argv);
     // If ever the process gets interrupted
-    process.on('SIGINT', command.closeCommand);
+    process.on('SIGINT', () => {
+      co(function*() {
+        yield command.closeCommand();
+        process.exit();
+      });
+    });
     // Executes the command
     yield command.execute();
     process.exit();

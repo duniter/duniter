@@ -14,7 +14,9 @@ const sync      = require('./tools/sync');
 const expectJSON     = httpTest.expectJSON;
 const expectHttpCode = httpTest.expectHttpCode;
 
-require('../../app/lib/logger')().mute();
+if (constants.MUTE_LOGS_DURING_UNIT_TESTS) {
+  require('../../app/lib/logger')().mute();
+}
 
 const MEMORY_MODE = true;
 const commonConf = {

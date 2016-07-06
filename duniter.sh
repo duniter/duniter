@@ -3,7 +3,7 @@
 ##########################
 #    UCOIN EXECUTABLE
 #
-# Wraps bin/ucoind.js that is called with Node.js
+# Wraps bin/duniter.js that is called with Node.js
 #
 
 DEB_PACKAGING=
@@ -50,7 +50,7 @@ duniter() {
 		;;
 
 		direct_start)
-		$NODE "$DUNITER_DIR/bin/ucoind" start ${@:2}
+		$NODE "$DUNITER_DIR/bin/duniter" start ${@:2}
 		;;
 
 		logs)
@@ -63,7 +63,7 @@ duniter() {
 		#---------------------------------
 
 		*)
-	  $NODE "$DUNITER_DIR/bin/ucoind" $*
+	  $NODE "$DUNITER_DIR/bin/duniter" $*
 		;;
 
 		esac

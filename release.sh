@@ -1,5 +1,14 @@
 #!/bin/bash
 
+### Control that the script is run on `dev` branch
+branch=`git rev-parse --abbrev-ref HEAD`
+if [[ ! "$branch" = "dev" ]];
+then
+  echo ">> This script must be run under \`dev\` branch"
+  exit
+fi
+
+### Releasing
 current=`grep -P "version\": \"\d+.\d+.\d+(\w*)" package.json | grep -oP "\d+.\d+.\d+(\w*)"`
 echo "Current version: $current"
 
@@ -47,7 +56,10 @@ if [[ $2 =~ ^[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?$ ]]; then
       ;;
   esac
   git commit -m "v$2"
+  git checkout master
+  git merge dev
   git tag "v$2"
+  git checkout dev
 else
   echo "Wrong version format"
 fi

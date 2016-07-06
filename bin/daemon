@@ -59,7 +59,7 @@ switch (process.argv[2]) {
 
 function getDaemon(overrideCommand) {
   return require("daemonize2").setup({
-    main: "ucoind",
+    main: "duniter",
     name: directory.INSTANCE_NAME,
     pidfile: path.join(directory.INSTANCE_HOME, "app.pid"),
 
@@ -74,8 +74,8 @@ function getCommand(overrideCommand) {
 }
 
 function getFullCommand(overrideCommand) {
-  let ucoind = path.resolve(path.dirname(process.argv[1]), './ucoind');
-  return [ucoind].concat(getCommand(overrideCommand));
+  let duniter = path.resolve(path.dirname(process.argv[1]), './duniter');
+  return [duniter].concat(getCommand(overrideCommand));
 }
 
 function start(daemonToStart) {

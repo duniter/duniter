@@ -137,7 +137,7 @@ function Synchroniser (server, host, port, conf, interactive) {
       }),
 
       applyMainBranch: (block) => co(function *() {
-        let addedBlock = yield server.BlockchainService.submitBlock(block, cautious, constants.FORK_ALLOWED);
+        const addedBlock = yield server.BlockchainService.submitBlock(block, cautious, constants.FORK_ALLOWED);
         server.streamPush(addedBlock);
         this.lastBlock = block;
         watcher.appliedPercent(Math.floor(block.number / to * 100));

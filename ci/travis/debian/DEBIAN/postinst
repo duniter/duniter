@@ -21,8 +21,8 @@ fi
 
 # Duniter CLI executes with embedded node
 if [[ -d $DUN_SOURCES/node ]]; then
-  chmod 755 $DUN_SOURCES/bin/ucoind
-  sed -i "s/usr\/bin\/env node/opt\/duniter\/sources\/node\/bin\/node/g" $DUN_SOURCES/bin/ucoind
+  chmod 755 $DUN_SOURCES/bin/duniter
+  sed -i "s/usr\/bin\/env node/opt\/duniter\/sources\/node\/bin\/node/g" $DUN_SOURCES/bin/duniter
   sed -i "s/DEB_PACKAGING=.*/DEB_PACKAGING=true/g" $DUN_SOURCES/duniter.sh
 fi
 # Else will execute with environment node

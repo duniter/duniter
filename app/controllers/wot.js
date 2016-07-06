@@ -138,7 +138,7 @@ function WOTBinding (server) {
     const identities = yield IdentityService.searchIdentities(search);
     const all = yield BlockchainService.requirementsOfIdentities(identities);
     if (!all || !all.length) {
-      throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
+      throw constants.ERRORS.NO_IDTY_MATCHING_PUB_OR_UID;
     }
     return {
       identities: all

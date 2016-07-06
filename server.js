@@ -129,7 +129,7 @@ function Server (dbConf, overrideConf) {
           constants.CRYPTO.DEFAULT_KEYPAIR.sec);
     }
     if (!keyPair) {
-      throw Error('This node does not have a keypair. Use `ucoind wizard key` to fix this.');
+      throw Error('This node does not have a keypair. Use `duniter wizard key` to fix this.');
     }
     that.keyPair = keyPair;
     that.sign = keyPair.sign;
@@ -345,9 +345,7 @@ function Server (dbConf, overrideConf) {
         });
   }
 
-  this.disconnect = () => {
-    return that.dal && that.dal.close();
-  };
+  this.disconnect = () => Promise.resolve(that.dal && that.dal.close());
 
   this.pullBlocks = that.PeeringService.pullBlocks;
 

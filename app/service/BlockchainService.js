@@ -17,7 +17,7 @@ const AbstractService = require('./AbstractService');
 
 const CHECK_ALL_RULES = true;
 
-module.exports = function() {
+module.exports = () => {
   return new BlockchainService();
 };
 
@@ -291,8 +291,12 @@ function BlockchainService () {
       outdistanced = yield rules.HELPERS.isOver3Hops(pubkey, newLinks, someNewcomers, current, conf, dal);
       // Expiration of current membershship
       if (join.identity.currentMSN >= 0) {
-        const msBlock = yield dal.getBlockOrNull(join.identity.currentMSN);
-        expiresMS = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
+        if (join.identity.member) {
+          const msBlock = yield dal.getBlockOrNull(join.identity.currentMSN);
+          expiresMS = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
+        } else {
+          expiresMS = 0;
+        }
       }
       // Expiration of pending membership
       const lastJoin = yield dal.lastJoinOfIdentity(idty.hash);

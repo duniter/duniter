@@ -184,11 +184,6 @@ function Server (dbConf, overrideConf) {
 
   this.submitP = (obj, isInnerWrite) => Q.nbind(this.submit, this)(obj, isInnerWrite);
 
-  this.readConfFile = () => co(function *() {
-    let dal = yield fileDAL.file(home);
-    return yield dal.loadConf();
-  });
-
   this.initDAL = () => this.dal.init();
 
   this.start = () => co(function*(){

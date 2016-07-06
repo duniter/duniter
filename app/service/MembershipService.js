@@ -7,7 +7,9 @@ const constants       = require('../lib/constants');
 const Membership      = require('../lib/entity/membership');
 const AbstractService = require('./AbstractService');
 
-module.exports = () => new MembershipService();
+module.exports = () => {
+  return new MembershipService();
+};
 
 function MembershipService () {
 

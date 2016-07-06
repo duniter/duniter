@@ -57,7 +57,9 @@ describe("Identities kicking", function() {
       yield tac.cert(cat);
       yield cat.join();
       yield tac.join();
-      yield commitS1();
+      yield commitS1({
+        time: now
+      });
       yield commitS1({
         time: now + 2000
       });
@@ -73,14 +75,18 @@ describe("Identities kicking", function() {
       yield cat.cert(toc);
       yield tac.cert(toc);
       yield toc.cert(cat);
-      yield commitS1();
       yield commitS1({
-        time: now + 5000
+        time: now
       });
       yield commitS1({
         time: now + 5000
       });
-      yield commitS1();
+      yield commitS1({
+        time: now + 5000
+      });
+      yield commitS1({
+        time: now
+      });
     });
   });
 

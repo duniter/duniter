@@ -5,7 +5,8 @@ const async          = require('async');
 const _              = require('underscore');
 const Q              = require('q');
 const events         = require('events');
-const keyring         = require('../lib/crypto/keyring');
+const rp             = require('request-promise');
+const keyring        = require('../lib/crypto/keyring');
 const logger         = require('../lib/logger')('peering');
 const base58         = require('../lib/crypto/base58');
 const dos2unix       = require('../lib/system/dos2unix');
@@ -45,6 +46,11 @@ function PeeringService(server) {
       thePeer = yield that.generateSelfPeer(conf, 0);
     }
     return Peer.statics.peerize(thePeer);
+  });
+
+  this.mirrorEndpoints = () => co(function *() {
+    let localPeer = yield that.peer();
+    return getOtherEndpoints(localPeer.endpoints, conf);
   });
 
   this.checkPeerSignature = function (p) {
@@ -105,7 +111,18 @@ function PeeringService(server) {
       peerEntity.hash = String(hashf(peerEntity.getRawSigned())).toUpperCase();
       peerEntity.raw = peerEntity.getRaw();
       yield dal.savePeer(peerEntity);
-      return Peer.statics.peerize(peerEntity);
+      let savedPeer = Peer.statics.peerize(peerEntity);
+      if (peerEntity.pubkey == selfPubkey) {
+        const localNodeNotListed = !peerEntity.containsEndpoint(getEndpoint(conf));
+        const current = localNodeNotListed && (yield dal.getCurrentBlockOrNull());
+        if (localNodeNotListed && (!current || current.number > blockNumber)) {
+          // Document with pubkey of local peer, but doesn't contain local interface: we must add it
+          that.generateSelfPeer(conf, 0);
+        } else {
+          peer = peerEntity;
+        }
+      }
+      return savedPeer;
     }));
   };
 
@@ -176,23 +193,35 @@ function PeeringService(server) {
     const current = yield server.dal.getCurrentBlockOrNull();
     const currency = theConf.currency;
     const peers = yield dal.findPeers(selfPubkey);
-    let p1 = {version: constants.DOCUMENTS_VERSION, currency: currency};
-    if (peers.length != 0) {
+    let p1 = {
+      version: constants.DOCUMENTS_VERSION,
+      currency: currency,
+      block: '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855',
+      endpoints: []
+    };
+    if (peers.length != 0 && peers[0]) {
       p1 = _(peers[0]).extend({version: constants.DOCUMENTS_VERSION, currency: currency});
     }
-    let endpoint = 'BASIC_MERKLED_API';
-    if (theConf.remotehost) {
-      endpoint += ' ' + theConf.remotehost;
-    }
-    if (theConf.remoteipv4) {
-      endpoint += ' ' + theConf.remoteipv4;
-    }
-    if (theConf.remoteipv6) {
-      endpoint += ' ' + theConf.remoteipv6;
-    }
-    if (theConf.remoteport) {
-      endpoint += ' ' + theConf.remoteport;
-    }
+    let endpoint = getEndpoint(theConf);
+    let otherPotentialEndpoints = getOtherEndpoints(p1.endpoints, theConf);
+    let reals = yield otherPotentialEndpoints.map((endpoint) => co(function*() {
+      let real = true;
+      let remote = Peer.statics.endpoint2host(endpoint);
+      try {
+        // We test only BMA APIs, because other may exist and we cannot judge against them yet
+        if (endpoint.startsWith('BASIC_MERKLED_API')) {
+          let answer = yield rp('http://' + remote + '/network/peering', { json: true });
+          if (!answer || answer.pubkey != selfPubkey) {
+            throw Error("Not same pubkey as local instance");
+          }
+        }
+      } catch (e) {
+        logger.warn('Wrong endpoint \'%s\': \'%s\'', endpoint, e.message || e);
+        real = false;
+      }
+      return real;
+    }));
+    let toConserve = otherPotentialEndpoints.filter((ep, i) => reals[i]);
     if (!currency || endpoint == 'BASIC_MERKLED_API') {
       logger.error('It seems there is an issue with your configuration.');
       logger.error('Please restart your node with:');
@@ -214,7 +243,7 @@ function PeeringService(server) {
       currency: currency,
       pubkey: selfPubkey,
       block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
-      endpoints: [endpoint]
+      endpoints: [endpoint].concat(toConserve)
     };
     const raw2 = dos2unix(new Peer(p2).getRaw());
     logger.info('External access:', new Peer(p2).getURL());
@@ -222,6 +251,8 @@ function PeeringService(server) {
     p2.signature = yield server.sign(raw2);
     p2.pubkey = selfPubkey;
     p2.documentType = 'peer';
+    // Remember this is now local peer value
+    peer = p2;
     // Submit & share with the network
     yield server.submitP(p2, false);
     const selfPeer = yield dal.getPeer(selfPubkey);
@@ -232,6 +263,31 @@ function PeeringService(server) {
     logger.info("Next peering signal in %s min", signalTimeInterval / 1000 / 60);
     return selfPeer;
   });
+
+  function getEndpoint(theConf) {
+    let endpoint = 'BASIC_MERKLED_API';
+    if (theConf.remotehost) {
+      endpoint += ' ' + theConf.remotehost;
+    }
+    if (theConf.remoteipv4) {
+      endpoint += ' ' + theConf.remoteipv4;
+    }
+    if (theConf.remoteipv6) {
+      endpoint += ' ' + theConf.remoteipv6;
+    }
+    if (theConf.remoteport) {
+      endpoint += ' ' + theConf.remoteport;
+    }
+    return endpoint;
+  }
+
+  function getOtherEndpoints(endpoints, theConf) {
+    return endpoints.filter((ep) => {
+      let lookLikeLocal = ep.includes(' ' + theConf.remoteport) && (
+        ep.includes(theConf.remoteipv4) || ep.includes(theConf.remoteipv6) || ep.includes(theConf.remoteipv4));
+      return !lookLikeLocal;
+    });
+  }
 
   const crawlPeers = (dontCrawlIfEnoughPeers, done) => {
     if (arguments.length == 1) {

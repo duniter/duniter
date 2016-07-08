@@ -92,7 +92,12 @@ function Router (PeeringService, conf, dal) {
         }
         members = chooseXin(members, constants.NETWORK.MAX_MEMBERS_TO_FORWARD_TO);
         nonmembers = chooseXin(nonmembers, constants.NETWORK.MAX_NON_MEMBERS_TO_FORWARD_TO);
-        return members.map((p) => (p.member = true) && p).concat(nonmembers);
+        let mainRoutes = members.map((p) => (p.member = true) && p).concat(nonmembers);
+        let mirrors = yield PeeringService.mirrorEndpoints();
+        return mainRoutes.concat(mirrors.map((mep, index) => { return {
+          pubkey: 'M' + index + '_' + PeeringService.pubkey,
+          endpoints: [mep]
+        }}));
       })
         .then(_.partial(done, null)).catch(done);
     };

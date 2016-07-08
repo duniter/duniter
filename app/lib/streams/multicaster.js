@@ -94,7 +94,7 @@ function Multicaster (conf, timeout) {
         peer: peering.getRawSigned()
       };
     },
-    getDocID: (doc) => doc.keyID(),
+    getDocID: (doc) => doc.keyID() + '#' + doc.block.match(/(\d+)-/)[1],
     withIsolation: WITH_ISOLATION
   });
 

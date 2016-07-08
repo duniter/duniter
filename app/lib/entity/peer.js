@@ -125,6 +125,8 @@ function Peer(json) {
   this.isReachable = () => {
     return this.getURL() ? true : false;
   };
+
+  this.containsEndpoint = (ep) => this.endpoints.reduce((found, endpoint) => found || endpoint == ep, false);
 }
 
 Peer.statics = {};
@@ -132,3 +134,5 @@ Peer.statics = {};
 Peer.statics.peerize = function(p) {
   return p != null ? new Peer(p) : null;
 };
+
+Peer.statics.endpoint2host = (endpoint) => Peer.statics.peerize({ endpoints: [endpoint] }).getURL();

@@ -103,7 +103,13 @@ function Synchroniser (server, host, port, conf, interactive) {
       lastBlock: null,
 
       // Get the local blockchain current block
-      localCurrent: () => dal.getCurrentBlockOrNull(),
+      localCurrent: () => co(function*() {
+        if (cautious) {
+          return yield dal.getCurrentBlockOrNull();
+        } else {
+          return this.lastBlock;
+        }
+      }),
 
       // Get the remote blockchain (bc) current block
       remoteCurrent: (peer) => Q.nfcall(peer.blockchain.current),
@@ -118,29 +124,33 @@ function Synchroniser (server, host, port, conf, interactive) {
 
       // Get block of given peer with given block number
       getRemoteBlock: (thePeer, number) => co(function *() {
+        let blocks = [];
         if (number <= to) {
-          let block = null;
+          const nextChunck = Math.min(to - number + 1, CONST_BLOCKS_CHUNK);
+
           try {
-            block = yield Q.nfcall(thePeer.blockchain.block, number);
-            Transaction.statics.setIssuers(block.transactions);
+            blocks = yield Q.nfcall(thePeer.blockchain.blocks, nextChunck, number);
             watcher.downloadPercent(Math.floor(number / to * 100));
-            return block;
           } catch (e) {
             if (e.httpCode != 404) {
               throw e;
             }
           }
-          return block;
-        } else {
-          return null;
         }
+        return blocks;
       }),
 
-      applyMainBranch: (block) => co(function *() {
-        const addedBlock = yield server.BlockchainService.submitBlock(block, cautious, constants.FORK_ALLOWED);
-        server.streamPush(addedBlock);
-        this.lastBlock = block;
-        watcher.appliedPercent(Math.floor(block.number / to * 100));
+      applyMainBranch: (blocks) => co(function *() {
+        if (cautious) {
+          for (const block of blocks) {
+            const addedBlock = yield server.BlockchainService.submitBlock(block, true, constants.FORK_ALLOWED);
+            server.streamPush(addedBlock);
+          }
+        } else {
+          yield server.BlockchainService.saveBlocksInMainBranch(blocks);
+        }
+        this.lastBlock = blocks[blocks.length - 1];
+        watcher.appliedPercent(Math.floor(blocks[blocks.length - 1].number / to * 100));
       }),
 
       // Eventually remove forks later on
@@ -150,9 +160,7 @@ function Synchroniser (server, host, port, conf, interactive) {
       isMemberPeer: (thePeer) => co(function *() {
         let idty = yield dal.getWrittenIdtyByPubkey(thePeer.pubkey);
         return (idty && idty.member) || false;
-      }),
-
-      downloadBlocks: (thePeer, fromNumber, count) => Q.nfcall(thePeer.blockchain.blocks, count, fromNumber)
+      })
     });
 
     const logInterval = setInterval(() => logRemaining(to), EVAL_REMAINING_INTERVAL);

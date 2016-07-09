@@ -449,17 +449,18 @@ function PeeringService(server) {
                 try {
                   block = yield Q.nfcall(thePeer.blockchain.block, number);
                   Transaction.statics.setIssuers(block.transactions);
-                  return block;
+                  return [block];
                 } catch (e) {
                   if (e.httpCode != 404) {
                     throw e;
                   }
                 }
-                return block;
+                return [];
               }),
 
               // Simulate the adding of a single new block on local blockchain
-              applyMainBranch: (block) => co(function *() {
+              applyMainBranch: (blocks) => co(function *() {
+                const block = blocks[0];
                 let addedBlock = yield server.BlockchainService.submitBlock(block, true, constants.FORK_ALLOWED);
                 server.streamPush(addedBlock);
               }),

@@ -99,44 +99,73 @@ module.exports = {
    * @param dao An abstract layer to retrieve peers data (blocks).
    */
   pull: (conf, dao) => co(function *() {
-
-    let forks = [];
     let localCurrent = yield dao.localCurrent();
-    let peers = yield dao.remotePeers();
-    // Try to get new legit blocks for local blockchain
-    for (const peer of peers) {
+    const forks = [];
+
+    const applyCoroutine = (peer, blocks) => co(function*() {
       let shortPubkey = peer.pubkey.substr(0, 6);
-      let remoteNext;
-      if (localCurrent) {
-        remoteNext = yield dao.getRemoteBlock(peer, localCurrent.number + 1);
-      } else {
-        remoteNext = yield dao.getRemoteBlock(peer, 0);
-      }
-      if (remoteNext) {
+      if (blocks.length > 0) {
+        logger.debug("Applying from " + blocks[0].number);
         let isFork = localCurrent
-            && !(remoteNext.previousHash == localCurrent.hash && remoteNext.number == localCurrent.number + 1);
+            && !(blocks[0].previousHash == localCurrent.hash
+            && blocks[0].number == localCurrent.number + 1);
         if (!isFork) {
           logger.debug('Peer %s is on same blockchain', shortPubkey);
-          let appliedSuccessfully;
-          do {
-            yield dao.applyMainBranch(remoteNext);
-            localCurrent = yield dao.localCurrent();
-            appliedSuccessfully = localCurrent.number == remoteNext.number && localCurrent.hash == remoteNext.hash;
-            remoteNext = yield dao.getRemoteBlock(peer, localCurrent.number + 1);
-          } while (appliedSuccessfully && remoteNext);
+          yield dao.applyMainBranch(blocks);
+          localCurrent = yield dao.localCurrent();
+          const appliedSuccessfully = localCurrent.number == blocks[blocks.length - 1].number
+                                  && localCurrent.hash == blocks[blocks.length - 1].hash;
+          return appliedSuccessfully;
         } else {
           logger.debug('Peer %s has forked', shortPubkey);
           let remoteCurrent = yield dao.remoteCurrent(peer);
           forks.push({
             peer: peer,
-            block: remoteNext,
+            block: blocks[0],
             current: remoteCurrent
           });
         }
-      } else {
-        logger.debug('Peer %s do not have next block #%s', shortPubkey, localCurrent.number + 1);
       }
+      return true;
+    });
+
+    const downloadCoroutine = (peer, number) => co(function*() {
+      return yield dao.getRemoteBlock(peer, number);
+    });
+
+    const downloadChuncks = (peer) => co(function*() {
+      let blocksToApply = [];
+      const currentBlock = yield dao.localCurrent();
+      let currentChunckStart;
+      if (currentBlock) {
+        currentChunckStart = currentBlock.number + 1;
+      } else {
+        currentChunckStart = 0;
+      }
+      let res;
+      do {
+        logger.debug("dl starts from " + currentChunckStart);
+        if (blocksToApply.length > 0)
+          logger.debug("apply starts from " + blocksToApply[0].number);
+        res = yield {
+          applied: applyCoroutine(peer, blocksToApply),
+          downloaded: downloadCoroutine(peer, currentChunckStart)
+        };
+        blocksToApply = res.downloaded;
+        currentChunckStart += res.downloaded.length;
+        if (!res.applied) {
+          logger.error("Blocks were not applied.")
+        }
+      } while (res.downloaded.length > 0 && res.applied);
+    });
+
+    let peers = yield dao.remotePeers();
+    // Try to get new legit blocks for local blockchain
+    const downloadChuncksTasks = [];
+    for (const peer of peers) {
+      downloadChuncksTasks.push(downloadChuncks(peer));
     }
+    yield downloadChuncksTasks;
     // Filter forks: do not include mirror peers (non-member peers)
     let memberForks = [];
     for (const fork of forks) {

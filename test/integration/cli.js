@@ -25,14 +25,16 @@ describe("CLI", function() {
 
   it('sync 2200 blocks (fast)', () => co(function*() {
     yield execute(['reset', 'data']);
-    yield execute(['sync', 'duniter.org', '8999', '2200']);
+    yield execute(['sync', 'duniter.org', '8999', '2200', '--nocautious', '--nointeractive']);
     const res = yield execute(['export-bc', '--nostdout']);
+    res[res.length - 1].should.have.property('number').equal(2200);
     res.should.have.length(2200 + 1);
   }));
 
   it('sync 5 blocks (cautious)', () => co(function*() {
     yield execute(['sync', 'duniter.org', '8999', '2204', '--nointeractive']);
     const res = yield execute(['export-bc', '--nostdout']);
+    res[res.length - 1].should.have.property('number').equal(2204);
     res.should.have.length(2204 + 1);
   }));
 

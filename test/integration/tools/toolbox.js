@@ -3,6 +3,7 @@
 const _        = require('underscore');
 const rp       = require('request-promise');
 const httpTest = require('../tools/http');
+const sync     = require('../tools/sync');
 const duniter  = require('../../../index');
 
 const MEMORY_MODE = true;
@@ -40,8 +41,11 @@ module.exports = {
     server.get = (uri) => rp(server.url(uri), { json: true });
     server.post = (uri, obj) => rp(server.url(uri), { method: 'POST', json: true, body: obj });
 
+    server.expect = (uri, expectations) => typeof expectations == 'function' ? httpTest.expectAnswer(rp(server.url(uri), { json: true }), expectations) : httpTest.expectJSON(rp(server.url(uri), { json: true }), expectations);
     server.expectThat = (uri, expectations) => httpTest.expectAnswer(rp(server.url(uri), { json: true }), expectations);
     server.expectJSON = (uri, expectations) => httpTest.expectJSON(rp(server.url(uri), { json: true }), expectations);
+
+    server.syncFrom = (otherServer, fromIncuded, toIncluded) => sync(fromIncuded, toIncluded, otherServer, server);
 
     return server;
   }

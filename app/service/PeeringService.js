@@ -6,6 +6,7 @@ const _              = require('underscore');
 const Q              = require('q');
 const events         = require('events');
 const rp             = require('request-promise');
+const multicaster    = require('../lib/streams/multicaster');
 const keyring        = require('../lib/crypto/keyring');
 const logger         = require('../lib/logger')('peering');
 const base58         = require('../lib/crypto/base58');
@@ -64,7 +65,7 @@ function PeeringService(server) {
   this.submitP = function(peering, eraseIfAlreadyRecorded, cautious){
     let thePeer = new Peer(peering);
     let sp = thePeer.block.split('-');
-    let blockNumber = parseInt(sp[0]);
+    const blockNumber = parseInt(sp[0]);
     let blockHash = sp[1];
     let sigTime = 0;
     let block;
@@ -97,10 +98,22 @@ function PeeringService(server) {
         // Already existing peer
         const sp2 = found.block.split('-');
         const previousBlockNumber = parseInt(sp2[0]);
-        if(blockNumber <= previousBlockNumber && !eraseIfAlreadyRecorded){
-          throw constants.ERROR.PEER.ALREADY_RECORDED;
+        const interfacesChanged = Peer.statics.endpointSum(thePeer) != Peer.statics.endpointSum(peerEntity);
+        const isOutdatedDocument = blockNumber < previousBlockNumber && !eraseIfAlreadyRecorded;
+        const isAlreadyKnown = blockNumber == previousBlockNumber && !eraseIfAlreadyRecorded;
+        if (isOutdatedDocument){
+          const error = _.extend({}, constants.ERRORS.NEWER_PEER_DOCUMENT_AVAILABLE);
+          _.extend(error.uerr, { peer: found });
+          throw error;
+        } else if (isAlreadyKnown) {
+          throw constants.ERRORS.PEER_DOCUMENT_ALREADY_KNOWN;
         }
         peerEntity = Peer.statics.peerize(found);
+        if (interfacesChanged) {
+          // Warns the old peer of the change
+          const caster = multicaster();
+          caster.sendPeering(Peer.statics.peerize(peerEntity), Peer.statics.peerize(thePeer));
+        }
         thePeer.copyValues(peerEntity);
         peerEntity.sigDate = new Date(sigTime * 1000);
       }
@@ -124,6 +137,11 @@ function PeeringService(server) {
       }
       return savedPeer;
     }));
+  };
+
+  this.handleNewerPeer = (pretendedNewer) => {
+    logger.debug('Applying pretended newer peer document %s/%s', pretendedNewer.block);
+    return server.singleWritePromise(_.extend({ documentType: 'peer' }, pretendedNewer));
   };
 
   const peerFifo = async.queue(function (task, callback) {

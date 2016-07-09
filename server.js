@@ -172,7 +172,7 @@ function Server (dbConf, overrideConf) {
         }
         return res;
       } catch (err) {
-        logger.debug(err);
+        logger.debug('Document write error: ', err);
         if (done) {
           isInnerWrite ? done(err, null) : done();
         } else {

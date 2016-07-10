@@ -4,6 +4,7 @@ const _        = require('underscore');
 const rp       = require('request-promise');
 const httpTest = require('../tools/http');
 const sync     = require('../tools/sync');
+const commit   = require('../tools/commit');
 const duniter  = require('../../../index');
 
 const MEMORY_MODE = true;
@@ -46,6 +47,8 @@ module.exports = {
     server.expectJSON = (uri, expectations) => httpTest.expectJSON(rp(server.url(uri), { json: true }), expectations);
 
     server.syncFrom = (otherServer, fromIncuded, toIncluded) => sync(fromIncuded, toIncluded, otherServer, server);
+
+    server.commit = (options) => commit(server)(options);
 
     return server;
   }

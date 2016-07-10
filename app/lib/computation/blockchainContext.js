@@ -423,33 +423,33 @@ function BlockchainContext() {
           'consumed': 0
         }));
       }
+    }
 
-      for (const obj of block.transactions) {
-        obj.version = constants.DOCUMENTS_VERSION;
-        obj.currency = block.currency;
-        obj.issuers = obj.signatories;
-        const tx = new Transaction(obj);
-        const txObj = tx.getTransaction();
-        const txHash = tx.getHash(true);
-        for (const input of txObj.inputs) {
-          yield dal.setConsumedSource(input.identifier, input.noffset);
-        }
+    for (const obj of block.transactions) {
+      obj.version = constants.DOCUMENTS_VERSION;
+      obj.currency = block.currency;
+      obj.issuers = obj.signatories;
+      const tx = new Transaction(obj);
+      const txObj = tx.getTransaction();
+      const txHash = tx.getHash(true);
+      for (const input of txObj.inputs) {
+        yield dal.setConsumedSource(input.identifier, input.noffset);
+      }
 
-        let index = 0;
-        for (const output of txObj.outputs) {
-          yield dal.saveSource(new Source({
-            'type': 'T',
-            'number': block.number,
-            'time': block.medianTime,
-            'identifier': txHash,
-            'noffset': index++,
-            'block_hash': block.hash,
-            'amount': output.amount,
-            'base': output.base,
-            'conditions': output.conditions,
-            'consumed': 0
-          }));
-        }
+      let index = 0;
+      for (const output of txObj.outputs) {
+        yield dal.saveSource(new Source({
+          'type': 'T',
+          'number': block.number,
+          'time': block.medianTime,
+          'identifier': txHash,
+          'noffset': index++,
+          'block_hash': block.hash,
+          'amount': output.amount,
+          'base': output.base,
+          'conditions': output.conditions,
+          'consumed': 0
+        }));
       }
     }
   });

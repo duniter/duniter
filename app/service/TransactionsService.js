@@ -25,13 +25,15 @@ function TransactionService () {
   this.processTx = (txObj) => this.pushFIFO(() => co(function *() {
     const tx = new Transaction(txObj, conf.currency);
     const existing = yield dal.getTxByHash(tx.hash);
+    const current = yield dal.getCurrentBlockOrNull();
     if (existing) {
       throw 'Transaction already processed';
     }
     // Start checks...
     const transaction = tx.getTransaction();
+    const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
     yield Q.nbind(rules.HELPERS.checkSingleTransactionLocally, rules.HELPERS)(transaction);
-    yield rules.HELPERS.checkSingleTransaction(transaction, { medianTime: moment().utc().unix() }, conf, dal);
+    yield rules.HELPERS.checkSingleTransaction(transaction, nextBlockWithFakeTimeVariation, conf, dal);
     yield dal.saveTransaction(tx);
     return tx;
   }));

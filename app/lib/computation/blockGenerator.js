@@ -109,12 +109,14 @@ function BlockGenerator(mainContext, prover) {
     const txs = yield dal.getTransactionsPending();
     const transactions = [];
     const passingTxs = [];
+    const current = yield dal.getCurrentBlockOrNull();
     for (const obj of txs) {
       const tx = new Transaction(obj, conf.currency);
       const extractedTX = tx.getTransaction();
       try {
         yield Q.nbind(rules.HELPERS.checkBunchOfTransactions, rules, passingTxs.concat(extractedTX));
-        yield rules.HELPERS.checkSingleTransaction(extractedTX, {medianTime: moment().utc().unix()}, conf, dal);
+        const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
+        yield rules.HELPERS.checkSingleTransaction(extractedTX, nextBlockWithFakeTimeVariation, conf, dal);
         transactions.push(tx);
         passingTxs.push(extractedTX);
         logger.info('Transaction added to block');

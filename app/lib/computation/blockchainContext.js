@@ -146,6 +146,8 @@ function BlockchainContext() {
           + ((block.time - current.time) >= 0 ? '+' : '')
           + '%d', block.time - current.time);
     }
+    // Unit Base
+    block.unitbase = (block.dividend && block.unitbase) || (current && current.unitbase) || 0;
     // Monetary Mass update
     if (current) {
       block.monetaryMass = (current.monetaryMass || 0)

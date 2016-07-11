@@ -104,6 +104,10 @@ function BlockDAL(db) {
     return that.query('SELECT * FROM block WHERE fork ORDER BY number');
   };
 
+  this.getDividendBlocks = () => {
+    return that.query('SELECT * FROM block WHERE dividend IS NOT NULL ORDER BY number');
+  };
+
   this.saveBunch = (blocks) => co(function *() {
     let queries = "INSERT INTO block (" + that.fields.join(',') + ") VALUES ";
     for (let i = 0, len = blocks.length; i < len; i++) {

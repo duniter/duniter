@@ -1,6 +1,5 @@
 "use strict";
 
-const Q = require('q');
 const co = require('co');
 const _ = require('underscore');
 const constant = require('./constants');
@@ -18,7 +17,7 @@ module.exports = {
      */
     dao.applyBranch = (blocks) => co(function *() {
       for (const block of blocks) {
-        yield dao.applyMainBranch(block);
+        yield dao.applyMainBranch([block]);
       }
       return true;
     });
@@ -29,66 +28,64 @@ module.exports = {
      * @param forksize The maximum length we can look at to find common root block.
      * @returns {*|Promise}
      */
-    dao.findCommonRoot = (fork, forksize) => {
-      return co(function *() {
+    dao.findCommonRoot = (fork, forksize) => co(function *() {
 
-        let commonRoot = null;
-        let localCurrent = yield dao.localCurrent();
+      let commonRoot = null;
+      let localCurrent = yield dao.localCurrent();
 
-        // We look between the top block that is known as fork ...
-        let topBlock = fork.block;
-        // ... and the bottom which is bounded by `forksize`
-        let bottomBlock = yield dao.getRemoteBlock(fork.peer, Math.max(0, localCurrent.number - forksize));
-        let lookBlock = bottomBlock;
-        let localEquivalent = yield dao.getLocalBlock(bottomBlock.number);
-        let isCommonBlock = lookBlock.hash == localEquivalent.hash;
-        if (isCommonBlock) {
+      // We look between the top block that is known as fork ...
+      let topBlock = fork.block;
+      // ... and the bottom which is bounded by `forksize`
+      let bottomBlock = (yield dao.getRemoteBlock(fork.peer, Math.max(0, localCurrent.number - forksize)))[0];
+      let lookBlock = bottomBlock;
+      let localEquivalent = yield dao.getLocalBlock(bottomBlock.number);
+      let isCommonBlock = lookBlock.hash == localEquivalent.hash;
+      if (isCommonBlock) {
 
-          // Then common root can be found between top and bottom. We process.
-          let position, wrongRemotechain = false;
-          do {
+        // Then common root can be found between top and bottom. We process.
+        let position, wrongRemotechain = false;
+        do {
 
-            isCommonBlock = lookBlock.hash == localEquivalent.hash;
-            if (!isCommonBlock) {
+          isCommonBlock = lookBlock.hash == localEquivalent.hash;
+          if (!isCommonBlock) {
 
-              // Too high, look downward
-              topBlock = lookBlock;
+            // Too high, look downward
+            topBlock = lookBlock;
+            position = middle(topBlock.number, bottomBlock.number);
+          }
+          else {
+            let upperBlock = (yield dao.getRemoteBlock(fork.peer, lookBlock.number + 1))[0];
+            let localUpper = yield dao.getLocalBlock(upperBlock.number);
+            let isCommonUpper = upperBlock.hash == localUpper.hash;
+            if (isCommonUpper) {
+
+              // Too low, look upward
+              bottomBlock = lookBlock;
               position = middle(topBlock.number, bottomBlock.number);
             }
             else {
-              let upperBlock = yield dao.getRemoteBlock(fork.peer, lookBlock.number + 1);
-              let localUpper = yield dao.getLocalBlock(upperBlock.number);
-              let isCommonUpper = upperBlock.hash == localUpper.hash;
-              if (isCommonUpper) {
 
-                // Too low, look upward
-                bottomBlock = lookBlock;
-                position = middle(topBlock.number, bottomBlock.number);
-              }
-              else {
-
-                // Spotted!
-                commonRoot = lookBlock;
-              }
+              // Spotted!
+              commonRoot = lookBlock;
             }
+          }
 
-            let noSpace = topBlock.number == bottomBlock.number + 1;
-            if (!commonRoot && noSpace) {
-              // Remote node have inconsistency blockchain, stop search
-              wrongRemotechain = true;
-            }
+          let noSpace = topBlock.number == bottomBlock.number + 1;
+          if (!commonRoot && noSpace) {
+            // Remote node have inconsistency blockchain, stop search
+            wrongRemotechain = true;
+          }
 
-            if (!wrongRemotechain) {
-              lookBlock = yield dao.getRemoteBlock(fork.peer, position);
-              localEquivalent = yield dao.getLocalBlock(position);
-            }
-          } while (!commonRoot && !wrongRemotechain);
-        }
-        // Otherwise common root is unreachable
+          if (!wrongRemotechain) {
+            lookBlock = (yield dao.getRemoteBlock(fork.peer, position))[0];
+            localEquivalent = yield dao.getLocalBlock(position);
+          }
+        } while (!commonRoot && !wrongRemotechain);
+      }
+      return commonRoot;
+    });
 
-        return Q(commonRoot);
-      });
-    };
+
     return dao;
   },
 

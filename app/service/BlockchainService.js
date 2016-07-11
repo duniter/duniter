@@ -127,7 +127,12 @@ function BlockchainService () {
   this.submitBlock = (obj, doCheck, forkAllowed) => this.pushFIFO(() => checkAndAddBlock(obj, doCheck, forkAllowed));
 
   const checkAndAddBlock = (obj, doCheck, forkAllowed) => co(function *() {
-    Transaction.statics.setIssuers(obj.transactions);
+    try {
+      Transaction.statics.setIssuers(obj.transactions);
+    }
+    catch (e) {
+        throw e;
+    }
     let existing = yield dal.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
     if (existing) {
       throw 'Already processed';

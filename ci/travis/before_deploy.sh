@@ -24,7 +24,6 @@ if [[ ! -f before_deploy ]]; then
   # Download Node.js
   NVER=`node -v`
   DUNITER_VER=`git describe --exact-match --tags $(git log -n1 --pretty='%h') | grep -Po "\d.*"`
-  DUNITER_VER="0.20.0dev"
   DUNITER_DEB_VER=" $DUNITER_VER"
   wget http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz
   tar xzf node-${NVER}-linux-x64.tar.gz

@@ -56,9 +56,9 @@ if [[ $2 =~ ^[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?$ ]]; then
       ;;
   esac
   git commit -m "v$2"
+  git tag "v$2"
   git checkout master
   git merge dev
-  git tag "v$2"
   git checkout dev
 else
   echo "Wrong version format"

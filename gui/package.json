@@ -1,9 +1,9 @@
 {
-  "name": "v0.20.0",
+  "name": "v0.20.1a1",
   "main": "index.html",
   "window": {
     "icon": "duniter.png",
-    "title": "v0.20.0",
+    "title": "v0.20.1a1",
     "frame": false,
     "width": 400,
     "height": 400,

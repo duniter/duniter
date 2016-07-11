@@ -33,11 +33,11 @@ if [[ $2 =~ ^[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?$ ]]; then
       if [[ "$1" =~ ^rel$ ]]; then
         # This is RELEASE: change the version in public installer + add the RELEASE flag
         sed -i "s/echo \"v.*\"/echo \"v$2\"/g" install.sh
-        sed -i "s/.*prerelease: true/#  prerelease: true/g" .travis.yml appveyor.yml
+        sed -i "s/.*prerelease: true/#    prerelease: true/g" .travis.yml appveyor.yml
       fi
       if [[ "$1" =~ ^pre$ ]]; then
         # This is RELEASE: just change the RELEASE flag to PRERELEASE
-        sed -i "s/#  prerelease: true/  prerelease: true/g" .travis.yml appveyor.yml
+        sed -i "s/.*prerelease: true/    prerelease: true/g" .travis.yml appveyor.yml
       fi
       ;;
     *)

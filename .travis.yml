@@ -37,7 +37,7 @@ deploy:
       tags: true
       repo: duniter/duniter
   - provider: releases
-  prerelease: true
+    prerelease: true
     skip_cleanup: true
     api-key:
       secure: h+GgYhh8/I/l5EWdI1+bDQYtN57jvDf0xhiwcxlfm/AvaJWOZa+q81HsXdHqtwgmsCoRklKtOqTM/nqgSOcWPXsAditRjEXOui2FjZiJCosDjDPMnN6HKzw6XVLtSOx7CeCX/xFmoNTIdsAuC+HUfDWCUFgrsMj9F0V9J3U1nDs=

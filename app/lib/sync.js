@@ -140,17 +140,24 @@ function Synchroniser (server, host, port, conf, interactive) {
         return blocks;
       }),
 
-      applyMainBranch: (blocks) => co(function *() {
+
+      applyBranch: (blocks) => co(function *() {
         if (cautious) {
           for (const block of blocks) {
-            const addedBlock = yield server.BlockchainService.submitBlock(block, true, constants.FORK_ALLOWED);
-            server.streamPush(addedBlock);
+            yield dao.applyMainBranch(block);
           }
         } else {
           yield server.BlockchainService.saveBlocksInMainBranch(blocks);
         }
         this.lastBlock = blocks[blocks.length - 1];
         watcher.appliedPercent(Math.floor(blocks[blocks.length - 1].number / to * 100));
+        return true;
+      }),
+
+      applyMainBranch: (block) => co(function *() {
+          const addedBlock = yield server.BlockchainService.submitBlock(block, true, constants.FORK_ALLOWED);
+          server.streamPush(addedBlock);
+          watcher.appliedPercent(Math.floor(block.number / to * 100));
       }),
 
       // Eventually remove forks later on

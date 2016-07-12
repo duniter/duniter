@@ -15,12 +15,14 @@ module.exports = {
      * Sugar function. Apply a bunch of blocks instead of one.
      * @param blocks
      */
-    dao.applyBranch = (blocks) => co(function *() {
-      for (const block of blocks) {
-        yield dao.applyMainBranch(block);
-      }
-      return true;
-    });
+    if (!dao.applyBranch) {
+      dao.applyBranch = (blocks) => co(function *() {
+        for (const block of blocks) {
+          yield dao.applyMainBranch(block);
+        }
+        return true;
+      });
+    }
 
     /**
      * Binary search algorithm to find the common root block between a local and a remote blockchain.

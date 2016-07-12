@@ -5,9 +5,8 @@
   "window": {
     "icon": "duniter.png",
     "title": "v0.20.1a4",
-    "frame": false,
     "width": 400,
-    "height": 400,
+    "height": 500,
     "min_width": 400,
     "min_height": 400
   }

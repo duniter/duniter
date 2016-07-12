@@ -94,8 +94,16 @@ function Multicaster (conf, timeout) {
         peer: peering.getRawSigned()
       };
     },
-    getDocID: (doc) => doc.keyID(),
-    withIsolation: WITH_ISOLATION
+    getDocID: (doc) => doc.keyID() + '#' + doc.block.match(/(\d+)-/)[1],
+    withIsolation: WITH_ISOLATION,
+    onError: (resJSON, peering, to) => {
+      const sentPeer = Peer.statics.peerize(peering);
+      if (Peer.statics.blockNumber(resJSON.peer) > sentPeer.blockNumber()) {
+        that.push({ outdated: true, peer: resJSON.peer });
+        logger.warn('Outdated peer document (%s) sent to %s', sentPeer.keyID() + '#' + sentPeer.block.match(/(\d+)-/)[1], to);
+      }
+      return Promise.resolve();
+    }
   });
 
   let msForward = forward({
@@ -140,8 +148,16 @@ function Multicaster (conf, timeout) {
             }
             for (const p of peers) {
               let peer = Peer.statics.peerize(p);
-              logger.debug(' `--> to peer %s [%s] (%s)', peer.keyID(), peer.member ? 'member' : '------', peer.getNamedURL());
-              yield post(peer, params.uri, params.getObj(theDoc));
+              const namedURL = peer.getNamedURL();
+              logger.debug(' `--> to peer %s [%s] (%s)', peer.keyID(), peer.member ? 'member' : '------', namedURL);
+              try {
+                yield post(peer, params.uri, params.getObj(theDoc));
+              } catch (e) {
+                if (params.onError) {
+                  const json = JSON.parse(e.body);
+                  yield params.onError(json, doc, namedURL);
+                }
+              }
             }
           } else {
             logger.debug('[ISOLATE] Prevent --> new Peer to be sent to %s peer(s)', peers.length);
@@ -153,18 +169,21 @@ function Multicaster (conf, timeout) {
     };
   }
 
-  function post(peer, url, data) {
+  function post(peer, uri, data) {
     if (!peer.isReachable()) {
       return Q();
     }
-    return Q.Promise(function(resolve){
+    return Q.Promise(function(resolve, reject){
       const postReq = request.post({
-        "uri": 'http://' + peer.getURL() + url,
+        "uri": 'http://' + peer.getURL() + uri,
         "timeout": timeout || constants.NETWORK.DEFAULT_TIMEOUT
       }, function (err, res) {
         if (err) {
           that.push({ unreachable: true, peer: { pubkey: peer.pubkey }});
           logger.warn(err.message || err);
+        }
+        if (res && res.statusCode != 200) {
+          return reject(res);
         }
         resolve(res);
       });

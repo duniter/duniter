@@ -218,13 +218,13 @@ function Synchroniser (server, host, port, conf, interactive) {
       try {
         yield PeeringService.submitP(remoteJsonPeer);
       } catch (err) {
-        if (err != constants.ERROR.PEER.ALREADY_RECORDED && err != constants.ERROR.PEER.UNKNOWN_REFERENCE_BLOCK) {
+        if (err.includes(constants.ERRORS.NEWER_PEER_DOCUMENT_AVAILABLE.uerr.message) && err != constants.ERROR.PEER.UNKNOWN_REFERENCE_BLOCK) {
           throw err;
         }
       }
     });
   }
-};
+}
 
 function NodesMerkle (json) {
   

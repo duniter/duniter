@@ -100,7 +100,7 @@ describe("Identities kicking", function() {
       res.identities[0].should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
       res.identities[0].should.have.property('uid').equal('cat');
       res.identities[0].should.have.property('expired').equal(false);
-      res.identities[0].should.have.property('membershipExpiresIn').equal(2045);
+      res.identities[0].should.have.property('membershipExpiresIn').within(2044, 2045);
     });
   });
 
@@ -110,7 +110,7 @@ describe("Identities kicking", function() {
       res.identities[0].should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
       res.identities[0].should.have.property('uid').equal('toc');
       res.identities[0].should.have.property('expired').equal(false);
-      res.identities[0].should.have.property('membershipExpiresIn').equal(2045);
+      res.identities[0].should.have.property('membershipExpiresIn').within(2044, 2045);
     });
   });
 

@@ -37,7 +37,6 @@ module.exports = {
   ERROR: {
 
     PEER: {
-      ALREADY_RECORDED: 'A more recent peering document is already recorded.',
       UNKNOWN_REFERENCE_BLOCK: 'Unknown reference block of peer'
     },
 
@@ -87,7 +86,9 @@ module.exports = {
     CANNOT_ROOT_BLOCK_NO_MEMBERS:         { httpCode: 400, uerr: { ucode: 2018, message: "Wrong new block: cannot make a root block without members" }},
     IDENTITY_WRONGLY_SIGNED:              { httpCode: 400, uerr: { ucode: 2019, message: "Weird, the signature is wrong and in the database." }},
     TOO_OLD_IDENTITY:                     { httpCode: 400, uerr: { ucode: 2020, message: "Identity has expired and cannot be written in the blockchain anymore." }},
-    NO_IDTY_MATCHING_PUB_OR_UID:          { httpCode: 404, uerr: { ucode: 2021, message: "No identity matching this pubkey or uid" }}
+    NO_IDTY_MATCHING_PUB_OR_UID:          { httpCode: 404, uerr: { ucode: 2021, message: "No identity matching this pubkey or uid" }},
+    NEWER_PEER_DOCUMENT_AVAILABLE:        { httpCode: 409, uerr: { ucode: 2022, message: "A newer peer document is available" }},
+    PEER_DOCUMENT_ALREADY_KNOWN:          { httpCode: 400, uerr: { ucode: 2023, message: "Peer document already known" }}
   },
 
   DEBUG: {
@@ -225,11 +226,11 @@ module.exports = {
       MAX: 20
     },
     STATUS_INTERVAL: {
-      UPDATE: 6, // Every X blocks
+      UPDATE: 0.5, // Every X blocks
       MAX: 20 // MAX Y blocks
     },
     SYNC_PEERS_INTERVAL: 3, // Every 3 block average generation time
-    SYNC_BLOCK_INTERVAL: 1, // Every 1 block average generation time
+    SYNC_BLOCK_INTERVAL: 0.67, // Every 2/3 block average generation time (so: more frequently than duration to create 1 block)
     TEST_PEERS_INTERVAL: 10 // In seconds
   },
   PROOF_OF_WORK: {

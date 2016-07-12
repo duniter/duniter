@@ -125,10 +125,25 @@ function Peer(json) {
   this.isReachable = () => {
     return this.getURL() ? true : false;
   };
+
+  this.containsEndpoint = (ep) => this.endpoints.reduce((found, endpoint) => found || endpoint == ep, false);
+
+  this.endpointSum = () => this.endpoints.join('_');
+
+  this.blockNumber = () => this.block.match(/^(\d+)-/)[1];
 }
 
 Peer.statics = {};
 
 Peer.statics.peerize = function(p) {
   return p != null ? new Peer(p) : null;
+};
+
+Peer.statics.endpoint2host = (endpoint) => Peer.statics.peerize({ endpoints: [endpoint] }).getURL();
+
+Peer.statics.endpointSum = (obj) => Peer.statics.peerize(obj).endpointSum();
+
+Peer.statics.blockNumber = (obj) => {
+  const peer = Peer.statics.peerize(obj);
+  return peer ? peer.blockNumber() : -1;
 };

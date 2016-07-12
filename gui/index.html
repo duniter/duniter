@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Duniter 0.20.0a85</title>
+  <title>Duniter 0.20.1a5</title>
   <style>
     html {
       font-family: "Courier New", Courier, monospace;
@@ -30,21 +30,45 @@
 <img src="duniter.png"/>
 <h1 id="loader">Loading...</h1>
 <script type="text/javascript">
+
+  const SERVER_ORIGIN = '127.0.0.1:9220';
+
+  let gui = require('nw.gui');
+
+  let packageJSON = require('./package.json');
   function reqListener () {
     document.getElementById('loader').innerHTML = 'Server ready.';
-    location.href = 'http://127.0.0.1:9220';
+    clearTimeout(strangeTimeout);
+    clearInterval(testInterval);
+    gui.Window.open('http://' + SERVER_ORIGIN + '/index.html', {
+      width: 1200,
+      height: 850,
+      min_height: 600,
+      min_width: 600
+    }, function(win) {
+      win.window.mainWindow = win;
+      win.window.gui = gui;
+      win.window.duniter = {
+        version: packageJSON.name.substr(1)
+      };
+      win.on('closed', function() {
+        // Also close globally the app when main window is closed
+        gui.Window.get().close();
+      });
+      gui.Window.get().hide();
+    });
   }
   function test() {
     var oReq = new XMLHttpRequest();
     oReq.addEventListener("load", reqListener);
-    oReq.open("GET", "http://127.0.0.1:9220/");
+    oReq.open("GET", "http://" + SERVER_ORIGIN);
     oReq.send();
   }
   function strange () {
     document.getElementById('loader').innerHTML = 'The server is not starting...';
   }
-  setInterval(test, 800);
-  setTimeout(strange, 8000);
+  var testInterval = setInterval(test, 800);
+  var strangeTimeout = setTimeout(strange, 8000);
 </script>
 </body>
 </html>

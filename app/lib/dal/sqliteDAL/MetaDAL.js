@@ -5,6 +5,7 @@
  */
 
 const co = require('co');
+const _ = require('underscore');
 const logger = require('../../logger')('metaDAL');
 const Transaction = require('../../entity/transaction');
 const AbstractSQLite = require('./AbstractSQLite');
@@ -28,9 +29,17 @@ function MetaDAL(db) {
   this.translated = {};
 
   const migrations = {
+
+    // Test
     0: 'BEGIN; COMMIT;',
+
+    // Test
     1: 'BEGIN; COMMIT;',
+
+    // New `receveid` column
     2: 'BEGIN; ALTER TABLE txs ADD COLUMN received INTEGER NULL; COMMIT;',
+
+    // Update wrong recipients field (was not filled in)
     3: () => co(function*() {
       const txsDAL = new (require('./TxsDAL'))(db);
       const txs = yield txsDAL.sqlListAll();
@@ -38,6 +47,58 @@ function MetaDAL(db) {
       for (const tx of txs) {
         yield txsDAL.saveEntity(tx);
       }
+    }),
+
+    // Migrates wrong unitbases
+    4: () => co(function*() {
+      let blockDAL = new (require('./BlockDAL'))(db);
+      let dividendBlocks = yield blockDAL.getDividendBlocks();
+      let bases = { 0: 0 }; // The first base is always 0 at block 0
+      for (let i = 0; i < dividendBlocks.length; i++) {
+        let block = dividendBlocks[i];
+        if (!bases[block.unitbase]) {
+          bases[block.unitbase] = block.number;
+        } else {
+          bases[block.unitbase] = Math.min(bases[block.unitbase], block.number);
+        }
+      }
+      let baseNumbers = _.keys(bases);
+      for (let i = 0; i < baseNumbers.length; i++) {
+        let base = parseInt(baseNumbers[i]);
+        let fromBlock = bases[base];
+        let upTo = bases[base + 1] || null;
+        if (upTo != null) {
+          yield blockDAL.exec('UPDATE block SET unitbase = ' + base + ' WHERE number >= ' + fromBlock + ' AND number < ' + upTo);
+        } else {
+          // The last base has not a successor yet, so we can take all following blocks
+          yield blockDAL.exec('UPDATE block SET unitbase = ' + base + ' WHERE number >= ' + fromBlock);
+        }
+      }
+    }),
+
+    // Migrates wrong monetary masses
+    5: () => co(function*() {
+      let blockDAL = new (require('./BlockDAL'))(db);
+      let udBlocks = yield blockDAL.getDividendBlocks();
+      let monetaryMass = 0;
+      let lastUDBlock = 0;
+      for (let i = 0; i < udBlocks.length; i++) {
+        let udBlock = udBlocks[i];
+        if (i == 0) {
+          // First UD
+          yield blockDAL.exec('UPDATE block SET monetaryMass = 0 WHERE number < ' + udBlock.number);
+        } else {
+          // Other UDs
+          let prevUDBlock = udBlocks[i - 1];
+          let fromBlock = prevUDBlock.number;
+          let upToExcluded = udBlock.number;
+          yield blockDAL.exec('UPDATE block SET monetaryMass = ' + monetaryMass + ' WHERE number >= ' + fromBlock + ' AND number < ' + upToExcluded);
+        }
+        lastUDBlock = udBlock.number;
+        monetaryMass += udBlock.dividend * Math.pow(10, udBlock.unitbase) * udBlock.membersCount;
+      }
+      // Blocks since last UD have the same monetary mass as last UD block
+      yield blockDAL.exec('UPDATE block SET monetaryMass = ' + monetaryMass + ' WHERE number >= ' + lastUDBlock);
     })
   };
 

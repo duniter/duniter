@@ -29,11 +29,21 @@ function Router (PeeringService, conf, dal) {
   const that = this;
 
   this._write = function (obj, enc, done) {
-         if (obj.joiners) {                      route('block',       obj, getRandomInUPPeers(),                        done); }
-    else if (obj.pubkey && obj.uid) {            route('identity',    obj, getRandomInUPPeers(),                        done); }
-    else if (obj.userid) {                       route('membership',  obj, getRandomInUPPeers(),                        done); }
-    else if (obj.inputs) {                       route('transaction', obj, getRandomInUPPeers(),                        done); }
-    else if (obj.endpoints) {                    route('peer',        obj, getRandomInUPPeersBut(obj.pubkey),           done); }
+    if (obj.joiners) {
+      route('block', obj, getRandomInUPPeers(), done);
+    }
+    else if (obj.pubkey && obj.uid) {
+      route('identity', obj, getRandomInUPPeers(), done);
+    }
+    else if (obj.userid) {
+      route('membership', obj, getRandomInUPPeers(), done);
+    }
+    else if (obj.inputs) {
+      route('transaction', obj, getRandomInUPPeers(), done);
+    }
+    else if (obj.endpoints) {
+      route('peer', obj, getRandomInUPPeers(), done);
+    }
     else if (obj.from && obj.from == PeeringService.pubkey) {
       // Route ONLY status emitted by this node
       route('status', obj, getTargeted(obj.to), done);
@@ -46,11 +56,22 @@ function Router (PeeringService, conf, dal) {
               next();
             })
             .catch(next);
-        },
+        }
       ], function(err) {
         if (err) logger.error(err);
         else logger.info("Peer %s unreachable: now considered as DOWN.", obj.peer.pubkey);
         done();
+      });
+    }
+    else if (obj.outdated) {
+      co(function*() {
+         try {
+           yield PeeringService.handleNewerPeer(obj.peer);
+           done();
+         } catch (e) {
+           logger.warn(e);
+           done(e);
+         }
       });
     }
     else {
@@ -76,10 +97,6 @@ function Router (PeeringService, conf, dal) {
     return getValidUpPeers([PeeringService.pubkey]);
   }
 
-  function getRandomInUPPeersBut (pubkey) {
-    return getValidUpPeers([PeeringService.pubkey, pubkey]);
-  }
-
   function getValidUpPeers (without) {
     return function (done) {
       return co(function *() {
@@ -92,7 +109,12 @@ function Router (PeeringService, conf, dal) {
         }
         members = chooseXin(members, constants.NETWORK.MAX_MEMBERS_TO_FORWARD_TO);
         nonmembers = chooseXin(nonmembers, constants.NETWORK.MAX_NON_MEMBERS_TO_FORWARD_TO);
-        return members.map((p) => (p.member = true) && p).concat(nonmembers);
+        let mainRoutes = members.map((p) => (p.member = true) && p).concat(nonmembers);
+        let mirrors = yield PeeringService.mirrorEndpoints();
+        return mainRoutes.concat(mirrors.map((mep, index) => { return {
+          pubkey: 'M' + index + '_' + PeeringService.pubkey,
+          endpoints: [mep]
+        }}));
       })
         .then(_.partial(done, null)).catch(done);
     };

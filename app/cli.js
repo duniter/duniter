@@ -849,11 +849,13 @@ program
   });
 
 function webWait() {
-  return co(function *() {
-    let webminapi = yield webInit();
-    return webminapi.httpLayer.openConnections();
-  })
-    .catch(mainError);
+  return new Promise(() => {
+    co(function *() {
+      let webminapi = yield webInit();
+      return webminapi.httpLayer.openConnections();
+    })
+      .catch(mainError);
+  });
 }
 
 function webStart() {

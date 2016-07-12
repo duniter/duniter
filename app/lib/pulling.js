@@ -17,7 +17,7 @@ module.exports = {
      */
     dao.applyBranch = (blocks) => co(function *() {
       for (const block of blocks) {
-        yield dao.applyMainBranch([block]);
+        yield dao.applyMainBranch(block);
       }
       return true;
     });
@@ -29,14 +29,13 @@ module.exports = {
      * @returns {*|Promise}
      */
     dao.findCommonRoot = (fork, forksize) => co(function *() {
-
       let commonRoot = null;
       let localCurrent = yield dao.localCurrent();
 
       // We look between the top block that is known as fork ...
       let topBlock = fork.block;
       // ... and the bottom which is bounded by `forksize`
-      let bottomBlock = (yield dao.getRemoteBlock(fork.peer, Math.max(0, localCurrent.number - forksize)))[0];
+      let bottomBlock = yield dao.getRemoteBlock(fork.peer, Math.max(0, localCurrent.number - forksize));
       let lookBlock = bottomBlock;
       let localEquivalent = yield dao.getLocalBlock(bottomBlock.number);
       let isCommonBlock = lookBlock.hash == localEquivalent.hash;
@@ -54,7 +53,7 @@ module.exports = {
             position = middle(topBlock.number, bottomBlock.number);
           }
           else {
-            let upperBlock = (yield dao.getRemoteBlock(fork.peer, lookBlock.number + 1))[0];
+            let upperBlock = yield dao.getRemoteBlock(fork.peer, lookBlock.number + 1);
             let localUpper = yield dao.getLocalBlock(upperBlock.number);
             let isCommonUpper = upperBlock.hash == localUpper.hash;
             if (isCommonUpper) {
@@ -77,15 +76,15 @@ module.exports = {
           }
 
           if (!wrongRemotechain) {
-            lookBlock = (yield dao.getRemoteBlock(fork.peer, position))[0];
+            lookBlock = yield dao.getRemoteBlock(fork.peer, position);
             localEquivalent = yield dao.getLocalBlock(position);
           }
         } while (!commonRoot && !wrongRemotechain);
       }
+      // Otherwise common root is unreachable
+
       return commonRoot;
     });
-
-
     return dao;
   },
 
@@ -108,7 +107,7 @@ module.exports = {
             && blocks[0].number == localCurrent.number + 1);
         if (!isFork) {
           logger.debug('Peer %s is on same blockchain', shortPubkey);
-          yield dao.applyMainBranch(blocks);
+          yield dao.applyBranch(blocks);
           localCurrent = yield dao.localCurrent();
           const appliedSuccessfully = localCurrent.number == blocks[blocks.length - 1].number
                                   && localCurrent.hash == blocks[blocks.length - 1].hash;
@@ -121,13 +120,14 @@ module.exports = {
             block: blocks[0],
             current: remoteCurrent
           });
+          return false;
         }
       }
       return true;
     });
 
     const downloadCoroutine = (peer, number) => co(function*() {
-      return yield dao.getRemoteBlock(peer, number);
+      return yield dao.downloadBlocks(peer, number);
     });
 
     const downloadChuncks = (peer) => co(function*() {

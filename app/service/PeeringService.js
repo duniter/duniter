@@ -20,6 +20,7 @@ const Transaction    = require('../lib/entity/transaction');
 const AbstractService = require('./AbstractService');
 
 const DONT_IF_MORE_THAN_FOUR_PEERS = true;
+const CONST_BLOCKS_CHUNK = 50;
 
 function PeeringService(server) {
 
@@ -523,18 +524,16 @@ function PeeringService(server) {
                 try {
                   block = yield Q.nfcall(thePeer.blockchain.block, number);
                   Transaction.statics.setIssuers(block.transactions);
-                  return [block];
                 } catch (e) {
                   if (e.httpCode != 404) {
                     throw e;
                   }
                 }
-                return [];
+                return block;
               }),
 
               // Simulate the adding of a single new block on local blockchain
-              applyMainBranch: (blocks) => co(function *() {
-                const block = blocks[0];
+              applyMainBranch: (block) => co(function *() {
                 let addedBlock = yield server.BlockchainService.submitBlock(block, true, constants.FORK_ALLOWED);
                 server.streamPush(addedBlock);
               }),
@@ -549,7 +548,12 @@ function PeeringService(server) {
               }),
 
               // Simulates the downloading of blocks from a peer
-              downloadBlocks: (thePeer, fromNumber, count) => Q.nfcall(thePeer.blockchain.blocks, count, fromNumber)
+              downloadBlocks: (thePeer, fromNumber, count) => co(function*() {
+                if (!count) {
+                  count = CONST_BLOCKS_CHUNK;
+                }
+                return yield Q.nfcall(thePeer.blockchain.blocks, count, fromNumber)
+              })
             });
 
             yield pulling.pull(conf, dao);

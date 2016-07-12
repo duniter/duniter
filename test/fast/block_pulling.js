@@ -191,13 +191,17 @@ function pullinTest(testConfiguration) {
  * @returns {{localCurrent: (function(): (*|Q.Promise<*>|Q.Promise<T>)), remoteCurrent: (function(): (*|Q.Promise<*>|Q.Promise<T>)), remotePeers: (function(): (*|Q.Promise<*>|Q.Promise<T>)), getRemoteBlock: (function(): (*|Q.Promise<*|null>|Q.Promise<T>)), applyMainBranch: (function(): (*|Q.Promise<Number|*|_Chain<*>>|Q.Promise<T>)), removeForks: (function(): (*|Q.Promise<T>)), isMemberPeer: (function(): (*|Q.Promise<boolean>|Q.Promise<T>)), findCommonRoot: (function(): (*|Promise)), downloadBlocks: (function(): (*|Q.Promise<Buffer|ArrayBuffer|Array.<any>|string|*|_Chain<any>>|Q.Promise<T>)), applyBranch: (function())}}
  */
 function mockDao(blockchain, sideChains) {
-  return pulling.abstractDao({
+  const dao = pulling.abstractDao({
 
     // Get the local blockchain current block
-    localCurrent: () => Q(blockchain[blockchain.length - 1]),
+    localCurrent: () => co(function*() {
+      return blockchain[blockchain.length - 1]
+    }),
 
     // Get the remote blockchain (bc) current block
-    remoteCurrent: (bc) => Q(bc[bc.length - 1]),
+    remoteCurrent: (bc) => co(function*() {
+      return bc[bc.length - 1]
+    }),
 
     // Get the remote peers to be pulled
     remotePeers: () => Q(sideChains.map((sc, index) => {
@@ -206,7 +210,9 @@ function mockDao(blockchain, sideChains) {
     })),
 
     // Get block of given peer with given block number
-    getLocalBlock: (number) => Q(blockchain[number] || null),
+    getLocalBlock: (number) => co(function*() {
+      return blockchain[number] || null
+    }),
 
     // Get block of given peer with given block number
     getRemoteBlock: (bc, number) => co(function *() {
@@ -220,16 +226,32 @@ function mockDao(blockchain, sideChains) {
     }),
 
     // Simulate the adding of a single new block on local blockchain
-    applyMainBranch: (block) => Q(blockchain.push(block)),
+    applyMainBranch: (block) => co(function*() {
+      return blockchain.push(block)
+    }),
 
     // Clean the eventual fork blocks already registered in DB (since real fork mechanism uses them, so we want
     // every old fork block to be removed)
-    removeForks: () => Q(),
+    removeForks: () => co(function*() {}),
 
     // Tells wether given peer is a member peer
-    isMemberPeer: (peer) => Q(true),
+    isMemberPeer: (peer) => co(function*() {
+      return true;
+    }),
 
     // Simulates the downloading of blocks from a peer
-    downloadBlocks: (bc, fromNumber, count) => Q(bc.slice(fromNumber, fromNumber + count))
+    downloadBlocks: (bc, fromNumber, count) => co(function*() {
+      if (!count) {
+        const block = yield dao.getRemoteBlock(bc, fromNumber);
+        if (block) {
+          return [block];
+        }
+        else {
+          return [];
+        }
+      }
+      return bc.slice(fromNumber, fromNumber + count);
+    }),
   });
+  return dao;
 }

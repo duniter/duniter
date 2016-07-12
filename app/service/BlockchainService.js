@@ -539,7 +539,7 @@ function BlockchainService () {
     const current = yield that.current();
     count = Math.min(current.number - from + 1, count);
     if (!current || current.number < from) {
-      throw 'Starting block #' + from + ' does not exist';
+      return [];
     }
     return dal.getBlocksBetween(from, from + count - 1);
   });

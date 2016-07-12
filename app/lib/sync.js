@@ -123,7 +123,7 @@ function Synchroniser (server, host, port, conf, interactive) {
       getLocalBlock: (number) => dal.getBlockOrNull(number),
 
       // Get block of given peer with given block number
-      getRemoteBlock: (thePeer, number) => co(function *() {
+      downloadBlocks: (thePeer, number) => co(function *() {
         let blocks = [];
         if (number <= to) {
           const nextChunck = Math.min(to - number + 1, CONST_BLOCKS_CHUNK);

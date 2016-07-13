@@ -168,12 +168,17 @@ program
   .description('Launch the configuration Wizard')
   .action(subCommand(function (step) {
     // Only show message "Saved"
-    connect(function (step, server, conf) {
-      async.series([
-        function (next) {
-          startWizard(step, server, conf, next);
-        }
-      ], logIfErrorAndExit(server));
+    return connect(function (step, server, conf) {
+      return new Promise((resolve, reject) => {
+        async.series([
+          function (next) {
+            startWizard(step, server, conf, next);
+          }
+        ], (err) => {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
     })(step, null);
   }));
 

@@ -31,11 +31,12 @@
 <h1 id="loader">Loading...</h1>
 <script type="text/javascript">
 
+  const packageJSONPath = '../../nw/package.json'; // Release specific
   const SERVER_ORIGIN = '127.0.0.1:9220';
 
   let gui = require('nw.gui');
 
-  let packageJSON = require('./package.json');
+  let packageJSON = require(packageJSONPath);
   function reqListener () {
     document.getElementById('loader').innerHTML = 'Server ready.';
     clearTimeout(strangeTimeout);

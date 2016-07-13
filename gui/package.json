@@ -1,10 +1,10 @@
 {
-  "name": "v0.20.1a5",
+  "name": "v0.20.1a6",
   "main": "index.html",
   "node-main": "../sources/bin/duniter",
   "window": {
     "icon": "duniter.png",
-    "title": "v0.20.1a5",
+    "title": "v0.20.1a6",
     "width": 400,
     "height": 500,
     "min_width": 400,

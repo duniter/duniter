@@ -96,8 +96,8 @@ function User (uid, options, node) {
     return yield that.sendMembership("OUT");
   });
 
-  this.revoke = () => co(function *() {
-    let res = yield that.lookup(pub);
+  this.revoke = (givenLookupIdty) => co(function *() {
+    let res = givenLookupIdty || (yield that.lookup(pub));
     let idty = Identity.statics.fromJSON({
       uid: res.results[0].uids[0].uid,
       buid: res.results[0].uids[0].meta.timestamp,

@@ -176,9 +176,10 @@ function IdentityService () {
         }
       }
       else {
-        // Create
-        revoc.revoked = true;
-        yield dal.savePendingIdentity(revoc);
+        // Create identity given by the revocation
+        const idty = new Identity(revoc);
+        idty.revocation_sig = revoc.signature;
+        yield dal.savePendingIdentity(idty);
         return jsonResultTrue();
       }
     }));

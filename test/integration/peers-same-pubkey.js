@@ -48,8 +48,8 @@ describe("Peer document", function() {
     }), Q());
 
     // Server 1
-    yield cat.selfCert();
-    yield toc.selfCert();
+    yield cat.createIdentity();
+    yield toc.createIdentity();
     yield toc.cert(cat);
     yield cat.cert(toc);
     yield cat.join();

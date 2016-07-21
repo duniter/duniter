@@ -36,15 +36,15 @@ describe("Lookup identity grouping", () => {
     yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
 
     // cat is publishing its identity, no problem
-    yield cat.selfCert();
+    yield cat.createIdentity();
 
     // tic1 is publishing its identity
-    yield tic1.selfCert();
+    yield tic1.createIdentity();
 
     // tic2 is publishing its identity, but he has **the same pubkey as tic1**.
     // This is OK on the protocol side, but the lookup should group the 2 identities
     // under the same pubkey
-    yield tic2.selfCert();
+    yield tic2.createIdentity();
   }));
 
   it('cat should have only 1 identity in 1 pubkey', () => httpTest.expectAnswer(rp('http://127.0.0.1:4452/wot/lookup/cat', { json: true }), (res) => {

@@ -332,8 +332,8 @@ function BlockGenerator(mainContext, prover) {
     }
     const idty = new Identity(identity);
     idty.currency = conf.currency;
-    const selfCert = idty.rawWithoutSig();
-    const verified = keyring.verify(selfCert, idty.sig, idty.pubkey);
+    const createIdentity = idty.rawWithoutSig();
+    const verified = keyring.verify(createIdentity, idty.sig, idty.pubkey);
     if (!verified) {
       throw constants.ERRORS.IDENTITY_WRONGLY_SIGNED;
     }

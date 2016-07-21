@@ -39,8 +39,8 @@ describe("HTTP API", function() {
     let s = yield server.initWithDAL();
     let bmapi = yield bma(s);
     yield bmapi.openConnections();
-    yield cat.selfCert();
-    yield toc.selfCert();
+    yield cat.createIdentity();
+    yield toc.createIdentity();
     yield toc.cert(cat);
     yield cat.cert(toc);
     yield cat.join();

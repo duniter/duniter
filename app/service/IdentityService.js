@@ -64,11 +64,11 @@ function IdentityService () {
 
   this.submitIdentity = (obj) => {
     let idty = new Identity(obj);
-    const selfCert = idty.rawWithoutSig();
+    const createIdentity = idty.rawWithoutSig();
     return that.pushFIFO(() => co(function *() {
       logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
       // Check signature's validity
-      let verified = keyring.verify(selfCert, idty.sig, idty.pubkey);
+      let verified = keyring.verify(createIdentity, idty.sig, idty.pubkey);
       if (!verified) {
         throw constants.ERRORS.SIGNATURE_DOES_NOT_MATCH;
       }

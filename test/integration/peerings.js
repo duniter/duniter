@@ -109,9 +109,9 @@ describe("Network", function() {
           nodeS2 = vucoin_p('127.0.0.1', s2.conf.port);
           nodeS3 = vucoin_p('127.0.0.1', s3.conf.port);
           // Server 1
-          yield cat.selfCert();
-          yield toc.selfCert();
-          yield tic.selfCert();
+          yield cat.createIdentity();
+          yield toc.createIdentity();
+          yield tic.createIdentity();
           yield toc.cert(cat);
           yield cat.cert(toc);
           yield cat.cert(tic);

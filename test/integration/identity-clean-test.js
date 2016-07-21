@@ -47,9 +47,9 @@ describe("Identities cleaned", function() {
 
     return co(function *() {
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield cat.selfCert();
-      yield tic.selfCert();
-      yield toc.selfCert();
+      yield cat.createIdentity();
+      yield tic.createIdentity();
+      yield toc.createIdentity();
 
       yield expectAnswer(rp('http://127.0.0.1:7733/wot/lookup/cat', { json: true }), function(res) {
         res.should.have.property('results').length(2);

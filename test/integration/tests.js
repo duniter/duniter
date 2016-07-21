@@ -78,10 +78,10 @@ describe("Integration", function() {
         return co(function *() {
 
           // Self certifications
-          yield cat.selfCert();
-          yield tac.selfCert();
-          yield tic.selfCert();
-          yield toc.selfCert();
+          yield cat.createIdentity();
+          yield tac.createIdentity();
+          yield tic.createIdentity();
+          yield toc.createIdentity();
           // Certifications
           yield cat.cert(tac);
         });
@@ -94,7 +94,7 @@ describe("Integration", function() {
 
           // We send again the same
           try {
-            yield tic.selfCert();
+            yield tic.createIdentity();
             throw 'Should have thrown an error';
           } catch (e) {
             JSON.parse(e).ucode.should.equal(constants.ERRORS.ALREADY_UP_TO_DATE.uerr.ucode);
@@ -105,7 +105,7 @@ describe("Integration", function() {
 
           // We send again the same
           try {
-            yield tic.selfCert();
+            yield tic.createIdentity();
             throw 'Should have thrown an error';
           } catch (e) {
             JSON.parse(e).ucode.should.equal(constants.ERRORS.ALREADY_UP_TO_DATE.uerr.ucode);
@@ -187,10 +187,10 @@ describe("Integration", function() {
         let now = Math.round(new Date().getTime() / 1000);
 
         // Self certifications
-        yield cat.selfCert();
-        yield tac.selfCert();
-        yield tic.selfCert();
-        yield toc.selfCert();
+        yield cat.createIdentity();
+        yield tac.createIdentity();
+        yield tic.createIdentity();
+        yield toc.createIdentity();
         yield cat.cert(tac);
         yield cat.cert(tic);
         yield cat.cert(toc);

@@ -20,7 +20,7 @@ function User (uid, options, node) {
 
   var that = this;
   var pub, sec;
-  var selfCert = "";
+  var createIdentity = "";
   that.node = node;
 
   // For sync code
@@ -50,20 +50,20 @@ function User (uid, options, node) {
     }
   }
 
-  this.selfCert = (useRoot) => co(function*() {
+  this.createIdentity = (useRoot) => co(function*() {
     if (!pub)
       yield Q.nfcall(init);
     const current = yield node.server.BlockchainService.current();
     let buid = !useRoot && current ? ucp.format.buid(current.number, current.hash) : '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855';
-    selfCert = rawer.getOfficialIdentity({
+    createIdentity = rawer.getOfficialIdentity({
       buid: buid,
       uid: uid,
       issuer: pub,
       currency: node.server.conf.currency
     });
-    selfCert += keyring.Key(pub, sec).signSync(selfCert) + '\n';
+    createIdentity += keyring.Key(pub, sec).signSync(createIdentity) + '\n';
     yield Q.nfcall(post, '/wot/add', {
-      "identity": selfCert
+      "identity": createIdentity
     });
   });
 

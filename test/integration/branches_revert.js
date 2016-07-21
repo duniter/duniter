@@ -44,8 +44,8 @@ describe("Revert root", function() {
 
     return co(function *() {
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield cat.selfCert();
-      yield toc.selfCert();
+      yield cat.createIdentity();
+      yield toc.createIdentity();
       yield toc.cert(cat);
       yield cat.cert(toc);
       yield cat.join();

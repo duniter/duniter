@@ -60,9 +60,9 @@ describe("Revocation", function() {
     return co(function *() {
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
       yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield cat.selfCert();
-      yield tic.selfCert();
-      yield toc.selfCert();
+      yield cat.createIdentity();
+      yield tic.createIdentity();
+      yield toc.createIdentity();
       yield cat.cert(tic);
       yield tic.cert(cat);
       yield tic.cert(toc);
@@ -107,7 +107,7 @@ describe("Revocation", function() {
   }));
 
   it('sending a revocation for tac should add an identity', () => co(function *() {
-    yield tacOnS1.selfCert();
+    yield tacOnS1.createIdentity();
     const idty = yield tacOnS1.lookup(tacOnS1.pub);
     yield tacOnS2.revoke(idty);
     // On S1 server, tac is known as normal identity

@@ -549,27 +549,44 @@ function NextBlockGenerator(conf, dal) {
     // The block above which (above from current means blocks with number < current)
     const blockOfChainability = current ? (yield dal.getChainabilityBlock(current.medianTime, conf.sigPeriod)) : null;
     for (const cert of certs) {
-      let exists = false;
-      if (current) {
-        // Already exists a link not replayable yet?
-        exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigValidity);
-      }
-      if (!exists) {
-        // Already exists a link not chainable yet?
-        // No chainability block means absolutely nobody can issue certifications yet
-        exists = current && (yield dal.existsNonChainableLink(cert.from, blockOfChainability ? blockOfChainability.number : -1, conf.sigStock));
-        if (!exists) {
-          // It does NOT already exists a similar certification written, which is not replayable yet
-          // Signatory must be a member
-          const isSignatoryAMember = yield dal.isMember(cert.from);
-          const isCertifiedANonLeavingMember = isSignatoryAMember && (yield dal.isMemberAndNonLeaver(cert.to));
-          // Certified must be a member and non-leaver
-          if (isSignatoryAMember && isCertifiedANonLeavingMember) {
-            updatesToFrom[cert.to] = updatesToFrom[cert.to] || [];
-            updates[cert.to] = updates[cert.to] || [];
-            if (updatesToFrom[cert.to].indexOf(cert.from) == -1) {
-              updates[cert.to].push(cert);
-              updatesToFrom[cert.to].push(cert.from);
+      const targetIdty = yield dal.getIdentityByHashOrNull(cert.target);
+      // The identity must be known
+      if (targetIdty) {
+        const certSig = cert.sig;
+        cert.sig = '';
+        cert.currency = conf.currency;
+        cert.issuer = cert.from;
+        cert.idty_issuer = targetIdty.pubkey;
+        cert.idty_uid = targetIdty.uid;
+        cert.idty_buid = targetIdty.buid;
+        cert.idty_sig = targetIdty.sig;
+        cert.buid = [cert.block_number, cert.block_hash].join('-');
+        const rawCert = Certification.statics.fromJSON(cert).getRaw();
+        if (keyring.verify(rawCert, certSig, cert.from)) {
+          cert.sig = certSig;
+          let exists = false;
+          if (current) {
+            // Already exists a link not replayable yet?
+            exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigValidity);
+          }
+          if (!exists) {
+            // Already exists a link not chainable yet?
+            // No chainability block means absolutely nobody can issue certifications yet
+            exists = current && (yield dal.existsNonChainableLink(cert.from, blockOfChainability ? blockOfChainability.number : -1, conf.sigStock));
+            if (!exists) {
+              // It does NOT already exists a similar certification written, which is not replayable yet
+              // Signatory must be a member
+              const isSignatoryAMember = yield dal.isMember(cert.from);
+              const isCertifiedANonLeavingMember = isSignatoryAMember && (yield dal.isMemberAndNonLeaver(cert.to));
+              // Certified must be a member and non-leaver
+              if (isSignatoryAMember && isCertifiedANonLeavingMember) {
+                updatesToFrom[cert.to] = updatesToFrom[cert.to] || [];
+                updates[cert.to] = updates[cert.to] || [];
+                if (updatesToFrom[cert.to].indexOf(cert.from) == -1) {
+                  updates[cert.to].push(cert);
+                  updatesToFrom[cert.to].push(cert.from);
+                }
+              }
             }
           }
         }

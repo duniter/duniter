@@ -681,44 +681,59 @@ function BlockGenerator(mainContext, prover) {
  */
 function NextBlockGenerator(conf, dal) {
 
-  this.findNewCertsFromWoT = function(current) {
-    return co(function *() {
-      var updates = {};
-      var updatesToFrom = {};
-      var certs = yield dal.certsFindNew();
-      // The block above which (above from current means blocks with number < current)
-      let blockOfChainability = current ? (yield dal.getChainabilityBlock(current.medianTime, conf.sigPeriod)) : null;
-      for (var i = 0; i < certs.length; i++) {
-        var cert = certs[i];
-        var exists = false;
-        if (current) {
-          // Already exists a link not replayable yet?
-          exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigValidity);
-        }
-        if (!exists) {
-          // Already exists a link not chainable yet?
-          // No chainability block means absolutely nobody can issue certifications yet
-          exists = current && (yield dal.existsNonChainableLink(cert.from, blockOfChainability ? blockOfChainability.number : -1, conf.sigStock));
+
+  this.findNewCertsFromWoT = (current) => co(function *() {
+    const updates = {};
+    const updatesToFrom = {};
+    const certs = yield dal.certsFindNew();
+    // The block above which (above from current means blocks with number < current)
+    const blockOfChainability = current ? (yield dal.getChainabilityBlock(current.medianTime, conf.sigPeriod)) : null;
+    for (const cert of certs) {
+      const targetIdty = yield dal.getIdentityByHashOrNull(cert.target);
+      // The identity must be known
+      if (targetIdty) {
+        const certSig = cert.sig;
+        cert.sig = '';
+        cert.currency = conf.currency;
+        cert.issuer = cert.from;
+        cert.idty_issuer = targetIdty.pubkey;
+        cert.idty_uid = targetIdty.uid;
+        cert.idty_buid = targetIdty.buid;
+        cert.idty_sig = targetIdty.sig;
+        cert.buid = [cert.block_number, cert.block_hash].join('-');
+        const rawCert = Certification.statics.fromJSON(cert).getRaw();
+        if (crypto.verify(rawCert, certSig, cert.from)) {
+          cert.sig = certSig;
+          let exists = false;
+          if (current) {
+            // Already exists a link not replayable yet?
+            exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigValidity);
+          }
           if (!exists) {
-            // It does NOT already exists a similar certification written, which is not replayable yet
-            // Signatory must be a member
-            var isSignatoryAMember = yield dal.isMember(cert.from);
-            var isCertifiedANonLeavingMember = isSignatoryAMember && (yield dal.isMemberAndNonLeaver(cert.to));
-            // Certified must be a member and non-leaver
-            if (isSignatoryAMember && isCertifiedANonLeavingMember) {
-              updatesToFrom[cert.to] = updatesToFrom[cert.to] || [];
-              updates[cert.to] = updates[cert.to] || [];
-              if (updatesToFrom[cert.to].indexOf(cert.from) == -1) {
-                updates[cert.to].push(cert);
-                updatesToFrom[cert.to].push(cert.from);
+            // Already exists a link not chainable yet?
+            // No chainability block means absolutely nobody can issue certifications yet
+            exists = current && (yield dal.existsNonChainableLink(cert.from, blockOfChainability ? blockOfChainability.number : -1, conf.sigStock));
+            if (!exists) {
+              // It does NOT already exists a similar certification written, which is not replayable yet
+              // Signatory must be a member
+              const isSignatoryAMember = yield dal.isMember(cert.from);
+              const isCertifiedANonLeavingMember = isSignatoryAMember && (yield dal.isMemberAndNonLeaver(cert.to));
+              // Certified must be a member and non-leaver
+              if (isSignatoryAMember && isCertifiedANonLeavingMember) {
+                updatesToFrom[cert.to] = updatesToFrom[cert.to] || [];
+                updates[cert.to] = updates[cert.to] || [];
+                if (updatesToFrom[cert.to].indexOf(cert.from) == -1) {
+                  updates[cert.to].push(cert);
+                  updatesToFrom[cert.to].push(cert.from);
+                }
               }
             }
           }
         }
       }
-      return updates;
-    });
-  };
+    }
+    return updates;
+  });
 
   this.filterJoiners = function takeAllJoiners(preJoinData, done) {
     // No manual filtering, takes all BUT already used UID or pubkey

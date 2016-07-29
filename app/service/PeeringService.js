@@ -63,6 +63,8 @@ function PeeringService(server) {
   };
 
   this.submitP = function(peering, eraseIfAlreadyRecorded, cautious){
+    // Force usage of local currency name, do not accept other currencies documents
+    peering.currency = conf.currency || peering.currency;
     let thePeer = new Peer(peering);
     let sp = thePeer.block.split('-');
     const blockNumber = parseInt(sp[0]);

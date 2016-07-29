@@ -33,7 +33,7 @@ function BlockGenerator(mainContext, prover) {
     logger = require('../logger')(dal.profile);
   };
 
-  this.nextBlock = () => generateNextBlock(new NextBlockGenerator(conf, dal));
+  this.nextBlock = (manualValues) => generateNextBlock(new NextBlockGenerator(conf, dal), manualValues);
 
   this.nextEmptyBlock = () => co(function *() {
     const current = yield dal.getCurrentBlockOrNull();
@@ -51,7 +51,7 @@ function BlockGenerator(mainContext, prover) {
   });
 
   this.makeNextBlock = (block, trial, manualValues) => co(function *() {
-    const unsignedBlock = block || (yield that.nextBlock());
+    const unsignedBlock = block || (yield that.nextBlock(manualValues));
     const trialLevel = trial || (yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal));
     return prover.prove(unsignedBlock, trialLevel, (manualValues && manualValues.time) || null);
   });
@@ -59,7 +59,7 @@ function BlockGenerator(mainContext, prover) {
   /**
    * Generate next block, gathering both updates & newcomers
    */
-  const generateNextBlock = (generator) => co(function *() {
+  const generateNextBlock = (generator, manualValues) => co(function *() {
     const current = yield dal.getCurrentBlockOrNull();
     const lastUDBlock = yield dal.lastUDBlock();
     const revocations = yield dal.getRevocatingMembers();
@@ -90,7 +90,7 @@ function BlockGenerator(mainContext, prover) {
     });
     // Revocations
     // Create the block
-    return createBlock(current, joinData, leaveData, newCertsFromWoT, revocations, exclusions, lastUDBlock, transactions);
+    return createBlock(current, joinData, leaveData, newCertsFromWoT, revocations, exclusions, lastUDBlock, transactions, manualValues);
   });
 
   const findNewcomersAndLeavers  = (current, filteringFunc) => co(function*() {
@@ -395,7 +395,7 @@ function BlockGenerator(mainContext, prover) {
     };
   });
 
-  const createBlock = (current, joinData, leaveData, updates, revocations, exclusions, lastUDBlock, transactions) => {
+  const createBlock = (current, joinData, leaveData, updates, revocations, exclusions, lastUDBlock, transactions, manualValues) => {
     // Revocations have an impact on exclusions
     revocations.forEach((idty) => exclusions.push(idty.pubkey));
     // Prevent writing joins/updates for excluded members
@@ -529,6 +529,9 @@ function BlockGenerator(mainContext, prover) {
       // InnerHash
       block.time = block.medianTime;
       block.inner_hash = hashf(rawer.getBlockInnerPart(block)).toUpperCase();
+      if (manualValues) {
+        _.extend(block, _.omit(manualValues, 'time'));
+      }
       return block;
     });
   }

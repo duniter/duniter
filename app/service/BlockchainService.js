@@ -127,6 +127,8 @@ function BlockchainService () {
   this.submitBlock = (obj, doCheck, forkAllowed) => this.pushFIFO(() => checkAndAddBlock(obj, doCheck, forkAllowed));
 
   const checkAndAddBlock = (obj, doCheck, forkAllowed) => co(function *() {
+    // Force usage of local currency name, do not accept other currencies documents
+    obj.currency = conf.currency || obj.currency;
     Transaction.statics.setIssuers(obj.transactions);
     let existing = yield dal.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
     if (existing) {

@@ -64,6 +64,8 @@ function IdentityService () {
 
   this.submitIdentity = (obj) => {
     let idty = new Identity(obj);
+    // Force usage of local currency name, do not accept other currencies documents
+    idty.currency = conf.currency || idty.currency;
     const createIdentity = idty.rawWithoutSig();
     return that.pushFIFO(() => co(function *() {
       logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
@@ -98,6 +100,8 @@ function IdentityService () {
     const current = yield dal.getCurrentBlockOrNull();
     // Prepare validator for certifications
     const potentialNext = new Block({ currency: conf.currency, identities: [], number: current ? current.number + 1 : 0 });
+    // Force usage of local currency name, do not accept other currencies documents
+    obj.currency = conf.currency || obj.currency;
     const cert = Certification.statics.fromJSON(obj);
     const targetHash = cert.getTargetHash();
     let idty = yield dal.getIdentityByHashOrNull(targetHash);
@@ -155,6 +159,8 @@ function IdentityService () {
   });
 
   this.submitRevocation = (obj) => {
+    // Force usage of local currency name, do not accept other currencies documents
+    obj.currency = conf.currency || obj.currency;
     const revoc = new Revocation(obj);
     const raw = revoc.rawWithoutSig();
     return that.pushFIFO(() => co(function *() {

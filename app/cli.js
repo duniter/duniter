@@ -857,7 +857,8 @@ function webWait() {
   return new Promise(() => {
     co(function *() {
       let webminapi = yield webInit();
-      return webminapi.httpLayer.openConnections();
+      yield webminapi.httpLayer.openConnections();
+      yield new Promise(() => null); // Never stop this command, unless Ctrl+C
     })
       .catch(mainError);
   });
@@ -870,6 +871,7 @@ function webStart() {
     yield webminapi.webminCtrl.startHTTP();
     yield webminapi.webminCtrl.startAllServices();
     yield webminapi.webminCtrl.regularUPnP();
+    yield new Promise(() => null); // Never stop this command, unless Ctrl+C
   })
     .catch(mainError);
 }

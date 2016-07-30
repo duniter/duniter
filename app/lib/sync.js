@@ -96,6 +96,10 @@ function Synchroniser (server, host, port, conf, interactive) {
     watcher.writeStatus('Connecting to ' + host + '...');
     const lCurrent = yield dal.getCurrentBlockOrNull();
     const localNumber = lCurrent ? lCurrent.number : -1;
+    if (isNaN(to)) {
+      const rCurrent = yield Q.nfcall(node.blockchain.current);
+      to = rCurrent['number'];
+    }
 
     // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
     const cautious = (askedCautious === true || (askedCautious === undefined && localNumber >= 0));
@@ -126,9 +130,10 @@ function Synchroniser (server, host, port, conf, interactive) {
       downloadBlocks: (thePeer, number) => co(function *() {
         let blocks = [];
         if (number <= to) {
-          const nextChunck = Math.min(to - number + 1, CONST_BLOCKS_CHUNK);
+          let nextChunck = CONST_BLOCKS_CHUNK;
 
           try {
+            watcher.writeStatus('Getting chunck from ' + number + ' to ' + (number + nextChunck));
             blocks = yield Q.nfcall(thePeer.blockchain.blocks, nextChunck, number);
             watcher.downloadPercent(Math.floor(number / to * 100));
           } catch (e) {

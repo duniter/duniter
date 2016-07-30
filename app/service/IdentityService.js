@@ -64,11 +64,13 @@ function IdentityService () {
 
   this.submitIdentity = (obj) => {
     let idty = new Identity(obj);
-    const selfCert = idty.rawWithoutSig();
+    // Force usage of local currency name, do not accept other currencies documents
+    idty.currency = conf.currency || idty.currency;
+    const createIdentity = idty.rawWithoutSig();
     return that.pushFIFO(() => co(function *() {
       logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
       // Check signature's validity
-      let verified = keyring.verify(selfCert, idty.sig, idty.pubkey);
+      let verified = keyring.verify(createIdentity, idty.sig, idty.pubkey);
       if (!verified) {
         throw constants.ERRORS.SIGNATURE_DOES_NOT_MATCH;
       }
@@ -98,6 +100,8 @@ function IdentityService () {
     const current = yield dal.getCurrentBlockOrNull();
     // Prepare validator for certifications
     const potentialNext = new Block({ currency: conf.currency, identities: [], number: current ? current.number + 1 : 0 });
+    // Force usage of local currency name, do not accept other currencies documents
+    obj.currency = conf.currency || obj.currency;
     const cert = Certification.statics.fromJSON(obj);
     const targetHash = cert.getTargetHash();
     let idty = yield dal.getIdentityByHashOrNull(targetHash);
@@ -155,6 +159,8 @@ function IdentityService () {
   });
 
   this.submitRevocation = (obj) => {
+    // Force usage of local currency name, do not accept other currencies documents
+    obj.currency = conf.currency || obj.currency;
     const revoc = new Revocation(obj);
     const raw = revoc.rawWithoutSig();
     return that.pushFIFO(() => co(function *() {
@@ -176,9 +182,10 @@ function IdentityService () {
         }
       }
       else {
-        // Create
-        revoc.revoked = true;
-        yield dal.savePendingIdentity(revoc);
+        // Create identity given by the revocation
+        const idty = new Identity(revoc);
+        idty.revocation_sig = revoc.signature;
+        yield dal.savePendingIdentity(idty);
         return jsonResultTrue();
       }
     }));

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Duniter 0.20.1a5</title>
+  <title>Duniter 0.20.1a4</title>
   <style>
     html {
       font-family: "Courier New", Courier, monospace;
@@ -34,8 +34,6 @@
   const SERVER_ORIGIN = '127.0.0.1:9220';
 
   let gui = require('nw.gui');
-
-  let packageJSON = require('./package.json');
   function reqListener () {
     document.getElementById('loader').innerHTML = 'Server ready.';
     clearTimeout(strangeTimeout);
@@ -46,11 +44,7 @@
       min_height: 600,
       min_width: 600
     }, function(win) {
-      win.window.mainWindow = win;
       win.window.gui = gui;
-      win.window.duniter = {
-        version: packageJSON.name.substr(1)
-      };
       win.on('closed', function() {
         // Also close globally the app when main window is closed
         gui.Window.get().close();

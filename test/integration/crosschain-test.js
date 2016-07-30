@@ -64,8 +64,8 @@ describe("Crosschain transactions", function() {
         yield sM.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
 
         // Initialize BETA
-        yield ticB.selfCert();
-        yield tocB.selfCert();
+        yield ticB.createIdentity();
+        yield tocB.createIdentity();
         yield tocB.cert(ticB);
         yield ticB.cert(tocB);
         yield ticB.join();
@@ -80,8 +80,8 @@ describe("Crosschain transactions", function() {
         yield commit(sB)();
 
         // Initialize META
-        yield ticM.selfCert();
-        yield tocM.selfCert();
+        yield ticM.createIdentity();
+        yield tocM.createIdentity();
         yield tocM.cert(ticM);
         yield ticM.cert(tocM);
         yield ticM.join();
@@ -235,8 +235,8 @@ describe("Crosschain transactions", function() {
         yield bmapi.openConnections();
 
         // Initialize BETA
-        yield ticB.selfCert();
-        yield tocB.selfCert();
+        yield ticB.createIdentity();
+        yield tocB.createIdentity();
         yield tocB.cert(ticB);
         yield ticB.cert(tocB);
         yield ticB.join();
@@ -251,8 +251,8 @@ describe("Crosschain transactions", function() {
         yield commit(sB)();
 
         // Initialize META
-        yield ticM.selfCert();
-        yield tocM.selfCert();
+        yield ticM.createIdentity();
+        yield tocM.createIdentity();
         yield tocM.cert(ticM);
         yield ticM.cert(tocM);
         yield ticM.join();

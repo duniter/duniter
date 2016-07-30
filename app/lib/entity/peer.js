@@ -139,6 +139,8 @@ Peer.statics.peerize = function(p) {
   return p != null ? new Peer(p) : null;
 };
 
+Peer.statics.fromJSON = Peer.statics.peerize;
+
 Peer.statics.endpoint2host = (endpoint) => Peer.statics.peerize({ endpoints: [endpoint] }).getURL();
 
 Peer.statics.endpointSum = (obj) => Peer.statics.peerize(obj).endpointSum();

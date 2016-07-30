@@ -21,11 +21,15 @@ function WOTBinding (server) {
   const Identity = require('../lib/entity/identity');
 
   this.lookup = (req) => co(function *() {
+    // Get the search parameter from HTTP query
     const search = yield ParametersService.getSearchP(req);
+    // Make the research
     const identities = yield IdentityService.searchIdentities(search);
+    // Entitify each result
     identities.forEach((idty, index) => identities[index] = new Identity(idty));
+    // Prepare some data to avoid displaying expired certifications
     const excluding = yield BlockchainService.getCertificationsExludingBlock();
-      for (const idty of identities) {
+    for (const idty of identities) {
       const certs = yield server.dal.certsToTarget(idty.getTargetHash());
       const validCerts = [];
       for (const cert of certs) {
@@ -60,17 +64,27 @@ function WOTBinding (server) {
       }
       idty.signed = validSigned;
     }
-    const json = {
-      partial: false,
-      results: []
-    };
     if (identities.length == 0) {
       throw constants.ERRORS.NO_MATCHING_IDENTITY;
     }
-    identities.forEach(function(identity){
-      json.results.push(identity.json());
+    const resultsByPubkey = {};
+    identities.forEach((identity) => {
+      const jsoned = identity.json();
+      if (!resultsByPubkey[jsoned.pubkey]) {
+        // Create the first matching identity with this pubkey in the map
+        resultsByPubkey[jsoned.pubkey] = jsoned;
+      } else {
+        // Merge the identity with the existing(s)
+        const existing = resultsByPubkey[jsoned.pubkey];
+        // We add the UID of the identity to the list of already added UIDs
+        existing.uids = existing.uids.concat(jsoned.uids);
+        // We do not merge the `signed`: every identity with the same pubkey has the same `signed` because it the *pubkey* which signs, not the identity
+      }
     });
-    return json;
+    return {
+      partial: false,
+      results: Object.values(resultsByPubkey)
+    };
   });
 
   this.members = () => co(function *() {

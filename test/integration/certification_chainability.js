@@ -53,8 +53,8 @@ describe("Certification chainability", function() {
        * tac <===> cat
        */
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield cat.selfCert();
-      yield tac.selfCert();
+      yield cat.createIdentity();
+      yield tac.createIdentity();
       yield cat.cert(tac);
       yield tac.cert(cat);
       yield cat.join();
@@ -65,7 +65,7 @@ describe("Certification chainability", function() {
       });
 
       // Should not happen on the first commit due to certPeriod
-      yield tic.selfCert();
+      yield tic.createIdentity();
       yield tic.join();
       yield cat.cert(tic);
       yield commitS1({ now });

@@ -54,7 +54,7 @@ describe("Identity absorption", function() {
     return co(function *() {
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
       yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield cat.selfCert();
+      yield cat.createIdentity();
       yield tic.cert(cat, s1);
     });
   });

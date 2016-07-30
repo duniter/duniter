@@ -170,9 +170,9 @@ function WebAdmin (dbConf, overConf) {
     });
     let found = yield server.dal.getIdentityByHashOrNull(entity.getTargetHash());
     if (!found) {
-      let selfCert = rawer.getOfficialIdentity(entity);
-      selfCert += pair.signSync(selfCert) + '\n';
-      found = yield that.pushEntity({ body: { identity: selfCert }}, http2raw.identity, constants.ENTITY_IDENTITY);
+      let createIdentity = rawer.getOfficialIdentity(entity);
+      createIdentity += pair.signSync(createIdentity) + '\n';
+      found = yield that.pushEntity({ body: { identity: createIdentity }}, http2raw.identity, constants.ENTITY_IDENTITY);
     }
     yield server.dal.fillInMembershipsOfIdentity(Q(found));
     if (_.filter(found.memberships, { membership: 'IN'}).length == 0) {

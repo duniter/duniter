@@ -40,7 +40,7 @@ describe("Community collapse", function() {
 
     return co(function *() {
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield cat.selfCert();
+      yield cat.createIdentity();
       yield cat.join();
       yield commit(s1)();
       yield commit(s1)();

@@ -168,12 +168,17 @@ program
   .description('Launch the configuration Wizard')
   .action(subCommand(function (step) {
     // Only show message "Saved"
-    connect(function (step, server, conf) {
-      async.series([
-        function (next) {
-          startWizard(step, server, conf, next);
-        }
-      ], logIfErrorAndExit(server));
+    return connect(function (step, server, conf) {
+      return new Promise((resolve, reject) => {
+        async.series([
+          function (next) {
+            startWizard(step, server, conf, next);
+          }
+        ], (err) => {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
     })(step, null);
   }));
 
@@ -852,7 +857,8 @@ function webWait() {
   return new Promise(() => {
     co(function *() {
       let webminapi = yield webInit();
-      return webminapi.httpLayer.openConnections();
+      yield webminapi.httpLayer.openConnections();
+      yield new Promise(() => null); // Never stop this command, unless Ctrl+C
     })
       .catch(mainError);
   });
@@ -865,6 +871,7 @@ function webStart() {
     yield webminapi.webminCtrl.startHTTP();
     yield webminapi.webminCtrl.startAllServices();
     yield webminapi.webminCtrl.regularUPnP();
+    yield new Promise(() => null); // Never stop this command, unless Ctrl+C
   })
     .catch(mainError);
 }

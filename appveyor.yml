@@ -32,8 +32,8 @@ after_test:
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set SRC=%cd%
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] echo %SRC%
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] copy misc\MSVSVersion.py %APPDATA%\npm\node_modules\nw-gyp\gyp\pylib\gyp\MSVSVersion.py
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW_VERSION=0.15.4
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW_RELEASE=v0.15.4
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW_VERSION=0.14.5
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW_RELEASE=v0.14.5
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] echo %NW_RELEASE%
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd node_modules/wotb
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm install --build-from-source
@@ -79,7 +79,7 @@ artifacts:
     name: Duniter
 
 deploy:
-  release: v0.20.1a5
+  release: v0.20.1a4
   provider: GitHub
   auth_token:
     secure: Vp/M0r0i1yhGR2nhrPWEbTiDIF6r0cmwbNDFZUzdFe5clWxPXtuC0lgIpOQI78zt

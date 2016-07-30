@@ -64,6 +64,8 @@ function PeeringService(server) {
   };
 
   this.submitP = function(peering, eraseIfAlreadyRecorded, cautious){
+    // Force usage of local currency name, do not accept other currencies documents
+    peering.currency = conf.currency || peering.currency;
     let thePeer = new Peer(peering);
     let sp = thePeer.block.split('-');
     const blockNumber = parseInt(sp[0]);
@@ -262,7 +264,7 @@ function PeeringService(server) {
       currency: currency,
       pubkey: selfPubkey,
       block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
-      endpoints: [endpoint].concat(toConserve)
+      endpoints: _.uniq([endpoint].concat(toConserve))
     };
     const raw2 = dos2unix(new Peer(p2).getRaw());
     logger.info('External access:', new Peer(p2).getURL());

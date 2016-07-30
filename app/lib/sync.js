@@ -98,7 +98,7 @@ function Synchroniser (server, host, port, conf, interactive) {
     const localNumber = lCurrent ? lCurrent.number : -1;
     if (isNaN(to)) {
       const rCurrent = yield Q.nfcall(node.blockchain.current);
-      to = rCurrent['number'];
+      to = rCurrent.number;
     }
 
     // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
@@ -130,7 +130,7 @@ function Synchroniser (server, host, port, conf, interactive) {
       downloadBlocks: (thePeer, number) => co(function *() {
         let blocks = [];
         if (number <= to) {
-          let nextChunck = CONST_BLOCKS_CHUNK;
+          const nextChunck = Math.min(to - number + 1, CONST_BLOCKS_CHUNK);
 
           try {
             watcher.writeStatus('Getting chunck from ' + number + ' to ' + (number + nextChunck));

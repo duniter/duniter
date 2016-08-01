@@ -35,7 +35,7 @@
 
   let gui = require('nw.gui');
 
-  let packageJSON = require('./package.json');
+  let packageJSON = require('../../nw/package.json');
   function reqListener () {
     document.getElementById('loader').innerHTML = 'Server ready.';
     clearTimeout(strangeTimeout);
@@ -56,7 +56,6 @@
         // Also close globally the app when main window is closed
         gui.Window.get().close();
       });
-      win.showDevTools();
       gui.Window.get().hide();
     });
   }

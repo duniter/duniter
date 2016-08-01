@@ -896,6 +896,9 @@ function webInit() {
 }
 
 function mainError(err) {
+  if (err.stack) {
+    logger.error(err.stack);
+  }
   logger.error(err.code || err.message || err);
   throw Error("Exiting");
 }

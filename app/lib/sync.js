@@ -81,114 +81,124 @@ function Synchroniser (server, host, port, conf, interactive) {
 
   this.sync = (to, chunkLen, askedCautious, nopeers) => co(function*() {
 
-    const vucoin = yield getVucoin(host, port, vucoinOptions);
-    const peering = yield Q.nfcall(vucoin.network.peering.get);
+    try {
 
-    let peer = new Peer(peering);
-    logger.info("Try with %s %s", peer.getURL(), peer.pubkey.substr(0, 6));
-    let node = yield peer.connect();
-    node.pubkey = peer.pubkey;
-    logger.info('Sync started.');
-    //============
-    // Blockchain
-    //============
-    logger.info('Downloading Blockchain...');
-    watcher.writeStatus('Connecting to ' + host + '...');
-    const lCurrent = yield dal.getCurrentBlockOrNull();
-    const localNumber = lCurrent ? lCurrent.number : -1;
-    if (isNaN(to)) {
-      const rCurrent = yield Q.nfcall(node.blockchain.current);
-      to = rCurrent.number;
-    }
+      const vucoin = yield getVucoin(host, port, vucoinOptions);
+      const peering = yield Q.nfcall(vucoin.network.peering.get);
 
-    // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
-    const cautious = (askedCautious === true || (askedCautious === undefined && localNumber >= 0));
-    let dao = pulling.abstractDao({
-      lastBlock: null,
+      let peer = new Peer(peering);
+      logger.info("Try with %s %s", peer.getURL(), peer.pubkey.substr(0, 6));
+      let node = yield peer.connect();
+      node.pubkey = peer.pubkey;
+      logger.info('Sync started.');
+      //============
+      // Blockchain
+      //============
+      logger.info('Downloading Blockchain...');
+      watcher.writeStatus('Connecting to ' + host + '...');
+      const lCurrent = yield dal.getCurrentBlockOrNull();
+      const localNumber = lCurrent ? lCurrent.number : -1;
+      if (isNaN(to)) {
+        const rCurrent = yield Q.nfcall(node.blockchain.current);
+        to = rCurrent.number;
+      }
 
-      // Get the local blockchain current block
-      localCurrent: () => co(function*() {
-        if (cautious) {
-          return yield dal.getCurrentBlockOrNull();
-        } else {
-          return this.lastBlock;
-        }
-      }),
+      // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
+      const cautious = (askedCautious === true || (askedCautious === undefined && localNumber >= 0));
+      let dao = pulling.abstractDao({
+        lastBlock: null,
 
-      // Get the remote blockchain (bc) current block
-      remoteCurrent: (peer) => Q.nfcall(peer.blockchain.current),
+        // Get the local blockchain current block
+        localCurrent: () => co(function*() {
+          if (cautious) {
+            return yield dal.getCurrentBlockOrNull();
+          } else {
+            return this.lastBlock;
+          }
+        }),
 
-      // Get the remote peers to be pulled
-      remotePeers: () => co(function*() {
-        return [node];
-      }),
+        // Get the remote blockchain (bc) current block
+        remoteCurrent: (peer) => Q.nfcall(peer.blockchain.current),
 
-      // Get block of given peer with given block number
-      getLocalBlock: (number) => dal.getBlockOrNull(number),
+        // Get the remote peers to be pulled
+        remotePeers: () => co(function*() {
+          return [node];
+        }),
 
-      // Get block of given peer with given block number
-      downloadBlocks: (thePeer, number) => co(function *() {
-        let blocks = [];
-        if (number <= to) {
-          const nextChunck = Math.min(to - number + 1, CONST_BLOCKS_CHUNK);
+        // Get block of given peer with given block number
+        getLocalBlock: (number) => dal.getBlockOrNull(number),
 
-          try {
-            watcher.writeStatus('Getting chunck from ' + number + ' to ' + (number + nextChunck));
-            blocks = yield Q.nfcall(thePeer.blockchain.blocks, nextChunck, number);
-            watcher.downloadPercent(Math.floor(number / to * 100));
-          } catch (e) {
-            if (e.httpCode != 404) {
-              throw e;
+        // Get block of given peer with given block number
+        downloadBlocks: (thePeer, number) => co(function *() {
+          let blocks = [];
+          if (number <= to) {
+            const nextChunck = Math.min(to - number + 1, CONST_BLOCKS_CHUNK);
+
+            try {
+              watcher.writeStatus('Getting chunck from ' + number + ' to ' + (number + nextChunck));
+              blocks = yield Q.nfcall(thePeer.blockchain.blocks, nextChunck, number);
+              watcher.downloadPercent(Math.floor(number / to * 100));
+            } catch (e) {
+              if (e.httpCode != 404) {
+                throw e;
+              }
             }
           }
-        }
-        return blocks;
-      }),
+          return blocks;
+        }),
 
 
-      applyBranch: (blocks) => co(function *() {
-        if (cautious) {
-          for (const block of blocks) {
-            yield dao.applyMainBranch(block);
+        applyBranch: (blocks) => co(function *() {
+          if (cautious) {
+            for (const block of blocks) {
+              yield dao.applyMainBranch(block);
+            }
+          } else {
+            yield server.BlockchainService.saveBlocksInMainBranch(blocks);
           }
-        } else {
-          yield server.BlockchainService.saveBlocksInMainBranch(blocks);
-        }
-        this.lastBlock = blocks[blocks.length - 1];
-        watcher.appliedPercent(Math.floor(blocks[blocks.length - 1].number / to * 100));
-        return true;
-      }),
+          this.lastBlock = blocks[blocks.length - 1];
+          watcher.appliedPercent(Math.floor(blocks[blocks.length - 1].number / to * 100));
+          return true;
+        }),
 
-      applyMainBranch: (block) => co(function *() {
+        applyMainBranch: (block) => co(function *() {
           const addedBlock = yield server.BlockchainService.submitBlock(block, true, constants.FORK_ALLOWED);
           server.streamPush(addedBlock);
           watcher.appliedPercent(Math.floor(block.number / to * 100));
-      }),
+        }),
 
-      // Eventually remove forks later on
-      removeForks: () => co(function*() {}),
+        // Eventually remove forks later on
+        removeForks: () => co(function*() {}),
 
-      // Tells wether given peer is a member peer
-      isMemberPeer: (thePeer) => co(function *() {
-        let idty = yield dal.getWrittenIdtyByPubkey(thePeer.pubkey);
-        return (idty && idty.member) || false;
-      })
-    });
+        // Tells wether given peer is a member peer
+        isMemberPeer: (thePeer) => co(function *() {
+          let idty = yield dal.getWrittenIdtyByPubkey(thePeer.pubkey);
+          return (idty && idty.member) || false;
+        })
+      });
 
-    const logInterval = setInterval(() => logRemaining(to), EVAL_REMAINING_INTERVAL);
-    yield pulling.pull(conf, dao);
+      const logInterval = setInterval(() => logRemaining(to), EVAL_REMAINING_INTERVAL);
+      yield pulling.pull(conf, dao);
 
-    // Finished blocks
-    watcher.downloadPercent(100.0);
-    watcher.appliedPercent(100.0);
+      // Finished blocks
+      watcher.downloadPercent(100.0);
+      watcher.appliedPercent(100.0);
 
-    if (logInterval) {
-      clearInterval(logInterval);
+      if (logInterval) {
+        clearInterval(logInterval);
+      }
+
+      // Save currency parameters given by root block
+      const rootBlock = yield server.dal.getBlock(0);
+      yield BlockchainService.saveParametersForRootBlock(rootBlock);
+      server.dal.blockDAL.cleanCache();
+      that.push({ sync: true });
+    } catch (err) {
+      that.push({ sync: false, msg: err });
+      err && watcher.writeStatus(err.message || String(err));
+      watcher.end();
+      throw err;
     }
-
-    // Save currency parameters given by root block
-    const rootBlock = yield server.dal.getBlock(0);
-    yield BlockchainService.saveParametersForRootBlock(rootBlock);
   });
 
   function getVucoin(theHost, thePort, options) {

@@ -105,15 +105,15 @@ function Synchroniser (server, host, port, conf, interactive) {
 
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = (askedCautious === true || (askedCautious === undefined && localNumber >= 0));
-      let lastBlock = null;
       let dao = pulling.abstractDao({
+        lastBlock: null,
 
         // Get the local blockchain current block
         localCurrent: () => co(function*() {
           if (cautious) {
             return yield dal.getCurrentBlockOrNull();
           } else {
-            return lastBlock;
+            return this.lastBlock;
           }
         }),
 
@@ -156,7 +156,7 @@ function Synchroniser (server, host, port, conf, interactive) {
           } else {
             yield server.BlockchainService.saveBlocksInMainBranch(blocks);
           }
-          lastBlock = blocks[blocks.length - 1];
+          this.lastBlock = blocks[blocks.length - 1];
           watcher.appliedPercent(Math.floor(blocks[blocks.length - 1].number / to * 100));
           return true;
         }),

@@ -118,6 +118,12 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
             value: data.stopped
           }));
         }
+        if (data.pulling !== undefined) {
+          wssEvents.broadcast(JSON.stringify({
+            type: 'pulling',
+            value: data.pulling
+          }));
+        }
       }));
   });
 

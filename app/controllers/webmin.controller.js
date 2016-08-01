@@ -30,6 +30,12 @@ function WebAdmin (dbConf, overConf) {
   let bmapi;
   const that = this;
 
+  server.pipe(es.mapSync(function(data) {
+    if (data.pulling !== undefined) {
+      that.push(data);
+    }
+  }));
+
   AbstractController.call(this, server);
 
   stream.Duplex.call(this, { objectMode: true });

@@ -200,6 +200,12 @@ function WebAdmin (dbConf, overConf) {
     return found;
   });
 
+  this.publishANewSelfPeer = (req) => co(function *() {
+    yield pluggedConfP;
+    yield server.recomputeSelfPeer();
+    return {};
+  });
+
   this.applyNetworkConf = (req) => co(function *() {
     yield pluggedConfP;
     const conf = http2raw.conf(req);

@@ -571,15 +571,6 @@ function PeeringService(server) {
                 if (!count) {
                   count = CONST_BLOCKS_CHUNK;
                 }
-                pullingEvent('downloading', count);
-                const blocks = yield Q.nfcall(thePeer.blockchain.blocks, count, fromNumber);
-                lastDownloaded = blocks[blocks.length - 1];
-                return blocks;
-              })
-              downloadBlocks: (thePeer, fromNumber, count) => co(function*() {
-                if (!count) {
-                  count = CONST_BLOCKS_CHUNK;
-                }
                 return yield Q.nfcall(thePeer.blockchain.blocks, count, fromNumber)
               })
             });

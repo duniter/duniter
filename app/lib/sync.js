@@ -191,8 +191,46 @@ function Synchroniser (server, host, port, conf, interactive) {
       // Save currency parameters given by root block
       const rootBlock = yield server.dal.getBlock(0);
       yield BlockchainService.saveParametersForRootBlock(rootBlock);
-      server.dal.blockDAL.cleanCache();
+      server.dal.blockDAL.cleanCache();//=======
+      // Peers
+      //=======
+      if (!nopeers) {
+        watcher.writeStatus('Peers...');
+        yield syncPeer(node);
+        const merkle = yield dal.merkleForPeers();
+        const getPeers = Q.nbind(node.network.peering.peers.get, node);
+        const json2 = yield getPeers({});
+        const rm = new NodesMerkle(json2);
+        if(rm.root() != merkle.root()){
+          const leavesToAdd = [];
+          const json = yield getPeers({ leaves: true });
+          _(json.leaves).forEach((leaf) => {
+            if(merkle.leaves().indexOf(leaf) == -1){
+              leavesToAdd.push(leaf);
+            }
+          });
+          for (const leaf of leavesToAdd) {
+            const json3 = yield getPeers({ "leaf": leaf });
+            const jsonEntry = json3.leaf.value;
+            const sign = json3.leaf.value.signature;
+            const entry = {};
+            ["version", "currency", "pubkey", "endpoints", "block"].forEach((key) => {
+              entry[key] = jsonEntry[key];
+            });
+            entry.signature = sign;
+            watcher.writeStatus('Peer ' + entry.pubkey);
+            logger.info('Peer ' + entry.pubkey);
+            yield PeeringService.submitP(entry, false, to === undefined);
+          }
+        }
+        else {
+          watcher.writeStatus('Peers already known');
+        }
+      }
+
+      watcher.end();
       that.push({ sync: true });
+      logger.info('Sync finished.');
     } catch (err) {
       that.push({ sync: false, msg: err });
       err && watcher.writeStatus(err.message || String(err));

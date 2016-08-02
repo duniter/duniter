@@ -50,7 +50,7 @@
       win.window.mainWindow = win;
       win.window.gui = gui;
       win.window.duniter = {
-        version: packageJSON.name.substr(1)
+        version: packageJSON.name
       };
       win.on('closed', function() {
         // Also close globally the app when main window is closed

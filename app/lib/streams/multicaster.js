@@ -43,7 +43,7 @@ function Multicaster (conf, timeout) {
     uri: '/wot/add',
     getObj: (idty) => {
       return {
-        "identity": idty.selfCert()
+        "identity": idty.createIdentity()
       };
     },
     getDocID: (idty) => 'with ' + (idty.certs || []).length + ' certs'

@@ -52,15 +52,15 @@ describe("Identities expiry", function() {
 
       const now = Math.round(new Date().getTime() / 1000);
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield cat.selfCert();
-      yield tac.selfCert();
-      yield tic.selfCert();
+      yield cat.createIdentity();
+      yield tac.createIdentity();
+      yield tic.createIdentity();
       yield cat.cert(tac);
       yield tac.cert(cat);
       yield cat.join();
       yield tac.join();
       yield commitS1();
-      yield toc.selfCert();
+      yield toc.createIdentity();
       yield toc.join();
       yield commitS1({
         time: now + 10

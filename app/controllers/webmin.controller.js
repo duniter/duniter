@@ -30,6 +30,12 @@ function WebAdmin (dbConf, overConf) {
   let bmapi;
   const that = this;
 
+  server.pipe(es.mapSync(function(data) {
+    if (data.pulling !== undefined) {
+      that.push(data);
+    }
+  }));
+
   AbstractController.call(this, server);
 
   stream.Duplex.call(this, { objectMode: true });
@@ -170,9 +176,9 @@ function WebAdmin (dbConf, overConf) {
     });
     let found = yield server.dal.getIdentityByHashOrNull(entity.getTargetHash());
     if (!found) {
-      let selfCert = rawer.getOfficialIdentity(entity);
-      selfCert += pair.signSync(selfCert) + '\n';
-      found = yield that.pushEntity({ body: { identity: selfCert }}, http2raw.identity, constants.ENTITY_IDENTITY);
+      let createIdentity = rawer.getOfficialIdentity(entity);
+      createIdentity += pair.signSync(createIdentity) + '\n';
+      found = yield that.pushEntity({ body: { identity: createIdentity }}, http2raw.identity, constants.ENTITY_IDENTITY);
     }
     yield server.dal.fillInMembershipsOfIdentity(Q(found));
     if (_.filter(found.memberships, { membership: 'IN'}).length == 0) {
@@ -192,6 +198,12 @@ function WebAdmin (dbConf, overConf) {
     }
     //
     return found;
+  });
+
+  this.publishANewSelfPeer = (req) => co(function *() {
+    yield pluggedConfP;
+    yield server.recomputeSelfPeer();
+    return {};
   });
 
   this.applyNetworkConf = (req) => co(function *() {

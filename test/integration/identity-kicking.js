@@ -51,8 +51,8 @@ describe("Identities kicking", function() {
 
       const now = Math.round(new Date().getTime() / 1000);
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield cat.selfCert();
-      yield tac.selfCert();
+      yield cat.createIdentity();
+      yield tac.createIdentity();
       yield cat.cert(tac);
       yield tac.cert(cat);
       yield cat.join();
@@ -70,7 +70,7 @@ describe("Identities kicking", function() {
       yield cat.join();
       yield tac.join();
       // toc joins thereafter
-      yield toc.selfCert();
+      yield toc.createIdentity();
       yield toc.join();
       yield cat.cert(toc);
       yield tac.cert(toc);

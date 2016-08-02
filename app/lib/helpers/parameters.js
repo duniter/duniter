@@ -30,7 +30,7 @@ function ParameterNamespace () {
       throw "From format is incorrect, must be a positive integer";
     }
     const matches2 = req.params.count.match(/^(\d+)$/);
-    if(!matches){
+    if(!matches2){
       throw "Count format is incorrect, must be a positive integer";
     }
     return {

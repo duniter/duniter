@@ -37,8 +37,8 @@ if [[ $2 =~ ^[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?$ ]]; then
         sed -i "s/.*prerelease: true/#  prerelease: true/g" appveyor.yml
       fi
       if [[ "$1" =~ ^pre$ ]]; then
-        # This is RELEASE: just change the RELEASE flag to PRERELEASE
-        sed -i "s/.*prerelease: true/    prerelease: true/g" .travis.ym
+        # This is PRE-RELEASE: just change the RELEASE flag to PRERELEASE
+        sed -i "s/.*prerelease: true/    prerelease: true/g" .travis.yml
         sed -i "s/.*prerelease: true/  prerelease: true/g" appveyor.yml
       fi
       ;;

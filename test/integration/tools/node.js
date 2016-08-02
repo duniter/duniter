@@ -54,8 +54,8 @@ function getTxNode(testSuite, afterBeforeHook){
   before(() => co(function*() {
     yield node2.startTesting();
     // Self certifications
-    yield tic.selfCert();
-    yield toc.selfCert();
+    yield tic.createIdentity();
+    yield toc.createIdentity();
     // Certification;
     yield tic.cert(toc);
     yield toc.cert(tic);

@@ -837,7 +837,7 @@ function FileDAL(params) {
   this.getUniqueIssuersBetween = (start, end) => co(function *() {
     const current = yield that.blockDAL.getCurrent();
     const firstBlock = Math.max(0, start);
-    const lastBlock = Math.max(0, Math.min(current.number - 1, end));
+    const lastBlock = Math.max(0, Math.min(current.number, end));
     const blocks = yield that.blockDAL.getBlocks(firstBlock, lastBlock);
     return _.chain(blocks).pluck('issuer').uniq().value();
   });

@@ -27,6 +27,7 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
     httpMethods.httpPOST( '/webmin/server/send_conf',          webminCtrl.sendConf, dtos.Identity);
     httpMethods.httpPOST( '/webmin/server/net_conf',           webminCtrl.applyNetworkConf, dtos.Boolean);
     httpMethods.httpPOST( '/webmin/server/key_conf',           webminCtrl.applyNewKeyConf, dtos.Boolean);
+    httpMethods.httpGET(  '/webmin/server/republish_selfpeer', webminCtrl.publishANewSelfPeer, dtos.Boolean);
     httpMethods.httpPOST( '/webmin/server/start_sync',         webminCtrl.startSync, dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/auto_conf_network',  webminCtrl.autoConfNetwork, dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/services/start_all', webminCtrl.startAllServices, dtos.Boolean);
@@ -116,6 +117,12 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
           wssEvents.broadcast(JSON.stringify({
             type: 'stopped',
             value: data.stopped
+          }));
+        }
+        if (data.pulling !== undefined) {
+          wssEvents.broadcast(JSON.stringify({
+            type: 'pulling',
+            value: data.pulling
           }));
         }
       }));

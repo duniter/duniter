@@ -1142,3 +1142,5 @@ Pour savoir si votre code est bon et corrige l'anomalie, relancez le test. S'il 
 Répétez ce processus jusqu'à ce que le test passe.
 
 Bonne chance !
+
+> Edit du 21/07/2016 : ce bug est désormais corrigé ! Vous pouvez retrouver la solution accompagnée de ses tests unitaires [sur ce commit](https://github.com/duniter/duniter/commit/9c5ed99f16673d5835edf46db926260d0c7307d3).

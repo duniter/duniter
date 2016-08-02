@@ -53,10 +53,10 @@ describe("Identities collision", function() {
 
     return co(function *() {
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      yield cat.selfCert();
-      yield tac.selfCert();
-      yield toc.selfCert();
-      yield tic.selfCert();
+      yield cat.createIdentity();
+      yield tac.createIdentity();
+      yield toc.createIdentity();
+      yield tic.createIdentity();
       yield toc.cert(cat);
       yield cat.cert(toc);
       yield cat.cert(tic);
@@ -77,7 +77,7 @@ describe("Identities collision", function() {
       // cat is the sentry
 
       // Man1 is someone who just needs a commit to join
-      yield man1.selfCert();
+      yield man1.createIdentity();
       yield man1.join();
       yield tac.cert(man1);
 
@@ -86,23 +86,23 @@ describe("Identities collision", function() {
        */
 
       // Man2 is someone who has no certifications yet has sent a JOIN
-      yield man2.selfCert();
+      yield man2.createIdentity();
       yield man2.join();
 
       // Man3 is someone who has only published its identity
-      yield man3.selfCert();
+      yield man3.createIdentity();
 
       // tic RENEW, but not written
       yield tic.join();
 
       try {
-        yield tic.selfCert();
+        yield tic.createIdentity();
         throw 'Should have thrown an error for already used pubkey';
       } catch (e) {
         JSON.parse(e).message.should.equal('Pubkey already used in the blockchain');
       }
       try {
-        yield tic2.selfCert();
+        yield tic2.createIdentity();
         throw 'Should have thrown an error for already used uid';
       } catch (e) {
         JSON.parse(e).message.should.equal('UID already used in the blockchain');

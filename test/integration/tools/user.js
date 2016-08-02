@@ -1,6 +1,7 @@
 "use strict";
 var co      = require('co');
 var Q		    = require('q');
+const _ = require('underscore');
 var async		= require('async');
 var request	= require('request');
 var vucoin	= require('vucoin');
@@ -11,6 +12,10 @@ var rawer		= require('../../../app/lib/ucp/rawer');
 var base58	= require('../../../app/lib/crypto/base58');
 var constants = require('../../../app/lib/constants');
 var Identity = require('../../../app/lib/entity/identity');
+var Certification = require('../../../app/lib/entity/certification');
+var Membership = require('../../../app/lib/entity/membership');
+var Revocation = require('../../../app/lib/entity/revocation');
+var Peer = require('../../../app/lib/entity/peer');
 
 module.exports = function (uid, salt, passwd, url) {
   return new User(uid, salt, passwd, url);
@@ -20,7 +25,7 @@ function User (uid, options, node) {
 
   var that = this;
   var pub, sec;
-  var selfCert = "";
+  var createIdentity = "";
   that.node = node;
 
   // For sync code
@@ -50,29 +55,29 @@ function User (uid, options, node) {
     }
   }
 
-  this.selfCert = (useRoot) => co(function*() {
+  this.createIdentity = (useRoot) => co(function*() {
     if (!pub)
       yield Q.nfcall(init);
     const current = yield node.server.BlockchainService.current();
     let buid = !useRoot && current ? ucp.format.buid(current.number, current.hash) : '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855';
-    selfCert = rawer.getOfficialIdentity({
+    createIdentity = rawer.getOfficialIdentity({
       buid: buid,
       uid: uid,
       issuer: pub,
       currency: node.server.conf.currency
     });
-    selfCert += keyring.Key(pub, sec).signSync(selfCert) + '\n';
+    createIdentity += keyring.Key(pub, sec).signSync(createIdentity) + '\n';
     yield Q.nfcall(post, '/wot/add', {
-      "identity": selfCert
+      "identity": createIdentity
     });
   });
 
-  this.cert = (user, fromServer) => co(function*() {
+  this.makeCert = (user, fromServer, overrideProps) => co(function*() {
     const lookup = yield that.lookup(user.pub, fromServer);
     const current = yield node.server.BlockchainService.current();
     const idty = lookup.results[0].uids[0];
     let buid = current ? ucp.format.buid(current.number, current.hash) : ucp.format.buid();
-    const cert = rawer.getOfficialCertification({
+    const cert = {
       "version": constants.DOCUMENTS_VERSION,
       "currency": node.server.conf.currency,
       "issuer": pub,
@@ -81,10 +86,17 @@ function User (uid, options, node) {
       "idty_buid": idty.meta.timestamp,
       "idty_sig": idty.self,
       "buid": buid
-    });
-    const sig = keyring.Key(pub, sec).signSync(cert, sec);
+    };
+    _.extend(cert, overrideProps || {});
+    const rawCert = rawer.getOfficialCertification(cert);
+    cert.sig = keyring.Key(pub, sec).signSync(rawCert, sec);
+    return Certification.statics.fromJSON(cert);
+  });
+
+  this.cert = (user, fromServer) => co(function*() {
+    const cert = yield that.makeCert(user, fromServer);
     yield Q.nfcall(post, '/wot/certify', {
-      "cert": cert + sig + "\n"
+      "cert": cert.getRaw()
     });
   });
 
@@ -96,46 +108,58 @@ function User (uid, options, node) {
     return yield that.sendMembership("OUT");
   });
 
-  this.revoke = () => co(function *() {
-    let res = yield that.lookup(pub);
-    let idty = Identity.statics.fromJSON({
+  this.makeRevocation = (givenLookupIdty, overrideProps) => co(function*() {
+    const res = givenLookupIdty || (yield that.lookup(pub));
+    const idty = Identity.statics.fromJSON({
       uid: res.results[0].uids[0].uid,
       buid: res.results[0].uids[0].meta.timestamp,
       sig: res.results[0].uids[0].self
     });
-
-    var revocation = rawer.getOfficialRevocation({
+    const revocation = {
       "currency": node.server.conf.currency,
       "issuer": pub,
       "uid": idty.uid,
       "sig": idty.sig,
       "buid": idty.buid,
       "revocation": ''
-    });
+    };
+    _.extend(revocation, overrideProps || {});
+    const rawRevocation = rawer.getOfficialRevocation(revocation);
+    revocation.revocation = keyring.Key(pub, sec).signSync(rawRevocation);
+    return Revocation.statics.fromJSON(revocation);
+  });
 
-    var sig = keyring.Key(pub, sec).signSync(revocation);
+  this.revoke = (givenLookupIdty) => co(function *() {
+    const revocation = yield that.makeRevocation(givenLookupIdty);
     return Q.nfcall(post, '/wot/revoke', {
-      "revocation": revocation + sig + '\n'
+      "revocation": revocation.getRaw()
     });
   });
 
-  this.sendMembership = (type) => co(function*() {
-    const lookup = yield that.lookup(pub, null);
+  this.makeMembership = (type, fromServer, overrideProps) => co(function*() {
+    const lookup = yield that.lookup(pub, fromServer);
     const current = yield node.server.BlockchainService.current();
     const idty = lookup.results[0].uids[0];
     const block = ucp.format.buid(current);
-    const join = rawer.getMembershipWithoutSignature({
-        "version": constants.DOCUMENTS_VERSION,
-        "currency": node.server.conf.currency,
-        "issuer": pub,
-        "block": block,
-        "membership": type,
-        "userid": uid,
-        "certts": idty.meta.timestamp
-      });
-    const sig = keyring.Key(pub, sec).signSync(join);
+    const join = {
+      "version": constants.DOCUMENTS_VERSION,
+      "currency": node.server.conf.currency,
+      "issuer": pub,
+      "block": block,
+      "membership": type,
+      "userid": uid,
+      "certts": idty.meta.timestamp
+    };
+    _.extend(join, overrideProps || {});
+    const rawJoin = rawer.getMembershipWithoutSignature(join);
+    join.signature = keyring.Key(pub, sec).signSync(rawJoin);
+    return Membership.statics.fromJSON(join);
+  });
+
+  this.sendMembership = (type) => co(function*() {
+    const ms = yield that.makeMembership(type);
     yield Q.nfcall(post, '/blockchain/membership', {
-      "membership": join + sig + '\n'
+      "membership": ms.getRawSigned()
     });
   });
 
@@ -250,14 +274,19 @@ function User (uid, options, node) {
     return raw + signatures.join('\n') + '\n';
   }
 
+  this.makeTX = (inputs, outputs, theOptions) => {
+    const raw = that.prepareTX(inputs, outputs, theOptions);
+    return signed(raw);
+  };
+
   this.prepareTX = (inputs, outputs, theOptions) => {
     let opts = theOptions || {};
     let issuers = opts.issuers || [pub];
     let raw = '';
     raw += "Version: " + constants.DOCUMENTS_VERSION + '\n';
     raw += "Type: Transaction\n";
-    raw += "Currency: " + node.server.conf.currency + '\n';
-    raw += "Locktime: " + (theOptions.locktime || 0) + '\n';
+    raw += "Currency: " + (opts.currency || node.server.conf.currency) + '\n';
+    raw += "Locktime: " + (opts.locktime || 0) + '\n';
     raw += "Issuers:\n";
     issuers.forEach((issuer) => raw += issuer + '\n');
     raw += "Inputs:\n";
@@ -277,6 +306,19 @@ function User (uid, options, node) {
     raw += "Comment: " + (opts.comment || "") + "\n";
     return raw;
   };
+
+  this.makePeer = (endpoints, overrideProps) => co(function*() {
+    const peer = Peer.statics.fromJSON({
+      currency: node.server.conf.currency,
+      pubkey: pub,
+      block: '2-00008DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB',
+      endpoints: endpoints
+    });
+    _.extend(peer, overrideProps || {});
+    const rawPeer = rawer.getPeerWithoutSignature(peer);
+    peer.signature = keyring.Key(pub, sec).signSync(rawPeer);
+    return Peer.statics.fromJSON(peer);
+  });
 
   function post(uri, data, done) {
     var postReq = request.post({

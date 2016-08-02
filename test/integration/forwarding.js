@@ -58,10 +58,10 @@ describe("Forwarding", function() {
             co(function *() {
 
               // Self certifications
-              yield cat.selfCert();
-              yield tac.selfCert();
-              yield tic.selfCert();
-              yield toc.selfCert();
+              yield cat.createIdentity();
+              yield tac.createIdentity();
+              yield tic.createIdentity();
+              yield toc.createIdentity();
               // Certifications
               yield cat.cert(tac);
               yield tac.cert(cat);

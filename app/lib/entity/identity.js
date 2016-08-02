@@ -76,7 +76,7 @@ const Identity = function(json) {
     return [this.pubkey, this.sig, this.buid, this.uid].join(':');
   };
 
-  this.selfCert = () => {
+  this.createIdentity = () => {
     return rawer.getOfficialIdentity(this);
   };
 

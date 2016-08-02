@@ -110,22 +110,26 @@ function TxsDAL(db) {
 
   this.getLinkedWithIssuer = (pubkey) => this.sqlFind({
     issuers: { $contains: pubkey },
-    written: true
+    written: true,
+    removed: false
   });
 
   this.getLinkedWithRecipient = (pubkey) => this.sqlFind({
     recipients: { $contains: pubkey },
-    written: true
+    written: true,
+    removed: false
   });
 
   this.getPendingWithIssuer = (pubkey) => this.sqlFind({
     issuers: { $contains: pubkey },
-    written: false
+    written: false,
+    removed: false
   });
 
   this.getPendingWithRecipient = (pubkey) => this.sqlFind({
     recipients: { $contains: pubkey },
-    written: false
+    written: false,
+    removed: false
   });
 
   this.insertBatchOfTxs = (txs) => co(function *() {

@@ -1,6 +1,5 @@
 "use strict";
 
-const Q = require('q');
 const co = require('co');
 const _ = require('underscore');
 const constant = require('./constants');
@@ -16,12 +15,14 @@ module.exports = {
      * Sugar function. Apply a bunch of blocks instead of one.
      * @param blocks
      */
-    dao.applyBranch = (blocks) => co(function *() {
-      for (const block of blocks) {
-        yield dao.applyMainBranch(block);
-      }
-      return true;
-    });
+    if (!dao.applyBranch) {
+      dao.applyBranch = (blocks) => co(function *() {
+        for (const block of blocks) {
+          yield dao.applyMainBranch(block);
+        }
+        return true;
+      });
+    }
 
     /**
      * Binary search algorithm to find the common root block between a local and a remote blockchain.
@@ -29,66 +30,63 @@ module.exports = {
      * @param forksize The maximum length we can look at to find common root block.
      * @returns {*|Promise}
      */
-    dao.findCommonRoot = (fork, forksize) => {
-      return co(function *() {
+    dao.findCommonRoot = (fork, forksize) => co(function *() {
+      let commonRoot = null;
+      let localCurrent = yield dao.localCurrent();
 
-        let commonRoot = null;
-        let localCurrent = yield dao.localCurrent();
+      // We look between the top block that is known as fork ...
+      let topBlock = fork.block;
+      // ... and the bottom which is bounded by `forksize`
+      let bottomBlock = yield dao.getRemoteBlock(fork.peer, Math.max(0, localCurrent.number - forksize));
+      let lookBlock = bottomBlock;
+      let localEquivalent = yield dao.getLocalBlock(bottomBlock.number);
+      let isCommonBlock = lookBlock.hash == localEquivalent.hash;
+      if (isCommonBlock) {
 
-        // We look between the top block that is known as fork ...
-        let topBlock = fork.block;
-        // ... and the bottom which is bounded by `forksize`
-        let bottomBlock = yield dao.getRemoteBlock(fork.peer, Math.max(0, localCurrent.number - forksize));
-        let lookBlock = bottomBlock;
-        let localEquivalent = yield dao.getLocalBlock(bottomBlock.number);
-        let isCommonBlock = lookBlock.hash == localEquivalent.hash;
-        if (isCommonBlock) {
+        // Then common root can be found between top and bottom. We process.
+        let position, wrongRemotechain = false;
+        do {
 
-          // Then common root can be found between top and bottom. We process.
-          let position, wrongRemotechain = false;
-          do {
+          isCommonBlock = lookBlock.hash == localEquivalent.hash;
+          if (!isCommonBlock) {
 
-            isCommonBlock = lookBlock.hash == localEquivalent.hash;
-            if (!isCommonBlock) {
+            // Too high, look downward
+            topBlock = lookBlock;
+            position = middle(topBlock.number, bottomBlock.number);
+          }
+          else {
+            let upperBlock = yield dao.getRemoteBlock(fork.peer, lookBlock.number + 1);
+            let localUpper = yield dao.getLocalBlock(upperBlock.number);
+            let isCommonUpper = upperBlock.hash == localUpper.hash;
+            if (isCommonUpper) {
 
-              // Too high, look downward
-              topBlock = lookBlock;
+              // Too low, look upward
+              bottomBlock = lookBlock;
               position = middle(topBlock.number, bottomBlock.number);
             }
             else {
-              let upperBlock = yield dao.getRemoteBlock(fork.peer, lookBlock.number + 1);
-              let localUpper = yield dao.getLocalBlock(upperBlock.number);
-              let isCommonUpper = upperBlock.hash == localUpper.hash;
-              if (isCommonUpper) {
 
-                // Too low, look upward
-                bottomBlock = lookBlock;
-                position = middle(topBlock.number, bottomBlock.number);
-              }
-              else {
-
-                // Spotted!
-                commonRoot = lookBlock;
-              }
+              // Spotted!
+              commonRoot = lookBlock;
             }
+          }
 
-            let noSpace = topBlock.number == bottomBlock.number + 1;
-            if (!commonRoot && noSpace) {
-              // Remote node have inconsistency blockchain, stop search
-              wrongRemotechain = true;
-            }
+          let noSpace = topBlock.number == bottomBlock.number + 1;
+          if (!commonRoot && noSpace) {
+            // Remote node have inconsistency blockchain, stop search
+            wrongRemotechain = true;
+          }
 
-            if (!wrongRemotechain) {
-              lookBlock = yield dao.getRemoteBlock(fork.peer, position);
-              localEquivalent = yield dao.getLocalBlock(position);
-            }
-          } while (!commonRoot && !wrongRemotechain);
-        }
-        // Otherwise common root is unreachable
+          if (!wrongRemotechain) {
+            lookBlock = yield dao.getRemoteBlock(fork.peer, position);
+            localEquivalent = yield dao.getLocalBlock(position);
+          }
+        } while (!commonRoot && !wrongRemotechain);
+      }
+      // Otherwise common root is unreachable
 
-        return Q(commonRoot);
-      });
-    };
+      return commonRoot;
+    });
     return dao;
   },
 
@@ -99,38 +97,74 @@ module.exports = {
    * @param dao An abstract layer to retrieve peers data (blocks).
    */
   pull: (conf, dao) => co(function *() {
-
-    let forks = [];
     let localCurrent = yield dao.localCurrent();
-    let peers = yield dao.remotePeers();
-    // Try to get new legit blocks for local blockchain
-    for (const peer of peers) {
+    const forks = [];
+
+    const applyCoroutine = (peer, blocks) => co(function*() {
       let shortPubkey = peer.pubkey.substr(0, 6);
-      let remoteNext = yield dao.getRemoteBlock(peer, localCurrent.number + 1);
-      if (remoteNext) {
-        let isFork = !(remoteNext.previousHash == localCurrent.hash && remoteNext.number == localCurrent.number + 1);
+      if (blocks.length > 0) {
+        logger.debug("Applying from " + blocks[0].number);
+        let isFork = localCurrent
+            && !(blocks[0].previousHash == localCurrent.hash
+            && blocks[0].number == localCurrent.number + 1);
         if (!isFork) {
           logger.debug('Peer %s is on same blockchain', shortPubkey);
-          let appliedSuccessfully;
-          do {
-            yield dao.applyMainBranch(remoteNext);
-            localCurrent = yield dao.localCurrent();
-            appliedSuccessfully = localCurrent.number == remoteNext.number && localCurrent.hash == remoteNext.hash;
-            remoteNext = yield dao.getRemoteBlock(peer, localCurrent.number + 1);
-          } while (appliedSuccessfully && remoteNext);
+          yield dao.applyBranch(blocks);
+          localCurrent = yield dao.localCurrent();
+          const appliedSuccessfully = localCurrent.number == blocks[blocks.length - 1].number
+                                  && localCurrent.hash == blocks[blocks.length - 1].hash;
+          return appliedSuccessfully;
         } else {
           logger.debug('Peer %s has forked', shortPubkey);
           let remoteCurrent = yield dao.remoteCurrent(peer);
           forks.push({
             peer: peer,
-            block: remoteNext,
+            block: blocks[0],
             current: remoteCurrent
           });
+          return false;
         }
-      } else {
-        logger.debug('Peer %s do not have next block #%s', shortPubkey, localCurrent.number + 1);
       }
+      return true;
+    });
+
+    const downloadCoroutine = (peer, number) => co(function*() {
+      return yield dao.downloadBlocks(peer, number);
+    });
+
+    const downloadChuncks = (peer) => co(function*() {
+      let blocksToApply = [];
+      const currentBlock = yield dao.localCurrent();
+      let currentChunckStart;
+      if (currentBlock) {
+        currentChunckStart = currentBlock.number + 1;
+      } else {
+        currentChunckStart = 0;
+      }
+      let res;
+      do {
+        logger.debug("dl starts from " + currentChunckStart);
+        if (blocksToApply.length > 0)
+          logger.debug("apply starts from " + blocksToApply[0].number);
+        res = yield {
+          applied: applyCoroutine(peer, blocksToApply),
+          downloaded: downloadCoroutine(peer, currentChunckStart)
+        };
+        blocksToApply = res.downloaded;
+        currentChunckStart += res.downloaded.length;
+        if (!res.applied) {
+          logger.error("Blocks were not applied.")
+        }
+      } while (res.downloaded.length > 0 && res.applied);
+    });
+
+    let peers = yield dao.remotePeers();
+    // Try to get new legit blocks for local blockchain
+    const downloadChuncksTasks = [];
+    for (const peer of peers) {
+      downloadChuncksTasks.push(downloadChuncks(peer));
     }
+    yield downloadChuncksTasks;
     // Filter forks: do not include mirror peers (non-member peers)
     let memberForks = [];
     for (const fork of forks) {

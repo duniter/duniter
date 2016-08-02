@@ -21,6 +21,14 @@ node/bin/npm install
 node/bin/npm prune --production
 SRC=`pwd`
 echo $SRC
+
+# Install UI
+cd web-ui
+git submodule init
+git submodule update
+npm install
+cd ..
+
 cd ..
 mkdir -p duniter_release/sources
 cp -R ${SRC}/* duniter_release/sources/

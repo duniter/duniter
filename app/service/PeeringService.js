@@ -20,6 +20,7 @@ const Transaction    = require('../lib/entity/transaction');
 const AbstractService = require('./AbstractService');
 
 const DONT_IF_MORE_THAN_FOUR_PEERS = true;
+const CONST_BLOCKS_CHUNK = 50;
 
 function PeeringService(server) {
 
@@ -63,6 +64,8 @@ function PeeringService(server) {
   };
 
   this.submitP = function(peering, eraseIfAlreadyRecorded, cautious){
+    // Force usage of local currency name, do not accept other currencies documents
+    peering.currency = conf.currency || peering.currency;
     let thePeer = new Peer(peering);
     let sp = thePeer.block.split('-');
     const blockNumber = parseInt(sp[0]);
@@ -261,7 +264,7 @@ function PeeringService(server) {
       currency: currency,
       pubkey: selfPubkey,
       block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
-      endpoints: [endpoint].concat(toConserve)
+      endpoints: _.uniq([endpoint].concat(toConserve))
     };
     const raw2 = dos2unix(new Peer(p2).getRaw());
     logger.info('External access:', new Peer(p2).getURL());
@@ -486,10 +489,20 @@ function PeeringService(server) {
     }
   });
 
+  function pullingEvent(type, number) {
+    server.push({
+      pulling: {
+        type: type,
+        data: number
+      }
+    });
+  }
+
   function syncBlock(callback, pubkey) {
     currentSyncP = co(function *() {
       let current = yield dal.getCurrentBlockOrNull();
       if (current) {
+        pullingEvent('start', current.number);
         logger.info("Pulling blocks from the network...");
         let peers = yield dal.findAllPeersNEWUPBut([selfPubkey]);
         peers = _.shuffle(peers);
@@ -498,11 +511,13 @@ function PeeringService(server) {
         }
         for (let i = 0, len = peers.length; i < len; i++) {
           let p = new Peer(peers[i]);
+          pullingEvent('peer', _.extend({ number: i, length: peers.length }, p));
           logger.trace("Try with %s %s", p.getURL(), p.pubkey.substr(0, 6));
           try {
             let node = yield p.connect();
             node.pubkey = p.pubkey;
             yield checkPeerValidity(p, node);
+            let lastDownloaded;
             let dao = pulling.abstractDao({
 
               // Get the local blockchain current block
@@ -523,7 +538,6 @@ function PeeringService(server) {
                 try {
                   block = yield Q.nfcall(thePeer.blockchain.block, number);
                   Transaction.statics.setIssuers(block.transactions);
-                  return block;
                 } catch (e) {
                   if (e.httpCode != 404) {
                     throw e;
@@ -535,6 +549,11 @@ function PeeringService(server) {
               // Simulate the adding of a single new block on local blockchain
               applyMainBranch: (block) => co(function *() {
                 let addedBlock = yield server.BlockchainService.submitBlock(block, true, constants.FORK_ALLOWED);
+                if (!lastDownloaded) {
+                  lastDownloaded = yield dao.remoteCurrent(node);
+                }
+                pullingEvent('applying', { number: block.number, last: lastDownloaded.number });
+                current = addedBlock;
                 server.streamPush(addedBlock);
               }),
 
@@ -548,7 +567,12 @@ function PeeringService(server) {
               }),
 
               // Simulates the downloading of blocks from a peer
-              downloadBlocks: (thePeer, fromNumber, count) => Q.nfcall(thePeer.blockchain.blocks, count, fromNumber)
+              downloadBlocks: (thePeer, fromNumber, count) => co(function*() {
+                if (!count) {
+                  count = CONST_BLOCKS_CHUNK;
+                }
+                return yield Q.nfcall(thePeer.blockchain.blocks, count, fromNumber)
+              })
             });
 
             yield pulling.pull(conf, dao);
@@ -570,11 +594,13 @@ function PeeringService(server) {
             }
           }
         }
+        pullingEvent('end', current.number);
       }
       logger.info('Will pull blocks from the network in %s min %s sec', Math.floor(SYNC_BLOCK_INTERVAL / 60), Math.floor(SYNC_BLOCK_INTERVAL % 60));
       callback && callback();
     })
       .catch((err) => {
+        pullingEvent('error');
         logger.warn(err.code || err.stack || err.message || err);
         callback && callback();
       });

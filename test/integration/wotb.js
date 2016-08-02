@@ -93,8 +93,8 @@ describe("WOTB module", function() {
          */
         yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
         wotb = s1.dal.wotb;
-        yield cat.selfCert();
-        yield toc.selfCert();
+        yield cat.createIdentity();
+        yield toc.createIdentity();
         yield toc.cert(cat);
         yield cat.cert(toc);
         yield cat.join();
@@ -131,7 +131,7 @@ describe("WOTB module", function() {
         /**
          * cat <==> toc --> tic
          */
-        yield tic.selfCert();
+        yield tic.createIdentity();
         yield toc.cert(tic);
         yield tic.join();
         yield commit(s1)();
@@ -162,9 +162,9 @@ describe("WOTB module", function() {
          */
         yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
         wotb = s2.dal.wotb;
-        yield cat2.selfCert();
-        yield toc2.selfCert();
-        yield tic2.selfCert();
+        yield cat2.createIdentity();
+        yield toc2.createIdentity();
+        yield tic2.createIdentity();
         // toc2 <==> cat2
         yield toc2.cert(cat2);
         yield cat2.cert(toc2);
@@ -236,8 +236,8 @@ describe("WOTB module", function() {
       return co(function *() {
         yield s3.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
         wotb = s3.dal.wotb;
-        yield cat3.selfCert();
-        yield tic3.selfCert();
+        yield cat3.createIdentity();
+        yield tic3.createIdentity();
         // cat <==> tic
         yield tic3.cert(cat3);
         yield cat3.cert(tic3);
@@ -272,7 +272,7 @@ describe("WOTB module", function() {
           time: now + 2400
         });
         // MedianTime is now +500 for next certs
-        yield toc3.selfCert();
+        yield toc3.createIdentity();
         yield toc3.join();
         yield tic3.cert(toc3);
         yield commit(s3)({

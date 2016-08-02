@@ -27,6 +27,8 @@ function MembershipService () {
 
   this.submitMembership = (ms) => this.pushFIFO(() => co(function *() {
     const entry = new Membership(ms);
+    // Force usage of local currency name, do not accept other currencies documents
+    entry.currency = conf.currency || entry.currency;
     entry.idtyHash = (hashf(entry.userid + entry.certts + entry.issuer) + "").toUpperCase();
     logger.info('⬇ %s %s', entry.issuer, entry.membership);
     if (!rules.HELPERS.checkSingleMembershipSignature(entry)) {

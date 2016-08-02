@@ -127,7 +127,14 @@ function BlockchainService () {
   this.submitBlock = (obj, doCheck, forkAllowed) => this.pushFIFO(() => checkAndAddBlock(obj, doCheck, forkAllowed));
 
   const checkAndAddBlock = (obj, doCheck, forkAllowed) => co(function *() {
-    Transaction.statics.setIssuers(obj.transactions);
+    // Force usage of local currency name, do not accept other currencies documents
+    obj.currency = conf.currency || obj.currency;
+    try {
+      Transaction.statics.setIssuers(obj.transactions);
+    }
+    catch (e) {
+        throw e;
+    }
     let existing = yield dal.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
     if (existing) {
       throw 'Already processed';
@@ -139,7 +146,7 @@ function BlockchainService () {
       if (doCheck) {
         yield mainContext.checkBlock(obj, constants.WITH_SIGNATURES_AND_POW);
       }
-      let res = yield mainContext.addBlock(obj, doCheck);
+      let res = yield mainContext.addBlock(obj);
       yield pushStatsForBlocks([res]);
       that.stopPoWThenProcessAndRestartPoW();
       return res;
@@ -413,7 +420,7 @@ function BlockchainService () {
     return mainFork.saveParametersForRootBlock(rootBlock);
   });
 
-  this.saveBlocksInMainBranch = (blocks, targetLastNumber) => co(function *() {
+  this.saveBlocksInMainBranch = (blocks) => co(function *() {
     // VERY FIRST: parameters, otherwise we compute wrong variables such as UDTime
     if (blocks[0].number == 0) {
       yield that.saveParametersForRootBlock(blocks[0]);
@@ -484,6 +491,7 @@ function BlockchainService () {
     yield mainContext.updateCertificationsForBlocks(blocks);
     // Create / Update sources
     yield mainContext.updateTransactionSourcesForBlocks(blocks, dividends);
+    logger.debug(blocks[0].number);
     yield dal.blockDAL.saveBunch(blocks);
     yield pushStatsForBlocks(blocks);
   });
@@ -533,7 +541,7 @@ function BlockchainService () {
     const current = yield that.current();
     count = Math.min(current.number - from + 1, count);
     if (!current || current.number < from) {
-      throw 'Starting block #' + from + ' does not exist';
+      return [];
     }
     return dal.getBlocksBetween(from, from + count - 1);
   });

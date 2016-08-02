@@ -9,4 +9,4 @@ Updating your instance is essentially equivalent to stopping your node and repea
 So, to update you have to:
 
 * stop your node (check the [desktop](https://forum.duniter.org/t/duniter-desktop-guide/902) or [command line](https://forum.duniter.org/t/duniter-command-line-guide/903) user's guide to know how do to it)
-* follow the [installation](https://forum.duniter.org/t/install-a-duniter-node/900) guide to update your node
+* follow the [installation](https://github.com/duniter/duniter/blob/master/doc/install-a-node.md) guide to update your node

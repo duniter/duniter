@@ -103,8 +103,8 @@ module.exports = {
     }
 
     routingCallback(app, {
-      httpGET:  (uri, promiseFunc, dtoContract) => handleRequest(app.get.bind(app), uri, promiseFunc, dtoContract),
-      httpPOST: (uri, promiseFunc, dtoContract) => handleRequest(app.post.bind(app), uri, promiseFunc, dtoContract)
+      httpGET:  (uri, promiseFunc, dtoContract, limiter) => handleRequest(app.get.bind(app), uri, promiseFunc, dtoContract, limiter),
+      httpPOST: (uri, promiseFunc, dtoContract, limiter) => handleRequest(app.post.bind(app), uri, promiseFunc, dtoContract, limiter)
     });
 
     if (staticPath) {
@@ -204,12 +204,16 @@ module.exports = {
   })
 };
 
-const handleRequest = (method, uri, promiseFunc, dtoContract) => {
+const handleRequest = (method, uri, promiseFunc, dtoContract, limiter) => {
   method(uri, function(req, res) {
     res.set('Access-Control-Allow-Origin', '*');
     res.type('application/json');
     co(function *() {
       try {
+        if (!limiter.canAnswerNow()) {
+          throw constants.ERRORS.HTTP_LIMITATION;
+        }
+        limiter.processRequest();
         let result = yield promiseFunc(req);
         // Ensure of the answer format
         result = sanitize(result, dtoContract);
@@ -223,7 +227,7 @@ const handleRequest = (method, uri, promiseFunc, dtoContract) => {
       }
     });
   });
-}
+};
 
 function getResultingError(e) {
   // Default is 500 unknown error

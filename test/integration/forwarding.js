@@ -7,6 +7,9 @@ const co     = require('co');
 const node   = require('./tools/node');
 const user   = require('./tools/user');
 const jspckg = require('../../package');
+const limiter = require('../../app/lib/system/limiter');
+
+limiter.noLimit();
 
 const MEMORY_MODE = true;
 

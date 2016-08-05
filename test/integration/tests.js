@@ -13,6 +13,9 @@ const jspckg = require('../../package');
 const commit    = require('./tools/commit');
 const httpTest  = require('./tools/http');
 const rp        = require('request-promise');
+const limiter = require('../../app/lib/system/limiter');
+
+limiter.noLimit();
 
 const expectAnswer   = httpTest.expectAnswer;
 const MEMORY_MODE = true;

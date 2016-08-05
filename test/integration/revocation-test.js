@@ -8,6 +8,9 @@ const user      = require('./tools/user');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
+const limiter = require('../../app/lib/system/limiter');
+
+limiter.noLimit();
 
 const expectAnswer   = httpTest.expectAnswer;
 

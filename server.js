@@ -6,6 +6,7 @@ const path        = require('path');
 const co          = require('co');
 const _           = require('underscore');
 const Q           = require('q');
+const archiver    = require('archiver');
 const parsers     = require('./app/lib/streams/parsers');
 const constants   = require('./app/lib/constants');
 const fileDAL     = require('./app/lib/dal/fileDAL');
@@ -29,6 +30,7 @@ function Server (dbConf, overrideConf) {
   const paramsP = directory.getHomeParams(dbConf && dbConf.memory, home);
   const logger = require('./app/lib/logger')('server');
   const that = this;
+  that.home = home;
   that.conf = null;
   that.dal = null;
   that.version = jsonpckg.version;
@@ -71,6 +73,11 @@ function Server (dbConf, overrideConf) {
     logger.debug('Plugging file system...');
     const params = yield paramsP;
     that.dal = fileDAL(params);
+  });
+
+  this.unplugFileSystem = () => co(function *() {
+    logger.debug('Unplugging file system...');
+    yield that.dal.close();
   });
 
   this.softResetData = () => co(function *() {
@@ -270,7 +277,7 @@ function Server (dbConf, overrideConf) {
   });
 
   this.resetAll = (done) => {
-    const files = ['stats', 'cores', 'current', 'conf', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.WOTB_FILE];
+    const files = ['stats', 'cores', 'current', 'conf', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.WOTB_FILE, 'export.zip', 'import.zip'];
     const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };
@@ -298,6 +305,19 @@ function Server (dbConf, overrideConf) {
   this.resetPeers = (done) => {
     return that.dal.resetPeers(done);
   };
+
+  this.exportAllDataAsZIP = () => co(function *() {
+    const params = yield paramsP;
+    const rootPath = params.home;
+    const archive = archiver('zip');
+    archive
+      .directory(rootPath + '/indicators', '/indicators', undefined, { name: 'indicators'})
+      .file(rootPath + '/duniter.db', { name: 'duniter.db'})
+      .file(rootPath + '/stats.json', { name: 'stats.json'})
+      .file(rootPath + '/wotb.bin', { name: 'wotb.bin'})
+      .finalize();
+    return archive;
+  });
 
   this.cleanDBData = () => co(function *() {
     yield _.values(that.dal.newDals).map((dal) => dal.cleanData && dal.cleanData());

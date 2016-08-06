@@ -37,7 +37,7 @@ module.exports = {
       sigQty: 1
     };
     const server = duniter({
-      memory: MEMORY_MODE,
+      memory: conf.memory !== undefined ? conf.memory : MEMORY_MODE,
       name: 'dev_unit_tests'
     }, _.extend(conf, commonConf));
 

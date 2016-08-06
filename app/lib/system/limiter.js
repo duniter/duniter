@@ -71,6 +71,10 @@ module.exports = {
     return disableLimits ? createObject(NO_LIMIT_STRATEGY) : createObject(HIGH_USAGE_STRATEGY);
   },
 
+  limitAsUnlimited() {
+    return createObject(NO_LIMIT_STRATEGY);
+  },
+
   limitAsTest() {
     return disableLimits ? createObject(NO_LIMIT_STRATEGY) : createObject(TEST_STRATEGY);
   },

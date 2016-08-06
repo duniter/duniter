@@ -34,6 +34,7 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
     httpMethods.httpGET(  '/webmin/server/services/stop_all',  webminCtrl.stopAllServices, dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/reset/data',         webminCtrl.resetData, dtos.Boolean);
     httpMethods.httpGET(  '/webmin/network/interfaces',        webminCtrl.listInterfaces, dtos.NetworkInterfaces);
+    httpMethods.httpGETFile('/webmin/data/duniter_export',     webminCtrl.exportData);
   }, (httpServer) => {
 
     // Socket for synchronization events

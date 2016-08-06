@@ -103,8 +103,9 @@ module.exports = {
     }
 
     routingCallback(app, {
-      httpGET:  (uri, promiseFunc, dtoContract, limiter) => handleRequest(app.get.bind(app), uri, promiseFunc, dtoContract, limiter),
-      httpPOST: (uri, promiseFunc, dtoContract, limiter) => handleRequest(app.post.bind(app), uri, promiseFunc, dtoContract, limiter)
+      httpGET:     (uri, promiseFunc, dtoContract, limiter) => handleRequest(app.get.bind(app), uri, promiseFunc, dtoContract, limiter),
+      httpPOST:    (uri, promiseFunc, dtoContract, limiter) => handleRequest(app.post.bind(app), uri, promiseFunc, dtoContract, limiter),
+      httpGETFile: (uri, promiseFunc, dtoContract, limiter) => handleFileRequest(app.get.bind(app), uri, promiseFunc, limiter)
     });
 
     if (staticPath) {
@@ -204,7 +205,8 @@ module.exports = {
   })
 };
 
-const handleRequest = (method, uri, promiseFunc, dtoContract, limiter) => {
+const handleRequest = (method, uri, promiseFunc, dtoContract, theLimiter) => {
+  const limiter = theLimiter || require('../system/limiter').limitAsUnlimited();
   method(uri, function(req, res) {
     res.set('Access-Control-Allow-Origin', '*');
     res.type('application/json');
@@ -219,6 +221,29 @@ const handleRequest = (method, uri, promiseFunc, dtoContract, limiter) => {
         result = sanitize(result, dtoContract);
         // HTTP answer
         res.status(200).send(JSON.stringify(result, null, "  "));
+      } catch (e) {
+        let error = getResultingError(e);
+        // HTTP error
+        res.status(error.httpCode).send(JSON.stringify(error.uerr, null, "  "));
+        throw e
+      }
+    });
+  });
+};
+
+const handleFileRequest = (method, uri, promiseFunc, theLimiter) => {
+  const limiter = theLimiter || require('../system/limiter').limitAsUnlimited();
+  method(uri, function(req, res) {
+    res.set('Access-Control-Allow-Origin', '*');
+    co(function *() {
+      try {
+        if (!limiter.canAnswerNow()) {
+          throw constants.ERRORS.HTTP_LIMITATION;
+        }
+        limiter.processRequest();
+        let fileStream = yield promiseFunc(req);
+        // HTTP answer
+        fileStream.pipe(res);
       } catch (e) {
         let error = getResultingError(e);
         // HTTP error

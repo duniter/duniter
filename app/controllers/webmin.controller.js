@@ -417,6 +417,11 @@ function WebAdmin (dbConf, overConf) {
     return {};
   });
 
+  this.exportData = () => co(function *() {
+    yield pluggedDALP;
+    return server.exportAllDataAsZIP();
+  });
+
   function plugForConf() {
     return co(function *() {
       yield server.plugFileSystem();

@@ -1,6 +1,8 @@
 "use strict";
 const should = require('should');
+const fs = require('fs');
 const co = require('co');
+const unzip = require('unzip');
 const toolbox = require('../integration/tools/toolbox');
 const user    = require('../integration/tools/user');
 const bma     = require('../../app/lib/streams/bma');
@@ -46,5 +48,9 @@ describe('Import/Export', () => {
         resolve();
       });
     });
+  }));
+
+  it('should be able to import data', () => co(function *() {
+    yield s1.importAllDataFromZIP(s1.home + '/export.zip');
   }));
 });

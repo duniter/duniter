@@ -7,6 +7,8 @@ const co          = require('co');
 const _           = require('underscore');
 const Q           = require('q');
 const archiver    = require('archiver');
+const unzip       = require('unzip');
+const fs          = require('fs');
 const parsers     = require('./app/lib/streams/parsers');
 const constants   = require('./app/lib/constants');
 const fileDAL     = require('./app/lib/dal/fileDAL');
@@ -317,6 +319,17 @@ function Server (dbConf, overrideConf) {
       .file(rootPath + '/wotb.bin', { name: 'wotb.bin'})
       .finalize();
     return archive;
+  });
+
+  this.importAllDataFromZIP = (zipFile) => co(function *() {
+    const params = yield paramsP;
+    yield that.resetData();
+    const output = unzip.Extract({ path: params.home });
+    fs.createReadStream(zipFile).pipe(output);
+    return new Promise((resolve, reject) => {
+      output.on('error', reject);
+      output.on('close', resolve);
+    });
   });
 
   this.cleanDBData = () => co(function *() {

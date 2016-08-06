@@ -11,6 +11,7 @@ const morgan = require('morgan');
 const errorhandler = require('errorhandler');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const fileUpload = require('express-fileupload');
 const constants = require('../constants');
 const sanitize = require('../streams/sanitize');
 const logger = require('../logger')('network');
@@ -74,7 +75,7 @@ module.exports = {
     }
   },
 
-  createServersAndListen: (name, interfaces, httpLogs, staticPath, routingCallback, listenWebSocket) => co(function *() {
+  createServersAndListen: (name, interfaces, httpLogs, staticPath, routingCallback, listenWebSocket, enableFileUpload) => co(function *() {
 
     const app = express();
 
@@ -91,6 +92,11 @@ module.exports = {
 
     // CORS for **any** HTTP request
     app.use(cors());
+
+    if (enableFileUpload) {
+      // File upload for backup API
+      app.use(fileUpload());
+    }
 
     app.use(bodyParser.urlencoded({
       extended: true

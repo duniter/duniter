@@ -7,6 +7,8 @@ const network = require('../system/network');
 const dtos = require('../../lib/streams/dtos');
 const logger = require('../logger')('webmin');
 
+const ENABLE_FILE_UPLOAD = true;
+
 let WebSocketServer = require('ws').Server;
 
 module.exports = function(dbConf, overConf, interfaces, httpLogs) {
@@ -35,6 +37,7 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
     httpMethods.httpGET(  '/webmin/server/reset/data',         webminCtrl.resetData, dtos.Boolean);
     httpMethods.httpGET(  '/webmin/network/interfaces',        webminCtrl.listInterfaces, dtos.NetworkInterfaces);
     httpMethods.httpGETFile('/webmin/data/duniter_export',     webminCtrl.exportData);
+    httpMethods.httpPOST( '/webmin/data/duniter_import',       webminCtrl.importData);
   }, (httpServer) => {
 
     // Socket for synchronization events
@@ -127,7 +130,7 @@ module.exports = function(dbConf, overConf, interfaces, httpLogs) {
           }));
         }
       }));
-  });
+  }, ENABLE_FILE_UPLOAD);
 
   return {
     httpLayer: httpLayer,

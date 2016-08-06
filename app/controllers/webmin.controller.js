@@ -48,14 +48,18 @@ function WebAdmin (dbConf, overConf) {
 
   let pluggedConfP = plugForConf();
 
-  let pluggedDALP = co(function *() {
-    yield pluggedConfP;
+  let pluggedDALP = replugDAL();
 
-    // Routing documents
-    server.routing();
+  function replugDAL() {
+    return co(function *() {
+      yield pluggedConfP;
 
-    return plugForDAL();
-  });
+      // Routing documents
+      server.routing();
+
+      return plugForDAL();
+    });
+  }
 
   this.summary = () => co(function *() {
     yield pluggedDALP;
@@ -420,6 +424,34 @@ function WebAdmin (dbConf, overConf) {
   this.exportData = () => co(function *() {
     yield pluggedDALP;
     return server.exportAllDataAsZIP();
+  });
+
+  this.importData = (req) => co(function *() {
+    yield that.stopHTTP();
+    yield that.stopAllServices();
+    yield server.unplugFileSystem();
+    yield pluggedDALP;
+    if (!req.files.importData) {
+      throw "Wrong upload file name";
+    }
+    const importZipPath = server.home + '/import.zip';
+    yield new Promise((resolve, reject) => {
+      req.files.importData.mv(importZipPath, (err) => {
+        err ? reject(err) : resolve();
+      });
+    });
+    yield server.importAllDataFromZIP(importZipPath);
+    pluggedConfP = plugForConf();
+    pluggedDALP = replugDAL();
+    return {};
+  });
+
+  this.loadData = (dunFile) => co(function *() {
+    yield pluggedDALP;
+    // We have to wait for a non-breaking window to process reset
+    yield server.unplugFileSystem();
+    yield server.cleanDBData();
+    return {};
   });
 
   function plugForConf() {

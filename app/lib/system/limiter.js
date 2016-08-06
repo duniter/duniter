@@ -55,6 +55,10 @@ let HIGH_USAGE_STRATEGY = Object.create(Limiter);
 HIGH_USAGE_STRATEGY.limitPerSecond = 10;
 HIGH_USAGE_STRATEGY.limitPerMinute = 300;
 
+let VERY_HIGH_USAGE_STRATEGY = Object.create(Limiter);
+VERY_HIGH_USAGE_STRATEGY.limitPerSecond = 30;
+VERY_HIGH_USAGE_STRATEGY.limitPerMinute = 30 * 60; // Limit is only per second
+
 let TEST_STRATEGY = Object.create(Limiter);
 TEST_STRATEGY.limitPerSecond = 5;
 TEST_STRATEGY.limitPerMinute = 6;
@@ -69,6 +73,10 @@ module.exports = {
   
   limitAsHighUsage() {
     return disableLimits ? createObject(NO_LIMIT_STRATEGY) : createObject(HIGH_USAGE_STRATEGY);
+  },
+
+  limitAsVeryHighUsage() {
+    return disableLimits ? createObject(NO_LIMIT_STRATEGY) : createObject(VERY_HIGH_USAGE_STRATEGY);
   },
 
   limitAsUnlimited() {

@@ -56,7 +56,7 @@ module.exports = function(server, interfaces, httpLogs) {
     httpMethods.httpGET(  '/blockchain/with/tx',                    blockchain.with.tx,                   dtos.Stat,           limiter.limitAsHighUsage());
     httpMethods.httpGET(  '/blockchain/branches',                   blockchain.branches,                  dtos.Branches,       limiter.limitAsHighUsage());
     httpMethods.httpGET(  '/network/peering',                       net.peer,                             dtos.Peer,           limiter.limitAsHighUsage());
-    httpMethods.httpGET(  '/network/peering/peers',                 net.peersGet,                         dtos.MerkleOfPeers,  limiter.limitAsHighUsage());
+    httpMethods.httpGET(  '/network/peering/peers',                 net.peersGet,                         dtos.MerkleOfPeers,  limiter.limitAsVeryHighUsage());
     httpMethods.httpPOST( '/network/peering/peers',                 net.peersPost,                        dtos.Peer,           limiter.limitAsHighUsage());
     httpMethods.httpGET(  '/network/peers',                         net.peers,                            dtos.Peers,          limiter.limitAsHighUsage());
     httpMethods.httpPOST( '/wot/add',                               wot.add,                              dtos.Identity,       limiter.limitAsHighUsage());

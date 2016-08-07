@@ -291,8 +291,12 @@ function AbstractSQLite(db) {
     for (const f of that.booleans) {
       row[f] = Boolean(row[f]);
     }
+    // Transient
+    for (const f of (that.transientFields || [])) {
+      row[f] = row[f];
+    }
     return row;
-  };
+  }
 
   function toRow(entity) {
     let row = _.clone(entity);

@@ -6,6 +6,7 @@ const Q = require('q');
 const co = require('co');
 const logger = require('../../logger')('idtyDAL');
 const AbstractSQLite = require('./AbstractSQLite');
+const SandBox = require('./SandBox');
 
 module.exports = IdentityDAL;
 
@@ -39,6 +40,7 @@ function IdentityDAL(db, wotb) {
   this.arrays = [];
   this.booleans = ['revoked', 'member', 'kick', 'leaving', 'wasMember', 'written'];
   this.pkFields = ['pubkey', 'uid', 'hash'];
+  this.transientFields = ['certsCount', 'ref_block'];
   this.translated = {};
 
   this.init = () => co(function *() {
@@ -272,4 +274,41 @@ function IdentityDAL(db, wotb) {
       yield that.saveEntity(idty);
     }
   });
+
+  /**************************
+   * SANDBOX STUFF
+   */
+
+  this.getSandboxIdentities = (underBlock) => that.query('SELECT ' +
+    'I.*, ' +
+    'I.hash, ' +
+    '(SELECT COUNT(*) FROM cert C where C.target = I.hash) AS certsCount, ' +
+    'CAST(SUBSTR(buid, 0, INSTR(buid, "-")) as number) AS ref_block ' +
+    'FROM ' + that.table + ' as I ' +
+    'WHERE NOT I.member ' +
+    'AND I.expired IS NULL ' +
+    (underBlock !== undefined ? 'AND ref_block < ' + underBlock + ' ' : '') +
+    'ORDER BY certsCount DESC, ref_block ASC ' +
+    'LIMIT ' + (that.sandbox.maxSize), []);
+
+  this.sandbox = new SandBox(10, this.getSandboxIdentities.bind(this), (compared, reference) => {
+    if (compared.certsCount < reference.certsCount) {
+      return -1;
+    }
+    else if (compared.certsCount > reference.certsCount) {
+      return 1;
+    }
+    else if (compared.ref_block > reference.ref_block) {
+      return -1;
+    }
+    else if (compared.ref_block < reference.ref_block) {
+      return 1;
+    }
+    else {
+      return 0;
+    }
+  });
+
+  this.getSandboxRoom = () => this.sandbox.getSandboxRoom();
+  this.setSandboxSize = (maxSize) => this.sandbox.maxSize = maxSize;
 }

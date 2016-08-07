@@ -10,6 +10,8 @@ const Revocation      = require('../../app/lib/entity/revocation');
 const AbstractService = require('./AbstractService');
 const co              = require('co');
 
+const BY_ABSORPTION = true;
+
 module.exports = () => {
   return new IdentityService();
 };
@@ -62,7 +64,7 @@ function IdentityService () {
 
   this.getPendingFromPubkey = (pubkey) => dal.getNonWritten(pubkey);
 
-  this.submitIdentity = (obj) => {
+  this.submitIdentity = (obj, byAbsorption) => {
     let idty = new Identity(obj);
     // Force usage of local currency name, do not accept other currencies documents
     idty.currency = conf.currency || idty.currency;
@@ -89,6 +91,13 @@ function IdentityService () {
           throw constants.ERRORS.UID_ALREADY_USED;
         }
         idty = new Identity(idty);
+        if (byAbsorption === BY_ABSORPTION) {
+          idty.certsCount = 1;
+        }
+        idty.ref_block = parseInt(idty.buid.split('-')[0]);
+        if (!(yield dal.idtyDAL.sandbox.acceptNewSandBoxEntry(idty, conf.pair && conf.pair.pub))) {
+          throw constants.ERRORS.SANDBOX_IS_FULL;
+        }
         yield dal.savePendingIdentity(idty);
         logger.info('✔ IDTY %s %s', idty.pubkey, idty.uid);
         return idty;
@@ -113,7 +122,7 @@ function IdentityService () {
         uid: cert.idty_uid,
         buid: cert.idty_buid,
         sig: cert.idty_sig
-      });
+      }, BY_ABSORPTION);
     }
     return that.pushFIFO(() => co(function *() {
       logger.info('⬇ CERT %s block#%s -> %s', cert.from, cert.block_number, idty.uid);

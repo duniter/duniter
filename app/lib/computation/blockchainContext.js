@@ -84,6 +84,7 @@ function BlockchainContext() {
     yield dal.blockDAL.setSideBlock(block, previousBlock);
     yield undoCertifications(block);
     yield undoLinks(block);
+    yield dal.unflagExpiredIdentitiesOf(block.number);
     if (previousBlock) {
       yield dal.undoObsoleteLinks(previousBlock.medianTime - conf.sigValidity);
     }
@@ -132,6 +133,8 @@ function BlockchainContext() {
     yield that.computeObsoleteLinks(block);
     // Compute obsolete memberships (active, joiner)
     yield that.computeObsoleteMemberships(block);
+    // Compute obsolete identities
+    yield that.computeExpiredIdentities(block);
     // Update consumed sources & create new ones
     yield that.updateSources(block);
     // Delete eventually present transactions
@@ -405,6 +408,13 @@ function BlockchainContext() {
     }
     if (lastForRevoke) {
       yield dal.revokeWithOutdatedMemberships(lastForRevoke.number);
+    }
+  });
+
+  this.computeExpiredIdentities = (block) => co(function *() {
+    let lastForExpiry = yield dal.getIdentityExcludingBlock(block, conf.idtyWindow);
+    if (lastForExpiry) {
+      yield dal.flagExpiredIdentities(lastForExpiry.number, block.number);
     }
   });
 

@@ -173,7 +173,7 @@ describe("DAL", function(){
   it('should have DB version 6', () => co(function *() {
     let version = yield fileDAL.getDBVersion();
     should.exist(version);
-    version.should.equal(6);
+    version.should.equal(7);
   }));
 
   it('should have no peer in a first time', function(){

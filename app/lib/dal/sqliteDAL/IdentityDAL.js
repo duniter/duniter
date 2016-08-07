@@ -33,7 +33,8 @@ function IdentityDAL(db, wotb) {
     'sig',
     'hash',
     'written',
-    'wotb_id'
+    'wotb_id',
+    'expired'
   ];
   this.arrays = [];
   this.booleans = ['revoked', 'member', 'kick', 'leaving', 'wasMember', 'written'];
@@ -231,6 +232,19 @@ function IdentityDAL(db, wotb) {
   this.searchThoseMatching = (search) => that.sqlFindLikeAny({
     pubkey: "%" + search + "%",
     uid: "%" + search + "%"
+  });
+
+  this.flagExpiredIdentities = (maxNumber, onNumber) => co(function *() {
+    yield that.exec('UPDATE ' + that.table + ' ' +
+      'SET expired = ' + onNumber + ' ' +
+      'WHERE expired IS NULL ' +
+      'AND CAST(SUBSTR(buid, 0, INSTR(buid, "-")) as number) <= ' + maxNumber);
+  });
+
+  this.unflagExpiredIdentitiesOf = (onNumber) => co(function *() {
+    yield that.exec('UPDATE ' + that.table + ' ' +
+      'SET expired = NULL ' +
+      'WHERE expired = ' + onNumber);
   });
 
   this.kickMembersForMembershipBelow = (maxNumber) => co(function *() {

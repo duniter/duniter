@@ -409,11 +409,16 @@ dtos.Boolean = {
   "success": Boolean
 };
 
+dtos.SummaryConf = {
+  "cpu": Number
+};
+
 dtos.AdminSummary = {
   "version": String,
   "host": String,
   "current": dtos.Block,
   "pubkey": String,
+  "conf": dtos.SummaryConf,
   "parameters": dtos.Parameters
 };
 

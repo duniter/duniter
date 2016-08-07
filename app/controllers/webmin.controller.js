@@ -71,6 +71,9 @@ function WebAdmin (dbConf, overConf) {
       "host": host,
       "current": current,
       "pubkey": server.keyPair.publicKey,
+      "conf": {
+        "cpu": server.conf.cpu
+      },
       "parameters": parameters
     };
   });
@@ -248,9 +251,16 @@ function WebAdmin (dbConf, overConf) {
         sec: base58.encode(secretKey)
       }
     }));
-    pluggedConfP = co(function *() {
-      yield server.loadConf();
-    });
+    pluggedConfP = yield server.loadConf();
+    yield pluggedConfP;
+    return {};
+  });
+
+  this.applyCPUConf = (req) => co(function *() {
+    yield pluggedConfP;
+    server.conf.cpu = http2raw.cpu(req);
+    yield server.dal.saveConf(server.conf);
+    pluggedConfP = yield server.loadConf();
     yield pluggedConfP;
     return {};
   });

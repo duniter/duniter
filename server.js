@@ -278,6 +278,16 @@ function Server (dbConf, overrideConf) {
       }
   });
 
+  this.resetHome = () => co(function *() {
+    const params = yield paramsP;
+    const myFS = params.fs;
+    const rootPath = params.home;
+    const existsDir = yield myFS.exists(rootPath);
+    if (existsDir) {
+      yield myFS.removeTree(rootPath);
+    }
+  });
+
   this.resetAll = (done) => {
     const files = ['stats', 'cores', 'current', 'conf', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.WOTB_FILE, 'export.zip', 'import.zip'];
     const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];

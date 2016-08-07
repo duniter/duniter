@@ -38,7 +38,6 @@ describe("Identities with shared pubkey", function() {
   }));
 
   it('should exit 2 pubkey result', () => s1.expect('/wot/lookup/cat', (res) => {
-    console.log(JSON.stringify(res, null, ' '));
     res.results.should.have.length(2);
     res.results[0].should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
     res.results[1].should.have.property('pubkey').equal('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc');

@@ -47,6 +47,10 @@ function MembershipService () {
     }
     const current = yield dal.getCurrentBlockOrNull();
     yield rules.HELPERS.checkMembershipBlock(entry, current, conf, dal);
+    entry.pubkey = entry.issuer;
+    if (!(yield dal.msDAL.sandbox.acceptNewSandBoxEntry(entry, conf.pair && conf.pair.pub))) {
+      throw constants.ERRORS.SANDBOX_FOR_MEMERSHIP_IS_FULL;
+    }
     // Saves entry
     yield dal.savePendingMembership(entry);
     logger.info('✔ %s %s', entry.issuer, entry.membership);

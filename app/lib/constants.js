@@ -56,6 +56,7 @@ module.exports = {
     HTTP_LIMITATION:                      { httpCode: 503, uerr: { ucode: 1006, message: "This URI has reached its maximum usage quota. Please retry later." }},
     SANDBOX_FOR_IDENTITY_IS_FULL:         { httpCode: 503, uerr: { ucode: 1007, message: "The identities' sandbox is full. Please retry with another document or retry later." }},
     SANDBOX_FOR_CERT_IS_FULL:             { httpCode: 503, uerr: { ucode: 1008, message: "The certifications' sandbox is full. Please retry with another document or retry later." }},
+    SANDBOX_FOR_MEMERSHIP_IS_FULL:        { httpCode: 503, uerr: { ucode: 1009, message: "The memberships' sandbox is full. Please retry with another document or retry later." }},
 
     HTTP_PARAM_PUBKEY_REQUIRED:           { httpCode: 400, uerr: { ucode: 1101, message: "Parameter `pubkey` is required" }},
     HTTP_PARAM_IDENTITY_REQUIRED:         { httpCode: 400, uerr: { ucode: 1102, message: "Parameter `identity` is required" }},

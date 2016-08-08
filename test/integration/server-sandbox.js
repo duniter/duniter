@@ -15,6 +15,7 @@ limiter.noLimit();
 const s1 = toolbox.server({
   idtyWindow: 10,
   certWindow: 10,
+  msWindow: 10,
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
@@ -63,6 +64,7 @@ describe("Sandboxes", function() {
     yield s3.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
     s1.dal.idtyDAL.setSandboxSize(3);
     s1.dal.certDAL.setSandboxSize(7);
+    s1.dal.msDAL.setSandboxSize(2);
     s2.dal.idtyDAL.setSandboxSize(10);
     s3.dal.idtyDAL.setSandboxSize(3);
   }));
@@ -189,13 +191,34 @@ describe("Sandboxes", function() {
       yield s1.commit({
         time: now + 1000
       });
-      yield s1.commit({
-        time: now + 1000
-      });
-      yield s1.commit({
-        time: now + 1000
-      });
       (yield s1.dal.certDAL.getSandboxRoom()).should.equal(3);
+    }));
+  });
+
+  describe('Memberships', () => {
+
+    it('should accept i8,i9', () => co(function *() {
+      (yield s1.dal.msDAL.getSandboxRoom()).should.equal(2);
+      yield i8.join();
+      yield i9.join();
+      (yield s1.dal.msDAL.getSandboxRoom()).should.equal(0);
+    }));
+
+    it('should reject i7', () => shouldThrow(co(function *() {
+      (yield s1.dal.msDAL.getSandboxRoom()).should.equal(0);
+      yield i7.join();
+    })));
+
+    it('should accept a membership from the same key as server, always', () => co(function *() {
+      (yield s1.dal.msDAL.getSandboxRoom()).should.equal(0);
+      yield i1.join();
+    }));
+
+    it('should make room as membership get expired', () => co(function *() {
+      yield s1.commit({
+        time: now + 1000
+      });
+      (yield s1.dal.msDAL.getSandboxRoom()).should.equal(2);
     }));
   });
 });

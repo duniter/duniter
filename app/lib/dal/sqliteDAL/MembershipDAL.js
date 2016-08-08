@@ -6,6 +6,7 @@ const Q = require('q');
 const co = require('co');
 const _ = require('underscore');
 const AbstractSQLite = require('./AbstractSQLite');
+const SandBox = require('./SandBox');
 
 module.exports = MembershipDAL;
 
@@ -169,4 +170,31 @@ function MembershipDAL(db) {
       'SET expired = NULL ' +
       'WHERE expired = ' + onNumber);
   });
+
+  /**************************
+   * SANDBOX STUFF
+   */
+
+  this.getSandboxMemberships = () => that.query('SELECT ' +
+    '* ' +
+    'FROM ' + that.table + ' ' +
+    'WHERE expired IS NULL ' +
+    'AND written_number IS NULL ' +
+    'ORDER BY blockNumber ASC ' +
+    'LIMIT ' + (that.sandbox.maxSize), []);
+
+  this.sandbox = new SandBox(30, this.getSandboxMemberships.bind(this), (compared, reference) => {
+    if (compared.block_number > reference.block_number) {
+      return -1;
+    }
+    else if (compared.block_number < reference.block_number) {
+      return 1;
+    }
+    else {
+      return 0;
+    }
+  });
+
+  this.getSandboxRoom = () => this.sandbox.getSandboxRoom();
+  this.setSandboxSize = (maxSize) => this.sandbox.maxSize = maxSize;
 }

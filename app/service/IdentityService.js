@@ -191,6 +191,11 @@ function IdentityService () {
         // Create identity given by the revocation
         const idty = new Identity(revoc);
         idty.revocation_sig = revoc.signature;
+        idty.certsCount = 0;
+        idty.ref_block = parseInt(idty.buid.split('-')[0]);
+        if (!(yield dal.idtyDAL.sandbox.acceptNewSandBoxEntry(idty, conf.pair && conf.pair.pub))) {
+          throw constants.ERRORS.SANDBOX_FOR_IDENTITY_IS_FULL;
+        }
         yield dal.savePendingIdentity(idty);
         return jsonResultTrue();
       }

@@ -43,6 +43,7 @@ const i4 = user('i4',   { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', s
 const i5 = user('i5',   { pub: '91dWdiyf7KaC4GAiKrwU7nGuue1vvmHqjCXbPziJFYtE', sec: '4Zno2b8ZULwBLY3RU5JcZhUf2a5FfXLVUMaYwPEzzN6i4ow9vXPsiCq7u2pEhkgJywqWdj97Hje1fdqnnzHeFgQe'}, { server: s1 });
 const i6 = user('i6',   { pub: '3C95HniUZsUN55AJy7z4wkz1UwtebbNd63dVAZ6EaUNm', sec: '3iJMz8JKNeU692L7jvug8xVnKvzN9RDee2m6QkMKbWKrvoHhv6apS4LR9hP786PUyFYJWz8bReMrFK8PY3aGxB8m'}, { server: s1 });
 const i7 = user('i7',   { pub: '4e9QJhJqHfMzEHgt3GtbfCXjqHVaQuJZKrKt8CNKR3AF', sec: 'TqdT99RpPEUjiz8su5QY7AQwharxPeo4ELCmeaFcvBEd3fW7wY7s9i531LMnTrCYBsgkrES494V6KjkhGppyEcF' }, { server: s1 });
+const i7onS2 = user('i7',   { pub: '4e9QJhJqHfMzEHgt3GtbfCXjqHVaQuJZKrKt8CNKR3AF', sec: 'TqdT99RpPEUjiz8su5QY7AQwharxPeo4ELCmeaFcvBEd3fW7wY7s9i531LMnTrCYBsgkrES494V6KjkhGppyEcF' }, { server: s2 });
 const i8 = user('i8',   { pub: '6GiiWjJxr29Stc4Ph4J4EipZJCzaQW1j6QXKANTNzRV3', sec: 'Yju625FGz6FHErshRc7jZyJUJ83MG4Zh9TXUNML62rKLXz7VJmwofnhJzeRRensranFJGQMYBLNSAeycAAsp62m' }, { server: s1 });
 const i9 = user('i9',   { pub: '6v4HnmiGxNzKwEjnBqxicWAmdKo6Bk51GvfQByS5YmiB', sec: '2wXPPDYfM3a8jmpYiFihS9qzdqFZrLWryu4uwpNPRuw5TRW3JCdJPsMa64eAcpshLTnMXkrKL94argk3FGxzzBKh' }, { server: s1 });
 const i10 = user('i10', { pub: '6kr9Xr86qmrrwGq3XEjUXRVpHqS63FL52tcutcYGcRiv', sec: '2jCzQx7XUWoxboH67mMMv2z8VcrQabtYWpxS39iF6hNQnSBwN1d9RVauVC52PTRz6mgMzTjrSMETPrrB5N3oC7qQ' }, { server: s1 });
@@ -112,8 +113,13 @@ describe("Sandboxes", function() {
 
     it('should reject i7(1)', () => shouldThrow(i7.createIdentity()));
 
+    it('should reject i7(1) by revocation', () => shouldThrow(co(function *() {
+      yield i7onS2.createIdentity();
+      const idty = yield i7onS2.lookup(i7onS2.pub);
+      yield i7.revoke(idty);
+    })));
+
     it('should accept i7(1), i8(1), i9(1) by i1->i7(1), i1->i8(1), i1->i9(1)', () => co(function *() {
-      yield i7.createIdentity(null, s2);
       yield i1.cert(i7, s2);
       (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
       yield i8.createIdentity(null, s2);

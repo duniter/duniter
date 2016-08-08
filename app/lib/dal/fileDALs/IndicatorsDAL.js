@@ -33,6 +33,8 @@ function IndicatorsDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   this.writeCurrentExpiringForIdty = (excluding) => that.coreFS.writeJSON('indicators/expiringIDTY.json', excluding);
 
+  this.writeCurrentExpiringForMembership = (excluding) => that.coreFS.writeJSON('indicators/expiringMS.json', excluding);
+
   this.getCurrentMembershipExcludingBlock = () => that.coreFS.readJSON('indicators/excludingMS.json');
 
   this.getCurrentMembershipRevocatingBlock = () => that.coreFS.readJSON('indicators/revocatingMS.json');
@@ -42,4 +44,6 @@ function IndicatorsDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
   this.getCurrentCertificationExcludingBlock = () => that.coreFS.readJSON('indicators/excludingCRT.json');
 
   this.getCurrentIdentityExpiringBlock = () => that.coreFS.readJSON('indicators/expiringIDTY.json');
+
+  this.getCurrentMembershipExpiringBlock = () => that.coreFS.readJSON('indicators/expiringMS.json');
 }

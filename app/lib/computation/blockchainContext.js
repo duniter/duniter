@@ -138,6 +138,8 @@ function BlockchainContext() {
     yield that.computeExpiredIdentities(block);
     // Compute obsolete certifications
     yield that.computeExpiredCertifications(block);
+    // Compute obsolete memberships
+    yield that.computeExpiredMemberships (block);
     // Update consumed sources & create new ones
     yield that.updateSources(block);
     // Delete eventually present transactions
@@ -425,6 +427,13 @@ function BlockchainContext() {
     let lastForExpiry = yield dal.getCertificationExpiringBlock(block, conf.certWindow);
     if (lastForExpiry) {
       yield dal.flagExpiredCertifications(lastForExpiry.number, block.number);
+    }
+  });
+
+  this.computeExpiredMemberships = (block) => co(function *() {
+    let lastForExpiry = yield dal.getMembershipExpiringBlock(block, conf.certWindow);
+    if (lastForExpiry) {
+      yield dal.flagExpiredMemberships(lastForExpiry.number, block.number);
     }
   });
 

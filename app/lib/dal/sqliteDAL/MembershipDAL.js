@@ -31,7 +31,8 @@ function MembershipDAL(db) {
     'idtyHash',
     'written',
     'written_number',
-    'signature'
+    'signature',
+    'expired'
   ];
   this.arrays = [];
   this.booleans = ['written'];
@@ -154,5 +155,18 @@ function MembershipDAL(db) {
     if (queries.length) {
       return that.exec(queries.join('\n'));
     }
+  });
+
+  this.flagExpiredMemberships = (maxNumber, onNumber) => co(function *() {
+    yield that.exec('UPDATE ' + that.table + ' ' +
+      'SET expired = ' + onNumber + ' ' +
+      'WHERE expired IS NULL ' +
+      'AND blockNumber <= ' + maxNumber);
+  });
+
+  this.unflagExpiredMembershipsOf = (onNumber) => co(function *() {
+    yield that.exec('UPDATE ' + that.table + ' ' +
+      'SET expired = NULL ' +
+      'WHERE expired = ' + onNumber);
   });
 }

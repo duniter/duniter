@@ -5,6 +5,7 @@
 const Q = require('q');
 const co = require('co');
 const AbstractSQLite = require('./AbstractSQLite');
+const SandBox = require('./SandBox');
 
 module.exports = CertDAL;
 
@@ -116,4 +117,31 @@ function CertDAL(db) {
       'SET expired = NULL ' +
       'WHERE expired = ' + onNumber);
   });
+
+  /**************************
+   * SANDBOX STUFF
+   */
+
+  this.getSandboxCertifications = () => that.query('SELECT ' +
+    '* ' +
+    'FROM ' + that.table + ' ' +
+    'WHERE expired IS NULL ' +
+    'AND written_block IS NULL ' +
+    'ORDER BY block_number ASC ' +
+    'LIMIT ' + (that.sandbox.maxSize), []);
+
+  this.sandbox = new SandBox(30, this.getSandboxCertifications.bind(this), (compared, reference) => {
+    if (compared.block_number > reference.block_number) {
+      return -1;
+    }
+    else if (compared.block_number < reference.block_number) {
+      return 1;
+    }
+    else {
+      return 0;
+    }
+  });
+
+  this.getSandboxRoom = () => this.sandbox.getSandboxRoom();
+  this.setSandboxSize = (maxSize) => this.sandbox.maxSize = maxSize;
 }

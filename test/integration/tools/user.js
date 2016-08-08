@@ -95,7 +95,7 @@ function User (uid, options, node) {
 
   this.cert = (user, fromServer) => co(function*() {
     const cert = yield that.makeCert(user, fromServer);
-    yield Q.nfcall(post, '/wot/certify', {
+    yield doPost('/wot/certify', {
       "cert": cert.getRaw()
     });
   });

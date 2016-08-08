@@ -96,7 +96,7 @@ function IdentityService () {
         }
         idty.ref_block = parseInt(idty.buid.split('-')[0]);
         if (!(yield dal.idtyDAL.sandbox.acceptNewSandBoxEntry(idty, conf.pair && conf.pair.pub))) {
-          throw constants.ERRORS.SANDBOX_IS_FULL;
+          throw constants.ERRORS.SANDBOX_FOR_IDENTITY_IS_FULL;
         }
         yield dal.savePendingIdentity(idty);
         logger.info('✔ IDTY %s %s', idty.pubkey, idty.uid);
@@ -150,14 +150,11 @@ function IdentityService () {
         });
         let existingCert = yield dal.existsCert(mCert);
         if (!existingCert) {
-          try {
-            yield dal.registerNewCertification(new Certification(mCert));
-            logger.info('✔ CERT %s', mCert.from);
-          } catch (e) {
-            // TODO: This is weird...
-            logger.error(e);
-            logger.info('✔ CERT %s', mCert.from);
+          if (!(yield dal.certDAL.sandbox.acceptNewSandBoxEntry(mCert, conf.pair && conf.pair.pub))) {
+            throw constants.ERRORS.SANDBOX_FOR_CERT_IS_FULL;
           }
+          yield dal.registerNewCertification(new Certification(mCert));
+          logger.info('✔ CERT %s', mCert.from);
         }
       } else {
         logger.info('✘ CERT %s %s', cert.from, cert.err);

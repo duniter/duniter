@@ -139,7 +139,7 @@ function BlockchainContext() {
     // Compute obsolete certifications
     yield that.computeExpiredCertifications(block);
     // Compute obsolete memberships
-    yield that.computeExpiredMemberships (block);
+    yield that.computeExpiredMemberships(block);
     // Update consumed sources & create new ones
     yield that.updateSources(block);
     // Delete eventually present transactions

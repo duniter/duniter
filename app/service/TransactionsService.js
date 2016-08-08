@@ -2,7 +2,7 @@
 
 const co              = require('co');
 const Q               = require('q');
-const moment          = require('moment');
+const constants       = require('../lib/constants');
 const rules           = require('../lib/rules');
 const Transaction     = require('../lib/entity/transaction');
 const AbstractService = require('./AbstractService');
@@ -34,6 +34,11 @@ function TransactionService () {
     const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
     yield Q.nbind(rules.HELPERS.checkSingleTransactionLocally, rules.HELPERS)(transaction);
     yield rules.HELPERS.checkSingleTransaction(transaction, nextBlockWithFakeTimeVariation, conf, dal);
+    const server_pubkey = conf.pair && conf.pair.pub;
+    transaction.pubkey = transaction.issuers.indexOf(server_pubkey) !== -1 ? server_pubkey : '';
+    if (!(yield dal.txsDAL.sandbox.acceptNewSandBoxEntry(transaction, server_pubkey))) {
+      throw constants.ERRORS.SANDBOX_FOR_TRANSACTION_IS_FULL;
+    }
     yield dal.saveTransaction(tx);
     return tx;
   }));

@@ -103,7 +103,11 @@ function MetaDAL(db) {
 
     6: 'BEGIN; ALTER TABLE idty ADD COLUMN expired INTEGER NULL; COMMIT;',
     7: 'BEGIN; ALTER TABLE cert ADD COLUMN expired INTEGER NULL; COMMIT;',
-    8: 'BEGIN; ALTER TABLE membership ADD COLUMN expired INTEGER NULL; COMMIT;'
+    8: 'BEGIN; ALTER TABLE membership ADD COLUMN expired INTEGER NULL; COMMIT;',
+    9: 'BEGIN;' +
+    'ALTER TABLE txs ADD COLUMN output_base INTEGER NULL;' +
+    'ALTER TABLE txs ADD COLUMN output_amount INTEGER NULL;' +
+    'COMMIT;'
   };
 
   this.init = () => co(function *() {

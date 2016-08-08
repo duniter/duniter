@@ -655,6 +655,71 @@ function FileDAL(params) {
     }
   });
 
+  this.getCertificationExpiringBlock = (current, certWindow) => co(function *() {
+    let currentExcluding;
+    if (current.number > 0) {
+      try {
+        currentExcluding = yield that.indicatorsDAL.getCurrentCertificationExpiringBlock();
+      } catch (e) {
+        currentExcluding = null;
+      }
+    }
+    if (!currentExcluding) {
+      const root = yield that.getRootBlock();
+      const delaySinceStart = current.medianTime - root.medianTime;
+      if (delaySinceStart > certWindow) {
+        return that.indicatorsDAL.writeCurrentExpiringForCert(root).then(() => root);
+      }
+    } else {
+      // Check current position
+      const currentNextBlock = yield that.getBlock(currentExcluding.number + 1);
+      if (isExcluding(current, currentExcluding, currentNextBlock, certWindow)) {
+        return currentExcluding;
+      } else {
+        // Have to look for new one
+        const start = currentExcluding.number;
+        let newExcluding;
+        let top = current.number;
+        let bottom = start;
+        // Binary tree search
+        do {
+          let middle = top - bottom;
+          if (middle % 2 != 0) {
+            middle = middle + 1;
+          }
+          middle /= 2;
+          middle += bottom;
+          if (middle == top) {
+            middle--;
+            bottom--; // Helps not being stuck looking at 'top'
+          }
+          const middleBlock = yield that.getBlock(middle);
+          const middleNextB = yield that.getBlock(middle + 1);
+          const delaySinceMiddle = current.medianTime - middleBlock.medianTime;
+          const delaySinceNextB = current.medianTime - middleNextB.medianTime;
+          const isValidPeriod = delaySinceMiddle <= certWindow;
+          const isValidPeriodB = delaySinceNextB <= certWindow;
+          const isExcludin = !isValidPeriod && isValidPeriodB;
+          //console.log('CRT: Search between %s and %s: %s => %s,%s', bottom, top, middle, isValidPeriod ? 'DOWN' : 'UP', isValidPeriodB ? 'DOWN' : 'UP');
+          if (isExcludin) {
+            // Found
+            yield that.indicatorsDAL.writeCurrentExpiringForCert(middleBlock);
+            newExcluding = middleBlock;
+          }
+          else if (isValidPeriod) {
+            // Look down in the blockchain
+            top = middle;
+          }
+          else {
+            // Look up in the blockchain
+            bottom = middle;
+          }
+        } while (!newExcluding);
+        return newExcluding;
+      }
+    }
+  });
+
   const isExcluding = (current, excluding, nextBlock, certValidtyTime) => {
     const delaySinceMiddle = current.medianTime - excluding.medianTime;
     const delaySinceNextB = current.medianTime - nextBlock.medianTime;
@@ -664,6 +729,7 @@ function FileDAL(params) {
   };
 
   this.flagExpiredIdentities = (maxNumber, onNumber) => this.idtyDAL.flagExpiredIdentities(maxNumber, onNumber);
+  this.flagExpiredCertifications = (maxNumber, onNumber) => this.certDAL.flagExpiredCertifications(maxNumber, onNumber);
   this.kickWithOutdatedMemberships = (maxNumber) => this.idtyDAL.kickMembersForMembershipBelow(maxNumber);
   this.revokeWithOutdatedMemberships = (maxNumber) => this.idtyDAL.revokeMembersForMembershipBelow(maxNumber);
 
@@ -783,6 +849,8 @@ function FileDAL(params) {
   this.unConsumeSource = (identifier, noffset) => that.sourcesDAL.unConsumeSource(identifier, noffset);
 
   this.unflagExpiredIdentitiesOf = (number) => that.idtyDAL.unflagExpiredIdentitiesOf(number);
+  
+  this.unflagExpiredCertificationsOf = (number) => that.certDAL.unflagExpiredCertificationsOf(number);
 
   this.saveSource = (src) => that.sourcesDAL.addSource(src.type, src.number, src.identifier, src.noffset,
       src.amount, src.base, src.block_hash, src.time, src.conditions);

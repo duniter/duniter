@@ -28,7 +28,8 @@ function CertDAL(db) {
     'target',
     'to',
     'from',
-    'block'
+    'block',
+    'expired'
   ];
   this.arrays = [];
   this.booleans = ['linked', 'written'];
@@ -101,5 +102,18 @@ function CertDAL(db) {
     if (queries.length) {
       return that.exec(queries.join('\n'));
     }
+  });
+
+  this.flagExpiredCertifications = (maxNumber, onNumber) => co(function *() {
+    yield that.exec('UPDATE ' + that.table + ' ' +
+      'SET expired = ' + onNumber + ' ' +
+      'WHERE expired IS NULL ' +
+      'AND block_number <= ' + maxNumber);
+  });
+
+  this.unflagExpiredCertificationsOf = (onNumber) => co(function *() {
+    yield that.exec('UPDATE ' + that.table + ' ' +
+      'SET expired = NULL ' +
+      'WHERE expired = ' + onNumber);
   });
 }

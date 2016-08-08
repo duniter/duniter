@@ -101,7 +101,8 @@ function MetaDAL(db) {
       yield blockDAL.exec('UPDATE block SET monetaryMass = ' + monetaryMass + ' WHERE number >= ' + lastUDBlock);
     }),
 
-    6: 'BEGIN; ALTER TABLE idty ADD COLUMN expired INTEGER NULL; COMMIT;'
+    6: 'BEGIN; ALTER TABLE idty ADD COLUMN expired INTEGER NULL; COMMIT;',
+    7: 'BEGIN; ALTER TABLE cert ADD COLUMN expired INTEGER NULL; COMMIT;'
   };
 
   this.init = () => co(function *() {

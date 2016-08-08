@@ -279,7 +279,7 @@ function IdentityDAL(db, wotb) {
    * SANDBOX STUFF
    */
 
-  this.getSandboxIdentities = (underBlock) => that.query('SELECT ' +
+  this.getSandboxIdentities = () => that.query('SELECT ' +
     'I.*, ' +
     'I.hash, ' +
     '(SELECT COUNT(*) FROM cert C where C.target = I.hash) AS certsCount, ' +
@@ -287,7 +287,6 @@ function IdentityDAL(db, wotb) {
     'FROM ' + that.table + ' as I ' +
     'WHERE NOT I.member ' +
     'AND I.expired IS NULL ' +
-    (underBlock !== undefined ? 'AND ref_block < ' + underBlock + ' ' : '') +
     'ORDER BY certsCount DESC, ref_block ASC ' +
     'LIMIT ' + (that.sandbox.maxSize), []);
 

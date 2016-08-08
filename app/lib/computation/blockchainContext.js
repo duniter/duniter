@@ -412,7 +412,7 @@ function BlockchainContext() {
   });
 
   this.computeExpiredIdentities = (block) => co(function *() {
-    let lastForExpiry = yield dal.getIdentityExcludingBlock(block, conf.idtyWindow);
+    let lastForExpiry = yield dal.getIdentityExpiringBlock(block, conf.idtyWindow);
     if (lastForExpiry) {
       yield dal.flagExpiredIdentities(lastForExpiry.number, block.number);
     }

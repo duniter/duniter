@@ -590,11 +590,11 @@ function FileDAL(params) {
     }
   });
 
-  this.getIdentityExcludingBlock = (current, idtyValidtyTime) => co(function *() {
+  this.getIdentityExpiringBlock = (current, idtyValidtyTime) => co(function *() {
     let currentExcluding;
     if (current.number > 0) {
       try {
-        currentExcluding = yield that.indicatorsDAL.getCurrentIdentityExcludingBlock();
+        currentExcluding = yield that.indicatorsDAL.getCurrentIdentityExpiringBlock();
       } catch (e) {
         currentExcluding = null;
       }
@@ -603,7 +603,7 @@ function FileDAL(params) {
       const root = yield that.getRootBlock();
       const delaySinceStart = current.medianTime - root.medianTime;
       if (delaySinceStart > idtyValidtyTime) {
-        return that.indicatorsDAL.writeCurrentExcludingForIdty(root).then(() => root);
+        return that.indicatorsDAL.writeCurrentExpiringForIdty(root).then(() => root);
       }
     } else {
       // Check current position
@@ -638,7 +638,7 @@ function FileDAL(params) {
           //console.log('CRT: Search between %s and %s: %s => %s,%s', bottom, top, middle, isValidPeriod ? 'DOWN' : 'UP', isValidPeriodB ? 'DOWN' : 'UP');
           if (isExcludin) {
             // Found
-            yield that.indicatorsDAL.writeCurrentExcludingForIdty(middleBlock);
+            yield that.indicatorsDAL.writeCurrentExpiringForIdty(middleBlock);
             newExcluding = middleBlock;
           }
           else if (isValidPeriod) {

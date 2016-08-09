@@ -7,7 +7,7 @@ const co          = require('co');
 const _           = require('underscore');
 const Q           = require('q');
 const archiver    = require('archiver');
-const unzip       = require('unzip');
+const unzip       = require('unzip2');
 const fs          = require('fs');
 const parsers     = require('./app/lib/streams/parsers');
 const constants   = require('./app/lib/constants');
@@ -321,13 +321,18 @@ function Server (dbConf, overrideConf) {
   this.exportAllDataAsZIP = () => co(function *() {
     const params = yield paramsP;
     const rootPath = params.home;
+    const myFS = params.fs;
     const archive = archiver('zip');
-    archive
-      .directory(rootPath + '/indicators', '/indicators', undefined, { name: 'indicators'})
-      .file(rootPath + '/duniter.db', { name: 'duniter.db'})
-      .file(rootPath + '/stats.json', { name: 'stats.json'})
-      .file(rootPath + '/wotb.bin', { name: 'wotb.bin'})
-      .finalize();
+    if (yield myFS.exists(path.join(rootPath, 'indicators'))) {
+      archive.directory(path.join(rootPath, 'indicators'), '/indicators', undefined, { name: 'indicators'});
+    }
+    const files = ['duniter.db', 'stats.json', 'wotb.bin'];
+    for (const file of files) {
+      if (yield myFS.exists(path.join(rootPath, file))) {
+        archive.file(path.join(rootPath, file), { name: file });
+      }
+    }
+    archive.finalize();
     return archive;
   });
 
@@ -440,6 +445,11 @@ function Server (dbConf, overrideConf) {
       flow: remote,
       syncPromise: syncPromise
     };
+  };
+  
+  this.testForSync = (onHost, onPort) => {
+    const remote = new Synchroniser(that, onHost, onPort);
+    return remote.test();
   };
 
   /**

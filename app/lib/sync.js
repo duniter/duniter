@@ -79,6 +79,14 @@ function Synchroniser (server, host, port, conf, interactive) {
     }
   });
 
+  this.test = (to, chunkLen, askedCautious, nopeers) => co(function*() {
+    const vucoin = yield getVucoin(host, port, vucoinOptions);
+    const peering = yield Q.nfcall(vucoin.network.peering.get);
+    const peer = new Peer(peering);
+    const node = yield peer.connect();
+    return Q.nfcall(node.blockchain.current);
+  });
+
   this.sync = (to, chunkLen, askedCautious, nopeers) => co(function*() {
 
     try {

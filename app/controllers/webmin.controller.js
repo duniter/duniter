@@ -1,5 +1,6 @@
 "use strict";
 
+const path = require('path');
 const util = require('util');
 const es = require('event-stream');
 const stream      = require('stream');
@@ -444,7 +445,7 @@ function WebAdmin (dbConf, overConf) {
     if (!req.files.importData) {
       throw "Wrong upload file name";
     }
-    const importZipPath = server.home + '/import.zip';
+    const importZipPath = path.join(server.home, 'import.zip');
     yield new Promise((resolve, reject) => {
       req.files.importData.mv(importZipPath, (err) => {
         err ? reject(err) : resolve();
@@ -454,6 +455,10 @@ function WebAdmin (dbConf, overConf) {
     pluggedConfP = plugForConf();
     pluggedDALP = replugDAL();
     return {};
+  });
+
+  this.testPeer = (req) => co(function *() {
+    return server.testForSync(req.body.host, parseInt(req.body.port));
   });
 
   this.loadData = (dunFile) => co(function *() {

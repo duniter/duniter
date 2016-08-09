@@ -821,7 +821,11 @@ function FileDAL(params) {
   this.close = () => co(function *() {
     yield _.values(that.newDals).map((dal) => dal.cleanCache && dal.cleanCache());
     return new Promise((resolve, reject) => {
-      if (!dbOpened) {
+      let isOpened = !dbOpened;
+      if (process.platform === 'win32') {
+        isOpened = sqlite.open; // For an unknown reason, we need this line.
+      }
+      if (!isOpened) {
         return resolve();
       }
       logger.debug('Trying to close SQLite...');

@@ -78,6 +78,7 @@ module.exports = {
     httpMethods.httpPOST( '/webmin/server/key_conf',           webminCtrl.applyNewKeyConf, dtos.Boolean);
     httpMethods.httpPOST( '/webmin/server/cpu_conf',           webminCtrl.applyCPUConf, dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/republish_selfpeer', webminCtrl.publishANewSelfPeer, dtos.Boolean);
+    httpMethods.httpPOST( '/webmin/server/test_sync',          webminCtrl.testPeer, dtos.Block);
     httpMethods.httpPOST( '/webmin/server/start_sync',         webminCtrl.startSync, dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/auto_conf_network',  webminCtrl.autoConfNetwork, dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/services/start_all', webminCtrl.startAllServices, dtos.Boolean);

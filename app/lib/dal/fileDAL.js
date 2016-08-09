@@ -25,6 +25,10 @@ function FileDAL(params) {
   const rootPath = params.home;
   const myFS = params.fs;
   const sqlite = params.dbf();
+  let dbOpened = false;
+  sqlite.once('open', () => {
+    dbOpened = true;
+  });
   const wotbInstance = params.wotb;
   const that = this;
 
@@ -817,7 +821,7 @@ function FileDAL(params) {
   this.close = () => co(function *() {
     yield _.values(that.newDals).map((dal) => dal.cleanCache && dal.cleanCache());
     return new Promise((resolve, reject) => {
-      if (!sqlite.open) {
+      if (dbOpened) {
         return resolve();
       }
       logger.debug('Trying to close SQLite...');

@@ -144,6 +144,7 @@ function AbstractSQLite(db) {
 
   this.exec = (sql) => co(function *() {
     try {
+      logger.trace(sql);
       return Q.nbind(db.exec, db)(sql);
     } catch (e) {
       logger.error('ERROR >> %s', sql);

@@ -83,7 +83,7 @@ function WebAdmin (dbConf, overConf) {
     const conf = http2raw.conf(req);
     const pair = yield keyring.scryptKeyPair(conf.idty_entropy, conf.idty_password);
     return {
-      "pubkey": base58.encode(pair.publicKey)
+      "pubkey": pair.publicKey
     };
   });
 

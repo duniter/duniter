@@ -54,6 +54,7 @@ describe('Import/Export', () => {
   }));
 
   it('should be able to import data', () => co(function *() {
+    yield s1.unplugFileSystem();
     yield s1.importAllDataFromZIP(s1.home + '/export.zip');
   }));
 });

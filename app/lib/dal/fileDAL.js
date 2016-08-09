@@ -821,7 +821,7 @@ function FileDAL(params) {
   this.close = () => co(function *() {
     yield _.values(that.newDals).map((dal) => dal.cleanCache && dal.cleanCache());
     return new Promise((resolve, reject) => {
-      if (dbOpened) {
+      if (!dbOpened) {
         return resolve();
       }
       logger.debug('Trying to close SQLite...');
@@ -829,7 +829,12 @@ function FileDAL(params) {
         logger.info('Database closed.');
         resolve();
       });
-      sqlite.on('error', (err) => reject(err));
+      sqlite.on('error', (err) => {
+        if (err && err.message === 'SQLITE_MISUSE: Database is closed') {
+          return resolve();
+        }
+        reject(err);
+      });
       sqlite.close();
     });
   });

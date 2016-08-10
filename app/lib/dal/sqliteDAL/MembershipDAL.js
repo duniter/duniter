@@ -6,6 +6,7 @@ const Q = require('q');
 const co = require('co');
 const _ = require('underscore');
 const AbstractSQLite = require('./AbstractSQLite');
+const SandBox = require('./SandBox');
 
 module.exports = MembershipDAL;
 
@@ -31,7 +32,8 @@ function MembershipDAL(db) {
     'idtyHash',
     'written',
     'written_number',
-    'signature'
+    'signature',
+    'expired'
   ];
   this.arrays = [];
   this.booleans = ['written'];
@@ -155,4 +157,44 @@ function MembershipDAL(db) {
       return that.exec(queries.join('\n'));
     }
   });
+
+  this.flagExpiredMemberships = (maxNumber, onNumber) => co(function *() {
+    yield that.exec('UPDATE ' + that.table + ' ' +
+      'SET expired = ' + onNumber + ' ' +
+      'WHERE expired IS NULL ' +
+      'AND blockNumber <= ' + maxNumber);
+  });
+
+  this.unflagExpiredMembershipsOf = (onNumber) => co(function *() {
+    yield that.exec('UPDATE ' + that.table + ' ' +
+      'SET expired = NULL ' +
+      'WHERE expired = ' + onNumber);
+  });
+
+  /**************************
+   * SANDBOX STUFF
+   */
+
+  this.getSandboxMemberships = () => that.query('SELECT ' +
+    '* ' +
+    'FROM ' + that.table + ' ' +
+    'WHERE expired IS NULL ' +
+    'AND written_number IS NULL ' +
+    'ORDER BY blockNumber ASC ' +
+    'LIMIT ' + (that.sandbox.maxSize), []);
+
+  this.sandbox = new SandBox(30, this.getSandboxMemberships.bind(this), (compared, reference) => {
+    if (compared.block_number > reference.block_number) {
+      return -1;
+    }
+    else if (compared.block_number < reference.block_number) {
+      return 1;
+    }
+    else {
+      return 0;
+    }
+  });
+
+  this.getSandboxRoom = () => this.sandbox.getSandboxRoom();
+  this.setSandboxSize = (maxSize) => this.sandbox.maxSize = maxSize;
 }

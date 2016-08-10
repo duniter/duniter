@@ -1,6 +1,6 @@
 {
   "name": "duniter",
-  "version": "0.21.3",
+  "version": "0.22.0",
   "engines": {
     "node": ">=4.2.0",
     "npm": ">=2.11"
@@ -34,6 +34,7 @@
     "url": "https://github.com/duniter/duniter/issues"
   },
   "dependencies": {
+    "archiver": "1.0.1",
     "async": "1.5.2",
     "bindings": "1.2.1",
     "body-parser": "1.14.2",
@@ -46,6 +47,7 @@
     "event-stream": "3.1.5",
     "express": "4.13.4",
     "express-cors": "0.0.3",
+    "express-fileupload": "0.0.5",
     "inquirer": "0.8.5",
     "jison": "0.4.17",
     "merkle": "0.4.0",
@@ -65,6 +67,8 @@
     "superagent": "1.4.0",
     "tweetnacl": "0.14.1",
     "underscore": "1.8.3",
+    "unzip": "0.1.11",
+    "unzip2": "0.2.5",
     "vucoin": "0.30.4",
     "winston": "2.1.1",
     "wotb": "0.4.10",

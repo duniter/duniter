@@ -10,7 +10,8 @@ module.exports = {
   peer:          requiresParameter('peer',        constants.ERRORS.HTTP_PARAM_PEER_REQUIRED),
   membership:    Http2RawMembership,
   block:         requiresParameter('block',       constants.ERRORS.HTTP_PARAM_BLOCK_REQUIRED),
-  conf:          requiresParameter('conf',        constants.ERRORS.HTTP_PARAM_CONF_REQUIRED)
+  conf:          requiresParameter('conf',        constants.ERRORS.HTTP_PARAM_CONF_REQUIRED),
+  cpu:           requiresParameter('cpu',         constants.ERRORS.HTTP_PARAM_CPU_REQUIRED)
 };
 
 function requiresParameter(parameter, err) {

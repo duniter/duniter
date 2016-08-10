@@ -33,7 +33,7 @@ const logger = new (winston.Logger)({
   transports: [
     // setup console logging
     new (winston.transports.Console)({
-      level: 'trace',
+      level: 'debug',
       levels: customLevels.levels,
       handleExceptions: false,
       colorize: true,
@@ -51,7 +51,7 @@ logger.addCallbackLogs = (callbackForLog) => {
     loggerAttached = true;
     logger.add(cbLogger, {
       callback: callbackForLog,
-      level: 'trace',
+      level: 'debug',
       levels: customLevels.levels,
       handleExceptions: false,
       colorize: true,

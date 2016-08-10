@@ -11,6 +11,9 @@ const node   = require('./tools/node');
 const user   = require('./tools/user');
 const unit   = require('./tools/unit');
 const http   = require('./tools/http');
+const limiter = require('../../app/lib/system/limiter');
+
+limiter.noLimit();
 
 describe("Testing transactions", function() {
 

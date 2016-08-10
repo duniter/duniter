@@ -1,5 +1,6 @@
 "use strict";
 
+const path = require('path');
 const util = require('util');
 const es = require('event-stream');
 const stream      = require('stream');
@@ -48,14 +49,18 @@ function WebAdmin (dbConf, overConf) {
 
   let pluggedConfP = plugForConf();
 
-  let pluggedDALP = co(function *() {
-    yield pluggedConfP;
+  let pluggedDALP = replugDAL();
 
-    // Routing documents
-    server.routing();
+  function replugDAL() {
+    return co(function *() {
+      yield pluggedConfP;
 
-    return plugForDAL();
-  });
+      // Routing documents
+      server.routing();
+
+      return plugForDAL();
+    });
+  }
 
   this.summary = () => co(function *() {
     yield pluggedDALP;
@@ -67,6 +72,9 @@ function WebAdmin (dbConf, overConf) {
       "host": host,
       "current": current,
       "pubkey": server.keyPair.publicKey,
+      "conf": {
+        "cpu": server.conf.cpu
+      },
       "parameters": parameters
     };
   });
@@ -75,7 +83,7 @@ function WebAdmin (dbConf, overConf) {
     const conf = http2raw.conf(req);
     const pair = yield keyring.scryptKeyPair(conf.idty_entropy, conf.idty_password);
     return {
-      "pubkey": base58.encode(pair.publicKey)
+      "pubkey": pair.publicKey
     };
   });
 
@@ -244,9 +252,16 @@ function WebAdmin (dbConf, overConf) {
         sec: base58.encode(secretKey)
       }
     }));
-    pluggedConfP = co(function *() {
-      yield server.loadConf();
-    });
+    pluggedConfP = yield server.loadConf();
+    yield pluggedConfP;
+    return {};
+  });
+
+  this.applyCPUConf = (req) => co(function *() {
+    yield pluggedConfP;
+    server.conf.cpu = http2raw.cpu(req);
+    yield server.dal.saveConf(server.conf);
+    pluggedConfP = yield server.loadConf();
     yield pluggedConfP;
     return {};
   });
@@ -414,6 +429,43 @@ function WebAdmin (dbConf, overConf) {
     yield server.BlockchainService.pushFIFO(() => co(function *() {
       yield server.softResetData();
     }));
+    return {};
+  });
+
+  this.exportData = () => co(function *() {
+    yield pluggedDALP;
+    return server.exportAllDataAsZIP();
+  });
+
+  this.importData = (req) => co(function *() {
+    yield that.stopHTTP();
+    yield that.stopAllServices();
+    yield server.unplugFileSystem();
+    yield pluggedDALP;
+    if (!req.files.importData) {
+      throw "Wrong upload file name";
+    }
+    const importZipPath = path.join(server.home, 'import.zip');
+    yield new Promise((resolve, reject) => {
+      req.files.importData.mv(importZipPath, (err) => {
+        err ? reject(err) : resolve();
+      });
+    });
+    yield server.importAllDataFromZIP(importZipPath);
+    pluggedConfP = plugForConf();
+    pluggedDALP = replugDAL();
+    return {};
+  });
+
+  this.testPeer = (req) => co(function *() {
+    return server.testForSync(req.body.host, parseInt(req.body.port));
+  });
+
+  this.loadData = (dunFile) => co(function *() {
+    yield pluggedDALP;
+    // We have to wait for a non-breaking window to process reset
+    yield server.unplugFileSystem();
+    yield server.cleanDBData();
     return {};
   });
 

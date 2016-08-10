@@ -11,6 +11,7 @@ const morgan = require('morgan');
 const errorhandler = require('errorhandler');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const fileUpload = require('express-fileupload');
 const constants = require('../constants');
 const sanitize = require('../streams/sanitize');
 const logger = require('../logger')('network');
@@ -74,7 +75,7 @@ module.exports = {
     }
   },
 
-  createServersAndListen: (name, interfaces, httpLogs, staticPath, routingCallback, listenWebSocket) => co(function *() {
+  createServersAndListen: (name, interfaces, httpLogs, staticPath, routingCallback, listenWebSocket, enableFileUpload) => co(function *() {
 
     const app = express();
 
@@ -92,6 +93,11 @@ module.exports = {
     // CORS for **any** HTTP request
     app.use(cors());
 
+    if (enableFileUpload) {
+      // File upload for backup API
+      app.use(fileUpload());
+    }
+
     app.use(bodyParser.urlencoded({
       extended: true
     }));
@@ -103,8 +109,9 @@ module.exports = {
     }
 
     routingCallback(app, {
-      httpGET:  (uri, promiseFunc, dtoContract) => handleRequest(app.get.bind(app), uri, promiseFunc, dtoContract),
-      httpPOST: (uri, promiseFunc, dtoContract) => handleRequest(app.post.bind(app), uri, promiseFunc, dtoContract)
+      httpGET:     (uri, promiseFunc, dtoContract, limiter) => handleRequest(app.get.bind(app), uri, promiseFunc, dtoContract, limiter),
+      httpPOST:    (uri, promiseFunc, dtoContract, limiter) => handleRequest(app.post.bind(app), uri, promiseFunc, dtoContract, limiter),
+      httpGETFile: (uri, promiseFunc, dtoContract, limiter) => handleFileRequest(app.get.bind(app), uri, promiseFunc, limiter)
     });
 
     if (staticPath) {
@@ -204,12 +211,17 @@ module.exports = {
   })
 };
 
-const handleRequest = (method, uri, promiseFunc, dtoContract) => {
+const handleRequest = (method, uri, promiseFunc, dtoContract, theLimiter) => {
+  const limiter = theLimiter || require('../system/limiter').limitAsUnlimited();
   method(uri, function(req, res) {
     res.set('Access-Control-Allow-Origin', '*');
     res.type('application/json');
     co(function *() {
       try {
+        if (!limiter.canAnswerNow()) {
+          throw constants.ERRORS.HTTP_LIMITATION;
+        }
+        limiter.processRequest();
         let result = yield promiseFunc(req);
         // Ensure of the answer format
         result = sanitize(result, dtoContract);
@@ -223,7 +235,30 @@ const handleRequest = (method, uri, promiseFunc, dtoContract) => {
       }
     });
   });
-}
+};
+
+const handleFileRequest = (method, uri, promiseFunc, theLimiter) => {
+  const limiter = theLimiter || require('../system/limiter').limitAsUnlimited();
+  method(uri, function(req, res) {
+    res.set('Access-Control-Allow-Origin', '*');
+    co(function *() {
+      try {
+        if (!limiter.canAnswerNow()) {
+          throw constants.ERRORS.HTTP_LIMITATION;
+        }
+        limiter.processRequest();
+        let fileStream = yield promiseFunc(req);
+        // HTTP answer
+        fileStream.pipe(res);
+      } catch (e) {
+        let error = getResultingError(e);
+        // HTTP error
+        res.status(error.httpCode).send(JSON.stringify(error.uerr, null, "  "));
+        throw e
+      }
+    });
+  });
+};
 
 function getResultingError(e) {
   // Default is 500 unknown error

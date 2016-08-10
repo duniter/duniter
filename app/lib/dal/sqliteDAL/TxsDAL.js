@@ -7,6 +7,7 @@ const co = require('co');
 const moment = require('moment');
 const Transaction = require('../../entity/transaction');
 const AbstractSQLite = require('./AbstractSQLite');
+const SandBox = require('./SandBox');
 
 module.exports = TxsDAL;
 
@@ -36,7 +37,9 @@ function TxsDAL(db) {
     'issuers',
     'signatories',
     'signatures',
-    'recipients'
+    'recipients',
+    'output_base',
+    'output_amount'
   ];
   this.arrays = ['inputs','unlocks','outputs','issuers','signatories','signatures','recipients'];
   this.booleans = ['written','removed'];
@@ -145,4 +148,36 @@ function TxsDAL(db) {
       return that.exec(queries.join('\n'));
     }
   });
+
+  /**************************
+   * SANDBOX STUFF
+   */
+
+  this.getSandboxMemberships = () => that.query('SELECT ' +
+    '* ' +
+    'FROM ' + that.table + ' ' +
+    'WHERE NOT written ' +
+    'AND NOT removed ' +
+    'LIMIT ' + (that.sandbox.maxSize), []);
+
+  this.sandbox = new SandBox(30, this.getSandboxMemberships.bind(this), (compared, reference) => {
+    if (compared.output_base < reference.output_base) {
+      return -1;
+    }
+    else if (compared.output_base > reference.output_base) {
+      return 1;
+    }
+    else if (compared.output_amount > reference.output_amount) {
+      return -1;
+    }
+    else if (compared.output_amount < reference.output_amount) {
+      return 1;
+    }
+    else {
+      return 0;
+    }
+  });
+
+  this.getSandboxRoom = () => this.sandbox.getSandboxRoom();
+  this.setSandboxSize = (maxSize) => this.sandbox.maxSize = maxSize;
 }

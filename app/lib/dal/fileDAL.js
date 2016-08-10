@@ -25,6 +25,10 @@ function FileDAL(params) {
   const rootPath = params.home;
   const myFS = params.fs;
   const sqlite = params.dbf();
+  let dbOpened = false;
+  sqlite.once('open', () => {
+    dbOpened = true;
+  });
   const wotbInstance = params.wotb;
   const that = this;
 
@@ -408,187 +412,114 @@ function FileDAL(params) {
     return that.idtyDAL.saveIdentity(idty);
   });
 
-  this.getMembershipExcludingBlock = (current, msValidtyTime) => co(function *() {
-    let currentExcluding;
-    if (current.number > 0) {
-      try {
-        currentExcluding = yield that.indicatorsDAL.getCurrentMembershipExcludingBlock();
-      } catch (e) {
-        currentExcluding = null;
-      }
-    }
-    if (!currentExcluding) {
-      const root = yield that.getRootBlock();
-      const delaySinceStart = current.medianTime - root.medianTime;
-      if (delaySinceStart > msValidtyTime) {
-        return that.indicatorsDAL.writeCurrentExcluding(root).then(() => root);
-      }
-    } else {
-      const start = currentExcluding.number;
-      let newExcluding;
-      let top = current.number, bottom = start;
-      // Binary tree search
-      do {
-        let middle = top - bottom;
-        if (middle % 2 != 0) {
-          middle = middle + 1;
-        }
-        middle /= 2;
-        middle += bottom;
-        if (middle == top) {
-          middle--;
-          bottom--; // Helps not being stuck looking at 'top'
-        }
-        const middleBlock = yield that.getBlock(middle);
-        const middleNextB = yield that.getBlock(middle + 1);
-        const delaySinceMiddle = current.medianTime - middleBlock.medianTime;
-        const delaySinceNextB = current.medianTime - middleNextB.medianTime;
-        const isValidPeriod = delaySinceMiddle <= msValidtyTime;
-        const isValidPeriodB = delaySinceNextB <= msValidtyTime;
-        const isExcludin = !isValidPeriod && isValidPeriodB;
-        //console.log('MS: Search between %s and %s: %s => %s,%s', bottom, top, middle, isValidPeriod ? 'DOWN' : 'UP', isValidPeriodB ? 'DOWN' : 'UP');
-        if (isExcludin) {
-          // Found
-          yield that.indicatorsDAL.writeCurrentExcluding(middleBlock);
-          newExcluding = middleBlock;
-        }
-        else if (isValidPeriod) {
-          // Look down in the blockchain
-          top = middle;
-        }
-        else {
-          // Look up in the blockchain
-          bottom = middle;
-        }
-      } while (!newExcluding);
-      return newExcluding;
-    }
-  });
+  this.getMembershipExcludingBlock = (current, msValidtyTime) => getCurrentExcludingOrExpiring(
+    current,
+    msValidtyTime,
+    that.indicatorsDAL.getCurrentMembershipExcludingBlock.bind(that.indicatorsDAL),
+    that.indicatorsDAL.writeCurrentExcluding.bind(that.indicatorsDAL)
+  );
 
-  // TODO: this is complete duplicate of getMembershipExcludingBlock()n but with two different calls:
-  // * getCurrentMembershipRevocatingBlock()
-  // * writeCurrentRevocating
-  this.getMembershipRevocatingBlock = (current, msValidtyTime) => co(function *() {
-    let currentExcluding;
-    if (current.number > 0) {
-      try {
-        currentExcluding = yield that.indicatorsDAL.getCurrentMembershipRevocatingBlock();
-      } catch (e) {
-        currentExcluding = null;
-      }
-    }
-    if (!currentExcluding) {
-      const root = yield that.getRootBlock();
-      const delaySinceStart = current.medianTime - root.medianTime;
-      if (delaySinceStart > msValidtyTime) {
-        return that.indicatorsDAL.writeCurrentRevocating(root).then(() => root);
-      }
-    } else {
-      const start = currentExcluding.number;
-      let newRevocating;
-      let top = current.number, bottom = start;
-      // Binary tree search
-      do {
-        let middle = top - bottom;
-        if (middle % 2 != 0) {
-          middle = middle + 1;
-        }
-        middle /= 2;
-        middle += bottom;
-        if (middle == top) {
-          middle--;
-          bottom--; // Helps not being stuck looking at 'top'
-        }
-        const middleBlock = yield that.getBlock(middle);
-        const middleNextB = yield that.getBlock(middle + 1);
-        const delaySinceMiddle = current.medianTime - middleBlock.medianTime;
-        const delaySinceNextB = current.medianTime - middleNextB.medianTime;
-        const isValidPeriod = delaySinceMiddle <= msValidtyTime;
-        const isValidPeriodB = delaySinceNextB <= msValidtyTime;
-        const isExcludin = !isValidPeriod && isValidPeriodB;
-        //console.log('MS: Search between %s and %s: %s => %s,%s', bottom, top, middle, isValidPeriod ? 'DOWN' : 'UP', isValidPeriodB ? 'DOWN' : 'UP');
-        if (isExcludin) {
-          // Found
-          yield that.indicatorsDAL.writeCurrentRevocating(middleBlock);
-          newRevocating = middleBlock;
-        }
-        else if (isValidPeriod) {
-          // Look down in the blockchain
-          top = middle;
-        }
-        else {
-          // Look up in the blockchain
-          bottom = middle;
-        }
-      } while (!newRevocating);
-      return newRevocating;
-    }
-  });
+  this.getMembershipRevocatingBlock = (current, msValidtyTime) => getCurrentExcludingOrExpiring(
+    current,
+    msValidtyTime,
+    that.indicatorsDAL.getCurrentMembershipRevocatingBlock.bind(that.indicatorsDAL),
+    that.indicatorsDAL.writeCurrentRevocating.bind(that.indicatorsDAL)
+  );
 
-  this.getCertificationExcludingBlock = (current, certValidtyTime) => co(function *() {
-    let currentExcluding;
-    if (current.number > 0) {
-      try {
-        currentExcluding = yield that.indicatorsDAL.getCurrentCertificationExcludingBlock();
-      } catch (e) {
-        currentExcluding = null;
+  this.getCertificationExcludingBlock = (current, certValidtyTime) => getCurrentExcludingOrExpiring(
+    current,
+    certValidtyTime,
+    that.indicatorsDAL.getCurrentCertificationExcludingBlock.bind(that.indicatorsDAL),
+    that.indicatorsDAL.writeCurrentExcludingForCert.bind(that.indicatorsDAL)
+  );
+
+  this.getIdentityExpiringBlock = (current, idtyValidtyTime) => getCurrentExcludingOrExpiring(
+    current,
+    idtyValidtyTime,
+    that.indicatorsDAL.getCurrentIdentityExpiringBlock.bind(that.indicatorsDAL),
+    that.indicatorsDAL.writeCurrentExpiringForIdty.bind(that.indicatorsDAL)
+  );
+
+  this.getCertificationExpiringBlock = (current, certWindow) => getCurrentExcludingOrExpiring(
+    current,
+    certWindow,
+    that.indicatorsDAL.getCurrentCertificationExpiringBlock.bind(that.indicatorsDAL),
+    that.indicatorsDAL.writeCurrentExpiringForCert.bind(that.indicatorsDAL)
+  );
+
+  this.getMembershipExpiringBlock = (current, msWindow) => getCurrentExcludingOrExpiring(
+    current,
+    msWindow,
+    that.indicatorsDAL.getCurrentMembershipExpiringBlock.bind(that.indicatorsDAL),
+    that.indicatorsDAL.writeCurrentExpiringForMembership.bind(that.indicatorsDAL)
+  );
+
+  function getCurrentExcludingOrExpiring(current, delayMax, currentGetter, currentSetter) {
+    return co(function *() {
+      let currentExcluding;
+      if (current.number > 0) {
+        try {
+          currentExcluding = yield currentGetter();
+        } catch (e) {
+          currentExcluding = null;
+        }
       }
-    }
-    if (!currentExcluding) {
-      const root = yield that.getRootBlock();
-      const delaySinceStart = current.medianTime - root.medianTime;
-      if (delaySinceStart > certValidtyTime) {
-        return that.indicatorsDAL.writeCurrentExcludingForCert(root).then(() => root);
-      }
-    } else {
-      // Check current position
-      const currentNextBlock = yield that.getBlock(currentExcluding.number + 1);
-      if (isExcluding(current, currentExcluding, currentNextBlock, certValidtyTime)) {
-        return currentExcluding;
+      if (!currentExcluding) {
+        const root = yield that.getRootBlock();
+        const delaySinceStart = current.medianTime - root.medianTime;
+        if (delaySinceStart > delayMax) {
+          return currentSetter(root).then(() => root);
+        }
       } else {
-        // Have to look for new one
-        const start = currentExcluding.number;
-        let newExcluding;
-        let top = current.number;
-        let bottom = start;
-        // Binary tree search
-        do {
-          let middle = top - bottom;
-          if (middle % 2 != 0) {
-            middle = middle + 1;
-          }
-          middle /= 2;
-          middle += bottom;
-          if (middle == top) {
-            middle--;
-            bottom--; // Helps not being stuck looking at 'top'
-          }
-          const middleBlock = yield that.getBlock(middle);
-          const middleNextB = yield that.getBlock(middle + 1);
-          const delaySinceMiddle = current.medianTime - middleBlock.medianTime;
-          const delaySinceNextB = current.medianTime - middleNextB.medianTime;
-          const isValidPeriod = delaySinceMiddle <= certValidtyTime;
-          const isValidPeriodB = delaySinceNextB <= certValidtyTime;
-          const isExcludin = !isValidPeriod && isValidPeriodB;
-          //console.log('CRT: Search between %s and %s: %s => %s,%s', bottom, top, middle, isValidPeriod ? 'DOWN' : 'UP', isValidPeriodB ? 'DOWN' : 'UP');
-          if (isExcludin) {
-            // Found
-            yield that.indicatorsDAL.writeCurrentExcludingForCert(middleBlock);
-            newExcluding = middleBlock;
-          }
-          else if (isValidPeriod) {
-            // Look down in the blockchain
-            top = middle;
-          }
-          else {
-            // Look up in the blockchain
-            bottom = middle;
-          }
-        } while (!newExcluding);
-        return newExcluding;
+        // Check current position
+        const currentNextBlock = yield that.getBlock(currentExcluding.number + 1);
+        if (isExcluding(current, currentExcluding, currentNextBlock, delayMax)) {
+          return currentExcluding;
+        } else {
+          // Have to look for new one
+          const start = currentExcluding.number;
+          let newExcluding;
+          let top = current.number;
+          let bottom = start;
+          // Binary tree search
+          do {
+            let middle = top - bottom;
+            if (middle % 2 != 0) {
+              middle = middle + 1;
+            }
+            middle /= 2;
+            middle += bottom;
+            if (middle == top) {
+              middle--;
+              bottom--; // Helps not being stuck looking at 'top'
+            }
+            const middleBlock = yield that.getBlock(middle);
+            const middleNextB = yield that.getBlock(middle + 1);
+            const delaySinceMiddle = current.medianTime - middleBlock.medianTime;
+            const delaySinceNextB = current.medianTime - middleNextB.medianTime;
+            const isValidPeriod = delaySinceMiddle <= delayMax;
+            const isValidPeriodB = delaySinceNextB <= delayMax;
+            const isExcludin = !isValidPeriod && isValidPeriodB;
+            //console.log('CRT: Search between %s and %s: %s => %s,%s', bottom, top, middle, isValidPeriod ? 'DOWN' : 'UP', isValidPeriodB ? 'DOWN' : 'UP');
+            if (isExcludin) {
+              // Found
+              yield currentSetter(middleBlock);
+              newExcluding = middleBlock;
+            }
+            else if (isValidPeriod) {
+              // Look down in the blockchain
+              top = middle;
+            }
+            else {
+              // Look up in the blockchain
+              bottom = middle;
+            }
+          } while (!newExcluding);
+          return newExcluding;
+        }
       }
-    }
-  });
+    });
+  }
 
   const isExcluding = (current, excluding, nextBlock, certValidtyTime) => {
     const delaySinceMiddle = current.medianTime - excluding.medianTime;
@@ -598,6 +529,9 @@ function FileDAL(params) {
     return !isValidPeriod && isValidPeriodB;
   };
 
+  this.flagExpiredIdentities = (maxNumber, onNumber) => this.idtyDAL.flagExpiredIdentities(maxNumber, onNumber);
+  this.flagExpiredCertifications = (maxNumber, onNumber) => this.certDAL.flagExpiredCertifications(maxNumber, onNumber);
+  this.flagExpiredMemberships = (maxNumber, onNumber) => this.msDAL.flagExpiredMemberships(maxNumber, onNumber);
   this.kickWithOutdatedMemberships = (maxNumber) => this.idtyDAL.kickMembersForMembershipBelow(maxNumber);
   this.revokeWithOutdatedMemberships = (maxNumber) => this.idtyDAL.revokeMembersForMembershipBelow(maxNumber);
 
@@ -715,6 +649,12 @@ function FileDAL(params) {
   this.removeAllSourcesOfBlock = (number) => that.sourcesDAL.removeAllSourcesOfBlock(number);
 
   this.unConsumeSource = (identifier, noffset) => that.sourcesDAL.unConsumeSource(identifier, noffset);
+
+  this.unflagExpiredIdentitiesOf = (number) => that.idtyDAL.unflagExpiredIdentitiesOf(number);
+  
+  this.unflagExpiredCertificationsOf = (number) => that.certDAL.unflagExpiredCertificationsOf(number);
+  
+  this.unflagExpiredMembershipsOf = (number) => that.msDAL.unflagExpiredMembershipsOf(number);
 
   this.saveSource = (src) => that.sourcesDAL.addSource(src.type, src.number, src.identifier, src.noffset,
       src.amount, src.base, src.block_hash, src.time, src.conditions);
@@ -881,7 +821,11 @@ function FileDAL(params) {
   this.close = () => co(function *() {
     yield _.values(that.newDals).map((dal) => dal.cleanCache && dal.cleanCache());
     return new Promise((resolve, reject) => {
-      if (!sqlite.open) {
+      let isOpened = !dbOpened;
+      if (process.platform === 'win32') {
+        isOpened = sqlite.open; // For an unknown reason, we need this line.
+      }
+      if (!isOpened) {
         return resolve();
       }
       logger.debug('Trying to close SQLite...');
@@ -889,7 +833,12 @@ function FileDAL(params) {
         logger.info('Database closed.');
         resolve();
       });
-      sqlite.on('error', (err) => reject(err));
+      sqlite.on('error', (err) => {
+        if (err && err.message === 'SQLITE_MISUSE: Database is closed') {
+          return resolve();
+        }
+        reject(err);
+      });
       sqlite.close();
     });
   });

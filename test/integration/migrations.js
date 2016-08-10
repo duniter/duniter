@@ -61,8 +61,7 @@ describe("Migration", function() {
      */
 
     it('should be able to fix the issue', () => co(function*() {
-      yield node.server.dal.metaDAL.exec('UPDATE meta SET version = 3');
-      yield node.server.dal.metaDAL.upgradeDatabase();
+      yield node.server.dal.metaDAL.upgradeDatabaseVersions([3,4,5]);
     }));
 
     it('it should exist a received tx for toc', node.expectHttp('/tx/history/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', (res) => {

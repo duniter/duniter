@@ -49,7 +49,7 @@ describe("Document pool currency", function() {
 
   it('Identity with wrong currency should be rejected', () => co(function*() {
     const idtyCat1 = yield s1.lookup2identity(cat1.pub);
-    console.log(idtyCat1.createIdentity());
+    idtyCat1.createIdentity();
     try {
       yield s2.postIdentity(idtyCat1);
       throw "Identity should not have been accepted, since it has an unknown currency name";

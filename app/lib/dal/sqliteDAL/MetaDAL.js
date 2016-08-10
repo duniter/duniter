@@ -99,7 +99,15 @@ function MetaDAL(db) {
       }
       // Blocks since last UD have the same monetary mass as last UD block
       yield blockDAL.exec('UPDATE block SET monetaryMass = ' + monetaryMass + ' WHERE number >= ' + lastUDBlock);
-    })
+    }),
+
+    6: 'BEGIN; ALTER TABLE idty ADD COLUMN expired INTEGER NULL; COMMIT;',
+    7: 'BEGIN; ALTER TABLE cert ADD COLUMN expired INTEGER NULL; COMMIT;',
+    8: 'BEGIN; ALTER TABLE membership ADD COLUMN expired INTEGER NULL; COMMIT;',
+    9: 'BEGIN;' +
+    'ALTER TABLE txs ADD COLUMN output_base INTEGER NULL;' +
+    'ALTER TABLE txs ADD COLUMN output_amount INTEGER NULL;' +
+    'COMMIT;'
   };
 
   this.init = () => co(function *() {
@@ -112,25 +120,38 @@ function MetaDAL(db) {
       'COMMIT;', []);
   });
 
+  function executeMigration(migration) {
+    return co(function *() {
+      if (typeof migration == "string") {
+
+        // Simple SQL script to pass
+        yield that.exec(migration);
+
+      } else if (typeof migration == "function") {
+
+        // JS function to execute
+        yield migration();
+
+      }
+    });
+  }
+
   this.upgradeDatabase = () => co(function *() {
     let version = yield that.getVersion();
     while(migrations[version]) {
       logger.debug("Upgrading from v%s to v%s...", version, version + 1);
 
-      if (typeof migrations[version] == "string") {
-
-        // Simple SQL script to pass
-        yield that.exec(migrations[version]);
-
-      } else if (typeof migrations[version] == "function") {
-
-        // JS function to execute
-        yield migrations[version]();
-        
-      }
+      yield executeMigration(migrations[version]);
       // Automated increment
       yield that.exec('UPDATE meta SET version = version + 1');
       version++;
+    }
+  });
+
+  this.upgradeDatabaseVersions = (versions) => co(function *() {
+    for (const version of versions) {
+      logger.debug("Upgrading from to v%s...", version, version + 1);
+      yield executeMigration(migrations[version]);
     }
   });
 

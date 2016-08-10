@@ -55,7 +55,7 @@ function User (uid, options, node) {
     }
   }
 
-  this.createIdentity = (useRoot) => co(function*() {
+  this.createIdentity = (useRoot, fromServer) => co(function*() {
     if (!pub)
       yield Q.nfcall(init);
     const current = yield node.server.BlockchainService.current();
@@ -67,9 +67,9 @@ function User (uid, options, node) {
       currency: node.server.conf.currency
     });
     createIdentity += keyring.Key(pub, sec).signSync(createIdentity) + '\n';
-    yield Q.nfcall(post, '/wot/add', {
+    yield doPost('/wot/add', {
       "identity": createIdentity
-    });
+    }, fromServer);
   });
 
   this.makeCert = (user, fromServer, overrideProps) => co(function*() {
@@ -95,7 +95,7 @@ function User (uid, options, node) {
 
   this.cert = (user, fromServer) => co(function*() {
     const cert = yield that.makeCert(user, fromServer);
-    yield Q.nfcall(post, '/wot/certify', {
+    yield doPost('/wot/certify', {
       "cert": cert.getRaw()
     });
   });
@@ -329,6 +329,21 @@ function User (uid, options, node) {
       done(err, res, body);
     });
     postReq.form(data);
+  }
+
+  function doPost(uri, data, fromServer) {
+    const ip = fromServer ? fromServer.conf.ipv4 : node.server.conf.remoteipv4;
+    const port = fromServer ? fromServer.conf.port : node.server.conf.remoteport;
+    return new Promise((resolve, reject) => {
+      var postReq = request.post({
+        "uri": 'http://' + [ip, port].join(':') + uri,
+        "timeout": 1000 * 100000
+      }, function (err, res, body) {
+        err = err || (res.statusCode != 200 && body != 'Already up-to-date' && body) || null;
+        err ? reject(err) : resolve(res);
+      });
+      postReq.form(data);
+    });
   }
 
   function getVucoin(fromServer) {

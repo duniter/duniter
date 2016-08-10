@@ -518,13 +518,6 @@ function BlockchainService () {
     return dal.pushStats(stats);
   }
 
-  this.obsoleteInMainBranch = (block) => co(function*(){
-    // Compute obsolete links
-    yield mainContext.computeObsoleteLinks(block);
-    // Compute obsolete memberships (active, joiner)
-    yield mainContext.computeObsoleteMemberships(block);
-  });
-
   this.getCertificationsExludingBlock = () => co(function*() {
     try {
       const current = yield dal.getCurrentBlockOrNull();

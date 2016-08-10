@@ -6,6 +6,9 @@ const path        = require('path');
 const co          = require('co');
 const _           = require('underscore');
 const Q           = require('q');
+const archiver    = require('archiver');
+const unzip       = require('unzip2');
+const fs          = require('fs');
 const parsers     = require('./app/lib/streams/parsers');
 const constants   = require('./app/lib/constants');
 const fileDAL     = require('./app/lib/dal/fileDAL');
@@ -29,6 +32,7 @@ function Server (dbConf, overrideConf) {
   const paramsP = directory.getHomeParams(dbConf && dbConf.memory, home);
   const logger = require('./app/lib/logger')('server');
   const that = this;
+  that.home = home;
   that.conf = null;
   that.dal = null;
   that.version = jsonpckg.version;
@@ -71,6 +75,11 @@ function Server (dbConf, overrideConf) {
     logger.debug('Plugging file system...');
     const params = yield paramsP;
     that.dal = fileDAL(params);
+  });
+
+  this.unplugFileSystem = () => co(function *() {
+    logger.debug('Unplugging file system...');
+    yield that.dal.close();
   });
 
   this.softResetData = () => co(function *() {
@@ -269,8 +278,18 @@ function Server (dbConf, overrideConf) {
       }
   });
 
+  this.resetHome = () => co(function *() {
+    const params = yield paramsP;
+    const myFS = params.fs;
+    const rootPath = params.home;
+    const existsDir = yield myFS.exists(rootPath);
+    if (existsDir) {
+      yield myFS.removeTree(rootPath);
+    }
+  });
+
   this.resetAll = (done) => {
-    const files = ['stats', 'cores', 'current', 'conf', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.WOTB_FILE];
+    const files = ['stats', 'cores', 'current', 'conf', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.WOTB_FILE, 'export.zip', 'import.zip'];
     const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   };
@@ -298,6 +317,35 @@ function Server (dbConf, overrideConf) {
   this.resetPeers = (done) => {
     return that.dal.resetPeers(done);
   };
+
+  this.exportAllDataAsZIP = () => co(function *() {
+    const params = yield paramsP;
+    const rootPath = params.home;
+    const myFS = params.fs;
+    const archive = archiver('zip');
+    if (yield myFS.exists(path.join(rootPath, 'indicators'))) {
+      archive.directory(path.join(rootPath, 'indicators'), '/indicators', undefined, { name: 'indicators'});
+    }
+    const files = ['duniter.db', 'stats.json', 'wotb.bin'];
+    for (const file of files) {
+      if (yield myFS.exists(path.join(rootPath, file))) {
+        archive.file(path.join(rootPath, file), { name: file });
+      }
+    }
+    archive.finalize();
+    return archive;
+  });
+
+  this.importAllDataFromZIP = (zipFile) => co(function *() {
+    const params = yield paramsP;
+    yield that.resetData();
+    const output = unzip.Extract({ path: params.home });
+    fs.createReadStream(zipFile).pipe(output);
+    return new Promise((resolve, reject) => {
+      output.on('error', reject);
+      output.on('close', resolve);
+    });
+  });
 
   this.cleanDBData = () => co(function *() {
     yield _.values(that.dal.newDals).map((dal) => dal.cleanData && dal.cleanData());
@@ -397,6 +445,11 @@ function Server (dbConf, overrideConf) {
       flow: remote,
       syncPromise: syncPromise
     };
+  };
+  
+  this.testForSync = (onHost, onPort) => {
+    const remote = new Synchroniser(that, onHost, onPort);
+    return remote.test();
   };
 
   /**

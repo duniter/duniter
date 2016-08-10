@@ -18,6 +18,10 @@ let Transaction = function(obj, currency) {
    this[key] = json[key];
   });
 
+  // Store the maximum output base
+  this.output_amount = this.outputs.reduce((sum, output) => sum + parseInt(output.split(':')[0]), 0);
+  this.output_base = this.outputs.reduce((maxBase, output) => Math.max(maxBase, parseInt(output.split(':')[1])), 0);
+
   this.version = constants.DOCUMENTS_VERSION;
   this.currency = currency || this.currency;
 

@@ -144,6 +144,7 @@ function AbstractSQLite(db) {
 
   this.exec = (sql) => co(function *() {
     try {
+      // logger.trace(sql);
       return Q.nbind(db.exec, db)(sql);
     } catch (e) {
       logger.error('ERROR >> %s', sql);
@@ -291,8 +292,12 @@ function AbstractSQLite(db) {
     for (const f of that.booleans) {
       row[f] = Boolean(row[f]);
     }
+    // Transient
+    for (const f of (that.transientFields || [])) {
+      row[f] = row[f];
+    }
     return row;
-  };
+  }
 
   function toRow(entity) {
     let row = _.clone(entity);

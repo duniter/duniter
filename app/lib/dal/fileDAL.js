@@ -537,8 +537,6 @@ function FileDAL(params) {
 
   this.getPeerOrNull = (pubkey) => nullIfError(that.getPeer(pubkey));
 
-  this.getBlockOrNull = (number) => nullIfError(that.getBlock(number));
-
   this.findAllPeersNEWUPBut = (pubkeys) => co(function*() {
     const peers = yield that.listAllPeers();
     return peers.filter((peer) => pubkeys.indexOf(peer.pubkey) == -1

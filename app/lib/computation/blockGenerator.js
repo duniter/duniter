@@ -138,7 +138,7 @@ function BlockGenerator(mainContext, prover) {
       leave.idHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
       let block;
       if (current) {
-        block = yield dal.getBlockOrNull(ms.number);
+        block = yield dal.getBlock(ms.number);
       }
       else {
         block = {};
@@ -557,7 +557,7 @@ function NextBlockGenerator(conf, dal) {
       if (targetIdty) {
         const certSig = cert.sig;
         // Do not rely on certification block UID, prefer using the known hash of the block by its given number
-        const targetBlock = yield dal.getBlockOrNull(cert.block_number);
+        const targetBlock = yield dal.getBlock(cert.block_number);
         // Check if writable
         let duration = current ? current.medianTime - parseInt(targetBlock.medianTime) : 0;
         if (duration <= conf.sigWindow) {

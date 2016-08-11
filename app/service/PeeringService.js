@@ -258,7 +258,7 @@ function PeeringService(server) {
     }
     // Finally we can't have a negative block
     minBlock = Math.max(0, minBlock);
-    let targetBlock = yield server.dal.getBlockOrNull(minBlock);
+    let targetBlock = yield server.dal.getBlock(minBlock);
     const p2 = {
       version: constants.DOCUMENTS_VERSION,
       currency: currency,
@@ -530,7 +530,7 @@ function PeeringService(server) {
               remotePeers: () => Q([node]),
 
               // Get block of given peer with given block number
-              getLocalBlock: (number) => dal.getBlockOrNull(number),
+              getLocalBlock: (number) => dal.getBlock(number),
 
               // Get block of given peer with given block number
               getRemoteBlock: (thePeer, number) => co(function *() {

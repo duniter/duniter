@@ -299,7 +299,7 @@ function BlockchainService () {
       // Expiration of current membershship
       if (join.identity.currentMSN >= 0) {
         if (join.identity.member) {
-          const msBlock = yield dal.getBlockOrNull(join.identity.currentMSN);
+          const msBlock = yield dal.getBlock(join.identity.currentMSN);
           expiresMS = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
         } else {
           expiresMS = 0;
@@ -308,7 +308,7 @@ function BlockchainService () {
       // Expiration of pending membership
       const lastJoin = yield dal.lastJoinOfIdentity(idty.hash);
       if (lastJoin) {
-        const msBlock = yield dal.getBlockOrNull(lastJoin.blockNumber);
+        const msBlock = yield dal.getBlock(lastJoin.blockNumber);
         expiresPending = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
       }
       // Expiration of certifications
@@ -343,7 +343,7 @@ function BlockchainService () {
     const certsFromCerts = [];
     const certs = newCerts[newcomer] || [];
     for (const cert of certs) {
-      const block = yield dal.getBlockOrNull(cert.block_number);
+      const block = yield dal.getBlock(cert.block_number);
       certsFromCerts.push({
         from: cert.from,
         to: cert.to,
@@ -415,7 +415,7 @@ function BlockchainService () {
 
   this.saveParametersForRootBlock = (block) => co(function *() {
     let mainFork = mainContext;
-    let rootBlock = block || (yield mainFork.dal.getBlockOrNull(0));
+    let rootBlock = block || (yield mainFork.dal.getBlock(0));
     if (!rootBlock) throw 'Cannot registrer currency parameters since no root block exists';
     return mainFork.saveParametersForRootBlock(rootBlock);
   });
@@ -426,13 +426,13 @@ function BlockchainService () {
       yield that.saveParametersForRootBlock(blocks[0]);
     }
     // Helper to retrieve a block with local cache
-    const getBlockOrNull = (number) => {
+    const getBlock = (number) => {
       const firstLocalNumber = blocks[0].number;
       if (number >= firstLocalNumber) {
         let offset = number - firstLocalNumber;
         return Q(blocks[offset]);
       }
-      return dal.getBlockOrNull(number);
+      return dal.getBlock(number);
     };
     // Insert a bunch of blocks
     const lastPrevious = blocks[0].number == 0 ? null : yield dal.getBlock(blocks[0].number - 1);
@@ -486,7 +486,7 @@ function BlockchainService () {
     // Create certifications
     yield mainContext.updateMembershipsForBlocks(blocks);
     // Create certifications
-    yield mainContext.updateLinksForBlocks(blocks, getBlockOrNull);
+    yield mainContext.updateLinksForBlocks(blocks, getBlock);
     // Create certifications
     yield mainContext.updateCertificationsForBlocks(blocks);
     // Create / Update sources

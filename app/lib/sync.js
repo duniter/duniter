@@ -134,7 +134,7 @@ function Synchroniser (server, host, port, conf, interactive) {
         }),
 
         // Get block of given peer with given block number
-        getLocalBlock: (number) => dal.getBlockOrNull(number),
+        getLocalBlock: (number) => dal.getBlock(number),
 
         // Get block of given peer with given block number
         downloadBlocks: (thePeer, number) => co(function *() {

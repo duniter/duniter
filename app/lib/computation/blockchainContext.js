@@ -129,7 +129,7 @@ function BlockchainContext() {
     // Create/Update certifications
     yield that.updateCertifications(block);
     // Save links
-    yield that.updateLinksForBlocks([block], dal.getBlockOrNull.bind(dal));
+    yield that.updateLinksForBlocks([block], dal.getBlock.bind(dal));
     // Compute obsolete links
     yield that.computeObsoleteLinks(block);
     // Compute obsolete memberships (active, joiner)
@@ -522,17 +522,17 @@ function BlockchainContext() {
    * New method for CREATING links found in blocks.
    * Made for performance reasons, this method will batch insert all links at once.
    * @param blocks
-   * @param getBlockOrNull
+   * @param getBlock
    * @returns {*}
    */
-  this.updateLinksForBlocks = (blocks, getBlockOrNull) => co(function *() {
+  this.updateLinksForBlocks = (blocks, getBlock) => co(function *() {
     let links = [];
     for (const block of blocks) {
       for (const inlineCert of block.certifications) {
         let cert = Certification.statics.fromInline(inlineCert);
         let tagBlock = block;
         if (block.number > 0) {
-          tagBlock = yield getBlockOrNull(cert.block_number);
+          tagBlock = yield getBlock(cert.block_number);
         }
         let fromIdty = yield dal.getWrittenIdtyByPubkey(cert.from);
         let toIdty = yield dal.getWrittenIdtyByPubkey(cert.to);

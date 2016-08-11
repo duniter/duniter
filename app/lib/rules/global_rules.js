@@ -17,6 +17,14 @@ let rules = {};
 
 rules.FUNCTIONS = {
 
+  checkVersion: (block, dal) => co(function *() {
+    let current = yield dal.getCurrentBlockOrNull();
+    if (current && current.version == 3 && block.version == 2) {
+      throw Error('`Version: 2` must follow another V2 block or be the root block');
+    }
+    return true;
+  }),
+
   checkNumber: (block, dal) => co(function *() {
     let current = yield dal.getCurrentBlockOrNull();
     if (!current && block.number != 0) {

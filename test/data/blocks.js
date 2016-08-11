@@ -1341,6 +1341,30 @@ module.exports = {
     "Nonce: 1\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
+  V2_CANNOT_FOLLOW_V3: 
+    "Version: 2\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Number: 1\n" +
+    "PoWMin: 1\n" +
+    "Time: 1411776000\n" +
+    "MedianTime: 1411776000\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "PreviousHash: 52DC8A585C5D89571C511BB83F7E7D3382F0041452064B1272E65F0B42B82D57\n" +
+    "PreviousIssuer: G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Actives:\n" +
+    "Leavers:\n" +
+    "Revoked:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
+    "Nonce: 1\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
   SAME_BLOCK_NUMBER: 
     "Version: 2\n" +
     "Type: Block\n" +

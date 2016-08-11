@@ -1,4 +1,6 @@
-# Goal of this document
+# Install a Duniter node
+
+## Goal of this document
 
 This document is a little guide to install & deploy your own Duniter instance to either:
 
@@ -17,10 +19,10 @@ This document is a little guide to install & deploy your own Duniter instance to
 * [Server](#server)
   * [GNU/Linux](#gnu-linux-1)
     * [Ubuntu/Debian package (64 bits)](#ubuntudebian-package-64-bits)
+    * [YunoHost](#yunohost)
     * [Automated install script](#automated-install-script)
     - [Other distributions (64 bits)](#other-distributions-64-bits)
     * [Docker](#docker)
-    * [YunoHost](#yunohost)
     * [NPM](#npm)
   * [Windows](#windows-1)
 
@@ -124,6 +126,10 @@ You will control your instance using *command line tools*, but if you want you c
 ```bash
 dpkg -i [downloaded_file_name].deb
 ```
+### YunoHost
+
+A [YunoHost package](https://github.com/duniter/duniter_ynh) is available.
+
 
 ### Other distributions (64 bits)
 
@@ -155,10 +161,6 @@ wget -qO- https://raw.githubusercontent.com/duniter/duniter/master/install.sh | 
 ### Docker
 
 A [Docker installation guide](https://github.com/duniter/duniter/blob/master/docker/README.md) is available.
-
-### YunoHost
-
-A [YunoHost package](https://github.com/duniter/duniter_ynh) is avaible.
 
 ### NPM
 

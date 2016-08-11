@@ -51,10 +51,10 @@ describe("Revert two blocks", function() {
       yield cat.cert(toc);
       yield cat.join();
       yield toc.join();
-      yield commit(s1)();
-      yield commit(s1)();
+      yield commit(s1)({ version: 2 });
+      yield commit(s1)({ version: 2 });
       yield cat.sendP(51, toc);
-      yield commit(s1)();
+      yield commit(s1)({ version: 2 });
       yield s1.revert();
     });
   });

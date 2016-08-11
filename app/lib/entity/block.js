@@ -1,5 +1,6 @@
 "use strict";
 const _ = require('underscore');
+const constants = require('../constants');
 const hashf = require('../ucp/hashf');
 
 module.exports = Block;
@@ -204,7 +205,7 @@ function Block(json) {
         });
       });
       tx.comment = simpleTx.comment;
-      tx.version = version;
+      tx.version = constants.DOCUMENTS_VERSION;
       tx.currency = currency;
       tx.locktime = parseInt(simpleTx.locktime);
       transactions.push(tx);

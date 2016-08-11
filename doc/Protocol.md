@@ -1289,13 +1289,14 @@ The proof is considered valid if:
 ##### Universal Dividend
 
 * Root block do not have `UniversalDividend` field.
-* Universal Dividend must be present if `MedianTime` value is greater or equal to `lastUDTime` + `dt` **AND** `N(t+1)` is > 0.
-* `lastUDTime` is the `MedianTime` of the last block with `UniversalDividend` in it.
-* Initial value of `lastUDTime` equals to the root block's `MedianTime`.
+* Universal Dividend must be present if `MedianTime` value is greater or equal to `lastUDTime` + `dt`.
+  * `lastUDTime` is the `MedianTime` of the last block with `UniversalDividend` in it.
+  * Initial value of `lastUDTime` equals to the root block's `MedianTime`.
+* UD(t = 0) = `ud0`
 * Value of `UniversalDividend` (`UD(t+1)`) equals to:
 
 ```
-UD(t+1) = CEIL(MAX(UD(t) ; c * M(t) / N(t+1) ))
+UD(t+1) = INTEGER_PART((1 + c) * UD(t))
 ```
 
 Where:
@@ -1303,11 +1304,6 @@ Where:
 * `t` is UD time
 * `UD(t)` is last UD value
 * `c` equals to `[c]` parameter of this protocol
-* `N(t+1)` equals to `MembersCount` of the current block (last written block)
-* `M(t)` equals to the sum of all `UD(t)*N(t)` of the blockchain (from t = 0, to t = now) where:
-  * `N(t)` is the `MembersCount` for `UD(t)`
-  * `UD(0)` equals to `[ud0]` parameter of this protocol
-  * `N(0) = 0`
 
 ###### UD overflow
 If `UniversalDividend` value is higher or equal to `1000000` (1 million), then `UniversalDividend` value has to be:

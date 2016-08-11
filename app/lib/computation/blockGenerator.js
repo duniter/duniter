@@ -37,9 +37,8 @@ function BlockGenerator(mainContext, prover) {
 
   this.nextEmptyBlock = () => co(function *() {
     const current = yield dal.getCurrentBlockOrNull();
-    const lastUDBlock = dal.lastUDBlock();
     const exclusions = yield dal.getToBeKickedPubkeys();
-    return createBlock(current, {}, {}, {}, [], exclusions, lastUDBlock, []);
+    return createBlock(current, {}, {}, {}, [], exclusions, []);
   });
 
   this.manualRoot = () => co(function *() {
@@ -61,7 +60,6 @@ function BlockGenerator(mainContext, prover) {
    */
   const generateNextBlock = (generator, manualValues) => co(function *() {
     const current = yield dal.getCurrentBlockOrNull();
-    const lastUDBlock = yield dal.lastUDBlock();
     const revocations = yield dal.getRevocatingMembers();
     const exclusions = yield dal.getToBeKickedPubkeys();
     const newCertsFromWoT = yield generator.findNewCertsFromWoT(current);
@@ -90,7 +88,7 @@ function BlockGenerator(mainContext, prover) {
     });
     // Revocations
     // Create the block
-    return createBlock(current, joinData, leaveData, newCertsFromWoT, revocations, exclusions, lastUDBlock, transactions, manualValues);
+    return createBlock(current, joinData, leaveData, newCertsFromWoT, revocations, exclusions, transactions, manualValues);
   });
 
   const findNewcomersAndLeavers  = (current, filteringFunc) => co(function*() {
@@ -395,7 +393,7 @@ function BlockGenerator(mainContext, prover) {
     };
   });
 
-  const createBlock = (current, joinData, leaveData, updates, revocations, exclusions, lastUDBlock, transactions, manualValues) => {
+  const createBlock = (current, joinData, leaveData, updates, revocations, exclusions, transactions, manualValues) => {
     // Revocations have an impact on exclusions
     revocations.forEach((idty) => exclusions.push(idty.pubkey));
     // Prevent writing joins/updates for excluded members
@@ -410,7 +408,7 @@ function BlockGenerator(mainContext, prover) {
       delete joinData[leaver];
     });
     const block = new Block();
-    block.version = constants.DOCUMENTS_VERSION;
+    block.version = (manualValues && manualValues.version) || constants.DOCUMENTS_VERSION;
     block.currency = current ? current.currency : conf.currency;
     block.nonce = 0;
     block.number = current ? current.number + 1 : 0;
@@ -501,30 +499,10 @@ function BlockGenerator(mainContext, prover) {
         block.medianTime = yield rules.HELPERS.getMedianTime(block.number, conf, dal);
       }
       // Universal Dividend
-      let lastUDTime = lastUDBlock && lastUDBlock.UDTime;
-      if (!lastUDTime) {
-        const rootBlock = yield dal.getBlockOrNull(0);
-        lastUDTime = rootBlock && rootBlock.UDTime;
-      }
-      if (lastUDTime != null) {
-        if (current && lastUDTime + conf.dt <= block.medianTime) {
-          const M = current.monetaryMass || 0;
-          const c = conf.c;
-          const N = block.membersCount;
-          const previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
-          const previousUB = lastUDBlock ? lastUDBlock.unitbase : constants.FIRST_UNIT_BASE;
-          if (N > 0) {
-            block.dividend = Math.ceil(Math.max(previousUD, c * M / Math.pow(10,previousUB) / N));
-            block.unitbase = previousUB;
-            if (block.dividend >= Math.pow(10, constants.NB_DIGITS_UD)) {
-              block.dividend = Math.ceil(block.dividend / 10.0);
-              block.unitbase++;
-            }
-          } else {
-            // The community has collapsed. RIP.
-            block.dividend = 0;
-          }
-        }
+      const nextUD = yield rules.HELPERS.getNextUD(dal, conf, block.version, block.medianTime, current, block.membersCount);
+      if (nextUD) {
+        block.dividend = nextUD.dividend;
+        block.unitbase = nextUD.unitbase;
       }
       // InnerHash
       block.time = block.medianTime;

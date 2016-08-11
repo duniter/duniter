@@ -65,7 +65,7 @@ function BlockParser (onError) {
     obj.previousIssuer = obj.previousIssuer || '';
     obj.membersCount = obj.membersCount || '';
     obj.transactions.map((tx) => {
-      tx.version = obj.version;
+      tx.version = constants.DOCUMENTS_VERSION;
       tx.currency = obj.currency;
       tx.hash = hashf(rawer.getTransaction(tx)).toUpperCase();
     });
@@ -93,7 +93,7 @@ function BlockParser (onError) {
     };
     if(!err){
       // Version
-      if(!obj.version || !obj.version.match(constants.DOCUMENTS_VERSION_REGEXP))
+      if(!obj.version || !obj.version.match(constants.DOCUMENTS_BLOCK_VERSION_REGEXP))
         err = {code: codes.BAD_VERSION, message: "Version unknown"};
     }
     if(!err){

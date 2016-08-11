@@ -408,7 +408,7 @@ function BlockGenerator(mainContext, prover) {
       delete joinData[leaver];
     });
     const block = new Block();
-    block.version = (manualValues && manualValues.version) || constants.DOCUMENTS_VERSION;
+    block.version = (manualValues && manualValues.version) || constants.BLOCK_GENERATED_VERSION;
     block.currency = current ? current.currency : conf.currency;
     block.nonce = 0;
     block.number = current ? current.number + 1 : 0;

@@ -827,7 +827,7 @@ To be a valid, a block must match the following rules:
 The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
 ##### Data
-* `Version` equals `1`
+* `Version` equals `2` or `3`
 * `Type` equals `Block`
 
 ### Peer
@@ -890,7 +890,7 @@ Field | Description
 To be a valid, a peer document must match the following rules:
 
 ##### Format
-* `Version` equals `2`
+* `Version` equals `2` or `3`
 * `Type` equals `Peer`
 * `Currency` is a valid currency name
 * `PublicKey` is a [Public key](#publickey)
@@ -954,6 +954,10 @@ A Block can be accepted only if it respects a set of rules, here divided in 2 pa
 #### Local validation
 
 Local validation verifies the coherence of a well-formatted block, withtout any other context than the block itself.
+
+##### Version and Number
+
+If `Number` is `0`, then `Version` must be `2`.
 
 ##### InnerHash
 
@@ -1141,6 +1145,10 @@ An identity is considered *revoked* if either:
 
 * A block's `Number` must be exactly equal to previous block + 1.
 * If blockchain is empty, `Number` must be `0` .
+
+##### Version
+
+`Version` must be `2` or `3`. Also, `Version: 2` cannot follow a `Version: 3` block.
 
 ##### PoWMin
 

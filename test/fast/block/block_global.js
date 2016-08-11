@@ -72,6 +72,15 @@ describe("Block global coherence:", function(){
     should.not.exist(err);
   }));
 
+  it('a V2 number cannot follow V3', test(rules.GLOBAL.checkVersion, blocks.V2_CANNOT_FOLLOW_V3, {
+    getCurrentBlockOrNull: () => Q({
+      version: 3
+    })
+  }, function (err) {
+    should.exist(err);
+    err.message.should.equal('`Version: 2` must follow another V2 block or be the root block');
+  }));
+
   it('a block with positive number while no root exists should fail', test(rules.GLOBAL.checkNumber, blocks.ROOT_BLOCK_REQUIRED, {
     getCurrentBlockOrNull: () => Q(null)
   }, function (err) {

@@ -54,14 +54,21 @@ Your instance will be up as long as you keep your computer and Duniter software 
 2. Process the installation by opening the file with `GDebi` (or with `dpkg` software if you prefer to use it).
 <img src="https://forum.duniter.org/uploads/default/original/1X/4a7a8147635cd49c32c1ec8481a659f1e578c76d.png" width="460" height="202">
 
-3. Use Gnome Shell to look for "Duniter" and click on it to launch the software.
+3. Use GNOME Shell to look for "Duniter" and click on it to launch the software.
 <img src="https://forum.duniter.org/uploads/default/original/1X/6a92043447c583ef3c47e84742b67ce2fd799a49.png" width="690" height="428">
 
 > At any moment you could also use `duniter-desktop` command to launch Duniter. It is an equivalent.
 
 ### Other distribution
+#### With tarball archive
 
-#### Installation
+1. Go to the [releases page](https://github.com/duniter/duniter/releases) and choose the latest build. Download the file with `.tar.gz` extension.
+
+2. Extract the tarball: `tar zxvf duniter-*.tar.gz`.
+
+3. Run it with `./nw/nw`.
+
+#### By building it
 
 Duniter can be easily installed on most Linux machines (either 32bits or 64bits) using the following command:
 
@@ -106,7 +113,7 @@ The graphical interface should now show up.
 ## MacOS
 
 > Coming soon.
-> Meanwhile, you can try the [Linux/Other distributions] section which will probably work. Please contact us on [our forum](https://forum.duniter.org) if you have any difficulty or succeed with this procedure, we lack a Mac for testing.
+> Meanwhile, you can try the [Linux/Other distributions] section which will probably work. Please contact us on [our forum](https://forum.duniter.org) if you have any difficulty or succeed with this procedure, we lack a Mac user for testing.
 
 # Server
 
@@ -126,6 +133,16 @@ You will control your instance using *command line tools*, but if you want you c
 ```bash
 dpkg -i [downloaded_file_name].deb
 ```
+
+3. Launch the daemon with:
+```bash
+duniter start
+```
+If you want to launch the node with the administration web interface:
+```bash
+duniter webstart
+```
+
 ### YunoHost
 
 A [YunoHost package](https://github.com/duniter/duniter_ynh) is available.

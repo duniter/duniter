@@ -49,7 +49,7 @@ let Transaction = function(obj, currency) {
   this.getTransaction = () => {
     const tx = {};
     tx.hash = this.hash;
-    tx.version = this.version;
+    tx.version = constants.DOCUMENTS_VERSION;
     tx.currency = this.currency;
     tx.issuers = this.issuers || this.signatories;
     tx.signatures = this.signatures;

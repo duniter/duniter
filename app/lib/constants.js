@@ -118,6 +118,7 @@ module.exports = {
   BLOCK_UID: exact(BLOCK_UID),
 
   DOCUMENTS_VERSION_REGEXP: /^2$/,
+  DOCUMENTS_BLOCK_VERSION_REGEXP: /^(2|3)$/,
   DOCUMENTS_VERSION: 2,
 
   REVOCATION_FACTOR: 2, // This is protocol fixed value
@@ -172,7 +173,7 @@ module.exports = {
   },
   BLOCK: {
     NONCE:       find("Nonce: (" + ZERO_OR_POSITIVE_INT + ")"),
-    VERSION:     find("Version: (2)"),
+    VERSION:     find("Version: (2|3)"),
     TYPE:        find("Type: (Block)"),
     CURRENCY:    find("Currency: (" + CURRENCY + ")"),
     BNUMBER:     find("Number: (" + ZERO_OR_POSITIVE_INT + ")"),

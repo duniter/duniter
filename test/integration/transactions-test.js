@@ -44,11 +44,13 @@ describe("Testing transactions", function() {
     yield toc.cert(tic);
     yield tic.join();
     yield toc.join();
-    yield s1.commit();
+    yield s1.commit({ version: 2 });
     yield s1.commit({
+      version: 2,
       time: now + 7210
     });
     yield s1.commit({
+      version: 2,
       time: now + 7210
     });
     yield tic.sendP(51, toc);
@@ -58,6 +60,7 @@ describe("Testing transactions", function() {
       res.history.pending[0].should.have.property('received').be.a.Number;
     });
     yield s1.commit({
+      version: 2,
       time: now + 7220
     });
   }));
@@ -91,7 +94,7 @@ describe("Testing transactions", function() {
     it('toc should be able to send 80 to tic', () => co(function *() {
       let tx1 = yield toc.prepareITX(171, tic);
       yield toc.sendTX(tx1);
-      yield s1.commit();
+      yield s1.commit({ version: 2 });
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
     }));
   });
@@ -104,16 +107,17 @@ describe("Testing transactions", function() {
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(2);
       // Make the time go so another UD is available
       yield s1.commit({
+        version: 2,
         time: now + 30000
       });
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(2);
-      yield s1.commit();
+      yield s1.commit({ version: 2 });
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3);
       let tx1 = yield toc.prepareITX(120, tic);
       yield toc.sendTX(tx1);
-      yield s1.commit();
+      yield s1.commit({ version: 2 });
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(4);
       // Now cat has all the money...
@@ -127,14 +131,14 @@ describe("Testing transactions", function() {
       yield unit.shouldNotFail(toc.sendTX(tx4));
       yield unit.shouldFail(toc.sendTX(tx5), 'Wrong unlocker in transaction');
       yield unit.shouldFail(toc.sendTX(tx6), 'Wrong unlocker in transaction');
-      yield s1.commit(); // TX4 commited
+      yield s1.commit({ version: 2 }); // TX4 commited
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0); // The tx was not sent to someone! So toc has nothing more than before.
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3);
       let tx7 = yield tic.prepareUTX(tx4, ['XHX(2872767826647264)'], [{ qty: 120, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong1'});
       let tx8 = yield tic.prepareUTX(tx4, ['XHX(1872767826647264)'], [{ qty: 120, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'okk'}); // tic unlocks the XHX locked amount, and gives it to toc!
       yield unit.shouldFail(toc.sendTX(tx7), 'Wrong unlocker in transaction');
       yield unit.shouldNotFail(toc.sendTX(tx8));
-      yield s1.commit(); // TX4 commited
+      yield s1.commit({ version: 2 }); // TX4 commited
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1); // That's why toc now has 1 more source...
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3); // ...and why tic's number of sources hasn't changed
     }));
@@ -144,13 +148,13 @@ describe("Testing transactions", function() {
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3);
       let tx1 = yield toc.prepareITX(120, tic);
       yield toc.sendTX(tx1);
-      yield s1.commit();
+      yield s1.commit({ version: 2 });
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(4);
       // The funding transaction that can be reverted by its issuer (tic here) or consumed by toc if he knowns X for H(X)
       let tx2 = yield tic.prepareUTX(tx1, ['SIG(0)'], [{ qty: 120, base: 0, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + toc.pub + ')) || (SIG(' + tic.pub + ') && SIG(' + toc.pub + '))'  }], { comment: 'cross1' });
       yield unit.shouldNotFail(toc.sendTX(tx2));
-      yield s1.commit(); // TX2 commited
+      yield s1.commit({ version: 2 }); // TX2 commited
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1); // toc is also present in the target of tx2
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(4); // As well as tic
       let tx3 = yield tic.prepareUTX(tx2, ['XHX(1872767826647264) SIG(0)'], [{ qty: 120, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong'});

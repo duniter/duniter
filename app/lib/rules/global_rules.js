@@ -61,34 +61,21 @@ rules.FUNCTIONS = {
 
   checkUD: (block, conf, dal) => co(function *() {
     let current = yield dal.getCurrentBlockOrNull();
-    let lastUDBlock = yield dal.lastUDBlock();
-    let root = yield dal.getBlock(0);
-    const lastUDTime = lastUDBlock ? lastUDBlock.UDTime : (root != null ? root.medianTime : 0);
-    const UD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
-    const UB = lastUDBlock ? lastUDBlock.unitbase : 0;
-    const M = lastUDBlock ? lastUDBlock.monetaryMass : 0;
-    const Nt1 = block.membersCount;
-    const c = conf.c;
-    let UDt1 = Nt1 > 0 ? Math.ceil(Math.max(UD, c * M / Math.pow(10,UB) / Nt1)) : 0;
-    let UBt1 = UB;
-    if (UDt1 >= Math.pow(10, constants.NB_DIGITS_UD)) {
-      UDt1 = Math.ceil(UDt1 / 10.0);
-      UBt1++;
-    }
+    let nextUD = yield rules.HELPERS.getNextUD(dal, conf, block.version, block.medianTime, current, block.membersCount);
     if (!current && block.dividend) {
       throw Error('Root block cannot have UniversalDividend field');
     }
-    else if (current && block.medianTime >= lastUDTime + conf.dt && UDt1 && !block.dividend) {
+    else if (current && nextUD && !block.dividend) {
       throw Error('Block must have a UniversalDividend field');
     }
-    else if (current && block.medianTime >= lastUDTime + conf.dt && UDt1 && block.dividend != UDt1) {
-      throw Error('UniversalDividend must be equal to ' + UDt1);
+    else if (current && nextUD && block.dividend != nextUD.dividend) {
+      throw Error('UniversalDividend must be equal to ' + nextUD.dividend);
     }
-    else if (current && block.medianTime < lastUDTime + conf.dt && block.dividend) {
+    else if (current && !nextUD && block.dividend) {
       throw Error('This block cannot have UniversalDividend');
     }
-    else if (current && block.medianTime >= lastUDTime + conf.dt && UDt1 && block.unitbase != UBt1) {
-      throw Error('UnitBase must be equal to ' + UBt1);
+    else if (current && nextUD && block.unitbase != nextUD.unitbase) {
+      throw Error('UnitBase must be equal to ' + nextUD.unitbase);
     }
     return true;
   }),
@@ -531,7 +518,59 @@ rules.HELPERS = {
   checkSingleTransaction: (tx, block, conf, dal) => rules.FUNCTIONS.checkSourcesAvailability({
     getTransactions: () => [tx],
     medianTime: block.medianTime
-  }, conf, dal)
+  }, conf, dal),
+
+  getNextUD: (dal, conf, version, nextMedianTime, current, nextN) => co(function *() {
+    const lastUDBlock = yield dal.lastUDBlock();
+    let lastUDTime = lastUDBlock && lastUDBlock.UDTime;
+    if (!lastUDTime) {
+      const rootBlock = yield dal.getBlock(0);
+      lastUDTime = (rootBlock != null ? rootBlock.medianTime : 0);
+    }
+    if (lastUDTime == null) {
+      return null;
+    }
+    if (!current) {
+      return null;
+    }
+    if (lastUDTime + conf.dt <= nextMedianTime) {
+      if (version == 2) {
+        const M = lastUDBlock ? lastUDBlock.monetaryMass : current.monetaryMass || 0;
+        const c = conf.c;
+        const N = nextN;
+        const previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
+        const previousUB = lastUDBlock ? lastUDBlock.unitbase : constants.FIRST_UNIT_BASE;
+        if (N > 0) {
+          const block = {
+            dividend: Math.ceil(Math.max(previousUD, c * M / Math.pow(10, previousUB) / N)),
+            unitbase: previousUB
+          };
+          if (block.dividend >= Math.pow(10, constants.NB_DIGITS_UD)) {
+            block.dividend = Math.ceil(block.dividend / 10.0);
+            block.unitbase++;
+          }
+          return block;
+        } else {
+          // The community has collapsed. RIP.
+          return null;
+        }
+      } else {
+        const c = conf.c;
+        const previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
+        const previousUB = lastUDBlock ? lastUDBlock.unitbase : constants.FIRST_UNIT_BASE;
+        const block = {
+          dividend: parseInt(((1 + c) * previousUD).toFixed(0)),
+          unitbase: previousUB
+        };
+        if (block.dividend >= Math.pow(10, constants.NB_DIGITS_UD)) {
+          block.dividend = Math.ceil(block.dividend / 10.0);
+          block.unitbase++;
+        }
+        return block;
+      }
+    }
+    return null;
+  })
 };
 
 /*****************************

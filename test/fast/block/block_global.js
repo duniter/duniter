@@ -442,8 +442,17 @@ describe("Block global coherence:", function(){
     err.message.should.equal('Block must have a UniversalDividend field');
   }));
 
-  it('a block with wrong Universal Dividend value should fail', test(rules.GLOBAL.checkUD, blocks.BLOCK_WITH_WRONG_UD, {
+  it('a block with wrong (version 2) Universal Dividend value should fail', test(rules.GLOBAL.checkUD, blocks.BLOCK_WITH_WRONG_UD, {
     lastUDBlock: () => Q({ UDTime: 1411776900, medianTime: 1411776900, monetaryMass: 3620 * 10000, dividend: 110, unitbase: 4 }),
+    getBlock: () => Q(),
+    getCurrentBlockOrNull: () => Q({ time: 1411777000, medianTime: 1411777000 })
+  }, function (err) {
+    should.exist(err);
+    err.message.should.equal('UniversalDividend must be equal to 121');
+  }));
+
+  it('a block with wrong (version 3) Universal Dividend value should fail', test(rules.GLOBAL.checkUD, blocks.BLOCK_WITH_WRONG_UD_V3, {
+    lastUDBlock: () => Q({ UDTime: 1411776900, medianTime: 1411776900, dividend: 110, unitbase: 4 }),
     getBlock: () => Q(),
     getCurrentBlockOrNull: () => Q({ time: 1411777000, medianTime: 1411777000 })
   }, function (err) {

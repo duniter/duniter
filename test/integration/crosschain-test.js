@@ -70,14 +70,14 @@ describe("Crosschain transactions", function() {
         yield ticB.cert(tocB);
         yield ticB.join();
         yield tocB.join();
-        yield commit(sB)();
-        yield commit(sB)();
+        yield commit(sB)({ version: 2 });
+        yield commit(sB)({ version: 2 });
         // Preparation: we create a source transaction for our transfer
         btx0 = yield tocB.prepareITX(120, tocB);
         // We submit it to the network
         yield tocB.sendTX(btx0);
         // Written
-        yield commit(sB)();
+        yield commit(sB)({ version: 2 });
 
         // Initialize META
         yield ticM.createIdentity();
@@ -86,14 +86,14 @@ describe("Crosschain transactions", function() {
         yield ticM.cert(tocM);
         yield ticM.join();
         yield tocM.join();
-        yield commit(sM)();
-        yield commit(sM)();
+        yield commit(sM)({ version: 2 });
+        yield commit(sM)({ version: 2 });
         // Preparation: we create a source transaction for our transfer
         mtx0 = yield ticM.prepareITX(120, ticM);
         // We submit it to the network
         yield ticM.sendTX(mtx0);
         // Written
-        yield commit(sM)();
+        yield commit(sM)({ version: 2 });
       })
     );
 
@@ -123,12 +123,12 @@ describe("Crosschain transactions", function() {
         // We submit TX1 to the network & write it
         yield tocB.sendTX(btx1);
         // Written
-        yield commit(sB)();
+        yield commit(sB)({ version: 2 });
 
         // We submit TX3 to the network & write it
         yield ticM.sendTX(mtx3);
         // Written
-        yield commit(sM)();
+        yield commit(sM)({ version: 2 });
 
         /**
          * So now ... parties can either COMMIT or ROLLBACK. It's UP to the initiator: TOC.
@@ -140,13 +140,13 @@ describe("Crosschain transactions", function() {
         let mtx5 = yield tocM.prepareUTX(mtx3, ['XHX(1872767826647264) SIG(0)'], [{ qty: 120, base: 0, lock: 'SIG(' + tocM.pub + ')' }], { comment: 'toc takes money on META_BROUZOUF'});
         yield tocM.sendTX(mtx5);
         // Written
-        yield commit(sM)();
+        yield commit(sM)({ version: 2 });
 
         // But now X is revealed: TAC can takes the money offered in TX1 by TOCB
         let btx6 = yield ticB.prepareUTX(btx1, ['XHX(1872767826647264) SIG(0)'], [{ qty: 120, base: 0, lock: 'SIG(' + ticB.pub + ')' }], { comment: 'tic takes money on BETA_BROUZOUF'});
         yield ticB.sendTX(btx6);
         // Written
-        yield commit(sB)();
+        yield commit(sB)({ version: 2 });
 
         /**
          * Now the transaction is fully COMMITTED! Look at rollback transactions: they will fail.
@@ -241,14 +241,14 @@ describe("Crosschain transactions", function() {
         yield ticB.cert(tocB);
         yield ticB.join();
         yield tocB.join();
-        yield commit(sB)();
-        yield commit(sB)();
+        yield commit(sB)({ version: 2 });
+        yield commit(sB)({ version: 2 });
         // Preparation: we create a source transaction for our transfer
         btx0 = yield tocB.prepareITX(120, tocB);
         // We submit it to the network
         yield tocB.sendTX(btx0);
         // Written
-        yield commit(sB)();
+        yield commit(sB)({ version: 2 });
 
         // Initialize META
         yield ticM.createIdentity();
@@ -257,14 +257,14 @@ describe("Crosschain transactions", function() {
         yield ticM.cert(tocM);
         yield ticM.join();
         yield tocM.join();
-        yield commit(sM)();
-        yield commit(sM)();
+        yield commit(sM)({ version: 2 });
+        yield commit(sM)({ version: 2 });
         // Preparation: we create a source transaction for our transfer
         mtx0 = yield ticM.prepareITX(120, ticM);
         // We submit it to the network
         yield ticM.sendTX(mtx0);
         // Written
-        yield commit(sM)();
+        yield commit(sM)({ version: 2 });
       });
     });
 
@@ -294,12 +294,12 @@ describe("Crosschain transactions", function() {
         // We submit TX1 to the network & write it
         yield tocB.sendTX(btx1);
         // Written
-        yield commit(sB)();
+        yield commit(sB)({ version: 2 });
 
         // We submit TX3 to the network & write it
         yield ticM.sendTX(mtx3);
         // Written
-        yield commit(sM)();
+        yield commit(sM)({ version: 2 });
 
         /**
          * So now ... parties can either COMMIT or ROLLBACK. It's UP to the initiator: TOC.
@@ -309,10 +309,10 @@ describe("Crosschain transactions", function() {
 
         yield unit.shouldNotFail(tocB.sendTX(btx2));
         // Written
-        yield commit(sB)();
+        yield commit(sB)({ version: 2 });
         yield unit.shouldNotFail(ticM.sendTX(mtx4));
         // Written
-        yield commit(sM)();
+        yield commit(sM)({ version: 2 });
 
         /**
          * Now the transaction is fully COMMITTED! Look at rollback transactions: they will fail.

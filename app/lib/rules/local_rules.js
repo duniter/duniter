@@ -58,8 +58,14 @@ rules.FUNCTIONS = {
   }),
 
   checkUnitBase: (block) => co(function *() {
-    if (block.dividend > 0 && !(block.unitbase === 0 || block.unitbase > 0))
-      throw Error('UnitBase must be provided for UD block');
+    if (block.version == 2) {
+      if (block.dividend > 0 && !(block.unitbase === 0 || block.unitbase > 0))
+        throw Error('UnitBase must be provided for UD block');
+    } else {
+      if (block.number == 0 && block.unitbase != 0) {
+        throw Error('UnitBase must equal 0 for root block');
+      }
+    }
     return true;
   }),
 

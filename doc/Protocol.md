@@ -1447,7 +1447,6 @@ TRUE
 * A transaction must have its issuers appear at least once in `Inputs` field, where an issuer is linked to `INDEX` by its position in `Issuers` field. First issuer is `INDEX = 0`.
 * A transaction's `Inputs` amount sum must be equal to `Ouputs` amount sum.
 * A transaction cannot have two identical `Inputs`
-* A transaction cannot have a same pubkey twice in `Outputs`
 
 ## Implementations
 

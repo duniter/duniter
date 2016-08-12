@@ -774,7 +774,7 @@ PoWMin                | The current minimum PoW difficulty                | Alwa
 Time                  | Time of generation                                | Always
 MedianTime            | Median date                                       | Always
 UniversalDividend     | Universal Dividend amount                         | **Optional**
-UnitBase              | Universal Dividend unit base (power of 10)        | **Optional**
+UnitBase              | Universal Dividend unit base (power of 10)        | Always in V3, **Optional** in V2
 Issuer                | This block's issuer's public key                  | Always
 PreviousHash          | Previous block fingerprint (SHA256)               | from Block#1
 PreviousIssuer        | Previous block issuer's public key                | from Block#1
@@ -990,7 +990,11 @@ To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must
 
 ##### UnitBase
 
-If `UniversalDividend` field is present, `UnitBase` must be present too.
+* Block V2:
+  * If `UniversalDividend` field is present, `UnitBase` must be present too.
+* Block V3:
+  * The field is always present.
+  * For root block, `UnitBase` must equal `0`.
 
 ##### Signature
 
@@ -1319,14 +1323,15 @@ If `UniversalDividend` value is higher or equal to `1000000` (1 million), then `
 UD(t+1) = CEIL(UD(t+1) / 10)
 ```
 
-and `UnitBase` value must be incremented by `1` compared to its value at `UD(t)`.
+and `UnitBase` value must be incremented by `1` compared to its value at `UD(t)` (see UnitBase global rule).
 
 ##### UnitBase
 
 The field must be either equal to:
 
-* previous `UnitBase` value in the blockchain if UD had no overflow
-* previous `UnitBase` value in the blockchain `+ 1` if UD had an overflow
+* `0` for root block
+* previous block `UnitBase` value if UD has no overflow
+* previous block `UnitBase` value `+ 1` if UD has an overflow
 
 ##### Transactions
 

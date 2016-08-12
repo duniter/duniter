@@ -503,6 +503,8 @@ function BlockGenerator(mainContext, prover) {
       if (nextUD) {
         block.dividend = nextUD.dividend;
         block.unitbase = nextUD.unitbase;
+      } else if (block.version == 3) {
+        block.unitbase = block.number == 0 ? 0 : current.unitbase;
       }
       // InnerHash
       block.time = block.medianTime;

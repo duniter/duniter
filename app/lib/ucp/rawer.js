@@ -86,7 +86,7 @@ module.exports = new function() {
     raw += "MedianTime: " + json.medianTime + "\n";
     if (json.dividend)
       raw += "UniversalDividend: " + json.dividend + "\n";
-    if (json.dividend)
+    if (json.version == 3 || json.dividend)
       raw += "UnitBase: " + json.unitbase + "\n";
     raw += "Issuer: " + json.issuer + "\n";
     if(json.previousHash)

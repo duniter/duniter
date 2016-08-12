@@ -478,6 +478,15 @@ describe("Block global coherence:", function(){
     err.message.should.equal('UnitBase must be equal to 3');
   }));
 
+  it('a block without UD with wrong UnitBase value should fail', test(rules.GLOBAL.checkUD, blocks.BLOCK_WITH_WRONG_UNIT_BASE_NO_UD, {
+    lastUDBlock: () => Q({ UDTime: 1411777000, medianTime: 1411777000, monetaryMass: 12345678900, dividend: 100, unitbase: 8 }),
+    getBlock: () => Q(),
+    getCurrentBlockOrNull: () => Q({ time: 1411777000, medianTime: 1411777000, unitbase: 5 })
+  }, function (err) {
+    should.exist(err);
+    err.message.should.equal('UnitBase must be equal to previous unit base = 5');
+  }));
+
   it('a root block with unlegitimated Universal Dividend presence should fail', test(rules.GLOBAL.checkUD, blocks.BLOCK_UNLEGITIMATE_UD, {
     lastUDBlock: () => Q({ UDTime: 1411777000, medianTime: 1411777000, monetaryMass: 3620 * 10000, dividend: 110, unitbase: 4 }),
     getBlock: () => Q(),

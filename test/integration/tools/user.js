@@ -210,6 +210,7 @@ function User (uid, options, node) {
       throw 'Amount and recipient are required';
     }
     let http = yield getVucoin();
+    let current = yield Q.nbind(http.blockchain.current, http)();
     let json = yield Q.nbind(http.tx.sources, http)(pub);
     let i = 0;
     let cumulated = 0;
@@ -261,9 +262,12 @@ function User (uid, options, node) {
         lock: "SIG(" + pub + ")"
       });
     }
-    return signed(that.prepareTX(inputs, outputs, {
+    let raw = that.prepareTX(inputs, outputs, {
+      version: current && current.version,
+      blockstamp: current && [current.number, current.hash].join('-'),
       comment: comment
-    }));
+    });
+    return signed(raw);
   });
 
   function signed(raw, user2) {
@@ -283,9 +287,12 @@ function User (uid, options, node) {
     let opts = theOptions || {};
     let issuers = opts.issuers || [pub];
     let raw = '';
-    raw += "Version: " + constants.DOCUMENTS_VERSION + '\n';
+    raw += "Version: " + (opts.version || constants.DOCUMENTS_VERSION) + '\n';
     raw += "Type: Transaction\n";
     raw += "Currency: " + (opts.currency || node.server.conf.currency) + '\n';
+    if (opts.version && opts.version == 3) {
+      raw += "Blockstamp: " + opts.blockstamp + '\n';
+    }
     raw += "Locktime: " + (opts.locktime || 0) + '\n';
     raw += "Issuers:\n";
     issuers.forEach((issuer) => raw += issuer + '\n');

@@ -17,6 +17,7 @@ function TransactionParser (onError) {
     {prop: "outputs",    regexp: /Outputs:\n([\s\S]*)/,       parser: extractOutputs },
     {prop: "comment",    regexp: constants.TRANSACTION.COMMENT },
     {prop: "locktime",   regexp: constants.TRANSACTION.LOCKTIME },
+    {prop: "blockstamp", regexp: constants.TRANSACTION.BLOCKSTAMP },
     {prop: "signatures", regexp: /Outputs:\n([\s\S]*)/,       parser: extractSignatures }
   ];
   const multilineFields = [];
@@ -36,7 +37,7 @@ function TransactionParser (onError) {
     };
     if(!err){
       // Version
-      if(!obj.version || !obj.version.match(constants.DOCUMENTS_VERSION_REGEXP))
+      if(!obj.version || !obj.version.match(constants.DOCUMENTS_TRANSACTION_VERSION_REGEXP))
         err = {code: codes.BAD_VERSION, message: "Version unknown"};
     }
     return err && err.message;

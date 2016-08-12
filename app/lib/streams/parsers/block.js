@@ -65,7 +65,6 @@ function BlockParser (onError) {
     obj.previousIssuer = obj.previousIssuer || '';
     obj.membersCount = obj.membersCount || '';
     obj.transactions.map((tx) => {
-      tx.version = constants.DOCUMENTS_VERSION;
       tx.currency = obj.currency;
       tx.hash = hashf(rawer.getTransaction(tx)).toUpperCase();
     });
@@ -177,36 +176,43 @@ function extractTransactions(raw) {
       // Parse the transaction
       const currentTX = { raw: line + '\n' };
       const sp = line.split(':');
+      const version = parseInt(sp[1]);
       const nbSignatories = parseInt(sp[2]);
       const nbInputs = parseInt(sp[3]);
       const nbUnlocks = parseInt(sp[4]);
       const nbOutputs = parseInt(sp[5]);
       const hasComment = parseInt(sp[6]);
+      const start = version == 3 ? 2 : 1;
+      currentTX.version = version;
+      if (version == 3) {
+        currentTX.blockstamp = lines[i + 1];
+        currentTX.raw += currentTX.blockstamp + '\n';
+      }
       currentTX.locktime = parseInt(sp[7]);
       const linesToExtract = {
         signatories: {
-          start: 1,
-          end: nbSignatories
+          start: start,
+          end: (start - 1) + nbSignatories
         },
         inputs: {
-          start: 1 + nbSignatories,
-          end: nbSignatories + nbInputs
+          start: start + nbSignatories,
+          end: (start - 1) + nbSignatories + nbInputs
         },
         unlocks: {
-          start: 1 + nbSignatories + nbInputs,
-          end: nbSignatories + nbInputs + nbUnlocks
+          start: start + nbSignatories + nbInputs,
+          end: (start - 1) + nbSignatories + nbInputs + nbUnlocks
         },
         outputs: {
-          start: 1 + nbSignatories + nbInputs + nbUnlocks,
-          end: nbSignatories + nbInputs + nbUnlocks + nbOutputs
+          start: start + nbSignatories + nbInputs + nbUnlocks,
+          end: (start - 1) + nbSignatories + nbInputs + nbUnlocks + nbOutputs
         },
         comments: {
-          start: 1 + nbSignatories + nbInputs + nbUnlocks + nbOutputs,
-          end: nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment
+          start: start + nbSignatories + nbInputs + nbUnlocks + nbOutputs,
+          end: (start - 1) + nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment
         },
         signatures: {
-          start: 1 + nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment,
-          end: 2 * nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment
+          start: start + nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment,
+          end: (start - 1) + 2 * nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment
         }
       };
       ['signatories', 'inputs', 'unlocks', 'outputs', 'comments', 'signatures'].forEach((prop) => {
@@ -228,7 +234,7 @@ function extractTransactions(raw) {
       currentTX.hash = hashf(rawer.getTransaction(currentTX)).toUpperCase();
       // Add to txs array
       transactions.push(currentTX);
-      i = i + 2 * nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment;
+      i = i + (currentTX.version == 3 ? 1 : 0) + 2 * nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment;
     } else {
       // Not a transaction header, stop reading
       i = lines.length;

@@ -14,14 +14,7 @@ However, it already exists a testing currency named [Test_Net](https://forum.dun
 
 ### Add your node to the network
 
-```
-$ wget -qO- https://raw.githubusercontent.com/duniter/duniter/master/install.sh | bash
-$ duniter init
-$ duniter sync duniter.org 8999
-$ duniter start
-```
-
-and you are done! See [Install documentation](https://github.com/duniter/duniter/wiki/Install-Duniter-node) for further details.
+See [Install a node documentation](https://github.com/duniter/duniter/blob/master/doc/install-a-node.md).
 
 ### Try Sakia Wallet
 

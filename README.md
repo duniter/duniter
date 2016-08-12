@@ -16,6 +16,9 @@ However, it already exists a testing currency named [Test_Net](https://forum.dun
 
 See [Install a node documentation](https://github.com/duniter/duniter/blob/master/doc/install-a-node.md).
 
+### Try Cesium Wallet
+- [Try Cesium Wallet](http://cesium.duniter.fr)
+
 ### Try Sakia Wallet
 
 In the world of crypto-currencies, [Sakia Wallet](http://sakia-wallet.org/) would be called a [SPV](https://en.bitcoin.it/wiki/Thin_Client_Security#Simplified_Payment_Verification_.28SPV.29_Clients) client. It is a graphical client connecting to the network. See this [tutorial](https://forum.duniter.org/t/join-our-new-testnet-currency/813) to join in the testing currency with Sakia.

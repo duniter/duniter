@@ -40,7 +40,7 @@
     "body-parser": "1.14.2",
     "co": "4.6.0",
     "colors": "1.1.2",
-    "commander": "2.1.0",
+    "commander": "2.9.0",
     "cors": "2.7.1",
     "daemonize2": "0.4.2",
     "errorhandler": "1.4.3",

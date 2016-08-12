@@ -330,12 +330,12 @@ program
   })));
 
 program
-  .command('gen-next [host] [port] [diff]')
+  .command('gen-next [host] [port] [difficulty]')
   .description('Tries to generate the next block of the blockchain')
   .action(subCommand(service(generateAndSend("generateNext"))));
 
 program
-  .command('gen-root [host] [port] [diff]')
+  .command('gen-root [host] [port] [difficulty]')
   .description('Tries to generate root block, with choice of root members')
   .action(subCommand(service(generateAndSend("generateManualRoot"))));
 

@@ -119,6 +119,7 @@ module.exports = {
 
   DOCUMENTS_VERSION_REGEXP: /^2$/,
   DOCUMENTS_BLOCK_VERSION_REGEXP: /^(2|3)$/,
+  DOCUMENTS_TRANSACTION_VERSION_REGEXP: /^(2|3)$/,
   DOCUMENTS_VERSION: 2,
   BLOCK_GENERATED_VERSION: 3,
 
@@ -203,6 +204,7 @@ module.exports = {
     SOURCE:  exact("(T:" + FINGERPRINT + ":" + INTEGER + "|D:" + PUBKEY + ":" + POSITIVE_INT + ")"),
     UNLOCK:  exact(INTEGER + ":" + UNLOCK + "( (" + UNLOCK + "))*"),
     TARGET:  exact(POSITIVE_INT + ":" + INTEGER + ":" + CONDITIONS),
+    BLOCKSTAMP:find('Blockstamp: (' + BLOCK_UID + ')'),
     COMMENT: find("Comment: (" + COMMENT + ")"),
     LOCKTIME:find("Locktime: (" + INTEGER + ")"),
     INLINE_COMMENT: exact(COMMENT)

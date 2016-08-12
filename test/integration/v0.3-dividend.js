@@ -62,4 +62,25 @@ describe("Protocol 0.3", function() {
     res.sources[0].should.have.property('base').equal(0);
     res.sources[1].should.have.property('base').equal(0);
   }));
+
+  it('should be able to send 300 units', () => co(function *() {
+    yield cat.send(300, tac);
+    yield s1.commit();
+    yield s1.expect('/tx/sources/2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', (res) => {
+      res.should.have.property('pubkey').equal('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc');
+      res.should.have.property('sources').length(6);
+      res.sources[0].should.have.property('amount').equal(110);
+      res.sources[1].should.have.property('amount').equal(121);
+      res.sources[2].should.have.property('amount').equal(133);
+      res.sources[3].should.have.property('amount').equal(146);
+      res.sources[4].should.have.property('amount').equal(161);
+      res.sources[5].should.have.property('amount').equal(300);
+      res.sources[0].should.have.property('type').equal('D');
+      res.sources[1].should.have.property('type').equal('D');
+      res.sources[2].should.have.property('type').equal('D');
+      res.sources[3].should.have.property('type').equal('D');
+      res.sources[4].should.have.property('type').equal('D');
+      res.sources[5].should.have.property('type').equal('T');
+    })
+  }));
 });

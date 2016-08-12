@@ -300,7 +300,7 @@ function BlockchainContext() {
       // Remove any source created for this block (both Dividend and Transaction)
       dal.removeAllSourcesOfBlock(block.number);
       for (const obj of block.transactions) {
-        obj.version = constants.DOCUMENTS_VERSION;
+        obj.version = block.version;
         obj.currency = block.currency;
         obj.issuers = obj.signatories;
         let tx = new Transaction(obj);
@@ -315,7 +315,7 @@ function BlockchainContext() {
   function undoDeleteTransactions(block) {
     return co(function *() {
       for (const obj of block.transactions) {
-        obj.version = constants.DOCUMENTS_VERSION;
+        obj.version = block.version;
         obj.currency = block.currency;
         obj.issuers = obj.signatories;
         let tx = new Transaction(obj);
@@ -457,7 +457,7 @@ function BlockchainContext() {
     }
 
     for (const obj of block.transactions) {
-      obj.version = constants.DOCUMENTS_VERSION;
+      obj.version = block.version;
       obj.currency = block.currency;
       obj.issuers = obj.signatories;
       const tx = new Transaction(obj);
@@ -617,7 +617,7 @@ function BlockchainContext() {
       // Transactions
       for (const json of block.transactions) {
         let obj = json;
-        obj.version = constants.DOCUMENTS_VERSION;
+        obj.version = block.version;
         obj.currency = block.currency;
         obj.issuers = json.signatories;
         let tx = new Transaction(obj);
@@ -650,7 +650,7 @@ function BlockchainContext() {
 
   this.deleteTransactions = (block) => co(function*() {
     for (const obj of block.transactions) {
-      obj.version = constants.DOCUMENTS_VERSION;
+      obj.version = block.version;
       obj.currency = block.currency;
       obj.issuers = obj.signatories;
       const tx = new Transaction(obj);

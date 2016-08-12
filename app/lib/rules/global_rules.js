@@ -492,6 +492,13 @@ rules.FUNCTIONS = {
       }
     }
     return true;
+  }),
+
+  checkTransactionsBlockStamp: (block, conf, dal) => co(function *() {
+    for(const tx of block.getTransactions()) {
+      yield rules.HELPERS.checkTxBlockStamp(tx, dal);
+    }
+    return true;
   })
 };
 
@@ -581,6 +588,17 @@ rules.HELPERS = {
       }
     }
     return null;
+  }),
+
+  checkTxBlockStamp: (tx, dal) => co(function *() {
+    if (tx.version == 3) {
+      const number = tx.blockstamp.split('-')[0];
+      const hash = tx.blockstamp.split('-')[1];
+      const basedBlock = yield dal.getBlockByNumberAndHashOrNull(number, hash);
+      if (!basedBlock) {
+        throw "Wrong blockstamp for transaction";
+      }
+    }
   })
 };
 

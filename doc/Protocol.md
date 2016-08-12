@@ -362,6 +362,7 @@ A transaction is defined by the following format:
     Version: VERSION
     Type: Transaction
     Currency: CURRENCY_NAME
+    Blockstamp: BLOCK_UID
     Locktime: INTEGER
     Issuers:
     PUBLIC_KEY
@@ -386,6 +387,7 @@ Field | Description
 `Version` | denotes the current structure version.
 `Type` | Type of the document.
 `Currency` | contains the name of the currency.
+`Blockstamp` | a block reference as timestamp of the transaction
 `Locktime` | waiting delay to be included in the blockchain
 `Issuers` | a list of public key
 `Inputs` | a list of money sources
@@ -397,9 +399,10 @@ Field | Description
 
 A Transaction structure is considered *valid* if:
 
-* Field `Version` equals `2`.
+* Field `Version` equals `2` or `3`.
 * Field `Type` equals `Transaction`.
 * Field `Currency` is not empty.
+* Field `Blockstamp` is a block UID
 * Field `Locktime` is an integer
 * Field `Issuers` is a multiline field whose lines are public keys.
 * Field `Inputs` is a multiline field whose lines match either:
@@ -572,6 +575,7 @@ Key `HsLShA` sending 30 coins to key `BYfWYF` using 1 source transaction (its va
     Version: 2
     Type: Transaction
     Currency: beta_brousouf
+    Blockstamp: 204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
     Locktime: 0
     Issuers:
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
@@ -595,6 +599,7 @@ Key `HsLShA` sending 30 coins to key `BYfWYF` using 2 sources transaction writte
     Version: 2
     Type: Transaction
     Currency: beta_brousouf
+    Blockstamp: 204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
     Locktime: 0
     Issuers:
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
@@ -621,6 +626,7 @@ Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 s
     Version: 2
     Type: Transaction
     Currency: beta_brousouf
+    Blockstamp: 204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
     Locktime: 0
     Issuers:
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
@@ -657,6 +663,7 @@ Signatures (fakes here):
 A transaction may be described under a more compact format, to be used under [Block](#block) document. General format is:
 
     TX:VERSION:NB_ISSUERS:NB_INPUTS:NB_OUTPUTS:HAS_COMMENT:LOCKTIME
+    BLOCKSTAMP
     PUBLIC_KEY
     ...
     INPUT
@@ -671,7 +678,8 @@ A transaction may be described under a more compact format, to be used under [Bl
 
 Here is an example compacting above [example 2](#example-2):
 
-    TX:1:1:3:1:0:0
+    TX:3:1:3:1:0:0
+    204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
     T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:10
@@ -684,7 +692,8 @@ Here is an example compacting above [example 2](#example-2):
 
 Here is an example compacting above [example 3](#example-3):
 
-    TX:1:3:6:3:1:0
+    TX:3:3:6:3:1:0
+    204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp
     9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
@@ -1043,6 +1052,7 @@ To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must
 * A transaction cannot have 2 identical outputs
 * A transaction cannot have `SIG(INDEX)` unlocks with `INDEX >= ` issuers count.
 * A transaction **must** have signatures matching its content for each issuer
+* A transaction's version must be the same as its including block
 
 ###### About signatures
 

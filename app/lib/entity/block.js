@@ -205,9 +205,10 @@ function Block(json) {
         });
       });
       tx.comment = simpleTx.comment;
-      tx.version = constants.DOCUMENTS_VERSION;
+      tx.version = simpleTx.version;
       tx.currency = currency;
       tx.locktime = parseInt(simpleTx.locktime);
+      tx.blockstamp = simpleTx.blockstamp;
       transactions.push(tx);
     });
     return transactions;

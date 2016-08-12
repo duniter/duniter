@@ -22,7 +22,6 @@ let Transaction = function(obj, currency) {
   this.output_amount = this.outputs.reduce((sum, output) => sum + parseInt(output.split(':')[0]), 0);
   this.output_base = this.outputs.reduce((maxBase, output) => Math.max(maxBase, parseInt(output.split(':')[1])), 0);
 
-  this.version = constants.DOCUMENTS_VERSION;
   this.currency = currency || this.currency;
 
   if (this.signatories && this.signatories.length)
@@ -40,6 +39,7 @@ let Transaction = function(obj, currency) {
       'outputs': this.outputs,
       'comment': this.comment,
       'locktime': this.locktime,
+      'blockstamp': this.blockstamp,
       'signatures': this.signatures,
       'raw': this.getRaw(),
       'hash': this.hash
@@ -49,7 +49,7 @@ let Transaction = function(obj, currency) {
   this.getTransaction = () => {
     const tx = {};
     tx.hash = this.hash;
-    tx.version = constants.DOCUMENTS_VERSION;
+    tx.version = this.version;
     tx.currency = this.currency;
     tx.issuers = this.issuers || this.signatories;
     tx.signatures = this.signatures;
@@ -78,6 +78,7 @@ let Transaction = function(obj, currency) {
       });
     });
     tx.comment = this.comment;
+    tx.blockstamp = this.blockstamp;
     tx.locktime = this.locktime;
     return tx;
   };

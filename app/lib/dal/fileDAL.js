@@ -600,7 +600,7 @@ function FileDAL(params) {
     block.wrong = false;
     yield [
       that.saveBlockInFile(block, true),
-      that.saveTxsInFiles(block.transactions, {block_number: block.number, time: block.medianTime}),
+      that.saveTxsInFiles(block.transactions, {block_number: block.number, time: block.medianTime, version: block.version }),
       that.saveMemberships('join', block.joiners, block.number),
       that.saveMemberships('active', block.actives, block.number),
       that.saveMemberships('leave', block.leavers, block.number)

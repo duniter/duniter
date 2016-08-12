@@ -340,6 +340,17 @@ rules.FUNCTIONS = {
     return true;
   }),
 
+  checkTxVersion: (block) => co(function *() {
+    const txs = block.getTransactions();
+    // Check rule against each transaction
+    for (const tx of txs) {
+      if (tx.version != block.version) {
+        throw Error('A transaction must have the same version as its block');
+      }
+    }
+    return true;
+  }),
+
   checkTxIssuers: (block) => co(function *() {
     const txs = block.getTransactions();
     // Check rule against each transaction
@@ -437,7 +448,7 @@ function checkSingleMembershipSignature(ms) {
 
 function getSigResult(tx) {
   let sigResult = { sigs: {}, matching: true };
-  let json = { "version": tx.version, "currency": tx.currency, "locktime": tx.locktime, "inputs": [], "outputs": [], "issuers": tx.issuers, "signatures": [], "comment": tx.comment };
+  let json = { "version": tx.version, "currency": tx.currency, "blockstamp": tx.blockstamp, "locktime": tx.locktime, "inputs": [], "outputs": [], "issuers": tx.issuers, "signatures": [], "comment": tx.comment };
   tx.inputs.forEach(function (input) {
     json.inputs.push(input.raw);
   });

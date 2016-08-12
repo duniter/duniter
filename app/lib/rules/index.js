@@ -39,6 +39,7 @@ rules.ALIAS = {
     yield rules.LOCAL.checkCertificationOneByIssuer(block);
     yield rules.LOCAL.checkCertificationUnicity(block);
     yield rules.LOCAL.checkCertificationIsntForLeaverOrExcluded(block);
+    yield rules.LOCAL.checkTxVersion(block);
     yield rules.LOCAL.checkTxIssuers(block);
     yield rules.LOCAL.checkTxSources(block);
     yield rules.LOCAL.checkTxRecipients(block);
@@ -64,6 +65,7 @@ rules.ALIAS = {
     yield rules.LOCAL.checkCertificationOneByIssuer(block);
     yield rules.LOCAL.checkCertificationUnicity(block);
     yield rules.LOCAL.checkCertificationIsntForLeaverOrExcluded(block);
+    yield rules.LOCAL.checkTxVersion(block);
     yield rules.LOCAL.checkTxIssuers(block);
     yield rules.LOCAL.checkTxSources(block);
     yield rules.LOCAL.checkTxRecipients(block);
@@ -102,6 +104,7 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkPoWMin(block, conf, dal);
     yield rules.GLOBAL.checkProofOfWork(block, conf, dal);
     yield rules.GLOBAL.checkUD(block, conf, dal);
+    yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
     yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   }),
 
@@ -136,6 +139,7 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkMembersCountIsGood(block, dal);
     yield rules.GLOBAL.checkPoWMin(block, conf, dal);
     yield rules.GLOBAL.checkUD(block, conf, dal);
+    yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
     yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   })
 };

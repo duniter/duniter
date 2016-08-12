@@ -33,6 +33,7 @@ function TransactionService () {
     const transaction = tx.getTransaction();
     const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
     yield Q.nbind(rules.HELPERS.checkSingleTransactionLocally, rules.HELPERS)(transaction);
+    yield rules.HELPERS.checkTxBlockStamp(transaction, dal);
     yield rules.HELPERS.checkSingleTransaction(transaction, nextBlockWithFakeTimeVariation, conf, dal);
     const server_pubkey = conf.pair && conf.pair.pub;
     transaction.pubkey = transaction.issuers.indexOf(server_pubkey) !== -1 ? server_pubkey : '';

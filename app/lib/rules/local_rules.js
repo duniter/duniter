@@ -401,19 +401,6 @@ rules.FUNCTIONS = {
             throw Error('Empty conditions are forbidden');
           }
         }
-        // Cannot have 2 identical pubkeys in outputs
-        let existsIdenticalRecipient = false;
-        const recipients = [];
-        tx.outputs.forEach(function (output) {
-          if (~recipients.indexOf(output.raw)) {
-            existsIdenticalRecipient = true;
-          } else {
-            recipients.push(output.raw);
-          }
-        });
-        if (existsIdenticalRecipient) {
-          throw Error('It cannot exist 2 identical recipients inside a transaction');
-        }
       }
     }
     return true;

@@ -439,6 +439,8 @@ It follows a machine-readable BNF grammar composed of
 * `SIG(PUBLIC_KEY)`, `XHX(INTEGER)` functions
 * ` ` space
 
+**An empty condition or a condition fully composed of spaces is considered an invalid output condition**.
+
 ##### Output condition examples
 
 * `SIG(HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd)`

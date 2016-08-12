@@ -395,6 +395,12 @@ rules.FUNCTIONS = {
         throw Error('A transaction must have at least 1 recipient');
       }
       else {
+        // Cannot have empty output condition
+        for (const output of tx.outputs) {
+          if (!output.conditions.match(/(SIG|XHX)/)) {
+            throw Error('Empty conditions are forbidden');
+          }
+        }
         // Cannot have 2 identical pubkeys in outputs
         let existsIdenticalRecipient = false;
         const recipients = [];

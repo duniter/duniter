@@ -43,6 +43,7 @@ rules.ALIAS = {
     yield rules.LOCAL.checkTxIssuers(block);
     yield rules.LOCAL.checkTxSources(block);
     yield rules.LOCAL.checkTxRecipients(block);
+    yield rules.LOCAL.checkTxAmounts(block);
     yield rules.LOCAL.checkTxSignature(block);
   }),
 
@@ -69,6 +70,7 @@ rules.ALIAS = {
     yield rules.LOCAL.checkTxIssuers(block);
     yield rules.LOCAL.checkTxSources(block);
     yield rules.LOCAL.checkTxRecipients(block);
+    yield rules.LOCAL.checkTxAmounts(block);
     yield rules.LOCAL.checkTxSignature(block);
   }),
 

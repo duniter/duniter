@@ -211,6 +211,7 @@ function User (uid, options, node) {
     }
     let http = yield getVucoin();
     let current = yield Q.nbind(http.blockchain.current, http)();
+    let version = current && current.version;
     let json = yield Q.nbind(http.tx.sources, http)(pub);
     let i = 0;
     let cumulated = 0;
@@ -245,7 +246,7 @@ function User (uid, options, node) {
     sources2.forEach((src) => inputSum += src.amount * Math.pow(10, src.base));
     let inputs = sources2.map((src) => {
       return {
-        src: [src.type, src.identifier, src.noffset].join(':'),
+        src: (version == 3 ? [src.amount, src.base] : []).concat([src.type, src.identifier, src.noffset]).join(':'),
         unlock: 'SIG(0)'
       };
     });
@@ -263,7 +264,7 @@ function User (uid, options, node) {
       });
     }
     let raw = that.prepareTX(inputs, outputs, {
-      version: current && current.version,
+      version: version,
       blockstamp: current && [current.number, current.hash].join('-'),
       comment: comment
     });

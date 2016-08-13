@@ -58,11 +58,13 @@ function extractIssuers(raw) {
   return issuers;
 }
 
-function extractInputs(raw) {
+function extractInputs(raw, obj) {
   const inputs = [];
   const lines = raw.split(/\n/);
   for (const line of lines) {
-    if (line.match(constants.TRANSACTION.SOURCE)) {
+    if (
+      (obj.version == 2 && line.match(constants.TRANSACTION.SOURCE)) ||
+      (obj.version == 3 && line.match(constants.TRANSACTION.SOURCE_V3))) {
       inputs.push(line);
     } else {
       // Not a transaction input, stop reading

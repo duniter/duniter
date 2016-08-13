@@ -406,12 +406,12 @@ A Transaction structure is considered *valid* if:
 * Field `Locktime` is an integer
 * Field `Issuers` is a multiline field whose lines are public keys.
 * Field `Inputs` is a multiline field whose lines match either:
-  * `D:PUBLIC_KEY:BLOCK_ID` format
-  * `T:T_HASH:T_INDEX` format
+  * `AMOUNT:BASE:D:PUBLIC_KEY:BLOCK_ID` format
+  * `AMOUNT:BASE:T:T_HASH:T_INDEX` format
 * Field `Unlocks` is a multiline field whose lines follow `INDEX:UL_CONDITIONS` format:
   * `IN_INDEX` must be an integer value
   * `UL_CONDITIONS` must be a valid [Input Condition](#input-condition)
-* Field `Outputs` is a multiline field whose lines follow `AMOUNT:CONDITIONS` format:
+* Field `Outputs` is a multiline field whose lines follow `AMOUNT:BASE:CONDITIONS` format:
   * `AMOUNT` must be an integer value
   * `BASE` must be an integer value
   * `CONDITIONS` must be a valid [Output Condition](#output-condition)
@@ -523,7 +523,7 @@ Then the `25` units can be spent *exclusively* in a future transaction TX2 which
     Issuers:
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g
     Inputs:
-    T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
+    55:1:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
     Unlocks:
     0:SIG(0)
 
@@ -558,7 +558,7 @@ Then the `25` units can be spent *exclusively* in a future transaction TX2 which
     Issuers:
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g
     Inputs:
-    T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
+    55:1:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
     Unlocks:
     0:XHX(1872767826647264)
 
@@ -572,7 +572,7 @@ The necessary condition `XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8
 
 #### Example 1
 
-Key `HsLShA` sending 30 coins to key `BYfWYF` using 1 source transaction (its value is not known but could be 30) written in block #3.
+Key `HsLShA` sending 30 coins to key `BYfWYF` using 1 source transaction written in block #3.
 
     Version: 2
     Type: Transaction
@@ -582,7 +582,7 @@ Key `HsLShA` sending 30 coins to key `BYfWYF` using 1 source transaction (its va
     Issuers:
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     Inputs:
-    T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:3
+    30:0:T:8361C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:3
     Unlocks:
     0:SIG(0)
     Outputs:
@@ -596,7 +596,7 @@ Signatures (fake here):
 
 #### Example 2
 
-Key `HsLShA` sending 30 coins to key `BYfWYF` using 2 sources transaction written in blocks #65 and #77 + 1 UD from block #88.
+Key `HsLShA` sending 30 coins (base 2) to key `BYfWYF` using 2 sources transaction written in blocks #65 and #77 + 1 UD from block #88.
 
     Version: 2
     Type: Transaction
@@ -606,9 +606,9 @@ Key `HsLShA` sending 30 coins to key `BYfWYF` using 2 sources transaction writte
     Issuers:
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     Inputs:
-    T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
-    T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:10
-    D:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:88
+    6:2:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
+    20:2:T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:10
+    40:1:D:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:88
     Unlocks:
     0:SIG(0)
     1:SIG(0)
@@ -635,12 +635,12 @@ Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 s
     CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp
     9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
     Inputs:
-    T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:2
-    T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:8
-    D:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:46
-    T:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:3
-    T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:5
-    D:9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:46
+    40:2:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:2
+    70:2:T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:8
+    20:2:D:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:46
+    70:2:T:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:3
+    20:2:T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:5
+    15:2:D:9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:46
     Unlocks:
     0:SIG(0)
     1:XHX(7665798292)
@@ -664,7 +664,7 @@ Signatures (fakes here):
 
 A transaction may be described under a more compact format, to be used under [Block](#block) document. General format is:
 
-    TX:VERSION:NB_ISSUERS:NB_INPUTS:NB_OUTPUTS:HAS_COMMENT:LOCKTIME
+    TX:VERSION:NB_ISSUERS:NB_INPUTS:NB_UNLOCKS:NB_OUTPUTS:HAS_COMMENT:LOCKTIME
     BLOCKSTAMP
     PUBLIC_KEY
     ...
@@ -683,9 +683,9 @@ Here is an example compacting above [example 2](#example-2):
     TX:3:1:3:1:0:0
     204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
-    T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
-    T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:10
-    D:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:88
+    6:2:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
+    20:2:T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:10
+    40:1:D:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:88
     0:SIG(0)
     1:SIG(0)
     2:SIG(0)
@@ -699,12 +699,12 @@ Here is an example compacting above [example 3](#example-3):
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp
     9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
-    T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:2
-    T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:8
-    D:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:46
-    T:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:3
-    T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:5
-    D:9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:46
+    40:2:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:2
+    70:2:T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:8
+    20:2D:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:46
+    70:2:T:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:3
+    20:2:T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:5
+    15:2:D:9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:46
     0:SIG(0)
     1:XHX(7665798292)
     2:SIG(0)
@@ -1055,6 +1055,75 @@ To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must
 * A transaction cannot have `SIG(INDEX)` unlocks with `INDEX >= ` issuers count.
 * A transaction **must** have signatures matching its content for each issuer
 * A transaction's version must be the same as its including block
+* It cannot exist 2 transactions with an identical source
+
+###### CommonBase
+
+Each input has an `InputBase`, and each output has an `OutputBase`. These bases are to be called `AmountBase`.
+
+The `CommonBase` is the lowest base value among all `AmountBase` of the transaction.
+
+For any amount comparison, the respective amounts must be translated into `CommonBase` using the following rule:
+
+```
+AMOUNT(CommonBase) = AMOUNT(AmountBase) x POW(10, AmountBase - CommonBase)
+```
+
+So if a transaction only carries amounts with the same `AmountBase`, no conversion is required. But if a transaction carries:
+
+* input_0 of value 45 with `AmountBase = 5`
+* input_1 of value 75 with `AmountBase = 5`
+* input_2 of value 3 with `AmountBase = 6`
+* output_0 of value 15 with `AmountBase = 6`
+
+Then the output value has to be converted before being compared:
+
+```
+CommonBase = 5
+
+output_0(5) = output_0(6) x POW(10, 6 - 5)
+output_0(5) = output_0(6) x POW(10, 1)
+output_0(5) = output_0(6) x 10
+output_0(5) = 15 x 10
+output_0(5) = 150
+
+input_0(5) = input_0(5)
+input_0(5) = 45
+
+input_1(5) = input_1(5)
+input_1(5) = 75
+
+input_2(5) = input_2(6) x POW(10, 6 - 5)
+input_2(5) = input_2(6) x POW(10, 1)
+input_2(5) = input_2(6) x 10
+input_2(5) = 3 x 10
+input_2(5) = 30
+```
+
+The equality of inputs and outputs is then verified because:
+
+```
+output_0(5) = 150
+input_0(5) = 45
+input_1(5) = 75
+input_2(5) = 30
+
+output_0(5) = input_0(5) + input_1(5) + input_2(5)
+150 = 45 + 75 + 30
+TRUE
+```
+
+###### Amounts
+
+* *Def.*: `InputBaseSum` is the sum of amounts with the same `InputBase`.
+* *Def.*: `OutputBaseSum` is the sum of amounts with the same `OutputBase`.
+* *Def.*: `BaseDelta = OutputBaseSum - InputBaseSum`, expressed in `CommonBase`
+* *Rule*: For each `OutputBase`:
+  * if `BaseDelta > 0`, then it must equal the sum of all preceding `BaseDelta`
+  * if `BaseDelta < 0`, then it must equal the sum of all preceding `BaseDelta`
+* *Rule*: The sum of all inputs in `CommonBase` must equal the sum of all outputs in `CommonBase`
+
+> Consequence: we cannot create money nor lose money through transactions. We can only transfer coins we own.
 
 ###### About signatures
 
@@ -1347,78 +1416,16 @@ The field must be either equal to:
 
 ##### Transactions
 
-* It cannot exist 2 transactions with an identical source
 * For `D` sources, public key must be a member for the block `#NUMBER` (so, *before* the block's memberships were applied)
 * For `T` sources, the attached unlock condition must match
-* The sum of all inputs must match the sum of all outputs
 * Transaction cannot be included if `BLOCK_MEDIAN_TIME - MOST_RECENT_INPUT_TIME < LOCKTIME`
-
-###### CommonBase
-
-Each input has an `InputBase`, and each output has an `OutputBase`. These bases are to be called `AmountBase`.
-
-The `CommonBase` is the lowest base value among all `AmountBase` of the transaction.
-
-For any amount comparison, the respective amounts must be translated into `CommonBase` using the following rule:
-
-```
-AMOUNT(CommonBase) = AMOUNT(AmountBase) x POW(10, AmountBase - CommonBase)
-```
-
-So if a transaction only carries amounts with the same `AmountBase`, no conversion is required. But if a transaction carries:
-
-* input_0 of value 45 with `AmountBase = 5`
-* input_1 of value 75 with `AmountBase = 5`
-* input_2 of value 3 with `AmountBase = 6`
-* output_0 of value 15 with `AmountBase = 6`
-
-Then the output value has to be converted before being compared:
-
-```
-CommonBase = 5
-
-output_0(5) = output_0(6) x POW(10, 6 - 5)
-output_0(5) = output_0(6) x POW(10, 1)
-output_0(5) = output_0(6) x 10
-output_0(5) = 15 x 10
-output_0(5) = 150
-
-input_0(5) = input_0(5)
-input_0(5) = 45
-
-input_1(5) = input_1(5)
-input_1(5) = 75
-
-input_2(5) = input_2(6) x POW(10, 6 - 5)
-input_2(5) = input_2(6) x POW(10, 1)
-input_2(5) = input_2(6) x 10
-input_2(5) = 3 x 10
-input_2(5) = 30
-```
-
-The equality of inputs and outputs is then verified because:
-
-```
-output_0(5) = 150
-input_0(5) = 45
-input_1(5) = 75
-input_2(5) = 30
-
-output_0(5) = input_0(5) + input_1(5) + input_2(5)
-150 = 45 + 75 + 30
-TRUE
-```
 
 ###### Amounts
 
-* For each UD source, the amount must match the exact targeted UD value
-* The sum of all inputs in `CommonBase` must equal the sum of all outputs in `CommonBase`
+* *Rule*: For each UD source, the amount must match the exact targeted UD value
+* *Def.*: `MaxOutputBase` is the maximum value of all `OutputBase`
+* *Rule*: `MaxOutputBase` cannot be higher than current block `UnitBase`
 
-> Consequence: we cannot create money nor lose money through transactions. We can only transfer coins we own.
-
-* Each output `AmountBase` must be equal to the maximum `AmountBase` of all inputs
-
-> Consequence: if a transaction carries inputs with a different `AmountBase`, these coins will be transformed into a higher `UnitBase` if they make round output amounts for this higher base.
 
 ### Peer
 

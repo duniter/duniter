@@ -94,7 +94,9 @@ module.exports = {
     TOO_OLD_IDENTITY:                     { httpCode: 400, uerr: { ucode: 2020, message: "Identity has expired and cannot be written in the blockchain anymore." }},
     NO_IDTY_MATCHING_PUB_OR_UID:          { httpCode: 404, uerr: { ucode: 2021, message: "No identity matching this pubkey or uid" }},
     NEWER_PEER_DOCUMENT_AVAILABLE:        { httpCode: 409, uerr: { ucode: 2022, message: "A newer peer document is available" }},
-    PEER_DOCUMENT_ALREADY_KNOWN:          { httpCode: 400, uerr: { ucode: 2023, message: "Peer document already known" }}
+    PEER_DOCUMENT_ALREADY_KNOWN:          { httpCode: 400, uerr: { ucode: 2023, message: "Peer document already known" }},
+    TX_INPUTS_OUTPUTS_NOT_EQUAL:          { httpCode: 400, uerr: { ucode: 2024, message: "Transaction inputs sum must equal outputs sum" }},
+    TX_OUTPUT_SUM_NOT_EQUALS_PREV_DELTAS: { httpCode: 400, uerr: { ucode: 2025, message: "Transaction output base amount does not equal previous base deltas" }}
   },
 
   DEBUG: {
@@ -202,6 +204,7 @@ module.exports = {
     HEADER:  exact("TX:" + POSITIVE_INT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + BOOLEAN + ":" + INTEGER),
     SENDER:  exact(PUBKEY),
     SOURCE:  exact("(T:" + FINGERPRINT + ":" + INTEGER + "|D:" + PUBKEY + ":" + POSITIVE_INT + ")"),
+    SOURCE_V3:  exact("(" + POSITIVE_INT + ":" + INTEGER + ":T:" + FINGERPRINT + ":" + INTEGER + "|" + POSITIVE_INT + ":" + INTEGER + ":D:" + PUBKEY + ":" + POSITIVE_INT + ")"),
     UNLOCK:  exact(INTEGER + ":" + UNLOCK + "( (" + UNLOCK + "))*"),
     TARGET:  exact(POSITIVE_INT + ":" + INTEGER + ":" + CONDITIONS),
     BLOCKSTAMP:find('Blockstamp: (' + BLOCK_UID + ')'),

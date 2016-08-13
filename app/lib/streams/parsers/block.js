@@ -158,10 +158,10 @@ function splitAndMatch (separator, regexp) {
   };
 }
 
-function extractTransactions(raw) {
+function extractTransactions(raw, obj) {
   const regexps = {
     "signatories": constants.TRANSACTION.SENDER,
-    "inputs": constants.TRANSACTION.SOURCE,
+    "inputs": obj.version == 3 ? constants.TRANSACTION.SOURCE_V3 : constants.TRANSACTION.SOURCE,
     "unlocks": constants.TRANSACTION.UNLOCK,
     "outputs": constants.TRANSACTION.TARGET,
     "comments": constants.TRANSACTION.INLINE_COMMENT,

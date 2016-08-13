@@ -1,8 +1,9 @@
 "use strict";
 
 const co         = require('co');
+const constants  = require('../constants');
 const hashf      = require('../ucp/hashf');
-const keyring     = require('../crypto/keyring');
+const keyring    = require('../crypto/keyring');
 const rawer      = require('../ucp/rawer');
 const Identity   = require('../entity/identity');
 const Membership = require('../entity/membership');
@@ -387,6 +388,12 @@ rules.FUNCTIONS = {
     return true;
   }),
 
+  checkTxAmounts: (block) => co(function *() {
+    for (const tx of block.getTransactions()) {
+      rules.HELPERS.checkTxAmountsValidity(tx);
+    }
+  }),
+
   checkTxRecipients: (block) => co(function *() {
     const txs = block.getTransactions();
     // Check rule against each transaction
@@ -477,6 +484,7 @@ function checkBunchOfTransactions(txs, done){
     yield local_rule.checkTxIssuers(block);
     yield local_rule.checkTxSources(block);
     yield local_rule.checkTxRecipients(block);
+    yield local_rule.checkTxAmounts(block);
     yield local_rule.checkTxSignature(block);
     done && done();
   })
@@ -496,7 +504,57 @@ rules.HELPERS = {
 
   checkBunchOfTransactions: checkBunchOfTransactions,
 
-  checkSingleTransactionLocally: (tx, done) => checkBunchOfTransactions([tx], done)
+  checkSingleTransactionLocally: (tx, done) => checkBunchOfTransactions([tx], done),
+
+  checkTxAmountsValidity: (tx) => {
+    if (tx.version == 3) {
+      // Rule of money conservation
+      const commonBase = tx.inputs.reduce((min, input) => {
+        if (min === null) return input.base;
+        return Math.min(min, parseInt(input.base));
+      }, null);
+      const inputSumCommonBase = tx.inputs.reduce((sum, input) => {
+        return sum + input.amount * Math.pow(10, input.base - commonBase);
+      }, 0);
+      const outputSumCommonBase = tx.outputs.reduce((sum, output) => {
+        return sum + output.amount * Math.pow(10, output.base - commonBase);
+      }, 0);
+      if (inputSumCommonBase !== outputSumCommonBase) {
+        throw constants.ERRORS.TX_INPUTS_OUTPUTS_NOT_EQUAL;
+      }
+      // Rule of unit base transformation
+      const maxOutputBase = tx.outputs.reduce((max, output) => {
+        return Math.max(max, parseInt(output.base));
+      }, 0);
+      // Compute deltas
+      const deltas = {};
+      for (let i = commonBase; i <= maxOutputBase; i++) {
+        const inputBaseSum = tx.inputs.reduce((sum, input) => {
+          if (input.base == i) {
+            return sum + input.amount * Math.pow(10, input.base - commonBase);
+          } else {
+            return sum;
+          }
+        }, 0);
+        const outputBaseSum = tx.outputs.reduce((sum, output) => {
+          if (output.base == i) {
+            return sum + output.amount * Math.pow(10, output.base - commonBase);
+          } else {
+            return sum;
+          }
+        }, 0);
+        const delta = outputBaseSum - inputBaseSum;
+        let sumUpToBase = 0;
+        for (let j = commonBase; j < i; j++) {
+          sumUpToBase -= deltas[j];
+        }
+        if (delta > 0 && delta !== sumUpToBase) {
+          throw constants.ERRORS.TX_OUTPUT_SUM_NOT_EQUALS_PREV_DELTAS;
+        }
+        deltas[i] = delta;
+      }
+    }
+  }
 };
 
 module.exports = rules;

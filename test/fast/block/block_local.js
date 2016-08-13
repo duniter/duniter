@@ -67,6 +67,8 @@ describe("Block local coherence", function(){
     it('Block cannot contain transactions with identical sources in one transaction',                 test(rules.LOCAL.checkTxSources, blocks.TRANSACTION_WITH_DUPLICATED_SOURCE_SINGLE_TX, 'It cannot exist 2 identical sources for transactions inside a given block'));
     it('Block cannot contain transactions with identical sources in a pack of transactions',          test(rules.LOCAL.checkTxSources, blocks.TRANSACTION_WITH_DUPLICATED_SOURCE_MULTIPLE_TX, 'It cannot exist 2 identical sources for transactions inside a given block'));
     it('Block cannot contain transactions with empty output conditions',                              test(rules.LOCAL.checkTxRecipients, blocks.TRANSACTION_WITH_EMPTY_TX_CONDITIONS, 'Empty conditions are forbidden'));
+    it('Block cannot contain transactions with wrong total',                                          test(rules.LOCAL.checkTxAmounts, blocks.TRANSACTION_WRONG_TOTAL, 'Transaction inputs sum must equal outputs sum'));
+    it('Block cannot contain transactions with wrong base transformation',                            test(rules.LOCAL.checkTxAmounts, blocks.TRANSACTION_WRONG_TRANSFORM, 'Transaction output base amount does not equal previous base deltas'));
     it('Block cannot contain transactions with wrong signatures',                                     test(rules.LOCAL.checkTxSignature, blocks.TRANSACTION_WITH_WRONG_SIGNATURES, 'Signature from a transaction must match'));
   });
   

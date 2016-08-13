@@ -265,20 +265,20 @@ Ce troisième niveau permet de découvrir les quelques (cinq) commandes que vous
 En mode développement, on utilise la syntaxe suivante dans la console Git ouverte précédemment :
 
 ```bash
-node bin/ucoind <commande>
+node bin/duniter <commande>
 ```
 
 Par exemple pour démarrer le programme (ne le faites pas tout de suite !), on utilise :
 
 ```bash
-node bin/ucoind start
+node bin/duniter start
 ```
 
-Ici, le programme principal est `node` (Node.js). Il prend pour argument un fichier JavaScript (ici le fichier `ucoind` qui est un fichier JavaScript dont on a retiré l'extension `.js`) du dossier `bin/` qui est présent dans le code source, auquel on peut ajouter un ensemble d'arguments qui constitueront alors les arguments du programme JavaScript.
+Ici, le programme principal est `node` (Node.js). Il prend pour argument un fichier JavaScript (ici le fichier `duniter` qui est un fichier JavaScript dont on a retiré l'extension `.js`) du dossier `bin/` qui est présent dans le code source, auquel on peut ajouter un ensemble d'arguments qui constitueront alors les arguments du programme JavaScript.
 
 > On parler communément de programme Node.js pour désigner les programmes JavaScript tournant avec Node.js.
 
-> Notez également que le fichier principal de *Duniter* est *ucoind*. Ce nom *ucoind* vient de *uCoin*, l'ancien nom du logiciel. Ne tenez pas rigueur de ce nom de fichier : bien qu'il fasse référence à l'ancien nom, il s'agit bien du programme principal de *Duniter*.
+> Notez également que le fichier principal de *Duniter* est *duniter*.
 
 ### Configuration avec les commandes `config` et `wizard`
 
@@ -301,7 +301,7 @@ Pour obtenir ces 2 éléments, le plus simple dans est d'utiliser la commande `c
 Lancez donc la commande :
 
 ```bash
-node bin/ucoind config --autoconf
+node bin/duniter config --autoconf
 2016-06-01T07:47:00+02:00 - debug: Plugging file system...
 2016-06-01T07:47:00+02:00 - debug: Loading conf...
 2016-06-01T07:47:00+02:00 - debug: Loading crypto functions...
@@ -328,7 +328,7 @@ Par exemple si la configuration réseau ne vous convient pas, vous pouvez la mod
 
 
 ```bash
-node bin/ucoind wizard network
+node bin/duniter wizard network
 ```
 ```bash
 2016-06-01T08:10:16+02:00 - debug: Plugging file system...
@@ -351,7 +351,7 @@ Comme vous pouvez le constater, la commande vous demande de choisir des valeurs 
 Vous pouvez donc changer d'autres parties de votre configuration, par exemple votre trousseau cryptographique avec la commande :
 
 ```bash
-node bin/ucoind wizard key
+node bin/duniter wizard key
 ```
 ```bash
 2016-06-01T08:13:14+02:00 - debug: Plugging file system...
@@ -366,7 +366,7 @@ node bin/ucoind wizard key
 Nous y sommes ! Il est *dores et déjà possible* de démarrer Duniter. Essayez, avec la commande `start` :
 
 ```bash
-node bin/ucoind start
+node bin/duniter start
 ```
 ```bash
 2016-06-01T08:16:24+02:00 - debug: Plugging file system...
@@ -396,7 +396,7 @@ Cette commande permet à votre nœud de récupérer l'ensemble de la blockchain 
 Exécutez la commande :
 
 ```bash
-node bin/ucoind sync cgeek.fr 9330
+node bin/duniter sync cgeek.fr 9330
 ```
 ```bash
 Progress:
@@ -431,13 +431,13 @@ Pour ce faire, lancer simplement la commande `reset data` qui supprime *les donn
 
 
 ```bash
-node bin/ucoind reset data
+node bin/duniter reset data
 ```
 
 Il existe également une commande plus large, qui supprime également votre configuration Duniter (réseau, trousseau cryptographique, ...) :
 
 ```bash
-node bin/ucoind reset all
+node bin/duniter reset all
 ```
 
 Voilà, vous connaissez désormais les commandes de base ! Allons maintenant voir comment dialoguer avec votre nœud fraîchement installé.
@@ -489,7 +489,7 @@ Pour rappel, dans cet exemple nous utilisons l'interface `192.168.1.28:21629`. *
 La seconde étape est de lancer votre noeud avec la commande :
 
 ```bash
-node bin/ucoind start
+node bin/duniter start
 ```
 
 ### Consulter l'URI `/node/summary`
@@ -688,7 +688,7 @@ Au terme de ces commandes, vous devriez obtenir un sous-dossier `public/` dans `
 Tout est prêt, il ne reste plus qu'à lancer Duniter ! Cependant, nous ne le ferons pas avec la commande `start` mais avec la commande `webwait`.
 
 ```bash
-node bin/ucoind webwait
+node bin/duniter webwait
 ```
 ```text
 2016-06-01T13:53:18+02:00 - debug: Plugging file system...
@@ -807,7 +807,7 @@ Il est déjà plus simple de se repérer dans les fichiers source.
 
 #### Ouverture d'un premier fichier
 
-Ouvrez le fichier que nous utilisons depuis le début : `bin/ucoind`. Vous constaterez qu'il s'agit en effet d'un fichier JavaScript, puisque son code est effectivement lisible et correspond à du JS :
+Ouvrez le fichier que nous utilisons depuis le début : `bin/duniter`. Vous constaterez qu'il s'agit en effet d'un fichier JavaScript, puisque son code est effectivement lisible et correspond à du JS :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/9e416926421d7e9ac0580c9683e196e1a7212462.png" width="690" height="473">
 
@@ -910,7 +910,7 @@ On peut voir que le fichier `tx_format` possède une icône de lancement (picto 
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/d1e8de56b9a0c02a0623840c5a3da84bc9b46f13.png" width="534" height="132">
 
-Les tests ne concernent donc que les fichiers avec ce pictogramme. Pas la peine d'essayer de lancer les autres de la même façon ! Sauf ... le fichier `bin/ucoind`, comme nous allons le voir au niveau IX !
+Les tests ne concernent donc que les fichiers avec ce pictogramme. Pas la peine d'essayer de lancer les autres de la même façon ! Sauf ... le fichier `bin/duniter`, comme nous allons le voir au niveau IX !
 
 ## Niveau IX : lancer Duniter avec WebStorm
 
@@ -968,11 +968,11 @@ Observant cela avec attention. Notons entre autres :
     * `pr` dont la valeur est un objet `Peer`
     * `pr.version` dont la valeur est `"2"` : cela tombe bien, car nous avons mis un point d'arrête sur une ligne dont le but est de vérifier que pr.version est bien égal à `"2"` : ce test passera.
 
-On peut donc ainsi comprendre tout ce qui se passe dans Duniter. Ici il s'agit d'un test automatisé, mais on peut faire exactement la même chose avec `bin/ucoind` comme nous allons le voir au prochain niveau !
+On peut donc ainsi comprendre tout ce qui se passe dans Duniter. Ici il s'agit d'un test automatisé, mais on peut faire exactement la même chose avec `bin/duniter` comme nous allons le voir au prochain niveau !
 
 ## Niveau XI : point d'arrêt d'une commande
 
-Continuons avec la commande `webwait`, et tentons d'y poser un point d'arrêt. Rendez-vous dans le fichier `bin/ucoind` à la ligne 830.
+Continuons avec la commande `webwait`, et tentons d'y poser un point d'arrêt. Rendez-vous dans le fichier `bin/duniter` à la ligne 830.
 
 Ajoutons 2 points d'arrêt : 1 en ligne 830 et un autre en ligne 831 :
 
@@ -1022,9 +1022,9 @@ Si vous faites de nouveau F9, vous arriverez alors à cet écran :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/a6771e01590846568f895871d0d9c9aa8a9666d7.png" width="620" height="499">
 
-Cela signifie une 1ère chose, c'est que ce point d'arrête intervient manifestement *avant* le celui du fichier `ucoind` ligne 831.
+Cela signifie une 1ère chose, c'est que ce point d'arrête intervient manifestement *avant* le celui du fichier `duniter` ligne 831.
 
-Et si l'on regarde la pile d'appel (colonne "Frames" de la fenêtre de debug), on peut repérer que c'est la fonction en ligne 858 du fichier `ucoind` qui appelle ce code d'information "Plugging file system...".
+Et si l'on regarde la pile d'appel (colonne "Frames" de la fenêtre de debug), on peut repérer que c'est la fonction en ligne 858 du fichier `duniter` qui appelle ce code d'information "Plugging file system...".
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/5a5f72bbdc39f897fba4ad8a8383dca5e0d67a2f.png" width="620" height="499">
 
@@ -1057,7 +1057,7 @@ Ce débogage est en réalité très simple, puisqu'il consiste principalement à
 Nous considérerons que vous savez désormais comment lancer l'application en mode debug, mais pour rappel succinct :
 
 * ajouter une configuration Node.js
-  * mettez comme fichier cible `bin/ucoind`
+  * mettez comme fichier cible `bin/duniter`
   * valorisez les arguments avec `start`
 
 ### Placer un point d'arrêt pour les appels HTTP

@@ -25,6 +25,18 @@ rules.FUNCTIONS = {
     return true;
   }),
 
+  checkBlockLength: (block, dal) => co(function *() {
+    if (block.len > 500) {
+      const maxSize = yield rules.HELPERS.getMaxBlockSize(dal);
+      if (block.len > maxSize) {
+        throw Error('Block size is too high');
+      }
+    } else {
+      // There is no problem with blocks <= 500 lines
+      return true;
+    }
+  }),
+
   checkNumber: (block, dal) => co(function *() {
     let current = yield dal.getCurrentBlockOrNull();
     if (!current && block.number != 0) {
@@ -696,6 +708,16 @@ rules.HELPERS = {
       }
     }
     return frameVar;
+  }),
+
+  getMaxBlockSize: (dal) => co(function *() {
+    const current = yield dal.getCurrentBlockOrNull();
+    const start = current ? current.number - current.issuersCount : 0;
+    const end = current ? current.number : 0;
+    const blocks = yield dal.getBlocksBetween(start, end);
+    const avgSize = blocks.length ? blocks.reduce((lenSum, b) => lenSum + b.len, 0) / blocks.length : 0;
+    const maxSize = Math.ceil(1.1 * avgSize);
+    return Math.max(500, maxSize);
   })
 };
 

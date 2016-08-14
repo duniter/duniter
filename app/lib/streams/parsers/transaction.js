@@ -27,7 +27,19 @@ function TransactionParser (onError) {
     obj.documentType = 'transaction';
     obj.comment = obj.comment || "";
     obj.locktime = parseInt(obj.locktime) || 0;
-    obj.signatures.push(obj.signature)
+    obj.signatures.push(obj.signature);
+    if (obj.version == 3) {
+      const compactSize = 2 // Header + blockstamp
+        + obj.issuers.length
+        + obj.inputs.length
+        + obj.unlocks.length
+        + obj.outputs.length
+        + (obj.comment ? 1 : 0)
+        + obj.signatures;
+      if (compactSize > 100) {
+        throw 'A transaction has a maximum size of 100 lines';
+      }
+    }
   };
 
   this._verify = (obj) => {

@@ -743,6 +743,9 @@ but also other informations like:
     UniversalDividend: DIVIDEND_AMOUNT
     UnitBase: UNIT_BASE
     Issuer: ISSUER_KEY
+    IssuersFrame: ISSUERS_FRAME
+    IssuersFrameVar: ISSUERS_FRAME_VAR
+    DifferentIssuersCount: ISSUER_KEY
     PreviousHash: PREVIOUS_HASH
     PreviousIssuer: PREVIOUS_ISSUER_KEY
     Parameters: PARAMETERS
@@ -787,6 +790,9 @@ MedianTime            | Median date                                       | Alwa
 UniversalDividend     | Universal Dividend amount                         | **Optional**
 UnitBase              | Universal Dividend unit base (power of 10)        | Always in V3, **Optional** in V2
 Issuer                | This block's issuer's public key                  | Always
+IssuersFrame          | The size of the frame to look for issuers         | Always
+IssuersFrameVar       | A counter to increment/decrement IssuersFrame     | Always
+DifferentIssuersCount | The count of unique issuers of blocks             | Always
 PreviousHash          | Previous block fingerprint (SHA256)               | from Block#1
 PreviousIssuer        | Previous block issuer's public key                | from Block#1
 Parameters            | Currency parameters.                              | **Block#0 only**
@@ -805,7 +811,7 @@ Nonce                 | An arbitrary nonce value                          | Alwa
 To be a valid, a block must match the following rules:
 
 ##### Format
-* `Version`, `Nonce`, `Number`, `PoWMin`, `Time`, `MedianTime`, `MembersCount`, `UniversalDividend` and `UnitBase` are integer values
+* `Version`, `Nonce`, `Number`, `PoWMin`, `Time`, `MedianTime`, `MembersCount`, `UniversalDividend`, `UnitBase`, `IssuersFrame`, `IssuersFrameVar` and `DifferentIssuersCount` are integer values
 * `Currency` is a valid currency name
 * `PreviousHash` is an uppercased SHA256 hash
 * `Issuer` and `PreviousIssuer` are [Public keys](#publickey)
@@ -1265,6 +1271,30 @@ We define `PPowMin` as the `PowMin` value of previous block.
 
 * A block's `PreviousIssuer` must be exactly equal to previous block's `Issuer` field.
 
+##### IssuersFrame
+
+`IssuersFrame(t) = IssuersFrame(t-1) + CONVERGENCE` where:
+
+* `IssuersFrame(t)` is the value of field in local block
+* `IssuersFrame(t-1)` is the value of the field in the previous block (`1` in case of making root block or `100` if previous block is V2)
+* `CONVERGENCE` equals `+1` if IssuersFrameVar(t-1) is `> 0`, or `-1` if IssuersFrameVar(t-1) is `< 0`
+
+##### DifferentIssuersCount
+
+This field counts the number of different block issuers between the `IssuersFrame(t-1)` previous blocks.
+
+`IssuersFrame(t-1)`'s value is the one given by the previous block, or `0` in case of making root block, or `100` if previous block is V2.
+
+##### IssuersFrameVar
+
+`IssuersFrameVar(t) = IssuersFrameVar(t-1) + NEW_ISSUER_INC - GONE_ISSUER_DEC + CONVERGENCE` where:
+
+* `IssuersFrameVar(t)` is the value of field in local block
+* `IssuersFrameVar(t-1)` is the value of the field in the previous block (`0` for root block or if previous block is V2)
+* `NEW_ISSUER_INC` equals 5 if `DifferentIssuersCount` from local block equals `DifferentIssuersCount` of previous block `+1` (equals `0` if previous block is V2)
+* `GONE_ISSUER_DEC` equals 5 if `DifferentIssuersCount` from local block equals `DifferentIssuersCount` of previous block `-1` (equals `0` if previous block is V2)
+* `CONVERGENCE` equals `-1` if IssuersFrameVar(t-1) is `> 0`, or `+1` if IssuersFrameVar(t-1) is `< 0`
+
 ##### Dates
 
 * For any non-root block, `MedianTime` must be equal to the median value of `Time` field for the last `medianTimeBlocks` blocks. If the number of available blocks is an even value, the median is computed over the 2 centered values by an arithmetical median on them, ceil rounded.
@@ -1335,7 +1365,7 @@ We define `PPowMin` as the `PowMin` value of previous block.
 To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros + a remaining mark character. Rules is the following, and **relative to a each particular member**:
 
 ```
-PERSONAL_DIFF = MAX [ PoWMin ; PoWMin * FLOOR (percentRot * (1 + nbPreviousIssuers )/ (1 + nbBlocksSince)) ]
+PERSONAL_DIFF = MAX [ PoWMin ; PoWMin * FLOOR (percentRot * nbPreviousIssuers / (1 + nbBlocksSince)) ]
 
 if (PERSONAL_DIFF + 1) % 16 == 0 then PERSONAL_DIFF = PERSONAL_DIFF + 1
 
@@ -1347,7 +1377,7 @@ Where:
 
 * `[PoWMin]` is the `PoWMin` value of incoming block
 * `[percentRot]` is the protocol parameter
-* `[nbPreviousIssuers]` is the number of different block issuers in `blockRot` blocks **before** the last block of the member, **excepted the member**.
+* `[nbPreviousIssuers] = DifferentIssuersCount(last block of issuer)`
 * `[nbBlocksSince]` is the number of blocks written **since** the last block of the member (so, incoming block excluded).
 
 

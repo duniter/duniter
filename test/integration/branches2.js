@@ -105,13 +105,73 @@ describe("SelfFork", function() {
 
     it('/block/0 should exist', function() {
       return expectJSON(rp('http://127.0.0.1:7781/blockchain/block/0', { json: true }), {
-        number: 0
+        number: 0,
+        issuersCount: 0,
+        issuersFrame: 1,
+        issuersFrameVar: 0
       });
     });
 
     it('/block/1 should exist', function() {
       return expectJSON(rp('http://127.0.0.1:7781/blockchain/block/1', { json: true }), {
-        number: 1
+        number: 1,
+        issuersCount: 1,
+        issuersFrame: 1,
+        issuersFrameVar: 5
+      });
+    });
+
+    it('/block/2 should exist', function() {
+      return expectJSON(rp('http://127.0.0.1:7781/blockchain/block/2', { json: true }), {
+        number: 2,
+        issuersCount: 1,
+        issuersFrame: 2,
+        issuersFrameVar: 4
+      });
+    });
+
+    it('/block/3 should exist', function() {
+      return expectJSON(rp('http://127.0.0.1:7781/blockchain/block/3', { json: true }), {
+        number: 3,
+        issuersCount: 1,
+        issuersFrame: 3,
+        issuersFrameVar: 3
+      });
+    });
+
+    it('/block/4 should exist', function() {
+      return expectJSON(rp('http://127.0.0.1:7781/blockchain/block/4', { json: true }), {
+        number: 4,
+        issuersCount: 2,
+        issuersFrame: 4,
+        issuersFrameVar: 7
+      });
+    });
+
+    it('/block/5 should exist', function() {
+      return expectJSON(rp('http://127.0.0.1:7781/blockchain/block/5', { json: true }), {
+        number: 5,
+        issuersCount: 2,
+        issuersFrame: 5,
+        issuersFrameVar: 6
+      });
+    });
+
+    it('/block/6 should exist', function() {
+      return expectJSON(rp('http://127.0.0.1:7781/blockchain/block/6', { json: true }), {
+        number: 6,
+        issuersCount: 2,
+        issuersFrame: 6,
+        issuersFrameVar: 5
+      });
+    });
+
+    it('/block/7 should exist', function() {
+      return expectJSON(rp('http://127.0.0.1:7781/blockchain/block/7', { json: true }), {
+        number: 7,
+        issuersCount: 2,
+        issuersFrame: 7,
+        issuersFrameVar: 4
       });
     });
 

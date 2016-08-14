@@ -89,6 +89,11 @@ module.exports = new function() {
     if (json.version == 3 || json.dividend)
       raw += "UnitBase: " + json.unitbase + "\n";
     raw += "Issuer: " + json.issuer + "\n";
+    if (json.version == 3) {
+      raw += "IssuersFrame: " + json.issuersFrame + "\n";
+      raw += "IssuersFrameVar: " + json.issuersFrameVar + "\n";
+      raw += "DifferentIssuersCount: " + json.issuersCount + "\n";
+    }
     if(json.previousHash)
       raw += "PreviousHash: " + json.previousHash + "\n";
     if(json.previousIssuer)

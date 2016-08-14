@@ -88,7 +88,8 @@ function BlockchainBinding (server) {
     if (current) {
       nextBlockNumber = current ? current.number + 1 : 0;
     }
-    const difficulty = yield rules.HELPERS.getTrialLevel(idty.pubkey, conf, server.dal);
+    const version = current ? current.version : 3;
+    const difficulty = yield rules.HELPERS.getTrialLevel(version, idty.pubkey, conf, server.dal);
     return {
       "block": nextBlockNumber,
       "level": difficulty
@@ -100,9 +101,10 @@ function BlockchainBinding (server) {
     const number = (current && current.number) || 0;
     const issuers = yield server.dal.getUniqueIssuersBetween(number - 1 - conf.blocksRot, number - 1);
     const difficulties = [];
+    const version = current ? current.version : 3;
     for (const issuer of issuers) {
       const member = yield server.dal.getWrittenIdtyByPubkey(issuer);
-      const difficulty = yield rules.HELPERS.getTrialLevel(member.pubkey, conf, server.dal);
+      const difficulty = yield rules.HELPERS.getTrialLevel(version, member.pubkey, conf, server.dal);
       difficulties.push({
         uid: member.uid,
         level: difficulty

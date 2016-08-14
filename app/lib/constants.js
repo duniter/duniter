@@ -190,6 +190,9 @@ module.exports = {
     PREV_ISSUER: find("PreviousIssuer: (" + PUBKEY + ")"),
     MEMBERS_COUNT:find("MembersCount: (" + ZERO_OR_POSITIVE_INT + ")"),
     BLOCK_ISSUER:find('Issuer: (' + PUBKEY + ')'),
+    BLOCK_ISSUERS_FRAME:find('IssuersFrame: (' + INTEGER + ')'),
+    BLOCK_ISSUERS_FRAME_VAR:find('IssuersFrameVar: (' + INTEGER + ')'),
+    DIFFERENT_ISSUERS_COUNT:find('DifferentIssuersCount: (' + INTEGER + ')'),
     PARAMETERS:  find("Parameters: (" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ")"),
     JOINER:   exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + BLOCK_UID + ":" + USER_ID),
     ACTIVE:   exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + BLOCK_UID + ":" + USER_ID),
@@ -332,7 +335,7 @@ module.exports = {
   SAFE_FACTOR: 3,
   BLOCKS_COLLECT_THRESHOLD: 30, // Blocks to collect from memory and persist
 
-  MUTE_LOGS_DURING_UNIT_TESTS: true
+  MUTE_LOGS_DURING_UNIT_TESTS: false
 };
 
 function exact (regexpContent) {

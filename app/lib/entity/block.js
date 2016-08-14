@@ -21,6 +21,9 @@ function Block(json) {
       || key == "membersCount"
       || key == "dividend"
       || key == "unitbase"
+      || key == "issuersCount"
+      || key == "issuersFrame"
+      || key == "issuersFrameVar"
       || key == "UDTime"
     ) {
       if (typeof value == "string") {
@@ -50,7 +53,10 @@ function Block(json) {
       "medianTime",
       "membersCount",
       "monetaryMass",
-      "unitbase"
+      "unitbase",
+      "issuersCount",
+      "issuersFrame",
+      "issuersFrameVar"
     ].forEach((field) => {
         json[field] = parseInt(this[field], 10);
       });

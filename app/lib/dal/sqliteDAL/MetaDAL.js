@@ -108,7 +108,12 @@ function MetaDAL(db) {
     'ALTER TABLE txs ADD COLUMN output_base INTEGER NULL;' +
     'ALTER TABLE txs ADD COLUMN output_amount INTEGER NULL;' +
     'COMMIT;',
-    10: 'BEGIN; ALTER TABLE txs ADD COLUMN blockstamp VARCHAR(200) NULL; COMMIT;'
+    10: 'BEGIN; ALTER TABLE txs ADD COLUMN blockstamp VARCHAR(200) NULL; COMMIT;',
+    11: 'BEGIN;' +
+    'ALTER TABLE block ADD COLUMN issuersFrame INTEGER NULL;' +
+    'ALTER TABLE block ADD COLUMN issuersFrameVar INTEGER NULL;' +
+    'ALTER TABLE block ADD COLUMN issuersCount INTEGER NULL;' +
+    'COMMIT;'
   };
 
   this.init = () => co(function *() {

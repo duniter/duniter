@@ -80,6 +80,9 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkPreviousHash(block, dal);
     yield rules.GLOBAL.checkPreviousIssuer(block, dal);
     yield rules.GLOBAL.checkIssuerIsMember(block, dal);
+    yield rules.GLOBAL.checkIssuersFrame(block, conf, dal);
+    yield rules.GLOBAL.checkIssuersFrameVar(block, conf, dal);
+    yield rules.GLOBAL.checkDifferentIssuersCount(block, conf, dal);
     yield rules.GLOBAL.checkTimes(block, conf, dal);
     yield rules.GLOBAL.checkIdentityUnicity(block, conf, dal);
     yield rules.GLOBAL.checkPubkeyUnicity(block, conf, dal);
@@ -116,6 +119,9 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkPreviousHash(block, dal);
     yield rules.GLOBAL.checkPreviousIssuer(block, dal);
     yield rules.GLOBAL.checkIssuerIsMember(block, dal);
+    yield rules.GLOBAL.checkIssuersFrame(block, conf, dal);
+    yield rules.GLOBAL.checkIssuersFrameVar(block, conf, dal);
+    yield rules.GLOBAL.checkDifferentIssuersCount(block, conf, dal);
     yield rules.GLOBAL.checkTimes(block, conf, dal);
     yield rules.GLOBAL.checkIdentityUnicity(block, conf, dal);
     yield rules.GLOBAL.checkPubkeyUnicity(block, conf, dal);

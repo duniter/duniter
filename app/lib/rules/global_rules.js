@@ -54,7 +54,7 @@ rules.FUNCTIONS = {
 
   checkProofOfWork: (block, conf, dal) => co(function *() {
     // Compute exactly how much zeros are required for this block's issuer
-    let difficulty = yield getTrialLevel(block.issuer, conf, dal);
+    let difficulty = yield getTrialLevel(block.version, block.issuer, conf, dal);
     const remainder = difficulty % 16;
     const nbZerosReq = Math.max(0, (difficulty - remainder) / 16);
     const highMark = constants.PROOF_OF_WORK.UPPER_BOUND[remainder];
@@ -123,6 +123,36 @@ rules.FUNCTIONS = {
       throw Error('Issuer is not a member');
     }
     return true;
+  }),
+
+  checkDifferentIssuersCount: (block, conf, dal) => co(function *() {
+    if (block.version == 3) {
+      const isGood = block.issuersCount == (yield rules.HELPERS.getDifferentIssuers(dal));
+      if (!isGood) {
+        throw Error('DifferentIssuersCount is not correct');
+      }
+      return isGood;
+    }
+  }),
+
+  checkIssuersFrame: (block, conf, dal) => co(function *() {
+    if (block.version == 3) {
+      const isGood = block.issuersFrame == (yield rules.HELPERS.getIssuersFrame(dal));
+      if (!isGood) {
+        throw Error('IssuersFrame is not correct');
+      }
+      return isGood;
+    }
+  }),
+
+  checkIssuersFrameVar: (block, conf, dal) => co(function *() {
+    if (block.version == 3) {
+      const isGood = block.issuersFrameVar == (yield rules.HELPERS.getIssuersFrameVar(block, dal));
+      if (!isGood) {
+        throw Error('IssuersFrameVar is not correct');
+      }
+      return isGood;
+    }
   }),
 
   checkTimes: (block, conf, dal) => co(function *() {
@@ -523,7 +553,7 @@ rules.HELPERS = {
     }
   }),
 
-  getTrialLevel: (issuer, conf, dal) => getTrialLevel(issuer, conf, dal),
+  getTrialLevel: (version, issuer, conf, dal) => getTrialLevel(version, issuer, conf, dal),
 
   getPoWMin: (blockNumber, conf, dal) => getPoWMinFor(blockNumber, conf, dal),
 
@@ -599,6 +629,73 @@ rules.HELPERS = {
         throw "Wrong blockstamp for transaction";
       }
     }
+  }),
+
+  getDifferentIssuers: (dal) => co(function *() {
+    const current = yield dal.getCurrentBlockOrNull();
+    let frameSize = 0;
+    let currentNumber = 0;
+    if (current) {
+      currentNumber = current.number;
+      if (current.version == 2) {
+        frameSize = 100;
+      } else {
+        frameSize = current.issuersFrame;
+      }
+    }
+    const blocksBetween = yield dal.getBlocksBetween(Math.max(0, currentNumber - frameSize + 1), currentNumber);
+    const issuers = _.pluck(blocksBetween, 'issuer');
+    return _.uniq(issuers).length;
+  }),
+
+  getIssuersFrame: (dal) => co(function *() {
+    const current = yield dal.getCurrentBlockOrNull();
+    let frame = 1;
+    if (!current) {
+      frame = 1;
+    }
+    else {
+      if (current.version == 2) {
+        frame = 100;
+      }
+      else if (current.version == 3) {
+        frame = current.issuersFrame;
+        // CONVERGENCE
+        if (current.issuersFrameVar > 0) {
+          frame++;
+        }
+        if (current.issuersFrameVar < 0) {
+          frame--;
+        }
+      }
+    }
+    return frame;
+  }),
+
+  getIssuersFrameVar: (block, dal) => co(function *() {
+    const current = yield dal.getCurrentBlockOrNull();
+    let frameVar = 0;
+    if (current && current.version == 3) {
+      frameVar = current.issuersFrameVar;
+    }
+    if (current) {
+      // CONVERGENCE
+      if (current.issuersFrameVar > 0) {
+        frameVar--;
+      }
+      if (current.issuersFrameVar < 0) {
+        frameVar++;
+      }
+      // NEW_ISSUER_INC
+      if (current.issuersCount < block.issuersCount) {
+        frameVar += 5;
+      }
+      // GONE_ISSUER_DEC
+      if (current.issuersCount > block.issuersCount) {
+        frameVar -= 5;
+      }
+    }
+    return frameVar;
   })
 };
 
@@ -769,31 +866,55 @@ function getNodeIDfromPubkey(nodesCache, pubkey, dal) {
   });
 }
 
-function getTrialLevel (issuer, conf, dal) {
+function getTrialLevel (version, issuer, conf, dal) {
   return co(function *() {
-    // Compute exactly how much zeros are required for this block's issuer
-    let percentRot = conf.percentRot;
-    let current = yield dal.getCurrentBlockOrNull();
-    if (!current) {
-      return 0;
-    }
-    let last = yield dal.lastBlockOfIssuer(issuer);
-    let powMin = yield getPoWMinFor(current.number + 1, conf, dal);
-    let issuers = [];
-    if (last) {
-      let blocksBetween = yield dal.getBlocksBetween(last.number - 1 - conf.blocksRot, last.number - 1);
-      issuers = _.pluck(blocksBetween, 'issuer');
+    if (version == 2) {
+      // Compute exactly how much zeros are required for this block's issuer
+      let percentRot = conf.percentRot;
+      let current = yield dal.getCurrentBlockOrNull();
+      if (!current) {
+        return 0;
+      }
+      let last = yield dal.lastBlockOfIssuer(issuer);
+      let powMin = yield getPoWMinFor(current.number + 1, conf, dal);
+      let issuers = [];
+      if (last) {
+        let blocksBetween = yield dal.getBlocksBetween(last.number - 1 - conf.blocksRot, last.number - 1);
+        issuers = _.pluck(blocksBetween, 'issuer');
+      } else {
+        // So we can have nbPreviousIssuers = 0 & nbBlocksSince = 0 for someone who has never written any block
+        last = { number: current.number };
+      }
+      const nbPreviousIssuers = _(_(issuers).uniq()).without(issuer).length;
+      const nbBlocksSince = current.number - last.number;
+      let personal_diff = Math.max(powMin, powMin * Math.floor(percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
+      if (personal_diff + 1 % 16 == 0) {
+        personal_diff++;
+      }
+      return personal_diff;
     } else {
-      // So we can have nbPreviousIssuers = 0 & nbBlocksSince = 0 for someone who has never written any block
-      last = { number: current.number };
+      // Compute exactly how much zeros are required for this block's issuer
+      let percentRot = conf.percentRot;
+      let current = yield dal.getCurrentBlockOrNull();
+      if (!current) {
+        return 0;
+      }
+      let last = yield dal.lastBlockOfIssuer(issuer);
+      let powMin = yield getPoWMinFor(current.number + 1, conf, dal);
+      let nbPreviousIssuers = 0;
+      if (last) {
+        nbPreviousIssuers = last.issuersCount;
+      } else {
+        // So we have nbBlocksSince = 0 for someone who has never written any block
+        last = { number: current.number };
+      }
+      const nbBlocksSince = current.number - last.number;
+      let personal_diff = Math.max(powMin, powMin * Math.floor(percentRot * nbPreviousIssuers / (1 + nbBlocksSince)));
+      if (personal_diff + 1 % 16 == 0) {
+        personal_diff++;
+      }
+      return personal_diff;
     }
-    const nbPreviousIssuers = _(_(issuers).uniq()).without(issuer).length;
-    const nbBlocksSince = current.number - last.number;
-    let personal_diff = Math.max(powMin, powMin * Math.floor(percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
-    if (personal_diff + 1 % 16 == 0) {
-      personal_diff++;
-    }
-    return personal_diff;
   });
 }
 

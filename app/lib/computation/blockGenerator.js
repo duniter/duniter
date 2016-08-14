@@ -51,7 +51,9 @@ function BlockGenerator(mainContext, prover) {
 
   this.makeNextBlock = (block, trial, manualValues) => co(function *() {
     const unsignedBlock = block || (yield that.nextBlock(manualValues));
-    const trialLevel = trial || (yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal));
+    const current = yield dal.getCurrentBlockOrNull();
+    const version = current ? current.version : 3;
+    const trialLevel = trial || (yield rules.HELPERS.getTrialLevel(version, selfPubkey, conf, dal));
     return prover.prove(unsignedBlock, trialLevel, (manualValues && manualValues.time) || null);
   });
 
@@ -505,6 +507,12 @@ function BlockGenerator(mainContext, prover) {
         block.unitbase = nextUD.unitbase;
       } else if (block.version == 3) {
         block.unitbase = block.number == 0 ? 0 : current.unitbase;
+      }
+      // V3 Rotation
+      if (block.version == 3) {
+        block.issuersCount = yield rules.HELPERS.getDifferentIssuers(dal);
+        block.issuersFrame = yield rules.HELPERS.getIssuersFrame(dal);
+        block.issuersFrameVar = yield rules.HELPERS.getIssuersFrameVar(block, dal);
       }
       // InnerHash
       block.time = block.medianTime;

@@ -387,7 +387,8 @@ function BlockchainService () {
             return null;
           }
         }
-        const trial = yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal);
+        const version = current ? current.version : 3;
+        const trial = yield rules.HELPERS.getTrialLevel(version, selfPubkey, conf, dal);
         if (trial > (current.powMin + 2)) {
           powCanceled = 'Too high difficulty: waiting for other members to write next block';
         }
@@ -395,7 +396,7 @@ function BlockchainService () {
           const block2 = lastGeneratedWasWrong ?
             yield generator.nextEmptyBlock() :
             yield generator.nextBlock();
-          const trial2 = yield rules.HELPERS.getTrialLevel(selfPubkey, conf, dal);
+          const trial2 = yield rules.HELPERS.getTrialLevel(version, selfPubkey, conf, dal);
           prover.computing();
           return yield generator.makeNextBlock(block2, trial2);
         }

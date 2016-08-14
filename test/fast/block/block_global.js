@@ -123,6 +123,43 @@ describe("Block global coherence:", function(){
     err.message.should.equal('PreviousIssuer not matching issuer of current block');
   }));
 
+  it('a block with wrong DifferentIssuersCount following V2 should fail', test(rules.GLOBAL.checkDifferentIssuersCount, blocks.WRONG_DIFFERENT_ISSUERS_COUNT_FOLLOWING_V2, {
+    getCurrentBlockOrNull: () => Q({ version: 2 }),
+    getBlocksBetween: () => Q([])
+  }, function (err) {
+    should.exist(err);
+    err.message.should.equal('DifferentIssuersCount is not correct');
+  }));
+  
+  it('a block with wrong DifferentIssuersCount following V3 should fail', test(rules.GLOBAL.checkDifferentIssuersCount, blocks.WRONG_DIFFERENT_ISSUERS_COUNT_FOLLOWING_V3, {
+    getCurrentBlockOrNull: () => Q({ version: 3, issuersCount: 4 }),
+    getBlocksBetween: () => Q([
+      // 5 blocks, 4 different issuers
+      { issuer: 'A' },
+      { issuer: 'B' },
+      { issuer: 'A' },
+      { issuer: 'C' },
+      { issuer: 'D' }
+    ])
+  }, function (err) {
+    should.exist(err);
+    err.message.should.equal('DifferentIssuersCount is not correct');
+  }));
+
+  it('a block with wrong IssuersFrame following V2 should fail', test(rules.GLOBAL.checkIssuersFrame, blocks.WRONG_ISSUERS_FRAME_FOLLOWING_V2, {
+    getCurrentBlockOrNull: () => Q({ version: 2 })
+  }, function (err) {
+    should.exist(err);
+    err.message.should.equal('IssuersFrame is not correct');
+  }));
+
+  it('a block with wrong IssuersFrame following V3 should fail', test(rules.GLOBAL.checkIssuersFrameVar, blocks.WRONG_ISSUERS_FRAME_FOLLOWING_V3, {
+    getCurrentBlockOrNull: () => Q({ version: 3, issuersCount: 3, issuersFrame: 56, issuersFrameVar: 6 })
+  }, function (err) {
+    should.exist(err);
+    err.message.should.equal('IssuersFrameVar is not correct');
+  }));
+
   it('a block with wrong Issuer should fail', test(rules.GLOBAL.checkIssuerIsMember, blocks.WRONG_ISSUER, {
     isMember: () => Q(false)
   }, function (err) {

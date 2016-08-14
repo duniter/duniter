@@ -21,7 +21,7 @@ function BlockDAL(db) {
   let that = this;
 
   this.table = 'block';
-  this.fields = ['fork', 'hash', 'inner_hash', 'signature', 'currency', 'issuer', 'issuersCount', 'issuersFrame', 'issuersFrameVar', 'parameters', 'previousHash', 'previousIssuer', 'version', 'membersCount', 'monetaryMass', 'UDTime', 'medianTime', 'dividend', 'unitbase', 'time', 'powMin', 'number', 'nonce', 'transactions', 'certifications', 'identities', 'joiners', 'actives', 'leavers', 'revoked', 'excluded'];
+  this.fields = ['fork', 'hash', 'inner_hash', 'signature', 'currency', 'issuer', 'issuersCount', 'issuersFrame', 'issuersFrameVar', 'parameters', 'previousHash', 'previousIssuer', 'version', 'membersCount', 'monetaryMass', 'UDTime', 'medianTime', 'dividend', 'unitbase', 'time', 'powMin', 'number', 'nonce', 'transactions', 'certifications', 'identities', 'joiners', 'actives', 'leavers', 'revoked', 'excluded', 'len'];
   this.arrays = ['identities','certifications','actives','revoked','excluded','leavers','joiners','transactions'];
   this.bigintegers = ['monetaryMass','dividend'];
   this.booleans = ['wrong'];

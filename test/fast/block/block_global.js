@@ -81,6 +81,16 @@ describe("Block global coherence:", function(){
     err.message.should.equal('`Version: 2` must follow another V2 block or be the root block');
   }));
 
+  it('a V3 block has a limited size', test(rules.GLOBAL.checkBlockLength, blocks.V3_HAS_MAXIMUM_SIZE, {
+    getCurrentBlockOrNull: () => Q({ version: 3, len: 200 }),
+    getBlocksBetween: () => Q([
+      { len: 450 },{ len: 500 },{ len: 530 }
+    ])
+  }, function (err) {
+    should.exist(err);
+    err.message.should.equal('Block size is too high');
+  }));
+
   it('a block with positive number while no root exists should fail', test(rules.GLOBAL.checkNumber, blocks.ROOT_BLOCK_REQUIRED, {
     getCurrentBlockOrNull: () => Q(null)
   }, function (err) {

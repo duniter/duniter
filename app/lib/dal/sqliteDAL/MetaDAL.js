@@ -113,7 +113,27 @@ function MetaDAL(db) {
     'ALTER TABLE block ADD COLUMN issuersFrame INTEGER NULL;' +
     'ALTER TABLE block ADD COLUMN issuersFrameVar INTEGER NULL;' +
     'ALTER TABLE block ADD COLUMN issuersCount INTEGER NULL;' +
-    'COMMIT;'
+    'COMMIT;',
+    12: () => co(function *() {
+      let blockDAL = new (require('./BlockDAL'))(db);
+      yield blockDAL.exec('ALTER TABLE block ADD COLUMN len INTEGER NULL;');
+      yield blockDAL.exec('ALTER TABLE txs ADD COLUMN len INTEGER NULL;');
+      const current = yield blockDAL.getCurrent();
+      if (current && current.version == 2) {
+        const blocks = yield blockDAL.getBlocks(Math.max(0, current.number - 99), current.number);
+        for (const block of blocks) {
+          block.len = block.identities.length +
+            block.joiners.length +
+            block.actives.length +
+            block.leavers.length +
+            block.revoked.length +
+            block.excluded.length +
+            block.certifications.length +
+            block.transactions.length;
+          blockDAL.saveBlock(block);
+        }
+      }
+    })
   };
 
   this.init = () => co(function *() {

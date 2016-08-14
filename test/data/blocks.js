@@ -2970,6 +2970,36 @@ module.exports = {
     "Nonce: 1\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
+  V3_HAS_MAXIMUM_SIZE:
+    "Version: 3\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Number: 83\n" +
+    "PoWMin: 1\n" +
+    "Time: 1411777000\n" +
+    "MedianTime: 1411777000\n" +
+    "UniversalDividend: 100\n" +
+    "UnitBase: 0\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "IssuersFrame: 101\n" +
+    "IssuersFrameVar: 11\n" +
+    "DifferentIssuersCount: 4\n" +
+    "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:YvMQqaOAgLtnJzg5ZGhI17sZvXjGgzpSMxNz8ikttMspU5/45MQAqnOfuJnfbrzkkspGlUUjDnUPsOmHPcVyBQ==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:CAT\n".repeat(544) +
+    "Joiners:\n" +
+    "Actives:\n" +
+    "Leavers:\n" +
+    "Revoked:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
+    "Nonce: 1\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
   TRANSACTION_WITHOUT_ISSUERS:
     "Version: 2\n" +
     "Type: Block\n" +

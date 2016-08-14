@@ -1,6 +1,6 @@
 # UCP - Duniter Protocol
 
-> This document is still regularly updated (as of February 2015)
+> This document is still regularly updated (as of August 2016)
 
 ## Contents
 
@@ -1054,6 +1054,7 @@ To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must
 
 ##### Transactions
 
+* A transaction in compact format cannot measure more than 100 lines
 * A transaction must have at least 1 issuer, 1 source and 1 recipient
 * For each issuer line, starting from line # `0`, it must exist a source with an `INDEX` value equal to this line#
 * A transaction cannot have 2 identical inputs
@@ -1142,6 +1143,21 @@ TRUE
 Global validation verifies the coherence of a locally-validated block, in the context of the whole blockchain, including the block.
 
 ##### Definitions
+
+###### Block size
+
+The block size is defined as the number of lines in multiline fields (`Identities`, `Joiners`, `Actives`, `Leavers`, `Revoked`, `Excluded`, `Certifications`, `Transactions`).
+
+For example:
+
+* 1 new identity + 1 joiner + 2 certifications = 4 lines sized block
+* 1 new identity + 1 joiner + 2 certifications + 5 lines transaction = 9 lines sized block
+
+The maximum size of a block `MAX_BLOCK_SIZE` is defined by:
+
+`MAX_BLOCK_SIZE = MAX(500 ; CEIL(1.10 * AVERAGE_BLOCK_SIZE))`
+
+Where: `AVERAGE_BLOCK_SIZE` equals to the average block size of the `DifferentIssuersCount` previous blocks.
 
 ###### Block time
 Block time is a special discrete time defined by the blocks themselves, where unit is *a block*, and values are *block number + fingerprint*.

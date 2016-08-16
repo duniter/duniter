@@ -650,7 +650,7 @@ rules.HELPERS = {
     if (current) {
       currentNumber = current.number;
       if (current.version == 2) {
-        frameSize = 100;
+        frameSize = 40;
       } else {
         frameSize = current.issuersFrame;
       }
@@ -668,7 +668,7 @@ rules.HELPERS = {
     }
     else {
       if (current.version == 2) {
-        frame = 100;
+        frame = 40;
       }
       else if (current.version == 3) {
         frame = current.issuersFrame;
@@ -689,8 +689,6 @@ rules.HELPERS = {
     let frameVar = 0;
     if (current && current.version == 3) {
       frameVar = current.issuersFrameVar;
-    }
-    if (current) {
       // CONVERGENCE
       if (current.issuersFrameVar > 0) {
         frameVar--;

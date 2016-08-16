@@ -1292,14 +1292,14 @@ We define `PPowMin` as the `PowMin` value of previous block.
 `IssuersFrame(t) = IssuersFrame(t-1) + CONVERGENCE` where:
 
 * `IssuersFrame(t)` is the value of field in local block
-* `IssuersFrame(t-1)` is the value of the field in the previous block (`1` in case of making root block or `100` if previous block is V2)
+* `IssuersFrame(t-1)` is the value of the field in the previous block (`1` in case of making root block or `40` if previous block is V2)
 * `CONVERGENCE` equals `+1` if IssuersFrameVar(t-1) is `> 0`, or `-1` if IssuersFrameVar(t-1) is `< 0`
 
 ##### DifferentIssuersCount
 
 This field counts the number of different block issuers between the `IssuersFrame(t-1)` previous blocks.
 
-`IssuersFrame(t-1)`'s value is the one given by the previous block, or `0` in case of making root block, or `100` if previous block is V2.
+`IssuersFrame(t-1)`'s value is the one given by the previous block, or `0` in case of making root block, or `40` if previous block is V2.
 
 ##### IssuersFrameVar
 

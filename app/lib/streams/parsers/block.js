@@ -1,6 +1,7 @@
 "use strict";
 const util          = require('util');
 const GenericParser = require('./GenericParser');
+const Block         = require('../../entity/block');
 const hashf         = require('../../ucp/hashf');
 const rawer         = require('../../ucp/rawer');
 const constants     = require('../../constants');
@@ -71,14 +72,7 @@ function BlockParser (onError) {
       tx.currency = obj.currency;
       tx.hash = hashf(rawer.getTransaction(tx)).toUpperCase();
     });
-    obj.len = obj.identities.length +
-      obj.joiners.length +
-      obj.actives.length +
-      obj.leavers.length +
-      obj.revoked.length +
-      obj.excluded.length +
-      obj.certifications.length +
-      obj.transactions.length;
+    obj.len = Block.statics.getLen(obj);
   };
 
   this._verify = (obj) => {

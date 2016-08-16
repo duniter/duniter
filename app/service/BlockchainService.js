@@ -11,6 +11,7 @@ const constants       = require('../lib/constants');
 const blockchainCtx   = require('../lib/computation/blockchainContext');
 const blockGenerator  = require('../lib/computation/blockGenerator');
 const blockProver     = require('../lib/computation/blockProver');
+const Block           = require('../lib/entity/block');
 const Identity        = require('../lib/entity/identity');
 const Transaction     = require('../lib/entity/transaction');
 const AbstractService = require('./AbstractService');
@@ -441,6 +442,7 @@ function BlockchainService () {
     for (let i = 0; i < blocks.length; i++) {
       const previous = i > 0 ? blocks[i - 1] : lastPrevious;
       const block = blocks[i];
+      block.len = Block.statics.getLen(block);
       block.fork = false;
       // Monetary mass & UD Time recording before inserting elements
       block.monetaryMass = (previous && previous.monetaryMass) || 0;

@@ -228,3 +228,18 @@ function Block(json) {
 Block.statics = {};
 
 Block.statics.fromJSON = (json) => new Block(json);
+
+Block.statics.getLen = (block) => block.identities.length +
+    block.joiners.length +
+    block.actives.length +
+    block.leavers.length +
+    block.revoked.length +
+    block.excluded.length +
+    block.certifications.length +
+    block.transactions.reduce((sum, tx) => sum
+    + 1 // header
+    + (tx.version == 3 ? 1 : 0) // blockstamp
+    + tx.signatories.length * 2 // issuers + signatures
+    + tx.inputs.length * 2 // inputs + unlocks
+    + (tx.comment ? 1 : 0)
+    + tx.outputs.length, 0);

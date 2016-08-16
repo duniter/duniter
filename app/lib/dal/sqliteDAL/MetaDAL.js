@@ -7,6 +7,7 @@
 const co = require('co');
 const _ = require('underscore');
 const logger = require('../../logger')('metaDAL');
+const Block = require('../../entity/block');
 const Transaction = require('../../entity/transaction');
 const AbstractSQLite = require('./AbstractSQLite');
 
@@ -122,14 +123,7 @@ function MetaDAL(db) {
       if (current && current.version == 2) {
         const blocks = yield blockDAL.getBlocks(Math.max(0, current.number - 99), current.number);
         for (const block of blocks) {
-          block.len = block.identities.length +
-            block.joiners.length +
-            block.actives.length +
-            block.leavers.length +
-            block.revoked.length +
-            block.excluded.length +
-            block.certifications.length +
-            block.transactions.length;
+          block.len = Block.statics.getLen(block);
           blockDAL.saveBlock(block);
         }
       }

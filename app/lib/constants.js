@@ -1,6 +1,6 @@
 "use strict";
 
-const CURRENCY     = "[a-zA-Z0-9-_ ]+";
+const CURRENCY     = "[a-zA-Z0-9-_ ]{2,50}";
 const UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\d{2}\\.\\d{2}(\\+|-)\\d{3}\\.\\d{2});(\\d+)(;?)";
 const USER_ID      = "[A-Za-z0-9_-]*";
 const BASE58       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+";

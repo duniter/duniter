@@ -2,12 +2,21 @@
 const _ = require('underscore');
 const constants = require('../constants');
 const hashf = require('../ucp/hashf');
+const Transaction = require('./transaction');
 
 module.exports = Block;
 
 function Block(json) {
 
   this.documentType = 'block';
+  this.transactions = this.transactions || [];
+  this.excluded = this.excluded || [];
+  this.actives = this.actives || [];
+  this.leavers = this.leavers || [];
+  this.revoked = this.revoked || [];
+  this.identities = this.identities || [];
+  this.joiners = this.joiners || [];
+  this.certifications = this.certifications || [];
 
   _(json || {}).keys().forEach((key) => {
     let value = json[key];
@@ -234,12 +243,5 @@ Block.statics.getLen = (block) => block.identities.length +
     block.actives.length +
     block.leavers.length +
     block.revoked.length +
-    block.excluded.length +
     block.certifications.length +
-    block.transactions.reduce((sum, tx) => sum
-    + 1 // header
-    + (tx.version == 3 ? 1 : 0) // blockstamp
-    + tx.signatories.length * 2 // issuers + signatures
-    + tx.inputs.length * 2 // inputs + unlocks
-    + (tx.comment ? 1 : 0)
-    + tx.outputs.length, 0);
+    block.transactions.reduce((sum, tx) => sum + Transaction.statics.getLen(tx), 0);

@@ -5,11 +5,11 @@ const UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\
 const USER_ID      = "[A-Za-z0-9_-]*";
 const BASE58       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+";
 const PUBKEY       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}";
-const TIMESTAMP    = "[1-9][0-9]*";
-const POSITIVE_INT = "[1-9][0-9]*";
+const TIMESTAMP    = "[1-9][0-9]{0,18}";
+const POSITIVE_INT = "[1-9][0-9]{0,18}";
 const DIVIDEND     = "[1-9][0-9]{0,5}";
-const ZERO_OR_POSITIVE_INT = "0|[1-9][0-9]*";
-const INTEGER      = "(0|[1-9]\\d*)";
+const ZERO_OR_POSITIVE_INT = "0|[1-9][0-9]{0,18}";
+const INTEGER      = "(0|[1-9]\\d{0,18})";
 const FLOAT        = "\\d+\.\\d+";
 const BOOLEAN      = "[01]";
 const SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";

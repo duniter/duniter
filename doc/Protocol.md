@@ -85,6 +85,10 @@ A valid currency name is composed of alphanumeric characters, space, `-` or `_`.
 
 For any document using a date field, targeted date is to be understood as **UTC+0** reference.
 
+#### Integer
+
+Any integer field has a maximum len of 19 digits.
+
 ### Signatures
 
 #### Format

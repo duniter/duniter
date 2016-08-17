@@ -83,4 +83,9 @@ describe("Protocol 0.3", function() {
       res.sources[5].should.have.property('type').equal('T');
     })
   }));
+
+  it('should have a correct history', () => s1.expect('/tx/history/2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', (res) => {
+    res.history.received[0].should.have.property('blockstamp').not.equal(null).not.equal('');
+    res.history.received[0].should.have.property('blockstampTime').not.equal(null).greaterThan(0);
+  }));
 });

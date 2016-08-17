@@ -627,11 +627,15 @@ function FileDAL(params) {
   this.saveSideBlockInFile = (block) => that.writeSideFileOfBlock(block);
 
   this.saveTxsInFiles = (txs, extraProps) => {
-    return Q.all(txs.map((tx) => {
+    return Q.all(txs.map((tx) => co(function*() {
       _.extend(tx, extraProps);
       _.extend(tx, {currency: that.getCurrency()});
-      return that.txsDAL.addLinked(new Transaction(tx));
-    }));
+      if (tx.version == 3) {
+        const sp = tx.blockstamp.split('-');
+        tx.blockstampTime = (yield that.getBlockByNumberAndHash(sp[0], sp[1])).medianTime;
+        return that.txsDAL.addLinked(new Transaction(tx));
+      }
+    })));
   };
 
   this.merkleForPeers = () => co(function *() {

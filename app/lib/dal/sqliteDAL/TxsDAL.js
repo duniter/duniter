@@ -27,6 +27,7 @@ function TxsDAL(db) {
     'currency',
     'comment',
     'blockstamp',
+    'blockstampTime',
     'locktime',
     'received',
     'time',

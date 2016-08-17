@@ -127,7 +127,8 @@ function MetaDAL(db) {
           blockDAL.saveBlock(block);
         }
       }
-    })
+    }),
+    13: 'BEGIN; ALTER TABLE txs ADD COLUMN blockstampTime INTEGER NULL; COMMIT;'
   };
 
   this.init = () => co(function *() {

@@ -40,6 +40,7 @@ let Transaction = function(obj, currency) {
       'comment': this.comment,
       'locktime': this.locktime,
       'blockstamp': this.blockstamp,
+      'blockstampTime': this.blockstampTime,
       'signatures': this.signatures,
       'raw': this.getRaw(),
       'hash': this.hash
@@ -81,6 +82,7 @@ let Transaction = function(obj, currency) {
     });
     tx.comment = this.comment;
     tx.blockstamp = this.blockstamp;
+    tx.blockstampTime = this.blockstampTime;
     tx.locktime = this.locktime;
     return tx;
   };

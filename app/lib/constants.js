@@ -2,7 +2,7 @@
 
 const CURRENCY     = "[a-zA-Z0-9-_ ]{2,50}";
 const UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\d{2}\\.\\d{2}(\\+|-)\\d{3}\\.\\d{2});(\\d+)(;?)";
-const USER_ID      = "[A-Za-z0-9_-]*";
+const USER_ID      = "[A-Za-z0-9_-]{2,100}";
 const BASE58       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+";
 const PUBKEY       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}";
 const TIMESTAMP    = "[1-9][0-9]{0,18}";

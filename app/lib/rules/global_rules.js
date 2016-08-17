@@ -640,6 +640,10 @@ rules.HELPERS = {
       if (!basedBlock) {
         throw "Wrong blockstamp for transaction";
       }
+      const current = yield dal.getCurrentBlockOrNull();
+      if (current && current.medianTime > basedBlock.medianTime + constants.TRANSACTION_EXPIRY_DELAY) {
+        throw "Transaction has expired";
+      }
     }
   }),
 

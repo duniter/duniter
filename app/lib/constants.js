@@ -129,6 +129,8 @@ module.exports = {
   NB_DIGITS_UD: 6,      // This is protocol fixed value
   FIRST_UNIT_BASE: 0,
 
+  TRANSACTION_EXPIRY_DELAY: 3600 * 24 * 7,
+
   CERT: {
     SELF: {
       UID: exact("UID:" + USER_ID),

@@ -396,103 +396,159 @@ function BlockGenerator(mainContext, prover) {
   });
 
   const createBlock = (current, joinData, leaveData, updates, revocations, exclusions, transactions, manualValues) => {
-    // Revocations have an impact on exclusions
-    revocations.forEach((idty) => exclusions.push(idty.pubkey));
-    // Prevent writing joins/updates for excluded members
-    exclusions = _.uniq(exclusions);
-    exclusions.forEach((excluded) => {
-      delete updates[excluded];
-      delete joinData[excluded];
-      delete leaveData[excluded];
-    });
-    _(leaveData).keys().forEach((leaver) => {
-      delete updates[leaver];
-      delete joinData[leaver];
-    });
-    const block = new Block();
-    block.version = (manualValues && manualValues.version) || constants.BLOCK_GENERATED_VERSION;
-    block.currency = current ? current.currency : conf.currency;
-    block.nonce = 0;
-    block.number = current ? current.number + 1 : 0;
-    block.parameters = block.number > 0 ? '' : [
-      conf.c, conf.dt, conf.ud0,
-      conf.sigPeriod, conf.sigStock, conf.sigWindow, conf.sigValidity,
-      conf.sigQty, conf.idtyWindow, conf.msWindow, conf.xpercent, conf.msValidity,
-      conf.stepMax, conf.medianTimeBlocks, conf.avgGenTime, conf.dtDiffEval,
-      conf.blocksRot, (conf.percentRot == 1 ? "1.0" : conf.percentRot)
-    ].join(':');
-    block.previousHash = current ? current.hash : "";
-    block.previousIssuer = current ? current.issuer : "";
-    if (selfPubkey)
-      block.issuer = selfPubkey;
-    // Members merkle
-    const joiners = _(joinData).keys();
-    const previousCount = current ? current.membersCount : 0;
-    if (joiners.length == 0 && !current) {
-      throw constants.ERRORS.CANNOT_ROOT_BLOCK_NO_MEMBERS;
-    }
-    // Newcomers
-    block.identities = [];
-    // Newcomers + back people
-    block.joiners = [];
-    joiners.forEach((joiner) => {
-      const data = joinData[joiner];
-      // Identities only for never-have-been members
-      if (!data.identity.member && !data.identity.wasMember) {
-        block.identities.push(new Identity(data.identity).inline());
-      }
-      // Join only for non-members
-      if (!data.identity.member) {
-        block.joiners.push(new Membership(data.ms).inline());
-      }
-    });
-    block.identities = _.sortBy(block.identities, (line) => {
-      const sp = line.split(':');
-      return sp[2] + sp[3];
-    });
-    // Renewed
-    block.actives = [];
-    joiners.forEach((joiner) => {
-      const data = joinData[joiner];
-      // Join only for non-members
-      if (data.identity.member) {
-        block.actives.push(new Membership(data.ms).inline());
-      }
-    });
-    // Leavers
-    block.leavers = [];
-    const leavers = _(leaveData).keys();
-    leavers.forEach((leaver) => {
-      const data = leaveData[leaver];
-      // Join only for non-members
-      if (data.identity.member) {
-        block.leavers.push(new Membership(data.ms).inline());
-      }
-    });
-    block.revoked = revocations.map((idty) => [idty.pubkey, idty.revocation_sig].join(':'));
-    // Kicked people
-    block.excluded = exclusions;
-    // Final number of members
-    block.membersCount = previousCount + block.joiners.length - block.excluded.length;
-
-    //----- Certifications -----
-
-    // Certifications from the WoT, to newcomers
-    block.certifications = [];
-    joiners.forEach((joiner) => {
-      const data = joinData[joiner] || [];
-      data.certs.forEach((cert) => block.certifications.push(new Certification(cert).inline()));
-    });
-    // Certifications from the WoT, to the WoT
-    _(updates).keys().forEach((certifiedMember) => {
-      const certs = updates[certifiedMember] || [];
-      certs.forEach((cert) => block.certifications.push(new Certification(cert).inline()));
-    });
-    // Transactions
-    block.transactions = [];
-    transactions.forEach((tx) => block.transactions.push({ raw: tx.compact() }));
-
     return co(function *() {
+
+      const maxLenOfBlock = yield rules.HELPERS.getMaxBlockSize(dal);
+      let blockLen = 0;
+      // Revocations have an impact on exclusions
+      revocations.forEach((idty) => exclusions.push(idty.pubkey));
+      // Prevent writing joins/updates for excluded members
+      exclusions = _.uniq(exclusions);
+      exclusions.forEach((excluded) => {
+        delete updates[excluded];
+        delete joinData[excluded];
+        delete leaveData[excluded];
+      });
+      _(leaveData).keys().forEach((leaver) => {
+        delete updates[leaver];
+        delete joinData[leaver];
+      });
+      const block = new Block();
+      block.version = (manualValues && manualValues.version) || constants.BLOCK_GENERATED_VERSION;
+      block.currency = current ? current.currency : conf.currency;
+      block.nonce = 0;
+      block.number = current ? current.number + 1 : 0;
+      block.parameters = block.number > 0 ? '' : [
+        conf.c, conf.dt, conf.ud0,
+        conf.sigPeriod, conf.sigStock, conf.sigWindow, conf.sigValidity,
+        conf.sigQty, conf.idtyWindow, conf.msWindow, conf.xpercent, conf.msValidity,
+        conf.stepMax, conf.medianTimeBlocks, conf.avgGenTime, conf.dtDiffEval,
+        conf.blocksRot, (conf.percentRot == 1 ? "1.0" : conf.percentRot)
+      ].join(':');
+      block.previousHash = current ? current.hash : "";
+      block.previousIssuer = current ? current.issuer : "";
+      if (selfPubkey)
+        block.issuer = selfPubkey;
+      // Members merkle
+      const joiners = _(joinData).keys();
+      const previousCount = current ? current.membersCount : 0;
+      if (joiners.length == 0 && !current) {
+        throw constants.ERRORS.CANNOT_ROOT_BLOCK_NO_MEMBERS;
+      }
+
+      // Kicked people
+      block.excluded = exclusions;
+
+      /*****
+       * Priority 1: keep the WoT sane
+       */
+      // Certifications from the WoT, to the WoT
+      _(updates).keys().forEach((certifiedMember) => {
+        const certs = updates[certifiedMember] || [];
+        certs.forEach((cert) => {
+          if (blockLen < maxLenOfBlock) {
+            block.certifications.push(new Certification(cert).inline());
+            blockLen++;
+          }
+        });
+      });
+      // Renewed
+      joiners.forEach((joiner) => {
+        const data = joinData[joiner];
+        // Join only for non-members
+        if (data.identity.member) {
+          if (blockLen < maxLenOfBlock) {
+            block.actives.push(new Membership(data.ms).inline());
+            blockLen++;
+          }
+        }
+      });
+      // Leavers
+      const leavers = _(leaveData).keys();
+      leavers.forEach((leaver) => {
+        const data = leaveData[leaver];
+        // Join only for non-members
+        if (data.identity.member) {
+          if (blockLen < maxLenOfBlock) {
+            block.leavers.push(new Membership(data.ms).inline());
+            blockLen++;
+          }
+        }
+      });
+
+      /*****
+       * Priority 2: revoked identities
+       */
+      revocations.forEach((idty) => {
+        if (blockLen < maxLenOfBlock) {
+          block.revoked.push([idty.pubkey, idty.revocation_sig].join(':'));
+          blockLen++;
+        }
+      });
+
+      /*****
+       * Priority 3: newcomers/renewcomers
+       */
+      let countOfCertsToNewcomers = 0;
+      // Newcomers
+      // Newcomers + back people
+      joiners.forEach((joiner) => {
+        const data = joinData[joiner];
+        // Identities only for never-have-been members
+        if (!data.identity.member && !data.identity.wasMember) {
+          block.identities.push(new Identity(data.identity).inline());
+        }
+        // Join only for non-members
+        if (!data.identity.member) {
+          block.joiners.push(new Membership(data.ms).inline());
+        }
+      });
+      block.identities = _.sortBy(block.identities, (line) => {
+        const sp = line.split(':');
+        return sp[2] + sp[3];
+      });
+
+      // Certifications from the WoT, to newcomers
+      joiners.forEach((joiner) => {
+        const data = joinData[joiner] || [];
+        data.certs.forEach((cert) => {
+          countOfCertsToNewcomers++;
+          block.certifications.push(new Certification(cert).inline());
+        });
+      });
+
+      // Eventually revert newcomers/renewcomer
+      if (Block.statics.getLen(block) > maxLenOfBlock) {
+        for (let i = 0; i < block.identities.length; i++) {
+          block.identities.pop();
+          block.joiners.pop();
+        }
+        for (let i = 0; i < countOfCertsToNewcomers; i++) {
+          block.certifications.pop();
+        }
+      }
+
+      // Final number of members
+      block.membersCount = previousCount + block.joiners.length - block.excluded.length;
+
+      /*****
+       * Priority 4: transactions
+       */
+      block.transactions = [];
+      blockLen = Block.statics.getLen(block);
+      if (blockLen < maxLenOfBlock) {
+        transactions.forEach((tx) => {
+          const txLen = Transaction.statics.getLen(tx);
+          if (blockLen + txLen <= maxLenOfBlock) {
+            block.transactions.push({ raw: tx.compact() });
+          }
+          blockLen += txLen;
+        });
+      }
+
+      /**
+       * Finally handle the Universal Dividend
+       */
       block.powMin = block.number == 0 ? 0 : yield rules.HELPERS.getPoWMin(block.number, conf, dal);
       if (block.number == 0) {
         block.medianTime = moment.utc().unix() - conf.rootoffset;

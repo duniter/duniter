@@ -1150,7 +1150,7 @@ Global validation verifies the coherence of a locally-validated block, in the co
 
 ###### Block size
 
-The block size is defined as the number of lines in multiline fields (`Identities`, `Joiners`, `Actives`, `Leavers`, `Revoked`, `Excluded`, `Certifications`, `Transactions`).
+The block size is defined as the number of lines in multiline fields (`Identities`, `Joiners`, `Actives`, `Leavers`, `Revoked`, `Certifications`, `Transactions`) **except** `Excluded` field.
 
 For example:
 

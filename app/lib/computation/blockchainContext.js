@@ -560,7 +560,8 @@ function BlockchainContext() {
   this.updateTransactionsForBlocks = (blocks) => co(function *() {
     let txs = [];
     for (const block of blocks) {
-      txs = txs.concat(block.transactions.map((tx) => {
+      const newOnes = [];
+      for (const tx of block.transactions) {
         _.extend(tx, {
           block_number: block.number,
           time: block.medianTime,
@@ -568,8 +569,13 @@ function BlockchainContext() {
           written: true,
           removed: false
         });
-        return new Transaction(tx);
-      }));
+        if (tx.version == 3) {
+          const sp = tx.blockstamp.split('-');
+          tx.blockstampTime = (yield that.getBlockByNumberAndHash(sp[0], sp[1])).medianTime;
+        }
+        newOnes.push(new Transaction(tx));
+      }
+      txs = txs.concat(newOnes);
     }
     return dal.updateTransactions(txs);
   });

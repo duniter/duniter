@@ -337,7 +337,9 @@ dtos.TxOfHistory = {
   "signatures": [String],
   "hash": String,
   "block_number": Number,
-  "time": Number
+  "time": Number,
+  "blockstamp": String,
+  "blockstampTime": Number
 };
 
 dtos.TxHistory = {

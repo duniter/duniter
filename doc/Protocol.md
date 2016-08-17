@@ -79,7 +79,7 @@ The block ID of the block#433 is `433`. Its UID *might be* `433-FB11681FC1B3E36C
 
 #### Currency name
 
-A valid currency name is composed of alphanumeric characters, space, `-` or `_`.
+A valid currency name is composed of alphanumeric characters, space, `-` or `_` and has a length between 2 and 50 characters.
 
 #### Dates
 

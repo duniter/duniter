@@ -89,6 +89,7 @@ function BlockGenerator() {
       // Start
       powWorker.setOnPoW(function(err, powBlock) {
         const theBlock = (powBlock && new Block(powBlock)) || null;
+        logger.info('FOUND proof-of-work with %s leading zeros followed by [0-' + highMark + ']!', nbZeros);
         resolve(theBlock);
       });
 

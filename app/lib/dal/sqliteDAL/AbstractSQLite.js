@@ -280,7 +280,9 @@ function AbstractSQLite(db) {
     }
     // Big integers are stored as strings to avoid data loss
     for (const bigint of that.bigintegers) {
-      row[bigint] = parseInt(row[bigint], 10);
+      if (row[bigint] !== null && row[bigint] !== undefined) {
+        row[bigint] = parseInt(row[bigint]);
+      }
     }
     // Translate some DB fields to obj fields
     let toTranslate = that.translated || {};

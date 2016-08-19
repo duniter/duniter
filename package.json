@@ -1,6 +1,6 @@
 {
   "name": "duniter",
-  "version": "0.30.0",
+  "version": "0.30.1",
   "engines": {
     "node": ">=4.2.0",
     "npm": ">=2.11"

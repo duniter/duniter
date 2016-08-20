@@ -117,6 +117,7 @@ function BlockGenerator(mainContext, prover) {
         yield Q.nbind(rules.HELPERS.checkBunchOfTransactions, rules, passingTxs.concat(extractedTX));
         const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
         yield rules.HELPERS.checkSingleTransaction(extractedTX, nextBlockWithFakeTimeVariation, conf, dal);
+        yield rules.HELPERS.checkTxBlockStamp(extractedTX, dal);
         transactions.push(tx);
         passingTxs.push(extractedTX);
         logger.info('Transaction added to block');

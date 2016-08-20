@@ -10,6 +10,7 @@ const POSITIVE_INT = "[1-9][0-9]{0,18}";
 const DIVIDEND     = "[1-9][0-9]{0,5}";
 const ZERO_OR_POSITIVE_INT = "0|[1-9][0-9]{0,18}";
 const INTEGER      = "(0|[1-9]\\d{0,18})";
+const RELATIVE_INTEGER = "(0|-?[1-9]\\d{0,18})";
 const FLOAT        = "\\d+\.\\d+";
 const BOOLEAN      = "[01]";
 const SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
@@ -193,7 +194,7 @@ module.exports = {
     MEMBERS_COUNT:find("MembersCount: (" + ZERO_OR_POSITIVE_INT + ")"),
     BLOCK_ISSUER:find('Issuer: (' + PUBKEY + ')'),
     BLOCK_ISSUERS_FRAME:find('IssuersFrame: (' + INTEGER + ')'),
-    BLOCK_ISSUERS_FRAME_VAR:find('IssuersFrameVar: (' + INTEGER + ')'),
+    BLOCK_ISSUERS_FRAME_VAR:find('IssuersFrameVar: (' + RELATIVE_INTEGER + ')'),
     DIFFERENT_ISSUERS_COUNT:find('DifferentIssuersCount: (' + INTEGER + ')'),
     PARAMETERS:  find("Parameters: (" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ")"),
     JOINER:   exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + BLOCK_UID + ":" + USER_ID),

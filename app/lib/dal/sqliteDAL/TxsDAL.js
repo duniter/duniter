@@ -76,9 +76,10 @@ function TxsDAL(db) {
       'COMMIT;', []);
   });
 
-  this.getAllPending = () => this.sqlFind({
+  this.getAllPending = (versionMin) => this.sqlFind({
     written: false,
-    removed: false
+    removed: false,
+    version: { $gte: versionMin }
   });
 
   this.getTX = (hash) => this.sqlFindOne({

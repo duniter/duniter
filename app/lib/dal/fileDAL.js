@@ -291,7 +291,7 @@ function FileDAL(params) {
 
   this.removeTxByHash = (hash) => that.txsDAL.removeTX(hash);
 
-  this.getTransactionsPending = () => that.txsDAL.getAllPending();
+  this.getTransactionsPending = (versionMin) => that.txsDAL.getAllPending(versionMin);
 
   this.getNonWritten = (pubkey) => co(function*() {
     const pending = yield that.idtyDAL.getPendingIdentities();

@@ -66,7 +66,7 @@ function BlockGenerator(mainContext, prover) {
     const exclusions = yield dal.getToBeKickedPubkeys();
     const newCertsFromWoT = yield generator.findNewCertsFromWoT(current);
     const newcomersLeavers = yield findNewcomersAndLeavers(current, generator.filterJoiners);
-    const transactions = yield findTransactions();
+    const transactions = yield findTransactions(current);
     const joinData = newcomersLeavers[2];
     const leaveData = newcomersLeavers[3];
     const newCertsFromNewcomers = newcomersLeavers[4];
@@ -105,11 +105,11 @@ function BlockGenerator(mainContext, prover) {
     return [cur, newWoTMembers, finalJoinData, leavers, updates];
   });
 
-  const findTransactions = () => co(function*() {
-    const txs = yield dal.getTransactionsPending();
+  const findTransactions = (current) => co(function*() {
+    const versionMin = current ? current.version : constants.DOCUMENTS_VERSION;
+    const txs = yield dal.getTransactionsPending(versionMin);
     const transactions = [];
     const passingTxs = [];
-    const current = yield dal.getCurrentBlockOrNull();
     for (const obj of txs) {
       const tx = new Transaction(obj, conf.currency);
       const extractedTX = tx.getTransaction();

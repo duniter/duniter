@@ -249,7 +249,7 @@ function WebAdmin (dbConf, overConf) {
       passwd: conf.idty_password,
       pair: {
         pub: publicKey,
-        sec: base58.encode(secretKey)
+        sec: secretKey
       }
     }));
     pluggedConfP = yield server.loadConf();

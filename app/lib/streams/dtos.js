@@ -432,3 +432,20 @@ dtos.AdminSummary = {
 dtos.PreviewPubkey = {
   "pubkey": String
 };
+
+dtos.Sandbox = {
+  size: Number,
+  room: Number
+};
+
+dtos.IdentitySandbox = dtos.Sandbox;
+dtos.CertificationSandbox = dtos.Sandbox;
+dtos.MembershipSandbox = dtos.Sandbox;
+dtos.TransactionSandbox = dtos.Sandbox;
+
+dtos.Sandboxes = {
+  identities: dtos.IdentitySandbox,
+  certifications: dtos.CertificationSandbox,
+  memberships: dtos.MembershipSandbox,
+  transactions: dtos.TransactionSandbox
+};

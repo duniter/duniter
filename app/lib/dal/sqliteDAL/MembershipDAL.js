@@ -6,6 +6,7 @@ const Q = require('q');
 const co = require('co');
 const _ = require('underscore');
 const AbstractSQLite = require('./AbstractSQLite');
+const constants = require('../../constants');
 const SandBox = require('./SandBox');
 
 module.exports = MembershipDAL;
@@ -175,19 +176,13 @@ function MembershipDAL(db) {
    * SANDBOX STUFF
    */
 
-  this.getSandboxMemberships = () => that.query('SELECT ' +
-    '* ' +
-    'FROM ' + that.table + ' ' +
-    'WHERE expired IS NULL ' +
-    'AND written_number IS NULL ' +
-    'ORDER BY blockNumber ASC ' +
-    'LIMIT ' + (that.sandbox.maxSize), []);
+  this.getSandboxMemberships = () => that.query('SELECT * FROM sandbox_memberships LIMIT ' + (that.sandbox.maxSize), []);
 
-  this.sandbox = new SandBox(30, this.getSandboxMemberships.bind(this), (compared, reference) => {
-    if (compared.block_number > reference.block_number) {
+  this.sandbox = new SandBox(constants.SANDBOX_SIZE_MEMBERSHIPS, this.getSandboxMemberships.bind(this), (compared, reference) => {
+    if (compared.block_number < reference.block_number) {
       return -1;
     }
-    else if (compared.block_number < reference.block_number) {
+    else if (compared.block_number > reference.block_number) {
       return 1;
     }
     else {

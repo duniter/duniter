@@ -338,7 +338,12 @@ module.exports = {
   SAFE_FACTOR: 3,
   BLOCKS_COLLECT_THRESHOLD: 30, // Blocks to collect from memory and persist
 
-  MUTE_LOGS_DURING_UNIT_TESTS: false
+  MUTE_LOGS_DURING_UNIT_TESTS: false,
+
+  SANDBOX_SIZE_TRANSACTIONS: 200,
+  SANDBOX_SIZE_IDENTITIES: 100,
+  SANDBOX_SIZE_CERTIFICATIONS: 300,
+  SANDBOX_SIZE_MEMBERSHIPS: 200
 };
 
 function exact (regexpContent) {

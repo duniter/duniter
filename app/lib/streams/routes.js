@@ -21,6 +21,7 @@ module.exports = {
     const transactions = require('../../controllers/transactions')(server);
     const dividend     = require('../../controllers/uds')(server);
     httpMethods.httpGET(  prefix + '/node/summary',                          node.summary,                         dtos.Summary,        limiter.limitAsHighUsage());
+    httpMethods.httpGET(  prefix + '/node/sandboxes',                        node.sandboxes,                       dtos.Sandboxes,      limiter.limitAsHighUsage());
     httpMethods.httpGET(  prefix + '/blockchain/parameters',                 blockchain.parameters,                dtos.Parameters,     limiter.limitAsHighUsage());
     httpMethods.httpPOST( prefix + '/blockchain/membership',                 blockchain.parseMembership,           dtos.Membership,     limiter.limitAsHighUsage());
     httpMethods.httpGET(  prefix + '/blockchain/memberships/:search',        blockchain.memberships,               dtos.Memberships,    limiter.limitAsHighUsage());

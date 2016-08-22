@@ -128,7 +128,35 @@ function MetaDAL(db) {
         }
       }
     }),
-    13: 'BEGIN; ALTER TABLE txs ADD COLUMN blockstampTime INTEGER NULL; COMMIT;'
+    13: 'BEGIN; ALTER TABLE txs ADD COLUMN blockstampTime INTEGER NULL; COMMIT;',
+    14: 'BEGIN; ' +
+      
+    'CREATE VIEW IF NOT EXISTS sandbox_txs AS SELECT * FROM txs WHERE NOT written AND NOT removed ORDER BY output_base DESC, output_amount DESC;' +
+      
+    'CREATE VIEW IF NOT EXISTS sandbox_idty AS SELECT ' +
+      'I.*, ' +
+      'I.hash, ' +
+      '(SELECT COUNT(*) FROM cert C where C.target = I.hash) AS certsCount, ' +
+      'CAST(SUBSTR(buid, 0, INSTR(buid, "-")) as number) AS ref_block ' +
+      'FROM idty as I ' +
+      'WHERE NOT I.member ' +
+      'AND I.expired IS NULL ' +
+      'ORDER BY certsCount DESC, ref_block DESC;' +
+      
+    'CREATE VIEW IF NOT EXISTS sandbox_memberships AS SELECT ' +
+      '* ' +
+      'FROM membership ' +
+      'WHERE expired IS NULL ' +
+      'AND written_number IS NULL ' +
+      'ORDER BY blockNumber DESC;' +
+      
+    'CREATE VIEW IF NOT EXISTS sandbox_certs AS SELECT ' +
+      '* ' +
+      'FROM cert ' +
+      'WHERE expired IS NULL ' +
+      'AND written_block IS NULL ' +
+      'ORDER BY block_number DESC;' +
+    'COMMIT;'
   };
 
   this.init = () => co(function *() {

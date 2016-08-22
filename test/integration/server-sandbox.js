@@ -113,10 +113,10 @@ describe("Sandboxes", function() {
       (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
     }));
 
-    it('should reject i7(1)', () => shouldThrow(i7.createIdentity()));
+    it('should reject i7(1)', () => shouldThrow(i7.createIdentity(true)));
 
     it('should reject i7(1) by revocation', () => shouldThrow(co(function *() {
-      yield i7onS2.createIdentity();
+      yield i7onS2.createIdentity(true);
       const idty = yield i7onS2.lookup(i7onS2.pub);
       yield i7.revoke(idty);
     })));
@@ -134,20 +134,18 @@ describe("Sandboxes", function() {
 
     it('should reject i10(1) by i1->i10(1)', () => shouldThrow(co(function *() {
       (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
-      yield i10.createIdentity(null, s2);
+      yield i10.createIdentity(true, s2);
       yield i1.cert(i10, s2);
     })));
 
-    it('should accept i10(0) by i1->i10(0) because of an anterior date compared to others in sandbox', () => co(function *() {
-      yield i10.createIdentity(true, s3);
+    it('should accept i10(0) by i1->i10(0) because of an superior date compared to others in sandbox', () => co(function *() {
+      yield i10.createIdentity(null, s3);
       yield i1.cert(i10, s3);
     }));
 
     it('should accept i11(0) and i12(0) for the same reason', () => co(function *() {
-      yield i11.createIdentity(true, s3);
-      yield i1.cert(i11, s3);
-      yield i12.createIdentity(true, s3);
-      yield i1.cert(i12, s3);
+      yield i11.createIdentity(null, s3);
+      yield i12.createIdentity(null, s3);
     }));
 
     it('should reject i13(0) because absolutely no more room is available', () => shouldThrow(co(function *() {

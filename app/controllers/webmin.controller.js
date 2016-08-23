@@ -72,6 +72,7 @@ function WebAdmin (dbConf, overConf) {
       "host": host,
       "current": current,
       "pubkey": server.keyPair.publicKey,
+      "seckey": server.keyPair.secretKey,
       "conf": {
         "cpu": server.conf.cpu
       },

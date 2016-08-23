@@ -425,6 +425,7 @@ dtos.AdminSummary = {
   "host": String,
   "current": dtos.Block,
   "pubkey": String,
+  "seckey": String,
   "conf": dtos.SummaryConf,
   "parameters": dtos.Parameters
 };

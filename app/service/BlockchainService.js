@@ -436,6 +436,13 @@ function BlockchainService () {
       }
       return dal.getBlock(number);
     };
+    const getBlockByNumberAndHash = (number, hash) => co(function*() {
+      const block = yield getBlock(number);
+      if (!block || block.hash != hash) {
+        throw 'Block #' + [number, hash].join('-') + ' not found neither in DB nor in applying blocks';
+      }
+      return block;
+    });
     // Insert a bunch of blocks
     const lastPrevious = blocks[0].number == 0 ? null : yield dal.getBlock(blocks[0].number - 1);
     const dividends = [];
@@ -485,7 +492,7 @@ function BlockchainService () {
       }
     }
     // Transactions recording
-    yield mainContext.updateTransactionsForBlocks(blocks);
+    yield mainContext.updateTransactionsForBlocks(blocks, getBlockByNumberAndHash);
     // Create certifications
     yield mainContext.updateMembershipsForBlocks(blocks);
     // Create certifications

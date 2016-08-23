@@ -71,7 +71,7 @@
     "unzip2": "0.2.5",
     "vucoin": "0.30.4",
     "winston": "2.1.1",
-    "wotb": "0.4.10",
+    "wotb": "0.4.11",
     "ws": "1.0.1"
   },
   "devDependencies": {

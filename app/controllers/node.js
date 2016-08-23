@@ -32,7 +32,7 @@ function sandboxIt(sandbox) {
   return co(function*() {
     return {
       size: sandbox.maxSize,
-      room: yield sandbox.getSandboxRoom()
+      free: yield sandbox.getSandboxRoom()
     };
   });
 }

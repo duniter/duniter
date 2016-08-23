@@ -435,7 +435,7 @@ dtos.PreviewPubkey = {
 
 dtos.Sandbox = {
   size: Number,
-  room: Number
+  free: Number
 };
 
 dtos.IdentitySandbox = dtos.Sandbox;

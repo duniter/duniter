@@ -493,7 +493,7 @@ program
   .command('reset [config|data|peers|tx|stats|all]')
   .description('Reset configuration, data, peers, transactions or everything in the database')
   .action(subCommand((type) => {
-    let init = type == 'data' ? server : connect;
+    let init = ['data', 'all'].indexOf(type) !== -1 ? server : connect;
     return init(function (server) {
       if (!~['config', 'data', 'peers', 'stats', 'all'].indexOf(type)) {
         throw Error('Bad command: usage `reset config`, `reset data`, `reset peers`, `reset stats` or `reset all`');

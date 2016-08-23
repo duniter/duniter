@@ -463,10 +463,11 @@ rules.FUNCTIONS = {
 
   checkSourcesAvailability: (block, conf, dal) => co(function *() {
     let txs = block.getTransactions();
+    const current = yield dal.getCurrentBlockOrNull();
     for (const tx of txs) {
       let unlocks = {};
       let sumOfInputs = 0;
-      let maxInputBase = null;
+      let maxOutputBase = current.unitbase;
       for (const unlock of tx.unlocks) {
         let sp = unlock.split(':');
         let index = parseInt(sp[0]);
@@ -481,10 +482,6 @@ rules.FUNCTIONS = {
           throw constants.ERRORS.SOURCE_ALREADY_CONSUMED;
         }
         sumOfInputs += dbSrc.amount * Math.pow(10, dbSrc.base);
-        if (maxInputBase == null) {
-          maxInputBase = dbSrc.base;
-        }
-        maxInputBase = Math.max(maxInputBase, dbSrc.base);
         if (block.medianTime - dbSrc.time < tx.locktime) {
           throw constants.ERRORS.LOCKTIME_PREVENT;
         }
@@ -523,7 +520,7 @@ rules.FUNCTIONS = {
         }
       }
       let sumOfOutputs = tx.outputs.reduce(function(p, output) {
-        if (output.base != maxInputBase) {
+        if (output.base > maxOutputBase) {
           throw constants.ERRORS.WRONG_OUTPUT_BASE;
         }
         return p + output.amount * Math.pow(10, output.base);

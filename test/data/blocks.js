@@ -3214,6 +3214,62 @@ module.exports = {
     "Nonce: 1\n" +
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
+  TRANSACTION_V3_GOOD_AMOUNTS:
+    "Version: 3\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Number: 83\n" +
+    "PoWMin: 1\n" +
+    "Time: 1411777000\n" +
+    "MedianTime: 1411777000\n" +
+    "UnitBase: 0\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "IssuersFrame: 101\n" +
+    "IssuersFrameVar: 11\n" +
+    "DifferentIssuersCount: 4\n" +
+    "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Actives:\n" +
+    "Leavers:\n" +
+    "Revoked:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "TX:3:1:3:3:17:1:0\n" +
+    "33089-00004C8D3A7EAA34ADD20E36268F7A141A45B8D47C0872EFDB00187810E0BBFD\n" +
+    "TENGx7WtzFsTXwnbrPEvb6odX2WnqYcnnrjiiLvp1mS\n" +
+    "17602605:0:T:E4E8486E20D521AAB329376431BD633A59FE847EF533C38CDD2C9F6E820FF786:14\n" +
+    "800:1:T:E9BDCC49762D17757B1AA8C52744CD182DF3FFC8EA9B237267A1B3B33ABE089B:0\n" +
+    "1897916:1:T:04A9E034116E436E581C01B9B58150A38615C06D12AE434614D5A08F6B409B1C:0\n" +
+    "0:SIG(0)\n" +
+    "1:SIG(0)\n" +
+    "2:SIG(0)\n" +
+    "5:0:SIG(TENGx7WtzFsTXwnbrPEvb6odX2WnqYcnnrjiiLvp1mS)\n" +
+    "6:1:SIG(TENGx7WtzFsTXwnbrPEvb6odX2WnqYcnnrjiiLvp1mS)\n" +
+    "7:2:SIG(TENGx7WtzFsTXwnbrPEvb6odX2WnqYcnnrjiiLvp1mS)\n" +
+    "60:3:SIG(DesHja7gonANRJB7YUkfCgQpnDjgGeDXAeArdhcbXPmJ)\n" +
+    "170:3:SIG(HGYV5C16mrdvE9vpb1S9nMDHkVPsubBgANs9pSb6HWCV)\n" +
+    "210:3:SIG(HxWwfnVXpfec957STN97q6cMSzefkbXdApRTwVuUFUyc)\n" +
+    "110:3:SIG(9bZEATXBGPUSsk8oAYi4KAChg3rHKwNt67hVdErbNGCW)\n" +
+    "200:3:SIG(8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU)\n" +
+    "100:3:SIG(2eijdARyo6FuTVX6kZPbVziRB8wq87sGXpCth9eaUNX4)\n" +
+    "160:3:SIG(HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk)\n" +
+    "90:3:SIG(8KTEFQS78HwEz1NK627rNsYwENxNXJyvtyMAyfKPXZRB)\n" +
+    "180:3:SIG(XeBpJwRLkF5J4mnwyEDriEcNB13iFpe1MAKR4mH3fzN)\n" +
+    "130:3:SIG(5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of)\n" +
+    "130:3:SIG(4eDissnRvTq7JSgbmnL62ogQcrCLzw2zdrxA4q1yuczs)\n" +
+    "100:3:SIG(2pyPsXM8UCB88jP2NRM4rUHxb63qm89JMEWbpoRrhyDK)\n" +
+    "40:3:SIG(6KXBjAFceD1gp8RBVZfy5YQyKFXG8GaX8tKaLAyPWHrj)\n" +
+    "34909:3:SIG(TENGx7WtzFsTXwnbrPEvb6odX2WnqYcnnrjiiLvp1mS)\n" +
+    "REMU:22684:22851\n" +
+    "Iu9NripkuUAeYhhUyeiW9PSTkYFu4kM8ZEtFUgfh44qsuF5PaM38zy3/IszWtJ1i6HGQsbrxDiOVem6Gu+tyDA==\n" +
+    "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
+    "Nonce: 1\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
   TRANSACTION_WRONG_TRANSFORM:
     "Version: 3\n" +
     "Type: Block\n" +
@@ -3252,6 +3308,41 @@ module.exports = {
     "220:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
     "29:3:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
     "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
+    "I6gJkJIQJ9vwDRXZ6kdBsOArQ3zzMYPmFxDbJqseBVq5NWlmJ7l7oY9iWtqhPF38rp7/iitbgyftsRR8djOGDg==\n" +
+    "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
+    "Nonce: 1\n" +
+    "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
+
+  BLOCK_TX_V3_TOO_HIGH_OUTPUT_BASE:
+    "Version: 3\n" +
+    "Type: Block\n" +
+    "Currency: beta_brousouf\n" +
+    "Number: 83\n" +
+    "PoWMin: 1\n" +
+    "Time: 1411777000\n" +
+    "MedianTime: 1411777000\n" +
+    "UnitBase: 0\n" +
+    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "IssuersFrame: 101\n" +
+    "IssuersFrameVar: 11\n" +
+    "DifferentIssuersCount: 4\n" +
+    "PreviousHash: 2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
+    "PreviousIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
+    "MembersCount: 3\n" +
+    "Identities:\n" +
+    "Joiners:\n" +
+    "Actives:\n" +
+    "Leavers:\n" +
+    "Revoked:\n" +
+    "Excluded:\n" +
+    "Certifications:\n" +
+    "Transactions:\n" +
+    "TX:3:1:1:1:1:0:0\n" +
+    "5-2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326\n" +
+    "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
+    "10:3:T:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:88\n" +
+    "0:SIG(0)\n" +
+    "1:4:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
     "I6gJkJIQJ9vwDRXZ6kdBsOArQ3zzMYPmFxDbJqseBVq5NWlmJ7l7oY9iWtqhPF38rp7/iitbgyftsRR8djOGDg==\n" +
     "InnerHash: DE837CA3F49C423A6A6C124819ABA31A41C1C4A4E2728B5721DF891B98FA8D0D\n" +
     "Nonce: 1\n" +

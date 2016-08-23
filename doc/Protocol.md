@@ -1130,8 +1130,7 @@ TRUE
 * *Def.*: `OutputBaseSum` is the sum of amounts with the same `OutputBase`.
 * *Def.*: `BaseDelta = OutputBaseSum - InputBaseSum`, expressed in `CommonBase`
 * *Rule*: For each `OutputBase`:
-  * if `BaseDelta > 0`, then it must equal the sum of all preceding `BaseDelta`
-  * if `BaseDelta < 0`, then it must equal the sum of all preceding `BaseDelta`
+  * if `BaseDelta > 0`, then it must be inferior or equal to the sum of all preceding `BaseDelta`
 * *Rule*: The sum of all inputs in `CommonBase` must equal the sum of all outputs in `CommonBase`
 
 > Consequence: we cannot create money nor lose money through transactions. We can only transfer coins we own.

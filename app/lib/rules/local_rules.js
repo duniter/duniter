@@ -548,7 +548,7 @@ rules.HELPERS = {
         for (let j = commonBase; j < i; j++) {
           sumUpToBase -= deltas[j];
         }
-        if (delta > 0 && delta !== sumUpToBase) {
+        if (delta > 0 && delta > sumUpToBase) {
           throw constants.ERRORS.TX_OUTPUT_SUM_NOT_EQUALS_PREV_DELTAS;
         }
         deltas[i] = delta;

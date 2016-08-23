@@ -560,6 +560,7 @@ describe("Block global coherence:", function(){
   }));
 
   it('a block with good transactions should pass', test(rules.GLOBAL.checkSourcesAvailability, blocks.BLOCK_WITH_GOOD_TRANSACTIONS, {
+    getCurrentBlockOrNull: () => Q({ unitbase: 5 }),
     getSource: (id, noffset) => {
       if (id == '6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3' && noffset == 4)   return Q({ amount: 0,   base: 4 });
       if (id == '3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435' && noffset == 10)  return Q({ amount: 0,   base: 3 });
@@ -573,6 +574,7 @@ describe("Block global coherence:", function(){
   }));
 
   it('a block with wrong transaction sum should fail', test(rules.GLOBAL.checkSourcesAvailability, blocks.BLOCK_WITH_WRONG_TRANSACTION_SUMS, {
+    getCurrentBlockOrNull: () => Q({ unitbase: 5 }),
     getSource: (id, noffset) => {
       if (id == '6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3' && noffset == 4)   return Q({ amount: 0,   base: 4 });
       if (id == '3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435' && noffset == 10)  return Q({ amount: 0,   base: 3 });
@@ -587,6 +589,7 @@ describe("Block global coherence:", function(){
   }));
 
   it('a block with wrong transaction unit bases should fail', test(rules.GLOBAL.checkSourcesAvailability, blocks.BLOCK_WITH_WRONG_TRANSACTION_SUMS, {
+    getCurrentBlockOrNull: () => Q({ unitbase: 5 }),
     getSource: (id, noffset) => {
       if (id == '6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3' && noffset == 4)   return Q({ amount: 0,   base: 4 });
       if (id == '3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435' && noffset == 10)  return Q({ amount: 0,   base: 3 });
@@ -601,6 +604,7 @@ describe("Block global coherence:", function(){
   }));
 
   it('a block with whose transaction has too high unit bases should fail', test(rules.GLOBAL.checkSourcesAvailability, blocks.BLOCK_WITH_WRONG_TRANSACTION_UNIT_BASES, {
+    getCurrentBlockOrNull: () => Q({ unitbase: 2 }),
     getSource: (id, noffset) => {
       if (id == '6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3' && noffset == 4)   return Q({ amount: 0,   base: 4 });
       if (id == '3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435' && noffset == 10)  return Q({ amount: 0,   base: 3 });
@@ -615,6 +619,7 @@ describe("Block global coherence:", function(){
   }));
 
   it('a block with unavailable UD source should fail', test(rules.GLOBAL.checkSourcesAvailability, blocks.BLOCK_WITH_UNAVAILABLE_UD_SOURCE, {
+    getCurrentBlockOrNull: () => Q({ unitbase: 5 }),
     getSource: (id, noffset) => {
       if (id == '6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3' && noffset == 4)   return Q({ amount: 0,   base: 4 });
       if (id == '3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435' && noffset == 10)  return Q({ amount: 0,   base: 3 });
@@ -629,6 +634,7 @@ describe("Block global coherence:", function(){
   }));
 
   it('a block with unavailable TX source should fail', test(rules.GLOBAL.checkSourcesAvailability, blocks.BLOCK_WITH_UNAVAILABLE_TX_SOURCE, {
+    getCurrentBlockOrNull: () => Q({ unitbase: 5 }),
     getSource: (id, noffset) => {
       if (id == '6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3' && noffset == 4)   return Q({ amount: 0,   base: 4 });
       if (id == '3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435' && noffset == 10)  return Q({ amount: 0,   base: 3 });
@@ -640,6 +646,14 @@ describe("Block global coherence:", function(){
   }, function (err) {
     should.exist(err);
     err.should.have.property('uerr').property('message').equal('Source already consumed');
+  }));
+
+  it('a block with a too high unit base should fail', test(rules.GLOBAL.checkSourcesAvailability, blocks.BLOCK_TX_V3_TOO_HIGH_OUTPUT_BASE, {
+    getCurrentBlockOrNull: () => Q({ unitbase: 3 }),
+    getSource: () => Q({ base: 1, amount: 10 })
+  }, function (err) {
+    should.exist(err);
+    err.should.have.property('uerr').property('message').equal('Wrong unit base for outputs');
   }));
 
   it('a block with an unknown member revoked should fail', test(rules.GLOBAL.checkRevoked, blocks.BLOCK_UNKNOWN_REVOKED, {

@@ -127,7 +127,7 @@ function Server (dbConf, overrideConf) {
     logger.debug('Loading crypto functions...');
     // Extract key pair
     let keyPair = null;
-    if (that.conf.pair) {
+    if (!overrideConf.salt && !overrideConf.passwd && that.conf.pair) {
       keyPair = keyring.Key(that.conf.pair.pub, that.conf.pair.sec);
     }
     else if (that.conf.passwd || that.conf.salt) {

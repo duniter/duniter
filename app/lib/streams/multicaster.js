@@ -146,7 +146,8 @@ function Multicaster (conf, timeout) {
             } else {
               logger.info('POST %s', params.type);
             }
-            for (const p of peers) {
+            // Parallel treatment for superfast propagation
+            yield peers.map((p) => co(function*() {
               let peer = Peer.statics.peerize(p);
               const namedURL = peer.getNamedURL();
               logger.debug(' `--> to peer %s [%s] (%s)', peer.keyID(), peer.member ? 'member' : '------', namedURL);
@@ -158,7 +159,7 @@ function Multicaster (conf, timeout) {
                   yield params.onError(json, doc, namedURL);
                 }
               }
-            }
+            }));
           } else {
             logger.debug('[ISOLATE] Prevent --> new Peer to be sent to %s peer(s)', peers.length);
           }

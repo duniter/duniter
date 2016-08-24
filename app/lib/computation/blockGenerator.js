@@ -604,8 +604,8 @@ function NextBlockGenerator(conf, dal) {
         // Do not rely on certification block UID, prefer using the known hash of the block by its given number
         const targetBlock = yield dal.getBlock(cert.block_number);
         // Check if writable
-        let duration = current ? current.medianTime - parseInt(targetBlock.medianTime) : 0;
-        if (duration <= conf.sigWindow) {
+        let duration = current && targetBlock ? current.medianTime - parseInt(targetBlock.medianTime) : 0;
+        if (targetBlock && duration <= conf.sigWindow) {
           cert.sig = '';
           cert.currency = conf.currency;
           cert.issuer = cert.from;

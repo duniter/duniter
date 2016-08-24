@@ -251,7 +251,10 @@ function BlockGenerator(mainContext, prover) {
     for (const ms of memberships) {
       try {
         if (ms.block != constants.BLOCK.SPECIAL_BLOCK) {
-          let msBasedBlock = yield dal.getBlock(ms.block);
+          let msBasedBlock = yield dal.getBlockByBlockstampOrNull(ms.block);
+          if (!msBasedBlock) {
+            throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
+          }
           let age = current.medianTime - msBasedBlock.medianTime;
           if (age > conf.msWindow) {
             throw 'Too old membership';

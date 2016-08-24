@@ -161,6 +161,14 @@ function FileDAL(params) {
   this.getAbsoluteBlockByNumberAndHash = (number, hash) =>
       that.blockDAL.getAbsoluteBlock(number, hash);
 
+  this.getBlockByBlockstampOrNull = (blockstamp) => {
+    if (!blockstamp) throw "Blockstamp is required to find the block";
+    const sp = blockstamp.split('-');
+    const number = parseInt(sp[0]);
+    const hash = sp[1];
+    return that.getBlockByNumberAndHashOrNull(number, hash);
+  };
+
   this.getBlockByNumberAndHash = (number, hash) => co(function*() {
     try {
       const block = yield that.getBlock(number);

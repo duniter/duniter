@@ -253,7 +253,7 @@ module.exports = {
       MAX: 20 // MAX Y blocks
     },
     SYNC_PEERS_INTERVAL: 3, // Every 3 block average generation time
-    SYNC_BLOCK_INTERVAL: 0.67, // Every 2/3 block average generation time (so: more frequently than duration to create 1 block)
+    SYNC_BLOCK_INTERVAL: 1, // Every block average generation time
     TEST_PEERS_INTERVAL: 10 // In seconds
   },
   PROOF_OF_WORK: {

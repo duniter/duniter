@@ -188,18 +188,6 @@ function extractTransactions(raw, obj) {
       const nbOutputs = parseInt(sp[5]);
       const hasComment = parseInt(sp[6]);
       const start = version == 3 ? 2 : 1;
-      if (version == 3) {
-        const compactSize = 2 // Header + blockstamp
-        + nbSignatories
-        + nbInputs
-        + nbUnlocks
-        + nbOutputs
-        + hasComment
-        + nbSignatories; // Signatures
-        if (compactSize > 100) {
-          throw 'A transaction has a maximum size of 100 lines';
-        }
-      }
       currentTX.version = version;
       if (version == 3) {
         currentTX.blockstamp = lines[i + 1];

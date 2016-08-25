@@ -543,7 +543,7 @@ function BlockGenerator(mainContext, prover) {
       if (blockLen < maxLenOfBlock) {
         transactions.forEach((tx) => {
           const txLen = Transaction.statics.getLen(tx);
-          if (blockLen + txLen <= maxLenOfBlock && tx.version == block.version) {
+          if (txLen <= constants.MAXIMUM_LEN_OF_COMPACT_TX && blockLen + txLen <= maxLenOfBlock && tx.version == block.version) {
             block.transactions.push({ raw: tx.compact() });
           }
           blockLen += txLen;

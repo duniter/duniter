@@ -127,7 +127,7 @@ Transaction.statics.setIssuers = (txs) => {
 
 Transaction.statics.getLen = (tx) => 1 // header
   + (tx.version == 3 ? 1 : 0) // blockstamp
-  + tx.signatories.length * 2 // issuers + signatures
+  + (tx.signatories || tx.issuers).length * 2 // issuers + signatures
   + tx.inputs.length * 2 // inputs + unlocks
   + (tx.comment ? 1 : 0)
   + tx.outputs.length;

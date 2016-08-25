@@ -7,6 +7,7 @@ const keyring    = require('../crypto/keyring');
 const rawer      = require('../ucp/rawer');
 const Identity   = require('../entity/identity');
 const Membership = require('../entity/membership');
+const Transaction = require('../entity/transaction');
 
 let rules = {};
 
@@ -352,6 +353,18 @@ rules.FUNCTIONS = {
     return true;
   }),
 
+  checkTxLen: (block) => co(function *() {
+    const txs = block.getTransactions();
+    // Check rule against each transaction
+    for (const tx of txs) {
+      const txLen = Transaction.statics.getLen(tx);
+      if (txLen > constants.MAXIMUM_LEN_OF_COMPACT_TX) {
+        throw constants.ERRORS.A_TRANSACTION_HAS_A_MAX_SIZE;
+      }
+    }
+    return true;
+  }),
+
   checkTxIssuers: (block) => co(function *() {
     const txs = block.getTransactions();
     // Check rule against each transaction
@@ -481,6 +494,7 @@ function checkBunchOfTransactions(txs, done){
   };
   return co(function *() {
     let local_rule = rules.FUNCTIONS;
+    yield local_rule.checkTxLen(block);
     yield local_rule.checkTxIssuers(block);
     yield local_rule.checkTxSources(block);
     yield local_rule.checkTxRecipients(block);

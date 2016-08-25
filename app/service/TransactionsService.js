@@ -40,6 +40,7 @@ function TransactionService () {
     if (!(yield dal.txsDAL.sandbox.acceptNewSandBoxEntry(transaction, server_pubkey))) {
       throw constants.ERRORS.SANDBOX_FOR_TRANSACTION_IS_FULL;
     }
+    tx.blockstampTime = transaction.blockstampTime;
     yield dal.saveTransaction(tx);
     return tx;
   }));

@@ -300,7 +300,7 @@ function getBestLocal(family) {
       }
     }
   }
-  return _.sortBy(res, function(entry) {
+  const best = _.sortBy(res, function(entry) {
     if (entry.name.match(/^eth0/))  return 0;
     if (entry.name.match(/^eth1/))  return 1;
     if (entry.name.match(/^eth2/))  return 2;
@@ -310,7 +310,8 @@ function getBestLocal(family) {
     if (entry.name.match(/^lo/))    return 6;
     if (entry.name.match(/^None/))  return 7;
     return 10;
-  })[0].value;
+  })[0];
+  return (best && best.value) || "";
 }
 
 function getLAN(family) {

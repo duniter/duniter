@@ -16,8 +16,6 @@
       * [requirements/[PUBKEY]](#wotrequirementspubkey)
       * [certifiers-of/[search]](#wotcertifiers-ofsearch)
       * [certified-by/[search]](#wotcertified-bysearch)
-  * [currency/](#currency)
-      * [parameters](#currencyparameters)
   * [blockchain/](#blockchain)
       * [parameters](#blockchainparameters)
       * [membership](#blockchainmembership)
@@ -603,9 +601,10 @@ Identity data written in the blockchain.
 }
 ```
 
-### currency/*
 
-#### `currency/parameters`
+### blockchain/*
+
+#### `blockchain/parameters`
 
 **Goal**
 
@@ -641,14 +640,6 @@ The synchronization parameters.
   percentRot: 0.67
 }
 ```
-
-### blockchain/*
-
-#### `blockchain/parameters`
-
-**Goal**
-
-Shortcut to [/currency/parameters](#currency-parameters).
 
 Parameters meaning is described under [Protocol parameters](./Protocol.md#protocol-parameters).
 

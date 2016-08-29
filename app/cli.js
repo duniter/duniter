@@ -85,7 +85,7 @@ program
   .option('--home <path>', 'Path to Duniter HOME (defaults to "$HOME/.config/duniter").')
   .option('-d, --mdb <name>', 'Database name (defaults to "duniter_default").')
 
-  .option('--autoconf', 'With `init` command, will guess the best network and key options witout aksing for confirmation')
+  .option('--autoconf', 'With `config` and `init` commands, will guess the best network and key options witout aksing for confirmation')
   .option('--ipv4 <address>', 'IPv4 interface to listen for requests')
   .option('--ipv6 <address>', 'IPv6 interface to listen for requests')
   .option('--remoteh <host>', 'Remote interface others may use to contact this node')

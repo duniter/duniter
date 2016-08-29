@@ -440,7 +440,7 @@ rules.FUNCTIONS = {
 };
 
 function maxAcceleration (conf) {
-  let maxGenTime = Math.ceil(conf.avgGenTime * Math.sqrt(1.066));
+  let maxGenTime = Math.ceil(conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO);
   return Math.ceil(maxGenTime * conf.medianTimeBlocks);
 }
 

@@ -967,8 +967,8 @@ function getPoWMinFor (blockNumber, conf, dal) {
         // Compute PoWMin value
         const duration = medianTime - lastDistant.medianTime;
         const speed = speedRange / duration;
-        const maxGenTime = Math.ceil(conf.avgGenTime * Math.sqrt(1.066));
-        const minGenTime = Math.floor(conf.avgGenTime / Math.sqrt(1.066));
+        const maxGenTime = Math.ceil(conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO);
+        const minGenTime = Math.floor(conf.avgGenTime / constants.POW_DIFFICULTY_RANGE_RATIO);
         const maxSpeed = 1.0 / minGenTime;
         const minSpeed = 1.0 / maxGenTime;
         // logger.debug('Current speed is', speed, '(' + conf.dtDiffEval + '/' + duration + ')', 'and must be [', minSpeed, ';', maxSpeed, ']');

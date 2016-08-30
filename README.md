@@ -1,10 +1,12 @@
-![Duniter logo](https://raw.github.com/duniter/duniter/master/duniter-logos/250×250.png)
+![Duniter logo](https://raw.github.com/duniter/duniter/master/images/250×250.png)
 
 # Duniter [![Build Status](https://api.travis-ci.org/duniter/duniter.png)](https://travis-ci.org/duniter/duniter) [![Coverage Status](https://coveralls.io/repos/duniter/duniter/badge.svg?branch=master&service=github)](https://coveralls.io/github/duniter/duniter?branch=master)
 
 Duniter (previously uCoin) is a libre software allowing to create a new kind of P2P crypto-currencies based on individuals and Universal Dividend.
 
 Inspired by [Bitcoin](https://github.com/bitcoin/bitcoin) and [OpenUDC](https://github.com/Open-UDC/open-udc) projects.
+
+<p align="center"><img src="https://github.com/duniter/duniter/blob/master/images/duniter_admin_ui.png" /></p>
 
 ## Development state
 
@@ -21,9 +23,7 @@ See [Install a node documentation](https://github.com/duniter/duniter/blob/maste
 
 ### Try Sakia Wallet
 
-In the world of crypto-currencies, [Sakia Wallet](http://sakia-wallet.org/) would be called a [SPV](https://en.bitcoin.it/wiki/Thin_Client_Security#Simplified_Payment_Verification_.28SPV.29_Clients) client. It is a graphical client connecting to the network. See this [tutorial](https://forum.duniter.org/t/join-our-new-testnet-currency/813) to join in the testing currency with Sakia.
-
-<p align="center"><img src="http://sakia-wallet.org/img/Dividends.png" /></p>
+In the world of crypto-currencies, [Sakia Wallet](http://sakia-wallet.org) ([repository](https://github.com/duniter/sakia)) would be called a [SPV](https://en.bitcoin.it/wiki/Thin_Client_Security#Simplified_Payment_Verification_.28SPV.29_Clients) client. It is a graphical client connecting to the network. See this [tutorial](https://forum.duniter.org/t/join-our-new-testnet-currency/813) to join in the testing currency with Sakia.
 
 ## Going further
 

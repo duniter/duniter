@@ -358,7 +358,7 @@ function BlockchainService () {
 
   this.startGeneration = () => co(function *() {
     if (!conf.participate) {
-      throw 'This node is configured for not participating to computation blocks.';
+      throw 'This node is configured for not participating to compute blocks.';
     }
     if (!selfPubkey) {
       throw 'No self pubkey found.';
@@ -367,17 +367,17 @@ function BlockchainService () {
     const isMember = yield dal.isMember(selfPubkey);
     let powCanceled = '';
     if (!isMember) {
-      powCanceled = 'Local node is not a member. Waiting to be a member before computation a block.';
+      powCanceled = 'Local node is not a member. Waiting to be a member before computing a block.';
     }
     else {
       current = yield dal.getCurrentBlockOrNull();
       if (!current) {
-        powCanceled = 'Waiting for a root block before computation new blocks';
+        powCanceled = 'Waiting for a root block before computing new blocks';
       }
       else {
         const lastIssuedByUs = current.issuer == selfPubkey;
         if (lastIssuedByUs) {
-          logger.warn('Waiting ' + conf.powDelay + 's before starting computation next block...');
+          logger.warn('Waiting ' + conf.powDelay + 's before starting to compute next block...');
           try {
             yield prover.waitBeforePoW();
           } catch (e) {

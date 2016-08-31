@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ##########################
-#    UCOIN EXECUTABLE
+#    DUNITER EXECUTABLE
 #
 # Wraps bin/duniter.js that is called with Node.js
 #
@@ -35,14 +35,14 @@ duniter() {
 
 	VERSION=`$NODE -v`
 
-	if [[ $VERSION != v5* && $VERSION != v6* ]]; then
-	  echo "$NODE v5 or v6 is required";
+	if [[ $VERSION != v5* && $VERSION != v4* ]]; then
+	  echo "$NODE v5 or v4 is required";
 	else
 
 		case "$1" in
 
 		#---------------------------------
-		#  UCOIN DAEMON MANAGEMENT
+		#  DUNITER DAEMON MANAGEMENT
 		#---------------------------------
 
 		webwait|webstart|webstop|webrestart|start|stop|restart)
@@ -59,7 +59,7 @@ duniter() {
 		;;
 
 		#---------------------------------
-		#  UCOIN CLI COMMANDS
+		#  DUNITER CLI COMMANDS
 		#---------------------------------
 
 		*)

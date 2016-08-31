@@ -301,15 +301,14 @@ function getBestLocal(family) {
     }
   }
   const best = _.sortBy(res, function(entry) {
-    if (entry.name.match(/^eth0/))  return 0;
-    if (entry.name.match(/^eth1/))  return 1;
-    if (entry.name.match(/^eth2/))  return 2;
-    if (entry.name.match(/^wlan0/)) return 3;
-    if (entry.name.match(/^wlan1/)) return 4;
-    if (entry.name.match(/^wlan2/)) return 5;
-    if (entry.name.match(/^lo/))    return 6;
-    if (entry.name.match(/^None/))  return 7;
-    return 10;
+    if (entry.name.match(/^enp\ds\d/))    return 0;
+    if (entry.name.match(/^enp\ds\df\d/)) return 1;
+    if (entry.name.match(/^eth\d/))       return 2;
+    if (entry.name.match(/^wlp\ds\d/))    return 3;
+    if (entry.name.match(/^wlan\d/))      return 4;
+    if (entry.name.match(/^lo/))          return 5;
+    if (entry.name.match(/^None/))        return 6;
+    return 7;
   })[0];
   return (best && best.value) || "";
 }

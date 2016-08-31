@@ -4,6 +4,7 @@
 
 const Q = require('q');
 const co = require('co');
+const constants = require('../../constants');
 const AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = BlockDAL;
@@ -68,6 +69,12 @@ function BlockDAL(db) {
   });
 
   this.cleanCache = () => current = null;
+
+  /**
+   * Periodically cleans the current block cache.
+   * It seems the cache is not always correct and may stuck the node, so it is preferable to reset it periodically.
+   */
+  setInterval(this.cleanCache, constants.CURRENT_BLOCK_CACHE_DURATION);
 
   this.getCurrent = () => co(function *() {
     if (!current) {

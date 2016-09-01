@@ -49,9 +49,6 @@
       win.moveBy(300, 0);
       win.window.mainWindow = win;
       win.window.gui = gui;
-      win.window.duniter = {
-        version: packageJSON.name
-      };
       win.on('closed', function() {
         // Also close globally the app when main window is closed
         gui.Window.get().close();

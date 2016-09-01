@@ -488,6 +488,12 @@ function Server (dbConf, overrideConf) {
     const obj = parser.syncWrite(raw);
     return yield that.singleWritePromise(obj);
   });
+
+  /**
+   * Retrieve the last linesQuantity lines from the log file.
+   * @param linesQuantity
+   */
+  this.getLastLogLines = (linesQuantity) => this.dal.getLogContent(linesQuantity);
 }
 
 util.inherits(Server, stream.Duplex);

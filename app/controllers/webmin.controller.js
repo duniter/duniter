@@ -3,6 +3,7 @@
 const path = require('path');
 const util = require('util');
 const es = require('event-stream');
+const rp = require('request-promise');
 const stream      = require('stream');
 const _ = require('underscore');
 const Q = require('q');
@@ -468,6 +469,19 @@ function WebAdmin (dbConf, overConf) {
     yield server.unplugFileSystem();
     yield server.cleanDBData();
     return {};
+  });
+
+  this.logsExport = (req) => co(function *() {
+    yield pluggedDALP;
+    const logs = yield server.getLastLogLines(req.params.quantity || 1500);
+    const body = yield rp.post({
+      url: 'http://hastebin.com/documents',
+      body: logs
+    });
+    const res = JSON.parse(body);
+    return {
+      link: 'http://hastebin.com/' + res.key
+    };
   });
 
   function plugForConf() {

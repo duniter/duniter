@@ -857,4 +857,19 @@ function FileDAL(params) {
     that.peerDAL.removeAll();
     return yield that.close();
   });
+
+  this.getLogContent = (linesQuantity) => new Promise((resolve, reject) => {
+    let lines = [], i = 0;
+    const lineReader = require('readline').createInterface({
+      input: require('fs').createReadStream(require('path').join(rootPath, 'duniter.log'))
+    });
+    lineReader.on('line', (line) => {
+      line = "\n" + line;
+      lines.push(line);
+      i++;
+      if (i >= linesQuantity) lines.shift();
+    });
+    lineReader.on('close', () => resolve(lines));
+    lineReader.on('error', (err) => reject(err));
+  });
 }

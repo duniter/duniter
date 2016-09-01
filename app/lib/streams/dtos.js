@@ -450,3 +450,7 @@ dtos.Sandboxes = {
   memberships: dtos.MembershipSandbox,
   transactions: dtos.TransactionSandbox
 };
+
+dtos.LogLink = {
+  link: String
+};

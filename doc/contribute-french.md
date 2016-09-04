@@ -1,10 +1,11 @@
+# Contribuer au code de Duniter
 ## Introduction
 
 Cet article est un tutoriel d'initiation au code source du logiciel Duniter. Celui-ci vous permettra, à travers une succession d'étapes, d'accéder à la maîtrise des outils et méthodes utilisés quotidiennement par les développeurs de Duniter pour créer et modifier le logiciel.
 
-A la fin de ce tutoriel, vous serez donc *capable de modifier le logiciel*. Et si le cœur vous en dit, vous pourrez même réaliser une modification et partager celle-ci avec le dépôt de code principal, afin que celle-ci soit officiellement intégrée et disponible aux utilisateurs !
+À la fin de ce tutoriel, vous serez donc *capable de modifier le logiciel*. Et si le cœur vous en dit, vous pourrez même réaliser une modification et partager celle-ci avec le dépôt de code principal, afin que celle-ci soit officiellement intégrée et disponible aux utilisateurs !
 
-A vos claviers !
+À vos claviers !
 
 ### Sommaire
 
@@ -108,7 +109,7 @@ Ce second niveau vise à obtenir les outils de base pour exécuter le code sourc
 * l'installation du moteur d'exécution JavaScript *Node.js*
 * la vérification du bon fonctionnement du code source *via* les Tests Unitaires (TU)
 
-Si les tests passent, vous aurez dores et déjà un environnement entièrement **fonctionnel** !
+Si les tests passent, vous aurez d’ores et déjà un environnement entièrement **fonctionnel** !
 
 ### Installer Node.js
 
@@ -180,7 +181,7 @@ Une fois téléchargé l'installeur, procédez à l'installation. *Ne choisissez
 
 ### Installer les modules Node.js de Duniter
 
-Duniter repose sur des librairies tierce pour fonctionner appelées *dépendances*, comme par exemple des librairies de cryptographie. En effet, nous n'avons pas tout recodé de zéro et n'avons que peu d'intérêt à le faire.
+Duniter repose sur des librairies tierce pour fonctionner appelées *dépendances*, comme des librairies de cryptographie. En effet, nous n'avons pas tout recodé de zéro et n'avons que peu d'intérêt à le faire.
 
 Et donc, le fait d'avoir cloné les sources n'est en réalité pas suffisant pour lancer l'application. Nous devons obtenir le code des dépendances pour obtenir ainsi l'ensemble du code exécutable du programme. Pour ce faire, retournez dans la console Git et déplacez-vous dans le répertoire cloné :
 
@@ -276,7 +277,7 @@ node bin/duniter start
 
 Ici, le programme principal est `node` (Node.js). Il prend pour argument un fichier JavaScript (ici le fichier `duniter` qui est un fichier JavaScript dont on a retiré l'extension `.js`) du dossier `bin/` qui est présent dans le code source, auquel on peut ajouter un ensemble d'arguments qui constitueront alors les arguments du programme JavaScript.
 
-> On parler communément de programme Node.js pour désigner les programmes JavaScript tournant avec Node.js.
+> On parle communément de programme Node.js pour désigner les programmes JavaScript tournant avec Node.js.
 
 > Notez également que le fichier principal de *Duniter* est *duniter*.
 
@@ -295,7 +296,7 @@ Duniter a besoin d'une configuration minimale pour fonctionner, résumable en 2 
 
 Pour obtenir ces 2 éléments, le plus simple dans est d'utiliser la commande `config` avec l'option `--autoconf` qui tente de résoudre par elle-même ces 2 paramètres :
 
-* la configuration réseau est automatiquement détecté
+* la configuration réseau est automatiquement détectée
 * une paire de clés cryptographiques est générée aléatoirement
 
 Lancez donc la commande :
@@ -346,7 +347,7 @@ node bin/duniter wizard network
   Enter new one
 ```
 
-Comme vous pouvez le constater, la commande vous demande de choisir des valeurs (IPv4, IPv6, port, IPv4 distante, ...). Notez que dans le cas précis de `wizard network`, la commande ne vous posera des questions que concernant la configuration réseau.
+Comme vous pouvez le constater, la commande vous demande de choisir des valeurs (IPv4, IPv6, port, IPv4 distante…). Notez que dans le cas précis de `wizard network`, la commande ne vous posera des questions que concernant la configuration réseau.
 
 Vous pouvez donc changer d'autres parties de votre configuration, par exemple votre trousseau cryptographique avec la commande :
 
@@ -363,7 +364,7 @@ node bin/duniter wizard key
 
 #### Lancer l'application avec la commande `start`
 
-Nous y sommes ! Il est *dores et déjà possible* de démarrer Duniter. Essayez, avec la commande `start` :
+Nous y sommes ! Il est *d’ores et déjà possible* de démarrer Duniter. Essayez, avec la commande `start` :
 
 ```bash
 node bin/duniter start
@@ -427,14 +428,14 @@ Vous pouvez désormais relancer la commande `start` et observer votre nœud loca
 
 Régulièrement, on peut souhaiter vouloir oublier une monnaie existante afin, par exemple, de créer une nouvelle monnaie localement sur son PC à des fins de test.
 
-Pour ce faire, lancer simplement la commande `reset data` qui supprime *les données monétaires uniquement* (blockchain, nom de la monnaie, transactions, identitéss, ...)
+Pour ce faire, lancer simplement la commande `reset data` qui supprime *les données monétaires uniquement* (blockchain, nom de la monnaie, transactions, identitéss…)
 
 
 ```bash
 node bin/duniter reset data
 ```
 
-Il existe également une commande plus large, qui supprime également votre configuration Duniter (réseau, trousseau cryptographique, ...) :
+Il existe également une commande plus large, qui supprime également votre configuration Duniter (réseau, trousseau cryptographique…) :
 
 ```bash
 node bin/duniter reset all
@@ -444,7 +445,7 @@ Voilà, vous connaissez désormais les commandes de base ! Allons maintenant voi
 
 ## Niveau IV : dialoguer via l'API HTTP
 
-Ce 4ème niveau vous amènera à *dialoguer* avec votre nœud une fois lancé. En effet, celui-ci écoute le réseau à travers une API HTTP, nommée [Basic Merkled API (BMA)](https://github.com/duniter/duniter/blob/master/doc/HTTP_API.md). C'est cette via cette interface HTTP que les noeuds dialoguent entre eux, et il est tout à fait possible pour nous de faire de même via un navigateur web : celui-ci est un spécialiste pour faire des requêtes HTTP.
+Ce 4ème niveau vous amènera à *dialoguer* avec votre nœud une fois lancé. En effet, celui-ci écoute le réseau à travers une API HTTP, nommée [Basic Merkled API (BMA)](https://github.com/duniter/duniter/blob/master/doc/HTTP_API.md). C'est cette via cette interface HTTP que les nœuds dialoguent entre eux, et il est tout à fait possible pour nous de faire de même via un navigateur web : celui-ci est un spécialiste pour faire des requêtes HTTP.
 
 Vous réaliserez donc ici :
 
@@ -472,7 +473,7 @@ Nous vous conseillons l'utilisation de Firefox ou Chrome pour ce tutoriel, toute
 
 ### Repérer le point d'écoute de votre nœud
 
-La toute 1ère chose à faire est de connaître l'interface et le port d'écoute de votre nœud pour pouvoir lui envoyer des requête HTTP.
+La toute 1ère chose à faire est de connaître l'interface et le port d'écoute de votre nœud pour pouvoir lui envoyer des requêtes HTTP.
 
 Vous l'avez normalement noté lors de la commande `config --autoconf`. Toutefois si vous ne l'avez pas fait, vous pouvez toujours retrouver votre configuration dans le dossier
 
@@ -484,9 +485,9 @@ C'est ce fichier qui contient toute votre configuration : réseau, trousseau cry
 
 Pour rappel, dans cet exemple nous utilisons l'interface `192.168.1.28:21629`. **La vôtre est différente**, mais notez-là car nous allons l'utiliser.
 
-### Lancez votre noeud
+### Lancez votre nœud
 
-La seconde étape est de lancer votre noeud avec la commande :
+La seconde étape est de lancer votre nœud avec la commande :
 
 ```bash
 node bin/duniter start
@@ -524,9 +525,9 @@ Qu'est-ce à dire ? Nous voyons ici un résultat au format JSON, incluant plusie
 * la version du logiciel `0.20.0a84`
 * un autre paramètre obscur `forkWindowSize`
 
-Ces valeurs ont été retournées par votre nœud local, c'est celui-ci qui a répondu à votre requête. D'ailleurs vous pouvez vérifier cela en coupant votre noeud (avec `Ctrl + ^C` par exemple) et en actualisant la page. Celle-ci devrait s'afficher en erreur, puisque votre nœud est alors éteint.
+Ces valeurs ont été retournées par votre nœud local, c'est celui-ci qui a répondu à votre requête. D'ailleurs vous pouvez vérifier cela en coupant votre nœud (avec `Ctrl + ^C` par exemple) et en actualisant la page. Celle-ci devrait s'afficher en erreur, puisque votre nœud est alors éteint.
 
-Et donc, votre noeud a répondu cela en conséquence de votre appel à l'URI particulière `/node/summary`. Si vous testez d'autres URIs, les résultats seront différents. Voyons-en d'autres.
+Et donc, votre nœud a répondu cela en conséquence de votre appel à l'URI particulière `/node/summary`. Si vous testez d'autres URIs, les résultats seront différents. Voyons-en d'autres.
 
 ### Le block courant ave `/blockchain/current`
 
@@ -641,14 +642,14 @@ Nous n'allons pas faire le tour de l'ensemble des méthodes disponibles, mais vo
 Entres méthodes intéressantes, on pourra noter :
 
 * `/wot/members` qui donne la liste des membres actuels de la monnaie
-* `/wot/lookup/[recherche]` qui permet de réaliser une recherche sur une identité publiée sur un noeud
+* `/wot/lookup/[recherche]` qui permet de réaliser une recherche sur une identité publiée sur un nœud
 * `/tx/sources/[cle_publique]` qui permet d'obtenir la liste des sources de monnaie dont bénéficie une clé
 
 Bien évidemment, c'est à vous de juger ce qui vous est intéressant ou non selon vos besoins de développement !
 
 ### Résumé
 
-Nous avons donc pu observer notre noeud configuré puis lancé en ligne de commande, et dialogué avec celui-ci via des requêtes HTTP à l'aide d'un navigateur web.
+Nous avons donc pu observer notre nœud configuré puis lancé en ligne de commande, et dialogué avec celui-ci via des requêtes HTTP à l'aide d'un navigateur web.
 
 Mais ce n'est pas la seule façon d'utiliser Duniter ! Celui-ci possède notamment une interface graphique qui peut très largement être préférée, même durant le développement. Voyons cela.
 
@@ -727,7 +728,7 @@ Il s'agit donc d'interfaces complémentaires, et développer Duniter consiste à
 
 #### L'API classique (BMA)
 
-En ayant lancé l'IHM, vous avez également lancé le fonctionnement "monétaire" de votre noeud : celui-ci est donc toujours accessible *via* les URIs que nous avons vues dans le niveau IV. Vous pouvez tester cela tout de suite avec en accédant par exemple :
+En ayant lancé l'IHM, vous avez également lancé le fonctionnement "monétaire" de votre nœud : celui-ci est donc toujours accessible *via* les URIs que nous avons vues dans le niveau IV. Vous pouvez tester cela tout de suite avec en accédant par exemple :
 
 ```bash
 http://<votre_interface>/blockchain/current
@@ -745,18 +746,18 @@ Cette API ne dispose pas pour le moment de documentation, et par ailleurs ce tut
 
 ## Niveau VI : utiliser un Environnement de Développement Intégré (EDI)
 
-Pour un confort de développement et une efficacité maximum, on utilise généralement un EDI qui facilite grandement nos tâches quotidiennes comme déboguer le code, comparer nos fichiers avec une version précédente, détecter des erreurs automatiquement (variable non déclarée, condition booléenne toujours fausse, erreur de syntaxe, ...) ou naviguer dans le code par simple clic sur les noms de variables ou de fonctions.
+Pour un confort de développement et une efficacité maximum, on utilise généralement un EDI qui facilite grandement nos tâches quotidiennes comme déboguer le code, comparer nos fichiers avec une version précédente, détecter des erreurs automatiquement (variable non déclarée, condition booléenne toujours fausse, erreur de syntaxe…) ou naviguer dans le code par simple clic sur les noms de variables ou de fonctions.
 
 Pour développer en Node.js, nous choisissons d'utiliser [WebStorm de JetBrains](https://www.jetbrains.com/webstorm/).
 > WebStorm *n'est pas un logiciel libre.* Toutefois, il n'existe pas aujourd'hui d'équivalent libre de ce logiciel aux très nombreux atouts.
 >
-> De plus, ce logiciel est payant mais il peut être utilisé pendant 30 jours gratuitement. Aussi cela suffit pour suivre ce tutoriel.
+> De plus, ce logiciel est payant, mais il peut être utilisé pendant 30 jours gratuitement. Aussi cela suffit pour suivre ce tutoriel.
 >
 > Mais si vous souhaitez poursuivre les développements, alors :
 >
 > * Le coût pour un individu est [peu cher la 1ère année](https://www.jetbrains.com/webstorm/buy/#edition=personal).
 > * De plus, il est également **gratuit pour les projets OpenSource** qui peuvent bénéficier de licences accordées sur demande par JetBrains. Duniter bénéficie déjà de 2 licences, dont 1 est disponible, et si vous décidez de vous investir dans le logiciel, nous pourrons en obtenir une spécialement pour vous.
-> * Et si vraiment, vraiment ... vous ne voulez pas payer et préférez les *logiciels libres sinon rien*, alors vous pourrez toujours utiliser d'autres outils pour développer. Vous pourrez par exemple utiliser [node-inspector](https://github.com/node-inspector/node-inspector) pour déboguer et [Atom](https://atom.io/) comme éditeur de code source, tout en utilisant [git-cola](https://git-cola.github.io/) comme outil graphique pour la gestion du code source. *Mais n'allez dans cette direction qu'en étant suffisamment expérimenté en tant que développeur, au risque de vous perdre !*
+> * Et si vraiment, vraiment… vous ne voulez pas payer et préférez les *logiciels libres sinon rien*, alors vous pourrez toujours utiliser d'autres outils pour développer. Vous pourrez par exemple utiliser [node-inspector](https://github.com/node-inspector/node-inspector) pour déboguer et [Atom](https://atom.io/) comme éditeur de code source, tout en utilisant [git-cola](https://git-cola.github.io/) comme outil graphique pour la gestion du code source. *Mais n'allez dans cette direction qu'en étant suffisamment expérimenté en tant que développeur, au risque de vous perdre !*
 
 Ne sous-estimez pas l'impact d'un EDI, les possibilités apportées par ce genre d'outil peuvent créer un énorme fossé entre deux développeurs, selon que l'un d'eux utilise ce type d'outil ou non. Aide à la saisie, visualisation du code (dans l'espace : accès rapide à l'ensemble des fichiers, et dans le temps avec l'historique du code source intégré), débogage à l'exécution, validation et partage rapide du code sont autant de fonctions qui changent crucialement votre rapport au code, et donc au logiciel final.
 
@@ -783,7 +784,8 @@ L'EDI va alors s'ouvrir, et vous pourrez conserver l'icône de lancement dans le
 
 Lancez simplement l'installeur qui ajoutera WebStorm à vos programmes. Puis lancez- le.
 
-### Ouvrir le projet `duniter`
+### Configuration de Webstorm
+#### Ouvrir le projet `duniter`
 
 Au premier lancement de WebStorm, outre l'acceptation de la période d'essai de 30 jours, vous obtiendrez la fenêtre suivante :
 
@@ -841,7 +843,7 @@ Pour terminer, cliquez sur "OK".
 
 #### Désactiver le watcher Babel
 
-Etant donné que nous développons du JavaScript en norme ECMAScript 6, WebStorm propose de transpiler notre code en ECMAScript 5 (c'est-à-dire, transformer le code ES6 récent et à peine supporté par les navigateurs en ES5 qui lui est supporté). Refusez cela en cliquant sur "Dismiss" dans la barre de notification verte :
+Étant donné que nous développons du JavaScript en norme ECMAScript 6, WebStorm propose de transpiler notre code en ECMAScript 5 (c'est-à-dire, transformer le code ES6 récent est à peine supporté par les navigateurs en ES5 qui lui est supporté). Refusez cela en cliquant sur "Dismiss" dans la barre de notification verte :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/0f53272a6243904dc6ad7c89e9dcf534fe636d39.png" width="690" height="90">
 
@@ -859,9 +861,10 @@ puis cliquez sur "Edit Configurations...". Là, cliquez sur le bouton "+" tout �
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/063475258b7417d1d574cb1284463df36755288d.png" width="273" height="241">
 
-Ici, renseignez simplement 2 paramètres :
+Ici, renseignez simplement les paramètres :
 
 * `Extra Mocha options` à `--timeout 20000`
+- Ajoutez le chemin vers le dossier `test`
 * Cochez `Include subdirectories
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/4edfedce3086215f47ecc5d02f18863578c4d72e.png" width="413" height="137">
@@ -892,17 +895,17 @@ Félicitations, votre EDI est correctement configuré ! Allons au niveau suivant
 
 Comme vous avez pu le remarquer, lancer la totalité des tests unitaires prend un certain temps. Pendant les développements, nous travaillons en général sur une fonctionnalité ou un bug précis. Aussi, nous ne lançons la totalité des tests qu'à la fin de nos développements, juste avant de *commiter* (d'ajouter les modifications dans l'historique de code Git).
 
-### Lancer un test à partir d'un fichier
+### Lancer un test à partir d’un fichier
 
-A la place, nous lançons *un seul* fichier de test qui concerne le bug ou la fonctionnalité développée. Imaginons par exemple que nous développions un code assurant la validité du format d'une transaction Duniter. Alors, il est possible de lancer le fichier de test associé : `test/fast/tx_format.js` (c'est un code que nous avons déjà commencé à réaliser). Faites un clic droit sur le fichier puis lancez le test unitaire en choisissant le menu "Run" :
+À la place, nous lançons *un seul* fichier de test qui concerne le bug ou la fonctionnalité développée. Imaginons par exemple que nous développions un code assurant la validité du format d'une transaction Duniter. Alors, il est possible de lancer le fichier de test associé : `test/fast/tx_format.js` (c'est un code que nous avons déjà commencé à réaliser). Faites un clic droit sur le fichier puis lancez le test unitaire en choisissant le menu "Run" :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/e3d9901bd7379dbb4721287071a0a1027b17e15e.png" width="430" height="100">
 
 Ce test a été un succès et réalisé en 5 ms. Parfait !
 
-### Savoir qu'un fichier permet de lancer un test
+### Savoir qu’un fichier permet de lancer un test
 
-WebStorm précise qu'un fichier peut être exécuté comme un test à l'aide d'un pictogramme : regardez bien cette imprssion d'écran :
+WebStorm précise qu'un fichier peut être exécuté comme un test à l'aide d'un pictogramme : regardez bien cette impression d'écran :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/09047a30fc8bc51b387dbb14522f9943c94a8eb2.png" width="180" height="88">
 
@@ -910,7 +913,7 @@ On peut voir que le fichier `tx_format` possède une icône de lancement (picto 
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/d1e8de56b9a0c02a0623840c5a3da84bc9b46f13.png" width="534" height="132">
 
-Les tests ne concernent donc que les fichiers avec ce pictogramme. Pas la peine d'essayer de lancer les autres de la même façon ! Sauf ... le fichier `bin/duniter`, comme nous allons le voir au niveau IX !
+Les tests ne concernent donc que les fichiers avec ce pictogramme. Pas la peine d'essayer de lancer les autres de la même façon ! Sauf … le fichier `bin/duniter`, comme nous allons le voir au niveau IX !
 
 ## Niveau IX : lancer Duniter avec WebStorm
 
@@ -940,11 +943,11 @@ Bien évidemment, si vous vous rendez à l'adresse http://localhost:9220, alors 
 
 Voyons désormais le plus gros intérêt à faire cela "passer par WebStorm" : les points d'arrêts.
 
-## Niveau X : observer l'exécution du code avec un point d'arrêt
+## Niveau X : observer l’exécution du code avec un point d’arrêt
 
-Il s'agit là probablement de la chose la plus puissante qu'un outil de développement, et par la même le développeur, puisse faire : ajouter un point d'arrêt dans son programme.
+Il s'agit là probablement de la chose la plus puissante qu'un outil de développement, et par la même le développeur, puisse faire : ajouter un [point d'arrêt](https://fr.wikipedia.org/wiki/Point_d%27arr%C3%AAt_(informatique)) dans son programme.
 
-Pour rappel, cela permet de mettre littéralement le programme en pause. Mais petit supplément chocolat : on peut absolument **tout voir de l'état de son code** : contenu des variables, emplacement dans la pile d'appel, écriture de cod à la volée en tenant compte des variables disponibles, et j'en passe.
+Pour rappel, cela permet de mettre littéralement le programme en pause. Mais petit supplément chocolat : on peut absolument **tout voir de l'état de son code** : contenu des variables, emplacement dans la pile d'appel, écriture de code à la volée en tenant compte des variables disponibles, et j'en passe.
 
 Bref, le point d'arrêt est un outil à vénérer. Voyons comment l'utiliser dans WebStorm.
 
@@ -966,23 +969,23 @@ Observant cela avec attention. Notons entre autres :
 * la fenêtre inférieure de WebStorm qui est la fenêtre de débogage
   * on y voit notamment une partie "Variables" indiquant les différentes valeurs des variables à portée comme :
     * `pr` dont la valeur est un objet `Peer`
-    * `pr.version` dont la valeur est `"2"` : cela tombe bien, car nous avons mis un point d'arrête sur une ligne dont le but est de vérifier que pr.version est bien égal à `"2"` : ce test passera.
+    * `pr.version` dont la valeur est `"2"` : cela tombe bien, car nous avons mis un point d'arrêt sur une ligne dont le but est de vérifier que pr.version est bien égal à `"2"` : ce test passera.
 
 On peut donc ainsi comprendre tout ce qui se passe dans Duniter. Ici il s'agit d'un test automatisé, mais on peut faire exactement la même chose avec `bin/duniter` comme nous allons le voir au prochain niveau !
 
-## Niveau XI : point d'arrêt d'une commande
+## Niveau XI : point d’arrêt d’une commande
 
-Continuons avec la commande `webwait`, et tentons d'y poser un point d'arrêt. Rendez-vous dans le fichier `bin/duniter` à la ligne 830.
+Continuons avec la commande `webwait`, et tentons d'y poser un point d'arrêt. Rendez-vous dans le fichier `app/cli.js` à la ligne 859.
 
-Ajoutons 2 points d'arrêt : 1 en ligne 830 et un autre en ligne 831 :
+Ajoutons deux points d'arrêt : un en ligne 859 et un autre en ligne 860 :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/a039e658be64a3f575f5832d7e33b51e1f1501b7.png" width="466" height="128">
 
-Maintenant, lançons la commande webwait en sélectionnant la configuration "commande webwait" puis en choisissant le bouton de débogage en forme d'insect (de *bug* en anglais) :
+Maintenant, lançons la commande webwait en sélectionnant la configuration "commande webwait" pour le fichier `bin/duniter` puis en choisissant le bouton de débogage en forme d'insect (de *bug* en anglais) :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/d3219eb54752acf0c91fa5f805f81d2cd12647cd.png" width="302" height="36">
 
-Comme nous pouvons le voir, la magie opère à nouveau : le code s'arrête sur notre 1er point de débogage, ligne 830.
+Comme nous pouvons le voir, la magie opère à nouveau : le code s'arrête sur notre 1er point de débogage, ligne 859.
 
 Si l'on observe l'onglet "Console" de la fenêtre de debug (= débogage), on peut y voir ceci :
 
@@ -1000,7 +1003,7 @@ Le programme s'est arrêté cette fois au second point d'arrêt, et on peut obse
 
 C'est donc que la fonction `webInit()` a *peut-être* été la cause de cet appel. Vérifions.
 
-### Visualisation de la pile d'appel
+### Visualisation de la pile d’appel
 
 Recherchons le chaîne de caractères `"Plugging file system..."` dans le code pour repérer un éventuel appel. Pour cela, utilisez le raccourci `Ctrl + Shift + F` :
 
@@ -1010,7 +1013,7 @@ Pius cliquez sur "Find". Vous obtiendrez le résultat suivant :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/48f80f1e07828edab1601f4414f605b995143ddd.png" width="471" height="227">
 
-Double-cliquez sur le résultat trouvé, et vous serez alors amené au fichier `server.js`, ligne 72. Ajoutez-y un point d'arrêt :
+Double-cliquez sur le résultat trouvé, et vous serez alors amené au fichier `server.js`, ligne 75. Ajoutez-y un point d'arrêt :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/789c7fbb457d3f780316a2cf164ed45f82d0c701.png" width="448" height="94">
 
@@ -1022,21 +1025,23 @@ Si vous faites de nouveau F9, vous arriverez alors à cet écran :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/a6771e01590846568f895871d0d9c9aa8a9666d7.png" width="620" height="499">
 
-Cela signifie une 1ère chose, c'est que ce point d'arrête intervient manifestement *avant* le celui du fichier `duniter` ligne 831.
+Cela signifie une 1ère chose, c'est que ce point d'arrêt intervient manifestement *avant* le celui du fichier `app/cli.js` ligne 859.
 
-Et si l'on regarde la pile d'appel (colonne "Frames" de la fenêtre de debug), on peut repérer que c'est la fonction en ligne 858 du fichier `duniter` qui appelle ce code d'information "Plugging file system...".
+Et si l'on regarde la pile d'appel (colonne "Frames" de la fenêtre de debug), on peut repérer que c'est la fonction en ligne 890 du fichier `app/cli.js` qui appelle ce code d'information "Plugging file system...".
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/5a5f72bbdc39f897fba4ad8a8383dca5e0d67a2f.png" width="620" height="499">
 
-Et à quoi correspond cette ligne 858 ? Cliquons sur cette ligne dans le colonne "Frames" pour y être amené. Et où arrivons nous ? Dans la fonction `webInit()` !
+Et à quoi correspond cette ligne 890 ? Cliquons sur cette ligne dans le colonne "Frames" pour y être amené. Et où arrivons-nous ? Dans la fonction `webInit()` !
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/e31c24b98d23ab1f4e6446cb39d28dbb94fedb50.png" width="690" height="260">
 
 On peut donc en déduire que c'est **la fonction `webInit()` est responsable de l'appel du code** informant l'utilisateur que le logiciel est en train de "Brancher le système de fichiers...".
 
-Quoi de transcendant à cela ? A priori rien. Mais cela signifie une chose très importante : **il n'est pas nécessaire de connaître l'architecture complète de l'application pour comprendre ce qu'elle fait.** Il suffit de placer les points d'arrêts aux endroits qui vous intéressent pour explorer la totalité des chemins d'appels, et donc de comprendre la responsabilité de chaque partie du code.
+Quoi de transcendant à cela ? A priori rien. Mais, cela signifie une chose très importante : **il n'est pas nécessaire de connaître l'architecture complète de l'application pour comprendre ce qu'elle fait.** Il suffit de placer les points d'arrêts aux endroits qui vous intéressent pour explorer la totalité des chemins d'appels, et donc de comprendre la responsabilité de chaque partie du code.
 
-> A noter qu'il s'agit d'une technique simple et très efficace quand l'on souhaite comprendre un projet libre dont on ne connaît *a priori* rien. Votre serviteur s'en sert très régulièrement pour le développement de Duniter pour les dépendances qu'il utilise : celles-ci se composent de fichiers JavaScript, et sont par conséquent *également* débogables à l'exécution de Duniter.
+> À noter qu'il s'agit d'une technique simple et très efficace quand l'on souhaite comprendre un projet libre dont on ne connaît *a priori* rien. Votre serviteur s'en sert très régulièrement pour le développement de Duniter pour les dépendances qu'il utilise : celles-ci se composent de fichiers JavaScript, et sont par conséquent *également* débogables à l'exécution de Duniter.
+
+Enlevez les points d’arrêts pour le niveau suivant.
 
 ## Niveau XII : déboguer un appel HTTP
 
@@ -1045,7 +1050,7 @@ Nous avons vu comment déboguer le code d'un test unitaire, puis celui d'une com
 Rappelez-vous, il s'agit des appels d'URL dans votre navigateur  web de la forme :
 
 ```text
-http://<votre_interface>/node/summary
+http://<adresse>:<port>/node/summary
 ```
 
 Essayons cette fois de déboguer un appel à l'URI `/wot/lookup/[recherche]`, qui permet de rechercher les informations disponibles pour une identité dont l'identifiant UID ou la clé publique contiendrait le valeur `[recherche]`.
@@ -1060,9 +1065,9 @@ Nous considérerons que vous savez désormais comment lancer l'application en mo
   * mettez comme fichier cible `bin/duniter`
   * valorisez les arguments avec `start`
 
-### Placer un point d'arrêt pour les appels HTTP
+### Placer un point d’arrêt pour les appels HTTP
 
-Petit point d'architecture. Il est en fait assez simple de trouver les points de réponse HTTP dans le code, à partir du fichier `app/lib/streams/bma.js`. Ouvrez-le et voyez le code suivant :
+Petit point d'architecture. Il est en fait assez simple de trouver les points de réponse HTTP dans le code, à partir du fichier `app/lib/streams/routes.js`. Ouvrez-le et voyez le code suivant :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/6441a732cca56a89b94ec760b7b721da7526fc1b.png" width="620" height="499">
 
@@ -1072,7 +1077,7 @@ Comme nous nous intéressons à la méthode `/wot/lookup`, maintenez la touche `
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/1ef8c93170bada28820e2a9a003bf0d68881b136.png" width="97" height="22">
 
-Vous serez alors automatiquement redirigé par l'EDI vers la méthode qui sera effectivement appelée durant l'appel HTTP. Mettons un point d'arrêt ligne 25 par exemple :
+Vous serez alors automatiquement redirigé par l'EDI vers la méthode qui sera effectivement appelée durant l'appel HTTP. Mettons un point d'arrêt ligne 27 par exemple :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/f1868bbbe60e791f2f50aaa1c3fd15e571a69a22.png" width="619" height="111">
 
@@ -1083,21 +1088,21 @@ Si vous accédez à l'URL :
 http://<votre_interface>/wot/lookup/abc
 ```
 
-Alors vous obtiendrez l'arrêt de l'application au point d'arrêt ajouté, et vous devriez avoir la variable `search` valorisée à `abc`. Si vous appyez sur F9, votre navigateur affichera la réponse et le programme sera de nouveau en marche.
+Alors vous obtiendrez l'arrêt de l'application au point d'arrêt ajouté, et vous devriez avoir la variable `search` valorisée à `abc`. Si vous appuyez sur F9, votre navigateur affichera la réponse et le programme sera de nouveau en marche.
 
 Réessayez avec une valeur autre que `abc` pour voir la valeur changer au niveau du point d'arrêt.
 
-### Voir le nombre d'identités trouvées
+### Voir le nombre d’identités trouvées
 
-Regardez la ligne 25 du fichier wot.js que nous débogons actuellement :
+Regardez la ligne 27 du fichier wot.js que nous débogons actuellement :
 
 ```js
-var identities = yield IdentityService.searchIdentities(search);
+const identities = yield IdentityService.searchIdentities(search);
 ```
 
-On pourrait traduire cette ligne en "Mettre dans la variable `identities` le résultat de la recherche renvoyée par la fonction `searchIdentities` de l'objet `IdentityService` avec le paramètre `search` de notre recherche.
+On pourrait traduire cette ligne en : « Mettre dans la variable `identities` le résultat de la recherche renvoyée par la fonction `searchIdentities` de l'objet `IdentityService` avec le paramètre `search` de notre recherche ».
 
-En plaçant un point d'arrêt ligne 26, on pourra alors observer le contenu de cette variable, notamment en ajoutant un "Watcher" :
+En plaçant un point d'arrêt ligne 31, on pourra alors observer le contenu de cette variable, notamment en ajoutant un "Watcher" :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/8a578735e5d318b7294fbd8465ee9689e1e9fa84.png" width="690" height="286">
 
@@ -1105,9 +1110,9 @@ Voyez dans la partie "Watches" la saisie que nous venons de faire : il s'agit de
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/dd777c2d3d0d83ab3686a69299e003a149e44417.png" width="690" height="286">
 
-### Déboguer l'API via un test unitaire
+### Déboguer l’API via un test unitaire
 
-Lancez cette fois le fichier `test/integration/lookup.js` en mode debug. Ce test de 71 lignes contient un algorithme très simple qui fait notamment appel à la méthode `/wot/lookup`. Vous devriez de nouveau vous arrêter sur le point d'arrêt et voir l'appel qui est effectué par le test.
+Lancez cette fois le fichier `test/integration/lookup.js` en mode debug. Ce test de 73 lignes contient un algorithme très simple qui fait notamment appel à la méthode `/wot/lookup`. Vous devriez de nouveau vous arrêter sur le point d'arrêt et voir l'appel qui est effectué par le test.
 
 L'avantage de ce test est que vous n'avez pas à configurer votre nœud local pour qu'il fonctionne : le test *inclut* l'instanciation d'un nœud avec un port donné, et les données sont inscrites en mémoire le temps du test. De quoi relancer sereinement le test pour déboguer efficacement.
 
@@ -1115,32 +1120,20 @@ L'avantage de ce test est que vous n'avez pas à configurer votre nœud local po
 
 Vous avez désormais parcouru les points les plus importants pour **voir** fonctionner techniquement l'application, jusque dans ses tests unitaires.
 
-Dans le prochain et avant dernier niveau, nous vous proposerons de *coder* réellement l'application, et pour un code a publier officiellement dans le dépôt Duniter !
+Dans le prochain et avant dernier niveau, nous vous proposerons de *coder* réellement l'application, et pour un code à publier officiellement dans le dépôt Duniter !
 
 ## Niveau XIII : résoudre un bug
 
-Ce niveau est très simple : il faut résoudre le bug suivant : https://github.com/duniter/duniter/issues/387
+Ce niveau est très simple : il faut résoudre [ce bug](https://github.com/duniter/duniter/issues/387).
+
+> Edit du 21/07/2016 : ce bug est désormais corrigé ! Vous pouvez retrouver la solution accompagnée de ses tests unitaires [sur ce commit](https://github.com/duniter/duniter/commit/9c5ed99f16673d5835edf46db926260d0c7307d3).
 
 J'ai déjà codé le test unitaire permettant de déceler effectivement le bug, dans le test du fichier `lookup.js` du niveau précédent.
 
-Pour le moment le test ne renvoie pas d'alarme, car celui-ci est *désactivé* : pour réactiver le test, il faut supprimer le code `.skip` ligne 60 :
-
-```js
-it.skip('...'
-```
-
-doit devenir :
-
-```js
-it('...'
-```
-
-Si vous exécutez ce fichier, le test vous annoncera une erreur. Or pourtant, le test est correctement écrit : c'est bel et bien un bug de la méthode `/wot/lookup`. A vous de trouver quoi, et de réaliser le correctif.
+Si vous exécutez ce fichier, le test vous annoncera une erreur. Or pourtant, le test est correctement écrit : c'est bel et bien un bug de la méthode `/wot/lookup`. À vous de trouver quoi, et de réaliser le correctif.
 
 Pour savoir si votre code est bon et corrige l'anomalie, relancez le test. S'il ne passe toujours pas, réétudiez le problème, changez votre correctif et relancez le test.
 
 Répétez ce processus jusqu'à ce que le test passe.
 
 Bonne chance !
-
-> Edit du 21/07/2016 : ce bug est désormais corrigé ! Vous pouvez retrouver la solution accompagnée de ses tests unitaires [sur ce commit](https://github.com/duniter/duniter/commit/9c5ed99f16673d5835edf46db926260d0c7307d3).

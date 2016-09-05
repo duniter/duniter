@@ -150,12 +150,11 @@ function BlockGenerator() {
 
         if (!msg.found) {
           const pow = msg.pow;
-          for (let i = 5; i >= 3; i--) {
-            const lowPowRegexp = new RegExp('^0{' + (i) + '}[^0]');
-            if (pow.match(lowPowRegexp)) {
-              logger.info('Matched %s zeros %s with Nonce = %s for block#%s', i, pow, msg.block.nonce, msg.block.number);
-              break;
-            }
+          const lowPowRegexp = new RegExp('^(0{2,})[^0]');
+          const matches = pow.match(lowPowRegexp);
+          // We log only proof with at least 3 zeros
+          if (matches && matches[1].length >= constants.PROOF_OF_WORK.MINIMAL_TO_SHOW) {
+            logger.info('Matched %s zeros %s with Nonce = %s for block#%s', matches[1].length, pow, msg.block.nonce, msg.block.number);
           }
         }
         // Continue...

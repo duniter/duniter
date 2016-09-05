@@ -79,7 +79,7 @@ process.on('message', (stuff) => co(function*() {
       if (charOK) {
         found = pow[nbZeros].match(new RegExp('[0-' + highMark + ']'));
       }
-      if (!found && nbZeros > 0 && j >= Math.max(1, nbZeros - 2)) {
+      if (!found && nbZeros > 0 && j >= constants.PROOF_OF_WORK.MINIMAL_TO_SHOW) {
         yield pSend({ found: false, pow: pow, block: block, nbZeros: nbZeros });
       }
       testsCount++;

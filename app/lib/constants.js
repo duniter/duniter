@@ -257,6 +257,7 @@ module.exports = {
     TEST_PEERS_INTERVAL: 10 // In seconds
   },
   PROOF_OF_WORK: {
+    MINIMAL_TO_SHOW: 3,
     EVALUATION: 1000,
     RELEASE_MEMORY: 10000,
     UPPER_BOUND: [

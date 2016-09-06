@@ -227,7 +227,7 @@ GET technical informations about this peer.
 Technical informations about the node.
 ```json
 {
-  "ucoin": {
+  "duniter": {
     "software": "duniter",
     "version": "0.10.3",
     "forkWindowSize": 10

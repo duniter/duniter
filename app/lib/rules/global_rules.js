@@ -97,7 +97,7 @@ rules.FUNCTIONS = {
     else if (current && nextUD && block.unitbase != nextUD.unitbase) {
       throw Error('UnitBase must be equal to ' + nextUD.unitbase);
     }
-    else if (block.version == 3 && current && block.unitbase != current.unitbase) {
+    else if (block.version == 3 && current && !nextUD && block.unitbase != current.unitbase) {
       throw Error('UnitBase must be equal to previous unit base = ' + current.unitbase);
     }
     return true;

@@ -715,37 +715,37 @@ function FileDAL(params) {
 
   this.unacceptIdentity = that.idtyDAL.unacceptIdentity;
 
+  this.getPreviousMembershipsInfos = (ms) => co(function*() {
+    const previousMS = yield that.msDAL.previousMS(ms.issuer, ms.number);
+    let previousIN = previousMS;
+    if (previousMS.membership !== 'IN') {
+      previousIN = yield that.msDAL.previousIN(ms.issuer, ms.number);
+    }
+    return {
+      previousIN: previousIN,
+      previousMS: previousMS
+    };
+  });
+
   this.unJoinIdentity = (ms) => co(function *() {
-    const previousMSN = yield that.msDAL.previousMS(ms.issuer, ms.number);
-    let previousINN = previousMSN.number;
-    if (previousMSN.membership == 'IN') {
-      previousINN = previousMSN;
-    }
-    else {
-      previousINN = yield that.msDAL.previousIN(ms.issuer, ms.number);
-    }
-    yield that.idtyDAL.unJoinIdentity(ms, previousMSN.number, previousINN.number);
+    const previousMSS = yield that.getPreviousMembershipsInfos(ms);
+    yield that.idtyDAL.unJoinIdentity(ms, previousMSS.previousMS, previousMSS.previousIN);
     yield that.msDAL.unwriteMS(ms);
   });
 
   this.unRenewIdentity = (ms) => co(function *() {
-    const previousMSN = yield that.msDAL.previousMS(ms.issuer, ms.number);
-    let previousINN = previousMSN.number;
-    if (previousMSN.membership == 'IN') {
-      previousINN = previousMSN;
-    }
-    else {
-      previousINN = yield that.msDAL.previousIN(ms.issuer, ms.number);
-    }
-    yield that.idtyDAL.unRenewIdentity(ms, previousMSN.number, previousINN.number);
+    const previousMSS = yield that.getPreviousMembershipsInfos(ms);
+    yield that.idtyDAL.unRenewIdentity(ms, previousMSS.previousMS, previousMSS.previousIN);
     yield that.msDAL.unwriteMS(ms);
   });
 
   this.unLeaveIdentity = (ms) => co(function *() {
-    const previousMSN = yield that.msDAL.previousMS(ms.issuer, ms.number);
-    yield that.idtyDAL.unLeaveIdentity(ms, previousMSN.number);
+    const previousMSS = yield that.getPreviousMembershipsInfos(ms);
+    yield that.idtyDAL.unLeaveIdentity(ms, previousMSS.previousMS, previousMSS.previousIN);
     yield that.msDAL.unwriteMS(ms);
   });
+
+  this.unFlagToBeKicked = that.idtyDAL.unFlagToBeKicked.bind(that.idtyDAL);
 
   this.unExcludeIdentity = that.idtyDAL.unExcludeIdentity;
 

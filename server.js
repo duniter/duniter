@@ -410,7 +410,6 @@ function Server (dbConf, overrideConf) {
     if (current.number <= number) {
       logger.warn('Already reached');
     }
-    that.BlockchainService.revertCurrentBlock();
   });
 
   this.singleWritePromise = (obj) => that.submit(obj);

@@ -59,28 +59,27 @@ describe("Certification chainability", function() {
       yield tac.cert(cat);
       yield cat.join();
       yield tac.join();
-      yield commitS1({ now });
+      yield commitS1({ time: now });
       yield commitS1({
-        time: now + 395
+        time: now + 399
       });
 
       // Should not happen on the first commit due to certPeriod
       yield tic.createIdentity();
       yield tic.join();
       yield cat.cert(tic);
-      yield commitS1({ now });
-      yield commitS1({ now });
-      // We still are at +195, and the certPeriod must be OVER (or equal to) current time to allow new certs from cat.
+      yield commitS1({ time: now + 199 });
+      yield commitS1({ time: now + 199 });
+      // We still are at +199, and the certPeriod must be OVER (or equal to) current time to allow new certs from cat.
       // So if we increment +1
       yield commitS1({
-        time: now + 100
+        time: now + 300
       });
       yield commitS1({
-        time: now + 400
+        time: now + 300
       });
-      yield commitS1({ now });
       // Should be integrated now
-      yield commitS1({ now });
+      yield commitS1({ time: now + 300 });
     });
   });
 
@@ -126,16 +125,9 @@ describe("Certification chainability", function() {
     });
   });
 
-  it('block 6 should have 0 certs', function() {
+  it('block 6 should have 1 certs', function() {
     return expectAnswer(rp('http://127.0.0.1:9225/blockchain/block/6', { json: true }), function(res) {
       res.should.have.property('number').equal(6);
-      res.should.have.property('certifications').length(0);
-    });
-  });
-
-  it('block 7 should have 1 certs', function() {
-    return expectAnswer(rp('http://127.0.0.1:9225/blockchain/block/7', { json: true }), function(res) {
-      res.should.have.property('number').equal(7);
       res.should.have.property('certifications').length(1);
     });
   });

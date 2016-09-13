@@ -148,8 +148,12 @@ function BlockchainService () {
         yield mainContext.checkBlock(obj, constants.WITH_SIGNATURES_AND_POW);
       }
       let res = yield mainContext.addBlock(obj);
-      yield pushStatsForBlocks([res]);
-      that.stopPoWThenProcessAndRestartPoW();
+      try {
+        yield pushStatsForBlocks([res]);
+        that.stopPoWThenProcessAndRestartPoW();
+      } catch (e) {
+        logger.warn("An error occurred after the add of the block", e.stack || e);
+      }
       return res;
     } else if (forkAllowed) {
       // add it as side chain

@@ -111,26 +111,43 @@ function IdentityDAL(db, wotb) {
     return that.saveIdentity(idty);
   });
 
-  this.unJoinIdentity = (ms, previousMSN, previousINN) => co(function *() {
+  this.unJoinIdentity = (ms, previousMS, previousIN) => co(function *() {
     const idty = yield that.getFromPubkey(ms.issuer);
-    idty.currentMSN = previousMSN;
-    idty.currentINN = previousINN;
+    idty.currentMSN = previousMS.number;
+    idty.currentINN = previousIN.number;
+    if (previousMS.membership === 'OUT') {
+      idty.leaving = true;
+    }
     idty.member = false;
+    /**
+     * Note: it is not required to do:
+     *
+     *     `idty.wasMember = false;`
+     *
+     * because this is already done by `unacceptIdentity` method.
+     */
     wotb.setEnabled(false, idty.wotb_id);
     return that.saveIdentity(idty);
   });
 
-  this.unRenewIdentity = (pubkey, previousMSN, previousINN) => co(function *() {
-    const idty = yield that.getFromPubkey(pubkey);
-    idty.currentMSN = previousMSN;
-    idty.currentINN = previousINN;
+  this.unRenewIdentity = (ms, previousMS, previousIN) => co(function *() {
+    const idty = yield that.getFromPubkey(ms.issuer);
+    idty.currentMSN = previousMS.number;
+    idty.currentINN = previousIN.number;
+    if (previousMS.membership === 'OUT') {
+      idty.leaving = true;
+    }
     return that.saveIdentity(idty);
   });
 
-  this.unLeaveIdentity = (pubkey, previousMSN) => co(function *() {
-    const idty = yield that.getFromPubkey(pubkey);
-    idty.currentMSN = previousMSN;
+  this.unLeaveIdentity = (ms, previousMS, previousIN) => co(function *() {
+    const idty = yield that.getFromPubkey(ms.issuer);
+    idty.currentMSN = previousMS.number;
+    idty.currentINN = previousIN.number;
     idty.leaving = false;
+    if (previousMS.membership === 'OUT') {
+      idty.leaving = true;
+    }
     return that.saveIdentity(idty);
   });
 
@@ -249,6 +266,8 @@ function IdentityDAL(db, wotb) {
       'SET expired = NULL ' +
       'WHERE expired = ' + onNumber);
   });
+
+  this.unFlagToBeKicked = () => that.exec('UPDATE ' + that.table + ' SET kick = 0 WHERE kick');
 
   this.kickMembersForMembershipBelow = (maxNumber) => co(function *() {
     const toKick = yield that.sqlFind({

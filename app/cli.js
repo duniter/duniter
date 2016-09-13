@@ -293,7 +293,7 @@ program
   .command('revert [count]')
   .description('Revert (undo + remove) the top [count] blocks from the blockchain. EXPERIMENTAL')
   .action(subCommand(service(function (count, server) {
-    co(function *() {
+    return co(function *() {
       try {
         for (let i = 0; i < count; i++) {
           yield server.revert();
@@ -314,7 +314,7 @@ program
   .command('revert-to [number]')
   .description('Revert (undo + remove) top blockchain blocks until block #[number] is reached. EXPERIMENTAL')
   .action(subCommand(service(function (number, server) {
-    co(function *() {
+    return co(function *() {
       try {
         yield server.revertTo(number);
       } catch (err) {

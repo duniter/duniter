@@ -54,7 +54,10 @@ module.exports = {
 
     server.syncFrom = (otherServer, fromIncuded, toIncluded) => sync(fromIncuded, toIncluded, otherServer, server);
 
-    server.commit = (options) => commit(server)(options);
+    server.commit = (options) => co(function*() {
+      const raw = yield commit(server)(options);
+      return JSON.parse(raw);
+    });
 
     server.lookup2identity = (search) => co(function*() {
       const lookup = yield server.get('/wot/lookup/' + search);

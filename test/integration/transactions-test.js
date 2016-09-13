@@ -108,7 +108,7 @@ describe("Testing transactions", function() {
       // Make the time go so another UD is available
       yield s1.commit({
         version: 2,
-        time: now + 30000
+        time: now + 19840
       });
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(2);

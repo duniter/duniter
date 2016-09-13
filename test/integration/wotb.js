@@ -174,7 +174,9 @@ describe("WOTB module", function() {
         yield cat2.join();
         yield toc2.join();
         yield tic2.join();
-        yield commit(s2)();
+        yield commit(s2)({
+          time: now
+        });
         // Should make MS expire for toc2
         yield commit(s2)({
           time: now + 800
@@ -184,9 +186,13 @@ describe("WOTB module", function() {
         });
         yield cat2.join(); // Renew for not to be kicked!
         yield tic2.join(); // Renew for not to be kicked!
-        yield commit(s2)();
+        yield commit(s2)({
+          time: now + 800
+        });
         // Members excluded
-        yield commit(s2)();
+        yield commit(s2)({
+          time: now + 800
+        });
       });
     });
 
@@ -340,7 +346,7 @@ describe("WOTB module", function() {
         yield tic3.cert(cat3);
         yield cat3.join();
         yield commit(s3)({
-          time: now + 1800
+          time: now + 2700
         });
         /**
          *  cat <-- tic <-- [toc]

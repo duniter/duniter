@@ -47,10 +47,10 @@ function BlockchainContext() {
       const currentBlock = yield that.current();
       block.fork = false;
       yield saveBlockData(currentBlock, block);
+      logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));
       return block;
     }
     catch(err) {
-      logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));
       throw err;
     }
   });

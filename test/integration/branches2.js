@@ -61,7 +61,7 @@ describe("SelfFork", function() {
   before(() => co(function *() {
     const commitS1 = commit(s1);
     const commitS2 = commit(s2, {
-      time: now + 10000000
+      time: now + 37180
     });
 
     yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());

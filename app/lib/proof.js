@@ -64,6 +64,9 @@ process.on('message', (stuff) => co(function*() {
     let i = 0;
     // Time is updated regularly during the proof
     block.time = getBlockTime(block, conf, forcedTime);
+    if (block.number == 0) {
+      block.medianTime = block.time;
+    }
     block.inner_hash = getBlockInnerHash(block);
     while(!found && i < testsPerRound) {
       block.nonce++;
@@ -125,7 +128,10 @@ const computeSpeed = (block, sigFunc) => co(function*() {
 });
 
 function getBlockTime (block, conf, forcedTime) {
-  const now = forcedTime || moment.utc().unix();
+  if (forcedTime) {
+    return forcedTime;
+  }
+  const now = moment.utc().unix();
   const maxAcceleration = rules.HELPERS.maxAcceleration(conf);
   const timeoffset = block.number >= conf.medianTimeBlocks ? 0 : conf.rootoffset || 0;
   const medianTime = block.medianTime;

@@ -217,6 +217,8 @@ function AbstractSQLite(db) {
         return '`' + k + '` >= ?';
       } else if (obj[k].$gt !== undefined) {
         return '`' + k + '` >= ?';
+      }  else if (obj[k].$lt !== undefined) {
+        return '`' + k + '` < ?';
       }  else if (obj[k].$null !== undefined) {
         return '`' + k + '` IS ' + (!obj[k].$null ? 'NOT' : '') + ' NULL';
       }  else if (obj[k].$contains !== undefined) {
@@ -240,6 +242,7 @@ function AbstractSQLite(db) {
         if      (obj[f].$lte  !== undefined)      { pValue = obj[f].$lte;  }
         else if (obj[f].$gte  !== undefined)      { pValue = obj[f].$gte;  }
         else if (obj[f].$gt   !== undefined)      { pValue = obj[f].$gt;   }
+        else if (obj[f].$lt   !== undefined)      { pValue = obj[f].$lt;   }
         else if (obj[f].$null !== undefined)      { pValue = obj[f].$null; }
         else if (obj[f].$contains !== undefined) { pValue = "%" + obj[f].$contains + "%"; }
         else if (~that.bigintegers.indexOf(f) && typeof obj[f] !== "string") {

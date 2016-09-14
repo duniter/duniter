@@ -11,6 +11,8 @@ const Identity    = require('../../../app/lib/entity/identity');
 const Block       = require('../../../app/lib/entity/block');
 const bma         = require('../../../app/lib/streams/bma');
 const multicaster = require('../../../app/lib/streams/multicaster');
+const network     = require('../../../app/lib/system/network');
+const dtos        = require('../../../app/lib/streams/dtos');
 const duniter     = require('../../../index');
 
 const MEMORY_MODE = true;
@@ -19,6 +21,57 @@ const HOST = '127.0.0.1';
 let PORT = 10000;
 
 module.exports = {
+  
+  fakeSyncServer: (readBlocksMethod) => {
+    
+    const host = HOST;
+    const port = PORT++;
+    
+    return co(function*() {
+      
+      // Meaningful variables
+      const NO_HTTP_LOGS = false;
+      const NO_STATIC_PATH = null;
+
+      // A fake HTTP limiter with no limit at all
+      const noLimit = {
+        canAnswerNow: () => true,
+        processRequest: () => { /* Does nothing */ }
+      };
+
+      const fakeServer = yield network.createServersAndListen("Fake Duniter Server", [{
+        ip: host,
+        port: port
+      }], NO_HTTP_LOGS, NO_STATIC_PATH, (app, httpMethods) => {
+
+        // Mock BMA method for sync mocking
+        httpMethods.httpGET('/network/peering', () => {
+          return co(function*() {
+            return {
+              endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
+            }
+          });
+        }, dtos.Peer, noLimit);
+
+        // Another mock BMA method for sync mocking
+        httpMethods.httpGET('/blockchain/blocks/:count/:from', (req) => {
+
+          // What do we do on /blockchain/blocks request
+          let count = parseInt(req.params.count);
+          let from = parseInt(req.params.from);
+
+          return readBlocksMethod(count, from);
+
+        }, dtos.Blocks, noLimit);
+      });
+
+      yield fakeServer.openConnections();
+      return {
+        host: host,
+        port: port
+      };
+    });
+  },
 
   /**
    * Creates a new memory duniter server for Unit Test purposes.

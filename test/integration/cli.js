@@ -1,15 +1,30 @@
 "use strict";
 
-const spawn  = require('child_process').spawn;
-const path   = require('path');
-const co     = require('co');
-const should = require('should');
-const cli    = require('../../app/cli');
+const spawn     = require('child_process').spawn;
+const path      = require('path');
+const co        = require('co');
+const should    = require('should');
+const toolbox   = require('./tools/toolbox');
+const cli       = require('../../app/cli');
 const constants = require('../../app/lib/constants');
 
 const DB_NAME = "unit_tests";
 
 describe("CLI", function() {
+
+  let fakeServer;
+
+  before(() => co(function*() {
+
+    const blockchain = require('../data/blockchain.json');
+    fakeServer = yield toolbox.fakeSyncServer((count, from) => {
+
+      return co(function*() {
+        const blocks = blockchain.blocks;
+        return blocks.slice(from, from + count);
+      });
+    });
+  }));
 
   it('config --autoconf', () => co(function*() {
     let res = yield execute(['config', '--autoconf']);
@@ -25,14 +40,14 @@ describe("CLI", function() {
 
   it('sync 2200 blocks (fast)', () => co(function*() {
     yield execute(['reset', 'data']);
-    yield execute(['sync', 'duniter.org', '8999', '2200', '--nocautious', '--nointeractive']);
+    yield execute(['sync', fakeServer.host, fakeServer.port, '2200', '--nocautious', '--nointeractive']);
     const res = yield execute(['export-bc', '--nostdout']);
     res[res.length - 1].should.have.property('number').equal(2200);
     res.should.have.length(2200 + 1);
   }));
 
   it('sync 5 blocks (cautious)', () => co(function*() {
-    yield execute(['sync', 'duniter.org', '8999', '2204', '--nointeractive']);
+    yield execute(['sync', fakeServer.host, fakeServer.port, '2204', '--nointeractive']);
     const res = yield execute(['export-bc', '--nostdout']);
     res[res.length - 1].should.have.property('number').equal(2204);
     res.should.have.length(2204 + 1);

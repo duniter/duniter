@@ -12,18 +12,16 @@ const DB_NAME = "unit_tests";
 
 describe("CLI", function() {
 
-  let fakeServer;
+  let farmOfServers = [], fakeServer;
 
   before(() => co(function*() {
 
     const blockchain = require('../data/blockchain.json');
-    fakeServer = yield toolbox.fakeSyncServer((count, from) => {
+    const onReadBlockchainChunk = (count, from) => Promise.resolve(blockchain.blocks.slice(from, from + count));
+    const onReadParticularBlock = (number) => Promise.resolve(blockchain.blocks[number]);
 
-      return co(function*() {
-        const blocks = blockchain.blocks;
-        return blocks.slice(from, from + count);
-      });
-    });
+    farmOfServers = yield Array.from({ length: 3 }).map(() => toolbox.fakeSyncServer(onReadBlockchainChunk, onReadParticularBlock));
+    fakeServer = farmOfServers[0];
   }));
 
   it('config --autoconf', () => co(function*() {

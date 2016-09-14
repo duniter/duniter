@@ -22,7 +22,7 @@ let PORT = 10000;
 
 module.exports = {
   
-  fakeSyncServer: (readBlocksMethod) => {
+  fakeSyncServer: (readBlocksMethod, readParticularBlockMethod) => {
     
     const host = HOST;
     const port = PORT++;
@@ -53,6 +53,14 @@ module.exports = {
           });
         }, dtos.Peer, noLimit);
 
+        // Mock BMA method for sync mocking
+        httpMethods.httpGET('/network/peering/peers', () => {
+          return co(function*() {
+            return {
+            }
+          });
+        }, dtos.MerkleOfPeers, noLimit);
+
         // Another mock BMA method for sync mocking
         httpMethods.httpGET('/blockchain/blocks/:count/:from', (req) => {
 
@@ -63,6 +71,16 @@ module.exports = {
           return readBlocksMethod(count, from);
 
         }, dtos.Blocks, noLimit);
+
+        // Another mock BMA method for sync mocking
+        httpMethods.httpGET('/blockchain/block/:number', (req) => {
+
+          // What do we do on /blockchain/blocks request
+          let number = parseInt(req.params.number);
+
+          return readParticularBlockMethod(number);
+
+        }, dtos.Block, noLimit);
       });
 
       yield fakeServer.openConnections();

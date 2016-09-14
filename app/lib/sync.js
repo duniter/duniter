@@ -106,13 +106,52 @@ function Synchroniser (server, host, port, conf, interactive) {
       watcher.writeStatus('Connecting to ' + host + '...');
       const lCurrent = yield dal.getCurrentBlockOrNull();
       const localNumber = lCurrent ? lCurrent.number : -1;
+      let rCurrent;
       if (isNaN(to)) {
-        const rCurrent = yield Q.nfcall(node.blockchain.current);
-        to = rCurrent.number;
+        rCurrent = yield Q.nfcall(node.blockchain.current);
+      } else {
+        rCurrent = yield Q.nfcall(node.blockchain.block, to);
       }
+      to = rCurrent.number;
 
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = (askedCautious === true || (askedCautious === undefined && localNumber >= 0));
+      const nbBlocksToDownload = Math.max(0, to - localNumber);
+      const numberOfChunksToDownload = Math.ceil(nbBlocksToDownload / CONST_BLOCKS_CHUNK);
+
+      // Starts the download RIGHT NOW
+      let downloadedBlocks = [];
+      for (let i = 0; i < numberOfChunksToDownload; i++) {
+        downloadedBlocks[i] = co(function*() {
+
+          // Wait previous download to complete before starting
+          yield (i == 0 ? Promise.resolve() : downloadedBlocks[i - 1]);
+
+          // TODO: wait for the 5 preceding downloads to complete before starting a new
+
+          // The algorithm to download a chunk
+          const from = localNumber + 1 + i * CONST_BLOCKS_CHUNK;
+          const count = i < numberOfChunksToDownload - 1 ? CONST_BLOCKS_CHUNK : (nbBlocksToDownload % CONST_BLOCKS_CHUNK);
+
+          let blocks = [];
+          try {
+            watcher.writeStatus('Getting chunck from ' + from + ' to ' + (from + count));
+            blocks = yield Q.nfcall(node.blockchain.blocks, count, from);
+
+            // TODO: check if the chain of block is correct compared to its previous one
+
+            watcher.downloadPercent(Math.floor((from + count) / to * 100));
+          } catch (e) {
+            logger.error(e);
+            if (e.httpCode != 404) {
+              throw e;
+            }
+          }
+
+          return blocks;
+        });
+      }
+
       let dao = pulling.abstractDao({
         lastBlock: null,
 
@@ -126,7 +165,7 @@ function Synchroniser (server, host, port, conf, interactive) {
         }),
 
         // Get the remote blockchain (bc) current block
-        remoteCurrent: (peer) => Q.nfcall(peer.blockchain.current),
+        remoteCurrent: (peer) => Promise.resolve(rCurrent),
 
         // Get the remote peers to be pulled
         remotePeers: () => co(function*() {
@@ -136,23 +175,12 @@ function Synchroniser (server, host, port, conf, interactive) {
         // Get block of given peer with given block number
         getLocalBlock: (number) => dal.getBlock(number),
 
-        // Get block of given peer with given block number
         downloadBlocks: (thePeer, number) => co(function *() {
-          let blocks = [];
-          if (number <= to) {
-            const nextChunck = Math.min(to - number + 1, CONST_BLOCKS_CHUNK);
-
-            try {
-              watcher.writeStatus('Getting chunck from ' + number + ' to ' + (number + nextChunck));
-              blocks = yield Q.nfcall(thePeer.blockchain.blocks, nextChunck, number);
-              watcher.downloadPercent(Math.floor(number / to * 100));
-            } catch (e) {
-              if (e.httpCode != 404) {
-                throw e;
-              }
-            }
-          }
-          return blocks;
+          // Note: we don't care about the particular peer asked by the method. We use the network instead.
+          const numberOffseted = number - (localNumber + 1);
+          const targetChunk = Math.floor(numberOffseted / CONST_BLOCKS_CHUNK);
+          // Return the download promise! Simple.
+          return downloadedBlocks[targetChunk];
         }),
 
 

@@ -22,7 +22,7 @@ let PORT = 10000;
 
 module.exports = {
   
-  fakeSyncServer: (readBlocksMethod, readParticularBlockMethod) => {
+  fakeSyncServer: (readBlocksMethod, readParticularBlockMethod, onPeersRequested) => {
     
     const host = HOST;
     const port = PORT++;
@@ -54,12 +54,7 @@ module.exports = {
         }, dtos.Peer, noLimit);
 
         // Mock BMA method for sync mocking
-        httpMethods.httpGET('/network/peering/peers', () => {
-          return co(function*() {
-            return {
-            }
-          });
-        }, dtos.MerkleOfPeers, noLimit);
+        httpMethods.httpGET('/network/peering/peers', onPeersRequested, dtos.MerkleOfPeers, noLimit);
 
         // Another mock BMA method for sync mocking
         httpMethods.httpGET('/blockchain/blocks/:count/:from', (req) => {

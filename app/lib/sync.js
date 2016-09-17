@@ -12,13 +12,13 @@ const logger       = require('./logger')('sync');
 const rawer        = require('./ucp/rawer');
 const constants    = require('../lib/constants');
 const Peer         = require('../lib/entity/peer');
-const Transaction  = require('../lib/entity/transaction');
 const multimeter   = require('multimeter');
 const pulling      = require('../lib/pulling');
 
-const CONST_BLOCKS_CHUNK = 500;
+const CONST_BLOCKS_CHUNK = 250;
 const EVAL_REMAINING_INTERVAL = 1000;
-const COMPUTE_SPEED_ON_COUNT_CHUNKS = 8;
+const CONST_MAX_SIMULTANEOUS_DOWNLOADS = 50;
+
 
 module.exports = Synchroniser;
 
@@ -26,7 +26,7 @@ function Synchroniser (server, host, port, conf, interactive) {
 
   const that = this;
 
-  let speed = 0, syncStart = new Date(), times = [syncStart], blocksApplied = 0;
+  let speed = 0, blocksApplied = 0;
   const baseWatcher = interactive ? new MultimeterWatcher() : new LoggerWatcher();
 
   // Wrapper to also push event stream
@@ -99,6 +99,38 @@ function Synchroniser (server, host, port, conf, interactive) {
       let node = yield peer.connect();
       node.pubkey = peer.pubkey;
       logger.info('Sync started.');
+
+      //=======
+      // Peers (just for P2P download)
+      //=======
+      let peers = [];
+      if (!nopeers) {
+        watcher.writeStatus('Peers...');
+        const merkle = yield dal.merkleForPeers();
+        const getPeers = Q.nbind(node.network.peering.peers.get, node);
+        const json2 = yield getPeers({});
+        const rm = new NodesMerkle(json2);
+        if(rm.root() != merkle.root()){
+          const leavesToAdd = [];
+          const json = yield getPeers({ leaves: true });
+          _(json.leaves).forEach((leaf) => {
+            if(merkle.leaves().indexOf(leaf) == -1){
+              leavesToAdd.push(leaf);
+            }
+          });
+          peers = yield leavesToAdd.map((leaf) => co(function*() {
+            const json3 = yield getPeers({ "leaf": leaf });
+            const jsonEntry = json3.leaf.value;
+            const endpoint = jsonEntry.endpoints[0];
+            watcher.writeStatus('Peer ' + endpoint);
+            return jsonEntry;
+          }));
+        }
+        else {
+          watcher.writeStatus('Peers already known');
+        }
+      }
+
       //============
       // Blockchain
       //============
@@ -116,41 +148,9 @@ function Synchroniser (server, host, port, conf, interactive) {
 
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = (askedCautious === true || (askedCautious === undefined && localNumber >= 0));
-      const nbBlocksToDownload = Math.max(0, to - localNumber);
-      const numberOfChunksToDownload = Math.ceil(nbBlocksToDownload / CONST_BLOCKS_CHUNK);
+      const downloader = new P2PDownloader(localNumber, to, CONST_MAX_SIMULTANEOUS_DOWNLOADS, peers, watcher);
 
-      // Starts the download RIGHT NOW
-      let downloadedBlocks = [];
-      for (let i = 0; i < numberOfChunksToDownload; i++) {
-        downloadedBlocks[i] = co(function*() {
-
-          // Wait previous download to complete before starting
-          yield (i == 0 ? Promise.resolve() : downloadedBlocks[i - 1]);
-
-          // TODO: wait for the 5 preceding downloads to complete before starting a new
-
-          // The algorithm to download a chunk
-          const from = localNumber + 1 + i * CONST_BLOCKS_CHUNK;
-          const count = i < numberOfChunksToDownload - 1 ? CONST_BLOCKS_CHUNK : (nbBlocksToDownload % CONST_BLOCKS_CHUNK);
-
-          let blocks = [];
-          try {
-            watcher.writeStatus('Getting chunck from ' + from + ' to ' + (from + count));
-            blocks = yield Q.nfcall(node.blockchain.blocks, count, from);
-
-            // TODO: check if the chain of block is correct compared to its previous one
-
-            watcher.downloadPercent(Math.floor((from + count) / to * 100));
-          } catch (e) {
-            logger.error(e);
-            if (e.httpCode != 404) {
-              throw e;
-            }
-          }
-
-          return blocks;
-        });
-      }
+      downloader.start();
 
       let dao = pulling.abstractDao({
         lastBlock: null,
@@ -180,7 +180,7 @@ function Synchroniser (server, host, port, conf, interactive) {
           const numberOffseted = number - (localNumber + 1);
           const targetChunk = Math.floor(numberOffseted / CONST_BLOCKS_CHUNK);
           // Return the download promise! Simple.
-          return downloadedBlocks[targetChunk];
+          return downloader.getChunk(targetChunk);
         }),
 
 
@@ -439,6 +439,282 @@ function LoggerWatcher() {
   this.end = () => {
   };
 
+}
+
+function makeQuerablePromise(promise) {
+
+  // Don't create a wrapper for promises that can already be queried.
+  if (promise.isResolved) return promise;
+
+  var isResolved = false;
+  var isRejected = false;
+
+  // Observe the promise, saving the fulfillment in a closure scope.
+  var result = promise.then((v) => { isResolved = true; return v; }, (e)  => { isRejected = true; throw e; });
+  result.isFulfilled = () => isResolved || isRejected;
+  result.isResolved = () => isResolved;
+  result.isRejected = () => isRejected;
+  return result;
+}
+
+function P2PDownloader(localNumber, to, maxParallelDownloads, peers, watcher) {
+
+  const that = this;
+  const PARALLEL_PER_CHUNK = 1;
+  const MAX_DELAY_PER_DOWNLOAD = 15000;
+  const NO_NODES_AVAILABLE = "No node available for download";
+  const TOO_LONG_TIME_DOWNLOAD = "No answer after " + MAX_DELAY_PER_DOWNLOAD + "ms, will retry download later.";
+  const nbBlocksToDownload = Math.max(0, to - localNumber);
+  const numberOfChunksToDownload = Math.ceil(nbBlocksToDownload / CONST_BLOCKS_CHUNK);
+  const chunks          = Array.from({ length: numberOfChunksToDownload }).map(() => null);
+  const processing      = Array.from({ length: numberOfChunksToDownload }).map(() => false);
+  const handler         = Array.from({ length: numberOfChunksToDownload }).map(() => null);
+  const resultsDeferers = Array.from({ length: numberOfChunksToDownload }).map(() => null);
+  const resultsData     = Array.from({ length: numberOfChunksToDownload }).map((unused, index) => new Promise((resolve, reject) => {
+    resultsDeferers[index] = { resolve, reject };
+  }));
+
+  // Create slots of download, in a ready stage
+  let downloadSlots = Math.min(maxParallelDownloads, peers.length);
+
+  let nodes = {};
+
+  /**
+   * Get a list of P2P nodes to use for download.
+   * If a node is not yet correctly initialized (we can test a node before considering it good for downloading), then
+   * this method would not return it.
+   */
+  const getP2Pcandidates = () => co(function*() {
+    let promises = peers.reduce((chosens, other, index) => {
+      if (!nodes[index]) {
+        // Create the node
+        let p = new Peer(peers[index]);
+        nodes[index] = makeQuerablePromise(co(function*() {
+          // We wait for the download process to be triggered
+          // yield downloadStarter;
+          // if (nodes[index - 1]) {
+          //   try { yield nodes[index - 1]; } catch (e) {}
+          // }
+          const node = yield p.connect();
+          // We initialize nodes with the worst possible notation
+          node.tta = MAX_DELAY_PER_DOWNLOAD;
+          return node;
+        }));
+        chosens.push(nodes[index]);
+      } else {
+        chosens.push(nodes[index]);
+      }
+      // Continue
+      return chosens;
+    }, []);
+    let candidates = yield promises;
+    candidates.forEach((c) => {
+      c.tta = c.tta || 0; // By default we say a node is super slow to answer
+      c.ttas = c.ttas || []; // Memorize the answer delays
+    });
+    if (candidates.length === 0) {
+      throw NO_NODES_AVAILABLE;
+    }
+    // We remove the nodes impossible to reach (timeout)
+    let withGoodDelays = _.filter(candidates, (c) => c.tta <= MAX_DELAY_PER_DOWNLOAD);
+    if (withGoodDelays.length === 0) {
+      // No node can be reached, we can try to lower the number of nodes on which we download
+      downloadSlots = Math.floor(downloadSlots / 2);
+      // We reinitialize the nodes
+      nodes = {};
+      // And try it all again
+      return getP2Pcandidates();
+    }
+    const parallelMax = Math.min(PARALLEL_PER_CHUNK, withGoodDelays.length);
+    withGoodDelays = _.sortBy(withGoodDelays, (c) => c.tta);
+    console.log(withGoodDelays.map((c) => [c.tta, [c.host, c.port].join(':')].join(' - ')));
+    withGoodDelays = withGoodDelays.slice(0, parallelMax);
+    withGoodDelays.forEach((c) =>
+      c.tta = (c.tta * 2)) // We temporarily double the tta, because we make a request (if we send a request, obviously the node will need approx. tta time to answer))
+    return withGoodDelays;
+  });
+
+  /**
+   * Download a chunk of blocks using P2P network through BMA API.
+   * @param from The starting block to download
+   * @param count The number of blocks to download.
+   * @param chunkIndex The # of the chunk in local algorithm (logging purposes only)
+   */
+  const p2pDownload = (from, count, chunkIndex) => co(function*() {
+    let candidates = yield getP2Pcandidates();
+    // Book the nodes
+    return yield raceOrCancelIfTimeout(MAX_DELAY_PER_DOWNLOAD, candidates.map((node) => co(function*() {
+      try {
+        const start = Date.now();
+        handler[chunkIndex] = node;
+        watcher.writeStatus('Getting chunck #' + chunkIndex + '/' + numberOfChunksToDownload + ' from ' + from + ' to ' + (from + count) + ' on peer ' + [node.host, node.port].join(':'));
+        let blocks = yield Q.nfcall(node.blockchain.blocks, count, from);
+        node.ttas.push(Date.now() - start);
+        // Only keep a flow of 5 ttas for the node
+        if (node.ttas.length > 5) node.ttas.shift();
+        // Average time to answer
+        node.tta = Math.round(node.ttas.reduce((sum, tta) => sum + tta, 0) / node.ttas.length);
+        watcher.writeStatus('GOT chunck #' + chunkIndex + '/' + numberOfChunksToDownload + ' from ' + from + ' to ' + (from + count) + ' on peer ' + [node.host, node.port].join(':'));
+        return blocks;
+      } catch (e) {
+        // If a node throws an error, do not cancel the download
+        return new Promise((resolve, reject) => setTimeout(reject, MAX_DELAY_PER_DOWNLOAD));
+      }
+    })));
+  });
+
+  /**
+   * Function for downloading a chunk by its number.
+   * @param index Number of the chunk.
+   */
+  const downloadChunk = (index) => co(function*() {
+    // The algorithm to download a chunk
+    const from = localNumber + 1 + index * CONST_BLOCKS_CHUNK;
+    const count = index < numberOfChunksToDownload - 1 ? CONST_BLOCKS_CHUNK : (nbBlocksToDownload % CONST_BLOCKS_CHUNK);
+    try {
+      return yield p2pDownload(from, count, index);
+    } catch (e) {
+      logger.error(e);
+      return downloadChunk(index);
+    }
+  });
+
+  const slots = [];
+  const downloads = {};
+
+  /**
+   * Utility function that starts a race between promises but cancels it if no answer is found before `timeout`
+   * @param timeout
+   * @param races
+   * @returns {Promise}
+   */
+  const raceOrCancelIfTimeout = (timeout, races) => {
+    return Promise.race([
+      // Process the race, but cancel it if we don't get an anwser quickly enough
+      new Promise((resolve, reject) => {
+        setTimeout(() => {
+          reject(TOO_LONG_TIME_DOWNLOAD);
+        }, MAX_DELAY_PER_DOWNLOAD);
+      })
+    ].concat(races));
+  };
+
+  /**
+   * Triggers for starting the download.
+   */
+  let startResolver;
+  const downloadStarter = new Promise((resolve, reject) => startResolver = resolve);
+
+  const chainsCorrectly = (blocks, index) => co(function*() {
+    for (let i = 1; i < blocks.length; i++) {
+      if (blocks[i].number !== blocks[i - 1].number + 1 || blocks[i].previousHash !== blocks[i - 1].hash) {
+        return false;
+      }
+    }
+
+    for (let i = 0; i < blocks.length; i++) {
+      // Note: the hash, in Duniter, is made only on the **signing part** of the block: InnerHash + Nonce
+      if (blocks[i].hash !== hashf(rawer.getBlockInnerHashAndNonceWithSignature(blocks[i])).toUpperCase()) {
+        return false;
+      }
+    }
+
+    const previousChunk = yield that.getChunk(index - 1);
+    const firstBlock = blocks[0];
+    const lastBlock = previousChunk[previousChunk.length - 1];
+    if (firstBlock && lastBlock && (firstBlock.number !== lastBlock.number + 1 || firstBlock.previousHash !== lastBlock.hash)) {
+      return false;
+    }
+    return true;
+  });
+
+  /**
+   * Download worker
+   * @type {*|Promise} When finished.
+   */
+  co(function*() {
+    yield downloadStarter;
+    let doneCount = 0;
+    while (doneCount < chunks.length) {
+      doneCount = 0;
+      // Add as much possible downloads as possible, and count the already done ones
+      for (let i = 0; i < chunks.length; i++) {
+        if (chunks[i] === null && !processing[i] && slots.indexOf(i) === -1 && slots.length < downloadSlots) {
+          slots.push(i);
+          processing[i] = true;
+          downloads[i] = makeQuerablePromise(downloadChunk(i)); // Starts a new download
+        } else if (chunks[i]) {
+          doneCount++;
+        }
+      }
+      watcher.downloadPercent(Math.round(doneCount / numberOfChunksToDownload * 100));
+      let races = slots.map((i) => downloads[i]);
+      if (races.length) {
+        try {
+          yield raceOrCancelIfTimeout(MAX_DELAY_PER_DOWNLOAD, races);
+        } catch (e) {
+          logger.warn(e);
+        }
+        for (let i = 0; i < slots.length; i++) {
+          // We must know the index of what resolved/rejected to free the slot
+          const doneIndex = slots.reduce((found, realIndex, index) => {
+            if (found !== null) return found;
+            if (downloads[realIndex].isFulfilled()) return index;
+            return null;
+          }, null);
+          if (doneIndex !== null) {
+            const realIndex = slots[doneIndex];
+            if (downloads[realIndex].isResolved()) {
+              const p = new Promise((resolve, reject) => co(function*() {
+                const blocks = yield downloads[realIndex];
+                if (realIndex > 0) {
+                  // We must wait for previous blocks to be STRONGLY validated before going any further
+                  yield that.getChunk(realIndex - 1);
+                }
+                const chainsWell = yield chainsCorrectly(blocks, realIndex);
+                if (chainsWell) {
+                  // Chunk is COMPLETE
+                  logger.warn("Chunk #%s is COMPLETE from %s", realIndex, [handler[realIndex].host, handler[realIndex].port].join(':'));
+                  chunks[realIndex] = blocks;
+                  resultsDeferers[realIndex].resolve(chunks[realIndex]);
+                } else {
+                  logger.warn("Chunk #%s is DOES NOT CHAIN CORRECTLY from %s", realIndex, [handler[realIndex].host, handler[realIndex].port].join(':'));
+                  // Penality on this node to avoid its usage
+                  handler[realIndex].tta += MAX_DELAY_PER_DOWNLOAD;
+                  // Need a retry
+                  processing[realIndex] = false;
+                }
+              }));
+            } else {
+              processing[realIndex] = false; // Need a retry
+            }
+            slots.splice(doneIndex, 1);
+          }
+        }
+      }
+      // Wait a bit
+      yield new Promise((resolve, reject) => setTimeout(resolve, 10));
+    }
+  })
+    .catch((e) => {
+      console.error('Fatal error in the downloader:');
+      console.error(e);
+    });
+
+  /**
+   * PUBLIC API
+   */
+
+  /***
+   * Triggers the downloading
+   */
+  this.start  = () => startResolver();
+
+  /***
+   * Promises a chunk to be downloaded and returned
+   * @param index The number of the chunk to download & return
+   */
+  this.getChunk = (index) => resultsData[index] || Promise.resolve([]);
 }
 
 util.inherits(Synchroniser, stream.Duplex);

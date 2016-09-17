@@ -553,8 +553,10 @@ function PeeringService(server) {
                   lastDownloaded = yield dao.remoteCurrent(node);
                 }
                 pullingEvent('applying', { number: block.number, last: lastDownloaded.number });
-                current = addedBlock;
-                server.streamPush(addedBlock);
+                if (addedBlock) {
+                  current = addedBlock;
+                  server.streamPush(addedBlock);
+                }
               }),
 
               // Eventually remove forks later on

@@ -509,6 +509,10 @@ function PeeringService(server) {
         if (pubkey) {
           _(peers).filter((p) => p.pubkey == pubkey);
         }
+        // Shuffle the peers
+        peers = _.shuffle(peers);
+        // Only take at max X of them
+        peers = peers.slice(0, constants.MAX_NUMBER_OF_PEERS_FOR_PULLING);
         for (let i = 0, len = peers.length; i < len; i++) {
           let p = new Peer(peers[i]);
           pullingEvent('peer', _.extend({ number: i, length: peers.length }, p));

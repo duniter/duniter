@@ -253,7 +253,7 @@ module.exports = {
       MAX: 20 // MAX Y blocks
     },
     SYNC_PEERS_INTERVAL: 3, // Every 3 block average generation time
-    SYNC_BLOCK_INTERVAL: 1, // Every block average generation time
+    SYNC_BLOCK_INTERVAL: 2, // Every 2 block average generation time
     TEST_PEERS_INTERVAL: 10 // In seconds
   },
   PROOF_OF_WORK: {
@@ -351,6 +351,7 @@ module.exports = {
   SANDBOX_SIZE_MEMBERSHIPS: 200,
 
   MAXIMUM_LEN_OF_COMPACT_TX: MAXIMUM_LEN_OF_COMPACT_TX,
+  MAX_NUMBER_OF_PEERS_FOR_PULLING: 10,
 
   CURRENT_BLOCK_CACHE_DURATION: 10 * 1000 // 30 seconds
 };

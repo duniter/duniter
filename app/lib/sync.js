@@ -527,7 +527,6 @@ function P2PDownloader(localNumber, to, maxParallelDownloads, peers, watcher) {
     }
     const parallelMax = Math.min(PARALLEL_PER_CHUNK, withGoodDelays.length);
     withGoodDelays = _.sortBy(withGoodDelays, (c) => c.tta);
-    console.log(withGoodDelays.map((c) => [c.tta, [c.host, c.port].join(':')].join(' - ')));
     withGoodDelays = withGoodDelays.slice(0, parallelMax);
     withGoodDelays.forEach((c) =>
       c.tta = (c.tta * 2)) // We temporarily double the tta, because we make a request (if we send a request, obviously the node will need approx. tta time to answer))
@@ -697,8 +696,8 @@ function P2PDownloader(localNumber, to, maxParallelDownloads, peers, watcher) {
     }
   })
     .catch((e) => {
-      console.error('Fatal error in the downloader:');
-      console.error(e);
+      logger.error('Fatal error in the downloader:');
+      logger.error(e);
     });
 
   /**

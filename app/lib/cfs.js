@@ -199,6 +199,9 @@ function CFSCore(rootPath, qfs, parent) {
         if (err.message.match(/^Unexpected token {/)) {
           // TODO: this is a bug thrown during Unit Tests with MEMORY_MODE true...
           return JSON.parse(data.match(/^(.*)}{.*/)[1] + '}');
+        } else if (err.message.match(/^Unexpected end of input/)) {
+          // Could not read, return empty object
+          return {};
         }
         throw err;
       });

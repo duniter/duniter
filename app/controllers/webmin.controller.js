@@ -33,7 +33,7 @@ function WebAdmin (dbConf, overConf) {
   const that = this;
 
   server.pipe(es.mapSync(function(data) {
-    if (data.pulling !== undefined) {
+    if (data.pulling !== undefined || data.pow !== undefined) {
       that.push(data);
     }
   }));
@@ -78,6 +78,15 @@ function WebAdmin (dbConf, overConf) {
         "cpu": server.conf.cpu
       },
       "parameters": parameters
+    };
+  });
+
+  this.powSummary = () => co(function *() {
+    yield pluggedDALP;
+    return {
+      "total": yield server.getCountOfSelfMadePoW(),
+      "mirror": !(yield server.isServerMember()),
+      "waiting": server.isPoWPaused
     };
   });
 

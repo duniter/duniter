@@ -42,7 +42,7 @@ function Server (dbConf, overrideConf) {
   that.IdentityService     = require('./app/service/IdentityService')();
   that.MembershipService   = require('./app/service/MembershipService')();
   that.PeeringService      = require('./app/service/PeeringService')(that);
-  that.BlockchainService   = require('./app/service/BlockchainService')();
+  that.BlockchainService   = require('./app/service/BlockchainService')(that);
   that.TransactionsService = require('./app/service/TransactionsService')();
 
   // Create document mapping
@@ -227,7 +227,11 @@ function Server (dbConf, overrideConf) {
     shouldContinue = false;
     that.BlockchainService.stopPoWThenProcessAndRestartPoW();
   };
+  
+  this.getCountOfSelfMadePoW = () => this.BlockchainService.getCountOfSelfMadePoW();
+  this.isServerMember = () => this.BlockchainService.isMember();
 
+  this.isPoWPaused = true;
   this._blockComputation = () => co(function *() {
     while (shouldContinue) {
       try {
@@ -242,6 +246,7 @@ function Server (dbConf, overrideConf) {
         }
       }
       catch (e) {
+        that.isPoWPaused = true;
         logger.error(e);
         shouldContinue = true;
       }

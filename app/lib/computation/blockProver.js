@@ -8,9 +8,9 @@ const childProcess    = require('child_process');
 const path            = require('path');
 const Block           = require('../entity/block');
 
-module.exports = () => new BlockGenerator();
+module.exports = (server) => new BlockGenerator(server);
 
-function BlockGenerator() {
+function BlockGenerator(server) {
 
   let conf, dal, pair, logger;
 
@@ -89,6 +89,12 @@ function BlockGenerator() {
       // Start
       powWorker.setOnPoW(function(err, powBlock) {
         const theBlock = (powBlock && new Block(powBlock)) || null;
+        if (theBlock) {
+          // We found it
+          powEvent(true, theBlock.hash);
+        } else {
+          powEvent(true, '');
+        }
         logger.info('FOUND proof-of-work with %s leading zeros followed by [0-' + highMark + ']!', nbZeros);
         resolve(theBlock);
       });
@@ -104,6 +110,10 @@ function BlockGenerator() {
       logger.info('Generating proof-of-work with %s leading zeros followed by [0-' + highMark + ']... (CPU usage set to %s%)', nbZeros, (conf.cpu * 100).toFixed(0));
     });
   };
+
+  function powEvent(found, hash) {
+    server.push({ pow: { found, hash } });
+  }
 
   function Worker() {
 
@@ -150,11 +160,13 @@ function BlockGenerator() {
 
         if (!msg.found) {
           const pow = msg.pow;
-          const lowPowRegexp = new RegExp('^(0{2,})[^0]');
-          const matches = pow.match(lowPowRegexp);
-          // We log only proof with at least 3 zeros
-          if (matches && matches[1].length >= constants.PROOF_OF_WORK.MINIMAL_TO_SHOW) {
-            logger.info('Matched %s zeros %s with Nonce = %s for block#%s', matches[1].length, pow, msg.block.nonce, msg.block.number);
+          const matches = pow.match(/^(0{2,})[^0]/);
+          if (matches) {
+            // We log only proof with at least 3 zeros
+            powEvent(false, pow);
+            if (matches && matches[1].length >= constants.PROOF_OF_WORK.MINIMAL_TO_SHOW) {
+              logger.info('Matched %s zeros %s with Nonce = %s for block#%s', matches[1].length, pow, msg.block.nonce, msg.block.number);
+            }
           }
         }
         // Continue...

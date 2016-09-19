@@ -216,6 +216,8 @@ function FileDAL(params) {
   this.lastBlockOfIssuer = function (issuer) {
     return that.blockDAL.lastBlockOfIssuer(issuer);
   };
+  
+  this.getCountOfPoW = (issuer) => that.blockDAL.getCountOfBlocksIssuedBy(issuer);
 
   this.getBlocksBetween = (start, end) => Q(this.blockDAL.getBlocks(Math.max(0, start), end));
 

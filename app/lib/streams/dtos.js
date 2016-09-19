@@ -430,6 +430,12 @@ dtos.AdminSummary = {
   "parameters": dtos.Parameters
 };
 
+dtos.PoWSummary = {
+  "total": Number,
+  "mirror": Boolean,
+  "waiting": Boolean
+};
+
 dtos.PreviewPubkey = {
   "pubkey": String
 };

@@ -18,17 +18,17 @@ const AbstractService = require('./AbstractService');
 
 const CHECK_ALL_RULES = true;
 
-module.exports = () => {
-  return new BlockchainService();
+module.exports = (server) => {
+  return new BlockchainService(server);
 };
 
-function BlockchainService () {
+function BlockchainService (server) {
 
   AbstractService.call(this);
 
   let that = this;
   const mainContext = blockchainCtx();
-  const prover = blockProver();
+  const prover = blockProver(server);
   const generator = blockGenerator(mainContext, prover);
   let conf, dal, keyPair, logger, selfPubkey;
 
@@ -360,11 +360,16 @@ function BlockchainService () {
 
   this.prove = prover.prove;
 
+  this.isMember = () => dal.isMember(selfPubkey);
+  this.getCountOfSelfMadePoW = () => dal.getCountOfPoW(selfPubkey);
+
   this.startGeneration = () => co(function *() {
     if (!conf.participate) {
+      server.isPoWPaused = true;
       throw 'This node is configured for not participating to compute blocks.';
     }
     if (!selfPubkey) {
+      server.isPoWPaused = true;
       throw 'No self pubkey found.';
     }
     let block, current;
@@ -381,6 +386,7 @@ function BlockchainService () {
       else {
         const lastIssuedByUs = current.issuer == selfPubkey;
         if (lastIssuedByUs) {
+          server.isPoWPaused = true;
           logger.warn('Waiting ' + conf.powDelay + 's before starting to compute next block...');
           try {
             yield prover.waitBeforePoW();
@@ -388,6 +394,7 @@ function BlockchainService () {
             powCanceled = e;
           }
           if (powCanceled) {
+            server.isPoWPaused = true;
             logger.warn(powCanceled);
             return null;
           }
@@ -398,6 +405,7 @@ function BlockchainService () {
           powCanceled = 'Too high difficulty: waiting for other members to write next block';
         }
         else {
+          server.isPoWPaused = false;
           const block2 = lastGeneratedWasWrong ?
             yield generator.nextEmptyBlock() :
             yield generator.nextBlock();
@@ -408,11 +416,13 @@ function BlockchainService () {
       }
     }
     if (powCanceled) {
+      server.isPoWPaused = true;
       logger.warn(powCanceled);
       return prover.waitForContinue();
     }
   })
     .then(function(block){
+      server.isPoWPaused = true;
       prover.notComputing();
       return block;
     });

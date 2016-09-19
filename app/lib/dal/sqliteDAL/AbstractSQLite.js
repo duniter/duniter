@@ -279,7 +279,7 @@ function AbstractSQLite(db) {
 
   function toEntity(row) {
     for (const arr of that.arrays) {
-      row[arr] = JSON.parse(row[arr]);
+      row[arr] = row[arr] ? JSON.parse(row[arr]) : [];
     }
     // Big integers are stored as strings to avoid data loss
     for (const bigint of that.bigintegers) {

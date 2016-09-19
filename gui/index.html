@@ -40,15 +40,26 @@
     document.getElementById('loader').innerHTML = 'Server ready.';
     clearTimeout(strangeTimeout);
     clearInterval(testInterval);
-    gui.Window.open('http://' + SERVER_ORIGIN + '/index.html', {
-      width: 1200,
-      height: 850,
-      min_height: 600,
-      min_width: 600
-    }, function(win) {
+    let memorizedValue = null;
+    try {
+      memorizedValue = JSON.parse(localStorage.getItem('DUNITER_WINDOW_SIZE'));
+    } catch (e) {
+    }
+    const DUNITER_WINDOW_SIZE = memorizedValue || {
+              width: 1200,
+              height: 850,
+              min_height: 600,
+              min_width: 600
+            };
+    gui.Window.open('http://' + SERVER_ORIGIN + '/index.html', DUNITER_WINDOW_SIZE, function(win) {
       win.moveBy(300, 0);
       win.window.mainWindow = win;
       win.window.gui = gui;
+      win.window.onResize = function(theWin) {
+        DUNITER_WINDOW_SIZE.height = theWin.outerHeight - 78;
+        DUNITER_WINDOW_SIZE.width = theWin.outerWidth - 32;
+        localStorage.setItem('DUNITER_WINDOW_SIZE', JSON.stringify(DUNITER_WINDOW_SIZE));
+      };
       win.on('closed', function() {
         // Also close globally the app when main window is closed
         gui.Window.get().close();

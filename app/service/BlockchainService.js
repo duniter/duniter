@@ -150,7 +150,7 @@ function BlockchainService (server) {
       let res = yield mainContext.addBlock(obj);
       try {
         yield pushStatsForBlocks([res]);
-        that.stopPoWThenProcessAndRestartPoW();
+        that.stopPoWThenProcessAndRestartPoW(res);
       } catch (e) {
         logger.warn("An error occurred after the add of the block", e.stack || e);
       }
@@ -253,7 +253,7 @@ function BlockchainService (server) {
 
   this.revertCurrentBlock = () => this.pushFIFO(() => mainContext.revertCurrentBlock());
 
-  this.stopPoWThenProcessAndRestartPoW = () => prover.cancel();
+  this.stopPoWThenProcessAndRestartPoW = (gottenBlock) => prover.cancel(gottenBlock);
 
   /**
    * Generates root block with manual selection of root members.
@@ -388,11 +388,6 @@ function BlockchainService (server) {
         if (lastIssuedByUs) {
           server.isPoWPaused = true;
           logger.warn('Waiting ' + conf.powDelay + 's before starting to compute next block...');
-          try {
-            yield prover.waitBeforePoW();
-          } catch (e) {
-            powCanceled = e;
-          }
           if (powCanceled) {
             server.isPoWPaused = true;
             logger.warn(powCanceled);
@@ -410,7 +405,6 @@ function BlockchainService (server) {
             yield generator.nextEmptyBlock() :
             yield generator.nextBlock();
           const trial2 = yield rules.HELPERS.getTrialLevel(version, selfPubkey, conf, dal);
-          prover.computing();
           return yield generator.makeNextBlock(block2, trial2);
         }
       }
@@ -418,12 +412,10 @@ function BlockchainService (server) {
     if (powCanceled) {
       server.isPoWPaused = true;
       logger.warn(powCanceled);
-      return prover.waitForContinue();
     }
   })
     .then(function(block){
       server.isPoWPaused = true;
-      prover.notComputing();
       return block;
     });
 

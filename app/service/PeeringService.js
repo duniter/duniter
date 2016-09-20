@@ -251,13 +251,12 @@ function PeeringService(server) {
     }
     // Choosing next based-block for our peer record: we basically want the most distant possible from current
     let minBlock = current ? current.number - 30 : 0;
-    // But if already have a peer record within this distance, we need to take the next block of it
     if (p1) {
-      let p1Block = parseInt(p1.block.split('-')[0], 10);
-      minBlock = Math.max(minBlock, p1Block + 1);
+      // But if already have a peer record within this distance, we need to take the next block of it
+      minBlock = Math.max(minBlock, parseInt(p1.block.split('-')[0], 10) + 1);
     }
-    // Finally we can't have a negative block
-    minBlock = Math.max(0, minBlock);
+    // The number cannot be superior to current block
+    minBlock = Math.min(minBlock, current ? current.number : minBlock);
     let targetBlock = yield server.dal.getBlock(minBlock);
     const p2 = {
       version: constants.DOCUMENTS_VERSION,

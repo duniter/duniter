@@ -251,7 +251,7 @@ module.exports = {
       MAX: 20
     },
     STATUS_INTERVAL: {
-      UPDATE: 0.5, // Every X blocks
+      UPDATE: 2, // Every X blocks
       MAX: 20 // MAX Y blocks
     },
     SYNC_PEERS_INTERVAL: 3, // Every 3 block average generation time

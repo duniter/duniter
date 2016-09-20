@@ -261,7 +261,6 @@ module.exports = {
   PROOF_OF_WORK: {
     MINIMAL_TO_SHOW: 3,
     EVALUATION: 1000,
-    RELEASE_MEMORY: 10000,
     UPPER_BOUND: [
       '9A-F',
       '9A-E',

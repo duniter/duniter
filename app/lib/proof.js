@@ -34,21 +34,13 @@ process.on('message', (stuff) => co(function*() {
   }
   else {
     lastSecret = pair.sec;
-    sigFunc = keyring.Key(pair.pub, pair.sec).sign;
+    sigFunc = keyring.Key(pair.pub, pair.sec).signSync;
   }
   signatureFunc = sigFunc;
   let pow = "", sig = "", raw = "";
 
   block.time = getBlockTime(block, conf, forcedTime);
-  // Test CPU speed
-  if ((nbZeros > 0 || highMark != '9A-F') && speed == 1) {
-    speed = yield computeSpeed(block, sigFunc);
-  }
-  const testsPerSecond = speed;
-  const testsPerRound = Math.max(Math.round(testsPerSecond * cpu), 1) / SAMPLES_PER_SECOND; // We make a sample every Xms
 
-  yield pSend({ found: false, testsPerSecond: testsPerSecond,
-    testsPerRound: testsPerRound * SAMPLES_PER_SECOND, nonce: block.nonce });
   // Really start now
   let testsCount = 0;
   if (nbZeros == 0) {
@@ -58,43 +50,64 @@ process.on('message', (stuff) => co(function*() {
   // Compute block's hash
   block.inner_hash = getBlockInnerHash(block);
   let found = false;
+  let score = 0;
+  let turn = 0;
   while (!found) {
-    // Prove
-    const testStart = new Date();
-    let i = 0;
-    // Time is updated regularly during the proof
-    block.time = getBlockTime(block, conf, forcedTime);
-    if (block.number == 0) {
-      block.medianTime = block.time;
-    }
-    block.inner_hash = getBlockInnerHash(block);
-    while(!found && i < testsPerRound) {
-      block.nonce++;
-      raw = rawer.getBlockInnerHashAndNonce(block);
-      sig = dos2unix(yield sigFunc(raw));
-      pow = hash(raw + sig + '\n');
-      //found = pow.match(powRegexp);
-      let j = 0, charOK = true;
-      while (j < nbZeros && charOK) {
-        charOK = pow[j] == '0';
-        j++;
-      }
-      if (charOK) {
-        found = pow[nbZeros].match(new RegExp('[0-' + highMark + ']'));
-      }
-      if (!found && nbZeros > 0 && j >= constants.PROOF_OF_WORK.MINIMAL_TO_SHOW) {
-        yield pSend({ found: false, pow: pow, block: block, nbZeros: nbZeros });
-      }
-      testsCount++;
-      i++;
-    }
-    const end = new Date();
-    const durationMS = (end.getTime() - testStart.getTime());
-    // Run NEXT only after a delay
-    yield function*() {
-      yield (cb) => setTimeout(cb, nbZeros == 0 ? 0 : Math.max(0, (A_SECOND / SAMPLES_PER_SECOND - durationMS))); // Max wait 1 second
-    };
-    yield pSend({ found: false, pow: pow, block: block, nbZeros: nbZeros });
+
+    // We make a bunch of tests every second
+    yield Promise.race([
+      countDown(1000),
+      co(function*() {
+        /*****
+         * 1 second tests
+         */
+        // Prove
+        let i = 0;
+        const thisTurn = turn;
+        const pausePeriod = score ? score / 5 : 10; // 5 pauses per second
+        // We limit the number of t
+        const testsPerRound = score ? Math.floor(score * conf.cpu) : 1000 * 1000 * 1000;
+        // Time is updated regularly during the proof
+        block.time = getBlockTime(block, conf, forcedTime);
+        if (block.number == 0) {
+          block.medianTime = block.time;
+        }
+        block.inner_hash = getBlockInnerHash(block);
+        while(!found && i < testsPerRound && thisTurn == turn) {
+          block.nonce++;
+          raw = "InnerHash: " + block.inner_hash + "\nNonce: " + block.nonce + "\n";
+          sig = sigFunc(raw);
+          pow = hash(raw + sig + '\n');
+          let j = 0, charOK = true;
+          while (j < nbZeros && charOK) {
+            charOK = pow[j] == '0';
+            j++;
+          }
+          if (charOK) {
+            found = pow[nbZeros].match(new RegExp('[0-' + highMark + ']'));
+          }
+          if (!found && nbZeros > 0 && j >= constants.PROOF_OF_WORK.MINIMAL_TO_SHOW) {
+            pSend({ found: false, pow: pow, block: block, nbZeros: nbZeros });
+          }
+          if (!found) {
+            i++;
+            testsCount++;
+            if (i % pausePeriod == 0) {
+              yield countDown(0); // Very low pause, just the time to process eventual end of the turn
+            }
+          }
+        }
+        if (!found) {
+          if (turn > 0 && !score) {
+            score = testsCount;
+          }
+          // We wait for main "while" countdown to end the turn. This gives of a bit of breath to the CPU (the amount
+          // of "breath" depends on the "cpu" parameter.
+          yield countDown(1000);
+        }
+      })
+    ]);
+    turn++;
   }
   block.signature = sig;
   yield pSend({
@@ -105,6 +118,10 @@ process.on('message', (stuff) => co(function*() {
     });
 }));
 
+function countDown(duration) {
+  return new Promise((resolve) => setTimeout(resolve, duration));
+}
+
 function getBlockInnerHash(block) {
   const raw = rawer.getBlockInnerPart(block);
   return hash(raw);
@@ -113,19 +130,6 @@ function getBlockInnerHash(block) {
 function hash(str) {
   return hashf(str).toUpperCase();
 }
-
-const computeSpeed = (block, sigFunc) => co(function*() {
-  const start = new Date();
-  const raw = rawer.getBlockInnerHashAndNonce(block);
-  for (let i = 0; i < constants.PROOF_OF_WORK.EVALUATION; i++) {
-    // Signature
-    const sig = dos2unix(yield sigFunc(raw));
-    // Hash
-    hash(raw + sig + '\n');
-  }
-  const duration = (new Date().getTime() - start.getTime());
-  return Math.round(constants.PROOF_OF_WORK.EVALUATION * 1000 / duration);
-});
 
 function getBlockTime (block, conf, forcedTime) {
   if (forcedTime) {

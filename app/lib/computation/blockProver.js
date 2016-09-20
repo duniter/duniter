@@ -10,15 +10,14 @@ const Block           = require('../entity/block');
 
 module.exports = (server) => new BlockGenerator(server);
 
-function BlockGenerator(server) {
+function BlockGenerator(notifier) {
 
-  let conf, dal, pair, logger;
+  let conf, pair, logger;
 
   this.setConfDAL = (newConf, newDAL, newPair) => {
-    dal = newDAL;
     conf = newConf;
     pair = newPair;
-    logger = require('../logger')(dal.profile);
+    logger = require('../logger')('prover');
   };
 
   const cancels = [];
@@ -112,18 +111,17 @@ function BlockGenerator(server) {
   };
 
   function powEvent(found, hash) {
-    server.push({ pow: { found, hash } });
+    notifier && notifier.push({ pow: { found, hash } });
   }
 
   function Worker() {
 
-    let stopped = true;
     const that = this;
     let onPoWFound = function() { throw 'Proof-of-work found, but no listener is attached.'; };
     let onPoWError = function() { throw 'Proof-of-work error, but no listener is attached.'; };
     that.powProcess = childProcess.fork(path.join(__dirname, '../proof.js'));
-    let start = null;
-    let speedMesured = false;
+    const start = Date.now();
+    let stopped = false;
 
     that.powProcess.on('message', function(msg) {
       const block = msg.block;
@@ -131,31 +129,15 @@ function BlockGenerator(server) {
         onPoWError(msg.error);
         stopped = true;
       }
-      if (stopped) {
-        // Started...
-        start = new Date();
-        stopped = false;
-      }
       if (!stopped && msg.found) {
-        const end = new Date();
-        const duration = (end.getTime() - start.getTime());
-        const testsPerSecond = (1000 / duration * msg.testsCount).toFixed(2);
+        const duration = (Date.now() - start);
+        const testsPerSecond = (msg.testsCount / (duration / 1000)).toFixed(2);
         logger.info('Done: %s in %ss (%s tests, ~%s tests/s)', msg.pow, (duration / 1000).toFixed(2), msg.testsCount, testsPerSecond);
         stopped = true;
-        start = null;
         block.hash = msg.pow;
         onPoWFound(null, block);
-      } else if (!stopped && msg.testsPerRound) {
-        logger.info('Mesured max speed is ~%s tests/s. Proof will try with ~%s tests/s.', msg.testsPerSecond, msg.testsPerRound);
-        speedMesured = true;
-      } else if (!stopped && msg.nonce > block.nonce + constants.PROOF_OF_WORK.RELEASE_MEMORY) {
-        // Reset fork process (release memory)...
-        logger.trace('Release mem... lastCount = %s, nonce = %s', block.nonce);
-        block.nonce = msg.nonce;
-        speedMesured = false;
         that.powProcess.kill();
         powWorker = new Worker();
-        that.powProcess.send({ conf: conf, block: block, zeros: msg.nbZeros, pair: pair.json()});
       } else if (!stopped) {
 
         if (!msg.found) {
@@ -172,15 +154,13 @@ function BlockGenerator(server) {
         // Continue...
         //console.log('Already made: %s tests...', msg.nonce);
         // Look for incoming block
-        if (speedMesured && cancels.length) {
-          speedMesured = false;
+        if (cancels.length) {
           stopped = true;
           that.powProcess.kill();
           that.powProcess = null;
           powWorker = null;
           onPoWFound();
           logger.debug('Proof-of-work computation canceled.');
-          start = null;
           const cancelConfirm = cancels.shift();
           cancelConfirm();
         }

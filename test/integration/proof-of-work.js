@@ -95,7 +95,7 @@ describe("Proof-of-work", function() {
             throw 's2 server should not have found the proof before s1';
           } catch (e) {
             should.exist(e);
-            e.should.equal('Proof-of-work computation canceled');
+            e.should.equal('Proof-of-work computation canceled because block received');
           }
         })
       ]),

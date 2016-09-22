@@ -3,6 +3,7 @@
 const co        = require('co');
 const should    = require('should');
 const toolbox   = require('./tools/toolbox');
+const constants = require('../../app/lib/constants');
 const keyring   = require('../../app/lib/crypto/keyring');
 const blockProver = require('../../app/lib/computation/blockProver');
 
@@ -31,7 +32,9 @@ prover.setConfDAL({
 
 const now = 1474382274 * 1000;
 const MUST_START_WITH_A_ZERO = 16;
-const MUST_START_WITH_SEVERAL_ZEROS = 48;
+const MUST_START_WITH_TWO_ZEROS = 32;
+
+constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1; // For simple tests. Can be changed to test multiple cores.
 
 describe("Proof-of-work", function() {
 
@@ -39,10 +42,9 @@ describe("Proof-of-work", function() {
     let block = yield prover.prove({
       issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
       number: 2
-    }, MUST_START_WITH_SEVERAL_ZEROS, now);
+    }, MUST_START_WITH_TWO_ZEROS, now);
     block.hash.should.match(/^0/);
-    intermediateProofs.length.should.be.greaterThan(1);
-    intermediateProofs[intermediateProofs.length - 2].pow.should.have.property('found').equal(false);
+    intermediateProofs.length.should.be.greaterThan(0);
     intermediateProofs[intermediateProofs.length - 1].pow.should.have.property('found').equal(true);
     intermediateProofs[intermediateProofs.length - 1].pow.should.have.property('hash').equal(block.hash);
   }));
@@ -64,7 +66,7 @@ describe("Proof-of-work", function() {
   it('should be able to cancel a proof-of-work on other PoW receival', () => co(function*() {
     const now = 1474464481;
     const res = yield toolbox.simpleNetworkOf2NodesAnd2Users({
-      powMin: 48
+      powMin: 32
     }), s1 = res.s1, s2 = res.s2;
     yield s1.commit({
       time: now
@@ -88,7 +90,7 @@ describe("Proof-of-work", function() {
           try {
             let s2commit = s2.commit({ time: now + 10 });
             // A little handicap for s1 which will find the proof immediately
-            setTimeout(() => s1.commit({ time: now + 10 }), 500);
+            setTimeout(() => s1.commit({ time: now + 10 }), 0);
             yield s2commit;
             throw 's2 server should not have found the proof before s1';
           } catch (e) {

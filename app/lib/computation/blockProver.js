@@ -124,7 +124,8 @@ function BlockGenerator(notifier) {
   function WorkerFarm() {
     // Create
     const that = this;
-    const cores = require('os').cpus();
+    // We use as much cores as available, but not more than CORES_MAXIMUM_USE_IN_PARALLEL
+    const cores = require('os').cpus().slice(0, constants.CORES_MAXIMUM_USE_IN_PARALLEL);
     // Each worker has his own chunk of possible nonces
     const workers = cores.map((c, index) => new Worker((index + 1), (index + 1) * 1000 * 1000 * 1000 * 100, pair.publicKey));
 

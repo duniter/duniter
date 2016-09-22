@@ -23,7 +23,6 @@ process.on('uncaughtException', (err) => {
 });
 
 process.on('message', (message) => co(function*() {
-  // console.log(message);
   if (message.command == 'id') {
     lastPub = message.pubkey;
     id = message.identifier;
@@ -189,9 +188,6 @@ function getBlockTime (block, conf, forcedTime) {
 }
 
 function pSend(stuff) {
-  if (stuff.powStatus) {
-    console.log('--> ENGINE %s %s: %s', id, lastPub.slice(0, 6), stuff.powStatus);
-  }
   stuff.pubkey = lastPub;
   return new Promise(function (resolve, reject) {
     process.send(stuff, function (error) {

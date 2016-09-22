@@ -139,23 +139,14 @@ function BlockGenerator(notifier) {
     const whenReady = () => Promise.all(workers.map((worker) => worker.whenReady()));
 
     this.stopPoW = () => {
-      logger.info('Ask for stopping the engines');
       stopPromise = querablep(Promise.all(workers.map((worker) => worker.stopPoW())));
       return stopPromise;
     };
 
     this.askNewProof = (stuff) => co(function*() {
       yield whenReady();
-      for (let i = 0; i < workers.length; i++) {
-        let worker = workers[i];
-        logger.info('Is ready w#%s = ', i + 1, worker.whenReady().isResolved());
-      }
       // Starts a new race to find the PoW
       const races = workers.map((worker) => querablep(worker.askNewProof(_.clone(stuff))));
-      for (let i = 0; i < workers.length; i++) {
-        let worker = workers[i];
-        logger.info('Is ready w#%s = ', i + 1, worker.whenReady().isResolved());
-      }
       powPromise = querablep(Promise.race(races));
       // Wait for the PoW to be either found or canceled
       yield powPromise;
@@ -166,7 +157,7 @@ function BlockGenerator(notifier) {
         }
         return null;
       }, null);
-      logger.info('ENGINE %s HAS FOUND A PROOF', engineNumber);
+      logger.info('ENGINE #%s HAS FOUND A PROOF', engineNumber);
       // Ask for stopping the other engines
       yield that.stopPoW();
       // But also gie the answer in the **same time**, without waiting for effective stop of the engines
@@ -226,7 +217,6 @@ function BlockGenerator(notifier) {
     powProcess.on('message', function(msg) {
       if (msg.powStatus) {
         // We look only at status messages, avoiding eventual PoW messages
-        logger.info("==> PROVER %s %s: %s", id, (msg.pubkey || pair.publicKey).slice(0, 6), msg.powStatus);
         if (msg.powStatus == 'ready' && readyResolver) {
           readyResolver();
         }

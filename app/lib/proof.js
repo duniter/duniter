@@ -9,9 +9,11 @@ const constants = require('./constants');
 const keyring = require('./crypto/keyring');
 const rawer = require('./ucp/rawer');
 
+const AUTOKILL_TIMEOUT_DELAY = 10 * 1000;
 const TURN_DURATION = 100;
 const PAUSES_PER_TURN = 5;
 
+let timeoutAutoKill = null;
 let computing = false;
 let askedStop = false;
 
@@ -27,6 +29,11 @@ process.on('message', (message) => co(function*() {
     lastPub = message.pubkey;
     id = message.identifier;
     pSend({ powStatus: 'ready' });
+    autoKillIfNoContact();
+  }
+  else if (message.command == 'idle') {
+    autoKillIfNoContact();
+    pSend({ powStatus: 'idle' });
   }
   else if (message.command == 'ready') {
     pSend({ powStatus: computing ? 'computing' : 'ready' });
@@ -195,4 +202,15 @@ function pSend(stuff) {
       error && reject();
     });
   });
+}
+
+function autoKillIfNoContact() {
+  if (timeoutAutoKill) {
+    clearTimeout(timeoutAutoKill);
+  }
+  // If the timeout is not cleared in some way, the process exits
+  timeoutAutoKill = setTimeout(() => {
+    console.log('Killing engine #%s', id);
+    process.exit();
+  }, AUTOKILL_TIMEOUT_DELAY);
 }

@@ -10,7 +10,8 @@ const querablep       = require('../querablep');
 
 module.exports = (server) => new BlockGenerator(server);
 
-const CANCELED_BECAUSE_GIVEN = 'Proof-of-work computation canceled';
+const POW_CANCELED = 'Proof-of-work computation canceled';
+const POW_CANCELED_BECAUSE_GIVEN = 'Proof-of-work computation canceled because block received';
 
 function BlockGenerator(notifier) {
 
@@ -108,8 +109,10 @@ function BlockGenerator(notifier) {
         logger.info('FOUND proof-of-work with %s leading zeros followed by [0-' + highMark + ']!', nbZeros);
         return new Block(proof);
       } catch (e) {
-        if (e == CANCELED_BECAUSE_GIVEN) {
+        if (e == POW_CANCELED_BECAUSE_GIVEN) {
           logger.info('GIVEN proof-of-work for block#%s with %s leading zeros followed by [0-' + highMark + ']! stop PoW for %s', block.number, nbZeros, pair.publicKey.slice(0,6));
+        } else if (e == POW_CANCELED) {
+          logger.info('Proof-of-work interrupted for some unknown reason, restarting..');
         }
         logger.warn(e);
         throw e;
@@ -172,16 +175,13 @@ function BlockGenerator(notifier) {
     let onAlmostPoW = function() { throw 'Almost proof-of-work found, but no listener is attached.'; };
     let onPoWSuccess = function() { throw 'Proof-of-work success, but no listener is attached.'; };
     let onPoWError = function() { throw 'Proof-of-work error, but no listener is attached.'; };
-    let powProcess = childProcess.fork(path.join(__dirname, '../proof.js'));
+    let powProcess, readyPromise, readyResolver, lastStuff;
 
-    let readyPromise, readyResolver;
+    newProcess();
 
     function createReadyPromise() {
       readyPromise = querablep(new Promise((resolve) => readyResolver = resolve));
     }
-
-    createReadyPromise();
-    powProcess.send({ command: 'id', pubkey: pub, identifier: id });
 
     this.whenReady = () => readyPromise;
 
@@ -214,46 +214,69 @@ function BlockGenerator(notifier) {
       onAlmostPoW = onPoW;
     };
 
-    powProcess.on('message', function(msg) {
-      if (msg.powStatus) {
-        // We look only at status messages, avoiding eventual PoW messages
-        if (msg.powStatus == 'ready' && readyResolver) {
-          readyResolver();
-        }
+    function newProcess() {
+      let interval;
+      
+      powProcess = childProcess.fork(path.join(__dirname, '../proof.js'));
+
+      if (!readyPromise || readyPromise.isFulfilled()) {
+        createReadyPromise();
       }
-    });
 
-    powProcess.on('message', function(message) {
-
-      // A message about the PoW
-      if (message.pow) {
-        const msg = message.pow;
-        const block = msg.block;
-        if (msg.error) {
-          onPoWError && onPoWError(msg.error);
-          onPoWError = null;
+      powProcess.on('exit', function() {
+        onPoWError && onPoWError(POW_CANCELED);
+        onPoWError = null;
+        if (interval) {
+          clearInterval(interval);
         }
-        else if (msg.found) {
-          block.hash = msg.pow;
-          onAlmostPoW(block.hash, block.hash.match(/^(0{2,})[^0]/), block, msg.found);
-          onPoWError = null;
-          onPoWSuccess && onPoWSuccess({ block: block, testsCount: msg.testsCount });
-          onPoWSuccess = null;
-        } else {
-          if (msg.canceled) {
-            onPoWError && onPoWError(CANCELED_BECAUSE_GIVEN);
+        newProcess();
+      });
+
+      powProcess.on('message', function(msg) {
+        if (msg.powStatus) {
+          // We look only at status messages, avoiding eventual PoW messages
+          if (msg.powStatus == 'ready' && readyResolver) {
+            readyResolver();
+          }
+        }
+      });
+
+      powProcess.on('message', function(message) {
+
+        // A message about the PoW
+        if (message.pow) {
+          const msg = message.pow;
+          const block = msg.block;
+          if (msg.error) {
+            onPoWError && onPoWError(msg.error);
             onPoWError = null;
           }
-          else if (!msg.found) {
-            const pow = msg.pow;
-            const matches = pow.match(/^(0{2,})[^0]/);
-            if (matches) {
-              // We log only proof with at least 3 zeros
-              onAlmostPoW(pow, matches, msg.block, msg.found);
+          else if (msg.found) {
+            block.hash = msg.pow;
+            onAlmostPoW(block.hash, block.hash.match(/^(0{2,})[^0]/), block, msg.found);
+            onPoWError = null;
+            onPoWSuccess && onPoWSuccess({ block: block, testsCount: msg.testsCount });
+            onPoWSuccess = null;
+          } else {
+            if (msg.canceled) {
+              onPoWError && onPoWError(POW_CANCELED_BECAUSE_GIVEN);
+              onPoWError = null;
+            }
+            else if (!msg.found) {
+              const pow = msg.pow;
+              const matches = pow.match(/^(0{2,})[^0]/);
+              if (matches) {
+                // We log only proof with at least 3 zeros
+                onAlmostPoW(pow, matches, msg.block, msg.found);
+              }
             }
           }
         }
-      }
-    });
+      });
+
+      // Initialize the engine
+      powProcess.send({ command: 'id', pubkey: pub, identifier: id });
+      interval = setInterval(() => powProcess.send({ command: 'idle' }), constants.ENGINE_IDLE_INTERVAL);
+    }
   }
 }

@@ -356,7 +356,9 @@ module.exports = {
   MAX_NUMBER_OF_PEERS_FOR_PULLING: 10,
 
   CURRENT_BLOCK_CACHE_DURATION: 10 * 1000, // 30 seconds
-  CORES_MAXIMUM_USE_IN_PARALLEL: 8 // For more cores, we need to use a better PoW synchronization algorithm
+  CORES_MAXIMUM_USE_IN_PARALLEL: 8, // For more cores, we need to use a better PoW synchronization algorithm
+
+  ENGINE_IDLE_INTERVAL: 5000
 };
 
 function exact (regexpContent) {

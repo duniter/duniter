@@ -1,11 +1,12 @@
 "use strict";
 const co              = require('co');
-const Q               = require('q');
+const _               = require('underscore');
 const constants       = require('../constants');
 const base58          = require('../crypto/base58');
 const childProcess    = require('child_process');
 const path            = require('path');
 const Block           = require('../entity/block');
+const querablep       = require('../querablep');
 
 module.exports = (server) => new BlockGenerator(server);
 
@@ -13,13 +14,14 @@ const CANCELED_BECAUSE_GIVEN = 'Proof-of-work computation canceled';
 
 function BlockGenerator(notifier) {
 
-  let conf, pair, logger, computing = false, askedStop = false;
+  let that = this;
+  let conf, pair, logger, wait = null, waitResolve, waitReject;
 
-  let workerPromise;
+  let workerFarmPromise;
 
   function getWorker() {
-    return (workerPromise || (workerPromise = co(function*() {
-      return new Worker();
+    return (workerFarmPromise || (workerFarmPromise = co(function*() {
+      return new WorkerFarm();
     })));
   }
 
@@ -35,17 +37,37 @@ function BlockGenerator(notifier) {
     process.execArgv = [];
   }
 
+  this.waitDelay = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
+
+  this.waitForNewAsking = () => wait = new Promise((resolve, reject) => {
+    waitResolve = resolve;
+    waitReject = reject;
+  });
+
   this.cancel = (gottenBlock) => co(function*() {
-    if (computing && !askedStop) {
-      askedStop = true;
+    // If no farm was instanciated, tehre is nothing to do yet
+    if (workerFarmPromise) {
       let worker = yield getWorker();
-      let stopped = yield worker.stopPoW();
-      askedStop = false;
-      console.log('STOPPED!');
+      if (worker.isComputing() && !worker.isStopping()) {
+        yield worker.stopPoW();
+      }
+      if (waitResolve) {
+        waitResolve();
+        waitResolve = null;
+        waitReject = null;
+        wait = null;
+      }
     }
   });
 
   this.prove = function (block, difficulty, forcedTime) {
+
+    if (waitResolve) {
+      waitResolve();
+      waitResolve = null;
+      waitReject = null;
+      wait = null;
+    }
 
     const remainder = difficulty % 16;
     const nbZeros = (difficulty - remainder) / 16;
@@ -53,7 +75,7 @@ function BlockGenerator(notifier) {
 
     return co(function*() {
 
-      let powWorker = yield getWorker();
+      let powFarm = yield getWorker();
 
       if (block.number == 0) {
         // On initial block, difficulty is the one given manually
@@ -61,19 +83,19 @@ function BlockGenerator(notifier) {
       }
 
       // Start
-      powWorker.setOnAlmostPoW(function(pow, matches, block, found) {
+      powFarm.setOnAlmostPoW(function(pow, matches, block, found) {
         powEvent(found, pow);
-        if (matches && matches[1].length >= constants.PROOF_OF_WORK.MINIMAL_TO_SHOW) {
-          logger.info('Matched %s zeros %s with Nonce = %s for block#%s', matches[1].length, pow, block.nonce, block.number);
+        if (matches && matches[1].length >= constants.PROOF_OF_WORK.MINIMAL_TO_SHOW_IN_LOGS) {
+          logger.info('Matched %s zeros %s with Nonce = %s for block#%s by %s', matches[1].length, pow, block.nonce, block.number, block.issuer.slice(0,6));
         }
       });
 
       block.nonce = 0;
-      logger.info('Generating proof-of-work with %s leading zeros followed by [0-' + highMark + ']... (CPU usage set to %s%)', nbZeros, (conf.cpu * 100).toFixed(0));
+      logger.info('Generating proof-of-work with %s leading zeros followed by [0-' + highMark + ']... (CPU usage set to %s%) for block#%s', nbZeros, (conf.cpu * 100).toFixed(0), block.number, block.issuer.slice(0,6));
       const start = Date.now();
       try {
 
-        let result = yield powWorker.askNewProof({
+        let result = yield powFarm.askNewProof({
           newPoW: { conf: conf, block: block, zeros: nbZeros, highMark: highMark, forcedTime: forcedTime,
             pair: pair.json()
           }
@@ -87,7 +109,7 @@ function BlockGenerator(notifier) {
         return new Block(proof);
       } catch (e) {
         if (e == CANCELED_BECAUSE_GIVEN) {
-          logger.info('GIVEN proof-of-work with %s leading zeros followed by [0-' + highMark + ']!', nbZeros);
+          logger.info('GIVEN proof-of-work for block#%s with %s leading zeros followed by [0-' + highMark + ']! stop PoW for %s', block.number, nbZeros, pair.publicKey.slice(0,6));
         }
         logger.warn(e);
         throw e;
@@ -99,84 +121,137 @@ function BlockGenerator(notifier) {
     notifier && notifier.push({ pow: { found, hash } });
   }
 
-  function Worker() {
-
+  function WorkerFarm() {
+    // Create
     const that = this;
+    const cores = require('os').cpus();
+    // Each worker has his own chunk of possible nonces
+    const workers = cores.map((c, index) => new Worker((index + 1), (index + 1) * 1000 * 1000 * 1000 * 100, pair.publicKey));
+
+    let powPromise = null;
+    let stopPromise = null;
+
+    this.isComputing = () => powPromise !== null && !powPromise.isResolved();
+
+    this.isStopping = () => stopPromise !== null && !stopPromise.isResolved();
+
+    const whenReady = () => Promise.all(workers.map((worker) => worker.whenReady()));
+
+    this.stopPoW = () => {
+      logger.info('Ask for stopping the engines');
+      stopPromise = querablep(Promise.all(workers.map((worker) => worker.stopPoW())));
+      return stopPromise;
+    };
+
+    this.askNewProof = (stuff) => co(function*() {
+      yield whenReady();
+      for (let i = 0; i < workers.length; i++) {
+        let worker = workers[i];
+        logger.info('Is ready w#%s = ', i + 1, worker.whenReady().isResolved());
+      }
+      // Starts a new race to find the PoW
+      const races = workers.map((worker) => querablep(worker.askNewProof(_.clone(stuff))));
+      for (let i = 0; i < workers.length; i++) {
+        let worker = workers[i];
+        logger.info('Is ready w#%s = ', i + 1, worker.whenReady().isResolved());
+      }
+      powPromise = querablep(Promise.race(races));
+      // Wait for the PoW to be either found or canceled
+      yield powPromise;
+      let engineNumber = races.reduce((doneIndex, obj, index) => {
+        if (doneIndex !== null) return doneIndex;
+        if (races[index].isResolved()) {
+          return index + 1;
+        }
+        return null;
+      }, null);
+      logger.info('ENGINE %s HAS FOUND A PROOF', engineNumber);
+      // Ask for stopping the other engines
+      yield that.stopPoW();
+      // But also gie the answer in the **same time**, without waiting for effective stop of the engines
+      return powPromise;
+    });
+
+    this.setOnAlmostPoW = (onPoW) => workers.map((worker) => worker.setOnAlmostPoW(onPoW));
+  }
+
+  function Worker(id, nonceBeginning, pub) {
+
     let onAlmostPoW = function() { throw 'Almost proof-of-work found, but no listener is attached.'; };
     let onPoWSuccess = function() { throw 'Proof-of-work success, but no listener is attached.'; };
     let onPoWError = function() { throw 'Proof-of-work error, but no listener is attached.'; };
-    that.powProcess = childProcess.fork(path.join(__dirname, '../proof.js'));
+    let powProcess = childProcess.fork(path.join(__dirname, '../proof.js'));
 
-    /**
-     * Checks is the engine is ready for a new PoW
-     */
-    this.isReady = () => new Promise((resolve) => {
-      that.powProcess.on('message', function(msg) {
-        if (msg.powStatus) {
-          // We look only at status messages, avoiding eventual PoW messages
-          resolve(msg.powStatus == 'ready');
-        }
-      });
-      that.powProcess.send({ command: 'ready' });
-    });
+    let readyPromise, readyResolver;
+
+    function createReadyPromise() {
+      readyPromise = querablep(new Promise((resolve) => readyResolver = resolve));
+    }
+
+    createReadyPromise();
+    powProcess.send({ command: 'id', pubkey: pub, identifier: id });
+
+    this.whenReady = () => readyPromise;
 
     /**
      * Eventually stops the engine PoW if one was computing
      */
-    this.stopPoW = () => new Promise((resolve) => {
-      that.powProcess.on('message', function(msg) {
-        if (msg.powStatus) {
-          // We look only at status messages, avoiding eventual PoW messages
-          resolve(msg.powStatus == 'ready' || msg.powStatus == 'stopped');
-        }
-      });
-      that.powProcess.send({ command: 'stop' });
-    });
+    this.stopPoW = () => {
+      powProcess.send({ command: 'stop' });
+      return readyPromise;
+    };
 
     /**
      * Starts a new computation of PoW
      * @param stuff The necessary data for computing the PoW
      */
     this.askNewProof = (stuff) => new Promise((resolve, reject) => {
-      return co(function*() {
-        const ready = yield that.isReady();
-        if (!ready) {
-          throw 'PoW engine not ready';
-        }
+      // Soon or later the engine will be ready again, we will need to know it
+      createReadyPromise();
 
-        computing = true;
+      // Binds the engine to this promise
+      onPoWSuccess = resolve;
+      onPoWError = reject;
 
-        // Binds the engine to this promise
-        onPoWSuccess = resolve;
-        onPoWError = reject;
-
-        // Starts the PoW
-        that.powProcess.send(stuff);
-      });
+      // Starts the PoW
+      stuff.newPoW.block.nonce = nonceBeginning;
+      powProcess.send(stuff);
     });
 
     this.setOnAlmostPoW = function(onPoW) {
       onAlmostPoW = onPoW;
     };
 
-    that.powProcess.on('message', function(message) {
+    powProcess.on('message', function(msg) {
+      if (msg.powStatus) {
+        // We look only at status messages, avoiding eventual PoW messages
+        logger.info("==> PROVER %s %s: %s", id, (msg.pubkey || pair.publicKey).slice(0, 6), msg.powStatus);
+        if (msg.powStatus == 'ready' && readyResolver) {
+          readyResolver();
+        }
+      }
+    });
+
+    powProcess.on('message', function(message) {
 
       // A message about the PoW
       if (message.pow) {
         const msg = message.pow;
         const block = msg.block;
         if (msg.error) {
-          onPoWError(msg.error);
+          onPoWError && onPoWError(msg.error);
+          onPoWError = null;
         }
         else if (msg.found) {
-          computing = false;
           block.hash = msg.pow;
           onAlmostPoW(block.hash, block.hash.match(/^(0{2,})[^0]/), block, msg.found);
-          onPoWSuccess({ block: block, testsCount: msg.testsCount });
+          onPoWError = null;
+          onPoWSuccess && onPoWSuccess({ block: block, testsCount: msg.testsCount });
+          onPoWSuccess = null;
         } else {
           if (msg.canceled) {
-            computing = false;
-            onPoWError(CANCELED_BECAUSE_GIVEN);
+            onPoWError && onPoWError(CANCELED_BECAUSE_GIVEN);
+            onPoWError = null;
           }
           else if (!msg.found) {
             const pow = msg.pow;

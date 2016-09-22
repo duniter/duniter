@@ -388,6 +388,7 @@ function BlockchainService (server) {
         if (lastIssuedByUs) {
           server.isPoWPaused = true;
           logger.warn('Waiting ' + conf.powDelay + 's before starting to compute next block...');
+          yield prover.waitDelay(conf.powDelay);
           if (powCanceled) {
             server.isPoWPaused = true;
             logger.warn(powCanceled);
@@ -412,6 +413,7 @@ function BlockchainService (server) {
     if (powCanceled) {
       server.isPoWPaused = true;
       logger.warn(powCanceled);
+      yield prover.waitForNewAsking();
     }
   })
     .then(function(block){

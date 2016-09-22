@@ -14,6 +14,7 @@ const constants    = require('../lib/constants');
 const Peer         = require('../lib/entity/peer');
 const multimeter   = require('multimeter');
 const pulling      = require('../lib/pulling');
+const makeQuerablePromise = require('../lib/querablep');
 
 const CONST_BLOCKS_CHUNK = 250;
 const EVAL_REMAINING_INTERVAL = 1000;
@@ -439,22 +440,6 @@ function LoggerWatcher() {
   this.end = () => {
   };
 
-}
-
-function makeQuerablePromise(promise) {
-
-  // Don't create a wrapper for promises that can already be queried.
-  if (promise.isResolved) return promise;
-
-  var isResolved = false;
-  var isRejected = false;
-
-  // Observe the promise, saving the fulfillment in a closure scope.
-  var result = promise.then((v) => { isResolved = true; return v; }, (e)  => { isRejected = true; throw e; });
-  result.isFulfilled = () => isResolved || isRejected;
-  result.isResolved = () => isResolved;
-  result.isRejected = () => isRejected;
-  return result;
 }
 
 function P2PDownloader(localNumber, to, maxParallelDownloads, peers, watcher) {

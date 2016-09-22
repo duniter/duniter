@@ -18,7 +18,7 @@ function Router (PeeringService, conf, dal) {
     dal = theDAL;
   };
 
-  const logger   = require('../logger')(dal.profile);
+  const logger   = require('../logger')('router');
 
   stream.Transform.call(this, { objectMode: true });
 
@@ -48,7 +48,7 @@ function Router (PeeringService, conf, dal) {
         }
         else if (obj.from && obj.from == PeeringService.pubkey) {
           // Route ONLY status emitted by this node
-          yield route('status', obj, getTargeted(obj.to));
+          yield route('status', obj, getTargeted(obj.to || obj.idty_issuer));
         }
         else if (obj.unreachable) {
           yield dal.setPeerDown(obj.peer.pubkey);

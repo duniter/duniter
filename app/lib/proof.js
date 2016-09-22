@@ -3,15 +3,19 @@ const co = require('co');
 const async = require('async');
 const moment = require('moment');
 const hashf = require('./ucp/hashf');
+const dos2unix = require('./system/dos2unix');
 const rules = require('./rules');
 const constants = require('./constants');
 const keyring = require('./crypto/keyring');
 const rawer = require('./ucp/rawer');
 
+const TURN_DURATION = 100;
+const PAUSES_PER_TURN = 5;
+
 let computing = false;
 let askedStop = false;
 
-let signatureFunc, lastSecret;
+let signatureFunc, id, lastPub, lastSecret;
 
 process.on('uncaughtException', (err) => {
   console.error(err.stack || Error(err));
@@ -19,12 +23,18 @@ process.on('uncaughtException', (err) => {
 });
 
 process.on('message', (message) => co(function*() {
-  if (message.command == 'ready') {
+  // console.log(message);
+  if (message.command == 'id') {
+    lastPub = message.pubkey;
+    id = message.identifier;
+    pSend({ powStatus: 'ready' });
+  }
+  else if (message.command == 'ready') {
     pSend({ powStatus: computing ? 'computing' : 'ready' });
   }
   else if (message.command == 'stop') {
     if (!computing) {
-      pSend({ powStatus: 'stopped' });
+      pSend({ powStatus: 'ready' });
     } else {
       askedStop = true;
     }
@@ -37,6 +47,7 @@ process.on('message', (message) => co(function*() {
 function beginNewProofOfWork(stuff) {
   askedStop = false;
   computing = co(function*() {
+    pSend({ powStatus: 'started block#' + stuff.block.number });
     const conf = stuff.conf;
     const block = stuff.block;
     const nbZeros = stuff.zeros;
@@ -50,6 +61,7 @@ function beginNewProofOfWork(stuff) {
     }
     else {
       lastSecret = pair.sec;
+      lastPub = pair.pub;
       sigFunc = keyring.Key(pair.pub, pair.sec).signSync;
     }
     signatureFunc = sigFunc;
@@ -72,54 +84,59 @@ function beginNewProofOfWork(stuff) {
 
       // We make a bunch of tests every second
       yield Promise.race([
-        countDown(1000),
+        countDown(TURN_DURATION),
         co(function*() {
-          /*****
-           * 1 second tests
-           */
-          // Prove
-          let i = 0;
-          const thisTurn = turn;
-          const pausePeriod = score ? score / 5 : 10; // 5 pauses per second
-          // We limit the number of t
-          const testsPerRound = score ? Math.floor(score * cpu) : 1000 * 1000 * 1000;
-          // Time is updated regularly during the proof
-          block.time = getBlockTime(block, conf, forcedTime);
-          if (block.number == 0) {
-            block.medianTime = block.time;
-          }
-          block.inner_hash = getBlockInnerHash(block);
-          while(!found && i < testsPerRound && thisTurn == turn && !askedStop) {
-            block.nonce++;
-            raw = "InnerHash: " + block.inner_hash + "\nNonce: " + block.nonce + "\n";
-            sig = sigFunc(raw);
-            pow = hash(raw + sig + '\n');
-            let j = 0, charOK = true;
-            while (j < nbZeros && charOK) {
-              charOK = pow[j] == '0';
-              j++;
+          try {
+
+            /*****
+             * A NEW TURN
+             */
+            // Prove
+            let i = 0;
+            const thisTurn = turn;
+            const pausePeriod = score ? score / PAUSES_PER_TURN : 10; // number of pauses per turn
+            // We limit the number of t
+            const testsPerRound = score ? Math.floor(score * cpu) : 1000 * 1000 * 1000;
+            // Time is updated regularly during the proof
+            block.time = getBlockTime(block, conf, forcedTime);
+            if (block.number == 0) {
+              block.medianTime = block.time;
             }
-            if (charOK) {
-              found = pow[nbZeros].match(new RegExp('[0-' + highMark + ']'));
-            }
-            if (!found && nbZeros > 0 && j >= constants.PROOF_OF_WORK.MINIMAL_TO_SHOW) {
-              pSend({ pow: { found: false, pow: pow, block: block, nbZeros: nbZeros }});
-            }
-            if (!found) {
-              i++;
-              testsCount++;
-              if (i % pausePeriod == 0) {
-                yield countDown(0); // Very low pause, just the time to process eventual end of the turn
+            block.inner_hash = getBlockInnerHash(block);
+            while(!found && i < testsPerRound && thisTurn == turn && !askedStop) {
+              block.nonce++;
+              raw = dos2unix("InnerHash: " + block.inner_hash + "\nNonce: " + block.nonce + "\n");
+              sig = dos2unix(sigFunc(raw));
+              pow = hashf("InnerHash: " + block.inner_hash + "\nNonce: " + block.nonce + "\n" + sig + "\n").toUpperCase();
+              let j = 0, charOK = true;
+              while (j < nbZeros && charOK) {
+                charOK = pow[j] == '0';
+                j++;
+              }
+              if (charOK) {
+                found = pow[nbZeros].match(new RegExp('[0-' + highMark + ']'));
+              }
+              if (!found && nbZeros > 0 && j - 1 >= constants.PROOF_OF_WORK.MINIMAL_TO_SHOW) {
+                pSend({ pow: { found: false, pow: pow, block: block, nbZeros: nbZeros }});
+              }
+              if (!found) {
+                i++;
+                testsCount++;
+                if (i % pausePeriod == 0) {
+                  yield countDown(0); // Very low pause, just the time to process eventual end of the turn
+                }
               }
             }
-          }
-          if (!found) {
-            if (turn > 0 && !score) {
-              score = testsCount;
+            if (!found) {
+              if (turn > 0 && !score) {
+                score = testsCount;
+              }
+              // We wait for main "while" countdown to end the turn. This gives of a bit of breath to the CPU (the amount
+              // of "breath" depends on the "cpu" parameter.
+              yield countDown(TURN_DURATION);
             }
-            // We wait for main "while" countdown to end the turn. This gives of a bit of breath to the CPU (the amount
-            // of "breath" depends on the "cpu" parameter.
-            yield countDown(1000);
+          } catch (e) {
+            console.error(e);
           }
         })
       ]);
@@ -129,7 +146,9 @@ function beginNewProofOfWork(stuff) {
     computing = false;
     if (askedStop) {
       askedStop = false;
-      pSend({ pow: { canceled: true }});
+      yield pSend({ pow: { canceled: true }});
+      pSend({ powStatus: 'canceled block#' + block.number });
+      pSend({ powStatus: 'ready' });
     } else {
       yield pSend({
         pow: {
@@ -139,6 +158,7 @@ function beginNewProofOfWork(stuff) {
           pow: pow
         }
       });
+      pSend({ powStatus: 'found' });
     }
   });
 }
@@ -169,6 +189,10 @@ function getBlockTime (block, conf, forcedTime) {
 }
 
 function pSend(stuff) {
+  if (stuff.powStatus) {
+    console.log('--> ENGINE %s %s: %s', id, lastPub.slice(0, 6), stuff.powStatus);
+  }
+  stuff.pubkey = lastPub;
   return new Promise(function (resolve, reject) {
     process.send(stuff, function (error) {
       !error && resolve();

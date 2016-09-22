@@ -188,8 +188,6 @@ function MetaDAL(db) {
   this.upgradeDatabase = () => co(function *() {
     let version = yield that.getVersion();
     while(migrations[version]) {
-      logger.debug("Upgrading from v%s to v%s...", version, version + 1);
-
       yield executeMigration(migrations[version]);
       // Automated increment
       yield that.exec('UPDATE meta SET version = version + 1');

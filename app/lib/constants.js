@@ -259,7 +259,8 @@ module.exports = {
     TEST_PEERS_INTERVAL: 10 // In seconds
   },
   PROOF_OF_WORK: {
-    MINIMAL_TO_SHOW: 3,
+    MINIMAL_TO_SHOW: 2,
+    MINIMAL_TO_SHOW_IN_LOGS: 3,
     EVALUATION: 1000,
     UPPER_BOUND: [
       '9A-F',

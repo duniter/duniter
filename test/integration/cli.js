@@ -119,12 +119,14 @@ describe("CLI", function() {
     let res = yield execute(['config', '--autoconf']);
     res.should.have.property("ipv4").not.equal("a wrong string");
     res.should.have.property("ipv4").match(constants.IPV4_REGEXP);
+    if (process.platform === 'win32') yield new Promise((resolve) => setTimeout(resolve, 500));
   }));
 
   it('reset data', () => co(function*() {
     yield execute(['reset', 'data']);
     const res = yield execute(['export-bc', '--nostdout']);
     res.should.have.length(0);
+    if (process.platform === 'win32') yield new Promise((resolve) => setTimeout(resolve, 500));
   }));
 
   it('sync 2200 blocks (fast)', () => co(function*() {
@@ -133,6 +135,7 @@ describe("CLI", function() {
     const res = yield execute(['export-bc', '--nostdout']);
     res[res.length - 1].should.have.property('number').equal(2200);
     res.should.have.length(2200 + 1);
+    if (process.platform === 'win32') yield new Promise((resolve) => setTimeout(resolve, 500));
   }));
 
   it('sync 5 blocks (cautious)', () => co(function*() {
@@ -140,6 +143,7 @@ describe("CLI", function() {
     const res = yield execute(['export-bc', '--nostdout']);
     res[res.length - 1].should.have.property('number').equal(2204);
     res.should.have.length(2204 + 1);
+    if (process.platform === 'win32') yield new Promise((resolve) => setTimeout(resolve, 500));
   }));
 
   it('[spawn] reset data', () => co(function*() {

@@ -162,7 +162,8 @@ function BlockGenerator(notifier) {
       }, null);
       logger.info('ENGINE #%s HAS FOUND A PROOF', engineNumber);
       // Ask for stopping the other engines
-      yield that.stopPoW();
+      let res = yield powPromise;
+      yield that.stopPoW(res.block);
       // But also gie the answer in the **same time**, without waiting for effective stop of the engines
       return powPromise;
     });

@@ -630,7 +630,7 @@ function P2PDownloader(localNumber, to, maxParallelDownloads, peers, watcher) {
           slots.push(i);
           processing[i] = true;
           downloads[i] = makeQuerablePromise(downloadChunk(i)); // Starts a new download
-        } else if (chunks[i]) {
+        } else if (downloads[i] && downloads[i].isFulfilled() && processing[i]) {
           doneCount++;
         }
       }

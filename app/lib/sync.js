@@ -104,7 +104,6 @@ function Synchroniser (server, host, port, conf, interactive) {
       //============
       // Blockchain headers
       //============
-      to = 1999;
       logger.info('Getting remote blockchain info...');
       watcher.writeStatus('Connecting to ' + host + '...');
       const lCurrent = yield dal.getCurrentBlockOrNull();
@@ -174,6 +173,9 @@ function Synchroniser (server, host, port, conf, interactive) {
           if (cautious) {
             return yield dal.getCurrentBlockOrNull();
           } else {
+            if (lCurrent && !lastPullBlock) {
+              lastPullBlock = lCurrent;
+            }
             return lastPullBlock;
           }
         }),

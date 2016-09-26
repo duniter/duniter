@@ -531,14 +531,14 @@ function P2PDownloader(localNumber, to, maxParallelDownloads, peers, watcher) {
       try {
         const start = Date.now();
         handler[chunkIndex] = node;
-        watcher.writeStatus('Getting chunck #' + chunkIndex + '/' + numberOfChunksToDownload + ' from ' + from + ' to ' + (from + count) + ' on peer ' + [node.host, node.port].join(':'));
+        watcher.writeStatus('Getting chunck #' + chunkIndex + '/' + numberOfChunksToDownload + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + [node.host, node.port].join(':'));
         let blocks = yield Q.nfcall(node.blockchain.blocks, count, from);
         node.ttas.push(Date.now() - start);
         // Only keep a flow of 5 ttas for the node
         if (node.ttas.length > 5) node.ttas.shift();
         // Average time to answer
         node.tta = Math.round(node.ttas.reduce((sum, tta) => sum + tta, 0) / node.ttas.length);
-        watcher.writeStatus('GOT chunck #' + chunkIndex + '/' + numberOfChunksToDownload + ' from ' + from + ' to ' + (from + count) + ' on peer ' + [node.host, node.port].join(':'));
+        watcher.writeStatus('GOT chunck #' + chunkIndex + '/' + numberOfChunksToDownload + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + [node.host, node.port].join(':'));
         return blocks;
       } catch (e) {
         // If a node throws an error, do not cancel the download

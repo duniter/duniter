@@ -9,11 +9,11 @@ const AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = LinksDAL;
 
-function LinksDAL(dbo, wotb) {
+function LinksDAL(db, wotb) {
 
   "use strict";
 
-  AbstractSQLite.call(this, dbo);
+  AbstractSQLite.call(this, db);
 
   const that = this;
 

@@ -12,11 +12,11 @@ const SandBox = require('./SandBox');
 
 module.exports = TxsDAL;
 
-function TxsDAL(dbo) {
+function TxsDAL(db) {
 
   "use strict";
 
-  AbstractSQLite.call(this, dbo);
+  AbstractSQLite.call(this, db);
 
   const that = this;
 

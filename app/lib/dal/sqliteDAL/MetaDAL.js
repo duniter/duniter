@@ -13,9 +13,9 @@ const AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = MetaDAL;
 
-function MetaDAL(dbo) {
+function MetaDAL(db) {
 
-  AbstractSQLite.call(this, dbo);
+  AbstractSQLite.call(this, db);
 
   const that = this;
 
@@ -42,7 +42,7 @@ function MetaDAL(dbo) {
 
     // Update wrong recipients field (was not filled in)
     3: () => co(function*() {
-      const txsDAL = new (require('./TxsDAL'))(dbo);
+      const txsDAL = new (require('./TxsDAL'))(db);
       const txs = yield txsDAL.sqlListAll();
       Transaction.statics.setRecipients(txs);
       for (const tx of txs) {
@@ -52,7 +52,7 @@ function MetaDAL(dbo) {
 
     // Migrates wrong unitbases
     4: () => co(function*() {
-      let blockDAL = new (require('./BlockDAL'))(dbo);
+      let blockDAL = new (require('./BlockDAL'))(db);
       let dividendBlocks = yield blockDAL.getDividendBlocks();
       let bases = { 0: 0 }; // The first base is always 0 at block 0
       for (let i = 0; i < dividendBlocks.length; i++) {
@@ -79,7 +79,7 @@ function MetaDAL(dbo) {
 
     // Migrates wrong monetary masses
     5: () => co(function*() {
-      let blockDAL = new (require('./BlockDAL'))(dbo);
+      let blockDAL = new (require('./BlockDAL'))(db);
       let udBlocks = yield blockDAL.getDividendBlocks();
       let monetaryMass = 0;
       let lastUDBlock = 0;
@@ -116,7 +116,7 @@ function MetaDAL(dbo) {
     'ALTER TABLE block ADD COLUMN issuersCount INTEGER NULL;' +
     'COMMIT;',
     12: () => co(function *() {
-      let blockDAL = new (require('./BlockDAL'))(dbo);
+      let blockDAL = new (require('./BlockDAL'))(db);
       yield blockDAL.exec('ALTER TABLE block ADD COLUMN len INTEGER NULL;');
       yield blockDAL.exec('ALTER TABLE txs ADD COLUMN len INTEGER NULL;');
       const current = yield blockDAL.getCurrent();

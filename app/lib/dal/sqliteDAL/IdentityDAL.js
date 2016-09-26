@@ -11,11 +11,11 @@ const SandBox = require('./SandBox');
 
 module.exports = IdentityDAL;
 
-function IdentityDAL(dbo, wotb) {
+function IdentityDAL(db, wotb) {
 
   "use strict";
 
-  AbstractSQLite.call(this, dbo);
+  AbstractSQLite.call(this, db);
 
   const that = this;
 

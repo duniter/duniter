@@ -7,11 +7,11 @@ const AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = PeerDAL;
 
-function PeerDAL(dbo) {
+function PeerDAL(db) {
 
   "use strict";
 
-  AbstractSQLite.call(this, dbo);
+  AbstractSQLite.call(this, db);
 
   const that = this;
 

@@ -8,11 +8,11 @@ const AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = SourcesDAL;
 
-function SourcesDAL(dbo) {
+function SourcesDAL(db) {
 
   "use strict";
 
-  AbstractSQLite.call(this, dbo);
+  AbstractSQLite.call(this, db);
 
   const that = this;
 

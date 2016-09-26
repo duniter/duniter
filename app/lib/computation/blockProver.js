@@ -189,6 +189,9 @@ function BlockGenerator(notifier) {
      * Eventually stops the engine PoW if one was computing
      */
     this.stopPoW = () => {
+      logger.info('Stop proof-of-work worker #%s', id);
+      onPoWError = null;
+      onPoWSuccess = null;
       powProcess.send({ command: 'stop' });
       return readyPromise;
     };

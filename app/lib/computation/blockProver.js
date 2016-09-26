@@ -48,9 +48,9 @@ function BlockGenerator(notifier) {
   this.cancel = (gottenBlock) => co(function*() {
     // If no farm was instanciated, tehre is nothing to do yet
     if (workerFarmPromise) {
-      let worker = yield getWorker();
-      if (worker.isComputing() && !worker.isStopping()) {
-        yield worker.stopPoW();
+      let farm = yield getWorker();
+      if (farm.isComputing() && !farm.isStopping()) {
+        yield farm.stopPoW(gottenBlock);
       }
       if (waitResolve) {
         waitResolve();
@@ -141,8 +141,8 @@ function BlockGenerator(notifier) {
 
     const whenReady = () => Promise.all(workers.map((worker) => worker.whenReady()));
 
-    this.stopPoW = () => {
-      stopPromise = querablep(Promise.all(workers.map((worker) => worker.stopPoW())));
+    this.stopPoW = (gottenBlock) => {
+      stopPromise = querablep(Promise.all(workers.map((worker) => worker.stopPoW(gottenBlock))));
       return stopPromise;
     };
 
@@ -175,7 +175,7 @@ function BlockGenerator(notifier) {
     let onAlmostPoW = function() { throw 'Almost proof-of-work found, but no listener is attached.'; };
     let onPoWSuccess = function() { throw 'Proof-of-work success, but no listener is attached.'; };
     let onPoWError = function() { throw 'Proof-of-work error, but no listener is attached.'; };
-    let powProcess, readyPromise, readyResolver, lastStuff;
+    let powProcess, readyPromise, readyResolver, lastInterval;
 
     newProcess();
 
@@ -188,10 +188,16 @@ function BlockGenerator(notifier) {
     /**
      * Eventually stops the engine PoW if one was computing
      */
-    this.stopPoW = () => {
+    this.stopPoW = (gottenBlock) => {
       logger.info('Stop proof-of-work worker #%s', id);
-      onPoWError = null;
-      onPoWSuccess = null;
+      if (!gottenBlock) {
+        // Canceled for a long time (not because of an incoming block)
+        onPoWError = null;
+        onPoWSuccess = null;
+        if (lastInterval) {
+          clearInterval(lastInterval); // Force engine killing after some time if stop failed
+        }
+      }
       powProcess.send({ command: 'stop' });
       return readyPromise;
     };
@@ -280,6 +286,7 @@ function BlockGenerator(notifier) {
       // Initialize the engine
       powProcess.send({ command: 'id', pubkey: pub, identifier: id });
       interval = setInterval(() => powProcess.send({ command: 'idle' }), constants.ENGINE_IDLE_INTERVAL);
+      lastInterval = interval;
     }
   }
 }

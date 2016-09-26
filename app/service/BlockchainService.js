@@ -425,7 +425,7 @@ function BlockchainService (server) {
 
   this.saveParametersForRootBlock = (block) => co(function *() {
     let mainFork = mainContext;
-    let rootBlock = block || (yield mainFork.dal.getBlock(0));
+    let rootBlock = block || (yield dal.getBlock(0));
     if (!rootBlock) throw 'Cannot registrer currency parameters since no root block exists';
     return mainFork.saveParametersForRootBlock(rootBlock);
   });

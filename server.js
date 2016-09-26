@@ -82,13 +82,6 @@ function Server (dbConf, overrideConf) {
     yield that.dal.close();
   });
 
-  this.softResetData = () => co(function *() {
-    logger.debug('Soft data reset... [cache]');
-    yield that.dal.cleanCaches();
-    logger.debug('Soft data reset... [data]');
-    yield that.cleanDBData();
-  });
-
   this.loadConf = (useDefaultConf) => co(function *() {
     logger.debug('Loading conf...');
     that.conf = yield that.dal.loadConf(overrideConf, useDefaultConf);
@@ -354,9 +347,9 @@ function Server (dbConf, overrideConf) {
   });
 
   this.cleanDBData = () => co(function *() {
-    yield _.values(that.dal.newDals).map((dal) => dal.cleanData && dal.cleanData());
+    yield that.dal.cleanCaches();
     that.dal.wotb.resetWoT();
-    const files = ['stats', 'cores', 'current'];
+    const files = ['stats', 'cores', 'current', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.UCOIN_DB_NAME + '.log'];
     const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs);
   });

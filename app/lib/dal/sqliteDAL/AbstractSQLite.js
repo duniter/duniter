@@ -10,7 +10,7 @@ const logger = require('../../logger')('sqlite');
 
 module.exports = AbstractSQLite;
 
-function AbstractSQLite(db) {
+function AbstractSQLite(dbo) {
 
   "use strict";
 
@@ -27,7 +27,7 @@ function AbstractSQLite(db) {
     try {
       //logger.trace(sql, JSON.stringify(params || []));
       const start = new Date();
-      const res = yield Q.nbind(db.all, db)(sql, params || []);
+      const res = yield Q.nbind(dbo.sqlite.all, dbo.sqlite)(sql, params || []);
       const duration = (new Date()) - start;
       const entities = res.map(toEntity);
       // Display result
@@ -145,7 +145,7 @@ function AbstractSQLite(db) {
   this.exec = (sql) => co(function *() {
     try {
       // logger.trace(sql);
-      return Q.nbind(db.exec, db)(sql);
+      return Q.nbind(dbo.sqlite.exec, dbo.sqlite)(sql);
     } catch (e) {
       logger.error('ERROR >> %s', sql);
       throw e;

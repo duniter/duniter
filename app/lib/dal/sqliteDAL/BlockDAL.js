@@ -12,11 +12,11 @@ module.exports = BlockDAL;
 const IS_FORK = true;
 const IS_NOT_FORK = false;
 
-function BlockDAL(db) {
+function BlockDAL(dbo) {
 
   "use strict";
 
-  AbstractSQLite.call(this, db);
+  AbstractSQLite.call(this, dbo);
 
   let current = null;
   let that = this;

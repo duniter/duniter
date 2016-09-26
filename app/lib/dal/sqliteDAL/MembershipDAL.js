@@ -11,11 +11,11 @@ const SandBox = require('./SandBox');
 
 module.exports = MembershipDAL;
 
-function MembershipDAL(db) {
+function MembershipDAL(dbo) {
 
   "use strict";
 
-  AbstractSQLite.call(this, db);
+  AbstractSQLite.call(this, dbo);
 
   const that = this;
 

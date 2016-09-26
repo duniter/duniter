@@ -24,9 +24,11 @@ function FileDAL(params) {
 
   const rootPath = params.home;
   const myFS = params.fs;
-  const sqlite = params.dbf();
+  const databaseObject = {
+    sqlite: params.dbf()
+  };
   let dbOpened = false;
-  sqlite.once('open', () => {
+  databaseObject.sqlite.once('open', () => {
     dbOpened = true;
   });
   const wotbInstance = params.wotb;
@@ -37,17 +39,17 @@ function FileDAL(params) {
 
   // DALs
   this.confDAL = new ConfDAL(rootPath, myFS, null, that, CFSStorage);
-  this.metaDAL = new (require('./sqliteDAL/MetaDAL'))(sqlite);
-  this.peerDAL = new (require('./sqliteDAL/PeerDAL'))(sqlite);
-  this.blockDAL = new (require('./sqliteDAL/BlockDAL'))(sqlite);
-  this.sourcesDAL = new (require('./sqliteDAL/SourcesDAL'))(sqlite);
-  this.txsDAL = new (require('./sqliteDAL/TxsDAL'))(sqlite);
+  this.metaDAL = new (require('./sqliteDAL/MetaDAL'))(databaseObject);
+  this.peerDAL = new (require('./sqliteDAL/PeerDAL'))(databaseObject);
+  this.blockDAL = new (require('./sqliteDAL/BlockDAL'))(databaseObject);
+  this.sourcesDAL = new (require('./sqliteDAL/SourcesDAL'))(databaseObject);
+  this.txsDAL = new (require('./sqliteDAL/TxsDAL'))(databaseObject);
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, null, that, CFSStorage);
   this.statDAL = new StatDAL(rootPath, myFS, null, that, CFSStorage);
-  this.linksDAL = new (require('./sqliteDAL/LinksDAL'))(sqlite, wotbInstance);
-  this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqlite, wotbInstance);
-  this.certDAL = new (require('./sqliteDAL/CertDAL'))(sqlite);
-  this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(sqlite);
+  this.linksDAL = new (require('./sqliteDAL/LinksDAL'))(databaseObject, wotbInstance);
+  this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(databaseObject, wotbInstance);
+  this.certDAL = new (require('./sqliteDAL/CertDAL'))(databaseObject);
+  this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(databaseObject);
 
   this.newDals = {
     'metaDAL': that.metaDAL,
@@ -835,23 +837,23 @@ function FileDAL(params) {
     return new Promise((resolve, reject) => {
       let isOpened = !dbOpened;
       if (process.platform === 'win32') {
-        isOpened = sqlite.open; // For an unknown reason, we need this line.
+        isOpened = databaseObject.sqlite.open; // For an unknown reason, we need this line.
       }
       if (!isOpened) {
         return resolve();
       }
       logger.debug('Trying to close SQLite...');
-      sqlite.on('close', () => {
+      databaseObject.sqlite.on('close', () => {
         logger.info('Database closed.');
         resolve();
       });
-      sqlite.on('error', (err) => {
+      databaseObject.sqlite.on('error', (err) => {
         if (err && err.message === 'SQLITE_MISUSE: Database is closed') {
           return resolve();
         }
         reject(err);
       });
-      sqlite.close();
+      databaseObject.sqlite.close();
     });
   });
 

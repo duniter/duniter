@@ -438,7 +438,13 @@ function WebAdmin (dbConf, overConf) {
     yield pluggedDALP;
     // We have to wait for a non-breaking window to process reset
     yield server.BlockchainService.pushFIFO(() => co(function *() {
-      yield server.softResetData();
+      yield that.stopHTTP();
+      yield that.stopAllServices();
+      yield server.unplugFileSystem();
+      yield server.cleanDBData();
+      yield pluggedDALP;
+      pluggedConfP = plugForConf();
+      pluggedDALP = replugDAL();
     }));
     return {};
   });

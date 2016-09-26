@@ -554,7 +554,10 @@ function P2PDownloader(localNumber, to, maxParallelDownloads, peers, watcher) {
   const downloadChunk = (index) => co(function*() {
     // The algorithm to download a chunk
     const from = localNumber + 1 + index * CONST_BLOCKS_CHUNK;
-    const count = index < numberOfChunksToDownload - 1 ? CONST_BLOCKS_CHUNK : (nbBlocksToDownload % CONST_BLOCKS_CHUNK);
+    let count = CONST_BLOCKS_CHUNK;
+    if (index == numberOfChunksToDownload - 1) {
+      count = nbBlocksToDownload % CONST_BLOCKS_CHUNK || CONST_BLOCKS_CHUNK;
+    }
     try {
       return yield p2pDownload(from, count, index);
     } catch (e) {

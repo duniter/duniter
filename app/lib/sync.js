@@ -241,7 +241,9 @@ function Synchroniser (server, host, port, conf, interactive) {
       // Save currency parameters given by root block
       const rootBlock = yield server.dal.getBlock(0);
       yield BlockchainService.saveParametersForRootBlock(rootBlock);
-      server.dal.blockDAL.cleanCache();//=======
+      server.dal.blockDAL.cleanCache();
+
+      //=======
       // Peers
       //=======
       if (!nopeers) {

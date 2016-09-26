@@ -478,14 +478,6 @@ function WebAdmin (dbConf, overConf) {
     return server.testForSync(req.body.host, parseInt(req.body.port));
   });
 
-  this.loadData = (dunFile) => co(function *() {
-    yield pluggedDALP;
-    // We have to wait for a non-breaking window to process reset
-    yield server.unplugFileSystem();
-    yield server.cleanDBData();
-    return {};
-  });
-
   this.logsExport = (req) => co(function *() {
     yield pluggedDALP;
     const logs = yield server.getLastLogLines(req.params.quantity || 1500);

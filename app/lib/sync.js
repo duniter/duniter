@@ -101,6 +101,22 @@ function Synchroniser (server, host, port, conf, interactive) {
       node.pubkey = peer.pubkey;
       logger.info('Sync started.');
 
+      //============
+      // Blockchain headers
+      //============
+      to = 1999;
+      logger.info('Getting remote blockchain info...');
+      watcher.writeStatus('Connecting to ' + host + '...');
+      const lCurrent = yield dal.getCurrentBlockOrNull();
+      const localNumber = lCurrent ? lCurrent.number : -1;
+      let rCurrent;
+      if (isNaN(to)) {
+        rCurrent = yield Q.nfcall(node.blockchain.current);
+      } else {
+        rCurrent = yield Q.nfcall(node.blockchain.block, to);
+      }
+      to = rCurrent.number;
+
       //=======
       // Peers (just for P2P download)
       //=======
@@ -120,11 +136,16 @@ function Synchroniser (server, host, port, conf, interactive) {
             }
           });
           peers = yield leavesToAdd.map((leaf) => co(function*() {
-            const json3 = yield getPeers({ "leaf": leaf });
-            const jsonEntry = json3.leaf.value;
-            const endpoint = jsonEntry.endpoints[0];
-            watcher.writeStatus('Peer ' + endpoint);
-            return jsonEntry;
+            try {
+              const json3 = yield getPeers({ "leaf": leaf });
+              const jsonEntry = json3.leaf.value;
+              const endpoint = jsonEntry.endpoints[0];
+              watcher.writeStatus('Peer ' + endpoint);
+              return jsonEntry;
+            } catch (e) {
+              logger.warn("Could not get peer of leaf %s, continue...", leaf);
+              return null;
+            }
           }));
         }
         else {
@@ -132,20 +153,12 @@ function Synchroniser (server, host, port, conf, interactive) {
         }
       }
 
+      peers = peers.filter((p) => p);
+
       //============
       // Blockchain
       //============
       logger.info('Downloading Blockchain...');
-      watcher.writeStatus('Connecting to ' + host + '...');
-      const lCurrent = yield dal.getCurrentBlockOrNull();
-      const localNumber = lCurrent ? lCurrent.number : -1;
-      let rCurrent;
-      if (isNaN(to)) {
-        rCurrent = yield Q.nfcall(node.blockchain.current);
-      } else {
-        rCurrent = yield Q.nfcall(node.blockchain.block, to);
-      }
-      to = rCurrent.number;
 
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = (askedCautious === true || (askedCautious === undefined && localNumber >= 0));

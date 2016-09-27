@@ -7,7 +7,7 @@ const cfs  = require('../cfs');
 const Q    = require('q');
 const qfs  = require('q-io/fs');
 const fs   = require('fs');
-const sqlite3 = require("sqlite3b").verbose();
+const driver = require("../dal/drivers/sqlite");
 
 const DEFAULT_DOMAIN = "duniter_default";
 const DEFAULT_HOME = (process.platform == 'win32' ? process.env.USERPROFILE : process.env.HOME) + '/.config/duniter/';
@@ -25,7 +25,7 @@ const dir = module.exports = {
   INSTANCE_NAME: getDomain(opts.mdb),
   INSTANCE_HOME: getHomePath(opts.mdb, opts.home),
   INSTANCE_HOMELOG_FILE: getLogsPath(opts.mdb, opts.home),
-  UCOIN_DB_NAME: 'duniter',
+  DUNITER_DB_NAME: 'duniter',
   WOTB_FILE: 'wotb.bin',
 
   getHome: (profile, dir) => getHomePath(profile, dir),
@@ -50,11 +50,11 @@ const dir = module.exports = {
     const home = params.home;
     yield someDelayFix();
     if (isMemory) {
-      params.dbf = () => new sqlite3.Database(':memory:');
+      params.dbf = () => driver(':memory:');
       params.wotb = require('../wot').memoryInstance();
     } else {
-      const sqlitePath = path.join(home, dir.UCOIN_DB_NAME + '.db');
-      params.dbf = () => new sqlite3.Database(sqlitePath);
+      const sqlitePath = path.join(home, dir.DUNITER_DB_NAME + '.db');
+      params.dbf = () => driver(sqlitePath);
       const wotbFilePath = path.join(home, dir.WOTB_FILE);
       let existsFile = yield qfs.exists(wotbFilePath);
       if (!existsFile) {

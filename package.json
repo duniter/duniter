@@ -84,7 +84,8 @@
     "mocha-lcov-reporter": "1.0.0",
     "sha1": "",
     "should": "",
-    "supertest": ""
+    "supertest": "",
+    "tmp": "0.0.29"
   },
   "bin": {
     "duniter": "./bin/duniter"

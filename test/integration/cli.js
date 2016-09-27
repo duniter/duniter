@@ -125,7 +125,7 @@ describe("CLI", function() {
   it('reset data', () => co(function*() {
     yield execute(['reset', 'data']);
     const res = yield execute(['export-bc', '--nostdout']);
-    res.should.have.length(0);
+    res.slice(0, 1).should.have.length(0);
     if (process.platform === 'win32') yield new Promise((resolve) => setTimeout(resolve, 500));
   }));
 

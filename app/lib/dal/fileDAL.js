@@ -24,11 +24,7 @@ function FileDAL(params) {
 
   const rootPath = params.home;
   const myFS = params.fs;
-  const sqlite = params.dbf();
-  let dbOpened = false;
-  sqlite.once('open', () => {
-    dbOpened = true;
-  });
+  const sqliteDriver = params.dbf();
   const wotbInstance = params.wotb;
   const that = this;
 
@@ -37,17 +33,17 @@ function FileDAL(params) {
 
   // DALs
   this.confDAL = new ConfDAL(rootPath, myFS, null, that, CFSStorage);
-  this.metaDAL = new (require('./sqliteDAL/MetaDAL'))(sqlite);
-  this.peerDAL = new (require('./sqliteDAL/PeerDAL'))(sqlite);
-  this.blockDAL = new (require('./sqliteDAL/BlockDAL'))(sqlite);
-  this.sourcesDAL = new (require('./sqliteDAL/SourcesDAL'))(sqlite);
-  this.txsDAL = new (require('./sqliteDAL/TxsDAL'))(sqlite);
+  this.metaDAL = new (require('./sqliteDAL/MetaDAL'))(sqliteDriver);
+  this.peerDAL = new (require('./sqliteDAL/PeerDAL'))(sqliteDriver);
+  this.blockDAL = new (require('./sqliteDAL/BlockDAL'))(sqliteDriver);
+  this.sourcesDAL = new (require('./sqliteDAL/SourcesDAL'))(sqliteDriver);
+  this.txsDAL = new (require('./sqliteDAL/TxsDAL'))(sqliteDriver);
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, null, that, CFSStorage);
   this.statDAL = new StatDAL(rootPath, myFS, null, that, CFSStorage);
-  this.linksDAL = new (require('./sqliteDAL/LinksDAL'))(sqlite, wotbInstance);
-  this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqlite, wotbInstance);
-  this.certDAL = new (require('./sqliteDAL/CertDAL'))(sqlite);
-  this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(sqlite);
+  this.linksDAL = new (require('./sqliteDAL/LinksDAL'))(sqliteDriver, wotbInstance);
+  this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqliteDriver, wotbInstance);
+  this.certDAL = new (require('./sqliteDAL/CertDAL'))(sqliteDriver);
+  this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(sqliteDriver);
 
   this.newDals = {
     'metaDAL': that.metaDAL,
@@ -832,27 +828,7 @@ function FileDAL(params) {
 
   this.close = () => co(function *() {
     yield _.values(that.newDals).map((dal) => dal.cleanCache && dal.cleanCache());
-    return new Promise((resolve, reject) => {
-      let isOpened = !dbOpened;
-      if (process.platform === 'win32') {
-        isOpened = sqlite.open; // For an unknown reason, we need this line.
-      }
-      if (!isOpened) {
-        return resolve();
-      }
-      logger.debug('Trying to close SQLite...');
-      sqlite.on('close', () => {
-        logger.info('Database closed.');
-        resolve();
-      });
-      sqlite.on('error', (err) => {
-        if (err && err.message === 'SQLITE_MISUSE: Database is closed') {
-          return resolve();
-        }
-        reject(err);
-      });
-      sqlite.close();
-    });
+    return sqliteDriver.closeConnection();
   });
 
   this.resetPeers = () => co(function *() {

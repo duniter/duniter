@@ -287,19 +287,17 @@ function Server (dbConf, overrideConf) {
     }
   });
 
-  this.resetAll = (done) => {
-    const files = ['stats', 'cores', 'current', 'conf', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.WOTB_FILE, 'export.zip', 'import.zip'];
+  this.resetAll = (done) => co(function*() {
+    const files = ['stats', 'cores', 'current', directory.DUNITER_DB_NAME, directory.DUNITER_DB_NAME + '.db', directory.DUNITER_DB_NAME + '.log', directory.WOTB_FILE, 'export.zip', 'import.zip', 'conf'];
     const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
-  };
+  });
 
-  this.resetData = (done) => {
-    return co(function*(){
-      const files = ['stats', 'cores', 'current', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.UCOIN_DB_NAME + '.log', directory.WOTB_FILE];
-      const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
-      yield resetFiles(files, dirs, done);
-    });
-  };
+  this.resetData = (done) => co(function*(){
+    const files = ['stats', 'cores', 'current', directory.DUNITER_DB_NAME, directory.DUNITER_DB_NAME + '.db', directory.DUNITER_DB_NAME + '.log', directory.WOTB_FILE];
+    const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+    yield resetFiles(files, dirs, done);
+  });
 
   this.resetConf = (done) => {
     const files = ['conf'];
@@ -349,7 +347,7 @@ function Server (dbConf, overrideConf) {
   this.cleanDBData = () => co(function *() {
     yield that.dal.cleanCaches();
     that.dal.wotb.resetWoT();
-    const files = ['stats', 'cores', 'current', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.UCOIN_DB_NAME + '.log'];
+    const files = ['stats', 'cores', 'current', directory.DUNITER_DB_NAME, directory.DUNITER_DB_NAME + '.db', directory.DUNITER_DB_NAME + '.log'];
     const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs);
   });

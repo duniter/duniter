@@ -184,6 +184,16 @@ function BlockGenerator(notifier) {
       readyPromise = querablep(new Promise((resolve) => readyResolver = resolve));
     }
 
+    function sendToProcess(obj) {
+      try {
+        if (powProcess.connected) {
+          powProcess.send(obj);
+        }
+      } catch (e) {
+        logger.warn(e);
+      }
+    }
+
     this.whenReady = () => readyPromise;
 
     /**
@@ -199,7 +209,7 @@ function BlockGenerator(notifier) {
           clearInterval(lastInterval); // Force engine killing after some time if stop failed
         }
       }
-      powProcess.send({ command: 'stop' });
+      sendToProcess({ command: 'stop' });
       return readyPromise;
     };
 
@@ -217,7 +227,7 @@ function BlockGenerator(notifier) {
 
       // Starts the PoW
       stuff.newPoW.block.nonce = nonceBeginning;
-      powProcess.send(stuff);
+      sendToProcess(stuff);
     });
 
     this.setOnAlmostPoW = function(onPoW) {
@@ -226,7 +236,7 @@ function BlockGenerator(notifier) {
 
     function newProcess() {
       let interval;
-      
+
       powProcess = childProcess.fork(path.join(__dirname, '../proof.js'));
 
       if (!readyPromise || readyPromise.isFulfilled()) {
@@ -285,8 +295,8 @@ function BlockGenerator(notifier) {
       });
 
       // Initialize the engine
-      powProcess.send({ command: 'id', pubkey: pub, identifier: id });
-      interval = setInterval(() => powProcess.send({ command: 'idle' }), constants.ENGINE_IDLE_INTERVAL);
+      sendToProcess({ command: 'id', pubkey: pub, identifier: id });
+      interval = setInterval(() => sendToProcess({ command: 'idle' }), constants.ENGINE_IDLE_INTERVAL);
       lastInterval = interval;
     }
   }

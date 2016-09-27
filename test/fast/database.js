@@ -6,7 +6,7 @@ const should = require('should');
 const sqlite = require('../../app/lib/dal/drivers/sqlite');
 
 const MEMORY = ':memory:';
-const FILE = tmp.fileSync().name;
+const FILE = tmp.fileSync().name + '.db'; // We add an suffix to avoid Windows-locking of the file by the `tmp` module
 
 const CREATE_TABLE_SQL = 'BEGIN;' +
   'CREATE TABLE IF NOT EXISTS duniter (' +
@@ -58,23 +58,31 @@ describe("SQLite driver", function() {
 
   describe("File", function() {
 
+    const driver = sqlite(FILE);
     let rows;
 
-    it('should be openable and closable on will, memorizing previous state', () => co(function*() {
-      const driver = sqlite(FILE);
+    it('should be able to open a new one', () => co(function*() {
       yield driver.executeSql(CREATE_TABLE_SQL);
       rows = yield driver.executeAll(SELECT_FROM_TABLE, []);
       rows.should.have.length(0);
       yield driver.closeConnection();
+    }));
+
+    it('should be able to reopen the file', () => co(function*() {
       // Reopens the file
       rows = yield driver.executeAll(SELECT_FROM_TABLE, []);
       rows.should.have.length(0);
+    }));
 
+    it('should be able to remove the file', () => co(function*() {
       // We explicitely ask for destruction
       yield driver.destroyDatabase();
       yield driver.executeAll(SELECT_FROM_TABLE, [])
         .then(() => 'Should have thrown an exception')
         .catch((err) => err.should.have.property('message').match(/^SQLITE_ERROR: no such table: duniter$/));
+    }));
+
+    it('should be able to open the file after being removed', () => co(function*() {
       // But if we populate it again, it will work
       yield driver.executeSql(CREATE_TABLE_SQL);
       rows = yield driver.executeAll(SELECT_FROM_TABLE, []);

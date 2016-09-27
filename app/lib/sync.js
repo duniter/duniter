@@ -548,14 +548,14 @@ function P2PDownloader(localNumber, to, maxParallelDownloads, peers, watcher) {
       try {
         const start = Date.now();
         handler[chunkIndex] = node;
-        watcher.writeStatus('Getting chunck #' + chunkIndex + '/' + numberOfChunksToDownload + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + [node.host, node.port].join(':'));
+        watcher.writeStatus('Getting chunck #' + chunkIndex + '/' + (numberOfChunksToDownload - 1) + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + [node.host, node.port].join(':'));
         let blocks = yield Q.nfcall(node.blockchain.blocks, count, from);
         node.ttas.push(Date.now() - start);
         // Only keep a flow of 5 ttas for the node
         if (node.ttas.length > 5) node.ttas.shift();
         // Average time to answer
         node.tta = Math.round(node.ttas.reduce((sum, tta) => sum + tta, 0) / node.ttas.length);
-        watcher.writeStatus('GOT chunck #' + chunkIndex + '/' + numberOfChunksToDownload + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + [node.host, node.port].join(':'));
+        watcher.writeStatus('GOT chunck #' + chunkIndex + '/' + (numberOfChunksToDownload - 1) + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + [node.host, node.port].join(':'));
         return blocks;
       } catch (e) {
         // If a node throws an error, do not cancel the download
@@ -638,9 +638,10 @@ function P2PDownloader(localNumber, to, maxParallelDownloads, peers, watcher) {
    */
   co(function*() {
     yield downloadStarter;
-    let doneCount = 0;
-    while (doneCount < chunks.length) {
+    let doneCount = 0, resolvedCount = 0;
+    while (resolvedCount < chunks.length) {
       doneCount = 0;
+      resolvedCount = 0;
       // Add as much possible downloads as possible, and count the already done ones
       for (let i = 0; i < chunks.length; i++) {
         if (chunks[i] === null && !processing[i] && slots.indexOf(i) === -1 && slots.length < downloadSlots) {
@@ -649,6 +650,10 @@ function P2PDownloader(localNumber, to, maxParallelDownloads, peers, watcher) {
           downloads[i] = makeQuerablePromise(downloadChunk(i)); // Starts a new download
         } else if (downloads[i] && downloads[i].isFulfilled() && processing[i]) {
           doneCount++;
+        }
+        // We count the number of perfectly downloaded & validated chunks
+        if (chunks[i]) {
+          resolvedCount++;
         }
       }
       watcher.downloadPercent(Math.round(doneCount / numberOfChunksToDownload * 100));

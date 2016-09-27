@@ -55,6 +55,7 @@ function SQLiteDriver(path) {
     if (path !== MEMORY_PATH) {
       yield qfs.remove(path);
     }
+    logger.debug('Database removed');
   });
 
   this.closeConnection = () => co(function*() {

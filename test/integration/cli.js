@@ -83,7 +83,7 @@ describe("CLI", function() {
       } else if (index == 4) {
         
         /***************
-         * Node with apparent good chaining, but one of the hashs if WRONG
+         * Node with apparent good chaining, but one of the hashs is WRONG
          */
         return toolbox.fakeSyncServer((count, from) => {
           // We just need to send the wrong chunk
@@ -119,14 +119,12 @@ describe("CLI", function() {
     let res = yield execute(['config', '--autoconf']);
     res.should.have.property("ipv4").not.equal("a wrong string");
     res.should.have.property("ipv4").match(constants.IPV4_REGEXP);
-    if (process.platform === 'win32') yield new Promise((resolve) => setTimeout(resolve, 500));
   }));
 
   it('reset data', () => co(function*() {
     yield execute(['reset', 'data']);
     const res = yield execute(['export-bc', '--nostdout']);
     res.slice(0, 1).should.have.length(0);
-    if (process.platform === 'win32') yield new Promise((resolve) => setTimeout(resolve, 500));
   }));
 
   it('sync 2200 blocks (fast)', () => co(function*() {
@@ -135,7 +133,6 @@ describe("CLI", function() {
     const res = yield execute(['export-bc', '--nostdout']);
     res[res.length - 1].should.have.property('number').equal(2200);
     res.should.have.length(2200 + 1);
-    if (process.platform === 'win32') yield new Promise((resolve) => setTimeout(resolve, 500));
   }));
 
   it('sync 5 blocks (cautious)', () => co(function*() {
@@ -143,7 +140,6 @@ describe("CLI", function() {
     const res = yield execute(['export-bc', '--nostdout']);
     res[res.length - 1].should.have.property('number').equal(2204);
     res.should.have.length(2204 + 1);
-    if (process.platform === 'win32') yield new Promise((resolve) => setTimeout(resolve, 500));
   }));
 
   it('[spawn] reset data', () => co(function*() {

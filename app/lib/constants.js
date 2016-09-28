@@ -231,11 +231,13 @@ module.exports = {
     SPECIAL_BLOCK: '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
   },
   NETWORK: {
-    MAX_NON_MEMBERS_TO_FORWARD_TO: 3,
-    MAX_MEMBERS_TO_FORWARD_TO: 5,
+    MAX_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS: 10,
+    MAX_NON_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS: 6,
+    MAX_NON_MEMBERS_TO_FORWARD_TO: 4,
+    MAX_MEMBERS_TO_FORWARD_TO: 4,
     COUNT_FOR_ENOUGH_PEERS: 4,
     MAX_CONCURRENT_POST: 3,
-    DEFAULT_TIMEOUT: 5000,
+    DEFAULT_TIMEOUT: 10 * 1000, // 10 seconds
     SYNC_LONG_TIMEOUT: 30 * 1000, // 30 seconds
     DEFAULT_PORT: 8999,
     PORT: {
@@ -249,16 +251,17 @@ module.exports = {
       MAX: 20
     },
     STATUS_INTERVAL: {
-      UPDATE: 0.5, // Every X blocks
+      UPDATE: 2, // Every X blocks
       MAX: 20 // MAX Y blocks
     },
     SYNC_PEERS_INTERVAL: 3, // Every 3 block average generation time
-    SYNC_BLOCK_INTERVAL: 1, // Every block average generation time
+    SYNC_BLOCK_INTERVAL: 2, // Every 2 block average generation time
     TEST_PEERS_INTERVAL: 10 // In seconds
   },
   PROOF_OF_WORK: {
+    MINIMAL_TO_SHOW: 2,
+    MINIMAL_TO_SHOW_IN_LOGS: 3,
     EVALUATION: 1000,
-    RELEASE_MEMORY: 10000,
     UPPER_BOUND: [
       '9A-F',
       '9A-E',
@@ -350,8 +353,12 @@ module.exports = {
   SANDBOX_SIZE_MEMBERSHIPS: 200,
 
   MAXIMUM_LEN_OF_COMPACT_TX: MAXIMUM_LEN_OF_COMPACT_TX,
+  MAX_NUMBER_OF_PEERS_FOR_PULLING: 10,
 
-  CURRENT_BLOCK_CACHE_DURATION: 10 * 1000 // 30 seconds
+  CURRENT_BLOCK_CACHE_DURATION: 10 * 1000, // 30 seconds
+  CORES_MAXIMUM_USE_IN_PARALLEL: 8, // For more cores, we need to use a better PoW synchronization algorithm
+
+  ENGINE_IDLE_INTERVAL: 5000
 };
 
 function exact (regexpContent) {

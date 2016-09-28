@@ -79,7 +79,7 @@ artifacts:
     name: Duniter
 
 deploy:
-  release: v0.30.17
+  release: v0.31.0
   provider: GitHub
   auth_token:
     secure: Vp/M0r0i1yhGR2nhrPWEbTiDIF6r0cmwbNDFZUzdFe5clWxPXtuC0lgIpOQI78zt

@@ -7,3 +7,8 @@ bin/jpgp*.jar
 naclb/build
 naclb/node_modules
 gui/nw
+
+# Vim swap files
+*~
+*.swp
+*.swo

@@ -98,6 +98,8 @@ describe("Generation", function() {
       s1.startBlockComputation();
       yield until(s2, 'block', 1);
       s2.startBlockComputation();
+      s1.conf.powDelay = 2000;
+      s2.conf.powDelay = 2000;
       yield [
         until(s1, 'block', 2),
         until(s2, 'block', 2)

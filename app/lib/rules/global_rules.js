@@ -896,7 +896,7 @@ function getTrialLevel (version, issuer, conf, dal) {
       let percentRot = conf.percentRot;
       let current = yield dal.getCurrentBlockOrNull();
       if (!current) {
-        return 0;
+        return conf.powMin || 0;
       }
       let last = yield dal.lastBlockOfIssuer(issuer);
       let powMin = yield getPoWMinFor(current.number + 1, conf, dal);
@@ -920,7 +920,7 @@ function getTrialLevel (version, issuer, conf, dal) {
       let percentRot = conf.percentRot;
       let current = yield dal.getCurrentBlockOrNull();
       if (!current) {
-        return 0;
+        return conf.powMin || 0;
       }
       let last = yield dal.lastBlockOfIssuer(issuer);
       let powMin = yield getPoWMinFor(current.number + 1, conf, dal);

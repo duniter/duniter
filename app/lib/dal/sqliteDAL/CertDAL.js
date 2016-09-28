@@ -10,11 +10,11 @@ const SandBox = require('./SandBox');
 
 module.exports = CertDAL;
 
-function CertDAL(db) {
+function CertDAL(driver) {
 
   "use strict";
 
-  AbstractSQLite.call(this, db);
+  AbstractSQLite.call(this, driver);
 
   const that = this;
 

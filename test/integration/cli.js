@@ -1,15 +1,119 @@
 "use strict";
 
-const spawn  = require('child_process').spawn;
-const path   = require('path');
-const co     = require('co');
-const should = require('should');
-const cli    = require('../../app/cli');
+const spawn     = require('child_process').spawn;
+const path      = require('path');
+const co        = require('co');
+const should    = require('should');
+const _         = require('underscore');
+const toolbox   = require('./tools/toolbox');
+const cli       = require('../../app/cli');
+const merkleh   = require('../../app/lib/helpers/merkle');
+const hashf     = require('../../app/lib/ucp/hashf');
 const constants = require('../../app/lib/constants');
+const Merkle    = require('../../app/lib/entity/merkle');
 
 const DB_NAME = "unit_tests";
 
 describe("CLI", function() {
+
+  let farmOfServers = [], fakeServer;
+
+  before(() => co(function*() {
+
+    const blockchain = require('../data/blockchain.json');
+    const peers = [];
+    const peersMap = {};
+    const leaves = [];
+
+    /********
+     * HTTP METHODS
+     */
+    const onReadBlockchainChunk = (count, from) => Promise.resolve(blockchain.blocks.slice(from, from + count));
+    const onReadParticularBlock = (number) => Promise.resolve(blockchain.blocks[number]);
+    const onPeersRequested = (req) => co(function*() {
+      const merkle = new Merkle();
+      merkle.initialize(leaves);
+      merkle.leaf = {
+        "hash": req.params.leaf,
+        "value": peersMap[req.params.leaf] || ""
+      };
+      return merkleh.processForURL(req, merkle, () => co(function*() {
+        return peersMap;
+      }));
+    });
+
+    /**
+     * The fake hash in the blockchain
+     */
+    const fakeHash = hashf("A wrong content").toUpperCase();
+
+    farmOfServers = yield Array.from({ length: 5 }).map((unused, index) => {
+      if (index < 2) {
+        
+        /***************
+         * Normal nodes
+         */
+        return toolbox.fakeSyncServer(onReadBlockchainChunk, onReadParticularBlock, onPeersRequested);
+      } else if (index == 2) {
+        
+        /***************
+         * Node with wrong chaining between 2 chunks of blocks
+         */
+        return toolbox.fakeSyncServer((count, from) => {
+          // We just need to send the wrong chunk
+          from = from - count;
+          return Promise.resolve(blockchain.blocks.slice(from, from + count));
+        }, onReadParticularBlock, onPeersRequested);
+      } else if (index == 3) {
+        
+        /***************
+         * Node with wrong chaining between 2 blocks
+         */
+        return toolbox.fakeSyncServer((count, from) => {
+          // We just need to send the wrong chunk
+          const chunk = blockchain.blocks.slice(from, from + count).map((block, index) => {
+            if (index === 10) {
+              const clone = _.clone(block);
+              clone.hash = fakeHash;
+            }
+            return block;
+          });
+          return Promise.resolve(chunk);
+        }, onReadParticularBlock, onPeersRequested);
+      } else if (index == 4) {
+        
+        /***************
+         * Node with apparent good chaining, but one of the hashs is WRONG
+         */
+        return toolbox.fakeSyncServer((count, from) => {
+          // We just need to send the wrong chunk
+          const chunk = blockchain.blocks.slice(from, from + count).map((block, index) => {
+            if (index === 10) {
+              const clone = _.clone(block);
+              clone.hash = fakeHash;
+            } else if (index === 11) {
+              const clone = _.clone(block);
+              clone.previousHash = fakeHash;
+              return clone;
+            }
+            return block;
+          });
+          return Promise.resolve(chunk);
+        }, onReadParticularBlock, onPeersRequested);
+      }
+    });
+    farmOfServers.map((server, index) => {
+      const peer = {
+        endpoints: [['BASIC_MERKLED_API', server.host, server.port].join(' ')],
+        pubkey: hashf(index + ""),
+        hash: hashf(index + "").toUpperCase()
+      };
+      peers.push(peer);
+      leaves.push(peer.hash);
+      peersMap[peer.hash] = peer;
+    });
+    fakeServer = farmOfServers[0];
+  }));
 
   it('config --autoconf', () => co(function*() {
     let res = yield execute(['config', '--autoconf']);
@@ -20,19 +124,19 @@ describe("CLI", function() {
   it('reset data', () => co(function*() {
     yield execute(['reset', 'data']);
     const res = yield execute(['export-bc', '--nostdout']);
-    res.should.have.length(0);
+    res.slice(0, 1).should.have.length(0);
   }));
 
   it('sync 2200 blocks (fast)', () => co(function*() {
     yield execute(['reset', 'data']);
-    yield execute(['sync', 'duniter.org', '8999', '2200', '--nocautious', '--nointeractive']);
+    yield execute(['sync', fakeServer.host, fakeServer.port, '2200', '--nocautious', '--nointeractive']);
     const res = yield execute(['export-bc', '--nostdout']);
     res[res.length - 1].should.have.property('number').equal(2200);
     res.should.have.length(2200 + 1);
   }));
 
   it('sync 5 blocks (cautious)', () => co(function*() {
-    yield execute(['sync', 'duniter.org', '8999', '2204', '--nointeractive']);
+    yield execute(['sync', fakeServer.host, fakeServer.port, '2204', '--nointeractive']);
     const res = yield execute(['export-bc', '--nostdout']);
     res[res.length - 1].should.have.property('number').equal(2204);
     res.should.have.length(2204 + 1);

@@ -553,7 +553,7 @@ function BlockGenerator(mainContext, prover) {
       /**
        * Finally handle the Universal Dividend
        */
-      block.powMin = block.number == 0 ? 0 : yield rules.HELPERS.getPoWMin(block.number, conf, dal);
+      block.powMin = block.number == 0 ? conf.powMin || 0 : yield rules.HELPERS.getPoWMin(block.number, conf, dal);
       if (block.number == 0) {
         block.medianTime = moment.utc().unix() - conf.rootoffset;
       }

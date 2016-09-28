@@ -42,7 +42,7 @@ function Server (dbConf, overrideConf) {
   that.IdentityService     = require('./app/service/IdentityService')();
   that.MembershipService   = require('./app/service/MembershipService')();
   that.PeeringService      = require('./app/service/PeeringService')(that);
-  that.BlockchainService   = require('./app/service/BlockchainService')();
+  that.BlockchainService   = require('./app/service/BlockchainService')(that);
   that.TransactionsService = require('./app/service/TransactionsService')();
 
   // Create document mapping
@@ -80,13 +80,6 @@ function Server (dbConf, overrideConf) {
   this.unplugFileSystem = () => co(function *() {
     logger.debug('Unplugging file system...');
     yield that.dal.close();
-  });
-
-  this.softResetData = () => co(function *() {
-    logger.debug('Soft data reset... [cache]');
-    yield that.dal.cleanCaches();
-    logger.debug('Soft data reset... [data]');
-    yield that.cleanDBData();
   });
 
   this.loadConf = (useDefaultConf) => co(function *() {
@@ -227,7 +220,11 @@ function Server (dbConf, overrideConf) {
     shouldContinue = false;
     that.BlockchainService.stopPoWThenProcessAndRestartPoW();
   };
+  
+  this.getCountOfSelfMadePoW = () => this.BlockchainService.getCountOfSelfMadePoW();
+  this.isServerMember = () => this.BlockchainService.isMember();
 
+  this.isPoWPaused = true;
   this._blockComputation = () => co(function *() {
     while (shouldContinue) {
       try {
@@ -242,6 +239,7 @@ function Server (dbConf, overrideConf) {
         }
       }
       catch (e) {
+        that.isPoWPaused = true;
         logger.error(e);
         shouldContinue = true;
       }
@@ -289,19 +287,17 @@ function Server (dbConf, overrideConf) {
     }
   });
 
-  this.resetAll = (done) => {
-    const files = ['stats', 'cores', 'current', 'conf', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.WOTB_FILE, 'export.zip', 'import.zip'];
+  this.resetAll = (done) => co(function*() {
+    const files = ['stats', 'cores', 'current', directory.DUNITER_DB_NAME, directory.DUNITER_DB_NAME + '.db', directory.DUNITER_DB_NAME + '.log', directory.WOTB_FILE, 'export.zip', 'import.zip', 'conf'];
     const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
-  };
+  });
 
-  this.resetData = (done) => {
-    return co(function*(){
-      const files = ['stats', 'cores', 'current', directory.UCOIN_DB_NAME, directory.UCOIN_DB_NAME + '.db', directory.UCOIN_DB_NAME + '.log', directory.WOTB_FILE];
-      const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
-      yield resetFiles(files, dirs, done);
-    });
-  };
+  this.resetData = (done) => co(function*(){
+    const files = ['stats', 'cores', 'current', directory.DUNITER_DB_NAME, directory.DUNITER_DB_NAME + '.db', directory.DUNITER_DB_NAME + '.log', directory.WOTB_FILE];
+    const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+    yield resetFiles(files, dirs, done);
+  });
 
   this.resetConf = (done) => {
     const files = ['conf'];
@@ -349,9 +345,9 @@ function Server (dbConf, overrideConf) {
   });
 
   this.cleanDBData = () => co(function *() {
-    yield _.values(that.dal.newDals).map((dal) => dal.cleanData && dal.cleanData());
+    yield that.dal.cleanCaches();
     that.dal.wotb.resetWoT();
-    const files = ['stats', 'cores', 'current'];
+    const files = ['stats', 'cores', 'current', directory.DUNITER_DB_NAME, directory.DUNITER_DB_NAME + '.db', directory.DUNITER_DB_NAME + '.log'];
     const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs);
   });
@@ -365,13 +361,20 @@ function Server (dbConf, overrideConf) {
         // JSON file?
         const existsJSON = yield myFS.exists(rootPath + '/' + fName + '.json');
         if (existsJSON) {
-          yield myFS.remove(rootPath + '/' + fName + '.json');
+          const theFilePath = rootPath + '/' + fName + '.json';
+          yield myFS.remove(theFilePath);
+          if (yield myFS.exists(theFilePath)) {
+            throw Error('Failed to delete file "' + theFilePath + '"');
+          }
         } else {
           // Normal file?
           const normalFile = path.join(rootPath, fName);
           const existsFile = yield myFS.exists(normalFile);
           if (existsFile) {
             yield myFS.remove(normalFile);
+            if (yield myFS.exists(normalFile)) {
+              throw Error('Failed to delete file "' + normalFile + '"');
+            }
           }
         }
       }
@@ -379,6 +382,9 @@ function Server (dbConf, overrideConf) {
         const existsDir = yield myFS.exists(rootPath + '/' + dirName);
         if (existsDir) {
           yield myFS.removeTree(rootPath + '/' + dirName);
+          if (yield myFS.exists(rootPath + '/' + dirName)) {
+            throw Error('Failed to delete folder "' + rootPath + '/' + dirName + '"');
+          }
         }
       }
       done && done();
@@ -487,6 +493,12 @@ function Server (dbConf, overrideConf) {
     const obj = parser.syncWrite(raw);
     return yield that.singleWritePromise(obj);
   });
+
+  /**
+   * Retrieve the last linesQuantity lines from the log file.
+   * @param linesQuantity
+   */
+  this.getLastLogLines = (linesQuantity) => this.dal.getLogContent(linesQuantity);
 }
 
 util.inherits(Server, stream.Duplex);

@@ -12,11 +12,11 @@ module.exports = BlockDAL;
 const IS_FORK = true;
 const IS_NOT_FORK = false;
 
-function BlockDAL(db) {
+function BlockDAL(driver) {
 
   "use strict";
 
-  AbstractSQLite.call(this, db);
+  AbstractSQLite.call(this, driver);
 
   let current = null;
   let that = this;
@@ -101,6 +101,11 @@ function BlockDAL(db) {
 
   this.lastBlockOfIssuer = (issuer) => co(function *() {
     return (yield that.query('SELECT * FROM block WHERE issuer = ? and NOT fork ORDER BY number DESC LIMIT 1', [issuer]))[0];
+  });
+
+  this.getCountOfBlocksIssuedBy = (issuer) => co(function *() {
+    let res = yield that.query('SELECT COUNT(*) as quantity FROM block WHERE issuer = ? and NOT fork', [issuer]);
+    return res[0].quantity;
   });
 
   this.getMoreRecentBlockWithTimeEqualBelow = (maxTime) => co(function *() {

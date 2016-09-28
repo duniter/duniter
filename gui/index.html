@@ -3,10 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Duniter 0.30.17</title>
+  <title>Duniter 0.31.0</title>
   <style>
     html {
       font-family: "Courier New", Courier, monospace;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      border: none;
+      overflow: hidden;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
     }
     img {
       width: 50%;
@@ -40,24 +58,48 @@
     document.getElementById('loader').innerHTML = 'Server ready.';
     clearTimeout(strangeTimeout);
     clearInterval(testInterval);
-    gui.Window.open('http://' + SERVER_ORIGIN + '/index.html', {
-      width: 1200,
-      height: 850,
-      min_height: 600,
-      min_width: 600
-    }, function(win) {
-      win.moveBy(300, 0);
-      win.window.mainWindow = win;
-      win.window.gui = gui;
-      win.window.duniter = {
-        version: packageJSON.name
-      };
-      win.on('closed', function() {
-        // Also close globally the app when main window is closed
-        gui.Window.get().close();
-      });
-      gui.Window.get().hide();
-    });
+    document.getElementById('loader').remove();
+    document.getElementsByTagName('img')[0].remove();
+    const iframe = document.createElement('iframe');
+    document.getElementsByTagName('body')[0].appendChild(iframe);
+    iframe.src = "http://" + SERVER_ORIGIN;
+
+    const interval = setInterval(() => {
+      if (iframe.contentWindow.duniterChildCallback) {
+        clearInterval(interval);
+        iframe.contentWindow.duniterChildCallback(gui);
+      }
+    }, 1000);
+
+    let memorizedValue = null;
+    try {
+      memorizedValue = JSON.parse(localStorage.getItem('DUNITER_WINDOW_SIZE'));
+    } catch (e) {
+    }
+    const NORMAL_WIDTH = 1200;
+    const NORMAL_HEIGHT = 850;
+    const DUNITER_WINDOW_SIZE = memorizedValue || {
+              width: NORMAL_WIDTH,
+              height: NORMAL_HEIGHT,
+              min_height: 600,
+              min_width: 600
+            };
+
+    window.resizeTo(DUNITER_WINDOW_SIZE.width, DUNITER_WINDOW_SIZE.height);
+
+    const heightDifference = DUNITER_WINDOW_SIZE.height - NORMAL_HEIGHT;
+    const widthDifference  = DUNITER_WINDOW_SIZE.width - NORMAL_WIDTH;
+
+    if (heightDifference != 0 || widthDifference != 0) {
+      window.moveBy(-widthDifference / 2, -heightDifference / 2);
+    }
+
+    // Remember the size
+    window.onresize = function() {
+      DUNITER_WINDOW_SIZE.height = window.innerHeight;
+      DUNITER_WINDOW_SIZE.width = window.innerWidth;
+      localStorage.setItem('DUNITER_WINDOW_SIZE', JSON.stringify(DUNITER_WINDOW_SIZE));
+    };
   }
   function test() {
     var oReq = new XMLHttpRequest();

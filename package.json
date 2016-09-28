@@ -1,6 +1,6 @@
 {
   "name": "duniter",
-  "version": "0.30.17",
+  "version": "0.31.0",
   "engines": {
     "node": ">=4.2.0",
     "npm": ">=2.11"
@@ -84,7 +84,8 @@
     "mocha-lcov-reporter": "1.0.0",
     "sha1": "",
     "should": "",
-    "supertest": ""
+    "supertest": "",
+    "tmp": "0.0.29"
   },
   "bin": {
     "duniter": "./bin/duniter"

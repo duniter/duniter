@@ -10,7 +10,7 @@ const logger = require('../../logger')('sqlite');
 
 module.exports = AbstractSQLite;
 
-function AbstractSQLite(db) {
+function AbstractSQLite(driver) {
 
   "use strict";
 
@@ -27,7 +27,7 @@ function AbstractSQLite(db) {
     try {
       //logger.trace(sql, JSON.stringify(params || []));
       const start = new Date();
-      const res = yield Q.nbind(db.all, db)(sql, params || []);
+      const res = yield driver.executeAll(sql, params || []);
       const duration = (new Date()) - start;
       const entities = res.map(toEntity);
       // Display result
@@ -145,7 +145,7 @@ function AbstractSQLite(db) {
   this.exec = (sql) => co(function *() {
     try {
       // logger.trace(sql);
-      return Q.nbind(db.exec, db)(sql);
+      return driver.executeSql(sql);
     } catch (e) {
       logger.error('ERROR >> %s', sql);
       throw e;
@@ -279,7 +279,7 @@ function AbstractSQLite(db) {
 
   function toEntity(row) {
     for (const arr of that.arrays) {
-      row[arr] = JSON.parse(row[arr]);
+      row[arr] = row[arr] ? JSON.parse(row[arr]) : [];
     }
     // Big integers are stored as strings to avoid data loss
     for (const bigint of that.bigintegers) {

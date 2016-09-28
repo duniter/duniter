@@ -230,7 +230,6 @@ program
       yield caster.sendPeering(Peer.statics.peerize(peering), Peer.statics.peerize(selfPeer));
       logger.info('Sent.');
       yield server.disconnect();
-      throw Error("Exiting");
     })
       .catch(function (err) {
         logger.error(err.code || err.message || err);

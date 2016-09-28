@@ -18,7 +18,7 @@ function Router (PeeringService, conf, dal) {
     dal = theDAL;
   };
 
-  const logger   = require('../logger')(dal.profile);
+  const logger   = require('../logger')('router');
 
   stream.Transform.call(this, { objectMode: true });
 
@@ -32,23 +32,23 @@ function Router (PeeringService, conf, dal) {
     return co(function*() {
       try {
         if (obj.joiners) {
-          yield route('block', obj, getRandomInUPPeers());
+          yield route('block', obj, getRandomInUPPeers(obj.issuer === PeeringService.pubkey));
         }
         else if (obj.pubkey && obj.uid) {
-          yield route('identity', obj, getRandomInUPPeers());
+          yield route('identity', obj, getRandomInUPPeers(obj.pubkey === PeeringService.pubkey));
         }
         else if (obj.userid) {
-          yield route('membership', obj, getRandomInUPPeers());
+          yield route('membership', obj, getRandomInUPPeers(obj.issuer === PeeringService.pubkey));
         }
         else if (obj.inputs) {
-          yield route('transaction', obj, getRandomInUPPeers());
+          yield route('transaction', obj, getRandomInUPPeers(obj.issuers.indexOf(PeeringService.pubkey) !== -1));
         }
         else if (obj.endpoints) {
-          yield route('peer', obj, getRandomInUPPeers());
+          yield route('peer', obj, getRandomInUPPeers(obj.pubkey === PeeringService.pubkey));
         }
         else if (obj.from && obj.from == PeeringService.pubkey) {
           // Route ONLY status emitted by this node
-          yield route('status', obj, getTargeted(obj.to));
+          yield route('status', obj, getTargeted(obj.to || obj.idty_issuer));
         }
         else if (obj.unreachable) {
           yield dal.setPeerDown(obj.peer.pubkey);
@@ -76,11 +76,11 @@ function Router (PeeringService, conf, dal) {
     });
   }
 
-  function getRandomInUPPeers () {
-    return getValidUpPeers([PeeringService.pubkey]);
+  function getRandomInUPPeers (isSelfDocument) {
+    return getValidUpPeers([PeeringService.pubkey], isSelfDocument);
   }
 
-  function getValidUpPeers (without) {
+  function getValidUpPeers (without, isSelfDocument) {
     return function () {
       return co(function *() {
         let members = [];
@@ -90,8 +90,8 @@ function Router (PeeringService, conf, dal) {
           let isMember = yield dal.isMember(p.pubkey);
           isMember ? members.push(p) : nonmembers.push(p);
         }
-        members = chooseXin(members, constants.NETWORK.MAX_MEMBERS_TO_FORWARD_TO);
-        nonmembers = chooseXin(nonmembers, constants.NETWORK.MAX_NON_MEMBERS_TO_FORWARD_TO);
+        members = chooseXin(members, isSelfDocument ? constants.NETWORK.MAX_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS : constants.NETWORK.MAX_MEMBERS_TO_FORWARD_TO);
+        nonmembers = chooseXin(nonmembers,  isSelfDocument ? constants.NETWORK.MAX_NON_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS : constants.NETWORK.MAX_NON_MEMBERS_TO_FORWARD_TO);
         let mainRoutes = members.map((p) => (p.member = true) && p).concat(nonmembers);
         let mirrors = yield PeeringService.mirrorEndpoints();
         return mainRoutes.concat(mirrors.map((mep, index) => { return {

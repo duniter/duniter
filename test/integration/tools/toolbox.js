@@ -7,10 +7,15 @@ const rp          = require('request-promise');
 const httpTest    = require('../tools/http');
 const sync        = require('../tools/sync');
 const commit      = require('../tools/commit');
+const user        = require('../tools/user');
+const until       = require('../tools/until');
+const Peer        = require('../../../app/lib/entity/peer');
 const Identity    = require('../../../app/lib/entity/identity');
 const Block       = require('../../../app/lib/entity/block');
 const bma         = require('../../../app/lib/streams/bma');
 const multicaster = require('../../../app/lib/streams/multicaster');
+const network     = require('../../../app/lib/system/network');
+const dtos        = require('../../../app/lib/streams/dtos');
 const duniter     = require('../../../index');
 
 const MEMORY_MODE = true;
@@ -19,6 +24,101 @@ const HOST = '127.0.0.1';
 let PORT = 10000;
 
 module.exports = {
+
+  simpleNetworkOf2NodesAnd2Users: (options) => co(function*() {
+    const catKeyring = { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'};
+    const tacKeyring = { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'};
+
+    const s1 = module.exports.server(_.extend({ pair: catKeyring }, options || {}));
+    const s2 = module.exports.server(_.extend({ pair: tacKeyring }, options || {}));
+
+    const cat = user('cat', catKeyring, { server: s1 });
+    const tac = user('tac', tacKeyring, { server: s1 });
+
+    yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+    yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+
+    yield s2.sharePeeringWith(s1);
+    // yield s2.post('/network/peering/peers', yield s1.get('/network/peering'));
+    // yield s1.submitPeerP(yield s2.get('/network/peering'));
+
+    yield cat.createIdentity();
+    yield tac.createIdentity();
+    yield cat.cert(tac);
+    yield tac.cert(cat);
+    yield cat.join();
+    yield tac.join();
+
+    // Each server forwards to each other
+    s1.pipe(s1.router()).pipe(multicaster());
+    s2.pipe(s2.router()).pipe(multicaster());
+
+    return { s1, s2, cat, tac };
+  }),
+
+  fakeSyncServer: (readBlocksMethod, readParticularBlockMethod, onPeersRequested) => {
+
+    const host = HOST;
+    const port = PORT++;
+
+    return co(function*() {
+
+      // Meaningful variables
+      const NO_HTTP_LOGS = false;
+      const NO_STATIC_PATH = null;
+
+      // A fake HTTP limiter with no limit at all
+      const noLimit = {
+        canAnswerNow: () => true,
+        processRequest: () => { /* Does nothing */ }
+      };
+
+      const fakeServer = yield network.createServersAndListen("Fake Duniter Server", [{
+        ip: host,
+        port: port
+      }], NO_HTTP_LOGS, NO_STATIC_PATH, (app, httpMethods) => {
+
+        // Mock BMA method for sync mocking
+        httpMethods.httpGET('/network/peering', () => {
+          return co(function*() {
+            return {
+              endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
+            }
+          });
+        }, dtos.Peer, noLimit);
+
+        // Mock BMA method for sync mocking
+        httpMethods.httpGET('/network/peering/peers', onPeersRequested, dtos.MerkleOfPeers, noLimit);
+
+        // Another mock BMA method for sync mocking
+        httpMethods.httpGET('/blockchain/blocks/:count/:from', (req) => {
+
+          // What do we do on /blockchain/blocks request
+          let count = parseInt(req.params.count);
+          let from = parseInt(req.params.from);
+
+          return readBlocksMethod(count, from);
+
+        }, dtos.Blocks, noLimit);
+
+        // Another mock BMA method for sync mocking
+        httpMethods.httpGET('/blockchain/block/:number', (req) => {
+
+          // What do we do on /blockchain/blocks request
+          let number = parseInt(req.params.number);
+
+          return readParticularBlockMethod(number);
+
+        }, dtos.Block, noLimit);
+      });
+
+      yield fakeServer.openConnections();
+      return {
+        host: host,
+        port: port
+      };
+    });
+  },
 
   /**
    * Creates a new memory duniter server for Unit Test purposes.
@@ -54,6 +154,8 @@ module.exports = {
 
     server.syncFrom = (otherServer, fromIncuded, toIncluded) => sync(fromIncuded, toIncluded, otherServer, server);
 
+    server.until = (type, count) => until(server, type, count);
+
     server.commit = (options) => co(function*() {
       const raw = yield commit(server)(options);
       return JSON.parse(raw);
@@ -78,6 +180,13 @@ module.exports = {
     server.makeNext = (overrideProps) => co(function*() {
       const block = yield server.doMakeNextBlock(overrideProps || {});
       return Block.statics.fromJSON(block);
+    });
+
+    server.sharePeeringWith = (otherServer) => co(function*() {
+      let p = yield server.get('/network/peering');
+      yield otherServer.post('/network/peering/peers', {
+        peer: Peer.statics.peerize(p).getRawSigned()
+      });
     });
 
     server.postIdentity = (idty) => server.post('/wot/add', {

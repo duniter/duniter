@@ -331,7 +331,7 @@ function Synchroniser (server, host, port, conf, interactive) {
       try {
         yield PeeringService.submitP(remoteJsonPeer);
       } catch (err) {
-        if (err.indexOf(constants.ERRORS.NEWER_PEER_DOCUMENT_AVAILABLE.uerr.message) !== -1 && err != constants.ERROR.PEER.UNKNOWN_REFERENCE_BLOCK) {
+        if (err.indexOf(constants.ERRORS.NEWER_PEER_DOCUMENT_AVAILABLE.err.message) !== -1 && err != constants.ERROR.PEER.UNKNOWN_REFERENCE_BLOCK) {
           throw err;
         }
       }

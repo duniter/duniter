@@ -86,10 +86,10 @@ module.exports = new function() {
     raw += "MedianTime: " + json.medianTime + "\n";
     if (json.dividend)
       raw += "UniversalDividend: " + json.dividend + "\n";
-    if (json.version == 3 || json.dividend)
+    if (json.version > 2 || json.dividend)
       raw += "UnitBase: " + json.unitbase + "\n";
     raw += "Issuer: " + json.issuer + "\n";
-    if (json.version == 3) {
+    if (json.version > 2) {
       raw += "IssuersFrame: " + json.issuersFrame + "\n";
       raw += "IssuersFrameVar: " + json.issuersFrameVar + "\n";
       raw += "DifferentIssuersCount: " + json.issuersCount + "\n";

@@ -125,7 +125,7 @@ module.exports = {
   BLOCK_UID: exact(BLOCK_UID),
 
   DOCUMENTS_VERSION_REGEXP: /^2$/,
-  DOCUMENTS_BLOCK_VERSION_REGEXP: /^(2|3)$/,
+  DOCUMENTS_BLOCK_VERSION_REGEXP: /^(2|3|4)$/,
   DOCUMENTS_TRANSACTION_VERSION_REGEXP: /^(2|3)$/,
   DOCUMENTS_VERSION: 2,
   BLOCK_GENERATED_VERSION: 3,
@@ -184,7 +184,7 @@ module.exports = {
   },
   BLOCK: {
     NONCE:       find("Nonce: (" + ZERO_OR_POSITIVE_INT + ")"),
-    VERSION:     find("Version: (2|3)"),
+    VERSION:     find("Version: (2|3|4)"),
     TYPE:        find("Type: (Block)"),
     CURRENCY:    find("Currency: (" + CURRENCY + ")"),
     BNUMBER:     find("Number: (" + ZERO_OR_POSITIVE_INT + ")"),
@@ -360,7 +360,8 @@ module.exports = {
 
   ENGINE_IDLE_INTERVAL: 5000,
 
-  POW_DIFFICULTY_RANGE_RATIO: 1.189
+  POW_DIFFICULTY_RANGE_RATIO_V3: Math.sqrt(1.066),
+  POW_DIFFICULTY_RANGE_RATIO_V4: 1.189
 };
 
 function exact (regexpContent) {

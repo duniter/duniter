@@ -80,8 +80,8 @@ rules.FUNCTIONS = {
   checkBlockTimes: (block, conf) => co(function *() {
     const time = parseInt(block.time);
     const medianTime = parseInt(block.medianTime);
-    if (block.number > 0 && (time < medianTime || time > medianTime + maxAcceleration(conf)))
-      throw Error('A block must have its Time between MedianTime and MedianTime + ' + maxAcceleration(conf));
+    if (block.number > 0 && (time < medianTime || time > medianTime + maxAcceleration(block, conf)))
+      throw Error('A block must have its Time between MedianTime and MedianTime + ' + maxAcceleration(block, conf));
     else if (block.number == 0 && time != medianTime)
       throw Error('Root block must have Time equal MedianTime');
     return true;
@@ -439,9 +439,14 @@ rules.FUNCTIONS = {
   })
 };
 
-function maxAcceleration (conf) {
-  let maxGenTime = Math.ceil(conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO);
-  return Math.ceil(maxGenTime * conf.medianTimeBlocks);
+function maxAcceleration (block, conf) {
+  if (block.version > 3) {
+    let maxGenTime = Math.ceil(conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO_V4);
+    return Math.ceil(maxGenTime * conf.medianTimeBlocks);
+  } else {
+    let maxGenTime = Math.ceil(conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO_V3);
+    return Math.ceil(maxGenTime * conf.medianTimeBlocks);
+  }
 }
 
 function existsPubkeyIn(pubk, memberships) {

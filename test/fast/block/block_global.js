@@ -81,6 +81,24 @@ describe("Block global coherence:", function(){
     err.message.should.equal('`Version: 2` must follow another V2 block or be the root block');
   }));
 
+  it('a V2 number cannot follow V4', test(rules.GLOBAL.checkVersion, blocks.V2_CANNOT_FOLLOW_V3, {
+    getCurrentBlockOrNull: () => Q({
+      version: 4
+    })
+  }, function (err) {
+    should.exist(err);
+    err.message.should.equal('`Version: 2` must follow another V2 block or be the root block');
+  }));
+
+  it('a V3 number cannot follow V4', test(rules.GLOBAL.checkVersion, blocks.V3_CANNOT_FOLLOW_V4, {
+    getCurrentBlockOrNull: () => Q({
+      version: 4
+    })
+  }, function (err) {
+    should.exist(err);
+    err.message.should.equal('`Version: 3` must follow another V3 block, a V2 block or be the root block');
+  }));
+
   it('a V3 block has a limited size', test(rules.GLOBAL.checkBlockLength, blocks.V3_HAS_MAXIMUM_SIZE, {
     getCurrentBlockOrNull: () => Q({ version: 3, len: 200 }),
     getBlocksBetween: () => Q([

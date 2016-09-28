@@ -477,6 +477,8 @@ function Server (dbConf, overrideConf) {
     that.upnpAPI = upnpAPI;
     return upnpAPI;
   });
+
+  this.applyCPU = (cpu) => that.BlockchainService.changeProverCPUSetting(cpu);
   
   this.listenToTheWeb = (showLogs) => co(function *() {
     const bmapi = yield bma(that, [{

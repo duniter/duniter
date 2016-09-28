@@ -120,6 +120,11 @@ function BlockGenerator(notifier) {
     });
   };
 
+  this.changeCPU = (cpu) => co(function*() {
+    const farm = yield getWorker();
+    yield farm.changeCPU(cpu);
+  });
+
   function powEvent(found, hash) {
     notifier && notifier.push({ pow: { found, hash } });
   }
@@ -134,6 +139,8 @@ function BlockGenerator(notifier) {
 
     let powPromise = null;
     let stopPromise = null;
+
+    this.changeCPU = (cpu) => Promise.all(workers.map((worker) => worker.changeConf({ cpu })));
 
     this.isComputing = () => powPromise !== null && !powPromise.isResolved();
 
@@ -195,6 +202,11 @@ function BlockGenerator(notifier) {
     }
 
     this.whenReady = () => readyPromise;
+
+    this.changeConf = (conf) => co(function*() {
+      logger.info('Changing conf to: %s on engine#%s', JSON.stringify(conf), id);
+      sendToProcess({ command: 'conf', conf });
+    });
 
     /**
      * Eventually stops the engine PoW if one was computing

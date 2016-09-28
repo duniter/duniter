@@ -17,7 +17,7 @@ let timeoutAutoKill = null;
 let computing = false;
 let askedStop = false;
 
-let signatureFunc, id, lastPub, lastSecret;
+let signatureFunc, id, lastPub, lastSecret, currentCPU = 1;
 
 process.on('uncaughtException', (err) => {
   console.error(err.stack || Error(err));
@@ -37,6 +37,13 @@ process.on('message', (message) => co(function*() {
   }
   else if (message.command == 'ready') {
     pSend({ powStatus: computing ? 'computing' : 'ready' });
+  }
+  else if (message.command == 'conf') {
+    if (message.conf) {
+      if (message.conf.cpu !== undefined) {
+        currentCPU = message.conf.cpu;
+      }
+    }
   }
   else if (message.command == 'stop') {
     if (!computing) {
@@ -59,7 +66,7 @@ function beginNewProofOfWork(stuff) {
     const nbZeros = stuff.zeros;
     const pair = stuff.pair;
     const forcedTime = stuff.forcedTime;
-    const cpu = conf.cpu || constants.DEFAULT_CPU;
+    currentCPU = conf.cpu || constants.DEFAULT_CPU;
     const highMark = stuff.highMark;
     let sigFunc = null;
     if (signatureFunc && lastSecret == pair.sec) {
@@ -102,7 +109,7 @@ function beginNewProofOfWork(stuff) {
             const thisTurn = turn;
             const pausePeriod = score ? score / PAUSES_PER_TURN : 10; // number of pauses per turn
             // We limit the number of t
-            const testsPerRound = score ? Math.floor(score * cpu) : 1000 * 1000 * 1000;
+            const testsPerRound = score ? Math.floor(score * currentCPU) : 1000 * 1000 * 1000;
             // Time is updated regularly during the proof
             block.time = getBlockTime(block, conf, forcedTime);
             if (block.number == 0) {

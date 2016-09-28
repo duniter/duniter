@@ -575,5 +575,7 @@ function BlockchainService (server) {
         logger.warn(err);
         done();
       });
-  }
+  };
+
+  this.changeProverCPUSetting = (cpu) => prover.changeCPU(cpu);
 }

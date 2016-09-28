@@ -272,6 +272,7 @@ function WebAdmin (dbConf, overConf) {
     yield pluggedConfP;
     server.conf.cpu = http2raw.cpu(req);
     yield server.dal.saveConf(server.conf);
+    yield server.applyCPU(server.conf.cpu);
     pluggedConfP = yield server.loadConf();
     yield pluggedConfP;
     return {};

@@ -119,11 +119,13 @@ function WebAdmin (dbConf, overConf) {
     if (server.upnpAPI) {
       server.upnpAPI.stopRegular();
     }
-    try {
-      yield server.upnp();
-      server.upnpAPI.startRegular();
-    } catch (e) {
-      logger.error(e);
+    if (server.conf.upnp) {
+      try {
+        yield server.upnp();
+        server.upnpAPI.startRegular();
+      } catch (e) {
+        logger.error(e);
+      }
     }
     return {};
   });

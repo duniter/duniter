@@ -67,7 +67,9 @@ module.exports = {
   },
   
   webmin: function(webminCtrl, app, httpMethods) {
-    httpMethods.httpGET(  '/webmin/summary',                   webminCtrl.summary, dtos.AdminSummary);
+    httpMethods.httpGET(  '/webmin/summary',                   webminCtrl.summary,    dtos.AdminSummary);
+    httpMethods.httpGET(  '/webmin/summary/pow',               webminCtrl.powSummary, dtos.PoWSummary);
+    httpMethods.httpGET(  '/webmin/logs/export/:quantity',     webminCtrl.logsExport, dtos.LogLink);
     httpMethods.httpPOST( '/webmin/key/preview',               webminCtrl.previewPubkey, dtos.PreviewPubkey);
     httpMethods.httpGET(  '/webmin/server/http/start',         webminCtrl.startHTTP, dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/http/stop',          webminCtrl.stopHTTP,  dtos.Boolean);
@@ -221,6 +223,12 @@ module.exports = {
             wssEvents.broadcast(JSON.stringify({
               type: 'pulling',
               value: data.pulling
+            }));
+          }
+          if (data.pow !== undefined) {
+            wssEvents.broadcast(JSON.stringify({
+              type: 'pow',
+              value: data.pow
             }));
           }
         }));

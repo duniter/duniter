@@ -112,7 +112,7 @@ function BlockchainBinding (server) {
     }
     return {
       "block": number + 1,
-      "levels": difficulties
+      "levels": _.sortBy(difficulties, (diff) => diff.level)
     };
   });
 

@@ -18,17 +18,17 @@ const AbstractService = require('./AbstractService');
 
 const CHECK_ALL_RULES = true;
 
-module.exports = () => {
-  return new BlockchainService();
+module.exports = (server) => {
+  return new BlockchainService(server);
 };
 
-function BlockchainService () {
+function BlockchainService (server) {
 
   AbstractService.call(this);
 
   let that = this;
   const mainContext = blockchainCtx();
-  const prover = blockProver();
+  const prover = blockProver(server);
   const generator = blockGenerator(mainContext, prover);
   let conf, dal, keyPair, logger, selfPubkey;
 
@@ -148,8 +148,12 @@ function BlockchainService () {
         yield mainContext.checkBlock(obj, constants.WITH_SIGNATURES_AND_POW);
       }
       let res = yield mainContext.addBlock(obj);
-      yield pushStatsForBlocks([res]);
-      that.stopPoWThenProcessAndRestartPoW();
+      try {
+        yield pushStatsForBlocks([res]);
+        that.stopPoWThenProcessAndRestartPoW(res);
+      } catch (e) {
+        logger.warn("An error occurred after the add of the block", e.stack || e);
+      }
       return res;
     } else if (forkAllowed) {
       // add it as side chain
@@ -249,7 +253,7 @@ function BlockchainService () {
 
   this.revertCurrentBlock = () => this.pushFIFO(() => mainContext.revertCurrentBlock());
 
-  this.stopPoWThenProcessAndRestartPoW = () => prover.cancel();
+  this.stopPoWThenProcessAndRestartPoW = (gottenBlock) => prover.cancel(gottenBlock);
 
   /**
    * Generates root block with manual selection of root members.
@@ -356,34 +360,37 @@ function BlockchainService () {
 
   this.prove = prover.prove;
 
+  this.isMember = () => dal.isMember(selfPubkey);
+  this.getCountOfSelfMadePoW = () => dal.getCountOfPoW(selfPubkey);
+
   this.startGeneration = () => co(function *() {
     if (!conf.participate) {
-      throw 'This node is configured for not participating to computation blocks.';
+      server.isPoWPaused = true;
+      throw 'This node is configured for not participating to compute blocks.';
     }
     if (!selfPubkey) {
+      server.isPoWPaused = true;
       throw 'No self pubkey found.';
     }
     let block, current;
     const isMember = yield dal.isMember(selfPubkey);
     let powCanceled = '';
     if (!isMember) {
-      powCanceled = 'Local node is not a member. Waiting to be a member before computation a block.';
+      powCanceled = 'Local node is not a member. Waiting to be a member before computing a block.';
     }
     else {
       current = yield dal.getCurrentBlockOrNull();
       if (!current) {
-        powCanceled = 'Waiting for a root block before computation new blocks';
+        powCanceled = 'Waiting for a root block before computing new blocks';
       }
       else {
         const lastIssuedByUs = current.issuer == selfPubkey;
         if (lastIssuedByUs) {
-          logger.warn('Waiting ' + conf.powDelay + 's before starting computation next block...');
-          try {
-            yield prover.waitBeforePoW();
-          } catch (e) {
-            powCanceled = e;
-          }
+          server.isPoWPaused = true;
+          logger.warn('Waiting ' + conf.powDelay + 's before starting to compute next block...');
+          yield prover.waitDelay(conf.powDelay);
           if (powCanceled) {
+            server.isPoWPaused = true;
             logger.warn(powCanceled);
             return null;
           }
@@ -394,22 +401,23 @@ function BlockchainService () {
           powCanceled = 'Too high difficulty: waiting for other members to write next block';
         }
         else {
+          server.isPoWPaused = false;
           const block2 = lastGeneratedWasWrong ?
             yield generator.nextEmptyBlock() :
             yield generator.nextBlock();
           const trial2 = yield rules.HELPERS.getTrialLevel(version, selfPubkey, conf, dal);
-          prover.computing();
           return yield generator.makeNextBlock(block2, trial2);
         }
       }
     }
     if (powCanceled) {
+      server.isPoWPaused = true;
       logger.warn(powCanceled);
-      return prover.waitForContinue();
+      yield prover.waitForNewAsking();
     }
   })
     .then(function(block){
-      prover.notComputing();
+      server.isPoWPaused = true;
       return block;
     });
 
@@ -417,7 +425,7 @@ function BlockchainService () {
 
   this.saveParametersForRootBlock = (block) => co(function *() {
     let mainFork = mainContext;
-    let rootBlock = block || (yield mainFork.dal.getBlock(0));
+    let rootBlock = block || (yield dal.getBlock(0));
     if (!rootBlock) throw 'Cannot registrer currency parameters since no root block exists';
     return mainFork.saveParametersForRootBlock(rootBlock);
   });

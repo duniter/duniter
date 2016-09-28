@@ -47,10 +47,10 @@ function BlockchainContext() {
       const currentBlock = yield that.current();
       block.fork = false;
       yield saveBlockData(currentBlock, block);
+      logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));
       return block;
     }
     catch(err) {
-      logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));
       throw err;
     }
   });
@@ -224,6 +224,7 @@ function BlockchainContext() {
 
   function undoMembersUpdate (block) {
     return co(function *() {
+      yield dal.unFlagToBeKicked();
       // Undo 'join' which can be either newcomers or comebackers
       for (const msRaw of block.joiners) {
         let ms = Membership.statics.fromInline(msRaw, 'IN', conf.currency);
@@ -237,12 +238,12 @@ function BlockchainContext() {
       // Undo renew (only remove last membership IN document)
       for (const msRaw of block.actives) {
         let ms = Membership.statics.fromInline(msRaw, 'IN', conf.currency);
-        yield dal.unRenewIdentity(ms.issuer);
+        yield dal.unRenewIdentity(ms);
       }
       // Undo leavers (forget about their last membership OUT document)
       for (const msRaw of block.leavers) {
         let ms = Membership.statics.fromInline(msRaw, 'OUT', conf.currency);
-        yield dal.unLeaveIdentity(ms.issuer);
+        yield dal.unLeaveIdentity(ms);
       }
       // Undo revoked (make them non-revoked)
       let revokedPubkeys = [];

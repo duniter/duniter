@@ -523,7 +523,7 @@ rules.HELPERS = {
   checkTxAmountsValidity: (tx) => {
     if (tx.version == 3) {
       // Rule of money conservation
-      const commonBase = tx.inputs.reduce((min, input) => {
+      const commonBase = tx.inputs.concat(tx.outputs).reduce((min, input) => {
         if (min === null) return input.base;
         return Math.min(min, parseInt(input.base));
       }, null);

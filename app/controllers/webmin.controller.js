@@ -3,6 +3,7 @@
 const path = require('path');
 const util = require('util');
 const es = require('event-stream');
+const rp = require('request-promise');
 const stream      = require('stream');
 const _ = require('underscore');
 const Q = require('q');
@@ -32,7 +33,7 @@ function WebAdmin (dbConf, overConf) {
   const that = this;
 
   server.pipe(es.mapSync(function(data) {
-    if (data.pulling !== undefined) {
+    if (data.pulling !== undefined || data.pow !== undefined) {
       that.push(data);
     }
   }));
@@ -77,6 +78,15 @@ function WebAdmin (dbConf, overConf) {
         "cpu": server.conf.cpu
       },
       "parameters": parameters
+    };
+  });
+
+  this.powSummary = () => co(function *() {
+    yield pluggedDALP;
+    return {
+      "total": yield server.getCountOfSelfMadePoW(),
+      "mirror": !(yield server.isServerMember()),
+      "waiting": server.isPoWPaused
     };
   });
 
@@ -428,7 +438,13 @@ function WebAdmin (dbConf, overConf) {
     yield pluggedDALP;
     // We have to wait for a non-breaking window to process reset
     yield server.BlockchainService.pushFIFO(() => co(function *() {
-      yield server.softResetData();
+      yield that.stopHTTP();
+      yield that.stopAllServices();
+      yield server.unplugFileSystem();
+      yield server.cleanDBData();
+      yield pluggedDALP;
+      pluggedConfP = plugForConf();
+      pluggedDALP = replugDAL();
     }));
     return {};
   });
@@ -462,12 +478,17 @@ function WebAdmin (dbConf, overConf) {
     return server.testForSync(req.body.host, parseInt(req.body.port));
   });
 
-  this.loadData = (dunFile) => co(function *() {
+  this.logsExport = (req) => co(function *() {
     yield pluggedDALP;
-    // We have to wait for a non-breaking window to process reset
-    yield server.unplugFileSystem();
-    yield server.cleanDBData();
-    return {};
+    const logs = yield server.getLastLogLines(req.params.quantity || 1500);
+    const body = yield rp.post({
+      url: 'http://hastebin.com/documents',
+      body: logs
+    });
+    const res = JSON.parse(body);
+    return {
+      link: 'http://hastebin.com/' + res.key
+    };
   });
 
   function plugForConf() {

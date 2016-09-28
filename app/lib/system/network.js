@@ -301,20 +301,17 @@ function getBestLocal(family) {
     }
   }
   const best = _.sortBy(res, function(entry) {
-    if (entry.name.match(/^enp3s0f1/)) return 0;
-    if (entry.name.match(/^enp0s3/))   return 1;
-    if (entry.name.match(/^enp3s0/))   return 2;
-    if (entry.name.match(/^eth0/))     return 3;
-    if (entry.name.match(/^eth1/))     return 4;
-    if (entry.name.match(/^eth2/))     return 5;
-    if (entry.name.match(/^wlp4s1/))   return 6;
-    if (entry.name.match(/^wlp2s0/))   return 7;
-    if (entry.name.match(/^wlan0/))    return 8;
-    if (entry.name.match(/^wlan1/))    return 9;
-    if (entry.name.match(/^wlan2/))    return 10;
-    if (entry.name.match(/^lo/))       return 11;
-    if (entry.name.match(/^None/))     return 12;
-    return 13;
+    if (entry.name.match(/^enp\ds\d/))    return 0;
+    if (entry.name.match(/^enp\ds\df\d/)) return 1;
+    if (entry.name.match(/^eth\d/))       return 2;
+    if (entry.name.match(/^Ethernet/))    return 3;
+    if (entry.name.match(/^wlp\ds\d/))    return 4;
+    if (entry.name.match(/^wlan\d/))      return 5;
+    if (entry.name.match(/^Wi-Fi/))       return 6;
+    if (entry.name.match(/^lo/))          return 7;
+    if (entry.name.match(/^Loopback/))    return 8;
+    if (entry.name.match(/^None/))        return 9;
+    return 10;
   })[0];
   return (best && best.value) || "";
 }

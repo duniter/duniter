@@ -85,7 +85,7 @@ program
   .option('--home <path>', 'Path to Duniter HOME (defaults to "$HOME/.config/duniter").')
   .option('-d, --mdb <name>', 'Database name (defaults to "duniter_default").')
 
-  .option('--autoconf', 'With `config` and `init` commands, will guess the best network and key options witout aksing for confirmation')
+  .option('--autoconf', 'With `config` and `init` commands, will guess the best network and key options witout asking for confirmation')
   .option('--ipv4 <address>', 'IPv4 interface to listen for requests')
   .option('--ipv6 <address>', 'IPv6 interface to listen for requests')
   .option('--remoteh <host>', 'Remote interface others may use to contact this node')
@@ -230,7 +230,6 @@ program
       yield caster.sendPeering(Peer.statics.peerize(peering), Peer.statics.peerize(selfPeer));
       logger.info('Sent.');
       yield server.disconnect();
-      throw Error("Exiting");
     })
       .catch(function (err) {
         logger.error(err.code || err.message || err);
@@ -293,7 +292,7 @@ program
   .command('revert [count]')
   .description('Revert (undo + remove) the top [count] blocks from the blockchain. EXPERIMENTAL')
   .action(subCommand(service(function (count, server) {
-    co(function *() {
+    return co(function *() {
       try {
         for (let i = 0; i < count; i++) {
           yield server.revert();
@@ -314,7 +313,7 @@ program
   .command('revert-to [number]')
   .description('Revert (undo + remove) top blockchain blocks until block #[number] is reached. EXPERIMENTAL')
   .action(subCommand(service(function (number, server) {
-    co(function *() {
+    return co(function *() {
       try {
         yield server.revertTo(number);
       } catch (err) {

@@ -28,16 +28,8 @@ before_deploy:
   # Download & embed Nodejs binary
   - ci/travis/before_deploy.sh
 deploy:
-  - provider: npm
-    email: cem.moreau@gmail.com
-    skip_cleanup: true
-    api_key:
-      secure: gZV7yLxDwwxD4oQXl1hwugmtnWXqP8vojuVGtAGwtMlwJE0n270w6O5xZHDd7DSmOZLftk6/wue/RdhLDsD6J1z3Uxu+VoUWy7aG/sFcGRaBwct+bGqFGkyd+I1mCXFnAZMDwbtgdkQlOCS9PM1BfMEYq49XXqaLaDnwouR+2bI=
-    on:
-      tags: true
-      repo: duniter/duniter
   - provider: releases
-    prerelease: true
+#    prerelease: true
     skip_cleanup: true
     api-key:
       secure: h+GgYhh8/I/l5EWdI1+bDQYtN57jvDf0xhiwcxlfm/AvaJWOZa+q81HsXdHqtwgmsCoRklKtOqTM/nqgSOcWPXsAditRjEXOui2FjZiJCosDjDPMnN6HKzw6XVLtSOx7CeCX/xFmoNTIdsAuC+HUfDWCUFgrsMj9F0V9J3U1nDs=
@@ -48,3 +40,11 @@ deploy:
     on:
       repo: duniter/duniter
       tags: true
+  - provider: npm
+    email: cem.moreau@gmail.com
+    skip_cleanup: true
+    api_key:
+      secure: gZV7yLxDwwxD4oQXl1hwugmtnWXqP8vojuVGtAGwtMlwJE0n270w6O5xZHDd7DSmOZLftk6/wue/RdhLDsD6J1z3Uxu+VoUWy7aG/sFcGRaBwct+bGqFGkyd+I1mCXFnAZMDwbtgdkQlOCS9PM1BfMEYq49XXqaLaDnwouR+2bI=
+    on:
+      tags: true
+      repo: duniter/duniter

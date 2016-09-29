@@ -28,7 +28,7 @@
     "crypto-currency"
   ],
   "author": "Cedric Moreau <cem.moreau@gmail.com>",
-  "license": "GPLv3",
+  "license": "GPL-3.0",
   "readmeFilename": "README.md",
   "bugs": {
     "url": "https://github.com/duniter/duniter/issues"

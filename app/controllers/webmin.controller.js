@@ -86,7 +86,7 @@ function WebAdmin (dbConf, overConf) {
     return {
       "total": yield server.getCountOfSelfMadePoW(),
       "mirror": !(yield server.isServerMember()),
-      "waiting": server.isPoWPaused
+      "waiting": server.isPoWWaiting()
     };
   });
 

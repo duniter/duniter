@@ -358,7 +358,10 @@ module.exports = {
   CURRENT_BLOCK_CACHE_DURATION: 10 * 1000, // 30 seconds
   CORES_MAXIMUM_USE_IN_PARALLEL: 8, // For more cores, we need to use a better PoW synchronization algorithm
 
-  ENGINE_IDLE_INTERVAL: 5000
+  ENGINE_IDLE_INTERVAL: 5000,
+
+  // When to trigger the PoW process again if no PoW is triggered for a while. In milliseconds.
+  POW_SECURITY_RETRY_DELAY: 10 * 60 * 1000
 };
 
 function exact (regexpContent) {

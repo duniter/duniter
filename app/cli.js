@@ -452,17 +452,10 @@ program
   .command('check-config')
   .description('Checks the node\'s configuration')
   .action(subCommand(service(function (server) {
-    server.checkConfig()
+    return server.checkConfig()
       .then(function () {
         logger.warn('Configuration seems correct.');
-        server.disconnect();
-        throw Error("Exiting");
       })
-      .catch(function (err) {
-        logger.warn(err.message || err);
-        server.disconnect();
-        throw Error("Exiting");
-      });
   })));
 
 program
@@ -522,7 +515,6 @@ program
         } catch (e) {
           logger.error(e);
         }
-        return server.disconnect();
       });
     }, type != 'peers')(type);
   }));
@@ -827,17 +819,6 @@ function service(callback, nologs) {
         server.disconnect();
         throw Error(err);
       });
-  };
-}
-
-function logIfErrorAndExit(server, prefix) {
-  return function (err) {
-    if (err && err.uerr) {
-      err = err.uerr.message;
-    }
-    err && logger.error((prefix ? prefix : "") + (err.message || err));
-    server.disconnect();
-    onResolve && onResolve();
   };
 }
 

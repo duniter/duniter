@@ -15,6 +15,7 @@ const hashf          = require('../lib/ucp/hashf');
 const rawer          = require('../lib/ucp/rawer');
 const pulling        = require('../lib/pulling');
 const constants      = require('../lib/constants');
+const querablep      = require('../lib/querablep');
 const Peer           = require('../lib/entity/peer');
 const Transaction    = require('../lib/entity/transaction');
 const AbstractService = require('./AbstractService');
@@ -181,6 +182,8 @@ function PeeringService(server) {
     syncBlockInterval = setInterval(()  => syncBlockFifo.push(syncBlock), 1000 * SYNC_BLOCK_INTERVAL);
     syncBlock(done);
   };
+
+  this.pullingPromise = () => currentSyncP;
 
   this.pullBlocks = (pubkey) => syncBlock(null, pubkey);
 
@@ -498,7 +501,7 @@ function PeeringService(server) {
   }
 
   function syncBlock(callback, pubkey) {
-    currentSyncP = co(function *() {
+    currentSyncP = querablep(co(function *() {
       let current = yield dal.getCurrentBlockOrNull();
       if (current) {
         pullingEvent('start', current.number);
@@ -608,7 +611,7 @@ function PeeringService(server) {
         pullingEvent('error');
         logger.warn(err.code || err.stack || err.message || err);
         callback && callback();
-      });
+      }));
     return currentSyncP;
   }
 

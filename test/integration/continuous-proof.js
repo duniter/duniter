@@ -106,4 +106,21 @@ describe("Continous proof-of-work", function() {
       s3.until('block', 10)
     ];
   }));
+
+  it('testing proof-of-work during a block pulling', () => co(function*() {
+    const res = yield toolbox.simpleNetworkOf2NodesAnd2Users({
+      participate: true,
+      powMin: 0
+    }), s2 = res.s1, s3 = res.s2;
+    yield s2.commit();
+    s2.conf.cpu = 1.0;
+    s2.startBlockComputation();
+    yield s2.until('block', 15);
+    s2.stopBlockComputation();
+    yield [
+      s3.PeeringService.pullBlocks(),
+      s3.startBlockComputation()
+    ];
+    yield s3.expectJSON('/blockchain/current', { number: 15 });
+  }));
 });

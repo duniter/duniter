@@ -304,7 +304,6 @@ function BlockGenerator(notifier) {
       // Initialize the engine
       sendToProcess({ command: 'id', pubkey: pub, identifier: id });
       interval = setInterval(() => {
-        logger.trace('%s interval to engine %s', pub.slice(0,6), id);
         return sendToProcess({ command: 'idle' });
       }, constants.ENGINE_IDLE_INTERVAL);
     }

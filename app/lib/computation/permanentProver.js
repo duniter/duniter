@@ -65,6 +65,12 @@ function PermanentProver(server) {
             throw 'Too high difficulty: waiting for other members to write next block';
           }
           const lastIssuedByUs = current.issuer == selfPubkey;
+          const pullingPromise = server.PeeringService.pullingPromise();
+          if (pullingPromise && !pullingPromise.isFulfilled()) {
+            logger.warn('Waiting for the end of pulling...');
+            yield pullingPromise;
+            logger.warn('Pulling done. Continue proof-of-work loop.');
+          }
           if (lastIssuedByUs && !promiseOfWaitingBetween2BlocksOfOurs) {
             promiseOfWaitingBetween2BlocksOfOurs = new Promise((resolve) => setTimeout(resolve, conf.powDelay));
             logger.warn('Waiting ' + conf.powDelay + 'ms before starting to compute next block...');

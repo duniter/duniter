@@ -707,7 +707,6 @@ function ManualRootGenerator() {
                 if (~answers.uids.indexOf(preJoinData[newcomer].ms.userid))
                   filtered[newcomer] = preJoinData[newcomer];
               });
-              console.log(filtered);
               if (answers.uids.length == 0)
                 reject('No newcomer selected');
               else

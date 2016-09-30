@@ -264,16 +264,19 @@ function Synchroniser (server, host, port, conf, interactive) {
             }
           });
           for (const leaf of leavesToAdd) {
-            const json3 = yield getPeers({ "leaf": leaf });
-            const jsonEntry = json3.leaf.value;
-            const sign = json3.leaf.value.signature;
-            const entry = {};
-            ["version", "currency", "pubkey", "endpoints", "block"].forEach((key) => {
-              entry[key] = jsonEntry[key];
-            });
-            entry.signature = sign;
-            watcher.writeStatus('Peer ' + entry.pubkey);
-            yield PeeringService.submitP(entry, false, to === undefined);
+            try {
+              const json3 = yield getPeers({ "leaf": leaf });
+              const jsonEntry = json3.leaf.value;
+              const sign = json3.leaf.value.signature;
+              const entry = {};
+              ["version", "currency", "pubkey", "endpoints", "block"].forEach((key) => {
+                entry[key] = jsonEntry[key];
+              });
+              entry.signature = sign;
+              watcher.writeStatus('Peer ' + entry.pubkey);
+            } catch (e) {
+              logger.warn(e);
+            }
           }
         }
         else {
@@ -286,7 +289,7 @@ function Synchroniser (server, host, port, conf, interactive) {
       logger.info('Sync finished.');
     } catch (err) {
       that.push({ sync: false, msg: err });
-      err && watcher.writeStatus(err.message || String(err));
+      err && watcher.writeStatus(err.message || (err.uerr && err.uerr.message) || String(err));
       watcher.end();
       throw err;
     }

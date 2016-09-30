@@ -61,7 +61,7 @@ function PermanentProver(server) {
           const version = current ? current.version : 3;
           const trial = yield rules.HELPERS.getTrialLevel(version, selfPubkey, conf, dal);
           if (trial > (current.powMin + 2)) {
-            logger.warn('Trial = ', trial);
+            logger.warn('Trial = %s', trial);
             throw 'Too high difficulty: waiting for other members to write next block';
           }
           const lastIssuedByUs = current.issuer == selfPubkey;

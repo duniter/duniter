@@ -180,7 +180,7 @@ function BlockGenerator(notifier) {
     let onAlmostPoW = function() { throw 'Almost proof-of-work found, but no listener is attached.'; };
     let onPoWSuccess = function() { throw 'Proof-of-work success, but no listener is attached.'; };
     let onPoWError = function() { throw 'Proof-of-work error, but no listener is attached.'; };
-    let powProcess, readyPromise, readyResolver, lastInterval;
+    let powProcess, readyPromise, readyResolver;
 
     newProcess();
 
@@ -214,9 +214,6 @@ function BlockGenerator(notifier) {
         // Canceled for a long time (not because of an incoming block)
         onPoWError = null;
         onPoWSuccess = null;
-        if (lastInterval) {
-          clearInterval(lastInterval); // Force engine killing after some time if stop failed
-        }
       }
       sendToProcess({ command: 'stop' });
       return readyPromise;
@@ -255,6 +252,7 @@ function BlockGenerator(notifier) {
       powProcess.on('exit', function() {
         onPoWError && onPoWError(POW_CANCELED);
         onPoWError = null;
+        logger.trace('Engine engine %s exited unexpectedly', id);
         if (interval) {
           clearInterval(interval);
         }
@@ -305,8 +303,10 @@ function BlockGenerator(notifier) {
 
       // Initialize the engine
       sendToProcess({ command: 'id', pubkey: pub, identifier: id });
-      interval = setInterval(() => sendToProcess({ command: 'idle' }), constants.ENGINE_IDLE_INTERVAL);
-      lastInterval = interval;
+      interval = setInterval(() => {
+        logger.trace('%s interval to engine %s', pub.slice(0,6), id);
+        return sendToProcess({ command: 'idle' });
+      }, constants.ENGINE_IDLE_INTERVAL);
     }
   }
 }

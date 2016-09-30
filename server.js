@@ -381,6 +381,7 @@ function Server (dbConf, overrideConf) {
 
   this.pullBlocks = that.PeeringService.pullBlocks;
 
+  // Unit Tests or Preview method
   this.doMakeNextBlock = (manualValues) => that.BlockchainService.makeNextBlock(null, null, manualValues);
 
   this.doCheckBlock = (block) => {

@@ -217,7 +217,7 @@ function autoKillIfNoContact() {
   }
   // If the timeout is not cleared in some way, the process exits
   timeoutAutoKill = setTimeout(() => {
-    console.log('Killing engine #%s', id);
+    console.log('Killing engine %s #%s', lastPub, id);
     process.exit();
   }, AUTOKILL_TIMEOUT_DELAY);
 }

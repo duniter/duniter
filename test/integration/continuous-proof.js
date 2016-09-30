@@ -90,4 +90,20 @@ describe("Continous proof-of-work", function() {
     yield new Promise((resolve) => setTimeout(resolve, 100));
     s1.permaProver.should.have.property('loops').equal(8);
   }));
+
+  it('testing a network', () => co(function*() {
+    const res = yield toolbox.simpleNetworkOf2NodesAnd2Users({
+      participate: true,
+      powMin: 16
+    }), s2 = res.s1, s3 = res.s2;
+    yield s2.commit();
+    s2.conf.cpu = 0.5;
+    s3.conf.cpu = 0.5;
+    s2.startBlockComputation();
+    s3.startBlockComputation();
+    yield [
+      s2.until('block', 10),
+      s3.until('block', 10)
+    ];
+  }));
 });

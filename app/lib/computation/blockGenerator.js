@@ -553,7 +553,7 @@ function BlockGenerator(mainContext, prover) {
       /**
        * Finally handle the Universal Dividend
        */
-      block.powMin = block.number == 0 ? conf.powMin || 0 : yield rules.HELPERS.getPoWMin(block.number, conf, dal);
+      block.powMin = block.number == 0 ? conf.powMin || 0 : yield rules.HELPERS.getPoWMin(block.version, block.number, conf, dal);
       if (block.number == 0) {
         block.medianTime = moment.utc().unix() - conf.rootoffset;
       }
@@ -565,11 +565,11 @@ function BlockGenerator(mainContext, prover) {
       if (nextUD) {
         block.dividend = nextUD.dividend;
         block.unitbase = nextUD.unitbase;
-      } else if (block.version == 3) {
+      } else if (block.version > 2) {
         block.unitbase = block.number == 0 ? 0 : current.unitbase;
       }
       // V3 Rotation
-      if (block.version == 3) {
+      if (block.version > 2) {
         block.issuersCount = yield rules.HELPERS.getDifferentIssuers(dal);
         block.issuersFrame = yield rules.HELPERS.getIssuersFrame(dal);
         block.issuersFrameVar = yield rules.HELPERS.getIssuersFrameVar(block, dal);

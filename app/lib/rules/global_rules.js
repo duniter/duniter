@@ -19,8 +19,11 @@ rules.FUNCTIONS = {
 
   checkVersion: (block, dal) => co(function *() {
     let current = yield dal.getCurrentBlockOrNull();
-    if (current && current.version == 3 && block.version == 2) {
+    if (current && current.version > 2 && block.version == 2) {
       throw Error('`Version: 2` must follow another V2 block or be the root block');
+    }
+    if (current && current.version > 3 && block.version == 3) {
+      throw Error('`Version: 3` must follow another V3 block, a V2 block or be the root block');
     }
     return true;
   }),
@@ -53,7 +56,7 @@ rules.FUNCTIONS = {
 
   checkPoWMin: (block, conf, dal) => co(function *() {
     if (block.number > 0) {
-      let correctPowMin = yield getPoWMinFor(block.number, conf, dal);
+      let correctPowMin = yield getPoWMinFor(block.version, block.number, conf, dal);
       if (block.powMin < correctPowMin) {
         throw Error('PoWMin value must be incremented');
       }
@@ -97,7 +100,7 @@ rules.FUNCTIONS = {
     else if (current && nextUD && block.unitbase != nextUD.unitbase) {
       throw Error('UnitBase must be equal to ' + nextUD.unitbase);
     }
-    else if (block.version == 3 && current && !nextUD && block.unitbase != current.unitbase) {
+    else if (block.version > 2 && current && !nextUD && block.unitbase != current.unitbase) {
       throw Error('UnitBase must be equal to previous unit base = ' + current.unitbase);
     }
     return true;
@@ -138,7 +141,7 @@ rules.FUNCTIONS = {
   }),
 
   checkDifferentIssuersCount: (block, conf, dal) => co(function *() {
-    if (block.version == 3) {
+    if (block.version > 2) {
       const isGood = block.issuersCount == (yield rules.HELPERS.getDifferentIssuers(dal));
       if (!isGood) {
         throw Error('DifferentIssuersCount is not correct');
@@ -148,7 +151,7 @@ rules.FUNCTIONS = {
   }),
 
   checkIssuersFrame: (block, conf, dal) => co(function *() {
-    if (block.version == 3) {
+    if (block.version > 2) {
       const isGood = block.issuersFrame == (yield rules.HELPERS.getIssuersFrame(dal));
       if (!isGood) {
         throw Error('IssuersFrame is not correct');
@@ -158,7 +161,7 @@ rules.FUNCTIONS = {
   }),
 
   checkIssuersFrameVar: (block, conf, dal) => co(function *() {
-    if (block.version == 3) {
+    if (block.version > 2) {
       const isGood = block.issuersFrameVar == (yield rules.HELPERS.getIssuersFrameVar(block, dal));
       if (!isGood) {
         throw Error('IssuersFrameVar is not correct');
@@ -564,7 +567,7 @@ rules.HELPERS = {
 
   getTrialLevel: (version, issuer, conf, dal) => getTrialLevel(version, issuer, conf, dal),
 
-  getPoWMin: (blockNumber, conf, dal) => getPoWMinFor(blockNumber, conf, dal),
+  getPoWMin: (version, blockNumber, conf, dal) => getPoWMinFor(version, blockNumber, conf, dal),
 
   getMedianTime: (blockNumber, conf, dal) => getMedianTime(blockNumber, conf, dal),
 
@@ -673,7 +676,7 @@ rules.HELPERS = {
       if (current.version == 2) {
         frame = 40;
       }
-      else if (current.version == 3) {
+      else if (current.version > 2) {
         frame = current.issuersFrame;
         // CONVERGENCE
         if (current.issuersFrameVar > 0) {
@@ -690,7 +693,7 @@ rules.HELPERS = {
   getIssuersFrameVar: (block, dal) => co(function *() {
     const current = yield dal.getCurrentBlockOrNull();
     let frameVar = 0;
-    if (current && current.version == 3) {
+    if (current && current.version > 2) {
       frameVar = current.issuersFrameVar;
       // CONVERGENCE
       if (current.issuersFrameVar > 0) {
@@ -899,7 +902,7 @@ function getTrialLevel (version, issuer, conf, dal) {
         return conf.powMin || 0;
       }
       let last = yield dal.lastBlockOfIssuer(issuer);
-      let powMin = yield getPoWMinFor(current.number + 1, conf, dal);
+      let powMin = yield getPoWMinFor(version, current.number + 1, conf, dal);
       let issuers = [];
       if (last) {
         let blocksBetween = yield dal.getBlocksBetween(last.number - 1 - conf.blocksRot, last.number - 1);
@@ -923,7 +926,7 @@ function getTrialLevel (version, issuer, conf, dal) {
         return conf.powMin || 0;
       }
       let last = yield dal.lastBlockOfIssuer(issuer);
-      let powMin = yield getPoWMinFor(current.number + 1, conf, dal);
+      let powMin = yield getPoWMinFor(version, current.number + 1, conf, dal);
       let nbPreviousIssuers = 0;
       if (last) {
         nbPreviousIssuers = last.issuersCount;
@@ -944,7 +947,7 @@ function getTrialLevel (version, issuer, conf, dal) {
 /**
  * Deduce the PoWMin field for a given block number
  */
-function getPoWMinFor (blockNumber, conf, dal) {
+function getPoWMinFor (blockVersion, blockNumber, conf, dal) {
   return Q.Promise(function(resolve, reject){
     if (blockNumber == 0) {
       reject('Cannot deduce PoWMin for block#0');
@@ -967,8 +970,9 @@ function getPoWMinFor (blockNumber, conf, dal) {
         // Compute PoWMin value
         const duration = medianTime - lastDistant.medianTime;
         const speed = speedRange / duration;
-        const maxGenTime = Math.ceil(conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO);
-        const minGenTime = Math.floor(conf.avgGenTime / constants.POW_DIFFICULTY_RANGE_RATIO);
+        const ratio = blockVersion > 3 ? constants.POW_DIFFICULTY_RANGE_RATIO_V4 : constants.POW_DIFFICULTY_RANGE_RATIO_V3;
+        const maxGenTime = Math.ceil(conf.avgGenTime * ratio);
+        const minGenTime = Math.floor(conf.avgGenTime / ratio);
         const maxSpeed = 1.0 / minGenTime;
         const minSpeed = 1.0 / maxGenTime;
         // logger.debug('Current speed is', speed, '(' + conf.dtDiffEval + '/' + duration + ')', 'and must be [', minSpeed, ';', maxSpeed, ']');

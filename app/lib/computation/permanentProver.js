@@ -124,6 +124,8 @@ function PermanentProver(server) {
             waitingRaces.push(promiseOfWaitingBetween2BlocksOfOurs);
           }
 
+          let raceDone = false;
+
           yield Promise.race(waitingRaces.concat([
 
             // The blockchain has changed! We or someone else found a proof, we must make a gnu one
@@ -134,10 +136,14 @@ function PermanentProver(server) {
 
             // Security: if nothing happens for a while, trigger the whole process again
             new Promise((resolve) => setTimeout(() => {
-              logger.warn('Security trigger: proof-of-work process seems stuck');
-              resolve();
+              if (!raceDone) {
+                logger.warn('Security trigger: proof-of-work process seems stuck');
+                resolve();
+              }
             }, constants.POW_SECURITY_RETRY_DELAY))
           ]));
+
+          raceDone = true;
         }
       } catch (e) {
         logger.warn(e);

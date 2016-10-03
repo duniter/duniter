@@ -10,7 +10,7 @@ const keyring = require('./crypto/keyring');
 const rawer = require('./ucp/rawer');
 
 const AUTOKILL_TIMEOUT_DELAY = 10 * 1000;
-const TURN_DURATION = 100;
+const TURN_DURATION_IN_MILLISEC = 1000;
 const PAUSES_PER_TURN = 5;
 
 let timeoutAutoKill = null;
@@ -97,7 +97,7 @@ function beginNewProofOfWork(stuff) {
 
       // We make a bunch of tests every second
       yield Promise.race([
-        countDown(TURN_DURATION),
+        countDown(TURN_DURATION_IN_MILLISEC),
         co(function*() {
           try {
 
@@ -146,7 +146,7 @@ function beginNewProofOfWork(stuff) {
               }
               // We wait for main "while" countdown to end the turn. This gives of a bit of breath to the CPU (the amount
               // of "breath" depends on the "cpu" parameter.
-              yield countDown(TURN_DURATION);
+              yield countDown(TURN_DURATION_IN_MILLISEC);
             }
           } catch (e) {
             console.error(e);

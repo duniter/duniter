@@ -15,6 +15,7 @@ const hashf          = require('../lib/ucp/hashf');
 const rawer          = require('../lib/ucp/rawer');
 const pulling        = require('../lib/pulling');
 const constants      = require('../lib/constants');
+const querablep      = require('../lib/querablep');
 const Peer           = require('../lib/entity/peer');
 const Transaction    = require('../lib/entity/transaction');
 const AbstractService = require('./AbstractService');
@@ -182,6 +183,8 @@ function PeeringService(server) {
     syncBlock(done);
   };
 
+  this.pullingPromise = () => currentSyncP;
+
   this.pullBlocks = (pubkey) => syncBlock(null, pubkey);
 
   const FIRST_CALL = true;
@@ -251,13 +254,12 @@ function PeeringService(server) {
     }
     // Choosing next based-block for our peer record: we basically want the most distant possible from current
     let minBlock = current ? current.number - 30 : 0;
-    // But if already have a peer record within this distance, we need to take the next block of it
     if (p1) {
-      let p1Block = parseInt(p1.block.split('-')[0], 10);
-      minBlock = Math.max(minBlock, p1Block + 1);
+      // But if already have a peer record within this distance, we need to take the next block of it
+      minBlock = Math.max(minBlock, parseInt(p1.block.split('-')[0], 10) + 1);
     }
-    // Finally we can't have a negative block
-    minBlock = Math.max(0, minBlock);
+    // The number cannot be superior to current block
+    minBlock = Math.min(minBlock, current ? current.number : minBlock);
     let targetBlock = yield server.dal.getBlock(minBlock);
     const p2 = {
       version: constants.DOCUMENTS_VERSION,
@@ -499,7 +501,7 @@ function PeeringService(server) {
   }
 
   function syncBlock(callback, pubkey) {
-    currentSyncP = co(function *() {
+    currentSyncP = querablep(co(function *() {
       let current = yield dal.getCurrentBlockOrNull();
       if (current) {
         pullingEvent('start', current.number);
@@ -509,6 +511,10 @@ function PeeringService(server) {
         if (pubkey) {
           _(peers).filter((p) => p.pubkey == pubkey);
         }
+        // Shuffle the peers
+        peers = _.shuffle(peers);
+        // Only take at max X of them
+        peers = peers.slice(0, constants.MAX_NUMBER_OF_PEERS_FOR_PULLING);
         for (let i = 0, len = peers.length; i < len; i++) {
           let p = new Peer(peers[i]);
           pullingEvent('peer', _.extend({ number: i, length: peers.length }, p));
@@ -553,8 +559,10 @@ function PeeringService(server) {
                   lastDownloaded = yield dao.remoteCurrent(node);
                 }
                 pullingEvent('applying', { number: block.number, last: lastDownloaded.number });
-                current = addedBlock;
-                server.streamPush(addedBlock);
+                if (addedBlock) {
+                  current = addedBlock;
+                  server.streamPush(addedBlock);
+                }
               }),
 
               // Eventually remove forks later on
@@ -603,7 +611,7 @@ function PeeringService(server) {
         pullingEvent('error');
         logger.warn(err.code || err.stack || err.message || err);
         callback && callback();
-      });
+      }));
     return currentSyncP;
   }
 

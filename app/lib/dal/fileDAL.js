@@ -24,11 +24,7 @@ function FileDAL(params) {
 
   const rootPath = params.home;
   const myFS = params.fs;
-  const sqlite = params.dbf();
-  let dbOpened = false;
-  sqlite.once('open', () => {
-    dbOpened = true;
-  });
+  const sqliteDriver = params.dbf();
   const wotbInstance = params.wotb;
   const that = this;
 
@@ -37,17 +33,17 @@ function FileDAL(params) {
 
   // DALs
   this.confDAL = new ConfDAL(rootPath, myFS, null, that, CFSStorage);
-  this.metaDAL = new (require('./sqliteDAL/MetaDAL'))(sqlite);
-  this.peerDAL = new (require('./sqliteDAL/PeerDAL'))(sqlite);
-  this.blockDAL = new (require('./sqliteDAL/BlockDAL'))(sqlite);
-  this.sourcesDAL = new (require('./sqliteDAL/SourcesDAL'))(sqlite);
-  this.txsDAL = new (require('./sqliteDAL/TxsDAL'))(sqlite);
+  this.metaDAL = new (require('./sqliteDAL/MetaDAL'))(sqliteDriver);
+  this.peerDAL = new (require('./sqliteDAL/PeerDAL'))(sqliteDriver);
+  this.blockDAL = new (require('./sqliteDAL/BlockDAL'))(sqliteDriver);
+  this.sourcesDAL = new (require('./sqliteDAL/SourcesDAL'))(sqliteDriver);
+  this.txsDAL = new (require('./sqliteDAL/TxsDAL'))(sqliteDriver);
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, null, that, CFSStorage);
   this.statDAL = new StatDAL(rootPath, myFS, null, that, CFSStorage);
-  this.linksDAL = new (require('./sqliteDAL/LinksDAL'))(sqlite, wotbInstance);
-  this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqlite, wotbInstance);
-  this.certDAL = new (require('./sqliteDAL/CertDAL'))(sqlite);
-  this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(sqlite);
+  this.linksDAL = new (require('./sqliteDAL/LinksDAL'))(sqliteDriver, wotbInstance);
+  this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqliteDriver, wotbInstance);
+  this.certDAL = new (require('./sqliteDAL/CertDAL'))(sqliteDriver);
+  this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(sqliteDriver);
 
   this.newDals = {
     'metaDAL': that.metaDAL,
@@ -216,6 +212,8 @@ function FileDAL(params) {
   this.lastBlockOfIssuer = function (issuer) {
     return that.blockDAL.lastBlockOfIssuer(issuer);
   };
+  
+  this.getCountOfPoW = (issuer) => that.blockDAL.getCountOfBlocksIssuedBy(issuer);
 
   this.getBlocksBetween = (start, end) => Q(this.blockDAL.getBlocks(Math.max(0, start), end));
 
@@ -715,37 +713,37 @@ function FileDAL(params) {
 
   this.unacceptIdentity = that.idtyDAL.unacceptIdentity;
 
+  this.getPreviousMembershipsInfos = (ms) => co(function*() {
+    const previousMS = yield that.msDAL.previousMS(ms.issuer, ms.number);
+    let previousIN = previousMS;
+    if (previousMS.membership !== 'IN') {
+      previousIN = yield that.msDAL.previousIN(ms.issuer, ms.number);
+    }
+    return {
+      previousIN: previousIN,
+      previousMS: previousMS
+    };
+  });
+
   this.unJoinIdentity = (ms) => co(function *() {
-    const previousMSN = yield that.msDAL.previousMS(ms.issuer, ms.number);
-    let previousINN = previousMSN.number;
-    if (previousMSN.membership == 'IN') {
-      previousINN = previousMSN;
-    }
-    else {
-      previousINN = yield that.msDAL.previousIN(ms.issuer, ms.number);
-    }
-    yield that.idtyDAL.unJoinIdentity(ms, previousMSN.number, previousINN.number);
+    const previousMSS = yield that.getPreviousMembershipsInfos(ms);
+    yield that.idtyDAL.unJoinIdentity(ms, previousMSS.previousMS, previousMSS.previousIN);
     yield that.msDAL.unwriteMS(ms);
   });
 
   this.unRenewIdentity = (ms) => co(function *() {
-    const previousMSN = yield that.msDAL.previousMS(ms.issuer, ms.number);
-    let previousINN = previousMSN.number;
-    if (previousMSN.membership == 'IN') {
-      previousINN = previousMSN;
-    }
-    else {
-      previousINN = yield that.msDAL.previousIN(ms.issuer, ms.number);
-    }
-    yield that.idtyDAL.unRenewIdentity(ms, previousMSN.number, previousINN.number);
+    const previousMSS = yield that.getPreviousMembershipsInfos(ms);
+    yield that.idtyDAL.unRenewIdentity(ms, previousMSS.previousMS, previousMSS.previousIN);
     yield that.msDAL.unwriteMS(ms);
   });
 
   this.unLeaveIdentity = (ms) => co(function *() {
-    const previousMSN = yield that.msDAL.previousMS(ms.issuer, ms.number);
-    yield that.idtyDAL.unLeaveIdentity(ms, previousMSN.number);
+    const previousMSS = yield that.getPreviousMembershipsInfos(ms);
+    yield that.idtyDAL.unLeaveIdentity(ms, previousMSS.previousMS, previousMSS.previousIN);
     yield that.msDAL.unwriteMS(ms);
   });
+
+  this.unFlagToBeKicked = that.idtyDAL.unFlagToBeKicked.bind(that.idtyDAL);
 
   this.unExcludeIdentity = that.idtyDAL.unExcludeIdentity;
 
@@ -830,31 +828,26 @@ function FileDAL(params) {
 
   this.close = () => co(function *() {
     yield _.values(that.newDals).map((dal) => dal.cleanCache && dal.cleanCache());
-    return new Promise((resolve, reject) => {
-      let isOpened = !dbOpened;
-      if (process.platform === 'win32') {
-        isOpened = sqlite.open; // For an unknown reason, we need this line.
-      }
-      if (!isOpened) {
-        return resolve();
-      }
-      logger.debug('Trying to close SQLite...');
-      sqlite.on('close', () => {
-        logger.info('Database closed.');
-        resolve();
-      });
-      sqlite.on('error', (err) => {
-        if (err && err.message === 'SQLITE_MISUSE: Database is closed') {
-          return resolve();
-        }
-        reject(err);
-      });
-      sqlite.close();
-    });
+    return sqliteDriver.closeConnection();
   });
 
   this.resetPeers = () => co(function *() {
     that.peerDAL.removeAll();
     return yield that.close();
+  });
+
+  this.getLogContent = (linesQuantity) => new Promise((resolve, reject) => {
+    let lines = [], i = 0;
+    const lineReader = require('readline').createInterface({
+      input: require('fs').createReadStream(require('path').join(rootPath, 'duniter.log'))
+    });
+    lineReader.on('line', (line) => {
+      line = "\n" + line;
+      lines.push(line);
+      i++;
+      if (i >= linesQuantity) lines.shift();
+    });
+    lineReader.on('close', () => resolve(lines));
+    lineReader.on('error', (err) => reject(err));
   });
 }

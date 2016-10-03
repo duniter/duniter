@@ -45,7 +45,7 @@ duniter() {
 		#  DUNITER DAEMON MANAGEMENT
 		#---------------------------------
 
-		webwait|webstart|webstop|webrestart|start|stop|restart)
+		reset|webwait|webstart|webstop|webrestart|start|stop|restart)
 		$NODE "$DUNITER_DIR/bin/daemon" $*
 		;;
 

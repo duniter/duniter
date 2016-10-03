@@ -102,35 +102,35 @@ module.exports = new function() {
       raw += "Parameters: " + json.parameters + "\n";
     raw += "MembersCount: " + json.membersCount + "\n";
     raw += "Identities:\n";
-    for (const idty of json.identities){
+    for (const idty of (json.identities || [])){
       raw += idty + "\n";
     }
     raw += "Joiners:\n";
-    for (const joiner of json.joiners){
+    for (const joiner of (json.joiners || [])){
       raw += joiner + "\n";
     }
     raw += "Actives:\n";
-    for (const active of json.actives){
+    for (const active of (json.actives || [])){
       raw += active + "\n";
     }
     raw += "Leavers:\n";
-    for (const leaver of json.leavers){
+    for (const leaver of (json.leavers || [])){
       raw += leaver + "\n";
     }
     raw += "Revoked:\n";
-    for (const revoked of json.revoked){
+    for (const revoked of (json.revoked || [])){
       raw += revoked + "\n";
     }
     raw += "Excluded:\n";
-    for (const excluded of json.excluded){
+    for (const excluded of (json.excluded || [])){
       raw += excluded + "\n";
     }
     raw += "Certifications:\n";
-    for (const cert of json.certifications){
+    for (const cert of (json.certifications || [])){
       raw += cert + "\n";
     }
     raw += "Transactions:\n";
-    for (const tx of json.transactions){
+    for (const tx of (json.transactions || [])){
       raw += tx.raw || this.getCompactTransaction(tx);
     }
     return dos2unix(raw);

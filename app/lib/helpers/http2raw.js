@@ -16,7 +16,7 @@ module.exports = {
 
 function requiresParameter(parameter, err) {
   return (req) => {
-    if(!req.body || !req.body[parameter]){
+    if(!req.body || req.body[parameter] === undefined){
       throw err;
     }
     return req.body[parameter];

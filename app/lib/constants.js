@@ -347,7 +347,7 @@ module.exports = {
   SAFE_FACTOR: 3,
   BLOCKS_COLLECT_THRESHOLD: 30, // Blocks to collect from memory and persist
 
-  MUTE_LOGS_DURING_UNIT_TESTS: false,
+  MUTE_LOGS_DURING_UNIT_TESTS: true,
 
   SANDBOX_SIZE_TRANSACTIONS: 200,
   SANDBOX_SIZE_IDENTITIES: 100,

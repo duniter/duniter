@@ -240,7 +240,7 @@ function PeeringService(server) {
           }
         }
         // We also remove endpoints that are *asked* to be removed in the conf file
-        if (endpoint.indexOf(conf.rmEndpoints) !== - 1) {
+        if ((conf.rmEndpoints || []).indexOf(endpoint) !== -1) {
           real = false;
         }
       } catch (e) {
@@ -270,7 +270,7 @@ function PeeringService(server) {
       currency: currency,
       pubkey: selfPubkey,
       block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
-      endpoints: _.uniq([endpoint].concat(toConserve).concat(conf.endpoints))
+      endpoints: _.uniq([endpoint].concat(toConserve).concat(conf.endpoints || []))
     };
     const raw2 = dos2unix(new Peer(p2).getRaw());
     logger.info('External access:', new Peer(p2).getURL());
@@ -310,8 +310,8 @@ function PeeringService(server) {
 
   function getOtherEndpoints(endpoints, theConf) {
     return endpoints.filter((ep) => {
-      return ep.match(constants.BMA_REGEXP) && ep.includes(' ' + theConf.remoteport) && (
-        ep.includes(theConf.remoteipv4) || ep.includes(theConf.remoteipv6) || ep.includes(theConf.remoteipv4));
+      return ep.match(constants.BMA_REGEXP) && !(ep.includes(' ' + theConf.remoteport) && (
+        ep.includes(theConf.remoteipv4) || ep.includes(theConf.remoteipv6) || ep.includes(theConf.remoteipv4)));
     });
   }
 

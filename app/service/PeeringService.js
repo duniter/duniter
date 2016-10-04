@@ -239,6 +239,10 @@ function PeeringService(server) {
             throw Error("Not same pubkey as local instance");
           }
         }
+        // We also remove endpoints that are *asked* to be removed in the conf file
+        if (endpoint.indexOf(conf.rmEndpoints) !== - 1) {
+          real = false;
+        }
       } catch (e) {
         logger.warn('Wrong endpoint \'%s\': \'%s\'', endpoint, e.message || e);
         real = false;
@@ -266,7 +270,7 @@ function PeeringService(server) {
       currency: currency,
       pubkey: selfPubkey,
       block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
-      endpoints: _.uniq([endpoint].concat(toConserve))
+      endpoints: _.uniq([endpoint].concat(toConserve).concat(conf.endpoints))
     };
     const raw2 = dos2unix(new Peer(p2).getRaw());
     logger.info('External access:', new Peer(p2).getURL());
@@ -306,9 +310,8 @@ function PeeringService(server) {
 
   function getOtherEndpoints(endpoints, theConf) {
     return endpoints.filter((ep) => {
-      let lookLikeLocal = ep.includes(' ' + theConf.remoteport) && (
+      return ep.match(constants.BMA_REGEXP) && ep.includes(' ' + theConf.remoteport) && (
         ep.includes(theConf.remoteipv4) || ep.includes(theConf.remoteipv6) || ep.includes(theConf.remoteipv4));
-      return !lookLikeLocal;
     });
   }
 

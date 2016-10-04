@@ -95,6 +95,8 @@ program
   .option('--remotep <port>', 'Remote port others may use to contact this node')
   .option('--upnp', 'Use UPnP to open remote port')
   .option('--noupnp', 'Do not use UPnP to open remote port')
+  .option('--addep <endpoint>', 'With `config` command, add given endpoint to the list of endpoints of this node')
+  .option('--remep <endpoint>', 'With `config` command, remove given endpoint to the list of endpoints of this node')
 
   // Webmin options
   .option('--webmhost <host>', 'Local network interface to connect to (IP)')
@@ -469,6 +471,28 @@ program
         yield Q.nbind(wiz.networkReconfiguration, wiz)(conf, program.autoconf, program.noupnp);
         yield Q.nbind(wiz.keyReconfigure, wiz)(conf, program.autoconf);
       }
+      // Try to add an endpoint if provided
+      if (program.addep) {
+        if (conf.endpoints.indexOf(program.addep) === -1) {
+          conf.endpoints.push(program.addep);
+        }
+        // Remove it from "to be removed" list
+        const indexInRemove = conf.rmEndpoints.indexOf(program.addep);
+        if (indexInRemove !== -1) {
+          conf.rmEndpoints.splice(indexInRemove, 1);
+        }
+      }
+      // Try to remove an endpoint if provided
+      if (program.remep) {
+        if (conf.rmEndpoints.indexOf(program.remep) === -1) {
+          conf.rmEndpoints.push(program.remep);
+        }
+        // Remove it from "to be added" list
+        const indexInToAdd = conf.endpoints.indexOf(program.remep);
+        if (indexInToAdd !== -1) {
+          conf.endpoints.splice(indexInToAdd, 1);
+        }
+      }
       return server.dal.saveConf(conf)
         .then(function () {
           logger.debug("Configuration saved.");
@@ -646,6 +670,8 @@ function commandLineConf(conf) {
       http: program.httplogs,
       nohttp: program.nohttplogs
     },
+    endpoints: [],
+    rmEndpoints: [],
     ucp: {
       rootoffset: program.rootoffset,
       sigPeriod: program.sigPeriod,

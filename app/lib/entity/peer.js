@@ -3,11 +3,11 @@ const Q = require('q');
 const _ = require('underscore');
 const vucoin = require('vucoin');
 const rawer = require('../ucp/rawer');
+const constants = require('../constants');
 
 module.exports = Peer;
 
 const DEFAULT_HOST = 'localhost';
-const BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
 
 function Peer(json) {
 
@@ -47,7 +47,7 @@ function Peer(json) {
   this.getBMA = () => {
     let bma = null;
     this.endpoints.forEach((ep) => {
-      const matches = !bma && ep.match(BMA_REGEXP);
+      const matches = !bma && ep.match(constants.BMA_REGEXP);
       if (matches) {
         bma = {
           "dns": matches[2] || '',

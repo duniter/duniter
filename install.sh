@@ -15,7 +15,7 @@ latest_version() {
 }
 
 repo_url() {
-  echo "https://github.com/blavenie/duniter.git"
+  echo "https://github.com/duniter/duniter.git"
 }
 
 download() {

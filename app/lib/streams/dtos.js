@@ -332,6 +332,7 @@ dtos.TxOfHistory = {
   "version": Number,
   "issuers": [String],
   "inputs": [String],
+  "unlocks": [String],
   "outputs": [String],
   "comment": String,
   "locktime": String,

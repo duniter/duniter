@@ -41,7 +41,7 @@ blocktime             | The realtime recorded by a block.
 
 ## Introduction
 
-UCP aims at defining a data format, interpretation of it and processing rules in order to build coherent free currency systems in a P2P environment. UCP is to be understood as an *abstract* protocol since it defines currency parameters and rules about them, but not their value which is implementation specific.
+UCP aims at defining a data format, an interpretation of it and processing rules in order to build coherent free currency systems in a P2P environment. UCP is to be understood as an *abstract* protocol since it defines currency parameters and rules about them, but not their value which is implementation specific.
 
 This document describes UCP in a bottom-up logic, so you will find first the details of the protocol (data format) to end with general protocol requirements.
 
@@ -61,7 +61,7 @@ This is a *very important information* as every document is subject to hashes, a
 
 #### Block identifiers
 
-It exists 2 kinds of [Block](#block) identifiers:
+There are 2 kinds of [Block](#block) identifiers:
 
 ##### `BLOCK_ID`
 
@@ -75,11 +75,11 @@ It is the concatenation of the `BLOCK_ID` of a block and hash. Its format is `BL
 The block ID of the root block is `0`. Its UID *might be* `0-883228A23F8A75B342E912DF439738450AE94F5D`.
 The block ID of the block#433 is `433`. Its UID *might be* `433-FB11681FC1B3E36C9B7A74F4DDE2D07EC2637957`.
 
-> Note that it is said "might be" because the hash is not known by advance.
+> Note that it says "might be" because the hash is not known in advance.
 
 #### Currency name
 
-A valid currency name is composed of alphanumeric characters, space, `-` or `_` and has a length between 2 and 50 characters.
+A valid currency name is composed of alphanumeric characters, spaces, `-` or `_` and has a length of 2 to 50 characters.
 
 #### Dates
 
@@ -87,15 +87,15 @@ For any document using a date field, targeted date is to be understood as **UTC+
 
 #### Integer
 
-Any integer field has a maximum len of 19 digits.
+Any integer field has a maximum length of 19 digits.
 
 ### Signatures
 
 #### Format
 
-Signatures follow [Ed55219 pattern](http://en.wikipedia.org/wiki/EdDSA), and are written under [Base64](http://en.wikipedia.org/wiki/Base64) encoding.
+Signatures follow the [Ed55219 pattern](http://en.wikipedia.org/wiki/EdDSA), and are written under [Base64](http://en.wikipedia.org/wiki/Base64) encoding.
 
-Here is an example of expected signature:
+Here is an example of an expected signature:
 
     H41/8OGV2W4CLKbE35kk5t1HJQsb3jEM0/QGLUf80CwJvGZf3HvVCcNtHPUFoUBKEDQO9mPK3KJkqOoxHpqHCw==
 
@@ -117,7 +117,7 @@ Its format is a [Base58](http://en.wikipedia.org/wiki/Base58) string of 43 or 44
 
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
 
-A public key is alway paired with a private key, which UCP will never deal with. UCP only deals with public keys and signatures.
+A public key is always paired with a private key, which UCP will never deal with. UCP only deals with public keys and signatures.
 
 ### Identity
 
@@ -128,7 +128,7 @@ Issuing an identity is the act of creating a link between a *public key* and *an
 > « This identity refers to me ! »
 
 #### Identity unique ID
-UCP does not rely on any particular identity format, which remains implementation free. Identity simply has to be a string of length between 2 and 100 characters avoiding usage of line endings characters.
+UCP does not rely on any particular identity format, which remains implementation free. Identity simply has to be a string of length between 2 and 100 characters avoiding usage of line ending characters.
 
 In this document *identifier*, `UserID`, `USER_ID` and `uid` will be indifferently used to refer to this identity string.
 
@@ -143,7 +143,7 @@ An identity is a *signed* document containing the identifier:
     UniqueID: USER_ID
     Timestamp: BLOCK_UID
 
-Here, `USER_ID` has to be replaced by a valid identifier, `PUBLIC_KEY` by a valid public key and `BLOCK_UID` by a valid block unique ID. This document **is what signature is based upon**.
+Here, `USER_ID` has to be replaced with a valid identifier, `PUBLIC_KEY` with a valid public key and `BLOCK_UID` with a valid block unique ID. This document **is what signature is based upon**.
 
 The whole identity document is then:
 
@@ -184,13 +184,13 @@ A valid identity:
 
 #### Definition
 
-An identity revocation is the act, for a given public key's owner, to revoke an identity he created for representing himself. Doing a self-revocation is extacly like saying:
+An identity revocation is the act, for a given public key's owner, to revoke an identity they created for representing themself. Doing a self-revocation is exactly like saying:
 
-> « This identity I created has no more sense. It has to be locked definitively. »
+> « This identity I created makes no sense anymore. It has to be definitively locked. »
 
 #### Use case
 
-Its goal is only to inform that a created identity was either made by mistake, or contained a mistake, may have been compromised (private key stolen, lost, ...), or because for some reason you want to create another identity for you.
+Its goal is only to inform that a created identity was either made by mistake, or contained a mistake, may have been compromised (private key stolen, lost...), or because for some reason you want to make yourself another identity.
 
 #### Format
 
@@ -238,7 +238,7 @@ A valid revocation could be:
 
 #### Definition
 
-A *certification* in UCP refers to the document *certifying* someone else's identity to consider it as the unique reference to a living individual.
+A *certification* in UCP refers to the document *certifying* that someone else's identity is to consider as the unique reference to a living individual.
 
 #### Format
 
@@ -262,7 +262,7 @@ Where:
 
 #### Inline format
 
-Certification may exists under *inline format* which describes the certification under a simple line. Here is general structure:
+Certifications may exist in an *inline format*, which describes the certification in a simple line. Here is the general structure:
 
     PUBKEY_FROM:PUBKEY_TO:BLOCK_ID:SIGNATURE
 
@@ -302,22 +302,20 @@ A valid certification could be:
 
 ### Membership
 
-In UCP, a member is represented by a public key he is supposed to be the owner. To be integrated in a WoT, the newcomer owner of the key *has to express its will* to integrate the WoT.
+In UCP, a member is represented by a public key they are supposed to own. To be integrated in a WoT, the newcomer owner of the key *has to express their will* to integrate the WoT.
 
-This step is done by issuing a the following document:
+This step is done by issuing the following document:
 
-```bash
-Version: VERSION
-Type: Membership
-Currency: CURRENCY_NAME
-Issuer: ISSUER
-Block: M_BLOCK_UID
-Membership: MEMBERSHIP_TYPE
-UserID: USER_ID
-CertTS: BLOCK_UID
-```
+    Version: VERSION
+    Type: Membership
+    Currency: CURRENCY_NAME
+    Issuer: ISSUER
+    Block: M_BLOCK_UID
+    Membership: MEMBERSHIP_TYPE
+    UserID: USER_ID
+    CertTS: BLOCK_UID
 
-followed by a signature of `Issuer`.
+followed by a signature of the `Issuer`.
 
 #### Fields details
 
@@ -328,7 +326,7 @@ Field | Description
 `Currency` | Contains the name of the currency.
 `Issuer` | The public key of the issuer.
 `Block` | Block number and hash. Value is used to target a blockchain and precise time reference for membership's time validity.
-`Membership` | Membership message. Value is either `IN` or `OUT` to express wether a member wishes to opt-in or opt-out the community.
+`Membership` | Membership message. Value is either `IN` or `OUT` to express whether a member wishes to opt-in or opt-out the community.
 `UserID` | Identity to use for this public key
 `CertTS` | Identity's block UID
 
@@ -357,7 +355,7 @@ Money ownership **IS NOT** limited to members of the Community. Any owner (an in
 
 #### Transfering money
 
-Obviously, coins a sender does not own CANNOT be sent by him. That is why a transaction refers to other transactions, to prove that the sender actually owns the coins he wants to send.
+Obviously, coins a sender does not own CANNOT be sent by them. That is why a transaction refers to other transactions, to prove that the sender actually owns the coins they want to send.
 
 #### Format
 
@@ -388,12 +386,12 @@ Here is a description of each field:
 
 Field | Description
 ----- | -----------
-`Version` | denotes the current structure version.
-`Type` | Type of the document.
-`Currency` | contains the name of the currency.
+`Version` | denotes the current structure version
+`Type` | type of the document
+`Currency` | contains the name of the currency
 `Blockstamp` | a block reference as timestamp of the transaction
 `Locktime` | waiting delay to be included in the blockchain
-`Issuers` | a list of public key
+`Issuers` | a list of public keys
 `Inputs` | a list of money sources
 `Unlocks` | a list of values justifying inputs consumption
 `Outputs` | a list of amounts and conditions to unlock them
@@ -425,7 +423,7 @@ A Transaction structure is considered *valid* if:
 
 It is a suite of values each separated by a space "` `". Values must be either a `SIG(INDEX)` or `HXH(INTEGER)`.
 
-If no value is provided, the valid input condition is an empty string.
+If no values are provided, the valid input condition is an empty string.
 
 ##### Input condition examples
 
@@ -460,7 +458,7 @@ Each `Unlock` of TX2 refers to an input of TX2 through `IN_INDEX`, input itself 
 
 A function of TX1 at position `f` returns TRUE if parameter at position `p` resolves the function. Otherwise it returns FALSE.
 
-The condition of an `Output` is unlocked if, evaluated globally with `(`, `)`, `(`, `&&`, and `||`, the condition returns TRUE.
+The condition of an `Output` is unlocked if, evaluated globally with `(`, `)`, `&&`, and `||`, the condition returns TRUE.
 
 ##### Example 1
 
@@ -474,7 +472,7 @@ Is resolved by TX2:
     Unlocks:
     0:XHX(1872767826647264)
 
-Because `XHX(1872767826647264) = 8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB` (this will be explained in next sections).
+Because `XHX(1872767826647264) = 8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB` (this will be explained in the next section).
 
 ##### Example 2
 
@@ -492,7 +490,7 @@ Is resolved by TX2:
     Unlocks:
     0:SIG(1)
 
-Because `SIG(1)` refers to signature of `DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo`, and considering signature of `DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo` is good over TX2.
+Because `SIG(1)` refers to the signature `DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo`, considering that signature `DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo` is good over TX2.
 
 #### SIG and XHX functions
 
@@ -509,7 +507,7 @@ This function is a control over the signature.
   * if TX2 does not give `SIG(INDEX)` parameter as [matching parameter](#condition-matching), the condition fails
   * if TX2's `Issuers[INDEX]` does not equal `PUBKEY_A`, the condition fails
   * if TX2's `SIG(INDEX)` does not return TRUE, the condition fails
-* in an `Unlock` of TX2, `SIG(INDEX)` return TRUE if `Signatures[INDEX]` is a valid signature of TX2 against`Issuers[INDEX]`
+* in an `Unlock` of TX2, `SIG(INDEX)` returns TRUE if `Signatures[INDEX]` is a valid signature of TX2 against `Issuers[INDEX]`
 
 So if we have, in TX1:
 
@@ -533,7 +531,7 @@ Then the `25` units can be spent *exclusively* in a future transaction TX2 which
 
 Where:
 
-* `SIG(0)` refers to the signature of `Issuers[0]`, i.e. `BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g`
+* `SIG(0)` refers to the signature of `Issuers[0]`, here `BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g`
 * `6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3` is the hash of TX1.
 
 The necessary condition `SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)` is matched here if **both**:
@@ -666,7 +664,7 @@ Signatures (fakes here):
 
 #### Compact format
 
-A transaction may be described under a more compact format, to be used under [Block](#block) document. General format is:
+A transaction may be described with a more compact format, to be used in a [Block](#block) document. The general format is:
 
     TX:VERSION:NB_ISSUERS:NB_INPUTS:NB_UNLOCKS:NB_OUTPUTS:HAS_COMMENT:LOCKTIME
     BLOCKSTAMP
@@ -682,7 +680,7 @@ A transaction may be described under a more compact format, to be used under [Bl
     SIGNATURE
     ...
 
-Here is an example compacting above [example 2](#example-2):
+Here is an example compacting [example 2](#example-2) from above:
 
     TX:3:1:3:1:0:0
     204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
@@ -696,7 +694,7 @@ Here is an example compacting above [example 2](#example-2):
     30:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
     42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
 
-Here is an example compacting above [example 3](#example-3):
+Here is an example compacting [example 3](#example-3) from above:
 
     TX:3:3:6:3:1:0
     204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
@@ -807,14 +805,16 @@ Actives               | `IN` memberships                                  | Alwa
 Leavers               | `OUT` memberships                                 | Always
 Revoked               | Revocation documents                              | Always
 Excluded              | Exluded members' public key                       | Always
-Transactions          | A liste of compact transactions                   | Always
+Transactions          | A list of compact transactions                    | Always
 InnerHash             | The hash value of the block's inner content       | Always
 Nonce                 | An arbitrary nonce value                          | Always
 
 #### Coherence
-To be a valid, a block must match the following rules:
+
+To be valid, a block must match the following rules:
 
 ##### Format
+
 * `Version`, `Nonce`, `Number`, `PoWMin`, `Time`, `MedianTime`, `MembersCount`, `UniversalDividend`, `UnitBase`, `IssuersFrame`, `IssuersFrameVar` and `DifferentIssuersCount` are integer values
 * `Currency` is a valid currency name
 * `PreviousHash` is an uppercased SHA256 hash
@@ -841,21 +841,22 @@ To be a valid, a block must match the following rules:
   * `BLOCK_ID` : a positive integer
   * `SIGNATURE` : a [Signature](#signature) of the certification
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
-* `Parameters` is a simple line field, composed of 1 float, 12 integers and 1 last float all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency) :
+* `Parameters` is a simple line field, composed of 1 float, 12 integers and 1 last float all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency):
 
         c:dt:ud0:sigPeriod:sigStock:sigWindow:sigValidity:sigQty:idtyWindow:msWindow:xpercent:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:blocksRot:percentRot
 
 The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
 ##### Data
+
 * `Version` equals `2` or `3`
 * `Type` equals `Block`
 
 ### Peer
 
-UCP uses P2P networks to manage community & money data. Since only members can write to the Blockchain, it is important to have authenticated peers so newly validated blocks can be efficiently sent to them, without any ambiguity.
+UCP uses P2P networks to manage community and money data. Since only members can write to the Blockchain, it is important to have authenticated peers so newly validated blocks can be efficiently sent to them, without any ambiguity.
 
-For that purpose, UCP defines a peering table containing, for a given node public key:
+For that purpose, UCP defines a peering table containing, for a given node's public key:
 
 * a currency name
 * a list of endpoints to contact the node
@@ -877,19 +878,20 @@ This link is made through a document called *Peer* whose format is described bel
 
 With the signature attached, this document certifies that this public key is owned by this server at given network endpoints.
 
-The aggregation of all *Peer* documents is called the *peering table*, and allows to authentify addresses of all nodes identified by their public key.
+The aggregation of all *Peer* documents is called the *peering table*, and allows to authentify addresses of all nodes identified by their public keys.
 
 #### Fields details
 
 Field | Description
 ----- | -----------
 `Version` | denotes the current structure version.
-`Type`  | The document type.
+`Type`  | the document type.
 `Currency` | contains the name of the currency.
 `Issuer` | the node's public key.
-`Block` | Block number and hash. Value is used to target a blockchain and precise time reference.
+`Block` | block number and hash. Value is used to target a blockchain and precise time reference.
 `Endpoints` | a list of endpoints to interact with the node
-`Endpoints` has a particular structure: it is made up of at least one line with each line following format:
+
+`Endpoints` has a particular structure. It is made up of at least one line, with each line following this format:
 
     PROTOCOL_NAME[ OPTIONS]
     [...]
@@ -908,9 +910,11 @@ Field | Description
 `PORT` | is the port of the address to access the node.
 
 #### Coherence
-To be a valid, a peer document must match the following rules:
+
+To be valid, a peer document must match the following rules:
 
 ##### Format
+
 * `Version` equals `2` or `3`
 * `Type` equals `Peer`
 * `Currency` is a valid currency name
@@ -943,7 +947,7 @@ ud0         | UD(0), i.e. initial Universal Dividend
 sigPeriod   | Minimum delay between 2 certifications of a same issuer, in seconds. Must be positive or zero.
 sigStock    | Maximum quantity of active certifications made by member.
 sigWindow   | Maximum delay a certification can wait before being expired for non-writing.
-sigValidity | Maximum age of a active signature (in seconds)
+sigValidity | Maximum age of an active signature (in seconds)
 sigQty      | Minimum quantity of signatures to be part of the WoT
 idtyWindow  | Maximum delay an identity can wait before being expired for non-writing.
 msWindow    | Maximum delay a membership can wait before being expired for non-writing.
@@ -970,11 +974,12 @@ sentries | Members with at least `dSen` active links *from* them
 ## Processing
 
 ### Block
+
 A Block can be accepted only if it respects a set of rules, here divided in 2 parts : *local* and *global*.
 
 #### Local validation
 
-Local validation verifies the coherence of a well-formatted block, withtout any other context than the block itself.
+Local validation verifies the coherence of a well-formatted block, without any other context than the block itself.
 
 ##### Version and Number
 
@@ -982,13 +987,14 @@ If `Number` is `0`, then `Version` must be `2`.
 
 ##### InnerHash
 
-* `InnerHash` is the SHA256 hash of the whole fields from `Version: 2` to `\InnerHash`, 'InnerHash' string being excluded from the hash computation.
+* `InnerHash` is the SHA256 hash of the whole fields from `Version: 2` to `\InnerHash`, the 'InnerHash' string being excluded from the hash computation.
 
 ##### Nonce
 
 * `Nonce` value may be any zero or positive integer. This field is a special field allowing for document hash to change for proof-of-work computation.
 
 ##### Proof of work
+
 To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must start with a specific number of zeros. Locally, this hash must start with at least `NB_ZEROS` zeros:
 
     REMAINDER = PowMin % 16
@@ -996,18 +1002,18 @@ To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must
 
 ##### PreviousHash
 
-* `PreviousHash` must be present if `Number` field is over `0` value.
-* `PreviousHash` must not be present if `Number` field equals `0` value.
+* `PreviousHash` must be present if the value of the `Number` field is greater than `0`.
+* `PreviousHash` must not be present if the value of the `Number` field is equal to `0`.
 
 ##### PreviousIssuer
 
-* `PreviousIssuer` must be present if `Number` field is over `0` value.
-* `PreviousIssuer` must not be present if `Number` field equals `0` value.
+* `PreviousIssuer` must be present if the value of the `Number` field is greater than `0`.
+* `PreviousIssuer` must not be present if the value of the `Number` field is equal to `0`.
 
 ##### Parameters
 
-* `Parameters` must be present if `Number` field equals `0` value.
-* `Parameters` must not be present if `Number` field is over `0` value.
+* `Parameters` must be present if the value of the `Number` field is equal to `0`.
+* `Parameters` must not be present if the value of the `Number` field is greater than `0`.
 
 ##### UnitBase
 
@@ -1019,7 +1025,7 @@ To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must
 
 ##### Signature
 
-* A block must have a valid signature over the content from `Hash: ` to `Nonce: NONCE\n`, where associated public key is block's `Issuer` field.
+* A block must have a valid signature over the content from `Hash: ` to `Nonce: NONCE\n`, where the associated public key is the block's `Issuer` field.
 
 ##### Dates
 
@@ -1028,10 +1034,10 @@ To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must
 
 ##### Identities
 
-* A block cannot contain identities whose signature does not match identity's content
+* A block cannot contain identities whose signature does not match the identity's content
 * A block cannot have two or more identities sharing a same `USER_ID`.
 * A block cannot have two or more identities sharing a same `PUBLIC_KEY`.
-* Each identity of a block must match a `Joiners` line matching same `PUBLIC_KEY`
+* Each identity of a block must match a `Joiners` line matching the same `PUBLIC_KEY`
 
 ##### Memberships (Joiners, Actives, Leavers)
 
@@ -1039,7 +1045,7 @@ To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must
 
 ##### Members changes (Joiners, Actives, Leavers, Excluded)
 
-* A block cannot contain more than 1 occurrence of a same `PUBLIC_KEY` in `Joiners`, `Actives`, `Leavers` and `Excluded` field as a whole. In other words, a given `PUBLIC_KEY` present in `Joiners` cannot be present in `Joiners` a second time, neither be present one time in `Actives`, `Leavers` or `Excluded`.
+* A block cannot contain more than 1 occurrence of a same `PUBLIC_KEY` in `Joiners`, `Actives`, `Leavers` and `Excluded` field as a whole. In other words, a given `PUBLIC_KEY` present in `Joiners` cannot be present in `Joiners` a second time, neither can it be present in `Actives`, `Leavers` or `Excluded`.
 
 ##### Revoked
 
@@ -1060,13 +1066,13 @@ To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must
 
 * A transaction in compact format cannot measure more than 100 lines
 * A transaction must have at least 1 issuer, 1 source and 1 recipient
-* For each issuer line, starting from line # `0`, it must exist a source with an `INDEX` value equal to this line#
+* For each issuer line, starting from line # `0`, there must be a source with an `INDEX` value equal to this line#
 * A transaction cannot have 2 identical inputs
 * A transaction cannot have 2 identical outputs
 * A transaction cannot have `SIG(INDEX)` unlocks with `INDEX >= ` issuers count.
 * A transaction **must** have signatures matching its content for each issuer
 * A transaction's version must be the same as its including block
-* It cannot exist 2 transactions with an identical source
+* There cannot be 2 transactions with the same source
 
 ###### CommonBase
 
@@ -1137,9 +1143,9 @@ TRUE
 
 ###### About signatures
 
-* Signature count must be the same as issuers count
+* Signatures count must be the same as issuers count
 * Signatures are ordered by issuer
-* Signature is made over the transaction's content, signatures excepted
+* Signatures are made over the transaction's content, signatures excepted
 
 #### Global
 
@@ -1160,14 +1166,16 @@ The maximum size of a block `MAX_BLOCK_SIZE` is defined by:
 
 `MAX_BLOCK_SIZE = MAX(500 ; CEIL(1.10 * AVERAGE_BLOCK_SIZE))`
 
-Where: `AVERAGE_BLOCK_SIZE` equals to the average block size of the `DifferentIssuersCount` previous blocks.
+Where: `AVERAGE_BLOCK_SIZE` equals to the average block size of the `DifferentIssuersCount` of previous blocks.
 
 ###### Block time
+
 Block time is a special discrete time defined by the blocks themselves, where unit is *a block*, and values are *block number + fingerprint*.
 
-So, refering to t<sub>block</sub> = 0-2B7A158B9FD052164005ED5B491699644A846CE2 is valid only if it exists a block#0 in the blockchain whose hash equals 2B7A158B9FD052164005ED5B491699644A846CE2.
+So, refering to t<sub>block</sub> = 0-2B7A158B9FD052164005ED5B491699644A846CE2 is valid only if there exists a block#0 in the blockchain whose hash equals 2B7A158B9FD052164005ED5B491699644A846CE2.
 
 ###### UD time
+
 UD time is a special discrete time defined by the UDs written in the blockchain where unit is a *UD*.
 
 Refering to UD(t = 1) means UD#1, and refers to the *first UD* written in the blockchain.
@@ -1175,63 +1183,76 @@ Refering to UD(t = 1) means UD#1, and refers to the *first UD* written in the bl
 > UD(t = 0) means UD#0 which does not exist. However, UD#0 is a currency parameter noted **[ud0]**.
 
 ###### Calendar time
-Calendar time is the one provided by the blocks under `MedianTime` field. This time is discrete and unit is second.
+
+Calendar time is the one provided by the blocks under `MedianTime` field. This time is discrete and the unit is seconds.
 
 > *Current time* is to be understood as the last block calendar time written in the blockchain.
 
 ###### Certification time
+
 When making a certification, `BLOCK_ID` is a reference to *block time*.
 
 ###### Membership time
+
 When making a membership, `NUMBER` is a reference to *block time*.
 
 ###### Certification & Membership age
+
 Age is defined as the number of seconds between the certification's or membership's *block time* and *current time*:
 
     AGE = current_time - block_time
 
 ###### Identity writability
-An identity is to be considered *non-writable* if its age is less or equal to `[idtyWindow]`:
+
+An identity is to be considered *non-writable* if its age is less than or equal to `[idtyWindow]`:
 
     VALID   = AGE <= [idtyWindow]
     EXPIRED = AGE > [idtyWindow]
 
 ###### Membership writability
-A membership is to be considered *non-writable* if its age is less or equal to `[msWindow]`:
+
+A membership is to be considered *non-writable* if its age is less than or equal to `[msWindow]`:
 
     VALID   = AGE <= [msWindow]
     EXPIRED = AGE > [msWindow]
 
 ###### Certification writability
-A certification is to be considered *non-writable* if its age is less or equal to `[sigWindow]`:
+
+A certification is to be considered *non-writable* if its age is less than or equal to `[sigWindow]`:
 
     VALID   = AGE <= [sigWindow]
     EXPIRED = AGE > [sigWindow]
 
 ###### Certification validity
-A certification is to be considered *valid* if: its age is less or equal to `[sigValidity]`:
+
+A certification is to be considered *valid* if its age is less than or equal to `[sigValidity]`:
 
     VALID   = AGE <= [sigValidity]
     EXPIRED = AGE > [sigValidity]
 
 ###### Certification activity
+
 A certification is to be considered *active* if it is both written in the blockchain and *valid* (equivalent to not expired).
 
 ###### Certification stock
-The stock of certification is defined per member and reflects the number of *active* certifications, i.e. which are not expired:
+
+The stock of certification is defined per member and reflects the number of *active* certifications (i.e. not expired):
 
     STOCK = COUNT(active_certifications)
 
 ###### Membership validity
-A membership is to be considered valid if its age is less or equal to `[msValidity]`:
+
+A membership is to be considered valid if its age is less than or equal to `[msValidity]`:
 
     VALID   = AGE <= [msValidity]
     EXPIRED = AGE > [msValidity]
 
 ###### Membership activity
-A membership is to be considered *active* if it is both written in the blockchain and *valid* (equivalent to not expired).
+
+A membership is to be considered *active* if it is both written in the blockchain and *valid* (i.e. not expired).
 
 ###### Certification chaining
+
 A written certification is to be considered chainable if:
 
 * its age is greater or equal to `[sigPeriod]`:
@@ -1240,21 +1261,22 @@ A written certification is to be considered chainable if:
         CHAINABLE = AGE >= [sigPeriod] && STOCK < [sigStock]
 
 ###### Member
-A member is a `PUBLIC_KEY` matching a valid `Identity` whose last occurrence in blockchain is either `Joiners`, `Actives` or `Leavers` **and is not expired**.
 
-A `PUBLIC_KEY` whose last occurrence in blockchain is `Leavers` or `Excluded`, or has no occurrence in the blockchain **is not** a member.
+A member is a `PUBLIC_KEY` matching a valid `Identity` whose last occurrence in the blockchain is either `Joiners`, `Actives` or `Leavers` **and is not expired**.
+
+A `PUBLIC_KEY` whose last occurrence in the blockchain is `Leavers` or `Excluded`, or has no occurrence in the blockchain **is not** a member.
 
 ###### Revocation
 
 An identity is considered *revoked* if either:
 
 * the age of its last `IN` membership is `>= 2 x [msValidity]` (implicit revocation)
-* it exists a block in which the identity is found under `Revoked` field (explicit revocation)
+* there exists a block in which the identity is found under `Revoked` field (explicit revocation)
 
 ##### Number
 
 * A block's `Number` must be exactly equal to previous block + 1.
-* If blockchain is empty, `Number` must be `0` .
+* If the blockchain is empty, `Number` must be `0` .
 
 ##### Version
 
@@ -1270,31 +1292,31 @@ An identity is considered *revoked* if either:
 
 ###### Rules
 
-We define `PPowMin` as the `PowMin` value of previous block.
+We define `PPowMin` as the `PowMin` value of the previous block.
 
-* If incoming block's `Number` is > 0 and a multiple of `dtDiffEval`, then:
-  * If `speed` is greater or equal to `maxSpeed`, then:
+* If the incoming block's `Number` is greater than 0 and a multiple of `dtDiffEval`, then:
+  * If `speed` is greater than or equal to `maxSpeed`, then:
       *  if `(PPoWMin + 2) % 16 == 0` then `PoWMin = PPoWMin + 2`
       *  else `PoWMin = PPoWMin + 1`
-  * If `speed` is less or equal to `minSpeed`, then:
+  * If `speed` is less than or equal to `minSpeed`, then:
 	  * if `(PPoWMin) % 16 == 0` then `PoWMin = MAX(0, PPoWMin - 2)`
 	  * else `PoWMin = MAX(0, PPoWMin - 1)`
 * Else
-  * If `Number` is > 0, `PoWMin` must be equal to previous block's `PoWMin`
+  * If `Number` is greater than 0, `PoWMin` must be equal to the previous block's `PoWMin`
 
 ##### PreviousHash
 
-* A block's `PreviousHash` must be exactly equal to previous block's computed hash (a.k.a Proof-of-Work). Note that this hash **must** start with ` powZeroMin` zeros.
+* A block's `PreviousHash` must be exactly equal to the previous block's computed hash (a.k.a Proof-of-Work). Note that this hash **must** start with ` powZeroMin` zeros.
 
 ##### PreviousIssuer
 
-* A block's `PreviousIssuer` must be exactly equal to previous block's `Issuer` field.
+* A block's `PreviousIssuer` must be exactly equal to the previous block's `Issuer` field.
 
 ##### IssuersFrame
 
 `IssuersFrame(t) = IssuersFrame(t-1) + CONVERGENCE` where:
 
-* `IssuersFrame(t)` is the value of field in local block
+* `IssuersFrame(t)` is the value of the field in the local block
 * `IssuersFrame(t-1)` is the value of the field in the previous block (`1` in case of making root block or `40` if previous block is V2)
 * `CONVERGENCE` equals `+1` if IssuersFrameVar(t-1) is `> 0`, or `-1` if IssuersFrameVar(t-1) is `< 0`
 
@@ -1302,21 +1324,21 @@ We define `PPowMin` as the `PowMin` value of previous block.
 
 This field counts the number of different block issuers between the `IssuersFrame(t-1)` previous blocks.
 
-`IssuersFrame(t-1)`'s value is the one given by the previous block, or `0` in case of making root block, or `40` if previous block is V2.
+`IssuersFrame(t-1)`'s value is the one given by the previous block, or `0` when making a root block, or `40` if the previous block is V2.
 
 ##### IssuersFrameVar
 
 `IssuersFrameVar(t) = IssuersFrameVar(t-1) + NEW_ISSUER_INC - GONE_ISSUER_DEC + CONVERGENCE` where:
 
-* `IssuersFrameVar(t)` is the value of field in local block
+* `IssuersFrameVar(t)` is the value of the field in the local block
 * `IssuersFrameVar(t-1)` is the value of the field in the previous block (`0` for root block or if previous block is V2)
-* `NEW_ISSUER_INC` equals 5 if `DifferentIssuersCount` from local block equals `DifferentIssuersCount` of previous block `+1` (equals `0` if previous block is V2)
-* `GONE_ISSUER_DEC` equals 5 if `DifferentIssuersCount` from local block equals `DifferentIssuersCount` of previous block `-1` (equals `0` if previous block is V2)
+* `NEW_ISSUER_INC` equals 5 if `DifferentIssuersCount` from local block equals `DifferentIssuersCount` of the previous block `+1` (equals `0` if previous block is V2)
+* `GONE_ISSUER_DEC` equals 5 if `DifferentIssuersCount` from local block equals `DifferentIssuersCount` of the previous block `-1` (equals `0` if previous block is V2)
 * `CONVERGENCE` equals `-1` if IssuersFrameVar(t-1) is `> 0`, or `+1` if IssuersFrameVar(t-1) is `< 0`
 
 ##### Dates
 
-* For any non-root block, `MedianTime` must be equal to the median value of `Time` field for the last `medianTimeBlocks` blocks. If the number of available blocks is an even value, the median is computed over the 2 centered values by an arithmetical median on them, ceil rounded.
+* For any non-root block, `MedianTime` must be equal to the median value of the `Time` field for the last `medianTimeBlocks` blocks. If the number of available blocks is an even value, the median is computed over the 2 centered values by an arithmetical median on them, ceil rounded.
 
 ##### Identity
 
@@ -1331,7 +1353,7 @@ This field counts the number of different block issuers between the `IssuersFram
 * A membership must not be expired.
 * Block#0's memberships' `NUMBER` must be `0` and `HASH` the special value `E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855` (SHA1 of empty string).
 * Other blocks' memberships' `NUMBER` and `HASH` field must match an existing block in the blockchain.
-* Each membership's `NUMBER` must be higher than previous membership's `NUMBER` of the same issuer.
+* Each membership's `NUMBER` must be higher than the previous membership's `NUMBER` of the same issuer.
 
 ##### Joiners, Actives (Web of Trust distance constraint)
 
@@ -1371,17 +1393,18 @@ This field counts the number of different block issuers between the `IssuersFram
 * A certification must be writable.
 * A certification must not be expired.
 * A certification's `PUBKEY_TO`'s last membership occurrence **must not** be in `Leavers`.
-* A certification's `PUBKEY_TO` must be a member **or** be in incoming block's `Joiners`.
+* A certification's `PUBKEY_TO` must be a member **or** be in the incoming block's `Joiners`.
 * A certification's signature must be valid over `PUBKEY_TO`'s self-certification, where signatory is `PUBKEY_FROM`.
-* Replayability: it cannot exist 2 *actives* certifications with the same `PUBKEY_FROM` and `PUBKEY_TO`.
-* Chainability: a certification whose `PUBKEY_FROM` is the same than an existing certification in the blockchain can be written **only if** last certification written (incoming block excluded) is considered chainable.
+* Replayability: there cannot exist 2 *active* certifications with the same `PUBKEY_FROM` and `PUBKEY_TO`.
+* Chainability: a certification whose `PUBKEY_FROM` is the same than an existing certification in the blockchain can be written **only if** the last written certification (incoming block excluded) is considered chainable.
 
 ##### MembersCount
 
-`MembersCount` field must be equal to last block's `MembersCount` plus incoming block's `Joiners` count, minus minus this block's `Excluded` count.
+`MembersCount` field must be equal to the last block's `MembersCount` plus the incoming block's `Joiners` count, minus this block's `Excluded` count.
 
 ##### Proof-of-Work
-To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros + a remaining mark character. Rules is the following, and **relative to a each particular member**:
+
+To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros + a remaining mark character. Rules are the following, and **each relative to a particular member**:
 
 ```
 PERSONAL_DIFF = MAX [ PoWMin ; PoWMin * FLOOR (percentRot * nbPreviousIssuers / (1 + nbBlocksSince)) ]
@@ -1394,7 +1417,7 @@ NB_ZEROS = (PERSONAL_DIFFICULTY - REMAINDER) / 16
 
 Where:
 
-* `[PoWMin]` is the `PoWMin` value of incoming block
+* `[PoWMin]` is the `PoWMin` value of the incoming block
 * `[percentRot]` is the protocol parameter
 * `[nbPreviousIssuers] = DifferentIssuersCount(last block of issuer)`
 * `[nbBlocksSince]` is the number of blocks written **since** the last block of the member (so, incoming block excluded).
@@ -1426,12 +1449,12 @@ The proof is considered valid if:
 
 > N.B.: it is not possible to have REMAINDER = 15
 
-> Those rules of difficulty adaptation ensures a shared control of the blockchain writing.
+> Those rules of difficulty adaptation ensure a shared control of the blockchain writing.
 
 ##### Universal Dividend
 
-* Root block do not have `UniversalDividend` field.
-* Universal Dividend must be present if `MedianTime` value is greater or equal to `lastUDTime` + `dt`.
+* Root blocks do not have the `UniversalDividend` field.
+* Universal Dividend must be present if `MedianTime` value is greater than or equal to `lastUDTime` + `dt`.
   * `lastUDTime` is the `MedianTime` of the last block with `UniversalDividend` in it.
   * Initial value of `lastUDTime` equals to the root block's `MedianTime`.
 * UD(t = 0) = `ud0`
@@ -1448,10 +1471,9 @@ Where:
 * `c` equals to `[c]` parameter of this protocol
 
 ###### UD overflow
-If `UniversalDividend` value is higher or equal to `1000000` (1 million), then `UniversalDividend` value has to be:
-```
-UD(t+1) = CEIL(UD(t+1) / 10)
-```
+If the `UniversalDividend` value is higher than or equal to `1000000` (1 million), then the `UniversalDividend` value has to be:
+
+    UD(t+1) = CEIL(UD(t+1) / 10)
 
 and `UnitBase` value must be incremented by `1` compared to its value at `UD(t)` (see UnitBase global rule).
 
@@ -1460,8 +1482,8 @@ and `UnitBase` value must be incremented by `1` compared to its value at `UD(t)`
 The field must be either equal to:
 
 * `0` for root block
-* previous block `UnitBase` value if UD has no overflow
-* previous block `UnitBase` value `+ 1` if UD has an overflow
+* the previous block's `UnitBase` value if UD has no overflow
+* the previous block's `UnitBase` value `+ 1` if UD has an overflow
 
 ##### Transactions
 
@@ -1473,8 +1495,7 @@ The field must be either equal to:
 
 * *Rule*: For each UD source, the amount must match the exact targeted UD value
 * *Def.*: `MaxOutputBase` is the maximum value of all `OutputBase`
-* *Rule*: `MaxOutputBase` cannot be higher than current block `UnitBase`
-
+* *Rule*: `MaxOutputBase` cannot be higher than the current block's `UnitBase`
 
 ### Peer
 
@@ -1498,19 +1519,19 @@ The field must be either equal to:
 * A transaction must have at least 1 source
 * A transaction must have at least 1 recipient
 * A transaction must have at least 1 signature
-* A transaction must exactly same number of signatures and issuers
-* A transaction's indexes' (`Inputs` field) value must be less or equal to `Issuers` line count
-* A transaction must have its issuers appear at least once in `Inputs` field, where an issuer is linked to `INDEX` by its position in `Issuers` field. First issuer is `INDEX = 0`.
-* A transaction's `Inputs` amount sum must be equal to `Ouputs` amount sum.
+* A transaction must have exactly the same number of signatures and issuers
+* A transaction's indexes' (`Inputs` field) value must be less than or equal to the `Issuers` line count
+* A transaction must have its issuers appear at least once in the `Inputs` field, where an issuer is linked to `INDEX` by its position in the `Issuers` field. First issuer is `INDEX = 0`.
+* A transaction's `Inputs` amount sum must be equal to the `Ouputs` amount sum.
 * A transaction cannot have two identical `Inputs`
 
 ## Implementations
 
 ### APIs
 
-UCP does not imposes a particular API to deal with UCP data. Instead, UCP prefers to allow for any API definition using [Peer](#peer) document, and then leting peers deal themselves with the API(s) they prefer.
+UCP does not impose any particular APIs to deal with UCP data. Instead, UCP prefers to allow for any API definitions using [Peer](#peer) document, and then letting peers deal with the API(s) they prefer themselves.
 
-At this stage, only [Duniter HTTP API](/HTTP_API.md) (named BASIC_MERKLED_API) is known as a valid UCP API.
+At this stage, only the [Duniter HTTP API](/HTTP_API.md) (named BASIC_MERKLED_API) is known as a valid UCP API.
 
 ## References
 

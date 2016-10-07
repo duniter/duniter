@@ -36,7 +36,7 @@ if [[ ! -f before_deploy ]]; then
 
   # Install Nw.js
   mkdir ucoin_release
-  NW_RELEASE="v0.14.5"
+  NW_RELEASE="v0.17.6"
   NW="nwjs-${NW_RELEASE}-linux-x64"
   NW_GZ="${NW}.tar.gz"
   wget http://dl.nwjs.io/${NW_RELEASE}/${NW_GZ}

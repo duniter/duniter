@@ -35,7 +35,7 @@ duniter() {
 
 	VERSION=`$NODE -v`
 
-	if [[ $VERSION != v5* && $VERSION != v4* ]]; then
+	if [[ $VERSION != v6* && $VERSION != v5* && $VERSION != v4* ]]; then
 	  echo "$NODE v5 or v4 is required";
 	else
 

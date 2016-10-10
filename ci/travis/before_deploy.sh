@@ -8,6 +8,40 @@ if [[ ! -f before_deploy ]]; then
   # Clean testing packages
   npm prune --production
 
+  # Build node addons for Desktop version (Nw.js)
+  SRC=`pwd`
+  echo $SRC
+  ADDON_VERSION=48
+  NW_VERSION=0.17.6
+  NW_RELEASE=v0.17.6
+  echo $NW_RELEASE
+
+  npm install -g nw-gyp node-pre-gyp
+  cd node_modules/wotb
+  npm install --build-from-source
+  node-pre-gyp --runtime=node-webkit --target=$NW_VERSION configure
+  node-pre-gyp --runtime=node-webkit --target=$NW_VERSION build
+  cp lib/binding/Release/node-webkit-$NW_RELEASE-linux-x64/wotb.node lib/binding/Release/node-v$ADDON_VERSION-linux-x64/wotb.node
+  cd ../..
+  cd node_modules/naclb
+  npm install --build-from-source
+  node-pre-gyp --runtime=node-webkit --target=$NW_VERSION configure
+  node-pre-gyp --runtime=node-webkit --target=$NW_VERSION build
+  cp lib/binding/Release/node-webkit-$NW_RELEASE-linux-x64/naclb.node lib/binding/Release/node-v$ADDON_VERSION-linux-x64/naclb.node
+  cd ../..
+  cd node_modules/scryptb
+  npm install --build-from-source
+  node-pre-gyp --runtime=node-webkit --target=$NW_VERSION configure
+  node-pre-gyp --runtime=node-webkit --target=$NW_VERSION build
+  cp lib/binding/Release/node-webkit-$NW_RELEASE-linux-x64/scryptb.node lib/binding/Release/node-v$ADDON_VERSION-linux-x64/scryptb.node
+  cd ../..
+  cd node_modules/sqlite3
+  npm install --build-from-source
+  node-pre-gyp --runtime=node-webkit --target=$NW_VERSION configure
+  node-pre-gyp --runtime=node-webkit --target=$NW_VERSION build
+  cp lib/binding/node-webkit-$NW_RELEASE-linux-x64/node_sqlite3.node lib/binding/node-v$ADDON_VERSION-linux-x64/node_sqlite3.node
+  cd ../..
+
   cd ..
   cp -R duniter gh_duniter
 
@@ -65,8 +99,8 @@ if [[ ! -f before_deploy ]]; then
   mv ucoin_release/duniter-desktop.nw duniter-x64/opt/duniter/
   mv ucoin_release/nw.nwb duniter-x64/opt/duniter/
   fakeroot dpkg-deb --build duniter-x64
-  mv duniter-x64.deb ../duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
-  mv duniter-x64.tar.gz ../duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
+  mv duniter-x64.deb ../duniter-desktop-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
+  mv duniter-x64.tar.gz ../duniter-desktop-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
   pwd
   ls -al
   pwd

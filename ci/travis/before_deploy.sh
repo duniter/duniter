@@ -5,6 +5,17 @@ if [[ ! -f before_deploy ]]; then
   # Process this only once
   touch before_deploy
 
+  # Prepare
+  NVER=`node -v`
+  DUNITER_VER=`git describe --exact-match --tags $(git log -n1 --pretty='%h') | grep -Po "\d.*"`
+  DUNITER_DEB_VER=" $DUNITER_VER"
+  ADDON_VERSION=48
+  NW_VERSION=0.17.6
+  NW_RELEASE="v${NW_VERSION}"
+  NW="nwjs-${NW_RELEASE}-linux-x64"
+  NW_GZ="${NW}.tar.gz"
+  TRAVIS_TAG=test
+
   # Clean testing packages
   npm prune --production
 
@@ -73,5 +84,5 @@ if [[ ! -f before_deploy ]]; then
   ls -al ../
 
   ###### NPM release
-  cd ../duniter
+  cd npm_
 fi

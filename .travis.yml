@@ -17,7 +17,8 @@ code_climate:
 sudo: false
 
 # Unit Tests (+code coverage)
-script: npm run-script test-travis
+script:
+  - ci/travis/before_deploy.sh
 
 after_success:
   # Send coverage data to Coveralls
@@ -35,8 +36,9 @@ deploy:
       secure: h+GgYhh8/I/l5EWdI1+bDQYtN57jvDf0xhiwcxlfm/AvaJWOZa+q81HsXdHqtwgmsCoRklKtOqTM/nqgSOcWPXsAditRjEXOui2FjZiJCosDjDPMnN6HKzw6XVLtSOx7CeCX/xFmoNTIdsAuC+HUfDWCUFgrsMj9F0V9J3U1nDs=
     file:
     - /home/travis/build/ucoin-x64.tar.gz
-    - /home/travis/build/duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
-    - /home/travis/build/duniter-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
+    - /home/travis/build/duniter-desktop-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
+    - /home/travis/build/duniter-desktop-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
+    - /home/travis/build/duniter-server-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
     on:
       repo: duniter/duniter
       tags: true

@@ -144,7 +144,7 @@ program
 
 program
   .command('start')
-  .description('Start Duniter server.')
+  .description('Start Duniter node.')
   .action(subCommand(service((server, conf) => new Promise((resolve, reject) => {
     co(function*() {
         try {
@@ -154,6 +154,14 @@ program
         }
     });
   }))));
+
+program
+  .command('restart')
+  .description('Restart Duniter node.')
+
+program
+  .command('webrestart')
+  .description('Restart Duniter node and web admin.')
 
 program
   .command('webwait')

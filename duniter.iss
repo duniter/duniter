@@ -33,6 +33,7 @@ OutputBaseFilename={#MyAppName}
 Compression=lzma
 SolidCompression=yes
 UninstallDisplayIcon={app}\nw\{#MyAppExeName}
+ArchitecturesInstallIn64BitMode=x64
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

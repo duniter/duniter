@@ -14,7 +14,6 @@ if [[ ! -f before_deploy ]]; then
   NW_RELEASE="v${NW_VERSION}"
   NW="nwjs-${NW_RELEASE}-linux-x64"
   NW_GZ="${NW}.tar.gz"
-  TRAVIS_TAG=test
 
   # Clean testing packages
   npm prune --production

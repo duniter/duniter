@@ -17,8 +17,7 @@ code_climate:
 sudo: false
 
 # Unit Tests (+code coverage)
-script:
-  - ci/travis/before_deploy.sh
+script: npm run-script test-travis
 
 after_success:
   # Send coverage data to Coveralls

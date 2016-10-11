@@ -41,6 +41,10 @@ Name: "french"; MessagesFile: "compiler:Languages\French.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
+[InstallDelete]
+Type: filesandordirs; Name: "{app}\nw\";
+Type: filesandordirs; Name: "{app}\sources\";
+
 [Files]
 Source: "{#MyAppSrc}\nw\*"; DestDir: "{app}\nw\"; Flags: ignoreversion recursesubdirs
 Source: "{#MyAppSrc}\sources\*"; DestDir: "{app}\sources\"; Flags: ignoreversion recursesubdirs

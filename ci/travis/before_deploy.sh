@@ -21,9 +21,6 @@ if [[ ! -f before_deploy ]]; then
 
   SRC=`pwd`
 
-  # Remove git files
-  rm -Rf .git
-
   cd ..
   cp -r $SRC npm_ # This one should no more be touched
 
@@ -38,7 +35,9 @@ if [[ ! -f before_deploy ]]; then
 
   cd ..
   cp -r $SRC desktop_
-  cp -r $SRC server_
+
+  # Remove git files
+  rm -Rf .git
 
   # -------------------------------------------------
   # Build Desktop version (Nw.js is embedded)

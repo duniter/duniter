@@ -130,6 +130,8 @@ if [[ ! -f before_deploy ]]; then
   rm -rf ../duniter-desktop.nw
   zip -qr ../duniter-desktop.nw *
   cd ../..
+  rm -rf duniter-x64/opt/duniter/duniter-desktop.nw
+  mv desktop_release/duniter-desktop.nw duniter-x64/opt/duniter/
   fakeroot dpkg-deb --build duniter-x64
   mv duniter-x64.deb ../duniter-server-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
 

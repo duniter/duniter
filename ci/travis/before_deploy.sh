@@ -117,8 +117,12 @@ if [[ ! -f before_deploy ]]; then
   # Remove Nw.js
   rm -rf duniter-x64/opt/duniter/nw*
 
-  # Download Node.js and package it with the sources
+  # Rebuild node addons
   cd desktop_release/sources/
+  rm -rf node_modules
+  npm install --production
+
+  # Download Node.js and package it with the sources
   wget http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz
   tar xzf node-${NVER}-linux-x64.tar.gz
   mv node-${NVER}-linux-x64 node

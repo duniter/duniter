@@ -69,7 +69,7 @@ after_test:
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\duniter_release\sources\web-ui\node_modules
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\duniter_release\sources\web-ui\bower_components
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] iscc %cd%\duniter_release\sources\duniter.iss /DROOT_PATH=%cd%\duniter_release
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] move %cd%\duniter_release\Duniter.exe %cd%\duniter\duniter-%APPVEYOR_REPO_TAG_NAME%-windows-x64.exe
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] move %cd%\duniter_release\Duniter.exe %cd%\duniter\duniter-desktop-%APPVEYOR_REPO_TAG_NAME%-windows-x64.exe
 
 artifacts:
   - path: duniter*.exe

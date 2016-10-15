@@ -164,10 +164,6 @@ program
   .description('Restart Duniter node.')
 
 program
-  .command('webrestart')
-  .description('Restart Duniter node and web admin.')
-
-program
   .command('webwait')
   .description('Start Duniter web admin.')
   .action(subCommand(webWait));
@@ -180,6 +176,10 @@ program
 program
   .command('webstop')
   .description('Stop Duniter web admin and node.')
+
+program
+  .command('webrestart')
+  .description('Restart Duniter node and web admin.')
 
 program
   .command('wizard [step]')

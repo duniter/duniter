@@ -67,17 +67,22 @@ function WebAdmin (dbConf, overConf) {
     yield pluggedDALP;
     const host = server.conf ? [server.conf.ipv4, server.conf.port].join(':') : '';
     const current = yield server.dal.getCurrentBlockOrNull();
+    const rootBlock = yield server.dal.getBlock(0);
+    const lastUDBlock = yield server.dal.blockDAL.lastBlockWithDividend();
+    const lastUD = lastUDBlock ? lastUDBlock.dividend : null;
     const parameters = yield server.dal.getParameters();
     return {
       "version": server.version,
       "host": host,
       "current": current,
+      "rootBlock": rootBlock,
       "pubkey": server.keyPair.publicKey,
       "seckey": server.keyPair.secretKey,
       "conf": {
         "cpu": server.conf.cpu
       },
-      "parameters": parameters
+      "parameters": parameters,
+      "lastUD": lastUD
     };
   });
 

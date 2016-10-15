@@ -439,10 +439,12 @@ dtos.AdminSummary = {
   "version": String,
   "host": String,
   "current": dtos.Block,
+  "rootBlock": dtos.Block,
   "pubkey": String,
   "seckey": String,
   "conf": dtos.SummaryConf,
-  "parameters": dtos.Parameters
+  "parameters": dtos.Parameters,
+  "lastUD": Number
 };
 
 dtos.PoWSummary = {

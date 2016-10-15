@@ -144,7 +144,7 @@ program
 
 program
   .command('start')
-  .description('Start Duniter node.')
+  .description('Start Duniter node daemon.')
   .action(subCommand(service((server, conf) => new Promise((resolve, reject) => {
     co(function*() {
         try {
@@ -157,11 +157,11 @@ program
 
 program
   .command('stop')
-  .description('Stop Duniter node.')
+  .description('Stop Duniter node daemon.')
 
 program
   .command('restart')
-  .description('Restart Duniter node.')
+  .description('Restart Duniter node daemon.')
 
 program
   .command('webwait')
@@ -170,20 +170,20 @@ program
 
 program
   .command('webstart')
-  .description('Start Duniter web admin + immediately start the server.')
+  .description('Start Duniter node daemon and web admin.')
   .action(subCommand(webStart));
 
 program
   .command('webstop')
-  .description('Stop Duniter web admin and node.')
+  .description('Stop Duniter node daemon and web admin.')
 
 program
   .command('webrestart')
-  .description('Restart Duniter node and web admin.')
+  .description('Restart Duniter node daemon and web admin.')
 
 program
   .command('wizard [step]')
-  .description('Launch the configuration Wizard')
+  .description('Launch the configuration wizard.')
   .action(subCommand(function (step) {
     // Only show message "Saved"
     return connect(function (step, server, conf) {

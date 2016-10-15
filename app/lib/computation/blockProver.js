@@ -15,7 +15,7 @@ const POW_CANCELED_BECAUSE_GIVEN = 'Proof-of-work computation canceled because b
 
 function BlockGenerator(notifier) {
 
-  let conf, pair, logger, wait = null, waitResolve, waitReject;
+  let conf, pair, logger, wait = null, waitResolve;
 
   let workerFarmPromise;
 
@@ -37,9 +37,8 @@ function BlockGenerator(notifier) {
     process.execArgv = [];
   }
 
-  this.waitForNewAsking = () => wait = new Promise((resolve, reject) => {
+  this.waitForNewAsking = () => wait = new Promise((resolve) => {
     waitResolve = resolve;
-    waitReject = reject;
   });
 
   this.cancel = (gottenBlock) => co(function*() {
@@ -52,7 +51,6 @@ function BlockGenerator(notifier) {
       if (waitResolve) {
         waitResolve();
         waitResolve = null;
-        waitReject = null;
         wait = null;
       }
     }
@@ -63,7 +61,6 @@ function BlockGenerator(notifier) {
     if (waitResolve) {
       waitResolve();
       waitResolve = null;
-      waitReject = null;
       wait = null;
     }
 

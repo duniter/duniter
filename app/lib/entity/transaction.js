@@ -72,13 +72,7 @@ let Transaction = function(obj, currency) {
     // Outputs
     tx.outputs = [];
     this.outputs.forEach(function (output) {
-      const sp = output.split(':');
-      tx.outputs.push({
-        amount: parseInt(sp[0]),
-        base: parseInt(sp[1]),
-        conditions: sp[2],
-        raw: output
-      });
+      tx.outputs.push(Transaction.statics.outputStr2Obj(output));
     });
     tx.comment = this.comment;
     tx.blockstamp = this.blockstamp;
@@ -109,6 +103,16 @@ Transaction.statics.outputs2recipients = (tx) => tx.outputs.map(function(out) {
   const recipent = out.match('SIG\\((.*)\\)');
   return (recipent && recipent[1]) || 'UNKNOWN';
 });
+
+Transaction.statics.outputStr2Obj = (outputStr) => {
+  const sp = outputStr.split(':');
+  return {
+    amount: parseInt(sp[0]),
+    base: parseInt(sp[1]),
+    conditions: sp[2],
+    raw: outputStr
+  };
+};
 
 Transaction.statics.setRecipients = (txs) => {
   // Each transaction must have a good "recipients" field for future searchs

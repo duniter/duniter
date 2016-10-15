@@ -181,9 +181,13 @@ function User (uid, options, node) {
   this.prepareUTX = (previousTX, unlocks, outputs, opts) => co(function *() {
     let obj = parsers.parseTransaction.syncWrite(previousTX);
     // Unlocks inputs with given "unlocks" strings
-    let inputs = obj.outputs.map((out, index) => {
+    let outputsToConsume = obj.outputs;
+    if (opts.theseOutputsStart !== undefined) {
+      outputsToConsume = outputsToConsume.slice(opts.theseOutputsStart);
+    }
+    let inputs = outputsToConsume.map((out, index) => {
       return {
-        src: ['T', obj.hash, index].join(':'),
+        src: ['T', obj.hash, (opts.theseOutputsStart || 0) + index].join(':'),
         unlock: unlocks[index]
       };
     });

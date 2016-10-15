@@ -639,8 +639,8 @@ function FileDAL(params) {
       if (tx.version == 3) {
         const sp = tx.blockstamp.split('-');
         tx.blockstampTime = (yield that.getBlockByNumberAndHash(sp[0], sp[1])).medianTime;
-        return that.txsDAL.addLinked(new Transaction(tx));
       }
+      return that.txsDAL.addLinked(new Transaction(tx));
     })));
   };
 

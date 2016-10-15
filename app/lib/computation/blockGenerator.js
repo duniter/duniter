@@ -120,10 +120,16 @@ function BlockGenerator(mainContext, prover) {
         yield rules.HELPERS.checkTxBlockStamp(extractedTX, dal);
         transactions.push(tx);
         passingTxs.push(extractedTX);
-        logger.info('Transaction added to block');
+        logger.info('Transaction %s added to block', tx.hash);
       } catch (err) {
         logger.error(err);
-        yield dal.removeTxByHash(extractedTX.hash);
+        const currentNumber = (current && current.number) || 0;
+        const blockstamp = extractedTX.blockstamp || (currentNumber + '-');
+        const txBlockNumber = parseInt(blockstamp.split('-')[0]);
+        // 10 blocks before removing the transaction
+        if (currentNumber - txBlockNumber + 1 >= constants.TRANSACTION_MAX_TRIES) {
+          yield dal.removeTxByHash(extractedTX.hash);
+        }
       }
     }
     return transactions;

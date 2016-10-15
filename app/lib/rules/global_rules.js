@@ -9,6 +9,7 @@ const rawer          = require('../ucp/rawer');
 const Identity       = require('../entity/identity');
 const Membership     = require('../entity/membership');
 const Certification  = require('../entity/certification');
+const Transaction    = require('../entity/transaction');
 const logger         = require('../logger')('globr');
 const unlock         = require('../ucp/txunlock');
 const local_rules    = require('./local_rules');
@@ -464,7 +465,7 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkSourcesAvailability: (block, conf, dal) => co(function *() {
+  checkSourcesAvailability: (block, conf, dal, alsoCheckPendingTransactions) => co(function *() {
     let txs = block.getTransactions();
     const current = yield dal.getCurrentBlockOrNull();
     for (const tx of txs) {
@@ -480,6 +481,23 @@ rules.FUNCTIONS = {
         let src = tx.inputs[k];
         let dbSrc = yield dal.getSource(src.identifier, src.noffset);
         logger.debug('Source %s:%s = %s', src.identifier, src.noffset, dbSrc && dbSrc.consumed);
+        if (!dbSrc && alsoCheckPendingTransactions) {
+          // For chained transactions which are checked on sandbox submission, we accept them if there is already
+          // a previous transaction of the chain already recorded in the pool
+          dbSrc = yield co(function*() {
+            let hypotheticSrc = null;
+            let targetTX = yield dal.getTxByHash(src.identifier);
+            if (targetTX) {
+              let outputStr = targetTX.outputs[src.noffset];
+              if (outputStr) {
+                hypotheticSrc = Transaction.statics.outputStr2Obj(outputStr);
+                hypotheticSrc.consumed = false;
+                hypotheticSrc.time = 0;
+              }
+            }
+            return hypotheticSrc;
+          });
+        }
         if (!dbSrc || dbSrc.consumed) {
           logger.warn('Source ' + [src.type, src.identifier, src.noffset].join(':') + ' is not available');
           throw constants.ERRORS.SOURCE_ALREADY_CONSUMED;
@@ -575,10 +593,10 @@ rules.HELPERS = {
 
   checkExistsPubkey: (pub, dal) => dal.getWrittenIdtyByPubkey(pub),
 
-  checkSingleTransaction: (tx, block, conf, dal) => rules.FUNCTIONS.checkSourcesAvailability({
+  checkSingleTransaction: (tx, block, conf, dal, alsoCheckPendingTransactions) => rules.FUNCTIONS.checkSourcesAvailability({
     getTransactions: () => [tx],
     medianTime: block.medianTime
-  }, conf, dal),
+  }, conf, dal, alsoCheckPendingTransactions),
 
   getNextUD: (dal, conf, version, nextMedianTime, current, nextN) => co(function *() {
     const lastUDBlock = yield dal.lastUDBlock();

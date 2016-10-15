@@ -45,6 +45,9 @@ describe("Lookup identity grouping", () => {
     // This is OK on the protocol side, but the lookup should group the 2 identities
     // under the same pubkey
     yield tic2.createIdentity();
+
+    yield cat.join();
+    yield tic1.join();
   }));
 
   it('cat should have only 1 identity in 1 pubkey', () => httpTest.expectAnswer(rp('http://127.0.0.1:4452/wot/lookup/cat', { json: true }), (res) => {
@@ -68,5 +71,17 @@ describe("Lookup identity grouping", () => {
     res.results[0].uids[0].should.have.property('uid').equal('tic1');
     // which are tic2
     res.results[0].uids[1].should.have.property('uid').equal('tic2');
+  }));
+
+  it('should exist 2 pending memberships', () => httpTest.expectAnswer(rp('http://127.0.0.1:4452/wot/pending', { json: true }), (res) => {
+    res.should.have.property('memberships').length(2);
+    res.memberships[0].should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
+    res.memberships[0].should.have.property('uid').equal('tic1');
+    res.memberships[0].should.have.property('version').equal(0);
+    res.memberships[0].should.have.property('currency').equal('bb');
+    res.memberships[0].should.have.property('membership').equal('IN');
+    res.memberships[0].should.have.property('blockNumber').equal(0);
+    res.memberships[0].should.have.property('blockHash').equal('E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855');
+    res.memberships[0].should.have.property('written').equal(null);
   }));
 });

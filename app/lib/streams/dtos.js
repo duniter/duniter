@@ -63,6 +63,21 @@ dtos.Memberships = {
   ]
 };
 
+dtos.MembershipList = {
+  "memberships": [
+    {
+      "pubkey": String,
+      "uid": String,
+      "version": Number,
+      "currency": String,
+      "membership": String,
+      "blockNumber": Number,
+      "blockHash": String,
+      "written": Number
+    }
+  ]
+};
+
 dtos.TransactionOfBlock = {
   "version": Number,
   "currency": String,

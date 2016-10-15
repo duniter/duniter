@@ -145,7 +145,8 @@ program
 program
   .command('start')
   .description('Start Duniter node daemon.')
-  .action(subCommand(service((server, conf) => new Promise((resolve, reject) => {
+  .action(subCommand(needsToBeLaunchedByScript),
+  subCommand(service((server, conf) => new Promise((resolve, reject) => {
     co(function*() {
         try {
           yield duniter.statics.startNode(server, conf);
@@ -158,10 +159,12 @@ program
 program
   .command('stop')
   .description('Stop Duniter node daemon.')
+  .action(subCommand(needsToBeLaunchedByScript));
 
 program
   .command('restart')
   .description('Restart Duniter node daemon.')
+  .action(subCommand(needsToBeLaunchedByScript));
 
 program
   .command('webwait')
@@ -176,10 +179,12 @@ program
 program
   .command('webstop')
   .description('Stop Duniter node daemon and web admin.')
+  .action(subCommand(needsToBeLaunchedByScript));
 
 program
   .command('webrestart')
   .description('Restart Duniter node daemon and web admin.')
+  .action(subCommand(needsToBeLaunchedByScript));
 
 program
   .command('wizard [step]')
@@ -923,4 +928,9 @@ function mainError(err) {
   }
   logger.error(err.code || err.message || err);
   throw Error("Exiting");
+}
+
+function needsToBeLaunchedByScript() {
+    logger.error('This command must not be launched directly, using duniter.sh script');
+    return Promise.resolve();
 }

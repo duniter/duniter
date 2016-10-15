@@ -156,6 +156,10 @@ program
   }))));
 
 program
+  .command('stop')
+  .description('Stop Duniter node.')
+
+program
   .command('restart')
   .description('Restart Duniter node.')
 
@@ -172,6 +176,10 @@ program
   .command('webstart')
   .description('Start Duniter web admin + immediately start the server.')
   .action(subCommand(webStart));
+
+program
+  .command('webstop')
+  .description('Stop Duniter web admin and node.')
 
 program
   .command('wizard [step]')

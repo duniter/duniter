@@ -145,8 +145,7 @@ program
 program
   .command('start')
   .description('Start Duniter node daemon.')
-  .action(subCommand(needsToBeLaunchedByScript),
-  subCommand(service((server, conf) => new Promise((resolve, reject) => {
+  .action(subCommand(service((server, conf) => new Promise((resolve, reject) => {
     co(function*() {
         try {
           yield duniter.statics.startNode(server, conf);

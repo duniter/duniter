@@ -17,7 +17,7 @@ limiter.noLimit();
 
 describe("Transaction chaining", function() {
 
-  const now = 1476549382;
+  const now = 1456644632;
 
   const s1 = toolbox.server({
     pair: {
@@ -71,10 +71,10 @@ describe("Transaction chaining", function() {
       yield unit.shouldNotFail(toc.sendTX(tx2));
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(1);
-      yield s1.commit({ version: 2 }); // TX1 commited
+      yield s1.commit({ version: 2, time: now + 7210 }); // TX1 commited
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1); // The 16 remaining units
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(2); // The UD + 104 units sent by toc
-      yield s1.commit({ version: 2 }); // TX2 commited
+      yield s1.commit({ version: 2, time: now + 7210 }); // TX2 commited
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3); // The UD + 104 + 16 units sent by toc
       constants.TRANSACTION_MAX_TRIES = tmp;

@@ -250,7 +250,7 @@ function Synchroniser (server, host, port, conf, interactive) {
         watcher.writeStatus('Peers...');
         yield syncPeer(node);
         const merkle = yield dal.merkleForPeers();
-        const getPeers = Q.nbind(node.network.peering.peers.get, node);
+        const getPeers = node.getPeers.bind(node);
         const json2 = yield getPeers({});
         const rm = new NodesMerkle(json2);
         if(rm.root() != merkle.root()){

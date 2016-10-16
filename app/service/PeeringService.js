@@ -375,10 +375,10 @@ function PeeringService(server) {
       const node = yield aPeer.connect();
       yield checkPeerValidity(aPeer, node);
       //let remotePeer = yield Q.nbind(node.network.peering.get)();
-      const json = yield Q.nbind(node.network.peering.peers.get, node)({ leaves: true });
+      const json = yield node.getPeers.bind(node)({ leaves: true });
       for (let i = 0, len = json.leaves.length; i < len; i++) {
         let leaf = json.leaves[i];
-        let subpeer = yield Q.nbind(node.network.peering.peers.get, node)({ leaf: leaf });
+        let subpeer = yield node.getPeers.bind(node)({ leaf: leaf });
         subpeers.push(subpeer);
       }
       return subpeers;

@@ -69,7 +69,6 @@ function WebAdmin (dbConf, overConf) {
     const current = yield server.dal.getCurrentBlockOrNull();
     const rootBlock = yield server.dal.getBlock(0);
     const lastUDBlock = yield server.dal.blockDAL.lastBlockWithDividend();
-    const lastUD = lastUDBlock ? lastUDBlock.dividend : null;
     const parameters = yield server.dal.getParameters();
     return {
       "version": server.version,
@@ -82,7 +81,7 @@ function WebAdmin (dbConf, overConf) {
         "cpu": server.conf.cpu
       },
       "parameters": parameters,
-      "lastUD": lastUD
+      "lastUDBlock": lastUDBlock
     };
   });
 

@@ -444,7 +444,7 @@ dtos.AdminSummary = {
   "seckey": String,
   "conf": dtos.SummaryConf,
   "parameters": dtos.Parameters,
-  "lastUD": Number
+  "lastUDBlock": dtos.Block
 };
 
 dtos.PoWSummary = {

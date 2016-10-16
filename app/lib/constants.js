@@ -368,7 +368,8 @@ module.exports = {
   POW_DIFFICULTY_RANGE_RATIO_V3: Math.sqrt(1.066),
   POW_DIFFICULTY_RANGE_RATIO_V4: 1.189,
 
-  TRANSACTION_MAX_TRIES: 10
+  TRANSACTION_MAX_TRIES: 10,
+  NONCE_RANGE: 1000 * 1000 * 1000 * 100
 };
 
 function exact (regexpContent) {

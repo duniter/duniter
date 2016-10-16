@@ -16,6 +16,9 @@ let timeoutAutoKill = null;
 let computing = false;
 let askedStop = false;
 
+// By default, we do not prefix the PoW by any number
+let prefix = 0;
+
 let signatureFunc, id, lastPub, lastSecret, currentCPU = 1;
 
 process.on('uncaughtException', (err) => {
@@ -42,6 +45,9 @@ process.on('message', (message) => co(function*() {
       if (message.conf.cpu !== undefined) {
         currentCPU = message.conf.cpu;
       }
+      if (message.conf.prefix !== undefined) {
+        prefix = parseInt(message.conf.prefix) * 10 * constants.NONCE_RANGE;
+      }
     }
   }
   else if (message.command == 'stop') {
@@ -60,8 +66,10 @@ function beginNewProofOfWork(stuff) {
   askedStop = false;
   computing = co(function*() {
     pSend({ powStatus: 'started block#' + stuff.block.number });
+    let nonce = 0;
     const conf = stuff.conf;
     const block = stuff.block;
+    const nonceBeginning = stuff.nonceBeginning;
     const nbZeros = stuff.zeros;
     const pair = stuff.pair;
     const forcedTime = stuff.forcedTime;
@@ -84,7 +92,6 @@ function beginNewProofOfWork(stuff) {
     // Really start now
     let testsCount = 0;
     if (nbZeros == 0) {
-      block.nonce = 0;
       block.time = block.medianTime;
     }
     // Compute block's hash
@@ -116,7 +123,9 @@ function beginNewProofOfWork(stuff) {
             }
             block.inner_hash = getBlockInnerHash(block);
             while(!found && i < testsPerRound && thisTurn == turn && !askedStop) {
-              block.nonce++;
+              nonce++;
+              // The final nonce is composed of 3 parts
+              block.nonce = prefix + nonceBeginning + nonce;
               raw = dos2unix("InnerHash: " + block.inner_hash + "\nNonce: " + block.nonce + "\n");
               sig = dos2unix(sigFunc(raw));
               pow = hashf("InnerHash: " + block.inner_hash + "\nNonce: " + block.nonce + "\n" + sig + "\n").toUpperCase();

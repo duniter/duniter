@@ -130,8 +130,17 @@ function PeeringService(server) {
       yield dal.savePeer(peerEntity);
       let savedPeer = Peer.statics.peerize(peerEntity);
       if (peerEntity.pubkey == selfPubkey) {
-        const localNodeNotListed = !peerEntity.containsEndpoint(getEndpoint(conf));
+        const localEndpoint = getEndpoint(conf);
+        const localNodeNotListed = !peerEntity.containsEndpoint(localEndpoint);
         const current = localNodeNotListed && (yield dal.getCurrentBlockOrNull());
+        if (!localNodeNotListed) {
+          const indexOfThisNode = peerEntity.endpoints.indexOf(localEndpoint);
+          if (indexOfThisNode !== -1) {
+            server.BlockchainService.prover.changePoWPrefix((indexOfThisNode + 1) * 10); // We multiply by 10 to give room to computers with < 100 cores
+          } else {
+            logger.warn('This node has his interface listed in the peer document, but its index cannot be found.');
+          }
+        }
         if (localNodeNotListed && (!current || current.number > blockNumber)) {
           // Document with pubkey of local peer, but doesn't contain local interface: we must add it
           that.generateSelfPeer(conf, 0);

@@ -1,6 +1,5 @@
 "use strict";
 const co = require('co');
-const async = require('async');
 const moment = require('moment');
 const hashf = require('./ucp/hashf');
 const dos2unix = require('./system/dos2unix');

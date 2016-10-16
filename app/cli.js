@@ -269,47 +269,6 @@ program
   .action(subCommand(connect(makeDump, true)));
 
 program
-  .command('forward [host] [port] [to]')
-  .description('Forward local blockchain to a remote Duniter node')
-  .action(subCommand(service(function (host, port, to, server) {
-
-    var remoteCurrent;
-    async.waterfall([
-      function (next) {
-        vucoin(host, port, next, {timeout: server.conf.timeout});
-      },
-      function (node, next) {
-        node.blockchain.current().then(_.partial(next, null)).catch(next);
-      },
-      function (current, next) {
-        remoteCurrent = current;
-        logger.info(remoteCurrent.number);
-        server.dal.getBlockFrom(remoteCurrent.number - 10).then(_.partial(next, null)).catch(next);
-      },
-      function (blocks, next) {
-        blocks = _.sortBy(blocks, 'number');
-        // Forward
-        var peer = new Peer({
-          endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
-        });
-        async.forEachSeries(blocks, function (block, callback) {
-          logger.info("Forwarding block#" + block.number);
-          server.dal.getBlock(block.number)
-            .then(function (fullBlock) {
-              multicaster(server.conf).sendBlock(peer, new Block(fullBlock)).then(() => callback()).catch(callback);
-            });
-        }, next);
-      }
-    ], function (err) {
-      if (err) {
-        logger.error('Error during forwarding:', err);
-      }
-      server.disconnect();
-      throw Error("Exiting");
-    });
-  })));
-
-program
   .command('revert [count]')
   .description('Revert (undo + remove) the top [count] blocks from the blockchain. EXPERIMENTAL')
   .action(subCommand(service(function (count, server) {

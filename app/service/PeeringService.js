@@ -407,7 +407,7 @@ function PeeringService(server) {
             yield dal.setPeerDown(p.pubkey);
             // Now we test
             let node = yield p.connect();
-            let peering = yield Q.nfcall(node.network.peering.get);
+            let peering = yield node.getPeer();
             yield checkPeerValidity(p, node);
             // The node answered, it is no more DOWN!
             logger.info('Node %s (%s:%s) is UP!', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
@@ -469,7 +469,7 @@ function PeeringService(server) {
 
   const checkPeerValidity = (p, node) => co(function *() {
     try {
-      let document = yield Q.nfcall(node.network.peering.get);
+      let document = yield node.getPeer();
       let thePeer = Peer.statics.peerize(document);
       let goodSignature = that.checkPeerSignature(thePeer);
       if (!goodSignature) {
@@ -533,7 +533,7 @@ function PeeringService(server) {
               localCurrent: () => dal.getCurrentBlockOrNull(),
 
               // Get the remote blockchain (bc) current block
-              remoteCurrent: (thePeer) => Q.nfcall(thePeer.blockchain.current),
+              remoteCurrent: (thePeer) => thePeer.getCurrent(),
 
               // Get the remote peers to be pulled
               remotePeers: () => Q([node]),
@@ -545,7 +545,7 @@ function PeeringService(server) {
               getRemoteBlock: (thePeer, number) => co(function *() {
                 let block = null;
                 try {
-                  block = yield Q.nfcall(thePeer.blockchain.block, number);
+                  block = yield thePeer.getBlock(number);
                   Transaction.statics.setIssuers(block.transactions);
                 } catch (e) {
                   if (e.httpCode != 404) {
@@ -582,7 +582,7 @@ function PeeringService(server) {
                 if (!count) {
                   count = CONST_BLOCKS_CHUNK;
                 }
-                return yield Q.nfcall(thePeer.blockchain.blocks, count, fromNumber)
+                return thePeer.getBlocks(count, fromNumber);
               })
             });
 

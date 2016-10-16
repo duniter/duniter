@@ -6,7 +6,7 @@ const async = require('async');
 const Q = require('q');
 const _ = require('underscore');
 const program = require('commander');
-const vucoin = require('vucoin');
+const contacter = require('../app/lib/contacter');
 const directory = require('../app/lib/system/directory');
 const wizard = require('../app/lib/wizard');
 const multicaster = require('../app/lib/streams/multicaster');
@@ -236,9 +236,8 @@ program
   .description('Exchange peerings with another node')
   .action(subCommand(service(function (host, port, server) {
     return co(function *() {
-      let node = yield Q.nfcall(vucoin, host, port);
       logger.info('Fetching peering record at %s:%s...', host, port);
-      let peering = yield Q.nfcall(node.network.peering.get);
+      let peering = yield contacter.statics.fetchPeer(host, port);
       logger.info('Apply peering ...');
       yield server.PeeringService.submitP(peering, ERASE_IF_ALREADY_RECORDED, !program.nocautious);
       logger.info('Applied');

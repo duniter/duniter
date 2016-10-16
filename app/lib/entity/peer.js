@@ -1,7 +1,7 @@
 "use strict";
 const Q = require('q');
 const _ = require('underscore');
-const vucoin = require('vucoin');
+const contacter = require('../contacter');
 const rawer = require('../ucp/rawer');
 const constants = require('../constants');
 
@@ -110,17 +110,9 @@ function Peer(json) {
 
   this.getRawSigned = () => rawer.getPeer(this);
 
-  this.connect = (timeout) => {
-    return Q.Promise((resolve, reject) => {
-      vucoin(this.getDns() || this.getIPv6() || this.getIPv4() || DEFAULT_HOST, this.getPort(),
-          (err, node) => {
-            if (err) return reject(err);
-            resolve(node);
-          }, {
-            timeout: timeout || 2000
-          });
-    });
-  };
+  this.connect = (timeout) => Promise.resolve(contacter(this.getDns() || this.getIPv6() || this.getIPv4() || DEFAULT_HOST, this.getPort(), {
+    timeout: timeout || constants.NETWORK.DEFAULT_TIMEOUT
+  }));
 
   this.isReachable = () => {
     return this.getURL() ? true : false;

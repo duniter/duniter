@@ -1,6 +1,5 @@
 "use strict";
 const stream      = require('stream');
-const async       = require('async');
 const util        = require('util');
 const path        = require('path');
 const co          = require('co');

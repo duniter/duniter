@@ -5,7 +5,7 @@ const co           = require('co');
 const Q            = require('q');
 const _            = require('underscore');
 const moment       = require('moment');
-const vucoin       = require('vucoin');
+const contacter    = require('./contacter');
 const hashf        = require('./ucp/hashf');
 const dos2unix     = require('./system/dos2unix');
 const logger       = require('./logger')('sync');
@@ -62,7 +62,7 @@ function Synchroniser (server, host, port, conf, interactive) {
   const PeeringService     = server.PeeringService;
   const BlockchainService  = server.BlockchainService;
 
-  const vucoinOptions = {
+  const contacterOptions = {
     timeout: constants.NETWORK.SYNC_LONG_TIMEOUT
   };
 
@@ -81,19 +81,17 @@ function Synchroniser (server, host, port, conf, interactive) {
   });
 
   this.test = (to, chunkLen, askedCautious, nopeers) => co(function*() {
-    const vucoin = yield getVucoin(host, port, vucoinOptions);
-    const peering = yield Q.nfcall(vucoin.network.peering.get);
+    const peering = yield contacter.statics.fetchPeer(host, port, contacterOptions);
     const peer = new Peer(peering);
     const node = yield peer.connect();
-    return Q.nfcall(node.blockchain.current);
+    return node.getCurrent();
   });
 
   this.sync = (to, chunkLen, askedCautious, nopeers) => co(function*() {
 
     try {
 
-      const vucoin = yield getVucoin(host, port, vucoinOptions);
-      const peering = yield Q.nfcall(vucoin.network.peering.get);
+      const peering = yield contacter.statics.fetchPeer(host, port, contacterOptions);
 
       let peer = new Peer(peering);
       logger.info("Try with %s %s", peer.getURL(), peer.pubkey.substr(0, 6));
@@ -110,9 +108,9 @@ function Synchroniser (server, host, port, conf, interactive) {
       const localNumber = lCurrent ? lCurrent.number : -1;
       let rCurrent;
       if (isNaN(to)) {
-        rCurrent = yield Q.nfcall(node.blockchain.current);
+        rCurrent = yield node.getCurrent();
       } else {
-        rCurrent = yield Q.nfcall(node.blockchain.block, to);
+        rCurrent = yield node.getBlock(to);
       }
       to = rCurrent.number;
 
@@ -123,7 +121,7 @@ function Synchroniser (server, host, port, conf, interactive) {
       if (!nopeers) {
         watcher.writeStatus('Peers...');
         const merkle = yield dal.merkleForPeers();
-        const getPeers = Q.nbind(node.network.peering.peers.get, node);
+        const getPeers = node.getPeers.bind(node);
         const json2 = yield getPeers({});
         const rm = new NodesMerkle(json2);
         if(rm.root() != merkle.root()){
@@ -252,7 +250,7 @@ function Synchroniser (server, host, port, conf, interactive) {
         watcher.writeStatus('Peers...');
         yield syncPeer(node);
         const merkle = yield dal.merkleForPeers();
-        const getPeers = Q.nbind(node.network.peering.peers.get, node);
+        const getPeers = node.getPeers.bind(node);
         const json2 = yield getPeers({});
         const rm = new NodesMerkle(json2);
         if(rm.root() != merkle.root()){
@@ -295,17 +293,6 @@ function Synchroniser (server, host, port, conf, interactive) {
     }
   });
 
-  function getVucoin(theHost, thePort, options) {
-    return new Promise(function (resolve, reject) {
-      vucoin(theHost, thePort, function (err, node) {
-        if (err) {
-          return reject('Cannot sync: ' + err);
-        }
-        resolve(node);
-      }, options);
-    });
-  }
-
   //============
   // Peer
   //============
@@ -316,7 +303,7 @@ function Synchroniser (server, host, port, conf, interactive) {
     let remoteJsonPeer = {};
 
     return co(function *() {
-      const json = yield Q.nfcall(node.network.peering.get);
+      const json = yield node.getPeer();
       remotePeer.copyValuesFrom(json);
       const entry = remotePeer.getRaw();
       const signature = dos2unix(remotePeer.signature);
@@ -552,7 +539,7 @@ function P2PDownloader(localNumber, to, maxParallelDownloads, peers, watcher) {
         const start = Date.now();
         handler[chunkIndex] = node;
         watcher.writeStatus('Getting chunck #' + chunkIndex + '/' + (numberOfChunksToDownload - 1) + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + [node.host, node.port].join(':'));
-        let blocks = yield Q.nfcall(node.blockchain.blocks, count, from);
+        let blocks = yield node.getBlocks(count, from);
         node.ttas.push(Date.now() - start);
         // Only keep a flow of 5 ttas for the node
         if (node.ttas.length > 5) node.ttas.shift();

@@ -2,7 +2,7 @@
 
 const co      = require('co');
 const qfs     = require('q-io/fs');
-const sqlite3 = require("sqlite3b").verbose();
+const sqlite3 = require("sqlite3").verbose();
 
 module.exports = function NewSqliteDriver(path) {
   return new SQLiteDriver(path);

@@ -231,7 +231,6 @@ const handleRequest = (method, uri, promiseFunc, dtoContract, theLimiter) => {
         let error = getResultingError(e);
         // HTTP error
         res.status(error.httpCode).send(JSON.stringify(error.uerr, null, "  "));
-        throw e
       }
     });
   });

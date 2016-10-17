@@ -28,7 +28,7 @@ function TransactionParser (onError) {
     obj.comment = obj.comment || "";
     obj.locktime = parseInt(obj.locktime) || 0;
     obj.signatures.push(obj.signature);
-    if (obj.version == 3) {
+    if (obj.version >= 3) {
       const compactSize = 2 // Header + blockstamp
         + obj.issuers.length
         + obj.inputs.length
@@ -76,7 +76,7 @@ function extractInputs(raw, obj) {
   for (const line of lines) {
     if (
       (obj.version == 2 && line.match(constants.TRANSACTION.SOURCE)) ||
-      (obj.version == 3 && line.match(constants.TRANSACTION.SOURCE_V3))) {
+      (obj.version >= 3 && line.match(constants.TRANSACTION.SOURCE_V3))) {
       inputs.push(line);
     } else {
       // Not a transaction input, stop reading

@@ -166,7 +166,7 @@ function splitAndMatch (separator, regexp) {
 function extractTransactions(raw, obj) {
   const regexps = {
     "signatories": constants.TRANSACTION.SENDER,
-    "inputs": obj.version == 3 ? constants.TRANSACTION.SOURCE_V3 : constants.TRANSACTION.SOURCE,
+    "inputs": obj.version > 2 ? constants.TRANSACTION.SOURCE_V3 : constants.TRANSACTION.SOURCE,
     "unlocks": constants.TRANSACTION.UNLOCK,
     "outputs": constants.TRANSACTION.TARGET,
     "comments": constants.TRANSACTION.INLINE_COMMENT,
@@ -187,9 +187,9 @@ function extractTransactions(raw, obj) {
       const nbUnlocks = parseInt(sp[4]);
       const nbOutputs = parseInt(sp[5]);
       const hasComment = parseInt(sp[6]);
-      const start = version == 3 ? 2 : 1;
+      const start = version > 2 ? 2 : 1;
       currentTX.version = version;
-      if (version == 3) {
+      if (version > 2) {
         currentTX.blockstamp = lines[i + 1];
         currentTX.raw += currentTX.blockstamp + '\n';
       }
@@ -239,7 +239,7 @@ function extractTransactions(raw, obj) {
       currentTX.hash = hashf(rawer.getTransaction(currentTX)).toUpperCase();
       // Add to txs array
       transactions.push(currentTX);
-      i = i + (currentTX.version == 3 ? 1 : 0) + 2 * nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment;
+      i = i + (currentTX.version > 2 ? 1 : 0) + 2 * nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment;
     } else {
       // Not a transaction header, stop reading
       i = lines.length;

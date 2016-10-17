@@ -11,7 +11,7 @@ const commit    = require('./tools/commit');
 const until     = require('./tools/until');
 const multicaster = require('../../app/lib/streams/multicaster');
 const Peer = require('../../app/lib/entity/peer');
-const vucoin_p  = require('./tools/vucoin_p');
+const contacter  = require('../../app/lib/contacter');
 const sync      = require('./tools/sync');
 
 const expectJSON     = httpTest.expectJSON;
@@ -78,8 +78,8 @@ describe("Generation", function() {
           .pipe(server.router());
         yield server.start();
       }
-      nodeS1 = vucoin_p('127.0.0.1', s1.conf.port);
-      nodeS2 = vucoin_p('127.0.0.1', s2.conf.port);
+      nodeS1 = contacter('127.0.0.1', s1.conf.port);
+      nodeS2 = contacter('127.0.0.1', s2.conf.port);
       // Server 1
       yield cat.createIdentity();
       yield toc.createIdentity();

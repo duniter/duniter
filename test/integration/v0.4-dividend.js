@@ -39,42 +39,42 @@ describe("Protocol 0.3", function() {
     yield tac.cert(cat);
     yield cat.join();
     yield tac.join();
-    yield s1.commit({ version: 3, time: now });
-    yield s1.commit({ version: 3, time: now + 5000 });
-    yield s1.commit({ version: 3, time: now + 5000 });
-    yield s1.commit({ version: 3, time: now + 5000 });
+    yield s1.commit({ time: now });
+    yield s1.commit({ time: now + 5000 });
+    yield s1.commit({ time: now + 5000 });
+    yield s1.commit({ time: now + 5000 });
 
     // tic joins
     yield tic.createIdentity();
     yield cat.cert(tic);
     yield tic.join();
-    yield s1.commit({ version: 3, time: now + 5000 });
-    yield s1.commit({ version: 3, time: now + 5000 });
+    yield s1.commit({ time: now + 5000 });
+    yield s1.commit({ time: now + 5000 });
   }));
 
   it('should exit 2 dividends for cat', () => s1.expect('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (res) => {
     res.should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
     res.should.have.property('sources').length(4);
-    res.sources[0].should.have.property('amount').equal(110);
-    res.sources[1].should.have.property('amount').equal(121);
-    res.sources[2].should.have.property('amount').equal(133);
-    res.sources[3].should.have.property('amount').equal(146);
+    res.sources[0].should.have.property('amount').equal(100); // M = 0;   N = 2; = UD(0) + c²*M/N = 100 + 0.01*0/2 = 100
+    res.sources[1].should.have.property('amount').equal(101); // M = 200; N = 2; = UD(1) + c²*M/N = 100 + 0.01*200/2 = 101
+    res.sources[2].should.have.property('amount').equal(102); // M = 402; N = 3; = UD(2) + c²*M/N = 101 + 0.01*402/3 = 102
+    res.sources[3].should.have.property('amount').equal(104); // M = 708; N = 3; = UD(3) + c²*M/N = 102 + 0.01*708/3 = 104
     res.sources[0].should.have.property('base').equal(0);
     res.sources[1].should.have.property('base').equal(0);
   }));
 
   it('should be able to send 300 units', () => co(function *() {
-    yield cat.send(300, tac);
-    yield s1.commit({ version: 3 });
+    yield cat.send(105, tac);
+    yield s1.commit();
     yield s1.expect('/tx/sources/2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', (res) => {
       res.should.have.property('pubkey').equal('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc');
       res.should.have.property('sources').length(6);
-      res.sources[0].should.have.property('amount').equal(110);
-      res.sources[1].should.have.property('amount').equal(121);
-      res.sources[2].should.have.property('amount').equal(133);
-      res.sources[3].should.have.property('amount').equal(146);
-      res.sources[4].should.have.property('amount').equal(161);
-      res.sources[5].should.have.property('amount').equal(300);
+      res.sources[0].should.have.property('amount').equal(100);
+      res.sources[1].should.have.property('amount').equal(101);
+      res.sources[2].should.have.property('amount').equal(102);
+      res.sources[3].should.have.property('amount').equal(104);
+      res.sources[4].should.have.property('amount').equal(107);
+      res.sources[5].should.have.property('amount').equal(105);
       res.sources[0].should.have.property('type').equal('D');
       res.sources[1].should.have.property('type').equal('D');
       res.sources[2].should.have.property('type').equal('D');

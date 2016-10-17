@@ -108,6 +108,11 @@ function BlockDAL(driver) {
     return res[0].quantity;
   });
 
+  this.getNbIssuedFrom = (issuer, from) => co(function *() {
+    let res = yield that.query('SELECT COUNT(*) as quantity FROM block WHERE issuer = ? and number >= ? and NOT fork', [issuer, from]);
+    return res[0].quantity;
+  });
+
   this.getMoreRecentBlockWithTimeEqualBelow = (maxTime) => co(function *() {
     return (yield that.query('SELECT * FROM block WHERE medianTime <= ? and NOT fork ORDER BY number DESC LIMIT 1', [maxTime]))[0];
   });

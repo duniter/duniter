@@ -24,9 +24,8 @@ if [[ -d $DUN_SOURCES/node ]]; then
   chmod 755 $DUN_SOURCES/bin/duniter
   sed -i "s/usr\/bin\/env node/opt\/duniter\/sources\/node\/bin\/node/g" $DUN_SOURCES/bin/duniter
   sed -i "s/DEB_PACKAGING=.*/DEB_PACKAGING=true/g" $DUN_SOURCES/duniter.sh
+  ln -s $DUN_SOURCES/duniter.sh /usr/bin/duniter
 fi
 # Else will execute with environment node
-
-ln -s $DUN_SOURCES/duniter.sh /usr/bin/duniter
 
 chmod +r -R $DUN_ROOT

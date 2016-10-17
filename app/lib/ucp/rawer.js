@@ -86,10 +86,10 @@ module.exports = new function() {
     raw += "MedianTime: " + json.medianTime + "\n";
     if (json.dividend)
       raw += "UniversalDividend: " + json.dividend + "\n";
-    if (json.version == 3 || json.dividend)
+    if (json.version > 2 || json.dividend)
       raw += "UnitBase: " + json.unitbase + "\n";
     raw += "Issuer: " + json.issuer + "\n";
-    if (json.version == 3) {
+    if (json.version > 2) {
       raw += "IssuersFrame: " + json.issuersFrame + "\n";
       raw += "IssuersFrameVar: " + json.issuersFrameVar + "\n";
       raw += "DifferentIssuersCount: " + json.issuersCount + "\n";
@@ -166,7 +166,7 @@ module.exports = new function() {
     raw += "Version: " + (json.version) + "\n";
     raw += "Type: Transaction\n";
     raw += "Currency: " + json.currency + "\n";
-    if (json.version == 3) {
+    if (json.version >= 3) {
       raw += "Blockstamp: " + json.blockstamp + "\n";
     }
     raw += "Locktime: " + json.locktime + "\n";
@@ -196,7 +196,7 @@ module.exports = new function() {
   this.getCompactTransaction = (json) => {
     let issuers = (json.issuers || json.signatories);
     let raw = ["TX", json.version, issuers.length, json.inputs.length, json.unlocks.length, json.outputs.length, json.comment ? 1 : 0, json.locktime || 0].join(':') + '\n';
-    if (json.version == 3) {
+    if (json.version >= 3) {
       raw += json.blockstamp + "\n";
     }
     (issuers || []).forEach((issuer) => {

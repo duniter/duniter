@@ -130,8 +130,17 @@ function PeeringService(server) {
       yield dal.savePeer(peerEntity);
       let savedPeer = Peer.statics.peerize(peerEntity);
       if (peerEntity.pubkey == selfPubkey) {
-        const localNodeNotListed = !peerEntity.containsEndpoint(getEndpoint(conf));
+        const localEndpoint = getEndpoint(conf);
+        const localNodeNotListed = !peerEntity.containsEndpoint(localEndpoint);
         const current = localNodeNotListed && (yield dal.getCurrentBlockOrNull());
+        if (!localNodeNotListed) {
+          const indexOfThisNode = peerEntity.endpoints.indexOf(localEndpoint);
+          if (indexOfThisNode !== -1) {
+            server.BlockchainService.prover.changePoWPrefix((indexOfThisNode + 1) * 10); // We multiply by 10 to give room to computers with < 100 cores
+          } else {
+            logger.warn('This node has his interface listed in the peer document, but its index cannot be found.');
+          }
+        }
         if (localNodeNotListed && (!current || current.number > blockNumber)) {
           // Document with pubkey of local peer, but doesn't contain local interface: we must add it
           that.generateSelfPeer(conf, 0);
@@ -239,6 +248,10 @@ function PeeringService(server) {
             throw Error("Not same pubkey as local instance");
           }
         }
+        // We also remove endpoints that are *asked* to be removed in the conf file
+        if ((conf.rmEndpoints || []).indexOf(endpoint) !== -1) {
+          real = false;
+        }
       } catch (e) {
         logger.warn('Wrong endpoint \'%s\': \'%s\'', endpoint, e.message || e);
         real = false;
@@ -266,7 +279,7 @@ function PeeringService(server) {
       currency: currency,
       pubkey: selfPubkey,
       block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
-      endpoints: _.uniq([endpoint].concat(toConserve))
+      endpoints: _.uniq([endpoint].concat(toConserve).concat(conf.endpoints || []))
     };
     const raw2 = dos2unix(new Peer(p2).getRaw());
     logger.info('External access:', new Peer(p2).getURL());
@@ -306,9 +319,8 @@ function PeeringService(server) {
 
   function getOtherEndpoints(endpoints, theConf) {
     return endpoints.filter((ep) => {
-      let lookLikeLocal = ep.includes(' ' + theConf.remoteport) && (
-        ep.includes(theConf.remoteipv4) || ep.includes(theConf.remoteipv6) || ep.includes(theConf.remoteipv4));
-      return !lookLikeLocal;
+      return ep.match(constants.BMA_REGEXP) && !(ep.includes(' ' + theConf.remoteport) && (
+        ep.includes(theConf.remoteipv4) || ep.includes(theConf.remoteipv6) || ep.includes(theConf.remoteipv4)));
     });
   }
 
@@ -372,10 +384,10 @@ function PeeringService(server) {
       const node = yield aPeer.connect();
       yield checkPeerValidity(aPeer, node);
       //let remotePeer = yield Q.nbind(node.network.peering.get)();
-      const json = yield Q.nbind(node.network.peering.peers.get, node)({ leaves: true });
+      const json = yield node.getPeers.bind(node)({ leaves: true });
       for (let i = 0, len = json.leaves.length; i < len; i++) {
         let leaf = json.leaves[i];
-        let subpeer = yield Q.nbind(node.network.peering.peers.get, node)({ leaf: leaf });
+        let subpeer = yield node.getPeers.bind(node)({ leaf: leaf });
         subpeers.push(subpeer);
       }
       return subpeers;
@@ -404,7 +416,7 @@ function PeeringService(server) {
             yield dal.setPeerDown(p.pubkey);
             // Now we test
             let node = yield p.connect();
-            let peering = yield Q.nfcall(node.network.peering.get);
+            let peering = yield node.getPeer();
             yield checkPeerValidity(p, node);
             // The node answered, it is no more DOWN!
             logger.info('Node %s (%s:%s) is UP!', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
@@ -466,7 +478,7 @@ function PeeringService(server) {
 
   const checkPeerValidity = (p, node) => co(function *() {
     try {
-      let document = yield Q.nfcall(node.network.peering.get);
+      let document = yield node.getPeer();
       let thePeer = Peer.statics.peerize(document);
       let goodSignature = that.checkPeerSignature(thePeer);
       if (!goodSignature) {
@@ -530,7 +542,7 @@ function PeeringService(server) {
               localCurrent: () => dal.getCurrentBlockOrNull(),
 
               // Get the remote blockchain (bc) current block
-              remoteCurrent: (thePeer) => Q.nfcall(thePeer.blockchain.current),
+              remoteCurrent: (thePeer) => thePeer.getCurrent(),
 
               // Get the remote peers to be pulled
               remotePeers: () => Q([node]),
@@ -542,7 +554,7 @@ function PeeringService(server) {
               getRemoteBlock: (thePeer, number) => co(function *() {
                 let block = null;
                 try {
-                  block = yield Q.nfcall(thePeer.blockchain.block, number);
+                  block = yield thePeer.getBlock(number);
                   Transaction.statics.setIssuers(block.transactions);
                 } catch (e) {
                   if (e.httpCode != 404) {
@@ -579,7 +591,7 @@ function PeeringService(server) {
                 if (!count) {
                   count = CONST_BLOCKS_CHUNK;
                 }
-                return yield Q.nfcall(thePeer.blockchain.blocks, count, fromNumber)
+                return thePeer.getBlocks(count, fromNumber);
               })
             });
 

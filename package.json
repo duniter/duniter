@@ -1,6 +1,6 @@
 {
   "name": "duniter",
-  "version": "0.31.2",
+  "version": "0.40.0a14",
   "engines": {
     "node": ">=4.2.0",
     "npm": ">=2.11"
@@ -63,13 +63,12 @@
     "request-promise": "4.1.1",
     "scryptb": "6.0.4",
     "sha1": "1.1.1",
-    "sqlite3b": "3.1.2",
+    "sqlite3": "3.1.4",
     "superagent": "2.3.0",
     "tweetnacl": "0.14.3",
     "underscore": "1.8.3",
     "unzip": "0.1.11",
     "unzip2": "0.2.5",
-    "vucoin": "0.30.4",
     "winston": "2.2.0",
     "wotb": "0.4.11",
     "ws": "1.1.1"

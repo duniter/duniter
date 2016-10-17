@@ -1384,7 +1384,9 @@ This field counts the number of different block issuers between the `IssuersFram
 To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros + a remaining mark character. Rules is the following, and **relative to a each particular member**:
 
 ```
-PERSONAL_DIFF = MAX [ PoWMin ; PoWMin * FLOOR (percentRot * nbPreviousIssuers / (1 + nbBlocksSince)) ]
+PERSONAL_EXCESS = MAX(0, (nbPersonalBlocksInFrame / 5) - 1)
+PERSONAL_HANDICAP = FLOOR(LN(1 + PERSONAL_EXCESS) / LN(1.189))
+PERSONAL_DIFF = PoWMin * (1 + FLOOR (percentRot * nbPreviousIssuers / (1 + nbBlocksSince))) + PERSONAL_HANDICAP
 
 if (PERSONAL_DIFF + 1) % 16 == 0 then PERSONAL_DIFF = PERSONAL_DIFF + 1
 
@@ -1394,6 +1396,7 @@ NB_ZEROS = (PERSONAL_DIFFICULTY - REMAINDER) / 16
 
 Where:
 
+* `[nbPersonalBlocksInFrame]` is the number of blocks written by the member from block (current `number` - current `issuersFrame` + 1) to current block (included)
 * `[PoWMin]` is the `PoWMin` value of incoming block
 * `[percentRot]` is the protocol parameter
 * `[nbPreviousIssuers] = DifferentIssuersCount(last block of issuer)`

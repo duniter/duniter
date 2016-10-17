@@ -953,7 +953,16 @@ function getTrialLevel (version, issuer, conf, dal) {
         last = { number: current.number };
       }
       const nbBlocksSince = current.number - last.number;
-      let personal_diff = Math.max(powMin, powMin * Math.floor(percentRot * nbPreviousIssuers / (1 + nbBlocksSince)));
+      let personal_diff;
+      if (version == 3) {
+        personal_diff = Math.max(powMin, powMin * Math.floor(percentRot * nbPreviousIssuers / (1 + nbBlocksSince)));
+      } else {
+        const from = current.number - current.issuersFrame + 1;
+        const nbBlocksIssuedInFrame = yield dal.getNbIssuedInFrame(issuer, from);
+        const personal_excess = Math.max(0, (nbBlocksIssuedInFrame / 5) - 1);
+        const personal_handicap = Math.floor(Math.log(1 + personal_excess) / Math.log(1.189));
+        personal_diff = powMin * (1 + Math.floor(percentRot * nbPreviousIssuers / (1 + nbBlocksSince))) + personal_handicap;
+      }
       if (personal_diff + 1 % 16 == 0) {
         personal_diff++;
       }

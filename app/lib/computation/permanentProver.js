@@ -60,8 +60,8 @@ function PermanentProver(server) {
           }
           const version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
           const trial = yield rules.HELPERS.getTrialLevel(version, selfPubkey, conf, dal);
-          if (trial > (current.powMin + 2)) {
-            logger.warn('Trial = %s', trial);
+          if (trial > (current.powMin + constants.POW_MAXIMUM_ACCEPTABLE_HANDICAP)) {
+            logger.debug('Trial = %s, powMin = %s, pubkey = %s', trial, current.powMin, selfPubkey.slice(0, 6));
             throw 'Too high difficulty: waiting for other members to write next block';
           }
           const lastIssuedByUs = current.issuer == selfPubkey;

@@ -1386,7 +1386,7 @@ To be valid, a block fingerprint (whole document + signature) must start with a 
 ```
 PERSONAL_EXCESS = MAX(0, (nbPersonalBlocksInFrame / 5) - 1)
 PERSONAL_HANDICAP = FLOOR(LN(1 + PERSONAL_EXCESS) / LN(1.189))
-PERSONAL_DIFF = PoWMin * (1 + FLOOR (percentRot * nbPreviousIssuers / (1 + nbBlocksSince))) + PERSONAL_HANDICAP
+PERSONAL_DIFF = MAX [ PoWMin ; PoWMin * FLOOR (percentRot * nbPreviousIssuers / (1 + nbBlocksSince)) ] + PERSONAL_HANDICAP
 
 if (PERSONAL_DIFF + 1) % 16 == 0 then PERSONAL_DIFF = PERSONAL_DIFF + 1
 

@@ -88,7 +88,7 @@ function BlockchainBinding (server) {
     if (current) {
       nextBlockNumber = current ? current.number + 1 : 0;
     }
-    const version = current ? current.version : 3;
+    const version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
     const difficulty = yield rules.HELPERS.getTrialLevel(version, idty.pubkey, conf, server.dal);
     return {
       "block": nextBlockNumber,

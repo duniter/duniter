@@ -130,7 +130,8 @@ module.exports = {
   DOCUMENTS_BLOCK_VERSION_REGEXP: /^(2|3|4)$/,
   DOCUMENTS_TRANSACTION_VERSION_REGEXP: /^(2|3)$/,
   DOCUMENTS_VERSION: 2,
-  BLOCK_GENERATED_VERSION: 3,
+  BLOCK_GENERATED_VERSION: 4,
+  LAST_VERSION_FOR_TX: 3,
 
   REVOCATION_FACTOR: 2, // This is protocol fixed value
   NB_DIGITS_UD: 6,      // This is protocol fixed value

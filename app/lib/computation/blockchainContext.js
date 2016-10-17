@@ -564,7 +564,7 @@ function BlockchainContext() {
           written: true,
           removed: false
         });
-        if (tx.version == 3) {
+        if (tx.version >= 3) {
           const sp = tx.blockstamp.split('-');
           tx.blockstampTime = (yield getBlockByNumberAndHash(sp[0], sp[1])).medianTime;
         }

@@ -58,7 +58,7 @@ function PermanentProver(server) {
           if (!current) {
             throw 'Waiting for a root block before computing new blocks';
           }
-          const version = current ? current.version : 3;
+          const version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
           const trial = yield rules.HELPERS.getTrialLevel(version, selfPubkey, conf, dal);
           if (trial > (current.powMin + 2)) {
             logger.warn('Trial = %s', trial);

@@ -608,7 +608,7 @@ function FileDAL(params) {
     block.wrong = false;
     yield [
       that.saveBlockInFile(block, true),
-      that.saveTxsInFiles(block.transactions, {block_number: block.number, time: block.medianTime, version: block.version }),
+      that.saveTxsInFiles(block.transactions, {block_number: block.number, time: block.medianTime }),
       that.saveMemberships('join', block.joiners, block.number),
       that.saveMemberships('active', block.actives, block.number),
       that.saveMemberships('leave', block.leavers, block.number)
@@ -638,7 +638,7 @@ function FileDAL(params) {
     return Q.all(txs.map((tx) => co(function*() {
       _.extend(tx, extraProps);
       _.extend(tx, {currency: that.getCurrency()});
-      if (tx.version == 3) {
+      if (tx.version >= 3) {
         const sp = tx.blockstamp.split('-');
         tx.blockstampTime = (yield that.getBlockByNumberAndHash(sp[0], sp[1])).medianTime;
       }

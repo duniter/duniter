@@ -346,8 +346,10 @@ rules.FUNCTIONS = {
     const txs = block.getTransactions();
     // Check rule against each transaction
     for (const tx of txs) {
-      if (tx.version != block.version) {
-        throw Error('A transaction must have the same version as its block');
+      if (tx.version != block.version && parseInt(block.version) <= 3) {
+        throw Error('A transaction must have the same version as its block prior to protocol 0.4');
+      } else if (tx.version != 3 && parseInt(block.version) > 3) {
+        throw Error('A transaction must have the version 3 for blocks with version >= 3');
       }
     }
     return true;
@@ -526,7 +528,7 @@ rules.HELPERS = {
   checkSingleTransactionLocally: (tx, done) => checkBunchOfTransactions([tx], done),
 
   checkTxAmountsValidity: (tx) => {
-    if (tx.version == 3) {
+    if (tx.version >= 3) {
       // Rule of money conservation
       const commonBase = tx.inputs.concat(tx.outputs).reduce((min, input) => {
         if (min === null) return input.base;

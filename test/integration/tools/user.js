@@ -215,7 +215,7 @@ function User (uid, options, node) {
     }
     let http = yield getContacter();
     let current = yield http.getCurrent();
-    let version = current && current.version;
+    let version = current && Math.min(constants.LAST_VERSION_FOR_TX, current.version);
     let json = yield http.getSources(pub);
     let i = 0;
     let cumulated = 0;
@@ -250,7 +250,7 @@ function User (uid, options, node) {
     sources2.forEach((src) => inputSum += src.amount * Math.pow(10, src.base));
     let inputs = sources2.map((src) => {
       return {
-        src: (version == 3 ? [src.amount, src.base] : []).concat([src.type, src.identifier, src.noffset]).join(':'),
+        src: (version >= 3 ? [src.amount, src.base] : []).concat([src.type, src.identifier, src.noffset]).join(':'),
         unlock: 'SIG(0)'
       };
     });
@@ -295,7 +295,7 @@ function User (uid, options, node) {
     raw += "Version: " + (opts.version || constants.DOCUMENTS_VERSION) + '\n';
     raw += "Type: Transaction\n";
     raw += "Currency: " + (opts.currency || node.server.conf.currency) + '\n';
-    if (opts.version && opts.version == 3) {
+    if (opts.version && opts.version >= 3) {
       raw += "Blockstamp: " + opts.blockstamp + '\n';
     }
     raw += "Locktime: " + (opts.locktime || 0) + '\n';

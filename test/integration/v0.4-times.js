@@ -22,7 +22,7 @@ describe("Protocol 0.4 Times", function() {
   before(() => co(function*() {
     const res = yield toolbox.simpleNodeWith2Users(conf);
     s1 = res.s1;
-    yield s1.commit({ time: now }); // We must issue a normal root block, because always medianTime(0) == time(0)
+    yield s1.commit({ version: 3, time: now }); // We must issue a normal root block, because always medianTime(0) == time(0)
   }));
 
   it('a V3 block should not accept a time = medianTime + avgGenTime * √(1,066)', () => co(function*() {

@@ -52,7 +52,7 @@ function BlockGenerator(mainContext, prover) {
   this.makeNextBlock = (block, trial, manualValues) => co(function *() {
     const unsignedBlock = block || (yield that.nextBlock(manualValues));
     const current = yield dal.getCurrentBlockOrNull();
-    const version = current ? current.version : 3;
+    const version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
     const trialLevel = trial || (yield rules.HELPERS.getTrialLevel(version, selfPubkey, conf, dal));
     return prover.prove(unsignedBlock, trialLevel, (manualValues && manualValues.time) || null);
   });
@@ -106,7 +106,7 @@ function BlockGenerator(mainContext, prover) {
   });
 
   const findTransactions = (current) => co(function*() {
-    const versionMin = current ? current.version : constants.DOCUMENTS_VERSION;
+    const versionMin = current ? Math.min(constants.LAST_VERSION_FOR_TX, current.version) : constants.DOCUMENTS_VERSION;
     const txs = yield dal.getTransactionsPending(versionMin);
     const transactions = [];
     const passingTxs = [];
@@ -549,7 +549,7 @@ function BlockGenerator(mainContext, prover) {
       if (blockLen < maxLenOfBlock) {
         transactions.forEach((tx) => {
           const txLen = Transaction.statics.getLen(tx);
-          if (txLen <= constants.MAXIMUM_LEN_OF_COMPACT_TX && blockLen + txLen <= maxLenOfBlock && tx.version == block.version) {
+          if (txLen <= constants.MAXIMUM_LEN_OF_COMPACT_TX && blockLen + txLen <= maxLenOfBlock && (tx.version == block.version || (parseInt(tx.version) >= 3 && parseInt(block.version) >= 3))) {
             block.transactions.push({ raw: tx.compact() });
           }
           blockLen += txLen;

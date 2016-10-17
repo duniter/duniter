@@ -659,7 +659,7 @@ rules.HELPERS = {
   }),
 
   checkTxBlockStamp: (tx, dal) => co(function *() {
-    if (tx.version == 3) {
+    if (tx.version >= 3) {
       const number = tx.blockstamp.split('-')[0];
       const hash = tx.blockstamp.split('-')[1];
       const basedBlock = yield dal.getBlockByNumberAndHashOrNull(number, hash);
@@ -967,7 +967,7 @@ function getTrialLevel (version, issuer, conf, dal) {
       }
       const nbBlocksSince = current.number - last.number;
       let personal_diff;
-      if (version == 3) {
+      if (version >= 3) {
         personal_diff = Math.max(powMin, powMin * Math.floor(percentRot * nbPreviousIssuers / (1 + nbBlocksSince)));
       } else {
         const from = current.number - current.issuersFrame + 1;

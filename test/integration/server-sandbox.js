@@ -5,10 +5,10 @@ const should    = require('should');
 const bma       = require('../../app/lib/streams/bma');
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
-const until     = require('./tools/until');
 const toolbox   = require('./tools/toolbox');
 const multicaster = require('../../app/lib/streams/multicaster');
-const limiter = require('../../app/lib/system/limiter');
+const constants = require('../../app/lib/constants');
+const limiter   = require('../../app/lib/system/limiter');
 
 limiter.noLimit();
 
@@ -230,9 +230,13 @@ describe("Sandboxes", function() {
 
   describe('Transaction', () => {
 
+    const tmp = constants.TRANSACTION_MAX_TRIES;
+    constants.TRANSACTION_MAX_TRIES = 2;
+
     it('should accept 2 transactions of 20, 30 units', () => co(function *() {
       yield i4.send(20, i1);
       yield i4.send(30, i1);
+      (yield s1.dal.txsDAL.getSandboxRoom()).should.equal(0);
     }));
 
     it('should reject amount of 10', () => shouldThrow(co(function *() {
@@ -247,6 +251,7 @@ describe("Sandboxes", function() {
       yield s1.commit();
       yield s1.commit();
       (yield s1.dal.txsDAL.getSandboxRoom()).should.equal(2);
+      constants.TRANSACTION_MAX_TRIES = tmp;
     }));
   });
 });

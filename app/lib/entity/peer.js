@@ -1,13 +1,13 @@
 "use strict";
 const Q = require('q');
 const _ = require('underscore');
-const vucoin = require('vucoin');
+const contacter = require('../contacter');
 const rawer = require('../ucp/rawer');
+const constants = require('../constants');
 
 module.exports = Peer;
 
 const DEFAULT_HOST = 'localhost';
-const BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
 
 function Peer(json) {
 
@@ -47,7 +47,7 @@ function Peer(json) {
   this.getBMA = () => {
     let bma = null;
     this.endpoints.forEach((ep) => {
-      const matches = !bma && ep.match(BMA_REGEXP);
+      const matches = !bma && ep.match(constants.BMA_REGEXP);
       if (matches) {
         bma = {
           "dns": matches[2] || '',
@@ -110,17 +110,9 @@ function Peer(json) {
 
   this.getRawSigned = () => rawer.getPeer(this);
 
-  this.connect = (timeout) => {
-    return Q.Promise((resolve, reject) => {
-      vucoin(this.getDns() || this.getIPv6() || this.getIPv4() || DEFAULT_HOST, this.getPort(),
-          (err, node) => {
-            if (err) return reject(err);
-            resolve(node);
-          }, {
-            timeout: timeout || 2000
-          });
-    });
-  };
+  this.connect = (timeout) => Promise.resolve(contacter(this.getDns() || this.getIPv6() || this.getIPv4() || DEFAULT_HOST, this.getPort(), {
+    timeout: timeout || constants.NETWORK.DEFAULT_TIMEOUT
+  }));
 
   this.isReachable = () => {
     return this.getURL() ? true : false;

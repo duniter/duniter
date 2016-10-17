@@ -36,7 +36,7 @@ function ConfDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
       "msWindow": parseInt(conf.msWindow,10),
       "xpercent": parseFloat(conf.xpercent,10),
       "msValidity": parseInt(conf.msValidity,10),
-      "stepMax": parseInt(3,10), // Duniter only handles 3 step currencies for now
+      "stepMax": parseInt(conf.stepMax,10),
       "medianTimeBlocks": parseInt(conf.medianTimeBlocks,10),
       "avgGenTime": parseInt(conf.avgGenTime,10),
       "dtDiffEval": parseInt(conf.dtDiffEval,10),

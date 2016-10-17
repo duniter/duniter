@@ -22,6 +22,7 @@ const CONDITIONS   = "(&&|\\|\\|| |[()]|(SIG\\([0-9a-zA-Z]{43,44}\\)|(XHX\\([A-F
 const BLOCK_UID    = INTEGER + "-" + FINGERPRINT;
 const META_TS      = "META:TS:" + BLOCK_UID;
 
+const BMA_REGEXP  = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
 const IPV4_REGEXP = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
 const IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/;
 
@@ -108,6 +109,7 @@ module.exports = {
     LONG_DAL_PROCESS: 50
   },
 
+  BMA_REGEXP: BMA_REGEXP,
   IPV4_REGEXP: IPV4_REGEXP,
   IPV6_REGEXP: IPV6_REGEXP,
 
@@ -125,10 +127,11 @@ module.exports = {
   BLOCK_UID: exact(BLOCK_UID),
 
   DOCUMENTS_VERSION_REGEXP: /^2$/,
-  DOCUMENTS_BLOCK_VERSION_REGEXP: /^(2|3)$/,
+  DOCUMENTS_BLOCK_VERSION_REGEXP: /^(2|3|4)$/,
   DOCUMENTS_TRANSACTION_VERSION_REGEXP: /^(2|3)$/,
   DOCUMENTS_VERSION: 2,
-  BLOCK_GENERATED_VERSION: 3,
+  BLOCK_GENERATED_VERSION: 4,
+  LAST_VERSION_FOR_TX: 3,
 
   REVOCATION_FACTOR: 2, // This is protocol fixed value
   NB_DIGITS_UD: 6,      // This is protocol fixed value
@@ -184,7 +187,7 @@ module.exports = {
   },
   BLOCK: {
     NONCE:       find("Nonce: (" + ZERO_OR_POSITIVE_INT + ")"),
-    VERSION:     find("Version: (2|3)"),
+    VERSION:     find("Version: (2|3|4)"),
     TYPE:        find("Type: (Block)"),
     CURRENCY:    find("Currency: (" + CURRENCY + ")"),
     BNUMBER:     find("Number: (" + ZERO_OR_POSITIVE_INT + ")"),
@@ -234,7 +237,7 @@ module.exports = {
     MAX_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS: 10,
     MAX_NON_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS: 6,
     MAX_NON_MEMBERS_TO_FORWARD_TO: 4,
-    MAX_MEMBERS_TO_FORWARD_TO: 4,
+    MAX_MEMBERS_TO_FORWARD_TO: 6,
     COUNT_FOR_ENOUGH_PEERS: 4,
     MAX_CONCURRENT_POST: 3,
     DEFAULT_TIMEOUT: 10 * 1000, // 10 seconds
@@ -345,7 +348,7 @@ module.exports = {
   SAFE_FACTOR: 3,
   BLOCKS_COLLECT_THRESHOLD: 30, // Blocks to collect from memory and persist
 
-  MUTE_LOGS_DURING_UNIT_TESTS: false,
+  MUTE_LOGS_DURING_UNIT_TESTS: true,
 
   SANDBOX_SIZE_TRANSACTIONS: 200,
   SANDBOX_SIZE_IDENTITIES: 100,
@@ -358,7 +361,17 @@ module.exports = {
   CURRENT_BLOCK_CACHE_DURATION: 10 * 1000, // 30 seconds
   CORES_MAXIMUM_USE_IN_PARALLEL: 8, // For more cores, we need to use a better PoW synchronization algorithm
 
-  ENGINE_IDLE_INTERVAL: 5000
+  ENGINE_IDLE_INTERVAL: 5000,
+
+  // When to trigger the PoW process again if no PoW is triggered for a while. In milliseconds.
+  POW_SECURITY_RETRY_DELAY: 10 * 60 * 1000,
+
+  POW_DIFFICULTY_RANGE_RATIO_V3: Math.sqrt(1.066),
+  POW_DIFFICULTY_RANGE_RATIO_V4: 1.189,
+
+  TRANSACTION_MAX_TRIES: 10,
+  NONCE_RANGE: 1000 * 1000 * 1000 * 100,
+  POW_MAXIMUM_ACCEPTABLE_HANDICAP: 3
 };
 
 function exact (regexpContent) {

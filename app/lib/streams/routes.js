@@ -50,6 +50,7 @@ module.exports = {
     httpMethods.httpPOST( prefix + '/wot/revoke',                            wot.revoke,                           dtos.Result,         limiter.limitAsHighUsage());
     httpMethods.httpGET(  prefix + '/wot/lookup/:search',                    wot.lookup,                           dtos.Lookup,         limiter.limitAsHighUsage());
     httpMethods.httpGET(  prefix + '/wot/members',                           wot.members,                          dtos.Members,        limiter.limitAsHighUsage());
+    httpMethods.httpGET(  prefix + '/wot/pending',                           wot.pendingMemberships,               dtos.MembershipList, limiter.limitAsHighUsage());
     httpMethods.httpGET(  prefix + '/wot/requirements/:search',              wot.requirements,                     dtos.Requirements,   limiter.limitAsHighUsage());
     httpMethods.httpGET(  prefix + '/wot/certifiers-of/:search',             wot.certifiersOf,                     dtos.Certifications, limiter.limitAsHighUsage());
     httpMethods.httpGET(  prefix + '/wot/certified-by/:search',              wot.certifiedBy,                      dtos.Certifications, limiter.limitAsHighUsage());

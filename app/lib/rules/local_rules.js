@@ -80,8 +80,8 @@ rules.FUNCTIONS = {
   checkBlockTimes: (block, conf) => co(function *() {
     const time = parseInt(block.time);
     const medianTime = parseInt(block.medianTime);
-    if (block.number > 0 && (time < medianTime || time > medianTime + maxAcceleration(conf)))
-      throw Error('A block must have its Time between MedianTime and MedianTime + ' + maxAcceleration(conf));
+    if (block.number > 0 && (time < medianTime || time > medianTime + maxAcceleration(block, conf)))
+      throw Error('A block must have its Time between MedianTime and MedianTime + ' + maxAcceleration(block, conf));
     else if (block.number == 0 && time != medianTime)
       throw Error('Root block must have Time equal MedianTime');
     return true;
@@ -346,8 +346,10 @@ rules.FUNCTIONS = {
     const txs = block.getTransactions();
     // Check rule against each transaction
     for (const tx of txs) {
-      if (tx.version != block.version) {
-        throw Error('A transaction must have the same version as its block');
+      if (tx.version != block.version && parseInt(block.version) <= 3) {
+        throw Error('A transaction must have the same version as its block prior to protocol 0.4');
+      } else if (tx.version != 3 && parseInt(block.version) > 3) {
+        throw Error('A transaction must have the version 3 for blocks with version >= 3');
       }
     }
     return true;
@@ -439,9 +441,14 @@ rules.FUNCTIONS = {
   })
 };
 
-function maxAcceleration (conf) {
-  let maxGenTime = Math.ceil(conf.avgGenTime * Math.sqrt(1.066));
-  return Math.ceil(maxGenTime * conf.medianTimeBlocks);
+function maxAcceleration (block, conf) {
+  if (block.version > 3) {
+    let maxGenTime = Math.ceil(conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO_V4);
+    return Math.ceil(maxGenTime * conf.medianTimeBlocks);
+  } else {
+    let maxGenTime = Math.ceil(conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO_V3);
+    return Math.ceil(maxGenTime * conf.medianTimeBlocks);
+  }
 }
 
 function existsPubkeyIn(pubk, memberships) {
@@ -521,7 +528,7 @@ rules.HELPERS = {
   checkSingleTransactionLocally: (tx, done) => checkBunchOfTransactions([tx], done),
 
   checkTxAmountsValidity: (tx) => {
-    if (tx.version == 3) {
+    if (tx.version >= 3) {
       // Rule of money conservation
       const commonBase = tx.inputs.concat(tx.outputs).reduce((min, input) => {
         if (min === null) return input.base;

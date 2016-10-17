@@ -1,6 +1,5 @@
 "use strict";
 const stream      = require('stream');
-const async       = require('async');
 const util        = require('util');
 const path        = require('path');
 const co          = require('co');
@@ -23,6 +22,7 @@ const multicaster = require('./app/lib/streams/multicaster');
 const upnp        = require('./app/lib/system/upnp');
 const bma         = require('./app/lib/streams/bma');
 const rawer       = require('./app/lib/ucp/rawer');
+const permanentProver = require('./app/lib/computation/permanentProver');
 
 function Server (dbConf, overrideConf) {
 
@@ -31,6 +31,7 @@ function Server (dbConf, overrideConf) {
   const home = directory.getHome(dbConf.name, dbConf.home);
   const paramsP = directory.getHomeParams(dbConf && dbConf.memory, home);
   const logger = require('./app/lib/logger')('server');
+  const permaProver = this.permaProver = permanentProver(this);
   const that = this;
   that.home = home;
   that.conf = null;
@@ -214,43 +215,23 @@ function Server (dbConf, overrideConf) {
       yield Q.nbind(that.BlockchainService.regularCleanMemory, that.BlockchainService);
   });
 
-  let shouldContinue = false;
-
-  this.stopBlockComputation = () => {
-    shouldContinue = false;
-    that.BlockchainService.stopPoWThenProcessAndRestartPoW();
-  };
+  this.stopBlockComputation = () => permaProver.stopEveryting();
   
   this.getCountOfSelfMadePoW = () => this.BlockchainService.getCountOfSelfMadePoW();
   this.isServerMember = () => this.BlockchainService.isMember();
 
-  this.isPoWPaused = true;
-  this._blockComputation = () => co(function *() {
-    while (shouldContinue) {
-      try {
-        const block = yield that.BlockchainService.startGeneration();
-        if (block && shouldContinue) {
-          try {
-            const obj = parsers.parseBlock.syncWrite(dos2unix(block.getRawSigned()));
-            yield that.singleWritePromise(obj);
-          } catch (err) {
-            logger.warn('Proof-of-work self-submission: %s', err.message || err);
-          }
-        }
-      }
-      catch (e) {
-        that.isPoWPaused = true;
-        logger.error(e);
-        shouldContinue = true;
-      }
-    }
-    logger.info('Proof-of-work computation STOPPED.');
-  });
+  this.isPoWWaiting = () => permaProver.isPoWWaiting();
 
-  this.startBlockComputation = () => {
-    shouldContinue = true;
-    return that._blockComputation();
-  };
+  this.startBlockComputation = () => permaProver.allowedToStart();
+
+  permaProver.onBlockComputed((block) => co(function*() {
+    try {
+      const obj = parsers.parseBlock.syncWrite(dos2unix(block.getRawSigned()));
+      yield that.singleWritePromise(obj);
+    } catch (err) {
+      logger.warn('Proof-of-work self-submission: %s', err.message || err);
+    }
+  }));
 
   this.checkConfig = () => {
     return that.checkPeeringConf(that.conf);
@@ -399,6 +380,7 @@ function Server (dbConf, overrideConf) {
 
   this.pullBlocks = that.PeeringService.pullBlocks;
 
+  // Unit Tests or Preview method
   this.doMakeNextBlock = (manualValues) => that.BlockchainService.makeNextBlock(null, null, manualValues);
 
   this.doCheckBlock = (block) => {
@@ -477,6 +459,8 @@ function Server (dbConf, overrideConf) {
     that.upnpAPI = upnpAPI;
     return upnpAPI;
   });
+
+  this.applyCPU = (cpu) => that.BlockchainService.changeProverCPUSetting(cpu);
   
   this.listenToTheWeb = (showLogs) => co(function *() {
     const bmapi = yield bma(that, [{

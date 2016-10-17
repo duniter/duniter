@@ -614,12 +614,12 @@ rules.HELPERS = {
       return null;
     }
     if (lastUDTime + conf.dt <= nextMedianTime) {
+      const M = lastUDBlock ? lastUDBlock.monetaryMass : current.monetaryMass || 0;
+      const c = conf.c;
+      const N = nextN;
+      const previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
+      const previousUB = lastUDBlock ? lastUDBlock.unitbase : constants.FIRST_UNIT_BASE;
       if (version == 2) {
-        const M = lastUDBlock ? lastUDBlock.monetaryMass : current.monetaryMass || 0;
-        const c = conf.c;
-        const N = nextN;
-        const previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
-        const previousUB = lastUDBlock ? lastUDBlock.unitbase : constants.FIRST_UNIT_BASE;
         if (N > 0) {
           const block = {
             dividend: Math.ceil(Math.max(previousUD, c * M / Math.pow(10, previousUB) / N)),
@@ -635,13 +635,19 @@ rules.HELPERS = {
           return null;
         }
       } else {
-        const c = conf.c;
-        const previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
-        const previousUB = lastUDBlock ? lastUDBlock.unitbase : constants.FIRST_UNIT_BASE;
         const block = {
-          dividend: parseInt(((1 + c) * previousUD).toFixed(0)),
           unitbase: previousUB
         };
+        if (version == 3) {
+          block.dividend = parseInt(((1 + c) * previousUD).toFixed(0));
+        } else {
+          if (N > 0) {
+            block.dividend = parseInt((previousUD + Math.pow(c, 2) * M / N).toFixed(0));
+          } else {
+            // The community has collapsed. RIP.
+            return null;
+          }
+        }
         if (block.dividend >= Math.pow(10, constants.NB_DIGITS_UD)) {
           block.dividend = Math.ceil(block.dividend / 10.0);
           block.unitbase++;

@@ -1441,7 +1441,7 @@ The proof is considered valid if:
 * Value of `UniversalDividend` (`UD(t+1)`) equals to:
 
 ```
-UD(t+1) = INTEGER_PART((1 + c) * UD(t))
+UD(t+1) = INTEGER_PART(UD(t) + c² * M(t) / N(t+1))
 ```
 
 Where:
@@ -1449,6 +1449,10 @@ Where:
 * `t` is UD time
 * `UD(t)` is last UD value
 * `c` equals to `[c]` parameter of this protocol
+* `N(t+1)` equals to this block's `MembersCount` field
+* `M(t)` equals to the sum of all `UD(t)*N(t)` of the blockchain (from t = 0, to t = now) where:
+  * `N(t)` is the `MembersCount` for `UD(t)`
+  * `UD(0)` equals to `[ud0]` parameter of this protocol
 
 ###### UD overflow
 If `UniversalDividend` value is higher or equal to `1000000` (1 million), then `UniversalDividend` value has to be:

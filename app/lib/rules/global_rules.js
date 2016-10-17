@@ -967,7 +967,7 @@ function getTrialLevel (version, issuer, conf, dal) {
       }
       const nbBlocksSince = current.number - last.number;
       let personal_diff;
-      if (version >= 3) {
+      if (version == 3) {
         personal_diff = Math.max(powMin, powMin * Math.floor(percentRot * nbPreviousIssuers / (1 + nbBlocksSince)));
       } else {
         const from = current.number - current.issuersFrame + 1;

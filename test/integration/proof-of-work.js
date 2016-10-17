@@ -66,7 +66,7 @@ describe("Proof-of-work", function() {
   it('should be able to cancel a proof-of-work on other PoW receival', () => co(function*() {
     const now = 1474464481;
     const res = yield toolbox.simpleNetworkOf2NodesAnd2Users({
-      powMin: 32
+      powMin: 34
     }), s1 = res.s1, s2 = res.s2;
     yield s1.commit({
       time: now

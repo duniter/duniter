@@ -431,12 +431,14 @@ rules.FUNCTIONS = {
   }),
 
   checkJoinersAreNotOudistanced: (block, conf, dal) => checkPeopleAreNotOudistanced(
+    block.version,
     block.joiners.map((inlineMS) => Membership.statics.fromInline(inlineMS).issuer),
     getNewLinks(block),
     block.identities.map((inline) => Identity.statics.fromInline(inline).pubkey),
     conf, dal),
 
   checkActivesAreNotOudistanced: (block, conf, dal) => checkPeopleAreNotOudistanced(
+    block.version,
     block.actives.map((inlineMS) => Membership.statics.fromInline(inlineMS).issuer),
     getNewLinks(block),
     block.identities.map((inline) => Identity.statics.fromInline(inline).pubkey),
@@ -571,12 +573,12 @@ rules.HELPERS = {
 
   checkCertificationIsValidForBlock: (cert, block, idty, conf, dal) => checkCertificationIsValid(block, cert, () => idty, conf, dal),
 
-  isOver3Hops: (member, newLinks, newcomers, current, conf, dal) => co(function *() {
+  isOver3Hops: (version, member, newLinks, newcomers, current, conf, dal) => co(function *() {
     if (!current) {
       return Q(false);
     }
     try {
-      yield checkPeopleAreNotOudistanced([member], newLinks, newcomers, conf, dal);
+      yield checkPeopleAreNotOudistanced(version, [member], newLinks, newcomers, conf, dal);
       return false;
     } catch (e) {
       return true;
@@ -853,7 +855,7 @@ function checkCertificationIsValid (block, cert, findIdtyFunc, conf, dal) {
   });
 }
 
-function checkPeopleAreNotOudistanced (pubkeys, newLinks, newcomers, conf, dal) {
+function checkPeopleAreNotOudistanced (version, pubkeys, newLinks, newcomers, conf, dal) {
   return co(function *() {
     let wotb = dal.wotb;
     let current = yield dal.getCurrentBlockOrNull();
@@ -881,7 +883,12 @@ function checkPeopleAreNotOudistanced (pubkeys, newLinks, newcomers, conf, dal) 
     let error;
     for (const pubkey of pubkeys) {
       let nodeID = yield getNodeIDfromPubkey(nodesCache, pubkey, dal);
-      let dSen = Math.ceil(constants.CONTRACT.DSEN_P * Math.exp(Math.log(membersCount) / conf.stepMax));
+      let dSen;
+      if (version <= 3) {
+        dSen = Math.ceil(constants.CONTRACT.DSEN_P * Math.exp(Math.log(membersCount) / conf.stepMax));
+      } else {
+        dSen = Math.ceil(Math.pow(membersCount, 1 / conf.stepMax));
+      }
       let isOutdistanced = wotb.isOutdistanced(nodeID, dSen, conf.stepMax, conf.xpercent);
       if (isOutdistanced) {
         error = Error('Joiner/Active is outdistanced from WoT');

@@ -295,8 +295,9 @@ function BlockchainService (server) {
       const newCerts = yield generator.computeNewCerts(nextBlockNumber, [join.identity.pubkey], joinData, updates);
       const newLinks = generator.newCertsToLinks(newCerts, updates);
       const currentTime = current ? current.medianTime : 0;
+      const currentVersion = current ? current.version : constants.BLOCK_GENERATED_VERSION;
       certs = yield that.getValidCerts(pubkey, newCerts);
-      outdistanced = yield rules.HELPERS.isOver3Hops(pubkey, newLinks, someNewcomers, current, conf, dal);
+      outdistanced = yield rules.HELPERS.isOver3Hops(currentVersion, pubkey, newLinks, someNewcomers, current, conf, dal);
       // Expiration of current membershship
       if (join.identity.currentMSN >= 0) {
         if (join.identity.member) {

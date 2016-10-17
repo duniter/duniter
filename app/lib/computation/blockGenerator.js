@@ -219,7 +219,7 @@ function BlockGenerator(mainContext, prover) {
           // Will throw an error if not enough links
           yield mainContext.checkHaveEnoughLinks(newcomer, newLinks);
           // This one does not throw but returns a boolean
-          const isOut = yield rules.HELPERS.isOver3Hops(newcomer, newLinks, realNewcomers, current, conf, dal);
+          const isOut = yield rules.HELPERS.isOver3Hops(block.version, newcomer, newLinks, realNewcomers, current, conf, dal);
           if (isOut) {
             throw 'Key ' + newcomer + ' is not recognized by the WoT for this block';
           }

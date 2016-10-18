@@ -642,7 +642,7 @@ rules.HELPERS = {
           block.dividend = parseInt(((1 + c) * previousUD).toFixed(0));
         } else {
           if (N > 0) {
-            block.dividend = parseInt((previousUD + Math.pow(c, 2) * M / N).toFixed(0));
+            block.dividend = parseInt((previousUD + Math.pow(c, 2) * (M / N) / Math.pow(10, previousUB)).toFixed(0));
           } else {
             // The community has collapsed. RIP.
             return null;

@@ -181,9 +181,9 @@ function BlockGenerator(notifier) {
 
   function Worker(id, nonceBeginning, pub) {
 
-    let onAlmostPoW = function() { throw 'Almost proof-of-work found, but no listener is attached.'; };
-    let onPoWSuccess = function() { throw 'Proof-of-work success, but no listener is attached.'; };
-    let onPoWError = function() { throw 'Proof-of-work error, but no listener is attached.'; };
+    let onAlmostPoW = function() { logger.error('Almost proof-of-work found, but no listener is attached.'); };
+    let onPoWSuccess = function() { logger.error('Proof-of-work success, but no listener is attached.'); };
+    let onPoWError = function() { logger.error('Proof-of-work error, but no listener is attached.'); };
     let powProcess, readyPromise, readyResolver;
 
     newProcess();

@@ -213,6 +213,7 @@ dtos.UID = {
   "self": String,
   "revocation_sig": String,
   "revoked": Boolean,
+  "revoked_on": Number,
   "others": [dtos.Other]
 };
 

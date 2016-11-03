@@ -689,7 +689,7 @@ function FileDAL(params) {
       // TODO: create a specific method with a different name and hide saveIdentity()
       that.idtyDAL.saveIdentity(idty);
 
-  this.revokeIdentity = (pubkey) => that.idtyDAL.revokeIdentity(pubkey);
+  this.revokeIdentity = (pubkey, number) => that.idtyDAL.revokeIdentity(pubkey, number);
 
   this.unrevokeIdentity = (pubkey) => that.idtyDAL.unrevokeIdentity(pubkey);
 

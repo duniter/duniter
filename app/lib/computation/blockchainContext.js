@@ -207,7 +207,7 @@ function BlockchainContext() {
       // Revoked
       for (const inlineRevocation of block.revoked) {
         let revocation = Identity.statics.revocationFromInline(inlineRevocation);
-        yield dal.revokeIdentity(revocation.pubkey);
+        yield dal.revokeIdentity(revocation.pubkey, block.number);
       }
       // Excluded
       for (const excluded of block.excluded) {

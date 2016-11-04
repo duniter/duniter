@@ -237,7 +237,7 @@ function PeeringService(server) {
     }
     let endpoint = getEndpoint(theConf);
     let otherPotentialEndpoints = getOtherEndpoints(p1.endpoints, theConf);
-    console.log(otherPotentialEndpoints);
+    logger.info('Sibling endpoints:', otherPotentialEndpoints);
     let reals = yield otherPotentialEndpoints.map((endpoint) => co(function*() {
       let real = true;
       let remote = Peer.statics.endpoint2host(endpoint);

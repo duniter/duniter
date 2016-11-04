@@ -8,6 +8,7 @@ const co = require('co');
 const _ = require('underscore');
 const logger = require('../../logger')('metaDAL');
 const Block = require('../../entity/block');
+const Revocation = require('../../entity/revocation');
 const Transaction = require('../../entity/transaction');
 const AbstractSQLite = require('./AbstractSQLite');
 
@@ -156,7 +157,23 @@ function MetaDAL(driver) {
       'WHERE expired IS NULL ' +
       'AND written_block IS NULL ' +
       'ORDER BY block_number DESC;' +
-    'COMMIT;'
+    'COMMIT;',
+
+    15: () => co(function *() {
+      let blockDAL = new (require('./BlockDAL'))(driver);
+      let idtyDAL = new (require('./IdentityDAL'))(driver);
+      yield idtyDAL.exec('ALTER TABLE idty ADD COLUMN revoked_on INTEGER NULL');
+      const blocks = yield blockDAL.query('SELECT * FROM block WHERE revoked NOT LIKE ?', ['[]']);
+      for (const block of blocks) {
+        // Explicit revocations only
+        for (const inlineRevocation of block.revoked) {
+          const revocation = Revocation.statics.fromInline(inlineRevocation);
+          const idty = yield idtyDAL.getFromPubkey(revocation.pubkey);
+          idty.revoked_on = block.number;
+          yield idtyDAL.saveIdentity(idty);
+        }
+      }
+    }),
   };
 
   this.init = () => co(function *() {

@@ -136,7 +136,7 @@ function BlockchainService (server) {
     }
     let existing = yield dal.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
     if (existing) {
-      throw 'Already processed';
+      throw constants.ERRORS.BLOCK_ALREADY_PROCESSED;
     }
     let current = yield mainContext.current();
     let followsCurrent = !current || (obj.number == current.number + 1 && obj.previousHash == current.hash);

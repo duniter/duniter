@@ -94,6 +94,7 @@ describe("Revocation", function() {
     res.results[0].should.have.property('uids').length(1);
     res.results[0].uids[0].should.have.property('uid').equal('cat');
     res.results[0].uids[0].should.have.property('revoked').equal(false);
+    res.results[0].uids[0].should.have.property('revoked_on').equal(null);
     res.results[0].uids[0].should.have.property('revocation_sig').equal(null);
   }));
 
@@ -104,6 +105,7 @@ describe("Revocation", function() {
       res.results[0].should.have.property('uids').length(1);
       res.results[0].uids[0].should.have.property('uid').equal('cat');
       res.results[0].uids[0].should.have.property('revoked').equal(false);
+      res.results[0].uids[0].should.have.property('revoked_on').equal(null);
       res.results[0].uids[0].should.have.property('revocation_sig').not.equal(null);
       res.results[0].uids[0].should.have.property('revocation_sig').not.equal('');
     });
@@ -119,6 +121,7 @@ describe("Revocation", function() {
       res.results[0].should.have.property('uids').length(1);
       res.results[0].uids[0].should.have.property('uid').equal('tac');
       res.results[0].uids[0].should.have.property('revoked').equal(false);
+      res.results[0].uids[0].should.have.property('revoked_on').equal(null);
       res.results[0].uids[0].should.have.property('revocation_sig').equal(null);
     });
     // On S2 server, tac is known as identity with revocation pending (not written! so `revoked` field is false)
@@ -127,6 +130,7 @@ describe("Revocation", function() {
       res.results[0].should.have.property('uids').length(1);
       res.results[0].uids[0].should.have.property('uid').equal('tac');
       res.results[0].uids[0].should.have.property('revoked').equal(false);
+      res.results[0].uids[0].should.have.property('revoked_on').equal(null);
       res.results[0].uids[0].should.have.property('revocation_sig').not.equal(null);
       res.results[0].uids[0].should.have.property('revocation_sig').not.equal('');
     });
@@ -139,6 +143,7 @@ describe("Revocation", function() {
       res.results[0].should.have.property('uids').length(1);
       res.results[0].uids[0].should.have.property('uid').equal('cat');
       res.results[0].uids[0].should.have.property('revoked').equal(true);
+      res.results[0].uids[0].should.have.property('revoked_on').equal(1);
       res.results[0].uids[0].should.have.property('revocation_sig').not.equal(null);
       res.results[0].uids[0].should.have.property('revocation_sig').not.equal('');
     });
@@ -151,6 +156,7 @@ describe("Revocation", function() {
       res.results[0].should.have.property('uids').length(1);
       res.results[0].uids[0].should.have.property('uid').equal('cat');
       res.results[0].uids[0].should.have.property('revoked').equal(false);
+      res.results[0].uids[0].should.have.property('revoked_on').equal(null);
       res.results[0].uids[0].should.have.property('revocation_sig').not.equal(null);
       res.results[0].uids[0].should.have.property('revocation_sig').not.equal('');
     });
@@ -163,6 +169,7 @@ describe("Revocation", function() {
       res.results[0].should.have.property('uids').length(1);
       res.results[0].uids[0].should.have.property('uid').equal('cat');
       res.results[0].uids[0].should.have.property('revoked').equal(true);
+      res.results[0].uids[0].should.have.property('revoked_on').equal(1);
       res.results[0].uids[0].should.have.property('revocation_sig').not.equal(null);
       res.results[0].uids[0].should.have.property('revocation_sig').not.equal('');
     });

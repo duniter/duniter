@@ -63,7 +63,7 @@ duniter() {
 		#---------------------------------
 
 		*)
-	  $NODE "$DUNITER_DIR/bin/duniter" $*
+	  $NODE "$DUNITER_DIR/bin/duniter" "$@"
 		;;
 
 		esac
@@ -72,5 +72,5 @@ duniter() {
 
 # If the script was launched with parameters, try to launch the Duniter command
 if [ ! -z $1 ]; then
-	duniter $*
+	duniter "$@"
 fi

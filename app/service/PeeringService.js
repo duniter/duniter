@@ -237,6 +237,7 @@ function PeeringService(server) {
     }
     let endpoint = getEndpoint(theConf);
     let otherPotentialEndpoints = getOtherEndpoints(p1.endpoints, theConf);
+    logger.info('Sibling endpoints:', otherPotentialEndpoints);
     let reals = yield otherPotentialEndpoints.map((endpoint) => co(function*() {
       let real = true;
       let remote = Peer.statics.endpoint2host(endpoint);
@@ -319,8 +320,9 @@ function PeeringService(server) {
 
   function getOtherEndpoints(endpoints, theConf) {
     return endpoints.filter((ep) => {
-      return ep.match(constants.BMA_REGEXP) && !(ep.includes(' ' + theConf.remoteport) && (
-        ep.includes(theConf.remoteipv4) || ep.includes(theConf.remoteipv6) || ep.includes(theConf.remoteipv4)));
+      return !ep.match(constants.BMA_REGEXP) || (
+          !(ep.includes(' ' + theConf.remoteport) && (
+          ep.includes(theConf.remotehost) || ep.includes(theConf.remoteipv6) || ep.includes(theConf.remoteipv4))));
     });
   }
 

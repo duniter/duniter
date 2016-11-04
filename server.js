@@ -176,7 +176,10 @@ function Server (dbConf, overrideConf) {
         }
         return res;
       } catch (err) {
-        logger.debug('Document write error: ', err);
+        if (err && !err.uerr) {
+          // Unhandled error, display it
+          logger.debug('Document write error: ', err);
+        }
         if (done) {
           isInnerWrite ? done(err, null) : done();
         } else {

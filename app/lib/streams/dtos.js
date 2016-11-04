@@ -82,7 +82,7 @@ dtos.TransactionOfBlock = {
   "version": Number,
   "currency": String,
   "comment": String,
-  "locktime": String,
+  "locktime": Number,
   "signatures": [String],
   "outputs": [String],
   "inputs": [String],
@@ -213,6 +213,7 @@ dtos.UID = {
   "self": String,
   "revocation_sig": String,
   "revoked": Boolean,
+  "revoked_on": Number,
   "others": [dtos.Other]
 };
 
@@ -323,7 +324,7 @@ dtos.Transaction = {
   "unlocks": [String],
   "outputs": [String],
   "comment": String,
-  "locktime": String,
+  "locktime": Number,
   "signatures": [String],
   "raw": String,
   "hash": String
@@ -350,7 +351,7 @@ dtos.TxOfHistory = {
   "unlocks": [String],
   "outputs": [String],
   "comment": String,
-  "locktime": String,
+  "locktime": Number,
   "received": Number,
   "signatures": [String],
   "hash": String,

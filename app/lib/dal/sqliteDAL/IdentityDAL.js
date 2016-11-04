@@ -22,6 +22,7 @@ function IdentityDAL(driver, wotb) {
   this.table = 'idty';
   this.fields = [
     'revoked',
+    'revoked_on',
     'revocation_sig',
     'currentMSN',
     'currentINN',
@@ -76,10 +77,11 @@ function IdentityDAL(driver, wotb) {
       'COMMIT;', []);
   });
 
-  this.revokeIdentity = (pubkey) => {
+  this.revokeIdentity = (pubkey, number) => {
     return co(function *() {
       const idty = yield that.getFromPubkey(pubkey);
       idty.revoked = true;
+      idty.revoked_on = number;
       return that.saveIdentity(idty);
     });
   };
@@ -87,6 +89,7 @@ function IdentityDAL(driver, wotb) {
   this.unrevokeIdentity = (pubkey) => co(function *() {
     const idty = yield that.getFromPubkey(pubkey);
     idty.revoked = false;
+    idty.revoked_on = null;
     return that.saveIdentity(idty);
   });
 

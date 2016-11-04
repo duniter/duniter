@@ -72,6 +72,7 @@ module.exports = {
     httpMethods.httpGET(  '/webmin/summary/pow',               webminCtrl.powSummary, dtos.PoWSummary);
     httpMethods.httpGET(  '/webmin/logs/export/:quantity',     webminCtrl.logsExport, dtos.LogLink);
     httpMethods.httpPOST( '/webmin/key/preview',               webminCtrl.previewPubkey, dtos.PreviewPubkey);
+    httpMethods.httpGET(  '/webmin/server/reachable',          webminCtrl.isNodePubliclyReachable, dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/http/start',         webminCtrl.startHTTP, dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/http/stop',          webminCtrl.stopHTTP,  dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/http/upnp/open',     webminCtrl.openUPnP,  dtos.Boolean);
@@ -106,6 +107,11 @@ module.exports = {
         path: prefix + '/ws/peer'
       });
 
+      wssBlock.on('error', function (error) {
+        logger.error('Error on WS Server');
+        logger.error(error);
+      });
+
       wssBlock.on('connection', function connection(ws) {
         co(function *() {
           currentBlock = yield server.dal.getCurrentBlockOrNull();
@@ -115,20 +121,30 @@ module.exports = {
         });
       });
 
-      wssBlock.broadcast = (data) => wssBlock.clients.forEach((client) => client.send(data));
+      wssBlock.broadcast = (data) => wssBlock.clients.forEach((client) => {
+        try {
+          client.send(data);
+        } catch (e) {
+          logger.error('error on ws: %s', e);
+        }
+      });
       wssPeer.broadcast = (data) => wssPeer.clients.forEach((client) => client.send(data));
 
       // Forward blocks & peers
       server
         .pipe(es.mapSync(function(data) {
-          // Broadcast block
-          if (data.joiners) {
-            currentBlock = data;
-            wssBlock.broadcast(JSON.stringify(sanitize(currentBlock, dtos.Block)));
-          }
-          // Broadcast peer
-          if (data.endpoints) {
-            wssPeer.broadcast(JSON.stringify(sanitize(data, dtos.Peer)));
+          try {
+            // Broadcast block
+            if (data.joiners) {
+              currentBlock = data;
+              wssBlock.broadcast(JSON.stringify(sanitize(currentBlock, dtos.Block)));
+            }
+            // Broadcast peer
+            if (data.endpoints) {
+              wssPeer.broadcast(JSON.stringify(sanitize(data, dtos.Peer)));
+            }
+          } catch (e) {
+            logger.error('error on ws mapSync:', e);
           }
         }));
     };

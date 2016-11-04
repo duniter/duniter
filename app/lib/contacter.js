@@ -79,3 +79,15 @@ contacter.statics.quickly = (host, port, opts, callbackPromise) => co(function*(
 });
 
 contacter.statics.fetchPeer = (host, port, opts) => contacter.statics.quickly(host, port, opts, (node) => node.getPeer());
+
+contacter.statics.isReachableFromTheInternet = (peer, opts) => co(function*() {
+  const Peer = require('./entity/peer');
+  const p = Peer.statics.fromJSON(peer);
+  const node = new Contacter(p.getHost(), p.getPort(), opts);
+  try {
+    yield node.getPeer();
+    return true;
+  } catch (e) {
+    return false;
+  }
+});

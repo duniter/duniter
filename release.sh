@@ -26,6 +26,9 @@ if [[ $2 =~ ^[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?$ ]]; then
       sed -i "s/title\": .*/title\": \"v$2\",/g" gui/package.json
       sed -i "s/<title>Duniter.*<\/title>/<title>Duniter $2<\/title>/g" gui/index.html
 
+      # Bump the before_deploy.sh
+      sed -i "s/DUNITER_VER=.*/DUNITER_VER=$2/g" ci/travis/before_deploy.sh
+
       # Bump the install.sh
       sed -i "s/echo \"v.*\"/echo \"v$2\"/g" install.sh
 

@@ -258,7 +258,7 @@ module.exports = {
       MAX: 20 // MAX Y blocks
     },
     SYNC_PEERS_INTERVAL: 3, // Every 3 block average generation time
-    SYNC_BLOCK_INTERVAL: 2, // Every 2 block average generation time
+    SYNC_BLOCK_INTERVAL: 0.8, // Every 0.8 block average generation time
     TEST_PEERS_INTERVAL: 10 // In seconds
   },
   PROOF_OF_WORK: {
@@ -356,7 +356,7 @@ module.exports = {
   SANDBOX_SIZE_MEMBERSHIPS: 200,
 
   MAXIMUM_LEN_OF_COMPACT_TX: MAXIMUM_LEN_OF_COMPACT_TX,
-  MAX_NUMBER_OF_PEERS_FOR_PULLING: 10,
+  MAX_NUMBER_OF_PEERS_FOR_PULLING: 4,
 
   CURRENT_BLOCK_CACHE_DURATION: 10 * 1000, // 30 seconds
   CORES_MAXIMUM_USE_IN_PARALLEL: 8, // For more cores, we need to use a better PoW synchronization algorithm

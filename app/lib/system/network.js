@@ -84,7 +84,7 @@ module.exports = {
       app.use(morgan('\x1b[90m:remote-addr - :method :url HTTP/:http-version :status :res[content-length] - :response-time ms\x1b[0m', {
         stream: {
           write: function(message){
-            message && logger.info(message.replace(/\n$/,''));
+            message && logger.trace(message.replace(/\n$/,''));
           }
         }
       }));

@@ -19,6 +19,7 @@ const bma = require('../lib/streams/bma');
 const Identity = require('../lib/entity/identity');
 const network = require('../lib/system/network');
 const AbstractController = require('../controllers/abstract');
+const contacter = require('../lib/contacter');
 const logger = require('../lib/logger')('webmin');
 
 module.exports = (dbConf, overConf) => {
@@ -479,6 +480,12 @@ function WebAdmin (dbConf, overConf) {
     pluggedConfP = plugForConf();
     pluggedDALP = replugDAL();
     return {};
+  });
+
+  this.isNodePubliclyReachable = (req) => co(function *() {
+    const peer = yield server.PeeringService.peer();
+    const reachable = yield contacter.statics.isReachableFromTheInternet(peer, { timeout: 5000 });
+    return { success: reachable };
   });
 
   this.testPeer = (req) => co(function *() {

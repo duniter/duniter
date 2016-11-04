@@ -72,6 +72,7 @@ module.exports = {
     httpMethods.httpGET(  '/webmin/summary/pow',               webminCtrl.powSummary, dtos.PoWSummary);
     httpMethods.httpGET(  '/webmin/logs/export/:quantity',     webminCtrl.logsExport, dtos.LogLink);
     httpMethods.httpPOST( '/webmin/key/preview',               webminCtrl.previewPubkey, dtos.PreviewPubkey);
+    httpMethods.httpGET(  '/webmin/server/reachable',          webminCtrl.isNodePubliclyReachable, dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/http/start',         webminCtrl.startHTTP, dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/http/stop',          webminCtrl.stopHTTP,  dtos.Boolean);
     httpMethods.httpGET(  '/webmin/server/http/upnp/open',     webminCtrl.openUPnP,  dtos.Boolean);

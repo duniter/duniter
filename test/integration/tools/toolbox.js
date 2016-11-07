@@ -24,7 +24,7 @@ const HOST = '127.0.0.1';
 let PORT = 10000;
 
 module.exports = {
-  
+
   simpleNetworkOf2NodesAnd2Users: (options) => co(function*() {
     const catKeyring = { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'};
     const tacKeyring = { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'};
@@ -77,14 +77,14 @@ module.exports = {
 
     return { s1, cat, tac };
   }),
-  
+
   fakeSyncServer: (readBlocksMethod, readParticularBlockMethod, onPeersRequested) => {
-    
+
     const host = HOST;
     const port = PORT++;
-    
+
     return co(function*() {
-      
+
       // Meaningful variables
       const NO_HTTP_LOGS = false;
       const NO_STATIC_PATH = null;

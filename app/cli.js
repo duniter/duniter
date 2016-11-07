@@ -316,7 +316,18 @@ program
 program
   .command('gen-root [host] [port] [difficulty]')
   .description('Tries to generate root block, with choice of root members')
-  .action(subCommand(service(generateAndSend("generateManualRoot"))));
+    .action(subCommand(service(function (host, port, difficulty, server, conf) {
+      if (!host) {
+        throw 'Host is required.';
+      }
+      if (!port) {
+        throw 'Port is required.';
+      }
+      if (!difficulty) {
+        throw 'Difficulty is required.';
+      }
+      return generateAndSend("generateManualRoot")(host, port, difficulty, server, conf);
+    })));
 
 function generateAndSend(generationMethod) {
   return function (host, port, difficulty, server, conf) {

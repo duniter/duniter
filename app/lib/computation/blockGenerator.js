@@ -353,7 +353,8 @@ function BlockGenerator(mainContext, prover) {
         // TODO: check if this is still working
         const certs = yield dal.certsNotLinkedToTarget(idHash);
         foundCerts = _.filter(certs, function(cert){
-          return ~joiners.indexOf(cert.from);
+          // Add 'joiners && ': special case when block#0 not written ANd not joiner yet (avoid undefined error)
+          return joiners && ~joiners.indexOf(cert.from);
         });
       } else {
         // Look for certifications from WoT members
@@ -693,26 +694,30 @@ function ManualRootGenerator() {
   this.findNewCertsFromWoT = () => Q({});
 
   this.filterJoiners = (preJoinData) => co(function*() {
-    const joinData = {};
+    const filtered = {};
     const newcomers = _(preJoinData).keys();
     const uids = [];
     newcomers.forEach((newcomer) => uids.push(preJoinData[newcomer].ms.userid));
+
     if (newcomers.length > 0) {
-      inquirer.prompt([{
-        type: "checkbox",
-        name: "uids",
-        message: "Newcomers to add",
-        choices: uids,
-        default: uids[0]
-      }], (answers) => {
-        newcomers.forEach((newcomer) => {
-          if (~answers.uids.indexOf(preJoinData[newcomer].ms.userid))
-            joinData[newcomer] = preJoinData[newcomer];
-        });
-        if (answers.uids.length == 0)
-          throw 'No newcomer selected';
-        else
-          return joinData;
+      return new Promise((resolve, reject) => {
+        inquirer.prompt([{
+              type: "checkbox",
+              name: "uids",
+              message: "Newcomers to add",
+              choices: uids,
+              default: uids[0]
+            }],
+            (answers) => {
+              newcomers.forEach((newcomer) => {
+                if (~answers.uids.indexOf(preJoinData[newcomer].ms.userid))
+                  filtered[newcomer] = preJoinData[newcomer];
+              });
+              if (answers.uids.length == 0)
+                reject('No newcomer selected');
+              else
+                resolve(filtered);
+            });
       });
     } else {
       throw 'No newcomer found';

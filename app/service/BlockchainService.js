@@ -302,7 +302,12 @@ function BlockchainService (server) {
       if (join.identity.currentMSN >= 0) {
         if (join.identity.member) {
           const msBlock = yield dal.getBlock(join.identity.currentMSN);
-          expiresMS = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
+          if (msBlock && msBlock.medianTime) { // special case for block #0
+            expiresMS = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
+          }
+          else {
+            expiresMS = conf.msValidity;
+          }
         } else {
           expiresMS = 0;
         }
@@ -311,7 +316,12 @@ function BlockchainService (server) {
       const lastJoin = yield dal.lastJoinOfIdentity(idty.hash);
       if (lastJoin) {
         const msBlock = yield dal.getBlock(lastJoin.blockNumber);
-        expiresPending = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
+        if (msBlock && msBlock.medianTime) { // Special case for block#0
+          expiresPending = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
+        }
+        else {
+          expiresPending = conf.msValidity;
+        }
       }
       // Expiration of certifications
       for (const cert of certs) {

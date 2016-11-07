@@ -23,8 +23,10 @@ rules.FUNCTIONS = {
     if (current && current.version > 2 && block.version == 2) {
       throw Error('`Version: 2` must follow another V2 block or be the root block');
     }
-    if (current && current.version > 3 && block.version == 3) {
-      throw Error('`Version: 3` must follow another V3 block, a V2 block or be the root block');
+    else if (block.version > 2) {
+      if (current && current.version != (block.version - 1) && current.version != block.version) {
+        throw Error('`Version: ' + block.version + '` must follow another V' + block.version + ' block, a V' + (block.version - 1) + ' block or be the root block');
+      }
     }
     return true;
   }),

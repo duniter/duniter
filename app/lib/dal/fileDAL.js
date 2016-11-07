@@ -594,13 +594,15 @@ function FileDAL(params) {
       // We do not set mirror peers as down (ex. of mirror: 'M1_HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk')
       if (!pubkey.match(/_/)) {
         const p = yield that.getPeer(pubkey);
-        const now = (new Date()).getTime();
-        p.status = 'DOWN';
-        if (!p.first_down) {
-          p.first_down = now;
+        if (p) {
+          const now = (new Date()).getTime();
+          p.status = 'DOWN';
+          if (!p.first_down) {
+            p.first_down = now;
+          }
+          p.last_try = now;
+          yield that.peerDAL.savePeer(p);
         }
-        p.last_try = now;
-        yield that.peerDAL.savePeer(p);
       }
     } catch (err) {
       throw err;

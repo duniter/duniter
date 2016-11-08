@@ -188,16 +188,20 @@ function MetaDAL(driver) {
 
   function executeMigration(migration) {
     return co(function *() {
-      if (typeof migration == "string") {
+      try {
+        if (typeof migration == "string") {
 
-        // Simple SQL script to pass
-        yield that.exec(migration);
+          // Simple SQL script to pass
+          yield that.exec(migration);
 
-      } else if (typeof migration == "function") {
+        } else if (typeof migration == "function") {
 
-        // JS function to execute
-        yield migration();
+          // JS function to execute
+          yield migration();
 
+        }
+      } catch (e) {
+        logger.warn('An error occured during DB migration, continue.', e);
       }
     });
   }

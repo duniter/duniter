@@ -245,7 +245,7 @@ function networkConfiguration(conf, done) {
     function(upnpSuccess, upnpConf, next) {
 
       var operations = getLocalNetworkOperations(conf)
-        .concat(getRemoteNetworkOperations(conf));
+        .concat(getRemoteNetworkOperations(conf, upnpConf.remoteipv4, upnpConf.remoteipv6));
 
       if (upnpSuccess) {
         operations = operations.concat(getUseUPnPOperations(conf));
@@ -275,15 +275,18 @@ function networkReconfiguration(conf, autoconf, noupnp, done) {
         var local = [conf.ipv4, conf.port].join(':');
         var remote = [conf.remoteipv4, conf.remoteport].join(':');
         if (autoconf) {
+          conf.ipv6 = conf.remoteipv6 = network.getBestLocalIPv6();
+          logger.info('IPv6: %s', conf.ipv6);
           logger.info('Local IPv4: %s', local);
           logger.info('Remote IPv4: %s', remote);
           // Use proposed local + remote with UPnP binding
           return async.waterfall(useUPnPOperations
             .concat(dnsOperations), next);
         }
-        choose("UPnP is available: ucoin will be bound: \n  from " + local + "\n  to " + remote + "\nKeep this configuration?", true,
+        choose("UPnP is available: duniter will be bound: \n  from " + local + "\n  to " + remote + "\nKeep this configuration?", true,
           function () {
             // Yes: not network changes
+            conf.ipv6 = conf.remoteipv6 = network.getBestLocalIPv6();
             async.waterfall(useUPnPOperations
               .concat(dnsOperations), next);
           },
@@ -371,19 +374,33 @@ function getLocalNetworkOperations(conf, autoconf) {
       var interfaces = [{ name: "None", value: null }];
       osInterfaces.forEach(function(netInterface){
         var addresses = netInterface.addresses;
-        var filtered = _(addresses).where({family: 'IPv6'});
+        var filtered = _(addresses).where({ family: 'IPv6' });
         filtered.forEach(function(addr){
           var address = addr.address
           if (addr.scopeid)
             address += "%" + netInterface.name
+          let nameSuffix = "";
+          if (addr.scopeid == 0 && !addr.internal) {
+            nameSuffix = " (Global)";
+          }
           interfaces.push({
-            name: [netInterface.name, address].join(' '),
+            name: [netInterface.name, address, nameSuffix].join(' '),
+            internal: addr.internal,
+            scopeid: addr.scopeid,
             value: address
           });
         });
       });
+      interfaces.sort((addr1, addr2) => {
+        if (addr1.value === null) return -1;
+        if (addr1.internal && !addr2.internal) return 1;
+        if (addr1.scopeid && !addr2.scopeid) return 1;
+        return 0;
+      });
+      if (autoconf || !conf.ipv6) {
+        conf.ipv6 = conf.remoteipv6 = network.getBestLocalIPv6();
+      }
       if (autoconf) {
-        conf.ipv6 = network.getBestLocalIPv6();
         return next();
       }
       inquirer.prompt([{
@@ -393,7 +410,7 @@ function getLocalNetworkOperations(conf, autoconf) {
         default: conf.ipv6,
         choices: interfaces
       }], function (answers) {
-        conf.ipv6 = answers.ipv6;
+        conf.ipv6 = conf.remoteipv6 = answers.ipv6;
         next();
       });
     },
@@ -407,6 +424,10 @@ function getLocalNetworkOperations(conf, autoconf) {
 function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6, autoconf) {
   return [
     function (next){
+      if (!conf.ipv4) {
+        conf.remoteipv4 = null;
+        return next(null, {});
+      }
       var choices = [{ name: "None", value: null }];
       // Local interfaces
       var osInterfaces = network.listInterfaces();
@@ -454,49 +475,29 @@ function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6, autoconf) {
     },
     function (answers, next){
       conf.remoteipv4 = answers.remoteipv4;
-      var choices = [{ name: "None", value: null }];
-      if (conf.remoteipv6) {
-        choices.push({ name: conf.remoteipv6, value: conf.remoteipv6 });
-      }
-      if (remoteipv6 && remoteipv6 != conf.remoteipv6) {
-        choices.push({ name: remoteipv6, value: remoteipv6 });
-      }
-      choices.push({ name: "Enter new one", value: "new" });
-      inquirer.prompt([{
-        type: "list",
-        name: "remoteipv6",
-        message: "Remote IPv6",
-        default: conf.remoteipv6 || null,
-        choices: choices,
-        validate: function (input) {
-          return input && input.toString().match(constants.IPV6_REGEXP) ? true : false;
-        }
-      }], function (answers) {
-        if (answers.remoteipv6 == "new") {
-          inquirer.prompt([{
-            type: "input",
-            name: "remoteipv6",
-            message: "Remote IPv6",
-            default: conf.remoteipv6 || conf.ipv6,
-            validate: function (input) {
-              return input && input.toString().match(constants.IPV6_REGEXP) ? true : false;
-            }
-          }], function (answers) {
-            conf.remoteipv6 = answers.remoteipv6;
-            next();
+      return co(function*() {
+        if (conf.remoteipv4 || conf.remotehost) {
+          yield new Promise((resolve, reject) => {
+            const getPort = async.apply(simpleInteger, "Remote port", "remoteport", conf);
+            getPort((err) => {
+              if (err) return reject(err);
+              resolve();
+            });
           });
-        } else {
-          conf.remoteipv6 = answers.remoteipv6;
-          next();
+        } else if (conf.remoteipv6) {
+          conf.remoteport = conf.port;
         }
-      });
-    },
-    async.apply(simpleInteger, "Remote port", "remoteport", conf)
+      }).then(() => next()).catch(next);
+    }
   ];
 }
 
 function getHostnameOperations(conf, autoconf) {
   return [function(next) {
+    if (!conf.ipv4) {
+      conf.remotehost = null;
+      return next();
+    }
     if (autoconf) {
       logger.info('DNS: %s', conf.remotehost || 'No');
       return next();
@@ -515,6 +516,10 @@ function getHostnameOperations(conf, autoconf) {
 
 function getUseUPnPOperations(conf, autoconf) {
   return [function(next) {
+    if (!conf.ipv4) {
+      conf.upnp = false;
+      return next();
+    }
     if (autoconf) {
       logger.info('UPnP: %s', 'Yes');
       conf.upnp = true;

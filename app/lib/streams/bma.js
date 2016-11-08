@@ -17,7 +17,7 @@ module.exports = function(server, interfaces, httpLogs) {
       if (server.conf.ipv6) {
         interfaces.push({
           ip: server.conf.ipv6,
-          port: server.conf.port
+          port: (server.conf.remoteport || server.conf.port) // We try to get the best one
         });
       }
     }

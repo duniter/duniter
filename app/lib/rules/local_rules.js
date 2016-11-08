@@ -14,6 +14,10 @@ let rules = {};
 rules.FUNCTIONS = {
 
   checkVersion: (block) => co(function*() {
+    // V5 can appear only after a precise time
+    if (block.version == 5 && block.medianTime < constants.TIME_FOR_V5) {
+      throw Error("V5 block cannot have medianTime < " + constants.TIME_FOR_V5);
+    }
     return true;
   }),
 
@@ -587,6 +591,10 @@ rules.HELPERS = {
     // 1. We follow previous block's version
     let version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
 
+    // 2. If we can, we go to the next version
+    if (version == 4 && block.medianTime > constants.TIME_FOR_V5) {
+      version = 5;
+    }
     return version;
   })
 };

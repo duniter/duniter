@@ -27,6 +27,7 @@ describe("Block local coherence", function(){
   describe("should be rejected", function(){
 
     it('if wrong signature block',                                                                    test(rules.LOCAL.checkBlockSignature, blocks.WRONG_SIGNATURE, 'Block\'s signature must match'));
+    it('if block is V5 before it is time for V5',                                                     test(rules.LOCAL.checkVersion, blocks.V5_BLOCK_TOO_EARLY, 'V5 block cannot have medianTime < 1478689200'));
     it('if root block does not have Parameters',                                                      test(rules.LOCAL.checkParameters, blocks.ROOT_WITHOUT_PARAMETERS, 'Parameters must be provided for root block'));
     it('if proof-of-work does not match PoWMin field',                                                test(rules.LOCAL.checkProofOfWork, blocks.WRONG_PROOF_OF_WORK, 'Not a proof-of-work'));
     it('if non-root has Parameters',                                                                  test(rules.LOCAL.checkParameters, blocks.NON_ROOT_WITH_PARAMETERS, 'Parameters must not be provided for non-root block'));

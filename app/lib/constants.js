@@ -135,7 +135,7 @@ module.exports = {
   BLOCK_GENERATED_VERSION: 4,
   LAST_VERSION_FOR_TX: 3,
 
-  TIME_FOR_V5: 1478689200, // 2016-11-09 12:00:00 UTC+0
+  TIME_FOR_V5: 1478696400, // 2016-11-09 14:00:00 BCT (blockchain time)
 
   REVOCATION_FACTOR: 2, // This is protocol fixed value
   NB_DIGITS_UD: 6,      // This is protocol fixed value

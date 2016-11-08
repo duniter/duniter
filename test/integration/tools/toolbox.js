@@ -78,6 +78,33 @@ module.exports = {
     return { s1, cat, tac };
   }),
 
+  simpleNodeWith2otherUsers: (options) => co(function*() {
+
+    const ticKeyring = { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'};
+    const tocKeyring = { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'};
+
+    const s1 = module.exports.server(_.extend({ pair: ticKeyring }, options || {}));
+
+    const tic = user('cat', ticKeyring, { server: s1 });
+    const toc = user('tac', tocKeyring, { server: s1 });
+
+    yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+
+    yield tic.createIdentity();
+    yield toc.createIdentity();
+    yield tic.cert(toc);
+    yield toc.cert(tic);
+    yield tic.join();
+    yield toc.join();
+
+    return { s1, tic, toc };
+  }),
+
+  createUser: (uid, pub, sec, defaultServer) => co(function*() {
+    const keyring = { pub: pub, sec: sec };
+    return user(uid, keyring, { server: defaultServer });
+  }),
+
   fakeSyncServer: (readBlocksMethod, readParticularBlockMethod, onPeersRequested) => {
 
     const host = HOST;

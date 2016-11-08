@@ -265,9 +265,17 @@ rules.FUNCTIONS = {
       if (found) {
         throw Error('Identity already used');
       }
+      // Because the window rule does not apply on initial certifications
       if (current && idty.buid != constants.BLOCK.SPECIAL_BLOCK) {
-        // Because the window rule does not apply on initial certifications
-        let basedBlock = yield dal.getBlock(idty.buid);
+        let basedBlock;
+        if (block.version < 5) {
+          // Prior to DUP 0.5: the full blockstamp was not chcked, only the number
+          const blockNumber = idty.buid.split('-')[0];
+          basedBlock = yield dal.getBlock(blockNumber);
+        } else {
+          // From DUP 0.5: we fully check the blockstamp
+          basedBlock = yield dal.getBlockByBlockstamp(idty.buid);
+        }
         // Check if writable
         let duration = current.medianTime - parseInt(basedBlock.medianTime);
         if (duration > conf.idtyWindow) {

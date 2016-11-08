@@ -25,7 +25,7 @@ function User (uid, options, node) {
 
   var that = this;
   var pub, sec;
-  var createIdentity = "";
+  var createdIdentity = "";
   that.node = node;
 
   // For sync code
@@ -60,17 +60,21 @@ function User (uid, options, node) {
       yield Q.nfcall(init);
     const current = yield node.server.BlockchainService.current();
     let buid = !useRoot && current ? ucp.format.buid(current.number, current.hash) : '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855';
-    createIdentity = rawer.getOfficialIdentity({
+    createdIdentity = rawer.getOfficialIdentity({
       buid: buid,
       uid: uid,
       issuer: pub,
       currency: node.server.conf.currency
     });
-    createIdentity += keyring.Key(pub, sec).signSync(createIdentity) + '\n';
-    yield doPost('/wot/add', {
-      "identity": createIdentity
-    }, fromServer);
+    createdIdentity += keyring.Key(pub, sec).signSync(createdIdentity) + '\n';
+    yield that.submitIdentity(createdIdentity, fromServer);
   });
+
+  this.submitIdentity = (raw, fromServer) => doPost('/wot/add', {
+    "identity": raw
+  }, fromServer);
+
+  this.getIdentityRaw = () => createdIdentity;
 
   this.makeCert = (user, fromServer, overrideProps) => co(function*() {
     const lookup = yield that.lookup(user.pub, fromServer);

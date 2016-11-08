@@ -223,6 +223,9 @@ dtos.Signed = {
   "meta": {
     "timestamp": String
   },
+  "cert_time": {
+    "block": Number
+  },
   "isMember": Boolean,
   "wasMember": Boolean,
   "signature": String

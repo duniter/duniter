@@ -62,6 +62,9 @@ const Identity = function(json) {
         "meta": {
           "timestamp": cert.idty.buid
         },
+        "cert_time": {
+          "block": cert.block_number
+        },
         "isMember": cert.idty.member,
         "wasMember": cert.idty.wasMember,
         "signature": cert.sig

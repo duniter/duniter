@@ -1020,12 +1020,9 @@ function getTrialLevel (version, issuer, conf, dal) {
 
       const from = current.number - current.issuersFrame + 1;
       const nbBlocksIssuedInFrame = yield dal.getNbIssuedInFrame(issuer, from);
-      console.log('nbBlocksIssuedInFrame for %s = %s, median = %s, counts = %s', issuer, nbBlocksIssuedInFrame, medianOfIssuedBlocks, JSON.stringify(counts));
       const personal_excess = Math.max(0, ((nbBlocksIssuedInFrame + 1)/ medianOfIssuedBlocks) - 1);
       // Personal_handicap
-      console.log('personal_excess = %s', personal_excess);
       const handicap = Math.floor(Math.log(1 + personal_excess) / Math.log(1.189));
-      console.log('handicap = %s', handicap);
       let personal_diff = powMin + handicap;
       if (personal_diff + 1 % 16 == 0) {
         personal_diff++;

@@ -1404,12 +1404,14 @@ This field counts the number of different block issuers between the `IssuersFram
 
 ##### Proof-of-Work
 
+> As of Version 5.
+
 To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros + a remaining mark character. Rules are the following, and **each relative to a particular member**:
 
 ```
-PERSONAL_EXCESS = MAX(0, (nbPersonalBlocksInFrame / 5) - 1)
+PERSONAL_EXCESS = MAX(0, ( (nbPersonalBlocksInFrame + 1) / medianOfBlocksInFrame) - 1)
 PERSONAL_HANDICAP = FLOOR(LN(1 + PERSONAL_EXCESS) / LN(1.189))
-PERSONAL_DIFF = MAX [ PoWMin ; PoWMin * FLOOR (percentRot * nbPreviousIssuers / (1 + nbBlocksSince)) ] + PERSONAL_HANDICAP
+PERSONAL_DIFF = PoWMin + PERSONAL_HANDICAP
 
 if (PERSONAL_DIFF + 1) % 16 == 0 then PERSONAL_DIFF = PERSONAL_DIFF + 1
 
@@ -1420,15 +1422,8 @@ NB_ZEROS = (PERSONAL_DIFFICULTY - REMAINDER) / 16
 Where:
 
 * `[nbPersonalBlocksInFrame]` is the number of blocks written by the member from block (current `number` - current `issuersFrame` + 1) to current block (included)
+* `[medianOfBlocksInFrame]` is the median quantity of blocks issued per member from block (current `number` - current `issuersFrame` + 1) to current block (included)
 * `[PoWMin]` is the `PoWMin` value of the incoming block
-* `[percentRot]` is the protocol parameter
-* `[nbPreviousIssuers] = DifferentIssuersCount(last block of issuer)`
-* `[nbBlocksSince]` is the number of blocks written **since** the last block of the member (so, incoming block excluded).
-
-
-* If no block has been written by the member:
-  * `[nbPreviousIssuers] = 0`
-  * `[nbBlocksSince] = 0`
 
 The proof is considered valid if:
 

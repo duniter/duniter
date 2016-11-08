@@ -951,7 +951,7 @@ function getTrialLevel (version, issuer, conf, dal) {
         personal_diff++;
       }
       return personal_diff;
-    } else {
+    } else if (version > 2 && version < 5) {
       // Compute exactly how much zeros are required for this block's issuer
       let percentRot = conf.percentRot;
       let current = yield dal.getCurrentBlockOrNull();
@@ -976,6 +976,49 @@ function getTrialLevel (version, issuer, conf, dal) {
         // Personal_handicap
         personal_diff += Math.floor(Math.log(1 + personal_excess) / Math.log(1.189));
       }
+      if (personal_diff + 1 % 16 == 0) {
+        personal_diff++;
+      }
+      return personal_diff;
+    } else {
+      // NB: no more use conf.percentRot
+      // Compute exactly how much zeros are required for this block's issuer
+      let current = yield dal.getCurrentBlockOrNull();
+      if (!current) {
+        return conf.powMin || 0;
+      }
+      let powMin = yield getPoWMinFor(version, current.number + 1, conf, dal);
+      let blocksBetween = [];
+      if (current) {
+        blocksBetween = yield dal.getBlocksBetween(current.number - current.issuersFrame + 1, current.number);
+      }
+      const blocksByIssuer = blocksBetween.reduce((oMap, block) => {
+        oMap[block.issuer] = oMap[block.issuer] || 0;
+        oMap[block.issuer]++;
+        return oMap;
+      }, {});
+      const counts = Object.values(blocksByIssuer);
+      let medianOfIssuedBlocks = null;
+      counts.sort((a, b) => a < b ? -1 : (a > b ? 1 : 0));
+      const nbIssuers = counts.length;
+      if (nbIssuers % 2 === 0) {
+        // Even number of nodes: the median is the average between the 2 central values
+        const firstValue = counts[nbIssuers / 2];
+        const secondValue = counts[nbIssuers / 2 - 1];
+        medianOfIssuedBlocks = (firstValue + secondValue) / 2;
+      } else {
+        medianOfIssuedBlocks = counts[(nbIssuers + 1) / 2 - 1];
+      }
+
+      const from = current.number - current.issuersFrame + 1;
+      const nbBlocksIssuedInFrame = yield dal.getNbIssuedInFrame(issuer, from);
+      console.log('nbBlocksIssuedInFrame for %s = %s, median = %s, counts = %s', issuer, nbBlocksIssuedInFrame, medianOfIssuedBlocks, JSON.stringify(counts));
+      const personal_excess = Math.max(0, ((nbBlocksIssuedInFrame + 1)/ medianOfIssuedBlocks) - 1);
+      // Personal_handicap
+      console.log('personal_excess = %s', personal_excess);
+      const handicap = Math.floor(Math.log(1 + personal_excess) / Math.log(1.189));
+      console.log('handicap = %s', handicap);
+      let personal_diff = powMin + handicap;
       if (personal_diff + 1 % 16 == 0) {
         personal_diff++;
       }

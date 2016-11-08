@@ -13,6 +13,10 @@ let rules = {};
 
 rules.FUNCTIONS = {
 
+  checkVersion: (block) => co(function*() {
+    return true;
+  }),
+
   checkParameters: (block) => co(function *() {
     if (block.number == 0 && !block.parameters) {
       throw Error('Parameters must be provided for root block');
@@ -575,7 +579,16 @@ rules.HELPERS = {
         deltas[i] = delta;
       }
     }
-  }
+  },
+
+  getMaxPossibleVersionNumber: (current, block) => co(function*() {
+    // Looking at current blockchain, find what is the next maximum version we can produce
+
+    // 1. We follow previous block's version
+    let version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
+
+    return version;
+  })
 };
 
 module.exports = rules;

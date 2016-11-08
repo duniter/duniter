@@ -425,10 +425,18 @@ function BlockGenerator(mainContext, prover) {
         delete joinData[leaver];
       });
       const block = new Block();
-      block.version = (manualValues && manualValues.version) || constants.BLOCK_GENERATED_VERSION;
+      block.number = current ? current.number + 1 : 0;
+      // Compute the new MedianTime
+      if (block.number == 0) {
+        block.medianTime = moment.utc().unix() - conf.rootoffset;
+      }
+      else {
+        block.medianTime = yield rules.HELPERS.getMedianTime(block.number, conf, dal);
+      }
+      // Choose the version
+      block.version = (manualValues && manualValues.version) || (yield rules.HELPERS.getMaxPossibleVersionNumber(current, block));
       block.currency = current ? current.currency : conf.currency;
       block.nonce = 0;
-      block.number = current ? current.number + 1 : 0;
       block.parameters = block.number > 0 ? '' : [
         conf.c, conf.dt, conf.ud0,
         conf.sigPeriod, conf.sigStock, conf.sigWindow, conf.sigValidity,
@@ -561,12 +569,6 @@ function BlockGenerator(mainContext, prover) {
        * Finally handle the Universal Dividend
        */
       block.powMin = block.number == 0 ? conf.powMin || 0 : yield rules.HELPERS.getPoWMin(block.version, block.number, conf, dal);
-      if (block.number == 0) {
-        block.medianTime = moment.utc().unix() - conf.rootoffset;
-      }
-      else {
-        block.medianTime = yield rules.HELPERS.getMedianTime(block.number, conf, dal);
-      }
       // Universal Dividend
       const nextUD = yield rules.HELPERS.getNextUD(dal, conf, block.version, block.medianTime, current, block.membersCount);
       if (nextUD) {

@@ -19,6 +19,7 @@ _.extend(rules.HELPERS, global_rules.HELPERS);
 rules.ALIAS = {
 
   ALL_LOCAL: (block, conf) => co(function *() {
+    yield rules.LOCAL.checkVersion(block);
     yield rules.LOCAL.checkParameters(block);
     yield rules.LOCAL.checkProofOfWork(block);
     yield rules.LOCAL.checkInnerHash(block);
@@ -48,6 +49,7 @@ rules.ALIAS = {
   }),
 
   ALL_LOCAL_BUT_POW_AND_SIGNATURE: (block, conf) => co(function *() {
+    yield rules.LOCAL.checkVersion(block);
     yield rules.LOCAL.checkParameters(block);
     yield rules.LOCAL.checkInnerHash(block);
     yield rules.LOCAL.checkPreviousHash(block);

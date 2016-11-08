@@ -13,6 +13,7 @@ const INTEGER      = "(0|[1-9]\\d{0,18})";
 const RELATIVE_INTEGER = "(0|-?[1-9]\\d{0,18})";
 const FLOAT        = "\\d+\.\\d+";
 const BOOLEAN      = "[01]";
+const BLOCK_VERSION = "(2|3|4|5)";
 const SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
 const FINGERPRINT  = "[A-F0-9]{64}";
 const COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}";
@@ -128,11 +129,13 @@ module.exports = {
   BLOCK_UID: exact(BLOCK_UID),
 
   DOCUMENTS_VERSION_REGEXP: /^2$/,
-  DOCUMENTS_BLOCK_VERSION_REGEXP: /^(2|3|4)$/,
+  DOCUMENTS_BLOCK_VERSION_REGEXP: new RegExp("^" + BLOCK_VERSION + "$"),
   DOCUMENTS_TRANSACTION_VERSION_REGEXP: /^(2|3)$/,
   DOCUMENTS_VERSION: 2,
   BLOCK_GENERATED_VERSION: 4,
   LAST_VERSION_FOR_TX: 3,
+
+  TIME_FOR_V5: 1478689200, // 2016-11-09 12:00:00 UTC+0
 
   REVOCATION_FACTOR: 2, // This is protocol fixed value
   NB_DIGITS_UD: 6,      // This is protocol fixed value
@@ -188,7 +191,7 @@ module.exports = {
   },
   BLOCK: {
     NONCE:       find("Nonce: (" + ZERO_OR_POSITIVE_INT + ")"),
-    VERSION:     find("Version: (2|3|4)"),
+    VERSION:     find("Version: " + BLOCK_VERSION),
     TYPE:        find("Type: (Block)"),
     CURRENCY:    find("Currency: (" + CURRENCY + ")"),
     BNUMBER:     find("Number: (" + ZERO_OR_POSITIVE_INT + ")"),

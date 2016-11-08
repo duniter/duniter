@@ -8,10 +8,12 @@ module.exports = function(server, interfaces, httpLogs) {
   if (!interfaces) {
     interfaces = [];
     if (server.conf) {
-      interfaces = [{
-        ip: server.conf.ipv4,
-        port: server.conf.port
-      }];
+      if (server.conf.ipv4) {
+        interfaces = [{
+          ip: server.conf.ipv4,
+          port: server.conf.port
+        }];
+      }
       if (server.conf.ipv6) {
         interfaces.push({
           ip: server.conf.ipv6,

@@ -368,7 +368,7 @@ describe("Identities collision", function() {
       res.should.have.property('block').equal(2);
       res.should.have.property('levels').length(1);
       res.levels[0].should.have.property('uid').equal('cat');
-      res.levels[0].should.have.property('level').equal(0);
+      res.levels[0].should.have.property('level').equal(4);
     });
   });
 });

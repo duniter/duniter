@@ -36,7 +36,7 @@ describe("Migration", function() {
     it('should be able to commit the transaction', () => co(function*() {
       yield node.commitP();
       // The recipients are wrongly valued in this version
-      node.server.dal.txsDAL.exec('UPDATE txs SET recipients = "[]";');
+      yield node.server.dal.txsDAL.exec('UPDATE txs SET recipients = "[]";');
     }));
 
     it('it should NOT exist anything for toc, again', node.expectHttp('/tx/history/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', (res) => {

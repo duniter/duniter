@@ -5,6 +5,7 @@ var rp     = require('request-promise');
 var _ = require('underscore');
 var async  = require('async');
 var request  = require('request');
+var rules = require('../../../app/lib/rules');
 var contacter = require('../../../app/lib/contacter');
 var ucoin  = require('../../../index');
 var multicaster = require('../../../app/lib/streams/multicaster');
@@ -29,7 +30,7 @@ module.exports.statics = {
 
   newBasicTxNodeWithOldDatabase: (testSuite) => () => {
     getTxNode(testSuite, (node) => co(function*() {
-      node.server.dal.txsDAL.exec('UPDATE txs SET recipients = "[]";');
+      yield node.server.dal.txsDAL.exec('UPDATE txs SET recipients = "[]";');
     }));
   }
 };
@@ -135,46 +136,28 @@ function Node (dbName, options) {
         function(next) {
           async.parallel({
             block: function(callback){
-              that.server.BlockchainService.generateNext()
-                  .then((block) => callback(null, block))
-                  .catch(callback);
-            },
-            sigFunc: function(callback){
-              callback(null, require('../../../app/lib/crypto/keyring')
-                  .Key(that.server.keyPair.pub, that.server.keyPair.sec)
-                  .sign)
+              co(function *() {
+                const block2 = yield that.server.BlockchainService.generateNext();
+                const trial2 = yield rules.HELPERS.getTrialLevel(block2.version, that.server.keyPair.publicKey, that.server.conf, that.server.dal);
+                return that.server.BlockchainService.makeNextBlock(block2, trial2);
+              })
+                .then((block) => callback(null, block))
+                .catch(callback);
             }
           }, next);
         },
         function(res, next) {
           var block = res.block;
-          var sigFunc = res.sigFunc;
-          var pub = that.server.PeeringService.pubkey;
-          proveAndSend(that.server, block, sigFunc, pub, block.powMin, next);
+          logger.debug(block.getRawSigned());
+          post('/blockchain/block', {
+            "block": block.getRawSigned()
+          }, next);
         }
       ], function(err, res) {
         done(err, res.body);
       });
     };
   };
-
-  function proveAndSend (server, block, sigFunc, issuer, difficulty, done) {
-    var BlockchainService = server.BlockchainService;
-    async.waterfall([
-      function (next){
-        block.issuer = issuer;
-        BlockchainService.prove(block, difficulty).then((proven) => next(null, proven)).catch(next);
-      },
-      function (provenBlock, next){
-        if (provenBlock) {
-          logger.debug(provenBlock.getRawSigned());
-          post('/blockchain/block', {
-            "block": provenBlock.getRawSigned()
-          }, next);
-        }
-      }
-    ], done);
-  }
 
   function post(uri, data, done) {
     var postReq = request.post({

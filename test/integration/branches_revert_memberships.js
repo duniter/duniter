@@ -43,7 +43,9 @@ describe("Revert memberships", function() {
     yield i2.join();
 
     yield s1.commit({ time: now });
-    yield s1.commit({ time: now });
+    yield s1.expect('/blockchain/current', (res) => { res.number.should.equal(0); (res.medianTime - now).should.equal(0); });
+    yield s1.commit({ time: now + 15 });
+    yield s1.expect('/blockchain/current', (res) => { res.number.should.equal(1); (res.medianTime - now).should.equal(0); });
 
     yield shouldHavePendingMS(0);
     yield i3.createIdentity();
@@ -52,7 +54,8 @@ describe("Revert memberships", function() {
     yield i3.join();
     yield shouldHavePendingMS(1);
     yield shouldBeJoining();
-    yield s1.commit({ time: now });
+    yield s1.commit({ time: now + 15 });
+    yield s1.expect('/blockchain/current', (res) => { res.number.should.equal(2); (res.medianTime - now).should.equal(7); });
     yield shouldHaveJoined();
     yield shouldHavePendingMS(0);
   }));
@@ -64,7 +67,8 @@ describe("Revert memberships", function() {
   it('should exist a renew', () => co(function*() {
     yield i3.join(); // Renew
     yield shouldHavePendingMS(1);
-    yield s1.commit({ time: now + 30 });
+    yield s1.commit({ time: now + 15 });
+    yield s1.expect('/blockchain/current', (res) => { res.number.should.equal(3); (res.medianTime - now).should.equal(10); });
     yield s1.expect('/blockchain/current', (res) => {
       res.should.have.property('membersCount').equal(3);
       res.should.have.property('actives').length(1);
@@ -74,11 +78,13 @@ describe("Revert memberships", function() {
   }));
 
   it('should exist 2 other renew', () => co(function*() {
-    yield s1.commit({ time: now + 30 });
+    yield s1.commit({ time: now + 15 });
+    // yield s1.expect('/blockchain/current', (res) => { res.number.should.equal(4); (res.medianTime - now).should.equal(11); });
     yield i1.join(); // Renew
     yield i2.join(); // Renew
     yield shouldHavePendingMS(2);
-    yield s1.commit({ time: now + 30 });
+    yield s1.commit({ time: now + 15 });
+    // yield s1.expect('/blockchain/current', (res) => { res.number.should.equal(5); (res.medianTime - now).should.equal(21); });
     yield s1.expect('/blockchain/current', (res) => {
       res.should.have.property('membersCount').equal(3);
       res.should.have.property('actives').length(2);
@@ -89,8 +95,9 @@ describe("Revert memberships", function() {
 
   it('should exist a leaver', () => co(function*() {
     yield i3.leave();
-    yield s1.commit({ time: now + 30 });
+    yield s1.commit({ time: now + 80 });
     yield s1.expect('/blockchain/current', (res) => {
+      // (res.medianTime - now).should.equal(27);
       res.should.have.property('membersCount').equal(3);
       res.should.have.property('leavers').length(1);
     });
@@ -99,7 +106,10 @@ describe("Revert memberships", function() {
   }));
 
   it('should exist a kicked member', () => co(function*() {
-    yield s1.commit({ time: now + 30 });
+    yield s1.commit({ time: now + 55 });
+    // yield s1.expect('/blockchain/current', (res) => { res.number.should.equal(7); (res.medianTime - now).should.equal(25); });
+    // yield s1.commit({ time: now + 30 });
+    // yield s1.expect('/blockchain/current', (res) => { res.number.should.equal(8); (res.medianTime - now).should.equal(18); });
     yield shouldBeBeingKicked();
     yield s1.commit({ time: now + 30 });
     yield s1.expect('/blockchain/current', (res) => {

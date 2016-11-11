@@ -263,7 +263,7 @@ function BlockGenerator(mainContext, prover) {
           }
           let age = current.medianTime - msBasedBlock.medianTime;
           if (age > conf.msWindow) {
-            throw 'Too old membership';
+            throw constants.ERRORS.TOO_OLD_MEMBERSHIP;
           }
         }
         const idtyHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
@@ -273,7 +273,9 @@ function BlockGenerator(mainContext, prover) {
           preJoinData[join.identity.pubkey] = join;
         }
       } catch (err) {
-        logger.warn(err);
+        if (err && !err.uerr) {
+          logger.warn(err);
+        }
       }
     }
     return preJoinData;

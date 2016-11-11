@@ -245,6 +245,17 @@ function FileDAL(params) {
 
   this.getValidLinksTo = (to) => that.linksDAL.getValidLinksTo(to);
 
+  this.getMembersWithoutEnoughValidLinks = (sigQty) => that.idtyDAL.query('' +
+    'SELECT * ' +
+    'FROM idty i ' +
+    'WHERE member ' +
+    'AND (' +
+    ' SELECT count(*) ' +
+    ' FROM link lnk ' +
+    ' WHERE NOT lnk.obsolete ' +
+    ' AND lnk.target = i.pubkey' +
+    ') < ?', [sigQty]);
+
   this.getPreviousLinks = (from, to) => co(function *() {
     let links = yield that.linksDAL.getLinksWithPath(from, to);
     links = _.sortBy(links, 'timestamp');

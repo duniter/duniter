@@ -394,14 +394,9 @@ function BlockchainContext() {
 
   this.computeObsoleteLinks = (block) => co(function*() {
     yield dal.obsoletesLinks(block.medianTime - conf.sigValidity);
-    const members = yield dal.getMembers();
+    const members = yield dal.getMembersWithoutEnoughValidLinks(conf.sigQty);
     for (const idty of members) {
-      try {
-        yield that.checkHaveEnoughLinks(idty.pubkey, {});
-      } catch (notEnoughLinks) {
-        yield dal.setKicked(idty.pubkey, new Identity(idty).getTargetHash(),
-            notEnoughLinks ? true : false);
-      }
+      yield dal.setKicked(idty.pubkey, new Identity(idty).getTargetHash(), true);
     }
   });
 

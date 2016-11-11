@@ -483,6 +483,8 @@ function FileDAL(params) {
     that.indicatorsDAL.writeCurrentExpiringForMembership.bind(that.indicatorsDAL)
   );
 
+  this.nextBlockWithDifferentMedianTime = (block) => that.blockDAL.nextBlockWithDifferentMedianTime(block);
+
   function getCurrentExcludingOrExpiring(current, delayMax, currentGetter, currentSetter) {
     return co(function *() {
       let currentExcluding;
@@ -497,12 +499,13 @@ function FileDAL(params) {
         const root = yield that.getRootBlock();
         const delaySinceStart = current.medianTime - root.medianTime;
         if (delaySinceStart > delayMax) {
-          return currentSetter(root).then(() => root);
+          currentExcluding = root;
         }
-      } else {
+      }
+      if (currentExcluding) {
         // Check current position
-        const currentNextBlock = yield that.getBlock(currentExcluding.number + 1);
-        if (isExcluding(current, currentExcluding, currentNextBlock, delayMax)) {
+        const nextBlock = yield that.nextBlockWithDifferentMedianTime(currentExcluding);
+        if (isExcluding(current, currentExcluding, nextBlock, delayMax)) {
           return currentExcluding;
         } else {
           // Have to look for new one
@@ -550,11 +553,19 @@ function FileDAL(params) {
     });
   }
 
-  const isExcluding = (current, excluding, nextBlock, certValidtyTime) => {
-    const delaySinceMiddle = current.medianTime - excluding.medianTime;
-    const delaySinceNextB = current.medianTime - nextBlock.medianTime;
-    const isValidPeriod = delaySinceMiddle <= certValidtyTime;
-    const isValidPeriodB = delaySinceNextB <= certValidtyTime;
+  /**
+   * Checks if `excluding` is still an excluding block, and its follower `nextBlock` is not, in reference to `current`.
+   * @param current HEAD of the blockchain.
+   * @param excluding The block we test if it is still excluding.
+   * @param nextBlock The block that might be the new excluding block.
+   * @param maxWindow The time window for exclusion.
+   * @returns {boolean}
+   */
+  const isExcluding = (current, excluding, nextBlock, maxWindow) => {
+    const delayFromExcludingToHead = current.medianTime - excluding.medianTime;
+    const delayFromNextToHead = current.medianTime - nextBlock.medianTime;
+    const isValidPeriod = delayFromExcludingToHead <= maxWindow;
+    const isValidPeriodB = delayFromNextToHead <= maxWindow;
     return !isValidPeriod && isValidPeriodB;
   };
 

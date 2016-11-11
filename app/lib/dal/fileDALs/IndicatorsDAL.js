@@ -23,27 +23,38 @@ function IndicatorsDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
     });
   };
 
-  this.writeCurrentExcluding = (excluding) => that.coreFS.writeJSON('indicators/excludingMS.json', excluding);
+  const cache = {};
 
-  this.writeCurrentRevocating = (revocating) => that.coreFS.writeJSON('indicators/revocatingMS.json', revocating);
+  function setBlock(key, block) {
+    cache[key] = block;
+    return Promise.resolve(block);
+  }
 
-  this.writeCurrentExcludingForCert = (excluding) => that.coreFS.writeJSON('indicators/excludingCRT.json', excluding);
+  function getBlock(key) {
+    return Promise.resolve(cache[key] || null);
+  }
 
-  this.writeCurrentExpiringForCert = (excluding) => that.coreFS.writeJSON('indicators/expiringCRT.json', excluding);
+  this.writeCurrentExcluding = (excluding) => setBlock('excludingMS', excluding);
 
-  this.writeCurrentExpiringForIdty = (excluding) => that.coreFS.writeJSON('indicators/expiringIDTY.json', excluding);
+  this.writeCurrentRevocating = (revocating) => setBlock('revocatingMS', revocating);
 
-  this.writeCurrentExpiringForMembership = (excluding) => that.coreFS.writeJSON('indicators/expiringMS.json', excluding);
+  this.writeCurrentExcludingForCert = (excluding) => setBlock('excludingCRT', excluding);
 
-  this.getCurrentMembershipExcludingBlock = () => that.coreFS.readJSON('indicators/excludingMS.json');
+  this.writeCurrentExpiringForCert = (excluding) => setBlock('expiringCRT', excluding);
 
-  this.getCurrentMembershipRevocatingBlock = () => that.coreFS.readJSON('indicators/revocatingMS.json');
+  this.writeCurrentExpiringForIdty = (excluding) => setBlock('expiringIDTY', excluding);
 
-  this.getCurrentCertificationExpiringBlock = () => that.coreFS.readJSON('indicators/expiringCRT.json');
+  this.writeCurrentExpiringForMembership = (excluding) => setBlock('expiringMS', excluding);
 
-  this.getCurrentCertificationExcludingBlock = () => that.coreFS.readJSON('indicators/excludingCRT.json');
+  this.getCurrentMembershipExcludingBlock = () => getBlock('excludingMS');
 
-  this.getCurrentIdentityExpiringBlock = () => that.coreFS.readJSON('indicators/expiringIDTY.json');
+  this.getCurrentMembershipRevocatingBlock = () => getBlock('revocatingMS');
 
-  this.getCurrentMembershipExpiringBlock = () => that.coreFS.readJSON('indicators/expiringMS.json');
+  this.getCurrentCertificationExpiringBlock = () => getBlock('expiringCRT');
+
+  this.getCurrentCertificationExcludingBlock = () => getBlock('excludingCRT');
+
+  this.getCurrentIdentityExpiringBlock = () => getBlock('expiringIDTY');
+
+  this.getCurrentMembershipExpiringBlock = () => getBlock('expiringMS');
 }

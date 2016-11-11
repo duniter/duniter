@@ -403,6 +403,17 @@ function Server (dbConf, overrideConf) {
     }
   });
 
+  this.reapplyTo = (number) => co(function *() {
+    const current = yield that.BlockchainService.current();
+    if (current.number == number) {
+      logger.warn('Already reached');
+    } else {
+      for (let i = 0, count = number - current.number; i < count; i++) {
+        yield that.BlockchainService.applyNextAvailableFork();
+      }
+    }
+  });
+
   this.singleWritePromise = (obj) => that.submit(obj);
 
   let theRouter;

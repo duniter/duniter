@@ -227,6 +227,8 @@ function FileDAL(params) {
 
   this.getBlocksBetween = (start, end) => Q(this.blockDAL.getBlocks(Math.max(0, start), end));
 
+  this.getForkBlocksFollowing = (current) => this.blockDAL.getNextForkBlocks(current.number, current.hash);
+
   this.getBlockCurrent = () => co(function*() {
     const current = yield that.blockDAL.getCurrent();
     if (!current)

@@ -251,6 +251,8 @@ function BlockchainService (server) {
 
   this.revertCurrentBlock = () => this.pushFIFO(() => mainContext.revertCurrentBlock());
 
+  this.applyNextAvailableFork = () => this.pushFIFO(() => mainContext.applyNextAvailableFork());
+
   /**
    * Generates root block with manual selection of root members.
    */

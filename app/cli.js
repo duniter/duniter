@@ -309,6 +309,25 @@ program
   })));
 
 program
+  .command('reapply-to [number]')
+  .description('Reapply reverted blocks until block #[number] is reached. EXPERIMENTAL')
+  .action(subCommand(service(function (number, server) {
+    return co(function *() {
+      try {
+        yield server.reapplyTo(number);
+      } catch (err) {
+        logger.error('Error during reapply:', err);
+      }
+      // Save DB
+      ((server && server.disconnect()) || Q())
+        .catch(() => null)
+        .then(function () {
+          throw Error("Exiting");
+        });
+    });
+  })));
+
+program
   .command('gen-next [host] [port] [difficulty]')
   .description('Tries to generate the next block of the blockchain')
   .action(subCommand(service(generateAndSend("generateNext"))));

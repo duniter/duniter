@@ -161,4 +161,8 @@ function BlockDAL(driver) {
   });
 
   this.migrateOldBlocks = () => Q();
+
+  this.getNextForkBlocks = (number, hash) => {
+    return that.query('SELECT * FROM block WHERE fork AND number = ? AND previousHash like ? ORDER BY number', [number + 1, hash]);
+  };
 }

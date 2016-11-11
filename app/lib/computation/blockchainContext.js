@@ -78,6 +78,20 @@ function BlockchainContext() {
     return res;
   });
 
+  this.applyNextAvailableFork = () => co(function *() {
+    const current = yield that.current();
+    logger.debug('Find next potential block #%s...', current.number + 1);
+    const forks = yield dal.getForkBlocksFollowing(current);
+    if (!forks.length) {
+      throw constants.ERRORS.NO_POTENTIAL_FORK_AS_NEXT;
+    }
+    const block = forks[0];
+    yield that.checkBlock(block, constants.WITH_SIGNATURES_AND_POW);
+    const res = yield that.addBlock(block);
+    logger.debug('Applied block #%s', block.number);
+    // return res;
+  });
+
   this.revertBlock = (block) => co(function *() {
     const previousBlock = yield dal.getBlockByNumberAndHashOrNull(block.number - 1, block.previousHash || '');
     // Set the block as SIDE block (equivalent to removal from main branch)

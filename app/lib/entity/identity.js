@@ -35,7 +35,8 @@ const Identity = function(json) {
       others.push({
         "pubkey": cert.from,
         "meta": {
-          "block_number": cert.block_number
+          "block_number": cert.block_number,
+          "block_hash": cert.block_hash
         },
         "uids": cert.uids,
         "isMember": cert.isMember,
@@ -63,7 +64,8 @@ const Identity = function(json) {
           "timestamp": cert.idty.buid
         },
         "cert_time": {
-          "block": cert.block_number
+          "block": cert.block_number,
+          "block_hash": cert.block_hash
         },
         "isMember": cert.idty.member,
         "wasMember": cert.idty.wasMember,

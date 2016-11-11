@@ -197,7 +197,8 @@ dtos.MerkleOfPeers = {
 dtos.Other = {
   "pubkey": String,
   "meta": {
-    "block_number": Number
+    "block_number": Number,
+    "block_hash": String
   },
   "uids": [String],
   "isMember": Boolean,
@@ -224,7 +225,8 @@ dtos.Signed = {
     "timestamp": String
   },
   "cert_time": {
-    "block": Number
+    "block": Number,
+    "block_hash": String
   },
   "isMember": Boolean,
   "wasMember": Boolean,

@@ -6,7 +6,7 @@ const async = require('async');
 const Q = require('q');
 const _ = require('underscore');
 const program = require('commander');
-const vucoin = require('vucoin');
+const contacter = require('../app/lib/contacter');
 const directory = require('../app/lib/system/directory');
 const wizard = require('../app/lib/wizard');
 const multicaster = require('../app/lib/streams/multicaster');
@@ -95,6 +95,8 @@ program
   .option('--remotep <port>', 'Remote port others may use to contact this node')
   .option('--upnp', 'Use UPnP to open remote port')
   .option('--noupnp', 'Do not use UPnP to open remote port')
+  .option('--addep <endpoint>', 'With `config` command, add given endpoint to the list of endpoints of this node')
+  .option('--remep <endpoint>', 'With `config` command, remove given endpoint to the list of endpoints of this node')
 
   // Webmin options
   .option('--webmhost <host>', 'Local network interface to connect to (IP)')
@@ -142,7 +144,7 @@ program
 
 program
   .command('start')
-  .description('Start Duniter server.')
+  .description('Start Duniter node daemon.')
   .action(subCommand(service((server, conf) => new Promise((resolve, reject) => {
     co(function*() {
         try {
@@ -154,18 +156,38 @@ program
   }))));
 
 program
+  .command('stop')
+  .description('Stop Duniter node daemon.')
+  .action(subCommand(needsToBeLaunchedByScript));
+
+program
+  .command('restart')
+  .description('Restart Duniter node daemon.')
+  .action(subCommand(needsToBeLaunchedByScript));
+
+program
   .command('webwait')
   .description('Start Duniter web admin.')
   .action(subCommand(webWait));
 
 program
   .command('webstart')
-  .description('Start Duniter web admin + immediately start the server.')
+  .description('Start Duniter node daemon and web admin.')
   .action(subCommand(webStart));
 
 program
+  .command('webstop')
+  .description('Stop Duniter node daemon and web admin.')
+  .action(subCommand(needsToBeLaunchedByScript));
+
+program
+  .command('webrestart')
+  .description('Restart Duniter node daemon and web admin.')
+  .action(subCommand(needsToBeLaunchedByScript));
+
+program
   .command('wizard [step]')
-  .description('Launch the configuration Wizard')
+  .description('Launch the configuration wizard.')
   .action(subCommand(function (step) {
     // Only show message "Saved"
     return connect(function (step, server, conf) {
@@ -214,9 +236,8 @@ program
   .description('Exchange peerings with another node')
   .action(subCommand(service(function (host, port, server) {
     return co(function *() {
-      let node = yield Q.nfcall(vucoin, host, port);
       logger.info('Fetching peering record at %s:%s...', host, port);
-      let peering = yield Q.nfcall(node.network.peering.get);
+      let peering = yield contacter.statics.fetchPeer(host, port);
       logger.info('Apply peering ...');
       yield server.PeeringService.submitP(peering, ERASE_IF_ALREADY_RECORDED, !program.nocautious);
       logger.info('Applied');
@@ -246,47 +267,6 @@ program
   .command('dump [what]')
   .description('Diverse dumps of the inner data')
   .action(subCommand(connect(makeDump, true)));
-
-program
-  .command('forward [host] [port] [to]')
-  .description('Forward local blockchain to a remote Duniter node')
-  .action(subCommand(service(function (host, port, to, server) {
-
-    var remoteCurrent;
-    async.waterfall([
-      function (next) {
-        vucoin(host, port, next, {timeout: server.conf.timeout});
-      },
-      function (node, next) {
-        node.blockchain.current().then(_.partial(next, null)).catch(next);
-      },
-      function (current, next) {
-        remoteCurrent = current;
-        logger.info(remoteCurrent.number);
-        server.dal.getBlockFrom(remoteCurrent.number - 10).then(_.partial(next, null)).catch(next);
-      },
-      function (blocks, next) {
-        blocks = _.sortBy(blocks, 'number');
-        // Forward
-        var peer = new Peer({
-          endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
-        });
-        async.forEachSeries(blocks, function (block, callback) {
-          logger.info("Forwarding block#" + block.number);
-          server.dal.getBlock(block.number)
-            .then(function (fullBlock) {
-              multicaster(server.conf).sendBlock(peer, new Block(fullBlock)).then(() => callback()).catch(callback);
-            });
-        }, next);
-      }
-    ], function (err) {
-      if (err) {
-        logger.error('Error during forwarding:', err);
-      }
-      server.disconnect();
-      throw Error("Exiting");
-    });
-  })));
 
 program
   .command('revert [count]')
@@ -463,17 +443,10 @@ program
   .command('check-config')
   .description('Checks the node\'s configuration')
   .action(subCommand(service(function (server) {
-    server.checkConfig()
+    return server.checkConfig()
       .then(function () {
         logger.warn('Configuration seems correct.');
-        server.disconnect();
-        throw Error("Exiting");
       })
-      .catch(function (err) {
-        logger.warn(err.message || err);
-        server.disconnect();
-        throw Error("Exiting");
-      });
   })));
 
 program
@@ -486,6 +459,28 @@ program
         conf.upnp = !program.noupnp;
         yield Q.nbind(wiz.networkReconfiguration, wiz)(conf, program.autoconf, program.noupnp);
         yield Q.nbind(wiz.keyReconfigure, wiz)(conf, program.autoconf);
+      }
+      // Try to add an endpoint if provided
+      if (program.addep) {
+        if (conf.endpoints.indexOf(program.addep) === -1) {
+          conf.endpoints.push(program.addep);
+        }
+        // Remove it from "to be removed" list
+        const indexInRemove = conf.rmEndpoints.indexOf(program.addep);
+        if (indexInRemove !== -1) {
+          conf.rmEndpoints.splice(indexInRemove, 1);
+        }
+      }
+      // Try to remove an endpoint if provided
+      if (program.remep) {
+        if (conf.rmEndpoints.indexOf(program.remep) === -1) {
+          conf.rmEndpoints.push(program.remep);
+        }
+        // Remove it from "to be added" list
+        const indexInToAdd = conf.endpoints.indexOf(program.remep);
+        if (indexInToAdd !== -1) {
+          conf.endpoints.splice(indexInToAdd, 1);
+        }
       }
       return server.dal.saveConf(conf)
         .then(function () {
@@ -533,7 +528,6 @@ program
         } catch (e) {
           logger.error(e);
         }
-        return server.disconnect();
       });
     }, type != 'peers')(type);
   }));
@@ -665,6 +659,8 @@ function commandLineConf(conf) {
       http: program.httplogs,
       nohttp: program.nohttplogs
     },
+    endpoints: [],
+    rmEndpoints: [],
     ucp: {
       rootoffset: program.rootoffset,
       sigPeriod: program.sigPeriod,
@@ -841,17 +837,6 @@ function service(callback, nologs) {
   };
 }
 
-function logIfErrorAndExit(server, prefix) {
-  return function (err) {
-    if (err && err.uerr) {
-      err = err.uerr.message;
-    }
-    err && logger.error((prefix ? prefix : "") + (err.message || err));
-    server.disconnect();
-    onResolve && onResolve();
-  };
-}
-
 function parsePercent(s) {
   var f = parseFloat(s);
   return isNaN(f) ? 0 : f;
@@ -911,4 +896,9 @@ function mainError(err) {
   }
   logger.error(err.code || err.message || err);
   throw Error("Exiting");
+}
+
+function needsToBeLaunchedByScript() {
+    logger.error('This command must not be launched directly, using duniter.sh script');
+    return Promise.resolve();
 }

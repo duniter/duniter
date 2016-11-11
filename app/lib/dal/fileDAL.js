@@ -165,6 +165,14 @@ function FileDAL(params) {
     return that.getBlockByNumberAndHashOrNull(number, hash);
   };
 
+  this.getBlockByBlockstamp = (blockstamp) => {
+    if (!blockstamp) throw "Blockstamp is required to find the block";
+    const sp = blockstamp.split('-');
+    const number = parseInt(sp[0]);
+    const hash = sp[1];
+    return that.getBlockByNumberAndHash(number, hash);
+  };
+
   this.getBlockByNumberAndHash = (number, hash) => co(function*() {
     try {
       const block = yield that.getBlock(number);
@@ -214,6 +222,8 @@ function FileDAL(params) {
   };
   
   this.getCountOfPoW = (issuer) => that.blockDAL.getCountOfBlocksIssuedBy(issuer);
+
+  this.getNbIssuedInFrame = (issuer, from) => that.blockDAL.getNbIssuedFrom(issuer, from);
 
   this.getBlocksBetween = (start, end) => Q(this.blockDAL.getBlocks(Math.max(0, start), end));
 
@@ -589,14 +599,19 @@ function FileDAL(params) {
 
   this.setPeerDown = (pubkey) => co(function *() {
     try {
-      const p = yield that.getPeer(pubkey);
-      const now = (new Date()).getTime();
-      p.status = 'DOWN';
-      if (!p.first_down) {
-        p.first_down = now;
+      // We do not set mirror peers as down (ex. of mirror: 'M1_HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk')
+      if (!pubkey.match(/_/)) {
+        const p = yield that.getPeer(pubkey);
+        if (p) {
+          const now = (new Date()).getTime();
+          p.status = 'DOWN';
+          if (!p.first_down) {
+            p.first_down = now;
+          }
+          p.last_try = now;
+          yield that.peerDAL.savePeer(p);
+        }
       }
-      p.last_try = now;
-      return that.peerDAL.savePeer(p);
     } catch (err) {
       throw err;
     }
@@ -606,7 +621,7 @@ function FileDAL(params) {
     block.wrong = false;
     yield [
       that.saveBlockInFile(block, true),
-      that.saveTxsInFiles(block.transactions, {block_number: block.number, time: block.medianTime, version: block.version }),
+      that.saveTxsInFiles(block.transactions, {block_number: block.number, time: block.medianTime }),
       that.saveMemberships('join', block.joiners, block.number),
       that.saveMemberships('active', block.actives, block.number),
       that.saveMemberships('leave', block.leavers, block.number)
@@ -636,11 +651,11 @@ function FileDAL(params) {
     return Q.all(txs.map((tx) => co(function*() {
       _.extend(tx, extraProps);
       _.extend(tx, {currency: that.getCurrency()});
-      if (tx.version == 3) {
+      if (tx.version >= 3) {
         const sp = tx.blockstamp.split('-');
         tx.blockstampTime = (yield that.getBlockByNumberAndHash(sp[0], sp[1])).medianTime;
-        return that.txsDAL.addLinked(new Transaction(tx));
       }
+      return that.txsDAL.addLinked(new Transaction(tx));
     })));
   };
 
@@ -687,7 +702,7 @@ function FileDAL(params) {
       // TODO: create a specific method with a different name and hide saveIdentity()
       that.idtyDAL.saveIdentity(idty);
 
-  this.revokeIdentity = (pubkey) => that.idtyDAL.revokeIdentity(pubkey);
+  this.revokeIdentity = (pubkey, number) => that.idtyDAL.revokeIdentity(pubkey, number);
 
   this.unrevokeIdentity = (pubkey) => that.idtyDAL.unrevokeIdentity(pubkey);
 

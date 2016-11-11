@@ -2,7 +2,6 @@
 
 const co = require('co');
 const _ = require('underscore');
-const async    = require('async');
 const util     = require('util');
 const stream   = require('stream');
 const Peer     = require('../entity/peer');

@@ -148,12 +148,6 @@ function BlockchainContext() {
   });
 
   const updateBlocksComputedVars = (current, block) => co(function*() {
-    if (current) {
-      logger.trace('Block median time +%s', block.medianTime - current.medianTime);
-      logger.trace('Block time '
-          + ((block.time - current.time) >= 0 ? '+' : '')
-          + '%d', block.time - current.time);
-    }
     // Unit Base
     block.unitbase = (block.dividend && block.unitbase) || (current && current.unitbase) || 0;
     // Monetary Mass update
@@ -213,7 +207,7 @@ function BlockchainContext() {
       // Revoked
       for (const inlineRevocation of block.revoked) {
         let revocation = Identity.statics.revocationFromInline(inlineRevocation);
-        yield dal.revokeIdentity(revocation.pubkey);
+        yield dal.revokeIdentity(revocation.pubkey, block.number);
       }
       // Excluded
       for (const excluded of block.excluded) {
@@ -570,7 +564,7 @@ function BlockchainContext() {
           written: true,
           removed: false
         });
-        if (tx.version == 3) {
+        if (tx.version >= 3) {
           const sp = tx.blockstamp.split('-');
           tx.blockstampTime = (yield getBlockByNumberAndHash(sp[0], sp[1])).medianTime;
         }

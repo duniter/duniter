@@ -1,5 +1,4 @@
 "use strict";
-var async   = require('async');
 var should  = require('should');
 var parsers = require('../../../app/lib/streams/parsers');
 

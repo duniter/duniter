@@ -27,6 +27,7 @@ describe("Block local coherence", function(){
   describe("should be rejected", function(){
 
     it('if wrong signature block',                                                                    test(rules.LOCAL.checkBlockSignature, blocks.WRONG_SIGNATURE, 'Block\'s signature must match'));
+    it('if block is V5 before it is time for V5',                                                     test(rules.LOCAL.checkVersion, blocks.V5_BLOCK_TOO_EARLY, 'V5 block cannot have medianTime < 1478696400'));
     it('if root block does not have Parameters',                                                      test(rules.LOCAL.checkParameters, blocks.ROOT_WITHOUT_PARAMETERS, 'Parameters must be provided for root block'));
     it('if proof-of-work does not match PoWMin field',                                                test(rules.LOCAL.checkProofOfWork, blocks.WRONG_PROOF_OF_WORK, 'Not a proof-of-work'));
     it('if non-root has Parameters',                                                                  test(rules.LOCAL.checkParameters, blocks.NON_ROOT_WITH_PARAMETERS, 'Parameters must not be provided for non-root block'));
@@ -37,8 +38,8 @@ describe("Block local coherence", function(){
     it('a V2 block with Dividend must have UnitBase field',                                           test(rules.LOCAL.checkUnitBase, blocks.UD_BLOCK_WIHTOUT_BASE, 'Document has unkown fields or wrong line ending format'));
     it('a V3 root block must have UnitBase field',                                                    test(rules.LOCAL.checkUnitBase, blocks.V3_ROOT_BLOCK_NOBASE, 'Document has unkown fields or wrong line ending format'));
     it('a V3 root block must have UnitBase field equal 0',                                            test(rules.LOCAL.checkUnitBase, blocks.V3_ROOT_BLOCK_POSITIVE_BASE, 'UnitBase must equal 0 for root block'));
-    it('a block with wrong date (in past)',                                                           test(rules.LOCAL.checkBlockTimes, blocks.WRONG_DATE_LOWER, 'A block must have its Time between MedianTime and MedianTime + 1240'));
-    it('a block with wrong date (in future, but too far)',                                            test(rules.LOCAL.checkBlockTimes, blocks.WRONG_DATE_HIGHER_BUT_TOO_HIGH, 'A block must have its Time between MedianTime and MedianTime + 1240'));
+    it('a block with wrong date (in past)',                                                           test(rules.LOCAL.checkBlockTimes, blocks.WRONG_DATE_LOWER, 'A block must have its Time between MedianTime and MedianTime + 1440'));
+    it('a block with wrong date (in future, but too far)',                                            test(rules.LOCAL.checkBlockTimes, blocks.WRONG_DATE_HIGHER_BUT_TOO_HIGH, 'A block must have its Time between MedianTime and MedianTime + 1440'));
     it('a root block with different time & medianTime should fail',                                   test(rules.LOCAL.checkBlockTimes, blocks.WRONG_ROOT_TIMES, 'Root block must have Time equal MedianTime'));
     it('a block with good date',                                                                      test(rules.LOCAL.checkBlockTimes, blocks.GOOD_DATE_HIGHER));
     it('Block cannot contain wrongly signed identities',                                              test(rules.LOCAL.checkIdentitiesSignature, blocks.WRONGLY_SIGNED_IDENTITIES, 'Identity\'s signature must match'));
@@ -60,7 +61,7 @@ describe("Block local coherence", function(){
     it('Block cannot contain identical certifications',                                               test(rules.LOCAL.checkCertificationUnicity, blocks.IDENTICAL_CERTIFICATIONS, 'Block cannot contain identical certifications (A -> B)'));
     it('Block cannot contain certifications concerning a leaver',                                     test(rules.LOCAL.checkCertificationIsntForLeaverOrExcluded, blocks.LEAVER_WITH_CERTIFICATIONS, 'Block cannot contain certifications concerning leavers or excluded members'));
     it('Block cannot contain certifications concerning an excluded member',                           test(rules.LOCAL.checkCertificationIsntForLeaverOrExcluded, blocks.EXCLUDED_WITH_CERTIFICATIONS, 'Block cannot contain certifications concerning leavers or excluded members'));
-    it('Block cannot contain transactions with version different of its block',                       test(rules.LOCAL.checkTxVersion, blocks.TRANSACTION_WITH_WRONG_VERSION, 'A transaction must have the same version as its block'));
+    it('Block cannot contain transactions with version different of its block',                       test(rules.LOCAL.checkTxVersion, blocks.TRANSACTION_WITH_WRONG_VERSION, 'A transaction must have the same version as its block prior to protocol 0.4'));
     it('Block cannot contain transactions without issuers (1)',                                       test(rules.LOCAL.checkTxIssuers, blocks.TRANSACTION_WITHOUT_ISSUERS, 'A transaction must have at least 1 issuer'));
     it('Block cannot contain transactions without issuers (2)',                                       test(rules.LOCAL.checkTxSources, blocks.TRANSACTION_WITHOUT_SOURCES, 'A transaction must have at least 1 source'));
     it('Block cannot contain transactions without issuers (3)',                                       test(rules.LOCAL.checkTxRecipients, blocks.TRANSACTION_WITHOUT_RECIPIENT, 'A transaction must have at least 1 recipient'));

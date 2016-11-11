@@ -19,6 +19,7 @@ const bma = require('../lib/streams/bma');
 const Identity = require('../lib/entity/identity');
 const network = require('../lib/system/network');
 const AbstractController = require('../controllers/abstract');
+const contacter = require('../lib/contacter');
 const logger = require('../lib/logger')('webmin');
 
 module.exports = (dbConf, overConf) => {
@@ -67,17 +68,21 @@ function WebAdmin (dbConf, overConf) {
     yield pluggedDALP;
     const host = server.conf ? [server.conf.ipv4, server.conf.port].join(':') : '';
     const current = yield server.dal.getCurrentBlockOrNull();
+    const rootBlock = yield server.dal.getBlock(0);
+    const lastUDBlock = yield server.dal.blockDAL.lastBlockWithDividend();
     const parameters = yield server.dal.getParameters();
     return {
       "version": server.version,
       "host": host,
       "current": current,
+      "rootBlock": rootBlock,
       "pubkey": server.keyPair.publicKey,
       "seckey": server.keyPair.secretKey,
       "conf": {
         "cpu": server.conf.cpu
       },
-      "parameters": parameters
+      "parameters": parameters,
+      "lastUDBlock": lastUDBlock
     };
   });
 
@@ -86,7 +91,7 @@ function WebAdmin (dbConf, overConf) {
     return {
       "total": yield server.getCountOfSelfMadePoW(),
       "mirror": !(yield server.isServerMember()),
-      "waiting": server.isPoWPaused
+      "waiting": server.isPoWWaiting()
     };
   });
 
@@ -119,11 +124,13 @@ function WebAdmin (dbConf, overConf) {
     if (server.upnpAPI) {
       server.upnpAPI.stopRegular();
     }
-    try {
-      yield server.upnp();
-      server.upnpAPI.startRegular();
-    } catch (e) {
-      logger.error(e);
+    if (server.conf.upnp) {
+      try {
+        yield server.upnp();
+        server.upnpAPI.startRegular();
+      } catch (e) {
+        logger.error(e);
+      }
     }
     return {};
   });
@@ -272,6 +279,7 @@ function WebAdmin (dbConf, overConf) {
     yield pluggedConfP;
     server.conf.cpu = http2raw.cpu(req);
     yield server.dal.saveConf(server.conf);
+    yield server.applyCPU(server.conf.cpu);
     pluggedConfP = yield server.loadConf();
     yield pluggedConfP;
     return {};
@@ -472,6 +480,12 @@ function WebAdmin (dbConf, overConf) {
     pluggedConfP = plugForConf();
     pluggedDALP = replugDAL();
     return {};
+  });
+
+  this.isNodePubliclyReachable = (req) => co(function *() {
+    const peer = yield server.PeeringService.peer();
+    const reachable = yield contacter.statics.isReachableFromTheInternet(peer, { timeout: 5000 });
+    return { success: reachable };
   });
 
   this.testPeer = (req) => co(function *() {

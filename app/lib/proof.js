@@ -1,6 +1,5 @@
 "use strict";
 const co = require('co');
-const async = require('async');
 const moment = require('moment');
 const hashf = require('./ucp/hashf');
 const dos2unix = require('./system/dos2unix');
@@ -10,14 +9,17 @@ const keyring = require('./crypto/keyring');
 const rawer = require('./ucp/rawer');
 
 const AUTOKILL_TIMEOUT_DELAY = 10 * 1000;
-const TURN_DURATION = 100;
+const TURN_DURATION_IN_MILLISEC = 1000;
 const PAUSES_PER_TURN = 5;
 
 let timeoutAutoKill = null;
 let computing = false;
 let askedStop = false;
 
-let signatureFunc, id, lastPub, lastSecret;
+// By default, we do not prefix the PoW by any number
+let prefix = 0;
+
+let signatureFunc, id, lastPub, lastSecret, currentCPU = 1;
 
 process.on('uncaughtException', (err) => {
   console.error(err.stack || Error(err));
@@ -38,6 +40,16 @@ process.on('message', (message) => co(function*() {
   else if (message.command == 'ready') {
     pSend({ powStatus: computing ? 'computing' : 'ready' });
   }
+  else if (message.command == 'conf') {
+    if (message.conf) {
+      if (message.conf.cpu !== undefined) {
+        currentCPU = message.conf.cpu;
+      }
+      if (message.conf.prefix !== undefined) {
+        prefix = parseInt(message.conf.prefix) * 10 * constants.NONCE_RANGE;
+      }
+    }
+  }
   else if (message.command == 'stop') {
     if (!computing) {
       pSend({ powStatus: 'ready' });
@@ -54,12 +66,14 @@ function beginNewProofOfWork(stuff) {
   askedStop = false;
   computing = co(function*() {
     pSend({ powStatus: 'started block#' + stuff.block.number });
+    let nonce = 0;
     const conf = stuff.conf;
     const block = stuff.block;
+    const nonceBeginning = stuff.nonceBeginning;
     const nbZeros = stuff.zeros;
     const pair = stuff.pair;
     const forcedTime = stuff.forcedTime;
-    const cpu = conf.cpu || constants.DEFAULT_CPU;
+    currentCPU = conf.cpu || constants.DEFAULT_CPU;
     const highMark = stuff.highMark;
     let sigFunc = null;
     if (signatureFunc && lastSecret == pair.sec) {
@@ -78,7 +92,6 @@ function beginNewProofOfWork(stuff) {
     // Really start now
     let testsCount = 0;
     if (nbZeros == 0) {
-      block.nonce = 0;
       block.time = block.medianTime;
     }
     // Compute block's hash
@@ -90,7 +103,7 @@ function beginNewProofOfWork(stuff) {
 
       // We make a bunch of tests every second
       yield Promise.race([
-        countDown(TURN_DURATION),
+        countDown(TURN_DURATION_IN_MILLISEC),
         co(function*() {
           try {
 
@@ -102,7 +115,7 @@ function beginNewProofOfWork(stuff) {
             const thisTurn = turn;
             const pausePeriod = score ? score / PAUSES_PER_TURN : 10; // number of pauses per turn
             // We limit the number of t
-            const testsPerRound = score ? Math.floor(score * cpu) : 1000 * 1000 * 1000;
+            const testsPerRound = score ? Math.floor(score * currentCPU) : 1000 * 1000 * 1000;
             // Time is updated regularly during the proof
             block.time = getBlockTime(block, conf, forcedTime);
             if (block.number == 0) {
@@ -110,7 +123,9 @@ function beginNewProofOfWork(stuff) {
             }
             block.inner_hash = getBlockInnerHash(block);
             while(!found && i < testsPerRound && thisTurn == turn && !askedStop) {
-              block.nonce++;
+              nonce++;
+              // The final nonce is composed of 3 parts
+              block.nonce = prefix + nonceBeginning + nonce;
               raw = dos2unix("InnerHash: " + block.inner_hash + "\nNonce: " + block.nonce + "\n");
               sig = dos2unix(sigFunc(raw));
               pow = hashf("InnerHash: " + block.inner_hash + "\nNonce: " + block.nonce + "\n" + sig + "\n").toUpperCase();
@@ -139,7 +154,7 @@ function beginNewProofOfWork(stuff) {
               }
               // We wait for main "while" countdown to end the turn. This gives of a bit of breath to the CPU (the amount
               // of "breath" depends on the "cpu" parameter.
-              yield countDown(TURN_DURATION);
+              yield countDown(TURN_DURATION_IN_MILLISEC);
             }
           } catch (e) {
             console.error(e);
@@ -187,7 +202,7 @@ function getBlockTime (block, conf, forcedTime) {
     return forcedTime;
   }
   const now = moment.utc().unix();
-  const maxAcceleration = rules.HELPERS.maxAcceleration(conf);
+  const maxAcceleration = rules.HELPERS.maxAcceleration(block, conf);
   const timeoffset = block.number >= conf.medianTimeBlocks ? 0 : conf.rootoffset || 0;
   const medianTime = block.medianTime;
   const upperBound = block.number == 0 ? medianTime : Math.min(medianTime + maxAcceleration, now - timeoffset);
@@ -210,7 +225,7 @@ function autoKillIfNoContact() {
   }
   // If the timeout is not cleared in some way, the process exits
   timeoutAutoKill = setTimeout(() => {
-    console.log('Killing engine #%s', id);
+    console.log('Killing engine %s #%s', lastPub, id);
     process.exit();
   }, AUTOKILL_TIMEOUT_DELAY);
 }

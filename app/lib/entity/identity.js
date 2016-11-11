@@ -6,6 +6,7 @@ const rawer = require('../ucp/rawer');
 const Identity = function(json) {
 
   this.revoked = false;
+  this.revoked_on = null;
   this.currentMSN = -1;
   this.currentINN = -1;
   this.member = false;
@@ -48,6 +49,7 @@ const Identity = function(json) {
         "timestamp": this.buid
       },
       "revoked": this.revoked,
+      "revoked_on": this.revoked_on,
       "revocation_sig": this.revocation_sig,
       "self": this.sig,
       "others": others
@@ -59,6 +61,9 @@ const Identity = function(json) {
         "pubkey": cert.idty.pubkey,
         "meta": {
           "timestamp": cert.idty.buid
+        },
+        "cert_time": {
+          "block": cert.block_number
         },
         "isMember": cert.idty.member,
         "wasMember": cert.idty.wasMember,

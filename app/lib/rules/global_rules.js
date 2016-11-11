@@ -9,6 +9,7 @@ const rawer          = require('../ucp/rawer');
 const Identity       = require('../entity/identity');
 const Membership     = require('../entity/membership');
 const Certification  = require('../entity/certification');
+const Transaction    = require('../entity/transaction');
 const logger         = require('../logger')('globr');
 const unlock         = require('../ucp/txunlock');
 const local_rules    = require('./local_rules');
@@ -19,8 +20,13 @@ rules.FUNCTIONS = {
 
   checkVersion: (block, dal) => co(function *() {
     let current = yield dal.getCurrentBlockOrNull();
-    if (current && current.version == 3 && block.version == 2) {
+    if (current && current.version > 2 && block.version == 2) {
       throw Error('`Version: 2` must follow another V2 block or be the root block');
+    }
+    else if (block.version > 2) {
+      if (current && current.version != (block.version - 1) && current.version != block.version) {
+        throw Error('`Version: ' + block.version + '` must follow another V' + block.version + ' block, a V' + (block.version - 1) + ' block or be the root block');
+      }
     }
     return true;
   }),
@@ -53,7 +59,7 @@ rules.FUNCTIONS = {
 
   checkPoWMin: (block, conf, dal) => co(function *() {
     if (block.number > 0) {
-      let correctPowMin = yield getPoWMinFor(block.number, conf, dal);
+      let correctPowMin = yield getPoWMinFor(block.version, block.number, conf, dal);
       if (block.powMin < correctPowMin) {
         throw Error('PoWMin value must be incremented');
       }
@@ -97,7 +103,7 @@ rules.FUNCTIONS = {
     else if (current && nextUD && block.unitbase != nextUD.unitbase) {
       throw Error('UnitBase must be equal to ' + nextUD.unitbase);
     }
-    else if (block.version == 3 && current && !nextUD && block.unitbase != current.unitbase) {
+    else if (block.version > 2 && current && !nextUD && block.unitbase != current.unitbase) {
       throw Error('UnitBase must be equal to previous unit base = ' + current.unitbase);
     }
     return true;
@@ -138,7 +144,7 @@ rules.FUNCTIONS = {
   }),
 
   checkDifferentIssuersCount: (block, conf, dal) => co(function *() {
-    if (block.version == 3) {
+    if (block.version > 2) {
       const isGood = block.issuersCount == (yield rules.HELPERS.getDifferentIssuers(dal));
       if (!isGood) {
         throw Error('DifferentIssuersCount is not correct');
@@ -148,7 +154,7 @@ rules.FUNCTIONS = {
   }),
 
   checkIssuersFrame: (block, conf, dal) => co(function *() {
-    if (block.version == 3) {
+    if (block.version > 2) {
       const isGood = block.issuersFrame == (yield rules.HELPERS.getIssuersFrame(dal));
       if (!isGood) {
         throw Error('IssuersFrame is not correct');
@@ -158,7 +164,7 @@ rules.FUNCTIONS = {
   }),
 
   checkIssuersFrameVar: (block, conf, dal) => co(function *() {
-    if (block.version == 3) {
+    if (block.version > 2) {
       const isGood = block.issuersFrameVar == (yield rules.HELPERS.getIssuersFrameVar(block, dal));
       if (!isGood) {
         throw Error('IssuersFrameVar is not correct');
@@ -259,9 +265,17 @@ rules.FUNCTIONS = {
       if (found) {
         throw Error('Identity already used');
       }
+      // Because the window rule does not apply on initial certifications
       if (current && idty.buid != constants.BLOCK.SPECIAL_BLOCK) {
-        // Because the window rule does not apply on initial certifications
-        let basedBlock = yield dal.getBlock(idty.buid);
+        let basedBlock;
+        if (block.version < 5) {
+          // Prior to DUP 0.5: the full blockstamp was not chcked, only the number
+          const blockNumber = idty.buid.split('-')[0];
+          basedBlock = yield dal.getBlock(blockNumber);
+        } else {
+          // From DUP 0.5: we fully check the blockstamp
+          basedBlock = yield dal.getBlockByBlockstamp(idty.buid);
+        }
         // Check if writable
         let duration = current.medianTime - parseInt(basedBlock.medianTime);
         if (duration > conf.idtyWindow) {
@@ -427,12 +441,14 @@ rules.FUNCTIONS = {
   }),
 
   checkJoinersAreNotOudistanced: (block, conf, dal) => checkPeopleAreNotOudistanced(
+    block.version,
     block.joiners.map((inlineMS) => Membership.statics.fromInline(inlineMS).issuer),
     getNewLinks(block),
     block.identities.map((inline) => Identity.statics.fromInline(inline).pubkey),
     conf, dal),
 
   checkActivesAreNotOudistanced: (block, conf, dal) => checkPeopleAreNotOudistanced(
+    block.version,
     block.actives.map((inlineMS) => Membership.statics.fromInline(inlineMS).issuer),
     getNewLinks(block),
     block.identities.map((inline) => Identity.statics.fromInline(inline).pubkey),
@@ -461,7 +477,7 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkSourcesAvailability: (block, conf, dal) => co(function *() {
+  checkSourcesAvailability: (block, conf, dal, alsoCheckPendingTransactions) => co(function *() {
     let txs = block.getTransactions();
     const current = yield dal.getCurrentBlockOrNull();
     for (const tx of txs) {
@@ -477,6 +493,23 @@ rules.FUNCTIONS = {
         let src = tx.inputs[k];
         let dbSrc = yield dal.getSource(src.identifier, src.noffset);
         logger.debug('Source %s:%s = %s', src.identifier, src.noffset, dbSrc && dbSrc.consumed);
+        if (!dbSrc && alsoCheckPendingTransactions) {
+          // For chained transactions which are checked on sandbox submission, we accept them if there is already
+          // a previous transaction of the chain already recorded in the pool
+          dbSrc = yield co(function*() {
+            let hypotheticSrc = null;
+            let targetTX = yield dal.getTxByHash(src.identifier);
+            if (targetTX) {
+              let outputStr = targetTX.outputs[src.noffset];
+              if (outputStr) {
+                hypotheticSrc = Transaction.statics.outputStr2Obj(outputStr);
+                hypotheticSrc.consumed = false;
+                hypotheticSrc.time = 0;
+              }
+            }
+            return hypotheticSrc;
+          });
+        }
         if (!dbSrc || dbSrc.consumed) {
           logger.warn('Source ' + [src.type, src.identifier, src.noffset].join(':') + ' is not available');
           throw constants.ERRORS.SOURCE_ALREADY_CONSUMED;
@@ -550,12 +583,12 @@ rules.HELPERS = {
 
   checkCertificationIsValidForBlock: (cert, block, idty, conf, dal) => checkCertificationIsValid(block, cert, () => idty, conf, dal),
 
-  isOver3Hops: (member, newLinks, newcomers, current, conf, dal) => co(function *() {
+  isOver3Hops: (version, member, newLinks, newcomers, current, conf, dal) => co(function *() {
     if (!current) {
       return Q(false);
     }
     try {
-      yield checkPeopleAreNotOudistanced([member], newLinks, newcomers, conf, dal);
+      yield checkPeopleAreNotOudistanced(version, [member], newLinks, newcomers, conf, dal);
       return false;
     } catch (e) {
       return true;
@@ -564,7 +597,7 @@ rules.HELPERS = {
 
   getTrialLevel: (version, issuer, conf, dal) => getTrialLevel(version, issuer, conf, dal),
 
-  getPoWMin: (blockNumber, conf, dal) => getPoWMinFor(blockNumber, conf, dal),
+  getPoWMin: (version, blockNumber, conf, dal) => getPoWMinFor(version, blockNumber, conf, dal),
 
   getMedianTime: (blockNumber, conf, dal) => getMedianTime(blockNumber, conf, dal),
 
@@ -572,10 +605,10 @@ rules.HELPERS = {
 
   checkExistsPubkey: (pub, dal) => dal.getWrittenIdtyByPubkey(pub),
 
-  checkSingleTransaction: (tx, block, conf, dal) => rules.FUNCTIONS.checkSourcesAvailability({
+  checkSingleTransaction: (tx, block, conf, dal, alsoCheckPendingTransactions) => rules.FUNCTIONS.checkSourcesAvailability({
     getTransactions: () => [tx],
     medianTime: block.medianTime
-  }, conf, dal),
+  }, conf, dal, alsoCheckPendingTransactions),
 
   getNextUD: (dal, conf, version, nextMedianTime, current, nextN) => co(function *() {
     const lastUDBlock = yield dal.lastUDBlock();
@@ -591,12 +624,12 @@ rules.HELPERS = {
       return null;
     }
     if (lastUDTime + conf.dt <= nextMedianTime) {
+      const M = lastUDBlock ? lastUDBlock.monetaryMass : current.monetaryMass || 0;
+      const c = conf.c;
+      const N = nextN;
+      const previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
+      const previousUB = lastUDBlock ? lastUDBlock.unitbase : constants.FIRST_UNIT_BASE;
       if (version == 2) {
-        const M = lastUDBlock ? lastUDBlock.monetaryMass : current.monetaryMass || 0;
-        const c = conf.c;
-        const N = nextN;
-        const previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
-        const previousUB = lastUDBlock ? lastUDBlock.unitbase : constants.FIRST_UNIT_BASE;
         if (N > 0) {
           const block = {
             dividend: Math.ceil(Math.max(previousUD, c * M / Math.pow(10, previousUB) / N)),
@@ -612,13 +645,19 @@ rules.HELPERS = {
           return null;
         }
       } else {
-        const c = conf.c;
-        const previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
-        const previousUB = lastUDBlock ? lastUDBlock.unitbase : constants.FIRST_UNIT_BASE;
         const block = {
-          dividend: parseInt(((1 + c) * previousUD).toFixed(0)),
           unitbase: previousUB
         };
+        if (version == 3) {
+          block.dividend = parseInt(((1 + c) * previousUD).toFixed(0));
+        } else {
+          if (N > 0) {
+            block.dividend = parseInt((previousUD + Math.pow(c, 2) * (M / N) / Math.pow(10, previousUB)).toFixed(0));
+          } else {
+            // The community has collapsed. RIP.
+            return null;
+          }
+        }
         if (block.dividend >= Math.pow(10, constants.NB_DIGITS_UD)) {
           block.dividend = Math.ceil(block.dividend / 10.0);
           block.unitbase++;
@@ -630,7 +669,7 @@ rules.HELPERS = {
   }),
 
   checkTxBlockStamp: (tx, dal) => co(function *() {
-    if (tx.version == 3) {
+    if (tx.version >= 3) {
       const number = tx.blockstamp.split('-')[0];
       const hash = tx.blockstamp.split('-')[1];
       const basedBlock = yield dal.getBlockByNumberAndHashOrNull(number, hash);
@@ -673,7 +712,7 @@ rules.HELPERS = {
       if (current.version == 2) {
         frame = 40;
       }
-      else if (current.version == 3) {
+      else if (current.version > 2) {
         frame = current.issuersFrame;
         // CONVERGENCE
         if (current.issuersFrameVar > 0) {
@@ -690,7 +729,7 @@ rules.HELPERS = {
   getIssuersFrameVar: (block, dal) => co(function *() {
     const current = yield dal.getCurrentBlockOrNull();
     let frameVar = 0;
-    if (current && current.version == 3) {
+    if (current && current.version > 2) {
       frameVar = current.issuersFrameVar;
       // CONVERGENCE
       if (current.issuersFrameVar > 0) {
@@ -832,7 +871,7 @@ function checkCertificationIsValid (block, cert, findIdtyFunc, conf, dal) {
   });
 }
 
-function checkPeopleAreNotOudistanced (pubkeys, newLinks, newcomers, conf, dal) {
+function checkPeopleAreNotOudistanced (version, pubkeys, newLinks, newcomers, conf, dal) {
   return co(function *() {
     let wotb = dal.wotb;
     let current = yield dal.getCurrentBlockOrNull();
@@ -860,7 +899,12 @@ function checkPeopleAreNotOudistanced (pubkeys, newLinks, newcomers, conf, dal) 
     let error;
     for (const pubkey of pubkeys) {
       let nodeID = yield getNodeIDfromPubkey(nodesCache, pubkey, dal);
-      let dSen = Math.ceil(constants.CONTRACT.DSEN_P * Math.exp(Math.log(membersCount) / conf.stepMax));
+      let dSen;
+      if (version <= 3) {
+        dSen = Math.ceil(constants.CONTRACT.DSEN_P * Math.exp(Math.log(membersCount) / conf.stepMax));
+      } else {
+        dSen = Math.ceil(Math.pow(membersCount, 1 / conf.stepMax));
+      }
       let isOutdistanced = wotb.isOutdistanced(nodeID, dSen, conf.stepMax, conf.xpercent);
       if (isOutdistanced) {
         error = Error('Joiner/Active is outdistanced from WoT');
@@ -899,7 +943,7 @@ function getTrialLevel (version, issuer, conf, dal) {
         return conf.powMin || 0;
       }
       let last = yield dal.lastBlockOfIssuer(issuer);
-      let powMin = yield getPoWMinFor(current.number + 1, conf, dal);
+      let powMin = yield getPoWMinFor(version, current.number + 1, conf, dal);
       let issuers = [];
       if (last) {
         let blocksBetween = yield dal.getBlocksBetween(last.number - 1 - conf.blocksRot, last.number - 1);
@@ -915,7 +959,7 @@ function getTrialLevel (version, issuer, conf, dal) {
         personal_diff++;
       }
       return personal_diff;
-    } else {
+    } else if (version > 2 && version < 5) {
       // Compute exactly how much zeros are required for this block's issuer
       let percentRot = conf.percentRot;
       let current = yield dal.getCurrentBlockOrNull();
@@ -923,7 +967,7 @@ function getTrialLevel (version, issuer, conf, dal) {
         return conf.powMin || 0;
       }
       let last = yield dal.lastBlockOfIssuer(issuer);
-      let powMin = yield getPoWMinFor(current.number + 1, conf, dal);
+      let powMin = yield getPoWMinFor(version, current.number + 1, conf, dal);
       let nbPreviousIssuers = 0;
       if (last) {
         nbPreviousIssuers = last.issuersCount;
@@ -933,6 +977,53 @@ function getTrialLevel (version, issuer, conf, dal) {
       }
       const nbBlocksSince = current.number - last.number;
       let personal_diff = Math.max(powMin, powMin * Math.floor(percentRot * nbPreviousIssuers / (1 + nbBlocksSince)));
+      if (version > 3) {
+        const from = current.number - current.issuersFrame + 1;
+        const nbBlocksIssuedInFrame = yield dal.getNbIssuedInFrame(issuer, from);
+        const personal_excess = Math.max(0, (nbBlocksIssuedInFrame / 5) - 1);
+        // Personal_handicap
+        personal_diff += Math.floor(Math.log(1 + personal_excess) / Math.log(1.189));
+      }
+      if (personal_diff + 1 % 16 == 0) {
+        personal_diff++;
+      }
+      return personal_diff;
+    } else {
+      // NB: no more use conf.percentRot
+      // Compute exactly how much zeros are required for this block's issuer
+      let current = yield dal.getCurrentBlockOrNull();
+      if (!current) {
+        return conf.powMin || 0;
+      }
+      let powMin = yield getPoWMinFor(version, current.number + 1, conf, dal);
+      let blocksBetween = [];
+      if (current) {
+        blocksBetween = yield dal.getBlocksBetween(current.number - current.issuersFrame + 1, current.number);
+      }
+      const blocksByIssuer = blocksBetween.reduce((oMap, block) => {
+        oMap[block.issuer] = oMap[block.issuer] || 0;
+        oMap[block.issuer]++;
+        return oMap;
+      }, {});
+      const counts = Object.values(blocksByIssuer);
+      let medianOfIssuedBlocks = null;
+      counts.sort((a, b) => a < b ? -1 : (a > b ? 1 : 0));
+      const nbIssuers = counts.length;
+      if (nbIssuers % 2 === 0) {
+        // Even number of nodes: the median is the average between the 2 central values
+        const firstValue = counts[nbIssuers / 2];
+        const secondValue = counts[nbIssuers / 2 - 1];
+        medianOfIssuedBlocks = (firstValue + secondValue) / 2;
+      } else {
+        medianOfIssuedBlocks = counts[(nbIssuers + 1) / 2 - 1];
+      }
+
+      const from = current.number - current.issuersFrame + 1;
+      const nbBlocksIssuedInFrame = yield dal.getNbIssuedInFrame(issuer, from);
+      const personal_excess = Math.max(0, ((nbBlocksIssuedInFrame + 1)/ medianOfIssuedBlocks) - 1);
+      // Personal_handicap
+      const handicap = Math.floor(Math.log(1 + personal_excess) / Math.log(1.189));
+      let personal_diff = powMin + handicap;
       if (personal_diff + 1 % 16 == 0) {
         personal_diff++;
       }
@@ -944,7 +1035,7 @@ function getTrialLevel (version, issuer, conf, dal) {
 /**
  * Deduce the PoWMin field for a given block number
  */
-function getPoWMinFor (blockNumber, conf, dal) {
+function getPoWMinFor (blockVersion, blockNumber, conf, dal) {
   return Q.Promise(function(resolve, reject){
     if (blockNumber == 0) {
       reject('Cannot deduce PoWMin for block#0');
@@ -967,8 +1058,9 @@ function getPoWMinFor (blockNumber, conf, dal) {
         // Compute PoWMin value
         const duration = medianTime - lastDistant.medianTime;
         const speed = speedRange / duration;
-        const maxGenTime = Math.ceil(conf.avgGenTime * Math.sqrt(1.066));
-        const minGenTime = Math.floor(conf.avgGenTime / Math.sqrt(1.066));
+        const ratio = blockVersion > 3 ? constants.POW_DIFFICULTY_RANGE_RATIO_V4 : constants.POW_DIFFICULTY_RANGE_RATIO_V3;
+        const maxGenTime = Math.ceil(conf.avgGenTime * ratio);
+        const minGenTime = Math.floor(conf.avgGenTime / ratio);
         const maxSpeed = 1.0 / minGenTime;
         const minSpeed = 1.0 / maxGenTime;
         // logger.debug('Current speed is', speed, '(' + conf.dtDiffEval + '/' + duration + ')', 'and must be [', minSpeed, ';', maxSpeed, ']');

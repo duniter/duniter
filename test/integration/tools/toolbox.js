@@ -56,6 +56,55 @@ module.exports = {
     return { s1, s2, cat, tac };
   }),
 
+  simpleNodeWith2Users: (options) => co(function*() {
+
+    const catKeyring = { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'};
+    const tacKeyring = { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'};
+
+    const s1 = module.exports.server(_.extend({ pair: catKeyring }, options || {}));
+
+    const cat = user('cat', catKeyring, { server: s1 });
+    const tac = user('tac', tacKeyring, { server: s1 });
+
+    yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+
+    yield cat.createIdentity();
+    yield tac.createIdentity();
+    yield cat.cert(tac);
+    yield tac.cert(cat);
+    yield cat.join();
+    yield tac.join();
+
+    return { s1, cat, tac };
+  }),
+
+  simpleNodeWith2otherUsers: (options) => co(function*() {
+
+    const ticKeyring = { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'};
+    const tocKeyring = { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'};
+
+    const s1 = module.exports.server(_.extend({ pair: ticKeyring }, options || {}));
+
+    const tic = user('cat', ticKeyring, { server: s1 });
+    const toc = user('tac', tocKeyring, { server: s1 });
+
+    yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+
+    yield tic.createIdentity();
+    yield toc.createIdentity();
+    yield tic.cert(toc);
+    yield toc.cert(tic);
+    yield tic.join();
+    yield toc.join();
+
+    return { s1, tic, toc };
+  }),
+
+  createUser: (uid, pub, sec, defaultServer) => co(function*() {
+    const keyring = { pub: pub, sec: sec };
+    return user(uid, keyring, { server: defaultServer });
+  }),
+
   fakeSyncServer: (readBlocksMethod, readParticularBlockMethod, onPeersRequested) => {
 
     const host = HOST;
@@ -159,6 +208,18 @@ module.exports = {
     server.commit = (options) => co(function*() {
       const raw = yield commit(server)(options);
       return JSON.parse(raw);
+    });
+
+    server.commitExpectError = (options) => co(function*() {
+      try {
+        const raw = yield commit(server)(options);
+        JSON.parse(raw);
+        throw { message: 'Commit operation should have thrown an error' };
+      } catch (e) {
+        if (e.statusCode) {
+          throw JSON.parse(e.error);
+        }
+      }
     });
 
     server.lookup2identity = (search) => co(function*() {

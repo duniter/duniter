@@ -10,8 +10,7 @@ module.exports = {
       yield promise;
       throw { "message": '{ "message": "Should have thrown an error" }' };
     } catch(e) {
-      let err = JSON.parse(e.message);
-      err.should.have.property('message').equal(message);
+      e.should.have.property('message').equal(message);
     }
   }),
 

@@ -13,6 +13,14 @@ let rules = {};
 
 rules.FUNCTIONS = {
 
+  checkVersion: (block) => co(function*() {
+    // V5 can appear only after a precise time
+    if (block.version == 5 && block.medianTime < constants.TIME_FOR_V5) {
+      throw Error("V5 block cannot have medianTime < " + constants.TIME_FOR_V5);
+    }
+    return true;
+  }),
+
   checkParameters: (block) => co(function *() {
     if (block.number == 0 && !block.parameters) {
       throw Error('Parameters must be provided for root block');
@@ -80,8 +88,8 @@ rules.FUNCTIONS = {
   checkBlockTimes: (block, conf) => co(function *() {
     const time = parseInt(block.time);
     const medianTime = parseInt(block.medianTime);
-    if (block.number > 0 && (time < medianTime || time > medianTime + maxAcceleration(conf)))
-      throw Error('A block must have its Time between MedianTime and MedianTime + ' + maxAcceleration(conf));
+    if (block.number > 0 && (time < medianTime || time > medianTime + maxAcceleration(block, conf)))
+      throw Error('A block must have its Time between MedianTime and MedianTime + ' + maxAcceleration(block, conf));
     else if (block.number == 0 && time != medianTime)
       throw Error('Root block must have Time equal MedianTime');
     return true;
@@ -346,8 +354,10 @@ rules.FUNCTIONS = {
     const txs = block.getTransactions();
     // Check rule against each transaction
     for (const tx of txs) {
-      if (tx.version != block.version) {
-        throw Error('A transaction must have the same version as its block');
+      if (tx.version != block.version && parseInt(block.version) <= 3) {
+        throw Error('A transaction must have the same version as its block prior to protocol 0.4');
+      } else if (tx.version != 3 && parseInt(block.version) > 3) {
+        throw Error('A transaction must have the version 3 for blocks with version >= 3');
       }
     }
     return true;
@@ -439,9 +449,14 @@ rules.FUNCTIONS = {
   })
 };
 
-function maxAcceleration (conf) {
-  let maxGenTime = Math.ceil(conf.avgGenTime * Math.sqrt(1.066));
-  return Math.ceil(maxGenTime * conf.medianTimeBlocks);
+function maxAcceleration (block, conf) {
+  if (block.version > 3) {
+    let maxGenTime = Math.ceil(conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO_V4);
+    return Math.ceil(maxGenTime * conf.medianTimeBlocks);
+  } else {
+    let maxGenTime = Math.ceil(conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO_V3);
+    return Math.ceil(maxGenTime * conf.medianTimeBlocks);
+  }
 }
 
 function existsPubkeyIn(pubk, memberships) {
@@ -521,7 +536,7 @@ rules.HELPERS = {
   checkSingleTransactionLocally: (tx, done) => checkBunchOfTransactions([tx], done),
 
   checkTxAmountsValidity: (tx) => {
-    if (tx.version == 3) {
+    if (tx.version >= 3) {
       // Rule of money conservation
       const commonBase = tx.inputs.concat(tx.outputs).reduce((min, input) => {
         if (min === null) return input.base;
@@ -568,7 +583,20 @@ rules.HELPERS = {
         deltas[i] = delta;
       }
     }
-  }
+  },
+
+  getMaxPossibleVersionNumber: (current, block) => co(function*() {
+    // Looking at current blockchain, find what is the next maximum version we can produce
+
+    // 1. We follow previous block's version
+    let version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
+
+    // 2. If we can, we go to the next version
+    if (version == 4 && block.medianTime > constants.TIME_FOR_V5) {
+      version = 5;
+    }
+    return version;
+  })
 };
 
 module.exports = rules;

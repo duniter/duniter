@@ -35,7 +35,7 @@ duniter() {
 
 	VERSION=`$NODE -v`
 
-	if [[ $VERSION != v5* && $VERSION != v4* ]]; then
+	if [[ $VERSION != v6* && $VERSION != v5* && $VERSION != v4* ]]; then
 	  echo "$NODE v5 or v4 is required";
 	else
 
@@ -45,7 +45,7 @@ duniter() {
 		#  DUNITER DAEMON MANAGEMENT
 		#---------------------------------
 
-		webwait|webstart|webstop|webrestart|start|stop|restart)
+		reset|webwait|webstart|webstop|webrestart|start|stop|restart)
 		$NODE "$DUNITER_DIR/bin/daemon" $*
 		;;
 
@@ -63,7 +63,7 @@ duniter() {
 		#---------------------------------
 
 		*)
-	  $NODE "$DUNITER_DIR/bin/duniter" $*
+	  $NODE "$DUNITER_DIR/bin/duniter" "$@"
 		;;
 
 		esac
@@ -72,5 +72,5 @@ duniter() {
 
 # If the script was launched with parameters, try to launch the Duniter command
 if [ ! -z $1 ]; then
-	duniter $*
+	duniter "$@"
 fi

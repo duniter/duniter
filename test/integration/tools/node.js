@@ -5,7 +5,7 @@ var rp     = require('request-promise');
 var _ = require('underscore');
 var async  = require('async');
 var request  = require('request');
-var vucoin = require('vucoin');
+var contacter = require('../../../app/lib/contacter');
 var ucoin  = require('../../../index');
 var multicaster = require('../../../app/lib/streams/multicaster');
 var Configuration = require('../../../app/lib/entity/configuration');
@@ -98,10 +98,7 @@ function Node (dbName, options) {
     return function(done) {
       async.waterfall([
         function (next) {
-          vucoin(options.remoteipv4, options.remoteport, next);
-        },
-        function (node, next) {
-          that.http = node;
+          that.http = contacter(options.remoteipv4, options.remoteport);
           that.executes(scenarios, next);
         }
       ], done);
@@ -213,10 +210,7 @@ function Node (dbName, options) {
             .catch(next);
         },
         function (next) {
-          vucoin(options.remoteipv4, options.remoteport, next);
-        },
-        function (node, next) {
-          that.http = node;
+          that.http = contacter(options.remoteipv4, options.remoteport);
           next();
         }
       ], function(err) {
@@ -256,7 +250,7 @@ function Node (dbName, options) {
     return function(done) {
       async.waterfall([
         function(next) {
-          that.http.wot.lookup(search, next);
+          that.http.getLookup(search).then((o) => next(null, o)).catch(next);
         }
       ], function(err, res) {
         callback(res, done);
@@ -291,7 +285,7 @@ function Node (dbName, options) {
     return function(done) {
       async.waterfall([
         function(next) {
-          that.http.blockchain.block(number, next);
+          that.http.getBlock(number).then((o) => next(null, o)).catch(next);
         }
       ], function(err, block) {
         callback(block, done);
@@ -303,7 +297,7 @@ function Node (dbName, options) {
     return function(done) {
       async.waterfall([
         function(next) {
-          that.http.node.summary(next);
+          that.http.getSummary().then((o) => next(null, o)).catch(next);
         }
       ], function(err, summary) {
         callback(summary, done);
@@ -311,22 +305,8 @@ function Node (dbName, options) {
     };
   };
 
-  this.sourcesOf = function(pub, callback) {
-    return function(done) {
-      async.waterfall([
-        function(next) {
-          that.http.tx.sources(pub, next);
-        }
-      ], function(err, res) {
-        callback(res, done);
-      });
-    };
-  };
-
-  this.sourcesOfP = (pub) => Q.nbind(that.http.tx.sources, that)(pub);
-
   this.peering = function(done) {
-    that.http.network.peering.get(done);
+    that.http.getPeer().then((o) => done(null, o)).catch(done);
   };
 
   this.peeringP = () => Q.nfcall(this.peering);

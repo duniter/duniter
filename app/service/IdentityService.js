@@ -90,6 +90,8 @@ function IdentityService () {
         if (used) {
           throw constants.ERRORS.UID_ALREADY_USED;
         }
+        const current = yield dal.getCurrentBlockOrNull();
+        yield rules.GLOBAL.checkIdentitiesAreWritable({ identities: [idty.inline()], version: (current && current.version) || constants.BLOCK_GENERATED_VERSION }, conf, dal);
         idty = new Identity(idty);
         if (byAbsorption === BY_ABSORPTION) {
           idty.certsCount = 1;

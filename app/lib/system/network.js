@@ -19,7 +19,17 @@ const logger = require('../logger')('network');
 module.exports = {
 
   getBestLocalIPv4: () => getBestLocal('IPv4'),
-  getBestLocalIPv6: () => getBestLocal('IPv6'),
+  getBestLocalIPv6: function getFirstGlobalIPv6() {
+    const osInterfaces = module.exports.listInterfaces();
+    for (let netInterface of osInterfaces) {
+      const addresses = netInterface.addresses;
+      const filtered = _(addresses).where({family: 'IPv6', scopeid: 0, internal: false });
+      if (filtered[0]) {
+        return filtered[0].address;
+      }
+    }
+    return null;
+  },
   getLANIPv4: () => getLAN('IPv4'),
   getLANIPv6: () => getLAN('IPv6'),
 
@@ -59,11 +69,9 @@ module.exports = {
       });
     });
     conf.remoteipv4 = publicIP.match(constants.IPV4_REGEXP) ? publicIP : null;
-    conf.remoteipv6 = publicIP.match(constants.IPV6_REGEXP) ? publicIP : null;
     conf.remoteport = publicPort;
     conf.port = privatePort;
     conf.ipv4 = privateIP.match(constants.IPV4_REGEXP) ? privateIP : null;
-    conf.ipv6 = privateIP.match(constants.IPV6_REGEXP) ? privateIP : null;
     return conf;
   }),
 
@@ -84,7 +92,7 @@ module.exports = {
       app.use(morgan('\x1b[90m:remote-addr - :method :url HTTP/:http-version :status :res[content-length] - :response-time ms\x1b[0m', {
         stream: {
           write: function(message){
-            message && logger.info(message.replace(/\n$/,''));
+            message && logger.trace(message.replace(/\n$/,''));
           }
         }
       }));
@@ -198,7 +206,7 @@ module.exports = {
                   resolve(httpServer);
                 });
               });
-              logger.info(name + ' listening on http://' + netInterface + ':' + port);
+              logger.info(name + ' listening on http://' + (netInterface.match(/:/) ? '[' + netInterface + ']' : netInterface) + ':' + port);
             } catch (e) {
               logger.warn('Could NOT listen to http://' + netInterface + ':' + port);
               logger.warn(e);
@@ -231,7 +239,6 @@ const handleRequest = (method, uri, promiseFunc, dtoContract, theLimiter) => {
         let error = getResultingError(e);
         // HTTP error
         res.status(error.httpCode).send(JSON.stringify(error.uerr, null, "  "));
-        throw e
       }
     });
   });

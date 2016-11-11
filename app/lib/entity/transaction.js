@@ -59,11 +59,11 @@ let Transaction = function(obj, currency) {
     this.inputs.forEach((input) => {
       const sp = input.split(':');
       tx.inputs.push({
-        amount:     this.version == 3 ? sp[0] : null,
-        base:       this.version == 3 ? sp[1] : null,
-        type:       this.version == 3 ? sp[2] : sp[0],
-        identifier: this.version == 3 ? sp[3] : sp[1],
-        noffset:    this.version == 3 ? parseInt(sp[4]) : parseInt(sp[2]),
+        amount:     this.version >= 3 ? sp[0] : null,
+        base:       this.version >= 3 ? sp[1] : null,
+        type:       this.version >= 3 ? sp[2] : sp[0],
+        identifier: this.version >= 3 ? sp[3] : sp[1],
+        noffset:    this.version >= 3 ? parseInt(sp[4]) : parseInt(sp[2]),
         raw: input
       });
     });
@@ -72,13 +72,7 @@ let Transaction = function(obj, currency) {
     // Outputs
     tx.outputs = [];
     this.outputs.forEach(function (output) {
-      const sp = output.split(':');
-      tx.outputs.push({
-        amount: parseInt(sp[0]),
-        base: parseInt(sp[1]),
-        conditions: sp[2],
-        raw: output
-      });
+      tx.outputs.push(Transaction.statics.outputStr2Obj(output));
     });
     tx.comment = this.comment;
     tx.blockstamp = this.blockstamp;
@@ -110,6 +104,16 @@ Transaction.statics.outputs2recipients = (tx) => tx.outputs.map(function(out) {
   return (recipent && recipent[1]) || 'UNKNOWN';
 });
 
+Transaction.statics.outputStr2Obj = (outputStr) => {
+  const sp = outputStr.split(':');
+  return {
+    amount: parseInt(sp[0]),
+    base: parseInt(sp[1]),
+    conditions: sp[2],
+    raw: outputStr
+  };
+};
+
 Transaction.statics.setRecipients = (txs) => {
   // Each transaction must have a good "recipients" field for future searchs
   txs.forEach((tx) => tx.recipients = Transaction.statics.outputs2recipients(tx));
@@ -126,7 +130,7 @@ Transaction.statics.setIssuers = (txs) => {
 };
 
 Transaction.statics.getLen = (tx) => 1 // header
-  + (tx.version == 3 ? 1 : 0) // blockstamp
+  + (tx.version >= 3 ? 1 : 0) // blockstamp
   + (tx.signatories || tx.issuers).length * 2 // issuers + signatures
   + tx.inputs.length * 2 // inputs + unlocks
   + (tx.comment ? 1 : 0)

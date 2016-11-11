@@ -17,6 +17,19 @@ switch (process.argv[2]) {
     daemon.stop();
     break;
 
+  case "sync":
+  case "reset":
+    const command = process.argv[2];
+    if (daemon.status()) {
+      console.log('Stopping daemon...');
+      daemon.stop(function() {
+        launchCmd(command);
+      });
+    } else {
+      launchCmd(command);
+    }
+    break;
+
   case "restart":
     daemon = getDaemon('start');
     daemon.stop(function(err) {
@@ -76,6 +89,14 @@ function getCommand(overrideCommand) {
 function getFullCommand(overrideCommand) {
   let duniter = path.resolve(path.dirname(process.argv[1]), './duniter');
   return [duniter].concat(getCommand(overrideCommand));
+}
+
+function launchCmd(cmd) {
+  let checkConf = spawn(process.argv[0], getFullCommand(cmd));
+
+  // Error messages
+  checkConf.stdout.on('data', (data) => console.log(data.toString('utf8')));
+  checkConf.stderr.on('data', (data) => console.error(data.toString('utf8')));
 }
 
 function start(daemonToStart) {

@@ -15,8 +15,7 @@ const POW_CANCELED_BECAUSE_GIVEN = 'Proof-of-work computation canceled because b
 
 function BlockGenerator(notifier) {
 
-  let that = this;
-  let conf, pair, logger, wait = null, waitResolve, waitReject;
+  let conf, pair, logger, wait = null, waitResolve;
 
   let workerFarmPromise;
 
@@ -38,11 +37,8 @@ function BlockGenerator(notifier) {
     process.execArgv = [];
   }
 
-  this.waitDelay = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
-
-  this.waitForNewAsking = () => wait = new Promise((resolve, reject) => {
+  this.waitForNewAsking = () => wait = new Promise((resolve) => {
     waitResolve = resolve;
-    waitReject = reject;
   });
 
   this.cancel = (gottenBlock) => co(function*() {
@@ -55,7 +51,6 @@ function BlockGenerator(notifier) {
       if (waitResolve) {
         waitResolve();
         waitResolve = null;
-        waitReject = null;
         wait = null;
       }
     }
@@ -66,7 +61,6 @@ function BlockGenerator(notifier) {
     if (waitResolve) {
       waitResolve();
       waitResolve = null;
-      waitReject = null;
       wait = null;
     }
 
@@ -120,6 +114,16 @@ function BlockGenerator(notifier) {
     });
   };
 
+  this.changeCPU = (cpu) => co(function*() {
+    const farm = yield getWorker();
+    yield farm.changeCPU(cpu);
+  });
+
+  this.changePoWPrefix = (prefix) => co(function*() {
+    const farm = yield getWorker();
+    yield farm.changePoWPrefix(prefix);
+  });
+
   function powEvent(found, hash) {
     notifier && notifier.push({ pow: { found, hash } });
   }
@@ -130,10 +134,14 @@ function BlockGenerator(notifier) {
     // We use as much cores as available, but not more than CORES_MAXIMUM_USE_IN_PARALLEL
     const cores = require('os').cpus().slice(0, constants.CORES_MAXIMUM_USE_IN_PARALLEL);
     // Each worker has his own chunk of possible nonces
-    const workers = cores.map((c, index) => new Worker((index + 1), (index + 1) * 1000 * 1000 * 1000 * 100, pair.publicKey));
+    const workers = cores.map((c, index) => new Worker((index + 1), (index + 1) * constants.NONCE_RANGE, pair.publicKey));
 
     let powPromise = null;
     let stopPromise = null;
+
+    this.changeCPU = (cpu) => Promise.all(workers.map((worker) => worker.changeConf({ cpu })));
+
+    this.changePoWPrefix = (prefix) => Promise.all(workers.map((worker) => worker.changeConf({ prefix })));
 
     this.isComputing = () => powPromise !== null && !powPromise.isResolved();
 
@@ -173,10 +181,10 @@ function BlockGenerator(notifier) {
 
   function Worker(id, nonceBeginning, pub) {
 
-    let onAlmostPoW = function() { throw 'Almost proof-of-work found, but no listener is attached.'; };
-    let onPoWSuccess = function() { throw 'Proof-of-work success, but no listener is attached.'; };
-    let onPoWError = function() { throw 'Proof-of-work error, but no listener is attached.'; };
-    let powProcess, readyPromise, readyResolver, lastInterval;
+    let onAlmostPoW = function() { logger.error('Almost proof-of-work found, but no listener is attached.'); };
+    let onPoWSuccess = function() { logger.error('Proof-of-work success, but no listener is attached.'); };
+    let onPoWError = function() { logger.error('Proof-of-work error, but no listener is attached.'); };
+    let powProcess, readyPromise, readyResolver;
 
     newProcess();
 
@@ -196,6 +204,11 @@ function BlockGenerator(notifier) {
 
     this.whenReady = () => readyPromise;
 
+    this.changeConf = (conf) => co(function*() {
+      logger.info('Changing conf to: %s on engine#%s', JSON.stringify(conf), id);
+      sendToProcess({ command: 'conf', conf });
+    });
+
     /**
      * Eventually stops the engine PoW if one was computing
      */
@@ -205,9 +218,6 @@ function BlockGenerator(notifier) {
         // Canceled for a long time (not because of an incoming block)
         onPoWError = null;
         onPoWSuccess = null;
-        if (lastInterval) {
-          clearInterval(lastInterval); // Force engine killing after some time if stop failed
-        }
       }
       sendToProcess({ command: 'stop' });
       return readyPromise;
@@ -226,7 +236,7 @@ function BlockGenerator(notifier) {
       onPoWError = reject;
 
       // Starts the PoW
-      stuff.newPoW.block.nonce = nonceBeginning;
+      stuff.newPoW.nonceBeginning = nonceBeginning;
       sendToProcess(stuff);
     });
 
@@ -246,6 +256,7 @@ function BlockGenerator(notifier) {
       powProcess.on('exit', function() {
         onPoWError && onPoWError(POW_CANCELED);
         onPoWError = null;
+        logger.trace('Engine engine %s exited unexpectedly', id);
         if (interval) {
           clearInterval(interval);
         }
@@ -296,8 +307,9 @@ function BlockGenerator(notifier) {
 
       // Initialize the engine
       sendToProcess({ command: 'id', pubkey: pub, identifier: id });
-      interval = setInterval(() => sendToProcess({ command: 'idle' }), constants.ENGINE_IDLE_INTERVAL);
-      lastInterval = interval;
+      interval = setInterval(() => {
+        return sendToProcess({ command: 'idle' });
+      }, constants.ENGINE_IDLE_INTERVAL);
     }
   }
 }

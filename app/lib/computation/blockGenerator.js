@@ -52,7 +52,7 @@ function BlockGenerator(mainContext, prover) {
   this.makeNextBlock = (block, trial, manualValues) => co(function *() {
     const unsignedBlock = block || (yield that.nextBlock(manualValues));
     const current = yield dal.getCurrentBlockOrNull();
-    const version = current ? current.version : 3;
+    const version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
     const trialLevel = trial || (yield rules.HELPERS.getTrialLevel(version, selfPubkey, conf, dal));
     return prover.prove(unsignedBlock, trialLevel, (manualValues && manualValues.time) || null);
   });
@@ -106,7 +106,7 @@ function BlockGenerator(mainContext, prover) {
   });
 
   const findTransactions = (current) => co(function*() {
-    const versionMin = current ? current.version : constants.DOCUMENTS_VERSION;
+    const versionMin = current ? Math.min(constants.LAST_VERSION_FOR_TX, current.version) : constants.DOCUMENTS_VERSION;
     const txs = yield dal.getTransactionsPending(versionMin);
     const transactions = [];
     const passingTxs = [];
@@ -120,10 +120,16 @@ function BlockGenerator(mainContext, prover) {
         yield rules.HELPERS.checkTxBlockStamp(extractedTX, dal);
         transactions.push(tx);
         passingTxs.push(extractedTX);
-        logger.info('Transaction added to block');
+        logger.info('Transaction %s added to block', tx.hash);
       } catch (err) {
         logger.error(err);
-        yield dal.removeTxByHash(extractedTX.hash);
+        const currentNumber = (current && current.number) || 0;
+        const blockstamp = extractedTX.blockstamp || (currentNumber + '-');
+        const txBlockNumber = parseInt(blockstamp.split('-')[0]);
+        // 10 blocks before removing the transaction
+        if (currentNumber - txBlockNumber + 1 >= constants.TRANSACTION_MAX_TRIES) {
+          yield dal.removeTxByHash(extractedTX.hash);
+        }
       }
     }
     return transactions;
@@ -213,7 +219,7 @@ function BlockGenerator(mainContext, prover) {
           // Will throw an error if not enough links
           yield mainContext.checkHaveEnoughLinks(newcomer, newLinks);
           // This one does not throw but returns a boolean
-          const isOut = yield rules.HELPERS.isOver3Hops(newcomer, newLinks, realNewcomers, current, conf, dal);
+          const isOut = yield rules.HELPERS.isOver3Hops(block.version, newcomer, newLinks, realNewcomers, current, conf, dal);
           if (isOut) {
             throw 'Key ' + newcomer + ' is not recognized by the WoT for this block';
           }
@@ -419,10 +425,18 @@ function BlockGenerator(mainContext, prover) {
         delete joinData[leaver];
       });
       const block = new Block();
-      block.version = (manualValues && manualValues.version) || constants.BLOCK_GENERATED_VERSION;
+      block.number = current ? current.number + 1 : 0;
+      // Compute the new MedianTime
+      if (block.number == 0) {
+        block.medianTime = moment.utc().unix() - conf.rootoffset;
+      }
+      else {
+        block.medianTime = yield rules.HELPERS.getMedianTime(block.number, conf, dal);
+      }
+      // Choose the version
+      block.version = (manualValues && manualValues.version) || (yield rules.HELPERS.getMaxPossibleVersionNumber(current, block));
       block.currency = current ? current.currency : conf.currency;
       block.nonce = 0;
-      block.number = current ? current.number + 1 : 0;
       block.parameters = block.number > 0 ? '' : [
         conf.c, conf.dt, conf.ud0,
         conf.sigPeriod, conf.sigStock, conf.sigWindow, conf.sigValidity,
@@ -544,7 +558,7 @@ function BlockGenerator(mainContext, prover) {
       if (blockLen < maxLenOfBlock) {
         transactions.forEach((tx) => {
           const txLen = Transaction.statics.getLen(tx);
-          if (txLen <= constants.MAXIMUM_LEN_OF_COMPACT_TX && blockLen + txLen <= maxLenOfBlock && tx.version == block.version) {
+          if (txLen <= constants.MAXIMUM_LEN_OF_COMPACT_TX && blockLen + txLen <= maxLenOfBlock && (tx.version == block.version || (parseInt(tx.version) >= 3 && parseInt(block.version) >= 3))) {
             block.transactions.push({ raw: tx.compact() });
           }
           blockLen += txLen;
@@ -554,23 +568,17 @@ function BlockGenerator(mainContext, prover) {
       /**
        * Finally handle the Universal Dividend
        */
-      block.powMin = block.number == 0 ? conf.powMin || 0 : yield rules.HELPERS.getPoWMin(block.number, conf, dal);
-      if (block.number == 0) {
-        block.medianTime = moment.utc().unix() - conf.rootoffset;
-      }
-      else {
-        block.medianTime = yield rules.HELPERS.getMedianTime(block.number, conf, dal);
-      }
+      block.powMin = block.number == 0 ? conf.powMin || 0 : yield rules.HELPERS.getPoWMin(block.version, block.number, conf, dal);
       // Universal Dividend
       const nextUD = yield rules.HELPERS.getNextUD(dal, conf, block.version, block.medianTime, current, block.membersCount);
       if (nextUD) {
         block.dividend = nextUD.dividend;
         block.unitbase = nextUD.unitbase;
-      } else if (block.version == 3) {
+      } else if (block.version > 2) {
         block.unitbase = block.number == 0 ? 0 : current.unitbase;
       }
       // V3 Rotation
-      if (block.version == 3) {
+      if (block.version > 2) {
         block.issuersCount = yield rules.HELPERS.getDifferentIssuers(dal);
         block.issuersFrame = yield rules.HELPERS.getIssuersFrame(dal);
         block.issuersFrameVar = yield rules.HELPERS.getIssuersFrameVar(block, dal);

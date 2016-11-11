@@ -230,4 +230,26 @@ function WOTBinding (server) {
   this.certify = (req) => this.pushEntity(req, http2raw.certification, constants.ENTITY_CERTIFICATION);
 
   this.revoke = (req) => this.pushEntity(req, http2raw.revocation, constants.ENTITY_REVOCATION);
+
+  this.pendingMemberships = (req) => co(function*() {
+    const memberships = yield server.dal.findNewcomers();
+    const json = {
+      memberships: []
+    };
+    json.memberships = memberships.map((ms) => {
+      return {
+        pubkey: ms.issuer,
+        uid: ms.userid,
+        version: ms.version,
+        currency: server.conf.currency,
+        membership: ms.membership,
+        blockNumber: parseInt(ms.blockNumber),
+        blockHash: ms.blockHash,
+        written: (!ms.written_number && ms.written_number !== 0) ? null : ms.written_number
+      };
+    });
+    json.memberships = _.sortBy(json.memberships, 'blockNumber');
+    json.memberships.reverse();
+    return json;
+  });
 }

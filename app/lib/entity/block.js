@@ -202,11 +202,11 @@ function Block(json) {
       (simpleTx.inputs || []).forEach((input) => {
         const sp = input.split(':');
         tx.inputs.push({
-          amount:     this.version == 3 ? sp[0] : null,
-          base:       this.version == 3 ? sp[1] : null,
-          type:       this.version == 3 ? sp[2] : sp[0],
-          identifier: this.version == 3 ? sp[3] : sp[1],
-          noffset:    this.version == 3 ? parseInt(sp[4]) : parseInt(sp[2]),
+          amount:     this.version >= 3 ? sp[0] : null,
+          base:       this.version >= 3 ? sp[1] : null,
+          type:       this.version >= 3 ? sp[2] : sp[0],
+          identifier: this.version >= 3 ? sp[3] : sp[1],
+          noffset:    this.version >= 3 ? parseInt(sp[4]) : parseInt(sp[2]),
           raw: input
         });
       });

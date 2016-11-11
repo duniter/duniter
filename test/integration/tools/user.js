@@ -4,7 +4,7 @@ var Q		    = require('q');
 const _ = require('underscore');
 var async		= require('async');
 var request	= require('request');
-var vucoin	= require('vucoin');
+var contacter = require('../../../app/lib/contacter');
 var ucp     = require('../../../app/lib/ucp/buid');
 var parsers = require('../../../app/lib/streams/parsers');
 var keyring	= require('../../../app/lib/crypto/keyring');
@@ -25,7 +25,7 @@ function User (uid, options, node) {
 
   var that = this;
   var pub, sec;
-  var createIdentity = "";
+  var createdIdentity = "";
   that.node = node;
 
   // For sync code
@@ -60,17 +60,21 @@ function User (uid, options, node) {
       yield Q.nfcall(init);
     const current = yield node.server.BlockchainService.current();
     let buid = !useRoot && current ? ucp.format.buid(current.number, current.hash) : '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855';
-    createIdentity = rawer.getOfficialIdentity({
+    createdIdentity = rawer.getOfficialIdentity({
       buid: buid,
       uid: uid,
       issuer: pub,
       currency: node.server.conf.currency
     });
-    createIdentity += keyring.Key(pub, sec).signSync(createIdentity) + '\n';
-    yield doPost('/wot/add', {
-      "identity": createIdentity
-    }, fromServer);
+    createdIdentity += keyring.Key(pub, sec).signSync(createdIdentity) + '\n';
+    yield that.submitIdentity(createdIdentity, fromServer);
   });
+
+  this.submitIdentity = (raw, fromServer) => doPost('/wot/add', {
+    "identity": raw
+  }, fromServer);
+
+  this.getIdentityRaw = () => createdIdentity;
 
   this.makeCert = (user, fromServer, overrideProps) => co(function*() {
     const lookup = yield that.lookup(user.pub, fromServer);
@@ -174,16 +178,20 @@ function User (uid, options, node) {
   };
 
   this.sendTX = (rawTX) => co(function *() {
-    let http = yield getVucoin();
-    return Q.nbind(http.tx.process, http)(rawTX);
+    let http = yield getContacter();
+    return http.processTransaction(rawTX);
   });
 
   this.prepareUTX = (previousTX, unlocks, outputs, opts) => co(function *() {
     let obj = parsers.parseTransaction.syncWrite(previousTX);
     // Unlocks inputs with given "unlocks" strings
-    let inputs = obj.outputs.map((out, index) => {
+    let outputsToConsume = obj.outputs;
+    if (opts.theseOutputsStart !== undefined) {
+      outputsToConsume = outputsToConsume.slice(opts.theseOutputsStart);
+    }
+    let inputs = outputsToConsume.map((out, index) => {
       return {
-        src: ['T', obj.hash, index].join(':'),
+        src: ['T', obj.hash, (opts.theseOutputsStart || 0) + index].join(':'),
         unlock: unlocks[index]
       };
     });
@@ -209,10 +217,10 @@ function User (uid, options, node) {
     if (!amount || !recipient) {
       throw 'Amount and recipient are required';
     }
-    let http = yield getVucoin();
-    let current = yield Q.nbind(http.blockchain.current, http)();
-    let version = current && current.version;
-    let json = yield Q.nbind(http.tx.sources, http)(pub);
+    let http = yield getContacter();
+    let current = yield http.getCurrent();
+    let version = current && Math.min(constants.LAST_VERSION_FOR_TX, current.version);
+    let json = yield http.getSources(pub);
     let i = 0;
     let cumulated = 0;
     let commonbase = null;
@@ -246,7 +254,7 @@ function User (uid, options, node) {
     sources2.forEach((src) => inputSum += src.amount * Math.pow(10, src.base));
     let inputs = sources2.map((src) => {
       return {
-        src: (version == 3 ? [src.amount, src.base] : []).concat([src.type, src.identifier, src.noffset]).join(':'),
+        src: (version >= 3 ? [src.amount, src.base] : []).concat([src.type, src.identifier, src.noffset]).join(':'),
         unlock: 'SIG(0)'
       };
     });
@@ -291,7 +299,7 @@ function User (uid, options, node) {
     raw += "Version: " + (opts.version || constants.DOCUMENTS_VERSION) + '\n';
     raw += "Type: Transaction\n";
     raw += "Currency: " + (opts.currency || node.server.conf.currency) + '\n';
-    if (opts.version && opts.version == 3) {
+    if (opts.version && opts.version >= 3) {
       raw += "Blockstamp: " + opts.blockstamp + '\n';
     }
     raw += "Locktime: " + (opts.locktime || 0) + '\n';
@@ -354,21 +362,18 @@ function User (uid, options, node) {
     });
   }
 
-  function getVucoin(fromServer) {
-    return Q.Promise(function(resolve, reject){
+  function getContacter(fromServer) {
+    return Q.Promise(function(resolve){
       let theNode = (fromServer && { server: fromServer }) || node;
-      vucoin(theNode.server.conf.ipv4, theNode.server.conf.port, function(err, node2) {
-        if (err) return reject(err);
-        resolve(node2);
-      }, {
+      resolve(contacter(theNode.server.conf.ipv4, theNode.server.conf.port, {
         timeout: 1000 * 100000
-      });
+      }));
     });
   }
 
   this.lookup = (pubkey, fromServer) => co(function*() {
-    const node2 = yield getVucoin(fromServer);
-    return yield Q.nbind(node2.wot.lookup, node2.wot, pubkey);
+    const node2 = yield getContacter(fromServer);
+    return node2.getLookup(pubkey);
   });
 
   this.sendP = (amount, userid, comment) => Q.nfcall(this.send.apply(this, [amount, userid, comment]));

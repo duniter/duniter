@@ -13,6 +13,7 @@ const INTEGER      = "(0|[1-9]\\d{0,18})";
 const RELATIVE_INTEGER = "(0|-?[1-9]\\d{0,18})";
 const FLOAT        = "\\d+\.\\d+";
 const BOOLEAN      = "[01]";
+const BLOCK_VERSION = "(2|3|4|5)";
 const SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
 const FINGERPRINT  = "[A-F0-9]{64}";
 const COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}";
@@ -22,6 +23,7 @@ const CONDITIONS   = "(&&|\\|\\|| |[()]|(SIG\\([0-9a-zA-Z]{43,44}\\)|(XHX\\([A-F
 const BLOCK_UID    = INTEGER + "-" + FINGERPRINT;
 const META_TS      = "META:TS:" + BLOCK_UID;
 
+const BMA_REGEXP  = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
 const IPV4_REGEXP = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
 const IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/;
 
@@ -101,13 +103,15 @@ module.exports = {
     TX_INPUTS_OUTPUTS_NOT_EQUAL:          { httpCode: 400, uerr: { ucode: 2024, message: "Transaction inputs sum must equal outputs sum" }},
     TX_OUTPUT_SUM_NOT_EQUALS_PREV_DELTAS: { httpCode: 400, uerr: { ucode: 2025, message: "Transaction output base amount does not equal previous base deltas" }},
     BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK:    { httpCode: 400, uerr: { ucode: 2026, message: "Blockstamp does not match a block" }},
-    A_TRANSACTION_HAS_A_MAX_SIZE:         { httpCode: 400, uerr: { ucode: 2027, message: 'A transaction has a maximum size of ' + MAXIMUM_LEN_OF_COMPACT_TX + ' lines' }}
+    A_TRANSACTION_HAS_A_MAX_SIZE:         { httpCode: 400, uerr: { ucode: 2027, message: 'A transaction has a maximum size of ' + MAXIMUM_LEN_OF_COMPACT_TX + ' lines' }},
+    BLOCK_ALREADY_PROCESSED:              { httpCode: 400, uerr: { ucode: 2028, message: 'Already processed' }}
   },
 
   DEBUG: {
     LONG_DAL_PROCESS: 50
   },
 
+  BMA_REGEXP: BMA_REGEXP,
   IPV4_REGEXP: IPV4_REGEXP,
   IPV6_REGEXP: IPV6_REGEXP,
 
@@ -125,10 +129,13 @@ module.exports = {
   BLOCK_UID: exact(BLOCK_UID),
 
   DOCUMENTS_VERSION_REGEXP: /^2$/,
-  DOCUMENTS_BLOCK_VERSION_REGEXP: /^(2|3)$/,
+  DOCUMENTS_BLOCK_VERSION_REGEXP: new RegExp("^" + BLOCK_VERSION + "$"),
   DOCUMENTS_TRANSACTION_VERSION_REGEXP: /^(2|3)$/,
   DOCUMENTS_VERSION: 2,
-  BLOCK_GENERATED_VERSION: 3,
+  BLOCK_GENERATED_VERSION: 4,
+  LAST_VERSION_FOR_TX: 3,
+
+  TIME_FOR_V5: 1478696400, // 2016-11-09 14:00:00 BCT (blockchain time)
 
   REVOCATION_FACTOR: 2, // This is protocol fixed value
   NB_DIGITS_UD: 6,      // This is protocol fixed value
@@ -184,7 +191,7 @@ module.exports = {
   },
   BLOCK: {
     NONCE:       find("Nonce: (" + ZERO_OR_POSITIVE_INT + ")"),
-    VERSION:     find("Version: (2|3)"),
+    VERSION:     find("Version: " + BLOCK_VERSION),
     TYPE:        find("Type: (Block)"),
     CURRENCY:    find("Currency: (" + CURRENCY + ")"),
     BNUMBER:     find("Number: (" + ZERO_OR_POSITIVE_INT + ")"),
@@ -234,7 +241,7 @@ module.exports = {
     MAX_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS: 10,
     MAX_NON_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS: 6,
     MAX_NON_MEMBERS_TO_FORWARD_TO: 4,
-    MAX_MEMBERS_TO_FORWARD_TO: 4,
+    MAX_MEMBERS_TO_FORWARD_TO: 6,
     COUNT_FOR_ENOUGH_PEERS: 4,
     MAX_CONCURRENT_POST: 3,
     DEFAULT_TIMEOUT: 10 * 1000, // 10 seconds
@@ -255,7 +262,7 @@ module.exports = {
       MAX: 20 // MAX Y blocks
     },
     SYNC_PEERS_INTERVAL: 3, // Every 3 block average generation time
-    SYNC_BLOCK_INTERVAL: 2, // Every 2 block average generation time
+    SYNC_BLOCK_INTERVAL: 0.8, // Every 0.8 block average generation time
     TEST_PEERS_INTERVAL: 10 // In seconds
   },
   PROOF_OF_WORK: {
@@ -345,7 +352,7 @@ module.exports = {
   SAFE_FACTOR: 3,
   BLOCKS_COLLECT_THRESHOLD: 30, // Blocks to collect from memory and persist
 
-  MUTE_LOGS_DURING_UNIT_TESTS: false,
+  MUTE_LOGS_DURING_UNIT_TESTS: true,
 
   SANDBOX_SIZE_TRANSACTIONS: 200,
   SANDBOX_SIZE_IDENTITIES: 100,
@@ -353,12 +360,22 @@ module.exports = {
   SANDBOX_SIZE_MEMBERSHIPS: 200,
 
   MAXIMUM_LEN_OF_COMPACT_TX: MAXIMUM_LEN_OF_COMPACT_TX,
-  MAX_NUMBER_OF_PEERS_FOR_PULLING: 10,
+  MAX_NUMBER_OF_PEERS_FOR_PULLING: 4,
 
   CURRENT_BLOCK_CACHE_DURATION: 10 * 1000, // 30 seconds
   CORES_MAXIMUM_USE_IN_PARALLEL: 8, // For more cores, we need to use a better PoW synchronization algorithm
 
-  ENGINE_IDLE_INTERVAL: 5000
+  ENGINE_IDLE_INTERVAL: 5000,
+
+  // When to trigger the PoW process again if no PoW is triggered for a while. In milliseconds.
+  POW_SECURITY_RETRY_DELAY: 10 * 60 * 1000,
+
+  POW_DIFFICULTY_RANGE_RATIO_V3: Math.sqrt(1.066),
+  POW_DIFFICULTY_RANGE_RATIO_V4: 1.189,
+
+  TRANSACTION_MAX_TRIES: 10,
+  NONCE_RANGE: 1000 * 1000 * 1000 * 100,
+  POW_MAXIMUM_ACCEPTABLE_HANDICAP: 8
 };
 
 function exact (regexpContent) {

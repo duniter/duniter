@@ -50,6 +50,6 @@ cd ../..
 mv duniter_release/duniter-desktop.nw duniter-${ARCH}/opt/duniter/
 echo "Making deb package"
 fakeroot dpkg-deb --build duniter-${ARCH}
-mv duniter-${ARCH}.deb duniter-v${DUNITER_VER}-linux-${ARCH}.deb
+mv duniter-${ARCH}.deb duniter-server-v${DUNITER_VER}-linux-${ARCH}.deb
 echo "Uploading release..."
-./github-release upload -u duniter -r duniter --tag v${DUNITER_VER} --name duniter-v${DUNITER_VER}-linux-${ARCH}.deb --file ./duniter-v${DUNITER_VER}-linux-${ARCH}.deb
+./github-release upload -u duniter -r duniter --tag v${DUNITER_VER} --name duniter-server-v${DUNITER_VER}-linux-${ARCH}.deb --file ./duniter-server-v${DUNITER_VER}-linux-${ARCH}.deb

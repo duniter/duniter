@@ -155,8 +155,12 @@ function Multicaster (conf, timeout) {
                 yield post(peer, params.uri, params.getObj(theDoc));
               } catch (e) {
                 if (params.onError) {
-                  const json = JSON.parse(e.body);
-                  yield params.onError(json, doc, namedURL);
+                  try {
+                    const json = JSON.parse(e.body);
+                    yield params.onError(json, doc, namedURL);
+                  } catch (ex) {
+                    logger.warn('Could not reach %s', namedURL);
+                  }
                 }
               }
             }));

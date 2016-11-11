@@ -7,12 +7,12 @@ mkdir -p $DUN_SOURCES
 
 # Duniter sources
 if [[ -f $DUN_ROOT/duniter-desktop.nw ]]; then
-  unzip -d $DUN_SOURCES/ $DUN_ROOT/duniter-desktop.nw
+  unzip -q -d $DUN_SOURCES/ $DUN_ROOT/duniter-desktop.nw
 fi
 
 # Duniter-Desktop
 if [[ -f $DUN_ROOT/nw.nwb ]]; then
-  unzip -d $DUN_NW $DUN_ROOT/nw.nwb
+  unzip -q -d $DUN_NW $DUN_ROOT/nw.nwb
   cp -R $DUN_SOURCES/gui/* $DUN_NW/
   chmod +x $DUN_NW/nw $DUN_NW/lib $DUN_NW/locales
   ln -s $DUN_NW/nw /usr/bin/duniter-desktop
@@ -24,9 +24,8 @@ if [[ -d $DUN_SOURCES/node ]]; then
   chmod 755 $DUN_SOURCES/bin/duniter
   sed -i "s/usr\/bin\/env node/opt\/duniter\/sources\/node\/bin\/node/g" $DUN_SOURCES/bin/duniter
   sed -i "s/DEB_PACKAGING=.*/DEB_PACKAGING=true/g" $DUN_SOURCES/duniter.sh
+  ln -s $DUN_SOURCES/duniter.sh /usr/bin/duniter
 fi
 # Else will execute with environment node
-
-ln -s $DUN_SOURCES/duniter.sh /usr/bin/duniter
 
 chmod +r -R $DUN_ROOT

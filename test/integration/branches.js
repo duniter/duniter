@@ -44,7 +44,7 @@ describe("Branches", () => co(function*() {
     it('should have a 3 blocks fork window size', function() {
       return expectAnswer(rp('http://127.0.0.1:7778/node/summary', { json: true }), function(res) {
         res.should.have.property('duniter').property('software').equal('duniter');
-        res.should.have.property('duniter').property('version').equal('0.31.0');
+        res.should.have.property('duniter').property('version').equal('0.50.0');
         res.should.have.property('duniter').property('forkWindowSize').equal(3);
       });
     });

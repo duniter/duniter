@@ -1,21 +1,18 @@
 environment:
   matrix:
-    - nodejs_version: "5.9.1"
-      ADDON_VERSION: "47"
+    - nodejs_version: "6.7.0"
+      ADDON_VERSION: "48"
 
 platform:
   - x64
 
 install:
   - echo %ADDON_VERSION%
-  - ps: Install-Product node $env:nodejs_version $env:platform
+  - ps: Update-NodeJsInstallation $env:nodejs_version $env:platform
   - node -v
   - npm install -g npm
   - npm install -g nw-gyp node-pre-gyp
   - npm install
-
-test_script:
-  - npm test
 
 build: off
 
@@ -32,8 +29,8 @@ after_test:
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set SRC=%cd%
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] echo %SRC%
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] copy misc\MSVSVersion.py %APPDATA%\npm\node_modules\nw-gyp\gyp\pylib\gyp\MSVSVersion.py
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW_VERSION=0.14.5
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW_RELEASE=v0.14.5
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW_VERSION=0.17.6
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW_RELEASE=v0.17.6
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] echo %NW_RELEASE%
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd node_modules/wotb
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm install --build-from-source
@@ -50,11 +47,11 @@ after_test:
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\scryptb.node %cd%\lib\binding\Release\node-v%ADDON_VERSION%-win32-x64\scryptb.node /Y
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ../sqlite3b
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ../sqlite3
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm install --build-from-source
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\node_sqlite3.node %cd%\lib\binding\Release\node-v%ADDON_VERSION%-win32-x64\node_sqlite3.node /Y
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] copy %cd%\lib\binding\node-webkit-%NW_RELEASE%-win32-x64\node_sqlite3.node %cd%\lib\binding\node-v%ADDON_VERSION%-win32-x64\node_sqlite3.node /Y
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ../..
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm prune --production
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ..
@@ -63,7 +60,7 @@ after_test:
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] echo %NW%
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW_GZ=%NW%.zip
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] echo %NW_GZ%
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] curl -fS -o %NW_GZ% https://s3.eu-central-1.amazonaws.com/duniter/binaries/%NW_GZ%
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] curl -fS -o %NW_GZ% http://dl.nwjs.io/%NW_RELEASE%/nwjs-%NW_RELEASE%-win-x64.zip
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] 7z x %NW_GZ% 1> null
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] move %NW% %cd%\duniter_release\nw
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] mkdir %cd%\duniter_release\sources
@@ -72,14 +69,14 @@ after_test:
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\duniter_release\sources\web-ui\node_modules
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\duniter_release\sources\web-ui\bower_components
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] iscc %cd%\duniter_release\sources\duniter.iss /DROOT_PATH=%cd%\duniter_release
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] move %cd%\duniter_release\Duniter.exe %cd%\duniter\duniter-%APPVEYOR_REPO_TAG_NAME%-windows-x64.exe
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] move %cd%\duniter_release\Duniter.exe %cd%\duniter\duniter-desktop-%APPVEYOR_REPO_TAG_NAME%-windows-x64.exe
 
 artifacts:
   - path: duniter*.exe
     name: Duniter
 
 deploy:
-  release: v0.31.0
+  release: v0.50.0
   provider: GitHub
   auth_token:
     secure: Vp/M0r0i1yhGR2nhrPWEbTiDIF6r0cmwbNDFZUzdFe5clWxPXtuC0lgIpOQI78zt

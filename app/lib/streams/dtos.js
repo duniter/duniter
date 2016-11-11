@@ -63,11 +63,26 @@ dtos.Memberships = {
   ]
 };
 
+dtos.MembershipList = {
+  "memberships": [
+    {
+      "pubkey": String,
+      "uid": String,
+      "version": Number,
+      "currency": String,
+      "membership": String,
+      "blockNumber": Number,
+      "blockHash": String,
+      "written": Number
+    }
+  ]
+};
+
 dtos.TransactionOfBlock = {
   "version": Number,
   "currency": String,
   "comment": String,
-  "locktime": String,
+  "locktime": Number,
   "signatures": [String],
   "outputs": [String],
   "inputs": [String],
@@ -198,6 +213,7 @@ dtos.UID = {
   "self": String,
   "revocation_sig": String,
   "revoked": Boolean,
+  "revoked_on": Number,
   "others": [dtos.Other]
 };
 
@@ -206,6 +222,9 @@ dtos.Signed = {
   "pubkey": String,
   "meta": {
     "timestamp": String
+  },
+  "cert_time": {
+    "block": Number
   },
   "isMember": Boolean,
   "wasMember": Boolean,
@@ -308,7 +327,7 @@ dtos.Transaction = {
   "unlocks": [String],
   "outputs": [String],
   "comment": String,
-  "locktime": String,
+  "locktime": Number,
   "signatures": [String],
   "raw": String,
   "hash": String
@@ -332,9 +351,10 @@ dtos.TxOfHistory = {
   "version": Number,
   "issuers": [String],
   "inputs": [String],
+  "unlocks": [String],
   "outputs": [String],
   "comment": String,
-  "locktime": String,
+  "locktime": Number,
   "received": Number,
   "signatures": [String],
   "hash": String,
@@ -424,10 +444,12 @@ dtos.AdminSummary = {
   "version": String,
   "host": String,
   "current": dtos.Block,
+  "rootBlock": dtos.Block,
   "pubkey": String,
   "seckey": String,
   "conf": dtos.SummaryConf,
-  "parameters": dtos.Parameters
+  "parameters": dtos.Parameters,
+  "lastUDBlock": dtos.Block
 };
 
 dtos.PoWSummary = {

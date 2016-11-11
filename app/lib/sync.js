@@ -99,6 +99,8 @@ function Synchroniser (server, host, port, conf, interactive) {
       node.pubkey = peer.pubkey;
       logger.info('Sync started.');
 
+      const fullSync = !to;
+
       //============
       // Blockchain headers
       //============
@@ -118,7 +120,7 @@ function Synchroniser (server, host, port, conf, interactive) {
       // Peers (just for P2P download)
       //=======
       let peers = [];
-      if (!nopeers) {
+      if (!nopeers && (to - localNumber > 1000)) { // P2P download if more than 1000 blocs
         watcher.writeStatus('Peers...');
         const merkle = yield dal.merkleForPeers();
         const getPeers = node.getPeers.bind(node);
@@ -150,6 +152,9 @@ function Synchroniser (server, host, port, conf, interactive) {
         }
       }
 
+      if (!peers.length) {
+        peers.push(peer);
+      }
       peers = peers.filter((p) => p);
 
       //============
@@ -159,7 +164,7 @@ function Synchroniser (server, host, port, conf, interactive) {
 
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = (askedCautious === true || (askedCautious === undefined && localNumber >= 0));
-      const downloader = new P2PDownloader(localNumber, to, CONST_MAX_SIMULTANEOUS_DOWNLOADS, peers, watcher);
+      const downloader = new P2PDownloader(localNumber, to, rCurrent.hash, CONST_MAX_SIMULTANEOUS_DOWNLOADS, peers, watcher);
 
       downloader.start();
 
@@ -246,7 +251,7 @@ function Synchroniser (server, host, port, conf, interactive) {
       //=======
       // Peers
       //=======
-      if (!nopeers) {
+      if (!nopeers && fullSync) {
         watcher.writeStatus('Peers...');
         yield syncPeer(node);
         const merkle = yield dal.merkleForPeers();
@@ -449,7 +454,7 @@ function LoggerWatcher() {
 
 }
 
-function P2PDownloader(localNumber, to, maxParallelDownloads, peers, watcher) {
+function P2PDownloader(localNumber, to, toHash, maxParallelDownloads, peers, watcher) {
 
   const that = this;
   const PARALLEL_PER_CHUNK = 1;
@@ -600,24 +605,50 @@ function P2PDownloader(localNumber, to, maxParallelDownloads, peers, watcher) {
   const downloadStarter = new Promise((resolve, reject) => startResolver = resolve);
 
   const chainsCorrectly = (blocks, index) => co(function*() {
-    for (let i = 1; i < blocks.length; i++) {
+
+    if (!blocks.length) {
+      logger.error('No block was downloaded');
+      return false;
+    }
+
+    for (let i = blocks.length - 1; i > 0; i--) {
       if (blocks[i].number !== blocks[i - 1].number + 1 || blocks[i].previousHash !== blocks[i - 1].hash) {
+        logger.error("Blocks do not chaing correctly", blocks[i].number);
+        return false;
+      }
+      if (blocks[i].version != blocks[i - 1].version && blocks[i].version != blocks[i - 1].version + 1) {
+        logger.error("Version cannot be downgraded", blocks[i].number);
         return false;
       }
     }
 
+    // Check hashes
     for (let i = 0; i < blocks.length; i++) {
       // Note: the hash, in Duniter, is made only on the **signing part** of the block: InnerHash + Nonce
+      if (blocks[i].inner_hash !== hashf(rawer.getBlockInnerPart(blocks[i])).toUpperCase()) {
+        logger.error("Inner hash of block#%s from %s does not match", blocks[i].number);
+        return false;
+      }
       if (blocks[i].hash !== hashf(rawer.getBlockInnerHashAndNonceWithSignature(blocks[i])).toUpperCase()) {
+        logger.error("Hash of block#%s from %s does not match", blocks[i].number);
         return false;
       }
     }
 
-    const previousChunk = yield that.getChunk(index - 1);
-    const firstBlock = blocks[0];
-    const lastBlock = previousChunk[previousChunk.length - 1];
-    if (firstBlock && lastBlock && (firstBlock.number !== lastBlock.number + 1 || firstBlock.previousHash !== lastBlock.hash)) {
+    const lastBlockOfChunk = blocks[blocks.length - 1];
+    if (lastBlockOfChunk.number == to && lastBlockOfChunk.hash != toHash) {
+      // Top chunk
+      logger.error('Top block is not on the right chain');
       return false;
+    } else {
+      // Chaining between downloads
+      const previousChunk = yield that.getChunk(index + 1);
+      const blockN = blocks[blocks.length - 1]; // The block n
+      const blockNp1 = previousChunk[0]; // The block n + 1
+      if (blockN && blockNp1 && (blockN.number + 1 !== blockNp1.number || blockN.hash != blockNp1.previousHash)) {
+        logger.error('Chunk is not referenced by the upper one');
+        return false;
+      }
     }
     return true;
   });
@@ -633,7 +664,7 @@ function P2PDownloader(localNumber, to, maxParallelDownloads, peers, watcher) {
       doneCount = 0;
       resolvedCount = 0;
       // Add as much possible downloads as possible, and count the already done ones
-      for (let i = 0; i < chunks.length; i++) {
+      for (let i = chunks.length - 1; i >= 0; i--) {
         if (chunks[i] === null && !processing[i] && slots.indexOf(i) === -1 && slots.length < downloadSlots) {
           slots.push(i);
           processing[i] = true;
@@ -666,9 +697,10 @@ function P2PDownloader(localNumber, to, maxParallelDownloads, peers, watcher) {
             if (downloads[realIndex].isResolved()) {
               const p = new Promise((resolve, reject) => co(function*() {
                 const blocks = yield downloads[realIndex];
-                if (realIndex > 0) {
-                  // We must wait for previous blocks to be STRONGLY validated before going any further
-                  yield that.getChunk(realIndex - 1);
+                if (realIndex < chunks.length - 1) {
+                  // We must wait for NEXT blocks to be STRONGLY validated before going any further, otherwise we
+                  // could be on the wrong chain
+                  yield that.getChunk(realIndex + 1);
                 }
                 const chainsWell = yield chainsCorrectly(blocks, realIndex);
                 if (chainsWell) {
@@ -677,7 +709,7 @@ function P2PDownloader(localNumber, to, maxParallelDownloads, peers, watcher) {
                   chunks[realIndex] = blocks;
                   resultsDeferers[realIndex].resolve(chunks[realIndex]);
                 } else {
-                  logger.warn("Chunk #%s is DOES NOT CHAIN CORRECTLY from %s", realIndex, [handler[realIndex].host, handler[realIndex].port].join(':'));
+                  logger.warn("Chunk #%s DOES NOT CHAIN CORRECTLY from %s", realIndex, [handler[realIndex].host, handler[realIndex].port].join(':'));
                   // Penality on this node to avoid its usage
                   handler[realIndex].tta += MAX_DELAY_PER_DOWNLOAD;
                   // Need a retry

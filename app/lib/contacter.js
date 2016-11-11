@@ -19,6 +19,9 @@ function Contacter(host, port, opts) {
     timeout: opts.timeout || constants.NETWORK.DEFAULT_TIMEOUT
   };
 
+  this.host = host;
+  this.port = port;
+
   this.getSummary = () => get('/node/summary/', dtos.Summary);
   this.getLookup = (search) => get('/wot/lookup/', dtos.Lookup, search);
   this.getBlock = (number) => get('/blockchain/block/', dtos.Block, number);

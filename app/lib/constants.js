@@ -375,7 +375,7 @@ module.exports = {
 
   TRANSACTION_MAX_TRIES: 10,
   NONCE_RANGE: 1000 * 1000 * 1000 * 100,
-  POW_MAXIMUM_ACCEPTABLE_HANDICAP: 8
+  POW_MAXIMUM_ACCEPTABLE_HANDICAP: 64
 };
 
 function exact (regexpContent) {

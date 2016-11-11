@@ -48,7 +48,7 @@
     "express": "4.14.0",
     "express-cors": "0.0.3",
     "express-fileupload": "0.0.5",
-    "inquirer": "1.2.1",
+    "inquirer": "0.8.5",
     "jison": "0.4.17",
     "merkle": "0.5.1",
     "moment": "2.15.1",

@@ -12,3 +12,6 @@ gui/nw
 *~
 *.swp
 *.swo
+
+# Yarn
+yarn.lock

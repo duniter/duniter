@@ -107,6 +107,7 @@ if [[ ! -f before_deploy ]]; then
   mv desktop_release/nw.nwb duniter-x64/opt/duniter/
 
   # Server TGZ release
+  sed -i "s/Package: .*/Package: duniter-desktop/g" duniter-x64/DEBIAN/control
   fakeroot dpkg-deb --build duniter-x64
   mv duniter-x64.deb ../duniter-desktop-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
 
@@ -132,6 +133,7 @@ if [[ ! -f before_deploy ]]; then
   cd ../..
   rm -rf duniter-x64/opt/duniter/duniter-desktop.nw
   mv desktop_release/duniter-desktop.nw duniter-x64/opt/duniter/
+  sed -i "s/Package: .*/Package: duniter/g" duniter-x64/DEBIAN/control
   fakeroot dpkg-deb --build duniter-x64
   mv duniter-x64.deb ../duniter-server-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
 

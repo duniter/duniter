@@ -57,7 +57,11 @@ function Router (PeeringService, conf, dal) {
           yield PeeringService.handleNewerPeer(obj.peer);
         }
       } catch (e) {
-        logger.error("Routing error: %s", e && (e.stack || e.message || e));
+        if (e && e.uerr && e.uerr.ucode == constants.ERRORS.NEWER_PEER_DOCUMENT_AVAILABLE.uerr.ucode) {
+          logger.info('Newer peer document available on the network for local node');
+        } else {
+          logger.error("Routing error: %s", e && (e.stack || e.message || e));
+        }
       }
       done && done();
     });

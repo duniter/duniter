@@ -276,7 +276,7 @@ function networkReconfiguration(conf, autoconf, noupnp, done) {
         var remote = [conf.remoteipv4, conf.remoteport].join(':');
         if (autoconf) {
           conf.ipv6 = conf.remoteipv6 = network.getBestLocalIPv6();
-          logger.info('IPv6: %s', conf.ipv6);
+          logger.info('IPv6: %s', conf.ipv6 || "");
           logger.info('Local IPv4: %s', local);
           logger.info('Remote IPv4: %s', remote);
           // Use proposed local + remote with UPnP binding

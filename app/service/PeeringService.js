@@ -224,7 +224,7 @@ function PeeringService(server) {
 
   this.generateSelfPeer = (theConf, signalTimeInterval) => co(function*() {
     const current = yield server.dal.getCurrentBlockOrNull();
-    const currency = theConf.currency;
+    const currency = theConf.currency || constants.DEFAULT_CURRENCY_NAME;
     const peers = yield dal.findPeers(selfPubkey);
     let p1 = {
       version: constants.DOCUMENTS_VERSION,

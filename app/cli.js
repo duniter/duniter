@@ -148,6 +148,8 @@ program
   .action(subCommand(service((server, conf) => new Promise((resolve, reject) => {
     co(function*() {
         try {
+          yield configure(server, conf);
+          yield server.loadConf();
           yield duniter.statics.startNode(server, conf);
         } catch (e) {
           reject(e);
@@ -471,47 +473,7 @@ program
 program
   .command('config')
   .description('Register configuration in database')
-  .action(subCommand(connect(function (server, conf) {
-    return co(function *() {
-      if (program.autoconf) {
-        let wiz = wizard();
-        conf.upnp = !program.noupnp;
-        yield Q.nbind(wiz.networkReconfiguration, wiz)(conf, program.autoconf, program.noupnp);
-        yield Q.nbind(wiz.keyReconfigure, wiz)(conf, program.autoconf);
-      }
-      // Try to add an endpoint if provided
-      if (program.addep) {
-        if (conf.endpoints.indexOf(program.addep) === -1) {
-          conf.endpoints.push(program.addep);
-        }
-        // Remove it from "to be removed" list
-        const indexInRemove = conf.rmEndpoints.indexOf(program.addep);
-        if (indexInRemove !== -1) {
-          conf.rmEndpoints.splice(indexInRemove, 1);
-        }
-      }
-      // Try to remove an endpoint if provided
-      if (program.remep) {
-        if (conf.rmEndpoints.indexOf(program.remep) === -1) {
-          conf.rmEndpoints.push(program.remep);
-        }
-        // Remove it from "to be added" list
-        const indexInToAdd = conf.endpoints.indexOf(program.remep);
-        if (indexInToAdd !== -1) {
-          conf.endpoints.splice(indexInToAdd, 1);
-        }
-      }
-      return server.dal.saveConf(conf)
-        .then(function () {
-          logger.debug("Configuration saved.");
-          return conf;
-        })
-        .catch(function (err) {
-          logger.error("Configuration could not be saved: " + err);
-          throw Error(err);
-        });
-    });
-  })));
+  .action(subCommand(connect(configure)));
 
 program
   .command('reset [config|data|peers|tx|stats|all]')
@@ -849,7 +811,6 @@ function service(callback, nologs) {
         return callback.apply(this, cbArgs);
       })
       .catch(function (err) {
-        logger.error(err);
         server.disconnect();
         throw Error(err);
       });
@@ -901,6 +862,10 @@ function webInit() {
       // Add log files for this instance
       logger.addHomeLogs(params.home);
     }
+    const server = duniter({home: dbHome, name: dbName}, commandLineConf());
+    yield server.plugFileSystem();
+    const cnf = yield server.loadConf();
+    yield configure(server, cnf);
     return yield duniter.statics.enableHttpAdmin({
       home: dbHome,
       name: dbName,
@@ -920,4 +885,55 @@ function mainError(err) {
 function needsToBeLaunchedByScript() {
     logger.error('This command must not be launched directly, using duniter.sh script');
     return Promise.resolve();
+}
+
+function configure(server, conf) {
+  return co(function *() {
+    let wiz = wizard();
+    conf.upnp = !program.noupnp;
+    const autoconfNet = program.autoconf
+      || !(conf.ipv4 || conf.ipv6)
+      || !(conf.remoteipv4 || conf.remoteipv6 || conf.remotedns)
+      || !(conf.port && conf.remoteport);
+    if (autoconfNet) {
+      yield Q.nbind(wiz.networkReconfiguration, wiz)(conf, autoconfNet, program.noupnp);
+    }
+    const hasSaltPasswdKey = conf.salt && conf.passwd;
+    const hasKeyPair = conf.pair && conf.pair.pub && conf.pair.sec;
+    const autoconfKey = program.autoconf || (!hasSaltPasswdKey && !hasKeyPair);
+    if (autoconfKey) {
+      yield Q.nbind(wiz.keyReconfigure, wiz)(conf, autoconfKey);
+    }
+    // Try to add an endpoint if provided
+    if (program.addep) {
+      if (conf.endpoints.indexOf(program.addep) === -1) {
+        conf.endpoints.push(program.addep);
+      }
+      // Remove it from "to be removed" list
+      const indexInRemove = conf.rmEndpoints.indexOf(program.addep);
+      if (indexInRemove !== -1) {
+        conf.rmEndpoints.splice(indexInRemove, 1);
+      }
+    }
+    // Try to remove an endpoint if provided
+    if (program.remep) {
+      if (conf.rmEndpoints.indexOf(program.remep) === -1) {
+        conf.rmEndpoints.push(program.remep);
+      }
+      // Remove it from "to be added" list
+      const indexInToAdd = conf.endpoints.indexOf(program.remep);
+      if (indexInToAdd !== -1) {
+        conf.endpoints.splice(indexInToAdd, 1);
+      }
+    }
+    return server.dal.saveConf(conf)
+      .then(function () {
+        logger.debug("Configuration saved.");
+        return conf;
+      })
+      .catch(function (err) {
+        logger.error("Configuration could not be saved: " + err);
+        throw Error(err);
+      });
+  });
 }

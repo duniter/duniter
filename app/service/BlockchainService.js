@@ -127,7 +127,11 @@ function BlockchainService (server) {
 
   const checkAndAddBlock = (obj, doCheck, forkAllowed) => co(function *() {
     // Force usage of local currency name, do not accept other currencies documents
-    obj.currency = conf.currency || obj.currency;
+    if (conf.currency) {
+      obj.currency = conf.currency || obj.currency;
+    } else {
+      conf.currency = obj.currency;
+    }
     try {
       Transaction.statics.setIssuers(obj.transactions);
     }

@@ -302,6 +302,7 @@ module.exports = {
   },
 
   DEFAULT_CPU: 0.6,
+  DEFAULT_CURRENCY_NAME: "no_currency",
 
   CONTRACT: {
     DEFAULT: {
@@ -328,13 +329,6 @@ module.exports = {
     },
 
     DSEN_P: 1.2 // dSen proportional factor
-  },
-
-  CRYPTO: {
-    DEFAULT_KEYPAIR: {
-      pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-      sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
-    }
   },
 
   BRANCHES: {

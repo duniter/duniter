@@ -148,8 +148,6 @@ program
   .action(subCommand(service((server, conf) => new Promise((resolve, reject) => {
     co(function*() {
         try {
-          yield configure(server, conf);
-          yield server.loadConf();
           yield duniter.statics.startNode(server, conf);
         } catch (e) {
           reject(e);
@@ -802,14 +800,18 @@ function service(callback, nologs) {
       }
     });
 
+    const that = this;
+
     // Initialize server (db connection, ...)
-    return server.initWithDAL()
-      .then(function () {
-        cbArgs.length--;
-        cbArgs[cbArgs.length++] = server;
-        cbArgs[cbArgs.length++] = server.conf;
-        return callback.apply(this, cbArgs);
-      })
+    return co(function*() {
+      yield server.initWithDAL();
+      yield configure(server, {});
+      yield server.loadConf();
+      cbArgs.length--;
+      cbArgs[cbArgs.length++] = server;
+      cbArgs[cbArgs.length++] = server.conf;
+      return callback.apply(that, cbArgs);
+    })
       .catch(function (err) {
         server.disconnect();
         throw Error(err);

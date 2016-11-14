@@ -4,9 +4,10 @@ const async           = require('async');
 const _               = require('underscore');
 const co              = require('co');
 const Q               = require('q');
+const parsers         = require('../lib/streams/parsers');
 const rules           = require('../lib/rules');
 const base58          = require('../lib/crypto/base58');
-const keyring       = require('../lib/crypto/keyring');
+const keyring         = require('../lib/crypto/keyring');
 const constants       = require('../lib/constants');
 const blockchainCtx   = require('../lib/computation/blockchainContext');
 const blockGenerator  = require('../lib/computation/blockGenerator');
@@ -125,7 +126,9 @@ function BlockchainService (server) {
 
   this.submitBlock = (obj, doCheck, forkAllowed) => this.pushFIFO(() => checkAndAddBlock(obj, doCheck, forkAllowed));
 
-  const checkAndAddBlock = (obj, doCheck, forkAllowed) => co(function *() {
+  const checkAndAddBlock = (blockToAdd, doCheck, forkAllowed) => co(function *() {
+    // Check global format, notably version number
+    const obj = parsers.parseBlock.syncWrite(Block.statics.fromJSON(blockToAdd).getRawSigned());
     // Force usage of local currency name, do not accept other currencies documents
     if (conf.currency) {
       obj.currency = conf.currency || obj.currency;

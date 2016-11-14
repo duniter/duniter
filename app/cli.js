@@ -259,11 +259,6 @@ program
   })));
 
 program
-  .command('init [host] [port]')
-  .description('Setup a node configuration and sync data with given node')
-  .action(subCommand(connect(bootstrapServer, true)));
-
-program
   .command('dump [what]')
   .description('Diverse dumps of the inner data')
   .action(subCommand(connect(makeDump, true)));
@@ -554,55 +549,6 @@ function makeDump(what, server, conf) {
     server.disconnect();
     throw Error("Exiting");
   });
-}
-
-function bootstrapServer(host, port, server, conf) {
-  async.series(getBootstrapOperations(host, port, server, conf), function (err) {
-    if (err) {
-      logger.error(err);
-    }
-    server.disconnect();
-    throw Error("Exiting");
-  });
-}
-
-function getBootstrapOperations(host, port, server, conf) {
-  var ops = [];
-  var wiz = wizard(server);
-  ops = ops.concat([
-    function (next) {
-      // Reset data
-      server.resetAll(next);
-    },
-    function (next) {
-      conf.upnp = !program.noupnp;
-      wiz.networkReconfiguration(conf, program.autoconf, program.noupnp, next);
-    },
-    function (next) {
-      // PublicKey
-      var keyChosen = true;
-      async.doWhilst(function (next) {
-        async.waterfall([
-          function (next) {
-            if (!conf.salt && !conf.passwd) {
-              wiz.keyReconfigure(conf, program.autoconf, next);
-            } else {
-              next();
-            }
-          }
-        ], next);
-      }, function () {
-        return !keyChosen;
-      }, next);
-    },
-    function (next) {
-      return server.dal.saveConf(conf).then(_.partial(next, null)).catch(next);
-    }]);
-  ops.push(function (next) {
-    logger.info('Configuration saved.');
-    next();
-  });
-  return ops;
 }
 
 function commandLineConf(conf) {

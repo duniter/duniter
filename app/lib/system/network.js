@@ -24,8 +24,9 @@ module.exports = {
     for (let netInterface of osInterfaces) {
       const addresses = netInterface.addresses;
       const filtered = _(addresses).where({family: 'IPv6', scopeid: 0, internal: false });
-      if (filtered[0]) {
-        return filtered[0].address;
+      const filtered2 = _(filtered).filter((address) => !address.address.match(/^fe80/) && !address.address.match(/^::1/));
+      if (filtered2[0]) {
+        return filtered2[0].address;
       }
     }
     return null;

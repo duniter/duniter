@@ -751,7 +751,7 @@ function service(callback, nologs) {
     // Initialize server (db connection, ...)
     return co(function*() {
       yield server.initWithDAL();
-      yield configure(server, {});
+      yield configure(server, server.conf || {});
       yield server.loadConf();
       cbArgs.length--;
       cbArgs[cbArgs.length++] = server;

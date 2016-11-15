@@ -461,7 +461,6 @@ function BlockchainContext() {
     }
 
     for (const obj of block.transactions) {
-      obj.version = block.version;
       obj.currency = block.currency;
       obj.issuers = obj.signatories;
       const tx = new Transaction(obj);
@@ -660,7 +659,6 @@ function BlockchainContext() {
 
   this.deleteTransactions = (block) => co(function*() {
     for (const obj of block.transactions) {
-      obj.version = block.version;
       obj.currency = block.currency;
       obj.issuers = obj.signatories;
       const tx = new Transaction(obj);

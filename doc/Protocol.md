@@ -1071,7 +1071,9 @@ To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must
 * A transaction cannot have 2 identical outputs
 * A transaction cannot have `SIG(INDEX)` unlocks with `INDEX >= ` issuers count.
 * A transaction **must** have signatures matching its content for each issuer
-* A transaction's version must be the same as its including block
+* A transaction's version:
+  * must be the same as its including block if the block's `Version` is `<= 3`
+  * must be equal to `3` if the block's `Version` is `> 3`
 * There cannot be 2 transactions with the same source
 
 ###### CommonBase

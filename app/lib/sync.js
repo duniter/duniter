@@ -277,6 +277,7 @@ function Synchroniser (server, host, port, conf, interactive) {
               });
               entry.signature = sign;
               watcher.writeStatus('Peer ' + entry.pubkey);
+              yield PeeringService.submitP(entry, false, to === undefined);
             } catch (e) {
               logger.warn(e);
             }

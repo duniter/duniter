@@ -147,6 +147,10 @@ describe("CLI", function() {
     const res = yield executeSpawn(['export-bc']);
     JSON.parse(res).should.have.length(0);
   }));
+
+  it('[spawn] sync 10 first blocks --memory', () => co(function*() {
+    yield execute(['sync', fakeServer.host, fakeServer.port, '10', '--memory', '--cautious', '--nointeractive']);
+  }));
 });
 
 /**

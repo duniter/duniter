@@ -215,18 +215,14 @@ program
       throw 'Port is required.';
     }
     return co(function *() {
-      try {
-        let cautious;
-        if (program.nocautious) {
-          cautious = false;
-        }
-        if (program.cautious) {
-          cautious = true;
-        }
-        yield server.synchronize(host, port, parseInt(to), 0, !program.nointeractive, cautious, program.nopeers);
-      } catch (err) {
-        logger.error(err.stack || err.message);
+      let cautious;
+      if (program.nocautious) {
+        cautious = false;
       }
+      if (program.cautious) {
+        cautious = true;
+      }
+      yield server.synchronize(host, port, parseInt(to), 0, !program.nointeractive, cautious, program.nopeers);
       yield ((server && server.disconnect()) || Q()).catch(() => null);
     });
   })));

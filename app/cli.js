@@ -19,7 +19,7 @@ const Block = require('../app/lib/entity/block');
 
 let currentCommand = Promise.resolve(true);
 
-let onResolve, onReject, closeCommand = () => Promise.resolve(true);
+let onResolve, onReject, onService, closeCommand = () => Promise.resolve(true);
 
 module.exports = (programArgs) => {
 
@@ -34,13 +34,14 @@ module.exports = (programArgs) => {
     closeCommand: () => closeCommand(),
 
     // To execute the provided command
-    execute: () => co(function*() {
+    execute: (onServiceCallback) => co(function*() {
 
+      onService = onServiceCallback;
       program.parse(programArgs);
 
       if (programArgs.length <= 2) {
 
-        console.log('No command given, using default: duniter webwait');
+        logger.info('No command given, using default: duniter webwait');
         return co(function *() {
           try {
             yield webWait();
@@ -752,6 +753,7 @@ function service(callback, nologs) {
       cbArgs.length--;
       cbArgs[cbArgs.length++] = server;
       cbArgs[cbArgs.length++] = server.conf;
+      onService && onService(server);
       return callback.apply(that, cbArgs);
     })
       .catch(function (err) {
@@ -775,7 +777,7 @@ program
 function webWait() {
   return new Promise(() => {
     co(function *() {
-      let webminapi = yield webInit();
+      let webminapi = yield webInit(onService);
       yield webminapi.httpLayer.openConnections();
       yield new Promise(() => null); // Never stop this command, unless Ctrl+C
     })
@@ -785,7 +787,7 @@ function webWait() {
 
 function webStart() {
   return co(function *() {
-    let webminapi = yield webInit();
+    let webminapi = yield webInit(onService);
     yield webminapi.httpLayer.openConnections();
     yield webminapi.webminCtrl.startHTTP();
     yield webminapi.webminCtrl.startAllServices();
@@ -795,7 +797,7 @@ function webStart() {
     .catch(mainError);
 }
 
-function webInit() {
+function webInit(onService) {
   return co(function *() {
     var dbName = program.mdb;
     var dbHome = program.home;
@@ -810,6 +812,7 @@ function webInit() {
     yield server.plugFileSystem();
     const cnf = yield server.loadConf();
     yield configure(server, cnf);
+    onService && onService(server);
     return yield duniter.statics.enableHttpAdmin({
       home: dbHome,
       name: dbName,

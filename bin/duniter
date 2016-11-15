@@ -1,39 +1,4 @@
 #!/usr/bin/env node
 "use strict";
 
-const co = require('co');
-const cli = require('../app/cli');
-const logger = require('../app/lib/logger')('duniter');
-
-// Specific errors handling
-process.on('uncaughtException', (err) => {
-  // Dunno why this specific exception is not caught
-  if (err.code !== "EADDRNOTAVAIL" && err.code !== "EINVAL") {
-    logger.error(err);
-    process.exit(1);
-  }
-});
-
-process.on('unhandledRejection', (reason) => {
-  logger.error('Unhandled rejection: ' + reason);
-});
-
-return co(function*() {
-  try {
-    // Prepare the command
-    const command = cli(process.argv);
-    // If ever the process gets interrupted
-    process.on('SIGINT', () => {
-      co(function*() {
-        yield command.closeCommand();
-        process.exit();
-      });
-    });
-    // Executes the command
-    yield command.execute();
-    process.exit();
-  } catch (e) {
-    logger.error(e);
-    process.exit(1);
-  }
-});
+require('../index').statics.cli();

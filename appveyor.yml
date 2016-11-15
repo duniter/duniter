@@ -76,11 +76,11 @@ artifacts:
     name: Duniter
 
 deploy:
-  release: v0.50.1a3
+  release: v0.50.1
   provider: GitHub
   auth_token:
     secure: Vp/M0r0i1yhGR2nhrPWEbTiDIF6r0cmwbNDFZUzdFe5clWxPXtuC0lgIpOQI78zt
   artifact: /Duniter/
-  prerelease: true
+#  prerelease: true
   on:
     appveyor_repo_tag: true

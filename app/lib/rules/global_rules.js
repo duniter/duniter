@@ -851,6 +851,8 @@ function checkCertificationIsValid (block, cert, findIdtyFunc, conf, dal) {
         throw Error('Rejected certification: certifying its own self-certification has no meaning');
       else {
         const buid = [cert.block_number, basedBlock.hash].join('-');
+        if (cert.block_hash && buid != [cert.block_number, cert.block_hash].join('-'))
+          throw Error('Certification based on an unexisting block buid. from ' + cert.from.substring(0,8) + ' to ' + idty.pubkey.substring(0,8));
         idty.currency = conf.currency;
         const raw = rawer.getOfficialCertification(_.extend(idty, {
           idty_issuer: idty.pubkey,

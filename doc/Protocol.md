@@ -1282,7 +1282,7 @@ An identity is considered *revoked* if either:
 
 ##### Version
 
-`Version` must be `2` or `3`. Also, `Version: 2` cannot follow a `Version: 3` block.
+`Version` must be between `[2, 5]`. Also, `Version` of incoming block must be equal to `Version` or `Version + 1` of current block.
 
 ##### PoWMin
 

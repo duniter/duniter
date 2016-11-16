@@ -957,7 +957,7 @@ function getTrialLevel (version, issuer, conf, dal) {
       const nbPreviousIssuers = _(_(issuers).uniq()).without(issuer).length;
       const nbBlocksSince = current.number - last.number;
       let personal_diff = Math.max(powMin, powMin * Math.floor(percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
-      if ((personal_diff + 1) % 16 == 0) {
+      if (personal_diff + 1 % 16 == 0) {
         personal_diff++;
       }
       return personal_diff;
@@ -986,7 +986,7 @@ function getTrialLevel (version, issuer, conf, dal) {
         // Personal_handicap
         personal_diff += Math.floor(Math.log(1 + personal_excess) / Math.log(1.189));
       }
-      if ((personal_diff + 1) % 16 == 0) {
+      if (personal_diff + 1 % 16 == 0) {
         personal_diff++;
       }
       return personal_diff;
@@ -1026,7 +1026,7 @@ function getTrialLevel (version, issuer, conf, dal) {
       // Personal_handicap
       const handicap = Math.floor(Math.log(1 + personal_excess) / Math.log(1.189));
       let personal_diff = powMin + handicap;
-      if ((personal_diff + 1) % 16 == 0) {
+      if (personal_diff + 1 % 16 == 0) {
         personal_diff++;
       }
       return personal_diff;

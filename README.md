@@ -27,6 +27,11 @@ In the world of crypto-currencies, [Sakia Wallet](http://sakia-wallet.org) ([rep
 
 ## Going further
 
+### Contribute
+
+- [Quick-start-guide : start a duniter node with web-ui from source](https://github.com/duniter/duniter/blob/master/doc/quick-start.md)
+- [Guide (fr)](https://github.com/duniter/duniter/blob/master/doc/contribute-french.md)
+
 ### Documentation
 
 Visit [Duniter website](https://duniter.org): it gathers theoretical informations, FAQ and several useful links. If you want to learn, this is the first place to visit.

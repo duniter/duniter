@@ -16,7 +16,7 @@
     "full-install": "npm install && git submodule init && git submodule update && cd web-ui && npm install",
     "test": "mocha --growl --timeout 20000 test test/fast test/fast/block test/integration test/",
     "start": "node bin/duniter start",
-    "webstart": "parallelscript \"node bin/duniter webstart\" \"cd web-ui && npm start\"",
+    "webstart": "cd web-ui && parallelshell \"node ../bin/duniter webstart\" \"npm start\"",
     "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --timeout 20000 test test/fast test/fast/block test/integration test/"
   },
   "repository": {

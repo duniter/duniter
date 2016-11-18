@@ -308,18 +308,24 @@ function getBestLocal(family) {
       }
     }
   }
+  const interfacePriorityRegCatcher = [
+    /^tun\d/,
+    /^enp\ds\d/,
+    /^enp\ds\df\d/,
+    /^eth\d/,
+    /^Ethernet/,
+    /^wlp\ds\d/,
+    /^wlan\d/,
+    /^Wi-Fi/,
+    /^lo/,
+    /^Loopback/,
+    /^None/
+  ];
   const best = _.sortBy(res, function(entry) {
-    if (entry.name.match(/^enp\ds\d/))    return 0;
-    if (entry.name.match(/^enp\ds\df\d/)) return 1;
-    if (entry.name.match(/^eth\d/))       return 2;
-    if (entry.name.match(/^Ethernet/))    return 3;
-    if (entry.name.match(/^wlp\ds\d/))    return 4;
-    if (entry.name.match(/^wlan\d/))      return 5;
-    if (entry.name.match(/^Wi-Fi/))       return 6;
-    if (entry.name.match(/^lo/))          return 7;
-    if (entry.name.match(/^Loopback/))    return 8;
-    if (entry.name.match(/^None/))        return 9;
-    return 10;
+    for(let priority in interfacePriorityRegCatcher){
+      if (entry.name.match(interfacePriorityRegCatcher[priority])) return priority;
+    }
+    return interfacePriorityRegCatcher.length;
   })[0];
   return (best && best.value) || "";
 }

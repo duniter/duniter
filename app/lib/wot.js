@@ -22,6 +22,9 @@ function WoTBWrapper(instance) {
   this.existsLink = instance.existsLink;
   this.isOutdistanced = instance.isOutdistanced;
   this.setMaxCert = instance.setMaxCert;
+  this.getPaths = instance.getPaths;
+  this.getSentries = instance.getSentries;
+  this.getNonSentries = instance.getNonSentries;
 
   this.setEnabled = (enabled, nodeID) => instance.setEnabled(enabled, nodeID);
 

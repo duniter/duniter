@@ -73,7 +73,7 @@
     "unzip": "0.1.11",
     "unzip2": "0.2.5",
     "winston": "2.2.0",
-    "wotb": "duniter/wotb#ff24562a6abfd7b3d75953e161a471dcccef4305",
+    "wotb": "0.4.13",
     "ws": "1.1.1"
   },
   "devDependencies": {

@@ -139,6 +139,7 @@ function BlockDAL(driver) {
       }
     }
     yield that.exec(queries);
+    that.cleanCache();
   });
 
   this.saveBlock = (block) => co(function *() {

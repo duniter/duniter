@@ -840,7 +840,7 @@ function configure(server, conf) {
     conf.upnp = !program.noupnp;
     const autoconfNet = program.autoconf
       || !(conf.ipv4 || conf.ipv6)
-      || !(conf.remoteipv4 || conf.remoteipv6 || conf.remotedns)
+      || !(conf.remoteipv4 || conf.remoteipv6 || conf.remotehost)
       || !(conf.port && conf.remoteport);
     if (autoconfNet) {
       yield Q.nbind(wiz.networkReconfiguration, wiz)(conf, autoconfNet, program.noupnp);

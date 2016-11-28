@@ -626,6 +626,11 @@ function P2PDownloader(localNumber, to, toHash, maxParallelDownloads, peers, wat
     // Check hashes
     for (let i = 0; i < blocks.length; i++) {
       // Note: the hash, in Duniter, is made only on the **signing part** of the block: InnerHash + Nonce
+      if (blocks[i].version >= 3) {
+        for (const tx of blocks[i].transactions) {
+          tx.version = 3;
+        }
+      }
       if (blocks[i].inner_hash !== hashf(rawer.getBlockInnerPart(blocks[i])).toUpperCase()) {
         logger.error("Inner hash of block#%s from %s does not match", blocks[i].number);
         return false;

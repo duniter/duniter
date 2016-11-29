@@ -23,6 +23,8 @@ function TxsDAL(driver) {
   this.table = 'txs';
   this.fields = [
     'hash',
+    'v4_hash',
+    'v5_hash',
     'block_number',
     'version',
     'currency',
@@ -152,6 +154,8 @@ function TxsDAL(driver) {
       return that.exec(queries.join('\n'));
     }
   });
+
+  this.getTransactionByExtendedHash = (hash) => that.query("SELECT * FROM txs WHERE hash = ? OR v4_hash = ? OR v5_hash = ?", [hash, hash, hash]);
 
   /**************************
    * SANDBOX STUFF

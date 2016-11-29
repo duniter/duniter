@@ -576,7 +576,9 @@ function BlockchainContext() {
           const sp = tx.blockstamp.split('-');
           tx.blockstampTime = (yield getBlockByNumberAndHash(sp[0], sp[1])).medianTime;
         }
-        newOnes.push(new Transaction(tx));
+        const txEntity = new Transaction(tx);
+        txEntity.computeAllHashes();
+        newOnes.push(txEntity);
       }
       txs = txs.concat(newOnes);
     }

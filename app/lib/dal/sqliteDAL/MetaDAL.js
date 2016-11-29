@@ -174,6 +174,27 @@ function MetaDAL(driver) {
         }
       }
     }),
+
+    16: () => co(function *() {
+      let txsDAL = new (require('./TxsDAL'))(driver);
+      try {
+        yield txsDAL.exec('ALTER TABLE txs ADD COLUMN v4_hash CHAR(64) NULL');
+        yield txsDAL.exec('ALTER TABLE txs ADD COLUMN v5_hash CHAR(64) NULL');
+      } catch (e) {
+        logger.debug(e);
+      }
+      const v3_transactions = yield txsDAL.query('SELECT * FROM txs WHERE version = ?', [3]);
+      let i = 0;
+      for (const dbTx of v3_transactions) {
+        i++;
+        let tx = new Transaction(dbTx);
+        tx.computeAllHashes();
+        if (i % 50 == 0) {
+          logger.info('Migrating transaction %s/%s', i, v3_transactions.length);
+        }
+        yield txsDAL.saveEntity(tx);
+      }
+    }),
   };
 
   this.init = () => co(function *() {

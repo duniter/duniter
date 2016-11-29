@@ -90,6 +90,22 @@ let Transaction = function(obj, currency) {
     return this.hash;
   };
 
+  this.computeAllHashes = () => {
+    // Only for V3 transactions
+    if (this.version == 3) {
+      let initialVersion = this.version;
+      // v4 hash
+      this.version = 4;
+      this.v4_hash = hashf(rawer.getTransaction(this)).toUpperCase();
+      // v5 hash
+      this.version = 5;
+      this.v5_hash = hashf(rawer.getTransaction(this)).toUpperCase();
+      // Reset to initial version
+      this.version = initialVersion;
+      this.hash = hashf(rawer.getTransaction(this)).toUpperCase();
+    }
+  };
+
   this.compact = () => rawer.getCompactTransaction(this);
 
   this.hash = this.hash || hashf(this.getRaw()).toUpperCase();

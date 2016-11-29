@@ -393,7 +393,25 @@ function FileDAL(params) {
     return links.length ? true : false;
   });
 
-  this.getSource = (identifier, noffset) => that.sourcesDAL.getSource(identifier, noffset);
+  this.getSource = (identifier, noffset) => co(function*() {
+    let src = yield that.sourcesDAL.getSource(identifier, noffset);
+    // If the source does not exist, we try to check if it exists under another form (issue #735)
+    if (!src) {
+      let txs = yield that.txsDAL.getTransactionByExtendedHash(identifier);
+      if (txs.length > 1) {
+        throw constants.ERRORS.INCONSISTENT_DB_MULTI_TXS_SAME_HASH;
+      }
+      if (txs.length && txs[0].version == 3) {
+        // Other try: V4
+        src = yield that.sourcesDAL.getSource(txs[0].v4_hash, noffset);
+        if (!src) {
+          // Last try: V5
+          src = yield that.sourcesDAL.getSource(txs[0].v5_hash, noffset);
+        }
+      }
+    }
+    return src;
+  });
 
   this.isMember = (pubkey) => co(function*() {
     try {
@@ -679,7 +697,9 @@ function FileDAL(params) {
         const sp = tx.blockstamp.split('-');
         tx.blockstampTime = (yield that.getBlockByNumberAndHash(sp[0], sp[1])).medianTime;
       }
-      return that.txsDAL.addLinked(new Transaction(tx));
+      const txEntity = new Transaction(tx);
+      txEntity.computeAllHashes();
+      return that.txsDAL.addLinked(txEntity);
     })));
   };
 

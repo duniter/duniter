@@ -364,12 +364,14 @@ rules.FUNCTIONS = {
   }),
 
   checkTxLen: (block) => co(function *() {
-    const txs = block.getTransactions();
-    // Check rule against each transaction
-    for (const tx of txs) {
-      const txLen = Transaction.statics.getLen(tx);
-      if (txLen > constants.MAXIMUM_LEN_OF_COMPACT_TX) {
-        throw constants.ERRORS.A_TRANSACTION_HAS_A_MAX_SIZE;
+    if (block.version >= 3) {
+      const txs = block.getTransactions();
+      // Check rule against each transaction
+      for (const tx of txs) {
+        const txLen = Transaction.statics.getLen(tx);
+        if (txLen > constants.MAXIMUM_LEN_OF_COMPACT_TX) {
+          throw constants.ERRORS.A_TRANSACTION_HAS_A_MAX_SIZE;
+        }
       }
     }
     return true;

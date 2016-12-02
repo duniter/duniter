@@ -405,8 +405,12 @@ function FileDAL(params) {
         // Other try: V4
         src = yield that.sourcesDAL.getSource(txs[0].v4_hash, noffset);
         if (!src) {
-          // Last try: V5
+          // Another try: V5
           src = yield that.sourcesDAL.getSource(txs[0].v5_hash, noffset);
+        }
+        if (!src) {
+          // Final try: V3 (because identifier maybe be one of [hash, v4_hash, v5_hash]
+          src = yield that.sourcesDAL.getSource(txs[0].hash, noffset);
         }
       }
     }

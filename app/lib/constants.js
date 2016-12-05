@@ -13,7 +13,7 @@ const INTEGER      = "(0|[1-9]\\d{0,18})";
 const RELATIVE_INTEGER = "(0|-?[1-9]\\d{0,18})";
 const FLOAT        = "\\d+\.\\d+";
 const BOOLEAN      = "[01]";
-const BLOCK_VERSION = "(2|3|4|5)";
+const BLOCK_VERSION = "(2|3|4|5|6)";
 const SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
 const FINGERPRINT  = "[A-F0-9]{64}";
 const COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}";
@@ -139,6 +139,7 @@ module.exports = {
   LAST_VERSION_FOR_TX: 3,
 
   TIME_FOR_V5: 1478696400, // 2016-11-09 14:00:00 BCT (blockchain time)
+  TIME_FOR_V6: 1481029200, // 2016-12-06 14:00:00 BCT (blockchain time)
 
   REVOCATION_FACTOR: 2, // This is protocol fixed value
   NB_DIGITS_UD: 6,      // This is protocol fixed value

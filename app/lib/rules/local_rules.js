@@ -18,6 +18,10 @@ rules.FUNCTIONS = {
     if (block.version == 5 && block.medianTime < constants.TIME_FOR_V5) {
       throw Error("V5 block cannot have medianTime < " + constants.TIME_FOR_V5);
     }
+    // V6 can appear only after a precise time
+    if (block.version == 6 && block.medianTime < constants.TIME_FOR_V6) {
+      throw Error("V6 block cannot have medianTime < " + constants.TIME_FOR_V6);
+    }
     return true;
   }),
 
@@ -594,8 +598,13 @@ rules.HELPERS = {
     let version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
 
     // 2. If we can, we go to the next version
+    //
+    // > N.B: we can jump from v4 to v6 directly if time has come
     if (version == 4 && block.medianTime > constants.TIME_FOR_V5) {
       version = 5;
+    }
+    if (version == 5 && block.medianTime > constants.TIME_FOR_V6) {
+      version = 6;
     }
     return version;
   })

@@ -415,6 +415,7 @@ function BlockchainService (server) {
     for (let i = 0; i < blocks.length; i++) {
       const previous = i > 0 ? blocks[i - 1] : lastPrevious;
       const block = blocks[i];
+      yield dal.saveIndexes(block, conf);
       block.len = Block.statics.getLen(block);
       block.fork = false;
       // Monetary mass & UD Time recording before inserting elements

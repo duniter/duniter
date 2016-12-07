@@ -683,6 +683,19 @@ function FileDAL(params) {
     ];
   });
 
+  this.saveIndexes = (block, conf) => co(function*() {
+    const index = indexer.localIndex(block, conf);
+    const mindex = indexer.mindex(index);
+    const iindex = indexer.iindex(index);
+    const sindex = indexer.sindex(index);
+    const cindex = indexer.cindex(index);
+    yield that.mindexDAL.insertBatch(mindex);
+    yield that.iindexDAL.insertBatch(iindex);
+    yield that.sindexDAL.insertBatch(sindex);
+    yield that.cindexDAL.insertBatch(cindex);
+    return true;
+  });
+
   this.saveMemberships = (type, mss, blockNumber) => {
     const msType = type == 'leave' ? 'out' : 'in';
     return mss.reduce((p, msRaw) => p.then(() => {

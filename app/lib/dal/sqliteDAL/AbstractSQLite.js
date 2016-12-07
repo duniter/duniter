@@ -209,6 +209,22 @@ function AbstractSQLite(driver) {
     return "(" + formatted.join(',') + ")";
   };
 
+  /**
+   * Make a batch insert.
+   * @param records The records to insert as a batch.
+   */
+  this.insertBatch = (records) => co(function *() {
+    const queries = [];
+    if (records.length) {
+      const insert = that.getInsertHead();
+      const values = records.map((src) => that.getInsertValue(_.extend(src, { consumed: false })));
+      queries.push(insert + '\n' + values.join(',\n') + ';');
+    }
+    if (queries.length) {
+      return that.exec(queries.join('\n'));
+    }
+  });
+
   function toConditionsArray(obj) {
     return _.keys(obj).map((k) => {
       if (obj[k].$lte !== undefined) {
@@ -324,5 +340,5 @@ function AbstractSQLite(driver) {
       row[toTranslate[objField]] = row[objField];
     }
     return row;
-  };
+  }
 }

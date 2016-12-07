@@ -557,7 +557,7 @@ function PeeringService(server) {
                 let block = null;
                 try {
                   block = yield thePeer.getBlock(number);
-                  Transaction.statics.setIssuers(block.transactions);
+                  Transaction.statics.cleanSignatories(block.transactions);
                 } catch (e) {
                   if (e.httpCode != 404) {
                     throw e;

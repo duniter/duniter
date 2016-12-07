@@ -61060,7 +61060,7 @@
     "transactions": [
       {
         "locktime": "0",
-        "signatories": [
+        "issuers": [
           "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
         ],
         "inputs": [
@@ -61081,9 +61081,6 @@
         "currency": "test_net",
         "block_number": 1906,
         "time": 1461936232,
-        "issuers": [
-          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
-        ],
         "blockstamp": "",
         "blockstampTime": 0
       }
@@ -61288,7 +61285,7 @@
     "transactions": [
       {
         "locktime": "0",
-        "signatories": [
+        "issuers": [
           "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
         ],
         "inputs": [
@@ -61309,9 +61306,6 @@
         "currency": "test_net",
         "block_number": 1912,
         "time": 1461939589,
-        "issuers": [
-          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk"
-        ],
         "blockstamp": "",
         "blockstampTime": 0
       }
@@ -63235,7 +63229,7 @@
     "transactions": [
       {
         "locktime": "0",
-        "signatories": [
+        "issuers": [
           "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU"
         ],
         "inputs": [
@@ -63256,9 +63250,6 @@
         "currency": "test_net",
         "block_number": 1971,
         "time": 1461973360,
-        "issuers": [
-          "8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU"
-        ],
         "blockstamp": "",
         "blockstampTime": 0
       }
@@ -70754,7 +70745,7 @@
     "transactions": [
       {
         "locktime": "0",
-        "signatories": [
+        "issuers": [
           "5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of"
         ],
         "inputs": [
@@ -70775,9 +70766,6 @@
         "currency": "test_net",
         "block_number": 2204,
         "time": 1462106695,
-        "issuers": [
-          "5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of"
-        ],
         "blockstamp": "",
         "blockstampTime": 0
       }
@@ -71008,7 +70996,7 @@
     "transactions": [
       {
         "locktime": "0",
-        "signatories": [
+        "issuers": [
           "5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of"
         ],
         "inputs": [
@@ -71029,9 +71017,6 @@
         "currency": "test_net",
         "block_number": 2211,
         "time": 1462110700,
-        "issuers": [
-          "5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of"
-        ],
         "blockstamp": "",
         "blockstampTime": 0
       }
@@ -71454,7 +71439,7 @@
     "transactions": [
       {
         "locktime": "0",
-        "signatories": [
+        "issuers": [
           "5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of"
         ],
         "inputs": [
@@ -71475,9 +71460,6 @@
         "currency": "test_net",
         "block_number": 2224,
         "time": 1462118140,
-        "issuers": [
-          "5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of"
-        ],
         "blockstamp": "",
         "blockstampTime": 0
       }
@@ -71772,7 +71754,7 @@
     "transactions": [
       {
         "locktime": "0",
-        "signatories": [
+        "issuers": [
           "5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of"
         ],
         "inputs": [
@@ -71793,9 +71775,6 @@
         "currency": "test_net",
         "block_number": 2233,
         "time": 1462123290,
-        "issuers": [
-          "5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of"
-        ],
         "blockstamp": "",
         "blockstampTime": 0
       }

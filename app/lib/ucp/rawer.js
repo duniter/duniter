@@ -194,7 +194,7 @@ module.exports = new function() {
   };
 
   this.getCompactTransaction = (json) => {
-    let issuers = (json.issuers || json.signatories);
+    let issuers = json.issuers;
     let raw = ["TX", json.version, issuers.length, json.inputs.length, json.unlocks.length, json.outputs.length, json.comment ? 1 : 0, json.locktime || 0].join(':') + '\n';
     if (json.version >= 3) {
       raw += json.blockstamp + "\n";

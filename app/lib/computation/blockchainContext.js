@@ -311,7 +311,6 @@ function BlockchainContext() {
       for (const obj of block.transactions) {
         obj.version = block.version;
         obj.currency = block.currency;
-        obj.issuers = obj.signatories;
         let tx = new Transaction(obj);
         let txObj = tx.getTransaction();
         for (const input of txObj.inputs) {
@@ -326,7 +325,6 @@ function BlockchainContext() {
       for (const obj of block.transactions) {
         obj.version = block.version;
         obj.currency = block.currency;
-        obj.issuers = obj.signatories;
         let tx = new Transaction(obj);
         yield dal.saveTransaction(tx);
       }
@@ -462,7 +460,6 @@ function BlockchainContext() {
 
     for (const obj of block.transactions) {
       obj.currency = block.currency;
-      obj.issuers = obj.signatories;
       const tx = new Transaction(obj);
       const txObj = tx.getTransaction();
       const txHash = tx.getHash(true);
@@ -630,7 +627,6 @@ function BlockchainContext() {
         let obj = json;
         obj.version = block.version;
         obj.currency = block.currency;
-        obj.issuers = json.signatories;
         let tx = new Transaction(obj);
         let txObj = tx.getTransaction();
         let txHash = tx.getHash(true);
@@ -662,7 +658,6 @@ function BlockchainContext() {
   this.deleteTransactions = (block) => co(function*() {
     for (const obj of block.transactions) {
       obj.currency = block.currency;
-      obj.issuers = obj.signatories;
       const tx = new Transaction(obj);
       const txHash = tx.getHash();
       yield dal.removeTxByHash(txHash);

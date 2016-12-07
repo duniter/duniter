@@ -87,7 +87,7 @@ module.exports = {
           op: constants.IDX_UPDATE,
           uid: null,
           pub: ms.issuer,
-          created_on: null,
+          created_on: [ms.number, ms.fpr].join('-'),
           written_on: [block.number, block.hash].join('-'),
           member: true,
           wasMember: null,
@@ -212,7 +212,6 @@ module.exports = {
           tx: txHash,
           identifier: input.identifier,
           pos: input.noffset,
-          created_on: null,
           written_on: [block.number, block.hash].join('-'),
           amount: input.amount,
           base: input.base,
@@ -244,5 +243,6 @@ module.exports = {
   mindexCreate: (index) => _(index).filter({ index: constants.M_INDEX, op: constants.IDX_CREATE }),
   iindex:       (index) => _(index).filter({ index: constants.I_INDEX }),
   mindex:       (index) => _(index).filter({ index: constants.M_INDEX }),
-  cindex:       (index) => _(index).filter({ index: constants.C_INDEX })
+  cindex:       (index) => _(index).filter({ index: constants.C_INDEX }),
+  sindex:       (index) => _(index).filter({ index: constants.S_INDEX })
 };

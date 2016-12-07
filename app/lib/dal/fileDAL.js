@@ -2,6 +2,7 @@
 const Q       = require('q');
 const co      = require('co');
 const _       = require('underscore');
+const indexer = require('../dup/indexer');
 const hashf   = require('../ucp/hashf');
 const wotb    = require('../wot');
 const logger = require('../logger')('filedal');
@@ -44,6 +45,10 @@ function FileDAL(params) {
   this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqliteDriver, wotbInstance);
   this.certDAL = new (require('./sqliteDAL/CertDAL'))(sqliteDriver);
   this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(sqliteDriver);
+  this.mindexDAL = new (require('./sqliteDAL/index/MIndexDAL'))(sqliteDriver);
+  this.iindexDAL = new (require('./sqliteDAL/index/IIndexDAL'))(sqliteDriver);
+  this.sindexDAL = new (require('./sqliteDAL/index/SIndexDAL'))(sqliteDriver);
+  this.cindexDAL = new (require('./sqliteDAL/index/CIndexDAL'))(sqliteDriver);
 
   this.newDals = {
     'metaDAL': that.metaDAL,
@@ -72,7 +77,11 @@ function FileDAL(params) {
             'CREATE VIEW IF NOT EXISTS network AS select i.uid, (last_try - first_down) / 1000 as down_delay_in_sec, p.* from peer p LEFT JOIN idty i on i.pubkey = p.pubkey ORDER by down_delay_in_sec;' +
             'COMMIT;');
       })
-    }
+    },
+    'mindexDAL': that.mindexDAL,
+    'iindexDAL': that.iindexDAL,
+    'sindexDAL': that.sindexDAL,
+    'cindexDAL': that.cindexDAL
   };
 
   let currency = '';

@@ -1,7 +1,9 @@
 "use strict";
 
 const co         = require('co');
+const _          = require('underscore');
 const constants  = require('../constants');
+const indexer    = require('../dup/indexer');
 const hashf      = require('../ucp/hashf');
 const keyring    = require('../crypto/keyring');
 const rawer      = require('../ucp/rawer');
@@ -10,6 +12,8 @@ const Membership = require('../entity/membership');
 const Transaction = require('../entity/transaction');
 
 let rules = {};
+
+// TODO: make a global variable 'index' instead of recomputing the index each time
 
 rules.FUNCTIONS = {
 
@@ -114,113 +118,71 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkIdentitiesUserIDConflict: (block) => co(function *() {
-    const uids = [];
-    let i = 0;
-    let conflict = false;
-    while (!conflict && i < block.identities.length) {
-      const uid = block.identities[i].split(':')[3];
-      conflict = ~uids.indexOf(uid);
-      uids.push(uid);
-      i++;
-    }
-    if (conflict) {
+  checkIdentitiesUserIDConflict: (block, conf) => co(function *() {
+    const index = indexer.localIndex(block, conf);
+    const creates = indexer.iindexCreate(index);
+    const uids = _.chain(creates).pluck('uid').uniq().value();
+    if (creates.length !== uids.length) {
       throw Error('Block must not contain twice same identity uid');
     }
     return true;
   }),
 
-  checkIdentitiesPubkeyConflict: (block) => co(function *() {
-    const pubkeys = [];
-    let i = 0;
-    let conflict = false;
-    while (!conflict && i < block.identities.length) {
-      const pubk = block.identities[i].split(':')[0];
-      conflict = ~pubkeys.indexOf(pubk);
-      pubkeys.push(pubk);
-      i++;
-    }
-    if (conflict) {
+  checkIdentitiesPubkeyConflict: (block, conf) => co(function *() {
+    const index = indexer.localIndex(block, conf);
+    const creates = indexer.iindexCreate(index);
+    const pubkeys = _.chain(creates).pluck('pub').uniq().value();
+    if (creates.length !== pubkeys.length) {
       throw Error('Block must not contain twice same identity pubkey');
     }
     return true;
   }),
 
-  checkIdentitiesMatchJoin: (block) => co(function *() {
-    // N.B.: this function does not test for potential duplicates in
-    // identities and/or joiners, this is another test responsibility
-    const pubkeys = [];
-    block.identities.forEach(function(inline){
-      let sp = inline.split(':');
-      let pubk = sp[0], ts = sp[2], uid = sp[3];
-      pubkeys.push([pubk, uid, ts].join('-'));
-    });
-    let matchCount = 0;
-    let i = 0;
-    while (i < block.joiners.length) {
-      let sp = block.joiners[i].split(':');
-      let pubk = sp[0], ts = sp[3], uid = sp[4];
-      let idty = [pubk, uid, ts].join('-');
-      if (~pubkeys.indexOf(idty)) matchCount++;
-      i++;
-    }
-    let problem = matchCount != pubkeys.length;
-    if (problem) {
-      throw Error('Each identity must match a newcomer line with same userid and certts');
+  checkIdentitiesMatchJoin: (block, conf) => co(function *() {
+    const index = indexer.localIndex(block, conf);
+    const icreates = indexer.iindexCreate(index);
+    const mcreates = indexer.mindexCreate(index);
+    for (const icreate of icreates) {
+      const matching = _(mcreates).filter({ pub: icreate.pub });
+      if (matching.length == 0) {
+        throw Error('Each identity must match a newcomer line with same userid and certts');
+      }
     }
     return true;
   }),
 
-  checkRevokedAreExcluded: (block) => co(function *() {
-    // N.B.: this function does not test for potential duplicates in Revoked,
-    // this is another test responsability
-    const pubkeys = [];
-    block.revoked.forEach(function(inline){
-      let sp = inline.split(':');
-      let pubk = sp[0];
-      pubkeys.push(pubk);
-    });
-    let matchCount = 0;
-    let i = 0;
-    while (i < block.excluded.length) {
-      if (~pubkeys.indexOf(block.excluded[i])) matchCount++;
-      i++;
-    }
-    let problem = matchCount != pubkeys.length;
-    if (problem) {
-      throw Error('A revoked member must be excluded');
+  checkRevokedAreExcluded: (block, conf) => co(function *() {
+    const index = indexer.localIndex(block, conf);
+    const iindex = indexer.iindex(index);
+    const mindex = indexer.mindex(index);
+    const revocations = _.chain(mindex)
+      .filter((row) => row.op == constants.IDX_UPDATE && row.revoked_on !== null)
+      .pluck('pub')
+      .value();
+    for (const pub of revocations) {
+      const exclusions = _(iindex).where({ op: constants.IDX_UPDATE, member: false });
+      if (exclusions.length == 0) {
+        throw Error('A revoked member must be excluded');
+      }
     }
     return true;
   }),
 
-  checkRevokedUnicity: (block) => co(function *() {
-    let pubkeys = [];
-    let conflict = false;
-    let i = 0;
-    while (!conflict && i < block.revoked.length) {
-      let pubk = block.revoked[i].split(':')[0];
-      conflict = ~pubkeys.indexOf(pubk);
-      pubkeys.push(pubk);
-      i++;
-    }
-    if (conflict) {
+  checkRevokedUnicity: (block, conf) => co(function *() {
+    try {
+      yield rules.FUNCTIONS.checkMembershipUnicity(block, conf);
+    } catch (e) {
       throw Error('A single revocation per member is allowed');
     }
     return true;
   }),
 
-  checkRevokedNotInMemberships: (block) => co(function *() {
-    let i = 0;
-    let conflict = false;
-    while (!conflict && i < block.revoked.length) {
-      let pubk = block.revoked[i].split(':')[0];
-      conflict = existsPubkeyIn(pubk, block.joiners)
-        || existsPubkeyIn(pubk, block.actives)
-        || existsPubkeyIn(pubk, block.leavers);
-      i++;
-    }
-    if (conflict) {
-      throw Error('A revoked pubkey cannot have a membership in the same block');
+  checkMembershipUnicity: (block, conf) => co(function *() {
+    const index = indexer.localIndex(block, conf);
+    const mindex = indexer.mindex(index);
+    const pubkeys = _.chain(mindex).pluck('pub').uniq().value();
+    if (pubkeys.length !== mindex.length) {
+      throw Error('Unicity constraint PUBLIC_KEY on MINDEX is not respected');
     }
     return true;
   }),
@@ -296,60 +258,40 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkCertificationOneByIssuer: (block) => co(function *() {
-    let conflict = false;
+  checkCertificationOneByIssuer: (block, conf) => co(function *() {
     if (block.number > 0) {
-      const issuers = [];
-      let i = 0;
-      while (!conflict && i < block.certifications.length) {
-        const issuer = block.certifications[i].split(':')[0];
-        conflict = ~issuers.indexOf(issuer);
-        issuers.push(issuer);
-        i++;
+      const index = indexer.localIndex(block, conf);
+      const cindex = indexer.cindex(index);
+      const certFromA = _.uniq(cindex.map((row) => row.issuer));
+      if (certFromA.length !== cindex.length) {
+        throw Error('Block cannot contain two certifications from same issuer');
       }
-    }
-    if (conflict) {
-      throw Error('Block cannot contain two certifications from same issuer');
     }
     return true;
   }),
 
-  checkCertificationUnicity: (block) => co(function *() {
-    const certs = [];
-    let i = 0;
-    let conflict = false;
-    while (!conflict && i < block.certifications.length) {
-      const cert = block.certifications[i].split(':').slice(0,2).join(':');
-      conflict = ~certs.indexOf(cert);
-      certs.push(cert);
-      i++;
-    }
-    if (conflict) {
+  checkCertificationUnicity: (block, conf) => co(function *() {
+    const index = indexer.localIndex(block, conf);
+    const cindex = indexer.cindex(index);
+    const certAtoB = _.uniq(cindex.map((row) => row.issuer + row.receiver));
+    if (certAtoB.length !== cindex.length) {
       throw Error('Block cannot contain identical certifications (A -> B)');
     }
     return true;
   }),
 
-  checkCertificationIsntForLeaverOrExcluded: (block) => co(function *() {
-    const pubkeys = [];
-    block.leavers.forEach(function(leaver){
-      const pubk = leaver.split(':')[0];
-      pubkeys.push(pubk);
-    });
-    block.excluded.forEach(function(excluded){
-      pubkeys.push(excluded);
-    });
-    // Certifications
-    let conflict = false;
-    let i = 0;
-    while (!conflict && i < block.certifications.length) {
-      const sp = block.certifications[i].split(':');
-      const pubkFrom = sp[0], pubkTo = sp[1];
-      conflict = ~pubkeys.indexOf(pubkFrom) || ~pubkeys.indexOf(pubkTo);
-      i++;
-    }
-    if (conflict) {
-      throw Error('Block cannot contain certifications concerning leavers or excluded members');
+  checkCertificationIsntForLeaverOrExcluded: (block, conf) => co(function *() {
+    const index = indexer.localIndex(block, conf);
+    const cindex = indexer.cindex(index);
+    const iindex = indexer.iindex(index);
+    const mindex = indexer.mindex(index);
+    const certified = cindex.map((row) => row.receiver);
+    for (const pub of certified) {
+      const exclusions = _(iindex).where({ op: constants.IDX_UPDATE, member: false, pub: pub });
+      const leavers    = _(mindex).where({ op: constants.IDX_UPDATE, leaving: true, pub: pub });
+      if (exclusions.length > 0 || leavers.length > 0) {
+        throw Error('Block cannot contain certifications concerning leavers or excluded members');
+      }
     }
     return true;
   }),
@@ -392,26 +334,20 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkTxSources: (block) => co(function *() {
+  checkTxSources: (block, conf) => co(function *() {
     const txs = block.getTransactions();
-    const sources = [];
-    let i = 0;
-    let existsIdenticalSource = false;
-    while (!existsIdenticalSource && i < txs.length) {
-      const tx = txs[i];
+    for (const tx of txs) {
       if (!tx.inputs || tx.inputs.length == 0) {
         throw Error('A transaction must have at least 1 source');
       }
-      tx.inputs.forEach(function (input) {
-        if (~sources.indexOf(input.raw)) {
-          existsIdenticalSource = true;
-        } else {
-          sources.push(input.raw);
-        }
-      });
-      i++;
     }
-    if (existsIdenticalSource) {
+    const sindex = indexer.localSIndex(block);
+    const inputs = _.filter(sindex, (row) => row.op == constants.IDX_UPDATE).map((row) => [row.op, row.identifier, row.pos].join('-'));
+    if (inputs.length !== _.uniq(inputs).length) {
+      throw Error('It cannot exist 2 identical sources for transactions inside a given block');
+    }
+    const outputs = _.filter(sindex, (row) => row.op == constants.IDX_CREATE).map((row) => [row.op, row.identifier, row.pos].join('-'));
+    if (outputs.length !== _.uniq(outputs).length) {
       throw Error('It cannot exist 2 identical sources for transactions inside a given block');
     }
     return true;
@@ -463,17 +399,6 @@ function maxAcceleration (block, conf) {
     let maxGenTime = Math.ceil(conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO_V3);
     return Math.ceil(maxGenTime * conf.medianTimeBlocks);
   }
-}
-
-function existsPubkeyIn(pubk, memberships) {
-  let i = 0;
-  let conflict = false;
-  while (!conflict && i < memberships.length) {
-    let pubk2 = memberships[i].split(':')[0];
-    conflict = pubk == pubk2;
-    i++;
-  }
-  return conflict;
 }
 
 function checkSingleMembershipSignature(ms) {

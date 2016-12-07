@@ -1034,47 +1034,242 @@ To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must
 
 ##### Identities
 
-* A block cannot contain identities whose signature does not match the identity's content
-* A block cannot have two or more identities sharing a same `USER_ID`.
-* A block cannot have two or more identities sharing a same `PUBLIC_KEY`.
-* Each identity of a block must match a `Joiners` line matching the same `PUBLIC_KEY`
+A block cannot contain identities whose signature does not match the identity's content
 
 ##### Memberships (Joiners, Actives, Leavers)
 
-* A block cannot contain memberships whose signature does not match membership's content
-
-##### Members changes (Joiners, Actives, Leavers, Excluded)
-
-* A block cannot contain more than 1 occurrence of a same `PUBLIC_KEY` in `Joiners`, `Actives`, `Leavers` and `Excluded` field as a whole. In other words, a given `PUBLIC_KEY` present in `Joiners` cannot be present in `Joiners` a second time, neither can it be present in `Actives`, `Leavers` or `Excluded`.
+A block cannot contain memberships whose signature does not match the membership's content
 
 ##### Revoked
 
-* Each `PUBLIC_KEY` under `Revoked` field **must not** be present under `Joiners`, `Actives` or `Leavers` fields.
-* A block cannot contain more than 1 occurrence of a same `PUBLIC_KEY` in `Revoked`.
-
-##### Excluded
-
-* Each `PUBLIC_KEY` under `Revoked` field **must** be present under `Excluded` field.
-
-##### Certifications
-
-* A block cannot have two certifications from a same `PUBKEY_FROM`, unless it is block#0.
-* A block cannot have two identical certifications (same `PUBKEY_FROM` and same `PUBKEY_TO` for the two certifications)
-* A block cannot have certifications for public keys present in either `Excluded` or `Leavers` fields.
+A block cannot contain revocations whose signature does not match the revocation's content
 
 ##### Transactions
 
 * A transaction in compact format cannot measure more than 100 lines
-* A transaction must have at least 1 issuer, 1 source and 1 recipient
-* For each issuer line, starting from line # `0`, there must be a source with an `INDEX` value equal to this line#
-* A transaction cannot have 2 identical inputs
-* A transaction cannot have 2 identical outputs
+* A transaction must have at least 1 source
 * A transaction cannot have `SIG(INDEX)` unlocks with `INDEX >= ` issuers count.
-* A transaction **must** have signatures matching its content for each issuer
+* A transaction **must** have signatures matching its content **for each issuer**
 * A transaction's version:
   * must be the same as its including block if the block's `Version` is `<= 3`
   * must be equal to `3` if the block's `Version` is `> 3`
-* There cannot be 2 transactions with the same source
+* Signatures count must be the same as issuers count
+* Signatures are ordered by issuer
+* Signatures are made over the transaction's content, signatures excepted
+
+##### INDEX GENERATION
+
+##### Identities
+
+Each identity produces 2 new entries:
+
+    IINDEX (
+        op = 'CREATE'
+        uid = USER_ID
+        pub = PUBLIC_KEY
+        created_on = BLOCK_UID
+        written_on = BLOCKSTAMP
+        member = true
+        wasMember = true
+        kick = false
+    )
+
+    MINDEX (
+        op = 'CREATE'
+        pub = PUBLIC_KEY
+        created_on = BLOCK_UID
+        written_on = BLOCKSTAMP
+        expires_on = MedianTime + msValidity
+        revokes_on = MedianTime + msValidity*2
+        revoked_on = null
+        leaving = false
+    )
+
+##### Joiners
+
+Each join whose `PUBLIC_KEY` **does not match** an MINDEX `CREATE, PUBLIC_KEY` produces 2 new entries:
+
+    IINDEX (
+        op = 'UPDATE'
+        uid = null
+        pub = PUBLIC_KEY
+        created_on = null
+        written_on = BLOCKSTAMP
+        member = true
+        wasMember = null
+        kick = null
+    )
+
+    MINDEX (
+        op = 'UPDATE'
+        pub = PUBLIC_KEY
+        created_on = BLOCK_UID
+        written_on = BLOCKSTAMP
+        expires_on = MedianTime + msValidity
+        revokes_on = MedianTime + msValidity*2
+        revoked_on = null
+        leaving = null
+    )
+
+##### Actives
+
+Each active produces 1 new entry:
+
+    MINDEX (
+        op = 'UPDATE'
+        pub = PUBLIC_KEY
+        created_on = BLOCK_UID
+        written_on = BLOCKSTAMP
+        expires_on = MedianTime + msValidity
+        revokes_on = MedianTime + msValidity*2
+        revoked_on = null
+        leaving = null
+    )
+
+##### Leavers
+
+Each leaver produces 1 new entry:
+
+    MINDEX (
+        op = 'UPDATE'
+        pub = PUBLIC_KEY
+        created_on = BLOCK_UID
+        written_on = BLOCKSTAMP
+        expires_on = null
+        revokes_on = null
+        revoked_on = null
+        leaving = true
+    )
+
+##### Revoked
+
+Each revocation produces 1 new entry:
+
+    MINDEX (
+        op = 'UPDATE'
+        pub = PUBLIC_KEY
+        created_on = BLOCK_UID
+        written_on = BLOCKSTAMP
+        expires_on = null
+        revokes_on = null
+        revoked_on = BLOCKSTAMP
+        leaving = false
+    )
+
+##### Excluded
+
+Each exclusion produces 1 new entry:
+
+    IINDEX (
+        op = 'UPDATE'
+        uid = null
+        pub = PUBLIC_KEY
+        created_on = null
+        written_on = BLOCKSTAMP
+        member = false
+        wasMember = null
+        kick = false
+    )
+
+##### Certifications
+
+Each certification produces 1 new entry:
+
+    CINDEX (
+        op = 'CREATE'
+        issuer = PUBKEY_FROM
+        receiver = PUBKEY_TO
+        created_on = BLOCK_ID
+        written_on = BLOCKSTAMP
+        expires_on = MedianTime + sigValidity
+        expired_on = null
+    )
+
+##### Sources
+
+Each transaction input produces 1 new entry:
+
+    CINDEX (
+        op = 'UPDATE'
+        tx = TRANSACTION_HASH
+        identifier = INPUT_IDENTIFIER
+        pos = INPUT_INDEX
+        written_on = BLOCKSTAMP
+        amount = INPUT_AMOUNT
+        base = INPUT_BASE
+        conditions = null
+        consumed = true
+    )
+
+Each transaction output produces 1 new entry:
+
+    CINDEX (
+        op = 'CREATE'
+        tx = TRANSACTION_HASH
+        identifier = TRANSACTION_HASH
+        pos = OUTPUT_INDEX_IN_TRANSACTION
+        written_on = BLOCKSTAMP
+        amount = OUTPUT_AMOUNT
+        base = OUTPUT_BASE
+        conditions = OUTPUT_CONDITIONS
+        consumed = false
+    )
+
+##### INDEX RULES
+
+###### UserID and PublicKey unicity
+
+* The local IINDEX has a unicity constraint on `USER_ID`.
+* The local IINDEX has a unicity constraint on `PUBLIC_KEY`.
+* Each local IINDEX `op = 'CREATE'` operation must match a single local MINDEX `op = 'CREATE', pub = PUBLIC_KEY` operation.
+
+> Functionally: UserID and public key must be unique in a block, an each new identity must have an opt-in document attached.
+
+###### Membership unicity
+
+* The local MINDEX has a unicity constraint on `PUBLIC_KEY`
+
+> Functionally: a user has only 1 status change allowed per block.
+
+###### Revocation implies exclusion
+
+* Each local MINDEX ̀`op = 'UPDATE', revoked_on = BLOCKSTAMP` operations must match a single local IINDEX `op = 'UPDATE', pub = PUBLIC_KEY, member = false` operation.
+
+> Functionally: a revoked member must be immediately excluded.
+
+###### Certifications
+
+* The local CINDEX has a unicity constraint on `PUBKEY_FROM, PUBKEY_TO`
+* The local CINDEX has a unicity constraint on `PUBKEY_FROM`, except for block#0
+* The local CINDEX must not match a MINDEX operation on `PUBLIC_KEY = PUBKEY_FROM, member = false` or `PUBLIC_KEY = PUBKEY_FROM, leaving = true`
+
+> Functionally:
+>
+> * a block cannot have 2 identical certifications (A -> B)
+> * a block cannot have 2 certifications from a same public key, except in block#0
+> * a block cannot have a certification to a leaver or an excluded
+
+###### Sources
+
+* The local SINDEX has a unicity constraint on `UPDATE, IDENTIFIER, POS`
+* The local SINDEX has a unicity constraint on `CREATE, IDENTIFIER, POS`
+
+> Functionally: 
+> * a same source cannot be consumed twice by the block
+> * a same output cannot be produced twice by block
+>
+> But a source can be both created and consumed in the same block, so a *chain of transactions* can be stored at once.
+
+##### Double-spending control
+
+Definitions:
+
+For each SINDEX unique `tx`:
+
+* **inputs** are the SINDEX row matching `UPDATE, tx`
+* **outputs** are the SINDEX row matching `CREATE, tx`
+
+> Functionally: we gather the sources for each transaction, in order to check them.
 
 ###### CommonBase
 
@@ -1141,13 +1336,7 @@ TRUE
   * if `BaseDelta > 0`, then it must be inferior or equal to the sum of all preceding `BaseDelta`
 * *Rule*: The sum of all inputs in `CommonBase` must equal the sum of all outputs in `CommonBase`
 
-> Consequence: we cannot create money nor lose money through transactions. We can only transfer coins we own.
-
-###### About signatures
-
-* Signatures count must be the same as issuers count
-* Signatures are ordered by issuer
-* Signatures are made over the transaction's content, signatures excepted
+> Functionally: we cannot create nor lose money through transactions. We can only transfer coins we own.
 
 #### Global
 

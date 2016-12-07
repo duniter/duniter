@@ -38,16 +38,14 @@ module.exports = {
       index.push({
         index: constants.I_INDEX,
         op: constants.IDX_CREATE,
-        fields: {
-          uid: idty.uid,
-          pubkey: idty.pubkey,
-          created_on: idty.buid,
-          written_on: [block.number, block.hash].join('-'),
-          member: true,
-          wasMember: true,
-          kick: false,
-          wid: null // wotb id
-        }
+        uid: idty.uid,
+        pub: idty.pubkey,
+        created_on: idty.buid,
+        written_on: [block.number, block.hash].join('-'),
+        member: true,
+        wasMember: true,
+        kick: false,
+        wid: null // wotb id
       });
     }
 
@@ -57,50 +55,44 @@ module.exports = {
     // Joiners (newcomer or join back)
     for (const inlineMS of block.joiners) {
       const ms = Membership.statics.fromInline(inlineMS);
-      const matchesANewcomer = _.filter(index, (row) => row.index == constants.I_INDEX && row.fields.pubkey == ms.issuer).length > 0;
+      const matchesANewcomer = _.filter(index, (row) => row.index == constants.I_INDEX && row.pub == ms.issuer).length > 0;
       if (matchesANewcomer) {
         // Newcomer
         index.push({
           index: constants.M_INDEX,
           op: constants.IDX_CREATE,
-          fields: {
-            pubkey: ms.issuer,
-            created_on: [ms.number, ms.fpr].join('-'),
-            written_on: [block.number, block.hash].join('-'),
-            expires_on: block.medianTime + conf.msValidity,
-            revokes_on: block.medianTime + conf.msValidity * constants.REVOCATION_FACTOR,
-            revoked_on: null,
-            leaving: false
-          }
+          pub: ms.issuer,
+          created_on: [ms.number, ms.fpr].join('-'),
+          written_on: [block.number, block.hash].join('-'),
+          expires_on: block.medianTime + conf.msValidity,
+          revokes_on: block.medianTime + conf.msValidity * constants.REVOCATION_FACTOR,
+          revoked_on: null,
+          leaving: false
         });
       } else {
         // Join back
         index.push({
           index: constants.M_INDEX,
           op: constants.IDX_UPDATE,
-          fields: {
-            pubkey: ms.issuer,
-            created_on: [ms.number, ms.fpr].join('-'),
-            written_on: [block.number, block.hash].join('-'),
-            expires_on: block.medianTime + conf.msValidity,
-            revokes_on: block.medianTime + conf.msValidity * constants.REVOCATION_FACTOR,
-            revoked_on: null,
-            leaving: null
-          }
+          pub: ms.issuer,
+          created_on: [ms.number, ms.fpr].join('-'),
+          written_on: [block.number, block.hash].join('-'),
+          expires_on: block.medianTime + conf.msValidity,
+          revokes_on: block.medianTime + conf.msValidity * constants.REVOCATION_FACTOR,
+          revoked_on: null,
+          leaving: null
         });
         index.push({
           index: constants.I_INDEX,
           op: constants.IDX_UPDATE,
-          fields: {
-            uid: null,
-            pubkey: ms.issuer,
-            created_on: null,
-            written_on: [block.number, block.hash].join('-'),
-            member: true,
-            wasMember: null,
-            kick: null,
-            wid: null
-          }
+          uid: null,
+          pub: ms.issuer,
+          created_on: null,
+          written_on: [block.number, block.hash].join('-'),
+          member: true,
+          wasMember: null,
+          kick: null,
+          wid: null
         });
       }
     }
@@ -111,15 +103,13 @@ module.exports = {
       index.push({
         index: constants.M_INDEX,
         op: constants.IDX_UPDATE,
-        fields: {
-          pubkey: ms.issuer,
-          created_on: [ms.number, ms.fpr].join('-'),
-          written_on: [block.number, block.hash].join('-'),
-          expires_on: block.medianTime + conf.msValidity,
-          revokes_on: block.medianTime + conf.msValidity * constants.REVOCATION_FACTOR,
-          revoked_on: null,
-          leaving: null
-        }
+        pub: ms.issuer,
+        created_on: [ms.number, ms.fpr].join('-'),
+        written_on: [block.number, block.hash].join('-'),
+        expires_on: block.medianTime + conf.msValidity,
+        revokes_on: block.medianTime + conf.msValidity * constants.REVOCATION_FACTOR,
+        revoked_on: null,
+        leaving: null
       });
     }
     // Leavers
@@ -128,15 +118,13 @@ module.exports = {
       index.push({
         index: constants.M_INDEX,
         op: constants.IDX_UPDATE,
-        fields: {
-          pubkey: ms.issuer,
-          created_on: [ms.number, ms.fpr].join('-'),
-          written_on: [block.number, block.hash].join('-'),
-          expires_on: null,
-          revokes_on: null,
-          revoked_on: null,
-          leaving: true
-        }
+        pub: ms.issuer,
+        created_on: [ms.number, ms.fpr].join('-'),
+        written_on: [block.number, block.hash].join('-'),
+        expires_on: null,
+        revokes_on: null,
+        revoked_on: null,
+        leaving: true
       });
     }
     // Revoked
@@ -145,15 +133,13 @@ module.exports = {
       index.push({
         index: constants.M_INDEX,
         op: constants.IDX_UPDATE,
-        fields: {
-          pubkey: revocation.pubkey,
-          created_on: [block.number, block.hash].join('-'),
-          written_on: [block.number, block.hash].join('-'),
-          expires_on: null,
-          revokes_on: null,
-          revoked_on: [block.number, block.hash].join('-'),
-          leaving: null
-        }
+        pub: revocation.pubkey,
+        created_on: [block.number, block.hash].join('-'),
+        written_on: [block.number, block.hash].join('-'),
+        expires_on: null,
+        revokes_on: null,
+        revoked_on: [block.number, block.hash].join('-'),
+        leaving: false
       });
     }
     // Excluded
@@ -161,16 +147,14 @@ module.exports = {
       index.push({
         index: constants.I_INDEX,
         op: constants.IDX_UPDATE,
-        fields: {
-          uid: null,
-          pubkey: excluded,
-          created_on: [block.number, block.hash].join('-'),
-          written_on: [block.number, block.hash].join('-'),
-          member: false,
-          wasMember: null,
-          kick: false,
-          wid: null
-        }
+        uid: null,
+        pub: excluded,
+        created_on: [block.number, block.hash].join('-'),
+        written_on: [block.number, block.hash].join('-'),
+        member: false,
+        wasMember: null,
+        kick: false,
+        wid: null
       });
     }
 
@@ -182,22 +166,39 @@ module.exports = {
       index.push({
         index: constants.C_INDEX,
         op: constants.IDX_CREATE,
-        fields: {
-          issuer: cert.pubkey,
-          receiver: cert.to,
-          created_on: cert.block_number,
-          written_on: [block.number, block.hash].join('-'),
-          expires_on: block.medianTime + conf.sigValidity,
-          expired_on: block.medianTime + conf.sigValidity,
-          from_wid: null,
-          to_wid: null
-        }
+        issuer: cert.pubkey,
+        receiver: cert.to,
+        created_on: cert.block_number,
+        written_on: [block.number, block.hash].join('-'),
+        expires_on: block.medianTime + conf.sigValidity,
+        expired_on: null,
+        from_wid: null,
+        to_wid: null
       });
     }
 
+    return index.concat(module.exports.localSIndex(block));
+  },
+
+  localSIndex: (block) => {
     /*******************************
      * SOURCES INDEX (SINDEX)
      ******************************/
+    const index = [];
+    if (!block.transactions && block.getTransactions) {
+      const txs = block.getTransactions();
+      block.transactions = [];
+      for (const tx of txs) {
+        block.transactions.push({
+          version: tx.version,
+          comment: tx.comment,
+          issuers: tx.issuers,
+          signatures: tx.signatures,
+          inputs: tx.inputs.map((i) => i.raw),
+          outputs: tx.outputs.map((o) => o.raw)
+        });
+      }
+    }
     for (const obj of block.transactions) {
       obj.currency = block.currency;
       obj.issuers = obj.signatories;
@@ -208,17 +209,15 @@ module.exports = {
         index.push({
           index: constants.S_INDEX,
           op: constants.IDX_UPDATE,
-          fields: {
-            type: 'T',
-            identifier: input.identifier,
-            pos: input.noffset,
-            created_on: null,
-            written_on: [block.number, block.hash].join('-'),
-            amount: input.amount,
-            base: input.base,
-            consumed: true,
-            conditions: null
-          }
+          tx: txHash,
+          identifier: input.identifier,
+          pos: input.noffset,
+          created_on: null,
+          written_on: [block.number, block.hash].join('-'),
+          amount: input.amount,
+          base: input.base,
+          consumed: true,
+          conditions: null
         });
       }
 
@@ -227,21 +226,23 @@ module.exports = {
         index.push({
           index: constants.S_INDEX,
           op: constants.IDX_CREATE,
-          fields: {
-            type: 'T',
-            identifier: txHash,
-            pos: i++,
-            created_on: [block.number, block.hash].join('-'),
-            written_on: [block.number, block.hash].join('-'),
-            amount: output.amount,
-            base: output.base,
-            consumed: false,
-            conditions: output.conditions
-          }
+          tx: txHash,
+          identifier: txHash,
+          pos: i++,
+          written_on: [block.number, block.hash].join('-'),
+          amount: output.amount,
+          base: output.base,
+          consumed: false,
+          conditions: output.conditions
         });
       }
     }
-
     return index;
-  }
+  },
+
+  iindexCreate: (index) => _(index).filter({ index: constants.I_INDEX, op: constants.IDX_CREATE }),
+  mindexCreate: (index) => _(index).filter({ index: constants.M_INDEX, op: constants.IDX_CREATE }),
+  iindex:       (index) => _(index).filter({ index: constants.I_INDEX }),
+  mindex:       (index) => _(index).filter({ index: constants.M_INDEX }),
+  cindex:       (index) => _(index).filter({ index: constants.C_INDEX })
 };

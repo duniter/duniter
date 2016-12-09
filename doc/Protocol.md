@@ -808,6 +808,17 @@ Excluded              | Exluded members' public key                       | Alwa
 Transactions          | A list of compact transactions                    | Always
 InnerHash             | The hash value of the block's inner content       | Always
 Nonce                 | An arbitrary nonce value                          | Always
+BlockHash             | Hash from `InnerHash: ` to `SIGNATURE`            | Virtual
+BlockSize             | Hash from `InnerHash: ` to `SIGNATURE`            | Virtual
+
+##### BlockSize
+
+The block size is defined as the number of lines in multiline fields (`Identities`, `Joiners`, `Actives`, `Leavers`, `Revoked`, `Certifications`, `Transactions`) **except** `Excluded` field.
+
+For example:
+
+* 1 new identity + 1 joiner + 2 certifications = 4 lines sized block
+* 1 new identity + 1 joiner + 2 certifications + 5 lines transaction = 9 lines sized block
 
 #### Coherence
 
@@ -967,6 +978,8 @@ Variable  | Meaning
 members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)` targeting the keys whose last active (non-expired) membership is either in `Joiners` or `Actives`.
 maxGenTime  | `= CEIL(avgGenTime * 1.189)`
 minGenTime  | `= FLOOR(avgGenTime / 1.189)`
+minSpeed | 1 / maxGenTime
+maxSpeed | 1 / minGenTime
 maxAcceleration | `= CEIL(maxGenTime * medianTimeBlocks)`
 dSen | `= CEIL(membersCount ^ (1 / stepMax))`
 sentries | Members with at least `dSen` active links *from* them
@@ -983,7 +996,11 @@ Local validation verifies the coherence of a well-formatted block, without any o
 
 ##### Version and Number
 
-If `Number` is `0`, then `Version` must be `2`.
+Rule:
+
+    HEAD.version >= 2
+    AND
+    HEAD.version <= 6
 
 ##### InnerHash
 
@@ -995,7 +1012,7 @@ If `Number` is `0`, then `Version` must be `2`.
 
 ##### Proof of work
 
-To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must start with a specific number of zeros. Locally, this hash must start with at least `NB_ZEROS` zeros:
+To be valid, the BlockHash must start with a specific number of zeros. Locally, this hash must start with at least `NB_ZEROS` zeros:
 
     REMAINDER = PowMin % 16
     NB_ZEROS = (PowMin - REMAINDER) / 16
@@ -1014,6 +1031,10 @@ To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must
 
 * `Parameters` must be present if the value of the `Number` field is equal to `0`.
 * `Parameters` must not be present if the value of the `Number` field is greater than `0`.
+
+##### Universal Dividend
+
+If HEAD.number == 0, HEAD.dividend must equal `null`.
 
 ##### UnitBase
 
@@ -1342,42 +1363,422 @@ TRUE
 
 Global validation verifies the coherence of a locally-validated block, in the context of the whole blockchain, including the block.
 
-##### Definitions
+##### INDEX GENERATION
+
+###### Definitions
+
+Here are some references that will be used in next sections.
+
+BINDEX references:
+
+* *HEAD*: the BINDEX top entry (generated for incoming block, precisely)
+* *HEAD~1*: the BINDEX 1<sup>st</sup> entry before HEAD (= entry where `ENTRY.number = HEAD.number - 1`)
+* *HEAD~n*: the BINDEX n<sup>th</sup> entry before HEAD (= entry where `ENTRY.number = HEAD.number - n`)
+* *HEAD~n..m[field=value, ...]*: the BINDEX entries between *HEAD~n* and *HEAD~m*, included, where each entry fulfills the condition
+* *HEAD~n.property*: get a BINDEX entry property. Ex.: `HEAD~1.hash` looks at the hash of the entry preceding HEAD.
+* *(HEAD~n..m).property*: get all the values of *property* in BINDEX for entries between *HEAD~n* and *HEAD~m*, included.
+* *(HEAD~<n>..<m>).property*: same, but <n> and <m> are variables to be computed
+
+Function references:
+
+* *COUNT* returns the number of values in a list of values
+* *AVG* computes the average value in a list of values
+* *MEDIAN* computes the median value in a list of values
+
+> If values count is even, the median is computed over the 2 centered values by an arithmetical median on them, ceil rounded.
+
+* *UNIQ* returns a list of the unique values in a list of values
+* *INTEGER_PART* return the integer part of a number
+* *FIRST* return the first element in a list of values matching the given condition
+
+###### HEAD
+
+The block produces 1 new entry:
+
+    BINDEX (
+      version = Version
+      size = BlockSize
+      hash = BlockHash
+      issuer = Issuer
+      time = Time
+      number = null
+      previousHash = null
+      previousIssuer = null
+      membersCount = null
+      issuersCount = null
+      issuersFrame = null
+      issuersFrameVar = null
+      issuerDiff = null
+      avgBlockSize = null
+      medianTime = null
+      dividend = null
+      mass = null
+      unitBase = null
+      powMin = null
+      udTime = null
+      diffTime = null
+      speed = null
+    )
+    
+This entry will be refered to as *HEAD* in the following sections, and is added on the top of the BINDEX.
+
+###### HEAD.number
+
+If HEAD~1 is defined:
+
+    HEAD.number = HEAD~1.number + 1
+
+Else:
+
+    HEAD.number = 0
+    
+###### HEAD.previousHash
+
+If `HEAD.number > 0`:
+
+    HEAD.previousHash = HEAD~1.hash
+
+Else:
+
+    HEAD.previousHash = null
+    
+###### HEAD.previousIssuer
+
+If `HEAD.number > 0`:
+
+    HEAD.previousIssuer = HEAD~1.issuer
+
+Else:
+
+    HEAD.previousIssuer = null
+
+###### HEAD.issuersCount
+
+    HEAD.issuersCount = COUNT(UNIQ((HEAD~1..<m>).issuer))
+    
+Where, `HEAD.number == 0`
+
+    m = 0
+    
+Else if `HEAD~1.version > 2`:
+
+    m = HEAD~1.issuersFrame
+    
+Else:
+
+    m = 40
+
+###### HEAD.issuersFrame
+
+If `HEAD.number == 0`:
+
+    HEAD.issuersFrame = 1
+    
+Else if `HEAD~1.version == 2`:
+
+    m = 40 
+    
+Else if `HEAD~1.issuersFrameVar > 0`:
+
+    HEAD.issuersFrame = HEAD~1.issuersFrame + 1 
+    
+Else if `HEAD~1.issuersFrameVar < 0`:
+
+    HEAD.issuersFrame = HEAD~1.issuersFrame - 1 
+    
+Else:
+
+    HEAD.issuersFrame = HEAD~1.issuersFrame
+
+###### HEAD.issuersFrameVar
+
+If `HEAD.number == 0` OR `HEAD~1.version == 2`:
+
+    HEAD.issuersFrameVar = 0
+    
+Else if `HEAD~1.issuersFrameVar > 0`:
+
+    HEAD.issuersFrameVar = HEAD~1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD~1.issuersCount) + 1
+    
+Else if `HEAD~1.issuersFrameVar < 0`:
+
+    HEAD.issuersFrameVar = HEAD~1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD~1.issuersCount) - 1
+    
+Else:
+
+    HEAD.issuersFrameVar = HEAD~1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD~1.issuersCount)
+
+
+###### HEAD.avgBlockSize
+
+    HEAD.avgBlockSize = AVG((HEAD~1..<HEAD.issuersCount>).size)
+
+###### HEAD.medianTime
+
+If `HEAD.number > 0`:
+
+    range = MIN(medianTimeBlocks, HEAD.number)
+    HEAD.medianTime = MEDIAN((HEAD~1..<range>).time)
+
+Else:
+
+    HEAD.medianTime = HEAD.time
+
+###### HEAD.diffTime
+
+If `HEAD.number == 0`:
+
+    HEAD.diffTime = HEAD.medianTime + dtDiffEval
+
+Else if `HEAD~1.diffTime <= HEAD.diffTime`:
+
+    HEAD.diffTime = HEAD~1.diffTime + dtDiffEval
+
+Else:
+
+    HEAD.diffTime = HEAD~1.diffTime
+
+###### HEAD.udTime
+
+If `HEAD.number == 0`:
+
+    HEAD.udTime = HEAD.medianTime + dt
+
+Else if `HEAD~1.udTime <= HEAD.medianTime`:
+
+    HEAD.udTime = HEAD~1.udTime + dt
+
+Else:
+
+    HEAD.udTime = HEAD~1.udTime
+
+###### HEAD.unitBase
+
+If `HEAD.number == 0`:
+
+    HEAD.unitBase = 0
+    
+Else:
+
+    HEAD.unitBase = HEAD~1.unitBase
+
+###### HEAD.dividend
+
+If `HEAD.udTime != HEAD~1.udTime + dt`:
+
+    HEAD.dividend = INTEGER_PART(HEAD~1.dividend + c² * HEAD~1.mass / HEAD.membersCount)
+
+Else:
+
+    HEAD.dividend = HEAD~1.dividend
+    
+###### HEAD.dividend and HEAD.unitbase
+
+If `HEAD.dividend > 1000000`    :
+
+    HEAD.dividend = CEIL(HEAD.dividend / 10)
+    HEAD.unitBase = HEAD.unitBase + 1
+    
+###### HEAD.mass
+
+If `HEAD.udTime != HEAD~1.udTime + dt`:
+
+    HEAD.mass = HEAD~1.mass + HEAD.dividend * HEAD.membersCount
+
+Else:
+
+    HEAD.mass = HEAD~1.mass
+
+##### HEAD.membersCount
+
+    HEAD.membersCount = HEAD~1.membersCount + joiners - excluded
+
+Where:
+
+* `joiners` is the number of rows in local IINDEX where `member = true`
+* `excluded` is the number of rows in local IINDEX where `member = false`
+
+###### HEAD.speed
+
+If `HEAD.number == 0`:
+
+    speed = range / (HEAD.medianTime - HEAD~<range>.medianTime)
+    
+Else:
+
+    range = MIN(dtDiffEval, HEAD.number)
+    speed = range / (HEAD.medianTime - HEAD~<range>.medianTime)
+
+###### HEAD.powMin
+
+If `HEAD.number == 0`:
+ 
+    HEAD.powMin = 0
+     
+Else if `HEAD.diffTime != HEAD~1.diffTime + dt AND HEAD.speed >= maxSpeed AND (HEAD~1.powMin + 2) % 16 == 0`:
+
+    HEAD.powMin = HEAD~1.powMin + 2
+    
+Else if `HEAD.diffTime != HEAD~1.diffTime + dt AND HEAD.speed >= maxSpeed`:
+
+    HEAD.powMin = HEAD~1.powMin + 1
+     
+Else if `HEAD.diffTime != HEAD~1.diffTime + dt AND HEAD.speed <= minSpeed AND (HEAD~1.powMin) % 16 == 0`:
+
+    HEAD.powMin = HEAD~1.powMin - 2
+    
+Else if `HEAD.diffTime != HEAD~1.diffTime + dt AND HEAD.speed <= minSpeed`:
+
+    HEAD.powMin = HEAD~1.powMin - 1
+
+Else:
+    
+    HEAD.powMin = HEAD~1.powMin
+
+###### HEAD.powZeros and HEAD.powRemainder
+
+Rules are the following, and **each relative to a particular member**:
+
+    blocksOfIssuer = HEAD~1..<HEAD~1.issuersFrame>[issuer=HEAD.issuer]
+    nbPersonalBlocksInFrame = COUNT(blocksOfIssuer)
+    blocksPerIssuerInFrame = MAP(
+        UNIQ((HEAD~1..<HEAD~1.issuersFrame>).issuer)
+            => COUNT(HEAD~1..<HEAD~1.issuersFrame>[issuer=HEAD.issuer]))
+    medianOfBlocksInFrame = MEDIAN(blocksPerIssuerInFrame)
+    
+If `nbPersonalBlocksInFrame == 0`:
+    
+    nbPreviousIssuers = 0
+    nbBlocksSince = 0
+
+Else:
+
+    last = FIRST(blocksOfIssuer)
+    nbPreviousIssuers = last.issuersCount
+    nbBlocksSince = HEAD~1.number - last.number
+    
+EndIf
+    
+    PERSONAL_EXCESS = MAX(0, ( (nbPersonalBlocksInFrame + 1) / medianOfBlocksInFrame) - 1)
+    PERSONAL_HANDICAP = FLOOR(LN(1 + PERSONAL_EXCESS) / LN(1.189))
+    HEAD.issuerDiff = MAX [ HEAD.powMin ; HEAD.powMin * FLOOR (percentRot * nbPreviousIssuers / (1 + nbBlocksSince)) ] + PERSONAL_HANDICAP
+
+If `(HEAD.issuerDiff + 1) % 16 == 0`:
+
+    HEAD.issuerDiff = HEAD.issuerDiff + 1
+
+EndIf
+
+Finally:
+
+    HEAD.powRemainder = HEAD.issuerDiff  % 16
+    HEAD.powZeros = (HEAD.issuerDiff - HEAD.powRemainder) / 16
+
+##### Rules
+
+###### Version
+
+Rule:
+
+If `HEAD.number > 0`:
+
+    HEAD.version = (HEAD~1.version OR HEAD~1.version + 1)
 
 ###### Block size
 
-The block size is defined as the number of lines in multiline fields (`Identities`, `Joiners`, `Actives`, `Leavers`, `Revoked`, `Certifications`, `Transactions`) **except** `Excluded` field.
+Rule:
 
-For example:
+    HEAD.size < MAX(500 ; CEIL(1.10 * HEAD.avgBlockSize))
 
-* 1 new identity + 1 joiner + 2 certifications = 4 lines sized block
-* 1 new identity + 1 joiner + 2 certifications + 5 lines transaction = 9 lines sized block
+###### Number
 
-The maximum size of a block `MAX_BLOCK_SIZE` is defined by:
+Rule:
 
-`MAX_BLOCK_SIZE = MAX(500 ; CEIL(1.10 * AVERAGE_BLOCK_SIZE))`
+    Number = HEAD.number
 
-Where: `AVERAGE_BLOCK_SIZE` equals to the average block size of the `DifferentIssuersCount` of previous blocks.
+###### PreviousHash
 
-###### Block time
+Rule:
 
-Block time is a special discrete time defined by the blocks themselves, where unit is *a block*, and values are *block number + fingerprint*.
+    PreviousHash = HEAD.PreviousHash
 
-So, refering to t<sub>block</sub> = 0-2B7A158B9FD052164005ED5B491699644A846CE2 is valid only if there exists a block#0 in the blockchain whose hash equals 2B7A158B9FD052164005ED5B491699644A846CE2.
+###### PreviousIssuer
 
-###### UD time
+Rule:
 
-UD time is a special discrete time defined by the UDs written in the blockchain where unit is a *UD*.
+    PreviousIssuer = HEAD.PreviousIssuer
 
-Refering to UD(t = 1) means UD#1, and refers to the *first UD* written in the blockchain.
+###### DifferentIssuersCount
 
-> UD(t = 0) means UD#0 which does not exist. However, UD#0 is a currency parameter noted **[ud0]**.
+Rule:
 
-###### Calendar time
+    DifferentIssuersCount = HEAD.issuersCount
 
-Calendar time is the one provided by the blocks under `MedianTime` field. This time is discrete and the unit is seconds.
+###### IssuersFrame
 
-> *Current time* is to be understood as the last block calendar time written in the blockchain.
+Rule:
+
+    IssuersFrame = HEAD.issuersFrame
+
+###### IssuersFrameVar
+
+Rule:
+
+    IssuersFrameVar = HEAD.issuersFrameVar
+
+###### MedianTime
+
+Rule:
+
+    MedianTime = HEAD.medianTime
+
+###### UniversalDividend
+
+Rule:
+
+    UniversalDividend = HEAD.dividend
+
+###### UnitBase
+
+Rule:
+
+    UnitBase = HEAD.unitBase
+
+###### MembersCount
+
+Rule:
+
+    MembersCount = HEAD.membersCount
+
+###### PowMin
+
+Rule:
+
+    PowMin = HEAD.powMin
+
+###### Proof-of-work
+
+Rule: the proof is considered valid if:
+
+* `HEAD.hash` starts with at least `HEAD.powZeros` zeros
+* `HEAD.hash`'s `HEAD.powZeros + 1`th character is:
+  * between `[0-F]` if `HEAD.powRemainder = 0`
+  * between `[0-E]` if `HEAD.powRemainder = 1`
+  * between `[0-D]` if `HEAD.powRemainder = 2`
+  * between `[0-C]` if `HEAD.powRemainder = 3`
+  * between `[0-B]` if `HEAD.powRemainder = 4`
+  * between `[0-A]` if `HEAD.powRemainder = 5`
+  * between `[0-9]` if `HEAD.powRemainder = 6`
+  * between `[0-8]` if `HEAD.powRemainder = 7`
+  * between `[0-7]` if `HEAD.powRemainder = 8`
+  * between `[0-6]` if `HEAD.powRemainder = 9`
+  * between `[0-5]` if `HEAD.powRemainder = 10`
+  * between `[0-4]` if `HEAD.powRemainder = 11`
+  * between `[0-3]` if `HEAD.powRemainder = 12`
+  * between `[0-2]` if `HEAD.powRemainder = 13`
+  * between `[0-1]` if `HEAD.powRemainder = 14`
+
+> N.B.: it is not possible to have HEAD.powRemainder = 15
 
 ###### Certification time
 
@@ -1464,73 +1865,6 @@ An identity is considered *revoked* if either:
 * the age of its last `IN` membership is `>= 2 x [msValidity]` (implicit revocation)
 * there exists a block in which the identity is found under `Revoked` field (explicit revocation)
 
-##### Number
-
-* A block's `Number` must be exactly equal to previous block + 1.
-* If the blockchain is empty, `Number` must be `0` .
-
-##### Version
-
-`Version` must be between `[2, 5]`. Also, `Version` of incoming block must be equal to `Version` or `Version + 1` of current block.
-
-##### PoWMin
-
-###### Définitions
-* `speedRange = MIN(dtDiffEval, incomingNumber)`
-* `speed = speedRange / (medianTime(incomingNumber) - medianTime(incomingNumber - speedRange))`
-* `maxSpeed = 1/minGenTime`
-* `minSpeed = 1/maxGenTime`
-
-###### Rules
-
-We define `PPowMin` as the `PowMin` value of the previous block.
-
-* If the incoming block's `Number` is greater than 0 and a multiple of `dtDiffEval`, then:
-  * If `speed` is greater than or equal to `maxSpeed`, then:
-      *  if `(PPoWMin + 2) % 16 == 0` then `PoWMin = PPoWMin + 2`
-      *  else `PoWMin = PPoWMin + 1`
-  * If `speed` is less than or equal to `minSpeed`, then:
-	  * if `(PPoWMin) % 16 == 0` then `PoWMin = MAX(0, PPoWMin - 2)`
-	  * else `PoWMin = MAX(0, PPoWMin - 1)`
-* Else
-  * If `Number` is greater than 0, `PoWMin` must be equal to the previous block's `PoWMin`
-
-##### PreviousHash
-
-* A block's `PreviousHash` must be exactly equal to the previous block's computed hash (a.k.a Proof-of-Work). Note that this hash **must** start with ` powZeroMin` zeros.
-
-##### PreviousIssuer
-
-* A block's `PreviousIssuer` must be exactly equal to the previous block's `Issuer` field.
-
-##### IssuersFrame
-
-`IssuersFrame(t) = IssuersFrame(t-1) + CONVERGENCE` where:
-
-* `IssuersFrame(t)` is the value of the field in the local block
-* `IssuersFrame(t-1)` is the value of the field in the previous block (`1` in case of making root block or `40` if previous block is V2)
-* `CONVERGENCE` equals `+1` if IssuersFrameVar(t-1) is `> 0`, or `-1` if IssuersFrameVar(t-1) is `< 0`
-
-##### DifferentIssuersCount
-
-This field counts the number of different block issuers between the `IssuersFrame(t-1)` previous blocks.
-
-`IssuersFrame(t-1)`'s value is the one given by the previous block, or `0` when making a root block, or `40` if the previous block is V2.
-
-##### IssuersFrameVar
-
-`IssuersFrameVar(t) = IssuersFrameVar(t-1) + NEW_ISSUER_INC - GONE_ISSUER_DEC + CONVERGENCE` where:
-
-* `IssuersFrameVar(t)` is the value of the field in the local block
-* `IssuersFrameVar(t-1)` is the value of the field in the previous block (`0` for root block or if previous block is V2)
-* `NEW_ISSUER_INC` equals 5 if `DifferentIssuersCount` from local block equals `DifferentIssuersCount` of the previous block `+1` (equals `0` if previous block is V2)
-* `GONE_ISSUER_DEC` equals 5 if `DifferentIssuersCount` from local block equals `DifferentIssuersCount` of the previous block `-1` (equals `0` if previous block is V2)
-* `CONVERGENCE` equals `-1` if IssuersFrameVar(t-1) is `> 0`, or `+1` if IssuersFrameVar(t-1) is `< 0`
-
-##### Dates
-
-* For any non-root block, `MedianTime` must be equal to the median value of the `Time` field for the last `medianTimeBlocks` blocks. If the number of available blocks is an even value, the median is computed over the 2 centered values by an arithmetical median on them, ceil rounded.
-
 ##### Identity
 
 * An identity must be writable to be included in the block.
@@ -1588,103 +1922,6 @@ This field counts the number of different block issuers between the `IssuersFram
 * A certification's signature must be valid over `PUBKEY_TO`'s self-certification, where signatory is `PUBKEY_FROM`.
 * Replayability: there cannot exist 2 *active* certifications with the same `PUBKEY_FROM` and `PUBKEY_TO`.
 * Chainability: a certification whose `PUBKEY_FROM` is the same than an existing certification in the blockchain can be written **only if** the last written certification (incoming block excluded) is considered chainable.
-
-##### MembersCount
-
-`MembersCount` field must be equal to the last block's `MembersCount` plus the incoming block's `Joiners` count, minus this block's `Excluded` count.
-
-##### Proof-of-Work
-
-> As of Version 5.
-
-To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros + a remaining mark character. Rules are the following, and **each relative to a particular member**:
-
-```
-PERSONAL_EXCESS = MAX(0, ( (nbPersonalBlocksInFrame + 1) / medianOfBlocksInFrame) - 1)
-PERSONAL_HANDICAP = FLOOR(LN(1 + PERSONAL_EXCESS) / LN(1.189))
-PERSONAL_DIFF = MAX [ PoWMin ; PoWMin * FLOOR (percentRot * nbPreviousIssuers / (1 + nbBlocksSince)) ] + PERSONAL_HANDICAP
-
-if (PERSONAL_DIFF + 1) % 16 == 0 then PERSONAL_DIFF = PERSONAL_DIFF + 1
-
-REMAINDER = PERSONAL_DIFFICULTY  % 16
-NB_ZEROS = (PERSONAL_DIFFICULTY - REMAINDER) / 16
-```
-
-Where:
-
-* `[nbPersonalBlocksInFrame]` is the number of blocks written by the member from block (current `number` - current `issuersFrame` + 1) to current block (included)
-* `[medianOfBlocksInFrame]` is the median quantity of blocks issued per member from block (current `number` - current `issuersFrame` + 1) to current block (included)
-* `[PoWMin]` is the `PoWMin` value of the incoming block
-* `[percentRot]` is the protocol parameter
-* `[nbPreviousIssuers] = DifferentIssuersCount(last block of issuer)`
-* `[nbBlocksSince]` is the number of blocks written **since** the last block of the member (so, incoming block excluded).
-
-
-* If no block has been written by the member:
-  * `[nbPreviousIssuers] = 0`
-  * `[nbBlocksSince] = 0`
-
-The proof is considered valid if:
-
-* the proof starts with at least `NB_ZEROS` zeros
-* the `NB_ZEROS + 1`th character is:
-  * between `[0-F]` if `REMAINDER = 0`
-  * between `[0-E]` if `REMAINDER = 1`
-  * between `[0-D]` if `REMAINDER = 2`
-  * between `[0-C]` if `REMAINDER = 3`
-  * between `[0-B]` if `REMAINDER = 4`
-  * between `[0-A]` if `REMAINDER = 5`
-  * between `[0-9]` if `REMAINDER = 6`
-  * between `[0-8]` if `REMAINDER = 7`
-  * between `[0-7]` if `REMAINDER = 8`
-  * between `[0-6]` if `REMAINDER = 9`
-  * between `[0-5]` if `REMAINDER = 10`
-  * between `[0-4]` if `REMAINDER = 11`
-  * between `[0-3]` if `REMAINDER = 12`
-  * between `[0-2]` if `REMAINDER = 13`
-  * between `[0-1]` if `REMAINDER = 14`
-
-> N.B.: it is not possible to have REMAINDER = 15
-
-> Those rules of difficulty adaptation ensure a shared control of the blockchain writing.
-
-##### Universal Dividend
-
-* Root blocks do not have the `UniversalDividend` field.
-* Universal Dividend must be present if `MedianTime` value is greater than or equal to `lastUDTime` + `dt`.
-  * `lastUDTime` is the `MedianTime` of the last block with `UniversalDividend` in it.
-  * Initial value of `lastUDTime` equals to the root block's `MedianTime`.
-* UD(t = 0) = `ud0`
-* Value of `UniversalDividend` (`UD(t+1)`) equals to:
-
-```
-UD(t+1) = INTEGER_PART(UD(t) + c² * M(t) / N(t+1))
-```
-
-Where:
-
-* `t` is UD time
-* `UD(t)` is last UD value
-* `c` equals to `[c]` parameter of this protocol
-* `N(t+1)` equals to this block's `MembersCount` field
-* `M(t)` equals to the sum of all `UD(t)*N(t)` of the blockchain (from t = 0, to t = now) where:
-  * `N(t)` is the `MembersCount` for `UD(t)`
-  * `UD(0)` equals to `[ud0]` parameter of this protocol
-
-###### UD overflow
-If the `UniversalDividend` value is higher than or equal to `1000000` (1 million), then the `UniversalDividend` value has to be:
-
-    UD(t+1) = CEIL(UD(t+1) / 10)
-
-and `UnitBase` value must be incremented by `1` compared to its value at `UD(t)` (see UnitBase global rule).
-
-##### UnitBase
-
-The field must be either equal to:
-
-* `0` for root block
-* the previous block's `UnitBase` value if UD has no overflow
-* the previous block's `UnitBase` value `+ 1` if UD has an overflow
 
 ##### Transactions
 

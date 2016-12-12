@@ -1,4 +1,4 @@
-# UCP - Duniter Protocol
+# DUP - Duniter Protocol
 
 > This document is still regularly updated (as of August 2016)
 
@@ -2320,6 +2320,10 @@ If `REDUCED.revokes_on<=HEAD.medianTime AND REDUCED.revoked_on==null`, add a new
         pub = MS.pub
         revoked_on = HEAD.medianTime
     )
+
+##### Final INDEX operations
+
+All the LOCAL INDEX values (IINDEX, MINDEX, CINDEX, SINDEX, BINDEX) have to be appended to the GLOBAL INDEX.
 
 ### Peer
 

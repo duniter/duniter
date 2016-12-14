@@ -31,7 +31,7 @@ function SQLiteDriver(path) {
     const db = yield getDB();
     return new Promise((resolve, reject) => db.all(sql, params, (err, rows) => {
       if (err) {
-        return reject(err);
+        return reject(Error('SQL error "' + err.message + '" on query "' + sql + '"'));
       } else {
         return resolve(rows);
       }
@@ -42,7 +42,7 @@ function SQLiteDriver(path) {
     const db = yield getDB();
     return new Promise((resolve, reject) => db.exec(sql, (err) => {
       if (err) {
-        return reject(err);
+        return reject(Error('SQL error "' + err.message + '" on query "' + sql + '"'));
       } else {
         return resolve();
       }

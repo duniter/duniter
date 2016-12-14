@@ -38,7 +38,7 @@ function SIndexDAL(driver) {
     return that.exec('BEGIN;' +
       'CREATE TABLE IF NOT EXISTS ' + that.table + ' (' +
       'op VARCHAR(10) NOT NULL,' +
-      'tx VARCHAR(80) NOT NULL,' +
+      'tx VARCHAR(80) NULL,' +
       'identifier VARCHAR(64) NOT NULL,' +
       'pos INTEGER NOT NULL,' +
       'written_on VARCHAR(80) NOT NULL,' +

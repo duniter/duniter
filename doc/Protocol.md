@@ -1048,7 +1048,7 @@ If HEAD.number == 0, HEAD.dividend must equal `null`.
 
 ##### Dates
 
-* A block must have its `Time` field be between [`MedianTime` ; `MedianTime` + `accelerationMax`].
+* A block must have its `Time` field be between [`MedianTime` ; `MedianTime` + `maxAcceleration`].
 * Root block's `Time` & `MedianTime` must be equal.
 
 ##### Identities
@@ -1174,6 +1174,7 @@ Each revocation produces 1 new entry:
         expires_on = null
         revokes_on = null
         revoked_on = BLOCKSTAMP
+        revocation = REVOCATION_SIG
         leaving = false
     )
 
@@ -1396,6 +1397,7 @@ Function references:
 * *INTEGER_PART* return the integer part of a number
 * *FIRST* return the first element in a list of values matching the given condition
 * *REDUCE* merges a set of elements into a single one, by extending the non-null properties from each record into the resulting record.
+* *REDUCE_BY* merges a set of elements into a new set, where each new element is the reduction of the first set sharing a given key.
 
 > If there is no elements, all its properties are `null`.
 
@@ -1413,6 +1415,7 @@ The block produces 1 new entry:
       issuer = Issuer
       time = Time
       number = null
+      currency = null
       previousHash = null
       previousIssuer = null
       membersCount = null
@@ -1433,7 +1436,7 @@ The block produces 1 new entry:
     
 This entry will be refered to as *HEAD* in the following sections, and is added on the top of the BINDEX.
 
-###### HEAD.number
+###### BR_G01 - HEAD.number
 
 If HEAD~1 is defined:
 
@@ -1443,7 +1446,7 @@ Else:
 
     HEAD.number = 0
     
-###### HEAD.previousHash
+###### BR_G02 - HEAD.previousHash
 
 If `HEAD.number > 0`:
 
@@ -1453,7 +1456,17 @@ Else:
 
     HEAD.previousHash = null
     
-###### HEAD.previousIssuer
+###### BR_G99 - HEAD.currency
+
+If `HEAD.number > 0`:
+
+    HEAD.currency = HEAD~1.currency
+
+Else:
+
+    HEAD.currency = null
+    
+###### BR_G03 - HEAD.previousIssuer
 
 If `HEAD.number > 0`:
 
@@ -1463,23 +1476,21 @@ Else:
 
     HEAD.previousIssuer = null
 
-###### HEAD.issuersCount
-
-    HEAD.issuersCount = COUNT(UNIQ((HEAD~1..<m>).issuer))
+###### BR_G04 - HEAD.issuersCount
     
-Where, `HEAD.number == 0`
+If `HEAD.number == 0`:
 
-    m = 0
+    HEAD.issuersCount = 0
     
 Else if `HEAD~1.version > 2`:
 
-    m = HEAD~1.issuersFrame
+    HEAD.issuersCount = COUNT(UNIQ((HEAD~1..<HEAD~1.issuersFrame>).issuer))
     
 Else:
 
-    m = 40
+    HEAD.issuersCount = COUNT(UNIQ((HEAD~1..40).issuer))
 
-###### HEAD.issuersFrame
+###### BR_G05 - HEAD.issuersFrame
 
 If `HEAD.number == 0`:
 
@@ -1487,7 +1498,7 @@ If `HEAD.number == 0`:
     
 Else if `HEAD~1.version == 2`:
 
-    m = 40 
+    HEAD.issuersFrame = 40
     
 Else if `HEAD~1.issuersFrameVar > 0`:
 
@@ -1501,7 +1512,7 @@ Else:
 
     HEAD.issuersFrame = HEAD~1.issuersFrame
 
-###### HEAD.issuersFrameVar
+###### BR_G06 - HEAD.issuersFrameVar
 
 If `HEAD.number == 0` OR `HEAD~1.version == 2`:
 
@@ -1509,47 +1520,56 @@ If `HEAD.number == 0` OR `HEAD~1.version == 2`:
     
 Else if `HEAD~1.issuersFrameVar > 0`:
 
-    HEAD.issuersFrameVar = HEAD~1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD~1.issuersCount) + 1
+    HEAD.issuersFrameVar = HEAD~1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD~1.issuersCount) - 1
     
 Else if `HEAD~1.issuersFrameVar < 0`:
 
-    HEAD.issuersFrameVar = HEAD~1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD~1.issuersCount) - 1
+    HEAD.issuersFrameVar = HEAD~1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD~1.issuersCount) + 1
     
 Else:
 
     HEAD.issuersFrameVar = HEAD~1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD~1.issuersCount)
 
 
-###### HEAD.avgBlockSize
+###### BR_G07 - HEAD.avgBlockSize
 
     HEAD.avgBlockSize = AVG((HEAD~1..<HEAD.issuersCount>).size)
 
-###### HEAD.medianTime
+###### BR_G08 - HEAD.medianTime
 
 If `HEAD.number > 0`:
 
-    range = MIN(medianTimeBlocks, HEAD.number)
-    HEAD.medianTime = MEDIAN((HEAD~1..<range>).time)
+    HEAD.medianTime = MEDIAN((HEAD~1..<MIN(medianTimeBlocks, HEAD.number)>).time)
 
 Else:
 
     HEAD.medianTime = HEAD.time
 
-###### HEAD.diffTime
+###### BR_G09 - HEAD.diffNumber
 
 If `HEAD.number == 0`:
 
-    HEAD.diffTime = HEAD.medianTime + dtDiffEval
+    HEAD.diffNumber = HEAD.number + dtDiffEval
 
-Else if `HEAD~1.diffTime <= HEAD.diffTime`:
+Else if `HEAD~1.diffNumber <= HEAD.number`:
 
-    HEAD.diffTime = HEAD~1.diffTime + dtDiffEval
+    HEAD.diffNumber = HEAD~1.diffNumber + dtDiffEval
 
 Else:
 
-    HEAD.diffTime = HEAD~1.diffTime
+    HEAD.diffNumber = HEAD~1.diffNumber
 
-###### HEAD.udTime
+###### BR_G10 - HEAD.membersCount
+
+If `HEAD.number == 0`:
+
+    HEAD.membersCount = COUNT(LOCAL_IINDEX[member=true])
+    
+Else:
+
+    HEAD.membersCount = HEAD~1.membersCount + COUNT(LOCAL_IINDEX[member=true]) - COUNT(LOCAL_IINDEX[member=false])
+
+###### BR_G11 - HEAD.udTime
 
 If `HEAD.number == 0`:
 
@@ -1563,7 +1583,7 @@ Else:
 
     HEAD.udTime = HEAD~1.udTime
 
-###### HEAD.unitBase
+###### BR_G12 - HEAD.unitBase
 
 If `HEAD.number == 0`:
 
@@ -1573,72 +1593,84 @@ Else:
 
     HEAD.unitBase = HEAD~1.unitBase
 
-###### HEAD.dividend
+###### BR_G13 - HEAD.dividend and HEAD.new_dividend
 
-If `HEAD.udTime != HEAD~1.udTime + dt`:
+If `HEAD.number == 0`:
+
+    HEAD.dividend = ud0
+    HEAD.new_dividend = null
+
+If `HEAD.udTime != HEAD~1.udTime`:
 
     HEAD.dividend = INTEGER_PART(HEAD~1.dividend + c² * HEAD~1.mass / HEAD.membersCount)
+    HEAD.new_dividend = HEAD.dividend
 
 Else:
 
     HEAD.dividend = HEAD~1.dividend
+    HEAD.new_dividend = null
     
-###### HEAD.dividend and HEAD.unitbase
+###### BR_G14 - HEAD.dividend and HEAD.unitbase and HEAD.new_dividend
 
-If `HEAD.dividend > 1000000`    :
+If `HEAD.dividend >= 1000000`    :
 
     HEAD.dividend = CEIL(HEAD.dividend / 10)
+    HEAD.new_dividend = HEAD.dividend
     HEAD.unitBase = HEAD.unitBase + 1
     
-###### HEAD.mass
+###### BR_G15 - HEAD.mass
 
-If `HEAD.udTime != HEAD~1.udTime + dt`:
+If `HEAD.number == 0`:
 
-    HEAD.mass = HEAD~1.mass + HEAD.dividend * HEAD.membersCount
+    HEAD.mass = 0
+    
+Else if `HEAD.udTime != HEAD~1.udTime`:
+
+    HEAD.mass = HEAD~1.mass + HEAD.dividend * POWER(10, HEAD.unitBase) * HEAD.membersCount
 
 Else:
 
     HEAD.mass = HEAD~1.mass
 
-##### HEAD.membersCount
-
-    HEAD.membersCount = HEAD~1.membersCount + joiners - excluded
-
-Where:
-
-* `joiners` is the number of rows in local IINDEX where `member = true`
-* `excluded` is the number of rows in local IINDEX where `member = false`
-
-###### HEAD.speed
+###### BR_G16 - HEAD.speed
 
 If `HEAD.number == 0`:
 
-    speed = range / (HEAD.medianTime - HEAD~<range>.medianTime)
+    speed = 0
     
 Else:
 
     range = MIN(dtDiffEval, HEAD.number)
-    speed = range / (HEAD.medianTime - HEAD~<range>.medianTime)
+    elapsed = (HEAD.medianTime - HEAD~<range>.medianTime)
+    
+EndIf
 
-###### HEAD.powMin
+If `elapsed == 0`:
+
+    speed = 0
+
+Else:
+    speed = range / elapsed
+
+###### BR_G17 - HEAD.powMin
 
 If `HEAD.number == 0`:
  
     HEAD.powMin = 0
      
-Else if `HEAD.diffTime != HEAD~1.diffTime + dt AND HEAD.speed >= maxSpeed AND (HEAD~1.powMin + 2) % 16 == 0`:
+Else if `HEAD.diffNumber != HEAD~1.diffNumber AND HEAD.speed >= maxSpeed AND (HEAD~1.powMin + 2) % 16 == 0`:
 
     HEAD.powMin = HEAD~1.powMin + 2
     
-Else if `HEAD.diffTime != HEAD~1.diffTime + dt AND HEAD.speed >= maxSpeed`:
+Else if `HEAD.diffNumber != HEAD~1.diffNumber AND HEAD.speed >= maxSpeed`:
 
     HEAD.powMin = HEAD~1.powMin + 1
      
-Else if `HEAD.diffTime != HEAD~1.diffTime + dt AND HEAD.speed <= minSpeed AND (HEAD~1.powMin) % 16 == 0`:
+Else if `HEAD.diffNumber != HEAD~1.diffNumber AND HEAD.speed <= minSpeed AND (HEAD~1.powMin) % 16 == 0`:
 
     HEAD.powMin = HEAD~1.powMin - 2
     
-Else if `HEAD.diffTime != HEAD~1.diffTime + dt AND HEAD.speed <= minSpeed`:
+Else if `HEAD.diffNumber != HEAD~1.diffNumber AND HEAD.speed <= minSpeed`:
 
     HEAD.powMin = HEAD~1.powMin - 1
 
@@ -1646,9 +1678,14 @@ Else:
     
     HEAD.powMin = HEAD~1.powMin
 
-###### HEAD.powZeros and HEAD.powRemainder
+###### BR_G18 - HEAD.powZeros and HEAD.powRemainder
 
-Rules are the following, and **each relative to a particular member**:
+If `HEAD.number == 0`:
+
+    nbPersonalBlocksInFrame = 0
+    medianOfBlocksInFrame = 1
+    
+Else:
 
     blocksOfIssuer = HEAD~1..<HEAD~1.issuersFrame>[issuer=HEAD.issuer]
     nbPersonalBlocksInFrame = COUNT(blocksOfIssuer)
@@ -1656,6 +1693,8 @@ Rules are the following, and **each relative to a particular member**:
         UNIQ((HEAD~1..<HEAD~1.issuersFrame>).issuer)
             => COUNT(HEAD~1..<HEAD~1.issuersFrame>[issuer=HEAD.issuer]))
     medianOfBlocksInFrame = MEDIAN(blocksPerIssuerInFrame)
+    
+EndIf
     
 If `nbPersonalBlocksInFrame == 0`:
     
@@ -1687,69 +1726,65 @@ Finally:
 
 ###### Local IINDEX augmentation
 
-####### ENTRY.age
+####### BR_G19 - ENTRY.age
 
 For each ENTRY in local IINDEX where `op = 'CREATE'`:
 
     REF_BLOCK = HEAD~<NUMBER(ENTRY.created_on)>[hash=HASH(ENTRY.created_on)]
     
-If `REF_BLOC == null`:
-
-    timeReference = 0
+If `HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'`:
     
-Else if `HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'`:
+    ENTRY.age = 0
+    
+Else if `REF_BLOC != null`:
 
-    timeReference = HEAD.medianTime
+    ENTRY.age = HEAD~1.medianTime - REF_BLOCK.medianTime
     
 Else:
 
-    timeReference = REF_BLOCK
+    ENTRY.age = conf.idtyWindow + 1
     
 EndIf
 
-    ENTRY.age = HEAD~1.medianTime - timeReference
-
-###### Identity UserID unicity
+###### BR_G20 - Identity UserID unicity
 
 For each ENTRY in local IINDEX where `op = 'CREATE'`:
 
 Rule:
 
-    ENTRY.uidUnique == COUNT(GLOBAL_IINDEX[uid=ENTRY.uid) == 0
+    ENTRY.uidUnique = COUNT(GLOBAL_IINDEX[uid=ENTRY.uid) == 0
 
-###### Identity pubkey unicity
+###### BR_G21 - Identity pubkey unicity
 
 For each ENTRY in local IINDEX where `op = 'CREATE'`:
 
 Rule:
 
-    ENTRY.pubUnique == COUNT(GLOBAL_IINDEX[pub=ENTRY.pub) == 0
+    ENTRY.pubUnique = COUNT(GLOBAL_IINDEX[pub=ENTRY.pub) == 0
 
 ###### Local MINDEX augmentation
 
-####### ENTRY.age
+####### BR_G22 - ENTRY.age
 
 For each ENTRY in local MINDEX where `revoked_on == null`:
 
     REF_BLOCK = HEAD~<NUMBER(ENTRY.created_on)>[hash=HASH(ENTRY.created_on)]
     
-If `REF_BLOC == null`:
-
-    timeReference = 0
+If `HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'`:
     
-Else if `HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'`:
+    ENTRY.age = 0
+    
+Else if `REF_BLOC != null`:
 
-    timeReference = HEAD.medianTime
+    ENTRY.age = HEAD~1.medianTime - REF_BLOCK.medianTime
     
 Else:
 
-    timeReference = REF_BLOCK
+    ENTRY.age = conf.msWindow + 1
     
 EndIf
 
-    ENTRY.age = HEAD~1.medianTime - timeReference
-
-####### ENTRY.numberFollowing
+####### BR_G23 - ENTRY.numberFollowing
 
 For each ENTRY in local MINDEX where `revoked_on == null`:
 
@@ -1759,7 +1794,7 @@ For each ENTRY in local MINDEX where `revoked_on != null`:
 
     ENTRY.numberFollowing = true
 
-####### ENTRY.distanceOK
+####### BR_G24 - ENTRY.distanceOK
 
 For each ENTRY in local MINDEX where `expires_on != null`:
 
@@ -1776,19 +1811,19 @@ For each ENTRY in local MINDEX where `expires_on == null`:
 
     ENTRY.distanceOK = true
 
-####### ENTRY.onRevoked
+####### BR_G25 - ENTRY.onRevoked
 
 For each ENTRY in local MINDEX:
 
     ENTRY.onRevoked = REDUCE(GLOBAL_MINDEX[pub=ENTRY.pub]).revoked_on != null
 
-####### ENTRY.joinsTwice
+####### BR_G26 - ENTRY.joinsTwice
 
 For each ENTRY in local MINDEX where `member == true`:
 
-    ENTRY.joinsTwice = REDUCE(GLOBAL_MINDEX[pub=ENTRY.pub]).membre == true
+    ENTRY.joinsTwice = REDUCE(GLOBAL_MINDEX[pub=ENTRY.pub]).member == true
 
-####### ENTRY.enoughCerts
+####### BR_G27 - ENTRY.enoughCerts
 
 For each ENTRY in local MINDEX where `expires_on != null`:
 
@@ -1800,7 +1835,7 @@ For each ENTRY in local MINDEX where `expires_on == null`:
 
     ENTRY.enoughCerts = true
 
-####### ENTRY.leaverIsMember
+####### BR_G28 - ENTRY.leaverIsMember
 
 For each ENTRY in local MINDEX where `expires_on == null`:
 
@@ -1810,7 +1845,7 @@ For each ENTRY in local MINDEX where `expires_on != null`:
 
     ENTRY.leaverIsMember = false
 
-####### ENTRY.activeIsMember
+####### BR_G29 - ENTRY.activeIsMember
 
 For each ENTRY in local MINDEX where `expires_on == null`:
 
@@ -1820,7 +1855,7 @@ For each ENTRY in local MINDEX where `expires_on != null`:
 
     ENTRY.activeIsMember = REDUCE(GLOBAL_IINDEX[pub=ENTRY.pub]).member
 
-####### ENTRY.revokedIsMember
+####### BR_G30 - ENTRY.revokedIsMember
 
 For each ENTRY in local MINDEX where `revoked_on == null`:
 
@@ -1830,7 +1865,7 @@ For each ENTRY in local MINDEX where `revoked_on != null`:
 
     ENTRY.revokedIsMember = REDUCE(GLOBAL_IINDEX[pub=ENTRY.pub]).member
 
-####### ENTRY.alreadyRevoked
+####### BR_G31 - ENTRY.alreadyRevoked
 
 For each ENTRY in local MINDEX where `revoked_on == null`:
 
@@ -1840,7 +1875,7 @@ For each ENTRY in local MINDEX where `revoked_on != null`:
 
     ENTRY.alreadyRevoked = REDUCE(GLOBAL_MINDEX[pub=ENTRY.pub]).revoked_on != null
 
-####### ENTRY.revocationSigOK
+####### BR_G32 - ENTRY.revocationSigOK
 
 For each ENTRY in local MINDEX where `revoked_on == null`:
 
@@ -1850,7 +1885,7 @@ For each ENTRY in local MINDEX where `revoked_on != null`:
 
     ENTRY.revocationSigOK = SIG_CHECK_REVOKE(REDUCE(GLOBAL_IINDEX[pub=ENTRY.pub]), ENTRY)
 
-####### ENTRY.excludedIsMember
+####### BR_G33 - ENTRY.excludedIsMember
 
 For each ENTRY in local MINDEX where `member != false`:
 
@@ -1860,7 +1895,7 @@ For each ENTRY in local MINDEX where `member == false`:
 
     ENTRY.excludedIsMember = REDUCE(GLOBAL_IINDEX[pub=ENTRY.pub]).member
 
-####### ENTRY.isBeingRevoked
+####### BR_G34 - ENTRY.isBeingRevoked
 
 For each ENTRY in local MINDEX where `revoked_on == null`:
 
@@ -1870,7 +1905,7 @@ For each ENTRY in local MINDEX where `revoked_on != null`:
 
     ENTRY.isBeingRevoked = true
 
-####### ENTRY.isBeingKicked
+####### BR_G35 - ENTRY.isBeingKicked
 
 For each ENTRY in local MINDEX where `member != false`:
 
@@ -1880,7 +1915,7 @@ For each ENTRY in local MINDEX where `member == false`:
 
     ENTRY.isBeingKicked = true
 
-####### ENTRY.hasToBeExcluded
+####### BR_G36 - ENTRY.hasToBeExcluded
 
 For each ENTRY in local MINDEX:
 
@@ -1890,155 +1925,165 @@ For each ENTRY in local MINDEX:
 
 For each ENTRY in local CINDEX:
 
-####### ENTRY.age
+####### BR_G37 - ENTRY.age
 
     REF_BLOCK = HEAD~<NUMBER(ENTRY.created_on)>[hash=HASH(ENTRY.created_on)]
     
-If `REF_BLOC == null`:
-
-    timeReference = 0
+If `HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'`:
     
-Else if `HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'`:
+    ENTRY.age = 0
+    
+Else if `REF_BLOC != null`:
 
-    timeReference = HEAD.medianTime
+    ENTRY.age = HEAD~1.medianTime - REF_BLOCK.medianTime
     
 Else:
 
-    timeReference = REF_BLOCK
+    ENTRY.age = conf.sigWindow + 1
     
 EndIf
-
-    ENTRY.age = HEAD~1.medianTime - timeReference
     
-####### ENTRY.unchainables
+####### BR_G38 - ENTRY.unchainables
+
+If `HEAD.number > 0`:
 
     ENTRY.unchainables = COUNT(GLOBAL_CINDEX[issuer=ENTRY.issuer, chainable_on > HEAD~1.medianTime]))
     
-####### ENTRY.stock
+####### BR_G39 - ENTRY.stock
 
     ENTRY.stock = COUNT(GLOBAL_CINDEX[issuer=ENTRY.issuer, expired_on=null]))
     
-####### ENTRY.fromMember
+####### BR_G40 - ENTRY.fromMember
 
     ENTRY.fromMember = REDUCE(GLOBAL_IINDEX[pub=ENTRY.issuer]).member
     
-####### ENTRY.toMember
+####### BR_G41 - ENTRY.toMember
 
     ENTRY.toMember = REDUCE(GLOBAL_IINDEX[pub=ENTRY.receiver]).member
     
-####### ENTRY.toNewcomer
+####### BR_G42 - ENTRY.toNewcomer
 
-    ENTRY.toMember = COUNT(LOCAL_IINDEX[op='CREATE',pub=ENTRY.receiver]) > 0
+    ENTRY.toNewcomer = COUNT(LOCAL_IINDEX[op='CREATE',pub=ENTRY.receiver]) > 0
     
-####### ENTRY.toLeaver
+####### BR_G43 - ENTRY.toLeaver
 
     ENTRY.toLeaver = REDUCE(GLOBAL_MINDEX[pub=ENTRY.receiver]).leaving
     
-####### ENTRY.isReplay
+####### BR_G44 - ENTRY.isReplay
 
     ENTRY.isReplay = COUNT(GLOBAL_CINDEX[issuer=ENTRY.issuer,receiver=ENTRY.receiver,expired_on=null]) > 0
     
-####### ENTRY.sigOK
+####### BR_G45 - ENTRY.sigOK
 
     ENTRY.sigOK = SIG_CHECK_CERT(REDUCE(GLOBAL_IINDEX[pub=ENTRY.receiver]), ENTRY)
 
 ###### Local SINDEX augmentation
 
-####### ENTRY.available
+####### BR_G46 - ENTRY.available
 
-    ENTRY.available = GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base].consumed == false
+For each `LOCAL_SINDEX[op='UPDATE'] as ENTRY`:
 
-####### ENTRY.isLocked
+    ENTRY.available = REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]).consumed == false
 
-    ENTRY.isLocked = TX_SOURCE_UNLOCK(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos].conditions, ENTRY)
+####### BR_G47 - ENTRY.isLocked
+
+    ENTRY.isLocked = TX_SOURCE_UNLOCK(REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]).conditions, ENTRY)
     
-####### ENTRY.isTimeLocked
+####### BR_G48 - ENTRY.isTimeLocked
 
-    ENTRY.isTimeLocked = ENTRY.written_time - GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos].written_time < locktime
+    ENTRY.isTimeLocked = ENTRY.written_time - REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]).written_time < ENTRY.locktime
 
 ##### Rules
 
-###### Version
+###### BR_G49 - Version
 
 Rule:
 
 If `HEAD.number > 0`:
 
-    HEAD.version = (HEAD~1.version OR HEAD~1.version + 1)
+    HEAD.version == (HEAD~1.version OR HEAD~1.version + 1)
 
-###### Block size
+###### BR_G50 - Block size
 
 Rule:
 
     HEAD.size < MAX(500 ; CEIL(1.10 * HEAD.avgBlockSize))
 
-###### Number
+###### BR_G98 - Currency
+
+Rule:
+
+If `HEAD.number > 0`:
+
+    Currency = HEAD.currency
+
+###### BR_G51 - Number
 
 Rule:
 
     Number = HEAD.number
 
-###### PreviousHash
+###### BR_G52 - PreviousHash
 
 Rule:
 
-    PreviousHash = HEAD.PreviousHash
+    PreviousHash = HEAD.previousHash
 
-###### PreviousIssuer
+###### BR_G53 - PreviousIssuer
 
 Rule:
 
-    PreviousIssuer = HEAD.PreviousIssuer
+    PreviousIssuer = HEAD.previousIssuer
 
-###### DifferentIssuersCount
+###### BR_G54 - DifferentIssuersCount
 
 Rule:
 
     DifferentIssuersCount = HEAD.issuersCount
 
-###### IssuersFrame
+###### BR_G55 - IssuersFrame
 
 Rule:
 
     IssuersFrame = HEAD.issuersFrame
 
-###### IssuersFrameVar
+###### BR_G56 - IssuersFrameVar
 
 Rule:
 
     IssuersFrameVar = HEAD.issuersFrameVar
 
-###### MedianTime
+###### BR_G57 - MedianTime
 
 Rule:
 
     MedianTime = HEAD.medianTime
 
-###### UniversalDividend
+###### BR_G58 - UniversalDividend
 
 Rule:
 
-    UniversalDividend = HEAD.dividend
+    UniversalDividend = HEAD.new_dividend
 
-###### UnitBase
+###### BR_G59 - UnitBase
 
 Rule:
 
     UnitBase = HEAD.unitBase
 
-###### MembersCount
+###### BR_G60 - MembersCount
 
 Rule:
 
     MembersCount = HEAD.membersCount
 
-###### PowMin
+###### BR_G61 - PowMin
 
 Rule:
 
     PowMin = HEAD.powMin
 
-###### Proof-of-work
+###### BR_G62 - Proof-of-work
 
 Rule: the proof is considered valid if:
 
@@ -2062,43 +2107,43 @@ Rule: the proof is considered valid if:
 
 > N.B.: it is not possible to have HEAD.powRemainder = 15
 
-###### Identity writability
+###### BR_G63 - Identity writability
 
 Rule:
 
     ENTRY.age <= [idtyWindow]
 
-###### Membership writability
+###### BR_G64 - Membership writability
 
 Rule:
 
     ENTRY.age <= [msWindow]
 
-###### Certification writability
+###### BR_G65 - Certification writability
 
 Rule:
 
     ENTRY.age <= [sigWindow]
 
-###### Certification stock
+###### BR_G66 - Certification stock
 
 Rule:
 
-    ENTRY.stock < sigStock
+    ENTRY.stock <= sigStock
 
-###### Certification period
+###### BR_G67 - Certification period
 
 Rule:
 
     ENTRY.unchainables == 0
 
-###### Certification from member
+###### BR_G68 - Certification from member
 
 Rule:
 
     ENTRY.fromMember == true
 
-###### Certification to member or newcomer
+###### BR_G69 - Certification to member or newcomer
 
 Rule:
 
@@ -2106,103 +2151,103 @@ Rule:
     OR
     ENTRY.toNewcomer == true
 
-###### Certification to non-leaver
+###### BR_G70 - Certification to non-leaver
 
 Rule:
 
     ENTRY.toLeaver == false
 
-###### Certification replay
+###### BR_G71 - Certification replay
 
 Rule:
 
     ENTRY.isReplay == false
 
-###### Certification signature
+###### BR_G72 - Certification signature
 
 Rule:
 
     ENTRY.sigOK == true
 
-###### Identity UserID unicity
+###### BR_G73 - Identity UserID unicity
 
 Rule:
 
     ENTRY.uidUnique == true
 
-###### Identity pubkey unicity
+###### BR_G74 - Identity pubkey unicity
 
 Rule:
 
     ENTRY.pubUnique == true
 
-###### Membership succession
+###### BR_G75 - Membership succession
 
 Rule:
 
     ENTRY.numberFollowing == true
 
-###### Membership distance check
+###### BR_G76 - Membership distance check
 
 Rule:
 
     ENTRY.distanceOK == true
 
-###### Membership on revoked
+###### BR_G77 - Membership on revoked
 
 Rule:
 
     ENTRY.onRevoked == false
 
-###### Membership joins twice
+###### BR_G78 - Membership joins twice
 
 Rule:
 
     ENTRY.joinsTwice == false
 
-###### Membership enough certifications
+###### BR_G79 - Membership enough certifications
 
 Rule:
 
     ENTRY.enoughCerts == true
 
-###### Membership leaver
+###### BR_G80 - Membership leaver
 
 Rule:
 
     ENTRY.leaverIsMember == false
 
-###### Membership active
+###### BR_G81 - Membership active
 
 Rule:
 
     ENTRY.activeIsMember == true
 
-###### Revocation by a member
+###### BR_G82 - Revocation by a member
 
 Rule:
 
     ENTRY.revokedIsMember == true
 
-###### Revocation singleton
+###### BR_G83 - Revocation singleton
 
 Rule:
 
     ENTRY.alreadyRevoked == false
 
-###### Revocation signature
+###### BR_G84 - Revocation signature
 
 Rule:
 
     ENTRY.revocationSigOK == true
     
-###### Excluded is a member
+###### BR_G85 - Excluded is a member
 
 Rule:
 
     ENTRY.excludedIsMember == true
     
-###### Excluded to be kicked
+###### BR_G86 - Excluded to be kicked
 
 Rule:
 
@@ -2210,7 +2255,7 @@ For each `GLOBAL_MINDEX[kick=true] as TO_KICK`:
 
     COUNT(LOCAL_INDEX[pub=TO_KICK.pub,isBeingKicked=true]) == 1
     
-###### Input is available
+###### BR_G87 - Input is available
 
 For each `LOCAL_SINDEX[op='UPDATE'] as ENTRY`:
 
@@ -2218,7 +2263,7 @@ Rule:
 
     ENTRY.available == true
     
-###### Input is unlocked
+###### BR_G88 - Input is unlocked
 
 For each `LOCAL_SINDEX[op='UPDATE'] as ENTRY`:
 
@@ -2226,7 +2271,7 @@ Rule:
 
     ENTRY.isLocked == false
     
-###### Input is time unlocked
+###### BR_G89 - Input is time unlocked
 
 For each `LOCAL_SINDEX[op='UPDATE'] as ENTRY`:
 
@@ -2234,7 +2279,7 @@ Rule:
 
     ENTRY.isTimeLocked == false
     
-###### Output base
+###### BR_G90 - Output base
 
 For each `LOCAL_SINDEX[op='CREATE'] as ENTRY`:
 
@@ -2244,13 +2289,15 @@ Rule:
 
 ##### Post-rules INDEX augmentation
 
-###### Dividend
+###### BR_G91 - Dividend
 
-For each `GLOBAL_IINDEX[member=true] as MEMBER`, add a new LOCAL_SINDEX entry:
+If `HEAD.new_dividend != null`:
+
+For each `REDUCE_BY(GLOBAL_IINDEX[member=true], 'pub') as IDTY` then if `IDTY.member`, add a new LOCAL_SINDEX entry:
 
     SINDEX (
         op = 'CREATE'
-        identifier = MEMBER.pub
+        identifier = IDTY.pub
         pos = HEAD.number
         written_on = BLOCKSTAMP
         written_time = MedianTime
@@ -2261,7 +2308,7 @@ For each `GLOBAL_IINDEX[member=true] as MEMBER`, add a new LOCAL_SINDEX entry:
         consumed = false
     )
 
-###### Certification expiry
+###### BR_G92 - Certification expiry
 
 For each `GLOBAL_CINDEX[expires_on<=HEAD.medianTime] as CERT`, add a new LOCAL_CINDEX entry:
 
@@ -2273,7 +2320,7 @@ For each `GLOBAL_CINDEX[expires_on<=HEAD.medianTime] as CERT`, add a new LOCAL_C
         expired_on = HEAD.medianTime
     )
 
-###### Membership expiry
+###### BR_G93 - Membership expiry
 
 For each `GLOBAL_MINDEX[expires_on<=HEAD.medianTime,expired_on=0] as MS`, add a new LOCAL_MINDEX entry:
 
@@ -2283,9 +2330,9 @@ For each `GLOBAL_MINDEX[expires_on<=HEAD.medianTime,expired_on=0] as MS`, add a 
         expired_on = HEAD.medianTime
     )
     
-###### Exclusion by membership
+###### BR_G94 - Exclusion by membership
 
-For each `LOCAL_MINDEX[expired_on!=0] as MS`, add a new LOCAL_IINDEX entry:
+For each `GLOBAL_MINDEX[expired_on!=0] as MS`, add a new LOCAL_IINDEX entry:
 
     IINDEX (
         op = 'UPDATE'
@@ -2294,20 +2341,20 @@ For each `LOCAL_MINDEX[expired_on!=0] as MS`, add a new LOCAL_IINDEX entry:
         kick = true
     )
     
-###### Exclusion by certification
+###### BR_G95 - Exclusion by certification
 
 For each `LOCAL_CINDEX[expired_on!=0] as CERT`:
 
-If `COUNT(GLOBAL_CINDEX[receiver=CERT.pub]) + COUNT(LOCAL_CINDEX[receiver=CERT.pub,expired_on=null]) - COUNT(LOCAL_CINDEX[receiver=CERT.pub,expired_on!=null]) < sigQty`, add a new LOCAL_IINDEX entry:
+If `COUNT(GLOBAL_CINDEX[receiver=CERT.receiver]) + COUNT(LOCAL_CINDEX[receiver=CERT.receiver,expired_on=null]) - COUNT(LOCAL_CINDEX[receiver=CERT.receiver,expired_on!=null]) < sigQty`, add a new LOCAL_IINDEX entry:
 
     IINDEX (
         op = 'UPDATE'
-        pub = MS.pub
+        pub = CERT.receiver
         written_on = BLOCKSTAMP
         kick = true
     )
 
-###### Implicit revocation
+###### BR_G96 - Implicit revocation
 
 For each `GLOBAL_MINDEX[revokes_on<=HEAD.medianTime,revoked_on=null] as MS`:
 
@@ -2318,12 +2365,13 @@ If `REDUCED.revokes_on<=HEAD.medianTime AND REDUCED.revoked_on==null`, add a new
     MINDEX (
         op = 'UPDATE'
         pub = MS.pub
+        written_on = BLOCKSTAMP
         revoked_on = HEAD.medianTime
     )
 
-##### Final INDEX operations
+##### BR_G97 - Final INDEX operations
 
-All the LOCAL INDEX values (IINDEX, MINDEX, CINDEX, SINDEX, BINDEX) have to be appended to the GLOBAL INDEX.
+If all the rules [BR_G49 ; BR_G90] pass, then all the LOCAL INDEX values (IINDEX, MINDEX, CINDEX, SINDEX, BINDEX) have to be appended to the GLOBAL INDEX.
 
 ### Peer
 

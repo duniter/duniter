@@ -51,4 +51,7 @@ function IIndexDAL(driver) {
       'CREATE INDEX IF NOT EXISTS idx_iindex_pub ON i_index (pub);' +
       'COMMIT;', []);
   });
+
+  // TODO: check created_on is always filled in
+  this.reducable = (pub) => this.query('SELECT * FROM ' + this.table + ' WHERE pub = ? ORDER BY CAST(created_on as integer) ASC', [pub]);
 }

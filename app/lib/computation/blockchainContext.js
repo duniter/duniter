@@ -134,11 +134,11 @@ function BlockchainContext() {
   this.current = () => dal.getCurrentBlockOrNull();
 
   const saveBlockData = (current, block) => co(function*() {
+    yield that.saveParametersForRootBlock(block);
+    yield dal.saveIndexes(block, conf);
     yield updateBlocksComputedVars(current, block);
     // Saves the block (DAL)
     yield dal.saveBlock(block);
-    yield that.saveParametersForRootBlock(block);
-    yield dal.saveIndexes(block, conf);
     // Create/Update members (create new identities if do not exist)
     yield that.updateMembers(block);
     // Create/Update certifications

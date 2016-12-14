@@ -747,19 +747,20 @@ function service(callback, nologs) {
 
     // Initialize server (db connection, ...)
     return co(function*() {
-      yield server.initWithDAL();
-      yield configure(server, server.conf || {});
-      yield server.loadConf();
-      cbArgs.length--;
-      cbArgs[cbArgs.length++] = server;
-      cbArgs[cbArgs.length++] = server.conf;
-      onService && onService(server);
-      return callback.apply(that, cbArgs);
-    })
-      .catch(function (err) {
+      try {
+        yield server.initWithDAL();
+        yield configure(server, server.conf || {});
+        yield server.loadConf();
+        cbArgs.length--;
+        cbArgs[cbArgs.length++] = server;
+        cbArgs[cbArgs.length++] = server.conf;
+        onService && onService(server);
+        return callback.apply(that, cbArgs);
+      } catch (e) {
         server.disconnect();
-        throw Error(err);
-      });
+        throw e;
+      }
+    });
   };
 }
 

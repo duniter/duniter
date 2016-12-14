@@ -245,3 +245,8 @@ Block.statics.getLen = (block) => block.identities.length +
     block.revoked.length +
     block.certifications.length +
     block.transactions.reduce((sum, tx) => sum + Transaction.statics.getLen(tx), 0);
+
+Block.statics.getHash = (block) => {
+  const entity = Block.statics.fromJSON(block);
+  return entity.getHash();
+};

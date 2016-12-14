@@ -45,6 +45,7 @@ function FileDAL(params) {
   this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqliteDriver, wotbInstance);
   this.certDAL = new (require('./sqliteDAL/CertDAL'))(sqliteDriver);
   this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(sqliteDriver);
+  this.bindexDAL = new (require('./sqliteDAL/index/BIndexDAL'))(sqliteDriver);
   this.mindexDAL = new (require('./sqliteDAL/index/MIndexDAL'))(sqliteDriver);
   this.iindexDAL = new (require('./sqliteDAL/index/IIndexDAL'))(sqliteDriver);
   this.sindexDAL = new (require('./sqliteDAL/index/SIndexDAL'))(sqliteDriver);
@@ -78,6 +79,7 @@ function FileDAL(params) {
             'COMMIT;');
       })
     },
+    'bindexDAL': that.bindexDAL,
     'mindexDAL': that.mindexDAL,
     'iindexDAL': that.iindexDAL,
     'sindexDAL': that.sindexDAL,
@@ -685,10 +687,18 @@ function FileDAL(params) {
 
   this.saveIndexes = (block, conf) => co(function*() {
     const index = indexer.localIndex(block, conf);
-    const mindex = indexer.mindex(index);
-    const iindex = indexer.iindex(index);
-    const sindex = indexer.sindex(index);
-    const cindex = indexer.cindex(index);
+    let mindex = indexer.mindex(index);
+    let iindex = indexer.iindex(index);
+    let sindex = indexer.sindex(index);
+    let cindex = indexer.cindex(index);
+    const HEAD = yield indexer.completeGlobalScope(block, conf, index, that);
+    sindex = sindex.concat(yield indexer.ruleIndexGenDividend(HEAD, that));
+    cindex = cindex.concat(yield indexer.ruleIndexGenCertificationExpiry(HEAD, that));
+    mindex = mindex.concat(yield indexer.ruleIndexGenMembershipExpiry(HEAD, that));
+    iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByMembership(HEAD, that));
+    iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByCertificatons(HEAD, cindex, conf, that));
+    mindex = mindex.concat(yield indexer.ruleIndexGenImplicitRevocation(HEAD, that));
+    yield that.bindexDAL.saveEntity(HEAD);
     yield that.mindexDAL.insertBatch(mindex);
     yield that.iindexDAL.insertBatch(iindex);
     yield that.sindexDAL.insertBatch(sindex);

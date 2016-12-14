@@ -25,6 +25,7 @@ function CIndexDAL(driver) {
     'written_on',
     'expires_on',
     'expired_on',
+    'chainable_on',
     'from_wid',
     'to_wid'
   ];
@@ -44,12 +45,17 @@ function CIndexDAL(driver) {
       'written_on VARCHAR(80) NOT NULL,' +
       'expires_on INTEGER NULL,' +
       'expired_on INTEGER NULL,' +
+      'chainable_on INTEGER NULL,' +
       'from_wid INTEGER NULL,' +
       'to_wid INTEGER NULL,' +
       'PRIMARY KEY (op,issuer,receiver,written_on)' +
       ');' +
       'CREATE INDEX IF NOT EXISTS idx_cindex_issuer ON c_index (issuer);' +
       'CREATE INDEX IF NOT EXISTS idx_cindex_receiver ON c_index (receiver);' +
+      'CREATE INDEX IF NOT EXISTS idx_cindex_chainable_on ON c_index (chainable_on);' +
       'COMMIT;', []);
   });
+
+  // TODO: check created_on is always filled in
+  this.reducable = (pub) => this.query('SELECT * FROM ' + this.table + ' WHERE pub = ? ORDER BY CAST(created_on as integer) ASC', [pub]);
 }

@@ -23,6 +23,7 @@ function MIndexDAL(driver) {
     'created_on',
     'written_on',
     'expires_on',
+    'expired_on',
     'revokes_on',
     'revoked_on',
     'leaving'
@@ -41,6 +42,7 @@ function MIndexDAL(driver) {
       'created_on VARCHAR(80) NOT NULL,' +
       'written_on VARCHAR(80) NOT NULL,' +
       'expires_on INTEGER NULL,' +
+      'expired_on INTEGER NULL,' +
       'revokes_on INTEGER NULL,' +
       'revoked_on INTEGER NULL,' +
       'leaving BOOLEAN NULL,' +
@@ -49,4 +51,7 @@ function MIndexDAL(driver) {
       'CREATE INDEX IF NOT EXISTS idx_mindex_pub ON m_index (pub);' +
       'COMMIT;', []);
   });
+
+  // TODO: check created_on is always filled in
+  this.reducable = (pub) => this.query('SELECT * FROM ' + this.table + ' WHERE pub = ? ORDER BY CAST(created_on as integer) ASC', [pub]);
 }

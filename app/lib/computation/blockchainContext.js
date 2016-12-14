@@ -366,27 +366,26 @@ function BlockchainContext() {
 
   that.saveParametersForRootBlock = (block) => co(function*() {
     if (block.parameters) {
-      const sp = block.parameters.split(':');
-
-      conf.c = parseFloat(sp[0]);
-      conf.dt = parseInt(sp[1]);
-      conf.ud0 = parseInt(sp[2]);
-      conf.sigPeriod = parseInt(sp[3]);
-      conf.sigStock = parseInt(sp[4]);
-      conf.sigWindow = parseInt(sp[5]);
-      conf.sigValidity = parseInt(sp[6]);
-      conf.sigQty = parseInt(sp[7]);
-      conf.idtyWindow = parseInt(sp[8]);
-      conf.msWindow = parseInt(sp[9]);
-      conf.xpercent = parseFloat(sp[10]);
-      conf.msValidity = parseInt(sp[11]);
-      conf.stepMax = parseInt(sp[12]);
-      conf.medianTimeBlocks = parseInt(sp[13]);
-      conf.avgGenTime = parseInt(sp[14]);
-      conf.dtDiffEval = parseInt(sp[15]);
-      conf.blocksRot = parseInt(sp[16]);
-      conf.percentRot = parseFloat(sp[17]);
-      conf.currency = block.currency;
+      const bconf = Block.statics.getConf(block);
+      conf.c = bconf.c;
+      conf.dt = bconf.dt;
+      conf.ud0 = bconf.ud0;
+      conf.sigPeriod = bconf.sigPeriod;
+      conf.sigStock = bconf.sigStock;
+      conf.sigWindow = bconf.sigWindow;
+      conf.sigValidity = bconf.sigValidity;
+      conf.sigQty = bconf.sigQty;
+      conf.idtyWindow = bconf.idtyWindow;
+      conf.msWindow = bconf.msWindow;
+      conf.xpercent = bconf.xpercent;
+      conf.msValidity = bconf.msValidity;
+      conf.stepMax = bconf.stepMax;
+      conf.medianTimeBlocks = bconf.medianTimeBlocks;
+      conf.avgGenTime = bconf.avgGenTime;
+      conf.dtDiffEval = bconf.dtDiffEval;
+      conf.blocksRot = bconf.blocksRot;
+      conf.percentRot = bconf.percentRot;
+      conf.currency = bconf.currency;
       // Super important: adapt wotb module to handle the correct stock
       dal.wotb.setMaxCert(conf.sigStock);
       return dal.saveConf(conf);

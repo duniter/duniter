@@ -250,3 +250,27 @@ Block.statics.getHash = (block) => {
   const entity = Block.statics.fromJSON(block);
   return entity.getHash();
 };
+
+Block.statics.getConf = (block) => {
+  const sp = block.parameters.split(':');
+  const bconf = {};
+  bconf.c = parseFloat(sp[0]);
+  bconf.dt = parseInt(sp[1]);
+  bconf.ud0 = parseInt(sp[2]);
+  bconf.sigPeriod = parseInt(sp[3]);
+  bconf.sigStock = parseInt(sp[4]);
+  bconf.sigWindow = parseInt(sp[5]);
+  bconf.sigValidity = parseInt(sp[6]);
+  bconf.sigQty = parseInt(sp[7]);
+  bconf.idtyWindow = parseInt(sp[8]);
+  bconf.msWindow = parseInt(sp[9]);
+  bconf.xpercent = parseFloat(sp[10]);
+  bconf.msValidity = parseInt(sp[11]);
+  bconf.stepMax = parseInt(sp[12]);
+  bconf.medianTimeBlocks = parseInt(sp[13]);
+  bconf.avgGenTime = parseInt(sp[14]);
+  bconf.dtDiffEval = parseInt(sp[15]);
+  bconf.blocksRot = parseInt(sp[16]);
+  bconf.percentRot = parseFloat(sp[17]);
+  return bconf;
+};

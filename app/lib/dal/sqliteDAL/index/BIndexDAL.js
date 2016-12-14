@@ -58,7 +58,7 @@ function BIndexDAL(driver) {
       'issuersCount INTEGER NOT NULL,' +
       'issuersFrame INTEGER NOT NULL,' +
       'issuersFrameVar INTEGER NOT NULL,' +
-      'issuerDiff INTEGER NOT NULL,' +
+      'issuerDiff INTEGER NULL,' +
       'avgBlockSize INTEGER NOT NULL,' +
       'medianTime INTEGER NOT NULL,' +
       'dividend INTEGER NOT NULL,' +

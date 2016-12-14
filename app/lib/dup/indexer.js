@@ -12,7 +12,7 @@ const Certification   = require('../entity/certification');
 const Membership      = require('../entity/membership');
 const Transaction     = require('../entity/transaction');
 
-module.exports = {
+const indexer = module.exports = {
 
   localIndex: (block, conf) => {
 
@@ -254,6 +254,84 @@ module.exports = {
     return index;
   },
 
+  quickCompleteGlobalScope: (block, conf, bindex, iindex, mindex, cindex, sindex) => co(function*() {
+
+    function range(start, end, property) {
+      return co(function*() {
+        let range;
+        end = Math.max(end, bindex.length);
+        if (start == 1) {
+          range = bindex.slice(-end);
+        } else {
+          range = bindex.slice(-end, -start + 1);
+        }
+        range.reverse();
+        if (property) {
+          // Filter on a particular property
+          return range.map((b) => b[property]);
+        } else {
+          return range;
+        }
+      });
+    }
+
+    function head(n) {
+      return co(function*() {
+        return (yield range(n, n))[0];
+      });
+    }
+
+    const HEAD = {
+      version: block.version,
+      bsize: Block.statics.getLen(block),
+      hash: Block.statics.getHash(block),
+      issuer: block.issuer,
+      time: block.time,
+      medianTime: block.medianTime,
+      number: block.number,
+      powMin: block.powMin,
+      unitBase: block.unitbase,
+      membersCount: block.membersCount,
+      dividend: block.dividend
+    };
+    const HEAD_1 = yield head(1);
+
+    if (HEAD.number == 0) {
+      HEAD.dividend = conf.ud0;
+    }
+    else if (!HEAD.dividend) {
+      HEAD.dividend = HEAD_1.dividend;
+    } else {
+      HEAD.new_dividend = HEAD.dividend;
+    }
+
+    // BR_G04
+    yield indexer.prepareIssuersCount(HEAD, range, HEAD_1);
+
+    // BR_G05
+    indexer.prepareIssuersFrame(HEAD, HEAD_1);
+
+    // BR_G06
+    indexer.prepareIssuersFrameVar(HEAD, HEAD_1);
+
+    // BR_G07
+    yield indexer.prepareAvgBlockSize(HEAD, range);
+
+    // BR_G09
+    indexer.prepareDiffNumber(HEAD, HEAD_1, conf);
+
+    // BR_G11
+    indexer.prepareUDTime(HEAD, HEAD_1, conf);
+
+    // BR_G15
+    indexer.prepareMass(HEAD, HEAD_1);
+
+    // BR_G16
+    yield indexer.prepareSpeed(HEAD, head, conf);
+
+    return HEAD;
+  }),
+
   completeGlobalScope: (block, conf, index, dal) => co(function*() {
 
     const iindex = module.exports.iindex(index);
@@ -313,40 +391,16 @@ module.exports = {
     }
 
     // BR_G04
-    if (HEAD.number == 0) {
-      HEAD.issuersCount = 0;
-    } else if(HEAD_1.version > 2) {
-      HEAD.issuersCount = count(uniq(yield range(1, HEAD_1.issuersFrame, 'issuer')));
-    } else {
-      HEAD.issuersCount = count(uniq(yield range(1, 40, 'issuer')));
-    }
+    yield indexer.prepareIssuersCount(HEAD, range, HEAD_1);
 
     // BR_G05
-    if (HEAD.number == 0) {
-      HEAD.issuersFrame = 1;
-    } else if (HEAD_1.version == 2) {
-      HEAD.issuersFrame = 40
-    } else if (HEAD_1.issuersFrameVar > 0) {
-      HEAD.issuersFrameVar = HEAD_1.issuersFrame + 1
-    } else if (HEAD_1.issuersFrameVar < 0) {
-      HEAD.issuersFrameVar = HEAD_1.issuersFrame - 1
-    } else {
-      HEAD.issuersFrameVar = HEAD_1.issuersFrame
-    }
+    indexer.prepareIssuersFrame(HEAD, HEAD_1);
 
     // BR_G06
-    if (HEAD.number == 0 || HEAD_1.version == 2) {
-      HEAD.issuersFrameVar = 0;
-    } else if (HEAD_1.issuersFrameVar > 0) {
-      HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD_1.issuersCount) - 1;
-    } else if (HEAD_1.issuersFrameVar < 0) {
-      HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD_1.issuersCount) + 1;
-    } else {
-      HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD_1.issuersCount);
-    }
+    indexer.prepareIssuersFrameVar(HEAD, HEAD_1);
 
     // BR_G07
-    HEAD.avgBlockSize = average(yield range(1, HEAD.issuersCount, 'bsize'));
+    yield indexer.prepareAvgBlockSize(HEAD, range);
 
     // BR_G08
     if (HEAD.number > 0) {
@@ -356,13 +410,7 @@ module.exports = {
     }
 
     // BR_G09
-    if (HEAD.number == 0) {
-      HEAD.diffNumber = HEAD.number + conf.dtDiffEval;
-    } else if (HEAD_1.diffNumber <= HEAD.number) {
-      HEAD.diffNumber = HEAD_1.diffNumber + conf.dtDiffEval;
-    } else {
-      HEAD.diffNumber = HEAD_1.diffNumber;
-    }
+    indexer.prepareDiffNumber(HEAD, HEAD_1, conf);
 
     // BR_G10
     if (HEAD.number == 0) {
@@ -374,13 +422,7 @@ module.exports = {
     }
 
     // BR_G11
-    if (HEAD.number == 0) {
-      HEAD.udTime = HEAD.medianTime + conf.dt;
-    } else if (HEAD_1.udTime <= HEAD.medianTime) {
-      HEAD.udTime = HEAD_1.udTime + conf.dt;
-    } else {
-      HEAD.udTime = HEAD_1.udTime;
-    }
+    indexer.prepareUDTime(HEAD, HEAD_1, conf);
 
     // BR_G12
     if (HEAD.number == 0) {
@@ -409,27 +451,10 @@ module.exports = {
     }
 
     // BR_G15
-    if (HEAD.number == 0) {
-      HEAD.mass = 0;
-    }
-    else if (HEAD.udTime != HEAD_1.udTime) {
-      HEAD.mass = HEAD_1.mass + HEAD.dividend * Math.pow(10, HEAD.unitBase) * HEAD.membersCount;
-    } else {
-      HEAD.mass = HEAD_1.mass;
-    }
+    indexer.prepareMass(HEAD, HEAD_1);
 
     // BR_G16
-    if (HEAD.number == 0) {
-      HEAD.speed = 0;
-    } else {
-      const quantity = Math.min(conf.dtDiffEval, HEAD.number);
-      const elapsed = (HEAD.medianTime - (yield head(quantity)).medianTime);
-      if (!elapsed) {
-        HEAD.speed = 0;
-      } else {
-        HEAD.speed = quantity / elapsed;
-      }
-    }
+    yield indexer.prepareSpeed(HEAD, head, conf);
 
     // BR_G17
     if (HEAD.number == 0) {
@@ -750,6 +775,99 @@ module.exports = {
     }));
 
     return HEAD;
+  }),
+
+  // BR_G04
+  prepareIssuersCount: (HEAD, range, HEAD_1) => co(function*() {
+    if (HEAD.number == 0) {
+      HEAD.issuersCount = 0;
+    } else if(HEAD_1.version > 2) {
+      HEAD.issuersCount = count(uniq(yield range(1, HEAD_1.issuersFrame, 'issuer')));
+    } else {
+      HEAD.issuersCount = count(uniq(yield range(1, 40, 'issuer')));
+    }
+  }),
+
+  // BR_G05
+  prepareIssuersFrame: (HEAD, HEAD_1) => {
+    if (HEAD.number == 0) {
+      HEAD.issuersFrame = 1;
+    } else if (HEAD_1.version == 2) {
+      HEAD.issuersFrame = 40
+    } else if (HEAD_1.issuersFrameVar > 0) {
+      HEAD.issuersFrame = HEAD_1.issuersFrame + 1
+    } else if (HEAD_1.issuersFrameVar < 0) {
+      HEAD.issuersFrame = HEAD_1.issuersFrame - 1
+    } else {
+      HEAD.issuersFrame = HEAD_1.issuersFrame
+    }
+  },
+
+  // BR_G06
+  prepareIssuersFrameVar: (HEAD, HEAD_1) => {
+    if (HEAD.number == 0 || HEAD_1.version == 2) {
+      HEAD.issuersFrameVar = 0;
+    } else if (HEAD_1.issuersFrameVar > 0) {
+      HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD_1.issuersCount) - 1;
+    } else if (HEAD_1.issuersFrameVar < 0) {
+      HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD_1.issuersCount) + 1;
+    } else {
+      HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD_1.issuersCount);
+    }
+  },
+
+  // BR_G07
+  prepareAvgBlockSize: (HEAD, range) => co(function*() {
+    HEAD.avgBlockSize = average(yield range(1, HEAD.issuersCount, 'bsize'));
+  }),
+
+  // BR_G09
+  prepareDiffNumber: (HEAD, HEAD_1, conf) => {
+    if (HEAD.number == 0) {
+      HEAD.diffNumber = HEAD.number + conf.dtDiffEval;
+    } else if (HEAD_1.diffNumber <= HEAD.number) {
+      HEAD.diffNumber = HEAD_1.diffNumber + conf.dtDiffEval;
+    } else {
+      HEAD.diffNumber = HEAD_1.diffNumber;
+    }
+  },
+
+  // BR_G11
+  prepareUDTime: (HEAD, HEAD_1, conf) => {
+    if (HEAD.number == 0) {
+      HEAD.udTime = HEAD.medianTime + conf.dt;
+    } else if (HEAD_1.udTime <= HEAD.medianTime) {
+      HEAD.udTime = HEAD_1.udTime + conf.dt;
+    } else {
+      HEAD.udTime = HEAD_1.udTime;
+    }
+  },
+
+  // BR_G15
+  prepareMass: (HEAD, HEAD_1) => {
+    if (HEAD.number == 0) {
+      HEAD.mass = 0;
+    }
+    else if (HEAD.udTime != HEAD_1.udTime) {
+      HEAD.mass = HEAD_1.mass + HEAD.dividend * Math.pow(10, HEAD.unitBase) * HEAD.membersCount;
+    } else {
+      HEAD.mass = HEAD_1.mass;
+    }
+  },
+
+  // BR_G16
+  prepareSpeed: (HEAD, head, conf) => co(function*() {
+    if (HEAD.number == 0) {
+      HEAD.speed = 0;
+    } else {
+      const quantity = Math.min(conf.dtDiffEval, HEAD.number);
+      const elapsed = (HEAD.medianTime - (yield head(quantity)).medianTime);
+      if (!elapsed) {
+        HEAD.speed = 0;
+      } else {
+        HEAD.speed = quantity / elapsed;
+      }
+    }
   }),
 
   // BR_G49

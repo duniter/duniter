@@ -7,10 +7,12 @@ const _            = require('underscore');
 const moment       = require('moment');
 const contacter    = require('./contacter');
 const hashf        = require('./ucp/hashf');
+const indexer      = require('./dup/indexer');
 const dos2unix     = require('./system/dos2unix');
 const logger       = require('./logger')('sync');
 const rawer        = require('./ucp/rawer');
 const constants    = require('../lib/constants');
+const Block        = require('../lib/entity/block');
 const Peer         = require('../lib/entity/peer');
 const multimeter   = require('multimeter');
 const pulling      = require('../lib/pulling');
@@ -169,6 +171,15 @@ function Synchroniser (server, host, port, conf, interactive) {
       downloader.start();
 
       let lastPullBlock = null;
+
+      let bindex = [];
+      let iindex = [];
+      let mindex = [];
+      let cindex = [];
+      let sindex = [];
+      let currConf = {};
+      let bindexSize = 0;
+
       let dao = pulling.abstractDao({
 
         // Get the local blockchain current block
@@ -209,6 +220,42 @@ function Synchroniser (server, host, port, conf, interactive) {
               yield dao.applyMainBranch(block);
             }
           } else {
+            for (const block of blocks) {
+              if (block.number == 0) {
+                currConf = Block.statics.getConf(block);
+              }
+              bindexSize = [
+                block.issuersCount,
+                block.issuersFrame,
+                conf.medianTimeBlocks,
+                conf.dtDiffEval,
+                CONST_BLOCKS_CHUNK
+              ].reduce((max, value) => {
+                return Math.max(max, value);
+              }, 0);
+
+              const index = indexer.localIndex(block, currConf);
+              mindex = mindex.concat(indexer.mindex(index));
+              iindex = iindex.concat(indexer.iindex(index));
+              sindex = sindex.concat(indexer.sindex(index));
+              cindex = cindex.concat(indexer.cindex(index));
+              bindex.push(yield indexer.quickCompleteGlobalScope(block, currConf, bindex, iindex, mindex, cindex, sindex));
+              if (bindexSize && bindex.length >= 2 * bindexSize) {
+
+                // Save the INDEX (not bindex, which is particular)
+                yield dal.mindexDAL.insertBatch(mindex);
+                yield dal.iindexDAL.insertBatch(iindex);
+                yield dal.sindexDAL.insertBatch(sindex);
+                yield dal.cindexDAL.insertBatch(cindex);
+                mindex = [];
+                iindex = [];
+                sindex = [];
+                cindex = [];
+
+                // We trim it, not necessary to store it all (we already store the full blocks)
+                bindex.splice(0, bindexSize);
+              }
+            }
             yield server.BlockchainService.saveBlocksInMainBranch(blocks);
           }
           lastPullBlock = blocks[blocks.length - 1];
@@ -234,6 +281,13 @@ function Synchroniser (server, host, port, conf, interactive) {
 
       const logInterval = setInterval(() => logRemaining(to), EVAL_REMAINING_INTERVAL);
       yield pulling.pull(conf, dao);
+
+      // Save the INDEX
+      yield dal.bindexDAL.insertBatch(bindex);
+      yield dal.mindexDAL.insertBatch(mindex);
+      yield dal.iindexDAL.insertBatch(iindex);
+      yield dal.sindexDAL.insertBatch(sindex);
+      yield dal.cindexDAL.insertBatch(cindex);
 
       // Finished blocks
       watcher.downloadPercent(100.0);

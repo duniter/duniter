@@ -233,26 +233,27 @@ program
   .description('Exchange peerings with another node')
   .action(subCommand(service(function (host, port, server) {
     return co(function *() {
-      logger.info('Fetching peering record at %s:%s...', host, port);
-      let peering = yield contacter.statics.fetchPeer(host, port);
-      logger.info('Apply peering ...');
-      yield server.PeeringService.submitP(peering, ERASE_IF_ALREADY_RECORDED, !program.nocautious);
-      logger.info('Applied');
-      let selfPeer = yield server.dal.getPeer(server.PeeringService.pubkey);
-      if (!selfPeer) {
-        yield Q.nfcall(server.PeeringService.generateSelfPeer, server.conf, 0);
-        selfPeer = yield server.dal.getPeer(server.PeeringService.pubkey);
-      }
-      logger.info('Send self peering ...');
-      var caster = multicaster();
-      yield caster.sendPeering(Peer.statics.peerize(peering), Peer.statics.peerize(selfPeer));
-      logger.info('Sent.');
-      yield server.disconnect();
-    })
-      .catch(function (err) {
-        logger.error(err.code || err.message || err);
+      try {
+        logger.info('Fetching peering record at %s:%s...', host, port);
+        let peering = yield contacter.statics.fetchPeer(host, port);
+        logger.info('Apply peering ...');
+        yield server.PeeringService.submitP(peering, ERASE_IF_ALREADY_RECORDED, !program.nocautious);
+        logger.info('Applied');
+        let selfPeer = yield server.dal.getPeer(server.PeeringService.pubkey);
+        if (!selfPeer) {
+          yield Q.nfcall(server.PeeringService.generateSelfPeer, server.conf, 0);
+          selfPeer = yield server.dal.getPeer(server.PeeringService.pubkey);
+        }
+        logger.info('Send self peering ...');
+        var caster = multicaster();
+        yield caster.sendPeering(Peer.statics.peerize(peering), Peer.statics.peerize(selfPeer));
+        logger.info('Sent.');
+        yield server.disconnect();
+      } catch(e) {
+        logger.error(e.code || e.message || e);
         throw Error("Exiting");
-      });
+      }
+    });
   })));
 
 program
@@ -411,43 +412,44 @@ program
   .description('Exports the whole blockchain as JSON array, up to [upto] block number (excluded).')
   .action(subCommand(service(function (upto, server) {
     return co(function *() {
-      let CHUNK_SIZE = 500;
-      let jsoned = [];
-      let current = yield server.dal.getCurrentBlockOrNull();
-      let lastNumber = current ? current.number + 1 : -1;
-      if (upto !== undefined && upto.match(/\d+/)) {
-        lastNumber = Math.min(parseInt(upto), lastNumber);
-      }
-      let chunksCount = Math.floor(lastNumber / CHUNK_SIZE);
-      let chunks = [];
-      // Max-size chunks
-      for (let i = 0, len = chunksCount; i < len; i++) {
-        chunks.push({start: i * CHUNK_SIZE, to: i * CHUNK_SIZE + CHUNK_SIZE - 1});
-      }
-      // A last chunk
-      if (lastNumber > chunksCount * CHUNK_SIZE) {
-        chunks.push({start: chunksCount * CHUNK_SIZE, to: lastNumber});
-      }
-      for (const chunk of chunks) {
-        let blocks = yield server.dal.getBlocksBetween(chunk.start, chunk.to);
-        blocks.forEach(function (block) {
-          jsoned.push(_(new Block(block).json()).omit('raw'));
-        });
-      }
-      if (!program.nostdout) {
-        console.log(JSON.stringify(jsoned, null, "  "));
-      }
-      yield server.disconnect();
-      return jsoned;
-    })
-      .catch(function (err) {
-        logger.warn(err.message || err);
-        server.disconnect()
-          .catch(() => null)
-          .then(function () {
-            throw Error(err);
+      try {
+        let CHUNK_SIZE = 500;
+        let jsoned = [];
+        let current = yield server.dal.getCurrentBlockOrNull();
+        let lastNumber = current ? current.number + 1 : -1;
+        if (upto !== undefined && upto.match(/\d+/)) {
+          lastNumber = Math.min(parseInt(upto), lastNumber);
+        }
+        let chunksCount = Math.floor(lastNumber / CHUNK_SIZE);
+        let chunks = [];
+        // Max-size chunks
+        for (let i = 0, len = chunksCount; i < len; i++) {
+          chunks.push({start: i * CHUNK_SIZE, to: i * CHUNK_SIZE + CHUNK_SIZE - 1});
+        }
+        // A last chunk
+        if (lastNumber > chunksCount * CHUNK_SIZE) {
+          chunks.push({start: chunksCount * CHUNK_SIZE, to: lastNumber});
+        }
+        for (const chunk of chunks) {
+          let blocks = yield server.dal.getBlocksBetween(chunk.start, chunk.to);
+          blocks.forEach(function (block) {
+            jsoned.push(_(new Block(block).json()).omit('raw'));
           });
-      });
+        }
+        if (!program.nostdout) {
+          console.log(JSON.stringify(jsoned, null, "  "));
+        }
+        yield server.disconnect();
+        return jsoned;
+      } catch(e) {
+          logger.warn(err.message || err);
+          server.disconnect()
+            .catch(() => null)
+            .then(function () {
+              throw Error(err);
+            });
+      }
+    });
   }, NO_LOGS)));
 
 program
@@ -682,14 +684,15 @@ function connect(callback, useDefaultConf) {
     return server.plugFileSystem(useDefaultConf)
       .then(() => server.loadConf())
       .then(function () {
-        cbArgs.length--;
-        cbArgs[cbArgs.length++] = server;
-        cbArgs[cbArgs.length++] = server.conf;
-        return callback.apply(this, cbArgs);
-      })
-      .catch(function (err) {
-        server.disconnect();
-        throw Error(err);
+        try {
+          cbArgs.length--;
+          cbArgs[cbArgs.length++] = server;
+          cbArgs[cbArgs.length++] = server.conf;
+          return callback.apply(this, cbArgs);
+        } catch(e) {
+          server.disconnect();
+          throw Error(err);
+	}
       });
   };
 }
@@ -747,18 +750,19 @@ function service(callback, nologs) {
 
     // Initialize server (db connection, ...)
     return co(function*() {
-      yield server.initWithDAL();
-      yield configure(server, server.conf || {});
-      yield server.loadConf();
-      cbArgs.length--;
-      cbArgs[cbArgs.length++] = server;
-      cbArgs[cbArgs.length++] = server.conf;
-      onService && onService(server);
-      return callback.apply(that, cbArgs);
-    })
-      .catch(function (err) {
+      try {
+        yield server.initWithDAL();
+        yield configure(server, server.conf || {});
+        yield server.loadConf();
+        cbArgs.length--;
+        cbArgs[cbArgs.length++] = server;
+        cbArgs[cbArgs.length++] = server.conf;
+        onService && onService(server);
+        return callback.apply(that, cbArgs);
+      } catch (e) {
         server.disconnect();
         throw Error(err);
+      }
       });
   };
 }
@@ -875,12 +879,13 @@ function configure(server, conf) {
     }
     return server.dal.saveConf(conf)
       .then(function () {
-        logger.debug("Configuration saved.");
-        return conf;
-      })
-      .catch(function (err) {
-        logger.error("Configuration could not be saved: " + err);
-        throw Error(err);
+        try {
+          logger.debug("Configuration saved.");
+          return conf;
+        } catch (e) {
+          logger.error("Configuration could not be saved: " + err);
+          throw Error(err);
+	}
       });
   });
 }

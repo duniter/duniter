@@ -330,45 +330,46 @@ function Server (dbConf, overrideConf) {
 
   function resetFiles(files, dirs, done) {
     return co(function *() {
-      const params = yield paramsP;
-      const myFS = params.fs;
-      const rootPath = params.home;
-      for (const fName of files) {
-        // JSON file?
-        const existsJSON = yield myFS.exists(rootPath + '/' + fName + '.json');
-        if (existsJSON) {
-          const theFilePath = rootPath + '/' + fName + '.json';
-          yield myFS.remove(theFilePath);
-          if (yield myFS.exists(theFilePath)) {
-            throw Error('Failed to delete file "' + theFilePath + '"');
-          }
-        } else {
-          // Normal file?
-          const normalFile = path.join(rootPath, fName);
-          const existsFile = yield myFS.exists(normalFile);
-          if (existsFile) {
-            yield myFS.remove(normalFile);
-            if (yield myFS.exists(normalFile)) {
-              throw Error('Failed to delete file "' + normalFile + '"');
+      try {
+        const params = yield paramsP;
+        const myFS = params.fs;
+        const rootPath = params.home;
+        for (const fName of files) {
+          // JSON file?
+          const existsJSON = yield myFS.exists(rootPath + '/' + fName + '.json');
+          if (existsJSON) {
+            const theFilePath = rootPath + '/' + fName + '.json';
+            yield myFS.remove(theFilePath);
+            if (yield myFS.exists(theFilePath)) {
+              throw Error('Failed to delete file "' + theFilePath + '"');
+            }
+          } else {
+            // Normal file?
+            const normalFile = path.join(rootPath, fName);
+            const existsFile = yield myFS.exists(normalFile);
+            if (existsFile) {
+              yield myFS.remove(normalFile);
+              if (yield myFS.exists(normalFile)) {
+                throw Error('Failed to delete file "' + normalFile + '"');
+              }
             }
           }
         }
-      }
-      for (const dirName of dirs) {
-        const existsDir = yield myFS.exists(rootPath + '/' + dirName);
-        if (existsDir) {
-          yield myFS.removeTree(rootPath + '/' + dirName);
-          if (yield myFS.exists(rootPath + '/' + dirName)) {
-            throw Error('Failed to delete folder "' + rootPath + '/' + dirName + '"');
+        for (const dirName of dirs) {
+          const existsDir = yield myFS.exists(rootPath + '/' + dirName);
+          if (existsDir) {
+            yield myFS.removeTree(rootPath + '/' + dirName);
+            if (yield myFS.exists(rootPath + '/' + dirName)) {
+              throw Error('Failed to delete folder "' + rootPath + '/' + dirName + '"');
+            }
           }
         }
+        done && done();
+    } catch(e) {
+          done && done(e);
+          throw e;
       }
-      done && done();
-    })
-        .catch((err) => {
-          done && done(err);
-          throw err;
-        });
+    });
   }
 
   this.disconnect = () => Promise.resolve(that.dal && that.dal.close());

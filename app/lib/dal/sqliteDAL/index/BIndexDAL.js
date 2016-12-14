@@ -95,4 +95,6 @@ function BIndexDAL(driver) {
     const count = m - n + 1;
     return that.query('SELECT * FROM ' + that.table + ' ORDER BY number DESC LIMIT ? OFFSET ?', [count, n - 1]);
   });
+
+  this.removeBlock = (number) => that.exec('DELETE FROM ' + that.table + ' WHERE number = ' + number);
 }

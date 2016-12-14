@@ -52,4 +52,6 @@ function SIndexDAL(driver) {
       'CREATE INDEX IF NOT EXISTS idx_sindex_pos ON s_index (pos);' +
       'COMMIT;', []);
   });
+
+  this.removeBlock = (blockstamp) => that.exec('DELETE FROM ' + that.table + ' WHERE written_on = \'' + blockstamp + '\'');
 }

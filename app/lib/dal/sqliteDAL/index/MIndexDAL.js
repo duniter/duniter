@@ -31,7 +31,7 @@ function MIndexDAL(driver) {
   this.arrays = [];
   this.bigintegers = [];
   this.booleans = ['leaving'];
-  this.pkFields = ['op', 'pub', 'written_on'];
+  this.pkFields = ['op', 'pub', 'created_on', 'written_on'];
   this.translated = {};
 
   this.init = () => co(function *() {
@@ -46,7 +46,7 @@ function MIndexDAL(driver) {
       'revokes_on INTEGER NULL,' +
       'revoked_on INTEGER NULL,' +
       'leaving BOOLEAN NULL,' +
-      'PRIMARY KEY (op,pub,written_on)' +
+      'PRIMARY KEY (op,pub,created_on,written_on)' +
       ');' +
       'CREATE INDEX IF NOT EXISTS idx_mindex_pub ON m_index (pub);' +
       'COMMIT;', []);
@@ -54,4 +54,6 @@ function MIndexDAL(driver) {
 
   // TODO: check created_on is always filled in
   this.reducable = (pub) => this.query('SELECT * FROM ' + this.table + ' WHERE pub = ? ORDER BY CAST(created_on as integer) ASC', [pub]);
+
+  this.removeBlock = (blockstamp) => that.exec('DELETE FROM ' + that.table + ' WHERE written_on = \'' + blockstamp + '\'');
 }

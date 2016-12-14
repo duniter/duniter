@@ -58,4 +58,6 @@ function CIndexDAL(driver) {
 
   // TODO: check created_on is always filled in
   this.reducable = (pub) => this.query('SELECT * FROM ' + this.table + ' WHERE pub = ? ORDER BY CAST(created_on as integer) ASC', [pub]);
+
+  this.removeBlock = (blockstamp) => that.exec('DELETE FROM ' + that.table + ' WHERE written_on = \'' + blockstamp + '\'');
 }

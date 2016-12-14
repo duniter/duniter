@@ -106,6 +106,11 @@ function BlockchainContext() {
     yield undoMembersUpdate(block);
     yield undoTransactionSources(block);
     yield undoDeleteTransactions(block);
+    yield dal.bindexDAL.removeBlock(block.number);
+    yield dal.iindexDAL.removeBlock([block.number, block.hash].join('-'));
+    yield dal.mindexDAL.removeBlock([block.number, block.hash].join('-'));
+    yield dal.cindexDAL.removeBlock([block.number, block.hash].join('-'));
+    yield dal.sindexDAL.removeBlock([block.number, block.hash].join('-'));
   });
 
   const checkIssuer = (block) => co(function*() {
@@ -385,7 +390,7 @@ function BlockchainContext() {
       conf.dtDiffEval = bconf.dtDiffEval;
       conf.blocksRot = bconf.blocksRot;
       conf.percentRot = bconf.percentRot;
-      conf.currency = bconf.currency;
+      conf.currency = block.currency;
       // Super important: adapt wotb module to handle the correct stock
       dal.wotb.setMaxCert(conf.sigStock);
       return dal.saveConf(conf);

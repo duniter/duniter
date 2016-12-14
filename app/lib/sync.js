@@ -165,7 +165,7 @@ function Synchroniser (server, host, port, conf, interactive) {
       logger.info('Downloading Blockchain...');
 
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
-      const cautious = (askedCautious === true || (askedCautious === undefined && localNumber >= 0));
+      const cautious = (askedCautious === true || localNumber >= 0);
       const downloader = new P2PDownloader(localNumber, to, rCurrent.hash, CONST_MAX_SIMULTANEOUS_DOWNLOADS, peers, watcher);
 
       downloader.start();
@@ -282,12 +282,14 @@ function Synchroniser (server, host, port, conf, interactive) {
       const logInterval = setInterval(() => logRemaining(to), EVAL_REMAINING_INTERVAL);
       yield pulling.pull(conf, dao);
 
-      // Save the INDEX
-      yield dal.bindexDAL.insertBatch(bindex);
-      yield dal.mindexDAL.insertBatch(mindex);
-      yield dal.iindexDAL.insertBatch(iindex);
-      yield dal.sindexDAL.insertBatch(sindex);
-      yield dal.cindexDAL.insertBatch(cindex);
+      if (!cautious) {
+        // Save the INDEX
+        yield dal.bindexDAL.insertBatch(bindex);
+        yield dal.mindexDAL.insertBatch(mindex);
+        yield dal.iindexDAL.insertBatch(iindex);
+        yield dal.sindexDAL.insertBatch(sindex);
+        yield dal.cindexDAL.insertBatch(cindex);
+      }
 
       // Finished blocks
       watcher.downloadPercent(100.0);

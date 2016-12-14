@@ -222,7 +222,7 @@ const indexer = module.exports = {
           written_on: [block.number, block.hash].join('-'),
           written_time: block.medianTime,
           locktime: obj.locktime,
-          unlock: obj.unlocks[k],
+          unlock: txObj.unlocks[k],
           amount: input.amount,
           base: input.base,
           consumed: true,
@@ -551,7 +551,7 @@ const indexer = module.exports = {
 
     // BR_G24
     // Global testing, because of wotb
-    const oneIsOutdistanced = yield checkPeopleAreNotOudistanced (
+    const oneIsOutdistanced = yield checkPeopleAreNotOudistanced(
       HEAD.version,
       _.filter(mindex, (entry) => !entry.revoked_on).map((entry) => entry.pub),
       cindex.reduce((newLinks, c) => {
@@ -1188,6 +1188,7 @@ const indexer = module.exports = {
         issuer: CERT.issuer,
         receiver: CERT.receiver,
         created_on: CERT.created_on,
+        written_on: [HEAD.number, HEAD.hash].join('-'),
         expired_on: HEAD.medianTime
       });
     }

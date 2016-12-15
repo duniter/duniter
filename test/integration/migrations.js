@@ -34,7 +34,7 @@ describe("Migration", function() {
     }));
 
     it('should be able to commit the transaction', () => co(function*() {
-      yield node.commitP();
+      yield node.commitP({ time: 1481800000 + 100 });
       // The recipients are wrongly valued in this version
       yield node.server.dal.txsDAL.exec('UPDATE txs SET recipients = "[]";');
     }));

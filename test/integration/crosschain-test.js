@@ -14,12 +14,14 @@ const httpTest  = require('./tools/http');
 
 describe("Crosschain transactions", function() {
 
+  const now = Math.round(Date.now() / 1000);
+
   const MEMORY_MODE = true;
   const commonConf = {
     ipv4: '127.0.0.1',
     httpLogs: true,
     forksize: 3,
-    dt: 0, ud0: 120, rootoffset: 10,
+    dt: 1, ud0: 120, rootoffset: 10,
     parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
     sigQty: 1
   };
@@ -70,14 +72,15 @@ describe("Crosschain transactions", function() {
         yield ticB.cert(tocB);
         yield ticB.join();
         yield tocB.join();
-        yield commit(sB)({ version: 2 });
-        yield commit(sB)({ version: 2 });
+        yield commit(sB)({ version: 2, time: now });
+        yield commit(sB)({ version: 2, time: now + 10 });
+        yield commit(sB)({ version: 2, time: now + 10 });
         // Preparation: we create a source transaction for our transfer
         btx0 = yield tocB.prepareITX(120, tocB);
         // We submit it to the network
         yield tocB.sendTX(btx0);
         // Written
-        yield commit(sB)({ version: 2 });
+        yield commit(sB)({ version: 2, time: now + 10 });
 
         // Initialize META
         yield ticM.createIdentity();
@@ -86,8 +89,9 @@ describe("Crosschain transactions", function() {
         yield ticM.cert(tocM);
         yield ticM.join();
         yield tocM.join();
-        yield commit(sM)({ version: 2 });
-        yield commit(sM)({ version: 2 });
+        yield commit(sM)({ version: 2, time: now });
+        yield commit(sM)({ version: 2, time: now + 10 });
+        yield commit(sM)({ version: 2, time: now + 10 });
         // Preparation: we create a source transaction for our transfer
         mtx0 = yield ticM.prepareITX(120, ticM);
         // We submit it to the network
@@ -241,8 +245,9 @@ describe("Crosschain transactions", function() {
         yield ticB.cert(tocB);
         yield ticB.join();
         yield tocB.join();
-        yield commit(sB)({ version: 2 });
-        yield commit(sB)({ version: 2 });
+        yield commit(sB)({ version: 2, time: now });
+        yield commit(sB)({ version: 2, time: now + 10 });
+        yield commit(sB)({ version: 2, time: now + 10 });
         // Preparation: we create a source transaction for our transfer
         btx0 = yield tocB.prepareITX(120, tocB);
         // We submit it to the network
@@ -257,8 +262,9 @@ describe("Crosschain transactions", function() {
         yield ticM.cert(tocM);
         yield ticM.join();
         yield tocM.join();
-        yield commit(sM)({ version: 2 });
-        yield commit(sM)({ version: 2 });
+        yield commit(sM)({ version: 2, time: now });
+        yield commit(sM)({ version: 2, time: now + 10 });
+        yield commit(sM)({ version: 2, time: now + 10 });
         // Preparation: we create a source transaction for our transfer
         mtx0 = yield ticM.prepareITX(120, ticM);
         // We submit it to the network

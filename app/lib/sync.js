@@ -217,6 +217,10 @@ function Synchroniser (server, host, port, conf, interactive) {
         applyBranch: (blocks) => co(function *() {
           if (cautious) {
             for (const block of blocks) {
+              if (block.number == 0) {
+                yield BlockchainService.saveParametersForRootBlock(block);
+                currConf = Block.statics.getConf(block);
+              }
               yield dao.applyMainBranch(block);
             }
           } else {
@@ -224,6 +228,26 @@ function Synchroniser (server, host, port, conf, interactive) {
               if (block.number == 0) {
                 currConf = Block.statics.getConf(block);
               }
+
+              const index = indexer.localIndex(block, currConf);
+              mindex = mindex.concat(indexer.mindex(index));
+              iindex = iindex.concat(indexer.iindex(index));
+              sindex = sindex.concat(indexer.sindex(index));
+              cindex = cindex.concat(indexer.cindex(index));
+              bindex.push(yield indexer.quickCompleteGlobalScope(block, currConf, bindex, iindex, mindex, cindex, sindex));
+              if (block.dividend) {
+                // Flush the INDEX (not bindex, which is particular)
+                yield dal.mindexDAL.insertBatch(mindex);
+                yield dal.iindexDAL.insertBatch(iindex);
+                yield dal.sindexDAL.insertBatch(sindex);
+                yield dal.cindexDAL.insertBatch(cindex);
+                mindex = [];
+                iindex = [];
+                cindex = [];
+                sindex = yield indexer.ruleIndexGenDividend(bindex[bindex.length-1], dal);
+              }
+
+              // Trim the bindex
               bindexSize = [
                 block.issuersCount,
                 block.issuersFrame,
@@ -234,24 +258,7 @@ function Synchroniser (server, host, port, conf, interactive) {
                 return Math.max(max, value);
               }, 0);
 
-              const index = indexer.localIndex(block, currConf);
-              mindex = mindex.concat(indexer.mindex(index));
-              iindex = iindex.concat(indexer.iindex(index));
-              sindex = sindex.concat(indexer.sindex(index));
-              cindex = cindex.concat(indexer.cindex(index));
-              bindex.push(yield indexer.quickCompleteGlobalScope(block, currConf, bindex, iindex, mindex, cindex, sindex));
               if (bindexSize && bindex.length >= 2 * bindexSize) {
-
-                // Save the INDEX (not bindex, which is particular)
-                yield dal.mindexDAL.insertBatch(mindex);
-                yield dal.iindexDAL.insertBatch(iindex);
-                yield dal.sindexDAL.insertBatch(sindex);
-                yield dal.cindexDAL.insertBatch(cindex);
-                mindex = [];
-                iindex = [];
-                sindex = [];
-                cindex = [];
-
                 // We trim it, not necessary to store it all (we already store the full blocks)
                 bindex.splice(0, bindexSize);
               }

@@ -34,7 +34,7 @@ const s1 = ucoin({
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
   },
   participate: false, rootoffset: 10,
-  sigQty: 1, dt: 0, ud0: 120
+  sigQty: 1, dt: 1, ud0: 120
 }, commonConf));
 
 const s2 = ucoin({

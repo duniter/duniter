@@ -405,7 +405,7 @@ function checkSingleMembershipSignature(ms) {
   return keyring.verify(ms.getRaw(), ms.signature, ms.issuer);
 }
 
-function getSigResult(tx) {
+function getSigResult(tx, a) {
   let sigResult = { sigs: {}, matching: true };
   let json = { "version": tx.version, "currency": tx.currency, "blockstamp": tx.blockstamp, "locktime": tx.locktime, "inputs": [], "outputs": [], "issuers": tx.issuers, "signatures": [], "comment": tx.comment };
   tx.inputs.forEach(function (input) {

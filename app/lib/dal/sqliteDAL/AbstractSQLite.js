@@ -275,7 +275,11 @@ function AbstractSQLite(driver) {
   const escapeToSQLite = (val) => {
     if (typeof val == "boolean") {
       // SQLite specific: true => 1, false => 0
-      return val ? 1 : 0;
+      if (val !== null && val !== undefined) {
+        return val ? 1 : 0;
+      } else {
+        return null;
+      }
     }
     else if (typeof val == "string") {
       return "'" + val.replace(/'/g, "\\'") + "'";
@@ -311,7 +315,7 @@ function AbstractSQLite(driver) {
     }
     // Booleans
     for (const f of that.booleans) {
-      row[f] = Boolean(row[f]);
+      row[f] = row[f] !== null ? Boolean(row[f]) : null;
     }
     // Transient
     for (const f of (that.transientFields || [])) {

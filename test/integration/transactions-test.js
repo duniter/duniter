@@ -138,7 +138,7 @@ describe("Testing transactions", function() {
       let tx8 = yield tic.prepareUTX(tx4, ['XHX(1872767826647264)'], [{ qty: 120, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'okk'}); // tic unlocks the XHX locked amount, and gives it to toc!
       yield unit.shouldFail(toc.sendTX(tx7), 'Wrong unlocker in transaction');
       yield unit.shouldNotFail(toc.sendTX(tx8));
-      yield s1.commit({ version: 2 }); // TX4 commited
+      yield s1.commit({ version: 2 }); // TX8 commited
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1); // That's why toc now has 1 more source...
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3); // ...and why tic's number of sources hasn't changed
     }));

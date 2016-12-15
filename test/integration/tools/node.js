@@ -38,6 +38,7 @@ module.exports.statics = {
 function getTxNode(testSuite, afterBeforeHook){
 
   let port = ++AUTO_PORT;
+  const now = 1481800000;
 
   var node2 = new Node({ name: "db_" + port, memory: MEMORY_MODE }, { currency: 'cc', ipv4: 'localhost', port: port, remoteipv4: 'localhost', remoteport: port, upnp: false, httplogs: false,
     pair: {
@@ -46,7 +47,7 @@ function getTxNode(testSuite, afterBeforeHook){
     },
     forksize: 3,
     participate: false, rootoffset: 10,
-    sigQty: 1, dt: 0, ud0: 120
+    sigQty: 1, dt: 1, ud0: 120
   });
 
   var tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, node2);
@@ -62,8 +63,9 @@ function getTxNode(testSuite, afterBeforeHook){
     yield toc.cert(tic);
     yield tic.join();
     yield toc.join();
-    yield node2.commitP();
-    yield node2.commitP();
+    yield node2.commitP({ time: now });
+    yield node2.commitP({ time: now + 10 });
+    yield node2.commitP({ time: now + 10 });
     yield tic.sendP(51, toc);
 
     if (afterBeforeHook) {
@@ -130,16 +132,16 @@ function Node (dbName, options) {
    * Generates next block and submit it to local node.
    * @returns {Function}
    */
-  this.commit = function() {
+  this.commit = function(params) {
     return function(done) {
       async.waterfall([
         function(next) {
           async.parallel({
             block: function(callback){
               co(function *() {
-                const block2 = yield that.server.BlockchainService.generateNext();
+                const block2 = yield that.server.BlockchainService.generateNext(params);
                 const trial2 = yield rules.HELPERS.getTrialLevel(block2.version, that.server.keyPair.publicKey, that.server.conf, that.server.dal);
-                return that.server.BlockchainService.makeNextBlock(block2, trial2);
+                return that.server.BlockchainService.makeNextBlock(block2, trial2, params);
               })
                 .then((block) => callback(null, block))
                 .catch(callback);
@@ -302,5 +304,5 @@ function Node (dbName, options) {
 
   this.submitPeerP = (peer) => Q.nfcall(this.submitPeer, peer);
 
-  this.commitP = () => Q.nfcall(this.commit());
+  this.commitP = (params) => Q.nfcall(this.commit(params));
 }

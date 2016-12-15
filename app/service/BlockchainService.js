@@ -268,7 +268,7 @@ function BlockchainService (server) {
   /**
    * Generates next block, finding newcomers, renewers, leavers, certs, transactions, etc.
    */
-  this.generateNext = () => generator.nextBlock();
+  this.generateNext = (params) => generator.nextBlock(params);
 
   this.requirementsOfIdentities = (identities) => co(function *() {
     let all = [];

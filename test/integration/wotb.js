@@ -28,7 +28,7 @@ const s1 = ucoin({
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
   },
   participate: false, rootoffset: 10,
-  sigQty: 1, dt: 0, ud0: 120
+  sigQty: 1, dt: 1, ud0: 120
 }, commonConf));
 
 const s2 = ucoin({
@@ -41,7 +41,7 @@ const s2 = ucoin({
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
   },
   participate: false, rootoffset: 10,
-  sigQty: 1, dt: 0, ud0: 120,
+  sigQty: 1, dt: 1, ud0: 120,
   msValidity: 400 // Memberships expire after 400 second delay
 }, commonConf));
 
@@ -55,7 +55,7 @@ const s3 = ucoin({
     sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
   },
   participate: false, rootoffset: 10,
-  sigQty: 1, dt: 0, ud0: 120,
+  sigQty: 1, dt: 1, ud0: 120,
   sigValidity: 1400, sigPeriod: 0
 }, commonConf));
 
@@ -71,7 +71,7 @@ const cat3 = user('cat3', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
 const toc3 = user('toc3', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s3 });
 const tic3 = user('tic3', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s3 });
 
-const now = Math.round(new Date().getTime() / 1000);
+const now = 1482000000;
 const _100_PERCENT = 1.0;
 const MAX_DISTANCE_1 = 1;
 const MAX_DISTANCE_2 = 2;
@@ -254,7 +254,7 @@ describe("WOTB module", function() {
 
     it('two first commits: the WoT is new and OK', function() {
       return co(function *() {
-        yield commit(s3)();
+        yield commit(s3)({ time: now });
         yield commit(s3)({
           time: now + 1200
         });

@@ -29,7 +29,7 @@ function TransactionService () {
     const existing = yield dal.getTxByHash(tx.hash);
     const current = yield dal.getCurrentBlockOrNull();
     if (existing) {
-      throw 'Transaction already processed';
+      throw constants.ERRORS.TX_ALREADY_PROCESSED;
     }
     // Start checks...
     const transaction = tx.getTransaction();

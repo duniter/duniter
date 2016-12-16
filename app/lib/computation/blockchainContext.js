@@ -409,7 +409,6 @@ function BlockchainContext() {
       // Remove any source created for this block (both Dividend and Transaction)
       dal.removeAllSourcesOfBlock(block.number);
       for (const obj of block.transactions) {
-        obj.version = block.version;
         obj.currency = block.currency;
         obj.issuers = obj.signatories;
         let tx = new Transaction(obj);
@@ -424,7 +423,6 @@ function BlockchainContext() {
   function undoDeleteTransactions(block) {
     return co(function *() {
       for (const obj of block.transactions) {
-        obj.version = block.version;
         obj.currency = block.currency;
         obj.issuers = obj.signatories;
         let tx = new Transaction(obj);
@@ -727,12 +725,12 @@ function BlockchainContext() {
       // Transactions
       for (const json of block.transactions) {
         let obj = json;
-        obj.version = block.version;
         obj.currency = block.currency;
         obj.issuers = json.signatories;
         let tx = new Transaction(obj);
+        tx.computeAllHashes();
         let txObj = tx.getTransaction();
-        let txHash = tx.getHash(true);
+        let txHash = tx.getHash();
         sources = sources.concat(txObj.inputs.map((input) => _.extend({ toConsume: true }, input)));
         sources = sources.concat(txObj.outputs.map((output, index) => _.extend({
           toConsume: false

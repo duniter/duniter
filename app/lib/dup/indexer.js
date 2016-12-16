@@ -259,7 +259,7 @@ const indexer = module.exports = {
     function range(start, end, property) {
       return co(function*() {
         let range;
-        end = Math.max(end, bindex.length);
+        end = Math.min(end, bindex.length);
         if (start == 1) {
           range = bindex.slice(-end);
         } else {
@@ -354,11 +354,6 @@ const indexer = module.exports = {
     function head(n) {
       return dal.bindexDAL.head(n);
     }
-
-    const maxGenTime = Math.ceil(conf.avgGenTime * 1.189);
-    const minGenTime = Math.floor(conf.avgGenTime / 1.189);
-    const minSpeed = 1/ maxGenTime;
-    const maxSpeed = 1/ minGenTime;
 
     const HEAD = {
       version: block.version,
@@ -466,7 +461,8 @@ const indexer = module.exports = {
       else if (HEAD.version >= 4) {
         // DUG
         const previousUB = HEAD_1.unitBase;
-        HEAD.dividend = Math.floor(HEAD_1.dividend + Math.pow(conf.c, 2) * HEAD_1.mass / Math.pow(10, previousUB) / HEAD.membersCount);
+        // TODO: ceiling for v1.0
+        HEAD.dividend = Math.round(HEAD_1.dividend + Math.pow(conf.c, 2) * HEAD_1.mass / HEAD.membersCount / Math.pow(10, previousUB));
         HEAD.new_dividend = HEAD.dividend;
       }
     } else {
@@ -489,6 +485,13 @@ const indexer = module.exports = {
 
     // BR_G17
     if (HEAD.number > 0) {
+
+      const ratio = HEAD.version > 3 ? 1.189 : Math.sqrt(1.066);
+      const maxGenTime = Math.ceil(conf.avgGenTime * ratio);
+      const minGenTime = Math.floor(conf.avgGenTime / ratio);
+      const minSpeed = 1/ maxGenTime;
+      const maxSpeed = 1/ minGenTime;
+
       if (HEAD.diffNumber != HEAD_1.diffNumber && HEAD.speed >= maxSpeed && (HEAD_1.powMin + 2) % 16 == 0) {
         HEAD.powMin = HEAD_1.powMin + 2;
       } else if (HEAD.diffNumber != HEAD_1.diffNumber && HEAD.speed >= maxSpeed) {
@@ -528,6 +531,9 @@ const indexer = module.exports = {
     if (HEAD.version == 2) {
 
       // V0.2 Hardness
+      if (nbPersonalBlocksInFrame > 0) {
+        nbPreviousIssuers--;
+      }
       HEAD.issuerDiff = Math.max(HEAD.powMin, HEAD.powMin * Math.floor(conf.percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
 
     } else if (HEAD.version == 3) {
@@ -568,11 +574,20 @@ const indexer = module.exports = {
       if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
         ENTRY.age = 0;
       } else {
-        let ref = yield head(HEAD_1.number + 1 - number(ENTRY.created_on));
-        if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
-          ENTRY.age = HEAD_1.medianTime - ref.medianTime;
+        if (HEAD.version <= 4) {
+          let ref = yield dal.getBlock(number(ENTRY.created_on));
+          if (ref) { // blockstamp was not checked prior to 0.5
+            ENTRY.age = HEAD_1.medianTime - ref.medianTime;
+          } else {
+            ENTRY.age = conf.idtyWindow + 1;
+          }
         } else {
-          ENTRY.age = conf.idtyWindow + 1;
+          let ref = yield dal.getBlockByBlockstamp(ENTRY.created_on);
+          if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
+            ENTRY.age = HEAD_1.medianTime - ref.medianTime;
+          } else {
+            ENTRY.age = conf.idtyWindow + 1;
+          }
         }
       }
     }));
@@ -619,7 +634,7 @@ const indexer = module.exports = {
       if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
         ENTRY.age = 0;
       } else {
-        let ref = yield head(HEAD_1.number + 1 - number(ENTRY.created_on));
+        let ref = yield dal.getBlockByBlockstamp(ENTRY.created_on);
         if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
           ENTRY.age = HEAD_1.medianTime - ref.medianTime;
         } else {
@@ -741,7 +756,7 @@ const indexer = module.exports = {
       if (HEAD.number == 0) {
         ENTRY.age = 0;
       } else {
-        let ref = yield head(HEAD_1.number + 1 - number(ENTRY.created_on));
+        let ref = yield dal.getBlock(number(ENTRY.created_on));
         if (ref) {
           ENTRY.age = HEAD_1.medianTime - ref.medianTime;
         } else {
@@ -802,12 +817,21 @@ const indexer = module.exports = {
     // BR_G46
     yield _.where(sindex, { op: constants.IDX_UPDATE }).map((ENTRY) => co(function*() {
       if (HEAD.version > 2) {
-        ENTRY.available = reduce(yield dal.sindexDAL.sqlFind({
-            identifier: ENTRY.identifier,
-            pos: ENTRY.pos,
-            amount: ENTRY.amount,
-            base: ENTRY.base
-          })).consumed === false;
+        const reducable = yield dal.sindexDAL.sqlFind({
+          identifier: ENTRY.identifier,
+          pos: ENTRY.pos,
+          amount: ENTRY.amount,
+          base: ENTRY.base
+        });
+        // TODO: not in v1.0
+        let available;
+        if (count(reducable) > 0) {
+          available = reduce(reducable).consumed === false;
+        } else {
+          const src = yield dal.getSource(ENTRY.identifier, ENTRY.pos);
+          available = src.consumed === false;
+        }
+        ENTRY.available = available;
       } else {
         ENTRY.available = reduce(yield dal.sindexDAL.sqlFind({
             identifier: ENTRY.identifier,
@@ -821,12 +845,18 @@ const indexer = module.exports = {
       if (HEAD.version > 2) {
         let source = _.filter(sindex, (src) => src.identifier == ENTRY.identifier && src.pos == ENTRY.pos && src.conditions)[0];
         if (!source) {
-          source = reduce(yield dal.sindexDAL.sqlFind({
+          const reducable = yield dal.sindexDAL.sqlFind({
             identifier: ENTRY.identifier,
             pos: ENTRY.pos,
             amount: ENTRY.amount,
             base: ENTRY.base
-          }));
+          });
+          // TODO: not in v1.0
+          if (count(reducable) > 0) {
+            source = reduce(reducable);
+          } else {
+            source = yield dal.getSource(ENTRY.identifier, ENTRY.pos);
+          }
         }
         ENTRY.isLocked = !txSourceUnlock(ENTRY, source);
       } else {
@@ -887,12 +917,19 @@ const indexer = module.exports = {
   prepareIssuersFrameVar: (HEAD, HEAD_1) => {
     if (HEAD.number == 0 || HEAD_1.version == 2) {
       HEAD.issuersFrameVar = 0;
-    } else if (HEAD_1.issuersFrameVar > 0) {
-      HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD_1.issuersCount) - 1;
-    } else if (HEAD_1.issuersFrameVar < 0) {
-      HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD_1.issuersCount) + 1;
     } else {
-      HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD_1.issuersCount);
+      // TODO: remove this bug
+      let issuersVar = (HEAD.issuersCount - HEAD_1.issuersCount);
+      if (issuersVar > 0) issuersVar = 1;
+      if (issuersVar < 0) issuersVar = -1;
+      if (issuersVar == 0) issuersVar = 0;
+      if (HEAD_1.issuersFrameVar > 0) {
+        HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*issuersVar - 1;
+      } else if (HEAD_1.issuersFrameVar < 0) {
+        HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*issuersVar + 1;
+      } else {
+        HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*issuersVar;
+      }
     }
   },
 
@@ -1006,7 +1043,11 @@ const indexer = module.exports = {
   ruleDividend: (block, HEAD) => block.dividend == HEAD.new_dividend,
 
   // BR_G59
-  ruleUnitBase: (block, HEAD) => block.unitbase == HEAD.unitBase,
+  ruleUnitBase: (block, HEAD) => {
+    if (HEAD.version >= 3) {
+      return block.unitbase == HEAD.unitBase;
+    }
+  },
 
   // BR_G60
   ruleMembersCount: (block, HEAD) => block.membersCount == HEAD.membersCount,
@@ -1254,7 +1295,7 @@ const indexer = module.exports = {
   ruleIndexGenDividend: (HEAD, dal) => co(function*() {
     const dividends = [];
     if (HEAD.new_dividend) {
-      const potentials = yield dal.iindexDAL.sqlFind({ member: true });
+      const potentials = yield dal.iindexDAL.sqlFind({ op: constants.IDX_CREATE });
       for (const potential of potentials) {
         const MEMBER = reduce(yield dal.iindexDAL.reducable(potential.pub));
         if (MEMBER.member) {

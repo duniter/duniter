@@ -260,7 +260,8 @@ function Synchroniser (server, host, port, conf, interactive) {
 
               if (bindexSize && bindex.length >= 2 * bindexSize) {
                 // We trim it, not necessary to store it all (we already store the full blocks)
-                bindex.splice(0, bindexSize);
+                const spliced = bindex.splice(0, bindexSize);
+                yield dal.bindexDAL.insertBatch(spliced);
               }
             }
             yield server.BlockchainService.saveBlocksInMainBranch(blocks);

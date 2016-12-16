@@ -1603,7 +1603,7 @@ If `HEAD.number == 0`:
 
 If `HEAD.udTime != HEAD~1.udTime`:
 
-    HEAD.dividend = INTEGER_PART(HEAD~1.dividend + c² * HEAD~1.mass / POW(10, HEAD~1.unitbase) / HEAD.membersCount)
+    HEAD.dividend = CEIL(HEAD~1.dividend + c² * HEAD~1.mass / POW(10, HEAD~1.unitbase) / HEAD.membersCount)
     HEAD.new_dividend = HEAD.dividend
 
 Else:

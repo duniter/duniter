@@ -405,6 +405,7 @@ function FileDAL(params) {
   });
 
   this.getSource = (identifier, noffset) => co(function*() {
+    // TODO: remove for version 1.0
     let src = yield that.sourcesDAL.getSource(identifier, noffset);
     // If the source does not exist, we try to check if it exists under another form (issue #735)
     if (!src) {

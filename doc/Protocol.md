@@ -123,7 +123,7 @@ A public key is always paired with a private key, which UCP will never deal with
 
 #### Definition
 
-Issuing an identity is the act of creating a link between a *public key* and *an arbitrary identity*. In UCP, this link is done through the signature of an identity string by a public key. It is exactly like saying:
+Issuing an identity is the act of creating a link between a *public key* and *an arbitrary identity*. In UCP, this link is done through the signature of an identity string by the private key corresponding to the public key. It is exactly like saying:
 
 > « This identity refers to me ! »
 

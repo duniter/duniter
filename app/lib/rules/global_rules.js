@@ -12,6 +12,7 @@ const Certification  = require('../entity/certification');
 const Transaction    = require('../entity/transaction');
 const logger         = require('../logger')('globr');
 const unlock         = require('../ucp/txunlock');
+const indexer        = require('../dup/indexer');
 const local_rules    = require('./local_rules');
 
 let rules = {};
@@ -20,17 +21,11 @@ let rules = {};
 
 rules.FUNCTIONS = {
 
-  checkVersion: (block, dal) => co(function *() {
-    let current = yield dal.getCurrentBlockOrNull();
-    if (current && current.version > 2 && block.version == 2) {
-      throw Error('`Version: 2` must follow another V2 block or be the root block');
+  checkVersion: (block, bcContext) => co(function *() {
+    const HEAD_1 = yield bcContext.getHEAD_1();
+    if (!indexer.ruleVersion(block, HEAD_1)) {
+      throw Error('Protocol: version rule');
     }
-    else if (block.version > 2) {
-      if (current && current.version != (block.version - 1) && current.version != block.version) {
-        throw Error('`Version: ' + block.version + '` must follow another V' + block.version + ' block, a V' + (block.version - 1) + ' block or be the root block');
-      }
-    }
-    return true;
   }),
 
   checkBlockLength: (block, dal) => co(function *() {

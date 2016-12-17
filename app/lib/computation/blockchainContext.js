@@ -77,6 +77,16 @@ function BlockchainContext() {
   });
 
   /**
+   * Get currently written HEAD.
+   */
+  this.getHEAD_1 = () => co(function*() {
+    if (!vHEAD) {
+      yield refreshHead();
+    }
+    return HEAD_1;
+  });
+
+  /**
    * Utility method: gives the personalized difficulty level of a given issuer for next block.
    * @param version The version in which is computed the difficulty.
    * @param issuer The issuer we want to get the difficulty level.

@@ -52,7 +52,8 @@ function getDAL(overrides) {
 describe("Block global coherence:", function(){
 
   it('a valid block should not have any error', validate(blocks.VALID_ROOT, getDAL(), {
-    getIssuerPersonalizedDifficulty: () => Q(1)
+    getIssuerPersonalizedDifficulty: () => Q(1),
+    getHEAD_1: () => Q({ version : 2 })
   }, function (err) {
     should.not.exist(err);
   }));
@@ -71,36 +72,37 @@ describe("Block global coherence:", function(){
     isMember: () => Q(true),
     getBlocksBetween: () => Q([{time:1411776000},{time:1411776000},{time:1411776000}])
   }), {
-    getIssuerPersonalizedDifficulty: () => Q(2)
+    getIssuerPersonalizedDifficulty: () => Q(2),
+    getHEAD_1: () => Q({ version : 2 })
   }, function (err) {
     should.not.exist(err);
   }));
 
   it('a V2 number cannot follow V3', test(rules.GLOBAL.checkVersion, blocks.V2_CANNOT_FOLLOW_V3, {
-    getCurrentBlockOrNull: () => Q({
-      version: 3
-    })
+    bcContext: {
+      getHEAD_1: () => Q({ version : 3 })
+    }
   }, function (err) {
     should.exist(err);
-    err.message.should.equal('`Version: 2` must follow another V2 block or be the root block');
+    err.message.should.equal('Protocol: version rule');
   }));
 
   it('a V2 number cannot follow V4', test(rules.GLOBAL.checkVersion, blocks.V2_CANNOT_FOLLOW_V3, {
-    getCurrentBlockOrNull: () => Q({
-      version: 4
-    })
+    bcContext: {
+      getHEAD_1: () => Q({ version : 4 })
+    }
   }, function (err) {
     should.exist(err);
-    err.message.should.equal('`Version: 2` must follow another V2 block or be the root block');
+    err.message.should.equal('Protocol: version rule');
   }));
 
   it('a V3 number cannot follow V4', test(rules.GLOBAL.checkVersion, blocks.V3_CANNOT_FOLLOW_V4, {
-    getCurrentBlockOrNull: () => Q({
-      version: 4
-    })
+    bcContext: {
+      getHEAD_1: () => Q({ version : 4 })
+    }
   }, function (err) {
     should.exist(err);
-    err.message.should.equal('`Version: 3` must follow another V3 block, a V2 block or be the root block');
+    err.message.should.equal('Protocol: version rule');
   }));
 
   it('a V3 block has a limited size', test(rules.GLOBAL.checkBlockLength, blocks.V3_HAS_MAXIMUM_SIZE, {
@@ -703,7 +705,7 @@ function test (rule, raw, dal, callback) {
     return co(function *() {
       let obj = parser.syncWrite(raw);
       let block = new Block(obj);
-      if (rule == rules.GLOBAL.checkProofOfWork) {
+      if (rule == rules.GLOBAL.checkProofOfWork || rule == rules.GLOBAL.checkVersion) {
         yield rule(block, dal.bcContext);
       } else if (rule.length == 2) {
         yield rule(block, dal);

@@ -106,7 +106,6 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkCertificationsDelayIsRespected(block, conf, dal);
     yield rules.GLOBAL.checkCertificationsPeriodIsRespected(block, conf, dal);
     yield rules.GLOBAL.checkMembersCountIsGood(block, dal);
-    yield rules.GLOBAL.checkUD(block, conf, dal);
     yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
     yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   }),
@@ -141,7 +140,6 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkCertificationsDelayIsRespected(block, conf, dal);
     yield rules.GLOBAL.checkCertificationsPeriodIsRespected(block, conf, dal);
     yield rules.GLOBAL.checkMembersCountIsGood(block, dal);
-    yield rules.GLOBAL.checkUD(block, conf, dal);
     yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
     yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   })

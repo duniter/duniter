@@ -574,10 +574,9 @@ function BlockGenerator(mainContext, prover) {
        */
       block.powMin = (yield mainContext.getVirtualHeadCopy()).powMin;
       // Universal Dividend
-      const nextUD = yield rules.HELPERS.getNextUD(dal, conf, block.version, block.medianTime, current, block.membersCount);
-      if (nextUD) {
-        block.dividend = nextUD.dividend;
-        block.unitbase = nextUD.unitbase;
+      if (vHEAD.new_dividend) {
+        block.dividend = vHEAD.dividend;
+        block.unitbase = vHEAD.unitBase;
       } else if (block.version > 2) {
         block.unitbase = block.number == 0 ? 0 : current.unitbase;
       }

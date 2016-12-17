@@ -12,7 +12,6 @@ const Certification  = require('../entity/certification');
 const Transaction    = require('../entity/transaction');
 const logger         = require('../logger')('globr');
 const unlock         = require('../ucp/txunlock');
-const indexer        = require('../dup/indexer');
 const local_rules    = require('./local_rules');
 
 let rules = {};
@@ -20,30 +19,6 @@ let rules = {};
 // TODO: all the global rules should be replaced by index rule someday
 
 rules.FUNCTIONS = {
-
-  checkUD: (block, conf, dal) => co(function *() {
-    let current = yield dal.getCurrentBlockOrNull();
-    let nextUD = yield rules.HELPERS.getNextUD(dal, conf, block.version, block.medianTime, current, block.membersCount);
-    if (!current && block.dividend) {
-      throw Error('Root block cannot have UniversalDividend field');
-    }
-    else if (current && nextUD && !block.dividend) {
-      throw Error('Block must have a UniversalDividend field');
-    }
-    else if (current && nextUD && block.dividend != nextUD.dividend) {
-      throw Error('UniversalDividend must be equal to ' + nextUD.dividend);
-    }
-    else if (current && !nextUD && block.dividend) {
-      throw Error('This block cannot have UniversalDividend');
-    }
-    else if (current && nextUD && block.unitbase != nextUD.unitbase) {
-      throw Error('UnitBase must be equal to ' + nextUD.unitbase);
-    }
-    else if (block.version > 2 && current && !nextUD && block.unitbase != current.unitbase) {
-      throw Error('UnitBase must be equal to previous unit base = ' + current.unitbase);
-    }
-    return true;
-  }),
 
   checkPreviousHash: (block, dal) => co(function *() {
     let current = yield dal.getCurrentBlockOrNull();
@@ -541,64 +516,6 @@ rules.HELPERS = {
     getTransactions: () => [tx],
     medianTime: block.medianTime
   }, conf, dal, alsoCheckPendingTransactions),
-
-  getNextUD: (dal, conf, version, nextMedianTime, current, nextN) => co(function *() {
-    const lastUDBlock = yield dal.lastUDBlock();
-    let lastUDTime = lastUDBlock && lastUDBlock.UDTime;
-    if (!lastUDTime) {
-      const rootBlock = yield dal.getBlock(0);
-      lastUDTime = (rootBlock != null ? rootBlock.medianTime : 0);
-    }
-    if (lastUDTime == null) {
-      return null;
-    }
-    if (!current) {
-      return null;
-    }
-    if (lastUDTime + conf.dt <= nextMedianTime) {
-      const M = lastUDBlock ? lastUDBlock.monetaryMass : current.monetaryMass || 0;
-      const c = conf.c;
-      const N = nextN;
-      const previousUD = lastUDBlock ? lastUDBlock.dividend : conf.ud0;
-      const previousUB = lastUDBlock ? lastUDBlock.unitbase : constants.FIRST_UNIT_BASE;
-      if (version == 2) {
-        if (N > 0) {
-          const block = {
-            dividend: Math.ceil(Math.max(previousUD, c * M / Math.pow(10, previousUB) / N)),
-            unitbase: previousUB
-          };
-          if (block.dividend >= Math.pow(10, constants.NB_DIGITS_UD)) {
-            block.dividend = Math.ceil(block.dividend / 10.0);
-            block.unitbase++;
-          }
-          return block;
-        } else {
-          // The community has collapsed. RIP.
-          return null;
-        }
-      } else {
-        const block = {
-          unitbase: previousUB
-        };
-        if (version == 3) {
-          block.dividend = parseInt(((1 + c) * previousUD).toFixed(0));
-        } else {
-          if (N > 0) {
-            block.dividend = parseInt((previousUD + Math.pow(c, 2) * (M / N) / Math.pow(10, previousUB)).toFixed(0));
-          } else {
-            // The community has collapsed. RIP.
-            return null;
-          }
-        }
-        if (block.dividend >= Math.pow(10, constants.NB_DIGITS_UD)) {
-          block.dividend = Math.ceil(block.dividend / 10.0);
-          block.unitbase++;
-        }
-        return block;
-      }
-    }
-    return null;
-  }),
 
   checkTxBlockStamp: (tx, dal) => co(function *() {
     if (tx.version >= 3) {

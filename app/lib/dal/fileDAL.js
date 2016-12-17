@@ -885,6 +885,28 @@ function FileDAL(params) {
     return _.chain(blocks).pluck('issuer').uniq().value();
   });
 
+  /**
+   * Gets a range of entries for the last `start`th to the last `end`th HEAD entry.
+   * @param start The starting entry number (min. 1)
+   * @param end The ending entry (max. BINDEX length)
+   * @param property If provided, transforms the range of entries into an array of the asked property.
+   */
+  this.range = (start, end, property) => co(function*() {
+    const range = yield that.bindexDAL.range(start, end);
+    if (property) {
+      // Filter on a particular property
+      return range.map((b) => b[property]);
+    } else {
+      return range;
+    }
+  });
+
+  /**
+   * Get the last `n`th entry from the BINDEX.
+   * @param n The entry number (min. 1).
+   */
+  this.head = (n) => this.bindexDAL.head(n);
+
   /***********************
    *    CONFIGURATION
    **********************/

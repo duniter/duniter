@@ -339,21 +339,8 @@ const indexer = module.exports = {
     const cindex = module.exports.cindex(index);
     const sindex = module.exports.sindex(index);
 
-    function range(start, end, property) {
-      return co(function*() {
-        const range = yield dal.bindexDAL.range(start, end);
-        if (property) {
-          // Filter on a particular property
-          return range.map((b) => b[property]);
-        } else {
-          return range;
-        }
-      });
-    }
-
-    function head(n) {
-      return dal.bindexDAL.head(n);
-    }
+    const range = dal.range;
+    const head = dal.head;
 
     const HEAD = {
       version: block.version,
@@ -506,68 +493,7 @@ const indexer = module.exports = {
     }
 
     // BR_G18
-    let nbPersonalBlocksInFrame, medianOfBlocksInFrame, blocksOfIssuer;
-    let nbPreviousIssuers = 0, nbBlocksSince = 0;
-    if (HEAD.number == 0) {
-      nbPersonalBlocksInFrame = 0;
-      medianOfBlocksInFrame = 1;
-    } else {
-      const blocksInFrame = yield range(1, HEAD_1.issuersFrame);
-      const issuersInFrame = yield range(1, HEAD_1.issuersFrame, 'issuer');
-      blocksOfIssuer = _.filter(blocksInFrame, (entry) => entry.issuer == HEAD.issuer);
-      nbPersonalBlocksInFrame = count(blocksOfIssuer);
-      const blocksPerIssuerInFrame = uniq(issuersInFrame).map((issuer) => count(_.where(blocksInFrame, { issuer })));
-      medianOfBlocksInFrame = median(blocksPerIssuerInFrame);
-      if (nbPersonalBlocksInFrame == 0) {
-        nbPreviousIssuers = 0;
-        nbBlocksSince = 0;
-      } else {
-        const last = blocksOfIssuer[0];
-        nbPreviousIssuers = last.issuersCount;
-        nbBlocksSince = HEAD_1.number - last.number;
-      }
-    }
-
-    if (HEAD.version == 2) {
-
-      // V0.2 Hardness
-      if (nbPersonalBlocksInFrame > 0) {
-        nbPreviousIssuers--;
-      }
-      HEAD.issuerDiff = Math.max(HEAD.powMin, HEAD.powMin * Math.floor(conf.percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
-
-    } else if (HEAD.version == 3) {
-
-      // V0.3 Hardness
-      HEAD.issuerDiff = Math.max(HEAD.powMin, HEAD.powMin * Math.floor(conf.percentRot * nbPreviousIssuers / (1 + nbBlocksSince)));
-
-    } else if (HEAD.version == 4) {
-
-      // V0.4 Hardness
-      const PERSONAL_EXCESS = Math.max(0, (nbPersonalBlocksInFrame / 5) - 1);
-      const PERSONAL_HANDICAP = Math.floor(Math.log(1 + PERSONAL_EXCESS) / Math.log(1.189));
-      HEAD.issuerDiff = Math.max(HEAD.powMin, HEAD.powMin * Math.floor(conf.percentRot * nbPreviousIssuers / (1 + nbBlocksSince))) + PERSONAL_HANDICAP;
-
-    } else if (HEAD.version == 5) {
-
-      // V0.5 Hardness
-      const PERSONAL_EXCESS = Math.max(0, ((nbPersonalBlocksInFrame + 1)/ medianOfBlocksInFrame) - 1);
-      const PERSONAL_HANDICAP = Math.floor(Math.log(1 + PERSONAL_EXCESS) / Math.log(1.189));
-      HEAD.issuerDiff = HEAD.powMin + PERSONAL_HANDICAP;
-
-    } else if (HEAD.version >= 6) {
-
-      // V0.6 Hardness
-      const PERSONAL_EXCESS = Math.max(0, ( (nbPersonalBlocksInFrame + 1) / medianOfBlocksInFrame) - 1);
-      const PERSONAL_HANDICAP = Math.floor(Math.log(1 + PERSONAL_EXCESS) / Math.log(1.189));
-      HEAD.issuerDiff = Math.max(HEAD.powMin, HEAD.powMin * Math.floor(conf.percentRot * nbPreviousIssuers / (1 + nbBlocksSince))) + PERSONAL_HANDICAP;
-      if ((HEAD.issuerDiff + 1) % 16 == 0) {
-        HEAD.issuerDiff += 1;
-      }
-    }
-
-    HEAD.powRemainder = HEAD.issuerDiff  % 16;
-    HEAD.powZeros = (HEAD.issuerDiff - HEAD.powRemainder) / 16;
+    yield indexer.preparePersonalizedPoW(HEAD, HEAD_1, range, conf);
 
     // BR_G19
     yield _.where(iindex, { op: constants.IDX_CREATE }).map((ENTRY) => co(function*() {
@@ -985,6 +911,72 @@ const indexer = module.exports = {
         HEAD.speed = quantity / elapsed;
       }
     }
+  }),
+
+  // BR_G18
+  preparePersonalizedPoW: (HEAD, HEAD_1, range, conf) => co(function*() {
+    let nbPersonalBlocksInFrame, medianOfBlocksInFrame, blocksOfIssuer;
+    let nbPreviousIssuers = 0, nbBlocksSince = 0;
+    if (HEAD.number == 0) {
+      nbPersonalBlocksInFrame = 0;
+      medianOfBlocksInFrame = 1;
+    } else {
+      const blocksInFrame = yield range(1, HEAD_1.issuersFrame);
+      const issuersInFrame = yield range(1, HEAD_1.issuersFrame, 'issuer');
+      blocksOfIssuer = _.filter(blocksInFrame, (entry) => entry.issuer == HEAD.issuer);
+      nbPersonalBlocksInFrame = count(blocksOfIssuer);
+      const blocksPerIssuerInFrame = uniq(issuersInFrame).map((issuer) => count(_.where(blocksInFrame, { issuer })));
+      medianOfBlocksInFrame = median(blocksPerIssuerInFrame);
+      if (nbPersonalBlocksInFrame == 0) {
+        nbPreviousIssuers = 0;
+        nbBlocksSince = 0;
+      } else {
+        const last = blocksOfIssuer[0];
+        nbPreviousIssuers = last.issuersCount;
+        nbBlocksSince = HEAD_1.number - last.number;
+      }
+    }
+
+    if (HEAD.version == 2) {
+
+      // V0.2 Hardness
+      if (nbPersonalBlocksInFrame > 0) {
+        nbPreviousIssuers--;
+      }
+      HEAD.issuerDiff = Math.max(HEAD.powMin, HEAD.powMin * Math.floor(conf.percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
+
+    } else if (HEAD.version == 3) {
+
+      // V0.3 Hardness
+      HEAD.issuerDiff = Math.max(HEAD.powMin, HEAD.powMin * Math.floor(conf.percentRot * nbPreviousIssuers / (1 + nbBlocksSince)));
+
+    } else if (HEAD.version == 4) {
+
+      // V0.4 Hardness
+      const PERSONAL_EXCESS = Math.max(0, (nbPersonalBlocksInFrame / 5) - 1);
+      const PERSONAL_HANDICAP = Math.floor(Math.log(1 + PERSONAL_EXCESS) / Math.log(1.189));
+      HEAD.issuerDiff = Math.max(HEAD.powMin, HEAD.powMin * Math.floor(conf.percentRot * nbPreviousIssuers / (1 + nbBlocksSince))) + PERSONAL_HANDICAP;
+
+    } else if (HEAD.version == 5) {
+
+      // V0.5 Hardness
+      const PERSONAL_EXCESS = Math.max(0, ((nbPersonalBlocksInFrame + 1)/ medianOfBlocksInFrame) - 1);
+      const PERSONAL_HANDICAP = Math.floor(Math.log(1 + PERSONAL_EXCESS) / Math.log(1.189));
+      HEAD.issuerDiff = HEAD.powMin + PERSONAL_HANDICAP;
+
+    } else if (HEAD.version >= 6) {
+
+      // V0.6 Hardness
+      const PERSONAL_EXCESS = Math.max(0, ( (nbPersonalBlocksInFrame + 1) / medianOfBlocksInFrame) - 1);
+      const PERSONAL_HANDICAP = Math.floor(Math.log(1 + PERSONAL_EXCESS) / Math.log(1.189));
+      HEAD.issuerDiff = Math.max(HEAD.powMin, HEAD.powMin * Math.floor(conf.percentRot * nbPreviousIssuers / (1 + nbBlocksSince))) + PERSONAL_HANDICAP;
+      if ((HEAD.issuerDiff + 1) % 16 == 0) {
+        HEAD.issuerDiff += 1;
+      }
+    }
+
+    HEAD.powRemainder = HEAD.issuerDiff  % 16;
+    HEAD.powZeros = (HEAD.issuerDiff - HEAD.powRemainder) / 16;
   }),
 
   // BR_G49
@@ -1433,7 +1425,7 @@ function median(values) {
     // Even number: the median is the average between the 2 central values, ceil rounded.
     const firstValue = values[nbValues / 2];
     const secondValue = values[nbValues / 2 - 1];
-    med = Math.ceil((firstValue + secondValue) / 2);
+    med = ((firstValue + secondValue) / 2); // TODO v1.0 median ceil rounded
   } else {
     med = values[(nbValues + 1) / 2 - 1];
   }

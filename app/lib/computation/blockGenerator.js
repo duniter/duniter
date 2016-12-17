@@ -53,7 +53,7 @@ function BlockGenerator(mainContext, prover) {
     const unsignedBlock = block || (yield that.nextBlock(manualValues));
     const current = yield dal.getCurrentBlockOrNull();
     const version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
-    const trialLevel = trial || (yield rules.HELPERS.getTrialLevel(version, selfPubkey, conf, dal));
+    const trialLevel = trial || (yield rules.HELPERS.getTrialLevel(version, selfPubkey, mainContext));
     return prover.prove(unsignedBlock, trialLevel, (manualValues && manualValues.time) || null);
   });
 

@@ -76,7 +76,7 @@ rules.ALIAS = {
     yield rules.LOCAL.checkTxSignature(block);
   }),
 
-  ALL_GLOBAL: (block, conf, dal) => co(function *() {
+  ALL_GLOBAL: (block, conf, dal, bcContext) => co(function *() {
     yield rules.GLOBAL.checkNumber(block, dal);
     yield rules.GLOBAL.checkVersion(block, dal);
     yield rules.GLOBAL.checkBlockLength(block, dal);
@@ -110,13 +110,13 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkCertificationsPeriodIsRespected(block, conf, dal);
     yield rules.GLOBAL.checkMembersCountIsGood(block, dal);
     yield rules.GLOBAL.checkPoWMin(block, conf, dal);
-    yield rules.GLOBAL.checkProofOfWork(block, conf, dal);
+    yield rules.GLOBAL.checkProofOfWork(block, bcContext);
     yield rules.GLOBAL.checkUD(block, conf, dal);
     yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
     yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   }),
 
-  ALL_GLOBAL_WITHOUT_POW: (block, conf, dal) => co(function *() {
+  ALL_GLOBAL_WITHOUT_POW: (block, conf, dal, bcContext) => co(function *() {
     yield rules.GLOBAL.checkNumber(block, dal);
     yield rules.GLOBAL.checkVersion(block, dal);
     yield rules.GLOBAL.checkBlockLength(block, dal);
@@ -180,10 +180,10 @@ function checkLocal(contract) {
 }
 
 function check(contract) {
-  return (b, conf, dal, done) => {
+  return (b, conf, dal, bcContext, done) => {
     return co(function *() {
       const block = new Block(b);
-      yield contract(block, conf, dal);
+      yield contract(block, conf, dal, bcContext);
       done && done();
     })
       .catch((err) => {

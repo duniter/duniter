@@ -72,6 +72,8 @@ function Server (dbConf, overrideConf) {
     }
   };
 
+  this.getBcContext = () => this.BlockchainService.getContext();
+
   this.plugFileSystem = () => co(function *() {
     logger.debug('Plugging file system...');
     const params = yield paramsP;

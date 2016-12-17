@@ -51,7 +51,9 @@ function getDAL(overrides) {
 
 describe("Block global coherence:", function(){
 
-  it('a valid block should not have any error', validate(blocks.VALID_ROOT, getDAL(), function (err) {
+  it('a valid block should not have any error', validate(blocks.VALID_ROOT, getDAL(), {
+    getIssuerPersonalizedDifficulty: () => Q(1)
+  }, function (err) {
     should.not.exist(err);
   }));
 
@@ -68,7 +70,9 @@ describe("Block global coherence:", function(){
     },
     isMember: () => Q(true),
     getBlocksBetween: () => Q([{time:1411776000},{time:1411776000},{time:1411776000}])
-  }), function (err) {
+  }), {
+    getIssuerPersonalizedDifficulty: () => Q(2)
+  }, function (err) {
     should.not.exist(err);
   }));
 
@@ -393,46 +397,44 @@ describe("Block global coherence:", function(){
   }));
 
   it('a block not starting with a leading zero should fail', test(rules.GLOBAL.checkProofOfWork, blocks.NO_LEADING_ZERO, {
-    getCurrentBlockOrNull: () => Q({ number: 2 }),
-    lastBlockOfIssuer: () => Q({ number: 2 }),
-    getBlock: () => Q({ powMin: 8 }),
-    getBlocksBetween: () => Q([{ issuer: 'a' }])
+    bcContext: {
+      getIssuerPersonalizedDifficulty: () => Q(8)
+    }
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Wrong proof-of-work level: given 0 zeros and \'F\', required was 0 zeros and an hexa char between [0-7]');
   }));
 
   it('a block requiring 2 leading zeros but providing less should fail', test(rules.GLOBAL.checkProofOfWork, blocks.REQUIRES_7_LEADING_ZEROS, {
-    getCurrentBlockOrNull: () => Q({ number: 2 }),
-    lastBlockOfIssuer: () => Q({ number: 2 }),
-    getBlock: () => Q({ powMin: 6 }),
-    getBlocksBetween: () => Q([{ issuer: 'a' },{ issuer: 'b' }])
+    bcContext: {
+      getIssuerPersonalizedDifficulty: () => Q(12)
+    }
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Wrong proof-of-work level: given 0 zeros and \'B\', required was 0 zeros and an hexa char between [0-3]');
   }));
 
   it('a block requiring 1 leading zeros but providing less should fail', test(rules.GLOBAL.checkProofOfWork, blocks.REQUIRES_6_LEADING_ZEROS, {
-    getCurrentBlockOrNull: () => Q({ number: 2 }),
-    lastBlockOfIssuer: () => Q({ number: 2 }),
-    getBlock: () => Q({ powMin: 8 }),
-    getBlocksBetween: () => Q([{ issuer: 'a' }])
+    bcContext: {
+      getIssuerPersonalizedDifficulty: () => Q(8)
+    }
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Wrong proof-of-work level: given 0 zeros and \'8\', required was 0 zeros and an hexa char between [0-7]');
   }));
 
   it('a block requiring 1 leading zeros as first block of newcomer should succeed', test(rules.GLOBAL.checkProofOfWork, blocks.FIRST_BLOCK_OF_NEWCOMER, {
-    getCurrentBlockOrNull: () => Q(null)
+    bcContext: {
+      getIssuerPersonalizedDifficulty: () => Q(1)
+    }
   }, function (err) {
     should.not.exist(err);
   }));
 
   it('a block requiring 40 leading zeros as second block of newcomer should fail', test(rules.GLOBAL.checkProofOfWork, blocks.SECOND_BLOCK_OF_NEWCOMER, {
-    getCurrentBlockOrNull: () => Q({ number: 2 }),
-    lastBlockOfIssuer: () => Q({ number: 2 }),
-    getBlock: () => Q({ powMin: 160 }),
-    getBlocksBetween: () => Q([{ issuer: 'a' }])
+    bcContext: {
+      getIssuerPersonalizedDifficulty: () => Q(160)
+    }
   }, function (err) {
     should.exist(err);
     err.message.should.equal('Wrong proof-of-work level: given 0 zeros and \'F\', required was 10 zeros and an hexa char between [0-9A-F]');
@@ -701,7 +703,9 @@ function test (rule, raw, dal, callback) {
     return co(function *() {
       let obj = parser.syncWrite(raw);
       let block = new Block(obj);
-      if (rule.length == 2) {
+      if (rule == rules.GLOBAL.checkProofOfWork) {
+        yield rule(block, dal.bcContext);
+      } else if (rule.length == 2) {
         yield rule(block, dal);
       } else {
         yield rule(block, conf, dal);
@@ -711,14 +715,14 @@ function test (rule, raw, dal, callback) {
   };
 }
 
-function validate (raw, dal, callback) {
+function validate (raw, dal, bcContext, callback) {
   var block;
   return function() {
     return Q.Promise(function(resolve, reject){
       async.waterfall([
         function (next){
           block = new Block(parser.syncWrite(raw));
-          rules.CHECK.ASYNC.ALL_GLOBAL(block, conf, dal, next);
+          rules.CHECK.ASYNC.ALL_GLOBAL(block, conf, dal, bcContext, next);
         }
       ], function (err) {
         err && console.error(err.stack);

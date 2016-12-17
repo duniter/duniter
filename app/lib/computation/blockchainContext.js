@@ -22,6 +22,71 @@ function BlockchainContext() {
   const that = this;
   let conf, dal, logger;
 
+  /**
+   * The virtual next HEAD. Computed each time a new block is added, because a lot of HEAD variables are deterministic
+   * and can be computed one, just after a block is added for later controls.
+   */
+  let vHEAD;
+
+  /**
+   * The currently written HEAD, aka. HEAD_1 relatively to incoming HEAD.
+   */
+  let HEAD_1;
+
+  let HEADrefreshed = Q();
+
+  /**
+   * Refresh the virtual HEAD value for determined variables of the next coming block, avoiding to recompute them
+   * each time a new block arrives to check if the values are correct. We can know and store them early on, in vHEAD.
+   */
+  function refreshHead() {
+    HEADrefreshed = co(function*() {
+      HEAD_1 = yield dal.head(1);
+      // We suppose next block will have same version #, and no particular data in the block (empty index)
+      let block = { version: HEAD_1 ? HEAD_1.version : constants.BLOCK_GENERATED_VERSION };
+      // But if no HEAD_1 exist, we must initialize a block with default values
+      if (!HEAD_1) {
+        block = {
+          version: HEAD_1 ? HEAD_1.version : constants.BLOCK_GENERATED_VERSION,
+          time: Math.round(Date.now() / 1000),
+          powMin: conf.powMin || 0,
+          powZeros: 0,
+          powRemainder: 0
+        };
+      }
+      vHEAD = yield indexer.completeGlobalScope(Block.statics.fromJSON(block).json(), conf, [], dal);
+    });
+    return HEADrefreshed;
+  }
+
+  /**
+   * Gets a copy of vHEAD, extended with some extra properties.
+   * @param props The extra properties to add.
+   */
+  this.getVirtualHeadCopy = (props) => co(function*() {
+    if (!vHEAD) {
+      yield refreshHead();
+    }
+    const copy = {};
+    const keys = Object.keys(vHEAD);
+    for (const k of keys) {
+      copy[k] = vHEAD[k];
+    }
+    _.extend(copy, props);
+    return copy;
+  });
+
+  /**
+   * Utility method: gives the personalized difficulty level of a given issuer for next block.
+   * @param version The version in which is computed the difficulty.
+   * @param issuer The issuer we want to get the difficulty level.
+   */
+  this.getIssuerPersonalizedDifficulty = (version, issuer) => co(function *() {
+    const HEAD = yield that.getVirtualHeadCopy({ version, issuer });
+    yield indexer.preparePersonalizedPoW(HEAD, HEAD_1, dal.range, conf);
+    return HEAD.issuerDiff;
+  });
+
   this.setConfDAL = (newConf, newDAL) => {
     dal = newDAL;
     conf = newConf;
@@ -31,7 +96,7 @@ function BlockchainContext() {
   this.checkBlock = (block, withPoWAndSignature) => co(function*(){
     if (withPoWAndSignature) {
       yield Q.nbind(rules.CHECK.ASYNC.ALL_LOCAL, rules, block, conf);
-      yield Q.nbind(rules.CHECK.ASYNC.ALL_GLOBAL, rules, block, conf, dal);
+      yield Q.nbind(rules.CHECK.ASYNC.ALL_GLOBAL, rules, block, conf, dal, that);
       const index = indexer.localIndex(block, conf);
       const mindex = indexer.mindex(index);
       const iindex = indexer.iindex(index);
@@ -142,6 +207,7 @@ function BlockchainContext() {
       block.fork = false;
       yield saveBlockData(currentBlock, block);
       logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));
+      HEAD_1 = vHEAD = HEADrefreshed = null;
       return block;
     }
     catch(err) {
@@ -169,6 +235,8 @@ function BlockchainContext() {
     logger.debug('Reverting block #%s...', current.number);
     const res = yield that.revertBlock(current);
     logger.debug('Reverted block #%s', current.number);
+    // Invalidates the head, since it has changed.
+    yield refreshHead();
     return res;
   });
 

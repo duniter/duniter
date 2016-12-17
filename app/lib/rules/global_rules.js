@@ -16,6 +16,8 @@ const local_rules    = require('./local_rules');
 
 let rules = {};
 
+// TODO: all the global rules should be replaced by index rule someday
+
 rules.FUNCTIONS = {
 
   checkVersion: (block, dal) => co(function *() {
@@ -70,9 +72,9 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkProofOfWork: (block, conf, dal) => co(function *() {
+  checkProofOfWork: (block, bcContext) => co(function *() {
     // Compute exactly how much zeros are required for this block's issuer
-    let difficulty = yield getTrialLevel(block.version, block.issuer, conf, dal);
+    let difficulty = yield getTrialLevel(block.version, block.issuer, bcContext);
     const remainder = difficulty % 16;
     const nbZerosReq = Math.max(0, (difficulty - remainder) / 16);
     const highMark = constants.PROOF_OF_WORK.UPPER_BOUND[remainder];
@@ -595,7 +597,7 @@ rules.HELPERS = {
     }
   }),
 
-  getTrialLevel: (version, issuer, conf, dal) => getTrialLevel(version, issuer, conf, dal),
+  getTrialLevel: (version, issuer, bcContext) => getTrialLevel(version, issuer, bcContext),
 
   getPoWMin: (version, blockNumber, conf, dal) => getPoWMinFor(version, blockNumber, conf, dal),
 
@@ -935,156 +937,8 @@ function getNodeIDfromPubkey(nodesCache, pubkey, dal) {
   });
 }
 
-function getTrialLevel (version, issuer, conf, dal) {
-  return co(function *() {
-    if (version == 2) {
-      // Compute exactly how much zeros are required for this block's issuer
-      let percentRot = conf.percentRot;
-      let current = yield dal.getCurrentBlockOrNull();
-      if (!current) {
-        return conf.powMin || 0;
-      }
-      let last = yield dal.lastBlockOfIssuer(issuer);
-      let powMin = yield getPoWMinFor(version, current.number + 1, conf, dal);
-      let issuers = [];
-      if (last) {
-        let blocksBetween = yield dal.getBlocksBetween(last.number - 1 - conf.blocksRot, last.number - 1);
-        issuers = _.pluck(blocksBetween, 'issuer');
-      } else {
-        // So we can have nbPreviousIssuers = 0 & nbBlocksSince = 0 for someone who has never written any block
-        last = { number: current.number };
-      }
-      const nbPreviousIssuers = _(_(issuers).uniq()).without(issuer).length;
-      const nbBlocksSince = current.number - last.number;
-      let personal_diff = Math.max(powMin, powMin * Math.floor(percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
-      if (personal_diff + 1 % 16 == 0) {
-        personal_diff++;
-      }
-      return personal_diff;
-    } else if (version > 2 && version < 5) {
-      // Compute exactly how much zeros are required for this block's issuer
-      let percentRot = conf.percentRot;
-      let current = yield dal.getCurrentBlockOrNull();
-      if (!current) {
-        return conf.powMin || 0;
-      }
-      let last = yield dal.lastBlockOfIssuer(issuer);
-      let powMin = yield getPoWMinFor(version, current.number + 1, conf, dal);
-      let nbPreviousIssuers = 0;
-      if (last) {
-        nbPreviousIssuers = last.issuersCount;
-      } else {
-        // So we have nbBlocksSince = 0 for someone who has never written any block
-        last = { number: current.number };
-      }
-      const nbBlocksSince = current.number - last.number;
-      let personal_diff = Math.max(powMin, powMin * Math.floor(percentRot * nbPreviousIssuers / (1 + nbBlocksSince)));
-      if (version > 3) {
-        const from = current.number - current.issuersFrame + 1;
-        const nbBlocksIssuedInFrame = yield dal.getNbIssuedInFrame(issuer, from);
-        const personal_excess = Math.max(0, (nbBlocksIssuedInFrame / 5) - 1);
-        // Personal_handicap
-        personal_diff += Math.floor(Math.log(1 + personal_excess) / Math.log(1.189));
-      }
-      if (personal_diff + 1 % 16 == 0) {
-        personal_diff++;
-      }
-      return personal_diff;
-    } else if (version == 5) {
-      // NB: no more use conf.percentRot
-      // Compute exactly how much zeros are required for this block's issuer
-      let current = yield dal.getCurrentBlockOrNull();
-      if (!current) {
-        return conf.powMin || 0;
-      }
-      let powMin = yield getPoWMinFor(version, current.number + 1, conf, dal);
-      let blocksBetween = [];
-      if (current) {
-        blocksBetween = yield dal.getBlocksBetween(current.number - current.issuersFrame + 1, current.number);
-      }
-      const blocksByIssuer = blocksBetween.reduce((oMap, block) => {
-        oMap[block.issuer] = oMap[block.issuer] || 0;
-        oMap[block.issuer]++;
-        return oMap;
-      }, {});
-      const counts = Object.values(blocksByIssuer);
-      let medianOfIssuedBlocks = null;
-      counts.sort((a, b) => a < b ? -1 : (a > b ? 1 : 0));
-      const nbIssuers = counts.length;
-      if (nbIssuers % 2 === 0) {
-        // Even number of nodes: the median is the average between the 2 central values
-        const firstValue = counts[nbIssuers / 2];
-        const secondValue = counts[nbIssuers / 2 - 1];
-        medianOfIssuedBlocks = (firstValue + secondValue) / 2;
-      } else {
-        medianOfIssuedBlocks = counts[(nbIssuers + 1) / 2 - 1];
-      }
-
-      const from = current.number - current.issuersFrame + 1;
-      const nbBlocksIssuedInFrame = yield dal.getNbIssuedInFrame(issuer, from);
-      const personal_excess = Math.max(0, ((nbBlocksIssuedInFrame + 1)/ medianOfIssuedBlocks) - 1);
-      // Personal_handicap
-      const handicap = Math.floor(Math.log(1 + personal_excess) / Math.log(1.189));
-      let personal_diff = powMin + handicap;
-      if (personal_diff + 1 % 16 == 0) {
-        personal_diff++;
-      }
-      return personal_diff;
-    } else if (version >= 6) {
-      // NB: no more use conf.percentRot
-      // Compute exactly how much zeros are required for this block's issuer
-      let current = yield dal.getCurrentBlockOrNull();
-      if (!current) {
-        return conf.powMin || 0;
-      }
-      let powMin = yield getPoWMinFor(version, current.number + 1, conf, dal);
-      let blocksBetween = [];
-      if (current) {
-        blocksBetween = yield dal.getBlocksBetween(current.number - current.issuersFrame + 1, current.number);
-      }
-      const blocksByIssuer = blocksBetween.reduce((oMap, block) => {
-        oMap[block.issuer] = oMap[block.issuer] || 0;
-        oMap[block.issuer]++;
-        return oMap;
-      }, {});
-      const counts = Object.values(blocksByIssuer);
-      let medianOfIssuedBlocks = null;
-      counts.sort((a, b) => a < b ? -1 : (a > b ? 1 : 0));
-      const nbIssuers = counts.length;
-      if (nbIssuers % 2 === 0) {
-        // Even number of nodes: the median is the average between the 2 central values
-        const firstValue = counts[nbIssuers / 2];
-        const secondValue = counts[nbIssuers / 2 - 1];
-        medianOfIssuedBlocks = (firstValue + secondValue) / 2;
-      } else {
-        medianOfIssuedBlocks = counts[(nbIssuers + 1) / 2 - 1];
-      }
-
-      const from = current.number - current.issuersFrame + 1;
-      const nbBlocksIssuedInFrame = yield dal.getNbIssuedInFrame(issuer, from);
-      const personal_excess = Math.max(0, ((nbBlocksIssuedInFrame + 1)/ medianOfIssuedBlocks) - 1);
-      // Personal_handicap
-      const handicap = Math.floor(Math.log(1 + personal_excess) / Math.log(1.189));
-
-      //-- 0.4 reintroduction
-      let percentRot = conf.percentRot;
-      let last = yield dal.lastBlockOfIssuer(issuer);
-      let nbPreviousIssuers = 0;
-      if (last) {
-        nbPreviousIssuers = last.issuersCount;
-      } else {
-        // So we have nbBlocksSince = 0 for someone who has never written any block
-        last = { number: current.number };
-      }
-      const nbBlocksSince = current.number - last.number;
-
-      let personal_diff = Math.max(powMin, powMin * Math.floor(percentRot * nbPreviousIssuers / (1 + nbBlocksSince))) + handicap;
-      if ((personal_diff + 1) % 16 == 0) {
-        personal_diff++;
-      }
-      return personal_diff;
-    }
-  });
+function getTrialLevel (version, issuer, bcContext) {
+  return bcContext.getIssuerPersonalizedDifficulty(version, issuer);
 }
 
 /**

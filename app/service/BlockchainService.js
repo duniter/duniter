@@ -33,6 +33,8 @@ function BlockchainService (server) {
   const generator = blockGenerator(mainContext, prover);
   let conf, dal, keyPair, logger, selfPubkey;
 
+  this.getContext = () => mainContext;
+
   this.setConfDAL = (newConf, newDAL, newKeyPair) => {
     dal = newDAL;
     conf = newConf;

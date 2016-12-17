@@ -988,7 +988,7 @@ const indexer = module.exports = {
   },
 
   // BR_G50
-  ruleBlockSize: (HEAD) => HEAD.bsize < Math.max(500, Math.ceil(1.1 * HEAD.avgBlockSize)),
+  ruleBlockSize: (HEAD) => HEAD.bsize < indexer.DUP_HELPERS.getMaxBlockSize(HEAD),
 
   // BR_G98
   ruleCurrency: (block, HEAD) => {
@@ -1398,7 +1398,12 @@ const indexer = module.exports = {
   iindex:       (index) => _(index).filter({ index: constants.I_INDEX }),
   mindex:       (index) => _(index).filter({ index: constants.M_INDEX }),
   cindex:       (index) => _(index).filter({ index: constants.C_INDEX }),
-  sindex:       (index) => _(index).filter({ index: constants.S_INDEX })
+  sindex:       (index) => _(index).filter({ index: constants.S_INDEX }),
+
+  DUP_HELPERS: {
+
+    getMaxBlockSize: (HEAD) => Math.max(500, Math.ceil(1.1 * HEAD.avgBlockSize))
+  }
 };
 
 function count(range) {

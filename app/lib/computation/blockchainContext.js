@@ -43,16 +43,19 @@ function BlockchainContext() {
     HEADrefreshed = co(function*() {
       HEAD_1 = yield dal.head(1);
       // We suppose next block will have same version #, and no particular data in the block (empty index)
-      let block = { version: HEAD_1 ? HEAD_1.version : constants.BLOCK_GENERATED_VERSION };
+      let block;
       // But if no HEAD_1 exist, we must initialize a block with default values
       if (!HEAD_1) {
         block = {
-          version: HEAD_1 ? HEAD_1.version : constants.BLOCK_GENERATED_VERSION,
+          version: constants.BLOCK_GENERATED_VERSION,
           time: Math.round(Date.now() / 1000),
           powMin: conf.powMin || 0,
           powZeros: 0,
-          powRemainder: 0
+          powRemainder: 0,
+          avgBlockSize: 0
         };
+      } else {
+        block = { version: HEAD_1.version };
       }
       vHEAD = yield indexer.completeGlobalScope(Block.statics.fromJSON(block).json(), conf, [], dal);
     });

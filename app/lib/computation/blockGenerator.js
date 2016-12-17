@@ -4,6 +4,7 @@ const co              = require('co');
 const Q               = require('q');
 const moment          = require('moment');
 const inquirer        = require('inquirer');
+const indexer         = require('../dup/indexer');
 const rawer           = require('../ucp/rawer');
 const hashf           = require('../ucp/hashf');
 const constants       = require('../constants');
@@ -53,7 +54,7 @@ function BlockGenerator(mainContext, prover) {
     const unsignedBlock = block || (yield that.nextBlock(manualValues));
     const current = yield dal.getCurrentBlockOrNull();
     const version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
-    const trialLevel = trial || (yield rules.HELPERS.getTrialLevel(version, selfPubkey, mainContext));
+    const trialLevel = trial || (yield mainContext.getIssuerPersonalizedDifficulty(version, selfPubkey));
     return prover.prove(unsignedBlock, trialLevel, (manualValues && manualValues.time) || null);
   });
 
@@ -411,7 +412,8 @@ function BlockGenerator(mainContext, prover) {
   const createBlock = (current, joinData, leaveData, updates, revocations, exclusions, transactions, manualValues) => {
     return co(function *() {
 
-      const maxLenOfBlock = yield rules.HELPERS.getMaxBlockSize(dal);
+      const vHEAD = yield mainContext.getVirtualHeadCopy();
+      const maxLenOfBlock = indexer.DUP_HELPERS.getMaxBlockSize(vHEAD);
       let blockLen = 0;
       // Revocations have an impact on exclusions
       revocations.forEach((idty) => exclusions.push(idty.pubkey));
@@ -570,7 +572,7 @@ function BlockGenerator(mainContext, prover) {
       /**
        * Finally handle the Universal Dividend
        */
-      block.powMin = block.number == 0 ? conf.powMin || 0 : yield rules.HELPERS.getPoWMin(block.version, block.number, conf, dal);
+      block.powMin = (yield mainContext.getVirtualHeadCopy()).powMin;
       // Universal Dividend
       const nextUD = yield rules.HELPERS.getNextUD(dal, conf, block.version, block.medianTime, current, block.membersCount);
       if (nextUD) {

@@ -140,7 +140,7 @@ function Node (dbName, options) {
             block: function(callback){
               co(function *() {
                 const block2 = yield that.server.BlockchainService.generateNext(params);
-                const trial2 = yield rules.HELPERS.getTrialLevel(block2.version, that.server.keyPair.publicKey, that.server.getBcContext());
+                const trial2 = yield that.server.getBcContext().getIssuerPersonalizedDifficulty(block2.version, that.server.keyPair.publicKey);
                 return that.server.BlockchainService.makeNextBlock(block2, trial2, params);
               })
                 .then((block) => callback(null, block))

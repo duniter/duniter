@@ -49,7 +49,7 @@ function getDAL(overrides) {
   }, overrides);
 }
 
-describe("Block global coherence:", function(){
+describe.skip("Block global coherence:", function(){
 
   it('a valid block should not have any error', validate(blocks.VALID_ROOT, getDAL(), {
     getIssuerPersonalizedDifficulty: () => Q(1),

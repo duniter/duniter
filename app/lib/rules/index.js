@@ -77,9 +77,6 @@ rules.ALIAS = {
   }),
 
   ALL_GLOBAL: (block, conf, dal, bcContext) => co(function *() {
-    yield rules.GLOBAL.checkNumber(block, dal);
-    yield rules.GLOBAL.checkVersion(block, bcContext);
-    yield rules.GLOBAL.checkBlockLength(block, dal);
     yield rules.GLOBAL.checkPreviousHash(block, dal);
     yield rules.GLOBAL.checkPreviousIssuer(block, dal);
     yield rules.GLOBAL.checkIssuerIsMember(block, dal);
@@ -109,17 +106,12 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkCertificationsDelayIsRespected(block, conf, dal);
     yield rules.GLOBAL.checkCertificationsPeriodIsRespected(block, conf, dal);
     yield rules.GLOBAL.checkMembersCountIsGood(block, dal);
-    yield rules.GLOBAL.checkPoWMin(block, conf, dal);
-    yield rules.GLOBAL.checkProofOfWork(block, bcContext);
     yield rules.GLOBAL.checkUD(block, conf, dal);
     yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
     yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   }),
 
   ALL_GLOBAL_WITHOUT_POW: (block, conf, dal, bcContext) => co(function *() {
-    yield rules.GLOBAL.checkNumber(block, dal);
-    yield rules.GLOBAL.checkVersion(block, bcContext);
-    yield rules.GLOBAL.checkBlockLength(block, dal);
     yield rules.GLOBAL.checkPreviousHash(block, dal);
     yield rules.GLOBAL.checkPreviousIssuer(block, dal);
     yield rules.GLOBAL.checkIssuerIsMember(block, dal);
@@ -149,7 +141,6 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkCertificationsDelayIsRespected(block, conf, dal);
     yield rules.GLOBAL.checkCertificationsPeriodIsRespected(block, conf, dal);
     yield rules.GLOBAL.checkMembersCountIsGood(block, dal);
-    yield rules.GLOBAL.checkPoWMin(block, conf, dal);
     yield rules.GLOBAL.checkUD(block, conf, dal);
     yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
     yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);

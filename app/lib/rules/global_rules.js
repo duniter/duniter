@@ -21,67 +21,6 @@ let rules = {};
 
 rules.FUNCTIONS = {
 
-  checkVersion: (block, bcContext) => co(function *() {
-    const HEAD_1 = yield bcContext.getHEAD_1();
-    if (!indexer.ruleVersion(block, HEAD_1)) {
-      throw Error('Protocol: version rule');
-    }
-  }),
-
-  checkBlockLength: (block, dal) => co(function *() {
-    if (block.len > 500) {
-      const maxSize = yield rules.HELPERS.getMaxBlockSize(dal);
-      if (block.len > maxSize) {
-        throw Error('Block size is too high');
-      }
-    } else {
-      // There is no problem with blocks <= 500 lines
-      return true;
-    }
-  }),
-
-  checkNumber: (block, dal) => co(function *() {
-    let current = yield dal.getCurrentBlockOrNull();
-    if (!current && block.number != 0) {
-      throw Error('Root block required first');
-    }
-    else if (current && block.number <= current.number) {
-      throw Error('Too late for this block');
-    }
-    else if (current && block.number > current.number + 1) {
-      throw Error('Too early for this block');
-    }
-    return true;
-  }),
-
-  checkPoWMin: (block, conf, dal) => co(function *() {
-    if (block.number > 0) {
-      let correctPowMin = yield getPoWMinFor(block.version, block.number, conf, dal);
-      if (block.powMin < correctPowMin) {
-        throw Error('PoWMin value must be incremented');
-      }
-      else if (correctPowMin < block.powMin) {
-        throw Error('PoWMin value must be decremented');
-      }
-    }
-    return true;
-  }),
-
-  checkProofOfWork: (block, bcContext) => co(function *() {
-    // Compute exactly how much zeros are required for this block's issuer
-    let difficulty = yield getTrialLevel(block.version, block.issuer, bcContext);
-    const remainder = difficulty % 16;
-    const nbZerosReq = Math.max(0, (difficulty - remainder) / 16);
-    const highMark = constants.PROOF_OF_WORK.UPPER_BOUND[remainder];
-    const powRegexp = new RegExp('^0{' + nbZerosReq + '}' + '[0-' + highMark + ']');
-    if (!block.hash.match(powRegexp)) {
-      const givenZeros = Math.max(0, Math.min(nbZerosReq, block.hash.match(/^0*/)[0].length));
-      const c = block.hash.substr(givenZeros, 1);
-      throw Error('Wrong proof-of-work level: given ' + givenZeros + ' zeros and \'' + c + '\', required was ' + nbZerosReq + ' zeros and an hexa char between [0-' + highMark + ']');
-    }
-    return true;
-  }),
-
   checkUD: (block, conf, dal) => co(function *() {
     let current = yield dal.getCurrentBlockOrNull();
     let nextUD = yield rules.HELPERS.getNextUD(dal, conf, block.version, block.medianTime, current, block.membersCount);
@@ -592,10 +531,6 @@ rules.HELPERS = {
     }
   }),
 
-  getTrialLevel: (version, issuer, bcContext) => getTrialLevel(version, issuer, bcContext),
-
-  getPoWMin: (version, blockNumber, conf, dal) => getPoWMinFor(version, blockNumber, conf, dal),
-
   getMedianTime: (blockNumber, conf, dal) => getMedianTime(blockNumber, conf, dal),
 
   checkExistsUserID: (uid, dal) => dal.getWrittenIdtyByUID(uid),
@@ -745,16 +680,6 @@ rules.HELPERS = {
       }
     }
     return frameVar;
-  }),
-
-  getMaxBlockSize: (dal) => co(function *() {
-    const current = yield dal.getCurrentBlockOrNull();
-    const start = current ? current.number - current.issuersCount : 0;
-    const end = current ? current.number : 0;
-    const blocks = yield dal.getBlocksBetween(start, end);
-    const avgSize = blocks.length ? blocks.reduce((lenSum, b) => lenSum + b.len, 0) / blocks.length : 0;
-    const maxSize = Math.ceil(1.1 * avgSize);
-    return Math.max(500, maxSize);
   })
 };
 
@@ -929,70 +854,6 @@ function getNodeIDfromPubkey(nodesCache, pubkey, dal) {
       nodesCache[pubkey] = toNode;
     }
     return toNode;
-  });
-}
-
-function getTrialLevel (version, issuer, bcContext) {
-  return bcContext.getIssuerPersonalizedDifficulty(version, issuer);
-}
-
-/**
- * Deduce the PoWMin field for a given block number
- */
-function getPoWMinFor (blockVersion, blockNumber, conf, dal) {
-  return Q.Promise(function(resolve, reject){
-    if (blockNumber == 0) {
-      reject('Cannot deduce PoWMin for block#0');
-    } else if (blockNumber % conf.dtDiffEval != 0) {
-      co(function *() {
-        const previous = yield dal.getBlock(blockNumber - 1);
-        return previous.powMin;
-      })
-        .then(resolve)
-        .catch(function(err) {
-          reject(err);
-          throw err;
-        });
-    } else {
-      co(function *() {
-        const previous = yield dal.getBlock(blockNumber - 1);
-        const medianTime = yield getMedianTime(blockNumber, conf, dal);
-        const speedRange = Math.min(conf.dtDiffEval, blockNumber);
-        const lastDistant = yield dal.getBlock(Math.max(0, blockNumber - speedRange));
-        // Compute PoWMin value
-        const duration = medianTime - lastDistant.medianTime;
-        const speed = speedRange / duration;
-        const ratio = blockVersion > 3 ? constants.POW_DIFFICULTY_RANGE_RATIO_V4 : constants.POW_DIFFICULTY_RANGE_RATIO_V3;
-        const maxGenTime = Math.ceil(conf.avgGenTime * ratio);
-        const minGenTime = Math.floor(conf.avgGenTime / ratio);
-        const maxSpeed = 1.0 / minGenTime;
-        const minSpeed = 1.0 / maxGenTime;
-        // logger.debug('Current speed is', speed, '(' + conf.dtDiffEval + '/' + duration + ')', 'and must be [', minSpeed, ';', maxSpeed, ']');
-        if (speed >= maxSpeed) {
-          // Must increase difficulty
-          if ((previous.powMin + 2) % 16 == 0) {
-            // Avoid (16*n - 1) value
-            resolve(previous.powMin + 2);
-          } else {
-            resolve(previous.powMin + 1);
-          }
-        }
-        else if (speed <= minSpeed) {
-          // Must decrease difficulty
-          if (previous.powMin % 16 == 0) {
-            // Avoid (16*n - 1) value
-            resolve(Math.max(0, previous.powMin - 2));
-          } else {
-            resolve(Math.max(0, previous.powMin - 1));
-          }
-        }
-        else {
-          // Must not change difficulty
-          resolve(previous.powMin);
-        }
-      })
-        .catch(reject);
-    }
   });
 }
 

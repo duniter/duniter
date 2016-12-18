@@ -383,6 +383,13 @@ const indexer = module.exports = {
       HEAD.previousIssuer = null;
     }
 
+    // BR_G03
+    if (HEAD.number > 0) {
+      HEAD.issuerIsMember = reduce(yield dal.iindexDAL.reducable(HEAD.issuer)).member;
+    } else {
+      HEAD.issuerIsMember = reduce(_.where(iindex, { pub: HEAD.issuer })).member;
+    }
+
     // BR_G04
     yield indexer.prepareIssuersCount(HEAD, range, HEAD_1);
 
@@ -1016,6 +1023,9 @@ const indexer = module.exports = {
 
   // BR_G53
   rulePreviousIssuer: (block, HEAD) => block.previousIssuer == HEAD.previousIssuer || (!block.previousIssuer && !HEAD.previousIssuer),
+
+  // BR_G101
+  ruleIssuerIsMember: (HEAD) => HEAD.issuerIsMember == true,
 
   // BR_G54
   ruleIssuersCount: (block, HEAD) => {

@@ -77,7 +77,6 @@ rules.ALIAS = {
   }),
 
   ALL_GLOBAL: (block, conf, dal, bcContext) => co(function *() {
-    yield rules.GLOBAL.checkIssuerIsMember(block, dal);
     yield rules.GLOBAL.checkIssuersFrame(block, conf, dal);
     yield rules.GLOBAL.checkIssuersFrameVar(block, conf, dal);
     yield rules.GLOBAL.checkDifferentIssuersCount(block, conf, dal);
@@ -103,13 +102,11 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkCertificationsAreMadeToNonLeaver(block, dal);
     yield rules.GLOBAL.checkCertificationsDelayIsRespected(block, conf, dal);
     yield rules.GLOBAL.checkCertificationsPeriodIsRespected(block, conf, dal);
-    yield rules.GLOBAL.checkMembersCountIsGood(block, dal);
     yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
     yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   }),
 
   ALL_GLOBAL_WITHOUT_POW: (block, conf, dal, bcContext) => co(function *() {
-    yield rules.GLOBAL.checkIssuerIsMember(block, dal);
     yield rules.GLOBAL.checkIssuersFrame(block, conf, dal);
     yield rules.GLOBAL.checkIssuersFrameVar(block, conf, dal);
     yield rules.GLOBAL.checkDifferentIssuersCount(block, conf, dal);
@@ -135,7 +132,6 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkCertificationsAreMadeToNonLeaver(block, dal);
     yield rules.GLOBAL.checkCertificationsDelayIsRespected(block, conf, dal);
     yield rules.GLOBAL.checkCertificationsPeriodIsRespected(block, conf, dal);
-    yield rules.GLOBAL.checkMembersCountIsGood(block, dal);
     yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
     yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   })

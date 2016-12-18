@@ -1476,6 +1476,16 @@ If `HEAD.number > 0`:
 Else:
 
     HEAD.previousIssuer = null
+    
+###### BR_G100 - HEAD.issuerIsMember
+
+If `HEAD.number > 0`:
+
+    HEAD.issuerIsMember = REDUCE(GLOBAL_IINDEX[pub=HEAD.issuer]).member
+
+Else:
+
+    HEAD.issuerIsMember = REDUCE(LOCAL_IINDEX[pub=HEAD.issuer]).member
 
 ###### BR_G04 - HEAD.issuersCount
     
@@ -2056,7 +2066,13 @@ Rule:
 
 Rule:
 
-    PreviousIssuer = HEAD.previousIssuer
+    PreviousHash = HEAD.previousHash
+
+###### BR_G101 - Issuer
+
+Rule:
+
+    HEAD.issuerIsMember == true
 
 ###### BR_G54 - DifferentIssuersCount
 

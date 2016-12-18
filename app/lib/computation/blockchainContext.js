@@ -129,6 +129,8 @@ function BlockchainContext() {
       if (indexer.rulePreviousHash(block, HEAD) === false) throw Error('rulePreviousHash');
       // BR_G53
       if (indexer.rulePreviousIssuer(block, HEAD) === false) throw Error('rulePreviousIssuer');
+      // BR_G101
+      if (indexer.ruleIssuerIsMember(HEAD) === false) throw Error('ruleIssuerIsMember');
       // BR_G54
       if (indexer.ruleIssuersCount(block, HEAD) === false) throw Error('ruleIssuersCount');
       // BR_G55

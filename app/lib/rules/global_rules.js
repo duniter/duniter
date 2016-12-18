@@ -20,24 +20,6 @@ let rules = {};
 
 rules.FUNCTIONS = {
 
-  checkMembersCountIsGood: (block, dal) => co(function *() {
-    let current = yield dal.getCurrentBlockOrNull();
-    const currentCount = current ? current.membersCount : 0;
-    const constiation = block.joiners.length - block.excluded.length;
-    if (block.membersCount != currentCount + constiation) {
-      throw Error('Wrong members count');
-    }
-    return true;
-  }),
-
-  checkIssuerIsMember: (block, dal) => co(function *() {
-    let isMember = block.number == 0 ? isLocalMember(block.issuer, block) : yield dal.isMember(block.issuer);
-    if (!isMember) {
-      throw Error('Issuer is not a member');
-    }
-    return true;
-  }),
-
   checkDifferentIssuersCount: (block, conf, dal) => co(function *() {
     if (block.version > 2) {
       const isGood = block.issuersCount == (yield rules.HELPERS.getDifferentIssuers(dal));

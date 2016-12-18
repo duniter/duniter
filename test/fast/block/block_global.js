@@ -49,6 +49,13 @@ function getDAL(overrides) {
   }, overrides);
 }
 
+/**
+ * TODO: reimplement tests according to new convention:
+ *
+ *   - Name: protocol-brg<number>-<title>.js
+ *   - Content: see existing tests
+ */
+
 describe.skip("Block global coherence:", function(){
 
   it('a valid block should not have any error', validate(blocks.VALID_ROOT, getDAL(), {
@@ -76,71 +83,6 @@ describe.skip("Block global coherence:", function(){
     getvHEAD_1: () => Q({ version : 2 })
   }, function (err) {
     should.not.exist(err);
-  }));
-
-  it('a V2 number cannot follow V3', test(rules.GLOBAL.checkVersion, blocks.V2_CANNOT_FOLLOW_V3, {
-    bcContext: {
-      getHEAD_1: () => Q({ version : 3 })
-    }
-  }, function (err) {
-    should.exist(err);
-    err.message.should.equal('Protocol: version rule');
-  }));
-
-  it('a V2 number cannot follow V4', test(rules.GLOBAL.checkVersion, blocks.V2_CANNOT_FOLLOW_V3, {
-    bcContext: {
-      getHEAD_1: () => Q({ version : 4 })
-    }
-  }, function (err) {
-    should.exist(err);
-    err.message.should.equal('Protocol: version rule');
-  }));
-
-  it('a V3 number cannot follow V4', test(rules.GLOBAL.checkVersion, blocks.V3_CANNOT_FOLLOW_V4, {
-    bcContext: {
-      getHEAD_1: () => Q({ version : 4 })
-    }
-  }, function (err) {
-    should.exist(err);
-    err.message.should.equal('Protocol: version rule');
-  }));
-
-  it('a V3 block has a limited size', test(rules.GLOBAL.checkBlockLength, blocks.V3_HAS_MAXIMUM_SIZE, {
-    getCurrentBlockOrNull: () => Q({ version: 3, len: 200 }),
-    getBlocksBetween: () => Q([
-      { len: 450 },{ len: 500 },{ len: 530 }
-    ])
-  }, function (err) {
-    should.exist(err);
-    err.message.should.equal('Block size is too high');
-  }));
-
-  it('a block with positive number while no root exists should fail', test(rules.GLOBAL.checkNumber, blocks.ROOT_BLOCK_REQUIRED, {
-    getCurrentBlockOrNull: () => Q(null)
-  }, function (err) {
-    should.exist(err);
-    err.message.should.equal('Root block required first');
-  }));
-
-  it('a block with same number as current should fail', test(rules.GLOBAL.checkNumber, blocks.SAME_BLOCK_NUMBER, {
-    getCurrentBlockOrNull: () => Q({ number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 })
-  }, function (err) {
-    should.exist(err);
-    err.message.should.equal('Too late for this block');
-  }));
-
-  it('a block with older number than current should fail', test(rules.GLOBAL.checkNumber, blocks.OLD_BLOCK_NUMBER, {
-    getCurrentBlockOrNull: () => Q({ number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 })
-  }, function (err) {
-    should.exist(err);
-    err.message.should.equal('Too late for this block');
-  }));
-
-  it('a block with too far future number than current should fail', test(rules.GLOBAL.checkNumber, blocks.FAR_FUTURE_BLOCK_NUMBER, {
-    getCurrentBlockOrNull: () => Q({ number: 50, hash: '4C8800825C44A22F230AFC0D140BF1930331A686899D16EBE4C58C9F34C609E8', issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', membersCount: 3 })
-  }, function (err) {
-    should.exist(err);
-    err.message.should.equal('Too early for this block');
   }));
 
   it('a block with wrong PreviousHash should fail', test(rules.GLOBAL.checkPreviousHash, blocks.WRONG_PREVIOUS_HASH, {

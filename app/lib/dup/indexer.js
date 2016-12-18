@@ -357,11 +357,7 @@ const indexer = module.exports = {
     }
 
     // BR_G01
-    if (HEAD_1) {
-      HEAD.number = HEAD_1.number + 1;
-    } else {
-      HEAD.number = 0;
-    }
+    indexer.prepareNumber(HEAD, HEAD_1);
 
     // BR_G02
     if (HEAD.number > 0) {
@@ -804,6 +800,15 @@ const indexer = module.exports = {
 
     return HEAD;
   }),
+
+  // BR_G01
+  prepareNumber: (HEAD, HEAD_1) => {
+    if (HEAD_1) {
+      HEAD.number = HEAD_1.number + 1;
+    } else {
+      HEAD.number = 0;
+    }
+  },
 
   // BR_G04
   prepareIssuersCount: (HEAD, range, HEAD_1) => co(function*() {

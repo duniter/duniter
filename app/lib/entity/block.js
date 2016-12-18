@@ -162,33 +162,6 @@ function Block(json) {
     return found;
   };
 
-  this.isLeaving = (pubkey) => {
-    let i = 0;
-    let found = false;
-    while (!found && i < this.leavers.length) {
-      if (this.leavers[i].match(new RegExp('^' + pubkey)))
-        found = true;
-      i++;
-    }
-    while (!found && i < this.excluded.length) {
-      if (this.excluded[i].match(new RegExp('^' + pubkey)))
-        found = true;
-      i++;
-    }
-    return found;
-  };
-
-  this.isJoining = (pubkey) => {
-    let i = 0;
-    let found = false;
-    while (!found && i < this.joiners.length) {
-      if (this.joiners[i].match(new RegExp('^' + pubkey)))
-        found = true;
-      i++;
-    }
-    return found;
-  };
-
   this.getTransactions = () => {
     const transactions = [];
     const version = this.version;

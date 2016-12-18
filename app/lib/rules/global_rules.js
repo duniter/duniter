@@ -20,45 +20,12 @@ let rules = {};
 
 rules.FUNCTIONS = {
 
-  checkCertificationsAreMadeByMembers: (block, dal) => co(function *() {
-    for (const obj of block.certifications) {
-      let cert = Certification.statics.fromInline(obj);
-      let isMember = yield isAMember(cert.from, block, dal);
-      if (!isMember) {
-        throw Error('Certification from non-member');
-      }
-    }
-    return true;
-  }),
-
   checkCertificationsAreValid: (block, conf, dal) => co(function *() {
     for (const obj of block.certifications) {
       let cert = Certification.statics.fromInline(obj);
       yield checkCertificationIsValid(block, cert, (b, pub) => {
         return getGlobalIdentity(b, pub, dal);
       }, conf, dal);
-    }
-    return true;
-  }),
-
-  checkCertificationsAreMadeToMembers: (block, dal) => co(function *() {
-    for (const obj of block.certifications) {
-      let cert = Certification.statics.fromInline(obj);
-      let isMember = yield isMemberOrJoiner(cert.to, block, dal);
-      if (!isMember) {
-        throw Error('Certification to non-member');
-      }
-    }
-    return true;
-  }),
-
-  checkCertificationsAreMadeToNonLeaver: (block, dal) => co(function *() {
-    for (const obj of block.certifications) {
-      let cert = Certification.statics.fromInline(obj);
-      let isLeaving = yield dal.isLeaving(cert.to);
-      if (isLeaving) {
-        throw Error('Certification to leaver');
-      }
     }
     return true;
   }),
@@ -477,23 +444,6 @@ function getGlobalIdentity (block, pubkey, dal) {
     }
     return dal.getWrittenIdtyByPubkey(pubkey);
   });
-}
-
-function isAMember(pubkey, block, dal) {
-  if (block.number == 0) {
-    return Q(isLocalMember(pubkey, block));
-  } else {
-    return dal.isMember(pubkey);
-  }
-}
-
-function isMemberOrJoiner(pubkey, block, dal) {
-  let isJoiner = isLocalMember(pubkey, block);
-  return isJoiner ? Q(isJoiner) : dal.isMember(pubkey);
-}
-
-function isLocalMember(pubkey, block) {
-  return block.isJoining(pubkey);
 }
 
 function checkMSTarget (ms, block, conf, dal) {

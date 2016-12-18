@@ -431,11 +431,6 @@ function FileDAL(params) {
     }
   });
 
-  this.isLeaving = (pubkey) => co(function *() {
-    let idty = yield that.idtyDAL.getFromPubkey(pubkey);
-    return idty && idty.leaving || false;
-  });
-
   this.isMemberAndNonLeaver = (pubkey) => co(function*() {
     try {
       const idty = yield that.idtyDAL.getFromPubkey(pubkey);

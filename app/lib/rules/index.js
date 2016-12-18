@@ -92,10 +92,7 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkExcluded(block, conf, dal);
     yield rules.GLOBAL.checkKickedMembersAreExcluded(block, conf, dal);
     yield rules.GLOBAL.checkCertificationsAreWritable(block, conf, dal);
-    yield rules.GLOBAL.checkCertificationsAreMadeByMembers(block, dal);
     yield rules.GLOBAL.checkCertificationsAreValid(block, conf, dal);
-    yield rules.GLOBAL.checkCertificationsAreMadeToMembers(block, dal);
-    yield rules.GLOBAL.checkCertificationsAreMadeToNonLeaver(block, dal);
     yield rules.GLOBAL.checkCertificationsDelayIsRespected(block, conf, dal);
     yield rules.GLOBAL.checkCertificationsPeriodIsRespected(block, conf, dal);
     yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
@@ -118,10 +115,7 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkExcluded(block, conf, dal);
     yield rules.GLOBAL.checkKickedMembersAreExcluded(block, conf, dal);
     yield rules.GLOBAL.checkCertificationsAreWritable(block, conf, dal);
-    yield rules.GLOBAL.checkCertificationsAreMadeByMembers(block, dal);
     yield rules.GLOBAL.checkCertificationsAreValid(block, conf, dal);
-    yield rules.GLOBAL.checkCertificationsAreMadeToMembers(block, dal);
-    yield rules.GLOBAL.checkCertificationsAreMadeToNonLeaver(block, dal);
     yield rules.GLOBAL.checkCertificationsDelayIsRespected(block, conf, dal);
     yield rules.GLOBAL.checkCertificationsPeriodIsRespected(block, conf, dal);
     yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);

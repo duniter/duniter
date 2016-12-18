@@ -1422,7 +1422,8 @@ const indexer = module.exports = {
 
   DUP_HELPERS: {
 
-    getMaxBlockSize: (HEAD) => Math.max(500, Math.ceil(1.1 * HEAD.avgBlockSize))
+    getMaxBlockSize: (HEAD) => Math.max(500, Math.ceil(1.1 * HEAD.avgBlockSize)),
+    checkPeopleAreNotOudistanced: checkPeopleAreNotOudistanced
   }
 };
 

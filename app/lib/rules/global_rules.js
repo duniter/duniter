@@ -6,6 +6,7 @@ const _              = require('underscore');
 const constants      = require('../constants');
 const keyring         = require('../crypto/keyring');
 const rawer          = require('../ucp/rawer');
+const indexer        = require('../dup/indexer');
 const Identity       = require('../entity/identity');
 const Membership     = require('../entity/membership');
 const Certification  = require('../entity/certification');
@@ -48,35 +49,6 @@ rules.FUNCTIONS = {
     }
     return true;
   }),
-
-  checkJoinersHaveEnoughCertifications: (block, conf, dal) => co(function *() {
-    if (block.number > 0) {
-      const newLinks = getNewLinks(block);
-      for (const obj of block.joiners) {
-        let ms = Membership.statics.fromInline(obj);
-        let links = yield dal.getValidLinksTo(ms.issuer);
-        let nbCerts = links.length + (newLinks[ms.issuer] || []).length;
-        if (nbCerts < conf.sigQty) {
-          throw Error('Joiner/Active does not gathers enough certifications');
-        }
-      }
-    }
-    return true;
-  }),
-
-  checkJoinersAreNotOudistanced: (block, conf, dal) => checkPeopleAreNotOudistanced(
-    block.version,
-    block.joiners.map((inlineMS) => Membership.statics.fromInline(inlineMS).issuer),
-    getNewLinks(block),
-    block.identities.map((inline) => Identity.statics.fromInline(inline).pubkey),
-    conf, dal),
-
-  checkActivesAreNotOudistanced: (block, conf, dal) => checkPeopleAreNotOudistanced(
-    block.version,
-    block.actives.map((inlineMS) => Membership.statics.fromInline(inlineMS).issuer),
-    getNewLinks(block),
-    block.identities.map((inline) => Identity.statics.fromInline(inline).pubkey),
-    conf, dal),
 
   checkJoinersAreNotRevoked: (block, conf, dal) => co(function *() {
     for (const obj of block.joiners) {
@@ -200,8 +172,7 @@ rules.HELPERS = {
       return Q(false);
     }
     try {
-      yield checkPeopleAreNotOudistanced(version, [member], newLinks, newcomers, conf, dal);
-      return false;
+      return indexer.DUP_HELPERS.checkPeopleAreNotOudistanced(version, [member], newLinks, newcomers, conf, dal);
     } catch (e) {
       return true;
     }
@@ -313,78 +284,6 @@ function checkCertificationIsValid (block, cert, findIdtyFunc, conf, dal) {
       }
     }
   });
-}
-
-function checkPeopleAreNotOudistanced (version, pubkeys, newLinks, newcomers, conf, dal) {
-  return co(function *() {
-    let wotb = dal.wotb;
-    let current = yield dal.getCurrentBlockOrNull();
-    let membersCount = current ? current.membersCount : 0;
-    // TODO: make a temporary copy of the WoT in RAM
-    // We add temporarily the newcomers to the WoT, to integrate their new links
-    let nodesCache = newcomers.reduce((map, pubkey) => {
-      let nodeID = wotb.addNode();
-      map[pubkey] = nodeID;
-      wotb.setEnabled(false, nodeID); // These are not members yet
-      return map;
-    }, {});
-    // Add temporarily the links to the WoT
-    let tempLinks = [];
-    let toKeys = _.keys(newLinks);
-    for (const toKey of toKeys) {
-      let toNode = yield getNodeIDfromPubkey(nodesCache, toKey, dal);
-      for (const fromKey of newLinks[toKey]) {
-        let fromNode = yield getNodeIDfromPubkey(nodesCache, fromKey, dal);
-        tempLinks.push({ from: fromNode, to: toNode });
-      }
-    }
-    tempLinks.forEach((link) => wotb.addLink(link.from, link.to));
-    // Checking distance of each member against them
-    let error;
-    for (const pubkey of pubkeys) {
-      let nodeID = yield getNodeIDfromPubkey(nodesCache, pubkey, dal);
-      let dSen;
-      if (version <= 3) {
-        dSen = Math.ceil(constants.CONTRACT.DSEN_P * Math.exp(Math.log(membersCount) / conf.stepMax));
-      } else {
-        dSen = Math.ceil(Math.pow(membersCount, 1 / conf.stepMax));
-      }
-      let isOutdistanced = wotb.isOutdistanced(nodeID, dSen, conf.stepMax, conf.xpercent);
-      if (isOutdistanced) {
-        error = Error('Joiner/Active is outdistanced from WoT');
-        break;
-      }
-    }
-    // Undo temp links/nodes
-    tempLinks.forEach((link) => wotb.removeLink(link.from, link.to));
-    newcomers.forEach(() => wotb.removeNode());
-    if (error) {
-      throw error;
-    }
-  });
-}
-
-function getNodeIDfromPubkey(nodesCache, pubkey, dal) {
-  return co(function *() {
-    let toNode = nodesCache[pubkey];
-    // Eventually cache the target nodeID
-    if (toNode === null || toNode === undefined) {
-      let idty = yield dal.getWrittenIdtyByPubkey(pubkey);
-      toNode = idty.wotb_id;
-      nodesCache[pubkey] = toNode;
-    }
-    return toNode;
-  });
-}
-
-function getNewLinks (block) {
-  const newLinks = {};
-  block.certifications.forEach(function(inlineCert){
-    const cert = Certification.statics.fromInline(inlineCert);
-    newLinks[cert.to] = newLinks[cert.to] || [];
-    newLinks[cert.to].push(cert.from);
-  });
-  return newLinks;
 }
 
 module.exports = rules;

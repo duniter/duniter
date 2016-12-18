@@ -79,8 +79,6 @@ rules.ALIAS = {
   ALL_GLOBAL: (block, conf, dal, bcContext) => co(function *() {
     yield rules.GLOBAL.checkIdentityUnicity(block, conf, dal);
     yield rules.GLOBAL.checkPubkeyUnicity(block, conf, dal);
-    yield rules.GLOBAL.checkIdentitiesAreWritable(block, conf, dal);
-    yield rules.GLOBAL.checkMembershipsAreWritable(block, conf, dal);
     yield rules.GLOBAL.checkJoiners(block, conf, dal);
     yield rules.GLOBAL.checkJoinersHaveEnoughCertifications(block, conf, dal);
     yield rules.GLOBAL.checkJoinersAreNotOudistanced(block, conf, dal);
@@ -91,7 +89,6 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkJoinersAreNotRevoked(block, conf, dal);
     yield rules.GLOBAL.checkExcluded(block, conf, dal);
     yield rules.GLOBAL.checkKickedMembersAreExcluded(block, conf, dal);
-    yield rules.GLOBAL.checkCertificationsAreWritable(block, conf, dal);
     yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
     yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   }),
@@ -99,8 +96,6 @@ rules.ALIAS = {
   ALL_GLOBAL_WITHOUT_POW: (block, conf, dal, bcContext) => co(function *() {
     yield rules.GLOBAL.checkIdentityUnicity(block, conf, dal);
     yield rules.GLOBAL.checkPubkeyUnicity(block, conf, dal);
-    yield rules.GLOBAL.checkIdentitiesAreWritable(block, conf, dal);
-    yield rules.GLOBAL.checkMembershipsAreWritable(block, conf, dal);
     yield rules.GLOBAL.checkJoiners(block, conf, dal);
     yield rules.GLOBAL.checkJoinersHaveEnoughCertifications(block, conf, dal);
     yield rules.GLOBAL.checkJoinersAreNotOudistanced(block, conf, dal);
@@ -111,7 +106,6 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkJoinersAreNotRevoked(block, conf, dal);
     yield rules.GLOBAL.checkExcluded(block, conf, dal);
     yield rules.GLOBAL.checkKickedMembersAreExcluded(block, conf, dal);
-    yield rules.GLOBAL.checkCertificationsAreWritable(block, conf, dal);
     yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
     yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   })

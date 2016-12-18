@@ -49,41 +49,6 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkCertificationsAreWritable: (block, conf, dal) => co(function *() {
-    let current = yield dal.getCurrentBlockOrNull();
-    for (const obj of block.certifications) {
-      let cert = Certification.statics.fromInline(obj);
-      if (current) {
-        // Because the window rule does not apply on initial certifications
-        let basedBlock = yield dal.getBlock(cert.block_number);
-        // Check if writable
-        let duration = current.medianTime - parseInt(basedBlock.medianTime);
-        if (duration > conf.sigWindow) {
-          throw Error('Certification is too old and cannot be written');
-        }
-      }
-    }
-    return true;
-  }),
-
-  checkMembershipsAreWritable: (block, conf, dal) => co(function *() {
-    let current = yield dal.getCurrentBlockOrNull();
-    let fields = ['joiners', 'actives', 'leavers'];
-    for (const field of fields) {
-      for (const obj of block[field]) {
-        let ms = Membership.statics.fromInline(obj);
-        if (ms.block != constants.BLOCK.SPECIAL_BLOCK) {
-          let msBasedBlock = yield dal.getBlock(ms.block);
-          let age = current.medianTime - msBasedBlock.medianTime;
-          if (age > conf.msWindow) {
-            throw 'Too old membership';
-          }
-        }
-      }
-    }
-    return true;
-  }),
-
   checkIdentityUnicity: (block, conf, dal) => co(function *() {
     for (const obj of block.identities) {
       let idty = Identity.statics.fromInline(obj);

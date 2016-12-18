@@ -412,7 +412,8 @@ function BlockGenerator(mainContext, prover) {
   const createBlock = (current, joinData, leaveData, updates, revocations, exclusions, transactions, manualValues) => {
     return co(function *() {
 
-      const vHEAD = yield mainContext.getVirtualHeadCopy();
+      const vHEAD = yield mainContext.getvHeadCopy();
+      const vHEAD_1 = yield mainContext.getvHEAD_1();
       const maxLenOfBlock = indexer.DUP_HELPERS.getMaxBlockSize(vHEAD);
       let blockLen = 0;
       // Revocations have an impact on exclusions
@@ -554,6 +555,8 @@ function BlockGenerator(mainContext, prover) {
       // Final number of members
       block.membersCount = previousCount + block.joiners.length - block.excluded.length;
 
+      vHEAD.membersCount = block.membersCount;
+
       /*****
        * Priority 4: transactions
        */
@@ -572,7 +575,14 @@ function BlockGenerator(mainContext, prover) {
       /**
        * Finally handle the Universal Dividend
        */
-      block.powMin = (yield mainContext.getVirtualHeadCopy()).powMin;
+      block.powMin = vHEAD.powMin;
+
+      // BR_G13
+      indexer.prepareDividend(vHEAD, vHEAD_1, conf);
+
+      // BR_G14
+      indexer.prepareUnitBase(vHEAD, vHEAD_1, conf);
+
       // Universal Dividend
       if (vHEAD.new_dividend) {
         block.dividend = vHEAD.dividend;

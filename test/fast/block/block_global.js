@@ -53,7 +53,7 @@ describe.skip("Block global coherence:", function(){
 
   it('a valid block should not have any error', validate(blocks.VALID_ROOT, getDAL(), {
     getIssuerPersonalizedDifficulty: () => Q(1),
-    getHEAD_1: () => Q({ version : 2 })
+    getvHEAD_1: () => Q({ version : 2 })
   }, function (err) {
     should.not.exist(err);
   }));
@@ -73,7 +73,7 @@ describe.skip("Block global coherence:", function(){
     getBlocksBetween: () => Q([{time:1411776000},{time:1411776000},{time:1411776000}])
   }), {
     getIssuerPersonalizedDifficulty: () => Q(2),
-    getHEAD_1: () => Q({ version : 2 })
+    getvHEAD_1: () => Q({ version : 2 })
   }, function (err) {
     should.not.exist(err);
   }));

@@ -77,8 +77,6 @@ rules.ALIAS = {
   }),
 
   ALL_GLOBAL: (block, conf, dal, bcContext) => co(function *() {
-    yield rules.GLOBAL.checkPreviousHash(block, dal);
-    yield rules.GLOBAL.checkPreviousIssuer(block, dal);
     yield rules.GLOBAL.checkIssuerIsMember(block, dal);
     yield rules.GLOBAL.checkIssuersFrame(block, conf, dal);
     yield rules.GLOBAL.checkIssuersFrameVar(block, conf, dal);
@@ -111,8 +109,6 @@ rules.ALIAS = {
   }),
 
   ALL_GLOBAL_WITHOUT_POW: (block, conf, dal, bcContext) => co(function *() {
-    yield rules.GLOBAL.checkPreviousHash(block, dal);
-    yield rules.GLOBAL.checkPreviousIssuer(block, dal);
     yield rules.GLOBAL.checkIssuerIsMember(block, dal);
     yield rules.GLOBAL.checkIssuersFrame(block, conf, dal);
     yield rules.GLOBAL.checkIssuersFrameVar(block, conf, dal);

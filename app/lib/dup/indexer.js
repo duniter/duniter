@@ -425,44 +425,10 @@ const indexer = module.exports = {
     }
 
     // BR_G13
-    if (HEAD.number == 0) {
-      HEAD.dividend = conf.ud0;
-      HEAD.new_dividend = null;
-    } else if (HEAD.udTime != HEAD_1.udTime) {
-      if (HEAD.version == 2) {
-        // DUA
-        const M = HEAD_1.mass;
-        const N = HEAD.membersCount;
-        const previousUB = HEAD_1.unitBase;
-        const previousUD = HEAD_1.dividend;
-        const c = conf.c;
-        HEAD.dividend = Math.ceil(Math.max(previousUD, c * M / Math.pow(10, previousUB) / N));
-        HEAD.new_dividend = HEAD.dividend;
-      }
-      else if (HEAD.version == 3) {
-        // DUB
-        const c = conf.c;
-        HEAD.dividend = parseInt(((1 + c) * HEAD_1.dividend).toFixed(0));
-        HEAD.new_dividend = HEAD.dividend;
-      }
-      else if (HEAD.version >= 4) {
-        // DUG
-        const previousUB = HEAD_1.unitBase;
-        // TODO: ceiling for v1.0
-        HEAD.dividend = Math.round(HEAD_1.dividend + Math.pow(conf.c, 2) * HEAD_1.mass / HEAD.membersCount / Math.pow(10, previousUB));
-        HEAD.new_dividend = HEAD.dividend;
-      }
-    } else {
-      HEAD.dividend = HEAD_1.dividend;
-      HEAD.new_dividend = null;
-    }
+    indexer.prepareDividend(HEAD, HEAD_1, conf);
 
     // BR_G14
-    if (HEAD.dividend >= Math.pow(10, 6)) {
-      HEAD.dividend = Math.ceil(HEAD.dividend / 10);
-      HEAD.new_dividend = HEAD.dividend;
-      HEAD.unitBase = HEAD.unitBase + 1;
-    }
+    indexer.prepareUnitBase(HEAD, HEAD_1, conf);
 
     // BR_G15
     indexer.prepareMass(HEAD, HEAD_1);
@@ -883,6 +849,50 @@ const indexer = module.exports = {
       HEAD.udTime = HEAD_1.udTime + conf.dt;
     } else {
       HEAD.udTime = HEAD_1.udTime;
+    }
+  },
+
+  // BR_G13
+  prepareDividend: (HEAD, HEAD_1, conf) => {
+    if (HEAD.number == 0) {
+      HEAD.dividend = conf.ud0;
+      HEAD.new_dividend = null;
+    } else if (HEAD.udTime != HEAD_1.udTime) {
+      if (HEAD.version == 2) {
+        // DUA
+        const M = HEAD_1.mass;
+        const N = HEAD.membersCount;
+        const previousUB = HEAD_1.unitBase;
+        const previousUD = HEAD_1.dividend;
+        const c = conf.c;
+        HEAD.dividend = Math.ceil(Math.max(previousUD, c * M / Math.pow(10, previousUB) / N));
+        HEAD.new_dividend = HEAD.dividend;
+      }
+      else if (HEAD.version == 3) {
+        // DUB
+        const c = conf.c;
+        HEAD.dividend = parseInt(((1 + c) * HEAD_1.dividend).toFixed(0));
+        HEAD.new_dividend = HEAD.dividend;
+      }
+      else if (HEAD.version >= 4) {
+        // DUG
+        const previousUB = HEAD_1.unitBase;
+        // TODO: ceiling for v1.0
+        HEAD.dividend = parseInt((HEAD_1.dividend + Math.pow(conf.c, 2) * HEAD_1.mass / HEAD.membersCount / Math.pow(10, previousUB)).toFixed(0));
+        HEAD.new_dividend = HEAD.dividend;
+      }
+    } else {
+      HEAD.dividend = HEAD_1.dividend;
+      HEAD.new_dividend = null;
+    }
+  },
+
+  // BR_G14
+  prepareUnitBase: (HEAD) => {
+    if (HEAD.dividend >= Math.pow(10, 6)) {
+      HEAD.dividend = Math.ceil(HEAD.dividend / 10);
+      HEAD.new_dividend = HEAD.dividend;
+      HEAD.unitBase = HEAD.unitBase + 1;
     }
   },
 

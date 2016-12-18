@@ -31,7 +31,7 @@ function BlockchainContext() {
   /**
    * The currently written HEAD, aka. HEAD_1 relatively to incoming HEAD.
    */
-  let HEAD_1;
+  let vHEAD_1;
 
   let HEADrefreshed = Q();
 
@@ -41,11 +41,11 @@ function BlockchainContext() {
    */
   function refreshHead() {
     HEADrefreshed = co(function*() {
-      HEAD_1 = yield dal.head(1);
+      vHEAD_1 = yield dal.head(1);
       // We suppose next block will have same version #, and no particular data in the block (empty index)
       let block;
       // But if no HEAD_1 exist, we must initialize a block with default values
-      if (!HEAD_1) {
+      if (!vHEAD_1) {
         block = {
           version: constants.BLOCK_GENERATED_VERSION,
           time: Math.round(Date.now() / 1000),
@@ -55,7 +55,7 @@ function BlockchainContext() {
           avgBlockSize: 0
         };
       } else {
-        block = { version: HEAD_1.version };
+        block = { version: vHEAD_1.version };
       }
       vHEAD = yield indexer.completeGlobalScope(Block.statics.fromJSON(block).json(), conf, [], dal);
     });
@@ -66,7 +66,7 @@ function BlockchainContext() {
    * Gets a copy of vHEAD, extended with some extra properties.
    * @param props The extra properties to add.
    */
-  this.getVirtualHeadCopy = (props) => co(function*() {
+  this.getvHeadCopy = (props) => co(function*() {
     if (!vHEAD) {
       yield refreshHead();
     }
@@ -82,11 +82,11 @@ function BlockchainContext() {
   /**
    * Get currently written HEAD.
    */
-  this.getHEAD_1 = () => co(function*() {
+  this.getvHEAD_1 = () => co(function*() {
     if (!vHEAD) {
       yield refreshHead();
     }
-    return HEAD_1;
+    return vHEAD_1;
   });
 
   /**
@@ -95,9 +95,9 @@ function BlockchainContext() {
    * @param issuer The issuer we want to get the difficulty level.
    */
   this.getIssuerPersonalizedDifficulty = (version, issuer) => co(function *() {
-    const HEAD = yield that.getVirtualHeadCopy({ version, issuer });
-    yield indexer.preparePersonalizedPoW(HEAD, HEAD_1, dal.range, conf);
-    return HEAD.issuerDiff;
+    const vHEAD = yield that.getvHeadCopy({ version, issuer });
+    yield indexer.preparePersonalizedPoW(vHEAD, vHEAD_1, dal.range, conf);
+    return vHEAD.issuerDiff;
   });
 
   this.setConfDAL = (newConf, newDAL) => {
@@ -220,7 +220,7 @@ function BlockchainContext() {
       block.fork = false;
       yield saveBlockData(currentBlock, block);
       logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));
-      HEAD_1 = vHEAD = HEADrefreshed = null;
+      vHEAD_1 = vHEAD = HEADrefreshed = null;
       return block;
     }
     catch(err) {

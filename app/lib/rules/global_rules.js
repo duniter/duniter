@@ -20,22 +20,6 @@ let rules = {};
 
 rules.FUNCTIONS = {
 
-  checkPreviousHash: (block, dal) => co(function *() {
-    let current = yield dal.getCurrentBlockOrNull();
-    if (current && block.previousHash != current.hash) {
-      throw Error('PreviousHash not matching hash of current block');
-    }
-    return true;
-  }),
-
-  checkPreviousIssuer: (block, dal) => co(function *() {
-    let current = yield dal.getCurrentBlockOrNull();
-    if (current && block.previousIssuer != current.issuer) {
-      throw Error('PreviousIssuer not matching issuer of current block');
-    }
-    return true;
-  }),
-
   checkMembersCountIsGood: (block, dal) => co(function *() {
     let current = yield dal.getCurrentBlockOrNull();
     const currentCount = current ? current.membersCount : 0;

@@ -77,13 +77,9 @@ rules.ALIAS = {
   }),
 
   ALL_GLOBAL: (block, conf, dal, bcContext) => co(function *() {
-    yield rules.GLOBAL.checkJoiners(block, conf, dal);
     yield rules.GLOBAL.checkJoinersHaveEnoughCertifications(block, conf, dal);
     yield rules.GLOBAL.checkJoinersAreNotOudistanced(block, conf, dal);
-    yield rules.GLOBAL.checkActives(block, conf, dal);
     yield rules.GLOBAL.checkActivesAreNotOudistanced(block, conf, dal);
-    yield rules.GLOBAL.checkLeavers(block, conf, dal);
-    yield rules.GLOBAL.checkRevoked(block, conf, dal);
     yield rules.GLOBAL.checkJoinersAreNotRevoked(block, conf, dal);
     yield rules.GLOBAL.checkExcluded(block, conf, dal);
     yield rules.GLOBAL.checkKickedMembersAreExcluded(block, conf, dal);
@@ -92,13 +88,9 @@ rules.ALIAS = {
   }),
 
   ALL_GLOBAL_WITHOUT_POW: (block, conf, dal, bcContext) => co(function *() {
-    yield rules.GLOBAL.checkJoiners(block, conf, dal);
     yield rules.GLOBAL.checkJoinersHaveEnoughCertifications(block, conf, dal);
     yield rules.GLOBAL.checkJoinersAreNotOudistanced(block, conf, dal);
-    yield rules.GLOBAL.checkActives(block, conf, dal);
     yield rules.GLOBAL.checkActivesAreNotOudistanced(block, conf, dal);
-    yield rules.GLOBAL.checkLeavers(block, conf, dal);
-    yield rules.GLOBAL.checkRevoked(block, conf, dal);
     yield rules.GLOBAL.checkJoinersAreNotRevoked(block, conf, dal);
     yield rules.GLOBAL.checkExcluded(block, conf, dal);
     yield rules.GLOBAL.checkKickedMembersAreExcluded(block, conf, dal);

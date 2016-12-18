@@ -970,6 +970,7 @@ avgGenTime  | The average time for writing 1 block (wished time)
 dtDiffEval  | The number of blocks required to evaluate again `PoWMin` value
 blocksRot   | The number of previous blocks to check for personalized difficulty
 percentRot  | The percent of previous issuers to reach for personalized difficulty
+txWindow    | `= 3600 * 24 * 7`. Maximum delay a transaction can wait before being expired for non-writing.
 
 ### Computed variables
 
@@ -1218,6 +1219,7 @@ Each transaction input produces 1 new entry:
         tx = TRANSACTION_HASH
         identifier = INPUT_IDENTIFIER
         pos = INPUT_INDEX
+        created_on = TX_BLOCKSTAMP
         written_on = BLOCKSTAMP
         amount = INPUT_AMOUNT
         base = INPUT_BASE
@@ -2012,6 +2014,26 @@ Else:
 
 ###### Local SINDEX augmentation
 
+####### BR_G102 - ENTRY.age
+
+For each ENTRY in local IINDEX where `op = 'UPDATE'`:
+
+    REF_BLOCK = HEAD~<HEAD~1.number + 1 - NUMBER(ENTRY.hash)>[hash=HASH(ENTRY.created_on)]
+    
+If `HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'`:
+    
+    ENTRY.age = 0
+    
+Else if `REF_BLOC != null`:
+
+    ENTRY.age = HEAD~1.medianTime - REF_BLOCK.medianTime
+    
+Else:
+
+    ENTRY.age = conf.txWindow + 1
+    
+EndIf
+
 ####### BR_G46 - ENTRY.available
 
 For each `LOCAL_SINDEX[op='UPDATE'] as ENTRY`:
@@ -2303,6 +2325,12 @@ Rule:
 For each `GLOBAL_IINDEX[kick=true] as TO_KICK`:
 
     COUNT(LOCAL_MINDEX[pub=TO_KICK.pub,isBeingKicked=true]) == 1
+
+###### BR_G103 - Trancation writability
+
+Rule:
+
+    ENTRY.age <= [txWindow]
     
 ###### BR_G87 - Input is available
 

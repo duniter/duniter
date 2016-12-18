@@ -219,6 +219,7 @@ const indexer = module.exports = {
           tx: txHash,
           identifier: input.identifier,
           pos: input.noffset,
+          created_on: tx.blockstamp,
           written_on: [block.number, block.hash].join('-'),
           written_time: block.medianTime,
           locktime: obj.locktime,
@@ -711,6 +712,24 @@ const indexer = module.exports = {
         }
         return dal.getWrittenIdtyByPubkey(pub);
       }, conf, dal);
+    }));
+
+    // BR_G102
+    yield _.where(sindex, { op: constants.IDX_UPDATE }).map((ENTRY) => co(function*() {
+      if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
+        ENTRY.age = 0;
+      } else {
+        if (HEAD.version >= 3) {
+          let ref = yield dal.getBlockByBlockstamp(ENTRY.created_on);
+          if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
+            ENTRY.age = HEAD_1.medianTime - ref.medianTime;
+          } else {
+            ENTRY.age = constants.TRANSACTION_EXPIRY_DELAY + 1;
+          }
+        } else {
+          ENTRY.age = 0;
+        }
+      }
     }));
 
     // BR_G46
@@ -1262,6 +1281,13 @@ const indexer = module.exports = {
       }
     }
   }),
+
+  // BR_G103
+  ruleTxWritability: (sindex) => {
+    for (const ENTRY of sindex) {
+      if (ENTRY.age > constants.TRANSACTION_EXPIRY_DELAY) return false;
+    }
+  },
 
   // BR_G87
   ruleInputIsAvailable: (sindex) => {

@@ -148,13 +148,6 @@ rules.FUNCTIONS = {
       }
     }
     return true;
-  }),
-
-  checkTransactionsBlockStamp: (block, conf, dal) => co(function *() {
-    for(const tx of block.getTransactions()) {
-      yield rules.HELPERS.checkTxBlockStamp(tx, dal);
-    }
-    return true;
   })
 };
 

@@ -22,6 +22,7 @@ function SIndexDAL(driver) {
     'tx',
     'identifier',
     'pos',
+    'created_on',
     'written_on',
     'amount',
     'base',
@@ -41,6 +42,7 @@ function SIndexDAL(driver) {
       'tx VARCHAR(80) NULL,' +
       'identifier VARCHAR(64) NOT NULL,' +
       'pos INTEGER NOT NULL,' +
+      'created_on VARCHAR(80) NULL,' +
       'written_on VARCHAR(80) NOT NULL,' +
       'amount VARCHAR(50) NULL,' +
       'base INTEGER NULL,' +

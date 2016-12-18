@@ -197,6 +197,8 @@ function BlockchainContext() {
       if (indexer.ruleMembershipExcludedIsMember(iindex) === false) throw Error('ruleMembershipExcludedIsMember');
       // BR_G86
       if (indexer.ruleToBeKickedArePresent(mindex, dal) === false) throw Error('ruleToBeKickedArePresent');
+      // BR_G103
+      if (indexer.ruleTxWritability(sindex) === false) throw Error('ruleToBeKickedArePresent');
       // BR_G87
       if (indexer.ruleInputIsAvailable(sindex) === false) throw Error('ruleInputIsAvailable');
       // BR_G88

@@ -78,14 +78,10 @@ rules.ALIAS = {
 
   ALL_GLOBAL: (block, conf, dal, bcContext) => co(function *() {
     yield rules.GLOBAL.checkJoinersAreNotRevoked(block, conf, dal);
-    yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
-    yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   }),
 
   ALL_GLOBAL_WITHOUT_POW: (block, conf, dal, bcContext) => co(function *() {
     yield rules.GLOBAL.checkJoinersAreNotRevoked(block, conf, dal);
-    yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
-    yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   })
 };
 

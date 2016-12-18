@@ -49,28 +49,6 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkIdentityUnicity: (block, conf, dal) => co(function *() {
-    for (const obj of block.identities) {
-      let idty = Identity.statics.fromInline(obj);
-      let found = yield dal.getWrittenIdtyByUID(idty.uid);
-      if (found) {
-        throw Error('Identity already used');
-      }
-    }
-    return true;
-  }),
-
-  checkPubkeyUnicity: (block, conf, dal) => co(function *() {
-    for (const obj of block.identities) {
-      let idty = Identity.statics.fromInline(obj);
-      let found = yield dal.getWrittenIdtyByPubkey(idty.pubkey);
-      if (found) {
-        throw Error('Pubkey already used');
-      }
-    }
-    return true;
-  }),
-
   checkJoiners: (block, conf, dal) => co(function *() {
     for (const obj of block.joiners) {
       let ms = Membership.statics.fromInline(obj);

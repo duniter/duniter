@@ -20,16 +20,6 @@ let rules = {};
 
 rules.FUNCTIONS = {
 
-  checkTimes: (block, conf, dal) => co(function *() {
-    if (block.number > 0) {
-      let medianTime = yield getMedianTime(block.number, conf, dal);
-      if (medianTime != block.medianTime) {
-        throw Error('Wrong MedianTime');
-      }
-    }
-    return true;
-  }),
-
   checkCertificationsAreMadeByMembers: (block, dal) => co(function *() {
     for (const obj of block.certifications) {
       let cert = Certification.statics.fromInline(obj);
@@ -442,8 +432,6 @@ rules.HELPERS = {
     }
   }),
 
-  getMedianTime: (blockNumber, conf, dal) => getMedianTime(blockNumber, conf, dal),
-
   checkExistsUserID: (uid, dal) => dal.getWrittenIdtyByUID(uid),
 
   checkExistsPubkey: (pub, dal) => dal.getWrittenIdtyByPubkey(pub),
@@ -642,32 +630,6 @@ function getNodeIDfromPubkey(nodesCache, pubkey, dal) {
       nodesCache[pubkey] = toNode;
     }
     return toNode;
-  });
-}
-
-function getMedianTime (blockNumber, conf, dal) {
-  return co(function *() {
-    if (blockNumber == 0) {
-      // No rule to check for block#0
-      return 0;
-    }
-    // Get the number of blocks we can look back from this block
-    let blocksCount = blockNumber < conf.medianTimeBlocks ? blockNumber : conf.medianTimeBlocks;
-    // Get their 'time' value
-    // console.log('Times between ', blockNumber - blocksCount, blockNumber - 1);
-    let blocksBetween = yield dal.getBlocksBetween(blockNumber - blocksCount, blockNumber - 1);
-    let timeValues = _.pluck(blocksBetween, 'time');
-    timeValues.sort();
-    let sum = 0;
-    for (const timeValue of timeValues) {
-      sum += timeValue;
-    }
-    if (timeValues.length) {
-      return Math.floor(sum / timeValues.length);
-    }
-    else {
-      throw Error('No block found for MedianTime comparison');
-    }
   });
 }
 

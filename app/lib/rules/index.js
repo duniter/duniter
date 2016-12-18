@@ -77,7 +77,6 @@ rules.ALIAS = {
   }),
 
   ALL_GLOBAL: (block, conf, dal, bcContext) => co(function *() {
-    yield rules.GLOBAL.checkTimes(block, conf, dal);
     yield rules.GLOBAL.checkIdentityUnicity(block, conf, dal);
     yield rules.GLOBAL.checkPubkeyUnicity(block, conf, dal);
     yield rules.GLOBAL.checkIdentitiesAreWritable(block, conf, dal);
@@ -104,7 +103,6 @@ rules.ALIAS = {
   }),
 
   ALL_GLOBAL_WITHOUT_POW: (block, conf, dal, bcContext) => co(function *() {
-    yield rules.GLOBAL.checkTimes(block, conf, dal);
     yield rules.GLOBAL.checkIdentityUnicity(block, conf, dal);
     yield rules.GLOBAL.checkPubkeyUnicity(block, conf, dal);
     yield rules.GLOBAL.checkIdentitiesAreWritable(block, conf, dal);

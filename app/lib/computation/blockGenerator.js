@@ -436,7 +436,7 @@ function BlockGenerator(mainContext, prover) {
         block.medianTime = moment.utc().unix() - conf.rootoffset;
       }
       else {
-        block.medianTime = yield rules.HELPERS.getMedianTime(block.number, conf, dal);
+        block.medianTime = vHEAD.medianTime;
       }
       // Choose the version
       block.version = (manualValues && manualValues.version) || (yield rules.HELPERS.getMaxPossibleVersionNumber(current, block));

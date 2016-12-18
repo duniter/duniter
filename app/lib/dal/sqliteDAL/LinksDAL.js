@@ -69,17 +69,6 @@ function LinksDAL(driver, wotb) {
     obsolete: false
   });
 
-  this.getLinksWithPath = (from, to) =>
-    this.sqlFind({
-      source: from,
-      target: to
-    });
-
-  this.getLinksFrom = (from) =>
-    this.sqlFind({
-      source: from
-    });
-
   this.getLinksOfIssuerAbove = (from, aboveBlock) =>
     this.sqlFind({
       source: from,

@@ -260,23 +260,6 @@ function FileDAL(params) {
     ' AND lnk.target = i.pubkey' +
     ') < ?', [sigQty]);
 
-  this.getPreviousLinks = (from, to) => co(function *() {
-    let links = yield that.linksDAL.getLinksWithPath(from, to);
-    links = _.sortBy(links, 'timestamp');
-    return links[links.length - 1];
-  });
-
-  this.getValidFromTo = (from, to) => co(function*() {
-    const links = that.getValidLinksFrom(from);
-    return _.chain(links).where({target: to}).value();
-  });
-
-  this.getLastValidFrom = (from) => co(function *() {
-    let links = yield that.linksDAL.getLinksFrom(from);
-    links = _.sortBy(links, 'timestamp');
-    return links[links.length - 1];
-  });
-
   this.getAvailableSourcesByPubkey = function (pubkey) {
     return that.sourcesDAL.getAvailableForPubkey(pubkey);
   };

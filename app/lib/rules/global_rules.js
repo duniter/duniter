@@ -20,47 +20,6 @@ let rules = {};
 
 rules.FUNCTIONS = {
 
-  checkCertificationsAreValid: (block, conf, dal) => co(function *() {
-    for (const obj of block.certifications) {
-      let cert = Certification.statics.fromInline(obj);
-      yield checkCertificationIsValid(block, cert, (b, pub) => {
-        return getGlobalIdentity(b, pub, dal);
-      }, conf, dal);
-    }
-    return true;
-  }),
-
-  checkCertificationsDelayIsRespected: (block, conf, dal) => co(function *() {
-    for (const obj of block.certifications) {
-      let cert = Certification.statics.fromInline(obj);
-      let previous = yield dal.getPreviousLinks(cert.from, cert.to);
-      let duration = previous && (block.medianTime - parseInt(previous.timestamp));
-      if (previous && (duration <= conf.sigValidity)) {
-        throw Error('A similar certification is already active');
-      }
-    }
-    return true;
-  }),
-
-  checkCertificationsPeriodIsRespected: (block, conf, dal) => co(function *() {
-    let current = yield dal.getCurrentBlockOrNull();
-    for (const obj of block.certifications) {
-      let cert = Certification.statics.fromInline(obj);
-      let previous = yield dal.getLastValidFrom(cert.from);
-      if (previous) {
-        let duration = current.medianTime - parseInt(previous.timestamp);
-        if (duration < conf.sigPeriod) {
-          throw Error('Previous certification is not chainable yet');
-        }
-        let stock = yield dal.getValidLinksFrom(cert.from);
-        if (stock >= conf.sigStock) {
-          throw Error('Previous certification is not chainable yet');
-        }
-      }
-    }
-    return true;
-  }),
-
   checkIdentitiesAreWritable: (block, conf, dal) => co(function *() {
     let current = yield dal.getCurrentBlockOrNull();
     for (const obj of block.identities) {
@@ -431,20 +390,6 @@ rules.HELPERS = {
  *      UTILITY FUNCTIONS
  *
  *****************************/
-
-/**
- * Get an identity, using global scope.
- * Considers identity collision + existence have already been checked.
- **/
-function getGlobalIdentity (block, pubkey, dal) {
-  return co(function *() {
-    let localInlineIdty = block.getInlineIdentity(pubkey);
-    if (localInlineIdty) {
-      return Identity.statics.fromInline(localInlineIdty);
-    }
-    return dal.getWrittenIdtyByPubkey(pubkey);
-  });
-}
 
 function checkMSTarget (ms, block, conf, dal) {
   return co(function *() {

@@ -49,16 +49,6 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkExcluded: (block, conf, dal) => co(function *() {
-    for (const pubkey of block.excluded) {
-      let idty = yield dal.getWrittenIdtyByPubkey(pubkey);
-      if (!idty) {
-        throw Error("Cannot be in excluded if not a member");
-      }
-    }
-    return true;
-  }),
-
   checkJoinersHaveEnoughCertifications: (block, conf, dal) => co(function *() {
     if (block.number > 0) {
       const newLinks = getNewLinks(block);
@@ -87,18 +77,6 @@ rules.FUNCTIONS = {
     getNewLinks(block),
     block.identities.map((inline) => Identity.statics.fromInline(inline).pubkey),
     conf, dal),
-
-  checkKickedMembersAreExcluded: (block, conf, dal) => co(function *() {
-    let identities = yield dal.getToBeKicked();
-    let remainingKeys = identities.map(function (idty) {
-      return idty.pubkey;
-    });
-    remainingKeys = _(remainingKeys).difference(block.excluded);
-    if (remainingKeys.length > 0) {
-      throw Error('All kicked members must be present under Excluded members')
-    }
-    return true;
-  }),
 
   checkJoinersAreNotRevoked: (block, conf, dal) => co(function *() {
     for (const obj of block.joiners) {

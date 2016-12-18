@@ -81,8 +81,6 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkJoinersAreNotOudistanced(block, conf, dal);
     yield rules.GLOBAL.checkActivesAreNotOudistanced(block, conf, dal);
     yield rules.GLOBAL.checkJoinersAreNotRevoked(block, conf, dal);
-    yield rules.GLOBAL.checkExcluded(block, conf, dal);
-    yield rules.GLOBAL.checkKickedMembersAreExcluded(block, conf, dal);
     yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
     yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   }),
@@ -92,8 +90,6 @@ rules.ALIAS = {
     yield rules.GLOBAL.checkJoinersAreNotOudistanced(block, conf, dal);
     yield rules.GLOBAL.checkActivesAreNotOudistanced(block, conf, dal);
     yield rules.GLOBAL.checkJoinersAreNotRevoked(block, conf, dal);
-    yield rules.GLOBAL.checkExcluded(block, conf, dal);
-    yield rules.GLOBAL.checkKickedMembersAreExcluded(block, conf, dal);
     yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
     yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   })

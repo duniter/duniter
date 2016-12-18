@@ -50,17 +50,6 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkJoinersAreNotRevoked: (block, conf, dal) => co(function *() {
-    for (const obj of block.joiners) {
-      let ms = Membership.statics.fromInline(obj);
-      let idty = yield dal.getWrittenIdtyByPubkey(ms.issuer);
-      if (idty && idty.revoked) {
-        throw Error('Revoked pubkeys cannot join');
-      }
-    }
-    return true;
-  }),
-
   checkSourcesAvailability: (block, conf, dal, alsoCheckPendingTransactions) => co(function *() {
     let txs = block.getTransactions();
     const current = yield dal.getCurrentBlockOrNull();

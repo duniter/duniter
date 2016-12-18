@@ -74,14 +74,6 @@ rules.ALIAS = {
     yield rules.LOCAL.checkTxRecipients(block);
     yield rules.LOCAL.checkTxAmounts(block);
     yield rules.LOCAL.checkTxSignature(block);
-  }),
-
-  ALL_GLOBAL: (block, conf, dal, bcContext) => co(function *() {
-    yield rules.GLOBAL.checkJoinersAreNotRevoked(block, conf, dal);
-  }),
-
-  ALL_GLOBAL_WITHOUT_POW: (block, conf, dal, bcContext) => co(function *() {
-    yield rules.GLOBAL.checkJoinersAreNotRevoked(block, conf, dal);
   })
 };
 
@@ -89,8 +81,6 @@ rules.CHECK = {
   ASYNC: {
     ALL_LOCAL: checkLocal(rules.ALIAS.ALL_LOCAL),
     ALL_LOCAL_BUT_POW: checkLocal(rules.ALIAS.ALL_LOCAL_BUT_POW_AND_SIGNATURE),
-    ALL_GLOBAL: check(rules.ALIAS.ALL_GLOBAL),
-    ALL_GLOBAL_BUT_POW: check(rules.ALIAS.ALL_GLOBAL_WITHOUT_POW)
   }
 };
 

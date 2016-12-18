@@ -109,7 +109,6 @@ function BlockchainContext() {
   this.checkBlock = (block, withPoWAndSignature) => co(function*(){
     if (withPoWAndSignature) {
       yield Q.nbind(rules.CHECK.ASYNC.ALL_LOCAL, rules, block, conf);
-      yield Q.nbind(rules.CHECK.ASYNC.ALL_GLOBAL, rules, block, conf, dal, that);
       const index = indexer.localIndex(block, conf);
       const mindex = indexer.mindex(index);
       const iindex = indexer.iindex(index);

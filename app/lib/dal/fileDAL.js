@@ -234,8 +234,6 @@ function FileDAL(params) {
   
   this.getCountOfPoW = (issuer) => that.blockDAL.getCountOfBlocksIssuedBy(issuer);
 
-  this.getNbIssuedInFrame = (issuer, from) => that.blockDAL.getNbIssuedFrom(issuer, from);
-
   this.getBlocksBetween = (start, end) => Q(this.blockDAL.getBlocks(Math.max(0, start), end));
 
   this.getForkBlocksFollowing = (current) => this.blockDAL.getNextForkBlocks(current.number, current.hash);
@@ -245,11 +243,6 @@ function FileDAL(params) {
     if (!current)
       throw 'No current block';
     return current;
-  });
-
-  this.getBlockFrom = (number) => co(function*() {
-    const current = yield that.getCurrentBlockOrNull();
-    return that.getBlocksBetween(number, current.number);
   });
 
   this.getValidLinksFrom = (from) => that.linksDAL.getValidLinksFrom(from);

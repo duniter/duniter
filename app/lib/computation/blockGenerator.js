@@ -590,11 +590,11 @@ function BlockGenerator(mainContext, prover) {
       } else if (block.version > 2) {
         block.unitbase = block.number == 0 ? 0 : current.unitbase;
       }
-      // V3 Rotation
+      // Rotation
       if (block.version > 2) {
-        block.issuersCount = yield rules.HELPERS.getDifferentIssuers(dal);
-        block.issuersFrame = yield rules.HELPERS.getIssuersFrame(dal);
-        block.issuersFrameVar = yield rules.HELPERS.getIssuersFrameVar(block, dal);
+        block.issuersCount = vHEAD.issuersCount;
+        block.issuersFrame = vHEAD.issuersFrame;
+        block.issuersFrameVar = vHEAD.issuersFrameVar;
       }
       // InnerHash
       block.time = block.medianTime;

@@ -20,36 +20,6 @@ let rules = {};
 
 rules.FUNCTIONS = {
 
-  checkDifferentIssuersCount: (block, conf, dal) => co(function *() {
-    if (block.version > 2) {
-      const isGood = block.issuersCount == (yield rules.HELPERS.getDifferentIssuers(dal));
-      if (!isGood) {
-        throw Error('DifferentIssuersCount is not correct');
-      }
-      return isGood;
-    }
-  }),
-
-  checkIssuersFrame: (block, conf, dal) => co(function *() {
-    if (block.version > 2) {
-      const isGood = block.issuersFrame == (yield rules.HELPERS.getIssuersFrame(dal));
-      if (!isGood) {
-        throw Error('IssuersFrame is not correct');
-      }
-      return isGood;
-    }
-  }),
-
-  checkIssuersFrameVar: (block, conf, dal) => co(function *() {
-    if (block.version > 2) {
-      const isGood = block.issuersFrameVar == (yield rules.HELPERS.getIssuersFrameVar(block, dal));
-      if (!isGood) {
-        throw Error('IssuersFrameVar is not correct');
-      }
-      return isGood;
-    }
-  }),
-
   checkTimes: (block, conf, dal) => co(function *() {
     if (block.number > 0) {
       let medianTime = yield getMedianTime(block.number, conf, dal);
@@ -498,71 +468,6 @@ rules.HELPERS = {
         throw "Transaction has expired";
       }
     }
-  }),
-
-  getDifferentIssuers: (dal) => co(function *() {
-    const current = yield dal.getCurrentBlockOrNull();
-    let frameSize = 0;
-    let currentNumber = 0;
-    if (current) {
-      currentNumber = current.number;
-      if (current.version == 2) {
-        frameSize = 40;
-      } else {
-        frameSize = current.issuersFrame;
-      }
-    }
-    const blocksBetween = yield dal.getBlocksBetween(Math.max(0, currentNumber - frameSize + 1), currentNumber);
-    const issuers = _.pluck(blocksBetween, 'issuer');
-    return _.uniq(issuers).length;
-  }),
-
-  getIssuersFrame: (dal) => co(function *() {
-    const current = yield dal.getCurrentBlockOrNull();
-    let frame = 1;
-    if (!current) {
-      frame = 1;
-    }
-    else {
-      if (current.version == 2) {
-        frame = 40;
-      }
-      else if (current.version > 2) {
-        frame = current.issuersFrame;
-        // CONVERGENCE
-        if (current.issuersFrameVar > 0) {
-          frame++;
-        }
-        if (current.issuersFrameVar < 0) {
-          frame--;
-        }
-      }
-    }
-    return frame;
-  }),
-
-  getIssuersFrameVar: (block, dal) => co(function *() {
-    const current = yield dal.getCurrentBlockOrNull();
-    let frameVar = 0;
-    if (current && current.version > 2) {
-      frameVar = current.issuersFrameVar;
-      // CONVERGENCE
-      if (current.issuersFrameVar > 0) {
-        frameVar--;
-      }
-      if (current.issuersFrameVar < 0) {
-        frameVar++;
-      }
-      // NEW_ISSUER_INC
-      if (current.issuersCount < block.issuersCount) {
-        frameVar += 5;
-      }
-      // GONE_ISSUER_DEC
-      if (current.issuersCount > block.issuersCount) {
-        frameVar -= 5;
-      }
-    }
-    return frameVar;
   })
 };
 

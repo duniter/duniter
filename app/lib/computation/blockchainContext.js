@@ -303,7 +303,10 @@ function BlockchainContext() {
     yield dal.unflagExpiredIdentitiesOf(block.number);
     yield dal.unflagExpiredCertificationsOf(block.number);
     yield undoMembersUpdate(block);
-    yield undoTransactionSources(block);
+
+    // Remove any source created for this block (both Dividend and Transaction).
+    yield dal.removeAllSourcesOfBlock([block.number, block.hash].join('-'));
+
     yield undoDeleteTransactions(block);
   });
 
@@ -357,8 +360,6 @@ function BlockchainContext() {
     yield that.computeExpiredCertifications(block);
     // Compute obsolete memberships
     yield that.computeExpiredMemberships(block);
-    // Update consumed sources & create new ones
-    yield that.updateSources(block);
     // Delete eventually present transactions
     yield that.deleteTransactions(block);
     return block;
@@ -486,22 +487,6 @@ function BlockchainContext() {
     });
   }
 
-  function undoTransactionSources(block) {
-    return co(function *() {
-      // Remove any source created for this block (both Dividend and Transaction)
-      dal.removeAllSourcesOfBlock(block.number);
-      for (const obj of block.transactions) {
-        obj.currency = block.currency;
-        obj.issuers = obj.signatories;
-        let tx = new Transaction(obj);
-        let txObj = tx.getTransaction();
-        for (const input of txObj.inputs) {
-          yield dal.unConsumeSource(input.identifier, input.noffset);
-        }
-      }
-    });
-  }
-
   function undoDeleteTransactions(block) {
     return co(function *() {
       for (const obj of block.transactions) {
@@ -620,53 +605,6 @@ function BlockchainContext() {
     }
   });
 
-  this.updateSources = (block) => co(function*() {
-    if (block.dividend) {
-      const idties = yield dal.getMembers();
-      for (const idty of idties) {
-        yield dal.saveSource(new Source({
-          'type': 'D',
-          'number': block.number,
-          'time': block.medianTime,
-          'identifier': idty.pubkey,
-          'noffset': block.number,
-          'block_hash': block.hash,
-          'amount': block.dividend,
-          'base': block.unitbase,
-          'conditions': 'SIG(' + idty.pubkey + ')', // Only this pubkey can unlock its UD
-          'consumed': 0
-        }));
-      }
-    }
-
-    for (const obj of block.transactions) {
-      obj.currency = block.currency;
-      obj.issuers = obj.signatories;
-      const tx = new Transaction(obj);
-      const txObj = tx.getTransaction();
-      const txHash = tx.getHash(true);
-      for (const input of txObj.inputs) {
-        yield dal.setConsumedSource(input.identifier, input.noffset);
-      }
-
-      let index = 0;
-      for (const output of txObj.outputs) {
-        yield dal.saveSource(new Source({
-          'type': 'T',
-          'number': block.number,
-          'time': block.medianTime,
-          'identifier': txHash,
-          'noffset': index++,
-          'block_hash': block.hash,
-          'amount': output.amount,
-          'base': output.base,
-          'conditions': output.conditions,
-          'consumed': 0
-        }));
-      }
-    }
-  });
-
   /**
    * New method for CREATING memberships found in blocks.
    * Made for performance reasons, this method will batch insert all memberships at once.
@@ -760,49 +698,6 @@ function BlockchainContext() {
       }
     }
     return dal.updateCertifications(certs);
-  });
-
-  /**
-   * New method for CREATING sources found in transactions of blocks.
-   * Made for performance reasons, this method will batch insert all sources at once.
-   * @param blocks
-   * @returns {*}
-   */
-  this.updateTransactionSourcesForBlocks = (blocks, dividends) => co(function *() {
-    let sources = dividends;
-    for (const block of blocks) {
-      // Transactions
-      for (const json of block.transactions) {
-        let obj = json;
-        obj.currency = block.currency;
-        obj.issuers = json.signatories;
-        let tx = new Transaction(obj);
-        tx.computeAllHashes();
-        let txObj = tx.getTransaction();
-        let txHash = tx.getHash();
-        sources = sources.concat(txObj.inputs.map((input) => _.extend({ toConsume: true }, input)));
-        sources = sources.concat(txObj.outputs.map((output, index) => _.extend({
-          toConsume: false
-        }, {
-          'type': 'T',
-          'number': block.number,
-          'block_hash': block.hash,
-          'fingerprint': txHash,
-          'amount': output.amount,
-          'base': output.base,
-          'consumed': false,
-          'identifier': txHash,
-          'noffset': index,
-          'conditions': output.conditions
-        })));
-      }
-    }
-    try {
-      let res = yield dal.updateSources(sources);
-      return res;
-    } catch (e) {
-      throw e;
-    }
   });
 
   this.deleteTransactions = (block) => co(function*() {

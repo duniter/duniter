@@ -19,7 +19,7 @@ function Source(json) {
   this.json = function () {
     return {
       "type": this.type,
-      "noffset": this.noffset,
+      "noffset": this.pos,
       "identifier": this.identifier,
       "amount": this.amount,
       "base": this.base

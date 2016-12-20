@@ -37,7 +37,6 @@ function FileDAL(params) {
   this.metaDAL = new (require('./sqliteDAL/MetaDAL'))(sqliteDriver);
   this.peerDAL = new (require('./sqliteDAL/PeerDAL'))(sqliteDriver);
   this.blockDAL = new (require('./sqliteDAL/BlockDAL'))(sqliteDriver);
-  this.sourcesDAL = new (require('./sqliteDAL/SourcesDAL'))(sqliteDriver);
   this.txsDAL = new (require('./sqliteDAL/TxsDAL'))(sqliteDriver);
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, null, that, CFSStorage);
   this.statDAL = new StatDAL(rootPath, myFS, null, that, CFSStorage);
@@ -56,7 +55,6 @@ function FileDAL(params) {
     'certDAL': that.certDAL,
     'msDAL': that.msDAL,
     'idtyDAL': that.idtyDAL,
-    'sourcesDAL': that.sourcesDAL,
     'txsDAL': that.txsDAL,
     'peerDAL': that.peerDAL,
     'indicatorsDAL': that.indicatorsDAL,
@@ -221,9 +219,7 @@ function FileDAL(params) {
 
   this.getValidLinksTo = (to) => that.cindexDAL.getValidLinksTo(to);
 
-  this.getAvailableSourcesByPubkey = function (pubkey) {
-    return that.sourcesDAL.getAvailableForPubkey(pubkey);
-  };
+  this.getAvailableSourcesByPubkey = (pubkey) => this.sindexDAL.getAvailableForPubkey(pubkey);
 
   this.getIdentityByHashOrNull = (hash) => that.idtyDAL.getByHash(hash);
 
@@ -341,9 +337,9 @@ function FileDAL(params) {
     return links.length ? true : false;
   });
 
-  this.getSource = (identifier, noffset) => co(function*() {
+  this.getSource = (identifier, pos) => co(function*() {
     // TODO: remove for version 1.0
-    let src = yield that.sourcesDAL.getSource(identifier, noffset);
+    let src = yield that.sindexDAL.getSource(identifier, pos);
     // If the source does not exist, we try to check if it exists under another form (issue #735)
     if (!src) {
       let txs = yield that.txsDAL.getTransactionByExtendedHash(identifier);
@@ -352,14 +348,14 @@ function FileDAL(params) {
       }
       if (txs.length && txs[0].version == 3) {
         // Other try: V4
-        src = yield that.sourcesDAL.getSource(txs[0].v4_hash, noffset);
+        src = yield that.sindexDAL.getSource(txs[0].v4_hash, pos);
         if (!src) {
           // Another try: V5
-          src = yield that.sourcesDAL.getSource(txs[0].v5_hash, noffset);
+          src = yield that.sindexDAL.getSource(txs[0].v5_hash, pos);
         }
         if (!src) {
           // Final try: V3 (because identifier maybe be one of [hash, v4_hash, v5_hash]
-          src = yield that.sourcesDAL.getSource(txs[0].hash, noffset);
+          src = yield that.sindexDAL.getSource(txs[0].hash, pos);
         }
       }
     }
@@ -385,8 +381,6 @@ function FileDAL(params) {
   });
 
   this.existsCert = (cert) => that.certDAL.existsGivenCert(cert);
-
-  this.setConsumedSource = (identifier, noffset) => that.sourcesDAL.consumeSource(identifier, noffset);
 
   this.setKicked = (pubkey, hash, notEnoughLinks) => co(function*() {
     const kick = notEnoughLinks ? true : false;
@@ -704,20 +698,13 @@ function FileDAL(params) {
     return merkle;
   });
 
-  this.removeAllSourcesOfBlock = (number) => that.sourcesDAL.removeAllSourcesOfBlock(number);
-
-  this.unConsumeSource = (identifier, noffset) => that.sourcesDAL.unConsumeSource(identifier, noffset);
+  this.removeAllSourcesOfBlock = (blockstamp) => that.sindexDAL.removeBlock(blockstamp);
 
   this.unflagExpiredIdentitiesOf = (number) => that.idtyDAL.unflagExpiredIdentitiesOf(number);
   
   this.unflagExpiredCertificationsOf = (number) => that.certDAL.unflagExpiredCertificationsOf(number);
   
   this.unflagExpiredMembershipsOf = (number) => that.msDAL.unflagExpiredMembershipsOf(number);
-
-  this.saveSource = (src) => that.sourcesDAL.addSource(src.type, src.number, src.identifier, src.noffset,
-      src.amount, src.base, src.block_hash, src.time, src.conditions);
-
-  this.updateSources = (sources) => that.sourcesDAL.updateBatchOfSources(sources);
 
   this.updateCertifications = (certs) => that.certDAL.updateBatchOfCertifications(certs);
 
@@ -820,7 +807,7 @@ function FileDAL(params) {
   });
 
   this.getUDHistory = (pubkey) => co(function *() {
-    const sources = yield that.sourcesDAL.getUDSources(pubkey);
+    const sources = yield that.sindexDAL.getUDSources(pubkey);
     return {
       history: sources.map((src) => _.extend({
         block_number: src.number

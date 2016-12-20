@@ -64,8 +64,8 @@ rules.FUNCTIONS = {
       }
       for (let k = 0, len2 = tx.inputs.length; k < len2; k++) {
         let src = tx.inputs[k];
-        let dbSrc = yield dal.getSource(src.identifier, src.noffset);
-        logger.debug('Source %s:%s = %s', src.identifier, src.noffset, dbSrc && dbSrc.consumed);
+        let dbSrc = yield dal.getSource(src.identifier, src.pos);
+        logger.debug('Source %s:%s = %s', src.identifier, src.pos, dbSrc && dbSrc.consumed);
         if (!dbSrc && alsoCheckPendingTransactions) {
           // For chained transactions which are checked on sandbox submission, we accept them if there is already
           // a previous transaction of the chain already recorded in the pool
@@ -73,7 +73,7 @@ rules.FUNCTIONS = {
             let hypotheticSrc = null;
             let targetTX = yield dal.getTxByHash(src.identifier);
             if (targetTX) {
-              let outputStr = targetTX.outputs[src.noffset];
+              let outputStr = targetTX.outputs[src.pos];
               if (outputStr) {
                 hypotheticSrc = Transaction.statics.outputStr2Obj(outputStr);
                 hypotheticSrc.consumed = false;
@@ -84,11 +84,11 @@ rules.FUNCTIONS = {
           });
         }
         if (!dbSrc || dbSrc.consumed) {
-          logger.warn('Source ' + [src.type, src.identifier, src.noffset].join(':') + ' is not available');
+          logger.warn('Source ' + [src.type, src.identifier, src.pos].join(':') + ' is not available');
           throw constants.ERRORS.SOURCE_ALREADY_CONSUMED;
         }
         sumOfInputs += dbSrc.amount * Math.pow(10, dbSrc.base);
-        if (block.medianTime - dbSrc.time < tx.locktime) {
+        if (block.medianTime - dbSrc.written_time < tx.locktime) {
           throw constants.ERRORS.LOCKTIME_PREVENT;
         }
         let sigResults = local_rules.HELPERS.getSigResult(tx);
@@ -120,7 +120,7 @@ rules.FUNCTIONS = {
               throw Error('Locked');
             }
           } catch (e) {
-            logger.warn('Source ' + [src.type, src.identifier, src.noffset].join(':') + ' unlock fail');
+            logger.warn('Source ' + [src.type, src.identifier, src.pos].join(':') + ' unlock fail');
             throw constants.ERRORS.WRONG_UNLOCKER;
           }
         }

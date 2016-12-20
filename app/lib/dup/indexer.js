@@ -219,7 +219,7 @@ const indexer = module.exports = {
           op: constants.IDX_UPDATE,
           tx: txHash,
           identifier: input.identifier,
-          pos: input.noffset,
+          pos: input.pos,
           created_on: tx.blockstamp,
           written_on: [block.number, block.hash].join('-'),
           written_time: block.medianTime,
@@ -774,12 +774,15 @@ const indexer = module.exports = {
             source = yield dal.getSource(ENTRY.identifier, ENTRY.pos);
           }
         }
+        ENTRY.conditions = source.conditions;
         ENTRY.isLocked = !txSourceUnlock(ENTRY, source);
       } else {
-        ENTRY.isLocked = !txSourceUnlock(ENTRY, reduce(yield dal.sindexDAL.sqlFind({
+        const source = reduce(yield dal.sindexDAL.sqlFind({
           identifier: ENTRY.identifier,
           pos: ENTRY.pos
-        })));
+        }));
+        ENTRY.conditions = source.conditions;
+        ENTRY.isLocked = !txSourceUnlock(ENTRY, source);
       }
     }));
 

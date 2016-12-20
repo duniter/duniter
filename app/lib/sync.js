@@ -234,7 +234,8 @@ function Synchroniser (server, host, port, conf, interactive) {
               iindex = iindex.concat(indexer.iindex(index));
               sindex = sindex.concat(indexer.sindex(index));
               cindex = cindex.concat(indexer.cindex(index));
-              bindex.push(yield indexer.quickCompleteGlobalScope(block, currConf, bindex, iindex, mindex, cindex, sindex));
+              const HEAD = yield indexer.quickCompleteGlobalScope(block, currConf, bindex, iindex, mindex, cindex, sindex);
+              bindex.push(HEAD);
               if (block.dividend) {
                 // Flush the INDEX (not bindex, which is particular)
                 yield dal.mindexDAL.insertBatch(mindex);
@@ -243,8 +244,8 @@ function Synchroniser (server, host, port, conf, interactive) {
                 yield dal.cindexDAL.insertBatch(cindex);
                 mindex = [];
                 iindex = [];
-                cindex = [];
-                sindex = yield indexer.ruleIndexGenDividend(bindex[bindex.length-1], dal);
+                cindex = yield indexer.ruleIndexGenCertificationExpiry(HEAD, dal);
+                sindex = yield indexer.ruleIndexGenDividend(HEAD, dal);
               }
 
               // Trim the bindex

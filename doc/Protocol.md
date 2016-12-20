@@ -2389,6 +2389,8 @@ For each `REDUCE_BY(GLOBAL_IINDEX[member=true], 'pub') as IDTY` then if `IDTY.me
 
 For each `GLOBAL_CINDEX[expires_on<=HEAD.medianTime] as CERT`, add a new LOCAL_CINDEX entry:
 
+If `reduce(GLOBAL_CINDEX[issuer=CERT.issuer,receiver=CERT.receiver,created_on=CERT.created_on]).expired_on == 0`:
+
     CINDEX (
         op = 'UPDATE'
         issuer = CERT.issuer

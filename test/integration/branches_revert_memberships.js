@@ -25,7 +25,7 @@ const i3 = user('i3',   { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', s
 
 describe("Revert memberships", function() {
 
-  const now = Math.round(Date.now() / 1000);
+  const now = 1482000000;
 
   before(() => co(function*() {
 

@@ -275,14 +275,14 @@ describe("WOTB module", function() {
     it('third & fourth commits: toc should have joined', function() {
       return co(function *() {
         yield commit(s3)({
-          time: now + 2400
+          time: now + 2800
         });
         // MedianTime is now +500 for next certs
         yield toc3.createIdentity();
         yield toc3.join();
         yield tic3.cert(toc3);
         yield commit(s3)({
-          time: now + 4000
+          time: now + 5000
         });
         // MedianTime is now +1000 for next certs
         /**
@@ -304,7 +304,7 @@ describe("WOTB module", function() {
       return co(function *() {
         yield toc3.cert(tic3);
         yield commit(s3)({
-          time: now + 4000
+          time: now + 5000
         });
         /**
          *   cat     tic <==> toc
@@ -324,7 +324,7 @@ describe("WOTB module", function() {
     it('sixth commit: cat is gone with its certs', function() {
       return co(function *() {
         yield commit(s3)({
-          time: now + 2500
+          time: now + 5000
         });
         /**
          *         tic <-- toc
@@ -346,7 +346,7 @@ describe("WOTB module", function() {
         yield tic3.cert(cat3);
         yield cat3.join();
         yield commit(s3)({
-          time: now + 2700
+          time: now + 5000
         });
         /**
          *  cat <-- tic <-- [toc]

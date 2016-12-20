@@ -41,7 +41,6 @@ function FileDAL(params) {
   this.txsDAL = new (require('./sqliteDAL/TxsDAL'))(sqliteDriver);
   this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, null, that, CFSStorage);
   this.statDAL = new StatDAL(rootPath, myFS, null, that, CFSStorage);
-  this.linksDAL = new (require('./sqliteDAL/LinksDAL'))(sqliteDriver, wotbInstance);
   this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqliteDriver, wotbInstance);
   this.certDAL = new (require('./sqliteDAL/CertDAL'))(sqliteDriver);
   this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(sqliteDriver);
@@ -58,7 +57,6 @@ function FileDAL(params) {
     'msDAL': that.msDAL,
     'idtyDAL': that.idtyDAL,
     'sourcesDAL': that.sourcesDAL,
-    'linksDAL': that.linksDAL,
     'txsDAL': that.txsDAL,
     'peerDAL': that.peerDAL,
     'indicatorsDAL': that.indicatorsDAL,
@@ -240,18 +238,7 @@ function FileDAL(params) {
     return current;
   });
 
-  this.getValidLinksTo = (to) => that.linksDAL.getValidLinksTo(to);
-
-  this.getMembersWithoutEnoughValidLinks = (sigQty) => that.idtyDAL.query('' +
-    'SELECT * ' +
-    'FROM idty i ' +
-    'WHERE member ' +
-    'AND (' +
-    ' SELECT count(*) ' +
-    ' FROM link lnk ' +
-    ' WHERE NOT lnk.obsolete ' +
-    ' AND lnk.target = i.pubkey' +
-    ') < ?', [sigQty]);
+  this.getValidLinksTo = (to) => that.cindexDAL.getValidLinksTo(to);
 
   this.getAvailableSourcesByPubkey = function (pubkey) {
     return that.sourcesDAL.getAvailableForPubkey(pubkey);
@@ -368,8 +355,8 @@ function FileDAL(params) {
     return _.chain(mss).sortBy((ms) => -ms.sigDate).value();
   });
 
-  this.existsLinkFromOrAfterDate = (from, to, minDate) => co(function *() {
-    const links = yield that.linksDAL.getSimilarLinksFromDate(from, to, minDate);
+  this.existsNonReplayableLink = (from, to) => co(function *() {
+    const links = yield that.cindexDAL.existsNonReplayableLink(from, to);
     return links.length ? true : false;
   });
 
@@ -417,10 +404,6 @@ function FileDAL(params) {
   });
 
   this.existsCert = (cert) => that.certDAL.existsGivenCert(cert);
-
-  this.obsoletesLinks = (minTimestamp) => that.linksDAL.obsoletesLinks(minTimestamp);
-
-  this.undoObsoleteLinks = (minTimestamp) => that.linksDAL.unObsoletesLinks(minTimestamp);
 
   this.setConsumedSource = (identifier, noffset) => that.sourcesDAL.consumeSource(identifier, noffset);
 
@@ -668,6 +651,25 @@ function FileDAL(params) {
     yield that.iindexDAL.insertBatch(iindex);
     yield that.sindexDAL.insertBatch(sindex);
     yield that.cindexDAL.insertBatch(cindex);
+    return { mindex, iindex, sindex, cindex };
+  });
+
+  this.updateWotbLinks = (cindex) => co(function*() {
+    for (const entry of cindex) {
+      const from = yield that.getWrittenIdtyByPubkey(entry.issuer);
+      const to = yield that.getWrittenIdtyByPubkey(entry.receiver);
+      if (entry.op == constants.IDX_CREATE) {
+        that.wotb.addLink(from.wotb_id, to.wotb_id, true);
+      } else {
+        // Update = removal
+        that.wotb.removeLink(from.wotb_id, to.wotb_id, true);
+      }
+    }
+  });
+
+  this.trimIndexes = (block, conf) => co(function*() {
+    // TODO: trim should be done on a fork window size
+    // yield that.cindexDAL.trimExpiredCerts();
     return true;
   });
 
@@ -711,8 +713,6 @@ function FileDAL(params) {
     return merkle;
   });
 
-  this.removeLink = (link) => that.linksDAL.removeLink(link);
-
   this.removeAllSourcesOfBlock = (number) => that.sourcesDAL.removeAllSourcesOfBlock(number);
 
   this.unConsumeSource = (identifier, noffset) => that.sourcesDAL.unConsumeSource(identifier, noffset);
@@ -731,8 +731,6 @@ function FileDAL(params) {
   this.updateCertifications = (certs) => that.certDAL.updateBatchOfCertifications(certs);
 
   this.updateMemberships = (certs) => that.msDAL.updateBatchOfMemberships(certs);
-
-  this.updateLinks = (certs) => that.linksDAL.updateBatchOfLinks(certs);
 
   this.updateTransactions = (txs) => that.txsDAL.insertBatchOfTxs(txs);
 

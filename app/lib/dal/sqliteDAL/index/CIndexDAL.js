@@ -3,7 +3,7 @@
  */
 
 const co = require('co');
-const _ = require('underscore');
+const constants = require('./../../../constants');
 const indexer = require('./../../../dup/indexer');
 const AbstractSQLite = require('./../AbstractSQLite');
 
@@ -61,6 +61,48 @@ function CIndexDAL(driver) {
     const reducables = yield that.query('SELECT * FROM ' + that.table + ' WHERE issuer = ? ORDER BY CAST(written_on as integer) ASC', [from]);
     return indexer.DUP_HELPERS.reduceBy(reducables, ['issuer', 'receiver', 'created_on']);
   });
+
+  this.trimExpiredCerts = () => co(function*() {
+    const toDelete = yield that.sqlFind({ expired_on: { $gt: 0 }});
+    for (const row of toDelete) {
+      yield that.exec("DELETE FROM " + that.table + " " +
+        "WHERE issuer like '" + row.issuer + "' " +
+        "AND receiver = '" + row.receiver + "' " +
+        "AND created_on like '" + row.created_on + "'");
+    }
+  });
+
+  this.getWrittenOn = (blockstamp) => that.sqlFind({ written_on: blockstamp });
+
+  this.findExpired = (medianTime) => that.query('SELECT * FROM ' + that.table + ' c1 WHERE expires_on <= ? ' +
+    'AND NOT EXISTS (' +
+    ' SELECT * FROM c_index c2' +
+    ' WHERE c1.issuer = c2.issuer' +
+    ' AND c1.receiver = c2.receiver' +
+    ' AND c1.created_on = c2.created_on' +
+    ' AND c2.op = ?' +
+    ')', [medianTime, constants.IDX_UPDATE]);
+
+  this.getValidLinksTo = (receiver) => that.query('SELECT * FROM ' + that.table + ' c1 ' +
+    'WHERE c1.receiver = ? ' +
+    'AND NOT EXISTS (' +
+    ' SELECT * FROM c_index c2' +
+    ' WHERE c1.issuer = c2.issuer' +
+    ' AND c1.receiver = c2.receiver' +
+    ' AND c1.created_on = c2.created_on' +
+    ' AND c2.op = ?' +
+    ')', [receiver, constants.IDX_UPDATE]);
+
+  this.existsNonReplayableLink = (issuer, receiver) => that.query('SELECT * FROM ' + that.table + ' c1 ' +
+    'WHERE c1.issuer = ? ' +
+    'AND c1.receiver = ? ' +
+    'AND NOT EXISTS (' +
+    ' SELECT * FROM c_index c2' +
+    ' WHERE c1.issuer = c2.issuer' +
+    ' AND c1.receiver = c2.receiver' +
+    ' AND c1.created_on = c2.created_on' +
+    ' AND c2.op = ?' +
+    ')', [issuer, receiver, constants.IDX_UPDATE]);
 
   this.removeBlock = (blockstamp) => that.exec('DELETE FROM ' + that.table + ' WHERE written_on = \'' + blockstamp + '\'');
 }

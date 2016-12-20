@@ -370,7 +370,7 @@ function BlockGenerator(mainContext, prover) {
               }
             }
             // Already exists a link not replayable yet?
-            let exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigValidity);
+            let exists = yield dal.existsNonReplayableLink(cert.from, cert.to);
             if (exists) {
               throw 'It already exists a similar certification written, which is not replayable yet';
             }
@@ -638,7 +638,7 @@ function NextBlockGenerator(mainContext, conf, dal) {
             let exists = false;
             if (current) {
               // Already exists a link not replayable yet?
-              exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigValidity);
+              exists = yield dal.existsNonReplayableLink(cert.from, cert.to);
             }
             if (!exists) {
               // Already exists a link not chainable yet?

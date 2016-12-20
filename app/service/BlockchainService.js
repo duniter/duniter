@@ -362,7 +362,7 @@ function BlockchainService (server) {
 
   this.getValidCerts = (newcomer, newCerts) => co(function *() {
     const links = yield dal.getValidLinksTo(newcomer);
-    const certsFromLinks = links.map((lnk) => { return { from: lnk.source, to: lnk.target, timestamp: lnk.timestamp }; });
+    const certsFromLinks = links.map((lnk) => { return { from: lnk.issuer, to: lnk.receiver, timestamp: lnk.expires_on - conf.sigValidity }; });
     const certsFromCerts = [];
     const certs = newCerts[newcomer] || [];
     for (const cert of certs) {
@@ -463,8 +463,6 @@ function BlockchainService (server) {
     yield mainContext.updateTransactionsForBlocks(blocks, getBlockByNumberAndHash);
     // Create certifications
     yield mainContext.updateMembershipsForBlocks(blocks);
-    // Create certifications
-    yield mainContext.updateLinksForBlocks(blocks, getBlock);
     // Create certifications
     yield mainContext.updateCertificationsForBlocks(blocks);
     // Create / Update sources

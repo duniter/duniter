@@ -271,24 +271,40 @@ function BlockchainContext() {
   });
 
   this.revertBlock = (block) => co(function *() {
+
+    // Priority: index update
+    const blockstamp = [block.number, block.hash].join('-');
+    yield dal.bindexDAL.removeBlock(block.number);
+    yield dal.iindexDAL.removeBlock(blockstamp);
+    yield dal.mindexDAL.removeBlock(blockstamp);
+
+    // Revert links
+    const writtenOn = yield dal.cindexDAL.getWrittenOn(blockstamp);
+    for (const entry of writtenOn) {
+      const from = yield dal.getWrittenIdtyByPubkey(entry.issuer);
+      const to = yield dal.getWrittenIdtyByPubkey(entry.receiver);
+      if (entry.op == constants.IDX_CREATE) {
+        // We remove the created link
+        dal.wotb.removeLink(from.wotb_id, to.wotb_id, true);
+      } else {
+        // We add the removed link
+        dal.wotb.addLink(from.wotb_id, to.wotb_id, true);
+      }
+    }
+
+    yield dal.cindexDAL.removeBlock(blockstamp);
+    yield dal.sindexDAL.removeBlock(blockstamp);
+
+    // Then: normal updates
     const previousBlock = yield dal.getBlockByNumberAndHashOrNull(block.number - 1, block.previousHash || '');
     // Set the block as SIDE block (equivalent to removal from main branch)
     yield dal.blockDAL.setSideBlock(block, previousBlock);
     yield undoCertifications(block);
-    yield undoLinks(block);
     yield dal.unflagExpiredIdentitiesOf(block.number);
     yield dal.unflagExpiredCertificationsOf(block.number);
-    if (previousBlock) {
-      yield dal.undoObsoleteLinks(previousBlock.medianTime - conf.sigValidity);
-    }
     yield undoMembersUpdate(block);
     yield undoTransactionSources(block);
     yield undoDeleteTransactions(block);
-    yield dal.bindexDAL.removeBlock(block.number);
-    yield dal.iindexDAL.removeBlock([block.number, block.hash].join('-'));
-    yield dal.mindexDAL.removeBlock([block.number, block.hash].join('-'));
-    yield dal.cindexDAL.removeBlock([block.number, block.hash].join('-'));
-    yield dal.sindexDAL.removeBlock([block.number, block.hash].join('-'));
   });
 
   const checkIssuer = (block) => co(function*() {
@@ -318,16 +334,19 @@ function BlockchainContext() {
 
   const saveBlockData = (current, block) => co(function*() {
     yield that.saveParametersForRootBlock(block);
-    yield dal.saveIndexes(block, conf);
+    const indexes = yield dal.saveIndexes(block, conf);
+    yield dal.trimIndexes(block, conf);
     yield updateBlocksComputedVars(current, block);
     // Saves the block (DAL)
     yield dal.saveBlock(block);
     // Create/Update members (create new identities if do not exist)
     yield that.updateMembers(block);
+
+    // --> Update links
+    dal.updateWotbLinks(indexes.cindex);
+
     // Create/Update certifications
     yield that.updateCertifications(block);
-    // Save links
-    yield that.updateLinksForBlocks([block], dal.getBlock.bind(dal));
     // Compute obsolete links
     yield that.computeObsoleteLinks(block);
     // Compute obsolete memberships (active, joiner)
@@ -467,27 +486,6 @@ function BlockchainContext() {
     });
   }
 
-  function undoLinks(block) {
-    return co(function *() {
-      for (const inlineCert of block.certifications) {
-        let cert = Certification.statics.fromInline(inlineCert);
-        let fromIdty = yield dal.getWrittenIdtyByPubkey(cert.from);
-        let toIdty = yield dal.getWrittenIdtyByPubkey(cert.to);
-        dal.removeLink(
-          new Link({
-            source: cert.from,
-            target: cert.to,
-            from_wotb_id: fromIdty.wotb_id,
-            to_wotb_id: toIdty.wotb_id,
-            timestamp: block.medianTime,
-            block_number: block.number,
-            block_hash: block.hash,
-            obsolete: false
-          }));
-      }
-    });
-  }
-
   function undoTransactionSources(block) {
     return co(function *() {
       // Remove any source created for this block (both Dividend and Transaction)
@@ -574,8 +572,8 @@ function BlockchainContext() {
   });
 
   this.computeObsoleteLinks = (block) => co(function*() {
-    yield dal.obsoletesLinks(block.medianTime - conf.sigValidity);
-    const members = yield dal.getMembersWithoutEnoughValidLinks(conf.sigQty);
+    const iindexEntries = yield dal.iindexDAL.sqlFind({ kick: true });
+    const members = yield iindexEntries.map((entry) => dal.getWrittenIdtyByPubkey(entry.pub));
     for (const idty of members) {
       yield dal.setKicked(idty.pubkey, new Identity(idty).getTargetHash(), true);
     }
@@ -700,39 +698,6 @@ function BlockchainContext() {
       });
     }
     return dal.updateMemberships(memberships);
-  });
-
-  /**
-   * New method for CREATING links found in blocks.
-   * Made for performance reasons, this method will batch insert all links at once.
-   * @param blocks
-   * @param getBlock
-   * @returns {*}
-   */
-  this.updateLinksForBlocks = (blocks, getBlock) => co(function *() {
-    let links = [];
-    for (const block of blocks) {
-      for (const inlineCert of block.certifications) {
-        let cert = Certification.statics.fromInline(inlineCert);
-        let tagBlock = block;
-        if (block.number > 0) {
-          tagBlock = yield getBlock(cert.block_number);
-        }
-        let fromIdty = yield dal.getWrittenIdtyByPubkey(cert.from);
-        let toIdty = yield dal.getWrittenIdtyByPubkey(cert.to);
-        links.push({
-          source: cert.from,
-          target: cert.to,
-          from_wotb_id: fromIdty.wotb_id,
-          to_wotb_id: toIdty.wotb_id,
-          timestamp: tagBlock.medianTime,
-          block_number: block.number,
-          block_hash: block.hash,
-          obsolete: false
-        });
-      }
-    }
-    return dal.updateLinks(links);
   });
 
   /**

@@ -1365,7 +1365,7 @@ const indexer = module.exports = {
   // BR_G92
   ruleIndexGenCertificationExpiry: (HEAD, dal) => co(function*() {
     const expiries = [];
-    const certs = yield dal.cindexDAL.sqlFind({ expires_on: { $lte: HEAD.medianTime }});
+    const certs = yield dal.cindexDAL.findExpired(HEAD.medianTime);
     for (const CERT of certs) {
       expiries.push({
         op: 'UPDATE',

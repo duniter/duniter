@@ -119,37 +119,6 @@ function FileDAL(params) {
 
   this.listAllPeers = () => that.peerDAL.listAll();
 
-  function nullIfError(promise, done) {
-    return promise
-        .then(function (p) {
-          done && done(null, p);
-          return p;
-        })
-        .catch(function () {
-          done && done(null, null);
-          return null;
-        });
-  }
-
-  function nullIfErrorIs(promise, expectedError, done) {
-    return promise
-        .then(function (p) {
-          done && done(null, p);
-          return p;
-        })
-        .catch(function (err) {
-          if (err == expectedError) {
-            done && done(null, null);
-            return null;
-          }
-          if (done) {
-            done(err);
-            return null;
-          }
-          throw err;
-        });
-  }
-
   this.getPeer = (pubkey) => co(function*() {
     try {
       return that.peerDAL.getPeer(pubkey)
@@ -195,7 +164,11 @@ function FileDAL(params) {
   });
 
   this.getBlockByNumberAndHashOrNull = (number, hash) => co(function*() {
-    return yield nullIfError(that.getBlockByNumberAndHash(number, hash));
+    try {
+      return yield that.getBlockByNumberAndHash(number, hash);
+    } catch (e) {
+      return null;
+    }
   });
 
   this.existsNonChainableLink = (from, vHEAD_1, sigStock) => co(function *() {
@@ -211,7 +184,15 @@ function FileDAL(params) {
 
 
   this.getCurrentBlockOrNull = () => co(function*() {
-    return nullIfErrorIs(that.getBlockCurrent(), constants.ERROR.BLOCK.NO_CURRENT_BLOCK);
+    let current = null;
+    try {
+      current = yield that.getBlockCurrent();
+    } catch (e) {
+      if (e != constants.ERROR.BLOCK.NO_CURRENT_BLOCK) {
+        throw e;
+      }
+    }
+    return current;
   });
 
   this.getPromoted = (number) => that.getBlock(number);
@@ -556,7 +537,17 @@ function FileDAL(params) {
   this.kickWithOutdatedMemberships = (maxNumber) => this.idtyDAL.kickMembersForMembershipBelow(maxNumber);
   this.revokeWithOutdatedMemberships = (maxNumber) => this.idtyDAL.revokeMembersForMembershipBelow(maxNumber);
 
-  this.getPeerOrNull = (pubkey) => nullIfError(that.getPeer(pubkey));
+  this.getPeerOrNull = (pubkey) => co(function*() {
+    let peer = null;
+    try {
+      peer = yield that.getPeer(pubkey);
+    } catch (e) {
+      if (e != constants.ERROR.BLOCK.NO_CURRENT_BLOCK) {
+        throw e;
+      }
+    }
+    return peer;
+  });
 
   this.findAllPeersNEWUPBut = (pubkeys) => co(function*() {
     const peers = yield that.listAllPeers();

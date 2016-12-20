@@ -11,8 +11,6 @@ const Identity        = require('../entity/identity');
 const Certification   = require('../entity/certification');
 const Membership      = require('../entity/membership');
 const Block           = require('../entity/block');
-const Link            = require('../entity/link');
-const Source          = require('../entity/source');
 const Transaction     = require('../entity/transaction');
 
 module.exports = () => { return new BlockchainContext() };

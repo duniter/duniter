@@ -232,7 +232,7 @@ function AbstractSQLite(driver) {
       } else if (obj[k].$gte !== undefined) {
         return '`' + k + '` >= ?';
       } else if (obj[k].$gt !== undefined) {
-        return '`' + k + '` >= ?';
+        return '`' + k + '` > ?';
       }  else if (obj[k].$lt !== undefined) {
         return '`' + k + '` < ?';
       }  else if (obj[k].$null !== undefined) {

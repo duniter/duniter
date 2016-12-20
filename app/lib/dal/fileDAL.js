@@ -200,19 +200,14 @@ function FileDAL(params) {
     return yield nullIfError(that.getBlockByNumberAndHash(number, hash));
   });
 
-  this.getChainabilityBlock = (currentTime, sigPeriod) => co(function *() {
-    // AGE = current_time - block_time
-    // CHAINABLE = AGE >= sigPeriod
-    // CHAINABLE = block_time =< current_time - sigPeriod
-    return that.blockDAL.getMoreRecentBlockWithTimeEqualBelow(currentTime - sigPeriod);
-  });
-
-  this.existsNonChainableLink = (from, chainabilityBlockNumber, sigStock) => co(function *() {
+  this.existsNonChainableLink = (from, vHEAD_1, sigStock) => co(function *() {
     // Cert period rule
-    let links = yield that.linksDAL.getLinksOfIssuerAbove(from, chainabilityBlockNumber);
-    if (links.length > 0) return true;
+    const medianTime = vHEAD_1 ? vHEAD_1.medianTime : 0;
+    const linksFrom = yield that.cindexDAL.reducablesFrom(from);
+    const unchainables = _.filter(linksFrom, (link) => link.chainable_on > medianTime);
+    if (unchainables.length > 0) return true;
     // Max stock rule
-    let activeLinks = yield that.linksDAL.getValidLinksFrom(from);
+    let activeLinks = _.filter(linksFrom, (link) => !link.expired_on);
     return activeLinks.length >= sigStock;
   });
 
@@ -244,8 +239,6 @@ function FileDAL(params) {
       throw 'No current block';
     return current;
   });
-
-  this.getValidLinksFrom = (from) => that.linksDAL.getValidLinksFrom(from);
 
   this.getValidLinksTo = (to) => that.linksDAL.getValidLinksTo(to);
 

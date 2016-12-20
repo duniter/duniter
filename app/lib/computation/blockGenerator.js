@@ -34,13 +34,7 @@ function BlockGenerator(mainContext, prover) {
     logger = require('../logger')(dal.profile);
   };
 
-  this.nextBlock = (manualValues) => generateNextBlock(new NextBlockGenerator(conf, dal), manualValues);
-
-  this.nextEmptyBlock = () => co(function *() {
-    const current = yield dal.getCurrentBlockOrNull();
-    const exclusions = yield dal.getToBeKickedPubkeys();
-    return createBlock(current, {}, {}, {}, [], exclusions, []);
-  });
+  this.nextBlock = (manualValues) => generateNextBlock(new NextBlockGenerator(mainContext, conf, dal), manualValues);
 
   this.manualRoot = () => co(function *() {
     let current = yield dal.getCurrentBlockOrNull();
@@ -329,7 +323,7 @@ function BlockGenerator(mainContext, prover) {
   this.getSinglePreJoinData = (current, idHash, joiners) => co(function *() {
     const identity = yield dal.getIdentityByHashOrNull(idHash);
     let foundCerts = [];
-    const blockOfChainability = current ? (yield dal.getChainabilityBlock(current.medianTime, conf.sigPeriod)) : null;
+    const vHEAD_1 = yield mainContext.getvHEAD_1();
     if (!identity) {
       throw 'Identity with hash \'' + idHash + '\' not found';
     }
@@ -381,7 +375,7 @@ function BlockGenerator(mainContext, prover) {
               throw 'It already exists a similar certification written, which is not replayable yet';
             }
             // Already exists a link not chainable yet?
-            exists = yield dal.existsNonChainableLink(cert.from, blockOfChainability ? blockOfChainability.number : -1, conf.sigStock);
+            exists = yield dal.existsNonChainableLink(cert.from, vHEAD_1, conf.sigStock);
             if (exists) {
               throw 'It already exists a certification written which is not chainable yet';
             }
@@ -611,7 +605,7 @@ function BlockGenerator(mainContext, prover) {
  * Class to implement strategy of automatic selection of incoming data for next block.
  * @constructor
  */
-function NextBlockGenerator(conf, dal) {
+function NextBlockGenerator(mainContext, conf, dal) {
 
   const logger = require('../logger')(dal.profile);
 
@@ -619,8 +613,7 @@ function NextBlockGenerator(conf, dal) {
     const updates = {};
     const updatesToFrom = {};
     const certs = yield dal.certsFindNew();
-    // The block above which (above from current means blocks with number < current)
-    const blockOfChainability = current ? (yield dal.getChainabilityBlock(current.medianTime, conf.sigPeriod)) : null;
+    const vHEAD_1 = yield mainContext.getvHEAD_1();
     for (const cert of certs) {
       const targetIdty = yield dal.getIdentityByHashOrNull(cert.target);
       // The identity must be known
@@ -650,7 +643,7 @@ function NextBlockGenerator(conf, dal) {
             if (!exists) {
               // Already exists a link not chainable yet?
               // No chainability block means absolutely nobody can issue certifications yet
-              exists = current && (yield dal.existsNonChainableLink(cert.from, blockOfChainability ? blockOfChainability.number : -1, conf.sigStock));
+              exists = yield dal.existsNonChainableLink(cert.from, vHEAD_1, conf.sigStock);
               if (!exists) {
                 // It does NOT already exists a similar certification written, which is not replayable yet
                 // Signatory must be a member

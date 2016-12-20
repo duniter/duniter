@@ -69,8 +69,8 @@ const indexer = module.exports = {
           pub: ms.issuer,
           created_on: [ms.number, ms.fpr].join('-'),
           written_on: [block.number, block.hash].join('-'),
-          expires_on: block.medianTime + conf.msValidity,
-          revokes_on: block.medianTime + conf.msValidity * constants.REVOCATION_FACTOR,
+          expires_on: parseInt(block.medianTime) + conf.msValidity,
+          revokes_on: parseInt(block.medianTime) + conf.msValidity * constants.REVOCATION_FACTOR,
           revoked_on: null,
           leaving: false
         });
@@ -82,8 +82,8 @@ const indexer = module.exports = {
           pub: ms.issuer,
           created_on: [ms.number, ms.fpr].join('-'),
           written_on: [block.number, block.hash].join('-'),
-          expires_on: block.medianTime + conf.msValidity,
-          revokes_on: block.medianTime + conf.msValidity * constants.REVOCATION_FACTOR,
+          expires_on: parseInt(block.medianTime) + conf.msValidity,
+          revokes_on: parseInt(block.medianTime) + conf.msValidity * constants.REVOCATION_FACTOR,
           revoked_on: null,
           leaving: null
         });
@@ -111,8 +111,8 @@ const indexer = module.exports = {
         pub: ms.issuer,
         created_on: [ms.number, ms.fpr].join('-'),
         written_on: [block.number, block.hash].join('-'),
-        expires_on: block.medianTime + conf.msValidity,
-        revokes_on: block.medianTime + conf.msValidity * constants.REVOCATION_FACTOR,
+        expires_on: parseInt(block.medianTime) + conf.msValidity,
+        revokes_on: parseInt(block.medianTime) + conf.msValidity * constants.REVOCATION_FACTOR,
         revoked_on: null,
         leaving: null
       });
@@ -176,7 +176,8 @@ const indexer = module.exports = {
         receiver: cert.to,
         created_on: cert.block_number,
         written_on: [block.number, block.hash].join('-'),
-        expires_on: block.medianTime + conf.sigValidity,
+        chainable_on: parseInt(block.medianTime)  + conf.sigPeriod,
+        expires_on: parseInt(block.medianTime) + conf.sigValidity,
         expired_on: 0,
         from_wid: null,
         to_wid: null
@@ -664,7 +665,8 @@ const indexer = module.exports = {
     // BR_G38
     if (HEAD.number > 0) {
       yield cindex.map((ENTRY) => co(function*() {
-        ENTRY.unchainables = count(yield dal.cindexDAL.sqlFind({ issuer: ENTRY.issuer, chainable_on: { $gt: HEAD_1.medianTime }}));
+        const rows = yield dal.cindexDAL.sqlFind({ issuer: ENTRY.issuer, chainable_on: { $gt: HEAD_1.medianTime }});
+        ENTRY.unchainables = count(rows);
       }));
     }
 
@@ -1453,6 +1455,8 @@ const indexer = module.exports = {
 
   DUP_HELPERS: {
 
+    reduce: reduce,
+    reduceBy: reduceBy,
     getMaxBlockSize: (HEAD) => Math.max(500, Math.ceil(1.1 * HEAD.avgBlockSize)),
     checkPeopleAreNotOudistanced: checkPeopleAreNotOudistanced
   }
@@ -1507,6 +1511,16 @@ function reduce(records) {
     }
     return obj;
   }, {});
+}
+
+function reduceBy(reducables, properties) {
+  const reduced = reducables.reduce((map, entry) => {
+    const id = properties.map((prop) => entry[prop]).join('-');
+    map[id] = map[id] || [];
+    map[id].push(entry);
+    return map;
+  }, {});
+  return Object.values(reduced).map((value) => indexer.DUP_HELPERS.reduce(value));
 }
 
 function checkPeopleAreNotOudistanced (version, pubkeys, newLinks, newcomers, conf, dal) {

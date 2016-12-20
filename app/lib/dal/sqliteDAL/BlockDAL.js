@@ -108,10 +108,6 @@ function BlockDAL(driver) {
     return res[0].quantity;
   });
 
-  this.getMoreRecentBlockWithTimeEqualBelow = (maxTime) => co(function *() {
-    return (yield that.query('SELECT * FROM block WHERE medianTime <= ? and NOT fork ORDER BY number DESC LIMIT 1', [maxTime]))[0];
-  });
-
   this.getForkBlocks = () => {
     return that.query('SELECT * FROM block WHERE fork ORDER BY number');
   };

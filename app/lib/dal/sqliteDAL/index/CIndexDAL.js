@@ -4,6 +4,7 @@
 
 const co = require('co');
 const _ = require('underscore');
+const indexer = require('./../../../dup/indexer');
 const AbstractSQLite = require('./../AbstractSQLite');
 
 module.exports = CIndexDAL;
@@ -56,7 +57,10 @@ function CIndexDAL(driver) {
       'COMMIT;', []);
   });
 
-  this.reducable = (pub) => this.query('SELECT * FROM ' + this.table + ' WHERE pub = ? ORDER BY CAST(written_on as integer) ASC', [pub]);
+  this.reducablesFrom = (from) => co(function*() {
+    const reducables = yield that.query('SELECT * FROM ' + that.table + ' WHERE issuer = ? ORDER BY CAST(written_on as integer) ASC', [from]);
+    return indexer.DUP_HELPERS.reduceBy(reducables, ['issuer', 'receiver', 'created_on']);
+  });
 
   this.removeBlock = (blockstamp) => that.exec('DELETE FROM ' + that.table + ' WHERE written_on = \'' + blockstamp + '\'');
 }

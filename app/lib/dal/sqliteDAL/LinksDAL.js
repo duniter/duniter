@@ -53,11 +53,6 @@ function LinksDAL(driver, wotb) {
       'COMMIT;', []);
   });
 
-  this.getValidLinksFrom = (pubkey) => this.sqlFind({
-    source: pubkey,
-    obsolete: false
-  });
-
   this.getSimilarLinksFromDate = (from, to, minDate) => this.sqlFind({
     source: from,
     target: to,
@@ -68,12 +63,6 @@ function LinksDAL(driver, wotb) {
     target: pubkey,
     obsolete: false
   });
-
-  this.getLinksOfIssuerAbove = (from, aboveBlock) =>
-    this.sqlFind({
-      source: from,
-      block_number: { $gt: aboveBlock }
-    });
 
   this.obsoletesLinks = (minTimestamp) => co(function *() {
     const linksToObsolete = yield that.sqlFind({

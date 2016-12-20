@@ -187,7 +187,7 @@ describe("Integration", function() {
       return co(function *() {
 
         yield node3.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-        let now = Math.round(new Date().getTime() / 1000);
+        const now = 1482220000;
 
         // Self certifications
         yield cat.createIdentity();
@@ -209,9 +209,13 @@ describe("Integration", function() {
         yield commit(node3)({
           time: now
         });
-        yield commit(node3)();
+        yield commit(node3)({
+          time: now
+        });
         yield toc.leave();
-        yield commit(node3)();
+        yield commit(node3)({
+          time: now
+        });
         yield tac.cert(toc);
         yield tic.cert(toc);
         yield toc.cert(tic); // Should be taken in 1 block
@@ -222,7 +226,9 @@ describe("Integration", function() {
         yield commit(node3)({
           time: now + 200
         });
-        yield commit(node3)();
+        yield commit(node3)({
+          time: now + 200
+        });
       });
     });
 
@@ -269,8 +275,8 @@ describe("Integration", function() {
     blockShouldHaveCerts(1, 0);
     blockShouldHaveCerts(2, 0);
     blockShouldHaveCerts(3, 1);
-    blockShouldHaveCerts(4, 0);
-    blockShouldHaveCerts(5, 1);
+    blockShouldHaveCerts(4, 1);
+    blockShouldHaveCerts(5, 0);
 
     function blockShouldHaveCerts(number, certificationsCount) {
       it('it should exist block#' + number + ' with ' + certificationsCount + ' certification', () => expectAnswer(rp('http://127.0.0.1:9997/blockchain/block/' + number, { json: true }), function(block) {

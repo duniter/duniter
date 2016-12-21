@@ -176,6 +176,7 @@ const indexer = module.exports = {
         receiver: cert.to,
         created_on: cert.block_number,
         written_on: [block.number, block.hash].join('-'),
+        sig: cert.sig,
         chainable_on: parseInt(block.medianTime)  + conf.sigPeriod,
         expires_on: parseInt(block.medianTime) + conf.sigValidity,
         expired_on: 0,

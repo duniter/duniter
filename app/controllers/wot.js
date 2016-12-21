@@ -28,38 +28,33 @@ function WOTBinding (server) {
     // Entitify each result
     identities.forEach((idty, index) => identities[index] = new Identity(idty));
     // Prepare some data to avoid displaying expired certifications
-    const excluding = yield BlockchainService.getCertificationsExludingBlock();
     for (const idty of identities) {
-      const certs = yield server.dal.certsToTarget(idty.getTargetHash());
+      const certs = yield server.dal.certsToTarget(idty.pubkey, idty.getTargetHash());
       const validCerts = [];
       for (const cert of certs) {
-        if (!(excluding && cert.block <= excluding.number)) {
-          const member = yield IdentityService.getWrittenByPubkey(cert.from);
-          if (member) {
-            cert.uids = [member.uid];
-            cert.isMember = member.member;
-            cert.wasMember = member.wasMember;
-          } else {
-            const potentials = yield IdentityService.getPendingFromPubkey(cert.from);
-            cert.uids = _(potentials).pluck('uid');
-            cert.isMember = false;
-            cert.wasMember = false;
-          }
-          validCerts.push(cert);
+        const member = yield IdentityService.getWrittenByPubkey(cert.from);
+        if (member) {
+          cert.uids = [member.uid];
+          cert.isMember = member.member;
+          cert.wasMember = member.wasMember;
+        } else {
+          const potentials = yield IdentityService.getPendingFromPubkey(cert.from);
+          cert.uids = _(potentials).pluck('uid');
+          cert.isMember = false;
+          cert.wasMember = false;
         }
+        validCerts.push(cert);
       }
       idty.certs = validCerts;
       const signed = yield server.dal.certsFrom(idty.pubkey);
       const validSigned = [];
       for (let j = 0; j < signed.length; j++) {
         const cert = _.clone(signed[j]);
-        if (!(excluding && cert.block <= excluding.number)) {
-          cert.idty = yield server.dal.getIdentityByHashOrNull(cert.target);
-          if (cert.idty) {
-            validSigned.push(cert);
-          } else {
-            logger.debug('A certification to an unknown identity was found (%s => %s)', cert.from, cert.to);
-          }
+        cert.idty = yield server.dal.getIdentityByHashOrNull(cert.target);
+        if (cert.idty) {
+          validSigned.push(cert);
+        } else {
+          logger.debug('A certification to an unknown identity was found (%s => %s)', cert.from, cert.to);
         }
       }
       idty.signed = validSigned;
@@ -99,27 +94,24 @@ function WOTBinding (server) {
   this.certifiersOf = (req) => co(function *() {
     const search = yield ParametersService.getSearchP(req);
     const idty = yield IdentityService.findMemberWithoutMemberships(search);
-    const excluding = yield BlockchainService.getCertificationsExludingBlock();
-    const certs = yield server.dal.certsToTarget(idty.getTargetHash());
+    const certs = yield server.dal.certsToTarget(idty.pubkey, idty.getTargetHash());
     idty.certs = [];
     for (const cert of certs) {
-      if (!(excluding && cert.block <= excluding.number)) {
-        const certifier = yield server.dal.getWrittenIdtyByPubkey(cert.from);
-        if (certifier) {
-          cert.uid = certifier.uid;
-          cert.isMember = certifier.member;
-          cert.sigDate = certifier.buid;
-          cert.wasMember = true; // As we checked if(certified)
-          if (!cert.cert_time) {
-            // TODO: would be more efficient to save medianTime on certification reception
-            let certBlock = yield server.dal.getBlock(cert.block_number);
-            cert.cert_time = {
-              block: certBlock.number,
-              medianTime: certBlock.medianTime
-            };
-          }
-          idty.certs.push(cert);
+      const certifier = yield server.dal.getWrittenIdtyByPubkey(cert.from);
+      if (certifier) {
+        cert.uid = certifier.uid;
+        cert.isMember = certifier.member;
+        cert.sigDate = certifier.buid;
+        cert.wasMember = true; // As we checked if(certified)
+        if (!cert.cert_time) {
+          // TODO: would be more efficient to save medianTime on certification reception
+          let certBlock = yield server.dal.getBlock(cert.block_number);
+          cert.cert_time = {
+            block: certBlock.number,
+            medianTime: certBlock.medianTime
+          };
         }
+        idty.certs.push(cert);
       }
     }
     const json = {
@@ -162,27 +154,24 @@ function WOTBinding (server) {
   this.certifiedBy = (req) => co(function *() {
     const search = yield ParametersService.getSearchP(req);
     const idty = yield IdentityService.findMemberWithoutMemberships(search);
-    const excluding = yield BlockchainService.getCertificationsExludingBlock();
     const certs = yield server.dal.certsFrom(idty.pubkey);
     idty.certs = [];
     for (const cert of certs) {
-      if (!(excluding && cert.block <= excluding.number)) {
-        const certified = yield server.dal.getWrittenIdtyByPubkey(cert.to);
-        if (certified) {
-          cert.uid = certified.uid;
-          cert.isMember = certified.member;
-          cert.sigDate = certified.buid;
-          cert.wasMember = true; // As we checked if(certified)
-          if (!cert.cert_time) {
-            // TODO: would be more efficient to save medianTime on certification reception
-            let certBlock = yield server.dal.getBlock(cert.block_number);
-            cert.cert_time = {
-              block: certBlock.number,
-              medianTime: certBlock.medianTime
-            };
-          }
-          idty.certs.push(cert);
+      const certified = yield server.dal.getWrittenIdtyByPubkey(cert.to);
+      if (certified) {
+        cert.uid = certified.uid;
+        cert.isMember = certified.member;
+        cert.sigDate = certified.buid;
+        cert.wasMember = true; // As we checked if(certified)
+        if (!cert.cert_time) {
+          // TODO: would be more efficient to save medianTime on certification reception (note: now partially done with INDEX)
+          let certBlock = yield server.dal.getBlock(cert.block_number);
+          cert.cert_time = {
+            block: certBlock.number,
+            medianTime: certBlock.medianTime
+          };
         }
+        idty.certs.push(cert);
       }
     }
     const json = {

@@ -297,13 +297,15 @@ function BlockchainContext() {
     const previousBlock = yield dal.getBlockByNumberAndHashOrNull(block.number - 1, block.previousHash || '');
     // Set the block as SIDE block (equivalent to removal from main branch)
     yield dal.blockDAL.setSideBlock(block, previousBlock);
-    yield undoCertifications(block);
+
+    // Undo certifications
+    yield dal.cindexDAL.removeBlock(blockstamp);
+
     yield dal.unflagExpiredIdentitiesOf(block.number);
-    yield dal.unflagExpiredCertificationsOf(block.number);
     yield undoMembersUpdate(block);
 
     // Remove any source created for this block (both Dividend and Transaction).
-    yield dal.removeAllSourcesOfBlock([block.number, block.hash].join('-'));
+    yield dal.removeAllSourcesOfBlock(blockstamp);
 
     yield undoDeleteTransactions(block);
   });
@@ -347,19 +349,20 @@ function BlockchainContext() {
     dal.updateWotbLinks(indexes.cindex);
 
     // Create/Update certifications
-    yield that.updateCertifications(block);
+    yield that.removeCertificationsFromSandbox(block);
     // Compute obsolete links
     yield that.computeObsoleteLinks(block);
     // Compute obsolete memberships (active, joiner)
     yield that.computeObsoleteMemberships(block);
     // Compute obsolete identities
     yield that.computeExpiredIdentities(block);
-    // Compute obsolete certifications
-    yield that.computeExpiredCertifications(block);
     // Compute obsolete memberships
     yield that.computeExpiredMemberships(block);
     // Delete eventually present transactions
     yield that.deleteTransactions(block);
+
+    yield dal.trimSandboxes(block, conf);
+
     return block;
   });
 
@@ -469,22 +472,6 @@ function BlockchainContext() {
     });
   }
 
-  function undoCertifications(block) {
-    return co(function *() {
-      for (const inlineCert of block.certifications) {
-        let cert = Certification.statics.fromInline(inlineCert);
-        let toIdty = yield dal.getWrittenIdtyByPubkey(cert.to);
-        cert.target = new Identity(toIdty).getTargetHash();
-        let existing = yield dal.existsCert(cert);
-        existing.written_block = null;
-        existing.written_hash = null;
-        existing.linked = false;
-        existing.written = false;
-        yield dal.saveCert(new Certification(cert));
-      }
-    });
-  }
-
   function undoDeleteTransactions(block) {
     return co(function *() {
       for (const obj of block.transactions) {
@@ -497,32 +484,16 @@ function BlockchainContext() {
   }
 
   /**
-   * Historical method that takes certifications from a block and tries to either:
-   *  * Update the certification found in the DB an set it as written
-   *  * Create it if it does not exist
+   * Delete certifications from the sandbox since it has been written.
    *
-   * Has a sibling method named 'updateCertificationsForBlocks'.
-   * @param block
-   * @param done
+   * @param block Block in which are contained the certifications to remove from sandbox.
    */
-  this.updateCertifications = (block) => co(function*() {
+  this.removeCertificationsFromSandbox = (block) => co(function*() {
     for (let inlineCert of block.certifications) {
       let cert = Certification.statics.fromInline(inlineCert);
       let idty = yield dal.getWritten(cert.to);
       cert.target = new Identity(idty).getTargetHash();
-      const to_uid = idty.uid;
-      idty = yield dal.getWritten(cert.from);
-      const from_uid = idty.uid;
-      const existing = yield dal.existsCert(cert);
-      if (existing) {
-        cert = existing;
-      }
-      cert.written_block = block.number;
-      cert.written_hash = block.hash;
-      cert.from_uid = from_uid;
-      cert.to_uid = to_uid;
-      cert.linked = true;
-      yield dal.officializeCertification(new Certification(cert));
+      yield dal.deleteCert(cert);
     }
   });
 
@@ -589,15 +560,8 @@ function BlockchainContext() {
     }
   });
 
-  this.computeExpiredCertifications = (block) => co(function *() {
-    let lastForExpiry = yield dal.getCertificationExpiringBlock(block, conf.certWindow);
-    if (lastForExpiry) {
-      yield dal.flagExpiredCertifications(lastForExpiry.number, block.number);
-    }
-  });
-
   this.computeExpiredMemberships = (block) => co(function *() {
-    let lastForExpiry = yield dal.getMembershipExpiringBlock(block, conf.certWindow);
+    let lastForExpiry = yield dal.getMembershipExpiringBlock(block, conf.msWindow);
     if (lastForExpiry) {
       yield dal.flagExpiredMemberships(lastForExpiry.number, block.number);
     }
@@ -665,37 +629,6 @@ function BlockchainContext() {
       txs = txs.concat(newOnes);
     }
     return dal.updateTransactions(txs);
-  });
-
-  /**
-   * New method for CREATING certifications found in blocks.
-   * Made for performance reasons, this method will batch insert all certifications at once.
-   * @param blocks
-   * @returns {*}
-   */
-  this.updateCertificationsForBlocks = (blocks) => co(function *() {
-    const certs = [];
-    for (const block of blocks) {
-      for (const inlineCert of block.certifications) {
-        let cert = Certification.statics.fromInline(inlineCert);
-        const to = yield dal.getWrittenIdtyByPubkey(cert.to);
-        const to_uid = to.uid;
-        cert.target = new Identity(to).getTargetHash();
-        const from = yield dal.getWrittenIdtyByPubkey(cert.from);
-        const from_uid = from.uid;
-        const existing = yield dal.existsCert(cert);
-        if (existing) {
-          cert = existing;
-        }
-        cert.written_block = block.number;
-        cert.written_hash = block.hash;
-        cert.from_uid = from_uid;
-        cert.to_uid = to_uid;
-        cert.linked = true;
-        certs.push(cert);
-      }
-    }
-    return dal.updateCertifications(certs);
   });
 
   this.deleteTransactions = (block) => co(function*() {

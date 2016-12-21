@@ -24,6 +24,7 @@ function CIndexDAL(driver) {
     'receiver',
     'created_on',
     'written_on',
+    'sig',
     'expires_on',
     'expired_on',
     'chainable_on',
@@ -44,6 +45,7 @@ function CIndexDAL(driver) {
       'receiver VARCHAR(50) NOT NULL,' +
       'created_on VARCHAR(80) NOT NULL,' +
       'written_on VARCHAR(80) NOT NULL,' +
+      'sig VARCHAR(100) NULL,' +
       'expires_on INTEGER NULL,' +
       'expired_on INTEGER NULL,' +
       'chainable_on INTEGER NULL,' +
@@ -93,16 +95,29 @@ function CIndexDAL(driver) {
     ' AND c2.op = ?' +
     ')', [receiver, constants.IDX_UPDATE]);
 
-  this.existsNonReplayableLink = (issuer, receiver) => that.query('SELECT * FROM ' + that.table + ' c1 ' +
+  this.getValidLinksFrom = (issuer) => that.query('SELECT * FROM ' + that.table + ' c1 ' +
     'WHERE c1.issuer = ? ' +
-    'AND c1.receiver = ? ' +
     'AND NOT EXISTS (' +
     ' SELECT * FROM c_index c2' +
     ' WHERE c1.issuer = c2.issuer' +
     ' AND c1.receiver = c2.receiver' +
     ' AND c1.created_on = c2.created_on' +
     ' AND c2.op = ?' +
-    ')', [issuer, receiver, constants.IDX_UPDATE]);
+    ')', [issuer, constants.IDX_UPDATE]);
+
+  this.existsNonReplayableLink = (issuer, receiver) => co(function*() {
+    const results = that.query('SELECT * FROM ' + that.table + ' c1 ' +
+      'WHERE c1.issuer = ? ' +
+      'AND c1.receiver = ? ' +
+      'AND NOT EXISTS (' +
+      ' SELECT * FROM c_index c2' +
+      ' WHERE c1.issuer = c2.issuer' +
+      ' AND c1.receiver = c2.receiver' +
+      ' AND c1.created_on = c2.created_on' +
+      ' AND c2.op = ?' +
+      ')', [issuer, receiver, constants.IDX_UPDATE]);
+    return results.length > 0;
+  });
 
   this.removeBlock = (blockstamp) => that.exec('DELETE FROM ' + that.table + ' WHERE written_on = \'' + blockstamp + '\'');
 }

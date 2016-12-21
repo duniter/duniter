@@ -439,8 +439,6 @@ function BlockchainService (server) {
     yield mainContext.updateTransactionsForBlocks(blocks, getBlockByNumberAndHash);
     // Create certifications
     yield mainContext.updateMembershipsForBlocks(blocks);
-    // Create certifications
-    yield mainContext.updateCertificationsForBlocks(blocks);
     logger.debug(blocks[0].number);
     yield dal.blockDAL.saveBunch(blocks);
     yield pushStatsForBlocks(blocks);
@@ -467,15 +465,6 @@ function BlockchainService (server) {
     }
     return dal.pushStats(stats);
   }
-
-  this.getCertificationsExludingBlock = () => co(function*() {
-    try {
-      const current = yield dal.getCurrentBlockOrNull();
-      return yield dal.getCertificationExcludingBlock(current, conf.sigValidity);
-    } catch (err) {
-        return { number: -1 };
-    }
-  });
 
   this.blocksBetween = (from, count) => co(function *() {
     if (count > 5000) {

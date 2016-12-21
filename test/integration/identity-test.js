@@ -283,26 +283,30 @@ describe("Identities collision", function() {
       res.should.have.property('sigDate').be.a.Number;
       res.should.have.property('certifications').length(2);
       let certs = res.certifications;
-      certs[0].should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
-      certs[0].should.have.property('uid').equal('toc');
-      certs[0].should.have.property('isMember').equal(true);
-      certs[0].should.have.property('wasMember').equal(true);
-      certs[0].should.have.property('sigDate').be.a.Number;
-      certs[0].should.have.property('cert_time').property('block').be.a.Number;
-      certs[0].should.have.property('cert_time').property('medianTime').be.a.Number;
-      certs[0].should.have.property('written').property('number').equal(0);
-      certs[0].should.have.property('written').property('hash').not.equal('');
-      certs[0].should.have.property('signature').not.equal('');
-      certs[1].should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
-      certs[1].should.have.property('uid').equal('tic');
-      certs[1].should.have.property('isMember').equal(true);
-      certs[1].should.have.property('wasMember').equal(true);
-      certs[1].should.have.property('sigDate').be.a.Number;
-      certs[1].should.have.property('cert_time').property('block').be.a.Number;
-      certs[1].should.have.property('cert_time').property('medianTime').be.a.Number;
-      certs[1].should.have.property('written').property('number').equal(0);
-      certs[1].should.have.property('written').property('hash').not.equal('');
-      certs[1].should.have.property('signature').not.equal('');
+      for (const cert of certs) {
+        if (cert.pubkey == 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo') {
+          cert.should.have.property('uid').equal('toc');
+          cert.should.have.property('isMember').equal(true);
+          cert.should.have.property('wasMember').equal(true);
+          cert.should.have.property('sigDate').be.a.Number;
+          cert.should.have.property('cert_time').property('block').be.a.Number;
+          cert.should.have.property('cert_time').property('medianTime').be.a.Number;
+          cert.should.have.property('written').property('number').equal(0);
+          cert.should.have.property('written').property('hash').not.equal('');
+          cert.should.have.property('signature').not.equal('');
+        } else {
+          cert.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
+          cert.should.have.property('uid').equal('tic');
+          cert.should.have.property('isMember').equal(true);
+          cert.should.have.property('wasMember').equal(true);
+          cert.should.have.property('sigDate').be.a.Number;
+          cert.should.have.property('cert_time').property('block').be.a.Number;
+          cert.should.have.property('cert_time').property('medianTime').be.a.Number;
+          cert.should.have.property('written').property('number').equal(0);
+          cert.should.have.property('written').property('hash').not.equal('');
+          cert.should.have.property('signature').not.equal('');
+        }
+      }
     });
   });
 

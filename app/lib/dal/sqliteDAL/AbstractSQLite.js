@@ -96,19 +96,6 @@ function AbstractSQLite(driver) {
     yield that.insert(toSave);
   });
 
-  this.updateEntity = (entity, values) => co(function *() {
-    const toSave = toRow(entity);
-    if (that.beforeSaveHook) {
-      that.beforeSaveHook(toSave);
-    }
-    const valuesKeys = _.keys(values);
-    const valorizations = valuesKeys.map((field) => '`' + field + '` = ?').join(', ');
-    const conditions = getPKFields().map((field) => '`' + field + '` = ?').join(' and ');
-    const setValues = valuesKeys.map((field) => values[field]);
-    const condValues = getPKFields().map((k) => toSave[k]);
-    return that.query('UPDATE ' + that.table + ' SET ' + valorizations + ' WHERE ' + conditions, setValues.concat(condValues));
-  });
-
   this.insert = (entity) => co(function *() {
     const row = toRow(entity);
     const values = that.fields.map((f) => row[f]);
@@ -119,6 +106,16 @@ function AbstractSQLite(driver) {
     const conditions = getPKFields().map((field) => '`' + field + '` = ?').join(' and ');
     const params = toParams(entity, getPKFields());
     return (yield that.query('SELECT * FROM ' + that.table + ' WHERE ' + conditions, params))[0];
+  });
+
+  this.deleteEntity = (entity) => co(function *() {
+    const toSave = toRow(entity);
+    if (that.beforeSaveHook) {
+      that.beforeSaveHook(toSave);
+    }
+    const conditions = getPKFields().map((field) => '`' + field + '` = ?').join(' and ');
+    const condValues = getPKFields().map((k) => toSave[k]);
+    return that.query('DELETE FROM ' + that.table + ' WHERE ' + conditions, condValues);
   });
 
   this.exec = (sql) => co(function *() {
@@ -147,20 +144,6 @@ function AbstractSQLite(driver) {
     const valuesKeys = getFields(that.fields);
     const values = valuesKeys.map((field) => escapeToSQLite(row[field]));
     return "(" + values.join(',') + ")";
-  };
-
-  this.getConsumeHead = () => {
-    return 'UPDATE ' + that.table + " SET consumed = 1 WHERE ";
-  };
-
-  this.getConsumeValues = (entities) => {
-    return entities.map((toSave) => {
-      if (that.beforeSaveHook) {
-        that.beforeSaveHook(toSave);
-      }
-      const conditions = getPKFields().map((field) => '`' + field + '` = ' + escapeToSQLite(toSave[field])).join(' and ');
-      return "(" + conditions + ")";
-    }).join(' OR\n ');
   };
 
   this.toInsertValues = (entity) => {

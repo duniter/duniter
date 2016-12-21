@@ -287,16 +287,49 @@ function FileDAL(params) {
 
   this.searchJustIdentities = (search) => this.idtyDAL.searchThoseMatching(search);
 
-  this.certsToTarget = (hash) => co(function*() {
+  this.certsToTarget = (pub, hash) => co(function*() {
     const certs = yield that.certDAL.getToTarget(hash);
-    const matching = _.chain(certs).sortBy((c) => -c.block).value();
+    const links = yield that.cindexDAL.getValidLinksTo(pub);
+    let matching = certs;
+    links.map((entry) => {
+      entry.from = entry.issuer;
+      const co = entry.created_on.split('-');
+      const wo = entry.written_on.split('-');
+      entry.block = parseInt(co[0]);
+      entry.block_number = parseInt(co[0]);
+      entry.block_hash = co[1];
+      entry.linked = true;
+      entry.written_block = parseInt(wo[0]);
+      entry.written_hash = wo[1];
+      matching.push(entry);
+    });
+    matching  = _.sortBy(matching, (c) => -c.block);
     matching.reverse();
     return matching;
   });
 
   this.certsFrom = (pubkey) => co(function*() {
-    const certs = yield that.certDAL.getFromPubkey(pubkey);
-    return _.chain(certs).where({from: pubkey}).sortBy((c) => c.block).value();
+    const certs = yield that.certDAL.getFromPubkeyCerts(pubkey);
+    const links = yield that.cindexDAL.getValidLinksFrom(pubkey);
+    let matching = certs;
+    yield links.map((entry) => co(function*() {
+      const idty = yield that.getWrittenIdtyByPubkey(entry.receiver);
+      entry.from = entry.issuer;
+      entry.to = entry.receiver;
+      const co = entry.created_on.split('-');
+      const wo = entry.written_on.split('-');
+      entry.block = parseInt(co[0]);
+      entry.block_number = parseInt(co[0]);
+      entry.block_hash = co[1];
+      entry.target = idty.hash;
+      entry.linked = true;
+      entry.written_block = parseInt(wo[0]);
+      entry.written_hash = wo[1];
+      matching.push(entry);
+    }));
+    matching  = _.sortBy(matching, (c) => -c.block);
+    matching.reverse();
+    return matching;
   });
 
   this.certsFindNew = () => co(function*() {
@@ -332,10 +365,7 @@ function FileDAL(params) {
     return _.chain(mss).sortBy((ms) => -ms.sigDate).value();
   });
 
-  this.existsNonReplayableLink = (from, to) => co(function *() {
-    const links = yield that.cindexDAL.existsNonReplayableLink(from, to);
-    return links.length ? true : false;
-  });
+  this.existsNonReplayableLink = (from, to) => this.cindexDAL.existsNonReplayableLink(from, to);
 
   this.getSource = (identifier, pos) => co(function*() {
     // TODO: remove for version 1.0
@@ -380,7 +410,14 @@ function FileDAL(params) {
     }
   });
 
-  this.existsCert = (cert) => that.certDAL.existsGivenCert(cert);
+  this.existsCert = (cert) => co(function*() {
+    const existing = yield that.certDAL.existsGivenCert(cert);
+    if (existing) return existing;
+    const existsLink = yield that.cindexDAL.existsNonReplayableLink(cert.from, cert.to);
+    return !!existsLink;
+  });
+
+  this.deleteCert = (cert) => that.certDAL.deleteCert(cert);
 
   this.setKicked = (pubkey, hash, notEnoughLinks) => co(function*() {
     const kick = notEnoughLinks ? true : false;
@@ -411,25 +448,11 @@ function FileDAL(params) {
     that.indicatorsDAL.writeCurrentRevocating.bind(that.indicatorsDAL)
   );
 
-  this.getCertificationExcludingBlock = (current, certValidtyTime) => getCurrentExcludingOrExpiring(
-    current,
-    certValidtyTime,
-    that.indicatorsDAL.getCurrentCertificationExcludingBlock.bind(that.indicatorsDAL),
-    that.indicatorsDAL.writeCurrentExcludingForCert.bind(that.indicatorsDAL)
-  );
-
   this.getIdentityExpiringBlock = (current, idtyValidtyTime) => getCurrentExcludingOrExpiring(
     current,
     idtyValidtyTime,
     that.indicatorsDAL.getCurrentIdentityExpiringBlock.bind(that.indicatorsDAL),
     that.indicatorsDAL.writeCurrentExpiringForIdty.bind(that.indicatorsDAL)
-  );
-
-  this.getCertificationExpiringBlock = (current, certWindow) => getCurrentExcludingOrExpiring(
-    current,
-    certWindow,
-    that.indicatorsDAL.getCurrentCertificationExpiringBlock.bind(that.indicatorsDAL),
-    that.indicatorsDAL.writeCurrentExpiringForCert.bind(that.indicatorsDAL)
   );
 
   this.getMembershipExpiringBlock = (current, msWindow) => getCurrentExcludingOrExpiring(
@@ -526,7 +549,6 @@ function FileDAL(params) {
   };
 
   this.flagExpiredIdentities = (maxNumber, onNumber) => this.idtyDAL.flagExpiredIdentities(maxNumber, onNumber);
-  this.flagExpiredCertifications = (maxNumber, onNumber) => this.certDAL.flagExpiredCertifications(maxNumber, onNumber);
   this.flagExpiredMemberships = (maxNumber, onNumber) => this.msDAL.flagExpiredMemberships(maxNumber, onNumber);
   this.kickWithOutdatedMemberships = (maxNumber) => this.idtyDAL.kickMembersForMembershipBelow(maxNumber);
   this.revokeWithOutdatedMemberships = (maxNumber) => this.idtyDAL.revokeMembersForMembershipBelow(maxNumber);
@@ -658,6 +680,11 @@ function FileDAL(params) {
     return true;
   });
 
+  this.trimSandboxes = (block, conf) => co(function*() {
+    yield that.certDAL.trimExpiredCerts(block.medianTime);
+    return true;
+  });
+
   this.saveMemberships = (type, mss, blockNumber) => {
     const msType = type == 'leave' ? 'out' : 'in';
     return mss.reduce((p, msRaw) => p.then(() => {
@@ -702,21 +729,11 @@ function FileDAL(params) {
 
   this.unflagExpiredIdentitiesOf = (number) => that.idtyDAL.unflagExpiredIdentitiesOf(number);
   
-  this.unflagExpiredCertificationsOf = (number) => that.certDAL.unflagExpiredCertificationsOf(number);
-  
   this.unflagExpiredMembershipsOf = (number) => that.msDAL.unflagExpiredMembershipsOf(number);
-
-  this.updateCertifications = (certs) => that.certDAL.updateBatchOfCertifications(certs);
 
   this.updateMemberships = (certs) => that.msDAL.updateBatchOfMemberships(certs);
 
   this.updateTransactions = (txs) => that.txsDAL.insertBatchOfTxs(txs);
-
-  this.officializeCertification = (cert) => that.certDAL.saveOfficial(cert);
-
-  this.saveCert = (cert) =>
-      // TODO: create a specific method with a different name and hide saveCert()
-      that.certDAL.saveCert(cert);
 
   this.savePendingIdentity = (idty) =>
       // TODO: create a specific method with a different name and hide saveIdentity()

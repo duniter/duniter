@@ -14,7 +14,7 @@ limiter.noLimit();
 
 const s1 = toolbox.server({
   idtyWindow: 10,
-  certWindow: 10,
+  sigWindow: 10,
   msWindow: 10,
   dt: 10,
   pair: {

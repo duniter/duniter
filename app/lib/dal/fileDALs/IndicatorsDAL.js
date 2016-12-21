@@ -38,10 +38,6 @@ function IndicatorsDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   this.writeCurrentRevocating = (revocating) => setBlock('revocatingMS', revocating);
 
-  this.writeCurrentExcludingForCert = (excluding) => setBlock('excludingCRT', excluding);
-
-  this.writeCurrentExpiringForCert = (excluding) => setBlock('expiringCRT', excluding);
-
   this.writeCurrentExpiringForIdty = (excluding) => setBlock('expiringIDTY', excluding);
 
   this.writeCurrentExpiringForMembership = (excluding) => setBlock('expiringMS', excluding);
@@ -49,10 +45,6 @@ function IndicatorsDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
   this.getCurrentMembershipExcludingBlock = () => getBlock('excludingMS');
 
   this.getCurrentMembershipRevocatingBlock = () => getBlock('revocatingMS');
-
-  this.getCurrentCertificationExpiringBlock = () => getBlock('expiringCRT');
-
-  this.getCurrentCertificationExcludingBlock = () => getBlock('excludingCRT');
 
   this.getCurrentIdentityExpiringBlock = () => getBlock('expiringIDTY');
 

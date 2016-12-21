@@ -140,6 +140,8 @@ function IdentityService () {
             number: 0,
             hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
           };
+        } else {
+          cert.expires_on = basedBlock.medianTime + conf.sigWindow;
         }
         cert.block_hash = basedBlock.hash;
         const mCert = new Certification({
@@ -148,7 +150,8 @@ function IdentityService () {
           block_number: cert.block_number,
           block_hash: cert.block_hash,
           target: targetHash,
-          to: idty.pubkey
+          to: idty.pubkey,
+          expires_on: cert.expires_on
         });
         let existingCert = yield dal.existsCert(mCert);
         if (!existingCert) {

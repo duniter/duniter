@@ -179,13 +179,16 @@ describe("WOTB module", function() {
         });
         // Should make MS expire for toc2
         yield commit(s2)({
-          time: now + 800
+          time: now + 500
         });
         yield commit(s2)({
-          time: now + 800
+          time: now + 600
         });
         yield cat2.join(); // Renew for not to be kicked!
         yield tic2.join(); // Renew for not to be kicked!
+        yield commit(s2)({
+          time: now + 800
+        });
         yield commit(s2)({
           time: now + 800
         });

@@ -3,7 +3,7 @@
  */
 
 const co = require('co');
-const _ = require('underscore');
+const indexer = require('./../../../dup/indexer');
 const AbstractSQLite = require('./../AbstractSQLite');
 
 module.exports = MIndexDAL;
@@ -50,6 +50,14 @@ function MIndexDAL(driver) {
       ');' +
       'CREATE INDEX IF NOT EXISTS idx_mindex_pub ON m_index (pub);' +
       'COMMIT;', []);
+  });
+
+  this.getReducedMS = (pub) => co(function*() {
+    const reducables = yield that.reducable(pub);
+    if (reducables.length) {
+      return indexer.DUP_HELPERS.reduce(reducables);
+    }
+    return null;
   });
 
   this.reducable = (pub) => this.query('SELECT * FROM ' + this.table + ' WHERE pub = ? ORDER BY CAST(written_on as integer) ASC', [pub]);

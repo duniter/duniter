@@ -89,7 +89,7 @@ function CertDAL(driver) {
 
   this.deleteCert = (cert) => this.deleteEntity(cert);
 
-  this.trimExpiredCerts = (medianTime) => this.exec('DELETE FROM ' + this.table + ' WHERE expires_on < ' + medianTime);
+  this.trimExpiredCerts = (medianTime) => this.exec('DELETE FROM ' + this.table + ' WHERE expires_on IS NULL OR expires_on < ' + medianTime);
 
   /**************************
    * SANDBOX STUFF

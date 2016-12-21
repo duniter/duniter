@@ -34,19 +34,7 @@ function IndicatorsDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
     return Promise.resolve(cache[key] || null);
   }
 
-  this.writeCurrentExcluding = (excluding) => setBlock('excludingMS', excluding);
-
-  this.writeCurrentRevocating = (revocating) => setBlock('revocatingMS', revocating);
-
   this.writeCurrentExpiringForIdty = (excluding) => setBlock('expiringIDTY', excluding);
 
-  this.writeCurrentExpiringForMembership = (excluding) => setBlock('expiringMS', excluding);
-
-  this.getCurrentMembershipExcludingBlock = () => getBlock('excludingMS');
-
-  this.getCurrentMembershipRevocatingBlock = () => getBlock('revocatingMS');
-
   this.getCurrentIdentityExpiringBlock = () => getBlock('expiringIDTY');
-
-  this.getCurrentMembershipExpiringBlock = () => getBlock('expiringMS');
 }

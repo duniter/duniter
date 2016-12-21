@@ -202,7 +202,7 @@ function checkMSTarget (ms, block, conf, dal) {
       throw Error('Hash must be E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855 for root block\'s memberships');
     }
     else if (block.number == 0) {
-      return true; // Valid for root block
+      return null; // Valid for root block
     } else {
       let basedBlock;
       try {
@@ -214,7 +214,7 @@ function checkMSTarget (ms, block, conf, dal) {
       if (current && current.medianTime > basedBlock.medianTime + conf.msValidity) {
         throw Error('Membership has expired');
       }
-      return true;
+      return basedBlock;
     }
   });
 }

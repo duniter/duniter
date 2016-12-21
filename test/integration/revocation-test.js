@@ -2,6 +2,7 @@
 
 const _         = require('underscore');
 const co        = require('co');
+const should    = require('should');
 const ucoin     = require('../../index');
 const bma       = require('../../app/lib/streams/bma');
 const user      = require('./tools/user');
@@ -183,7 +184,11 @@ describe("Revocation", function() {
   });
 
   it('cat should not be able to join back', () => co(function *() {
-    yield cat.join();
+    try {
+      yield cat.join();
+    } catch (e) {
+      should.exists(e);
+    }
     yield commitS1();
     return expectAnswer(rp('http://127.0.0.1:9964/wot/members', { json: true }), function(res) {
       res.should.have.property('results').length(2);

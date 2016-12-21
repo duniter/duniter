@@ -310,9 +310,11 @@ function BlockchainService (server) {
       certs = yield that.getValidCerts(pubkey, newCerts);
       outdistanced = yield rules.HELPERS.isOver3Hops(currentVersion, pubkey, newLinks, someNewcomers, current, conf, dal);
       // Expiration of current membershship
-      if (join.identity.currentMSN >= 0) {
+      const currentMembership = yield dal.mindexDAL.getReducedMS(pubkey);
+      const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
+      if (currentMSN >= 0) {
         if (join.identity.member) {
-          const msBlock = yield dal.getBlock(join.identity.currentMSN);
+          const msBlock = yield dal.getBlock(currentMSN);
           if (msBlock && msBlock.medianTime) { // special case for block #0
             expiresMS = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
           }
@@ -437,8 +439,6 @@ function BlockchainService (server) {
     }
     // Transactions recording
     yield mainContext.updateTransactionsForBlocks(blocks, getBlockByNumberAndHash);
-    // Create certifications
-    yield mainContext.updateMembershipsForBlocks(blocks);
     logger.debug(blocks[0].number);
     yield dal.blockDAL.saveBunch(blocks);
     yield pushStatsForBlocks(blocks);

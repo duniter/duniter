@@ -146,7 +146,9 @@ function BlockGenerator(mainContext, prover) {
         block = {};
       }
       const identity = yield dal.getIdentityByHashOrNull(leave.idHash);
-      if (identity && block && identity.currentMSN < leave.ms.number && identity.member) {
+      const currentMembership = yield dal.mindexDAL.getReducedMS(ms.issuer);
+      const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
+      if (identity && block && currentMSN < leave.ms.number && identity.member) {
         // MS + matching cert are found
         leave.identity = identity;
         leaveData[identity.pubkey] = leave;
@@ -264,7 +266,9 @@ function BlockGenerator(mainContext, prover) {
         const idtyHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
         const join = yield that.getSinglePreJoinData(current, idtyHash, joiners);
         join.ms = ms;
-        if (!join.identity.revoked && join.identity.currentMSN < parseInt(join.ms.number)) {
+        const currentMembership = yield dal.mindexDAL.getReducedMS(ms.issuer);
+        const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
+        if (!join.identity.revoked && currentMSN < parseInt(join.ms.number)) {
           preJoinData[join.identity.pubkey] = join;
         }
       } catch (err) {
@@ -344,7 +348,8 @@ function BlockGenerator(mainContext, prover) {
     if (!verified) {
       throw constants.ERRORS.IDENTITY_WRONGLY_SIGNED;
     }
-    if (!identity.leaving) {
+    const isIdentityLeaving = yield dal.isLeaving(idty.pubkey);
+    if (!isIdentityLeaving) {
       if (!current) {
         // Look for certifications from initial joiners
         // TODO: check if this is still working

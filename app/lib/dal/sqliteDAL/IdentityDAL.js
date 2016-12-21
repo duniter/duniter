@@ -49,19 +49,19 @@ function IdentityDAL(driver, wotb) {
     return that.exec('BEGIN;' +
       'CREATE TABLE IF NOT EXISTS ' + that.table + ' (' +
       'revoked BOOLEAN NOT NULL,' +
-      'currentMSN INTEGER NOT NULL,' +
-      'currentINN INTEGER NOT NULL,' +
+      'currentMSN INTEGER NULL,' +
+      'currentINN INTEGER NULL,' +
       'buid VARCHAR(100) NOT NULL,' +
       'member BOOLEAN NOT NULL,' +
       'kick BOOLEAN NOT NULL,' +
-      'leaving BOOLEAN NOT NULL,' +
+      'leaving BOOLEAN NULL,' +
       'wasMember BOOLEAN NOT NULL,' +
       'pubkey VARCHAR(50) NOT NULL,' +
       'uid VARCHAR(255) NOT NULL,' +
       'sig VARCHAR(100) NOT NULL,' +
       'revocation_sig VARCHAR(100) NULL,' +
       'hash VARCHAR(64) NOT NULL,' +
-      'written BOOLEAN NOT NULL,' +
+      'written BOOLEAN NULL,' +
       'wotb_id INTEGER NULL,' +
       'PRIMARY KEY (pubkey,uid,hash)' +
       ');' +
@@ -103,24 +103,16 @@ function IdentityDAL(driver, wotb) {
 
   this.unacceptIdentity = (pubkey) => co(function *() {
     const idty = yield that.getFromPubkey(pubkey);
-    idty.currentMSN = -1;
-    idty.currentINN = -1;
     idty.written = false;
     idty.wasMember = false;
     idty.member = false;
     idty.kick = false;
-    idty.leaving = false;
     idty.wotb_id = wotb.removeNode();
     return that.saveIdentity(idty);
   });
 
-  this.unJoinIdentity = (ms, previousMS, previousIN) => co(function *() {
+  this.unJoinIdentity = (ms) => co(function *() {
     const idty = yield that.getFromPubkey(ms.issuer);
-    idty.currentMSN = previousMS.number;
-    idty.currentINN = previousIN.number;
-    if (previousMS.membership === 'OUT') {
-      idty.leaving = true;
-    }
     idty.member = false;
     /**
      * Note: it is not required to do:
@@ -133,27 +125,6 @@ function IdentityDAL(driver, wotb) {
     return that.saveIdentity(idty);
   });
 
-  this.unRenewIdentity = (ms, previousMS, previousIN) => co(function *() {
-    const idty = yield that.getFromPubkey(ms.issuer);
-    idty.currentMSN = previousMS.number;
-    idty.currentINN = previousIN.number;
-    if (previousMS.membership === 'OUT') {
-      idty.leaving = true;
-    }
-    return that.saveIdentity(idty);
-  });
-
-  this.unLeaveIdentity = (ms, previousMS, previousIN) => co(function *() {
-    const idty = yield that.getFromPubkey(ms.issuer);
-    idty.currentMSN = previousMS.number;
-    idty.currentINN = previousIN.number;
-    idty.leaving = false;
-    if (previousMS.membership === 'OUT') {
-      idty.leaving = true;
-    }
-    return that.saveIdentity(idty);
-  });
-
   this.unExcludeIdentity = (pubkey, causeWasRevocation) => co(function *() {
     const idty = yield that.getFromPubkey(pubkey);
     idty.member = true;
@@ -163,8 +134,6 @@ function IdentityDAL(driver, wotb) {
   });
 
   this.newIdentity = function(idty) {
-    idty.currentMSN = -1; // Will be overidden by joinIdentity()
-    idty.currentINN = -1; // Will be overidden by joinIdentity()
     idty.member = true;
     idty.wasMember = true;
     idty.kick = false;
@@ -174,32 +143,24 @@ function IdentityDAL(driver, wotb) {
     return that.saveIdentity(idty);
   };
 
-  this.joinIdentity = (pubkey, currentMSN) =>  co(function *() {
+  this.joinIdentity = (pubkey) =>  co(function *() {
     const idty = yield that.getFromPubkey(pubkey);
-    idty.currentMSN = currentMSN;
-    idty.currentINN = currentMSN;
     idty.member = true;
     idty.wasMember = true;
-    idty.leaving = false;
     wotb.setEnabled(true, idty.wotb_id);
     return that.saveIdentity(idty);
   });
 
-  this.activeIdentity = (pubkey, currentMSN) => co(function *() {
+  this.activeIdentity = (pubkey) => co(function *() {
     const idty = yield that.getFromPubkey(pubkey);
-    idty.currentMSN = currentMSN;
-    idty.currentINN = currentMSN;
     idty.member = true;
     idty.kick = false;
-    idty.leaving = false;
     wotb.setEnabled(true, idty.wotb_id);
     return that.saveIdentity(idty);
   });
 
-  this.leaveIdentity = (pubkey, currentMSN) => co(function *() {
+  this.leaveIdentity = (pubkey) => co(function *() {
     const idty = yield that.getFromPubkey(pubkey);
-    idty.currentMSN = currentMSN;
-    idty.leaving = true;
     return that.saveIdentity(idty);
   });
 
@@ -250,8 +211,6 @@ function IdentityDAL(driver, wotb) {
     wasMember: false
   });
 
-  this.listLocalPending = () => Q([]);
-
   this.searchThoseMatching = (search) => that.sqlFindLikeAny({
     pubkey: "%" + search + "%",
     uid: "%" + search + "%"
@@ -271,32 +230,6 @@ function IdentityDAL(driver, wotb) {
   });
 
   this.unFlagToBeKicked = () => that.exec('UPDATE ' + that.table + ' SET kick = 0 WHERE kick');
-
-  this.kickMembersForMembershipBelow = (maxNumber) => co(function *() {
-    const toKick = yield that.sqlFind({
-      currentINN: { $lte: maxNumber },
-      kick: false,
-      member: true
-    });
-    for (const idty of toKick) {
-      logger.trace('Kick %s for currentINN <= %s', idty.uid, maxNumber);
-      idty.kick = true;
-      yield that.saveEntity(idty);
-    }
-  });
-
-  this.revokeMembersForMembershipBelow = (maxNumber) => co(function *() {
-    const toKick = yield that.sqlFind({
-      currentINN: { $lte: maxNumber },
-      kick: false,
-      member: true
-    });
-    for (const idty of toKick) {
-      logger.trace('Revoke %s for currentINN <= %s', idty.uid, maxNumber);
-      idty.revoked = true;
-      yield that.saveEntity(idty);
-    }
-  });
 
   /**************************
    * SANDBOX STUFF

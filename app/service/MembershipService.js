@@ -35,9 +35,12 @@ function MembershipService () {
       throw constants.ERRORS.WRONG_SIGNATURE_MEMBERSHIP;
     }
     // Get already existing Membership with same parameters
-    const found = yield dal.getMembershipForHashAndIssuer(entry);
-    if (found) {
+    const mostRecentNumber = yield dal.getMostRecentMembershipNumberForIssuer(entry.issuer);
+    const thisNumber = parseInt(entry.block);
+    if (mostRecentNumber == thisNumber) {
       throw constants.ERRORS.ALREADY_RECEIVED_MEMBERSHIP;
+    } else if (mostRecentNumber > thisNumber) {
+      throw constants.ERRORS.A_MORE_RECENT_MEMBERSHIP_EXISTS;
     }
     const isMember = yield dal.isMember(entry.issuer);
     const isJoin = entry.membership == 'IN';
@@ -46,7 +49,10 @@ function MembershipService () {
       throw constants.ERRORS.MEMBERSHIP_A_NON_MEMBER_CANNOT_LEAVE;
     }
     const current = yield dal.getCurrentBlockOrNull();
-    yield rules.HELPERS.checkMembershipBlock(entry, current, conf, dal);
+    const basedBlock = yield rules.HELPERS.checkMembershipBlock(entry, current, conf, dal);
+    if (basedBlock) {
+      entry.expires_on = basedBlock.medianTime + conf.msWindow;
+    }
     entry.pubkey = entry.issuer;
     if (!(yield dal.msDAL.sandbox.acceptNewSandBoxEntry(entry, conf.pair && conf.pair.pub))) {
       throw constants.ERRORS.SANDBOX_FOR_MEMERSHIP_IS_FULL;

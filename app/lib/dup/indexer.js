@@ -69,6 +69,7 @@ const indexer = module.exports = {
           pub: ms.issuer,
           created_on: [ms.number, ms.fpr].join('-'),
           written_on: [block.number, block.hash].join('-'),
+          type: 'JOIN',
           expires_on: parseInt(block.medianTime) + conf.msValidity,
           revokes_on: parseInt(block.medianTime) + conf.msValidity * constants.REVOCATION_FACTOR,
           revoked_on: null,
@@ -82,6 +83,7 @@ const indexer = module.exports = {
           pub: ms.issuer,
           created_on: [ms.number, ms.fpr].join('-'),
           written_on: [block.number, block.hash].join('-'),
+          type: 'JOIN',
           expires_on: parseInt(block.medianTime) + conf.msValidity,
           revokes_on: parseInt(block.medianTime) + conf.msValidity * constants.REVOCATION_FACTOR,
           revoked_on: null,
@@ -111,6 +113,7 @@ const indexer = module.exports = {
         pub: ms.issuer,
         created_on: [ms.number, ms.fpr].join('-'),
         written_on: [block.number, block.hash].join('-'),
+        type: 'ACTIVE',
         expires_on: parseInt(block.medianTime) + conf.msValidity,
         revokes_on: parseInt(block.medianTime) + conf.msValidity * constants.REVOCATION_FACTOR,
         revoked_on: null,
@@ -126,6 +129,7 @@ const indexer = module.exports = {
         pub: ms.issuer,
         created_on: [ms.number, ms.fpr].join('-'),
         written_on: [block.number, block.hash].join('-'),
+        type: 'LEAVE',
         expires_on: null,
         revokes_on: null,
         revoked_on: null,
@@ -257,7 +261,7 @@ const indexer = module.exports = {
     return index;
   },
 
-  quickCompleteGlobalScope: (block, conf, bindex, iindex, mindex, cindex, sindex) => co(function*() {
+  quickCompleteGlobalScope: (block, conf, bindex, iindex, mindex, cindex, sindex, dal) => co(function*() {
 
     function range(start, end, property) {
       return co(function*() {
@@ -331,6 +335,21 @@ const indexer = module.exports = {
 
     // BR_G16
     yield indexer.prepareSpeed(HEAD, head, conf);
+
+    // BR_G19
+    yield indexer.prepareIdentitiesAge(iindex, HEAD, HEAD_1, conf, dal);
+
+    // BR_G22
+    yield indexer.prepareMembershipsAge(mindex, HEAD, HEAD_1, conf, dal);
+
+    // BR_G37
+    yield indexer.prepareCertificationsAge(cindex, HEAD, HEAD_1, conf, dal);
+
+    // BR_G104
+    indexer.ruleIndexCorrectMembershipExpiryDate(mindex);
+
+    // BR_G105
+    indexer.ruleIndexCorrectCertificationExpiryDate(cindex);
 
     return HEAD;
   }),
@@ -468,27 +487,7 @@ const indexer = module.exports = {
     yield indexer.preparePersonalizedPoW(HEAD, HEAD_1, range, conf);
 
     // BR_G19
-    yield _.where(iindex, { op: constants.IDX_CREATE }).map((ENTRY) => co(function*() {
-      if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
-        ENTRY.age = 0;
-      } else {
-        if (HEAD.version <= 4) {
-          let ref = yield dal.getBlock(number(ENTRY.created_on));
-          if (ref) { // blockstamp was not checked prior to 0.5
-            ENTRY.age = HEAD_1.medianTime - ref.medianTime;
-          } else {
-            ENTRY.age = conf.idtyWindow + 1;
-          }
-        } else {
-          let ref = yield dal.getBlockByBlockstamp(ENTRY.created_on);
-          if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
-            ENTRY.age = HEAD_1.medianTime - ref.medianTime;
-          } else {
-            ENTRY.age = conf.idtyWindow + 1;
-          }
-        }
-      }
-    }));
+    yield indexer.prepareIdentitiesAge(iindex, HEAD, HEAD_1, conf, dal);
 
     // BR_G20
     yield iindex.map((ENTRY) => co(function*() {
@@ -528,18 +527,7 @@ const indexer = module.exports = {
     }));
 
     // BR_G22
-    yield _.filter(mindex, (entry) => !entry.revoked_on).map((ENTRY) => co(function*() {
-      if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
-        ENTRY.age = 0;
-      } else {
-        let ref = yield dal.getBlockByBlockstamp(ENTRY.created_on);
-        if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
-          ENTRY.age = HEAD_1.medianTime - ref.medianTime;
-        } else {
-          ENTRY.age = conf.msWindow + 1;
-        }
-      }
-    }));
+    yield indexer.prepareMembershipsAge(mindex, HEAD, HEAD_1, conf, dal);
 
     // BR_G23
     yield mindex.map((ENTRY) => co(function*() {
@@ -590,7 +578,7 @@ const indexer = module.exports = {
 
     // BR_G27
     yield mindex.map((ENTRY) => co(function*() {
-      if (ENTRY.expires_on) {
+      if (ENTRY.type == 'JOIN' || ENTRY.type == 'ACTIVE') {
         const existing = count(yield dal.cindexDAL.sqlFind({ receiver: ENTRY.pub, expired_on: 0 }));
         const pending = count(_.filter(cindex, (c) => c.receiver == ENTRY.pub && c.expired_on == 0));
         ENTRY.enoughCerts = (existing + pending) >= conf.sigQty;
@@ -601,7 +589,7 @@ const indexer = module.exports = {
 
     // BR_G28
     yield mindex.map((ENTRY) => co(function*() {
-      if (!ENTRY.expires_on) {
+      if (ENTRY.type == 'LEAVE') {
         ENTRY.leaverIsMember = reduce(yield dal.iindexDAL.reducable(ENTRY.pub)).member;
       } else {
         ENTRY.leaverIsMember = true;
@@ -610,10 +598,10 @@ const indexer = module.exports = {
 
     // BR_G29
     yield mindex.map((ENTRY) => co(function*() {
-      if (!(ENTRY.op == constants.IDX_UPDATE && ENTRY.expires_on === 0)) {
-        ENTRY.activeIsMember = true;
-      } else {
+      if (ENTRY.type == 'ACTIVE') {
         ENTRY.activeIsMember = reduce(yield dal.iindexDAL.reducable(ENTRY.pub)).member;
+      } else {
+        ENTRY.activeIsMember = true;
       }
     }));
 
@@ -650,18 +638,7 @@ const indexer = module.exports = {
     }));
 
     // BR_G37
-    yield cindex.map((ENTRY) => co(function*() {
-      if (HEAD.number == 0) {
-        ENTRY.age = 0;
-      } else {
-        let ref = yield dal.getBlock(number(ENTRY.created_on));
-        if (ref) {
-          ENTRY.age = HEAD_1.medianTime - ref.medianTime;
-        } else {
-          ENTRY.age = conf.sigWindow + 1;
-        }
-      }
-    }));
+    yield indexer.prepareCertificationsAge(cindex, HEAD, HEAD_1, conf, dal);
 
     // BR_G38
     if (HEAD.number > 0) {
@@ -1026,6 +1003,63 @@ const indexer = module.exports = {
     HEAD.powZeros = (HEAD.issuerDiff - HEAD.powRemainder) / 16;
   }),
 
+  // BR_G19
+  prepareIdentitiesAge: (iindex, HEAD, HEAD_1, conf, dal) => co(function*() {
+    yield _.where(iindex, { op: constants.IDX_CREATE }).map((ENTRY) => co(function*() {
+      if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
+        ENTRY.age = 0;
+      } else {
+        if (HEAD.version <= 4) {
+          let ref = yield dal.getBlock(number(ENTRY.created_on));
+          if (ref) { // blockstamp was not checked prior to 0.5
+            ENTRY.age = HEAD_1.medianTime - ref.medianTime;
+          } else {
+            ENTRY.age = conf.idtyWindow + 1;
+          }
+        } else {
+          let ref = yield dal.getBlockByBlockstamp(ENTRY.created_on);
+          if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
+            ENTRY.age = HEAD_1.medianTime - ref.medianTime;
+          } else {
+            ENTRY.age = conf.idtyWindow + 1;
+          }
+        }
+      }
+    }));
+  }),
+
+  // BR_G22
+  prepareMembershipsAge: (mindex, HEAD, HEAD_1, conf, dal) => co(function*() {
+    yield _.filter(mindex, (entry) => !entry.revoked_on).map((ENTRY) => co(function*() {
+      if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
+        ENTRY.age = 0;
+      } else {
+        let ref = yield dal.getBlockByBlockstamp(ENTRY.created_on);
+        if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
+          ENTRY.age = HEAD_1.medianTime - ref.medianTime;
+        } else {
+          ENTRY.age = conf.msWindow + 1;
+        }
+      }
+    }));
+  }),
+
+  // BR_G37
+  prepareCertificationsAge: (cindex, HEAD, HEAD_1, conf, dal) => co(function*() {
+    yield cindex.map((ENTRY) => co(function*() {
+      if (HEAD.number == 0) {
+        ENTRY.age = 0;
+      } else {
+        let ref = yield dal.getBlock(number(ENTRY.created_on));
+        if (ref) {
+          ENTRY.age = HEAD_1.medianTime - ref.medianTime;
+        } else {
+          ENTRY.age = conf.sigWindow + 1;
+        }
+      }
+    }));
+  }),
+
   // BR_G49
   ruleVersion: (HEAD, HEAD_1) => {
     if (HEAD.number > 0) {
@@ -1386,21 +1420,27 @@ const indexer = module.exports = {
   // BR_G93
   ruleIndexGenMembershipExpiry: (HEAD, dal) => co(function*() {
     const expiries = [];
-    const memberships = yield dal.mindexDAL.sqlFind({ expires_on: { $lte: HEAD.medianTime }, expired_on: 0 });
-    for (const MS of memberships) {
-      expiries.push({
-        op: 'UPDATE',
-        pub: MS.pub,
-        expired_on: HEAD.medianTime
-      });
+    const memberships = reduceBy(yield dal.mindexDAL.sqlFind({ expires_on: { $lte: HEAD.medianTime } }), ['pub']);
+    for (const POTENTIAL of memberships) {
+      const MS = yield dal.mindexDAL.getReducedMS(POTENTIAL.pub);
+      const hasRenewedSince = MS.expires_on > HEAD.medianTime;
+      if (!MS.expired_on && !hasRenewedSince) {
+        expiries.push({
+          op: 'UPDATE',
+          pub: MS.pub,
+          created_on: MS.created_on,
+          written_on: [HEAD.number, HEAD.hash].join('-'),
+          expired_on: HEAD.medianTime
+        });
+      }
     }
     return expiries;
   }),
 
   // BR_G94
-  ruleIndexGenExclusionByMembership: (HEAD, dal) => co(function*() {
+  ruleIndexGenExclusionByMembership: (HEAD, mindex) => co(function*() {
     const exclusions = [];
-    const memberships = yield dal.mindexDAL.sqlFind({ expired_on: { $gt: 0 } });
+    const memberships = _.filter(mindex, (entry) => entry.expired_on);
     for (const MS of memberships) {
       exclusions.push({
         op: 'UPDATE',
@@ -1448,6 +1488,22 @@ const indexer = module.exports = {
       }
     }
     return revocations;
+  }),
+
+  // BR_G104
+  ruleIndexCorrectMembershipExpiryDate: (mindex) => co(function*() {
+    for (const MS of mindex) {
+      if (MS.type == 'JOIN' || MS.type == 'ACTIVE') {
+        MS.expires_on -= MS.age;
+      }
+    }
+  }),
+
+  // BR_G105
+  ruleIndexCorrectCertificationExpiryDate: (cindex) => co(function*() {
+    for (const CERT of cindex) {
+      CERT.expires_on -= CERT.age;
+    }
   }),
 
   iindexCreate: (index) => _(index).filter({ index: constants.I_INDEX, op: constants.IDX_CREATE }),

@@ -1102,6 +1102,7 @@ Each identity produces 2 new entries:
         expired_on = 0
         expires_on = MedianTime + msValidity
         revokes_on = MedianTime + msValidity*2
+        type = 'JOIN'
         revoked_on = null
         leaving = false
     )
@@ -1129,6 +1130,7 @@ Each join whose `PUBLIC_KEY` **does not match** a local MINDEX `CREATE, PUBLIC_K
         expired_on = 0
         expires_on = MedianTime + msValidity
         revokes_on = MedianTime + msValidity*2
+        type = 'JOIN'
         revoked_on = null
         leaving = null
     )
@@ -1144,6 +1146,7 @@ Each active produces 1 new entry:
         written_on = BLOCKSTAMP
         expires_on = MedianTime + msValidity
         revokes_on = MedianTime + msValidity*2
+        type = 'RENEW'
         revoked_on = null
         leaving = null
     )
@@ -1157,6 +1160,7 @@ Each leaver produces 1 new entry:
         pub = PUBLIC_KEY
         created_on = BLOCK_UID
         written_on = BLOCKSTAMP
+        type = 'LEAVE'
         expires_on = null
         revokes_on = null
         revoked_on = null
@@ -1172,6 +1176,7 @@ Each revocation produces 1 new entry:
         pub = PUBLIC_KEY
         created_on = BLOCK_UID
         written_on = BLOCKSTAMP
+        type = 'REV'
         expires_on = null
         revokes_on = null
         revoked_on = BLOCKSTAMP
@@ -1849,7 +1854,7 @@ For each ENTRY in local MINDEX where `revoked_on != null`:
 
 ####### BR_G24 - ENTRY.distanceOK
 
-For each ENTRY in local MINDEX where `expires_on != null`:
+For each ENTRY in local MINDEX where `type == 'JOIN' OR type == 'ACTIVE'`:
 
     dSen = CEIL(HEAD.membersCount ^ (1 / stepMax))
     
@@ -1860,7 +1865,7 @@ For each ENTRY in local MINDEX where `expires_on != null`:
     
 > Functionally: checks if it exists, for at least `xpercent`% of the sentries, a path using GLOBAL_CINDEX + LOCAL_CINDEX leading to the key `PUBLIC_KEY` with a maximum count of `[stepMax]` hops.
 
-For each ENTRY in local MINDEX where `expires_on == null`:
+For each ENTRY in local MINDEX where `!(type == 'JOIN' OR type == 'ACTIVE')`:
 
     ENTRY.distanceOK = true
 
@@ -1878,35 +1883,35 @@ For each ENTRY in local MINDEX where `op = 'UPDATE', expired_on = 0`:
 
 ####### BR_G27 - ENTRY.enoughCerts
 
-For each ENTRY in local MINDEX where `expires_on != null`:
+For each ENTRY in local MINDEX where `type == 'JOIN' OR type == 'ACTIVE'`:
 
     ENTRY.enoughCerts = COUNT(GLOBAL_CINDEX[receiver=ENTRY.pub,expired_on=null]) + COUNT(LOCAL_CINDEX[receiver=ENTRY.pub,expired_on=null]) >= sigQty 
     
 > Functionally: any member or newcomer needs `[sigQty]` certifications coming *to* him to be in the WoT
 
-For each ENTRY in local MINDEX where `expires_on == null`:
+For each ENTRY in local MINDEX where `!(type == 'JOIN' OR type == 'ACTIVE')`:
 
     ENTRY.enoughCerts = true
 
 ####### BR_G28 - ENTRY.leaverIsMember
 
-For each ENTRY in local MINDEX where `expires_on == null`:
+For each ENTRY in local MINDEX where `type == 'LEAVE'`:
 
     ENTRY.leaverIsMember = REDUCE(GLOBAL_IINDEX[pub=ENTRY.pub]).member 
     
-For each ENTRY in local MINDEX where `expires_on != null`:
+For each ENTRY in local MINDEX where `type != 'LEAVE'`:
 
     ENTRY.leaverIsMember = true
 
 ####### BR_G29 - ENTRY.activeIsMember
 
-For each ENTRY in local MINDEX where `expires_on == null`:
-
-    ENTRY.activeIsMember = true 
-
-For each ENTRY in local MINDEX where `expires_on != null`:
+For each ENTRY in local MINDEX where `type == 'ACTIVE'`:
 
     ENTRY.activeIsMember = REDUCE(GLOBAL_IINDEX[pub=ENTRY.pub]).member
+
+For each ENTRY in local MINDEX where `type != 'ACTIVE'`:
+
+    ENTRY.activeIsMember = true
 
 ####### BR_G30 - ENTRY.revokedIsMember
 
@@ -2401,17 +2406,20 @@ If `reduce(GLOBAL_CINDEX[issuer=CERT.issuer,receiver=CERT.receiver,created_on=CE
 
 ###### BR_G93 - Membership expiry
 
-For each `GLOBAL_MINDEX[expires_on<=HEAD.medianTime,expired_on=0] as MS`, add a new LOCAL_MINDEX entry:
+For each `REDUCE_BY(GLOBAL_MINDEX[expires_on<=HEAD.medianTime], 'pub') as POTENTIAL` then consider `REDUCE(GLOBAL_MINDEX[pub=POTENTIAL.pub]) AS MS`.
+
+If `MS.expired_on == null OR MS.expired_on == 0`, add a new LOCAL_MINDEX entry:
 
     MINDEX (
         op = 'UPDATE'
         pub = MS.pub
+        written_on = BLOCKSTAMP
         expired_on = HEAD.medianTime
     )
     
 ###### BR_G94 - Exclusion by membership
 
-For each `GLOBAL_MINDEX[expired_on!=0] as MS`, add a new LOCAL_IINDEX entry:
+For each `LOCAL_MINDEX[expired_on!=0] as MS`, add a new LOCAL_IINDEX entry:
 
     IINDEX (
         op = 'UPDATE'
@@ -2447,6 +2455,24 @@ If `REDUCED.revokes_on<=HEAD.medianTime AND REDUCED.revoked_on==null`, add a new
         written_on = BLOCKSTAMP
         revoked_on = HEAD.medianTime
     )
+
+###### BR_G104 - Membership expiry date correction
+
+For each `LOCAL_MINDEX[type='JOIN'] as MS`:
+
+    MS.expires_on = MS.expires_on - MS.age
+    MS.revokes_on = MS.revokes_on - MS.age
+
+For each `LOCAL_MINDEX[type='ACTIVE'] as MS`:
+
+    MS.expires_on = MS.expires_on - MS.age
+    MS.revokes_on = MS.revokes_on - MS.age
+
+###### BR_G105 - Certification expiry date correction
+
+For each `LOCAL_CINDEX as CERT`:
+
+    CERT.expires_on = CERT.expires_on - CERT.age
 
 ##### BR_G97 - Final INDEX operations
 

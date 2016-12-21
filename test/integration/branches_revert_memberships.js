@@ -5,7 +5,6 @@ const should    = require('should');
 const bma       = require('../../app/lib/streams/bma');
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
-const until     = require('./tools/until');
 const toolbox   = require('./tools/toolbox');
 const limiter   = require('../../app/lib/system/limiter');
 const multicaster = require('../../app/lib/streams/multicaster');
@@ -95,7 +94,7 @@ describe("Revert memberships", function() {
 
   it('should exist a leaver', () => co(function*() {
     yield i3.leave();
-    yield s1.commit({ time: now + 80 });
+    yield s1.commit({ time: now + 100 });
     yield s1.expect('/blockchain/current', (res) => {
       // (res.medianTime - now).should.equal(27);
       res.should.have.property('membersCount').equal(3);
@@ -133,46 +132,46 @@ describe("Revert memberships", function() {
   it('revert the join back', () => co(function*() {
     yield s1.revert();
     yield shouldHaveBeenKicked();
-    yield shouldHavePendingMS(1); // Keep track of undone membership
+    yield shouldHavePendingMS(0); // Undone memberships are lost
   }));
 
   it('revert excluded member', () => co(function*() {
     yield s1.revert();
     yield shouldBeBeingKicked();
-    yield shouldHavePendingMS(1); // Keep track of undone membership
+    yield shouldHavePendingMS(0); // Undone memberships are lost
   }));
 
   it('revert being kicked', () => co(function*() {
     yield s1.revert();
     yield shouldBeLeaving();
-    yield shouldHavePendingMS(1); // Keep track of undone membership
+    yield shouldHavePendingMS(0); // Undone memberships are lost
   }));
 
   it('revert leaving', () => co(function*() {
     yield s1.revert();
     yield shouldBeRenewed();
-    yield shouldHavePendingMS(2); // Keep track of undone membership
+    yield shouldHavePendingMS(0); // Undone memberships are lost
   }));
 
   it('revert 2 neutral blocks for i3', () => co(function*() {
     yield s1.revert();
     yield shouldBeRenewed();
-    yield shouldHavePendingMS(4); // Keep track of undone membership
+    yield shouldHavePendingMS(0); // Undone memberships are lost
     yield s1.revert();
     yield shouldBeRenewed();
-    yield shouldHavePendingMS(4); // Keep track of undone membership
+    yield shouldHavePendingMS(0); // Undone memberships are lost
   }));
 
   it('revert renewal block', () => co(function*() {
     yield s1.revert();
     yield shouldHaveJoined();
-    yield shouldHavePendingMS(5); // Keep track of undone membership
+    yield shouldHavePendingMS(0); // Undone memberships are lost
   }));
 
   it('revert join block', () => co(function*() {
     yield s1.revert();
     yield shouldBeJoining();
-    yield shouldHavePendingMS(6); // Keep track of undone membership
+    yield shouldHavePendingMS(0); // Undone memberships are lost
   }));
 
   /*********
@@ -192,13 +191,10 @@ describe("Revert memberships", function() {
   function shouldBeFreshlyCreated() {
     return co(function*() {
       const idty = (yield s1.dal.idtyDAL.searchThoseMatching(i3.pub))[0];
-      idty.should.have.property('currentMSN').equal(-1);
-      idty.should.have.property('currentINN').equal(-1);
       idty.should.have.property('wasMember').equal(false);
       idty.should.have.property('written').equal(false);
       idty.should.have.property('kick').equal(false);
       idty.should.have.property('member').equal(false);
-      idty.should.have.property('leaving').equal(false);
     });
   }
 
@@ -209,79 +205,61 @@ describe("Revert memberships", function() {
   function shouldHaveJoined() {
     return co(function*() {
       const idty = yield s1.dal.idtyDAL.getFromPubkey(i3.pub);
-      idty.should.have.property('currentMSN').equal(1);
-      idty.should.have.property('currentINN').equal(1);
       idty.should.have.property('wasMember').equal(true);
       idty.should.have.property('written').equal(true);
       idty.should.have.property('kick').equal(false);
       idty.should.have.property('member').equal(true);
-      idty.should.have.property('leaving').equal(false);
     });
   }
 
   function shouldBeRenewed() {
     return co(function*() {
       const idty = yield s1.dal.idtyDAL.getFromPubkey(i3.pub);
-      idty.should.have.property('currentMSN').equal(2);
-      idty.should.have.property('currentINN').equal(2);
       idty.should.have.property('wasMember').equal(true);
       idty.should.have.property('written').equal(true);
       idty.should.have.property('kick').equal(false);
       idty.should.have.property('member').equal(true);
-      idty.should.have.property('leaving').equal(false);
     });
   }
 
   function shouldBeLeaving() {
     return co(function*() {
       const idty = yield s1.dal.idtyDAL.getFromPubkey(i3.pub);
-      idty.should.have.property('currentMSN').equal(5);
-      idty.should.have.property('currentINN').equal(2);
       idty.should.have.property('wasMember').equal(true);
       idty.should.have.property('written').equal(true);
       idty.should.have.property('kick').equal(false);
       idty.should.have.property('member').equal(true);
-      idty.should.have.property('leaving').equal(true);
     });
   }
 
   function shouldBeBeingKicked() {
     return co(function*() {
-      // Should be set as kicked bow
+      // Should be set as kicked now
       const idty = yield s1.dal.idtyDAL.getFromPubkey(i3.pub);
-      idty.should.have.property('currentMSN').equal(5);
-      idty.should.have.property('currentINN').equal(2);
       idty.should.have.property('wasMember').equal(true);
       idty.should.have.property('written').equal(true);
       idty.should.have.property('kick').equal(true);
       idty.should.have.property('member').equal(true);
-      idty.should.have.property('leaving').equal(true);
     });
   }
 
   function shouldHaveBeenKicked() {
     return co(function*() {
       const idty = yield s1.dal.idtyDAL.getFromPubkey(i3.pub);
-      idty.should.have.property('currentMSN').equal(5);
-      idty.should.have.property('currentINN').equal(2);
       idty.should.have.property('wasMember').equal(true);
       idty.should.have.property('written').equal(true);
       idty.should.have.property('kick').equal(false);
       idty.should.have.property('member').equal(false);
-      idty.should.have.property('leaving').equal(true);
     });
   }
 
   function shouldHaveComeBack() {
     return co(function*() {
       let idty = yield s1.dal.idtyDAL.getFromPubkey(i3.pub);
-      idty.should.have.property('currentMSN').equal(8);
-      idty.should.have.property('currentINN').equal(8);
       idty.should.have.property('wasMember').equal(true);
       idty.should.have.property('written').equal(true);
       idty.should.have.property('kick').equal(false);
       idty.should.have.property('member').equal(true);
-      idty.should.have.property('leaving').equal(false);
     });
   }
 });

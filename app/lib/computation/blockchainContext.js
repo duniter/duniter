@@ -350,14 +350,14 @@ function BlockchainContext() {
 
     // Create/Update certifications
     yield that.removeCertificationsFromSandbox(block);
+    // Create/Update memberships
+    yield that.removeMembershipsFromSandbox(block);
     // Compute obsolete links
-    yield that.computeObsoleteLinks(block);
-    // Compute obsolete memberships (active, joiner)
-    yield that.computeObsoleteMemberships(block);
+    yield that.computeToBeKicked(indexes.iindex);
+    // Compute obsolete links
+    yield that.computeToBeRevoked(indexes.mindex);
     // Compute obsolete identities
     yield that.computeExpiredIdentities(block);
-    // Compute obsolete memberships
-    yield that.computeExpiredMemberships(block);
     // Delete eventually present transactions
     yield that.deleteTransactions(block);
 
@@ -411,17 +411,17 @@ function BlockchainContext() {
       // Joiners (come back)
       for (const inlineMS of block.joiners) {
         let ms = Membership.statics.fromInline(inlineMS);
-        yield dal.joinIdentity(ms.issuer, ms.number);
+        yield dal.joinIdentity(ms.issuer);
       }
       // Actives
       for (const inlineMS of block.actives) {
         let ms = Membership.statics.fromInline(inlineMS);
-        yield dal.activeIdentity(ms.issuer, ms.number);
+        yield dal.activeIdentity(ms.issuer);
       }
       // Leavers
       for (const inlineMS of block.leavers) {
         let ms = Membership.statics.fromInline(inlineMS);
-        yield dal.leaveIdentity(ms.issuer, ms.number);
+        yield dal.leaveIdentity(ms.issuer);
       }
       // Revoked
       for (const inlineRevocation of block.revoked) {
@@ -430,7 +430,7 @@ function BlockchainContext() {
       }
       // Excluded
       for (const excluded of block.excluded) {
-        dal.excludeIdentity(excluded);
+        yield dal.excludeIdentity(excluded);
       }
     });
   });
@@ -447,16 +447,6 @@ function BlockchainContext() {
       for (const identity of block.identities) {
         let idty = Identity.statics.fromInline(identity);
         yield dal.unacceptIdentity(idty.pubkey);
-      }
-      // Undo renew (only remove last membership IN document)
-      for (const msRaw of block.actives) {
-        let ms = Membership.statics.fromInline(msRaw, 'IN', conf.currency);
-        yield dal.unRenewIdentity(ms);
-      }
-      // Undo leavers (forget about their last membership OUT document)
-      for (const msRaw of block.leavers) {
-        let ms = Membership.statics.fromInline(msRaw, 'OUT', conf.currency);
-        yield dal.unLeaveIdentity(ms);
       }
       // Undo revoked (make them non-revoked)
       let revokedPubkeys = [];
@@ -497,6 +487,19 @@ function BlockchainContext() {
     }
   });
 
+  /**
+   * Delete memberships from the sandbox since it has been written.
+   *
+   * @param block Block in which are contained the certifications to remove from sandbox.
+   */
+  this.removeMembershipsFromSandbox = (block) => co(function*() {
+    const mss = block.joiners.concat(block.actives).concat(block.leavers);
+    for (const inlineMS of mss) {
+      let ms = Membership.statics.fromInline(inlineMS);
+      yield dal.deleteMS(ms);
+    }
+  });
+
   that.saveParametersForRootBlock = (block) => co(function*() {
     if (block.parameters) {
       const bconf = Block.statics.getConf(block);
@@ -525,11 +528,18 @@ function BlockchainContext() {
     }
   });
 
-  this.computeObsoleteLinks = (block) => co(function*() {
-    const iindexEntries = yield dal.iindexDAL.sqlFind({ kick: true });
-    const members = yield iindexEntries.map((entry) => dal.getWrittenIdtyByPubkey(entry.pub));
+  this.computeToBeKicked = (iindex) => co(function*() {
+    const kickables = _.filter(iindex, (entry) => entry.kick);
+    const members = yield kickables.map((entry) => dal.getWrittenIdtyByPubkey(entry.pub));
     for (const idty of members) {
-      yield dal.setKicked(idty.pubkey, new Identity(idty).getTargetHash(), true);
+      yield dal.setKicked(idty.pubkey, new Identity(idty).getTargetHash());
+    }
+  });
+
+  this.computeToBeRevoked = (mindex) => co(function*() {
+    const revocations = _.filter(mindex, (entry) => entry.revoked_on);
+    for (const revoked of revocations) {
+      yield dal.setRevoked(revoked.pub, true);
     }
   });
 
@@ -542,62 +552,11 @@ function BlockchainContext() {
       throw 'Key ' + target + ' does not have enough links (' + count + '/' + conf.sigQty + ')';
   });
 
-  this.computeObsoleteMemberships = (block) => co(function *() {
-    let lastForKick = yield dal.getMembershipExcludingBlock(block, conf.msValidity);
-    let lastForRevoke = yield dal.getMembershipRevocatingBlock(block, conf.msValidity * constants.REVOCATION_FACTOR);
-    if (lastForKick) {
-      yield dal.kickWithOutdatedMemberships(lastForKick.number);
-    }
-    if (lastForRevoke) {
-      yield dal.revokeWithOutdatedMemberships(lastForRevoke.number);
-    }
-  });
-
   this.computeExpiredIdentities = (block) => co(function *() {
     let lastForExpiry = yield dal.getIdentityExpiringBlock(block, conf.idtyWindow);
     if (lastForExpiry) {
       yield dal.flagExpiredIdentities(lastForExpiry.number, block.number);
     }
-  });
-
-  this.computeExpiredMemberships = (block) => co(function *() {
-    let lastForExpiry = yield dal.getMembershipExpiringBlock(block, conf.msWindow);
-    if (lastForExpiry) {
-      yield dal.flagExpiredMemberships(lastForExpiry.number, block.number);
-    }
-  });
-
-  /**
-   * New method for CREATING memberships found in blocks.
-   * Made for performance reasons, this method will batch insert all memberships at once.
-   * @param blocks
-   * @returns {*}
-   */
-  this.updateMembershipsForBlocks = (blocks) => co(function *() {
-    const memberships = [];
-    const types = {
-      'join': 'joiners',
-      'active': 'actives',
-      'leave': 'leavers'
-    };
-    for (const block of blocks) {
-      _.keys(types).forEach(function(type){
-        const msType = type == 'leave' ? 'out' : 'in';
-        const field = types[type];
-        const mss = block[field];
-        for (const msRaw of mss) {
-          const ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', block.currency);
-          ms.membership = msType.toUpperCase();
-          ms.written = true;
-          ms.written_number = block.number;
-          ms.type = type;
-          ms.hash = String(hashf(ms.getRawSigned())).toUpperCase();
-          ms.idtyHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
-          memberships.push(ms);
-        }
-      });
-    }
-    return dal.updateMemberships(memberships);
   });
 
   /**

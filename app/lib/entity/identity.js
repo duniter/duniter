@@ -7,12 +7,9 @@ const Identity = function(json) {
 
   this.revoked = false;
   this.revoked_on = null;
-  this.currentMSN = -1;
-  this.currentINN = -1;
   this.member = false;
   this.buid = '';
   this.kick = false;
-  this.leaving = false;
   this.wasMember = false;
   this.signed = [];
   this.certs = [];

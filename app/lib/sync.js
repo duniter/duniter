@@ -179,6 +179,7 @@ function Synchroniser (server, host, port, conf, interactive) {
       let sindex = [];
       let currConf = {};
       let bindexSize = 0;
+      let allBlocks = [];
 
       let dao = pulling.abstractDao({
 
@@ -224,47 +225,77 @@ function Synchroniser (server, host, port, conf, interactive) {
               yield dao.applyMainBranch(block);
             }
           } else {
+            let blocksToSave = [];
+
             for (const block of blocks) {
+              allBlocks.push(block);
+
               if (block.number == 0) {
                 currConf = Block.statics.getConf(block);
               }
 
-              const index = indexer.localIndex(block, currConf);
-              mindex = mindex.concat(indexer.mindex(index));
-              iindex = iindex.concat(indexer.iindex(index));
-              sindex = sindex.concat(indexer.sindex(index));
-              cindex = cindex.concat(indexer.cindex(index));
-              const HEAD = yield indexer.quickCompleteGlobalScope(block, currConf, bindex, iindex, mindex, cindex, sindex);
-              bindex.push(HEAD);
-              if (block.dividend) {
-                // Flush the INDEX (not bindex, which is particular)
+              if (block.number != to) {
+                blocksToSave.push(block);
+                const index = indexer.localIndex(block, currConf);
+                mindex = mindex.concat(indexer.mindex(index));
+                iindex = iindex.concat(indexer.iindex(index));
+                sindex = sindex.concat(indexer.sindex(index));
+                cindex = cindex.concat(indexer.cindex(index));
+                const HEAD = yield indexer.quickCompleteGlobalScope(block, currConf, bindex, iindex, mindex, cindex, sindex, {
+                  getBlock: (number) => {
+                    return Promise.resolve(allBlocks[number - 1]);
+                  },
+                  getBlockByBlockstamp: (blockstamp) => {
+                    return Promise.resolve(allBlocks[parseInt(blockstamp) - 1]);
+                  }
+                });
+                bindex.push(HEAD);
+                if (block.dividend) {
+                  // Flush the INDEX (not bindex, which is particular)
+                  yield dal.mindexDAL.insertBatch(mindex);
+                  yield dal.iindexDAL.insertBatch(iindex);
+                  yield dal.sindexDAL.insertBatch(sindex);
+                  yield dal.cindexDAL.insertBatch(cindex);
+                  mindex = [];
+                  iindex = [];
+                  cindex = [];
+                  sindex = yield indexer.ruleIndexGenDividend(HEAD, dal);
+                }
+
+                // Trim the bindex
+                bindexSize = [
+                  block.issuersCount,
+                  block.issuersFrame,
+                  conf.medianTimeBlocks,
+                  conf.dtDiffEval,
+                  CONST_BLOCKS_CHUNK
+                ].reduce((max, value) => {
+                  return Math.max(max, value);
+                }, 0);
+
+                if (bindexSize && bindex.length >= 2 * bindexSize) {
+                  // We trim it, not necessary to store it all (we already store the full blocks)
+                  bindex.splice(0, bindexSize);
+                }
+              } else {
+
+                yield server.BlockchainService.saveBlocksInMainBranch(blocksToSave);
+                blocksToSave = [];
+
+                // Save the INDEX
+                yield dal.bindexDAL.insertBatch(bindex);
                 yield dal.mindexDAL.insertBatch(mindex);
                 yield dal.iindexDAL.insertBatch(iindex);
                 yield dal.sindexDAL.insertBatch(sindex);
                 yield dal.cindexDAL.insertBatch(cindex);
-                mindex = [];
-                iindex = [];
-                cindex = yield indexer.ruleIndexGenCertificationExpiry(HEAD, dal);
-                sindex = yield indexer.ruleIndexGenDividend(HEAD, dal);
-              }
 
-              // Trim the bindex
-              bindexSize = [
-                block.issuersCount,
-                block.issuersFrame,
-                conf.medianTimeBlocks,
-                conf.dtDiffEval,
-                CONST_BLOCKS_CHUNK
-              ].reduce((max, value) => {
-                return Math.max(max, value);
-              }, 0);
-
-              if (bindexSize && bindex.length >= 2 * bindexSize) {
-                // We trim it, not necessary to store it all (we already store the full blocks)
-                bindex.splice(0, bindexSize);
+                // Last block: cautious mode to trigger all the INDEX expiry mechanisms
+                yield dao.applyMainBranch(block);
               }
             }
-            yield server.BlockchainService.saveBlocksInMainBranch(blocks);
+            if (blocksToSave.length) {
+              yield server.BlockchainService.saveBlocksInMainBranch(blocksToSave);
+            }
           }
           lastPullBlock = blocks[blocks.length - 1];
           watcher.appliedPercent(Math.floor(blocks[blocks.length - 1].number / to * 100));
@@ -289,15 +320,6 @@ function Synchroniser (server, host, port, conf, interactive) {
 
       const logInterval = setInterval(() => logRemaining(to), EVAL_REMAINING_INTERVAL);
       yield pulling.pull(conf, dao);
-
-      if (!cautious) {
-        // Save the INDEX
-        yield dal.bindexDAL.insertBatch(bindex);
-        yield dal.mindexDAL.insertBatch(mindex);
-        yield dal.iindexDAL.insertBatch(iindex);
-        yield dal.sindexDAL.insertBatch(sindex);
-        yield dal.cindexDAL.insertBatch(cindex);
-      }
 
       // Finished blocks
       watcher.downloadPercent(100.0);

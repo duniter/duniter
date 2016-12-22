@@ -114,7 +114,7 @@ function IIndexDAL(driver) {
       if (reducable.length) {
         if (retrieveOnField) {
           // Force full retrieval on `pub` field
-          reducable = yield that.query('SELECT * FROM ' + that.table + ' WHERE pub = ?', [reducable[0].pub]);
+          reducable = yield that.query('SELECT * FROM ' + that.table + ' WHERE pub = ? ORDER BY (CAST written_on as int) ASC', [reducable[0].pub]);
         }
         return toCorrectEntity(indexer.DUP_HELPERS.reduce(reducable));
       }

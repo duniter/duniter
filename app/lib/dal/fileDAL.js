@@ -621,8 +621,6 @@ function FileDAL(params) {
 
   this.revokeIdentity = (pubkey) => that.idtyDAL.revokeIdentity(pubkey);
 
-  this.excludeIdentity = (pubkey) => that.idtyDAL.excludeIdentity(pubkey);
-
   this.removeUnWrittenWithPubkey = (pubkey) => co(function*() {
     return yield that.idtyDAL.removeUnWrittenWithPubkey(pubkey)
   });

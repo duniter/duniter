@@ -331,7 +331,10 @@ function BlockchainContext() {
   this.current = () => dal.getCurrentBlockOrNull();
 
   const saveBlockData = (current, block) => co(function*() {
-    yield that.saveParametersForRootBlock(block);
+
+    if (block.number == 0) {
+      yield that.saveParametersForRootBlock(block);
+    }
 
     const indexes = yield dal.generateIndexes(block, conf);
 
@@ -411,12 +414,6 @@ function BlockchainContext() {
     return co(function *() {
       // Joiners (come back)
       for (const inlineMS of block.joiners) {
-        let ms = Membership.statics.fromInline(inlineMS);
-        const idty = yield dal.getWrittenIdtyByPubkey(ms.issuer);
-        dal.wotb.setEnabled(true, idty.wotb_id);
-      }
-      // Actives
-      for (const inlineMS of block.actives) {
         let ms = Membership.statics.fromInline(inlineMS);
         const idty = yield dal.getWrittenIdtyByPubkey(ms.issuer);
         dal.wotb.setEnabled(true, idty.wotb_id);

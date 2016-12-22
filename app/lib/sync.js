@@ -225,6 +225,7 @@ function Synchroniser (server, host, port, conf, interactive) {
               yield dao.applyMainBranch(block);
             }
           } else {
+            const ctx = BlockchainService.getContext();
             let blocksToSave = [];
 
             for (const block of blocks) {
@@ -237,10 +238,12 @@ function Synchroniser (server, host, port, conf, interactive) {
               if (block.number != to) {
                 blocksToSave.push(block);
                 const index = indexer.localIndex(block, currConf);
-                mindex = mindex.concat(indexer.mindex(index));
-                iindex = iindex.concat(indexer.iindex(index));
+                const local_iindex = indexer.iindex(index);
+                const local_cindex = indexer.cindex(index);
+                iindex = iindex.concat(local_iindex);
+                cindex = cindex.concat(local_cindex);
                 sindex = sindex.concat(indexer.sindex(index));
-                cindex = cindex.concat(indexer.cindex(index));
+                mindex = mindex.concat(indexer.mindex(index));
                 const HEAD = yield indexer.quickCompleteGlobalScope(block, currConf, bindex, iindex, mindex, cindex, sindex, {
                   getBlock: (number) => {
                     return Promise.resolve(allBlocks[number - 1]);
@@ -250,7 +253,15 @@ function Synchroniser (server, host, port, conf, interactive) {
                   }
                 });
                 bindex.push(HEAD);
-                if (block.dividend) {
+
+                yield ctx.createNewcomers(local_iindex);
+
+                if (block.dividend
+                  || block.joiners.length
+                  || block.actives.length
+                  || block.revoked.length
+                  || block.excluded.length
+                  || block.certifications.length) {
                   // Flush the INDEX (not bindex, which is particular)
                   yield dal.mindexDAL.insertBatch(mindex);
                   yield dal.iindexDAL.insertBatch(iindex);
@@ -260,6 +271,12 @@ function Synchroniser (server, host, port, conf, interactive) {
                   iindex = [];
                   cindex = [];
                   sindex = yield indexer.ruleIndexGenDividend(HEAD, dal);
+
+                  // Create/Update nodes in wotb
+                  yield ctx.updateMembers(block);
+
+                  // --> Update links
+                  yield dal.updateWotbLinks(local_cindex);
                 }
 
                 // Trim the bindex
@@ -279,7 +296,9 @@ function Synchroniser (server, host, port, conf, interactive) {
                 }
               } else {
 
-                yield server.BlockchainService.saveBlocksInMainBranch(blocksToSave);
+                if (blocksToSave.length) {
+                  yield server.BlockchainService.saveBlocksInMainBranch(blocksToSave);
+                }
                 blocksToSave = [];
 
                 // Save the INDEX

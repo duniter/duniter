@@ -91,6 +91,15 @@ function IdentityService () {
           throw constants.ERRORS.UID_ALREADY_USED;
         }
         const current = yield dal.getCurrentBlockOrNull();
+        if (idty.buid == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855' && current) {
+          throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
+        } else if (current) {
+          let basedBlock = yield dal.getBlockByBlockstamp(idty.buid);
+          if (!basedBlock) {
+            throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
+          }
+          idty.expires_on = basedBlock.medianTime + conf.idtyWindow;
+        }
         yield rules.GLOBAL.checkIdentitiesAreWritable({ identities: [idty.inline()], version: (current && current.version) || constants.BLOCK_GENERATED_VERSION }, conf, dal);
         idty = new Identity(idty);
         if (byAbsorption === BY_ABSORPTION) {
@@ -188,7 +197,7 @@ function IdentityService () {
         else if (existing.revocation_sig) {
           throw 'Revocation already registered';
         } else {
-          yield dal.setRevocating(obj.hash, revoc.revocation);
+          yield dal.setRevocating(existing, revoc.revocation);
           return jsonResultTrue();
         }
       }

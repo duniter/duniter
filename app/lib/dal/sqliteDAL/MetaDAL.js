@@ -162,13 +162,14 @@ function MetaDAL(driver) {
     15: () => co(function *() {
       let blockDAL = new (require('./BlockDAL'))(driver);
       let idtyDAL = new (require('./IdentityDAL'))(driver);
+      let iindexDAL = new (require('./index/IIndexDAL'))(driver);
       yield idtyDAL.exec('ALTER TABLE idty ADD COLUMN revoked_on INTEGER NULL');
       const blocks = yield blockDAL.query('SELECT * FROM block WHERE revoked NOT LIKE ?', ['[]']);
       for (const block of blocks) {
         // Explicit revocations only
         for (const inlineRevocation of block.revoked) {
           const revocation = Revocation.statics.fromInline(inlineRevocation);
-          const idty = yield idtyDAL.getFromPubkey(revocation.pubkey);
+          const idty = yield iindexDAL.getFromPubkey(revocation.pubkey);
           idty.revoked_on = block.number;
           yield idtyDAL.saveIdentity(idty);
         }

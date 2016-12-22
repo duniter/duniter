@@ -2327,9 +2327,13 @@ Rule:
 
 Rule:
 
-For each `GLOBAL_IINDEX[kick=true] as TO_KICK`:
+For each `REDUCE_BY(GLOBAL_IINDEX[kick=true], 'pub') as TO_KICK`:
 
-    COUNT(LOCAL_MINDEX[pub=TO_KICK.pub,isBeingKicked=true]) == 1
+    REDUCED = REDUCE(GLOBAL_IINDEX[pub=TO_KICK.pub])
+    
+If `REDUCED.kick` then:
+
+    COUNT(LOCAL_MINDEX[pub=REDUCED.pub,isBeingKicked=true]) == 1
 
 ###### BR_G103 - Trancation writability
 

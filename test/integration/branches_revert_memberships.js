@@ -105,7 +105,7 @@ describe("Revert memberships", function() {
   }));
 
   it('should exist a kicked member', () => co(function*() {
-    yield s1.commit({ time: now + 55 });
+    yield s1.commit({ time: now + 25 });
     // yield s1.expect('/blockchain/current', (res) => { res.number.should.equal(7); (res.medianTime - now).should.equal(25); });
     // yield s1.commit({ time: now + 30 });
     // yield s1.expect('/blockchain/current', (res) => { res.number.should.equal(8); (res.medianTime - now).should.equal(18); });
@@ -170,7 +170,6 @@ describe("Revert memberships", function() {
 
   it('revert join block', () => co(function*() {
     yield s1.revert();
-    yield shouldBeJoining();
     yield shouldHavePendingMS(0); // Undone memberships are lost
   }));
 
@@ -204,9 +203,8 @@ describe("Revert memberships", function() {
 
   function shouldHaveJoined() {
     return co(function*() {
-      const idty = yield s1.dal.idtyDAL.getFromPubkey(i3.pub);
+      const idty = yield s1.dal.iindexDAL.getFromPubkey(i3.pub);
       idty.should.have.property('wasMember').equal(true);
-      idty.should.have.property('written').equal(true);
       idty.should.have.property('kick').equal(false);
       idty.should.have.property('member').equal(true);
     });
@@ -214,9 +212,8 @@ describe("Revert memberships", function() {
 
   function shouldBeRenewed() {
     return co(function*() {
-      const idty = yield s1.dal.idtyDAL.getFromPubkey(i3.pub);
+      const idty = yield s1.dal.iindexDAL.getFromPubkey(i3.pub);
       idty.should.have.property('wasMember').equal(true);
-      idty.should.have.property('written').equal(true);
       idty.should.have.property('kick').equal(false);
       idty.should.have.property('member').equal(true);
     });
@@ -224,9 +221,8 @@ describe("Revert memberships", function() {
 
   function shouldBeLeaving() {
     return co(function*() {
-      const idty = yield s1.dal.idtyDAL.getFromPubkey(i3.pub);
+      const idty = yield s1.dal.iindexDAL.getFromPubkey(i3.pub);
       idty.should.have.property('wasMember').equal(true);
-      idty.should.have.property('written').equal(true);
       idty.should.have.property('kick').equal(false);
       idty.should.have.property('member').equal(true);
     });
@@ -235,9 +231,8 @@ describe("Revert memberships", function() {
   function shouldBeBeingKicked() {
     return co(function*() {
       // Should be set as kicked now
-      const idty = yield s1.dal.idtyDAL.getFromPubkey(i3.pub);
+      const idty = yield s1.dal.iindexDAL.getFromPubkey(i3.pub);
       idty.should.have.property('wasMember').equal(true);
-      idty.should.have.property('written').equal(true);
       idty.should.have.property('kick').equal(true);
       idty.should.have.property('member').equal(true);
     });
@@ -245,9 +240,8 @@ describe("Revert memberships", function() {
 
   function shouldHaveBeenKicked() {
     return co(function*() {
-      const idty = yield s1.dal.idtyDAL.getFromPubkey(i3.pub);
+      const idty = yield s1.dal.iindexDAL.getFromPubkey(i3.pub);
       idty.should.have.property('wasMember').equal(true);
-      idty.should.have.property('written').equal(true);
       idty.should.have.property('kick').equal(false);
       idty.should.have.property('member').equal(false);
     });
@@ -255,9 +249,8 @@ describe("Revert memberships", function() {
 
   function shouldHaveComeBack() {
     return co(function*() {
-      let idty = yield s1.dal.idtyDAL.getFromPubkey(i3.pub);
+      let idty = yield s1.dal.iindexDAL.getFromPubkey(i3.pub);
       idty.should.have.property('wasMember').equal(true);
-      idty.should.have.property('written').equal(true);
       idty.should.have.property('kick').equal(false);
       idty.should.have.property('member').equal(true);
     });

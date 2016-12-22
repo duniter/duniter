@@ -26,7 +26,8 @@ function MIndexDAL(driver) {
     'expired_on',
     'revokes_on',
     'revoked_on',
-    'leaving'
+    'leaving',
+    'revocation'
   ];
   this.arrays = [];
   this.bigintegers = [];
@@ -46,6 +47,7 @@ function MIndexDAL(driver) {
       'revokes_on INTEGER NULL,' +
       'revoked_on INTEGER NULL,' +
       'leaving BOOLEAN NULL,' +
+      'revocation VARCHAR(80) NULL,' +
       'PRIMARY KEY (op,pub,created_on,written_on)' +
       ');' +
       'CREATE INDEX IF NOT EXISTS idx_mindex_pub ON m_index (pub);' +

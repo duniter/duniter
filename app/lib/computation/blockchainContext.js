@@ -207,7 +207,6 @@ function BlockchainContext() {
     }
     else {
       yield Q.nbind(rules.CHECK.ASYNC.ALL_LOCAL_BUT_POW, rules, block, conf);
-      yield Q.nbind(rules.CHECK.ASYNC.ALL_GLOBAL_BUT_POW, rules, block, conf, dal);
     }
     // Check document's coherence
     yield checkIssuer(block);
@@ -270,11 +269,7 @@ function BlockchainContext() {
 
   this.revertBlock = (block) => co(function *() {
 
-    // Priority: index update
     const blockstamp = [block.number, block.hash].join('-');
-    yield dal.bindexDAL.removeBlock(block.number);
-    yield dal.iindexDAL.removeBlock(blockstamp);
-    yield dal.mindexDAL.removeBlock(blockstamp);
 
     // Revert links
     const writtenOn = yield dal.cindexDAL.getWrittenOn(blockstamp);
@@ -290,6 +285,12 @@ function BlockchainContext() {
       }
     }
 
+    // Revert nodes
+    yield undoMembersUpdate(block);
+
+    yield dal.bindexDAL.removeBlock(block.number);
+    yield dal.mindexDAL.removeBlock(blockstamp);
+    yield dal.iindexDAL.removeBlock(blockstamp);
     yield dal.cindexDAL.removeBlock(blockstamp);
     yield dal.sindexDAL.removeBlock(blockstamp);
 
@@ -297,12 +298,6 @@ function BlockchainContext() {
     const previousBlock = yield dal.getBlockByNumberAndHashOrNull(block.number - 1, block.previousHash || '');
     // Set the block as SIDE block (equivalent to removal from main branch)
     yield dal.blockDAL.setSideBlock(block, previousBlock);
-
-    // Undo certifications
-    yield dal.cindexDAL.removeBlock(blockstamp);
-
-    yield dal.unflagExpiredIdentitiesOf(block.number);
-    yield undoMembersUpdate(block);
 
     // Remove any source created for this block (both Dividend and Transaction).
     yield dal.removeAllSourcesOfBlock(blockstamp);
@@ -337,27 +332,36 @@ function BlockchainContext() {
 
   const saveBlockData = (current, block) => co(function*() {
     yield that.saveParametersForRootBlock(block);
-    const indexes = yield dal.saveIndexes(block, conf);
+
+    const indexes = yield dal.generateIndexes(block, conf);
+
+    // Newcomers
+    yield that.createNewcomers(indexes.iindex);
+
+    // Save indexes
+    yield dal.bindexDAL.saveEntity(indexes.HEAD);
+    yield dal.mindexDAL.insertBatch(indexes.mindex);
+    yield dal.iindexDAL.insertBatch(indexes.iindex);
+    yield dal.sindexDAL.insertBatch(indexes.sindex);
+    yield dal.cindexDAL.insertBatch(indexes.cindex);
+
+    // Create/Update nodes in wotb
+    yield that.updateMembers(block);
+
     yield dal.trimIndexes(block, conf);
     yield updateBlocksComputedVars(current, block);
     // Saves the block (DAL)
     yield dal.saveBlock(block);
-    // Create/Update members (create new identities if do not exist)
-    yield that.updateMembers(block);
 
     // --> Update links
-    dal.updateWotbLinks(indexes.cindex);
+    yield dal.updateWotbLinks(indexes.cindex);
 
     // Create/Update certifications
     yield that.removeCertificationsFromSandbox(block);
     // Create/Update memberships
     yield that.removeMembershipsFromSandbox(block);
-    // Compute obsolete links
-    yield that.computeToBeKicked(indexes.iindex);
-    // Compute obsolete links
+    // Compute to be revoked members
     yield that.computeToBeRevoked(indexes.mindex);
-    // Compute obsolete identities
-    yield that.computeExpiredIdentities(block);
     // Delete eventually present transactions
     yield that.deleteTransactions(block);
 
@@ -376,19 +380,10 @@ function BlockchainContext() {
     }
     // UD Time update
     if (block.number == 0) {
-      block.UDTime = block.medianTime; // Root = first UD time
       block.dividend = null;
     }
-    else if (block.dividend) {
-      const result = yield {
-        last: dal.lastUDBlock(),
-        root: dal.getBlock(0)
-      };
-      block.UDTime = conf.dt + (result.last ? result.last.UDTime : result.root.medianTime);
-    }
-    else {
+    else if (!block.dividend) {
       block.dividend = null;
-      block.UDTime = current.UDTime;
     }
   });
 
@@ -397,31 +392,34 @@ function BlockchainContext() {
     yield dal.removeUnWrittenWithUID(idty.uid);
   });
 
+  this.createNewcomers = (iindex) => co(function*() {
+    for (const entry of iindex) {
+      if (entry.op == constants.IDX_CREATE) {
+        // Reserves a wotb ID
+        entry.wotb_id = dal.wotb.addNode();
+        logger.trace('%s was affected wotb_id %s', entry.uid, entry.wotb_id);
+        // Remove from the sandbox any other identity with the same pubkey/uid, since it has now been reserved.
+        yield cleanRejectedIdentities({
+          pubkey: entry.pub,
+          uid: entry.uid
+        });
+      }
+    }
+  });
+
   this.updateMembers = (block) => co(function *() {
     return co(function *() {
-      // Newcomers
-      for (const identity of block.identities) {
-        let idty = Identity.statics.fromInline(identity);
-        // Computes the hash if not done yet
-        if (!idty.hash)
-          idty.hash = (hashf(rawer.getOfficialIdentity(idty)) + "").toUpperCase();
-        yield dal.newIdentity(idty);
-        yield cleanRejectedIdentities(idty);
-      }
       // Joiners (come back)
       for (const inlineMS of block.joiners) {
         let ms = Membership.statics.fromInline(inlineMS);
-        yield dal.joinIdentity(ms.issuer);
+        const idty = yield dal.getWrittenIdtyByPubkey(ms.issuer);
+        dal.wotb.setEnabled(true, idty.wotb_id);
       }
       // Actives
       for (const inlineMS of block.actives) {
         let ms = Membership.statics.fromInline(inlineMS);
-        yield dal.activeIdentity(ms.issuer);
-      }
-      // Leavers
-      for (const inlineMS of block.leavers) {
-        let ms = Membership.statics.fromInline(inlineMS);
-        yield dal.leaveIdentity(ms.issuer);
+        const idty = yield dal.getWrittenIdtyByPubkey(ms.issuer);
+        dal.wotb.setEnabled(true, idty.wotb_id);
       }
       // Revoked
       for (const inlineRevocation of block.revoked) {
@@ -430,34 +428,29 @@ function BlockchainContext() {
       }
       // Excluded
       for (const excluded of block.excluded) {
-        yield dal.excludeIdentity(excluded);
+        const idty = yield dal.getWrittenIdtyByPubkey(excluded);
+        dal.wotb.setEnabled(false, idty.wotb_id);
       }
     });
   });
 
   function undoMembersUpdate (block) {
     return co(function *() {
-      yield dal.unFlagToBeKicked();
       // Undo 'join' which can be either newcomers or comebackers
       for (const msRaw of block.joiners) {
         let ms = Membership.statics.fromInline(msRaw, 'IN', conf.currency);
-        yield dal.unJoinIdentity(ms);
+        const idty = yield dal.getWrittenIdtyByPubkey(ms.issuer);
+        dal.wotb.setEnabled(false, idty.wotb_id);
       }
-      // Undo newcomers (may strengthen the undo 'join')
+      // Undo newcomers
       for (const identity of block.identities) {
-        let idty = Identity.statics.fromInline(identity);
-        yield dal.unacceptIdentity(idty.pubkey);
+        // Does not matter which one it really was, we pop the last X identities
+        dal.wotb.removeNode();
       }
-      // Undo revoked (make them non-revoked)
-      let revokedPubkeys = [];
-      for (const inlineRevocation of block.revoked) {
-        let revocation = Identity.statics.revocationFromInline(inlineRevocation);
-        revokedPubkeys.push(revocation.pubkey);
-        yield dal.unrevokeIdentity(revocation.pubkey);
-      }
-      // Undo excluded (make them become members again, but set them as 'to be kicked')
+      // Undo excluded (make them become members again in wotb)
       for (const pubkey of block.excluded) {
-        yield dal.unExcludeIdentity(pubkey, revokedPubkeys.indexOf(pubkey) !== -1);
+        const idty = yield dal.getWrittenIdtyByPubkey(pubkey);
+        dal.wotb.setEnabled(true, idty.wotb_id);
       }
     });
   }
@@ -528,14 +521,6 @@ function BlockchainContext() {
     }
   });
 
-  this.computeToBeKicked = (iindex) => co(function*() {
-    const kickables = _.filter(iindex, (entry) => entry.kick);
-    const members = yield kickables.map((entry) => dal.getWrittenIdtyByPubkey(entry.pub));
-    for (const idty of members) {
-      yield dal.setKicked(idty.pubkey, new Identity(idty).getTargetHash());
-    }
-  });
-
   this.computeToBeRevoked = (mindex) => co(function*() {
     const revocations = _.filter(mindex, (entry) => entry.revoked_on);
     for (const revoked of revocations) {
@@ -552,17 +537,11 @@ function BlockchainContext() {
       throw 'Key ' + target + ' does not have enough links (' + count + '/' + conf.sigQty + ')';
   });
 
-  this.computeExpiredIdentities = (block) => co(function *() {
-    let lastForExpiry = yield dal.getIdentityExpiringBlock(block, conf.idtyWindow);
-    if (lastForExpiry) {
-      yield dal.flagExpiredIdentities(lastForExpiry.number, block.number);
-    }
-  });
-
   /**
    * New method for CREATING transactions found in blocks.
    * Made for performance reasons, this method will batch insert all transactions at once.
    * @param blocks
+   * @param getBlockByNumberAndHash
    * @returns {*}
    */
   this.updateTransactionsForBlocks = (blocks, getBlockByNumberAndHash) => co(function *() {

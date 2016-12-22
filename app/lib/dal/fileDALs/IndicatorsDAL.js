@@ -23,18 +23,5 @@ function IndicatorsDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
     });
   };
 
-  const cache = {};
 
-  function setBlock(key, block) {
-    cache[key] = block;
-    return Promise.resolve(block);
-  }
-
-  function getBlock(key) {
-    return Promise.resolve(cache[key] || null);
-  }
-
-  this.writeCurrentExpiringForIdty = (excluding) => setBlock('expiringIDTY', excluding);
-
-  this.getCurrentIdentityExpiringBlock = () => getBlock('expiringIDTY');
 }

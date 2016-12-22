@@ -413,29 +413,8 @@ function BlockchainService (server) {
       }
       return block;
     });
-    // Insert a bunch of blocks
-    const lastPrevious = blocks[0].number == 0 ? null : yield dal.getBlock(blocks[0].number - 1);
-    for (let i = 0; i < blocks.length; i++) {
-      const previous = i > 0 ? blocks[i - 1] : lastPrevious;
-      const block = blocks[i];
-      block.len = Block.statics.getLen(block);
+    for (const block of blocks) {
       block.fork = false;
-      // Monetary mass & UD Time recording before inserting elements
-      block.monetaryMass = (previous && previous.monetaryMass) || 0;
-      block.unitbase = (block.dividend && block.unitbase) || (previous && previous.unitbase) || 0;
-      block.dividend = block.dividend || null;
-      // UD Time update
-      const previousBlock = i > 0 ? blocks[i - 1] : lastPrevious;
-      if (block.number == 0) {
-        block.UDTime = block.medianTime; // Root = first UD time
-      }
-      else if (block.dividend) {
-        block.UDTime = conf.dt + previousBlock.UDTime;
-        block.monetaryMass += block.dividend * Math.pow(10, block.unitbase || 0) * block.membersCount;
-      } else {
-        block.UDTime = previousBlock.UDTime;
-      }
-      yield mainContext.updateMembers(block);
     }
     // Transactions recording
     yield mainContext.updateTransactionsForBlocks(blocks, getBlockByNumberAndHash);

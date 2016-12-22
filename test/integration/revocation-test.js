@@ -3,7 +3,7 @@
 const _         = require('underscore');
 const co        = require('co');
 const should    = require('should');
-const ucoin     = require('../../index');
+const duniter   = require('../../index');
 const bma       = require('../../app/lib/streams/bma');
 const user      = require('./tools/user');
 const rp        = require('request-promise');
@@ -13,7 +13,7 @@ const limiter = require('../../app/lib/system/limiter');
 
 limiter.noLimit();
 
-const expectAnswer   = httpTest.expectAnswer;
+const expectAnswer  = httpTest.expectAnswer;
 
 const MEMORY_MODE = true;
 const commonConf = {
@@ -27,7 +27,7 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = ucoin({
+const s1 = duniter({
   memory: MEMORY_MODE,
   name: 'bb12'
 }, _.extend({
@@ -38,9 +38,9 @@ const s1 = ucoin({
   }
 }, commonConf));
 
-const s2 = ucoin({
+const s2 = duniter({
   memory: MEMORY_MODE,
-  name: 'bb12'
+  name: 'bb13'
 }, _.extend({
   port: '9965',
   pair: {
@@ -150,32 +150,6 @@ describe("Revocation", function() {
     });
   }));
 
-  it('if we revert the commit, cat should not be revoked', () => co(function *() {
-    yield s1.revert();
-    return expectAnswer(rp('http://127.0.0.1:9964/wot/lookup/cat', { json: true }), function(res) {
-      res.should.have.property('results').length(1);
-      res.results[0].should.have.property('uids').length(1);
-      res.results[0].uids[0].should.have.property('uid').equal('cat');
-      res.results[0].uids[0].should.have.property('revoked').equal(false);
-      res.results[0].uids[0].should.have.property('revoked_on').equal(null);
-      res.results[0].uids[0].should.have.property('revocation_sig').not.equal(null);
-      res.results[0].uids[0].should.have.property('revocation_sig').not.equal('');
-    });
-  }));
-
-  it('if we commit again, cat should be revoked', () => co(function *() {
-    yield commitS1();
-    return expectAnswer(rp('http://127.0.0.1:9964/wot/lookup/cat', { json: true }), function(res) {
-      res.should.have.property('results').length(1);
-      res.results[0].should.have.property('uids').length(1);
-      res.results[0].uids[0].should.have.property('uid').equal('cat');
-      res.results[0].uids[0].should.have.property('revoked').equal(true);
-      res.results[0].uids[0].should.have.property('revoked_on').equal(1);
-      res.results[0].uids[0].should.have.property('revocation_sig').not.equal(null);
-      res.results[0].uids[0].should.have.property('revocation_sig').not.equal('');
-    });
-  }));
-
   it('should have 2 members', function() {
     return expectAnswer(rp('http://127.0.0.1:9964/wot/members', { json: true }), function(res) {
       res.should.have.property('results').length(2);
@@ -193,6 +167,33 @@ describe("Revocation", function() {
     return expectAnswer(rp('http://127.0.0.1:9964/wot/members', { json: true }), function(res) {
       res.should.have.property('results').length(2);
       _.pluck(res.results, 'uid').sort().should.deepEqual(['tic','toc']);
+    });
+  }));
+
+  it('if we revert the commit, cat should not be revoked', () => co(function *() {
+    yield s1.revert();
+    yield s1.revert();
+    return expectAnswer(rp('http://127.0.0.1:9964/wot/lookup/cat', { json: true }), function(res) {
+      res.should.have.property('results').length(1);
+      res.results[0].should.have.property('uids').length(1);
+      res.results[0].uids[0].should.have.property('uid').equal('cat');
+      res.results[0].uids[0].should.have.property('revoked').equal(false);
+      res.results[0].uids[0].should.have.property('revoked_on').equal(null);
+      res.results[0].uids[0].should.have.property('revocation_sig').equal(null); // We loose the revocation
+      res.results[0].uids[0].should.have.property('revocation_sig').equal(null);
+    });
+  }));
+
+  it('if we commit again, cat should NOT be revoked (we have lost the revocation)', () => co(function *() {
+    yield commitS1();
+    return expectAnswer(rp('http://127.0.0.1:9964/wot/lookup/cat', { json: true }), function(res) {
+      res.should.have.property('results').length(1);
+      res.results[0].should.have.property('uids').length(1);
+      res.results[0].uids[0].should.have.property('uid').equal('cat');
+      res.results[0].uids[0].should.have.property('revoked').equal(false);
+      res.results[0].uids[0].should.have.property('revoked_on').equal(null);
+      res.results[0].uids[0].should.have.property('revocation_sig').equal(null); // We loose the revocation
+      res.results[0].uids[0].should.have.property('revocation_sig').equal(null);
     });
   }));
 

@@ -45,6 +45,8 @@ const indexer = module.exports = {
         op: constants.IDX_CREATE,
         uid: idty.uid,
         pub: idty.pubkey,
+        hash: idty.hash,
+        sig: idty.sig,
         created_on: idty.buid,
         written_on: [block.number, block.hash].join('-'),
         member: true,
@@ -94,7 +96,7 @@ const indexer = module.exports = {
           op: constants.IDX_UPDATE,
           uid: null,
           pub: ms.issuer,
-          created_on: [ms.number, ms.fpr].join('-'),
+          created_on: null,
           written_on: [block.number, block.hash].join('-'),
           member: true,
           wasMember: null,
@@ -159,7 +161,7 @@ const indexer = module.exports = {
         op: constants.IDX_UPDATE,
         uid: null,
         pub: excluded,
-        created_on: [block.number, block.hash].join('-'),
+        created_on: null,
         written_on: [block.number, block.hash].join('-'),
         member: false,
         wasMember: null,
@@ -599,7 +601,8 @@ const indexer = module.exports = {
     // BR_G29
     yield mindex.map((ENTRY) => co(function*() {
       if (ENTRY.type == 'ACTIVE') {
-        ENTRY.activeIsMember = reduce(yield dal.iindexDAL.reducable(ENTRY.pub)).member;
+        const reducable = yield dal.iindexDAL.reducable(ENTRY.pub);
+        ENTRY.activeIsMember = reduce(reducable).member;
       } else {
         ENTRY.activeIsMember = true;
       }
@@ -1319,9 +1322,9 @@ const indexer = module.exports = {
 
   // BR_G86
   ruleToBeKickedArePresent: (mindex, dal) => co(function*() {
-    const toBeKicked = yield dal.iindexDAL.sqlFind({ kick: true });
+    const toBeKicked = yield dal.iindexDAL.getToBeKickedPubkeys();
     for (const toKick of toBeKicked) {
-      if (count(_.where(mindex, { pub: toKick.pub, isBeingKicked: true })) !== 1) {
+      if (count(_.where(mindex, { pub: toKick, isBeingKicked: true })) !== 1) {
         return false;
       }
     }
@@ -1378,7 +1381,7 @@ const indexer = module.exports = {
   ruleIndexGenDividend: (HEAD, dal) => co(function*() {
     const dividends = [];
     if (HEAD.new_dividend) {
-      const potentials = yield dal.iindexDAL.sqlFind({ op: constants.IDX_CREATE });
+      const potentials = reduceBy(yield dal.iindexDAL.sqlFind({ member: true }), ['pub']);
       for (const potential of potentials) {
         const MEMBER = reduce(yield dal.iindexDAL.reducable(potential.pub));
         if (MEMBER.member) {

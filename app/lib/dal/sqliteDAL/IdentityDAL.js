@@ -11,7 +11,7 @@ const SandBox = require('./SandBox');
 
 module.exports = IdentityDAL;
 
-function IdentityDAL(driver, wotb) {
+function IdentityDAL(driver) {
 
   "use strict";
 
@@ -37,7 +37,8 @@ function IdentityDAL(driver, wotb) {
     'hash',
     'written',
     'wotb_id',
-    'expired'
+    'expired',
+    'expires_on'
   ];
   this.arrays = [];
   this.booleans = ['revoked', 'member', 'kick', 'leaving', 'wasMember', 'written'];
@@ -63,6 +64,7 @@ function IdentityDAL(driver, wotb) {
       'hash VARCHAR(64) NOT NULL,' +
       'written BOOLEAN NULL,' +
       'wotb_id INTEGER NULL,' +
+      'expires_on INTEGER NULL,' +
       'PRIMARY KEY (pubkey,uid,hash)' +
       ');' +
       'CREATE INDEX IF NOT EXISTS idx_idty_pubkey ON idty (pubkey);' +
@@ -77,92 +79,7 @@ function IdentityDAL(driver, wotb) {
       'COMMIT;', []);
   });
 
-  this.revokeIdentity = (pubkey, number) => {
-    return co(function *() {
-      const idty = yield that.getFromPubkey(pubkey);
-      idty.revoked = true;
-      idty.revoked_on = number;
-      return that.saveIdentity(idty);
-    });
-  };
-
-  this.unrevokeIdentity = (pubkey) => co(function *() {
-    const idty = yield that.getFromPubkey(pubkey);
-    idty.revoked = false;
-    idty.revoked_on = null;
-    return that.saveIdentity(idty);
-  });
-
-  this.excludeIdentity = (pubkey) => co(function *() {
-    const idty = yield that.getFromPubkey(pubkey);
-    idty.member = false;
-    idty.kick = false;
-    wotb.setEnabled(false, idty.wotb_id);
-    return that.saveIdentity(idty);
-  });
-
-  this.unacceptIdentity = (pubkey) => co(function *() {
-    const idty = yield that.getFromPubkey(pubkey);
-    idty.written = false;
-    idty.wasMember = false;
-    idty.member = false;
-    idty.kick = false;
-    idty.wotb_id = wotb.removeNode();
-    return that.saveIdentity(idty);
-  });
-
-  this.unJoinIdentity = (ms) => co(function *() {
-    const idty = yield that.getFromPubkey(ms.issuer);
-    idty.member = false;
-    /**
-     * Note: it is not required to do:
-     *
-     *     `idty.wasMember = false;`
-     *
-     * because this is already done by `unacceptIdentity` method.
-     */
-    wotb.setEnabled(false, idty.wotb_id);
-    return that.saveIdentity(idty);
-  });
-
-  this.unExcludeIdentity = (pubkey, causeWasRevocation) => co(function *() {
-    const idty = yield that.getFromPubkey(pubkey);
-    idty.member = true;
-    idty.kick = !causeWasRevocation;
-    wotb.setEnabled(true, idty.wotb_id);
-    return that.saveIdentity(idty);
-  });
-
-  this.newIdentity = function(idty) {
-    idty.member = true;
-    idty.wasMember = true;
-    idty.kick = false;
-    idty.written = true;
-    idty.wotb_id = wotb.addNode();
-    logger.trace('%s was affected wotb_id %s', idty.uid, idty.wotb_id);
-    return that.saveIdentity(idty);
-  };
-
-  this.joinIdentity = (pubkey) =>  co(function *() {
-    const idty = yield that.getFromPubkey(pubkey);
-    idty.member = true;
-    idty.wasMember = true;
-    wotb.setEnabled(true, idty.wotb_id);
-    return that.saveIdentity(idty);
-  });
-
-  this.activeIdentity = (pubkey) => co(function *() {
-    const idty = yield that.getFromPubkey(pubkey);
-    idty.member = true;
-    idty.kick = false;
-    wotb.setEnabled(true, idty.wotb_id);
-    return that.saveIdentity(idty);
-  });
-
-  this.leaveIdentity = (pubkey) => co(function *() {
-    const idty = yield that.getFromPubkey(pubkey);
-    return that.saveIdentity(idty);
-  });
+  this.revokeIdentity = (pubkey) => this.exec('DELETE FROM ' + this.table + ' WHERE pubkey = \'' + pubkey + '\'');
 
   this.removeUnWrittenWithPubkey = (pubkey) => this.sqlRemoveWhere({
     pubkey: pubkey,
@@ -174,32 +91,12 @@ function IdentityDAL(driver, wotb) {
     written: false
   });
 
-  this.getFromPubkey = (pubkey) => this.sqlFindOne({
-    pubkey: pubkey,
-    wasMember: true
-  });
-
-  this.getFromUID = (uid) => this.sqlFindOne({
-    uid: uid,
-    wasMember: true
-  });
-
   this.getByHash = (hash) => this.sqlFindOne({
     hash: hash
   });
 
-  this.getLatestMember = () => that.sqlFindOne({
-    wasMember: true
-  }, {
-    wotb_id: this.DESC
-  });
-
   this.saveIdentity = (idty) =>
     this.saveEntity(idty);
-
-  this.getWhoIsOrWasMember = () => that.sqlFind({
-    wasMember: true
-  });
 
   this.getToRevoke = () => that.sqlFind({
     revocation_sig: { $null: false },
@@ -208,7 +105,8 @@ function IdentityDAL(driver, wotb) {
   });
 
   this.getPendingIdentities = () => that.sqlFind({
-    wasMember: false
+    revocation_sig: { $null: false },
+    revoked: false
   });
 
   this.searchThoseMatching = (search) => that.sqlFindLikeAny({
@@ -216,20 +114,7 @@ function IdentityDAL(driver, wotb) {
     uid: "%" + search + "%"
   });
 
-  this.flagExpiredIdentities = (maxNumber, onNumber) => co(function *() {
-    yield that.exec('UPDATE ' + that.table + ' ' +
-      'SET expired = ' + onNumber + ' ' +
-      'WHERE expired IS NULL ' +
-      'AND CAST(SUBSTR(buid, 0, INSTR(buid, "-")) as number) <= ' + maxNumber);
-  });
-
-  this.unflagExpiredIdentitiesOf = (onNumber) => co(function *() {
-    yield that.exec('UPDATE ' + that.table + ' ' +
-      'SET expired = NULL ' +
-      'WHERE expired = ' + onNumber);
-  });
-
-  this.unFlagToBeKicked = () => that.exec('UPDATE ' + that.table + ' SET kick = 0 WHERE kick');
+  this.trimExpiredIdentities = (medianTime) => this.exec('DELETE FROM ' + this.table + ' WHERE expires_on IS NULL OR expires_on < ' + medianTime);
 
   /**************************
    * SANDBOX STUFF

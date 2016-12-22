@@ -238,6 +238,9 @@ function Node (dbName, options) {
           that.http.getLookup(search).then((o) => next(null, o)).catch(next);
         }
       ], function(err, res) {
+        if (err) {
+          logger.error(err);
+        }
         callback(res, done);
       });
     };

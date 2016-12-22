@@ -59,12 +59,6 @@ describe("Revert root", function() {
     yield s1.revert();
     yield s1.expectError('/blockchain/current', 404, 'No current block');
     yield s1.expectError('/blockchain/block/0', 404, 'Block not found');
-    yield s1.expectThat('/wot/lookup/cat', (res) => {
-      res.should.have.property('results').length(1);
-      res.results[0].should.have.property('uids').length(1);
-      res.results[0].uids[0].should.have.property('uid').equal('cat');
-      // The certifications were lost in the revert process
-      res.results[0].uids[0].should.have.property('others').length(0);
-    });
+    yield s1.expectError('/wot/lookup/cat', 404, 'No matching identity'); // Revert completely removes the identity
   }));
 });

@@ -94,7 +94,7 @@ describe("Revert memberships", function() {
 
   it('should exist a leaver', () => co(function*() {
     yield i3.leave();
-    yield s1.commit({ time: now + 100 });
+    yield s1.commit({ time: now + 80 });
     yield s1.expect('/blockchain/current', (res) => {
       // (res.medianTime - now).should.equal(27);
       res.should.have.property('membersCount').equal(3);

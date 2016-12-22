@@ -72,8 +72,8 @@ const indexer = module.exports = {
           created_on: [ms.number, ms.fpr].join('-'),
           written_on: [block.number, block.hash].join('-'),
           type: 'JOIN',
-          expires_on: parseInt(block.medianTime) + conf.msValidity,
-          revokes_on: parseInt(block.medianTime) + conf.msValidity * constants.REVOCATION_FACTOR,
+          expires_on: conf.msValidity,
+          revokes_on: conf.msValidity * constants.REVOCATION_FACTOR,
           revoked_on: null,
           leaving: false
         });
@@ -86,8 +86,8 @@ const indexer = module.exports = {
           created_on: [ms.number, ms.fpr].join('-'),
           written_on: [block.number, block.hash].join('-'),
           type: 'JOIN',
-          expires_on: parseInt(block.medianTime) + conf.msValidity,
-          revokes_on: parseInt(block.medianTime) + conf.msValidity * constants.REVOCATION_FACTOR,
+          expires_on: conf.msValidity,
+          revokes_on: conf.msValidity * constants.REVOCATION_FACTOR,
           revoked_on: null,
           leaving: null
         });
@@ -116,8 +116,8 @@ const indexer = module.exports = {
         created_on: [ms.number, ms.fpr].join('-'),
         written_on: [block.number, block.hash].join('-'),
         type: 'ACTIVE',
-        expires_on: parseInt(block.medianTime) + conf.msValidity,
-        revokes_on: parseInt(block.medianTime) + conf.msValidity * constants.REVOCATION_FACTOR,
+        expires_on: conf.msValidity,
+        revokes_on: conf.msValidity * constants.REVOCATION_FACTOR,
         revoked_on: null,
         leaving: null
       });
@@ -184,7 +184,7 @@ const indexer = module.exports = {
         written_on: [block.number, block.hash].join('-'),
         sig: cert.sig,
         chainable_on: parseInt(block.medianTime)  + conf.sigPeriod,
-        expires_on: parseInt(block.medianTime) + conf.sigValidity,
+        expires_on: conf.sigValidity,
         expired_on: 0,
         from_wid: null,
         to_wid: null
@@ -348,10 +348,10 @@ const indexer = module.exports = {
     yield indexer.prepareCertificationsAge(cindex, HEAD, HEAD_1, conf, dal);
 
     // BR_G104
-    indexer.ruleIndexCorrectMembershipExpiryDate(mindex);
+    yield indexer.ruleIndexCorrectMembershipExpiryDate(HEAD, mindex, dal);
 
     // BR_G105
-    indexer.ruleIndexCorrectCertificationExpiryDate(cindex);
+    yield indexer.ruleIndexCorrectCertificationExpiryDate(HEAD, cindex, dal);
 
     return HEAD;
   }),
@@ -1428,13 +1428,22 @@ const indexer = module.exports = {
       const MS = yield dal.mindexDAL.getReducedMS(POTENTIAL.pub);
       const hasRenewedSince = MS.expires_on > HEAD.medianTime;
       if (!MS.expired_on && !hasRenewedSince) {
-        expiries.push({
-          op: 'UPDATE',
-          pub: MS.pub,
-          created_on: MS.created_on,
-          written_on: [HEAD.number, HEAD.hash].join('-'),
-          expired_on: HEAD.medianTime
-        });
+        let shouldBeKicked = true;
+        // ------ Fast synchronization specific code ------
+        const idty = yield dal.iindexDAL.getFromPubkey(POTENTIAL.pub);
+        if (!idty.member) {
+          shouldBeKicked = false;
+        }
+        // ------------------------------------------------
+        if (shouldBeKicked) {
+          expiries.push({
+            op: 'UPDATE',
+            pub: MS.pub,
+            created_on: MS.created_on,
+            written_on: [HEAD.number, HEAD.hash].join('-'),
+            expired_on: HEAD.medianTime
+          });
+        }
       }
     }
     return expiries;
@@ -1494,18 +1503,31 @@ const indexer = module.exports = {
   }),
 
   // BR_G104
-  ruleIndexCorrectMembershipExpiryDate: (mindex) => co(function*() {
+  ruleIndexCorrectMembershipExpiryDate: (HEAD, mindex, dal) => co(function*() {
     for (const MS of mindex) {
       if (MS.type == 'JOIN' || MS.type == 'ACTIVE') {
-        MS.expires_on -= MS.age;
+        let basedBlock = { medianTime: 0 };
+        if (HEAD.number == 0) {
+          basedBlock = HEAD;
+        } else {
+          basedBlock = yield dal.getBlockByBlockstamp(MS.created_on);
+        }
+        MS.expires_on += basedBlock.medianTime;
+        MS.revokes_on += basedBlock.medianTime;
       }
     }
   }),
 
   // BR_G105
-  ruleIndexCorrectCertificationExpiryDate: (cindex) => co(function*() {
+  ruleIndexCorrectCertificationExpiryDate: (HEAD, cindex, dal) => co(function*() {
     for (const CERT of cindex) {
-      CERT.expires_on -= CERT.age;
+      let basedBlock = { medianTime: 0 };
+      if (HEAD.number == 0) {
+        basedBlock = HEAD;
+      } else {
+        basedBlock = yield dal.getBlock(CERT.created_on);
+      }
+      CERT.expires_on += basedBlock.medianTime;
     }
   }),
 

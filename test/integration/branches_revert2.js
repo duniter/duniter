@@ -33,13 +33,15 @@ const s1 = ucoin({
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
   },
   participate: false, rootoffset: 10,
-  sigQty: 1, dt: 0, ud0: 120
+  sigQty: 1, dt: 1, ud0: 120
 }, commonConf));
 
 const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
 const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
 
 describe("Revert two blocks", function() {
+
+  const now = Math.floor(Date.now() / 1000);
 
   before(function() {
 
@@ -51,10 +53,11 @@ describe("Revert two blocks", function() {
       yield cat.cert(toc);
       yield cat.join();
       yield toc.join();
-      yield commit(s1)({ version: 2 });
-      yield commit(s1)({ version: 2 });
+      yield commit(s1)({ version: 2, time: now });
+      yield commit(s1)({ version: 2, time: now + 10 });
+      yield commit(s1)({ version: 2, time: now + 10 });
       yield cat.sendP(51, toc);
-      yield commit(s1)({ version: 2 });
+      yield commit(s1)({ version: 2, time: now + 10 });
       yield s1.revert();
     });
   });
@@ -68,8 +71,8 @@ describe("Revert two blocks", function() {
     });
 
     it('/block/1 should exist', function() {
-      return expectJSON(rp('http://127.0.0.1:7712/blockchain/block/1', { json: true }), {
-        number: 1,
+      return expectJSON(rp('http://127.0.0.1:7712/blockchain/block/2', { json: true }), {
+        number: 2,
         dividend: 120
       });
     });
@@ -80,7 +83,7 @@ describe("Revert two blocks", function() {
         res.sources.should.have.length(1);
         res.sources[0].should.have.property('identifier').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
         res.sources[0].should.have.property('type').equal('D');
-        res.sources[0].should.have.property('noffset').equal(1);
+        res.sources[0].should.have.property('noffset').equal(2);
         res.sources[0].should.have.property('amount').equal(120);
       });
     });
@@ -91,7 +94,7 @@ describe("Revert two blocks", function() {
         res.sources.should.have.length(1);
         res.sources[0].should.have.property('identifier').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
         res.sources[0].should.have.property('type').equal('D');
-        res.sources[0].should.have.property('noffset').equal(1);
+        res.sources[0].should.have.property('noffset').equal(2);
         res.sources[0].should.have.property('amount').equal(120);
       });
     });

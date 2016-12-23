@@ -44,7 +44,7 @@ describe("Certification chainability", function() {
 
   before(function() {
 
-    const now = Math.round(new Date().getTime() / 1000);
+    const now = 1482220000;
 
     const commitS1 = commit(s1);
 

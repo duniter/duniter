@@ -29,17 +29,17 @@ rules.ALIAS = {
     yield rules.LOCAL.checkBlockSignature(block);
     yield rules.LOCAL.checkBlockTimes(block, conf);
     yield rules.LOCAL.checkIdentitiesSignature(block);
-    yield rules.LOCAL.checkIdentitiesUserIDConflict(block);
-    yield rules.LOCAL.checkIdentitiesPubkeyConflict(block);
-    yield rules.LOCAL.checkIdentitiesMatchJoin(block);
-    yield rules.LOCAL.checkRevokedNotInMemberships(block);
-    yield rules.LOCAL.checkRevokedUnicity(block);
-    yield rules.LOCAL.checkRevokedAreExcluded(block);
+    yield rules.LOCAL.checkIdentitiesUserIDConflict(block, conf);
+    yield rules.LOCAL.checkIdentitiesPubkeyConflict(block, conf);
+    yield rules.LOCAL.checkIdentitiesMatchJoin(block, conf);
+    yield rules.LOCAL.checkMembershipUnicity(block, conf);
+    yield rules.LOCAL.checkRevokedUnicity(block, conf);
+    yield rules.LOCAL.checkRevokedAreExcluded(block, conf);
     yield rules.LOCAL.checkMembershipsSignature(block);
     yield rules.LOCAL.checkPubkeyUnicity(block);
-    yield rules.LOCAL.checkCertificationOneByIssuer(block);
-    yield rules.LOCAL.checkCertificationUnicity(block);
-    yield rules.LOCAL.checkCertificationIsntForLeaverOrExcluded(block);
+    yield rules.LOCAL.checkCertificationOneByIssuer(block, conf);
+    yield rules.LOCAL.checkCertificationUnicity(block, conf);
+    yield rules.LOCAL.checkCertificationIsntForLeaverOrExcluded(block, conf);
     yield rules.LOCAL.checkTxVersion(block);
     yield rules.LOCAL.checkTxIssuers(block);
     yield rules.LOCAL.checkTxSources(block);
@@ -57,102 +57,23 @@ rules.ALIAS = {
     yield rules.LOCAL.checkUnitBase(block);
     yield rules.LOCAL.checkBlockTimes(block, conf);
     yield rules.LOCAL.checkIdentitiesSignature(block);
-    yield rules.LOCAL.checkIdentitiesUserIDConflict(block);
-    yield rules.LOCAL.checkIdentitiesPubkeyConflict(block);
-    yield rules.LOCAL.checkIdentitiesMatchJoin(block);
-    yield rules.LOCAL.checkRevokedNotInMemberships(block);
-    yield rules.LOCAL.checkRevokedUnicity(block);
-    yield rules.LOCAL.checkRevokedAreExcluded(block);
+    yield rules.LOCAL.checkIdentitiesUserIDConflict(block, conf);
+    yield rules.LOCAL.checkIdentitiesPubkeyConflict(block, conf);
+    yield rules.LOCAL.checkIdentitiesMatchJoin(block, conf);
+    yield rules.LOCAL.checkMembershipUnicity(block, conf);
+    yield rules.LOCAL.checkRevokedUnicity(block, conf);
+    yield rules.LOCAL.checkRevokedAreExcluded(block, conf);
     yield rules.LOCAL.checkMembershipsSignature(block);
     yield rules.LOCAL.checkPubkeyUnicity(block);
-    yield rules.LOCAL.checkCertificationOneByIssuer(block);
-    yield rules.LOCAL.checkCertificationUnicity(block);
-    yield rules.LOCAL.checkCertificationIsntForLeaverOrExcluded(block);
+    yield rules.LOCAL.checkCertificationOneByIssuer(block, conf);
+    yield rules.LOCAL.checkCertificationUnicity(block, conf);
+    yield rules.LOCAL.checkCertificationIsntForLeaverOrExcluded(block, conf);
     yield rules.LOCAL.checkTxVersion(block);
     yield rules.LOCAL.checkTxIssuers(block);
     yield rules.LOCAL.checkTxSources(block);
     yield rules.LOCAL.checkTxRecipients(block);
     yield rules.LOCAL.checkTxAmounts(block);
     yield rules.LOCAL.checkTxSignature(block);
-  }),
-
-  ALL_GLOBAL: (block, conf, dal) => co(function *() {
-    yield rules.GLOBAL.checkNumber(block, dal);
-    yield rules.GLOBAL.checkVersion(block, dal);
-    yield rules.GLOBAL.checkBlockLength(block, dal);
-    yield rules.GLOBAL.checkPreviousHash(block, dal);
-    yield rules.GLOBAL.checkPreviousIssuer(block, dal);
-    yield rules.GLOBAL.checkIssuerIsMember(block, dal);
-    yield rules.GLOBAL.checkIssuersFrame(block, conf, dal);
-    yield rules.GLOBAL.checkIssuersFrameVar(block, conf, dal);
-    yield rules.GLOBAL.checkDifferentIssuersCount(block, conf, dal);
-    yield rules.GLOBAL.checkTimes(block, conf, dal);
-    yield rules.GLOBAL.checkIdentityUnicity(block, conf, dal);
-    yield rules.GLOBAL.checkPubkeyUnicity(block, conf, dal);
-    yield rules.GLOBAL.checkIdentitiesAreWritable(block, conf, dal);
-    yield rules.GLOBAL.checkMembershipsAreWritable(block, conf, dal);
-    yield rules.GLOBAL.checkJoiners(block, conf, dal);
-    yield rules.GLOBAL.checkJoinersHaveEnoughCertifications(block, conf, dal);
-    yield rules.GLOBAL.checkJoinersAreNotOudistanced(block, conf, dal);
-    yield rules.GLOBAL.checkActives(block, conf, dal);
-    yield rules.GLOBAL.checkActivesAreNotOudistanced(block, conf, dal);
-    yield rules.GLOBAL.checkLeavers(block, conf, dal);
-    yield rules.GLOBAL.checkRevoked(block, conf, dal);
-    yield rules.GLOBAL.checkJoinersAreNotRevoked(block, conf, dal);
-    yield rules.GLOBAL.checkExcluded(block, conf, dal);
-    yield rules.GLOBAL.checkKickedMembersAreExcluded(block, conf, dal);
-    yield rules.GLOBAL.checkCertificationsAreWritable(block, conf, dal);
-    yield rules.GLOBAL.checkCertificationsAreMadeByMembers(block, dal);
-    yield rules.GLOBAL.checkCertificationsAreValid(block, conf, dal);
-    yield rules.GLOBAL.checkCertificationsAreMadeToMembers(block, dal);
-    yield rules.GLOBAL.checkCertificationsAreMadeToNonLeaver(block, dal);
-    yield rules.GLOBAL.checkCertificationsDelayIsRespected(block, conf, dal);
-    yield rules.GLOBAL.checkCertificationsPeriodIsRespected(block, conf, dal);
-    yield rules.GLOBAL.checkMembersCountIsGood(block, dal);
-    yield rules.GLOBAL.checkPoWMin(block, conf, dal);
-    yield rules.GLOBAL.checkProofOfWork(block, conf, dal);
-    yield rules.GLOBAL.checkUD(block, conf, dal);
-    yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
-    yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
-  }),
-
-  ALL_GLOBAL_WITHOUT_POW: (block, conf, dal) => co(function *() {
-    yield rules.GLOBAL.checkNumber(block, dal);
-    yield rules.GLOBAL.checkVersion(block, dal);
-    yield rules.GLOBAL.checkBlockLength(block, dal);
-    yield rules.GLOBAL.checkPreviousHash(block, dal);
-    yield rules.GLOBAL.checkPreviousIssuer(block, dal);
-    yield rules.GLOBAL.checkIssuerIsMember(block, dal);
-    yield rules.GLOBAL.checkIssuersFrame(block, conf, dal);
-    yield rules.GLOBAL.checkIssuersFrameVar(block, conf, dal);
-    yield rules.GLOBAL.checkDifferentIssuersCount(block, conf, dal);
-    yield rules.GLOBAL.checkTimes(block, conf, dal);
-    yield rules.GLOBAL.checkIdentityUnicity(block, conf, dal);
-    yield rules.GLOBAL.checkPubkeyUnicity(block, conf, dal);
-    yield rules.GLOBAL.checkIdentitiesAreWritable(block, conf, dal);
-    yield rules.GLOBAL.checkMembershipsAreWritable(block, conf, dal);
-    yield rules.GLOBAL.checkJoiners(block, conf, dal);
-    yield rules.GLOBAL.checkJoinersHaveEnoughCertifications(block, conf, dal);
-    yield rules.GLOBAL.checkJoinersAreNotOudistanced(block, conf, dal);
-    yield rules.GLOBAL.checkActives(block, conf, dal);
-    yield rules.GLOBAL.checkActivesAreNotOudistanced(block, conf, dal);
-    yield rules.GLOBAL.checkLeavers(block, conf, dal);
-    yield rules.GLOBAL.checkRevoked(block, conf, dal);
-    yield rules.GLOBAL.checkJoinersAreNotRevoked(block, conf, dal);
-    yield rules.GLOBAL.checkExcluded(block, conf, dal);
-    yield rules.GLOBAL.checkKickedMembersAreExcluded(block, conf, dal);
-    yield rules.GLOBAL.checkCertificationsAreWritable(block, conf, dal);
-    yield rules.GLOBAL.checkCertificationsAreMadeByMembers(block, dal);
-    yield rules.GLOBAL.checkCertificationsAreValid(block, conf, dal);
-    yield rules.GLOBAL.checkCertificationsAreMadeToMembers(block, dal);
-    yield rules.GLOBAL.checkCertificationsAreMadeToNonLeaver(block, dal);
-    yield rules.GLOBAL.checkCertificationsDelayIsRespected(block, conf, dal);
-    yield rules.GLOBAL.checkCertificationsPeriodIsRespected(block, conf, dal);
-    yield rules.GLOBAL.checkMembersCountIsGood(block, dal);
-    yield rules.GLOBAL.checkPoWMin(block, conf, dal);
-    yield rules.GLOBAL.checkUD(block, conf, dal);
-    yield rules.GLOBAL.checkTransactionsBlockStamp(block, conf, dal);
-    yield rules.GLOBAL.checkSourcesAvailability(block, conf, dal);
   })
 };
 
@@ -160,8 +81,6 @@ rules.CHECK = {
   ASYNC: {
     ALL_LOCAL: checkLocal(rules.ALIAS.ALL_LOCAL),
     ALL_LOCAL_BUT_POW: checkLocal(rules.ALIAS.ALL_LOCAL_BUT_POW_AND_SIGNATURE),
-    ALL_GLOBAL: check(rules.ALIAS.ALL_GLOBAL),
-    ALL_GLOBAL_BUT_POW: check(rules.ALIAS.ALL_GLOBAL_WITHOUT_POW)
   }
 };
 
@@ -180,10 +99,10 @@ function checkLocal(contract) {
 }
 
 function check(contract) {
-  return (b, conf, dal, done) => {
+  return (b, conf, dal, bcContext, done) => {
     return co(function *() {
       const block = new Block(b);
-      yield contract(block, conf, dal);
+      yield contract(block, conf, dal, bcContext);
       done && done();
     })
       .catch((err) => {

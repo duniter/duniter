@@ -761,9 +761,9 @@ function service(callback, nologs) {
         return callback.apply(that, cbArgs);
       } catch (e) {
         server.disconnect();
-        throw Error(err);
+        throw e;
       }
-      });
+    });
   };
 }
 

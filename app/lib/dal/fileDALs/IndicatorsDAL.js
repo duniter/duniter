@@ -23,38 +23,5 @@ function IndicatorsDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
     });
   };
 
-  const cache = {};
 
-  function setBlock(key, block) {
-    cache[key] = block;
-    return Promise.resolve(block);
-  }
-
-  function getBlock(key) {
-    return Promise.resolve(cache[key] || null);
-  }
-
-  this.writeCurrentExcluding = (excluding) => setBlock('excludingMS', excluding);
-
-  this.writeCurrentRevocating = (revocating) => setBlock('revocatingMS', revocating);
-
-  this.writeCurrentExcludingForCert = (excluding) => setBlock('excludingCRT', excluding);
-
-  this.writeCurrentExpiringForCert = (excluding) => setBlock('expiringCRT', excluding);
-
-  this.writeCurrentExpiringForIdty = (excluding) => setBlock('expiringIDTY', excluding);
-
-  this.writeCurrentExpiringForMembership = (excluding) => setBlock('expiringMS', excluding);
-
-  this.getCurrentMembershipExcludingBlock = () => getBlock('excludingMS');
-
-  this.getCurrentMembershipRevocatingBlock = () => getBlock('revocatingMS');
-
-  this.getCurrentCertificationExpiringBlock = () => getBlock('expiringCRT');
-
-  this.getCurrentCertificationExcludingBlock = () => getBlock('excludingCRT');
-
-  this.getCurrentIdentityExpiringBlock = () => getBlock('expiringIDTY');
-
-  this.getCurrentMembershipExpiringBlock = () => getBlock('expiringMS');
 }

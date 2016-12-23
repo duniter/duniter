@@ -11,7 +11,8 @@ const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
 
-const expectAnswer   = httpTest.expectAnswer;
+const expectAnswer = httpTest.expectAnswer;
+const expectError  = httpTest.expectError;
 
 const MEMORY_MODE = true;
 const commonConf = {
@@ -42,15 +43,15 @@ const tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', s
 const tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
 const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
 
+const now = 1482300000;
+const commitS1 = commit(s1);
+
 describe("Identities expiry", function() {
 
   before(function() {
 
-    const commitS1 = commit(s1);
-
     return co(function *() {
 
-      const now = Math.round(new Date().getTime() / 1000);
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
       yield cat.createIdentity();
       yield tac.createIdentity();
@@ -59,25 +60,20 @@ describe("Identities expiry", function() {
       yield tac.cert(cat);
       yield cat.join();
       yield tac.join();
-      yield commitS1();
+      yield commitS1({
+        time: now
+      });
       yield toc.createIdentity();
       yield toc.join();
       yield commitS1({
-        time: now + 10
-      });
-      yield commitS1({
-        time: now + 10
+        time: now + 5
       });
     });
   });
 
   it('should have requirements failing for tic', function() {
-    return expectAnswer(rp('http://127.0.0.1:8560/wot/requirements/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', { json: true }), (res) => {
-      res.should.have.property('identities').length(1);
-      res.identities[0].should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
-      res.identities[0].should.have.property('uid').equal('tic');
-      res.identities[0].should.have.property('expired').equal(true);
-    });
+    // tic has been cleaned up, since its identity has expired after the root block
+    return expectError(404, 'No identity matching this pubkey or uid', rp('http://127.0.0.1:8560/wot/requirements/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', { json: true }));
   });
 
   it('should have requirements failing for toc', function() {
@@ -85,7 +81,15 @@ describe("Identities expiry", function() {
       res.should.have.property('identities').length(1);
       res.identities[0].should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
       res.identities[0].should.have.property('uid').equal('toc');
-      res.identities[0].should.have.property('expired').equal(true);
+      res.identities[0].should.have.property('expired').equal(false);
     });
   });
+
+  it('should have requirements failing for toc', () => co(function*() {
+    // tic has been cleaned up after the block#2
+    yield commitS1({
+      time: now + 5
+    });
+    return expectError(404, 'No identity matching this pubkey or uid', rp('http://127.0.0.1:8560/wot/requirements/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', { json: true }));
+  }));
 });

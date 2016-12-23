@@ -25,7 +25,7 @@ const tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', s
 
 let now;
 
-describe("Protocol 0.3", function() {
+describe("Protocol 0.3 Dividend", function() {
 
   before(() => co(function*() {
 

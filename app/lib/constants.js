@@ -109,6 +109,7 @@ module.exports = {
     BLOCK_ALREADY_PROCESSED:              { httpCode: 400, uerr: { ucode: 2028, message: 'Already processed' }},
     TOO_OLD_MEMBERSHIP:                   { httpCode: 400, uerr: { ucode: 2029, message: "Too old membership." }},
     TX_ALREADY_PROCESSED:                 { httpCode: 400, uerr: { ucode: 2030, message: "Transaction already processed" }},
+    A_MORE_RECENT_MEMBERSHIP_EXISTS:      { httpCode: 400, uerr: { ucode: 2031, message: "A more recent membership already exists" }}
   },
 
   DEBUG: {
@@ -374,7 +375,15 @@ module.exports = {
 
   TRANSACTION_MAX_TRIES: 10,
   NONCE_RANGE: 1000 * 1000 * 1000 * 100,
-  POW_MAXIMUM_ACCEPTABLE_HANDICAP: 64
+  POW_MAXIMUM_ACCEPTABLE_HANDICAP: 64,
+
+  // INDEXES
+  M_INDEX: 'MINDEX',
+  I_INDEX: 'IINDEX',
+  S_INDEX: 'SINDEX',
+  C_INDEX: 'CINDEX',
+  IDX_CREATE: 'CREATE',
+  IDX_UPDATE: 'UPDATE'
 };
 
 function exact (regexpContent) {

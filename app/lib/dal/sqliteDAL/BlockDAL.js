@@ -108,15 +108,6 @@ function BlockDAL(driver) {
     return res[0].quantity;
   });
 
-  this.getNbIssuedFrom = (issuer, from) => co(function *() {
-    let res = yield that.query('SELECT COUNT(*) as quantity FROM block WHERE issuer = ? and number >= ? and NOT fork', [issuer, from]);
-    return res[0].quantity;
-  });
-
-  this.getMoreRecentBlockWithTimeEqualBelow = (maxTime) => co(function *() {
-    return (yield that.query('SELECT * FROM block WHERE medianTime <= ? and NOT fork ORDER BY number DESC LIMIT 1', [maxTime]))[0];
-  });
-
   this.getForkBlocks = () => {
     return that.query('SELECT * FROM block WHERE fork ORDER BY number');
   };
@@ -124,10 +115,6 @@ function BlockDAL(driver) {
   this.getDividendBlocks = () => {
     return that.query('SELECT * FROM block WHERE dividend IS NOT NULL ORDER BY number');
   };
-
-  this.nextBlockWithDifferentMedianTime = (block) => co(function *() {
-    return (yield that.query('SELECT * FROM block WHERE number > ? AND medianTime > ? and NOT fork ORDER BY number ASC LIMIT 1', [block.number, block.medianTime]))[0];
-  });
 
   this.saveBunch = (blocks) => co(function *() {
     let queries = "INSERT INTO block (" + that.fields.join(',') + ") VALUES ";

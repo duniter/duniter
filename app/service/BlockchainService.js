@@ -33,6 +33,8 @@ function BlockchainService (server) {
   const generator = blockGenerator(mainContext, prover);
   let conf, dal, keyPair, logger, selfPubkey;
 
+  this.getContext = () => mainContext;
+
   this.setConfDAL = (newConf, newDAL, newKeyPair) => {
     dal = newDAL;
     conf = newConf;
@@ -268,7 +270,7 @@ function BlockchainService (server) {
   /**
    * Generates next block, finding newcomers, renewers, leavers, certs, transactions, etc.
    */
-  this.generateNext = () => generator.nextBlock();
+  this.generateNext = (params) => generator.nextBlock(params);
 
   this.requirementsOfIdentities = (identities) => co(function *() {
     let all = [];
@@ -308,9 +310,11 @@ function BlockchainService (server) {
       certs = yield that.getValidCerts(pubkey, newCerts);
       outdistanced = yield rules.HELPERS.isOver3Hops(currentVersion, pubkey, newLinks, someNewcomers, current, conf, dal);
       // Expiration of current membershship
-      if (join.identity.currentMSN >= 0) {
+      const currentMembership = yield dal.mindexDAL.getReducedMS(pubkey);
+      const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
+      if (currentMSN >= 0) {
         if (join.identity.member) {
-          const msBlock = yield dal.getBlock(join.identity.currentMSN);
+          const msBlock = yield dal.getBlock(currentMSN);
           if (msBlock && msBlock.medianTime) { // special case for block #0
             expiresMS = Math.max(0, (msBlock.medianTime + conf.msValidity - currentTime));
           }
@@ -360,7 +364,7 @@ function BlockchainService (server) {
 
   this.getValidCerts = (newcomer, newCerts) => co(function *() {
     const links = yield dal.getValidLinksTo(newcomer);
-    const certsFromLinks = links.map((lnk) => { return { from: lnk.source, to: lnk.target, timestamp: lnk.timestamp }; });
+    const certsFromLinks = links.map((lnk) => { return { from: lnk.issuer, to: lnk.receiver, timestamp: lnk.expires_on - conf.sigValidity }; });
     const certsFromCerts = [];
     const certs = newCerts[newcomer] || [];
     for (const cert of certs) {
@@ -409,64 +413,11 @@ function BlockchainService (server) {
       }
       return block;
     });
-    // Insert a bunch of blocks
-    const lastPrevious = blocks[0].number == 0 ? null : yield dal.getBlock(blocks[0].number - 1);
-    const dividends = [];
-    for (let i = 0; i < blocks.length; i++) {
-      const previous = i > 0 ? blocks[i - 1] : lastPrevious;
-      const block = blocks[i];
-      block.len = Block.statics.getLen(block);
+    for (const block of blocks) {
       block.fork = false;
-      // Monetary mass & UD Time recording before inserting elements
-      block.monetaryMass = (previous && previous.monetaryMass) || 0;
-      block.unitbase = (block.dividend && block.unitbase) || (previous && previous.unitbase) || 0;
-      block.dividend = block.dividend || null;
-      // UD Time update
-      const previousBlock = i > 0 ? blocks[i - 1] : lastPrevious;
-      if (block.number == 0) {
-        block.UDTime = block.medianTime; // Root = first UD time
-      }
-      else if (block.dividend) {
-        block.UDTime = conf.dt + previousBlock.UDTime;
-        block.monetaryMass += block.dividend * Math.pow(10, block.unitbase || 0) * block.membersCount;
-      } else {
-        block.UDTime = previousBlock.UDTime;
-      }
-      yield mainContext.updateMembers(block);
-
-      // Dividends
-      if (block.dividend) {
-        // Get the members at THAT moment (only them should have the UD)
-        let idties = yield dal.getMembers();
-        for (const idty of idties) {
-          dividends.push({
-            'pubkey': idty.pubkey,
-            'identifier': idty.pubkey,
-            'noffset': block.number,
-            'type': 'D',
-            'number': block.number,
-            'time': block.medianTime,
-            'fingerprint': block.hash,
-            'block_hash': block.hash,
-            'amount': block.dividend,
-            'base': block.unitbase,
-            'consumed': false,
-            'toConsume': false,
-            'conditions': 'SIG(' + idty.pubkey + ')' // Only this pubkey can unlock its UD
-          });
-        }
-      }
     }
     // Transactions recording
     yield mainContext.updateTransactionsForBlocks(blocks, getBlockByNumberAndHash);
-    // Create certifications
-    yield mainContext.updateMembershipsForBlocks(blocks);
-    // Create certifications
-    yield mainContext.updateLinksForBlocks(blocks, getBlock);
-    // Create certifications
-    yield mainContext.updateCertificationsForBlocks(blocks);
-    // Create / Update sources
-    yield mainContext.updateTransactionSourcesForBlocks(blocks, dividends);
     logger.debug(blocks[0].number);
     yield dal.blockDAL.saveBunch(blocks);
     yield pushStatsForBlocks(blocks);
@@ -493,15 +444,6 @@ function BlockchainService (server) {
     }
     return dal.pushStats(stats);
   }
-
-  this.getCertificationsExludingBlock = () => co(function*() {
-    try {
-      const current = yield dal.getCurrentBlockOrNull();
-      return yield dal.getCertificationExcludingBlock(current, conf.sigValidity);
-    } catch (err) {
-        return { number: -1 };
-    }
-  });
 
   this.blocksBetween = (from, count) => co(function *() {
     if (count > 5000) {

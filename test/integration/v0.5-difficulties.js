@@ -30,19 +30,19 @@ describe("Protocol 0.5 Difficulties", function() {
     s1 = res.s1;
     s2 = res.s2;
     yield [
-      s1.commit({ time: now }),
+      s1.commit({ time: now, version: 5 }),
       s2.until('block', 1)
     ];
   }));
 
   it('should be able to emit a block#1 by a different user', () => co(function*() {
     yield [
-      s1.commit({ time: now }), // medianOfBlocksInFrame = MEDIAN([1]) = 1
+      s1.commit({ time: now, version: 5 }), // medianOfBlocksInFrame = MEDIAN([1]) = 1
       s2.until('block', 1),
       s1.until('block', 1)
     ];
     yield [
-      s2.commit({ time: now }), // medianOfBlocksInFrame = MEDIAN([1]) = 1
+      s2.commit({ time: now, version: 5 }), // medianOfBlocksInFrame = MEDIAN([1]) = 1
       s2.until('block', 1),
       s1.until('block', 1)
     ];

@@ -7,10 +7,12 @@ const _            = require('underscore');
 const moment       = require('moment');
 const contacter    = require('./contacter');
 const hashf        = require('./ucp/hashf');
+const indexer      = require('./dup/indexer');
 const dos2unix     = require('./system/dos2unix');
 const logger       = require('./logger')('sync');
 const rawer        = require('./ucp/rawer');
 const constants    = require('../lib/constants');
+const Block        = require('../lib/entity/block');
 const Peer         = require('../lib/entity/peer');
 const multimeter   = require('multimeter');
 const pulling      = require('../lib/pulling');
@@ -163,12 +165,22 @@ function Synchroniser (server, host, port, conf, interactive) {
       logger.info('Downloading Blockchain...');
 
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
-      const cautious = (askedCautious === true || (askedCautious === undefined && localNumber >= 0));
+      const cautious = (askedCautious === true || localNumber >= 0);
       const downloader = new P2PDownloader(localNumber, to, rCurrent.hash, CONST_MAX_SIMULTANEOUS_DOWNLOADS, peers, watcher);
 
       downloader.start();
 
       let lastPullBlock = null;
+
+      let bindex = [];
+      let iindex = [];
+      let mindex = [];
+      let cindex = [];
+      let sindex = [];
+      let currConf = {};
+      let bindexSize = 0;
+      let allBlocks = [];
+
       let dao = pulling.abstractDao({
 
         // Get the local blockchain current block
@@ -206,10 +218,103 @@ function Synchroniser (server, host, port, conf, interactive) {
         applyBranch: (blocks) => co(function *() {
           if (cautious) {
             for (const block of blocks) {
+              if (block.number == 0) {
+                yield BlockchainService.saveParametersForRootBlock(block);
+                currConf = Block.statics.getConf(block);
+              }
               yield dao.applyMainBranch(block);
             }
           } else {
-            yield server.BlockchainService.saveBlocksInMainBranch(blocks);
+            const ctx = BlockchainService.getContext();
+            let blocksToSave = [];
+
+            for (const block of blocks) {
+              allBlocks.push(block);
+
+              if (block.number == 0) {
+                currConf = Block.statics.getConf(block);
+              }
+
+              if (block.number != to) {
+                blocksToSave.push(block);
+                const index = indexer.localIndex(block, currConf);
+                const local_iindex = indexer.iindex(index);
+                const local_cindex = indexer.cindex(index);
+                iindex = iindex.concat(local_iindex);
+                cindex = cindex.concat(local_cindex);
+                sindex = sindex.concat(indexer.sindex(index));
+                mindex = mindex.concat(indexer.mindex(index));
+                const HEAD = yield indexer.quickCompleteGlobalScope(block, currConf, bindex, iindex, mindex, cindex, sindex, {
+                  getBlock: (number) => {
+                    return Promise.resolve(allBlocks[number - 1]);
+                  },
+                  getBlockByBlockstamp: (blockstamp) => {
+                    return Promise.resolve(allBlocks[parseInt(blockstamp) - 1]);
+                  }
+                });
+                bindex.push(HEAD);
+
+                yield ctx.createNewcomers(local_iindex);
+
+                if (block.dividend
+                  || block.joiners.length
+                  || block.actives.length
+                  || block.revoked.length
+                  || block.excluded.length
+                  || block.certifications.length) {
+                  // Flush the INDEX (not bindex, which is particular)
+                  yield dal.mindexDAL.insertBatch(mindex);
+                  yield dal.iindexDAL.insertBatch(iindex);
+                  yield dal.sindexDAL.insertBatch(sindex);
+                  yield dal.cindexDAL.insertBatch(cindex);
+                  mindex = [];
+                  iindex = [];
+                  cindex = [];
+                  sindex = yield indexer.ruleIndexGenDividend(HEAD, dal);
+
+                  // Create/Update nodes in wotb
+                  yield ctx.updateMembers(block);
+
+                  // --> Update links
+                  yield dal.updateWotbLinks(local_cindex);
+                }
+
+                // Trim the bindex
+                bindexSize = [
+                  block.issuersCount,
+                  block.issuersFrame,
+                  conf.medianTimeBlocks,
+                  conf.dtDiffEval,
+                  CONST_BLOCKS_CHUNK
+                ].reduce((max, value) => {
+                  return Math.max(max, value);
+                }, 0);
+
+                if (bindexSize && bindex.length >= 2 * bindexSize) {
+                  // We trim it, not necessary to store it all (we already store the full blocks)
+                  bindex.splice(0, bindexSize);
+                }
+              } else {
+
+                if (blocksToSave.length) {
+                  yield server.BlockchainService.saveBlocksInMainBranch(blocksToSave);
+                }
+                blocksToSave = [];
+
+                // Save the INDEX
+                yield dal.bindexDAL.insertBatch(bindex);
+                yield dal.mindexDAL.insertBatch(mindex);
+                yield dal.iindexDAL.insertBatch(iindex);
+                yield dal.sindexDAL.insertBatch(sindex);
+                yield dal.cindexDAL.insertBatch(cindex);
+
+                // Last block: cautious mode to trigger all the INDEX expiry mechanisms
+                yield dao.applyMainBranch(block);
+              }
+            }
+            if (blocksToSave.length) {
+              yield server.BlockchainService.saveBlocksInMainBranch(blocksToSave);
+            }
           }
           lastPullBlock = blocks[blocks.length - 1];
           watcher.appliedPercent(Math.floor(blocks[blocks.length - 1].number / to * 100));

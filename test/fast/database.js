@@ -38,7 +38,7 @@ describe("SQLite driver", function() {
       yield driver.closeConnection();
       yield driver.executeAll(SELECT_FROM_TABLE, [])
         .then(() => 'Should have thrown an exception')
-        .catch((err) => err.should.have.property('message').match(/^SQLITE_ERROR: no such table: duniter$/));
+        .catch((err) => err.should.have.property('message').match(/SQLITE_ERROR: no such table: duniter/));
       // But if we populate it again, it will work
       yield driver.executeSql(CREATE_TABLE_SQL);
       rows = yield driver.executeAll(SELECT_FROM_TABLE, []);
@@ -48,7 +48,7 @@ describe("SQLite driver", function() {
       yield driver.destroyDatabase();
       yield driver.executeAll(SELECT_FROM_TABLE, [])
         .then(() => 'Should have thrown an exception')
-        .catch((err) => err.should.have.property('message').match(/^SQLITE_ERROR: no such table: duniter$/));
+        .catch((err) => err.should.have.property('message').match(/SQLITE_ERROR: no such table: duniter/));
       // But if we populate it again, it will work
       yield driver.executeSql(CREATE_TABLE_SQL);
       rows = yield driver.executeAll(SELECT_FROM_TABLE, []);
@@ -79,7 +79,7 @@ describe("SQLite driver", function() {
       yield driver.destroyDatabase();
       yield driver.executeAll(SELECT_FROM_TABLE, [])
         .then(() => 'Should have thrown an exception')
-        .catch((err) => err.should.have.property('message').match(/^SQLITE_ERROR: no such table: duniter$/));
+        .catch((err) => err.should.have.property('message').match(/SQLITE_ERROR: no such table: duniter/));
     }));
 
     it('should be able to open the file after being removed', () => co(function*() {

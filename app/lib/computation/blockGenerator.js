@@ -4,6 +4,7 @@ const co              = require('co');
 const Q               = require('q');
 const moment          = require('moment');
 const inquirer        = require('inquirer');
+const indexer         = require('../dup/indexer');
 const rawer           = require('../ucp/rawer');
 const hashf           = require('../ucp/hashf');
 const constants       = require('../constants');
@@ -33,13 +34,7 @@ function BlockGenerator(mainContext, prover) {
     logger = require('../logger')(dal.profile);
   };
 
-  this.nextBlock = (manualValues) => generateNextBlock(new NextBlockGenerator(conf, dal), manualValues);
-
-  this.nextEmptyBlock = () => co(function *() {
-    const current = yield dal.getCurrentBlockOrNull();
-    const exclusions = yield dal.getToBeKickedPubkeys();
-    return createBlock(current, {}, {}, {}, [], exclusions, []);
-  });
+  this.nextBlock = (manualValues) => generateNextBlock(new NextBlockGenerator(mainContext, conf, dal), manualValues);
 
   this.manualRoot = () => co(function *() {
     let current = yield dal.getCurrentBlockOrNull();
@@ -53,7 +48,7 @@ function BlockGenerator(mainContext, prover) {
     const unsignedBlock = block || (yield that.nextBlock(manualValues));
     const current = yield dal.getCurrentBlockOrNull();
     const version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
-    const trialLevel = trial || (yield rules.HELPERS.getTrialLevel(version, selfPubkey, conf, dal));
+    const trialLevel = trial || (yield mainContext.getIssuerPersonalizedDifficulty(version, selfPubkey));
     return prover.prove(unsignedBlock, trialLevel, (manualValues && manualValues.time) || null);
   });
 
@@ -151,7 +146,9 @@ function BlockGenerator(mainContext, prover) {
         block = {};
       }
       const identity = yield dal.getIdentityByHashOrNull(leave.idHash);
-      if (identity && block && identity.currentMSN < leave.ms.number && identity.member) {
+      const currentMembership = yield dal.mindexDAL.getReducedMS(ms.issuer);
+      const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
+      if (identity && block && currentMSN < leave.ms.number && identity.member) {
         // MS + matching cert are found
         leave.identity = identity;
         leaveData[identity.pubkey] = leave;
@@ -269,7 +266,9 @@ function BlockGenerator(mainContext, prover) {
         const idtyHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
         const join = yield that.getSinglePreJoinData(current, idtyHash, joiners);
         join.ms = ms;
-        if (!join.identity.revoked && join.identity.currentMSN < parseInt(join.ms.number)) {
+        const currentMembership = yield dal.mindexDAL.getReducedMS(ms.issuer);
+        const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
+        if (!join.identity.revoked && currentMSN < parseInt(join.ms.number)) {
           preJoinData[join.identity.pubkey] = join;
         }
       } catch (err) {
@@ -328,7 +327,7 @@ function BlockGenerator(mainContext, prover) {
   this.getSinglePreJoinData = (current, idHash, joiners) => co(function *() {
     const identity = yield dal.getIdentityByHashOrNull(idHash);
     let foundCerts = [];
-    const blockOfChainability = current ? (yield dal.getChainabilityBlock(current.medianTime, conf.sigPeriod)) : null;
+    const vHEAD_1 = yield mainContext.getvHEAD_1();
     if (!identity) {
       throw 'Identity with hash \'' + idHash + '\' not found';
     }
@@ -349,7 +348,8 @@ function BlockGenerator(mainContext, prover) {
     if (!verified) {
       throw constants.ERRORS.IDENTITY_WRONGLY_SIGNED;
     }
-    if (!identity.leaving) {
+    const isIdentityLeaving = yield dal.isLeaving(idty.pubkey);
+    if (!isIdentityLeaving) {
       if (!current) {
         // Look for certifications from initial joiners
         // TODO: check if this is still working
@@ -375,12 +375,12 @@ function BlockGenerator(mainContext, prover) {
               }
             }
             // Already exists a link not replayable yet?
-            let exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigValidity);
+            let exists = yield dal.existsNonReplayableLink(cert.from, cert.to);
             if (exists) {
               throw 'It already exists a similar certification written, which is not replayable yet';
             }
             // Already exists a link not chainable yet?
-            exists = yield dal.existsNonChainableLink(cert.from, blockOfChainability ? blockOfChainability.number : -1, conf.sigStock);
+            exists = yield dal.existsNonChainableLink(cert.from, vHEAD_1, conf.sigStock);
             if (exists) {
               throw 'It already exists a certification written which is not chainable yet';
             }
@@ -411,7 +411,9 @@ function BlockGenerator(mainContext, prover) {
   const createBlock = (current, joinData, leaveData, updates, revocations, exclusions, transactions, manualValues) => {
     return co(function *() {
 
-      const maxLenOfBlock = yield rules.HELPERS.getMaxBlockSize(dal);
+      const vHEAD = yield mainContext.getvHeadCopy();
+      const vHEAD_1 = yield mainContext.getvHEAD_1();
+      const maxLenOfBlock = indexer.DUP_HELPERS.getMaxBlockSize(vHEAD);
       let blockLen = 0;
       // Revocations have an impact on exclusions
       revocations.forEach((idty) => exclusions.push(idty.pubkey));
@@ -433,7 +435,7 @@ function BlockGenerator(mainContext, prover) {
         block.medianTime = moment.utc().unix() - conf.rootoffset;
       }
       else {
-        block.medianTime = yield rules.HELPERS.getMedianTime(block.number, conf, dal);
+        block.medianTime = vHEAD.medianTime;
       }
       // Choose the version
       block.version = (manualValues && manualValues.version) || (yield rules.HELPERS.getMaxPossibleVersionNumber(current, block));
@@ -552,6 +554,8 @@ function BlockGenerator(mainContext, prover) {
       // Final number of members
       block.membersCount = previousCount + block.joiners.length - block.excluded.length;
 
+      vHEAD.membersCount = block.membersCount;
+
       /*****
        * Priority 4: transactions
        */
@@ -570,20 +574,26 @@ function BlockGenerator(mainContext, prover) {
       /**
        * Finally handle the Universal Dividend
        */
-      block.powMin = block.number == 0 ? conf.powMin || 0 : yield rules.HELPERS.getPoWMin(block.version, block.number, conf, dal);
+      block.powMin = vHEAD.powMin;
+
+      // BR_G13
+      indexer.prepareDividend(vHEAD, vHEAD_1, conf);
+
+      // BR_G14
+      indexer.prepareUnitBase(vHEAD, vHEAD_1, conf);
+
       // Universal Dividend
-      const nextUD = yield rules.HELPERS.getNextUD(dal, conf, block.version, block.medianTime, current, block.membersCount);
-      if (nextUD) {
-        block.dividend = nextUD.dividend;
-        block.unitbase = nextUD.unitbase;
+      if (vHEAD.new_dividend) {
+        block.dividend = vHEAD.dividend;
+        block.unitbase = vHEAD.unitBase;
       } else if (block.version > 2) {
         block.unitbase = block.number == 0 ? 0 : current.unitbase;
       }
-      // V3 Rotation
+      // Rotation
       if (block.version > 2) {
-        block.issuersCount = yield rules.HELPERS.getDifferentIssuers(dal);
-        block.issuersFrame = yield rules.HELPERS.getIssuersFrame(dal);
-        block.issuersFrameVar = yield rules.HELPERS.getIssuersFrameVar(block, dal);
+        block.issuersCount = vHEAD.issuersCount;
+        block.issuersFrame = vHEAD.issuersFrame;
+        block.issuersFrameVar = vHEAD.issuersFrameVar;
       }
       // InnerHash
       block.time = block.medianTime;
@@ -600,7 +610,7 @@ function BlockGenerator(mainContext, prover) {
  * Class to implement strategy of automatic selection of incoming data for next block.
  * @constructor
  */
-function NextBlockGenerator(conf, dal) {
+function NextBlockGenerator(mainContext, conf, dal) {
 
   const logger = require('../logger')(dal.profile);
 
@@ -608,8 +618,7 @@ function NextBlockGenerator(conf, dal) {
     const updates = {};
     const updatesToFrom = {};
     const certs = yield dal.certsFindNew();
-    // The block above which (above from current means blocks with number < current)
-    const blockOfChainability = current ? (yield dal.getChainabilityBlock(current.medianTime, conf.sigPeriod)) : null;
+    const vHEAD_1 = yield mainContext.getvHEAD_1();
     for (const cert of certs) {
       const targetIdty = yield dal.getIdentityByHashOrNull(cert.target);
       // The identity must be known
@@ -634,12 +643,12 @@ function NextBlockGenerator(conf, dal) {
             let exists = false;
             if (current) {
               // Already exists a link not replayable yet?
-              exists = yield dal.existsLinkFromOrAfterDate(cert.from, cert.to, current.medianTime - conf.sigValidity);
+              exists = yield dal.existsNonReplayableLink(cert.from, cert.to);
             }
             if (!exists) {
               // Already exists a link not chainable yet?
               // No chainability block means absolutely nobody can issue certifications yet
-              exists = current && (yield dal.existsNonChainableLink(cert.from, blockOfChainability ? blockOfChainability.number : -1, conf.sigStock));
+              exists = yield dal.existsNonChainableLink(cert.from, vHEAD_1, conf.sigStock);
               if (!exists) {
                 // It does NOT already exists a similar certification written, which is not replayable yet
                 // Signatory must be a member

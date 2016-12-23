@@ -27,60 +27,47 @@ describe("Forwarding", function() {
     const tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, node1);
     const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, node1);
 
-    before(function(done) {
-      Promise.all([node1, node2].map(function(node) {
-        return node
-          .startTesting();
-      }))
-        .then(function() {
-          return new Promise(function(resolve, reject){
-            async.waterfall([
-              function(next) {
-                node2.peering(next);
-              },
-              function(peer, next) {
-                node1.submitPeer(peer, function(err) {
-                  next(err);
-                });
-              },
-              function(next) {
-                node1.peering(next);
-              },
-              function(peer, next) {
-                node2.submitPeer(peer, next);
-              }
-            ], function(err) {
-              err ? reject(err) : resolve();
+    before(() => co(function*(){
+      yield [node1, node2].map((node) => node.startTesting());
+      yield new Promise(function(resolve, reject){
+        async.waterfall([
+          function(next) {
+            node2.peering(next);
+          },
+          function(peer, next) {
+            node1.submitPeer(peer, function(err) {
+              next(err);
             });
-          });
-        })
-        .then(function(){
-          return Promise.all([
-            node2.until('identity', 4),
-            node2.until('block', 1),
-            co(function *() {
-
-              // Self certifications
-              yield cat.createIdentity();
-              yield tac.createIdentity();
-              yield tic.createIdentity();
-              yield toc.createIdentity();
-              // Certifications
-              yield cat.cert(tac);
-              yield tac.cert(cat);
-              yield cat.join();
-              yield tac.join();
-              yield node1.commitP();
-            })
-          ]);
-        })
-        .then(function(){
-          done();
-        })
-        .catch(function(err){
-          done(err);
+          },
+          function(next) {
+            node1.peering(next);
+          },
+          function(peer, next) {
+            node2.submitPeer(peer, next);
+          }
+        ], function(err) {
+          err ? reject(err) : resolve();
         });
-    });
+      });
+      yield [
+        node2.until('identity', 4),
+        node2.until('block', 1),
+        co(function *() {
+
+          // Self certifications
+          yield cat.createIdentity();
+          yield tac.createIdentity();
+          yield tic.createIdentity();
+          yield toc.createIdentity();
+          // Certifications
+          yield cat.cert(tac);
+          yield tac.cert(cat);
+          yield cat.join();
+          yield tac.join();
+          yield node1.commitP();
+        })
+      ];
+    }));
 
     describe("Testing technical API", function(){
 
@@ -118,52 +105,70 @@ function doTests(node) {
     describe("user cat", function(){
 
       it('should give only 1 result', node.lookup('cat', function(res, done){
-        should.exists(res);
-        assert.equal(res.results.length, 1);
-        done();
+        try {
+          should.exists(res);
+          assert.equal(res.results.length, 1);
+          done();
+        } catch (e) {
+          done(e);
+        }
       }));
 
       it('should have sent 1 signature', node.lookup('cat', function(res, done){
-        should.exists(res);
-        assert.equal(res.results[0].signed.length, 1);
-        should.exists(res.results[0].signed[0].isMember);
-        should.exists(res.results[0].signed[0].wasMember);
-        assert.equal(res.results[0].signed[0].isMember, true);
-        assert.equal(res.results[0].signed[0].wasMember, true);
-        done();
+        try {
+          should.exists(res);
+          assert.equal(res.results[0].signed.length, 1);
+          should.exists(res.results[0].signed[0].isMember);
+          should.exists(res.results[0].signed[0].wasMember);
+          assert.equal(res.results[0].signed[0].isMember, true);
+          assert.equal(res.results[0].signed[0].wasMember, true);
+          done();
+        } catch (e) {
+          done(e);
+        }
       }));
     });
 
     describe("user tac", function(){
 
       it('should give only 1 result', node.lookup('tac', function(res, done){
-        should.exists(res);
-        assert.equal(res.results.length, 1);
-        done();
+        try {
+          should.exists(res);
+          assert.equal(res.results.length, 1);
+          done();
+        } catch (e) {
+          done(e);
+        }
       }));
 
       it('should have 1 signature', node.lookup('tac', function(res, done){
-        should.exists(res);
-        assert.equal(res.results[0].uids[0].others.length, 1);
-        done();
+        try {
+          should.exists(res);
+          assert.equal(res.results[0].uids[0].others.length, 1);
+          done();
+        } catch (e) {
+          done(e);
+        }
       }));
 
       it('should have sent 1 signature', node.lookup('tac', function(res, done){
-        should.exists(res);
-        assert.equal(res.results[0].signed.length, 1);
-        done();
+        try {
+          should.exists(res);
+          assert.equal(res.results[0].signed.length, 1);
+          done();
+        } catch (e) {
+          done(e);
+        }
       }));
     });
 
     it('toc should give only 1 result', node.lookup('toc', function(res, done){
-      should.exists(res);
-      assert.equal(res.results.length, 1);
+      should.not.exists(res);
       done();
     }));
 
     it('tic should give only 1 results', node.lookup('tic', function(res, done){
-      should.exists(res);
-      assert.equal(res.results.length, 1);
+      should.not.exists(res);
       done();
     }));
   };

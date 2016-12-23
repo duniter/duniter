@@ -63,7 +63,7 @@ let Transaction = function(obj, currency) {
         base:       this.version >= 3 ? sp[1] : null,
         type:       this.version >= 3 ? sp[2] : sp[0],
         identifier: this.version >= 3 ? sp[3] : sp[1],
-        noffset:    this.version >= 3 ? parseInt(sp[4]) : parseInt(sp[2]),
+        pos:        this.version >= 3 ? parseInt(sp[4]) : parseInt(sp[2]),
         raw: input
       });
     });

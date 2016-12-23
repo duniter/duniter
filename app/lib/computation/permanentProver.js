@@ -59,7 +59,7 @@ function PermanentProver(server) {
             throw 'Waiting for a root block before computing new blocks';
           }
           const version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
-          const trial = yield rules.HELPERS.getTrialLevel(version, selfPubkey, conf, dal);
+          const trial = yield server.getBcContext().getIssuerPersonalizedDifficulty(version, selfPubkey);
           if (trial > (current.powMin + constants.POW_MAXIMUM_ACCEPTABLE_HANDICAP)) {
             logger.debug('Trial = %s, powMin = %s, pubkey = %s', trial, current.powMin, selfPubkey.slice(0, 6));
             throw 'Too high difficulty: waiting for other members to write next block';
@@ -107,7 +107,7 @@ function PermanentProver(server) {
             co(function*() {
               try {
                 const block2 = yield server.BlockchainService.generateNext();
-                const trial2 = yield rules.HELPERS.getTrialLevel(block2.version, server.keyPair.publicKey, server.conf, server.dal);
+                const trial2 = yield server.getBcContext().getIssuerPersonalizedDifficulty(block2.version, server.keyPair.publicKey);
                 lastComputedBlock = yield server.BlockchainService.makeNextBlock(block2, trial2);
                 yield onBlockCallback(lastComputedBlock); 
               } catch (e) {

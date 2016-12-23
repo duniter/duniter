@@ -1,4 +1,4 @@
-# UCP - Duniter Protocol
+# DUP - Duniter Protocol
 
 > This document is still regularly updated (as of August 2016)
 
@@ -81,7 +81,7 @@ The block ID of the block#433 is `433`. Its UID *might be* `433-FB11681FC1B3E36C
 
 A valid currency name is composed of alphanumeric characters, spaces, `-` or `_` and has a length of 2 to 50 characters.
 
-#### Dates
+#### Datesœ
 
 For any document using a date field, targeted date is to be understood as **UTC+0** reference.
 
@@ -808,6 +808,17 @@ Excluded              | Exluded members' public key                       | Alwa
 Transactions          | A list of compact transactions                    | Always
 InnerHash             | The hash value of the block's inner content       | Always
 Nonce                 | An arbitrary nonce value                          | Always
+BlockHash             | Hash from `InnerHash: ` to `SIGNATURE`            | Virtual
+BlockSize             | Hash from `InnerHash: ` to `SIGNATURE`            | Virtual
+
+##### BlockSize
+
+The block size is defined as the number of lines in multiline fields (`Identities`, `Joiners`, `Actives`, `Leavers`, `Revoked`, `Certifications`, `Transactions`) **except** `Excluded` field.
+
+For example:
+
+* 1 new identity + 1 joiner + 2 certifications = 4 lines sized block
+* 1 new identity + 1 joiner + 2 certifications + 5 lines transaction = 9 lines sized block
 
 #### Coherence
 
@@ -959,6 +970,7 @@ avgGenTime  | The average time for writing 1 block (wished time)
 dtDiffEval  | The number of blocks required to evaluate again `PoWMin` value
 blocksRot   | The number of previous blocks to check for personalized difficulty
 percentRot  | The percent of previous issuers to reach for personalized difficulty
+txWindow    | `= 3600 * 24 * 7`. Maximum delay a transaction can wait before being expired for non-writing.
 
 ### Computed variables
 
@@ -967,9 +979,9 @@ Variable  | Meaning
 members   | Synonym of `members(t = now)`, `wot(t)`, `community(t)` targeting the keys whose last active (non-expired) membership is either in `Joiners` or `Actives`.
 maxGenTime  | `= CEIL(avgGenTime * 1.189)`
 minGenTime  | `= FLOOR(avgGenTime / 1.189)`
+minSpeed | 1 / maxGenTime
+maxSpeed | 1 / minGenTime
 maxAcceleration | `= CEIL(maxGenTime * medianTimeBlocks)`
-dSen | `= CEIL(membersCount ^ (1 / stepMax))`
-sentries | Members with at least `dSen` active links *from* them
 
 ## Processing
 
@@ -983,7 +995,11 @@ Local validation verifies the coherence of a well-formatted block, without any o
 
 ##### Version and Number
 
-If `Number` is `0`, then `Version` must be `2`.
+Rule:
+
+    HEAD.version >= 2
+    AND
+    HEAD.version <= 6
 
 ##### InnerHash
 
@@ -995,7 +1011,7 @@ If `Number` is `0`, then `Version` must be `2`.
 
 ##### Proof of work
 
-To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must start with a specific number of zeros. Locally, this hash must start with at least `NB_ZEROS` zeros:
+To be valid, the BlockHash must start with a specific number of zeros. Locally, this hash must start with at least `NB_ZEROS` zeros:
 
     REMAINDER = PowMin % 16
     NB_ZEROS = (PowMin - REMAINDER) / 16
@@ -1015,6 +1031,10 @@ To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must
 * `Parameters` must be present if the value of the `Number` field is equal to `0`.
 * `Parameters` must not be present if the value of the `Number` field is greater than `0`.
 
+##### Universal Dividend
+
+If HEAD.number == 0, HEAD.dividend must equal `null`.
+
 ##### UnitBase
 
 * Block V2:
@@ -1029,52 +1049,260 @@ To be valid, a block proof-of-work (hash from `InnerHash: ` to `SIGNATURE`) must
 
 ##### Dates
 
-* A block must have its `Time` field be between [`MedianTime` ; `MedianTime` + `accelerationMax`].
+* A block must have its `Time` field be between [`MedianTime` ; `MedianTime` + `maxAcceleration`].
 * Root block's `Time` & `MedianTime` must be equal.
 
 ##### Identities
 
-* A block cannot contain identities whose signature does not match the identity's content
-* A block cannot have two or more identities sharing a same `USER_ID`.
-* A block cannot have two or more identities sharing a same `PUBLIC_KEY`.
-* Each identity of a block must match a `Joiners` line matching the same `PUBLIC_KEY`
+A block cannot contain identities whose signature does not match the identity's content
 
 ##### Memberships (Joiners, Actives, Leavers)
 
-* A block cannot contain memberships whose signature does not match membership's content
-
-##### Members changes (Joiners, Actives, Leavers, Excluded)
-
-* A block cannot contain more than 1 occurrence of a same `PUBLIC_KEY` in `Joiners`, `Actives`, `Leavers` and `Excluded` field as a whole. In other words, a given `PUBLIC_KEY` present in `Joiners` cannot be present in `Joiners` a second time, neither can it be present in `Actives`, `Leavers` or `Excluded`.
+A block cannot contain memberships whose signature does not match the membership's content
 
 ##### Revoked
 
-* Each `PUBLIC_KEY` under `Revoked` field **must not** be present under `Joiners`, `Actives` or `Leavers` fields.
-* A block cannot contain more than 1 occurrence of a same `PUBLIC_KEY` in `Revoked`.
-
-##### Excluded
-
-* Each `PUBLIC_KEY` under `Revoked` field **must** be present under `Excluded` field.
-
-##### Certifications
-
-* A block cannot have two certifications from a same `PUBKEY_FROM`, unless it is block#0.
-* A block cannot have two identical certifications (same `PUBKEY_FROM` and same `PUBKEY_TO` for the two certifications)
-* A block cannot have certifications for public keys present in either `Excluded` or `Leavers` fields.
+A block cannot contain revocations whose signature does not match the revocation's content
 
 ##### Transactions
 
 * A transaction in compact format cannot measure more than 100 lines
-* A transaction must have at least 1 issuer, 1 source and 1 recipient
-* For each issuer line, starting from line # `0`, there must be a source with an `INDEX` value equal to this line#
-* A transaction cannot have 2 identical inputs
-* A transaction cannot have 2 identical outputs
+* A transaction must have at least 1 source
 * A transaction cannot have `SIG(INDEX)` unlocks with `INDEX >= ` issuers count.
-* A transaction **must** have signatures matching its content for each issuer
+* A transaction **must** have signatures matching its content **for each issuer**
 * A transaction's version:
   * must be the same as its including block if the block's `Version` is `<= 3`
   * must be equal to `3` if the block's `Version` is `> 3`
-* There cannot be 2 transactions with the same source
+* Signatures count must be the same as issuers count
+* Signatures are ordered by issuer
+* Signatures are made over the transaction's content, signatures excepted
+
+##### INDEX GENERATION
+
+##### Identities
+
+Each identity produces 2 new entries:
+
+    IINDEX (
+        op = 'CREATE'
+        uid = USER_ID
+        pub = PUBLIC_KEY
+        created_on = BLOCK_UID
+        written_on = BLOCKSTAMP
+        member = true
+        wasMember = true
+        kick = false
+    )
+
+    MINDEX (
+        op = 'CREATE'
+        pub = PUBLIC_KEY
+        created_on = BLOCK_UID
+        written_on = BLOCKSTAMP
+        expired_on = 0
+        expires_on = MedianTime + msValidity
+        revokes_on = MedianTime + msValidity*2
+        type = 'JOIN'
+        revoked_on = null
+        leaving = false
+    )
+
+##### Joiners
+
+Each join whose `PUBLIC_KEY` **does not match** a local MINDEX `CREATE, PUBLIC_KEY` produces 2 new entries:
+
+    IINDEX (
+        op = 'UPDATE'
+        uid = null
+        pub = PUBLIC_KEY
+        created_on = null
+        written_on = BLOCKSTAMP
+        member = true
+        wasMember = null
+        kick = null
+    )
+
+    MINDEX (
+        op = 'UPDATE'
+        pub = PUBLIC_KEY
+        created_on = BLOCK_UID
+        written_on = BLOCKSTAMP
+        expired_on = 0
+        expires_on = MedianTime + msValidity
+        revokes_on = MedianTime + msValidity*2
+        type = 'JOIN'
+        revoked_on = null
+        leaving = null
+    )
+
+##### Actives
+
+Each active produces 1 new entry:
+
+    MINDEX (
+        op = 'UPDATE'
+        pub = PUBLIC_KEY
+        created_on = BLOCK_UID
+        written_on = BLOCKSTAMP
+        expires_on = MedianTime + msValidity
+        revokes_on = MedianTime + msValidity*2
+        type = 'RENEW'
+        revoked_on = null
+        leaving = null
+    )
+
+##### Leavers
+
+Each leaver produces 1 new entry:
+
+    MINDEX (
+        op = 'UPDATE'
+        pub = PUBLIC_KEY
+        created_on = BLOCK_UID
+        written_on = BLOCKSTAMP
+        type = 'LEAVE'
+        expires_on = null
+        revokes_on = null
+        revoked_on = null
+        leaving = true
+    )
+
+##### Revoked
+
+Each revocation produces 1 new entry:
+
+    MINDEX (
+        op = 'UPDATE'
+        pub = PUBLIC_KEY
+        created_on = BLOCK_UID
+        written_on = BLOCKSTAMP
+        type = 'REV'
+        expires_on = null
+        revokes_on = null
+        revoked_on = BLOCKSTAMP
+        revocation = REVOCATION_SIG
+        leaving = false
+    )
+
+##### Excluded
+
+Each exclusion produces 1 new entry:
+
+    IINDEX (
+        op = 'UPDATE'
+        uid = null
+        pub = PUBLIC_KEY
+        created_on = null
+        written_on = BLOCKSTAMP
+        member = false
+        wasMember = null
+        kick = false
+    )
+
+##### Certifications
+
+Each certification produces 1 new entry:
+
+    CINDEX (
+        op = 'CREATE'
+        issuer = PUBKEY_FROM
+        receiver = PUBKEY_TO
+        created_on = BLOCK_ID
+        written_on = BLOCKSTAMP
+        sig = SIGNATURE
+        expires_on = MedianTime + sigValidity
+        chainable_on = MedianTime + sigPeriod
+        expired_on = 0
+    )
+
+##### Sources
+
+Each transaction input produces 1 new entry:
+
+    SINDEX (
+        op = 'UPDATE'
+        tx = TRANSACTION_HASH
+        identifier = INPUT_IDENTIFIER
+        pos = INPUT_INDEX
+        created_on = TX_BLOCKSTAMP
+        written_on = BLOCKSTAMP
+        amount = INPUT_AMOUNT
+        base = INPUT_BASE
+        conditions = null
+        consumed = true
+    )
+
+Each transaction output produces 1 new entry:
+
+    SINDEX (
+        op = 'CREATE'
+        tx = TRANSACTION_HASH
+        identifier = TRANSACTION_HASH
+        pos = OUTPUT_INDEX_IN_TRANSACTION
+        written_on = BLOCKSTAMP
+        written_time = MedianTime
+        amount = OUTPUT_AMOUNT
+        base = OUTPUT_BASE
+        locktime = LOCKTIME
+        conditions = OUTPUT_CONDITIONS
+        consumed = false
+    )
+
+##### INDEX RULES
+
+###### UserID and PublicKey unicity
+
+* The local IINDEX has a unicity constraint on `USER_ID`.
+* The local IINDEX has a unicity constraint on `PUBLIC_KEY`.
+* Each local IINDEX `op = 'CREATE'` operation must match a single local MINDEX `op = 'CREATE', pub = PUBLIC_KEY` operation.
+
+> Functionally: UserID and public key must be unique in a block, an each new identity must have an opt-in document attached.
+
+###### Membership unicity
+
+* The local MINDEX has a unicity constraint on `PUBLIC_KEY`
+
+> Functionally: a user has only 1 status change allowed per block.
+
+###### Revocation implies exclusion
+
+* Each local MINDEX ̀`op = 'UPDATE', revoked_on = BLOCKSTAMP` operations must match a single local IINDEX `op = 'UPDATE', pub = PUBLIC_KEY, member = false` operation.
+
+> Functionally: a revoked member must be immediately excluded.
+
+###### Certifications
+
+* The local CINDEX has a unicity constraint on `PUBKEY_FROM, PUBKEY_TO`
+* The local CINDEX has a unicity constraint on `PUBKEY_FROM`, except for block#0
+* The local CINDEX must not match a MINDEX operation on `PUBLIC_KEY = PUBKEY_FROM, member = false` or `PUBLIC_KEY = PUBKEY_FROM, leaving = true`
+
+> Functionally:
+>
+> * a block cannot have 2 identical certifications (A -> B)
+> * a block cannot have 2 certifications from a same public key, except in block#0
+> * a block cannot have a certification to a leaver or an excluded
+
+###### Sources
+
+* The local SINDEX has a unicity constraint on `UPDATE, IDENTIFIER, POS`
+* The local SINDEX has a unicity constraint on `CREATE, IDENTIFIER, POS`
+
+> Functionally: 
+> * a same source cannot be consumed twice by the block
+> * a same output cannot be produced twice by block
+>
+> But a source can be both created and consumed in the same block, so a *chain of transactions* can be stored at once.
+
+##### Double-spending control
+
+Definitions:
+
+For each SINDEX unique `tx`:
+
+* **inputs** are the SINDEX row matching `UPDATE, tx`
+* **outputs** are the SINDEX row matching `CREATE, tx`
+
+> Functionally: we gather the sources for each transaction, in order to check them.
 
 ###### CommonBase
 
@@ -1141,373 +1369,1118 @@ TRUE
   * if `BaseDelta > 0`, then it must be inferior or equal to the sum of all preceding `BaseDelta`
 * *Rule*: The sum of all inputs in `CommonBase` must equal the sum of all outputs in `CommonBase`
 
-> Consequence: we cannot create money nor lose money through transactions. We can only transfer coins we own.
-
-###### About signatures
-
-* Signatures count must be the same as issuers count
-* Signatures are ordered by issuer
-* Signatures are made over the transaction's content, signatures excepted
+> Functionally: we cannot create nor lose money through transactions. We can only transfer coins we own.
 
 #### Global
 
 Global validation verifies the coherence of a locally-validated block, in the context of the whole blockchain, including the block.
 
-##### Definitions
+##### INDEX GENERATION
 
-###### Block size
+###### Definitions
 
-The block size is defined as the number of lines in multiline fields (`Identities`, `Joiners`, `Actives`, `Leavers`, `Revoked`, `Certifications`, `Transactions`) **except** `Excluded` field.
+Here are some references that will be used in next sections.
 
-For example:
+BINDEX references:
 
-* 1 new identity + 1 joiner + 2 certifications = 4 lines sized block
-* 1 new identity + 1 joiner + 2 certifications + 5 lines transaction = 9 lines sized block
+* *HEAD*: the BINDEX top entry (generated for incoming block, precisely)
+* *HEAD~1*: the BINDEX 1<sup>st</sup> entry before HEAD (= entry where `ENTRY.number = HEAD.number - 1`)
+* *HEAD~n*: the BINDEX n<sup>th</sup> entry before HEAD (= entry where `ENTRY.number = HEAD.number - n`)
+* *HEAD~n[field=value, ...]*: the BINDEX entry at *HEAD~n* if it fulfills the condition, null otherwise
+* *HEAD~n..m[field=value, ...]*: the BINDEX entries between *HEAD~n* and *HEAD~m*, included, where each entry fulfills the condition
+* *HEAD~n.property*: get a BINDEX entry property. Ex.: `HEAD~1.hash` looks at the hash of the entry preceding HEAD.
+* *(HEAD~n..m).property*: get all the values of *property* in BINDEX for entries between *HEAD~n* and *HEAD~m*, included.
+* *(HEAD~<n>..<m>).property*: same, but <n> and <m> are variables to be computed
 
-The maximum size of a block `MAX_BLOCK_SIZE` is defined by:
+Function references:
 
-`MAX_BLOCK_SIZE = MAX(500 ; CEIL(1.10 * AVERAGE_BLOCK_SIZE))`
+* *COUNT* returns the number of values in a list of values
+* *AVG* computes the average value in a list of values, floor rounded.
+* *MEDIAN* computes the median value in a list of values
+* *MAX* computes the maximum value in a list of values
 
-Where: `AVERAGE_BLOCK_SIZE` equals to the average block size of the `DifferentIssuersCount` of previous blocks.
+> If values count is even, the median is computed over the 2 centered values by an arithmetical median on them, ceil rounded.
 
-###### Block time
+* *UNIQ* returns a list of the unique values in a list of values
+* *INTEGER_PART* return the integer part of a number
+* *FIRST* return the first element in a list of values matching the given condition
+* *REDUCE* merges a set of elements into a single one, by extending the non-null properties from each record into the resulting record.
+* *REDUCE_BY* merges a set of elements into a new set, where each new element is the reduction of the first set sharing a given key.
 
-Block time is a special discrete time defined by the blocks themselves, where unit is *a block*, and values are *block number + fingerprint*.
+> If there is no elements, all its properties are `null`.
 
-So, refering to t<sub>block</sub> = 0-2B7A158B9FD052164005ED5B491699644A846CE2 is valid only if there exists a block#0 in the blockchain whose hash equals 2B7A158B9FD052164005ED5B491699644A846CE2.
+* *NUMBER* get the number part of blockstamp
+* *HASH* get the hash part of blockstamp
 
-###### UD time
+###### HEAD
 
-UD time is a special discrete time defined by the UDs written in the blockchain where unit is a *UD*.
+The block produces 1 new entry:
 
-Refering to UD(t = 1) means UD#1, and refers to the *first UD* written in the blockchain.
+    BINDEX (
+      version = Version
+      size = BlockSize
+      hash = BlockHash
+      issuer = Issuer
+      time = Time
+      number = null
+      currency = null
+      previousHash = null
+      previousIssuer = null
+      membersCount = null
+      issuersCount = null
+      issuersFrame = null
+      issuersFrameVar = null
+      issuerDiff = null
+      avgBlockSize = null
+      medianTime = null
+      dividend = null
+      mass = null
+      unitBase = null
+      powMin = PowMin
+      udTime = null
+      diffTime = null
+      speed = null
+    )
+    
+This entry will be refered to as *HEAD* in the following sections, and is added on the top of the BINDEX.
 
-> UD(t = 0) means UD#0 which does not exist. However, UD#0 is a currency parameter noted **[ud0]**.
+###### BR_G01 - HEAD.number
 
-###### Calendar time
+If HEAD~1 is defined:
 
-Calendar time is the one provided by the blocks under `MedianTime` field. This time is discrete and the unit is seconds.
+    HEAD.number = HEAD~1.number + 1
 
-> *Current time* is to be understood as the last block calendar time written in the blockchain.
+Else:
 
-###### Certification time
+    HEAD.number = 0
+    
+###### BR_G02 - HEAD.previousHash
 
-When making a certification, `BLOCK_ID` is a reference to *block time*.
+If `HEAD.number > 0`:
 
-###### Membership time
+    HEAD.previousHash = HEAD~1.hash
 
-When making a membership, `NUMBER` is a reference to *block time*.
+Else:
 
-###### Certification & Membership age
+    HEAD.previousHash = null
+    
+###### BR_G99 - HEAD.currency
 
-Age is defined as the number of seconds between the certification's or membership's *block time* and *current time*:
+If `HEAD.number > 0`:
 
-    AGE = current_time - block_time
+    HEAD.currency = HEAD~1.currency
 
-###### Identity writability
+Else:
 
-An identity is to be considered *non-writable* if its age is less than or equal to `[idtyWindow]`:
+    HEAD.currency = null
+    
+###### BR_G03 - HEAD.previousIssuer
 
-    VALID   = AGE <= [idtyWindow]
-    EXPIRED = AGE > [idtyWindow]
+If `HEAD.number > 0`:
 
-###### Membership writability
+    HEAD.previousIssuer = HEAD~1.issuer
 
-A membership is to be considered *non-writable* if its age is less than or equal to `[msWindow]`:
+Else:
 
-    VALID   = AGE <= [msWindow]
-    EXPIRED = AGE > [msWindow]
+    HEAD.previousIssuer = null
+    
+###### BR_G100 - HEAD.issuerIsMember
 
-###### Certification writability
+If `HEAD.number > 0`:
 
-A certification is to be considered *non-writable* if its age is less than or equal to `[sigWindow]`:
+    HEAD.issuerIsMember = REDUCE(GLOBAL_IINDEX[pub=HEAD.issuer]).member
 
-    VALID   = AGE <= [sigWindow]
-    EXPIRED = AGE > [sigWindow]
+Else:
 
-###### Certification validity
+    HEAD.issuerIsMember = REDUCE(LOCAL_IINDEX[pub=HEAD.issuer]).member
 
-A certification is to be considered *valid* if its age is less than or equal to `[sigValidity]`:
+###### BR_G04 - HEAD.issuersCount
+    
+If `HEAD.number == 0`:
 
-    VALID   = AGE <= [sigValidity]
-    EXPIRED = AGE > [sigValidity]
+    HEAD.issuersCount = 0
+    
+Else if `HEAD~1.version > 2`:
 
-###### Certification activity
+    HEAD.issuersCount = COUNT(UNIQ((HEAD~1..<HEAD~1.issuersFrame>).issuer))
+    
+Else:
 
-A certification is to be considered *active* if it is both written in the blockchain and *valid* (equivalent to not expired).
+    HEAD.issuersCount = COUNT(UNIQ((HEAD~1..40).issuer))
 
-###### Certification stock
+###### BR_G05 - HEAD.issuersFrame
 
-The stock of certification is defined per member and reflects the number of *active* certifications (i.e. not expired):
+If `HEAD.number == 0`:
 
-    STOCK = COUNT(active_certifications)
+    HEAD.issuersFrame = 1
+    
+Else if `HEAD~1.version == 2`:
 
-###### Membership validity
+    HEAD.issuersFrame = 40
+    
+Else if `HEAD~1.issuersFrameVar > 0`:
 
-A membership is to be considered valid if its age is less than or equal to `[msValidity]`:
+    HEAD.issuersFrame = HEAD~1.issuersFrame + 1 
+    
+Else if `HEAD~1.issuersFrameVar < 0`:
 
-    VALID   = AGE <= [msValidity]
-    EXPIRED = AGE > [msValidity]
+    HEAD.issuersFrame = HEAD~1.issuersFrame - 1 
+    
+Else:
 
-###### Membership activity
+    HEAD.issuersFrame = HEAD~1.issuersFrame
 
-A membership is to be considered *active* if it is both written in the blockchain and *valid* (i.e. not expired).
+###### BR_G06 - HEAD.issuersFrameVar
 
-###### Certification chaining
+If `HEAD.number == 0` OR `HEAD~1.version == 2`:
 
-A written certification is to be considered chainable if:
+    HEAD.issuersFrameVar = 0
+    
+Else if `HEAD~1.issuersFrameVar > 0`:
 
-* its age is greater or equal to `[sigPeriod]`:
-* the number of active certifications is lower than `[sigStock]`:
+    HEAD.issuersFrameVar = HEAD~1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD~1.issuersCount) - 1
+    
+Else if `HEAD~1.issuersFrameVar < 0`:
 
-        CHAINABLE = AGE >= [sigPeriod] && STOCK < [sigStock]
+    HEAD.issuersFrameVar = HEAD~1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD~1.issuersCount) + 1
+    
+Else:
 
-###### Member
+    HEAD.issuersFrameVar = HEAD~1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD~1.issuersCount)
 
-A member is a `PUBLIC_KEY` matching a valid `Identity` whose last occurrence in the blockchain is either `Joiners`, `Actives` or `Leavers` **and is not expired**.
 
-A `PUBLIC_KEY` whose last occurrence in the blockchain is `Leavers` or `Excluded`, or has no occurrence in the blockchain **is not** a member.
+###### BR_G07 - HEAD.avgBlockSize
 
-###### Revocation
+    HEAD.avgBlockSize = AVG((HEAD~1..<HEAD.issuersCount>).size)
 
-An identity is considered *revoked* if either:
+###### BR_G08 - HEAD.medianTime
 
-* the age of its last `IN` membership is `>= 2 x [msValidity]` (implicit revocation)
-* there exists a block in which the identity is found under `Revoked` field (explicit revocation)
+If `HEAD.number > 0`:
 
-##### Number
+    HEAD.medianTime = MEDIAN((HEAD~1..<MIN(medianTimeBlocks, HEAD.number)>).time)
 
-* A block's `Number` must be exactly equal to previous block + 1.
-* If the blockchain is empty, `Number` must be `0` .
+Else:
 
-##### Version
+    HEAD.medianTime = HEAD.time
 
-`Version` must be between `[2, 5]`. Also, `Version` of incoming block must be equal to `Version` or `Version + 1` of current block.
+###### BR_G09 - HEAD.diffNumber
 
-##### PoWMin
+If `HEAD.number == 0`:
 
-###### Définitions
-* `speedRange = MIN(dtDiffEval, incomingNumber)`
-* `speed = speedRange / (medianTime(incomingNumber) - medianTime(incomingNumber - speedRange))`
-* `maxSpeed = 1/minGenTime`
-* `minSpeed = 1/maxGenTime`
+    HEAD.diffNumber = HEAD.number + dtDiffEval
 
-###### Rules
+Else if `HEAD~1.diffNumber <= HEAD.number`:
 
-We define `PPowMin` as the `PowMin` value of the previous block.
+    HEAD.diffNumber = HEAD~1.diffNumber + dtDiffEval
 
-* If the incoming block's `Number` is greater than 0 and a multiple of `dtDiffEval`, then:
-  * If `speed` is greater than or equal to `maxSpeed`, then:
-      *  if `(PPoWMin + 2) % 16 == 0` then `PoWMin = PPoWMin + 2`
-      *  else `PoWMin = PPoWMin + 1`
-  * If `speed` is less than or equal to `minSpeed`, then:
-	  * if `(PPoWMin) % 16 == 0` then `PoWMin = MAX(0, PPoWMin - 2)`
-	  * else `PoWMin = MAX(0, PPoWMin - 1)`
-* Else
-  * If `Number` is greater than 0, `PoWMin` must be equal to the previous block's `PoWMin`
+Else:
 
-##### PreviousHash
+    HEAD.diffNumber = HEAD~1.diffNumber
 
-* A block's `PreviousHash` must be exactly equal to the previous block's computed hash (a.k.a Proof-of-Work). Note that this hash **must** start with ` powZeroMin` zeros.
+###### BR_G10 - HEAD.membersCount
 
-##### PreviousIssuer
+If `HEAD.number == 0`:
 
-* A block's `PreviousIssuer` must be exactly equal to the previous block's `Issuer` field.
+    HEAD.membersCount = COUNT(LOCAL_IINDEX[member=true])
+    
+Else:
 
-##### IssuersFrame
+    HEAD.membersCount = HEAD~1.membersCount + COUNT(LOCAL_IINDEX[member=true]) - COUNT(LOCAL_IINDEX[member=false])
 
-`IssuersFrame(t) = IssuersFrame(t-1) + CONVERGENCE` where:
+###### BR_G11 - HEAD.udTime
 
-* `IssuersFrame(t)` is the value of the field in the local block
-* `IssuersFrame(t-1)` is the value of the field in the previous block (`1` in case of making root block or `40` if previous block is V2)
-* `CONVERGENCE` equals `+1` if IssuersFrameVar(t-1) is `> 0`, or `-1` if IssuersFrameVar(t-1) is `< 0`
+If `HEAD.number == 0`:
 
-##### DifferentIssuersCount
+    HEAD.udTime = HEAD.medianTime + dt
 
-This field counts the number of different block issuers between the `IssuersFrame(t-1)` previous blocks.
+Else if `HEAD~1.udTime <= HEAD.medianTime`:
 
-`IssuersFrame(t-1)`'s value is the one given by the previous block, or `0` when making a root block, or `40` if the previous block is V2.
+    HEAD.udTime = HEAD~1.udTime + dt
 
-##### IssuersFrameVar
+Else:
 
-`IssuersFrameVar(t) = IssuersFrameVar(t-1) + NEW_ISSUER_INC - GONE_ISSUER_DEC + CONVERGENCE` where:
+    HEAD.udTime = HEAD~1.udTime
 
-* `IssuersFrameVar(t)` is the value of the field in the local block
-* `IssuersFrameVar(t-1)` is the value of the field in the previous block (`0` for root block or if previous block is V2)
-* `NEW_ISSUER_INC` equals 5 if `DifferentIssuersCount` from local block equals `DifferentIssuersCount` of the previous block `+1` (equals `0` if previous block is V2)
-* `GONE_ISSUER_DEC` equals 5 if `DifferentIssuersCount` from local block equals `DifferentIssuersCount` of the previous block `-1` (equals `0` if previous block is V2)
-* `CONVERGENCE` equals `-1` if IssuersFrameVar(t-1) is `> 0`, or `+1` if IssuersFrameVar(t-1) is `< 0`
+###### BR_G12 - HEAD.unitBase
 
-##### Dates
+If `HEAD.number == 0`:
 
-* For any non-root block, `MedianTime` must be equal to the median value of the `Time` field for the last `medianTimeBlocks` blocks. If the number of available blocks is an even value, the median is computed over the 2 centered values by an arithmetical median on them, ceil rounded.
+    HEAD.unitBase = 0
+    
+Else:
 
-##### Identity
+    HEAD.unitBase = HEAD~1.unitBase
 
-* An identity must be writable to be included in the block.
-* The blockchain cannot contain two or more identities sharing a same `USER_ID`.
-* The blockchain cannot contain two or more identities sharing a same `PUBLIC_KEY`.
-* Block#0's identities' `BLOCK_UID` must be the special value `0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855`.
-* Other blocks' identities' `BLOCK_UID` field must match an existing block in the blockchain.
+###### BR_G13 - HEAD.dividend and HEAD.new_dividend
 
-##### Joiners, Actives, Leavers (block fingerprint based memberships)
+If `HEAD.number == 0`:
 
-* A membership must not be expired.
-* Block#0's memberships' `NUMBER` must be `0` and `HASH` the special value `E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855` (SHA1 of empty string).
-* Other blocks' memberships' `NUMBER` and `HASH` field must match an existing block in the blockchain.
-* Each membership's `NUMBER` must be higher than the previous membership's `NUMBER` of the same issuer.
+    HEAD.dividend = ud0
+    HEAD.new_dividend = null
 
-##### Joiners, Actives (Web of Trust distance constraint)
+If `HEAD.udTime != HEAD~1.udTime`:
 
-* A given `PUBLIC_KEY` cannot be in `Joiners` if it does not exist, for at least `xpercent`% of the sentries, a path using certifications (this block included) leading to the key `PUBLIC_KEY` with a maximum count of `[stepMax]` hops.
+    HEAD.dividend = CEIL(HEAD~1.dividend + c² * HEAD~1.mass / POW(10, HEAD~1.unitbase) / HEAD.membersCount)
+    HEAD.new_dividend = HEAD.dividend
 
-##### Joiners
+Else:
 
-* A revoked public key **cannot** be in `Joiners`
-* A given `PUBLIC_KEY` cannot be in `Joiners` if it is a member.
-* A given `PUBLIC_KEY` cannot be in `Joiners` if it does not have `[sigQty]` active certifications coming *to* it (incoming block included)
-* `PUBLIC_KEY` must match for exactly one identity of the blockchain (incoming block included).
+    HEAD.dividend = HEAD~1.dividend
+    HEAD.new_dividend = null
+    
+###### BR_G14 - HEAD.dividend and HEAD.unitbase and HEAD.new_dividend
 
-##### Actives
+If `HEAD.dividend >= 1000000`    :
 
-* A given `PUBLIC_KEY` **can** be in `Actives` **only if** it is a member.
+    HEAD.dividend = CEIL(HEAD.dividend / 10)
+    HEAD.new_dividend = HEAD.dividend
+    HEAD.unitBase = HEAD.unitBase + 1
+    
+###### BR_G15 - HEAD.mass
 
-##### Leavers
+If `HEAD.number == 0`:
 
-* A given `PUBLIC_KEY` cannot be in `Leavers` if it is not a member.
+    HEAD.mass = 0
+    
+Else if `HEAD.udTime != HEAD~1.udTime`:
 
-##### Revoked
+    HEAD.mass = HEAD~1.mass + HEAD.dividend * POWER(10, HEAD.unitBase) * HEAD.membersCount
 
-* A given `PUBLIC_KEY` cannot be in `Revoked` if it has never been a member.
-* A given `PUBLIC_KEY` cannot be in `Revoked` if its identity is already revoked.
-* A given `PUBLIC_KEY` cannot be in `Revoked` if its revocation signature does not match.
+Else:
 
-##### Excluded
+    HEAD.mass = HEAD~1.mass
 
-* A given `PUBLIC_KEY` cannot be in `Excluded` if it is not a member
-* Each `PUBLIC_KEY` with less than `[sigQty]` active certifications or whose last membership is either in `Joiners` or `Actives` is outdated **must** be present in this field.
-* Each `PUBLIC_KEY` whose last membership occurrence is either in `Joiners` or `Actives` *and* is outdated **must** be present in this field.
-* A given `PUBLIC_KEY` **cannot** be in `Excluded` field if it doesn't **have to** (i.e. if no **must** condition is matched).
+###### BR_G16 - HEAD.speed
 
-##### Certifications
+If `HEAD.number == 0`:
 
-* A certification's `PUBKEY_FROM` must be a member.
-* A certification must be writable.
-* A certification must not be expired.
-* A certification's `PUBKEY_TO`'s last membership occurrence **must not** be in `Leavers`.
-* A certification's `PUBKEY_TO` must be a member **or** be in the incoming block's `Joiners`.
-* A certification's signature must be valid over `PUBKEY_TO`'s self-certification, where signatory is `PUBKEY_FROM`.
-* Replayability: there cannot exist 2 *active* certifications with the same `PUBKEY_FROM` and `PUBKEY_TO`.
-* Chainability: a certification whose `PUBKEY_FROM` is the same than an existing certification in the blockchain can be written **only if** the last written certification (incoming block excluded) is considered chainable.
+    speed = 0
+    
+Else:
 
-##### MembersCount
+    range = MIN(dtDiffEval, HEAD.number)
+    elapsed = (HEAD.medianTime - HEAD~<range>.medianTime)
+    
+EndIf
 
-`MembersCount` field must be equal to the last block's `MembersCount` plus the incoming block's `Joiners` count, minus this block's `Excluded` count.
+If `elapsed == 0`:
 
-##### Proof-of-Work
+    speed = 100
 
-> As of Version 5.
+Else:
+    speed = range / elapsed
 
-To be valid, a block fingerprint (whole document + signature) must start with a specific number of zeros + a remaining mark character. Rules are the following, and **each relative to a particular member**:
+###### BR_G17 - HEAD.powMin
 
-```
-PERSONAL_EXCESS = MAX(0, ( (nbPersonalBlocksInFrame + 1) / medianOfBlocksInFrame) - 1)
-PERSONAL_HANDICAP = FLOOR(LN(1 + PERSONAL_EXCESS) / LN(1.189))
-PERSONAL_DIFF = MAX [ PoWMin ; PoWMin * FLOOR (percentRot * nbPreviousIssuers / (1 + nbBlocksSince)) ] + PERSONAL_HANDICAP
+If `HEAD.number > 0 AND HEAD.diffNumber != HEAD~1.diffNumber AND HEAD.speed >= maxSpeed AND (HEAD~1.powMin + 2) % 16 == 0`:
 
-if (PERSONAL_DIFF + 1) % 16 == 0 then PERSONAL_DIFF = PERSONAL_DIFF + 1
+    HEAD.powMin = HEAD~1.powMin + 2
+    
+Else if `HEAD.number > 0 AND HEAD.diffNumber != HEAD~1.diffNumber AND HEAD.speed >= maxSpeed`:
 
-REMAINDER = PERSONAL_DIFFICULTY  % 16
-NB_ZEROS = (PERSONAL_DIFFICULTY - REMAINDER) / 16
-```
+    HEAD.powMin = HEAD~1.powMin + 1
+     
+Else if `HEAD.number > 0 AND HEAD.diffNumber != HEAD~1.diffNumber AND HEAD.speed <= minSpeed AND (HEAD~1.powMin) % 16 == 0`:
 
-Where:
+    HEAD.powMin = MAX(0, HEAD~1.powMin - 2)
+    
+Else if `HEAD.number > 0 AND HEAD.diffNumber != HEAD~1.diffNumber AND HEAD.speed <= minSpeed`:
 
-* `[nbPersonalBlocksInFrame]` is the number of blocks written by the member from block (current `number` - current `issuersFrame` + 1) to current block (included)
-* `[medianOfBlocksInFrame]` is the median quantity of blocks issued per member from block (current `number` - current `issuersFrame` + 1) to current block (included)
-* `[PoWMin]` is the `PoWMin` value of the incoming block
-* `[percentRot]` is the protocol parameter
-* `[nbPreviousIssuers] = DifferentIssuersCount(last block of issuer)`
-* `[nbBlocksSince]` is the number of blocks written **since** the last block of the member (so, incoming block excluded).
+    HEAD.powMin = MAX(0, HEAD~1.powMin - 1)
 
+Else if `HEAD.number > 0`:
+    
+    HEAD.powMin = HEAD~1.powMin
 
-* If no block has been written by the member:
-  * `[nbPreviousIssuers] = 0`
-  * `[nbBlocksSince] = 0`
+###### BR_G18 - HEAD.powZeros and HEAD.powRemainder
 
-The proof is considered valid if:
+If `HEAD.number == 0`:
 
-* the proof starts with at least `NB_ZEROS` zeros
-* the `NB_ZEROS + 1`th character is:
-  * between `[0-F]` if `REMAINDER = 0`
-  * between `[0-E]` if `REMAINDER = 1`
-  * between `[0-D]` if `REMAINDER = 2`
-  * between `[0-C]` if `REMAINDER = 3`
-  * between `[0-B]` if `REMAINDER = 4`
-  * between `[0-A]` if `REMAINDER = 5`
-  * between `[0-9]` if `REMAINDER = 6`
-  * between `[0-8]` if `REMAINDER = 7`
-  * between `[0-7]` if `REMAINDER = 8`
-  * between `[0-6]` if `REMAINDER = 9`
-  * between `[0-5]` if `REMAINDER = 10`
-  * between `[0-4]` if `REMAINDER = 11`
-  * between `[0-3]` if `REMAINDER = 12`
-  * between `[0-2]` if `REMAINDER = 13`
-  * between `[0-1]` if `REMAINDER = 14`
+    nbPersonalBlocksInFrame = 0
+    medianOfBlocksInFrame = 1
+    
+Else:
 
-> N.B.: it is not possible to have REMAINDER = 15
+    blocksOfIssuer = HEAD~1..<HEAD~1.issuersFrame>[issuer=HEAD.issuer]
+    nbPersonalBlocksInFrame = COUNT(blocksOfIssuer)
+    blocksPerIssuerInFrame = MAP(
+        UNIQ((HEAD~1..<HEAD~1.issuersFrame>).issuer)
+            => COUNT(HEAD~1..<HEAD~1.issuersFrame>[issuer=HEAD.issuer]))
+    medianOfBlocksInFrame = MEDIAN(blocksPerIssuerInFrame)
+    
+EndIf
+    
+If `nbPersonalBlocksInFrame == 0`:
+    
+    nbPreviousIssuers = 0
+    nbBlocksSince = 0
 
-> Those rules of difficulty adaptation ensure a shared control of the blockchain writing.
+Else:
 
-##### Universal Dividend
+    last = FIRST(blocksOfIssuer)
+    nbPreviousIssuers = last.issuersCount
+    nbBlocksSince = HEAD~1.number - last.number
+    
+EndIf
+    
+    PERSONAL_EXCESS = MAX(0, ( (nbPersonalBlocksInFrame + 1) / medianOfBlocksInFrame) - 1)
+    PERSONAL_HANDICAP = FLOOR(LN(1 + PERSONAL_EXCESS) / LN(1.189))
+    HEAD.issuerDiff = MAX [ HEAD.powMin ; HEAD.powMin * FLOOR (percentRot * nbPreviousIssuers / (1 + nbBlocksSince)) ] + PERSONAL_HANDICAP
 
-* Root blocks do not have the `UniversalDividend` field.
-* Universal Dividend must be present if `MedianTime` value is greater than or equal to `lastUDTime` + `dt`.
-  * `lastUDTime` is the `MedianTime` of the last block with `UniversalDividend` in it.
-  * Initial value of `lastUDTime` equals to the root block's `MedianTime`.
-* UD(t = 0) = `ud0`
-* Value of `UniversalDividend` (`UD(t+1)`) equals to:
+If `(HEAD.issuerDiff + 1) % 16 == 0`:
 
-```
-UD(t+1) = INTEGER_PART(UD(t) + c² * M(t) / N(t+1))
-```
+    HEAD.issuerDiff = HEAD.issuerDiff + 1
 
-Where:
+EndIf
 
-* `t` is UD time
-* `UD(t)` is last UD value
-* `c` equals to `[c]` parameter of this protocol
-* `N(t+1)` equals to this block's `MembersCount` field
-* `M(t)` equals to the sum of all `UD(t)*N(t)` of the blockchain (from t = 0, to t = now) where:
-  * `N(t)` is the `MembersCount` for `UD(t)`
-  * `UD(0)` equals to `[ud0]` parameter of this protocol
+Finally:
 
-###### UD overflow
-If the `UniversalDividend` value is higher than or equal to `1000000` (1 million), then the `UniversalDividend` value has to be:
+    HEAD.powRemainder = HEAD.issuerDiff  % 16
+    HEAD.powZeros = (HEAD.issuerDiff - HEAD.powRemainder) / 16
 
-    UD(t+1) = CEIL(UD(t+1) / 10)
+###### Local IINDEX augmentation
 
-and `UnitBase` value must be incremented by `1` compared to its value at `UD(t)` (see UnitBase global rule).
+####### BR_G19 - ENTRY.age
 
-##### UnitBase
+For each ENTRY in local IINDEX where `op = 'CREATE'`:
 
-The field must be either equal to:
+    REF_BLOCK = HEAD~<HEAD~1.number + 1 - NUMBER(ENTRY.created_on)>[hash=HASH(ENTRY.created_on)]
+    
+If `HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'`:
+    
+    ENTRY.age = 0
+    
+Else if `REF_BLOC != null`:
 
-* `0` for root block
-* the previous block's `UnitBase` value if UD has no overflow
-* the previous block's `UnitBase` value `+ 1` if UD has an overflow
+    ENTRY.age = HEAD~1.medianTime - REF_BLOCK.medianTime
+    
+Else:
 
-##### Transactions
+    ENTRY.age = conf.idtyWindow + 1
+    
+EndIf
 
-* For `D` sources, public key must be a member for the block `#NUMBER` (so, *before* the block's memberships were applied)
-* For `T` sources, the attached unlock condition must match
-* Transaction cannot be included if `BLOCK_MEDIAN_TIME - MOST_RECENT_INPUT_TIME < LOCKTIME`
+###### BR_G20 - Identity UserID unicity
 
-###### Amounts
+For each ENTRY in local IINDEX:
 
-* *Rule*: For each UD source, the amount must match the exact targeted UD value
-* *Def.*: `MaxOutputBase` is the maximum value of all `OutputBase`
-* *Rule*: `MaxOutputBase` cannot be higher than the current block's `UnitBase`
+If `op = 'CREATE'`:
+
+    ENTRY.uidUnique = COUNT(GLOBAL_IINDEX[uid=ENTRY.uid) == 0
+    
+Else:
+
+    ENTRY.uidUnique = true
+
+###### BR_G21 - Identity pubkey unicity
+
+For each ENTRY in local IINDEX:
+
+If `op = 'CREATE'`:
+
+    ENTRY.pubUnique = COUNT(GLOBAL_IINDEX[pub=ENTRY.pub) == 0
+    
+Else:
+
+    ENTRY.pubUnique = true
+
+####### BR_G33 - ENTRY.excludedIsMember
+
+For each ENTRY in local IINDEX where `member != false`:
+
+    ENTRY.excludedIsMember = true 
+
+For each ENTRY in local IINDEX where `member == false`:
+
+    ENTRY.excludedIsMember = REDUCE(GLOBAL_IINDEX[pub=ENTRY.pub]).member
+
+####### BR_G35 - ENTRY.isBeingKicked
+
+For each ENTRY in local IINDEX where `member != false`:
+
+    ENTRY.isBeingKicked = false 
+
+For each ENTRY in local IINDEX where `member == false`:
+
+    ENTRY.isBeingKicked = true
+
+####### BR_G36 - ENTRY.hasToBeExcluded
+
+For each ENTRY in local IINDEX:
+
+    ENTRY.hasToBeExcluded = REDUCE(GLOBAL_IINDEX[pub=ENTRY.pub]).kick
+
+###### Local MINDEX augmentation
+
+####### BR_G22 - ENTRY.age
+
+For each ENTRY in local MINDEX where `revoked_on == null`:
+
+    REF_BLOCK = HEAD~<HEAD~1.number + 1 - NUMBER(ENTRY.created_on)>[hash=HASH(ENTRY.created_on)]
+    
+If `HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'`:
+    
+    ENTRY.age = 0
+    
+Else if `REF_BLOC != null`:
+
+    ENTRY.age = HEAD~1.medianTime - REF_BLOCK.medianTime
+    
+Else:
+
+    ENTRY.age = conf.msWindow + 1
+    
+EndIf
+
+####### BR_G23 - ENTRY.numberFollowing
+
+For each ENTRY in local MINDEX where `revoked_on == null`:
+
+    created_on = REDUCE(GLOBAL_MINDEX[pub=ENTRY.pub]).created_on
+    
+If `created_on != null`:
+
+    ENTRY.numberFollowing = NUMBER(ENTRY.created_ON) > NUMBER(created_on)
+    
+Else:
+
+    ENTRY.numberFollowing = true
+    
+EndIf
+
+For each ENTRY in local MINDEX where `revoked_on != null`:
+
+    ENTRY.numberFollowing = true
+
+####### BR_G24 - ENTRY.distanceOK
+
+For each ENTRY in local MINDEX where `type == 'JOIN' OR type == 'ACTIVE'`:
+
+    dSen = CEIL(HEAD.membersCount ^ (1 / stepMax))
+    
+    GRAPH = SET(LOCAL_CINDEX, 'issuer', 'receiver') + SET(GLOBAL_CINDEX, 'issuer', 'receiver')
+    SENTRIES = SUBSET(GRAPH, dSen, 'issuer')
+
+    ENTRY.distanceOK = EXISTS_PATH(xpercent, SENTRIES, GRAPH, ENTRY.pub, stepMax)
+    
+> Functionally: checks if it exists, for at least `xpercent`% of the sentries, a path using GLOBAL_CINDEX + LOCAL_CINDEX leading to the key `PUBLIC_KEY` with a maximum count of `[stepMax]` hops.
+
+For each ENTRY in local MINDEX where `!(type == 'JOIN' OR type == 'ACTIVE')`:
+
+    ENTRY.distanceOK = true
+
+####### BR_G25 - ENTRY.onRevoked
+
+For each ENTRY in local MINDEX:
+
+    ENTRY.onRevoked = REDUCE(GLOBAL_MINDEX[pub=ENTRY.pub]).revoked_on != null
+
+####### BR_G26 - ENTRY.joinsTwice
+
+For each ENTRY in local MINDEX where `op = 'UPDATE', expired_on = 0`:
+
+    ENTRY.joinsTwice = REDUCE(GLOBAL_IINDEX[pub=ENTRY.pub]).member == true
+
+####### BR_G27 - ENTRY.enoughCerts
+
+For each ENTRY in local MINDEX where `type == 'JOIN' OR type == 'ACTIVE'`:
+
+    ENTRY.enoughCerts = COUNT(GLOBAL_CINDEX[receiver=ENTRY.pub,expired_on=null]) + COUNT(LOCAL_CINDEX[receiver=ENTRY.pub,expired_on=null]) >= sigQty 
+    
+> Functionally: any member or newcomer needs `[sigQty]` certifications coming *to* him to be in the WoT
+
+For each ENTRY in local MINDEX where `!(type == 'JOIN' OR type == 'ACTIVE')`:
+
+    ENTRY.enoughCerts = true
+
+####### BR_G28 - ENTRY.leaverIsMember
+
+For each ENTRY in local MINDEX where `type == 'LEAVE'`:
+
+    ENTRY.leaverIsMember = REDUCE(GLOBAL_IINDEX[pub=ENTRY.pub]).member 
+    
+For each ENTRY in local MINDEX where `type != 'LEAVE'`:
+
+    ENTRY.leaverIsMember = true
+
+####### BR_G29 - ENTRY.activeIsMember
+
+For each ENTRY in local MINDEX where `type == 'ACTIVE'`:
+
+    ENTRY.activeIsMember = REDUCE(GLOBAL_IINDEX[pub=ENTRY.pub]).member
+
+For each ENTRY in local MINDEX where `type != 'ACTIVE'`:
+
+    ENTRY.activeIsMember = true
+
+####### BR_G30 - ENTRY.revokedIsMember
+
+For each ENTRY in local MINDEX where `revoked_on == null`:
+
+    ENTRY.revokedIsMember = true 
+
+For each ENTRY in local MINDEX where `revoked_on != null`:
+
+    ENTRY.revokedIsMember = REDUCE(GLOBAL_IINDEX[pub=ENTRY.pub]).member
+
+####### BR_G31 - ENTRY.alreadyRevoked
+
+For each ENTRY in local MINDEX where `revoked_on == null`:
+
+    ENTRY.alreadyRevoked = false 
+
+For each ENTRY in local MINDEX where `revoked_on != null`:
+
+    ENTRY.alreadyRevoked = REDUCE(GLOBAL_MINDEX[pub=ENTRY.pub]).revoked_on != null
+
+####### BR_G32 - ENTRY.revocationSigOK
+
+For each ENTRY in local MINDEX where `revoked_on == null`:
+
+    ENTRY.revocationSigOK = true 
+
+For each ENTRY in local MINDEX where `revoked_on != null`:
+
+    ENTRY.revocationSigOK = SIG_CHECK_REVOKE(REDUCE(GLOBAL_IINDEX[pub=ENTRY.pub]), ENTRY)
+
+####### BR_G34 - ENTRY.isBeingRevoked
+
+For each ENTRY in local MINDEX where `revoked_on == null`:
+
+    ENTRY.isBeingRevoked = false 
+
+For each ENTRY in local MINDEX where `revoked_on != null`:
+
+    ENTRY.isBeingRevoked = true
+    
+###### Local CINDEX augmentation
+
+For each ENTRY in local CINDEX:
+
+####### BR_G37 - ENTRY.age
+
+    REF_BLOCK = HEAD~<HEAD~1.number + 1 - NUMBER(ENTRY.created_on)>[hash=HASH(ENTRY.created_on)]
+    
+If `HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'`:
+    
+    ENTRY.age = 0
+    
+Else if `REF_BLOC != null`:
+
+    ENTRY.age = HEAD~1.medianTime - REF_BLOCK.medianTime
+    
+Else:
+
+    ENTRY.age = conf.sigWindow + 1
+    
+EndIf
+    
+####### BR_G38 - ENTRY.unchainables
+
+If `HEAD.number > 0`:
+
+    ENTRY.unchainables = COUNT(GLOBAL_CINDEX[issuer=ENTRY.issuer, chainable_on > HEAD~1.medianTime]))
+    
+####### BR_G39 - ENTRY.stock
+
+    ENTRY.stock = COUNT(GLOBAL_CINDEX[issuer=ENTRY.issuer, expired_on=0]))
+    
+####### BR_G40 - ENTRY.fromMember
+
+    ENTRY.fromMember = REDUCE(GLOBAL_IINDEX[pub=ENTRY.issuer]).member
+    
+####### BR_G41 - ENTRY.toMember
+
+    ENTRY.toMember = REDUCE(GLOBAL_IINDEX[pub=ENTRY.receiver]).member
+    
+####### BR_G42 - ENTRY.toNewcomer
+
+    ENTRY.toNewcomer = COUNT(LOCAL_IINDEX[member=true,pub=ENTRY.receiver]) > 0
+    
+####### BR_G43 - ENTRY.toLeaver
+
+    ENTRY.toLeaver = REDUCE(GLOBAL_MINDEX[pub=ENTRY.receiver]).leaving
+    
+####### BR_G44 - ENTRY.isReplay
+
+    reducable = GLOBAL_CINDEX[issuer=ENTRY.issuer,receiver=ENTRY.receiver,expired_on=0]
+    
+If `count(reducable) == 0`:
+
+    ENTRY.isReplay = false
+
+Else:
+
+    ENTRY.isReplay = reduce(reducable).expired_on == 0
+    
+####### BR_G45 - ENTRY.sigOK
+
+    ENTRY.sigOK = SIG_CHECK_CERT(REDUCE(GLOBAL_IINDEX[pub=ENTRY.receiver]), ENTRY)
+
+###### Local SINDEX augmentation
+
+####### BR_G102 - ENTRY.age
+
+For each ENTRY in local IINDEX where `op = 'UPDATE'`:
+
+    REF_BLOCK = HEAD~<HEAD~1.number + 1 - NUMBER(ENTRY.hash)>[hash=HASH(ENTRY.created_on)]
+    
+If `HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'`:
+    
+    ENTRY.age = 0
+    
+Else if `REF_BLOC != null`:
+
+    ENTRY.age = HEAD~1.medianTime - REF_BLOCK.medianTime
+    
+Else:
+
+    ENTRY.age = conf.txWindow + 1
+    
+EndIf
+
+####### BR_G46 - ENTRY.available
+
+For each `LOCAL_SINDEX[op='UPDATE'] as ENTRY`:
+
+    ENTRY.available = REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]).consumed == false
+
+####### BR_G47 - ENTRY.isLocked
+
+    ENTRY.isLocked = TX_SOURCE_UNLOCK(REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]).conditions, ENTRY)
+    
+####### BR_G48 - ENTRY.isTimeLocked
+
+    ENTRY.isTimeLocked = ENTRY.written_time - REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]).written_time < ENTRY.locktime
+
+##### Rules
+
+###### BR_G49 - Version
+
+Rule:
+
+If `HEAD.number > 0`:
+
+    HEAD.version == (HEAD~1.version OR HEAD~1.version + 1)
+
+###### BR_G50 - Block size
+
+Rule:
+
+    HEAD.size < MAX(500 ; CEIL(1.10 * HEAD.avgBlockSize))
+
+###### BR_G98 - Currency
+
+Rule:
+
+If `HEAD.number > 0`:
+
+    Currency = HEAD.currency
+
+###### BR_G51 - Number
+
+Rule:
+
+    Number = HEAD.number
+
+###### BR_G52 - PreviousHash
+
+Rule:
+
+    PreviousHash = HEAD.previousHash
+
+###### BR_G53 - PreviousIssuer
+
+Rule:
+
+    PreviousHash = HEAD.previousHash
+
+###### BR_G101 - Issuer
+
+Rule:
+
+    HEAD.issuerIsMember == true
+
+###### BR_G54 - DifferentIssuersCount
+
+Rule:
+
+If `HEAD.version > 2`:
+
+    DifferentIssuersCount = HEAD.issuersCount
+
+###### BR_G55 - IssuersFrame
+
+Rule:
+
+If `HEAD.version > 2`:
+
+    IssuersFrame = HEAD.issuersFrame
+
+###### BR_G56 - IssuersFrameVar
+
+Rule:
+
+If `HEAD.version > 2`:
+
+    IssuersFrameVar = HEAD.issuersFrameVar
+
+###### BR_G57 - MedianTime
+
+Rule:
+
+    MedianTime = HEAD.medianTime
+
+###### BR_G58 - UniversalDividend
+
+Rule:
+
+    UniversalDividend = HEAD.new_dividend
+
+###### BR_G59 - UnitBase
+
+Rule:
+
+    UnitBase = HEAD.unitBase
+
+###### BR_G60 - MembersCount
+
+Rule:
+
+    MembersCount = HEAD.membersCount
+
+###### BR_G61 - PowMin
+
+Rule:
+
+If `HEAD.number > 0`:
+
+    PowMin = HEAD.powMin
+
+###### BR_G62 - Proof-of-work
+
+Rule: the proof is considered valid if:
+
+* `HEAD.hash` starts with at least `HEAD.powZeros` zeros
+* `HEAD.hash`'s `HEAD.powZeros + 1`th character is:
+  * between `[0-F]` if `HEAD.powRemainder = 0`
+  * between `[0-E]` if `HEAD.powRemainder = 1`
+  * between `[0-D]` if `HEAD.powRemainder = 2`
+  * between `[0-C]` if `HEAD.powRemainder = 3`
+  * between `[0-B]` if `HEAD.powRemainder = 4`
+  * between `[0-A]` if `HEAD.powRemainder = 5`
+  * between `[0-9]` if `HEAD.powRemainder = 6`
+  * between `[0-8]` if `HEAD.powRemainder = 7`
+  * between `[0-7]` if `HEAD.powRemainder = 8`
+  * between `[0-6]` if `HEAD.powRemainder = 9`
+  * between `[0-5]` if `HEAD.powRemainder = 10`
+  * between `[0-4]` if `HEAD.powRemainder = 11`
+  * between `[0-3]` if `HEAD.powRemainder = 12`
+  * between `[0-2]` if `HEAD.powRemainder = 13`
+  * between `[0-1]` if `HEAD.powRemainder = 14`
+
+> N.B.: it is not possible to have HEAD.powRemainder = 15
+
+###### BR_G63 - Identity writability
+
+Rule:
+
+    ENTRY.age <= [idtyWindow]
+
+###### BR_G64 - Membership writability
+
+Rule:
+
+    ENTRY.age <= [msWindow]
+
+###### BR_G65 - Certification writability
+
+Rule:
+
+    ENTRY.age <= [sigWindow]
+
+###### BR_G66 - Certification stock
+
+Rule:
+
+    ENTRY.stock <= sigStock
+
+###### BR_G67 - Certification period
+
+Rule:
+
+    ENTRY.unchainables == 0
+
+###### BR_G68 - Certification from member
+
+Rule:
+
+If `HEAD.number > 0`:
+
+    ENTRY.fromMember == true
+
+###### BR_G69 - Certification to member or newcomer
+
+Rule:
+
+    ENTRY.toMember == true
+    OR
+    ENTRY.toNewcomer == true
+
+###### BR_G70 - Certification to non-leaver
+
+Rule:
+
+    ENTRY.toLeaver == false
+
+###### BR_G71 - Certification replay
+
+Rule:
+
+    ENTRY.isReplay == false
+
+###### BR_G72 - Certification signature
+
+Rule:
+
+    ENTRY.sigOK == true
+
+###### BR_G73 - Identity UserID unicity
+
+Rule:
+
+    ENTRY.uidUnique == true
+
+###### BR_G74 - Identity pubkey unicity
+
+Rule:
+
+    ENTRY.pubUnique == true
+
+###### BR_G75 - Membership succession
+
+Rule:
+
+    ENTRY.numberFollowing == true
+
+###### BR_G76 - Membership distance check
+
+Rule:
+
+    ENTRY.distanceOK == true
+
+###### BR_G77 - Membership on revoked
+
+Rule:
+
+    ENTRY.onRevoked == false
+
+###### BR_G78 - Membership joins twice
+
+Rule:
+
+    ENTRY.joinsTwice == false
+
+###### BR_G79 - Membership enough certifications
+
+Rule:
+
+    ENTRY.enoughCerts == true
+
+###### BR_G80 - Membership leaver
+
+Rule:
+
+    ENTRY.leaverIsMember == true
+
+###### BR_G81 - Membership active
+
+Rule:
+
+    ENTRY.activeIsMember == true
+
+###### BR_G82 - Revocation by a member
+
+Rule:
+
+    ENTRY.revokedIsMember == true
+
+###### BR_G83 - Revocation singleton
+
+Rule:
+
+    ENTRY.alreadyRevoked == false
+
+###### BR_G84 - Revocation signature
+
+Rule:
+
+    ENTRY.revocationSigOK == true
+    
+###### BR_G85 - Excluded is a member
+
+Rule:
+
+    ENTRY.excludedIsMember == true
+    
+###### BR_G86 - Excluded to be kicked
+
+Rule:
+
+For each `REDUCE_BY(GLOBAL_IINDEX[kick=true], 'pub') as TO_KICK`:
+
+    REDUCED = REDUCE(GLOBAL_IINDEX[pub=TO_KICK.pub])
+    
+If `REDUCED.kick` then:
+
+    COUNT(LOCAL_MINDEX[pub=REDUCED.pub,isBeingKicked=true]) == 1
+
+###### BR_G103 - Trancation writability
+
+Rule:
+
+    ENTRY.age <= [txWindow]
+    
+###### BR_G87 - Input is available
+
+For each `LOCAL_SINDEX[op='UPDATE'] as ENTRY`:
+
+Rule:
+
+    ENTRY.available == true
+    
+###### BR_G88 - Input is unlocked
+
+For each `LOCAL_SINDEX[op='UPDATE'] as ENTRY`:
+
+Rule:
+
+    ENTRY.isLocked == false
+    
+###### BR_G89 - Input is time unlocked
+
+For each `LOCAL_SINDEX[op='UPDATE'] as ENTRY`:
+
+Rule:
+
+    ENTRY.isTimeLocked == false
+    
+###### BR_G90 - Output base
+
+For each `LOCAL_SINDEX[op='CREATE'] as ENTRY`:
+
+Rule:
+
+    ENTRY.unitBase <= HEAD~1.unitBase
+
+##### Post-rules INDEX augmentation
+
+###### BR_G91 - Dividend
+
+If `HEAD.new_dividend != null`:
+
+For each `REDUCE_BY(GLOBAL_IINDEX[member=true], 'pub') as IDTY` then if `IDTY.member`, add a new LOCAL_SINDEX entry:
+
+    SINDEX (
+        op = 'CREATE'
+        identifier = IDTY.pub
+        pos = HEAD.number
+        written_on = BLOCKSTAMP
+        written_time = MedianTime
+        amount = HEAD.dividend
+        base = HEAD.unitBase
+        locktime = null
+        conditions = REQUIRE_SIG(MEMBER.pub)
+        consumed = false
+    )
+
+###### BR_G92 - Certification expiry
+
+For each `GLOBAL_CINDEX[expires_on<=HEAD.medianTime] as CERT`, add a new LOCAL_CINDEX entry:
+
+If `reduce(GLOBAL_CINDEX[issuer=CERT.issuer,receiver=CERT.receiver,created_on=CERT.created_on]).expired_on == 0`:
+
+    CINDEX (
+        op = 'UPDATE'
+        issuer = CERT.issuer
+        receiver = CERT.receiver
+        created_on = CERT.created_on
+        expired_on = HEAD.medianTime
+    )
+
+###### BR_G93 - Membership expiry
+
+For each `REDUCE_BY(GLOBAL_MINDEX[expires_on<=HEAD.medianTime], 'pub') as POTENTIAL` then consider `REDUCE(GLOBAL_MINDEX[pub=POTENTIAL.pub]) AS MS`.
+
+If `MS.expired_on == null OR MS.expired_on == 0`, add a new LOCAL_MINDEX entry:
+
+    MINDEX (
+        op = 'UPDATE'
+        pub = MS.pub
+        written_on = BLOCKSTAMP
+        expired_on = HEAD.medianTime
+    )
+    
+###### BR_G94 - Exclusion by membership
+
+For each `LOCAL_MINDEX[expired_on!=0] as MS`, add a new LOCAL_IINDEX entry:
+
+    IINDEX (
+        op = 'UPDATE'
+        pub = MS.pub
+        written_on = BLOCKSTAMP
+        kick = true
+    )
+    
+###### BR_G95 - Exclusion by certification
+
+For each `LOCAL_CINDEX[expired_on!=0] as CERT`:
+
+If `COUNT(GLOBAL_CINDEX[receiver=CERT.receiver]) + COUNT(LOCAL_CINDEX[receiver=CERT.receiver,expired_on=0]) - COUNT(LOCAL_CINDEX[receiver=CERT.receiver,expired_on!=0]) < sigQty`, add a new LOCAL_IINDEX entry:
+
+    IINDEX (
+        op = 'UPDATE'
+        pub = CERT.receiver
+        written_on = BLOCKSTAMP
+        kick = true
+    )
+
+###### BR_G96 - Implicit revocation
+
+For each `GLOBAL_MINDEX[revokes_on<=HEAD.medianTime,revoked_on=null] as MS`:
+
+    REDUCED = REDUCE(GLOBAL_MINDEX[pub=MS.pub])
+
+If `REDUCED.revokes_on<=HEAD.medianTime AND REDUCED.revoked_on==null`, add a new LOCAL_MINDEX entry:
+
+    MINDEX (
+        op = 'UPDATE'
+        pub = MS.pub
+        written_on = BLOCKSTAMP
+        revoked_on = HEAD.medianTime
+    )
+
+###### BR_G104 - Membership expiry date correction
+
+For each `LOCAL_MINDEX[type='JOIN'] as MS`:
+
+    MS.expires_on = MS.expires_on - MS.age
+    MS.revokes_on = MS.revokes_on - MS.age
+
+For each `LOCAL_MINDEX[type='ACTIVE'] as MS`:
+
+    MS.expires_on = MS.expires_on - MS.age
+    MS.revokes_on = MS.revokes_on - MS.age
+
+###### BR_G105 - Certification expiry date correction
+
+For each `LOCAL_CINDEX as CERT`:
+
+    CERT.expires_on = CERT.expires_on - CERT.age
+
+##### BR_G97 - Final INDEX operations
+
+If all the rules [BR_G49 ; BR_G90] pass, then all the LOCAL INDEX values (IINDEX, MINDEX, CINDEX, SINDEX, BINDEX) have to be appended to the GLOBAL INDEX.
 
 ### Peer
 

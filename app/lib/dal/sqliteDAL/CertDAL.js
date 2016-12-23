@@ -31,7 +31,8 @@ function CertDAL(driver) {
     'to',
     'from',
     'block',
-    'expired'
+    'expired',
+    'expires_on'
   ];
   this.arrays = [];
   this.booleans = ['linked', 'written'];
@@ -52,6 +53,7 @@ function CertDAL(driver) {
       'written BOOLEAN NOT NULL,' +
       'written_block INTEGER,' +
       'written_hash VARCHAR(64),' +
+      'expires_on INTEGER NULL,' +
       'PRIMARY KEY (`from`, target, sig, written_block)' +
       ');' +
       'CREATE INDEX IF NOT EXISTS idx_cert_from ON cert (`from`);' +
@@ -68,7 +70,7 @@ function CertDAL(driver) {
     target: hash
   });
 
-  this.getFromPubkey = (pubkey) => this.sqlFind({
+  this.getFromPubkeyCerts = (pubkey) => this.sqlFind({
     from: pubkey
   });
 
@@ -81,43 +83,13 @@ function CertDAL(driver) {
     linked: false
   });
 
-  this.listLocalPending = () => Q([]);
-
-  this.saveOfficial = (cert) => {
-    cert.linked = true;
-    return this.saveEntity(cert);
-  };
-
-  this.saveCert = (cert) => this.saveEntity(cert);
-
   this.saveNewCertification = (cert) => this.saveEntity(cert);
 
   this.existsGivenCert = (cert) => Q(this.sqlExisting(cert));
 
-  this.updateBatchOfCertifications = (certs) => co(function *() {
-    const queries = [];
-    const insert = that.getInsertHead();
-    const values = certs.map((cert) => that.getInsertValue(cert));
-    if (certs.length) {
-      queries.push(insert + '\n' + values.join(',\n') + ';');
-    }
-    if (queries.length) {
-      return that.exec(queries.join('\n'));
-    }
-  });
+  this.deleteCert = (cert) => this.deleteEntity(cert);
 
-  this.flagExpiredCertifications = (maxNumber, onNumber) => co(function *() {
-    yield that.exec('UPDATE ' + that.table + ' ' +
-      'SET expired = ' + onNumber + ' ' +
-      'WHERE expired IS NULL ' +
-      'AND block_number <= ' + maxNumber);
-  });
-
-  this.unflagExpiredCertificationsOf = (onNumber) => co(function *() {
-    yield that.exec('UPDATE ' + that.table + ' ' +
-      'SET expired = NULL ' +
-      'WHERE expired = ' + onNumber);
-  });
+  this.trimExpiredCerts = (medianTime) => this.exec('DELETE FROM ' + this.table + ' WHERE expires_on IS NULL OR expires_on < ' + medianTime);
 
   /**************************
    * SANDBOX STUFF

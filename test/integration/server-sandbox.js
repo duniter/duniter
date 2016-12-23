@@ -14,7 +14,7 @@ limiter.noLimit();
 
 const s1 = toolbox.server({
   idtyWindow: 10,
-  certWindow: 10,
+  sigWindow: 10,
   msWindow: 10,
   dt: 10,
   pair: {
@@ -57,7 +57,7 @@ const i14 = user('i14', { pub: 'H9dtBFmJohAwMNXSbfoL6xfRtmrqMw8WZnjXMHr4vEHX', s
 
 describe("Sandboxes", function() {
 
-  const now = parseInt(Date.now() / 1000);
+  const now = 1482300000;
 
   before(() => co(function*() {
 
@@ -101,9 +101,12 @@ describe("Sandboxes", function() {
       yield i1.join();
       yield i4.join();
       (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
-      yield s1.commit();
-      (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(1); // i2, i3
-      yield s1.commit();
+      yield s1.commit({ time: now });
+      (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(3); // i2, i3 were removed for too old identities (based on virtual root block)
+      yield i2.createIdentity();
+      yield i3.createIdentity();
+      (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(1);
+      yield s1.commit({ time: now });
       yield s2.syncFrom(s1, 0, 1);
       yield s3.syncFrom(s1, 0, 1);
     }));
@@ -121,8 +124,11 @@ describe("Sandboxes", function() {
       yield i7.revoke(idty);
     })));
 
-    it('should accept i7(1), i8(1), i9(1) by i1->i7(1), i1->i8(1), i1->i9(1)', () => co(function *() {
+    it('should reject i1 -> i7 by revocation', () => shouldThrow(co(function *() {
       yield i1.cert(i7, s2);
+    })));
+
+    it('should accept i7(1), i8(1), i9(1) by i1->i7(1), i1->i8(1), i1->i9(1)', () => co(function *() {
       (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
       yield i8.createIdentity(null, s2);
       yield i1.cert(i8, s2);
@@ -175,6 +181,9 @@ describe("Sandboxes", function() {
   describe('Certifications', () => {
 
     it('should accept i4->i7(0),i4->i8(0),i4->i9(0)', () => co(function *() {
+      yield i7.createIdentity();
+      yield i8.createIdentity();
+      yield i9.createIdentity();
       s1.dal.certDAL.setSandboxSize(3);
       (yield s1.dal.certDAL.getSandboxRoom()).should.equal(3);
       yield i4.cert(i7);
@@ -204,6 +213,8 @@ describe("Sandboxes", function() {
   describe('Memberships', () => {
 
     it('should accept i8,i9', () => co(function *() {
+      yield i8.createIdentity(); // Identities have changed
+      yield i9.createIdentity();
       (yield s1.dal.msDAL.getSandboxRoom()).should.equal(2);
       yield i8.join();
       yield i9.join();

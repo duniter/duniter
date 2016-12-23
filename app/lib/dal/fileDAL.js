@@ -2,18 +2,17 @@
 const Q       = require('q');
 const co      = require('co');
 const _       = require('underscore');
+const indexer = require('../dup/indexer');
 const hashf   = require('../ucp/hashf');
 const wotb    = require('../wot');
 const logger = require('../logger')('filedal');
 const directory = require('../system/directory');
 const Configuration = require('../entity/configuration');
-const Membership = require('../entity/membership');
 const Merkle = require('../entity/merkle');
 const Transaction = require('../entity/transaction');
 const constants = require('../constants');
 const ConfDAL = require('./fileDALs/confDAL');
 const StatDAL = require('./fileDALs/statDAL');
-const IndicatorsDAL = require('./fileDALs/IndicatorsDAL');
 const CFSStorage = require('./fileDALs/AbstractCFS');
 
 module.exports = (params) => {
@@ -25,25 +24,26 @@ function FileDAL(params) {
   const rootPath = params.home;
   const myFS = params.fs;
   const sqliteDriver = params.dbf();
-  const wotbInstance = params.wotb;
   const that = this;
 
   this.profile = 'DAL';
-  this.wotb = wotbInstance;
+  this.wotb = params.wotb;
 
   // DALs
   this.confDAL = new ConfDAL(rootPath, myFS, null, that, CFSStorage);
   this.metaDAL = new (require('./sqliteDAL/MetaDAL'))(sqliteDriver);
   this.peerDAL = new (require('./sqliteDAL/PeerDAL'))(sqliteDriver);
   this.blockDAL = new (require('./sqliteDAL/BlockDAL'))(sqliteDriver);
-  this.sourcesDAL = new (require('./sqliteDAL/SourcesDAL'))(sqliteDriver);
   this.txsDAL = new (require('./sqliteDAL/TxsDAL'))(sqliteDriver);
-  this.indicatorsDAL = new IndicatorsDAL(rootPath, myFS, null, that, CFSStorage);
   this.statDAL = new StatDAL(rootPath, myFS, null, that, CFSStorage);
-  this.linksDAL = new (require('./sqliteDAL/LinksDAL'))(sqliteDriver, wotbInstance);
-  this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqliteDriver, wotbInstance);
+  this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqliteDriver);
   this.certDAL = new (require('./sqliteDAL/CertDAL'))(sqliteDriver);
   this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(sqliteDriver);
+  this.bindexDAL = new (require('./sqliteDAL/index/BIndexDAL'))(sqliteDriver);
+  this.mindexDAL = new (require('./sqliteDAL/index/MIndexDAL'))(sqliteDriver);
+  this.iindexDAL = new (require('./sqliteDAL/index/IIndexDAL'))(sqliteDriver);
+  this.sindexDAL = new (require('./sqliteDAL/index/SIndexDAL'))(sqliteDriver);
+  this.cindexDAL = new (require('./sqliteDAL/index/CIndexDAL'))(sqliteDriver);
 
   this.newDals = {
     'metaDAL': that.metaDAL,
@@ -51,11 +51,8 @@ function FileDAL(params) {
     'certDAL': that.certDAL,
     'msDAL': that.msDAL,
     'idtyDAL': that.idtyDAL,
-    'sourcesDAL': that.sourcesDAL,
-    'linksDAL': that.linksDAL,
     'txsDAL': that.txsDAL,
     'peerDAL': that.peerDAL,
-    'indicatorsDAL': that.indicatorsDAL,
     'confDAL': that.confDAL,
     'statDAL': that.statDAL,
     'ghostDAL': {
@@ -72,7 +69,12 @@ function FileDAL(params) {
             'CREATE VIEW IF NOT EXISTS network AS select i.uid, (last_try - first_down) / 1000 as down_delay_in_sec, p.* from peer p LEFT JOIN idty i on i.pubkey = p.pubkey ORDER by down_delay_in_sec;' +
             'COMMIT;');
       })
-    }
+    },
+    'bindexDAL': that.bindexDAL,
+    'mindexDAL': that.mindexDAL,
+    'iindexDAL': that.iindexDAL,
+    'sindexDAL': that.sindexDAL,
+    'cindexDAL': that.cindexDAL
   };
 
   let currency = '';
@@ -85,7 +87,8 @@ function FileDAL(params) {
     }
     logger.debug("Upgrade database...");
     yield that.metaDAL.upgradeDatabase();
-    const latestMember = yield that.idtyDAL.getLatestMember();
+    // TODO: remove as of v1.0
+    const latestMember = yield that.iindexDAL.getLatestMember();
     if (latestMember && that.wotb.getWoTSize() > latestMember.wotb_id + 1) {
       logger.warn('Maintenance: cleaning wotb...');
       while (that.wotb.getWoTSize() > latestMember.wotb_id + 1) {
@@ -101,45 +104,12 @@ function FileDAL(params) {
 
   this.getDBVersion = () => that.metaDAL.getVersion();
 
-  this.getCurrency = () => currency;
-
   that.writeFileOfBlock = (block) => that.blockDAL.saveBlock(block);
 
   this.writeSideFileOfBlock = (block) =>
       that.blockDAL.saveSideBlock(block);
 
   this.listAllPeers = () => that.peerDAL.listAll();
-
-  function nullIfError(promise, done) {
-    return promise
-        .then(function (p) {
-          done && done(null, p);
-          return p;
-        })
-        .catch(function () {
-          done && done(null, null);
-          return null;
-        });
-  }
-
-  function nullIfErrorIs(promise, expectedError, done) {
-    return promise
-        .then(function (p) {
-          done && done(null, p);
-          return p;
-        })
-        .catch(function (err) {
-          if (err == expectedError) {
-            done && done(null, null);
-            return null;
-          }
-          if (done) {
-            done(err);
-            return null;
-          }
-          throw err;
-        });
-  }
 
   this.getPeer = (pubkey) => co(function*() {
     try {
@@ -186,28 +156,35 @@ function FileDAL(params) {
   });
 
   this.getBlockByNumberAndHashOrNull = (number, hash) => co(function*() {
-    return yield nullIfError(that.getBlockByNumberAndHash(number, hash));
+    try {
+      return yield that.getBlockByNumberAndHash(number, hash);
+    } catch (e) {
+      return null;
+    }
   });
 
-  this.getChainabilityBlock = (currentTime, sigPeriod) => co(function *() {
-    // AGE = current_time - block_time
-    // CHAINABLE = AGE >= sigPeriod
-    // CHAINABLE = block_time =< current_time - sigPeriod
-    return that.blockDAL.getMoreRecentBlockWithTimeEqualBelow(currentTime - sigPeriod);
-  });
-
-  this.existsNonChainableLink = (from, chainabilityBlockNumber, sigStock) => co(function *() {
+  this.existsNonChainableLink = (from, vHEAD_1, sigStock) => co(function *() {
     // Cert period rule
-    let links = yield that.linksDAL.getLinksOfIssuerAbove(from, chainabilityBlockNumber);
-    if (links.length > 0) return true;
+    const medianTime = vHEAD_1 ? vHEAD_1.medianTime : 0;
+    const linksFrom = yield that.cindexDAL.reducablesFrom(from);
+    const unchainables = _.filter(linksFrom, (link) => link.chainable_on > medianTime);
+    if (unchainables.length > 0) return true;
     // Max stock rule
-    let activeLinks = yield that.linksDAL.getValidLinksFrom(from);
+    let activeLinks = _.filter(linksFrom, (link) => !link.expired_on);
     return activeLinks.length >= sigStock;
   });
 
 
   this.getCurrentBlockOrNull = () => co(function*() {
-    return nullIfErrorIs(that.getBlockCurrent(), constants.ERROR.BLOCK.NO_CURRENT_BLOCK);
+    let current = null;
+    try {
+      current = yield that.getBlockCurrent();
+    } catch (e) {
+      if (e != constants.ERROR.BLOCK.NO_CURRENT_BLOCK) {
+        throw e;
+      }
+    }
+    return current;
   });
 
   this.getPromoted = (number) => that.getBlock(number);
@@ -223,8 +200,6 @@ function FileDAL(params) {
   
   this.getCountOfPoW = (issuer) => that.blockDAL.getCountOfBlocksIssuedBy(issuer);
 
-  this.getNbIssuedInFrame = (issuer, from) => that.blockDAL.getNbIssuedFrom(issuer, from);
-
   this.getBlocksBetween = (start, end) => Q(this.blockDAL.getBlocks(Math.max(0, start), end));
 
   this.getForkBlocksFollowing = (current) => this.blockDAL.getNextForkBlocks(current.number, current.hash);
@@ -236,66 +211,32 @@ function FileDAL(params) {
     return current;
   });
 
-  this.getBlockFrom = (number) => co(function*() {
-    const current = yield that.getCurrentBlockOrNull();
-    return that.getBlocksBetween(number, current.number);
+  this.getValidLinksTo = (to) => that.cindexDAL.getValidLinksTo(to);
+
+  this.getAvailableSourcesByPubkey = (pubkey) => this.sindexDAL.getAvailableForPubkey(pubkey);
+
+  this.getIdentityByHashOrNull = (hash) => co(function*() {
+    const pending = yield that.idtyDAL.getByHash(hash);
+    if (!pending) {
+      return that.iindexDAL.getFromHash(hash);
+    }
+    return pending;
   });
 
-  this.getValidLinksFrom = (from) => that.linksDAL.getValidLinksFrom(from);
-
-  this.getValidLinksTo = (to) => that.linksDAL.getValidLinksTo(to);
-
-  this.getMembersWithoutEnoughValidLinks = (sigQty) => that.idtyDAL.query('' +
-    'SELECT * ' +
-    'FROM idty i ' +
-    'WHERE member ' +
-    'AND (' +
-    ' SELECT count(*) ' +
-    ' FROM link lnk ' +
-    ' WHERE NOT lnk.obsolete ' +
-    ' AND lnk.target = i.pubkey' +
-    ') < ?', [sigQty]);
-
-  this.getPreviousLinks = (from, to) => co(function *() {
-    let links = yield that.linksDAL.getLinksWithPath(from, to);
-    links = _.sortBy(links, 'timestamp');
-    return links[links.length - 1];
-  });
-
-  this.getValidFromTo = (from, to) => co(function*() {
-    const links = that.getValidLinksFrom(from);
-    return _.chain(links).where({target: to}).value();
-  });
-
-  this.getLastValidFrom = (from) => co(function *() {
-    let links = yield that.linksDAL.getLinksFrom(from);
-    links = _.sortBy(links, 'timestamp');
-    return links[links.length - 1];
-  });
-
-  this.getAvailableSourcesByPubkey = function (pubkey) {
-    return that.sourcesDAL.getAvailableForPubkey(pubkey);
-  };
-
-  this.getIdentityByHashOrNull = (hash) => that.idtyDAL.getByHash(hash);
-
-  this.getMembers = () => co(function*() {
-    const idties = yield that.idtyDAL.getWhoIsOrWasMember()
-    return _.chain(idties).where({member: true}).value();
-  });
+  this.getMembers = () => that.iindexDAL.getMembers();
 
   // TODO: this should definitely be reduced by removing fillInMembershipsOfIdentity
   this.getWritten = (pubkey) => co(function*() {
     try {
-      return yield that.fillInMembershipsOfIdentity(that.idtyDAL.getFromPubkey(pubkey));
+      return yield that.fillInMembershipsOfIdentity(that.iindexDAL.getFromPubkey(pubkey));
     } catch (err) {
       logger.error(err);
       return null;
     }
   });
 
-  this.getWrittenIdtyByPubkey = (pubkey) => this.idtyDAL.getFromPubkey(pubkey);
-  this.getWrittenIdtyByUID = (pubkey) => this.idtyDAL.getFromUID(pubkey);
+  this.getWrittenIdtyByPubkey = (pubkey) => this.iindexDAL.getFromPubkey(pubkey);
+  this.getWrittenIdtyByUID = (pubkey) => this.iindexDAL.getFromUID(pubkey);
 
   this.fillInMembershipsOfIdentity = (queryPromise) => co(function*() {
     try {
@@ -327,32 +268,81 @@ function FileDAL(params) {
     return _.chain(pending).where({pubkey: pubkey}).value();
   });
 
-  this.getToBeKicked = () => co(function*() {
-    const membersOnce = yield that.idtyDAL.getWhoIsOrWasMember();
-    return _.chain(membersOnce).where({member: true, kick: true}).value();
-  });
-
   this.getRevocatingMembers = () => co(function *() {
-    return that.idtyDAL.getToRevoke();
+    const revoking = yield that.idtyDAL.getToRevoke();
+    const toRevoke = [];
+    for (const pending of revoking) {
+      const idty = yield that.getWrittenIdtyByPubkey(pending.pubkey);
+      if (!idty.revoked_on) {
+        toRevoke.push(pending);
+      }
+    }
+    return toRevoke;
   });
 
-  this.getToBeKickedPubkeys = () => co(function *() {
-    const exclusions = yield that.getToBeKicked();
-    return _.pluck(exclusions, 'pubkey');
+  this.getToBeKickedPubkeys = () => that.iindexDAL.getToBeKickedPubkeys();
+
+  this.searchJustIdentities = (search) => co(function*() {
+    const pendings = yield that.idtyDAL.searchThoseMatching(search);
+    const writtens = yield that.iindexDAL.searchThoseMatching(search);
+    const nonPendings = _.filter(writtens, (w) => {
+      return _.where(pendings, { pubkey: w.pub }).length == 0;
+    });
+    const found = pendings.concat(nonPendings);
+    return yield found.map(f => co(function*() {
+      const ms = yield that.mindexDAL.getReducedMS(f.pub);
+      if (ms) {
+        f.revoked_on = ms.revoked_on ? parseInt(ms.revoked_on) : null;
+        f.revoked = !!f.revoked_on;
+        f.revocation_sig = ms.revocation || null;
+      }
+      return f;
+    }))
   });
 
-  this.searchJustIdentities = (search) => this.idtyDAL.searchThoseMatching(search);
-
-  this.certsToTarget = (hash) => co(function*() {
+  this.certsToTarget = (pub, hash) => co(function*() {
     const certs = yield that.certDAL.getToTarget(hash);
-    const matching = _.chain(certs).sortBy((c) => -c.block).value();
+    const links = yield that.cindexDAL.getValidLinksTo(pub);
+    let matching = certs;
+    links.map((entry) => {
+      entry.from = entry.issuer;
+      const co = entry.created_on.split('-');
+      const wo = entry.written_on.split('-');
+      entry.block = parseInt(co[0]);
+      entry.block_number = parseInt(co[0]);
+      entry.block_hash = co[1];
+      entry.linked = true;
+      entry.written_block = parseInt(wo[0]);
+      entry.written_hash = wo[1];
+      matching.push(entry);
+    });
+    matching  = _.sortBy(matching, (c) => -c.block);
     matching.reverse();
     return matching;
   });
 
   this.certsFrom = (pubkey) => co(function*() {
-    const certs = yield that.certDAL.getFromPubkey(pubkey);
-    return _.chain(certs).where({from: pubkey}).sortBy((c) => c.block).value();
+    const certs = yield that.certDAL.getFromPubkeyCerts(pubkey);
+    const links = yield that.cindexDAL.getValidLinksFrom(pubkey);
+    let matching = certs;
+    yield links.map((entry) => co(function*() {
+      const idty = yield that.getWrittenIdtyByPubkey(entry.receiver);
+      entry.from = entry.issuer;
+      entry.to = entry.receiver;
+      const co = entry.created_on.split('-');
+      const wo = entry.written_on.split('-');
+      entry.block = parseInt(co[0]);
+      entry.block_number = parseInt(co[0]);
+      entry.block_hash = co[1];
+      entry.target = idty.hash;
+      entry.linked = true;
+      entry.written_block = parseInt(wo[0]);
+      entry.written_hash = wo[1];
+      matching.push(entry);
+    }));
+    matching  = _.sortBy(matching, (c) => -c.block);
+    matching.reverse();
+    return matching;
   });
 
   this.certsFindNew = () => co(function*() {
@@ -365,12 +355,14 @@ function FileDAL(params) {
     return _.chain(certs).sortBy((c) => -c.block).value();
   });
 
-  this.getMembershipForHashAndIssuer = (ms) => co(function*() {
-    try {
-      return that.msDAL.getMembershipOfIssuer(ms);
-    } catch (err) {
-      return null;
+  this.getMostRecentMembershipNumberForIssuer = (issuer) => co(function*() {
+    const mss = yield that.msDAL.getMembershipsOfIssuer(issuer);
+    const reduced = yield that.mindexDAL.getReducedMS(issuer);
+    let max = reduced ? parseInt(reduced.created_on) : -1;
+    for (const ms of mss) {
+      max = Math.max(ms.number, max);
     }
+    return max;
   });
 
   this.lastJoinOfIdentity = (target) => co(function *() {
@@ -388,13 +380,11 @@ function FileDAL(params) {
     return _.chain(mss).sortBy((ms) => -ms.sigDate).value();
   });
 
-  this.existsLinkFromOrAfterDate = (from, to, minDate) => co(function *() {
-    const links = yield that.linksDAL.getSimilarLinksFromDate(from, to, minDate);
-    return links.length ? true : false;
-  });
+  this.existsNonReplayableLink = (from, to) => this.cindexDAL.existsNonReplayableLink(from, to);
 
-  this.getSource = (identifier, noffset) => co(function*() {
-    let src = yield that.sourcesDAL.getSource(identifier, noffset);
+  this.getSource = (identifier, pos) => co(function*() {
+    // TODO: remove for version 1.0
+    let src = yield that.sindexDAL.getSource(identifier, pos);
     // If the source does not exist, we try to check if it exists under another form (issue #735)
     if (!src) {
       let txs = yield that.txsDAL.getTransactionByExtendedHash(identifier);
@@ -403,14 +393,14 @@ function FileDAL(params) {
       }
       if (txs.length && txs[0].version == 3) {
         // Other try: V4
-        src = yield that.sourcesDAL.getSource(txs[0].v4_hash, noffset);
+        src = yield that.sindexDAL.getSource(txs[0].v4_hash, pos);
         if (!src) {
           // Another try: V5
-          src = yield that.sourcesDAL.getSource(txs[0].v5_hash, noffset);
+          src = yield that.sindexDAL.getSource(txs[0].v5_hash, pos);
         }
         if (!src) {
           // Final try: V3 (because identifier maybe be one of [hash, v4_hash, v5_hash]
-          src = yield that.sourcesDAL.getSource(txs[0].hash, noffset);
+          src = yield that.sindexDAL.getSource(txs[0].hash, pos);
         }
       }
     }
@@ -419,185 +409,64 @@ function FileDAL(params) {
 
   this.isMember = (pubkey) => co(function*() {
     try {
-      const idty = yield that.idtyDAL.getFromPubkey(pubkey);
+      const idty = yield that.iindexDAL.getFromPubkey(pubkey);
       return idty.member;
     } catch (err) {
       return false;
     }
   });
 
-  this.isLeaving = (pubkey) => co(function *() {
-    let idty = yield that.idtyDAL.getFromPubkey(pubkey);
-    return idty && idty.leaving || false;
-  });
-
   this.isMemberAndNonLeaver = (pubkey) => co(function*() {
     try {
-      const idty = yield that.idtyDAL.getFromPubkey(pubkey);
-      return (idty && idty.member && !idty.leaving || false);
+      const idty = yield that.iindexDAL.getFromPubkey(pubkey);
+      if (idty && idty.member) {
+        return !(yield that.isLeaving(pubkey));
+      }
+      return false;
     } catch (err) {
       return false;
     }
   });
 
-  this.existsCert = (cert) => that.certDAL.existsGivenCert(cert);
+  this.isLeaving = (pubkey) => co(function*() {
+    const ms = yield that.mindexDAL.getReducedMS(pubkey);
+    return (ms && ms.leaving) || false;
+  });
 
-  this.obsoletesLinks = (minTimestamp) => that.linksDAL.obsoletesLinks(minTimestamp);
+  this.existsCert = (cert) => co(function*() {
+    const existing = yield that.certDAL.existsGivenCert(cert);
+    if (existing) return existing;
+    const existsLink = yield that.cindexDAL.existsNonReplayableLink(cert.from, cert.to);
+    return !!existsLink;
+  });
 
-  this.undoObsoleteLinks = (minTimestamp) => that.linksDAL.unObsoletesLinks(minTimestamp);
+  this.deleteCert = (cert) => that.certDAL.deleteCert(cert);
 
-  this.setConsumedSource = (identifier, noffset) => that.sourcesDAL.consumeSource(identifier, noffset);
+  this.deleteMS = (ms) => that.msDAL.deleteMS(ms);
 
-  this.setKicked = (pubkey, hash, notEnoughLinks) => co(function*() {
-    const kick = notEnoughLinks ? true : false;
-    const idty = yield that.idtyDAL.getFromPubkey(pubkey);
-    if (idty.kick != kick) {
-      idty.kick = kick;
-      return yield that.idtyDAL.saveIdentity(idty);
+  this.setRevoked = (pubkey) => co(function*() {
+    const idty = yield that.getWrittenIdtyByPubkey(pubkey);
+    idty.revoked = true;
+    return yield that.idtyDAL.saveIdentity(idty);
+  });
+
+  this.setRevocating = (existing, revocation_sig) => co(function *() {
+    existing.revocation_sig = revocation_sig;
+    existing.revoked = false;
+    return that.idtyDAL.saveIdentity(existing);
+  });
+
+  this.getPeerOrNull = (pubkey) => co(function*() {
+    let peer = null;
+    try {
+      peer = yield that.getPeer(pubkey);
+    } catch (e) {
+      if (e != constants.ERROR.BLOCK.NO_CURRENT_BLOCK) {
+        throw e;
+      }
     }
+    return peer;
   });
-
-  this.setRevocating = (hash, revocation_sig) => co(function *() {
-    let idty = yield that.idtyDAL.getByHash(hash);
-    idty.revocation_sig = revocation_sig;
-    return that.idtyDAL.saveIdentity(idty);
-  });
-
-  this.getMembershipExcludingBlock = (current, msValidtyTime) => getCurrentExcludingOrExpiring(
-    current,
-    msValidtyTime,
-    that.indicatorsDAL.getCurrentMembershipExcludingBlock.bind(that.indicatorsDAL),
-    that.indicatorsDAL.writeCurrentExcluding.bind(that.indicatorsDAL)
-  );
-
-  this.getMembershipRevocatingBlock = (current, msValidtyTime) => getCurrentExcludingOrExpiring(
-    current,
-    msValidtyTime,
-    that.indicatorsDAL.getCurrentMembershipRevocatingBlock.bind(that.indicatorsDAL),
-    that.indicatorsDAL.writeCurrentRevocating.bind(that.indicatorsDAL)
-  );
-
-  this.getCertificationExcludingBlock = (current, certValidtyTime) => getCurrentExcludingOrExpiring(
-    current,
-    certValidtyTime,
-    that.indicatorsDAL.getCurrentCertificationExcludingBlock.bind(that.indicatorsDAL),
-    that.indicatorsDAL.writeCurrentExcludingForCert.bind(that.indicatorsDAL)
-  );
-
-  this.getIdentityExpiringBlock = (current, idtyValidtyTime) => getCurrentExcludingOrExpiring(
-    current,
-    idtyValidtyTime,
-    that.indicatorsDAL.getCurrentIdentityExpiringBlock.bind(that.indicatorsDAL),
-    that.indicatorsDAL.writeCurrentExpiringForIdty.bind(that.indicatorsDAL)
-  );
-
-  this.getCertificationExpiringBlock = (current, certWindow) => getCurrentExcludingOrExpiring(
-    current,
-    certWindow,
-    that.indicatorsDAL.getCurrentCertificationExpiringBlock.bind(that.indicatorsDAL),
-    that.indicatorsDAL.writeCurrentExpiringForCert.bind(that.indicatorsDAL)
-  );
-
-  this.getMembershipExpiringBlock = (current, msWindow) => getCurrentExcludingOrExpiring(
-    current,
-    msWindow,
-    that.indicatorsDAL.getCurrentMembershipExpiringBlock.bind(that.indicatorsDAL),
-    that.indicatorsDAL.writeCurrentExpiringForMembership.bind(that.indicatorsDAL)
-  );
-
-  this.nextBlockWithDifferentMedianTime = (block) => that.blockDAL.nextBlockWithDifferentMedianTime(block);
-
-  function getCurrentExcludingOrExpiring(current, delayMax, currentGetter, currentSetter) {
-    return co(function *() {
-      let currentExcluding;
-      if (current.number > 0) {
-        try {
-          currentExcluding = yield currentGetter();
-        } catch (e) {
-          currentExcluding = null;
-        }
-      }
-      if (!currentExcluding) {
-        const root = yield that.getRootBlock();
-        const delaySinceStart = current.medianTime - root.medianTime;
-        if (delaySinceStart > delayMax) {
-          currentExcluding = root;
-        }
-      }
-      if (currentExcluding) {
-        // Check current position
-        const nextBlock = yield that.nextBlockWithDifferentMedianTime(currentExcluding);
-        if (isExcluding(current, currentExcluding, nextBlock, delayMax)) {
-          return currentExcluding;
-        } else {
-          // Have to look for new one
-          const start = currentExcluding.number;
-          let newExcluding;
-          let top = current.number;
-          let bottom = start;
-          // Binary tree search
-          do {
-            let middle = top - bottom;
-            if (middle % 2 != 0) {
-              middle = middle + 1;
-            }
-            middle /= 2;
-            middle += bottom;
-            if (middle == top) {
-              middle--;
-              bottom--; // Helps not being stuck looking at 'top'
-            }
-            const middleBlock = yield that.getBlock(middle);
-            const middleNextB = yield that.getBlock(middle + 1);
-            const delaySinceMiddle = current.medianTime - middleBlock.medianTime;
-            const delaySinceNextB = current.medianTime - middleNextB.medianTime;
-            const isValidPeriod = delaySinceMiddle <= delayMax;
-            const isValidPeriodB = delaySinceNextB <= delayMax;
-            const isExcludin = !isValidPeriod && isValidPeriodB;
-            //console.log('CRT: Search between %s and %s: %s => %s,%s', bottom, top, middle, isValidPeriod ? 'DOWN' : 'UP', isValidPeriodB ? 'DOWN' : 'UP');
-            if (isExcludin) {
-              // Found
-              yield currentSetter(middleBlock);
-              newExcluding = middleBlock;
-            }
-            else if (isValidPeriod) {
-              // Look down in the blockchain
-              top = middle;
-            }
-            else {
-              // Look up in the blockchain
-              bottom = middle;
-            }
-          } while (!newExcluding);
-          return newExcluding;
-        }
-      }
-    });
-  }
-
-  /**
-   * Checks if `excluding` is still an excluding block, and its follower `nextBlock` is not, in reference to `current`.
-   * @param current HEAD of the blockchain.
-   * @param excluding The block we test if it is still excluding.
-   * @param nextBlock The block that might be the new excluding block.
-   * @param maxWindow The time window for exclusion.
-   * @returns {boolean}
-   */
-  const isExcluding = (current, excluding, nextBlock, maxWindow) => {
-    const delayFromExcludingToHead = current.medianTime - excluding.medianTime;
-    const delayFromNextToHead = current.medianTime - nextBlock.medianTime;
-    const isValidPeriod = delayFromExcludingToHead <= maxWindow;
-    const isValidPeriodB = delayFromNextToHead <= maxWindow;
-    return !isValidPeriod && isValidPeriodB;
-  };
-
-  this.flagExpiredIdentities = (maxNumber, onNumber) => this.idtyDAL.flagExpiredIdentities(maxNumber, onNumber);
-  this.flagExpiredCertifications = (maxNumber, onNumber) => this.certDAL.flagExpiredCertifications(maxNumber, onNumber);
-  this.flagExpiredMemberships = (maxNumber, onNumber) => this.msDAL.flagExpiredMemberships(maxNumber, onNumber);
-  this.kickWithOutdatedMemberships = (maxNumber) => this.idtyDAL.kickMembersForMembershipBelow(maxNumber);
-  this.revokeWithOutdatedMemberships = (maxNumber) => this.idtyDAL.revokeMembersForMembershipBelow(maxNumber);
-
-  this.getPeerOrNull = (pubkey) => nullIfError(that.getPeer(pubkey));
 
   this.findAllPeersNEWUPBut = (pubkeys) => co(function*() {
     const peers = yield that.listAllPeers();
@@ -667,23 +536,53 @@ function FileDAL(params) {
     block.wrong = false;
     yield [
       that.saveBlockInFile(block, true),
-      that.saveTxsInFiles(block.transactions, {block_number: block.number, time: block.medianTime }),
-      that.saveMemberships('join', block.joiners, block.number),
-      that.saveMemberships('active', block.actives, block.number),
-      that.saveMemberships('leave', block.leavers, block.number)
+      that.saveTxsInFiles(block.transactions, {block_number: block.number, time: block.medianTime, currency: block.currency })
     ];
   });
 
-  this.saveMemberships = (type, mss, blockNumber) => {
-    const msType = type == 'leave' ? 'out' : 'in';
-    return mss.reduce((p, msRaw) => p.then(() => {
-      const ms = Membership.statics.fromInline(msRaw, type == 'leave' ? 'OUT' : 'IN', that.getCurrency());
-      ms.type = type;
-      ms.hash = String(hashf(ms.getRawSigned())).toUpperCase();
-      ms.idtyHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
-      return that.msDAL.saveOfficialMS(msType, ms, blockNumber);
-    }), Q());
-  };
+  this.generateIndexes = (block, conf) => co(function*() {
+    const index = indexer.localIndex(block, conf);
+    let mindex = indexer.mindex(index);
+    let iindex = indexer.iindex(index);
+    let sindex = indexer.sindex(index);
+    let cindex = indexer.cindex(index);
+    const HEAD = yield indexer.completeGlobalScope(block, conf, index, that);
+    sindex = sindex.concat(yield indexer.ruleIndexGenDividend(HEAD, that));
+    cindex = cindex.concat(yield indexer.ruleIndexGenCertificationExpiry(HEAD, that));
+    mindex = mindex.concat(yield indexer.ruleIndexGenMembershipExpiry(HEAD, that));
+    iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByMembership(HEAD, mindex));
+    iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByCertificatons(HEAD, cindex, conf, that));
+    mindex = mindex.concat(yield indexer.ruleIndexGenImplicitRevocation(HEAD, that));
+    yield indexer.ruleIndexCorrectMembershipExpiryDate(HEAD, mindex, that);
+    yield indexer.ruleIndexCorrectCertificationExpiryDate(HEAD, cindex, that);
+    return { HEAD, mindex, iindex, sindex, cindex };
+  });
+
+  this.updateWotbLinks = (cindex) => co(function*() {
+    for (const entry of cindex) {
+      const from = yield that.getWrittenIdtyByPubkey(entry.issuer);
+      const to = yield that.getWrittenIdtyByPubkey(entry.receiver);
+      if (entry.op == constants.IDX_CREATE) {
+        that.wotb.addLink(from.wotb_id, to.wotb_id, true);
+      } else {
+        // Update = removal
+        that.wotb.removeLink(from.wotb_id, to.wotb_id, true);
+      }
+    }
+  });
+
+  this.trimIndexes = (block, conf) => co(function*() {
+    // TODO: trim should be done on a fork window size
+    // yield that.cindexDAL.trimExpiredCerts();
+    return true;
+  });
+
+  this.trimSandboxes = (block, conf) => co(function*() {
+    yield that.certDAL.trimExpiredCerts(block.medianTime);
+    yield that.msDAL.trimExpiredMemberships(block.medianTime);
+    yield that.idtyDAL.trimExpiredIdentities(block.medianTime);
+    return true;
+  });
 
   this.savePendingMembership = (ms) => that.msDAL.savePendingMembership(ms);
 
@@ -696,7 +595,6 @@ function FileDAL(params) {
   this.saveTxsInFiles = (txs, extraProps) => {
     return Q.all(txs.map((tx) => co(function*() {
       _.extend(tx, extraProps);
-      _.extend(tx, {currency: that.getCurrency()});
       if (tx.version >= 3) {
         const sp = tx.blockstamp.split('-');
         tx.blockstampTime = (yield that.getBlockByNumberAndHash(sp[0], sp[1])).medianTime;
@@ -715,56 +613,13 @@ function FileDAL(params) {
     return merkle;
   });
 
-  this.removeLink = (link) => that.linksDAL.removeLink(link);
-
-  this.removeAllSourcesOfBlock = (number) => that.sourcesDAL.removeAllSourcesOfBlock(number);
-
-  this.unConsumeSource = (identifier, noffset) => that.sourcesDAL.unConsumeSource(identifier, noffset);
-
-  this.unflagExpiredIdentitiesOf = (number) => that.idtyDAL.unflagExpiredIdentitiesOf(number);
-  
-  this.unflagExpiredCertificationsOf = (number) => that.certDAL.unflagExpiredCertificationsOf(number);
-  
-  this.unflagExpiredMembershipsOf = (number) => that.msDAL.unflagExpiredMembershipsOf(number);
-
-  this.saveSource = (src) => that.sourcesDAL.addSource(src.type, src.number, src.identifier, src.noffset,
-      src.amount, src.base, src.block_hash, src.time, src.conditions);
-
-  this.updateSources = (sources) => that.sourcesDAL.updateBatchOfSources(sources);
-
-  this.updateCertifications = (certs) => that.certDAL.updateBatchOfCertifications(certs);
-
-  this.updateMemberships = (certs) => that.msDAL.updateBatchOfMemberships(certs);
-
-  this.updateLinks = (certs) => that.linksDAL.updateBatchOfLinks(certs);
+  this.removeAllSourcesOfBlock = (blockstamp) => that.sindexDAL.removeBlock(blockstamp);
 
   this.updateTransactions = (txs) => that.txsDAL.insertBatchOfTxs(txs);
 
-  this.officializeCertification = (cert) => that.certDAL.saveOfficial(cert);
+  this.savePendingIdentity = (idty) => that.idtyDAL.saveIdentity(idty);
 
-  this.saveCert = (cert) =>
-      // TODO: create a specific method with a different name and hide saveCert()
-      that.certDAL.saveCert(cert);
-
-  this.savePendingIdentity = (idty) =>
-      // TODO: create a specific method with a different name and hide saveIdentity()
-      that.idtyDAL.saveIdentity(idty);
-
-  this.revokeIdentity = (pubkey, number) => that.idtyDAL.revokeIdentity(pubkey, number);
-
-  this.unrevokeIdentity = (pubkey) => that.idtyDAL.unrevokeIdentity(pubkey);
-
-  this.excludeIdentity = (pubkey) => that.idtyDAL.excludeIdentity(pubkey);
-
-  this.newIdentity = (idty) => co(function *() {
-    return that.idtyDAL.newIdentity(idty);
-  });
-
-  this.joinIdentity = (pubkey, number) => that.idtyDAL.joinIdentity(pubkey, number);
-
-  this.activeIdentity = (pubkey, number) => that.idtyDAL.activeIdentity(pubkey, number);
-
-  this.leaveIdentity = (pubkey, number) => that.idtyDAL.leaveIdentity(pubkey, number);
+  this.revokeIdentity = (pubkey) => that.idtyDAL.revokeIdentity(pubkey);
 
   this.removeUnWrittenWithPubkey = (pubkey) => co(function*() {
     return yield that.idtyDAL.removeUnWrittenWithPubkey(pubkey)
@@ -773,42 +628,6 @@ function FileDAL(params) {
   this.removeUnWrittenWithUID = (pubkey) => co(function*() {
     return yield that.idtyDAL.removeUnWrittenWithUID(pubkey);
   });
-
-  this.unacceptIdentity = that.idtyDAL.unacceptIdentity;
-
-  this.getPreviousMembershipsInfos = (ms) => co(function*() {
-    const previousMS = yield that.msDAL.previousMS(ms.issuer, ms.number);
-    let previousIN = previousMS;
-    if (previousMS.membership !== 'IN') {
-      previousIN = yield that.msDAL.previousIN(ms.issuer, ms.number);
-    }
-    return {
-      previousIN: previousIN,
-      previousMS: previousMS
-    };
-  });
-
-  this.unJoinIdentity = (ms) => co(function *() {
-    const previousMSS = yield that.getPreviousMembershipsInfos(ms);
-    yield that.idtyDAL.unJoinIdentity(ms, previousMSS.previousMS, previousMSS.previousIN);
-    yield that.msDAL.unwriteMS(ms);
-  });
-
-  this.unRenewIdentity = (ms) => co(function *() {
-    const previousMSS = yield that.getPreviousMembershipsInfos(ms);
-    yield that.idtyDAL.unRenewIdentity(ms, previousMSS.previousMS, previousMSS.previousIN);
-    yield that.msDAL.unwriteMS(ms);
-  });
-
-  this.unLeaveIdentity = (ms) => co(function *() {
-    const previousMSS = yield that.getPreviousMembershipsInfos(ms);
-    yield that.idtyDAL.unLeaveIdentity(ms, previousMSS.previousMS, previousMSS.previousIN);
-    yield that.msDAL.unwriteMS(ms);
-  });
-
-  this.unFlagToBeKicked = that.idtyDAL.unFlagToBeKicked.bind(that.idtyDAL);
-
-  this.unExcludeIdentity = that.idtyDAL.unExcludeIdentity;
 
   this.registerNewCertification = (cert) => that.certDAL.saveNewCertification(cert);
 
@@ -835,7 +654,7 @@ function FileDAL(params) {
   });
 
   this.getUDHistory = (pubkey) => co(function *() {
-    const sources = yield that.sourcesDAL.getUDSources(pubkey);
+    const sources = yield that.sindexDAL.getUDSources(pubkey);
     return {
       history: sources.map((src) => _.extend({
         block_number: src.number
@@ -852,6 +671,28 @@ function FileDAL(params) {
     const blocks = yield that.blockDAL.getBlocks(firstBlock, lastBlock);
     return _.chain(blocks).pluck('issuer').uniq().value();
   });
+
+  /**
+   * Gets a range of entries for the last `start`th to the last `end`th HEAD entry.
+   * @param start The starting entry number (min. 1)
+   * @param end The ending entry (max. BINDEX length)
+   * @param property If provided, transforms the range of entries into an array of the asked property.
+   */
+  this.range = (start, end, property) => co(function*() {
+    const range = yield that.bindexDAL.range(start, end);
+    if (property) {
+      // Filter on a particular property
+      return range.map((b) => b[property]);
+    } else {
+      return range;
+    }
+  });
+
+  /**
+   * Get the last `n`th entry from the BINDEX.
+   * @param n The entry number (min. 1).
+   */
+  this.head = (n) => this.bindexDAL.head(n);
 
   /***********************
    *    CONFIGURATION

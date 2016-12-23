@@ -441,7 +441,7 @@ program
         }
         yield server.disconnect();
         return jsoned;
-      } catch(e) {
+      } catch(err) {
           logger.warn(err.message || err);
           server.disconnect()
             .catch(() => null)
@@ -691,7 +691,7 @@ function connect(callback, useDefaultConf) {
           return callback.apply(this, cbArgs);
         } catch(e) {
           server.disconnect();
-          throw Error(err);
+          throw e;
 	}
       });
   };
@@ -883,9 +883,9 @@ function configure(server, conf) {
           logger.debug("Configuration saved.");
           return conf;
         } catch (e) {
-          logger.error("Configuration could not be saved: " + err);
-          throw Error(err);
-	}
+          logger.error("Configuration could not be saved: " + e);
+          throw Error(e);
+        }
       });
   });
 }

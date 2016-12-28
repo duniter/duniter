@@ -96,4 +96,15 @@ function SIndexDAL(driver) {
     const filtered = _.filter(sources, (src) => !src.consumed);
     return _.sortBy(filtered, (row) => row.type == 'D' ? 0 : 1);
   });
+
+  this.trimConsumedSource = (belowNumber) => co(function*() {
+    const toDelete = yield that.query('SELECT * FROM ' + that.table + ' WHERE consumed AND CAST(written_on as int) < ?', [belowNumber]);
+    for (const row of toDelete) {
+      const sql = "DELETE FROM " + that.table + " " +
+        "WHERE identifier like '" + row.identifier + "' " +
+        (toDelete.tx ? 'AND tx like = \'' + toDelete.tx + '\'' : 'AND tx IS NULL ') +
+        "AND pos = " + row.pos;
+      yield that.exec(sql);
+    }
+  });
 }

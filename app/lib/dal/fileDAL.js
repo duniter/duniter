@@ -571,9 +571,12 @@ function FileDAL(params) {
     }
   });
 
-  this.trimIndexes = (block, conf) => co(function*() {
-    // TODO: trim should be done on a fork window size
-    // yield that.cindexDAL.trimExpiredCerts();
+  this.trimIndexes = (maxNumber) => co(function*() {
+    yield that.bindexDAL.trimBlocks(maxNumber);
+    yield that.iindexDAL.trimRecords(maxNumber);
+    yield that.mindexDAL.trimRecords(maxNumber);
+    yield that.cindexDAL.trimExpiredCerts(maxNumber);
+    yield that.sindexDAL.trimConsumedSource(maxNumber);
     return true;
   });
 

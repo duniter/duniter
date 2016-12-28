@@ -6,6 +6,7 @@ const co = require('co');
 const constants = require('./../../../constants');
 const indexer = require('./../../../dup/indexer');
 const AbstractSQLite = require('./../AbstractSQLite');
+const AbstractIndex = require('./../AbstractIndex');
 
 module.exports = CIndexDAL;
 
@@ -14,6 +15,7 @@ function CIndexDAL(driver) {
   "use strict";
 
   AbstractSQLite.call(this, driver);
+  AbstractIndex.call(this, driver);
 
   const that = this;
 
@@ -64,8 +66,8 @@ function CIndexDAL(driver) {
     return indexer.DUP_HELPERS.reduceBy(reducables, ['issuer', 'receiver', 'created_on']);
   });
 
-  this.trimExpiredCerts = () => co(function*() {
-    const toDelete = yield that.sqlFind({ expired_on: { $gt: 0 }});
+  this.trimExpiredCerts = (belowNumber) => co(function*() {
+    const toDelete = yield that.query('SELECT * FROM ' + that.table + ' WHERE expired_on > ? AND CAST(written_on as int) < ?', [0, belowNumber]);
     for (const row of toDelete) {
       yield that.exec("DELETE FROM " + that.table + " " +
         "WHERE issuer like '" + row.issuer + "' " +

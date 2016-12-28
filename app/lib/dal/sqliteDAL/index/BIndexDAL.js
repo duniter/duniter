@@ -87,6 +87,14 @@ function BIndexDAL(driver) {
   });
 
   /**
+   * Get the last record available in bindex
+   */
+  this.tail = () => co(function*() {
+    const tailRecords = yield that.query('SELECT * FROM ' + that.table + ' ORDER BY number ASC LIMIT 1', []);
+    return tailRecords[0];
+  });
+
+  /**
    * Get HEAD~n..m
    * @param n
    * @param m
@@ -97,4 +105,6 @@ function BIndexDAL(driver) {
   });
 
   this.removeBlock = (number) => that.exec('DELETE FROM ' + that.table + ' WHERE number = ' + number);
+
+  this.trimBlocks = (maxnumber) => that.exec('DELETE FROM ' + that.table + ' WHERE number < ' + maxnumber);
 }

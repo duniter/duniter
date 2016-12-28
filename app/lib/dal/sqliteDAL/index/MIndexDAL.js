@@ -5,6 +5,7 @@
 const co = require('co');
 const indexer = require('./../../../dup/indexer');
 const AbstractSQLite = require('./../AbstractSQLite');
+const AbstractIndex = require('./../AbstractIndex');
 
 module.exports = MIndexDAL;
 
@@ -13,6 +14,7 @@ function MIndexDAL(driver) {
   "use strict";
 
   AbstractSQLite.call(this, driver);
+  AbstractIndex.call(this);
 
   const that = this;
 

@@ -351,7 +351,21 @@ function BlockchainContext() {
     // Create/Update nodes in wotb
     yield that.updateMembers(block);
 
-    yield dal.trimIndexes(block, conf);
+    const TAIL = yield dal.bindexDAL.tail();
+    const bindexSize = [
+      block.issuersCount,
+      block.issuersFrame,
+      conf.medianTimeBlocks,
+      conf.dtDiffEval
+    ].reduce((max, value) => {
+      return Math.max(max, value);
+    }, 0);
+    const MAX_BINDEX_SIZE = 2*bindexSize;
+    const currentSize = indexes.HEAD.number - TAIL.number + 1;
+    if (currentSize > MAX_BINDEX_SIZE) {
+      yield dal.trimIndexes(indexes.HEAD.number - MAX_BINDEX_SIZE);
+    }
+
     yield updateBlocksComputedVars(current, block);
     // Saves the block (DAL)
     yield dal.saveBlock(block);

@@ -6,6 +6,7 @@ const co = require('co');
 const _ = require('underscore');
 const indexer = require('./../../../dup/indexer');
 const AbstractSQLite = require('./../AbstractSQLite');
+const AbstractIndex = require('./../AbstractIndex');
 
 module.exports = IIndexDAL;
 
@@ -14,6 +15,7 @@ function IIndexDAL(driver) {
   "use strict";
 
   AbstractSQLite.call(this, driver);
+  AbstractIndex.call(this);
 
   const that = this;
 

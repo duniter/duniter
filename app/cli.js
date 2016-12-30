@@ -16,6 +16,7 @@ const pjson = require('../package.json');
 const duniter = require('../index');
 const Peer = require('../app/lib/entity/peer');
 const Block = require('../app/lib/entity/block');
+const constants = require('../app/lib/constants');
 
 let currentCommand = Promise.resolve(true);
 
@@ -60,8 +61,11 @@ function subCommand(promiseFunc) {
         let result = yield promiseFunc.apply(null, args);
         onResolve(result);
       } catch (e) {
-        logger.error(e);
-        onReject(e);
+        if (e && e.uerr) {
+          onReject(e.uerr.message);
+        } else {
+          onReject(e);
+        }
       }
     })
   };
@@ -456,7 +460,7 @@ program
     let init = ['data', 'all'].indexOf(type) !== -1 ? server : connect;
     return init(function (server) {
       if (!~['config', 'data', 'peers', 'stats', 'all'].indexOf(type)) {
-        throw Error('Bad command: usage `reset config`, `reset data`, `reset peers`, `reset stats` or `reset all`');
+        throw constants.ERRORS.CLI_CALLERR_RESET;
       }
       return co(function*() {
         try {
@@ -774,6 +778,9 @@ function needsToBeLaunchedByScript() {
 
 function configure(server, conf) {
   return co(function *() {
+    if (typeof server == "string" || typeof conf == "string") {
+      throw constants.ERRORS.CLI_CALLERR_CONFIG;
+    }
     let wiz = wizard();
     conf.upnp = !program.noupnp;
     const autoconfNet = program.autoconf

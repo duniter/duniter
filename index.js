@@ -1,8 +1,8 @@
 "use strict";
 
 const co = require('co');
+const _ = require('underscore');
 const Server = require('./server');
-const bma  = require('./app/lib/streams/bma');
 const webmin  = require('./app/lib/streams/webmin');
 const logger = require('./app/lib/logger')('duniter');
 
@@ -61,69 +61,76 @@ module.exports.statics = {
     ip:  wmHost || 'localhost',
     port: wmPort || 9220
   }], httpLogs !== false),
+  autoStack: () => {
 
-  startNode: (server, conf) => co(function *() {
+    const cli = require('./app/cli');
+    const stack = {
 
-    logger.info(">> NODE STARTING");
-
-    // Public http interface
-    let bmapi = yield bma(server, null, conf.httplogs);
-
-    // Routing documents
-    server.routing();
-
-    // Services
-    yield module.exports.statics.startServices(server);
-    yield bmapi.openConnections();
-
-    logger.info('>> Server ready!');
-  }),
-
-  startServices: (server) => co(function *() {
-
-    /***************
-     * HTTP ROUTING
-     **************/
-    server.router(server.conf.routing);
-
-    /***************
-     *    UPnP
-     **************/
-    if (server.conf.upnp) {
-      try {
-        if (server.upnpAPI) {
-          server.upnpAPI.stopRegular();
+      registerDependency: (requiredObject) => {
+        for (const command of (requiredObject.duniter.cli || [])) {
+          cli.addCommand({ name: command.name, desc: command.desc }, command.requires, command.promiseCallback);
         }
-        yield server.upnp();
-        server.upnpAPI.startRegular();
-      } catch (e) {
-        logger.warn(e);
+      },
+
+      executeStack: () => {
+
+        // Specific errors handling
+        process.on('uncaughtException', (err) => {
+          // Dunno why this specific exception is not caught
+          if (err.code !== "EADDRNOTAVAIL" && err.code !== "EINVAL") {
+            logger.error(err);
+            process.exit(1);
+          }
+        });
+
+        process.on('unhandledRejection', (reason) => {
+          logger.error('Unhandled rejection: ' + reason);
+        });
+
+        return co(function*() {
+          try {
+            // Prepare the command
+            const command = cli(process.argv);
+            // If ever the process gets interrupted
+            process.on('SIGINT', () => {
+              co(function*() {
+                yield command.closeCommand();
+                process.exit();
+              });
+            });
+            // Executes the command
+            yield command.execute();
+            process.exit();
+          } catch (e) {
+            logger.error(e);
+            process.exit(1);
+          }
+        });
+      }
+    };
+
+    const pjson = require('./package.json');
+    const duniterModules = [];
+
+    // Look for compliant packages
+    const prodDeps = Object.keys(pjson.dependencies);
+    const devDeps = Object.keys(pjson.devDependencies);
+    const duniterDeps = _.filter(prodDeps.concat(devDeps), (dep) => dep.match(/^duniter-/));
+    for(const dep of duniterDeps) {
+      const required = require(dep);
+      if (required.duniter) {
+        duniterModules.push({
+          name: dep,
+          required
+        });
       }
     }
 
-    /*******************
-     * BLOCK COMPUTING
-     ******************/
-    if (server.conf.participate) {
-      server.startBlockComputation();
+    for (const duniterModule of duniterModules) {
+      console.log('Registering module %s...', duniterModule.name);
+      stack.registerDependency(duniterModule.required);
     }
 
-    /***********************
-     * CRYPTO NETWORK LAYER
-     **********************/
-    yield server.start();
-
-    return {};
-  }),
-
-  stopServices: (server) => co(function *() {
-
-    server.router(false);
-    if (server.conf.participate) {
-      server.stopBlockComputation();
-    }
-    yield server.stop();
-
-    return {};
-  })
+    return stack;
+  }
 };

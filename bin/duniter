@@ -1,4 +1,24 @@
 #!/usr/bin/env node
 "use strict";
 
-require('../index').statics.cli();
+const co = require('co');
+const duniter = require('../index');
+const stack = duniter.statics.autoStack();
+
+stack.registerDependency({
+  duniter: {
+    cli: [{
+      name: 'hello',
+      desc: 'Says hello to the world.',
+      requires: ['service'],
+      promiseCallback: (duniterServer) => co(function*(){
+        console.log('Hello, world.');
+      })
+    }]
+  }
+});
+
+return co(function*(){
+  yield stack.executeStack();
+  console.log('Done');
+});

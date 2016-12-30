@@ -31,8 +31,11 @@ describe("Protocol 0.4 Times", function() {
   }));
 
   it('a V3 block should not accept a time > medianTime + avgGenTime * √(1,066)', () => co(function*() {
-    yield s1.commitExpectError({ version: 3, medianTime: now, time: Math.ceil(now + conf.avgGenTime * Math.sqrt(1.066)) + 1 })
-      .catch((e) => e.should.have.property('message').equal('A block must have its Time between MedianTime and MedianTime + 5163'));
+    try {
+      yield s1.commitExpectError({ version: 3, medianTime: now, time: Math.ceil(now + conf.avgGenTime * Math.sqrt(1.066)) + 1 });
+    } catch (e) {
+      e.should.have.property('message').equal('A block must have its Time between MedianTime and MedianTime + 5163');
+    }
   }));
 
   it('a V4 block should not accept a time = medianTime + avgGenTime * 1.189', () => co(function*() {
@@ -41,7 +44,10 @@ describe("Protocol 0.4 Times", function() {
   }));
 
   it('a V4 block should not accept a time > medianTime + avgGenTime * 1.189', () => co(function*() {
-    yield s1.commitExpectError({ version: 4, medianTime: now, time: Math.ceil(now + conf.avgGenTime * 1.189) + 1 })
-      .catch((e) => e.should.have.property('message').equal('A block must have its Time between MedianTime and MedianTime + 5945'));
+    try {
+      yield s1.commitExpectError({ version: 4, medianTime: now, time: Math.ceil(now + conf.avgGenTime * 1.189) + 1 });
+    } catch (e) {
+      e.should.have.property('message').equal('A block must have its Time between MedianTime and MedianTime + 5945');
+    }
   }));
 });

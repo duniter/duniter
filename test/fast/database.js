@@ -34,21 +34,27 @@ describe("SQLite driver", function() {
       rows = yield driver.executeAll(SELECT_FROM_TABLE, []);
       rows.should.have.length(0);
 
-      // We close the memory database, it should not remember its state
-      yield driver.closeConnection();
-      yield driver.executeAll(SELECT_FROM_TABLE, [])
-        .then(() => 'Should have thrown an exception')
-        .catch((err) => err.should.have.property('message').match(/SQLITE_ERROR: no such table: duniter/));
+      try {
+        // We close the memory database, it should not remember its state
+        yield driver.closeConnection();
+        yield driver.executeAll(SELECT_FROM_TABLE, []);
+        throw 'Should have thrown an exception';
+      } catch (err) {
+        err.should.have.property('message').match(/SQLITE_ERROR: no such table: duniter/)
+      }
       // But if we populate it again, it will work
       yield driver.executeSql(CREATE_TABLE_SQL);
       rows = yield driver.executeAll(SELECT_FROM_TABLE, []);
       rows.should.have.length(0);
 
-      // We explicitely ask for destruction
-      yield driver.destroyDatabase();
-      yield driver.executeAll(SELECT_FROM_TABLE, [])
-        .then(() => 'Should have thrown an exception')
-        .catch((err) => err.should.have.property('message').match(/SQLITE_ERROR: no such table: duniter/));
+      try {
+        // We explicitely ask for destruction
+        yield driver.destroyDatabase();
+        yield driver.executeAll(SELECT_FROM_TABLE, []);
+        throw 'Should have thrown an exception';
+      } catch (err) {
+        err.should.have.property('message').match(/SQLITE_ERROR: no such table: duniter/)
+      }
       // But if we populate it again, it will work
       yield driver.executeSql(CREATE_TABLE_SQL);
       rows = yield driver.executeAll(SELECT_FROM_TABLE, []);
@@ -75,11 +81,14 @@ describe("SQLite driver", function() {
     }));
 
     it('should be able to remove the file', () => co(function*() {
-      // We explicitely ask for destruction
-      yield driver.destroyDatabase();
-      yield driver.executeAll(SELECT_FROM_TABLE, [])
-        .then(() => 'Should have thrown an exception')
-        .catch((err) => err.should.have.property('message').match(/SQLITE_ERROR: no such table: duniter/));
+      try {
+        // We explicitely ask for destruction
+        yield driver.destroyDatabase();
+        yield driver.executeAll(SELECT_FROM_TABLE, []);
+        throw 'Should have thrown an exception';
+      } catch (err) {
+        err.should.have.property('message').match(/SQLITE_ERROR: no such table: duniter/)
+      }
     }));
 
     it('should be able to open the file after being removed', () => co(function*() {

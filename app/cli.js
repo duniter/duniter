@@ -210,7 +210,9 @@ program
         cautious = true;
       }
       yield server.synchronize(host, port, parseInt(to), 0, !program.nointeractive, cautious, program.nopeers);
-      yield ((server && server.disconnect()) || Q()).catch(() => null);
+      if (server) {
+        yield server.disconnect();
+      }
     });
   })));
 
@@ -260,11 +262,7 @@ program
         logger.error('Error during revert:', err);
       }
       // Save DB
-      server.disconnect()
-        .catch(() => null)
-        .then(function () {
-          throw Error("Exiting");
-        });
+      yield server.disconnect();
     });
   })));
 
@@ -279,11 +277,9 @@ program
         logger.error('Error during revert:', err);
       }
       // Save DB
-      ((server && server.disconnect()) || Q())
-        .catch(() => null)
-        .then(function () {
-          throw Error("Exiting");
-        });
+      if (server) {
+        yield server.disconnect();
+      }
     });
   })));
 
@@ -298,11 +294,9 @@ program
         logger.error('Error during reapply:', err);
       }
       // Save DB
-      ((server && server.disconnect()) || Q())
-        .catch(() => null)
-        .then(function () {
-          throw Error("Exiting");
-        });
+      if (server) {
+        yield server.disconnect();
+      }
     });
   })));
 
@@ -333,18 +327,28 @@ function generateAndSend(generationMethod) {
       async.waterfall([
         function (next) {
           var method = eval('server.BlockchainService.' + generationMethod);
-          method().then(_.partial(next, null)).catch(next);
+          co(function*(){
+            try {
+              const block = yield method();
+              next(null, block);
+            } catch(e) {
+              next(e);
+            }
+          });
         },
         function (block, next) {
           if (program.check) {
             block.time = block.medianTime;
             program.show && console.log(block.getRawSigned());
-            server.doCheckBlock(block)
-              .then(function () {
+            co(function*(){
+              try {
+                yield server.doCheckBlock(block);
                 logger.info('Acceptable block');
                 next();
-              })
-              .catch(next);
+              } catch (e) {
+                next(e);
+              }
+            });
           }
           else {
             logger.debug('Block to be sent: %s', block.quickDescription());
@@ -358,7 +362,14 @@ function generateAndSend(generationMethod) {
               },
               function (next) {
                 // Extract key pair
-                keyring.scryptKeyPair(conf.salt, conf.passwd).then((pair) => next(null, pair)).catch(next);
+                co(function*(){
+                  try {
+                    const pair = yield keyring.scryptKeyPair(conf.salt, conf.passwd);
+                    next(null, pair);
+                  } catch(e) {
+                    next(e);
+                  }
+                });
               },
               function (pair, next) {
                 proveAndSend(server, block, pair.publicKey, parseInt(difficulty), host, parseInt(port), next);
@@ -380,7 +391,14 @@ function proveAndSend(server, block, issuer, difficulty, host, port, done) {
     function (next) {
       block.issuer = issuer;
       program.show && console.log(block.getRawSigned());
-      BlockchainService.prove(block, difficulty).then((proven) => next(null, proven)).catch(next);
+      co(function*(){
+        try {
+          const proven = yield BlockchainService.prove(block, difficulty);
+          next(null, proven);
+        } catch(e) {
+          next(e);
+        }
+      });
     },
     function (block, next) {
       var peer = new Peer({
@@ -388,7 +406,14 @@ function proveAndSend(server, block, issuer, difficulty, host, port, done) {
       });
       program.show && console.log(block.getRawSigned());
       logger.info('Posted block ' + block.quickDescription());
-      multicaster(server.conf).sendBlock(peer, block).then(() => next()).catch(next);
+      co(function*(){
+        try {
+          yield multicaster(server.conf).sendBlock(peer, block);
+          next();
+        } catch(e) {
+          next(e);
+        }
+      });
     }
   ], done);
 }
@@ -429,11 +454,7 @@ program
         return jsoned;
       } catch(err) {
           logger.warn(err.message || err);
-          server.disconnect()
-            .catch(() => null)
-            .then(function () {
-              throw Error(err);
-            });
+          yield server.disconnect();
       }
     });
   }, NO_LOGS)));
@@ -508,12 +529,15 @@ function startWizard(step, server, conf, done) {
       wizDo(conf, next);
     },
     function (next) {
-      return server.dal.saveConf(conf)
-        .then(function () {
+      co(function*(){
+        try {
+          yield server.dal.saveConf(conf);
           logger.debug("Configuration saved.");
           next();
-        })
-        .catch(next);
+        } catch(e) {
+          next(e);
+        }
+      });
     },
     function (next) {
       // Check config

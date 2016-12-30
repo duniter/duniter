@@ -17,7 +17,13 @@ function StatDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
 
   this.init = () => Promise.resolve();
 
-  this.loadStats = () => that.coreFS.readJSON('stats.json').catch(() => {});
+  this.loadStats = () => co(function*(){
+    try {
+      return yield that.coreFS.readJSON('stats.json');
+    } catch (e) {
+      return null;
+    }
+  });
 
   this.getStat = (statName) => that.loadStats().then((stats) => (stats && stats[statName]) || { statName: statName, blocks: [], lastParsedBlock: -1 });
 

@@ -769,79 +769,80 @@ function P2PDownloader(localNumber, to, toHash, maxParallelDownloads, peers, wat
    * @type {*|Promise} When finished.
    */
   co(function*() {
-    yield downloadStarter;
-    let doneCount = 0, resolvedCount = 0;
-    while (resolvedCount < chunks.length) {
-      doneCount = 0;
-      resolvedCount = 0;
-      // Add as much possible downloads as possible, and count the already done ones
-      for (let i = chunks.length - 1; i >= 0; i--) {
-        if (chunks[i] === null && !processing[i] && slots.indexOf(i) === -1 && slots.length < downloadSlots) {
-          slots.push(i);
-          processing[i] = true;
-          downloads[i] = makeQuerablePromise(downloadChunk(i)); // Starts a new download
-        } else if (downloads[i] && downloads[i].isFulfilled() && processing[i]) {
-          doneCount++;
-        }
-        // We count the number of perfectly downloaded & validated chunks
-        if (chunks[i]) {
-          resolvedCount++;
-        }
-      }
-      watcher.downloadPercent(Math.round(doneCount / numberOfChunksToDownload * 100));
-      let races = slots.map((i) => downloads[i]);
-      if (races.length) {
-        try {
-          yield raceOrCancelIfTimeout(MAX_DELAY_PER_DOWNLOAD, races);
-        } catch (e) {
-          logger.warn(e);
-        }
-        for (let i = 0; i < slots.length; i++) {
-          // We must know the index of what resolved/rejected to free the slot
-          const doneIndex = slots.reduce((found, realIndex, index) => {
-            if (found !== null) return found;
-            if (downloads[realIndex].isFulfilled()) return index;
-            return null;
-          }, null);
-          if (doneIndex !== null) {
-            const realIndex = slots[doneIndex];
-            if (downloads[realIndex].isResolved()) {
-              const p = new Promise((resolve, reject) => co(function*() {
-                const blocks = yield downloads[realIndex];
-                if (realIndex < chunks.length - 1) {
-                  // We must wait for NEXT blocks to be STRONGLY validated before going any further, otherwise we
-                  // could be on the wrong chain
-                  yield that.getChunk(realIndex + 1);
-                }
-                const chainsWell = yield chainsCorrectly(blocks, realIndex);
-                if (chainsWell) {
-                  // Chunk is COMPLETE
-                  logger.warn("Chunk #%s is COMPLETE from %s", realIndex, [handler[realIndex].host, handler[realIndex].port].join(':'));
-                  chunks[realIndex] = blocks;
-                  resultsDeferers[realIndex].resolve(chunks[realIndex]);
-                } else {
-                  logger.warn("Chunk #%s DOES NOT CHAIN CORRECTLY from %s", realIndex, [handler[realIndex].host, handler[realIndex].port].join(':'));
-                  // Penality on this node to avoid its usage
-                  handler[realIndex].tta += MAX_DELAY_PER_DOWNLOAD;
-                  // Need a retry
-                  processing[realIndex] = false;
-                }
-              }));
-            } else {
-              processing[realIndex] = false; // Need a retry
-            }
-            slots.splice(doneIndex, 1);
+    try {
+      yield downloadStarter;
+      let doneCount = 0, resolvedCount = 0;
+      while (resolvedCount < chunks.length) {
+        doneCount = 0;
+        resolvedCount = 0;
+        // Add as much possible downloads as possible, and count the already done ones
+        for (let i = chunks.length - 1; i >= 0; i--) {
+          if (chunks[i] === null && !processing[i] && slots.indexOf(i) === -1 && slots.length < downloadSlots) {
+            slots.push(i);
+            processing[i] = true;
+            downloads[i] = makeQuerablePromise(downloadChunk(i)); // Starts a new download
+          } else if (downloads[i] && downloads[i].isFulfilled() && processing[i]) {
+            doneCount++;
+          }
+          // We count the number of perfectly downloaded & validated chunks
+          if (chunks[i]) {
+            resolvedCount++;
           }
         }
+        watcher.downloadPercent(Math.round(doneCount / numberOfChunksToDownload * 100));
+        let races = slots.map((i) => downloads[i]);
+        if (races.length) {
+          try {
+            yield raceOrCancelIfTimeout(MAX_DELAY_PER_DOWNLOAD, races);
+          } catch (e) {
+            logger.warn(e);
+          }
+          for (let i = 0; i < slots.length; i++) {
+            // We must know the index of what resolved/rejected to free the slot
+            const doneIndex = slots.reduce((found, realIndex, index) => {
+              if (found !== null) return found;
+              if (downloads[realIndex].isFulfilled()) return index;
+              return null;
+            }, null);
+            if (doneIndex !== null) {
+              const realIndex = slots[doneIndex];
+              if (downloads[realIndex].isResolved()) {
+                const p = new Promise((resolve, reject) => co(function*() {
+                  const blocks = yield downloads[realIndex];
+                  if (realIndex < chunks.length - 1) {
+                    // We must wait for NEXT blocks to be STRONGLY validated before going any further, otherwise we
+                    // could be on the wrong chain
+                    yield that.getChunk(realIndex + 1);
+                  }
+                  const chainsWell = yield chainsCorrectly(blocks, realIndex);
+                  if (chainsWell) {
+                    // Chunk is COMPLETE
+                    logger.warn("Chunk #%s is COMPLETE from %s", realIndex, [handler[realIndex].host, handler[realIndex].port].join(':'));
+                    chunks[realIndex] = blocks;
+                    resultsDeferers[realIndex].resolve(chunks[realIndex]);
+                  } else {
+                    logger.warn("Chunk #%s DOES NOT CHAIN CORRECTLY from %s", realIndex, [handler[realIndex].host, handler[realIndex].port].join(':'));
+                    // Penality on this node to avoid its usage
+                    handler[realIndex].tta += MAX_DELAY_PER_DOWNLOAD;
+                    // Need a retry
+                    processing[realIndex] = false;
+                  }
+                }));
+              } else {
+                processing[realIndex] = false; // Need a retry
+              }
+              slots.splice(doneIndex, 1);
+            }
+          }
+        }
+        // Wait a bit
+        yield new Promise((resolve, reject) => setTimeout(resolve, 10));
       }
-      // Wait a bit
-      yield new Promise((resolve, reject) => setTimeout(resolve, 10));
-    }
-  })
-    .catch((e) => {
+    } catch (e) {
       logger.error('Fatal error in the downloader:');
       logger.error(e);
-    });
+    }
+  });
 
   /**
    * PUBLIC API

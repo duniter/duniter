@@ -176,18 +176,19 @@ describe("HTTP API", function() {
 });
 
 function expectJSON(promise, json) {
-  return promise
-    .then(function(resJson){
+  return co(function*(){
+    try {
+      const resJson = yield promise;
       _.keys(json).forEach(function(key){
         resJson.should.have.property(key).equal(json[key]);
       });
-    })
-    .catch(function(err){
+    } catch (err) {
       if (err.response) {
         assert.equal(err.response.statusCode, 200);
       }
       else throw err;
-    });
+    }
+  });
 }
 
 function postBlock(server2) {

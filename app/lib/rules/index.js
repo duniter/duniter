@@ -87,28 +87,15 @@ rules.CHECK = {
 function checkLocal(contract) {
   return (b, conf, done) => {
     return co(function *() {
-      const block = new Block(b);
-      yield contract(block, conf);
-      done && done();
-    })
-      .catch((err) => {
+      try {
+        const block = new Block(b);
+        yield contract(block, conf);
+        done && done();
+      } catch (err) {
         if (done) return done(err);
         throw err;
-      });
-  };
-}
-
-function check(contract) {
-  return (b, conf, dal, bcContext, done) => {
-    return co(function *() {
-      const block = new Block(b);
-      yield contract(block, conf, dal, bcContext);
-      done && done();
-    })
-      .catch((err) => {
-        if (done) return done(err);
-        throw err;
-      });
+      }
+    });
   };
 }
 

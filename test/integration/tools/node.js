@@ -140,12 +140,15 @@ function Node (dbName, options) {
           async.parallel({
             block: function(callback){
               co(function *() {
-                const block2 = yield that.server.BlockchainService.generateNext(params);
-                const trial2 = yield that.server.getBcContext().getIssuerPersonalizedDifficulty(block2.version, that.server.keyPair.publicKey);
-                return that.server.BlockchainService.makeNextBlock(block2, trial2, params);
-              })
-                .then((block) => callback(null, block))
-                .catch(callback);
+                try {
+                  const block2 = yield that.server.BlockchainService.generateNext(params);
+                  const trial2 = yield that.server.getBcContext().getIssuerPersonalizedDifficulty(block2.version, that.server.keyPair.publicKey);
+                  const block = yield that.server.BlockchainService.makeNextBlock(block2, trial2, params);
+                  callback(null, block);
+                } catch (e) {
+                  callback(e);
+                }
+              });
             }
           }, next);
         },
@@ -183,8 +186,9 @@ function Node (dbName, options) {
         function (server, next){
           // Launching server
           that.server = server;
-          that.server.start()
-            .then(function(){
+          co(function*(){
+            try {
+              yield that.server.start();
               if (server.conf.routing) {
                 server
                   .pipe(server.router()) // The router asks for multicasting of documents
@@ -192,8 +196,10 @@ function Node (dbName, options) {
               }
               started = true;
               next();
-            })
-            .catch(next);
+            } catch (e) {
+              next(e);
+            }
+          });
         },
         function (next) {
           that.http = contacter(options.remoteipv4, options.remoteport);
@@ -220,17 +226,18 @@ function Node (dbName, options) {
       var server = ucoin(dbConf, Configuration.statics.complete(options));
 
       // Initialize server (db connection, ...)
-      server.initWithDAL()
-        .then(function(){
+      return co(function*(){
+        try {
+          yield server.initWithDAL();
           //cbArgs.length--;
           cbArgs[cbArgs.length++] = server;
           //cbArgs[cbArgs.length++] = server.conf;
           callback(null, server);
-        })
-        .catch(function(err){
+        } catch (err) {
           server.disconnect();
           throw err;
-        });
+        }
+      });
     };
   }
 
@@ -240,15 +247,14 @@ function Node (dbName, options) {
 
   this.lookup = function(search, callback) {
     return function(done) {
-      async.waterfall([
-        function(next) {
-          that.http.getLookup(search).then((o) => next(null, o)).catch(next);
-        }
-      ], function(err, res) {
-        if (err) {
+      co(function*(){
+        try {
+          const res = yield that.http.getLookup(search);
+          callback(res, done);
+        } catch (err) {
           logger.error(err);
+          callback(null, done);
         }
-        callback(res, done);
       });
     };
   };
@@ -278,30 +284,42 @@ function Node (dbName, options) {
 
   this.block = function(number, callback) {
     return function(done) {
-      async.waterfall([
-        function(next) {
-          that.http.getBlock(number).then((o) => next(null, o)).catch(next);
+      co(function*(){
+        try {
+          const res = yield that.http.getBlock(number);
+          callback(res, done);
+        } catch (err) {
+          logger.error(err);
+          callback(null, done);
         }
-      ], function(err, block) {
-        callback(block, done);
       });
     };
   };
 
   this.summary = function(callback) {
     return function(done) {
-      async.waterfall([
-        function(next) {
-          that.http.getSummary().then((o) => next(null, o)).catch(next);
+      co(function*(){
+        try {
+          const res = yield that.http.getSummary();
+          callback(res, done);
+        } catch (err) {
+          logger.error(err);
+          callback(null, done);
         }
-      ], function(err, summary) {
-        callback(summary, done);
       });
     };
   };
 
   this.peering = function(done) {
-    that.http.getPeer().then((o) => done(null, o)).catch(done);
+    co(function*(){
+      try {
+        const res = yield that.http.getPeer();
+        done(null, res);
+      } catch (err) {
+        logger.error(err);
+        done(err);
+      }
+    });
   };
 
   this.peeringP = () => Q.nfcall(this.peering);

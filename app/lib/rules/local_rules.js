@@ -439,19 +439,20 @@ function checkBunchOfTransactions(txs, done){
     }
   };
   return co(function *() {
-    let local_rule = rules.FUNCTIONS;
-    yield local_rule.checkTxLen(block);
-    yield local_rule.checkTxIssuers(block);
-    yield local_rule.checkTxSources(block);
-    yield local_rule.checkTxRecipients(block);
-    yield local_rule.checkTxAmounts(block);
-    yield local_rule.checkTxSignature(block);
-    done && done();
-  })
-    .catch((err) => {
+    try {
+      let local_rule = rules.FUNCTIONS;
+      yield local_rule.checkTxLen(block);
+      yield local_rule.checkTxIssuers(block);
+      yield local_rule.checkTxSources(block);
+      yield local_rule.checkTxRecipients(block);
+      yield local_rule.checkTxAmounts(block);
+      yield local_rule.checkTxSignature(block);
+      done && done();
+    } catch (err) {
       if (done) return done(err);
       throw err;
-    });
+    }
+  });
 }
 
 rules.HELPERS = {

@@ -167,7 +167,14 @@ function PeeringService(server) {
     if (peerInterval)
       clearInterval(peerInterval);
     peerInterval = setInterval(function () {
-      peerFifo.push((done) => that.generateSelfPeer(conf, signalTimeInterval).then(done()).catch(done));
+      peerFifo.push((done) => co(function*(){
+        try {
+          yield that.generateSelfPeer(conf, signalTimeInterval);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      }))
     }, signalTimeInterval);
     yield that.generateSelfPeer(conf, signalTimeInterval);
   });
@@ -333,50 +340,54 @@ function PeeringService(server) {
     }
     logger.info('Crawling the network...');
     return co(function *() {
-      const peers = yield dal.listAllPeersWithStatusNewUPWithtout(selfPubkey);
-      if (peers.length > constants.NETWORK.COUNT_FOR_ENOUGH_PEERS && dontCrawlIfEnoughPeers == DONT_IF_MORE_THAN_FOUR_PEERS) {
-        return;
-      }
-      let peersToTest = peers.slice().map((p) => Peer.statics.peerize(p));
-      let tested = [];
-      const found = [];
-      while (peersToTest.length > 0) {
-        const results = yield peersToTest.map(crawlPeer);
-        tested = tested.concat(peersToTest.map((p) => p.pubkey));
-        // End loop condition
-        peersToTest.splice(0);
-        // Eventually continue the loop
-        for (let i = 0, len = results.length; i < len; i++) {
-          const res = results[i];
-          for (let j = 0, len2 = res.length; j < len2; j++) {
-            try {
-              const subpeer = res[j].leaf.value;
-              if (subpeer.currency && tested.indexOf(subpeer.pubkey) === -1) {
-                const p = Peer.statics.peerize(subpeer);
-                peersToTest.push(p);
-                found.push(p);
+      try {
+        const peers = yield dal.listAllPeersWithStatusNewUPWithtout(selfPubkey);
+        if (peers.length > constants.NETWORK.COUNT_FOR_ENOUGH_PEERS && dontCrawlIfEnoughPeers == DONT_IF_MORE_THAN_FOUR_PEERS) {
+          return;
+        }
+        let peersToTest = peers.slice().map((p) => Peer.statics.peerize(p));
+        let tested = [];
+        const found = [];
+        while (peersToTest.length > 0) {
+          const results = yield peersToTest.map(crawlPeer);
+          tested = tested.concat(peersToTest.map((p) => p.pubkey));
+          // End loop condition
+          peersToTest.splice(0);
+          // Eventually continue the loop
+          for (let i = 0, len = results.length; i < len; i++) {
+            const res = results[i];
+            for (let j = 0, len2 = res.length; j < len2; j++) {
+              try {
+                const subpeer = res[j].leaf.value;
+                if (subpeer.currency && tested.indexOf(subpeer.pubkey) === -1) {
+                  const p = Peer.statics.peerize(subpeer);
+                  peersToTest.push(p);
+                  found.push(p);
+                }
+              } catch (e) {
+                logger.warn('Invalid peer %s', res[j]);
               }
-            } catch (e) {
-              logger.warn('Invalid peer %s', res[j]);
             }
           }
+          // Make unique list
+          peersToTest = _.uniq(peersToTest, false, (p) => p.pubkey);
         }
-        // Make unique list
-        peersToTest = _.uniq(peersToTest, false, (p) => p.pubkey);
-      }
-      logger.info('Crawling done.');
-      for (let i = 0, len = found.length; i < len; i++) {
-        let p = found[i];
-        try {
-          // Try to write it
-          p.documentType = 'peer';
-          yield server.singleWritePromise(p);
-        } catch(e) {
-          // Silent error
+        logger.info('Crawling done.');
+        for (let i = 0, len = found.length; i < len; i++) {
+          let p = found[i];
+          try {
+            // Try to write it
+            p.documentType = 'peer';
+            yield server.singleWritePromise(p);
+          } catch(e) {
+            // Silent error
+          }
         }
+        done();
+      } catch (e) {
+        done(e);
       }
-    })
-      .then(() => done()).catch(done);
+    });
   };
 
   const crawlPeer = (aPeer) => co(function *() {
@@ -399,58 +410,61 @@ function PeeringService(server) {
   });
 
   const testPeers = (displayDelays, done) => co(function *() {
-    let peers = yield dal.listAllPeers();
-    let now = (new Date().getTime());
-    peers = _.filter(peers, (p) => p.pubkey != selfPubkey);
-    for (let i = 0, len = peers.length; i < len; i++) {
-      let p = new Peer(peers[i]);
-      if (p.status == 'DOWN') {
-        let shouldDisplayDelays = displayDelays;
-        let downAt = p.first_down || now;
-        let waitRemaining = getWaitRemaining(now, downAt, p.last_try);
-        let nextWaitRemaining = getWaitRemaining(now, downAt, now);
-        let testIt = waitRemaining <= 0;
-        if (testIt) {
-          // We try to reconnect only with peers marked as DOWN
-          try {
-            logger.trace('Checking if node %s is UP... (%s:%s) ', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
-            // We register the try anyway
-            yield dal.setPeerDown(p.pubkey);
-            // Now we test
-            let node = yield p.connect();
-            let peering = yield node.getPeer();
-            yield checkPeerValidity(p, node);
-            // The node answered, it is no more DOWN!
-            logger.info('Node %s (%s:%s) is UP!', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
-            yield dal.setPeerUP(p.pubkey);
-            // We try to forward its peering entry
-            let sp1 = peering.block.split('-');
-            let currentBlockNumber = sp1[0];
-            let currentBlockHash = sp1[1];
-            let sp2 = peering.block.split('-');
-            let blockNumber = sp2[0];
-            let blockHash = sp2[1];
-            if (!(currentBlockNumber == blockNumber && currentBlockHash == blockHash)) {
-              // The peering changed
-              yield that.submitP(peering);
+    try {
+      let peers = yield dal.listAllPeers();
+      let now = (new Date().getTime());
+      peers = _.filter(peers, (p) => p.pubkey != selfPubkey);
+      for (let i = 0, len = peers.length; i < len; i++) {
+        let p = new Peer(peers[i]);
+        if (p.status == 'DOWN') {
+          let shouldDisplayDelays = displayDelays;
+          let downAt = p.first_down || now;
+          let waitRemaining = getWaitRemaining(now, downAt, p.last_try);
+          let nextWaitRemaining = getWaitRemaining(now, downAt, now);
+          let testIt = waitRemaining <= 0;
+          if (testIt) {
+            // We try to reconnect only with peers marked as DOWN
+            try {
+              logger.trace('Checking if node %s is UP... (%s:%s) ', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
+              // We register the try anyway
+              yield dal.setPeerDown(p.pubkey);
+              // Now we test
+              let node = yield p.connect();
+              let peering = yield node.getPeer();
+              yield checkPeerValidity(p, node);
+              // The node answered, it is no more DOWN!
+              logger.info('Node %s (%s:%s) is UP!', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
+              yield dal.setPeerUP(p.pubkey);
+              // We try to forward its peering entry
+              let sp1 = peering.block.split('-');
+              let currentBlockNumber = sp1[0];
+              let currentBlockHash = sp1[1];
+              let sp2 = peering.block.split('-');
+              let blockNumber = sp2[0];
+              let blockHash = sp2[1];
+              if (!(currentBlockNumber == blockNumber && currentBlockHash == blockHash)) {
+                // The peering changed
+                yield that.submitP(peering);
+              }
+              // Do not need to display when next check will occur: the node is now UP
+              shouldDisplayDelays = false;
+            } catch (err) {
+              // Error: we set the peer as DOWN
+              logger.trace("Peer %s is DOWN (%s)", p.pubkey, (err.httpCode && 'HTTP ' + err.httpCode) || err.code || err.message || err);
+              yield dal.setPeerDown(p.pubkey);
+              shouldDisplayDelays = true;
             }
-            // Do not need to display when next check will occur: the node is now UP
-            shouldDisplayDelays = false;
-          } catch (err) {
-            // Error: we set the peer as DOWN
-            logger.trace("Peer %s is DOWN (%s)", p.pubkey, (err.httpCode && 'HTTP ' + err.httpCode) || err.code || err.message || err);
-            yield dal.setPeerDown(p.pubkey);
-            shouldDisplayDelays = true;
+          }
+          if (shouldDisplayDelays) {
+            logger.debug('Will check that node %s (%s:%s) is UP in %s min...', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort(), (nextWaitRemaining / 60).toFixed(0));
           }
         }
-        if (shouldDisplayDelays) {
-          logger.debug('Will check that node %s (%s:%s) is UP in %s min...', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort(), (nextWaitRemaining / 60).toFixed(0));
-        }
       }
+      done();
+    } catch (e) {
+      done(e);
     }
-    done();
-  })
-    .catch(done);
+  });
 
   function getWaitRemaining(now, downAt, last_try) {
     let downDelay = Math.floor((now - downAt) / 1000);
@@ -516,125 +530,126 @@ function PeeringService(server) {
 
   function syncBlock(callback, pubkey) {
     currentSyncP = querablep(co(function *() {
-      let current = yield dal.getCurrentBlockOrNull();
-      if (current) {
-        pullingEvent('start', current.number);
-        logger.info("Pulling blocks from the network...");
-        let peers = yield dal.findAllPeersNEWUPBut([selfPubkey]);
-        peers = _.shuffle(peers);
-        if (pubkey) {
-          _(peers).filter((p) => p.pubkey == pubkey);
-        }
-        // Shuffle the peers
-        peers = _.shuffle(peers);
-        // Only take at max X of them
-        peers = peers.slice(0, constants.MAX_NUMBER_OF_PEERS_FOR_PULLING);
-        for (let i = 0, len = peers.length; i < len; i++) {
-          let p = new Peer(peers[i]);
-          pullingEvent('peer', _.extend({ number: i, length: peers.length }, p));
-          logger.trace("Try with %s %s", p.getURL(), p.pubkey.substr(0, 6));
-          try {
-            let node = yield p.connect();
-            node.pubkey = p.pubkey;
-            yield checkPeerValidity(p, node);
-            let lastDownloaded;
-            let dao = pulling.abstractDao({
+      try {
+        let current = yield dal.getCurrentBlockOrNull();
+        if (current) {
+          pullingEvent('start', current.number);
+          logger.info("Pulling blocks from the network...");
+          let peers = yield dal.findAllPeersNEWUPBut([selfPubkey]);
+          peers = _.shuffle(peers);
+          if (pubkey) {
+            _(peers).filter((p) => p.pubkey == pubkey);
+          }
+          // Shuffle the peers
+          peers = _.shuffle(peers);
+          // Only take at max X of them
+          peers = peers.slice(0, constants.MAX_NUMBER_OF_PEERS_FOR_PULLING);
+          for (let i = 0, len = peers.length; i < len; i++) {
+            let p = new Peer(peers[i]);
+            pullingEvent('peer', _.extend({number: i, length: peers.length}, p));
+            logger.trace("Try with %s %s", p.getURL(), p.pubkey.substr(0, 6));
+            try {
+              let node = yield p.connect();
+              node.pubkey = p.pubkey;
+              yield checkPeerValidity(p, node);
+              let lastDownloaded;
+              let dao = pulling.abstractDao({
 
-              // Get the local blockchain current block
-              localCurrent: () => dal.getCurrentBlockOrNull(),
+                // Get the local blockchain current block
+                localCurrent: () => dal.getCurrentBlockOrNull(),
 
-              // Get the remote blockchain (bc) current block
-              remoteCurrent: (thePeer) => thePeer.getCurrent(),
+                // Get the remote blockchain (bc) current block
+                remoteCurrent: (thePeer) => thePeer.getCurrent(),
 
-              // Get the remote peers to be pulled
-              remotePeers: () => Q([node]),
+                // Get the remote peers to be pulled
+                remotePeers: () => Q([node]),
 
-              // Get block of given peer with given block number
-              getLocalBlock: (number) => dal.getBlock(number),
+                // Get block of given peer with given block number
+                getLocalBlock: (number) => dal.getBlock(number),
 
-              // Get block of given peer with given block number
-              getRemoteBlock: (thePeer, number) => co(function *() {
-                let block = null;
-                try {
-                  block = yield thePeer.getBlock(number);
-                  Transaction.statics.setIssuers(block.transactions);
-                } catch (e) {
-                  if (e.httpCode != 404) {
-                    throw e;
-                  }
-                }
-                return block;
-              }),
-
-              // Simulate the adding of a single new block on local blockchain
-              applyMainBranch: (block) => co(function *() {
-                let addedBlock = yield server.BlockchainService.submitBlock(block, true, constants.FORK_ALLOWED);
-                if (!lastDownloaded) {
-                  lastDownloaded = yield dao.remoteCurrent(node);
-                }
-                pullingEvent('applying', { number: block.number, last: lastDownloaded.number });
-                if (addedBlock) {
-                  current = addedBlock;
-                  server.streamPush(addedBlock);
-                }
-              }),
-
-              // Eventually remove forks later on
-              removeForks: () => Q(),
-
-              // Tells wether given peer is a member peer
-              isMemberPeer: (thePeer) => co(function *() {
-                let idty = yield dal.getWrittenIdtyByPubkey(thePeer.pubkey);
-                return (idty && idty.member) || false;
-              }),
-
-              // Simulates the downloading of blocks from a peer
-              downloadBlocks: (thePeer, fromNumber, count) => co(function*() {
-                if (!count) {
-                  count = CONST_BLOCKS_CHUNK;
-                }
-                let blocks = yield thePeer.getBlocks(count, fromNumber);
-                // Fix for #734
-                for (const block of blocks) {
-                  if (block.version >= 3) {
-                    for (const tx of block.transactions) {
-                      tx.version = 3;
+                // Get block of given peer with given block number
+                getRemoteBlock: (thePeer, number) => co(function *() {
+                  let block = null;
+                  try {
+                    block = yield thePeer.getBlock(number);
+                    Transaction.statics.setIssuers(block.transactions);
+                  } catch (e) {
+                    if (e.httpCode != 404) {
+                      throw e;
                     }
                   }
-                }
-                return blocks;
-              })
-            });
+                  return block;
+                }),
 
-            yield pulling.pull(conf, dao);
-            
-            // To stop the processing
-            if (askedCancel) {
-              len = 0;
-            }
-          } catch (e) {
-            if (isConnectionError(e)) {
-              logger.info("Peer %s unreachable: now considered as DOWN.", p.pubkey);
-              yield dal.setPeerDown(p.pubkey);
-            }
-            else if (e.httpCode == 404) {
-              logger.trace("No new block from %s %s", p.pubkey.substr(0, 6), p.getURL());
-            }
-            else {
-              logger.warn(e);
+                // Simulate the adding of a single new block on local blockchain
+                applyMainBranch: (block) => co(function *() {
+                  let addedBlock = yield server.BlockchainService.submitBlock(block, true, constants.FORK_ALLOWED);
+                  if (!lastDownloaded) {
+                    lastDownloaded = yield dao.remoteCurrent(node);
+                  }
+                  pullingEvent('applying', {number: block.number, last: lastDownloaded.number});
+                  if (addedBlock) {
+                    current = addedBlock;
+                    server.streamPush(addedBlock);
+                  }
+                }),
+
+                // Eventually remove forks later on
+                removeForks: () => Q(),
+
+                // Tells wether given peer is a member peer
+                isMemberPeer: (thePeer) => co(function *() {
+                  let idty = yield dal.getWrittenIdtyByPubkey(thePeer.pubkey);
+                  return (idty && idty.member) || false;
+                }),
+
+                // Simulates the downloading of blocks from a peer
+                downloadBlocks: (thePeer, fromNumber, count) => co(function*() {
+                  if (!count) {
+                    count = CONST_BLOCKS_CHUNK;
+                  }
+                  let blocks = yield thePeer.getBlocks(count, fromNumber);
+                  // Fix for #734
+                  for (const block of blocks) {
+                    if (block.version >= 3) {
+                      for (const tx of block.transactions) {
+                        tx.version = 3;
+                      }
+                    }
+                  }
+                  return blocks;
+                })
+              });
+
+              yield pulling.pull(conf, dao);
+
+              // To stop the processing
+              if (askedCancel) {
+                len = 0;
+              }
+            } catch (e) {
+              if (isConnectionError(e)) {
+                logger.info("Peer %s unreachable: now considered as DOWN.", p.pubkey);
+                yield dal.setPeerDown(p.pubkey);
+              }
+              else if (e.httpCode == 404) {
+                logger.trace("No new block from %s %s", p.pubkey.substr(0, 6), p.getURL());
+              }
+              else {
+                logger.warn(e);
+              }
             }
           }
+          pullingEvent('end', current.number);
         }
-        pullingEvent('end', current.number);
-      }
-      logger.info('Will pull blocks from the network in %s min %s sec', Math.floor(SYNC_BLOCK_INTERVAL / 60), Math.floor(SYNC_BLOCK_INTERVAL % 60));
-      callback && callback();
-    })
-      .catch((err) => {
+        logger.info('Will pull blocks from the network in %s min %s sec', Math.floor(SYNC_BLOCK_INTERVAL / 60), Math.floor(SYNC_BLOCK_INTERVAL % 60));
+        callback && callback();
+      } catch(err) {
         pullingEvent('error');
         logger.warn(err.code || err.stack || err.message || err);
         callback && callback();
-      }));
+      }
+    }));
     return currentSyncP;
   }
 

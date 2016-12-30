@@ -1,8 +1,9 @@
 "use strict";
 
-var should    = require('should');
-var assert    = require('assert');
-var _         = require('underscore');
+const co = require('co');
+const should    = require('should');
+const assert    = require('assert');
+const _         = require('underscore');
 
 module.exports = {
 
@@ -11,11 +12,11 @@ module.exports = {
       promise = arguments[1];
       message = undefined;
     }
-    return promise
-      .then(function(res){
-        assert.equal(200, code);
-      })
-      .catch(function(err){
+    return co(function*(){
+      try {
+        const res = yield promise;
+        assert.equal(res.statusCode, code);
+      } catch (err) {
         if (err.response) {
           assert.equal(err.response.statusCode, code);
           if (message) {
@@ -23,7 +24,8 @@ module.exports = {
           }
         }
         else throw err;
-      });
+      }
+    });
   },
 
   expectError: function expectHttpCode(code, message, promise) {
@@ -31,11 +33,11 @@ module.exports = {
       promise = arguments[1];
       message = undefined;
     }
-    return promise
-      .then(function(){
-        assert.equal(200, code);
-      })
-      .catch(function(err){
+    return co(function*(){
+      try {
+        const res = yield promise;
+        assert.equal(res.statusCode, code);
+      } catch (err) {
         if (err.response) {
           assert.equal(err.response.statusCode, code);
           if (message) {
@@ -44,35 +46,38 @@ module.exports = {
           }
         }
         else throw err;
-      });
+      }
+    });
   },
 
   expectJSON: function expectJSON(promise, json) {
-    return promise
-      .then(function(resJson){
+    return co(function*(){
+      try {
+        const resJson = yield promise;
         _.keys(json).forEach(function(key){
           resJson.should.have.property(key).equal(json[key]);
         });
-      })
-      .catch(function(err){
+      } catch (err) {
         if (err.response) {
           assert.equal(err.response.statusCode, 200);
         }
         else throw err;
-      });
+      }
+    });
   },
 
   expectAnswer: function expectJSON(promise, testFunc) {
-    return promise
-      .then(function(res) {
+    return co(function*(){
+      try {
+        const res = yield promise;
         return testFunc(res);
-      })
-      .catch(function(err){
+      } catch (err) {
         if (err.response) {
           console.error(err.error);
           assert.equal(err.response.statusCode, 200);
         }
         else throw err;
-      });
+      }
+    });
   }
 };

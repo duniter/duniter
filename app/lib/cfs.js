@@ -190,21 +190,21 @@ function CFSCore(rootPath, qfs, parent) {
    * Read a file and parse its content as JSON.
    * @param filePath File to read.
    */
-  this.readJSON = (filePath) => this.read(filePath).then(function(data) {
-    return Q()
-      .then(function(){
-        return JSON.parse(data);
-      })
-      .catch(function(err){
-        if (err.message.match(/^Unexpected token {/)) {
-          // TODO: this is a bug thrown during Unit Tests with MEMORY_MODE true...
-          return JSON.parse(data.match(/^(.*)}{.*/)[1] + '}');
-        } else if (err.message.match(/^Unexpected end of input/)) {
-          // Could not read, return empty object
-          return {};
-        }
-        throw err;
-      });
+  this.readJSON = (filePath) => co(function*(){
+    let data;
+    try {
+      data = yield that.read(filePath);
+      return JSON.parse(data);
+    } catch(err) {
+      if (data && err.message.match(/^Unexpected token {/)) {
+        // TODO: this is a bug thrown during Unit Tests with MEMORY_MODE true...
+        return JSON.parse(data.match(/^(.*)}{.*/)[1] + '}');
+      } else if (err.message.match(/^Unexpected end of input/)) {
+        // Could not read, return empty object
+        return {};
+      }
+      throw err;
+    }
   });
 
   /**

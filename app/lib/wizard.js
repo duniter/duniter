@@ -52,26 +52,29 @@ function Wizard () {
 
 function keyReconfigure(conf, autoconf, done) {
   return co(function *() {
-    if (autoconf) {
-      conf.salt = ~~(Math.random() * 2147483647) + "";
-      conf.passwd = ~~(Math.random() * 2147483647) + "";
-      logger.info('Key: %s', 'generated');
-    } else {
-      yield Q.Promise(function(resolve, reject){
-        choose('You need a keypair to identify your node on the network. Would you like to automatically generate it?', true,
-          function(){
-            conf.salt = ~~(Math.random() * 2147483647) + "";
-            conf.passwd = ~~(Math.random() * 2147483647) + "";
-            resolve();
-          },
-          function(){
-            doTasks(['key'], conf, (err) => err ? reject(err) : resolve());
-          });
-      });
+    try {
+      if (autoconf) {
+        conf.salt = ~~(Math.random() * 2147483647) + "";
+        conf.passwd = ~~(Math.random() * 2147483647) + "";
+        logger.info('Key: %s', 'generated');
+      } else {
+        yield Q.Promise(function(resolve, reject){
+          choose('You need a keypair to identify your node on the network. Would you like to automatically generate it?', true,
+            function(){
+              conf.salt = ~~(Math.random() * 2147483647) + "";
+              conf.passwd = ~~(Math.random() * 2147483647) + "";
+              resolve();
+            },
+            function(){
+              doTasks(['key'], conf, (err) => err ? reject(err) : resolve());
+            });
+        });
+      }
+      done();
+    } catch(e) {
+      done(e);
     }
-    done();
-  })
-    .catch(done);
+  });
 }
 
 function doTasks (todos, conf, done) {
@@ -476,18 +479,23 @@ function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6, autoconf) {
     function (answers, next){
       conf.remoteipv4 = answers.remoteipv4;
       return co(function*() {
-        if (conf.remoteipv4 || conf.remotehost) {
-          yield new Promise((resolve, reject) => {
-            const getPort = async.apply(simpleInteger, "Remote port", "remoteport", conf);
-            getPort((err) => {
-              if (err) return reject(err);
-              resolve();
+        try {
+          if (conf.remoteipv4 || conf.remotehost) {
+            yield new Promise((resolve, reject) => {
+              const getPort = async.apply(simpleInteger, "Remote port", "remoteport", conf);
+              getPort((err) => {
+                if (err) return reject(err);
+                resolve();
+              });
             });
-          });
-        } else if (conf.remoteipv6) {
-          conf.remoteport = conf.port;
+          } else if (conf.remoteipv6) {
+            conf.remoteport = conf.port;
+          }
+          next();
+        } catch (e) {
+          next(e);
         }
-      }).then(() => next()).catch(next);
+      });
     }
   ];
 }

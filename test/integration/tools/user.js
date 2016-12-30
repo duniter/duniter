@@ -38,7 +38,14 @@ function User (uid, options, node) {
     if (options.salt && options.passwd) {
       async.waterfall([
         function (next) {
-          keyring.scryptKeyPair(options.salt, options.passwd).then((pair) => next(null, pair)).catch(next);
+          co(function*(){
+            try {
+              const pair = yield keyring.scryptKeyPair(options.salt, options.passwd);
+              next(null, pair);
+            } catch (e) {
+              next(e);
+            }
+          });
         },
         function (pair, next) {
           pub = that.pub = pair.publicKey;
@@ -170,10 +177,14 @@ function User (uid, options, node) {
   this.send = function (amount, recipient, comment) {
     return function(done) {
       return co(function *() {
-        let raw = yield that.prepareITX(amount, recipient, comment);
-        return that.sendTX(raw);
-      })
-        .then(() => done()).catch(done);
+        try {
+          let raw = yield that.prepareITX(amount, recipient, comment);
+          yield that.sendTX(raw);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
     };
   };
 

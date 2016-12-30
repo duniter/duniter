@@ -14,16 +14,16 @@ module.exports = function (localPort, remotePort) {
         yield openPort(localPort, remotePort);
       } catch (e) {
         const client = upnp.createClient();
-        yield Q.nbind(client.externalIp, client)()
-          .catch(function(err){
-            if (err && err.message == 'timeout') {
-              throw 'No UPnP gateway found: your node won\'t be reachable from the Internet. Use --noupnp option to avoid this message.'
-            }
-            throw err;
-          })
-          .finally(function() {
-            client.close();
-          });
+        try {
+          yield Q.nbind(client.externalIp, client)();
+        } catch (err) {
+          if (err && err.message == 'timeout') {
+            throw 'No UPnP gateway found: your node won\'t be reachable from the Internet. Use --noupnp option to avoid this message.'
+          }
+          throw err;
+        } finally {
+          client.close();
+        }
       }
       let interval, upnpService = {
         openPort: () => {

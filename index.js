@@ -122,7 +122,6 @@ module.exports.statics = {
     }
 
     for (const duniterModule of duniterModules) {
-      console.log('Registering module %s...', duniterModule.name);
       stack.registerDependency(duniterModule.required);
     }
 

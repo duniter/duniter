@@ -3,7 +3,6 @@
 const co = require('co');
 const _ = require('underscore');
 const Server = require('./server');
-const webmin  = require('./app/lib/streams/webmin');
 const logger = require('./app/lib/logger')('duniter');
 
 module.exports = function (dbConf, overConf) {
@@ -57,10 +56,6 @@ module.exports.statics = {
 
   },
 
-  enableHttpAdmin: (dbConf, overConf, httpLogs, wmHost, wmPort) => webmin(dbConf, overConf, [{
-    ip:  wmHost || 'localhost',
-    port: wmPort || 9220
-  }], httpLogs !== false),
   autoStack: () => {
 
     const cli = require('./app/cli');

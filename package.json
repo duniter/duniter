@@ -13,10 +13,9 @@
     "test": "test"
   },
   "scripts": {
-    "full-install": "npm install && git submodule init && git submodule update && cd web-ui && npm install",
     "test": "mocha --growl --timeout 20000 test test/fast test/fast/block test/integration test/",
     "start": "node bin/duniter start",
-    "webstart": "cd web-ui && parallelshell \"node ../bin/duniter webstart\" \"npm start\"",
+    "build": "cd \"node_modules/duniter-ui\" && npm install && npm run build",
     "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --timeout 20000 test test/fast test/fast/block test/integration test/"
   },
   "repository": {
@@ -58,6 +57,7 @@
     "multimeter": "0.1.1",
     "naclb": "1.3.7",
     "nnupnp": "1.0.2",
+    "node-pre-gyp": "^0.6.32",
     "optimist": "0.6.1",
     "parallelshell": "^2.0.0",
     "q": "1.4.1",
@@ -78,6 +78,7 @@
   },
   "devDependencies": {
     "coveralls": "2.11.4",
+    "duniter-ui": "0.2.0",
     "eslint": "0.21.1",
     "eslint-plugin-mocha": "0.2.2",
     "istanbul": "0.4.0",

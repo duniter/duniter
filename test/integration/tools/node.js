@@ -13,6 +13,7 @@ var Configuration = require('../../../app/lib/entity/configuration');
 var Peer          = require('../../../app/lib/entity/peer');
 var user   = require('./user');
 var http   = require('./http');
+const bma = require('../../../app/lib/streams/bma');
 
 var MEMORY_MODE = true;
 
@@ -203,7 +204,13 @@ function Node (dbName, options) {
         done && done(err);
       });
     })
-      .then((server) => server.listenToTheWeb());
+      .then((server) => co(function*() {
+        const bmapi = yield bma(server, [{
+          ip: server.conf.ipv4,
+          port: server.conf.port
+        }], true);
+        return bmapi.openConnections();
+      }));
   };
 
   function service(callback) {

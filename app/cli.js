@@ -40,16 +40,7 @@ module.exports = (programArgs) => {
       program.parse(programArgs);
 
       if (programArgs.length <= 2) {
-
-        logger.info('No command given, using default: duniter webwait');
-        return co(function *() {
-          try {
-            yield webWait();
-          } catch (e) {
-            logger.error(e);
-            throw Error("Exiting");
-          }
-        });
+        onReject('No command given.');
       }
 
       const res = yield currentCommand;
@@ -99,10 +90,6 @@ program
   .option('--addep <endpoint>', 'With `config` command, add given endpoint to the list of endpoints of this node')
   .option('--remep <endpoint>', 'With `config` command, remove given endpoint to the list of endpoints of this node')
 
-  // Webmin options
-  .option('--webmhost <host>', 'Local network interface to connect to (IP)')
-  .option('--webmport <port>', 'Local network port to connect', parseInt)
-
   .option('--salt <salt>', 'Key salt to generate this key\'s secret key')
   .option('--passwd <password>', 'Password to generate this key\'s secret key')
   .option('--participate <Y|N>', 'Participate to writing the blockchain')
@@ -149,7 +136,22 @@ program
   .action(subCommand(service((server, conf) => new Promise((resolve, reject) => {
     co(function*() {
         try {
-          yield duniter.statics.startNode(server, conf);
+          const bma = require('./lib/streams/bma');
+
+          logger.info(">> NODE STARTING");
+
+          // Public http interface
+          let bmapi = yield bma(server, null, conf.httplogs);
+
+          // Routing documents
+          server.routing();
+
+          // Services
+          yield server.startServices();
+          yield bmapi.openConnections();
+
+          logger.info('>> Server ready!');
+
         } catch (e) {
           reject(e);
         }
@@ -164,26 +166,6 @@ program
 program
   .command('restart')
   .description('Restart Duniter node daemon.')
-  .action(subCommand(needsToBeLaunchedByScript));
-
-program
-  .command('webwait')
-  .description('Start Duniter web admin.')
-  .action(subCommand(webWait));
-
-program
-  .command('webstart')
-  .description('Start Duniter node daemon and web admin.')
-  .action(subCommand(webStart));
-
-program
-  .command('webstop')
-  .description('Stop Duniter node daemon and web admin.')
-  .action(subCommand(needsToBeLaunchedByScript));
-
-program
-  .command('webrestart')
-  .description('Restart Duniter node daemon and web admin.')
   .action(subCommand(needsToBeLaunchedByScript));
 
 program
@@ -778,60 +760,12 @@ program
     throw Error("Exiting");
   });
 
-function webWait() {
-  return new Promise(() => {
-    co(function *() {
-      let webminapi = yield webInit(onService);
-      yield webminapi.httpLayer.openConnections();
-      yield new Promise(() => null); // Never stop this command, unless Ctrl+C
-    })
-      .catch(mainError);
-  });
-}
-
-function webStart() {
-  return co(function *() {
-    let webminapi = yield webInit(onService);
-    yield webminapi.httpLayer.openConnections();
-    yield webminapi.webminCtrl.startHTTP();
-    yield webminapi.webminCtrl.startAllServices();
-    yield webminapi.webminCtrl.regularUPnP();
-    yield new Promise(() => null); // Never stop this command, unless Ctrl+C
-  })
-    .catch(mainError);
-}
-
-function webInit(onService) {
-  return co(function *() {
-    var dbName = program.mdb;
-    var dbHome = program.home;
-    if (!program.memory) {
-      let params = yield directory.getHomeFS(program.memory, dbHome);
-      yield directory.createHomeIfNotExists(params.fs, params.home);
-
-      // Add log files for this instance
-      logger.addHomeLogs(params.home);
-    }
-    const server = duniter({home: dbHome, name: dbName}, commandLineConf());
-    yield server.plugFileSystem();
-    const cnf = yield server.loadConf();
-    yield configure(server, cnf);
-    onService && onService(server);
-    return yield duniter.statics.enableHttpAdmin({
-      home: dbHome,
-      name: dbName,
-      memory: program.memory
-    }, commandLineConf(), false, program.webmhost, program.webmport);
-  });
-}
-
-function mainError(err) {
-  if (err.stack) {
-    logger.error(err.stack);
-  }
-  logger.error(err.code || err.message || err);
-  throw Error("Exiting");
-}
+module.exports.addCommand = (command, requirements, promiseCallback) => {
+  program
+    .command(command.name)
+    .description(command.desc)
+    .action(subCommand(service(promiseCallback)));
+};
 
 function needsToBeLaunchedByScript() {
     logger.error('This command must not be launched directly, using duniter.sh script');

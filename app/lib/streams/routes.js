@@ -6,7 +6,7 @@ const dtos = require('./dtos');
 const sanitize = require('./sanitize');
 const limiter = require('../system/limiter');
 const constants = require('../../lib/constants');
-const logger = require('../logger')('webmin');
+const logger = require('../logger')('routes');
 
 const WebSocketServer = require('ws').Server;
 
@@ -68,33 +68,6 @@ module.exports = {
     httpMethods.httpGET(  prefix + '/ud/history/:pubkey/times/:from/:to',    dividend.getHistoryBetweenTimes,      dtos.UDHistory,      limiter.limitAsHighUsage());
   },
   
-  webmin: function(webminCtrl, app, httpMethods) {
-    httpMethods.httpGET(  '/webmin/summary',                   webminCtrl.summary,    dtos.AdminSummary);
-    httpMethods.httpGET(  '/webmin/summary/pow',               webminCtrl.powSummary, dtos.PoWSummary);
-    httpMethods.httpGET(  '/webmin/logs/export/:quantity',     webminCtrl.logsExport, dtos.LogLink);
-    httpMethods.httpPOST( '/webmin/key/preview',               webminCtrl.previewPubkey, dtos.PreviewPubkey);
-    httpMethods.httpGET(  '/webmin/server/reachable',          webminCtrl.isNodePubliclyReachable, dtos.Boolean);
-    httpMethods.httpGET(  '/webmin/server/http/start',         webminCtrl.startHTTP, dtos.Boolean);
-    httpMethods.httpGET(  '/webmin/server/http/stop',          webminCtrl.stopHTTP,  dtos.Boolean);
-    httpMethods.httpGET(  '/webmin/server/http/upnp/open',     webminCtrl.openUPnP,  dtos.Boolean);
-    httpMethods.httpGET(  '/webmin/server/http/upnp/regular',  webminCtrl.regularUPnP,  dtos.Boolean);
-    httpMethods.httpGET(  '/webmin/server/preview_next',       webminCtrl.previewNext,  dtos.Block);
-    httpMethods.httpPOST( '/webmin/server/send_conf',          webminCtrl.sendConf, dtos.Identity);
-    httpMethods.httpPOST( '/webmin/server/net_conf',           webminCtrl.applyNetworkConf, dtos.Boolean);
-    httpMethods.httpPOST( '/webmin/server/key_conf',           webminCtrl.applyNewKeyConf, dtos.Boolean);
-    httpMethods.httpPOST( '/webmin/server/cpu_conf',           webminCtrl.applyCPUConf, dtos.Boolean);
-    httpMethods.httpGET(  '/webmin/server/republish_selfpeer', webminCtrl.publishANewSelfPeer, dtos.Boolean);
-    httpMethods.httpPOST( '/webmin/server/test_sync',          webminCtrl.testPeer, dtos.Block);
-    httpMethods.httpPOST( '/webmin/server/start_sync',         webminCtrl.startSync, dtos.Boolean);
-    httpMethods.httpGET(  '/webmin/server/auto_conf_network',  webminCtrl.autoConfNetwork, dtos.Boolean);
-    httpMethods.httpGET(  '/webmin/server/services/start_all', webminCtrl.startAllServices, dtos.Boolean);
-    httpMethods.httpGET(  '/webmin/server/services/stop_all',  webminCtrl.stopAllServices, dtos.Boolean);
-    httpMethods.httpGET(  '/webmin/server/reset/data',         webminCtrl.resetData, dtos.Boolean);
-    httpMethods.httpGET(  '/webmin/network/interfaces',        webminCtrl.listInterfaces, dtos.NetworkInterfaces);
-    httpMethods.httpGETFile('/webmin/data/duniter_export',     webminCtrl.exportData);
-    httpMethods.httpPOST( '/webmin/data/duniter_import',       webminCtrl.importData);
-  },
-  
   bmaWS: function(server, prefix) {
     return (httpServer) => {
 
@@ -146,108 +119,6 @@ module.exports = {
             }
           } catch (e) {
             logger.error('error on ws mapSync:', e);
-          }
-        }));
-    };
-  },
-
-  webminWS: function(webminCtrl) {
-    return (httpServer) => {
-
-      // Socket for synchronization events
-      let wssEvents = new WebSocketServer({
-        server: httpServer,
-        path: '/webmin/ws'
-      });
-
-      let lastLogs = [];
-      wssEvents.on('connection', function connection(ws) {
-
-        ws.on('message', () => {
-          wssEvents.broadcast(JSON.stringify({
-            type: 'log',
-            value: lastLogs
-          }));
-        });
-
-        wssEvents.broadcast(JSON.stringify({
-          type: 'log',
-          value: lastLogs
-        }));
-
-        // The callback which write each new log message to websocket
-        logger.addCallbackLogs((level, msg, timestamp) => {
-          lastLogs.splice(0, Math.max(0, lastLogs.length - constants.WEBMIN_LOGS_CACHE + 1));
-          lastLogs.push({
-            timestamp: timestamp,
-            level: level,
-            msg: msg
-          });
-          wssEvents.broadcast(JSON.stringify({
-            type: 'log',
-            value: [{
-              timestamp: timestamp,
-              level: level,
-              msg: msg
-            }]
-          }));
-        });
-      });
-
-      wssEvents.broadcast = (data) => wssEvents.clients.forEach((client) => {
-        try {
-          client.send(data);
-        } catch (e) {
-          console.log(e);
-        }
-      });
-
-      // Forward blocks & peers
-      webminCtrl
-        .pipe(es.mapSync(function(data) {
-          // Broadcast block
-          if (data.download !== undefined) {
-            wssEvents.broadcast(JSON.stringify({
-              type: 'download',
-              value: data.download
-            }));
-          }
-          if (data.applied !== undefined) {
-            wssEvents.broadcast(JSON.stringify({
-              type: 'applied',
-              value: data.applied
-            }));
-          }
-          if (data.sync !== undefined) {
-            wssEvents.broadcast(JSON.stringify({
-              type: 'sync',
-              value: data.sync,
-              msg: (data.msg && (data.msg.message || data.msg))
-            }));
-          }
-          if (data.started !== undefined) {
-            wssEvents.broadcast(JSON.stringify({
-              type: 'started',
-              value: data.started
-            }));
-          }
-          if (data.stopped !== undefined) {
-            wssEvents.broadcast(JSON.stringify({
-              type: 'stopped',
-              value: data.stopped
-            }));
-          }
-          if (data.pulling !== undefined) {
-            wssEvents.broadcast(JSON.stringify({
-              type: 'pulling',
-              value: data.pulling
-            }));
-          }
-          if (data.pow !== undefined) {
-            wssEvents.broadcast(JSON.stringify({
-              type: 'pow',
-              value: data.pow
-            }));
           }
         }));
     };

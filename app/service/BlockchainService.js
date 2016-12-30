@@ -457,25 +457,5 @@ function BlockchainService (server) {
     return dal.getBlocksBetween(from, from + count - 1);
   });
 
-  const cleanMemFifo = async.queue((task, callback) => task(callback), 1);
-  let cleanMemFifoInterval = null;
-  this.regularCleanMemory = function (done) {
-    if (cleanMemFifoInterval)
-      clearInterval(cleanMemFifoInterval);
-    cleanMemFifoInterval = setInterval(() => cleanMemFifo.push(cleanMemory), 1000 * constants.MEMORY_CLEAN_INTERVAL);
-    cleanMemory(done);
-  };
-
-  this.stopCleanMemory = () => clearInterval(cleanMemFifoInterval);
-
-  const cleanMemory = (done) => {
-    dal.blockDAL.migrateOldBlocks()
-      .then(() => done())
-      .catch((err) => {
-        logger.warn(err);
-        done();
-      });
-  };
-
   this.changeProverCPUSetting = (cpu) => prover.changeCPU(cpu);
 }

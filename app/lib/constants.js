@@ -343,12 +343,9 @@ module.exports = {
   INVALIDATE_CORE_CACHE: true,
   WITH_SIGNATURES_AND_POW: true,
 
-  WEBMIN_LOGS_CACHE: 2000,
-
   NO_FORK_ALLOWED: false,
   FORK_ALLOWED: true,
 
-  MEMORY_CLEAN_INTERVAL: 60 * 60, // hourly
   SAFE_FACTOR: 3,
   BLOCKS_COLLECT_THRESHOLD: 30, // Blocks to collect from memory and persist
 

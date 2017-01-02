@@ -1,19 +1,20 @@
 "use strict";
 const co = require('co');
 const moment = require('moment');
-const hashf = require('./ucp/hashf');
-const dos2unix = require('./system/dos2unix');
-const rules = require('./rules');
-const constants = require('./constants');
-const keyring = require('./crypto/keyring');
-const rawer = require('./ucp/rawer');
+const hashf = require('./../ucp/hashf');
+const dos2unix = require('./../system/dos2unix');
+const querablep = require('./../querablep');
+const rules = require('./../rules/index');
+const constants = require('./../constants');
+const keyring = require('./../crypto/keyring');
+const rawer = require('./../ucp/rawer');
 
-const AUTOKILL_TIMEOUT_DELAY = 10 * 1000;
+let AUTOKILL_TIMEOUT_DELAY = 10 * 1000;
 const TURN_DURATION_IN_MILLISEC = 1000;
 const PAUSES_PER_TURN = 5;
 
 let timeoutAutoKill = null;
-let computing = false;
+let computing = querablep(Promise.resolve(null));
 let askedStop = false;
 
 // By default, we do not prefix the PoW by any number
@@ -26,47 +27,71 @@ process.on('uncaughtException', (err) => {
   process.send({error: err});
 });
 
+autoKillIfNoContact();
+
 process.on('message', (message) => co(function*() {
-  if (message.command == 'id') {
-    lastPub = message.pubkey;
-    id = message.identifier;
-    pSend({ powStatus: 'ready' });
-    autoKillIfNoContact();
-  }
-  else if (message.command == 'idle') {
-    autoKillIfNoContact();
-    pSend({ powStatus: 'idle' });
-  }
-  else if (message.command == 'ready') {
-    pSend({ powStatus: computing ? 'computing' : 'ready' });
-  }
-  else if (message.command == 'conf') {
-    if (message.conf) {
-      if (message.conf.cpu !== undefined) {
-        currentCPU = message.conf.cpu;
+
+  switch (message.command) {
+
+    case 'state':
+      answer(message, computing.isFulfilled() ? 'ready' : 'computing');
+      break;
+
+    case 'autokillTimeout':
+      AUTOKILL_TIMEOUT_DELAY = message.value;
+      answer(message, 'OK');
+      break;
+
+    case 'identify':
+      lastPub = message.value.pubkey;
+      id = message.value.identifier;
+      answer(message, 'OK');
+      break;
+
+    case 'pubkey': answer(message, lastPub);    break;
+    case 'id':     answer(message, id);         break;
+    case 'cpu':    answer(message, currentCPU); break;
+    case 'prefix': answer(message, prefix);     break;
+
+    case 'newPoW':
+      co(function*() {
+        yield computing;
+        const res = yield beginNewProofOfWork(message.value);
+        answer(message, res);
+      });
+      break;
+
+    case 'cancel':
+      if (computing.isFulfilled()) {
+        answer(message, 'ready');
+      } else {
+        askedStop = true;
+        answer(message, 'cancelling');
       }
-      if (message.conf.prefix !== undefined) {
-        prefix = parseInt(message.conf.prefix) * 10 * constants.NONCE_RANGE;
+      break;
+
+    case 'conf':
+      if (message.value.cpu !== undefined) {
+        currentCPU = message.value.cpu;
       }
-    }
+      if (message.value.prefix !== undefined) {
+        prefix = parseInt(message.value.prefix) * 10 * constants.NONCE_RANGE;
+      }
+      answer(message, { currentCPU, prefix });
+      break;
   }
-  else if (message.command == 'stop') {
-    if (!computing) {
-      pSend({ powStatus: 'ready' });
-    } else {
-      askedStop = true;
-    }
-  }
-  else if (message.newPoW) {
-    beginNewProofOfWork(message.newPoW);
-  }
+
+  // We received a message, we postpone the autokill protection trigger
+  autoKillIfNoContact();
+
 }));
 
 function beginNewProofOfWork(stuff) {
   askedStop = false;
-  computing = co(function*() {
+  computing = querablep(co(function*() {
     pSend({ powStatus: 'started block#' + stuff.block.number });
     let nonce = 0;
+    let foundBlock = null;
     const conf = stuff.conf;
     const block = stuff.block;
     const nonceBeginning = stuff.nonceBeginning;
@@ -138,7 +163,7 @@ function beginNewProofOfWork(stuff) {
                 found = pow[nbZeros].match(new RegExp('[0-' + highMark + ']'));
               }
               if (!found && nbZeros > 0 && j - 1 >= constants.PROOF_OF_WORK.MINIMAL_TO_SHOW) {
-                pSend({ pow: { found: false, pow: pow, block: block, nbZeros: nbZeros }});
+                pSend({ pow: { pow: pow, block: block, nbZeros: nbZeros }});
               }
               if (!found) {
                 i++;
@@ -163,25 +188,26 @@ function beginNewProofOfWork(stuff) {
       ]);
       turn++;
     }
+    block.hash = pow;
     block.signature = sig;
-    computing = false;
     if (askedStop) {
       askedStop = false;
       yield pSend({ pow: { canceled: true }});
       pSend({ powStatus: 'canceled block#' + block.number });
       pSend({ powStatus: 'ready' });
     } else {
-      yield pSend({
+      foundBlock = {
         pow: {
-          found: true,
           block: block,
           testsCount: testsCount,
           pow: pow
         }
-      });
+      };
       pSend({ powStatus: 'found' });
     }
-  });
+    return foundBlock;
+  }));
+  return computing;
 }
 
 function countDown(duration) {
@@ -209,6 +235,19 @@ function getBlockTime (block, conf, forcedTime) {
   return Math.max(medianTime, upperBound);
 }
 
+function answer(message, answer) {
+  return new Promise(function (resolve, reject) {
+    process.send({
+      uuid: message.uuid,
+      answer,
+      pubkey: lastPub
+    }, function (error) {
+      !error && resolve();
+      error && reject();
+    });
+  });
+}
+
 function pSend(stuff) {
   stuff.pubkey = lastPub;
   return new Promise(function (resolve, reject) {
@@ -225,7 +264,6 @@ function autoKillIfNoContact() {
   }
   // If the timeout is not cleared in some way, the process exits
   timeoutAutoKill = setTimeout(() => {
-    console.log('Killing engine %s #%s', lastPub, id);
     process.exit();
   }, AUTOKILL_TIMEOUT_DELAY);
 }

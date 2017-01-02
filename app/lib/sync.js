@@ -20,7 +20,7 @@ const makeQuerablePromise = require('../lib/querablep');
 
 const CONST_BLOCKS_CHUNK = 250;
 const EVAL_REMAINING_INTERVAL = 1000;
-const CONST_MAX_SIMULTANEOUS_DOWNLOADS = 50;
+const INITIAL_DOWNLOAD_SLOTS = 1;
 
 
 module.exports = Synchroniser;
@@ -166,7 +166,7 @@ function Synchroniser (server, host, port, conf, interactive) {
 
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = (askedCautious === true || localNumber >= 0);
-      const downloader = new P2PDownloader(localNumber, to, rCurrent.hash, CONST_MAX_SIMULTANEOUS_DOWNLOADS, peers, watcher);
+      const downloader = new P2PDownloader(localNumber, to, rCurrent.hash, peers, watcher);
 
       downloader.start();
 
@@ -560,9 +560,10 @@ function LoggerWatcher() {
 
 }
 
-function P2PDownloader(localNumber, to, toHash, maxParallelDownloads, peers, watcher) {
+function P2PDownloader(localNumber, to, toHash, givenPeers, watcher) {
 
   const that = this;
+  const peers = _.shuffle(givenPeers);
   const PARALLEL_PER_CHUNK = 1;
   const MAX_DELAY_PER_DOWNLOAD = 15000;
   const NO_NODES_AVAILABLE = "No node available for download";
@@ -578,9 +579,13 @@ function P2PDownloader(localNumber, to, toHash, maxParallelDownloads, peers, wat
   }));
 
   // Create slots of download, in a ready stage
-  let downloadSlots = Math.min(maxParallelDownloads, peers.length);
+  let downloadSlots = Math.min(INITIAL_DOWNLOAD_SLOTS, peers.length);
 
   let nodes = {};
+
+  let nbDownloadsTried = 0, nbDownloading = 0;
+  let lastAvgDelay = MAX_DELAY_PER_DOWNLOAD;
+  let aSlotWasAdded = false;
 
   /**
    * Get a list of P2P nodes to use for download.
@@ -599,8 +604,9 @@ function P2PDownloader(localNumber, to, toHash, maxParallelDownloads, peers, wat
           //   try { yield nodes[index - 1]; } catch (e) {}
           // }
           const node = yield p.connect();
-          // We initialize nodes with the worst possible notation
-          node.tta = MAX_DELAY_PER_DOWNLOAD;
+          // We initialize nodes with the near worth possible notation
+          node.tta = 1;
+          node.nbSuccess = 0;
           return node;
         }));
         chosens.push(nodes[index]);
@@ -631,8 +637,8 @@ function P2PDownloader(localNumber, to, toHash, maxParallelDownloads, peers, wat
     const parallelMax = Math.min(PARALLEL_PER_CHUNK, withGoodDelays.length);
     withGoodDelays = _.sortBy(withGoodDelays, (c) => c.tta);
     withGoodDelays = withGoodDelays.slice(0, parallelMax);
-    withGoodDelays.forEach((c) =>
-      c.tta = (c.tta * 2)) // We temporarily double the tta, because we make a request (if we send a request, obviously the node will need approx. tta time to answer))
+    // We temporarily augment the tta to avoid asking several times to the same node in parallel
+    withGoodDelays.forEach((c) => c.tta = MAX_DELAY_PER_DOWNLOAD);
     return withGoodDelays;
   });
 
@@ -649,6 +655,8 @@ function P2PDownloader(localNumber, to, toHash, maxParallelDownloads, peers, wat
       try {
         const start = Date.now();
         handler[chunkIndex] = node;
+        node.downloading = true;
+        nbDownloading++;
         watcher.writeStatus('Getting chunck #' + chunkIndex + '/' + (numberOfChunksToDownload - 1) + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + [node.host, node.port].join(':'));
         let blocks = yield node.getBlocks(count, from);
         node.ttas.push(Date.now() - start);
@@ -657,10 +665,51 @@ function P2PDownloader(localNumber, to, toHash, maxParallelDownloads, peers, wat
         // Average time to answer
         node.tta = Math.round(node.ttas.reduce((sum, tta) => sum + tta, 0) / node.ttas.length);
         watcher.writeStatus('GOT chunck #' + chunkIndex + '/' + (numberOfChunksToDownload - 1) + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + [node.host, node.port].join(':'));
+        node.nbSuccess++;
+
+        // Opening/Closing slots depending on the Interne connection
+        if (slots.length == downloadSlots) {
+          const peers = yield Object.values(nodes);
+          const downloading = _.filter(peers, (p) => p.downloading && p.ttas.length);
+          const currentAvgDelay = downloading.reduce((sum, c) => {
+            const tta = Math.round(c.ttas.reduce((sum, tta) => sum + tta, 0) / c.ttas.length);
+            return sum + tta;
+          }, 0) / downloading.length;
+          // Check the impact of an added node (not first time)
+          if (!aSlotWasAdded) {
+            // We try to add a node
+            const newValue = Math.min(peers.length, downloadSlots + 1);
+            if (newValue !== downloadSlots) {
+              downloadSlots = newValue;
+              aSlotWasAdded = true;
+              logger.info('AUGMENTED DOWNLOAD SLOTS! Now has %s slots', downloadSlots);
+            }
+          } else {
+            aSlotWasAdded = false;
+            const decelerationPercent = currentAvgDelay / lastAvgDelay - 1;
+            const addedNodePercent = 1 / nbDownloading;
+            logger.info('Deceleration = %s (%s/%s), AddedNodePercent = %s', decelerationPercent, currentAvgDelay, lastAvgDelay, addedNodePercent);
+            if (decelerationPercent > addedNodePercent) {
+              downloadSlots = Math.max(1, downloadSlots - 1); // We reduce the number of slots, but we keep at least 1 slot
+              logger.info('REDUCED DOWNLOAD SLOT! Now has %s slots', downloadSlots);
+            }
+          }
+          lastAvgDelay = currentAvgDelay;
+        }
+
+        nbDownloadsTried++;
+        nbDownloading--;
+        node.downloading = false;
+
         return blocks;
       } catch (e) {
-        // If a node throws an error, do not cancel the download
-        return new Promise((resolve, reject) => setTimeout(reject, MAX_DELAY_PER_DOWNLOAD));
+        nbDownloading--;
+        node.downloading = false;
+        nbDownloadsTried++;
+        node.ttas.push(MAX_DELAY_PER_DOWNLOAD + 1); // No more ask on this node
+        // Average time to answer
+        node.tta = Math.round(node.ttas.reduce((sum, tta) => sum + tta, 0) / node.ttas.length);
+        throw e;
       }
     })));
   });

@@ -23,10 +23,13 @@ const AbstractService = require('./AbstractService');
 const DONT_IF_MORE_THAN_FOUR_PEERS = true;
 const CONST_BLOCKS_CHUNK = 50;
 
+const programStart = Date.now();
+let pullingActualIntervalDuration = constants.PULLING_MINIMAL_DELAY;
+
 function PeeringService(server) {
 
   AbstractService.call(this);
-  let conf, dal, pair, selfPubkey, SYNC_BLOCK_INTERVAL;
+  let conf, dal, pair, selfPubkey;
 
   this.setConfDAL = (newConf, newDAL, newPair) => {
     dal = newDAL;
@@ -34,7 +37,6 @@ function PeeringService(server) {
     pair = newPair;
     this.pubkey = pair.publicKey;
     selfPubkey = this.pubkey;
-    SYNC_BLOCK_INTERVAL = conf.avgGenTime * constants.NETWORK.SYNC_BLOCK_INTERVAL;
   };
 
   let peer = null;
@@ -195,7 +197,7 @@ function PeeringService(server) {
   this.regularSyncBlock = function (done) {
     if (syncBlockInterval)
       clearInterval(syncBlockInterval);
-    syncBlockInterval = setInterval(()  => syncBlockFifo.push(syncBlock), 1000 * SYNC_BLOCK_INTERVAL);
+    syncBlockInterval = setInterval(()  => syncBlockFifo.push(syncBlock), 1000 * pullingActualIntervalDuration);
     syncBlock(done);
   };
 
@@ -642,7 +644,21 @@ function PeeringService(server) {
           }
           pullingEvent('end', current.number);
         }
-        logger.info('Will pull blocks from the network in %s min %s sec', Math.floor(SYNC_BLOCK_INTERVAL / 60), Math.floor(SYNC_BLOCK_INTERVAL % 60));
+
+        // Eventually change the interval duration
+        const minutesElapsed = Math.ceil((Date.now() - programStart) / (60 * 1000));
+        const FACTOR = Math.sin((minutesElapsed / constants.PULLING_INTERVAL_TARGET) * (Math.PI / 2));
+        // Make the interval always higher than before
+        const pullingTheoreticalIntervalNow = Math.max(parseInt(Math.max(FACTOR * constants.PULLING_INTERVAL_TARGET, constants.PULLING_MINIMAL_DELAY)), pullingActualIntervalDuration);
+        if (pullingTheoreticalIntervalNow !== pullingActualIntervalDuration) {
+          pullingActualIntervalDuration = pullingTheoreticalIntervalNow;
+          // Change the interval
+          if (syncBlockInterval)
+            clearInterval(syncBlockInterval);
+          syncBlockInterval = setInterval(()  => syncBlockFifo.push(syncBlock), 1000 * pullingActualIntervalDuration);
+        }
+        logger.info('Will pull blocks from the network in %s min %s sec', Math.floor(pullingActualIntervalDuration / 60), Math.floor(pullingActualIntervalDuration % 60));
+
         callback && callback();
       } catch(err) {
         pullingEvent('error');

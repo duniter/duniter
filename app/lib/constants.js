@@ -270,7 +270,6 @@ module.exports = {
       MAX: 20 // MAX Y blocks
     },
     SYNC_PEERS_INTERVAL: 3, // Every 3 block average generation time
-    SYNC_BLOCK_INTERVAL: 0.8, // Every 0.8 block average generation time
     TEST_PEERS_INTERVAL: 10 // In seconds
   },
   PROOF_OF_WORK: {
@@ -382,7 +381,10 @@ module.exports = {
   S_INDEX: 'SINDEX',
   C_INDEX: 'CINDEX',
   IDX_CREATE: 'CREATE',
-  IDX_UPDATE: 'UPDATE'
+  IDX_UPDATE: 'UPDATE',
+
+  PULLING_MINIMAL_DELAY: 10,
+  PULLING_INTERVAL_TARGET: 240
 };
 
 function exact (regexpContent) {

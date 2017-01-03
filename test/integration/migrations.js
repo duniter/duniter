@@ -77,7 +77,7 @@ describe("Migration", function() {
       res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
       res.should.have.property('history').property('sent').length(1);
       res.should.have.property('history').property('sending').length(0);
-      res.should.have.property('history').property('received').length(1); // The rest
+      res.should.have.property('history').property('received').length(0); // The rest is not shown since issues#728
       res.should.have.property('history').property('pending').length(0);
     }));
   }));
@@ -122,7 +122,7 @@ describe("Migration", function() {
       res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
       res.should.have.property('history').property('sent').length(1);
       res.should.have.property('history').property('sending').length(0);
-      res.should.have.property('history').property('received').length(1); // The rest
+      res.should.have.property('history').property('received').length(0); // The rest is not shown since issues#728
       res.should.have.property('history').property('pending').length(0);
     }));
   }));

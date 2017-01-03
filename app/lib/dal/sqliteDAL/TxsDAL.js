@@ -2,6 +2,7 @@
  * Created by cgeek on 22/08/15.
  */
 
+const _ = require('underscore');
 const Q = require('q');
 const co = require('co');
 const moment = require('moment');
@@ -120,9 +121,13 @@ function TxsDAL(driver) {
     written: true
   });
 
-  this.getLinkedWithRecipient = (pubkey) => this.sqlFind({
-    recipients: { $contains: pubkey },
-    written: true
+  this.getLinkedWithRecipient = (pubkey) => co(function*() {
+    const rows = yield that.sqlFind({
+      recipients: { $contains: pubkey },
+      written: true
+    });
+    // Which does not contains the key as issuer
+    return _.filter(rows, (row) => row.issuers.indexOf(pubkey) === -1);
   });
 
   this.getPendingWithIssuer = (pubkey) => this.sqlFind({

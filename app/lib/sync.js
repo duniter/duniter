@@ -89,7 +89,7 @@ function Synchroniser (server, host, port, conf, interactive) {
     return node.getCurrent();
   });
 
-  this.sync = (to, chunkLen, askedCautious, nopeers) => co(function*() {
+  this.sync = (to, chunkLen, askedCautious, nopeers, shufflePeers) => co(function*() {
 
     try {
 
@@ -166,7 +166,8 @@ function Synchroniser (server, host, port, conf, interactive) {
 
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = (askedCautious === true || localNumber >= 0);
-      const downloader = new P2PDownloader(localNumber, to, rCurrent.hash, peers, watcher);
+      const shuffledPeers = shufflePeers ? _.shuffle(peers) : peers;
+      const downloader = new P2PDownloader(localNumber, to, rCurrent.hash, shuffledPeers, watcher);
 
       downloader.start();
 
@@ -563,10 +564,9 @@ function LoggerWatcher() {
 
 }
 
-function P2PDownloader(localNumber, to, toHash, givenPeers, watcher) {
+function P2PDownloader(localNumber, to, toHash, peers, watcher) {
 
   const that = this;
-  const peers = _.shuffle(givenPeers);
   const PARALLEL_PER_CHUNK = 1;
   const MAX_DELAY_PER_DOWNLOAD = 15000;
   const NO_NODES_AVAILABLE = "No node available for download";

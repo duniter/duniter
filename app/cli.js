@@ -124,6 +124,7 @@ program
   .option('--cautious', 'Check blocks validity during sync (overrides --nocautious option)')
   .option('--nopeers', 'Do not retrieve peers during sync')
   .option('--nostdout', 'Disable stdout printing for `export-bc` command')
+  .option('--noshuffle', 'Disable peers shuffling for `sync` command')
 
   .option('--timeout <milliseconds>', 'Timeout to use when contacting peers', parseInt)
   .option('--httplogs', 'Enable HTTP logs')
@@ -209,7 +210,7 @@ program
       if (program.cautious) {
         cautious = true;
       }
-      yield server.synchronize(host, port, parseInt(to), 0, !program.nointeractive, cautious, program.nopeers);
+      yield server.synchronize(host, port, parseInt(to), 0, !program.nointeractive, cautious, program.nopeers, program.noshuffle);
       if (server) {
         yield server.disconnect();
       }

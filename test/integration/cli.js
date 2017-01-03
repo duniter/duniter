@@ -129,7 +129,7 @@ describe("CLI", function() {
 
   it('sync 2200 blocks (fast)', () => co(function*() {
     yield execute(['reset', 'data']);
-    yield execute(['sync', fakeServer.host, fakeServer.port, '2200', '--nocautious', '--nointeractive']);
+    yield execute(['sync', fakeServer.host, fakeServer.port, '2200', '--nocautious', '--nointeractive', '--noshuffle']);
     const res = yield execute(['export-bc', '--nostdout']);
     res[res.length - 1].should.have.property('number').equal(2200);
     res.should.have.length(2200 + 1);

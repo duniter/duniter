@@ -293,6 +293,9 @@ function Synchroniser (server, host, port, conf, interactive) {
                 if (bindexSize && bindex.length >= 2 * bindexSize) {
                   // We trim it, not necessary to store it all (we already store the full blocks)
                   bindex.splice(0, bindexSize);
+
+                  // Process triming continuously to avoid super long ending of sync
+                  yield dal.trimIndexes(bindex[0].number);
                 }
               } else {
 

@@ -533,6 +533,7 @@ function Server (dbConf, overrideConf) {
     if (that.conf.participate) {
       that.stopBlockComputation();
     }
+    return that.PeeringService.stopRegular();
   });
 }
 

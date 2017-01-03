@@ -531,6 +531,20 @@ function PeeringService(server) {
   }
 
   function syncBlock(callback, pubkey) {
+
+    // Eventually change the interval duration
+    const minutesElapsed = Math.ceil((Date.now() - programStart) / (60 * 1000));
+    const FACTOR = Math.sin((minutesElapsed / constants.PULLING_INTERVAL_TARGET) * (Math.PI / 2));
+    // Make the interval always higher than before
+    const pullingTheoreticalIntervalNow = Math.max(parseInt(Math.max(FACTOR * constants.PULLING_INTERVAL_TARGET, constants.PULLING_MINIMAL_DELAY)), pullingActualIntervalDuration);
+    if (pullingTheoreticalIntervalNow !== pullingActualIntervalDuration) {
+      pullingActualIntervalDuration = pullingTheoreticalIntervalNow;
+      // Change the interval
+      if (syncBlockInterval)
+        clearInterval(syncBlockInterval);
+      syncBlockInterval = setInterval(()  => syncBlockFifo.push(syncBlock), 1000 * pullingActualIntervalDuration);
+    }
+
     currentSyncP = querablep(co(function *() {
       try {
         let current = yield dal.getCurrentBlockOrNull();
@@ -643,19 +657,6 @@ function PeeringService(server) {
             }
           }
           pullingEvent('end', current.number);
-        }
-
-        // Eventually change the interval duration
-        const minutesElapsed = Math.ceil((Date.now() - programStart) / (60 * 1000));
-        const FACTOR = Math.sin((minutesElapsed / constants.PULLING_INTERVAL_TARGET) * (Math.PI / 2));
-        // Make the interval always higher than before
-        const pullingTheoreticalIntervalNow = Math.max(parseInt(Math.max(FACTOR * constants.PULLING_INTERVAL_TARGET, constants.PULLING_MINIMAL_DELAY)), pullingActualIntervalDuration);
-        if (pullingTheoreticalIntervalNow !== pullingActualIntervalDuration) {
-          pullingActualIntervalDuration = pullingTheoreticalIntervalNow;
-          // Change the interval
-          if (syncBlockInterval)
-            clearInterval(syncBlockInterval);
-          syncBlockInterval = setInterval(()  => syncBlockFifo.push(syncBlock), 1000 * pullingActualIntervalDuration);
         }
         logger.info('Will pull blocks from the network in %s min %s sec', Math.floor(pullingActualIntervalDuration / 60), Math.floor(pullingActualIntervalDuration % 60));
 

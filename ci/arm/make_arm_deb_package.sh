@@ -23,17 +23,12 @@ SRC=`pwd`
 echo $SRC
 
 # Install UI
-cd web-ui
-git submodule init
-git submodule update
-npm install
-cd ..
+npm install duniter-ui
+rm -Rf node_modules/duniter-ui/node_modules
 
 cd ..
 mkdir -p duniter_release/sources
 cp -R ${SRC}/* duniter_release/sources/
-rm -Rf duniter_release/sources/web-ui/node_modules
-rm -Rf duniter_release/sources/web-ui/bower_components
 
 # Creating DEB packaging
 mv duniter_release/sources/ci/travis/debian duniter-${ARCH}

@@ -20,12 +20,6 @@ after_test:
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] powershell .\\ci\\appveyor\\inno_setup.ps1
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %APPDATA%\..\Local\NuGet\Cache
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set PATH="C:\Program Files (x86)\Inno Setup 5";%PATH%
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] git submodule init
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] git submodule update
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd "web-ui"
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] dir
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm install
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ..
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set SRC=%cd%
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] echo %SRC%
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] copy misc\MSVSVersion.py %APPDATA%\npm\node_modules\nw-gyp\gyp\pylib\gyp\MSVSVersion.py
@@ -54,6 +48,8 @@ after_test:
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] copy %cd%\lib\binding\node-webkit-%NW_RELEASE%-win32-x64\node_sqlite3.node %cd%\lib\binding\node-v%ADDON_VERSION%-win32-x64\node_sqlite3.node /Y
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ../..
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm prune --production
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm install duniter-ui
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\node_modules\duniter-ui\node_modules
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ..
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] mkdir duniter_release
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW=nwjs-%NW_RELEASE%-win-x64
@@ -66,8 +62,6 @@ after_test:
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] mkdir %cd%\duniter_release\sources
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] xcopy %SRC%\gui\* %cd%\duniter_release\nw\ /s /e
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] xcopy %SRC%\* %cd%\duniter_release\sources\ /s /e
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\duniter_release\sources\web-ui\node_modules
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\duniter_release\sources\web-ui\bower_components
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] iscc %cd%\duniter_release\sources\duniter.iss /DROOT_PATH=%cd%\duniter_release
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] move %cd%\duniter_release\Duniter.exe %cd%\duniter\duniter-desktop-%APPVEYOR_REPO_TAG_NAME%-windows-x64.exe
 

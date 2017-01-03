@@ -24,13 +24,8 @@ if [[ ! -f before_deploy ]]; then
   cp -r $SRC npm_ # This one should no more be touched
 
   # Install UI (common to desktop and server)
-  cd $SRC/web-ui
-  git submodule init
-  git submodule update
-  npm install
-  rm -Rf node_modules
-  rm -Rf bower_components
-  cd ..
+  npm install duniter-ui
+  rm -Rf node_modules/duniter-ui/node_modules
 
   cd ..
   cp -r $SRC desktop_

@@ -99,12 +99,13 @@ function SIndexDAL(driver) {
 
   this.trimConsumedSource = (belowNumber) => co(function*() {
     const toDelete = yield that.query('SELECT * FROM ' + that.table + ' WHERE consumed AND CAST(written_on as int) < ?', [belowNumber]);
+    const queries = [];
     for (const row of toDelete) {
       const sql = "DELETE FROM " + that.table + " " +
         "WHERE identifier like '" + row.identifier + "' " +
-        (toDelete.tx ? 'AND tx like = \'' + toDelete.tx + '\'' : 'AND tx IS NULL ') +
         "AND pos = " + row.pos;
-      yield that.exec(sql);
+      queries.push(sql);
     }
+    yield that.exec(queries.join(';\n'));
   });
 }

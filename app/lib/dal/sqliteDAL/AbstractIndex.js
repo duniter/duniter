@@ -15,7 +15,10 @@ function AbstractIndex() {
   const that = this;
 
   this.trimRecords = (belowNumber) => co(function*() {
-    const belowRecords = yield that.query('SELECT * FROM ' + that.table + ' WHERE CAST(written_on as int) < ?', [belowNumber]);
+    const belowRecords = yield that.query('SELECT COUNT(*) as nbRecords, pub FROM ' + that.table + ' ' +
+      'WHERE CAST(written_on as int) < ? ' +
+      'GROUP BY pub ' +
+      'HAVING nbRecords > 1', [belowNumber]);
     const reducedByPub = indexer.DUP_HELPERS.reduceBy(belowRecords, ['pub']);
     for (const rec of reducedByPub) {
       const recordsOfPub = yield that.query('SELECT * FROM ' + that.table + ' WHERE pub = ?', [rec.pub]);

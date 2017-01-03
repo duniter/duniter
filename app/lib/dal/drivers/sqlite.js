@@ -80,7 +80,12 @@ function SQLiteDriver(path) {
         }
         reject(err);
       });
-      db.close();
+      try {
+        db.close();
+      } catch (e) {
+        logger.error(e);
+        throw e;
+      }
     });
   });
 }

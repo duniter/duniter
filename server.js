@@ -441,11 +441,11 @@ function Server (dbConf, overrideConf) {
    * @param interactive Tell if the loading bars should be used for console output.
    * @param askedCautious If true, force the verification of each downloaded block. This is the right way to have a valid blockchain for sure.
    * @param nopeers If true, sync will omit to retrieve peer documents.
-   * @param shufflePeers If true, sync will shuffle the retrieved peers before downloading on them.
+   * @param noShufflePeers If true, sync will NOT shuffle the retrieved peers before downloading on them.
    */
-  this.synchronize = (onHost, onPort, upTo, chunkLength, interactive, askedCautious, nopeers, shufflePeers) => {
+  this.synchronize = (onHost, onPort, upTo, chunkLength, interactive, askedCautious, nopeers, noShufflePeers) => {
     const remote = new Synchroniser(that, onHost, onPort, that.conf, interactive === true);
-    const syncPromise = remote.sync(upTo, chunkLength, askedCautious, nopeers, shufflePeers);
+    const syncPromise = remote.sync(upTo, chunkLength, askedCautious, nopeers, noShufflePeers === true);
     return {
       flow: remote,
       syncPromise: syncPromise

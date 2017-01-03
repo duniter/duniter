@@ -89,7 +89,7 @@ function Synchroniser (server, host, port, conf, interactive) {
     return node.getCurrent();
   });
 
-  this.sync = (to, chunkLen, askedCautious, nopeers, shufflePeers) => co(function*() {
+  this.sync = (to, chunkLen, askedCautious, nopeers, noShufflePeers) => co(function*() {
 
     try {
 
@@ -166,7 +166,7 @@ function Synchroniser (server, host, port, conf, interactive) {
 
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = (askedCautious === true || localNumber >= 0);
-      const shuffledPeers = shufflePeers ? _.shuffle(peers) : peers;
+      const shuffledPeers = noShufflePeers ? peers : _.shuffle(peers);
       const downloader = new P2PDownloader(localNumber, to, rCurrent.hash, shuffledPeers, watcher);
 
       downloader.start();

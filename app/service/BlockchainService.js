@@ -136,7 +136,7 @@ function BlockchainService (server) {
       conf.currency = obj.currency;
     }
     try {
-      Transaction.statics.setIssuers(obj.transactions);
+      Transaction.statics.cleanSignatories(obj.transactions);
     }
     catch (e) {
         throw e;

@@ -40,13 +40,12 @@ function TxsDAL(driver) {
     'unlocks',
     'outputs',
     'issuers',
-    'signatories',
     'signatures',
     'recipients',
     'output_base',
     'output_amount'
   ];
-  this.arrays = ['inputs','unlocks','outputs','issuers','signatories','signatures','recipients'];
+  this.arrays = ['inputs','unlocks','outputs','issuers','signatures','recipients'];
   this.booleans = ['written','removed'];
   this.pkFields = ['hash'];
   this.translated = {};
@@ -65,7 +64,6 @@ function TxsDAL(driver) {
       'unlocks TEXT NOT NULL,' +
       'outputs TEXT NOT NULL,' +
       'issuers TEXT NOT NULL,' +
-      'signatories TEXT NOT NULL,' +
       'signatures TEXT NOT NULL,' +
       'recipients TEXT NOT NULL,' +
       'written BOOLEAN NOT NULL,' +

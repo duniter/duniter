@@ -195,7 +195,7 @@ function Block(json) {
     const currency = this.currency;
     this.transactions.forEach((simpleTx) => {
       const tx = {};
-      tx.issuers = simpleTx.signatories || [];
+      tx.issuers = simpleTx.issuers || [];
       tx.signatures = simpleTx.signatures || [];
       // Inputs
       tx.inputs = [];

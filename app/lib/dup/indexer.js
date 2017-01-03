@@ -215,7 +215,6 @@ const indexer = module.exports = {
     }
     for (const obj of block.transactions) {
       obj.currency = block.currency;
-      obj.issuers = obj.signatories;
       const tx = new Transaction(obj);
       const txObj = tx.getTransaction();
       const txHash = tx.getHash(true);

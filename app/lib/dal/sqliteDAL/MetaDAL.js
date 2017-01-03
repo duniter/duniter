@@ -196,6 +196,15 @@ function MetaDAL(driver) {
         yield txsDAL.saveEntity(tx);
       }
     }),
+
+    17: () => co(function *() {
+      let txsDAL = new (require('./TxsDAL'))(driver);
+      try {
+        yield txsDAL.exec('ALTER TABLE txs DROP COLUMN signatories');
+      } catch (e) {
+        logger.debug(e);
+      }
+    })
   };
 
   this.init = () => co(function *() {

@@ -165,7 +165,7 @@ function splitAndMatch (separator, regexp) {
 
 function extractTransactions(raw, obj) {
   const regexps = {
-    "signatories": constants.TRANSACTION.SENDER,
+    "issuers": constants.TRANSACTION.SENDER,
     "inputs": obj.version > 2 ? constants.TRANSACTION.SOURCE_V3 : constants.TRANSACTION.SOURCE,
     "unlocks": constants.TRANSACTION.UNLOCK,
     "outputs": constants.TRANSACTION.TARGET,
@@ -182,7 +182,7 @@ function extractTransactions(raw, obj) {
       const currentTX = { raw: line + '\n' };
       const sp = line.split(':');
       const version = parseInt(sp[1]);
-      const nbSignatories = parseInt(sp[2]);
+      const nbIssuers = parseInt(sp[2]);
       const nbInputs = parseInt(sp[3]);
       const nbUnlocks = parseInt(sp[4]);
       const nbOutputs = parseInt(sp[5]);
@@ -195,32 +195,32 @@ function extractTransactions(raw, obj) {
       }
       currentTX.locktime = parseInt(sp[7]);
       const linesToExtract = {
-        signatories: {
+        issuers: {
           start: start,
-          end: (start - 1) + nbSignatories
+          end: (start - 1) + nbIssuers
         },
         inputs: {
-          start: start + nbSignatories,
-          end: (start - 1) + nbSignatories + nbInputs
+          start: start + nbIssuers,
+          end: (start - 1) + nbIssuers + nbInputs
         },
         unlocks: {
-          start: start + nbSignatories + nbInputs,
-          end: (start - 1) + nbSignatories + nbInputs + nbUnlocks
+          start: start + nbIssuers + nbInputs,
+          end: (start - 1) + nbIssuers + nbInputs + nbUnlocks
         },
         outputs: {
-          start: start + nbSignatories + nbInputs + nbUnlocks,
-          end: (start - 1) + nbSignatories + nbInputs + nbUnlocks + nbOutputs
+          start: start + nbIssuers + nbInputs + nbUnlocks,
+          end: (start - 1) + nbIssuers + nbInputs + nbUnlocks + nbOutputs
         },
         comments: {
-          start: start + nbSignatories + nbInputs + nbUnlocks + nbOutputs,
-          end: (start - 1) + nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment
+          start: start + nbIssuers + nbInputs + nbUnlocks + nbOutputs,
+          end: (start - 1) + nbIssuers + nbInputs + nbUnlocks + nbOutputs + hasComment
         },
         signatures: {
-          start: start + nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment,
-          end: (start - 1) + 2 * nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment
+          start: start + nbIssuers + nbInputs + nbUnlocks + nbOutputs + hasComment,
+          end: (start - 1) + 2 * nbIssuers + nbInputs + nbUnlocks + nbOutputs + hasComment
         }
       };
-      ['signatories', 'inputs', 'unlocks', 'outputs', 'comments', 'signatures'].forEach((prop) => {
+      ['issuers', 'inputs', 'unlocks', 'outputs', 'comments', 'signatures'].forEach((prop) => {
         currentTX[prop] = currentTX[prop] || [];
         for (let j = linesToExtract[prop].start; j <= linesToExtract[prop].end; j++) {
           const line = lines[i + j];
@@ -239,7 +239,7 @@ function extractTransactions(raw, obj) {
       currentTX.hash = hashf(rawer.getTransaction(currentTX)).toUpperCase();
       // Add to txs array
       transactions.push(currentTX);
-      i = i + (currentTX.version > 2 ? 1 : 0) + 2 * nbSignatories + nbInputs + nbUnlocks + nbOutputs + hasComment;
+      i = i + (currentTX.version > 2 ? 1 : 0) + 2 * nbIssuers + nbInputs + nbUnlocks + nbOutputs + hasComment;
     } else {
       // Not a transaction header, stop reading
       i = lines.length;

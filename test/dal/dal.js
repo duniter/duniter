@@ -30,10 +30,10 @@ var mocks = {
     "transactions" : [
       {
         "version" : constants.DOCUMENTS_VERSION,
-        "hash": "E65B13D52D5F5F82881C831D5A43FFF624130066",
-        "signatories" : [
+        "issuers" : [
           "Ecp2suUYtgZzih816mi1bH1JjiaUFNoX2oe2nNvTocc3"
         ],
+        "hash": "E65B13D52D5F5F82881C831D5A43FFF624130066",
         "inputs" : [
           "0:D:714:00000982118DF0D23E3B6A8A60A894386948E00A:100"
         ],
@@ -48,10 +48,10 @@ var mocks = {
       },
       {
         "version" : constants.DOCUMENTS_VERSION,
-        "hash": "CB856DBE7A1D39CB37F5EA9962059CD44F903AD5",
-        "signatories" : [
+        "issuers" : [
           "Ecp2suUYtgZzih816mi1bH1JjiaUFNoX2oe2nNvTocc3"
         ],
+        "hash": "CB856DBE7A1D39CB37F5EA9962059CD44F903AD5",
         "inputs" : [
           "0:T:728:CBE88F0F473877333730D40E3940A648D8B2EFC7:23"
         ],
@@ -67,7 +67,7 @@ var mocks = {
       {
         "version" : constants.DOCUMENTS_VERSION,
         "hash": "18D1CDBCB9B77F6A7409F2BA5F53301FF3307850",
-        "signatories" : [
+        "issuers" : [
           "Ecp2suUYtgZzih816mi1bH1JjiaUFNoX2oe2nNvTocc3"
         ],
         "inputs" : [
@@ -86,7 +86,7 @@ var mocks = {
       {
         "version" : constants.DOCUMENTS_VERSION,
         "hash": "3CC9AA2B8EB657E7A2A31DBC3379B29064551B1C",
-        "signatories" : [
+        "issuers" : [
           "ERzNcJmHpdqeLAehYwktwhrGeGKd8DVy4ZhhgdhYtE5M"
         ],
         "inputs" : [
@@ -177,7 +177,7 @@ describe("DAL", function(){
   it('should have DB version 15', () => co(function *() {
     let version = yield fileDAL.getDBVersion();
     should.exist(version);
-    version.should.equal(17);
+    version.should.equal(18);
   }));
 
   it('should have no peer in a first time', function(){

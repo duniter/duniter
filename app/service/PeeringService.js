@@ -567,19 +567,19 @@ function PeeringService(server) {
                 // Get block of given peer with given block number
                 getLocalBlock: (number) => dal.getBlock(number),
 
-                // Get block of given peer with given block number
-                getRemoteBlock: (thePeer, number) => co(function *() {
-                  let block = null;
-                  try {
-                    block = yield thePeer.getBlock(number);
-                    Transaction.statics.setIssuers(block.transactions);
-                  } catch (e) {
-                    if (e.httpCode != 404) {
-                      throw e;
-                    }
+              // Get block of given peer with given block number
+              getRemoteBlock: (thePeer, number) => co(function *() {
+                let block = null;
+                try {
+                  block = yield thePeer.getBlock(number);
+                  Transaction.statics.cleanSignatories(block.transactions);
+                } catch (e) {
+                  if (e.httpCode != 404) {
+                    throw e;
                   }
-                  return block;
-                }),
+                }
+                return block;
+              }),
 
                 // Simulate the adding of a single new block on local blockchain
                 applyMainBranch: (block) => co(function *() {

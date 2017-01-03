@@ -470,7 +470,6 @@ function BlockchainContext() {
     return co(function *() {
       for (const obj of block.transactions) {
         obj.currency = block.currency;
-        obj.issuers = obj.signatories;
         let tx = new Transaction(obj);
         yield dal.saveTransaction(tx);
       }
@@ -583,7 +582,6 @@ function BlockchainContext() {
   this.deleteTransactions = (block) => co(function*() {
     for (const obj of block.transactions) {
       obj.currency = block.currency;
-      obj.issuers = obj.signatories;
       const tx = new Transaction(obj);
       const txHash = tx.getHash();
       yield dal.removeTxByHash(txHash);

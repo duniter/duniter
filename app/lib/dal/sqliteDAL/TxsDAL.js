@@ -117,14 +117,12 @@ function TxsDAL(driver) {
 
   this.getLinkedWithIssuer = (pubkey) => this.sqlFind({
     issuers: { $contains: pubkey },
-    written: true,
-    removed: false
+    written: true
   });
 
   this.getLinkedWithRecipient = (pubkey) => this.sqlFind({
     recipients: { $contains: pubkey },
-    written: true,
-    removed: false
+    written: true
   });
 
   this.getPendingWithIssuer = (pubkey) => this.sqlFind({

@@ -2,7 +2,6 @@
 const util         = require('util');
 const stream       = require('stream');
 const co           = require('co');
-const Q            = require('q');
 const _            = require('underscore');
 const moment       = require('moment');
 const contacter    = require('./contacter');
@@ -13,6 +12,7 @@ const logger       = require('./logger')('sync');
 const rawer        = require('./ucp/rawer');
 const constants    = require('../lib/constants');
 const Block        = require('../lib/entity/block');
+const Transaction  = require('../lib/entity/transaction');
 const Peer         = require('../lib/entity/peer');
 const multimeter   = require('multimeter');
 const pulling      = require('../lib/pulling');
@@ -206,6 +206,20 @@ function Synchroniser (server, host, port, conf, interactive) {
 
         // Get block of given peer with given block number
         getLocalBlock: (number) => dal.getBlock(number),
+
+        // Get block of given peer with given block number
+        getRemoteBlock: (thePeer, number) => co(function *() {
+          let block = null;
+          try {
+            block = yield node.getBlock(number);
+            Transaction.statics.cleanSignatories(block.transactions);
+          } catch (e) {
+            if (e.httpCode != 404) {
+              throw e;
+            }
+          }
+          return block;
+        }),
 
         downloadBlocks: (thePeer, number) => co(function *() {
           // Note: we don't care about the particular peer asked by the method. We use the network instead.

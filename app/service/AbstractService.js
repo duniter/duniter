@@ -10,6 +10,11 @@ const fifo = async.queue(function (task, callback) {
 module.exports = function AbstractService () {
 
   /**
+   * Gets the queue object for advanced flow control.
+   */
+  this.getFIFO = () => fifo;
+
+  /**
    * Adds a promise to a FIFO stack of promises, so the given promise will be executed against a shared FIFO stack.
    * @param p
    * @returns {Q.Promise<T>} A promise wrapping the promise given in the parameter.

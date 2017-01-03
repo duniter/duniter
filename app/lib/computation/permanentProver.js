@@ -60,10 +60,7 @@ function PermanentProver(server) {
           }
           const version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
           const trial = yield server.getBcContext().getIssuerPersonalizedDifficulty(version, selfPubkey);
-          if (trial > (current.powMin + constants.POW_MAXIMUM_ACCEPTABLE_HANDICAP)) {
-            logger.debug('Trial = %s, powMin = %s, pubkey = %s', trial, current.powMin, selfPubkey.slice(0, 6));
-            throw 'Too high difficulty: waiting for other members to write next block';
-          }
+          checkTrialIsNotTooHigh(trial, current, selfPubkey);
           const lastIssuedByUs = current.issuer == selfPubkey;
           const pullingPromise = server.PeeringService.pullingPromise();
           if (pullingPromise && !pullingPromise.isFulfilled()) {
@@ -106,10 +103,13 @@ function PermanentProver(server) {
             // The generation
             co(function*() {
               try {
+                const current = yield server.dal.getCurrentBlockOrNull();
+                const selfPubkey = server.keyPair.publicKey;
                 const block2 = yield server.BlockchainService.generateNext();
-                const trial2 = yield server.getBcContext().getIssuerPersonalizedDifficulty(block2.version, server.keyPair.publicKey);
+                const trial2 = yield server.getBcContext().getIssuerPersonalizedDifficulty(block2.version, selfPubkey);
+                checkTrialIsNotTooHigh(trial2, current, selfPubkey);
                 lastComputedBlock = yield server.BlockchainService.makeNextBlock(block2, trial2);
-                yield onBlockCallback(lastComputedBlock); 
+                yield onBlockCallback(lastComputedBlock);
               } catch (e) {
                 logger.warn('The proof-of-work generation was canceled: %s', (e && e.message) || e || 'unkonwn reason');
               }
@@ -174,4 +174,12 @@ function PermanentProver(server) {
   });
 
   this.onBlockComputed = (callback) => onBlockCallback = callback;
+
+  function checkTrialIsNotTooHigh(trial, current, selfPubkey) {
+    if (trial > (current.powMin + constants.POW_MAXIMUM_ACCEPTABLE_HANDICAP)) {
+      logger.debug('Trial = %s, powMin = %s, pubkey = %s', trial, current.powMin, selfPubkey.slice(0, 6));
+      throw 'Too high difficulty: waiting for other members to write next block';
+    }
+  }
 }
+

@@ -38,13 +38,26 @@ switch (process.argv[2]) {
     });
     break;
 
+  case "webstart":
+    daemon = getDaemon('webstart');
+    start(daemon);
+    break;
+
+  case "webrestart":
+    daemon = getDaemon('webstart');
+    daemon.stop(function(err) {
+      err && console.error(err);
+      start(daemon);
+    });
+    break;
+
   case "logs":
     console.log(directory.INSTANCE_HOMELOG_FILE);
     process.exit(0);
     break;
 
   default:
-    console.log("Usage: [start|stop|restart]");
+    console.log("Usage: [start|stop|restart|webstart|webrestart]");
 }
 
 function getDaemon(overrideCommand) {

@@ -44,6 +44,7 @@
     "commander": "2.9.0",
     "cors": "2.8.1",
     "daemonize2": "0.4.2",
+    "ddos": "0.1.16",
     "errorhandler": "1.4.3",
     "event-stream": "3.3.4",
     "express": "4.14.0",

@@ -5,6 +5,7 @@ const os = require('os');
 const Q = require('q');
 const _ = require('underscore');
 const upnp = require('nnupnp');
+const ddos = require('ddos');
 const http = require('http');
 const express = require('express');
 const morgan = require('morgan');
@@ -99,6 +100,14 @@ module.exports = {
       }));
     }
 
+    // DDOS protection
+    const whitelist = interfaces.map(i => i.ip);
+    if (whitelist.indexOf('127.0.0.1') === -1) {
+      whitelist.push('127.0.0.1');
+    }
+    const ddosInstance = new ddos({ whitelist });
+    app.use(ddosInstance.express);
+
     // CORS for **any** HTTP request
     app.use(cors());
 
@@ -164,6 +173,8 @@ module.exports = {
 
     // Return API
     return {
+
+      getDDOS: () => ddosInstance,
 
       closeConnections: () => co(function *() {
         for (let i = 0, len = httpServers.length; i < len; i++) {

@@ -85,7 +85,7 @@ if [[ ! -f before_deploy ]]; then
   cd ..
 
   # -------------------------------------------------
-  # Build Desktop version (Node.js is embedded, not Nw.js)
+  # Build Desktop version (Nw.js is embedded)
   # -------------------------------------------------
 
   # Create .deb tree + package it
@@ -108,7 +108,7 @@ if [[ ! -f before_deploy ]]; then
   mv duniter-x64.deb ../duniter-desktop-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
 
   # -------------------------------------------------
-  # Build Desktop version (Node.js is embedded, not Nw.js)
+  # Build Server version (Node.js is embedded, not Nw.js)
   # -------------------------------------------------
 
   # Remove Nw.js
@@ -118,6 +118,7 @@ if [[ ! -f before_deploy ]]; then
   cd desktop_release/sources/
   rm -rf node_modules
   npm install --production
+  npm install duniter-ui --production
 
   # Download Node.js and package it with the sources
   wget http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz

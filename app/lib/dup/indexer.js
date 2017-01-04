@@ -423,7 +423,7 @@ const indexer = module.exports = {
 
     // BR_G08
     if (HEAD.number > 0) {
-      HEAD.medianTime = average(yield range(1, Math.min(conf.medianTimeBlocks, HEAD.number), 'time')); // TODO: median
+      HEAD.medianTime = Math.max(HEAD_1.medianTime, average(yield range(1, Math.min(conf.medianTimeBlocks, HEAD.number), 'time')));
     } else {
       HEAD.medianTime = HEAD.time;
     }

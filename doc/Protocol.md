@@ -1399,7 +1399,7 @@ Function references:
 * *MEDIAN* computes the median value in a list of values
 * *MAX* computes the maximum value in a list of values
 
-> If values count is even, the median is computed over the 2 centered values by an arithmetical median on them, ceil rounded.
+> If values count is even, the median is computed over the 2 centered values by an arithmetical median on them, *NOT* rounded.
 
 * *UNIQ* returns a list of the unique values in a list of values
 * *INTEGER_PART* return the integer part of a number

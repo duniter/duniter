@@ -72,7 +72,7 @@ function PowEngine() {
     if (os.arch().match(/arm/)) {
       cpu /= 2; // Don't know exactly why is ARM so much saturated by PoW, so let's divide by 2
     }
-    ask('newPoW', { block, nonceBeginning, zeros, highMark, pair, forcedTime, conf: { medianTimeBlocks, avgGenTime, cpu } });
+    return ask('newPoW', { block, nonceBeginning, zeros, highMark, pair, forcedTime, conf: { medianTimeBlocks, avgGenTime, cpu } });
   };
 
   this.status = () => ask('state');

@@ -8,27 +8,27 @@ const SUCCESS = true;
 
 describe("Protocol BR_G49 - Version", function(){
 
-  it('V3 following V2 should fail', () => co(function*(){
-    const HEAD_1 = { number: 17, version: 3 };
-    const HEAD   = { number: 18, version: 2 };
+  it('V13 following V12 should fail', () => co(function*(){
+    const HEAD_1 = { number: 17, version: 13 };
+    const HEAD   = { number: 18, version: 12 };
     indexer.ruleVersion(HEAD, HEAD_1).should.equal(FAIL);
   }));
 
-  it('V4 following V2 should fail', () => co(function*(){
-    const HEAD_1 = { number: 17, version: 4 };
-    const HEAD   = { number: 18, version: 2 };
+  it('V14 following V12 should fail', () => co(function*(){
+    const HEAD_1 = { number: 17, version: 14 };
+    const HEAD   = { number: 18, version: 12 };
     indexer.ruleVersion(HEAD, HEAD_1).should.equal(FAIL);
   }));
 
-  it('V3 following V4 should succeed', () => co(function*(){
-    const HEAD_1 = { number: 17, version: 3 };
-    const HEAD   = { number: 18, version: 4 };
+  it('V13 following V14 should succeed', () => co(function*(){
+    const HEAD_1 = { number: 17, version: 13 };
+    const HEAD   = { number: 18, version: 14 };
     indexer.ruleVersion(HEAD, HEAD_1).should.equal(SUCCESS);
   }));
 
-  it('V3 following V5 should fail', () => co(function*(){
-    const HEAD_1 = { number: 17, version: 3 };
-    const HEAD   = { number: 18, version: 5 };
+  it('V13 following V15 should fail', () => co(function*(){
+    const HEAD_1 = { number: 17, version: 13 };
+    const HEAD   = { number: 18, version: 15 };
     indexer.ruleVersion(HEAD, HEAD_1).should.equal(FAIL);
   }));
 });

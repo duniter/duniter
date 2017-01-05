@@ -46,9 +46,7 @@ function BlockGenerator(mainContext, prover) {
 
   this.makeNextBlock = (block, trial, manualValues) => co(function *() {
     const unsignedBlock = block || (yield that.nextBlock(manualValues));
-    const current = yield dal.getCurrentBlockOrNull();
-    const version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
-    const trialLevel = trial || (yield mainContext.getIssuerPersonalizedDifficulty(version, selfPubkey));
+    const trialLevel = trial || (yield mainContext.getIssuerPersonalizedDifficulty(selfPubkey));
     return prover.prove(unsignedBlock, trialLevel, (manualValues && manualValues.time) || null);
   });
 
@@ -216,7 +214,7 @@ function BlockGenerator(mainContext, prover) {
           // Will throw an error if not enough links
           yield mainContext.checkHaveEnoughLinks(newcomer, newLinks);
           // This one does not throw but returns a boolean
-          const isOut = yield rules.HELPERS.isOver3Hops(block.version, newcomer, newLinks, realNewcomers, current, conf, dal);
+          const isOut = yield rules.HELPERS.isOver3Hops(newcomer, newLinks, realNewcomers, current, conf, dal);
           if (isOut) {
             throw 'Key ' + newcomer + ' is not recognized by the WoT for this block';
           }
@@ -564,7 +562,7 @@ function BlockGenerator(mainContext, prover) {
       if (blockLen < maxLenOfBlock) {
         transactions.forEach((tx) => {
           const txLen = Transaction.statics.getLen(tx);
-          if (txLen <= constants.MAXIMUM_LEN_OF_COMPACT_TX && blockLen + txLen <= maxLenOfBlock && (tx.version == block.version || (parseInt(tx.version) >= 3 && parseInt(block.version) >= 3))) {
+          if (txLen <= constants.MAXIMUM_LEN_OF_COMPACT_TX && blockLen + txLen <= maxLenOfBlock && tx.version == constants.TRANSACTION_VERSION) {
             block.transactions.push({ raw: tx.compact() });
           }
           blockLen += txLen;
@@ -586,15 +584,13 @@ function BlockGenerator(mainContext, prover) {
       if (vHEAD.new_dividend) {
         block.dividend = vHEAD.dividend;
         block.unitbase = vHEAD.unitBase;
-      } else if (block.version > 2) {
+      } else {
         block.unitbase = block.number == 0 ? 0 : current.unitbase;
       }
       // Rotation
-      if (block.version > 2) {
-        block.issuersCount = vHEAD.issuersCount;
-        block.issuersFrame = vHEAD.issuersFrame;
-        block.issuersFrameVar = vHEAD.issuersFrameVar;
-      }
+      block.issuersCount = vHEAD.issuersCount;
+      block.issuersFrame = vHEAD.issuersFrame;
+      block.issuersFrameVar = vHEAD.issuersFrameVar;
       // InnerHash
       block.time = block.medianTime;
       block.inner_hash = hashf(rawer.getBlockInnerPart(block)).toUpperCase();

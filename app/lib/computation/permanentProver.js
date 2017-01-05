@@ -58,8 +58,7 @@ function PermanentProver(server) {
           if (!current) {
             throw 'Waiting for a root block before computing new blocks';
           }
-          const version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
-          const trial = yield server.getBcContext().getIssuerPersonalizedDifficulty(version, selfPubkey);
+          const trial = yield server.getBcContext().getIssuerPersonalizedDifficulty(selfPubkey);
           checkTrialIsNotTooHigh(trial, current, selfPubkey);
           const lastIssuedByUs = current.issuer == selfPubkey;
           const pullingPromise = server.PeeringService.pullingPromise();
@@ -106,7 +105,7 @@ function PermanentProver(server) {
                 const current = yield server.dal.getCurrentBlockOrNull();
                 const selfPubkey = server.keyPair.publicKey;
                 const block2 = yield server.BlockchainService.generateNext();
-                const trial2 = yield server.getBcContext().getIssuerPersonalizedDifficulty(block2.version, selfPubkey);
+                const trial2 = yield server.getBcContext().getIssuerPersonalizedDifficulty(selfPubkey);
                 checkTrialIsNotTooHigh(trial2, current, selfPubkey);
                 lastComputedBlock = yield server.BlockchainService.makeNextBlock(block2, trial2);
                 yield onBlockCallback(lastComputedBlock);

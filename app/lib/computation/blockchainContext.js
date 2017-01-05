@@ -89,11 +89,10 @@ function BlockchainContext() {
 
   /**
    * Utility method: gives the personalized difficulty level of a given issuer for next block.
-   * @param version The version in which is computed the difficulty.
    * @param issuer The issuer we want to get the difficulty level.
    */
-  this.getIssuerPersonalizedDifficulty = (version, issuer) => co(function *() {
-    const vHEAD = yield that.getvHeadCopy({ version, issuer });
+  this.getIssuerPersonalizedDifficulty = (issuer) => co(function *() {
+    const vHEAD = yield that.getvHeadCopy({ issuer });
     yield indexer.preparePersonalizedPoW(vHEAD, vHEAD_1, dal.range, conf);
     return vHEAD.issuerDiff;
   });
@@ -566,10 +565,8 @@ function BlockchainContext() {
           written: true,
           removed: false
         });
-        if (tx.version >= 3) {
-          const sp = tx.blockstamp.split('-');
-          tx.blockstampTime = (yield getBlockByNumberAndHash(sp[0], sp[1])).medianTime;
-        }
+        const sp = tx.blockstamp.split('-');
+        tx.blockstampTime = (yield getBlockByNumberAndHash(sp[0], sp[1])).medianTime;
         const txEntity = new Transaction(tx);
         txEntity.computeAllHashes();
         newOnes.push(txEntity);

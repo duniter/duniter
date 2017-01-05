@@ -21,8 +21,6 @@ describe("Protocol 0.5 Identity blockstamp", function() {
 
   before(() => co(function*() {
 
-    constants.TIME_FOR_V5 = 1478543978; // 2016-11-07 19:39:38
-
     limiter.noLimit();
     const res1 = yield toolbox.simpleNodeWith2Users(conf);
     const res2 = yield toolbox.simpleNodeWith2otherUsers(conf);

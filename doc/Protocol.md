@@ -860,7 +860,7 @@ The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
 ##### Data
 
-* `Version` equals `2` or `3`
+* `Version` equals `6`
 * `Type` equals `Block`
 
 ### Peer
@@ -993,17 +993,15 @@ A Block can be accepted only if it respects a set of rules, here divided in 2 pa
 
 Local validation verifies the coherence of a well-formatted block, without any other context than the block itself.
 
-##### Version and Number
+##### Version
 
 Rule:
 
-    HEAD.version >= 2
-    AND
-    HEAD.version <= 6
+    HEAD.version == 6
 
 ##### InnerHash
 
-* `InnerHash` is the SHA256 hash of the whole fields from `Version: 2` to `\InnerHash`, the 'InnerHash' string being excluded from the hash computation.
+* `InnerHash` is the SHA256 hash of the whole fields from `Version:` to `\InnerHash`, the 'InnerHash' string being excluded from the hash computation.
 
 ##### Nonce
 
@@ -1070,9 +1068,7 @@ A block cannot contain revocations whose signature does not match the revocation
 * A transaction must have at least 1 source
 * A transaction cannot have `SIG(INDEX)` unlocks with `INDEX >= ` issuers count.
 * A transaction **must** have signatures matching its content **for each issuer**
-* A transaction's version:
-  * must be the same as its including block if the block's `Version` is `<= 3`
-  * must be equal to `3` if the block's `Version` is `> 3`
+* A transaction's version must be equal to `3`
 * Signatures count must be the same as issuers count
 * Signatures are ordered by issuer
 * Signatures are made over the transaction's content, signatures excepted
@@ -1500,23 +1496,15 @@ If `HEAD.number == 0`:
 
     HEAD.issuersCount = 0
     
-Else if `HEAD~1.version > 2`:
-
-    HEAD.issuersCount = COUNT(UNIQ((HEAD~1..<HEAD~1.issuersFrame>).issuer))
-    
 Else:
 
-    HEAD.issuersCount = COUNT(UNIQ((HEAD~1..40).issuer))
+    HEAD.issuersCount = COUNT(UNIQ((HEAD~1..<HEAD~1.issuersFrame>).issuer))
 
 ###### BR_G05 - HEAD.issuersFrame
 
 If `HEAD.number == 0`:
 
     HEAD.issuersFrame = 1
-    
-Else if `HEAD~1.version == 2`:
-
-    HEAD.issuersFrame = 40
     
 Else if `HEAD~1.issuersFrameVar > 0`:
 
@@ -1532,10 +1520,10 @@ Else:
 
 ###### BR_G06 - HEAD.issuersFrameVar
 
-If `HEAD.number == 0` OR `HEAD~1.version == 2`:
+If `HEAD.number == 0`:
 
     HEAD.issuersFrameVar = 0
-    
+
 Else if `HEAD~1.issuersFrameVar > 0`:
 
     HEAD.issuersFrameVar = HEAD~1.issuersFrameVar + 5*(HEAD.issuersCount - HEAD~1.issuersCount) - 1
@@ -1620,7 +1608,7 @@ If `HEAD.number == 0`:
 
 If `HEAD.udTime != HEAD~1.udTime`:
 
-    HEAD.dividend = CEIL(HEAD~1.dividend + c² * HEAD~1.mass / POW(10, HEAD~1.unitbase) / HEAD.membersCount)
+    HEAD.dividend = CEIL(HEAD~1.dividend + c² * CEIL(HEAD~1.mass / POW(10, HEAD~1.unitbase)) / HEAD.membersCount)
     HEAD.new_dividend = HEAD.dividend
 
 Else:
@@ -2105,23 +2093,17 @@ Rule:
 
 Rule:
 
-If `HEAD.version > 2`:
-
     DifferentIssuersCount = HEAD.issuersCount
 
 ###### BR_G55 - IssuersFrame
 
 Rule:
 
-If `HEAD.version > 2`:
-
     IssuersFrame = HEAD.issuersFrame
 
 ###### BR_G56 - IssuersFrameVar
 
 Rule:
-
-If `HEAD.version > 2`:
 
     IssuersFrameVar = HEAD.issuersFrameVar
 

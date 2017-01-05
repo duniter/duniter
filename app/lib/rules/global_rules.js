@@ -31,15 +31,8 @@ rules.FUNCTIONS = {
       }
       // Because the window rule does not apply on initial certifications
       if (current && idty.buid != constants.BLOCK.SPECIAL_BLOCK) {
-        let basedBlock;
-        if (block.version < 5) {
-          // Prior to DUP 0.5: the full blockstamp was not chcked, only the number
-          const blockNumber = idty.buid.split('-')[0];
-          basedBlock = yield dal.getBlock(blockNumber);
-        } else {
-          // From DUP 0.5: we fully check the blockstamp
-          basedBlock = yield dal.getBlockByBlockstamp(idty.buid);
-        }
+        // From DUP 0.5: we fully check the blockstamp
+        const basedBlock = yield dal.getBlockByBlockstamp(idty.buid);
         // Check if writable
         let duration = current.medianTime - parseInt(basedBlock.medianTime);
         if (duration > conf.idtyWindow) {
@@ -65,7 +58,7 @@ rules.FUNCTIONS = {
       for (let k = 0, len2 = tx.inputs.length; k < len2; k++) {
         let src = tx.inputs[k];
         let dbSrc = yield dal.getSource(src.identifier, src.pos);
-        logger.debug('Source %s:%s = %s', src.identifier, src.pos, dbSrc && dbSrc.consumed);
+        logger.debug('Source %s:%s:%s:%s = %s', src.amount, src.base, src.identifier, src.pos, dbSrc && dbSrc.consumed);
         if (!dbSrc && alsoCheckPendingTransactions) {
           // For chained transactions which are checked on sandbox submission, we accept them if there is already
           // a previous transaction of the chain already recorded in the pool
@@ -103,6 +96,7 @@ rules.FUNCTIONS = {
               if (func.match(/^SIG/)) {
                 let pubkey = tx.issuers[parseInt(param)];
                 if (!pubkey) {
+                  logger.warn('Source ' + [src.amount, src.base, src.type, src.identifier, src.pos].join(':') + ' unlock fail (unreferenced signatory)');
                   throw constants.ERRORS.WRONG_UNLOCKER;
                 }
                 unlocksForCondition.push({
@@ -120,7 +114,7 @@ rules.FUNCTIONS = {
               throw Error('Locked');
             }
           } catch (e) {
-            logger.warn('Source ' + [src.type, src.identifier, src.pos].join(':') + ' unlock fail');
+            logger.warn('Source ' + [src.amount, src.base, src.type, src.identifier, src.pos].join(':') + ' unlock fail');
             throw constants.ERRORS.WRONG_UNLOCKER;
           }
         }
@@ -149,12 +143,12 @@ rules.HELPERS = {
 
   checkCertificationIsValidForBlock: (cert, block, idty, conf, dal) => checkCertificationIsValid(block, cert, () => idty, conf, dal),
 
-  isOver3Hops: (version, member, newLinks, newcomers, current, conf, dal) => co(function *() {
+  isOver3Hops: (member, newLinks, newcomers, current, conf, dal) => co(function *() {
     if (!current) {
       return Q(false);
     }
     try {
-      return indexer.DUP_HELPERS.checkPeopleAreNotOudistanced(version, [member], newLinks, newcomers, conf, dal);
+      return indexer.DUP_HELPERS.checkPeopleAreNotOudistanced([member], newLinks, newcomers, conf, dal);
     } catch (e) {
       return true;
     }
@@ -170,19 +164,17 @@ rules.HELPERS = {
   }, conf, dal, alsoCheckPendingTransactions),
 
   checkTxBlockStamp: (tx, dal) => co(function *() {
-    if (tx.version >= 3) {
-      const number = tx.blockstamp.split('-')[0];
-      const hash = tx.blockstamp.split('-')[1];
-      const basedBlock = yield dal.getBlockByNumberAndHashOrNull(number, hash);
-      if (!basedBlock) {
-        throw "Wrong blockstamp for transaction";
-      }
-      // Valuates the blockstampTime field
-      tx.blockstampTime = basedBlock.medianTime;
-      const current = yield dal.getCurrentBlockOrNull();
-      if (current && current.medianTime > basedBlock.medianTime + constants.TRANSACTION_EXPIRY_DELAY) {
-        throw "Transaction has expired";
-      }
+    const number = tx.blockstamp.split('-')[0];
+    const hash = tx.blockstamp.split('-')[1];
+    const basedBlock = yield dal.getBlockByNumberAndHashOrNull(number, hash);
+    if (!basedBlock) {
+      throw "Wrong blockstamp for transaction";
+    }
+    // Valuates the blockstampTime field
+    tx.blockstampTime = basedBlock.medianTime;
+    const current = yield dal.getCurrentBlockOrNull();
+    if (current && current.medianTime > basedBlock.medianTime + constants.TRANSACTION_EXPIRY_DELAY) {
+      throw "Transaction has expired";
     }
   })
 };

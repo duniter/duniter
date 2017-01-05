@@ -7,9 +7,6 @@
 const co = require('co');
 const _ = require('underscore');
 const logger = require('../../logger')('metaDAL');
-const Block = require('../../entity/block');
-const Revocation = require('../../entity/revocation');
-const Transaction = require('../../entity/transaction');
 const AbstractSQLite = require('./AbstractSQLite');
 
 module.exports = MetaDAL;
@@ -43,64 +40,14 @@ function MetaDAL(driver) {
 
     // Update wrong recipients field (was not filled in)
     3: () => co(function*() {
-      const txsDAL = new (require('./TxsDAL'))(driver);
-      const txs = yield txsDAL.sqlListAll();
-      Transaction.statics.setRecipients(txs);
-      for (const tx of txs) {
-        yield txsDAL.saveEntity(tx);
-      }
     }),
 
     // Migrates wrong unitbases
     4: () => co(function*() {
-      let blockDAL = new (require('./BlockDAL'))(driver);
-      let dividendBlocks = yield blockDAL.getDividendBlocks();
-      let bases = { 0: 0 }; // The first base is always 0 at block 0
-      for (let i = 0; i < dividendBlocks.length; i++) {
-        let block = dividendBlocks[i];
-        if (!bases[block.unitbase]) {
-          bases[block.unitbase] = block.number;
-        } else {
-          bases[block.unitbase] = Math.min(bases[block.unitbase], block.number);
-        }
-      }
-      let baseNumbers = _.keys(bases);
-      for (let i = 0; i < baseNumbers.length; i++) {
-        let base = parseInt(baseNumbers[i]);
-        let fromBlock = bases[base];
-        let upTo = bases[base + 1] || null;
-        if (upTo != null) {
-          yield blockDAL.exec('UPDATE block SET unitbase = ' + base + ' WHERE number >= ' + fromBlock + ' AND number < ' + upTo);
-        } else {
-          // The last base has not a successor yet, so we can take all following blocks
-          yield blockDAL.exec('UPDATE block SET unitbase = ' + base + ' WHERE number >= ' + fromBlock);
-        }
-      }
     }),
 
     // Migrates wrong monetary masses
     5: () => co(function*() {
-      let blockDAL = new (require('./BlockDAL'))(driver);
-      let udBlocks = yield blockDAL.getDividendBlocks();
-      let monetaryMass = 0;
-      let lastUDBlock = 0;
-      for (let i = 0; i < udBlocks.length; i++) {
-        let udBlock = udBlocks[i];
-        if (i == 0) {
-          // First UD
-          yield blockDAL.exec('UPDATE block SET monetaryMass = 0 WHERE number < ' + udBlock.number);
-        } else {
-          // Other UDs
-          let prevUDBlock = udBlocks[i - 1];
-          let fromBlock = prevUDBlock.number;
-          let upToExcluded = udBlock.number;
-          yield blockDAL.exec('UPDATE block SET monetaryMass = ' + monetaryMass + ' WHERE number >= ' + fromBlock + ' AND number < ' + upToExcluded);
-        }
-        lastUDBlock = udBlock.number;
-        monetaryMass += udBlock.dividend * Math.pow(10, udBlock.unitbase) * udBlock.membersCount;
-      }
-      // Blocks since last UD have the same monetary mass as last UD block
-      yield blockDAL.exec('UPDATE block SET monetaryMass = ' + monetaryMass + ' WHERE number >= ' + lastUDBlock);
     }),
 
     6: 'BEGIN; ALTER TABLE idty ADD COLUMN expired INTEGER NULL; COMMIT;',
@@ -120,14 +67,6 @@ function MetaDAL(driver) {
       let blockDAL = new (require('./BlockDAL'))(driver);
       yield blockDAL.exec('ALTER TABLE block ADD COLUMN len INTEGER NULL;');
       yield blockDAL.exec('ALTER TABLE txs ADD COLUMN len INTEGER NULL;');
-      const current = yield blockDAL.getCurrent();
-      if (current && current.version == 2) {
-        const blocks = yield blockDAL.getBlocks(Math.max(0, current.number - 99), current.number);
-        for (const block of blocks) {
-          block.len = Block.statics.getLen(block);
-          blockDAL.saveBlock(block);
-        }
-      }
     }),
     13: 'BEGIN; ALTER TABLE txs ADD COLUMN blockstampTime INTEGER NULL; COMMIT;',
     14: 'BEGIN; ' +
@@ -160,41 +99,11 @@ function MetaDAL(driver) {
     'COMMIT;',
 
     15: () => co(function *() {
-      let blockDAL = new (require('./BlockDAL'))(driver);
       let idtyDAL = new (require('./IdentityDAL'))(driver);
-      let iindexDAL = new (require('./index/IIndexDAL'))(driver);
       yield idtyDAL.exec('ALTER TABLE idty ADD COLUMN revoked_on INTEGER NULL');
-      const blocks = yield blockDAL.query('SELECT * FROM block WHERE revoked NOT LIKE ?', ['[]']);
-      for (const block of blocks) {
-        // Explicit revocations only
-        for (const inlineRevocation of block.revoked) {
-          const revocation = Revocation.statics.fromInline(inlineRevocation);
-          const idty = yield iindexDAL.getFromPubkey(revocation.pubkey);
-          idty.revoked_on = block.number;
-          yield idtyDAL.saveIdentity(idty);
-        }
-      }
     }),
 
     16: () => co(function *() {
-      let txsDAL = new (require('./TxsDAL'))(driver);
-      try {
-        yield txsDAL.exec('ALTER TABLE txs ADD COLUMN v4_hash CHAR(64) NULL');
-        yield txsDAL.exec('ALTER TABLE txs ADD COLUMN v5_hash CHAR(64) NULL');
-      } catch (e) {
-        logger.debug(e);
-      }
-      const v3_transactions = yield txsDAL.query('SELECT * FROM txs WHERE version = ?', [3]);
-      let i = 0;
-      for (const dbTx of v3_transactions) {
-        i++;
-        let tx = new Transaction(dbTx);
-        tx.computeAllHashes();
-        if (i % 50 == 0) {
-          logger.info('Migrating transaction %s/%s', i, v3_transactions.length);
-        }
-        yield txsDAL.saveEntity(tx);
-      }
     })
   };
 

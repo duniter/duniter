@@ -22,8 +22,6 @@ describe("Protocol 0.5 Transaction version", function() {
 
   before(() => co(function*() {
 
-    constants.TIME_FOR_V5 = 1478543978; // 2016-11-07 19:39:38
-
     limiter.noLimit();
     const res1 = yield toolbox.simpleNodeWith2Users(conf);
     s1 = res1.s1;
@@ -38,6 +36,6 @@ describe("Protocol 0.5 Transaction version", function() {
   it('should not have a block with v5 transaction, but v3', () => co(function*() {
     const block = yield s1.commit({ time: now + 100 });
     should.exists(block.transactions[0]);
-    block.transactions[0].version.should.equal(3);
+    block.transactions[0].version.should.equal(constants.TRANSACTION_VERSION);
   }));
 });

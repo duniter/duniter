@@ -135,9 +135,10 @@ describe("Document pool currency", function() {
       yield tac1.cert(cat1);
       yield s1.commit();
       yield s1.commit();
+      const current = yield s1.get('/blockchain/current');
       const tx = cat1.makeTX(
         [{
-          src: "D:DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:1",
+          src: "1500:1:D:DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:1",
           unlock: "SIG(0)"
         }],
         [{
@@ -146,7 +147,8 @@ describe("Document pool currency", function() {
           lock: "XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)"
         }],
         {
-          currency: "wrong_currency"
+          currency: "wrong_currency",
+          blockstamp: [current.number, current.hash].join('-')
         });
       yield s1.postRawTX(tx);
       throw "Transaction should not have been accepted, since it has an unknown currency name";

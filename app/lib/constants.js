@@ -13,7 +13,8 @@ const INTEGER      = "(0|[1-9]\\d{0,18})";
 const RELATIVE_INTEGER = "(0|-?[1-9]\\d{0,18})";
 const FLOAT        = "\\d+\.\\d+";
 const BOOLEAN      = "[01]";
-const BLOCK_VERSION = "(2|3|4|5|6)";
+const BLOCK_VERSION = "(6)";
+const TX_VERSION   = "(3)";
 const SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
 const FINGERPRINT  = "[A-F0-9]{64}";
 const COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}";
@@ -137,13 +138,12 @@ module.exports = {
 
   DOCUMENTS_VERSION_REGEXP: /^2$/,
   DOCUMENTS_BLOCK_VERSION_REGEXP: new RegExp("^" + BLOCK_VERSION + "$"),
+  BLOCKSTAMP_REGEXP: new RegExp("^" + BLOCK_UID + "$"),
   DOCUMENTS_TRANSACTION_VERSION_REGEXP: /^(2|3)$/,
   DOCUMENTS_VERSION: 2,
-  BLOCK_GENERATED_VERSION: 4,
+  BLOCK_GENERATED_VERSION: 6,
   LAST_VERSION_FOR_TX: 3,
-
-  TIME_FOR_V5: 1478696400, // 2016-11-09 14:00:00 BCT (blockchain time)
-  TIME_FOR_V6: 1481029200, // 2016-12-06 14:00:00 BCT (blockchain time)
+  TRANSACTION_VERSION: 3,
 
   REVOCATION_FACTOR: 2, // This is protocol fixed value
   NB_DIGITS_UD: 6,      // This is protocol fixed value
@@ -226,9 +226,8 @@ module.exports = {
     SPECIAL_BLOCK: '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
   },
   TRANSACTION: {
-    HEADER:  exact("TX:" + POSITIVE_INT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + BOOLEAN + ":" + INTEGER),
+    HEADER:  exact("TX:" + TX_VERSION + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + BOOLEAN + ":" + INTEGER),
     SENDER:  exact(PUBKEY),
-    SOURCE:  exact("(T:" + FINGERPRINT + ":" + INTEGER + "|D:" + PUBKEY + ":" + POSITIVE_INT + ")"),
     SOURCE_V3:  exact("(" + POSITIVE_INT + ":" + INTEGER + ":T:" + FINGERPRINT + ":" + INTEGER + "|" + POSITIVE_INT + ":" + INTEGER + ":D:" + PUBKEY + ":" + POSITIVE_INT + ")"),
     UNLOCK:  exact(INTEGER + ":" + UNLOCK + "( (" + UNLOCK + "))*"),
     TARGET:  exact(POSITIVE_INT + ":" + INTEGER + ":" + CONDITIONS),
@@ -368,8 +367,7 @@ module.exports = {
   // When to trigger the PoW process again if no PoW is triggered for a while. In milliseconds.
   POW_SECURITY_RETRY_DELAY: 10 * 60 * 1000,
 
-  POW_DIFFICULTY_RANGE_RATIO_V3: Math.sqrt(1.066),
-  POW_DIFFICULTY_RANGE_RATIO_V4: 1.189,
+  POW_DIFFICULTY_RANGE_RATIO: 1.189,
 
   TRANSACTION_MAX_TRIES: 10,
   NONCE_RANGE: 1000 * 1000 * 1000 * 100,

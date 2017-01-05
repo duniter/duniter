@@ -17,18 +17,6 @@ let rules = {};
 
 rules.FUNCTIONS = {
 
-  checkVersion: (block) => co(function*() {
-    // V5 can appear only after a precise time
-    if (block.version == 5 && block.medianTime < constants.TIME_FOR_V5) {
-      throw Error("V5 block cannot have medianTime < " + constants.TIME_FOR_V5);
-    }
-    // V6 can appear only after a precise time
-    if (block.version == 6 && block.medianTime < constants.TIME_FOR_V6) {
-      throw Error("V6 block cannot have medianTime < " + constants.TIME_FOR_V6);
-    }
-    return true;
-  }),
-
   checkParameters: (block) => co(function *() {
     if (block.number == 0 && !block.parameters) {
       throw Error('Parameters must be provided for root block');
@@ -76,13 +64,8 @@ rules.FUNCTIONS = {
   }),
 
   checkUnitBase: (block) => co(function *() {
-    if (block.version == 2) {
-      if (block.dividend > 0 && !(block.unitbase === 0 || block.unitbase > 0))
-        throw Error('UnitBase must be provided for UD block');
-    } else {
-      if (block.number == 0 && block.unitbase != 0) {
-        throw Error('UnitBase must equal 0 for root block');
-      }
+    if (block.number == 0 && block.unitbase != 0) {
+      throw Error('UnitBase must equal 0 for root block');
     }
     return true;
   }),
@@ -300,9 +283,7 @@ rules.FUNCTIONS = {
     const txs = block.getTransactions();
     // Check rule against each transaction
     for (const tx of txs) {
-      if (tx.version != block.version && parseInt(block.version) <= 3) {
-        throw Error('A transaction must have the same version as its block prior to protocol 0.4');
-      } else if (tx.version != 3 && parseInt(block.version) > 3) {
+      if (tx.version != 3) {
         throw Error('A transaction must have the version 3 for blocks with version >= 3');
       }
     }
@@ -310,14 +291,12 @@ rules.FUNCTIONS = {
   }),
 
   checkTxLen: (block) => co(function *() {
-    if (block.version >= 3) {
-      const txs = block.getTransactions();
-      // Check rule against each transaction
-      for (const tx of txs) {
-        const txLen = Transaction.statics.getLen(tx);
-        if (txLen > constants.MAXIMUM_LEN_OF_COMPACT_TX) {
-          throw constants.ERRORS.A_TRANSACTION_HAS_A_MAX_SIZE;
-        }
+    const txs = block.getTransactions();
+    // Check rule against each transaction
+    for (const tx of txs) {
+      const txLen = Transaction.statics.getLen(tx);
+      if (txLen > constants.MAXIMUM_LEN_OF_COMPACT_TX) {
+        throw constants.ERRORS.A_TRANSACTION_HAS_A_MAX_SIZE;
       }
     }
     return true;
@@ -392,13 +371,8 @@ rules.FUNCTIONS = {
 };
 
 function maxAcceleration (block, conf) {
-  if (block.version > 3) {
-    let maxGenTime = Math.ceil(conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO_V4);
-    return Math.ceil(maxGenTime * conf.medianTimeBlocks);
-  } else {
-    let maxGenTime = Math.ceil(conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO_V3);
-    return Math.ceil(maxGenTime * conf.medianTimeBlocks);
-  }
+  let maxGenTime = Math.ceil(conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO);
+  return Math.ceil(maxGenTime * conf.medianTimeBlocks);
 }
 
 function checkSingleMembershipSignature(ms) {
@@ -468,52 +442,50 @@ rules.HELPERS = {
   checkSingleTransactionLocally: (tx, done) => checkBunchOfTransactions([tx], done),
 
   checkTxAmountsValidity: (tx) => {
-    if (tx.version >= 3) {
-      // Rule of money conservation
-      const commonBase = tx.inputs.concat(tx.outputs).reduce((min, input) => {
-        if (min === null) return input.base;
-        return Math.min(min, parseInt(input.base));
-      }, null);
-      const inputSumCommonBase = tx.inputs.reduce((sum, input) => {
-        return sum + input.amount * Math.pow(10, input.base - commonBase);
-      }, 0);
-      const outputSumCommonBase = tx.outputs.reduce((sum, output) => {
-        return sum + output.amount * Math.pow(10, output.base - commonBase);
-      }, 0);
-      if (inputSumCommonBase !== outputSumCommonBase) {
-        throw constants.ERRORS.TX_INPUTS_OUTPUTS_NOT_EQUAL;
-      }
-      // Rule of unit base transformation
-      const maxOutputBase = tx.outputs.reduce((max, output) => {
-        return Math.max(max, parseInt(output.base));
-      }, 0);
-      // Compute deltas
-      const deltas = {};
-      for (let i = commonBase; i <= maxOutputBase; i++) {
-        const inputBaseSum = tx.inputs.reduce((sum, input) => {
-          if (input.base == i) {
-            return sum + input.amount * Math.pow(10, input.base - commonBase);
-          } else {
-            return sum;
-          }
-        }, 0);
-        const outputBaseSum = tx.outputs.reduce((sum, output) => {
-          if (output.base == i) {
-            return sum + output.amount * Math.pow(10, output.base - commonBase);
-          } else {
-            return sum;
-          }
-        }, 0);
-        const delta = outputBaseSum - inputBaseSum;
-        let sumUpToBase = 0;
-        for (let j = commonBase; j < i; j++) {
-          sumUpToBase -= deltas[j];
+    // Rule of money conservation
+    const commonBase = tx.inputs.concat(tx.outputs).reduce((min, input) => {
+      if (min === null) return input.base;
+      return Math.min(min, parseInt(input.base));
+    }, null);
+    const inputSumCommonBase = tx.inputs.reduce((sum, input) => {
+      return sum + input.amount * Math.pow(10, input.base - commonBase);
+    }, 0);
+    const outputSumCommonBase = tx.outputs.reduce((sum, output) => {
+      return sum + output.amount * Math.pow(10, output.base - commonBase);
+    }, 0);
+    if (inputSumCommonBase !== outputSumCommonBase) {
+      throw constants.ERRORS.TX_INPUTS_OUTPUTS_NOT_EQUAL;
+    }
+    // Rule of unit base transformation
+    const maxOutputBase = tx.outputs.reduce((max, output) => {
+      return Math.max(max, parseInt(output.base));
+    }, 0);
+    // Compute deltas
+    const deltas = {};
+    for (let i = commonBase; i <= maxOutputBase; i++) {
+      const inputBaseSum = tx.inputs.reduce((sum, input) => {
+        if (input.base == i) {
+          return sum + input.amount * Math.pow(10, input.base - commonBase);
+        } else {
+          return sum;
         }
-        if (delta > 0 && delta > sumUpToBase) {
-          throw constants.ERRORS.TX_OUTPUT_SUM_NOT_EQUALS_PREV_DELTAS;
+      }, 0);
+      const outputBaseSum = tx.outputs.reduce((sum, output) => {
+        if (output.base == i) {
+          return sum + output.amount * Math.pow(10, output.base - commonBase);
+        } else {
+          return sum;
         }
-        deltas[i] = delta;
+      }, 0);
+      const delta = outputBaseSum - inputBaseSum;
+      let sumUpToBase = 0;
+      for (let j = commonBase; j < i; j++) {
+        sumUpToBase -= deltas[j];
       }
+      if (delta > 0 && delta > sumUpToBase) {
+        throw constants.ERRORS.TX_OUTPUT_SUM_NOT_EQUALS_PREV_DELTAS;
+      }
+      deltas[i] = delta;
     }
   },
 
@@ -524,14 +496,6 @@ rules.HELPERS = {
     let version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
 
     // 2. If we can, we go to the next version
-    //
-    // > N.B: we can jump from v4 to v6 directly if time has come
-    if (version == 4 && block.medianTime > constants.TIME_FOR_V5) {
-      version = 5;
-    }
-    if (version == 5 && block.medianTime > constants.TIME_FOR_V6) {
-      version = 6;
-    }
     return version;
   })
 };

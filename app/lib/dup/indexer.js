@@ -465,7 +465,7 @@ const indexer = module.exports = {
     // BR_G17
     if (HEAD.number > 0) {
 
-      const ratio = HEAD.version > 3 ? 1.189 : Math.sqrt(1.066);
+      const ratio = constants.POW_DIFFICULTY_RANGE_RATIO;
       const maxGenTime = Math.ceil(conf.avgGenTime * ratio);
       const minGenTime = Math.floor(conf.avgGenTime / ratio);
       const minSpeed = 1/ maxGenTime;
@@ -547,7 +547,6 @@ const indexer = module.exports = {
     // BR_G24
     // Global testing, because of wotb
     const oneIsOutdistanced = yield checkPeopleAreNotOudistanced(
-      HEAD.version,
       _.filter(mindex, (entry) => !entry.revoked_on).map((entry) => entry.pub),
       cindex.reduce((newLinks, c) => {
         newLinks[c.receiver] = newLinks[c.receiver] || [];
@@ -697,90 +696,50 @@ const indexer = module.exports = {
       if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
         ENTRY.age = 0;
       } else {
-        if (HEAD.version >= 3) {
-          let ref = yield dal.getBlockByBlockstamp(ENTRY.created_on);
-          if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
-            ENTRY.age = HEAD_1.medianTime - ref.medianTime;
-          } else {
-            ENTRY.age = constants.TRANSACTION_EXPIRY_DELAY + 1;
-          }
+        let ref = yield dal.getBlockByBlockstamp(ENTRY.created_on);
+        if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
+          ENTRY.age = HEAD_1.medianTime - ref.medianTime;
         } else {
-          ENTRY.age = 0;
+          ENTRY.age = constants.TRANSACTION_EXPIRY_DELAY + 1;
         }
       }
     }));
 
     // BR_G46
     yield _.where(sindex, { op: constants.IDX_UPDATE }).map((ENTRY) => co(function*() {
-      if (HEAD.version > 2) {
+      const reducable = yield dal.sindexDAL.sqlFind({
+        identifier: ENTRY.identifier,
+        pos: ENTRY.pos,
+        amount: ENTRY.amount,
+        base: ENTRY.base
+      });
+      ENTRY.available = reduce(reducable).consumed === false;
+    }));
+
+    // BR_G47
+    yield _.where(sindex, { op: constants.IDX_UPDATE }).map((ENTRY) => co(function*() {
+      let source = _.filter(sindex, (src) => src.identifier == ENTRY.identifier && src.pos == ENTRY.pos && src.conditions)[0];
+      if (!source) {
         const reducable = yield dal.sindexDAL.sqlFind({
           identifier: ENTRY.identifier,
           pos: ENTRY.pos,
           amount: ENTRY.amount,
           base: ENTRY.base
         });
-        // TODO: not in v1.0
-        let available;
-        if (count(reducable) > 0) {
-          available = reduce(reducable).consumed === false;
-        } else {
-          const src = yield dal.getSource(ENTRY.identifier, ENTRY.pos);
-          available = src.consumed === false;
-        }
-        ENTRY.available = available;
-      } else {
-        ENTRY.available = reduce(yield dal.sindexDAL.sqlFind({
-            identifier: ENTRY.identifier,
-            pos: ENTRY.pos
-          })).consumed === false;
+        source = reduce(reducable);
       }
-    }));
-
-    // BR_G47
-    yield _.where(sindex, { op: constants.IDX_UPDATE }).map((ENTRY) => co(function*() {
-      if (HEAD.version > 2) {
-        let source = _.filter(sindex, (src) => src.identifier == ENTRY.identifier && src.pos == ENTRY.pos && src.conditions)[0];
-        if (!source) {
-          const reducable = yield dal.sindexDAL.sqlFind({
-            identifier: ENTRY.identifier,
-            pos: ENTRY.pos,
-            amount: ENTRY.amount,
-            base: ENTRY.base
-          });
-          // TODO: not in v1.0
-          if (count(reducable) > 0) {
-            source = reduce(reducable);
-          } else {
-            source = yield dal.getSource(ENTRY.identifier, ENTRY.pos);
-          }
-        }
-        ENTRY.conditions = source.conditions;
-        ENTRY.isLocked = !txSourceUnlock(ENTRY, source);
-      } else {
-        const source = reduce(yield dal.sindexDAL.sqlFind({
-          identifier: ENTRY.identifier,
-          pos: ENTRY.pos
-        }));
-        ENTRY.conditions = source.conditions;
-        ENTRY.isLocked = !txSourceUnlock(ENTRY, source);
-      }
+      ENTRY.conditions = source.conditions;
+      ENTRY.isLocked = !txSourceUnlock(ENTRY, source);
     }));
 
     // BR_G48
     yield _.where(sindex, { op: constants.IDX_UPDATE }).map((ENTRY) => co(function*() {
-      if (HEAD.version > 2) {
-        ENTRY.isTimeLocked = ENTRY.written_time - reduce(yield dal.sindexDAL.sqlFind({
-            identifier: ENTRY.identifier,
-            pos: ENTRY.pos,
-            amount: ENTRY.amount,
-            base: ENTRY.base
-          })).written_time < ENTRY.locktime;
-      } else {
-        ENTRY.isTimeLocked = ENTRY.written_time - reduce(yield dal.sindexDAL.sqlFind({
-            identifier: ENTRY.identifier,
-            pos: ENTRY.pos
-          })).written_time < ENTRY.locktime;
-      }
+      ENTRY.isTimeLocked = ENTRY.written_time - reduce(yield dal.sindexDAL.sqlFind({
+          identifier: ENTRY.identifier,
+          pos: ENTRY.pos,
+          amount: ENTRY.amount,
+          base: ENTRY.base
+        })).written_time < ENTRY.locktime;
     }));
 
     return HEAD;
@@ -799,10 +758,8 @@ const indexer = module.exports = {
   prepareIssuersCount: (HEAD, range, HEAD_1) => co(function*() {
     if (HEAD.number == 0) {
       HEAD.issuersCount = 0;
-    } else if(HEAD_1.version > 2) {
-      HEAD.issuersCount = count(uniq(yield range(1, HEAD_1.issuersFrame, 'issuer')));
     } else {
-      HEAD.issuersCount = count(uniq(yield range(1, 40, 'issuer')));
+      HEAD.issuersCount = count(uniq(yield range(1, HEAD_1.issuersFrame, 'issuer')));
     }
   }),
 
@@ -810,8 +767,6 @@ const indexer = module.exports = {
   prepareIssuersFrame: (HEAD, HEAD_1) => {
     if (HEAD.number == 0) {
       HEAD.issuersFrame = 1;
-    } else if (HEAD_1.version == 2) {
-      HEAD.issuersFrame = 40
     } else if (HEAD_1.issuersFrameVar > 0) {
       HEAD.issuersFrame = HEAD_1.issuersFrame + 1
     } else if (HEAD_1.issuersFrameVar < 0) {
@@ -823,14 +778,10 @@ const indexer = module.exports = {
 
   // BR_G06
   prepareIssuersFrameVar: (HEAD, HEAD_1) => {
-    if (HEAD.number == 0 || HEAD_1.version == 2) {
+    if (HEAD.number == 0) {
       HEAD.issuersFrameVar = 0;
     } else {
-      // TODO: remove this bug
-      let issuersVar = (HEAD.issuersCount - HEAD_1.issuersCount);
-      if (issuersVar > 0) issuersVar = 1;
-      if (issuersVar < 0) issuersVar = -1;
-      if (issuersVar == 0) issuersVar = 0;
+      const issuersVar = (HEAD.issuersCount - HEAD_1.issuersCount);
       if (HEAD_1.issuersFrameVar > 0) {
         HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*issuersVar - 1;
       } else if (HEAD_1.issuersFrameVar < 0) {
@@ -874,29 +825,10 @@ const indexer = module.exports = {
       HEAD.dividend = conf.ud0;
       HEAD.new_dividend = null;
     } else if (HEAD.udTime != HEAD_1.udTime) {
-      if (HEAD.version == 2) {
-        // DUA
-        const M = HEAD_1.mass;
-        const N = HEAD.membersCount;
-        const previousUB = HEAD_1.unitBase;
-        const previousUD = HEAD_1.dividend;
-        const c = conf.c;
-        HEAD.dividend = Math.ceil(Math.max(previousUD, c * M / Math.pow(10, previousUB) / N));
-        HEAD.new_dividend = HEAD.dividend;
-      }
-      else if (HEAD.version == 3) {
-        // DUB
-        const c = conf.c;
-        HEAD.dividend = parseInt(((1 + c) * HEAD_1.dividend).toFixed(0));
-        HEAD.new_dividend = HEAD.dividend;
-      }
-      else if (HEAD.version >= 4) {
-        // DUG
-        const previousUB = HEAD_1.unitBase;
-        // TODO: ceiling for v1.0
-        HEAD.dividend = parseInt((HEAD_1.dividend + Math.pow(conf.c, 2) * HEAD_1.mass / HEAD.membersCount / Math.pow(10, previousUB)).toFixed(0));
-        HEAD.new_dividend = HEAD.dividend;
-      }
+      // DUG
+      const previousUB = HEAD_1.unitBase;
+      HEAD.dividend = Math.ceil(HEAD_1.dividend + Math.pow(conf.c, 2) * Math.ceil(HEAD_1.mass / Math.pow(10, previousUB)) / HEAD.membersCount);
+      HEAD.new_dividend = HEAD.dividend;
     } else {
       HEAD.dividend = HEAD_1.dividend;
       HEAD.new_dividend = null;
@@ -963,42 +895,12 @@ const indexer = module.exports = {
       }
     }
 
-    if (HEAD.version == 2) {
-
-      // V0.2 Hardness
-      if (nbPersonalBlocksInFrame > 0) {
-        nbPreviousIssuers--;
-      }
-      HEAD.issuerDiff = Math.max(HEAD.powMin, HEAD.powMin * Math.floor(conf.percentRot * (1 + nbPreviousIssuers) / (1 + nbBlocksSince)));
-
-    } else if (HEAD.version == 3) {
-
-      // V0.3 Hardness
-      HEAD.issuerDiff = Math.max(HEAD.powMin, HEAD.powMin * Math.floor(conf.percentRot * nbPreviousIssuers / (1 + nbBlocksSince)));
-
-    } else if (HEAD.version == 4) {
-
-      // V0.4 Hardness
-      const PERSONAL_EXCESS = Math.max(0, (nbPersonalBlocksInFrame / 5) - 1);
-      const PERSONAL_HANDICAP = Math.floor(Math.log(1 + PERSONAL_EXCESS) / Math.log(1.189));
-      HEAD.issuerDiff = Math.max(HEAD.powMin, HEAD.powMin * Math.floor(conf.percentRot * nbPreviousIssuers / (1 + nbBlocksSince))) + PERSONAL_HANDICAP;
-
-    } else if (HEAD.version == 5) {
-
-      // V0.5 Hardness
-      const PERSONAL_EXCESS = Math.max(0, ((nbPersonalBlocksInFrame + 1)/ medianOfBlocksInFrame) - 1);
-      const PERSONAL_HANDICAP = Math.floor(Math.log(1 + PERSONAL_EXCESS) / Math.log(1.189));
-      HEAD.issuerDiff = HEAD.powMin + PERSONAL_HANDICAP;
-
-    } else if (HEAD.version >= 6) {
-
-      // V0.6 Hardness
-      const PERSONAL_EXCESS = Math.max(0, ( (nbPersonalBlocksInFrame + 1) / medianOfBlocksInFrame) - 1);
-      const PERSONAL_HANDICAP = Math.floor(Math.log(1 + PERSONAL_EXCESS) / Math.log(1.189));
-      HEAD.issuerDiff = Math.max(HEAD.powMin, HEAD.powMin * Math.floor(conf.percentRot * nbPreviousIssuers / (1 + nbBlocksSince))) + PERSONAL_HANDICAP;
-      if ((HEAD.issuerDiff + 1) % 16 == 0) {
-        HEAD.issuerDiff += 1;
-      }
+    // V0.6 Hardness
+    const PERSONAL_EXCESS = Math.max(0, ( (nbPersonalBlocksInFrame + 1) / medianOfBlocksInFrame) - 1);
+    const PERSONAL_HANDICAP = Math.floor(Math.log(1 + PERSONAL_EXCESS) / Math.log(1.189));
+    HEAD.issuerDiff = Math.max(HEAD.powMin, HEAD.powMin * Math.floor(conf.percentRot * nbPreviousIssuers / (1 + nbBlocksSince))) + PERSONAL_HANDICAP;
+    if ((HEAD.issuerDiff + 1) % 16 == 0) {
+      HEAD.issuerDiff += 1;
     }
 
     HEAD.powRemainder = HEAD.issuerDiff  % 16;
@@ -1011,20 +913,11 @@ const indexer = module.exports = {
       if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
         ENTRY.age = 0;
       } else {
-        if (HEAD.version <= 4) {
-          let ref = yield dal.getBlock(number(ENTRY.created_on));
-          if (ref) { // blockstamp was not checked prior to 0.5
-            ENTRY.age = HEAD_1.medianTime - ref.medianTime;
-          } else {
-            ENTRY.age = conf.idtyWindow + 1;
-          }
+        let ref = yield dal.getBlockByBlockstamp(ENTRY.created_on);
+        if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
+          ENTRY.age = HEAD_1.medianTime - ref.medianTime;
         } else {
-          let ref = yield dal.getBlockByBlockstamp(ENTRY.created_on);
-          if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
-            ENTRY.age = HEAD_1.medianTime - ref.medianTime;
-          } else {
-            ENTRY.age = conf.idtyWindow + 1;
-          }
+          ENTRY.age = conf.idtyWindow + 1;
         }
       }
     }));
@@ -1094,25 +987,13 @@ const indexer = module.exports = {
   ruleIssuerIsMember: (HEAD) => HEAD.issuerIsMember == true,
 
   // BR_G54
-  ruleIssuersCount: (block, HEAD) => {
-    if (HEAD.version > 2) {
-      return block.issuersCount == HEAD.issuersCount;
-    }
-  },
+  ruleIssuersCount: (block, HEAD) => block.issuersCount == HEAD.issuersCount,
 
   // BR_G55
-  ruleIssuersFrame: (block, HEAD) => {
-    if (HEAD.version > 2) {
-      return block.issuersFrame == HEAD.issuersFrame;
-    }
-  },
+  ruleIssuersFrame: (block, HEAD) => block.issuersFrame == HEAD.issuersFrame,
 
   // BR_G56
-  ruleIssuersFrameVar: (block, HEAD) => {
-    if (HEAD.version > 2) {
-      return block.issuersFrameVar == HEAD.issuersFrameVar;
-    }
-  },
+  ruleIssuersFrameVar: (block, HEAD) => block.issuersFrameVar == HEAD.issuersFrameVar,
 
   // BR_G57
   ruleMedianTime: (block, HEAD) => block.medianTime == HEAD.medianTime,
@@ -1121,11 +1002,7 @@ const indexer = module.exports = {
   ruleDividend: (block, HEAD) => block.dividend == HEAD.new_dividend,
 
   // BR_G59
-  ruleUnitBase: (block, HEAD) => {
-    if (HEAD.version >= 3) {
-      return block.unitbase == HEAD.unitBase;
-    }
-  },
+  ruleUnitBase: (block, HEAD) => block.unitbase == HEAD.unitBase,
 
   // BR_G60
   ruleMembersCount: (block, HEAD) => block.membersCount == HEAD.membersCount,
@@ -1607,7 +1484,7 @@ function reduceBy(reducables, properties) {
   return Object.values(reduced).map((value) => indexer.DUP_HELPERS.reduce(value));
 }
 
-function checkPeopleAreNotOudistanced (version, pubkeys, newLinks, newcomers, conf, dal) {
+function checkPeopleAreNotOudistanced (pubkeys, newLinks, newcomers, conf, dal) {
   return co(function *() {
     let wotb = dal.wotb;
     let current = yield dal.getCurrentBlockOrNull();
@@ -1635,12 +1512,7 @@ function checkPeopleAreNotOudistanced (version, pubkeys, newLinks, newcomers, co
     let error;
     for (const pubkey of pubkeys) {
       let nodeID = yield getNodeIDfromPubkey(nodesCache, pubkey, dal);
-      let dSen;
-      if (version <= 3) {
-        dSen = Math.ceil(constants.CONTRACT.DSEN_P * Math.exp(Math.log(membersCount) / conf.stepMax));
-      } else {
-        dSen = Math.ceil(Math.pow(membersCount, 1 / conf.stepMax));
-      }
+      const dSen = Math.ceil(Math.pow(membersCount, 1 / conf.stepMax));
       let isOutdistanced = wotb.isOutdistanced(nodeID, dSen, conf.stepMax, conf.xpercent);
       if (isOutdistanced) {
         error = Error('Joiner/Active is outdistanced from WoT');

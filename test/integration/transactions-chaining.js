@@ -41,9 +41,9 @@ describe("Transaction chaining", function() {
     yield toc.cert(tic);
     yield tic.join();
     yield toc.join();
-    yield s1.commit({ version: 2, time: now });
-    yield s1.commit({ version: 2, time: now + 7210 });
-    yield s1.commit({ version: 2, time: now + 7210 });
+    yield s1.commit({ time: now });
+    yield s1.commit({ time: now + 7210 });
+    yield s1.commit({ time: now + 7210 });
   }));
 
   describe("Sources", function(){
@@ -59,10 +59,12 @@ describe("Transaction chaining", function() {
 
     it('with SIG and XHX', () => co(function *() {
       // Current state
+      let current = yield s1.get('/blockchain/current');
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1);
       let tx1 = yield toc.prepareITX(104, tic); // Rest = 120 - 104 = 16
       let tx2 = yield toc.prepareUTX(tx1, ['SIG(0)'], [{ qty: 16, base: 0, lock: 'SIG(' + tic.pub + ')' }], {
         comment: 'also take the remaining 16 units',
+        blockstamp: [current.number, current.hash].join('-'),
         theseOutputsStart: 1
       });
       const tmp = constants.TRANSACTION_MAX_TRIES = 2;
@@ -71,10 +73,10 @@ describe("Transaction chaining", function() {
       yield unit.shouldNotFail(toc.sendTX(tx2));
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(1);
-      yield s1.commit({ version: 2, time: now + 7210 }); // TX1 commited
+      yield s1.commit({ time: now + 7210 }); // TX1 commited
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1); // The 16 remaining units
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(2); // The UD + 104 units sent by toc
-      yield s1.commit({ version: 2, time: now + 7210 }); // TX2 commited
+      yield s1.commit({ time: now + 7210 }); // TX2 commited
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3); // The UD + 104 + 16 units sent by toc
       constants.TRANSACTION_MAX_TRIES = tmp;

@@ -142,7 +142,7 @@ function Node (dbName, options) {
               co(function *() {
                 try {
                   const block2 = yield that.server.BlockchainService.generateNext(params);
-                  const trial2 = yield that.server.getBcContext().getIssuerPersonalizedDifficulty(block2.version, that.server.keyPair.publicKey);
+                  const trial2 = yield that.server.getBcContext().getIssuerPersonalizedDifficulty(that.server.keyPair.publicKey);
                   const block = yield that.server.BlockchainService.makeNextBlock(block2, trial2, params);
                   callback(null, block);
                 } catch (e) {

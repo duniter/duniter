@@ -2,14 +2,15 @@
 var should  = require('should');
 var parsers = require('../../app/lib/streams/parsers');
 
-var raw = "Version: 2\n" +
+var raw = "Version: 3\n" +
     "Type: Transaction\n" +
     "Currency: test_net\n" +
+    "Blockstamp: 3-2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "Locktime: 0\n" +
     "Issuers:\n" +
     "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk\n" +
     "Inputs:\n" +
-    "D:HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:3428\n" +
+    "100000:0:D:HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:3428\n" +
     "Unlocks:\n" +
     "0:SIG(0)\n" +
     "Outputs:\n" +

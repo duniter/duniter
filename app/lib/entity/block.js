@@ -164,7 +164,6 @@ function Block(json) {
 
   this.getTransactions = () => {
     const transactions = [];
-    const version = this.version;
     const currency = this.currency;
     this.transactions.forEach((simpleTx) => {
       const tx = {};
@@ -175,11 +174,11 @@ function Block(json) {
       (simpleTx.inputs || []).forEach((input) => {
         const sp = input.split(':');
         tx.inputs.push({
-          amount:     this.version >= 3 ? sp[0] : null,
-          base:       this.version >= 3 ? sp[1] : null,
-          type:       this.version >= 3 ? sp[2] : sp[0],
-          identifier: this.version >= 3 ? sp[3] : sp[1],
-          pos:        this.version >= 3 ? parseInt(sp[4]) : parseInt(sp[2]),
+          amount:     sp[0],
+          base:       sp[1],
+          type:       sp[2],
+          identifier: sp[3],
+          pos:        parseInt(sp[4]),
           raw: input
         });
       });

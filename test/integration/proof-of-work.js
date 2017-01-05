@@ -34,7 +34,6 @@ const now = 1474382274 * 1000;
 const MUST_START_WITH_A_ZERO = 16;
 const MUST_START_WITH_TWO_ZEROS = 32;
 
-const BACKUP_TIME_FOR_V5 = constants.TIME_FOR_V5;
 const BACKUP_HANDICAP = constants.POW_MAXIMUM_ACCEPTABLE_HANDICAP;
 
 constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1; // For simple tests. Can be changed to test multiple cores.
@@ -42,7 +41,6 @@ constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1; // For simple tests. Can be changed
 describe("Proof-of-work", function() {
 
   before(() => {
-    constants.TIME_FOR_V5 = 1474382274 * 1000;
     constants.POW_MAXIMUM_ACCEPTABLE_HANDICAP = 8;
   });
 
@@ -72,9 +70,9 @@ describe("Proof-of-work", function() {
   }));
 
   it('should be able to cancel a proof-of-work on other PoW receival', () => co(function*() {
-    const now = 1474464481;
+    const now = 1474464483;
     const res = yield toolbox.simpleNetworkOf2NodesAnd2Users({
-      powMin: 34
+      powMin: 20
     }), s1 = res.s1, s2 = res.s2;
     yield s1.commit({
       time: now
@@ -182,7 +180,6 @@ describe("Proof-of-work", function() {
   }));
 
   after(() => {
-    constants.TIME_FOR_V5 = BACKUP_TIME_FOR_V5;
     constants.POW_MAXIMUM_ACCEPTABLE_HANDICAP = BACKUP_HANDICAP;
   });
 });

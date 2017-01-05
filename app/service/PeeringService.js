@@ -627,10 +627,8 @@ function PeeringService(server) {
                   let blocks = yield thePeer.getBlocks(count, fromNumber);
                   // Fix for #734
                   for (const block of blocks) {
-                    if (block.version >= 3) {
-                      for (const tx of block.transactions) {
-                        tx.version = 3;
-                      }
+                    for (const tx of block.transactions) {
+                      tx.version = constants.TRANSACTION_VERSION;
                     }
                   }
                   return blocks;

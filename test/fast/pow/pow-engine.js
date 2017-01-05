@@ -65,7 +65,7 @@ describe('PoW Engine', () => {
   it('should be able to make a proof', () => co(function*(){
     const e1 = engine();
     (yield e1.setValue('identify', { pubkey: 'pub1', identifier: 'id1' })).should.equal('OK');
-    const block = { number: 29 };
+    const block = { number: 35 };
     const nonceBeginning = 0;
     const zeros = 2;
     const highMark = 'A';
@@ -80,15 +80,15 @@ describe('PoW Engine', () => {
     proof.should.deepEqual({
       pow: {
         block: {
-          number: 29,
+          number: 35,
           time: 1,
-          inner_hash: 'B86E1870C06C353B9B0AC759AD800052EB51BE901F88678D08CF3E6FA8D026D1',
-          nonce: 26,
-          hash: '001E732E9376135C52CB5EF169B3F84B27A7C6F7644424D8966E4168077B8458',
-          signature: 'IibV85B58R9H/IvwJjxgHGLo/6lCcXX8L0vL5fjZ2jp0MiWd9/4NWj7Ofi7iQW4t3uvlgAHJfDqCmuQqeZRCCQ=='
+          inner_hash: '402281962743405E4DA969EF3DD076263310A9EF71632EB1A0974CC7E9C67948',
+          nonce: 20,
+          hash: '00825FA2FD9C56A1E58DBDD89AE467AAE9D771090CA4DD6BA1C1774BC33B0BD2',
+          signature: 'y7SkYyglqj/npBsWNludjcmTktlIiALtWWscermpzl4UFwy3W0I4D4TVGGKJj/+rt1OvvhO/ltdlxIUcKcMlBQ=='
         },
-        testsCount: 25,
-        pow: '001E732E9376135C52CB5EF169B3F84B27A7C6F7644424D8966E4168077B8458',
+        testsCount: 19,
+        pow: '00825FA2FD9C56A1E58DBDD89AE467AAE9D771090CA4DD6BA1C1774BC33B0BD2',
       }
     });
   }));

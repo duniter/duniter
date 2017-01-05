@@ -6,7 +6,7 @@ const parsers = require('../../app/lib/streams/parsers');
 const indexer = require('../../app/lib/dup/indexer');
 const constants = require('../../app/lib/constants');
 
-const raw = "Version: 5\n" +
+const raw = "Version: 6\n" +
   "Type: Block\n" +
   "Currency: beta_brousouf\n" +
   "Number: 10\n" +

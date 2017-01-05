@@ -21,87 +21,13 @@ var mocks = {
   block0: {
     "hash" : "00063EB6E83F8717CEF1D25B3E2EE308374A14B1",
     "signature" : "+78w7251vvRdhoIJ6IWHEiEOLxNrmfQf45Y5sYvPdnAdXkVpO1unMV5YA/G5Vhphyz1dICrbeKCPM5qbFsoWAQ==",
-    "version" : constants.DOCUMENTS_VERSION,
+    "version" : constants.BLOCK_GENERATED_VERSION,
     "currency" : "meta_brouzouf",
     "issuer" : "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk",
     "parameters" : "0.1:86400:100:604800:2629800:3:3:2629800:3:11:600:20:144:0.67",
     "previousHash" : "",
     "previousIssuer" : "",
     "transactions" : [
-      {
-        "version" : constants.DOCUMENTS_VERSION,
-        "issuers" : [
-          "Ecp2suUYtgZzih816mi1bH1JjiaUFNoX2oe2nNvTocc3"
-        ],
-        "hash": "E65B13D52D5F5F82881C831D5A43FFF624130066",
-        "inputs" : [
-          "0:D:714:00000982118DF0D23E3B6A8A60A894386948E00A:100"
-        ],
-        "outputs" : [
-          "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk:16",
-          "Ecp2suUYtgZzih816mi1bH1JjiaUFNoX2oe2nNvTocc3:84"
-        ],
-        "signatures" : [
-          "vxtu0SxtFrb3/vTMVR0ayD2jFKpe/kIA9X3ikjBW+4C8nCcSAtdAGgN+Jk1Epo0V726SpdMr8EvFqXR6KMXgAQ=="
-        ],
-        "comment" : "for memory leak elimination :)"
-      },
-      {
-        "version" : constants.DOCUMENTS_VERSION,
-        "issuers" : [
-          "Ecp2suUYtgZzih816mi1bH1JjiaUFNoX2oe2nNvTocc3"
-        ],
-        "hash": "CB856DBE7A1D39CB37F5EA9962059CD44F903AD5",
-        "inputs" : [
-          "0:T:728:CBE88F0F473877333730D40E3940A648D8B2EFC7:23"
-        ],
-        "outputs" : [
-          "ATkjQPa4sn4LBF69jqEPzFtRdHYJs6MJQjvP8JdN7MtN:3",
-          "Ecp2suUYtgZzih816mi1bH1JjiaUFNoX2oe2nNvTocc3:20"
-        ],
-        "signatures" : [
-          "DWJeH+LhebheqnhEIo4Qiczuj3319MYEhW8XG4QUvAzuIfxSHGX+ZoiL7cWyzT1ky10xSMjP12FSGpsb7vf1Cg=="
-        ],
-        "comment" : ""
-      },
-      {
-        "version" : constants.DOCUMENTS_VERSION,
-        "hash": "18D1CDBCB9B77F6A7409F2BA5F53301FF3307850",
-        "issuers" : [
-          "Ecp2suUYtgZzih816mi1bH1JjiaUFNoX2oe2nNvTocc3"
-        ],
-        "inputs" : [
-          "0:T:728:491C512C8FD478EC521E18BEDD38AADF0575C980:6",
-          "0:T:728:985E26930D2D656023ADD7107020849D66DFAC86:11"
-        ],
-        "outputs" : [
-          "5ocqzyDMMWf1V8bsoNhWb1iNwax1e9M7VTUN6navs8of:16",
-          "Ecp2suUYtgZzih816mi1bH1JjiaUFNoX2oe2nNvTocc3:1"
-        ],
-        "signatures" : [
-          "HQAy10777DfX7xa1RLMB6izWHSzX8zk1oeBrVjyTOcPHRyPtI7vMs5Kuzhhoe/JEramoEdXBectIXbxjHSuJCg=="
-        ],
-        "comment" : ""
-      },
-      {
-        "version" : constants.DOCUMENTS_VERSION,
-        "hash": "3CC9AA2B8EB657E7A2A31DBC3379B29064551B1C",
-        "issuers" : [
-          "ERzNcJmHpdqeLAehYwktwhrGeGKd8DVy4ZhhgdhYtE5M"
-        ],
-        "inputs" : [
-          "0:T:703:49DDBF319FD8B67A28890CF6821122356DF10F07:19",
-          "0:T:728:491C512C8FD478EC521E18BEDD38AADF0575C980:20"
-        ],
-        "outputs" : [
-          "Enqzh5p6SUm86rUH7tBFbAnWkeEZjRjTxYXUsN5ayCqz:23",
-          "ERzNcJmHpdqeLAehYwktwhrGeGKd8DVy4ZhhgdhYtE5M:16"
-        ],
-        "signatures" : [
-          "TC6a+pps/hV1NKtkiSs4MEGr507ZOq1legH34NzkDcUQTEclDJmpmXeR0E7skS/GeOGVO+apk1Ub1hrX6RlACw=="
-        ],
-        "comment" : ""
-      }
     ],
     "certifications" : [
       "37qBxM4hLV2jfyYo2bNzAjkeLngLr2r7G2HpdpKieVxw:8Fi1VSTbjkXguwThF4v2ZxC5whK7pwG2vcGTkPUPjPGU:0:3wmCVW8AbVxRFm2PuLXD9UTCIg93MhUblZJvlYrDldSV4xuA7mZCd8TV4vb/6Bkc0FMQgBdHtpXrQ7dpo20uBA==",

@@ -28,29 +28,31 @@ function TransactionParser (onError) {
     obj.comment = obj.comment || "";
     obj.locktime = parseInt(obj.locktime) || 0;
     obj.signatures.push(obj.signature);
-    if (obj.version >= 3) {
-      const compactSize = 2 // Header + blockstamp
-        + obj.issuers.length
-        + obj.inputs.length
-        + obj.unlocks.length
-        + obj.outputs.length
-        + (obj.comment ? 1 : 0)
-        + obj.signatures;
-      if (compactSize > 100) {
-        throw 'A transaction has a maximum size of 100 lines';
-      }
+    const compactSize = 2 // Header + blockstamp
+      + obj.issuers.length
+      + obj.inputs.length
+      + obj.unlocks.length
+      + obj.outputs.length
+      + (obj.comment ? 1 : 0)
+      + obj.signatures;
+    if (compactSize > 100) {
+      throw 'A transaction has a maximum size of 100 lines';
     }
   };
 
   this._verify = (obj) => {
     let err = null;
     const codes = {
-      'BAD_VERSION': 150
+      'BAD_VERSION': 150,
+      'NO_BLOCKSTAMP': 151
     };
     if(!err){
       // Version
       if(!obj.version || !obj.version.match(constants.DOCUMENTS_TRANSACTION_VERSION_REGEXP))
         err = {code: codes.BAD_VERSION, message: "Version unknown"};
+      // Blockstamp
+      if(!obj.blockstamp || !obj.blockstamp.match(constants.BLOCKSTAMP_REGEXP))
+        err = {code: codes.BAD_VERSION, message: "Blockstamp is required"};
     }
     return err && err.message;
   };
@@ -74,9 +76,7 @@ function extractInputs(raw, obj) {
   const inputs = [];
   const lines = raw.split(/\n/);
   for (const line of lines) {
-    if (
-      (obj.version == 2 && line.match(constants.TRANSACTION.SOURCE)) ||
-      (obj.version >= 3 && line.match(constants.TRANSACTION.SOURCE_V3))) {
+    if (line.match(constants.TRANSACTION.SOURCE_V3)) {
       inputs.push(line);
     } else {
       // Not a transaction input, stop reading

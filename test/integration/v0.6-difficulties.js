@@ -17,13 +17,9 @@ const now = 1480937906;
 
 let s1, s2;
 
-const BACKUP_TIME_FOR_V6 = constants.TIME_FOR_V6;
-
 describe("Protocol 0.6 Difficulties", function() {
 
   before(() => co(function*() {
-
-    constants.TIME_FOR_V6 = 1478543978; // 2016-11-07 19:39:38
 
     limiter.noLimit();
     const res = yield toolbox.simpleNetworkOf2NodesAnd2Users(conf);
@@ -47,12 +43,10 @@ describe("Protocol 0.6 Difficulties", function() {
       s1.until('block', 1)
     ];
     yield s1.expectJSON('/blockchain/current', {
-      version: 6,
       number: 2,
       issuer: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc'
     });
     yield s1.expectJSON('/blockchain/block/0', {
-      version: 6,
       number: 0,
       issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd'
     });
@@ -102,8 +96,4 @@ describe("Protocol 0.6 Difficulties", function() {
     yield s1.expectJSON('/blockchain/hardship/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', { level: 1 }); // medianOfBlocksInFrame = MEDIAN([11]) = 11, personal_excess = 12/11 = 9%, level = 1
     yield s1.expectJSON('/blockchain/hardship/2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', { level: 1 }); // medianOfBlocksInFrame = MEDIAN([11]) = 11, personal_excess = 0/11 = 0%, level = 1
   }));
-
-  after(() => {
-    constants.TIME_FOR_V6 = BACKUP_TIME_FOR_V6;
-  });
 });

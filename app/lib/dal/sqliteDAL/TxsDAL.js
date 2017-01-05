@@ -24,8 +24,6 @@ function TxsDAL(driver) {
   this.table = 'txs';
   this.fields = [
     'hash',
-    'v4_hash',
-    'v5_hash',
     'block_number',
     'version',
     'currency',

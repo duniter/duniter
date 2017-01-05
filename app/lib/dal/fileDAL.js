@@ -382,30 +382,7 @@ function FileDAL(params) {
 
   this.existsNonReplayableLink = (from, to) => this.cindexDAL.existsNonReplayableLink(from, to);
 
-  this.getSource = (identifier, pos) => co(function*() {
-    // TODO: remove for version 1.0
-    let src = yield that.sindexDAL.getSource(identifier, pos);
-    // If the source does not exist, we try to check if it exists under another form (issue #735)
-    if (!src) {
-      let txs = yield that.txsDAL.getTransactionByExtendedHash(identifier);
-      if (txs.length > 1) {
-        throw constants.ERRORS.INCONSISTENT_DB_MULTI_TXS_SAME_HASH;
-      }
-      if (txs.length && txs[0].version == 3) {
-        // Other try: V4
-        src = yield that.sindexDAL.getSource(txs[0].v4_hash, pos);
-        if (!src) {
-          // Another try: V5
-          src = yield that.sindexDAL.getSource(txs[0].v5_hash, pos);
-        }
-        if (!src) {
-          // Final try: V3 (because identifier maybe be one of [hash, v4_hash, v5_hash]
-          src = yield that.sindexDAL.getSource(txs[0].hash, pos);
-        }
-      }
-    }
-    return src;
-  });
+  this.getSource = (identifier, pos) => that.sindexDAL.getSource(identifier, pos);
 
   this.isMember = (pubkey) => co(function*() {
     try {
@@ -598,10 +575,8 @@ function FileDAL(params) {
   this.saveTxsInFiles = (txs, extraProps) => {
     return Q.all(txs.map((tx) => co(function*() {
       _.extend(tx, extraProps);
-      if (tx.version >= 3) {
-        const sp = tx.blockstamp.split('-');
-        tx.blockstampTime = (yield that.getBlockByNumberAndHash(sp[0], sp[1])).medianTime;
-      }
+      const sp = tx.blockstamp.split('-');
+      tx.blockstampTime = (yield that.getBlockByNumberAndHash(sp[0], sp[1])).medianTime;
       const txEntity = new Transaction(tx);
       txEntity.computeAllHashes();
       return that.txsDAL.addLinked(txEntity);

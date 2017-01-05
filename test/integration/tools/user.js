@@ -1,21 +1,22 @@
 "use strict";
-var co      = require('co');
-var Q		    = require('q');
+const co      = require('co');
+const Q		    = require('q');
 const _ = require('underscore');
-var async		= require('async');
-var request	= require('request');
-var contacter = require('../../../app/lib/contacter');
-var ucp     = require('../../../app/lib/ucp/buid');
-var parsers = require('../../../app/lib/streams/parsers');
-var keyring	= require('../../../app/lib/crypto/keyring');
-var rawer		= require('../../../app/lib/ucp/rawer');
-var base58	= require('../../../app/lib/crypto/base58');
-var constants = require('../../../app/lib/constants');
-var Identity = require('../../../app/lib/entity/identity');
-var Certification = require('../../../app/lib/entity/certification');
-var Membership = require('../../../app/lib/entity/membership');
-var Revocation = require('../../../app/lib/entity/revocation');
-var Peer = require('../../../app/lib/entity/peer');
+const async		= require('async');
+const request	= require('request');
+const contacter = require('../../../app/lib/contacter');
+const ucp     = require('../../../app/lib/ucp/buid');
+const parsers = require('../../../app/lib/streams/parsers');
+const keyring	= require('../../../app/lib/crypto/keyring');
+const rawer		= require('../../../app/lib/ucp/rawer');
+const base58	= require('../../../app/lib/crypto/base58');
+const constants = require('../../../app/lib/constants');
+const Identity = require('../../../app/lib/entity/identity');
+const Certification = require('../../../app/lib/entity/certification');
+const Membership = require('../../../app/lib/entity/membership');
+const Revocation = require('../../../app/lib/entity/revocation');
+const Peer = require('../../../app/lib/entity/peer');
+const Transaction = require('../../../app/lib/entity/transaction');
 
 module.exports = function (uid, salt, passwd, url) {
   return new User(uid, salt, passwd, url);
@@ -201,8 +202,9 @@ function User (uid, options, node) {
       outputsToConsume = outputsToConsume.slice(opts.theseOutputsStart);
     }
     let inputs = outputsToConsume.map((out, index) => {
+      const output = Transaction.statics.outputStr2Obj(out);
       return {
-        src: ['T', obj.hash, (opts.theseOutputsStart || 0) + index].join(':'),
+        src: [output.amount, output.base, 'T', obj.hash, (opts.theseOutputsStart || 0) + index].join(':'),
         unlock: unlocks[index]
       };
     });
@@ -213,8 +215,9 @@ function User (uid, options, node) {
     let obj = parsers.parseTransaction.syncWrite(previousTX);
     // Unlocks inputs with given "unlocks" strings
     let inputs = obj.outputs.map((out, index) => {
+      const output = Transaction.statics.outputStr2Obj(out);
       return {
-        src: ['T', obj.hash, index].join(':'),
+        src: [output.amount, output.base, 'T', obj.hash, index].join(':'),
         unlock: unlocks[index]
       };
     });
@@ -265,7 +268,7 @@ function User (uid, options, node) {
     sources2.forEach((src) => inputSum += src.amount * Math.pow(10, src.base));
     let inputs = sources2.map((src) => {
       return {
-        src: (version >= 3 ? [src.amount, src.base] : []).concat([src.type, src.identifier, src.noffset]).join(':'),
+        src: [src.amount, src.base].concat([src.type, src.identifier, src.noffset]).join(':'),
         unlock: 'SIG(0)'
       };
     });
@@ -307,12 +310,10 @@ function User (uid, options, node) {
     let opts = theOptions || {};
     let issuers = opts.issuers || [pub];
     let raw = '';
-    raw += "Version: " + (opts.version || constants.DOCUMENTS_VERSION) + '\n';
+    raw += "Version: " + (opts.version || constants.TRANSACTION_VERSION) + '\n';
     raw += "Type: Transaction\n";
     raw += "Currency: " + (opts.currency || node.server.conf.currency) + '\n';
-    if (opts.version && opts.version >= 3) {
-      raw += "Blockstamp: " + opts.blockstamp + '\n';
-    }
+    raw += "Blockstamp: " + opts.blockstamp + '\n';
     raw += "Locktime: " + (opts.locktime || 0) + '\n';
     raw += "Issuers:\n";
     issuers.forEach((issuer) => raw += issuer + '\n');

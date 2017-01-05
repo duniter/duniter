@@ -70,18 +70,18 @@ describe("Proof-of-work", function() {
   }));
 
   it('should be able to cancel a proof-of-work on other PoW receival', () => co(function*() {
-    const now = 1474464483;
+    const now = 1474464489;
     const res = yield toolbox.simpleNetworkOf2NodesAnd2Users({
-      powMin: 20
+      powMin: 46
     }), s1 = res.s1, s2 = res.s2;
     yield s1.commit({
-      time: now
+      time: now // 38 hits to find the proof (known by test)
     });
     yield s2.until('block', 1);
     yield s1.expectJSON('/blockchain/current', { number: 0 });
     yield s2.expectJSON('/blockchain/current', { number: 0 });
     yield s1.commit({
-      time: now
+      time: now + 13 // 521 hits to find the proof
     });
     yield s2.until('block', 1);
     yield s1.expectJSON('/blockchain/current', { number: 1 });
@@ -94,9 +94,9 @@ describe("Proof-of-work", function() {
       Promise.all([
         co(function*() {
           try {
-            let s2commit = s2.commit({ time: now + 10 });
-            // A little handicap for s1 which will find the proof immediately
-            setTimeout(() => s1.commit({ time: now + 10 }), 0);
+            let s2commit = s2.commit({ time: now + 14 }); // 7320 hits to be found: very high, that's good because we need time for s1 to find the proof *before* s2
+            // A little handicap for s1 which will find the proof almost immediately
+            setTimeout(() => s1.commit({ time: now + 10 }), 100);
             yield s2commit;
             throw 's2 server should not have found the proof before s1';
           } catch (e) {

@@ -224,7 +224,7 @@ function BlockGenerator(notifier) {
         return theEngine.status();
       }, constants.ENGINE_IDLE_INTERVAL);
       // Starts the PoW
-      const res = yield theEngine.prove(stuff.newPoW.block, nonceBeginning, stuff.newPoW.zeros, stuff.newPoW.highMark, stuff.newPoW.pair, stuff.newPoW.forcedTime, stuff.newPoW.conf.medianTimeBlocks, stuff.newPoW.conf.avgGenTime);
+      const res = yield theEngine.prove(stuff.newPoW.block, nonceBeginning, stuff.newPoW.zeros, stuff.newPoW.highMark, stuff.newPoW.pair, stuff.newPoW.forcedTime, stuff.newPoW.conf.medianTimeBlocks, stuff.newPoW.conf.avgGenTime, stuff.newPoW.conf.cpu);
       clearInterval(interval);
       if (res) {
         checkPoWandNotify(res.pow.pow, res.pow.block, POW_FOUND);

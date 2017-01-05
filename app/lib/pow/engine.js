@@ -3,6 +3,7 @@
 const childProcess = require('child_process');
 const path = require('path');
 const co = require('co');
+const os = require('os');
 const nuuid = require('node-uuid');
 const querablep = require('../querablep');
 
@@ -67,7 +68,12 @@ function PowEngine() {
     return exchanges[uuid];
   });
 
-  this.prove = (block, nonceBeginning, zeros, highMark, pair, forcedTime, medianTimeBlocks, avgGenTime) => ask('newPoW', { block, nonceBeginning, zeros, highMark, pair, forcedTime, conf: { medianTimeBlocks, avgGenTime } });
+  this.prove = (block, nonceBeginning, zeros, highMark, pair, forcedTime, medianTimeBlocks, avgGenTime, cpu) => {
+    if (os.arch().match(/arm/)) {
+      cpu /= 2; // Don't know exactly why is ARM so much saturated by PoW, so let's divide by 2
+    }
+    ask('newPoW', { block, nonceBeginning, zeros, highMark, pair, forcedTime, conf: { medianTimeBlocks, avgGenTime, cpu } });
+  };
 
   this.status = () => ask('state');
 

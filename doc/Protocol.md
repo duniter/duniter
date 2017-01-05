@@ -136,7 +136,7 @@ In this document *identifier*, `UserID`, `USER_ID` and `uid` will be indifferent
 
 An identity is a *signed* document containing the identifier:
 
-    Version: 2
+    Version: 10
     Type: Identity
     Currency: CURRENCY_NAME
     Issuer: PUBLIC_KEY
@@ -147,7 +147,7 @@ Here, `USER_ID` has to be replaced with a valid identifier, `PUBLIC_KEY` with a 
 
 The whole identity document is then:
 
-    Version: 2
+    Version: 10
     Type: Identity
     Currency: CURRENCY_NAME
     Issuer: PUBLIC_KEY
@@ -171,7 +171,7 @@ So the identity issuance is the act of saying:
 
 A valid identity:
 
-    Version: 2
+    Version: 10
     Type: Identity
     Currency: beta_brousouf
     Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
@@ -196,7 +196,7 @@ Its goal is only to inform that a created identity was either made by mistake, o
 
 A revocation is a *signed* document gathering the identity informations to revoke:
 
-    Version: 2
+    Version: 10
     Type: Revocation
     Currency: CURRENCY_NAME
     Issuer: PUBLIC_KEY
@@ -213,7 +213,7 @@ Where:
 
 If we have the following identity:
 
-    Version: 2
+    Version: 10
     Type: Identity
     Currency: beta_brousouf
     Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
@@ -223,7 +223,7 @@ If we have the following identity:
 
 A valid revocation could be:
 
-    Version: 2
+    Version: 10
     Type: Revocation
     Currency: beta_brousouf
     Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
@@ -244,7 +244,7 @@ A *certification* in UCP refers to the document *certifying* that someone else's
 
 A certification has the following format:
 
-    Version: 2
+    Version: 10
     Type: Certification
     Currency: CURRENCY_NAME
     Issuer: PUBLIC_KEY
@@ -279,7 +279,7 @@ Where:
 
 If we have the following complete self-certification:
 
-    Version: 2
+    Version: 10
     Type: Identity
     Currency: beta_brousouf
     Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
@@ -289,7 +289,7 @@ If we have the following complete self-certification:
 
 A valid certification could be:
 
-    Version: 2
+    Version: 10
     Type: Certification
     Currency: beta_brousouf
     Issuer: DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV
@@ -511,7 +511,7 @@ This function is a control over the signature.
 
 So if we have, in TX1:
 
-    Version: 2
+    Version: 10
     Type: Transaction
     [...]
 	Outputs
@@ -519,7 +519,7 @@ So if we have, in TX1:
 
 Then the `25` units can be spent *exclusively* in a future transaction TX2 which looks like:
 
-    Version: 2
+    Version: 10
     Type: Transaction
     [...]
     Issuers:
@@ -546,7 +546,7 @@ This function is a password control.
 
 So if we have, in TX1:
 
-    Version: 2
+    Version: 10
     Type: Transaction
     [...]
 	Outputs
@@ -554,7 +554,7 @@ So if we have, in TX1:
 
 Then the `25` units can be spent *exclusively* in a future transaction TX2 which looks like:
 
-    Version: 2
+    Version: 10
     Type: Transaction
     [...]
     Issuers:
@@ -576,7 +576,7 @@ The necessary condition `XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8
 
 Key `HsLShA` sending 30 coins to key `BYfWYF` using 1 source transaction written in block #3.
 
-    Version: 2
+    Version: 10
     Type: Transaction
     Currency: beta_brousouf
     Blockstamp: 204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
@@ -600,7 +600,7 @@ Signatures (fake here):
 
 Key `HsLShA` sending 30 coins (base 2) to key `BYfWYF` using 2 sources transaction written in blocks #65 and #77 + 1 UD from block #88.
 
-    Version: 2
+    Version: 10
     Type: Transaction
     Currency: beta_brousouf
     Blockstamp: 204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
@@ -627,7 +627,7 @@ Signatures (fake here):
 
 Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 sources transaction + 2 UD from same block #46.
 
-    Version: 2
+    Version: 10
     Type: Transaction
     Currency: beta_brousouf
     Blockstamp: 204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
@@ -936,7 +936,7 @@ The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
 #### Example
 
-    Version: 2
+    Version: 10
     Type: Peer
     Currency: beta_brousouf
     PublicKey: HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
@@ -997,7 +997,7 @@ Local validation verifies the coherence of a well-formatted block, without any o
 
 Rule:
 
-    HEAD.version == 6
+    HEAD.version == 10
 
 ##### InnerHash
 

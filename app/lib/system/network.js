@@ -105,7 +105,7 @@ module.exports = {
     if (whitelist.indexOf('127.0.0.1') === -1) {
       whitelist.push('127.0.0.1');
     }
-    const ddosInstance = new ddos({ whitelist });
+    const ddosInstance = new ddos({ whitelist, silent: true });
     app.use(ddosInstance.express);
 
     // CORS for **any** HTTP request

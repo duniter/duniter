@@ -65,24 +65,24 @@ describe("Network Merkle", function() {
         res.should.have.property('depth').equal(0);
         res.should.have.property('nodesCount').equal(0);
         res.should.have.property('leavesCount').equal(1);
-        res.should.have.property('root').equal('DEDB9A162DC1501491E5E62960E4899D5D644F31352174414C91CB34FB1FFC35');
+        res.should.have.property('root').equal('C3EAB939F0BEF711461A140A1BA2649C75905107FACA3BE9C5F76F7FD1C7BC5E');
         res.should.have.property('leaves').length(1);
-        res.leaves[0].should.equal('DEDB9A162DC1501491E5E62960E4899D5D644F31352174414C91CB34FB1FFC35');
+        res.leaves[0].should.equal('C3EAB939F0BEF711461A140A1BA2649C75905107FACA3BE9C5F76F7FD1C7BC5E');
       });
     });
 
-    it('/peers?leaf=DEDB9A162DC1501491E5E62960E4899D5D644F31352174414C91CB34FB1FFC35', function() {
-      return expectAnswer(rp('http://127.0.0.1:20501/network/peering/peers?leaf=DEDB9A162DC1501491E5E62960E4899D5D644F31352174414C91CB34FB1FFC35', { json: true }), (res) => {
+    it('/peers?leaf=C3EAB939F0BEF711461A140A1BA2649C75905107FACA3BE9C5F76F7FD1C7BC5E', function() {
+      return expectAnswer(rp('http://127.0.0.1:20501/network/peering/peers?leaf=C3EAB939F0BEF711461A140A1BA2649C75905107FACA3BE9C5F76F7FD1C7BC5E', { json: true }), (res) => {
         res.should.have.property('depth').equal(0);
         res.should.have.property('nodesCount').equal(0);
         res.should.have.property('leavesCount').equal(1);
-        res.should.have.property('root').equal('DEDB9A162DC1501491E5E62960E4899D5D644F31352174414C91CB34FB1FFC35');
+        res.should.have.property('root').equal('C3EAB939F0BEF711461A140A1BA2649C75905107FACA3BE9C5F76F7FD1C7BC5E');
         res.should.have.property('leaves').length(0);
-        res.should.have.property('leaf').have.property('hash').equal('DEDB9A162DC1501491E5E62960E4899D5D644F31352174414C91CB34FB1FFC35');
+        res.should.have.property('leaf').have.property('hash').equal('C3EAB939F0BEF711461A140A1BA2649C75905107FACA3BE9C5F76F7FD1C7BC5E');
         res.should.have.property('leaf').have.property('value');
         res.should.have.property('leaf').have.property('value').have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
         res.should.have.property('leaf').have.property('value').have.property('block').equal('0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855');
-        res.should.have.property('leaf').have.property('value').have.property('signature').equal('sxV6GN28vEup0pqXeJQn+l1IAoLIQFbJaW5WLvmreUZj3+kS9N5MWYnLuTze6VDd3baHbx+yZJ25ULPaDUYdDA==');
+        res.should.have.property('leaf').have.property('value').have.property('signature').equal('V4fA6+ll3aLIkh9ixhdQyd6xJxcYGcbRQhA4P9ATp3m0jCwKq3zbU5udGstBPTUn9EgCOxt08gO7teM4EYO/DQ==');
         res.should.have.property('leaf').have.property('value').have.property('status').equal('UP');
         res.should.have.property('leaf').have.property('value').have.property('currency').equal('bb');
         res.should.have.property('leaf').have.property('value').have.property('endpoints').length(1);
@@ -98,25 +98,25 @@ describe("Network Merkle", function() {
         res.should.have.property('depth').equal(1);
         res.should.have.property('nodesCount').equal(1);
         res.should.have.property('leavesCount').equal(2);
-        res.should.have.property('root').equal('75C5C6454FB56E1E999945454EF38EFD653686E516B13A571980B0DA3F899BFB');
+        res.should.have.property('root').equal('61977D7C6EAF055F2F06D3C9DFC848C2B0E52E289DD728783FF608905002C840');
         res.should.have.property('leaves').length(2);
-        res.leaves[0].should.equal('069EDBB63D06526422AA7BA673B69C9EC6606EA1A712D2F7304879403E4A3DE3');
-        res.leaves[1].should.equal('DEDB9A162DC1501491E5E62960E4899D5D644F31352174414C91CB34FB1FFC35');
+        res.leaves[0].should.equal('BDD850441E3CDEB9005345B425CDBDA83E7BC7E5D83E9130C6012084F93CD220');
+        res.leaves[1].should.equal('C3EAB939F0BEF711461A140A1BA2649C75905107FACA3BE9C5F76F7FD1C7BC5E');
       });
     });
 
-    it('/peers?leaf=069EDBB63D06526422AA7BA673B69C9EC6606EA1A712D2F7304879403E4A3DE3', function() {
-      return expectAnswer(rp('http://127.0.0.1:20502/network/peering/peers?leaf=069EDBB63D06526422AA7BA673B69C9EC6606EA1A712D2F7304879403E4A3DE3', { json: true }), (res) => {
+    it('/peers?leaf=BDD850441E3CDEB9005345B425CDBDA83E7BC7E5D83E9130C6012084F93CD220', function() {
+      return expectAnswer(rp('http://127.0.0.1:20502/network/peering/peers?leaf=BDD850441E3CDEB9005345B425CDBDA83E7BC7E5D83E9130C6012084F93CD220', { json: true }), (res) => {
         res.should.have.property('depth').equal(1);
         res.should.have.property('nodesCount').equal(1);
         res.should.have.property('leavesCount').equal(2);
-        res.should.have.property('root').equal('75C5C6454FB56E1E999945454EF38EFD653686E516B13A571980B0DA3F899BFB');
+        res.should.have.property('root').equal('61977D7C6EAF055F2F06D3C9DFC848C2B0E52E289DD728783FF608905002C840');
         res.should.have.property('leaves').length(0);
-        res.should.have.property('leaf').have.property('hash').equal('069EDBB63D06526422AA7BA673B69C9EC6606EA1A712D2F7304879403E4A3DE3');
+        res.should.have.property('leaf').have.property('hash').equal('BDD850441E3CDEB9005345B425CDBDA83E7BC7E5D83E9130C6012084F93CD220');
         res.should.have.property('leaf').have.property('value');
         res.should.have.property('leaf').have.property('value').have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
         res.should.have.property('leaf').have.property('value').have.property('block').equal('0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855');
-        res.should.have.property('leaf').have.property('value').have.property('signature').equal('iwUI8OzkxuQPZj5rF5lCwmvaGOplNm0+J1BM90Q44uw3475g2ZafkNUqL/xy47NgsfRX2vcrVv3iClojuzPcAg==');
+        res.should.have.property('leaf').have.property('value').have.property('signature').equal('pyQdsay3p2XUduM85A1eoUZbRu/7NnEQnMc+hWmIUpmylWTIMqoZmc3d6gIcaa/pvoVvV7QbldwXErpSy06FAQ==');
         res.should.have.property('leaf').have.property('value').have.property('status').equal('UP');
         res.should.have.property('leaf').have.property('value').have.property('currency').equal('bb');
         res.should.have.property('leaf').have.property('value').have.property('endpoints').length(1);

@@ -2,7 +2,7 @@
 var should  = require('should');
 var parsers = require('../../app/lib/streams/parsers');
 
-var raw = "Version: 3\n" +
+var raw = "Version: 10\n" +
     "Type: Transaction\n" +
     "Currency: test_net\n" +
     "Blockstamp: 3-2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +

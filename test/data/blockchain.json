@@ -1,12 +1,12 @@
 {
   "blocks": [
     {
-      "version": 6,
-      "nonce": 100000000001,
+      "version": 10,
+      "nonce": 300000000001,
       "number": 0,
       "powMin": 0,
-      "time": 1483612194,
-      "medianTime": 1483612194,
+      "time": 1483614905,
+      "medianTime": 1483614905,
       "membersCount": 2,
       "monetaryMass": null,
       "unitbase": 0,
@@ -16,38 +16,38 @@
       "len": 6,
       "currency": "duniter_unit_test_currency",
       "issuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "signature": "noNgXC1JIeEVfZd8G7zXdToWioKbfnDP2abO4zcWUXBuauAnkPWt7Vp/PkKKgOUNippZ1iycxFI4P8HePKryBg==",
-      "hash": "79F3D06CF03C0DDB34713CEE91EA1660D54155FFA683FC9095AC84EF932445CD",
+      "signature": "WJourHkd6NnMxKDSEfrsiB7qE0mGbiFHSwy0cE8/q/is6hTd0mzlMNBPxDhoPkAiocfXJrQuIVeG0/ygxQrTBw==",
+      "hash": "0DCD782E25C04B3E77A7B5687893212AF0C8AE20687A13655D1068DA536FBF3E",
       "parameters": "0.007376575:3600:120:0:40:604800:31536000:1:604800:604800:0.9:31536000:3:20:960:10:20:0.6666666666666666",
       "previousHash": null,
       "previousIssuer": null,
-      "inner_hash": "18272124CAB127F86323300FEFF01FCCC972FF3C19DE263A8C9AFE5A75F0511C",
+      "inner_hash": "3969BE7A32853B2AB526662E88A2F1BFD852048C6B1DAEF0483F3DF64757AF48",
       "dividend": null,
       "identities": [
-        "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:eqxvNrwg0TZGmfBk/cdTs3gdDRiRvE7MZpjUMoZRYK4e8+SLD8hF4fegBIE8+qqQ0tnoMK0KkemDB7XCqtdICw==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:tic",
-        "DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:T727fILleI5XNiqpLj0UfRD/LJd/DGS2vpqJLwhYHyBoiuQ4ktaQFGtO4alUaWQgNkyZkhaatbad+53UBBBmBg==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc"
+        "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:1eubHHbuNfilHMM0G2bI30iZzebQ2cQ1PC7uPAw08FGMMmQCRerlF/3pc4sAcsnexsxBseA/3lY03KlONqJBAg==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:tic",
+        "DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:lcekuS0eP2dpFL99imJcwvDAwx49diiDMkG8Lj7FLkC/6IJ0tgNjUzCIZgMGi7bL5tODRiWi9B49UMXb8b3MAw==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc"
       ],
       "joiners": [
-        "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:lgEsLYZSfzDyFjtxR2mnLamICcUtI8z8TQekxzlCyOVS/uegx0Q45Lk6ztQB+gmWI6lNiGmtjdoc26YFqqT3Ag==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:tic",
-        "DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:meZzYMYWTscR5cL99eglTDroJlgQEMAhLVlLwmaENkPfxhISzOxYgO9zQSm0K/xtU7TbFEh4JhyDN5F0AdxfBA==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc"
+        "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:s2hUbokkibTAWGEwErw6hyXSWlWFQ2UWs2PWx8d/kkElAyuuWaQq4Tsonuweh1xn4AC1TVWt4yMR3WrDdkhnAw==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:tic",
+        "DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:80pUx9YBk0RwqrVrQQA+PuxoNn21A8NwQ3824CQPU1ad9R1oDXc/pU6NVpQv92LM8gaWs/Pm1mLXNNVnr+m6BA==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc"
       ],
       "actives": [],
       "leavers": [],
       "revoked": [],
       "excluded": [],
       "certifications": [
-        "DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:0:sxfdBIP6uZoq482yEB/eJzr3fZ1IVYGq8AQbPM4HfYkUr9hRodWWSW6Lv+L+CTGkDNzudPPDgejUHqZD6/naBw==",
-        "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:0:pJ7uTPRJDM+CsTlW5HPnvkStYWPepnQ4jaIMQwnY0gnHymGIZL7oZ68pxXMFCRPWfeGQ2GVvCPEJQf5otCvKCw=="
+        "DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:0:vMaYgBSnU+83AYOVQCZAx1XLpg/F1MmMztDfCnZvl8hPs4LE9tcDvCrrFogAwMEW2N7Y0gCH62/fBMgw4KrGCA==",
+        "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:0:RKIGMgYIhB9FmjPbmyo4egPufg/iTpBznYGZp5hjK1WZ1a9imQldLNUMe0eiPlSKJTK/JD3gOlCiynOEY2csBA=="
       ],
       "transactions": []
     },
     {
-      "version": 6,
-      "nonce": 100000000001,
+      "version": 10,
+      "nonce": 200000000001,
       "number": 1,
       "powMin": 0,
-      "time": 1483619402,
-      "medianTime": 1483612194,
+      "time": 1483622114,
+      "medianTime": 1483614905,
       "membersCount": 2,
       "monetaryMass": 0,
       "unitbase": 0,
@@ -57,12 +57,12 @@
       "len": 0,
       "currency": "duniter_unit_test_currency",
       "issuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "signature": "bLgJgRpAiF6DN7lccxHzkjyoKlsI/NPh2GIjzV5GUBb0lCfSw7fArAd3apDLJF3QiHS8iVy1fH5R3jyD8SRCDA==",
-      "hash": "2D46464E2A8D40F29051FA603E2D03E8349AA5F8EF2F721964AF38847D2BCBDC",
+      "signature": "XHoAuJI0OfwA3/yCA2J9Q2u9Xvn/p6njXDz7Psi1v7ia1ibjH2mTB97odI8O7Mda2mVtyoVl4Un01cso1ww0Aw==",
+      "hash": "7D6AE31DBD9EF372120ADEE5FA90DDD4EFACAE96B926BD54087E52641FC72BFC",
       "parameters": "",
-      "previousHash": "79F3D06CF03C0DDB34713CEE91EA1660D54155FFA683FC9095AC84EF932445CD",
+      "previousHash": "0DCD782E25C04B3E77A7B5687893212AF0C8AE20687A13655D1068DA536FBF3E",
       "previousIssuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "inner_hash": "239597A84DB5CB243B788C48C27B73EBB0C9F6BCE1F99B7752E3D464C84232A8",
+      "inner_hash": "0FD9B1D8BBB6EE37572668F6B5E5CB66A546BE4337E05B31C09FB71B39F36EC6",
       "dividend": null,
       "identities": [],
       "joiners": [],
@@ -74,12 +74,12 @@
       "transactions": []
     },
     {
-      "version": 6,
-      "nonce": 100000000001,
+      "version": 10,
+      "nonce": 200000000001,
       "number": 2,
       "powMin": 0,
-      "time": 1483619402,
-      "medianTime": 1483615798,
+      "time": 1483622114,
+      "medianTime": 1483618509,
       "membersCount": 2,
       "monetaryMass": 240,
       "unitbase": 0,
@@ -89,12 +89,12 @@
       "len": 0,
       "currency": "duniter_unit_test_currency",
       "issuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "signature": "RjSZ2sXAIA8JyuVzdVPov7/fTq8DNAETWEpKZZcZy0Zs6gUNcrll+avtXgVTEYLxvZTFBIXzkslD6lUEpX3UBQ==",
-      "hash": "7F356CBA3D4F92C943FA8F503DA0BFBFC537CCA6CD49C207A47AA1A7A8AF0C3F",
+      "signature": "TkyydTsP5A5UZtn4URK7kSNUftdFDqP9Ma9DH36y1tfopvy5BUHtLc3Huz1eaiEJClfmNGh+LU5qxoSVmny3Bg==",
+      "hash": "347E823BE5B446972B5A9ED162428AA247840FA695FBC125CC964F289453F17C",
       "parameters": "",
-      "previousHash": "2D46464E2A8D40F29051FA603E2D03E8349AA5F8EF2F721964AF38847D2BCBDC",
+      "previousHash": "7D6AE31DBD9EF372120ADEE5FA90DDD4EFACAE96B926BD54087E52641FC72BFC",
       "previousIssuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "inner_hash": "4A5D65F938CAC7D131625FD493C0A55355E6AE5E499125C9E3D76AFA0592399B",
+      "inner_hash": "BBA373D017B83A8DAEE81FEC49E4A861AE624EE783B40554548595FB83C35409",
       "dividend": 120,
       "identities": [],
       "joiners": [],
@@ -106,12 +106,12 @@
       "transactions": []
     },
     {
-      "version": 6,
-      "nonce": 100000000001,
+      "version": 10,
+      "nonce": 300000000001,
       "number": 3,
       "powMin": 0,
-      "time": 1483619412,
-      "medianTime": 1483616999,
+      "time": 1483622124,
+      "medianTime": 1483619711,
       "membersCount": 2,
       "monetaryMass": 240,
       "unitbase": 0,
@@ -121,12 +121,12 @@
       "len": 8,
       "currency": "duniter_unit_test_currency",
       "issuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "signature": "xB1fUtsIxlVVyruQ6x1tNfBd68qVXs9yq9XBNQxliX8ohUX1iWqrs1CnigPgl+vByv761A0IkOIZztTC01yfAA==",
-      "hash": "5702B880929B59BCA649F0C607F96A0AE68E8EAE50423A27CFCBFFFF2B838085",
+      "signature": "FsdVyz6yu/szV8U/yFrpCGBZADqfQmboOOt3QiNSqtVbVPzVXutYsz7o+mew+uQAP3cSrvMt8uSKD1InslunDw==",
+      "hash": "4747B5BF56F8F582B01EE78C93470745175F1254868341F29569503C6AD3B7CA",
       "parameters": "",
-      "previousHash": "7F356CBA3D4F92C943FA8F503DA0BFBFC537CCA6CD49C207A47AA1A7A8AF0C3F",
+      "previousHash": "347E823BE5B446972B5A9ED162428AA247840FA695FBC125CC964F289453F17C",
       "previousIssuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "inner_hash": "D79BAFDFD18054218C04EAD4FEA10B86021DD56080340E780EF7FD71CEBAC816",
+      "inner_hash": "F3AD9B713ABF6F30135F35EFF3210B2E0C85F17A129A455CA352C559B5F98A06",
       "dividend": null,
       "identities": [],
       "joiners": [],
@@ -137,8 +137,8 @@
       "certifications": [],
       "transactions": [
         {
-          "version": 3,
-          "blockstamp": "2-7F356CBA3D4F92C943FA8F503DA0BFBFC537CCA6CD49C207A47AA1A7A8AF0C3F",
+          "version": 10,
+          "blockstamp": "2-347E823BE5B446972B5A9ED162428AA247840FA695FBC125CC964F289453F17C",
           "locktime": 0,
           "issuers": [
             "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV"
@@ -155,22 +155,22 @@
           ],
           "comments": [],
           "signatures": [
-            "E3zJWPsoQymCULup73QGFOfAXTSniK/O8aSVQLKcb31+Z7rul9IZ8f7BWpdE0gQnHt5Om16/4xh+upMieZlTDg=="
+            "5rfA0vIZ5nZ5VtpnVpc3BeDxPssaYTCNHsit4n9mxafTkRXhDNxLO/hDIwSz934xxsSdbYXdS1F4FrSy+ooDCA=="
           ],
           "comment": "",
           "currency": "duniter_unit_test_currency",
           "block_number": 3,
-          "time": 1483616999
+          "time": 1483619711
         }
       ]
     },
     {
-      "version": 6,
-      "nonce": 300000000001,
+      "version": 10,
+      "nonce": 100000000001,
       "number": 4,
       "powMin": 0,
-      "time": 1483617602,
-      "medianTime": 1483617602,
+      "time": 1483620314,
+      "medianTime": 1483620314,
       "membersCount": 2,
       "monetaryMass": 240,
       "unitbase": 0,
@@ -180,12 +180,12 @@
       "len": 9,
       "currency": "duniter_unit_test_currency",
       "issuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "signature": "jIlJKQLcVzHjIF0rVbrb+rUyk/RpSDm4GvfRUWGOEcu4oCFcNt6cjMl8+Cwm8s/FVzTRyUpjxEdSoeQ4QEC4Bg==",
-      "hash": "A049508E4D9F636E5CA4891CBE39D6D1BBE433514503378C6349D1C88ED2A7E6",
+      "signature": "GGqAwEZmugRVfwEi4SjET+BtQkdcpoekL0noaqvNLXpt0n0DWBQNcbG4MBTQciQgZn9CTvjxXC1qohnlCkWOCQ==",
+      "hash": "C30D95C66C7323780CD6D137EBF75ED9FE1A12B1E767D8CD982F1F30217418B5",
       "parameters": "",
-      "previousHash": "5702B880929B59BCA649F0C607F96A0AE68E8EAE50423A27CFCBFFFF2B838085",
+      "previousHash": "4747B5BF56F8F582B01EE78C93470745175F1254868341F29569503C6AD3B7CA",
       "previousIssuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "inner_hash": "4DE8039DDF85EE521FB0BAC5C68B761B7D2D579542D54D5E4DF941B031361F38",
+      "inner_hash": "4F76233A54A34BA6EF33C96996B27C5A5FCA3F79567E9AE4E5C075B355050510",
       "dividend": null,
       "identities": [],
       "joiners": [],
@@ -196,15 +196,15 @@
       "certifications": [],
       "transactions": [
         {
-          "version": 3,
-          "blockstamp": "3-5702B880929B59BCA649F0C607F96A0AE68E8EAE50423A27CFCBFFFF2B838085",
+          "version": 10,
+          "blockstamp": "3-4747B5BF56F8F582B01EE78C93470745175F1254868341F29569503C6AD3B7CA",
           "locktime": 0,
           "issuers": [
             "DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo"
           ],
           "inputs": [
             "120:0:D:DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:2",
-            "51:0:T:5B4BD2A20CB2D27DFAC915FA25B0D437D49ACC8CEAE3EE491DBE8633CFA61C6D:0"
+            "51:0:T:D77C05A6A346B58422DCAA779274F5F8D6D46F2DA9302BA257654183F055B366:0"
           ],
           "unlocks": [
             "0:SIG(0)",
@@ -215,22 +215,22 @@
           ],
           "comments": [],
           "signatures": [
-            "+UVRfXmPnw2WQUZ76XNikVLEzmFz+pR68W0NyTLt7DQ+PddSDFOqbXT9hxiwwO2W3Yr1N833ex4xeXZyUxVRCA=="
+            "K0XrFWiI143TLzsrWM1m8U9ZnloR5d6T6jWq/oXqo3RqFn0FS+CX1F9FqqxM94zG499NRXRkuQteT1Gd5qg+Ag=="
           ],
           "comment": "",
           "currency": "duniter_unit_test_currency",
           "block_number": 4,
-          "time": 1483617602
+          "time": 1483620314
         }
       ]
     },
     {
-      "version": 6,
+      "version": 10,
       "nonce": 100000000001,
       "number": 5,
       "powMin": 0,
-      "time": 1483632032,
-      "medianTime": 1483617602,
+      "time": 1483634744,
+      "medianTime": 1483620314,
       "membersCount": 2,
       "monetaryMass": 240,
       "unitbase": 0,
@@ -240,12 +240,12 @@
       "len": 0,
       "currency": "duniter_unit_test_currency",
       "issuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "signature": "OmvuphhkjeaCvMNbPc5KG5q8D1DEnUBeEBGLaupFXA2wELkaHwEmR709aM5GeOAZskBOBn37UpV7wnQ2y7oDBw==",
-      "hash": "886AD4E3EAF7663B494DAB66B2201E936B02015F56F4EFFFAB425BB784334F94",
+      "signature": "G05LWsvjnGULgHW4qtLr+rqLsGIvnffwHTtdCMmlLU9gzLaoeCPKmVaPBMFOuhePb0Wil2nonGbQ9X7+J/3cAg==",
+      "hash": "90F23DB9844EAB217EF0076F5B723D7CFBA4846F7CED42A1C7140DE048EF248A",
       "parameters": "",
-      "previousHash": "A049508E4D9F636E5CA4891CBE39D6D1BBE433514503378C6349D1C88ED2A7E6",
+      "previousHash": "C30D95C66C7323780CD6D137EBF75ED9FE1A12B1E767D8CD982F1F30217418B5",
       "previousIssuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "inner_hash": "301EE056C6D5BCEE418C24405583C5A9206B43C2DFA672FCA2213600398E2FB1",
+      "inner_hash": "B694ADC464A518972C5AB5DC6804252B40AD2D38D17CA999532953404948AFD0",
       "dividend": null,
       "identities": [],
       "joiners": [],
@@ -257,12 +257,12 @@
       "transactions": []
     },
     {
-      "version": 6,
-      "nonce": 200000000001,
+      "version": 10,
+      "nonce": 300000000001,
       "number": 6,
       "powMin": 0,
-      "time": 1483620007,
-      "medianTime": 1483620007,
+      "time": 1483622719,
+      "medianTime": 1483622719,
       "membersCount": 2,
       "monetaryMass": 482,
       "unitbase": 0,
@@ -272,12 +272,12 @@
       "len": 0,
       "currency": "duniter_unit_test_currency",
       "issuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "signature": "XbDFHJGPDmSTUQuLWT44aitZJwhx29A0/e71nMakK3/oYot7sOYmVW1p56FZsifi6cgDECBmeTROV+kWqJs8AQ==",
-      "hash": "15C5FA7029DAC05FD030F8A3C7455FAD2D902B39B5F9D8C59E8F6748C303ECD1",
+      "signature": "41zb+6309w9D2dZ1xUBIA8VzDAO3bVLIa0I911ZHiD23YVUKpSqk3oPWWs+sTgYASv2kk+i5ygMyxixyQrEMCA==",
+      "hash": "B6432A9F39B21B6A297F1C8784004FA58667E6CCBF8B6AF42621E6BABF25E375",
       "parameters": "",
-      "previousHash": "886AD4E3EAF7663B494DAB66B2201E936B02015F56F4EFFFAB425BB784334F94",
+      "previousHash": "90F23DB9844EAB217EF0076F5B723D7CFBA4846F7CED42A1C7140DE048EF248A",
       "previousIssuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "inner_hash": "8D30E0A06CEDB46C99603F929EE7443A7E946438E9828A597D04B35784258A4D",
+      "inner_hash": "C7DF18844F115B02776B0579D0358503812227D27AAE368F0E0FB06498C98268",
       "dividend": 121,
       "identities": [],
       "joiners": [],
@@ -289,12 +289,12 @@
       "transactions": []
     },
     {
-      "version": 6,
-      "nonce": 100000000001,
+      "version": 10,
+      "nonce": 200000000001,
       "number": 7,
       "powMin": 0,
-      "time": 1483620007,
-      "medianTime": 1483620007,
+      "time": 1483622719,
+      "medianTime": 1483622719,
       "membersCount": 2,
       "monetaryMass": 482,
       "unitbase": 0,
@@ -304,12 +304,12 @@
       "len": 7,
       "currency": "duniter_unit_test_currency",
       "issuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "signature": "B7Qv9Qg7xNtjfFwLC/TSpQPrLpHCAy6OEEUyDZNnyMeHTUwS4hRiPhe5eWxymtEjlTOt+1AigfyVDzJ5xIwLDQ==",
-      "hash": "A4D6C32557EC76109CB33C3AD78AABD8D7BEC70B64A46C5EE350DD6E24BEAEA4",
+      "signature": "qrncAMCOgoKQs+AVU6aA6lZRiwwmjyFFJ52huTOhUu03xGauGrA8vGt0N3tm7qEosLXwshGl3hx2L4yyG5YvDQ==",
+      "hash": "2A8FB524A4533C48242421A9D4F397EA55349546049404FADE69C6377FF548D1",
       "parameters": "",
-      "previousHash": "15C5FA7029DAC05FD030F8A3C7455FAD2D902B39B5F9D8C59E8F6748C303ECD1",
+      "previousHash": "B6432A9F39B21B6A297F1C8784004FA58667E6CCBF8B6AF42621E6BABF25E375",
       "previousIssuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "inner_hash": "BB3AA464E7058B9CCE3A6B3B4E2D0A4922F78169C5A50F67FE77A76B0A5E0903",
+      "inner_hash": "BDF4F79493B49BE202AE4FC9A606FCDAD494799A5BABA21BBE3488D20FE2678E",
       "dividend": null,
       "identities": [],
       "joiners": [],
@@ -320,8 +320,8 @@
       "certifications": [],
       "transactions": [
         {
-          "version": 3,
-          "blockstamp": "6-15C5FA7029DAC05FD030F8A3C7455FAD2D902B39B5F9D8C59E8F6748C303ECD1",
+          "version": 10,
+          "blockstamp": "6-B6432A9F39B21B6A297F1C8784004FA58667E6CCBF8B6AF42621E6BABF25E375",
           "locktime": 0,
           "issuers": [
             "DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo"
@@ -337,22 +337,22 @@
           ],
           "comments": [],
           "signatures": [
-            "37coPPe2SkZe11loDce7Q/Ewwv3hohNi3jNWFq12b3MXWcFgeGB/SiYSxwKre/VRL+uSEb1KJGH1o0p/TrTmBA=="
+            "e7V8ZKethWnOoPmEBhD01fz/QIFtaSgHDf7Dz9OP97AWY41q/GuKUc1NuQXKATUJZ7Mh4qRtyq1+RCAkZIzgDA=="
           ],
           "comment": "",
           "currency": "duniter_unit_test_currency",
           "block_number": 7,
-          "time": 1483620007
+          "time": 1483622719
         }
       ]
     },
     {
-      "version": 6,
-      "nonce": 100000000001,
+      "version": 10,
+      "nonce": 300000000001,
       "number": 8,
       "powMin": 0,
-      "time": 1483620007,
-      "medianTime": 1483620007,
+      "time": 1483622719,
+      "medianTime": 1483622719,
       "membersCount": 2,
       "monetaryMass": 482,
       "unitbase": 0,
@@ -362,12 +362,12 @@
       "len": 8,
       "currency": "duniter_unit_test_currency",
       "issuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "signature": "A4d9iSTM8Y68ffT+EavMblJ1eqbL7Bl6Rm17Qr5IPEvrsrp/4kImI6FiLpdZYKZAJSDKMiFetJ34nKogeKURAg==",
-      "hash": "CB0E3A01832EBC72342C2B2B88C38E537290C2AA0C88F1AFCC19F3D9D7AE2F1C",
+      "signature": "ZtV1UngKPYOJ5gwIQYjuFT8EilNJG7NVpyDosviRJ+9F5so/g9lGjF2i8DhVlCc8A0n9lW6Kio24XZsVykooCw==",
+      "hash": "999A84F9BAE0C3067752A21779FB8F2401EB18CC3F7FF7550A95BB2DF5C3670A",
       "parameters": "",
-      "previousHash": "A4D6C32557EC76109CB33C3AD78AABD8D7BEC70B64A46C5EE350DD6E24BEAEA4",
+      "previousHash": "2A8FB524A4533C48242421A9D4F397EA55349546049404FADE69C6377FF548D1",
       "previousIssuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "inner_hash": "D6700969041F37D529155C8FE69303853423562248772CD95BE5987BC07233CD",
+      "inner_hash": "C75C356062DE5FB1ADC44F32412EB7A88F76D6F3C4FA78E47D2CAF6DEBEF4415",
       "dividend": null,
       "identities": [],
       "joiners": [],
@@ -378,14 +378,14 @@
       "certifications": [],
       "transactions": [
         {
-          "version": 3,
-          "blockstamp": "7-A4D6C32557EC76109CB33C3AD78AABD8D7BEC70B64A46C5EE350DD6E24BEAEA4",
+          "version": 10,
+          "blockstamp": "7-2A8FB524A4533C48242421A9D4F397EA55349546049404FADE69C6377FF548D1",
           "locktime": 0,
           "issuers": [
             "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV"
           ],
           "inputs": [
-            "121:0:T:71A8E93E784B1D50B731B28C96E3EE3C318C6E2552A30EA5240CBB04A52A8F23:0"
+            "121:0:T:D54DF2479C4BF0D7E756F204AA7BC38F0C143EDDDC92DF9645BA031138E0477D:0"
           ],
           "unlocks": [
             "0:SIG(0)"
@@ -397,22 +397,22 @@
             "ok"
           ],
           "signatures": [
-            "JpLJ2qEaTKpn1e+povCBQ4gffHvv18taeiswFQ9SyetT8gQwJjcujz7UMgt+3pLlHUhueVbvE1/xRdhC81+4Bg=="
+            "CZ/PTKvdeIeh2Tcg+lcMO6V1wkVzHgEY2KYkIkdNv9o8R9Iq7QedyT6chbG7Qv55TJD8LCijIuutSmsgz5IMBg=="
           ],
           "comment": "ok",
           "currency": "duniter_unit_test_currency",
           "block_number": 8,
-          "time": 1483620007
+          "time": 1483622719
         }
       ]
     },
     {
-      "version": 6,
+      "version": 10,
       "nonce": 100000000001,
       "number": 9,
       "powMin": 0,
-      "time": 1483620007,
-      "medianTime": 1483620007,
+      "time": 1483622719,
+      "medianTime": 1483622719,
       "membersCount": 2,
       "monetaryMass": 482,
       "unitbase": 0,
@@ -422,12 +422,12 @@
       "len": 8,
       "currency": "duniter_unit_test_currency",
       "issuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "signature": "/TW1+AnNohrnVQ5IonXdWYPr3YCP+KLw/QVQR7dpkIZRI3oxIGnigNQz0vrMaMNJYATSyKhTiPHlYhIkNkqiAA==",
-      "hash": "F658FD78358DF218B326F4B16593607F91D3BB121E1EDEA8D2F1A860F21EF1B9",
+      "signature": "ZS8SZvAPwV+lzJIB9lzhXKbezvf2zYuqESorhi7hm5+h54gHVE1VdHq8kWqK8254e/E4+DBYGyUtmqkSzjp4DQ==",
+      "hash": "B087B0B7CF881355D0881BE61170168EBC0EAAA2640CD9119EDDCAFA6ED0D72B",
       "parameters": "",
-      "previousHash": "CB0E3A01832EBC72342C2B2B88C38E537290C2AA0C88F1AFCC19F3D9D7AE2F1C",
+      "previousHash": "999A84F9BAE0C3067752A21779FB8F2401EB18CC3F7FF7550A95BB2DF5C3670A",
       "previousIssuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "inner_hash": "5B125FA9F149C9AE632D39707C9CDC86E568A052F4A462078F317F1967902D9A",
+      "inner_hash": "B712970F21A1297D04755240C083533448E17381763A9789B23E7A8A80E1F3F8",
       "dividend": null,
       "identities": [],
       "joiners": [],
@@ -438,14 +438,14 @@
       "certifications": [],
       "transactions": [
         {
-          "version": 3,
-          "blockstamp": "7-A4D6C32557EC76109CB33C3AD78AABD8D7BEC70B64A46C5EE350DD6E24BEAEA4",
+          "version": 10,
+          "blockstamp": "7-2A8FB524A4533C48242421A9D4F397EA55349546049404FADE69C6377FF548D1",
           "locktime": 0,
           "issuers": [
             "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV"
           ],
           "inputs": [
-            "121:0:T:F9E46464D67B409C5932AD63B81F30D2167CFCCE175342B41781BDE873AE4B4A:0"
+            "121:0:T:5F779C409D291EC24D496703012EC703CCD5D4A1E3FC6977AD7FC6A17CBBB51A:0"
           ],
           "unlocks": [
             "0:XHX(1872767826647264)"
@@ -457,22 +457,22 @@
             "okk"
           ],
           "signatures": [
-            "YYygv5L1bSZuG5ipDIDB7r1hAk2PyKOA6P+7SaP7wup+AbFd62PIihyiYZNFN0vG8FpEaUohxUGE9b+5flhJCg=="
+            "0c6KHlaFOr7tzpMeh6cNWeM4u3CP6tq4n/8RU/lgCANqGieylYNi1l/rI6swaPR0+VveEME6TXxttckLHHchBg=="
           ],
           "comment": "okk",
           "currency": "duniter_unit_test_currency",
           "block_number": 9,
-          "time": 1483620007
+          "time": 1483622719
         }
       ]
     },
     {
-      "version": 6,
+      "version": 10,
       "nonce": 100000000001,
       "number": 10,
       "powMin": 1,
-      "time": 1483620007,
-      "medianTime": 1483620007,
+      "time": 1483622719,
+      "medianTime": 1483622719,
       "membersCount": 2,
       "monetaryMass": 482,
       "unitbase": 0,
@@ -482,12 +482,12 @@
       "len": 7,
       "currency": "duniter_unit_test_currency",
       "issuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "signature": "lUfMmipNNMVKpc6TyuVx4Ys6vxpkFq193A2ZLVtFy8coIBvXUvYyDpicHoSZdAR1qbiGEh079Qo0g1t0izaiBQ==",
-      "hash": "E67CB6C37205B822754D70CA9F3687E3BAB000F0688476A700D591306A153748",
+      "signature": "W6cestg9fjh6pG3jXz9N3j1BMd5urpOTI/PjcC5Z6bqIOw33d82XYYTudz6g49wBTA8ux/3bgdMh0Vu37dKsBw==",
+      "hash": "26B57CF37334A136A8BBC801C9163E3A769A8F2FBB4497DD5CDA39369DC89952",
       "parameters": "",
-      "previousHash": "F658FD78358DF218B326F4B16593607F91D3BB121E1EDEA8D2F1A860F21EF1B9",
+      "previousHash": "B087B0B7CF881355D0881BE61170168EBC0EAAA2640CD9119EDDCAFA6ED0D72B",
       "previousIssuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "inner_hash": "ED5A9E757E6CABE2D7A617664223E689938530C14C2EF8AA4036CB5CAB6642B9",
+      "inner_hash": "BD4C859BB6BDA4F738D7913026CC65EFAE1FAFAF8580FB3DF8811F9830528B41",
       "dividend": null,
       "identities": [],
       "joiners": [],
@@ -498,14 +498,14 @@
       "certifications": [],
       "transactions": [
         {
-          "version": 3,
-          "blockstamp": "9-F658FD78358DF218B326F4B16593607F91D3BB121E1EDEA8D2F1A860F21EF1B9",
+          "version": 10,
+          "blockstamp": "9-B087B0B7CF881355D0881BE61170168EBC0EAAA2640CD9119EDDCAFA6ED0D72B",
           "locktime": 0,
           "issuers": [
             "DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo"
           ],
           "inputs": [
-            "121:0:T:84BB9439E1110F4E600654E1B4801B1BFA64B9190384C1D837E73D6DB3D7432D:0"
+            "121:0:T:740955FB8D22AFB1E41B8F7F15CEE6082AFA45A138FE528A73ADB0B8761C6EEF:0"
           ],
           "unlocks": [
             "0:SIG(0)"
@@ -515,22 +515,22 @@
           ],
           "comments": [],
           "signatures": [
-            "BIvOvs/SnwUG0VEHpNybCRjI2dGeJbyY0qcsOba6ivOOdUBMSTT5BveJmBmFRrFfmCGZfB0RSu3+8hEY0hQ4CQ=="
+            "y4/kUzik/gqJuangJfSFJoX3pQS4l3qwnstT54I9YQl2G2i3A8EL6mWp4PYweLFKGBTrguhPKnM2moySWxslBw=="
           ],
           "comment": "",
           "currency": "duniter_unit_test_currency",
           "block_number": 10,
-          "time": 1483620007
+          "time": 1483622719
         }
       ]
     },
     {
-      "version": 6,
-      "nonce": 300000000001,
+      "version": 10,
+      "nonce": 100000000001,
       "number": 11,
       "powMin": 1,
-      "time": 1483620007,
-      "medianTime": 1483620007,
+      "time": 1483622719,
+      "medianTime": 1483622719,
       "membersCount": 2,
       "monetaryMass": 482,
       "unitbase": 0,
@@ -540,12 +540,12 @@
       "len": 8,
       "currency": "duniter_unit_test_currency",
       "issuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "signature": "WtkMAGEkPtY+jDCSEV4Fi1S3n/sQxrreK/86Y5ksJuD2PnzoZKRESjUFkVVkrEwJzYKkJjxqt3emiCO5d66tAw==",
-      "hash": "6DE6209D70C5BC4AA1B3E8DF4B7A3B9FB1995157927E5C2047B44BC0A0B128F2",
+      "signature": "97buQfxPg8ONEzLyBtlOGjXhhUft4TfJoXZkG/1Ou1KSj9R42On070cZjULH2cmheaX0ebjsKThEvQdFwlEfDQ==",
+      "hash": "2507D9FEFA73351D5FA79B3F0FB8450869AD40DA3986F8DAB6BD087169DC0C9E",
       "parameters": "",
-      "previousHash": "E67CB6C37205B822754D70CA9F3687E3BAB000F0688476A700D591306A153748",
+      "previousHash": "26B57CF37334A136A8BBC801C9163E3A769A8F2FBB4497DD5CDA39369DC89952",
       "previousIssuer": "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV",
-      "inner_hash": "48ED327DE72790C360821722C5E3E882C5ACEFED5A069AAE5EB3D27CC45BC378",
+      "inner_hash": "463A572E9304858E241C43C83722C44552EE3984B637546F3DD2415CFB34BECC",
       "dividend": null,
       "identities": [],
       "joiners": [],
@@ -556,14 +556,14 @@
       "certifications": [],
       "transactions": [
         {
-          "version": 3,
-          "blockstamp": "10-E67CB6C37205B822754D70CA9F3687E3BAB000F0688476A700D591306A153748",
+          "version": 10,
+          "blockstamp": "10-26B57CF37334A136A8BBC801C9163E3A769A8F2FBB4497DD5CDA39369DC89952",
           "locktime": 0,
           "issuers": [
             "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV"
           ],
           "inputs": [
-            "121:0:T:60A68F32B74D99C97CC1EF64527D82DC89C1F74084D5C295C6204B092C566A9F:0"
+            "121:0:T:230712F5F850602D2C0ACF26A7F60F791DFA9873A5E8B8374EE87938AD995EE5:0"
           ],
           "unlocks": [
             "0:SIG(0)"
@@ -575,12 +575,12 @@
             "cross1"
           ],
           "signatures": [
-            "Ut+cXNVvJwXtEbiEsOrfqH4JUhhcuZRUwxi+6w0O8lEoDnvV0qNnW4vqWl2L7rjO1oGHCG9WJzoOjE3yd5XtBw=="
+            "YLxw8AB+uVeLIMB2IWIOWGVvVRmnsYgl100vbPzNM+lfDU4wnmaftmoh8pMZzGjGUSBPSinIBvdJrVXZslymAA=="
           ],
           "comment": "cross1",
           "currency": "duniter_unit_test_currency",
           "block_number": 11,
-          "time": 1483620007
+          "time": 1483622719
         }
       ]
     }

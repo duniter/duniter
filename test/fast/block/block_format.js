@@ -2,7 +2,7 @@
 var should  = require('should');
 var parsers = require('../../../app/lib/streams/parsers');
 
-const raw = "Version: 6\n" +
+const raw = "Version: 10\n" +
   "Type: Block\n" +
   "Currency: test_net\n" +
   "Number: 32029\n" +
@@ -25,7 +25,7 @@ const raw = "Version: 6\n" +
   "Excluded:\n" +
   "Certifications:\n" +
   "Transactions:\n" +
-  "TX:3:1:6:6:2:1:0\n" +
+  "TX:10:1:6:6:2:1:0\n" +
   "32028-00001A8B07B4F5BD5473B83ECC02217E0DDE64A31D695B734C5D88F470B45606\n" +
   "F1pirjHYJYimekfvjVp2SGrVQSsJXb4H8JYKJddLzwVL\n" +
   "106930:3:D:F1pirjHYJYimekfvjVp2SGrVQSsJXb4H8JYKJddLzwVL:30580\n" +

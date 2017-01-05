@@ -13,8 +13,8 @@ const INTEGER      = "(0|[1-9]\\d{0,18})";
 const RELATIVE_INTEGER = "(0|-?[1-9]\\d{0,18})";
 const FLOAT        = "\\d+\.\\d+";
 const BOOLEAN      = "[01]";
-const BLOCK_VERSION = "(6)";
-const TX_VERSION   = "(3)";
+const BLOCK_VERSION = "(10)";
+const TX_VERSION   = "(10)";
 const SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
 const FINGERPRINT  = "[A-F0-9]{64}";
 const COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}";
@@ -136,14 +136,14 @@ module.exports = {
   SIG: exact(SIGNATURE),
   BLOCK_UID: exact(BLOCK_UID),
 
-  DOCUMENTS_VERSION_REGEXP: /^2$/,
+  DOCUMENTS_VERSION_REGEXP: /^10$/,
   DOCUMENTS_BLOCK_VERSION_REGEXP: new RegExp("^" + BLOCK_VERSION + "$"),
   BLOCKSTAMP_REGEXP: new RegExp("^" + BLOCK_UID + "$"),
-  DOCUMENTS_TRANSACTION_VERSION_REGEXP: /^(2|3)$/,
-  DOCUMENTS_VERSION: 2,
-  BLOCK_GENERATED_VERSION: 6,
-  LAST_VERSION_FOR_TX: 3,
-  TRANSACTION_VERSION: 3,
+  DOCUMENTS_TRANSACTION_VERSION_REGEXP: /^(10)$/,
+  DOCUMENTS_VERSION: 10,
+  BLOCK_GENERATED_VERSION: 10,
+  LAST_VERSION_FOR_TX: 10,
+  TRANSACTION_VERSION: 10,
 
   REVOCATION_FACTOR: 2, // This is protocol fixed value
   NB_DIGITS_UD: 6,      // This is protocol fixed value
@@ -168,7 +168,7 @@ module.exports = {
     IDTY_UID:       find('UniqueID: (' + USER_ID + ')')
   },
   DOCUMENTS: {
-    DOC_VERSION:    find('Version: (2)'),
+    DOC_VERSION:    find('Version: (10)'),
     DOC_CURRENCY:   find('Currency: (' + CURRENCY + ')'),
     DOC_ISSUER:     find('Issuer: (' + PUBKEY + ')'),
     TIMESTAMP:      find('Timestamp: (' + BLOCK_UID + ')')
@@ -190,7 +190,7 @@ module.exports = {
   },
   MEMBERSHIP: {
     BLOCK:      find('Block: (' + BLOCK_UID + ')'),
-    VERSION:    find('Version: (2)'),
+    VERSION:    find('Version: (10)'),
     CURRENCY:   find('Currency: (' + CURRENCY + ')'),
     ISSUER:     find('Issuer: (' + PUBKEY + ')'),
     MEMBERSHIP: find('Membership: (IN|OUT)'),

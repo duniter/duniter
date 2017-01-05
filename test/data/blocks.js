@@ -1,7 +1,7 @@
 
 module.exports = {
   WRONG_SIGNATURE:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 50\n" +
@@ -38,43 +38,40 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   VALID_ROOT:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
-    "Currency: bb\n" +
+    "Currency: duniter_unit_test_currency\n" +
     "Number: 0\n" +
     "PoWMin: 0\n" +
-    "Time: 1458831706\n" +
-    "MedianTime: 1458831706\n" +
+    "Time: 1483614905\n" +
+    "MedianTime: 1483614905\n" +
     "UnitBase: 0\n" +
-    "Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd\n" +
-    "IssuersFrame: 100\n" +
+    "Issuer: DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV\n" +
+    "IssuersFrame: 1\n" +
     "IssuersFrameVar: 0\n" +
-    "DifferentIssuersCount: 3\n" +
-    "Parameters: 0.007376575:2629800:100:0:40:604800:31536000:1:604800:604800:0.9:31536000:3:20:960:10:20:0.6666666666666666\n" +
-    "MembersCount: 3\n" +
+    "DifferentIssuersCount: 0\n" +
+    "Parameters: 0.007376575:3600:120:0:40:604800:31536000:1:604800:604800:0.9:31536000:3:20:960:10:20:0.6666666666666666\n" +
+    "MembersCount: 2\n" +
     "Identities:\n" +
-    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:5PmGBvNj8AZ1T75Fe1rDLKy8lygwTFbrSwLYfMZS8eASxig5uHxx7P9l/hVgjIx7byPAkAsmrZIbYp/DEdnnDA==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
-    "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:/FZ6zVzAw0qZ9qD67CesQTRSp5glmooF37Dxs6kRHOOGZnh4ICykG07/FB76Z3C4H9tq1Qq5Hwbxw96+9Qj1CA==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:tic\n" +
-    "DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:bQAaenbeQk89bcKHHi7XsJGyo3mOZXNIphFqSjcJxp/a85k9vOF+yS4T18ZYV3rShI2QV6W7JlLPc4q+YdWhDw==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
+    "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:1eubHHbuNfilHMM0G2bI30iZzebQ2cQ1PC7uPAw08FGMMmQCRerlF/3pc4sAcsnexsxBseA/3lY03KlONqJBAg==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:tic\n" +
+    "DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:lcekuS0eP2dpFL99imJcwvDAwx49diiDMkG8Lj7FLkC/6IJ0tgNjUzCIZgMGi7bL5tODRiWi9B49UMXb8b3MAw==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Joiners:\n" +
-    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:ICfYCQvs33HQhusMRswIFljGRjUIcmZPu+pt9qTcGEUf8/wZlIbiY/dwV6RUa4tI6TbvGcg2HUlmKLhFg9AKBQ==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat\n" +
-    "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:njph4Y7Kn6vmycTp/rJplRj7PZVFiXv7YjZlC3mrSyXzvQNtX4JFAwXivsRDL6HcWnDesBqwEdrDAmiD28DNDQ==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:tic\n" +
-    "DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:RkJsHDZdz++fFjr7+Qfv0pkSsTxkpD0TKW410XXVCNrPqHOPMaPVGauy6f1V0LuzVOJIRYPhDVekQLIcyEbjDw==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
+    "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:s2hUbokkibTAWGEwErw6hyXSWlWFQ2UWs2PWx8d/kkElAyuuWaQq4Tsonuweh1xn4AC1TVWt4yMR3WrDdkhnAw==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:tic\n" +
+    "DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:80pUx9YBk0RwqrVrQQA+PuxoNn21A8NwQ3824CQPU1ad9R1oDXc/pU6NVpQv92LM8gaWs/Pm1mLXNNVnr+m6BA==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:toc\n" +
     "Actives:\n" +
     "Leavers:\n" +
     "Revoked:\n" +
     "Excluded:\n" +
     "Certifications:\n" +
-    "DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:0:BXksBR6BU3b694HuLoyUzoDd5xjdaJfYOY4EO7xSD/UkktW5oKy709RL/nCHY5vfPA0HrwPyi8vXAVKNzmGUCQ==\n" +
-    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:0:CStF7zf3SShRaW+E3YlU7iJNlMt78m/DDn2eoZZNfHLMwd0hqkBmjQWdVKcnJS3oHqiiFCnVIRAbF03cDlafCA==\n" +
-    "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:0:X8P6NZNWq9qTmobhoFB4ITrSZQbEqAxkPt2wRpXC8JVniP3LvQi1h8DyiRvE6SbF1pyUsgRHiVKq1iB32YAGAA==\n" +
+    "DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:0:vMaYgBSnU+83AYOVQCZAx1XLpg/F1MmMztDfCnZvl8hPs4LE9tcDvCrrFogAwMEW2N7Y0gCH62/fBMgw4KrGCA==\n" +
+    "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:0:RKIGMgYIhB9FmjPbmyo4egPufg/iTpBznYGZp5hjK1WZ1a9imQldLNUMe0eiPlSKJTK/JD3gOlCiynOEY2csBA==\n" +
     "Transactions:\n" +
-    "InnerHash: 6C6A4B7E433EE8B036820FEA0C70D93F8E3BF360BC0C52C8B39487833A56A97F\n" +
-    "Nonce: 1\n" +
-    "Rj8FJ2Cr2XUVcfzdIpRqbBr0/tqOhZmjrgweKAkAPVN915Lj/LT4QZc8WJ80dmb4a15UXwoWphBMfrAJ+o88CQ==\n",
+    "InnerHash: 3969BE7A32853B2AB526662E88A2F1BFD852048C6B1DAEF0483F3DF64757AF48\n" +
+    "Nonce: 300000000001\n" +
+    "WJourHkd6NnMxKDSEfrsiB7qE0mGbiFHSwy0cE8/q/is6hTd0mzlMNBPxDhoPkAiocfXJrQuIVeG0/ygxQrTBw==\n",
 
   WRONG_PROOF_OF_WORK:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 1\n" +
@@ -101,7 +98,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   ROOT_WITHOUT_PARAMETERS:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -138,7 +135,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   NON_ROOT_WITH_PARAMETERS: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 5\n" +
@@ -165,7 +162,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   ROOT_WITH_PREVIOUS_HASH: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -192,7 +189,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   ROOT_WITH_PREVIOUS_ISSUER: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -219,7 +216,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   NON_ROOT_WITHOUT_PREVIOUS_HASH: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 1\n" +
@@ -245,7 +242,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   NON_ROOT_WITHOUT_PREVIOUS_ISSUER: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 1\n" +
@@ -272,7 +269,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   COLLIDING_UIDS:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -309,7 +306,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   COLLIDING_PUBKEYS:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -346,7 +343,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_DATE_LOWER: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 50\n" +
@@ -383,7 +380,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_DATE_HIGHER_BUT_TOO_FEW: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 10\n" +
@@ -422,7 +419,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_DATE_HIGHER_BUT_TOO_HIGH: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 10\n" +
@@ -461,7 +458,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_ROOT_TIMES: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -498,7 +495,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   GOOD_DATE_HIGHER: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 20\n" +
@@ -537,7 +534,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_IDTY_MATCH_JOINS: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -573,7 +570,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   MULTIPLE_JOINERS: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 1\n" +
@@ -608,7 +605,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   MULTIPLE_ACTIVES: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 1\n" +
@@ -643,7 +640,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   MULTIPLE_LEAVES: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -682,7 +679,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   MULTIPLE_EXCLUDED: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -717,7 +714,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   MULTIPLE_OVER_ALL: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -751,7 +748,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   MULTIPLE_CERTIFICATIONS_FROM_SAME_ISSUER: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 2\n" +
@@ -779,7 +776,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   IDENTICAL_CERTIFICATIONS: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -817,7 +814,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   LEAVER_WITH_CERTIFICATIONS: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -853,7 +850,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   EXCLUDED_WITH_CERTIFICATIONS: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -889,7 +886,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONGLY_SIGNED_IDENTITIES: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -926,7 +923,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONGLY_SIGNED_JOIN: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -963,7 +960,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONGLY_SIGNED_ACTIVE: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -997,7 +994,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONGLY_SIGNED_LEAVE: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -1029,7 +1026,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   CORRECTLY_SIGNED_LEAVE: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -1061,7 +1058,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONGLY_SIGNED_CERTIFICATION: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 29890\n" +
@@ -1098,7 +1095,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   UNKNOWN_CERTIFIER: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -1135,7 +1132,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   UNKNOWN_CERTIFIED: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -1172,7 +1169,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   EXISTING_UID: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -1209,7 +1206,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   EXISTING_PUBKEY: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -1246,7 +1243,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TOO_EARLY_CERTIFICATION_REPLAY: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -1283,7 +1280,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   EXPIRED_CERTIFICATIONS: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 90\n" +
@@ -1312,7 +1309,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   EXPIRED_MEMBERSHIP: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 90\n" +
@@ -1340,7 +1337,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REVOKED_JOINER: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 113\n" +
@@ -1369,7 +1366,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   NOT_ENOUGH_CERTIFICATIONS_JOINER: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 3\n" +
@@ -1407,7 +1404,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   NOT_ENOUGH_CERTIFICATIONS_JOINER_BLOCK_0: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -1443,7 +1440,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   OUTDISTANCED_JOINER: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 3\n" +
@@ -1474,7 +1471,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   VALID_NEXT: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 3\n" +
@@ -1504,7 +1501,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_PREVIOUS_HASH:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 51\n" +
@@ -1543,7 +1540,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_PREVIOUS_ISSUER: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 51\n" +
@@ -1582,7 +1579,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_DIFFERENT_ISSUERS_COUNT_FOLLOWING_V2:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 51\n" +
@@ -1621,7 +1618,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_DIFFERENT_ISSUERS_COUNT_FOLLOWING_V3:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 51\n" +
@@ -1660,7 +1657,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_ISSUERS_FRAME_FOLLOWING_V2:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 51\n" +
@@ -1699,7 +1696,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_ISSUERS_FRAME_FOLLOWING_V3:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 51\n" +
@@ -1738,7 +1735,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_ISSUER:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 51\n" +
@@ -1766,7 +1763,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_JOIN_BLOCK_TARGET_ROOT: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 51\n" +
@@ -1795,7 +1792,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_JOIN_ROOT_NUMBER: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -1822,7 +1819,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_JOIN_ROOT_HASH: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -1849,7 +1846,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_JOIN_NUMBER_TOO_LOW: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 12\n" +
@@ -1876,7 +1873,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_JOIN_BLOCK_TARGET: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 51\n" +
@@ -1905,7 +1902,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_JOIN_ALREADY_MEMBER: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 51\n" +
@@ -1934,7 +1931,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_ACTIVE_BLOCK_TARGET: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 51\n" +
@@ -1963,7 +1960,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   KICKED_NOT_EXCLUDED: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 4\n" +
@@ -1992,7 +1989,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   KICKED_EXCLUDED: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 4\n" +
@@ -2022,7 +2019,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_MEMBERS_COUNT: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 4\n" +
@@ -2052,7 +2049,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   NO_LEADING_ZERO: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 3\n" +
@@ -2080,7 +2077,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REQUIRES_4_LEADING_ZEROS: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 60\n" +
@@ -2110,7 +2107,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REQUIRES_7_LEADING_ZEROS: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 61\n" +
@@ -2140,7 +2137,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REQUIRES_6_LEADING_ZEROS: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 67\n" +
@@ -2170,7 +2167,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REQUIRES_5_LEADING_ZEROS: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 63\n" +
@@ -2200,7 +2197,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REQUIRES_7_LEADING_ZEROS_AGAIN: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 64\n" +
@@ -2230,7 +2227,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   FIRST_BLOCK_OF_NEWCOMER: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 65\n" +
@@ -2260,7 +2257,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   SECOND_BLOCK_OF_NEWCOMER: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 66\n" +
@@ -2290,7 +2287,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_ROOT_DATES: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -2327,7 +2324,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_MEDIAN_TIME_ODD: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 101\n" +
@@ -2355,7 +2352,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_MEDIAN_TIME_EVEN: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 102\n" +
@@ -2383,7 +2380,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   GOOD_MEDIAN_TIME_ODD: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 103\n" +
@@ -2411,7 +2408,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   GOOD_MEDIAN_TIME_EVEN: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 104\n" +
@@ -2439,7 +2436,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   WRONG_CONFIRMED_DATE_MUST_CONFIRM: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 72\n" +
@@ -2467,7 +2464,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   ROOT_BLOCK_WITH_UD: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -2506,7 +2503,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   UD_BLOCK_WIHTOUT_UD: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 80\n" +
@@ -2534,7 +2531,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   UD_BLOCK_WIHTOUT_BASE:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 80\n" +
@@ -2563,7 +2560,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   V3_ROOT_BLOCK_NOBASE:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -2587,7 +2584,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   V3_ROOT_BLOCK_POSITIVE_BASE:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -2615,7 +2612,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_WRONG_UD:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 81\n" +
@@ -2645,7 +2642,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_WRONG_UD_V3: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 81\n" +
@@ -2674,7 +2671,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_WRONG_UNIT_BASE:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 160\n" +
@@ -2704,7 +2701,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_WRONG_UNIT_BASE_NO_UD:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 160\n" +
@@ -2732,7 +2729,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_UNLEGITIMATE_UD:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 82\n" +
@@ -2762,7 +2759,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_UNLEGITIMATE_UD_2: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -2792,7 +2789,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   FIRST_UD_BLOCK_WITH_UD_THAT_SHOULDNT: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 20\n" +
@@ -2822,7 +2819,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   FIRST_UD_BLOCK_WITH_UD_THAT_SHOULD: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 20\n" +
@@ -2850,7 +2847,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITHOUT_TRANSACTIONS: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -2880,7 +2877,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_GOOD_TRANSACTIONS: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -2932,7 +2929,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_WRONG_TRANSACTION_SUMS:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -2984,7 +2981,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_WRONG_TRANSACTION_UNIT_BASES:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3036,7 +3033,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_WRONG_UD_SOURCE:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3071,7 +3068,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_WRONG_TX_SOURCE: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3106,7 +3103,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_UNAVAILABLE_UD_SOURCE: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3142,7 +3139,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_UNAVAILABLE_TX_SOURCE: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3178,7 +3175,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITHOUT_ISSUERS:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3201,7 +3198,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:3:0:2:2:1:0:0\n" +
+    "TX:10:0:2:2:1:0:0\n" +
     "3-2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "4500:3:T:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:88\n" +
     "4500:3:T:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:88\n" +
@@ -3213,7 +3210,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITHOUT_SOURCES:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3236,7 +3233,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:3:2:0:0:1:0:0\n" +
+    "TX:10:2:0:0:1:0:0\n" +
     "3-2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
@@ -3248,7 +3245,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITHOUT_RECIPIENT: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3271,7 +3268,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:3:2:2:2:0:0:0\n" +
+    "TX:10:2:2:2:0:0:0\n" +
     "3-2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
@@ -3286,7 +3283,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITH_DUPLICATED_SOURCE_SINGLE_TX:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3309,7 +3306,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:3:2:3:3:1:0:0\n" +
+    "TX:10:2:3:3:1:0:0\n" +
     "3-2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
@@ -3327,7 +3324,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITH_EMPTY_TX_CONDITIONS:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3350,7 +3347,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:3:2:2:2:2:0:0\n" +
+    "TX:10:2:2:2:2:0:0\n" +
     "3-2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
@@ -3367,7 +3364,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WRONG_TOTAL:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3390,7 +3387,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:3:2:2:2:2:0:0\n" +
+    "TX:10:2:2:2:2:0:0\n" +
     "5-2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
@@ -3407,7 +3404,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_V3_GOOD_AMOUNTS:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3430,7 +3427,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:3:1:3:3:17:1:0\n" +
+    "TX:10:1:3:3:17:1:0\n" +
     "33089-00004C8D3A7EAA34ADD20E36268F7A141A45B8D47C0872EFDB00187810E0BBFD\n" +
     "TENGx7WtzFsTXwnbrPEvb6odX2WnqYcnnrjiiLvp1mS\n" +
     "17602605:0:T:E4E8486E20D521AAB329376431BD633A59FE847EF533C38CDD2C9F6E820FF786:14\n" +
@@ -3463,7 +3460,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_TOO_LONG:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: test_net\n" +
     "Number: 33520\n" +
@@ -3486,7 +3483,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:3:1:48:48:2:0:0\n" +
+    "TX:10:1:48:48:2:0:0\n" +
     "33518-00001D9E2EA1F967667528817FAF17ECBACE6150EBB875A2196B4457C0366D2A\n" +
     "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk\n" +
     "60:3:T:2A74F44780925586EA4C01BEE9DA5042FE8BDB0FB0506B9D69990750B555AC91:15\n" +
@@ -3593,7 +3590,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WRONG_TRANSFORM:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3616,7 +3613,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:3:2:3:3:3:0:0\n" +
+    "TX:10:2:3:3:3:0:0\n" +
     "5-2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
@@ -3636,7 +3633,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WRONG_TRANSFORM_LOW_BASE:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3659,7 +3656,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:3:1:6:6:8:1:0\n" +
+    "TX:10:1:6:6:8:1:0\n" +
     "33753-0000054FC8AC7B450BA7D8BA7ED873FEDD5BF1E98D5D3B0DEE38DED55CB80CB3\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
     "150605:3:T:01B1AB40E7C1021712FF40D5605037C0ACEECA547BF519ABDCB6473A9F6BDF45:1\n" +
@@ -3689,7 +3686,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_TX_V3_TOO_HIGH_OUTPUT_BASE:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3712,7 +3709,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:3:1:1:1:1:0:0\n" +
+    "TX:10:1:1:1:1:0:0\n" +
     "5-2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "10:3:T:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:88\n" +
@@ -3724,7 +3721,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITH_DUPLICATED_SOURCE_MULTIPLE_TX:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3747,7 +3744,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:3:2:2:2:1:0:0\n" +
+    "TX:10:2:2:2:1:0:0\n" +
     "3-2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
@@ -3758,7 +3755,7 @@ module.exports = {
     "80:0:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)\n" +
     "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
     "I6gJkJIQJ9vwDRXZ6kdBsOArQ3zzMYPmFxDbJqseBVq5NWlmJ7l7oY9iWtqhPF38rp7/iitbgyftsRR8djOGDg==\n" +
-    "TX:3:1:1:1:1:0:0\n" +
+    "TX:10:1:1:1:1:0:0\n" +
     "3-2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "200:1:T:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:88\n" +
@@ -3770,7 +3767,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   TRANSACTION_WITH_WRONG_SIGNATURES: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 83\n" +
@@ -3793,7 +3790,7 @@ module.exports = {
     "Excluded:\n" +
     "Certifications:\n" +
     "Transactions:\n" +
-    "TX:3:2:2:2:1:0:0\n" +
+    "TX:10:2:2:2:1:0:0\n" +
     "3-2A27BD040B16B7AF59DDD88890E616987F4DD28AA47B9ABDBBEE46257B88E945\n" +
     "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
     "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
@@ -3809,7 +3806,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   CERT_BASED_ON_NON_ZERO_FOR_ROOT: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -3836,7 +3833,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   CERT_BASED_ON_NON_EXISTING_BLOCK: 
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 1\n" +
@@ -3863,7 +3860,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REVOKED_WITH_MEMBERSHIPS:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -3892,7 +3889,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REVOKED_WITH_DUPLICATES:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -3921,7 +3918,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   REVOKED_NOT_IN_EXCLUDED:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -3948,7 +3945,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_UNKNOWN_REVOKED:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -3976,7 +3973,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_YET_REVOKED:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +
@@ -4004,7 +4001,7 @@ module.exports = {
     "kNsKdC8eH0d4zdHh1djyMzRXjFrwk3Bc3M8wo4DV/7clE9J66K/U0FljyS79SI78ZZUPaVmrImKJ9SNiubCiBg==\n",
 
   BLOCK_WITH_WRONG_REVOCATION_SIG:
-    "Version: 6\n" +
+    "Version: 10\n" +
     "Type: Block\n" +
     "Currency: beta_brousouf\n" +
     "Number: 0\n" +

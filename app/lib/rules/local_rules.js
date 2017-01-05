@@ -283,8 +283,8 @@ rules.FUNCTIONS = {
     const txs = block.getTransactions();
     // Check rule against each transaction
     for (const tx of txs) {
-      if (tx.version != 3) {
-        throw Error('A transaction must have the version 3 for blocks with version >= 3');
+      if (tx.version != 10) {
+        throw Error('A transaction must have the version 10');
       }
     }
     return true;

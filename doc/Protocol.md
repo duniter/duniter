@@ -682,7 +682,7 @@ A transaction may be described with a more compact format, to be used in a [Bloc
 
 Here is an example compacting [example 2](#example-2) from above:
 
-    TX:3:1:3:1:0:0
+    TX:10:1:3:1:0:0
     204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     6:2:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
@@ -696,7 +696,7 @@ Here is an example compacting [example 2](#example-2) from above:
 
 Here is an example compacting [example 3](#example-3) from above:
 
-    TX:3:3:6:3:1:0
+    TX:10:3:6:3:1:0
     204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
     HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
     CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp

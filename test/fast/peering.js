@@ -4,7 +4,7 @@ var assert   = require('assert');
 var parsers  = require('../../app/lib/streams/parsers');
 
 var rawPeer = "" +
-  "Version: 2\n" +
+  "Version: 10\n" +
   "Type: Peer\n" +
   "Currency: beta_brousouf\n" +
   "PublicKey: 3Z7w5g4gC9oxwEbATnmK2UFgGWhLZPmZQb5dRxvNrXDu\n" +
@@ -27,8 +27,8 @@ describe('Peer', function(){
       done();
     });
 
-    it('should be version 2', function(){
-      assert.equal(pr.version, 2);
+    it('should be version 10', function(){
+      assert.equal(pr.version, 10);
     });
 
     it('should have beta_brousoufs currency name', function(){

@@ -6,7 +6,7 @@ const parsers = require('../../app/lib/streams/parsers');
 const indexer = require('../../app/lib/dup/indexer');
 const constants = require('../../app/lib/constants');
 
-const raw = "Version: 6\n" +
+const raw = "Version: 10\n" +
   "Type: Block\n" +
   "Currency: beta_brousouf\n" +
   "Number: 10\n" +
@@ -42,7 +42,7 @@ const raw = "Version: 6\n" +
   "F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU:0:h8D/dx/z5K2dx06ktp7fnmLRdxkdV5wRkJgnmEvKy2k55mM2RyREpHfD7t/1CC5Ew+UD0V9N27PfaoLxZc1KCQ==\n" +
   "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:F5PtTpt8QFYMGtpZaETygB2C2yxCSxH1UW1VopBNZ6qg:0:eefk9Gg0Ijz0GvrNnRc55CCCBd4yk8j0fNzWzVZFKR3kZ7lsKav6dWyAsaVhlNG5S6XwEwvPoMwKJq1Vn7OjBg==\n" +
   "Transactions:\n" +
-  "TX:3:1:6:6:8:1:0\n" +
+  "TX:10:1:6:6:8:1:0\n" +
   "33753-0000054FC8AC7B450BA7D8BA7ED873FEDD5BF1E98D5D3B0DEE38DED55CB80CB3\n" +
   "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
   "150605:3:T:01B1AB40E7C1021712FF40D5605037C0ACEECA547BF519ABDCB6473A9F6BDF45:1\n" +
@@ -67,7 +67,7 @@ const raw = "Version: 6\n" +
   "2:0:SIG(G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU)\n" +
   "all 10.6517\n" +
   "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r\n" +
-  "TX:3:1:1:1:1:0:0\n" +
+  "TX:10:1:1:1:1:0:0\n" +
   "5-2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326\n" +
   "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY\n" +
   "10:3:T:2C31D8915801E759F6D4FF3DA8DA983D7D56DCF4F8D94619FCFAD4B128362326:88\n" +
@@ -80,8 +80,12 @@ const raw = "Version: 6\n" +
 
 describe("v1.0 Local Index", function(){
 
-  const block = parsers.parseBlock.syncWrite(raw);
-  const index = indexer.localIndex(block, { sigValidity: 100, msValidity: 40 });
+  let block, index;
+
+  before(() => {
+    block = parsers.parseBlock.syncWrite(raw);
+    index = indexer.localIndex(block, { sigValidity: 100, msValidity: 40 });
+  });
 
   it('should have 30 index entries', () => {
     index.should.have.length(30);

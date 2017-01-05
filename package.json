@@ -1,6 +1,6 @@
 {
   "name": "duniter",
-  "version": "0.80.0",
+  "version": "0.80.1",
   "engines": {
     "node": ">=4.2.0",
     "npm": ">=2.11"
@@ -80,7 +80,6 @@
   },
   "devDependencies": {
     "coveralls": "2.11.4",
-    "duniter-ui": "0.2.10",
     "eslint": "0.21.1",
     "eslint-plugin-mocha": "0.2.2",
     "istanbul": "0.4.0",

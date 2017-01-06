@@ -75,7 +75,7 @@ if [[ ! -f before_deploy ]]; then
 
   PWD=`pwd`
   SRC="$PWD/desktop_"
-  wget http://dl.nwjs.io/${NW_RELEASE}/${NW_GZ}
+  wget https://dl.nwjs.io/${NW_RELEASE}/${NW_GZ}
   tar xvzf ${NW_GZ}
   mv ${NW} desktop_release/nw
   cp ${SRC}/gui/* desktop_release/nw/

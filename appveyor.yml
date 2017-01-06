@@ -56,7 +56,7 @@ after_test:
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] echo %NW%
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] set NW_GZ=%NW%.zip
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] echo %NW_GZ%
-  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] curl -fS -o %NW_GZ% http://dl.nwjs.io/%NW_RELEASE%/nwjs-%NW_RELEASE%-win-x64.zip
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] curl -fS -o %NW_GZ% https://dl.nwjs.io/%NW_RELEASE%/nwjs-%NW_RELEASE%-win-x64.zip
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] 7z x %NW_GZ% 1> null
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] move %NW% %cd%\duniter_release\nw
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] mkdir %cd%\duniter_release\sources

@@ -96,9 +96,9 @@ describe("Proof-of-work", function() {
       Promise.all([
         co(function*() {
           try {
-            let s2commit = s2.commit({ time: now + 10 });
+            let s2commit = s2.commit({ time: now + 14 });
             // A little handicap for s1 which will find the proof immediately
-            setTimeout(() => s1.commit({ time: now + 10 }), 0);
+            setTimeout(() => s1.commit({ time: now + 10 }), 500);
             yield s2commit;
             throw 's2 server should not have found the proof before s1';
           } catch (e) {

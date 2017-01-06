@@ -660,7 +660,8 @@ function FileDAL(params) {
     const sources = yield that.sindexDAL.getUDSources(pubkey);
     return {
       history: sources.map((src) => _.extend({
-        block_number: src.number
+        block_number: src.pos,
+        time: src.written_time
       }, src))
     };
   });

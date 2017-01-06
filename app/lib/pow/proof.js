@@ -99,7 +99,7 @@ function beginNewProofOfWork(stuff) {
     const pair = stuff.pair;
     const forcedTime = stuff.forcedTime;
     currentCPU = conf.cpu || constants.DEFAULT_CPU;
-    prefix = conf.prefix || prefix;
+    prefix = parseInt(conf.prefix || prefix) * 10 * constants.NONCE_RANGE;
     const highMark = stuff.highMark;
     let sigFunc = null;
     if (signatureFunc && lastSecret == pair.sec) {

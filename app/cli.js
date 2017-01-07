@@ -807,7 +807,14 @@ function configure(server, conf) {
       throw constants.ERRORS.CLI_CALLERR_CONFIG;
     }
     let wiz = wizard();
-    conf.upnp = !program.noupnp;
+    // UPnP override
+    if (program.noupnp === true) {
+      conf.upnp = false;
+    }
+    if (program.upnp === true) {
+      conf.upnp = true;
+    }
+    // Network autoconf
     const autoconfNet = program.autoconf
       || !(conf.ipv4 || conf.ipv6)
       || !(conf.remoteipv4 || conf.remoteipv6 || conf.remotehost)

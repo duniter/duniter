@@ -768,6 +768,7 @@ function service(callback, nologs) {
         cbArgs.length--;
         cbArgs[cbArgs.length++] = server;
         cbArgs[cbArgs.length++] = server.conf;
+        cbArgs[cbArgs.length++] = program;
         onService && onService(server);
         return callback.apply(that, cbArgs);
       } catch (e) {
@@ -794,6 +795,11 @@ module.exports.addCommand = (command, requirements, promiseCallback) => {
     .command(command.name)
     .description(command.desc)
     .action(subCommand(service(promiseCallback)));
+};
+
+module.exports.addOption = (optFormat, optDesc, optParser) => {
+  program
+    .option(optFormat, optDesc, optParser);
 };
 
 function needsToBeLaunchedByScript() {

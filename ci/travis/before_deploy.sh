@@ -7,7 +7,7 @@ if [[ ! -f before_deploy ]]; then
 
   # Prepare
   NVER=`node -v`
-  DUNITER_VER=0.80.5
+  DUNITER_VER=0.80.6
   DUNITER_DEB_VER=" $DUNITER_VER"
   ADDON_VERSION=48
   NW_VERSION=0.17.6

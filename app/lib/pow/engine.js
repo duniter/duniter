@@ -13,6 +13,8 @@ module.exports = function (opts) {
 
 function PowEngine() {
 
+  const that = this;
+
   // Super important for Node.js debugging
   const debug = process.execArgv.toString().indexOf('--debug') !== -1;
   if(debug) {
@@ -68,20 +70,28 @@ function PowEngine() {
     return exchanges[uuid];
   });
 
-  this.prove = (block, nonceBeginning, zeros, highMark, pair, forcedTime, medianTimeBlocks, avgGenTime, cpu) => {
+  this.prove = (block, nonceBeginning, zeros, highMark, pair, forcedTime, medianTimeBlocks, avgGenTime, cpu, prefix) => {
     if (os.arch().match(/arm/)) {
       cpu /= 2; // Don't know exactly why is ARM so much saturated by PoW, so let's divide by 2
     }
-    return ask('newPoW', { block, nonceBeginning, zeros, highMark, pair, forcedTime, conf: { medianTimeBlocks, avgGenTime, cpu } });
+    return ask('newPoW', { block, nonceBeginning, zeros, highMark, pair, forcedTime, conf: { medianTimeBlocks, avgGenTime, cpu, prefix } });
   };
 
   this.status = () => ask('state');
 
-  this.cancel = () => ask('cancel');
+  this.cancel = () => co(function*() {
+    if (that.isConnected()) {
+      return ask('cancel');
+    }
+  });
 
   this.getValue = (key) => ask(key);
 
-  this.setValue = (key, value) => ask(key, value);
+  this.setValue = (key, value) => co(function*() {
+    if (that.isConnected()) {
+      return ask(key, value);
+    }
+  });
 
   this.isConnected = () => powProcess ? powProcess.connected : false;
 

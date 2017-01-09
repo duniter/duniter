@@ -144,6 +144,7 @@ const tasks = {
         }], function (answers) {
           var keepOld = obfuscated.length > 0 && obfuscated == answers.passwd;
           conf.passwd = keepOld ? conf.passwd : answers.passwd;
+          conf.pair = undefined;
           next();
         });
       }
@@ -167,7 +168,6 @@ const tasks = {
       async.apply(simpleInteger, "Number of blocks on which is computed median time",                      "medianTimeBlocks", conf),
       async.apply(simpleInteger, "The average time for writing 1 block (wished time)",                     "avgGenTime", conf),
       async.apply(simpleInteger, "Frequency, in number of blocks, to wait for changing common difficulty", "dtDiffEval", conf),
-      async.apply(simpleInteger, "Number of blocks to check in past for deducing personalized difficulty", "blocksRot", conf),
       async.apply(simpleFloat,   "Weight in percent for previous issuers",                                 "percentRot", conf)
     ], done);
   },

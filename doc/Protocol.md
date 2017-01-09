@@ -854,7 +854,7 @@ To be valid, a block must match the following rules:
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
 * `Parameters` is a simple line field, composed of 1 float, 12 integers and 1 last float all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency):
 
-        c:dt:ud0:sigPeriod:sigStock:sigWindow:sigValidity:sigQty:idtyWindow:msWindow:xpercent:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:blocksRot:percentRot
+        c:dt:ud0:sigPeriod:sigStock:sigWindow:sigValidity:sigQty:idtyWindow:msWindow:xpercent:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:percentRot
 
 The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
@@ -968,7 +968,6 @@ stepMax     | Maximum distance between each WoT member and a newcomer
 medianTimeBlocks | Number of blocks used for calculating median time.
 avgGenTime  | The average time for writing 1 block (wished time)
 dtDiffEval  | The number of blocks required to evaluate again `PoWMin` value
-blocksRot   | The number of previous blocks to check for personalized difficulty
 percentRot  | The percent of previous issuers to reach for personalized difficulty
 txWindow    | `= 3600 * 24 * 7`. Maximum delay a transaction can wait before being expired for non-writing.
 

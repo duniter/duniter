@@ -636,7 +636,6 @@ The synchronization parameters.
   medianTimeBlocks: 11,
   avgGenTime: 600,
   dtDiffEval: 10,
-  blocksRot: 20,
   percentRot: 0.67
 }
 ```
@@ -879,7 +878,7 @@ None.
 
 **Returns**
 
-The respective difficulty of each member in the last `blocksRot` blocks for current block.
+The respective difficulty of each member in the last `IssuersFrame` blocks for current block.
 ```json
 {
   "block": 598,

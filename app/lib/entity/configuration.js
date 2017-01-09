@@ -29,7 +29,6 @@ const defaultConf = function() {
     "sigQty": constants.CONTRACT.DEFAULT.SIGQTY,
     "xpercent": constants.CONTRACT.DEFAULT.X_PERCENT,
     "percentRot": constants.CONTRACT.DEFAULT.PERCENTROT,
-    "blocksRot": constants.CONTRACT.DEFAULT.BLOCKSROT,
     "powDelay": constants.CONTRACT.DEFAULT.POWDELAY,
     "avgGenTime": constants.CONTRACT.DEFAULT.AVGGENTIME,
     "dtDiffEval": constants.CONTRACT.DEFAULT.DTDIFFEVAL,

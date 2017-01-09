@@ -7,7 +7,7 @@ if [[ ! -f before_deploy ]]; then
 
   # Prepare
   NVER=`node -v`
-  DUNITER_VER=0.80.2
+  DUNITER_VER=0.81.0
   DUNITER_DEB_VER=" $DUNITER_VER"
   ADDON_VERSION=48
   NW_VERSION=0.17.6
@@ -75,7 +75,7 @@ if [[ ! -f before_deploy ]]; then
 
   PWD=`pwd`
   SRC="$PWD/desktop_"
-  wget http://dl.nwjs.io/${NW_RELEASE}/${NW_GZ}
+  wget https://dl.nwjs.io/${NW_RELEASE}/${NW_GZ}
   tar xvzf ${NW_GZ}
   mv ${NW} desktop_release/nw
   cp ${SRC}/gui/* desktop_release/nw/

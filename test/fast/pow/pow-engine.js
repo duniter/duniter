@@ -64,6 +64,7 @@ describe('PoW Engine', () => {
 
   it('should be able to make a proof', () => co(function*(){
     const e1 = engine();
+    (yield e1.status()).should.equal('ready');
     (yield e1.setValue('identify', { pubkey: 'pub1', identifier: 'id1' })).should.equal('OK');
     const block = { number: 35 };
     const nonceBeginning = 0;
@@ -95,6 +96,7 @@ describe('PoW Engine', () => {
 
   it('should be able to stop a proof', () => co(function*(){
     const e1 = engine();
+    (yield e1.status()).should.equal('ready');
     (yield e1.setValue('identify', { pubkey: 'pub1', identifier: 'id1' })).should.equal('OK');
     const block = { number: 26 };
     const nonceBeginning = 0;

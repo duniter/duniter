@@ -106,107 +106,109 @@ function BlockchainContext() {
   this.checkBlock = (block, withPoWAndSignature) => co(function*(){
     if (withPoWAndSignature) {
       yield Q.nbind(rules.CHECK.ASYNC.ALL_LOCAL, rules, block, conf);
-      const index = indexer.localIndex(block, conf);
-      const mindex = indexer.mindex(index);
-      const iindex = indexer.iindex(index);
-      const sindex = indexer.sindex(index);
-      const cindex = indexer.cindex(index);
-      const HEAD = yield indexer.completeGlobalScope(block, conf, index, dal);
-      const HEAD_1 = yield dal.bindexDAL.head(1);
-      // BR_G49
-      if (indexer.ruleVersion(HEAD, HEAD_1) === false) throw Error('ruleVersion');
-      // BR_G50
-      if (indexer.ruleBlockSize(HEAD) === false) throw Error('ruleBlockSize');
-      // BR_G98
-      if (indexer.ruleCurrency(block, HEAD) === false) throw Error('ruleCurrency');
-      // BR_G51
-      if (indexer.ruleNumber(block, HEAD) === false) throw Error('ruleNumber');
-      // BR_G52
-      if (indexer.rulePreviousHash(block, HEAD) === false) throw Error('rulePreviousHash');
-      // BR_G53
-      if (indexer.rulePreviousIssuer(block, HEAD) === false) throw Error('rulePreviousIssuer');
-      // BR_G101
-      if (indexer.ruleIssuerIsMember(HEAD) === false) throw Error('ruleIssuerIsMember');
-      // BR_G54
-      if (indexer.ruleIssuersCount(block, HEAD) === false) throw Error('ruleIssuersCount');
-      // BR_G55
-      if (indexer.ruleIssuersFrame(block, HEAD) === false) throw Error('ruleIssuersFrame');
-      // BR_G56
-      if (indexer.ruleIssuersFrameVar(block, HEAD) === false) throw Error('ruleIssuersFrameVar');
-      // BR_G57
-      if (indexer.ruleMedianTime(block, HEAD) === false) throw Error('ruleMedianTime');
-      // BR_G58
-      if (indexer.ruleDividend(block, HEAD) === false) throw Error('ruleDividend');
-      // BR_G59
-      if (indexer.ruleUnitBase(block, HEAD) === false) throw Error('ruleUnitBase');
-      // BR_G60
-      if (indexer.ruleMembersCount(block, HEAD) === false) throw Error('ruleMembersCount');
-      // BR_G61
-      if (indexer.rulePowMin(block, HEAD) === false) throw Error('rulePowMin');
-      // BR_G62
-      if (indexer.ruleProofOfWork(HEAD) === false) throw Error('ruleProofOfWork');
-      // BR_G63
-      if (indexer.ruleIdentityWritability(iindex, conf) === false) throw Error('ruleIdentityWritability');
-      // BR_G64
-      if (indexer.ruleMembershipWritability(mindex, conf) === false) throw Error('ruleMembershipWritability');
-      // BR_G65
-      if (indexer.ruleCertificationWritability(cindex, conf) === false) throw Error('ruleCertificationWritability');
-      // BR_G66
-      if (indexer.ruleCertificationStock(cindex, conf) === false) throw Error('ruleCertificationStock');
-      // BR_G67
-      if (indexer.ruleCertificationPeriod(cindex) === false) throw Error('ruleCertificationPeriod');
-      // BR_G68
-      if (indexer.ruleCertificationFromMember(HEAD, cindex) === false) throw Error('ruleCertificationFromMember');
-      // BR_G69
-      if (indexer.ruleCertificationToMemberOrNewcomer(cindex) === false) throw Error('ruleCertificationToMemberOrNewcomer');
-      // BR_G70
-      if (indexer.ruleCertificationToLeaver(cindex) === false) throw Error('ruleCertificationToLeaver');
-      // BR_G71
-      if (indexer.ruleCertificationReplay(cindex) === false) throw Error('ruleCertificationReplay');
-      // BR_G72
-      if (indexer.ruleCertificationSignature(cindex) === false) throw Error('ruleCertificationSignature');
-      // BR_G73
-      if (indexer.ruleIdentityUIDUnicity(iindex) === false) throw Error('ruleIdentityUIDUnicity');
-      // BR_G74
-      if (indexer.ruleIdentityPubkeyUnicity(iindex) === false) throw Error('ruleIdentityPubkeyUnicity');
-      // BR_G75
-      if (indexer.ruleMembershipSuccession(mindex) === false) throw Error('ruleMembershipSuccession');
-      // BR_G76
-      if (indexer.ruleMembershipDistance(mindex) === false) throw Error('ruleMembershipDistance');
-      // BR_G77
-      if (indexer.ruleMembershipOnRevoked(mindex) === false) throw Error('ruleMembershipOnRevoked');
-      // BR_G78
-      if (indexer.ruleMembershipJoinsTwice(mindex) === false) throw Error('ruleMembershipJoinsTwice');
-      // BR_G79
-      if (indexer.ruleMembershipEnoughCerts(mindex) === false) throw Error('ruleMembershipEnoughCerts');
-      // BR_G80
-      if (indexer.ruleMembershipLeaverIsMember(mindex) === false) throw Error('ruleMembershipLeaverIsMember');
-      // BR_G81
-      if (indexer.ruleMembershipActiveIsMember(mindex) === false) throw Error('ruleMembershipActiveIsMember');
-      // BR_G82
-      if (indexer.ruleMembershipRevokedIsMember(mindex) === false) throw Error('ruleMembershipRevokedIsMember');
-      // BR_G83
-      if (indexer.ruleMembershipRevokedSingleton(mindex) === false) throw Error('ruleMembershipRevokedSingleton');
-      // BR_G84
-      if (indexer.ruleMembershipRevocationSignature(mindex) === false) throw Error('ruleMembershipRevocationSignature');
-      // BR_G85
-      if (indexer.ruleMembershipExcludedIsMember(iindex) === false) throw Error('ruleMembershipExcludedIsMember');
-      // BR_G86
-      if (indexer.ruleToBeKickedArePresent(mindex, dal) === false) throw Error('ruleToBeKickedArePresent');
-      // BR_G103
-      if (indexer.ruleTxWritability(sindex) === false) throw Error('ruleToBeKickedArePresent');
-      // BR_G87
-      if (indexer.ruleInputIsAvailable(sindex) === false) throw Error('ruleInputIsAvailable');
-      // BR_G88
-      if (indexer.ruleInputIsUnlocked(sindex) === false) throw Error('ruleInputIsUnlocked');
-      // BR_G89
-      if (indexer.ruleInputIsTimeUnlocked(sindex) === false) throw Error('ruleInputIsTimeUnlocked');
-      // BR_G90
-      if (indexer.ruleOutputBase(sindex, HEAD_1) === false) throw Error('ruleOutputBase');
     }
     else {
       yield Q.nbind(rules.CHECK.ASYNC.ALL_LOCAL_BUT_POW, rules, block, conf);
     }
+    const index = indexer.localIndex(block, conf);
+    const mindex = indexer.mindex(index);
+    const iindex = indexer.iindex(index);
+    const sindex = indexer.sindex(index);
+    const cindex = indexer.cindex(index);
+    const HEAD = yield indexer.completeGlobalScope(block, conf, index, dal);
+    const HEAD_1 = yield dal.bindexDAL.head(1);
+    // BR_G49
+    if (indexer.ruleVersion(HEAD, HEAD_1) === false) throw Error('ruleVersion');
+    // BR_G50
+    if (indexer.ruleBlockSize(HEAD) === false) throw Error('ruleBlockSize');
+    // BR_G98
+    if (indexer.ruleCurrency(block, HEAD) === false) throw Error('ruleCurrency');
+    // BR_G51
+    if (indexer.ruleNumber(block, HEAD) === false) throw Error('ruleNumber');
+    // BR_G52
+    if (indexer.rulePreviousHash(block, HEAD) === false) throw Error('rulePreviousHash');
+    // BR_G53
+    if (indexer.rulePreviousIssuer(block, HEAD) === false) throw Error('rulePreviousIssuer');
+    // BR_G101
+    if (indexer.ruleIssuerIsMember(HEAD) === false) throw Error('ruleIssuerIsMember');
+    // BR_G54
+    if (indexer.ruleIssuersCount(block, HEAD) === false) throw Error('ruleIssuersCount');
+    // BR_G55
+    if (indexer.ruleIssuersFrame(block, HEAD) === false) throw Error('ruleIssuersFrame');
+    // BR_G56
+    if (indexer.ruleIssuersFrameVar(block, HEAD) === false) throw Error('ruleIssuersFrameVar');
+    // BR_G57
+    if (indexer.ruleMedianTime(block, HEAD) === false) throw Error('ruleMedianTime');
+    // BR_G58
+    if (indexer.ruleDividend(block, HEAD) === false) throw Error('ruleDividend');
+    // BR_G59
+    if (indexer.ruleUnitBase(block, HEAD) === false) throw Error('ruleUnitBase');
+    // BR_G60
+    if (indexer.ruleMembersCount(block, HEAD) === false) throw Error('ruleMembersCount');
+    // BR_G61
+    if (indexer.rulePowMin(block, HEAD) === false) throw Error('rulePowMin');
+    if (withPoWAndSignature) {
+      // BR_G62
+      if (indexer.ruleProofOfWork(HEAD) === false) throw Error('ruleProofOfWork');
+    }
+    // BR_G63
+    if (indexer.ruleIdentityWritability(iindex, conf) === false) throw Error('ruleIdentityWritability');
+    // BR_G64
+    if (indexer.ruleMembershipWritability(mindex, conf) === false) throw Error('ruleMembershipWritability');
+    // BR_G65
+    if (indexer.ruleCertificationWritability(cindex, conf) === false) throw Error('ruleCertificationWritability');
+    // BR_G66
+    if (indexer.ruleCertificationStock(cindex, conf) === false) throw Error('ruleCertificationStock');
+    // BR_G67
+    if (indexer.ruleCertificationPeriod(cindex) === false) throw Error('ruleCertificationPeriod');
+    // BR_G68
+    if (indexer.ruleCertificationFromMember(HEAD, cindex) === false) throw Error('ruleCertificationFromMember');
+    // BR_G69
+    if (indexer.ruleCertificationToMemberOrNewcomer(cindex) === false) throw Error('ruleCertificationToMemberOrNewcomer');
+    // BR_G70
+    if (indexer.ruleCertificationToLeaver(cindex) === false) throw Error('ruleCertificationToLeaver');
+    // BR_G71
+    if (indexer.ruleCertificationReplay(cindex) === false) throw Error('ruleCertificationReplay');
+    // BR_G72
+    if (indexer.ruleCertificationSignature(cindex) === false) throw Error('ruleCertificationSignature');
+    // BR_G73
+    if (indexer.ruleIdentityUIDUnicity(iindex) === false) throw Error('ruleIdentityUIDUnicity');
+    // BR_G74
+    if (indexer.ruleIdentityPubkeyUnicity(iindex) === false) throw Error('ruleIdentityPubkeyUnicity');
+    // BR_G75
+    if (indexer.ruleMembershipSuccession(mindex) === false) throw Error('ruleMembershipSuccession');
+    // BR_G76
+    if (indexer.ruleMembershipDistance(mindex) === false) throw Error('ruleMembershipDistance');
+    // BR_G77
+    if (indexer.ruleMembershipOnRevoked(mindex) === false) throw Error('ruleMembershipOnRevoked');
+    // BR_G78
+    if (indexer.ruleMembershipJoinsTwice(mindex) === false) throw Error('ruleMembershipJoinsTwice');
+    // BR_G79
+    if (indexer.ruleMembershipEnoughCerts(mindex) === false) throw Error('ruleMembershipEnoughCerts');
+    // BR_G80
+    if (indexer.ruleMembershipLeaverIsMember(mindex) === false) throw Error('ruleMembershipLeaverIsMember');
+    // BR_G81
+    if (indexer.ruleMembershipActiveIsMember(mindex) === false) throw Error('ruleMembershipActiveIsMember');
+    // BR_G82
+    if (indexer.ruleMembershipRevokedIsMember(mindex) === false) throw Error('ruleMembershipRevokedIsMember');
+    // BR_G83
+    if (indexer.ruleMembershipRevokedSingleton(mindex) === false) throw Error('ruleMembershipRevokedSingleton');
+    // BR_G84
+    if (indexer.ruleMembershipRevocationSignature(mindex) === false) throw Error('ruleMembershipRevocationSignature');
+    // BR_G85
+    if (indexer.ruleMembershipExcludedIsMember(iindex) === false) throw Error('ruleMembershipExcludedIsMember');
+    // BR_G86
+    if (indexer.ruleToBeKickedArePresent(mindex, dal) === false) throw Error('ruleToBeKickedArePresent');
+    // BR_G103
+    if (indexer.ruleTxWritability(sindex) === false) throw Error('ruleToBeKickedArePresent');
+    // BR_G87
+    if (indexer.ruleInputIsAvailable(sindex) === false) throw Error('ruleInputIsAvailable');
+    // BR_G88
+    if (indexer.ruleInputIsUnlocked(sindex) === false) throw Error('ruleInputIsUnlocked');
+    // BR_G89
+    if (indexer.ruleInputIsTimeUnlocked(sindex) === false) throw Error('ruleInputIsTimeUnlocked');
+    // BR_G90
+    if (indexer.ruleOutputBase(sindex, HEAD_1) === false) throw Error('ruleOutputBase');
     // Check document's coherence
     yield checkIssuer(block);
   });
@@ -521,7 +523,6 @@ function BlockchainContext() {
       conf.medianTimeBlocks = bconf.medianTimeBlocks;
       conf.avgGenTime = bconf.avgGenTime;
       conf.dtDiffEval = bconf.dtDiffEval;
-      conf.blocksRot = bconf.blocksRot;
       conf.percentRot = bconf.percentRot;
       conf.currency = block.currency;
       // Super important: adapt wotb module to handle the correct stock

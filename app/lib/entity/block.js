@@ -242,7 +242,6 @@ Block.statics.getConf = (block) => {
   bconf.medianTimeBlocks = parseInt(sp[13]);
   bconf.avgGenTime = parseInt(sp[14]);
   bconf.dtDiffEval = parseInt(sp[15]);
-  bconf.blocksRot = parseInt(sp[16]);
-  bconf.percentRot = parseFloat(sp[17]);
+  bconf.percentRot = parseFloat(sp[16]);
   return bconf;
 };

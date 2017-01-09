@@ -30,7 +30,6 @@ dtos.Parameters = {
   medianTimeBlocks: Number,
   avgGenTime: Number,
   dtDiffEval: Number,
-  blocksRot: Number,
   percentRot: Number
 };
 

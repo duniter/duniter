@@ -120,7 +120,6 @@ function Server (dbConf, overrideConf) {
       msWindow:           constants.CONTRACT.DEFAULT.MSWINDOW,
       xpercent:           constants.CONTRACT.DEFAULT.X_PERCENT,
       percentRot:         constants.CONTRACT.DEFAULT.PERCENTROT,
-      blocksRot:          constants.CONTRACT.DEFAULT.BLOCKSROT,
       powDelay:           constants.CONTRACT.DEFAULT.POWDELAY,
       avgGenTime:         constants.CONTRACT.DEFAULT.AVGGENTIME,
       dtDiffEval:         constants.CONTRACT.DEFAULT.DTDIFFEVAL,

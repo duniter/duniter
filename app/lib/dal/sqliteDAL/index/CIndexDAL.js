@@ -108,7 +108,7 @@ function CIndexDAL(driver) {
     ')', [issuer, constants.IDX_UPDATE]);
 
   this.existsNonReplayableLink = (issuer, receiver) => co(function*() {
-    const results = that.query('SELECT * FROM ' + that.table + ' c1 ' +
+    const results = yield that.query('SELECT * FROM ' + that.table + ' c1 ' +
       'WHERE c1.issuer = ? ' +
       'AND c1.receiver = ? ' +
       'AND NOT EXISTS (' +

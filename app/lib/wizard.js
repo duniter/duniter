@@ -144,6 +144,7 @@ const tasks = {
         }], function (answers) {
           var keepOld = obfuscated.length > 0 && obfuscated == answers.passwd;
           conf.passwd = keepOld ? conf.passwd : answers.passwd;
+          conf.pair = undefined;
           next();
         });
       }

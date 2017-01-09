@@ -84,7 +84,7 @@ contacter.statics.quickly = (host, port, opts, callbackPromise) => co(function*(
 contacter.statics.quickly2 = (peer, opts, callbackPromise) => co(function*() {
   const Peer = require('./entity/peer');
   const p = Peer.statics.fromJSON(peer);
-  const node = new Contacter(p.getHost(), p.getPort(), opts);
+  const node = new Contacter(p.getHostPreferDNS(), p.getPort(), opts);
   return callbackPromise(node);
 });
 
@@ -95,7 +95,7 @@ contacter.statics.fetchBlock = (number, peer, opts) => contacter.statics.quickly
 contacter.statics.isReachableFromTheInternet = (peer, opts) => co(function*() {
   const Peer = require('./entity/peer');
   const p = Peer.statics.fromJSON(peer);
-  const node = new Contacter(p.getHost(), p.getPort(), opts);
+  const node = new Contacter(p.getHostPreferDNS(), p.getPort(), opts);
   try {
     yield node.getPeer();
     return true;

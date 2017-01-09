@@ -153,7 +153,7 @@ module.exports = {
         blocksToApply = res.downloaded;
         currentChunckStart += res.downloaded.length;
         if (!res.applied) {
-          logger.error("Blocks were not applied.")
+          logger.info("Blocks were not applied.")
         }
       } while (res.downloaded.length > 0 && res.applied);
     });

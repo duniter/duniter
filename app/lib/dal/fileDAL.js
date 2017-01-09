@@ -635,7 +635,8 @@ function FileDAL(params) {
     const sources = yield that.sindexDAL.getUDSources(pubkey);
     return {
       history: sources.map((src) => _.extend({
-        block_number: src.number
+        block_number: src.pos,
+        time: src.written_time
       }, src))
     };
   });
@@ -719,17 +720,24 @@ function FileDAL(params) {
   });
 
   this.getLogContent = (linesQuantity) => new Promise((resolve, reject) => {
-    let lines = [], i = 0;
-    const lineReader = require('readline').createInterface({
-      input: require('fs').createReadStream(require('path').join(rootPath, 'duniter.log'))
-    });
-    lineReader.on('line', (line) => {
-      line = "\n" + line;
-      lines.push(line);
-      i++;
-      if (i >= linesQuantity) lines.shift();
-    });
-    lineReader.on('close', () => resolve(lines));
-    lineReader.on('error', (err) => reject(err));
+    try {
+      let lines = [], i = 0;
+      const logPath = require('path').join(rootPath, 'duniter.log');
+      const readStream = require('fs').createReadStream(logPath);
+      readStream.on('error', (err) => reject(err));
+      const lineReader = require('readline').createInterface({
+        input: readStream
+      });
+      lineReader.on('line', (line) => {
+        line = "\n" + line;
+        lines.push(line);
+        i++;
+        if (i >= linesQuantity) lines.shift();
+      });
+      lineReader.on('close', () => resolve(lines));
+      lineReader.on('error', (err) => reject(err));
+    } catch (e) {
+      reject(e);
+    }
   });
 }

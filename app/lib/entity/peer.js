@@ -87,16 +87,9 @@ function Peer(json) {
         (bma.ipv6 ? bma.ipv6 : '')));
   };
 
-  this.getHost = () => {
-    let bma = this.getBMA();
-    return (this.hasValid4(bma) ? bma.ipv4 :
-      (bma.dns ? bma.dns :
-        (bma.ipv6 ? '[' + bma.ipv6 + ']' : DEFAULT_HOST)));
-  };
-
   this.getURL = () => {
     const bma = this.getBMA();
-    let base = this.getHost();
+    let base = this.getHostPreferDNS();
     if(bma.port)
       base += ':' + bma.port;
     return base;

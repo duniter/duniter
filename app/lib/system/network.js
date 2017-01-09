@@ -19,6 +19,7 @@ const logger = require('../logger')('network');
 
 module.exports = {
 
+  getEndpoint: getEndpoint,
   getBestLocalIPv4: () => getBestLocal('IPv4'),
   getBestLocalIPv6: function getFirstGlobalIPv6() {
     const osInterfaces = module.exports.listInterfaces();
@@ -302,6 +303,23 @@ function getResultingError(e) {
     }
   }
   return error;
+}
+
+function getEndpoint(theConf) {
+  let endpoint = 'BASIC_MERKLED_API';
+  if (theConf.remotehost) {
+    endpoint += ' ' + theConf.remotehost;
+  }
+  if (theConf.remoteipv4) {
+    endpoint += ' ' + theConf.remoteipv4;
+  }
+  if (theConf.remoteipv6) {
+    endpoint += ' ' + theConf.remoteipv6;
+  }
+  if (theConf.remoteport) {
+    endpoint += ' ' + theConf.remoteport;
+  }
+  return endpoint;
 }
 
 function getBestLocal(family) {

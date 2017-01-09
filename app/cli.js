@@ -768,6 +768,7 @@ function service(callback, nologs) {
         cbArgs.length--;
         cbArgs[cbArgs.length++] = server;
         cbArgs[cbArgs.length++] = server.conf;
+        cbArgs[cbArgs.length++] = program;
         onService && onService(server);
         return callback.apply(that, cbArgs);
       } catch (e) {
@@ -796,6 +797,11 @@ module.exports.addCommand = (command, requirements, promiseCallback) => {
     .action(subCommand(service(promiseCallback)));
 };
 
+module.exports.addOption = (optFormat, optDesc, optParser) => {
+  program
+    .option(optFormat, optDesc, optParser);
+};
+
 function needsToBeLaunchedByScript() {
     logger.error('This command must not be launched directly, using duniter.sh script');
     return Promise.resolve();
@@ -807,7 +813,14 @@ function configure(server, conf) {
       throw constants.ERRORS.CLI_CALLERR_CONFIG;
     }
     let wiz = wizard();
-    conf.upnp = !program.noupnp;
+    // UPnP override
+    if (program.noupnp === true) {
+      conf.upnp = false;
+    }
+    if (program.upnp === true) {
+      conf.upnp = true;
+    }
+    // Network autoconf
     const autoconfNet = program.autoconf
       || !(conf.ipv4 || conf.ipv6)
       || !(conf.remoteipv4 || conf.remoteipv6 || conf.remotehost)

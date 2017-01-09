@@ -62,6 +62,9 @@ module.exports.statics = {
     const stack = {
 
       registerDependency: (requiredObject) => {
+        for (const opt of (requiredObject.duniter.cliOptions || [])) {
+          cli.addOption(opt.value, opt.desc, opt.parser);
+        }
         for (const command of (requiredObject.duniter.cli || [])) {
           cli.addCommand({ name: command.name, desc: command.desc }, command.requires, command.promiseCallback);
         }

@@ -178,7 +178,7 @@ function BlockGenerator(notifier) {
 
     const theEngine = engine();
 
-    let onAlmostPoW;
+    let onAlmostPoW, prefix = 0;
 
     const checkPoWandNotify = (hash, block, found) => {
       const matches = hash.match(/^(0{2,})[^0]/);
@@ -190,6 +190,9 @@ function BlockGenerator(notifier) {
     this.whenReady = () => this.stopPoW();
 
     this.changeConf = (conf) => co(function*() {
+      if (conf.prefix) {
+        prefix = conf.prefix;
+      }
       logger.info('Changing conf to: %s on engine#%s', JSON.stringify(conf), id);
       theEngine.setValue('conf', conf );
     });
@@ -224,7 +227,18 @@ function BlockGenerator(notifier) {
         return theEngine.status();
       }, constants.ENGINE_IDLE_INTERVAL);
       // Starts the PoW
-      const res = yield theEngine.prove(stuff.newPoW.block, nonceBeginning, stuff.newPoW.zeros, stuff.newPoW.highMark, stuff.newPoW.pair, stuff.newPoW.forcedTime, stuff.newPoW.conf.medianTimeBlocks, stuff.newPoW.conf.avgGenTime, stuff.newPoW.conf.cpu);
+      const res = yield theEngine.prove(
+        stuff.newPoW.block,
+        nonceBeginning,
+        stuff.newPoW.zeros,
+        stuff.newPoW.highMark,
+        stuff.newPoW.pair,
+        stuff.newPoW.forcedTime,
+        stuff.newPoW.conf.medianTimeBlocks,
+        stuff.newPoW.conf.avgGenTime,
+        stuff.newPoW.conf.cpu,
+        prefix
+      );
       clearInterval(interval);
       if (res) {
         checkPoWandNotify(res.pow.pow, res.pow.block, POW_FOUND);

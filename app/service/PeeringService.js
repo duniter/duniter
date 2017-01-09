@@ -19,6 +19,7 @@ const querablep      = require('../lib/querablep');
 const Peer           = require('../lib/entity/peer');
 const Transaction    = require('../lib/entity/transaction');
 const AbstractService = require('./AbstractService');
+const network = require('../lib/system/network');
 
 const DONT_IF_MORE_THAN_FOUR_PEERS = true;
 const CONST_BLOCKS_CHUNK = 50;
@@ -132,7 +133,7 @@ function PeeringService(server) {
       yield dal.savePeer(peerEntity);
       let savedPeer = Peer.statics.peerize(peerEntity);
       if (peerEntity.pubkey == selfPubkey) {
-        const localEndpoint = getEndpoint(conf);
+        const localEndpoint = network.getEndpoint(conf);
         const localNodeNotListed = !peerEntity.containsEndpoint(localEndpoint);
         const current = localNodeNotListed && (yield dal.getCurrentBlockOrNull());
         if (!localNodeNotListed) {
@@ -244,7 +245,7 @@ function PeeringService(server) {
     if (peers.length != 0 && peers[0]) {
       p1 = _(peers[0]).extend({version: constants.DOCUMENTS_VERSION, currency: currency});
     }
-    let endpoint = getEndpoint(theConf);
+    let endpoint = network.getEndpoint(theConf);
     let otherPotentialEndpoints = getOtherEndpoints(p1.endpoints, theConf);
     logger.info('Sibling endpoints:', otherPotentialEndpoints);
     let reals = yield otherPotentialEndpoints.map((endpoint) => co(function*() {
@@ -309,23 +310,6 @@ function PeeringService(server) {
     logger.info("Next peering signal in %s min", signalTimeInterval / 1000 / 60);
     return selfPeer;
   });
-
-  function getEndpoint(theConf) {
-    let endpoint = 'BASIC_MERKLED_API';
-    if (theConf.remotehost) {
-      endpoint += ' ' + theConf.remotehost;
-    }
-    if (theConf.remoteipv4) {
-      endpoint += ' ' + theConf.remoteipv4;
-    }
-    if (theConf.remoteipv6) {
-      endpoint += ' ' + theConf.remoteipv6;
-    }
-    if (theConf.remoteport) {
-      endpoint += ' ' + theConf.remoteport;
-    }
-    return endpoint;
-  }
 
   function getOtherEndpoints(endpoints, theConf) {
     return endpoints.filter((ep) => {

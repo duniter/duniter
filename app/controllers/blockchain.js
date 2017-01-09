@@ -98,7 +98,7 @@ function BlockchainBinding (server) {
   this.difficulties = () => co(function *() {
     const current = yield server.dal.getCurrentBlockOrNull();
     const number = (current && current.number) || 0;
-    const issuers = yield server.dal.getUniqueIssuersBetween(number - 1 - conf.blocksRot, number - 1);
+    const issuers = yield server.dal.getUniqueIssuersBetween(number - 1 - current.issuersFrame, number - 1);
     const difficulties = [];
     for (const issuer of issuers) {
       const member = yield server.dal.getWrittenIdtyByPubkey(issuer);

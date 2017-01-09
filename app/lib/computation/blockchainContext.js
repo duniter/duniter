@@ -521,7 +521,6 @@ function BlockchainContext() {
       conf.medianTimeBlocks = bconf.medianTimeBlocks;
       conf.avgGenTime = bconf.avgGenTime;
       conf.dtDiffEval = bconf.dtDiffEval;
-      conf.blocksRot = bconf.blocksRot;
       conf.percentRot = bconf.percentRot;
       conf.currency = block.currency;
       // Super important: adapt wotb module to handle the correct stock

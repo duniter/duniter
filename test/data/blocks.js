@@ -50,7 +50,7 @@ module.exports = {
     "IssuersFrame: 1\n" +
     "IssuersFrameVar: 0\n" +
     "DifferentIssuersCount: 0\n" +
-    "Parameters: 0.007376575:3600:120:0:40:604800:31536000:1:604800:604800:0.9:31536000:3:20:960:10:20:0.6666666666666666\n" +
+    "Parameters: 0.007376575:3600:120:0:40:604800:31536000:1:604800:604800:0.9:31536000:3:20:960:10:0.6666666666666666\n" +
     "MembersCount: 2\n" +
     "Identities:\n" +
     "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:1eubHHbuNfilHMM0G2bI30iZzebQ2cQ1PC7uPAw08FGMMmQCRerlF/3pc4sAcsnexsxBseA/3lY03KlONqJBAg==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:tic\n" +
@@ -66,7 +66,7 @@ module.exports = {
     "DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:0:vMaYgBSnU+83AYOVQCZAx1XLpg/F1MmMztDfCnZvl8hPs4LE9tcDvCrrFogAwMEW2N7Y0gCH62/fBMgw4KrGCA==\n" +
     "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:0:RKIGMgYIhB9FmjPbmyo4egPufg/iTpBznYGZp5hjK1WZ1a9imQldLNUMe0eiPlSKJTK/JD3gOlCiynOEY2csBA==\n" +
     "Transactions:\n" +
-    "InnerHash: 3969BE7A32853B2AB526662E88A2F1BFD852048C6B1DAEF0483F3DF64757AF48\n" +
+    "InnerHash: 85EAAFF16565A526F5E7DD2E75E91F2D87BBD00BE30FBC2081BC855F76C93AFB\n" +
     "Nonce: 300000000001\n" +
     "WJourHkd6NnMxKDSEfrsiB7qE0mGbiFHSwy0cE8/q/is6hTd0mzlMNBPxDhoPkAiocfXJrQuIVeG0/ygxQrTBw==\n",
 
@@ -147,7 +147,7 @@ module.exports = {
     "IssuersFrame: 100\n" +
     "IssuersFrameVar: 0\n" +
     "DifferentIssuersCount: 3\n" +
-    "Parameters: 0.7376575:100:157680000:0:40:7200:31536000:1:1000:1000:0.9:31536000:3:1:60:10:20:0.67\n" +
+    "Parameters: 0.7376575:100:157680000:0:40:7200:31536000:1:1000:1000:0.9:31536000:3:1:60:10:0.67\n" +
     "MembersCount: 3\n" +
     "Identities:\n" +
     "Joiners:\n" +

@@ -444,7 +444,7 @@ function BlockGenerator(mainContext, prover) {
         conf.sigPeriod, conf.sigStock, conf.sigWindow, conf.sigValidity,
         conf.sigQty, conf.idtyWindow, conf.msWindow, conf.xpercent, conf.msValidity,
         conf.stepMax, conf.medianTimeBlocks, conf.avgGenTime, conf.dtDiffEval,
-        conf.blocksRot, (conf.percentRot == 1 ? "1.0" : conf.percentRot)
+        (conf.percentRot == 1 ? "1.0" : conf.percentRot)
       ].join(':');
       block.previousHash = current ? current.hash : "";
       block.previousIssuer = current ? current.issuer : "";

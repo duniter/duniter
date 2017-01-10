@@ -1693,7 +1693,7 @@ Else:
     nbPersonalBlocksInFrame = COUNT(blocksOfIssuer)
     blocksPerIssuerInFrame = MAP(
         UNIQ((HEAD~1..<HEAD~1.issuersFrame>).issuer)
-            => COUNT(HEAD~1..<HEAD~1.issuersFrame>[issuer=HEAD.issuer]))
+            => ISSUER: COUNT(HEAD~1..<HEAD~1.issuersFrame>[issuer=ISSUER]))
     medianOfBlocksInFrame = MEDIAN(blocksPerIssuerInFrame)
     
 EndIf

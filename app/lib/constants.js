@@ -146,7 +146,7 @@ module.exports = {
   TRANSACTION_VERSION: 10,
 
   REVOCATION_FACTOR: 2, // This is protocol fixed value
-  NB_DIGITS_UD: 6,      // This is protocol fixed value
+  NB_DIGITS_UD: 4,      // This is protocol fixed value
   FIRST_UNIT_BASE: 0,
 
   TRANSACTION_EXPIRY_DELAY: 3600 * 24 * 7,

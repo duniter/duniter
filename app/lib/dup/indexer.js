@@ -837,7 +837,7 @@ const indexer = module.exports = {
 
   // BR_G14
   prepareUnitBase: (HEAD) => {
-    if (HEAD.dividend >= Math.pow(10, 6)) {
+    if (HEAD.dividend >= Math.pow(10, constants.NB_DIGITS_UD)) {
       HEAD.dividend = Math.ceil(HEAD.dividend / 10);
       HEAD.new_dividend = HEAD.dividend;
       HEAD.unitBase = HEAD.unitBase + 1;

@@ -1365,6 +1365,7 @@ TRUE
 * *Rule*: The sum of all inputs in `CommonBase` must equal the sum of all outputs in `CommonBase`
 
 > Functionally: we cannot create nor lose money through transactions. We can only transfer coins we own.
+> Functionally: also, we cannot convert a superiod unit base into a lower one.
 
 #### Global
 

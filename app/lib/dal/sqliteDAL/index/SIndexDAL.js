@@ -33,7 +33,7 @@ function SIndexDAL(driver) {
     'conditions'
   ];
   this.arrays = [];
-  this.bigintegers = ['amount'];
+  this.bigintegers = [];
   this.booleans = ['consumed'];
   this.pkFields = ['op', 'identifier', 'pos', 'written_on'];
   this.translated = {};
@@ -48,7 +48,7 @@ function SIndexDAL(driver) {
       'created_on VARCHAR(80) NULL,' +
       'written_on VARCHAR(80) NOT NULL,' +
       'written_time INTEGER NOT NULL,' +
-      'amount VARCHAR(50) NULL,' +
+      'amount INTEGER NULL,' +
       'base INTEGER NULL,' +
       'locktime INTEGER NULL,' +
       'consumed BOOLEAN NOT NULL,' +

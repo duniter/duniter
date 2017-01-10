@@ -576,6 +576,16 @@ function BlockGenerator(mainContext, prover) {
 
       // Universal Dividend
       if (vHEAD.new_dividend) {
+
+        // BR_G13
+        // Recompute according to block.membersCount
+        indexer.prepareDividend(vHEAD, vHEAD_1, conf);
+        // BR_G14
+        indexer.prepareUnitBase(vHEAD, vHEAD_1, conf);
+
+        // Fix BR_G14 double call
+        vHEAD.unitBase = Math.min(vHEAD_1.unitBase + 1, vHEAD.unitBase);
+
         block.dividend = vHEAD.dividend;
         block.unitbase = vHEAD.unitBase;
       } else {

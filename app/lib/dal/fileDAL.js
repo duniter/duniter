@@ -525,6 +525,7 @@ function FileDAL(params) {
     let cindex = indexer.cindex(index);
     const HEAD = yield indexer.completeGlobalScope(block, conf, index, that);
     sindex = sindex.concat(yield indexer.ruleIndexGenDividend(HEAD, that));
+    sindex = sindex.concat(yield indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex, that));
     cindex = cindex.concat(yield indexer.ruleIndexGenCertificationExpiry(HEAD, that));
     mindex = mindex.concat(yield indexer.ruleIndexGenMembershipExpiry(HEAD, that));
     iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByMembership(HEAD, mindex));

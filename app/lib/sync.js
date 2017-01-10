@@ -286,6 +286,7 @@ function Synchroniser (server, host, port, conf, interactive) {
                   iindex = [];
                   cindex = [];
                   sindex = yield indexer.ruleIndexGenDividend(HEAD, dal);
+                  sindex = sindex.concat(yield indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex, dal));
 
                   // Create/Update nodes in wotb
                   yield ctx.updateMembers(block);

@@ -275,7 +275,7 @@ function User (uid, options, node) {
     let outputs = [{
       qty: amount,
       base: commonbase,
-      lock: 'SIG(' + recipient.pub + ')'
+      lock: 'SIG(' + (recipient.pub || recipient) + ')'
     }];
     if (inputSum - amount > 0) {
       // Rest back to issuer

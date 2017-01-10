@@ -1280,6 +1280,42 @@ const indexer = module.exports = {
     return dividends;
   }),
 
+  // BR_G106
+  ruleIndexGarbageSmallAccounts: (HEAD, sindex, dal) => co(function*() {
+    const garbages = [];
+    let potentialSources = yield dal.sindexDAL.findLowerThan(constants.ACCOUNT_MINIMUM_CURRENT_BASED_AMOUNT, HEAD.unitBase);
+    potentialSources = potentialSources.concat(_.where(sindex, { op: constants.IDX_CREATE }));
+    const accountsBalance = potentialSources.reduce((map, src) => {
+      if (!map[src.conditions]) {
+        map[src.conditions] = { amount: 0, sources: [] };
+      }
+      map[src.conditions].amount += src.amount * Math.pow(10, src.base);
+      map[src.conditions].sources.push(src);
+      return map;
+    }, {});
+    const accounts = Object.keys(accountsBalance);
+    for (const account of accounts) {
+      const amount = accountsBalance[account].amount;
+      const sources = accountsBalance[account].sources;
+      if (amount < constants.ACCOUNT_MINIMUM_CURRENT_BASED_AMOUNT * Math.pow(10, HEAD.unitBase)) {
+        for (const src of sources) {
+          garbages.push({
+            op: 'UPDATE',
+            identifier: src.identifier,
+            pos: src.pos,
+            amount: src.amount,
+            base: src.base,
+            written_on: [HEAD.number, HEAD.hash].join('-'),
+            written_time: HEAD.medianTime,
+            conditions: src.conditions,
+            consumed: true // It is now consumed
+          });
+        }
+      }
+    }
+    return garbages;
+  }),
+
   // BR_G92
   ruleIndexGenCertificationExpiry: (HEAD, dal) => co(function*() {
     const expiries = [];

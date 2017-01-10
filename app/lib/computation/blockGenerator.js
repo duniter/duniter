@@ -574,12 +574,6 @@ function BlockGenerator(mainContext, prover) {
        */
       block.powMin = vHEAD.powMin;
 
-      // BR_G13
-      indexer.prepareDividend(vHEAD, vHEAD_1, conf);
-
-      // BR_G14
-      indexer.prepareUnitBase(vHEAD, vHEAD_1, conf);
-
       // Universal Dividend
       if (vHEAD.new_dividend) {
         block.dividend = vHEAD.dividend;

@@ -233,8 +233,8 @@ const indexer = module.exports = {
           unlock: txObj.unlocks[k],
           amount: input.amount,
           base: input.base,
-          consumed: true,
           conditions: null,
+          consumed: true,
           txObj: txObj
         });
         k++;
@@ -253,8 +253,8 @@ const indexer = module.exports = {
           locktime: obj.locktime,
           amount: output.amount,
           base: output.base,
-          consumed: false,
           conditions: output.conditions,
+          consumed: false,
           txObj: obj
         });
       }
@@ -713,6 +713,7 @@ const indexer = module.exports = {
         amount: ENTRY.amount,
         base: ENTRY.base
       });
+      ENTRY.conditions = reduce(reducable).conditions; // We valuate the input conditions, so we can map these records to a same account
       ENTRY.available = reduce(reducable).consumed === false;
     }));
 

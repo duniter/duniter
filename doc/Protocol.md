@@ -2027,11 +2027,13 @@ Else:
     
 EndIf
 
-####### BR_G46 - ENTRY.available
+####### BR_G46 - ENTRY.available and ENTRY.conditions
 
 For each `LOCAL_SINDEX[op='UPDATE'] as ENTRY`:
 
-    ENTRY.available = REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]).consumed == false
+    INPUT = REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base])
+    ENTRY.conditions = INPUT.conditions
+    ENTRY.available = INPUT.consumed == false
 
 ####### BR_G47 - ENTRY.isLocked
 

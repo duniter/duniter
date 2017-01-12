@@ -46,10 +46,10 @@ describe("v1.0 Module API", () => {
   describe("Configuration hooks", () => {
 
     let stack;
-    const run = () => {
+    function run() {
       const args = Array.from(arguments);
       return stack.executeStack(['node', 'index.js', '--mdb', 'modules_api_tests'].concat(args));
-    };
+    }
 
     before(() => co(function*() {
 
@@ -143,10 +143,11 @@ describe("v1.0 Module API", () => {
     let fakeI;
     let fakeP;
     let fakeO;
-    const run = () => {
+
+    function run() {
       const args = Array.from(arguments);
       return stack.executeStack(['node', 'index.js', '--memory'].concat(args));
-    };
+    }
 
     before(() => co(function*() {
 

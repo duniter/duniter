@@ -345,7 +345,7 @@ describe("Identities collision", function() {
       res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
       res.should.have.property('uid').equal('tic');
       res.should.have.property('sigDate').be.a.Number;
-      res.should.have.property('memberships').length(1); // We no more conserve the memberships in sandbox
+      res.should.have.property('memberships').length(2);
       // Renew membership, not written
       res.memberships[0].should.have.property('version').equal(constants.DOCUMENTS_VERSION);
       res.memberships[0].should.have.property('currency').equal('bb');

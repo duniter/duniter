@@ -5,8 +5,8 @@ const _ = require('underscore');
 const Server = require('./server');
 const logger = require('./app/lib/logger')('duniter');
 
-module.exports = function (dbConf, overConf) {
-  return new Server(dbConf, overConf);
+module.exports = function (home, memory, overConf) {
+  return new Server(home, memory, overConf);
 };
 
 module.exports.statics = {

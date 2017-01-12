@@ -246,11 +246,6 @@ program
   })));
 
 program
-  .command('dump [what]')
-  .description('Diverse dumps of the inner data')
-  .action(subCommand(connect(makeDump, true)));
-
-program
   .command('revert [count]')
   .description('Revert (undo + remove) the top [count] blocks from the blockchain. EXPERIMENTAL')
   .action(subCommand(service(function (count, server) {
@@ -547,18 +542,6 @@ function startWizard(step, server, conf, done) {
       })(null, null);
     }
   ], done);
-}
-
-function makeDump(what, server, conf) {
-  return co(function *() {
-    try {
-      server.dal.wotb.showWoT();
-    } catch (e) {
-      logger.error(e);
-    }
-    server.disconnect();
-    throw Error("Exiting");
-  });
 }
 
 function commandLineConf(conf) {

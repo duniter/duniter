@@ -679,7 +679,8 @@ function connect(callback, useDefaultConf) {
     var dbName = program.mdb || "duniter_default";
     var dbHome = program.home;
 
-    var server = duniter({home: dbHome, name: dbName}, commandLineConf());
+    const home = directory.getHome(dbName, dbHome);
+    var server = duniter(home, program.memory === true, commandLineConf());
 
     // If ever the process gets interrupted
     let isSaving = false;
@@ -720,7 +721,8 @@ function server(callback, useDefaultConf) {
     var dbName = program.mdb || "duniter_default";
     var dbHome = program.home;
 
-    var server = duniter({home: dbHome, name: dbName}, commandLineConf());
+    const home = directory.getHome(dbName, dbHome);
+    var server = duniter(home, program.memory === true, commandLineConf());
 
     cbArgs.length--;
     cbArgs[cbArgs.length++] = server;
@@ -745,7 +747,8 @@ function service(callback, nologs) {
     // Add log files for this instance
     logger.addHomeLogs(directory.getHome(dbName, dbHome));
 
-    var server = duniter({home: dbHome, name: dbName, memory: program.memory}, commandLineConf());
+    const home = directory.getHome(dbName, dbHome);
+    var server = duniter(home, program.memory === true, commandLineConf());
 
     // If ever the process gets interrupted
     let isSaving = false;

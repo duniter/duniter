@@ -185,10 +185,10 @@ module.exports = {
       parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
       sigQty: 1
     };
-    const server = duniter({
-      memory: conf.memory !== undefined ? conf.memory : MEMORY_MODE,
-      name: conf.homename || 'dev_unit_tests'
-    }, _.extend(conf, commonConf));
+    const server = duniter(
+      '~/.config/duniter/' + (conf.homename || 'dev_unit_tests'),
+      conf.memory !== undefined ? conf.memory : MEMORY_MODE,
+      _.extend(conf, commonConf));
 
     server.port = port;
     server.host = HOST;

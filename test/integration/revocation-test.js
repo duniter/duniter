@@ -27,10 +27,10 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = duniter({
-  memory: MEMORY_MODE,
-  name: 'bb12'
-}, _.extend({
+const s1 = duniter(
+  '/bb12',
+  MEMORY_MODE,
+  _.extend({
   port: '9964',
   pair: {
     pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
@@ -38,10 +38,10 @@ const s1 = duniter({
   }
 }, commonConf));
 
-const s2 = duniter({
-  memory: MEMORY_MODE,
-  name: 'bb13'
-}, _.extend({
+const s2 = duniter(
+  '/bb13',
+  MEMORY_MODE,
+  _.extend({
   port: '9965',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',

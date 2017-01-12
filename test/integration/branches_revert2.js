@@ -23,10 +23,10 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb11'
-}, _.extend({
+const s1 = ucoin(
+  '/bb11',
+  MEMORY_MODE,
+  _.extend({
   port: '7712',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',

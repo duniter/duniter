@@ -12,9 +12,10 @@ const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
 const ws        = require('ws');
 
-const server = ucoin({
-  memory: true
-}, {
+const server = ucoin(
+  '/bb11',
+  true,
+  {
   ipv4: '127.0.0.1',
   port: '7777',
   currency: 'bb',

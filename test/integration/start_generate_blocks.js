@@ -26,10 +26,10 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb7'
-}, _.extend({
+const s1 = ucoin(
+  '/bb7',
+  MEMORY_MODE,
+  _.extend({
   port: '7790',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -39,10 +39,10 @@ const s1 = ucoin({
   participate: true // TODO: to remove when startGeneration will be an explicit call
 }, commonConf));
 
-const s2 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb7_2'
-}, _.extend({
+const s2 = ucoin(
+  '/bb7_2',
+  MEMORY_MODE,
+  _.extend({
   port: '7791',
   pair: {
     pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',

@@ -18,10 +18,10 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb11'
-}, _.extend({
+const s1 = ucoin(
+  '/bb11',
+  MEMORY_MODE,
+  _.extend({
   port: '9337',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -31,10 +31,10 @@ const s1 = ucoin({
   sigQty: 1, dt: 1, ud0: 120
 }, commonConf));
 
-const s2 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb41'
-}, _.extend({
+const s2 = ucoin(
+  '/bb41',
+  MEMORY_MODE,
+  _.extend({
   port: '9338',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -45,10 +45,10 @@ const s2 = ucoin({
   msValidity: 400 // Memberships expire after 400 second delay
 }, commonConf));
 
-const s3 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb11'
-}, _.extend({
+const s3 = ucoin(
+  '/bb11',
+  MEMORY_MODE,
+  _.extend({
   port: '9339',
   pair: {
     pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',

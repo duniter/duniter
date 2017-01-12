@@ -222,8 +222,7 @@ function Node (dbName, options) {
   function service(callback) {
     return function () {
       var cbArgs = arguments;
-      var dbConf = typeof dbName == 'object' ? dbName : { name: dbName, memory: true };
-      var server = ucoin(dbConf, Configuration.statics.complete(options));
+      var server = ucoin('/' + dbName, true, Configuration.statics.complete(options));
 
       // Initialize server (db connection, ...)
       return co(function*(){

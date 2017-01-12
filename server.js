@@ -23,12 +23,11 @@ const upnp        = require('./app/lib/system/upnp');
 const rawer       = require('./app/lib/ucp/rawer');
 const permanentProver = require('./app/lib/computation/permanentProver');
 
-function Server (dbConf, overrideConf) {
+function Server (home, memoryOnly, overrideConf) {
 
   stream.Duplex.call(this, { objectMode: true });
 
-  const home = directory.getHome(dbConf.name, dbConf.home);
-  const paramsP = directory.getHomeParams(dbConf && dbConf.memory, home);
+  const paramsP = directory.getHomeParams(memoryOnly, home);
   const logger = require('./app/lib/logger')('server');
   const permaProver = this.permaProver = permanentProver(this);
   const that = this;

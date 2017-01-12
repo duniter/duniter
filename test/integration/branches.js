@@ -3,7 +3,7 @@
 const _         = require('underscore');
 const co        = require('co');
 const should    = require('should');
-const ucoin     = require('../../index');
+const duniter   = require('../../index');
 const bma       = require('../../app/lib/streams/bma');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
@@ -20,10 +20,10 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb1'
-}, _.extend({
+const s1 = duniter(
+  '/bb1',
+  MEMORY_MODE,
+  _.extend({
   port: '7778',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',

@@ -14,10 +14,10 @@ const commonConf = {
   currency: 'bb'
 };
 
-const s1 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb12'
-}, _.extend({
+const s1 = ucoin(
+  'bb12',
+  MEMORY_MODE,
+  _.extend({
   port: '4452',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',

@@ -197,12 +197,10 @@ function Stack(dependencies) {
       return yield command.onPluggedDALExecute(server, conf, program, params,
 
         // Start services and streaming between them
-        () => {
+        () => co(function*() {
           const modules = streams.input.concat(streams.process).concat(streams.output);
-          for (const module of modules) {
-            // Any streaming module must implement a `startService` method
-            module.startService();
-          }
+          // Any streaming module must implement a `startService` method
+          yield modules.map(module => module.startService());
           // All inputs write to global INPUT stream
           for (const module of streams.input) module.pipe(INPUT);
           // All processes read from global INPUT stream
@@ -210,16 +208,14 @@ function Stack(dependencies) {
           // All processes write to global PROCESS stream
           for (const module of streams.process) module.pipe(PROCESS);
           // All ouputs read from global PROCESS stream
-          for (const module of streams.process) PROCESS.pipe(module);
-        },
+          for (const module of streams.output) PROCESS.pipe(module);
+        }),
 
         // Stop services and streaming between them
-        () => {
+        () => co(function*() {
           const modules = streams.input.concat(streams.process).concat(streams.output);
-          for (const module of modules) {
-            // Any streaming module must implement a `stopService` method
-            module.stopService();
-          }
+          // Any streaming module must implement a `stopService` method
+          yield modules.map(module => module.stopService());
           // Stop reading inputs
           for (const module of streams.input) module.unpipe();
           // Stop reading from global INPUT
@@ -227,7 +223,7 @@ function Stack(dependencies) {
           for (const module of streams.process) module.unpipe();
           // Stop reading from global PROCESS
           PROCESS.unpipe();
-        });
+        }));
     } catch (e) {
       server.disconnect();
       throw e;
@@ -430,8 +426,8 @@ function InputStream() {
     if (typeof str === 'string') {
       // Keep only strings
       const matches = str.match(/Type: (.*)\n/);
-      if (matches && matches[0].match(/(Block|Membership|Identity|Certification|Transaction|Peer)/)) {
-        const type = matches[0].toLowerCase();
+      if (matches && matches[1].match(/(Block|Membership|Identity|Certification|Transaction|Peer)/)) {
+        const type = matches[1].toLowerCase();
         that.push({ type, doc: str });
       }
     }

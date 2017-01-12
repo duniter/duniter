@@ -5,7 +5,7 @@ const logger = require('../app/lib/logger')('cli');
 const async = require('async');
 const Q = require('q');
 const _ = require('underscore');
-const program = require('commander');
+const Command = require('commander').Command;
 const contacter = require('../app/lib/contacter');
 const directory = require('../app/lib/system/directory');
 const wizard = require('../app/lib/wizard');
@@ -18,24 +18,492 @@ const Peer = require('../app/lib/entity/peer');
 const Block = require('../app/lib/entity/block');
 const constants = require('../app/lib/constants');
 
-let currentCommand = Promise.resolve(true);
+module.exports = () => {
 
-let onResolve, onReject, onService, closeCommand = () => Promise.resolve(true);
+  const ERASE_IF_ALREADY_RECORDED = true;
+  const NO_LOGS = true;
 
-module.exports = (programArgs) => {
+  const options = [];
+  const commands = [];
 
-  currentCommand = new Promise((resolve, reject) => {
-    onResolve = resolve;
-    onReject = reject;
-  });
-  
   return {
 
-    // Some external event can trigger the program closing function
-    closeCommand: () => closeCommand(),
+    addOption: (optFormat, optDesc, optParser) => options.push({ optFormat, optDesc, optParser }),
+
+    addCommand: (command, executionCallback) => commands.push({ command, executionCallback }),
 
     // To execute the provided command
-    execute: (onServiceCallback) => co(function*() {
+    execute: (programArgs, onServiceCallback) => co(function*() {
+
+      const program = new Command();
+
+      let onResolve, onReject = () => Promise.reject(Error("Uninitilized rejection throw")), onService, closeCommand = () => Promise.resolve(true);
+      const currentCommand = new Promise((resolve, reject) => {
+        onResolve = resolve;
+        onReject = reject;
+      });
+
+      program
+        .version(pjson.version)
+        .usage('<command> [options]')
+
+        .option('--home <path>', 'Path to Duniter HOME (defaults to "$HOME/.config/duniter").')
+        .option('-d, --mdb <name>', 'Database name (defaults to "duniter_default").')
+
+        .option('--autoconf', 'With `config` and `init` commands, will guess the best network and key options witout asking for confirmation')
+        .option('--ipv4 <address>', 'IPv4 interface to listen for requests')
+        .option('--ipv6 <address>', 'IPv6 interface to listen for requests')
+        .option('--remoteh <host>', 'Remote interface others may use to contact this node')
+        .option('--remote4 <host>', 'Remote interface for IPv4 access')
+        .option('--remote6 <host>', 'Remote interface for IPv6 access')
+        .option('-p, --port <port>', 'Port to listen for requests', parseInt)
+        .option('--remotep <port>', 'Remote port others may use to contact this node')
+        .option('--upnp', 'Use UPnP to open remote port')
+        .option('--noupnp', 'Do not use UPnP to open remote port')
+        .option('--addep <endpoint>', 'With `config` command, add given endpoint to the list of endpoints of this node')
+        .option('--remep <endpoint>', 'With `config` command, remove given endpoint to the list of endpoints of this node')
+
+        .option('--salt <salt>', 'Key salt to generate this key\'s secret key')
+        .option('--passwd <password>', 'Password to generate this key\'s secret key')
+        .option('--participate <Y|N>', 'Participate to writing the blockchain')
+        .option('--cpu <percent>', 'Percent of CPU usage for proof-of-work computation', parsePercent)
+
+        .option('-c, --currency <name>', 'Name of the currency managed by this node.')
+        .option('--sigPeriod <timestamp>', 'Minimum delay between 2 certifications of a same issuer, in seconds.')
+        .option('--sigStock <count>', 'Maximum quantity of valid certifications per member.')
+        .option('--sigWindow <duration>', 'Maximum age of a non-written certification.')
+        .option('--idtyWindow <duration>', 'Maximum age of a non-written certification.')
+        .option('--sigValidity <timestamp>', 'Validity duration of a certification, in seconds.')
+        .option('--msValidity <timestamp>', 'Validity duration of a memberships, in seconds.')
+        .option('--sigQty <number>', 'Minimum number of required certifications to be a member/stay as a member')
+        .option('--medtblocks <number>', 'medianTimeBlocks parameter of UCP')
+        .option('--avgGenTime <number>', 'avgGenTime parameter of UCP')
+        .option('--dtdiffeval <number>', 'dtDiffEval parameter of UCP')
+        .option('--powZeroMin <number>', 'Minimum number of leading zeros for a proof-of-work')
+        .option('--powPeriod <number>', 'Number of blocks to wait to decrease proof-of-work difficulty by one')
+        .option('--powDelay <number>', 'Number of seconds to wait before starting the computation of next block')
+        .option('--growth <number>', 'Universal Dividend %growth. Aka. \'c\' parameter in RTM', parsePercent)
+        .option('--ud0 <number>', 'Universal Dividend initial value')
+        .option('--dt <number>', 'Number of seconds between two UD')
+        .option('--rootoffset <number>', 'Allow to give a time offset for first block (offset in the past)')
+        .option('--show', 'With gen-next or gen-root commands, displays the generated block')
+
+        .option('--nointeractive', 'Disable interactive sync UI')
+        .option('--nocautious', 'Do not check blocks validity during sync')
+        .option('--cautious', 'Check blocks validity during sync (overrides --nocautious option)')
+        .option('--nopeers', 'Do not retrieve peers during sync')
+        .option('--nostdout', 'Disable stdout printing for `export-bc` command')
+        .option('--noshuffle', 'Disable peers shuffling for `sync` command')
+
+        .option('--timeout <milliseconds>', 'Timeout to use when contacting peers', parseInt)
+        .option('--httplogs', 'Enable HTTP logs')
+        .option('--nohttplogs', 'Disable HTTP logs')
+        .option('--isolate', 'Avoid the node to send peering or status informations to the network')
+        .option('--check', 'With gen-next: just check validity of generated block')
+        .option('--forksize <size>', 'Maximum size of fork window', parseInt)
+        .option('--memory', 'Memory mode')
+      ;
+
+      for (const opt of options) {
+        program
+          .option(opt.optFormat, opt.optDesc, opt.optParser);
+      }
+
+      for (const cmd of commands) {
+        program
+          .command(cmd.command.name)
+          .description(cmd.command.desc)
+          .action((...args) => co(function*() {
+            try {
+              const res = yield cmd.executionCallback.apply(null, [program].concat(args));
+              onResolve(res);
+            } catch (e) {
+              onReject(e);
+            }
+          }));
+      }
+
+      program
+        .command('start')
+        .description('Start Duniter node daemon.')
+        .action(subCommand(service((server, conf) => new Promise((resolve, reject) => {
+          co(function*() {
+            try {
+              const bma = require('./lib/streams/bma');
+
+              logger.info(">> NODE STARTING");
+
+              // Public http interface
+              let bmapi = yield bma(server, null, conf.httplogs);
+
+              // Routing documents
+              server.routing();
+
+              // Services
+              yield server.startServices();
+              yield bmapi.openConnections();
+
+              logger.info('>> Server ready!');
+
+            } catch (e) {
+              reject(e);
+            }
+          });
+        }))));
+
+      program
+        .command('stop')
+        .description('Stop Duniter node daemon.')
+        .action(subCommand(needsToBeLaunchedByScript));
+
+      program
+        .command('restart')
+        .description('Restart Duniter node daemon.')
+        .action(subCommand(needsToBeLaunchedByScript));
+
+      program
+        .command('wizard [step]')
+        .description('Launch the configuration wizard.')
+        .action(subCommand(function (step) {
+          // Only show message "Saved"
+          return connect(function (step, server, conf) {
+            return new Promise((resolve, reject) => {
+              async.series([
+                function (next) {
+                  startWizard(service, step, server, conf, next);
+                }
+              ], (err) => {
+                if (err) return reject(err);
+                resolve();
+              });
+            });
+          })(step, null);
+        }));
+
+      program
+        .command('sync [host] [port] [to]')
+        .description('Synchronize blockchain from a remote Duniter node')
+        .action(subCommand(service(function (host, port, to, server, conf) {
+          if (!host) {
+            throw 'Host is required.';
+          }
+          if (!port) {
+            throw 'Port is required.';
+          }
+          return co(function *() {
+            let cautious;
+            if (program.nocautious) {
+              cautious = false;
+            }
+            if (program.cautious) {
+              cautious = true;
+            }
+            yield server.synchronize(host, port, parseInt(to), 0, !program.nointeractive, cautious, program.nopeers, program.noshuffle);
+            if (server) {
+              yield server.disconnect();
+            }
+          });
+        })));
+
+      program
+        .command('peer [host] [port]')
+        .description('Exchange peerings with another node')
+        .action(subCommand(service(function (host, port, server) {
+          return co(function *() {
+            try {
+              logger.info('Fetching peering record at %s:%s...', host, port);
+              let peering = yield contacter.statics.fetchPeer(host, port);
+              logger.info('Apply peering ...');
+              yield server.PeeringService.submitP(peering, ERASE_IF_ALREADY_RECORDED, !program.nocautious);
+              logger.info('Applied');
+              let selfPeer = yield server.dal.getPeer(server.PeeringService.pubkey);
+              if (!selfPeer) {
+                yield Q.nfcall(server.PeeringService.generateSelfPeer, server.conf, 0);
+                selfPeer = yield server.dal.getPeer(server.PeeringService.pubkey);
+              }
+              logger.info('Send self peering ...');
+              var caster = multicaster();
+              yield caster.sendPeering(Peer.statics.peerize(peering), Peer.statics.peerize(selfPeer));
+              logger.info('Sent.');
+              yield server.disconnect();
+            } catch(e) {
+              logger.error(e.code || e.message || e);
+              throw Error("Exiting");
+            }
+          });
+        })));
+
+      program
+        .command('revert [count]')
+        .description('Revert (undo + remove) the top [count] blocks from the blockchain. EXPERIMENTAL')
+        .action(subCommand(service(function (count, server) {
+          return co(function *() {
+            try {
+              for (let i = 0; i < count; i++) {
+                yield server.revert();
+              }
+            } catch (err) {
+              logger.error('Error during revert:', err);
+            }
+            // Save DB
+            yield server.disconnect();
+          });
+        })));
+
+      program
+        .command('revert-to [number]')
+        .description('Revert (undo + remove) top blockchain blocks until block #[number] is reached. EXPERIMENTAL')
+        .action(subCommand(service(function (number, server) {
+          return co(function *() {
+            try {
+              yield server.revertTo(number);
+            } catch (err) {
+              logger.error('Error during revert:', err);
+            }
+            // Save DB
+            if (server) {
+              yield server.disconnect();
+            }
+          });
+        })));
+
+      program
+        .command('reapply-to [number]')
+        .description('Reapply reverted blocks until block #[number] is reached. EXPERIMENTAL')
+        .action(subCommand(service(function (number, server) {
+          return co(function *() {
+            try {
+              yield server.reapplyTo(number);
+            } catch (err) {
+              logger.error('Error during reapply:', err);
+            }
+            // Save DB
+            if (server) {
+              yield server.disconnect();
+            }
+          });
+        })));
+
+      program
+        .command('gen-next [host] [port] [difficulty]')
+        .description('Tries to generate the next block of the blockchain')
+        .action(subCommand(service(generateAndSend(program, (server) => server.BlockchainService.generateNext))));
+
+      program
+        .command('gen-root [host] [port] [difficulty]')
+        .description('Tries to generate root block, with choice of root members')
+        .action(subCommand(service(function (host, port, difficulty, server, conf) {
+          if (!host) {
+            throw 'Host is required.';
+          }
+          if (!port) {
+            throw 'Port is required.';
+          }
+          if (!difficulty) {
+            throw 'Difficulty is required.';
+          }
+          return generateAndSend(program, (server) => server.BlockchainService.generateManualRoot)(host, port, difficulty, server, conf);
+        })));
+
+      program
+        .command('export-bc [upto]')
+        .description('Exports the whole blockchain as JSON array, up to [upto] block number (excluded).')
+        .action(subCommand(service(function (upto, server) {
+          return co(function *() {
+            try {
+              let CHUNK_SIZE = 500;
+              let jsoned = [];
+              let current = yield server.dal.getCurrentBlockOrNull();
+              let lastNumber = current ? current.number + 1 : -1;
+              if (upto !== undefined && upto.match(/\d+/)) {
+                lastNumber = Math.min(parseInt(upto), lastNumber);
+              }
+              let chunksCount = Math.floor(lastNumber / CHUNK_SIZE);
+              let chunks = [];
+              // Max-size chunks
+              for (let i = 0, len = chunksCount; i < len; i++) {
+                chunks.push({start: i * CHUNK_SIZE, to: i * CHUNK_SIZE + CHUNK_SIZE - 1});
+              }
+              // A last chunk
+              if (lastNumber > chunksCount * CHUNK_SIZE) {
+                chunks.push({start: chunksCount * CHUNK_SIZE, to: lastNumber});
+              }
+              for (const chunk of chunks) {
+                let blocks = yield server.dal.getBlocksBetween(chunk.start, chunk.to);
+                blocks.forEach(function (block) {
+                  jsoned.push(_(new Block(block).json()).omit('raw'));
+                });
+              }
+              if (!program.nostdout) {
+                console.log(JSON.stringify(jsoned, null, "  "));
+              }
+              yield server.disconnect();
+              return jsoned;
+            } catch(err) {
+              logger.warn(err.message || err);
+              yield server.disconnect();
+            }
+          });
+        }, NO_LOGS)));
+
+      program
+        .command('check-config')
+        .description('Checks the node\'s configuration')
+        .action(subCommand(service(function (server) {
+          return server.checkConfig()
+            .then(function () {
+              logger.warn('Configuration seems correct.');
+            })
+        })));
+
+      program
+        .command('reset [config|data|peers|tx|stats|all]')
+        .description('Reset configuration, data, peers, transactions or everything in the database')
+        .action(subCommand((type) => {
+          let init = ['data', 'all'].indexOf(type) !== -1 ? server.bind(server, program) : connect;
+          return init(function (server) {
+            if (!~['config', 'data', 'peers', 'stats', 'all'].indexOf(type)) {
+              throw constants.ERRORS.CLI_CALLERR_RESET;
+            }
+            return co(function*() {
+              try {
+                if (type == 'data') {
+                  yield server.resetData();
+                  logger.warn('Data successfully reseted.');
+                }
+                if (type == 'peers') {
+                  yield server.resetPeers();
+                  logger.warn('Peers successfully reseted.');
+                }
+                if (type == 'stats') {
+                  yield server.resetStats();
+                  logger.warn('Stats successfully reseted.');
+                }
+                if (type == 'config') {
+                  yield server.resetConf();
+                  logger.warn('Configuration successfully reseted.');
+                }
+                if (type == 'all') {
+                  yield server.resetAll();
+                  logger.warn('Data & Configuration successfully reseted.');
+                }
+              } catch (e) {
+                logger.error(e);
+              }
+            });
+          }, type != 'peers')(type);
+        }));
+
+      program
+        .on('*', function (cmd) {
+          console.log("Unknown command '%s'. Try --help for a listing of commands & options.", cmd);
+          onResolve();
+        });
+
+      function subCommand(promiseFunc) {
+        return function() {
+          let args = Array.prototype.slice.call(arguments, 0);
+          return co(function*() {
+            try {
+              let result = yield promiseFunc.apply(null, args);
+              onResolve(result);
+            } catch (e) {
+              if (e && e.uerr) {
+                onReject(e.uerr.message);
+              } else {
+                onReject(e);
+              }
+            }
+          })
+        };
+      }
+
+      function connect(callback, useDefaultConf) {
+        return function () {
+          var cbArgs = arguments;
+          var dbName = program.mdb || "duniter_default";
+          var dbHome = program.home;
+
+          const home = directory.getHome(dbName, dbHome);
+          var server = duniter(home, program.memory === true, commandLineConf(program));
+
+          // If ever the process gets interrupted
+          let isSaving = false;
+          closeCommand = () => co(function*() {
+            if (!isSaving) {
+              isSaving = true;
+              // Save DB
+              return server.disconnect();
+            }
+          });
+
+          // Initialize server (db connection, ...)
+          return server.plugFileSystem(useDefaultConf)
+            .then(() => server.loadConf())
+            .then(function () {
+              try {
+                cbArgs.length--;
+                cbArgs[cbArgs.length++] = server;
+                cbArgs[cbArgs.length++] = server.conf;
+                return callback.apply(this, cbArgs);
+              } catch(e) {
+                server.disconnect();
+                throw e;
+              }
+            });
+        };
+      }
+
+      function service(callback, nologs) {
+
+        return function () {
+
+          if (nologs) {
+            // Disable logs
+            require('../app/lib/logger')().mute();
+          }
+
+          var cbArgs = arguments;
+          var dbName = program.mdb;
+          var dbHome = program.home;
+
+          // Add log files for this instance
+          logger.addHomeLogs(directory.getHome(dbName, dbHome));
+
+          const home = directory.getHome(dbName, dbHome);
+          var server = duniter(home, program.memory === true, commandLineConf(program));
+
+          // If ever the process gets interrupted
+          let isSaving = false;
+          closeCommand = () => co(function*() {
+            if (!isSaving) {
+              isSaving = true;
+              // Save DB
+              return server.disconnect();
+            }
+          });
+
+          const that = this;
+
+          // Initialize server (db connection, ...)
+          return co(function*() {
+            try {
+              yield server.initWithDAL();
+              yield configure(program, server, server.conf || {});
+              yield server.loadConf();
+              cbArgs.length--;
+              cbArgs[cbArgs.length++] = server;
+              cbArgs[cbArgs.length++] = server.conf;
+              cbArgs[cbArgs.length++] = program;
+              onService && onService(server);
+              return callback.apply(that, cbArgs);
+            } catch (e) {
+              server.disconnect();
+              throw e;
+            }
+          });
+        };
+      }
 
       onService = onServiceCallback;
       program.parse(programArgs);
@@ -53,271 +521,13 @@ module.exports = (programArgs) => {
   };
 };
 
-function subCommand(promiseFunc) {
-  return function() {
-    let args = Array.prototype.slice.call(arguments, 0);
-    return co(function*() {
-      try {
-        let result = yield promiseFunc.apply(null, args);
-        onResolve(result);
-      } catch (e) {
-        if (e && e.uerr) {
-          onReject(e.uerr.message);
-        } else {
-          onReject(e);
-        }
-      }
-    })
-  };
-}
+/****************
+ *
+ *   UTILITIES
+ *
+ ****************/
 
-const ERASE_IF_ALREADY_RECORDED = true;
-const NO_LOGS = true;
-
-program
-  .version(pjson.version)
-  .usage('<command> [options]')
-
-  .option('--home <path>', 'Path to Duniter HOME (defaults to "$HOME/.config/duniter").')
-  .option('-d, --mdb <name>', 'Database name (defaults to "duniter_default").')
-
-  .option('--autoconf', 'With `config` and `init` commands, will guess the best network and key options witout asking for confirmation')
-  .option('--ipv4 <address>', 'IPv4 interface to listen for requests')
-  .option('--ipv6 <address>', 'IPv6 interface to listen for requests')
-  .option('--remoteh <host>', 'Remote interface others may use to contact this node')
-  .option('--remote4 <host>', 'Remote interface for IPv4 access')
-  .option('--remote6 <host>', 'Remote interface for IPv6 access')
-  .option('-p, --port <port>', 'Port to listen for requests', parseInt)
-  .option('--remotep <port>', 'Remote port others may use to contact this node')
-  .option('--upnp', 'Use UPnP to open remote port')
-  .option('--noupnp', 'Do not use UPnP to open remote port')
-  .option('--addep <endpoint>', 'With `config` command, add given endpoint to the list of endpoints of this node')
-  .option('--remep <endpoint>', 'With `config` command, remove given endpoint to the list of endpoints of this node')
-
-  .option('--salt <salt>', 'Key salt to generate this key\'s secret key')
-  .option('--passwd <password>', 'Password to generate this key\'s secret key')
-  .option('--participate <Y|N>', 'Participate to writing the blockchain')
-  .option('--cpu <percent>', 'Percent of CPU usage for proof-of-work computation', parsePercent)
-
-  .option('-c, --currency <name>', 'Name of the currency managed by this node.')
-  .option('--sigPeriod <timestamp>', 'Minimum delay between 2 certifications of a same issuer, in seconds.')
-  .option('--sigStock <count>', 'Maximum quantity of valid certifications per member.')
-  .option('--sigWindow <duration>', 'Maximum age of a non-written certification.')
-  .option('--idtyWindow <duration>', 'Maximum age of a non-written certification.')
-  .option('--sigValidity <timestamp>', 'Validity duration of a certification, in seconds.')
-  .option('--msValidity <timestamp>', 'Validity duration of a memberships, in seconds.')
-  .option('--sigQty <number>', 'Minimum number of required certifications to be a member/stay as a member')
-  .option('--medtblocks <number>', 'medianTimeBlocks parameter of UCP')
-  .option('--avgGenTime <number>', 'avgGenTime parameter of UCP')
-  .option('--dtdiffeval <number>', 'dtDiffEval parameter of UCP')
-  .option('--powZeroMin <number>', 'Minimum number of leading zeros for a proof-of-work')
-  .option('--powPeriod <number>', 'Number of blocks to wait to decrease proof-of-work difficulty by one')
-  .option('--powDelay <number>', 'Number of seconds to wait before starting the computation of next block')
-  .option('--growth <number>', 'Universal Dividend %growth. Aka. \'c\' parameter in RTM', parsePercent)
-  .option('--ud0 <number>', 'Universal Dividend initial value')
-  .option('--dt <number>', 'Number of seconds between two UD')
-  .option('--rootoffset <number>', 'Allow to give a time offset for first block (offset in the past)')
-  .option('--show', 'With gen-next or gen-root commands, displays the generated block')
-
-  .option('--nointeractive', 'Disable interactive sync UI')
-  .option('--nocautious', 'Do not check blocks validity during sync')
-  .option('--cautious', 'Check blocks validity during sync (overrides --nocautious option)')
-  .option('--nopeers', 'Do not retrieve peers during sync')
-  .option('--nostdout', 'Disable stdout printing for `export-bc` command')
-  .option('--noshuffle', 'Disable peers shuffling for `sync` command')
-
-  .option('--timeout <milliseconds>', 'Timeout to use when contacting peers', parseInt)
-  .option('--httplogs', 'Enable HTTP logs')
-  .option('--nohttplogs', 'Disable HTTP logs')
-  .option('--isolate', 'Avoid the node to send peering or status informations to the network')
-  .option('--check', 'With gen-next: just check validity of generated block')
-  .option('--forksize <size>', 'Maximum size of fork window', parseInt)
-  .option('--memory', 'Memory mode')
-;
-
-program
-  .command('start')
-  .description('Start Duniter node daemon.')
-  .action(subCommand(service((server, conf) => new Promise((resolve, reject) => {
-    co(function*() {
-        try {
-          const bma = require('./lib/streams/bma');
-
-          logger.info(">> NODE STARTING");
-
-          // Public http interface
-          let bmapi = yield bma(server, null, conf.httplogs);
-
-          // Routing documents
-          server.routing();
-
-          // Services
-          yield server.startServices();
-          yield bmapi.openConnections();
-
-          logger.info('>> Server ready!');
-
-        } catch (e) {
-          reject(e);
-        }
-    });
-  }))));
-
-program
-  .command('stop')
-  .description('Stop Duniter node daemon.')
-  .action(subCommand(needsToBeLaunchedByScript));
-
-program
-  .command('restart')
-  .description('Restart Duniter node daemon.')
-  .action(subCommand(needsToBeLaunchedByScript));
-
-program
-  .command('wizard [step]')
-  .description('Launch the configuration wizard.')
-  .action(subCommand(function (step) {
-    // Only show message "Saved"
-    return connect(function (step, server, conf) {
-      return new Promise((resolve, reject) => {
-        async.series([
-          function (next) {
-            startWizard(step, server, conf, next);
-          }
-        ], (err) => {
-          if (err) return reject(err);
-          resolve();
-        });
-      });
-    })(step, null);
-  }));
-
-program
-  .command('sync [host] [port] [to]')
-  .description('Synchronize blockchain from a remote Duniter node')
-  .action(subCommand(service(function (host, port, to, server, conf) {
-    if (!host) {
-      throw 'Host is required.';
-    }
-    if (!port) {
-      throw 'Port is required.';
-    }
-    return co(function *() {
-      let cautious;
-      if (program.nocautious) {
-        cautious = false;
-      }
-      if (program.cautious) {
-        cautious = true;
-      }
-      yield server.synchronize(host, port, parseInt(to), 0, !program.nointeractive, cautious, program.nopeers, program.noshuffle);
-      if (server) {
-        yield server.disconnect();
-      }
-    });
-  })));
-
-program
-  .command('peer [host] [port]')
-  .description('Exchange peerings with another node')
-  .action(subCommand(service(function (host, port, server) {
-    return co(function *() {
-      try {
-        logger.info('Fetching peering record at %s:%s...', host, port);
-        let peering = yield contacter.statics.fetchPeer(host, port);
-        logger.info('Apply peering ...');
-        yield server.PeeringService.submitP(peering, ERASE_IF_ALREADY_RECORDED, !program.nocautious);
-        logger.info('Applied');
-        let selfPeer = yield server.dal.getPeer(server.PeeringService.pubkey);
-        if (!selfPeer) {
-          yield Q.nfcall(server.PeeringService.generateSelfPeer, server.conf, 0);
-          selfPeer = yield server.dal.getPeer(server.PeeringService.pubkey);
-        }
-        logger.info('Send self peering ...');
-        var caster = multicaster();
-        yield caster.sendPeering(Peer.statics.peerize(peering), Peer.statics.peerize(selfPeer));
-        logger.info('Sent.');
-        yield server.disconnect();
-      } catch(e) {
-        logger.error(e.code || e.message || e);
-        throw Error("Exiting");
-      }
-    });
-  })));
-
-program
-  .command('revert [count]')
-  .description('Revert (undo + remove) the top [count] blocks from the blockchain. EXPERIMENTAL')
-  .action(subCommand(service(function (count, server) {
-    return co(function *() {
-      try {
-        for (let i = 0; i < count; i++) {
-          yield server.revert();
-        }
-      } catch (err) {
-        logger.error('Error during revert:', err);
-      }
-      // Save DB
-      yield server.disconnect();
-    });
-  })));
-
-program
-  .command('revert-to [number]')
-  .description('Revert (undo + remove) top blockchain blocks until block #[number] is reached. EXPERIMENTAL')
-  .action(subCommand(service(function (number, server) {
-    return co(function *() {
-      try {
-        yield server.revertTo(number);
-      } catch (err) {
-        logger.error('Error during revert:', err);
-      }
-      // Save DB
-      if (server) {
-        yield server.disconnect();
-      }
-    });
-  })));
-
-program
-  .command('reapply-to [number]')
-  .description('Reapply reverted blocks until block #[number] is reached. EXPERIMENTAL')
-  .action(subCommand(service(function (number, server) {
-    return co(function *() {
-      try {
-        yield server.reapplyTo(number);
-      } catch (err) {
-        logger.error('Error during reapply:', err);
-      }
-      // Save DB
-      if (server) {
-        yield server.disconnect();
-      }
-    });
-  })));
-
-program
-  .command('gen-next [host] [port] [difficulty]')
-  .description('Tries to generate the next block of the blockchain')
-  .action(subCommand(service(generateAndSend((server) => server.BlockchainService.generateNext))));
-
-program
-  .command('gen-root [host] [port] [difficulty]')
-  .description('Tries to generate root block, with choice of root members')
-    .action(subCommand(service(function (host, port, difficulty, server, conf) {
-      if (!host) {
-        throw 'Host is required.';
-      }
-      if (!port) {
-        throw 'Port is required.';
-      }
-      if (!difficulty) {
-        throw 'Difficulty is required.';
-      }
-      return generateAndSend((server) => server.BlockchainService.generateManualRoot)(host, port, difficulty, server, conf);
-    })));
-
-function generateAndSend(getGenerationMethod) {
+function generateAndSend(program, getGenerationMethod) {
   return function (host, port, difficulty, server, conf) {
     return new Promise((resolve, reject) => {
       async.waterfall([
@@ -368,7 +578,7 @@ function generateAndSend(getGenerationMethod) {
                 });
               },
               function (pair, next) {
-                proveAndSend(server, block, pair.publicKey, parseInt(difficulty), host, parseInt(port), next);
+                proveAndSend(program, server, block, pair.publicKey, parseInt(difficulty), host, parseInt(port), next);
               }
             ], next);
           }
@@ -381,7 +591,7 @@ function generateAndSend(getGenerationMethod) {
   };
 }
 
-function proveAndSend(server, block, issuer, difficulty, host, port, done) {
+function proveAndSend(program, server, block, issuer, difficulty, host, port, done) {
   var BlockchainService = server.BlockchainService;
   async.waterfall([
     function (next) {
@@ -414,101 +624,7 @@ function proveAndSend(server, block, issuer, difficulty, host, port, done) {
   ], done);
 }
 
-program
-  .command('export-bc [upto]')
-  .description('Exports the whole blockchain as JSON array, up to [upto] block number (excluded).')
-  .action(subCommand(service(function (upto, server) {
-    return co(function *() {
-      try {
-        let CHUNK_SIZE = 500;
-        let jsoned = [];
-        let current = yield server.dal.getCurrentBlockOrNull();
-        let lastNumber = current ? current.number + 1 : -1;
-        if (upto !== undefined && upto.match(/\d+/)) {
-          lastNumber = Math.min(parseInt(upto), lastNumber);
-        }
-        let chunksCount = Math.floor(lastNumber / CHUNK_SIZE);
-        let chunks = [];
-        // Max-size chunks
-        for (let i = 0, len = chunksCount; i < len; i++) {
-          chunks.push({start: i * CHUNK_SIZE, to: i * CHUNK_SIZE + CHUNK_SIZE - 1});
-        }
-        // A last chunk
-        if (lastNumber > chunksCount * CHUNK_SIZE) {
-          chunks.push({start: chunksCount * CHUNK_SIZE, to: lastNumber});
-        }
-        for (const chunk of chunks) {
-          let blocks = yield server.dal.getBlocksBetween(chunk.start, chunk.to);
-          blocks.forEach(function (block) {
-            jsoned.push(_(new Block(block).json()).omit('raw'));
-          });
-        }
-        if (!program.nostdout) {
-          console.log(JSON.stringify(jsoned, null, "  "));
-        }
-        yield server.disconnect();
-        return jsoned;
-      } catch(err) {
-          logger.warn(err.message || err);
-          yield server.disconnect();
-      }
-    });
-  }, NO_LOGS)));
-
-program
-  .command('check-config')
-  .description('Checks the node\'s configuration')
-  .action(subCommand(service(function (server) {
-    return server.checkConfig()
-      .then(function () {
-        logger.warn('Configuration seems correct.');
-      })
-  })));
-
-program
-  .command('config')
-  .description('Register configuration in database')
-  .action(subCommand(connect(configure)));
-
-program
-  .command('reset [config|data|peers|tx|stats|all]')
-  .description('Reset configuration, data, peers, transactions or everything in the database')
-  .action(subCommand((type) => {
-    let init = ['data', 'all'].indexOf(type) !== -1 ? server : connect;
-    return init(function (server) {
-      if (!~['config', 'data', 'peers', 'stats', 'all'].indexOf(type)) {
-        throw constants.ERRORS.CLI_CALLERR_RESET;
-      }
-      return co(function*() {
-        try {
-          if (type == 'data') {
-            yield server.resetData();
-            logger.warn('Data successfully reseted.');
-          }
-          if (type == 'peers') {
-            yield server.resetPeers();
-            logger.warn('Peers successfully reseted.');
-          }
-          if (type == 'stats') {
-            yield server.resetStats();
-            logger.warn('Stats successfully reseted.');
-          }
-          if (type == 'config') {
-            yield server.resetConf();
-            logger.warn('Configuration successfully reseted.');
-          }
-          if (type == 'all') {
-            yield server.resetAll();
-            logger.warn('Data & Configuration successfully reseted.');
-          }
-        } catch (e) {
-          logger.error(e);
-        }
-      });
-    }, type != 'peers')(type);
-  }));
-
-function startWizard(step, server, conf, done) {
+function startWizard(service, step, server, conf, done) {
   var wiz = wizard(server);
   var task = {
     'currency': wiz.configCurrency,
@@ -544,7 +660,7 @@ function startWizard(step, server, conf, done) {
   ], done);
 }
 
-function commandLineConf(conf) {
+function commandLineConf(program, conf) {
 
   conf = conf || {};
   conf.sync = conf.sync || {};
@@ -656,56 +772,21 @@ function commandLineConf(conf) {
   return _(conf).extend({routing: true});
 }
 
-function connect(callback, useDefaultConf) {
-  return function () {
-    var cbArgs = arguments;
-    var dbName = program.mdb || "duniter_default";
-    var dbHome = program.home;
-
-    const home = directory.getHome(dbName, dbHome);
-    var server = duniter(home, program.memory === true, commandLineConf());
-
-    // If ever the process gets interrupted
-    let isSaving = false;
-    closeCommand = () => co(function*() {
-      if (!isSaving) {
-        isSaving = true;
-        // Save DB
-        return server.disconnect();
-      }
-    });
-
-    // Initialize server (db connection, ...)
-    return server.plugFileSystem(useDefaultConf)
-      .then(() => server.loadConf())
-      .then(function () {
-        try {
-          cbArgs.length--;
-          cbArgs[cbArgs.length++] = server;
-          cbArgs[cbArgs.length++] = server.conf;
-          return callback.apply(this, cbArgs);
-        } catch(e) {
-          server.disconnect();
-          throw e;
-	}
-      });
-  };
-}
-
 /**
  * Super basic server with only its home path set
+ * @param program
  * @param callback
  * @param useDefaultConf
  * @returns {Function}
  */
-function server(callback, useDefaultConf) {
+function server(program, callback, useDefaultConf) {
   return function () {
     var cbArgs = arguments;
     var dbName = program.mdb || "duniter_default";
     var dbHome = program.home;
 
     const home = directory.getHome(dbName, dbHome);
-    var server = duniter(home, program.memory === true, commandLineConf());
+    var server = duniter(home, program.memory === true, commandLineConf(program));
 
     cbArgs.length--;
     cbArgs[cbArgs.length++] = server;
@@ -714,86 +795,17 @@ function server(callback, useDefaultConf) {
   };
 }
 
-function service(callback, nologs) {
-
-  return function () {
-
-    if (nologs) {
-      // Disable logs
-      require('../app/lib/logger')().mute();
-    }
-
-    var cbArgs = arguments;
-    var dbName = program.mdb;
-    var dbHome = program.home;
-
-    // Add log files for this instance
-    logger.addHomeLogs(directory.getHome(dbName, dbHome));
-
-    const home = directory.getHome(dbName, dbHome);
-    var server = duniter(home, program.memory === true, commandLineConf());
-
-    // If ever the process gets interrupted
-    let isSaving = false;
-    closeCommand = () => co(function*() {
-      if (!isSaving) {
-        isSaving = true;
-        // Save DB
-        return server.disconnect();
-      }
-    });
-
-    const that = this;
-
-    // Initialize server (db connection, ...)
-    return co(function*() {
-      try {
-        yield server.initWithDAL();
-        yield configure(server, server.conf || {});
-        yield server.loadConf();
-        cbArgs.length--;
-        cbArgs[cbArgs.length++] = server;
-        cbArgs[cbArgs.length++] = server.conf;
-        cbArgs[cbArgs.length++] = program;
-        onService && onService(server);
-        return callback.apply(that, cbArgs);
-      } catch (e) {
-        server.disconnect();
-        throw e;
-      }
-    });
-  };
-}
-
 function parsePercent(s) {
   var f = parseFloat(s);
   return isNaN(f) ? 0 : f;
 }
-
-program
-  .on('*', function (cmd) {
-    console.log("Unknown command '%s'. Try --help for a listing of commands & options.", cmd);
-    throw Error("Exiting");
-  });
-
-module.exports.addCommand = (command, requirements, promiseCallback) => {
-  program
-    .command(command.name)
-    .description(command.desc)
-    .action(subCommand(service(promiseCallback)));
-};
-
-module.exports.addOption = (optFormat, optDesc, optParser) => {
-  program
-    .option(optFormat, optDesc, optParser);
-};
 
 function needsToBeLaunchedByScript() {
     logger.error('This command must not be launched directly, using duniter.sh script');
     return Promise.resolve();
 }
 
-function configure(server, conf) {
+function configure(program, server, conf) {
   return co(function *() {
     if (typeof server == "string" || typeof conf == "string") {
       throw constants.ERRORS.CLI_CALLERR_CONFIG;

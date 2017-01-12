@@ -1,9 +1,29 @@
 "use strict";
 
+const Q = require('q');
 const co = require('co');
+const util = require('util');
+const stream = require('stream');
 const _ = require('underscore');
 const Server = require('./server');
+const directory = require('./app/lib/system/directory');
+const constants = require('./app/lib/constants');
+const wizard = require('./app/lib/wizard');
 const logger = require('./app/lib/logger')('duniter');
+
+
+const configDependency = {
+  duniter: {
+    cli: [{
+      name: 'config',
+      desc: 'Register configuration in database',
+      // The command does nothing particular, it just stops the process right after configuration phase is over
+      onConfiguredExecute: (server, conf, program, params) => Promise.resolve(conf)
+    }]
+  }
+};
+
+const DEFAULT_DEPENDENCIES = [configDependency];
 
 module.exports = function (home, memory, overConf) {
   return new Server(home, memory, overConf);
@@ -13,100 +33,15 @@ module.exports.statics = {
 
   logger: logger,
 
-  /**************
-   * Duniter used by its Command Line Interface
-   * @param onService A callback for external usage when Duniter server is ready
+  /**
+   * Creates a new stack with core registrations only.
    */
-  cli: (onService) => {
+  simpleStack: () => new Stack(DEFAULT_DEPENDENCIES),
 
-    const cli = require('./app/cli');
-
-    // Specific errors handling
-    process.on('uncaughtException', (err) => {
-      // Dunno why this specific exception is not caught
-      if (err.code !== "EADDRNOTAVAIL" && err.code !== "EINVAL") {
-        logger.error(err);
-        process.exit(1);
-      }
-    });
-
-    process.on('unhandledRejection', (reason) => {
-      logger.error('Unhandled rejection: ' + reason);
-    });
-
-    return co(function*() {
-      try {
-        // Prepare the command
-        const command = cli(process.argv);
-        // If ever the process gets interrupted
-        process.on('SIGINT', () => {
-          co(function*() {
-            yield command.closeCommand();
-            process.exit();
-          });
-        });
-        // Executes the command
-        yield command.execute(onService);
-        process.exit();
-      } catch (e) {
-        logger.error(e);
-        process.exit(1);
-      }
-    });
-
-  },
-
+  /**
+   * Creates a new stack pre-registered with compliant modules found in package.json
+   */
   autoStack: () => {
-
-    const cli = require('./app/cli');
-    const stack = {
-
-      registerDependency: (requiredObject) => {
-        for (const opt of (requiredObject.duniter.cliOptions || [])) {
-          cli.addOption(opt.value, opt.desc, opt.parser);
-        }
-        for (const command of (requiredObject.duniter.cli || [])) {
-          cli.addCommand({ name: command.name, desc: command.desc }, command.requires, command.promiseCallback);
-        }
-      },
-
-      executeStack: () => {
-
-        // Specific errors handling
-        process.on('uncaughtException', (err) => {
-          // Dunno why this specific exception is not caught
-          if (err.code !== "EADDRNOTAVAIL" && err.code !== "EINVAL") {
-            logger.error(err);
-            process.exit(1);
-          }
-        });
-
-        process.on('unhandledRejection', (reason) => {
-          logger.error('Unhandled rejection: ' + reason);
-        });
-
-        return co(function*() {
-          try {
-            // Prepare the command
-            const command = cli(process.argv);
-            // If ever the process gets interrupted
-            process.on('SIGINT', () => {
-              co(function*() {
-                yield command.closeCommand();
-                process.exit();
-              });
-            });
-            // Executes the command
-            yield command.execute();
-            process.exit();
-          } catch (e) {
-            logger.error(e);
-            process.exit(1);
-          }
-        });
-      }
-    };
-
     const pjson = require('./package.json');
     const duniterModules = [];
 
@@ -124,10 +59,400 @@ module.exports.statics = {
       }
     }
 
-    for (const duniterModule of duniterModules) {
-      stack.registerDependency(duniterModule.required);
-    }
+    // The dependencies found in package.json
+    const foundDependencies = duniterModules.map(duniterModule => duniterModule.required);
 
-    return stack;
+    // The final stack
+    return new Stack(DEFAULT_DEPENDENCIES.concat(foundDependencies));
   }
 };
+
+function Stack(dependencies) {
+
+  const that = this;
+  const cli = require('./app/cli')();
+  const configLoadingCallbacks = [];
+  const configBeforeSaveCallbacks = [];
+  const INPUT = new InputStream();
+  const PROCESS = new ProcessStream();
+
+  const streams = {
+    input: [],
+    process: [],
+    output: [],
+  };
+
+  this.registerDependency = (requiredObject) => {
+    const def = requiredObject.duniter;
+    for (const opt of (def.cliOptions || [])) {
+      cli.addOption(opt.value, opt.desc, opt.parser);
+    }
+    for (const command of (def.cli || [])) {
+      cli.addCommand({
+        name: command.name,
+        desc: command.desc
+      }, (...args) => that.processCommand.apply(null, [command].concat(args)));
+    }
+
+    /**
+     * Configuration injection
+     * -----------------------
+     */
+    if (def.config) {
+      if (def.config.onLoading) {
+        configLoadingCallbacks.push(def.config.onLoading);
+      }
+      // Before the configuration is saved, the module can make some injection/cleaning
+      if (def.config.beforeSave) {
+        configBeforeSaveCallbacks.push(def.config.beforeSave);
+      }
+    }
+
+    /**
+     * Service injection
+     * -----------------
+     */
+    if (def.service) {
+      // To feed data coming from some I/O (network, disk, other module, ...)
+      if (def.service.input) {
+        streams.input.push(def.service.input);
+      }
+      // To handle data that has been submitted by INPUT stream
+      if (def.service.process) {
+        streams.process.push(def.service.process);
+      }
+      // To handle data that has been validated by PROCESS stream
+      if (def.service.output) {
+        streams.output.push(def.service.output);
+      }
+    }
+  };
+
+  this.processCommand = (...args) => co(function*() {
+    const command = args[0];
+    const program = args[1];
+    const params  = args.slice(2);
+    params.pop(); // Don't need the command argument
+
+    const dbName = program.mdb;
+    const dbHome = program.home;
+    const home = directory.getHome(dbName, dbHome);
+
+    // Add log files for this instance
+    logger.addHomeLogs(home);
+
+    const server = new Server(home, program.memory === true, commandLineConf(program));
+
+    // If ever the process gets interrupted
+    let isSaving = false;
+    process.on('SIGINT', () => {
+      co(function*() {
+        if (!isSaving) {
+          isSaving = true;
+          // Save DB
+          return server.disconnect();
+        }
+        process.exit();
+      });
+    });
+
+    // Initialize server (db connection, ...)
+    try {
+      yield server.plugFileSystem();
+
+      // Register the configuration hook for loading phase (overrides the loaded data)
+      server.loadConfHook = (conf) => co(function*() {
+        // Loading injection
+        for (const callback of configLoadingCallbacks) {
+          yield callback(conf, program);
+        }
+      });
+
+      // Register the configuration hook for saving phase (overrides the saved data)
+      server.dal.saveConfHook = (conf) => co(function*() {
+        const clonedConf = _.clone(conf);
+        for (const callback of configBeforeSaveCallbacks) {
+          yield callback(clonedConf, program);
+        }
+        return clonedConf;
+      });
+
+      const conf = yield server.loadConf();
+      // Auto-configuration default
+      yield configure(program, server, server.conf || {});
+      // Autosave conf
+      try {
+        yield server.dal.saveConf(conf);
+        logger.debug("Configuration saved.");
+      } catch (e) {
+        logger.error("Configuration could not be saved: " + e);
+        throw Error(e);
+      }
+      // First possible class of commands: post-config
+      if (command.onConfiguredExecute) {
+        return yield command.onConfiguredExecute(server, conf, program, params);
+      }
+      // Second possible class of commands: post-service
+      yield server.initDAL();
+      return yield command.onPluggedDALExecute(server, conf, program, params,
+
+        // Start services and streaming between them
+        () => {
+          const modules = streams.input.concat(streams.process).concat(streams.output);
+          for (const module of modules) {
+            // Any streaming module must implement a `startService` method
+            module.startService();
+          }
+          // All inputs write to global INPUT stream
+          for (const module of streams.input) module.pipe(INPUT);
+          // All processes read from global INPUT stream
+          for (const module of streams.process) INPUT.pipe(module);
+          // All processes write to global PROCESS stream
+          for (const module of streams.process) module.pipe(PROCESS);
+          // All ouputs read from global PROCESS stream
+          for (const module of streams.process) PROCESS.pipe(module);
+        },
+
+        // Stop services and streaming between them
+        () => {
+          const modules = streams.input.concat(streams.process).concat(streams.output);
+          for (const module of modules) {
+            // Any streaming module must implement a `stopService` method
+            module.stopService();
+          }
+          // Stop reading inputs
+          for (const module of streams.input) module.unpipe();
+          // Stop reading from global INPUT
+          INPUT.unpipe();
+          for (const module of streams.process) module.unpipe();
+          // Stop reading from global PROCESS
+          PROCESS.unpipe();
+        });
+    } catch (e) {
+      server.disconnect();
+      throw e;
+    }
+  });
+
+  this.executeStack = (argv) => {
+
+    // Trace these errors
+    process.on('unhandledRejection', (reason) => {
+      logger.error('Unhandled rejection: ' + reason);
+    });
+
+    // Executes the command
+    return cli.execute(argv);
+  };
+
+  // We register the initial dependencies right now. Others can be added thereafter.
+  for (const dep of dependencies) {
+    that.registerDependency(dep);
+  }
+}
+
+function commandLineConf(program, conf) {
+
+  conf = conf || {};
+  conf.sync = conf.sync || {};
+  var cli = {
+    currency: program.currency,
+    cpu: program.cpu,
+    server: {
+      port: program.port,
+      ipv4address: program.ipv4,
+      ipv6address: program.ipv6,
+      salt: program.salt,
+      passwd: program.passwd,
+      remote: {
+        host: program.remoteh,
+        ipv4: program.remote4,
+        ipv6: program.remote6,
+        port: program.remotep
+      }
+    },
+    db: {
+      mport: program.mport,
+      mdb: program.mdb,
+      home: program.home
+    },
+    net: {
+      upnp: program.upnp,
+      noupnp: program.noupnp
+    },
+    logs: {
+      http: program.httplogs,
+      nohttp: program.nohttplogs
+    },
+    endpoints: [],
+    rmEndpoints: [],
+    ucp: {
+      rootoffset: program.rootoffset,
+      sigPeriod: program.sigPeriod,
+      sigStock: program.sigStock,
+      sigWindow: program.sigWindow,
+      idtyWindow: program.idtyWindow,
+      msWindow: program.msWindow,
+      sigValidity: program.sigValidity,
+      sigQty: program.sigQty,
+      msValidity: program.msValidity,
+      powZeroMin: program.powZeroMin,
+      powPeriod: program.powPeriod,
+      powDelay: program.powDelay,
+      participate: program.participate,
+      ud0: program.ud0,
+      c: program.growth,
+      dt: program.dt,
+      incDateMin: program.incDateMin,
+      medtblocks: program.medtblocks,
+      dtdiffeval: program.dtdiffeval,
+      avgGenTime: program.avgGenTime
+    },
+    isolate: program.isolate,
+    forksize: program.forksize,
+    nofork: program.nofork,
+    timeout: program.timeout
+  };
+
+  // Update conf
+  if (cli.currency)                         conf.currency = cli.currency;
+  if (cli.server.ipv4address)               conf.ipv4 = cli.server.ipv4address;
+  if (cli.server.ipv6address)               conf.ipv6 = cli.server.ipv6address;
+  if (cli.server.port)                      conf.port = cli.server.port;
+  if (cli.server.salt)                      conf.salt = cli.server.salt;
+  if (cli.server.passwd != undefined)       conf.passwd = cli.server.passwd;
+  if (cli.server.remote.host != undefined)  conf.remotehost = cli.server.remote.host;
+  if (cli.server.remote.ipv4 != undefined)  conf.remoteipv4 = cli.server.remote.ipv4;
+  if (cli.server.remote.ipv6 != undefined)  conf.remoteipv6 = cli.server.remote.ipv6;
+  if (cli.server.remote.port != undefined)  conf.remoteport = cli.server.remote.port;
+  if (cli.ucp.rootoffset)                   conf.rootoffset = cli.ucp.rootoffset;
+  if (cli.ucp.sigPeriod)                    conf.sigPeriod = cli.ucp.sigPeriod;
+  if (cli.ucp.sigStock)                     conf.sigStock = cli.ucp.sigStock;
+  if (cli.ucp.sigWindow)                    conf.sigWindow = cli.ucp.sigWindow;
+  if (cli.ucp.idtyWindow)                   conf.idtyWindow = cli.ucp.idtyWindow;
+  if (cli.ucp.msWindow)                     conf.msWindow = cli.ucp.msWindow;
+  if (cli.ucp.sigValidity)                  conf.sigValidity = cli.ucp.sigValidity;
+  if (cli.ucp.msValidity)                   conf.msValidity = cli.ucp.msValidity;
+  if (cli.ucp.sigQty)                       conf.sigQty = cli.ucp.sigQty;
+  if (cli.ucp.msValidity)                   conf.msValidity = cli.ucp.msValidity;
+  if (cli.ucp.powZeroMin)                   conf.powZeroMin = cli.ucp.powZeroMin;
+  if (cli.ucp.powPeriod)                    conf.powPeriod = cli.ucp.powPeriod;
+  if (cli.ucp.powDelay)                     conf.powDelay = cli.ucp.powDelay;
+  if (cli.ucp.participate)                  conf.participate = cli.ucp.participate == 'Y';
+  if (cli.ucp.dt)                           conf.dt = cli.ucp.dt;
+  if (cli.ucp.c)                            conf.c = cli.ucp.c;
+  if (cli.ucp.ud0)                          conf.ud0 = cli.ucp.ud0;
+  if (cli.ucp.incDateMin)                   conf.incDateMin = cli.ucp.incDateMin;
+  if (cli.ucp.medtblocks)                   conf.medianTimeBlocks = cli.ucp.medtblocks;
+  if (cli.ucp.avgGenTime)                   conf.avgGenTime = cli.ucp.avgGenTime;
+  if (cli.ucp.dtdiffeval)                   conf.dtDiffEval = cli.ucp.dtdiffeval;
+  if (cli.net.upnp)                         conf.upnp = true;
+  if (cli.net.noupnp)                       conf.upnp = false;
+  if (cli.cpu)                              conf.cpu = Math.max(0.01, Math.min(1.0, cli.cpu));
+  if (cli.logs.http)                        conf.httplogs = true;
+  if (cli.logs.nohttp)                      conf.httplogs = false;
+  if (cli.db.mport)                         conf.mport = cli.db.mport;
+  if (cli.db.home)                          conf.home = cli.db.home;
+  if (cli.db.mdb)                           conf.mdb = cli.db.mdb;
+  if (cli.isolate)                          conf.isolate = cli.isolate;
+  if (cli.timeout)                          conf.timeout = cli.timeout;
+  if (cli.forksize != null)                 conf.forksize = cli.forksize;
+
+  // Specific internal settings
+  conf.createNext = true;
+  return _(conf).extend({routing: true});
+}
+
+function configure(program, server, conf) {
+  return co(function *() {
+    if (typeof server == "string" || typeof conf == "string") {
+      throw constants.ERRORS.CLI_CALLERR_CONFIG;
+    }
+    let wiz = wizard();
+    // UPnP override
+    if (program.noupnp === true) {
+      conf.upnp = false;
+    }
+    if (program.upnp === true) {
+      conf.upnp = true;
+    }
+    // Network autoconf
+    const autoconfNet = program.autoconf
+      || !(conf.ipv4 || conf.ipv6)
+      || !(conf.remoteipv4 || conf.remoteipv6 || conf.remotehost)
+      || !(conf.port && conf.remoteport);
+    if (autoconfNet) {
+      yield Q.nbind(wiz.networkReconfiguration, wiz)(conf, autoconfNet, program.noupnp);
+    }
+    const hasSaltPasswdKey = conf.salt && conf.passwd;
+    const hasKeyPair = conf.pair && conf.pair.pub && conf.pair.sec;
+    const autoconfKey = program.autoconf || (!hasSaltPasswdKey && !hasKeyPair);
+    if (autoconfKey) {
+      yield Q.nbind(wiz.keyReconfigure, wiz)(conf, autoconfKey);
+    }
+    // Try to add an endpoint if provided
+    if (program.addep) {
+      if (conf.endpoints.indexOf(program.addep) === -1) {
+        conf.endpoints.push(program.addep);
+      }
+      // Remove it from "to be removed" list
+      const indexInRemove = conf.rmEndpoints.indexOf(program.addep);
+      if (indexInRemove !== -1) {
+        conf.rmEndpoints.splice(indexInRemove, 1);
+      }
+    }
+    // Try to remove an endpoint if provided
+    if (program.remep) {
+      if (conf.rmEndpoints.indexOf(program.remep) === -1) {
+        conf.rmEndpoints.push(program.remep);
+      }
+      // Remove it from "to be added" list
+      const indexInToAdd = conf.endpoints.indexOf(program.remep);
+      if (indexInToAdd !== -1) {
+        conf.endpoints.splice(indexInToAdd, 1);
+      }
+    }
+  });
+}
+
+/**
+ * InputStream is a special stream that filters what passes in.
+ * Only DUP-like documents should be treated by the processing tools, to avoid JSON injection and save CPU cycles.
+ * @constructor
+ */
+function InputStream() {
+
+  const that = this;
+
+  stream.Transform.call(this, { objectMode: true });
+
+  this._write = function (str, enc, done) {
+    if (typeof str === 'string') {
+      // Keep only strings
+      const matches = str.match(/Type: (.*)\n/);
+      if (matches && matches[0].match(/(Block|Membership|Identity|Certification|Transaction|Peer)/)) {
+        const type = matches[0].toLowerCase();
+        that.push({ type, doc: str });
+      }
+    }
+    done && done();
+  };
+}
+
+function ProcessStream() {
+
+  const that = this;
+
+  stream.Transform.call(this, { objectMode: true });
+
+  this._write = function (obj, enc, done) {
+    // Never close the stream
+    if (obj !== undefined && obj !== null) {
+      that.push(obj);
+    }
+    done && done();
+  };
+}
+
+util.inherits(InputStream, stream.Transform);
+util.inherits(ProcessStream, stream.Transform);

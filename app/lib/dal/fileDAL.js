@@ -686,10 +686,16 @@ function FileDAL(params) {
   });
 
   this.saveConf = (confToSave) => {
-    // TODO: Do something about the currency global variable
-    currency = confToSave.currency;
-    // Save the conf in file
-    return that.confDAL.saveConf(confToSave);
+    return co(function*() {
+      // TODO: Do something about the currency global variable
+      currency = confToSave.currency;
+      // Save the conf in file
+      let theConf = confToSave;
+      if (that.saveConfHook) {
+        theConf = yield that.saveConfHook(theConf);
+      }
+      return that.confDAL.saveConf(theConf);
+    });
   };
 
   /***********************

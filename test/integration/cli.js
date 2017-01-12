@@ -6,7 +6,7 @@ const co        = require('co');
 const should    = require('should');
 const _         = require('underscore');
 const toolbox   = require('./tools/toolbox');
-const cli       = require('../../app/cli');
+const duniter   = require('../../index');
 const merkleh   = require('../../app/lib/helpers/merkle');
 const hashf     = require('../../app/lib/ucp/hashf');
 const constants = require('../../app/lib/constants');
@@ -161,9 +161,10 @@ describe("CLI", function() {
 function execute(args) {
   const finalArgs = [process.argv[0], __filename].concat(args).concat(['--mdb', DB_NAME]);
   return co(function*() {
-    const command = cli(finalArgs);
+
+    const stack = duniter.statics.autoStack();
     // Executes the command
-    return command.execute();
+    return stack.executeStack(finalArgs);
   });
 }
 

@@ -3,7 +3,7 @@
 const co        = require('co');
 const should    = require('should');
 const _         = require('underscore');
-const ucoin     = require('../../index');
+const duniter     = require('../../index');
 const bma       = require('../../app/lib/streams/bma');
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
@@ -18,7 +18,7 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = ucoin(
+const s1 = duniter(
   '/bb11',
   MEMORY_MODE,
   _.extend({
@@ -31,7 +31,7 @@ const s1 = ucoin(
   sigQty: 1, dt: 1, ud0: 120
 }, commonConf));
 
-const s2 = ucoin(
+const s2 = duniter(
   '/bb41',
   MEMORY_MODE,
   _.extend({
@@ -45,7 +45,7 @@ const s2 = ucoin(
   msValidity: 400 // Memberships expire after 400 second delay
 }, commonConf));
 
-const s3 = ucoin(
+const s3 = duniter(
   '/bb11',
   MEMORY_MODE,
   _.extend({

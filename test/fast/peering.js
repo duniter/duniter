@@ -10,7 +10,7 @@ var rawPeer = "" +
   "PublicKey: 3Z7w5g4gC9oxwEbATnmK2UFgGWhLZPmZQb5dRxvNrXDu\n" +
   "Block: 0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855\n" +
   "Endpoints:\n" +
-  "BASIC_MERKLED_API ucoin.twiced.fr 88.163.127.43 9101\n" +
+  "BASIC_MERKLED_API duniter.twiced.fr 88.163.127.43 9101\n" +
   "OTHER_PROTOCOL 88.163.127.43 9102\n" +
   "bvuKzc6+cGWMGC8FIkZHN8kdQhaRL/MK60KYyw5vJqkKEgxXbygQHAzfoojeSY4gPKIu4FggBkR1HndSEm2FAQ==\n";
 
@@ -44,7 +44,7 @@ describe('Peer', function(){
     });
 
     it('should have DNS', function(){
-      assert.equal(pr.getDns(), 'ucoin.twiced.fr');
+      assert.equal(pr.getDns(), 'duniter.twiced.fr');
     });
 
     it('should have IPv4', function(){

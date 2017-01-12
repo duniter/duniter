@@ -4,7 +4,7 @@ const co        = require('co');
 const Q         = require('q');
 const _         = require('underscore');
 const should    = require('should');
-const ucoin     = require('../../index');
+const duniter     = require('../../index');
 const bma       = require('../../app/lib/streams/bma');
 const user      = require('./tools/user');
 const constants = require('../../app/lib/constants');
@@ -30,7 +30,7 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = ucoin(
+const s1 = duniter(
   'bb_net1',
   MEMORY_MODE,
   _.extend({
@@ -41,7 +41,7 @@ const s1 = ucoin(
   }
 }, commonConf));
 
-const s2 = ucoin(
+const s2 = duniter(
   'bb_net2',
   MEMORY_MODE,
   _.extend({
@@ -52,7 +52,7 @@ const s2 = ucoin(
   }
 }, commonConf));
 
-const s3 = ucoin(
+const s3 = duniter(
   'bb_net3',
   MEMORY_MODE,
   _.extend({

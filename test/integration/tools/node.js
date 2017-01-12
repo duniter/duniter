@@ -7,7 +7,7 @@ var async  = require('async');
 var request  = require('request');
 var rules = require('../../../app/lib/rules');
 var contacter = require('../../../app/lib/contacter');
-var ucoin  = require('../../../index');
+var duniter  = require('../../../index');
 var multicaster = require('../../../app/lib/streams/multicaster');
 var Configuration = require('../../../app/lib/entity/configuration');
 var Peer          = require('../../../app/lib/entity/peer');
@@ -222,7 +222,7 @@ function Node (dbName, options) {
   function service(callback) {
     return function () {
       var cbArgs = arguments;
-      var server = ucoin('/' + dbName, true, Configuration.statics.complete(options));
+      var server = duniter('/' + dbName, true, Configuration.statics.complete(options));
 
       // Initialize server (db connection, ...)
       return co(function*(){

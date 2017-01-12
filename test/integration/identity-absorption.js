@@ -2,7 +2,7 @@
 
 const _         = require('underscore');
 const co        = require('co');
-const ucoin     = require('../../index');
+const duniter     = require('../../index');
 const bma       = require('../../app/lib/streams/bma');
 const user      = require('./tools/user');
 const rp        = require('request-promise');
@@ -22,7 +22,7 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = ucoin(
+const s1 = duniter(
   '/bb12',
   MEMORY_MODE,
   _.extend({
@@ -33,7 +33,7 @@ const s1 = ucoin(
   }
 }, commonConf));
 
-const s2 = ucoin(
+const s2 = duniter(
   '/bb12',
   MEMORY_MODE,
   _.extend({

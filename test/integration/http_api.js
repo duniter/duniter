@@ -4,7 +4,7 @@ const co        = require('co');
 const _         = require('underscore');
 const should    = require('should');
 const assert    = require('assert');
-const ucoin     = require('../../index');
+const duniter     = require('../../index');
 const bma       = require('../../app/lib/streams/bma');
 const user      = require('./tools/user');
 const http      = require('./tools/http');
@@ -12,7 +12,7 @@ const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
 const ws        = require('ws');
 
-const server = ucoin(
+const server = duniter(
   '/bb11',
   true,
   {

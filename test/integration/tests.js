@@ -7,7 +7,7 @@ const assert = require('assert');
 const bma       = require('../../app/lib/streams/bma');
 const constants = require('../../app/lib/constants');
 const node   = require('./tools/node');
-const ucoin     = require('../../index');
+const duniter     = require('../../index');
 const user   = require('./tools/user');
 const jspckg = require('../../package');
 const commit    = require('./tools/commit');
@@ -172,7 +172,7 @@ describe("Integration", function() {
 
   describe("Testing leavers", function(){
 
-    const node3 = ucoin('/db3', MEMORY_MODE, {
+    const node3 = duniter('/db3', MEMORY_MODE, {
       currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, upnp: false, httplogs: false,
       salt: 'abc', passwd: 'abc', participate: false, rootoffset: 0,
       sigQty: 1, sigPeriod: 0

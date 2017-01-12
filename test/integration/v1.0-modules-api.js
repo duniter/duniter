@@ -6,7 +6,7 @@ const should  = require('should');
 const util    = require('util');
 const stream  = require('stream');
 const duniter = require('../../index');
-const parsers = require('../../app/lib/streams/parsers');
+const parsers = require('../../app/lib/streams/parsers/index');
 const querablep = require('../../app/lib/querablep');
 
 describe("v1.0 Module API", () => {

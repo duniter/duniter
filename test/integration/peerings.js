@@ -18,8 +18,6 @@ const multicaster = require('../../app/lib/streams/multicaster');
 const Peer = require('../../app/lib/entity/peer');
 
 const expectJSON     = httpTest.expectJSON;
-const expectAnswer   = httpTest.expectAnswer;
-const expectHttpCode = httpTest.expectHttpCode;
 
 const MEMORY_MODE = true;
 const commonConf = {
@@ -141,21 +139,22 @@ describe("Network", function() {
           yield sync(2, 2, s1, s2);
           yield s2.recomputeSelfPeer();
           yield s2.bma.openConnections();
+          yield new Promise((resolve) => setTimeout(resolve, 1000));
           yield [
             until(s2, 'block', 2),
             until(s3, 'block', 2),
             commitS1()
               .then(commitS1)
           ];
-          yield commitS3();
           yield [
             until(s1, 'block', 1),
-            until(s2, 'block', 1)
+            until(s2, 'block', 1),
+            commitS3()
           ];
-          yield commitS2();
           yield [
             until(s1, 'block', 1),
-            until(s3, 'block', 1)
+            until(s3, 'block', 1),
+            commitS2()
           ];
         });
       })

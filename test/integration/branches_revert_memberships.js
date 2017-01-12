@@ -7,7 +7,6 @@ const user      = require('./tools/user');
 const commit    = require('./tools/commit');
 const toolbox   = require('./tools/toolbox');
 const limiter   = require('../../app/lib/system/limiter');
-const multicaster = require('../../app/lib/streams/multicaster');
 
 const s1 = toolbox.server({
   memory: true,

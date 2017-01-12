@@ -35,7 +35,7 @@ describe('PoW Engine', () => {
     e1.isConnected().should.equal(true);
     yield new Promise((res) => setTimeout(res, 50));
     e1.isConnected().should.equal(true);
-    yield new Promise((res) => setTimeout(res, 30));
+    yield new Promise((res) => setTimeout(res, 50));
     e1.isConnected().should.equal(true);
     yield new Promise((res) => setTimeout(res, 30));
     e1.isConnected().should.equal(false);

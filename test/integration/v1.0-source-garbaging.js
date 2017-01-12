@@ -6,7 +6,6 @@ const bma       = require('../../app/lib/streams/bma');
 const constants = require('../../app/lib/constants');
 const limiter   = require('../../app/lib/system/limiter');
 const toolbox   = require('./tools/toolbox');
-const multicaster = require('../../app/lib/streams/multicaster');
 
 const conf = {
   ud0: 9995,

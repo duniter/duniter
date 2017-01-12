@@ -6,7 +6,6 @@ const bma       = require('../../app/lib/streams/bma');
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
 const toolbox   = require('./tools/toolbox');
-const multicaster = require('../../app/lib/streams/multicaster');
 const constants = require('../../app/lib/constants');
 const limiter   = require('../../app/lib/system/limiter');
 

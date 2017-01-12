@@ -25,7 +25,7 @@ describe('DDOS', () => {
     });
   }));
 
-  it('should not be able to send more than 10 reqs/s', () => co(function*() {
+  it('should not be able to send more than 4 reqs/s', () => co(function*() {
     try {
       s1.bma.getDDOS().params.limit = 3;
       s1.bma.getDDOS().params.burst = 3;

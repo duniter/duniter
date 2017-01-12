@@ -113,14 +113,17 @@ module.exports = () => {
         program
           .command(cmd.command.name)
           .description(cmd.command.desc)
-          .action((...args) => co(function*() {
-            try {
-              const res = yield cmd.executionCallback.apply(null, [program].concat(args));
-              onResolve(res);
-            } catch (e) {
-              onReject(e);
-            }
-          }));
+          .action(function() {
+            const args = Array.from(arguments);
+            return co(function*() {
+              try {
+                const res = yield cmd.executionCallback.apply(null, [program].concat(args));
+                onResolve(res);
+              } catch (e) {
+                onReject(e);
+              }
+            });
+          });
       }
 
       program

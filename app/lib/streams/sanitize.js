@@ -63,25 +63,46 @@ module.exports = function sanitize (json, contract) {
         // Check coherence & alter member if needed
         if (!_(json[prop]).isNull() && t.toLowerCase() != tjson.toLowerCase()) {
           try {
-            if (t == "String" || t == "Number") {
+            if (t == "String") {
               let s = json[prop] == undefined ? '' : json[prop];
-              eval('json[prop] = new ' + t + '(' + s + ').valueOf()');
+              json[prop] = String(s).valueOf();
+            }
+            else if (t == "Number") {
+              let s = json[prop] == undefined ? '' : json[prop];
+              json[prop] = Number(s).valueOf();
+            }
+            else if (t == "Array") {
+              json[prop] = [];
+            }
+            else if (t == "Object") {
+              json[prop] = {};
             }
             else {
-              eval('json[prop] = new ' + t + '()');
+              json[prop] = Boolean();
             }
           } catch (ex) {
-            eval('json[prop] = new ' + t + '()');
+            if (t == "String") {
+              json[prop] = String();
+            }
+            else if (t == "Number") {
+              json[prop] = Number();
+            }
+            else if (t == "Array") {
+              json[prop] = [];
+            }
+            else if (t == "Object") {
+              json[prop] = {};
+            }
+            else {
+              json[prop] = Boolean();
+            }
           }
         }
         // Arrays
         if (t == 'Array') {
           let subt = propType[0];
           for (let j = 0, len2 = json[prop].length; j < len2; j++) {
-            if (subt == "String" || subt == "Number") {
-              eval('item = new ' + t + '(' + (json[prop] + '') + ').valueOf()');
-            }
-            else {
+            if (!(subt == "String" || subt == "Number")) {
               json[prop][j] = sanitize(json[prop][j], subt);
             }
           }

@@ -304,7 +304,7 @@ program
 program
   .command('gen-next [host] [port] [difficulty]')
   .description('Tries to generate the next block of the blockchain')
-  .action(subCommand(service(generateAndSend("generateNext"))));
+  .action(subCommand(service(generateAndSend((server) => server.BlockchainService.generateNext))));
 
 program
   .command('gen-root [host] [port] [difficulty]')
@@ -319,15 +319,15 @@ program
       if (!difficulty) {
         throw 'Difficulty is required.';
       }
-      return generateAndSend("generateManualRoot")(host, port, difficulty, server, conf);
+      return generateAndSend((server) => server.BlockchainService.generateManualRoot)(host, port, difficulty, server, conf);
     })));
 
-function generateAndSend(generationMethod) {
+function generateAndSend(getGenerationMethod) {
   return function (host, port, difficulty, server, conf) {
     return new Promise((resolve, reject) => {
       async.waterfall([
         function (next) {
-          var method = eval('server.BlockchainService.' + generationMethod);
+          const method = getGenerationMethod(server);
           co(function*(){
             try {
               const block = yield method();

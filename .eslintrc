@@ -22,6 +22,7 @@
     "no-trailing-spaces": 0,
     "no-unused-expressions": 0,
     "comma-spacing": 0,
+    "no-eval": 0,
 
     "quotes": [0, "double"],
     "linebreak-style": [1,"unix"],
@@ -30,7 +31,6 @@
 
     "no-process-exit": [1],
     "indent": [1,2],
-    "no-eval": [1],
     "comma-dangle": [1],
     "eol-last": [1],
     "no-shadow": [1],

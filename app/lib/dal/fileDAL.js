@@ -243,7 +243,16 @@ function FileDAL(params) {
       const idty = yield Q(queryPromise);
       if (idty) {
         const mss = yield that.msDAL.getMembershipsOfIssuer(idty.pubkey);
-        idty.memberships = mss;
+        const mssFromMindex = yield that.mindexDAL.reducable(idty.pubkey);
+        idty.memberships = mss.concat(mssFromMindex.map((ms) => {
+          const sp = ms.created_on.split('-');
+          return {
+            membership: ms.leaving ? 'OUT' : 'IN',
+            number: sp[0],
+            fpr: sp[1],
+            written_number: parseInt(ms.written_on)
+          }
+        }));
         return idty;
       }
     } catch (err) {

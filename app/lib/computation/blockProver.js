@@ -2,7 +2,6 @@
 const co              = require('co');
 const _               = require('underscore');
 const constants       = require('../constants');
-const base58          = require('../crypto/base58');
 const engine          = require('../pow/engine');
 const path            = require('path');
 const Block           = require('../entity/block');

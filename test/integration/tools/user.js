@@ -9,7 +9,6 @@ const ucp     = require('../../../app/lib/ucp/buid');
 const parsers = require('../../../app/lib/streams/parsers');
 const keyring	= require('../../../app/lib/crypto/keyring');
 const rawer		= require('../../../app/lib/ucp/rawer');
-const base58	= require('../../../app/lib/crypto/base58');
 const constants = require('../../../app/lib/constants');
 const Identity = require('../../../app/lib/entity/identity');
 const Certification = require('../../../app/lib/entity/certification');

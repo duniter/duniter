@@ -9,7 +9,6 @@ const rp             = require('request-promise');
 const multicaster    = require('../lib/streams/multicaster');
 const keyring        = require('../lib/crypto/keyring');
 const logger         = require('../lib/logger')('peering');
-const base58         = require('../lib/crypto/base58');
 const dos2unix       = require('../lib/system/dos2unix');
 const hashf          = require('../lib/ucp/hashf');
 const rawer          = require('../lib/ucp/rawer');

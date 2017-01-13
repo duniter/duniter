@@ -6,7 +6,6 @@ const co              = require('co');
 const Q               = require('q');
 const parsers         = require('../lib/streams/parsers');
 const rules           = require('../lib/rules');
-const base58          = require('../lib/crypto/base58');
 const keyring         = require('../lib/crypto/keyring');
 const constants       = require('../lib/constants');
 const blockchainCtx   = require('../lib/computation/blockchainContext');

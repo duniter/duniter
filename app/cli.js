@@ -11,7 +11,6 @@ const directory = require('../app/lib/system/directory');
 const wizard = require('../app/lib/wizard');
 const multicaster = require('../app/lib/streams/multicaster');
 const keyring = require('../app/lib/crypto/keyring');
-const base58 = require('../app/lib/crypto/base58');
 const pjson = require('../package.json');
 const duniter = require('../index');
 const Peer = require('../app/lib/entity/peer');

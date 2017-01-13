@@ -8,7 +8,6 @@ const indexer         = require('../dup/indexer');
 const rawer           = require('../ucp/rawer');
 const hashf           = require('../ucp/hashf');
 const constants       = require('../constants');
-const base58          = require('../crypto/base58');
 const rules           = require('../rules/index');
 const keyring          = require('../crypto/keyring');
 const Identity        = require('../entity/identity');

@@ -141,9 +141,6 @@ function Server (home, memoryOnly, overrideConf) {
     else if (that.conf.passwd || that.conf.salt) {
       keyPair = yield keyring.scryptKeyPair(that.conf.salt, that.conf.passwd);
     }
-    if (that.loadConfHook) {
-      yield that.loadConfHook(that.conf);
-    }
     if (keyPair) {
       that.keyPair = keyPair;
       that.sign = keyPair.sign;

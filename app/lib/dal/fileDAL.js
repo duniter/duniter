@@ -682,6 +682,9 @@ function FileDAL(params) {
     }
     // TODO: Do something about the currency global variable
     currency = conf.currency;
+    if (that.loadConfHook) {
+      yield that.loadConfHook(conf);
+    }
     return conf;
   });
 

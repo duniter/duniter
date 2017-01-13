@@ -161,7 +161,7 @@ function Stack(dependencies) {
       yield server.plugFileSystem();
 
       // Register the configuration hook for loading phase (overrides the loaded data)
-      server.loadConfHook = (conf) => co(function*() {
+      server.dal.loadConfHook = (conf) => co(function*() {
         // Loading injection
         for (const callback of configLoadingCallbacks) {
           yield callback(conf, program);

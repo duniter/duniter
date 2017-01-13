@@ -63,8 +63,6 @@ module.exports = () => {
         .option('--addep <endpoint>', 'With `config` command, add given endpoint to the list of endpoints of this node')
         .option('--remep <endpoint>', 'With `config` command, remove given endpoint to the list of endpoints of this node')
 
-        .option('--salt <salt>', 'Key salt to generate this key\'s secret key')
-        .option('--passwd <password>', 'Password to generate this key\'s secret key')
         .option('--participate <Y|N>', 'Participate to writing the blockchain')
         .option('--cpu <percent>', 'Percent of CPU usage for proof-of-work computation', parsePercent)
 
@@ -548,7 +546,7 @@ function generateAndSend(program, getGenerationMethod) {
                 // Extract key pair
                 co(function*(){
                   try {
-                    const pair = yield keyring.scryptKeyPair(conf.salt, conf.passwd);
+                    const pair = yield server.conf.keyPair;
                     next(null, pair);
                   } catch(e) {
                     next(e);

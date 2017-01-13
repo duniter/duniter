@@ -13,7 +13,6 @@ const constants   = require('./app/lib/constants');
 const fileDAL     = require('./app/lib/dal/fileDAL');
 const jsonpckg    = require('./package.json');
 const router      = require('./app/lib/streams/router');
-const base58      = require('./app/lib/crypto/base58');
 const keyring      = require('./app/lib/crypto/keyring');
 const directory   = require('./app/lib/system/directory');
 const dos2unix    = require('./app/lib/system/dos2unix');
@@ -131,25 +130,14 @@ function Server (home, memoryOnly, overrideConf) {
         that.conf[key] = defaultValues[key];
       }
     });
-    logger.debug('Loading crypto functions...');
     // Extract key pair
-    let keyPair = null;
-    const keypairOverriden = overrideConf && (overrideConf.salt || overrideConf.passwd);
-    if (!keypairOverriden && that.conf.pair) {
-      keyPair = keyring.Key(that.conf.pair.pub, that.conf.pair.sec);
-    }
-    else if (that.conf.passwd || that.conf.salt) {
-      keyPair = yield keyring.scryptKeyPair(that.conf.salt, that.conf.passwd);
-    }
-    if (keyPair) {
-      that.keyPair = keyPair;
-      that.sign = keyPair.sign;
-      // Update services
-      [that.IdentityService, that.MembershipService, that.PeeringService, that.BlockchainService, that.TransactionsService].map((service) => {
-        service.setConfDAL(that.conf, that.dal, that.keyPair);
-      });
-      that.router().setConfDAL(that.conf, that.dal);
-    }
+    that.keyPair = keyring.Key(that.conf.pair.pub, that.conf.pair.sec);
+    that.sign = that.keyPair.sign;
+    // Update services
+    [that.IdentityService, that.MembershipService, that.PeeringService, that.BlockchainService, that.TransactionsService].map((service) => {
+      service.setConfDAL(that.conf, that.dal, that.keyPair);
+    });
+    that.router().setConfDAL(that.conf, that.dal);
     return that.conf;
   });
 

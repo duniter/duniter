@@ -5,6 +5,7 @@ const co = require('co');
 const util = require('util');
 const stream = require('stream');
 const _ = require('underscore');
+const dkeypair = require('duniter-keypair');
 const Server = require('./server');
 const directory = require('./app/lib/system/directory');
 const constants = require('./app/lib/constants');
@@ -54,12 +55,20 @@ const syncDependency = {
   }
 };
 
+const MINIMAL_DEPENDENCIES = [{
+  name: 'duniter-config',
+  required: configDependency
+}];
+
 const DEFAULT_DEPENDENCIES = [{
   name: 'duniter-config',
   required: configDependency
 }, {
   name: 'duniter-sync',
   required: syncDependency
+}, {
+  name: 'duniter-keypair',
+  required: dkeypair
 }];
 
 module.exports = function (home, memory, overConf) {
@@ -69,6 +78,11 @@ module.exports = function (home, memory, overConf) {
 module.exports.statics = {
 
   logger: logger,
+
+  /**
+   * Creates a new stack with minimal registrations only.
+   */
+  minimalStack: () => new Stack(MINIMAL_DEPENDENCIES),
 
   /**
    * Creates a new stack with core registrations only.

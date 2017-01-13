@@ -1,26 +1,11 @@
 "use strict";
-const Q          = require('q');
-const co          = require('co');
-const _           = require('underscore');
 const nacl        = require('tweetnacl');
-const scrypt      = require('scryptb');
 const base58      = require('./base58');
-const rawer       = require('../ucp/rawer');
 const naclBinding = require('naclb');
 
 nacl.util = require('./nacl-util');
 
 const crypto_sign_BYTES = 64;
-const SEED_LENGTH = 32; // Length of the key
-// TODO: change key parameters
-const TEST_PARAMS = {
-  "N":4096,
-  "r":16,
-  "p":1
-};
-
-const enc = nacl.util.encodeBase64,
-    dec = nacl.util.decodeBase64;
 
 /**
  * Verify a signature against data & public key.
@@ -70,26 +55,7 @@ function Key(pub, sec) {
   };
 }
 
-const getScryptKey = (key, salt) => co(function*() {
-  // console.log('Derivating the key...');
-  const res = yield Q.nbind(scrypt.hash, scrypt, key, TEST_PARAMS, SEED_LENGTH, salt);
-  return dec(res.toString("base64"));
-});
-
-/**
- * Generates a new keypair object from salt + password strings.
- * Returns: { publicKey: pubkeyObject, secretKey: secretkeyObject }.
- */
-const getScryptKeyPair = (salt, key) => co(function*() {
-  const keyBytes = yield getScryptKey(key, salt);
-  const pair = nacl.sign.keyPair.fromSeed(keyBytes);
-  return new Key(base58.encode(pair.publicKey),
-      base58.encode(pair.secretKey));
-});
-
-
 module.exports ={
-  scryptKeyPair: getScryptKeyPair,
   Key: (pub, sec) => new Key(pub, sec),
   verify: verify
 };

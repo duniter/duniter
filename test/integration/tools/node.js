@@ -15,73 +15,12 @@ var user   = require('./user');
 var http   = require('./http');
 const bma = require('../../../app/lib/streams/bma');
 
-var MEMORY_MODE = true;
-
 module.exports = function (dbName, options) {
   return new Node(dbName, options);
 };
 
-let AUTO_PORT = 10200;
-
 module.exports.statics = {
-
-  newBasicTxNode: (testSuite) => () => {
-    getTxNode(testSuite);
-  },
-
-  newBasicTxNodeWithOldDatabase: (testSuite) => () => {
-    getTxNode(testSuite, (node) => co(function*() {
-      yield node.server.dal.txsDAL.exec('UPDATE txs SET recipients = "[]";');
-    }));
-  }
 };
-
-function getTxNode(testSuite, afterBeforeHook){
-
-  let port = ++AUTO_PORT;
-  const now = 1481800000;
-
-  var node2 = new Node({ name: "db_" + port, memory: MEMORY_MODE }, { currency: 'cc', ipv4: 'localhost', port: port, remoteipv4: 'localhost', remoteport: port, upnp: false, httplogs: false,
-    pair: {
-      pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
-      sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
-    },
-    forksize: 3,
-    participate: false, rootoffset: 10,
-    sigQty: 1, dt: 1, ud0: 120
-  });
-
-  var tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, node2);
-  var toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, node2);
-
-  before(() => co(function*() {
-    yield node2.startTesting();
-    // Self certifications
-    yield tic.createIdentity();
-    yield toc.createIdentity();
-    // Certification;
-    yield tic.cert(toc);
-    yield toc.cert(tic);
-    yield tic.join();
-    yield toc.join();
-    yield node2.commitP({ time: now });
-    yield node2.commitP({ time: now + 10 });
-    yield node2.commitP({ time: now + 10 });
-    yield tic.sendP(51, toc);
-
-    if (afterBeforeHook) {
-      yield afterBeforeHook(node2);
-    }
-  }));
-
-  after(node2.after());
-
-  node2.rp = (uri) => rp('http://127.0.0.1:' + port + uri, { json: true });
-
-  node2.expectHttp = (uri, callback) => () => http.expectAnswer(node2.rp(uri), callback);
-
-  testSuite(node2);
-}
 
 var UNTIL_TIMEOUT = 115000;
 
@@ -221,22 +160,26 @@ function Node (dbName, options) {
 
   function service(callback) {
     return function () {
-      var cbArgs = arguments;
-      var server = duniter('/' + dbName, true, Configuration.statics.complete(options));
-
-      // Initialize server (db connection, ...)
-      return co(function*(){
-        try {
-          yield server.initWithDAL();
-          //cbArgs.length--;
-          cbArgs[cbArgs.length++] = server;
-          //cbArgs[cbArgs.length++] = server.conf;
-          callback(null, server);
-        } catch (err) {
-          server.disconnect();
-          throw err;
+      const stack = duniter.statics.simpleStack();
+      stack.registerDependency({
+        duniter: {
+          config: {
+            onLoading: (conf, program) => co(function*() {
+              const overConf = Configuration.statics.complete(options);
+              _.extend(conf, overConf);
+            })
+          },
+          cli: [{
+            name: 'execute',
+            desc: 'Unit Test execution',
+            onPluggedDALExecute: (server, conf, program, params) => co(function*() {
+              callback(null, server);
+              yield Promise.resolve((res) => null); // Never ending
+            })
+          }]
         }
-      });
+      }, 'duniter-automated-test');
+      stack.executeStack(['', '', '--mdb', dbName, '--memory', 'execute']);
     };
   }
 

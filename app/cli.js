@@ -62,27 +62,9 @@ module.exports = () => {
         .option('--addep <endpoint>', 'With `config` command, add given endpoint to the list of endpoints of this node')
         .option('--remep <endpoint>', 'With `config` command, remove given endpoint to the list of endpoints of this node')
 
-        .option('--participate <Y|N>', 'Participate to writing the blockchain')
         .option('--cpu <percent>', 'Percent of CPU usage for proof-of-work computation', parsePercent)
 
         .option('-c, --currency <name>', 'Name of the currency managed by this node.')
-        .option('--sigPeriod <timestamp>', 'Minimum delay between 2 certifications of a same issuer, in seconds.')
-        .option('--sigStock <count>', 'Maximum quantity of valid certifications per member.')
-        .option('--sigWindow <duration>', 'Maximum age of a non-written certification.')
-        .option('--idtyWindow <duration>', 'Maximum age of a non-written certification.')
-        .option('--sigValidity <timestamp>', 'Validity duration of a certification, in seconds.')
-        .option('--msValidity <timestamp>', 'Validity duration of a memberships, in seconds.')
-        .option('--sigQty <number>', 'Minimum number of required certifications to be a member/stay as a member')
-        .option('--medtblocks <number>', 'medianTimeBlocks parameter of UCP')
-        .option('--avgGenTime <number>', 'avgGenTime parameter of UCP')
-        .option('--dtdiffeval <number>', 'dtDiffEval parameter of UCP')
-        .option('--powZeroMin <number>', 'Minimum number of leading zeros for a proof-of-work')
-        .option('--powPeriod <number>', 'Number of blocks to wait to decrease proof-of-work difficulty by one')
-        .option('--powDelay <number>', 'Number of seconds to wait before starting the computation of next block')
-        .option('--growth <number>', 'Universal Dividend %growth. Aka. \'c\' parameter in RTM', parsePercent)
-        .option('--ud0 <number>', 'Universal Dividend initial value')
-        .option('--dt <number>', 'Number of seconds between two UD')
-        .option('--rootoffset <number>', 'Allow to give a time offset for first block (offset in the past)')
         .option('--show', 'With gen-next or gen-root commands, displays the generated block')
 
         .option('--nointeractive', 'Disable interactive sync UI')
@@ -639,7 +621,7 @@ function commandLineConf(program, conf) {
 
   conf = conf || {};
   conf.sync = conf.sync || {};
-  var cli = {
+  const cli = {
     currency: program.currency,
     cpu: program.cpu,
     server: {
@@ -670,28 +652,6 @@ function commandLineConf(program, conf) {
     },
     endpoints: [],
     rmEndpoints: [],
-    ucp: {
-      rootoffset: program.rootoffset,
-      sigPeriod: program.sigPeriod,
-      sigStock: program.sigStock,
-      sigWindow: program.sigWindow,
-      idtyWindow: program.idtyWindow,
-      msWindow: program.msWindow,
-      sigValidity: program.sigValidity,
-      sigQty: program.sigQty,
-      msValidity: program.msValidity,
-      powZeroMin: program.powZeroMin,
-      powPeriod: program.powPeriod,
-      powDelay: program.powDelay,
-      participate: program.participate,
-      ud0: program.ud0,
-      c: program.growth,
-      dt: program.dt,
-      incDateMin: program.incDateMin,
-      medtblocks: program.medtblocks,
-      dtdiffeval: program.dtdiffeval,
-      avgGenTime: program.avgGenTime
-    },
     isolate: program.isolate,
     forksize: program.forksize,
     nofork: program.nofork,
@@ -709,27 +669,6 @@ function commandLineConf(program, conf) {
   if (cli.server.remote.ipv4 != undefined)  conf.remoteipv4 = cli.server.remote.ipv4;
   if (cli.server.remote.ipv6 != undefined)  conf.remoteipv6 = cli.server.remote.ipv6;
   if (cli.server.remote.port != undefined)  conf.remoteport = cli.server.remote.port;
-  if (cli.ucp.rootoffset)                   conf.rootoffset = cli.ucp.rootoffset;
-  if (cli.ucp.sigPeriod)                    conf.sigPeriod = cli.ucp.sigPeriod;
-  if (cli.ucp.sigStock)                     conf.sigStock = cli.ucp.sigStock;
-  if (cli.ucp.sigWindow)                    conf.sigWindow = cli.ucp.sigWindow;
-  if (cli.ucp.idtyWindow)                   conf.idtyWindow = cli.ucp.idtyWindow;
-  if (cli.ucp.msWindow)                     conf.msWindow = cli.ucp.msWindow;
-  if (cli.ucp.sigValidity)                  conf.sigValidity = cli.ucp.sigValidity;
-  if (cli.ucp.msValidity)                   conf.msValidity = cli.ucp.msValidity;
-  if (cli.ucp.sigQty)                       conf.sigQty = cli.ucp.sigQty;
-  if (cli.ucp.msValidity)                   conf.msValidity = cli.ucp.msValidity;
-  if (cli.ucp.powZeroMin)                   conf.powZeroMin = cli.ucp.powZeroMin;
-  if (cli.ucp.powPeriod)                    conf.powPeriod = cli.ucp.powPeriod;
-  if (cli.ucp.powDelay)                     conf.powDelay = cli.ucp.powDelay;
-  if (cli.ucp.participate)                  conf.participate = cli.ucp.participate == 'Y';
-  if (cli.ucp.dt)                           conf.dt = cli.ucp.dt;
-  if (cli.ucp.c)                            conf.c = cli.ucp.c;
-  if (cli.ucp.ud0)                          conf.ud0 = cli.ucp.ud0;
-  if (cli.ucp.incDateMin)                   conf.incDateMin = cli.ucp.incDateMin;
-  if (cli.ucp.medtblocks)                   conf.medianTimeBlocks = cli.ucp.medtblocks;
-  if (cli.ucp.avgGenTime)                   conf.avgGenTime = cli.ucp.avgGenTime;
-  if (cli.ucp.dtdiffeval)                   conf.dtDiffEval = cli.ucp.dtdiffeval;
   if (cli.net.upnp)                         conf.upnp = true;
   if (cli.net.noupnp)                       conf.upnp = false;
   if (cli.cpu)                              conf.cpu = Math.max(0.01, Math.min(1.0, cli.cpu));

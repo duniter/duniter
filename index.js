@@ -305,7 +305,7 @@ function commandLineConf(program, conf) {
 
   conf = conf || {};
   conf.sync = conf.sync || {};
-  var cli = {
+  const cli = {
     currency: program.currency,
     cpu: program.cpu,
     server: {
@@ -336,28 +336,6 @@ function commandLineConf(program, conf) {
     },
     endpoints: [],
     rmEndpoints: [],
-    ucp: {
-      rootoffset: program.rootoffset,
-      sigPeriod: program.sigPeriod,
-      sigStock: program.sigStock,
-      sigWindow: program.sigWindow,
-      idtyWindow: program.idtyWindow,
-      msWindow: program.msWindow,
-      sigValidity: program.sigValidity,
-      sigQty: program.sigQty,
-      msValidity: program.msValidity,
-      powZeroMin: program.powZeroMin,
-      powPeriod: program.powPeriod,
-      powDelay: program.powDelay,
-      participate: program.participate,
-      ud0: program.ud0,
-      c: program.growth,
-      dt: program.dt,
-      incDateMin: program.incDateMin,
-      medtblocks: program.medtblocks,
-      dtdiffeval: program.dtdiffeval,
-      avgGenTime: program.avgGenTime
-    },
     isolate: program.isolate,
     forksize: program.forksize,
     nofork: program.nofork,
@@ -375,27 +353,6 @@ function commandLineConf(program, conf) {
   if (cli.server.remote.ipv4 != undefined)  conf.remoteipv4 = cli.server.remote.ipv4;
   if (cli.server.remote.ipv6 != undefined)  conf.remoteipv6 = cli.server.remote.ipv6;
   if (cli.server.remote.port != undefined)  conf.remoteport = cli.server.remote.port;
-  if (cli.ucp.rootoffset)                   conf.rootoffset = cli.ucp.rootoffset;
-  if (cli.ucp.sigPeriod)                    conf.sigPeriod = cli.ucp.sigPeriod;
-  if (cli.ucp.sigStock)                     conf.sigStock = cli.ucp.sigStock;
-  if (cli.ucp.sigWindow)                    conf.sigWindow = cli.ucp.sigWindow;
-  if (cli.ucp.idtyWindow)                   conf.idtyWindow = cli.ucp.idtyWindow;
-  if (cli.ucp.msWindow)                     conf.msWindow = cli.ucp.msWindow;
-  if (cli.ucp.sigValidity)                  conf.sigValidity = cli.ucp.sigValidity;
-  if (cli.ucp.msValidity)                   conf.msValidity = cli.ucp.msValidity;
-  if (cli.ucp.sigQty)                       conf.sigQty = cli.ucp.sigQty;
-  if (cli.ucp.msValidity)                   conf.msValidity = cli.ucp.msValidity;
-  if (cli.ucp.powZeroMin)                   conf.powZeroMin = cli.ucp.powZeroMin;
-  if (cli.ucp.powPeriod)                    conf.powPeriod = cli.ucp.powPeriod;
-  if (cli.ucp.powDelay)                     conf.powDelay = cli.ucp.powDelay;
-  if (cli.ucp.participate)                  conf.participate = cli.ucp.participate == 'Y';
-  if (cli.ucp.dt)                           conf.dt = cli.ucp.dt;
-  if (cli.ucp.c)                            conf.c = cli.ucp.c;
-  if (cli.ucp.ud0)                          conf.ud0 = cli.ucp.ud0;
-  if (cli.ucp.incDateMin)                   conf.incDateMin = cli.ucp.incDateMin;
-  if (cli.ucp.medtblocks)                   conf.medianTimeBlocks = cli.ucp.medtblocks;
-  if (cli.ucp.avgGenTime)                   conf.avgGenTime = cli.ucp.avgGenTime;
-  if (cli.ucp.dtdiffeval)                   conf.dtDiffEval = cli.ucp.dtdiffeval;
   if (cli.net.upnp)                         conf.upnp = true;
   if (cli.net.noupnp)                       conf.upnp = false;
   if (cli.cpu)                              conf.cpu = Math.max(0.01, Math.min(1.0, cli.cpu));

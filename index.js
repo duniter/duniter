@@ -23,7 +23,10 @@ const configDependency = {
   }
 };
 
-const DEFAULT_DEPENDENCIES = [configDependency];
+const DEFAULT_DEPENDENCIES = [{
+  name: 'duniter-config',
+  required: configDependency
+}];
 
 module.exports = function (home, memory, overConf) {
   return new Server(home, memory, overConf);
@@ -59,11 +62,8 @@ module.exports.statics = {
       }
     }
 
-    // The dependencies found in package.json
-    const foundDependencies = duniterModules.map(duniterModule => duniterModule.required);
-
     // The final stack
-    return new Stack(DEFAULT_DEPENDENCIES.concat(foundDependencies));
+    return new Stack(DEFAULT_DEPENDENCIES.concat(duniterModules));
   }
 };
 
@@ -75,6 +75,7 @@ function Stack(dependencies) {
   const configBeforeSaveCallbacks = [];
   const INPUT = new InputStream();
   const PROCESS = new ProcessStream();
+  const loaded = {};
 
   const streams = {
     input: [],
@@ -82,7 +83,12 @@ function Stack(dependencies) {
     output: [],
   };
 
-  this.registerDependency = (requiredObject) => {
+  this.registerDependency = (requiredObject, name) => {
+    if (name && loaded[name]) {
+      // Do not try to load it twice
+      return;
+    }
+    loaded[name] = true;
     const def = requiredObject.duniter;
     for (const opt of (def.cliOptions || [])) {
       cli.addOption(opt.value, opt.desc, opt.parser);
@@ -243,7 +249,7 @@ function Stack(dependencies) {
 
   // We register the initial dependencies right now. Others can be added thereafter.
   for (const dep of dependencies) {
-    that.registerDependency(dep);
+    that.registerDependency(dep.required, dep.name);
   }
 }
 

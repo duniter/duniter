@@ -32,8 +32,9 @@ describe("v1.0 Module API", () => {
       }
     };
 
-    sStack.registerDependency(helloDependency);
-    aStack.registerDependency(helloDependency);
+    sStack.registerDependency(helloDependency, 'duniter-hello');
+    sStack.registerDependency(helloDependency, 'duniter-hello'); // Try to load it 2 times, should not throw an error
+    aStack.registerDependency(helloDependency, 'duniter-hello');
 
     (yield sStack.executeStack(['node', 'index.js', 'hello', 'World', 'TEST', '--opt1', '--option2', '5'])).should.equal('Hello, World. You successfully sent arg \'TEST\' along with opt1 = true and option2 = 5.');
     (yield aStack.executeStack(['node', 'index.js', 'hello', 'Zorld', 'ESSE', '--option2', 'd'])).should.equal('Hello, Zorld. You successfully sent arg \'ESSE\' along with opt1 = undefined and option2 = NaN.');
@@ -95,8 +96,8 @@ describe("v1.0 Module API", () => {
         }
       };
 
-      stack.registerDependency(configurationDependency);
-      stack.registerDependency(returnConfDependency);
+      stack.registerDependency(configurationDependency, 'duniter-configuration');
+      stack.registerDependency(returnConfDependency, 'duniter-gimme-conf');
     }));
 
     it('verify that we get the CLI options', () => co(function*() {
@@ -223,8 +224,8 @@ describe("v1.0 Module API", () => {
         }
       };
 
-      stack.registerDependency(dummyStartServiceDependency);
-      stack.registerDependency(dummyStopServiceDependency);
+      stack.registerDependency(dummyStartServiceDependency, 'duniter-dummy-start');
+      stack.registerDependency(dummyStopServiceDependency, 'duniter-dummy-stop');
     }));
 
     it('verify that services are started', () => co(function*() {

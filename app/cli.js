@@ -184,31 +184,6 @@ module.exports = () => {
         }));
 
       program
-        .command('sync [host] [port] [to]')
-        .description('Synchronize blockchain from a remote Duniter node')
-        .action(subCommand(service(function (host, port, to, server, conf) {
-          if (!host) {
-            throw 'Host is required.';
-          }
-          if (!port) {
-            throw 'Port is required.';
-          }
-          return co(function *() {
-            let cautious;
-            if (program.nocautious) {
-              cautious = false;
-            }
-            if (program.cautious) {
-              cautious = true;
-            }
-            yield server.synchronize(host, port, parseInt(to), 0, !program.nointeractive, cautious, program.nopeers, program.noshuffle);
-            if (server) {
-              yield server.disconnect();
-            }
-          });
-        })));
-
-      program
         .command('peer [host] [port]')
         .description('Exchange peerings with another node')
         .action(subCommand(service(function (host, port, server) {

@@ -65,7 +65,6 @@ module.exports = () => {
         .option('--cpu <percent>', 'Percent of CPU usage for proof-of-work computation', parsePercent)
 
         .option('-c, --currency <name>', 'Name of the currency managed by this node.')
-        .option('--show', 'With gen-next or gen-root commands, displays the generated block')
 
         .option('--nointeractive', 'Disable interactive sync UI')
         .option('--nocautious', 'Do not check blocks validity during sync')
@@ -78,7 +77,6 @@ module.exports = () => {
         .option('--httplogs', 'Enable HTTP logs')
         .option('--nohttplogs', 'Disable HTTP logs')
         .option('--isolate', 'Avoid the node to send peering or status informations to the network')
-        .option('--check', 'With gen-next: just check validity of generated block')
         .option('--forksize <size>', 'Maximum size of fork window', parseInt)
         .option('--memory', 'Memory mode')
       ;
@@ -220,27 +218,6 @@ module.exports = () => {
               yield server.disconnect();
             }
           });
-        })));
-
-      program
-        .command('gen-next [host] [port] [difficulty]')
-        .description('Tries to generate the next block of the blockchain')
-        .action(subCommand(service(generateAndSend(program, (server) => server.BlockchainService.generateNext))));
-
-      program
-        .command('gen-root [host] [port] [difficulty]')
-        .description('Tries to generate root block, with choice of root members')
-        .action(subCommand(service(function (host, port, difficulty, server, conf) {
-          if (!host) {
-            throw 'Host is required.';
-          }
-          if (!port) {
-            throw 'Port is required.';
-          }
-          if (!difficulty) {
-            throw 'Difficulty is required.';
-          }
-          return generateAndSend(program, (server) => server.BlockchainService.generateManualRoot)(host, port, difficulty, server, conf);
         })));
 
       program
@@ -464,96 +441,6 @@ module.exports = () => {
  *   UTILITIES
  *
  ****************/
-
-function generateAndSend(program, getGenerationMethod) {
-  return function (host, port, difficulty, server, conf) {
-    return new Promise((resolve, reject) => {
-      async.waterfall([
-        function (next) {
-          const method = getGenerationMethod(server);
-          co(function*(){
-            try {
-              const block = yield method();
-              next(null, block);
-            } catch(e) {
-              next(e);
-            }
-          });
-        },
-        function (block, next) {
-          if (program.check) {
-            block.time = block.medianTime;
-            program.show && console.log(block.getRawSigned());
-            co(function*(){
-              try {
-                yield server.doCheckBlock(block);
-                logger.info('Acceptable block');
-                next();
-              } catch (e) {
-                next(e);
-              }
-            });
-          }
-          else {
-            logger.debug('Block to be sent: %s', block.quickDescription());
-            async.waterfall([
-              function (next) {
-                // Extract key pair
-                co(function*(){
-                  try {
-                    const pair = yield server.conf.keyPair;
-                    next(null, pair);
-                  } catch(e) {
-                    next(e);
-                  }
-                });
-              },
-              function (pair, next) {
-                proveAndSend(program, server, block, pair.publicKey, parseInt(difficulty), host, parseInt(port), next);
-              }
-            ], next);
-          }
-        }
-      ], (err, data) => {
-        err && reject(err);
-        !err && resolve(data);
-      });
-    });
-  };
-}
-
-function proveAndSend(program, server, block, issuer, difficulty, host, port, done) {
-  var BlockchainService = server.BlockchainService;
-  async.waterfall([
-    function (next) {
-      block.issuer = issuer;
-      program.show && console.log(block.getRawSigned());
-      co(function*(){
-        try {
-          const proven = yield BlockchainService.prove(block, difficulty);
-          next(null, proven);
-        } catch(e) {
-          next(e);
-        }
-      });
-    },
-    function (block, next) {
-      var peer = new Peer({
-        endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
-      });
-      program.show && console.log(block.getRawSigned());
-      logger.info('Posted block ' + block.quickDescription());
-      co(function*(){
-        try {
-          yield multicaster(server.conf).sendBlock(peer, block);
-          next();
-        } catch(e) {
-          next(e);
-        }
-      });
-    }
-  ], done);
-}
 
 function commandLineConf(program, conf) {
 

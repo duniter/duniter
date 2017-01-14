@@ -144,25 +144,6 @@ module.exports = () => {
         .action(subCommand(needsToBeLaunchedByScript));
 
       program
-        .command('wizard [step]')
-        .description('Launch the configuration wizard.')
-        .action(subCommand(function (step) {
-          // Only show message "Saved"
-          return connect(function (step, server, conf) {
-            return new Promise((resolve, reject) => {
-              async.series([
-                function (next) {
-                  startWizard(service, step, server, conf, next);
-                }
-              ], (err) => {
-                if (err) return reject(err);
-                resolve();
-              });
-            });
-          })(step, null);
-        }));
-
-      program
         .command('peer [host] [port]')
         .description('Exchange peerings with another node')
         .action(subCommand(service(function (host, port, server) {
@@ -515,14 +496,7 @@ function generateAndSend(program, getGenerationMethod) {
           }
           else {
             logger.debug('Block to be sent: %s', block.quickDescription());
-            var wiz = wizard(server);
             async.waterfall([
-              function (next) {
-                if (!conf.salt && !conf.passwd)
-                  wiz.configKey(conf, next);
-                else
-                  next();
-              },
               function (next) {
                 // Extract key pair
                 co(function*(){
@@ -581,42 +555,6 @@ function proveAndSend(program, server, block, issuer, difficulty, host, port, do
   ], done);
 }
 
-function startWizard(service, step, server, conf, done) {
-  var wiz = wizard(server);
-  var task = {
-    'currency': wiz.configCurrency,
-    'basic': wiz.configBasic,
-    'pow': wiz.configPoW,
-    'network': wiz.configNetwork,
-    'network-reconfigure': wiz.configNetworkReconfigure,
-    'key': wiz.configKey,
-    'ucp': wiz.configUCP
-  };
-  var wizDo = task[step] || wiz.configAll;
-  async.waterfall([
-    function (next) {
-      wizDo(conf, next);
-    },
-    function (next) {
-      co(function*(){
-        try {
-          yield server.dal.saveConf(conf);
-          logger.debug("Configuration saved.");
-          next();
-        } catch(e) {
-          next(e);
-        }
-      });
-    },
-    function (next) {
-      // Check config
-      service(function (key, server, conf) {
-        next();
-      })(null, null);
-    }
-  ], done);
-}
-
 function commandLineConf(program, conf) {
 
   conf = conf || {};
@@ -628,8 +566,6 @@ function commandLineConf(program, conf) {
       port: program.port,
       ipv4address: program.ipv4,
       ipv6address: program.ipv6,
-      salt: program.salt,
-      passwd: program.passwd,
       remote: {
         host: program.remoteh,
         ipv4: program.remote4,
@@ -663,8 +599,6 @@ function commandLineConf(program, conf) {
   if (cli.server.ipv4address)               conf.ipv4 = cli.server.ipv4address;
   if (cli.server.ipv6address)               conf.ipv6 = cli.server.ipv6address;
   if (cli.server.port)                      conf.port = cli.server.port;
-  if (cli.server.salt)                      conf.salt = cli.server.salt;
-  if (cli.server.passwd != undefined)       conf.passwd = cli.server.passwd;
   if (cli.server.remote.host != undefined)  conf.remotehost = cli.server.remote.host;
   if (cli.server.remote.ipv4 != undefined)  conf.remoteipv4 = cli.server.remote.ipv4;
   if (cli.server.remote.ipv6 != undefined)  conf.remoteipv6 = cli.server.remote.ipv6;
@@ -739,12 +673,6 @@ function configure(program, server, conf) {
       || !(conf.port && conf.remoteport);
     if (autoconfNet) {
       yield Q.nbind(wiz.networkReconfiguration, wiz)(conf, autoconfNet, program.noupnp);
-    }
-    const hasSaltPasswdKey = conf.salt && conf.passwd;
-    const hasKeyPair = conf.pair && conf.pair.pub && conf.pair.sec;
-    const autoconfKey = program.autoconf || (!hasSaltPasswdKey && !hasKeyPair);
-    if (autoconfKey) {
-      yield Q.nbind(wiz.keyReconfigure, wiz)(conf, autoconfKey);
     }
     // Try to add an endpoint if provided
     if (program.addep) {

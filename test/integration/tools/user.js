@@ -17,8 +17,8 @@ const Revocation = require('../../../app/lib/entity/revocation');
 const Peer = require('../../../app/lib/entity/peer');
 const Transaction = require('../../../app/lib/entity/transaction');
 
-module.exports = function (uid, salt, passwd, url) {
-  return new User(uid, salt, passwd, url);
+module.exports = function (uid, url, node) {
+  return new User(uid, url, node);
 };
 
 function User (uid, options, node) {
@@ -35,25 +35,7 @@ function User (uid, options, node) {
   }
 
   function init(done) {
-    if (options.salt && options.passwd) {
-      async.waterfall([
-        function (next) {
-          co(function*(){
-            try {
-              const pair = yield keyring.scryptKeyPair(options.salt, options.passwd);
-              next(null, pair);
-            } catch (e) {
-              next(e);
-            }
-          });
-        },
-        function (pair, next) {
-          pub = that.pub = pair.publicKey;
-          sec = that.sec = pair.secretKey;
-          next();
-        }
-      ], done);
-    } else if (options.pub && options.sec) {
+    if (options.pub && options.sec) {
       pub = that.pub = options.pub;
       sec = that.sec = options.sec;
       done();

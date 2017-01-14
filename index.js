@@ -12,14 +12,43 @@ const constants = require('./app/lib/constants');
 const wizard = require('./app/lib/wizard');
 const logger = require('./app/lib/logger')('duniter');
 
-
 const configDependency = {
   duniter: {
     cli: [{
       name: 'config',
       desc: 'Register configuration in database',
       // The command does nothing particular, it just stops the process right after configuration phase is over
-      onConfiguredExecute: (server, conf, program, params) => Promise.resolve(conf)
+      onConfiguredExecute: (server, conf, program, params, wizardTasks) => Promise.resolve(conf)
+    }]
+  }
+};
+const wizardDependency = {
+  duniter: {
+
+    wizard: {
+      // The wizard itself also defines its personal tasks
+      'currency': Q.nbind(wizard().configCurrency, null),
+      'pow': Q.nbind(wizard().configPoW, null),
+      'network': Q.nbind(wizard().configNetwork, null),
+      'network-reconfigure': Q.nbind(wizard().configNetworkReconfigure, null),
+      'ucp': Q.nbind(wizard().configUCP, null)
+    },
+
+    cli: [{
+      name: 'wizard [step]',
+      desc: 'Launch the configuration wizard.',
+
+      onConfiguredExecute: (server, conf, program, params, wizardTasks) => co(function*() {
+        const step = params[0];
+        const tasks = step ? [wizardTasks[step]] : Object.values(wizardTasks);
+        for (const task of tasks) {
+          yield task(conf, program);
+        }
+        // Check config
+        yield server.checkConfig();
+        yield server.dal.saveConf(conf);
+        logger.debug("Configuration saved.");
+      })
     }]
   }
 };
@@ -55,21 +84,16 @@ const syncDependency = {
   }
 };
 
-const MINIMAL_DEPENDENCIES = [{
-  name: 'duniter-config',
-  required: configDependency
-}];
+const MINIMAL_DEPENDENCIES = [
+  { name: 'duniter-config',    required: configDependency }
+];
 
-const DEFAULT_DEPENDENCIES = [{
-  name: 'duniter-config',
-  required: configDependency
-}, {
-  name: 'duniter-sync',
-  required: syncDependency
-}, {
-  name: 'duniter-keypair',
-  required: dkeypair
-}];
+const DEFAULT_DEPENDENCIES = [
+  { name: 'duniter-config',    required: configDependency },
+  { name: 'duniter-sync',      required: syncDependency },
+  { name: 'duniter-wizard',    required: wizardDependency },
+  { name: 'duniter-keypair',   required: dkeypair }
+];
 
 module.exports = function (home, memory, overConf) {
   return new Server(home, memory, overConf);
@@ -124,6 +148,7 @@ function Stack(dependencies) {
   const INPUT = new InputStream();
   const PROCESS = new ProcessStream();
   const loaded = {};
+  const wizardTasks = {};
 
   const streams = {
     input: [],
@@ -159,6 +184,17 @@ function Stack(dependencies) {
       // Before the configuration is saved, the module can make some injection/cleaning
       if (def.config.beforeSave) {
         configBeforeSaveCallbacks.push(def.config.beforeSave);
+      }
+    }
+
+    /**
+     * Wizard injection
+     * -----------------------
+     */
+    if (def.wizard) {
+      const tasks = Object.keys(def.wizard);
+      for (const name of tasks) {
+        wizardTasks[name] = def.wizard[name];
       }
     }
 
@@ -244,7 +280,7 @@ function Stack(dependencies) {
       }
       // First possible class of commands: post-config
       if (command.onConfiguredExecute) {
-        return yield command.onConfiguredExecute(server, conf, program, params);
+        return yield command.onConfiguredExecute(server, conf, program, params, wizardTasks);
       }
       // Second possible class of commands: post-service
       yield server.initDAL();
@@ -312,8 +348,6 @@ function commandLineConf(program, conf) {
       port: program.port,
       ipv4address: program.ipv4,
       ipv6address: program.ipv6,
-      salt: program.salt,
-      passwd: program.passwd,
       remote: {
         host: program.remoteh,
         ipv4: program.remote4,
@@ -347,8 +381,6 @@ function commandLineConf(program, conf) {
   if (cli.server.ipv4address)               conf.ipv4 = cli.server.ipv4address;
   if (cli.server.ipv6address)               conf.ipv6 = cli.server.ipv6address;
   if (cli.server.port)                      conf.port = cli.server.port;
-  if (cli.server.salt)                      conf.salt = cli.server.salt;
-  if (cli.server.passwd != undefined)       conf.passwd = cli.server.passwd;
   if (cli.server.remote.host != undefined)  conf.remotehost = cli.server.remote.host;
   if (cli.server.remote.ipv4 != undefined)  conf.remoteipv4 = cli.server.remote.ipv4;
   if (cli.server.remote.ipv6 != undefined)  conf.remoteipv6 = cli.server.remote.ipv6;
@@ -390,12 +422,6 @@ function configure(program, server, conf) {
       || !(conf.port && conf.remoteport);
     if (autoconfNet) {
       yield Q.nbind(wiz.networkReconfiguration, wiz)(conf, autoconfNet, program.noupnp);
-    }
-    const hasSaltPasswdKey = conf.salt && conf.passwd;
-    const hasKeyPair = conf.pair && conf.pair.pub && conf.pair.sec;
-    const autoconfKey = program.autoconf || (!hasSaltPasswdKey && !hasKeyPair);
-    if (autoconfKey) {
-      yield Q.nbind(wiz.keyReconfigure, wiz)(conf, autoconfKey);
     }
     // Try to add an endpoint if provided
     if (program.addep) {

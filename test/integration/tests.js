@@ -174,7 +174,7 @@ describe("Integration", function() {
 
     const node3 = duniter('/db3', MEMORY_MODE, {
       currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, upnp: false, httplogs: false,
-      salt: 'abc', passwd: 'abc', participate: false, rootoffset: 0,
+      participate: false, rootoffset: 0,
       sigQty: 1, sigPeriod: 0,
       pair: {
         pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',

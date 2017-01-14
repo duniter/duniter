@@ -123,9 +123,6 @@ module.exports = {
   IPV4_REGEXP: IPV4_REGEXP,
   IPV6_REGEXP: IPV6_REGEXP,
 
-  SALT: exact(".+"),
-  PASSWORD: exact(".*"),
-
   INTEGER: /^\d+$/,
   FINGERPRINT: exact(FINGERPRINT),
   TIMESTAMP: exact(TIMESTAMP),

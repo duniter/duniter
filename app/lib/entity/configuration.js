@@ -13,8 +13,6 @@ const defaultConf = function() {
     "remoteipv4": null,
     "remoteipv6": null,
     "remoteport": constants.NETWORK.DEFAULT_PORT,
-    "salt": "",
-    "passwd": "",
     "endpoints": [],
     "rmEndpoints": [],
     "cpu": constants.DEFAULT_CPU,

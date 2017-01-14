@@ -14,67 +14,27 @@ module.exports = function () {
 
 function Wizard () {
 
-  this.configAll = function (conf, done) {
-    doTasks(['currency', 'network', 'key', 'pow', 'ucp'], conf, done);
-  };
-
-  this.configBasic = function (conf, done) {
-    doTasks(['key', 'network', 'pow'], conf, done);
-  };
-
-  this.configPoW = function (conf, done) {
+  this.configPoW = function (conf, program, done) {
     doTasks(['pow'], conf, done);
   };
 
-  this.configCurrency = function (conf, done) {
+  this.configCurrency = function (conf, program, done) {
     doTasks(['currency'], conf, done);
   };
 
-  this.configNetwork = function (conf, done) {
+  this.configNetwork = function (conf, program, done) {
     doTasks(['network'], conf, done);
   };
 
-  this.configNetworkReconfigure = function (conf, done) {
+  this.configNetworkReconfigure = function (conf, program, done) {
     doTasks(['networkReconfigure'], conf, done);
   };
 
-  this.configKey = function (conf, done) {
-    doTasks(['key'], conf, done);
-  };
-
-  this.configUCP = function (conf, done) {
+  this.configUCP = function (conf, program, done) {
     doTasks(['ucp'], conf, done);
   };
 
   this.networkReconfiguration = networkReconfiguration;
-  this.keyReconfigure = keyReconfigure;
-}
-
-function keyReconfigure(conf, autoconf, done) {
-  return co(function *() {
-    try {
-      if (autoconf) {
-        conf.salt = ~~(Math.random() * 2147483647) + "";
-        conf.passwd = ~~(Math.random() * 2147483647) + "";
-        logger.info('Key: %s', 'generated');
-      } else {
-        yield Q.Promise(function(resolve, reject){
-          choose('You need a keypair to identify your node on the network. Would you like to automatically generate it?', true,
-            function(){
-              conf.salt = ~~(Math.random() * 2147483647) + "";
-              conf.passwd = ~~(Math.random() * 2147483647) + "";
-              resolve();
-            },
-            function(){
-              doTasks(['key'], conf, (err) => err ? reject(err) : resolve());
-            });
-        });
-      }
-      done();
-    } catch(e) {
-      done(e);
-    }
-  });
 }
 
 function doTasks (todos, conf, done) {
@@ -113,42 +73,6 @@ const tasks = {
 
   networkReconfigure: function (conf, autoconf, noupnp, done) {
     networkReconfiguration(conf, autoconf, noupnp, done);
-  },
-
-  key: function (conf, done) {
-    async.waterfall([
-      function (next){
-        inquirer.prompt([{
-          type: "input",
-          name: "salt",
-          message: "Key's salt",
-          default: conf.salt ? conf.salt : undefined,
-          validate: function (input) {
-            return input.match(constants.SALT) ? true : false;
-          }
-        }], function (answers) {
-          conf.salt = answers.salt;
-          next();
-        });
-      },
-      function (next) {
-        var obfuscated = (conf.passwd || "").replace(/./g, '*');
-        inquirer.prompt([{
-          type: "password",
-          name: "passwd",
-          message: "Key\'s password",
-          default: obfuscated ? obfuscated : undefined,
-          validate: function (input) {
-            return input.match(constants.PASSWORD) ? true : false;
-          }
-        }], function (answers) {
-          var keepOld = obfuscated.length > 0 && obfuscated == answers.passwd;
-          conf.passwd = keepOld ? conf.passwd : answers.passwd;
-          conf.pair = undefined;
-          next();
-        });
-      }
-    ], done);
   },
 
   ucp: function (conf, done) {

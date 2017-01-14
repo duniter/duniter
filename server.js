@@ -226,26 +226,20 @@ function Server (home, memoryOnly, overrideConf) {
     }
   }));
 
-  this.checkConfig = () => {
-    return that.checkPeeringConf(that.conf);
-  };
-
-  this.checkPeeringConf = (conf) => co(function*() {
-      if (!conf.pair && conf.passwd == null) {
-        throw new Error('No key password was given.');
-      }
-      if (!conf.pair && conf.salt == null) {
-        throw new Error('No key salt was given.');
-      }
-      if(!conf.ipv4 && !conf.ipv6){
-        throw new Error("No interface to listen to.");
-      }
-      if(!conf.remoteipv4 && !conf.remoteipv6 && !conf.remotehost){
-        throw new Error('No interface for remote contact.');
-      }
-      if (!conf.remoteport) {
-        throw new Error('No port for remote contact.');
-      }
+  this.checkConfig = () => co(function*() {
+    const conf = that.conf;
+    if (!conf.pair) {
+      throw new Error('No keypair was given.');
+    }
+    if(!conf.ipv4 && !conf.ipv6){
+      throw new Error("No interface to listen to.");
+    }
+    if(!conf.remoteipv4 && !conf.remoteipv6 && !conf.remotehost){
+      throw new Error('No interface for remote contact.');
+    }
+    if (!conf.remoteport) {
+      throw new Error('No port for remote contact.');
+    }
   });
 
   this.resetHome = () => co(function *() {

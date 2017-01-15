@@ -3,7 +3,6 @@ const moment = require('moment');
 const path = require('path');
 const winston = require('winston');
 const cbLogger = require('./callbackLogger');
-const directory = require('../system/directory');
 
 const customLevels = {
   levels: {

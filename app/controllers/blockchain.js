@@ -2,7 +2,6 @@
 
 const co               = require('co');
 const _                = require('underscore');
-const rules            = require('../lib/rules');
 const constants        = require('../lib/constants');
 const http2raw         = require('../lib/helpers/http2raw');
 const Membership       = require('../lib/entity/membership');

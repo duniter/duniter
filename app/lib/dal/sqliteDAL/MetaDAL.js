@@ -5,7 +5,6 @@
  */
 
 const co = require('co');
-const _ = require('underscore');
 const logger = require('../../logger')('metaDAL');
 const AbstractSQLite = require('./AbstractSQLite');
 

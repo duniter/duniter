@@ -72,7 +72,7 @@ function extractIssuers(raw) {
   return issuers;
 }
 
-function extractInputs(raw, obj) {
+function extractInputs(raw) {
   const inputs = [];
   const lines = raw.split(/\n/);
   for (const line of lines) {

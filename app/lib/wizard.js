@@ -1,6 +1,5 @@
 "use strict";
 const co        = require('co');
-const Q         = require('q');
 const constants = require('./constants');
 const network   = require('./system/network');
 const async     = require('async');
@@ -348,7 +347,7 @@ function getLocalNetworkOperations(conf, autoconf) {
   ];
 }
 
-function getRemoteNetworkOperations(conf, remoteipv4, remoteipv6, autoconf) {
+function getRemoteNetworkOperations(conf, remoteipv4) {
   return [
     function (next){
       if (!conf.ipv4) {

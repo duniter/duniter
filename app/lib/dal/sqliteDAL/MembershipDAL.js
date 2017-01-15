@@ -2,7 +2,6 @@
  * Created by cgeek on 22/08/15.
  */
 
-const Q = require('q');
 const co = require('co');
 const _ = require('underscore');
 const AbstractSQLite = require('./AbstractSQLite');

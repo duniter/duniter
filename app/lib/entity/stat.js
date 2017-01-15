@@ -3,7 +3,7 @@ const _ = require('underscore');
 
 const Stat = function(json) {
   _(json).keys().forEach((key) => {
-   this[key] = json[key];
+    this[key] = json[key];
   });
 
   this.json = function () {

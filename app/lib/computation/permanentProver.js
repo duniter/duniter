@@ -2,8 +2,6 @@
 
 const co        = require('co');
 const constants = require('../constants');
-const rules     = require('../rules');
-const parsers   = require('../streams/parsers');
 
 module.exports = (server) => new PermanentProver(server);
 
@@ -49,7 +47,7 @@ function PermanentProver(server) {
           if (!selfPubkey) {
             throw 'No self pubkey found.';
           }
-          let block, current;
+          let current;
           const isMember = yield dal.isMember(selfPubkey);
           if (!isMember) {
             throw 'Local node is not a member. Waiting to be a member before computing a block.';

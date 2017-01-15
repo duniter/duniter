@@ -78,7 +78,7 @@ function TransactionBinding(server) {
     });
   });
 
-  this.getPending = (req) => co(function *() {
+  this.getPending = () => co(function *() {
     const pending = yield server.dal.getTransactionsPending();
     const res = {
       "currency": conf.currency,
@@ -91,19 +91,19 @@ function TransactionBinding(server) {
   });
 
   const getFilteredHistory = (pubkey, filter) => co(function*() {
-      let history = yield server.dal.getTransactionsHistory(pubkey);
-      let result = {
-        "currency": conf.currency,
-        "pubkey": pubkey,
-        "history": history
-      };
-      _.keys(history).map((key) => {
-        history[key].map((tx, index) => {
-          history[key][index] = _.omit(new Transaction(tx).json(), 'currency', 'raw');
-          _.extend(history[key][index], {block_number: tx && tx.block_number, time: tx && tx.time});
-        });
+    let history = yield server.dal.getTransactionsHistory(pubkey);
+    let result = {
+      "currency": conf.currency,
+      "pubkey": pubkey,
+      "history": history
+    };
+    _.keys(history).map((key) => {
+      history[key].map((tx, index) => {
+        history[key][index] = _.omit(new Transaction(tx).json(), 'currency', 'raw');
+        _.extend(history[key][index], {block_number: tx && tx.block_number, time: tx && tx.time});
       });
-      return filter(result);
+    });
+    return filter(result);
   });
 
   return this;

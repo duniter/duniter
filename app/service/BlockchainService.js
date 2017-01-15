@@ -1,12 +1,10 @@
 "use strict";
 
-const async           = require('async');
 const _               = require('underscore');
 const co              = require('co');
 const Q               = require('q');
 const parsers         = require('../lib/streams/parsers');
 const rules           = require('../lib/rules');
-const keyring         = require('../lib/crypto/keyring');
 const constants       = require('../lib/constants');
 const blockchainCtx   = require('../lib/computation/blockchainContext');
 const blockGenerator  = require('../lib/computation/blockGenerator');
@@ -30,14 +28,13 @@ function BlockchainService (server) {
   const mainContext = blockchainCtx();
   const prover = this.prover = blockProver(server);
   const generator = blockGenerator(mainContext, prover);
-  let conf, dal, keyPair, logger, selfPubkey;
+  let conf, dal, logger, selfPubkey;
 
   this.getContext = () => mainContext;
 
   this.setConfDAL = (newConf, newDAL, newKeyPair) => {
     dal = newDAL;
     conf = newConf;
-    keyPair = newKeyPair;
     mainContext.setConfDAL(conf, dal);
     prover.setConfDAL(conf, dal, newKeyPair);
     generator.setConfDAL(conf, dal, newKeyPair);
@@ -140,7 +137,7 @@ function BlockchainService (server) {
       Transaction.statics.cleanSignatories(obj.transactions);
     }
     catch (e) {
-        throw e;
+      throw e;
     }
     let existing = yield dal.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
     if (existing) {

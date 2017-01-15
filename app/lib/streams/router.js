@@ -1,7 +1,6 @@
 "use strict";
 
 const co = require('co');
-const _ = require('underscore');
 const util     = require('util');
 const stream   = require('stream');
 const Peer     = require('../entity/peer');

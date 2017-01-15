@@ -1,6 +1,5 @@
 "use strict";
 
-const Q = require('q');
 const _ = require('underscore');
 const co = require('co');
 const path = require('path');
@@ -24,7 +23,7 @@ function CFSCore(rootPath, qfs, parent) {
 
   /**
    * Creates the deletion folder before effective deletion.
-   * @returns {*|any|Q.Promise<void>} Promise of creation.
+   * @returns {*|any|Promise<void>} Promise of creation.
    */
   const createDeletionFolder = () => deletionFolderPromise || (deletionFolderPromise = that.makeTree('.deleted'));
 

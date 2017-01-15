@@ -5,7 +5,6 @@ const es = require('event-stream');
 const dtos = require('./dtos');
 const sanitize = require('./sanitize');
 const limiter = require('../system/limiter');
-const constants = require('../../lib/constants');
 const logger = require('../logger')('routes');
 
 const WebSocketServer = require('ws').Server;

@@ -1,7 +1,6 @@
 "use strict";
 const _                = require('underscore');
 const co               = require('co');
-const Q                = require('q');
 const http2raw         = require('../lib/helpers/http2raw');
 const constants        = require('../lib/constants');
 const Peer             = require('../lib/entity/peer');

@@ -3,8 +3,6 @@ const _               = require('underscore');
 const co              = require('co');
 const Q               = require('q');
 const indexer         = require('../dup/indexer');
-const hashf           = require('../ucp/hashf');
-const rawer           = require('../ucp/rawer');
 const constants       = require('../constants');
 const rules           = require('../rules/index');
 const Identity        = require('../entity/identity');
@@ -263,9 +261,7 @@ function BlockchainContext() {
     }
     const block = forks[0];
     yield that.checkBlock(block, constants.WITH_SIGNATURES_AND_POW);
-    const res = yield that.addBlock(block);
     logger.debug('Applied block #%s', block.number);
-    // return res;
   });
 
   this.revertBlock = (block) => co(function *() {
@@ -383,7 +379,7 @@ function BlockchainContext() {
     // Delete eventually present transactions
     yield that.deleteTransactions(block);
 
-    yield dal.trimSandboxes(block, conf);
+    yield dal.trimSandboxes(block);
 
     return block;
   });
@@ -455,7 +451,7 @@ function BlockchainContext() {
         dal.wotb.setEnabled(false, idty.wotb_id);
       }
       // Undo newcomers
-      for (const identity of block.identities) {
+      for (let i = 0; i < block.identities.length; i++) {
         // Does not matter which one it really was, we pop the last X identities
         dal.wotb.removeNode();
       }

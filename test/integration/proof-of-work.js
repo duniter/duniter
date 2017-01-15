@@ -55,20 +55,6 @@ describe("Proof-of-work", function() {
     intermediateProofs[intermediateProofs.length - 1].pow.should.have.property('hash').equal(block.hash);
   }));
 
-  it('should be possible to make the prover make us wait until we trigger it again', () => co(function*() {
-    let waitPromise = prover.waitForNewAsking();
-    return Promise.all([
-      waitPromise,
-      co(function*() {
-        yield new Promise((resolve) => setTimeout(resolve, 10));
-        yield prover.prove({
-          issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-          number: 2
-        }, MUST_START_WITH_A_ZERO, now);
-      })
-    ]);
-  }));
-
   // Too randomly successing test
   // it('should be able to cancel a proof-of-work on other PoW receival', () => co(function*() {
   //   const now = 1474464489;

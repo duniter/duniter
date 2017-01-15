@@ -78,7 +78,7 @@ rules.ALIAS = {
 rules.CHECK = {
   ASYNC: {
     ALL_LOCAL: checkLocal(rules.ALIAS.ALL_LOCAL),
-    ALL_LOCAL_BUT_POW: checkLocal(rules.ALIAS.ALL_LOCAL_BUT_POW_AND_SIGNATURE),
+    ALL_LOCAL_BUT_POW: checkLocal(rules.ALIAS.ALL_LOCAL_BUT_POW_AND_SIGNATURE)
   }
 };
 

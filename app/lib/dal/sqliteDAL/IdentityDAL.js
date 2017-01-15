@@ -2,9 +2,7 @@
  * Created by cgeek on 22/08/15.
  */
 
-const Q = require('q');
 const co = require('co');
-const logger = require('../../logger')('idtyDAL');
 const constants = require('../../constants');
 const AbstractSQLite = require('./AbstractSQLite');
 const SandBox = require('./SandBox');

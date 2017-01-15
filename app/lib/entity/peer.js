@@ -1,5 +1,4 @@
 "use strict";
-const Q = require('q');
 const _ = require('underscore');
 const contacter = require('../contacter');
 const rawer = require('../ucp/rawer');
@@ -14,7 +13,7 @@ function Peer(json) {
   this.documentType = 'peer';
 
   _(json).keys().forEach((key) => {
-   this[key] = json[key];
+    this[key] = json[key];
   });
 
   this.endpoints = this.endpoints || [];

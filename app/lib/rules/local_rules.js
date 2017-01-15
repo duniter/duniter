@@ -143,7 +143,7 @@ rules.FUNCTIONS = {
       .pluck('pub')
       .value();
     for (const pub of revocations) {
-      const exclusions = _(iindex).where({ op: constants.IDX_UPDATE, member: false });
+      const exclusions = _(iindex).where({ op: constants.IDX_UPDATE, member: false, pub });
       if (exclusions.length == 0) {
         throw Error('A revoked member must be excluded');
       }
@@ -313,7 +313,7 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkTxSources: (block, conf) => co(function *() {
+  checkTxSources: (block) => co(function *() {
     const txs = block.getTransactions();
     for (const tx of txs) {
       if (!tx.inputs || tx.inputs.length == 0) {
@@ -379,7 +379,7 @@ function checkSingleMembershipSignature(ms) {
   return keyring.verify(ms.getRaw(), ms.signature, ms.issuer);
 }
 
-function getSigResult(tx, a) {
+function getSigResult(tx) {
   let sigResult = { sigs: {}, matching: true };
   let json = { "version": tx.version, "currency": tx.currency, "blockstamp": tx.blockstamp, "locktime": tx.locktime, "inputs": [], "outputs": [], "issuers": tx.issuers, "signatures": [], "comment": tx.comment };
   tx.inputs.forEach(function (input) {
@@ -489,7 +489,7 @@ rules.HELPERS = {
     }
   },
 
-  getMaxPossibleVersionNumber: (current, block) => co(function*() {
+  getMaxPossibleVersionNumber: (current) => co(function*() {
     // Looking at current blockchain, find what is the next maximum version we can produce
 
     // 1. We follow previous block's version

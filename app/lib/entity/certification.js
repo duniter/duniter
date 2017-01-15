@@ -8,7 +8,7 @@ const Certification = function(json) {
   this.linked = false;
 
   _(json).keys().forEach((key) => {
-   this[key] = json[key];
+    this[key] = json[key];
   });
 
   this.from  = this.pubkey = this.from || this.pubkey || this.issuer;

@@ -163,7 +163,7 @@ function splitAndMatch (separator, regexp) {
   };
 }
 
-function extractTransactions(raw, obj) {
+function extractTransactions(raw) {
   const regexps = {
     "issuers": constants.TRANSACTION.SENDER,
     "inputs": constants.TRANSACTION.SOURCE_V3,

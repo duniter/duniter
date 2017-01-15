@@ -99,8 +99,8 @@ function SIndexDAL(driver) {
   });
 
   this.findLowerThan = (amount, base) => co(function*() {
-    const baseConditions = Array.from({ length: (base +1) }).map((el, index) => {
-      return '(base = ' + index + ' and amount < ' + (amount*Math.pow(10, base - index)) + ')';
+    const baseConditions = Array.from({ length: (base + 1) }).map((el, index) => {
+      return '(base = ' + index + ' and amount < ' + (amount * Math.pow(10, base - index)) + ')';
     }).join(' OR ');
     const potentials = yield that.query('SELECT * FROM ' + that.table + ' s1 ' +
       'WHERE s1.op = ? ' +

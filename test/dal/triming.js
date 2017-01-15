@@ -1,10 +1,8 @@
 "use strict";
 const co = require('co');
-const _ = require('underscore');
 const should = require('should');
 const FileDAL = require('../../app/lib/dal/fileDAL');
 const dir = require('../../app/lib/system/directory');
-const constants = require('../../app/lib/constants');
 const indexer = require('../../app/lib/dup/indexer');
 const toolbox = require('../integration/tools/toolbox');
 const limiter = require('../../app/lib/system/limiter');
@@ -46,7 +44,7 @@ describe("Triming", function(){
     yield dal.iindexDAL.insertBatch([
       { op: 'CREATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', uid: 'cat', created_on: '121-H', written_on: '122-H', member: true,  wasMember: true, kick: false },
       { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', uid: null,  created_on: '121-H', written_on: '123-H', member: null,  wasMember: null, kick: true },
-      { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', uid: null,  created_on: '121-H', written_on: '124-H', member: false, wasMember: null, kick: false },
+      { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', uid: null,  created_on: '121-H', written_on: '124-H', member: false, wasMember: null, kick: false }
     ]);
     let lignes = yield dal.iindexDAL.reducable('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
     lignes.should.have.length(3);
@@ -74,7 +72,7 @@ describe("Triming", function(){
       { op: 'CREATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', created_on: '121-H', written_on: '122-H', expires_on: 1000, expired_on: null },
       { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', created_on: '121-H', written_on: '123-H', expires_on: 1200, expired_on: null },
       { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', created_on: '121-H', written_on: '124-H', expires_on: null, expired_on: null },
-      { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', created_on: '121-H', written_on: '125-H', expires_on: 1400, expired_on: null },
+      { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', created_on: '121-H', written_on: '125-H', expires_on: 1400, expired_on: null }
     ]);
     const lignes = yield dal.mindexDAL.reducable('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
     lignes.should.have.length(4);
@@ -93,7 +91,7 @@ describe("Triming", function(){
     yield dal.cindexDAL.insertBatch([
       { op: 'CREATE', issuer: 'HgTT', receiver: 'DNan', created_on: '121-H', written_on: '126-H', expires_on: 1000, expired_on: null },
       { op: 'UPDATE', issuer: 'HgTT', receiver: 'DNan', created_on: '121-H', written_on: '126-H', expires_on: null, expired_on: 3000 },
-      { op: 'CREATE', issuer: 'DNan', receiver: 'HgTT', created_on: '125-H', written_on: '126-H', expires_on: null, expired_on: null },
+      { op: 'CREATE', issuer: 'DNan', receiver: 'HgTT', created_on: '125-H', written_on: '126-H', expires_on: null, expired_on: null }
     ]);
     (yield dal.cindexDAL.sqlFind({ issuer: 'HgTT' })).should.have.length(2);
     (yield dal.cindexDAL.sqlFind({ issuer: 'DNan' })).should.have.length(1);
@@ -112,7 +110,7 @@ describe("Triming", function(){
       { op: 'CREATE', identifier: 'SOURCE_1', pos: 4, written_on: '126-H', written_time: 2000, consumed: false },
       { op: 'UPDATE', identifier: 'SOURCE_1', pos: 4, written_on: '139-H', written_time: 4500, consumed: true },
       { op: 'CREATE', identifier: 'SOURCE_2', pos: 4, written_on: '126-H', written_time: 2000, consumed: false },
-      { op: 'CREATE', identifier: 'SOURCE_3', pos: 4, written_on: '126-H', written_time: 2000, consumed: false },
+      { op: 'CREATE', identifier: 'SOURCE_3', pos: 4, written_on: '126-H', written_time: 2000, consumed: false }
     ]);
     (yield dal.sindexDAL.sqlFind({ identifier: 'SOURCE_1' })).should.have.length(2);
     (yield dal.sindexDAL.sqlFind({ pos: 4 })).should.have.length(4);
@@ -138,7 +136,7 @@ describe("Triming", function(){
       medianTimeBlocks: 3
     })).s1;
     // const s1 = server.s1;
-    for (const i of new Array(13)) {
+    for (let i = 0; i < 13; i++) {
       yield server.commit();
     }
     (yield server.dal.bindexDAL.head(1)).should.have.property('number').equal(12);

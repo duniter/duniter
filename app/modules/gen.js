@@ -18,7 +18,7 @@ module.exports = {
     cli: [{
       name: 'gen-next [host] [port] [difficulty]',
       desc: 'Tries to generate the next block of the blockchain.',
-      onPluggedDALExecute: (server, conf, program, params, startServices, stopServices) => co(function*() {
+      onPluggedDALExecute: (server, conf, program, params) => co(function*() {
         const host = params[0];
         const port = params[1];
         const difficulty = params[2];

@@ -14,7 +14,7 @@ function GenericParser (captures, multipleLinesFields, rawerFunc) {
 
   this.rawerFunc = rawerFunc;
 
-  this._simpleLineExtraction = (pr, rawEntry, cap, parser) => {
+  this._simpleLineExtraction = (pr, rawEntry, cap) => {
     const fieldValue = rawEntry.match(cap.regexp);
     if(fieldValue && fieldValue.length >= 2){
       pr[cap.prop] = cap.parser ? cap.parser(fieldValue[1], pr) : fieldValue[1];

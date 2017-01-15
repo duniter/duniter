@@ -19,11 +19,11 @@ function SQLiteDriver(path) {
 
   function getDB() {
     return dbPromise || (dbPromise = co(function*() {
-        logger.debug('Opening SQLite database "%s"...', path);
-        let sqlite = new sqlite3.Database(path);
-        yield new Promise((resolve) => sqlite.once('open', resolve));
-        // Database is opened and ready
-        return sqlite;
+      logger.debug('Opening SQLite database "%s"...', path);
+      let sqlite = new sqlite3.Database(path);
+      yield new Promise((resolve) => sqlite.once('open', resolve));
+      // Database is opened and ready
+      return sqlite;
     }));
   }
 

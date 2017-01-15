@@ -23,12 +23,11 @@ module.exports = (mainContext, prover) => {
 function BlockGenerator(mainContext, prover) {
 
   const that = this;
-  let conf, dal, keyPair, selfPubkey, logger;
+  let conf, dal, selfPubkey, logger;
 
   this.setConfDAL = (newConf, newDAL, newKeyPair) => {
     dal = newDAL;
     conf = newConf;
-    keyPair = newKeyPair;
     selfPubkey = newKeyPair.publicKey;
     logger = require('../logger')(dal.profile);
   };
@@ -435,7 +434,7 @@ function BlockGenerator(mainContext, prover) {
         block.medianTime = vHEAD.medianTime;
       }
       // Choose the version
-      block.version = (manualValues && manualValues.version) || (yield rules.HELPERS.getMaxPossibleVersionNumber(current, block));
+      block.version = (manualValues && manualValues.version) || (yield rules.HELPERS.getMaxPossibleVersionNumber(current));
       block.currency = current ? current.currency : conf.currency;
       block.nonce = 0;
       block.parameters = block.number > 0 ? '' : [

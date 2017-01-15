@@ -6,7 +6,7 @@ module.exports = {
       name: 'config',
       desc: 'Register configuration in database',
       // The command does nothing particular, it just stops the process right after configuration phase is over
-      onConfiguredExecute: (server, conf, program, params, wizardTasks) => Promise.resolve(conf)
+      onConfiguredExecute: (server, conf) => Promise.resolve(conf)
     }]
   }
 }

@@ -2,7 +2,6 @@
 let _ = require('underscore');
 let rawer = require('../ucp/rawer');
 let hashf = require('../ucp/hashf');
-let constants = require('../constants');
 
 let Transaction = function(obj, currency) {
 
@@ -15,7 +14,7 @@ let Transaction = function(obj, currency) {
   this.issuers = [];
 
   _(json).keys().forEach((key) => {
-   this[key] = json[key];
+    this[key] = json[key];
   });
 
   // Store the maximum output base

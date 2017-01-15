@@ -468,8 +468,8 @@ const indexer = module.exports = {
       const ratio = constants.POW_DIFFICULTY_RANGE_RATIO;
       const maxGenTime = Math.ceil(conf.avgGenTime * ratio);
       const minGenTime = Math.floor(conf.avgGenTime / ratio);
-      const minSpeed = 1/ maxGenTime;
-      const maxSpeed = 1/ minGenTime;
+      const minSpeed = 1 / maxGenTime;
+      const maxSpeed = 1 / minGenTime;
 
       if (HEAD.diffNumber != HEAD_1.diffNumber && HEAD.speed >= maxSpeed && (HEAD_1.powMin + 2) % 16 == 0) {
         HEAD.powMin = HEAD_1.powMin + 2;
@@ -784,11 +784,11 @@ const indexer = module.exports = {
     } else {
       const issuersVar = (HEAD.issuersCount - HEAD_1.issuersCount);
       if (HEAD_1.issuersFrameVar > 0) {
-        HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*issuersVar - 1;
+        HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5 * issuersVar - 1;
       } else if (HEAD_1.issuersFrameVar < 0) {
-        HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*issuersVar + 1;
+        HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5 * issuersVar + 1;
       } else {
-        HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*issuersVar;
+        HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5 * issuersVar;
       }
     }
   },

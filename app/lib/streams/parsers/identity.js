@@ -1,7 +1,6 @@
 "use strict";
 const GenericParser = require('./GenericParser');
 const util          = require('util');
-const ucp           = require('../../ucp/buid');
 const rawer         = require('../../ucp/rawer');
 const hashf         = require('../../ucp/hashf');
 const constants     = require('../../constants');

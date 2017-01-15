@@ -16,6 +16,6 @@ function JSONer () {
     that.push(entity.json());
     done();
   };
-};
+}
 
 util.inherits(JSONer, stream.Transform);

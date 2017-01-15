@@ -7,7 +7,7 @@ module.exports = {
     cli: [{
       name: 'sync [host] [port] [to]',
       desc: 'Synchronize blockchain from a remote Duniter node',
-      onPluggedDALExecute: (server, conf, program, params, startServices, stopServices) => co(function*() {
+      onPluggedDALExecute: (server, conf, program, params) => co(function*() {
         const host = params[0];
         const port = params[1];
         const to   = params[2];

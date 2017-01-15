@@ -22,6 +22,7 @@
     "no-trailing-spaces": 0,
     "no-unused-expressions": 0,
     "comma-spacing": 0,
+    "semi": 0,
 
     "quotes": [0, "double"],
     "linebreak-style": [1,"unix"],
@@ -37,7 +38,6 @@
     "no-unused-vars": [1],
     "space-infix-ops": [1],
     "handle-callback-err": [1],
-    "semi": [1,"always"],
     "no-extra-semi": [1]
   },
   "env": {

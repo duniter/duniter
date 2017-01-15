@@ -1,6 +1,5 @@
 "use strict";
 const co = require('co');
-const Q = require('q');
 const _ = require('underscore');
 
 module.exports = function (server) {

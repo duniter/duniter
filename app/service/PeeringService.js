@@ -273,7 +273,7 @@ function PeeringService(server) {
       logger.error('It seems there is an issue with your configuration.');
       logger.error('Please restart your node with:');
       logger.error('$ duniter restart');
-      return Q.Promise((resolve) => null);
+      return Q.Promise(() => null);
     }
     // Choosing next based-block for our peer record: we basically want the most distant possible from current
     let minBlock = current ? current.number - 30 : 0;

@@ -2,7 +2,6 @@
 
 const co = require('co');
 const logger = require('../app/lib/logger')('cli');
-const async = require('async');
 const Q = require('q');
 const _ = require('underscore');
 const Command = require('commander').Command;
@@ -10,7 +9,6 @@ const contacter = require('../app/lib/contacter');
 const directory = require('../app/lib/system/directory');
 const wizard = require('../app/lib/wizard');
 const multicaster = require('../app/lib/streams/multicaster');
-const keyring = require('../app/lib/crypto/keyring');
 const pjson = require('../package.json');
 const duniter = require('../index');
 const Peer = require('../app/lib/entity/peer');
@@ -94,8 +92,8 @@ module.exports = () => {
             const args = Array.from(arguments);
             return co(function*() {
               try {
-                const res = yield cmd.executionCallback.apply(null, [program].concat(args));
-                onResolve(res);
+                const resOfExecution = yield cmd.executionCallback.apply(null, [program].concat(args));
+                onResolve(resOfExecution);
               } catch (e) {
                 onReject(e);
               }
@@ -275,7 +273,7 @@ module.exports = () => {
         .command('reset [config|data|peers|tx|stats|all]')
         .description('Reset configuration, data, peers, transactions or everything in the database')
         .action(subCommand((type) => {
-          let init = ['data', 'all'].indexOf(type) !== -1 ? server.bind(server, program) : connect;
+          let init = ['data', 'all'].indexOf(type) !== -1 ? getServer.bind(getServer, program) : connect;
           return init(function (server) {
             if (!~['config', 'data', 'peers', 'stats', 'all'].indexOf(type)) {
               throw constants.ERRORS.CLI_CALLERR_RESET;
@@ -335,12 +333,12 @@ module.exports = () => {
 
       function connect(callback, useDefaultConf) {
         return function () {
-          var cbArgs = arguments;
-          var dbName = program.mdb || "duniter_default";
-          var dbHome = program.home;
+          const cbArgs = arguments;
+          const dbName = program.mdb || "duniter_default";
+          const dbHome = program.home;
 
           const home = directory.getHome(dbName, dbHome);
-          var server = duniter(home, program.memory === true, commandLineConf(program));
+          const theServer = duniter(home, program.memory === true, commandLineConf(program));
 
           // If ever the process gets interrupted
           let isSaving = false;
@@ -348,21 +346,21 @@ module.exports = () => {
             if (!isSaving) {
               isSaving = true;
               // Save DB
-              return server.disconnect();
+              return theServer.disconnect();
             }
           });
 
           // Initialize server (db connection, ...)
-          return server.plugFileSystem(useDefaultConf)
-            .then(() => server.loadConf())
+          return theServer.plugFileSystem(useDefaultConf)
+            .then(() => theServer.loadConf())
             .then(function () {
               try {
                 cbArgs.length--;
-                cbArgs[cbArgs.length++] = server;
-                cbArgs[cbArgs.length++] = server.conf;
+                cbArgs[cbArgs.length++] = theServer;
+                cbArgs[cbArgs.length++] = theServer.conf;
                 return callback.apply(this, cbArgs);
               } catch(e) {
-                server.disconnect();
+                theServer.disconnect();
                 throw e;
               }
             });
@@ -378,15 +376,15 @@ module.exports = () => {
             require('../app/lib/logger')().mute();
           }
 
-          var cbArgs = arguments;
-          var dbName = program.mdb;
-          var dbHome = program.home;
+          const cbArgs = arguments;
+          const dbName = program.mdb;
+          const dbHome = program.home;
 
           // Add log files for this instance
           logger.addHomeLogs(directory.getHome(dbName, dbHome));
 
           const home = directory.getHome(dbName, dbHome);
-          var server = duniter(home, program.memory === true, commandLineConf(program));
+          const theServer = duniter(home, program.memory === true, commandLineConf(program));
 
           // If ever the process gets interrupted
           let isSaving = false;
@@ -394,7 +392,7 @@ module.exports = () => {
             if (!isSaving) {
               isSaving = true;
               // Save DB
-              return server.disconnect();
+              return theServer.disconnect();
             }
           });
 
@@ -403,17 +401,17 @@ module.exports = () => {
           // Initialize server (db connection, ...)
           return co(function*() {
             try {
-              yield server.initWithDAL();
-              yield configure(program, server, server.conf || {});
-              yield server.loadConf();
+              yield theServer.initWithDAL();
+              yield configure(program, theServer, theServer.conf || {});
+              yield theServer.loadConf();
               cbArgs.length--;
-              cbArgs[cbArgs.length++] = server;
-              cbArgs[cbArgs.length++] = server.conf;
+              cbArgs[cbArgs.length++] = theServer;
+              cbArgs[cbArgs.length++] = theServer.conf;
               cbArgs[cbArgs.length++] = program;
-              onService && onService(server);
+              onService && onService(theServer);
               return callback.apply(that, cbArgs);
             } catch (e) {
-              server.disconnect();
+              theServer.disconnect();
               throw e;
             }
           });
@@ -511,10 +509,9 @@ function commandLineConf(program, conf) {
  * Super basic server with only its home path set
  * @param program
  * @param callback
- * @param useDefaultConf
  * @returns {Function}
  */
-function server(program, callback, useDefaultConf) {
+function getServer(program, callback) {
   return function () {
     var cbArgs = arguments;
     var dbName = program.mdb || "duniter_default";
@@ -536,8 +533,8 @@ function parsePercent(s) {
 }
 
 function needsToBeLaunchedByScript() {
-    logger.error('This command must not be launched directly, using duniter.sh script');
-    return Promise.resolve();
+  logger.error('This command must not be launched directly, using duniter.sh script');
+  return Promise.resolve();
 }
 
 function configure(program, server, conf) {

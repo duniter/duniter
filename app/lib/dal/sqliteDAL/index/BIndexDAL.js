@@ -3,7 +3,6 @@
  */
 
 const co = require('co');
-const _ = require('underscore');
 const AbstractSQLite = require('./../AbstractSQLite');
 
 module.exports = BIndexDAL;

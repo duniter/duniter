@@ -3,7 +3,6 @@ const co              = require('co');
 const _               = require('underscore');
 const constants       = require('../constants');
 const engine          = require('../pow/engine');
-const path            = require('path');
 const Block           = require('../entity/block');
 const querablep       = require('../querablep');
 
@@ -14,7 +13,7 @@ module.exports = (server) => new BlockGenerator(server);
 
 function BlockGenerator(notifier) {
 
-  let conf, pair, logger, wait = null, waitResolve;
+  let conf, pair, logger, waitResolve;
 
   let workerFarmPromise;
 
@@ -36,10 +35,6 @@ function BlockGenerator(notifier) {
     process.execArgv = [];
   }
 
-  this.waitForNewAsking = () => wait = new Promise((resolve) => {
-    waitResolve = resolve;
-  });
-
   this.cancel = (gottenBlock) => co(function*() {
     // If no farm was instanciated, tehre is nothing to do yet
     if (workerFarmPromise) {
@@ -50,7 +45,6 @@ function BlockGenerator(notifier) {
       if (waitResolve) {
         waitResolve();
         waitResolve = null;
-        wait = null;
       }
     }
   });
@@ -60,7 +54,6 @@ function BlockGenerator(notifier) {
     if (waitResolve) {
       waitResolve();
       waitResolve = null;
-      wait = null;
     }
 
     const remainder = difficulty % 16;

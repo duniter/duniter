@@ -77,12 +77,12 @@ function Synchroniser (server, host, port, conf, interactive) {
     if (to > 1 && speed > 0) {
       const remain = (to - (localNumber + 1 + blocksApplied));
       const secondsLeft = remain / speed;
-      const momDuration = moment.duration(secondsLeft*1000);
+      const momDuration = moment.duration(secondsLeft * 1000);
       watcher.writeStatus('Remaining ' + momDuration.humanize() + '');
     }
   });
 
-  this.test = (to, chunkLen, askedCautious, nopeers) => co(function*() {
+  this.test = (to, chunkLen, askedCautious) => co(function*() {
     const peering = yield contacter.statics.fetchPeer(host, port, contacterOptions);
     const peer = new Peer(peering);
     const node = yield peer.connect();
@@ -197,7 +197,7 @@ function Synchroniser (server, host, port, conf, interactive) {
         }),
 
         // Get the remote blockchain (bc) current block
-        remoteCurrent: (peer) => Promise.resolve(rCurrent),
+        remoteCurrent: () => Promise.resolve(rCurrent),
 
         // Get the remote peers to be pulled
         remotePeers: () => co(function*() {
@@ -775,7 +775,7 @@ function P2PDownloader(localNumber, to, toHash, peers, watcher) {
    * Triggers for starting the download.
    */
   let startResolver;
-  const downloadStarter = new Promise((resolve, reject) => startResolver = resolve);
+  const downloadStarter = new Promise((resolve) => startResolver = resolve);
 
   const chainsCorrectly = (blocks, index) => co(function*() {
 
@@ -874,7 +874,7 @@ function P2PDownloader(localNumber, to, toHash, peers, watcher) {
             if (doneIndex !== null) {
               const realIndex = slots[doneIndex];
               if (downloads[realIndex].isResolved()) {
-                const p = new Promise((resolve, reject) => co(function*() {
+                co(function*() {
                   const blocks = yield downloads[realIndex];
                   if (realIndex < chunks.length - 1) {
                     // We must wait for NEXT blocks to be STRONGLY validated before going any further, otherwise we
@@ -894,7 +894,7 @@ function P2PDownloader(localNumber, to, toHash, peers, watcher) {
                     // Need a retry
                     processing[realIndex] = false;
                   }
-                }));
+                });
               } else {
                 processing[realIndex] = false; // Need a retry
               }

@@ -220,7 +220,7 @@ function WOTBinding (server) {
 
   this.revoke = (req) => this.pushEntity(req, http2raw.revocation, constants.ENTITY_REVOCATION);
 
-  this.pendingMemberships = (req) => co(function*() {
+  this.pendingMemberships = () => co(function*() {
     const memberships = yield server.dal.findNewcomers();
     const json = {
       memberships: []

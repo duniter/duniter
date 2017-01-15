@@ -293,18 +293,19 @@ function FileDAL(params) {
     const certs = yield that.certDAL.getToTarget(hash);
     const links = yield that.cindexDAL.getValidLinksTo(pub);
     let matching = certs;
-    links.map((entry) => {
+    yield links.map((entry) => co(function*() {
       entry.from = entry.issuer;
-      const cbt = entry.created_on.split('-');
       const wbt = entry.written_on.split('-');
-      entry.block = parseInt(cbt[0]);
-      entry.block_number = parseInt(cbt[0]);
-      entry.block_hash = cbt[1];
+      const blockNumber = parseInt(entry.created_on); // created_on field of `c_index` does not have the full blockstamp
+      const basedBlock = yield that.getBlock(blockNumber);
+      entry.block = blockNumber;
+      entry.block_number = blockNumber;
+      entry.block_hash = basedBlock ? basedBlock.hash : null;
       entry.linked = true;
       entry.written_block = parseInt(wbt[0]);
       entry.written_hash = wbt[1];
       matching.push(entry);
-    });
+    }));
     matching  = _.sortBy(matching, (c) => -c.block);
     matching.reverse();
     return matching;

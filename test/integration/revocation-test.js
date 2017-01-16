@@ -23,7 +23,6 @@ const commonConf = {
   forksize: 3,
   xpercent: 0.9,
   msValidity: 10000,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };
 

@@ -20,7 +20,6 @@ const commonConf = {
   httpLogs: true,
   forksize: 30,
   avgGenTime: 1,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };
 
@@ -33,7 +32,7 @@ const s1 = duniter(
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
   },
-  participate: false, rootoffset: 10,
+  rootoffset: 10,
   sigQty: 1, dt: 1, ud0: 120
 }, commonConf));
 

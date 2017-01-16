@@ -35,8 +35,7 @@ const s1 = duniter(
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
   },
-  powDelay: 1,
-  participate: true // TODO: to remove when startGeneration will be an explicit call
+  powDelay: 1
 }, commonConf));
 
 const s2 = duniter(
@@ -48,8 +47,7 @@ const s2 = duniter(
     pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
     sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
   },
-  powDelay: 1,
-  participate: true // TODO: to remove when startGeneration will be an explicit call
+  powDelay: 1
 }, commonConf));
 
 const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
@@ -78,6 +76,9 @@ describe("Generation", function() {
           .pipe(server.router());
         yield server.start();
         yield server.PeeringService.generateSelfPeer(server.conf, 0);
+        const prover = require('../../app/modules/prover').duniter.methods.prover();
+        server.startBlockComputation = () => prover.startService(server);
+        server.stopBlockComputation = () => prover.stopService();
       }
       nodeS1 = contacter('127.0.0.1', s1.conf.port);
       nodeS2 = contacter('127.0.0.1', s2.conf.port);

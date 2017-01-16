@@ -11,7 +11,6 @@ const blockProver = require('../../app/lib/computation/blockProver');
 const s1 = toolbox.server({
   powDelay: 1000,
   powMin: 32,
-  participate: true, // TODO: to remove when startGeneration will be an explicit call
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
@@ -93,7 +92,6 @@ describe("Continous proof-of-work", function() {
 
   it('testing a network', () => co(function*() {
     const res = yield toolbox.simpleNetworkOf2NodesAnd2Users({
-      participate: true,
       powMin: 16
     }), s2 = res.s1, s3 = res.s2;
     yield s2.commit();
@@ -109,7 +107,6 @@ describe("Continous proof-of-work", function() {
 
   it('testing proof-of-work during a block pulling', () => co(function*() {
     const res = yield toolbox.simpleNetworkOf2NodesAnd2Users({
-      participate: true,
       powMin: 0
     }), s2 = res.s1, s3 = res.s2;
     yield s2.commit();

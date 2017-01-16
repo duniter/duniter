@@ -130,7 +130,6 @@ describe("Triming", function(){
         pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
         sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
       },
-      participate: false,
       sigQty: 1,
       dtDiffEval: 2,
       medianTimeBlocks: 3

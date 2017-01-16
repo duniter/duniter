@@ -2,17 +2,20 @@
 
 const co        = require('co');
 const constants = require('../constants');
+const dos2unix    = require('../system/dos2unix');
+const parsers = require('../streams/parsers');
 
 module.exports = (server) => new PermanentProver(server);
 
-function PermanentProver(server) {
+function PermanentProver() {
 
   const logger = require('../logger')('permprover');
   const that = this;
 
-  let onBlockCallback = null,
-      blockchainChangedResolver = null,
-      powPromise = null,
+  // The server on which is done the proof
+  let server;
+
+  let blockchainChangedResolver = null,
       promiseOfWaitingBetween2BlocksOfOurs = null,
       lastComputedBlock = null;
 
@@ -20,9 +23,10 @@ function PermanentProver(server) {
   let resolveContinuePromise = null;
   let continuePromise = new Promise((resolve) => resolveContinuePromise = resolve);
 
-  this.isPoWWaiting = () => !powPromise;
-
-  this.allowedToStart = () => resolveContinuePromise(true);
+  this.allowedToStart = (onServer) => {
+    server = onServer;
+    resolveContinuePromise(true);
+  };
 
   this.loops = 0;
 
@@ -41,9 +45,6 @@ function PermanentProver(server) {
           const selfPubkey = server.keyPair.publicKey;
           const dal = server.dal;
           const conf = server.conf;
-          if (!conf.participate) {
-            throw 'This node is configured for not participating to compute blocks, but this message is showing up. Weird.';
-          }
           if (!selfPubkey) {
             throw 'No self pubkey found.';
           }
@@ -77,10 +78,6 @@ function PermanentProver(server) {
           /*******************
            * COMPUTING A BLOCK
            ******************/
-          if (!onBlockCallback) {
-            throw Error('No callback has been provided to handle newly found proofs');
-          }
-
           yield Promise.race([
 
             // We still listen at eventual blockchain change
@@ -100,7 +97,12 @@ function PermanentProver(server) {
                 const trial2 = yield server.getBcContext().getIssuerPersonalizedDifficulty(selfPubkey);
                 checkTrialIsNotTooHigh(trial2, current, selfPubkey);
                 lastComputedBlock = yield server.BlockchainService.makeNextBlock(block2, trial2);
-                yield onBlockCallback(lastComputedBlock);
+                try {
+                  const obj = parsers.parseBlock.syncWrite(dos2unix(lastComputedBlock.getRawSigned()));
+                  yield server.singleWritePromise(obj);
+                } catch (err) {
+                  logger.warn('Proof-of-work self-submission: %s', err.message || err);
+                }
               } catch (e) {
                 logger.warn('The proof-of-work generation was canceled: %s', (e && e.message) || e || 'unkonwn reason');
               }
@@ -163,8 +165,6 @@ function PermanentProver(server) {
     // If we were waiting, stop it and process the continuous generation
     blockchainChangedResolver && blockchainChangedResolver();
   });
-
-  this.onBlockComputed = (callback) => onBlockCallback = callback;
 
   function checkTrialIsNotTooHigh(trial, current, selfPubkey) {
     if (trial > (current.powMin + constants.POW_MAXIMUM_ACCEPTABLE_HANDICAP)) {

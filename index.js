@@ -25,13 +25,13 @@ const peerDependency      = require('./app/modules/peer');
 const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
 const crawlerDependency   = require('./app/modules/crawler');
+const proverDependency    = require('./app/modules/prover');
 
 const MINIMAL_DEPENDENCIES = [
   { name: 'duniter-config',    required: configDependency }
 ];
 
-const DEFAULT_DEPENDENCIES = [
-  { name: 'duniter-config',    required: configDependency },
+const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-sync',      required: syncDependency },
   { name: 'duniter-wizard',    required: wizardDependency },
   { name: 'duniter-gen',       required: genDependency },
@@ -45,7 +45,11 @@ const DEFAULT_DEPENDENCIES = [
   { name: 'duniter-psignal',   required: pSignalDependency },
   { name: 'duniter-crawler',   required: crawlerDependency },
   { name: 'duniter-keypair',   required: dkeypairDependency }
-];
+]);
+
+const PRODUCTION_DEPENDENCIES = DEFAULT_DEPENDENCIES.concat([
+  { name: 'duniter-prover',   required: proverDependency }
+]);
 
 module.exports = function (home, memory, overConf) {
   return new Server(home, memory, overConf);
@@ -87,7 +91,7 @@ module.exports.statics = {
     }
 
     // The final stack
-    return new Stack(DEFAULT_DEPENDENCIES.concat(duniterModules));
+    return new Stack(PRODUCTION_DEPENDENCIES.concat(duniterModules));
   }
 };
 

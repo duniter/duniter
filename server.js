@@ -20,7 +20,6 @@ const Synchroniser = require('./app/lib/sync');
 const multicaster = require('./app/lib/streams/multicaster');
 const upnp        = require('./app/lib/system/upnp');
 const rawer       = require('./app/lib/ucp/rawer');
-const permanentProver = require('./app/lib/computation/permanentProver');
 
 function Server (home, memoryOnly, overrideConf) {
 
@@ -28,7 +27,6 @@ function Server (home, memoryOnly, overrideConf) {
 
   const paramsP = directory.getHomeParams(memoryOnly, home);
   const logger = require('./app/lib/logger')('server');
-  const permaProver = this.permaProver = permanentProver(this);
   const that = this;
   that.home = home;
   that.conf = null;
@@ -198,23 +196,8 @@ function Server (home, memoryOnly, overrideConf) {
 
   this.recomputeSelfPeer = () => that.PeeringService.generateSelfPeer(that.conf, 0);
 
-  this.stopBlockComputation = () => permaProver.stopEveryting();
-  
   this.getCountOfSelfMadePoW = () => this.BlockchainService.getCountOfSelfMadePoW();
   this.isServerMember = () => this.BlockchainService.isMember();
-
-  this.isPoWWaiting = () => permaProver.isPoWWaiting();
-
-  this.startBlockComputation = () => permaProver.allowedToStart();
-
-  permaProver.onBlockComputed((block) => co(function*() {
-    try {
-      const obj = parsers.parseBlock.syncWrite(dos2unix(block.getRawSigned()));
-      yield that.singleWritePromise(obj);
-    } catch (err) {
-      logger.warn('Proof-of-work self-submission: %s', err.message || err);
-    }
-  }));
 
   this.checkConfig = () => co(function*() {
     const conf = that.conf;
@@ -483,13 +466,6 @@ function Server (home, memoryOnly, overrideConf) {
       }
     }
 
-    /*******************
-     * BLOCK COMPUTING
-     ******************/
-    if (that.conf.participate) {
-      that.startBlockComputation();
-    }
-
     /***********************
      * CRYPTO NETWORK LAYER
      **********************/
@@ -498,9 +474,6 @@ function Server (home, memoryOnly, overrideConf) {
 
   this.stopServices = () => co(function*(){
     that.router(false);
-    if (that.conf.participate) {
-      that.stopBlockComputation();
-    }
   });
 }
 

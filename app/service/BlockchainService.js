@@ -153,7 +153,6 @@ function BlockchainService (server) {
       let res = yield mainContext.addBlock(obj);
       try {
         yield pushStatsForBlocks([res]);
-        server.permaProver.blockchainChanged(res);
       } catch (e) {
         logger.warn("An error occurred after the add of the block", e.stack || e);
       }
@@ -176,14 +175,7 @@ function BlockchainService (server) {
   });
 
 
-  that.tryToFork = (current) => co(function *() {
-    yield eventuallySwitchOnSideChain(current);
-    let newCurrent = yield mainContext.current();
-    let forked = newCurrent.number != current.number || newCurrent.hash != current.hash;
-    if (forked) {
-      server.permaProver.blockchainChanged();
-    }
-  });
+  that.tryToFork = (current) => eventuallySwitchOnSideChain(current);
 
   const eventuallySwitchOnSideChain = (current) => co(function *() {
     const branches = yield that.branches();

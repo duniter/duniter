@@ -14,7 +14,6 @@ const commonConf = {
   currency: 'bb',
   httpLogs: true,
   forksize: 3,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };
 
@@ -27,7 +26,7 @@ const s1 = duniter(
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
   },
-  participate: false, rootoffset: 10,
+  rootoffset: 10,
   sigQty: 1, dt: 1, ud0: 120
 }, commonConf));
 
@@ -40,7 +39,7 @@ const s2 = duniter(
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
   },
-  participate: false, rootoffset: 10,
+  rootoffset: 10,
   sigQty: 1, dt: 1, ud0: 120,
   msValidity: 400 // Memberships expire after 400 second delay
 }, commonConf));
@@ -54,7 +53,7 @@ const s3 = duniter(
     pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
     sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
   },
-  participate: false, rootoffset: 10,
+  rootoffset: 10,
   sigQty: 1, dt: 1, ud0: 120,
   sigValidity: 1400, sigPeriod: 0
 }, commonConf));

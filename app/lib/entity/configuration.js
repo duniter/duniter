@@ -31,7 +31,6 @@ const defaultConf = function() {
     "avgGenTime": constants.CONTRACT.DEFAULT.AVGGENTIME,
     "dtDiffEval": constants.CONTRACT.DEFAULT.DTDIFFEVAL,
     "medianTimeBlocks": constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS,
-    "participate": true,
     "httplogs": false,
     "udid2": false,
     "timeout": 3000,

@@ -20,7 +20,6 @@ const server = duniter(
   port: '7777',
   currency: 'bb',
   httpLogs: true,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1,
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',

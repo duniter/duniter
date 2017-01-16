@@ -22,7 +22,6 @@ const commonConf = {
   xpercent: 0.9,
   sigValidity: 1600, // 1600 second of duration
   msValidity: 3600, // 3600 second of duration
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };
 

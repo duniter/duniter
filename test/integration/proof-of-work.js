@@ -113,7 +113,6 @@ describe("Proof-of-work", function() {
   it('should be able to cancel a waiting on other PoW receival', () => co(function*() {
     const now = 1474464481;
     const res = yield toolbox.simpleNetworkOf2NodesAnd2Users({
-      participate: true,
       percentRot: 1,
       powMin: 35
     }), s1 = res.s1, s2 = res.s2;

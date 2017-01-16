@@ -25,7 +25,6 @@ const commonConf = {
   httpLogs: true,
   forksize: 10,
   avgGenTime: constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES * 60,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };
 

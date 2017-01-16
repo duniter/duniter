@@ -26,7 +26,6 @@ const commonConf = {
   currency: 'bb',
   httpLogs: true,
   forksize: 3,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };
 

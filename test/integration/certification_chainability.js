@@ -20,7 +20,6 @@ const commonConf = {
   xpercent: 0.9,
   sigPeriod: 200, // every 200 seconds
   msValidity: 10000,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };
 

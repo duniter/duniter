@@ -21,7 +21,6 @@ describe("Crosschain transactions", function() {
     httpLogs: true,
     forksize: 3,
     dt: 1, ud0: 120, rootoffset: 10,
-    parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
     sigQty: 1
   };
 

@@ -182,7 +182,6 @@ module.exports = {
       currency: conf.currency || CURRENCY_NAME,
       httpLogs: true,
       forksize: 3,
-      parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
       sigQty: 1
     };
     const server = duniter(
@@ -290,6 +289,12 @@ module.exports = {
         .pipe(server.router());
       return server.start();
     });
+
+    const prover = require('../../../app/modules/prover').duniter.methods.prover();
+    server.permaProver = prover.permaProver;
+    server.pipe(prover);
+    server.startBlockComputation = () => prover.startService(server);
+    server.stopBlockComputation = () => prover.stopService();
 
     return server;
   }

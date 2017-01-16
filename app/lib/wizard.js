@@ -98,21 +98,7 @@ const tasks = {
   pow: function (conf, done) {
     async.waterfall([
       function (next){
-        choose("Participate writing the blockchain (when member)", conf.participate,
-          function participate () {
-            conf.participate = true;
-            next();
-          },
-          function doNotParticipate () {
-            conf.participate = false;
-            next();
-          });
-      },
-      function (next) {
-        if (conf.participate) {
-          simpleInteger("Start computation of a new block if none received since (seconds)", "powDelay", conf, next);
-        }
-        else next();
+        simpleInteger("Start computation of a new block if none received since (seconds)", "powDelay", conf, next);
       }
     ], done);
   }

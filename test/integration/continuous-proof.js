@@ -118,7 +118,7 @@ describe("Continous proof-of-work", function() {
     yield s2.until('block', 15);
     s2.stopBlockComputation();
     yield [
-      s3.PeeringService.pullBlocks(),
+      require('../../app/modules/crawler').duniter.methods.pullBlocks(s3),
       s3.startBlockComputation()
     ];
     yield s3.expectJSON('/blockchain/current', { number: 15 });

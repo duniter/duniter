@@ -86,7 +86,7 @@ describe("Switch", function() {
     yield s1.singleWritePromise(s2p);
 
     // Forking S1 from S2
-    yield s1.pullBlocks(s2p.pubkey);
+    yield require('../../app/modules/crawler').duniter.methods.pullBlocks(s1, s2p.pubkey);
 
     constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES = oldVal;
     // S1 should have switched to the other branch

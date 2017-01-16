@@ -98,7 +98,7 @@ describe("SelfFork", function() {
     yield s1.singleWritePromise(s2p);
 
     // Forking S1 from S2
-    return s1.pullBlocks(s2p.pubkey);
+    return require('../../app/modules/crawler').duniter.methods.pullBlocks(s1, s2p.pubkey);
   }));
 
   describe("Server 1 /blockchain", function() {

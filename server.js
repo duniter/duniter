@@ -194,15 +194,9 @@ function Server (home, memoryOnly, overrideConf) {
     // Add signing & public key functions to PeeringService
     logger.info('Node version: ' + that.version);
     logger.info('Node pubkey: ' + that.PeeringService.pubkey);
-    return that.initPeer();
   });
 
   this.recomputeSelfPeer = () => that.PeeringService.generateSelfPeer(that.conf, 0);
-
-  this.initPeer = () => co(function*(){
-      logger.info('Storing self peer...');
-      yield Q.nbind(that.PeeringService.regularSyncBlock, that.PeeringService);
-  });
 
   this.stopBlockComputation = () => permaProver.stopEveryting();
   
@@ -359,8 +353,6 @@ function Server (home, memoryOnly, overrideConf) {
 
   this.disconnect = () => Promise.resolve(that.dal && that.dal.close());
 
-  this.pullBlocks = that.PeeringService.pullBlocks;
-
   // Unit Tests or Preview method
   this.doMakeNextBlock = (manualValues) => that.BlockchainService.makeNextBlock(null, null, manualValues);
 
@@ -509,7 +501,6 @@ function Server (home, memoryOnly, overrideConf) {
     if (that.conf.participate) {
       that.stopBlockComputation();
     }
-    return that.PeeringService.stopRegular();
   });
 }
 

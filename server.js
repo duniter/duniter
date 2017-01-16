@@ -203,7 +203,6 @@ function Server (home, memoryOnly, overrideConf) {
       yield that.checkConfig();
       yield Q.nbind(that.PeeringService.regularCrawlPeers, that.PeeringService);
       logger.info('Storing self peer...');
-      yield that.PeeringService.regularPeerSignal();
       yield Q.nbind(that.PeeringService.regularTestPeers, that.PeeringService);
       yield Q.nbind(that.PeeringService.regularSyncBlock, that.PeeringService);
   });

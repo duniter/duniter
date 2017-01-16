@@ -77,6 +77,7 @@ describe("Generation", function() {
           .pipe(multicaster())
           .pipe(server.router());
         yield server.start();
+        yield server.PeeringService.generateSelfPeer(server.conf, 0);
       }
       nodeS1 = contacter('127.0.0.1', s1.conf.port);
       nodeS2 = contacter('127.0.0.1', s2.conf.port);

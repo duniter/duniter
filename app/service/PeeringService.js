@@ -159,28 +159,6 @@ function PeeringService(server) {
     return server.singleWritePromise(_.extend({ documentType: 'peer' }, pretendedNewer));
   };
 
-  const peerFifo = async.queue(function (task, callback) {
-    task(callback);
-  }, 1);
-  let peerInterval = null;
-
-  this.regularPeerSignal =  () => co(function*() {
-    let signalTimeInterval = 1000 * conf.avgGenTime * constants.NETWORK.STATUS_INTERVAL.UPDATE;
-    if (peerInterval)
-      clearInterval(peerInterval);
-    peerInterval = setInterval(function () {
-      peerFifo.push((done) => co(function*(){
-        try {
-          yield that.generateSelfPeer(conf, signalTimeInterval);
-          done();
-        } catch (e) {
-          done(e);
-        }
-      }))
-    }, signalTimeInterval);
-    yield that.generateSelfPeer(conf, signalTimeInterval);
-  });
-
   const crawlPeersFifo = async.queue((task, callback) => task(callback), 1);
   let crawlPeersInterval = null;
   this.regularCrawlPeers = function (done) {
@@ -217,11 +195,9 @@ function PeeringService(server) {
 
   this.stopRegular = () => {
     askedCancel = true;
-    clearInterval(peerInterval);
     clearInterval(crawlPeersInterval);
     clearInterval(syncBlockInterval);
     clearInterval(testPeerFifoInterval);
-    peerFifo.kill();
     crawlPeersFifo.kill();
     syncBlockFifo.kill();
     testPeerFifo.kill();

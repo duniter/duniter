@@ -23,6 +23,7 @@ const reapplyDependency   = require('./app/modules/reapply');
 const revertDependency    = require('./app/modules/revert');
 const peerDependency      = require('./app/modules/peer');
 const daemonDependency    = require('./app/modules/daemon');
+const pSignalDependency   = require('./app/modules/peersignal');
 
 const MINIMAL_DEPENDENCIES = [
   { name: 'duniter-config',    required: configDependency }
@@ -40,6 +41,7 @@ const DEFAULT_DEPENDENCIES = [
   { name: 'duniter-revert',    required: revertDependency },
   { name: 'duniter-peer',      required: peerDependency },
   { name: 'duniter-daemon',    required: daemonDependency },
+  { name: 'duniter-psignal',   required: pSignalDependency },
   { name: 'duniter-keypair',   required: dkeypairDependency }
 ];
 
@@ -102,6 +104,7 @@ function Stack(dependencies) {
     input: [],
     process: [],
     output: [],
+    neutral: []
   };
 
   this.registerDependency = (requiredObject, name) => {
@@ -162,6 +165,10 @@ function Stack(dependencies) {
       // To handle data that has been validated by PROCESS stream
       if (def.service.output) {
         streams.output.push(def.service.output);
+      }
+      // Special service which does not stream anything particular (ex.: piloting the `server` object)
+      if (def.service.neutral) {
+        streams.neutral.push(def.service.neutral);
       }
     }
   };
@@ -245,9 +252,9 @@ function Stack(dependencies) {
 
         // Start services and streaming between them
         () => co(function*() {
-          const modules = streams.input.concat(streams.process).concat(streams.output);
+          const modules = streams.input.concat(streams.process).concat(streams.output).concat(streams.neutral);
           // Any streaming module must implement a `startService` method
-          yield modules.map(module => module.startService());
+          yield modules.map(module => module.startService(server, conf));
           // All inputs write to global INPUT stream
           for (const module of streams.input) module.pipe(INPUT);
           // All processes read from global INPUT stream

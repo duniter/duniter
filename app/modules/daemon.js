@@ -8,7 +8,7 @@ module.exports = {
     cli: [{
       name: 'start',
       desc: 'Start Duniter node daemon.',
-      onPluggedDALExecute: (server, conf, program, params) => co(function*() {
+      onPluggedDALExecute: (server, conf, program, params, startServices) => co(function*() {
         const logger = server.logger;
         const bma = require('../lib/streams/bma');
 
@@ -23,6 +23,7 @@ module.exports = {
         // Services
         yield server.startServices();
         yield bmapi.openConnections();
+        yield startServices();
 
         logger.info('>> Server ready!');
 

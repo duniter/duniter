@@ -11,14 +11,9 @@ const wizard = require('../app/lib/wizard');
 const multicaster = require('../app/lib/streams/multicaster');
 const pjson = require('../package.json');
 const duniter = require('../index');
-const Peer = require('../app/lib/entity/peer');
-const Block = require('../app/lib/entity/block');
 const constants = require('../app/lib/constants');
 
 module.exports = () => {
-
-  const ERASE_IF_ALREADY_RECORDED = true;
-  const NO_LOGS = true;
 
   const options = [];
   const commands = [];
@@ -138,34 +133,6 @@ module.exports = () => {
         .command('restart')
         .description('Restart Duniter node daemon.')
         .action(subCommand(needsToBeLaunchedByScript));
-
-      program
-        .command('peer [host] [port]')
-        .description('Exchange peerings with another node')
-        .action(subCommand(service(function (host, port, server) {
-          return co(function *() {
-            try {
-              logger.info('Fetching peering record at %s:%s...', host, port);
-              let peering = yield contacter.statics.fetchPeer(host, port);
-              logger.info('Apply peering ...');
-              yield server.PeeringService.submitP(peering, ERASE_IF_ALREADY_RECORDED, !program.nocautious);
-              logger.info('Applied');
-              let selfPeer = yield server.dal.getPeer(server.PeeringService.pubkey);
-              if (!selfPeer) {
-                yield Q.nfcall(server.PeeringService.generateSelfPeer, server.conf, 0);
-                selfPeer = yield server.dal.getPeer(server.PeeringService.pubkey);
-              }
-              logger.info('Send self peering ...');
-              var caster = multicaster();
-              yield caster.sendPeering(Peer.statics.peerize(peering), Peer.statics.peerize(selfPeer));
-              logger.info('Sent.');
-              yield server.disconnect();
-            } catch(e) {
-              logger.error(e.code || e.message || e);
-              throw Error("Exiting");
-            }
-          });
-        })));
 
       program
         .on('*', function (cmd) {

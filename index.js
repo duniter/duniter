@@ -21,6 +21,7 @@ const checkConfDependency = require('./app/modules/check-config');
 const exportBcDependency  = require('./app/modules/export-bc');
 const reapplyDependency   = require('./app/modules/reapply');
 const revertDependency    = require('./app/modules/revert');
+const peerDependency      = require('./app/modules/peer');
 
 const MINIMAL_DEPENDENCIES = [
   { name: 'duniter-config',    required: configDependency }
@@ -36,6 +37,7 @@ const DEFAULT_DEPENDENCIES = [
   { name: 'duniter-exportbc',  required: exportBcDependency },
   { name: 'duniter-reapply',   required: reapplyDependency },
   { name: 'duniter-revert',    required: revertDependency },
+  { name: 'duniter-peer',      required: peerDependency },
   { name: 'duniter-keypair',   required: dkeypairDependency }
 ];
 
@@ -188,9 +190,14 @@ function Stack(dependencies) {
         if (!isSaving) {
           isSaving = true;
           // Save DB
-          return server.disconnect();
+          try {
+            yield server.disconnect();
+            process.exit();
+          } catch (e) {
+            logger.error(e);
+            process.exit(3);
+          }
         }
-        process.exit();
       });
     });
 

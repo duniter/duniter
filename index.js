@@ -20,6 +20,7 @@ const resetDependency     = require('./app/modules/reset');
 const checkConfDependency = require('./app/modules/check-config');
 const exportBcDependency  = require('./app/modules/export-bc');
 const reapplyDependency   = require('./app/modules/reapply');
+const revertDependency    = require('./app/modules/revert');
 
 const MINIMAL_DEPENDENCIES = [
   { name: 'duniter-config',    required: configDependency }
@@ -34,6 +35,7 @@ const DEFAULT_DEPENDENCIES = [
   { name: 'duniter-chkconf',   required: checkConfDependency },
   { name: 'duniter-exportbc',  required: exportBcDependency },
   { name: 'duniter-reapply',   required: reapplyDependency },
+  { name: 'duniter-revert',    required: revertDependency },
   { name: 'duniter-keypair',   required: dkeypairDependency }
 ];
 

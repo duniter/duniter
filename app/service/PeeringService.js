@@ -173,22 +173,10 @@ function PeeringService(server) {
 
   this.pullBlocks = (pubkey) => syncBlock(null, pubkey);
 
-  const FIRST_CALL = true;
-  const testPeerFifo = async.queue((task, callback) => task(callback), 1);
-  let testPeerFifoInterval = null;
-  this.regularTestPeers = function (done) {
-    if (testPeerFifoInterval)
-      clearInterval(testPeerFifoInterval);
-    testPeerFifoInterval = setInterval(() => testPeerFifo.push(testPeers.bind(null, !FIRST_CALL)), 1000 * constants.NETWORK.TEST_PEERS_INTERVAL);
-    testPeers(FIRST_CALL, done);
-  };
-
   this.stopRegular = () => {
     askedCancel = true;
     clearInterval(syncBlockInterval);
-    clearInterval(testPeerFifoInterval);
     syncBlockFifo.kill();
-    testPeerFifo.kill();
     return co(function *() {
       yield currentSyncP;
       askedCancel = false;
@@ -280,89 +268,6 @@ function PeeringService(server) {
           !(ep.includes(' ' + theConf.remoteport) && (
           ep.includes(theConf.remotehost) || ep.includes(theConf.remoteipv6) || ep.includes(theConf.remoteipv4))));
     });
-  }
-
-  const testPeers = (displayDelays, done) => co(function *() {
-    try {
-      let peers = yield dal.listAllPeers();
-      let now = (new Date().getTime());
-      peers = _.filter(peers, (p) => p.pubkey != selfPubkey);
-      for (let i = 0, len = peers.length; i < len; i++) {
-        let p = new Peer(peers[i]);
-        if (p.status == 'DOWN') {
-          let shouldDisplayDelays = displayDelays;
-          let downAt = p.first_down || now;
-          let waitRemaining = getWaitRemaining(now, downAt, p.last_try);
-          let nextWaitRemaining = getWaitRemaining(now, downAt, now);
-          let testIt = waitRemaining <= 0;
-          if (testIt) {
-            // We try to reconnect only with peers marked as DOWN
-            try {
-              logger.trace('Checking if node %s is UP... (%s:%s) ', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
-              // We register the try anyway
-              yield dal.setPeerDown(p.pubkey);
-              // Now we test
-              let node = yield p.connect();
-              let peering = yield node.getPeer();
-              yield checkPeerValidity(p, node);
-              // The node answered, it is no more DOWN!
-              logger.info('Node %s (%s:%s) is UP!', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort());
-              yield dal.setPeerUP(p.pubkey);
-              // We try to forward its peering entry
-              let sp1 = peering.block.split('-');
-              let currentBlockNumber = sp1[0];
-              let currentBlockHash = sp1[1];
-              let sp2 = peering.block.split('-');
-              let blockNumber = sp2[0];
-              let blockHash = sp2[1];
-              if (!(currentBlockNumber == blockNumber && currentBlockHash == blockHash)) {
-                // The peering changed
-                yield that.submitP(peering);
-              }
-              // Do not need to display when next check will occur: the node is now UP
-              shouldDisplayDelays = false;
-            } catch (err) {
-              // Error: we set the peer as DOWN
-              logger.trace("Peer %s is DOWN (%s)", p.pubkey, (err.httpCode && 'HTTP ' + err.httpCode) || err.code || err.message || err);
-              yield dal.setPeerDown(p.pubkey);
-              shouldDisplayDelays = true;
-            }
-          }
-          if (shouldDisplayDelays) {
-            logger.debug('Will check that node %s (%s:%s) is UP in %s min...', p.pubkey.substr(0, 6), p.getHostPreferDNS(), p.getPort(), (nextWaitRemaining / 60).toFixed(0));
-          }
-        }
-      }
-      done();
-    } catch (e) {
-      done(e);
-    }
-  });
-
-  function getWaitRemaining(now, downAt, last_try) {
-    let downDelay = Math.floor((now - downAt) / 1000);
-    let waitedSinceLastTest = Math.floor((now - (last_try || now)) / 1000);
-    let waitRemaining = 1;
-    if (downDelay <= constants.DURATIONS.A_MINUTE) {
-      waitRemaining = constants.DURATIONS.TEN_SECONDS - waitedSinceLastTest;
-    }
-    else if (downDelay <= constants.DURATIONS.TEN_MINUTES) {
-      waitRemaining = constants.DURATIONS.A_MINUTE - waitedSinceLastTest;
-    }
-    else if (downDelay <= constants.DURATIONS.AN_HOUR) {
-      waitRemaining = constants.DURATIONS.TEN_MINUTES - waitedSinceLastTest;
-    }
-    else if (downDelay <= constants.DURATIONS.A_DAY) {
-      waitRemaining = constants.DURATIONS.AN_HOUR - waitedSinceLastTest;
-    }
-    else if (downDelay <= constants.DURATIONS.A_WEEK) {
-      waitRemaining = constants.DURATIONS.A_DAY - waitedSinceLastTest;
-    }
-    else if (downDelay <= constants.DURATIONS.A_MONTH) {
-      waitRemaining = constants.DURATIONS.A_WEEK - waitedSinceLastTest;
-    }
-    // Else do not check it, DOWN for too long
-    return waitRemaining;
   }
 
   const checkPeerValidity = (p, node) => co(function *() {

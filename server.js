@@ -201,7 +201,6 @@ function Server (home, memoryOnly, overrideConf) {
 
   this.initPeer = () => co(function*(){
       logger.info('Storing self peer...');
-      yield Q.nbind(that.PeeringService.regularTestPeers, that.PeeringService);
       yield Q.nbind(that.PeeringService.regularSyncBlock, that.PeeringService);
   });
 

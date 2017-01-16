@@ -260,16 +260,6 @@ module.exports = () => {
         }, NO_LOGS)));
 
       program
-        .command('check-config')
-        .description('Checks the node\'s configuration')
-        .action(subCommand(service(function (server) {
-          return server.checkConfig()
-            .then(function () {
-              logger.warn('Configuration seems correct.');
-            })
-        })));
-
-      program
         .on('*', function (cmd) {
           console.log("Unknown command '%s'. Try --help for a listing of commands & options.", cmd);
           onResolve();

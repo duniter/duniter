@@ -17,6 +17,7 @@ const wizardDependency = require('./app/modules/wizard');
 const genDependency = require('./app/modules/gen');
 const syncDependency = require('./app/modules/synchronization');
 const resetDependency = require('./app/modules/reset');
+const checkConfDependency = require('./app/modules/check-config');
 
 const MINIMAL_DEPENDENCIES = [
   { name: 'duniter-config',    required: configDependency }
@@ -28,6 +29,7 @@ const DEFAULT_DEPENDENCIES = [
   { name: 'duniter-wizard',    required: wizardDependency },
   { name: 'duniter-gen',       required: genDependency },
   { name: 'duniter-reset',     required: resetDependency },
+  { name: 'duniter-chkconf',   required: checkConfDependency },
   { name: 'duniter-keypair',   required: dkeypairDependency }
 ];
 

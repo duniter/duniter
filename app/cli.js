@@ -270,44 +270,6 @@ module.exports = () => {
         })));
 
       program
-        .command('reset [config|data|peers|tx|stats|all]')
-        .description('Reset configuration, data, peers, transactions or everything in the database')
-        .action(subCommand((type) => {
-          let init = ['data', 'all'].indexOf(type) !== -1 ? getServer.bind(getServer, program) : connect;
-          return init(function (server) {
-            if (!~['config', 'data', 'peers', 'stats', 'all'].indexOf(type)) {
-              throw constants.ERRORS.CLI_CALLERR_RESET;
-            }
-            return co(function*() {
-              try {
-                if (type == 'data') {
-                  yield server.resetData();
-                  logger.warn('Data successfully reseted.');
-                }
-                if (type == 'peers') {
-                  yield server.resetPeers();
-                  logger.warn('Peers successfully reseted.');
-                }
-                if (type == 'stats') {
-                  yield server.resetStats();
-                  logger.warn('Stats successfully reseted.');
-                }
-                if (type == 'config') {
-                  yield server.resetConf();
-                  logger.warn('Configuration successfully reseted.');
-                }
-                if (type == 'all') {
-                  yield server.resetAll();
-                  logger.warn('Data & Configuration successfully reseted.');
-                }
-              } catch (e) {
-                logger.error(e);
-              }
-            });
-          }, type != 'peers')(type);
-        }));
-
-      program
         .on('*', function (cmd) {
           console.log("Unknown command '%s'. Try --help for a listing of commands & options.", cmd);
           onResolve();
@@ -328,42 +290,6 @@ module.exports = () => {
               }
             }
           })
-        };
-      }
-
-      function connect(callback, useDefaultConf) {
-        return function () {
-          const cbArgs = arguments;
-          const dbName = program.mdb || "duniter_default";
-          const dbHome = program.home;
-
-          const home = directory.getHome(dbName, dbHome);
-          const theServer = duniter(home, program.memory === true, commandLineConf(program));
-
-          // If ever the process gets interrupted
-          let isSaving = false;
-          closeCommand = () => co(function*() {
-            if (!isSaving) {
-              isSaving = true;
-              // Save DB
-              return theServer.disconnect();
-            }
-          });
-
-          // Initialize server (db connection, ...)
-          return theServer.plugFileSystem(useDefaultConf)
-            .then(() => theServer.loadConf())
-            .then(function () {
-              try {
-                cbArgs.length--;
-                cbArgs[cbArgs.length++] = theServer;
-                cbArgs[cbArgs.length++] = theServer.conf;
-                return callback.apply(this, cbArgs);
-              } catch(e) {
-                theServer.disconnect();
-                throw e;
-              }
-            });
         };
       }
 

@@ -202,23 +202,6 @@ module.exports = () => {
         })));
 
       program
-        .command('reapply-to [number]')
-        .description('Reapply reverted blocks until block #[number] is reached. EXPERIMENTAL')
-        .action(subCommand(service(function (number, server) {
-          return co(function *() {
-            try {
-              yield server.reapplyTo(number);
-            } catch (err) {
-              logger.error('Error during reapply:', err);
-            }
-            // Save DB
-            if (server) {
-              yield server.disconnect();
-            }
-          });
-        })));
-
-      program
         .on('*', function (cmd) {
           console.log("Unknown command '%s'. Try --help for a listing of commands & options.", cmd);
           onResolve();

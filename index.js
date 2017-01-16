@@ -11,13 +11,14 @@ const constants = require('./app/lib/constants');
 const wizard = require('./app/lib/wizard');
 const logger = require('./app/lib/logger')('duniter');
 
-const dkeypairDependency = require('duniter-keypair');
-const configDependency = require('./app/modules/config');
-const wizardDependency = require('./app/modules/wizard');
-const genDependency = require('./app/modules/gen');
-const syncDependency = require('./app/modules/synchronization');
-const resetDependency = require('./app/modules/reset');
+const dkeypairDependency  = require('duniter-keypair');
+const configDependency    = require('./app/modules/config');
+const wizardDependency    = require('./app/modules/wizard');
+const genDependency       = require('./app/modules/gen');
+const syncDependency      = require('./app/modules/synchronization');
+const resetDependency     = require('./app/modules/reset');
 const checkConfDependency = require('./app/modules/check-config');
+const exportBcDependency  = require('./app/modules/export-bc');
 
 const MINIMAL_DEPENDENCIES = [
   { name: 'duniter-config',    required: configDependency }
@@ -30,6 +31,7 @@ const DEFAULT_DEPENDENCIES = [
   { name: 'duniter-gen',       required: genDependency },
   { name: 'duniter-reset',     required: resetDependency },
   { name: 'duniter-chkconf',   required: checkConfDependency },
+  { name: 'duniter-exportbc',  required: exportBcDependency },
   { name: 'duniter-keypair',   required: dkeypairDependency }
 ];
 
@@ -165,6 +167,10 @@ function Stack(dependencies) {
     const dbName = program.mdb;
     const dbHome = program.home;
     const home = directory.getHome(dbName, dbHome);
+
+    if (command.logs === false) {
+      logger.mute();
+    }
 
     // Add log files for this instance
     logger.addHomeLogs(home);

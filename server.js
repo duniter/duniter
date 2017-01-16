@@ -200,8 +200,6 @@ function Server (home, memoryOnly, overrideConf) {
   this.recomputeSelfPeer = () => that.PeeringService.generateSelfPeer(that.conf, 0);
 
   this.initPeer = () => co(function*(){
-      yield that.checkConfig();
-      yield Q.nbind(that.PeeringService.regularCrawlPeers, that.PeeringService);
       logger.info('Storing self peer...');
       yield Q.nbind(that.PeeringService.regularTestPeers, that.PeeringService);
       yield Q.nbind(that.PeeringService.regularSyncBlock, that.PeeringService);

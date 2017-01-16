@@ -24,6 +24,7 @@ const revertDependency    = require('./app/modules/revert');
 const peerDependency      = require('./app/modules/peer');
 const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
+const crawlerDependency   = require('./app/modules/crawler');
 
 const MINIMAL_DEPENDENCIES = [
   { name: 'duniter-config',    required: configDependency }
@@ -42,6 +43,7 @@ const DEFAULT_DEPENDENCIES = [
   { name: 'duniter-peer',      required: peerDependency },
   { name: 'duniter-daemon',    required: daemonDependency },
   { name: 'duniter-psignal',   required: pSignalDependency },
+  { name: 'duniter-crawler',   required: crawlerDependency },
   { name: 'duniter-keypair',   required: dkeypairDependency }
 ];
 

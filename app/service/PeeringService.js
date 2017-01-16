@@ -20,7 +20,6 @@ const Transaction    = require('../lib/entity/transaction');
 const AbstractService = require('./AbstractService');
 const network = require('../lib/system/network');
 
-const DONT_IF_MORE_THAN_FOUR_PEERS = true;
 const CONST_BLOCKS_CHUNK = 50;
 
 const programStart = Date.now();
@@ -159,15 +158,6 @@ function PeeringService(server) {
     return server.singleWritePromise(_.extend({ documentType: 'peer' }, pretendedNewer));
   };
 
-  const crawlPeersFifo = async.queue((task, callback) => task(callback), 1);
-  let crawlPeersInterval = null;
-  this.regularCrawlPeers = function (done) {
-    if (crawlPeersInterval)
-      clearInterval(crawlPeersInterval);
-    crawlPeersInterval = setInterval(()  => crawlPeersFifo.push(crawlPeers), 1000 * conf.avgGenTime * constants.NETWORK.SYNC_PEERS_INTERVAL);
-    crawlPeers(DONT_IF_MORE_THAN_FOUR_PEERS, done);
-  };
-
   let askedCancel = false;
   let currentSyncP = Q();
   const syncBlockFifo = async.queue((task, callback) => task(callback), 1);
@@ -195,10 +185,8 @@ function PeeringService(server) {
 
   this.stopRegular = () => {
     askedCancel = true;
-    clearInterval(crawlPeersInterval);
     clearInterval(syncBlockInterval);
     clearInterval(testPeerFifoInterval);
-    crawlPeersFifo.kill();
     syncBlockFifo.kill();
     testPeerFifo.kill();
     return co(function *() {
@@ -293,82 +281,6 @@ function PeeringService(server) {
           ep.includes(theConf.remotehost) || ep.includes(theConf.remoteipv6) || ep.includes(theConf.remoteipv4))));
     });
   }
-
-  const crawlPeers = (dontCrawlIfEnoughPeers, done) => {
-    if (arguments.length == 1) {
-      done = dontCrawlIfEnoughPeers;
-      dontCrawlIfEnoughPeers = false;
-    }
-    logger.info('Crawling the network...');
-    return co(function *() {
-      try {
-        const peers = yield dal.listAllPeersWithStatusNewUPWithtout(selfPubkey);
-        if (peers.length > constants.NETWORK.COUNT_FOR_ENOUGH_PEERS && dontCrawlIfEnoughPeers == DONT_IF_MORE_THAN_FOUR_PEERS) {
-          return;
-        }
-        let peersToTest = peers.slice().map((p) => Peer.statics.peerize(p));
-        let tested = [];
-        const found = [];
-        while (peersToTest.length > 0) {
-          const results = yield peersToTest.map(crawlPeer);
-          tested = tested.concat(peersToTest.map((p) => p.pubkey));
-          // End loop condition
-          peersToTest.splice(0);
-          // Eventually continue the loop
-          for (let i = 0, len = results.length; i < len; i++) {
-            const res = results[i];
-            for (let j = 0, len2 = res.length; j < len2; j++) {
-              try {
-                const subpeer = res[j].leaf.value;
-                if (subpeer.currency && tested.indexOf(subpeer.pubkey) === -1) {
-                  const p = Peer.statics.peerize(subpeer);
-                  peersToTest.push(p);
-                  found.push(p);
-                }
-              } catch (e) {
-                logger.warn('Invalid peer %s', res[j]);
-              }
-            }
-          }
-          // Make unique list
-          peersToTest = _.uniq(peersToTest, false, (p) => p.pubkey);
-        }
-        logger.info('Crawling done.');
-        for (let i = 0, len = found.length; i < len; i++) {
-          let p = found[i];
-          try {
-            // Try to write it
-            p.documentType = 'peer';
-            yield server.singleWritePromise(p);
-          } catch(e) {
-            // Silent error
-          }
-        }
-        done();
-      } catch (e) {
-        done(e);
-      }
-    });
-  };
-
-  const crawlPeer = (aPeer) => co(function *() {
-    let subpeers = [];
-    try {
-      logger.debug('Crawling peers of %s %s', aPeer.pubkey.substr(0, 6), aPeer.getNamedURL());
-      const node = yield aPeer.connect();
-      yield checkPeerValidity(aPeer, node);
-      //let remotePeer = yield Q.nbind(node.network.peering.get)();
-      const json = yield node.getPeers.bind(node)({ leaves: true });
-      for (let i = 0, len = json.leaves.length; i < len; i++) {
-        let leaf = json.leaves[i];
-        let subpeer = yield node.getPeers.bind(node)({ leaf: leaf });
-        subpeers.push(subpeer);
-      }
-      return subpeers;
-    } catch (e) {
-      return subpeers;
-    }
-  });
 
   const testPeers = (displayDelays, done) => co(function *() {
     try {

@@ -160,7 +160,7 @@ function Node (dbName, options) {
           cli: [{
             name: 'execute',
             desc: 'Unit Test execution',
-            onPluggedDALExecute: (server, conf, program, params, startServices) => co(function*() {
+            onDatabaseExecute: (server, conf, program, params, startServices) => co(function*() {
               yield startServices();
               callback(null, server);
               yield Promise.resolve((res) => null); // Never ending

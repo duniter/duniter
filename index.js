@@ -263,7 +263,7 @@ function Stack(dependencies) {
         }
       }
 
-      return yield command.onPluggedDALExecute(server, conf, program, params,
+      return yield command.onDatabaseExecute(server, conf, program, params,
 
         // Start services and streaming between them
         () => co(function*() {

@@ -13,7 +13,7 @@ module.exports = {
     cli: [{
       name: 'peer [host] [port]',
       desc: 'Exchange peerings with another node',
-      onPluggedDALExecute: (server, conf, program, params) => co(function*() {
+      onDatabaseExecute: (server, conf, program, params) => co(function*() {
         const host = params[0];
         const port = params[1];
         const logger = server.logger;

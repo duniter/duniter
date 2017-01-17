@@ -7,7 +7,7 @@ module.exports = {
     cli: [{
       name: 'revert [count]',
       desc: 'Revert (undo + remove) the top [count] blocks from the blockchain. EXPERIMENTAL',
-      onPluggedDALExecute: (server, conf, program, params) => co(function*() {
+      onDatabaseExecute: (server, conf, program, params) => co(function*() {
         const count = params[0];
         const logger = server.logger;
         try {
@@ -23,7 +23,7 @@ module.exports = {
     },{
       name: 'revert-to [number]',
       desc: 'Revert (undo + remove) top blockchain blocks until block #[number] is reached. EXPERIMENTAL',
-      onPluggedDALExecute: (server, conf, program, params) => co(function*() {
+      onDatabaseExecute: (server, conf, program, params) => co(function*() {
         const number = params[0];
         const logger = server.logger;
         try {

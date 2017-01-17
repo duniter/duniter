@@ -8,7 +8,7 @@ module.exports = {
     cli: [{
       name: 'start',
       desc: 'Start Duniter node daemon.',
-      onPluggedDALExecute: (server, conf, program, params, startServices) => co(function*() {
+      onDatabaseExecute: (server, conf, program, params, startServices) => co(function*() {
         const logger = server.logger;
 
         logger.info(">> Server starting...");

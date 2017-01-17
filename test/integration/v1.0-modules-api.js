@@ -88,7 +88,7 @@ describe("v1.0 Module API", () => {
           cli: [{
             name: 'gimme-conf',
             desc: 'Returns the configuration object.',
-            onPluggedDALExecute: (server, conf, program, params, startServices, stopServices) => co(function*() {
+            onDatabaseExecute: (server, conf, program, params, startServices, stopServices) => co(function*() {
               // Gimme the conf!
               return conf;
             })
@@ -177,7 +177,7 @@ describe("v1.0 Module API", () => {
           cli: [{
             name: 'hello-service',
             desc: 'Says hello to the world, at service phase. And feed INPUT with a transaction.',
-            onPluggedDALExecute: (duniterServer, conf, program, programArgs, startServices, stopServices) => co(function*(){
+            onDatabaseExecute: (duniterServer, conf, program, programArgs, startServices, stopServices) => co(function*(){
               yield startServices();
               fakeI.push("Version: 10\n" +
                 "Type: Transaction\n" +
@@ -211,7 +211,7 @@ describe("v1.0 Module API", () => {
           cli: [{
             name: 'bye-service',
             desc: 'Says goodbye to the world, at service phase.',
-            onPluggedDALExecute: (duniterServer, conf, program, programArgs, startServices, stopServices) => co(function*(){
+            onDatabaseExecute: (duniterServer, conf, program, programArgs, startServices, stopServices) => co(function*(){
               yield stopServices();
               return Promise.resolve();
             })

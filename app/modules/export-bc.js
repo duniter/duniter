@@ -10,7 +10,7 @@ module.exports = {
       name: 'export-bc [upto]',
       desc: 'Exports the whole blockchain as JSON array, up to [upto] block number (excluded).',
       logs: false,
-      onPluggedDALExecute: (server, conf, program, params) => co(function*() {
+      onDatabaseExecute: (server, conf, program, params) => co(function*() {
         const upto = params[0];
         const logger = server.logger;
         try {

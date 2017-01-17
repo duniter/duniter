@@ -46,7 +46,7 @@ function Key(pub, sec) {
 
   this.signSync = (msg) => {
     const m = nacl.util.decodeUTF8(msg);
-    const signedMsg = naclBinding.sign(m, rawSec()); // TODO: super weird
+    const signedMsg = naclBinding.sign(m, rawSec());
     const sig = new Uint8Array(crypto_sign_BYTES);
     for (let i = 0; i < sig.length; i++) {
       sig[i] = signedMsg[i];

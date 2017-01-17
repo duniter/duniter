@@ -1484,7 +1484,7 @@ function median(values) {
     // Even number: the median is the average between the 2 central values, ceil rounded.
     const firstValue = values[nbValues / 2];
     const secondValue = values[nbValues / 2 - 1];
-    med = ((firstValue + secondValue) / 2); // TODO v1.0 median ceil rounded
+    med = ((firstValue + secondValue) / 2);
   } else {
     med = values[(nbValues + 1) / 2 - 1];
   }

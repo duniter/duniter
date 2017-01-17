@@ -67,7 +67,6 @@ function FileDAL(params) {
     }
     logger.debug("Upgrade database...");
     yield that.metaDAL.upgradeDatabase();
-    // TODO: remove as of v1.0
     const latestMember = yield that.iindexDAL.getLatestMember();
     if (latestMember && that.wotb.getWoTSize() > latestMember.wotb_id + 1) {
       logger.warn('Maintenance: cleaning wotb...');

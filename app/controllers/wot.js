@@ -104,7 +104,6 @@ function WOTBinding (server) {
         cert.sigDate = certifier.buid;
         cert.wasMember = true; // As we checked if(certified)
         if (!cert.cert_time) {
-          // TODO: would be more efficient to save medianTime on certification reception
           let certBlock = yield server.dal.getBlock(cert.block_number);
           cert.cert_time = {
             block: certBlock.number,
@@ -164,7 +163,6 @@ function WOTBinding (server) {
         cert.sigDate = certified.buid;
         cert.wasMember = true; // As we checked if(certified)
         if (!cert.cert_time) {
-          // TODO: would be more efficient to save medianTime on certification reception (note: now partially done with INDEX)
           let certBlock = yield server.dal.getBlock(cert.block_number);
           cert.cert_time = {
             block: certBlock.number,

@@ -348,7 +348,6 @@ function BlockGenerator(mainContext, prover) {
     if (!isIdentityLeaving) {
       if (!current) {
         // Look for certifications from initial joiners
-        // TODO: check if this is still working
         const certs = yield dal.certsNotLinkedToTarget(idHash);
         foundCerts = _.filter(certs, function(cert){
           // Add 'joiners && ': special case when block#0 not written ANd not joiner yet (avoid undefined error)

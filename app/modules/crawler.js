@@ -34,17 +34,21 @@ function Crawler() {
 
   this.pullBlocks = blockCrawler.pullBlocks;
 
-  this.startService = (server, conf) => [
-    peerCrawler.startService(server, conf),
-    peerTester.startService(server, conf),
-    blockCrawler.startService(server, conf)
-  ];
+  this.startService = (server, conf) => co(function*() {
+    return yield [
+      peerCrawler.startService(server, conf),
+      peerTester.startService(server, conf),
+      blockCrawler.startService(server, conf)
+    ];
+  });
 
-  this.stopService = () => [
-    peerCrawler.stopService(),
-    peerTester.stopService(),
-    blockCrawler.stopService()
-  ];
+  this.stopService = () => co(function*() {
+    return yield [
+      peerCrawler.stopService(),
+      peerTester.stopService(),
+      blockCrawler.stopService()
+    ];
+  });
 }
 
 function PeerCrawler() {

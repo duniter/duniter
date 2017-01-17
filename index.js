@@ -26,6 +26,7 @@ const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
 const crawlerDependency   = require('./app/modules/crawler');
 const proverDependency    = require('./app/modules/prover');
+const bmapiDependency     = require('./app/modules/bmapi');
 
 const MINIMAL_DEPENDENCIES = [
   { name: 'duniter-config',    required: configDependency }
@@ -44,6 +45,7 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-daemon',    required: daemonDependency },
   { name: 'duniter-psignal',   required: pSignalDependency },
   { name: 'duniter-crawler',   required: crawlerDependency },
+  { name: 'duniter-bmapi',     required: bmapiDependency },
   { name: 'duniter-keypair',   required: dkeypairDependency }
 ]);
 
@@ -162,7 +164,7 @@ function Stack(dependencies) {
     if (def.service) {
       // To feed data coming from some I/O (network, disk, other module, ...)
       if (def.service.input) {
-        streams.input.push(def.service.input);
+        streams.input.push(def.service.input());
       }
       // To handle data that has been submitted by INPUT stream
       if (def.service.process) {
@@ -330,10 +332,6 @@ function commandLineConf(program, conf) {
       mdb: program.mdb,
       home: program.home
     },
-    net: {
-      upnp: program.upnp,
-      noupnp: program.noupnp
-    },
     logs: {
       http: program.httplogs,
       nohttp: program.nohttplogs
@@ -355,8 +353,6 @@ function commandLineConf(program, conf) {
   if (cli.server.remote.ipv4 != undefined)  conf.remoteipv4 = cli.server.remote.ipv4;
   if (cli.server.remote.ipv6 != undefined)  conf.remoteipv6 = cli.server.remote.ipv6;
   if (cli.server.remote.port != undefined)  conf.remoteport = cli.server.remote.port;
-  if (cli.net.upnp)                         conf.upnp = true;
-  if (cli.net.noupnp)                       conf.upnp = false;
   if (cli.cpu)                              conf.cpu = Math.max(0.01, Math.min(1.0, cli.cpu));
   if (cli.logs.http)                        conf.httplogs = true;
   if (cli.logs.nohttp)                      conf.httplogs = false;
@@ -376,22 +372,6 @@ function configure(program, server, conf) {
   return co(function *() {
     if (typeof server == "string" || typeof conf == "string") {
       throw constants.ERRORS.CLI_CALLERR_CONFIG;
-    }
-    let wiz = wizard();
-    // UPnP override
-    if (program.noupnp === true) {
-      conf.upnp = false;
-    }
-    if (program.upnp === true) {
-      conf.upnp = true;
-    }
-    // Network autoconf
-    const autoconfNet = program.autoconf
-      || !(conf.ipv4 || conf.ipv6)
-      || !(conf.remoteipv4 || conf.remoteipv6 || conf.remotehost)
-      || !(conf.port && conf.remoteport);
-    if (autoconfNet) {
-      yield Q.nbind(wiz.networkReconfiguration, wiz)(conf, autoconfNet, program.noupnp);
     }
     // Try to add an endpoint if provided
     if (program.addep) {

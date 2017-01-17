@@ -18,7 +18,6 @@ const directory   = require('./app/lib/system/directory');
 const dos2unix    = require('./app/lib/system/dos2unix');
 const Synchroniser = require('./app/lib/sync');
 const multicaster = require('./app/lib/streams/multicaster');
-const upnp        = require('./app/lib/system/upnp');
 const rawer       = require('./app/lib/ucp/rawer');
 
 function Server (home, memoryOnly, overrideConf) {
@@ -422,12 +421,6 @@ function Server (home, memoryOnly, overrideConf) {
       .pipe(this.router());
   };
 
-  this.upnp = () => co(function *() {
-    const upnpAPI = yield upnp(that.conf.port, that.conf.remoteport);
-    that.upnpAPI = upnpAPI;
-    return upnpAPI;
-  });
-
   this.applyCPU = (cpu) => that.BlockchainService.changeProverCPUSetting(cpu);
   
   this.rawer = rawer;
@@ -450,21 +443,6 @@ function Server (home, memoryOnly, overrideConf) {
      * HTTP ROUTING
      **************/
     that.router(that.conf.routing);
-
-    /***************
-     *    UPnP
-     **************/
-    if (that.conf.upnp) {
-      try {
-        if (that.upnpAPI) {
-          that.upnpAPI.stopRegular();
-        }
-        yield that.upnp();
-        that.upnpAPI.startRegular();
-      } catch (e) {
-        logger.warn(e);
-      }
-    }
 
     /***********************
      * CRYPTO NETWORK LAYER

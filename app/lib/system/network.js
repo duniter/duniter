@@ -4,7 +4,6 @@ const co = require('co');
 const os = require('os');
 const Q = require('q');
 const _ = require('underscore');
-const upnp = require('nnupnp');
 const ddos = require('ddos');
 const http = require('http');
 const express = require('express');
@@ -17,74 +16,21 @@ const constants = require('../constants');
 const sanitize = require('../streams/sanitize');
 const logger = require('../logger')('network');
 
+const bmapiMethods = require('../../modules/bmapi').duniter.methods;
+
 module.exports = {
 
   getEndpoint: getEndpoint,
-  getBestLocalIPv4: () => getBestLocal('IPv4'),
-  getBestLocalIPv6: function getFirstGlobalIPv6() {
-    const osInterfaces = module.exports.listInterfaces();
-    for (let netInterface of osInterfaces) {
-      const addresses = netInterface.addresses;
-      const filtered = _(addresses).where({family: 'IPv6', scopeid: 0, internal: false });
-      const filtered2 = _(filtered).filter((address) => !address.address.match(/^fe80/) && !address.address.match(/^::1/));
-      if (filtered2[0]) {
-        return filtered2[0].address;
-      }
-    }
-    return null;
-  },
+  getBestLocalIPv4: bmapiMethods.getBestLocalIPv4,
+  getBestLocalIPv6: bmapiMethods.getBestLocalIPv6,
   getLANIPv4: () => getLAN('IPv4'),
   getLANIPv6: () => getLAN('IPv6'),
 
-  listInterfaces: () => {
-    const netInterfaces = os.networkInterfaces();
-    const keys = _.keys(netInterfaces);
-    const res = [];
-    for (const name of keys) {
-      res.push({
-        name: name,
-        addresses: netInterfaces[name]
-      });
-    }
-    return res;
-  },
+  listInterfaces: bmapiMethods.listInterfaces,
 
-  upnpConf: (noupnp) => co(function *() {
-    const conf = {};
-    const client = upnp.createClient();
-    // Look for 2 random ports
-    const privatePort = module.exports.getRandomPort(conf);
-    const publicPort = privatePort;
-    logger.info('Checking UPnP features...');
-    if (noupnp) {
-      throw Error('No UPnP');
-    }
-    const publicIP = yield Q.nbind(client.externalIp, client)();
-    yield Q.nbind(client.portMapping, client)({
-      public: publicPort,
-      private: privatePort,
-      ttl: 120
-    });
-    const privateIP = yield Q.Promise((resolve, reject) => {
-      client.findGateway((err, res, localIP) => {
-        if (err) return reject(err);
-        resolve(localIP);
-      });
-    });
-    conf.remoteipv4 = publicIP.match(constants.IPV4_REGEXP) ? publicIP : null;
-    conf.remoteport = publicPort;
-    conf.port = privatePort;
-    conf.ipv4 = privateIP.match(constants.IPV4_REGEXP) ? privateIP : null;
-    return conf;
-  }),
+  upnpConf: bmapiMethods.upnpConf,
 
-  getRandomPort: (conf) => {
-    if (conf && conf.remoteport) {
-      return conf.remoteport;
-    } else {
-      return ~~(Math.random() * (65536 - constants.NETWORK.PORT.START)) + constants.NETWORK.PORT.START;
-    }
-  },
+  getRandomPort: bmapiMethods.getRandomPort,
 
   createServersAndListen: (name, interfaces, httpLogs, staticPath, routingCallback, listenWebSocket, enableFileUpload) => co(function *() {
 
@@ -320,43 +266,6 @@ function getEndpoint(theConf) {
     endpoint += ' ' + theConf.remoteport;
   }
   return endpoint;
-}
-
-function getBestLocal(family) {
-  let netInterfaces = os.networkInterfaces();
-  let keys = _.keys(netInterfaces);
-  let res = [];
-  for (const name of keys) {
-    let addresses = netInterfaces[name];
-    for (const addr of addresses) {
-      if (!family || addr.family == family) {
-        res.push({
-          name: name,
-          value: addr.address
-        });
-      }
-    }
-  }
-  const interfacePriorityRegCatcher = [
-    /^tun\d/,
-    /^enp\ds\d/,
-    /^enp\ds\df\d/,
-    /^eth\d/,
-    /^Ethernet/,
-    /^wlp\ds\d/,
-    /^wlan\d/,
-    /^Wi-Fi/,
-    /^lo/,
-    /^Loopback/,
-    /^None/
-  ];
-  const best = _.sortBy(res, function(entry) {
-    for(let priority in interfacePriorityRegCatcher){
-      if (entry.name.match(interfacePriorityRegCatcher[priority])) return priority;
-    }
-    return interfacePriorityRegCatcher.length;
-  })[0];
-  return (best && best.value) || "";
 }
 
 function getLAN(family) {

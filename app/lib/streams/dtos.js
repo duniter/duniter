@@ -397,41 +397,6 @@ dtos.UDHistory = {
   }
 };
 
-dtos.NetAddress = {
-  "address": String,
-  "family": String,
-  "internal": Boolean,
-  "mac": String,
-  "netmask": String
-};
-
-dtos.NetworkInterface = {
-  "name": String,
-  "addresses": [dtos.NetAddress]
-};
-
-dtos.NetworkConf = {
-  "local": {
-    "ipv4": String,
-    "ipv6": String,
-    "port": Number
-  },
-  "remote": {
-    "ipv4": String,
-    "ipv6": String,
-    "port": Number,
-    "dns": String,
-    "upnp": Boolean
-  }
-};
-
-dtos.NetworkInterfaces = {
-  "local": [dtos.NetworkInterface],
-  "remote": [dtos.NetworkInterface],
-  "auto": dtos.NetworkConf,
-  "conf": dtos.NetworkConf
-};
-
 dtos.Boolean = {
   "success": Boolean
 };

@@ -8,7 +8,6 @@ const defaultConf = function() {
     "port": constants.NETWORK.DEFAULT_PORT,
     "ipv4": "127.0.0.1",
     "ipv6": null,
-    "upnp": true,
     "remotehost": null,
     "remoteipv4": null,
     "remoteipv6": null,

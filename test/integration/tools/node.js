@@ -145,17 +145,10 @@ function Node (dbName, options) {
           next();
         }
       ], function(err) {
-        err ? reject(err) : resolve(that.server);
+        err ? reject(err) : resolve();
         done && done(err);
       });
-    })
-      .then((server) => co(function*() {
-        const bmapi = yield bma(server, [{
-          ip: server.conf.ipv4,
-          port: server.conf.port
-        }], true);
-        return bmapi.openConnections();
-      }));
+    });
   };
 
   function service(callback) {

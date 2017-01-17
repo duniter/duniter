@@ -24,7 +24,7 @@ describe("Integration", function() {
 
   describe("Node 1", function() {
 
-    const node1 = node('db1', { currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, upnp: false, httplogs: false,
+    const node1 = node('db1', { currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, httplogs: false,
       rootoffset: 0,
       sigQty: 1,
       pair: {
@@ -173,7 +173,7 @@ describe("Integration", function() {
   describe("Testing leavers", function(){
 
     const node3 = duniter('/db3', MEMORY_MODE, {
-      currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, upnp: false, httplogs: false,
+      currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, httplogs: false,
       rootoffset: 0,
       sigQty: 1, sigPeriod: 0,
       pair: {

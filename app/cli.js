@@ -48,8 +48,6 @@ module.exports = () => {
         .option('--remote6 <host>', 'Remote interface for IPv6 access')
         .option('-p, --port <port>', 'Port to listen for requests', parseInt)
         .option('--remotep <port>', 'Remote port others may use to contact this node')
-        .option('--upnp', 'Use UPnP to open remote port')
-        .option('--noupnp', 'Do not use UPnP to open remote port')
         .option('--addep <endpoint>', 'With `config` command, add given endpoint to the list of endpoints of this node')
         .option('--remep <endpoint>', 'With `config` command, remove given endpoint to the list of endpoints of this node')
 

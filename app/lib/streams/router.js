@@ -6,13 +6,13 @@ const stream   = require('stream');
 const Peer     = require('../entity/peer');
 const constants = require('../constants');
 
-module.exports = function (PeeringService, conf, dal) {
-  return new Router(PeeringService, conf, dal);
+module.exports = function (PeeringService, dal) {
+  return new Router(PeeringService, dal);
 };
 
-function Router (PeeringService, conf, dal) {
+function Router (PeeringService, dal) {
   
-  this.setConfDAL = (theConf, theDAL) => {
+  this.setConfDAL = (theDAL) => {
     dal = theDAL;
   };
 

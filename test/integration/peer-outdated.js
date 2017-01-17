@@ -44,11 +44,7 @@ describe("Peer document expiry", function() {
       const bmaAPI = yield bma(server);
       yield bmaAPI.openConnections();
       server.bma = bmaAPI;
-      server
-        .pipe(server.router()) // The router asks for multicasting of documents
-        .pipe(multicaster())
-        .pipe(server.router());
-      return server.start();
+      require('../../app/modules/router').duniter.methods.routeToNetwork(server);
     }), Q());
 
     // Server 1

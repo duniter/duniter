@@ -18,6 +18,12 @@ if (constants.MUTE_LOGS_DURING_UNIT_TESTS) {
   require('../../app/lib/logger')().mute();
 }
 
+// Trace these errors
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection: ' + reason);
+  console.error(reason);
+});
+
 const MEMORY_MODE = true;
 const commonConf = {
   ipv4: '127.0.0.1',

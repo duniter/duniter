@@ -15,7 +15,7 @@ const crawler = new Crawler();
 module.exports = {
   duniter: {
     service: {
-      neutral: crawler
+      neutral: () => crawler
     },
 
     methods: { pullBlocks: crawler.pullBlocks }

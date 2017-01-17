@@ -12,12 +12,10 @@ const parsers     = require('./app/lib/streams/parsers');
 const constants   = require('./app/lib/constants');
 const fileDAL     = require('./app/lib/dal/fileDAL');
 const jsonpckg    = require('./package.json');
-const router      = require('./app/lib/streams/router');
 const keyring      = require('./app/lib/crypto/keyring');
 const directory   = require('./app/lib/system/directory');
 const dos2unix    = require('./app/lib/system/dos2unix');
 const Synchroniser = require('./app/lib/sync');
-const multicaster = require('./app/lib/streams/multicaster');
 const rawer       = require('./app/lib/ucp/rawer');
 
 function Server (home, memoryOnly, overrideConf) {
@@ -134,7 +132,6 @@ function Server (home, memoryOnly, overrideConf) {
     [that.IdentityService, that.MembershipService, that.PeeringService, that.BlockchainService, that.TransactionsService].map((service) => {
       service.setConfDAL(that.conf, that.dal, that.keyPair);
     });
-    that.router().setConfDAL(that.conf, that.dal);
     return that.conf;
   });
 
@@ -185,13 +182,6 @@ function Server (home, memoryOnly, overrideConf) {
   this.submitP = (obj, isInnerWrite) => Q.nbind(this.submit, this)(obj, isInnerWrite);
 
   this.initDAL = () => this.dal.init();
-
-  this.start = () => co(function*(){
-    yield that.checkConfig();
-    // Add signing & public key functions to PeeringService
-    logger.info('Node version: ' + that.version);
-    logger.info('Node pubkey: ' + that.PeeringService.pubkey);
-  });
 
   this.recomputeSelfPeer = () => that.PeeringService.generateSelfPeer(that.conf, 0);
 
@@ -368,16 +358,6 @@ function Server (home, memoryOnly, overrideConf) {
 
   this.singleWritePromise = (obj) => that.submit(obj);
 
-  let theRouter;
-
-  this.router = (active) => {
-    if (!theRouter) {
-      theRouter = router(that.PeeringService, that.conf, that.dal);
-    }
-    theRouter.setActive(active !== false);
-    return theRouter;
-  };
-
   /**
    * Synchronize the server with another server.
    *
@@ -407,20 +387,6 @@ function Server (home, memoryOnly, overrideConf) {
     return remote.test();
   };
 
-  /**
-   * Enable routing features:
-   *   - The server will try to send documents to the network
-   *   - The server will eventually be notified of network failures
-   */
-  this.routing = () => {
-    // The router asks for multicasting of documents
-    this.pipe(this.router())
-      // The documents get sent to peers
-      .pipe(multicaster(this.conf))
-      // The multicaster may answer 'unreachable peer'
-      .pipe(this.router());
-  };
-
   this.applyCPU = (cpu) => that.BlockchainService.changeProverCPUSetting(cpu);
   
   this.rawer = rawer;
@@ -436,23 +402,6 @@ function Server (home, memoryOnly, overrideConf) {
    * @param linesQuantity
    */
   this.getLastLogLines = (linesQuantity) => this.dal.getLogContent(linesQuantity);
-
-  this.startServices = () => co(function*(){
-
-    /***************
-     * HTTP ROUTING
-     **************/
-    that.router(that.conf.routing);
-
-    /***********************
-     * CRYPTO NETWORK LAYER
-     **********************/
-    yield that.start();
-  });
-
-  this.stopServices = () => co(function*(){
-    that.router(false);
-  });
 }
 
 util.inherits(Server, stream.Duplex);

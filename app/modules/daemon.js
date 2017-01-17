@@ -11,13 +11,14 @@ module.exports = {
       onPluggedDALExecute: (server, conf, program, params, startServices) => co(function*() {
         const logger = server.logger;
 
-        logger.info(">> NODE STARTING");
+        logger.info(">> Server starting...");
 
-        // Routing documents
-        server.routing();
+        yield server.checkConfig();
+        // Add signing & public key functions to PeeringService
+        logger.info('Node version: ' + server.version);
+        logger.info('Node pubkey: ' + server.conf.pair.pub);
 
         // Services
-        yield server.startServices();
         yield startServices();
 
         logger.info('>> Server ready!');

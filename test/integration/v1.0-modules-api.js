@@ -201,8 +201,8 @@ describe("v1.0 Module API", () => {
           }],
           service: {
             input: () => fakeI,
-            process: fakeP,
-            output: fakeO
+            process: () => fakeP,
+            output: () => fakeO
           }
         }
       };
@@ -218,8 +218,8 @@ describe("v1.0 Module API", () => {
           }],
           service: {
             input: () => fakeI,
-            process: fakeP,
-            output: fakeO
+            process: () => fakeP,
+            output: () => fakeO
           }
         }
       };

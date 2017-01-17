@@ -88,14 +88,8 @@ describe("Network", function() {
               return bmaAPI.openConnections()
                 .then(() => {
                   server.bma = bmaAPI;
-                  server
-                    .pipe(server.router()) // The router asks for multicasting of documents
-                    .pipe(multicaster())
-                    .pipe(server.router());
+                  require('../../app/modules/router').duniter.methods.routeToNetwork(server);
                 });
-            })
-            .then(function(){
-              return server.start();
             });
         });
     }, Q())

@@ -50,8 +50,8 @@ module.exports = {
     yield tac.join();
 
     // Each server forwards to each other
-    s1.pipe(s1.router()).pipe(multicaster());
-    s2.pipe(s2.router()).pipe(multicaster());
+    require('../../../app/modules/router').duniter.methods.routeToNetwork(s1);
+    require('../../../app/modules/router').duniter.methods.routeToNetwork(s2);
 
     return { s1, s2, cat, tac };
   }),
@@ -283,11 +283,7 @@ module.exports = {
       const bmaAPI = yield bma(server);
       yield bmaAPI.openConnections();
       server.bma = bmaAPI;
-      server
-        .pipe(server.router()) // The router asks for multicasting of documents
-        .pipe(multicaster())
-        .pipe(server.router());
-      return server.start();
+      require('../../../app/modules/router').duniter.methods.routeToNetwork(server);
     });
 
     const prover = require('../../../app/modules/prover').duniter.methods.prover();

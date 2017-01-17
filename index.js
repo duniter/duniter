@@ -27,6 +27,7 @@ const pSignalDependency   = require('./app/modules/peersignal');
 const crawlerDependency   = require('./app/modules/crawler');
 const proverDependency    = require('./app/modules/prover');
 const bmapiDependency     = require('./app/modules/bmapi');
+const routerDependency    = require('./app/modules/router');
 
 const MINIMAL_DEPENDENCIES = [
   { name: 'duniter-config',    required: configDependency }
@@ -46,6 +47,7 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-psignal',   required: pSignalDependency },
   { name: 'duniter-crawler',   required: crawlerDependency },
   { name: 'duniter-bmapi',     required: bmapiDependency },
+  { name: 'duniter-router',    required: routerDependency },
   { name: 'duniter-keypair',   required: dkeypairDependency }
 ]);
 
@@ -168,15 +170,15 @@ function Stack(dependencies) {
       }
       // To handle data that has been submitted by INPUT stream
       if (def.service.process) {
-        streams.process.push(def.service.process);
+        streams.process.push(def.service.process());
       }
       // To handle data that has been validated by PROCESS stream
       if (def.service.output) {
-        streams.output.push(def.service.output);
+        streams.output.push(def.service.output());
       }
       // Special service which does not stream anything particular (ex.: piloting the `server` object)
       if (def.service.neutral) {
-        streams.neutral.push(def.service.neutral);
+        streams.neutral.push(def.service.neutral());
       }
     }
   };
@@ -297,6 +299,7 @@ function Stack(dependencies) {
     // Trace these errors
     process.on('unhandledRejection', (reason) => {
       logger.error('Unhandled rejection: ' + reason);
+      logger.error(reason);
     });
 
     // Executes the command
@@ -363,9 +366,7 @@ function commandLineConf(program, conf) {
   if (cli.timeout)                          conf.timeout = cli.timeout;
   if (cli.forksize != null)                 conf.forksize = cli.forksize;
 
-  // Specific internal settings
-  conf.createNext = true;
-  return _(conf).extend({routing: true});
+  return conf;
 }
 
 function configure(program, server, conf) {

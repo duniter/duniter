@@ -7,7 +7,7 @@ const constants = require('../lib/constants');
 module.exports = {
   duniter: {
     service: {
-      neutral: new PeerSignalEmitter()
+      neutral: () => new PeerSignalEmitter()
     }
   }
 }

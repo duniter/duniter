@@ -149,7 +149,7 @@ function PermanentProver() {
   });
 
   this.blockchainChanged = (gottenBlock) => co(function*() {
-    if (!gottenBlock || !lastComputedBlock || gottenBlock.hash !== lastComputedBlock.hash) {
+    if (server && (!gottenBlock || !lastComputedBlock || gottenBlock.hash !== lastComputedBlock.hash)) {
       // Cancel any processing proof
       yield server.BlockchainService.prover.cancel(gottenBlock);
       // If we were waiting, stop it and process the continuous generation

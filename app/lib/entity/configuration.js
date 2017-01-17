@@ -33,7 +33,6 @@ const defaultConf = function() {
     "httplogs": false,
     "udid2": false,
     "timeout": 3000,
-    "routing": false,
     "isolate": false,
     "forksize": constants.BRANCHES.DEFAULT_WINDOW_SIZE
   };

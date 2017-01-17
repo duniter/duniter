@@ -125,20 +125,8 @@ function Node (dbName, options) {
         function (server, next){
           // Launching server
           that.server = server;
-          co(function*(){
-            try {
-              yield that.server.start();
-              if (server.conf.routing) {
-                server
-                  .pipe(server.router()) // The router asks for multicasting of documents
-                  .pipe(multicaster());
-              }
-              started = true;
-              next();
-            } catch (e) {
-              next(e);
-            }
-          });
+          started = true;
+          next();
         },
         function (next) {
           that.http = contacter(options.remoteipv4, options.remoteport);

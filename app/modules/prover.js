@@ -6,12 +6,10 @@ const stream = require('stream');
 const constants = require('../lib/constants');
 const permanentProver = require('../lib/computation/permanentProver');
 
-const prover = new Prover();
-
 module.exports = {
   duniter: {
     service: {
-      output: prover
+      output: () => new Prover()
     },
 
     methods: {

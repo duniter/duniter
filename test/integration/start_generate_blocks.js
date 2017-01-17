@@ -70,11 +70,7 @@ describe("Generation", function() {
         yield server.initWithDAL();
         server.bma = yield bma(server);
         yield server.bma.openConnections();
-        server
-          .pipe(server.router()) // The router asks for multicasting of documents
-          .pipe(multicaster())
-          .pipe(server.router());
-        yield server.start();
+        require('../../app/modules/router').duniter.methods.routeToNetwork(server);
         yield server.PeeringService.generateSelfPeer(server.conf, 0);
         const prover = require('../../app/modules/prover').duniter.methods.prover();
         server.startBlockComputation = () => prover.startService(server);

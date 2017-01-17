@@ -9,18 +9,18 @@ const permanentProver = require('../lib/computation/permanentProver');
 module.exports = {
   duniter: {
     service: {
-      output: () => new Prover()
+      output: (server, conf, logger) => new Prover(server, conf, logger)
     },
 
     methods: {
-      prover: () => new Prover()
+      prover: (server, conf, logger) => new Prover(server, conf, logger)
     }
   }
 }
 
-function Prover() {
+function Prover(server) {
 
-  const permaProver = this.permaProver = permanentProver();
+  const permaProver = this.permaProver = permanentProver(server);
 
   stream.Transform.call(this, { objectMode: true });
 
@@ -32,8 +32,8 @@ function Prover() {
     done && done();
   };
 
-  this.startService = (server) => co(function*() {
-    permaProver.allowedToStart(server);
+  this.startService = () => co(function*() {
+    permaProver.allowedToStart();
   });
 
   this.stopService = () => co(function*() {

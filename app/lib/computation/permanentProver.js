@@ -7,13 +7,10 @@ const parsers = require('../streams/parsers');
 
 module.exports = (server) => new PermanentProver(server);
 
-function PermanentProver() {
+function PermanentProver(server) {
 
   const logger = require('../logger')('permprover');
   const that = this;
-
-  // The server on which is done the proof
-  let server;
 
   let blockchainChangedResolver = null,
       promiseOfWaitingBetween2BlocksOfOurs = null,
@@ -23,8 +20,7 @@ function PermanentProver() {
   let resolveContinuePromise = null;
   let continuePromise = new Promise((resolve) => resolveContinuePromise = resolve);
 
-  this.allowedToStart = (onServer) => {
-    server = onServer;
+  this.allowedToStart = () => {
     resolveContinuePromise(true);
   };
 

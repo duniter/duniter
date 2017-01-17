@@ -150,6 +150,13 @@ function Node (dbName, options) {
               _.extend(conf, overConf);
             })
           },
+          service: {
+            process: (server) => _.extend(server, {
+              startService: () => {
+                logger.debug('Server Servie Started!');
+              }
+            })
+          },
           cli: [{
             name: 'execute',
             desc: 'Unit Test execution',

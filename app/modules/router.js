@@ -10,12 +10,12 @@ const multicaster = require('../lib/streams/multicaster');
 module.exports = {
   duniter: {
     service: {
-      output: () => new Router()
+      output: (server, conf, logger) => new Router(server, conf, logger)
     },
     methods: {
       routeToNetwork: (server) => {
-        const router = new Router();
-        router.startService(server);
+        const router = new Router(server);
+        router.startService();
         server.pipe(router);
       }
     }
@@ -26,7 +26,7 @@ module.exports = {
  * Service which triggers the server's peering generation (actualization of the Peer document).
  * @constructor
  */
-function Router() {
+function Router(server) {
 
   const that = this;
   let theRouter, theMulticaster = multicaster();
@@ -41,7 +41,7 @@ function Router() {
     done && done();
   };
 
-  this.startService = (server) => co(function*() {
+  this.startService = () => co(function*() {
     if (!theRouter) {
       theRouter = router(server.PeeringService, server.dal);
     }
@@ -54,7 +54,7 @@ function Router() {
      *   - The server will eventually be notified of network failures
      */
     // The router asks for multicasting of documents
-    server.pipe(that)
+    that
       .pipe(theRouter)
     // The documents get sent to peers
       .pipe(theMulticaster)
@@ -64,8 +64,8 @@ function Router() {
 
   this.stopService = () => co(function*() {
     that.unpipe();
-    theRouter.unpipe();
-    theMulticaster.unpipe();
+    theRouter && theRouter.unpipe();
+    theMulticaster && theMulticaster.unpipe();
   });
 }
 

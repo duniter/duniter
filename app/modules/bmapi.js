@@ -21,18 +21,18 @@ module.exports = {
 
     wizard: {
 
-      'network': (conf, program) => co(function*() {
-        yield Q.nbind(networkConfiguration, null, conf)();
+      'network': (conf, program, logger) => co(function*() {
+        yield Q.nbind(networkConfiguration, null, conf, logger)();
       }),
 
-      'network-reconfigure': (conf, program) => co(function*() {
-        yield Q.nbind(networkReconfiguration, null, conf, program.autoconf, program.noupnp)();
+      'network-reconfigure': (conf, program, logger) => co(function*() {
+        yield Q.nbind(networkReconfiguration, null, conf, logger, program.autoconf, program.noupnp)();
       })
     },
 
     config: {
 
-      onLoading: (conf, program) => co(function*(){
+      onLoading: (conf, program, logger) => co(function*(){
 
         // Network autoconf
         const autoconfNet = program.autoconf
@@ -40,7 +40,7 @@ module.exports = {
           || !(conf.remoteipv4 || conf.remoteipv6 || conf.remotehost)
           || !(conf.port && conf.remoteport);
         if (autoconfNet) {
-          yield Q.nbind(networkReconfiguration, null)(conf, autoconfNet, program.noupnp);
+          yield Q.nbind(networkReconfiguration, null)(conf, autoconfNet, logger, program.noupnp);
         }
 
         // Default value
@@ -59,7 +59,7 @@ module.exports = {
     },
 
     service: {
-      input: () => new BMAPI()
+      input: (server, conf, logger) => new BMAPI(server, conf, logger)
     },
 
     methods: {
@@ -68,18 +68,16 @@ module.exports = {
   }
 }
 
-function BMAPI() {
+function BMAPI(server, conf, logger) {
 
   // Public http interface
   let bmapi;
   // UPnP API
   let upnpAPI;
-  let logger;
 
   stream.Transform.call(this, { objectMode: true });
 
-  this.startService = (server, conf) => co(function*() {
-    logger = server.logger;
+  this.startService = () => co(function*() {
     const bma = require('../lib/streams/bma');
     bmapi = yield bma(server, null, conf.httplogs);
     yield bmapi.openConnections();
@@ -87,11 +85,11 @@ function BMAPI() {
     /***************
      *    UPnP
      **************/
+    if (upnpAPI) {
+      upnpAPI.stopRegular();
+    }
     if (conf.upnp) {
       try {
-        if (upnpAPI) {
-          upnpAPI.stopRegular();
-        }
         upnpAPI = yield upnp(conf.port, conf.remoteport);
         upnpAPI.startRegular();
       } catch (e) {
@@ -101,7 +99,9 @@ function BMAPI() {
   });
 
   this.stopService = () => co(function*() {
-    yield bmapi.closeConnections();
+    if (bmapi) {
+      yield bmapi.closeConnections();
+    }
     if (upnpAPI) {
       upnpAPI.stopRegular();
     }
@@ -110,9 +110,9 @@ function BMAPI() {
 
 
 
-function networkReconfiguration(conf, autoconf, noupnp, done) {
+function networkReconfiguration(conf, autoconf, logger, noupnp, done) {
   async.waterfall([
-    upnpResolve.bind(this, noupnp),
+    upnpResolve.bind(this, noupnp, logger),
     function(upnpSuccess, upnpConf, next) {
 
       // Default values
@@ -121,8 +121,8 @@ function networkReconfiguration(conf, autoconf, noupnp, done) {
 
       var localOperations = getLocalNetworkOperations(conf, autoconf);
       var remoteOpertions = getRemoteNetworkOperations(conf, upnpConf.remoteipv4, upnpConf.remoteipv6, autoconf);
-      var dnsOperations = getHostnameOperations(conf, autoconf);
-      var useUPnPOperations = getUseUPnPOperations(conf, autoconf);
+      var dnsOperations = getHostnameOperations(conf, logger, autoconf);
+      var useUPnPOperations = getUseUPnPOperations(conf, logger, autoconf);
 
       if (upnpSuccess) {
         _.extend(conf, upnpConf);
@@ -130,9 +130,9 @@ function networkReconfiguration(conf, autoconf, noupnp, done) {
         var remote = [conf.remoteipv4, conf.remoteport].join(':');
         if (autoconf) {
           conf.ipv6 = conf.remoteipv6 = getBestLocalIPv6();
-          console.log('IPv6: %s', conf.ipv6 || "");
-          console.log('Local IPv4: %s', local);
-          console.log('Remote IPv4: %s', remote);
+          logger.info('IPv6: %s', conf.ipv6 || "");
+          logger.info('Local IPv4: %s', local);
+          logger.info('Remote IPv4: %s', remote);
           // Use proposed local + remote with UPnP binding
           return async.waterfall(useUPnPOperations
             .concat(dnsOperations), next);
@@ -158,13 +158,13 @@ function networkReconfiguration(conf, autoconf, noupnp, done) {
           // Yes: local configuration = remote configuration
           return async.waterfall(
             localOperations
-              .concat(getHostnameOperations(conf, autoconf))
+              .concat(getHostnameOperations(conf, logger, autoconf))
               .concat([function (confDone) {
                 conf.remoteipv4 = conf.ipv4;
                 conf.remoteipv6 = conf.ipv6;
                 conf.remoteport = conf.port;
-                console.log('Local & Remote IPv4: %s', [conf.ipv4, conf.port].join(':'));
-                console.log('Local & Remote IPv6: %s', [conf.ipv6, conf.port].join(':'));
+                logger.info('Local & Remote IPv4: %s', [conf.ipv4, conf.port].join(':'));
+                logger.info('Local & Remote IPv6: %s', [conf.ipv6, conf.port].join(':'));
                 confDone();
               }]), next);
         }
@@ -173,7 +173,7 @@ function networkReconfiguration(conf, autoconf, noupnp, done) {
             // Yes: local configuration = remote configuration
             async.waterfall(
               localOperations
-                .concat(getHostnameOperations(conf))
+                .concat(getHostnameOperations(conf, logger))
                 .concat([function(confDone) {
                   conf.remoteipv4 = conf.ipv4;
                   conf.remoteipv6 = conf.ipv6;
@@ -194,10 +194,10 @@ function networkReconfiguration(conf, autoconf, noupnp, done) {
 }
 
 
-function upnpResolve(noupnp, done) {
+function upnpResolve(noupnp, logger, done) {
   return co(function *() {
     try {
-      let conf = yield upnpConf(noupnp);
+      let conf = yield upnpConf(noupnp, logger);
       done(null, true, conf);
     } catch (err) {
       done(null, false, {});
@@ -205,19 +205,19 @@ function upnpResolve(noupnp, done) {
   });
 }
 
-function networkConfiguration(conf, done) {
+function networkConfiguration(conf, logger, done) {
   async.waterfall([
-    upnpResolve.bind(this, !conf.upnp),
+    upnpResolve.bind(this, !conf.upnp, logger),
     function(upnpSuccess, upnpConf, next) {
 
       var operations = getLocalNetworkOperations(conf)
         .concat(getRemoteNetworkOperations(conf, upnpConf.remoteipv4, upnpConf.remoteipv6));
 
       if (upnpSuccess) {
-        operations = operations.concat(getUseUPnPOperations(conf));
+        operations = operations.concat(getUseUPnPOperations(conf, logger));
       }
 
-      async.waterfall(operations.concat(getHostnameOperations(conf, false)), next);
+      async.waterfall(operations.concat(getHostnameOperations(conf, logger, false)), next);
     }
   ], done);
 }
@@ -380,14 +380,14 @@ function getRemoteNetworkOperations(conf, remoteipv4) {
   ];
 }
 
-function getHostnameOperations(conf, autoconf) {
+function getHostnameOperations(conf, logger, autoconf) {
   return [function(next) {
     if (!conf.ipv4) {
       conf.remotehost = null;
       return next();
     }
     if (autoconf) {
-      console.log('DNS: %s', conf.remotehost || 'No');
+      logger.info('DNS: %s', conf.remotehost || 'No');
       return next();
     }
     choose("Does this server has a DNS name?", !!conf.remotehost,
@@ -402,14 +402,14 @@ function getHostnameOperations(conf, autoconf) {
   }];
 }
 
-function getUseUPnPOperations(conf, autoconf) {
+function getUseUPnPOperations(conf, logger, autoconf) {
   return [function(next) {
     if (!conf.ipv4) {
       conf.upnp = false;
       return next();
     }
     if (autoconf) {
-      console.log('UPnP: %s', 'Yes');
+      logger.info('UPnP: %s', 'Yes');
       conf.upnp = true;
       return next();
     }
@@ -436,14 +436,14 @@ function choose (question, defaultValue, ifOK, ifNotOK) {
   });
 }
 
-function upnpConf (noupnp) {
+function upnpConf (noupnp, logger) {
   return co(function *() {
     const conf = {};
     const client = require('nnupnp').createClient();
     // Look for 2 random ports
     const privatePort = getRandomPort(conf);
     const publicPort = privatePort;
-    console.log('Checking UPnP features...');
+    logger.info('Checking UPnP features...');
     if (noupnp) {
       throw Error('No UPnP');
     }

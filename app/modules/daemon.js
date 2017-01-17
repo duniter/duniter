@@ -29,16 +29,16 @@ module.exports = {
       name: 'stop',
       desc: 'Stop Duniter node daemon.',
       logs: false,
-      onConfiguredExecute: () => needsToBeLaunchedByScript()
+      onConfiguredExecute: (server) => needsToBeLaunchedByScript(server.logger)
     },{
       name: 'restart',
       desc: 'Restart Duniter node daemon.',
       logs: false,
-      onConfiguredExecute: () => needsToBeLaunchedByScript()
+      onConfiguredExecute: (server) => needsToBeLaunchedByScript(server.logger)
     }]
   }
 };
 
-function needsToBeLaunchedByScript() {
-  console.error('This command must not be launched directly, please use duniter.sh script');
+function needsToBeLaunchedByScript(logger) {
+  logger.error('This command must not be launched directly, please use duniter.sh script');
 }

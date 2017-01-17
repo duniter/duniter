@@ -286,10 +286,10 @@ module.exports = {
       require('../../../app/modules/router').duniter.methods.routeToNetwork(server);
     });
 
-    const prover = require('../../../app/modules/prover').duniter.methods.prover();
+    const prover = require('../../../app/modules/prover').duniter.methods.prover(server);
     server.permaProver = prover.permaProver;
     server.pipe(prover);
-    server.startBlockComputation = () => prover.startService(server);
+    server.startBlockComputation = () => prover.startService();
     server.stopBlockComputation = () => prover.stopService();
 
     return server;

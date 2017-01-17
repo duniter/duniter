@@ -7,7 +7,7 @@ const constants = require('../lib/constants');
 module.exports = {
   duniter: {
     service: {
-      neutral: () => new PeerSignalEmitter()
+      neutral: (server, conf, logger) => new PeerSignalEmitter(server, conf, logger)
     }
   }
 }
@@ -16,7 +16,7 @@ module.exports = {
  * Service which triggers the server's peering generation (actualization of the Peer document).
  * @constructor
  */
-function PeerSignalEmitter() {
+function PeerSignalEmitter(server, conf) {
 
   let INTERVAL = null;
 
@@ -24,7 +24,7 @@ function PeerSignalEmitter() {
     task(callback);
   }, 1);
 
-  this.startService = (server, conf) => co(function*() {
+  this.startService = () => co(function*() {
 
     // The interval duration
     const SIGNAL_INTERVAL = 1000 * conf.avgGenTime * constants.NETWORK.STATUS_INTERVAL.UPDATE;

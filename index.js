@@ -110,6 +110,7 @@ function Stack(dependencies) {
   const loaded = {};
   const wizardTasks = {};
 
+  const definitions = [];
   const streams = {
     input: [],
     process: [],
@@ -124,6 +125,7 @@ function Stack(dependencies) {
     }
     loaded[name] = true;
     const def = requiredObject.duniter;
+    definitions.push(def);
     for (const opt of (def.cliOptions || [])) {
       cli.addOption(opt.value, opt.desc, opt.parser);
     }
@@ -156,29 +158,6 @@ function Stack(dependencies) {
       const tasks = Object.keys(def.wizard);
       for (const name of tasks) {
         wizardTasks[name] = def.wizard[name];
-      }
-    }
-
-    /**
-     * Service injection
-     * -----------------
-     */
-    if (def.service) {
-      // To feed data coming from some I/O (network, disk, other module, ...)
-      if (def.service.input) {
-        streams.input.push(def.service.input());
-      }
-      // To handle data that has been submitted by INPUT stream
-      if (def.service.process) {
-        streams.process.push(def.service.process());
-      }
-      // To handle data that has been validated by PROCESS stream
-      if (def.service.output) {
-        streams.output.push(def.service.output());
-      }
-      // Special service which does not stream anything particular (ex.: piloting the `server` object)
-      if (def.service.neutral) {
-        streams.neutral.push(def.service.neutral());
       }
     }
   };
@@ -228,7 +207,7 @@ function Stack(dependencies) {
       server.dal.loadConfHook = (conf) => co(function*() {
         // Loading injection
         for (const callback of configLoadingCallbacks) {
-          yield callback(conf, program);
+          yield callback(conf, program, logger);
         }
       });
 
@@ -236,7 +215,7 @@ function Stack(dependencies) {
       server.dal.saveConfHook = (conf) => co(function*() {
         const clonedConf = _.clone(conf);
         for (const callback of configBeforeSaveCallbacks) {
-          yield callback(clonedConf, program);
+          yield callback(clonedConf, program, logger);
         }
         return clonedConf;
       });
@@ -258,13 +237,39 @@ function Stack(dependencies) {
       }
       // Second possible class of commands: post-service
       yield server.initDAL();
+
+      /**
+       * Service injection
+       * -----------------
+       */
+      for (const def of definitions) {
+        if (def.service) {
+          // To feed data coming from some I/O (network, disk, other module, ...)
+          if (def.service.input) {
+            streams.input.push(def.service.input(server, conf, logger));
+          }
+          // To handle data that has been submitted by INPUT stream
+          if (def.service.process) {
+            streams.process.push(def.service.process(server, conf, logger));
+          }
+          // To handle data that has been validated by PROCESS stream
+          if (def.service.output) {
+            streams.output.push(def.service.output(server, conf, logger));
+          }
+          // Special service which does not stream anything particular (ex.: piloting the `server` object)
+          if (def.service.neutral) {
+            streams.neutral.push(def.service.neutral(server, conf, logger));
+          }
+        }
+      }
+
       return yield command.onPluggedDALExecute(server, conf, program, params,
 
         // Start services and streaming between them
         () => co(function*() {
           const modules = streams.input.concat(streams.process).concat(streams.output).concat(streams.neutral);
           // Any streaming module must implement a `startService` method
-          yield modules.map(module => module.startService(server, conf));
+          yield modules.map(module => module.startService());
           // All inputs write to global INPUT stream
           for (const module of streams.input) module.pipe(INPUT);
           // All processes read from global INPUT stream

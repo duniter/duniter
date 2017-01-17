@@ -8,6 +8,12 @@ const constants = require('../../app/lib/constants');
 const keyring   = require('../../app/lib/crypto/keyring');
 const blockProver = require('../../app/lib/computation/blockProver');
 
+// Trace these errors
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection: ' + reason);
+  console.error(reason);
+});
+
 const s1 = toolbox.server({
   powDelay: 1000,
   powMin: 32,
@@ -97,11 +103,13 @@ describe("Continous proof-of-work", function() {
     yield s2.commit();
     s2.conf.cpu = 0.5;
     s3.conf.cpu = 0.5;
-    s2.startBlockComputation();
-    s3.startBlockComputation();
     yield [
       s2.until('block', 10),
-      s3.until('block', 10)
+      s3.until('block', 10),
+      co(function*() {
+        s2.startBlockComputation();
+        s3.startBlockComputation();
+      })
     ];
   }));
 

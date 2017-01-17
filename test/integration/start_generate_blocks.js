@@ -72,8 +72,8 @@ describe("Generation", function() {
         yield server.bma.openConnections();
         require('../../app/modules/router').duniter.methods.routeToNetwork(server);
         yield server.PeeringService.generateSelfPeer(server.conf, 0);
-        const prover = require('../../app/modules/prover').duniter.methods.prover();
-        server.startBlockComputation = () => prover.startService(server);
+        const prover = require('../../app/modules/prover').duniter.methods.prover(server);
+        server.startBlockComputation = () => prover.startService();
         server.stopBlockComputation = () => prover.stopService();
       }
       nodeS1 = contacter('127.0.0.1', s1.conf.port);

@@ -10,15 +10,19 @@ const querablep = require('../lib/querablep');
 const pulling = require('../lib/pulling');
 const Transaction = require('../lib/entity/transaction');
 
-const crawler = new Crawler();
-
 module.exports = {
   duniter: {
     service: {
-      neutral: () => crawler
+      neutral: (server, conf, logger) => new Crawler(server, conf, logger)
     },
 
-    methods: { pullBlocks: crawler.pullBlocks }
+    methods: {
+
+      pullBlocks: (server, pubkey) => co(function*() {
+        const crawler = new Crawler(server, server.conf, server.logger);
+        return crawler.pullBlocks(server, pubkey);
+      })
+    }
   }
 }
 
@@ -26,19 +30,19 @@ module.exports = {
  * Service which triggers the server's peering generation (actualization of the Peer document).
  * @constructor
  */
-function Crawler() {
+function Crawler(server, conf, logger) {
 
-  const peerCrawler = new PeerCrawler();
-  const peerTester = new PeerTester();
-  const blockCrawler = new BlockCrawler();
+  const peerCrawler = new PeerCrawler(server, conf, logger);
+  const peerTester = new PeerTester(server, conf, logger);
+  const blockCrawler = new BlockCrawler(server, logger);
 
   this.pullBlocks = blockCrawler.pullBlocks;
 
-  this.startService = (server, conf) => co(function*() {
+  this.startService = () => co(function*() {
     return yield [
-      peerCrawler.startService(server, conf),
-      peerTester.startService(server, conf),
-      blockCrawler.startService(server, conf)
+      peerCrawler.startService(),
+      peerTester.startService(),
+      blockCrawler.startService()
     ];
   });
 
@@ -51,16 +55,15 @@ function Crawler() {
   });
 }
 
-function PeerCrawler() {
+function PeerCrawler(server, conf, logger) {
 
   const DONT_IF_MORE_THAN_FOUR_PEERS = true;
 
-  let crawlPeersInterval = null, logger;
+  let crawlPeersInterval = null;
 
   const crawlPeersFifo = async.queue((task, callback) => task(callback), 1);
 
-  this.startService = (server, conf) => co(function*() {
-    logger = server.logger;
+  this.startService = () => co(function*() {
     if (crawlPeersInterval)
       clearInterval(crawlPeersInterval);
     crawlPeersInterval = setInterval(()  => crawlPeersFifo.push(() => crawlPeers(server, conf)), 1000 * conf.avgGenTime * constants.NETWORK.SYNC_PEERS_INTERVAL);
@@ -140,16 +143,14 @@ function PeerCrawler() {
   });
 }
 
-function PeerTester() {
+function PeerTester(server, conf, logger) {
 
   const FIRST_CALL = true;
 
   const testPeerFifo = async.queue((task, callback) => task(callback), 1);
   let testPeerFifoInterval = null;
-  let logger;
 
-  this.startService = (server, conf) => co(function*() {
-    logger = server.logger;
+  this.startService = () => co(function*() {
     if (testPeerFifoInterval)
       clearInterval(testPeerFifoInterval);
     testPeerFifoInterval = setInterval(() => testPeerFifo.push(testPeers.bind(null, server, conf, !FIRST_CALL)), 1000 * constants.NETWORK.TEST_PEERS_INTERVAL);
@@ -240,7 +241,7 @@ function PeerTester() {
   }
 }
 
-function BlockCrawler() {
+function BlockCrawler(server, logger) {
 
   const CONST_BLOCKS_CHUNK = 50;
 
@@ -249,10 +250,8 @@ function BlockCrawler() {
   let pullingActualIntervalDuration = constants.PULLING_MINIMAL_DELAY;
   const syncBlockFifo = async.queue((task, callback) => task(callback), 1);
   let syncBlockInterval = null;
-  let logger = require('../lib/logger')('crawler');
 
-  this.startService = (server, conf) => co(function*() {
-    logger = server.logger;
+  this.startService = () => co(function*() {
     if (syncBlockInterval)
       clearInterval(syncBlockInterval);
     syncBlockInterval = setInterval(() => syncBlockFifo.push(() => syncBlock(server)), 1000 * pullingActualIntervalDuration);

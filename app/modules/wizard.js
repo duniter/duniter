@@ -25,7 +25,7 @@ module.exports = {
         const step = params[0];
         const tasks = step ? [wizardTasks[step]] : Object.values(wizardTasks);
         for (const task of tasks) {
-          yield task(conf, program);
+          yield task(conf, program, server.logger);
         }
         // Check config
         yield server.checkConfig();

@@ -28,7 +28,7 @@ module.exports = {
 
   listInterfaces: bmapiMethods.listInterfaces,
 
-  upnpConf: bmapiMethods.upnpConf,
+  upnpConf: (noupnp) => bmapiMethods.upnpConf(noupnp, logger),
 
   getRandomPort: bmapiMethods.getRandomPort,
 

@@ -179,8 +179,8 @@ function BlockchainService (server) {
 
   const eventuallySwitchOnSideChain = (current) => co(function *() {
     const branches = yield that.branches();
-    const blocksAdvance = constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES / (conf.avgGenTime / 60);
-    const timeAdvance = constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES * 60;
+    const blocksAdvance = conf.swichOnTimeAheadBy / (conf.avgGenTime / 60);
+    const timeAdvance = conf.swichOnTimeAheadBy * 60;
     let potentials = _.without(branches, current);
     // We switch only to blockchain with X_MIN advance considering both theoretical time by block + written time
     potentials = _.filter(potentials, (p) => p.number - current.number >= blocksAdvance

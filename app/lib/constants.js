@@ -222,19 +222,15 @@ module.exports = {
     MAX_NON_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS: 6,
     MAX_NON_MEMBERS_TO_FORWARD_TO: 4,
     MAX_MEMBERS_TO_FORWARD_TO: 6,
-    COUNT_FOR_ENOUGH_PEERS: 4,
     MAX_CONCURRENT_POST: 3,
     DEFAULT_TIMEOUT: 10 * 1000, // 10 seconds
-    SYNC_LONG_TIMEOUT: 30 * 1000, // 30 seconds
     SYNC: {
       MAX: 20
     },
     STATUS_INTERVAL: {
       UPDATE: 2, // Every X blocks
       MAX: 20 // MAX Y blocks
-    },
-    SYNC_PEERS_INTERVAL: 3, // Every 3 block average generation time
-    TEST_PEERS_INTERVAL: 10 // In seconds
+    }
   },
   PROOF_OF_WORK: {
     MINIMAL_TO_SHOW: 2,
@@ -258,16 +254,6 @@ module.exports = {
       '1',
       '1' // In case remainder 15 happens for some reason
     ]
-  },
-
-  DURATIONS: {
-    TEN_SECONDS: 10,
-    A_MINUTE: 60,
-    TEN_MINUTES: 600,
-    AN_HOUR: 3600,
-    A_DAY: 3600 * 24,
-    A_WEEK: 3600 * 24 * 7,
-    A_MONTH: (3600 * 24 * 365.25) / 12
   },
 
   DEFAULT_CPU: 0.6,
@@ -301,15 +287,13 @@ module.exports = {
   },
 
   BRANCHES: {
-    DEFAULT_WINDOW_SIZE: 100,
-    SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES: 30
+    DEFAULT_WINDOW_SIZE: 100
   },
 
   INVALIDATE_CORE_CACHE: true,
   WITH_SIGNATURES_AND_POW: true,
 
   NO_FORK_ALLOWED: false,
-  FORK_ALLOWED: true,
 
   SAFE_FACTOR: 3,
   BLOCKS_COLLECT_THRESHOLD: 30, // Blocks to collect from memory and persist
@@ -322,7 +306,6 @@ module.exports = {
   SANDBOX_SIZE_MEMBERSHIPS: 200,
 
   MAXIMUM_LEN_OF_COMPACT_TX: MAXIMUM_LEN_OF_COMPACT_TX,
-  MAX_NUMBER_OF_PEERS_FOR_PULLING: 4,
 
   CURRENT_BLOCK_CACHE_DURATION: 10 * 1000, // 30 seconds
   CORES_MAXIMUM_USE_IN_PARALLEL: 8, // For more cores, we need to use a better PoW synchronization algorithm
@@ -346,10 +329,7 @@ module.exports = {
   S_INDEX: 'SINDEX',
   C_INDEX: 'CINDEX',
   IDX_CREATE: 'CREATE',
-  IDX_UPDATE: 'UPDATE',
-
-  PULLING_MINIMAL_DELAY: 20,
-  PULLING_INTERVAL_TARGET: 240
+  IDX_UPDATE: 'UPDATE'
 };
 
 function exact (regexpContent) {

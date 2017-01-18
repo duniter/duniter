@@ -48,10 +48,6 @@ module.exports = () => {
 
         .option('-c, --currency <name>', 'Name of the currency managed by this node.')
 
-        .option('--nointeractive', 'Disable interactive sync UI')
-        .option('--nocautious', 'Do not check blocks validity during sync')
-        .option('--cautious', 'Check blocks validity during sync (overrides --nocautious option)')
-        .option('--nopeers', 'Do not retrieve peers during sync')
         .option('--nostdout', 'Disable stdout printing for `export-bc` command')
         .option('--noshuffle', 'Disable peers shuffling for `sync` command')
 

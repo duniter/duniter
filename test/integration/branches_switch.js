@@ -27,6 +27,7 @@ const s1 = duniter(
   '/bb11',
   MEMORY_MODE,
   _.extend({
+  swichOnTimeAheadBy: 0,
   port: '7788',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -40,6 +41,7 @@ const s2 = duniter(
   '/bb12',
   MEMORY_MODE,
   _.extend({
+  swichOnTimeAheadBy: 0,
   port: '7789',
   pair: {
     pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
@@ -80,14 +82,10 @@ describe("Switch", function() {
     // So we now have:
     // S1 01234
     // S2   `3456789
-    let oldVal = constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES = 0;
-
     yield s1.singleWritePromise(s2p);
 
     // Forking S1 from S2
-    yield require('../../app/modules/crawler').duniter.methods.pullBlocks(s1, s2p.pubkey);
-
-    constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES = oldVal;
+    yield require('duniter-crawler').duniter.methods.pullBlocks(s1, s2p.pubkey);
     // S1 should have switched to the other branch
   }));
 

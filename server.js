@@ -15,7 +15,6 @@ const jsonpckg    = require('./package.json');
 const keyring      = require('./app/lib/crypto/keyring');
 const directory   = require('./app/lib/system/directory');
 const dos2unix    = require('./app/lib/system/dos2unix');
-const Synchroniser = require('./app/lib/sync');
 const rawer       = require('./app/lib/ucp/rawer');
 
 function Server (home, memoryOnly, overrideConf) {
@@ -43,11 +42,13 @@ function Server (home, memoryOnly, overrideConf) {
   that.lib.rawer = require('./app/lib/ucp/rawer');
   that.lib.http2raw = require('duniter-bma').duniter.methods.http2raw;
   that.lib.dos2unix = require('./app/lib/system/dos2unix');
-  that.lib.contacter = require('./app/lib/contacter');
+  that.lib.contacter = require('duniter-crawler').duniter.methods.contacter;
   that.lib.bma = require('duniter-bma').duniter.methods.bma;
   that.lib.network = require('./app/lib/system/network');
   that.lib.constants = require('./app/lib/constants');
   that.lib.ucp = require('./app/lib/ucp/buid');
+  that.lib.hashf = require('./app/lib/ucp/hashf');
+  that.lib.indexer = require('./app/lib/dup/indexer');
 
   that.MerkleService       = require("./app/lib/helpers/merkle");
   that.IdentityService     = require('./app/service/IdentityService')();
@@ -351,35 +352,6 @@ function Server (home, memoryOnly, overrideConf) {
   });
 
   this.singleWritePromise = (obj) => that.submit(obj);
-
-  /**
-   * Synchronize the server with another server.
-   *
-   * If local server's blockchain is empty, process a fast sync: **no block is verified in such a case**, unless
-   * you force value `askedCautious` to true.
-   *
-   * @param onHost Syncs on given host.
-   * @param onPort Syncs on given port.
-   * @param upTo Sync up to this number, if `upTo` value is a positive integer.
-   * @param chunkLength Length of each chunk of blocks to download. Kind of buffer size.
-   * @param interactive Tell if the loading bars should be used for console output.
-   * @param askedCautious If true, force the verification of each downloaded block. This is the right way to have a valid blockchain for sure.
-   * @param nopeers If true, sync will omit to retrieve peer documents.
-   * @param noShufflePeers If true, sync will NOT shuffle the retrieved peers before downloading on them.
-   */
-  this.synchronize = (onHost, onPort, upTo, chunkLength, interactive, askedCautious, nopeers, noShufflePeers) => {
-    const remote = new Synchroniser(that, onHost, onPort, that.conf, interactive === true);
-    const syncPromise = remote.sync(upTo, chunkLength, askedCautious, nopeers, noShufflePeers === true);
-    return {
-      flow: remote,
-      syncPromise: syncPromise
-    };
-  };
-  
-  this.testForSync = (onHost, onPort) => {
-    const remote = new Synchroniser(that, onHost, onPort);
-    return remote.test();
-  };
 
   this.applyCPU = (cpu) => that.BlockchainService.changeProverCPUSetting(cpu);
   

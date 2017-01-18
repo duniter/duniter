@@ -11,7 +11,7 @@ const commit    = require('./tools/commit');
 const until     = require('./tools/until');
 const multicaster = require('../../app/lib/streams/multicaster');
 const Peer = require('../../app/lib/entity/peer');
-const contacter  = require('../../app/lib/contacter');
+const contacter  = require('duniter-crawler').duniter.methods.contacter;
 const sync      = require('./tools/sync');
 
 const expectJSON     = httpTest.expectJSON;

@@ -5,7 +5,7 @@ const path = require('path');
 const co = require('co');
 const os = require('os');
 const nuuid = require('node-uuid');
-const querablep = require('../querablep');
+const querablep = require('querablep');
 
 module.exports = function (opts) {
   return new PowEngine(opts);

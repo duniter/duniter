@@ -30,7 +30,8 @@ const commonConf = {
   currency: 'bb',
   httpLogs: true,
   forksize: 10,
-  avgGenTime: constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES * 60,
+  swichOnTimeAheadBy: 30,
+  avgGenTime: 30 * 60,
   sigQty: 1
 };
 
@@ -103,7 +104,7 @@ describe("SelfFork", function() {
     yield s1.singleWritePromise(s2p);
 
     // Forking S1 from S2
-    return require('../../app/modules/crawler').duniter.methods.pullBlocks(s1, s2p.pubkey);
+    return require('duniter-crawler').duniter.methods.pullBlocks(s1, s2p.pubkey);
   }));
 
   describe("Server 1 /blockchain", function() {

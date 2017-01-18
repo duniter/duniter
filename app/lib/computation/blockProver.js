@@ -4,7 +4,7 @@ const _               = require('underscore');
 const constants       = require('../constants');
 const engine          = require('../pow/engine');
 const Block           = require('../entity/block');
-const querablep       = require('../querablep');
+const querablep       = require('querablep');
 
 const POW_FOUND = true;
 const POW_NOT_FOUND_YET = false;

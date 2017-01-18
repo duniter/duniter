@@ -15,16 +15,14 @@ const dkeypairDependency  = require('duniter-keypair');
 const configDependency    = require('./app/modules/config');
 const wizardDependency    = require('./app/modules/wizard');
 const genDependency       = require('./app/modules/gen');
-const syncDependency      = require('./app/modules/synchronization');
 const resetDependency     = require('./app/modules/reset');
 const checkConfDependency = require('./app/modules/check-config');
 const exportBcDependency  = require('./app/modules/export-bc');
 const reapplyDependency   = require('./app/modules/reapply');
 const revertDependency    = require('./app/modules/revert');
-const peerDependency      = require('./app/modules/peer');
 const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
-const crawlerDependency   = require('./app/modules/crawler');
+const crawlerDependency   = require('duniter-crawler');
 const proverDependency    = require('./app/modules/prover');
 const bmapiDependency     = require('duniter-bma');
 const routerDependency    = require('./app/modules/router');
@@ -34,7 +32,6 @@ const MINIMAL_DEPENDENCIES = [
 ];
 
 const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
-  { name: 'duniter-sync',      required: syncDependency },
   { name: 'duniter-wizard',    required: wizardDependency },
   { name: 'duniter-gen',       required: genDependency },
   { name: 'duniter-reset',     required: resetDependency },
@@ -42,7 +39,6 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-exportbc',  required: exportBcDependency },
   { name: 'duniter-reapply',   required: reapplyDependency },
   { name: 'duniter-revert',    required: revertDependency },
-  { name: 'duniter-peer',      required: peerDependency },
   { name: 'duniter-daemon',    required: daemonDependency },
   { name: 'duniter-psignal',   required: pSignalDependency },
   { name: 'duniter-crawler',   required: crawlerDependency },

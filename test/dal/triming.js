@@ -5,7 +5,6 @@ const FileDAL = require('../../app/lib/dal/fileDAL');
 const dir = require('../../app/lib/system/directory');
 const indexer = require('../../app/lib/dup/indexer');
 const toolbox = require('../integration/tools/toolbox');
-const limiter = require('../../app/lib/system/limiter');
 
 let dal;
 
@@ -14,7 +13,6 @@ describe("Triming", function(){
   before(() => co(function *() {
     dal = FileDAL(yield dir.getHomeParams(true, 'db0'));
     yield dal.init();
-    limiter.noLimit();
   }));
 
   it('should be able to feed the bindex', () => co(function *() {

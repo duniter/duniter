@@ -2,9 +2,8 @@
 
 const co        = require('co');
 const should    = require('should');
-const bma       = require('../../app/lib/streams/bma');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const constants = require('../../app/lib/constants');
-const limiter   = require('../../app/lib/system/limiter');
 const toolbox   = require('./tools/toolbox');
 
 const conf = {
@@ -36,7 +35,6 @@ describe("Protocol 1.0 Source Garbaging", function() {
 
   before(() => co(function*() {
 
-    limiter.noLimit();
     const res1 = yield toolbox.simpleNodeWith2Users(conf);
     s1 = res1.s1;
     cat = res1.cat; // HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd

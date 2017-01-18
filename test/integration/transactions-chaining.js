@@ -5,15 +5,12 @@ const _ = require('underscore');
 const should = require('should');
 const assert = require('assert');
 const constants = require('../../app/lib/constants');
-const bma       = require('../../app/lib/streams/bma');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const toolbox   = require('./tools/toolbox');
 const node   = require('./tools/node');
 const user   = require('./tools/user');
 const unit   = require('./tools/unit');
 const http   = require('./tools/http');
-const limiter = require('../../app/lib/system/limiter');
-
-limiter.noLimit();
 
 describe("Transaction chaining", function() {
 

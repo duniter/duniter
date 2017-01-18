@@ -13,7 +13,7 @@ var Configuration = require('../../../app/lib/entity/configuration');
 var Peer          = require('../../../app/lib/entity/peer');
 var user   = require('./user');
 var http   = require('./http');
-const bma = require('../../../app/lib/streams/bma');
+const bma = require('duniter-bma').duniter.methods.bma;
 
 module.exports = function (dbName, options) {
   return new Node(dbName, options);
@@ -146,6 +146,13 @@ function Node (dbName, options) {
         duniter: {
           config: {
             onLoading: (conf, program) => co(function*() {
+              options.port = options.port || 8999;
+              options.ipv4 = options.ipv4 || "127.0.0.1";
+              options.ipv6 = options.ipv6 || null;
+              options.remotehost = options.remotehost || null;
+              options.remoteipv4 = options.remoteipv4 || null;
+              options.remoteipv6 = options.remoteipv6 || null;
+              options.remoteport = options.remoteport || 8999;
               const overConf = Configuration.statics.complete(options);
               _.extend(conf, overConf);
             })

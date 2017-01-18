@@ -41,13 +41,6 @@ module.exports = () => {
         .option('-d, --mdb <name>', 'Database name (defaults to "duniter_default").')
 
         .option('--autoconf', 'With `config` and `init` commands, will guess the best network and key options witout asking for confirmation')
-        .option('--ipv4 <address>', 'IPv4 interface to listen for requests')
-        .option('--ipv6 <address>', 'IPv6 interface to listen for requests')
-        .option('--remoteh <host>', 'Remote interface others may use to contact this node')
-        .option('--remote4 <host>', 'Remote interface for IPv4 access')
-        .option('--remote6 <host>', 'Remote interface for IPv6 access')
-        .option('-p, --port <port>', 'Port to listen for requests', parseInt)
-        .option('--remotep <port>', 'Remote port others may use to contact this node')
         .option('--addep <endpoint>', 'With `config` command, add given endpoint to the list of endpoints of this node')
         .option('--remep <endpoint>', 'With `config` command, remove given endpoint to the list of endpoints of this node')
 

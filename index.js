@@ -26,7 +26,7 @@ const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
 const crawlerDependency   = require('./app/modules/crawler');
 const proverDependency    = require('./app/modules/prover');
-const bmapiDependency     = require('./app/modules/bmapi');
+const bmapiDependency     = require('duniter-bma');
 const routerDependency    = require('./app/modules/router');
 
 const MINIMAL_DEPENDENCIES = [
@@ -326,14 +326,6 @@ function commandLineConf(program, conf) {
     cpu: program.cpu,
     server: {
       port: program.port,
-      ipv4address: program.ipv4,
-      ipv6address: program.ipv6,
-      remote: {
-        host: program.remoteh,
-        ipv4: program.remote4,
-        ipv6: program.remote6,
-        port: program.remotep
-      }
     },
     db: {
       mport: program.mport,
@@ -354,13 +346,7 @@ function commandLineConf(program, conf) {
 
   // Update conf
   if (cli.currency)                         conf.currency = cli.currency;
-  if (cli.server.ipv4address)               conf.ipv4 = cli.server.ipv4address;
-  if (cli.server.ipv6address)               conf.ipv6 = cli.server.ipv6address;
   if (cli.server.port)                      conf.port = cli.server.port;
-  if (cli.server.remote.host != undefined)  conf.remotehost = cli.server.remote.host;
-  if (cli.server.remote.ipv4 != undefined)  conf.remoteipv4 = cli.server.remote.ipv4;
-  if (cli.server.remote.ipv6 != undefined)  conf.remoteipv6 = cli.server.remote.ipv6;
-  if (cli.server.remote.port != undefined)  conf.remoteport = cli.server.remote.port;
   if (cli.cpu)                              conf.cpu = Math.max(0.01, Math.min(1.0, cli.cpu));
   if (cli.logs.http)                        conf.httplogs = true;
   if (cli.logs.nohttp)                      conf.httplogs = false;

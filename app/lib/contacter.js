@@ -3,8 +3,8 @@
 const co = require('co');
 const rp = require('request-promise');
 const constants = require('./constants');
-const sanitize = require('./streams/sanitize');
-const dtos = require('./streams/dtos');
+const sanitize = require('duniter-bma').duniter.methods.sanitize;
+const dtos = require('duniter-bma').duniter.methods.dtos;
 
 /**
  * Created by cgeek on 16/10/16.

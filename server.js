@@ -35,17 +35,21 @@ function Server (home, memoryOnly, overrideConf) {
   that.lib = {};
   that.lib.keyring = require('./app/lib/crypto/keyring');
   that.lib.Identity = require('./app/lib/entity/identity');
+  that.lib.Transaction = require('./app/lib/entity/transaction');
+  that.lib.Peer = require('./app/lib/entity/peer');
+  that.lib.Membership = require('./app/lib/entity/membership');
+  that.lib.Block = require('./app/lib/entity/block');
+  that.lib.Stat = require('./app/lib/entity/stat');
   that.lib.rawer = require('./app/lib/ucp/rawer');
-  that.lib.http2raw = require('./app/lib/helpers/http2raw');
+  that.lib.http2raw = require('duniter-bma').duniter.methods.http2raw;
   that.lib.dos2unix = require('./app/lib/system/dos2unix');
   that.lib.contacter = require('./app/lib/contacter');
-  that.lib.bma = require('./app/lib/streams/bma');
+  that.lib.bma = require('duniter-bma').duniter.methods.bma;
   that.lib.network = require('./app/lib/system/network');
   that.lib.constants = require('./app/lib/constants');
   that.lib.ucp = require('./app/lib/ucp/buid');
 
   that.MerkleService       = require("./app/lib/helpers/merkle");
-  that.ParametersService   = require("./app/lib/helpers/parameters")();
   that.IdentityService     = require('./app/service/IdentityService')();
   that.MembershipService   = require('./app/service/MembershipService')();
   that.PeeringService      = require('./app/service/PeeringService')(that);
@@ -189,18 +193,8 @@ function Server (home, memoryOnly, overrideConf) {
   this.isServerMember = () => this.BlockchainService.isMember();
 
   this.checkConfig = () => co(function*() {
-    const conf = that.conf;
-    if (!conf.pair) {
+    if (!that.conf.pair) {
       throw new Error('No keypair was given.');
-    }
-    if(!conf.ipv4 && !conf.ipv6){
-      throw new Error("No interface to listen to.");
-    }
-    if(!conf.remoteipv4 && !conf.remoteipv6 && !conf.remotehost){
-      throw new Error('No interface for remote contact.');
-    }
-    if (!conf.remoteport) {
-      throw new Error('No port for remote contact.');
     }
   });
 

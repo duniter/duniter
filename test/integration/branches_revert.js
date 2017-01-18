@@ -2,7 +2,7 @@
 
 const co = require('co');
 const _         = require('underscore');
-const bma       = require('../../app/lib/streams/bma');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const toolbox   = require('./tools/toolbox');
 const commit    = require('./tools/commit');

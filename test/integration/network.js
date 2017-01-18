@@ -23,6 +23,7 @@ const s1 = node({
   memory: MEMORY_MODE,
   name: 'bb33'
 }, _.extend({
+  ipv4: '127.0.0.1',
   port: '20501',
   remoteport: '20501',
   pair: {

@@ -4,7 +4,7 @@ const co = require('co');
 const _ = require('underscore');
 const should = require('should');
 const assert = require('assert');
-const bma       = require('../../app/lib/streams/bma');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const constants = require('../../app/lib/constants');
 const node   = require('./tools/node');
 const duniter     = require('../../index');
@@ -13,9 +13,6 @@ const jspckg = require('../../package');
 const commit    = require('./tools/commit');
 const httpTest  = require('./tools/http');
 const rp        = require('request-promise');
-const limiter = require('../../app/lib/system/limiter');
-
-limiter.noLimit();
 
 const expectAnswer   = httpTest.expectAnswer;
 const MEMORY_MODE = true;

@@ -32,14 +32,6 @@ const MAXIMUM_LEN_OF_COMPACT_TX = 100;
 
 module.exports = {
 
-  ENTITY_TRANSACTION: 'transaction',
-  ENTITY_BLOCK: 'block',
-  ENTITY_MEMBERSHIP: 'membership',
-  ENTITY_PEER: 'peer',
-  ENTITY_IDENTITY: 'identity',
-  ENTITY_CERTIFICATION: 'certification',
-  ENTITY_REVOCATION: 'revocation',
-
   ERROR: {
 
     PEER: {
@@ -59,7 +51,6 @@ module.exports = {
     SIGNATURE_DOES_NOT_MATCH:             { httpCode: 400, uerr: { ucode: 1003, message: "Signature does not match" }},
     ALREADY_UP_TO_DATE:                   { httpCode: 400, uerr: { ucode: 1004, message: "Already up-to-date" }},
     WRONG_DOCUMENT:                       { httpCode: 400, uerr: { ucode: 1005, message: "Document has unkown fields or wrong line ending format" }},
-    HTTP_LIMITATION:                      { httpCode: 503, uerr: { ucode: 1006, message: "This URI has reached its maximum usage quota. Please retry later." }},
     SANDBOX_FOR_IDENTITY_IS_FULL:         { httpCode: 503, uerr: { ucode: 1007, message: "The identities' sandbox is full. Please retry with another document or retry later." }},
     SANDBOX_FOR_CERT_IS_FULL:             { httpCode: 503, uerr: { ucode: 1008, message: "The certifications' sandbox is full. Please retry with another document or retry later." }},
     SANDBOX_FOR_MEMERSHIP_IS_FULL:        { httpCode: 503, uerr: { ucode: 1009, message: "The memberships' sandbox is full. Please retry with another document or retry later." }},
@@ -69,31 +60,16 @@ module.exports = {
     CLI_CALLERR_RESET:                    { httpCode: 503, uerr: { ucode: 1013, message: "Bad command: usage is `reset config`, `reset data`, `reset peers`, `reset stats` or `reset all`" }},
     CLI_CALLERR_CONFIG:                   { httpCode: 503, uerr: { ucode: 1014, message: "Bad command: usage is `config`." }},
 
-    HTTP_PARAM_PUBKEY_REQUIRED:           { httpCode: 400, uerr: { ucode: 1101, message: "Parameter `pubkey` is required" }},
-    HTTP_PARAM_IDENTITY_REQUIRED:         { httpCode: 400, uerr: { ucode: 1102, message: "Parameter `identity` is required" }},
-    HTTP_PARAM_PEER_REQUIRED:             { httpCode: 400, uerr: { ucode: 1103, message: "Requires a peer" }},
-    HTTP_PARAM_BLOCK_REQUIRED:            { httpCode: 400, uerr: { ucode: 1104, message: "Requires a block" }},
-    HTTP_PARAM_MEMBERSHIP_REQUIRED:       { httpCode: 400, uerr: { ucode: 1105, message: "Requires a membership" }},
-    HTTP_PARAM_TX_REQUIRED:               { httpCode: 400, uerr: { ucode: 1106, message: "Requires a transaction" }},
-    HTTP_PARAM_SIG_REQUIRED:              { httpCode: 400, uerr: { ucode: 1107, message: "Parameter `sig` is required" }},
-    HTTP_PARAM_CERT_REQUIRED:             { httpCode: 400, uerr: { ucode: 1108, message: "Parameter `cert` is required" }},
-    HTTP_PARAM_REVOCATION_REQUIRED:       { httpCode: 400, uerr: { ucode: 1109, message: "Parameter `revocation` is required" }},
-    HTTP_PARAM_CONF_REQUIRED:             { httpCode: 400, uerr: { ucode: 1110, message: "Parameter `conf` is required" }},
-    HTTP_PARAM_CPU_REQUIRED:              { httpCode: 400, uerr: { ucode: 1111, message: "Parameter `cpu` is required" }},
-
     // Business errors
     NO_MATCHING_IDENTITY:                 { httpCode: 404, uerr: { ucode: 2001, message: "No matching identity" }},
     UID_ALREADY_USED:                     { httpCode: 400, uerr: { ucode: 2002, message: "UID already used in the blockchain" }},
     PUBKEY_ALREADY_USED:                  { httpCode: 400, uerr: { ucode: 2003, message: "Pubkey already used in the blockchain" }},
     NO_MEMBER_MATCHING_PUB_OR_UID:        { httpCode: 404, uerr: { ucode: 2004, message: "No member matching this pubkey or uid" }},
-    SELF_PEER_NOT_FOUND:                  { httpCode: 404, uerr: { ucode: 2005, message: "Self peering was not found" }},
     WRONG_SIGNATURE_MEMBERSHIP:           { httpCode: 400, uerr: { ucode: 2006, message: "wrong signature for membership" }},
     ALREADY_RECEIVED_MEMBERSHIP:          { httpCode: 400, uerr: { ucode: 2007, message: "Already received membership" }},
     MEMBERSHIP_A_NON_MEMBER_CANNOT_LEAVE: { httpCode: 400, uerr: { ucode: 2008, message: "A non-member cannot leave" }},
     NOT_A_MEMBER:                         { httpCode: 400, uerr: { ucode: 2009, message: "Not a member" }},
-    NO_CURRENT_BLOCK:                     { httpCode: 404, uerr: { ucode: 2010, message: "No current block" }},
     BLOCK_NOT_FOUND:                      { httpCode: 404, uerr: { ucode: 2011, message: "Block not found" }},
-    PEER_NOT_FOUND:                       { httpCode: 404, uerr: { ucode: 2012, message: "Peer not found" }},
     WRONG_UNLOCKER:                       { httpCode: 400, uerr: { ucode: 2013, message: "Wrong unlocker in transaction" }},
     LOCKTIME_PREVENT:                     { httpCode: 400, uerr: { ucode: 2014, message: "Locktime not elapsed yet" }},
     SOURCE_ALREADY_CONSUMED:              { httpCode: 400, uerr: { ucode: 2015, message: "Source already consumed" }},
@@ -250,14 +226,6 @@ module.exports = {
     MAX_CONCURRENT_POST: 3,
     DEFAULT_TIMEOUT: 10 * 1000, // 10 seconds
     SYNC_LONG_TIMEOUT: 30 * 1000, // 30 seconds
-    DEFAULT_PORT: 8999,
-    PORT: {
-      START: 15000
-    },
-    UPNP: {
-      INTERVAL: 300,
-      TTL: 600
-    },
     SYNC: {
       MAX: 20
     },

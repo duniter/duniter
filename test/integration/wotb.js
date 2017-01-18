@@ -4,7 +4,7 @@ const co        = require('co');
 const should    = require('should');
 const _         = require('underscore');
 const duniter     = require('../../index');
-const bma       = require('../../app/lib/streams/bma');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
 

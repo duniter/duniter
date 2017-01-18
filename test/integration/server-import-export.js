@@ -6,7 +6,7 @@ const co = require('co');
 const unzip = require('unzip');
 const toolbox = require('../integration/tools/toolbox');
 const user    = require('../integration/tools/user');
-const bma     = require('../../app/lib/streams/bma');
+const bma     = require('duniter-bma').duniter.methods.bma;
 
 const serverConfig = {
   memory: false,

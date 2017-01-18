@@ -5,13 +5,6 @@ const constants = require('../constants');
 const defaultConf = function() {
   return {
     "currency": null,
-    "port": constants.NETWORK.DEFAULT_PORT,
-    "ipv4": "127.0.0.1",
-    "ipv6": null,
-    "remotehost": null,
-    "remoteipv4": null,
-    "remoteipv6": null,
-    "remoteport": constants.NETWORK.DEFAULT_PORT,
     "endpoints": [],
     "rmEndpoints": [],
     "cpu": constants.DEFAULT_CPU,

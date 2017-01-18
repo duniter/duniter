@@ -12,11 +12,14 @@ const until       = require('../tools/until');
 const Peer        = require('../../../app/lib/entity/peer');
 const Identity    = require('../../../app/lib/entity/identity');
 const Block       = require('../../../app/lib/entity/block');
-const bma         = require('../../../app/lib/streams/bma');
+const bma         = require('duniter-bma').duniter.methods.bma;
 const multicaster = require('../../../app/lib/streams/multicaster');
 const network     = require('../../../app/lib/system/network');
-const dtos        = require('../../../app/lib/streams/dtos');
+const dtos        = require('duniter-bma').duniter.methods.dtos;
 const duniter     = require('../../../index');
+const logger      = require('../../../app/lib/logger')('toolbox');
+
+require('duniter-bma').duniter.methods.noLimit(); // Disables the HTTP limiter
 
 const MEMORY_MODE = true;
 const CURRENCY_NAME = 'duniter_unit_test_currency';
@@ -125,7 +128,7 @@ module.exports = {
       const fakeServer = yield network.createServersAndListen("Fake Duniter Server", [{
         ip: host,
         port: port
-      }], NO_HTTP_LOGS, NO_STATIC_PATH, (app, httpMethods) => {
+      }], NO_HTTP_LOGS, logger, NO_STATIC_PATH, (app, httpMethods) => {
 
         // Mock BMA method for sync mocking
         httpMethods.httpGET('/network/peering', () => {

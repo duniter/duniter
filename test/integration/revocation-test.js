@@ -4,14 +4,11 @@ const _         = require('underscore');
 const co        = require('co');
 const should    = require('should');
 const duniter   = require('../../index');
-const bma       = require('../../app/lib/streams/bma');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
-const limiter = require('../../app/lib/system/limiter');
-
-limiter.noLimit();
 
 const expectAnswer  = httpTest.expectAnswer;
 

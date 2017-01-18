@@ -20,14 +20,6 @@ function Wizard () {
     doTasks(['currency'], conf, done);
   };
 
-  this.configNetwork = function (conf, program, done) {
-    doTasks(['network'], conf, done);
-  };
-
-  this.configNetworkReconfigure = function (conf, program, done) {
-    doTasks(['networkReconfigure'], conf, done);
-  };
-
   this.configUCP = function (conf, program, done) {
     doTasks(['ucp'], conf, done);
   };
@@ -35,9 +27,6 @@ function Wizard () {
 
 function doTasks (todos, conf, done) {
   async.forEachSeries(todos, function(task, callback){
-    if (task == 'networkReconfigure') {
-      return tasks[task] && tasks[task](conf, false, false, callback);
-    }
     tasks[task] && tasks[task](conf, callback);
   }, done);
 }

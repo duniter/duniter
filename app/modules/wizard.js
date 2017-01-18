@@ -12,8 +12,6 @@ module.exports = {
       // The wizard itself also defines its personal tasks
       'currency': Q.nbind(wizard().configCurrency, null),
       'pow': Q.nbind(wizard().configPoW, null),
-      'network': Q.nbind(wizard().configNetwork, null),
-      'network-reconfigure': Q.nbind(wizard().configNetworkReconfigure, null),
       'ucp': Q.nbind(wizard().configUCP, null)
     },
 

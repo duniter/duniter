@@ -34,10 +34,11 @@ describe("v1.0 Module API", () => {
 
     sStack.registerDependency(helloDependency, 'duniter-hello');
     sStack.registerDependency(helloDependency, 'duniter-hello'); // Try to load it 2 times, should not throw an error
+    sStack.registerDependency(require('duniter-keypair'), 'duniter-keypair');
     aStack.registerDependency(helloDependency, 'duniter-hello');
 
-    (yield sStack.executeStack(['node', 'index.js', 'hello', 'World', 'TEST', '--opt1', '--option2', '5'])).should.equal('Hello, World. You successfully sent arg \'TEST\' along with opt1 = true and option2 = 5.');
-    (yield aStack.executeStack(['node', 'index.js', 'hello', 'Zorld', 'ESSE', '--option2', 'd'])).should.equal('Hello, Zorld. You successfully sent arg \'ESSE\' along with opt1 = undefined and option2 = NaN.');
+    (yield sStack.executeStack(['node', 'index.js', '--memory', 'hello', 'World', 'TEST', '--opt1', '--option2', '5'])).should.equal('Hello, World. You successfully sent arg \'TEST\' along with opt1 = true and option2 = 5.');
+    (yield aStack.executeStack(['node', 'index.js', '--memory', 'hello', 'Zorld', 'ESSE', '--option2', 'd'])).should.equal('Hello, Zorld. You successfully sent arg \'ESSE\' along with opt1 = undefined and option2 = NaN.');
   }));
 
   /***********************

@@ -3,9 +3,9 @@
 const co              = require('co');
 const _               = require('underscore');
 const constants       = require('../constants');
-const rawer           = require('../ucp/rawer');
+const rawer           = require('duniter-common').rawer;
 const unlock          = require('../ucp/txunlock');
-const keyring         = require('../crypto/keyring');
+const keyring         = require('duniter-common').keyring;
 const Block           = require('../entity/block');
 const Identity        = require('../entity/identity');
 const Certification   = require('../entity/certification');
@@ -233,8 +233,8 @@ const indexer = module.exports = {
           unlock: txObj.unlocks[k],
           amount: input.amount,
           base: input.base,
-          consumed: true,
           conditions: null,
+          consumed: true,
           txObj: txObj
         });
         k++;
@@ -253,8 +253,8 @@ const indexer = module.exports = {
           locktime: obj.locktime,
           amount: output.amount,
           base: output.base,
-          consumed: false,
           conditions: output.conditions,
+          consumed: false,
           txObj: obj
         });
       }
@@ -468,8 +468,8 @@ const indexer = module.exports = {
       const ratio = constants.POW_DIFFICULTY_RANGE_RATIO;
       const maxGenTime = Math.ceil(conf.avgGenTime * ratio);
       const minGenTime = Math.floor(conf.avgGenTime / ratio);
-      const minSpeed = 1/ maxGenTime;
-      const maxSpeed = 1/ minGenTime;
+      const minSpeed = 1 / maxGenTime;
+      const maxSpeed = 1 / minGenTime;
 
       if (HEAD.diffNumber != HEAD_1.diffNumber && HEAD.speed >= maxSpeed && (HEAD_1.powMin + 2) % 16 == 0) {
         HEAD.powMin = HEAD_1.powMin + 2;
@@ -713,6 +713,7 @@ const indexer = module.exports = {
         amount: ENTRY.amount,
         base: ENTRY.base
       });
+      ENTRY.conditions = reduce(reducable).conditions; // We valuate the input conditions, so we can map these records to a same account
       ENTRY.available = reduce(reducable).consumed === false;
     }));
 
@@ -783,11 +784,11 @@ const indexer = module.exports = {
     } else {
       const issuersVar = (HEAD.issuersCount - HEAD_1.issuersCount);
       if (HEAD_1.issuersFrameVar > 0) {
-        HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*issuersVar - 1;
+        HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5 * issuersVar - 1;
       } else if (HEAD_1.issuersFrameVar < 0) {
-        HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*issuersVar + 1;
+        HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5 * issuersVar + 1;
       } else {
-        HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5*issuersVar;
+        HEAD.issuersFrameVar = HEAD_1.issuersFrameVar + 5 * issuersVar;
       }
     }
   },
@@ -837,7 +838,7 @@ const indexer = module.exports = {
 
   // BR_G14
   prepareUnitBase: (HEAD) => {
-    if (HEAD.dividend >= Math.pow(10, 6)) {
+    if (HEAD.dividend >= Math.pow(10, constants.NB_DIGITS_UD)) {
       HEAD.dividend = Math.ceil(HEAD.dividend / 10);
       HEAD.new_dividend = HEAD.dividend;
       HEAD.unitBase = HEAD.unitBase + 1;
@@ -1279,6 +1280,42 @@ const indexer = module.exports = {
     return dividends;
   }),
 
+  // BR_G106
+  ruleIndexGarbageSmallAccounts: (HEAD, sindex, dal) => co(function*() {
+    const garbages = [];
+    let potentialSources = yield dal.sindexDAL.findLowerThan(constants.ACCOUNT_MINIMUM_CURRENT_BASED_AMOUNT, HEAD.unitBase);
+    potentialSources = potentialSources.concat(_.where(sindex, { op: constants.IDX_CREATE }));
+    const accountsBalance = potentialSources.reduce((map, src) => {
+      if (!map[src.conditions]) {
+        map[src.conditions] = { amount: 0, sources: [] };
+      }
+      map[src.conditions].amount += src.amount * Math.pow(10, src.base);
+      map[src.conditions].sources.push(src);
+      return map;
+    }, {});
+    const accounts = Object.keys(accountsBalance);
+    for (const account of accounts) {
+      const amount = accountsBalance[account].amount;
+      const sources = accountsBalance[account].sources;
+      if (amount < constants.ACCOUNT_MINIMUM_CURRENT_BASED_AMOUNT * Math.pow(10, HEAD.unitBase)) {
+        for (const src of sources) {
+          garbages.push({
+            op: 'UPDATE',
+            identifier: src.identifier,
+            pos: src.pos,
+            amount: src.amount,
+            base: src.base,
+            written_on: [HEAD.number, HEAD.hash].join('-'),
+            written_time: HEAD.medianTime,
+            conditions: src.conditions,
+            consumed: true // It is now consumed
+          });
+        }
+      }
+    }
+    return garbages;
+  }),
+
   // BR_G92
   ruleIndexGenCertificationExpiry: (HEAD, dal) => co(function*() {
     const expiries = [];
@@ -1447,7 +1484,7 @@ function median(values) {
     // Even number: the median is the average between the 2 central values, ceil rounded.
     const firstValue = values[nbValues / 2];
     const secondValue = values[nbValues / 2 - 1];
-    med = ((firstValue + secondValue) / 2); // TODO v1.0 median ceil rounded
+    med = ((firstValue + secondValue) / 2);
   } else {
     med = values[(nbValues + 1) / 2 - 1];
   }

@@ -16,7 +16,6 @@ const commonConf = {
   currency: 'bb',
   httpLogs: true,
   forksize: 3,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };
 
@@ -24,13 +23,14 @@ const s1 = node({
   memory: MEMORY_MODE,
   name: 'bb33'
 }, _.extend({
+  ipv4: '127.0.0.1',
   port: '20501',
   remoteport: '20501',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
   },
-  participate: false, rootoffset: 10,
+  rootoffset: 10,
   sigQty: 1, dt: 0, ud0: 120
 }, commonConf));
 

@@ -2,8 +2,8 @@
 
 const co        = require('co');
 const _         = require('underscore');
-const ucoin     = require('../../index');
-const bma       = require('../../app/lib/streams/bma');
+const duniter     = require('../../index');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
@@ -18,21 +18,27 @@ if (constants.MUTE_LOGS_DURING_UNIT_TESTS) {
   require('../../app/lib/logger')().mute();
 }
 
+// Trace these errors
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection: ' + reason);
+  console.error(reason);
+});
+
 const MEMORY_MODE = true;
 const commonConf = {
   ipv4: '127.0.0.1',
   currency: 'bb',
   httpLogs: true,
   forksize: 10,
-  avgGenTime: constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES * 60,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
+  swichOnTimeAheadBy: 30,
+  avgGenTime: 30 * 60,
   sigQty: 1
 };
 
-const s1 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb4'
-}, _.extend({
+const s1 = duniter(
+  '/bb4',
+  MEMORY_MODE,
+  _.extend({
   port: '7781',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -40,10 +46,10 @@ const s1 = ucoin({
   }
 }, commonConf));
 
-const s2 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb5'
-}, _.extend({
+const s2 = duniter(
+  '/bb5',
+  MEMORY_MODE,
+  _.extend({
   port: '7782',
   pair: {
     pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
@@ -98,7 +104,7 @@ describe("SelfFork", function() {
     yield s1.singleWritePromise(s2p);
 
     // Forking S1 from S2
-    return s1.pullBlocks(s2p.pubkey);
+    return require('duniter-crawler').duniter.methods.pullBlocks(s1, s2p.pubkey);
   }));
 
   describe("Server 1 /blockchain", function() {

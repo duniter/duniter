@@ -1,7 +1,7 @@
 "use strict";
 const util                 = require('util');
 const stream               = require('stream');
-const hashf                = require('../../ucp/hashf');
+const hashf                = require('duniter-common').hashf;
 const logger               = require('../../logger')('gen_parser');
 const constants            = require('../../constants');
 
@@ -14,7 +14,7 @@ function GenericParser (captures, multipleLinesFields, rawerFunc) {
 
   this.rawerFunc = rawerFunc;
 
-  this._simpleLineExtraction = (pr, rawEntry, cap, parser) => {
+  this._simpleLineExtraction = (pr, rawEntry, cap) => {
     const fieldValue = rawEntry.match(cap.regexp);
     if(fieldValue && fieldValue.length >= 2){
       pr[cap.prop] = cap.parser ? cap.parser(fieldValue[1], pr) : fieldValue[1];

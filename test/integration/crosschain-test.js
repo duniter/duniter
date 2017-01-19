@@ -5,7 +5,7 @@ const _ = require('underscore');
 const assert = require('assert');
 const should = require('should');
 const rp        = require('request-promise');
-const bma       = require('../../app/lib/streams/bma');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const commit    = require('./tools/commit');
 const toolbox = require('./tools/toolbox');
 const user   = require('./tools/user');
@@ -21,7 +21,6 @@ describe("Crosschain transactions", function() {
     httpLogs: true,
     forksize: 3,
     dt: 1, ud0: 120, rootoffset: 10,
-    parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
     sigQty: 1
   };
 

@@ -1,16 +1,16 @@
-var lint = require('mocha-eslint');
+const lint = require('mocha-eslint');
 
 // Array of paths to lint
 // Note: a seperate Mocha test will be run for each path and each file which
 // matches a glob pattern
-var paths = [
+const paths = [
   'app',
   'bin/duniter',
   'test'
 ];
 
 // Specify style of output
-var options = {};
+const options = {};
 options.formatter = 'stylish';
 
 // Run the tests

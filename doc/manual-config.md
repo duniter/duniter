@@ -19,7 +19,7 @@ Replace `mycurrency` by the name of the currency you want to manage.
 
 ## Network parameters
 
-By default, ucoin runs on port 8033. You may change it using the --port parameter:
+By default, duniter runs on port 8033. You may change it using the --port parameter:
 
 ```bash
 $ duniter config --port 80
@@ -60,9 +60,9 @@ Note too that listening to multiple interfaces doesn't imply mutiple program ins
 
 ### Peering informations
 
-Duniter protocol uses peering mecanisms, hence needs any ucoin node to be reachable through the network.
+Duniter protocol uses peering mecanisms, hence needs any duniter node to be reachable through the network.
 
-As the server may be behind a reverse proxy, or because hosts may change of address, remote informations are likely to be different from listening host and port parameters. ucoin software defines 4 remote parameters you need to precise for your ucoin instance to be working:
+As the server may be behind a reverse proxy, or because hosts may change of address, remote informations are likely to be different from listening host and port parameters. duniter software defines 4 remote parameters you need to precise for your duniter instance to be working:
 
 * `--remoteh`
 * `--remote4`

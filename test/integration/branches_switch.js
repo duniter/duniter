@@ -2,8 +2,8 @@
 
 const co = require('co');
 const _         = require('underscore');
-const ucoin     = require('../../index');
-const bma       = require('../../app/lib/streams/bma');
+const duniter     = require('../../index');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
@@ -20,27 +20,28 @@ const commonConf = {
   httpLogs: true,
   forksize: 30,
   avgGenTime: 1,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };
 
-const s1 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb11'
-}, _.extend({
+const s1 = duniter(
+  '/bb11',
+  MEMORY_MODE,
+  _.extend({
+  swichOnTimeAheadBy: 0,
   port: '7788',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
   },
-  participate: false, rootoffset: 10,
+  rootoffset: 10,
   sigQty: 1, dt: 1, ud0: 120
 }, commonConf));
 
-const s2 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb12'
-}, _.extend({
+const s2 = duniter(
+  '/bb12',
+  MEMORY_MODE,
+  _.extend({
+  swichOnTimeAheadBy: 0,
   port: '7789',
   pair: {
     pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
@@ -81,14 +82,10 @@ describe("Switch", function() {
     // So we now have:
     // S1 01234
     // S2   `3456789
-    let oldVal = constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES = 0;
-
     yield s1.singleWritePromise(s2p);
 
     // Forking S1 from S2
-    yield s1.pullBlocks(s2p.pubkey);
-
-    constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES = oldVal;
+    yield require('duniter-crawler').duniter.methods.pullBlocks(s1, s2p.pubkey);
     // S1 should have switched to the other branch
   }));
 

@@ -3,8 +3,8 @@
 const _         = require('underscore');
 const co        = require('co');
 const should    = require('should');
-const ucoin     = require('../../index');
-const bma       = require('../../app/lib/streams/bma');
+const duniter     = require('../../index');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
@@ -20,14 +20,13 @@ const commonConf = {
   xpercent: 0.9,
   sigPeriod: 200, // every 200 seconds
   msValidity: 10000,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };
 
-const s1 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb11'
-}, _.extend({
+const s1 = duniter(
+  '/bb11',
+  MEMORY_MODE,
+  _.extend({
   port: '9225',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',

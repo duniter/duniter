@@ -2,11 +2,9 @@
 
 const co        = require('co');
 const should    = require('should');
-const bma       = require('../../app/lib/streams/bma');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const constants = require('../../app/lib/constants');
-const limiter   = require('../../app/lib/system/limiter');
 const toolbox   = require('./tools/toolbox');
-const multicaster = require('../../app/lib/streams/multicaster');
 
 const conf = {
   avgGenTime: 5000,
@@ -21,7 +19,6 @@ describe("Protocol 0.5 Identity blockstamp", function() {
 
   before(() => co(function*() {
 
-    limiter.noLimit();
     const res1 = yield toolbox.simpleNodeWith2Users(conf);
     const res2 = yield toolbox.simpleNodeWith2otherUsers(conf);
     s1 = res1.s1;

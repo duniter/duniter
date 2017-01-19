@@ -1,13 +1,12 @@
 "use strict";
 const _ = require('underscore');
-const rawer = require('../ucp/rawer');
-const ucp = require('../ucp/buid');
+const rawer = require('duniter-common').rawer;
 const Identity = require('./identity');
 
 const Revocation = function(json) {
 
   _(json).keys().forEach((key) => {
-   this[key] = json[key];
+    this[key] = json[key];
   });
 
   this.getRaw = () => rawer.getOfficialRevocation(this);

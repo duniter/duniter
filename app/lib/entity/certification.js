@@ -1,14 +1,14 @@
 "use strict";
 const _ = require('underscore');
-const rawer = require('../ucp/rawer');
-const ucp = require('../ucp/buid');
+const rawer = require('duniter-common').rawer;
+const ucp = require('duniter-common').buid;
 
 const Certification = function(json) {
 
   this.linked = false;
 
   _(json).keys().forEach((key) => {
-   this[key] = json[key];
+    this[key] = json[key];
   });
 
   this.from  = this.pubkey = this.from || this.pubkey || this.issuer;

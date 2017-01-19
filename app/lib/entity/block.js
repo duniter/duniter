@@ -1,7 +1,6 @@
 "use strict";
 const _ = require('underscore');
-const constants = require('../constants');
-const hashf = require('../ucp/hashf');
+const hashf = require('duniter-common').hashf;
 const Transaction = require('./transaction');
 
 module.exports = Block;
@@ -69,8 +68,8 @@ function Block(json) {
       "issuersFrameVar",
       "len"
     ].forEach((field) => {
-        json[field] = parseInt(this[field], 10);
-      });
+      json[field] = parseInt(this[field], 10);
+    });
     [
       "currency",
       "issuer",
@@ -78,20 +77,20 @@ function Block(json) {
       "hash",
       "parameters"
     ].forEach((field) => {
-        json[field] = this[field] || "";
-      });
+      json[field] = this[field] || "";
+    });
     [
       "previousHash",
       "previousIssuer",
       "inner_hash"
     ].forEach((field) => {
-        json[field] = this[field] || null;
-      });
+      json[field] = this[field] || null;
+    });
     [
       "dividend"
     ].forEach((field) => {
-        json[field] = parseInt(this[field]) || null;
-      });
+      json[field] = parseInt(this[field]) || null;
+    });
     [
       "identities",
       "joiners",
@@ -101,19 +100,19 @@ function Block(json) {
       "excluded",
       "certifications"
     ].forEach((field) => {
-        json[field] = [];
-        this[field].forEach((raw) => {
-          json[field].push(raw);
-        });
+      json[field] = [];
+      this[field].forEach((raw) => {
+        json[field].push(raw);
       });
+    });
     [
       "transactions"
     ].forEach((field) => {
-        json[field] = [];
-        this[field].forEach((obj) => {
-          json[field].push(_(obj).omit('raw', 'certifiers', 'hash'));
-        });
+      json[field] = [];
+      this[field].forEach((obj) => {
+        json[field].push(_(obj).omit('raw', 'certifiers', 'hash'));
       });
+    });
     json.raw = this.getRaw();
     return json;
   };
@@ -126,23 +125,23 @@ function Block(json) {
   };
 
   this.getRawInnerPart = () => {
-    return require('../ucp/rawer').getBlockInnerPart(this);
+    return require('duniter-common').rawer.getBlockInnerPart(this);
   };
 
   this.getRaw = () => {
-    return require('../ucp/rawer').getBlockWithInnerHashAndNonce(this);
+    return require('duniter-common').rawer.getBlockWithInnerHashAndNonce(this);
   };
 
   this.getSignedPart = () => {
-    return require('../ucp/rawer').getBlockInnerHashAndNonce(this);
+    return require('duniter-common').rawer.getBlockInnerHashAndNonce(this);
   };
 
   this.getProofOfWorkPart = () => {
-    return require('../ucp/rawer').getBlockInnerHashAndNonceWithSignature(this);
+    return require('duniter-common').rawer.getBlockInnerHashAndNonceWithSignature(this);
   };
 
   this.getRawSigned = () => {
-    return require('../ucp/rawer').getBlock(this);
+    return require('duniter-common').rawer.getBlock(this);
   };
 
   this.quickDescription = () => {

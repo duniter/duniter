@@ -2,8 +2,8 @@
 const util          = require('util');
 const GenericParser = require('./GenericParser');
 const Block         = require('../../entity/block');
-const hashf         = require('../../ucp/hashf');
-const rawer         = require('../../ucp/rawer');
+const hashf         = require('duniter-common').hashf;
+const rawer         = require('duniter-common').rawer;
 const constants     = require('../../constants');
 
 module.exports = BlockParser;
@@ -54,7 +54,7 @@ function BlockParser (onError) {
     obj.transactions = obj.transactions || [];
     obj.version = obj.version || '';
     obj.type = obj.type || '';
-    obj.hash = hashf(require('../../ucp/rawer').getBlockInnerHashAndNonceWithSignature(obj)).toUpperCase();
+    obj.hash = hashf(require('duniter-common').rawer.getBlockInnerHashAndNonceWithSignature(obj)).toUpperCase();
     obj.inner_hash = obj.inner_hash || '';
     obj.currency = obj.currency || '';
     obj.nonce = obj.nonce || '';
@@ -163,7 +163,7 @@ function splitAndMatch (separator, regexp) {
   };
 }
 
-function extractTransactions(raw, obj) {
+function extractTransactions(raw) {
   const regexps = {
     "issuers": constants.TRANSACTION.SENDER,
     "inputs": constants.TRANSACTION.SOURCE_V3,

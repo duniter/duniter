@@ -1,8 +1,6 @@
 "use strict";
 
 const co = require('co');
-const colors = require('colors');
-const logger = require('../../logger')('sqlite');
 
 module.exports = SandBox;
 
@@ -24,7 +22,7 @@ function SandBox(maxSize, findElements, compareElements) {
     return comparison > 0;
   });
 
-  this.getSandboxRoom = (underBlock) => co(function *() {
+  this.getSandboxRoom = () => co(function *() {
     const elems = yield findElements();
     return that.maxSize - elems.length;
   });

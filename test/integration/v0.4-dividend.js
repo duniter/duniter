@@ -2,12 +2,10 @@
 
 const co        = require('co');
 const should    = require('should');
-const bma       = require('../../app/lib/streams/bma');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
-const until     = require('./tools/until');
 const toolbox   = require('./tools/toolbox');
-const multicaster = require('../../app/lib/streams/multicaster');
 
 const s1 = toolbox.server({
   c: 0.1,
@@ -23,13 +21,11 @@ const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', s
 const tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: s1 });
 const tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
 
-let now;
+const now = 1484000000;
 
 describe("Protocol 0.4 Dividend", function() {
 
   before(() => co(function*() {
-
-    now = Math.round(new Date().getTime() / 1000);
 
     yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
 

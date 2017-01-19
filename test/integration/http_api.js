@@ -4,22 +4,22 @@ const co        = require('co');
 const _         = require('underscore');
 const should    = require('should');
 const assert    = require('assert');
-const ucoin     = require('../../index');
-const bma       = require('../../app/lib/streams/bma');
+const duniter     = require('../../index');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const http      = require('./tools/http');
 const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
 const ws        = require('ws');
 
-const server = ucoin({
-  memory: true
-}, {
+const server = duniter(
+  '/bb11',
+  true,
+  {
   ipv4: '127.0.0.1',
   port: '7777',
   currency: 'bb',
   httpLogs: true,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1,
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -54,7 +54,7 @@ describe("HTTP API", function() {
 
   function makeBlockAndPost(theServer) {
     return function() {
-      return theServer.doMakeNextBlock()
+      return require('duniter-prover').duniter.methods.generateAndProveTheNext(theServer)
         .then(postBlock(theServer));
     };
   }

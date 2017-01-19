@@ -5,15 +5,12 @@ const _ = require('underscore');
 const should = require('should');
 const assert = require('assert');
 const constants = require('../../app/lib/constants');
-const bma       = require('../../app/lib/streams/bma');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const toolbox   = require('./tools/toolbox');
 const node   = require('./tools/node');
 const user   = require('./tools/user');
 const unit   = require('./tools/unit');
 const http   = require('./tools/http');
-const limiter = require('../../app/lib/system/limiter');
-
-limiter.noLimit();
 
 describe("Transaction chaining", function() {
 
@@ -25,7 +22,7 @@ describe("Transaction chaining", function() {
       sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
     },
     dt: 3600,
-    ud0: 120,
+    ud0: 1200,
     c: 0.1
   });
 
@@ -48,10 +45,10 @@ describe("Transaction chaining", function() {
 
   describe("Sources", function(){
 
-    it('it should exist block#2 with UD of 120', () => s1.expect('/blockchain/block/2', (block) => {
+    it('it should exist block#2 with UD of 1200', () => s1.expect('/blockchain/block/2', (block) => {
       should.exists(block);
       assert.equal(block.number, 2);
-      assert.equal(block.dividend, 120);
+      assert.equal(block.dividend, 1200);
     }));
   });
 
@@ -61,9 +58,9 @@ describe("Transaction chaining", function() {
       // Current state
       let current = yield s1.get('/blockchain/current');
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1);
-      let tx1 = yield toc.prepareITX(104, tic); // Rest = 120 - 104 = 16
-      let tx2 = yield toc.prepareUTX(tx1, ['SIG(0)'], [{ qty: 16, base: 0, lock: 'SIG(' + tic.pub + ')' }], {
-        comment: 'also take the remaining 16 units',
+      let tx1 = yield toc.prepareITX(1040, tic); // Rest = 1200 - 1040 = 160
+      let tx2 = yield toc.prepareUTX(tx1, ['SIG(0)'], [{ qty: 160, base: 0, lock: 'SIG(' + tic.pub + ')' }], {
+        comment: 'also take the remaining 160 units',
         blockstamp: [current.number, current.hash].join('-'),
         theseOutputsStart: 1
       });
@@ -74,11 +71,11 @@ describe("Transaction chaining", function() {
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(1);
       yield s1.commit({ time: now + 7210 }); // TX1 commited
-      (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1); // The 16 remaining units
-      (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(2); // The UD + 104 units sent by toc
+      (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1); // The 160 remaining units
+      (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(2); // The UD + 1040 units sent by toc
       yield s1.commit({ time: now + 7210 }); // TX2 commited
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
-      (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3); // The UD + 104 + 16 units sent by toc
+      (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3); // The UD + 1040 + 160 units sent by toc
       constants.TRANSACTION_MAX_TRIES = tmp;
     }));
   });

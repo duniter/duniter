@@ -5,19 +5,8 @@ const constants = require('../constants');
 const defaultConf = function() {
   return {
     "currency": null,
-    "port": constants.NETWORK.DEFAULT_PORT,
-    "ipv4": "127.0.0.1",
-    "ipv6": null,
-    "upnp": true,
-    "remotehost": null,
-    "remoteipv4": null,
-    "remoteipv6": null,
-    "remoteport": constants.NETWORK.DEFAULT_PORT,
-    "salt": "",
-    "passwd": "",
     "endpoints": [],
     "rmEndpoints": [],
-    "cpu": constants.DEFAULT_CPU,
     "upInterval": 3600 * 1000,
     "c": constants.CONTRACT.DEFAULT.C,
     "dt": constants.CONTRACT.DEFAULT.DT,
@@ -33,11 +22,9 @@ const defaultConf = function() {
     "avgGenTime": constants.CONTRACT.DEFAULT.AVGGENTIME,
     "dtDiffEval": constants.CONTRACT.DEFAULT.DTDIFFEVAL,
     "medianTimeBlocks": constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS,
-    "participate": true,
     "httplogs": false,
     "udid2": false,
     "timeout": 3000,
-    "routing": false,
     "isolate": false,
     "forksize": constants.BRANCHES.DEFAULT_WINDOW_SIZE
   };

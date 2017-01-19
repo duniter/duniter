@@ -4,18 +4,15 @@ const co = require('co');
 const _ = require('underscore');
 const should = require('should');
 const assert = require('assert');
-const bma       = require('../../app/lib/streams/bma');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const constants = require('../../app/lib/constants');
 const node   = require('./tools/node');
-const ucoin     = require('../../index');
+const duniter     = require('../../index');
 const user   = require('./tools/user');
 const jspckg = require('../../package');
 const commit    = require('./tools/commit');
 const httpTest  = require('./tools/http');
 const rp        = require('request-promise');
-const limiter = require('../../app/lib/system/limiter');
-
-limiter.noLimit();
 
 const expectAnswer   = httpTest.expectAnswer;
 const MEMORY_MODE = true;
@@ -24,8 +21,8 @@ describe("Integration", function() {
 
   describe("Node 1", function() {
 
-    const node1 = node('db1', { currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, upnp: false, httplogs: false,
-      participate: false, rootoffset: 0,
+    const node1 = node('db1', { currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, httplogs: false,
+      rootoffset: 0,
       sigQty: 1,
       pair: {
         pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -172,10 +169,14 @@ describe("Integration", function() {
 
   describe("Testing leavers", function(){
 
-    const node3 = ucoin({ name: 'db3', memory: MEMORY_MODE }, {
-      currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, upnp: false, httplogs: false,
-      salt: 'abc', passwd: 'abc', participate: false, rootoffset: 0,
-      sigQty: 1, sigPeriod: 0
+    const node3 = duniter('/db3', MEMORY_MODE, {
+      currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, httplogs: false,
+      rootoffset: 0,
+      sigQty: 1, sigPeriod: 0,
+      pair: {
+        pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+        sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
+      }
     });
 
     const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: node3 });

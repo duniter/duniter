@@ -2,12 +2,10 @@
 
 const co        = require('co');
 const should    = require('should');
-const bma       = require('../../app/lib/streams/bma');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
 const toolbox   = require('./tools/toolbox');
-const limiter   = require('../../app/lib/system/limiter');
-const multicaster = require('../../app/lib/streams/multicaster');
 
 const s1 = toolbox.server({
   memory: true,
@@ -27,8 +25,6 @@ describe("Revert memberships", function() {
   const now = 1482000000;
 
   before(() => co(function*() {
-
-    limiter.noLimit();
 
     yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
 

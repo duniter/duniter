@@ -5,20 +5,27 @@ const co = require('co');
 const duniter = require('../index');
 const stack = duniter.statics.autoStack();
 
-stack.registerDependency({
-  duniter: {
-    cli: [{
-      name: 'hello',
-      desc: 'Says hello to the world.',
-      requires: ['service'],
-      promiseCallback: (duniterServer) => co(function*(){
-        console.log('Hello, world.');
-      })
-    }]
-  }
-});
+return co(function*() {
 
-return co(function*(){
-  yield stack.executeStack();
-  console.log('Done');
+  // Specific errors handling
+  process.on('uncaughtException', (err) => {
+    // Dunno why this specific exception is not caught
+    if (err.code !== "EADDRNOTAVAIL" && err.code !== "EINVAL") {
+      duniter.statics.logger.error(err);
+      process.exit(2);
+    }
+  });
+
+  try {
+    yield stack.executeStack(process.argv);
+    // Everything went well, close Duniter quietly.
+    process.exit();
+  } catch (e) {
+    // If an unhandled error occured
+    duniter.statics.logger.error(e);
+    process.exit(1);
+  } finally {
+    // If we did not succeed to close before, force close with error.
+    process.exit(100);
+  }
 });

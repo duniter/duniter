@@ -4,22 +4,20 @@ const co        = require('co');
 const Q         = require('q');
 const _         = require('underscore');
 const should    = require('should');
-const ucoin     = require('../../index');
-const bma       = require('../../app/lib/streams/bma');
+const duniter     = require('../../index');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
 const sync      = require('./tools/sync');
-const contacter  = require('../../app/lib/contacter');
+const contacter  = require('duniter-crawler').duniter.methods.contacter;
 const until     = require('./tools/until');
 const multicaster = require('../../app/lib/streams/multicaster');
 const Peer = require('../../app/lib/entity/peer');
 
 const expectJSON     = httpTest.expectJSON;
-const expectAnswer   = httpTest.expectAnswer;
-const expectHttpCode = httpTest.expectHttpCode;
 
 const MEMORY_MODE = true;
 const commonConf = {
@@ -28,14 +26,13 @@ const commonConf = {
   currency: 'bb',
   httpLogs: true,
   forksize: 3,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };
 
-const s1 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb_net1'
-}, _.extend({
+const s1 = duniter(
+  'bb_net1',
+  MEMORY_MODE,
+  _.extend({
   port: '7784',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -43,10 +40,10 @@ const s1 = ucoin({
   }
 }, commonConf));
 
-const s2 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb_net2'
-}, _.extend({
+const s2 = duniter(
+  'bb_net2',
+  MEMORY_MODE,
+  _.extend({
   port: '7785',
   pair: {
     pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
@@ -54,10 +51,10 @@ const s2 = ucoin({
   }
 }, commonConf));
 
-const s3 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb_net3'
-}, _.extend({
+const s3 = duniter(
+  'bb_net3',
+  MEMORY_MODE,
+  _.extend({
   port: '7786',
   pair: {
     pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
@@ -91,14 +88,8 @@ describe("Network", function() {
               return bmaAPI.openConnections()
                 .then(() => {
                   server.bma = bmaAPI;
-                  server
-                    .pipe(server.router()) // The router asks for multicasting of documents
-                    .pipe(multicaster())
-                    .pipe(server.router());
+                  require('../../app/modules/router').duniter.methods.routeToNetwork(server);
                 });
-            })
-            .then(function(){
-              return server.start();
             });
         });
     }, Q())
@@ -141,21 +132,22 @@ describe("Network", function() {
           yield sync(2, 2, s1, s2);
           yield s2.recomputeSelfPeer();
           yield s2.bma.openConnections();
+          yield new Promise((resolve) => setTimeout(resolve, 1000));
           yield [
             until(s2, 'block', 2),
             until(s3, 'block', 2),
             commitS1()
               .then(commitS1)
           ];
-          yield commitS3();
           yield [
             until(s1, 'block', 1),
-            until(s2, 'block', 1)
+            until(s2, 'block', 1),
+            commitS3()
           ];
-          yield commitS2();
           yield [
             until(s1, 'block', 1),
-            until(s3, 'block', 1)
+            until(s3, 'block', 1),
+            commitS2()
           ];
         });
       })

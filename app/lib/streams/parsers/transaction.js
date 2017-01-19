@@ -1,6 +1,6 @@
 "use strict";
 const GenericParser = require('./GenericParser');
-const rawer         = require('../../ucp/rawer');
+const rawer         = require('duniter-common').rawer;
 const constants     = require('../../constants');
 const util          = require('util');
 
@@ -72,7 +72,7 @@ function extractIssuers(raw) {
   return issuers;
 }
 
-function extractInputs(raw, obj) {
+function extractInputs(raw) {
   const inputs = [];
   const lines = raw.split(/\n/);
   for (const line of lines) {

@@ -1,6 +1,5 @@
 "use strict";
 
-const Q = require('q');
 const _ = require('underscore');
 const co = require('co');
 const path = require('path');
@@ -24,7 +23,7 @@ function CFSCore(rootPath, qfs, parent) {
 
   /**
    * Creates the deletion folder before effective deletion.
-   * @returns {*|any|Q.Promise<void>} Promise of creation.
+   * @returns {*|any|Promise<void>} Promise of creation.
    */
   const createDeletionFolder = () => deletionFolderPromise || (deletionFolderPromise = that.makeTree('.deleted'));
 
@@ -197,7 +196,7 @@ function CFSCore(rootPath, qfs, parent) {
       return JSON.parse(data);
     } catch(err) {
       if (data && err.message.match(/^Unexpected token {/)) {
-        // TODO: this is a bug thrown during Unit Tests with MEMORY_MODE true...
+        // This is a bug thrown during Unit Tests with MEMORY_MODE true...
         return JSON.parse(data.match(/^(.*)}{.*/)[1] + '}');
       } else if (err.message.match(/^Unexpected end of input/)) {
         // Could not read, return empty object

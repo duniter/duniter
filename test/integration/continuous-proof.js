@@ -5,13 +5,18 @@ const should    = require('should');
 const user      = require('./tools/user');
 const toolbox   = require('./tools/toolbox');
 const constants = require('../../app/lib/constants');
-const keyring   = require('../../app/lib/crypto/keyring');
-const blockProver = require('../../app/lib/computation/blockProver');
+const keyring   = require('duniter-common').keyring;
+
+// Trace these errors
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection: ' + reason);
+  console.error(reason);
+});
 
 const s1 = toolbox.server({
+  cpu: 1,
   powDelay: 1000,
   powMin: 32,
-  participate: true, // TODO: to remove when startGeneration will be an explicit call
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
@@ -37,18 +42,17 @@ describe("Continous proof-of-work", function() {
   }));
 
   it('should automatically stop waiting if nothing happens', () => co(function*() {
-    s1.permaProver.should.have.property('loops').equal(0);
-    const PREVIOUS_VALUE = constants.POW_SECURITY_RETRY_DELAY;
-    constants.POW_SECURITY_RETRY_DELAY = 10;
+    s1.conf.powSecurityRetryDelay = 10;
     let start = Date.now();
     s1.startBlockComputation();
+    s1.permaProver.should.have.property('loops').equal(0);
     yield s1.until('block', 1);
     s1.permaProver.should.have.property('loops').equal(1);
     (start - Date.now()).should.be.belowOrEqual(1000);
     yield s1.stopBlockComputation();
     yield new Promise((resolve) => setTimeout(resolve, 100));
     s1.permaProver.should.have.property('loops').equal(2);
-    constants.POW_SECURITY_RETRY_DELAY = PREVIOUS_VALUE;
+    s1.conf.powSecurityRetryDelay = 10 * 60 * 1000;
     yield s1.revert();
     s1.permaProver.loops = 0;
   }));
@@ -93,23 +97,23 @@ describe("Continous proof-of-work", function() {
 
   it('testing a network', () => co(function*() {
     const res = yield toolbox.simpleNetworkOf2NodesAnd2Users({
-      participate: true,
       powMin: 16
     }), s2 = res.s1, s3 = res.s2;
     yield s2.commit();
     s2.conf.cpu = 0.5;
     s3.conf.cpu = 0.5;
-    s2.startBlockComputation();
-    s3.startBlockComputation();
     yield [
       s2.until('block', 10),
-      s3.until('block', 10)
+      s3.until('block', 10),
+      co(function*() {
+        s2.startBlockComputation();
+        s3.startBlockComputation();
+      })
     ];
   }));
 
   it('testing proof-of-work during a block pulling', () => co(function*() {
     const res = yield toolbox.simpleNetworkOf2NodesAnd2Users({
-      participate: true,
       powMin: 0
     }), s2 = res.s1, s3 = res.s2;
     yield s2.commit();
@@ -118,7 +122,7 @@ describe("Continous proof-of-work", function() {
     yield s2.until('block', 15);
     s2.stopBlockComputation();
     yield [
-      s3.PeeringService.pullBlocks(),
+      require('duniter-crawler').duniter.methods.pullBlocks(s3),
       s3.startBlockComputation()
     ];
     yield s3.expectJSON('/blockchain/current', { number: 15 });

@@ -12,25 +12,16 @@ const parsers     = require('./app/lib/streams/parsers');
 const constants   = require('./app/lib/constants');
 const fileDAL     = require('./app/lib/dal/fileDAL');
 const jsonpckg    = require('./package.json');
-const router      = require('./app/lib/streams/router');
-const base58      = require('./app/lib/crypto/base58');
-const keyring      = require('./app/lib/crypto/keyring');
+const keyring      = require('duniter-common').keyring;
 const directory   = require('./app/lib/system/directory');
-const dos2unix    = require('./app/lib/system/dos2unix');
-const Synchroniser = require('./app/lib/sync');
-const multicaster = require('./app/lib/streams/multicaster');
-const upnp        = require('./app/lib/system/upnp');
-const rawer       = require('./app/lib/ucp/rawer');
-const permanentProver = require('./app/lib/computation/permanentProver');
+const rawer       = require('duniter-common').rawer;
 
-function Server (dbConf, overrideConf) {
+function Server (home, memoryOnly, overrideConf) {
 
   stream.Duplex.call(this, { objectMode: true });
 
-  const home = directory.getHome(dbConf.name, dbConf.home);
-  const paramsP = directory.getHomeParams(dbConf && dbConf.memory, home);
+  const paramsP = directory.getHomeParams(memoryOnly, home);
   const logger = require('./app/lib/logger')('server');
-  const permaProver = this.permaProver = permanentProver(this);
   const that = this;
   that.home = home;
   that.conf = null;
@@ -40,19 +31,28 @@ function Server (dbConf, overrideConf) {
 
   // External libs
   that.lib = {};
-  that.lib.keyring = require('./app/lib/crypto/keyring');
+  that.lib.keyring = require('duniter-common').keyring;
   that.lib.Identity = require('./app/lib/entity/identity');
-  that.lib.rawer = require('./app/lib/ucp/rawer');
-  that.lib.http2raw = require('./app/lib/helpers/http2raw');
-  that.lib.dos2unix = require('./app/lib/system/dos2unix');
-  that.lib.contacter = require('./app/lib/contacter');
-  that.lib.bma = require('./app/lib/streams/bma');
+  that.lib.Certification = require('./app/lib/entity/certification');
+  that.lib.Transaction = require('./app/lib/entity/transaction');
+  that.lib.Peer = require('./app/lib/entity/peer');
+  that.lib.Membership = require('./app/lib/entity/membership');
+  that.lib.Block = require('./app/lib/entity/block');
+  that.lib.Stat = require('./app/lib/entity/stat');
+  that.lib.rawer = require('duniter-common').rawer;
+  that.lib.parsers = require('./app/lib/streams/parsers');
+  that.lib.http2raw = require('duniter-bma').duniter.methods.http2raw;
+  that.lib.dos2unix = require('duniter-common').dos2unix;
+  that.lib.contacter = require('duniter-crawler').duniter.methods.contacter;
+  that.lib.bma = require('duniter-bma').duniter.methods.bma;
   that.lib.network = require('./app/lib/system/network');
   that.lib.constants = require('./app/lib/constants');
-  that.lib.ucp = require('./app/lib/ucp/buid');
+  that.lib.ucp = require('duniter-common').buid;
+  that.lib.hashf = require('duniter-common').hashf;
+  that.lib.indexer = require('./app/lib/dup/indexer');
+  that.lib.rules = require('./app/lib/rules');
 
   that.MerkleService       = require("./app/lib/helpers/merkle");
-  that.ParametersService   = require("./app/lib/helpers/parameters")();
   that.IdentityService     = require('./app/service/IdentityService')();
   that.MembershipService   = require('./app/service/MembershipService')();
   that.PeeringService      = require('./app/service/PeeringService')(that);
@@ -105,7 +105,6 @@ function Server (dbConf, overrideConf) {
     const defaultValues = {
       remoteipv6:         that.conf.ipv6,
       remoteport:         that.conf.port,
-      cpu:                constants.DEFAULT_CPU,
       c:                  constants.CONTRACT.DEFAULT.C,
       dt:                 constants.CONTRACT.DEFAULT.DT,
       ud0:                constants.CONTRACT.DEFAULT.UD0,
@@ -132,25 +131,13 @@ function Server (dbConf, overrideConf) {
         that.conf[key] = defaultValues[key];
       }
     });
-    logger.debug('Loading crypto functions...');
     // Extract key pair
-    let keyPair = null;
-    const keypairOverriden = overrideConf && (overrideConf.salt || overrideConf.passwd);
-    if (!keypairOverriden && that.conf.pair) {
-      keyPair = keyring.Key(that.conf.pair.pub, that.conf.pair.sec);
-    }
-    else if (that.conf.passwd || that.conf.salt) {
-      keyPair = yield keyring.scryptKeyPair(that.conf.salt, that.conf.passwd);
-    }
-    if (keyPair) {
-      that.keyPair = keyPair;
-      that.sign = keyPair.sign;
-      // Update services
-      [that.IdentityService, that.MembershipService, that.PeeringService, that.BlockchainService, that.TransactionsService].map((service) => {
-        service.setConfDAL(that.conf, that.dal, that.keyPair);
-      });
-      that.router().setConfDAL(that.conf, that.dal);
-    }
+    that.keyPair = keyring.Key(that.conf.pair.pub, that.conf.pair.sec);
+    that.sign = that.keyPair.sign;
+    // Update services
+    [that.IdentityService, that.MembershipService, that.PeeringService, that.BlockchainService, that.TransactionsService].map((service) => {
+      service.setConfDAL(that.conf, that.dal, that.keyPair);
+    });
     return that.conf;
   });
 
@@ -202,63 +189,15 @@ function Server (dbConf, overrideConf) {
 
   this.initDAL = () => this.dal.init();
 
-  this.start = () => co(function*(){
-    yield that.checkConfig();
-    // Add signing & public key functions to PeeringService
-    logger.info('Node version: ' + that.version);
-    logger.info('Node pubkey: ' + that.PeeringService.pubkey);
-    return that.initPeer();
-  });
-
   this.recomputeSelfPeer = () => that.PeeringService.generateSelfPeer(that.conf, 0);
 
-  this.initPeer = () => co(function*(){
-      yield that.checkConfig();
-      yield Q.nbind(that.PeeringService.regularCrawlPeers, that.PeeringService);
-      logger.info('Storing self peer...');
-      yield that.PeeringService.regularPeerSignal();
-      yield Q.nbind(that.PeeringService.regularTestPeers, that.PeeringService);
-      yield Q.nbind(that.PeeringService.regularSyncBlock, that.PeeringService);
-  });
-
-  this.stopBlockComputation = () => permaProver.stopEveryting();
-  
   this.getCountOfSelfMadePoW = () => this.BlockchainService.getCountOfSelfMadePoW();
   this.isServerMember = () => this.BlockchainService.isMember();
 
-  this.isPoWWaiting = () => permaProver.isPoWWaiting();
-
-  this.startBlockComputation = () => permaProver.allowedToStart();
-
-  permaProver.onBlockComputed((block) => co(function*() {
-    try {
-      const obj = parsers.parseBlock.syncWrite(dos2unix(block.getRawSigned()));
-      yield that.singleWritePromise(obj);
-    } catch (err) {
-      logger.warn('Proof-of-work self-submission: %s', err.message || err);
+  this.checkConfig = () => co(function*() {
+    if (!that.conf.pair) {
+      throw new Error('No keypair was given.');
     }
-  }));
-
-  this.checkConfig = () => {
-    return that.checkPeeringConf(that.conf);
-  };
-
-  this.checkPeeringConf = (conf) => co(function*() {
-      if (!conf.pair && conf.passwd == null) {
-        throw new Error('No key password was given.');
-      }
-      if (!conf.pair && conf.salt == null) {
-        throw new Error('No key salt was given.');
-      }
-      if(!conf.ipv4 && !conf.ipv6){
-        throw new Error("No interface to listen to.");
-      }
-      if(!conf.remoteipv4 && !conf.remoteipv6 && !conf.remotehost){
-        throw new Error('No interface for remote contact.');
-      }
-      if (!conf.remoteport) {
-        throw new Error('No port for remote contact.');
-      }
   });
 
   this.resetHome = () => co(function *() {
@@ -382,16 +321,6 @@ function Server (dbConf, overrideConf) {
 
   this.disconnect = () => Promise.resolve(that.dal && that.dal.close());
 
-  this.pullBlocks = that.PeeringService.pullBlocks;
-
-  // Unit Tests or Preview method
-  this.doMakeNextBlock = (manualValues) => that.BlockchainService.makeNextBlock(null, null, manualValues);
-
-  this.doCheckBlock = (block) => {
-    const parsed = parsers.parseBlock.syncWrite(block.getRawSigned());
-    return that.BlockchainService.checkBlock(parsed, false);
-  };
-
   this.revert = () => this.BlockchainService.revertCurrentBlock();
 
   this.revertTo = (number) => co(function *() {
@@ -417,67 +346,6 @@ function Server (dbConf, overrideConf) {
 
   this.singleWritePromise = (obj) => that.submit(obj);
 
-  let theRouter;
-
-  this.router = (active) => {
-    if (!theRouter) {
-      theRouter = router(that.PeeringService, that.conf, that.dal);
-    }
-    theRouter.setActive(active !== false);
-    return theRouter;
-  };
-
-  /**
-   * Synchronize the server with another server.
-   *
-   * If local server's blockchain is empty, process a fast sync: **no block is verified in such a case**, unless
-   * you force value `askedCautious` to true.
-   *
-   * @param onHost Syncs on given host.
-   * @param onPort Syncs on given port.
-   * @param upTo Sync up to this number, if `upTo` value is a positive integer.
-   * @param chunkLength Length of each chunk of blocks to download. Kind of buffer size.
-   * @param interactive Tell if the loading bars should be used for console output.
-   * @param askedCautious If true, force the verification of each downloaded block. This is the right way to have a valid blockchain for sure.
-   * @param nopeers If true, sync will omit to retrieve peer documents.
-   * @param noShufflePeers If true, sync will NOT shuffle the retrieved peers before downloading on them.
-   */
-  this.synchronize = (onHost, onPort, upTo, chunkLength, interactive, askedCautious, nopeers, noShufflePeers) => {
-    const remote = new Synchroniser(that, onHost, onPort, that.conf, interactive === true);
-    const syncPromise = remote.sync(upTo, chunkLength, askedCautious, nopeers, noShufflePeers === true);
-    return {
-      flow: remote,
-      syncPromise: syncPromise
-    };
-  };
-  
-  this.testForSync = (onHost, onPort) => {
-    const remote = new Synchroniser(that, onHost, onPort);
-    return remote.test();
-  };
-
-  /**
-   * Enable routing features:
-   *   - The server will try to send documents to the network
-   *   - The server will eventually be notified of network failures
-   */
-  this.routing = () => {
-    // The router asks for multicasting of documents
-    this.pipe(this.router())
-      // The documents get sent to peers
-      .pipe(multicaster(this.conf))
-      // The multicaster may answer 'unreachable peer'
-      .pipe(this.router());
-  };
-
-  this.upnp = () => co(function *() {
-    const upnpAPI = yield upnp(that.conf.port, that.conf.remoteport);
-    that.upnpAPI = upnpAPI;
-    return upnpAPI;
-  });
-
-  this.applyCPU = (cpu) => that.BlockchainService.changeProverCPUSetting(cpu);
-  
   this.rawer = rawer;
 
   this.writeRaw = (raw, type) => co(function *() {
@@ -491,49 +359,6 @@ function Server (dbConf, overrideConf) {
    * @param linesQuantity
    */
   this.getLastLogLines = (linesQuantity) => this.dal.getLogContent(linesQuantity);
-
-  this.startServices = () => co(function*(){
-
-    /***************
-     * HTTP ROUTING
-     **************/
-    that.router(that.conf.routing);
-
-    /***************
-     *    UPnP
-     **************/
-    if (that.conf.upnp) {
-      try {
-        if (that.upnpAPI) {
-          that.upnpAPI.stopRegular();
-        }
-        yield that.upnp();
-        that.upnpAPI.startRegular();
-      } catch (e) {
-        logger.warn(e);
-      }
-    }
-
-    /*******************
-     * BLOCK COMPUTING
-     ******************/
-    if (that.conf.participate) {
-      that.startBlockComputation();
-    }
-
-    /***********************
-     * CRYPTO NETWORK LAYER
-     **********************/
-    yield that.start();
-  });
-
-  this.stopServices = () => co(function*(){
-    that.router(false);
-    if (that.conf.participate) {
-      that.stopBlockComputation();
-    }
-    return that.PeeringService.stopRegular();
-  });
 }
 
 util.inherits(Server, stream.Duplex);

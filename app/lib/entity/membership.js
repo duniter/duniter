@@ -1,7 +1,7 @@
 "use strict";
 const _ = require('underscore');
 const moment = require('moment');
-const rawer = require('../ucp/rawer');
+const rawer = require('duniter-common').rawer;
 const constants = require('../constants');
 
 const Membership = function(json) {

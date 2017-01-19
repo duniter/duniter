@@ -4,14 +4,11 @@ const _         = require('underscore');
 const co        = require('co');
 const should    = require('should');
 const duniter   = require('../../index');
-const bma       = require('../../app/lib/streams/bma');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
-const limiter = require('../../app/lib/system/limiter');
-
-limiter.noLimit();
 
 const expectAnswer  = httpTest.expectAnswer;
 
@@ -23,14 +20,13 @@ const commonConf = {
   forksize: 3,
   xpercent: 0.9,
   msValidity: 10000,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };
 
-const s1 = duniter({
-  memory: MEMORY_MODE,
-  name: 'bb12'
-}, _.extend({
+const s1 = duniter(
+  '/bb12',
+  MEMORY_MODE,
+  _.extend({
   port: '9964',
   pair: {
     pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
@@ -38,10 +34,10 @@ const s1 = duniter({
   }
 }, commonConf));
 
-const s2 = duniter({
-  memory: MEMORY_MODE,
-  name: 'bb13'
-}, _.extend({
+const s2 = duniter(
+  '/bb13',
+  MEMORY_MODE,
+  _.extend({
   port: '9965',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',

@@ -4,12 +4,13 @@ const co         = require('co');
 const _          = require('underscore');
 const constants  = require('../constants');
 const indexer    = require('../dup/indexer');
-const hashf      = require('../ucp/hashf');
-const keyring    = require('../crypto/keyring');
-const rawer      = require('../ucp/rawer');
+const hashf      = require('duniter-common').hashf;
+const keyring    = require('duniter-common').keyring;
+const rawer      = require('duniter-common').rawer;
 const Identity   = require('../entity/identity');
 const Membership = require('../entity/membership');
 const Transaction = require('../entity/transaction');
+const maxAcceleration = require('duniter-common').rules.HELPERS.maxAcceleration;
 
 let rules = {};
 
@@ -79,8 +80,8 @@ rules.FUNCTIONS = {
   checkBlockTimes: (block, conf) => co(function *() {
     const time = parseInt(block.time);
     const medianTime = parseInt(block.medianTime);
-    if (block.number > 0 && (time < medianTime || time > medianTime + maxAcceleration(block, conf)))
-      throw Error('A block must have its Time between MedianTime and MedianTime + ' + maxAcceleration(block, conf));
+    if (block.number > 0 && (time < medianTime || time > medianTime + maxAcceleration(conf)))
+      throw Error('A block must have its Time between MedianTime and MedianTime + ' + maxAcceleration(conf));
     else if (block.number == 0 && time != medianTime)
       throw Error('Root block must have Time equal MedianTime');
     return true;
@@ -143,7 +144,7 @@ rules.FUNCTIONS = {
       .pluck('pub')
       .value();
     for (const pub of revocations) {
-      const exclusions = _(iindex).where({ op: constants.IDX_UPDATE, member: false });
+      const exclusions = _(iindex).where({ op: constants.IDX_UPDATE, member: false, pub });
       if (exclusions.length == 0) {
         throw Error('A revoked member must be excluded');
       }
@@ -313,7 +314,7 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkTxSources: (block, conf) => co(function *() {
+  checkTxSources: (block) => co(function *() {
     const txs = block.getTransactions();
     for (const tx of txs) {
       if (!tx.inputs || tx.inputs.length == 0) {
@@ -370,16 +371,11 @@ rules.FUNCTIONS = {
   })
 };
 
-function maxAcceleration (block, conf) {
-  let maxGenTime = Math.ceil(conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO);
-  return Math.ceil(maxGenTime * conf.medianTimeBlocks);
-}
-
 function checkSingleMembershipSignature(ms) {
   return keyring.verify(ms.getRaw(), ms.signature, ms.issuer);
 }
 
-function getSigResult(tx, a) {
+function getSigResult(tx) {
   let sigResult = { sigs: {}, matching: true };
   let json = { "version": tx.version, "currency": tx.currency, "blockstamp": tx.blockstamp, "locktime": tx.locktime, "inputs": [], "outputs": [], "issuers": tx.issuers, "signatures": [], "comment": tx.comment };
   tx.inputs.forEach(function (input) {
@@ -431,7 +427,7 @@ function checkBunchOfTransactions(txs, done){
 
 rules.HELPERS = {
 
-  maxAcceleration: maxAcceleration,
+  maxAcceleration: (block, conf) => maxAcceleration(conf),
 
   checkSingleMembershipSignature: checkSingleMembershipSignature,
 
@@ -489,7 +485,7 @@ rules.HELPERS = {
     }
   },
 
-  getMaxPossibleVersionNumber: (current, block) => co(function*() {
+  getMaxPossibleVersionNumber: (current) => co(function*() {
     // Looking at current blockchain, find what is the next maximum version we can produce
 
     // 1. We follow previous block's version

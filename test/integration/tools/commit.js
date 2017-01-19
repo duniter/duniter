@@ -12,7 +12,7 @@ module.exports = function makeBlockAndPost(theServer, extraProps) {
       manualValues = _.extend(manualValues, extraProps);
     }
     return co(function *() {
-      let proven = yield theServer.doMakeNextBlock(manualValues);
+      let proven = yield require('duniter-prover').duniter.methods.generateAndProveTheNext(theServer, null, null, manualValues);
       return postBlock(theServer)(proven);
     });
   };

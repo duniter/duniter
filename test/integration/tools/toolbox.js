@@ -12,11 +12,14 @@ const until       = require('../tools/until');
 const Peer        = require('../../../app/lib/entity/peer');
 const Identity    = require('../../../app/lib/entity/identity');
 const Block       = require('../../../app/lib/entity/block');
-const bma         = require('../../../app/lib/streams/bma');
+const bma         = require('duniter-bma').duniter.methods.bma;
 const multicaster = require('../../../app/lib/streams/multicaster');
 const network     = require('../../../app/lib/system/network');
-const dtos        = require('../../../app/lib/streams/dtos');
+const dtos        = require('duniter-bma').duniter.methods.dtos;
 const duniter     = require('../../../index');
+const logger      = require('../../../app/lib/logger')('toolbox');
+
+require('duniter-bma').duniter.methods.noLimit(); // Disables the HTTP limiter
 
 const MEMORY_MODE = true;
 const CURRENCY_NAME = 'duniter_unit_test_currency';
@@ -50,8 +53,8 @@ module.exports = {
     yield tac.join();
 
     // Each server forwards to each other
-    s1.pipe(s1.router()).pipe(multicaster());
-    s2.pipe(s2.router()).pipe(multicaster());
+    require('../../../app/modules/router').duniter.methods.routeToNetwork(s1);
+    require('../../../app/modules/router').duniter.methods.routeToNetwork(s2);
 
     return { s1, s2, cat, tac };
   }),
@@ -125,7 +128,7 @@ module.exports = {
       const fakeServer = yield network.createServersAndListen("Fake Duniter Server", [{
         ip: host,
         port: port
-      }], NO_HTTP_LOGS, NO_STATIC_PATH, (app, httpMethods) => {
+      }], NO_HTTP_LOGS, logger, NO_STATIC_PATH, (app, httpMethods) => {
 
         // Mock BMA method for sync mocking
         httpMethods.httpGET('/network/peering', () => {
@@ -182,13 +185,12 @@ module.exports = {
       currency: conf.currency || CURRENCY_NAME,
       httpLogs: true,
       forksize: 3,
-      parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
       sigQty: 1
     };
-    const server = duniter({
-      memory: conf.memory !== undefined ? conf.memory : MEMORY_MODE,
-      name: conf.homename || 'dev_unit_tests'
-    }, _.extend(conf, commonConf));
+    const server = duniter(
+      '~/.config/duniter/' + (conf.homename || 'dev_unit_tests'),
+      conf.memory !== undefined ? conf.memory : MEMORY_MODE,
+      _.extend(conf, commonConf));
 
     server.port = port;
     server.host = HOST;
@@ -240,7 +242,7 @@ module.exports = {
     });
 
     server.makeNext = (overrideProps) => co(function*() {
-      const block = yield server.doMakeNextBlock(overrideProps || {});
+      const block = yield require('duniter-prover').duniter.methods.generateAndProveTheNext(server, null, null, overrideProps || {});
       return Block.statics.fromJSON(block);
     });
 
@@ -284,12 +286,20 @@ module.exports = {
       const bmaAPI = yield bma(server);
       yield bmaAPI.openConnections();
       server.bma = bmaAPI;
-      server
-        .pipe(server.router()) // The router asks for multicasting of documents
-        .pipe(multicaster())
-        .pipe(server.router());
-      return server.start();
+      require('../../../app/modules/router').duniter.methods.routeToNetwork(server);
     });
+
+    let prover;
+    server.startBlockComputation = () => {
+      if (!prover) {
+        prover = require('duniter-prover').duniter.methods.prover(server);
+        server.permaProver = prover.permaProver;
+        server.pipe(prover);
+      }
+      prover.startService();
+    };
+    // server.startBlockComputation = () => prover.startService();
+    server.stopBlockComputation = () => prover.stopService();
 
     return server;
   }

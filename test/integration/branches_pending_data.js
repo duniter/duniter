@@ -3,7 +3,7 @@
 const co = require('co');
 const _         = require('underscore');
 const duniter   = require('../../index');
-const bma       = require('../../app/lib/streams/bma');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
@@ -18,14 +18,13 @@ const commonConf = {
   currency: 'bb',
   httpLogs: true,
   forksize: 3,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };
 
-const s1 = duniter({
-  memory: MEMORY_MODE,
-  name: 'bb6'
-}, _.extend({
+const s1 = duniter(
+  '/bb6',
+  MEMORY_MODE,
+  _.extend({
   port: '7783',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',

@@ -1,8 +1,7 @@
 "use strict";
-const Q = require('q');
 const _ = require('underscore');
-const contacter = require('../contacter');
-const rawer = require('../ucp/rawer');
+const contacter = require('duniter-crawler').duniter.methods.contacter;
+const rawer = require('duniter-common').rawer;
 const constants = require('../constants');
 
 module.exports = Peer;
@@ -14,7 +13,7 @@ function Peer(json) {
   this.documentType = 'peer';
 
   _(json).keys().forEach((key) => {
-   this[key] = json[key];
+    this[key] = json[key];
   });
 
   this.endpoints = this.endpoints || [];

@@ -3,8 +3,8 @@
 const co        = require('co');
 const should    = require('should');
 const _         = require('underscore');
-const ucoin     = require('../../index');
-const bma       = require('../../app/lib/streams/bma');
+const duniter     = require('../../index');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
 
@@ -14,47 +14,46 @@ const commonConf = {
   currency: 'bb',
   httpLogs: true,
   forksize: 3,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };
 
-const s1 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb11'
-}, _.extend({
+const s1 = duniter(
+  '/bb11',
+  MEMORY_MODE,
+  _.extend({
   port: '9337',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
   },
-  participate: false, rootoffset: 10,
+  rootoffset: 10,
   sigQty: 1, dt: 1, ud0: 120
 }, commonConf));
 
-const s2 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb41'
-}, _.extend({
+const s2 = duniter(
+  '/bb41',
+  MEMORY_MODE,
+  _.extend({
   port: '9338',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
   },
-  participate: false, rootoffset: 10,
+  rootoffset: 10,
   sigQty: 1, dt: 1, ud0: 120,
   msValidity: 400 // Memberships expire after 400 second delay
 }, commonConf));
 
-const s3 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb11'
-}, _.extend({
+const s3 = duniter(
+  '/bb11',
+  MEMORY_MODE,
+  _.extend({
   port: '9339',
   pair: {
     pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
     sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
   },
-  participate: false, rootoffset: 10,
+  rootoffset: 10,
   sigQty: 1, dt: 1, ud0: 120,
   sigValidity: 1400, sigPeriod: 0
 }, commonConf));

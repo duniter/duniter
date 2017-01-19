@@ -1365,6 +1365,7 @@ TRUE
 * *Rule*: The sum of all inputs in `CommonBase` must equal the sum of all outputs in `CommonBase`
 
 > Functionally: we cannot create nor lose money through transactions. We can only transfer coins we own.
+> Functionally: also, we cannot convert a superiod unit base into a lower one.
 
 #### Global
 
@@ -1401,6 +1402,7 @@ Function references:
 * *FIRST* return the first element in a list of values matching the given condition
 * *REDUCE* merges a set of elements into a single one, by extending the non-null properties from each record into the resulting record.
 * *REDUCE_BY* merges a set of elements into a new set, where each new element is the reduction of the first set sharing a given key.
+* *CONCAT* concatenates two sets of elements into a new one
 
 > If there is no elements, all its properties are `null`.
 
@@ -1692,7 +1694,7 @@ Else:
     nbPersonalBlocksInFrame = COUNT(blocksOfIssuer)
     blocksPerIssuerInFrame = MAP(
         UNIQ((HEAD~1..<HEAD~1.issuersFrame>).issuer)
-            => COUNT(HEAD~1..<HEAD~1.issuersFrame>[issuer=HEAD.issuer]))
+            => ISSUER: COUNT(HEAD~1..<HEAD~1.issuersFrame>[issuer=ISSUER]))
     medianOfBlocksInFrame = MEDIAN(blocksPerIssuerInFrame)
     
 EndIf
@@ -2026,11 +2028,13 @@ Else:
     
 EndIf
 
-####### BR_G46 - ENTRY.available
+####### BR_G46 - ENTRY.available and ENTRY.conditions
 
 For each `LOCAL_SINDEX[op='UPDATE'] as ENTRY`:
 
-    ENTRY.available = REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]).consumed == false
+    INPUT = REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base])
+    ENTRY.conditions = INPUT.conditions
+    ENTRY.available = INPUT.consumed == false
 
 ####### BR_G47 - ENTRY.isLocked
 
@@ -2373,6 +2377,31 @@ For each `REDUCE_BY(GLOBAL_IINDEX[member=true], 'pub') as IDTY` then if `IDTY.me
         locktime = null
         conditions = REQUIRE_SIG(MEMBER.pub)
         consumed = false
+    )
+
+###### BR_G106 - Low accounts
+
+Set:
+
+    ACCOUNTS = UNIQ(GLOBAL_SINDEX, 'conditions')
+
+For each `ACCOUNTS as ACCOUNT` then:
+
+Set:
+
+    ALL_SOURCES = CONCAT(GLOBAL_SINDEX[conditions=ACCOUNT.conditions], LOCAL_SINDEX[conditions=ACCOUNT.conditions])
+    SOURCES = REDUCE_BY(ALL_SOURCES, 'identifier', 'pos')[consumed=false]
+    BALANCE = SUM(MAP(SOURCES => SRC: SRC.amount * POW(10, SRC.base)))
+
+If `BALANCE < 100 * POW(10, HEAD.unitBase)`, then for each `SOURCES AS SRC` add a new LOCAL_SINDEX entry:
+
+    SINDEX (
+        op = 'UPDATE'
+        identifier = SRC.identifier
+        pos = SRC.pos
+        written_on = BLOCKSTAMP
+        written_time = MedianTime
+        consumed = true
     )
 
 ###### BR_G92 - Certification expiry

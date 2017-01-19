@@ -2,15 +2,11 @@
 
 const co        = require('co');
 const should    = require('should');
-const bma       = require('../../app/lib/streams/bma');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
 const toolbox   = require('./tools/toolbox');
-const multicaster = require('../../app/lib/streams/multicaster');
 const constants = require('../../app/lib/constants');
-const limiter   = require('../../app/lib/system/limiter');
-
-limiter.noLimit();
 
 const s1 = toolbox.server({
   idtyWindow: 10,

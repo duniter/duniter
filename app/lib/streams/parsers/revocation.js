@@ -1,10 +1,8 @@
 "use strict";
 const GenericParser = require('./GenericParser');
 const util          = require('util');
-const moment        = require('moment');
-const ucp           = require('../../ucp/buid');
-const rawer         = require('../../ucp/rawer');
-const hashf         = require('../../ucp/hashf');
+const rawer         = require('duniter-common').rawer;
+const hashf         = require('duniter-common').hashf;
 const constants     = require('../../constants');
 
 module.exports = RevocationParser;

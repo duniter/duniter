@@ -24,7 +24,7 @@ function BlockDAL(driver) {
   this.table = 'block';
   this.fields = ['fork', 'hash', 'inner_hash', 'signature', 'currency', 'issuer', 'issuersCount', 'issuersFrame', 'issuersFrameVar', 'parameters', 'previousHash', 'previousIssuer', 'version', 'membersCount', 'monetaryMass', 'UDTime', 'medianTime', 'dividend', 'unitbase', 'time', 'powMin', 'number', 'nonce', 'transactions', 'certifications', 'identities', 'joiners', 'actives', 'leavers', 'revoked', 'excluded', 'len'];
   this.arrays = ['identities','certifications','actives','revoked','excluded','leavers','joiners','transactions'];
-  this.bigintegers = ['monetaryMass','dividend'];
+  this.bigintegers = ['monetaryMass'];
   this.booleans = ['wrong'];
   this.pkFields = ['number','hash'];
 
@@ -45,7 +45,7 @@ function BlockDAL(driver) {
       'monetaryMass VARCHAR(100) DEFAULT \'0\',' +
       'UDTime DATETIME,' +
       'medianTime DATETIME NOT NULL,' +
-      'dividend VARCHAR(100) DEFAULT \'0\',' +
+      'dividend INTEGER DEFAULT \'0\',' +
       'unitbase INTEGER NULL,' +
       'time DATETIME NOT NULL,' +
       'powMin INTEGER NOT NULL,' +

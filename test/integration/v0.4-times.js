@@ -2,12 +2,9 @@
 
 const co        = require('co');
 const should    = require('should');
-const bma       = require('../../app/lib/streams/bma');
-const user      = require('./tools/user');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const commit    = require('./tools/commit');
-const until     = require('./tools/until');
 const toolbox   = require('./tools/toolbox');
-const multicaster = require('../../app/lib/streams/multicaster');
 
 const conf = {
   avgGenTime: 5000,

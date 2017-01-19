@@ -1,17 +1,13 @@
 "use strict";
 
-const async           = require('async');
 const _               = require('underscore');
 const co              = require('co');
 const Q               = require('q');
 const parsers         = require('../lib/streams/parsers');
 const rules           = require('../lib/rules');
-const base58          = require('../lib/crypto/base58');
-const keyring         = require('../lib/crypto/keyring');
 const constants       = require('../lib/constants');
 const blockchainCtx   = require('../lib/computation/blockchainContext');
-const blockGenerator  = require('../lib/computation/blockGenerator');
-const blockProver     = require('../lib/computation/blockProver');
+const blockGenerator  = require('duniter-prover').duniter.methods.blockGenerator;
 const Block           = require('../lib/entity/block');
 const Identity        = require('../lib/entity/identity');
 const Transaction     = require('../lib/entity/transaction');
@@ -29,19 +25,14 @@ function BlockchainService (server) {
 
   let that = this;
   const mainContext = blockchainCtx();
-  const prover = this.prover = blockProver(server);
-  const generator = blockGenerator(mainContext, prover);
-  let conf, dal, keyPair, logger, selfPubkey;
+  let conf, dal, logger, selfPubkey;
 
   this.getContext = () => mainContext;
 
   this.setConfDAL = (newConf, newDAL, newKeyPair) => {
     dal = newDAL;
     conf = newConf;
-    keyPair = newKeyPair;
     mainContext.setConfDAL(conf, dal);
-    prover.setConfDAL(conf, dal, newKeyPair);
-    generator.setConfDAL(conf, dal, newKeyPair);
     selfPubkey = newKeyPair.publicKey;
     logger = require('../lib/logger')(dal.profile);
   };
@@ -141,7 +132,7 @@ function BlockchainService (server) {
       Transaction.statics.cleanSignatories(obj.transactions);
     }
     catch (e) {
-        throw e;
+      throw e;
     }
     let existing = yield dal.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
     if (existing) {
@@ -157,7 +148,6 @@ function BlockchainService (server) {
       let res = yield mainContext.addBlock(obj);
       try {
         yield pushStatsForBlocks([res]);
-        server.permaProver.blockchainChanged(res);
       } catch (e) {
         logger.warn("An error occurred after the add of the block", e.stack || e);
       }
@@ -180,19 +170,12 @@ function BlockchainService (server) {
   });
 
 
-  that.tryToFork = (current) => co(function *() {
-    yield eventuallySwitchOnSideChain(current);
-    let newCurrent = yield mainContext.current();
-    let forked = newCurrent.number != current.number || newCurrent.hash != current.hash;
-    if (forked) {
-      server.permaProver.blockchainChanged();
-    }
-  });
+  that.tryToFork = (current) => eventuallySwitchOnSideChain(current);
 
   const eventuallySwitchOnSideChain = (current) => co(function *() {
     const branches = yield that.branches();
-    const blocksAdvance = constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES / (conf.avgGenTime / 60);
-    const timeAdvance = constants.BRANCHES.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES * 60;
+    const blocksAdvance = conf.swichOnTimeAheadBy / (conf.avgGenTime / 60);
+    const timeAdvance = conf.swichOnTimeAheadBy * 60;
     let potentials = _.without(branches, current);
     // We switch only to blockchain with X_MIN advance considering both theoretical time by block + written time
     potentials = _.filter(potentials, (p) => p.number - current.number >= blocksAdvance
@@ -262,16 +245,6 @@ function BlockchainService (server) {
 
   this.applyNextAvailableFork = () => this.pushFIFO(() => mainContext.applyNextAvailableFork());
 
-  /**
-   * Generates root block with manual selection of root members.
-   */
-  this.generateManualRoot = () => generator.manualRoot();
-
-  /**
-   * Generates next block, finding newcomers, renewers, leavers, certs, transactions, etc.
-   */
-  this.generateNext = (params) => generator.nextBlock(params);
-
   this.requirementsOfIdentities = (identities) => co(function *() {
     let all = [];
     let current = yield dal.getCurrentBlockOrNull();
@@ -295,6 +268,7 @@ function BlockchainService (server) {
     let expiresPending = 0;
     let certs = [];
     try {
+      const generator = blockGenerator(server);
       const join = yield generator.getSinglePreJoinData(current, idty.hash);
       const pubkey = join.identity.pubkey;
       // Check WoT stability
@@ -377,12 +351,8 @@ function BlockchainService (server) {
     return certsFromLinks.concat(certsFromCerts);
   });
 
-  this.prove = prover.prove;
-
   this.isMember = () => dal.isMember(selfPubkey);
   this.getCountOfSelfMadePoW = () => dal.getCountOfPoW(selfPubkey);
-
-  this.makeNextBlock = generator.makeNextBlock;
 
   this.saveParametersForRootBlock = (block) => co(function *() {
     let mainFork = mainContext;
@@ -455,6 +425,4 @@ function BlockchainService (server) {
     }
     return dal.getBlocksBetween(from, from + count - 1);
   });
-
-  this.changeProverCPUSetting = (cpu) => prover.changeCPU(cpu);
 }

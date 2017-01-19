@@ -3,10 +3,7 @@ const Q       = require('q');
 const co      = require('co');
 const _       = require('underscore');
 const indexer = require('../dup/indexer');
-const hashf   = require('../ucp/hashf');
-const wotb    = require('../wot');
 const logger = require('../logger')('filedal');
-const directory = require('../system/directory');
 const Configuration = require('../entity/configuration');
 const Merkle = require('../entity/merkle');
 const Transaction = require('../entity/transaction');
@@ -55,29 +52,12 @@ function FileDAL(params) {
     'peerDAL': that.peerDAL,
     'confDAL': that.confDAL,
     'statDAL': that.statDAL,
-    'ghostDAL': {
-      init: () => co(function *() {
-
-        // Create extra views (useful for stats or debug)
-        return that.blockDAL.exec('BEGIN;' +
-            'CREATE VIEW IF NOT EXISTS identities_pending AS SELECT * FROM idty WHERE NOT written;' +
-            'CREATE VIEW IF NOT EXISTS certifications_pending AS SELECT * FROM cert WHERE NOT written;' +
-            'CREATE VIEW IF NOT EXISTS transactions_pending AS SELECT * FROM txs WHERE NOT written;' +
-            'CREATE VIEW IF NOT EXISTS transactions_desc AS SELECT * FROM txs ORDER BY time DESC;' +
-            'CREATE VIEW IF NOT EXISTS forks AS SELECT number, hash, issuer, monetaryMass, dividend, UDTime, membersCount, medianTime, time, * FROM block WHERE fork ORDER BY number DESC;' +
-            'CREATE VIEW IF NOT EXISTS blockchain AS SELECT number, hash, issuer, monetaryMass, dividend, UDTime, membersCount, medianTime, time, * FROM block WHERE NOT fork ORDER BY number DESC;' +
-            'CREATE VIEW IF NOT EXISTS network AS select i.uid, (last_try - first_down) / 1000 as down_delay_in_sec, p.* from peer p LEFT JOIN idty i on i.pubkey = p.pubkey ORDER by down_delay_in_sec;' +
-            'COMMIT;');
-      })
-    },
     'bindexDAL': that.bindexDAL,
     'mindexDAL': that.mindexDAL,
     'iindexDAL': that.iindexDAL,
     'sindexDAL': that.sindexDAL,
     'cindexDAL': that.cindexDAL
   };
-
-  let currency = '';
 
   this.init = () => co(function *() {
     const dalNames = _.keys(that.newDals);
@@ -87,7 +67,6 @@ function FileDAL(params) {
     }
     logger.debug("Upgrade database...");
     yield that.metaDAL.upgradeDatabase();
-    // TODO: remove as of v1.0
     const latestMember = yield that.iindexDAL.getLatestMember();
     if (latestMember && that.wotb.getWoTSize() > latestMember.wotb_id + 1) {
       logger.warn('Maintenance: cleaning wotb...');
@@ -243,7 +222,16 @@ function FileDAL(params) {
       const idty = yield Q(queryPromise);
       if (idty) {
         const mss = yield that.msDAL.getMembershipsOfIssuer(idty.pubkey);
-        idty.memberships = mss;
+        const mssFromMindex = yield that.mindexDAL.reducable(idty.pubkey);
+        idty.memberships = mss.concat(mssFromMindex.map((ms) => {
+          const sp = ms.created_on.split('-');
+          return {
+            membership: ms.leaving ? 'OUT' : 'IN',
+            number: sp[0],
+            fpr: sp[1],
+            written_number: parseInt(ms.written_on)
+          }
+        }));
         return idty;
       }
     } catch (err) {
@@ -304,18 +292,19 @@ function FileDAL(params) {
     const certs = yield that.certDAL.getToTarget(hash);
     const links = yield that.cindexDAL.getValidLinksTo(pub);
     let matching = certs;
-    links.map((entry) => {
+    yield links.map((entry) => co(function*() {
       entry.from = entry.issuer;
-      const co = entry.created_on.split('-');
-      const wo = entry.written_on.split('-');
-      entry.block = parseInt(co[0]);
-      entry.block_number = parseInt(co[0]);
-      entry.block_hash = co[1];
+      const wbt = entry.written_on.split('-');
+      const blockNumber = parseInt(entry.created_on); // created_on field of `c_index` does not have the full blockstamp
+      const basedBlock = yield that.getBlock(blockNumber);
+      entry.block = blockNumber;
+      entry.block_number = blockNumber;
+      entry.block_hash = basedBlock ? basedBlock.hash : null;
       entry.linked = true;
-      entry.written_block = parseInt(wo[0]);
-      entry.written_hash = wo[1];
+      entry.written_block = parseInt(wbt[0]);
+      entry.written_hash = wbt[1];
       matching.push(entry);
-    });
+    }));
     matching  = _.sortBy(matching, (c) => -c.block);
     matching.reverse();
     return matching;
@@ -329,15 +318,15 @@ function FileDAL(params) {
       const idty = yield that.getWrittenIdtyByPubkey(entry.receiver);
       entry.from = entry.issuer;
       entry.to = entry.receiver;
-      const co = entry.created_on.split('-');
-      const wo = entry.written_on.split('-');
-      entry.block = parseInt(co[0]);
-      entry.block_number = parseInt(co[0]);
-      entry.block_hash = co[1];
+      const cbt = entry.created_on.split('-');
+      const wbt = entry.written_on.split('-');
+      entry.block = parseInt(cbt[0]);
+      entry.block_number = parseInt(cbt[0]);
+      entry.block_hash = cbt[1];
       entry.target = idty.hash;
       entry.linked = true;
-      entry.written_block = parseInt(wo[0]);
-      entry.written_hash = wo[1];
+      entry.written_block = parseInt(wbt[0]);
+      entry.written_hash = wbt[1];
       matching.push(entry);
     }));
     matching  = _.sortBy(matching, (c) => -c.block);
@@ -458,7 +447,7 @@ function FileDAL(params) {
             .indexOf(p.status) !== -1).value();
   });
 
-  this.listAllPeersWithStatusNewUPWithtout = (pubkey) => co(function *() {
+  this.listAllPeersWithStatusNewUPWithtout = () => co(function *() {
     const peers = yield that.peerDAL.listAll();
     return _.chain(peers).filter((p) => p.status == 'UP').filter((p) => p.pubkey);
   });
@@ -512,7 +501,7 @@ function FileDAL(params) {
   this.saveBlock = (block) => co(function*() {
     block.wrong = false;
     yield [
-      that.saveBlockInFile(block, true),
+      that.saveBlockInFile(block),
       that.saveTxsInFiles(block.transactions, {block_number: block.number, time: block.medianTime, currency: block.currency })
     ];
   });
@@ -525,6 +514,7 @@ function FileDAL(params) {
     let cindex = indexer.cindex(index);
     const HEAD = yield indexer.completeGlobalScope(block, conf, index, that);
     sindex = sindex.concat(yield indexer.ruleIndexGenDividend(HEAD, that));
+    sindex = sindex.concat(yield indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex, that));
     cindex = cindex.concat(yield indexer.ruleIndexGenCertificationExpiry(HEAD, that));
     mindex = mindex.concat(yield indexer.ruleIndexGenMembershipExpiry(HEAD, that));
     iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByMembership(HEAD, mindex));
@@ -557,7 +547,7 @@ function FileDAL(params) {
     return true;
   });
 
-  this.trimSandboxes = (block, conf) => co(function*() {
+  this.trimSandboxes = (block) => co(function*() {
     yield that.certDAL.trimExpiredCerts(block.medianTime);
     yield that.msDAL.trimExpiredMemberships(block.medianTime);
     yield that.idtyDAL.trimExpiredIdentities(block.medianTime);
@@ -566,7 +556,7 @@ function FileDAL(params) {
 
   this.savePendingMembership = (ms) => that.msDAL.savePendingMembership(ms);
 
-  this.saveBlockInFile = (block, check) => co(function *() {
+  this.saveBlockInFile = (block) => co(function *() {
     yield that.writeFileOfBlock(block);
   });
 
@@ -685,16 +675,21 @@ function FileDAL(params) {
       const savedConf = yield that.confDAL.loadConf();
       conf = _(savedConf).extend(overrideConf || {});
     }
-    // TODO: Do something about the currency global variable
-    currency = conf.currency;
+    if (that.loadConfHook) {
+      yield that.loadConfHook(conf);
+    }
     return conf;
   });
 
   this.saveConf = (confToSave) => {
-    // TODO: Do something about the currency global variable
-    currency = confToSave.currency;
-    // Save the conf in file
-    return that.confDAL.saveConf(confToSave);
+    return co(function*() {
+      // Save the conf in file
+      let theConf = confToSave;
+      if (that.saveConfHook) {
+        theConf = yield that.saveConfHook(theConf);
+      }
+      return that.confDAL.saveConf(theConf);
+    });
   };
 
   /***********************

@@ -1,7 +1,7 @@
 "use strict";
 const GenericParser = require('./GenericParser');
-const ucp           = require('../../ucp/buid');
-const rawer         = require('../../ucp/rawer');
+const ucp           = require('duniter-common').buid;
+const rawer         = require('duniter-common').rawer;
 const util          = require('util');
 const constants     = require('../../constants');
 

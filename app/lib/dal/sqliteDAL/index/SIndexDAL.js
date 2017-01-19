@@ -5,6 +5,7 @@
 const _ = require('underscore');
 const co = require('co');
 const indexer = require('../../../dup/indexer');
+const constants = require('../../../constants');
 const AbstractSQLite = require('./../AbstractSQLite');
 
 module.exports = SIndexDAL;
@@ -33,7 +34,7 @@ function SIndexDAL(driver) {
     'conditions'
   ];
   this.arrays = [];
-  this.bigintegers = ['amount'];
+  this.bigintegers = [];
   this.booleans = ['consumed'];
   this.pkFields = ['op', 'identifier', 'pos', 'written_on'];
   this.translated = {};
@@ -48,7 +49,7 @@ function SIndexDAL(driver) {
       'created_on VARCHAR(80) NULL,' +
       'written_on VARCHAR(80) NOT NULL,' +
       'written_time INTEGER NOT NULL,' +
-      'amount VARCHAR(50) NULL,' +
+      'amount INTEGER NULL,' +
       'base INTEGER NULL,' +
       'locktime INTEGER NULL,' +
       'consumed BOOLEAN NOT NULL,' +
@@ -95,6 +96,23 @@ function SIndexDAL(driver) {
     });
     const filtered = _.filter(sources, (src) => !src.consumed);
     return _.sortBy(filtered, (row) => row.type == 'D' ? 0 : 1);
+  });
+
+  this.findLowerThan = (amount, base) => co(function*() {
+    const baseConditions = Array.from({ length: (base + 1) }).map((el, index) => {
+      return '(base = ' + index + ' and amount < ' + (amount * Math.pow(10, base - index)) + ')';
+    }).join(' OR ');
+    const potentials = yield that.query('SELECT * FROM ' + that.table + ' s1 ' +
+      'WHERE s1.op = ? ' +
+      'AND (' + baseConditions + ') ' +
+      'AND NOT EXISTS (' +
+      ' SELECT * ' +
+      ' FROM s_index s2 ' +
+      ' WHERE s2.identifier = s1.identifier ' +
+      ' AND s2.pos = s1.pos ' +
+      ' AND s2.op = ?' +
+      ')', [constants.IDX_CREATE, constants.IDX_UPDATE]);
+    return potentials;
   });
 
   this.trimConsumedSource = (belowNumber) => co(function*() {

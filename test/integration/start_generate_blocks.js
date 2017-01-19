@@ -2,8 +2,8 @@
 
 const co        = require('co');
 const _         = require('underscore');
-const ucoin     = require('../../index');
-const bma       = require('../../app/lib/streams/bma');
+const duniter     = require('../../index');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
@@ -11,7 +11,7 @@ const commit    = require('./tools/commit');
 const until     = require('./tools/until');
 const multicaster = require('../../app/lib/streams/multicaster');
 const Peer = require('../../app/lib/entity/peer');
-const contacter  = require('../../app/lib/contacter');
+const contacter  = require('duniter-crawler').duniter.methods.contacter;
 const sync      = require('./tools/sync');
 
 const expectJSON     = httpTest.expectJSON;
@@ -26,30 +26,28 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb7'
-}, _.extend({
+const s1 = duniter(
+  '/bb7',
+  MEMORY_MODE,
+  _.extend({
   port: '7790',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
   },
-  powDelay: 1,
-  participate: true // TODO: to remove when startGeneration will be an explicit call
+  powDelay: 1
 }, commonConf));
 
-const s2 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb7_2'
-}, _.extend({
+const s2 = duniter(
+  '/bb7_2',
+  MEMORY_MODE,
+  _.extend({
   port: '7791',
   pair: {
     pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
     sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
   },
-  powDelay: 1,
-  participate: true // TODO: to remove when startGeneration will be an explicit call
+  powDelay: 1
 }, commonConf));
 
 const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
@@ -72,11 +70,11 @@ describe("Generation", function() {
         yield server.initWithDAL();
         server.bma = yield bma(server);
         yield server.bma.openConnections();
-        server
-          .pipe(server.router()) // The router asks for multicasting of documents
-          .pipe(multicaster())
-          .pipe(server.router());
-        yield server.start();
+        require('../../app/modules/router').duniter.methods.routeToNetwork(server);
+        yield server.PeeringService.generateSelfPeer(server.conf, 0);
+        const prover = require('duniter-prover').duniter.methods.prover(server);
+        server.startBlockComputation = () => prover.startService();
+        server.stopBlockComputation = () => prover.stopService();
       }
       nodeS1 = contacter('127.0.0.1', s1.conf.port);
       nodeS2 = contacter('127.0.0.1', s2.conf.port);

@@ -3,8 +3,8 @@
 const _         = require('underscore');
 const co        = require('co');
 const should    = require('should');
-const ucoin     = require('../../index');
-const bma       = require('../../app/lib/streams/bma');
+const duniter   = require('../../index');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 
@@ -16,14 +16,13 @@ const commonConf = {
   currency: 'bb',
   httpLogs: true,
   forksize: 3,
-  parcatipate: false, // TODO: to remove when startGeneration will be an explicit call
   sigQty: 1
 };
 
-const s1 = ucoin({
-  memory: MEMORY_MODE,
-  name: 'bb1'
-}, _.extend({
+const s1 = duniter(
+  '/bb1',
+  MEMORY_MODE,
+  _.extend({
   port: '7778',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -44,7 +43,7 @@ describe("Branches", () => co(function*() {
     it('should have a 3 blocks fork window size', function() {
       return expectAnswer(rp('http://127.0.0.1:7778/node/summary', { json: true }), function(res) {
         res.should.have.property('duniter').property('software').equal('duniter');
-        res.should.have.property('duniter').property('version').equal('0.81.0');
+        res.should.have.property('duniter').property('version').equal('0.90.0');
         res.should.have.property('duniter').property('forkWindowSize').equal(3);
       });
     });

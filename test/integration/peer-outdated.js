@@ -5,7 +5,7 @@ const Q         = require('q');
 const should    = require('should');
 const es        = require('event-stream');
 const _         = require('underscore');
-const bma       = require('../../app/lib/streams/bma');
+const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
 const until     = require('./tools/until');
@@ -44,11 +44,7 @@ describe("Peer document expiry", function() {
       const bmaAPI = yield bma(server);
       yield bmaAPI.openConnections();
       server.bma = bmaAPI;
-      server
-        .pipe(server.router()) // The router asks for multicasting of documents
-        .pipe(multicaster())
-        .pipe(server.router());
-      return server.start();
+      require('../../app/modules/router').duniter.methods.routeToNetwork(server);
     }), Q());
 
     // Server 1

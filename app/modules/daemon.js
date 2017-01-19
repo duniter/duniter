@@ -5,6 +5,10 @@ const co = require('co');
 module.exports = {
   duniter: {
 
+    service: {
+      process: (server) => ServerService(server)
+    },
+
     cli: [{
       name: 'start',
       desc: 'Start Duniter node daemon.',
@@ -38,6 +42,12 @@ module.exports = {
     }]
   }
 };
+
+function ServerService(server) {
+  server.startService = () => Promise.resolve();
+  server.stopService = () => Promise.resolve();
+  return server;
+}
 
 function needsToBeLaunchedByScript(logger) {
   logger.error('This command must not be launched directly, please use duniter.sh script');

@@ -72,7 +72,7 @@ describe("Generation", function() {
         yield server.bma.openConnections();
         require('../../app/modules/router').duniter.methods.routeToNetwork(server);
         yield server.PeeringService.generateSelfPeer(server.conf, 0);
-        const prover = require('../../app/modules/prover').duniter.methods.prover(server);
+        const prover = require('duniter-prover').duniter.methods.prover(server);
         server.startBlockComputation = () => prover.startService();
         server.stopBlockComputation = () => prover.stopService();
       }

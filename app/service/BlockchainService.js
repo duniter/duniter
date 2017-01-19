@@ -7,8 +7,7 @@ const parsers         = require('../lib/streams/parsers');
 const rules           = require('../lib/rules');
 const constants       = require('../lib/constants');
 const blockchainCtx   = require('../lib/computation/blockchainContext');
-const blockGenerator  = require('../lib/computation/blockGenerator');
-const blockProver     = require('../lib/computation/blockProver');
+const blockGenerator  = require('duniter-prover').duniter.methods.blockGenerator;
 const Block           = require('../lib/entity/block');
 const Identity        = require('../lib/entity/identity');
 const Transaction     = require('../lib/entity/transaction');
@@ -26,8 +25,6 @@ function BlockchainService (server) {
 
   let that = this;
   const mainContext = blockchainCtx();
-  const prover = this.prover = blockProver(server);
-  const generator = blockGenerator(mainContext, prover);
   let conf, dal, logger, selfPubkey;
 
   this.getContext = () => mainContext;
@@ -36,8 +33,6 @@ function BlockchainService (server) {
     dal = newDAL;
     conf = newConf;
     mainContext.setConfDAL(conf, dal);
-    prover.setConfDAL(conf, dal, newKeyPair);
-    generator.setConfDAL(conf, dal, newKeyPair);
     selfPubkey = newKeyPair.publicKey;
     logger = require('../lib/logger')(dal.profile);
   };
@@ -250,16 +245,6 @@ function BlockchainService (server) {
 
   this.applyNextAvailableFork = () => this.pushFIFO(() => mainContext.applyNextAvailableFork());
 
-  /**
-   * Generates root block with manual selection of root members.
-   */
-  this.generateManualRoot = () => generator.manualRoot();
-
-  /**
-   * Generates next block, finding newcomers, renewers, leavers, certs, transactions, etc.
-   */
-  this.generateNext = (params) => generator.nextBlock(params);
-
   this.requirementsOfIdentities = (identities) => co(function *() {
     let all = [];
     let current = yield dal.getCurrentBlockOrNull();
@@ -283,6 +268,7 @@ function BlockchainService (server) {
     let expiresPending = 0;
     let certs = [];
     try {
+      const generator = blockGenerator(server);
       const join = yield generator.getSinglePreJoinData(current, idty.hash);
       const pubkey = join.identity.pubkey;
       // Check WoT stability
@@ -365,12 +351,8 @@ function BlockchainService (server) {
     return certsFromLinks.concat(certsFromCerts);
   });
 
-  this.prove = prover.prove;
-
   this.isMember = () => dal.isMember(selfPubkey);
   this.getCountOfSelfMadePoW = () => dal.getCountOfPoW(selfPubkey);
-
-  this.makeNextBlock = generator.makeNextBlock;
 
   this.saveParametersForRootBlock = (block) => co(function *() {
     let mainFork = mainContext;
@@ -443,6 +425,4 @@ function BlockchainService (server) {
     }
     return dal.getBlocksBetween(from, from + count - 1);
   });
-
-  this.changeProverCPUSetting = (cpu) => prover.changeCPU(cpu);
 }

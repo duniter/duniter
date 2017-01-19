@@ -12,16 +12,16 @@ module.exports = function () {
 
 function Wizard () {
 
-  this.configPoW = function (conf, program, done) {
+  this.configPoW = function (conf, program, logger, done) {
     doTasks(['pow'], conf, done);
   };
 
-  this.configCurrency = function (conf, program, done) {
+  this.configCurrency = function (conf, program, logger, done) {
     doTasks(['currency'], conf, done);
   };
 
-  this.configUCP = function (conf, program, done) {
-    doTasks(['ucp'], conf, done);
+  this.configUCP = function (conf, program, logger, done) {
+    doTasks(['parameters'], conf, done);
   };
 }
 
@@ -52,7 +52,7 @@ const tasks = {
     ], done);
   },
 
-  ucp: function (conf, done) {
+  parameters: function (conf, done) {
     async.waterfall([
       async.apply(simpleFloat,   "Universal Dividend %growth",                                             "c", conf),
       async.apply(simpleInteger, "Universal Dividend period (in seconds)",                                 "dt", conf),

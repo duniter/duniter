@@ -1,6 +1,6 @@
 "use strict";
 const _ = require('underscore');
-const rawer = require('../ucp/rawer');
+const rawer = require('duniter-common').rawer;
 const Identity = require('./identity');
 
 const Revocation = function(json) {

@@ -80,9 +80,9 @@ function Node (dbName, options) {
             block: function(callback){
               co(function *() {
                 try {
-                  const block2 = yield that.server.BlockchainService.generateNext(params);
+                  const block2 = yield require('duniter-prover').duniter.methods.generateTheNextBlock(that.server, params);
                   const trial2 = yield that.server.getBcContext().getIssuerPersonalizedDifficulty(that.server.keyPair.publicKey);
-                  const block = yield that.server.BlockchainService.makeNextBlock(block2, trial2, params);
+                  const block = yield require('duniter-prover').duniter.methods.generateAndProveTheNext(that.server, block2, trial2, params);
                   callback(null, block);
                 } catch (e) {
                   callback(e);
@@ -142,6 +142,9 @@ function Node (dbName, options) {
   function service(callback) {
     return function () {
       const stack = duniter.statics.simpleStack();
+      for (const name of ['duniter-keypair', 'duniter-bma']) {
+        stack.registerDependency(require(name), name);
+      }
       stack.registerDependency({
         duniter: {
           config: {

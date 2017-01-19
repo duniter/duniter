@@ -1,7 +1,7 @@
 "use strict";
 const _ = require('underscore');
-const hashf = require('../ucp/hashf');
-const rawer = require('../ucp/rawer');
+const hashf = require('duniter-common').hashf;
+const rawer = require('duniter-common').rawer;
 
 const Identity = function(json) {
 

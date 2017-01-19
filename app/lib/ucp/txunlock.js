@@ -1,7 +1,7 @@
 "use strict";
 
 let Parser = require("jison").Parser;
-let ucp = require('./buid');
+let ucp = require('duniter-common').buid;
 
 let grammar = {
   "lex": {

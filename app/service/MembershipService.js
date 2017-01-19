@@ -2,7 +2,7 @@
 
 const co              = require('co');
 const rules           = require('../lib/rules');
-const hashf           = require('../lib/ucp/hashf');
+const hashf           = require('duniter-common').hashf;
 const constants       = require('../lib/constants');
 const Membership      = require('../lib/entity/membership');
 const AbstractService = require('./AbstractService');

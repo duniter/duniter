@@ -7,7 +7,6 @@ const defaultConf = function() {
     "currency": null,
     "endpoints": [],
     "rmEndpoints": [],
-    "cpu": constants.DEFAULT_CPU,
     "upInterval": 3600 * 1000,
     "c": constants.CONTRACT.DEFAULT.C,
     "dt": constants.CONTRACT.DEFAULT.DT,

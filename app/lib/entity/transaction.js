@@ -1,7 +1,7 @@
 "use strict";
 let _ = require('underscore');
-let rawer = require('../ucp/rawer');
-let hashf = require('../ucp/hashf');
+let rawer = require('duniter-common').rawer;
+let hashf = require('duniter-common').hashf;
 
 let Transaction = function(obj, currency) {
 

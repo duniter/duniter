@@ -5,8 +5,7 @@ const should    = require('should');
 const user      = require('./tools/user');
 const toolbox   = require('./tools/toolbox');
 const constants = require('../../app/lib/constants');
-const keyring   = require('../../app/lib/crypto/keyring');
-const blockProver = require('../../app/lib/computation/blockProver');
+const keyring   = require('duniter-common').keyring;
 
 // Trace these errors
 process.on('unhandledRejection', (reason) => {
@@ -15,6 +14,7 @@ process.on('unhandledRejection', (reason) => {
 });
 
 const s1 = toolbox.server({
+  cpu: 1,
   powDelay: 1000,
   powMin: 32,
   pair: {
@@ -42,18 +42,17 @@ describe("Continous proof-of-work", function() {
   }));
 
   it('should automatically stop waiting if nothing happens', () => co(function*() {
-    s1.permaProver.should.have.property('loops').equal(0);
-    const PREVIOUS_VALUE = constants.POW_SECURITY_RETRY_DELAY;
-    constants.POW_SECURITY_RETRY_DELAY = 10;
+    s1.conf.powSecurityRetryDelay = 10;
     let start = Date.now();
     s1.startBlockComputation();
+    s1.permaProver.should.have.property('loops').equal(0);
     yield s1.until('block', 1);
     s1.permaProver.should.have.property('loops').equal(1);
     (start - Date.now()).should.be.belowOrEqual(1000);
     yield s1.stopBlockComputation();
     yield new Promise((resolve) => setTimeout(resolve, 100));
     s1.permaProver.should.have.property('loops').equal(2);
-    constants.POW_SECURITY_RETRY_DELAY = PREVIOUS_VALUE;
+    s1.conf.powSecurityRetryDelay = 10 * 60 * 1000;
     yield s1.revert();
     s1.permaProver.loops = 0;
   }));

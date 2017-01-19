@@ -1,6 +1,6 @@
 "use strict";
 const _ = require('underscore');
-const hashf = require('../ucp/hashf');
+const hashf = require('duniter-common').hashf;
 const Transaction = require('./transaction');
 
 module.exports = Block;
@@ -125,23 +125,23 @@ function Block(json) {
   };
 
   this.getRawInnerPart = () => {
-    return require('../ucp/rawer').getBlockInnerPart(this);
+    return require('duniter-common').rawer.getBlockInnerPart(this);
   };
 
   this.getRaw = () => {
-    return require('../ucp/rawer').getBlockWithInnerHashAndNonce(this);
+    return require('duniter-common').rawer.getBlockWithInnerHashAndNonce(this);
   };
 
   this.getSignedPart = () => {
-    return require('../ucp/rawer').getBlockInnerHashAndNonce(this);
+    return require('duniter-common').rawer.getBlockInnerHashAndNonce(this);
   };
 
   this.getProofOfWorkPart = () => {
-    return require('../ucp/rawer').getBlockInnerHashAndNonceWithSignature(this);
+    return require('duniter-common').rawer.getBlockInnerHashAndNonceWithSignature(this);
   };
 
   this.getRawSigned = () => {
-    return require('../ucp/rawer').getBlock(this);
+    return require('duniter-common').rawer.getBlock(this);
   };
 
   this.quickDescription = () => {

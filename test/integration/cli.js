@@ -8,7 +8,7 @@ const _         = require('underscore');
 const toolbox   = require('./tools/toolbox');
 const duniter   = require('../../index');
 const merkleh   = require('../../app/lib/helpers/merkle');
-const hashf     = require('../../app/lib/ucp/hashf');
+const hashf     = require('duniter-common').hashf;
 const constants = require('../../app/lib/constants');
 const Merkle    = require('../../app/lib/entity/merkle');
 

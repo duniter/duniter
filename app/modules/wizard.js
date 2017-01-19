@@ -12,7 +12,7 @@ module.exports = {
       // The wizard itself also defines its personal tasks
       'currency': Q.nbind(wizard().configCurrency, null),
       'pow': Q.nbind(wizard().configPoW, null),
-      'ucp': Q.nbind(wizard().configUCP, null)
+      'parameters': Q.nbind(wizard().configUCP, null)
     },
 
     cli: [{
@@ -23,6 +23,9 @@ module.exports = {
         const step = params[0];
         const tasks = step ? [wizardTasks[step]] : Object.values(wizardTasks);
         for (const task of tasks) {
+          if (!task) {
+            throw 'Unknown task';
+          }
           yield task(conf, program, server.logger);
         }
         // Check config

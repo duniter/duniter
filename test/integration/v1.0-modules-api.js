@@ -96,6 +96,7 @@ describe("v1.0 Module API", () => {
         }
       };
 
+      stack.registerDependency(require('duniter-keypair'), 'duniter-keypair');
       stack.registerDependency(configurationDependency, 'duniter-configuration');
       stack.registerDependency(returnConfDependency, 'duniter-gimme-conf');
     }));
@@ -165,10 +166,11 @@ describe("v1.0 Module API", () => {
           that.push(tx);
         }
       });
-      fakeO = new FakeStream((that, data) => {
+      fakeO = new FakeStream((that, data, enc, done) => {
         if (data.issuers) {
           that.resolveData();
         }
+        done && done();
       });
       // Fake output has a special promise of data receival, for our tests
       fakeO.outputed = querablep(new Promise((res) => fakeO.resolveData = res));
@@ -224,6 +226,8 @@ describe("v1.0 Module API", () => {
         }
       };
 
+      stack.registerDependency(require('duniter-keypair'), 'duniter-keypair');
+      stack.registerDependency(require('duniter-bma'), 'duniter-bma');
       stack.registerDependency(dummyStartServiceDependency, 'duniter-dummy-start');
       stack.registerDependency(dummyStopServiceDependency, 'duniter-dummy-stop');
     }));

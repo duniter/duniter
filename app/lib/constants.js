@@ -233,7 +233,6 @@ module.exports = {
     }
   },
   PROOF_OF_WORK: {
-    MINIMAL_TO_SHOW: 2,
     MINIMAL_TO_SHOW_IN_LOGS: 3,
     EVALUATION: 1000,
     UPPER_BOUND: [
@@ -256,7 +255,6 @@ module.exports = {
     ]
   },
 
-  DEFAULT_CPU: 0.6,
   DEFAULT_CURRENCY_NAME: "no_currency",
 
   CONTRACT: {
@@ -312,14 +310,9 @@ module.exports = {
 
   ENGINE_IDLE_INTERVAL: 5000,
 
-  // When to trigger the PoW process again if no PoW is triggered for a while. In milliseconds.
-  POW_SECURITY_RETRY_DELAY: 10 * 60 * 1000,
-
   POW_DIFFICULTY_RANGE_RATIO: 1.189,
 
   TRANSACTION_MAX_TRIES: 10,
-  NONCE_RANGE: 1000 * 1000 * 1000 * 100,
-  POW_MAXIMUM_ACCEPTABLE_HANDICAP: 64,
 
   ACCOUNT_MINIMUM_CURRENT_BASED_AMOUNT: 100,
 

@@ -2,6 +2,7 @@
 
 const Q = require('q');
 const co = require('co');
+const es = require('event-stream');
 const util = require('util');
 const stream = require('stream');
 const _ = require('underscore');
@@ -11,10 +12,8 @@ const constants = require('./app/lib/constants');
 const wizard = require('./app/lib/wizard');
 const logger = require('./app/lib/logger')('duniter');
 
-const dkeypairDependency  = require('duniter-keypair');
 const configDependency    = require('./app/modules/config');
 const wizardDependency    = require('./app/modules/wizard');
-const genDependency       = require('./app/modules/gen');
 const resetDependency     = require('./app/modules/reset');
 const checkConfDependency = require('./app/modules/check-config');
 const exportBcDependency  = require('./app/modules/export-bc');
@@ -22,9 +21,7 @@ const reapplyDependency   = require('./app/modules/reapply');
 const revertDependency    = require('./app/modules/revert');
 const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
-const crawlerDependency   = require('duniter-crawler');
-const proverDependency    = require('./app/modules/prover');
-const bmapiDependency     = require('duniter-bma');
+const proverDependency    = require('duniter-prover');//require('./app/modules/prover');
 const routerDependency    = require('./app/modules/router');
 
 const MINIMAL_DEPENDENCIES = [
@@ -33,7 +30,6 @@ const MINIMAL_DEPENDENCIES = [
 
 const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-wizard',    required: wizardDependency },
-  { name: 'duniter-gen',       required: genDependency },
   { name: 'duniter-reset',     required: resetDependency },
   { name: 'duniter-chkconf',   required: checkConfDependency },
   { name: 'duniter-exportbc',  required: exportBcDependency },
@@ -41,10 +37,7 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-revert',    required: revertDependency },
   { name: 'duniter-daemon',    required: daemonDependency },
   { name: 'duniter-psignal',   required: pSignalDependency },
-  { name: 'duniter-crawler',   required: crawlerDependency },
-  { name: 'duniter-bmapi',     required: bmapiDependency },
-  { name: 'duniter-router',    required: routerDependency },
-  { name: 'duniter-keypair',   required: dkeypairDependency }
+  { name: 'duniter-router',    required: routerDependency }
 ]);
 
 const PRODUCTION_DEPENDENCIES = DEFAULT_DEPENDENCIES.concat([
@@ -263,9 +256,6 @@ function Stack(dependencies) {
 
         // Start services and streaming between them
         () => co(function*() {
-          const modules = streams.input.concat(streams.process).concat(streams.output).concat(streams.neutral);
-          // Any streaming module must implement a `startService` method
-          yield modules.map(module => module.startService());
           // All inputs write to global INPUT stream
           for (const module of streams.input) module.pipe(INPUT);
           // All processes read from global INPUT stream
@@ -274,6 +264,9 @@ function Stack(dependencies) {
           for (const module of streams.process) module.pipe(PROCESS);
           // All ouputs read from global PROCESS stream
           for (const module of streams.output) PROCESS.pipe(module);
+          // Any streaming module must implement a `startService` method
+          const modules = streams.input.concat(streams.process).concat(streams.output).concat(streams.neutral);
+          yield modules.map(module => module.startService());
         }),
 
         // Stop services and streaming between them

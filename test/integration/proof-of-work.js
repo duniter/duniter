@@ -3,9 +3,10 @@
 const co        = require('co');
 const should    = require('should');
 const toolbox   = require('./tools/toolbox');
+const Block = require('../../app/lib/entity/block');
 const constants = require('../../app/lib/constants');
-const keyring   = require('../../app/lib/crypto/keyring');
-const blockProver = require('../../app/lib/computation/blockProver');
+const logger = require('../../app/lib/logger')();
+const blockProver = require('duniter-prover').duniter.methods.blockProver;
 
 /***
 conf.medianTimeBlocks
@@ -18,31 +19,25 @@ keyring from Key
 const intermediateProofs = [];
 
 const prover = blockProver({
-  push: (data) => intermediateProofs.push(data)
-});
-
-prover.setConfDAL({
-    cpu: 1.0 // 80%
+  push: (data) => intermediateProofs.push(data),
+  conf: {
+    cpu: 1.0, // 80%,
+    pair: {
+      pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+      sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
+    }
   },
-  null,
-  keyring.Key(
-  'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-  '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
-));
+  logger,
+  lib: { constants, Block }
+});
 
 const now = 1474382274 * 1000;
 const MUST_START_WITH_A_ZERO = 16;
 const MUST_START_WITH_TWO_ZEROS = 32;
 
-const BACKUP_HANDICAP = constants.POW_MAXIMUM_ACCEPTABLE_HANDICAP;
-
 constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1; // For simple tests. Can be changed to test multiple cores.
 
 describe("Proof-of-work", function() {
-
-  before(() => {
-    constants.POW_MAXIMUM_ACCEPTABLE_HANDICAP = 8;
-  });
 
   it('should be able to find an easy PoW', () => co(function*() {
     let block = yield prover.prove({
@@ -113,6 +108,8 @@ describe("Proof-of-work", function() {
   it('should be able to cancel a waiting on other PoW receival', () => co(function*() {
     const now = 1474464481;
     const res = yield toolbox.simpleNetworkOf2NodesAnd2Users({
+      powSecurityRetryDelay: 10 * 60 * 1000,
+      powMaxHandicap: 8,
       percentRot: 1,
       powMin: 35
     }), s1 = res.s1, s2 = res.s2;
@@ -164,8 +161,4 @@ describe("Proof-of-work", function() {
     yield s1.expectJSON('/blockchain/current', { number: 5 });
     yield s2.expectJSON('/blockchain/current', { number: 5 });
   }));
-
-  after(() => {
-    constants.POW_MAXIMUM_ACCEPTABLE_HANDICAP = BACKUP_HANDICAP;
-  });
 });

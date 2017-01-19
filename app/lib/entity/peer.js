@@ -1,7 +1,7 @@
 "use strict";
 const _ = require('underscore');
 const contacter = require('duniter-crawler').duniter.methods.contacter;
-const rawer = require('../ucp/rawer');
+const rawer = require('duniter-common').rawer;
 const constants = require('../constants');
 
 module.exports = Peer;

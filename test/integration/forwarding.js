@@ -9,6 +9,7 @@ const user   = require('./tools/user');
 const jspckg = require('../../package');
 
 const MEMORY_MODE = true;
+require('duniter-bma').duniter.methods.noLimit(); // Disables the HTTP limiter
 
 describe("Forwarding", function() {
 

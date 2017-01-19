@@ -12,10 +12,9 @@ const parsers     = require('./app/lib/streams/parsers');
 const constants   = require('./app/lib/constants');
 const fileDAL     = require('./app/lib/dal/fileDAL');
 const jsonpckg    = require('./package.json');
-const keyring      = require('./app/lib/crypto/keyring');
+const keyring      = require('duniter-common').keyring;
 const directory   = require('./app/lib/system/directory');
-const dos2unix    = require('./app/lib/system/dos2unix');
-const rawer       = require('./app/lib/ucp/rawer');
+const rawer       = require('duniter-common').rawer;
 
 function Server (home, memoryOnly, overrideConf) {
 
@@ -32,23 +31,26 @@ function Server (home, memoryOnly, overrideConf) {
 
   // External libs
   that.lib = {};
-  that.lib.keyring = require('./app/lib/crypto/keyring');
+  that.lib.keyring = require('duniter-common').keyring;
   that.lib.Identity = require('./app/lib/entity/identity');
+  that.lib.Certification = require('./app/lib/entity/certification');
   that.lib.Transaction = require('./app/lib/entity/transaction');
   that.lib.Peer = require('./app/lib/entity/peer');
   that.lib.Membership = require('./app/lib/entity/membership');
   that.lib.Block = require('./app/lib/entity/block');
   that.lib.Stat = require('./app/lib/entity/stat');
-  that.lib.rawer = require('./app/lib/ucp/rawer');
+  that.lib.rawer = require('duniter-common').rawer;
+  that.lib.parsers = require('./app/lib/streams/parsers');
   that.lib.http2raw = require('duniter-bma').duniter.methods.http2raw;
-  that.lib.dos2unix = require('./app/lib/system/dos2unix');
+  that.lib.dos2unix = require('duniter-common').dos2unix;
   that.lib.contacter = require('duniter-crawler').duniter.methods.contacter;
   that.lib.bma = require('duniter-bma').duniter.methods.bma;
   that.lib.network = require('./app/lib/system/network');
   that.lib.constants = require('./app/lib/constants');
-  that.lib.ucp = require('./app/lib/ucp/buid');
-  that.lib.hashf = require('./app/lib/ucp/hashf');
+  that.lib.ucp = require('duniter-common').buid;
+  that.lib.hashf = require('duniter-common').hashf;
   that.lib.indexer = require('./app/lib/dup/indexer');
+  that.lib.rules = require('./app/lib/rules');
 
   that.MerkleService       = require("./app/lib/helpers/merkle");
   that.IdentityService     = require('./app/service/IdentityService')();
@@ -103,7 +105,6 @@ function Server (home, memoryOnly, overrideConf) {
     const defaultValues = {
       remoteipv6:         that.conf.ipv6,
       remoteport:         that.conf.port,
-      cpu:                constants.DEFAULT_CPU,
       c:                  constants.CONTRACT.DEFAULT.C,
       dt:                 constants.CONTRACT.DEFAULT.DT,
       ud0:                constants.CONTRACT.DEFAULT.UD0,
@@ -320,14 +321,6 @@ function Server (home, memoryOnly, overrideConf) {
 
   this.disconnect = () => Promise.resolve(that.dal && that.dal.close());
 
-  // Unit Tests or Preview method
-  this.doMakeNextBlock = (manualValues) => that.BlockchainService.makeNextBlock(null, null, manualValues);
-
-  this.doCheckBlock = (block) => {
-    const parsed = parsers.parseBlock.syncWrite(block.getRawSigned());
-    return that.BlockchainService.checkBlock(parsed, false);
-  };
-
   this.revert = () => this.BlockchainService.revertCurrentBlock();
 
   this.revertTo = (number) => co(function *() {
@@ -353,8 +346,6 @@ function Server (home, memoryOnly, overrideConf) {
 
   this.singleWritePromise = (obj) => that.submit(obj);
 
-  this.applyCPU = (cpu) => that.BlockchainService.changeProverCPUSetting(cpu);
-  
   this.rawer = rawer;
 
   this.writeRaw = (raw, type) => co(function *() {

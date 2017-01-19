@@ -6,11 +6,11 @@ const Q              = require('q');
 const events         = require('events');
 const rp             = require('request-promise');
 const multicaster    = require('../lib/streams/multicaster');
-const keyring        = require('../lib/crypto/keyring');
+const keyring        = require('duniter-common').keyring;
 const logger         = require('../lib/logger')('peering');
-const dos2unix       = require('../lib/system/dos2unix');
-const hashf          = require('../lib/ucp/hashf');
-const rawer          = require('../lib/ucp/rawer');
+const dos2unix       = require('duniter-common').dos2unix;
+const hashf          = require('duniter-common').hashf;
+const rawer          = require('duniter-common').rawer;
 const constants      = require('../lib/constants');
 const Peer           = require('../lib/entity/peer');
 const AbstractService = require('./AbstractService');
@@ -128,7 +128,9 @@ function PeeringService(server) {
         if (!localNodeNotListed) {
           const indexOfThisNode = peerEntity.endpoints.indexOf(localEndpoint);
           if (indexOfThisNode !== -1) {
-            server.BlockchainService.prover.changePoWPrefix((indexOfThisNode + 1) * 10); // We multiply by 10 to give room to computers with < 100 cores
+            server.push({
+              nodeIndexInPeers: indexOfThisNode
+            });
           } else {
             logger.warn('This node has his interface listed in the peer document, but its index cannot be found.');
           }

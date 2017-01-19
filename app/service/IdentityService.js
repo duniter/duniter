@@ -1,7 +1,7 @@
 "use strict";
 const Q               = require('q');
 const rules           = require('../lib/rules');
-const keyring          = require('../lib/crypto/keyring');
+const keyring          = require('duniter-common').keyring;
 const constants       = require('../lib/constants');
 const Block           = require('../../app/lib/entity/block');
 const Identity        = require('../../app/lib/entity/identity');

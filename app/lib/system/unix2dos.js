@@ -1,5 +1,5 @@
 "use strict";
-const dos2unix = require('./dos2unix');
+const dos2unix = require('duniter-common').dos2unix;
 const util     = require('util');
 const stream   = require('stream');
 

@@ -1,7 +1,7 @@
 "use strict";
 const util                 = require('util');
 const stream               = require('stream');
-const hashf                = require('../../ucp/hashf');
+const hashf                = require('duniter-common').hashf;
 const logger               = require('../../logger')('gen_parser');
 const constants            = require('../../constants');
 

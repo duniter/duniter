@@ -71,7 +71,6 @@
   },
   "devDependencies": {
     "coveralls": "2.11.4",
-    "duniter-ui": "^0.3.0",
     "eslint": "3.13.1",
     "eslint-plugin-mocha": "4.8.0",
     "istanbul": "0.4.0",

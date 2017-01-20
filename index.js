@@ -251,21 +251,24 @@ function Stack(dependencies) {
           }
         }
       }
+      // All inputs write to global INPUT stream
+      for (const module of streams.input) module.pipe(INPUT);
+      // All processes read from global INPUT stream
+      for (const module of streams.process) INPUT.pipe(module);
+      // All processes write to global PROCESS stream
+      for (const module of streams.process) module.pipe(PROCESS);
+      // All ouputs read from global PROCESS stream
+      for (const module of streams.output) PROCESS.pipe(module);
 
       return yield command.onDatabaseExecute(server, conf, program, params,
 
         // Start services and streaming between them
         () => co(function*() {
-          // All inputs write to global INPUT stream
-          for (const module of streams.input) module.pipe(INPUT);
-          // All processes read from global INPUT stream
-          for (const module of streams.process) INPUT.pipe(module);
-          // All processes write to global PROCESS stream
-          for (const module of streams.process) module.pipe(PROCESS);
-          // All ouputs read from global PROCESS stream
-          for (const module of streams.output) PROCESS.pipe(module);
           // Any streaming module must implement a `startService` method
-          const modules = streams.input.concat(streams.process).concat(streams.output).concat(streams.neutral);
+          for (const m of streams.input) {
+            yield m.startService();
+          }
+          const modules = [].concat(streams.process).concat(streams.output).concat(streams.neutral);
           yield modules.map(module => module.startService());
         }),
 
@@ -274,13 +277,13 @@ function Stack(dependencies) {
           const modules = streams.input.concat(streams.process).concat(streams.output);
           // Any streaming module must implement a `stopService` method
           yield modules.map(module => module.stopService());
-          // Stop reading inputs
-          for (const module of streams.input) module.unpipe();
+          // // Stop reading inputs
+          // for (const module of streams.input) module.unpipe();
           // Stop reading from global INPUT
-          INPUT.unpipe();
-          for (const module of streams.process) module.unpipe();
-          // Stop reading from global PROCESS
-          PROCESS.unpipe();
+          // INPUT.unpipe();
+          // for (const module of streams.process) module.unpipe();
+          // // Stop reading from global PROCESS
+          // PROCESS.unpipe();
         }));
     } catch (e) {
       server.disconnect();

@@ -65,7 +65,7 @@ module.exports.statics = {
   /**
    * Creates a new stack pre-registered with compliant modules found in package.json
    */
-  autoStack: () => {
+  autoStack: (priorityModules) => {
     const pjson = require('./package.json');
     const duniterModules = [];
 
@@ -84,7 +84,7 @@ module.exports.statics = {
     }
 
     // The final stack
-    return new Stack(PRODUCTION_DEPENDENCIES.concat(duniterModules));
+    return new Stack((priorityModules || []).concat(PRODUCTION_DEPENDENCIES).concat(duniterModules));
   }
 };
 

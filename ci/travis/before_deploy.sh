@@ -15,24 +15,17 @@ if [[ ! -f before_deploy ]]; then
   NW="nwjs-${NW_RELEASE}-linux-x64"
   NW_GZ="${NW}.tar.gz"
 
-  # Clean testing packages
+  # Clean test and UI packages
   npm prune --production
+  rm -Rf node_modules/duniter-ui/node_modules
 
   SRC=`pwd`
-
-  cd ..
-  cp -r $SRC npm_ # This one should no more be touched
-
-  # Install UI (common to desktop and server)
-  cd $SRC
-  npm install duniter-ui
-  rm -Rf node_modules/duniter-ui/node_modules
 
   cd ..
   cp -r $SRC desktop_
 
   # Remove git files
-  rm -Rf .git
+  rm -Rf .git "$SRC/.git"
 
   # -------------------------------------------------
   # Build Desktop version (Nw.js is embedded)

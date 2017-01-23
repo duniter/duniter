@@ -23,7 +23,7 @@ SRC=`pwd`
 echo $SRC
 
 # Install UI
-node/bin/npm install duniter-ui --production
+node/bin/npm install duniter-ui --production --save
 rm -Rf node_modules/duniter-ui/node_modules
 
 cd ..

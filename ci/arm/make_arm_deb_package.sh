@@ -2,7 +2,7 @@
 
 ARCH=$1
 DUNITER_VER=$2
-NVER="v5.9.1"
+NVER="v6.9.4"
 DUNITER_DEB_VER=" $DUNITER_VER"
 echo "$ARCH"
 echo "$NVER"
@@ -23,7 +23,7 @@ SRC=`pwd`
 echo $SRC
 
 # Install UI
-npm install duniter-ui
+node/bin/npm install duniter-ui --production
 rm -Rf node_modules/duniter-ui/node_modules
 
 cd ..

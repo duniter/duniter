@@ -64,7 +64,10 @@ function SIndexDAL(driver) {
   this.removeBlock = (blockstamp) => that.exec('DELETE FROM ' + that.table + ' WHERE written_on = \'' + blockstamp + '\'');
 
   this.getSource = (identifier, pos) => co(function*() {
-    const reducable = yield that.sqlFind({ identifier, pos });
+    const reducable = yield that.query('SELECT * FROM ' + that.table + ' s1 ' +
+      'WHERE s1.identifier = ? ' +
+      'AND s1.pos = ? ' +
+      'ORDER BY op ASC', [identifier, pos]);
     if (reducable.length == 0) {
       return null;
     } else {
@@ -75,10 +78,10 @@ function SIndexDAL(driver) {
   });
 
   this.getUDSources = (pubkey) => co(function*() {
-    const reducables = yield that.sqlFind({
-      conditions: { $contains: pubkey },
-      tx: { $null: true }
-    });
+    const reducables = yield that.query('SELECT * FROM ' + that.table + ' s1 ' +
+      'WHERE conditions = ? ' +
+      'AND s1.tx IS NULL ' +
+      'ORDER BY op ASC', ['SIG(' + pubkey + ')']);
     const reduced = indexer.DUP_HELPERS.reduceBy(reducables, ['identifier', 'pos']).map((src) => {
       src.type = src.tx ? 'T' : 'D';
       return src;
@@ -87,15 +90,22 @@ function SIndexDAL(driver) {
   });
 
   this.getAvailableForPubkey = (pubkey) => co(function*() {
-    const reducables = yield that.sqlFind({
-      conditions: { $contains: 'SIG(' + pubkey + ')' }
-    });
-    const sources = indexer.DUP_HELPERS.reduceBy(reducables, ['identifier', 'pos']).map((src) => {
+    const potentials = yield that.query('SELECT * FROM ' + that.table + ' s1 ' +
+      'WHERE s1.op = ? ' +
+      'AND conditions LIKE \'%SIG(' + pubkey + ')%\' ' +
+      'AND NOT EXISTS (' +
+      ' SELECT * ' +
+      ' FROM s_index s2 ' +
+      ' WHERE s2.identifier = s1.identifier ' +
+      ' AND s2.pos = s1.pos ' +
+      ' AND s2.op = ?' +
+      ') ' +
+      'ORDER BY CAST(SUBSTR(written_on, 0, INSTR(written_on, "-")) as number)', [constants.IDX_CREATE, constants.IDX_UPDATE]);
+    const sources = potentials.map((src) => {
       src.type = src.tx ? 'T' : 'D';
       return src;
     });
-    const filtered = _.filter(sources, (src) => !src.consumed);
-    return _.sortBy(filtered, (row) => row.type == 'D' ? 0 : 1);
+    return _.sortBy(sources, (row) => row.type == 'D' ? 0 : 1);
   });
 
   this.findLowerThan = (amount, base) => co(function*() {

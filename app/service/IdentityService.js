@@ -169,6 +169,8 @@ function IdentityService () {
           }
           yield dal.registerNewCertification(new Certification(mCert));
           logger.info('✔ CERT %s', mCert.from);
+        } else {
+          throw constants.ERRORS.ALREADY_UP_TO_DATE;
         }
       } else {
         logger.info('✘ CERT %s %s', cert.from, cert.err);

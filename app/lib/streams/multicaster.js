@@ -7,6 +7,7 @@ const co      = require('co');
 const constants = require('../../lib/constants');
 const Peer    = require('../../lib/entity/peer');
 const Identity = require('../../lib/entity/identity');
+const Certification = require('../../lib/entity/certification');
 const Revocation = require('../../lib/entity/revocation');
 const Membership = require('../../lib/entity/membership');
 const Block = require('../../lib/entity/block');
@@ -50,7 +51,7 @@ function Multicaster (conf, timeout) {
   });
 
   let certForward = forward({
-    transform: Identity.statics.fromJSON,
+    transform: Certification.statics.fromJSON,
     type: 'Cert',
     uri: '/wot/certify',
     getObj: (cert) => {

@@ -35,6 +35,9 @@ function Router (PeeringService, dal) {
         else if (obj.pubkey && obj.uid) {
           yield route('identity', obj, getRandomInUPPeers(obj.pubkey === PeeringService.pubkey));
         }
+        else if (obj.idty_uid) {
+          yield route('cert', obj, getRandomInUPPeers(obj.pubkey === PeeringService.pubkey));
+        }
         else if (obj.userid) {
           yield route('membership', obj, getRandomInUPPeers(obj.issuer === PeeringService.pubkey));
         }

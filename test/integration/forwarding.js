@@ -49,6 +49,7 @@ describe("Forwarding", function() {
       });
       yield [
         node2.until('identity', 4),
+        node2.until('certification', 2),
         node2.until('block', 1),
         co(function *() {
 

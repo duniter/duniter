@@ -67,7 +67,7 @@
     "unzip": "0.1.11",
     "unzip2": "0.2.5",
     "winston": "2.2.0",
-    "wotb": "0.4.14"
+    "wotb": "0.4.15"
   },
   "devDependencies": {
     "coveralls": "2.11.4",

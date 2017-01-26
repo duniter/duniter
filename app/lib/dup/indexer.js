@@ -1523,7 +1523,8 @@ function reduceBy(reducables, properties) {
 
 function checkPeopleAreNotOudistanced (pubkeys, newLinks, newcomers, conf, dal) {
   return co(function *() {
-    let wotb = dal.wotb;
+    // let wotb = dal.wotb;
+    let wotb = dal.wotb.memcopy();
     let current = yield dal.getCurrentBlockOrNull();
     let membersCount = current ? current.membersCount : 0;
     // TODO: make a temporary copy of the WoT in RAM
@@ -1559,6 +1560,7 @@ function checkPeopleAreNotOudistanced (pubkeys, newLinks, newcomers, conf, dal) 
     // Undo temp links/nodes
     tempLinks.forEach((link) => wotb.removeLink(link.from, link.to));
     newcomers.forEach(() => wotb.removeNode());
+    wotb.clear();
     return error ? true : false;
   });
 }

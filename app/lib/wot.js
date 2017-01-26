@@ -12,8 +12,13 @@ module.exports = {
 
 function WoTBWrapper(instance) {
 
+  this.memcopy = () => {
+    return new WoTBWrapper(instance.memCopy());
+  };
+
   this.setVerbose = wotb.setVerbose;
   this.resetWoT = instance.resetWoT;
+  this.clear = instance.clear;
   this.showWoT = instance.showWoT;
   this.showGraph = () =>
     instance.showGraph();

@@ -95,7 +95,7 @@ install_from_git() {
   # Install Duniter dependencies (NPM modules)
   NODE=$DUNITER_DIR/node/bin/node
   NPM=$DUNITER_DIR/node/bin/npm
-  $NPM install
+  $NODE $NPM install
   return
 }
 

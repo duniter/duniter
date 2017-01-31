@@ -1301,6 +1301,7 @@ const indexer = module.exports = {
         for (const src of sources) {
           garbages.push({
             op: 'UPDATE',
+            tx: src.tx,
             identifier: src.identifier,
             pos: src.pos,
             amount: src.amount,

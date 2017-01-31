@@ -16,7 +16,7 @@ module.exports = {
     },
 
     cli: [{
-      name: 'wizard [network|?]',
+      name: 'wizard [key|network|network-reconfigure|currency|pow|parameters]',
       desc: 'Launch the configuration wizard.',
 
       onConfiguredExecute: (server, conf, program, params, wizardTasks) => co(function*() {

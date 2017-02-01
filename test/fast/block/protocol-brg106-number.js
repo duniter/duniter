@@ -3,9 +3,6 @@ const co            = require('co');
 const should        = require('should');
 const indexer       = require('../../../app/lib/dup/indexer');
 
-const FAIL = false;
-const SUCCESS = true;
-
 describe("Protocol BR_G106 - Garbaging", function(){
 
   it('An account with balance < 1,00 should be cleaned up', () => co(function*(){
@@ -13,6 +10,13 @@ describe("Protocol BR_G106 - Garbaging", function(){
     const dal = {
       sindexDAL: {
         findLowerThan: () => co(function*() {
+          return [
+            { amount: 10, base: 0, tx: 'A' },
+            { amount: 22, base: 0, tx: 'B' },
+            { amount: 15, base: 0, tx: null } // UD
+          ];
+        }),
+        getAvailableForConditions: (conditions) => co(function*() {
           return [
             { amount: 10, base: 0, tx: 'A' },
             { amount: 22, base: 0, tx: 'B' },

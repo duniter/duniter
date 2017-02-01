@@ -59,17 +59,20 @@ describe("Protocol 1.0 Source Garbaging", function() {
   }));
 
   it('should be able to send money to tac with no losses', () => co(function*() {
-    yield cat.sendP(3000, tac);
+    yield cat.sendP(2999, tac);
+    yield s1.commit({ time: now + 300 });
+    yield cat.sendP(1, tac);
     yield s1.commit({ time: now + 300 });
     yield s1.expectThat('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (json) => {
       json.sources.should.deepEqual([
-        { type: 'T', noffset: 1, identifier: '693C54130D1D393767347F657D074FA471E0844FC1CF35A6FDEAC68849737A01', amount: 6995, base: 0 }
+        { type: 'T', noffset: 1, identifier: '0DD9901D4AC08B8F77584F2AA86235873D095C071361A4419949C1F41634AD71', amount: 6995, base: 0 }
       ]);
     });
     yield s1.expectThat('/tx/sources/2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', (json) => {
       json.sources.should.deepEqual([
         { type: 'D', noffset: 2, identifier: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', amount: 9995, base: 0 },
-        { type: 'T', noffset: 0, identifier: '693C54130D1D393767347F657D074FA471E0844FC1CF35A6FDEAC68849737A01', amount: 3000, base: 0 }
+        { type: 'T', noffset: 0, identifier: '05339B305C93BCFD000DD0578EED8D8C1B1884525E669A90C471DDE431628BCA', amount: 2999, base: 0 },
+        { type: 'T', noffset: 0, identifier: '0DD9901D4AC08B8F77584F2AA86235873D095C071361A4419949C1F41634AD71', amount: 1, base: 0 }
       ]);
     });
   }));
@@ -79,27 +82,55 @@ describe("Protocol 1.0 Source Garbaging", function() {
     yield s1.commit({ time: now + 300 });
     yield s1.expectThat('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (json) => {
       json.sources.should.deepEqual([
-        { type: 'T', noffset: 1, identifier: '1E47AF2308490CD7480CD509F3D031B9F1E0DEE9E40FEC9CF9462CEE412C0710', amount: 1500, base: 0 }
+        { type: 'T', noffset: 1, identifier: '03E54C10B62FC39558D1743CA130AFF9A172CD8485FDA6BAD7FA50421A456F4C', amount: 1500, base: 0 }
       ]);
     });
     yield s1.expectThat('/tx/sources/2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', (json) => {
       json.sources.should.deepEqual([
         { type: 'D', noffset: 2, identifier: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', amount: 9995, base: 0 },
-        { type: 'T', noffset: 0, identifier: '693C54130D1D393767347F657D074FA471E0844FC1CF35A6FDEAC68849737A01', amount: 3000, base: 0 },
-        { type: 'T', noffset: 0, identifier: '1E47AF2308490CD7480CD509F3D031B9F1E0DEE9E40FEC9CF9462CEE412C0710', amount: 5495, base: 0 }
+        { type: 'T', noffset: 0, identifier: '05339B305C93BCFD000DD0578EED8D8C1B1884525E669A90C471DDE431628BCA', amount: 2999, base: 0 },
+        { type: 'T', noffset: 0, identifier: '0DD9901D4AC08B8F77584F2AA86235873D095C071361A4419949C1F41634AD71', amount: 1, base: 0 },
+        { type: 'T', noffset: 0, identifier: '03E54C10B62FC39558D1743CA130AFF9A172CD8485FDA6BAD7FA50421A456F4C', amount: 5495, base: 0 }
       ]);
     });
   }));
 
   it('should be able to lose money by sending 1,99,100,999,1000,300+700 units to random accounts', () => co(function*() {
+    yield s1.expectThat('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (json) => {
+      json.sources.should.deepEqual([
+        { type: 'T', noffset: 1, identifier: '03E54C10B62FC39558D1743CA130AFF9A172CD8485FDA6BAD7FA50421A456F4C', amount: 1500, base: 0 }
+      ]);
+    });
     yield cat.sendP(1, '6EQoFVnFf2xpaRzieNTXmAKU6XkDHYrvgorJ8ppMFa8b');
     yield s1.commit({ time: now + 300 });
+    yield s1.expectThat('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (json) => {
+      json.sources.should.deepEqual([
+        { type: 'T', noffset: 1, identifier: 'F260D0403BCF49812C5002324E096A19B725D922F654DB31F0F144C830E10380', amount: 1499, base: 0 }
+      ]);
+    });
     yield cat.sendP(99, '2EvWF9XM6TY3zUDjwi3qfGRW5zhN11TXcUDXdgK2XK41');
     yield s1.commit({ time: now + 300 });
+    yield s1.expectThat('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (json) => {
+      json.sources.should.deepEqual([
+        { type: 'T', noffset: 1, identifier: '217ACD8A6D98DBB38D8C8C6C8A930049933A09B2D7283501BD61857506351875', amount: 1400, base: 0 }
+      ]);
+    });
     yield cat.sendP(100, 'DPFgnVSB14QnYFjKNhbFRYLxroSmaXZ53TzgFZBcCxbF');
     yield s1.commit({ time: now + 300 });
+    yield s1.expectThat('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (json) => {
+      json.sources.should.deepEqual([
+        { type: 'T', noffset: 1, identifier: 'CA4817B83983AE92075B9A777C9DAED80CF07A0B2343E78ECA368D1FD342E8FC', amount: 1300, base: 0 }
+      ]);
+    });
+    yield tac.sendP(4, 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
     yield cat.sendP(999, '4WmQWq4NuJtu6mzFDKkmmu6Cm6BZvgoY4b4MMDMwVvu7');
     yield s1.commit({ time: now + 300 });
+    yield s1.expectThat('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (json) => {
+      json.sources.should.deepEqual([
+        { type: 'T', noffset: 1, identifier: '985B74A888072D26C2E4B31DA611C3C7BA8BF5BB3F9677F1796F0F97B2BA9620', amount: 301, base: 0 },
+        { type: 'T', noffset: 0, identifier: 'CACBD70FC07A122108A8C0798EF43E9D016065210B25C8554560BDED0E4D0B88', amount: 4, base: 0 }
+      ]);
+    });
     yield cat.sendP(300, '7kMAi8wttYKPK5QSfCwoDriNTcCTWKzTbuSjsLsjGJX2');
     yield tac.sendP(700, '7kMAi8wttYKPK5QSfCwoDriNTcCTWKzTbuSjsLsjGJX2');
     yield s1.commit({ time: now + 900 });
@@ -118,20 +149,20 @@ describe("Protocol 1.0 Source Garbaging", function() {
     // Has just enough on the account (100 units)
     yield s1.expectThat('/tx/sources/DPFgnVSB14QnYFjKNhbFRYLxroSmaXZ53TzgFZBcCxbF', (json) => {
       json.sources.should.deepEqual([
-        { type: 'T', noffset: 0, identifier: '5218AA814F5AE71BF9ECF2DC86D8E8D85968F98E220D2E12DB6AAEFD2CD9EEE0', amount: 100, base: 0 }
+        { type: 'T', noffset: 0, identifier: 'CA4817B83983AE92075B9A777C9DAED80CF07A0B2343E78ECA368D1FD342E8FC', amount: 100, base: 0 }
       ]);
     });
     // Has way enough on the account (999 units)
     yield s1.expectThat('/tx/sources/4WmQWq4NuJtu6mzFDKkmmu6Cm6BZvgoY4b4MMDMwVvu7', (json) => {
       json.sources.should.deepEqual([
-        { type: 'T', noffset: 0, identifier: 'F603AD88714A83A0B3C68BA14E311C55CD81F609C033B18501BAE1C8A21CB174', amount: 999, base: 0 }
+        { type: 'T', noffset: 0, identifier: '985B74A888072D26C2E4B31DA611C3C7BA8BF5BB3F9677F1796F0F97B2BA9620', amount: 999, base: 0 }
       ]);
     });
     // Has way enough on the account (300 + 700 units)
     yield s1.expectThat('/tx/sources/7kMAi8wttYKPK5QSfCwoDriNTcCTWKzTbuSjsLsjGJX2', (json) => {
       json.sources.should.deepEqual([
-        { type: 'T', noffset: 0, identifier: 'C6FBF49423B6B629DEDB3CA1F0CD2BDE756C3FD5CFA009A52218A8098E18B9D4', amount: 300, base: 0 },
-        { type: 'T', noffset: 0, identifier: 'CE69CC143D8725ECB6D666B8194907DFCA8F2FD3242271F9DA16CA6B37290BA1', amount: 700, base: 0 }
+        { type: 'T', noffset: 0, identifier: '660E2783D1D52B10DDE425D7EDE13539ABBDF7407A8656B96540ED91D46A5F01', amount: 300, base: 0 },
+        { type: 'T', noffset: 0, identifier: 'FCE87BC40052FFAF8CB72EFBBD698463B3407E080807667DAC7E6239FB531238', amount: 700, base: 0 }
       ]);
     });
   }));
@@ -149,24 +180,24 @@ describe("Protocol 1.0 Source Garbaging", function() {
     // Has enough on the account (300x10^0 + 700x10^0 = 1000x10^0 = 100x10^1)
     yield s1.expectThat('/tx/sources/7kMAi8wttYKPK5QSfCwoDriNTcCTWKzTbuSjsLsjGJX2', (json) => {
       json.sources.should.deepEqual([
-        { type: 'T', noffset: 0, identifier: 'C6FBF49423B6B629DEDB3CA1F0CD2BDE756C3FD5CFA009A52218A8098E18B9D4', amount: 300, base: 0 },
-        { type: 'T', noffset: 0, identifier: 'CE69CC143D8725ECB6D666B8194907DFCA8F2FD3242271F9DA16CA6B37290BA1', amount: 700, base: 0 }
+        { type: 'T', noffset: 0, identifier: '660E2783D1D52B10DDE425D7EDE13539ABBDF7407A8656B96540ED91D46A5F01', amount: 300, base: 0 },
+        { type: 'T', noffset: 0, identifier: 'FCE87BC40052FFAF8CB72EFBBD698463B3407E080807667DAC7E6239FB531238', amount: 700, base: 0 }
       ]);
     });
     yield s1.commit({ time: now + 1800 });
     // Has enough on the account (300x10^0 + 700x10^0 = 1000x10^0 = 100x10^1)
     yield s1.expectThat('/tx/sources/7kMAi8wttYKPK5QSfCwoDriNTcCTWKzTbuSjsLsjGJX2', (json) => {
       json.sources.should.deepEqual([
-        { type: 'T', noffset: 0, identifier: 'C6FBF49423B6B629DEDB3CA1F0CD2BDE756C3FD5CFA009A52218A8098E18B9D4', amount: 300, base: 0 },
-        { type: 'T', noffset: 0, identifier: 'CE69CC143D8725ECB6D666B8194907DFCA8F2FD3242271F9DA16CA6B37290BA1', amount: 700, base: 0 }
+        { type: 'T', noffset: 0, identifier: '660E2783D1D52B10DDE425D7EDE13539ABBDF7407A8656B96540ED91D46A5F01', amount: 300, base: 0 },
+        { type: 'T', noffset: 0, identifier: 'FCE87BC40052FFAF8CB72EFBBD698463B3407E080807667DAC7E6239FB531238', amount: 700, base: 0 }
       ]);
     });
     yield s1.commit({ time: now + 3600 });
     yield s1.expectThat('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (json) => {
       json.sources.should.deepEqual([
-        { type: 'D', noffset: 10, identifier: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', amount: 1980, base: 1 },
-        { type: 'D', noffset: 11, identifier: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', amount: 4901, base: 1 },
-        { type: 'D', noffset: 12, identifier: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', amount: 1263, base: 2 }
+        { type: 'D', noffset: 11, identifier: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', amount: 1980, base: 1 },
+        { type: 'D', noffset: 12, identifier: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', amount: 4901, base: 1 },
+        { type: 'D', noffset: 13, identifier: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', amount: 1263, base: 2 }
       ]);
     });
   }));

@@ -1284,33 +1284,43 @@ const indexer = module.exports = {
   ruleIndexGarbageSmallAccounts: (HEAD, sindex, dal) => co(function*() {
     const garbages = [];
     let potentialSources = yield dal.sindexDAL.findLowerThan(constants.ACCOUNT_MINIMUM_CURRENT_BASED_AMOUNT, HEAD.unitBase);
-    potentialSources = potentialSources.concat(_.where(sindex, { op: constants.IDX_CREATE }));
-    const accountsBalance = potentialSources.reduce((map, src) => {
-      if (!map[src.conditions]) {
-        map[src.conditions] = { amount: 0, sources: [] };
-      }
-      map[src.conditions].amount += src.amount * Math.pow(10, src.base);
-      map[src.conditions].sources.push(src);
+    let localSources = _.where(sindex, { op: constants.IDX_CREATE });
+    potentialSources = potentialSources.concat(localSources);
+    const accounts = Object.keys(potentialSources.reduce((acc, src) => {
+      acc[src.conditions] = true;
+      return acc;
+    }, {}));
+    const accountsBalance = yield accounts.reduce((map, acc) => {
+      map[acc] = dal.sindexDAL.getAvailableForConditions(acc);
       return map;
     }, {});
-    const accounts = Object.keys(accountsBalance);
     for (const account of accounts) {
-      const amount = accountsBalance[account].amount;
-      const sources = accountsBalance[account].sources;
-      if (amount < constants.ACCOUNT_MINIMUM_CURRENT_BASED_AMOUNT * Math.pow(10, HEAD.unitBase)) {
-        for (const src of sources) {
-          garbages.push({
-            op: 'UPDATE',
-            tx: src.tx,
-            identifier: src.identifier,
-            pos: src.pos,
-            amount: src.amount,
-            base: src.base,
-            written_on: [HEAD.number, HEAD.hash].join('-'),
-            written_time: HEAD.medianTime,
-            conditions: src.conditions,
-            consumed: true // It is now consumed
-          });
+      let sources = yield accountsBalance[account];
+      const localAccountEntries = _.filter(sindex, (src) => src.conditions == account);
+      const balance = sources.concat(localAccountEntries).reduce((sum, src) => {
+        if (src.op === 'CREATE') {
+          return sum + src.amount * Math.pow(10, src.base);
+        } else {
+          return sum - src.amount * Math.pow(10, src.base);
+        }
+      }, 0)
+      if (balance < constants.ACCOUNT_MINIMUM_CURRENT_BASED_AMOUNT * Math.pow(10, HEAD.unitBase)) {
+        for (const src of sources.concat(localAccountEntries)) {
+          const sourceBeingConsumed = _.filter(sindex, (entry) => entry.op === 'UPDATE' && entry.identifier == src.identifier && entry.pos == src.pos).length > 0;
+          if (!sourceBeingConsumed) {
+            garbages.push({
+              op: 'UPDATE',
+              tx: src.tx,
+              identifier: src.identifier,
+              pos: src.pos,
+              amount: src.amount,
+              base: src.base,
+              written_on: [HEAD.number, HEAD.hash].join('-'),
+              written_time: HEAD.medianTime,
+              conditions: src.conditions,
+              consumed: true // It is now consumed
+            });
+          }
         }
       }
     }

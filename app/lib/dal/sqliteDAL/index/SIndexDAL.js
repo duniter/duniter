@@ -89,10 +89,12 @@ function SIndexDAL(driver) {
     return _.sortBy(reduced, (row) => row.type == 'D' ? 0 : 1);
   });
 
-  this.getAvailableForPubkey = (pubkey) => co(function*() {
+  this.getAvailableForPubkey = (pubkey) => this.getAvailableForConditions('%SIG(' + pubkey + ')%');
+
+  this.getAvailableForConditions = (conditionsStr) => co(function*() {
     const potentials = yield that.query('SELECT * FROM ' + that.table + ' s1 ' +
       'WHERE s1.op = ? ' +
-      'AND conditions LIKE \'%SIG(' + pubkey + ')%\' ' +
+      'AND conditions LIKE ? ' +
       'AND NOT EXISTS (' +
       ' SELECT * ' +
       ' FROM s_index s2 ' +
@@ -100,7 +102,7 @@ function SIndexDAL(driver) {
       ' AND s2.pos = s1.pos ' +
       ' AND s2.op = ?' +
       ') ' +
-      'ORDER BY CAST(SUBSTR(written_on, 0, INSTR(written_on, "-")) as number)', [constants.IDX_CREATE, constants.IDX_UPDATE]);
+      'ORDER BY CAST(SUBSTR(written_on, 0, INSTR(written_on, "-")) as number)', [constants.IDX_CREATE, conditionsStr, constants.IDX_UPDATE]);
     const sources = potentials.map((src) => {
       src.type = src.tx ? 'T' : 'D';
       return src;

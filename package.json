@@ -42,7 +42,7 @@
     "colors": "1.1.2",
     "commander": "2.9.0",
     "daemonize2": "0.4.2",
-    "duniter-bma": "^0.2.7",
+    "duniter-bma": "^0.2.8",
     "duniter-common": "0.1.0",
     "duniter-crawler": "^0.2.5",
     "duniter-keypair": "^0.3.0",

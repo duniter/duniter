@@ -327,6 +327,9 @@ function BlockchainService (server) {
       meta: {
         timestamp: idty.buid
       },
+      revocation_sig: idty.revocation_sig,
+      revoked: idty.revoked,
+      revoked_on: idty.revoked_on,
       expired: expired,
       outdistanced: outdistanced,
       certifications: certs,

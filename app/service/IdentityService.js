@@ -186,34 +186,42 @@ function IdentityService () {
     const revoc = new Revocation(obj);
     const raw = revoc.rawWithoutSig();
     return that.pushFIFO(() => co(function *() {
-      let verified = keyring.verify(raw, revoc.revocation, revoc.pubkey);
-      if (!verified) {
-        throw 'Wrong signature for revocation';
-      }
-      const existing = yield dal.getIdentityByHashOrNull(obj.hash);
-      if (existing) {
-        // Modify
-        if (existing.revoked) {
-          throw 'Already revoked';
+      try {
+        logger.info('⬇ REVOCATION %s %s', revoc.pubkey, revoc.uid);
+        let verified = keyring.verify(raw, revoc.revocation, revoc.pubkey);
+        if (!verified) {
+          throw 'Wrong signature for revocation';
         }
-        else if (existing.revocation_sig) {
-          throw 'Revocation already registered';
-        } else {
-          yield dal.setRevocating(existing, revoc.revocation);
+        const existing = yield dal.getIdentityByHashOrNull(obj.hash);
+        if (existing) {
+          // Modify
+          if (existing.revoked) {
+            throw 'Already revoked';
+          }
+          else if (existing.revocation_sig) {
+            throw 'Revocation already registered';
+          } else {
+            yield dal.setRevocating(existing, revoc.revocation);
+            logger.info('✔ REVOCATION %s %s', revoc.pubkey, revoc.uid);
+            return jsonResultTrue();
+          }
+        }
+        else {
+          // Create identity given by the revocation
+          const idty = new Identity(revoc);
+          idty.revocation_sig = revoc.signature;
+          idty.certsCount = 0;
+          idty.ref_block = parseInt(idty.buid.split('-')[0]);
+          if (!(yield dal.idtyDAL.sandbox.acceptNewSandBoxEntry(idty, conf.pair && conf.pair.pub))) {
+            throw constants.ERRORS.SANDBOX_FOR_IDENTITY_IS_FULL;
+          }
+          yield dal.savePendingIdentity(idty);
+          logger.info('✔ REVOCATION %s %s', revoc.pubkey, revoc.uid);
           return jsonResultTrue();
         }
-      }
-      else {
-        // Create identity given by the revocation
-        const idty = new Identity(revoc);
-        idty.revocation_sig = revoc.signature;
-        idty.certsCount = 0;
-        idty.ref_block = parseInt(idty.buid.split('-')[0]);
-        if (!(yield dal.idtyDAL.sandbox.acceptNewSandBoxEntry(idty, conf.pair && conf.pair.pub))) {
-          throw constants.ERRORS.SANDBOX_FOR_IDENTITY_IS_FULL;
-        }
-        yield dal.savePendingIdentity(idty);
-        return jsonResultTrue();
+      } catch (e) {
+        logger.info('✘ REVOCATION %s %s', revoc.pubkey, revoc.uid);
+        throw e;
       }
     }));
   };

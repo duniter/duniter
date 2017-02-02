@@ -346,6 +346,25 @@ describe("Identities collision", function() {
     });
   });
 
+  it('requirements of man3 after revocation', () => co(function*() {
+    yield man3.revoke();
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/requirements/man3', { json: true }), function(res) {
+      res.should.have.property('identities').be.an.Array;
+      res.should.have.property('identities').have.length(1);
+      res.identities[0].should.have.property('pubkey').equal('5bfpAfZJ4xYspUBYseASJrofhRm6e6JMombt43HBaRzW');
+      res.identities[0].should.have.property('uid').equal('man3');
+      res.identities[0].should.have.property('meta').property('timestamp');
+      res.identities[0].should.have.property('expired').equal(false);
+      res.identities[0].should.have.property('outdistanced').equal(true);
+      res.identities[0].should.have.property('certifications').length(0);
+      res.identities[0].should.have.property('membershipPendingExpiresIn').equal(0);
+      res.identities[0].should.have.property('membershipExpiresIn').equal(0);
+      res.identities[0].should.have.property('revoked').equal(false);
+      res.identities[0].should.have.property('revoked_on').equal(null);
+      res.identities[0].should.have.property('revocation_sig').not.equal(null);
+    });
+  }));
+
   it('memberships of tic', function() {
     return expectAnswer(rp('http://127.0.0.1:7799/blockchain/memberships/tic', { json: true }), function(res) {
       res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');

@@ -880,8 +880,8 @@ const indexer = module.exports = {
       nbPersonalBlocksInFrame = 0;
       medianOfBlocksInFrame = 1;
     } else {
-      const blocksInFrame = yield range(1, HEAD_1.issuersFrame);
-      const issuersInFrame = yield range(1, HEAD_1.issuersFrame, 'issuer');
+      const blocksInFrame = _.filter(yield range(1, HEAD_1.issuersFrame), (b) => b.number <= HEAD_1.number);
+      const issuersInFrame = blocksInFrame.map((b) => b.issuer);
       blocksOfIssuer = _.filter(blocksInFrame, (entry) => entry.issuer == HEAD.issuer);
       nbPersonalBlocksInFrame = count(blocksOfIssuer);
       const blocksPerIssuerInFrame = uniq(issuersInFrame).map((issuer) => count(_.where(blocksInFrame, { issuer })));

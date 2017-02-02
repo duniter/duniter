@@ -885,7 +885,7 @@ const indexer = module.exports = {
       blocksOfIssuer = _.filter(blocksInFrame, (entry) => entry.issuer == HEAD.issuer);
       nbPersonalBlocksInFrame = count(blocksOfIssuer);
       const blocksPerIssuerInFrame = uniq(issuersInFrame).map((issuer) => count(_.where(blocksInFrame, { issuer })));
-      medianOfBlocksInFrame = median(blocksPerIssuerInFrame);
+      medianOfBlocksInFrame = Math.max(1, median(blocksPerIssuerInFrame));
       if (nbPersonalBlocksInFrame == 0) {
         nbPreviousIssuers = 0;
         nbBlocksSince = 0;
@@ -1488,16 +1488,18 @@ function average(values) {
 }
 
 function median(values) {
-  let med = null;
+  let med = 0;
   values.sort((a, b) => a < b ? -1 : (a > b ? 1 : 0));
   const nbValues = values.length;
-  if (nbValues % 2 === 0) {
-    // Even number: the median is the average between the 2 central values, ceil rounded.
-    const firstValue = values[nbValues / 2];
-    const secondValue = values[nbValues / 2 - 1];
-    med = ((firstValue + secondValue) / 2);
-  } else {
-    med = values[(nbValues + 1) / 2 - 1];
+  if (nbValues > 0) {
+    if (nbValues % 2 === 0) {
+      // Even number: the median is the average between the 2 central values, ceil rounded.
+      const firstValue = values[nbValues / 2];
+      const secondValue = values[nbValues / 2 - 1];
+      med = ((firstValue + secondValue) / 2);
+    } else {
+      med = values[(nbValues + 1) / 2 - 1];
+    }
   }
   return med;
 }

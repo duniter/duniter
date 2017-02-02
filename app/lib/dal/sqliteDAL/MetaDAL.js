@@ -7,6 +7,9 @@
 const co = require('co');
 const logger = require('../../logger')('metaDAL');
 const AbstractSQLite = require('./AbstractSQLite');
+const hashf = require('duniter-common').hashf;
+const rawer = require('duniter-common').rawer;
+const constants = require('./../../constants');
 
 module.exports = MetaDAL;
 
@@ -111,6 +114,130 @@ function MetaDAL(driver) {
     }),
 
     16: () => co(function *() {
+    }),
+
+    17: () => co(function *() {
+      let blockDAL = new (require('./BlockDAL'))(driver);
+      let sindexDAL = new (require('./index/SIndexDAL'))(driver);
+      const blocks = yield blockDAL.sqlListAll();
+      const Block = require('../../../lib/entity/block');
+      const Identity = require('../../../lib/entity/identity');
+      const amountsPerKey = {};
+      const members = [];
+      for (const block of blocks) {
+        const b = new Block(block);
+        const amountsInForBlockPerKey = {};
+        for (const idty of b.identities) {
+          members.push(Identity.statics.fromInline(idty).pubkey);
+        }
+        if (b.dividend) {
+          for (const member of members) {
+            amountsInForBlockPerKey[member] = amountsInForBlockPerKey[member] || { amounts: [], sources: [] };
+            amountsInForBlockPerKey[member].amounts.push({ amount: b.dividend * Math.pow(10, b.unitbase), comment: 'Dividend' });
+            amountsInForBlockPerKey[member].sources.push({ type: 'D', amount: b.dividend, base: b.unitbase, identifier: member, pos: b.number, block: b, tx: null });
+          }
+        }
+        const txs = b.getTransactions();
+        for (let i = 0; i < txs.length; i++) {
+          const tx = txs[i];
+          tx.hash = hashf(rawer.getTransaction(b.transactions[i])).toUpperCase();
+          for (const input of tx.inputs) {
+            input.tx = tx.hash;
+            input.block = b;
+            amountsInForBlockPerKey[tx.issuers[0]] = amountsInForBlockPerKey[tx.issuers[0]] || { amounts: [], sources: [] };
+            amountsInForBlockPerKey[tx.issuers[0]].amounts.push({ amount: -input.amount * Math.pow(10, input.base), comment: tx.comment || '######' });
+            amountsInForBlockPerKey[tx.issuers[0]].sources.push(input);
+          }
+          for (let j = 0; j < tx.outputs.length; j++) {
+            const output = tx.outputs[j];
+            const conditions = output.conditions.match(/^SIG\((.+)\)$/);
+            if (conditions) {
+              output.tx = tx.hash;
+              output.identifier = tx.hash;
+              output.pos = j;
+              output.block = b;
+              amountsInForBlockPerKey[conditions[1]] = amountsInForBlockPerKey[conditions[1]] || { amounts: [], sources: [] };
+              amountsInForBlockPerKey[conditions[1]].amounts.push({ amount: output.amount * Math.pow(10, output.base), comment: tx.comment || '######' });
+              amountsInForBlockPerKey[conditions[1]].sources.push(output);
+            }
+          }
+        }
+        for (const key of Object.keys(amountsInForBlockPerKey)) {
+          amountsPerKey[key] = amountsPerKey[key] || [];
+          amountsPerKey[key].push(amountsInForBlockPerKey[key]);
+        }
+      }
+      const keysToSee = Object.keys(amountsPerKey);
+      const sourcesMovements = [];
+      for (const key of keysToSee) {
+        const allCreates = {};
+        const allUpdates = {};
+        const amounts = amountsPerKey[key];
+        let balance = 0;
+        for (let j = 0; j < amounts.length; j++) {
+          const amountsInBlock = amounts[j].amounts;
+          for (let i = 0; i < amountsInBlock.length; i++) {
+            const a = amountsInBlock[i].amount;
+            const id = [amounts[j].sources[i].identifier, amounts[j].sources[i].pos].join('-');
+            if (a < 0) {
+              allUpdates[id] = amounts[j].sources[i];
+              delete allCreates[id];
+            } else {
+              allCreates[id] = amounts[j].sources[i];
+            }
+            balance += a;
+          }
+          if (balance > 0 && balance < 100) {
+            const sourcesToDelete = [];
+            for (const k of Object.keys(amountsPerKey)) {
+              for (const amPerBlock of Object.keys(amountsPerKey[k])) {
+                for (const src of amountsPerKey[k][amPerBlock].sources) {
+                  const id = [src.identifier, src.pos].join('-');
+                  if (src.conditions == 'SIG(' + key + ')' && allCreates[id]) {
+                    sourcesToDelete.push(src);
+                  }
+                }
+              }
+            }
+            const amountsToDelete = sourcesToDelete.map((src) => {
+              return {
+                amount: -src.amount * Math.pow(10, src.base),
+                comment: '--DESTRUCTION--'
+              };
+            });
+            amounts.splice(j + 1, 0, { amounts: amountsToDelete, sources: sourcesToDelete });
+          }
+        }
+        let amountMissing = 0;
+        yield Object.values(allCreates).map((src) => co(function*() {
+          const exist = yield sindexDAL.getSource(src.identifier, src.pos);
+          if (!exist || exist.consumed) {
+            amountMissing += src.amount;
+            const block = src.block;
+            sourcesMovements.push({
+              op: constants.IDX_CREATE,
+              tx: src.tx,
+              identifier: src.identifier,
+              pos: src.pos,
+              written_on: [block.number, block.hash].join('-'),
+              written_time: block.medianTime,
+              locktime: src.locktime,
+              amount: src.amount,
+              base: src.base,
+              conditions: src.conditions,
+              consumed: false
+            });
+          }
+        }));
+        let amountNotDestroyed = 0;
+        yield Object.values(allUpdates).map((src) => co(function*() {
+          const exist = yield sindexDAL.getSource(src.identifier, src.pos);
+          if (exist && !exist.consumed) {
+            amountNotDestroyed += src.amount;
+          }
+        }));
+      }
+      yield sindexDAL.insertBatch(sourcesMovements);
     })
   };
 

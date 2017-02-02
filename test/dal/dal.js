@@ -100,10 +100,10 @@ describe("DAL", function(){
     return fileDAL.saveConf({ currency: "meta_brouzouf" });
   }));
 
-  it('should have DB version 15', () => co(function *() {
+  it('should have DB version 18', () => co(function *() {
     let version = yield fileDAL.getDBVersion();
     should.exist(version);
-    version.should.equal(17);
+    version.should.equal(18);
   }));
 
   it('should have no peer in a first time', function(){

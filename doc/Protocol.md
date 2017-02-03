@@ -801,7 +801,7 @@ Parameters            | Currency parameters.                              | **Bl
 MembersCount          | Number of members in the WoT, this block included | Always
 Identities            | New identities in the WoT                         | Always
 Joiners               | `IN` memberships                                  | Always
-Actives               | `IN` memberships                                  | Always
+Actives               | `IN` memberships (renewal)                        | Always
 Leavers               | `OUT` memberships                                 | Always
 Revoked               | Revocation documents                              | Always
 Excluded              | Exluded members' public key                       | Always

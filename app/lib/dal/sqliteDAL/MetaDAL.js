@@ -119,7 +119,7 @@ function MetaDAL(driver) {
     17: () => co(function *() {
       let blockDAL = new (require('./BlockDAL'))(driver);
       let sindexDAL = new (require('./index/SIndexDAL'))(driver);
-      const blocks = yield blockDAL.sqlListAll();
+      const blocks = yield blockDAL.query('SELECT * FROM block WHERE NOT fork');
       const Block = require('../../../lib/entity/block');
       const Identity = require('../../../lib/entity/identity');
       const amountsPerKey = {};

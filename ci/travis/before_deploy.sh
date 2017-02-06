@@ -17,7 +17,7 @@ if [[ ! -f before_deploy ]]; then
 
   # Clean test and UI packages
   npm prune --production
-  npm install duniter-ui@0.3.1 --save --production
+  npm install duniter-ui --save --production
   rm -Rf node_modules/duniter-ui/node_modules
 
   SRC=`pwd`

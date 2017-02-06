@@ -14,6 +14,8 @@ function AbstractIndex() {
 
   const that = this;
 
+  this.getWrittenOn = (blockstamp) => that.query('SELECT * FROM ' + that.table + ' WHERE written_on = ?', [blockstamp]);
+
   this.trimRecords = (belowNumber) => co(function*() {
     const belowRecords = yield that.query('SELECT COUNT(*) as nbRecords, pub FROM ' + that.table + ' ' +
       'WHERE CAST(written_on as int) < ? ' +

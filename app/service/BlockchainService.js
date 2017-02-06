@@ -264,6 +264,7 @@ function BlockchainService (server) {
     // TODO: this is not clear
     let expired = false;
     let outdistanced = false;
+    let isSentry = false;
     let expiresMS = 0;
     let expiresPending = 0;
     let certs = [];
@@ -309,6 +310,7 @@ function BlockchainService (server) {
           expiresPending = conf.msValidity;
         }
       }
+      isSentry = idty.member && (yield dal.isSentry(idty.pub, conf));
       // Expiration of certifications
       for (const cert of certs) {
         cert.expiresIn = Math.max(0, cert.timestamp + conf.sigValidity - currentTime);
@@ -332,6 +334,7 @@ function BlockchainService (server) {
       revoked_on: idty.revoked_on,
       expired: expired,
       outdistanced: outdistanced,
+      isSentry: isSentry,
       certifications: certs,
       membershipPendingExpiresIn: expiresPending,
       membershipExpiresIn: expiresMS

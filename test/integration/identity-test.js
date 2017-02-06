@@ -219,6 +219,7 @@ describe("Identities collision", function() {
       res.identities[0].should.have.property('meta').property('timestamp');
       res.identities[0].should.have.property('expired').equal(false); // Because it has been a member once! So its identity will exist forever.
       res.identities[0].should.have.property('outdistanced').equal(false);
+      res.identities[0].should.have.property('isSentry').equal(true); // dSen = 2, cat has issued and received 2 certs with tic and toc
       res.identities[0].should.have.property('certifications').have.length(2);
       res.identities[0].should.have.property('membershipPendingExpiresIn').equal(0);
       res.identities[0].should.have.property('membershipExpiresIn').greaterThan(9000);
@@ -234,6 +235,7 @@ describe("Identities collision", function() {
       res.identities[0].should.have.property('meta').property('timestamp');
       res.identities[0].should.have.property('expired').equal(false);
       res.identities[0].should.have.property('outdistanced').equal(false);
+      res.identities[0].should.have.property('isSentry').equal(false); // Not a member, also dSen = 2, but man1 has only 1 certification
       res.identities[0].should.have.property('certifications').length(1);
       res.identities[0].certifications[0].should.have.property('from').equal('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc');
       res.identities[0].certifications[0].should.have.property('to').equal('12AbjvYY5hxV4v2KrN9pnGzgFxogwrzgYyncYHHsyFDK');
@@ -325,6 +327,7 @@ describe("Identities collision", function() {
       res.identities[0].should.have.property('meta').property('timestamp');
       res.identities[0].should.have.property('expired').equal(false);
       res.identities[0].should.have.property('outdistanced').equal(true);
+      res.identities[0].should.have.property('isSentry').equal(false); // Outdistanced, non-member, ...
       res.identities[0].should.have.property('certifications').length(0);
       res.identities[0].should.have.property('membershipPendingExpiresIn').greaterThan(9000);
       res.identities[0].should.have.property('membershipExpiresIn').equal(0);
@@ -340,6 +343,7 @@ describe("Identities collision", function() {
       res.identities[0].should.have.property('meta').property('timestamp');
       res.identities[0].should.have.property('expired').equal(false);
       res.identities[0].should.have.property('outdistanced').equal(true);
+      res.identities[0].should.have.property('isSentry').equal(false); // Outdistanced, non-member, ...
       res.identities[0].should.have.property('certifications').length(0);
       res.identities[0].should.have.property('membershipPendingExpiresIn').equal(0);
       res.identities[0].should.have.property('membershipExpiresIn').equal(0);
@@ -356,6 +360,7 @@ describe("Identities collision", function() {
       res.identities[0].should.have.property('meta').property('timestamp');
       res.identities[0].should.have.property('expired').equal(false);
       res.identities[0].should.have.property('outdistanced').equal(true);
+      res.identities[0].should.have.property('isSentry').equal(false); // Outdistanced, non-member, ...
       res.identities[0].should.have.property('certifications').length(0);
       res.identities[0].should.have.property('membershipPendingExpiresIn').equal(0);
       res.identities[0].should.have.property('membershipExpiresIn').equal(0);

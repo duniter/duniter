@@ -243,10 +243,10 @@ function BlockchainContext() {
   });
 
   this.revertCurrentBlock = () => co(function *() {
-    const current = yield that.current();
-    logger.debug('Reverting block #%s...', current.number);
-    const res = yield that.revertBlock(current);
-    logger.debug('Reverted block #%s', current.number);
+    const head_1 = yield dal.bindexDAL.head(1);
+    logger.debug('Reverting block #%s...', head_1.number);
+    const res = yield that.revertBlock(head_1.number, head_1.hash);
+    logger.debug('Reverted block #%s', head_1.number);
     // Invalidates the head, since it has changed.
     yield refreshHead();
     return res;
@@ -264,9 +264,9 @@ function BlockchainContext() {
     logger.debug('Applied block #%s', block.number);
   });
 
-  this.revertBlock = (block) => co(function *() {
+  this.revertBlock = (number, hash) => co(function *() {
 
-    const blockstamp = [block.number, block.hash].join('-');
+    const blockstamp = [number, hash].join('-');
 
     // Revert links
     const writtenOn = yield dal.cindexDAL.getWrittenOn(blockstamp);
@@ -283,23 +283,27 @@ function BlockchainContext() {
     }
 
     // Revert nodes
-    yield undoMembersUpdate(block);
+    yield undoMembersUpdate(blockstamp);
 
-    yield dal.bindexDAL.removeBlock(block.number);
+    yield dal.bindexDAL.removeBlock(number);
     yield dal.mindexDAL.removeBlock(blockstamp);
     yield dal.iindexDAL.removeBlock(blockstamp);
     yield dal.cindexDAL.removeBlock(blockstamp);
     yield dal.sindexDAL.removeBlock(blockstamp);
 
     // Then: normal updates
-    const previousBlock = yield dal.getBlockByNumberAndHashOrNull(block.number - 1, block.previousHash || '');
+    const previousBlock = yield dal.getBlock(number - 1);
     // Set the block as SIDE block (equivalent to removal from main branch)
-    yield dal.blockDAL.setSideBlock(block, previousBlock);
+    yield dal.blockDAL.setSideBlock(number, previousBlock);
 
     // Remove any source created for this block (both Dividend and Transaction).
     yield dal.removeAllSourcesOfBlock(blockstamp);
 
-    yield undoDeleteTransactions(block);
+    const block = yield dal.getBlockByBlockstampOrNull(blockstamp);
+    if (block) {
+      // For some reason the block might not exist (issue #827)
+      yield undoDeleteTransactions(block);
+    }
   });
 
   const checkIssuer = (block) => co(function*() {
@@ -442,23 +446,34 @@ function BlockchainContext() {
     });
   });
 
-  function undoMembersUpdate (block) {
+  function undoMembersUpdate (blockstamp) {
     return co(function *() {
-      // Undo 'join' which can be either newcomers or comebackers
-      for (const msRaw of block.joiners) {
-        let ms = Membership.statics.fromInline(msRaw, 'IN', conf.currency);
-        const idty = yield dal.getWrittenIdtyByPubkey(ms.issuer);
-        dal.wotb.setEnabled(false, idty.wotb_id);
+      const joiners = yield dal.iindexDAL.getWrittenOn(blockstamp);
+      for (const entry of joiners) {
+        // Undo 'join' which can be either newcomers or comebackers
+        // => equivalent to i_index.member = true AND i_index.op = 'UPDATE'
+        if (entry.member === true && entry.op === constants.IDX_UPDATE) {
+          const idty = yield dal.getWrittenIdtyByPubkey(entry.pub);
+          dal.wotb.setEnabled(false, idty.wotb_id);
+        }
       }
-      // Undo newcomers
-      for (let i = 0; i < block.identities.length; i++) {
-        // Does not matter which one it really was, we pop the last X identities
-        dal.wotb.removeNode();
+      const newcomers = yield dal.iindexDAL.getWrittenOn(blockstamp);
+      for (const entry of newcomers) {
+        // Undo newcomers
+        // => equivalent to i_index.op = 'CREATE'
+        if (entry.op === constants.IDX_CREATE) {
+          // Does not matter which one it really was, we pop the last X identities
+          dal.wotb.removeNode();
+        }
       }
-      // Undo excluded (make them become members again in wotb)
-      for (const pubkey of block.excluded) {
-        const idty = yield dal.getWrittenIdtyByPubkey(pubkey);
-        dal.wotb.setEnabled(true, idty.wotb_id);
+      const excluded = yield dal.iindexDAL.getWrittenOn(blockstamp);
+      for (const entry of excluded) {
+        // Undo excluded (make them become members again in wotb)
+        // => equivalent to m_index.member = false
+        if (entry.member === false && entry.op === constants.IDX_UPDATE) {
+          const idty = yield dal.getWrittenIdtyByPubkey(entry.pub);
+          dal.wotb.setEnabled(true, idty.wotb_id);
+        }
       }
     });
   }

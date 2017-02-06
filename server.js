@@ -187,7 +187,21 @@ function Server (home, memoryOnly, overrideConf) {
 
   this.submitP = (obj, isInnerWrite) => Q.nbind(this.submit, this)(obj, isInnerWrite);
 
-  this.initDAL = () => this.dal.init();
+  this.initDAL = () => co(function*() {
+    yield that.dal.init();
+    // Maintenance
+    let head_1 = yield that.dal.bindexDAL.head(1);
+    if (head_1) {
+      // Case 1: b_index < block
+      yield that.dal.blockDAL.exec('DELETE FROM block WHERE NOT fork AND number > ' + head_1.number);
+      // Case 2: b_index > block
+      const current = yield that.dal.blockDAL.getCurrent();
+      const nbBlocksToRevert = (head_1.number - current.number);
+      for (let i = 0; i < nbBlocksToRevert; i++) {
+        yield that.revert();
+      }
+    }
+  });
 
   this.recomputeSelfPeer = () => that.PeeringService.generateSelfPeer(that.conf, 0);
 

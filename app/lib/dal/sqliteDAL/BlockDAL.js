@@ -147,8 +147,8 @@ function BlockDAL(driver) {
     });
   }
 
-  this.setSideBlock = (block, previousBlock) => co(function *() {
-    yield that.query('UPDATE block SET fork = ? WHERE number = ? and hash = ?', [true, block.number, block.hash]);
+  this.setSideBlock = (number, previousBlock) => co(function *() {
+    yield that.query('UPDATE block SET fork = ? WHERE number = ?', [true, number]);
     current = previousBlock;
   });
 

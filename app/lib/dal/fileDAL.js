@@ -334,6 +334,17 @@ function FileDAL(params) {
     return matching;
   });
 
+  this.isSentry = (pubkey, conf) => co(function*() {
+    const current = yield that.getCurrentBlockOrNull();
+    if (current) {
+      const dSen = Math.ceil(Math.pow(current.membersCount, 1 / conf.stepMax));
+      const linksFrom = yield that.cindexDAL.getValidLinksFrom(pubkey);
+      const linksTo = yield that.cindexDAL.getValidLinksTo(pubkey);
+      return linksFrom.length >= dSen && linksTo.length >= dSen;
+    }
+    return false;
+  });
+
   this.certsFindNew = () => co(function*() {
     const certs = yield that.certDAL.getNotLinked();
     return _.chain(certs).where({linked: false}).sortBy((c) => -c.block).value();

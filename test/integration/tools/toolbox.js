@@ -125,7 +125,7 @@ module.exports = {
         processRequest: () => { /* Does nothing */ }
       };
 
-      const fakeServer = yield network.createServersAndListen("Fake Duniter Server", [{
+      const fakeServer = yield network.createServersAndListen("Fake Duniter Server", { conf: {} }, [{
         ip: host,
         port: port
       }], NO_HTTP_LOGS, logger, NO_STATIC_PATH, (app, httpMethods) => {

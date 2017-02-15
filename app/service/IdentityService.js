@@ -203,7 +203,12 @@ function IdentityService () {
           } else {
             yield dal.setRevocating(existing, revoc.revocation);
             logger.info('✔ REVOCATION %s %s', revoc.pubkey, revoc.uid);
-            return jsonResultTrue();
+            revoc.json = function() {
+              return {
+                result: true
+              };
+            };
+            return revoc;
           }
         }
         else {
@@ -217,22 +222,17 @@ function IdentityService () {
           }
           yield dal.savePendingIdentity(idty);
           logger.info('✔ REVOCATION %s %s', revoc.pubkey, revoc.uid);
-          return jsonResultTrue();
+          revoc.json = function() {
+            return {
+              result: true
+            };
+          };
+          return revoc;
         }
       } catch (e) {
         logger.info('✘ REVOCATION %s %s', revoc.pubkey, revoc.uid);
         throw e;
       }
     }));
-  };
-}
-
-function jsonResultTrue () {
-  return {
-    json: function() {
-      return {
-        result: true
-      };
-    }
   };
 }

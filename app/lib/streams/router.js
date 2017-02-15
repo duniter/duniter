@@ -32,6 +32,9 @@ function Router (PeeringService, dal) {
         if (obj.joiners) {
           yield route('block', obj, getRandomInUPPeers(obj.issuer === PeeringService.pubkey));
         }
+        else if (obj.revocation) {
+          yield route('revocation', obj, getRandomInUPPeers(obj.pubkey === PeeringService.pubkey));
+        }
         else if (obj.pubkey && obj.uid) {
           yield route('identity', obj, getRandomInUPPeers(obj.pubkey === PeeringService.pubkey));
         }

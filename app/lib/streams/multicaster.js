@@ -70,8 +70,7 @@ function Multicaster (conf, timeout) {
       return {
         "revocation": revocation.getRaw()
       };
-    },
-    getDocID: (idty) => 'with ' + (idty.certs || []).length + ' certs'
+    }
   });
 
   let txForward = forward({

@@ -66,6 +66,12 @@ describe("Forwarding", function() {
           yield node1.commitP();
         })
       ];
+      yield [
+        node2.until('revocation', 1),
+        co(function *() {
+          yield cat.revoke();
+        })
+      ];
     }));
 
     describe("Testing technical API", function(){

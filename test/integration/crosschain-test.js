@@ -12,9 +12,13 @@ const user   = require('./tools/user');
 const unit   = require('./tools/unit');
 const httpTest  = require('./tools/http');
 
+/**
+ * Test Crosschain algorithm described at https://en.bitcoin.it/wiki/Atomic_cross-chain_trading
+ */
+
 describe("Crosschain transactions", function() {
 
-  const now = Math.round(Date.now() / 1000);
+  const now = 1487000000;
 
   const MEMORY_MODE = true;
   const commonConf = {
@@ -91,7 +95,7 @@ describe("Crosschain transactions", function() {
         // We submit it to the network
         yield ticM.sendTX(mtx0);
         // Written
-        yield commit(sM)();
+        yield commit(sM)({ time: now + 10 });
       })
     );
 
@@ -116,27 +120,35 @@ describe("Crosschain transactions", function() {
         // 1. toc secretely chooses X password
         let btx1 = yield tocB.prepareUTX(btx0, ['SIG(0)'], [{ qty: 120, base: 0, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + ticB.pub + ')) || (SIG(' + tocB.pub + ') && SIG(' + ticB.pub + '))'  }], { comment: 'BETA toc to tic', blockstamp: blockstampB });
         // 2. toc makes a rollback transaction from tx1, signed by both parties (through internet): toc and tic
-        let btx2 = yield tocB.prepareMTX(btx1, ticB, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + tocB.pub + ')' }], { comment: 'money back to tocB in 48h', locktime: 0, blockstamp: blockstampB }); // N.B.: locktime should be like 48h in real world
+        let btx2 = yield tocB.prepareMTX(btx1, ticB, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + tocB.pub + ')' }], { comment: 'money back to tocB in 48h', locktime: 3600*48, blockstamp: blockstampB }); // N.B.: locktime should be like 48h in real world
 
         // TICM side (META)
         // 3. tic generates a transaction based on H(X) given by toc (through internet)
         let mtx3 = yield ticM.prepareUTX(mtx0, ['SIG(0)'], [{ qty: 120, base: 0, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + tocM.pub + ')) || (SIG(' + ticM.pub + ') && SIG(' + tocM.pub + '))'  }], { comment: 'META tic to toc', blockstamp: blockstampM });
         // 4. tic makes a rollback transaction from tx1, signed by both parties: toc and tic
-        let mtx4 = yield ticM.prepareMTX(mtx3, tocM, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + tocB.pub + ')' }], { comment: 'money back to tocB', locktime: 0, blockstamp: blockstampM }); // N.B.: locktime should be like 24h in real world
+        let mtx4 = yield ticM.prepareMTX(mtx3, tocM, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + tocB.pub + ')' }], { comment: 'money back to tocB', locktime: 3600*24, blockstamp: blockstampM }); // N.B.: locktime should be like 24h in real world
 
         // We submit TX1 to the network & write it
         yield tocB.sendTX(btx1);
         // Written
-        yield commit(sB)();
+        yield commit(sB)({ time: now + 10 });
 
         // We submit TX3 to the network & write it
         yield ticM.sendTX(mtx3);
         // Written
-        yield commit(sM)();
+        yield commit(sM)({ time: now + 10 });
 
         /**
          * So now ... parties can either COMMIT or ROLLBACK. It's UP to the initiator: TOC.
-         *
+         */
+
+        /**
+         * Note: the ROLLBACK transactions have a locktime, and cannot be used before that delay.
+         */
+        yield unit.shouldFail(ticM.sendTX(mtx4), 'Locktime not elapsed yet');
+        yield unit.shouldFail(tocB.sendTX(btx2), 'Locktime not elapsed yet');
+
+        /**
          * Let's say TOC agrees & and start COMMIT.
          */
 
@@ -249,7 +261,7 @@ describe("Crosschain transactions", function() {
         // We submit it to the network
         yield tocB.sendTX(btx0);
         // Written
-        yield commit(sB)();
+        yield commit(sB)({ time: now + 10 });
 
         // Initialize META
         yield ticM.createIdentity();
@@ -266,7 +278,7 @@ describe("Crosschain transactions", function() {
         // We submit it to the network
         yield ticM.sendTX(mtx0);
         // Written
-        yield commit(sM)();
+        yield commit(sM)({ time: now + 10 });
       });
     });
 
@@ -291,23 +303,23 @@ describe("Crosschain transactions", function() {
         // 1. toc secretely chooses X password
         let btx1 = yield tocB.prepareUTX(btx0, ['SIG(0)'], [{ qty: 120, base: 0, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + ticB.pub + ')) || (SIG(' + tocB.pub + ') && SIG(' + ticB.pub + '))'  }], { comment: 'BETA toc to tic', blockstamp: blockstampB });
         // 2. toc makes a rollback transaction from tx1, signed by both parties (through internet): toc and tic
-        let btx2 = yield tocB.prepareMTX(btx1, ticB, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + tocB.pub + ')' }], { comment: 'money back to tocB in 48h', locktime: 0, blockstamp: blockstampB }); // N.B.: locktime should be like 48h in real world
+        let btx2 = yield tocB.prepareMTX(btx1, ticB, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + tocB.pub + ')' }], { comment: 'money back to tocB in 48h', locktime: 3, blockstamp: blockstampB }); // N.B.: locktime should be like 48h in real world
 
         // TICM side (META)
         // 3. tic generates a transaction based on H(X) given by toc (through internet)
         let mtx3 = yield ticM.prepareUTX(mtx0, ['SIG(0)'], [{ qty: 120, base: 0, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + tocM.pub + ')) || (SIG(' + ticM.pub + ') && SIG(' + tocM.pub + '))'  }], { comment: 'META tic to toc', blockstamp: blockstampM });
         // 4. tic makes a rollback transaction from tx1, signed by both parties: toc and tic
-        let mtx4 = yield ticM.prepareMTX(mtx3, tocM, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + ticM.pub + ')' }], { comment: 'money back to ticM', locktime: 0, blockstamp: blockstampM }); // N.B.: locktime should be like 24h in real world
+        let mtx4 = yield ticM.prepareMTX(mtx3, tocM, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + ticM.pub + ')' }], { comment: 'money back to ticM', locktime: 2, blockstamp: blockstampM }); // N.B.: locktime should be like 24h in real world
 
         // We submit TX1 to the network & write it
         yield tocB.sendTX(btx1);
         // Written
-        yield commit(sB)();
+        yield commit(sB)({ time: now + 12 });
 
         // We submit TX3 to the network & write it
         yield ticM.sendTX(mtx3);
         // Written
-        yield commit(sM)();
+        yield commit(sM)({ time: now + 12 });
 
         /**
          * So now ... parties can either COMMIT or ROLLBACK. It's UP to the initiator: TOC.
@@ -315,12 +327,27 @@ describe("Crosschain transactions", function() {
          * Let's say TOC wants to stop and ROLLBACK.
          */
 
-        yield unit.shouldNotFail(tocB.sendTX(btx2));
-        // Written
-        yield commit(sB)();
-        yield unit.shouldNotFail(ticM.sendTX(mtx4));
-        // Written
-        yield commit(sM)();
+        /**
+         * Note: the ROLLBACK transactions have a locktime, and cannot be used before that delay.
+         */
+        yield unit.shouldFail(ticM.sendTX(mtx4), 'Locktime not elapsed yet');
+        yield unit.shouldFail(tocB.sendTX(btx2), 'Locktime not elapsed yet');
+
+        // Increment the medianTime by 1
+        yield commit(sM)({ time: now + 12 });
+        yield commit(sB)({ time: now + 14 });
+
+        yield unit.shouldNotFail(ticM.sendTX(mtx4)); // tic can rollback early (24h in real case) if toc does not reveal X
+        yield unit.shouldFail(tocB.sendTX(btx2), 'Locktime not elapsed yet'); // This one has a longer locktime (48h in real case)
+
+        // Rollback for TIC(M) should be done
+        yield commit(sM)({ time: now + 12 });
+
+        // Make the medianTime increment by 1
+        yield commit(sB)({ time: now + 14 });
+
+        yield unit.shouldNotFail(tocB.sendTX(btx2)); // toc can rollback now (48h has passed). He has not revealed X, so he is safe.
+        yield commit(sB)({ time: now + 14 });
 
         /**
          * Now the transaction is fully COMMITTED! Look at rollback transactions: they will fail.

@@ -18,7 +18,10 @@ module.exports = {
     try {
       yield promise;
     } catch(e) {
-      let err = JSON.parse(e.message);
+      let err = e;
+      if (typeof e === 'string') {
+        err = JSON.parse(e.message);
+      }
       should.not.exist(err);
     }
   })

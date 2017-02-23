@@ -541,10 +541,10 @@ function FileDAL(params) {
       const from = yield that.getWrittenIdtyByPubkey(entry.issuer);
       const to = yield that.getWrittenIdtyByPubkey(entry.receiver);
       if (entry.op == constants.IDX_CREATE) {
-        that.wotb.addLink(from.wotb_id, to.wotb_id, true);
+        that.wotb.addLink(from.wotb_id, to.wotb_id);
       } else {
         // Update = removal
-        that.wotb.removeLink(from.wotb_id, to.wotb_id, true);
+        that.wotb.removeLink(from.wotb_id, to.wotb_id);
       }
     }
   });

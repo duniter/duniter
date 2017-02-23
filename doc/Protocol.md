@@ -2446,7 +2446,11 @@ For each `LOCAL_MINDEX[expired_on!=0] as MS`, add a new LOCAL_IINDEX entry:
 
 For each `LOCAL_CINDEX[expired_on!=0] as CERT`:
 
-If `COUNT(GLOBAL_CINDEX[receiver=CERT.receiver]) + COUNT(LOCAL_CINDEX[receiver=CERT.receiver,expired_on=0]) - COUNT(LOCAL_CINDEX[receiver=CERT.receiver,expired_on!=0]) < sigQty`, add a new LOCAL_IINDEX entry:
+Set:
+
+    CURRENT_VALID_CERTS = REDUCE_BY(GLOBAL_CINDEX[receiver=CERT.receiver], 'issuer', 'receiver', 'created_on')[expired_on=0]
+
+If `COUNT(CURRENT_VALID_CERTS) + COUNT(LOCAL_CINDEX[receiver=CERT.receiver,expired_on=0]) - COUNT(LOCAL_CINDEX[receiver=CERT.receiver,expired_on!=0]) < sigQty`, add a new LOCAL_IINDEX entry:
 
     IINDEX (
         op = 'UPDATE'

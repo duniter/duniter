@@ -1198,10 +1198,10 @@ const indexer = module.exports = {
   },
 
   // BR_G86
-  ruleToBeKickedArePresent: (mindex, dal) => co(function*() {
+  ruleToBeKickedArePresent: (iindex, dal) => co(function*() {
     const toBeKicked = yield dal.iindexDAL.getToBeKickedPubkeys();
     for (const toKick of toBeKicked) {
-      if (count(_.where(mindex, { pub: toKick, isBeingKicked: true })) !== 1) {
+      if (count(_.where(iindex, { pub: toKick, isBeingKicked: true })) !== 1) {
         return false;
       }
     }
@@ -1395,7 +1395,7 @@ const indexer = module.exports = {
     for (const CERT of expiredCerts) {
       const just_expired = _.filter(cindex, (c) => c.receiver == CERT.receiver && c.expired_on > 0);
       const just_received = _.filter(cindex, (c) => c.receiver == CERT.receiver && c.expired_on == 0);
-      const non_expired_global = yield dal.cindexDAL.sqlFind({ receiver: CERT.receiver, expired_on: 0 });
+      const non_expired_global = yield dal.cindexDAL.getValidLinksTo(CERT.receiver);
       if ((count(non_expired_global) - count(just_expired) + count(just_received)) < conf.sigQty) {
         exclusions.push({
           op: 'UPDATE',

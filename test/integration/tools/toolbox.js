@@ -184,9 +184,11 @@ module.exports = {
       remoteipv4: HOST,
       currency: conf.currency || CURRENCY_NAME,
       httpLogs: true,
-      forksize: 3,
-      sigQty: 1
+      forksize: 3
     };
+    if (conf.sigQty === undefined) {
+      conf.sigQty = 1;
+    }
     const server = duniter(
       '~/.config/duniter/' + (conf.homename || 'dev_unit_tests'),
       conf.memory !== undefined ? conf.memory : MEMORY_MODE,

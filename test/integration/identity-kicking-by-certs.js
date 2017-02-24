@@ -59,12 +59,14 @@ describe("Identities kicking by certs", function() {
     yield tac.cert(tuc);
     yield tuc.cert(cat);
     yield tuc.join();
-    yield s1.commit({ time: now + 10 });
-    yield s1.commit({ time: now + 10 });
-    yield s1.commit({ time: now + 10 });
+    yield s1.commit({ time: now + 8 });
+    yield s1.commit({ time: now + 8 });
+    yield s1.commit({ time: now + 8 });
+    yield s1.commit({ time: now + 8 });
+    yield s1.commit({ time: now + 8 });
   }));
 
-  it('block#6 should have kicked 2 member', () => s1.expectThat('/blockchain/block/6', (res) => {
+  it('block#7 should have kicked 2 member', () => s1.expectThat('/blockchain/block/7', (res) => {
     assert.equal(res.excluded.length, 2);
   }));
 });

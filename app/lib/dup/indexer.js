@@ -1374,16 +1374,19 @@ const indexer = module.exports = {
   }),
 
   // BR_G94
-  ruleIndexGenExclusionByMembership: (HEAD, mindex) => co(function*() {
+  ruleIndexGenExclusionByMembership: (HEAD, mindex, dal) => co(function*() {
     const exclusions = [];
     const memberships = _.filter(mindex, (entry) => entry.expired_on);
     for (const MS of memberships) {
-      exclusions.push({
-        op: 'UPDATE',
-        pub: MS.pub,
-        written_on: [HEAD.number, HEAD.hash].join('-'),
-        kick: true
-      });
+      const idty = yield dal.iindexDAL.getFromPubkey(MS.pub);
+      if (idty.member) {
+        exclusions.push({
+          op: 'UPDATE',
+          pub: MS.pub,
+          written_on: [HEAD.number, HEAD.hash].join('-'),
+          kick: true
+        });
+      }
     }
     return exclusions;
   }),
@@ -1397,12 +1400,15 @@ const indexer = module.exports = {
       const just_received = _.filter(cindex, (c) => c.receiver == CERT.receiver && c.expired_on == 0);
       const non_expired_global = yield dal.cindexDAL.getValidLinksTo(CERT.receiver);
       if ((count(non_expired_global) - count(just_expired) + count(just_received)) < conf.sigQty) {
-        exclusions.push({
-          op: 'UPDATE',
-          pub: CERT.receiver,
-          written_on: [HEAD.number, HEAD.hash].join('-'),
-          kick: true
-        });
+        const idty = yield dal.iindexDAL.getFromPubkey(CERT.receiver);
+        if (idty.member) {
+          exclusions.push({
+            op: 'UPDATE',
+            pub: CERT.receiver,
+            written_on: [HEAD.number, HEAD.hash].join('-'),
+            kick: true
+          });
+        }
       }
     }
     return exclusions;

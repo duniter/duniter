@@ -528,7 +528,7 @@ function FileDAL(params) {
     sindex = sindex.concat(yield indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex, that));
     cindex = cindex.concat(yield indexer.ruleIndexGenCertificationExpiry(HEAD, that));
     mindex = mindex.concat(yield indexer.ruleIndexGenMembershipExpiry(HEAD, that));
-    iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByMembership(HEAD, mindex));
+    iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByMembership(HEAD, mindex, that));
     iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByCertificatons(HEAD, cindex, conf, that));
     mindex = mindex.concat(yield indexer.ruleIndexGenImplicitRevocation(HEAD, that));
     yield indexer.ruleIndexCorrectMembershipExpiryDate(HEAD, mindex, that);

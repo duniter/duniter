@@ -1445,7 +1445,11 @@ const indexer = module.exports = {
         if (HEAD.number == 0) {
           basedBlock = HEAD;
         } else {
-          basedBlock = yield dal.getBlockByBlockstamp(MS.created_on);
+          if (HEAD.currency === 'gtest') {
+            basedBlock = yield dal.getBlockByBlockstampBuggy(MS.created_on); // TODO: fix for v1.0.0
+          } else {
+            basedBlock = yield dal.getBlockByBlockstamp(MS.created_on);
+          }
         }
         MS.expires_on += basedBlock.medianTime;
         MS.revokes_on += basedBlock.medianTime;
@@ -1460,7 +1464,11 @@ const indexer = module.exports = {
       if (HEAD.number == 0) {
         basedBlock = HEAD;
       } else {
-        basedBlock = yield dal.getBlock(CERT.created_on);
+        if (HEAD.currency === 'gtest') {
+          basedBlock = yield dal.getBlockBuggy(CERT.created_on); // TODO: fix for v1.0.0
+        } else {
+          basedBlock = yield dal.getBlock(CERT.created_on);
+        }
       }
       CERT.expires_on += basedBlock.medianTime;
     }

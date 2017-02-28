@@ -291,6 +291,7 @@ const indexer = module.exports = {
 
     const HEAD = {
       version: block.version,
+      currency: block.currency,
       bsize: Block.statics.getLen(block),
       hash: Block.statics.getHash(block),
       issuer: block.issuer,

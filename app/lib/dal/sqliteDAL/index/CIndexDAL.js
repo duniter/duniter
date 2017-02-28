@@ -89,6 +89,7 @@ function CIndexDAL(driver) {
 
   this.getValidLinksTo = (receiver) => that.query('SELECT * FROM ' + that.table + ' c1 ' +
     'WHERE c1.receiver = ? ' +
+    'AND c1.expired_on = 0 ' +
     'AND NOT EXISTS (' +
     ' SELECT * FROM c_index c2' +
     ' WHERE c1.issuer = c2.issuer' +
@@ -99,6 +100,7 @@ function CIndexDAL(driver) {
 
   this.getValidLinksFrom = (issuer) => that.query('SELECT * FROM ' + that.table + ' c1 ' +
     'WHERE c1.issuer = ? ' +
+    'AND c1.expired_on = 0 ' +
     'AND NOT EXISTS (' +
     ' SELECT * FROM c_index c2' +
     ' WHERE c1.issuer = c2.issuer' +

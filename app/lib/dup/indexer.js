@@ -651,7 +651,7 @@ const indexer = module.exports = {
 
     // BR_G39
     yield cindex.map((ENTRY) => co(function*() {
-      ENTRY.stock = count(yield dal.cindexDAL.sqlFind({ issuer: ENTRY.issuer, expired_on: 0 }));
+      ENTRY.stock = count(yield dal.cindexDAL.getValidLinksFrom(ENTRY.issuer));
     }));
 
     // BR_G40

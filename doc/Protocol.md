@@ -1972,7 +1972,7 @@ If `HEAD.number > 0`:
     
 ####### BR_G39 - ENTRY.stock
 
-    ENTRY.stock = COUNT(GLOBAL_CINDEX[issuer=ENTRY.issuer, expired_on=0]))
+    ENTRY.stock = COUNT(REDUCE_BY(GLOBAL_CINDEX[issuer=ENTRY.issuer], 'receiver', 'created_on')[expired_on=0])
     
 ####### BR_G40 - ENTRY.fromMember
 

@@ -2058,6 +2058,8 @@ If `HEAD.number > 0`:
 
 Rule:
 
+If `HEAD.number > 0`:
+
     HEAD.size < MAX(500 ; CEIL(1.10 * HEAD.avgBlockSize))
 
 ###### BR_G98 - Currency

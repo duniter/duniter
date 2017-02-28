@@ -965,7 +965,12 @@ const indexer = module.exports = {
   },
 
   // BR_G50
-  ruleBlockSize: (HEAD) => HEAD.bsize < indexer.DUP_HELPERS.getMaxBlockSize(HEAD),
+  ruleBlockSize: (HEAD) => {
+    if (HEAD.number > 0) {
+      return HEAD.bsize < indexer.DUP_HELPERS.getMaxBlockSize(HEAD);
+    }
+    return true;
+  },
 
   // BR_G98
   ruleCurrency: (block, HEAD) => {

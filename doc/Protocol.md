@@ -1936,7 +1936,7 @@ For each ENTRY in local MINDEX where `revoked_on != null`:
 
 For each ENTRY in local MINDEX where `revoked_on == null`:
 
-    ENTRY.isBeingRevoked = false 
+    ENTRY.isBeingRevoked = false
 
 For each ENTRY in local MINDEX where `revoked_on != null`:
 
@@ -2310,7 +2310,7 @@ Rule:
 
     ENTRY.excludedIsMember == true
     
-###### BR_G86 - Excluded to be kicked
+###### BR_G86 - Excluded contains exclatly those to be kicked
 
 Rule:
 
@@ -2321,6 +2321,12 @@ For each `REDUCE_BY(GLOBAL_IINDEX[kick=true], 'pub') as TO_KICK`:
 If `REDUCED.kick` then:
 
     COUNT(LOCAL_MINDEX[pub=REDUCED.pub,isBeingKicked=true]) == 1
+    
+Rule:
+
+For each `IINDEX[member=false] as ENTRY`:
+
+    ENTRY.hasToBeExcluded = true
 
 ###### BR_G103 - Trancation writability
 

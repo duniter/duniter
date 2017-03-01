@@ -518,6 +518,11 @@ const indexer = module.exports = {
       }
     }));
 
+    // BR_G34
+    yield mindex.map((ENTRY) => co(function*() {
+      ENTRY.isBeingRevoked = !!ENTRY.revoked_on;
+    }));
+
     // BR_G35
     yield iindex.map((ENTRY) => co(function*() {
       ENTRY.isBeingKicked = ENTRY.member === false;
@@ -525,7 +530,9 @@ const indexer = module.exports = {
 
     // BR_G36
     yield iindex.map((ENTRY) => co(function*() {
-      ENTRY.hasToBeExcluded = reduce(yield dal.iindexDAL.reducable(ENTRY.pub)).kick;
+      const isMarkedAsToKick = reduce(yield dal.iindexDAL.reducable(ENTRY.pub)).kick;
+      const isBeingRevoked = count(_.filter(mindex, (m) => m.isBeingRevoked && m.pub == ENTRY.pub)) == 1;
+      ENTRY.hasToBeExcluded = isMarkedAsToKick || isBeingRevoked;
     }));
 
     // BR_G22
@@ -632,11 +639,6 @@ const indexer = module.exports = {
       } else {
         ENTRY.revocationSigOK = yield sigCheckRevoke(ENTRY, dal, block.currency);
       }
-    }));
-
-    // BR_G34
-    yield mindex.map((ENTRY) => co(function*() {
-      ENTRY.isBeingRevoked = ENTRY.revoked;
     }));
 
     // BR_G37
@@ -1208,6 +1210,12 @@ const indexer = module.exports = {
     const toBeKicked = yield dal.iindexDAL.getToBeKickedPubkeys();
     for (const toKick of toBeKicked) {
       if (count(_.where(iindex, { pub: toKick, isBeingKicked: true })) !== 1) {
+        return false;
+      }
+    }
+    const beingKicked = _.filter(iindex, (i) => i.member === false);
+    for (const entry of beingKicked) {
+      if (!entry.hasToBeExcluded) {
         return false;
       }
     }

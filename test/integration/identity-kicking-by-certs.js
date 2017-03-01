@@ -3,6 +3,7 @@
 const _         = require('underscore');
 const co        = require('co');
 const assert    = require('assert');
+const should    = require('should');
 const duniter   = require('../../index');
 const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
@@ -63,10 +64,31 @@ describe("Identities kicking by certs", function() {
     yield s1.commit({ time: now + 8 });
     yield s1.commit({ time: now + 8 });
     yield s1.commit({ time: now + 8 });
+    yield cat.revoke();
+    let err;
+    try {
+      yield s1.commit({ time: now + 8, excluded: ['3conGDUXdrTGbQPMQQhEC4Ubu1MCAnFrAYvUaewbUhtk'] });
+    } catch (e) {
+      err = e;
+    }
+    should.exist(err);
+    should.deepEqual(JSON.parse(err.error), {
+      "ucode": 1002,
+      "message": "ruleToBeKickedArePresent"
+    });
     yield s1.commit({ time: now + 8 });
   }));
 
-  it('block#7 should have kicked 2 member', () => s1.expectThat('/blockchain/block/7', (res) => {
-    assert.equal(res.excluded.length, 2);
+  it('block#7 should have kicked 2 member', () => s1.expectJSON('/blockchain/block/7', (res) => {
+    assert.deepEqual(res.excluded, [
+      '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc',
+      'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo'
+    ]);
+  }));
+
+  it('block#8 should have kicked 1 member', () => s1.expectJSON('/blockchain/block/8', (res) => {
+    assert.deepEqual(res.excluded, [
+      'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd'
+    ]);
   }));
 });

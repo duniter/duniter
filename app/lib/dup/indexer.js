@@ -1586,6 +1586,7 @@ function checkPeopleAreNotOudistanced (pubkeys, newLinks, newcomers, conf, dal) 
         tempLinks.push({ from: fromNode, to: toNode });
       }
     }
+    wotb.setMaxCert(conf.sigStock + tempLinks.length);
     tempLinks.forEach((link) => wotb.addLink(link.from, link.to));
     // Checking distance of each member against them
     let error;

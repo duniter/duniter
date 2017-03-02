@@ -40,9 +40,8 @@ Visit [Duniter website](https://duniter.org): it gathers theoretical information
 
 If you wish to participate/debate on Duniter, you can:
 
-* visit [Duniter Forum](http://forum.duniter.org)
-* join XMPP chatroom [duniter@muc.duniter.org](https://jappix.com/)
-* join diffusion list [https://groups.google.com/forum/?hl=fr#!forum/ucoin](https://groups.google.com/forum/?hl=fr#!forum/ucoin)
+* visit [Duniter Forum](https://forum.duniter.org)
+* join XMPP chatroom [duniter@muc.duniter.org](https://chat.duniter.org)
 * contact us directly at [contact@duniter.org](mailto:contact@duniter.org)
 
 # References

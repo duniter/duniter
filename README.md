@@ -12,7 +12,7 @@ Inspired by [Bitcoin](https://github.com/bitcoin/bitcoin) and [OpenUDC](https://
 
 Software is still under development, and **no production currency using Duniter exists for now**.
 
-However, it already exists a testing currency named [Test_Net](https://forum.duniter.org/t/join-our-new-testnet-currency/813). Want to test it? Two ways.
+However, it already exists a testing currency named [Ğtest](https://forum.duniter.org/t/join-the-gtest-currency/1620). Want to test it? Two ways.
 
 ### Add your node to the network
 
@@ -40,10 +40,23 @@ Visit [Duniter website](https://duniter.org): it gathers theoretical information
 
 If you wish to participate/debate on Duniter, you can:
 
-* visit [Duniter Forum](http://forum.duniter.org)
-* join XMPP chatroom [duniter@muc.duniter.org](https://jappix.com/)
-* join diffusion list [https://groups.google.com/forum/?hl=fr#!forum/ucoin](https://groups.google.com/forum/?hl=fr#!forum/ucoin)
+* visit [Duniter Forum](https://forum.duniter.org)
+* join XMPP chatroom [duniter@muc.duniter.org](https://chat.duniter.org)
 * contact us directly at [contact@duniter.org](mailto:contact@duniter.org)
+
+### Developement
+Duniter is using modules on different git repositories:
+- [Crawler](https://github.com/duniter/duniter-crawler): network crawler.
+- [Prover](https://github.com/duniter/duniter-prover): handle Proof-of-Work.
+- [BMA API](https://github.com/duniter/duniter-bma): Basic Merkled API.
+- [Keypair](https://github.com/duniter/duniter-keypair): provide the cryptographic keypair.
+- [WotB](https://github.com/duniter/wotb): compute Web of Trust.
+- [Debug](https://github.com/duniter/duniter-debug): debug tool.
+- [Web admin](https://github.com/duniter/duniter-ui): web administration interface (optional).
+
+Optional modules:
+- [Remuniter](https://github.com/duniter/remuniter): service to remunerate blocks issuers.
+- [Wot explorer](https://github.com/c-geek/wotex): Web of Trust explorer.
 
 # References
 

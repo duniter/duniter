@@ -12,7 +12,7 @@ Inspired by [Bitcoin](https://github.com/bitcoin/bitcoin) and [OpenUDC](https://
 
 Software is still under development, and **no production currency using Duniter exists for now**.
 
-However, it already exists a testing currency named [Test_Net](https://forum.duniter.org/t/join-our-new-testnet-currency/813). Want to test it? Two ways.
+However, it already exists a testing currency named [Ğtest](https://forum.duniter.org/t/join-the-gtest-currency/1620). Want to test it? Two ways.
 
 ### Add your node to the network
 

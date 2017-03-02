@@ -1366,22 +1366,13 @@ const indexer = module.exports = {
       const MS = yield dal.mindexDAL.getReducedMS(POTENTIAL.pub);
       const hasRenewedSince = MS.expires_on > HEAD.medianTime;
       if (!MS.expired_on && !hasRenewedSince) {
-        let shouldBeKicked = true;
-        // ------ Fast synchronization specific code ------
-        const idty = yield dal.iindexDAL.getFromPubkey(POTENTIAL.pub);
-        if (!idty.member) {
-          shouldBeKicked = false;
-        }
-        // ------------------------------------------------
-        if (shouldBeKicked) {
-          expiries.push({
-            op: 'UPDATE',
-            pub: MS.pub,
-            created_on: MS.created_on,
-            written_on: [HEAD.number, HEAD.hash].join('-'),
-            expired_on: HEAD.medianTime
-          });
-        }
+        expiries.push({
+          op: 'UPDATE',
+          pub: MS.pub,
+          created_on: MS.created_on,
+          written_on: [HEAD.number, HEAD.hash].join('-'),
+          expired_on: HEAD.medianTime
+        });
       }
     }
     return expiries;

@@ -44,6 +44,20 @@ If you wish to participate/debate on Duniter, you can:
 * join XMPP chatroom [duniter@muc.duniter.org](https://chat.duniter.org)
 * contact us directly at [contact@duniter.org](mailto:contact@duniter.org)
 
+### Developement
+Duniter is using modules on different git repositories:
+- [Crawler](https://github.com/duniter/duniter-crawler): network crawler.
+- [Prover](https://github.com/duniter/duniter-prover): handle Proof-of-Work.
+- [BMA API](https://github.com/duniter/duniter-bma): Basic Merkled API.
+- [Keypair](https://github.com/duniter/duniter-keypair): provide the cryptographic keypair.
+- [WotB](https://github.com/duniter/wotb): compute Web of Trust.
+- [Debug](https://github.com/duniter/duniter-debug): debug tool.
+- [Web admin](https://github.com/duniter/duniter-ui): web administration interface (optional).
+
+Optional modules:
+- [Remuniter](https://github.com/duniter/remuniter): service to remunerate blocks issuers.
+- [Wot explorer](https://github.com/c-geek/wotex): Web of Trust explorer.
+
 # References
 
 ## Theoretical

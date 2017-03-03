@@ -180,7 +180,7 @@ function Multicaster (conf, timeout) {
     }
     return Q.Promise(function(resolve, reject){
       const postReq = request.post({
-        "uri": 'http://' + peer.getURL() + uri,
+        "uri": protocol(peer.getPort()) + '://' + peer.getURL() + uri,
         "timeout": timeout || constants.NETWORK.DEFAULT_TIMEOUT
       }, function (err, res) {
         if (err) {
@@ -195,6 +195,10 @@ function Multicaster (conf, timeout) {
       postReq.form(data);
     });
   }
+}
+
+function protocol(port) {
+  return port == 443 ? 'https' : 'http';
 }
 
 util.inherits(Multicaster, stream.Transform);

@@ -1136,9 +1136,22 @@ const indexer = module.exports = {
   },
 
   // BR_G76
-  ruleMembershipDistance: (mindex) => {
+  ruleMembershipDistance: (HEAD, mindex) => {
     for (const ENTRY of mindex) {
-      if (!ENTRY.distanceOK) return false;
+      if (HEAD.currency == 'gtest'
+        && !ENTRY.distanceOK
+        // && HEAD.number != 8450
+        // && HEAD.number != 9775
+        // && HEAD.number != 10893
+        // && HEAD.number != 11090
+        // && HEAD.number != 11263
+        // && HEAD.number != 11392
+        && HEAD.number < 11512) {
+        return false;
+      }
+      else if (HEAD.currency != 'gtest' && !ENTRY.distanceOK) {
+        return false;
+      }
     }
   },
 

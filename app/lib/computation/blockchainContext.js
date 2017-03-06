@@ -176,7 +176,7 @@ function BlockchainContext() {
     // BR_G75
     if (indexer.ruleMembershipSuccession(mindex) === false) throw Error('ruleMembershipSuccession');
     // BR_G76
-    if (indexer.ruleMembershipDistance(mindex) === false) throw Error('ruleMembershipDistance');
+    if (indexer.ruleMembershipDistance(HEAD, mindex) === false) throw Error('ruleMembershipDistance');
     // BR_G77
     if (indexer.ruleMembershipOnRevoked(mindex) === false) throw Error('ruleMembershipOnRevoked');
     // BR_G78

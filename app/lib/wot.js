@@ -20,6 +20,7 @@ function WoTBWrapper(instance) {
   this.resetWoT = instance.resetWoT;
   this.clear = instance.clear;
   this.showWoT = instance.showWoT;
+  this.dumpWoT = instance.dumpWoT;
   this.showGraph = () =>
     instance.showGraph();
   this.getWoTSize = instance.getWoTSize;
@@ -30,8 +31,14 @@ function WoTBWrapper(instance) {
   this.getPaths = instance.getPaths;
   this.getSentries = instance.getSentries;
   this.getNonSentries = instance.getNonSentries;
+  this.getDisabled = instance.getDisabled;
 
-  this.setEnabled = (enabled, nodeID) => instance.setEnabled(enabled, nodeID);
+  this.setEnabled = (enabled, nodeID) => {
+    if (!enabled) {
+      logger.trace('Disable node %s', nodeID);
+    }
+    instance.setEnabled(enabled, nodeID)
+  };
 
   this.addNode = () => {
     let nodeNumber = instance.addNode();

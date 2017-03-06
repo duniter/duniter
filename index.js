@@ -222,7 +222,7 @@ function Stack(dependencies) {
       }
       // First possible class of commands: post-config
       if (command.onConfiguredExecute) {
-        return yield command.onConfiguredExecute(server, conf, program, params, wizardTasks);
+        return yield command.onConfiguredExecute(server, conf, program, params, wizardTasks, that);
       }
       // Second possible class of commands: post-service
       yield server.initDAL();
@@ -284,7 +284,7 @@ function Stack(dependencies) {
           // for (const module of streams.process) module.unpipe();
           // // Stop reading from global PROCESS
           // PROCESS.unpipe();
-        }));
+        }), that);
     } catch (e) {
       server.disconnect();
       throw e;

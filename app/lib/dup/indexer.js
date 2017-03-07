@@ -840,7 +840,7 @@ const indexer = module.exports = {
     } else if (HEAD.udReevalTime != HEAD_1.udReevalTime) {
       // DUG
       const previousUB = HEAD_1.unitBase;
-      HEAD.dividend = Math.ceil(HEAD_1.dividend + Math.pow(conf.c, 2) * Math.ceil(HEAD_1.mass / Math.pow(10, previousUB)) / HEAD.membersCount);
+      HEAD.dividend = Math.ceil(HEAD_1.dividend + Math.pow(conf.c, 2) * Math.ceil(HEAD_1.mass / Math.pow(10, previousUB)) / HEAD.membersCount / (conf.dtReeval / conf.dt));
     } else {
       HEAD.dividend = HEAD_1.dividend;
     }

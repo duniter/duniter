@@ -21,6 +21,10 @@ const server = duniter(
   currency: 'bb',
   httpLogs: true,
   sigQty: 1,
+  dt: 60,
+  dtReeval: 120,
+  udTime0: 1488902199,
+  udReevalTime0: 1520438199,
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
@@ -60,6 +64,15 @@ describe("HTTP API", function() {
   }
 
   describe("/blockchain", function() {
+
+    it('/parameters/ should give the parameters', function() {
+      return expectJSON(rp('http://127.0.0.1:7777/blockchain/parameters', { json: true }), {
+        udTime0: 1488902199,
+        udReevalTime0: 1520438199,
+        dt: 60,
+        dtReeval: 120
+      });
+    });
 
     it('/block/0 should exist', function() {
       return expectJSON(rp('http://127.0.0.1:7777/blockchain/block/0', { json: true }), {
@@ -154,7 +167,7 @@ describe("HTTP API", function() {
       client.on('message', function message(data) {
         const block = JSON.parse(data);
         should(block).have.property('number', 4);
-        should(block).have.property('dividend', null);
+        should(block).have.property('dividend');
         if (!completed) {
           completed = true;
           done();

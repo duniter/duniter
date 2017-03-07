@@ -40,7 +40,10 @@ function ConfDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
       "medianTimeBlocks": parseInt(conf.medianTimeBlocks,10),
       "avgGenTime": parseInt(conf.avgGenTime,10),
       "dtDiffEval": parseInt(conf.dtDiffEval,10),
-      "percentRot": parseFloat(conf.percentRot)
+      "percentRot": parseFloat(conf.percentRot),
+      "udTime0": parseInt(conf.udTime0),
+      "udReevalTime0": parseInt(conf.udReevalTime0),
+      "dtReeval": parseInt(conf.dtReeval)
     };
   });
 

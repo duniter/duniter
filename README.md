@@ -72,4 +72,4 @@ Optional modules:
 
 # License
 
-This software is distributed under [GNU GPLv3](https://raw.github.com/duniter/duniter/master/LICENSE).
+This software is distributed under [GNU AGPLv3](https://raw.github.com/duniter/duniter/master/LICENSE).

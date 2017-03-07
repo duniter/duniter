@@ -188,7 +188,7 @@ module.exports = {
     BLOCK_ISSUERS_FRAME:find('IssuersFrame: (' + INTEGER + ')'),
     BLOCK_ISSUERS_FRAME_VAR:find('IssuersFrameVar: (' + RELATIVE_INTEGER + ')'),
     DIFFERENT_ISSUERS_COUNT:find('DifferentIssuersCount: (' + INTEGER + ')'),
-    PARAMETERS:  find("Parameters: (" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ")"),
+    PARAMETERS:  find("Parameters: (" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ")"),
     JOINER:   exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + BLOCK_UID + ":" + USER_ID),
     ACTIVE:   exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + BLOCK_UID + ":" + USER_ID),
     LEAVER:   exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + BLOCK_UID + ":" + USER_ID),
@@ -261,6 +261,7 @@ module.exports = {
     DEFAULT: {
       C: 0.007376575,
       DT: 30.4375 * 24 * 3600,
+      DT_REEVAL: 30.4375 * 24 * 3600,
       UD0: 100,
       STEPMAX: 3,
       SIGDELAY: 3600 * 24 * 365 * 5,

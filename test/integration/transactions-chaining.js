@@ -22,6 +22,7 @@ describe("Transaction chaining", function() {
       sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
     },
     dt: 3600,
+    udTime0: now + 3600,
     ud0: 1200,
     c: 0.1
   });

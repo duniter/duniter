@@ -25,7 +25,8 @@ describe("Crosschain transactions", function() {
     httpLogs: true,
     forksize: 3,
     dt: 1, ud0: 120, rootoffset: 10,
-    sigQty: 1
+    sigQty: 1,
+    udTime0: now + 1
   };
 
   describe('Successfull transaction', () => {

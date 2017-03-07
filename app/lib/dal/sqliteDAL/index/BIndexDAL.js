@@ -35,6 +35,7 @@ function BIndexDAL(driver) {
     'unitBase',
     'powMin',
     'udTime',
+    'udReevalTime',
     'diffNumber',
     'speed'
   ];
@@ -65,6 +66,7 @@ function BIndexDAL(driver) {
       'unitBase INTEGER NOT NULL,' +
       'powMin INTEGER NOT NULL,' +
       'udTime INTEGER NOT NULL,' +
+      'udReevalTime INTEGER NOT NULL,' +
       'diffNumber INTEGER NOT NULL,' +
       'speed FLOAT NOT NULL,' +
       'PRIMARY KEY (number)' +

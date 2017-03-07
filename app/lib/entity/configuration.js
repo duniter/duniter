@@ -10,6 +10,7 @@ const defaultConf = function() {
     "upInterval": 3600 * 1000,
     "c": constants.CONTRACT.DEFAULT.C,
     "dt": constants.CONTRACT.DEFAULT.DT,
+    "dtReeval": constants.CONTRACT.DEFAULT.DT_REEVAL,
     "ud0": constants.CONTRACT.DEFAULT.UD0,
     "stepMax": constants.CONTRACT.DEFAULT.STEPMAX,
     "sigPeriod": constants.CONTRACT.DEFAULT.SIGPERIOD,

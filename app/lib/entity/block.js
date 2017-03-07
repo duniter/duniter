@@ -242,5 +242,8 @@ Block.statics.getConf = (block) => {
   bconf.avgGenTime = parseInt(sp[14]);
   bconf.dtDiffEval = parseInt(sp[15]);
   bconf.percentRot = parseFloat(sp[16]);
+  bconf.udTime0 = parseInt(sp[17]);
+  bconf.udReevalTime0 = parseInt(sp[18]);
+  bconf.dtReeval = parseInt(sp[19]);
   return bconf;
 };

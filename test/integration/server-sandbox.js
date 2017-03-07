@@ -8,11 +8,14 @@ const commit    = require('./tools/commit');
 const toolbox   = require('./tools/toolbox');
 const constants = require('../../app/lib/constants');
 
+const now = 1482300000;
+
 const s1 = toolbox.server({
   idtyWindow: 10,
   sigWindow: 10,
   msWindow: 10,
   dt: 10,
+  udTime0: now + 1,
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
@@ -52,8 +55,6 @@ const i14 = user('i14', { pub: 'H9dtBFmJohAwMNXSbfoL6xfRtmrqMw8WZnjXMHr4vEHX', s
 // const i16 = user('i16', { pub: 'vi8hUTxss825cFCQE4SzmqBaAwLS236NmtrTQZBAAhG',  sec: '5dVvAdWKcndQSaR9pzjEriRhGkCjef74HzecqKnydBVHdxXDewpAu3mcSU72PRKcCkTYTJPpgWmwuCyZubDKmoy4' }, { server: s1 });
 
 describe("Sandboxes", function() {
-
-  const now = 1482300000;
 
   before(() => co(function*() {
 

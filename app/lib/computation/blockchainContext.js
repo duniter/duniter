@@ -535,6 +535,9 @@ function BlockchainContext() {
       conf.avgGenTime = bconf.avgGenTime;
       conf.dtDiffEval = bconf.dtDiffEval;
       conf.percentRot = bconf.percentRot;
+      conf.udTime0 = bconf.udTime0;
+      conf.udReevalTime0 = bconf.udReevalTime0;
+      conf.dtReeval = bconf.dtReeval;
       conf.currency = block.currency;
       // Super important: adapt wotb module to handle the correct stock
       dal.wotb.setMaxCert(conf.sigStock);

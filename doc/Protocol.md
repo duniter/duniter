@@ -854,7 +854,7 @@ To be valid, a block must match the following rules:
 * `Transactions` is a multiline field composed of [compact transactions](#compact-format)
 * `Parameters` is a simple line field, composed of 1 float, 12 integers and 1 last float all separated by a colon `:`, and representing [currency parameters](#protocol-parameters) (a.k.a Protocol parameters, but valued for a given currency):
 
-        c:dt:ud0:sigPeriod:sigStock:sigWindow:sigValidity:sigQty:idtyWindow:msWindow:xpercent:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:percentRot
+        c:dt:ud0:sigPeriod:sigStock:sigWindow:sigValidity:sigQty:idtyWindow:msWindow:xpercent:msValidity:stepMax:medianTimeBlocks:avgGenTime:dtDiffEval:percentRot:udTime0:udReevalTime0:dtReeval
 
 The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
@@ -953,8 +953,11 @@ The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 Parameter   | Goal
 ----------- | ----
 c           | The %growth of the UD every `[dt]` period
-dt          | Time period between two UD
+dt          | Time period between two UD.
+dtReeval    | Time period between two re-evaluation of the UD.
 ud0         | UD(0), i.e. initial Universal Dividend
+udTime0     | Time of first UD.
+udReevalTime0 | Time of first reevaluation of the UD.
 sigPeriod   | Minimum delay between 2 certifications of a same issuer, in seconds. Must be positive or zero.
 sigStock    | Maximum quantity of active certifications made by member.
 sigWindow   | Maximum delay a certification can wait before being expired for non-writing.
@@ -1576,11 +1579,11 @@ Else:
 
     HEAD.membersCount = HEAD~1.membersCount + COUNT(LOCAL_IINDEX[member=true]) - COUNT(LOCAL_IINDEX[member=false])
 
-###### BR_G11 - HEAD.udTime
+###### BR_G11 - HEAD.udTime and HEAD.udReevalTime
 
 If `HEAD.number == 0`:
 
-    HEAD.udTime = HEAD.medianTime + dt
+    HEAD.udTime = udTime0
 
 Else if `HEAD~1.udTime <= HEAD.medianTime`:
 
@@ -1589,6 +1592,22 @@ Else if `HEAD~1.udTime <= HEAD.medianTime`:
 Else:
 
     HEAD.udTime = HEAD~1.udTime
+    
+EndIf
+
+If `HEAD.number == 0`:
+
+    HEAD.udReevalTime = udReevalTime0
+
+Else if `HEAD~1.udReevalTime <= HEAD.medianTime`:
+
+    HEAD.udReevalTime = HEAD~1.udReevalTime + dtReeval
+
+Else:
+
+    HEAD.udReevalTime = HEAD~1.udReevalTime
+    
+EndIf
 
 ###### BR_G12 - HEAD.unitBase
 
@@ -1605,16 +1624,27 @@ Else:
 If `HEAD.number == 0`:
 
     HEAD.dividend = ud0
-    HEAD.new_dividend = null
+    
+Else If `HEAD.udReevalTime != HEAD~1.udReevalTime`:
 
-If `HEAD.udTime != HEAD~1.udTime`:
-
-    HEAD.dividend = CEIL(HEAD~1.dividend + c² * CEIL(HEAD~1.mass / POW(10, HEAD~1.unitbase)) / HEAD.membersCount)
-    HEAD.new_dividend = HEAD.dividend
+    HEAD.dividend = HEAD_1.dividend + c² * CEIL(HEAD~1.mass / POW(10, HEAD~1.unitbase)) / HEAD.membersCount)
 
 Else:
 
     HEAD.dividend = HEAD~1.dividend
+    
+EndIf
+
+If `HEAD.number == 0`:
+
+    HEAD.new_dividend = null
+
+Else If `HEAD.udTime != HEAD~1.udTime`:
+
+    HEAD.new_dividend = HEAD.dividend
+
+Else:
+
     HEAD.new_dividend = null
     
 ###### BR_G14 - HEAD.dividend and HEAD.unitbase and HEAD.new_dividend

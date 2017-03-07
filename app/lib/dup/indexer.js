@@ -814,27 +814,42 @@ const indexer = module.exports = {
 
   // BR_G11
   prepareUDTime: (HEAD, HEAD_1, conf) => {
+    // UD Production
     if (HEAD.number == 0) {
-      HEAD.udTime = HEAD.medianTime + conf.dt;
+      HEAD.udTime = conf.udTime0;
     } else if (HEAD_1.udTime <= HEAD.medianTime) {
       HEAD.udTime = HEAD_1.udTime + conf.dt;
     } else {
       HEAD.udTime = HEAD_1.udTime;
     }
+    // UD Reevaluation
+    if (HEAD.number == 0) {
+      HEAD.udReevalTime = conf.udReevalTime0;
+    } else if (HEAD_1.udReevalTime <= HEAD.medianTime) {
+      HEAD.udReevalTime = HEAD_1.udReevalTime + conf.dtReeval;
+    } else {
+      HEAD.udReevalTime = HEAD_1.udReevalTime;
+    }
   },
 
   // BR_G13
   prepareDividend: (HEAD, HEAD_1, conf) => {
+    // UD re-evaluation
     if (HEAD.number == 0) {
       HEAD.dividend = conf.ud0;
-      HEAD.new_dividend = null;
-    } else if (HEAD.udTime != HEAD_1.udTime) {
+    } else if (HEAD.udReevalTime != HEAD_1.udReevalTime) {
       // DUG
       const previousUB = HEAD_1.unitBase;
       HEAD.dividend = Math.ceil(HEAD_1.dividend + Math.pow(conf.c, 2) * Math.ceil(HEAD_1.mass / Math.pow(10, previousUB)) / HEAD.membersCount);
-      HEAD.new_dividend = HEAD.dividend;
     } else {
       HEAD.dividend = HEAD_1.dividend;
+    }
+    // UD creation
+    if (HEAD.number == 0) {
+      HEAD.new_dividend = null;
+    } else if (HEAD.udTime != HEAD_1.udTime) {
+      HEAD.new_dividend = HEAD.dividend;
+    } else {
       HEAD.new_dividend = null;
     }
   },

@@ -17,6 +17,8 @@ const rp        = require('request-promise');
 const expectAnswer   = httpTest.expectAnswer;
 const MEMORY_MODE = true;
 
+require('duniter-bma').duniter.methods.noLimit(); // Disables the HTTP limiter
+
 describe("Integration", function() {
 
   describe("Node 1", function() {

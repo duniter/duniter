@@ -103,11 +103,6 @@ function FileDAL(params) {
     return block || null;
   });
 
-  this.getBlockBuggy = (number) => co(function*() {
-    const block = yield that.blockDAL.getBlock(Math.max(0, number - 1)); // This is the bug: we look at previous block
-    return block || null;
-  });
-
   this.getAbsoluteBlockByNumberAndHash = (number, hash) =>
       that.blockDAL.getAbsoluteBlock(number, hash);
 
@@ -125,10 +120,6 @@ function FileDAL(params) {
     const number = parseInt(sp[0]);
     const hash = sp[1];
     return that.getBlockByNumberAndHash(number, hash);
-  };
-
-  this.getBlockByBlockstampBuggy = (blockstamp) => {
-    return that.getBlockBuggy(parseInt(blockstamp));
   };
 
   this.getBlockByNumberAndHash = (number, hash) => co(function*() {

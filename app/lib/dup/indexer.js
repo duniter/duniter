@@ -1474,7 +1474,7 @@ const indexer = module.exports = {
           basedBlock = HEAD;
         } else {
           if (HEAD.currency === 'gtest') {
-            basedBlock = yield dal.getBlockByBlockstampBuggy(MS.created_on); // TODO: fix for v1.0.0
+            basedBlock = yield dal.getBlockByBlockstamp(MS.created_on);
           } else {
             basedBlock = yield dal.getBlockByBlockstamp(MS.created_on);
           }
@@ -1493,7 +1493,7 @@ const indexer = module.exports = {
         basedBlock = HEAD;
       } else {
         if (HEAD.currency === 'gtest') {
-          basedBlock = yield dal.getBlockBuggy(CERT.created_on); // TODO: fix for v1.0.0
+          basedBlock = yield dal.getBlock(CERT.created_on);
         } else {
           basedBlock = yield dal.getBlock(CERT.created_on);
         }

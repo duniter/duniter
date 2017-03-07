@@ -77,7 +77,7 @@ describe("Protocol 1.0 Ğ1 Dividend", function() {
 
   it('should have block#12 with UD 1000', () => s1.expectThat('/blockchain/block/12', (json) => {
     json.dividend.should.equal(1000);
-    json.should.have.property('medianTime').equal(start + aDay * 11); // 2016-03-19 12:00:00 UTC+0
+    json.should.have.property('medianTime').equal(start + aDay * 11); // 2016-03-20 12:00:00 UTC+0
   }));
 
   it('should have block#13 with UD 1027', () => s1.expectThat('/blockchain/block/13', (json) => {
@@ -87,6 +87,6 @@ describe("Protocol 1.0 Ğ1 Dividend", function() {
 
   it('should have block#14 with UD 1027', () => s1.expectThat('/blockchain/block/14', (json) => {
     json.dividend.should.equal(1027);
-    json.should.have.property('medianTime').equal(start + aDay * 13); // 2016-03-21 12:00:00 UTC+0
+    json.should.have.property('medianTime').equal(start + aDay * 13); // 2016-03-22 12:00:00 UTC+0
   }));
 });

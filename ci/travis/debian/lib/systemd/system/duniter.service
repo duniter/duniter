@@ -1,0 +1,16 @@
+[Unit]
+Description=Duniter node
+After=network.target
+ConditionPathExists=/home/duniter/.config/duniter/duniter_default/duniter.db
+
+[Service]
+Group=duniter
+User=duniter
+Type=forking
+ExecStart=/usr/bin/duniter start
+ExecReload=/usr/bin/duniter restart
+ExecStop=/usr/bin/duniter stop
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

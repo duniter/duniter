@@ -145,7 +145,7 @@ sudo apt-get install build-essential
 
 Pour Windows, téléchargez la version 6.10 disponible sur le site officiel de Node.js : https://nodejs.org
 
-<img src="../images/download_node_js.png.png" width="583" height="202">
+<img src="./images/download_node_js.png.png" width="583" height="202">
 
 Puis lancez l'installeur ainsi téléchargé.
 

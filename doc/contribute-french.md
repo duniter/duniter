@@ -1,4 +1,4 @@
-# Contribuer au code de Duniter
+﻿# Contribuer au code de Duniter
 ## Introduction
 
 Cet article est un tutoriel d'initiation au code source du logiciel Duniter. Celui-ci vous permettra, à travers une succession d'étapes, d'accéder à la maîtrise des outils et méthodes utilisés quotidiennement par les développeurs de Duniter pour créer et modifier le logiciel.
@@ -123,13 +123,13 @@ Vous pouvez installer nvm avec la commande suivante :
 curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.31.1/install.sh | bash
 ```
 
-Fermez puis rouvrez votre terminal, comme indiqué. Puis, installez Node.js (choisissez la version 4) :
+Fermez puis rouvrez votre terminal, comme indiqué. Puis, installez Node.js (choisissez la version 6) :
 
 ```bash
-nvm install 4
+nvm install 6
 ```
 
-Vous aurez alors la dernière version de la branche 4.x de Node.js prête à l'emploi.
+Vous aurez alors la dernière version de la branche 6.10 de Node.js prête à l'emploi.
 
 ##### Outils de build
 
@@ -143,9 +143,9 @@ sudo apt-get install build-essential
 
 ##### Node.js
 
-Pour Windows, téléchargez la version 4 disponible sur le site officiel de Node.js : https://nodejs.org
+Pour Windows, téléchargez la version 6.10 disponible sur le site officiel de Node.js : https://nodejs.org
 
-<img src="https://forum.duniter.org/uploads/default/original/1X/f1c8e156e095f6af002eeaa093ee655c5c29f895.png" width="595" height="190">
+<img src="../images/download_node_js.png.png" width="583" height="202">
 
 Puis lancez l'installeur ainsi téléchargé.
 

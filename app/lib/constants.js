@@ -10,6 +10,7 @@ const POSITIVE_INT = "[1-9][0-9]{0,18}";
 const DIVIDEND     = "[1-9][0-9]{0,5}";
 const ZERO_OR_POSITIVE_INT = "0|[1-9][0-9]{0,18}";
 const INTEGER      = "(0|[1-9]\\d{0,18})";
+const XUNLOCK      = "[a-zA-Z0-9]{1,64}";
 const RELATIVE_INTEGER = "(0|-?[1-9]\\d{0,18})";
 const FLOAT        = "\\d+\.\\d+";
 const BOOLEAN      = "[01]";
@@ -18,9 +19,9 @@ const TX_VERSION   = "(10)";
 const SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
 const FINGERPRINT  = "[A-F0-9]{64}";
 const COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}";
-const UNLOCK       = "(SIG\\(" + INTEGER + "\\)|XHX\\(" + INTEGER + "\\))";
 const CONDITIONS   = "(&&|\\|\\|| |[()]|(SIG\\([0-9a-zA-Z]{43,44}\\)|(XHX\\([A-F0-9]{64}\\))))*";
 //const CONDITIONS   = "(&&|\|\|| |[()]|(SIG\\(\\da-zA-Z\\))|(XHX\\(" + FINGERPRINT + "\\)))*";
+const UNLOCK       = "(SIG\\(" + INTEGER + "\\)|XHX\\(" + XUNLOCK + "\\))";
 const BLOCK_UID    = INTEGER + "-" + FINGERPRINT;
 const META_TS      = "META:TS:" + BLOCK_UID;
 

@@ -109,18 +109,18 @@ describe("Testing transactions", function() {
       yield s1.commit();
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3);
-      let tx1 = yield toc.prepareITX(1201, tic);
+      let tx1 = yield toc.prepareITX(1200, tic);
       yield toc.sendTX(tx1);
       yield s1.commit();
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(4);
       // Now cat has all the money...
       let current = yield s1.get('/blockchain/current');
-      let tx2 = yield tic.prepareUTX(tx1, ['SIG(2)'], [{ qty: 1201, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong', blockstamp: [current.number, current.hash].join('-') });
-      let tx3 = yield tic.prepareUTX(tx1, ['SIG(1)'], [{ qty: 1201, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong', blockstamp: [current.number, current.hash].join('-') });
-      let tx4 = yield tic.prepareUTX(tx1, ['SIG(0)'], [{ qty: 1201, base: 0, lock: 'XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)' }], { comment: 'ok', blockstamp: [current.number, current.hash].join('-') });
-      let tx5 = yield tic.prepareUTX(tx1, ['XHX(2)'], [{ qty: 1201, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong', blockstamp: [current.number, current.hash].join('-') });
-      let tx6 = yield tic.prepareUTX(tx1, ['XHX(4)'], [{ qty: 1201, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong', blockstamp: [current.number, current.hash].join('-') });
+      let tx2 = yield tic.prepareUTX(tx1, ['SIG(2)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong', blockstamp: [current.number, current.hash].join('-') });
+      let tx3 = yield tic.prepareUTX(tx1, ['SIG(1)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong', blockstamp: [current.number, current.hash].join('-') });
+      let tx4 = yield tic.prepareUTX(tx1, ['SIG(0)'], [{ qty: 1200, base: 0, lock: 'XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)' }], { comment: 'ok', blockstamp: [current.number, current.hash].join('-') });
+      let tx5 = yield tic.prepareUTX(tx1, ['XHX(2)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong', blockstamp: [current.number, current.hash].join('-') });
+      let tx6 = yield tic.prepareUTX(tx1, ['XHX(4)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong', blockstamp: [current.number, current.hash].join('-') });
       yield unit.shouldFail(toc.sendTX(tx2), 'Wrong unlocker in transaction');
       yield unit.shouldFail(toc.sendTX(tx3), 'Wrong unlocker in transaction');
       yield unit.shouldNotFail(toc.sendTX(tx4));
@@ -129,8 +129,8 @@ describe("Testing transactions", function() {
       yield s1.commit(); // TX4 commited
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0); // The tx was not sent to someone, but with an XHX! So toc has nothing more than before.
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3);
-      let tx7 = yield tic.prepareUTX(tx4, ['XHX(2872767826647264)'], [{ qty: 1201, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong1', blockstamp: [current.number, current.hash].join('-') });
-      let tx8 = yield tic.prepareUTX(tx4, ['XHX(1872767826647264)'], [{ qty: 1201, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'okk', blockstamp: [current.number, current.hash].join('-') }); // tic unlocks the XHX locked amount, and gives it to toc!
+      let tx7 = yield tic.prepareUTX(tx4, ['XHX(2872767826647264)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong1', blockstamp: [current.number, current.hash].join('-') });
+      let tx8 = yield tic.prepareUTX(tx4, ['XHX(1872767826647264)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'okk', blockstamp: [current.number, current.hash].join('-') }); // tic unlocks the XHX locked amount, and gives it to toc!
       yield unit.shouldFail(toc.sendTX(tx7), 'Wrong unlocker in transaction');
       yield unit.shouldNotFail(toc.sendTX(tx8));
       yield s1.commit(); // TX8 commited
@@ -141,24 +141,24 @@ describe("Testing transactions", function() {
     it('with MULTISIG', () => co(function *() {
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3);
-      let tx1 = yield toc.prepareITX(1201, tic);
+      let tx1 = yield toc.prepareITX(1200, tic);
       yield toc.sendTX(tx1);
       yield s1.commit();
       let current = yield s1.get('/blockchain/current');
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(4);
       // The funding transaction that can be reverted by its issuer (tic here) or consumed by toc if he knowns X for H(X)
-      let tx2 = yield tic.prepareUTX(tx1, ['SIG(0)'], [{ qty: 1201, base: 0, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + toc.pub + ')) || (SIG(' + tic.pub + ') && SIG(' + toc.pub + '))'  }], { comment: 'cross1', blockstamp: [current.number, current.hash].join('-') });
+      let tx2 = yield tic.prepareUTX(tx1, ['SIG(0)'], [{ qty: 1200, base: 0, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + toc.pub + ')) || (SIG(' + tic.pub + ') && SIG(' + toc.pub + '))'  }], { comment: 'cross1', blockstamp: [current.number, current.hash].join('-') });
       yield unit.shouldNotFail(toc.sendTX(tx2));
       yield s1.commit(); // TX2 commited
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1); // toc is also present in the target of tx2
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(4); // As well as tic
-      let tx3 = yield tic.prepareUTX(tx2, ['XHX(1872767826647264) SIG(0)'], [{ qty: 1201, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong', blockstamp: [current.number, current.hash].join('-') });
-      let tx4 = yield toc.prepareUTX(tx2, ['XHX(1872767826647264) SIG(0)'], [{ qty: 1201, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'ok', blockstamp: [current.number, current.hash].join('-') });
-      let tx5 = yield tic.prepareMTX(tx2, toc, ['XHX(1872767826647264) SIG(1) SIG(0)'], [{ qty: 1201, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'multi OK', blockstamp: [current.number, current.hash].join('-') });
-      let tx6 = yield toc.prepareMTX(tx2, tic, ['XHX(1872767826647264) SIG(1) SIG(0)'], [{ qty: 1201, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'multi WRONG', blockstamp: [current.number, current.hash].join('-') });
+      let tx3 = yield tic.prepareUTX(tx2, ['XHX(1872767826647264) SIG(0)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong', blockstamp: [current.number, current.hash].join('-') });
+      let tx4 = yield toc.prepareUTX(tx2, ['XHX(1872767826647264) SIG(0)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'ok', blockstamp: [current.number, current.hash].join('-') });
+      let tx5 = yield tic.prepareMTX(tx2, toc, ['XHX(1872767826647264) SIG(1) SIG(0)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'multi OK', blockstamp: [current.number, current.hash].join('-') });
+      let tx6 = yield toc.prepareMTX(tx2, tic, ['XHX(1872767826647264) SIG(1) SIG(0)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'multi WRONG', blockstamp: [current.number, current.hash].join('-') });
       // nLocktime
-      let tx7 = yield tic.prepareMTX(tx2, toc, ['XHX(1872767826647264) SIG(1) SIG(0)'], [{ qty: 1201, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong locktime', locktime: 100, blockstamp: [current.number, current.hash].join('-') });
+      let tx7 = yield tic.prepareMTX(tx2, toc, ['XHX(1872767826647264) SIG(1) SIG(0)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong locktime', locktime: 100, blockstamp: [current.number, current.hash].join('-') });
       yield unit.shouldFail(toc.sendTX(tx3), 'Wrong unlocker in transaction');
       yield unit.shouldNotFail(toc.sendTX(tx4));
       yield unit.shouldNotFail(toc.sendTX(tx5));

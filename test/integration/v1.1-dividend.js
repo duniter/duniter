@@ -12,6 +12,7 @@ const now = 1484000000;
 const s1 = toolbox.server({
   c: 0.1,
   dt: 10,
+  dtReeval: 10,
   udTime0: now + 10,
   udReevalTime0: now + 10,
   ud0: 100,
@@ -27,7 +28,7 @@ const tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', s
 const tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
 
 
-describe("Protocol 0.4 Dividend", function() {
+describe("Protocol 1.1 Dividend", function() {
 
   before(() => co(function*() {
 
@@ -55,10 +56,10 @@ describe("Protocol 0.4 Dividend", function() {
   it('should exit 2 dividends for cat', () => s1.expect('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (res) => {
     res.should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
     res.should.have.property('sources').length(4);
-    res.sources[0].should.have.property('amount').equal(100); // M = 0;   N = 2; = UD(0) + c²*M/N = 100 + 0.01*0/2 = 100 (ceiled)
-    res.sources[1].should.have.property('amount').equal(101); // M = 200; N = 2; = UD(1) + c²*M/N = 100 + 0.01*200/2 = 101 (ceiled)
-    res.sources[2].should.have.property('amount').equal(103); // M = 402; N = 3; = UD(2) + c²*M/N = 101 + 0.01*402/3 = 103 (ceiled)
-    res.sources[3].should.have.property('amount').equal(106); // M = 708; N = 3; = UD(3) + c²*M/N = 103 + 0.01*708/3 = 106 (ceiled)
+    res.sources[0].should.have.property('amount').equal(100); // UD(0) = ud0 => M(0) = 0
+    res.sources[1].should.have.property('amount').equal(100); // t = 1, M(t-1) = 0; , N(t) = 2, UD(t) = UD(t-1) + c²*M(t-1)/N(t) = 100 + 0.01*0/2 = 100 (ceiled) => M(1) = 200
+    res.sources[2].should.have.property('amount').equal(101); // t = 2, M(t-1) = 200, N(t) = 3, UD(t) = UD(t-1) + c²*M(t-1)/N(t) = 100 + 0.01*200/3 = 101 (ceiled) => M(2) = M(1)+N(t-1)*DU(t-1) = 200+2*100 = 400
+    res.sources[3].should.have.property('amount').equal(103); // t = 3, M(t-1) = 402, N(t) = 3, UD(t) = UD(t-1) + c²*M(t-1)/N(t) = 101 + 0.01*400/3 = 103 (ceiled) => M(3) = M(2)+N(t-1)*DU(t-1) = 400+3*101 = 703
     res.sources[0].should.have.property('base').equal(0);
     res.sources[1].should.have.property('base').equal(0);
   }));
@@ -70,10 +71,10 @@ describe("Protocol 0.4 Dividend", function() {
       res.should.have.property('pubkey').equal('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc');
       res.should.have.property('sources').length(6);
       res.sources[0].should.have.property('amount').equal(100);
-      res.sources[1].should.have.property('amount').equal(101);
-      res.sources[2].should.have.property('amount').equal(103);
-      res.sources[3].should.have.property('amount').equal(106);
-      res.sources[4].should.have.property('amount').equal(110);
+      res.sources[1].should.have.property('amount').equal(100);
+      res.sources[2].should.have.property('amount').equal(101);
+      res.sources[3].should.have.property('amount').equal(103);
+      res.sources[4].should.have.property('amount').equal(106);
       res.sources[5].should.have.property('amount').equal(105);
       res.sources[0].should.have.property('type').equal('D');
       res.sources[1].should.have.property('type').equal('D');

@@ -77,11 +77,11 @@ describe("Protocol 1.0 Dividend Update", function() {
     json.dividend.should.equal(1000);
   }));
 
-  it('should have block#8 with UD 1010', () => s1.expectThat('/blockchain/block/8', (json) => {
-    json.dividend.should.equal(1002);
+  it('should have block#8 with UD 1000', () => s1.expectThat('/blockchain/block/8', (json) => {
+    json.dividend.should.equal(1000);
   }));
 
-  it('should have block#9 with UD 1010', () => s1.expectThat('/blockchain/block/9', (json) => {
-    json.dividend.should.equal(1002);
+  it('should have block#9 with UD 1000', () => s1.expectThat('/blockchain/block/9', (json) => {
+    json.dividend.should.equal(1000);
   }));
 });

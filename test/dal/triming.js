@@ -17,11 +17,11 @@ describe("Triming", function(){
 
   it('should be able to feed the bindex', () => co(function *() {
     yield dal.bindexDAL.insertBatch([
-      { number: 121, version: 6, bsize: 0, hash: "HASH", issuer: "ISSUER", time: 0, membersCount: 3, issuersCount: 2, issuersFrame: 1, issuersFrameVar: 2, avgBlockSize: 0, medianTime: 1482500000, dividend: 100, mass: 300, unitBase: 2, powMin: 70, udTime: 0, udReevalTime: 0, diffNumber: 5, speed: 1.0 },
-      { number: 122, version: 6, bsize: 0, hash: "HASH", issuer: "ISSUER", time: 0, membersCount: 3, issuersCount: 2, issuersFrame: 1, issuersFrameVar: 2, avgBlockSize: 0, medianTime: 1482500000, dividend: 100, mass: 300, unitBase: 2, powMin: 70, udTime: 0, udReevalTime: 0, diffNumber: 5, speed: 1.0 },
-      { number: 123, version: 6, bsize: 0, hash: "HASH", issuer: "ISSUER", time: 0, membersCount: 3, issuersCount: 2, issuersFrame: 1, issuersFrameVar: 2, avgBlockSize: 0, medianTime: 1482500000, dividend: 100, mass: 300, unitBase: 2, powMin: 70, udTime: 0, udReevalTime: 0, diffNumber: 5, speed: 1.0 },
-      { number: 124, version: 6, bsize: 0, hash: "HASH", issuer: "ISSUER", time: 0, membersCount: 3, issuersCount: 2, issuersFrame: 1, issuersFrameVar: 2, avgBlockSize: 0, medianTime: 1482500000, dividend: 100, mass: 300, unitBase: 2, powMin: 70, udTime: 0, udReevalTime: 0, diffNumber: 5, speed: 1.0 },
-      { number: 125, version: 6, bsize: 0, hash: "HASH", issuer: "ISSUER", time: 0, membersCount: 3, issuersCount: 2, issuersFrame: 1, issuersFrameVar: 2, avgBlockSize: 0, medianTime: 1482500000, dividend: 100, mass: 300, unitBase: 2, powMin: 70, udTime: 0, udReevalTime: 0, diffNumber: 5, speed: 1.0 }
+      { number: 121, version: 6, bsize: 0, hash: "HASH", issuer: "ISSUER", time: 0, membersCount: 3, issuersCount: 2, issuersFrame: 1, issuersFrameVar: 2, avgBlockSize: 0, medianTime: 1482500000, dividend: 100, mass: 300, massReeval: 300, unitBase: 2, powMin: 70, udTime: 0, udReevalTime: 0, diffNumber: 5, speed: 1.0 },
+      { number: 122, version: 6, bsize: 0, hash: "HASH", issuer: "ISSUER", time: 0, membersCount: 3, issuersCount: 2, issuersFrame: 1, issuersFrameVar: 2, avgBlockSize: 0, medianTime: 1482500000, dividend: 100, mass: 300, massReeval: 300, unitBase: 2, powMin: 70, udTime: 0, udReevalTime: 0, diffNumber: 5, speed: 1.0 },
+      { number: 123, version: 6, bsize: 0, hash: "HASH", issuer: "ISSUER", time: 0, membersCount: 3, issuersCount: 2, issuersFrame: 1, issuersFrameVar: 2, avgBlockSize: 0, medianTime: 1482500000, dividend: 100, mass: 300, massReeval: 300, unitBase: 2, powMin: 70, udTime: 0, udReevalTime: 0, diffNumber: 5, speed: 1.0 },
+      { number: 124, version: 6, bsize: 0, hash: "HASH", issuer: "ISSUER", time: 0, membersCount: 3, issuersCount: 2, issuersFrame: 1, issuersFrameVar: 2, avgBlockSize: 0, medianTime: 1482500000, dividend: 100, mass: 300, massReeval: 300, unitBase: 2, powMin: 70, udTime: 0, udReevalTime: 0, diffNumber: 5, speed: 1.0 },
+      { number: 125, version: 6, bsize: 0, hash: "HASH", issuer: "ISSUER", time: 0, membersCount: 3, issuersCount: 2, issuersFrame: 1, issuersFrameVar: 2, avgBlockSize: 0, medianTime: 1482500000, dividend: 100, mass: 300, massReeval: 300, unitBase: 2, powMin: 70, udTime: 0, udReevalTime: 0, diffNumber: 5, speed: 1.0 }
     ]);
   }));
 

@@ -840,7 +840,7 @@ const indexer = module.exports = {
     } else if (HEAD.udReevalTime != HEAD_1.udReevalTime) {
       // DUG
       const previousUB = HEAD_1.unitBase;
-      HEAD.dividend = Math.ceil(HEAD_1.dividend + Math.pow(conf.c, 2) * Math.ceil(HEAD_1.mass / Math.pow(10, previousUB)) / HEAD.membersCount / (conf.dtReeval / conf.dt));
+      HEAD.dividend = Math.ceil(HEAD_1.dividend + Math.pow(conf.c, 2) * Math.ceil(HEAD_1.massReeval / Math.pow(10, previousUB)) / HEAD.membersCount / (conf.dtReeval / conf.dt));
     } else {
       HEAD.dividend = HEAD_1.dividend;
     }
@@ -865,6 +865,7 @@ const indexer = module.exports = {
 
   // BR_G15
   prepareMass: (HEAD, HEAD_1) => {
+    // Mass
     if (HEAD.number == 0) {
       HEAD.mass = 0;
     }
@@ -872,6 +873,15 @@ const indexer = module.exports = {
       HEAD.mass = HEAD_1.mass + HEAD.dividend * Math.pow(10, HEAD.unitBase) * HEAD.membersCount;
     } else {
       HEAD.mass = HEAD_1.mass;
+    }
+    // Mass on re-evaluation
+    if (HEAD.number == 0) {
+      HEAD.massReeval = 0;
+    }
+    else if (HEAD.udReevalTime != HEAD_1.udReevalTime) {
+      HEAD.massReeval = HEAD_1.mass;
+    } else {
+      HEAD.massReeval = HEAD_1.massReeval;
     }
   },
 

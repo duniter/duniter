@@ -1435,6 +1435,7 @@ The block produces 1 new entry:
       medianTime = null
       dividend = null
       mass = null
+      massReeval = null
       unitBase = null
       powMin = PowMin
       udTime = null
@@ -1627,7 +1628,7 @@ If `HEAD.number == 0`:
     
 Else If `HEAD.udReevalTime != HEAD~1.udReevalTime`:
 
-    HEAD.dividend = HEAD_1.dividend + c² * CEIL(HEAD~1.mass / POW(10, HEAD~1.unitbase)) / HEAD.membersCount)
+    HEAD.dividend = HEAD_1.dividend + c² * CEIL(HEAD~1.massReeval / POW(10, HEAD~1.unitbase)) / HEAD.membersCount)
 
 Else:
 
@@ -1655,7 +1656,7 @@ If `HEAD.dividend >= 1000000`    :
     HEAD.new_dividend = HEAD.dividend
     HEAD.unitBase = HEAD.unitBase + 1
     
-###### BR_G15 - HEAD.mass
+###### BR_G15 - HEAD.mass and HEAD.massReeval
 
 If `HEAD.number == 0`:
 
@@ -1668,6 +1669,24 @@ Else if `HEAD.udTime != HEAD~1.udTime`:
 Else:
 
     HEAD.mass = HEAD~1.mass
+
+EndIf
+
+If `HEAD.number == 0`:
+
+    HEAD.massReeval = 0
+
+Else if `HEAD.udReevalTime != HEAD~1.udReevalTime`:
+
+    HEAD.massReeval = HEAD~1.mass
+
+Else:
+
+    HEAD.massReeval = HEAD~1.massReeval
+
+EndIf
+
+> Functionnally: the UD is reevaluated on the preceding monetary mass (important!)
 
 ###### BR_G16 - HEAD.speed
 

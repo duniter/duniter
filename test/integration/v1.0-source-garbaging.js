@@ -171,6 +171,7 @@ describe("Protocol 1.0 Source Garbaging", function() {
 
   it('should have lost some money with unitBase bumped from 0 to 1', () => co(function*() {
     yield s1.commit({ time: now + 900 });
+    yield s1.commit({ time: now + 900 });
     // Has no more enough on the account (100x10^0 < 100x10^1)
     yield s1.expectThat('/tx/sources/DPFgnVSB14QnYFjKNhbFRYLxroSmaXZ53TzgFZBcCxbF', (json) => {
       json.sources.should.deepEqual([]);
@@ -197,9 +198,9 @@ describe("Protocol 1.0 Source Garbaging", function() {
     yield s1.commit({ time: now + 3600 });
     yield s1.expectThat('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (json) => {
       json.sources.should.deepEqual([
-        { type: 'D', noffset: 11, identifier: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', amount: 1980, base: 1 },
-        { type: 'D', noffset: 12, identifier: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', amount: 4901, base: 1 },
-        { type: 'D', noffset: 13, identifier: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', amount: 1263, base: 2 }
+        { type: 'D', noffset: 11, identifier: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', amount: 9995, base: 0 },
+        { type: 'D', noffset: 12, identifier: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', amount: 1980, base: 1 },
+        { type: 'D', noffset: 14, identifier: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', amount: 3940, base: 1 }
       ]);
     });
   }));

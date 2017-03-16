@@ -32,6 +32,7 @@ function BIndexDAL(driver) {
     'medianTime',
     'dividend',
     'mass',
+    'massReeval',
     'unitBase',
     'powMin',
     'udTime',
@@ -40,7 +41,7 @@ function BIndexDAL(driver) {
     'speed'
   ];
   this.arrays = [];
-  this.bigintegers = ['mass'];
+  this.bigintegers = ['mass', 'massReeval'];
   this.booleans = ['leaving'];
   this.pkFields = ['number'];
   this.translated = {};

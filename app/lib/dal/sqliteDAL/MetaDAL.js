@@ -238,7 +238,12 @@ function MetaDAL(driver) {
         }));
       }
       yield sindexDAL.insertBatch(sourcesMovements);
-    })
+    }),
+
+    18: 'BEGIN;' +
+      // Add a `massReeval` column
+    'ALTER TABLE b_index ADD COLUMN massReeval VARCHAR(100) NOT NULL DEFAULT \'0\';' +
+    'COMMIT;'
   };
 
   this.init = () => co(function *() {

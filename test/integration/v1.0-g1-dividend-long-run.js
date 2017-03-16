@@ -13,11 +13,14 @@ const aDay = 3600 * 24;
 const _6months = 15778800;
 
 const conf = {
+  sigValidity: _6months * 160, // A whole life
+  msValidity: _6months * 160, // A whole life
   ud0: 1000,
   udTime0: 1488970800, // 2016-03-08 12:00:00 UTC+0
   udReevalTime0: 1490094000, // 2016-03-21 12:00:00 UTC+0 ==> first recomputed UD (equinox)
   c: .0488, // 4.88 %
   dt: aDay,
+  cpu: 1.,
   dtReeval: _6months, // 6 months
   medianTimeBlocks: 1, // The medianTime always equals previous block's medianTime for easy testing
   avgGenTime: 3600 * 24 // 1 bloc a day
@@ -27,7 +30,7 @@ constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1;
 
 let s1, cat, tac;
 
-describe("Protocol 1.0 Ğ1 Dividend", function() {
+describe("Protocol 1.0 Ğ1 Dividend - long run", function() {
 
   /*****
    * DESCRIPTION
@@ -45,7 +48,7 @@ describe("Protocol 1.0 Ğ1 Dividend", function() {
     yield s1.commit({ time: start });
     yield s1.commit({ time: start + 1 });
     yield s1.commit({ time: start + delayToUD });
-    for (let i = 1; i < 15; i++) {
+    for (let i = 1; i < 20; i++) {
       yield s1.commit({ time: (start + delayToUD) + aDay * i });
     }
   }));
@@ -73,38 +76,6 @@ describe("Protocol 1.0 Ğ1 Dividend", function() {
   it('should have block#4 with UD 1000', () => s1.expectThat('/blockchain/block/4', (json) => {
     json.dividend.should.equal(1000);
     json.should.have.property('medianTime').equal((start + delayToUD) + aDay); // 2016-03-10 12:00:00 UTC+0
-  }));
-
-  it('should have block#4 with UD 1000', () => s1.expectThat('/blockchain/block/5', (json) => {
-    json.dividend.should.equal(1000);
-    json.should.have.property('medianTime').equal((start + delayToUD) + aDay * 2); // 2016-03-11 12:00:00 UTC+0
-  }));
-
-  it('should have block#4 with UD 1000', () => s1.expectThat('/blockchain/block/6', (json) => {
-    json.dividend.should.equal(1000);
-    json.should.have.property('medianTime').equal((start + delayToUD) + aDay * 3); // 2016-03-12 12:00:00 UTC+0
-  }));
-
-  // ... skip some blocks ...
-
-  it('should have block#11 with UD 1000', () => s1.expectThat('/blockchain/block/11', (json) => {
-    json.dividend.should.equal(1000);
-    json.should.have.property('medianTime').equal((start + delayToUD) + aDay * 8); // 2016-03-17 12:00:00 UTC+0
-  }));
-
-  it('should have block#12 with UD 1000', () => s1.expectThat('/blockchain/block/12', (json) => {
-    json.dividend.should.equal(1000);
-    json.should.have.property('medianTime').equal((start + delayToUD) + aDay * 9); // 2016-03-18 12:00:00 UTC+0
-  }));
-
-  it('should have block#13 with UD 1000', () => s1.expectThat('/blockchain/block/13', (json) => {
-    json.dividend.should.equal(1000);
-    json.should.have.property('medianTime').equal((start + delayToUD) + aDay * 10); // 2016-03-19 12:00:00 UTC+0
-  }));
-
-  it('should have block#14 with UD 1000', () => s1.expectThat('/blockchain/block/14', (json) => {
-    json.dividend.should.equal(1000);
-    json.should.have.property('medianTime').equal((start + delayToUD) + aDay * 11); // 2016-03-20 12:00:00 UTC+0
   }));
 
   it('should have block#14 with UD 1000, even if dtReeval has been reached', () => s1.expectThat('/blockchain/block/15', (json) => {

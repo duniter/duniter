@@ -722,7 +722,7 @@ const indexer = module.exports = {
 
     // BR_G47
     yield _.where(sindex, { op: constants.IDX_UPDATE }).map((ENTRY) => co(function*() {
-      let source = _.filter(sindex, (src) => src.identifier == ENTRY.identifier && src.pos == ENTRY.pos && src.conditions)[0];
+      let source = _.filter(sindex, (src) => src.identifier == ENTRY.identifier && src.pos == ENTRY.pos && src.conditions && src.op === constants.IDX_CREATE)[0];
       if (!source) {
         const reducable = yield dal.sindexDAL.sqlFind({
           identifier: ENTRY.identifier,
@@ -733,7 +733,7 @@ const indexer = module.exports = {
         source = reduce(reducable);
       }
       ENTRY.conditions = source.conditions;
-      ENTRY.isLocked = !txSourceUnlock(ENTRY, source);
+      ENTRY.isLocked = !txSourceUnlock(ENTRY, source, HEAD);
     }));
 
     // BR_G48
@@ -1732,10 +1732,11 @@ function checkCertificationIsValid (block, cert, findIdtyFunc, conf, dal) {
   });
 }
 
-function txSourceUnlock(ENTRY, source) {
+function txSourceUnlock(ENTRY, source, HEAD) {
   const tx = ENTRY.txObj;
   let sigResults = require('../rules/local_rules').HELPERS.getSigResult(tx, 'a');
   let unlocksForCondition = [];
+  let unlocksMetadata = {};
   let unlockValues = ENTRY.unlock;
   if (source.conditions) {
     if (unlockValues) {
@@ -1758,7 +1759,16 @@ function txSourceUnlock(ENTRY, source) {
         }
       }
     }
-    if (unlock(source.conditions, unlocksForCondition)) {
+
+    if (source.conditions.match(/CLTV/)) {
+      unlocksMetadata.currentTime = HEAD.medianTime;
+    }
+
+    if (source.conditions.match(/CSV/)) {
+      unlocksMetadata.elapsedTime = HEAD.medianTime - parseInt(source.written_time);
+    }
+
+    if (unlock(source.conditions, unlocksForCondition, unlocksMetadata)) {
       return true;
     }
   }

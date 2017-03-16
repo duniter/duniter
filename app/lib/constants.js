@@ -10,6 +10,8 @@ const POSITIVE_INT = "[1-9][0-9]{0,18}";
 const DIVIDEND     = "[1-9][0-9]{0,5}";
 const ZERO_OR_POSITIVE_INT = "0|[1-9][0-9]{0,18}";
 const INTEGER      = "(0|[1-9]\\d{0,18})";
+const CLTV_INTEGER = "([0-9]{1,10})";
+const CSV_INTEGER  = "([0-9]{1,8})";
 const XUNLOCK      = "[a-zA-Z0-9]{1,64}";
 const RELATIVE_INTEGER = "(0|-?[1-9]\\d{0,18})";
 const FLOAT        = "\\d+\.\\d+";
@@ -19,9 +21,8 @@ const TX_VERSION   = "(10)";
 const SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
 const FINGERPRINT  = "[A-F0-9]{64}";
 const COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}";
-const CONDITIONS   = "(&&|\\|\\|| |[()]|(SIG\\([0-9a-zA-Z]{43,44}\\)|(XHX\\([A-F0-9]{64}\\))))*";
-//const CONDITIONS   = "(&&|\|\|| |[()]|(SIG\\(\\da-zA-Z\\))|(XHX\\(" + FINGERPRINT + "\\)))*";
 const UNLOCK       = "(SIG\\(" + INTEGER + "\\)|XHX\\(" + XUNLOCK + "\\))";
+const CONDITIONS   = "(&&|\\|\\|| |[()]|(SIG\\([0-9a-zA-Z]{43,44}\\)|(XHX\\([A-F0-9]{64}\\)|CLTV\\(" + CLTV_INTEGER + "\\)|CSV\\(" + CSV_INTEGER + "\\))))*";
 const BLOCK_UID    = INTEGER + "-" + FINGERPRINT;
 const META_TS      = "META:TS:" + BLOCK_UID;
 
@@ -208,7 +209,8 @@ module.exports = {
     BLOCKSTAMP:find('Blockstamp: (' + BLOCK_UID + ')'),
     COMMENT: find("Comment: (" + COMMENT + ")"),
     LOCKTIME:find("Locktime: (" + INTEGER + ")"),
-    INLINE_COMMENT: exact(COMMENT)
+    INLINE_COMMENT: exact(COMMENT),
+    OUTPUT_CONDITION: exact(CONDITIONS)
   },
   PEER: {
     BLOCK: find("Block: (" + INTEGER + "-" + FINGERPRINT + ")"),

@@ -84,6 +84,7 @@ rules.FUNCTIONS = {
         }
         let sigResults = local_rules.HELPERS.getSigResult(tx);
         let unlocksForCondition = [];
+        let unlocksMetadata = {};
         let unlockValues = unlocks[k];
         if (dbSrc.conditions) {
           if (unlockValues) {
@@ -101,14 +102,22 @@ rules.FUNCTIONS = {
                   pubkey: pubkey,
                   sigOK: sigResults.sigs[pubkey] && sigResults.sigs[pubkey].matching || false
                 });
-              } else {
-                // XHX
+              } else if (func.match(/^XHX/)) {
                 unlocksForCondition.push(param);
               }
             }
           }
+
+          if (dbSrc.conditions.match(/CLTV/)) {
+            unlocksMetadata.currentTime = block.medianTime;
+          }
+
+          if (dbSrc.conditions.match(/CSV/)) {
+            unlocksMetadata.elapsedTime = block.medianTime - dbSrc.written_time;
+          }
+
           try {
-            if (!unlock(dbSrc.conditions, unlocksForCondition)) {
+            if (!unlock(dbSrc.conditions, unlocksForCondition, unlocksMetadata)) {
               throw Error('Locked');
             }
           } catch (e) {

@@ -437,8 +437,8 @@ If no values are provided, the valid input condition is an empty string.
 It follows a machine-readable BNF grammar composed of
 
 * `(` and `)` characters
-* `AND` and `OR` operators
-* `SIG(PUBLIC_KEY)`, `XHX(INTEGER)` functions
+* `&&` and `||` operators
+* `SIG(PUBLIC_KEY)`, `XHX(SHA256_HASH)`, `CLTV(INTEGER)`, `CSV(INTEGER)` functions
 * ` ` space
 
 **An empty condition or a condition fully composed of spaces is considered an invalid output condition**.
@@ -446,8 +446,10 @@ It follows a machine-readable BNF grammar composed of
 ##### Output condition examples
 
 * `SIG(HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd)`
-* `(SIG(HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd) AND XHX(309BC5E644F797F53E5A2065EAF38A173437F2E6))`
-* `(SIG(HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd) OR (SIG(DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV) AND XHX(309BC5E644F797F53E5A2065EAF38A173437F2E6)))`
+* `(SIG(HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd) && XHX(309BC5E644F797F53E5A2065EAF38A173437F2E6))`
+* `(SIG(HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd) && CSV(3600))`
+* `(SIG(HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd) && (CLTV(1489677041) || CSV(3600)))`
+* `(SIG(HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd) || (SIG(DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV) && XHX(309BC5E644F797F53E5A2065EAF38A173437F2E6)))`
 
 #### Condition matching
 
@@ -492,14 +494,14 @@ Is resolved by TX2:
 
 Because `SIG(1)` refers to the signature `DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo`, considering that signature `DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo` is good over TX2.
 
-#### SIG and XHX functions
+#### Unlocking functions
 
-These functions are present under both `Unlocks` and `Outputs` fields.
+These functions may be present under both `Unlocks` and `Outputs` fields.
 
 * When present under `Outputs`, these functions define the *necessary conditions* to spend each output.
 * When present under `Unlocks`, these functions define the *sufficient proofs* that each input can be spent.
 
-##### SIG example
+##### SIG function
 
 This function is a control over the signature.
 
@@ -540,7 +542,7 @@ The necessary condition `SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)` is m
 * `Issuers[0] = BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g`
 
 
-##### XHX example
+##### XHX function
 
 This function is a password control.
 
@@ -653,7 +655,7 @@ Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 s
     Outputs:
     120:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
     146:2:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)
-    49:2:(SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i) OR XHX(3EB4702F2AC2FD3FA4FDC46A4FC05AE8CDEE1A85))
+    49:2:(SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i) || XHX(3EB4702F2AC2FD3FA4FDC46A4FC05AE8CDEE1A85))
     Comment: -----@@@----- (why not this comment?)
 
 Signatures (fakes here):
@@ -661,6 +663,42 @@ Signatures (fakes here):
     42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
     2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX
     2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk
+
+##### CLTV function
+
+This function locks an ouput in the future, which will be unlocked at a given date.
+
+So if we have, in TX1:
+
+    Version: 10
+    Type: Transaction
+    [...]
+	Outputs
+    25:2:CLTV(1489677041)
+
+Then the `25` units can be spent *exclusively* in a block whose `MedianTime >= 1489677041`
+
+`CLTV`'s parameter must be an integer with a length between `1` and `10` chars.
+
+##### CSV function
+
+This function locks an ouput in the future, which will be unlocked after the given amount of time has elapsed.
+
+So if we have, in TX1:
+
+    Version: 10
+    Type: Transaction
+    Currency: beta_brousouf
+    Blockstamp: 204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
+    [...]
+	Outputs
+    25:2:CSV(3600)
+
+We define `TxTime` as the `MedianTime` of block `204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B`.
+
+Then the `25` units can be spent *exclusively* in a block whose `MedianTime - TxTime >= 3600`.
+
+`CSV`'s parameter must be an integer with a length between `1` and `8` chars.
 
 #### Compact format
 
@@ -715,7 +753,7 @@ Here is an example compacting [example 3](#example-3) from above:
     5:SIG(2)
     120:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
     146:2:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)
-    49:2:(SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i) OR XHX(3EB4702F2AC2FD3FA4FDC46A4FC05AE8CDEE1A85))
+    49:2:(SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i) || XHX(3EB4702F2AC2FD3FA4FDC46A4FC05AE8CDEE1A85))
     -----@@@----- (why not this comment?)
     42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
     2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX

@@ -9,7 +9,7 @@ WORKDIR /home/duser
 
 RUN curl -kL https://raw.githubusercontent.com/duniter/duniter/master/install.sh | bash
 
-EXPOSE 8999
+EXPOSE 10901
 
 ADD go /home/duser/go
 

@@ -161,7 +161,7 @@ describe("Document pool currency", function() {
 
   it('Peer with wrong currency should be rejected', () => co(function*() {
     try {
-      const peer = yield toc2.makePeer(['BASIC_MERKLED_API localhost 8999'], {
+      const peer = yield toc2.makePeer(['BASIC_MERKLED_API localhost 10901'], {
         currency: "wrong_currency"
       });
       yield s2.postPeer(peer);

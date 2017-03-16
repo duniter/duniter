@@ -149,13 +149,13 @@ function Node (dbName, options) {
         duniter: {
           config: {
             onLoading: (conf, program) => co(function*() {
-              options.port = options.port || 8999;
+              options.port = options.port || 10901;
               options.ipv4 = options.ipv4 || "127.0.0.1";
               options.ipv6 = options.ipv6 || null;
               options.remotehost = options.remotehost || null;
               options.remoteipv4 = options.remoteipv4 || null;
               options.remoteipv6 = options.remoteipv6 || null;
-              options.remoteport = options.remoteport || 8999;
+              options.remoteport = options.remoteport || 10901;
               const overConf = Configuration.statics.complete(options);
               _.extend(conf, overConf);
             })

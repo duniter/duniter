@@ -217,6 +217,7 @@ describe("Identities collision", function() {
       res.identities[0].should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
       res.identities[0].should.have.property('uid').equal('cat');
       res.identities[0].should.have.property('meta').property('timestamp');
+      res.identities[0].should.have.property('wasMember').equal(true);
       res.identities[0].should.have.property('expired').equal(false); // Because it has been a member once! So its identity will exist forever.
       res.identities[0].should.have.property('outdistanced').equal(false);
       res.identities[0].should.have.property('isSentry').equal(true); // dSen = 2, cat has issued and received 2 certs with tic and toc

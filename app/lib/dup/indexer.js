@@ -1410,7 +1410,7 @@ const indexer = module.exports = {
   }),
 
   // BR_G95
-  ruleIndexGenExclusionByCertificatons: (HEAD, cindex, conf, dal) => co(function*() {
+  ruleIndexGenExclusionByCertificatons: (HEAD, cindex, iindex, conf, dal) => co(function*() {
     const exclusions = [];
     const expiredCerts = _.filter(cindex, (c) => c.expired_on > 0);
     for (const CERT of expiredCerts) {
@@ -1418,8 +1418,9 @@ const indexer = module.exports = {
       const just_received = _.filter(cindex, (c) => c.receiver == CERT.receiver && c.expired_on == 0);
       const non_expired_global = yield dal.cindexDAL.getValidLinksTo(CERT.receiver);
       if ((count(non_expired_global) - count(just_expired) + count(just_received)) < conf.sigQty) {
+        const isInExcluded = _.filter(iindex, (i) => i.member === false && i.pub === CERT.receiver)[0];
         const idty = yield dal.iindexDAL.getFromPubkey(CERT.receiver);
-        if (idty.member) {
+        if (!isInExcluded && idty.member) {
           exclusions.push({
             op: 'UPDATE',
             pub: CERT.receiver,

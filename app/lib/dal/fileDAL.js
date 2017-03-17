@@ -529,7 +529,7 @@ function FileDAL(params) {
     cindex = cindex.concat(yield indexer.ruleIndexGenCertificationExpiry(HEAD, that));
     mindex = mindex.concat(yield indexer.ruleIndexGenMembershipExpiry(HEAD, that));
     iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByMembership(HEAD, mindex, that));
-    iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByCertificatons(HEAD, cindex, conf, that));
+    iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByCertificatons(HEAD, cindex, iindex, conf, that));
     mindex = mindex.concat(yield indexer.ruleIndexGenImplicitRevocation(HEAD, that));
     yield indexer.ruleIndexCorrectMembershipExpiryDate(HEAD, mindex, that);
     yield indexer.ruleIndexCorrectCertificationExpiryDate(HEAD, cindex, that);

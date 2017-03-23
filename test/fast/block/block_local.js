@@ -71,6 +71,7 @@ describe("Block local coherence", function(){
     it('Block cannot contain transactions with unexisting lower base in sources',                     test(rules.LOCAL.checkTxAmounts, blocks.TRANSACTION_WRONG_TRANSFORM_LOW_BASE, 'Transaction output base amount does not equal previous base deltas'));
     it('Block cannot contain transactions with more than 100 lines',                                  test(rules.LOCAL.checkTxLen, blocks.TRANSACTION_TOO_LONG, 'A transaction has a maximum size of 100 lines'));
     it('Block cannot contain transactions with a too large output',                                   test(rules.LOCAL.checkTxLen, blocks.OUTPUT_TOO_LONG, 'A transaction output has a maximum size of 2000 characters'));
+    it('Block cannot contain transactions with a too large unlock',                                   test(rules.LOCAL.checkTxLen, blocks.UNLOCK_TOO_LONG, 'A transaction unlock has a maximum size of 2000 characters'));
     it('Block cannot be refused with a good V3 transaction',                                          test(rules.LOCAL.checkTxAmounts, blocks.TRANSACTION_V3_GOOD_AMOUNTS));
     it('Block cannot contain transactions with wrong signatures',                                     test(rules.LOCAL.checkTxSignature, blocks.TRANSACTION_WITH_WRONG_SIGNATURES, 'Signature from a transaction must match'));
   });

@@ -300,6 +300,15 @@ rules.FUNCTIONS = {
         throw constants.ERRORS.A_TRANSACTION_HAS_A_MAX_SIZE;
       }
     }
+    // Check rule against each output of each transaction
+    for (const tx of txs) {
+      for (const output of tx.outputs) {
+        const out = typeof output === 'string' ? output : Transaction.statics.outputObj2Str(output)
+        if (out.length > constants.MAXIMUM_LEN_OF_OUTPUT) {
+          throw constants.ERRORS.MAXIMUM_LEN_OF_OUTPUT
+        }
+      }
+    }
     return true;
   }),
 

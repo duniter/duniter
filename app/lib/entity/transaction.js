@@ -112,6 +112,8 @@ Transaction.statics.outputStr2Obj = (outputStr) => {
   };
 };
 
+Transaction.statics.outputObj2Str = (o) => [o.amount, o.base, o.conditions].join(':')
+
 Transaction.statics.setRecipients = (txs) => {
   // Each transaction must have a good "recipients" field for future searchs
   txs.forEach((tx) => tx.recipients = Transaction.statics.outputs2recipients(tx));

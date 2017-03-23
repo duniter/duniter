@@ -29,6 +29,7 @@ const IPV4_REGEXP = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0
 const IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/;
 
 const MAXIMUM_LEN_OF_COMPACT_TX = 100;
+const MAXIMUM_LEN_OF_OUTPUT = 2000;
 
 module.exports = {
 
@@ -88,7 +89,8 @@ module.exports = {
     BLOCK_ALREADY_PROCESSED:              { httpCode: 400, uerr: { ucode: 2028, message: 'Already processed' }},
     TOO_OLD_MEMBERSHIP:                   { httpCode: 400, uerr: { ucode: 2029, message: "Too old membership." }},
     TX_ALREADY_PROCESSED:                 { httpCode: 400, uerr: { ucode: 2030, message: "Transaction already processed" }},
-    A_MORE_RECENT_MEMBERSHIP_EXISTS:      { httpCode: 400, uerr: { ucode: 2031, message: "A more recent membership already exists" }}
+    A_MORE_RECENT_MEMBERSHIP_EXISTS:      { httpCode: 400, uerr: { ucode: 2031, message: "A more recent membership already exists" }},
+    MAXIMUM_LEN_OF_OUTPUT:                { httpCode: 400, uerr: { ucode: 2032, message: 'A transaction output has a maximum size of ' + MAXIMUM_LEN_OF_OUTPUT + ' characters' }}
   },
 
   DEBUG: {
@@ -304,6 +306,7 @@ module.exports = {
   SANDBOX_SIZE_MEMBERSHIPS: 200,
 
   MAXIMUM_LEN_OF_COMPACT_TX: MAXIMUM_LEN_OF_COMPACT_TX,
+  MAXIMUM_LEN_OF_OUTPUT: MAXIMUM_LEN_OF_OUTPUT,
 
   CURRENT_BLOCK_CACHE_DURATION: 10 * 1000, // 30 seconds
   CORES_MAXIMUM_USE_IN_PARALLEL: 8, // For more cores, we need to use a better PoW synchronization algorithm

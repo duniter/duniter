@@ -309,6 +309,14 @@ rules.FUNCTIONS = {
         }
       }
     }
+    // Check rule against each unlock of each transaction
+    for (const tx of txs) {
+      for (const unlock of tx.unlocks) {
+        if (unlock.length > constants.MAXIMUM_LEN_OF_UNLOCK) {
+          throw constants.ERRORS.MAXIMUM_LEN_OF_UNLOCK
+        }
+      }
+    }
     return true;
   }),
 

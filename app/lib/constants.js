@@ -30,6 +30,7 @@ const IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,
 
 const MAXIMUM_LEN_OF_COMPACT_TX = 100;
 const MAXIMUM_LEN_OF_OUTPUT = 2000;
+const MAXIMUM_LEN_OF_UNLOCK = MAXIMUM_LEN_OF_OUTPUT;
 
 module.exports = {
 
@@ -90,7 +91,8 @@ module.exports = {
     TOO_OLD_MEMBERSHIP:                   { httpCode: 400, uerr: { ucode: 2029, message: "Too old membership." }},
     TX_ALREADY_PROCESSED:                 { httpCode: 400, uerr: { ucode: 2030, message: "Transaction already processed" }},
     A_MORE_RECENT_MEMBERSHIP_EXISTS:      { httpCode: 400, uerr: { ucode: 2031, message: "A more recent membership already exists" }},
-    MAXIMUM_LEN_OF_OUTPUT:                { httpCode: 400, uerr: { ucode: 2032, message: 'A transaction output has a maximum size of ' + MAXIMUM_LEN_OF_OUTPUT + ' characters' }}
+    MAXIMUM_LEN_OF_OUTPUT:                { httpCode: 400, uerr: { ucode: 2032, message: 'A transaction output has a maximum size of ' + MAXIMUM_LEN_OF_OUTPUT + ' characters' }},
+    MAXIMUM_LEN_OF_UNLOCK:                { httpCode: 400, uerr: { ucode: 2033, message: 'A transaction unlock has a maximum size of ' + MAXIMUM_LEN_OF_UNLOCK + ' characters' }}
   },
 
   DEBUG: {
@@ -306,7 +308,8 @@ module.exports = {
   SANDBOX_SIZE_MEMBERSHIPS: 200,
 
   MAXIMUM_LEN_OF_COMPACT_TX: MAXIMUM_LEN_OF_COMPACT_TX,
-  MAXIMUM_LEN_OF_OUTPUT: MAXIMUM_LEN_OF_OUTPUT,
+  MAXIMUM_LEN_OF_OUTPUT,
+  MAXIMUM_LEN_OF_UNLOCK,
 
   CURRENT_BLOCK_CACHE_DURATION: 10 * 1000, // 30 seconds
   CORES_MAXIMUM_USE_IN_PARALLEL: 8, // For more cores, we need to use a better PoW synchronization algorithm

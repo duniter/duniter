@@ -261,6 +261,7 @@ function BlockchainContext() {
     }
     const block = forks[0];
     yield that.checkBlock(block, constants.WITH_SIGNATURES_AND_POW);
+    yield that.addBlock(block);
     logger.debug('Applied block #%s', block.number);
   });
 

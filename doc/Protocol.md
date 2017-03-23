@@ -527,7 +527,7 @@ Then the `25` units can be spent *exclusively* in a future transaction TX2 which
     Issuers:
     BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g
     Inputs:
-    55:1:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
+    25:2:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
     Unlocks:
     0:SIG(0)
 
@@ -666,7 +666,7 @@ Signatures (fakes here):
 
 ##### CLTV function
 
-This function locks an ouput in the future, which will be unlocked at a given date.
+This function locks an output in the future, which will be unlocked at a given date.
 
 So if we have, in TX1:
 
@@ -682,7 +682,7 @@ Then the `25` units can be spent *exclusively* in a block whose `MedianTime >= 1
 
 ##### CSV function
 
-This function locks an ouput in the future, which will be unlocked after the given amount of time has elapsed.
+This function locks an output in the future, which will be unlocked after the given amount of time has elapsed.
 
 So if we have, in TX1:
 

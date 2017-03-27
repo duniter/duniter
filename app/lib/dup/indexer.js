@@ -1442,7 +1442,8 @@ const indexer = module.exports = {
       if (REDUCED.revokes_on <= HEAD.medianTime && !REDUCED.revoked_on) {
         revocations.push({
           op: 'UPDATE',
-          pub: MS.receiver,
+          pub: MS.pub,
+          created_on: REDUCED.created_on,
           written_on: [HEAD.number, HEAD.hash].join('-'),
           revoked_on: HEAD.medianTime
         });

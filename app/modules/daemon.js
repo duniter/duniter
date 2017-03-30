@@ -30,6 +30,11 @@ module.exports = {
         return new Promise(() => null); // Never ending
       })
     },{
+      name: 'status',
+      desc: 'Show Duniter node daemon status.',
+      logs: false,
+      onConfiguredExecute: (server) => needsToBeLaunchedByScript(server.logger)
+    },{
       name: 'stop',
       desc: 'Stop Duniter node daemon.',
       logs: false,

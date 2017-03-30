@@ -17,6 +17,14 @@ switch (process.argv[2]) {
     daemon.stop();
     break;
 
+  case "status":
+    if (daemon.status()) {
+      console.log('Duniter daemon status: running');
+    } else {
+      console.log('Duniter daemon status: stopped');
+    }
+    break;
+
   case "sync":
   case "reset":
     const command = process.argv[2];

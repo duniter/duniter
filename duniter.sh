@@ -45,7 +45,7 @@ duniter() {
 		#  DUNITER DAEMON MANAGEMENT
 		#---------------------------------
 
-		reset|start|stop|restart|webstart|webrestart)
+		reset|start|stop|status|restart|webstart|webrestart)
 		$NODE "$DUNITER_DIR/bin/daemon" $*
 		;;
 

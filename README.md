@@ -6,24 +6,29 @@ Duniter (previously uCoin) is a libre software allowing to create a new kind of 
 
 Inspired by [Bitcoin](https://github.com/bitcoin/bitcoin) and [OpenUDC](https://github.com/Open-UDC/open-udc) projects.
 
-<p align="center"><img src="https://github.com/duniter/duniter/blob/master/images/duniter_admin_ui.png" /></p>
+<p align="center"><img src="https://github.com/duniter/duniter/blob/master/images/duniter_admin_g1.png" /></p>
 
 ## Development state
 
-Software is still under development, and **no production currency using Duniter exists for now**.
+[Ğ1, first libre currency for production using Duniter have been launched March 8th 2017](https://en.duniter.org/g1-go/).
 
-However, it already exists a testing currency named [Ğtest](https://forum.duniter.org/t/join-the-gtest-currency/1620). Want to test it? Two ways.
+However, we are running simultaneously a testing currency.
 
 ### Add your node to the network
 
 See [Install a node documentation](https://github.com/duniter/duniter/blob/master/doc/install-a-node.md).
 
-### Try Cesium Wallet
-- [Try Cesium Wallet](http://cesium.duniter.fr)
+### Clients, wallets
+#### Cesium
+- [Repository](https://github.com/duniter/cesium)
 
-### Try Sakia Wallet
+#### Sakia
+- [Website](http://sakia-wallet.org)
+- [Repository](https://github.com/duniter/sakia)
 
-In the world of crypto-currencies, [Sakia Wallet](http://sakia-wallet.org) ([repository](https://github.com/duniter/sakia)) would be called a [SPV](https://en.bitcoin.it/wiki/Thin_Client_Security#Simplified_Payment_Verification_.28SPV.29_Clients) client. It is a graphical client connecting to the network. See this [tutorial](https://forum.duniter.org/t/join-our-new-testnet-currency/813) to join in the testing currency with Sakia.
+#### Silkaj
+- [Website](https://silkaj.duniter.org)
+- [Repository](https://github.com/duniter/silkaj)
 
 ## Going further
 

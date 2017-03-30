@@ -6,7 +6,7 @@ Duniter (previously uCoin) is a libre software allowing to create a new kind of 
 
 Inspired by [Bitcoin](https://github.com/bitcoin/bitcoin) and [OpenUDC](https://github.com/Open-UDC/open-udc) projects.
 
-<p align="center"><img src="https://github.com/duniter/duniter/blob/master/images/duniter_admin_ui.png" /></p>
+<p align="center"><img src="https://github.com/duniter/duniter/blob/master/images/duniter_admin_g1.png" /></p>
 
 ## Development state
 

@@ -20,10 +20,11 @@ switch (process.argv[2]) {
   case "status":
     if (daemon.status()) {
       console.log('Duniter daemon status: running');
+      process.exit(0)
     } else {
       console.log('Duniter daemon status: stopped');
+      process.exit(2)
     }
-    break;
 
   case "sync":
   case "reset":

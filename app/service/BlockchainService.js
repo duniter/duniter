@@ -269,6 +269,8 @@ function BlockchainService (server) {
     let expiresMS = 0;
     let expiresPending = 0;
     let certs = [];
+    let certsPending = [];
+    let mssPending = [];
     try {
       const generator = blockGenerator(server);
       const join = yield generator.getSinglePreJoinData(current, idty.hash);
@@ -279,6 +281,18 @@ function BlockchainService (server) {
       const joinData = {};
       joinData[join.identity.pubkey] = join;
       const updates = {};
+      certsPending = yield dal.certDAL.getToTarget(idty.hash);
+      certsPending = certsPending.map((c) => {
+        c.blockstamp = [c.block_number, c.block_hash].join('-')
+        return c
+      });
+      mssPending = yield dal.msDAL.getPendingINOfTarget(idty.hash)
+      mssPending = mssPending.map((ms) => {
+        ms.blockstamp = [ms.block, ms.blockHash].join('-')
+        ms.sig = ms.signature
+        ms.type = ms.membership
+        return ms
+      });
       const newCerts = yield generator.computeNewCerts(nextBlockNumber, [join.identity.pubkey], joinData, updates);
       const newLinks = generator.newCertsToLinks(newCerts, updates);
       const currentTime = current ? current.medianTime : 0;
@@ -339,6 +353,8 @@ function BlockchainService (server) {
       isSentry: isSentry,
       wasMember: wasMember,
       certifications: certs,
+      pendingCerts: certsPending,
+      pendingMemberships: mssPending,
       membershipPendingExpiresIn: expiresPending,
       membershipExpiresIn: expiresMS
     };
@@ -354,6 +370,7 @@ function BlockchainService (server) {
       certsFromCerts.push({
         from: cert.from,
         to: cert.to,
+        sig: cert.sig,
         timestamp: block.medianTime
       });
     }

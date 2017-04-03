@@ -15,15 +15,19 @@ const http   = require('./tools/http');
 
 describe("Testing transactions", function() {
 
-  let now;
+  const now = 1490000000;
 
   const s1 = toolbox.server({
     pair: {
       pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
       sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
     },
-    dt: 3600,
-    ud0: 1200
+    dt: 7210,
+    ud0: 1200,
+    udTime0: now + 7210,
+    udReevalTime0: now + 7210,
+    avgGenTime: 7210,
+    medianTimeBlocks: 1
   });
 
   const tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
@@ -31,8 +35,7 @@ describe("Testing transactions", function() {
 
   before(() => co(function*() {
 
-    now = Math.round(new Date().getTime() / 1000);
-
+    constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
     yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
     // Self certifications
     yield tic.createIdentity();
@@ -42,7 +45,7 @@ describe("Testing transactions", function() {
     yield toc.cert(tic);
     yield tic.join();
     yield toc.join();
-    yield s1.commit();
+    yield s1.commit({ time: now });
     yield s1.commit({
       time: now + 7210
     });
@@ -68,11 +71,41 @@ describe("Testing transactions", function() {
       assert.equal(block.dividend, 1200);
     }));
 
-    it('tic should be able to send 510 to toc', () => s1.expect('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', (res) => {
-      should.exists(res);
-      assert.equal(res.sources.length, 1);
-      const txSrc = _.findWhere(res.sources, { type: 'T' });
-      assert.equal(txSrc.amount, 690);
+    it('tic should be able to send 510 to toc', () => co(function*() {
+      yield s1.expect('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', (res) => {
+        should.exists(res);
+        assert.equal(res.sources.length, 1);
+        assert.equal(res.sources[0].conditions, 'SIG(DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV)')
+        const txSrc = _.findWhere(res.sources, { type: 'T' });
+        assert.equal(txSrc.amount, 690);
+      })
+      const tx = yield s1.get('/tx/hash/5645ED3A022201BC4C225CEF76E3DE7A0FC8DAFDB6C7211E7C1C214AABC7B1CE')
+      assert.notEqual(tx, null)
+      assert.deepEqual(tx, {
+        "comment": "",
+        "currency": "duniter_unit_test_currency",
+        "hash": "5645ED3A022201BC4C225CEF76E3DE7A0FC8DAFDB6C7211E7C1C214AABC7B1CE",
+        "inputs": [
+          "1200:0:D:DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:2"
+        ],
+        "issuers": [
+          "DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV"
+        ],
+        "locktime": 0,
+        "outputs": [
+          "510:0:SIG(DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo)",
+          "690:0:SIG(DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV)"
+        ],
+        "raw": "",
+        "signatures": [
+          "3KDs6xjn6itMqk36IKlyfH5YOkz069Or0BDVzeL0lU6BMjS3CpM2+Ak3cC041dxk8Te+/smviOu3wHzjapHtDQ=="
+        ],
+        "unlocks": [
+          "0:SIG(0)"
+        ],
+        "version": 10,
+        "written_block": 3
+      })
     }));
 
     it('toc should have 1510 of sources', () => s1.expect('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', (res) => {
@@ -89,7 +122,7 @@ describe("Testing transactions", function() {
     it('toc should be able to send 800 to tic', () => co(function *() {
       let tx1 = yield toc.prepareITX(1710, tic);
       yield toc.sendTX(tx1);
-      yield s1.commit();
+      yield s1.commit({ time: now + 15000 });
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
     }));
   });
@@ -100,18 +133,15 @@ describe("Testing transactions", function() {
       // Current state
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(2);
-      // Make the time go so another UD is available
-      yield s1.commit({
-        time: now + 19840
-      });
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(2);
-      yield s1.commit();
+      // Make the time go so another UD is available
+      yield s1.commit({ time: now + 15000 });
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3);
       let tx1 = yield toc.prepareITX(1200, tic);
       yield toc.sendTX(tx1);
-      yield s1.commit();
+      yield s1.commit({ time: now + 15000 });
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(4);
       // Now cat has all the money...
@@ -126,14 +156,14 @@ describe("Testing transactions", function() {
       yield unit.shouldNotFail(toc.sendTX(tx4));
       yield unit.shouldFail(toc.sendTX(tx5), 'Wrong unlocker in transaction');
       yield unit.shouldFail(toc.sendTX(tx6), 'Wrong unlocker in transaction');
-      yield s1.commit(); // TX4 commited
+      yield s1.commit({ time: now + 19840 }); // TX4 commited
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0); // The tx was not sent to someone, but with an XHX! So toc has nothing more than before.
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3);
       let tx7 = yield tic.prepareUTX(tx4, ['XHX(2872767826647264)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong1', blockstamp: [current.number, current.hash].join('-') });
       let tx8 = yield tic.prepareUTX(tx4, ['XHX(1872767826647264)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'okk', blockstamp: [current.number, current.hash].join('-') }); // tic unlocks the XHX locked amount, and gives it to toc!
       yield unit.shouldFail(toc.sendTX(tx7), 'Wrong unlocker in transaction');
       yield unit.shouldNotFail(toc.sendTX(tx8));
-      yield s1.commit(); // TX8 commited
+      yield s1.commit({ time: now + 19840 }); // TX8 commited
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1); // That's why toc now has 1 more source...
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3); // ...and why tic's number of sources hasn't changed
     }));
@@ -143,14 +173,14 @@ describe("Testing transactions", function() {
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3);
       let tx1 = yield toc.prepareITX(1200, tic);
       yield toc.sendTX(tx1);
-      yield s1.commit();
+      yield s1.commit({ time: now + 19840 });
       let current = yield s1.get('/blockchain/current');
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(4);
       // The funding transaction that can be reverted by its issuer (tic here) or consumed by toc if he knowns X for H(X)
       let tx2 = yield tic.prepareUTX(tx1, ['SIG(0)'], [{ qty: 1200, base: 0, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + toc.pub + ')) || (SIG(' + tic.pub + ') && SIG(' + toc.pub + '))'  }], { comment: 'cross1', blockstamp: [current.number, current.hash].join('-') });
       yield unit.shouldNotFail(toc.sendTX(tx2));
-      yield s1.commit(); // TX2 commited
+      yield s1.commit({ time: now + 19840 }); // TX2 commited
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1); // toc is also present in the target of tx2
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(4); // As well as tic
       let tx3 = yield tic.prepareUTX(tx2, ['XHX(1872767826647264) SIG(0)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong', blockstamp: [current.number, current.hash].join('-') });

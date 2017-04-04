@@ -164,7 +164,7 @@ function IdentityService () {
         });
         let existingCert = yield dal.existsCert(mCert);
         if (!existingCert) {
-          if (!(yield dal.certDAL.sandbox.acceptNewSandBoxEntry(mCert, conf.pair && conf.pair.pub))) {
+          if (!(yield dal.certDAL.getSandboxForKey(cert.from).acceptNewSandBoxEntry(mCert, conf.pair && conf.pair.pub))) {
             throw constants.ERRORS.SANDBOX_FOR_CERT_IS_FULL;
           }
           yield dal.registerNewCertification(new Certification(mCert));

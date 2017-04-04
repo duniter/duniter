@@ -62,7 +62,6 @@ describe("Sandboxes", function() {
     yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
     yield s3.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
     s1.dal.idtyDAL.setSandboxSize(3);
-    s1.dal.certDAL.setSandboxSize(7);
     s1.dal.msDAL.setSandboxSize(2);
     s1.dal.txsDAL.setSandboxSize(2);
     s2.dal.idtyDAL.setSandboxSize(10);
@@ -177,25 +176,32 @@ describe("Sandboxes", function() {
 
   describe('Certifications', () => {
 
+    const NEW_VALUE = 3
+    const OLD_VALUE = constants.SANDBOX_SIZE_CERTIFICATIONS
+
+    before(() => {
+      constants.SANDBOX_SIZE_CERTIFICATIONS = NEW_VALUE
+    })
+
     it('should accept i4->i7(0),i4->i8(0),i4->i9(0)', () => co(function *() {
       yield i7.createIdentity();
       yield i8.createIdentity();
       yield i9.createIdentity();
-      s1.dal.certDAL.setSandboxSize(3);
-      (yield s1.dal.certDAL.getSandboxRoom()).should.equal(3);
+      (yield s1.dal.certDAL.getSandboxForKey('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc').getSandboxRoom()).should.equal(3);
       yield i4.cert(i7);
       yield i4.cert(i8);
       yield i4.cert(i9);
-      (yield s1.dal.certDAL.getSandboxRoom()).should.equal(0);
+      (yield s1.dal.certDAL.getSandboxForKey('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc').getSandboxRoom()).should.equal(0);
+      (yield s1.dal.certDAL.getSandboxForKey('91dWdiyf7KaC4GAiKrwU7nGuue1vvmHqjCXbPziJFYtE').getSandboxRoom()).should.equal(3);
     }));
 
     it('should reject i4->i10(0)', () => shouldThrow(co(function *() {
-      (yield s1.dal.certDAL.getSandboxRoom()).should.equal(0);
+      (yield s1.dal.certDAL.getSandboxForKey('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc').getSandboxRoom()).should.equal(0);
       yield i4.cert(i10);
     })));
 
     it('should accept a certification from the same key as server, always', () => co(function *() {
-      (yield s1.dal.certDAL.getSandboxRoom()).should.equal(0);
+      (yield s1.dal.certDAL.getSandboxForKey('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc').getSandboxRoom()).should.equal(0);
       yield i1.cert(i8);
     }));
 
@@ -203,8 +209,12 @@ describe("Sandboxes", function() {
       yield s1.commit({
         time: now + 1000
       });
-      (yield s1.dal.certDAL.getSandboxRoom()).should.equal(3);
+      (yield s1.dal.certDAL.getSandboxForKey('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc').getSandboxRoom()).should.equal(3);
     }));
+
+    after(() => {
+      constants.SANDBOX_SIZE_CERTIFICATIONS = OLD_VALUE
+    })
   });
 
   describe('Memberships', () => {

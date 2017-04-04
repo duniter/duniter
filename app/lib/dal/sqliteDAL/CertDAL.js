@@ -95,20 +95,19 @@ function CertDAL(driver) {
    * SANDBOX STUFF
    */
 
-  this.getSandboxCertifications = () => that.query('SELECT * FROM sandbox_certs LIMIT ' + (that.sandbox.maxSize), []);
-
-  this.sandbox = new SandBox(constants.SANDBOX_SIZE_CERTIFICATIONS, this.getSandboxCertifications.bind(this), (compared, reference) => {
-    if (compared.block_number < reference.block_number) {
-      return -1;
+  this.getSandboxForKey = (pub) => {
+    const getRecorded = () => that.query('SELECT * FROM cert WHERE `from` = ? ORDER BY block_number ASC LIMIT ' + constants.SANDBOX_SIZE_CERTIFICATIONS, [pub])
+    const compare = (compared, reference) => {
+      if (compared.block_number < reference.block_number) {
+        return -1
+      }
+      else if (compared.block_number > reference.block_number) {
+        return 1
+      }
+      else {
+        return 0
+      }
     }
-    else if (compared.block_number > reference.block_number) {
-      return 1;
-    }
-    else {
-      return 0;
-    }
-  });
-
-  this.getSandboxRoom = () => this.sandbox.getSandboxRoom();
-  this.setSandboxSize = (maxSize) => this.sandbox.maxSize = maxSize;
+    return new SandBox(constants.SANDBOX_SIZE_CERTIFICATIONS, getRecorded, compare)
+  }
 }

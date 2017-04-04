@@ -28,6 +28,16 @@ let PORT = 10000;
 
 module.exports = {
 
+  shouldFail: (promise, message) => co(function*() {
+    try {
+      yield promise;
+      throw { "message": '{ "message": "Should have thrown an error" }' };
+    } catch(e) {
+      const err = JSON.parse(e)
+      err.should.have.property('message').equal(message);
+    }
+  }),
+
   simpleNetworkOf2NodesAnd2Users: (options) => co(function*() {
     const catKeyring = { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'};
     const tacKeyring = { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'};

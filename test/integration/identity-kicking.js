@@ -73,10 +73,10 @@ describe("Identities kicking", function() {
       yield toc.join();
       yield cat.cert(toc);
       yield tac.cert(toc);
-      yield toc.cert(cat);
       yield commitS1({
         time: now + 2000
       });
+      yield toc.cert(cat);
       yield commitS1({
         time: now + 5000
       });

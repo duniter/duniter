@@ -52,15 +52,15 @@ describe("Identities kicking by certs", function() {
     yield tic.createIdentity();
     yield cat.cert(tic);
     yield tac.cert(tic);
-    yield tic.cert(cat);
     yield tic.join();
     yield tuc.createIdentity();
     yield s1.commit({ time: now + 8 });
+    yield tic.cert(cat);
     yield cat.cert(tuc);
     yield tac.cert(tuc);
-    yield tuc.cert(cat);
     yield tuc.join();
     yield s1.commit({ time: now + 8 });
+    yield tuc.cert(cat);
     yield s1.commit({ time: now + 8 });
     yield s1.commit({ time: now + 8 });
     yield s1.commit({ time: now + 8 });

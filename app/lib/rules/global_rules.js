@@ -232,6 +232,14 @@ function checkCertificationIsValid (block, cert, findIdtyFunc, conf, dal) {
         } catch (e) {
           throw Error('Certification based on an unexisting block');
         }
+        try {
+          const issuer = yield dal.getWrittenIdtyByPubkey(cert.from)
+          if (!issuer || !issuer.member) {
+            throw Error('Issuer is not a member')
+          }
+        } catch (e) {
+          throw Error('Certifier must be a member')
+        }
       }
       let idty = yield findIdtyFunc(block, cert.to, dal);
       let current = block.number == 0 ? null : yield dal.getCurrentBlockOrNull();

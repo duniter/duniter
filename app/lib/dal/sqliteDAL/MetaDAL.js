@@ -243,6 +243,11 @@ function MetaDAL(driver) {
     18: 'BEGIN;' +
       // Add a `massReeval` column
     'ALTER TABLE b_index ADD COLUMN massReeval VARCHAR(100) NOT NULL DEFAULT \'0\';' +
+    'COMMIT;',
+
+    19: 'BEGIN;' +
+      // Add a `removed` column
+    'ALTER TABLE idty ADD COLUMN removed BOOLEAN NULL DEFAULT 0;' +
     'COMMIT;'
   };
 

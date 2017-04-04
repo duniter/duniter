@@ -7,6 +7,7 @@ const bma       = require('duniter-bma').duniter.methods.bma;
 const user      = require('./tools/user');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
+const toolbox   = require('./tools/toolbox');
 
 const expectAnswer   = httpTest.expectAnswer;
 
@@ -73,4 +74,14 @@ describe("Identity absorption", function() {
       res.results[0].uids[0].should.have.property('uid').equal('cat');
     });
   });
+
+  it('should test idty absorption refusal', () => co(function*() {
+    (yield s2.dal.idtyDAL.query('SELECT * FROM idty')).should.have.length(1);
+    yield s2.dal.idtyDAL.exec('DELETE FROM idty');
+    (yield s2.dal.idtyDAL.query('SELECT * FROM idty')).should.have.length(0);
+    yield toolbox.shouldFail(tic.cert(cat, s1), 'Already up-to-date');
+    (yield s2.dal.idtyDAL.query('SELECT * FROM idty')).should.have.length(1);
+    (yield s2.dal.idtyDAL.query('SELECT * FROM idty WHERE removed')).should.have.length(1);
+    (yield s2.dal.idtyDAL.query('SELECT * FROM idty WHERE NOT removed')).should.have.length(0);
+  }));
 });

@@ -36,10 +36,11 @@ function IdentityDAL(driver) {
     'written',
     'wotb_id',
     'expired',
-    'expires_on'
+    'expires_on',
+    'removed'
   ];
   this.arrays = [];
-  this.booleans = ['revoked', 'member', 'kick', 'leaving', 'wasMember', 'written'];
+  this.booleans = ['revoked', 'member', 'kick', 'leaving', 'wasMember', 'written', 'removed'];
   this.pkFields = ['pubkey', 'uid', 'hash'];
   this.transientFields = ['certsCount', 'ref_block'];
   this.translated = {};
@@ -95,6 +96,8 @@ function IdentityDAL(driver) {
 
   this.saveIdentity = (idty) =>
     this.saveEntity(idty);
+
+  this.deleteByHash = (hash) => this.exec('UPDATE ' + this.table + ' SET removed = 1 where hash = \'' + hash + '\'');
 
   this.getToRevoke = () => that.sqlFind({
     revocation_sig: { $null: false },

@@ -102,12 +102,11 @@ function IdentityService () {
         }
         yield rules.GLOBAL.checkIdentitiesAreWritable({ identities: [idty.inline()], version: (current && current.version) || constants.BLOCK_GENERATED_VERSION }, conf, dal);
         idty = new Identity(idty);
-        if (byAbsorption === BY_ABSORPTION) {
-          idty.certsCount = 1;
-        }
-        idty.ref_block = parseInt(idty.buid.split('-')[0]);
-        if (!(yield dal.idtyDAL.sandbox.acceptNewSandBoxEntry(idty, conf.pair && conf.pair.pub))) {
-          throw constants.ERRORS.SANDBOX_FOR_IDENTITY_IS_FULL;
+        if (byAbsorption !== BY_ABSORPTION) {
+          idty.ref_block = parseInt(idty.buid.split('-')[0]);
+          if (!(yield dal.idtyDAL.sandbox.acceptNewSandBoxEntry(idty, conf.pair && conf.pair.pub))) {
+            throw constants.ERRORS.SANDBOX_FOR_IDENTITY_IS_FULL;
+          }
         }
         yield dal.savePendingIdentity(idty);
         logger.info('✔ IDTY %s %s', idty.pubkey, idty.uid);
@@ -125,7 +124,9 @@ function IdentityService () {
     const cert = Certification.statics.fromJSON(obj);
     const targetHash = cert.getTargetHash();
     let idty = yield dal.getIdentityByHashOrNull(targetHash);
+    let idtyAbsorbed = false
     if (!idty) {
+      idtyAbsorbed = true
       idty = yield that.submitIdentity({
         currency: cert.currency,
         issuer: cert.idty_issuer,
@@ -143,36 +144,44 @@ function IdentityService () {
         cert.err = e;
       }
       if (!cert.err) {
-        let basedBlock = yield dal.getBlock(cert.block_number);
-        if (cert.block_number == 0 && !basedBlock) {
-          basedBlock = {
-            number: 0,
-            hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
-          };
-        } else {
-          cert.expires_on = basedBlock.medianTime + conf.sigWindow;
-        }
-        cert.block_hash = basedBlock.hash;
-        const mCert = new Certification({
-          pubkey: cert.from,
-          sig: cert.sig,
-          block_number: cert.block_number,
-          block_hash: cert.block_hash,
-          target: targetHash,
-          to: idty.pubkey,
-          expires_on: cert.expires_on
-        });
-        let existingCert = yield dal.existsCert(mCert);
-        if (!existingCert) {
-          if (!(yield dal.certDAL.getSandboxForKey(cert.from).acceptNewSandBoxEntry(mCert, conf.pair && conf.pair.pub))) {
-            throw constants.ERRORS.SANDBOX_FOR_CERT_IS_FULL;
+        try {
+          let basedBlock = yield dal.getBlock(cert.block_number);
+          if (cert.block_number == 0 && !basedBlock) {
+            basedBlock = {
+              number: 0,
+              hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
+            };
+          } else {
+            cert.expires_on = basedBlock.medianTime + conf.sigWindow;
           }
-          yield dal.registerNewCertification(new Certification(mCert));
-          logger.info('✔ CERT %s', mCert.from);
-        } else {
-          throw constants.ERRORS.ALREADY_UP_TO_DATE;
+          cert.block_hash = basedBlock.hash;
+          const mCert = new Certification({
+            pubkey: cert.from,
+            sig: cert.sig,
+            block_number: cert.block_number,
+            block_hash: cert.block_hash,
+            target: targetHash,
+            to: idty.pubkey,
+            expires_on: cert.expires_on
+          });
+          let existingCert = yield dal.existsCert(mCert);
+          if (!existingCert) {
+            if (!(yield dal.certDAL.getSandboxForKey(cert.from).acceptNewSandBoxEntry(mCert, conf.pair && conf.pair.pub))) {
+              throw constants.ERRORS.SANDBOX_FOR_CERT_IS_FULL;
+            }
+            yield dal.registerNewCertification(new Certification(mCert));
+            logger.info('✔ CERT %s', mCert.from);
+          } else {
+            throw constants.ERRORS.ALREADY_UP_TO_DATE;
+          }
+        } catch (e) {
+          cert.err = e
         }
-      } else {
+      }
+      if (cert.err) {
+        if (idtyAbsorbed) {
+          yield dal.idtyDAL.deleteByHash(targetHash)
+        }
         logger.info('✘ CERT %s %s', cert.from, cert.err);
         throw cert.err;
       }

@@ -154,6 +154,8 @@ function TxsDAL(driver) {
     }
   });
 
+  this.trimExpiredNonWrittenTxs = (limitTime) => that.exec("DELETE FROM txs WHERE NOT written AND blockstampTime <= " + limitTime)
+
   this.getTransactionByExtendedHash = (hash) => that.query("SELECT * FROM txs WHERE hash = ? OR v4_hash = ? OR v5_hash = ?", [hash, hash, hash]);
 
   /**************************

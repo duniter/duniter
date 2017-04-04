@@ -180,7 +180,7 @@ rules.HELPERS = {
     // Valuates the blockstampTime field
     tx.blockstampTime = basedBlock.medianTime;
     const current = yield dal.getCurrentBlockOrNull();
-    if (current && current.medianTime > basedBlock.medianTime + constants.TRANSACTION_EXPIRY_DELAY) {
+    if (current && current.medianTime > basedBlock.medianTime + constants.TX_WINDOW) {
       throw "Transaction has expired";
     }
   })

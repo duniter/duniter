@@ -129,7 +129,7 @@ module.exports = {
   NB_DIGITS_UD: 4,      // This is protocol fixed value
   FIRST_UNIT_BASE: 0,
 
-  TRANSACTION_EXPIRY_DELAY: 3600 * 24 * 7,
+  TX_WINDOW: 3600 * 24 * 7,
 
   CERT: {
     SELF: {

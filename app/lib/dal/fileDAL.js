@@ -562,6 +562,7 @@ function FileDAL(params) {
     yield that.certDAL.trimExpiredCerts(block.medianTime);
     yield that.msDAL.trimExpiredMemberships(block.medianTime);
     yield that.idtyDAL.trimExpiredIdentities(block.medianTime);
+    yield that.txsDAL.trimExpiredNonWrittenTxs(block.medianTime - constants.TX_WINDOW);
     return true;
   });
 

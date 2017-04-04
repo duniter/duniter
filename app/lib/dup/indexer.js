@@ -703,7 +703,7 @@ const indexer = module.exports = {
         if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
           ENTRY.age = HEAD_1.medianTime - ref.medianTime;
         } else {
-          ENTRY.age = constants.TRANSACTION_EXPIRY_DELAY + 1;
+          ENTRY.age = constants.TX_WINDOW + 1;
         }
       }
     }));
@@ -1262,7 +1262,7 @@ const indexer = module.exports = {
   // BR_G103
   ruleTxWritability: (sindex) => {
     for (const ENTRY of sindex) {
-      if (ENTRY.age > constants.TRANSACTION_EXPIRY_DELAY) return false;
+      if (ENTRY.age > constants.TX_WINDOW) return false;
     }
   },
 

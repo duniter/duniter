@@ -44,7 +44,7 @@
     "daemonize2": "0.4.2",
     "duniter-bma": "^1.0.3",
     "duniter-common": "^1.0.0",
-    "duniter-crawler": "^1.0.2",
+    "duniter-crawler": "^1.0.4",
     "duniter-keypair": "^1.0.0",
     "duniter-prover": "^1.0.0",
     "event-stream": "3.3.4",

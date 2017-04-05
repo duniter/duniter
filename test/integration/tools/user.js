@@ -86,11 +86,11 @@ function User (uid, options, node) {
     return Certification.statics.fromJSON(cert);
   });
 
-  this.cert = (user, fromServer) => co(function*() {
+  this.cert = (user, fromServer, toServer) => co(function*() {
     const cert = yield that.makeCert(user, fromServer);
     yield doPost('/wot/certify', {
       "cert": cert.getRaw()
-    });
+    }, toServer);
   });
 
   this.join = () => co(function*() {

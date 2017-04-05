@@ -288,7 +288,7 @@ function BlockchainService (server) {
       });
       mssPending = yield dal.msDAL.getPendingINOfTarget(idty.hash)
       mssPending = mssPending.map((ms) => {
-        ms.blockstamp = [ms.block, ms.blockHash].join('-')
+        ms.blockstamp = ms.block
         ms.sig = ms.signature
         ms.type = ms.membership
         return ms
@@ -342,6 +342,7 @@ function BlockchainService (server) {
     return {
       pubkey: idty.pubkey,
       uid: idty.uid,
+      sig: idty.sig,
       meta: {
         timestamp: idty.buid
       },

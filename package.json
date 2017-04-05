@@ -42,7 +42,6 @@
     "colors": "1.1.2",
     "commander": "2.9.0",
     "daemonize2": "0.4.2",
-    "duniter-bma": "^1.0.6",
     "duniter-common": "^1.0.0",
     "duniter-crawler": "^1.0.5",
     "duniter-keypair": "^1.0.1",
@@ -71,6 +70,7 @@
   },
   "devDependencies": {
     "coveralls": "2.11.4",
+    "duniter-bma": "^1.0.7",
     "eslint": "3.13.1",
     "eslint-plugin-mocha": "4.8.0",
     "istanbul": "0.4.0",

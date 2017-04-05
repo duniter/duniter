@@ -45,7 +45,6 @@ function Server (home, memoryOnly, overrideConf) {
   that.lib.dos2unix = require('duniter-common').dos2unix;
   that.lib.contacter = require('duniter-crawler').duniter.methods.contacter;
   that.lib.bma = require('duniter-bma').duniter.methods.bma;
-  that.lib.network = require('./app/lib/system/network');
   that.lib.constants = require('./app/lib/constants');
   that.lib.ucp = require('duniter-common').buid;
   that.lib.hashf = require('duniter-common').hashf;
@@ -373,6 +372,11 @@ function Server (home, memoryOnly, overrideConf) {
    * @param linesQuantity
    */
   this.getLastLogLines = (linesQuantity) => this.dal.getLogContent(linesQuantity);
+
+  /**
+   * Default endpoint. To be overriden by a module to specify another endpoint value (for ex. BMA).
+   */
+  this.getMainEndpoint = () => Promise.resolve('DEFAULT_ENDPOINT')
 }
 
 util.inherits(Server, stream.Duplex);

@@ -14,7 +14,6 @@ const Identity    = require('../../../app/lib/entity/identity');
 const Block       = require('../../../app/lib/entity/block');
 const bma         = require('duniter-bma').duniter.methods.bma;
 const multicaster = require('../../../app/lib/streams/multicaster');
-const network     = require('../../../app/lib/system/network');
 const dtos        = require('duniter-bma').duniter.methods.dtos;
 const duniter     = require('../../../index');
 const logger      = require('../../../app/lib/logger')('toolbox');
@@ -135,7 +134,7 @@ module.exports = {
         processRequest: () => { /* Does nothing */ }
       };
 
-      const fakeServer = yield network.createServersAndListen("Fake Duniter Server", { conf: {} }, [{
+      const fakeServer = yield require('duniter-bma').duniter.methods.createServersAndListen("Fake Duniter Server", { conf: {} }, [{
         ip: host,
         port: port
       }], NO_HTTP_LOGS, logger, NO_STATIC_PATH, (app, httpMethods) => {
@@ -312,6 +311,8 @@ module.exports = {
     };
     // server.startBlockComputation = () => prover.startService();
     server.stopBlockComputation = () => prover.stopService();
+
+    server.getMainEndpoint = require('duniter-bma').duniter.methods.getMainEndpoint
 
     return server;
   }

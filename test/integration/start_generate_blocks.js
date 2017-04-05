@@ -67,6 +67,7 @@ describe("Generation", function() {
     return co(function *() {
       let servers = [s1, s2];
       for (const server of servers) {
+        server.getMainEndpoint = require('duniter-bma').duniter.methods.getMainEndpoint
         yield server.initWithDAL();
         server.bma = yield bma(server);
         yield server.bma.openConnections();

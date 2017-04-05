@@ -14,7 +14,6 @@ const rawer          = require('duniter-common').rawer;
 const constants      = require('../lib/constants');
 const Peer           = require('../lib/entity/peer');
 const AbstractService = require('./AbstractService');
-const network = require('../lib/system/network');
 
 function PeeringService(server) {
 
@@ -122,7 +121,7 @@ function PeeringService(server) {
       yield dal.savePeer(peerEntity);
       let savedPeer = Peer.statics.peerize(peerEntity);
       if (peerEntity.pubkey == selfPubkey) {
-        const localEndpoint = network.getEndpoint(conf);
+        const localEndpoint = yield server.getMainEndpoint(conf);
         const localNodeNotListed = !peerEntity.containsEndpoint(localEndpoint);
         const current = localNodeNotListed && (yield dal.getCurrentBlockOrNull());
         if (!localNodeNotListed) {
@@ -164,7 +163,7 @@ function PeeringService(server) {
     if (peers.length != 0 && peers[0]) {
       p1 = _(peers[0]).extend({version: constants.DOCUMENTS_VERSION, currency: currency});
     }
-    let endpoint = network.getEndpoint(theConf);
+    let endpoint = yield server.getMainEndpoint(theConf);
     let otherPotentialEndpoints = getOtherEndpoints(p1.endpoints, theConf);
     logger.info('Sibling endpoints:', otherPotentialEndpoints);
     let reals = yield otherPotentialEndpoints.map((endpoint) => co(function*() {

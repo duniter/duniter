@@ -57,6 +57,8 @@ describe("Switch", function() {
   before(() => co(function *() {
     yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
     yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+    s1.getMainEndpoint = require('duniter-bma').duniter.methods.getMainEndpoint
+    s2.getMainEndpoint = require('duniter-bma').duniter.methods.getMainEndpoint
     yield cat.createIdentity();
     yield toc.createIdentity();
     yield toc.cert(cat);

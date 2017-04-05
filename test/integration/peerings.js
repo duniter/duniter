@@ -79,6 +79,7 @@ describe("Network", function() {
     const commitS3 = commit(s3);
 
     return [s1, s2, s3].reduce(function(p, server) {
+      server.getMainEndpoint = require('duniter-bma').duniter.methods.getMainEndpoint
       return p
         .then(function(){
           return server

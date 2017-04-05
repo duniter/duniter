@@ -1,7 +1,6 @@
 "use strict";
 const co        = require('co');
 const constants = require('./constants');
-const network   = require('./system/network');
 const async     = require('async');
 const inquirer  = require('inquirer');
 const logger    = require('./logger')('wizard');

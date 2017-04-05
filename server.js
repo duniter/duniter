@@ -43,7 +43,6 @@ function Server (home, memoryOnly, overrideConf) {
   that.lib.parsers = require('./app/lib/streams/parsers');
   that.lib.http2raw = require('duniter-bma').duniter.methods.http2raw;
   that.lib.dos2unix = require('duniter-common').dos2unix;
-  that.lib.contacter = require('duniter-crawler').duniter.methods.contacter;
   that.lib.bma = require('duniter-bma').duniter.methods.bma;
   that.lib.constants = require('./app/lib/constants');
   that.lib.ucp = require('duniter-common').buid;

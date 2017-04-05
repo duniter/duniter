@@ -1,12 +1,9 @@
 "use strict";
 const _ = require('underscore');
-const contacter = require('duniter-crawler').duniter.methods.contacter;
 const rawer = require('duniter-common').rawer;
 const constants = require('../constants');
 
 module.exports = Peer;
-
-const DEFAULT_HOST = 'localhost';
 
 function Peer(json) {
 
@@ -101,10 +98,6 @@ function Peer(json) {
   this.getRaw = () => rawer.getPeerWithoutSignature(this);
 
   this.getRawSigned = () => rawer.getPeer(this);
-
-  this.connect = (timeout) => Promise.resolve(contacter(this.getDns() || this.getIPv6() || this.getIPv4() || DEFAULT_HOST, this.getPort(), {
-    timeout: timeout || constants.NETWORK.DEFAULT_TIMEOUT
-  }));
 
   this.isReachable = () => {
     return this.getURL() ? true : false;

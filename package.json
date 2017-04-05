@@ -42,11 +42,11 @@
     "colors": "1.1.2",
     "commander": "2.9.0",
     "daemonize2": "0.4.2",
-    "duniter-bma": "^1.0.3",
+    "duniter-bma": "^1.0.6",
     "duniter-common": "^1.0.0",
-    "duniter-crawler": "^1.0.4",
-    "duniter-keypair": "^1.0.0",
-    "duniter-prover": "^1.0.0",
+    "duniter-crawler": "^1.0.5",
+    "duniter-keypair": "^1.0.1",
+    "duniter-prover": "^1.0.2",
     "event-stream": "3.3.4",
     "inquirer": "3.0.6",
     "jison": "0.4.17",
@@ -80,7 +80,8 @@
     "sha1": "",
     "should": "",
     "supertest": "",
-    "tmp": "0.0.29"
+    "tmp": "0.0.29",
+    "ws": "1.1.1"
   },
   "bin": {
     "duniter": "./bin/duniter"

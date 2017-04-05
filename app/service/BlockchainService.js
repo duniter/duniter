@@ -7,7 +7,6 @@ const parsers         = require('../lib/streams/parsers');
 const rules           = require('../lib/rules');
 const constants       = require('../lib/constants');
 const blockchainCtx   = require('../lib/computation/blockchainContext');
-const blockGenerator  = require('duniter-prover').duniter.methods.blockGenerator;
 const Block           = require('../lib/entity/block');
 const Identity        = require('../lib/entity/identity');
 const Transaction     = require('../lib/entity/transaction');
@@ -272,8 +271,7 @@ function BlockchainService (server) {
     let certsPending = [];
     let mssPending = [];
     try {
-      const generator = blockGenerator(server);
-      const join = yield generator.getSinglePreJoinData(current, idty.hash);
+      const join = yield server.generatorGetJoinData(current, idty.hash, 'a');
       const pubkey = join.identity.pubkey;
       // Check WoT stability
       const someNewcomers = join.identity.wasMember ? [] : [join.identity.pubkey];
@@ -293,8 +291,8 @@ function BlockchainService (server) {
         ms.type = ms.membership
         return ms
       });
-      const newCerts = yield generator.computeNewCerts(nextBlockNumber, [join.identity.pubkey], joinData, updates);
-      const newLinks = generator.newCertsToLinks(newCerts, updates);
+      const newCerts = yield server.generatorComputeNewCerts(nextBlockNumber, [join.identity.pubkey], joinData, updates);
+      const newLinks = yield server.generatorNewCertsToLinks(newCerts, updates);
       const currentTime = current ? current.medianTime : 0;
       certs = yield that.getValidCerts(pubkey, newCerts);
       outdistanced = yield rules.HELPERS.isOver3Hops(pubkey, newLinks, someNewcomers, current, conf, dal);

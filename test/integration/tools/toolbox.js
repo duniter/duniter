@@ -298,6 +298,8 @@ module.exports = {
       yield bmaAPI.openConnections();
       server.bma = bmaAPI;
       require('../../../app/modules/router').duniter.methods.routeToNetwork(server);
+      // Extra: for /wot/requirements URL
+      require('duniter-prover').duniter.methods.hookServer(server);
     });
 
     let prover;

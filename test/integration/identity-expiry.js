@@ -5,6 +5,7 @@ const co        = require('co');
 const should    = require('should');
 const duniter   = require('../../index');
 const bma       = require('duniter-bma').duniter.methods.bma;
+const prover    = require('duniter-prover').duniter.methods;
 const user      = require('./tools/user');
 const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
@@ -52,6 +53,7 @@ describe("Identities expiry", function() {
     return co(function *() {
 
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+      prover.hookServer(s1)
       yield cat.createIdentity();
       yield tac.createIdentity();
       yield tic.createIdentity();

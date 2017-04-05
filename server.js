@@ -376,6 +376,21 @@ function Server (home, memoryOnly, overrideConf) {
    * Default endpoint. To be overriden by a module to specify another endpoint value (for ex. BMA).
    */
   this.getMainEndpoint = () => Promise.resolve('DEFAULT_ENDPOINT')
+
+  /**
+   * Default WoT incoming data for new block. To be overriden by a module.
+   */
+  this.generatorGetJoinData = () => Promise.resolve({})
+
+  /**
+   * Default WoT incoming certifications for new block, filtering wrong certs. To be overriden by a module.
+   */
+  this.generatorComputeNewCerts = () => Promise.resolve({})
+
+  /**
+   * Default WoT transforming method for certs => links. To be overriden by a module.
+   */
+  this.generatorNewCertsToLinks = () => Promise.resolve({})
 }
 
 util.inherits(Server, stream.Duplex);

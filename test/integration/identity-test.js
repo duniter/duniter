@@ -54,6 +54,7 @@ describe("Identities collision", function() {
 
     return co(function *() {
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+      require('duniter-prover').duniter.methods.hookServer(s1);
       yield cat.createIdentity();
       yield tac.createIdentity();
       yield toc.createIdentity();

@@ -21,7 +21,6 @@ const reapplyDependency   = require('./app/modules/reapply');
 const revertDependency    = require('./app/modules/revert');
 const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
-const proverDependency    = require('duniter-prover');//require('./app/modules/prover');
 const routerDependency    = require('./app/modules/router');
 
 const MINIMAL_DEPENDENCIES = [
@@ -41,7 +40,6 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
 ]);
 
 const PRODUCTION_DEPENDENCIES = DEFAULT_DEPENDENCIES.concat([
-  { name: 'duniter-prover',   required: proverDependency }
 ]);
 
 module.exports = function (home, memory, overConf) {

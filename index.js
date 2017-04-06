@@ -194,7 +194,7 @@ function Stack(dependencies) {
       server.dal.loadConfHook = (conf) => co(function*() {
         // Loading injection
         for (const callback of configLoadingCallbacks) {
-          yield callback(conf, program, logger);
+          yield callback(conf, program, logger, server.dal.confDAL);
         }
       });
 
@@ -202,7 +202,7 @@ function Stack(dependencies) {
       server.dal.saveConfHook = (conf) => co(function*() {
         const clonedConf = _.clone(conf);
         for (const callback of configBeforeSaveCallbacks) {
-          yield callback(clonedConf, program, logger);
+          yield callback(clonedConf, program, logger, server.dal.confDAL);
         }
         return clonedConf;
       });

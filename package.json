@@ -70,7 +70,7 @@
     "coveralls": "2.11.4",
     "duniter-bma": "^1.0.7",
     "duniter-crawler": "^1.0.8",
-    "duniter-keypair": "^1.0.1",
+    "duniter-keypair": "^1.0.2",
     "duniter-prover": "^1.0.4",
     "eslint": "3.13.1",
     "eslint-plugin-mocha": "4.8.0",

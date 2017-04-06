@@ -1,12 +1,27 @@
 "use strict";
 
-const co = require('co');
+const co        = require('co');
+const qfs       = require('q-io/fs');
+const directory = require('../lib/system/directory');
+const constants = require('../lib/constants');
+const path      = require('path');
+const Tail      = require("tail").Tail
 
 module.exports = {
   duniter: {
 
-    service: {
-      process: (server) => ServerService(server)
+    cliOptions: [
+      { value: '--loglevel <level>', desc: 'Logs level, either [error,warning,info,debug,trace]. default to `info`.' }
+    ],
+
+    config: {
+
+      /*****
+       * Tries to load a specific parameter `conf.loglevel`
+       */
+      onLoading: (conf, program) => co(function*(){
+        conf.loglevel = program.loglevel || conf.loglevel || 'trace'
+      })
     },
 
     cli: [{
@@ -54,6 +69,15 @@ module.exports = {
         }
       })
     }, {
+
+      name: 'logs',
+      desc: 'Follow duniter logs.',
+      logs: false,
+      onConfiguredExecute: (server, conf, program, params) => co(function*() {
+        printTailAndWatchFile(directory.INSTANCE_HOMELOG_FILE, constants.NB_INITIAL_LINES_TO_SHOW)
+        // Never ending command
+        return new Promise(res => null)
+      })
     }, {
 
       name: 'direct_start',
@@ -93,4 +117,37 @@ function stopDaemon(daemon) {
     resolve()
   }))
 }
+
+function printTailAndWatchFile(file, tailSize) {
+  return co(function*() {
+    if (yield qfs.exists(file)) {
+      const content = yield qfs.read(file)
+      const lines = content.split('\n')
+      const from = Math.max(0, lines.length - tailSize)
+      const lastLines = lines.slice(from).join('\n')
+      console.log(lastLines)
+    }
+    watchFile(file)
+  })
+}
+
+function watchFile(file) {
+  const tail = new Tail(file);
+
+  // Specific errors handling
+  process.on('uncaughtException', (err) => {
+    if (err.code === "ENOENT") {
+      console.error('EXCEPTION: ', err.message);
+      setTimeout(() => watchFile(file), 1000) // Wait a second
+    }
+  });
+
+  // On new line
+  tail.on("line", function(data) {
+    console.log(data);
+  });
+
+  tail.on("error", function(error) {
+    console.error('ERROR: ', error);
+  });
 }

@@ -63,25 +63,26 @@ logger.addCallbackLogs = (callbackForLog) => {
 
 // Singletons
 let loggerHomeAttached = false;
-logger.addHomeLogs = (home) => {
-  if (!loggerHomeAttached) {
-    loggerHomeAttached = true;
-    logger.add(winston.transports.File, {
-      level: 'info',
-      levels: customLevels.levels,
-      handleExceptions: false,
-      colorize: true,
-      tailable: true,
-      maxsize: 50 * 1024 * 1024, // 50 MB
-      maxFiles: 3,
-      //zippedArchive: true,
-      json: false,
-      filename: path.join(home, 'duniter.log'),
-      timestamp: function () {
-        return moment().format();
-      }
-    });
+logger.addHomeLogs = (home, level) => {
+  if (loggerHomeAttached) {
+    logger.remove(winston.transports.File);
   }
+  loggerHomeAttached = true;
+  logger.add(winston.transports.File, {
+    level: level || 'info',
+    levels: customLevels.levels,
+    handleExceptions: false,
+    colorize: true,
+    tailable: true,
+    maxsize: 50 * 1024 * 1024, // 50 MB
+    maxFiles: 3,
+    //zippedArchive: true,
+    json: false,
+    filename: path.join(home, 'duniter.log'),
+    timestamp: function () {
+      return moment().format();
+    }
+  });
 };
 
 let muted = false;

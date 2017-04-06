@@ -327,6 +327,9 @@ module.exports = {
 
   ACCOUNT_MINIMUM_CURRENT_BASED_AMOUNT: 100,
 
+  // With `logs` command, the number of tail lines to show
+  NB_INITIAL_LINES_TO_SHOW: 100,
+
   // INDEXES
   M_INDEX: 'MINDEX',
   I_INDEX: 'IINDEX',

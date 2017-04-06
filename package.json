@@ -59,6 +59,7 @@
     "sha1": "1.1.1",
     "sqlite3": "3.1.4",
     "superagent": "3.5.2",
+    "tail": "^1.2.1",
     "underscore": "1.8.3",
     "unzip": "0.1.11",
     "unzip2": "0.2.5",

@@ -156,16 +156,18 @@ describe("Identities collision", function() {
       res.should.have.property('sigDate').be.a.Number;
       res.should.have.property('certifications').length(2);
       let certs = res.certifications;
-      certs[1].should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
-      certs[1].should.have.property('uid').equal('toc');
-      certs[1].should.have.property('isMember').equal(true);
-      certs[1].should.have.property('wasMember').equal(true);
-      certs[1].should.have.property('sigDate').be.a.Number;
-      certs[1].should.have.property('cert_time').property('block').be.a.Number;
-      certs[1].should.have.property('cert_time').property('medianTime').be.a.Number;
-      certs[1].should.have.property('written').property('number').equal(0);
-      certs[1].should.have.property('written').property('hash').not.equal('');
-      certs[1].should.have.property('signature').not.equal('');
+      // Look for the index
+      const index = certs[0].pubkey === 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo' ? 0 : 1;
+      certs[index].should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
+      certs[index].should.have.property('uid').equal('toc');
+      certs[index].should.have.property('isMember').equal(true);
+      certs[index].should.have.property('wasMember').equal(true);
+      certs[index].should.have.property('sigDate').be.a.Number;
+      certs[index].should.have.property('cert_time').property('block').be.a.Number;
+      certs[index].should.have.property('cert_time').property('medianTime').be.a.Number;
+      certs[index].should.have.property('written').property('number').equal(0);
+      certs[index].should.have.property('written').property('hash').not.equal('');
+      certs[index].should.have.property('signature').not.equal('');
     });
   });
 

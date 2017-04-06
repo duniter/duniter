@@ -7,9 +7,14 @@ const co     = require('co');
 const node   = require('./tools/node');
 const user   = require('./tools/user');
 const jspckg = require('../../package');
+const constants = require('../../app/lib/constants');
 
 const MEMORY_MODE = true;
 require('duniter-bma').duniter.methods.noLimit(); // Disables the HTTP limiter
+
+if (constants.MUTE_LOGS_DURING_UNIT_TESTS) {
+  require('../../app/lib/logger')().mute();
+}
 
 describe("Forwarding", function() {
 

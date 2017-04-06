@@ -11,6 +11,7 @@ module.exports = {
     cli: [{
       name: 'reset [config|data|peers|tx|stats|all]',
       desc: 'Reset configuration, data, peers, transactions or everything in the database',
+      preventIfRunning: true,
 
       onConfiguredExecute: (server, conf, program, params, wizardTasks) => co(function*() {
         const type = params[0];

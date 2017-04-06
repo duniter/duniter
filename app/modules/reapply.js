@@ -7,6 +7,7 @@ module.exports = {
     cli: [{
       name: 'reapply-to [number]',
       desc: 'Reapply reverted blocks until block #[number] is reached. EXPERIMENTAL',
+      preventIfRunning: true,
       onDatabaseExecute: (server, conf, program, params) => co(function*() {
         const number = params[0];
         const logger = server.logger;

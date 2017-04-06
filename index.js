@@ -222,6 +222,12 @@ function Stack(dependencies) {
         logger.error("Configuration could not be saved: " + e);
         throw Error(e);
       }
+
+      const daemon = server.getDaemon()
+      if (command.preventIfRunning && daemon.status()) {
+        throw 'Your node is currently running. Please stop it and relaunch your command.'
+      }
+
       // First possible class of commands: post-config
       if (command.onConfiguredExecute) {
         return yield command.onConfiguredExecute(server, conf, program, params, wizardTasks, that);

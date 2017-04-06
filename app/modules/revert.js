@@ -7,6 +7,8 @@ module.exports = {
     cli: [{
       name: 'revert [count]',
       desc: 'Revert (undo + remove) the top [count] blocks from the blockchain. EXPERIMENTAL',
+      preventIfRunning: true,
+
       onDatabaseExecute: (server, conf, program, params) => co(function*() {
         const count = params[0];
         const logger = server.logger;

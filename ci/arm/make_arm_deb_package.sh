@@ -17,12 +17,15 @@ mv node-${NVER}-linux-${ARCH} node
 rm node-${NVER}-linux-${ARCH}.tar.gz
 
 echo "npm install"
-node/bin/npm install
-node/bin/npm prune --production
+node/bin/npm install --production
 SRC=`pwd`
 echo $SRC
 
-# Install UI
+# Install modules
+node/bin/npm install duniter-bma --save --production
+node/bin/npm install duniter-crawler --save --production
+node/bin/npm install duniter-keypair --save --production
+node/bin/npm install duniter-prover --save --production
 node/bin/npm install duniter-ui --production --save
 rm -Rf node_modules/duniter-ui/node_modules
 

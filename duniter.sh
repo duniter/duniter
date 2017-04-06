@@ -3,7 +3,7 @@
 ##########################
 #    DUNITER EXECUTABLE
 #
-# Wraps bin/duniter.js that is called with Node.js
+# Wraps bin/duniter that is called with Node.js
 #
 
 DEB_PACKAGING=
@@ -35,38 +35,13 @@ duniter() {
 
 	VERSION=`$NODE -v`
 
-	if [[ $VERSION != v6* && $VERSION != v5* && $VERSION != v4* ]]; then
-	  echo "$NODE v5 or v4 is required";
+	if [[ $VERSION != v6* ]]; then
+	  echo "$NODE v6 is required";
 	else
 
-		case "$1" in
-
-		#---------------------------------
-		#  DUNITER DAEMON MANAGEMENT
-		#---------------------------------
-
-		reset|start|stop|status|restart|webstart|webrestart)
-		$NODE "$DUNITER_DIR/bin/daemon" $*
-		;;
-
-		direct_start)
-		$NODE "$DUNITER_DIR/bin/duniter" start ${@:2}
-		;;
-
-		logs)
-		LOGS_FILE=`$NODE "$DUNITER_DIR/bin/daemon" $*`
-		tail -f -n 500 "$LOGS_FILE"
-		;;
-
-		#---------------------------------
-		#  DUNITER CLI COMMANDS
-		#---------------------------------
-
-		*)
+	  # Calls duniter JS command
 	  $NODE "$DUNITER_DIR/bin/duniter" "$@"
-		;;
 
-		esac
 	fi;
 }
 

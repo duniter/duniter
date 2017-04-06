@@ -8,6 +8,7 @@ const Q           = require('q');
 const archiver    = require('archiver');
 const unzip       = require('unzip2');
 const fs          = require('fs');
+const daemonize   = require("daemonize2")
 const parsers     = require('./app/lib/streams/parsers');
 const constants   = require('./app/lib/constants');
 const fileDAL     = require('./app/lib/dal/fileDAL');
@@ -366,11 +367,72 @@ function Server (home, memoryOnly, overrideConf) {
     return yield that.singleWritePromise(obj);
   });
 
+  /*****************
+   * DAEMONIZATION
+   ****************/
+
+  /**
+   * Get the daemon handle. Eventually give arguments to launch a new daemon.
+   * @param overrideCommand The new command to launch.
+   * @param insteadOfCmd The current command to be replaced by `overrideCommand` command.
+   * @returns {*} The daemon handle.
+   */
+  this.getDaemon = function getDaemon(overrideCommand, insteadOfCmd) {
+    const mainModule = process.argv[1]
+    const argv = getCommand(overrideCommand, insteadOfCmd)
+    return daemonize.setup({
+      main: mainModule,
+      name: directory.INSTANCE_NAME,
+      pidfile: path.join(directory.INSTANCE_HOME, "app.pid"),
+      argv
+    });
+  }
+
+  /**
+   * Return current script full command arguments except the two firsts (which are node executable + js file).
+   * If the two optional `cmd` and `insteadOfCmd` parameters are given, replace `insteadOfCmd`'s value by `cmd` in
+   * the script arguments.
+   *
+   *   Ex:
+   *     * process.argv: ['/usr/bin/node', '/opt/duniter/sources/bin/duniter', 'restart', '--mdb', 'g1']
+   *
+   *     Then `getCommand('direct_start', 'restart') will return:
+   *
+   *     * ['direct_start', '--mdb', 'g1']
+   *
+   *     This new array is what will be given to a *fork* of current script, resulting in a new process with:
+   *
+   *     * process.argv: ['/usr/bin/node', '/opt/duniter/sources/bin/duniter', 'direct_start', '--mdb', 'g1']
+   *
+   * @param cmd
+   * @param insteadOfCmd
+   * @returns {*}
+   */
+  function getCommand(cmd, insteadOfCmd) {
+    if (insteadOfCmd) {
+      // Return the same command args, except the command `insteadOfCmd` which is replaced by `cmd`
+      return process.argv.slice(2).map((arg) => {
+        if (arg == insteadOfCmd) {
+          return cmd
+        } else {
+          return arg
+        }
+      })
+    } else {
+      // Return the exact same args (generally for stop/status commands)
+      return process.argv.slice(2)
+    }
+  }
+
   /**
    * Retrieve the last linesQuantity lines from the log file.
    * @param linesQuantity
    */
   this.getLastLogLines = (linesQuantity) => this.dal.getLogContent(linesQuantity);
+
+  /*****************
+   * MODULES PLUGS
+   ****************/
 
   /**
    * Default endpoint. To be overriden by a module to specify another endpoint value (for ex. BMA).

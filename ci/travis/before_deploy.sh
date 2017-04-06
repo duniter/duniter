@@ -18,6 +18,10 @@ if [[ ! -f before_deploy ]]; then
   # Clean test and UI packages
   npm prune --production
   npm install duniter-ui --save --production
+  npm install duniter-bma --save --production
+  npm install duniter-crawler --save --production
+  npm install duniter-keypair --save --production
+  npm install duniter-prover --save --production
   rm -Rf node_modules/duniter-ui/node_modules
 
   SRC=`pwd`

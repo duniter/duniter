@@ -49,6 +49,10 @@ after_test:
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ../..
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm prune --production
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm install duniter-ui --save --production
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm install duniter-bma --save --production
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm install duniter-crawler --save --production
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm install duniter-keypair --save --production
+  - if [%APPVEYOR_REPO_TAG_NAME%] neq [] npm install duniter-prover --save --production
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] rd /s /q %cd%\node_modules\duniter-ui\node_modules
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] cd ..
   - if [%APPVEYOR_REPO_TAG_NAME%] neq [] mkdir duniter_release

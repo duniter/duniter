@@ -20,7 +20,7 @@ module.exports = {
        * Tries to load a specific parameter `conf.loglevel`
        */
       onLoading: (conf, program) => co(function*(){
-        conf.loglevel = program.loglevel || conf.loglevel || 'trace'
+        conf.loglevel = program.loglevel || conf.loglevel || 'info'
       })
     },
 

@@ -96,6 +96,11 @@ install_from_git() {
   NODE=$DUNITER_DIR/node/bin/node
   NPM=$DUNITER_DIR/node/bin/npm
   $NODE $NPM install
+  $NODE $NPM install duniter-bma --save --production
+  $NODE $NPM install duniter-crawler --save --production
+  $NODE $NPM install duniter-keypair --save --production
+  $NODE $NPM install duniter-prover --save --production
+  $NODE $NPM install duniter-ui --production --save
   return
 }
 

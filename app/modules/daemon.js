@@ -14,6 +14,10 @@ module.exports = {
       { value: '--loglevel <level>', desc: 'Logs level, either [error,warning,info,debug,trace]. default to `info`.' }
     ],
 
+    service: {
+      process: (server) => ServerService(server)
+    },
+
     config: {
 
       /*****
@@ -102,6 +106,12 @@ module.exports = {
     }]
   }
 };
+
+function ServerService(server) {
+  server.startService = () => Promise.resolve();
+  server.stopService = () => Promise.resolve();
+  return server;
+}
 
 function startDaemon(daemon) {
   return new Promise((resolve, reject) => daemon.start((err) => {

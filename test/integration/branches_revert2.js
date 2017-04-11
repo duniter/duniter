@@ -13,6 +13,8 @@ const expectJSON     = httpTest.expectJSON;
 const expectHttpCode = httpTest.expectHttpCode;
 const expectAnswer = httpTest.expectAnswer;
 
+const now = 1490000000;
+
 const MEMORY_MODE = true;
 const commonConf = {
   ipv4: '127.0.0.1',
@@ -31,7 +33,8 @@ const s1 = duniter(
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
   },
-  rootoffset: 10,
+  udTime0: now + 1,
+  medianTimeBlocks: 1,
   sigQty: 1, dt: 1, ud0: 120
 }, commonConf));
 
@@ -39,8 +42,6 @@ const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', s
 const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
 
 describe("Revert two blocks", function() {
-
-  const now = Math.floor(Date.now() / 1000);
 
   before(function() {
 
@@ -53,10 +54,10 @@ describe("Revert two blocks", function() {
       yield cat.join();
       yield toc.join();
       yield commit(s1)({ time: now });
-      yield commit(s1)({ time: now + 10 });
-      yield commit(s1)({ time: now + 10 });
+      yield commit(s1)({ time: now + 1 });
+      yield commit(s1)({ time: now + 1 });
       yield cat.sendP(51, toc);
-      yield commit(s1)({ time: now + 10 });
+      yield commit(s1)({ time: now + 1 });
       yield s1.revert();
     });
   });
@@ -69,11 +70,15 @@ describe("Revert two blocks", function() {
       });
     });
 
-    it('/block/1 should exist', function() {
+    it('/block/2 should exist', function() {
       return expectJSON(rp('http://127.0.0.1:7712/blockchain/block/2', { json: true }), {
         number: 2,
         dividend: 120
       });
+    });
+
+    it('/block/3 should NOT exist', function() {
+      return expectHttpCode(404, rp('http://127.0.0.1:7712/blockchain/block/3', { json: true }));
     });
 
     it('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd should have only UD', function() {

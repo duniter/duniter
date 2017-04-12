@@ -20,14 +20,19 @@ Paramétrer la Freebox
 -------------
 **Ouvrir les ports de la Freebox**
 
+Il s'agit d'utiliser la fonction routeur de la Freebox et d'ouvrir les ports suivants en particulier :
+![Freebox v5 ports ouverts](./images/freebox_v5_redirections_ports.PNG)
+
 
 **Fixer l'adresse ip du Raspberry**
+
 Cette étape consiste à affecter une adresse ip fixe au RPi. 
 Comme le mien était neuf, j'ai branché dessus un écran, un clavier et une souris pour installer le système d'exploitation [Raspbian Jessie Lite](https://www.raspberrypi.org/downloads/raspbian/) grâce à [NOOBS](https://www.raspberrypi.org/downloads/noobs/).
 Une fois le système d'exploitation installé, j'ai lancé la commande suivante dans un terminal pour déterminer les adresses ip et mac du RPi : 
 > ifconfig
 
-Dans l'interface web de la Freebox, il faut ensuite se rendre dans la rubrique 
+Dans l'interface web de la Freebox, il faut ensuite se rendre dans la rubrique "Baux DHCP permanents" et ajouter les informations relatives au RPi.
+![Freebox v5 - Baux DHCP permanents](./images/freebox_v5_baux_dhcp_perm.PNG)
 
 
 ----------

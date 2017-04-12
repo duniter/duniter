@@ -53,11 +53,12 @@ Après le paramétrage de la Freebox, j'ai :
  3. copié une image de Yunohost dessus depuis un autre ordinateur ;
  4. introduit de nouveau la carte micro-SD dans le RPi pour installer Yunohost, en suivant [ces explications](https://yunohost.org/#/install_on_raspberry_fr)
 
-Cette façon de procéder n'était peut-être pas la plus optimale. 
+Cette façon de procéder n'était peut-être pas la plus optimale : au lieu d'utiliser Raspbian Jessie Lite temporairement, j'aurais pu installer Yunohost directement.
 
 
 Configurer la zone DNS du/des (sous)nom(s) de domaine
 -------------------
+
 
 
 

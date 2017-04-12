@@ -12,8 +12,9 @@ Il s'appuie et s'inspire de deux autres tutoriels qu'il est vivement conseillé 
 Les principales étapes sont les suivantes :
  1. Paramétrer la Freebox
  2. Installer Yunohost
- 3. Configurer la zone DNS du/des (sous)nom(s) de domaine
- 4. Générer un certificat
+ 3. Configurer la zone DNS du/des (sous)nom(s) de domaine(s)
+ 4. Installer l'application Duniter
+ 5. Générer un certificat
 
 ----------
 
@@ -51,16 +52,23 @@ Après le paramétrage de la Freebox, j'ai :
  1. éteint le RPi ;
  2. retiré la carte micro-SD pour la formater ;
  3. copié une image de Yunohost dessus depuis un autre ordinateur ;
- 4. introduit de nouveau la carte micro-SD dans le RPi pour installer Yunohost, en suivant [ces explications](https://yunohost.org/#/install_on_raspberry_fr)
+ 4. introduit de nouveau la carte micro-SD dans le RPi pour installer Yunohost, en suivant [ces explications](https://yunohost.org/#/install_on_raspberry_fr).
 
-Cette façon de procéder n'était peut-être pas la plus optimale : au lieu d'utiliser Raspbian Jessie Lite temporairement, j'aurais pu installer Yunohost directement.
+Cette façon de procéder n'était peut-être pas la plus optimale : au lieu d'utiliser Raspbian Jessie Lite temporairement, j'aurais pu d'emblée installer Yunohost.
 
 
-Configurer la zone DNS du/des (sous)nom(s) de domaine
+Configurer la zone DNS du/des (sous)nom(s) de domaine(s)
 -------------------
 
+Pour ma part, j'ai acheté un nom de domaine, auprès de 1and1 en l'occurrence. J'ai opté pour l'organisation suivante :
+ 1. mondomaine.fr ;
+ 2. duniter.mondomaine.fr (sous-domaine dédié à Duniter)
+
+Contrairement à la Livebox, la Freebox v5 propose une adresse ipv4 fixe, ce qui facilite normalement l'installation.
 
 
+Installer l'application Duniter
+-------------------
 
 Générer un certificat
 -------------------

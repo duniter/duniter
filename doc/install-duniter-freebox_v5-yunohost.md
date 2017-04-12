@@ -4,7 +4,7 @@ Installer Duniter sur Raspberry Pi 3 derrière une Freebox v5 avec Yunohost
 
 Ce tutoriel présente une manière de procéder pour installer Duniter sur un Raspberry Pi 3 (RPi) derrière une Freebox v5 avec Yunohost (v2.5.6).
 
-Il s'appuie et s'inspire de deux autres tutoriels qu'il est conseillé de lire au préalable :
+Il s'appuie et s'inspire de deux autres tutoriels qu'il est vivement conseillé de lire au préalable :
 
  - [Duniter sur un VPN](https://forum.duniter.org/t/duniter-sur-un-vpn/2280/13)
  - [Duniter sur Yunohost derrière une box privatrice (type livebox)](https://forum.duniter.org/t/duniter-sur-yunohost-derriere-une-box-privatrice-type-livebox/2169)

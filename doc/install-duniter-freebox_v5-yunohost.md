@@ -13,14 +13,19 @@ Les principales étapes sont les suivantes :
  1. Paramétrer la Freebox
  2. Installer Yunohost
  3. Configurer la zone DNS du/des (sous)nom(s) de domaine
+ 4. Générer un certificat
 
 ----------
 
 Paramétrer la Freebox
 -------------
+
+La fonction routeur de la Freebox v5 est accessible depuis l'interface web de Free :
+![Freebox v5 routeur](./images/freebox_v5_routeur.png)
+
 **Ouvrir les ports de la Freebox**
 
-Il s'agit d'utiliser la fonction routeur de la Freebox et d'ouvrir les ports suivants en particulier :
+ Il s'agit d'ouvrir les ports suivants :
 ![Freebox v5 ports ouverts](./images/freebox_v5_redirections_ports.PNG)
 
 
@@ -39,5 +44,23 @@ Dans l'interface web de la Freebox, il faut ensuite se rendre dans la rubrique "
 
 
 Installer Yunohost
+-------------------
+Yunohost est un système d'exploitation orienté serveur. Il permet de faire de l'auto-hébergement de services Internet. Il est basé et reste totalement compatible avec Debian GNU/Linux.
+
+Après le paramétrage de la Freebox, j'ai :
+ 1. éteint le RPi ;
+ 2. retiré la carte micro-SD pour la formater ;
+ 3. copié une image de Yunohost dessus depuis un autre ordinateur ;
+ 4. introduit de nouveau la carte micro-SD dans le RPi pour installer Yunohost, en suivant [ces explications](https://yunohost.org/#/install_on_raspberry_fr)
+
+Cette façon de procéder n'était peut-être pas la plus optimale. 
+
+
+Configurer la zone DNS du/des (sous)nom(s) de domaine
+-------------------
+
+
+
+Générer un certificat
 -------------------
 

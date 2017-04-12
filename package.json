@@ -82,8 +82,7 @@
     "sha1": "",
     "should": "",
     "supertest": "",
-    "tmp": "0.0.29",
-    "ws": "1.1.1"
+    "tmp": "0.0.29"
   },
   "bin": {
     "duniter": "./bin/duniter"

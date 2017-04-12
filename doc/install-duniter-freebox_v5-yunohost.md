@@ -40,6 +40,8 @@ Une fois le système d'exploitation installé, j'ai lancé la commande suivante 
 Dans l'interface web de la Freebox, il faut ensuite se rendre dans la rubrique "Baux DHCP permanents" et ajouter les informations relatives au RPi.
 ![Freebox v5 - Baux DHCP permanents](./images/freebox_v5_baux_dhcp_perm.PNG)
 
+Pour pouvoir enregistrer mes modifications, j'ai du ajouter une ligne vide (visible sur les captures d'écran).
+
 
 ----------
 
@@ -65,6 +67,9 @@ Pour ma part, j'ai acheté un nom de domaine, auprès de 1and1 en l'occurrence. 
  2. duniter.mondomaine.fr (sous-domaine dédié à Duniter)
 
 Contrairement à la Livebox, la Freebox v5 propose une adresse ipv4 fixe, ce qui facilite normalement l'installation.
+
+J'ai paramétré la résolution du nom de domaine dans l'interface de 1and1 comme suit :
+
 
 
 Installer l'application Duniter

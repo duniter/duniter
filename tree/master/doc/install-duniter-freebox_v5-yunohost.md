@@ -20,7 +20,8 @@ Paramétrer la Freebox
 -------------
 **Ouvrir les ports de la Freebox**
 
-Il s'agit d'utiliser la fonction routeur de la Freebox. 
+Il s'agit d'utiliser la fonction routeur de la Freebox et d'ouvrir les ports suivants en particulier :
+![Freebox v5 ports ouverts](./images/freebox_v5_redirections_ports.PNG)
 
 
 **Fixer l'adresse ip du Raspberry**

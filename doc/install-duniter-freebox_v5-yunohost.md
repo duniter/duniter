@@ -76,7 +76,7 @@ J'ai ensuite créé un alias pour le sous-domaine
 ![Gestion domaine1](./images/gestion_sous_domaine.PNG)
 ![Gestion domaine2](./images/gestion_sous_domaine_2.PNG)
 
-Après cette étape, vous pouvez désormais accéder au RPi via ssh en spécifiant votre nom de domaine à la place de l'ip fixe externe comme précédemment.
+Après cette étape, vous pouvez désormais accéder au RPi via ssh en spécifiant votre nom de domaine à la place de l'ip fixe externe.
 
 
 Installer l'application Duniter

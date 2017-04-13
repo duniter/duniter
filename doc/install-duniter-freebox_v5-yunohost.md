@@ -57,7 +57,7 @@ Après le paramétrage de la Freebox, j'ai :
 
 Cette façon de procéder n'était peut-être pas la plus optimale : au lieu d'utiliser Raspbian Jessie Lite temporairement, j'aurais pu d'emblée installer Yunohost.
 
-À ce stade, vous devoir pouvoir accéder au RPi en ssh depuis un autre ordinateur.
+À ce stade, vous devoir pouvoir accéder au RPi en ssh depuis un autre ordinateur, même extérieur à votre réseau local, en utilisant l'ip fixe externe.
 
 
 Configurer la zone DNS du/des (sous)nom(s) de domaine(s)
@@ -67,14 +67,25 @@ Pour ma part, j'ai acheté un nom de domaine (auprès de 1and1 en l'occurrence m
  1. mondomaine.fr ;
  2. duniter.mondomaine.fr (sous-domaine dédié à Duniter)
 
-Contrairement à la Livebox, la Freebox v5 propose une adresse ipv4 fixe, ce qui facilite normalement l'installation.
+Contrairement à la Livebox, la Freebox v5 propose une adresse ipv4 fixe, ce qui facilite normalement l'installation. Cette adresse ip externe est consultable depuis l'interface Free (voir 1ère capture d'écran).
 
-J'ai paramétré la résolution du nom de domaine dans l'interface de 1and1 comme suit :
+Dans mon cas, j'ai paramétré la résolution du nom de domaine dans l'interface de 1and1 comme suit :
+![Gestion domaine](./images/gestion_domaine.PNG)
 
+J'ai ensuite créé un alias pour le sous-domaine
+![Gestion domaine1](./images/gestion_sous_domaine.PNG)
+![Gestion domaine2](./images/gestion_sous_domaine_2.PNG)
+
+Après cette étape, vous pouvez désormais accéder au RPi via ssh en spécifiant votre nom de domaine à la place de l'ip fixe externe comme précédemment.
 
 
 Installer l'application Duniter
 -------------------
+
+Duniter peut désormais être installé soit en ligne de commande soit par l'interface web de Yunohost.
+
+
+
 
 Générer un certificat
 -------------------

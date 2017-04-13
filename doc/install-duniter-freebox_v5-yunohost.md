@@ -29,6 +29,7 @@ La fonction routeur de la Freebox v5 est accessible depuis l'interface web de Fr
  Il s'agit d'ouvrir les ports suivants :
 ![Freebox v5 ports ouverts](./images/freebox_v5_redirections_ports.PNG)
 
+Pour pouvoir enregistrer mes modifications, j'ai du ajouter une ligne vide (visible sur la capture d'écran ci-dessus).
 
 **Fixer l'adresse ip du Raspberry**
 
@@ -39,8 +40,6 @@ Une fois le système d'exploitation installé, j'ai lancé la commande suivante 
 
 Dans l'interface web de la Freebox, il faut ensuite se rendre dans la rubrique "Baux DHCP permanents" et ajouter les informations relatives au RPi.
 ![Freebox v5 - Baux DHCP permanents](./images/freebox_v5_baux_dhcp_perm.PNG)
-
-Pour pouvoir enregistrer mes modifications, j'ai du ajouter une ligne vide (visible sur les captures d'écran).
 
 
 ----------
@@ -58,11 +57,13 @@ Après le paramétrage de la Freebox, j'ai :
 
 Cette façon de procéder n'était peut-être pas la plus optimale : au lieu d'utiliser Raspbian Jessie Lite temporairement, j'aurais pu d'emblée installer Yunohost.
 
+À ce stade, vous devoir pouvoir accéder au RPi en ssh depuis un autre ordinateur.
+
 
 Configurer la zone DNS du/des (sous)nom(s) de domaine(s)
 -------------------
 
-Pour ma part, j'ai acheté un nom de domaine, auprès de 1and1 en l'occurrence. J'ai opté pour l'organisation suivante :
+Pour ma part, j'ai acheté un nom de domaine (auprès de 1and1 en l'occurrence mais d'autres prestataires comme OVH proposent le même service). J'ai opté pour l'organisation suivante :
  1. mondomaine.fr ;
  2. duniter.mondomaine.fr (sous-domaine dédié à Duniter)
 

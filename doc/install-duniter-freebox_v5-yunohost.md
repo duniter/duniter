@@ -38,7 +38,7 @@ Comme le mien était neuf, j'ai branché dessus un écran, un clavier et une sou
 Une fois le système d'exploitation installé, j'ai lancé la commande suivante dans un terminal pour déterminer les adresses ip et mac du RPi : 
 > ifconfig
 
-Dans l'interface web de la Freebox, il faut ensuite se rendre dans la rubrique "Baux DHCP permanents" et ajouter les informations relatives au RPi.
+Dans l'interface web de la Freebox, il faut ensuite se rendre dans la rubrique "Baux DHCP permanents" et ajouter les informations relatives au RPi fournies par la commande précédente.
 ![Freebox v5 - Baux DHCP permanents](./images/freebox_v5_baux_dhcp_perm.PNG)
 
 
@@ -84,7 +84,7 @@ Installer l'application Duniter
 
 Duniter peut désormais être installé soit en ligne de commande soit par l'interface web de Yunohost.
 
-Pour cette partie, je renvoie à la section correspondante dans ce tutoriel : [Duniter à l'aide de Yunohost](https://forum.duniter.org/t/installation-d-un-noeud-duniter-a-l-aide-de-yunohost/1420)
+Pour cette partie, je renvoie à la section correspondante dans ce tutoriel : [Installer Duniter à l'aide de Yunohost](https://forum.duniter.org/t/installation-d-un-noeud-duniter-a-l-aide-de-yunohost/1420)
 
 L'installation peut durer quelques dizaines de minutes.
 
@@ -96,5 +96,5 @@ Une fois le noeud installé, j'ai du générer un certificat ssl pour accéder �
 
 ![Generer certificat ssl](./images/yunohost_certificat_ssl.PNG)
 
-
+L'installation est terminée ! Vous pouvez accéder à l'interface web de Duniter depuis https://duniter.mondomaine.fr/webui.
 

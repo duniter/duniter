@@ -84,9 +84,9 @@ Installer l'application Duniter
 
 Duniter peut désormais être installé soit en ligne de commande soit par l'interface web de Yunohost.
 
-Pour cette partie, je renvoie à la section correspondante dans ce tutoriel : [Installer Duniter à l'aide de Yunohost](https://forum.duniter.org/t/installation-d-un-noeud-duniter-a-l-aide-de-yunohost/1420)
+Pour cette partie, je renvoie à la section correspondante dans ce tutoriel : [Installer Duniter à l'aide de Yunohost](https://forum.duniter.org/t/installation-d-un-noeud-duniter-a-l-aide-de-yunohost/1420).
 
-L'installation peut durer quelques dizaines de minutes.
+Ne vous inquiétez pas, l'installation peut durer quelques dizaines de minutes.
 
 
 Générer un certificat ssl

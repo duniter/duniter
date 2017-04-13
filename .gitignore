@@ -15,3 +15,8 @@ gui/nw
 
 # Yarn
 yarn.lock
+
+# Vagrant
+.vagrant/
+vagrant/*.log
+vagrant/duniter

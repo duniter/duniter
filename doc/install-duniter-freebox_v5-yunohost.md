@@ -6,7 +6,7 @@ Ce tutoriel présente une manière de procéder pour installer Duniter sur un Ra
 
 Il s'appuie et s'inspire de deux autres tutoriels qu'il est vivement conseillé de lire au préalable :
 
- - [Duniter sur un VPN](https://forum.duniter.org/t/duniter-sur-un-vpn/2280/13)
+ - [Installer Duniter à l'aide de Yunohost](https://forum.duniter.org/t/installation-d-un-noeud-duniter-a-l-aide-de-yunohost/1420)
  - [Duniter sur Yunohost derrière une box privatrice (type livebox)](https://forum.duniter.org/t/duniter-sur-yunohost-derriere-une-box-privatrice-type-livebox/2169)
 
 Les principales étapes sont les suivantes :
@@ -14,7 +14,7 @@ Les principales étapes sont les suivantes :
  2. Installer Yunohost
  3. Configurer la zone DNS du/des (sous)nom(s) de domaine(s)
  4. Installer l'application Duniter
- 5. Générer un certificat
+ 5. Générer un certificat ssl
 
 ----------
 
@@ -84,9 +84,17 @@ Installer l'application Duniter
 
 Duniter peut désormais être installé soit en ligne de commande soit par l'interface web de Yunohost.
 
+Pour cette partie, je renvoie à la section correspondante dans ce tutoriel : [Duniter à l'aide de Yunohost](https://forum.duniter.org/t/installation-d-un-noeud-duniter-a-l-aide-de-yunohost/1420)
+
+L'installation peut durer quelques dizaines de minutes.
 
 
-
-Générer un certificat
+Générer un certificat ssl
 -------------------
+
+Une fois le noeud installé, j'ai du générer un certificat ssl pour accéder à l'interface web de Duniter depuis un navigateur.
+
+![Generer certificat ssl](./images/yunohost_certificat_ssl.PNG)
+
+
 

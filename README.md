@@ -48,6 +48,7 @@ If you wish to participate/debate on Duniter, you can:
 * visit [Duniter Forum](https://forum.duniter.org)
 * join XMPP chatroom [duniter@muc.duniter.org](https://chat.duniter.org)
 * contact us directly at [contact@duniter.org](mailto:contact@duniter.org)
+* subscribe to [a mailing list for Duniter node's administrators](https://listes.aquilenet.fr/sympa/subscribe/duniter-node-admins)
 
 ### Developement
 Duniter is using modules on different git repositories:

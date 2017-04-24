@@ -10,7 +10,20 @@ description: |
 grade: devel # must be 'stable' to release into candidate/stable channels
 confinement: strict
 
+apps:
+  duniter:
+    command: duniter
+    plugs: [network, network-bind]
+
 parts:
   duniter:
     source: .
     plugin: nodejs
+    build-packages: [g++, make, python]
+    node-engine: '6.10.2'
+    node-packages:
+      - duniter-bma
+      - duniter-crawler
+      - duniter-keypair
+      - duniter-prover
+      - duniter-ui

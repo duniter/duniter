@@ -1,0 +1,16 @@
+name: duniter
+version: master
+summary: Crypto-currency software using Node.js for creating Libre Currency
+description: |
+  Duniter (previously uCoin) is a libre software allowing to create a new kind
+  of P2P crypto-currencies based on individuals and Universal Dividend.
+
+  Inspired by Bitcoin and OpenUDC projects.
+
+grade: devel # must be 'stable' to release into candidate/stable channels
+confinement: strict
+
+parts:
+  duniter:
+    source: .
+    plugin: nodejs

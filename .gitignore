@@ -13,5 +13,13 @@ gui/nw
 *.swp
 *.swo
 
-# Yarn
-yarn.lock
+# Vagrant
+.vagrant/
+vagrant/*.log
+vagrant/duniter
+
+# Releases
+*.deb
+*.tar.gz
+*.log
+*.exe

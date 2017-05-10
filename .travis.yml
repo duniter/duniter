@@ -24,22 +24,7 @@ after_success:
   - cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
   - rm -Rf ./coverage
 
-before_deploy:
-  # Download & embed Nodejs binary
-  - ci/travis/before_deploy.sh
 deploy:
-  - provider: releases
-#    prerelease: true
-    skip_cleanup: true
-    api-key:
-      secure: h+GgYhh8/I/l5EWdI1+bDQYtN57jvDf0xhiwcxlfm/AvaJWOZa+q81HsXdHqtwgmsCoRklKtOqTM/nqgSOcWPXsAditRjEXOui2FjZiJCosDjDPMnN6HKzw6XVLtSOx7CeCX/xFmoNTIdsAuC+HUfDWCUFgrsMj9F0V9J3U1nDs=
-    file:
-    - /home/travis/build/duniter-desktop-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
-    - /home/travis/build/duniter-desktop-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
-    - /home/travis/build/duniter-server-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
-    on:
-      repo: duniter/duniter
-      tags: true
   - provider: npm
     email: cem.moreau@gmail.com
     skip_cleanup: true

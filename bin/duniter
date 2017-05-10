@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 "use strict";
 
+const heapdump = require('heapdump'); // Allow to take heap snapshots on will with "kill -USR2 <pid>" --> generates a heapdump-<id>.heapsnapshot file from where duniter was launched
 const co = require('co');
 const duniter = require('../index');
 const stack = duniter.statics.autoStack();

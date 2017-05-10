@@ -44,6 +44,7 @@
     "daemonize2": "0.4.2",
     "duniter-common": "^1.0.0",
     "event-stream": "3.3.4",
+    "heapdump": "^0.3.9",
     "inquirer": "3.0.6",
     "jison": "0.4.17",
     "merkle": "0.5.1",
@@ -82,8 +83,7 @@
     "sha1": "",
     "should": "",
     "supertest": "",
-    "tmp": "0.0.29",
-    "ws": "1.1.1"
+    "tmp": "0.0.29"
   },
   "bin": {
     "duniter": "./bin/duniter"

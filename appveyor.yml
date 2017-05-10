@@ -13,3 +13,5 @@ install:
   - npm install -g npm
   - npm install -g nw-gyp node-pre-gyp
   - npm install
+
+build: off

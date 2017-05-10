@@ -710,9 +710,9 @@ doctrine@^1.2.2:
     esutils "^2.0.2"
     isarray "^1.0.0"
 
-duniter-bma@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/duniter-bma/-/duniter-bma-1.1.0.tgz#48ac17d150043dabfc0a0be069c5a45528f938aa"
+duniter-bma@^1.1.0, duniter-bma@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/duniter-bma/-/duniter-bma-1.1.2.tgz#179e24e70d7dcfcedebdc26a211e42ce1714bf4c"
   dependencies:
     async "2.2.0"
     body-parser "1.17.1"
@@ -734,17 +734,17 @@ duniter-bma@^1.1.0:
     ws "1.1.1"
 
 duniter-common@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/duniter-common/-/duniter-common-1.0.0.tgz#d11b8cb9296e2d29943f2969b1c9291fec8d4d3d"
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/duniter-common/-/duniter-common-1.0.1.tgz#a768503c1ee2ceca89c5e5314692d79f64aeb949"
   dependencies:
     co "4.6.0"
     naclb "1.3.7"
     node-pre-gyp "0.6.32"
     tweetnacl "0.14.3"
 
-duniter-crawler@^1.1.0:
-  version "1.1.2"
-  resolved "https://registry.yarnpkg.com/duniter-crawler/-/duniter-crawler-1.1.2.tgz#ca57504355f53333c4f9ae27069af825c0ef0f6e"
+duniter-crawler@^1.1.0, duniter-crawler@^1.1.3:
+  version "1.1.3"
+  resolved "https://registry.yarnpkg.com/duniter-crawler/-/duniter-crawler-1.1.3.tgz#a826268a70b02b4aadd74002bc05dfdb93b6d91f"
   dependencies:
     async "2.2.0"
     co "4.6.0"
@@ -757,9 +757,9 @@ duniter-crawler@^1.1.0:
     request-promise "4.2.0"
     underscore "1.8.3"
 
-duniter-keypair@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/duniter-keypair/-/duniter-keypair-1.1.0.tgz#e4f359a54d40f1f5b615784bf1e6b14ca144b252"
+duniter-keypair@^1.1.3:
+  version "1.1.3"
+  resolved "https://registry.yarnpkg.com/duniter-keypair/-/duniter-keypair-1.1.3.tgz#2ed198e6097ad2ce5c929760cfe568a64137f90e"
   dependencies:
     bs58 "4.0.0"
     co "4.6.0"
@@ -771,9 +771,9 @@ duniter-keypair@^1.1.0:
     tweetnacl "0.14.5"
     tweetnacl-util "0.15.0"
 
-duniter-prover@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/duniter-prover/-/duniter-prover-1.1.0.tgz#0dbde8ea7e6458cca697b9e7e98839d460e8be41"
+duniter-prover@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/duniter-prover/-/duniter-prover-1.1.2.tgz#9b445ea074099b8d819c213ea4b42db035541a1e"
   dependencies:
     async "2.2.0"
     co "4.6.0"

@@ -6,8 +6,7 @@ export NVM_DIR="$HOME/.nvm"
 
 # Prepare
 NVER=`node -v`
-DUNITER_VER=1.2.2
-DUNITER_DEB_VER=" $DUNITER_VER"
+DUNITER_TAG=
 ADDON_VERSION=48
 NW_VERSION=0.17.6
 NW_RELEASE="v${NW_VERSION}"
@@ -22,6 +21,14 @@ RELEASES="$ROOT/releases"
 mkdir -p "$DOWNLOADS"
 
 # -----------
+# Clean sources + releases
+# -----------
+rm -rf "$DOWNLOADS/duniter"
+rm -rf "$RELEASES"
+rm -rf /vagrant/*.deb
+rm -rf /vagrant/*.tar.gz
+
+# -----------
 # Downloads
 # -----------
 
@@ -30,9 +37,14 @@ cd "$DOWNLOADS"
 if [ ! -d "$DOWNLOADS/duniter" ]; then
   git clone https://github.com/duniter/duniter.git
   cd duniter
-  git checkout dev # TODO: remove dev
+  COMMIT=`git rev-list --tags --max-count=1`
+  DUNITER_TAG=`echo $(git describe --tags $COMMIT) | sed 's/^v//'`
+  git checkout "v${DUNITER_TAG}"
   cd ..
 fi
+
+DUNITER_DEB_VER=" $DUNITER_TAG"
+DUNITER_TAG="v$DUNITER_TAG"
 
 if [ ! -f "$DOWNLOADS/$NW_GZ" ]; then
   wget https://dl.nwjs.io/${NW_RELEASE}/${NW_GZ}
@@ -136,7 +148,7 @@ cp -R "$RELEASES/desktop_release" "$RELEASES/desktop_release_tgz"
 #rm -rf node_modules/naclb/lib/binding/Release/node-webkit-$NW_RELEASE-linux-x64
 #rm -rf node_modules/scryptb/lib/binding/Release/node-webkit-$NW_RELEASE-linux-x64
 cd "$RELEASES/desktop_release_tgz"
-tar czf /vagrant/duniter-desktop-${DUNITER_VER}-linux-x64.tar.gz * --exclude ".git" --exclude "coverage" --exclude "test"
+tar czf /vagrant/duniter-desktop-${DUNITER_TAG}-linux-x64.tar.gz * --exclude ".git" --exclude "coverage" --exclude "test"
 
 # -------------------------------------------------
 # Build Desktop version .deb
@@ -164,7 +176,7 @@ zip -qr ${RELEASES}/duniter-x64/opt/duniter/nw.nwb *
 sed -i "s/Package: .*/Package: duniter-desktop/g" ${RELEASES}/duniter-x64/DEBIAN/control
 cd ${RELEASES}/
 fakeroot dpkg-deb --build duniter-x64
-mv duniter-x64.deb /vagrant/duniter-desktop-${DUNITER_VER}-linux-x64.deb
+mv duniter-x64.deb /vagrant/duniter-desktop-${DUNITER_TAG}-linux-x64.deb
 
 # -------------------------------------------------
 # Build Server version (Node.js is embedded, not Nw.js)
@@ -184,4 +196,4 @@ cd ${RELEASES}
 sed -i "s/Package: .*/Package: duniter/g" ${RELEASES}/duniter-server-x64/DEBIAN/control
 rm -rf ${RELEASES}/duniter-server-x64/usr
 fakeroot dpkg-deb --build duniter-server-x64
-mv duniter-server-x64.deb /vagrant/duniter-server-${DUNITER_VER}-linux-x64.deb
+mv duniter-server-x64.deb /vagrant/duniter-server-${DUNITER_TAG}-linux-x64.deb

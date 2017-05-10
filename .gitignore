@@ -20,3 +20,9 @@ yarn.lock
 .vagrant/
 vagrant/*.log
 vagrant/duniter
+
+# Releases
+*.deb
+*.tar.gz
+*.log
+*.exe

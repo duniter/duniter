@@ -1,13 +1,5 @@
 #!/bin/bash
 
-### Control that the script is run on `dev` branch
-branch=`git rev-parse --abbrev-ref HEAD`
-if [[ ! "$branch" = "dev" ]];
-then
-  echo ">> This script must be run under \`dev\` branch"
-  exit
-fi
-
 ### Releasing
 current=`grep -P "version\": \"\d+.\d+.\d+(\w*)" package.json | grep -oP "\d+.\d+.\d+(\w*)"`
 echo "Current version: $current"

@@ -25,7 +25,7 @@ REMOTE_TAG=`git ls-remote --tags origin | grep -Fo "$TAG"`
 
 if [[ -z $REMOTE_TAG ]]; then
   echo "The '$TAG' tag does not exist on 'origin' repository. Use command ./release/new_version.sh to create a new version and use 'git push origin --tags' to share the tag."
-#  exit 2
+  exit 2
 fi
 
 echo "Remote tag: $REMOTE_TAG"

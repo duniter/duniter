@@ -90,6 +90,7 @@ function Server (home, memoryOnly, overrideConf) {
     logger.debug('Plugging file system...');
     const params = yield paramsP;
     that.dal = fileDAL(params);
+    yield that.onPluggedFSHook()
   });
 
   this.unplugFileSystem = () => co(function *() {
@@ -453,6 +454,11 @@ function Server (home, memoryOnly, overrideConf) {
    * Default WoT transforming method for certs => links. To be overriden by a module.
    */
   this.generatorNewCertsToLinks = () => Promise.resolve({})
+
+  /*
+   * Default hook on file system plugging. To be overriden by module system.
+   */
+  this.onPluggedFSHook = () => Promise.resolve({})
 }
 
 util.inherits(Server, stream.Duplex);

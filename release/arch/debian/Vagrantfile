@@ -12,7 +12,7 @@ Vagrant.configure("2") do |config|
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://atlas.hashicorp.com/search.
-  config.vm.box = "https://s3.eu-central-1.amazonaws.com/duniter/vagrant/duniter_ubuntu.box"
+  config.vm.box = "https://s3.eu-central-1.amazonaws.com/duniter/vagrant/duniter_trusty64.box"
   config.vm.provision :shell, path: "bootstrap.sh"
 
   # Disable automatic box update checking. If you disable this, then

@@ -188,24 +188,26 @@ function Stack(dependencies) {
 
     // Initialize server (db connection, ...)
     try {
+      server.onPluggedFSHook = () => co(function*() {
+
+        // Register the configuration hook for loading phase (overrides the loaded data)
+        server.dal.loadConfHook = (conf) => co(function*() {
+          // Loading injection
+          for (const callback of configLoadingCallbacks) {
+            yield callback(conf, program, logger, server.dal.confDAL);
+          }
+        });
+
+        // Register the configuration hook for saving phase (overrides the saved data)
+        server.dal.saveConfHook = (conf) => co(function*() {
+          const clonedConf = _.clone(conf);
+          for (const callback of configBeforeSaveCallbacks) {
+            yield callback(clonedConf, program, logger, server.dal.confDAL);
+          }
+          return clonedConf;
+        });
+      })
       yield server.plugFileSystem();
-
-      // Register the configuration hook for loading phase (overrides the loaded data)
-      server.dal.loadConfHook = (conf) => co(function*() {
-        // Loading injection
-        for (const callback of configLoadingCallbacks) {
-          yield callback(conf, program, logger, server.dal.confDAL);
-        }
-      });
-
-      // Register the configuration hook for saving phase (overrides the saved data)
-      server.dal.saveConfHook = (conf) => co(function*() {
-        const clonedConf = _.clone(conf);
-        for (const callback of configBeforeSaveCallbacks) {
-          yield callback(clonedConf, program, logger, server.dal.confDAL);
-        }
-        return clonedConf;
-      });
 
       const conf = yield server.loadConf();
 

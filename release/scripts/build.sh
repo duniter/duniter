@@ -7,7 +7,7 @@ make)
   case "$2" in
   arm)
     cd release/arch/arm
-    ./build-deb.sh
+    ./build-arm.sh
     if [ ! $? -eq 0 ]; then
       echo ">> Something went wrong. Stopping build."
     else

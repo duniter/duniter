@@ -126,10 +126,16 @@ cd "$RELEASES/desktop_/node_modules/sqlite3"
 node-pre-gyp --runtime=node-webkit --target=$NW_VERSION configure
 node-pre-gyp --runtime=node-webkit --target=$NW_VERSION build
 cp lib/binding/node-webkit-$NW_RELEASE-linux-x64/node_sqlite3.node lib/binding/node-v$ADDON_VERSION-linux-x64/node_sqlite3.node
+cd "$RELEASES/desktop_/node_modules/heapdump"
+nw-gyp --target=$NW_VERSION configure
+nw-gyp --target=$NW_VERSION build
 
 # Unused binaries
 cd "$RELEASES/desktop_/"
 rm -rf node_modules/sqlite3/build
+#rm -rf node_modules/naclb/build
+#rm -rf node_modules/wotb/build
+#rm -rf node_modules/scryptb/build
 
 ## Install Nw.js
 mkdir -p "$RELEASES/desktop_release"
@@ -155,7 +161,7 @@ tar czf /vagrant/duniter-desktop-${DUNITER_TAG}-linux-x64.tar.gz * --exclude ".g
 # -------------------------------------------------
 
 # Create .deb tree + package it
-cp -r "$RELEASES/desktop_release/sources/ci/travis/debian" "$RELEASES/duniter-x64"
+cp -r "$RELEASES/desktop_release/sources/release/arch/debian/package" "$RELEASES/duniter-x64"
 mkdir -p "$RELEASES/duniter-x64/opt/duniter/"
 chmod 755 ${RELEASES}/duniter-x64/DEBIAN/post*
 chmod 755 ${RELEASES}/duniter-x64/DEBIAN/pre*

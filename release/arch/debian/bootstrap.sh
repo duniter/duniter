@@ -9,4 +9,4 @@ apt-get update
 apt-get install --yes git curl build-essential yarn python-minimal zip
 
 # User installation
-sudo su ubuntu -c "bash /vagrant/user-bootstrap.sh"
+sudo su vagrant -c "bash /vagrant/user-bootstrap.sh"

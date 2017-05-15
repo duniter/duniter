@@ -40,7 +40,7 @@ duniter() {
 	else
 
 	  # Calls duniter JS command
-	  $NODE "$DUNITER_DIR/bin/duniter" "$@"
+	  $NODE --max_old_space_size=300 "$DUNITER_DIR/bin/duniter" "$@"
 
 	fi;
 }

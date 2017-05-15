@@ -1,6 +1,7 @@
 {
   "name": "v1.2.3",
   "main": "index.html",
+  "js-flags": "--max_old_space_size=300",
   "node-main": "../sources/bin/duniter",
   "window": {
     "icon": "duniter.png",

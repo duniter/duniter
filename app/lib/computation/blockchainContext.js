@@ -11,9 +11,9 @@ const Membership      = require('../entity/membership');
 const Block           = require('../entity/block');
 const Transaction     = require('../entity/transaction');
 
-module.exports = () => { return new BlockchainContext() };
+module.exports = (BlockchainService) => { return new BlockchainContext(BlockchainService) };
 
-function BlockchainContext() {
+function BlockchainContext(BlockchainService) {
 
   const that = this;
   let conf, dal, logger;
@@ -600,4 +600,172 @@ function BlockchainContext() {
       yield dal.removeTxByHash(txHash);
     }
   });
+
+  let bindex = [];
+  let iindex = [];
+  let mindex = [];
+  let cindex = [];
+  let sindex = [];
+  let bindexSize = 0;
+  let allBlocks = [];
+  let expires = [];
+  let nextExpiring = 0;
+  let currConf = {};
+
+  this.quickApplyBlocks = (blocks, to) => co(function*() {
+
+    const ctx = that
+    let blocksToSave = [];
+
+    for (const block of blocks) {
+      allBlocks.push(block);
+
+      if (block.number == 0) {
+        currConf = Block.statics.getConf(block);
+      }
+
+      if (block.number != to) {
+        blocksToSave.push(block);
+        const index = indexer.localIndex(block, currConf);
+        const local_iindex = indexer.iindex(index);
+        const local_cindex = indexer.cindex(index);
+        const local_sindex = indexer.sindex(index);
+        const local_mindex = indexer.mindex(index);
+        iindex = iindex.concat(local_iindex);
+        cindex = cindex.concat(local_cindex);
+        sindex = sindex.concat(local_sindex);
+        mindex = mindex.concat(local_mindex);
+
+        const HEAD = yield indexer.quickCompleteGlobalScope(block, currConf, bindex, iindex, mindex, cindex, sindex, {
+          getBlock: (number) => {
+            return Promise.resolve(allBlocks[number]);
+          },
+          getBlockByBlockstamp: (blockstamp) => {
+            return Promise.resolve(allBlocks[parseInt(blockstamp)]);
+          }
+        });
+        bindex.push(HEAD);
+
+        // Remember expiration dates
+        for (const entry of index) {
+          if (entry.op === 'CREATE' && entry.expires_on) {
+            expires.push(entry.expires_on);
+          }
+        }
+        expires = _.uniq(expires);
+
+        yield ctx.createNewcomers(local_iindex);
+
+        if (block.dividend
+          || block.joiners.length
+          || block.actives.length
+          || block.revoked.length
+          || block.excluded.length
+          || block.certifications.length
+          || block.transactions.length
+          || block.medianTime >= nextExpiring) {
+
+          for (let i = 0; i < expires.length; i++) {
+            let expire = expires[i];
+            if (block.medianTime > expire) {
+              expires.splice(i, 1);
+              i--;
+            }
+          }
+          nextExpiring = expires.reduce((max, value) => Math.min(max, value), nextExpiring);
+
+          // Fills in correctly the SINDEX
+          yield _.where(sindex, { op: 'UPDATE' }).map((entry) => co(function*() {
+            if (!entry.conditions) {
+              const src = yield dal.sindexDAL.getSource(entry.identifier, entry.pos);
+              entry.conditions = src.conditions;
+            }
+          }))
+
+          // Flush the INDEX (not bindex, which is particular)
+          yield dal.mindexDAL.insertBatch(mindex);
+          yield dal.iindexDAL.insertBatch(iindex);
+          yield dal.sindexDAL.insertBatch(sindex);
+          yield dal.cindexDAL.insertBatch(cindex);
+          mindex = [];
+          iindex = [];
+          cindex = [];
+          sindex = [];
+
+          sindex = sindex.concat(yield indexer.ruleIndexGenDividend(HEAD, dal));
+          sindex = sindex.concat(yield indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex.concat(local_sindex), dal));
+          cindex = cindex.concat(yield indexer.ruleIndexGenCertificationExpiry(HEAD, dal));
+          mindex = mindex.concat(yield indexer.ruleIndexGenMembershipExpiry(HEAD, dal));
+          iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByMembership(HEAD, mindex, dal));
+          iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByCertificatons(HEAD, cindex, local_iindex, conf, dal));
+          mindex = mindex.concat(yield indexer.ruleIndexGenImplicitRevocation(HEAD, dal));
+          // --> Update links
+          yield dal.updateWotbLinks(local_cindex.concat(cindex));
+
+          // Flush the INDEX again
+          yield dal.mindexDAL.insertBatch(mindex);
+          yield dal.iindexDAL.insertBatch(iindex);
+          yield dal.sindexDAL.insertBatch(sindex);
+          yield dal.cindexDAL.insertBatch(cindex);
+          mindex = [];
+          iindex = [];
+          cindex = [];
+          sindex = [];
+
+          // Create/Update nodes in wotb
+          yield ctx.updateMembers(block);
+        }
+
+        // Trim the bindex
+        bindexSize = [
+          block.issuersCount,
+          block.issuersFrame,
+          conf.medianTimeBlocks,
+          conf.dtDiffEval,
+          blocks.length
+        ].reduce((max, value) => {
+          return Math.max(max, value);
+        }, 0);
+
+        if (bindexSize && bindex.length >= 2 * bindexSize) {
+          // We trim it, not necessary to store it all (we already store the full blocks)
+          bindex.splice(0, bindexSize);
+
+          // Process triming continuously to avoid super long ending of sync
+          yield dal.trimIndexes(bindex[0].number);
+        }
+      } else {
+
+        if (blocksToSave.length) {
+          yield BlockchainService.saveBlocksInMainBranch(blocksToSave);
+        }
+        blocksToSave = [];
+
+        // Save the INDEX
+        yield dal.bindexDAL.insertBatch(bindex);
+        yield dal.mindexDAL.insertBatch(mindex);
+        yield dal.iindexDAL.insertBatch(iindex);
+        yield dal.sindexDAL.insertBatch(sindex);
+        yield dal.cindexDAL.insertBatch(cindex);
+
+        // Last block: cautious mode to trigger all the INDEX expiry mechanisms
+        yield BlockchainService.submitBlock(block, true, true);
+
+        // Clean temporary variables
+        bindex = [];
+        iindex = [];
+        mindex = [];
+        cindex = [];
+        sindex = [];
+        bindexSize = 0;
+        allBlocks = [];
+        expires = [];
+        nextExpiring = 0;
+        currConf = {};
+      }
+    }
+    if (blocksToSave.length) {
+      yield BlockchainService.saveBlocksInMainBranch(blocksToSave);
+    }
+  })
 }

@@ -248,7 +248,25 @@ function MetaDAL(driver) {
     19: 'BEGIN;' +
       // Add a `removed` column
     'ALTER TABLE idty ADD COLUMN removed BOOLEAN NULL DEFAULT 0;' +
-    'COMMIT;'
+    'COMMIT;',
+
+    /**
+     * Feeds the table of wallets with balances
+     */
+    20: () => co(function*() {
+      let walletDAL = new (require('./WalletDAL'))(driver);
+      let sindexDAL = new (require('./index/SIndexDAL'))(driver);
+      const conditions = yield sindexDAL.query('SELECT DISTINCT(conditions) FROM s_index')
+      for (const row of conditions) {
+        const wallet = {
+          conditions: row.conditions,
+          balance: 0
+        }
+        const amountsRemaining = yield sindexDAL.getAvailableForConditions(row.conditions)
+        wallet.balance = amountsRemaining.reduce((sum, src) => sum + src.amount * Math.pow(10, src.base), 0)
+        yield walletDAL.saveWallet(wallet)
+      }
+    })
   };
 
   this.init = () => co(function *() {

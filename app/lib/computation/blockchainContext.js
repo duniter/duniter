@@ -297,6 +297,12 @@ function BlockchainContext(BlockchainService) {
     // Set the block as SIDE block (equivalent to removal from main branch)
     yield dal.blockDAL.setSideBlock(number, previousBlock);
 
+    const REVERSE_BALANCE = true
+    const sindexOfBlock = yield dal.sindexDAL.getWrittenOn(blockstamp)
+
+    // Revert the balances variations for this block
+    yield that.updateWallets(sindexOfBlock, REVERSE_BALANCE)
+
     // Remove any source created for this block (both Dividend and Transaction).
     yield dal.removeAllSourcesOfBlock(blockstamp);
 
@@ -352,6 +358,9 @@ function BlockchainContext(BlockchainService) {
 
     // Create/Update nodes in wotb
     yield that.updateMembers(block);
+
+    // Update the wallets' blances
+    yield that.updateWallets(indexes.sindex)
 
     const TAIL = yield dal.bindexDAL.tail();
     const bindexSize = [
@@ -443,6 +452,26 @@ function BlockchainContext(BlockchainService) {
       for (const excluded of block.excluded) {
         const idty = yield dal.getWrittenIdtyByPubkey(excluded);
         dal.wotb.setEnabled(false, idty.wotb_id);
+      }
+    });
+  });
+
+  this.updateWallets = (sindex, reverse) => co(function *() {
+    return co(function *() {
+      const differentConditions = _.uniq(sindex.map((entry) => entry.conditions))
+      for (const conditions of differentConditions) {
+        const creates = _.filter(sindex, (entry) => entry.conditions === conditions && entry.op === constants.IDX_CREATE)
+        const updates = _.filter(sindex, (entry) => entry.conditions === conditions && entry.op === constants.IDX_UPDATE)
+        const positives = creates.reduce((sum, src) => sum + src.amount * Math.pow(10, src.base), 0)
+        const negatives = updates.reduce((sum, src) => sum + src.amount * Math.pow(10, src.base), 0)
+        const wallet = yield dal.getWallet(conditions)
+        let variation = positives - negatives
+        if (reverse) {
+          // To do the opposite operations, for a reverted block
+          variation *= -1
+        }
+        wallet.balance += variation
+        yield dal.saveWallet(wallet)
       }
     });
   });
@@ -687,6 +716,8 @@ function BlockchainContext(BlockchainService) {
           yield dal.iindexDAL.insertBatch(iindex);
           yield dal.sindexDAL.insertBatch(sindex);
           yield dal.cindexDAL.insertBatch(cindex);
+          // Update balances with local transactions
+          yield that.updateWallets(sindex)
           mindex = [];
           iindex = [];
           cindex = [];
@@ -699,6 +730,9 @@ function BlockchainContext(BlockchainService) {
           iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByMembership(HEAD, mindex, dal));
           iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByCertificatons(HEAD, cindex, local_iindex, conf, dal));
           mindex = mindex.concat(yield indexer.ruleIndexGenImplicitRevocation(HEAD, dal));
+          // Update balances with UD + local garbagings
+          yield that.updateWallets(sindex)
+
           // --> Update links
           yield dal.updateWotbLinks(local_cindex.concat(cindex));
 

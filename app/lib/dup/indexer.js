@@ -11,6 +11,7 @@ const Identity        = require('../entity/identity');
 const Certification   = require('../entity/certification');
 const Membership      = require('../entity/membership');
 const Transaction     = require('../entity/transaction');
+const logger          = require('../logger')('indexer');
 
 const indexer = module.exports = {
 
@@ -1335,29 +1336,29 @@ const indexer = module.exports = {
   // BR_G106
   ruleIndexGarbageSmallAccounts: (HEAD, sindex, dal) => co(function*() {
     const garbages = [];
-    let potentialSources = yield dal.sindexDAL.findLowerThan(constants.ACCOUNT_MINIMUM_CURRENT_BASED_AMOUNT, HEAD.unitBase);
-    let localSources = _.where(sindex, { op: constants.IDX_CREATE });
-    potentialSources = potentialSources.concat(localSources);
-    const accounts = Object.keys(potentialSources.reduce((acc, src) => {
+    const accounts = Object.keys(sindex.reduce((acc, src) => {
       acc[src.conditions] = true;
       return acc;
     }, {}));
-    const accountsBalance = yield accounts.reduce((map, acc) => {
-      map[acc] = dal.sindexDAL.getAvailableForConditions(acc);
+    const wallets = accounts.reduce((map, acc) => {
+      map[acc] = dal.getWallet(acc);
       return map;
     }, {});
     for (const account of accounts) {
-      let sources = yield accountsBalance[account];
       const localAccountEntries = _.filter(sindex, (src) => src.conditions == account);
-      const balance = sources.concat(localAccountEntries).reduce((sum, src) => {
+      const wallet = yield wallets[account];
+      const balance = wallet.balance
+      const variations = localAccountEntries.reduce((sum, src) => {
         if (src.op === 'CREATE') {
           return sum + src.amount * Math.pow(10, src.base);
         } else {
           return sum - src.amount * Math.pow(10, src.base);
         }
       }, 0)
-      if (balance < constants.ACCOUNT_MINIMUM_CURRENT_BASED_AMOUNT * Math.pow(10, HEAD.unitBase)) {
-        for (const src of sources.concat(localAccountEntries)) {
+      // console.log('Balance of %s = %s (%s)', account, balance, variations > 0 ? '+' + variations : variations)
+      if (balance + variations < constants.ACCOUNT_MINIMUM_CURRENT_BASED_AMOUNT * Math.pow(10, HEAD.unitBase)) {
+        const globalAccountEntries = yield dal.sindexDAL.getAvailableForConditions(account)
+        for (const src of localAccountEntries.concat(globalAccountEntries)) {
           const sourceBeingConsumed = _.filter(sindex, (entry) => entry.op === 'UPDATE' && entry.identifier == src.identifier && entry.pos == src.pos).length > 0;
           if (!sourceBeingConsumed) {
             garbages.push({

@@ -36,6 +36,7 @@ function FileDAL(params) {
   this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqliteDriver);
   this.certDAL = new (require('./sqliteDAL/CertDAL'))(sqliteDriver);
   this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(sqliteDriver);
+  this.walletDAL = new (require('./sqliteDAL/WalletDAL'))(sqliteDriver);
   this.bindexDAL = new (require('./sqliteDAL/index/BIndexDAL'))(sqliteDriver);
   this.mindexDAL = new (require('./sqliteDAL/index/MIndexDAL'))(sqliteDriver);
   this.iindexDAL = new (require('./sqliteDAL/index/IIndexDAL'))(sqliteDriver);
@@ -52,6 +53,7 @@ function FileDAL(params) {
     'peerDAL': that.peerDAL,
     'confDAL': that.confDAL,
     'statDAL': that.statDAL,
+    'walletDAL': that.walletDAL,
     'bindexDAL': that.bindexDAL,
     'mindexDAL': that.mindexDAL,
     'iindexDAL': that.iindexDAL,
@@ -703,6 +705,20 @@ function FileDAL(params) {
       return that.confDAL.saveConf(theConf);
     });
   };
+
+  /***********************
+   *     WALLETS
+   **********************/
+
+  this.getWallet = (conditions) => co(function*() {
+    let wallet = yield that.walletDAL.getWallet(conditions)
+    if (!wallet) {
+      wallet = { conditions, balance: 0 }
+    }
+    return wallet
+  })
+
+  this.saveWallet = (wallet) => this.walletDAL.saveWallet(wallet)
 
   /***********************
    *     STATISTICS

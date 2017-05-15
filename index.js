@@ -92,6 +92,8 @@ function Stack(dependencies) {
   const cli = require('./app/cli')();
   const configLoadingCallbacks = [];
   const configBeforeSaveCallbacks = [];
+  const resetDataHooks = [];
+  const resetConfigHooks = [];
   const INPUT = new InputStream();
   const PROCESS = new ProcessStream();
   const loaded = {};
@@ -134,6 +136,20 @@ function Stack(dependencies) {
       // Before the configuration is saved, the module can make some injection/cleaning
       if (def.config.beforeSave) {
         configBeforeSaveCallbacks.push(def.config.beforeSave);
+      }
+    }
+
+    /**
+     * Reset data/config injection
+     * -----------------------
+     */
+    if (def.onReset) {
+      if (def.onReset.data) {
+        resetDataHooks.push(def.onReset.data);
+      }
+      // Before the configuration is saved, the module can make some injection/cleaning
+      if (def.onReset.config) {
+        resetConfigHooks.push(def.onReset.config);
       }
     }
 
@@ -185,6 +201,18 @@ function Stack(dependencies) {
         }
       });
     });
+
+    // Config or Data reset hooks
+    server.resetDataHook = () => co(function*() {
+      for (const callback of resetDataHooks) {
+        yield callback(server.conf, program, logger, server.dal.confDAL);
+      }
+    })
+    server.resetConfigHook = () => co(function*() {
+      for (const callback of resetConfigHooks) {
+        yield callback(server.conf, program, logger, server.dal.confDAL);
+      }
+    })
 
     // Initialize server (db connection, ...)
     try {

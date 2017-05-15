@@ -225,22 +225,26 @@ function Server (home, memoryOnly, overrideConf) {
   });
 
   this.resetAll = (done) => co(function*() {
+    yield that.resetDataHook()
+    yield that.resetConfigHook()
     const files = ['stats', 'cores', 'current', directory.DUNITER_DB_NAME, directory.DUNITER_DB_NAME + '.db', directory.DUNITER_DB_NAME + '.log', directory.WOTB_FILE, 'export.zip', 'import.zip', 'conf'];
     const dirs  = ['blocks', 'blockchain', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   });
 
   this.resetData = (done) => co(function*(){
+    yield that.resetDataHook()
     const files = ['stats', 'cores', 'current', directory.DUNITER_DB_NAME, directory.DUNITER_DB_NAME + '.db', directory.DUNITER_DB_NAME + '.log', directory.WOTB_FILE];
     const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     yield resetFiles(files, dirs, done);
   });
 
-  this.resetConf = (done) => {
+  this.resetConf = (done) => co(function*() {
+    yield that.resetConfigHook()
     const files = ['conf'];
     const dirs  = [];
     return resetFiles(files, dirs, done);
-  };
+  });
 
   this.resetStats = (done) => {
     const files = ['stats'];
@@ -455,10 +459,20 @@ function Server (home, memoryOnly, overrideConf) {
    */
   this.generatorNewCertsToLinks = () => Promise.resolve({})
 
-  /*
+  /**
    * Default hook on file system plugging. To be overriden by module system.
    */
   this.onPluggedFSHook = () => Promise.resolve({})
+
+  /**
+   * Default hook on data reset. To be overriden by module system.
+   */
+  this.resetDataHook = () => Promise.resolve({})
+
+  /**
+   * Default hook on data reset. To be overriden by module system.
+   */
+  this.resetConfigHook = () => Promise.resolve({})
 }
 
 util.inherits(Server, stream.Duplex);

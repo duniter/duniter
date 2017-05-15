@@ -662,10 +662,9 @@ function BlockchainContext(BlockchainService) {
         const local_mindex = indexer.mindex(index);
         iindex = iindex.concat(local_iindex);
         cindex = cindex.concat(local_cindex);
-        sindex = sindex.concat(local_sindex);
         mindex = mindex.concat(local_mindex);
 
-        const HEAD = yield indexer.quickCompleteGlobalScope(block, currConf, bindex, iindex, mindex, cindex, sindex, {
+        const HEAD = yield indexer.quickCompleteGlobalScope(block, currConf, bindex, iindex, mindex, cindex, {
           getBlock: (number) => {
             return Promise.resolve(allBlocks[number]);
           },
@@ -704,7 +703,7 @@ function BlockchainContext(BlockchainService) {
           nextExpiring = expires.reduce((max, value) => Math.min(max, value), nextExpiring);
 
           // Fills in correctly the SINDEX
-          yield _.where(sindex, { op: 'UPDATE' }).map((entry) => co(function*() {
+          yield _.where(sindex.concat(local_sindex), { op: 'UPDATE' }).map((entry) => co(function*() {
             if (!entry.conditions) {
               const src = yield dal.sindexDAL.getSource(entry.identifier, entry.pos);
               entry.conditions = src.conditions;
@@ -716,15 +715,13 @@ function BlockchainContext(BlockchainService) {
           yield dal.iindexDAL.insertBatch(iindex);
           yield dal.sindexDAL.insertBatch(sindex);
           yield dal.cindexDAL.insertBatch(cindex);
-          // Update balances with local transactions
-          yield that.updateWallets(sindex)
           mindex = [];
           iindex = [];
           cindex = [];
-          sindex = [];
+          sindex = local_sindex;
 
           sindex = sindex.concat(yield indexer.ruleIndexGenDividend(HEAD, dal));
-          sindex = sindex.concat(yield indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex.concat(local_sindex), dal));
+          sindex = sindex.concat(yield indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex, dal));
           cindex = cindex.concat(yield indexer.ruleIndexGenCertificationExpiry(HEAD, dal));
           mindex = mindex.concat(yield indexer.ruleIndexGenMembershipExpiry(HEAD, dal));
           iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByMembership(HEAD, mindex, dal));

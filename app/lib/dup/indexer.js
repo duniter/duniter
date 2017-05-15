@@ -263,7 +263,7 @@ const indexer = module.exports = {
     return index;
   },
 
-  quickCompleteGlobalScope: (block, conf, bindex, iindex, mindex, cindex, sindex, dal) => co(function*() {
+  quickCompleteGlobalScope: (block, conf, bindex, iindex, mindex, cindex, dal) => co(function*() {
 
     function range(start, end, property) {
       return co(function*() {

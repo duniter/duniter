@@ -1311,23 +1311,20 @@ const indexer = module.exports = {
   ruleIndexGenDividend: (HEAD, dal) => co(function*() {
     const dividends = [];
     if (HEAD.new_dividend) {
-      const potentials = reduceBy(yield dal.iindexDAL.sqlFind({ member: true }), ['pub']);
-      for (const potential of potentials) {
-        const MEMBER = reduce(yield dal.iindexDAL.reducable(potential.pub));
-        if (MEMBER.member) {
-          dividends.push({
-            op: 'CREATE',
-            identifier: MEMBER.pub,
-            pos: HEAD.number,
-            written_on: [HEAD.number, HEAD.hash].join('-'),
-            written_time: HEAD.medianTime,
-            amount: HEAD.dividend,
-            base: HEAD.unitBase,
-            locktime: null,
-            conditions: 'SIG(' + MEMBER.pub + ')',
-            consumed: false
-          });
-        }
+      const members = yield dal.iindexDAL.getMembersPubkeys()
+      for (const MEMBER of members) {
+        dividends.push({
+          op: 'CREATE',
+          identifier: MEMBER.pub,
+          pos: HEAD.number,
+          written_on: [HEAD.number, HEAD.hash].join('-'),
+          written_time: HEAD.medianTime,
+          amount: HEAD.dividend,
+          base: HEAD.unitBase,
+          locktime: null,
+          conditions: 'SIG(' + MEMBER.pub + ')',
+          consumed: false
+        });
       }
     }
     return dividends;

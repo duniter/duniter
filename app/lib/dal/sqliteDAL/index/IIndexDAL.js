@@ -72,6 +72,16 @@ function IIndexDAL(driver) {
     return filtered.map(toCorrectEntity);
   });
 
+  this.getMembersPubkeys = () => this.query('SELECT i1.pub ' +
+    'FROM i_index i1 ' +
+    'WHERE i1.member ' +
+    'AND CAST(i1.written_on as int) = (' +
+    ' SELECT MAX(CAST(i2.written_on as int)) ' +
+    ' FROM i_index i2 ' +
+    ' WHERE i1.pub = i2.pub ' +
+    ' AND i2.member IS NOT NULL' +
+    ')')
+
   this.getLatestMember = () => co(function*() {
     const max_wotb_id = (yield that.query('SELECT MAX(wotb_id) as max_wotb_id FROM ' + that.table))[0].max_wotb_id;
     return entityOrNull('wotb_id', max_wotb_id);

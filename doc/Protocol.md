@@ -1,6 +1,6 @@
 # DUP - Duniter Protocol
 
-> This document is still regularly updated (as of August 2016)
+> This document reflects Duniter in-production protocol. It is updated only for clarifications (2017).
 
 ## Contents
 

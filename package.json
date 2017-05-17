@@ -1,6 +1,6 @@
 {
   "name": "duniter",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "engines": {
     "node": ">=4.2.0",
     "npm": ">=2.11"
@@ -66,7 +66,7 @@
     "unzip": "0.1.11",
     "unzip2": "0.2.5",
     "winston": "2.3.1",
-    "wotb": "0.5.3"
+    "wotb": "0.5.5"
   },
   "devDependencies": {
     "coveralls": "2.11.4",

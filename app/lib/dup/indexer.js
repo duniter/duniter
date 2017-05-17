@@ -1594,7 +1594,7 @@ function reduceBy(reducables, properties) {
 function checkPeopleAreNotOudistanced (pubkeys, newLinks, newcomers, conf, dal) {
   return co(function *() {
     // let wotb = dal.wotb;
-    let wotb = dal.wotb.memcopy();
+    let wotb = dal.wotb.memCopy();
     let current = yield dal.getCurrentBlockOrNull();
     let membersCount = current ? current.membersCount : 0;
     // TODO: make a temporary copy of the WoT in RAM

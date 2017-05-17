@@ -1,64 +1,10 @@
 "use strict";
 
 const wotb = require('wotb');
-const logger = require('./logger')('wot');
 
 module.exports = {
 
-  fileInstance: (filepath) => new WoTBWrapper(wotb.newFileInstance(filepath)),
-  memoryInstance: () => new WoTBWrapper(wotb.newMemoryInstance()),
+  fileInstance: (filepath) => wotb.newFileInstance(filepath),
+  memoryInstance: () => wotb.newMemoryInstance(),
   setVerbose: wotb.setVerbose
 };
-
-function WoTBWrapper(instance) {
-
-  this.memcopy = () => {
-    return new WoTBWrapper(instance.memCopy());
-  };
-
-  this.setVerbose = wotb.setVerbose;
-  this.resetWoT = instance.resetWoT;
-  this.clear = instance.clear;
-  this.showWoT = instance.showWoT;
-  this.dumpWoT = instance.dumpWoT;
-  this.showGraph = () =>
-    instance.showGraph();
-  this.getWoTSize = instance.getWoTSize;
-  this.isEnabled = instance.isEnabled;
-  this.existsLink = instance.existsLink;
-  this.isOutdistanced = instance.isOutdistanced;
-  this.setMaxCert = instance.setMaxCert;
-  this.getPaths = instance.getPaths;
-  this.getSentries = instance.getSentries;
-  this.getNonSentries = instance.getNonSentries;
-  this.getDisabled = instance.getDisabled;
-
-  this.setEnabled = (enabled, nodeID) => {
-    if (!enabled) {
-      logger.trace('Disable node %s', nodeID);
-    }
-    instance.setEnabled(enabled, nodeID)
-  };
-
-  this.addNode = () => {
-    let nodeNumber = instance.addNode();
-    logger.trace('New node#%s', nodeNumber);
-    return nodeNumber;
-  };
-
-  this.removeNode = () => {
-    let remains = instance.removeNode();
-    logger.trace('Removed node#%s', remains + 1);
-    return remains;
-  };
-
-  this.addLink = (from, to) => {
-    logger.trace('Link %s -> %s', from, to);
-    instance.addLink(from, to);
-  };
-
-  this.removeLink = (from, to) => {
-    logger.trace('Link %s X> %s', from, to);
-    instance.removeLink(from, to);
-  };
-}

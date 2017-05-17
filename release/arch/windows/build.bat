@@ -1,3 +1,10 @@
+
+set VER_UI=1.1.5
+set VER_BMA=1.1.2
+set VER_CRAWLER=1.1.4
+set VER_PROVER=1.1.2
+set VER_KEYPAIR=1.1.3
+
 set ADDON_VERSION=48
 set NW_VERSION=0.17.6
 set NW_RELEASE=v0.17.6
@@ -34,13 +41,13 @@ REM call npm test
 echo "Retrait des modules 'dev'..."
 call npm prune --production
 echo "Ajout du module 1/4..."
-call npm install duniter-bma --save --production
+call npm install duniter-bma@%VER_BMA% --save --production
 echo "Ajout du module 2/4..."
-call npm install duniter-crawler --save --production
+call npm install duniter-crawler@%VER_CRAWLER% --save --production
 echo "Ajout du module 3/4..."
-call npm install duniter-keypair --save --production
+call npm install duniter-keypair@%VER_KEYPAIR% --save --production
 echo "Ajout du module 4/4..."
-call npm install duniter-prover --save --production
+call npm install duniter-prover@%VER_PROVER% --save --production
 set SRC=%cd%
 echo %SRC%
 cd node_modules/wotb
@@ -67,7 +74,7 @@ cd ../heapdump
 call nw-gyp --target=%NW_VERSION% --msvs_version=2015 configure
 call nw-gyp --target=%NW_VERSION% --msvs_version=2015 build
 cd ../..
-call npm install duniter-ui --save --production
+call npm install duniter-ui@%VER_UI% --save --production
 rd /s /q %cd%\node_modules\duniter-ui\node_modules
 cd ..
 mkdir duniter_release

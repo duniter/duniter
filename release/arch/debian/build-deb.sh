@@ -4,6 +4,12 @@
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 
+VER_UI=1.1.5
+VER_BMA=1.1.2
+VER_CRAWLER=1.1.4
+VER_PROVER=1.1.2
+VER_KEYPAIR=1.1.3
+
 # Prepare
 NVER=`node -v`
 DUNITER_TAG=
@@ -83,7 +89,7 @@ rm -Rf .git
 [[ $? -eq 0 ]] && echo ">> VM: removing duniter dev modules..."
 yarn remove duniter-bma duniter-crawler duniter-keypair duniter-prover --save
 [[ $? -eq 0 ]] && echo ">> VM: adding duniter modules..."
-yarn add duniter-ui duniter-bma duniter-crawler duniter-keypair duniter-prover --save --production
+yarn add "duniter-ui@$VER_UI" "duniter-bma@$VER_BMA" "duniter-crawler@$VER_CRAWLER" "duniter-keypair@$VER_KEYPAIR" "duniter-prover@$VER_PROVER" --save --production
 rm -rf node_modules yarn.lock
 yarn --production
 

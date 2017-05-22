@@ -2,9 +2,10 @@
 const _               = require('underscore');
 const co              = require('co');
 const Q               = require('q');
-const indexer         = require('../dup/indexer');
+const common          = require('duniter-common');
+const indexer         = require('duniter-common').indexer;
 const constants       = require('../constants');
-const rules           = require('../rules/index');
+const rules           = require('duniter-common').rules;
 const Identity        = require('../entity/identity');
 const Certification   = require('../entity/certification');
 const Membership      = require('../entity/membership');
@@ -53,7 +54,7 @@ function BlockchainContext(BlockchainService) {
       } else {
         block = { version: vHEAD_1.version };
       }
-      vHEAD = yield indexer.completeGlobalScope(Block.statics.fromJSON(block).json(), conf, [], dal);
+      vHEAD = yield indexer.completeGlobalScope(Block.statics.fromJSON(block), conf, [], dal);
     });
     return HEADrefreshed;
   }
@@ -274,7 +275,7 @@ function BlockchainContext(BlockchainService) {
     for (const entry of writtenOn) {
       const from = yield dal.getWrittenIdtyByPubkey(entry.issuer);
       const to = yield dal.getWrittenIdtyByPubkey(entry.receiver);
-      if (entry.op == constants.IDX_CREATE) {
+      if (entry.op == common.constants.IDX_CREATE) {
         // We remove the created link
         dal.wotb.removeLink(from.wotb_id, to.wotb_id, true);
       } else {
@@ -422,7 +423,7 @@ function BlockchainContext(BlockchainService) {
 
   this.createNewcomers = (iindex) => co(function*() {
     for (const entry of iindex) {
-      if (entry.op == constants.IDX_CREATE) {
+      if (entry.op == common.constants.IDX_CREATE) {
         // Reserves a wotb ID
         entry.wotb_id = dal.wotb.addNode();
         logger.trace('%s was affected wotb_id %s', entry.uid, entry.wotb_id);
@@ -460,8 +461,8 @@ function BlockchainContext(BlockchainService) {
     return co(function *() {
       const differentConditions = _.uniq(sindex.map((entry) => entry.conditions))
       for (const conditions of differentConditions) {
-        const creates = _.filter(sindex, (entry) => entry.conditions === conditions && entry.op === constants.IDX_CREATE)
-        const updates = _.filter(sindex, (entry) => entry.conditions === conditions && entry.op === constants.IDX_UPDATE)
+        const creates = _.filter(sindex, (entry) => entry.conditions === conditions && entry.op === common.constants.IDX_CREATE)
+        const updates = _.filter(sindex, (entry) => entry.conditions === conditions && entry.op === common.constants.IDX_UPDATE)
         const positives = creates.reduce((sum, src) => sum + src.amount * Math.pow(10, src.base), 0)
         const negatives = updates.reduce((sum, src) => sum + src.amount * Math.pow(10, src.base), 0)
         const wallet = yield dal.getWallet(conditions)
@@ -482,7 +483,7 @@ function BlockchainContext(BlockchainService) {
       for (const entry of joiners) {
         // Undo 'join' which can be either newcomers or comebackers
         // => equivalent to i_index.member = true AND i_index.op = 'UPDATE'
-        if (entry.member === true && entry.op === constants.IDX_UPDATE) {
+        if (entry.member === true && entry.op === common.constants.IDX_UPDATE) {
           const idty = yield dal.getWrittenIdtyByPubkey(entry.pub);
           dal.wotb.setEnabled(false, idty.wotb_id);
         }
@@ -491,7 +492,7 @@ function BlockchainContext(BlockchainService) {
       for (const entry of newcomers) {
         // Undo newcomers
         // => equivalent to i_index.op = 'CREATE'
-        if (entry.op === constants.IDX_CREATE) {
+        if (entry.op === common.constants.IDX_CREATE) {
           // Does not matter which one it really was, we pop the last X identities
           dal.wotb.removeNode();
         }
@@ -500,7 +501,7 @@ function BlockchainContext(BlockchainService) {
       for (const entry of excluded) {
         // Undo excluded (make them become members again in wotb)
         // => equivalent to m_index.member = false
-        if (entry.member === false && entry.op === constants.IDX_UPDATE) {
+        if (entry.member === false && entry.op === common.constants.IDX_UPDATE) {
           const idty = yield dal.getWrittenIdtyByPubkey(entry.pub);
           dal.wotb.setEnabled(true, idty.wotb_id);
         }

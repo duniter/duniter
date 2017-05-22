@@ -1,7 +1,7 @@
 "use strict";
 
 const co              = require('co');
-const rules           = require('../lib/rules');
+const rules           = require('duniter-common').rules
 const hashf           = require('duniter-common').hashf;
 const constants       = require('../lib/constants');
 const Membership      = require('../lib/entity/membership');

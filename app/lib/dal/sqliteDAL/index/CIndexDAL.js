@@ -4,7 +4,8 @@
 
 const co = require('co');
 const constants = require('./../../../constants');
-const indexer = require('./../../../dup/indexer');
+const common = require('duniter-common');
+const indexer = require('duniter-common').indexer;
 const AbstractSQLite = require('./../AbstractSQLite');
 const AbstractIndex = require('./../AbstractIndex');
 
@@ -85,7 +86,7 @@ function CIndexDAL(driver) {
     ' AND c1.receiver = c2.receiver' +
     ' AND c1.created_on = c2.created_on' +
     ' AND c2.op = ?' +
-    ')', [medianTime, constants.IDX_UPDATE]);
+    ')', [medianTime, common.constants.IDX_UPDATE]);
 
   this.getValidLinksTo = (receiver) => that.query('SELECT * FROM ' + that.table + ' c1 ' +
     'WHERE c1.receiver = ? ' +
@@ -96,7 +97,7 @@ function CIndexDAL(driver) {
     ' AND c1.receiver = c2.receiver' +
     ' AND c1.created_on = c2.created_on' +
     ' AND c2.op = ?' +
-    ')', [receiver, constants.IDX_UPDATE]);
+    ')', [receiver, common.constants.IDX_UPDATE]);
 
   this.getValidLinksFrom = (issuer) => that.query('SELECT * FROM ' + that.table + ' c1 ' +
     'WHERE c1.issuer = ? ' +
@@ -107,7 +108,7 @@ function CIndexDAL(driver) {
     ' AND c1.receiver = c2.receiver' +
     ' AND c1.created_on = c2.created_on' +
     ' AND c2.op = ?' +
-    ')', [issuer, constants.IDX_UPDATE]);
+    ')', [issuer, common.constants.IDX_UPDATE]);
 
   this.existsNonReplayableLink = (issuer, receiver) => co(function*() {
     const results = yield that.query('SELECT * FROM ' + that.table + ' c1 ' +
@@ -119,7 +120,7 @@ function CIndexDAL(driver) {
       ' AND c1.receiver = c2.receiver' +
       ' AND c1.created_on = c2.created_on' +
       ' AND c2.op = ?' +
-      ')', [issuer, receiver, constants.IDX_UPDATE]);
+      ')', [issuer, receiver, common.constants.IDX_UPDATE]);
     return results.length > 0;
   });
 

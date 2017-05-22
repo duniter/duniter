@@ -9,7 +9,7 @@ const archiver    = require('archiver');
 const unzip       = require('unzip2');
 const fs          = require('fs');
 const daemonize   = require("daemonize2")
-const parsers     = require('./app/lib/streams/parsers');
+const parsers     = require('duniter-common').parsers;
 const constants   = require('./app/lib/constants');
 const fileDAL     = require('./app/lib/dal/fileDAL');
 const jsonpckg    = require('./package.json');
@@ -29,27 +29,6 @@ function Server (home, memoryOnly, overrideConf) {
   that.dal = null;
   that.version = jsonpckg.version;
   that.logger = logger;
-
-  // External libs
-  that.lib = {};
-  that.lib.keyring = require('duniter-common').keyring;
-  that.lib.Identity = require('./app/lib/entity/identity');
-  that.lib.Certification = require('./app/lib/entity/certification');
-  that.lib.Transaction = require('./app/lib/entity/transaction');
-  that.lib.Peer = require('./app/lib/entity/peer');
-  that.lib.Membership = require('./app/lib/entity/membership');
-  that.lib.Block = require('./app/lib/entity/block');
-  that.lib.Stat = require('./app/lib/entity/stat');
-  that.lib.rawer = require('duniter-common').rawer;
-  that.lib.parsers = require('./app/lib/streams/parsers');
-  that.lib.http2raw = require('duniter-bma').duniter.methods.http2raw;
-  that.lib.dos2unix = require('duniter-common').dos2unix;
-  that.lib.bma = require('duniter-bma').duniter.methods.bma;
-  that.lib.constants = require('./app/lib/constants');
-  that.lib.ucp = require('duniter-common').buid;
-  that.lib.hashf = require('duniter-common').hashf;
-  that.lib.indexer = require('./app/lib/dup/indexer');
-  that.lib.rules = require('./app/lib/rules');
 
   that.MerkleService       = require("./app/lib/helpers/merkle");
   that.IdentityService     = require('./app/service/IdentityService')();

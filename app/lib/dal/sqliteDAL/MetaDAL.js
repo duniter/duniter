@@ -7,6 +7,7 @@
 const co = require('co');
 const logger = require('../../logger')('metaDAL');
 const AbstractSQLite = require('./AbstractSQLite');
+const common = require('duniter-common');
 const hashf = require('duniter-common').hashf;
 const rawer = require('duniter-common').rawer;
 const constants = require('./../../constants');
@@ -215,7 +216,7 @@ function MetaDAL(driver) {
             amountMissing += src.amount;
             const block = src.block;
             sourcesMovements.push({
-              op: constants.IDX_CREATE,
+              op: common.constants.IDX_CREATE,
               tx: src.tx,
               identifier: src.identifier,
               pos: src.pos,

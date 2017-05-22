@@ -13,8 +13,11 @@ process.on('unhandledRejection', (reason) => {
   console.error(reason);
 });
 
+const NB_CORES_FOR_COMPUTATION = 1 // For simple tests. Can be changed to test multiple cores.
+
 const s1 = toolbox.server({
   cpu: 1,
+  nbCores: NB_CORES_FOR_COMPUTATION,
   powDelay: 1000,
   powMin: 32,
   pair: {
@@ -25,8 +28,6 @@ const s1 = toolbox.server({
 
 const i1 = user('i1',   { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
 const i2 = user('i2',   { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
-
-constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1; // For simple tests. Can be changed to test multiple cores.
 
 describe("Continous proof-of-work", function() {
 
@@ -97,6 +98,7 @@ describe("Continous proof-of-work", function() {
 
   it('testing a network', () => co(function*() {
     const res = yield toolbox.simpleNetworkOf2NodesAnd2Users({
+      nbCores: NB_CORES_FOR_COMPUTATION,
       powMin: 16
     }), s2 = res.s1, s3 = res.s2;
     yield s2.commit();
@@ -114,6 +116,7 @@ describe("Continous proof-of-work", function() {
 
   it('testing proof-of-work during a block pulling', () => co(function*() {
     const res = yield toolbox.simpleNetworkOf2NodesAnd2Users({
+      nbCores: NB_CORES_FOR_COMPUTATION,
       powMin: 0
     }), s2 = res.s1, s3 = res.s2;
     yield s2.commit();

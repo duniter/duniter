@@ -6,7 +6,7 @@ const should  = require('should');
 const util    = require('util');
 const stream  = require('stream');
 const duniter = require('../../index');
-const parsers = require('../../app/lib/streams/parsers/index');
+const parsers = require('duniter-common').parsers;
 const querablep = require('querablep');
 
 describe("v1.0 Module API", () => {

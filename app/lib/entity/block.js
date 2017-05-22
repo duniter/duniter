@@ -1,6 +1,8 @@
 "use strict";
 const _ = require('underscore');
-const hashf = require('duniter-common').hashf;
+const common = require('duniter-common')
+const document = common.document;
+const hashf = common.hashf;
 const Transaction = require('./transaction');
 
 module.exports = Block;
@@ -52,70 +54,9 @@ function Block(json) {
   });
 
   this.json = () => {
-    const json = {};
-    [
-      "version",
-      "nonce",
-      "number",
-      "powMin",
-      "time",
-      "medianTime",
-      "membersCount",
-      "monetaryMass",
-      "unitbase",
-      "issuersCount",
-      "issuersFrame",
-      "issuersFrameVar",
-      "len"
-    ].forEach((field) => {
-      json[field] = parseInt(this[field], 10);
-    });
-    [
-      "currency",
-      "issuer",
-      "signature",
-      "hash",
-      "parameters"
-    ].forEach((field) => {
-      json[field] = this[field] || "";
-    });
-    [
-      "previousHash",
-      "previousIssuer",
-      "inner_hash"
-    ].forEach((field) => {
-      json[field] = this[field] || null;
-    });
-    [
-      "dividend"
-    ].forEach((field) => {
-      json[field] = parseInt(this[field]) || null;
-    });
-    [
-      "identities",
-      "joiners",
-      "actives",
-      "leavers",
-      "revoked",
-      "excluded",
-      "certifications"
-    ].forEach((field) => {
-      json[field] = [];
-      this[field].forEach((raw) => {
-        json[field].push(raw);
-      });
-    });
-    [
-      "transactions"
-    ].forEach((field) => {
-      json[field] = [];
-      this[field].forEach((obj) => {
-        json[field].push(_(obj).omit('raw', 'certifiers', 'hash'));
-      });
-    });
-    json.raw = this.getRaw();
-    return json;
-  };
+    const b = document.Block.fromJSON(this)
+    return b.json()
+  }
 
   this.getHash = () => {
     if (!this.hash) {

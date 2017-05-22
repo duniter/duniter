@@ -22,6 +22,7 @@ describe("Testing transactions", function() {
       pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
       sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
     },
+    nbCores: 1,
     dt: 7210,
     ud0: 1200,
     udTime0: now + 7210,
@@ -35,7 +36,6 @@ describe("Testing transactions", function() {
 
   before(() => co(function*() {
 
-    constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
     yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
     // Self certifications
     yield tic.createIdentity();

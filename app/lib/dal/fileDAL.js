@@ -2,7 +2,8 @@
 const Q       = require('q');
 const co      = require('co');
 const _       = require('underscore');
-const indexer = require('../dup/indexer');
+const common = require('duniter-common');
+const indexer = require('duniter-common').indexer;
 const logger = require('../logger')('filedal');
 const Configuration = require('../entity/configuration');
 const Merkle = require('../entity/merkle');
@@ -228,6 +229,7 @@ function FileDAL(params) {
         idty.memberships = mss.concat(mssFromMindex.map((ms) => {
           const sp = ms.created_on.split('-');
           return {
+            blockstamp: ms.created_on,
             membership: ms.leaving ? 'OUT' : 'IN',
             number: sp[0],
             fpr: sp[1],
@@ -542,7 +544,7 @@ function FileDAL(params) {
     for (const entry of cindex) {
       const from = yield that.getWrittenIdtyByPubkey(entry.issuer);
       const to = yield that.getWrittenIdtyByPubkey(entry.receiver);
-      if (entry.op == constants.IDX_CREATE) {
+      if (entry.op == common.constants.IDX_CREATE) {
         that.wotb.addLink(from.wotb_id, to.wotb_id);
       } else {
         // Update = removal
@@ -564,7 +566,7 @@ function FileDAL(params) {
     yield that.certDAL.trimExpiredCerts(block.medianTime);
     yield that.msDAL.trimExpiredMemberships(block.medianTime);
     yield that.idtyDAL.trimExpiredIdentities(block.medianTime);
-    yield that.txsDAL.trimExpiredNonWrittenTxs(block.medianTime - constants.TX_WINDOW);
+    yield that.txsDAL.trimExpiredNonWrittenTxs(block.medianTime - common.constants.TX_WINDOW);
     return true;
   });
 

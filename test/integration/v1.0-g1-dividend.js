@@ -23,8 +23,6 @@ const conf = {
   avgGenTime: 3600 * 24 // 1 bloc a day
 };
 
-constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1;
-
 let s1, cat, tac;
 
 describe("Protocol 1.0 Ğ1 Dividend", function() {

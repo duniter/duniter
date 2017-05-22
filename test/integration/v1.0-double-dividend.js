@@ -18,9 +18,6 @@ const conf = {
   medianTimeBlocks: 1 // The medianTime always equals previous block's medianTime
 };
 
-constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1;
-constants.NB_DIGITS_UD = 4;
-
 let s1, cat, tac;
 
 describe("Protocol 1.0 Dividend Update", function() {

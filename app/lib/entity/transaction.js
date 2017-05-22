@@ -18,8 +18,8 @@ let Transaction = function(obj, currency) {
   });
 
   // Store the maximum output base
-  this.output_amount = this.outputs.reduce((sum, output) => sum + parseInt(output.split(':')[0]), 0);
-  this.output_base = this.outputs.reduce((maxBase, output) => Math.max(maxBase, parseInt(output.split(':')[1])), 0);
+  this.output_amount = this.outputs.reduce((sum, output) => sum + parseInt((output.raw || output).split(':')[0]), 0);
+  this.output_base = this.outputs.reduce((maxBase, output) => Math.max(maxBase, parseInt((output.raw || output).split(':')[1])), 0);
 
   this.currency = currency || this.currency;
 
@@ -98,7 +98,7 @@ Transaction.statics = {};
 Transaction.statics.fromJSON = (json) => new Transaction(json);
 
 Transaction.statics.outputs2recipients = (tx) => tx.outputs.map(function(out) {
-  const recipent = out.match('SIG\\((.*)\\)');
+  const recipent = (out.raw || out).match('SIG\\((.*)\\)');
   return (recipent && recipent[1]) || 'UNKNOWN';
 });
 

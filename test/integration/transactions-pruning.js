@@ -8,6 +8,7 @@ const until     = require('./tools/until');
 const toolbox   = require('./tools/toolbox');
 const Peer = require('../../app/lib/entity/peer');
 const constants = require('../../app/lib/constants');
+const common    = require('duniter-common');
 
 const s1 = toolbox.server({
   currency: 'currency_one',
@@ -60,12 +61,12 @@ describe("Transactions pruning", function() {
   }));
 
   it('double spending transaction should have been pruned', () => co(function*() {
-    const tmp = constants.TRANSACTION_MAX_TRIES;
-    constants.TRANSACTION_MAX_TRIES = 1;
+    const tmp = common.constants.TRANSACTION_MAX_TRIES;
+    common.constants.TRANSACTION_MAX_TRIES = 1;
     yield s1.commit();
     yield s1.expect('/tx/history/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (res) => {
       res.history.should.have.property('sending').length(0);
     });
-    constants.TRANSACTION_MAX_TRIES = tmp;
+    common.constants.TRANSACTION_MAX_TRIES = tmp;
   }));
 });

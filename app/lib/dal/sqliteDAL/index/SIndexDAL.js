@@ -4,7 +4,8 @@
 
 const _ = require('underscore');
 const co = require('co');
-const indexer = require('../../../dup/indexer');
+const common = require('duniter-common');
+const indexer = require('duniter-common').indexer;
 const constants = require('../../../constants');
 const AbstractSQLite = require('./../AbstractSQLite');
 const AbstractIndex = require('./../AbstractIndex');
@@ -104,7 +105,7 @@ function SIndexDAL(driver) {
       ' AND s2.pos = s1.pos ' +
       ' AND s2.op = ?' +
       ') ' +
-      'ORDER BY CAST(SUBSTR(written_on, 0, INSTR(written_on, "-")) as number)', [constants.IDX_CREATE, conditionsStr, constants.IDX_UPDATE]);
+      'ORDER BY CAST(SUBSTR(written_on, 0, INSTR(written_on, "-")) as number)', [common.constants.IDX_CREATE, conditionsStr, common.constants.IDX_UPDATE]);
     const sources = potentials.map((src) => {
       src.type = src.tx ? 'T' : 'D';
       return src;

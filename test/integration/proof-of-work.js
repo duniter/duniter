@@ -17,10 +17,12 @@ keyring from Key
 ***/
 
 const intermediateProofs = [];
+const NB_CORES_FOR_COMPUTATION = 1 // For simple tests. Can be changed to test multiple cores.
 
 const prover = blockProver({
   push: (data) => intermediateProofs.push(data),
   conf: {
+    nbCores: NB_CORES_FOR_COMPUTATION,
     cpu: 1.0, // 80%,
     pair: {
       pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -34,8 +36,6 @@ const prover = blockProver({
 const now = 1474382274 * 1000;
 const MUST_START_WITH_A_ZERO = 16;
 const MUST_START_WITH_TWO_ZEROS = 32;
-
-constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1; // For simple tests. Can be changed to test multiple cores.
 
 describe("Proof-of-work", function() {
 

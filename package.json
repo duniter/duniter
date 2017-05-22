@@ -16,7 +16,7 @@
     "test": "mocha --growl --timeout 20000 test test/fast test/integration test/",
     "start": "node bin/duniter start",
     "build": "cd \"node_modules/duniter-ui\" && npm install && npm run build",
-    "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --timeout 20000 test test/fast test/fast/block test/integration test/"
+    "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --timeout 20000 test test/fast test/integration test/"
   },
   "repository": {
     "type": "git",

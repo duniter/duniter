@@ -22,7 +22,7 @@ const conf = {
 
 let s1, cat, tac
 
-describe("Transactions: CSV", function() {
+describe("Sources property", function() {
 
   before(() => co(function*() {
     const res = yield toolbox.simpleNodeWith2Users(conf);
@@ -39,21 +39,11 @@ describe("Transactions: CSV", function() {
     assert.equal(block.dividend, 200);
   }));
 
-  it('with SIG and CSV', () => co(function *() {
-    let tx1 = yield cat.prepareITX(200, tac);
-    yield unit.shouldNotFail(cat.sendTX(tx1));
-    yield s1.commit({ time: now + 19 }); // TODO: why not in the same block?
-    let current = yield s1.get('/blockchain/current');
-    let tx2 = yield tac.prepareUTX(tx1, ['SIG(0)'], [{ qty: 200, base: 0, lock: 'SIG(' + cat.pub + ') && CSV(20)' }], {
-      comment: 'must wait 20 seconds',
-      blockstamp: [current.number, current.hash].join('-')
-    });
-    yield unit.shouldNotFail(cat.sendTX(tx2));
-    yield s1.commit({ time: now + 38 }); // TODO: why not in the same block?
-    let tx3 = yield cat.prepareITX(200, tac);
-    yield unit.shouldFail(cat.sendTX(tx3), 'Wrong unlocker in transaction');
-    yield s1.commit({ time: now + 39 });
-    yield unit.shouldNotFail(cat.sendTX(tx3)); // Because next block will have medianTime = 39
-    yield s1.commit({ time: now + 39 });
+  it('it should exist sources for HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', () => s1.expect('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (res) => {
+    assert.equal(res.sources.length, 1)
+  }));
+
+  it('it should NOT exist sources if we change one letter to uppercased version', () => s1.expect('/tx/sources/HGTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (res) => {
+    assert.equal(res.sources.length, 0)
   }));
 });

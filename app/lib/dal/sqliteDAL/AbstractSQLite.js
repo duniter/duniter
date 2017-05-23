@@ -69,7 +69,7 @@ function AbstractSQLite(driver) {
 
   this.sqlFindLikeAny = (obj, sort) => co(function *() {
     const keys = _.keys(obj);
-    return that.query('SELECT * FROM ' + that.table + ' WHERE ' + keys.map((k) => '`' + k + '` like ?').join(' or '), keys.map((k) => obj[k].toUpperCase()), sort);
+    return that.query('SELECT * FROM ' + that.table + ' WHERE ' + keys.map((k) => 'UPPER(`' + k + '`) like ?').join(' or '), keys.map((k) => obj[k].toUpperCase()), sort);
   });
 
   this.sqlRemoveWhere = (obj) => co(function *() {

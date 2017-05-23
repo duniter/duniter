@@ -1168,8 +1168,8 @@ extend@^3.0.0, extend@~3.0.0:
   resolved "https://registry.yarnpkg.com/extend/-/extend-3.0.1.tgz#a755ea7bc1adfcc5a31ce7e762dbaadc5e636444"
 
 external-editor@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/external-editor/-/external-editor-2.0.1.tgz#4c597c6c88fa6410e41dbbaa7b1be2336aa31095"
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/external-editor/-/external-editor-2.0.2.tgz#384f6d8ae02054235c19e0a142c6d6fc36ad9363"
   dependencies:
     tmp "^0.0.31"
 
@@ -1759,16 +1759,9 @@ js-yaml@3.0.1:
     argparse "~ 0.1.11"
     esprima "~ 1.0.2"
 
-js-yaml@3.8.2:
+js-yaml@3.8.2, js-yaml@3.x, js-yaml@^3.2.5, js-yaml@^3.5.1:
   version "3.8.2"
   resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-3.8.2.tgz#02d3e2c0f6beab20248d412c352203827d786721"
-  dependencies:
-    argparse "^1.0.7"
-    esprima "^3.1.1"
-
-js-yaml@3.x, js-yaml@^3.2.5, js-yaml@^3.5.1:
-  version "3.8.4"
-  resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-3.8.4.tgz#520b4564f86573ba96662af85a8cafa7b4b5a6f6"
   dependencies:
     argparse "^1.0.7"
     esprima "^3.1.1"
@@ -3301,9 +3294,9 @@ wordwrap@~0.0.2:
   version "0.0.3"
   resolved "https://registry.yarnpkg.com/wordwrap/-/wordwrap-0.0.3.tgz#a3d5da6cd5c0bc0008d37234bbaf1bed63059107"
 
-wotb@0.5.5:
-  version "0.5.5"
-  resolved "https://registry.yarnpkg.com/wotb/-/wotb-0.5.5.tgz#ebc802c860a92143c7705904c43d4b972944c7eb"
+wotb@0.5.x:
+  version "0.5.7"
+  resolved "https://registry.yarnpkg.com/wotb/-/wotb-0.5.7.tgz#24b3c8d931533bf77971deceb85cecd2518c8316"
   dependencies:
     bindings "1.2.1"
     nan "2.2.0"

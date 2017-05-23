@@ -4,12 +4,6 @@
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 
-VER_UI=1.1.5
-VER_BMA=1.1.2
-VER_CRAWLER=1.1.4
-VER_PROVER=1.1.2
-VER_KEYPAIR=1.1.3
-
 # Prepare
 NVER=`node -v`
 DUNITER_TAG=
@@ -81,17 +75,12 @@ cd ${RELEASES}/duniter
 # Remove git files
 rm -Rf .git
 [[ $? -eq 0 ]] && echo ">> VM: building modules..."
-[[ $? -eq 0 ]] && yarn
+[[ $? -eq 0 ]] && yarn --production
 #[[ $? -eq 0 ]] && echo ">> VM: running tests..."
 #[[ $? -eq 0 ]] && yarn test
 
-# Clean test and UI packages
-[[ $? -eq 0 ]] && echo ">> VM: removing duniter dev modules..."
-yarn remove duniter-bma duniter-crawler duniter-keypair duniter-prover --save
-[[ $? -eq 0 ]] && echo ">> VM: adding duniter modules..."
-yarn add "duniter-ui@$VER_UI" "duniter-bma@$VER_BMA" "duniter-crawler@$VER_CRAWLER" "duniter-keypair@$VER_KEYPAIR" "duniter-prover@$VER_PROVER" --save --production
-rm -rf node_modules yarn.lock
-yarn --production
+[[ $? -eq 0 ]] && node -e "const deps = require('./package.json').peerDependencies; Object.keys(deps).forEach(k => console.log(k + \"@\" + deps[k]))" | xargs yarn add --production
+
 
 # Specific modules that are not needed in a release
 rm -rf node_modules/materialize-css

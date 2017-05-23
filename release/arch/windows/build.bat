@@ -1,10 +1,4 @@
 
-set VER_UI=1.1.5
-set VER_BMA=1.1.2
-set VER_CRAWLER=1.1.4
-set VER_PROVER=1.1.2
-set VER_KEYPAIR=1.1.3
-
 set ADDON_VERSION=48
 set NW_VERSION=0.17.6
 set NW_RELEASE=v0.17.6
@@ -35,19 +29,14 @@ echo %DUNITER_TAG%
 
 git checkout %DUNITER_TAG%
 
-call npm install
+call npm install --production
 REM call npm test
 
-echo "Retrait des modules 'dev'..."
-call npm prune --production
-echo "Ajout du module 1/4..."
-call npm install duniter-bma@%VER_BMA% --save --production
-echo "Ajout du module 2/4..."
-call npm install duniter-crawler@%VER_CRAWLER% --save --production
-echo "Ajout du module 3/4..."
-call npm install duniter-keypair@%VER_KEYPAIR% --save --production
-echo "Ajout du module 4/4..."
-call npm install duniter-prover@%VER_PROVER% --save --production
+echo ">> VM: installing peerDependencies installer..."
+call npm i --save-dev @team-griffin/install-self-peers
+echo ">> VM: installing peerDependencies..."
+call ./node_modules/.bin/install-self-peers --npm -- --production
+
 set SRC=%cd%
 echo %SRC%
 cd node_modules/wotb

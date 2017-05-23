@@ -4,12 +4,6 @@
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 
-VER_UI=1.1.5
-VER_BMA=1.1.2
-VER_CRAWLER=1.1.4
-VER_PROVER=1.1.2
-VER_KEYPAIR=1.1.3
-
 # Prepare
 ARCH="armv7l"
 NVER="v6.10.2"
@@ -72,11 +66,8 @@ SRC=`pwd`
 echo $SRC
 
 # Install modules
-node/bin/npm install "duniter-bma@$VER_BMA" --save --production
-node/bin/npm install "duniter-crawler@$VER_CRAWLER" --save --production
-node/bin/npm install "duniter-keypair@$VER_KEYPAIR" --save --production
-node/bin/npm install "duniter-prover@$VER_PROVER" --save --production
-node/bin/npm install "duniter-ui@$VER_UI" --production --save
+echo ">> VM: installing peerDependencies..."
+node/bin/node -e "const deps = require('./package.json').peerDependencies; Object.keys(deps).forEach(k => console.log(k + \"@\" + deps[k]))" | xargs node/bin/npm i --production
 
 # Clean unused UI modules
 rm -Rf node_modules/duniter-ui/node_modules

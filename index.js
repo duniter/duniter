@@ -21,6 +21,7 @@ const revertDependency    = require('./app/modules/revert');
 const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
 const routerDependency    = require('./app/modules/router');
+const pluginDependency    = require('./app/modules/plugin');
 
 const MINIMAL_DEPENDENCIES = [
   { name: 'duniter-config',    required: configDependency }
@@ -35,7 +36,8 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-revert',    required: revertDependency },
   { name: 'duniter-daemon',    required: daemonDependency },
   { name: 'duniter-psignal',   required: pSignalDependency },
-  { name: 'duniter-router',    required: routerDependency }
+  { name: 'duniter-router',    required: routerDependency },
+  { name: 'duniter-plugin',    required: pluginDependency }
 ]);
 
 const PRODUCTION_DEPENDENCIES = DEFAULT_DEPENDENCIES.concat([
@@ -69,15 +71,17 @@ module.exports.statics = {
     // Look for compliant packages
     const prodDeps = Object.keys(pjson.dependencies);
     const devDeps = Object.keys(pjson.devDependencies);
-    const duniterDeps = _.filter(prodDeps.concat(devDeps), (dep) => dep.match(/^duniter-/));
+    const duniterDeps = prodDeps.concat(devDeps)
     for(const dep of duniterDeps) {
-      const required = require(dep);
-      if (required.duniter) {
-        duniterModules.push({
-          name: dep,
-          required
-        });
-      }
+      try {
+        const required = require(dep);
+        if (required.duniter) {
+          duniterModules.push({
+            name: dep,
+            required
+          });
+        }
+      } catch (e) { /* Silent errors for packages that fail to load */ }
     }
 
     // The final stack

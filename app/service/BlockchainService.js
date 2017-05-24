@@ -412,7 +412,6 @@ function BlockchainService (server) {
     }
     // Transactions recording
     yield mainContext.updateTransactionsForBlocks(blocks, getBlockByNumberAndHash);
-    logger.debug(blocks[0].number);
     yield dal.blockDAL.saveBunch(blocks);
     yield pushStatsForBlocks(blocks);
   });

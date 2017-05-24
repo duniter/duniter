@@ -9,7 +9,9 @@ module.exports = {
   duniter: {
 
     methods: {
-      canWrite: getNPMAccess
+      canWrite: getNPMAccess,
+      npmInstall,
+      npmRemove
     },
 
     cli: [{
@@ -50,10 +52,10 @@ module.exports = {
   }
 }
 
-function npmInstall(what) {
+function npmInstall(what, npm, cwd) {
   return new Promise((res, rej) => {
-    const npm = getNPM()
-    const cwd = getCWD()
+    npm = npm || getNPM()
+    cwd = cwd || getCWD()
     const install = spawn(npm, ['i', '--save', what], { cwd })
 
     install.stdout.pipe(process.stdout)
@@ -77,10 +79,10 @@ function npmInstall(what) {
 }
 
 
-function npmRemove(what) {
+function npmRemove(what, npm, cwd) {
   return new Promise((res, rej) => {
-    const npm = getNPM()
-    const cwd = getCWD()
+    npm = npm || getNPM()
+    cwd = cwd || getCWD()
     const uninstall = spawn(npm, ['remove', '--save', what], { cwd })
 
     uninstall.stdout.pipe(process.stdout)

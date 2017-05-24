@@ -4,12 +4,21 @@ const co      = require('co');
 const _       = require('underscore');
 const should  = require('should');
 const util    = require('util');
+const path    = require('path');
 const stream  = require('stream');
 const duniter = require('../../index');
 const parsers = require('duniter-common').parsers;
 const querablep = require('querablep');
 
 describe("v1.0 Module API", () => {
+
+  it('should be able to execute `hello` command with quickRun', () => co(function*() {
+    duniter.statics.quickRunGetArgs = () => ['', '', 'hello-world']
+    duniter.statics.onRunDone = () => { /* Do not exit the process */ }
+    const absolutePath = path.join(__dirname, './scenarios/hello-plugin.js')
+    const res = yield duniter.statics.quickRun(absolutePath)
+    res.should.equal('Hello world! from within Duniter.')
+  }))
 
   it('should be able to execute `hello` command', () => co(function*() {
 

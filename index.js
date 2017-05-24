@@ -65,13 +65,15 @@ module.exports.statics = {
    * Creates a new stack pre-registered with compliant modules found in package.json
    */
   autoStack: (priorityModules) => {
-    const pjson = require(path.resolve('./package.json'))
     const duniterModules = [];
-
-    // Look for compliant packages
-    const prodDeps = Object.keys(pjson.dependencies);
-    const devDeps = Object.keys(pjson.devDependencies);
-    const duniterDeps = prodDeps.concat(devDeps)
+    let duniterDeps = []
+    try {
+      const pjson = require(path.resolve('./package.json'))
+      // Look for compliant packages
+      const prodDeps = Object.keys(pjson.dependencies);
+      const devDeps = Object.keys(pjson.devDependencies);
+      duniterDeps = prodDeps.concat(devDeps)
+    } catch (e) { /* duniter as a dependency might not be run from an NPM project */ }
     for(const dep of duniterDeps) {
       try {
         const required = require(dep);
@@ -86,7 +88,33 @@ module.exports.statics = {
 
     // The final stack
     return new Stack((priorityModules || []).concat(PRODUCTION_DEPENDENCIES).concat(duniterModules));
-  }
+  },
+
+  quickRun: function() {
+    const deps = Array.from(arguments).map((f, index) => {
+      const canonicalPath = path.resolve(f)
+      console.log(canonicalPath)
+      return {
+        name: 'duniter-quick-module-' + index,
+        required: require(canonicalPath)
+      }
+    })
+    const that = this
+    const stack = this.autoStack(deps)
+    return co(function*() {
+      let res
+      try {
+        res = yield stack.executeStack(that.quickRunGetArgs())
+      } catch(e) {
+        console.error(e)
+      }
+      that.onRunDone()
+      return res
+    })
+  },
+
+  quickRunGetArgs: () => process.argv.slice(),
+  onRunDone: () => process.exit()
 };
 
 function Stack(dependencies) {

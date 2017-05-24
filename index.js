@@ -1,8 +1,7 @@
 "use strict";
 
-const Q = require('q');
 const co = require('co');
-const es = require('event-stream');
+const path = require('path');
 const util = require('util');
 const stream = require('stream');
 const _ = require('underscore');
@@ -64,7 +63,7 @@ module.exports.statics = {
    * Creates a new stack pre-registered with compliant modules found in package.json
    */
   autoStack: (priorityModules) => {
-    const pjson = require('./package.json');
+    const pjson = require(path.resolve('./package.json'))
     const duniterModules = [];
 
     // Look for compliant packages

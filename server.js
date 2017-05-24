@@ -110,6 +110,11 @@ function Server (home, memoryOnly, overrideConf) {
         that.conf[key] = defaultValues[key];
       }
     });
+    // Default keypair
+    if (!that.conf.pair || !that.conf.pair.pub || !that.conf.pair.sec) {
+      // Create a random key
+      that.conf.pair = keyring.randomKey().json()
+    }
     // Extract key pair
     that.keyPair = keyring.Key(that.conf.pair.pub, that.conf.pair.sec);
     that.sign = that.keyPair.sign;

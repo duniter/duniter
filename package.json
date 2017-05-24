@@ -50,7 +50,6 @@
     "moment": "2.18.1",
     "node-pre-gyp": "0.6.34",
     "optimist": "0.6.1",
-    "parallelshell": "2.0.0",
     "q": "1.5.0",
     "q-io": "1.13.2",
     "querablep": "^0.1.0",

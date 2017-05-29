@@ -3228,9 +3228,9 @@ wordwrap@~0.0.2:
   version "0.0.3"
   resolved "https://registry.yarnpkg.com/wordwrap/-/wordwrap-0.0.3.tgz#a3d5da6cd5c0bc0008d37234bbaf1bed63059107"
 
-wotb@0.5.x:
-  version "0.5.7"
-  resolved "https://registry.yarnpkg.com/wotb/-/wotb-0.5.7.tgz#24b3c8d931533bf77971deceb85cecd2518c8316"
+wotb@^0.5.9:
+  version "0.5.9"
+  resolved "https://registry.yarnpkg.com/wotb/-/wotb-0.5.9.tgz#5918ee30ca746ec1ba2e8ccc9e1421e709995be2"
   dependencies:
     bindings "1.2.1"
     nan "2.2.0"

@@ -138,12 +138,15 @@ function Stack(dependencies) {
     neutral: []
   };
 
+  // Part of modules API
+  this.getModule = (name) => loaded[name]
+
   this.registerDependency = (requiredObject, name) => {
     if (name && loaded[name]) {
       // Do not try to load it twice
       return;
     }
-    loaded[name] = true;
+    loaded[name] = requiredObject;
     const def = requiredObject.duniter;
     definitions.push(def);
     for (const opt of (def.cliOptions || [])) {

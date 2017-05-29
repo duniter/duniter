@@ -54,9 +54,10 @@ module.exports = {
 
 function npmInstall(what, npm, cwd) {
   return new Promise((res, rej) => {
+    const node = getNode()
     npm = npm || getNPM()
     cwd = cwd || getCWD()
-    const install = spawn(npm, ['i', '--save', what], { cwd })
+    const install = spawn(node, [npm, 'i', '--save', what], { cwd })
 
     install.stdout.pipe(process.stdout)
     install.stderr.pipe(process.stderr)
@@ -81,9 +82,10 @@ function npmInstall(what, npm, cwd) {
 
 function npmRemove(what, npm, cwd) {
   return new Promise((res, rej) => {
+    const node = getNode()
     npm = npm || getNPM()
     cwd = cwd || getCWD()
-    const uninstall = spawn(npm, ['remove', '--save', what], { cwd })
+    const uninstall = spawn(node, [npm, 'remove', '--save', what], { cwd })
 
     uninstall.stdout.pipe(process.stdout)
     uninstall.stderr.pipe(process.stderr)
@@ -103,6 +105,10 @@ function npmRemove(what, npm, cwd) {
       res()
     });
   })
+}
+
+function getNode() {
+  return process.argv[0]
 }
 
 function getNPM() {

@@ -796,8 +796,8 @@ duniter-prover@1.3.x:
     underscore "1.8.3"
 
 duniter-ui@1.3.x:
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/duniter-ui/-/duniter-ui-1.3.1.tgz#cddebe90588e142c7958b986bb0e1c9f957dbe93"
+  version "1.3.4"
+  resolved "https://registry.yarnpkg.com/duniter-ui/-/duniter-ui-1.3.4.tgz#f0e969b30f5bb6076f122fdb119ffda120cf8a7c"
   dependencies:
     adm-zip "0.4.7"
     body-parser "1.17.1"

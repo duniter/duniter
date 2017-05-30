@@ -96,11 +96,7 @@ install_from_git() {
   NODE=$DUNITER_DIR/node/bin/node
   NPM=$DUNITER_DIR/node/bin/npm
   $NODE $NPM install
-  $NODE $NPM install duniter-bma --save --production
-  $NODE $NPM install duniter-crawler --save --production
-  $NODE $NPM install duniter-keypair --save --production
-  $NODE $NPM install duniter-prover --save --production
-  $NODE $NPM install duniter-ui --production --save
+  [[ $? -eq 0 ]] && $NODE -e "const deps = require('./package.json').peerDependencies; Object.keys(deps).forEach(k => console.log(k + \"@\" + deps[k]))" | xargs $NODE $NPM install --save --production
   return
 }
 

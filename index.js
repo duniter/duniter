@@ -93,7 +93,6 @@ module.exports.statics = {
   quickRun: function() {
     const deps = Array.from(arguments).map((f, index) => {
       const canonicalPath = path.resolve(f)
-      console.log(canonicalPath)
       return {
         name: 'duniter-quick-module-' + index,
         required: require(canonicalPath)

@@ -70,8 +70,8 @@ module.exports.statics = {
     try {
       const pjson = require(path.resolve('./package.json'))
       // Look for compliant packages
-      const prodDeps = Object.keys(pjson.dependencies);
-      const devDeps = Object.keys(pjson.devDependencies);
+      const prodDeps = Object.keys(pjson.dependencies || {});
+      const devDeps = Object.keys(pjson.devDependencies || {});
       duniterDeps = prodDeps.concat(devDeps)
     } catch (e) { /* duniter as a dependency might not be run from an NPM project */ }
     for(const dep of duniterDeps) {

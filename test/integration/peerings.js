@@ -115,9 +115,9 @@ describe("Network", function() {
           yield sync(0, 0, s1, s2);
           // Server 3 syncs block 0
           yield sync(0, 0, s1, s3);
-          yield nodeS1.getPeer().then((peer) => nodeS2.postPeer(new Peer(peer).getRawSigned()));
-          yield nodeS2.getPeer().then((peer) => nodeS1.postPeer(new Peer(peer).getRawSigned()));
-          yield nodeS3.getPeer().then((peer) => nodeS1.postPeer(new Peer(peer).getRawSigned()));
+          yield nodeS1.getPeer().then((peer) => nodeS2.postPeer(new Peer(peer).getRawSigned())).catch(e => console.error(e))
+          yield nodeS2.getPeer().then((peer) => nodeS1.postPeer(new Peer(peer).getRawSigned())).catch(e => console.error(e))
+          yield nodeS3.getPeer().then((peer) => nodeS1.postPeer(new Peer(peer).getRawSigned())).catch(e => console.error(e))
           yield commitS1();
           yield [
             until(s2, 'block', 1),

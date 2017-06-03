@@ -79,12 +79,12 @@ describe("Testing transactions", function() {
         const txSrc = _.findWhere(res.sources, { type: 'T' });
         assert.equal(txSrc.amount, 690);
       })
-      const tx = yield s1.get('/tx/hash/5645ED3A022201BC4C225CEF76E3DE7A0FC8DAFDB6C7211E7C1C214AABC7B1CE')
+      const tx = yield s1.get('/tx/hash/0D41759A8FB1350ADCC21ADBD799BC124722BC1CBCBB15355EF00494B4CD44D0')
       assert.notEqual(tx, null)
       assert.deepEqual(tx, {
         "comment": "",
         "currency": "duniter_unit_test_currency",
-        "hash": "5645ED3A022201BC4C225CEF76E3DE7A0FC8DAFDB6C7211E7C1C214AABC7B1CE",
+        "hash": "0D41759A8FB1350ADCC21ADBD799BC124722BC1CBCBB15355EF00494B4CD44D0",
         "inputs": [
           "1200:0:D:DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:2"
         ],
@@ -98,7 +98,7 @@ describe("Testing transactions", function() {
         ],
         "raw": "",
         "signatures": [
-          "3KDs6xjn6itMqk36IKlyfH5YOkz069Or0BDVzeL0lU6BMjS3CpM2+Ak3cC041dxk8Te+/smviOu3wHzjapHtDQ=="
+          "waKIjrO0lMBU+1pDPOEOC55OQeCUIczEkV7bUI6bgMIs7AzrRZSFsOnRzdbUDAnx/3SqhgRiqedzgtXVD/cYBA=="
         ],
         "unlocks": [
           "0:SIG(0)"

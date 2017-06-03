@@ -62,14 +62,14 @@ function FileDAL(params) {
     'cindexDAL': that.cindexDAL
   };
 
-  this.init = () => co(function *() {
+  this.init = (conf) => co(function *() {
     const dalNames = _.keys(that.newDals);
     for (const dalName of dalNames) {
       const dal = that.newDals[dalName];
       yield dal.init();
     }
     logger.debug("Upgrade database...");
-    yield that.metaDAL.upgradeDatabase();
+    yield that.metaDAL.upgradeDatabase(conf);
     const latestMember = yield that.iindexDAL.getLatestMember();
     if (latestMember && that.wotb.getWoTSize() > latestMember.wotb_id + 1) {
       logger.warn('Maintenance: cleaning wotb...');
@@ -374,9 +374,19 @@ function FileDAL(params) {
     return _(pending).sortBy((ms) => -ms.number)[0];
   });
 
-  this.findNewcomers = () => co(function*() {
-    const mss = yield that.msDAL.getPendingIN();
-    return _.chain(mss).sortBy((ms) => -ms.sigDate).value();
+  this.findNewcomers = (blockMedianTime) => co(function*() {
+    const pending = yield that.msDAL.getPendingIN()
+    const mss = yield pending.map(p => co(function*() {
+      const reduced = yield that.mindexDAL.getReducedMS(p.issuer)
+      if (!reduced || !reduced.chainable_on || blockMedianTime >= reduced.chainable_on || blockMedianTime < constants.TIME_TO_TURN_ON_BRG_107) {
+        return p
+      }
+      return null
+    }))
+    return _.chain(mss)
+      .filter(ms => ms)
+      .sortBy((ms) => -ms.sigDate)
+      .value()
   });
 
   this.findLeavers = () => co(function*() {

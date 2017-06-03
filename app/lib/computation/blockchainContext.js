@@ -154,6 +154,8 @@ function BlockchainContext(BlockchainService) {
     if (indexer.ruleIdentityWritability(iindex, conf) === false) throw Error('ruleIdentityWritability');
     // BR_G64
     if (indexer.ruleMembershipWritability(mindex, conf) === false) throw Error('ruleMembershipWritability');
+    // BR_G108
+    if (indexer.ruleMembershipPeriod(mindex) === false) throw Error('ruleMembershipPeriod');
     // BR_G65
     if (indexer.ruleCertificationWritability(cindex, conf) === false) throw Error('ruleCertificationWritability');
     // BR_G66

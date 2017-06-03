@@ -1057,6 +1057,7 @@ ud0         | UD(0), i.e. initial Universal Dividend
 udTime0     | Time of first UD.
 udReevalTime0 | Time of first reevaluation of the UD.
 sigPeriod   | Minimum delay between 2 certifications of a same issuer, in seconds. Must be positive or zero.
+msPeriod    | Minimum delay between 2 memberships of a same issuer, in seconds. Must be positive or zero.
 sigStock    | Maximum quantity of active certifications made by member.
 sigWindow   | Maximum delay a certification can wait before being expired for non-writing.
 sigValidity | Maximum age of an active signature (in seconds)
@@ -1198,6 +1199,7 @@ Each identity produces 2 new entries:
         expired_on = 0
         expires_on = MedianTime + msValidity
         revokes_on = MedianTime + msValidity*2
+        chainable_on = MedianTime + msPeriod
         type = 'JOIN'
         revoked_on = null
         leaving = false
@@ -1226,6 +1228,7 @@ Each join whose `PUBLIC_KEY` **does not match** a local MINDEX `CREATE, PUBLIC_K
         expired_on = 0
         expires_on = MedianTime + msValidity
         revokes_on = MedianTime + msValidity*2
+        chainable_on = MedianTime + msPeriod
         type = 'JOIN'
         revoked_on = null
         leaving = null
@@ -1242,6 +1245,7 @@ Each active produces 1 new entry:
         written_on = BLOCKSTAMP
         expires_on = MedianTime + msValidity
         revokes_on = MedianTime + msValidity*2
+        chainable_on = MedianTime + msPeriod
         type = 'RENEW'
         revoked_on = null
         leaving = null
@@ -2088,6 +2092,12 @@ For each ENTRY in local MINDEX where `revoked_on == null`:
 For each ENTRY in local MINDEX where `revoked_on != null`:
 
     ENTRY.isBeingRevoked = true
+   
+####### BR_G107 - ENTRY.unchainables
+F
+If `HEAD.number > 0`:
+
+    ENTRY.unchainables = COUNT(GLOBAL_MINDEX[issuer=ENTRY.issuer, chainable_on > HEAD~1.medianTime]))
     
 ###### Local CINDEX augmentation
 
@@ -2326,6 +2336,12 @@ Rule:
 Rule:
 
     ENTRY.age <= [msWindow]
+
+###### BR_G108 - Membership period
+
+Rule:
+
+    ENTRY.unchainables == 0
 
 ###### BR_G65 - Certification writability
 

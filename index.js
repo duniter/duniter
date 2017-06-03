@@ -296,7 +296,7 @@ function Stack(dependencies) {
         return yield command.onConfiguredExecute(server, conf, program, params, wizardTasks, that);
       }
       // Second possible class of commands: post-service
-      yield server.initDAL();
+      yield server.initDAL(conf);
 
       /**
        * Service injection

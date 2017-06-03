@@ -28,6 +28,7 @@ function MIndexDAL(driver) {
     'expired_on',
     'revokes_on',
     'revoked_on',
+    'chainable_on',
     'leaving',
     'revocation'
   ];

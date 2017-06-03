@@ -89,6 +89,7 @@ function Server (home, memoryOnly, overrideConf) {
       ud0:                constants.CONTRACT.DEFAULT.UD0,
       stepMax:            constants.CONTRACT.DEFAULT.STEPMAX,
       sigPeriod:          constants.CONTRACT.DEFAULT.SIGPERIOD,
+      msPeriod:           constants.CONTRACT.DEFAULT.MSPERIOD,
       sigStock:           constants.CONTRACT.DEFAULT.SIGSTOCK,
       sigWindow:          constants.CONTRACT.DEFAULT.SIGWINDOW,
       sigValidity:        constants.CONTRACT.DEFAULT.SIGVALIDITY,
@@ -110,6 +111,8 @@ function Server (home, memoryOnly, overrideConf) {
         that.conf[key] = defaultValues[key];
       }
     });
+    // 1.3.X: the msPeriod = msWindow
+    that.conf.msPeriod = that.conf.msPeriod || that.conf.msWindow
     // Default keypair
     if (!that.conf.pair || !that.conf.pair.pub || !that.conf.pair.sec) {
       // Create a random key
@@ -171,8 +174,8 @@ function Server (home, memoryOnly, overrideConf) {
 
   this.submitP = (obj, isInnerWrite) => Q.nbind(this.submit, this)(obj, isInnerWrite);
 
-  this.initDAL = () => co(function*() {
-    yield that.dal.init();
+  this.initDAL = (conf) => co(function*() {
+    yield that.dal.init(conf);
     // Maintenance
     let head_1 = yield that.dal.bindexDAL.head(1);
     if (head_1) {
@@ -352,7 +355,7 @@ function Server (home, memoryOnly, overrideConf) {
 
   this.writeRaw = (raw, type) => co(function *() {
     const parser = documentsMapping[type] && documentsMapping[type].parser;
-    const obj = parser.syncWrite(raw);
+    const obj = parser.syncWrite(raw, logger);
     return yield that.singleWritePromise(obj);
   });
 

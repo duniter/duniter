@@ -30,9 +30,12 @@ module.exports = {
   shouldFail: (promise, message) => co(function*() {
     try {
       yield promise;
-      throw { "message": '{ "message": "Should have thrown an error" }' };
+      throw '{ "message": "Should have thrown an error" }'
     } catch(e) {
-      const err = JSON.parse(e)
+      let err = e
+      if (typeof e === "string") {
+        err = JSON.parse(e)
+      }
       err.should.have.property('message').equal(message);
     }
   }),

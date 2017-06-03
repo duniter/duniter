@@ -267,6 +267,21 @@ function MetaDAL(driver) {
         wallet.balance = amountsRemaining.reduce((sum, src) => sum + src.amount * Math.pow(10, src.base), 0)
         yield walletDAL.saveWallet(wallet)
       }
+    }),
+
+    /**
+     * Feeds the m_index.chainable_on
+     */
+    21: (conf) => co(function*() {
+      let blockDAL = new (require('./BlockDAL'))(driver);
+      let mindexDAL = new (require('./index/MIndexDAL'))(driver);
+      yield mindexDAL.exec('ALTER TABLE m_index ADD COLUMN chainable_on INTEGER NULL;')
+      const memberships = yield mindexDAL.query('SELECT * FROM m_index WHERE op = ?', [common.constants.IDX_CREATE])
+      for (const ms of memberships) {
+        const reference = yield blockDAL.getBlock(parseInt(ms.written_on.split('-')[0]))
+        const updateQuery = 'UPDATE m_index SET chainable_on = ' + (reference.medianTime + conf.msPeriod) + ' WHERE pub = \'' + ms.pub + '\' AND op = \'CREATE\''
+        yield mindexDAL.exec(updateQuery)
+      }
     })
   };
 
@@ -280,7 +295,7 @@ function MetaDAL(driver) {
       'COMMIT;', []);
   });
 
-  function executeMigration(migration) {
+  function executeMigration(migration, conf) {
     return co(function *() {
       try {
         if (typeof migration == "string") {
@@ -291,7 +306,7 @@ function MetaDAL(driver) {
         } else if (typeof migration == "function") {
 
           // JS function to execute
-          yield migration();
+          yield migration(conf);
 
         }
       } catch (e) {
@@ -300,10 +315,10 @@ function MetaDAL(driver) {
     });
   }
 
-  this.upgradeDatabase = () => co(function *() {
+  this.upgradeDatabase = (conf) => co(function *() {
     let version = yield that.getVersion();
     while(migrations[version]) {
-      yield executeMigration(migrations[version]);
+      yield executeMigration(migrations[version], conf);
       // Automated increment
       yield that.exec('UPDATE meta SET version = version + 1');
       version++;

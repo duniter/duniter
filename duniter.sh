@@ -9,7 +9,7 @@
 DEB_PACKAGING=
 
 if [[ $DEB_PACKAGING ]]; then
-  DUNITER_DIR=/opt/duniter/sources/
+  DUNITER_DIR=/opt/duniter/
 fi
 
 duniter() {

@@ -1,28 +1,34 @@
 #!/bin/bash
 
 DUN_ROOT=/opt/duniter
-DUN_SOURCES=$DUN_ROOT/sources
-DUN_NW=$DUN_ROOT/nw
+DUN_SOURCES=$DUN_ROOT/
 mkdir -p $DUN_SOURCES
 
-# Duniter sources
+# Duniter sources extraction
 if [[ -f $DUN_ROOT/duniter-desktop.nw ]]; then
   unzip -q -d $DUN_SOURCES/ $DUN_ROOT/duniter-desktop.nw
+  rm -rf $DUN_ROOT/duniter-desktop.nw
 fi
 
 # Duniter-Desktop
-if [[ -f $DUN_ROOT/nw.nwb ]]; then
-  unzip -q -d $DUN_NW $DUN_ROOT/nw.nwb
-  cp -R $DUN_SOURCES/gui/* $DUN_NW/
-  chmod +x $DUN_NW/nw $DUN_NW/lib $DUN_NW/locales
-  ln -s $DUN_NW/nw /usr/bin/duniter-desktop
+if [[ -f $DUN_SOURCES/nw ]]; then
+  chmod +x $DUN_SOURCES/nw $DUN_SOURCES/lib $DUN_SOURCES/locales
+  chmod +rw $DUN_SOURCES/nw $DUN_SOURCES/lib $DUN_SOURCES/locales
+  ln -s $DUN_SOURCES/nw /usr/bin/duniter-desktop
   sed -i "s/DEB_PACKAGING=.*/DEB_PACKAGING=true/g" $DUN_SOURCES/duniter.sh
+  # Links for Node + NPM
+  cd $DUN_SOURCES
+  cd bin
+  ln -s ../lib/node_modules/npm/bin/npm-cli.js ./npm -f
+  cd ..
+  ln -s ./bin/node node -f
+  ln -s ./bin/npm npm -f
 fi
 
 # Duniter CLI executes with embedded node
 if [[ -d $DUN_SOURCES/node ]]; then
   chmod 755 $DUN_SOURCES/bin/duniter
-  sed -i "s/usr\/bin\/env node/opt\/duniter\/sources\/node\/bin\/node/g" $DUN_SOURCES/bin/duniter
+  sed -i "s/usr\/bin\/env node/opt\/duniter\/node\/bin\/node/g" $DUN_SOURCES/bin/duniter
   sed -i "s/DEB_PACKAGING=.*/DEB_PACKAGING=true/g" $DUN_SOURCES/duniter.sh
   ln -s $DUN_SOURCES/duniter.sh /usr/bin/duniter
 fi

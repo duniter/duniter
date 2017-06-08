@@ -129,9 +129,18 @@ function checkNPMAccess() {
 }
 
 function getNPMAccess() {
-  return new Promise((res) => {
-    fs.access(path.join(__dirname, '/../../package.json'), fs.constants.R_OK | fs.constants.W_OK, (err) => {
-      res(!err)
+  return co(function*() {
+    const hasAccessToPackageJSON = yield new Promise((res) => {
+      fs.access(path.join(__dirname, '/../../package.json'), fs.constants.R_OK | fs.constants.W_OK, (err) => {
+        res(!err)
+      })
     })
+    const hasAccessToNodeModules = yield new Promise((res) => {
+      fs.access(path.join(__dirname, '/../../node_modules'), fs.constants.R_OK | fs.constants.W_OK, (err) => {
+        res(!err)
+      })
+    })
+    console.log(hasAccessToPackageJSON, hasAccessToNodeModules)
+    return hasAccessToPackageJSON && hasAccessToNodeModules
   })
 }

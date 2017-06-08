@@ -53,7 +53,7 @@
 
   let gui = require('nw.gui');
 
-  let packageJSON = require('../../nw/package.json');
+  let packageJSON = require(require('path').resolve('./package.json'));
   function reqListener () {
     document.getElementById('loader').innerHTML = 'Server ready.';
     clearTimeout(strangeTimeout);

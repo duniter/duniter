@@ -108,11 +108,11 @@ function npmRemove(what, npm, cwd) {
 }
 
 function getNode() {
-  return process.argv[0]
+  return process.argv[0].replace(/(node|nw)$/, 'node')
 }
 
 function getNPM() {
-  return process.argv[0].replace(/node$/, 'npm')
+  return process.argv[0].replace(/(node|nw)$/, 'npm')
 }
 
 function getCWD() {

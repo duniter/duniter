@@ -9,6 +9,15 @@
   "private": false,
   "description": "Crypto-currency software allowing to build P2P free currencies",
   "main": "index.js",
+  "node-main": "../sources/bin/duniter",
+  "window": {
+    "icon": "duniter.png",
+    "title": "v1.3.3",
+    "width": 800,
+    "height": 800,
+    "min_width": 750,
+    "min_height": 400
+  },
   "directories": {
     "test": "test"
   },

@@ -5,7 +5,7 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 
 # Prepare
-ARCH="armv7l"
+ARCH="`uname -m | sed -e \"s/86_//\"`"
 NVER="v6.10.2"
 
 # Folders
@@ -79,22 +79,22 @@ rm -Rf node_modules/duniter-ui/node_modules
 #mv node_modules/sqlite3/lib/binding/Release/node-v48-linux-x64 node_modules/sqlite3/lib/binding/Release/node-v48-linux-arm
 
 cd ..
-mkdir -p duniter_release/sources
-cp -R ${SRC}/* duniter_release/sources/
+mkdir -p duniter_release
+cp -R ${SRC}/* duniter_release/
 
 # Creating DEB packaging
-mv duniter_release/sources/release/arch/debian/package duniter-${ARCH}
+mv duniter_release/release/arch/debian/package duniter-${ARCH}
 mkdir -p duniter-${ARCH}/opt/duniter/
 chmod 755 duniter-${ARCH}/DEBIAN/post*
 chmod 755 duniter-${ARCH}/DEBIAN/pre*
 sed -i "s/Version:.*/Version:$DUNITER_DEB_VER/g" duniter-${ARCH}/DEBIAN/control
-cd duniter_release/sources
+cd duniter_release
 pwd
 rm -Rf .git
 echo "Zipping..."
 zip -qr ../duniter-desktop.nw *
-cd ../..
-mv duniter_release/duniter-desktop.nw duniter-${ARCH}/opt/duniter/
+cd ../
+mv duniter-desktop.nw duniter-${ARCH}/opt/duniter/
 echo "Making package package"
 fakeroot dpkg-deb --build duniter-${ARCH}
 mv duniter-${ARCH}.deb "$INITIAL_DIRECTORY/duniter-server-v${DUNITER_VER}-linux-${ARCH}.deb"

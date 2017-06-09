@@ -139,11 +139,27 @@ mkdir -p "$RELEASES/desktop_release"
 # Build Desktop version .tar.gz
 # -------------------------------------------------
 
-cp -r "$DOWNLOADS/${NW}" "$RELEASES/desktop_release/nw"
-cp ${RELEASES}/desktop_/gui/* "$RELEASES/desktop_release/nw/"
-cp -R "$RELEASES/desktop_/" "$RELEASES/desktop_release/sources/"
+cp -r $DOWNLOADS/${NW}/* "$RELEASES/desktop_release/"
+# Embed Node.js with Nw.js to make Duniter modules installable
+cp -r ${DOWNLOADS}/node-${NVER}-linux-x64/lib "$RELEASES/desktop_release/"
+cp -r ${DOWNLOADS}/node-${NVER}-linux-x64/include "$RELEASES/desktop_release/"
+cp -r ${DOWNLOADS}/node-${NVER}-linux-x64/bin "$RELEASES/desktop_release/"
+# Add some specific files for GUI
+cp ${RELEASES}/desktop_/gui/* "$RELEASES/desktop_release/"
+# Add Duniter sources
+cp -R $RELEASES/desktop_/* "$RELEASES/desktop_release/"
+## Insert Nw specific fields while they do not exist (1.3.3)
+sed -i "s/\"main\": \"index.js\",/\"main\": \"index.html\",/" "$RELEASES/desktop_release/package.json"
+# Add links for Node.js + NPM
+cd "$RELEASES/desktop_release/bin"
+ln -s ../lib/node_modules/npm/bin/npm-cli.js ./npm -f
+cd ..
+ln -s ./bin/node node -f
+ln -s ./bin/npm npm -f
+#sed -i "s/\"node-main\": \"\.\.\/sources\/bin\/duniter\",/\"node-main\": \".\/bin\/duniter\",/" "$RELEASES/desktop_release/package.json"
+# Create a copy for TGZ binary
 cp -R "$RELEASES/desktop_release" "$RELEASES/desktop_release_tgz"
-#cd "$RELEASES/desktop_release_tgz/sources/"
+#cd "$RELEASES/desktop_release_tgz/"
 #rm -rf node_modules/sqlite3/lib/binding/node-webkit-$NW_RELEASE-linux-x64
 #rm -rf node_modules/wotb/lib/binding/Release/node-webkit-$NW_RELEASE-linux-x64
 #rm -rf node_modules/naclb/lib/binding/Release/node-webkit-$NW_RELEASE-linux-x64
@@ -156,12 +172,13 @@ tar czf /vagrant/duniter-desktop-${DUNITER_TAG}-linux-x64.tar.gz * --exclude ".g
 # -------------------------------------------------
 
 # Create .deb tree + package it
-cp -r "$RELEASES/desktop_release/sources/release/arch/debian/package" "$RELEASES/duniter-x64"
+#cp -r "$RELEASES/desktop_release/release/arch/debian/package" "$RELEASES/duniter-x64"
+cp -r "/vagrant/package" "$RELEASES/duniter-x64"
 mkdir -p "$RELEASES/duniter-x64/opt/duniter/"
 chmod 755 ${RELEASES}/duniter-x64/DEBIAN/post*
 chmod 755 ${RELEASES}/duniter-x64/DEBIAN/pre*
 sed -i "s/Version:.*/Version:$DUNITER_DEB_VER/g" ${RELEASES}/duniter-x64/DEBIAN/control
-cd ${RELEASES}/desktop_release/sources
+cd ${RELEASES}/desktop_release/
 #rm -rf node_modules/sqlite3/lib/binding/node-webkit-$NW_RELEASE-linux-x64
 #rm -rf node_modules/wotb/lib/binding/Release/node-webkit-$NW_RELEASE-linux-x64
 #rm -rf node_modules/naclb/lib/binding/Release/node-webkit-$NW_RELEASE-linux-x64
@@ -171,8 +188,6 @@ cd ${RELEASES}/desktop_release/sources
 #rm -rf node_modules/naclb/lib/binding/Release/node-v$ADDON_VERSION-linux-x64
 #rm -rf node_modules/scryptb/lib/binding/Release/node-v$ADDON_VERSION-linux-x64
 zip -qr ${RELEASES}/duniter-x64/opt/duniter/duniter-desktop.nw *
-cd ${RELEASES}/desktop_release/nw
-zip -qr ${RELEASES}/duniter-x64/opt/duniter/nw.nwb *
 
 sed -i "s/Package: .*/Package: duniter-desktop/g" ${RELEASES}/duniter-x64/DEBIAN/control
 cd ${RELEASES}/
@@ -188,7 +203,7 @@ rm -rf duniter-server-x64
 cp -r duniter-x64 duniter-server-x64
 
 # Remove Nw.js
-rm -rf duniter-server-x64/opt/duniter/nw*
+rm -rf duniter-server-x64/opt/duniter/duniter-desktop.nw*
 
 cd ${RELEASES}/server_
 cp -r ${DOWNLOADS}/node-${NVER}-linux-x64 node

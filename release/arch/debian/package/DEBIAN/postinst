@@ -30,7 +30,10 @@ if [[ -d $DUN_SOURCES/node ]]; then
   chmod 755 $DUN_SOURCES/bin/duniter
   sed -i "s/usr\/bin\/env node/opt\/duniter\/node\/bin\/node/g" $DUN_SOURCES/bin/duniter
   sed -i "s/DEB_PACKAGING=.*/DEB_PACKAGING=true/g" $DUN_SOURCES/duniter.sh
-  ln -s $DUN_SOURCES/duniter.sh /usr/bin/duniter
+  ln -s $DUN_SOURCES/duniter.sh /usr/bin/duniter -f
+  cd $DUN_SOURCES
+  cd node/bin/
+  ln -s ../lib/node_modules/npm/bin/npm-cli.js ./npm -f
 fi
 # Else will execute with environment node
 

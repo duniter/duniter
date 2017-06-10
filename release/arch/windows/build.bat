@@ -44,7 +44,7 @@ for /f "delims=" %%a in ('git rev-list --tags --max-count=1') do @set DUNITER_RE
 for /f "delims=" %%a in ('git describe --tags %DUNITER_REV%') do @set DUNITER_TAG=%%a
 echo %DUNITER_TAG%
 
-git checkout dev
+git checkout %DUNITER_TAG%
 
 call npm cache clean
 call npm install --production

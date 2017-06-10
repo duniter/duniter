@@ -108,11 +108,15 @@ function npmRemove(what, npm, cwd) {
 }
 
 function getNode() {
-  return process.argv[0].replace(/(node|nw)$/, 'node')
+  return process.argv[0]
+    .replace(/(node|nw)$/, 'node')
+    .replace(/(node|nw)\.exe$/, 'nodejs\\node.exe')
 }
 
 function getNPM() {
-  return process.argv[0].replace(/(node|nw)$/, 'npm')
+  return process.argv[0]
+    .replace(/(node|nw)$/, 'npm')
+    .replace(/(node|nw)\.exe$/, 'nodejs\\node_modules\\npm\\bin\\npm-cli.js')
 }
 
 function getCWD() {

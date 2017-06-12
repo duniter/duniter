@@ -371,12 +371,14 @@ function Server (home, memoryOnly, overrideConf) {
    */
   this.getDaemon = function getDaemon(overrideCommand, insteadOfCmd) {
     const mainModule = process.argv[1]
+    const cwd = path.resolve(mainModule, '../..')
     const argv = getCommand(overrideCommand, insteadOfCmd)
     return daemonize.setup({
       main: mainModule,
       name: directory.INSTANCE_NAME,
       pidfile: path.join(directory.INSTANCE_HOME, "app.pid"),
-      argv
+      argv,
+      cwd
     });
   }
 

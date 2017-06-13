@@ -6,9 +6,6 @@ const assert    = require('assert');
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
 const toolbox   = require('./tools/toolbox');
-const Identity  = require('../../app/lib/entity/identity');
-const Certification = require('../../app/lib/entity/certification');
-const Membership = require('../../app/lib/entity/membership');
 
 const s1 = toolbox.server({
   pair: {

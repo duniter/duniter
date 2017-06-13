@@ -5,7 +5,6 @@ var rp     = require('request-promise');
 var _ = require('underscore');
 var async  = require('async');
 var request  = require('request');
-var rules = require('../../../app/lib/rules');
 var contacter = require('duniter-crawler').duniter.methods.contacter;
 var duniter  = require('../../../index');
 var multicaster = require('../../../app/lib/streams/multicaster');

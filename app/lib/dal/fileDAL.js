@@ -2,7 +2,8 @@
 const Q       = require('q');
 const co      = require('co');
 const _       = require('underscore');
-const indexer = require('../dup/indexer');
+const common = require('duniter-common');
+const indexer = require('duniter-common').indexer;
 const logger = require('../logger')('filedal');
 const Configuration = require('../entity/configuration');
 const Merkle = require('../entity/merkle');
@@ -36,6 +37,7 @@ function FileDAL(params) {
   this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqliteDriver);
   this.certDAL = new (require('./sqliteDAL/CertDAL'))(sqliteDriver);
   this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(sqliteDriver);
+  this.walletDAL = new (require('./sqliteDAL/WalletDAL'))(sqliteDriver);
   this.bindexDAL = new (require('./sqliteDAL/index/BIndexDAL'))(sqliteDriver);
   this.mindexDAL = new (require('./sqliteDAL/index/MIndexDAL'))(sqliteDriver);
   this.iindexDAL = new (require('./sqliteDAL/index/IIndexDAL'))(sqliteDriver);
@@ -52,6 +54,7 @@ function FileDAL(params) {
     'peerDAL': that.peerDAL,
     'confDAL': that.confDAL,
     'statDAL': that.statDAL,
+    'walletDAL': that.walletDAL,
     'bindexDAL': that.bindexDAL,
     'mindexDAL': that.mindexDAL,
     'iindexDAL': that.iindexDAL,
@@ -59,14 +62,14 @@ function FileDAL(params) {
     'cindexDAL': that.cindexDAL
   };
 
-  this.init = () => co(function *() {
+  this.init = (conf) => co(function *() {
     const dalNames = _.keys(that.newDals);
     for (const dalName of dalNames) {
       const dal = that.newDals[dalName];
       yield dal.init();
     }
     logger.debug("Upgrade database...");
-    yield that.metaDAL.upgradeDatabase();
+    yield that.metaDAL.upgradeDatabase(conf);
     const latestMember = yield that.iindexDAL.getLatestMember();
     if (latestMember && that.wotb.getWoTSize() > latestMember.wotb_id + 1) {
       logger.warn('Maintenance: cleaning wotb...');
@@ -226,6 +229,7 @@ function FileDAL(params) {
         idty.memberships = mss.concat(mssFromMindex.map((ms) => {
           const sp = ms.created_on.split('-');
           return {
+            blockstamp: ms.created_on,
             membership: ms.leaving ? 'OUT' : 'IN',
             number: sp[0],
             fpr: sp[1],
@@ -370,9 +374,19 @@ function FileDAL(params) {
     return _(pending).sortBy((ms) => -ms.number)[0];
   });
 
-  this.findNewcomers = () => co(function*() {
-    const mss = yield that.msDAL.getPendingIN();
-    return _.chain(mss).sortBy((ms) => -ms.sigDate).value();
+  this.findNewcomers = (blockMedianTime) => co(function*() {
+    const pending = yield that.msDAL.getPendingIN()
+    const mss = yield pending.map(p => co(function*() {
+      const reduced = yield that.mindexDAL.getReducedMS(p.issuer)
+      if (!reduced || !reduced.chainable_on || blockMedianTime >= reduced.chainable_on || blockMedianTime < constants.TIME_TO_TURN_ON_BRG_107) {
+        return p
+      }
+      return null
+    }))
+    return _.chain(mss)
+      .filter(ms => ms)
+      .sortBy((ms) => -ms.sigDate)
+      .value()
   });
 
   this.findLeavers = () => co(function*() {
@@ -540,7 +554,7 @@ function FileDAL(params) {
     for (const entry of cindex) {
       const from = yield that.getWrittenIdtyByPubkey(entry.issuer);
       const to = yield that.getWrittenIdtyByPubkey(entry.receiver);
-      if (entry.op == constants.IDX_CREATE) {
+      if (entry.op == common.constants.IDX_CREATE) {
         that.wotb.addLink(from.wotb_id, to.wotb_id);
       } else {
         // Update = removal
@@ -562,7 +576,7 @@ function FileDAL(params) {
     yield that.certDAL.trimExpiredCerts(block.medianTime);
     yield that.msDAL.trimExpiredMemberships(block.medianTime);
     yield that.idtyDAL.trimExpiredIdentities(block.medianTime);
-    yield that.txsDAL.trimExpiredNonWrittenTxs(block.medianTime - constants.TX_WINDOW);
+    yield that.txsDAL.trimExpiredNonWrittenTxs(block.medianTime - common.constants.TX_WINDOW);
     return true;
   });
 
@@ -703,6 +717,20 @@ function FileDAL(params) {
       return that.confDAL.saveConf(theConf);
     });
   };
+
+  /***********************
+   *     WALLETS
+   **********************/
+
+  this.getWallet = (conditions) => co(function*() {
+    let wallet = yield that.walletDAL.getWallet(conditions)
+    if (!wallet) {
+      wallet = { conditions, balance: 0 }
+    }
+    return wallet
+  })
+
+  this.saveWallet = (wallet) => this.walletDAL.saveWallet(wallet)
 
   /***********************
    *     STATISTICS

@@ -39,7 +39,7 @@ describe("Transactions: CLTV", function() {
     assert.equal(block.dividend, 200);
   }));
 
-  it('with SIG and XHX', () => co(function *() {
+  it('with SIG and CLTV', () => co(function *() {
     let tx1 = yield cat.prepareITX(200, tac);
     yield unit.shouldNotFail(cat.sendTX(tx1));
     yield s1.commit({ time: now + 19 }); // TODO: why not in the same block?

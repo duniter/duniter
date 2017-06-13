@@ -23,14 +23,6 @@ const Membership = function(json) {
     });
   };
 
-  this.inline = () => [this.issuer,
-      this.signature,
-      [this.number, this.fpr].join('-'),
-      this.certts,
-      this.userid
-    ].join(':');
-
-
   this.json = () => {
     const json = {};
     ["version", "currency", "issuer", "membership"].forEach((key) => {

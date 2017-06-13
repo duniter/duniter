@@ -7,6 +7,7 @@
 const co = require('co');
 const logger = require('../../logger')('metaDAL');
 const AbstractSQLite = require('./AbstractSQLite');
+const common = require('duniter-common');
 const hashf = require('duniter-common').hashf;
 const rawer = require('duniter-common').rawer;
 const constants = require('./../../constants');
@@ -215,7 +216,7 @@ function MetaDAL(driver) {
             amountMissing += src.amount;
             const block = src.block;
             sourcesMovements.push({
-              op: constants.IDX_CREATE,
+              op: common.constants.IDX_CREATE,
               tx: src.tx,
               identifier: src.identifier,
               pos: src.pos,
@@ -248,7 +249,40 @@ function MetaDAL(driver) {
     19: 'BEGIN;' +
       // Add a `removed` column
     'ALTER TABLE idty ADD COLUMN removed BOOLEAN NULL DEFAULT 0;' +
-    'COMMIT;'
+    'COMMIT;',
+
+    /**
+     * Feeds the table of wallets with balances
+     */
+    20: () => co(function*() {
+      let walletDAL = new (require('./WalletDAL'))(driver);
+      let sindexDAL = new (require('./index/SIndexDAL'))(driver);
+      const conditions = yield sindexDAL.query('SELECT DISTINCT(conditions) FROM s_index')
+      for (const row of conditions) {
+        const wallet = {
+          conditions: row.conditions,
+          balance: 0
+        }
+        const amountsRemaining = yield sindexDAL.getAvailableForConditions(row.conditions)
+        wallet.balance = amountsRemaining.reduce((sum, src) => sum + src.amount * Math.pow(10, src.base), 0)
+        yield walletDAL.saveWallet(wallet)
+      }
+    }),
+
+    /**
+     * Feeds the m_index.chainable_on
+     */
+    21: (conf) => co(function*() {
+      let blockDAL = new (require('./BlockDAL'))(driver);
+      let mindexDAL = new (require('./index/MIndexDAL'))(driver);
+      yield mindexDAL.exec('ALTER TABLE m_index ADD COLUMN chainable_on INTEGER NULL;')
+      const memberships = yield mindexDAL.query('SELECT * FROM m_index WHERE op = ?', [common.constants.IDX_CREATE])
+      for (const ms of memberships) {
+        const reference = yield blockDAL.getBlock(parseInt(ms.written_on.split('-')[0]))
+        const updateQuery = 'UPDATE m_index SET chainable_on = ' + (reference.medianTime + conf.msPeriod) + ' WHERE pub = \'' + ms.pub + '\' AND op = \'CREATE\''
+        yield mindexDAL.exec(updateQuery)
+      }
+    })
   };
 
   this.init = () => co(function *() {
@@ -261,7 +295,7 @@ function MetaDAL(driver) {
       'COMMIT;', []);
   });
 
-  function executeMigration(migration) {
+  function executeMigration(migration, conf) {
     return co(function *() {
       try {
         if (typeof migration == "string") {
@@ -272,7 +306,7 @@ function MetaDAL(driver) {
         } else if (typeof migration == "function") {
 
           // JS function to execute
-          yield migration();
+          yield migration(conf);
 
         }
       } catch (e) {
@@ -281,10 +315,10 @@ function MetaDAL(driver) {
     });
   }
 
-  this.upgradeDatabase = () => co(function *() {
+  this.upgradeDatabase = (conf) => co(function *() {
     let version = yield that.getVersion();
     while(migrations[version]) {
-      yield executeMigration(migrations[version]);
+      yield executeMigration(migrations[version], conf);
       // Automated increment
       yield that.exec('UPDATE meta SET version = version + 1');
       version++;

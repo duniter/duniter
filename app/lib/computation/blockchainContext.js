@@ -2,18 +2,19 @@
 const _               = require('underscore');
 const co              = require('co');
 const Q               = require('q');
-const indexer         = require('../dup/indexer');
+const common          = require('duniter-common');
+const indexer         = require('duniter-common').indexer;
 const constants       = require('../constants');
-const rules           = require('../rules/index');
+const rules           = require('duniter-common').rules;
 const Identity        = require('../entity/identity');
 const Certification   = require('../entity/certification');
 const Membership      = require('../entity/membership');
 const Block           = require('../entity/block');
 const Transaction     = require('../entity/transaction');
 
-module.exports = () => { return new BlockchainContext() };
+module.exports = (BlockchainService) => { return new BlockchainContext(BlockchainService) };
 
-function BlockchainContext() {
+function BlockchainContext(BlockchainService) {
 
   const that = this;
   let conf, dal, logger;
@@ -53,7 +54,7 @@ function BlockchainContext() {
       } else {
         block = { version: vHEAD_1.version };
       }
-      vHEAD = yield indexer.completeGlobalScope(Block.statics.fromJSON(block).json(), conf, [], dal);
+      vHEAD = yield indexer.completeGlobalScope(Block.statics.fromJSON(block), conf, [], dal);
     });
     return HEADrefreshed;
   }
@@ -153,6 +154,8 @@ function BlockchainContext() {
     if (indexer.ruleIdentityWritability(iindex, conf) === false) throw Error('ruleIdentityWritability');
     // BR_G64
     if (indexer.ruleMembershipWritability(mindex, conf) === false) throw Error('ruleMembershipWritability');
+    // BR_G108
+    if (indexer.ruleMembershipPeriod(mindex) === false) throw Error('ruleMembershipPeriod');
     // BR_G65
     if (indexer.ruleCertificationWritability(cindex, conf) === false) throw Error('ruleCertificationWritability');
     // BR_G66
@@ -274,7 +277,7 @@ function BlockchainContext() {
     for (const entry of writtenOn) {
       const from = yield dal.getWrittenIdtyByPubkey(entry.issuer);
       const to = yield dal.getWrittenIdtyByPubkey(entry.receiver);
-      if (entry.op == constants.IDX_CREATE) {
+      if (entry.op == common.constants.IDX_CREATE) {
         // We remove the created link
         dal.wotb.removeLink(from.wotb_id, to.wotb_id, true);
       } else {
@@ -296,6 +299,12 @@ function BlockchainContext() {
     const previousBlock = yield dal.getBlock(number - 1);
     // Set the block as SIDE block (equivalent to removal from main branch)
     yield dal.blockDAL.setSideBlock(number, previousBlock);
+
+    const REVERSE_BALANCE = true
+    const sindexOfBlock = yield dal.sindexDAL.getWrittenOn(blockstamp)
+
+    // Revert the balances variations for this block
+    yield that.updateWallets(sindexOfBlock, dal, REVERSE_BALANCE)
 
     // Remove any source created for this block (both Dividend and Transaction).
     yield dal.removeAllSourcesOfBlock(blockstamp);
@@ -352,6 +361,9 @@ function BlockchainContext() {
 
     // Create/Update nodes in wotb
     yield that.updateMembers(block);
+
+    // Update the wallets' blances
+    yield that.updateWallets(indexes.sindex, dal)
 
     const TAIL = yield dal.bindexDAL.tail();
     const bindexSize = [
@@ -413,7 +425,7 @@ function BlockchainContext() {
 
   this.createNewcomers = (iindex) => co(function*() {
     for (const entry of iindex) {
-      if (entry.op == constants.IDX_CREATE) {
+      if (entry.op == common.constants.IDX_CREATE) {
         // Reserves a wotb ID
         entry.wotb_id = dal.wotb.addNode();
         logger.trace('%s was affected wotb_id %s', entry.uid, entry.wotb_id);
@@ -447,13 +459,33 @@ function BlockchainContext() {
     });
   });
 
+  this.updateWallets = (sindex, dal, reverse) => co(function *() {
+    return co(function *() {
+      const differentConditions = _.uniq(sindex.map((entry) => entry.conditions))
+      for (const conditions of differentConditions) {
+        const creates = _.filter(sindex, (entry) => entry.conditions === conditions && entry.op === common.constants.IDX_CREATE)
+        const updates = _.filter(sindex, (entry) => entry.conditions === conditions && entry.op === common.constants.IDX_UPDATE)
+        const positives = creates.reduce((sum, src) => sum + src.amount * Math.pow(10, src.base), 0)
+        const negatives = updates.reduce((sum, src) => sum + src.amount * Math.pow(10, src.base), 0)
+        const wallet = yield dal.getWallet(conditions)
+        let variation = positives - negatives
+        if (reverse) {
+          // To do the opposite operations, for a reverted block
+          variation *= -1
+        }
+        wallet.balance += variation
+        yield dal.saveWallet(wallet)
+      }
+    });
+  });
+
   function undoMembersUpdate (blockstamp) {
     return co(function *() {
       const joiners = yield dal.iindexDAL.getWrittenOn(blockstamp);
       for (const entry of joiners) {
         // Undo 'join' which can be either newcomers or comebackers
         // => equivalent to i_index.member = true AND i_index.op = 'UPDATE'
-        if (entry.member === true && entry.op === constants.IDX_UPDATE) {
+        if (entry.member === true && entry.op === common.constants.IDX_UPDATE) {
           const idty = yield dal.getWrittenIdtyByPubkey(entry.pub);
           dal.wotb.setEnabled(false, idty.wotb_id);
         }
@@ -462,7 +494,7 @@ function BlockchainContext() {
       for (const entry of newcomers) {
         // Undo newcomers
         // => equivalent to i_index.op = 'CREATE'
-        if (entry.op === constants.IDX_CREATE) {
+        if (entry.op === common.constants.IDX_CREATE) {
           // Does not matter which one it really was, we pop the last X identities
           dal.wotb.removeNode();
         }
@@ -471,7 +503,7 @@ function BlockchainContext() {
       for (const entry of excluded) {
         // Undo excluded (make them become members again in wotb)
         // => equivalent to m_index.member = false
-        if (entry.member === false && entry.op === constants.IDX_UPDATE) {
+        if (entry.member === false && entry.op === common.constants.IDX_UPDATE) {
           const idty = yield dal.getWrittenIdtyByPubkey(entry.pub);
           dal.wotb.setEnabled(true, idty.wotb_id);
         }
@@ -600,4 +632,197 @@ function BlockchainContext() {
       yield dal.removeTxByHash(txHash);
     }
   });
+
+  let bindex = [];
+  let iindex = [];
+  let mindex = [];
+  let cindex = [];
+  let sindex = [];
+  let bindexSize = 0;
+  let allBlocks = [];
+  let expires = [];
+  let nextExpiring = 0;
+  let currConf = {};
+  const memoryWallets = {}
+  const memoryDAL = {
+    getWallet: (conditions) => Promise.resolve(memoryWallets[conditions] || { conditions, balance: 0 }),
+    saveWallet: (wallet) => co(function*() {
+      // Make a copy
+      memoryWallets[wallet.conditions] = {
+        conditions: wallet.conditions,
+        balance: wallet.balance
+      }
+    })
+  }
+
+  this.quickApplyBlocks = (blocks, to) => co(function*() {
+
+    memoryDAL.sindexDAL = { getAvailableForConditions: dal.sindexDAL.getAvailableForConditions }
+    const ctx = that
+    let blocksToSave = [];
+
+    for (const block of blocks) {
+      allBlocks.push(block);
+
+      if (block.number == 0) {
+        currConf = Block.statics.getConf(block);
+      }
+
+      if (block.number != to) {
+        blocksToSave.push(block);
+        const index = indexer.localIndex(block, currConf);
+        const local_iindex = indexer.iindex(index);
+        const local_cindex = indexer.cindex(index);
+        const local_sindex = indexer.sindex(index);
+        const local_mindex = indexer.mindex(index);
+        iindex = iindex.concat(local_iindex);
+        cindex = cindex.concat(local_cindex);
+        mindex = mindex.concat(local_mindex);
+
+        const HEAD = yield indexer.quickCompleteGlobalScope(block, currConf, bindex, iindex, mindex, cindex, {
+          getBlock: (number) => {
+            return Promise.resolve(allBlocks[number]);
+          },
+          getBlockByBlockstamp: (blockstamp) => {
+            return Promise.resolve(allBlocks[parseInt(blockstamp)]);
+          }
+        });
+        bindex.push(HEAD);
+
+        // Remember expiration dates
+        for (const entry of index) {
+          if (entry.op === 'CREATE' && (entry.expires_on || entry.revokes_on)) {
+            expires.push(entry.expires_on || entry.revokes_on);
+          }
+        }
+        expires = _.uniq(expires);
+
+        yield ctx.createNewcomers(local_iindex);
+
+        if (block.dividend
+          || block.joiners.length
+          || block.actives.length
+          || block.revoked.length
+          || block.excluded.length
+          || block.certifications.length
+          || block.transactions.length
+          || block.medianTime >= nextExpiring) {
+          // logger.warn('>> Block#%s', block.number)
+
+          for (let i = 0; i < expires.length; i++) {
+            let expire = expires[i];
+            if (block.medianTime > expire) {
+              expires.splice(i, 1);
+              i--;
+            }
+          }
+          let currentNextExpiring = nextExpiring
+          nextExpiring = expires.reduce((max, value) => max ? Math.min(max, value) : value, nextExpiring);
+          const nextExpiringChanged = currentNextExpiring !== nextExpiring
+
+          // Fills in correctly the SINDEX
+          yield _.where(sindex.concat(local_sindex), { op: 'UPDATE' }).map((entry) => co(function*() {
+            if (!entry.conditions) {
+              const src = yield dal.sindexDAL.getSource(entry.identifier, entry.pos);
+              entry.conditions = src.conditions;
+            }
+          }))
+
+          // Flush the INDEX (not bindex, which is particular)
+          yield dal.mindexDAL.insertBatch(mindex);
+          yield dal.iindexDAL.insertBatch(iindex);
+          yield dal.sindexDAL.insertBatch(sindex);
+          yield dal.cindexDAL.insertBatch(cindex);
+          mindex = [];
+          iindex = [];
+          cindex = [];
+          sindex = local_sindex;
+
+          sindex = sindex.concat(yield indexer.ruleIndexGenDividend(HEAD, dal));
+          sindex = sindex.concat(yield indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex, memoryDAL));
+          if (nextExpiringChanged) {
+            cindex = cindex.concat(yield indexer.ruleIndexGenCertificationExpiry(HEAD, dal));
+            mindex = mindex.concat(yield indexer.ruleIndexGenMembershipExpiry(HEAD, dal));
+            iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByMembership(HEAD, mindex, dal));
+            iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByCertificatons(HEAD, cindex, local_iindex, conf, dal));
+            mindex = mindex.concat(yield indexer.ruleIndexGenImplicitRevocation(HEAD, dal));
+          }
+          // Update balances with UD + local garbagings
+          yield that.updateWallets(sindex, memoryDAL)
+
+          // --> Update links
+          yield dal.updateWotbLinks(local_cindex.concat(cindex));
+
+          // Flush the INDEX again
+          yield dal.mindexDAL.insertBatch(mindex);
+          yield dal.iindexDAL.insertBatch(iindex);
+          yield dal.sindexDAL.insertBatch(sindex);
+          yield dal.cindexDAL.insertBatch(cindex);
+          mindex = [];
+          iindex = [];
+          cindex = [];
+          sindex = [];
+
+          // Create/Update nodes in wotb
+          yield ctx.updateMembers(block);
+        }
+
+        // Trim the bindex
+        bindexSize = [
+          block.issuersCount,
+          block.issuersFrame,
+          conf.medianTimeBlocks,
+          conf.dtDiffEval,
+          blocks.length
+        ].reduce((max, value) => {
+          return Math.max(max, value);
+        }, 0);
+
+        if (bindexSize && bindex.length >= 2 * bindexSize) {
+          // We trim it, not necessary to store it all (we already store the full blocks)
+          bindex.splice(0, bindexSize);
+
+          // Process triming continuously to avoid super long ending of sync
+          yield dal.trimIndexes(bindex[0].number);
+        }
+      } else {
+
+        if (blocksToSave.length) {
+          yield BlockchainService.saveBlocksInMainBranch(blocksToSave);
+        }
+        blocksToSave = [];
+
+        // Save the INDEX
+        yield dal.bindexDAL.insertBatch(bindex);
+        yield dal.mindexDAL.insertBatch(mindex);
+        yield dal.iindexDAL.insertBatch(iindex);
+        yield dal.sindexDAL.insertBatch(sindex);
+        yield dal.cindexDAL.insertBatch(cindex);
+
+        // Save the intermediary table of wallets
+        const conditions = _.keys(memoryWallets)
+        const nonEmptyKeys = _.filter(conditions, (k) => memoryWallets[k] && memoryWallets[k].balance > 0)
+        const walletsToRecord = nonEmptyKeys.map((k) => memoryWallets[k])
+        yield dal.walletDAL.insertBatch(walletsToRecord)
+
+        // Last block: cautious mode to trigger all the INDEX expiry mechanisms
+        yield BlockchainService.submitBlock(block, true, true);
+
+        // Clean temporary variables
+        bindex = [];
+        iindex = [];
+        mindex = [];
+        cindex = [];
+        sindex = [];
+        bindexSize = 0;
+        allBlocks = [];
+        expires = [];
+        nextExpiring = 0;
+        currConf = {};
+      }
+    }
+    if (blocksToSave.length) {
+      yield BlockchainService.saveBlocksInMainBranch(blocksToSave);
+    }
+  })
 }

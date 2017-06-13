@@ -4,9 +4,11 @@
 
 const _ = require('underscore');
 const co = require('co');
-const indexer = require('../../../dup/indexer');
+const common = require('duniter-common');
+const indexer = require('duniter-common').indexer;
 const constants = require('../../../constants');
 const AbstractSQLite = require('./../AbstractSQLite');
+const AbstractIndex = require('./../AbstractIndex');
 
 module.exports = SIndexDAL;
 
@@ -15,6 +17,7 @@ function SIndexDAL(driver) {
   "use strict";
 
   AbstractSQLite.call(this, driver);
+  AbstractIndex.call(this, driver);
 
   const that = this;
 
@@ -102,29 +105,12 @@ function SIndexDAL(driver) {
       ' AND s2.pos = s1.pos ' +
       ' AND s2.op = ?' +
       ') ' +
-      'ORDER BY CAST(SUBSTR(written_on, 0, INSTR(written_on, "-")) as number)', [constants.IDX_CREATE, conditionsStr, constants.IDX_UPDATE]);
+      'ORDER BY CAST(SUBSTR(written_on, 0, INSTR(written_on, "-")) as number)', [common.constants.IDX_CREATE, conditionsStr, common.constants.IDX_UPDATE]);
     const sources = potentials.map((src) => {
       src.type = src.tx ? 'T' : 'D';
       return src;
     });
     return _.sortBy(sources, (row) => row.type == 'D' ? 0 : 1);
-  });
-
-  this.findLowerThan = (amount, base) => co(function*() {
-    const baseConditions = Array.from({ length: (base + 1) }).map((el, index) => {
-      return '(base = ' + index + ' and amount < ' + (amount * Math.pow(10, base - index)) + ')';
-    }).join(' OR ');
-    const potentials = yield that.query('SELECT * FROM ' + that.table + ' s1 ' +
-      'WHERE s1.op = ? ' +
-      'AND (' + baseConditions + ') ' +
-      'AND NOT EXISTS (' +
-      ' SELECT * ' +
-      ' FROM s_index s2 ' +
-      ' WHERE s2.identifier = s1.identifier ' +
-      ' AND s2.pos = s1.pos ' +
-      ' AND s2.op = ?' +
-      ')', [constants.IDX_CREATE, constants.IDX_UPDATE]);
-    return potentials;
   });
 
   this.trimConsumedSource = (belowNumber) => co(function*() {

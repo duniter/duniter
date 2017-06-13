@@ -52,6 +52,7 @@ If you wish to participate/debate on Duniter, you can:
 
 ### Developement
 Duniter is using modules on different git repositories:
+- [Common](https://github.com/duniter/duniter-common): commons tools for Duniter core and modules.
 - [Crawler](https://github.com/duniter/duniter-crawler): network crawler.
 - [Prover](https://github.com/duniter/duniter-prover): handle Proof-of-Work.
 - [BMA API](https://github.com/duniter/duniter-bma): Basic Merkled API.
@@ -61,6 +62,7 @@ Duniter is using modules on different git repositories:
 - [Web admin](https://github.com/duniter/duniter-ui): web administration interface (optional).
 
 Optional modules:
+- [Currency monit](https://github.com/duniter/duniter-currency-monit): charts to monitor currency and web of trust state.
 - [Remuniter](https://github.com/duniter/remuniter): service to remunerate blocks issuers.
 - [Wot explorer](https://github.com/c-geek/wotex): Web of Trust explorer.
 

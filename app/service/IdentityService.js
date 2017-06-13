@@ -1,6 +1,6 @@
 "use strict";
 const Q               = require('q');
-const rules           = require('../lib/rules');
+const rules           = require('duniter-common').rules
 const keyring          = require('duniter-common').keyring;
 const constants       = require('../lib/constants');
 const Block           = require('../../app/lib/entity/block');
@@ -182,7 +182,9 @@ function IdentityService () {
         if (idtyAbsorbed) {
           yield dal.idtyDAL.deleteByHash(targetHash)
         }
-        logger.info('✘ CERT %s %s', cert.from, cert.err);
+        const err = cert.err
+        const errMessage = (err.uerr && err.uerr.message) || err.message || err
+        logger.info('✘ CERT %s %s', cert.from, errMessage);
         throw cert.err;
       }
       return cert;

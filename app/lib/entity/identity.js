@@ -85,11 +85,8 @@ const Identity = function(json) {
   };
 
   this.rawWithoutSig = () => {
-    const sig = this.sig;
-    this.sig = '';
-    const raw = rawer.getOfficialIdentity(this);
-    this.sig = sig;
-    return raw;
+    const DO_NOT_SIGN = false
+    return rawer.getOfficialIdentity(this, DO_NOT_SIGN)
   };
 
   this.getTargetHash = () => {

@@ -1,8 +1,7 @@
 "use strict";
 
-const Q = require('q');
 const co = require('co');
-const es = require('event-stream');
+const path = require('path');
 const util = require('util');
 const stream = require('stream');
 const _ = require('underscore');
@@ -22,6 +21,7 @@ const revertDependency    = require('./app/modules/revert');
 const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
 const routerDependency    = require('./app/modules/router');
+const pluginDependency    = require('./app/modules/plugin');
 
 const MINIMAL_DEPENDENCIES = [
   { name: 'duniter-config',    required: configDependency }
@@ -36,7 +36,8 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-revert',    required: revertDependency },
   { name: 'duniter-daemon',    required: daemonDependency },
   { name: 'duniter-psignal',   required: pSignalDependency },
-  { name: 'duniter-router',    required: routerDependency }
+  { name: 'duniter-router',    required: routerDependency },
+  { name: 'duniter-plugin',    required: pluginDependency }
 ]);
 
 const PRODUCTION_DEPENDENCIES = DEFAULT_DEPENDENCIES.concat([
@@ -64,26 +65,55 @@ module.exports.statics = {
    * Creates a new stack pre-registered with compliant modules found in package.json
    */
   autoStack: (priorityModules) => {
-    const pjson = require('./package.json');
     const duniterModules = [];
-
-    // Look for compliant packages
-    const prodDeps = Object.keys(pjson.dependencies);
-    const devDeps = Object.keys(pjson.devDependencies);
-    const duniterDeps = _.filter(prodDeps.concat(devDeps), (dep) => dep.match(/^duniter-/));
+    let duniterDeps = []
+    try {
+      const pjson = require(path.resolve('./package.json'))
+      // Look for compliant packages
+      const prodDeps = Object.keys(pjson.dependencies || {});
+      const devDeps = Object.keys(pjson.devDependencies || {});
+      duniterDeps = prodDeps.concat(devDeps)
+    } catch (e) { /* duniter as a dependency might not be run from an NPM project */ }
     for(const dep of duniterDeps) {
-      const required = require(dep);
-      if (required.duniter) {
-        duniterModules.push({
-          name: dep,
-          required
-        });
-      }
+      try {
+        const required = require(dep);
+        if (required.duniter) {
+          duniterModules.push({
+            name: dep,
+            required
+          });
+        }
+      } catch (e) { /* Silent errors for packages that fail to load */ }
     }
 
     // The final stack
     return new Stack((priorityModules || []).concat(PRODUCTION_DEPENDENCIES).concat(duniterModules));
-  }
+  },
+
+  quickRun: function() {
+    const deps = Array.from(arguments).map((f, index) => {
+      const canonicalPath = path.resolve(f)
+      return {
+        name: 'duniter-quick-module-' + index,
+        required: require(canonicalPath)
+      }
+    })
+    const that = this
+    const stack = this.autoStack(deps)
+    return co(function*() {
+      let res
+      try {
+        res = yield stack.executeStack(that.quickRunGetArgs())
+      } catch(e) {
+        console.error(e)
+      }
+      that.onRunDone()
+      return res
+    })
+  },
+
+  quickRunGetArgs: () => process.argv.slice(),
+  onRunDone: () => process.exit()
 };
 
 function Stack(dependencies) {
@@ -92,6 +122,8 @@ function Stack(dependencies) {
   const cli = require('./app/cli')();
   const configLoadingCallbacks = [];
   const configBeforeSaveCallbacks = [];
+  const resetDataHooks = [];
+  const resetConfigHooks = [];
   const INPUT = new InputStream();
   const PROCESS = new ProcessStream();
   const loaded = {};
@@ -105,12 +137,15 @@ function Stack(dependencies) {
     neutral: []
   };
 
+  // Part of modules API
+  this.getModule = (name) => loaded[name]
+
   this.registerDependency = (requiredObject, name) => {
     if (name && loaded[name]) {
       // Do not try to load it twice
       return;
     }
-    loaded[name] = true;
+    loaded[name] = requiredObject;
     const def = requiredObject.duniter;
     definitions.push(def);
     for (const opt of (def.cliOptions || [])) {
@@ -134,6 +169,20 @@ function Stack(dependencies) {
       // Before the configuration is saved, the module can make some injection/cleaning
       if (def.config.beforeSave) {
         configBeforeSaveCallbacks.push(def.config.beforeSave);
+      }
+    }
+
+    /**
+     * Reset data/config injection
+     * -----------------------
+     */
+    if (def.onReset) {
+      if (def.onReset.data) {
+        resetDataHooks.push(def.onReset.data);
+      }
+      // Before the configuration is saved, the module can make some injection/cleaning
+      if (def.onReset.config) {
+        resetConfigHooks.push(def.onReset.config);
       }
     }
 
@@ -186,6 +235,18 @@ function Stack(dependencies) {
       });
     });
 
+    // Config or Data reset hooks
+    server.resetDataHook = () => co(function*() {
+      for (const callback of resetDataHooks) {
+        yield callback(server.conf, program, logger, server.dal.confDAL);
+      }
+    })
+    server.resetConfigHook = () => co(function*() {
+      for (const callback of resetConfigHooks) {
+        yield callback(server.conf, program, logger, server.dal.confDAL);
+      }
+    })
+
     // Initialize server (db connection, ...)
     try {
       server.onPluggedFSHook = () => co(function*() {
@@ -235,7 +296,7 @@ function Stack(dependencies) {
         return yield command.onConfiguredExecute(server, conf, program, params, wizardTasks, that);
       }
       // Second possible class of commands: post-service
-      yield server.initDAL();
+      yield server.initDAL(conf);
 
       /**
        * Service injection

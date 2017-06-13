@@ -11,7 +11,7 @@ if [ -z "$DUNITER_DIR" ]; then
 fi
 
 latest_version() {
-  echo "v1.2.6"
+  echo "v1.3.8"
 }
 
 repo_url() {
@@ -96,11 +96,7 @@ install_from_git() {
   NODE=$DUNITER_DIR/node/bin/node
   NPM=$DUNITER_DIR/node/bin/npm
   $NODE $NPM install
-  $NODE $NPM install duniter-bma@1.1.2 --save --production
-  $NODE $NPM install duniter-crawler@1.1.4 --save --production
-  $NODE $NPM install duniter-keypair@1.1.3 --save --production
-  $NODE $NPM install duniter-prover@1.1.2 --save --production
-  $NODE $NPM install duniter-ui@1.1.5 --production --save
+  [[ $? -eq 0 ]] && $NODE -e "const deps = require('./package.json').peerDependencies; Object.keys(deps).forEach(k => console.log(k + \"@\" + deps[k]))" | xargs $NODE $NPM install --save --production
   return
 }
 

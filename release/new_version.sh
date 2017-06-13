@@ -16,8 +16,7 @@ if [[ $1 =~ ^[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?$ ]]; then
   sed -i "s/define MyAppVerStr.*/define MyAppVerStr \"v$1\"/g" release/arch/windows/duniter.iss
 
   # GUI containers version
-  sed -i "s/name\": .*/name\": \"v$1\",/g" gui/package.json
-  sed -i "s/title\": .*/title\": \"v$1\",/g" gui/package.json
+  sed -i "s/title\": .*/title\": \"v$1\",/g" package.json
   sed -i "s/<title>Duniter.*<\/title>/<title>Duniter $1<\/title>/g" gui/index.html
 
   # Bump the install.sh
@@ -25,7 +24,7 @@ if [[ $1 =~ ^[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?$ ]]; then
 
   # Commit
   git reset HEAD
-  git add install.sh package.json test/integration/branches.js gui/package.json gui/index.html release/arch/debian/package/DEBIAN/control install.sh release/arch/windows/duniter.iss
+  git add install.sh package.json test/integration/branches.js gui/index.html release/arch/debian/package/DEBIAN/control install.sh release/arch/windows/duniter.iss
   git commit -m "v$1"
   git tag "v$1"
 else

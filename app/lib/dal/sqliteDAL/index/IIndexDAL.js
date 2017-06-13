@@ -4,7 +4,7 @@
 
 const co = require('co');
 const _ = require('underscore');
-const indexer = require('./../../../dup/indexer');
+const indexer = require('duniter-common').indexer;
 const AbstractSQLite = require('./../AbstractSQLite');
 const AbstractIndex = require('./../AbstractIndex');
 
@@ -71,6 +71,16 @@ function IIndexDAL(driver) {
     const filtered = _.filter(reduced, (entry) => entry.member);
     return filtered.map(toCorrectEntity);
   });
+
+  this.getMembersPubkeys = () => this.query('SELECT i1.pub ' +
+    'FROM i_index i1 ' +
+    'WHERE i1.member ' +
+    'AND CAST(i1.written_on as int) = (' +
+    ' SELECT MAX(CAST(i2.written_on as int)) ' +
+    ' FROM i_index i2 ' +
+    ' WHERE i1.pub = i2.pub ' +
+    ' AND i2.member IS NOT NULL' +
+    ')')
 
   this.getLatestMember = () => co(function*() {
     const max_wotb_id = (yield that.query('SELECT MAX(wotb_id) as max_wotb_id FROM ' + that.table))[0].max_wotb_id;

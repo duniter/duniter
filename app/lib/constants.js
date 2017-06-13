@@ -1,41 +1,17 @@
 "use strict";
 
-const CURRENCY     = "[a-zA-Z0-9-_ ]{2,50}";
-const UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\d{2}\\.\\d{2}(\\+|-)\\d{3}\\.\\d{2});(\\d+)(;?)";
-const USER_ID      = "[A-Za-z0-9_-]{2,100}";
-const BASE58       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+";
-const PUBKEY       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}";
-const SIG          = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}";
-const TIMESTAMP    = "[1-9][0-9]{0,18}";
-const POSITIVE_INT = "[1-9][0-9]{0,18}";
-const DIVIDEND     = "[1-9][0-9]{0,5}";
-const ZERO_OR_POSITIVE_INT = "0|[1-9][0-9]{0,18}";
-const INTEGER      = "(0|[1-9]\\d{0,18})";
-const CLTV_INTEGER = "([0-9]{1,10})";
-const CSV_INTEGER  = "([0-9]{1,8})";
-const XUNLOCK      = "[a-zA-Z0-9]{1,64}";
-const RELATIVE_INTEGER = "(0|-?[1-9]\\d{0,18})";
-const FLOAT        = "\\d+\.\\d+";
-const BOOLEAN      = "[01]";
-const BLOCK_VERSION = "(10)";
-const TX_VERSION   = "(10)";
-const SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}";
-const FINGERPRINT  = "[A-F0-9]{64}";
-const COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}";
-const UNLOCK       = "(SIG\\(" + INTEGER + "\\)|XHX\\(" + XUNLOCK + "\\))";
-const CONDITIONS   = "(&&|\\|\\|| |[()]|(SIG\\(" + SIG + "\\)|(XHX\\([A-F0-9]{64}\\)|CLTV\\(" + CLTV_INTEGER + "\\)|CSV\\(" + CSV_INTEGER + "\\))))*";
-const BLOCK_UID    = INTEGER + "-" + FINGERPRINT;
-const META_TS      = "META:TS:" + BLOCK_UID;
+const common = require('duniter-common')
 
-const BMA_REGEXP  = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
+const UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\d{2}\\.\\d{2}(\\+|-)\\d{3}\\.\\d{2});(\\d+)(;?)";
+const PUBKEY       = common.constants.FORMATS.PUBKEY
+const TIMESTAMP    = common.constants.FORMATS.TIMESTAMP
+
 const IPV4_REGEXP = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
 const IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/;
 
-const MAXIMUM_LEN_OF_COMPACT_TX = 100;
-const MAXIMUM_LEN_OF_OUTPUT = 2000;
-const MAXIMUM_LEN_OF_UNLOCK = MAXIMUM_LEN_OF_OUTPUT;
-
 module.exports = {
+
+  TIME_TO_TURN_ON_BRG_107: 1498860000,
 
   ERROR: {
 
@@ -55,7 +31,7 @@ module.exports = {
     UNHANDLED:                            { httpCode: 500, uerr: { ucode: 1002, message: "An unhandled error occured" }},
     SIGNATURE_DOES_NOT_MATCH:             { httpCode: 400, uerr: { ucode: 1003, message: "Signature does not match" }},
     ALREADY_UP_TO_DATE:                   { httpCode: 400, uerr: { ucode: 1004, message: "Already up-to-date" }},
-    WRONG_DOCUMENT:                       { httpCode: 400, uerr: { ucode: 1005, message: "Document has unkown fields or wrong line ending format" }},
+    WRONG_DOCUMENT:                       common.constants.ERRORS.WRONG_DOCUMENT,
     SANDBOX_FOR_IDENTITY_IS_FULL:         { httpCode: 503, uerr: { ucode: 1007, message: "The identities' sandbox is full. Please retry with another document or retry later." }},
     SANDBOX_FOR_CERT_IS_FULL:             { httpCode: 503, uerr: { ucode: 1008, message: "The certifications' sandbox is full. Please retry with another document or retry later." }},
     SANDBOX_FOR_MEMERSHIP_IS_FULL:        { httpCode: 503, uerr: { ucode: 1009, message: "The memberships' sandbox is full. Please retry with another document or retry later." }},
@@ -75,156 +51,50 @@ module.exports = {
     MEMBERSHIP_A_NON_MEMBER_CANNOT_LEAVE: { httpCode: 400, uerr: { ucode: 2008, message: "A non-member cannot leave" }},
     NOT_A_MEMBER:                         { httpCode: 400, uerr: { ucode: 2009, message: "Not a member" }},
     BLOCK_NOT_FOUND:                      { httpCode: 404, uerr: { ucode: 2011, message: "Block not found" }},
-    WRONG_UNLOCKER:                       { httpCode: 400, uerr: { ucode: 2013, message: "Wrong unlocker in transaction" }},
-    LOCKTIME_PREVENT:                     { httpCode: 400, uerr: { ucode: 2014, message: "Locktime not elapsed yet" }},
-    SOURCE_ALREADY_CONSUMED:              { httpCode: 400, uerr: { ucode: 2015, message: "Source already consumed" }},
-    WRONG_AMOUNTS:                        { httpCode: 400, uerr: { ucode: 2016, message: "Sum of inputs must equal sum of outputs" }},
-    WRONG_OUTPUT_BASE:                    { httpCode: 400, uerr: { ucode: 2017, message: "Wrong unit base for outputs" }},
-    CANNOT_ROOT_BLOCK_NO_MEMBERS:         { httpCode: 400, uerr: { ucode: 2018, message: "Wrong new block: cannot make a root block without members" }},
-    IDENTITY_WRONGLY_SIGNED:              { httpCode: 400, uerr: { ucode: 2019, message: "Weird, the signature is wrong and in the database." }},
-    TOO_OLD_IDENTITY:                     { httpCode: 400, uerr: { ucode: 2020, message: "Identity has expired and cannot be written in the blockchain anymore." }},
+    WRONG_UNLOCKER:                       common.constants.ERRORS.WRONG_UNLOCKER,
+    LOCKTIME_PREVENT:                     common.constants.ERRORS.LOCKTIME_PREVENT,
+    SOURCE_ALREADY_CONSUMED:              common.constants.ERRORS.SOURCE_ALREADY_CONSUMED,
+    WRONG_AMOUNTS:                        common.constants.ERRORS.WRONG_AMOUNTS,
+    WRONG_OUTPUT_BASE:                    common.constants.ERRORS.WRONG_OUTPUT_BASE,
+    CANNOT_ROOT_BLOCK_NO_MEMBERS:         common.constants.ERRORS.CANNOT_ROOT_BLOCK_NO_MEMBERS,
+    IDENTITY_WRONGLY_SIGNED:              common.constants.ERRORS.IDENTITY_WRONGLY_SIGNED,
+    TOO_OLD_IDENTITY:                     common.constants.ERRORS.TOO_OLD_IDENTITY,
     NO_IDTY_MATCHING_PUB_OR_UID:          { httpCode: 404, uerr: { ucode: 2021, message: "No identity matching this pubkey or uid" }},
     NEWER_PEER_DOCUMENT_AVAILABLE:        { httpCode: 409, uerr: { ucode: 2022, message: "A newer peer document is available" }},
     PEER_DOCUMENT_ALREADY_KNOWN:          { httpCode: 400, uerr: { ucode: 2023, message: "Peer document already known" }},
-    TX_INPUTS_OUTPUTS_NOT_EQUAL:          { httpCode: 400, uerr: { ucode: 2024, message: "Transaction inputs sum must equal outputs sum" }},
-    TX_OUTPUT_SUM_NOT_EQUALS_PREV_DELTAS: { httpCode: 400, uerr: { ucode: 2025, message: "Transaction output base amount does not equal previous base deltas" }},
-    BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK:    { httpCode: 400, uerr: { ucode: 2026, message: "Blockstamp does not match a block" }},
-    A_TRANSACTION_HAS_A_MAX_SIZE:         { httpCode: 400, uerr: { ucode: 2027, message: 'A transaction has a maximum size of ' + MAXIMUM_LEN_OF_COMPACT_TX + ' lines' }},
+    TX_INPUTS_OUTPUTS_NOT_EQUAL:          common.constants.ERRORS.TX_INPUTS_OUTPUTS_NOT_EQUAL,
+    TX_OUTPUT_SUM_NOT_EQUALS_PREV_DELTAS: common.constants.ERRORS.TX_OUTPUT_SUM_NOT_EQUALS_PREV_DELTAS,
+    BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK:    common.constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK,
+    A_TRANSACTION_HAS_A_MAX_SIZE:         common.constants.ERRORS.A_TRANSACTION_HAS_A_MAX_SIZE,
     BLOCK_ALREADY_PROCESSED:              { httpCode: 400, uerr: { ucode: 2028, message: 'Already processed' }},
-    TOO_OLD_MEMBERSHIP:                   { httpCode: 400, uerr: { ucode: 2029, message: "Too old membership." }},
+    TOO_OLD_MEMBERSHIP:                   common.constants.ERRORS.TOO_OLD_MEMBERSHIP,
     TX_ALREADY_PROCESSED:                 { httpCode: 400, uerr: { ucode: 2030, message: "Transaction already processed" }},
     A_MORE_RECENT_MEMBERSHIP_EXISTS:      { httpCode: 400, uerr: { ucode: 2031, message: "A more recent membership already exists" }},
-    MAXIMUM_LEN_OF_OUTPUT:                { httpCode: 400, uerr: { ucode: 2032, message: 'A transaction output has a maximum size of ' + MAXIMUM_LEN_OF_OUTPUT + ' characters' }},
-    MAXIMUM_LEN_OF_UNLOCK:                { httpCode: 400, uerr: { ucode: 2033, message: 'A transaction unlock has a maximum size of ' + MAXIMUM_LEN_OF_UNLOCK + ' characters' }}
+    MAXIMUM_LEN_OF_OUTPUT:                common.constants.ERRORS.MAXIMUM_LEN_OF_OUTPUT,
+    MAXIMUM_LEN_OF_UNLOCK:                common.constants.ERRORS.MAXIMUM_LEN_OF_UNLOCK
   },
 
   DEBUG: {
     LONG_DAL_PROCESS: 50
   },
 
-  BMA_REGEXP: BMA_REGEXP,
+  BMA_REGEXP: common.constants.BMA_REGEXP,
   IPV4_REGEXP: IPV4_REGEXP,
   IPV6_REGEXP: IPV6_REGEXP,
 
-  INTEGER: /^\d+$/,
-  FINGERPRINT: exact(FINGERPRINT),
   TIMESTAMP: exact(TIMESTAMP),
-  USER_ID: exact(USER_ID), // Any format, by default
   UDID2_FORMAT: exact(UDID2),
-  BASE58: exact(BASE58),
   PUBLIC_KEY: exact(PUBKEY),
-  SIG: exact(SIGNATURE),
-  BLOCK_UID: exact(BLOCK_UID),
 
-  DOCUMENTS_VERSION_REGEXP: /^10$/,
-  DOCUMENTS_BLOCK_VERSION_REGEXP: new RegExp("^" + BLOCK_VERSION + "$"),
-  BLOCKSTAMP_REGEXP: new RegExp("^" + BLOCK_UID + "$"),
-  DOCUMENTS_TRANSACTION_VERSION_REGEXP: /^(10)$/,
-  DOCUMENTS_VERSION: 10,
-  BLOCK_GENERATED_VERSION: 10,
+  DOCUMENTS_VERSION: common.constants.DOCUMENTS_VERSION,
+  BLOCK_GENERATED_VERSION: common.constants.BLOCK_GENERATED_VERSION,
   LAST_VERSION_FOR_TX: 10,
-  TRANSACTION_VERSION: 10,
+  TRANSACTION_VERSION: common.constants.TRANSACTION_VERSION,
 
-  REVOCATION_FACTOR: 2, // This is protocol fixed value
-  NB_DIGITS_UD: 4,      // This is protocol fixed value
+  REVOCATION_FACTOR: common.constants.REVOCATION_FACTOR, // This is protocol fixed value
   FIRST_UNIT_BASE: 0,
 
-  TX_WINDOW: 3600 * 24 * 7,
-
-  CERT: {
-    SELF: {
-      UID: exact("UID:" + USER_ID),
-      META: exact(META_TS)
-    },
-    REVOKE: exact("UID:REVOKE"),
-    OTHER: {
-      META: exact(META_TS),
-      INLINE: exact(PUBKEY + ":" + PUBKEY + ":" + INTEGER + ":" + SIGNATURE)
-    }
-  },
-  IDENTITY: {
-    INLINE: exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + USER_ID),
-    IDTY_TYPE:      find('Type: (Identity)'),
-    IDTY_UID:       find('UniqueID: (' + USER_ID + ')')
-  },
-  DOCUMENTS: {
-    DOC_VERSION:    find('Version: (10)'),
-    DOC_CURRENCY:   find('Currency: (' + CURRENCY + ')'),
-    DOC_ISSUER:     find('Issuer: (' + PUBKEY + ')'),
-    TIMESTAMP:      find('Timestamp: (' + BLOCK_UID + ')')
-  },
-  CERTIFICATION: {
-    CERT_TYPE:      find('Type: (Certification)'),
-    IDTY_ISSUER:    find('IdtyIssuer: (' + PUBKEY + ')'),
-    IDTY_UID:       find('IdtyUniqueID: (' + USER_ID + ')'),
-    IDTY_TIMESTAMP: find('IdtyTimestamp: (' + BLOCK_UID + ')'),
-    IDTY_SIG:       find('IdtySignature: (' + SIGNATURE + ')'),
-    CERT_TIMESTAMP: find('CertTimestamp: (' + BLOCK_UID + ')')
-  },
-  REVOCATION: {
-    REVOC_TYPE:      find('Type: (Certification)'),
-    IDTY_ISSUER:     find('IdtyIssuer: (' + PUBKEY + ')'),
-    IDTY_UID:        find('IdtyUniqueID: (' + USER_ID + ')'),
-    IDTY_TIMESTAMP:  find('IdtyTimestamp: (' + BLOCK_UID + ')'),
-    IDTY_SIG:        find('IdtySignature: (' + SIGNATURE + ')')
-  },
-  MEMBERSHIP: {
-    BLOCK:      find('Block: (' + BLOCK_UID + ')'),
-    VERSION:    find('Version: (10)'),
-    CURRENCY:   find('Currency: (' + CURRENCY + ')'),
-    ISSUER:     find('Issuer: (' + PUBKEY + ')'),
-    MEMBERSHIP: find('Membership: (IN|OUT)'),
-    USERID:     find('UserID: (' + USER_ID + ')'),
-    CERTTS:     find('CertTS: (' + BLOCK_UID + ')')
-  },
-  BLOCK: {
-    NONCE:       find("Nonce: (" + ZERO_OR_POSITIVE_INT + ")"),
-    VERSION:     find("Version: " + BLOCK_VERSION),
-    TYPE:        find("Type: (Block)"),
-    CURRENCY:    find("Currency: (" + CURRENCY + ")"),
-    BNUMBER:     find("Number: (" + ZERO_OR_POSITIVE_INT + ")"),
-    POWMIN:      find("PoWMin: (" + ZERO_OR_POSITIVE_INT + ")"),
-    TIME:        find("Time: (" + TIMESTAMP + ")"),
-    MEDIAN_TIME: find("MedianTime: (" + TIMESTAMP + ")"),
-    UD:          find("UniversalDividend: (" + DIVIDEND + ")"),
-    UNIT_BASE:   find("UnitBase: (" + INTEGER + ")"),
-    PREV_HASH:   find("PreviousHash: (" + FINGERPRINT + ")"),
-    PREV_ISSUER: find("PreviousIssuer: (" + PUBKEY + ")"),
-    MEMBERS_COUNT:find("MembersCount: (" + ZERO_OR_POSITIVE_INT + ")"),
-    BLOCK_ISSUER:find('Issuer: (' + PUBKEY + ')'),
-    BLOCK_ISSUERS_FRAME:find('IssuersFrame: (' + INTEGER + ')'),
-    BLOCK_ISSUERS_FRAME_VAR:find('IssuersFrameVar: (' + RELATIVE_INTEGER + ')'),
-    DIFFERENT_ISSUERS_COUNT:find('DifferentIssuersCount: (' + INTEGER + ')'),
-    PARAMETERS:  find("Parameters: (" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + FLOAT + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ")"),
-    JOINER:   exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + BLOCK_UID + ":" + USER_ID),
-    ACTIVE:   exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + BLOCK_UID + ":" + USER_ID),
-    LEAVER:   exact(PUBKEY + ":" + SIGNATURE + ":" + BLOCK_UID + ":" + BLOCK_UID + ":" + USER_ID),
-    REVOCATION: exact(PUBKEY + ":" + SIGNATURE),
-    EXCLUDED: exact(PUBKEY),
-    INNER_HASH: find("InnerHash: (" + FINGERPRINT + ")"),
-    SPECIAL_HASH: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855',
-    SPECIAL_BLOCK: '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
-  },
-  TRANSACTION: {
-    HEADER:  exact("TX:" + TX_VERSION + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + INTEGER + ":" + BOOLEAN + ":" + INTEGER),
-    SENDER:  exact(PUBKEY),
-    SOURCE_V3:  exact("(" + POSITIVE_INT + ":" + INTEGER + ":T:" + FINGERPRINT + ":" + INTEGER + "|" + POSITIVE_INT + ":" + INTEGER + ":D:" + PUBKEY + ":" + POSITIVE_INT + ")"),
-    UNLOCK:  exact(INTEGER + ":" + UNLOCK + "( (" + UNLOCK + "))*"),
-    TARGET:  exact(POSITIVE_INT + ":" + INTEGER + ":" + CONDITIONS),
-    BLOCKSTAMP:find('Blockstamp: (' + BLOCK_UID + ')'),
-    COMMENT: find("Comment: (" + COMMENT + ")"),
-    LOCKTIME:find("Locktime: (" + INTEGER + ")"),
-    INLINE_COMMENT: exact(COMMENT),
-    OUTPUT_CONDITION: exact(CONDITIONS)
-  },
-  PEER: {
-    BLOCK: find("Block: (" + INTEGER + "-" + FINGERPRINT + ")"),
-    SPECIAL_BLOCK: '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
-  },
-  STATUS: {
-    BLOCK: find("Block: (" + INTEGER + "-" + FINGERPRINT + ")"),
-    SPECIAL_BLOCK: '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
-  },
+  PEER: common.constants.PEER,
   NETWORK: {
     MAX_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS: 10,
     MAX_NON_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS: 6,
@@ -241,26 +111,8 @@ module.exports = {
     }
   },
   PROOF_OF_WORK: {
-    MINIMAL_TO_SHOW_IN_LOGS: 3,
     EVALUATION: 1000,
-    UPPER_BOUND: [
-      '9A-F',
-      '9A-E',
-      '9A-D',
-      '9A-C',
-      '9A-B',
-      '9A',
-      '9',
-      '8',
-      '7',
-      '6',
-      '5',
-      '4',
-      '3',
-      '2',
-      '1',
-      '1' // In case remainder 15 happens for some reason
-    ]
+    UPPER_BOUND: common.constants.PROOF_OF_WORK.UPPER_BOUND.slice()
   },
 
   DEFAULT_CURRENCY_NAME: "no_currency",
@@ -274,6 +126,7 @@ module.exports = {
       STEPMAX: 3,
       SIGDELAY: 3600 * 24 * 365 * 5,
       SIGPERIOD: 0, // Instant
+      MSPERIOD: 0, // Instant
       SIGSTOCK: 40,
       SIGWINDOW: 3600 * 24 * 7, // a week
       SIGVALIDITY: 3600 * 24 * 365,
@@ -312,37 +165,12 @@ module.exports = {
   SANDBOX_SIZE_CERTIFICATIONS: 12,
   SANDBOX_SIZE_MEMBERSHIPS: 5000,
 
-  MAXIMUM_LEN_OF_COMPACT_TX: MAXIMUM_LEN_OF_COMPACT_TX,
-  MAXIMUM_LEN_OF_OUTPUT,
-  MAXIMUM_LEN_OF_UNLOCK,
-
   CURRENT_BLOCK_CACHE_DURATION: 10 * 1000, // 30 seconds
-  CORES_MAXIMUM_USE_IN_PARALLEL: 8, // For more cores, we need to use a better PoW synchronization algorithm
-
-  ENGINE_IDLE_INTERVAL: 5000,
-
-  POW_DIFFICULTY_RANGE_RATIO: 1.189,
-
-  TRANSACTION_MAX_TRIES: 10,
-
-  ACCOUNT_MINIMUM_CURRENT_BASED_AMOUNT: 100,
 
   // With `logs` command, the number of tail lines to show
-  NB_INITIAL_LINES_TO_SHOW: 100,
-
-  // INDEXES
-  M_INDEX: 'MINDEX',
-  I_INDEX: 'IINDEX',
-  S_INDEX: 'SINDEX',
-  C_INDEX: 'CINDEX',
-  IDX_CREATE: 'CREATE',
-  IDX_UPDATE: 'UPDATE'
+  NB_INITIAL_LINES_TO_SHOW: 100
 };
 
 function exact (regexpContent) {
   return new RegExp("^" + regexpContent + "$");
-}
-
-function find (regexpContent) {
-  return new RegExp(regexpContent);
 }

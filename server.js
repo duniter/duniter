@@ -9,7 +9,7 @@ const archiver    = require('archiver');
 const unzip       = require('unzip2');
 const fs          = require('fs');
 const daemonize   = require("daemonize2")
-const parsers     = require('./app/lib/streams/parsers');
+const parsers     = require('duniter-common').parsers;
 const constants   = require('./app/lib/constants');
 const fileDAL     = require('./app/lib/dal/fileDAL');
 const jsonpckg    = require('./package.json');
@@ -29,27 +29,6 @@ function Server (home, memoryOnly, overrideConf) {
   that.dal = null;
   that.version = jsonpckg.version;
   that.logger = logger;
-
-  // External libs
-  that.lib = {};
-  that.lib.keyring = require('duniter-common').keyring;
-  that.lib.Identity = require('./app/lib/entity/identity');
-  that.lib.Certification = require('./app/lib/entity/certification');
-  that.lib.Transaction = require('./app/lib/entity/transaction');
-  that.lib.Peer = require('./app/lib/entity/peer');
-  that.lib.Membership = require('./app/lib/entity/membership');
-  that.lib.Block = require('./app/lib/entity/block');
-  that.lib.Stat = require('./app/lib/entity/stat');
-  that.lib.rawer = require('duniter-common').rawer;
-  that.lib.parsers = require('./app/lib/streams/parsers');
-  that.lib.http2raw = require('duniter-bma').duniter.methods.http2raw;
-  that.lib.dos2unix = require('duniter-common').dos2unix;
-  that.lib.bma = require('duniter-bma').duniter.methods.bma;
-  that.lib.constants = require('./app/lib/constants');
-  that.lib.ucp = require('duniter-common').buid;
-  that.lib.hashf = require('duniter-common').hashf;
-  that.lib.indexer = require('./app/lib/dup/indexer');
-  that.lib.rules = require('./app/lib/rules');
 
   that.MerkleService       = require("./app/lib/helpers/merkle");
   that.IdentityService     = require('./app/service/IdentityService')();
@@ -110,6 +89,7 @@ function Server (home, memoryOnly, overrideConf) {
       ud0:                constants.CONTRACT.DEFAULT.UD0,
       stepMax:            constants.CONTRACT.DEFAULT.STEPMAX,
       sigPeriod:          constants.CONTRACT.DEFAULT.SIGPERIOD,
+      msPeriod:           constants.CONTRACT.DEFAULT.MSPERIOD,
       sigStock:           constants.CONTRACT.DEFAULT.SIGSTOCK,
       sigWindow:          constants.CONTRACT.DEFAULT.SIGWINDOW,
       sigValidity:        constants.CONTRACT.DEFAULT.SIGVALIDITY,
@@ -131,6 +111,13 @@ function Server (home, memoryOnly, overrideConf) {
         that.conf[key] = defaultValues[key];
       }
     });
+    // 1.3.X: the msPeriod = msWindow
+    that.conf.msPeriod = that.conf.msPeriod || that.conf.msWindow
+    // Default keypair
+    if (!that.conf.pair || !that.conf.pair.pub || !that.conf.pair.sec) {
+      // Create a random key
+      that.conf.pair = keyring.randomKey().json()
+    }
     // Extract key pair
     that.keyPair = keyring.Key(that.conf.pair.pub, that.conf.pair.sec);
     that.sign = that.keyPair.sign;
@@ -187,8 +174,8 @@ function Server (home, memoryOnly, overrideConf) {
 
   this.submitP = (obj, isInnerWrite) => Q.nbind(this.submit, this)(obj, isInnerWrite);
 
-  this.initDAL = () => co(function*() {
-    yield that.dal.init();
+  this.initDAL = (conf) => co(function*() {
+    yield that.dal.init(conf);
     // Maintenance
     let head_1 = yield that.dal.bindexDAL.head(1);
     if (head_1) {
@@ -225,22 +212,26 @@ function Server (home, memoryOnly, overrideConf) {
   });
 
   this.resetAll = (done) => co(function*() {
+    yield that.resetDataHook()
+    yield that.resetConfigHook()
     const files = ['stats', 'cores', 'current', directory.DUNITER_DB_NAME, directory.DUNITER_DB_NAME + '.db', directory.DUNITER_DB_NAME + '.log', directory.WOTB_FILE, 'export.zip', 'import.zip', 'conf'];
     const dirs  = ['blocks', 'blockchain', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return resetFiles(files, dirs, done);
   });
 
   this.resetData = (done) => co(function*(){
+    yield that.resetDataHook()
     const files = ['stats', 'cores', 'current', directory.DUNITER_DB_NAME, directory.DUNITER_DB_NAME + '.db', directory.DUNITER_DB_NAME + '.log', directory.WOTB_FILE];
     const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     yield resetFiles(files, dirs, done);
   });
 
-  this.resetConf = (done) => {
+  this.resetConf = (done) => co(function*() {
+    yield that.resetConfigHook()
     const files = ['conf'];
     const dirs  = [];
     return resetFiles(files, dirs, done);
-  };
+  });
 
   this.resetStats = (done) => {
     const files = ['stats'];
@@ -364,7 +355,7 @@ function Server (home, memoryOnly, overrideConf) {
 
   this.writeRaw = (raw, type) => co(function *() {
     const parser = documentsMapping[type] && documentsMapping[type].parser;
-    const obj = parser.syncWrite(raw);
+    const obj = parser.syncWrite(raw, logger);
     return yield that.singleWritePromise(obj);
   });
 
@@ -380,12 +371,14 @@ function Server (home, memoryOnly, overrideConf) {
    */
   this.getDaemon = function getDaemon(overrideCommand, insteadOfCmd) {
     const mainModule = process.argv[1]
+    const cwd = path.resolve(mainModule, '../..')
     const argv = getCommand(overrideCommand, insteadOfCmd)
     return daemonize.setup({
       main: mainModule,
       name: directory.INSTANCE_NAME,
       pidfile: path.join(directory.INSTANCE_HOME, "app.pid"),
-      argv
+      argv,
+      cwd
     });
   }
 
@@ -455,10 +448,20 @@ function Server (home, memoryOnly, overrideConf) {
    */
   this.generatorNewCertsToLinks = () => Promise.resolve({})
 
-  /*
+  /**
    * Default hook on file system plugging. To be overriden by module system.
    */
   this.onPluggedFSHook = () => Promise.resolve({})
+
+  /**
+   * Default hook on data reset. To be overriden by module system.
+   */
+  this.resetDataHook = () => Promise.resolve({})
+
+  /**
+   * Default hook on data reset. To be overriden by module system.
+   */
+  this.resetConfigHook = () => Promise.resolve({})
 }
 
 util.inherits(Server, stream.Duplex);

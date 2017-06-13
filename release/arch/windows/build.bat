@@ -1,18 +1,22 @@
 
-set VER_UI=1.1.5
-set VER_BMA=1.1.2
-set VER_CRAWLER=1.1.4
-set VER_PROVER=1.1.2
-set VER_KEYPAIR=1.1.3
+set DUNITER_BRANCH=1.3.x
+set VER_UI=%DUNITER_BRANCH%
+set VER_BMA=%DUNITER_BRANCH%
+set VER_CRAWLER=%DUNITER_BRANCH%
+set VER_PROVER=%DUNITER_BRANCH%
+set VER_KEYPAIR=%DUNITER_BRANCH%
 
 set ADDON_VERSION=48
 set NW_VERSION=0.17.6
+set NODEJS_VERSION=6.11.0
+
 set NW_RELEASE=v0.17.6
 set NW=nwjs-%NW_RELEASE%-win-x64
 set NW_GZ=%NW%.zip
-echo %NW%
-echo %NW_GZ%
-echo %NW_RELEASE%
+
+set NODE_RELEASE=v%NODEJS_VERSION%
+set NODE=node-v%NODEJS_VERSION%-win-x64
+set NODE_ZIP=node-v%NODEJS_VERSION%-win-x64.zip
 node -v
 
 REM NPM
@@ -21,6 +25,13 @@ REM InnoSetup
 set PATH="C:\Program Files (x86)\Inno Setup 5";%PATH%
 
 cd C:\Users\vagrant
+
+if not exist %NODE_ZIP% (
+  echo "Telechargement de %NODE_ZIP%..."
+  powershell -Command "(New-Object System.Net.WebClient).DownloadFile(\"https://nodejs.org/dist/%NODE_RELEASE%/%NODE_ZIP%\", \"%NODE_ZIP%\")"
+  call 7z x %NODE_ZIP%
+)
+
 echo "Suppression des anciennes sources..."
 rd /s /q duniter
 rd /s /q duniter_release
@@ -35,19 +46,27 @@ echo %DUNITER_TAG%
 
 git checkout %DUNITER_TAG%
 
-call npm install
+call npm cache clean
+call npm install --production
 REM call npm test
-
 echo "Retrait des modules 'dev'..."
 call npm prune --production
-echo "Ajout du module 1/4..."
+echo "Ajout du module 1/5..."
 call npm install duniter-bma@%VER_BMA% --save --production
-echo "Ajout du module 2/4..."
+echo "Ajout du module 2/5..."
 call npm install duniter-crawler@%VER_CRAWLER% --save --production
-echo "Ajout du module 3/4..."
+echo "Ajout du module 3/5..."
 call npm install duniter-keypair@%VER_KEYPAIR% --save --production
-echo "Ajout du module 4/4..."
+echo "Ajout du module 4/5..."
 call npm install duniter-prover@%VER_PROVER% --save --production
+echo "Ajout du module 5/5..."
+call npm install duniter-ui@%VER_UI% --save --production
+
+REM echo ">> VM: installing peerDependencies installer..."
+REM call npm i --save-dev @team-griffin/install-self-peers
+REM echo ">> VM: installing peerDependencies..."
+REM call ./node_modules/.bin/install-self-peers --npm -- --production
+
 set SRC=%cd%
 echo %SRC%
 cd node_modules/wotb
@@ -73,16 +92,18 @@ copy %cd%\lib\binding\node-webkit-%NW_RELEASE%-win32-x64\node_sqlite3.node %cd%\
 cd ../heapdump
 call nw-gyp --target=%NW_VERSION% --msvs_version=2015 configure
 call nw-gyp --target=%NW_VERSION% --msvs_version=2015 build
-cd ../..
-call npm install duniter-ui@%VER_UI% --save --production
-rd /s /q %cd%\node_modules\duniter-ui\node_modules
-cd ..
+cd ../../..
 mkdir duniter_release
+mkdir duniter_release\nodejs
 call 7z x %NW_GZ%
-move %NW% %cd%\duniter_release\nw
-mkdir %cd%\duniter_release\sources
-xcopy %SRC%\gui\* %cd%\duniter_release\nw\ /s /e
-xcopy %SRC%\* %cd%\duniter_release\sources\ /s /e
-iscc %cd%\duniter_release\sources\release\arch\windows\duniter.iss /DROOT_PATH=%cd%\duniter_release
+xcopy %NW%\* %cd%\duniter_release\ /s /e /Y
+xcopy %SRC%\gui\* %cd%\duniter_release\ /s /e /Y
+xcopy %SRC%\* %cd%\duniter_release\ /s /e /Y
+xcopy %NODE%\* %cd%\duniter_release\nodejs\ /s /e /Y
+cd duniter_release
+powershell -Command "(Get-Content package.json) | foreach-object {$_ -replace '\"main\": \"index.js\",','\"main\": \"index.html\",' } | Set-Content package.json2"
+move /y package.json2 package.json
+cd ..
+iscc C:\vagrant\duniter.iss /DROOT_PATH=%cd%\duniter_release
 move %cd%\duniter_release\Duniter.exe C:\vagrant\duniter-desktop-%DUNITER_TAG%-windows-x64.exe
 echo "Build done: binary available at duniter-desktop-%DUNITER_TAG%-windows-x64.exe"

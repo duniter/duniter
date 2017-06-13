@@ -22,7 +22,16 @@ function SQLiteDriver(path) {
       logger.debug('Opening SQLite database "%s"...', path);
       let sqlite = new sqlite3.Database(path);
       yield new Promise((resolve) => sqlite.once('open', resolve));
-      // Database is opened and ready
+      // Database is opened
+
+      // Force case sensitiveness on LIKE operator
+      const sql = 'PRAGMA case_sensitive_like=ON;'
+      yield new Promise((resolve, reject) => sqlite.exec(sql, (err) => {
+        if (err) return reject(Error('SQL error "' + err.message + '" on INIT queries "' + sql + '"'))
+        return resolve()
+      }));
+
+      // Database is ready
       return sqlite;
     }));
   }

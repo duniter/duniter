@@ -3,8 +3,8 @@
 const _               = require('underscore');
 const co              = require('co');
 const Q               = require('q');
-const parsers         = require('../lib/streams/parsers');
-const rules           = require('../lib/rules');
+const parsers         = require('duniter-common').parsers;
+const rules           = require('duniter-common').rules
 const constants       = require('../lib/constants');
 const blockchainCtx   = require('../lib/computation/blockchainContext');
 const Block           = require('../lib/entity/block');
@@ -23,7 +23,7 @@ function BlockchainService (server) {
   AbstractService.call(this);
 
   let that = this;
-  const mainContext = blockchainCtx();
+  const mainContext = blockchainCtx(this);
   let conf, dal, logger, selfPubkey;
 
   this.getContext = () => mainContext;
@@ -412,7 +412,6 @@ function BlockchainService (server) {
     }
     // Transactions recording
     yield mainContext.updateTransactionsForBlocks(blocks, getBlockByNumberAndHash);
-    logger.debug(blocks[0].number);
     yield dal.blockDAL.saveBunch(blocks);
     yield pushStatsForBlocks(blocks);
   });
@@ -450,4 +449,14 @@ function BlockchainService (server) {
     }
     return dal.getBlocksBetween(from, from + count - 1);
   });
+
+  /**
+   * Allows to quickly insert a bunch of blocks. To reach such speed, this method skips global rules and buffers changes.
+   *
+   * **This method should be used ONLY when a node is really far away from current blockchain HEAD (i.e several hundreds of blocks late).
+   *
+   * @param blocks An array of blocks to insert.
+   * @param to The final block number of the fast insertion.
+   */
+  this.fastBlockInsertions = (blocks, to) => mainContext.quickApplyBlocks(blocks, to)
 }

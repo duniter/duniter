@@ -9,7 +9,7 @@
 DEB_PACKAGING=
 
 if [[ $DEB_PACKAGING ]]; then
-  DUNITER_DIR=/opt/duniter/sources/
+  DUNITER_DIR=/opt/duniter/
 fi
 
 duniter() {
@@ -40,6 +40,7 @@ duniter() {
 	else
 
 	  # Calls duniter JS command
+	  cd $DUNITER_DIR
 	  $NODE "$DUNITER_DIR/bin/duniter" "$@"
 
 	fi;

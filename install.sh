@@ -11,7 +11,7 @@ if [ -z "$DUNITER_DIR" ]; then
 fi
 
 latest_version() {
-  echo "v1.3.9"
+  echo "v1.3.10"
 }
 
 repo_url() {

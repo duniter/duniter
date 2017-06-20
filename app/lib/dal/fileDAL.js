@@ -472,9 +472,9 @@ function FileDAL(params) {
             .indexOf(p.status) !== -1).value();
   });
 
-  this.listAllPeersWithStatusNewUPWithtout = () => co(function *() {
+  this.listAllPeersWithStatusNewUPWithtout = (pub) => co(function *() {
     const peers = yield that.peerDAL.listAll();
-    return _.chain(peers).filter((p) => p.status == 'UP').filter((p) => p.pubkey).value();
+    return _.chain(peers).filter((p) => p.status == 'UP').filter((p) => p.pubkey !== pub).value();
   });
 
   this.findPeers = (pubkey) => co(function*() {

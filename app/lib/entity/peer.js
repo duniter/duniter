@@ -13,6 +13,10 @@ function Peer(json) {
     this[key] = json[key];
   });
 
+  // block == blockstamp
+  this.blockstamp = this.blockstamp || this.block
+  this.block = this.block || this.blockstamp
+
   this.endpoints = this.endpoints || [];
   this.statusTS = this.statusTS || 0;
 

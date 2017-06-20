@@ -264,7 +264,10 @@ function AbstractSQLite(driver) {
   }
 
   function toRow(entity) {
-    let row = _.clone(entity);
+    let row = {};
+    for (const f of that.fields) {
+      row[f] = entity[f]
+    }
     for (const arr of that.arrays) {
       row[arr] = JSON.stringify(row[arr] || []);
     }

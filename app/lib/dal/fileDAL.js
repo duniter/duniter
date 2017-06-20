@@ -474,7 +474,7 @@ function FileDAL(params) {
 
   this.listAllPeersWithStatusNewUPWithtout = () => co(function *() {
     const peers = yield that.peerDAL.listAll();
-    return _.chain(peers).filter((p) => p.status == 'UP').filter((p) => p.pubkey);
+    return _.chain(peers).filter((p) => p.status == 'UP').filter((p) => p.pubkey).value();
   });
 
   this.findPeers = (pubkey) => co(function*() {

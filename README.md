@@ -16,7 +16,7 @@ However, we are running simultaneously a testing currency.
 
 ### Add your node to the network
 
-See [Install a node documentation](https://github.com/duniter/duniter/blob/master/doc/install-a-node.md).
+See [Install a node documentation](https://duniter.org/en/wiki/duniter/install/).
 
 ### Clients, wallets
 #### Cesium

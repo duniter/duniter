@@ -14,9 +14,9 @@ module.exports = {
     },
     methods: {
       routeToNetwork: (server) => {
-        const router = new Router(server);
-        router.startService();
-        server.pipe(router);
+        const theRouter = new Router(server);
+        theRouter.startService();
+        server.pipe(theRouter);
       }
     }
   }

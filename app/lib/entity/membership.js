@@ -24,14 +24,14 @@ const Membership = function(json) {
   };
 
   this.json = () => {
-    const json = {};
+    const obj = {};
     ["version", "currency", "issuer", "membership"].forEach((key) => {
-      json[key] = this[key];
+      obj[key] = this[key];
     });
-    json.date = this.date && moment(this.date).unix();
-    json.sigDate = this.sigDate && moment(this.sigDate).unix();
-    json.raw = this.getRaw();
-    return { signature: this.signature, membership: json };
+    obj.date = this.date && moment(this.date).unix();
+    obj.sigDate = this.sigDate && moment(this.sigDate).unix();
+    obj.raw = this.getRaw();
+    return { signature: this.signature, membership: obj };
   };
 
   this.getRaw = () => rawer.getMembershipWithoutSignature(this);

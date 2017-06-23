@@ -11,15 +11,15 @@ module.exports = function () {
 
 function Wizard () {
 
-  this.configPoW = function (conf, program, logger, done) {
+  this.configPoW = function (conf, program, aLogger, done) {
     doTasks(['pow'], conf, done);
   };
 
-  this.configCurrency = function (conf, program, logger, done) {
+  this.configCurrency = function (conf, program, aLogger, done) {
     doTasks(['currency'], conf, done);
   };
 
-  this.configUCP = function (conf, program, logger, done) {
+  this.configUCP = function (conf, program, aLogger, done) {
     doTasks(['parameters'], conf, done);
   };
 }

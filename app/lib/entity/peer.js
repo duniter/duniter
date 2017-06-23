@@ -35,13 +35,13 @@ function Peer(json) {
   };
 
   this.json = () => {
-    const json = {};
+    const obj = {};
     ["version", "currency", "endpoints", "status", "block", "signature"].forEach((key) => {
-      json[key] = this[key];
+      obj[key] = this[key];
     });
-    json.raw = this.getRaw();
-    json.pubkey = this.pubkey;
-    return json;
+    obj.raw = this.getRaw();
+    obj.pubkey = this.pubkey;
+    return obj;
   };
 
   this.getBMA = () => {

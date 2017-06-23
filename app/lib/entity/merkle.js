@@ -43,11 +43,11 @@ function Merkle(json) {
     leaves.forEach((leaf) => {
       // If leaf IS present
       if(~this.levels[this.depth].indexOf(leaf)){
-        const leaves = this.leaves();
-        const index = leaves.indexOf(leaf);
+        const theLeaves = this.leaves();
+        const index = theLeaves.indexOf(leaf);
         if(~index){
           // Replacement: remove previous hash
-          leaves.splice(index, 1);
+          theLeaves.splice(index, 1);
         }
       }
     });

@@ -12,11 +12,11 @@ const driver = require("../dal/drivers/sqlite");
 const DEFAULT_DOMAIN = "duniter_default";
 const DEFAULT_HOME = (process.platform == 'win32' ? process.env.USERPROFILE : process.env.HOME) + '/.config/duniter/';
 
-const getLogsPath = (profile, dir) => path.join(getHomePath(profile, dir), 'duniter.log');
+const getLogsPath = (profile, directory) => path.join(getHomePath(profile, directory), 'duniter.log');
 
-const getHomePath = (profile, dir) => path.normalize(getUserHome(dir) + '/') + getDomain(profile);
+const getHomePath = (profile, directory) => path.normalize(getUserHome(directory) + '/') + getDomain(profile);
 
-const getUserHome = (dir) => (dir || DEFAULT_HOME);
+const getUserHome = (directory) => (directory || DEFAULT_HOME);
 
 const getDomain = (profile) => (profile || DEFAULT_DOMAIN);
 
@@ -28,7 +28,7 @@ const dir = module.exports = {
   DUNITER_DB_NAME: 'duniter',
   WOTB_FILE: 'wotb.bin',
 
-  getHome: (profile, dir) => getHomePath(profile, dir),
+  getHome: (profile, directory) => getHomePath(profile, directory),
 
   getHomeFS: (isMemory, theHome) => co(function *() {
     const home = theHome || dir.getHome();
@@ -65,8 +65,8 @@ const dir = module.exports = {
     return params;
   }),
 
-  createHomeIfNotExists: (fs, theHome) => co(function *() {
-    const fsHandler = cfs(theHome, fs);
+  createHomeIfNotExists: (fileSystem, theHome) => co(function *() {
+    const fsHandler = cfs(theHome, fileSystem);
     return fsHandler.makeTree('');
   })
 };

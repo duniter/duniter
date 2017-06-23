@@ -166,23 +166,23 @@ function PeeringService(server) {
     let endpoint = yield server.getMainEndpoint(theConf);
     let otherPotentialEndpoints = getOtherEndpoints(p1.endpoints, theConf);
     logger.info('Sibling endpoints:', otherPotentialEndpoints);
-    let reals = yield otherPotentialEndpoints.map((endpoint) => co(function*() {
+    let reals = yield otherPotentialEndpoints.map((theEndpoint) => co(function*() {
       let real = true;
-      let remote = Peer.statics.endpoint2host(endpoint);
+      let remote = Peer.statics.endpoint2host(theEndpoint);
       try {
         // We test only BMA APIs, because other may exist and we cannot judge against them yet
-        if (endpoint.startsWith('BASIC_MERKLED_API')) {
+        if (theEndpoint.startsWith('BASIC_MERKLED_API')) {
           let answer = yield rp('http://' + remote + '/network/peering', { json: true });
           if (!answer || answer.pubkey != selfPubkey) {
             throw Error("Not same pubkey as local instance");
           }
         }
         // We also remove endpoints that are *asked* to be removed in the conf file
-        if ((conf.rmEndpoints || []).indexOf(endpoint) !== -1) {
+        if ((conf.rmEndpoints || []).indexOf(theEndpoint) !== -1) {
           real = false;
         }
       } catch (e) {
-        logger.warn('Wrong endpoint \'%s\': \'%s\'', endpoint, e.message || e);
+        logger.warn('Wrong endpoint \'%s\': \'%s\'', theEndpoint, e.message || e);
         real = false;
       }
       return real;

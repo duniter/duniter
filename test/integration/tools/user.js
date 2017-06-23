@@ -242,11 +242,11 @@ function User (uid, options, node) {
     let sources2 = [];
     let total = 0;
     for (let j = 0; j < sources.length && total < amount; j++) {
-      var src = sources[j];
+      let src = sources[j];
       total += src.amount * Math.pow(10, src.base);
       sources2.push(src);
     }
-    var inputSum = 0;
+    let inputSum = 0;
     sources2.forEach((src) => inputSum += src.amount * Math.pow(10, src.base));
     let inputs = sources2.map((src) => {
       return {

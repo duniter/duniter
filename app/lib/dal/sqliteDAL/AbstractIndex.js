@@ -22,12 +22,12 @@ function AbstractIndex() {
       'GROUP BY pub ' +
       'HAVING nbRecords > 1', [belowNumber]);
     const reducedByPub = indexer.DUP_HELPERS.reduceBy(belowRecords, ['pub']);
-    for (const rec of reducedByPub) {
-      const recordsOfPub = yield that.query('SELECT * FROM ' + that.table + ' WHERE pub = ?', [rec.pub]);
+    for (const record of reducedByPub) {
+      const recordsOfPub = yield that.query('SELECT * FROM ' + that.table + ' WHERE pub = ?', [record.pub]);
       const toReduce = _.filter(recordsOfPub, (rec) => parseInt(rec.written_on) < belowNumber);
       if (toReduce.length) {
         // Clean the records in the DB
-        yield that.exec('DELETE FROM ' + that.table + ' WHERE pub = \'' + rec.pub + '\'');
+        yield that.exec('DELETE FROM ' + that.table + ' WHERE pub = \'' + record.pub + '\'');
         const nonReduced = _.filter(recordsOfPub, (rec) => parseInt(rec.written_on) >= belowNumber);
         const reduced = indexer.DUP_HELPERS.reduce(toReduce);
         // Persist

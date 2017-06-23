@@ -91,9 +91,9 @@ function BlockchainContext(BlockchainService) {
    * @param issuer The issuer we want to get the difficulty level.
    */
   this.getIssuerPersonalizedDifficulty = (issuer) => co(function *() {
-    const vHEAD = yield that.getvHeadCopy({ issuer });
-    yield indexer.preparePersonalizedPoW(vHEAD, vHEAD_1, dal.range, conf);
-    return vHEAD.issuerDiff;
+    const local_vHEAD = yield that.getvHeadCopy({ issuer });
+    yield indexer.preparePersonalizedPoW(local_vHEAD, vHEAD_1, dal.range, conf);
+    return local_vHEAD.issuerDiff;
   });
 
   this.setConfDAL = (newConf, newDAL) => {
@@ -374,7 +374,7 @@ function BlockchainContext(BlockchainService) {
     ].reduce((max, value) => {
       return Math.max(max, value);
     }, 0);
-    const MAX_BINDEX_SIZE = 2*bindexSize;
+    const MAX_BINDEX_SIZE = 2 * bindexSize;
     const currentSize = indexes.HEAD.number - TAIL.number + 1;
     if (currentSize > MAX_BINDEX_SIZE) {
       yield dal.trimIndexes(indexes.HEAD.number - MAX_BINDEX_SIZE);
@@ -459,7 +459,7 @@ function BlockchainContext(BlockchainService) {
     });
   });
 
-  this.updateWallets = (sindex, dal, reverse) => co(function *() {
+  this.updateWallets = (sindex, aDal, reverse) => co(function *() {
     return co(function *() {
       const differentConditions = _.uniq(sindex.map((entry) => entry.conditions))
       for (const conditions of differentConditions) {
@@ -467,14 +467,14 @@ function BlockchainContext(BlockchainService) {
         const updates = _.filter(sindex, (entry) => entry.conditions === conditions && entry.op === common.constants.IDX_UPDATE)
         const positives = creates.reduce((sum, src) => sum + src.amount * Math.pow(10, src.base), 0)
         const negatives = updates.reduce((sum, src) => sum + src.amount * Math.pow(10, src.base), 0)
-        const wallet = yield dal.getWallet(conditions)
+        const wallet = yield aDal.getWallet(conditions)
         let variation = positives - negatives
         if (reverse) {
           // To do the opposite operations, for a reverted block
           variation *= -1
         }
         wallet.balance += variation
-        yield dal.saveWallet(wallet)
+        yield aDal.saveWallet(wallet)
       }
     });
   });
@@ -633,22 +633,22 @@ function BlockchainContext(BlockchainService) {
     }
   });
 
-  let bindex = [];
-  let iindex = [];
-  let mindex = [];
-  let cindex = [];
-  let sindex = [];
-  let bindexSize = 0;
-  let allBlocks = [];
-  let expires = [];
-  let nextExpiring = 0;
-  let currConf = {};
-  const memoryWallets = {}
-  const memoryDAL = {
-    getWallet: (conditions) => Promise.resolve(memoryWallets[conditions] || { conditions, balance: 0 }),
+  let sync_bindex = [];
+  let sync_iindex = [];
+  let sync_mindex = [];
+  let sync_cindex = [];
+  let sync_sindex = [];
+  let sync_bindexSize = 0;
+  let sync_allBlocks = [];
+  let sync_expires = [];
+  let sync_nextExpiring = 0;
+  let sync_currConf = {};
+  const sync_memoryWallets = {}
+  const sync_memoryDAL = {
+    getWallet: (conditions) => Promise.resolve(sync_memoryWallets[conditions] || { conditions, balance: 0 }),
     saveWallet: (wallet) => co(function*() {
       // Make a copy
-      memoryWallets[wallet.conditions] = {
+      sync_memoryWallets[wallet.conditions] = {
         conditions: wallet.conditions,
         balance: wallet.balance
       }
@@ -657,45 +657,45 @@ function BlockchainContext(BlockchainService) {
 
   this.quickApplyBlocks = (blocks, to) => co(function*() {
 
-    memoryDAL.sindexDAL = { getAvailableForConditions: dal.sindexDAL.getAvailableForConditions }
+    sync_memoryDAL.sindexDAL = { getAvailableForConditions: dal.sindexDAL.getAvailableForConditions }
     const ctx = that
     let blocksToSave = [];
 
     for (const block of blocks) {
-      allBlocks.push(block);
+      sync_allBlocks.push(block);
 
       if (block.number == 0) {
-        currConf = Block.statics.getConf(block);
+        sync_currConf = Block.statics.getConf(block);
       }
 
       if (block.number != to) {
         blocksToSave.push(block);
-        const index = indexer.localIndex(block, currConf);
+        const index = indexer.localIndex(block, sync_currConf);
         const local_iindex = indexer.iindex(index);
         const local_cindex = indexer.cindex(index);
         const local_sindex = indexer.sindex(index);
         const local_mindex = indexer.mindex(index);
-        iindex = iindex.concat(local_iindex);
-        cindex = cindex.concat(local_cindex);
-        mindex = mindex.concat(local_mindex);
+        sync_iindex = sync_iindex.concat(local_iindex);
+        sync_cindex = sync_cindex.concat(local_cindex);
+        sync_mindex = sync_mindex.concat(local_mindex);
 
-        const HEAD = yield indexer.quickCompleteGlobalScope(block, currConf, bindex, iindex, mindex, cindex, {
+        const HEAD = yield indexer.quickCompleteGlobalScope(block, sync_currConf, sync_bindex, sync_iindex, sync_mindex, sync_cindex, {
           getBlock: (number) => {
-            return Promise.resolve(allBlocks[number]);
+            return Promise.resolve(sync_allBlocks[number]);
           },
           getBlockByBlockstamp: (blockstamp) => {
-            return Promise.resolve(allBlocks[parseInt(blockstamp)]);
+            return Promise.resolve(sync_allBlocks[parseInt(blockstamp)]);
           }
         });
-        bindex.push(HEAD);
+        sync_bindex.push(HEAD);
 
         // Remember expiration dates
         for (const entry of index) {
           if (entry.op === 'CREATE' && (entry.expires_on || entry.revokes_on)) {
-            expires.push(entry.expires_on || entry.revokes_on);
+            sync_expires.push(entry.expires_on || entry.revokes_on);
           }
         }
-        expires = _.uniq(expires);
+        sync_expires = _.uniq(sync_expires);
 
         yield ctx.createNewcomers(local_iindex);
 
@@ -706,22 +706,22 @@ function BlockchainContext(BlockchainService) {
           || block.excluded.length
           || block.certifications.length
           || block.transactions.length
-          || block.medianTime >= nextExpiring) {
+          || block.medianTime >= sync_nextExpiring) {
           // logger.warn('>> Block#%s', block.number)
 
-          for (let i = 0; i < expires.length; i++) {
-            let expire = expires[i];
+          for (let i = 0; i < sync_expires.length; i++) {
+            let expire = sync_expires[i];
             if (block.medianTime > expire) {
-              expires.splice(i, 1);
+              sync_expires.splice(i, 1);
               i--;
             }
           }
-          let currentNextExpiring = nextExpiring
-          nextExpiring = expires.reduce((max, value) => max ? Math.min(max, value) : value, nextExpiring);
-          const nextExpiringChanged = currentNextExpiring !== nextExpiring
+          let currentNextExpiring = sync_nextExpiring
+          sync_nextExpiring = sync_expires.reduce((max, value) => max ? Math.min(max, value) : value, sync_nextExpiring);
+          const nextExpiringChanged = currentNextExpiring !== sync_nextExpiring
 
           // Fills in correctly the SINDEX
-          yield _.where(sindex.concat(local_sindex), { op: 'UPDATE' }).map((entry) => co(function*() {
+          yield _.where(sync_sindex.concat(local_sindex), { op: 'UPDATE' }).map((entry) => co(function*() {
             if (!entry.conditions) {
               const src = yield dal.sindexDAL.getSource(entry.identifier, entry.pos);
               entry.conditions = src.conditions;
@@ -729,46 +729,46 @@ function BlockchainContext(BlockchainService) {
           }))
 
           // Flush the INDEX (not bindex, which is particular)
-          yield dal.mindexDAL.insertBatch(mindex);
-          yield dal.iindexDAL.insertBatch(iindex);
-          yield dal.sindexDAL.insertBatch(sindex);
-          yield dal.cindexDAL.insertBatch(cindex);
-          mindex = [];
-          iindex = [];
-          cindex = [];
-          sindex = local_sindex;
+          yield dal.mindexDAL.insertBatch(sync_mindex);
+          yield dal.iindexDAL.insertBatch(sync_iindex);
+          yield dal.sindexDAL.insertBatch(sync_sindex);
+          yield dal.cindexDAL.insertBatch(sync_cindex);
+          sync_mindex = [];
+          sync_iindex = [];
+          sync_cindex = [];
+          sync_sindex = local_sindex;
 
-          sindex = sindex.concat(yield indexer.ruleIndexGenDividend(HEAD, dal));
-          sindex = sindex.concat(yield indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex, memoryDAL));
+          sync_sindex = sync_sindex.concat(yield indexer.ruleIndexGenDividend(HEAD, dal));
+          sync_sindex = sync_sindex.concat(yield indexer.ruleIndexGarbageSmallAccounts(HEAD, sync_sindex, sync_memoryDAL));
           if (nextExpiringChanged) {
-            cindex = cindex.concat(yield indexer.ruleIndexGenCertificationExpiry(HEAD, dal));
-            mindex = mindex.concat(yield indexer.ruleIndexGenMembershipExpiry(HEAD, dal));
-            iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByMembership(HEAD, mindex, dal));
-            iindex = iindex.concat(yield indexer.ruleIndexGenExclusionByCertificatons(HEAD, cindex, local_iindex, conf, dal));
-            mindex = mindex.concat(yield indexer.ruleIndexGenImplicitRevocation(HEAD, dal));
+            sync_cindex = sync_cindex.concat(yield indexer.ruleIndexGenCertificationExpiry(HEAD, dal));
+            sync_mindex = sync_mindex.concat(yield indexer.ruleIndexGenMembershipExpiry(HEAD, dal));
+            sync_iindex = sync_iindex.concat(yield indexer.ruleIndexGenExclusionByMembership(HEAD, sync_mindex, dal));
+            sync_iindex = sync_iindex.concat(yield indexer.ruleIndexGenExclusionByCertificatons(HEAD, sync_cindex, local_iindex, conf, dal));
+            sync_mindex = sync_mindex.concat(yield indexer.ruleIndexGenImplicitRevocation(HEAD, dal));
           }
           // Update balances with UD + local garbagings
-          yield that.updateWallets(sindex, memoryDAL)
+          yield that.updateWallets(sync_sindex, sync_memoryDAL)
 
           // --> Update links
-          yield dal.updateWotbLinks(local_cindex.concat(cindex));
+          yield dal.updateWotbLinks(local_cindex.concat(sync_cindex));
 
           // Flush the INDEX again
-          yield dal.mindexDAL.insertBatch(mindex);
-          yield dal.iindexDAL.insertBatch(iindex);
-          yield dal.sindexDAL.insertBatch(sindex);
-          yield dal.cindexDAL.insertBatch(cindex);
-          mindex = [];
-          iindex = [];
-          cindex = [];
-          sindex = [];
+          yield dal.mindexDAL.insertBatch(sync_mindex);
+          yield dal.iindexDAL.insertBatch(sync_iindex);
+          yield dal.sindexDAL.insertBatch(sync_sindex);
+          yield dal.cindexDAL.insertBatch(sync_cindex);
+          sync_mindex = [];
+          sync_iindex = [];
+          sync_cindex = [];
+          sync_sindex = [];
 
           // Create/Update nodes in wotb
           yield ctx.updateMembers(block);
         }
 
         // Trim the bindex
-        bindexSize = [
+        sync_bindexSize = [
           block.issuersCount,
           block.issuersFrame,
           conf.medianTimeBlocks,
@@ -778,12 +778,12 @@ function BlockchainContext(BlockchainService) {
           return Math.max(max, value);
         }, 0);
 
-        if (bindexSize && bindex.length >= 2 * bindexSize) {
+        if (sync_bindexSize && sync_bindex.length >= 2 * sync_bindexSize) {
           // We trim it, not necessary to store it all (we already store the full blocks)
-          bindex.splice(0, bindexSize);
+          sync_bindex.splice(0, sync_bindexSize);
 
           // Process triming continuously to avoid super long ending of sync
-          yield dal.trimIndexes(bindex[0].number);
+          yield dal.trimIndexes(sync_bindex[0].number);
         }
       } else {
 
@@ -793,32 +793,32 @@ function BlockchainContext(BlockchainService) {
         blocksToSave = [];
 
         // Save the INDEX
-        yield dal.bindexDAL.insertBatch(bindex);
-        yield dal.mindexDAL.insertBatch(mindex);
-        yield dal.iindexDAL.insertBatch(iindex);
-        yield dal.sindexDAL.insertBatch(sindex);
-        yield dal.cindexDAL.insertBatch(cindex);
+        yield dal.bindexDAL.insertBatch(sync_bindex);
+        yield dal.mindexDAL.insertBatch(sync_mindex);
+        yield dal.iindexDAL.insertBatch(sync_iindex);
+        yield dal.sindexDAL.insertBatch(sync_sindex);
+        yield dal.cindexDAL.insertBatch(sync_cindex);
 
         // Save the intermediary table of wallets
-        const conditions = _.keys(memoryWallets)
-        const nonEmptyKeys = _.filter(conditions, (k) => memoryWallets[k] && memoryWallets[k].balance > 0)
-        const walletsToRecord = nonEmptyKeys.map((k) => memoryWallets[k])
+        const conditions = _.keys(sync_memoryWallets)
+        const nonEmptyKeys = _.filter(conditions, (k) => sync_memoryWallets[k] && sync_memoryWallets[k].balance > 0)
+        const walletsToRecord = nonEmptyKeys.map((k) => sync_memoryWallets[k])
         yield dal.walletDAL.insertBatch(walletsToRecord)
 
         // Last block: cautious mode to trigger all the INDEX expiry mechanisms
         yield BlockchainService.submitBlock(block, true, true);
 
         // Clean temporary variables
-        bindex = [];
-        iindex = [];
-        mindex = [];
-        cindex = [];
-        sindex = [];
-        bindexSize = 0;
-        allBlocks = [];
-        expires = [];
-        nextExpiring = 0;
-        currConf = {};
+        sync_bindex = [];
+        sync_iindex = [];
+        sync_mindex = [];
+        sync_cindex = [];
+        sync_sindex = [];
+        sync_bindexSize = 0;
+        sync_allBlocks = [];
+        sync_expires = [];
+        sync_nextExpiring = 0;
+        sync_currConf = {};
       }
     }
     if (blocksToSave.length) {

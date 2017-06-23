@@ -102,7 +102,7 @@ describe("v1.0 Module API", () => {
               // Gimme the conf!
               return conf;
             })
-          }],
+          }]
         }
       };
 

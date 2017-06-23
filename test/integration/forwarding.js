@@ -31,7 +31,7 @@ describe("Forwarding", function() {
     const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, node1);
 
     before(() => co(function*(){
-      yield [node1, node2].map((node) => node.startTesting());
+      yield [node1, node2].map((theNode) => theNode.startTesting());
       yield new Promise(function(resolve, reject){
         async.waterfall([
           function(next) {
@@ -108,13 +108,13 @@ describe("Forwarding", function() {
   });
 });
 
-function doTests(node) {
+function doTests(theNode) {
 
   return function(){
 
     describe("user cat", function(){
 
-      it('should give only 1 result', node.lookup('cat', function(res, done){
+      it('should give only 1 result', theNode.lookup('cat', function(res, done){
         try {
           should.exists(res);
           assert.equal(res.results.length, 1);
@@ -124,7 +124,7 @@ function doTests(node) {
         }
       }));
 
-      it('should have sent 1 signature', node.lookup('cat', function(res, done){
+      it('should have sent 1 signature', theNode.lookup('cat', function(res, done){
         try {
           should.exists(res);
           assert.equal(res.results[0].signed.length, 1);
@@ -141,7 +141,7 @@ function doTests(node) {
 
     describe("user tac", function(){
 
-      it('should give only 1 result', node.lookup('tac', function(res, done){
+      it('should give only 1 result', theNode.lookup('tac', function(res, done){
         try {
           should.exists(res);
           assert.equal(res.results.length, 1);
@@ -151,7 +151,7 @@ function doTests(node) {
         }
       }));
 
-      it('should have 1 signature', node.lookup('tac', function(res, done){
+      it('should have 1 signature', theNode.lookup('tac', function(res, done){
         try {
           should.exists(res);
           assert.equal(res.results[0].uids[0].others.length, 1);
@@ -161,7 +161,7 @@ function doTests(node) {
         }
       }));
 
-      it('should have sent 1 signature', node.lookup('tac', function(res, done){
+      it('should have sent 1 signature', theNode.lookup('tac', function(res, done){
         try {
           should.exists(res);
           assert.equal(res.results[0].signed.length, 1);
@@ -172,12 +172,12 @@ function doTests(node) {
       }));
     });
 
-    it('toc should give only 1 result', node.lookup('toc', function(res, done){
+    it('toc should give only 1 result', theNode.lookup('toc', function(res, done){
       should.not.exists(res);
       done();
     }));
 
-    it('tic should give only 1 results', node.lookup('tic', function(res, done){
+    it('tic should give only 1 results', theNode.lookup('tic', function(res, done){
       should.not.exists(res);
       done();
     }));

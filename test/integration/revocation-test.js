@@ -12,6 +12,8 @@ const commit    = require('./tools/commit');
 
 const expectAnswer  = httpTest.expectAnswer;
 
+require('duniter-bma').duniter.methods.noLimit(); // Disables the HTTP limiter
+
 const MEMORY_MODE = true;
 const commonConf = {
   ipv4: '127.0.0.1',
@@ -134,13 +136,14 @@ describe("Revocation", function() {
   }));
 
   it('if we commit a revocation, cat should be revoked', () => co(function *() {
+    yield commitS1({ revoked: [], excluded: [] });
     yield commitS1();
     return expectAnswer(rp('http://127.0.0.1:9964/wot/lookup/cat', { json: true }), function(res) {
       res.should.have.property('results').length(1);
       res.results[0].should.have.property('uids').length(1);
       res.results[0].uids[0].should.have.property('uid').equal('cat');
       res.results[0].uids[0].should.have.property('revoked').equal(true);
-      res.results[0].uids[0].should.have.property('revoked_on').equal(1);
+      res.results[0].uids[0].should.have.property('revoked_on').equal(2);
       res.results[0].uids[0].should.have.property('revocation_sig').not.equal(null);
       res.results[0].uids[0].should.have.property('revocation_sig').not.equal('');
     });

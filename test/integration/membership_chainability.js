@@ -28,7 +28,7 @@ describe("Membership chainability", function() {
       yield s1.commit({ time: now })
       yield s1.commit({ time: now })
       yield s1.commit({ time: now, actives: [
-        'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:QA2gKg6x2PhqMyKhi3hWBXuRJuRwd8G6WGHGNZIEicUR2kjE8Y3WScLyaMNQAZF3s7ewvUvpWkewopd5ugr+Bg==:1-4A21CEA1EA7C3BB0A22DEC87C5AECB38E69DB70A269CEC3644B8149B322C7669:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat'
+        'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:rppB5NEwmdMUCxw3N/QPMk+V1h2Jpn0yxTzdO2xxcNN3MACv6x8vNTChWwM6DOq+kXiQHTczFzoux+82WkMfDQ==:1-12D7B9BEBE941F6929A4A61CDC06DEEEFCB00FD1DA72E42FFF7B19A338D421E1:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat'
       ]})
     }))
 
@@ -64,7 +64,7 @@ describe("Membership chainability", function() {
     it('should refuse a block with a too early membership in it', () => co(function*() {
       yield toolbox.shouldFail(s1.commit({
         time: now + 20,
-        actives: ['HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:H2jum4LLenc/69vZAFw2OppLxVQgNtp+7XL+M9nSvAGjxMf8jBEAeQ/nrfDP3Lrk2SvDvp5Hice5jFboHVdxAQ==:1-2989DEFA8BD18F111B3686EB14ED91EE7C509C9D74EE5C96AECBD4F3CA5E0FB6:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat']
+        actives: ['HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:SiCD1MSyDiZKWLp/SP/2Vj5T3JMgjNnIIKMI//yvKRdWMzKjEn6/ZT+TCjyjnl85qRfmEuWv1jLmQSoe8GXSDg==:1-0DEE2A8EA05322FCC4355D5F0E7A2830F4A22ACEBDC4B62399484E091A5CCF27:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat']
       }), '500 - "{\\n  \\"ucode\\": 1002,\\n  \\"message\\": \\"ruleMembershipPeriod\\"\\n}"')
     }))
 

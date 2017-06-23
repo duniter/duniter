@@ -80,7 +80,7 @@
     "duniter-bma": "1.3.x",
     "duniter-crawler": "1.3.x",
     "duniter-keypair": "1.3.X",
-    "duniter-prover": "^1.3.3",
+    "duniter-prover": "1.4.x",
     "duniter-ui": "1.3.x",
     "eslint": "3.13.1",
     "eslint-plugin-mocha": "4.8.0",
@@ -97,7 +97,7 @@
     "duniter-bma": "1.3.x",
     "duniter-crawler": "1.3.x",
     "duniter-keypair": "1.3.X",
-    "duniter-prover": "1.3.x",
+    "duniter-prover": "1.4.x",
     "duniter-ui": "1.3.x"
   },
   "bin": {

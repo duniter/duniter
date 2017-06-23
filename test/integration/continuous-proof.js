@@ -99,14 +99,14 @@ describe("Continous proof-of-work", function() {
   it('testing a network', () => co(function*() {
     const res = yield toolbox.simpleNetworkOf2NodesAnd2Users({
       nbCores: NB_CORES_FOR_COMPUTATION,
-      powMin: 16
+      powMin: 32
     }), s2 = res.s1, s3 = res.s2;
     yield s2.commit();
-    s2.conf.cpu = 0.5;
-    s3.conf.cpu = 0.5;
+    s2.conf.cpu = 0.2;
+    s3.conf.cpu = 0.7;
     yield [
-      s2.until('block', 10),
-      s3.until('block', 10),
+      s2.until('block', 5),
+      s3.until('block', 5),
       co(function*() {
         s2.startBlockComputation();
         s3.startBlockComputation();

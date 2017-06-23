@@ -115,7 +115,7 @@ function IdentityDAL(driver) {
     uid: "%" + search + "%"
   });
 
-  this.trimExpiredIdentities = (medianTime) => this.exec('DELETE FROM ' + this.table + ' WHERE expires_on IS NULL OR expires_on < ' + medianTime);
+  this.trimExpiredIdentities = (medianTime) => this.exec('DELETE FROM ' + this.table + ' WHERE (expires_on IS NULL AND revocation_sig IS NULL) OR expires_on < ' + medianTime);
 
   /**************************
    * SANDBOX STUFF

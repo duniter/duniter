@@ -289,6 +289,10 @@ function BlockchainContext(BlockchainService) {
     // Revert nodes
     yield undoMembersUpdate(blockstamp);
 
+    // Get the money movements to revert in the balance
+    const REVERSE_BALANCE = true
+    const sindexOfBlock = yield dal.sindexDAL.getWrittenOn(blockstamp)
+
     yield dal.bindexDAL.removeBlock(number);
     yield dal.mindexDAL.removeBlock(blockstamp);
     yield dal.iindexDAL.removeBlock(blockstamp);
@@ -296,12 +300,10 @@ function BlockchainContext(BlockchainService) {
     yield dal.sindexDAL.removeBlock(blockstamp);
 
     // Then: normal updates
+    const block = yield dal.getBlockByBlockstampOrNull(blockstamp);
     const previousBlock = yield dal.getBlock(number - 1);
     // Set the block as SIDE block (equivalent to removal from main branch)
     yield dal.blockDAL.setSideBlock(number, previousBlock);
-
-    const REVERSE_BALANCE = true
-    const sindexOfBlock = yield dal.sindexDAL.getWrittenOn(blockstamp)
 
     // Revert the balances variations for this block
     yield that.updateWallets(sindexOfBlock, dal, REVERSE_BALANCE)
@@ -309,11 +311,8 @@ function BlockchainContext(BlockchainService) {
     // Remove any source created for this block (both Dividend and Transaction).
     yield dal.removeAllSourcesOfBlock(blockstamp);
 
-    const block = yield dal.getBlockByBlockstampOrNull(blockstamp);
-    if (block) {
-      // For some reason the block might not exist (issue #827)
-      yield undoDeleteTransactions(block);
-    }
+    // Restore block's transaction as incoming transactions
+    yield undoDeleteTransactions(block)
   });
 
   const checkIssuer = (block) => co(function*() {

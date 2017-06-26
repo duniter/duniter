@@ -282,7 +282,12 @@ function MetaDAL(driver) {
         const updateQuery = 'UPDATE m_index SET chainable_on = ' + (reference.medianTime + conf.msPeriod) + ' WHERE pub = \'' + ms.pub + '\' AND op = \'CREATE\''
         yield mindexDAL.exec(updateQuery)
       }
-    })
+    }),
+
+    // Replay the wallet table feeding, because of a potential bug
+    22: function resetWallets() {
+      return migrations[20]()
+    }
   };
 
   this.init = () => co(function *() {

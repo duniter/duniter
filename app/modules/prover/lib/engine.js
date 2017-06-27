@@ -19,7 +19,7 @@ function PowEngine(conf, logger) {
     process.execArgv = [];
   }
 
-  const nbWorkers = require('os').cpus().slice(0, conf && conf.nbCores || constants.CORES_MAXIMUM_USE_IN_PARALLEL).length
+  const nbWorkers = Math.min(constants.CORES_MAXIMUM_USE_IN_PARALLEL, require('os').cpus().slice(0, conf && conf.nbCores || 1).length)
   const cluster = powCluster(nbWorkers, logger)
 
   this.forceInit = () => cluster.initCluster()

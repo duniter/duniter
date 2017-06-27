@@ -3,7 +3,6 @@ set DUNITER_BRANCH=1.3.x
 set VER_UI=%DUNITER_BRANCH%
 set VER_BMA=%DUNITER_BRANCH%
 set VER_CRAWLER=%DUNITER_BRANCH%
-set VER_PROVER=%DUNITER_BRANCH%
 set VER_KEYPAIR=%DUNITER_BRANCH%
 
 set ADDON_VERSION=48
@@ -51,15 +50,13 @@ call npm install --production
 REM call npm test
 echo "Retrait des modules 'dev'..."
 call npm prune --production
-echo "Ajout du module 1/5..."
+echo "Ajout du module 1/4..."
 call npm install duniter-bma@%VER_BMA% --save --production
-echo "Ajout du module 2/5..."
+echo "Ajout du module 2/4..."
 call npm install duniter-crawler@%VER_CRAWLER% --save --production
-echo "Ajout du module 3/5..."
+echo "Ajout du module 3/4..."
 call npm install duniter-keypair@%VER_KEYPAIR% --save --production
-echo "Ajout du module 4/5..."
-call npm install duniter-prover@%VER_PROVER% --save --production
-echo "Ajout du module 5/5..."
+echo "Ajout du module 4/4..."
 call npm install duniter-ui@%VER_UI% --save --production
 
 REM echo ">> VM: installing peerDependencies installer..."

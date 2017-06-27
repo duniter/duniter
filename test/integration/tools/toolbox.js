@@ -256,7 +256,7 @@ module.exports = {
     });
 
     server.makeNext = (overrideProps) => co(function*() {
-      const block = yield require('duniter-prover').duniter.methods.generateAndProveTheNext(server, null, null, overrideProps || {});
+      const block = yield require('../../../app/modules/prover').duniter.methods.generateAndProveTheNext(server, null, null, overrideProps || {});
       return Block.statics.fromJSON(block);
     });
 
@@ -302,13 +302,13 @@ module.exports = {
       server.bma = bmaAPI;
       require('../../../app/modules/router').duniter.methods.routeToNetwork(server);
       // Extra: for /wot/requirements URL
-      require('duniter-prover').duniter.methods.hookServer(server);
+      require('../../../app/modules/prover').duniter.methods.hookServer(server);
     });
 
     let prover;
     server.startBlockComputation = () => {
       if (!prover) {
-        prover = require('duniter-prover').duniter.methods.prover(server);
+        prover = require('../../../app/modules/prover').duniter.methods.prover(server);
         server.permaProver = prover.permaProver;
         server.pipe(prover);
       }

@@ -54,7 +54,6 @@ If you wish to participate/debate on Duniter, you can:
 Duniter is using modules on different git repositories:
 - [Common](https://github.com/duniter/duniter-common): commons tools for Duniter core and modules.
 - [Crawler](https://github.com/duniter/duniter-crawler): network crawler.
-- [Prover](https://github.com/duniter/duniter-prover): handle Proof-of-Work.
 - [BMA API](https://github.com/duniter/duniter-bma): Basic Merkled API.
 - [Keypair](https://github.com/duniter/duniter-keypair): provide the cryptographic keypair.
 - [WotB](https://github.com/duniter/wotb): compute Web of Trust.

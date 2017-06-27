@@ -50,7 +50,7 @@ describe("Identities kicking", function() {
 
       const now = Math.round(new Date().getTime() / 1000);
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      require('duniter-prover').duniter.methods.hookServer(s1);
+      require('../../app/modules/prover').duniter.methods.hookServer(s1);
       yield cat.createIdentity();
       yield tac.createIdentity();
       yield cat.cert(tac);

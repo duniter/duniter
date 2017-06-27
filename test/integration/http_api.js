@@ -58,7 +58,7 @@ describe("HTTP API", function() {
 
   function makeBlockAndPost(theServer) {
     return function() {
-      return require('duniter-prover').duniter.methods.generateAndProveTheNext(theServer)
+      return require('../../app/modules/prover').duniter.methods.generateAndProveTheNext(theServer)
         .then(postBlock(theServer));
     };
   }

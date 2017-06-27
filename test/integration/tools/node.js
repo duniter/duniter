@@ -79,9 +79,9 @@ function Node (dbName, options) {
             block: function(callback){
               co(function *() {
                 try {
-                  const block2 = yield require('duniter-prover').duniter.methods.generateTheNextBlock(that.server, params);
+                  const block2 = yield require('../../../app/modules/prover').duniter.methods.generateTheNextBlock(that.server, params);
                   const trial2 = yield that.server.getBcContext().getIssuerPersonalizedDifficulty(that.server.keyPair.publicKey);
-                  const block = yield require('duniter-prover').duniter.methods.generateAndProveTheNext(that.server, block2, trial2, params);
+                  const block = yield require('../../../app/modules/prover').duniter.methods.generateAndProveTheNext(that.server, block2, trial2, params);
                   callback(null, block);
                 } catch (e) {
                   callback(e);

@@ -13,8 +13,8 @@ module.exports = function makeBlockAndPost(theServer, extraProps) {
     }
     return co(function *() {
       if (!theServer._utProver) {
-        theServer._utProver = require('duniter-prover').duniter.methods.blockProver(theServer)
-        theServer._utGenerator = require('duniter-prover').duniter.methods.blockGenerator(theServer, theServer._utProver)
+        theServer._utProver = require('../../../app/modules/prover').duniter.methods.blockProver(theServer)
+        theServer._utGenerator = require('../../../app/modules/prover').duniter.methods.blockGenerator(theServer, theServer._utProver)
       }
       let proven = yield theServer._utGenerator.makeNextBlock(null, null, manualValues)
       const block = yield postBlock(theServer)(proven);

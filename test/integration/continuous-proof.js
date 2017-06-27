@@ -18,8 +18,8 @@ const NB_CORES_FOR_COMPUTATION = 1 // For simple tests. Can be changed to test m
 const s1 = toolbox.server({
   cpu: 1,
   nbCores: NB_CORES_FOR_COMPUTATION,
-  powDelay: 1000,
-  powMin: 32,
+  powDelay: 100,
+  powMin: 1,
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
@@ -94,24 +94,6 @@ describe("Continous proof-of-work", function() {
     // If we wait a bit, the loop should be ended
     yield new Promise((resolve) => setTimeout(resolve, 100));
     s1.permaProver.should.have.property('loops').greaterThanOrEqual(8);
-  }));
-
-  it('testing a network', () => co(function*() {
-    const res = yield toolbox.simpleNetworkOf2NodesAnd2Users({
-      nbCores: NB_CORES_FOR_COMPUTATION,
-      powMin: 32
-    }), s2 = res.s1, s3 = res.s2;
-    yield s2.commit();
-    s2.conf.cpu = 0.2;
-    s3.conf.cpu = 0.7;
-    yield [
-      s2.until('block', 5),
-      s3.until('block', 5),
-      co(function*() {
-        s2.startBlockComputation();
-        s3.startBlockComputation();
-      })
-    ];
   }));
 
   it('testing proof-of-work during a block pulling', () => co(function*() {

@@ -3,7 +3,7 @@
 const co              = require('co');
 const Q               = require('q');
 const constants       = require('../lib/constants');
-const rules           = require('duniter-common').rules
+const rules           = require('../lib/rules')
 const Transaction     = require('../lib/entity/transaction');
 const AbstractService = require('./AbstractService');
 

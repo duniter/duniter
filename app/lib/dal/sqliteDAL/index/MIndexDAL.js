@@ -3,7 +3,7 @@
  */
 
 const co = require('co');
-const indexer = require('duniter-common').indexer;
+const indexer         = require('../../../indexer');
 const AbstractSQLite = require('./../AbstractSQLite');
 const AbstractIndex = require('./../AbstractIndex');
 

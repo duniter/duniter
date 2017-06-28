@@ -4,6 +4,8 @@ const co              = require('co');
 const moment          = require('moment');
 const inquirer        = require('inquirer');
 const common          = require('duniter-common');
+const indexer         = require('../../../lib/indexer')
+const rules           = require('../../../lib/rules')
 
 const keyring       = common.keyring;
 const hashf         = common.hashf;
@@ -14,8 +16,6 @@ const Transaction   = common.document.Transaction;
 const Identity      = common.document.Identity;
 const Certification = common.document.Certification;
 const constants     = common.constants
-const indexer       = common.indexer
-const rules         = common.rules
 
 module.exports = (server, prover) => {
   return new BlockGenerator(server, prover);

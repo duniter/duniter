@@ -268,7 +268,7 @@ function getBlockTime (block, conf, forcedTime) {
     return forcedTime;
   }
   const now = moment.utc().unix();
-  const maxAcceleration = require('duniter-common').rules.HELPERS.maxAcceleration(conf);
+  const maxAcceleration = require('../../../lib/rules').HELPERS.maxAcceleration(conf);
   const timeoffset = block.number >= conf.medianTimeBlocks ? 0 : conf.rootoffset || 0;
   const medianTime = block.medianTime;
   const upperBound = block.number === 0 ? medianTime : Math.min(medianTime + maxAcceleration, now - timeoffset);

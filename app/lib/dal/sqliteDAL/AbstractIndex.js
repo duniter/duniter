@@ -4,7 +4,7 @@
 
 const _ = require('underscore');
 const co = require('co');
-const indexer = require('duniter-common').indexer;
+const indexer = require('../../indexer');
 
 module.exports = AbstractIndex;
 

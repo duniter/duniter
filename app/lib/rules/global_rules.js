@@ -54,8 +54,8 @@ rules.FUNCTIONS = {
       let unlocks = {};
       let sumOfInputs = 0;
       let maxOutputBase = current.unitbase;
-      for (const unlock of tx.unlocks) {
-        let sp = unlock.split(':');
+      for (const theUnlock of tx.unlocks) {
+        let sp = theUnlock.split(':');
         let index = parseInt(sp[0]);
         unlocks[index] = sp[1];
       }

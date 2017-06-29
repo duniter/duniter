@@ -30,14 +30,14 @@ describe('Indexed Memory Blockchain', () => {
           { name: 'A', status: 'OK', writtenOn: 23000, events: 0, member: false },
           { name: 'A', status: 'OK', writtenOn: 23000, events: 4 },
           { name: 'A', status: 'OK', writtenOn: 23000, events: 5, member: true },
-          { name: 'A', status: 'OK', writtenOn: 23601, },
-          { name: 'A', status: 'OK', writtenOn: 23888, },
-          { name: 'A', status: 'OK', writtenOn: 23889, },
+          { name: 'A', status: 'OK', writtenOn: 23601 },
+          { name: 'A', status: 'OK', writtenOn: 23888 },
+          { name: 'A', status: 'OK', writtenOn: 23889 },
           { name: 'B', status: 'OK', writtenOn: 23000, events: 1, member: false },
           { name: 'B', status: 'KO', writtenOn: 23000, events: null },
           { name: 'C', status: 'KO', writtenOn: 23500 },
           { name: 'D', status: 'KO', writtenOn: 23500 },
-          { name: 'D', status: 'KO', writtenOn: 23521, expired: true },
+          { name: 'D', status: 'KO', writtenOn: 23521, expired: true }
         ]
       })
     }))
@@ -116,14 +116,14 @@ describe('Indexed Memory Blockchain', () => {
           { id: 'A', pos: 0, status: 'OK', writtenOn: 23000, events: 0, member: false },
           { id: 'A', pos: 0, status: 'OK', writtenOn: 23000, events: 4 },
           { id: 'A', pos: 0, status: 'OK', writtenOn: 23000, events: 5, member: true },
-          { id: 'A', pos: 0, status: 'OK', writtenOn: 23601, },
-          { id: 'A', pos: 1, status: 'OK', writtenOn: 23888, },
-          { id: 'A', pos: 2, status: 'OK', writtenOn: 23889, },
+          { id: 'A', pos: 0, status: 'OK', writtenOn: 23601 },
+          { id: 'A', pos: 1, status: 'OK', writtenOn: 23888 },
+          { id: 'A', pos: 2, status: 'OK', writtenOn: 23889 },
           { id: 'B', pos: 0, status: 'OK', writtenOn: 23000, events: 1, member: false },
           { id: 'B', pos: 0, status: 'KO', writtenOn: 23000, events: null },
           { id: 'C', pos: 0, status: 'KO', writtenOn: 23500 },
           { id: 'D', pos: 0, status: 'KO', writtenOn: 23500 },
-          { id: 'D', pos: 1, status: 'KO', writtenOn: 23521, expired: true },
+          { id: 'D', pos: 1, status: 'KO', writtenOn: 23521, expired: true }
         ]
       })
     }))

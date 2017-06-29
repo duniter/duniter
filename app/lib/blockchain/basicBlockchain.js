@@ -2,7 +2,7 @@
 
 module.exports = class BasicBlockchain {
 
-  constructor(operations) {
+  constructor(operations) {
     this.operations = operations
   }
 

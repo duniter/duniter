@@ -6,7 +6,7 @@ const BasicBlockchain = require('./basicBlockchain')
 
 module.exports = class IndexedBlockchain extends BasicBlockchain {
 
-  constructor(bcOperations, indexOperations, numberField, pkFields) {
+  constructor(bcOperations, indexOperations, numberField, pkFields) {
     super(bcOperations)
     this.indexOperations = indexOperations
     this.numberField = numberField

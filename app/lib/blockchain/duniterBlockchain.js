@@ -4,7 +4,7 @@ const IndexedBlockchain = require('./indexedBlockchain')
 
 module.exports = class DuniterBlockchain extends IndexedBlockchain {
 
-  constructor(bcOperations, indexOperations) {
+  constructor(bcOperations, indexOperations) {
     super(bcOperations, indexOperations)
   }
 

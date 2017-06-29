@@ -31,7 +31,7 @@ describe("Protocol BR_G106 - Garbaging", function(){
     const dal = {
       getWallet: (conditions) => Promise.resolve(balances[conditions]),
       sindexDAL: {
-        getAvailableForConditions: (conditions) => Promise.resolve(sources[conditions]),
+        getAvailableForConditions: (conditions) => Promise.resolve(sources[conditions])
       }
     };
     const HEAD   = { unitBase: 0 };
@@ -48,7 +48,7 @@ describe("Protocol BR_G106 - Garbaging", function(){
       { op: 'CREATE', conditions: 'pubkeyD', amount: 5,   base: 0, identifier: 'I7', pos: 0 }, // |-- Chaining transaction
       // C sends 100 to E --> C keeps 0
       { op: 'UPDATE', conditions: 'pubkeyC', amount: 100, base: 0, identifier: 'I8', pos: 0 },
-      { op: 'CREATE', conditions: 'pubkeyE', amount: 100, base: 0, identifier: 'I9', pos: 0 },
+      { op: 'CREATE', conditions: 'pubkeyE', amount: 100, base: 0, identifier: 'I9', pos: 0 }
       ], dal);
     cleaning.should.have.length(5);
     cleaning[0].should.have.property('identifier').equal('I3');

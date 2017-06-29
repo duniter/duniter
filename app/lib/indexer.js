@@ -271,19 +271,19 @@ const indexer = module.exports = {
 
     function range(start, end, property) {
       return co(function*() {
-        let range;
+        let theRange;
         end = Math.min(end, bindex.length);
         if (start == 1) {
-          range = bindex.slice(-end);
+          theRange = bindex.slice(-end);
         } else {
-          range = bindex.slice(-end, -start + 1);
+          theRange = bindex.slice(-end, -start + 1);
         }
-        range.reverse();
+        theRange.reverse();
         if (property) {
           // Filter on a particular property
-          return range.map((b) => b[property]);
+          return theRange.map((b) => b[property]);
         } else {
-          return range;
+          return theRange;
         }
       });
     }
@@ -1589,12 +1589,12 @@ function median(values) {
   return med;
 }
 
-function number(blockstamp) {
-  return parseInt(blockstamp);
+function number(theBlockstamp) {
+  return parseInt(theBlockstamp);
 }
 
-function blockstamp(number, hash) {
-  return [number, hash].join('-');
+function blockstamp(aNumber, aHash) {
+  return [aNumber, aHash].join('-');
 }
 
 function reduce(records) {

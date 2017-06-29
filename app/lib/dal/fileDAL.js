@@ -218,7 +218,7 @@ function FileDAL(params) {
   });
 
   this.getWrittenIdtyByPubkey = (pubkey) => this.iindexDAL.getFromPubkey(pubkey);
-  this.getWrittenIdtyByUID = (pubkey) => this.iindexDAL.getFromUID(pubkey);
+  this.getWrittenIdtyByUID = (uid) => this.iindexDAL.getFromUID(uid);
 
   this.fillInMembershipsOfIdentity = (queryPromise) => co(function*() {
     try {

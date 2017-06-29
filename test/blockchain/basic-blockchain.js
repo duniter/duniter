@@ -2,7 +2,7 @@
 
 const assert = require('assert')
 const co = require('co')
-const ArrayBlockchain = require('./arrayBlockchain')
+const ArrayBlockchain = require('./lib/arrayBlockchain')
 const BasicBlockchain = require('../../app/lib/blockchain/basicBlockchain')
 
 let blockchain, emptyBlockchain

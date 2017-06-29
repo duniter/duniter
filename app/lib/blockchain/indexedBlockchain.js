@@ -25,11 +25,10 @@ module.exports = class IndexedBlockchain extends BasicBlockchain {
       const records = {}
       for (const subIndex of subIndexes) {
         records[subIndex] = []
-        const criterias = {}
         const pks = typeof that.pkFields[subIndex].pk !== 'string' && that.pkFields[subIndex].pk.length ? Array.from(that.pkFields[subIndex].pk) : [that.pkFields[subIndex].pk]
         const rm = that.pkFields[subIndex].remove
-        criterias[that.numberField] = { $lt: maxNumber }
-        const potentialRecords = yield that.indexReduceGroupBy(subIndex, criterias, pks)
+        let potentialRecords = yield that.indexOperations.findTrimable(subIndex, that.numberField, maxNumber)
+        potentialRecords = reduceBy(potentialRecords, pks)
         for (const potential of potentialRecords) {
           const subCriteriasRowsToDelete = criteriasFromPks(pks, potential)
           subCriteriasRowsToDelete[that.numberField] = { $lt: maxNumber }

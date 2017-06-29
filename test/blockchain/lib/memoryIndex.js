@@ -36,24 +36,32 @@ module.exports = function MemoryIndex() {
     return matches
   }
 
+  const findWhere = (subIndex, criterias) => {
+    let res = []
+    const areBasicCriterias = _.values(criterias).reduce((are, criteria) => are && typeof criteria !== 'function' && typeof criteria !== 'object', true)
+    if (areBasicCriterias) {
+      res = _.where(indexStorage[subIndex], criterias)
+    } else {
+      // Slower test, with specific criterias
+      for (const row of indexStorage[subIndex]) {
+        if (matchComplexCriterias(criterias, row)) {
+          res.push(row)
+        }
+      }
+    }
+    return Promise.resolve(res)
+  }
+
   return {
 
     getSubIndexes: () => Promise.resolve(_.keys(indexStorage)),
 
-    findWhere: (subIndex, criterias) => {
-      let res = []
-      const areBasicCriterias = _.values(criterias).reduce((are, criteria) => are && typeof criteria !== 'function' && typeof criteria !== 'object', true)
-      if (areBasicCriterias) {
-        res = _.where(indexStorage[subIndex], criterias)
-      } else {
-        // Slower test, with specific criterias
-        for (const row of indexStorage[subIndex]) {
-          if (matchComplexCriterias(criterias, row)) {
-            res.push(row)
-          }
-        }
-      }
-      return Promise.resolve(res)
+    findWhere,
+
+    findTrimable: (subIndex, numberField, maxNumber) => {
+      const criterias = {}
+      criterias[numberField] = { $lt: maxNumber }
+      return findWhere(subIndex, criterias)
     },
 
     removeWhere: (subIndex, criterias) => {

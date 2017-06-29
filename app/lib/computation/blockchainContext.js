@@ -308,9 +308,6 @@ function BlockchainContext(BlockchainService) {
     // Revert the balances variations for this block
     yield that.updateWallets(sindexOfBlock, dal, REVERSE_BALANCE)
 
-    // Remove any source created for this block (both Dividend and Transaction).
-    yield dal.removeAllSourcesOfBlock(blockstamp);
-
     // Restore block's transaction as incoming transactions
     yield undoDeleteTransactions(block)
   });

@@ -60,7 +60,7 @@ if (cluster.isMaster) {
         // Stop the slaves' current work
         this.cancelWork()
       }
-      this.logger.debug(`ENGINE c#${this.clusterId}#${this.slavesMap[worker.id].index}:`, message)
+      // this.logger.debug(`ENGINE c#${this.clusterId}#${this.slavesMap[worker.id].index}:`, message)
     }
 
     initCluster() {

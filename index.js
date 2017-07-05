@@ -22,6 +22,7 @@ const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
 const routerDependency    = require('./app/modules/router');
 const pluginDependency    = require('./app/modules/plugin');
+const proverDependency    = require('./app/modules/prover');
 
 const MINIMAL_DEPENDENCIES = [
   { name: 'duniter-config',    required: configDependency }
@@ -37,7 +38,8 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-daemon',    required: daemonDependency },
   { name: 'duniter-psignal',   required: pSignalDependency },
   { name: 'duniter-router',    required: routerDependency },
-  { name: 'duniter-plugin',    required: pluginDependency }
+  { name: 'duniter-plugin',    required: pluginDependency },
+  { name: 'duniter-prover',    required: proverDependency }
 ]);
 
 const PRODUCTION_DEPENDENCIES = DEFAULT_DEPENDENCIES.concat([

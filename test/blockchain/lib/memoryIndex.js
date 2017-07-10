@@ -54,6 +54,8 @@ module.exports = function MemoryIndex() {
 
   return {
 
+    initIndexer: () => Promise.resolve(),
+
     getSubIndexes: () => Promise.resolve(_.keys(indexStorage)),
 
     findWhere,

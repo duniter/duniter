@@ -11,15 +11,27 @@ module.exports = class IndexedBlockchain extends BasicBlockchain {
     this.indexOperations = indexOperations
     this.numberField = numberField
     this.pkFields = pkFields
+    this.initIndexer = indexOperations.initIndexer(pkFields)
   }
 
   recordIndex(index) {
-    return this.indexOperations.recordIndex(index)
+    const that = this
+    return co(function*() {
+
+      // Wait indexer init
+      yield that.initIndexer
+
+      return that.indexOperations.recordIndex(index)
+    })
   }
 
   indexTrim(maxNumber) {
     const that = this
     return co(function*() {
+
+      // Wait indexer init
+      yield that.initIndexer
+
       const subIndexes = yield that.indexOperations.getSubIndexes()
       // Trim the subIndexes
       const records = {}
@@ -56,6 +68,10 @@ module.exports = class IndexedBlockchain extends BasicBlockchain {
   indexCount(indexName, criterias) {
     const that = this
     return co(function*() {
+
+      // Wait indexer init
+      yield that.initIndexer
+
       const records = yield that.indexOperations.findWhere(indexName, criterias)
       return records.length
     })
@@ -64,6 +80,10 @@ module.exports = class IndexedBlockchain extends BasicBlockchain {
   indexReduce(indexName, criterias) {
     const that = this
     return co(function*() {
+
+      // Wait indexer init
+      yield that.initIndexer
+
       const records = yield that.indexOperations.findWhere(indexName, criterias)
       return reduce(records)
     })
@@ -72,6 +92,10 @@ module.exports = class IndexedBlockchain extends BasicBlockchain {
   indexReduceGroupBy(indexName, criterias, properties) {
     const that = this
     return co(function*() {
+
+      // Wait indexer init
+      yield that.initIndexer
+
       const records = yield that.indexOperations.findWhere(indexName, criterias)
       return reduceBy(records, properties)
     })

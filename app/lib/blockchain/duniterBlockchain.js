@@ -13,6 +13,20 @@ const Membership      = require('../entity/membership')
 const Transaction     = require('../entity/transaction')
 const MiscIndexedBlockchain = require('./miscIndexedBlockchain')
 
+const statTests = {
+  'newcomers': 'identities',
+  'certs': 'certifications',
+  'joiners': 'joiners',
+  'actives': 'actives',
+  'leavers': 'leavers',
+  'revoked': 'revoked',
+  'excluded': 'excluded',
+  'ud': 'dividend',
+  'tx': 'transactions'
+};
+
+const statNames = ['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'revoked', 'excluded', 'ud', 'tx'];
+
 module.exports = class DuniterBlockchain extends MiscIndexedBlockchain {
 
   constructor(blockchainStorage, dal) {
@@ -170,6 +184,13 @@ module.exports = class DuniterBlockchain extends MiscIndexedBlockchain {
         const currentBlock = yield dal.getCurrentBlockOrNull();
         block.fork = false;
         yield that.saveBlockData(currentBlock, block, conf, dal, logger);
+
+        try {
+          yield DuniterBlockchain.pushStatsForBlocks([block], dal);
+        } catch (e) {
+          logger.warn("An error occurred after the add of the block", e.stack || e);
+        }
+
         logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (new Date() - start));
         return block;
       }
@@ -505,6 +526,28 @@ module.exports = class DuniterBlockchain extends MiscIndexedBlockchain {
         block.dividend = null;
       }
     })
+  }
+
+  static pushStatsForBlocks(blocks, dal) {
+    const stats = {};
+    // Stats
+    for (const block of blocks) {
+      for (const statName of statNames) {
+        if (!stats[statName]) {
+          stats[statName] = { blocks: [] };
+        }
+        const stat = stats[statName];
+        const testProperty = statTests[statName];
+        const value = block[testProperty];
+        const isPositiveValue = value && typeof value != 'object';
+        const isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
+        if (isPositiveValue || isNonEmptyArray) {
+          stat.blocks.push(block.number);
+        }
+        stat.lastParsedBlock = block.number;
+      }
+    }
+    return dal.pushStats(stats);
   }
 
   pushSideBlock(obj, dal, logger) {

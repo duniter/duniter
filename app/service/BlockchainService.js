@@ -2,7 +2,6 @@
 
 const _               = require('underscore');
 const co              = require('co');
-const Q               = require('q');
 const parsers         = require('duniter-common').parsers;
 const rules           = require('../lib/rules')
 const constants       = require('../lib/constants');
@@ -11,6 +10,7 @@ const Block           = require('../lib/entity/block');
 const Identity        = require('../lib/entity/identity');
 const Transaction     = require('../lib/entity/transaction');
 const AbstractService = require('./AbstractService');
+const quickSync       = require('../lib/computation/quickSync')
 
 const CHECK_ALL_RULES = true;
 
@@ -23,31 +23,19 @@ function BlockchainService (server) {
   AbstractService.call(this);
 
   let that = this;
-  const mainContext = blockchainCtx(this);
-  let conf, dal, logger, selfPubkey;
+  const mainContext = blockchainCtx();
+  let conf, dal, logger, selfPubkey, quickSynchronizer
 
   this.getContext = () => mainContext;
 
   this.setConfDAL = (newConf, newDAL, newKeyPair) => {
     dal = newDAL;
     conf = newConf;
-    mainContext.setConfDAL(conf, dal);
+    logger = require('../lib/logger')(dal.profile)
+    quickSynchronizer = quickSync(server.blockchain, conf, dal, logger)
+    mainContext.setConfDAL(conf, dal, server.blockchain, quickSynchronizer)
     selfPubkey = newKeyPair.publicKey;
-    logger = require('../lib/logger')(dal.profile);
   };
-
-  const statTests = {
-    'newcomers': 'identities',
-    'certs': 'certifications',
-    'joiners': 'joiners',
-    'actives': 'actives',
-    'leavers': 'leavers',
-    'revoked': 'revoked',
-    'excluded': 'excluded',
-    'ud': 'dividend',
-    'tx': 'transactions'
-  };
-  const statNames = ['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'revoked', 'excluded', 'ud', 'tx'];
 
   this.current = () => dal.getCurrentBlockOrNull();
 
@@ -144,13 +132,7 @@ function BlockchainService (server) {
       if (doCheck) {
         yield mainContext.checkBlock(obj, constants.WITH_SIGNATURES_AND_POW);
       }
-      let res = yield mainContext.addBlock(obj);
-      try {
-        yield pushStatsForBlocks([res]);
-      } catch (e) {
-        logger.warn("An error occurred after the add of the block", e.stack || e);
-      }
-      return res;
+      return yield mainContext.addBlock(obj)
     } else if (forkAllowed) {
       // add it as side chain
       if (current.number - obj.number + 1 >= conf.forksize) {
@@ -379,64 +361,8 @@ function BlockchainService (server) {
   this.isMember = () => dal.isMember(selfPubkey);
   this.getCountOfSelfMadePoW = () => dal.getCountOfPoW(selfPubkey);
 
-  this.saveParametersForRootBlock = (block) => co(function *() {
-    let mainFork = mainContext;
-    let rootBlock = block || (yield dal.getBlock(0));
-    if (!rootBlock) throw 'Cannot registrer currency parameters since no root block exists';
-    return mainFork.saveParametersForRootBlock(rootBlock);
-  });
-
-  this.saveBlocksInMainBranch = (blocks) => co(function *() {
-    // VERY FIRST: parameters, otherwise we compute wrong variables such as UDTime
-    if (blocks[0].number == 0) {
-      yield that.saveParametersForRootBlock(blocks[0]);
-    }
-    // Helper to retrieve a block with local cache
-    const getBlock = (number) => {
-      const firstLocalNumber = blocks[0].number;
-      if (number >= firstLocalNumber) {
-        let offset = number - firstLocalNumber;
-        return Q(blocks[offset]);
-      }
-      return dal.getBlock(number);
-    };
-    const getBlockByNumberAndHash = (number, hash) => co(function*() {
-      const block = yield getBlock(number);
-      if (!block || block.hash != hash) {
-        throw 'Block #' + [number, hash].join('-') + ' not found neither in DB nor in applying blocks';
-      }
-      return block;
-    });
-    for (const block of blocks) {
-      block.fork = false;
-    }
-    // Transactions recording
-    yield mainContext.updateTransactionsForBlocks(blocks, getBlockByNumberAndHash);
-    yield dal.blockDAL.saveBunch(blocks);
-    yield pushStatsForBlocks(blocks);
-  });
-
-  function pushStatsForBlocks(blocks) {
-    const stats = {};
-    // Stats
-    for (const block of blocks) {
-      for (const statName of statNames) {
-        if (!stats[statName]) {
-          stats[statName] = { blocks: [] };
-        }
-        const stat = stats[statName];
-        const testProperty = statTests[statName];
-        const value = block[testProperty];
-        const isPositiveValue = value && typeof value != 'object';
-        const isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
-        if (isPositiveValue || isNonEmptyArray) {
-          stat.blocks.push(block.number);
-        }
-        stat.lastParsedBlock = block.number;
-      }
-    }
-    return dal.pushStats(stats);
-  }
+  // This method is called by duniter-crawler 1.3.x
+  this.saveParametersForRootBlock = (block) => server.blockchain.saveParametersForRoot(block, conf, dal)
 
   this.blocksBetween = (from, count) => co(function *() {
     if (count > 5000) {
@@ -454,6 +380,8 @@ function BlockchainService (server) {
    * Allows to quickly insert a bunch of blocks. To reach such speed, this method skips global rules and buffers changes.
    *
    * **This method should be used ONLY when a node is really far away from current blockchain HEAD (i.e several hundreds of blocks late).
+   *
+   * This method is called by duniter-crawler 1.3.x.
    *
    * @param blocks An array of blocks to insert.
    * @param to The final block number of the fast insertion.

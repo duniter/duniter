@@ -16,6 +16,8 @@ const jsonpckg    = require('./package.json');
 const keyring      = require('duniter-common').keyring;
 const directory   = require('./app/lib/system/directory');
 const rawer       = require('duniter-common').rawer;
+const SQLBlockchain   = require('./app/lib/blockchain/sqlBlockchain')
+const DuniterBlockchain = require('./app/lib/blockchain/duniterBlockchain')
 
 function Server (home, memoryOnly, overrideConf) {
 
@@ -121,6 +123,8 @@ function Server (home, memoryOnly, overrideConf) {
     // Extract key pair
     that.keyPair = keyring.Key(that.conf.pair.pub, that.conf.pair.sec);
     that.sign = that.keyPair.sign;
+    // Blockchain object
+    that.blockchain = new DuniterBlockchain(new SQLBlockchain(that.dal), that.dal);
     // Update services
     [that.IdentityService, that.MembershipService, that.PeeringService, that.BlockchainService, that.TransactionsService].map((service) => {
       service.setConfDAL(that.conf, that.dal, that.keyPair);

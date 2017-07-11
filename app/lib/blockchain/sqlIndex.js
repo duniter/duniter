@@ -50,9 +50,13 @@ module.exports = function SQLIndex(db, definitions) {
     findWhere,
 
     findTrimable: (subIndex, numberField, maxNumber) => {
-      const criterias = {}
-      criterias[numberField] = { $lt: maxNumber }
-      return indexes[subIndex].sqlFind(criterias)
+      if (definitions[subIndex].findTrimable) {
+        return definitions[subIndex].findTrimable(maxNumber)
+      } else {
+        const criterias = {}
+        criterias[numberField] = { $lt: maxNumber }
+        return indexes[subIndex].sqlFind(criterias)
+      }
     },
 
     removeWhere: (subIndex, criterias) => {

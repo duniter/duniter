@@ -9,8 +9,14 @@ module.exports = function (blockchainStorage, mindexDAL, iindexDAL, sindexDAL, c
   return new IndexedBlockchain(blockchainStorage, SQLIndex(null, {
     m_index: { handler: mindexDAL },
     i_index: { handler: iindexDAL },
-    s_index: { handler: sindexDAL },
-    c_index: { handler: cindexDAL }
+    s_index: {
+      handler: sindexDAL,
+      findTrimable: (maxNumber) => sindexDAL.query('SELECT * FROM s_index WHERE consumed AND writtenOn < ?', [maxNumber])
+    },
+    c_index: {
+      handler: cindexDAL,
+      findTrimable: (maxNumber) => cindexDAL.query('SELECT * FROM c_index WHERE expired_on > 0 AND writtenOn < ?', [maxNumber])
+    }
   }), 'writtenOn', {
     m_index: {
       pk: ['pub']

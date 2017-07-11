@@ -4,7 +4,7 @@ const assert = require('assert')
 const co = require('co')
 const ArrayBlockchain = require('./lib/arrayBlockchain')
 const MemoryIndex = require('./lib/memoryIndex')
-const SQLIndex = require('./lib/sqlIndex')
+const SQLIndex = require('../../app/lib/blockchain/sqlIndex')
 const IndexedBlockchain = require('../../app/lib/blockchain/indexedBlockchain')
 const sqlite = require('../../app/lib/dal/drivers/sqlite')
 

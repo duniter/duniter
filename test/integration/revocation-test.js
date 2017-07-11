@@ -22,7 +22,8 @@ const commonConf = {
   forksize: 3,
   xpercent: 0.9,
   msValidity: 10000,
-  sigQty: 1
+  sigQty: 1,
+  avgGenTime: 300
 };
 
 const s1 = duniter(
@@ -60,6 +61,7 @@ describe("Revocation", function() {
   before(function() {
 
     return co(function *() {
+      const now = 1400000000
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
       yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
       yield cat.createIdentity();
@@ -72,7 +74,7 @@ describe("Revocation", function() {
       yield cat.join();
       yield tic.join();
       yield toc.join();
-      yield commitS1();
+      yield commitS1({ time: now });
 
       // We have the following WoT:
       /**

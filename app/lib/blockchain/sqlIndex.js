@@ -79,8 +79,6 @@ module.exports = function SQLIndex(db, definitions) {
 
 function IndexDAL(driver) {
 
-  "use strict";
-
   AbstractSQLite.call(this, driver);
   AbstractIndex.call(this);
 }

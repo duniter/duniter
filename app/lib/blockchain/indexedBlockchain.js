@@ -100,6 +100,18 @@ module.exports = class IndexedBlockchain extends BasicBlockchain {
       return reduceBy(records, properties)
     })
   }
+
+  indexRevert(blockNumber) {
+    const that = this
+    return co(function*() {
+      const subIndexes = yield that.indexOperations.getSubIndexes()
+      for (const subIndex of subIndexes) {
+        const removeCriterias = {}
+        removeCriterias[that.numberField] = blockNumber
+        yield that.indexOperations.removeWhere(subIndex, removeCriterias)
+      }
+    })
+  }
 }
 
 function reduce(records) {

@@ -48,7 +48,7 @@ describe("Identities kicking", function() {
 
     return co(function *() {
 
-      const now = Math.round(new Date().getTime() / 1000);
+      const now = 1400000000
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
       require('../../app/modules/prover').duniter.methods.hookServer(s1);
       yield cat.createIdentity();

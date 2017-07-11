@@ -29,6 +29,7 @@ function SIndexDAL(driver) {
     'pos',
     'created_on',
     'written_on',
+    'writtenOn',
     'written_time',
     'amount',
     'base',

@@ -27,6 +27,7 @@ function CIndexDAL(driver) {
     'receiver',
     'created_on',
     'written_on',
+    'writtenOn',
     'sig',
     'expires_on',
     'expired_on',

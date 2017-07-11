@@ -24,6 +24,7 @@ function MIndexDAL(driver) {
     'pub',
     'created_on',
     'written_on',
+    'writtenOn',
     'expires_on',
     'expired_on',
     'revokes_on',

@@ -287,7 +287,23 @@ function MetaDAL(driver) {
     // Replay the wallet table feeding, because of a potential bug
     22: function resetWallets() {
       return migrations[20]()
-    }
+    },
+
+    23: 'BEGIN;' +
+    // Add a `writtenOn` column for MISC Index
+    'ALTER TABLE m_index ADD COLUMN writtenOn INTEGER NOT NULL DEFAULT 0;' +
+    'ALTER TABLE i_index ADD COLUMN writtenOn INTEGER NOT NULL DEFAULT 0;' +
+    'ALTER TABLE s_index ADD COLUMN writtenOn INTEGER NOT NULL DEFAULT 0;' +
+    'ALTER TABLE c_index ADD COLUMN writtenOn INTEGER NOT NULL DEFAULT 0;' +
+    'CREATE INDEX IF NOT EXISTS idx_mindex_writtenOn ON m_index (writtenOn);' +
+    'CREATE INDEX IF NOT EXISTS idx_iindex_writtenOn ON i_index (writtenOn);' +
+    'CREATE INDEX IF NOT EXISTS idx_sindex_writtenOn ON s_index (writtenOn);' +
+    'CREATE INDEX IF NOT EXISTS idx_cindex_writtenOn ON c_index (writtenOn);' +
+    'UPDATE m_index SET writtenOn = CAST(written_on as integer);' +
+    'UPDATE i_index SET writtenOn = CAST(written_on as integer);' +
+    'UPDATE s_index SET writtenOn = CAST(written_on as integer);' +
+    'UPDATE c_index SET writtenOn = CAST(written_on as integer);' +
+    'COMMIT;'
   };
 
   this.init = () => co(function *() {

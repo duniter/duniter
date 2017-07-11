@@ -22,20 +22,26 @@ module.exports = function SQLIndex(db, definitions) {
     initIndexer: (pkFields) => co(function*() {
       const keys = _.keys(pkFields)
       for (const k of keys) {
-        const indexTable = new IndexDAL(db);
-        const pk = pkFields[k].pk
-        indexTable.table = k
-        indexTable.fields = definitions[k].fields
-        indexTable.booleans = definitions[k].booleans
-        indexes[k] = indexTable
-        indexTable.init = () => {
-          return indexTable.exec('BEGIN;' +
-            'CREATE TABLE IF NOT EXISTS ' + indexTable.table + ' (' +
-            definitions[k].sqlFields.join(',') +
-            ');' +
-            'COMMIT;', [])
+        if (definitions[k].handler) {
+          // External table: managed by another object
+          indexes[k] = definitions[k].handler
+        } else {
+          // Internal table: managed here
+          const indexTable = new IndexDAL(db);
+          const pk = pkFields[k].pk
+          indexTable.table = k
+          indexTable.fields = definitions[k].fields
+          indexTable.booleans = definitions[k].booleans
+          indexes[k] = indexTable
+          indexTable.init = () => {
+            return indexTable.exec('BEGIN;' +
+              'CREATE TABLE IF NOT EXISTS ' + indexTable.table + ' (' +
+              definitions[k].sqlFields.join(',') +
+              ');' +
+              'COMMIT;', [])
+          }
+          yield indexTable.init()
         }
-        yield indexTable.init()
       }
     }),
 

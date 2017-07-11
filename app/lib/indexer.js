@@ -51,6 +51,7 @@ const indexer = module.exports = {
         sig: idty.sig,
         created_on: idty.buid,
         written_on: [block.number, block.hash].join('-'),
+        writtenOn: block.number,
         member: true,
         wasMember: true,
         kick: false,
@@ -73,6 +74,7 @@ const indexer = module.exports = {
           pub: ms.issuer,
           created_on: [ms.number, ms.fpr].join('-'),
           written_on: [block.number, block.hash].join('-'),
+          writtenOn: block.number,
           type: 'JOIN',
           expires_on: conf.msValidity,
           revokes_on: conf.msValidity * constants.REVOCATION_FACTOR,
@@ -88,6 +90,7 @@ const indexer = module.exports = {
           pub: ms.issuer,
           created_on: [ms.number, ms.fpr].join('-'),
           written_on: [block.number, block.hash].join('-'),
+          writtenOn: block.number,
           type: 'JOIN',
           expires_on: conf.msValidity,
           revokes_on: conf.msValidity * constants.REVOCATION_FACTOR,
@@ -102,6 +105,7 @@ const indexer = module.exports = {
           pub: ms.issuer,
           created_on: null,
           written_on: [block.number, block.hash].join('-'),
+          writtenOn: block.number,
           member: true,
           wasMember: null,
           kick: null,
@@ -119,6 +123,7 @@ const indexer = module.exports = {
         pub: ms.issuer,
         created_on: [ms.number, ms.fpr].join('-'),
         written_on: [block.number, block.hash].join('-'),
+        writtenOn: block.number,
         type: 'ACTIVE',
         expires_on: conf.msValidity,
         revokes_on: conf.msValidity * constants.REVOCATION_FACTOR,
@@ -136,6 +141,7 @@ const indexer = module.exports = {
         pub: ms.issuer,
         created_on: [ms.number, ms.fpr].join('-'),
         written_on: [block.number, block.hash].join('-'),
+        writtenOn: block.number,
         type: 'LEAVE',
         expires_on: null,
         revokes_on: null,
@@ -153,6 +159,7 @@ const indexer = module.exports = {
         pub: revocation.pubkey,
         created_on: [block.number, block.hash].join('-'),
         written_on: [block.number, block.hash].join('-'),
+        writtenOn: block.number,
         expires_on: null,
         revokes_on: null,
         revoked_on: [block.number, block.hash].join('-'),
@@ -169,6 +176,7 @@ const indexer = module.exports = {
         pub: excluded,
         created_on: null,
         written_on: [block.number, block.hash].join('-'),
+        writtenOn: block.number,
         member: false,
         wasMember: null,
         kick: false,
@@ -188,6 +196,7 @@ const indexer = module.exports = {
         receiver: cert.to,
         created_on: cert.block_number,
         written_on: [block.number, block.hash].join('-'),
+        writtenOn: block.number,
         sig: cert.sig,
         chainable_on: parseInt(block.medianTime)  + conf.sigPeriod,
         expires_on: conf.sigValidity,
@@ -233,6 +242,7 @@ const indexer = module.exports = {
           pos: input.pos,
           created_on: obj.blockstamp,
           written_on: [block.number, block.hash].join('-'),
+          writtenOn: block.number,
           written_time: block.medianTime,
           locktime: obj.locktime,
           unlock: txObj.unlocks[k],
@@ -254,6 +264,7 @@ const indexer = module.exports = {
           identifier: txHash,
           pos: i++,
           written_on: [block.number, block.hash].join('-'),
+          writtenOn: block.number,
           written_time: block.medianTime,
           locktime: obj.locktime,
           amount: output.amount,
@@ -1346,6 +1357,7 @@ const indexer = module.exports = {
           identifier: MEMBER.pub,
           pos: HEAD.number,
           written_on: [HEAD.number, HEAD.hash].join('-'),
+          writtenOn: HEAD.number,
           written_time: HEAD.medianTime,
           amount: HEAD.dividend,
           base: HEAD.unitBase,
@@ -1394,6 +1406,7 @@ const indexer = module.exports = {
               amount: src.amount,
               base: src.base,
               written_on: [HEAD.number, HEAD.hash].join('-'),
+              writtenOn: HEAD.number,
               written_time: HEAD.medianTime,
               conditions: src.conditions,
               consumed: true // It is now consumed
@@ -1416,6 +1429,7 @@ const indexer = module.exports = {
         receiver: CERT.receiver,
         created_on: CERT.created_on,
         written_on: [HEAD.number, HEAD.hash].join('-'),
+        writtenOn: HEAD.number,
         expired_on: HEAD.medianTime
       });
     }
@@ -1435,6 +1449,7 @@ const indexer = module.exports = {
           pub: MS.pub,
           created_on: MS.created_on,
           written_on: [HEAD.number, HEAD.hash].join('-'),
+          writtenOn: HEAD.number,
           expired_on: HEAD.medianTime
         });
       }
@@ -1453,6 +1468,7 @@ const indexer = module.exports = {
           op: 'UPDATE',
           pub: MS.pub,
           written_on: [HEAD.number, HEAD.hash].join('-'),
+          writtenOn: HEAD.number,
           kick: true
         });
       }
@@ -1476,6 +1492,7 @@ const indexer = module.exports = {
             op: 'UPDATE',
             pub: CERT.receiver,
             written_on: [HEAD.number, HEAD.hash].join('-'),
+            writtenOn: HEAD.number,
             kick: true
           });
         }
@@ -1496,6 +1513,7 @@ const indexer = module.exports = {
           pub: MS.pub,
           created_on: REDUCED.created_on,
           written_on: [HEAD.number, HEAD.hash].join('-'),
+          writtenOn: HEAD.number,
           revoked_on: HEAD.medianTime
         });
       }

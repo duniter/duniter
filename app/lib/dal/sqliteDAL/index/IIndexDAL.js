@@ -28,6 +28,7 @@ function IIndexDAL(driver) {
     'sig',
     'created_on',
     'written_on',
+    'writtenOn',
     'member',
     'wasMember',
     'kick',

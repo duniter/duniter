@@ -54,7 +54,7 @@ module.exports = class IndexedBlockchain extends BasicBlockchain {
             const subCriteriasAllRowsOfObject = criteriasFromPks(pks, potential)
             yield that.indexOperations.removeWhere(subIndex, subCriteriasAllRowsOfObject)
             // Add the reduced row + rows to keep
-            if (!rm || reduced[rm] !== true) {
+            if (!rm || !reduced[rm]) {
               records[subIndex] = records[subIndex].concat([reduced]).concat(toKeep)
             }
           }

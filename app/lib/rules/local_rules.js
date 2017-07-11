@@ -105,8 +105,7 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkIdentitiesUserIDConflict: (block, conf) => co(function *() {
-    const index = indexer.localIndex(block, conf);
+  checkIdentitiesUserIDConflict: (block, conf, index) => co(function *() {
     const creates = indexer.iindexCreate(index);
     const uids = _.chain(creates).pluck('uid').uniq().value();
     if (creates.length !== uids.length) {
@@ -115,8 +114,7 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkIdentitiesPubkeyConflict: (block, conf) => co(function *() {
-    const index = indexer.localIndex(block, conf);
+  checkIdentitiesPubkeyConflict: (block, conf, index) => co(function *() {
     const creates = indexer.iindexCreate(index);
     const pubkeys = _.chain(creates).pluck('pub').uniq().value();
     if (creates.length !== pubkeys.length) {
@@ -125,8 +123,7 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkIdentitiesMatchJoin: (block, conf) => co(function *() {
-    const index = indexer.localIndex(block, conf);
+  checkIdentitiesMatchJoin: (block, conf, index) => co(function *() {
     const icreates = indexer.iindexCreate(index);
     const mcreates = indexer.mindexCreate(index);
     for (const icreate of icreates) {
@@ -138,8 +135,7 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkRevokedAreExcluded: (block, conf) => co(function *() {
-    const index = indexer.localIndex(block, conf);
+  checkRevokedAreExcluded: (block, conf, index) => co(function *() {
     const iindex = indexer.iindex(index);
     const mindex = indexer.mindex(index);
     const revocations = _.chain(mindex)
@@ -155,17 +151,16 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkRevokedUnicity: (block, conf) => co(function *() {
+  checkRevokedUnicity: (block, conf, index) => co(function *() {
     try {
-      yield rules.FUNCTIONS.checkMembershipUnicity(block, conf);
+      yield rules.FUNCTIONS.checkMembershipUnicity(block, conf, index);
     } catch (e) {
       throw Error('A single revocation per member is allowed');
     }
     return true;
   }),
 
-  checkMembershipUnicity: (block, conf) => co(function *() {
-    const index = indexer.localIndex(block, conf);
+  checkMembershipUnicity: (block, conf, index) => co(function *() {
     const mindex = indexer.mindex(index);
     const pubkeys = _.chain(mindex).pluck('pub').uniq().value();
     if (pubkeys.length !== mindex.length) {
@@ -245,9 +240,8 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkCertificationOneByIssuer: (block, conf) => co(function *() {
+  checkCertificationOneByIssuer: (block, conf, index) => co(function *() {
     if (block.number > 0) {
-      const index = indexer.localIndex(block, conf);
       const cindex = indexer.cindex(index);
       const certFromA = _.uniq(cindex.map((row) => row.issuer));
       if (certFromA.length !== cindex.length) {
@@ -257,8 +251,7 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkCertificationUnicity: (block, conf) => co(function *() {
-    const index = indexer.localIndex(block, conf);
+  checkCertificationUnicity: (block, conf, index) => co(function *() {
     const cindex = indexer.cindex(index);
     const certAtoB = _.uniq(cindex.map((row) => row.issuer + row.receiver));
     if (certAtoB.length !== cindex.length) {
@@ -267,8 +260,7 @@ rules.FUNCTIONS = {
     return true;
   }),
 
-  checkCertificationIsntForLeaverOrExcluded: (block, conf) => co(function *() {
-    const index = indexer.localIndex(block, conf);
+  checkCertificationIsntForLeaverOrExcluded: (block, conf, index) => co(function *() {
     const cindex = indexer.cindex(index);
     const iindex = indexer.iindex(index);
     const mindex = indexer.mindex(index);

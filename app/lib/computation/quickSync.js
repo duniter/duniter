@@ -238,8 +238,8 @@ module.exports = (blockchain, conf, dal, logger) => {
         yield dal.walletDAL.insertBatch(walletsToRecord)
 
         // Last block: cautious mode to trigger all the INDEX expiry mechanisms
-        yield blockchain.checkBlock(block, constants.WITH_SIGNATURES_AND_POW, conf, dal)
-        yield blockchain.pushBlock(block, null, conf, dal, logger)
+        const { index, HEAD } = yield blockchain.checkBlock(block, constants.WITH_SIGNATURES_AND_POW, conf, dal)
+        yield blockchain.pushBlock(block, index, HEAD, conf, dal, logger)
 
         // Clean temporary variables
         sync_bindex = [];

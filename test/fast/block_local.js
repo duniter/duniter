@@ -2,6 +2,7 @@
 const co             = require('co');
 const should         = require('should');
 const parsers        = require('duniter-common').parsers;
+const indexer        = require('../../app/lib/indexer')
 const rules          = require('../../app/lib/rules')
 const blocks         = require('../data/blocks.js');
 const parser         = parsers.parseBlock;
@@ -84,7 +85,8 @@ function test (rule, raw, expectedMessage) {
     try {
       let obj = parser.syncWrite(raw);
       let block = Block.fromJSON(obj);
-      yield rule(block, conf); // conf parameter is not always used
+      let index = indexer.localIndex(block, conf)
+      yield rule(block, conf, index); // conf parameter is not always used
       if (expectedMessage) {
         throw 'Test should have thrown an error';
       }

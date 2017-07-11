@@ -99,8 +99,8 @@ function BlockchainContext() {
 
   this.checkBlock = (block, withPoWAndSignature) => blockchain.checkBlock(block, withPoWAndSignature, conf, dal)
 
-  this.addBlock = (obj) => co(function*() {
-    const block = yield blockchain.pushBlock(obj, null, conf, dal, logger)
+  this.addBlock = (obj, index, HEAD) => co(function*() {
+    const block = yield blockchain.pushBlock(obj, index, HEAD, conf, dal, logger)
     vHEAD_1 = vHEAD = HEADrefreshed = null
     return block
   })
@@ -125,8 +125,8 @@ function BlockchainContext() {
       throw constants.ERRORS.NO_POTENTIAL_FORK_AS_NEXT;
     }
     const block = forks[0];
-    yield that.checkBlock(block, constants.WITH_SIGNATURES_AND_POW);
-    yield that.addBlock(block);
+    const { index, HEAD } = yield that.checkBlock(block, constants.WITH_SIGNATURES_AND_POW);
+    yield that.addBlock(block, index, HEAD);
     logger.debug('Applied block #%s', block.number);
   });
 

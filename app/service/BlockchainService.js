@@ -130,9 +130,11 @@ function BlockchainService (server) {
     if (followsCurrent) {
       // try to add it on main blockchain
       if (doCheck) {
-        yield mainContext.checkBlock(obj, constants.WITH_SIGNATURES_AND_POW);
+        const { index, HEAD } = yield mainContext.checkBlock(obj, constants.WITH_SIGNATURES_AND_POW);
+        return yield mainContext.addBlock(obj, index, HEAD)
+      } else {
+        return yield mainContext.addBlock(obj)
       }
-      return yield mainContext.addBlock(obj)
     } else if (forkAllowed) {
       // add it as side chain
       if (current.number - obj.number + 1 >= conf.forksize) {

@@ -531,13 +531,16 @@ function FileDAL(params) {
     ];
   });
 
-  this.generateIndexes = (block, conf) => co(function*() {
-    const index = indexer.localIndex(block, conf);
+  this.generateIndexes = (block, conf, index, HEAD) => co(function*() {
+    // We need to recompute the indexes for block#0
+    if (!index || !HEAD || HEAD.number == 0) {
+      index = indexer.localIndex(block, conf)
+      HEAD = yield indexer.completeGlobalScope(block, conf, index, that)
+    }
     let mindex = indexer.mindex(index);
     let iindex = indexer.iindex(index);
     let sindex = indexer.sindex(index);
     let cindex = indexer.cindex(index);
-    const HEAD = yield indexer.completeGlobalScope(block, conf, index, that);
     sindex = sindex.concat(yield indexer.ruleIndexGenDividend(HEAD, that));
     sindex = sindex.concat(yield indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex, that));
     cindex = cindex.concat(yield indexer.ruleIndexGenCertificationExpiry(HEAD, that));

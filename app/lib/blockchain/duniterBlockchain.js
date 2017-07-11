@@ -35,19 +35,19 @@ module.exports = class DuniterBlockchain extends MiscIndexedBlockchain {
 
   checkBlock(block, withPoWAndSignature, conf, dal) {
     return co(function*() {
+      const index = indexer.localIndex(block, conf)
       if (withPoWAndSignature) {
-        yield Q.nbind(rules.CHECK.ASYNC.ALL_LOCAL, rules, block, conf);
+        yield Q.nbind(rules.CHECK.ASYNC.ALL_LOCAL, rules, block, conf, index);
       }
       else {
-        yield Q.nbind(rules.CHECK.ASYNC.ALL_LOCAL_BUT_POW, rules, block, conf);
+        yield Q.nbind(rules.CHECK.ASYNC.ALL_LOCAL_BUT_POW, rules, block, conf, index);
       }
-      const index = indexer.localIndex(block, conf);
+      const HEAD = yield indexer.completeGlobalScope(block, conf, index, dal);
+      const HEAD_1 = yield dal.bindexDAL.head(1);
       const mindex = indexer.mindex(index);
       const iindex = indexer.iindex(index);
       const sindex = indexer.sindex(index);
       const cindex = indexer.cindex(index);
-      const HEAD = yield indexer.completeGlobalScope(block, conf, index, dal);
-      const HEAD_1 = yield dal.bindexDAL.head(1);
       // BR_G49
       if (indexer.ruleVersion(HEAD, HEAD_1) === false) throw Error('ruleVersion');
       // BR_G50
@@ -169,10 +169,11 @@ module.exports = class DuniterBlockchain extends MiscIndexedBlockchain {
       // Check the local rules
       // Enrich with the global index
       // Check the global rules
+      return { index, HEAD }
     })
   }
 
-  pushBlock(obj, index, conf, dal, logger) {
+  pushBlock(obj, index, HEAD, conf, dal, logger) {
     // const supra = super
     const that = this
     return co(function*() {
@@ -183,7 +184,7 @@ module.exports = class DuniterBlockchain extends MiscIndexedBlockchain {
       try {
         const currentBlock = yield dal.getCurrentBlockOrNull();
         block.fork = false;
-        yield that.saveBlockData(currentBlock, block, conf, dal, logger);
+        yield that.saveBlockData(currentBlock, block, conf, dal, logger, index, HEAD);
 
         try {
           yield DuniterBlockchain.pushStatsForBlocks([block], dal);
@@ -205,14 +206,14 @@ module.exports = class DuniterBlockchain extends MiscIndexedBlockchain {
     })
   }
 
-  saveBlockData(current, block, conf, dal, logger) {
+  saveBlockData(current, block, conf, dal, logger, index, HEAD) {
     const that = this
     return co(function*() {
       if (block.number == 0) {
         yield that.saveParametersForRoot(block, conf, dal);
       }
 
-      const indexes = yield dal.generateIndexes(block, conf);
+      const indexes = yield dal.generateIndexes(block, conf, index, HEAD);
 
       // Newcomers
       yield that.createNewcomers(indexes.iindex, dal, logger);

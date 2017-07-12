@@ -22,6 +22,7 @@
     "test": "test"
   },
   "scripts": {
+    "postinstall": "tsc",
     "tsc": "tsc",
     "test": "mocha --growl --timeout 20000 test test/fast test/integration test/",
     "start": "node bin/duniter start",

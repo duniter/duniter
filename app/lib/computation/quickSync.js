@@ -7,7 +7,7 @@ const indexer = require('../indexer')
 const constants = require('../constants')
 const Block = require('../entity/block')
 const Transaction = require('../entity/transaction')
-const DuniterBlockchain = require('../blockchain/duniterBlockchain')
+const DuniterBlockchain = require('../blockchain/DuniterBlockchain').DuniterBlockchain
 
 module.exports = (blockchain, conf, dal, logger) => {
 
@@ -239,7 +239,7 @@ module.exports = (blockchain, conf, dal, logger) => {
 
         // Last block: cautious mode to trigger all the INDEX expiry mechanisms
         const { index, HEAD } = yield blockchain.checkBlock(block, constants.WITH_SIGNATURES_AND_POW, conf, dal)
-        yield blockchain.pushBlock(block, index, HEAD, conf, dal, logger)
+        yield blockchain.pushTheBlock(block, index, HEAD, conf, dal, logger)
 
         // Clean temporary variables
         sync_bindex = [];

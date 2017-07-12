@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "sourceMap": true,
+    "target": "es6",
+    "moduleResolution": "node",
+    "module": "commonjs",
+    "strictNullChecks": true,
+    "noImplicitThis": true
+  },
+  "include": [
+    "app",
+    "bin",
+    "test"
+  ],
+  "compileOnSave": true
+}

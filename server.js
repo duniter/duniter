@@ -16,8 +16,8 @@ const jsonpckg    = require('./package.json');
 const keyring      = require('duniter-common').keyring;
 const directory   = require('./app/lib/system/directory');
 const rawer       = require('duniter-common').rawer;
-const SQLBlockchain   = require('./app/lib/blockchain/sqlBlockchain')
-const DuniterBlockchain = require('./app/lib/blockchain/duniterBlockchain')
+const SQLBlockchain   = require('./app/lib/blockchain/SqlBlockchain').SQLBlockchain
+const DuniterBlockchain = require('./app/lib/blockchain/DuniterBlockchain').DuniterBlockchain
 
 function Server (home, memoryOnly, overrideConf) {
 

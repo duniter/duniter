@@ -22,9 +22,10 @@
     "test": "test"
   },
   "scripts": {
+    "tsc": "tsc",
     "test": "mocha --growl --timeout 20000 test test/fast test/integration test/",
     "start": "node bin/duniter start",
-    "build": "cd \"node_modules/duniter-ui\" && npm install && npm run build",
+    "build": "tsc && cd \"node_modules/duniter-ui\" && npm install && npm run build",
     "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --timeout 20000 test test/fast test/integration test/"
   },
   "repository": {
@@ -76,6 +77,9 @@
     "wotb": "0.5.x"
   },
   "devDependencies": {
+    "@types/mocha": "^2.2.41",
+    "@types/node": "^8.0.9",
+    "@types/should": "^8.3.0",
     "coveralls": "2.11.4",
     "duniter-bma": "1.3.x",
     "duniter-crawler": "1.3.x",
@@ -90,7 +94,8 @@
     "sha1": "",
     "should": "",
     "supertest": "",
-    "tmp": "0.0.29"
+    "tmp": "0.0.29",
+    "typescript": "^2.4.1"
   },
   "peerDependencies": {
     "duniter-bma": "1.3.x",

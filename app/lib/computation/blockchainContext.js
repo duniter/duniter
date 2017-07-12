@@ -100,7 +100,7 @@ function BlockchainContext() {
   this.checkBlock = (block, withPoWAndSignature) => blockchain.checkBlock(block, withPoWAndSignature, conf, dal)
 
   this.addBlock = (obj, index, HEAD) => co(function*() {
-    const block = yield blockchain.pushBlock(obj, index, HEAD, conf, dal, logger)
+    const block = yield blockchain.pushTheBlock(obj, index, HEAD, conf, dal, logger)
     vHEAD_1 = vHEAD = HEADrefreshed = null
     return block
   })

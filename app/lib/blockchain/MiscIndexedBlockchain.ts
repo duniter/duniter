@@ -1,13 +1,11 @@
 "use strict"
+import {IndexedBlockchain} from "./IndexedBlockchain"
+import {SQLIndex} from "./SqlIndex"
 
-const co = require('co')
-const IndexedBlockchain = require('./indexedBlockchain')
-const SQLIndex = require('./sqlIndex')
-
-module.exports = class MiscIndexedBlockchain extends IndexedBlockchain {
+export class MiscIndexedBlockchain extends IndexedBlockchain {
 
   constructor(blockchainStorage, mindexDAL, iindexDAL, sindexDAL, cindexDAL) {
-    super(blockchainStorage, SQLIndex(null, {
+    super(blockchainStorage, new SQLIndex(null, {
       m_index: { handler: mindexDAL },
       i_index: { handler: iindexDAL },
       s_index: {

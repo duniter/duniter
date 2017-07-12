@@ -82,8 +82,9 @@ function BIndexDAL(driver) {
    * @param n Position
    */
   this.head = (n) => co(function*() {
-    // Default to HEAD~1
-    n = n || 1;
+    if (!n) {
+      throw "Cannot read HEAD~0, which is the incoming block"
+    }
     const headRecords = yield that.query('SELECT * FROM ' + that.table + ' ORDER BY number DESC LIMIT 1 OFFSET ?', [n - 1]);
     return headRecords[0];
   });

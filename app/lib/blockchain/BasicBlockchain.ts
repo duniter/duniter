@@ -1,18 +1,16 @@
 "use strict"
+import {BlockchainOperator} from "./interfaces/BlockchainOperator"
 
-module.exports = class BasicBlockchain {
+export class BasicBlockchain {
 
-  constructor(operations) {
-    this.operations = operations
+  constructor(private op:BlockchainOperator) {
   }
 
   /**
    * Adds a block at the end of the blockchain.
-   * @param b Block.
-   * @returns {*} Promise<Boolean>
    */
   pushBlock(b) {
-    return this.operations.store(b)
+    return this.op.store(b)
   }
 
   /**
@@ -21,7 +19,7 @@ module.exports = class BasicBlockchain {
    * @returns {*} Promise<Block>
    */
   getBlock(number) {
-    return this.operations.read(number)
+    return this.op.read(number)
   }
 
   /**
@@ -29,8 +27,8 @@ module.exports = class BasicBlockchain {
    * @param index Index from top. Defaults to `0`. E.g. `0` = HEAD, `1` = HEAD~1, etc.
    * @returns {*} Promise<Block>
    */
-  head(index) {
-    return this.operations.head(index)
+  head(index = 0) {
+    return this.op.head(index)
   }
 
   /**
@@ -38,7 +36,7 @@ module.exports = class BasicBlockchain {
    * @returns {*} Size.
    */
   height() {
-    return this.operations.height()
+    return this.op.height()
   }
 
   /**
@@ -47,7 +45,7 @@ module.exports = class BasicBlockchain {
    * @returns {*} Promise<Block>
    */
   headRange(n) {
-    return this.operations.headRange(n)
+    return this.op.headRange(n)
   }
 
   /**
@@ -55,6 +53,6 @@ module.exports = class BasicBlockchain {
    * @returns {*} Promise<Block> The reverted block.
    */
   revertHead() {
-    return this.operations.revert()
+    return this.op.revertHead()
   }
 }

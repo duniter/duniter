@@ -12,6 +12,8 @@ const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
 const ws        = require('ws');
 
+require('../../app/modules/prover/lib/constants').CORES_MAXIMUM_USE_IN_PARALLEL = 1
+
 const server = duniter(
   '/bb11',
   true,

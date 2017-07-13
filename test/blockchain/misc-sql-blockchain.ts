@@ -1,6 +1,7 @@
 "use strict";
 import {MiscIndexedBlockchain} from "../../app/lib/blockchain/MiscIndexedBlockchain"
 import {ArrayBlockchain} from "./lib/ArrayBlockchain"
+import {SQLiteDriver} from "../../app/lib/dal/drivers/SQLiteDriver"
 
 const assert = require('assert')
 const MIndexDAL = require('../../app/lib/dal/sqliteDAL/index/MIndexDAL')
@@ -8,7 +9,6 @@ const IIndexDAL = require('../../app/lib/dal/sqliteDAL/index/IIndexDAL')
 const SIndexDAL = require('../../app/lib/dal/sqliteDAL/index/SIndexDAL')
 const CIndexDAL = require('../../app/lib/dal/sqliteDAL/index/CIndexDAL')
 const MetaDAL = require('../../app/lib/dal/sqliteDAL/MetaDAL')
-const sqlite = require('../../app/lib/dal/drivers/sqlite')
 
 describe('MISC SQL Blockchain', () => {
 
@@ -16,7 +16,7 @@ describe('MISC SQL Blockchain', () => {
 
   before(async () => {
 
-    const db = new sqlite(':memory:')
+    const db = new SQLiteDriver(':memory:')
 
     const mindexDAL = new MIndexDAL(db)
     const iindexDAL = new IIndexDAL(db)

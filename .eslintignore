@@ -5,5 +5,6 @@ app/lib/db/*.js
 app/lib/dto/*.js
 app/lib/indexer.js
 app/lib/common.js
+app/lib/dal/drivers/*.js
 test/blockchain/*.js
 test/blockchain/lib/*.js

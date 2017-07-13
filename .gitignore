@@ -42,3 +42,4 @@ app/lib/common.js*
 app/lib/db/*.js*
 app/lib/dto/*.js*
 app/lib/indexer.js*
+app/lib/dal/drivers/*.js*

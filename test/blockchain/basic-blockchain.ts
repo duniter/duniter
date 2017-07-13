@@ -1,11 +1,11 @@
 import {BasicBlockchain} from "../../app/lib/blockchain/BasicBlockchain"
 import {ArrayBlockchain} from "./lib/ArrayBlockchain"
 import {SQLBlockchain} from "../../app/lib/blockchain/SqlBlockchain"
+import {SQLiteDriver} from "../../app/lib/dal/drivers/SQLiteDriver"
 
 const assert = require('assert')
 const BIndexDAL = require('../../app/lib/dal/sqliteDAL/index/BIndexDAL')
 const MetaDAL = require('../../app/lib/dal/sqliteDAL/MetaDAL')
-const sqlite = require('../../app/lib/dal/drivers/sqlite')
 
 let blockchain:BasicBlockchain,
   emptyBlockchain:BasicBlockchain
@@ -71,7 +71,7 @@ describe('Basic SQL Blockchain', () => {
   before(async () => {
 
     {
-      const db = new sqlite(':memory:')
+      const db = new SQLiteDriver(':memory:')
 
       const bindexDAL = new BIndexDAL(db)
       const metaDAL = new MetaDAL(db)
@@ -90,7 +90,7 @@ describe('Basic SQL Blockchain', () => {
       blockchain = new BasicBlockchain(new SQLBlockchain(dal))
     }
     {
-      const db = new sqlite(':memory:')
+      const db = new SQLiteDriver(':memory:')
 
       const bindexDAL = new BIndexDAL(db)
       const metaDAL = new MetaDAL(db)

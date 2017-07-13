@@ -3,9 +3,9 @@ import {ArrayBlockchain} from "./lib/ArrayBlockchain"
 import {IndexedBlockchain} from "../../app/lib/blockchain/IndexedBlockchain"
 import {MemoryIndex} from "./lib/MemoryIndex"
 import {SQLIndex} from "../../app/lib/blockchain/SqlIndex"
+import {SQLiteDriver} from "../../app/lib/dal/drivers/SQLiteDriver"
 
 const assert = require('assert')
-const sqlite = require('../../app/lib/dal/drivers/sqlite')
 
 describe('Indexed Blockchain', () => {
 
@@ -193,7 +193,7 @@ describe('Indexed Blockchain', () => {
     describe('PK on one field', () => {
 
       before(() => {
-        const db = new sqlite(':memory:')
+        const db = new SQLiteDriver(':memory:')
         blockchain = new IndexedBlockchain(new ArrayBlockchain(), new SQLIndex(db, {
           iindex: {
             sqlFields: [
@@ -319,7 +319,7 @@ describe('Indexed Blockchain', () => {
     describe('PK on two fields', () => {
 
       before(() => {
-        const db = new sqlite(':memory:')
+        const db = new SQLiteDriver(':memory:')
         blockchain = new IndexedBlockchain(new ArrayBlockchain(), new SQLIndex(db, {
           iindex: {
             sqlFields: [

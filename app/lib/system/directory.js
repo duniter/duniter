@@ -7,7 +7,7 @@ const cfs  = require('../cfs');
 const Q    = require('q');
 const qfs  = require('q-io/fs');
 const fs   = require('fs');
-const driver = require("../dal/drivers/sqlite");
+const SQLiteDriver = require("../dal/drivers/SQLiteDriver").SQLiteDriver
 
 const DEFAULT_DOMAIN = "duniter_default";
 const DEFAULT_HOME = (process.platform == 'win32' ? process.env.USERPROFILE : process.env.HOME) + '/.config/duniter/';
@@ -50,11 +50,11 @@ const dir = module.exports = {
     const home = params.home;
     yield someDelayFix();
     if (isMemory) {
-      params.dbf = () => driver(':memory:');
+      params.dbf = () => new SQLiteDriver(':memory:');
       params.wotb = require('../wot').memoryInstance();
     } else {
       const sqlitePath = path.join(home, dir.DUNITER_DB_NAME + '.db');
-      params.dbf = () => driver(sqlitePath);
+      params.dbf = () => new SQLiteDriver(sqlitePath);
       const wotbFilePath = path.join(home, dir.WOTB_FILE);
       let existsFile = yield qfs.exists(wotbFilePath);
       if (!existsFile) {

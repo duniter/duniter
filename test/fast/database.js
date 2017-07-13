@@ -3,7 +3,7 @@
 const co     = require('co');
 const tmp = require('tmp');
 const should = require('should');
-const sqlite = require('../../app/lib/dal/drivers/sqlite');
+const SQLiteDriver = require('../../app/lib/dal/drivers/SQLiteDriver').SQLiteDriver
 
 const MEMORY = ':memory:';
 const FILE = tmp.fileSync().name + '.db'; // We add an suffix to avoid Windows-locking of the file by the `tmp` module
@@ -29,7 +29,7 @@ describe("SQLite driver", function() {
     let rows;
 
     it('should be openable and closable on will', () => co(function*() {
-      const driver = sqlite(MEMORY);
+      const driver = new SQLiteDriver(MEMORY)
       yield driver.executeSql(CREATE_TABLE_SQL);
       rows = yield driver.executeAll(SELECT_FROM_TABLE, []);
       rows.should.have.length(0);
@@ -64,7 +64,7 @@ describe("SQLite driver", function() {
 
   describe("File", function() {
 
-    const driver = sqlite(FILE);
+    const driver = new SQLiteDriver(FILE);
     let rows;
 
     it('should be able to open a new one', () => co(function*() {

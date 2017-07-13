@@ -5,7 +5,7 @@ export class ArrayBlockchain implements BlockchainOperator {
   // The blockchain storage
   private bcArray: any[] = []
 
-  store(b): Promise<any> {
+  store(b:any): Promise<any> {
     this.bcArray.push(b)
     return Promise.resolve(b)
   }

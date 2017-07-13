@@ -12,7 +12,7 @@ const sqlite = require('../../app/lib/dal/drivers/sqlite')
 
 describe('MISC SQL Blockchain', () => {
 
-  let blockchain
+  let blockchain:any
 
   before(async () => {
 

@@ -1,14 +1,14 @@
 "use strict"
 import {IndexOperator} from "./interfaces/IndexOperator"
-import * as _ from "underscore"
 
 const IndexDAL = require('../dal/sqliteDAL/IndexDAL')
+const _ = require('underscore')
 
 export class SQLIndex implements IndexOperator {
 
   private indexes: { [k:string]: any } = {}
 
-  constructor(private db, private definitions: any) {
+  constructor(private db:any, private definitions: any) {
   }
 
   async initIndexer(pkFields: any): Promise<void> {
@@ -45,7 +45,7 @@ export class SQLIndex implements IndexOperator {
     if (this.definitions[subIndex].findTrimable) {
       return this.definitions[subIndex].findTrimable(maxNumber)
     } else {
-      const criterias = {}
+      const criterias:any = {}
       criterias[numberField] = { $lt: maxNumber }
       return this.indexes[subIndex].sqlFind(criterias)
     }

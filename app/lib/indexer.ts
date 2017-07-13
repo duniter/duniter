@@ -1,10 +1,10 @@
 "use strict";
 import {BlockDTO} from "./dto/BlockDTO"
 import {ConfDTO} from "./dto/ConfDTO"
-import {IdentityDTO} from "./dto/IdentityDTO";
+import {IdentityDTO} from "./dto/IdentityDTO"
 import {RevocationDTO} from "./dto/RevocationDTO"
 import {CertificationDTO} from "./dto/CertificationDTO"
-import {OutputDTO, TransactionDTO} from "./dto/TransactionDTO"
+import {TransactionDTO} from "./dto/TransactionDTO"
 import {DBHead} from "./db/DBHead"
 
 const co              = require('co');
@@ -956,7 +956,7 @@ export class Indexer {
 
   // BR_G07
   static async prepareAvgBlockSize(HEAD: DBHead, range: (n:number,m:number,s:string)=>Promise<number[]>) {
-    HEAD.avgBlockSize = average(await range(1, HEAD.issuersCount, 'bsize')); // TODO: vérifier l'appel asynchrone
+    HEAD.avgBlockSize = average(await range(1, HEAD.issuersCount, 'bsize'))
   }
 
   // BR_G09

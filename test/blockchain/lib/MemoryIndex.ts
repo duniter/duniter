@@ -17,7 +17,7 @@ export class MemoryIndex implements IndexOperator {
   }
 
   findTrimable(subIndex: string, numberField: string, maxNumber: number): Promise<any[]> {
-    const criterias = {}
+    const criterias:any = {}
     criterias[numberField] = { $lt: maxNumber }
     return this.findWhere(subIndex, criterias)
   }
@@ -48,7 +48,7 @@ export class MemoryIndex implements IndexOperator {
     return Promise.resolve()
   }
 
-  private static matchComplexCriterias(criterias, row): boolean {
+  private static matchComplexCriterias(criterias:any, row:any): boolean {
     const criteriaKeys = _.keys(criterias)
     let matches = true
     let i = 0
@@ -79,7 +79,7 @@ export class MemoryIndex implements IndexOperator {
 
   findWhere(subIndex: string, criterias: {}): Promise<any[]> {
     let res: any[] = []
-    const areBasicCriterias = _.values(criterias).reduce((are, criteria) => are && typeof criteria !== 'function' && typeof criteria !== 'object', true)
+    const areBasicCriterias = _.values(criterias).reduce((are:boolean, criteria:any) => are && typeof criteria !== 'function' && typeof criteria !== 'object', true)
     if (areBasicCriterias) {
       res = _.where(this.indexStorage[subIndex], criterias)
     } else {

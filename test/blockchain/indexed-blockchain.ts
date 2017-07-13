@@ -11,7 +11,7 @@ describe('Indexed Blockchain', () => {
 
   describe('MemoryIndex', () => {
 
-    let blockchain
+    let blockchain:any
 
     describe('PK on one field', () => {
 
@@ -188,7 +188,7 @@ describe('Indexed Blockchain', () => {
 
   describe('SqlIndex', () => {
 
-    let blockchain
+    let blockchain:any
 
     describe('PK on one field', () => {
 

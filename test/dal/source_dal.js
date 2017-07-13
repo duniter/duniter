@@ -3,7 +3,7 @@ const co = require('co');
 const should = require('should');
 const FileDAL = require('../../app/lib/dal/fileDAL');
 const dir = require('../../app/lib/system/directory');
-const indexer    = require('../../app/lib/indexer');
+const indexer    = require('../../app/lib/indexer').Indexer
 const toolbox = require('../integration/tools/toolbox');
 
 let dal;

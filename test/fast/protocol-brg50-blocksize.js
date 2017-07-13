@@ -1,7 +1,7 @@
 "use strict";
 const co            = require('co');
 const should        = require('should');
-const indexer       = require('../../app/lib/indexer');
+const indexer       = require('../../app/lib/indexer').Indexer
 
 const FAIL = false;
 const SUCCESS = true;

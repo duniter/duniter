@@ -1,7 +1,7 @@
 "use strict"
 import {BlockchainOperator} from "./interfaces/BlockchainOperator"
 
-const indexer = require('../../lib/indexer')
+const indexer = require('../../lib/indexer').Indexer
 
 export class SQLBlockchain implements BlockchainOperator {
 

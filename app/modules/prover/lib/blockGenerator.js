@@ -4,8 +4,9 @@ const co              = require('co');
 const moment          = require('moment');
 const inquirer        = require('inquirer');
 const common          = require('duniter-common');
-const indexer         = require('../../../lib/indexer')
+const indexer         = require('../../../lib/indexer').Indexer
 const rules           = require('../../../lib/rules')
+const TransactionDTO  = require('../../../lib/dto/TransactionDTO').TransactionDTO
 
 const keyring       = common.keyring;
 const hashf         = common.hashf;
@@ -105,7 +106,7 @@ function BlockGenerator(server, prover) {
     const passingTxs = [];
     for (const obj of txs) {
       obj.currency = conf.currency
-      const tx = Transaction.fromJSON(obj);
+      const tx = TransactionDTO.fromJSONObject(obj);
       try {
         yield new Promise((resolve, reject) => {
           rules.HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), (err, res) => {
@@ -587,7 +588,7 @@ function BlockGenerator(server, prover) {
         transactions.forEach((tx) => {
           const txLen = Transaction.getLen(tx);
           if (txLen <= common.constants.MAXIMUM_LEN_OF_COMPACT_TX && blockLen + txLen <= maxLenOfBlock && tx.version == common.constants.TRANSACTION_VERSION) {
-            block.transactions.push({ raw: tx.compact() });
+            block.transactions.push({ raw: tx.getCompactVersion() });
           }
           blockLen += txLen;
         });

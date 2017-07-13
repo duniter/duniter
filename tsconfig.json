@@ -5,7 +5,9 @@
     "moduleResolution": "node",
     "module": "commonjs",
     "strictNullChecks": true,
-    "noImplicitThis": true
+    "noImplicitThis": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true
   },
   "include": [
     "app",

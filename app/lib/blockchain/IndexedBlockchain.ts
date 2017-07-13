@@ -2,32 +2,33 @@
 import {BasicBlockchain} from "./BasicBlockchain"
 import {IndexOperator} from "./interfaces/IndexOperator"
 import {BlockchainOperator} from "./interfaces/BlockchainOperator"
-import * as _ from "underscore"
+
+const _ = require('underscore')
 
 export class IndexedBlockchain extends BasicBlockchain {
 
   private initIndexer: Promise<void>
 
-  constructor(bcOperations: BlockchainOperator, private indexOperations: IndexOperator, private numberField, private pkFields: any) {
+  constructor(bcOperations: BlockchainOperator, private indexOperations: IndexOperator, private numberField: string, private pkFields: any) {
     super(bcOperations)
     this.initIndexer = indexOperations.initIndexer(pkFields)
   }
 
-  async recordIndex(index) {
+  async recordIndex(index: { [index: string]: any }) {
     // Wait indexer init
     await this.initIndexer
 
     return this.indexOperations.recordIndex(index)
   }
 
-  async indexTrim(maxNumber) {
+  async indexTrim(maxNumber:number) {
 
     // Wait indexer init
     await this.initIndexer
 
     const subIndexes = await this.indexOperations.getSubIndexes()
     // Trim the subIndexes
-    const records = {}
+    const records: { [index: string]: any } = {}
     for (const subIndex of subIndexes) {
       records[subIndex] = []
       const pks = typeof this.pkFields[subIndex].pk !== 'string' && this.pkFields[subIndex].pk.length ? Array.from(this.pkFields[subIndex].pk) : [this.pkFields[subIndex].pk]
@@ -57,7 +58,7 @@ export class IndexedBlockchain extends BasicBlockchain {
     return Promise.resolve()
   }
 
-  async indexCount(indexName, criterias) {
+  async indexCount(indexName: string, criterias: { [index: string]: any }) {
 
     // Wait indexer init
     await this.initIndexer
@@ -66,7 +67,7 @@ export class IndexedBlockchain extends BasicBlockchain {
     return records.length
   }
 
-  async indexReduce(indexName, criterias) {
+  async indexReduce(indexName: string, criterias: { [index: string]: any }) {
 
     // Wait indexer init
     await this.initIndexer
@@ -75,7 +76,7 @@ export class IndexedBlockchain extends BasicBlockchain {
     return reduce(records)
   }
 
-  async indexReduceGroupBy(indexName, criterias, properties) {
+  async indexReduceGroupBy(indexName: string, criterias: { [index: string]: any }, properties: string[]) {
 
     // Wait indexer init
     await this.initIndexer
@@ -84,17 +85,17 @@ export class IndexedBlockchain extends BasicBlockchain {
     return reduceBy(records, properties)
   }
 
-  async indexRevert(blockNumber) {
+  async indexRevert(blockNumber:number) {
     const subIndexes = await this.indexOperations.getSubIndexes()
     for (const subIndex of subIndexes) {
-      const removeCriterias = {}
+      const removeCriterias: { [index: string]: any } = {}
       removeCriterias[this.numberField] = blockNumber
       await this.indexOperations.removeWhere(subIndex, removeCriterias)
     }
   }
 }
 
-function reduce(records) {
+function reduce(records: any[]) {
   return records.reduce((obj, record) => {
     const keys = Object.keys(record);
     for (const k of keys) {
@@ -106,18 +107,18 @@ function reduce(records) {
   }, {});
 }
 
-function reduceBy(reducables, properties) {
+function reduceBy(reducables: any[], properties: string[]) {
   const reduced = reducables.reduce((map, entry) => {
     const id = properties.map((prop) => entry[prop]).join('-');
     map[id] = map[id] || [];
     map[id].push(entry);
     return map;
   }, {});
-  return _.values(reduced).map((value) => reduce(value))
+  return _.values(reduced).map((rows: any[]) => reduce(rows))
 }
 
-function criteriasFromPks(pks, values) {
-  const criterias = {}
+function criteriasFromPks(pks: string[], values: any): { [index: string]: any } {
+  const criterias: { [index: string]: any } = {}
   for (const key of pks) {
     criterias[key] = values[key]
   }

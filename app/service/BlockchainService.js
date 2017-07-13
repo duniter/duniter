@@ -5,12 +5,13 @@ const co              = require('co');
 const parsers         = require('duniter-common').parsers;
 const rules           = require('../lib/rules')
 const constants       = require('../lib/constants');
-const blockchainCtx   = require('../lib/computation/blockchainContext');
+const blockchainCtx   = require('../lib/computation/BlockchainContext').BlockchainContext
 const Block           = require('../lib/entity/block');
+const BlockDTO        = require('../lib/dto/BlockDTO').BlockDTO
 const Identity        = require('../lib/entity/identity');
 const Transaction     = require('../lib/entity/transaction');
 const AbstractService = require('./AbstractService');
-const quickSync       = require('../lib/computation/quickSync')
+const QuickSynchronizer = require('../lib/computation/QuickSync').QuickSynchronizer
 
 const CHECK_ALL_RULES = true;
 
@@ -23,7 +24,7 @@ function BlockchainService (server) {
   AbstractService.call(this);
 
   let that = this;
-  const mainContext = blockchainCtx();
+  const mainContext = new blockchainCtx();
   let conf, dal, logger, selfPubkey, quickSynchronizer
 
   this.getContext = () => mainContext;
@@ -32,7 +33,7 @@ function BlockchainService (server) {
     dal = newDAL;
     conf = newConf;
     logger = require('../lib/logger')(dal.profile)
-    quickSynchronizer = quickSync(server.blockchain, conf, dal, logger)
+    quickSynchronizer = new QuickSynchronizer(server.blockchain, conf, dal, logger)
     mainContext.setConfDAL(conf, dal, server.blockchain, quickSynchronizer)
     selfPubkey = newKeyPair.publicKey;
   };
@@ -46,7 +47,8 @@ function BlockchainService (server) {
   });
 
   this.checkBlock = function(block) {
-    return mainContext.checkBlock(block);
+    const dto = BlockDTO.fromJSONObject(block)
+    return mainContext.checkBlock(dto);
   };
 
   this.branches = () => co(function *() {
@@ -129,11 +131,12 @@ function BlockchainService (server) {
     let followsCurrent = !current || (obj.number == current.number + 1 && obj.previousHash == current.hash);
     if (followsCurrent) {
       // try to add it on main blockchain
+      const dto = BlockDTO.fromJSONObject(obj)
       if (doCheck) {
-        const { index, HEAD } = yield mainContext.checkBlock(obj, constants.WITH_SIGNATURES_AND_POW);
-        return yield mainContext.addBlock(obj, index, HEAD)
+        const { index, HEAD } = yield mainContext.checkBlock(dto, constants.WITH_SIGNATURES_AND_POW);
+        return yield mainContext.addBlock(dto, index, HEAD)
       } else {
-        return yield mainContext.addBlock(obj)
+        return yield mainContext.addBlock(dto)
       }
     } else if (forkAllowed) {
       // add it as side chain

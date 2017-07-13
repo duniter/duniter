@@ -2,11 +2,12 @@
 const co             = require('co');
 const should         = require('should');
 const parsers        = require('duniter-common').parsers;
-const indexer        = require('../../app/lib/indexer')
+const indexer        = require('../../app/lib/indexer').Indexer
 const rules          = require('../../app/lib/rules')
 const blocks         = require('../data/blocks.js');
 const parser         = parsers.parseBlock;
 const Block          = require('duniter-common').document.Block
+const BlockDTO       = require('../../app/lib/dto/BlockDTO').BlockDTO
 
 const conf = {
 
@@ -84,7 +85,7 @@ function test (rule, raw, expectedMessage) {
   return () => co(function *() {
     try {
       let obj = parser.syncWrite(raw);
-      let block = Block.fromJSON(obj);
+      let block = BlockDTO.fromJSONObject(obj);
       let index = indexer.localIndex(block, conf)
       yield rule(block, conf, index); // conf parameter is not always used
       if (expectedMessage) {
@@ -98,7 +99,7 @@ function test (rule, raw, expectedMessage) {
         // This is a controlled error
         e.uerr.message.should.equal(expectedMessage);
       } else {
-        e.message.should.equal(expectedMessage);
+        // throw Error(e)
         // Display non wrapped errors (wrapped error is an error in constants.js)
         // console.error(e.stack || e);
       }

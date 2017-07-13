@@ -6,6 +6,7 @@ const constants       = require('../lib/constants');
 const rules           = require('../lib/rules')
 const Transaction     = require('../lib/entity/transaction');
 const AbstractService = require('./AbstractService');
+const TransactionDTO  = require('../lib/dto/TransactionDTO').TransactionDTO
 
 module.exports = () => {
   return new TransactionService();
@@ -37,9 +38,10 @@ function TransactionService () {
       // Start checks...
       const transaction = tx.getTransaction();
       const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
-      yield Q.nbind(rules.HELPERS.checkSingleTransactionLocally, rules.HELPERS)(transaction);
+      const dto = TransactionDTO.fromJSONObject(tx)
+      yield Q.nbind(rules.HELPERS.checkSingleTransactionLocally, rules.HELPERS)(dto);
       yield rules.HELPERS.checkTxBlockStamp(transaction, dal);
-      yield rules.HELPERS.checkSingleTransaction(transaction, nextBlockWithFakeTimeVariation, conf, dal, CHECK_PENDING_TRANSACTIONS);
+      yield rules.HELPERS.checkSingleTransaction(dto, nextBlockWithFakeTimeVariation, conf, dal, CHECK_PENDING_TRANSACTIONS);
       const server_pubkey = conf.pair && conf.pair.pub;
       transaction.pubkey = transaction.issuers.indexOf(server_pubkey) !== -1 ? server_pubkey : '';
       if (!(yield dal.txsDAL.sandbox.acceptNewSandBoxEntry(transaction, server_pubkey))) {

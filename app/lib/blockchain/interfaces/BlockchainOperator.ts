@@ -6,7 +6,7 @@ export interface BlockchainOperator {
    * Pushes a new block at the top of the blockchain.
    * @param b Block.
    */
-  store(b):Promise<any>
+  store(b:any):Promise<any>
 
   /**
    * Reads the block at index `i`.

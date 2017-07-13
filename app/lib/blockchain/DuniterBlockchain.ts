@@ -1,9 +1,15 @@
 import {MiscIndexedBlockchain} from "./MiscIndexedBlockchain"
+import {IindexEntry, IndexEntry, Indexer, MindexEntry, SindexEntry} from "../indexer"
+import {BlockchainOperator} from "./interfaces/BlockchainOperator"
+import {ConfDTO} from "../dto/ConfDTO"
+import {BlockDTO} from "../dto/BlockDTO"
+import {DBHead} from "../db/DBHead"
+import {IdentityDTO} from "../dto/IdentityDTO"
+import {DBBlock} from "../db/DBBlock"
 
 const _ = require('underscore')
 const Q = require('q')
 const rules = require('../rules')
-const indexer = require('../indexer')
 const common          = require('duniter-common')
 const Block           = require('../entity/block')
 const Identity        = require('../entity/identity')
@@ -11,137 +17,123 @@ const Certification   = require('../entity/certification')
 const Membership      = require('../entity/membership')
 const Transaction     = require('../entity/transaction')
 
-const statTests = {
-  'newcomers': 'identities',
-  'certs': 'certifications',
-  'joiners': 'joiners',
-  'actives': 'actives',
-  'leavers': 'leavers',
-  'revoked': 'revoked',
-  'excluded': 'excluded',
-  'ud': 'dividend',
-  'tx': 'transactions'
-};
-
-const statNames = ['newcomers', 'certs', 'joiners', 'actives', 'leavers', 'revoked', 'excluded', 'ud', 'tx'];
-
 export class DuniterBlockchain extends MiscIndexedBlockchain {
 
-  constructor(blockchainStorage, dal) {
+  constructor(blockchainStorage:BlockchainOperator, dal:any) {
     super(blockchainStorage, dal.mindexDAL, dal.iindexDAL, dal.sindexDAL, dal.cindexDAL)
   }
 
-  async checkBlock(block, withPoWAndSignature, conf, dal) {
-    const index = indexer.localIndex(block, conf)
+  async checkBlock(block:BlockDTO, withPoWAndSignature:boolean, conf: ConfDTO, dal:any) {
+    const index = Indexer.localIndex(block, conf)
     if (withPoWAndSignature) {
       await rules.CHECK.ASYNC.ALL_LOCAL(block, conf, index)
     }
     else {
       await rules.CHECK.ASYNC.ALL_LOCAL_BUT_POW(block, conf, index)
     }
-    const HEAD = await indexer.completeGlobalScope(block, conf, index, dal);
+    const HEAD = await Indexer.completeGlobalScope(block, conf, index, dal);
     const HEAD_1 = await dal.bindexDAL.head(1);
-    const mindex = indexer.mindex(index);
-    const iindex = indexer.iindex(index);
-    const sindex = indexer.sindex(index);
-    const cindex = indexer.cindex(index);
+    const mindex = Indexer.mindex(index);
+    const iindex = Indexer.iindex(index);
+    const sindex = Indexer.sindex(index);
+    const cindex = Indexer.cindex(index);
     // BR_G49
-    if (indexer.ruleVersion(HEAD, HEAD_1) === false) throw Error('ruleVersion');
+    if (Indexer.ruleVersion(HEAD, HEAD_1) === false) throw Error('ruleVersion');
     // BR_G50
-    if (indexer.ruleBlockSize(HEAD) === false) throw Error('ruleBlockSize');
+    if (Indexer.ruleBlockSize(HEAD) === false) throw Error('ruleBlockSize');
     // BR_G98
-    if (indexer.ruleCurrency(block, HEAD) === false) throw Error('ruleCurrency');
+    if (Indexer.ruleCurrency(block, HEAD) === false) throw Error('ruleCurrency');
     // BR_G51
-    if (indexer.ruleNumber(block, HEAD) === false) throw Error('ruleNumber');
+    if (Indexer.ruleNumber(block, HEAD) === false) throw Error('ruleNumber');
     // BR_G52
-    if (indexer.rulePreviousHash(block, HEAD) === false) throw Error('rulePreviousHash');
+    if (Indexer.rulePreviousHash(block, HEAD) === false) throw Error('rulePreviousHash');
     // BR_G53
-    if (indexer.rulePreviousIssuer(block, HEAD) === false) throw Error('rulePreviousIssuer');
+    if (Indexer.rulePreviousIssuer(block, HEAD) === false) throw Error('rulePreviousIssuer');
     // BR_G101
-    if (indexer.ruleIssuerIsMember(HEAD) === false) throw Error('ruleIssuerIsMember');
+    if (Indexer.ruleIssuerIsMember(HEAD) === false) throw Error('ruleIssuerIsMember');
     // BR_G54
-    if (indexer.ruleIssuersCount(block, HEAD) === false) throw Error('ruleIssuersCount');
+    if (Indexer.ruleIssuersCount(block, HEAD) === false) throw Error('ruleIssuersCount');
     // BR_G55
-    if (indexer.ruleIssuersFrame(block, HEAD) === false) throw Error('ruleIssuersFrame');
+    if (Indexer.ruleIssuersFrame(block, HEAD) === false) throw Error('ruleIssuersFrame');
     // BR_G56
-    if (indexer.ruleIssuersFrameVar(block, HEAD) === false) throw Error('ruleIssuersFrameVar');
+    if (Indexer.ruleIssuersFrameVar(block, HEAD) === false) throw Error('ruleIssuersFrameVar');
     // BR_G57
-    if (indexer.ruleMedianTime(block, HEAD) === false) throw Error('ruleMedianTime');
+    if (Indexer.ruleMedianTime(block, HEAD) === false) throw Error('ruleMedianTime');
     // BR_G58
-    if (indexer.ruleDividend(block, HEAD) === false) throw Error('ruleDividend');
+    if (Indexer.ruleDividend(block, HEAD) === false) throw Error('ruleDividend');
     // BR_G59
-    if (indexer.ruleUnitBase(block, HEAD) === false) throw Error('ruleUnitBase');
+    if (Indexer.ruleUnitBase(block, HEAD) === false) throw Error('ruleUnitBase');
     // BR_G60
-    if (indexer.ruleMembersCount(block, HEAD) === false) throw Error('ruleMembersCount');
+    if (Indexer.ruleMembersCount(block, HEAD) === false) throw Error('ruleMembersCount');
     // BR_G61
-    if (indexer.rulePowMin(block, HEAD) === false) throw Error('rulePowMin');
+    if (Indexer.rulePowMin(block, HEAD) === false) throw Error('rulePowMin');
     if (withPoWAndSignature) {
       // BR_G62
-      if (indexer.ruleProofOfWork(HEAD) === false) throw Error('ruleProofOfWork');
+      if (Indexer.ruleProofOfWork(HEAD) === false) throw Error('ruleProofOfWork');
     }
     // BR_G63
-    if (indexer.ruleIdentityWritability(iindex, conf) === false) throw Error('ruleIdentityWritability');
+    if (Indexer.ruleIdentityWritability(iindex, conf) === false) throw Error('ruleIdentityWritability');
     // BR_G64
-    if (indexer.ruleMembershipWritability(mindex, conf) === false) throw Error('ruleMembershipWritability');
+    if (Indexer.ruleMembershipWritability(mindex, conf) === false) throw Error('ruleMembershipWritability');
     // BR_G108
-    if (indexer.ruleMembershipPeriod(mindex) === false) throw Error('ruleMembershipPeriod');
+    if (Indexer.ruleMembershipPeriod(mindex) === false) throw Error('ruleMembershipPeriod');
     // BR_G65
-    if (indexer.ruleCertificationWritability(cindex, conf) === false) throw Error('ruleCertificationWritability');
+    if (Indexer.ruleCertificationWritability(cindex, conf) === false) throw Error('ruleCertificationWritability');
     // BR_G66
-    if (indexer.ruleCertificationStock(cindex, conf) === false) throw Error('ruleCertificationStock');
+    if (Indexer.ruleCertificationStock(cindex, conf) === false) throw Error('ruleCertificationStock');
     // BR_G67
-    if (indexer.ruleCertificationPeriod(cindex) === false) throw Error('ruleCertificationPeriod');
+    if (Indexer.ruleCertificationPeriod(cindex) === false) throw Error('ruleCertificationPeriod');
     // BR_G68
-    if (indexer.ruleCertificationFromMember(HEAD, cindex) === false) throw Error('ruleCertificationFromMember');
+    if (Indexer.ruleCertificationFromMember(HEAD, cindex) === false) throw Error('ruleCertificationFromMember');
     // BR_G69
-    if (indexer.ruleCertificationToMemberOrNewcomer(cindex) === false) throw Error('ruleCertificationToMemberOrNewcomer');
+    if (Indexer.ruleCertificationToMemberOrNewcomer(cindex) === false) throw Error('ruleCertificationToMemberOrNewcomer');
     // BR_G70
-    if (indexer.ruleCertificationToLeaver(cindex) === false) throw Error('ruleCertificationToLeaver');
+    if (Indexer.ruleCertificationToLeaver(cindex) === false) throw Error('ruleCertificationToLeaver');
     // BR_G71
-    if (indexer.ruleCertificationReplay(cindex) === false) throw Error('ruleCertificationReplay');
+    if (Indexer.ruleCertificationReplay(cindex) === false) throw Error('ruleCertificationReplay');
     // BR_G72
-    if (indexer.ruleCertificationSignature(cindex) === false) throw Error('ruleCertificationSignature');
+    if (Indexer.ruleCertificationSignature(cindex) === false) throw Error('ruleCertificationSignature');
     // BR_G73
-    if (indexer.ruleIdentityUIDUnicity(iindex) === false) throw Error('ruleIdentityUIDUnicity');
+    if (Indexer.ruleIdentityUIDUnicity(iindex) === false) throw Error('ruleIdentityUIDUnicity');
     // BR_G74
-    if (indexer.ruleIdentityPubkeyUnicity(iindex) === false) throw Error('ruleIdentityPubkeyUnicity');
+    if (Indexer.ruleIdentityPubkeyUnicity(iindex) === false) throw Error('ruleIdentityPubkeyUnicity');
     // BR_G75
-    if (indexer.ruleMembershipSuccession(mindex) === false) throw Error('ruleMembershipSuccession');
+    if (Indexer.ruleMembershipSuccession(mindex) === false) throw Error('ruleMembershipSuccession');
     // BR_G76
-    if (indexer.ruleMembershipDistance(HEAD, mindex) === false) throw Error('ruleMembershipDistance');
+    if (Indexer.ruleMembershipDistance(HEAD, mindex) === false) throw Error('ruleMembershipDistance');
     // BR_G77
-    if (indexer.ruleMembershipOnRevoked(mindex) === false) throw Error('ruleMembershipOnRevoked');
+    if (Indexer.ruleMembershipOnRevoked(mindex) === false) throw Error('ruleMembershipOnRevoked');
     // BR_G78
-    if (indexer.ruleMembershipJoinsTwice(mindex) === false) throw Error('ruleMembershipJoinsTwice');
+    if (Indexer.ruleMembershipJoinsTwice(mindex) === false) throw Error('ruleMembershipJoinsTwice');
     // BR_G79
-    if (indexer.ruleMembershipEnoughCerts(mindex) === false) throw Error('ruleMembershipEnoughCerts');
+    if (Indexer.ruleMembershipEnoughCerts(mindex) === false) throw Error('ruleMembershipEnoughCerts');
     // BR_G80
-    if (indexer.ruleMembershipLeaverIsMember(mindex) === false) throw Error('ruleMembershipLeaverIsMember');
+    if (Indexer.ruleMembershipLeaverIsMember(mindex) === false) throw Error('ruleMembershipLeaverIsMember');
     // BR_G81
-    if (indexer.ruleMembershipActiveIsMember(mindex) === false) throw Error('ruleMembershipActiveIsMember');
+    if (Indexer.ruleMembershipActiveIsMember(mindex) === false) throw Error('ruleMembershipActiveIsMember');
     // BR_G82
-    if (indexer.ruleMembershipRevokedIsMember(mindex) === false) throw Error('ruleMembershipRevokedIsMember');
+    if (Indexer.ruleMembershipRevokedIsMember(mindex) === false) throw Error('ruleMembershipRevokedIsMember');
     // BR_G83
-    if (indexer.ruleMembershipRevokedSingleton(mindex) === false) throw Error('ruleMembershipRevokedSingleton');
+    if (Indexer.ruleMembershipRevokedSingleton(mindex) === false) throw Error('ruleMembershipRevokedSingleton');
     // BR_G84
-    if (indexer.ruleMembershipRevocationSignature(mindex) === false) throw Error('ruleMembershipRevocationSignature');
+    if (Indexer.ruleMembershipRevocationSignature(mindex) === false) throw Error('ruleMembershipRevocationSignature');
     // BR_G85
-    if (indexer.ruleMembershipExcludedIsMember(iindex) === false) throw Error('ruleMembershipExcludedIsMember');
+    if (Indexer.ruleMembershipExcludedIsMember(iindex) === false) throw Error('ruleMembershipExcludedIsMember');
     // BR_G86
-    if ((await indexer.ruleToBeKickedArePresent(iindex, dal)) === false) throw Error('ruleToBeKickedArePresent');
+    if ((await Indexer.ruleToBeKickedArePresent(iindex, dal)) === false) throw Error('ruleToBeKickedArePresent');
     // BR_G103
-    if (indexer.ruleTxWritability(sindex) === false) throw Error('ruleTxWritability');
+    if (Indexer.ruleTxWritability(sindex) === false) throw Error('ruleTxWritability');
     // BR_G87
-    if (indexer.ruleInputIsAvailable(sindex) === false) throw Error('ruleInputIsAvailable');
+    if (Indexer.ruleInputIsAvailable(sindex) === false) throw Error('ruleInputIsAvailable');
     // BR_G88
-    if (indexer.ruleInputIsUnlocked(sindex) === false) throw Error('ruleInputIsUnlocked');
+    if (Indexer.ruleInputIsUnlocked(sindex) === false) throw Error('ruleInputIsUnlocked');
     // BR_G89
-    if (indexer.ruleInputIsTimeUnlocked(sindex) === false) throw Error('ruleInputIsTimeUnlocked');
+    if (Indexer.ruleInputIsTimeUnlocked(sindex) === false) throw Error('ruleInputIsTimeUnlocked');
     // BR_G90
-    if (indexer.ruleOutputBase(sindex, HEAD_1) === false) throw Error('ruleOutputBase');
+    if (Indexer.ruleOutputBase(sindex, HEAD_1) === false) throw Error('ruleOutputBase');
     // Check document's coherence
 
-    const matchesList = (regexp, list) => {
+    const matchesList = (regexp:RegExp, list:string[]) => {
       let i = 0;
       let found = "";
       while (!found && i < list.length) {
@@ -169,7 +161,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     return { index, HEAD }
   }
 
-  async pushTheBlock(obj, index, HEAD, conf, dal, logger) {
+  async pushTheBlock(obj:BlockDTO, index:IndexEntry[], HEAD:DBHead, conf:ConfDTO, dal:any, logger:any) {
     const start = Date.now();
     const block = new Block(obj);
     try {
@@ -196,7 +188,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     // await supra.recordIndex(index)
   }
 
-  async saveBlockData(current, block, conf, dal, logger, index, HEAD) {
+  async saveBlockData(current:DBBlock, block:BlockDTO, conf:ConfDTO, dal:any, logger:any, index:IndexEntry[], HEAD:DBHead) {
     if (block.number == 0) {
       await this.saveParametersForRoot(block, conf, dal);
     }
@@ -234,9 +226,10 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
       await dal.trimIndexes(indexes.HEAD.number - MAX_BINDEX_SIZE);
     }
 
-    await this.updateBlocksComputedVars(current, block);
+    const dbb = DBBlock.fromBlockDTO(block)
+    await this.updateBlocksComputedVars(current, dbb);
     // Saves the block (DAL)
-    await dal.saveBlock(block);
+    await dal.saveBlock(dbb);
 
     // --> Update links
     await dal.updateWotbLinks(indexes.cindex);
@@ -255,7 +248,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     return block;
   }
 
-  async saveParametersForRoot(block, conf, dal) {
+  async saveParametersForRoot(block:BlockDTO, conf:ConfDTO, dal:any) {
     if (block.parameters) {
       const bconf = Block.statics.getConf(block);
       conf.c = bconf.c;
@@ -285,27 +278,20 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
   }
 
-  async createNewcomers(iindex, dal, logger) {
+  async createNewcomers(iindex:IindexEntry[], dal:any, logger:any) {
     for (const entry of iindex) {
       if (entry.op == common.constants.IDX_CREATE) {
         // Reserves a wotb ID
         entry.wotb_id = dal.wotb.addNode();
         logger.trace('%s was affected wotb_id %s', entry.uid, entry.wotb_id);
         // Remove from the sandbox any other identity with the same pubkey/uid, since it has now been reserved.
-        await this.cleanRejectedIdentities({
-          pubkey: entry.pub,
-          uid: entry.uid
-        }, dal);
+        await dal.removeUnWrittenWithPubkey(entry.pub)
+        await dal.removeUnWrittenWithUID(entry.uid)
       }
     }
   }
 
-  async cleanRejectedIdentities(idty, dal) {
-    await dal.removeUnWrittenWithPubkey(idty.pubkey);
-    await dal.removeUnWrittenWithUID(idty.uid);
-  }
-
-  async updateMembers(block, dal) {
+  async updateMembers(block:BlockDTO, dal:any) {
     // Joiners (come back)
     for (const inlineMS of block.joiners) {
       let ms = Membership.statics.fromInline(inlineMS);
@@ -324,13 +310,13 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
   }
 
-  async updateWallets(sindex, aDal, reverse = false) {
+  async updateWallets(sindex:SindexEntry[], aDal:any, reverse = false) {
     const differentConditions = _.uniq(sindex.map((entry) => entry.conditions))
     for (const conditions of differentConditions) {
-      const creates = _.filter(sindex, (entry) => entry.conditions === conditions && entry.op === common.constants.IDX_CREATE)
-      const updates = _.filter(sindex, (entry) => entry.conditions === conditions && entry.op === common.constants.IDX_UPDATE)
-      const positives = creates.reduce((sum, src) => sum + src.amount * Math.pow(10, src.base), 0)
-      const negatives = updates.reduce((sum, src) => sum + src.amount * Math.pow(10, src.base), 0)
+      const creates = _.filter(sindex, (entry:SindexEntry) => entry.conditions === conditions && entry.op === common.constants.IDX_CREATE)
+      const updates = _.filter(sindex, (entry:SindexEntry) => entry.conditions === conditions && entry.op === common.constants.IDX_UPDATE)
+      const positives = creates.reduce((sum:number, src:SindexEntry) => sum + src.amount * Math.pow(10, src.base), 0)
+      const negatives = updates.reduce((sum:number, src:SindexEntry) => sum + src.amount * Math.pow(10, src.base), 0)
       const wallet = await aDal.getWallet(conditions)
       let variation = positives - negatives
       if (reverse) {
@@ -342,7 +328,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
   }
 
-  async revertBlock(number, hash, dal) {
+  async revertBlock(number:number, hash:string, dal:any) {
 
     const blockstamp = [number, hash].join('-');
 
@@ -386,7 +372,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     await this.undoDeleteTransactions(block, dal)
   }
 
-  async undoMembersUpdate(blockstamp, dal) {
+  async undoMembersUpdate(blockstamp:string, dal:any) {
     const joiners = await dal.iindexDAL.getWrittenOn(blockstamp);
     for (const entry of joiners) {
       // Undo 'join' which can be either newcomers or comebackers
@@ -416,7 +402,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
   }
 
-  async undoDeleteTransactions(block, dal) {
+  async undoDeleteTransactions(block:BlockDTO, dal:any) {
     for (const obj of block.transactions) {
       obj.currency = block.currency;
       let tx = new Transaction(obj);
@@ -430,7 +416,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
    * @param block Block in which are contained the certifications to remove from sandbox.
    * @param dal The DAL
    */
-  async removeCertificationsFromSandbox(block, dal) {
+  async removeCertificationsFromSandbox(block:BlockDTO, dal:any) {
     for (let inlineCert of block.certifications) {
       let cert = Certification.statics.fromInline(inlineCert);
       let idty = await dal.getWritten(cert.to);
@@ -445,7 +431,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
    * @param block Block in which are contained the certifications to remove from sandbox.
    * @param dal The DAL
    */
-  async removeMembershipsFromSandbox(block, dal) {
+  async removeMembershipsFromSandbox(block:BlockDTO, dal:any) {
     const mss = block.joiners.concat(block.actives).concat(block.leavers);
     for (const inlineMS of mss) {
       let ms = Membership.statics.fromInline(inlineMS);
@@ -453,14 +439,14 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
   }
 
-  async computeToBeRevoked(mindex, dal) {
-    const revocations = _.filter(mindex, (entry) => entry.revoked_on);
+  async computeToBeRevoked(mindex:MindexEntry[], dal:any) {
+    const revocations = _.filter(mindex, (entry:MindexEntry) => entry.revoked_on);
     for (const revoked of revocations) {
       await dal.setRevoked(revoked.pub, true);
     }
   }
 
-  async deleteTransactions(block, dal) {
+  async deleteTransactions(block:BlockDTO, dal:any) {
     for (const obj of block.transactions) {
       obj.currency = block.currency;
       const tx = new Transaction(obj);
@@ -469,7 +455,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
   }
 
-  updateBlocksComputedVars(current, block): Promise<void> {
+  updateBlocksComputedVars(current:DBBlock, block:DBBlock): Promise<void> {
     // Unit Base
     block.unitbase = (block.dividend && block.unitbase) || (current && current.unitbase) || 0;
     // Monetary Mass update
@@ -487,19 +473,28 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     return Promise.resolve()
   }
 
-  static pushStatsForBlocks(blocks, dal) {
-    const stats = {};
+  static pushStatsForBlocks(blocks:BlockDTO[], dal:any) {
+    const stats: { [k:string]: { blocks: number[], lastParsedBlock:number }} = {};
     // Stats
     for (const block of blocks) {
-      for (const statName of statNames) {
-        if (!stats[statName]) {
-          stats[statName] = { blocks: [] };
+      const values = [
+        { name: 'newcomers', value: block.identities },
+        { name: 'certs',     value: block.certifications },
+        { name: 'joiners',   value: block.joiners },
+        { name: 'actives',   value: block.actives },
+        { name: 'leavers',   value: block.leavers },
+        { name: 'revoked',   value: block.revoked },
+        { name: 'excluded',  value: block.excluded },
+        { name: 'ud',        value: block.dividend },
+        { name: 'tx',        value: block.transactions }
+      ]
+      for (const element of values) {
+        if (!stats[element.name]) {
+          stats[element.name] = { blocks: [], lastParsedBlock: -1 };
         }
-        const stat = stats[statName];
-        const testProperty = statTests[statName];
-        const value = block[testProperty];
-        const isPositiveValue = value && typeof value != 'object';
-        const isNonEmptyArray = value && typeof value == 'object' && value.length > 0;
+        const stat = stats[element.name]
+        const isPositiveValue = element.value && typeof element.value != 'object';
+        const isNonEmptyArray = element.value && typeof element.value == 'object' && element.value.length > 0;
         if (isPositiveValue || isNonEmptyArray) {
           stat.blocks.push(block.number);
         }
@@ -509,7 +504,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     return dal.pushStats(stats);
   }
 
-  async pushSideBlock(obj, dal, logger) {
+  async pushSideBlock(obj:BlockDTO, dal:any, logger:any) {
     const start = Date.now();
     const block = new Block(obj);
     block.fork = true;

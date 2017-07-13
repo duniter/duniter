@@ -3,7 +3,8 @@
 const co         = require('co');
 const _          = require('underscore');
 const common     = require('duniter-common');
-const indexer    = require('../indexer');
+const indexer    = require('../indexer').Indexer;
+const BlockDTO   = require('../dto/BlockDTO').BlockDTO
 
 const constants       = common.constants
 const hashf           = common.hashf
@@ -276,7 +277,7 @@ rules.FUNCTIONS = {
   }),
 
   checkTxVersion: (block) => co(function *() {
-    const txs = Block.getTransactions(block);
+    const txs = block.transactions
     // Check rule against each transaction
     for (const tx of txs) {
       if (tx.version != 10) {
@@ -287,7 +288,7 @@ rules.FUNCTIONS = {
   }),
 
   checkTxLen: (block) => co(function *() {
-    const txs = Block.getTransactions(block);
+    const txs = block.transactions
     // Check rule against each transaction
     for (const tx of txs) {
       const txLen = Transaction.getLen(tx);
@@ -316,7 +317,7 @@ rules.FUNCTIONS = {
   }),
 
   checkTxIssuers: (block) => co(function *() {
-    const txs = Block.getTransactions(block);
+    const txs = block.transactions
     // Check rule against each transaction
     for (const tx of txs) {
       if (tx.issuers.length == 0) {
@@ -327,13 +328,13 @@ rules.FUNCTIONS = {
   }),
 
   checkTxSources: (block) => co(function *() {
-    const txs = Block.getTransactions(block);
-    for (const tx of txs) {
+    const dto = BlockDTO.fromJSONObject(block)
+    for (const tx of dto.transactions) {
       if (!tx.inputs || tx.inputs.length == 0) {
         throw Error('A transaction must have at least 1 source');
       }
     }
-    const sindex = indexer.localSIndex(block);
+    const sindex = indexer.localSIndex(dto);
     const inputs = _.filter(sindex, (row) => row.op == constants.IDX_UPDATE).map((row) => [row.op, row.identifier, row.pos].join('-'));
     if (inputs.length !== _.uniq(inputs).length) {
       throw Error('It cannot exist 2 identical sources for transactions inside a given block');
@@ -346,13 +347,13 @@ rules.FUNCTIONS = {
   }),
 
   checkTxAmounts: (block) => co(function *() {
-    for (const tx of Block.getTransactions(block)) {
+    for (const tx of block.transactions) {
       rules.HELPERS.checkTxAmountsValidity(tx);
     }
   }),
 
   checkTxRecipients: (block) => co(function *() {
-    const txs = Block.getTransactions(block);
+    const txs = block.transactions
     // Check rule against each transaction
     for (const tx of txs) {
       if (!tx.outputs || tx.outputs.length == 0) {
@@ -360,7 +361,7 @@ rules.FUNCTIONS = {
       }
       else {
         // Cannot have empty output condition
-        for (const output of tx.outputs) {
+        for (const output of tx.outputsAsObjects()) {
           if (!output.conditions.match(/(SIG|XHX)/)) {
             throw Error('Empty conditions are forbidden');
           }
@@ -371,7 +372,7 @@ rules.FUNCTIONS = {
   }),
 
   checkTxSignature: (block) => co(function *() {
-    const txs = Block.getTransactions(block);
+    const txs = block.transactions
     // Check rule against each transaction
     for (const tx of txs) {
       let sigResult = getSigResult(tx);
@@ -399,7 +400,7 @@ function getSigResult(tx) {
   json.unlocks = tx.unlocks;
   let i = 0;
   let signaturesMatching = true;
-  const raw = rawer.getTransaction(json);
+  const raw = tx.getRawTxNoSig()
   while (signaturesMatching && i < tx.signatures.length) {
     const sig = tx.signatures[i];
     const pub = tx.issuers[i];
@@ -446,35 +447,37 @@ rules.HELPERS = {
   checkSingleTransactionLocally: (tx, done) => checkBunchOfTransactions([tx], done),
 
   checkTxAmountsValidity: (tx) => {
+    const inputs = tx.inputsAsObjects()
+    const outputs = tx.outputsAsObjects()
     // Rule of money conservation
-    const commonBase = tx.inputs.concat(tx.outputs).reduce((min, input) => {
+    const commonBase = inputs.concat(outputs).reduce((min, input) => {
       if (min === null) return input.base;
       return Math.min(min, parseInt(input.base));
     }, null);
-    const inputSumCommonBase = tx.inputs.reduce((sum, input) => {
+    const inputSumCommonBase = inputs.reduce((sum, input) => {
       return sum + input.amount * Math.pow(10, input.base - commonBase);
     }, 0);
-    const outputSumCommonBase = tx.outputs.reduce((sum, output) => {
+    const outputSumCommonBase = outputs.reduce((sum, output) => {
       return sum + output.amount * Math.pow(10, output.base - commonBase);
     }, 0);
     if (inputSumCommonBase !== outputSumCommonBase) {
       throw constants.ERRORS.TX_INPUTS_OUTPUTS_NOT_EQUAL;
     }
     // Rule of unit base transformation
-    const maxOutputBase = tx.outputs.reduce((max, output) => {
+    const maxOutputBase = outputs.reduce((max, output) => {
       return Math.max(max, parseInt(output.base));
     }, 0);
     // Compute deltas
     const deltas = {};
     for (let i = commonBase; i <= maxOutputBase; i++) {
-      const inputBaseSum = tx.inputs.reduce((sum, input) => {
+      const inputBaseSum = inputs.reduce((sum, input) => {
         if (input.base == i) {
           return sum + input.amount * Math.pow(10, input.base - commonBase);
         } else {
           return sum;
         }
       }, 0);
-      const outputBaseSum = tx.outputs.reduce((sum, output) => {
+      const outputBaseSum = outputs.reduce((sum, output) => {
         if (output.base == i) {
           return sum + output.amount * Math.pow(10, output.base - commonBase);
         } else {

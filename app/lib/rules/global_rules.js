@@ -3,7 +3,7 @@
 const co             = require('co');
 const _              = require('underscore');
 const common         = require('duniter-common');
-const indexer        = require('../indexer');
+const indexer        = require('../indexer').Indexer
 const local_rules    = require('../rules/local_rules');
 
 const constants      = common.constants
@@ -48,9 +48,11 @@ rules.FUNCTIONS = {
   }),
 
   checkSourcesAvailability: (block, conf, dal, alsoCheckPendingTransactions) => co(function *() {
-    let txs = block.getTransactions();
+    const txs = block.transactions
     const current = yield dal.getCurrentBlockOrNull();
     for (const tx of txs) {
+      const inputs = tx.inputsAsObjects()
+      const outputs = tx.outputsAsObjects()
       let unlocks = {};
       let sumOfInputs = 0;
       let maxOutputBase = current.unitbase;
@@ -59,8 +61,8 @@ rules.FUNCTIONS = {
         let index = parseInt(sp[0]);
         unlocks[index] = sp[1];
       }
-      for (let k = 0, len2 = tx.inputs.length; k < len2; k++) {
-        let src = tx.inputs[k];
+      for (let k = 0, len2 = inputs.length; k < len2; k++) {
+        let src = inputs[k];
         let dbSrc = yield dal.getSource(src.identifier, src.pos);
         logger.debug('Source %s:%s:%s:%s = %s', src.amount, src.base, src.identifier, src.pos, dbSrc && dbSrc.consumed);
         if (!dbSrc && alsoCheckPendingTransactions) {
@@ -132,7 +134,7 @@ rules.FUNCTIONS = {
           }
         }
       }
-      let sumOfOutputs = tx.outputs.reduce(function(p, output) {
+      let sumOfOutputs = outputs.reduce(function(p, output) {
         if (output.base > maxOutputBase) {
           throw constants.ERRORS.WRONG_OUTPUT_BASE;
         }
@@ -172,7 +174,7 @@ rules.HELPERS = {
   checkExistsPubkey: (pub, dal) => dal.getWrittenIdtyByPubkey(pub),
 
   checkSingleTransaction: (tx, block, conf, dal, alsoCheckPendingTransactions) => rules.FUNCTIONS.checkSourcesAvailability({
-    getTransactions: () => [tx],
+    transactions: [tx],
     medianTime: block.medianTime
   }, conf, dal, alsoCheckPendingTransactions),
 

@@ -4,7 +4,7 @@
 
 const _ = require('underscore');
 const co = require('co');
-const indexer = require('../../indexer');
+const indexer = require('../../indexer').Indexer
 
 module.exports = AbstractIndex;
 

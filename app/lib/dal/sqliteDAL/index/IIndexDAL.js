@@ -4,7 +4,7 @@
 
 const co = require('co');
 const _ = require('underscore');
-const indexer         = require('../../../indexer');
+const indexer         = require('../../../indexer').Indexer
 const AbstractSQLite = require('./../AbstractSQLite');
 const AbstractIndex = require('./../AbstractIndex');
 

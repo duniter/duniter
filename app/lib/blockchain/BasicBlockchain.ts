@@ -9,7 +9,7 @@ export class BasicBlockchain {
   /**
    * Adds a block at the end of the blockchain.
    */
-  pushBlock(b) {
+  pushBlock(b:any) {
     return this.op.store(b)
   }
 
@@ -18,7 +18,7 @@ export class BasicBlockchain {
    * @param number block ID.
    * @returns {*} Promise<Block>
    */
-  getBlock(number) {
+  getBlock(number:number) {
     return this.op.read(number)
   }
 
@@ -44,7 +44,7 @@ export class BasicBlockchain {
    * @param n Quantity from top. E.g. `1` = [HEAD], `3` = [HEAD, HEAD~1, HEAD~2], etc.
    * @returns {*} Promise<Block>
    */
-  headRange(n) {
+  headRange(n:number) {
     return this.op.headRange(n)
   }
 

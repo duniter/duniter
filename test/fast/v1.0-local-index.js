@@ -3,8 +3,9 @@
 const _       = require('underscore');
 const should  = require('should');
 const parsers = require('duniter-common').parsers;
-const indexer = require('../../app/lib/indexer');
+const indexer = require('../../app/lib/indexer').Indexer
 const constants = require('duniter-common').constants;
+const BlockDTO = require('../../app/lib/dto/BlockDTO').BlockDTO
 
 const raw = "Version: 10\n" +
   "Type: Block\n" +
@@ -84,7 +85,7 @@ describe("v1.0 Local Index", function(){
 
   before(() => {
     block = parsers.parseBlock.syncWrite(raw);
-    index = indexer.localIndex(block, { sigValidity: 100, msValidity: 40 });
+    index = indexer.localIndex(BlockDTO.fromJSONObject(block), { sigValidity: 100, msValidity: 40 });
   });
 
   it('should have 30 index entries', () => {

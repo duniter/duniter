@@ -2,13 +2,14 @@
 import {MiscIndexedBlockchain} from "../../app/lib/blockchain/MiscIndexedBlockchain"
 import {ArrayBlockchain} from "./lib/ArrayBlockchain"
 import {SQLiteDriver} from "../../app/lib/dal/drivers/SQLiteDriver"
+import {MIndexDAL} from "../../app/lib/dal/sqliteDAL/index/MIndexDAL";
+import {IIndexDAL} from "../../app/lib/dal/sqliteDAL/index/IIndexDAL";
+import {SIndexDAL} from "../../app/lib/dal/sqliteDAL/index/SIndexDAL";
+import {CIndexDAL} from "../../app/lib/dal/sqliteDAL/index/CIndexDAL";
+import {MetaDAL} from "../../app/lib/dal/sqliteDAL/MetaDAL";
+import {ConfDTO} from "../../app/lib/dto/ConfDTO";
 
 const assert = require('assert')
-const MIndexDAL = require('../../app/lib/dal/sqliteDAL/index/MIndexDAL')
-const IIndexDAL = require('../../app/lib/dal/sqliteDAL/index/IIndexDAL')
-const SIndexDAL = require('../../app/lib/dal/sqliteDAL/index/SIndexDAL')
-const CIndexDAL = require('../../app/lib/dal/sqliteDAL/index/CIndexDAL')
-const MetaDAL = require('../../app/lib/dal/sqliteDAL/MetaDAL')
 
 describe('MISC SQL Blockchain', () => {
 
@@ -24,8 +25,8 @@ describe('MISC SQL Blockchain', () => {
     const cindexDAL = new CIndexDAL(db)
     const metaDAL = new MetaDAL(db)
 
-    await mindexDAL.init()
     await iindexDAL.init()
+    await mindexDAL.init()
     await sindexDAL.init()
     await cindexDAL.init()
     await metaDAL.init()
@@ -36,7 +37,7 @@ describe('MISC SQL Blockchain', () => {
     await metaDAL.exec('CREATE TABLE membership (id INTEGER null);')
     await metaDAL.exec('CREATE TABLE block (fork INTEGER null);')
     await metaDAL.exec('CREATE TABLE b_index (id INTEGER null);')
-    await metaDAL.upgradeDatabase({});
+    await metaDAL.upgradeDatabase(ConfDTO.mock());
 
     blockchain = new MiscIndexedBlockchain(new ArrayBlockchain(), mindexDAL, iindexDAL, sindexDAL, cindexDAL)
   })

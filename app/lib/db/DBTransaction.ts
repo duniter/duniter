@@ -26,6 +26,7 @@ export class DBTransaction extends TransactionDTO {
       locktime,
       hash,
       blockstamp,
+      blockstampTime,
       issuers,
       inputs,
       outputs,

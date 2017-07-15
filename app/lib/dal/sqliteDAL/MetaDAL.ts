@@ -1,36 +1,54 @@
-"use strict";
+import {AbstractSQLite} from "./AbstractSQLite";
+import {SQLiteDriver} from "../drivers/SQLiteDriver";
+import {ConfDTO} from "../../dto/ConfDTO";
+import {SindexEntry} from "../../indexer";
+import {hashf} from "../../common";
+import {TransactionDTO} from "../../dto/TransactionDTO";
+import {BlockDAL} from "./BlockDAL";
+import {IdentityDAL} from "./IdentityDAL";
+import {SIndexDAL} from "./index/SIndexDAL";
+import {WalletDAL} from "./WalletDAL";
+import {MIndexDAL} from "./index/MIndexDAL";
 
-/**
- * Created by cgeek on 22/08/15.
- */
-
-const co = require('co');
+const _ = require('underscore')
 const logger = require('../../logger')('metaDAL');
-const AbstractSQLite = require('./AbstractSQLite');
 const common = require('duniter-common');
-const hashf = require('duniter-common').hashf;
 const rawer = require('duniter-common').rawer;
 const constants = require('./../../constants');
 
-module.exports = MetaDAL;
+export interface DBMeta {
+  id: number,
+  version: number
+}
 
-function MetaDAL(driver) {
+export class MetaDAL extends AbstractSQLite<DBMeta> {
 
-  AbstractSQLite.call(this, driver);
+  driverCopy:SQLiteDriver
 
-  const that = this;
+  constructor(driver:SQLiteDriver) {
+    super(
+      driver,
+      'meta',
+      // PK fields
+      ['version'],
+      // Fields
+      [
+        'id',
+        'version'
+      ],
+      // Arrays
+      [],
+      // Booleans
+      [],
+      // BigIntegers
+      [],
+      // Transient
+      []
+    )
+    this.driverCopy = driver
+  }
 
-  this.table = 'meta';
-  this.fields = [
-    'id',
-    'version'
-  ];
-  this.arrays = [];
-  this.booleans = [];
-  this.pkFields = ['version'];
-  this.translated = {};
-
-  const migrations = {
+  private migrations:any = {
 
     // Test
     0: 'BEGIN; COMMIT;',
@@ -50,16 +68,13 @@ function MetaDAL(driver) {
     2: 'BEGIN; ALTER TABLE txs ADD COLUMN received INTEGER NULL; COMMIT;',
 
     // Update wrong recipients field (was not filled in)
-    3: () => co(function*() {
-    }),
+    3: async () => {},
 
     // Migrates wrong unitbases
-    4: () => co(function*() {
-    }),
+    4: async () => {},
 
     // Migrates wrong monetary masses
-    5: () => co(function*() {
-    }),
+    5: async () => {},
 
     6: 'BEGIN; ALTER TABLE idty ADD COLUMN expired INTEGER NULL; COMMIT;',
     7: 'BEGIN; ALTER TABLE cert ADD COLUMN expired INTEGER NULL; COMMIT;',
@@ -74,11 +89,11 @@ function MetaDAL(driver) {
     'ALTER TABLE block ADD COLUMN issuersFrameVar INTEGER NULL;' +
     'ALTER TABLE block ADD COLUMN issuersCount INTEGER NULL;' +
     'COMMIT;',
-    12: () => co(function *() {
-      let blockDAL = new (require('./BlockDAL'))(driver);
-      yield blockDAL.exec('ALTER TABLE block ADD COLUMN len INTEGER NULL;');
-      yield blockDAL.exec('ALTER TABLE txs ADD COLUMN len INTEGER NULL;');
-    }),
+    12: async () => {
+      let blockDAL = new BlockDAL(this.driverCopy)
+      await blockDAL.exec('ALTER TABLE block ADD COLUMN len INTEGER NULL;');
+      await blockDAL.exec('ALTER TABLE txs ADD COLUMN len INTEGER NULL;');
+    },
     13: 'BEGIN; ALTER TABLE txs ADD COLUMN blockstampTime INTEGER NULL; COMMIT;',
     14: 'BEGIN; ' +
       
@@ -109,25 +124,24 @@ function MetaDAL(driver) {
       'ORDER BY block_number DESC;' +
     'COMMIT;',
 
-    15: () => co(function *() {
-      let idtyDAL = new (require('./IdentityDAL'))(driver);
-      yield idtyDAL.exec('ALTER TABLE idty ADD COLUMN revoked_on INTEGER NULL');
-    }),
+    15: async () => {
+      let idtyDAL = new IdentityDAL(this.driverCopy)
+      await idtyDAL.exec('ALTER TABLE idty ADD COLUMN revoked_on INTEGER NULL');
+    },
 
-    16: () => co(function *() {
-    }),
+    16: async () => {},
 
-    17: () => co(function *() {
-      let blockDAL = new (require('./BlockDAL'))(driver);
-      let sindexDAL = new (require('./index/SIndexDAL'))(driver);
-      const blocks = yield blockDAL.query('SELECT * FROM block WHERE NOT fork');
+    17: async () => {
+      let blockDAL = new BlockDAL(this.driverCopy)
+      let sindexDAL = new SIndexDAL(this.driverCopy)
+      const blocks = await blockDAL.query('SELECT * FROM block WHERE NOT fork');
       const Block = require('../../../lib/entity/block');
       const Identity = require('../../../lib/entity/identity');
-      const amountsPerKey = {};
+      const amountsPerKey:any = {};
       const members = [];
       for (const block of blocks) {
         const b = new Block(block);
-        const amountsInForBlockPerKey = {};
+        const amountsInForBlockPerKey:any = {};
         for (const idty of b.identities) {
           members.push(Identity.statics.fromInline(idty).pubkey);
         }
@@ -141,7 +155,7 @@ function MetaDAL(driver) {
         const txs = b.getTransactions();
         for (let i = 0; i < txs.length; i++) {
           const tx = txs[i];
-          tx.hash = hashf(rawer.getTransaction(b.transactions[i])).toUpperCase();
+          tx.hash = hashf(rawer.getTransaction(b.transactions[i]))
           for (const input of tx.inputs) {
             input.tx = tx.hash;
             input.block = b;
@@ -169,10 +183,10 @@ function MetaDAL(driver) {
         }
       }
       const keysToSee = Object.keys(amountsPerKey);
-      const sourcesMovements = [];
+      const sourcesMovements: SindexEntry[] = [];
       for (const key of keysToSee) {
-        const allCreates = {};
-        const allUpdates = {};
+        const allCreates: any = {};
+        const allUpdates: any = {};
         const amounts = amountsPerKey[key];
         let balance = 0;
         for (let j = 0; j < amounts.length; j++) {
@@ -210,17 +224,23 @@ function MetaDAL(driver) {
           }
         }
         let amountMissing = 0;
-        yield Object.values(allCreates).map((src) => co(function*() {
-          const exist = yield sindexDAL.getSource(src.identifier, src.pos);
+        await Promise.all(_.values(allCreates).map(async (src:any) => {
+          const exist = await sindexDAL.getSource(src.identifier, src.pos);
           if (!exist || exist.consumed) {
             amountMissing += src.amount;
             const block = src.block;
             sourcesMovements.push({
+              index: common.constants.I_INDEX,
               op: common.constants.IDX_CREATE,
               tx: src.tx,
               identifier: src.identifier,
               pos: src.pos,
+              unlock: null,
+              age: 0,
+              txObj: TransactionDTO.mock(),
+              created_on: null,
               written_on: [block.number, block.hash].join('-'),
+              writtenOn: block.number,
               written_time: block.medianTime,
               locktime: src.locktime,
               amount: src.amount,
@@ -229,17 +249,17 @@ function MetaDAL(driver) {
               consumed: false
             });
           }
-        }));
+        }))
         let amountNotDestroyed = 0;
-        yield Object.values(allUpdates).map((src) => co(function*() {
-          const exist = yield sindexDAL.getSource(src.identifier, src.pos);
+        await _.values(allUpdates).map(async (src:any) => {
+          const exist = await sindexDAL.getSource(src.identifier, src.pos);
           if (exist && !exist.consumed) {
             amountNotDestroyed += src.amount;
           }
-        }));
+        })
       }
-      yield sindexDAL.insertBatch(sourcesMovements);
-    }),
+      await sindexDAL.insertBatch(sourcesMovements);
+    },
 
     18: 'BEGIN;' +
       // Add a `massReeval` column
@@ -254,39 +274,39 @@ function MetaDAL(driver) {
     /**
      * Feeds the table of wallets with balances
      */
-    20: () => co(function*() {
-      let walletDAL = new (require('./WalletDAL'))(driver);
-      let sindexDAL = new (require('./index/SIndexDAL'))(driver);
-      const conditions = yield sindexDAL.query('SELECT DISTINCT(conditions) FROM s_index')
+    20: async () => {
+      let walletDAL = new WalletDAL(this.driverCopy)
+      let sindexDAL = new SIndexDAL(this.driverCopy)
+      const conditions = await sindexDAL.query('SELECT DISTINCT(conditions) FROM s_index')
       for (const row of conditions) {
         const wallet = {
           conditions: row.conditions,
           balance: 0
         }
-        const amountsRemaining = yield sindexDAL.getAvailableForConditions(row.conditions)
-        wallet.balance = amountsRemaining.reduce((sum, src) => sum + src.amount * Math.pow(10, src.base), 0)
-        yield walletDAL.saveWallet(wallet)
+        const amountsRemaining = await sindexDAL.getAvailableForConditions(row.conditions)
+        wallet.balance = amountsRemaining.reduce((sum:number, src:SindexEntry) => sum + src.amount * Math.pow(10, src.base), 0)
+        await walletDAL.saveWallet(wallet)
       }
-    }),
+    },
 
     /**
      * Feeds the m_index.chainable_on
      */
-    21: (conf) => co(function*() {
-      let blockDAL = new (require('./BlockDAL'))(driver);
-      let mindexDAL = new (require('./index/MIndexDAL'))(driver);
-      yield mindexDAL.exec('ALTER TABLE m_index ADD COLUMN chainable_on INTEGER NULL;')
-      const memberships = yield mindexDAL.query('SELECT * FROM m_index WHERE op = ?', [common.constants.IDX_CREATE])
+    21: async (conf:ConfDTO) => {
+      let blockDAL = new BlockDAL(this.driverCopy)
+      let mindexDAL = new MIndexDAL(this.driverCopy)
+      await mindexDAL.exec('ALTER TABLE m_index ADD COLUMN chainable_on INTEGER NULL;')
+      const memberships = await mindexDAL.query('SELECT * FROM m_index WHERE op = ?', [common.constants.IDX_CREATE])
       for (const ms of memberships) {
-        const reference = yield blockDAL.getBlock(parseInt(ms.written_on.split('-')[0]))
+        const reference = await blockDAL.getBlock(parseInt(ms.written_on.split('-')[0]))
         const updateQuery = 'UPDATE m_index SET chainable_on = ' + (reference.medianTime + conf.msPeriod) + ' WHERE pub = \'' + ms.pub + '\' AND op = \'CREATE\''
-        yield mindexDAL.exec(updateQuery)
+        await mindexDAL.exec(updateQuery)
       }
-    }),
+    },
 
     // Replay the wallet table feeding, because of a potential bug
-    22: function resetWallets() {
-      return migrations[20]()
+    22: () => {
+      return this.migrations[20]()
     },
 
     23: 'BEGIN;' +
@@ -306,64 +326,60 @@ function MetaDAL(driver) {
     'COMMIT;'
   };
 
-  this.init = () => co(function *() {
-    return that.exec('BEGIN;' +
-      'CREATE TABLE IF NOT EXISTS ' + that.table + ' (' +
+  async init() {
+    await this.exec('BEGIN;' +
+      'CREATE TABLE IF NOT EXISTS ' + this.table + ' (' +
       'id INTEGER NOT NULL,' +
       'version INTEGER NOT NULL,' +
       'PRIMARY KEY (id)' +
       ');' +
-      'COMMIT;', []);
-  });
-
-  function executeMigration(migration, conf) {
-    return co(function *() {
-      try {
-        if (typeof migration == "string") {
-
-          // Simple SQL script to pass
-          yield that.exec(migration);
-
-        } else if (typeof migration == "function") {
-
-          // JS function to execute
-          yield migration(conf);
-
-        }
-      } catch (e) {
-        logger.warn('An error occured during DB migration, continue.', e);
-      }
-    });
+      'COMMIT;')
   }
 
-  this.upgradeDatabase = (conf) => co(function *() {
-    let version = yield that.getVersion();
-    while(migrations[version]) {
-      yield executeMigration(migrations[version], conf);
+  private async executeMigration(migration: any[], conf:ConfDTO) {
+    try {
+      if (typeof migration == "string") {
+
+        // Simple SQL script to pass
+        await this.exec(migration);
+
+      } else if (typeof migration == "function") {
+
+        // JS function to execute
+        await migration(conf);
+
+      }
+    } catch (e) {
+      logger.warn('An error occured during DB migration, continue.', e);
+    }
+  }
+
+  async upgradeDatabase(conf:ConfDTO) {
+    let version = await this.getVersion();
+    while(this.migrations[version]) {
+      await this.executeMigration(this.migrations[version], conf);
       // Automated increment
-      yield that.exec('UPDATE meta SET version = version + 1');
+      await this.exec('UPDATE meta SET version = version + 1');
       version++;
     }
-  });
+  }
 
-  this.upgradeDatabaseVersions = (versions) => co(function *() {
-    for (const version of versions) {
-      logger.debug("Upgrading from to v%s...", version, version + 1);
-      yield executeMigration(migrations[version]);
-    }
-  });
+  getRow() {
+    return this.sqlFindOne({ id: 1 })
+  }
 
-  this.getRow = () => that.sqlFindOne({ id: 1 });
-
-  this.getVersion = () => co(function *() {
+  async getVersion() {
     try {
-      const row = yield that.getRow();
+      const row = await this.getRow()
       return row.version;
     } catch(e) {
-      yield that.exec('INSERT INTO ' + that.table + ' VALUES (1,0);');
+      await this.exec('INSERT INTO ' + this.table + ' VALUES (1,0);')
       return 0;
     }
-  });
+  }
 
-  this.cleanData = null; // Never clean data of this table
+  cleanData() {
+    // Never clean data of this table
+    return Promise.resolve()
+  }
 }

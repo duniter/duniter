@@ -60,14 +60,13 @@ export interface IindexEntry extends IndexEntry {
   member: boolean,
   wasMember: boolean | null,
   kick: boolean | null,
-  wid: number | null,
+  wotb_id: number | null,
   age: number,
   pubUnique?: boolean,
   excludedIsMember?: boolean,
   isBeingKicked?: boolean,
   uidUnique?: boolean,
   hasToBeExcluded?: boolean,
-  wotb_id?: number,
 }
 
 export interface CindexEntry extends IndexEntry {
@@ -105,6 +104,7 @@ export interface SindexEntry extends IndexEntry {
   consumed: boolean,
   txObj: TransactionDTO,
   age: number,
+  type?: string,
   available?: boolean,
   isLocked?: boolean,
   isTimeLocked?: boolean,
@@ -168,7 +168,7 @@ export class Indexer {
         member: true,
         wasMember: true,
         kick: false,
-        wid: null // wotb id
+        wotb_id: null
       })
     }
 
@@ -233,7 +233,7 @@ export class Indexer {
           member: true,
           wasMember: null,
           kick: null,
-          wid: null
+          wotb_id: null
         })
       }
     }
@@ -320,7 +320,7 @@ export class Indexer {
         member: false,
         wasMember: null,
         kick: false,
-        wid: null
+        wotb_id: null
       });
     }
 
@@ -1830,7 +1830,7 @@ function reduce(records: any[]) {
   }, {});
 }
 
-function reduceBy(reducables: SindexEntry[], properties: string[]): any[] {
+function reduceBy(reducables: IndexEntry[], properties: string[]): any[] {
   const reduced = reducables.reduce((map: any, entry: any) => {
     const id = properties.map((prop) => entry[prop]).join('-');
     map[id] = map[id] || [];

@@ -2,10 +2,11 @@ import {BasicBlockchain} from "../../app/lib/blockchain/BasicBlockchain"
 import {ArrayBlockchain} from "./lib/ArrayBlockchain"
 import {SQLBlockchain} from "../../app/lib/blockchain/SqlBlockchain"
 import {SQLiteDriver} from "../../app/lib/dal/drivers/SQLiteDriver"
+import {BIndexDAL} from "../../app/lib/dal/sqliteDAL/index/BIndexDAL";
+import {MetaDAL} from "../../app/lib/dal/sqliteDAL/MetaDAL";
+import {ConfDTO} from "../../app/lib/dto/ConfDTO";
 
 const assert = require('assert')
-const BIndexDAL = require('../../app/lib/dal/sqliteDAL/index/BIndexDAL')
-const MetaDAL = require('../../app/lib/dal/sqliteDAL/MetaDAL')
 
 let blockchain:BasicBlockchain,
   emptyBlockchain:BasicBlockchain
@@ -83,7 +84,7 @@ describe('Basic SQL Blockchain', () => {
       await metaDAL.exec('CREATE TABLE cert (id INTEGER null);')
       await metaDAL.exec('CREATE TABLE membership (id INTEGER null);')
       await metaDAL.exec('CREATE TABLE block (fork INTEGER null);')
-      await metaDAL.upgradeDatabase({});
+      await metaDAL.upgradeDatabase(ConfDTO.mock());
 
       const dal = { bindexDAL }
 
@@ -102,7 +103,7 @@ describe('Basic SQL Blockchain', () => {
       await metaDAL.exec('CREATE TABLE cert (id INTEGER null);')
       await metaDAL.exec('CREATE TABLE membership (id INTEGER null);')
       await metaDAL.exec('CREATE TABLE block (fork INTEGER null);')
-      await metaDAL.upgradeDatabase({});
+      await metaDAL.upgradeDatabase(ConfDTO.mock());
 
       const dal = { bindexDAL }
 

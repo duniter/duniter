@@ -28,12 +28,13 @@ export class TransactionDTO {
     public locktime: number,
     public hash: string,
     public blockstamp: string,
+    public blockstampTime: number,
     public issuers: string[],
     public inputs: string[],
     public outputs: string[],
     public unlocks: string[],
     public signatures: string[],
-    public comment?: string
+    public comment: string
   ) {
     // Compute the hash if not given
     if (!hash) {
@@ -76,6 +77,13 @@ export class TransactionDTO {
     })
   }
 
+  outputsAsRecipients(): string[] {
+    return this.outputs.map((out) => {
+      const recipent = out.match('SIG\\((.*)\\)');
+      return (recipent && recipent[1]) || 'UNKNOWN';
+    })
+  }
+
   getCompactVersion() {
     let issuers = this.issuers;
     let raw = ["TX", this.version, issuers.length, this.inputs.length, this.unlocks.length, this.outputs.length, this.comment ? 1 : 0, this.locktime || 0].join(':') + '\n';
@@ -102,17 +110,18 @@ export class TransactionDTO {
 
   static fromJSONObject(obj:any) {
     return new TransactionDTO(
-      obj.version,
-      obj.currency,
-      obj.locktime,
-      obj.hash,
-      obj.blockstamp,
-      obj.issuers,
-      obj.inputs,
-      obj.outputs,
-      obj.unlocks,
-      obj.signatures,
-      obj.comment
+      obj.version || 10,
+      obj.currency || "",
+      obj.locktime || 0,
+      obj.hash || "",
+      obj.blockstamp || "",
+      obj.blockstampTime || 0,
+      obj.issuers || [],
+      obj.inputs || [],
+      obj.outputs || [],
+      obj.unlocks || [],
+      obj.signatures || [],
+      obj.comment || ""
     )
   }
 
@@ -146,5 +155,9 @@ export class TransactionDTO {
       })
     }
     return raw
+  }
+
+  static mock() {
+    return new TransactionDTO(1, "", 0, "", "", 0, [], [], [], [], [], "")
   }
 }

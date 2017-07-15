@@ -8,6 +8,7 @@ const logger = require('../logger')('filedal');
 const Configuration = require('../entity/configuration');
 const Merkle = require('../entity/merkle');
 const Transaction = require('../entity/transaction');
+const TransactionDTO = require('../dto/TransactionDTO').TransactionDTO
 const constants = require('../constants');
 const ConfDAL = require('./fileDALs/confDAL');
 const StatDAL = require('./fileDALs/statDAL');
@@ -29,20 +30,20 @@ function FileDAL(params) {
 
   // DALs
   this.confDAL = new ConfDAL(rootPath, myFS, null, that, CFSStorage);
-  this.metaDAL = new (require('./sqliteDAL/MetaDAL'))(sqliteDriver);
-  this.peerDAL = new (require('./sqliteDAL/PeerDAL'))(sqliteDriver);
-  this.blockDAL = new (require('./sqliteDAL/BlockDAL'))(sqliteDriver);
-  this.txsDAL = new (require('./sqliteDAL/TxsDAL'))(sqliteDriver);
+  this.metaDAL = new (require('./sqliteDAL/MetaDAL').MetaDAL)(sqliteDriver);
+  this.peerDAL = new (require('./sqliteDAL/PeerDAL').PeerDAL)(sqliteDriver);
+  this.blockDAL = new (require('./sqliteDAL/BlockDAL').BlockDAL)(sqliteDriver);
+  this.txsDAL = new (require('./sqliteDAL/TxsDAL').TxsDAL)(sqliteDriver);
   this.statDAL = new StatDAL(rootPath, myFS, null, that, CFSStorage);
-  this.idtyDAL = new (require('./sqliteDAL/IdentityDAL'))(sqliteDriver);
-  this.certDAL = new (require('./sqliteDAL/CertDAL'))(sqliteDriver);
-  this.msDAL = new (require('./sqliteDAL/MembershipDAL'))(sqliteDriver);
-  this.walletDAL = new (require('./sqliteDAL/WalletDAL'))(sqliteDriver);
-  this.bindexDAL = new (require('./sqliteDAL/index/BIndexDAL'))(sqliteDriver);
-  this.mindexDAL = new (require('./sqliteDAL/index/MIndexDAL'))(sqliteDriver);
-  this.iindexDAL = new (require('./sqliteDAL/index/IIndexDAL'))(sqliteDriver);
-  this.sindexDAL = new (require('./sqliteDAL/index/SIndexDAL'))(sqliteDriver);
-  this.cindexDAL = new (require('./sqliteDAL/index/CIndexDAL'))(sqliteDriver);
+  this.idtyDAL = new (require('./sqliteDAL/IdentityDAL').IdentityDAL)(sqliteDriver);
+  this.certDAL = new (require('./sqliteDAL/CertDAL').CertDAL)(sqliteDriver);
+  this.msDAL = new (require('./sqliteDAL/MembershipDAL').MembershipDAL)(sqliteDriver);
+  this.walletDAL = new (require('./sqliteDAL/WalletDAL').WalletDAL)(sqliteDriver);
+  this.bindexDAL = new (require('./sqliteDAL/index/BIndexDAL').BIndexDAL)(sqliteDriver);
+  this.mindexDAL = new (require('./sqliteDAL/index/MIndexDAL').MIndexDAL)(sqliteDriver);
+  this.iindexDAL = new (require('./sqliteDAL/index/IIndexDAL').IIndexDAL)(sqliteDriver);
+  this.sindexDAL = new (require('./sqliteDAL/index/SIndexDAL').SIndexDAL)(sqliteDriver);
+  this.cindexDAL = new (require('./sqliteDAL/index/CIndexDAL').CIndexDAL)(sqliteDriver);
 
   this.newDals = {
     'metaDAL': that.metaDAL,
@@ -527,7 +528,7 @@ function FileDAL(params) {
     block.wrong = false;
     yield [
       that.saveBlockInFile(block),
-      that.saveTxsInFiles(block.transactions, {block_number: block.number, time: block.medianTime, currency: block.currency })
+      that.saveTxsInFiles(block.transactions, block.number, block.medianTime)
     ];
   });
 
@@ -591,14 +592,13 @@ function FileDAL(params) {
 
   this.saveSideBlockInFile = (block) => that.writeSideFileOfBlock(block);
 
-  this.saveTxsInFiles = (txs, extraProps) => {
+  this.saveTxsInFiles = (txs, block_number, medianTime) => {
     return Q.all(txs.map((tx) => co(function*() {
-      _.extend(tx, extraProps);
       const sp = tx.blockstamp.split('-');
       tx.blockstampTime = (yield that.getBlockByNumberAndHash(sp[0], sp[1])).medianTime;
       const txEntity = new Transaction(tx);
       txEntity.computeAllHashes();
-      return that.txsDAL.addLinked(txEntity);
+      return that.txsDAL.addLinked(TransactionDTO.fromJSONObject(txEntity), block_number, medianTime);
     })));
   };
 
@@ -628,7 +628,7 @@ function FileDAL(params) {
 
   this.registerNewCertification = (cert) => that.certDAL.saveNewCertification(cert);
 
-  this.saveTransaction = (tx) => that.txsDAL.addPending(tx);
+  this.saveTransaction = (tx) => that.txsDAL.addPending(TransactionDTO.fromJSONObject(tx))
 
   this.getTransactionsHistory = (pubkey) => co(function*() {
     const history = {

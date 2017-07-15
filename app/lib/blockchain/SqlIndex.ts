@@ -1,7 +1,7 @@
 "use strict"
 import {IndexOperator} from "./interfaces/IndexOperator"
+import {AbstractIndex} from "../dal/sqliteDAL/AbstractIndex";
 
-const IndexDAL = require('../dal/sqliteDAL/IndexDAL')
 const _ = require('underscore')
 
 export class SQLIndex implements IndexOperator {
@@ -19,18 +19,14 @@ export class SQLIndex implements IndexOperator {
         this.indexes[k] = this.definitions[k].handler
       } else {
         // Internal table: managed here
-        const indexTable = new IndexDAL(this.db);
-        const pk = pkFields[k].pk
-        indexTable.table = k
-        indexTable.fields = this.definitions[k].fields
-        indexTable.booleans = this.definitions[k].booleans
+        const indexTable = new AbstractIndex<any>(this.db, k, [], this.definitions[k].fields, [], this.definitions[k].booleans)
         this.indexes[k] = indexTable
         indexTable.init = () => {
           return indexTable.exec('BEGIN;' +
             'CREATE TABLE IF NOT EXISTS ' + indexTable.table + ' (' +
             this.definitions[k].sqlFields.join(',') +
             ');' +
-            'COMMIT;', [])
+            'COMMIT;')
         }
         await indexTable.init()
       }

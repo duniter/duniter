@@ -31,7 +31,7 @@ const sync_memoryDAL = {
     }
   },
   sindexDAL: {
-    getAvailableForConditions: null
+    getAvailableForConditions: (conditions:string) => null
   }
 }
 
@@ -90,7 +90,7 @@ export class QuickSynchronizer {
 
   async quickApplyBlocks(blocks:BlockDTO[], to: number | null): Promise<void> {
 
-    sync_memoryDAL.sindexDAL = { getAvailableForConditions: this.dal.sindexDAL.getAvailableForConditions }
+    sync_memoryDAL.sindexDAL = { getAvailableForConditions: (conditions:string) => this.dal.sindexDAL.getAvailableForConditions(conditions) }
     let blocksToSave: BlockDTO[] = [];
 
     for (const block of blocks) {

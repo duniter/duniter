@@ -43,3 +43,5 @@ app/lib/db/*.js*
 app/lib/dto/*.js*
 app/lib/indexer.js*
 app/lib/dal/drivers/*.js*
+app/lib/dal/sqliteDAL/*.js*
+app/lib/dal/sqliteDAL/index/*.js*

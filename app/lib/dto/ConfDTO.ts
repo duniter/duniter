@@ -32,4 +32,8 @@ export class ConfDTO {
     public msWindow: number,
     public sigWindow: number,
 ) {}
+
+  static mock() {
+    return new ConfDTO("", [], [], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0)
+  }
 }

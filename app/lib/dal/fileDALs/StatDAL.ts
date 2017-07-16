@@ -4,8 +4,8 @@ const _ = require('underscore');
 
 export class StatDAL extends AbstractCFS {
 
-  constructor(rootPath:string, qioFS:any, parentDAL:CFSCore, localDAL:any) {
-    super(rootPath, qioFS, parentDAL, localDAL)
+  constructor(rootPath:string, qioFS:any) {
+    super(rootPath, qioFS)
   }
 
   init() {

@@ -3,10 +3,9 @@ import {CFSCore} from "./CFSCore";
 export class AbstractCFS {
 
   protected coreFS:CFSCore
-  dal:any
+  protected dal:any
 
-  constructor(rootPath:string, qioFS:any, parentDAL:CFSCore, localDAL:any) {
-    this.coreFS = new CFSCore(rootPath, qioFS, parentDAL)
-    this.dal = localDAL;
+  constructor(rootPath:string, qioFS:any) {
+    this.coreFS = new CFSCore(rootPath, qioFS)
   }
 }

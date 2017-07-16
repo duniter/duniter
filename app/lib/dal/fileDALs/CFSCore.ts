@@ -3,7 +3,6 @@
 const _ = require('underscore');
 const path = require('path');
 
-const LOCAL_LEVEL = true;
 const DEEP_WRITE = true;
 
 export class CFSCore {
@@ -12,7 +11,7 @@ export class CFSCore {
   private deletionFolderPromise: Promise<any> | null
   private createDeletionFolder: () => Promise<any> | null
 
-  constructor(private rootPath:string, private qfs:any, private parent:CFSCore | null) {
+  constructor(private rootPath:string, private qfs:any) {
     this.deletedFolder = path.join(rootPath, '.deleted')
     this.deletionFolderPromise = null
 
@@ -21,10 +20,6 @@ export class CFSCore {
      * @returns {*|any|Promise<void>} Promise of creation.
      */
     this.createDeletionFolder = () => this.deletionFolderPromise || (this.deletionFolderPromise = this.makeTree('.deleted'))
-  }
-
-  changeParent(newParent:CFSCore) {
-    this.parent = newParent
   }
 
   /**
@@ -41,8 +36,7 @@ export class CFSCore {
       }
       return await this.qfs.read(path.join(this.rootPath, filePath));
     } catch (e) {
-      if (!this.parent) return null;
-      return this.parent.read(filePath);
+      return null
     }
   }
 
@@ -58,14 +52,9 @@ export class CFSCore {
         // A deleted file must be considered non-existant
         return false;
       }
-      let exists = await this.qfs.exists(path.join(this.rootPath, filePath));
-      if (!exists && this.parent) {
-        exists = this.parent.exists(filePath);
-      }
-      return exists;
+      return await this.qfs.exists(path.join(this.rootPath, filePath))
     } catch (e) {
-      if (!this.parent) return null;
-      return this.parent.exists(filePath);
+      return null
     }
   }
 
@@ -75,12 +64,9 @@ export class CFSCore {
    * @param localLevel Limit listing to local level.
    * @returns {*} Promise of file names.
    */
-  async list(ofPath:string, localLevel = false): Promise<string[]> {
+  async list(ofPath:string): Promise<string[]> {
     const dirPath = path.normalize(ofPath);
     let files: string[] = [], folder = path.join(this.rootPath, dirPath);
-    if (this.parent && !localLevel) {
-      files = await this.parent.list(dirPath);
-    }
     const hasDir = await this.qfs.exists(folder);
     if (hasDir) {
       files = files.concat(await this.qfs.list(folder));
@@ -96,10 +82,6 @@ export class CFSCore {
     return _.uniq(files);
   };
 
-  listLocal(ofPath:string) {
-    return this.list(ofPath, LOCAL_LEVEL)
-  }
-
   /**
    * WRITE operation of CFS. Writes the file in local Core.
    * @param filePath Path to the file to write.
@@ -107,9 +89,6 @@ export class CFSCore {
    * @param deep Wether to make a deep write or not.
    */
   async write(filePath:string, content:string, deep:boolean): Promise<void> {
-    if (deep && this.parent) {
-      return this.parent.write(filePath, content, deep);
-    }
     return this.qfs.write(path.join(this.rootPath, filePath), content);
   };
 
@@ -121,14 +100,6 @@ export class CFSCore {
    */
   async remove(filePath:string, deep:boolean): Promise<void> {
     // Make a deep physical deletion
-    if (deep && this.parent) {
-      return this.parent.remove(filePath, deep);
-    }
-    // Not the root core, make a logical deletion instead of physical
-    if (this.parent) {
-      await this.createDeletionFolder();
-      return this.qfs.write(path.join(this.rootPath, '.deleted', this.toRemoveFileName(filePath)), '');
-    }
     // Root core: physical deletion
     return this.qfs.remove(path.join(this.rootPath, filePath));
   }
@@ -209,8 +180,8 @@ export class CFSCore {
    * @param dirPath Path to get the files' contents.
    * @param localLevel Wether to read only local level or not.
    */
-  listJSON(dirPath:string, localLevel:boolean) {
-    return this.list(dirPath, localLevel).then(async (files) => Promise.all(files.map((f:string) => this.readJSON(path.join(dirPath, f)))))
+  listJSON(dirPath:string) {
+    return this.list(dirPath).then(async (files) => Promise.all(files.map((f:string) => this.readJSON(path.join(dirPath, f)))))
   }
 
   /**
@@ -218,7 +189,7 @@ export class CFSCore {
    * @param dirPath Path to get the files' contents.
    */
   listJSONLocal(dirPath:string) {
-    return this.listJSON(dirPath, LOCAL_LEVEL)
+    return this.listJSON(dirPath)
   }
 
   /**

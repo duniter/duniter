@@ -28,12 +28,12 @@ function FileDAL(params) {
   this.wotb = params.wotb;
 
   // DALs
-  this.confDAL = new ConfDAL(rootPath, myFS, null, that)
+  this.confDAL = new ConfDAL(rootPath, myFS)
   this.metaDAL = new (require('./sqliteDAL/MetaDAL').MetaDAL)(sqliteDriver);
   this.peerDAL = new (require('./sqliteDAL/PeerDAL').PeerDAL)(sqliteDriver);
   this.blockDAL = new (require('./sqliteDAL/BlockDAL').BlockDAL)(sqliteDriver);
   this.txsDAL = new (require('./sqliteDAL/TxsDAL').TxsDAL)(sqliteDriver);
-  this.statDAL = new StatDAL(rootPath, myFS, null, that)
+  this.statDAL = new StatDAL(rootPath, myFS)
   this.idtyDAL = new (require('./sqliteDAL/IdentityDAL').IdentityDAL)(sqliteDriver);
   this.certDAL = new (require('./sqliteDAL/CertDAL').CertDAL)(sqliteDriver);
   this.msDAL = new (require('./sqliteDAL/MembershipDAL').MembershipDAL)(sqliteDriver);

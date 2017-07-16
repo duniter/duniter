@@ -9,9 +9,9 @@ export class ConfDAL extends AbstractCFS {
 
   private logger:any
 
-  constructor(rootPath:string, qioFS:any, parentCore:CFSCore|any, localDAL:any) {
-    super(rootPath, qioFS, parentCore, localDAL)
-    this.logger = require('../../logger')(this.dal.profile)
+  constructor(rootPath:string, qioFS:any) {
+    super(rootPath, qioFS)
+    this.logger = require('../../logger')()
   }
 
   init() {

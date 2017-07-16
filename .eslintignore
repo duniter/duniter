@@ -8,5 +8,6 @@ app/lib/common.js
 app/lib/dal/drivers/*.js
 app/lib/dal/sqliteDAL/*.js
 app/lib/dal/sqliteDAL/index/*.js
-test/blockchain/*.js
-test/blockchain/lib/*.js
+app/lib/dal/fileDALs/*.js
+test/*.js
+test/**/*.js

@@ -2,7 +2,7 @@
 
 var assert = require('assert');
 var co = require('co');
-var cfs = require('../../app/lib/cfs');
+var CFSCore = require('../../app/lib/dal/fileDALs/CFSCore').CFSCore;
 var mockFS = require('q-io/fs-mock')({
   'B5_a': {
     "A.json": '{ "text": "Content of A from B5_a" }'
@@ -21,11 +21,11 @@ var mockFS = require('q-io/fs-mock')({
 
 describe("CFS", () => {
 
-  var coreB3 = cfs('/B3', mockFS);
-  var coreB4 = cfs('/B4', mockFS, coreB3);
-  var coreB5 = cfs('/B5_a', mockFS, coreB4);
+  var coreB3 = new CFSCore('/B3', mockFS);
+  var coreB4 = new CFSCore('/B4', mockFS, coreB3);
+  var coreB5 = new CFSCore('/B5_a', mockFS, coreB4);
 
-  var rootCore = cfs('/OTHER', mockFS);
+  var rootCore = new CFSCore('/OTHER', mockFS);
 
   // ------------ Direct READ ------------
 

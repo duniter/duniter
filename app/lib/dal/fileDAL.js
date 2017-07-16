@@ -10,9 +10,8 @@ const Merkle = require('../entity/merkle');
 const Transaction = require('../entity/transaction');
 const TransactionDTO = require('../dto/TransactionDTO').TransactionDTO
 const constants = require('../constants');
-const ConfDAL = require('./fileDALs/confDAL');
-const StatDAL = require('./fileDALs/statDAL');
-const CFSStorage = require('./fileDALs/AbstractCFS');
+const ConfDAL = require('./fileDALs/ConfDAL').ConfDAL
+const StatDAL = require('./fileDALs/StatDAL').StatDAL
 
 module.exports = (params) => {
   return new FileDAL(params);
@@ -29,12 +28,12 @@ function FileDAL(params) {
   this.wotb = params.wotb;
 
   // DALs
-  this.confDAL = new ConfDAL(rootPath, myFS, null, that, CFSStorage);
+  this.confDAL = new ConfDAL(rootPath, myFS, null, that)
   this.metaDAL = new (require('./sqliteDAL/MetaDAL').MetaDAL)(sqliteDriver);
   this.peerDAL = new (require('./sqliteDAL/PeerDAL').PeerDAL)(sqliteDriver);
   this.blockDAL = new (require('./sqliteDAL/BlockDAL').BlockDAL)(sqliteDriver);
   this.txsDAL = new (require('./sqliteDAL/TxsDAL').TxsDAL)(sqliteDriver);
-  this.statDAL = new StatDAL(rootPath, myFS, null, that, CFSStorage);
+  this.statDAL = new StatDAL(rootPath, myFS, null, that)
   this.idtyDAL = new (require('./sqliteDAL/IdentityDAL').IdentityDAL)(sqliteDriver);
   this.certDAL = new (require('./sqliteDAL/CertDAL').CertDAL)(sqliteDriver);
   this.msDAL = new (require('./sqliteDAL/MembershipDAL').MembershipDAL)(sqliteDriver);
@@ -739,9 +738,9 @@ function FileDAL(params) {
    *     STATISTICS
    **********************/
 
-  this.loadStats = that.statDAL.loadStats;
-  this.getStat = that.statDAL.getStat;
-  this.pushStats = that.statDAL.pushStats;
+  this.loadStats = () => that.statDAL.loadStats();
+  this.getStat = (name) => that.statDAL.getStat(name);
+  this.pushStats = (stats) => that.statDAL.pushStats(stats);
 
   this.cleanCaches = () => co(function *() {
     yield _.values(that.newDals).map((dal) => dal.cleanCache && dal.cleanCache());

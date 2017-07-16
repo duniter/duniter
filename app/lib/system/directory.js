@@ -3,7 +3,7 @@
 const co   = require('co');
 const opts = require('optimist').argv;
 const path = require('path');
-const cfs  = require('../cfs');
+const CFSCore  = require('../dal/fileDALs/CFSCore').CFSCore
 const Q    = require('q');
 const qfs  = require('q-io/fs');
 const fs   = require('fs');
@@ -66,7 +66,7 @@ const dir = module.exports = {
   }),
 
   createHomeIfNotExists: (fileSystem, theHome) => co(function *() {
-    const fsHandler = cfs(theHome, fileSystem);
+    const fsHandler = new CFSCore(theHome, fileSystem);
     return fsHandler.makeTree('');
   })
 };

@@ -1,27 +1,25 @@
-/**
- * Created by cgeek on 22/08/15.
- */
+import {CFSCore} from "./CFSCore";
+import {AbstractCFS} from "./AbstractCFS";
+import {ConfDTO} from "../../dto/ConfDTO";
 
 const Configuration = require('../../entity/configuration');
-const co = require('co');
 const _ = require('underscore');
 
-module.exports = ConfDAL;
+export class ConfDAL extends AbstractCFS {
 
-function ConfDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
+  private logger:any
 
-  "use strict";
+  constructor(rootPath:string, qioFS:any, parentCore:CFSCore|any, localDAL:any) {
+    super(rootPath, qioFS, parentCore, localDAL)
+    this.logger = require('../../logger')(this.dal.profile)
+  }
 
-  const that = this;
+  init() {
+    return Promise.resolve()
+  }
 
-  AbstractStorage.call(this, rootPath, qioFS, parentCore, localDAL);
-
-  const logger = require('../../logger')(this.dal.profile);
-
-  this.init = () => Promise.resolve();
-
-  this.getParameters = () => co(function *() {
-    const conf = yield that.loadConf();
+  async getParameters() {
+    const conf = await this.loadConf()
     return {
       "currency": conf.currency,
       "c": parseFloat(conf.c),
@@ -34,7 +32,7 @@ function ConfDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
       "sigQty": parseInt(conf.sigQty,10),
       "idtyWindow": parseInt(conf.idtyWindow,10),
       "msWindow": parseInt(conf.msWindow,10),
-      "xpercent": parseFloat(conf.xpercent,10),
+      "xpercent": parseFloat(conf.xpercent),
       "msValidity": parseInt(conf.msValidity,10),
       "stepMax": parseInt(conf.stepMax,10),
       "medianTimeBlocks": parseInt(conf.medianTimeBlocks,10),
@@ -44,19 +42,21 @@ function ConfDAL(rootPath, qioFS, parentCore, localDAL, AbstractStorage) {
       "udTime0": parseInt(conf.udTime0),
       "udReevalTime0": parseInt(conf.udReevalTime0),
       "dtReeval": parseInt(conf.dtReeval)
-    };
-  });
+    }
+  }
 
-  this.loadConf = () => co(function *() {
-    const data = yield that.coreFS.readJSON('conf.json');
+  async loadConf() {
+    const data = await this.coreFS.readJSON('conf.json');
     if (data) {
       return _(Configuration.statics.defaultConf()).extend(data);
     } else {
       // Silent error
-      logger.warn('No configuration loaded');
+      this.logger.warn('No configuration loaded');
       return {};
     }
-  });
+  }
 
-  this.saveConf = (confToSave) => that.coreFS.writeJSONDeep('conf.json', confToSave);
+  async saveConf(confToSave:ConfDTO) {
+    await this.coreFS.writeJSONDeep('conf.json', confToSave)
+  }
 }

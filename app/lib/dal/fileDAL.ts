@@ -361,7 +361,11 @@ export class FileDAL {
     const nonPendings = _.filter(writtens, (w:IindexEntry) => {
       return _.where(pendings, { pubkey: w.pub }).length == 0;
     });
-    const found = pendings.concat(nonPendings);
+    const found = pendings.concat(nonPendings.map((i:any) => {
+      // Use the correct field
+      i.pubkey = i.pub
+      return i
+    }));
     return await Promise.all(found.map(async (f:any) => {
       const ms = await this.mindexDAL.getReducedMS(f.pub);
       if (ms) {

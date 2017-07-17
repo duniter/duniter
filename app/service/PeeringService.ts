@@ -1,5 +1,9 @@
-"use strict";
-const co             = require('co');
+import {GlobalFifoPromise} from "./GlobalFifoPromise"
+import {ConfDTO, Keypair} from "../lib/dto/ConfDTO"
+import {FileDAL} from "../lib/dal/fileDAL"
+import {DBPeer} from "../lib/dal/sqliteDAL/PeerDAL"
+import {DBBlock} from "../lib/db/DBBlock"
+
 const util           = require('util');
 const _              = require('underscore');
 const Q              = require('q');
@@ -13,41 +17,49 @@ const hashf          = require('duniter-common').hashf;
 const rawer          = require('duniter-common').rawer;
 const constants      = require('../lib/constants');
 const Peer           = require('../lib/entity/peer');
-const AbstractService = require('./AbstractService');
 
-function PeeringService(server) {
+export interface Keyring {
+  publicKey:string
+  secretKey:string
+}
 
-  AbstractService.call(this);
-  let conf, dal, pair, selfPubkey;
+export class PeeringService {
 
-  this.setConfDAL = (newConf, newDAL, newPair) => {
-    dal = newDAL;
-    conf = newConf;
-    pair = newPair;
-    this.pubkey = pair.publicKey;
-    selfPubkey = this.pubkey;
-  };
+  conf:ConfDTO
+  dal:FileDAL
+  selfPubkey:string
+  pair:Keyring
+  pubkey:string
+  peerInstance:DBPeer | null
 
-  let peer = null;
-  const that = this;
+  constructor(private server:any) {
+  }
 
-  this.peer = (newPeer) => co(function *() {
+  setConfDAL(newConf:ConfDTO, newDAL:FileDAL, newPair:Keyring) {
+    this.dal = newDAL;
+    this.conf = newConf;
+    this.pair = newPair;
+    this.pubkey = this.pair.publicKey;
+    this.selfPubkey = this.pubkey;
+  }
+
+  async peer(newPeer:DBPeer | null = null) {
     if (newPeer) {
-      peer = newPeer;
+      this.peerInstance = newPeer;
     }
-    let thePeer = peer;
+    let thePeer = this.peerInstance;
     if (!thePeer) {
-      thePeer = yield that.generateSelfPeer(conf, 0);
+      thePeer = await this.generateSelfPeer(this.conf, 0)
     }
     return Peer.statics.peerize(thePeer);
-  });
+  }
 
-  this.mirrorEndpoints = () => co(function *() {
-    let localPeer = yield that.peer();
-    return getOtherEndpoints(localPeer.endpoints, conf);
-  });
+  async mirrorEndpoints() {
+    let localPeer = await this.peer();
+    return this.getOtherEndpoints(localPeer.endpoints, this.conf);
+  }
 
-  this.checkPeerSignature = function (p) {
+  checkPeerSignature(p:DBPeer) {
     const raw = rawer.getPeerWithoutSignature(p);
     const sig = p.signature;
     const pub = p.pubkey;
@@ -55,19 +67,19 @@ function PeeringService(server) {
     return !!signaturesMatching;
   };
 
-  this.submitP = function(peering, eraseIfAlreadyRecorded, cautious){
+  submitP(peering:DBPeer, eraseIfAlreadyRecorded = false, cautious = true) {
     // Force usage of local currency name, do not accept other currencies documents
-    peering.currency = conf.currency || peering.currency;
+    peering.currency = this.conf.currency || peering.currency;
     let thePeer = new Peer(peering);
     let sp = thePeer.block.split('-');
     const blockNumber = parseInt(sp[0]);
     let blockHash = sp[1];
     let sigTime = 0;
-    let block;
+    let block:DBBlock | null;
     let makeCheckings = cautious || cautious === undefined;
-    return that.pushFIFO(() => co(function *() {
+    return GlobalFifoPromise.pushFIFO(async () => {
       if (makeCheckings) {
-        let goodSignature = that.checkPeerSignature(thePeer);
+        let goodSignature = this.checkPeerSignature(thePeer);
         if (!goodSignature) {
           throw 'Signature from a peer must match';
         }
@@ -76,7 +88,7 @@ function PeeringService(server) {
         thePeer.statusTS = 0;
         thePeer.status = 'UP';
       } else {
-        block = yield dal.getBlockByNumberAndHashOrNull(blockNumber, blockHash);
+        block = await this.dal.getBlockByNumberAndHashOrNull(blockNumber, blockHash);
         if (!block && makeCheckings) {
           throw constants.ERROR.PEER.UNKNOWN_REFERENCE_BLOCK;
         } else if (!block) {
@@ -87,7 +99,7 @@ function PeeringService(server) {
       }
       sigTime = block ? block.medianTime : 0;
       thePeer.statusTS = sigTime;
-      let found = yield dal.getPeerOrNull(thePeer.pubkey);
+      let found = await this.dal.getPeerOrNull(thePeer.pubkey);
       let peerEntity = Peer.statics.peerize(found || thePeer);
       if(found){
         // Already existing peer
@@ -118,16 +130,16 @@ function PeeringService(server) {
       peerEntity.last_try = null;
       peerEntity.hash = String(hashf(peerEntity.getRawSigned())).toUpperCase();
       peerEntity.raw = peerEntity.getRaw();
-      yield dal.savePeer(peerEntity);
+      await this.dal.savePeer(peerEntity);
       let savedPeer = Peer.statics.peerize(peerEntity);
-      if (peerEntity.pubkey == selfPubkey) {
-        const localEndpoint = yield server.getMainEndpoint(conf);
+      if (peerEntity.pubkey == this.selfPubkey) {
+        const localEndpoint = await this.server.getMainEndpoint(this.conf);
         const localNodeNotListed = !peerEntity.containsEndpoint(localEndpoint);
-        const current = localNodeNotListed && (yield dal.getCurrentBlockOrNull());
+        const current = localNodeNotListed && (await this.dal.getCurrentBlockOrNull());
         if (!localNodeNotListed) {
           const indexOfThisNode = peerEntity.endpoints.indexOf(localEndpoint);
           if (indexOfThisNode !== -1) {
-            server.push({
+            this.server.push({
               nodeIndexInPeers: indexOfThisNode
             });
           } else {
@@ -136,24 +148,24 @@ function PeeringService(server) {
         }
         if (localNodeNotListed && (!current || current.number > blockNumber)) {
           // Document with pubkey of local peer, but doesn't contain local interface: we must add it
-          that.generateSelfPeer(conf, 0);
+          this.generateSelfPeer(this.conf, 0);
         } else {
-          peer = peerEntity;
+          this.peerInstance = peerEntity;
         }
       }
       return savedPeer;
-    }));
-  };
+    })
+  }
 
-  this.handleNewerPeer = (pretendedNewer) => {
+  handleNewerPeer(pretendedNewer:DBPeer) {
     logger.debug('Applying pretended newer peer document %s/%s', pretendedNewer.block);
-    return server.singleWritePromise(_.extend({ documentType: 'peer' }, pretendedNewer));
-  };
+    return this.server.singleWritePromise(_.extend({ documentType: 'peer' }, pretendedNewer));
+  }
 
-  this.generateSelfPeer = (theConf, signalTimeInterval) => co(function*() {
-    const current = yield server.dal.getCurrentBlockOrNull();
+  async generateSelfPeer(theConf:ConfDTO, signalTimeInterval:number) {
+    const current = await this.server.dal.getCurrentBlockOrNull();
     const currency = theConf.currency || constants.DEFAULT_CURRENCY_NAME;
-    const peers = yield dal.findPeers(selfPubkey);
+    const peers = await this.dal.findPeers(this.selfPubkey);
     let p1 = {
       version: constants.DOCUMENTS_VERSION,
       currency: currency,
@@ -163,22 +175,22 @@ function PeeringService(server) {
     if (peers.length != 0 && peers[0]) {
       p1 = _(peers[0]).extend({version: constants.DOCUMENTS_VERSION, currency: currency});
     }
-    let endpoint = yield server.getMainEndpoint(theConf);
-    let otherPotentialEndpoints = getOtherEndpoints(p1.endpoints, theConf);
+    let endpoint = await this.server.getMainEndpoint(theConf);
+    let otherPotentialEndpoints = this.getOtherEndpoints(p1.endpoints, theConf);
     logger.info('Sibling endpoints:', otherPotentialEndpoints);
-    let reals = yield otherPotentialEndpoints.map((theEndpoint) => co(function*() {
+    let reals = await otherPotentialEndpoints.map(async (theEndpoint:string) => {
       let real = true;
       let remote = Peer.statics.endpoint2host(theEndpoint);
       try {
         // We test only BMA APIs, because other may exist and we cannot judge against them yet
         if (theEndpoint.startsWith('BASIC_MERKLED_API')) {
-          let answer = yield rp('http://' + remote + '/network/peering', { json: true });
-          if (!answer || answer.pubkey != selfPubkey) {
+          let answer = await rp('http://' + remote + '/network/peering', { json: true });
+          if (!answer || answer.pubkey != this.selfPubkey) {
             throw Error("Not same pubkey as local instance");
           }
         }
-        // We also remove endpoints that are *asked* to be removed in the conf file
-        if ((conf.rmEndpoints || []).indexOf(theEndpoint) !== -1) {
+        // We also remove endpoints this are *asked* to be removed in the conf file
+        if ((this.conf.rmEndpoints || []).indexOf(theEndpoint) !== -1) {
           real = false;
         }
       } catch (e) {
@@ -186,7 +198,7 @@ function PeeringService(server) {
         real = false;
       }
       return real;
-    }));
+    })
     let toConserve = otherPotentialEndpoints.filter((ep, i) => reals[i]);
     if (!currency || endpoint == 'BASIC_MERKLED_API') {
       logger.error('It seems there is an issue with your configuration.');
@@ -202,34 +214,34 @@ function PeeringService(server) {
     }
     // The number cannot be superior to current block
     minBlock = Math.min(minBlock, current ? current.number : minBlock);
-    let targetBlock = yield server.dal.getBlock(minBlock);
-    const p2 = {
+    let targetBlock = await this.server.dal.getBlock(minBlock);
+    const p2:any = {
       version: constants.DOCUMENTS_VERSION,
       currency: currency,
-      pubkey: selfPubkey,
+      pubkey: this.selfPubkey,
       block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
-      endpoints: _.uniq([endpoint].concat(toConserve).concat(conf.endpoints || []))
+      endpoints: _.uniq([endpoint].concat(toConserve).concat(this.conf.endpoints || []))
     };
     const raw2 = dos2unix(new Peer(p2).getRaw());
     logger.info('External access:', new Peer(p2).getURL());
     logger.debug('Generating server\'s peering entry based on block#%s...', p2.block.split('-')[0]);
-    p2.signature = yield server.sign(raw2);
-    p2.pubkey = selfPubkey;
+    p2.signature = await this.server.sign(raw2);
+    p2.pubkey = this.selfPubkey;
     p2.documentType = 'peer';
     // Remember this is now local peer value
-    peer = p2;
+    this.peerInstance = p2;
     // Submit & share with the network
-    yield server.submitP(p2, false);
-    const selfPeer = yield dal.getPeer(selfPubkey);
+    await this.server.submitP(p2, false);
+    const selfPeer = await this.dal.getPeer(this.selfPubkey);
     // Set peer's statut to UP
     selfPeer.documentType = 'selfPeer';
-    yield that.peer(selfPeer);
-    server.streamPush(selfPeer);
+    await this.peer(selfPeer);
+    this.server.streamPush(selfPeer);
     logger.info("Next peering signal in %s min", signalTimeInterval / 1000 / 60);
     return selfPeer;
-  });
+  }
 
-  function getOtherEndpoints(endpoints, theConf) {
+  private getOtherEndpoints(endpoints:string[], theConf:ConfDTO) {
     return endpoints.filter((ep) => {
       return !ep.match(constants.BMA_REGEXP) || (
           !(ep.includes(' ' + theConf.remoteport) && (
@@ -239,7 +251,3 @@ function PeeringService(server) {
 }
 
 util.inherits(PeeringService, events.EventEmitter);
-
-module.exports = function (server, pair, dal) {
-  return new PeeringService(server, pair, dal);
-};

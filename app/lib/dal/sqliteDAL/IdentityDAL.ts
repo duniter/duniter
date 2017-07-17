@@ -19,8 +19,12 @@ export interface DBIdentity {
   hash: string
   written: boolean
   wotb_id: number | null
-  expires_on: number,
-  certsCount: number,
+  revoked_on: number | null
+  expires_on: number
+}
+
+export interface DBSandboxIdentity extends DBIdentity {
+  certsCount: number
   ref_block: number
 }
 
@@ -164,7 +168,7 @@ export class IdentityDAL extends AbstractSQLite<DBIdentity> {
     return this.query('SELECT * FROM sandbox_idty LIMIT ' + (this.sandbox.maxSize), [])
   }
 
-  sandbox = new SandBox(constants.SANDBOX_SIZE_IDENTITIES, this.getSandboxIdentities.bind(this), (compared:DBIdentity, reference:DBIdentity) => {
+  sandbox = new SandBox(constants.SANDBOX_SIZE_IDENTITIES, this.getSandboxIdentities.bind(this), (compared:DBSandboxIdentity, reference:DBSandboxIdentity) => {
     if (compared.certsCount < reference.certsCount) {
       return -1;
     }

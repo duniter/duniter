@@ -1,3 +1,8 @@
+export interface Keypair {
+  pub: string
+  sec: string
+}
+
 export class ConfDTO {
 
   constructor(
@@ -31,9 +36,15 @@ export class ConfDTO {
     public idtyWindow: number,
     public msWindow: number,
     public sigWindow: number,
+    public swichOnTimeAheadBy: number,
+    public pair: Keypair | null,
+    public remoteport: number,
+    public remotehost: string,
+    public remoteipv4: string,
+    public remoteipv6: string,
 ) {}
 
   static mock() {
-    return new ConfDTO("", [], [], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0)
+    return new ConfDTO("", [], [], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, null, 0, "", "", "")
   }
 }

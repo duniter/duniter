@@ -33,21 +33,21 @@ function Server (home, memoryOnly, overrideConf) {
   that.logger = logger;
 
   that.MerkleService       = require("./app/lib/helpers/merkle");
-  that.IdentityService     = require('./app/service/IdentityService')();
-  that.MembershipService   = require('./app/service/MembershipService')();
-  that.PeeringService      = require('./app/service/PeeringService')(that);
-  that.BlockchainService   = require('./app/service/BlockchainService')(that);
-  that.TransactionsService = require('./app/service/TransactionsService')();
+  that.IdentityService     = new (require('./app/service/IdentityService').IdentityService)()
+  that.MembershipService   = new (require('./app/service/MembershipService').MembershipService)()
+  that.PeeringService      = new (require('./app/service/PeeringService').PeeringService)(that)
+  that.BlockchainService   = new (require('./app/service/BlockchainService').BlockchainService)(that)
+  that.TransactionsService = new (require('./app/service/TransactionsService').TransactionService)()
 
   // Create document mapping
   const documentsMapping = {
-    'identity':      { action: that.IdentityService.submitIdentity,                                               parser: parsers.parseIdentity },
-    'certification': { action: that.IdentityService.submitCertification,                                          parser: parsers.parseCertification},
-    'revocation':    { action: that.IdentityService.submitRevocation,                                             parser: parsers.parseRevocation },
-    'membership':    { action: that.MembershipService.submitMembership,                                           parser: parsers.parseMembership },
-    'peer':          { action: that.PeeringService.submitP,                                                       parser: parsers.parsePeer },
-    'transaction':   { action: that.TransactionsService.processTx,                                                parser: parsers.parseTransaction },
-    'block':         { action: _.partial(that.BlockchainService.submitBlock, _, true, constants.NO_FORK_ALLOWED), parser: parsers.parseBlock }
+    'identity':      { action: (obj) => that.IdentityService.submitIdentity(obj),                                 parser: parsers.parseIdentity },
+    'certification': { action: (obj) => that.IdentityService.submitCertification(obj),                            parser: parsers.parseCertification},
+    'revocation':    { action: (obj) => that.IdentityService.submitRevocation(obj),                               parser: parsers.parseRevocation },
+    'membership':    { action: (obj) => that.MembershipService.submitMembership(obj),                             parser: parsers.parseMembership },
+    'peer':          { action: (obj) => that.PeeringService.submitP(obj),                                         parser: parsers.parsePeer },
+    'transaction':   { action: (obj) => that.TransactionsService.processTx(obj),                                  parser: parsers.parseTransaction },
+    'block':         { action: (obj) => that.BlockchainService.submitBlock(obj, true, constants.NO_FORK_ALLOWED), parser: parsers.parseBlock }
   };
 
   // Unused, but made mandatory by Duplex interface

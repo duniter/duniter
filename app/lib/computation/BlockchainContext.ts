@@ -105,7 +105,7 @@ export class BlockchainContext {
     return this.blockchain.checkBlock(block, withPoWAndSignature, this.conf, this.dal)
   }
 
-  async addBlock(obj: BlockDTO, index: any, HEAD: DBHead): Promise<any> {
+  async addBlock(obj: BlockDTO, index: any = null, HEAD: DBHead | null = null): Promise<any> {
     const block = await this.blockchain.pushTheBlock(obj, index, HEAD, this.conf, this.dal, this.logger)
     this.vHEAD_1 = this.vHEAD = this.HEADrefreshed = null
     return block

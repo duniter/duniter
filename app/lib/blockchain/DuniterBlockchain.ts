@@ -161,7 +161,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     return { index, HEAD }
   }
 
-  async pushTheBlock(obj:BlockDTO, index:IndexEntry[], HEAD:DBHead, conf:ConfDTO, dal:any, logger:any) {
+  async pushTheBlock(obj:BlockDTO, index:IndexEntry[], HEAD:DBHead | null, conf:ConfDTO, dal:any, logger:any) {
     const start = Date.now();
     const block = new Block(obj);
     try {
@@ -188,7 +188,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     // await supra.recordIndex(index)
   }
 
-  async saveBlockData(current:DBBlock, block:BlockDTO, conf:ConfDTO, dal:any, logger:any, index:IndexEntry[], HEAD:DBHead) {
+  async saveBlockData(current:DBBlock, block:BlockDTO, conf:ConfDTO, dal:any, logger:any, index:IndexEntry[], HEAD:DBHead | null) {
     if (block.number == 0) {
       await this.saveParametersForRoot(block, conf, dal);
     }

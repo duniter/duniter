@@ -1,4 +1,9 @@
+import {GlobalFifoPromise} from "./GlobalFifoPromise";
+
 "use strict";
+import {FileDAL} from "../lib/dal/fileDAL"
+import {ConfDTO} from "../lib/dto/ConfDTO"
+import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
 const Q               = require('q');
 const rules           = require('../lib/rules')
 const keyring          = require('duniter-common').keyring;
@@ -7,152 +12,164 @@ const Block           = require('../../app/lib/entity/block');
 const Identity        = require('../../app/lib/entity/identity');
 const Certification   = require('../../app/lib/entity/certification');
 const Revocation      = require('../../app/lib/entity/revocation');
-const AbstractService = require('./AbstractService');
-const co              = require('co');
 
 const BY_ABSORPTION = true;
 
-module.exports = () => {
-  return new IdentityService();
-};
+export class IdentityService {
 
-function IdentityService () {
+  dal:FileDAL
+  conf:ConfDTO
+  logger:any
 
-  AbstractService.call(this);
+  constructor() {}
 
-  const that = this;
-  let dal, conf, logger;
+  setConfDAL(newConf:ConfDTO, newDAL:FileDAL) {
+    this.dal = newDAL;
+    this.conf = newConf;
+    this.logger = require('../lib/logger')(this.dal.profile);
+  }
 
-  this.setConfDAL = (newConf, newDAL) => {
-    dal = newDAL;
-    conf = newConf;
-    logger = require('../lib/logger')(dal.profile);
-  };
+  searchIdentities(search:string) {
+    return this.dal.searchJustIdentities(search)
+  }
 
-  this.searchIdentities = (search) => dal.searchJustIdentities(search);
-
-  this.findMember = (search) => co(function *() {
+  async findMember(search:string) {
     let idty = null;
     if (search.match(constants.PUBLIC_KEY)) {
-      idty = yield dal.getWrittenIdtyByPubkey(search);
+      idty = await this.dal.getWrittenIdtyByPubkey(search);
     }
     else {
-      idty = yield dal.getWrittenIdtyByUID(search);
+      idty = await this.dal.getWrittenIdtyByUID(search);
     }
     if (!idty) {
       throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
     }
-    yield dal.fillInMembershipsOfIdentity(Q(idty));
+    await this.dal.fillInMembershipsOfIdentity(Q(idty));
     return new Identity(idty);
-  });
+  }
 
-  this.findMemberWithoutMemberships = (search) => co(function *() {
+  async findMemberWithoutMemberships(search:string) {
     let idty = null;
     if (search.match(constants.PUBLIC_KEY)) {
-      idty = yield dal.getWrittenIdtyByPubkey(search);
+      idty = await this.dal.getWrittenIdtyByPubkey(search)
     }
     else {
-      idty = yield dal.getWrittenIdtyByUID(search);
+      idty = await this.dal.getWrittenIdtyByUID(search)
     }
     if (!idty) {
       throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
     }
     return new Identity(idty);
-  });
+  }
 
-  this.getWrittenByPubkey = (pubkey) => dal.getWrittenIdtyByPubkey(pubkey);
+  getWrittenByPubkey(pubkey:string) {
+    return this.dal.getWrittenIdtyByPubkey(pubkey)
+  }
 
-  this.getPendingFromPubkey = (pubkey) => dal.getNonWritten(pubkey);
+  getPendingFromPubkey(pubkey:string) {
+    return this.dal.getNonWritten(pubkey)
+  }
 
-  this.submitIdentity = (obj, byAbsorption) => {
+  submitIdentity(obj:DBIdentity, byAbsorption = false) {
     let idty = new Identity(obj);
     // Force usage of local currency name, do not accept other currencies documents
-    idty.currency = conf.currency || idty.currency;
+    idty.currency = this.conf.currency;
     const createIdentity = idty.rawWithoutSig();
-    return that.pushFIFO(() => co(function *() {
-      logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
+    return GlobalFifoPromise.pushFIFO(async () => {
+      this.logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
       // Check signature's validity
       let verified = keyring.verify(createIdentity, idty.sig, idty.pubkey);
       if (!verified) {
         throw constants.ERRORS.SIGNATURE_DOES_NOT_MATCH;
       }
-      let existing = yield dal.getIdentityByHashOrNull(idty.hash);
+      let existing = await this.dal.getIdentityByHashOrNull(idty.hash);
       if (existing) {
         throw constants.ERRORS.ALREADY_UP_TO_DATE;
       }
       else if (!existing) {
         // Create if not already written uid/pubkey
-        let used = yield dal.getWrittenIdtyByPubkey(idty.pubkey);
+        let used = await this.dal.getWrittenIdtyByPubkey(idty.pubkey);
         if (used) {
           throw constants.ERRORS.PUBKEY_ALREADY_USED;
         }
-        used = yield dal.getWrittenIdtyByUID(idty.uid);
+        used = await this.dal.getWrittenIdtyByUID(idty.uid);
         if (used) {
           throw constants.ERRORS.UID_ALREADY_USED;
         }
-        const current = yield dal.getCurrentBlockOrNull();
+        const current = await this.dal.getCurrentBlockOrNull();
         if (idty.buid == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855' && current) {
           throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
         } else if (current) {
-          let basedBlock = yield dal.getBlockByBlockstamp(idty.buid);
+          let basedBlock = await this.dal.getBlockByBlockstamp(idty.buid);
           if (!basedBlock) {
             throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
           }
-          idty.expires_on = basedBlock.medianTime + conf.idtyWindow;
+          idty.expires_on = basedBlock.medianTime + this.conf.idtyWindow;
         }
-        yield rules.GLOBAL.checkIdentitiesAreWritable({ identities: [idty.inline()], version: (current && current.version) || constants.BLOCK_GENERATED_VERSION }, conf, dal);
+        await rules.GLOBAL.checkIdentitiesAreWritable({ identities: [idty.inline()], version: (current && current.version) || constants.BLOCK_GENERATED_VERSION }, this.conf, this.dal);
         idty = new Identity(idty);
         if (byAbsorption !== BY_ABSORPTION) {
           idty.ref_block = parseInt(idty.buid.split('-')[0]);
-          if (!(yield dal.idtyDAL.sandbox.acceptNewSandBoxEntry(idty, conf.pair && conf.pair.pub))) {
+          if (!(await this.dal.idtyDAL.sandbox.acceptNewSandBoxEntry(idty, this.conf.pair && this.conf.pair.pub))) {
             throw constants.ERRORS.SANDBOX_FOR_IDENTITY_IS_FULL;
           }
         }
-        yield dal.savePendingIdentity(idty);
-        logger.info('✔ IDTY %s %s', idty.pubkey, idty.uid);
+        await this.dal.savePendingIdentity(idty);
+        this.logger.info('✔ IDTY %s %s', idty.pubkey, idty.uid);
         return idty;
       }
-    }));
-  };
+    })
+  }
 
-  this.submitCertification = (obj) => co(function *() {
-    const current = yield dal.getCurrentBlockOrNull();
+  async submitCertification(obj:any) {
+    const current = await this.dal.getCurrentBlockOrNull();
     // Prepare validator for certifications
-    const potentialNext = new Block({ currency: conf.currency, identities: [], number: current ? current.number + 1 : 0 });
+    const potentialNext = new Block({ currency: this.conf.currency, identities: [], number: current ? current.number + 1 : 0 });
     // Force usage of local currency name, do not accept other currencies documents
-    obj.currency = conf.currency || obj.currency;
+    obj.currency = this.conf.currency || obj.currency;
     const cert = Certification.statics.fromJSON(obj);
     const targetHash = cert.getTargetHash();
-    let idty = yield dal.getIdentityByHashOrNull(targetHash);
+    let idty = await this.dal.getIdentityByHashOrNull(targetHash);
     let idtyAbsorbed = false
     if (!idty) {
       idtyAbsorbed = true
-      idty = yield that.submitIdentity({
-        currency: cert.currency,
-        issuer: cert.idty_issuer,
+      idty = await this.submitIdentity({
         pubkey: cert.idty_issuer,
         uid: cert.idty_uid,
         buid: cert.idty_buid,
-        sig: cert.idty_sig
+        sig: cert.idty_sig,
+        written: false,
+        revoked: false,
+        member: false,
+        wasMember: false,
+        kick: false,
+        leaving: false,
+        hash: '',
+        wotb_id: null,
+        expires_on: 0,
+        revoked_on: null,
+        revocation_sig: null,
+        currentMSN: null,
+        currentINN: null
       }, BY_ABSORPTION);
     }
-    return that.pushFIFO(() => co(function *() {
-      logger.info('⬇ CERT %s block#%s -> %s', cert.from, cert.block_number, idty.uid);
+    return GlobalFifoPromise.pushFIFO(async () => {
+      this.logger.info('⬇ CERT %s block#%s -> %s', cert.from, cert.block_number, idty.uid);
       try {
-        yield rules.HELPERS.checkCertificationIsValid(cert, potentialNext, () => Q(idty), conf, dal);
+        await rules.HELPERS.checkCertificationIsValid(cert, potentialNext, () => Q(idty), this.conf, this.dal);
       } catch (e) {
         cert.err = e;
       }
       if (!cert.err) {
         try {
-          let basedBlock = yield dal.getBlock(cert.block_number);
+          let basedBlock = await this.dal.getBlock(cert.block_number);
           if (cert.block_number == 0 && !basedBlock) {
             basedBlock = {
               number: 0,
               hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
             };
           } else {
-            cert.expires_on = basedBlock.medianTime + conf.sigWindow;
+            cert.expires_on = basedBlock.medianTime + this.conf.sigWindow;
           }
           cert.block_hash = basedBlock.hash;
           const mCert = new Certification({
@@ -164,13 +181,13 @@ function IdentityService () {
             to: idty.pubkey,
             expires_on: cert.expires_on
           });
-          let existingCert = yield dal.existsCert(mCert);
+          let existingCert = await this.dal.existsCert(mCert);
           if (!existingCert) {
-            if (!(yield dal.certDAL.getSandboxForKey(cert.from).acceptNewSandBoxEntry(mCert, conf.pair && conf.pair.pub))) {
+            if (!(await this.dal.certDAL.getSandboxForKey(cert.from).acceptNewSandBoxEntry(mCert, this.conf.pair && this.conf.pair.pub))) {
               throw constants.ERRORS.SANDBOX_FOR_CERT_IS_FULL;
             }
-            yield dal.registerNewCertification(new Certification(mCert));
-            logger.info('✔ CERT %s', mCert.from);
+            await this.dal.registerNewCertification(new Certification(mCert));
+            this.logger.info('✔ CERT %s', mCert.from);
           } else {
             throw constants.ERRORS.ALREADY_UP_TO_DATE;
           }
@@ -180,30 +197,30 @@ function IdentityService () {
       }
       if (cert.err) {
         if (idtyAbsorbed) {
-          yield dal.idtyDAL.deleteByHash(targetHash)
+          await this.dal.idtyDAL.deleteByHash(targetHash)
         }
         const err = cert.err
         const errMessage = (err.uerr && err.uerr.message) || err.message || err
-        logger.info('✘ CERT %s %s', cert.from, errMessage);
+        this.logger.info('✘ CERT %s %s', cert.from, errMessage);
         throw cert.err;
       }
       return cert;
-    }));
-  });
+    })
+  }
 
-  this.submitRevocation = (obj) => {
+  submitRevocation(obj:any) {
     // Force usage of local currency name, do not accept other currencies documents
-    obj.currency = conf.currency || obj.currency;
+    obj.currency = this.conf.currency || obj.currency;
     const revoc = new Revocation(obj);
     const raw = revoc.rawWithoutSig();
-    return that.pushFIFO(() => co(function *() {
+    return GlobalFifoPromise.pushFIFO(async () => {
       try {
-        logger.info('⬇ REVOCATION %s %s', revoc.pubkey, revoc.uid);
+        this.logger.info('⬇ REVOCATION %s %s', revoc.pubkey, revoc.uid);
         let verified = keyring.verify(raw, revoc.revocation, revoc.pubkey);
         if (!verified) {
           throw 'Wrong signature for revocation';
         }
-        const existing = yield dal.getIdentityByHashOrNull(obj.hash);
+        const existing = await this.dal.getIdentityByHashOrNull(obj.hash);
         if (existing) {
           // Modify
           if (existing.revoked) {
@@ -212,8 +229,8 @@ function IdentityService () {
           else if (existing.revocation_sig) {
             throw 'Revocation already registered';
           } else {
-            yield dal.setRevocating(existing, revoc.revocation);
-            logger.info('✔ REVOCATION %s %s', revoc.pubkey, revoc.uid);
+            await this.dal.setRevocating(existing, revoc.revocation);
+            this.logger.info('✔ REVOCATION %s %s', revoc.pubkey, revoc.uid);
             revoc.json = function() {
               return {
                 result: true
@@ -228,11 +245,11 @@ function IdentityService () {
           idty.revocation_sig = revoc.signature;
           idty.certsCount = 0;
           idty.ref_block = parseInt(idty.buid.split('-')[0]);
-          if (!(yield dal.idtyDAL.sandbox.acceptNewSandBoxEntry(idty, conf.pair && conf.pair.pub))) {
+          if (!(await this.dal.idtyDAL.sandbox.acceptNewSandBoxEntry(idty, this.conf.pair && this.conf.pair.pub))) {
             throw constants.ERRORS.SANDBOX_FOR_IDENTITY_IS_FULL;
           }
-          yield dal.savePendingIdentity(idty);
-          logger.info('✔ REVOCATION %s %s', revoc.pubkey, revoc.uid);
+          await this.dal.savePendingIdentity(idty);
+          this.logger.info('✔ REVOCATION %s %s', revoc.pubkey, revoc.uid);
           revoc.json = function() {
             return {
               result: true
@@ -241,9 +258,9 @@ function IdentityService () {
           return revoc;
         }
       } catch (e) {
-        logger.info('✘ REVOCATION %s %s', revoc.pubkey, revoc.uid);
+        this.logger.info('✘ REVOCATION %s %s', revoc.pubkey, revoc.uid);
         throw e;
       }
-    }));
-  };
+    })
+  }
 }

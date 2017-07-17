@@ -47,4 +47,5 @@ app/lib/dal/sqliteDAL/*.js*
 app/lib/dal/sqliteDAL/index/*.js*
 app/lib/dal/fileDALs/*.js*
 app/lib/dal/fileDAL.js*
+app/service/*.js*
 app/lib/wot.js*

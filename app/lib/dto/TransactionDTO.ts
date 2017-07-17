@@ -1,6 +1,10 @@
 import {hashf} from "../common"
 
-export class InputDTO {
+export interface BaseDTO {
+  base: number
+}
+
+export class InputDTO implements BaseDTO {
   constructor(
     public amount: number,
     public base: number,
@@ -11,7 +15,7 @@ export class InputDTO {
   ) {}
 }
 
-export class OutputDTO {
+export class OutputDTO implements BaseDTO {
   constructor(
     public amount: number,
     public base: number,

@@ -20,7 +20,7 @@ export class TransactionService {
   setConfDAL(newConf:ConfDTO, newDAL:FileDAL) {
     this.dal = newDAL;
     this.conf = newConf;
-    this.logger = require('../lib/logger')(this.dal.profile);
+    this.logger = require('../lib/logger').NewLogger(this.dal.profile);
   }
 
   processTx(txObj:any) {

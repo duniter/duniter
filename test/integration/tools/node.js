@@ -25,7 +25,7 @@ var UNTIL_TIMEOUT = 115000;
 
 function Node (dbName, options) {
 
-  var logger = require('../../../app/lib/logger')(dbName);
+  var logger = require('../../../app/lib/logger').NewLogger(dbName);
   var that = this;
   var started = false;
   that.server = null;

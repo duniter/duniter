@@ -24,7 +24,7 @@ function Server (home, memoryOnly, overrideConf) {
   stream.Duplex.call(this, { objectMode: true });
 
   const paramsP = directory.getHomeParams(memoryOnly, home);
-  const logger = require('./app/lib/logger')('server');
+  const logger = require('./app/lib/logger').NewLogger('server');
   const that = this;
   that.home = home;
   that.conf = null;

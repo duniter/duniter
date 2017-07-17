@@ -11,7 +11,7 @@ export class ConfDAL extends AbstractCFS {
 
   constructor(rootPath:string, qioFS:any) {
     super(rootPath, qioFS)
-    this.logger = require('../../logger')()
+    this.logger = require('../../logger').NewLogger()
   }
 
   init() {

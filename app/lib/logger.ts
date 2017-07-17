@@ -2,7 +2,31 @@
 const moment = require('moment');
 const path = require('path');
 const winston = require('winston');
-const cbLogger = require('./callbackLogger');
+
+/***************
+ * CALLBACK LOGGER
+ ***************/
+
+const util = require('util');
+
+const CallbackLogger = winston.transports.CallbackLogger = function (options:any) {
+
+  this.name = 'customLogger';
+  this.level = options.level || 'info';
+  this.callback = options.callback;
+  this.timestamp = options.timestamp;
+};
+
+util.inherits(CallbackLogger, winston.Transport);
+
+CallbackLogger.prototype.log = function (level:string, msg:string, meta:any, callback:any) {
+  this.callback(level, msg, this.timestamp());
+  callback(null, true);
+};
+
+/***************
+ * NORMAL LOGGER
+ ***************/
 
 const customLevels = {
   levels: {
@@ -45,10 +69,10 @@ const logger = new (winston.Logger)({
 
 // Singletons
 let loggerAttached = false;
-logger.addCallbackLogs = (callbackForLog) => {
+logger.addCallbackLogs = (callbackForLog:any) => {
   if (!loggerAttached) {
     loggerAttached = true;
-    logger.add(cbLogger, {
+    logger.add(CallbackLogger, {
       callback: callbackForLog,
       level: 'trace',
       levels: customLevels.levels,
@@ -63,7 +87,7 @@ logger.addCallbackLogs = (callbackForLog) => {
 
 // Singletons
 let loggerHomeAttached = false;
-logger.addHomeLogs = (home, level) => {
+logger.addHomeLogs = (home:string, level:string) => {
   if (!muted) {
     if (loggerHomeAttached) {
       logger.remove(winston.transports.File);
@@ -98,4 +122,6 @@ logger.mute = () => {
 /**
 * Convenience function to get logger directly
 */
-module.exports = () => logger;
+export function NewLogger() {
+  return logger
+}

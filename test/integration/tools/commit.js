@@ -3,7 +3,7 @@
 var _  = require('underscore');
 var co = require('co');
 var rp = require('request-promise');
-var logger = require('../../../app/lib/logger')('test');
+var logger = require('../../../app/lib/logger').NewLogger('test');
 
 module.exports = function makeBlockAndPost(theServer, extraProps) {
   return function(manualValues) {

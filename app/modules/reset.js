@@ -3,7 +3,7 @@
 const co = require('co');
 const constants = require('../lib/constants');
 const wizard = require('../lib/wizard');
-const logger = require('../lib/logger')('wizard');
+const logger = require('../lib/logger').NewLogger('wizard');
 
 module.exports = {
   duniter: {

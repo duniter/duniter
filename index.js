@@ -9,7 +9,7 @@ const Server = require('./server');
 const directory = require('./app/lib/system/directory');
 const constants = require('./app/lib/constants');
 const wizard = require('./app/lib/wizard');
-const logger = require('./app/lib/logger')('duniter');
+const logger = require('./app/lib/logger').NewLogger('duniter');
 
 const configDependency    = require('./app/modules/config');
 const wizardDependency    = require('./app/modules/wizard');

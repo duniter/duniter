@@ -11,7 +11,7 @@ import {WalletDAL} from "./WalletDAL";
 import {MIndexDAL} from "./index/MIndexDAL";
 
 const _ = require('underscore')
-const logger = require('../../logger')('metaDAL');
+const logger = require('../../logger').NewLogger('metaDAL');
 const common = require('duniter-common');
 const rawer = require('duniter-common').rawer;
 const constants = require('./../../constants');

@@ -6,7 +6,7 @@ import {SQLiteDriver} from "../drivers/SQLiteDriver"
 const _ = require('underscore');
 const co = require('co');
 const colors = require('colors');
-const logger = require('../../logger')('sqlite');
+const logger = require('../../logger').NewLogger('sqlite');
 
 export interface BeforeSaveHook<T> {
   (t:T): void

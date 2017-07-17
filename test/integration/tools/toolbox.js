@@ -16,7 +16,7 @@ const bma         = require('duniter-bma').duniter.methods.bma;
 const multicaster = require('../../../app/lib/streams/multicaster');
 const dtos        = require('duniter-bma').duniter.methods.dtos;
 const duniter     = require('../../../index');
-const logger      = require('../../../app/lib/logger')('toolbox');
+const logger      = require('../../../app/lib/logger').NewLogger('toolbox');
 
 require('duniter-bma').duniter.methods.noLimit(); // Disables the HTTP limiter
 

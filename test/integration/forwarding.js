@@ -13,7 +13,7 @@ const MEMORY_MODE = true;
 require('duniter-bma').duniter.methods.noLimit(); // Disables the HTTP limiter
 
 if (constants.MUTE_LOGS_DURING_UNIT_TESTS) {
-  require('../../app/lib/logger')().mute();
+  require('../../app/lib/logger').NewLogger().mute();
 }
 
 describe("Forwarding", function() {

@@ -15,7 +15,7 @@ const expectJSON     = httpTest.expectJSON;
 const expectHttpCode = httpTest.expectHttpCode;
 
 if (constants.MUTE_LOGS_DURING_UNIT_TESTS) {
-  require('../../app/lib/logger')().mute();
+  require('../../app/lib/logger').NewLogger().mute();
 }
 
 // Trace these errors

@@ -3,7 +3,7 @@
 const co = require('co');
 const should = require('should');
 const engine = require('../../../app/modules/prover/lib/engine');
-const logger = require('../../../app/lib/logger')()
+const logger = require('../../../app/lib/logger').NewLogger()
 
 describe('PoW Engine', () => {
 

@@ -3,7 +3,7 @@
 const co = require('co')
 const should = require('should')
 const powCluster = require('../../../app/modules/prover/lib/powCluster')
-const logger = require('../../../app/lib/logger')()
+const logger = require('../../../app/lib/logger').NewLogger()
 
 let master
 

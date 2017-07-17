@@ -16,7 +16,7 @@ function Router (PeeringService, dal) {
     dal = theDAL;
   };
 
-  const logger   = require('../logger')('router');
+  const logger   = require('../logger').NewLogger('router');
 
   stream.Transform.call(this, { objectMode: true });
 

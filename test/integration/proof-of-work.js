@@ -5,7 +5,7 @@ const should    = require('should');
 const toolbox   = require('./tools/toolbox');
 const Block = require('../../app/lib/entity/block');
 const constants = require('../../app/lib/constants');
-const logger = require('../../app/lib/logger')();
+const logger = require('../../app/lib/logger').NewLogger();
 const blockProver = require('../../app/modules/prover').duniter.methods.blockProver;
 
 /***

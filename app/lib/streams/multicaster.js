@@ -12,7 +12,7 @@ const Revocation = require('../../lib/entity/revocation');
 const Membership = require('../../lib/entity/membership');
 const Block = require('../../lib/entity/block');
 const Transaction = require('../../lib/entity/transaction');
-const logger  = require('../logger')('multicaster');
+const logger  = require('../logger').NewLogger('multicaster');
 
 const WITH_ISOLATION = true;
 

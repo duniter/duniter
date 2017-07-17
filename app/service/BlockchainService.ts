@@ -40,7 +40,7 @@ export class BlockchainService {
   setConfDAL(newConf:ConfDTO, newDAL:FileDAL, newKeyPair:any) {
     this.dal = newDAL;
     this.conf = newConf;
-    this.logger = require('../lib/logger')(this.dal.profile)
+    this.logger = require('../lib/logger').NewLogger(this.dal.profile)
     this.quickSynchronizer = new QuickSynchronizer(this.server.blockchain, this.conf, this.dal, this.logger)
     this.mainContext.setConfDAL(this.conf, this.dal, this.server.blockchain, this.quickSynchronizer)
     this.selfPubkey = newKeyPair.publicKey;

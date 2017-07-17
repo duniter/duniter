@@ -26,7 +26,7 @@ export class IdentityService {
   setConfDAL(newConf:ConfDTO, newDAL:FileDAL) {
     this.dal = newDAL;
     this.conf = newConf;
-    this.logger = require('../lib/logger')(this.dal.profile);
+    this.logger = require('../lib/logger').NewLogger(this.dal.profile);
   }
 
   searchIdentities(search:string) {

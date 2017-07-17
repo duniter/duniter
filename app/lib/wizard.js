@@ -3,7 +3,7 @@ const co        = require('co');
 const constants = require('./constants');
 const async     = require('async');
 const inquirer  = require('inquirer');
-const logger    = require('./logger')('wizard');
+const logger    = require('./logger').NewLogger('wizard');
 
 module.exports = function () {
   return new Wizard();

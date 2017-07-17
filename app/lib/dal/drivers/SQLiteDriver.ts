@@ -11,7 +11,7 @@ export class SQLiteDriver {
   constructor(
     private path:string
   ) {
-    this.logger = require('../../logger')('driver')
+    this.logger = require('../../logger').NewLogger('driver')
   }
 
   getDB(): Promise<any> {

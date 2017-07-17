@@ -98,7 +98,7 @@ export class BlockchainContext {
     this.conf = newConf;
     this.blockchain = theBlockchain
     this.quickSynchronizer = theQuickSynchronizer
-    this.logger = require('../logger')(this.dal.profile);
+    this.logger = require('../logger').NewLogger(this.dal.profile);
   }
 
   checkBlock(block: BlockDTO, withPoWAndSignature = true): Promise<any> {

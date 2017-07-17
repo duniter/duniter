@@ -30,6 +30,8 @@ export class BlockDTO {
   fork: boolean
   parameters: string
   signature: string
+  monetaryMass: number
+  UDTime: number
 
   constructor(
 ) {}

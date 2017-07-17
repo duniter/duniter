@@ -89,7 +89,7 @@ export class BlockchainContext {
    */
   async getIssuerPersonalizedDifficulty(issuer: string): Promise<any> {
     const local_vHEAD = await this.getvHeadCopy({ issuer });
-    await indexer.preparePersonalizedPoW(local_vHEAD, this.vHEAD_1, this.dal.range, this.conf)
+    await indexer.preparePersonalizedPoW(local_vHEAD, this.vHEAD_1, (n:number, m:number, p = "") => this.dal.range(n,m,p), this.conf)
     return local_vHEAD.issuerDiff;
   }
 

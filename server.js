@@ -11,7 +11,7 @@ const fs          = require('fs');
 const daemonize   = require("daemonize2")
 const parsers     = require('duniter-common').parsers;
 const constants   = require('./app/lib/constants');
-const fileDAL     = require('./app/lib/dal/fileDAL');
+const FileDAL     = require('./app/lib/dal/fileDAL').FileDAL
 const jsonpckg    = require('./package.json');
 const keyring      = require('duniter-common').keyring;
 const directory   = require('./app/lib/system/directory');
@@ -70,7 +70,7 @@ function Server (home, memoryOnly, overrideConf) {
   this.plugFileSystem = () => co(function *() {
     logger.debug('Plugging file system...');
     const params = yield paramsP;
-    that.dal = fileDAL(params);
+    that.dal = new FileDAL(params);
     yield that.onPluggedFSHook()
   });
 

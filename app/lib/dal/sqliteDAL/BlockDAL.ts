@@ -1,43 +1,11 @@
 import {AbstractSQLite} from "./AbstractSQLite";
 import {SQLiteDriver} from "../drivers/SQLiteDriver";
+import {DBBlock} from "../../db/DBBlock";
 const Q = require('q');
 const constants = require('../../constants');
 
 const IS_FORK = true;
 const IS_NOT_FORK = false;
-
-export interface DBBlock {
-  fork: boolean
-  hash: string
-  inner_hash: string
-  signature: string
-  currency: string
-  issuer: string
-  parameters: string
-  previousHash: string
-  previousIssuer: string
-  version: string
-  membersCount: string
-  monetaryMass: string
-  UDTime: string
-  medianTime: string
-  dividend: string
-  unitbase: string
-  time: string
-  powMin: string
-  number: string
-  nonce: string
-  transactions: string
-  certifications: string
-  identities: string
-  joiners: string
-  actives: string
-  leavers: string
-  revoked: string
-  excluded: string
-  created: string
-  updated: string
-}
 
 export class BlockDAL extends AbstractSQLite<DBBlock> {
 

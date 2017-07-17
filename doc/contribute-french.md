@@ -1094,7 +1094,7 @@ Réessayez avec une valeur autre que `abc` pour voir la valeur changer au niveau
 
 ### Voir le nombre d’identités trouvées
 
-Regardez la ligne 27 du fichier wot.js que nous débogons actuellement :
+Regardez la ligne 27 du fichier wot.ts que nous débogons actuellement :
 
 ```js
 const identities = yield IdentityService.searchIdentities(search);

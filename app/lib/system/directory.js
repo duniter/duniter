@@ -51,7 +51,7 @@ const dir = module.exports = {
     yield someDelayFix();
     if (isMemory) {
       params.dbf = () => new SQLiteDriver(':memory:');
-      params.wotb = require('../wot').memoryInstance();
+      params.wotb = require('../wot').WoTBObject.memoryInstance();
     } else {
       const sqlitePath = path.join(home, dir.DUNITER_DB_NAME + '.db');
       params.dbf = () => new SQLiteDriver(sqlitePath);
@@ -60,7 +60,7 @@ const dir = module.exports = {
       if (!existsFile) {
         fs.closeSync(fs.openSync(wotbFilePath, 'w'));
       }
-      params.wotb = require('../wot').fileInstance(wotbFilePath);
+      params.wotb = require('../wot').WoTBObject.fileInstance(wotbFilePath);
     }
     return params;
   }),

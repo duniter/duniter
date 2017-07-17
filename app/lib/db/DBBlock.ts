@@ -33,6 +33,8 @@ export class DBBlock {
   parameters: string
   monetaryMass: number
   dividend: number | null
+  UDTime: number
+  wrong = false
 
   constructor(
   ) {
@@ -69,6 +71,8 @@ export class DBBlock {
     dbb.inner_hash = b.inner_hash
     dbb.signature = b.signature
     dbb.nonce = b.nonce
+    dbb.UDTime = b.UDTime
+    dbb.monetaryMass = b.monetaryMass
     return dbb
   }
 }

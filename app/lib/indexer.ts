@@ -509,8 +509,8 @@ export class Indexer {
     const cindex = Indexer.cindex(index);
     const sindex = Indexer.sindex(index);
 
-    const range = dal.range;
-    const head = dal.head;
+    const range = (n:number,m:number,p = "") => dal.range(n, m, p)
+    const head = (n:number) => dal.head(n)
 
     const HEAD = new DBHead()
 

@@ -16,5 +16,7 @@ app/lib/rules/global_rules.js
 app/modules/wizard.js
 app/modules/router.js
 app/modules/revert.js
+app/modules/reset.js
+app/modules/reapply.js
 test/*.js
 test/**/*.js

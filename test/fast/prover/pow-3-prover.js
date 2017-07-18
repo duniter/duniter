@@ -4,7 +4,7 @@ const co = require('co')
 const should = require('should')
 const moment = require('moment')
 const winston = require('winston')
-const blockProver = require('../../../app/modules/prover/lib/blockProver');
+const BlockProver = require('../../../app/modules/prover/lib/blockProver').BlockProver
 
 // Mute logger
 winston.remove(winston.transports.Console)
@@ -14,7 +14,7 @@ describe('PoW block prover', () => {
   let prover
 
   before(() => {
-    prover = blockProver({
+    prover = new BlockProver({
       conf: {
         nbCores: 1,
         medianTimeBlocks: 20,

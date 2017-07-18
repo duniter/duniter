@@ -23,5 +23,7 @@ app/modules/daemon.js
 app/modules/export-bc.js
 app/modules/check-config.js
 app/modules/config.js
+app/modules/prover/*.js
+app/modules/prover/lib/*.js
 test/*.js
 test/**/*.js

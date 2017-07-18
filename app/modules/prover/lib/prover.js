@@ -1,44 +1,52 @@
 "use strict";
-
-const co = require('co');
-const util = require('util');
-const stream = require('stream');
-const permanentProver = require('./permanentProver');
-
-module.exports = Prover;
-
-function Prover(server) {
-
-  const permaProver = this.permaProver = permanentProver(server);
-
-  stream.Transform.call(this, { objectMode: true });
-
-  this._write = function (obj, enc, done) {
-    // Never close the stream
-    if (obj && obj.membersCount) {
-      permaProver.blockchainChanged(obj);
-    } else if (obj.nodeIndexInPeers !== undefined) {
-      permaProver.prover.changePoWPrefix((obj.nodeIndexInPeers + 1) * 10); // We multiply by 10 to give room to computers with < 100 cores
-    } else if (obj.cpu !== undefined) {
-      permaProver.prover.changeCPU(obj.cpu); // We multiply by 10 to give room to computers with < 100 cores
-    } else if (obj.pulling !== undefined) {
-      if (obj.pulling === 'processing') {
-        permaProver.pullingDetected();
-      }
-      else if (obj.pulling === 'finished') {
-        permaProver.pullingFinished();
-      }
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const permanentProver_1 = require("./permanentProver");
+const stream = require("stream");
+class Prover extends stream.Transform {
+    constructor(server) {
+        super({ objectMode: true });
+        this.permaProver = this.permaProver = new permanentProver_1.PermanentProver(server);
     }
-    done && done();
-  };
-
-  this.startService = () => co(function*() {
-    permaProver.allowedToStart();
-  });
-
-  this.stopService = () => co(function*() {
-    permaProver.stopEveryting();
-  });
+    _write(obj, enc, done) {
+        // Never close the stream
+        if (obj && obj.membersCount) {
+            this.permaProver.blockchainChanged(obj);
+        }
+        else if (obj.nodeIndexInPeers !== undefined) {
+            this.permaProver.prover.changePoWPrefix((obj.nodeIndexInPeers + 1) * 10); // We multiply by 10 to give room to computers with < 100 cores
+        }
+        else if (obj.cpu !== undefined) {
+            this.permaProver.prover.changeCPU(obj.cpu); // We multiply by 10 to give room to computers with < 100 cores
+        }
+        else if (obj.pulling !== undefined) {
+            if (obj.pulling === 'processing') {
+                this.permaProver.pullingDetected();
+            }
+            else if (obj.pulling === 'finished') {
+                this.permaProver.pullingFinished();
+            }
+        }
+        done && done();
+    }
+    ;
+    startService() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.permaProver.allowedToStart();
+        });
+    }
+    stopService() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.permaProver.stopEveryting();
+        });
+    }
 }
-
-util.inherits(Prover, stream.Transform);
+exports.Prover = Prover;
+//# sourceMappingURL=prover.js.map

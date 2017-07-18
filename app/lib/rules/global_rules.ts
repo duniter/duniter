@@ -1,13 +1,10 @@
 "use strict";
-import {BlockDTO} from "../dto/BlockDTO"
 import {ConfDTO} from "../dto/ConfDTO"
 import {FileDAL} from "../dal/fileDAL"
 import {DBBlock} from "../db/DBBlock"
-import {DBIdentity} from "../dal/sqliteDAL/IdentityDAL"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import * as local_rules from "./local_rules"
 
-const co             = require('co');
 const _              = require('underscore');
 const common         = require('duniter-common');
 const indexer        = require('../indexer').Indexer
@@ -158,9 +155,13 @@ export const GLOBAL_RULES_HELPERS = {
   // Functions used in an external context too
   checkMembershipBlock: (ms:any, current:DBBlock, conf:ConfDTO, dal:FileDAL) => checkMSTarget(ms, current ? { number: current.number + 1} : { number: 0 }, conf, dal),
 
-  checkCertificationIsValid: (cert:any, current:DBBlock, findIdtyFunc:any, conf:ConfDTO, dal:FileDAL) => checkCertificationIsValid(current ? current : { number: 0 }, cert, findIdtyFunc, conf, dal),
+  checkCertificationIsValid: (cert:any, current:DBBlock, findIdtyFunc:any, conf:ConfDTO, dal:FileDAL) => {
+    return checkCertificationIsValid(current ? current : { number: 0, currency: '' }, cert, findIdtyFunc, conf, dal)
+  },
 
-  checkCertificationIsValidForBlock: (cert:any, block:BlockDTO, idty:DBIdentity, conf:ConfDTO, dal:FileDAL) => checkCertificationIsValid(block, cert, () => idty, conf, dal),
+  checkCertificationIsValidForBlock: (cert:any, block:{ number:number, currency:string }, findIdtyFunc:(b:{ number:number, currency:string }, pubkey:string, dal:FileDAL) => Promise<any>, conf:ConfDTO, dal:FileDAL) => {
+    return checkCertificationIsValid(block, cert, findIdtyFunc, conf, dal)
+  },
 
   isOver3Hops: async (member:any, newLinks:any, newcomers:string[], current:DBBlock, conf:ConfDTO, dal:FileDAL) => {
     if (!current) {
@@ -177,7 +178,7 @@ export const GLOBAL_RULES_HELPERS = {
 
   checkExistsPubkey: (pub:string, dal:FileDAL) => dal.getWrittenIdtyByPubkey(pub),
 
-  checkSingleTransaction: (tx:TransactionDTO, block:{ medianTime: number }, conf:ConfDTO, dal:FileDAL, alsoCheckPendingTransactions:boolean) => GLOBAL_RULES_FUNCTIONS.checkSourcesAvailability({
+  checkSingleTransaction: (tx:TransactionDTO, block:{ medianTime: number }, conf:ConfDTO, dal:FileDAL, alsoCheckPendingTransactions:boolean = false) => GLOBAL_RULES_FUNCTIONS.checkSourcesAvailability({
     transactions: [tx],
     medianTime: block.medianTime
   }, conf, dal, alsoCheckPendingTransactions),
@@ -228,7 +229,7 @@ async function checkMSTarget (ms:any, block:any, conf:ConfDTO, dal:FileDAL) {
   }
 }
 
-async function checkCertificationIsValid (block:any, cert:any, findIdtyFunc:any, conf:ConfDTO, dal:FileDAL) {
+async function checkCertificationIsValid (block:{ number:number, currency:string }, cert:any, findIdtyFunc:(b:{ number:number, currency:string }, pubkey:string, dal:FileDAL) => Promise<any>, conf:ConfDTO, dal:FileDAL) {
   if (block.number == 0 && cert.block_number != 0) {
     throw Error('Number must be 0 for root block\'s certifications');
   } else {
@@ -250,10 +251,7 @@ async function checkCertificationIsValid (block:any, cert:any, findIdtyFunc:any,
         throw Error('Certifier must be a member')
       }
     }
-    // TODO: weird call, we cannot just do "await findIdtyFunc(...)". There is a bug somewhere.
-    let idty = await co(function*() {
-      return yield findIdtyFunc(block, cert.to, dal)
-    })
+    let idty = await findIdtyFunc(block, cert.to, dal)
     let current = block.number == 0 ? null : await dal.getCurrentBlockOrNull();
     if (!idty) {
       throw Error('Identity does not exist for certified');

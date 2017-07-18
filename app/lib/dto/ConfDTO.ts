@@ -10,7 +10,13 @@ export class ConfDTO {
     public currency: string,
     public endpoints: string[],
     public rmEndpoints: string[],
+    public rootoffset: number,
     public upInterval: number,
+    public cpu: number,
+    public nbCores: number,
+    public prefix: number,
+    public powSecurityRetryDelay: number,
+    public powMaxHandicap: number,
     public c: number,
     public dt: number,
     public dtReeval: number,
@@ -46,6 +52,6 @@ export class ConfDTO {
 ) {}
 
   static mock() {
-    return new ConfDTO("", "", [], [], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, null, 0, "", "", "")
+    return new ConfDTO("", "", [], [], 0, 0, 0.6, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, null, 0, "", "", "")
   }
 }

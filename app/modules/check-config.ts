@@ -1,6 +1,5 @@
 const constants = require('../lib/constants');
 const wizard = require('../lib/wizard');
-const logger = require('../lib/logger').NewLogger('wizard');
 
 module.exports = {
   duniter: {
@@ -11,6 +10,7 @@ module.exports = {
 
       onConfiguredExecute: async (server:any) => {
         await server.checkConfig()
+        const logger = require('../lib/logger').NewLogger('wizard')
         logger.warn('Configuration seems correct.');
       }
     }]

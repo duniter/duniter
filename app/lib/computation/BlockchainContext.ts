@@ -60,7 +60,7 @@ export class BlockchainContext {
    * Gets a copy of vHEAD, extended with some extra properties.
    * @param props The extra properties to add.
    */
-  async getvHeadCopy(props: any): Promise<any> {
+  async getvHeadCopy(props: any = {}): Promise<any> {
     if (!this.vHEAD) {
       await this.refreshHead();
     }

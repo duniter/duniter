@@ -51,6 +51,8 @@ app/lib/rules/*.js*
 app/lib/logger*js*
 app/service/*.js*
 app/lib/wot.js*
+app/modules/prover/*.js*
+app/modules/prover/lib/*.js*
 app/modules/router*.js*
 app/modules/wizard.js*
 app/modules/revert.js*

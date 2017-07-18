@@ -9,7 +9,7 @@ const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
 
-require('../../app/modules/prover/lib/constants').CORES_MAXIMUM_USE_IN_PARALLEL = 1
+require('../../app/modules/prover/lib/constants').Constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
 require('duniter-bma').duniter.methods.noLimit(); // Disables the HTTP limiter
 
 const expectJSON     = httpTest.expectJSON;

@@ -2,7 +2,7 @@
 
 const co = require('co')
 const should = require('should')
-const powCluster = require('../../../app/modules/prover/lib/powCluster')
+const PowCluster = require('../../../app/modules/prover/lib/powCluster').Master
 const logger = require('../../../app/lib/logger').NewLogger()
 
 let master
@@ -10,7 +10,7 @@ let master
 describe('PoW Cluster', () => {
 
   before(() => {
-    master = powCluster(1, logger)
+    master = new PowCluster(1, logger)
   })
 
   it('should have an empty cluster if no PoW was asked', () => {

@@ -6,7 +6,7 @@ const toolbox   = require('./tools/toolbox');
 const Block = require('../../app/lib/entity/block');
 const constants = require('../../app/lib/constants');
 const logger = require('../../app/lib/logger').NewLogger();
-const blockProver = require('../../app/modules/prover').duniter.methods.blockProver;
+const BlockProver = require('../../app/modules/prover/lib/blockProver').BlockProver
 
 /***
 conf.medianTimeBlocks
@@ -19,7 +19,7 @@ keyring from Key
 const intermediateProofs = [];
 const NB_CORES_FOR_COMPUTATION = 1 // For simple tests. Can be changed to test multiple cores.
 
-const prover = blockProver({
+const prover = new BlockProver({
   push: (data) => intermediateProofs.push(data),
   conf: {
     nbCores: NB_CORES_FOR_COMPUTATION,

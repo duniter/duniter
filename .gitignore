@@ -57,3 +57,5 @@ app/modules/wizard.js*
 app/modules/revert.js*
 app/modules/reapply.js*
 app/modules/reset.js*
+app/modules/peersignal.js*
+app/modules/plugin.js*

@@ -1,7 +1,7 @@
 import {ConfDTO} from "../lib/dto/ConfDTO"
+import {Wizard} from "../lib/wizard"
 
 const _ = require('underscore')
-const wizard = require('../lib/wizard');
 const logger = require('../lib/logger').NewLogger('wizard');
 
 module.exports = {
@@ -9,9 +9,9 @@ module.exports = {
 
     wizard: {
       // The wizard itself also defines its personal tasks
-      'currency': (conf:ConfDTO) => wizard().configCurrency(conf),
-      'pow': (conf:ConfDTO) => wizard().configPoW(conf),
-      'parameters': (conf:ConfDTO) => wizard().configUCP(conf)
+      'currency': (conf:ConfDTO) => Wizard.configCurrency(conf),
+      'pow': (conf:ConfDTO) => Wizard.configPoW(conf),
+      'parameters': (conf:ConfDTO) => Wizard.configUCP(conf)
     },
 
     cli: [{

@@ -8,7 +8,6 @@ const _ = require('underscore');
 const Server = require('./server');
 const directory = require('./app/lib/system/directory');
 const constants = require('./app/lib/constants');
-const wizard = require('./app/lib/wizard');
 const logger = require('./app/lib/logger').NewLogger('duniter');
 
 const configDependency    = require('./app/modules/config');

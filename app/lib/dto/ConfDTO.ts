@@ -6,6 +6,7 @@ export interface Keypair {
 export class ConfDTO {
 
   constructor(
+    public loglevel: string,
     public currency: string,
     public endpoints: string[],
     public rmEndpoints: string[],
@@ -45,6 +46,6 @@ export class ConfDTO {
 ) {}
 
   static mock() {
-    return new ConfDTO("", [], [], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, null, 0, "", "", "")
+    return new ConfDTO("", "", [], [], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, null, 0, "", "", "")
   }
 }

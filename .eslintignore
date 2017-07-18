@@ -20,5 +20,7 @@ app/modules/reset.js
 app/modules/reapply.js
 app/modules/peersignal.js
 app/modules/plugin.js
+app/modules/daemon.js
+app/modules/export-bc.js
 test/*.js
 test/**/*.js

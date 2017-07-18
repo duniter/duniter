@@ -9,7 +9,7 @@ const user      = require('./tools/user');
 const commit    = require('./tools/commit');
 const until     = require('./tools/until');
 const toolbox   = require('./tools/toolbox');
-const multicaster = require('../../app/lib/streams/multicaster');
+const Multicaster = require('../../app/lib/streams/multicaster').Multicaster
 const Peer = require('../../app/lib/entity/peer');
 
 const s1 = toolbox.server({
@@ -74,7 +74,7 @@ describe("Peer document expiry", function() {
   }));
 
   it('routing V1 peer document should raise an "outdated" event', () => co(function*() {
-    const caster = multicaster();
+    const caster = new Multicaster();
     return new Promise((resolve) => {
       caster
         .pipe(es.mapSync((obj) => {

@@ -3,12 +3,12 @@ import {ConfDTO} from "../lib/dto/ConfDTO"
 import {FileDAL} from "../lib/dal/fileDAL"
 import {DBPeer} from "../lib/dal/sqliteDAL/PeerDAL"
 import {DBBlock} from "../lib/db/DBBlock"
+import {Multicaster} from "../lib/streams/multicaster"
 
 const util           = require('util');
 const _              = require('underscore');
 const events         = require('events');
 const rp             = require('request-promise');
-const multicaster    = require('../lib/streams/multicaster');
 const keyring        = require('duniter-common').keyring;
 const logger         = require('../lib/logger').NewLogger('peering');
 const dos2unix       = require('duniter-common').dos2unix;
@@ -121,7 +121,7 @@ export class PeeringService {
           peerEntity = Peer.statics.peerize(found);
           if (interfacesChanged) {
             // Warns the old peer of the change
-            const caster = multicaster();
+            const caster = new Multicaster();
             caster.sendPeering(Peer.statics.peerize(peerEntity), Peer.statics.peerize(thePeer));
           }
           thePeer.copyValues(peerEntity);

@@ -12,7 +12,8 @@ app/lib/dal/fileDALs/*.js
 app/lib/dal/fileDAL.js
 app/service/*.js
 app/lib/rules/*.js
-app/lib/system/directory.js
+app/lib/system/*.js
+app/lib/streams/*.js
 app/modules/wizard.js
 app/modules/router.js
 app/modules/revert.js

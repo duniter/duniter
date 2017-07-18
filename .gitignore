@@ -50,6 +50,7 @@ app/lib/dal/fileDAL.js*
 app/lib/rules/*.js*
 app/lib/logger*js*
 app/lib/system/directory.js*
+app/lib/streams/*.js*
 app/service/*.js*
 app/lib/wot.js*
 app/modules/prover/*.js*

@@ -12,5 +12,6 @@ app/lib/dal/fileDALs/*.js
 app/lib/dal/fileDAL.js
 app/service/*.js
 app/lib/rules/local_rules.js
+app/lib/rules/global_rules.js
 test/*.js
 test/**/*.js

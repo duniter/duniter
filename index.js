@@ -8,6 +8,7 @@ const _ = require('underscore');
 const Server = require('./server');
 const directory = require('./app/lib/system/directory');
 const constants = require('./app/lib/constants');
+const CLI = require('./app/cli').ExecuteCommand
 const logger = require('./app/lib/logger').NewLogger('duniter');
 
 const configDependency    = require('./app/modules/config');
@@ -120,7 +121,7 @@ module.exports.statics = {
 function Stack(dependencies) {
 
   const that = this;
-  const cli = require('./app/cli')();
+  const cli = CLI();
   const configLoadingCallbacks = [];
   const configBeforeSaveCallbacks = [];
   const resetDataHooks = [];

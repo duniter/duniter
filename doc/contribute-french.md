@@ -975,7 +975,7 @@ On peut donc ainsi comprendre tout ce qui se passe dans Duniter. Ici il s'agit d
 
 ## Niveau XI : point d’arrêt d’une commande
 
-Continuons avec la commande `webwait`, et tentons d'y poser un point d'arrêt. Rendez-vous dans le fichier `app/cli.js` à la ligne 859.
+Continuons avec la commande `webwait`, et tentons d'y poser un point d'arrêt. Rendez-vous dans le fichier `app/cli.ts` à la ligne 859.
 
 Ajoutons deux points d'arrêt : un en ligne 859 et un autre en ligne 860 :
 
@@ -1025,9 +1025,9 @@ Si vous faites de nouveau F9, vous arriverez alors à cet écran :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/a6771e01590846568f895871d0d9c9aa8a9666d7.png" width="620" height="499">
 
-Cela signifie une 1ère chose, c'est que ce point d'arrêt intervient manifestement *avant* le celui du fichier `app/cli.js` ligne 859.
+Cela signifie une 1ère chose, c'est que ce point d'arrêt intervient manifestement *avant* le celui du fichier `app/cli.ts` ligne 859.
 
-Et si l'on regarde la pile d'appel (colonne "Frames" de la fenêtre de debug), on peut repérer que c'est la fonction en ligne 890 du fichier `app/cli.js` qui appelle ce code d'information "Plugging file system...".
+Et si l'on regarde la pile d'appel (colonne "Frames" de la fenêtre de debug), on peut repérer que c'est la fonction en ligne 890 du fichier `app/cli.ts` qui appelle ce code d'information "Plugging file system...".
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/5a5f72bbdc39f897fba4ad8a8383dca5e0d67a2f.png" width="620" height="499">
 

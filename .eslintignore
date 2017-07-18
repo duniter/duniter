@@ -22,5 +22,7 @@ app/modules/peersignal.js
 app/modules/plugin.js
 app/modules/daemon.js
 app/modules/export-bc.js
+app/modules/check-config.js
+app/modules/config.js
 test/*.js
 test/**/*.js

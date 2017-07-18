@@ -54,3 +54,4 @@ app/service/*.js*
 app/lib/wot.js*
 app/modules/router*.js*
 app/modules/wizard.js*
+app/modules/revert.js*

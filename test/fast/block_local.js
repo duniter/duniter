@@ -4,7 +4,7 @@ const should         = require('should');
 const parsers        = require('duniter-common').parsers;
 const indexer        = require('../../app/lib/indexer').Indexer
 const LOCAL_RULES    = require('../../app/lib/rules/local_rules').LOCAL_RULES_FUNCTIONS
-const CHECK          = require('../../app/lib/rules').CHECK
+const ALIAS          = require('../../app/lib/rules').ALIAS
 const blocks         = require('../data/blocks.js');
 const parser         = parsers.parseBlock;
 const Block          = require('duniter-common').document.Block
@@ -25,7 +25,7 @@ const conf = {
 
 describe("Block local coherence", function(){
 
-  it('a valid block should be well formatted',                                                        test(CHECK.ASYNC.ALL_LOCAL_BUT_POW_AND_SIGNATURE, blocks.VALID_ROOT));
+  it('a valid block should be well formatted',                                                      test(ALIAS.ALL_LOCAL_BUT_POW_AND_SIGNATURE, blocks.VALID_ROOT));
 
   describe("should be rejected", function(){
 
@@ -99,6 +99,9 @@ function test (rule, raw, expectedMessage) {
       if (e.uerr) {
         // This is a controlled error
         e.uerr.message.should.equal(expectedMessage);
+      } else if (e) {
+        // This is a controlled error
+        e.message.should.equal(expectedMessage);
       } else {
         // throw Error(e)
         // Display non wrapped errors (wrapped error is an error in constants.js)

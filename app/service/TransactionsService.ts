@@ -4,8 +4,6 @@ import {ConfDTO} from "../lib/dto/ConfDTO"
 import {FileDAL} from "../lib/dal/fileDAL"
 import {TransactionDTO} from "../lib/dto/TransactionDTO"
 
-const co              = require('co');
-const Q               = require('q');
 const constants       = require('../lib/constants');
 const rules           = require('../lib/rules')
 const Transaction     = require('../lib/entity/transaction');
@@ -37,7 +35,7 @@ export class TransactionService {
         const transaction = tx.getTransaction();
         const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
         const dto = TransactionDTO.fromJSONObject(tx)
-        await Q.nbind(rules.HELPERS.checkSingleTransactionLocally, rules.HELPERS)(dto);
+        await rules.HELPERS.checkSingleTransactionLocally(dto)
         await rules.HELPERS.checkTxBlockStamp(transaction, this.dal);
         await rules.HELPERS.checkSingleTransaction(dto, nextBlockWithFakeTimeVariation, this.conf, this.dal, CHECK_PENDING_TRANSACTIONS);
         const server_pubkey = this.conf.pair && this.conf.pair.pub;

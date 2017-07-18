@@ -1,7 +1,6 @@
 "use strict";
 
 const co        = require('co');
-const Q         = require('q');
 const should    = require('should');
 const es        = require('event-stream');
 const _         = require('underscore');
@@ -45,7 +44,7 @@ describe("Peer document expiry", function() {
       yield bmaAPI.openConnections();
       server.bma = bmaAPI;
       require('../../app/modules/router').duniter.methods.routeToNetwork(server);
-    }), Q());
+    }), Promise.resolve());
 
     // Server 1
     yield cat.createIdentity();

@@ -1,19 +1,18 @@
-import {SQLiteDriver} from "./drivers/SQLiteDriver";
-import {ConfDAL} from "./fileDALs/ConfDAL";
-import {StatDAL} from "./fileDALs/StatDAL";
-import {ConfDTO} from "../dto/ConfDTO";
-import {BlockDTO} from "../dto/BlockDTO";
-import {DBHead} from "../db/DBHead";
-import {DBIdentity} from "./sqliteDAL/IdentityDAL";
-import {CindexEntry, IindexEntry, IndexEntry, MindexEntry, SindexEntry} from "../indexer";
-import {DBPeer} from "./sqliteDAL/PeerDAL";
-import {TransactionDTO} from "../dto/TransactionDTO";
-import {DBCert} from "./sqliteDAL/CertDAL";
-import {DBWallet} from "./sqliteDAL/WalletDAL";
-import {DBTx} from "./sqliteDAL/TxsDAL";
-import {DBBlock} from "../db/DBBlock";
+import {SQLiteDriver} from "./drivers/SQLiteDriver"
+import {ConfDAL} from "./fileDALs/ConfDAL"
+import {StatDAL} from "./fileDALs/StatDAL"
+import {ConfDTO} from "../dto/ConfDTO"
+import {BlockDTO} from "../dto/BlockDTO"
+import {DBHead} from "../db/DBHead"
+import {DBIdentity} from "./sqliteDAL/IdentityDAL"
+import {CindexEntry, IindexEntry, IndexEntry, MindexEntry, SindexEntry} from "../indexer"
+import {DBPeer} from "./sqliteDAL/PeerDAL"
+import {TransactionDTO} from "../dto/TransactionDTO"
+import {DBCert} from "./sqliteDAL/CertDAL"
+import {DBWallet} from "./sqliteDAL/WalletDAL"
+import {DBTx} from "./sqliteDAL/TxsDAL"
+import {DBBlock} from "../db/DBBlock"
 
-const Q       = require('q');
 const fs      = require('fs')
 const path    = require('path')
 const readline = require('readline')
@@ -241,7 +240,7 @@ export class FileDAL {
   }
 
   getBlocksBetween (start:number, end:number) {
-    return Q(this.blockDAL.getBlocks(Math.max(0, start), end))
+    return Promise.resolve(this.blockDAL.getBlocks(Math.max(0, start), end))
   }
 
   getForkBlocksFollowing(current:DBBlock) {
@@ -295,7 +294,7 @@ export class FileDAL {
 
   async fillInMembershipsOfIdentity(queryPromise:Promise<DBIdentity>) {
     try {
-      const idty = await Q(queryPromise);
+      const idty:any = await Promise.resolve(queryPromise)
       if (idty) {
         const mss = await this.msDAL.getMembershipsOfIssuer(idty.pubkey);
         const mssFromMindex = await this.mindexDAL.reducable(idty.pubkey);

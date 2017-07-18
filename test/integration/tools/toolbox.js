@@ -1,6 +1,5 @@
 "use strict";
 
-const Q           = require('q');
 const _           = require('underscore');
 const co          = require('co');
 const rp          = require('request-promise');

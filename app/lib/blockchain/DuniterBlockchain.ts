@@ -4,11 +4,9 @@ import {BlockchainOperator} from "./interfaces/BlockchainOperator"
 import {ConfDTO} from "../dto/ConfDTO"
 import {BlockDTO} from "../dto/BlockDTO"
 import {DBHead} from "../db/DBHead"
-import {IdentityDTO} from "../dto/IdentityDTO"
 import {DBBlock} from "../db/DBBlock"
 
 const _ = require('underscore')
-const Q = require('q')
 const rules = require('../rules')
 const common          = require('duniter-common')
 const Block           = require('../entity/block')

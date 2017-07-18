@@ -1,7 +1,6 @@
-import {AbstractSQLite} from "./AbstractSQLite";
-import {SQLiteDriver} from "../drivers/SQLiteDriver";
-import {DBBlock} from "../../db/DBBlock";
-const Q = require('q');
+import {AbstractSQLite} from "./AbstractSQLite"
+import {SQLiteDriver} from "../drivers/SQLiteDriver"
+import {DBBlock} from "../../db/DBBlock"
 const constants = require('../../constants');
 
 const IS_FORK = true;
@@ -84,7 +83,7 @@ export class BlockDAL extends AbstractSQLite<DBBlock> {
     if (!this.current) {
       this.current = (await this.query('SELECT * FROM block WHERE NOT fork ORDER BY number DESC LIMIT 1'))[0];
     }
-    return Q(this.current);
+    return Promise.resolve(this.current)
   }
 
   async getBlock(number:string | number) {

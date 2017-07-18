@@ -1,7 +1,6 @@
 "use strict";
 
 const co        = require('co');
-const Q         = require('q');
 const _         = require('underscore');
 const should    = require('should');
 const duniter     = require('../../index');
@@ -93,7 +92,7 @@ describe("Network", function() {
                 });
             });
         });
-    }, Q())
+    }, Promise.resolve())
 
       .then(function(){
         return co(function *() {

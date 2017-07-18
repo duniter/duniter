@@ -214,8 +214,10 @@ function Stack(dependencies) {
       logger.mute();
     }
 
-    // Add log files for this instance
-    logger.addHomeLogs(home, program.loglevel);
+    // Add log files for this instance (non-memory instances only)
+    if (!program.memory) {
+      logger.addHomeLogs(home, program.loglevel);
+    }
 
     const server = new Server(home, program.memory === true, commandLineConf(program));
 
@@ -275,7 +277,10 @@ function Stack(dependencies) {
       const conf = yield server.loadConf();
 
       // Eventually change the log level
-      logger.addHomeLogs(home, conf.loglevel);
+      // Add log files for this instance (non-memory instances only)
+      if (!program.memory) {
+        logger.addHomeLogs(home, conf.loglevel);
+      }
 
       // Auto-configuration default
       yield configure(program, server, server.conf || {});

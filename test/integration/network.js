@@ -19,10 +19,7 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = node({
-  memory: MEMORY_MODE,
-  name: 'bb33'
-}, _.extend({
+const s1 = node('bb33', _.extend({
   ipv4: '127.0.0.1',
   port: '20501',
   remoteport: '20501',
@@ -34,10 +31,7 @@ const s1 = node({
   sigQty: 1, dt: 0, ud0: 120
 }, commonConf));
 
-const s2 = node({
-  memory: MEMORY_MODE,
-  name: 'bb12'
-}, _.extend({
+const s2 = node('bb12', _.extend({
   port: '20502',
   remoteport: '20502',
   pair: {

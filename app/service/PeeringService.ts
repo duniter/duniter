@@ -1,12 +1,11 @@
 import {GlobalFifoPromise} from "./GlobalFifoPromise"
-import {ConfDTO, Keypair} from "../lib/dto/ConfDTO"
+import {ConfDTO} from "../lib/dto/ConfDTO"
 import {FileDAL} from "../lib/dal/fileDAL"
 import {DBPeer} from "../lib/dal/sqliteDAL/PeerDAL"
 import {DBBlock} from "../lib/db/DBBlock"
 
 const util           = require('util');
 const _              = require('underscore');
-const Q              = require('q');
 const events         = require('events');
 const rp             = require('request-promise');
 const multicaster    = require('../lib/streams/multicaster');
@@ -31,6 +30,7 @@ export class PeeringService {
   pair:Keyring
   pubkey:string
   peerInstance:DBPeer | null
+  logger:any
 
   constructor(private server:any) {
   }
@@ -41,6 +41,7 @@ export class PeeringService {
     this.pair = newPair;
     this.pubkey = this.pair.publicKey;
     this.selfPubkey = this.pubkey;
+    this.logger = require('../lib/logger').NewLogger(this.dal.profile)
   }
 
   async peer(newPeer:DBPeer | null = null) {
@@ -68,6 +69,7 @@ export class PeeringService {
   };
 
   submitP(peering:DBPeer, eraseIfAlreadyRecorded = false, cautious = true) {
+    this.logger.info('⬇ PEER %s', peering.pubkey.substr(0, 8))
     // Force usage of local currency name, do not accept other currencies documents
     peering.currency = this.conf.currency || peering.currency;
     let thePeer = new Peer(peering);
@@ -78,82 +80,88 @@ export class PeeringService {
     let block:DBBlock | null;
     let makeCheckings = cautious || cautious === undefined;
     return GlobalFifoPromise.pushFIFO(async () => {
-      if (makeCheckings) {
-        let goodSignature = this.checkPeerSignature(thePeer);
-        if (!goodSignature) {
-          throw 'Signature from a peer must match';
-        }
-      }
-      if (thePeer.block == constants.PEER.SPECIAL_BLOCK) {
-        thePeer.statusTS = 0;
-        thePeer.status = 'UP';
-      } else {
-        block = await this.dal.getBlockByNumberAndHashOrNull(blockNumber, blockHash);
-        if (!block && makeCheckings) {
-          throw constants.ERROR.PEER.UNKNOWN_REFERENCE_BLOCK;
-        } else if (!block) {
-          thePeer.block = constants.PEER.SPECIAL_BLOCK;
-          thePeer.statusTS = 0;
-          thePeer.status = 'UP';
-        }
-      }
-      sigTime = block ? block.medianTime : 0;
-      thePeer.statusTS = sigTime;
-      let found = await this.dal.getPeerOrNull(thePeer.pubkey);
-      let peerEntity = Peer.statics.peerize(found || thePeer);
-      if(found){
-        // Already existing peer
-        const sp2 = found.block.split('-');
-        const previousBlockNumber = parseInt(sp2[0]);
-        const interfacesChanged = Peer.statics.endpointSum(thePeer) != Peer.statics.endpointSum(peerEntity);
-        const isOutdatedDocument = blockNumber < previousBlockNumber && !eraseIfAlreadyRecorded;
-        const isAlreadyKnown = blockNumber == previousBlockNumber && !eraseIfAlreadyRecorded;
-        if (isOutdatedDocument){
-          const error = _.extend({}, constants.ERRORS.NEWER_PEER_DOCUMENT_AVAILABLE);
-          _.extend(error.uerr, { peer: found });
-          throw error;
-        } else if (isAlreadyKnown) {
-          throw constants.ERRORS.PEER_DOCUMENT_ALREADY_KNOWN;
-        }
-        peerEntity = Peer.statics.peerize(found);
-        if (interfacesChanged) {
-          // Warns the old peer of the change
-          const caster = multicaster();
-          caster.sendPeering(Peer.statics.peerize(peerEntity), Peer.statics.peerize(thePeer));
-        }
-        thePeer.copyValues(peerEntity);
-        peerEntity.sigDate = new Date(sigTime * 1000);
-      }
-      // Set the peer as UP again
-      peerEntity.status = 'UP';
-      peerEntity.first_down = null;
-      peerEntity.last_try = null;
-      peerEntity.hash = String(hashf(peerEntity.getRawSigned())).toUpperCase();
-      peerEntity.raw = peerEntity.getRaw();
-      await this.dal.savePeer(peerEntity);
-      let savedPeer = Peer.statics.peerize(peerEntity);
-      if (peerEntity.pubkey == this.selfPubkey) {
-        const localEndpoint = await this.server.getMainEndpoint(this.conf);
-        const localNodeNotListed = !peerEntity.containsEndpoint(localEndpoint);
-        const current = localNodeNotListed && (await this.dal.getCurrentBlockOrNull());
-        if (!localNodeNotListed) {
-          const indexOfThisNode = peerEntity.endpoints.indexOf(localEndpoint);
-          if (indexOfThisNode !== -1) {
-            this.server.push({
-              nodeIndexInPeers: indexOfThisNode
-            });
-          } else {
-            logger.warn('This node has his interface listed in the peer document, but its index cannot be found.');
+      try {
+        if (makeCheckings) {
+          let goodSignature = this.checkPeerSignature(thePeer);
+          if (!goodSignature) {
+            throw 'Signature from a peer must match';
           }
         }
-        if (localNodeNotListed && (!current || current.number > blockNumber)) {
-          // Document with pubkey of local peer, but doesn't contain local interface: we must add it
-          this.generateSelfPeer(this.conf, 0);
+        if (thePeer.block == constants.PEER.SPECIAL_BLOCK) {
+          thePeer.statusTS = 0;
+          thePeer.status = 'UP';
         } else {
-          this.peerInstance = peerEntity;
+          block = await this.dal.getBlockByNumberAndHashOrNull(blockNumber, blockHash);
+          if (!block && makeCheckings) {
+            throw constants.ERROR.PEER.UNKNOWN_REFERENCE_BLOCK;
+          } else if (!block) {
+            thePeer.block = constants.PEER.SPECIAL_BLOCK;
+            thePeer.statusTS = 0;
+            thePeer.status = 'UP';
+          }
         }
+        sigTime = block ? block.medianTime : 0;
+        thePeer.statusTS = sigTime;
+        let found = await this.dal.getPeerOrNull(thePeer.pubkey);
+        let peerEntity = Peer.statics.peerize(found || thePeer);
+        if(found){
+          // Already existing peer
+          const sp2 = found.block.split('-');
+          const previousBlockNumber = parseInt(sp2[0]);
+          const interfacesChanged = Peer.statics.endpointSum(thePeer) != Peer.statics.endpointSum(peerEntity);
+          const isOutdatedDocument = blockNumber < previousBlockNumber && !eraseIfAlreadyRecorded;
+          const isAlreadyKnown = blockNumber == previousBlockNumber && !eraseIfAlreadyRecorded;
+          if (isOutdatedDocument){
+            const error = _.extend({}, constants.ERRORS.NEWER_PEER_DOCUMENT_AVAILABLE);
+            _.extend(error.uerr, { peer: found });
+            throw error;
+          } else if (isAlreadyKnown) {
+            throw constants.ERRORS.PEER_DOCUMENT_ALREADY_KNOWN;
+          }
+          peerEntity = Peer.statics.peerize(found);
+          if (interfacesChanged) {
+            // Warns the old peer of the change
+            const caster = multicaster();
+            caster.sendPeering(Peer.statics.peerize(peerEntity), Peer.statics.peerize(thePeer));
+          }
+          thePeer.copyValues(peerEntity);
+          peerEntity.sigDate = new Date(sigTime * 1000);
+        }
+        // Set the peer as UP again
+        peerEntity.status = 'UP';
+        peerEntity.first_down = null;
+        peerEntity.last_try = null;
+        peerEntity.hash = String(hashf(peerEntity.getRawSigned())).toUpperCase();
+        peerEntity.raw = peerEntity.getRaw();
+        await this.dal.savePeer(peerEntity);
+        this.logger.info('✔ PEER %s', peering.pubkey.substr(0, 8))
+        let savedPeer = Peer.statics.peerize(peerEntity);
+        if (peerEntity.pubkey == this.selfPubkey) {
+          const localEndpoint = await this.server.getMainEndpoint(this.conf);
+          const localNodeNotListed = !peerEntity.containsEndpoint(localEndpoint);
+          const current = localNodeNotListed && (await this.dal.getCurrentBlockOrNull());
+          if (!localNodeNotListed) {
+            const indexOfThisNode = peerEntity.endpoints.indexOf(localEndpoint);
+            if (indexOfThisNode !== -1) {
+              this.server.push({
+                nodeIndexInPeers: indexOfThisNode
+              });
+            } else {
+              logger.warn('This node has his interface listed in the peer document, but its index cannot be found.');
+            }
+          }
+          if (localNodeNotListed && (!current || current.number > blockNumber)) {
+            // Document with pubkey of local peer, but doesn't contain local interface: we must add it
+            this.generateSelfPeer(this.conf, 0);
+          } else {
+            this.peerInstance = peerEntity;
+          }
+        }
+        return savedPeer;
+      } catch (e) {
+        this.logger.info('✘ PEER %s', peering.pubkey.substr(0, 8))
+        throw e
       }
-      return savedPeer;
     })
   }
 
@@ -204,7 +212,7 @@ export class PeeringService {
       logger.error('It seems there is an issue with your configuration.');
       logger.error('Please restart your node with:');
       logger.error('$ duniter restart');
-      return Q.Promise(() => null);
+      return new Promise(() => null);
     }
     // Choosing next based-block for our peer record: we basically want the most distant possible from current
     let minBlock = current ? current.number - 30 : 0;

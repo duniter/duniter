@@ -4,7 +4,6 @@ const util        = require('util');
 const path        = require('path');
 const co          = require('co');
 const _           = require('underscore');
-const Q           = require('q');
 const archiver    = require('archiver');
 const unzip       = require('unzip2');
 const fs          = require('fs');
@@ -176,7 +175,7 @@ function Server (home, memoryOnly, overrideConf) {
     });
   };
 
-  this.submitP = (obj, isInnerWrite) => Q.nbind(this.submit, this)(obj, isInnerWrite);
+  this.submitP = (obj, isInnerWrite) => this.submit(obj, isInnerWrite)
 
   this.initDAL = (conf) => co(function*() {
     yield that.dal.init(conf);

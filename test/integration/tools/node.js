@@ -1,7 +1,5 @@
 "use strict";
-var Q = require('q');
 var co = require('co');
-var rp     = require('request-promise');
 var _ = require('underscore');
 var async  = require('async');
 var request  = require('request');
@@ -21,7 +19,7 @@ module.exports = function (dbName, options) {
 module.exports.statics = {
 };
 
-var UNTIL_TIMEOUT = 115000;
+var UNTIL_TIMEOUT = 20000;
 
 function Node (dbName, options) {
 
@@ -104,18 +102,26 @@ function Node (dbName, options) {
   };
 
   function post(uri, data, done) {
-    var postReq = request.post({
-      "uri": 'http://' + [that.server.conf.remoteipv4, that.server.conf.remoteport].join(':') + uri,
-      "timeout": 1000 * 10,
-      "json": true
-    }, function (err, res, body) {
-      done(err, res, body);
-    });
-    postReq.form(data);
+    return new Promise((resolve, reject) => {
+      var postReq = request.post({
+        "uri": 'http://' + [that.server.conf.remoteipv4, that.server.conf.remoteport].join(':') + uri,
+        "timeout": 1000 * 10,
+        "json": true
+      }, function (err, res, body) {
+        if (err) {
+          reject(err)
+          done && done(err)
+        } else {
+          resolve(res, body)
+          done && done(err, res, body)
+        }
+      });
+      postReq.form(data);
+    })
   }
-  
+
   this.startTesting = function(done) {
-    return Q.Promise(function(resolve, reject){
+    return new Promise(function(resolve, reject){
       if (started) return done();
       async.waterfall([
         function(next) {
@@ -202,7 +208,7 @@ function Node (dbName, options) {
   this.until = function (eventName, count) {
     var counted = 0;
     var max = count == undefined ? 1 : count;
-    return Q.Promise(function (resolve, reject) {
+    return new Promise(function (resolve, reject) {
       var finished = false;
       that.server.on(eventName, function () {
         counted++;
@@ -262,15 +268,25 @@ function Node (dbName, options) {
     });
   };
 
-  this.peeringP = () => Q.nfcall(this.peering);
+  this.peeringP = () => that.http.getPeer();
 
   this.submitPeer = function(peer, done) {
-    post('/network/peering/peers', {
+    return post('/network/peering/peers', {
       "peer": Peer.statics.peerize(peer).getRawSigned()
     }, done);
   };
 
-  this.submitPeerP = (peer) => Q.nfcall(this.submitPeer, peer);
+  this.submitPeerP = (peer) => new Promise((res, rej) => {
+    that.submitPeer(peer, (err, data) => {
+      if (err) return rej(err)
+      res(data)
+    })
+  })
 
-  this.commitP = (params) => Q.nfcall(this.commit(params));
+  this.commitP = (params) => new Promise((res, rej) => {
+    this.commit(params)((err, data) => {
+      if (err) return rej(err)
+      res(data)
+    })
+  })
 }

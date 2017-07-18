@@ -1,10 +1,9 @@
-import {GlobalFifoPromise} from "./GlobalFifoPromise";
-
-"use strict";
+import {GlobalFifoPromise} from "./GlobalFifoPromise"
 import {FileDAL} from "../lib/dal/fileDAL"
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
-const Q               = require('q');
+
+"use strict";
 const rules           = require('../lib/rules')
 const keyring          = require('duniter-common').keyring;
 const constants       = require('../lib/constants');
@@ -44,7 +43,7 @@ export class IdentityService {
     if (!idty) {
       throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
     }
-    await this.dal.fillInMembershipsOfIdentity(Q(idty));
+    await this.dal.fillInMembershipsOfIdentity(Promise.resolve(idty));
     return new Identity(idty);
   }
 
@@ -156,7 +155,7 @@ export class IdentityService {
     return GlobalFifoPromise.pushFIFO(async () => {
       this.logger.info('⬇ CERT %s block#%s -> %s', cert.from, cert.block_number, idty.uid);
       try {
-        await rules.HELPERS.checkCertificationIsValid(cert, potentialNext, () => Q(idty), this.conf, this.dal);
+        await rules.HELPERS.checkCertificationIsValid(cert, potentialNext, () => Promise.resolve(idty), this.conf, this.dal);
       } catch (e) {
         cert.err = e;
       }

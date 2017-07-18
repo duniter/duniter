@@ -4,7 +4,6 @@ const co   = require('co');
 const opts = require('optimist').argv;
 const path = require('path');
 const CFSCore  = require('../dal/fileDALs/CFSCore').CFSCore
-const Q    = require('q');
 const qfs  = require('q-io/fs');
 const fs   = require('fs');
 const SQLiteDriver = require("../dal/drivers/SQLiteDriver").SQLiteDriver
@@ -71,7 +70,7 @@ const dir = module.exports = {
   })
 };
 
-const someDelayFix = () => Q.Promise((resolve) => {
+const someDelayFix = () => new Promise((resolve) => {
   setTimeout(resolve, 100);
 });
 

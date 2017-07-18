@@ -1,7 +1,6 @@
 "use strict";
 
 const co        = require('co');
-const Q         = require('q');
 const _         = require('underscore');
 const should    = require('should');
 const bma       = require('duniter-bma').duniter.methods.bma;
@@ -41,7 +40,7 @@ describe("Peer document", function() {
       yield bmaAPI.openConnections();
       server.bma = bmaAPI;
       require('../../app/modules/router').duniter.methods.routeToNetwork(server);
-    }), Q());
+    }), Promise.resolve());
 
     // Server 1
     yield cat.createIdentity();

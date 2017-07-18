@@ -11,44 +11,46 @@ module.exports = function () {
 
 function Wizard () {
 
-  this.configPoW = function (conf, program, aLogger, done) {
-    doTasks(['pow'], conf, done);
-  };
+  this.configPoW = function (conf) {
+    return doTasks(['pow'], conf)
+  }
 
-  this.configCurrency = function (conf, program, aLogger, done) {
-    doTasks(['currency'], conf, done);
-  };
+  this.configCurrency = function (conf) {
+    return doTasks(['currency'], conf)
+  }
 
-  this.configUCP = function (conf, program, aLogger, done) {
-    doTasks(['parameters'], conf, done);
-  };
+  this.configUCP = function (conf) {
+    return doTasks(['parameters'], conf)
+  }
 }
 
-function doTasks (todos, conf, done) {
-  async.forEachSeries(todos, function(task, callback){
-    tasks[task] && tasks[task](conf, callback);
-  }, done);
+function doTasks (todos, conf) {
+  return new Promise((res, rej) => {
+    async.forEachSeries(todos, function(task, callback){
+      tasks[task] && tasks[task](conf, callback);
+    }, (err) => {
+      if (err) return rej(err)
+      return res()
+    });
+  })
 }
 
 const tasks = {
 
   currency: function (conf, done) {
-    async.waterfall([
-      function (next){
-        inquirer.prompt([{
-          type: "input",
-          name: "currency",
-          message: "Currency name",
-          default: conf.currency,
-          validate: function (input) {
-            return input.match(/^[a-zA-Z0-9-_ ]+$/) ? true : false;
-          }
-        }], function (answers) {
-          conf.currency = answers.currency;
-          next();
-        });
-      }
-    ], done);
+    return co(function*() {
+      const answers = yield inquirer.prompt([{
+        type: "input",
+        name: "currency",
+        message: "Currency name",
+        default: conf.currency,
+        validate: function (input) {
+          return input.match(/^[a-zA-Z0-9-_ ]+$/) ? true : false;
+        }
+      }])
+      conf.currency = answers.currency
+      done()
+    })
   },
 
   parameters: function (conf, done) {
@@ -82,16 +84,17 @@ const tasks = {
 };
 
 function simpleValue (question, property, defaultValue, conf, validation, done) {
-  inquirer.prompt([{
-    type: "input",
-    name: property,
-    message: question,
-    default: conf[property],
-    validate: validation
-  }], function (answers) {
-    conf[property] = answers[property];
-    done();
-  });
+  return co(function*() {
+    const answers = yield inquirer.prompt([{
+      type: "input",
+      name: property,
+      message: question,
+      default: conf[property],
+      validate: validation
+    }])
+    conf[property] = answers[property]
+    done()
+  })
 }
 
 function simpleInteger (question, property, conf, done) {

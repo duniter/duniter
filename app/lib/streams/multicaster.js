@@ -1,5 +1,4 @@
 "use strict";
-const Q       = require('q');
 const stream  = require('stream');
 const util    = require('util');
 const request = require('request');
@@ -176,9 +175,9 @@ function Multicaster (conf, timeout) {
 
   function post(peer, uri, data) {
     if (!peer.isReachable()) {
-      return Q();
+      return Promise.resolve();
     }
-    return Q.Promise(function(resolve, reject){
+    return new Promise(function(resolve, reject){
       const postReq = request.post({
         "uri": protocol(peer.getPort()) + '://' + peer.getURL() + uri,
         "timeout": timeout || constants.NETWORK.DEFAULT_TIMEOUT

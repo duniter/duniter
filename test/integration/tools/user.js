@@ -1,6 +1,5 @@
 "use strict";
 const co      = require('co');
-const Q		    = require('q');
 const _ = require('underscore');
 const async		= require('async');
 const request	= require('request');
@@ -46,8 +45,9 @@ function User (uid, options, node) {
   }
 
   this.createIdentity = (useRoot, fromServer) => co(function*() {
-    if (!pub)
-      yield Q.nfcall(init);
+    if (!pub) {
+      init(() => {})
+    }
     const current = yield node.server.BlockchainService.current();
     let buid = !useRoot && current ? ucp.format.buid(current.number, current.hash) : '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855';
     createdIdentity = rawer.getOfficialIdentity({
@@ -125,9 +125,9 @@ function User (uid, options, node) {
 
   this.revoke = (givenLookupIdty) => co(function *() {
     const revocation = yield that.makeRevocation(givenLookupIdty);
-    return Q.nfcall(post, '/wot/revoke', {
+    return post('/wot/revoke', {
       "revocation": revocation.getRaw()
-    });
+    })
   });
 
   this.makeMembership = (type, fromServer, overrideProps) => co(function*() {
@@ -152,7 +152,7 @@ function User (uid, options, node) {
 
   this.sendMembership = (type) => co(function*() {
     const ms = yield that.makeMembership(type);
-    yield Q.nfcall(post, '/blockchain/membership', {
+    yield post('/blockchain/membership', {
       "membership": ms.getRawSigned()
     });
   });
@@ -331,14 +331,21 @@ function User (uid, options, node) {
   });
 
   function post(uri, data, done) {
-    var postReq = request.post({
-      "uri": 'http://' + [node.server.conf.remoteipv4, node.server.conf.remoteport].join(':') + uri,
-      "timeout": 1000 * 100000
-    }, function (err, res, body) {
-      err = err || (res.statusCode != 200 && body != 'Already up-to-date' && body) || null;
-      done(err, res, body);
-    });
-    postReq.form(data);
+    return new Promise((resolve, reject) => {
+      var postReq = request.post({
+        "uri": 'http://' + [node.server.conf.remoteipv4, node.server.conf.remoteport].join(':') + uri,
+        "timeout": 1000 * 100000
+      }, function (err, res, body) {
+        err = err || (res.statusCode != 200 && body != 'Already up-to-date' && body) || null;
+        if (err) {
+          reject(err)
+        } else {
+          resolve(res, body)
+        }
+        done && done(err, res, body);
+      });
+      postReq.form(data);
+    })
   }
 
   function doPost(uri, data, fromServer) {
@@ -357,7 +364,7 @@ function User (uid, options, node) {
   }
 
   function getContacter(fromServer) {
-    return Q.Promise(function(resolve){
+    return new Promise(function(resolve){
       let theNode = (fromServer && { server: fromServer }) || node;
       resolve(contacter(theNode.server.conf.ipv4, theNode.server.conf.port, {
         timeout: 1000 * 100000
@@ -370,5 +377,10 @@ function User (uid, options, node) {
     return node2.getLookup(pubkey);
   });
 
-  this.sendP = (amount, userid, comment) => Q.nfcall(this.send.apply(this, [amount, userid, comment]));
+  this.sendP = (amount, userid, comment) => new Promise((res, rej) => {
+    that.send(amount, userid, comment)((err, data) => {
+      if (err) return rej(err)
+      res(data)
+    })
+  })
 }

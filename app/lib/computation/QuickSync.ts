@@ -5,7 +5,6 @@ import {DBTransaction} from "../db/DBTransaction"
 import {Indexer} from "../indexer"
 import {ConfDTO} from "../dto/ConfDTO"
 
-const Q = require('q');
 const _ = require('underscore')
 const constants = require('../constants')
 const Block = require('../entity/block')
@@ -46,11 +45,11 @@ export class QuickSynchronizer {
       await this.blockchain.saveParametersForRoot(blocks[0], this.conf, this.dal)
     }
     // Helper to retrieve a block with local cache
-    const getBlock = (number: number): BlockDTO => {
+    const getBlock = (number: number): Promise<BlockDTO> => {
       const firstLocalNumber = blocks[0].number;
       if (number >= firstLocalNumber) {
         let offset = number - firstLocalNumber;
-        return Q(blocks[offset]);
+        return Promise.resolve(blocks[offset])
       }
       return this.dal.getBlock(number);
     };

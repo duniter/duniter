@@ -5,7 +5,8 @@ const moment          = require('moment');
 const inquirer        = require('inquirer');
 const common          = require('duniter-common');
 const indexer         = require('../../../lib/indexer').Indexer
-const rules           = require('../../../lib/rules')
+const LOCAL_HELPERS   = require('../../../lib/rules/local_rules').LOCAL_RULES_HELPERS
+const GLOBAL_HELPERS  = require('../../../lib/rules/global_rules').GLOBAL_RULES_HELPERS
 const TransactionDTO  = require('../../../lib/dto/TransactionDTO').TransactionDTO
 
 const keyring       = common.keyring;
@@ -109,14 +110,14 @@ function BlockGenerator(server, prover) {
       const tx = TransactionDTO.fromJSONObject(obj);
       try {
         yield new Promise((resolve, reject) => {
-          rules.HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), (err, res) => {
+          LOCAL_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), (err, res) => {
             if (err) return reject(err)
             return resolve(res)
           })
         })
         const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
-        yield rules.HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, conf, dal);
-        yield rules.HELPERS.checkTxBlockStamp(tx, dal);
+        yield GLOBAL_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, conf, dal);
+        yield GLOBAL_HELPERS.checkTxBlockStamp(tx, dal);
         transactions.push(tx);
         passingTxs.push(tx);
         logger.info('Transaction %s added to block', tx.hash);
@@ -220,7 +221,7 @@ function BlockGenerator(server, prover) {
           // Will throw an error if not enough links
           yield mainContext.checkHaveEnoughLinks(newcomer, newLinks);
           // This one does not throw but returns a boolean
-          const isOut = yield rules.HELPERS.isOver3Hops(newcomer, newLinks, realNewcomers, current, conf, dal);
+          const isOut = yield GLOBAL_HELPERS.isOver3Hops(newcomer, newLinks, realNewcomers, current, conf, dal);
           if (isOut) {
             throw 'Key ' + newcomer + ' is not recognized by the WoT for this block';
           }
@@ -390,7 +391,7 @@ function BlockGenerator(server, prover) {
             const isMember = yield dal.isMember(cert.from);
             const doubleSignature = ~certifiers.indexOf(cert.from) ? true : false;
             if (isMember && !doubleSignature) {
-              const isValid = yield rules.HELPERS.checkCertificationIsValidForBlock(cert, { number: current.number + 1, currency: current.currency }, identity, conf, dal);
+              const isValid = yield GLOBAL_HELPERS.checkCertificationIsValidForBlock(cert, { number: current.number + 1, currency: current.currency }, identity, conf, dal);
               if (isValid) {
                 certifiers.push(cert.from);
                 foundCerts.push(cert);
@@ -448,7 +449,7 @@ function BlockGenerator(server, prover) {
         block.medianTime = vHEAD.medianTime;
       }
       // Choose the version
-      block.version = (manualValues && manualValues.version) || (yield rules.HELPERS.getMaxPossibleVersionNumber(current));
+      block.version = (manualValues && manualValues.version) || (yield LOCAL_HELPERS.getMaxPossibleVersionNumber(current));
       block.currency = current ? current.currency : conf.currency;
       block.nonce = 0;
       if (!conf.dtReeval) {
@@ -702,11 +703,11 @@ function NextBlockGenerator(mainContext, conf, dal, logger) {
     const filter = (pubkey) => co(function*() {
       try {
         // No manual filtering, takes all BUT already used UID or pubkey
-        let exists = yield rules.HELPERS.checkExistsUserID(preJoinData[pubkey].identity.uid, dal);
+        let exists = yield GLOBAL_HELPERS.checkExistsUserID(preJoinData[pubkey].identity.uid, dal);
         if (exists && !preJoinData[pubkey].identity.wasMember) {
           throw 'UID already taken';
         }
-        exists = yield rules.HELPERS.checkExistsPubkey(pubkey, dal);
+        exists = yield GLOBAL_HELPERS.checkExistsPubkey(pubkey, dal);
         if (exists && !preJoinData[pubkey].identity.wasMember) {
           throw 'Pubkey already taken';
         }

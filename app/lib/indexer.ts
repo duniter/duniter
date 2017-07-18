@@ -6,6 +6,7 @@ import {RevocationDTO} from "./dto/RevocationDTO"
 import {CertificationDTO} from "./dto/CertificationDTO"
 import {TransactionDTO} from "./dto/TransactionDTO"
 import {DBHead} from "./db/DBHead"
+import {LOCAL_RULES_HELPERS} from "./rules/local_rules"
 
 const co              = require('co');
 const _               = require('underscore');
@@ -1975,7 +1976,7 @@ async function checkCertificationIsValid (block: BlockDTO, cert: CindexEntry, fi
 
 function txSourceUnlock(ENTRY:SindexEntry, source:SindexEntry, HEAD: DBHead) {
   const tx = ENTRY.txObj;
-  let sigResults = require('./rules').HELPERS.getSigResult(tx, 'a');
+  let sigResults = LOCAL_RULES_HELPERS.getSigResult(tx)
   let unlocksForCondition = [];
   let unlocksMetadata: any = {};
   let unlockValues = ENTRY.unlock;

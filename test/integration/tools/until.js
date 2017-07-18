@@ -9,7 +9,6 @@ module.exports = function (server, eventName, count) {
     var finished = false;
     server.on(eventName, function () {
       counted++;
-      console.warn('Received ' + counted + '/' + count + ' ' + eventName);
       if (counted == max) {
         if (!finished) {
           finished = true;

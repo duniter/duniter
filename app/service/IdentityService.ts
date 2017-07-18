@@ -2,9 +2,9 @@ import {GlobalFifoPromise} from "./GlobalFifoPromise"
 import {FileDAL} from "../lib/dal/fileDAL"
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
+import {GLOBAL_RULES_FUNCTIONS, GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
 
 "use strict";
-const rules           = require('../lib/rules')
 const keyring          = require('duniter-common').keyring;
 const constants       = require('../lib/constants');
 const Block           = require('../../app/lib/entity/block');
@@ -105,7 +105,7 @@ export class IdentityService {
           }
           idty.expires_on = basedBlock.medianTime + this.conf.idtyWindow;
         }
-        await rules.GLOBAL.checkIdentitiesAreWritable({ identities: [idty.inline()], version: (current && current.version) || constants.BLOCK_GENERATED_VERSION }, this.conf, this.dal);
+        await GLOBAL_RULES_FUNCTIONS.checkIdentitiesAreWritable({ identities: [idty.inline()], version: (current && current.version) || constants.BLOCK_GENERATED_VERSION }, this.conf, this.dal);
         idty = new Identity(idty);
         if (byAbsorption !== BY_ABSORPTION) {
           idty.ref_block = parseInt(idty.buid.split('-')[0]);
@@ -155,7 +155,7 @@ export class IdentityService {
     return GlobalFifoPromise.pushFIFO(async () => {
       this.logger.info('⬇ CERT %s block#%s -> %s', cert.from, cert.block_number, idty.uid);
       try {
-        await rules.HELPERS.checkCertificationIsValid(cert, potentialNext, () => Promise.resolve(idty), this.conf, this.dal);
+        await GLOBAL_RULES_HELPERS.checkCertificationIsValid(cert, potentialNext, () => Promise.resolve(idty), this.conf, this.dal);
       } catch (e) {
         cert.err = e;
       }

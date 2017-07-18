@@ -7,6 +7,7 @@ const querablep = require('querablep');
 const constants = require('./constants');
 const keyring = require('duniter-common').keyring;
 const rawer = require('duniter-common').rawer;
+const LOCAL_HELPERS = require('../../../lib/rules/local_rules').LOCAL_RULES_HELPERS
 
 const PAUSES_PER_TURN = 5;
 
@@ -268,7 +269,7 @@ function getBlockTime (block, conf, forcedTime) {
     return forcedTime;
   }
   const now = moment.utc().unix();
-  const maxAcceleration = require('../../../lib/rules').HELPERS.maxAcceleration(conf);
+  const maxAcceleration = LOCAL_HELPERS.maxAcceleration(conf);
   const timeoffset = block.number >= conf.medianTimeBlocks ? 0 : conf.rootoffset || 0;
   const medianTime = block.medianTime;
   const upperBound = block.number === 0 ? medianTime : Math.min(medianTime + maxAcceleration, now - timeoffset);

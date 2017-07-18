@@ -5,9 +5,9 @@ import {ConfDTO} from "../dto/ConfDTO"
 import {BlockDTO} from "../dto/BlockDTO"
 import {DBHead} from "../db/DBHead"
 import {DBBlock} from "../db/DBBlock"
+import {CHECK} from "../rules/index"
 
 const _ = require('underscore')
-const rules = require('../rules')
 const common          = require('duniter-common')
 const Block           = require('../entity/block')
 const Identity        = require('../entity/identity')
@@ -21,13 +21,13 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     super(blockchainStorage, dal.mindexDAL, dal.iindexDAL, dal.sindexDAL, dal.cindexDAL)
   }
 
-  async checkBlock(block:BlockDTO, withPoWAndSignature:boolean, conf: ConfDTO, dal:any) {
+  static async checkBlock(block:BlockDTO, withPoWAndSignature:boolean, conf: ConfDTO, dal:any) {
     const index = Indexer.localIndex(block, conf)
     if (withPoWAndSignature) {
-      await rules.CHECK.ASYNC.ALL_LOCAL(block, conf, index)
+      await CHECK.ASYNC.ALL_LOCAL(block, conf, index)
     }
     else {
-      await rules.CHECK.ASYNC.ALL_LOCAL_BUT_POW(block, conf, index)
+      await CHECK.ASYNC.ALL_LOCAL_BUT_POW(block, conf, index)
     }
     const HEAD = await Indexer.completeGlobalScope(block, conf, index, dal);
     const HEAD_1 = await dal.bindexDAL.head(1);

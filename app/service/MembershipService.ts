@@ -2,8 +2,9 @@
 import {GlobalFifoPromise} from "./GlobalFifoPromise"
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {FileDAL} from "../lib/dal/fileDAL"
+import {LOCAL_RULES_HELPERS} from "../lib/rules/local_rules"
+import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
 
-const rules           = require('../lib/rules')
 const hashf           = require('duniter-common').hashf;
 const constants       = require('../lib/constants');
 const Membership      = require('../lib/entity/membership');
@@ -31,7 +32,7 @@ export class MembershipService {
       entry.currency = this.conf.currency || entry.currency;
       entry.idtyHash = (hashf(entry.userid + entry.certts + entry.issuer) + "").toUpperCase();
       this.logger.info('⬇ %s %s', entry.issuer, entry.membership);
-      if (!rules.HELPERS.checkSingleMembershipSignature(entry)) {
+      if (!LOCAL_RULES_HELPERS.checkSingleMembershipSignature(entry)) {
         throw constants.ERRORS.WRONG_SIGNATURE_MEMBERSHIP;
       }
       // Get already existing Membership with same parameters
@@ -49,7 +50,7 @@ export class MembershipService {
         throw constants.ERRORS.MEMBERSHIP_A_NON_MEMBER_CANNOT_LEAVE;
       }
       const current = await this.dal.getCurrentBlockOrNull();
-      const basedBlock = await rules.HELPERS.checkMembershipBlock(entry, current, this.conf, this.dal);
+      const basedBlock = await GLOBAL_RULES_HELPERS.checkMembershipBlock(entry, current, this.conf, this.dal);
       if (basedBlock) {
         entry.expires_on = basedBlock.medianTime + this.conf.msWindow;
       }

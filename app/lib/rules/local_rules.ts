@@ -1,13 +1,12 @@
 "use strict";
 import {BlockDTO} from "../dto/BlockDTO"
 import {ConfDTO} from "../dto/ConfDTO"
-import {CindexEntry, MindexEntry, SindexEntry} from "../indexer"
+import {CindexEntry, IndexEntry, Indexer, MindexEntry, SindexEntry} from "../indexer"
 import {BaseDTO, TransactionDTO} from "../dto/TransactionDTO"
 import {DBBlock} from "../db/DBBlock"
 
 const _          = require('underscore');
 const common     = require('duniter-common');
-const indexer    = require('../indexer').Indexer;
 
 const constants       = common.constants
 const hashf           = common.hashf
@@ -18,7 +17,7 @@ const Membership      = common.document.Membership
 const Transaction     = common.document.Transaction
 const maxAcceleration = require('./helpers').maxAcceleration
 
-export const FUNCTIONS = {
+export const LOCAL_RULES_FUNCTIONS = {
 
   checkParameters: async (block:BlockDTO) => {
     if (block.number == 0 && !block.parameters) {
@@ -104,8 +103,8 @@ export const FUNCTIONS = {
     return true;
   },
 
-  checkIdentitiesUserIDConflict: async (block:BlockDTO, conf:ConfDTO, index:SindexEntry) => {
-    const creates = indexer.iindexCreate(index);
+  checkIdentitiesUserIDConflict: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    const creates = Indexer.iindexCreate(index);
     const uids = _.chain(creates).pluck('uid').uniq().value();
     if (creates.length !== uids.length) {
       throw Error('Block must not contain twice same identity uid');
@@ -113,8 +112,8 @@ export const FUNCTIONS = {
     return true;
   },
 
-  checkIdentitiesPubkeyConflict: async (block:BlockDTO, conf:ConfDTO, index:SindexEntry) => {
-    const creates = indexer.iindexCreate(index);
+  checkIdentitiesPubkeyConflict: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    const creates = Indexer.iindexCreate(index);
     const pubkeys = _.chain(creates).pluck('pub').uniq().value();
     if (creates.length !== pubkeys.length) {
       throw Error('Block must not contain twice same identity pubkey');
@@ -122,9 +121,9 @@ export const FUNCTIONS = {
     return true;
   },
 
-  checkIdentitiesMatchJoin: async (block:BlockDTO, conf:ConfDTO, index:SindexEntry) => {
-    const icreates = indexer.iindexCreate(index);
-    const mcreates = indexer.mindexCreate(index);
+  checkIdentitiesMatchJoin: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    const icreates = Indexer.iindexCreate(index);
+    const mcreates = Indexer.mindexCreate(index);
     for (const icreate of icreates) {
       const matching = _(mcreates).filter({ pub: icreate.pub });
       if (matching.length == 0) {
@@ -134,9 +133,9 @@ export const FUNCTIONS = {
     return true;
   },
 
-  checkRevokedAreExcluded: async (block:BlockDTO, conf:ConfDTO, index:SindexEntry) => {
-    const iindex = indexer.iindex(index);
-    const mindex = indexer.mindex(index);
+  checkRevokedAreExcluded: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    const iindex = Indexer.iindex(index);
+    const mindex = Indexer.mindex(index);
     const revocations = _.chain(mindex)
       .filter((row:MindexEntry) => row.op == constants.IDX_UPDATE && row.revoked_on !== null)
       .pluck('pub')
@@ -150,17 +149,17 @@ export const FUNCTIONS = {
     return true;
   },
 
-  checkRevokedUnicity: async (block:BlockDTO, conf:ConfDTO, index:SindexEntry) => {
+  checkRevokedUnicity: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
     try {
-      await FUNCTIONS.checkMembershipUnicity(block, conf, index);
+      await LOCAL_RULES_FUNCTIONS.checkMembershipUnicity(block, conf, index);
     } catch (e) {
       throw Error('A single revocation per member is allowed');
     }
     return true;
   },
 
-  checkMembershipUnicity: async (block:BlockDTO, conf:ConfDTO, index:SindexEntry) => {
-    const mindex = indexer.mindex(index);
+  checkMembershipUnicity: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    const mindex = Indexer.mindex(index);
     const pubkeys = _.chain(mindex).pluck('pub').uniq().value();
     if (pubkeys.length !== mindex.length) {
       throw Error('Unicity constraint PUBLIC_KEY on MINDEX is not respected');
@@ -239,9 +238,9 @@ export const FUNCTIONS = {
     return true;
   },
 
-  checkCertificationOneByIssuer: async (block:BlockDTO, conf:ConfDTO, index:SindexEntry) => {
+  checkCertificationOneByIssuer: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
     if (block.number > 0) {
-      const cindex = indexer.cindex(index);
+      const cindex = Indexer.cindex(index);
       const certFromA = _.uniq(cindex.map((row:CindexEntry) => row.issuer));
       if (certFromA.length !== cindex.length) {
         throw Error('Block cannot contain two certifications from same issuer');
@@ -250,8 +249,8 @@ export const FUNCTIONS = {
     return true;
   },
 
-  checkCertificationUnicity: async (block:BlockDTO, conf:ConfDTO, index:SindexEntry) => {
-    const cindex = indexer.cindex(index);
+  checkCertificationUnicity: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    const cindex = Indexer.cindex(index);
     const certAtoB = _.uniq(cindex.map((row:CindexEntry) => row.issuer + row.receiver));
     if (certAtoB.length !== cindex.length) {
       throw Error('Block cannot contain identical certifications (A -> B)');
@@ -259,10 +258,10 @@ export const FUNCTIONS = {
     return true;
   },
 
-  checkCertificationIsntForLeaverOrExcluded: async (block:BlockDTO, conf:ConfDTO, index:SindexEntry) => {
-    const cindex = indexer.cindex(index);
-    const iindex = indexer.iindex(index);
-    const mindex = indexer.mindex(index);
+  checkCertificationIsntForLeaverOrExcluded: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    const cindex = Indexer.cindex(index);
+    const iindex = Indexer.iindex(index);
+    const mindex = Indexer.mindex(index);
     const certified = cindex.map((row:CindexEntry) => row.receiver);
     for (const pub of certified) {
       const exclusions = _(iindex).where({ op: constants.IDX_UPDATE, member: false, pub: pub });
@@ -332,7 +331,7 @@ export const FUNCTIONS = {
         throw Error('A transaction must have at least 1 source');
       }
     }
-    const sindex = indexer.localSIndex(dto);
+    const sindex = Indexer.localSIndex(dto);
     const inputs = _.filter(sindex, (row:SindexEntry) => row.op == constants.IDX_UPDATE).map((row:SindexEntry) => [row.op, row.identifier, row.pos].join('-'));
     if (inputs.length !== _.uniq(inputs).length) {
       throw Error('It cannot exist 2 identical sources for transactions inside a given block');
@@ -346,7 +345,7 @@ export const FUNCTIONS = {
 
   checkTxAmounts: async (block:BlockDTO) => {
     for (const tx of block.transactions) {
-      HELPERS.checkTxAmountsValidity(tx);
+      LOCAL_RULES_HELPERS.checkTxAmountsValidity(tx);
     }
   },
 
@@ -413,11 +412,11 @@ function getSigResult(tx:any) {
   return sigResult;
 }
 
-function checkBunchOfTransactions(transactions:TransactionDTO[], done:any){
+function checkBunchOfTransactions(transactions:TransactionDTO[], done:any = undefined){
   const block:any = { transactions };
   return (async () => {
     try {
-      let local_rule = FUNCTIONS;
+      let local_rule = LOCAL_RULES_FUNCTIONS;
       await local_rule.checkTxLen(block);
       await local_rule.checkTxIssuers(block);
       await local_rule.checkTxSources(block);
@@ -432,7 +431,7 @@ function checkBunchOfTransactions(transactions:TransactionDTO[], done:any){
   })()
 }
 
-export const HELPERS = {
+export const LOCAL_RULES_HELPERS = {
 
   maxAcceleration: (conf:ConfDTO) => maxAcceleration(conf),
 
@@ -442,7 +441,7 @@ export const HELPERS = {
 
   checkBunchOfTransactions: checkBunchOfTransactions,
 
-  checkSingleTransactionLocally: (tx:any, done:any) => checkBunchOfTransactions([tx], done),
+  checkSingleTransactionLocally: (tx:any, done:any = undefined) => checkBunchOfTransactions([tx], done),
 
   checkTxAmountsValidity: (tx:TransactionDTO) => {
     const inputs = tx.inputsAsObjects()

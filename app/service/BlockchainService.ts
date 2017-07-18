@@ -7,11 +7,11 @@ import {QuickSynchronizer} from "../lib/computation/QuickSync"
 import {BlockDTO} from "../lib/dto/BlockDTO"
 import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
 import {DBBlock} from "../lib/db/DBBlock"
+import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
 
 const _               = require('underscore');
 const co              = require('co');
 const parsers         = require('duniter-common').parsers;
-const rules           = require('../lib/rules')
 const constants       = require('../lib/constants');
 const Block           = require('../lib/entity/block');
 const Identity        = require('../lib/entity/identity');
@@ -305,7 +305,7 @@ export class BlockchainService {
       const newLinks = await this.server.generatorNewCertsToLinks(newCerts, updates);
       const currentTime = current ? current.medianTime : 0;
       certs = await this.getValidCerts(pubkey, newCerts);
-      outdistanced = await rules.HELPERS.isOver3Hops(pubkey, newLinks, someNewcomers, current, this.conf, this.dal);
+      outdistanced = await GLOBAL_RULES_HELPERS.isOver3Hops(pubkey, newLinks, someNewcomers, current, this.conf, this.dal);
       // Expiration of current membershship
       const currentMembership = await this.dal.mindexDAL.getReducedMS(pubkey);
       const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;

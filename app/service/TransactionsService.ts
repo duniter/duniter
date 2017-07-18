@@ -3,9 +3,10 @@ import {GlobalFifoPromise} from "./GlobalFifoPromise"
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {FileDAL} from "../lib/dal/fileDAL"
 import {TransactionDTO} from "../lib/dto/TransactionDTO"
+import {LOCAL_RULES_HELPERS} from "../lib/rules/local_rules"
+import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
 
 const constants       = require('../lib/constants');
-const rules           = require('../lib/rules')
 const Transaction     = require('../lib/entity/transaction');
 const CHECK_PENDING_TRANSACTIONS = true
 
@@ -35,9 +36,9 @@ export class TransactionService {
         const transaction = tx.getTransaction();
         const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
         const dto = TransactionDTO.fromJSONObject(tx)
-        await rules.HELPERS.checkSingleTransactionLocally(dto)
-        await rules.HELPERS.checkTxBlockStamp(transaction, this.dal);
-        await rules.HELPERS.checkSingleTransaction(dto, nextBlockWithFakeTimeVariation, this.conf, this.dal, CHECK_PENDING_TRANSACTIONS);
+        await LOCAL_RULES_HELPERS.checkSingleTransactionLocally(dto)
+        await GLOBAL_RULES_HELPERS.checkTxBlockStamp(transaction, this.dal);
+        await GLOBAL_RULES_HELPERS.checkSingleTransaction(dto, nextBlockWithFakeTimeVariation, this.conf, this.dal, CHECK_PENDING_TRANSACTIONS);
         const server_pubkey = this.conf.pair && this.conf.pair.pub;
         transaction.pubkey = transaction.issuers.indexOf(server_pubkey) !== -1 ? server_pubkey : '';
         if (!(await this.dal.txsDAL.sandbox.acceptNewSandBoxEntry(transaction, server_pubkey))) {

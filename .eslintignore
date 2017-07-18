@@ -11,8 +11,7 @@ app/lib/dal/sqliteDAL/index/*.js
 app/lib/dal/fileDALs/*.js
 app/lib/dal/fileDAL.js
 app/service/*.js
-app/lib/rules/local_rules.js
-app/lib/rules/global_rules.js
+app/lib/rules/*.js
 app/modules/wizard.js
 app/modules/router.js
 app/modules/revert.js

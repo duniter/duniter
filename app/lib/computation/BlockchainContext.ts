@@ -102,7 +102,7 @@ export class BlockchainContext {
   }
 
   checkBlock(block: BlockDTO, withPoWAndSignature = true): Promise<any> {
-    return this.blockchain.checkBlock(block, withPoWAndSignature, this.conf, this.dal)
+    return DuniterBlockchain.checkBlock(block, withPoWAndSignature, this.conf, this.dal)
   }
 
   async addBlock(obj: BlockDTO, index: any = null, HEAD: DBHead | null = null): Promise<any> {

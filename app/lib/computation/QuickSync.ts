@@ -240,7 +240,7 @@ export class QuickSynchronizer {
         await this.dal.walletDAL.insertBatch(walletsToRecord)
 
         // Last block: cautious mode to trigger all the INDEX expiry mechanisms
-        const { index, HEAD } = await this.blockchain.checkBlock(dto, constants.WITH_SIGNATURES_AND_POW, this.conf, this.dal)
+        const { index, HEAD } = await DuniterBlockchain.checkBlock(dto, constants.WITH_SIGNATURES_AND_POW, this.conf, this.dal)
         await this.blockchain.pushTheBlock(dto, index, HEAD, this.conf, this.dal, this.logger)
 
         // Clean temporary variables

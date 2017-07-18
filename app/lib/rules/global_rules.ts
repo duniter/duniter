@@ -5,12 +5,12 @@ import {FileDAL} from "../dal/fileDAL"
 import {DBBlock} from "../db/DBBlock"
 import {DBIdentity} from "../dal/sqliteDAL/IdentityDAL"
 import {TransactionDTO} from "../dto/TransactionDTO"
+import * as local_rules from "./local_rules"
 
 const co             = require('co');
 const _              = require('underscore');
 const common         = require('duniter-common');
 const indexer        = require('../indexer').Indexer
-const local_rules    = require('../rules/local_rules');
 
 const constants      = common.constants
 const keyring        = common.keyring
@@ -18,8 +18,6 @@ const rawer          = common.rawer
 const Identity       = common.document.Identity
 const Transaction    = common.document.Transaction
 const unlock         = common.txunlock
-
-export const rules:any = {}
 
 // Empty logger by default
 let logger = {
@@ -29,9 +27,9 @@ let logger = {
 
 // TODO: all the global rules should be replaced by index rule someday
 
-rules.FUNCTIONS = {
+export const GLOBAL_RULES_FUNCTIONS = {
 
-  checkIdentitiesAreWritable: async (block:BlockDTO, conf:ConfDTO, dal:FileDAL) => {
+  checkIdentitiesAreWritable: async (block:{ identities:string[], version: number }, conf:ConfDTO, dal:FileDAL) => {
     let current = await dal.getCurrentBlockOrNull();
     for (const obj of block.identities) {
       let idty = Identity.fromInline(obj);
@@ -53,7 +51,7 @@ rules.FUNCTIONS = {
     return true;
   },
 
-  checkSourcesAvailability: async (block:BlockDTO, conf:ConfDTO, dal:FileDAL, alsoCheckPendingTransactions:boolean) => {
+  checkSourcesAvailability: async (block:{ transactions:TransactionDTO[], medianTime: number }, conf:ConfDTO, dal:FileDAL, alsoCheckPendingTransactions:boolean) => {
     const txs = block.transactions
     const current = await dal.getCurrentBlockOrNull();
     for (const tx of txs) {
@@ -96,7 +94,7 @@ rules.FUNCTIONS = {
         if (block.medianTime - dbSrc.written_time < tx.locktime) {
           throw constants.ERRORS.LOCKTIME_PREVENT;
         }
-        let sigResults = local_rules.HELPERS.getSigResult(tx);
+        let sigResults = local_rules.LOCAL_RULES_HELPERS.getSigResult(tx);
         let unlocksForCondition = [];
         let unlocksMetadata:any = {};
         let unlockValues = unlocks[k];
@@ -155,7 +153,7 @@ rules.FUNCTIONS = {
   }
 }
 
-rules.HELPERS = {
+export const GLOBAL_RULES_HELPERS = {
 
   // Functions used in an external context too
   checkMembershipBlock: (ms:any, current:DBBlock, conf:ConfDTO, dal:FileDAL) => checkMSTarget(ms, current ? { number: current.number + 1} : { number: 0 }, conf, dal),
@@ -179,7 +177,7 @@ rules.HELPERS = {
 
   checkExistsPubkey: (pub:string, dal:FileDAL) => dal.getWrittenIdtyByPubkey(pub),
 
-  checkSingleTransaction: (tx:TransactionDTO, block:BlockDTO, conf:ConfDTO, dal:FileDAL, alsoCheckPendingTransactions:boolean) => rules.FUNCTIONS.checkSourcesAvailability({
+  checkSingleTransaction: (tx:TransactionDTO, block:{ medianTime: number }, conf:ConfDTO, dal:FileDAL, alsoCheckPendingTransactions:boolean) => GLOBAL_RULES_FUNCTIONS.checkSourcesAvailability({
     transactions: [tx],
     medianTime: block.medianTime
   }, conf, dal, alsoCheckPendingTransactions),

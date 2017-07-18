@@ -14,5 +14,6 @@ app/service/*.js
 app/lib/rules/local_rules.js
 app/lib/rules/global_rules.js
 app/modules/wizard.js
+app/modules/router.js
 test/*.js
 test/**/*.js

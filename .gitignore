@@ -52,3 +52,5 @@ app/lib/rules/global_rules*.js*
 app/lib/logger*js*
 app/service/*.js*
 app/lib/wot.js*
+app/modules/router*.js*
+app/modules/wizard.js*

@@ -3,7 +3,6 @@
 const co        = require('co');
 const should    = require('should');
 const toolbox   = require('./tools/toolbox');
-const Block = require('../../app/lib/entity/block');
 const constants = require('../../app/lib/constants');
 const logger = require('../../app/lib/logger').NewLogger();
 const BlockProver = require('../../app/modules/prover/lib/blockProver').BlockProver
@@ -29,8 +28,7 @@ const prover = new BlockProver({
       sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
     }
   },
-  logger,
-  lib: { constants, Block }
+  logger
 });
 
 const now = 1474382274 * 1000;

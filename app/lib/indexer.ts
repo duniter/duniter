@@ -1,6 +1,6 @@
 "use strict";
 import {BlockDTO} from "./dto/BlockDTO"
-import {ConfDTO} from "./dto/ConfDTO"
+import {ConfDTO, CurrencyConfDTO} from "./dto/ConfDTO"
 import {IdentityDTO} from "./dto/IdentityDTO"
 import {RevocationDTO} from "./dto/RevocationDTO"
 import {CertificationDTO} from "./dto/CertificationDTO"
@@ -129,7 +129,7 @@ function pushCindex(index: any[], entry: CindexEntry): void {
 
 export class Indexer {
 
-  static localIndex(block:BlockDTO, conf:ConfDTO): IndexEntry[] {
+  static localIndex(block:BlockDTO, conf:CurrencyConfDTO): IndexEntry[] {
 
     /********************
      * GENERAL BEHAVIOR
@@ -411,7 +411,7 @@ export class Indexer {
     return index;
   }
 
-  static async quickCompleteGlobalScope(block: BlockDTO, conf: ConfDTO, bindex: DBHead[], iindex: IindexEntry[], mindex: MindexEntry[], cindex: CindexEntry[], dal: any) {
+  static async quickCompleteGlobalScope(block: BlockDTO, conf: CurrencyConfDTO, bindex: DBHead[], iindex: IindexEntry[], mindex: MindexEntry[], cindex: CindexEntry[], dal: any) {
 
     function range(start: number, end: number, property = ""): any {
       let theRange;
@@ -961,7 +961,7 @@ export class Indexer {
   }
 
   // BR_G09
-  static prepareDiffNumber(HEAD: DBHead, HEAD_1: DBHead, conf: ConfDTO) {
+  static prepareDiffNumber(HEAD: DBHead, HEAD_1: DBHead, conf: CurrencyConfDTO) {
     if (HEAD.number == 0) {
       HEAD.diffNumber = HEAD.number + conf.dtDiffEval;
     } else if (HEAD_1.diffNumber <= HEAD.number) {
@@ -972,7 +972,7 @@ export class Indexer {
   }
 
   // BR_G11
-  static prepareUDTime(HEAD: DBHead, HEAD_1: DBHead, conf: ConfDTO) {
+  static prepareUDTime(HEAD: DBHead, HEAD_1: DBHead, conf: CurrencyConfDTO) {
     // UD Production
     if (HEAD.number == 0) {
       HEAD.udTime = conf.udTime0;
@@ -1045,7 +1045,7 @@ export class Indexer {
   }
 
   // BR_G16
-  static async prepareSpeed(HEAD: DBHead, head: (n:number) => Promise<BlockDTO>, conf: ConfDTO) {
+  static async prepareSpeed(HEAD: DBHead, head: (n:number) => Promise<BlockDTO>, conf: CurrencyConfDTO) {
     if (HEAD.number == 0) {
       HEAD.speed = 0;
     } else {
@@ -1096,7 +1096,7 @@ export class Indexer {
   }
 
   // BR_G19
-  static async prepareIdentitiesAge(iindex: IindexEntry[], HEAD: DBHead, HEAD_1: DBHead, conf: ConfDTO, dal: any) {
+  static async prepareIdentitiesAge(iindex: IindexEntry[], HEAD: DBHead, HEAD_1: DBHead, conf: CurrencyConfDTO, dal: any) {
     await Promise.all(_.where(iindex, { op: constants.IDX_CREATE }).map(async (ENTRY: IindexEntry) => {
       if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
         ENTRY.age = 0;
@@ -1112,7 +1112,7 @@ export class Indexer {
   }
 
   // BR_G22
-  static async prepareMembershipsAge(mindex: MindexEntry[], HEAD: DBHead, HEAD_1: DBHead, conf: ConfDTO, dal: any) {
+  static async prepareMembershipsAge(mindex: MindexEntry[], HEAD: DBHead, HEAD_1: DBHead, conf: CurrencyConfDTO, dal: any) {
     await Promise.all(_.filter(mindex, (entry: MindexEntry) => !entry.revoked_on).map(async (ENTRY:MindexEntry) => {
       if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
         ENTRY.age = 0;
@@ -1128,7 +1128,7 @@ export class Indexer {
   }
 
   // BR_G37
-  static async prepareCertificationsAge(cindex: CindexEntry[], HEAD: DBHead, HEAD_1: DBHead, conf: ConfDTO, dal: any) {
+  static async prepareCertificationsAge(cindex: CindexEntry[], HEAD: DBHead, HEAD_1: DBHead, conf: CurrencyConfDTO, dal: any) {
     await Promise.all(cindex.map(async (ENTRY) => {
       if (HEAD.number == 0) {
         ENTRY.age = 0;

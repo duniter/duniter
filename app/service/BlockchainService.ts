@@ -13,7 +13,6 @@ const _               = require('underscore');
 const co              = require('co');
 const parsers         = require('duniter-common').parsers;
 const constants       = require('../lib/constants');
-const Block           = require('../lib/entity/block');
 const Identity        = require('../lib/entity/identity');
 const Transaction     = require('../lib/entity/transaction');
 
@@ -125,7 +124,7 @@ export class BlockchainService {
 
   private async checkAndAddBlock(blockToAdd:any, doCheck:boolean, forkAllowed:boolean = false) {
     // Check global format, notably version number
-    const obj = parsers.parseBlock.syncWrite(Block.statics.fromJSON(blockToAdd).getRawSigned());
+    const obj = parsers.parseBlock.syncWrite(BlockDTO.fromJSONObject(blockToAdd).getRawSigned());
     // Force usage of local currency name, do not accept other currencies documents
     if (this.conf.currency) {
       obj.currency = this.conf.currency || obj.currency;

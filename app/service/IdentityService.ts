@@ -3,11 +3,11 @@ import {FileDAL} from "../lib/dal/fileDAL"
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
 import {GLOBAL_RULES_FUNCTIONS, GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
+import {BlockDTO} from "../lib/dto/BlockDTO"
 
 "use strict";
 const keyring          = require('duniter-common').keyring;
 const constants       = require('../lib/constants');
-const Block           = require('../../app/lib/entity/block');
 const Identity        = require('../../app/lib/entity/identity');
 const Certification   = require('../../app/lib/entity/certification');
 const Revocation      = require('../../app/lib/entity/revocation');
@@ -123,7 +123,7 @@ export class IdentityService {
   async submitCertification(obj:any) {
     const current = await this.dal.getCurrentBlockOrNull();
     // Prepare validator for certifications
-    const potentialNext = new Block({ currency: this.conf.currency, identities: [], number: current ? current.number + 1 : 0 });
+    const potentialNext = BlockDTO.fromJSONObject({ currency: this.conf.currency, identities: [], number: current ? current.number + 1 : 0 });
     // Force usage of local currency name, do not accept other currencies documents
     obj.currency = this.conf.currency || obj.currency;
     const cert = Certification.statics.fromJSON(obj);

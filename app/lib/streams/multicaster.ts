@@ -1,6 +1,7 @@
 import {ConfDTO} from "../dto/ConfDTO"
 import * as stream from "stream"
 import {DBPeer} from "../dal/sqliteDAL/PeerDAL"
+import {BlockDTO} from "../dto/BlockDTO"
 
 const request = require('request');
 const constants = require('../../lib/constants');
@@ -9,7 +10,6 @@ const Identity = require('../../lib/entity/identity');
 const Certification = require('../../lib/entity/certification');
 const Revocation = require('../../lib/entity/revocation');
 const Membership = require('../../lib/entity/membership');
-const Block = require('../../lib/entity/block');
 const Transaction = require('../../lib/entity/transaction');
 const logger  = require('../logger').NewLogger('multicaster');
 
@@ -32,7 +32,7 @@ export class Multicaster extends stream.Transform {
 
   async blockForward(doc:any, peers:DBPeer[]) {
     return this.forward({
-      transform: Block.statics.fromJSON,
+      transform: (b:any) => BlockDTO.fromJSONObject(b),
       type: 'Block',
       uri: '/blockchain/block',
       getObj: (block:any) => {

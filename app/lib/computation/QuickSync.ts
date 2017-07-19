@@ -3,11 +3,10 @@ import {DuniterBlockchain} from "../blockchain/DuniterBlockchain"
 import {BlockDTO} from "../dto/BlockDTO"
 import {DBTransaction} from "../db/DBTransaction"
 import {Indexer} from "../indexer"
-import {ConfDTO} from "../dto/ConfDTO"
+import {CurrencyConfDTO} from "../dto/ConfDTO"
 
 const _ = require('underscore')
 const constants = require('../constants')
-const Block = require('../entity/block')
 
 let sync_bindex: any [] = [];
 let sync_iindex: any[] = [];
@@ -18,7 +17,7 @@ let sync_bindexSize = 0;
 let sync_allBlocks: BlockDTO[] = [];
 let sync_expires: number[] = [];
 let sync_nextExpiring = 0;
-let sync_currConf: ConfDTO;
+let sync_currConf: CurrencyConfDTO;
 const sync_memoryWallets: any = {}
 const sync_memoryDAL = {
   getWallet: (conditions: string) => Promise.resolve(sync_memoryWallets[conditions] || { conditions, balance: 0 }),
@@ -99,7 +98,7 @@ export class QuickSynchronizer {
       const dto = BlockDTO.fromJSONObject(block)
 
       if (block.number == 0) {
-        sync_currConf = Block.statics.getConf(block);
+        sync_currConf = BlockDTO.getConf(block);
       }
 
       if (block.number != to) {

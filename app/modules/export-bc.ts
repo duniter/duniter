@@ -1,8 +1,8 @@
 "use strict";
 import {ConfDTO} from "../lib/dto/ConfDTO"
+import {BlockDTO} from "../lib/dto/BlockDTO"
 
 const _ = require('underscore');
-const Block = require('../lib/entity/block');
 
 module.exports = {
   duniter: {
@@ -34,7 +34,7 @@ module.exports = {
           for (const chunk of chunks) {
             let blocks = await server.dal.getBlocksBetween(chunk.start, chunk.to);
             blocks.forEach(function (block:any) {
-              jsoned.push(_(new Block(block).json()).omit('raw'));
+              jsoned.push(_(BlockDTO.fromJSONObject(block).json()).omit('raw'));
             });
           }
           if (!program.nostdout) {

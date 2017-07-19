@@ -4,6 +4,7 @@ import {FileDAL} from "../dal/fileDAL"
 import {DBBlock} from "../db/DBBlock"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import * as local_rules from "./local_rules"
+import {BlockDTO} from "../dto/BlockDTO"
 
 const _              = require('underscore');
 const common         = require('duniter-common');
@@ -155,7 +156,7 @@ export const GLOBAL_RULES_HELPERS = {
   // Functions used in an external context too
   checkMembershipBlock: (ms:any, current:DBBlock, conf:ConfDTO, dal:FileDAL) => checkMSTarget(ms, current ? { number: current.number + 1} : { number: 0 }, conf, dal),
 
-  checkCertificationIsValid: (cert:any, current:DBBlock, findIdtyFunc:any, conf:ConfDTO, dal:FileDAL) => {
+  checkCertificationIsValid: (cert:any, current:BlockDTO, findIdtyFunc:any, conf:ConfDTO, dal:FileDAL) => {
     return checkCertificationIsValid(current ? current : { number: 0, currency: '' }, cert, findIdtyFunc, conf, dal)
   },
 

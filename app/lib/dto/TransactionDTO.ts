@@ -46,6 +46,14 @@ export class TransactionDTO {
     }
   }
 
+  getLen() {
+    return 2 // header + blockstamp
+      + this.issuers.length * 2 // issuers + signatures
+      + this.inputs.length * 2 // inputs + unlocks
+      + (this.comment ? 1 : 0)
+      + this.outputs.length
+  }
+
   getHash() {
     const raw = TransactionDTO.toRAW(this)
     return hashf(raw)

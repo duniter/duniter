@@ -3,7 +3,30 @@ export interface Keypair {
   sec: string
 }
 
-export class ConfDTO {
+export interface CurrencyConfDTO {
+  c: number
+  dt: number
+  ud0: number
+  sigPeriod: number
+  sigStock: number
+  sigWindow: number
+  sigValidity: number
+  sigQty: number
+  idtyWindow: number
+  msWindow: number
+  msPeriod: number
+  xpercent: number
+  msValidity: number
+  stepMax: number
+  medianTimeBlocks: number
+  avgGenTime: number
+  dtDiffEval: number
+  percentRot: number
+  udTime0: number
+  udReevalTime0: number
+  dtReeval: number
+}
+export class ConfDTO implements CurrencyConfDTO {
 
   constructor(
     public loglevel: string,

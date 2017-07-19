@@ -1,4 +1,5 @@
 import {TransactionDTO} from "./TransactionDTO"
+import {CurrencyConfDTO} from "./ConfDTO"
 export class BlockDTO {
 
   version: number
@@ -35,6 +36,65 @@ export class BlockDTO {
 
   constructor(
 ) {}
+
+  json() {
+    return {
+      version: this.version,
+      nonce: this.nonce,
+      number: this.number,
+      powMin: this.powMin,
+      time: this.time,
+      medianTime: this.medianTime,
+      membersCount: this.membersCount,
+      monetaryMass: this.monetaryMass,
+      unitbase: this.unitbase,
+      issuersCount: this.issuersCount,
+      issuersFrame: this.issuersFrame,
+      issuersFrameVar: this.issuersFrameVar,
+      len: this.len,
+      currency: this.currency,
+      issuer: this.issuer,
+      signature: this.signature,
+      hash: this.hash,
+      parameters: this.parameters,
+      previousHash: this.previousHash,
+      previousIssuer: this.previousIssuer,
+      inner_hash: this.inner_hash,
+      dividend: this.dividend,
+      identities: this.identities,
+      joiners: this.joiners,
+      actives: this.actives,
+      leavers: this.leavers,
+      revoked: this.revoked,
+      excluded: this.excluded,
+      certifications: this.certifications,
+      transactions: this.transactions.map((tx) => {
+        return {
+          version: tx.version,
+          currency: tx.currency,
+          locktime: tx.locktime,
+          blockstamp: tx.blockstamp,
+          blockstampTime: tx.blockstampTime,
+          issuers: tx.issuers,
+          inputs: tx.inputs,
+          outputs: tx.outputs,
+          unlocks: tx.unlocks,
+          signatures: tx.signatures,
+          comment: tx.comment
+        }
+      })
+    }
+  }
+
+  get len() {
+    return this.identities.length +
+      this.joiners.length +
+      this.actives.length +
+      this.leavers.length +
+      this.revoked.length +
+      this.certifications.length +
+      this.transactions.reduce((sum, tx) => sum + tx.getLen(), 0)
+  }
 
   getInlineIdentity(pubkey:string): string | null {
     let i = 0;
@@ -132,19 +192,47 @@ export class BlockDTO {
     dto.issuersCount = parseInt(obj.issuersCount)
     dto.issuersFrame = parseInt(obj.issuersFrame)
     dto.issuersFrameVar = parseInt(obj.issuersFrameVar)
-    dto.identities = obj.identities
-    dto.joiners = obj.joiners
-    dto.actives = obj.actives
-    dto.leavers = obj.leavers
-    dto.revoked = obj.revoked
-    dto.excluded = obj.excluded
-    dto.certifications = obj.certifications
-    dto.transactions = obj.transactions.map(TransactionDTO.fromJSONObject)
+    dto.identities = obj.identities || []
+    dto.joiners = obj.joiners || []
+    dto.actives = obj.actives || []
+    dto.leavers = obj.leavers || []
+    dto.revoked = obj.revoked || []
+    dto.excluded = obj.excluded || []
+    dto.certifications = obj.certifications || []
+    dto.transactions = (obj.transactions || []).map(TransactionDTO.fromJSONObject)
     dto.medianTime = parseInt(obj.medianTime)
     dto.fork = !!obj.fork
     dto.parameters = obj.parameters
     dto.signature = obj.signature
     dto.nonce = parseInt(obj.nonce)
     return dto
+  }
+
+  static getConf(block:BlockDTO): CurrencyConfDTO {
+    const sp = block.parameters.split(':');
+    return {
+      c: parseFloat(sp[0]),
+      dt: parseInt(sp[1]),
+      ud0: parseInt(sp[2]),
+      sigPeriod: parseInt(sp[3]),
+      sigStock: parseInt(sp[4]),
+      sigWindow: parseInt(sp[5]),
+      sigValidity: parseInt(sp[6]),
+      sigQty: parseInt(sp[7]),
+      idtyWindow: parseInt(sp[8]),
+      msWindow: parseInt(sp[9]),
+      xpercent: parseFloat(sp[10]),
+      msValidity: parseInt(sp[11]),
+      stepMax: parseInt(sp[12]),
+      medianTimeBlocks: parseInt(sp[13]),
+      avgGenTime: parseInt(sp[14]),
+      dtDiffEval: parseInt(sp[15]),
+      percentRot: parseFloat(sp[16]),
+      udTime0: parseInt(sp[17]),
+      udReevalTime0: parseInt(sp[18]),
+      dtReeval: parseInt(sp[19]),
+      // New parameter, defaults to msWindow
+      msPeriod: parseInt(sp[9])
+    }
   }
 }

@@ -6,7 +6,6 @@ import {DBHead} from "../db/DBHead"
 const _               = require('underscore');
 const indexer         = require('../indexer').Indexer
 const constants       = require('../constants');
-const Block           = require('../entity/block');
 
 export class BlockchainContext {
 
@@ -51,7 +50,7 @@ export class BlockchainContext {
       } else {
         block = { version: this.vHEAD_1.version };
       }
-      this.vHEAD = await indexer.completeGlobalScope(Block.statics.fromJSON(block), this.conf, [], this.dal);
+      this.vHEAD = await indexer.completeGlobalScope(BlockDTO.fromJSONObject(block), this.conf, [], this.dal);
     })()
     return this.HEADrefreshed;
   }

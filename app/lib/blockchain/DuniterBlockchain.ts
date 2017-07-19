@@ -9,7 +9,6 @@ import {CHECK} from "../rules/index"
 
 const _ = require('underscore')
 const common          = require('duniter-common')
-const Block           = require('../entity/block')
 const Identity        = require('../entity/identity')
 const Certification   = require('../entity/certification')
 const Membership      = require('../entity/membership')
@@ -161,7 +160,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
 
   async pushTheBlock(obj:BlockDTO, index:IndexEntry[], HEAD:DBHead | null, conf:ConfDTO, dal:any, logger:any) {
     const start = Date.now();
-    const block = new Block(obj);
+    const block = BlockDTO.fromJSONObject(obj)
     try {
       const currentBlock = await dal.getCurrentBlockOrNull();
       block.fork = false;
@@ -248,7 +247,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
 
   async saveParametersForRoot(block:BlockDTO, conf:ConfDTO, dal:any) {
     if (block.parameters) {
-      const bconf = Block.statics.getConf(block);
+      const bconf = BlockDTO.getConf(block)
       conf.c = bconf.c;
       conf.dt = bconf.dt;
       conf.ud0 = bconf.ud0;
@@ -504,7 +503,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
 
   async pushSideBlock(obj:BlockDTO, dal:any, logger:any) {
     const start = Date.now();
-    const block = new Block(obj);
+    const block = DBBlock.fromBlockDTO(BlockDTO.fromJSONObject(obj))
     block.fork = true;
     try {
       // Saves the block (DAL)

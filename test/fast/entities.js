@@ -1,11 +1,11 @@
 "use strict";
 let should = require('should');
-let Block = require('../../app/lib/entity/block');
+let BlockDTO = require('../../app/lib/dto/BlockDTO').BlockDTO
 
 describe('Entities', () => {
 
   it('testing Block', () => {
-    let block = new Block({ dividend: 2 });
+    let block = BlockDTO.fromJSONObject({ dividend: 2 });
     block.should.have.property("dividend").equal(2);
   });
 });

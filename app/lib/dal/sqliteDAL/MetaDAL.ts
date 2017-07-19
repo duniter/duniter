@@ -1,14 +1,15 @@
-import {AbstractSQLite} from "./AbstractSQLite";
-import {SQLiteDriver} from "../drivers/SQLiteDriver";
-import {ConfDTO} from "../../dto/ConfDTO";
-import {SindexEntry} from "../../indexer";
-import {hashf} from "../../common";
-import {TransactionDTO} from "../../dto/TransactionDTO";
-import {BlockDAL} from "./BlockDAL";
-import {IdentityDAL} from "./IdentityDAL";
-import {SIndexDAL} from "./index/SIndexDAL";
-import {WalletDAL} from "./WalletDAL";
-import {MIndexDAL} from "./index/MIndexDAL";
+import {AbstractSQLite} from "./AbstractSQLite"
+import {SQLiteDriver} from "../drivers/SQLiteDriver"
+import {ConfDTO} from "../../dto/ConfDTO"
+import {SindexEntry} from "../../indexer"
+import {hashf} from "../../common"
+import {TransactionDTO} from "../../dto/TransactionDTO"
+import {BlockDAL} from "./BlockDAL"
+import {IdentityDAL} from "./IdentityDAL"
+import {SIndexDAL} from "./index/SIndexDAL"
+import {WalletDAL} from "./WalletDAL"
+import {MIndexDAL} from "./index/MIndexDAL"
+import {DBBlock} from "../../db/DBBlock"
 
 const _ = require('underscore')
 const logger = require('../../logger').NewLogger('metaDAL');
@@ -135,13 +136,26 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
       let blockDAL = new BlockDAL(this.driverCopy)
       let sindexDAL = new SIndexDAL(this.driverCopy)
       const blocks = await blockDAL.query('SELECT * FROM block WHERE NOT fork');
-      const Block = require('../../../lib/entity/block');
       const Identity = require('../../../lib/entity/identity');
-      const amountsPerKey:any = {};
+      type AmountPerKey = {
+        amounts: {
+          amount: number
+          comment:string
+        }[],
+        sources: {
+          amount:number
+          base:number
+          identifier:string
+          pos:number,
+          conditions:string
+          block:DBBlock,
+          tx:string|null
+        }[]
+      }
+      const amountsPerKey:{ [pub:string]: AmountPerKey[] } = {}
       const members = [];
-      for (const block of blocks) {
-        const b = new Block(block);
-        const amountsInForBlockPerKey:any = {};
+      for (const b of blocks) {
+        const amountsInForBlockPerKey: { [pub:string]: AmountPerKey } = {};
         for (const idty of b.identities) {
           members.push(Identity.statics.fromInline(idty).pubkey);
         }
@@ -149,31 +163,42 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
           for (const member of members) {
             amountsInForBlockPerKey[member] = amountsInForBlockPerKey[member] || { amounts: [], sources: [] };
             amountsInForBlockPerKey[member].amounts.push({ amount: b.dividend * Math.pow(10, b.unitbase), comment: 'Dividend' });
-            amountsInForBlockPerKey[member].sources.push({ type: 'D', amount: b.dividend, base: b.unitbase, identifier: member, pos: b.number, block: b, tx: null });
+            amountsInForBlockPerKey[member].sources.push({ amount: b.dividend, base: b.unitbase, identifier: member, pos: b.number, block: b, tx: null, conditions: 'SIG(' + member + ')' });
           }
         }
-        const txs = b.getTransactions();
+        const txs = b.transactions
         for (let i = 0; i < txs.length; i++) {
           const tx = txs[i];
           tx.hash = hashf(rawer.getTransaction(b.transactions[i]))
-          for (const input of tx.inputs) {
-            input.tx = tx.hash;
-            input.block = b;
+          for (const input of tx.inputsAsObjects()) {
             amountsInForBlockPerKey[tx.issuers[0]] = amountsInForBlockPerKey[tx.issuers[0]] || { amounts: [], sources: [] };
             amountsInForBlockPerKey[tx.issuers[0]].amounts.push({ amount: -input.amount * Math.pow(10, input.base), comment: tx.comment || '######' });
-            amountsInForBlockPerKey[tx.issuers[0]].sources.push(input);
+            amountsInForBlockPerKey[tx.issuers[0]].sources.push({
+              amount: input.amount,
+              base: input.base,
+              identifier: input.identifier,
+              pos: input.pos,
+              conditions: "",
+              block: b,
+              tx: tx.hash
+            })
           }
-          for (let j = 0; j < tx.outputs.length; j++) {
-            const output = tx.outputs[j];
+          const outputObjects = tx.outputsAsObjects()
+          for (let j = 0; j < outputObjects.length; j++) {
+            const output = outputObjects[j]
             const conditions = output.conditions.match(/^SIG\((.+)\)$/);
             if (conditions) {
-              output.tx = tx.hash;
-              output.identifier = tx.hash;
-              output.pos = j;
-              output.block = b;
               amountsInForBlockPerKey[conditions[1]] = amountsInForBlockPerKey[conditions[1]] || { amounts: [], sources: [] };
               amountsInForBlockPerKey[conditions[1]].amounts.push({ amount: output.amount * Math.pow(10, output.base), comment: tx.comment || '######' });
-              amountsInForBlockPerKey[conditions[1]].sources.push(output);
+              amountsInForBlockPerKey[conditions[1]].sources.push({
+                amount: output.amount,
+                base: output.base,
+                identifier: tx.hash,
+                pos: j,
+                conditions: output.conditions,
+                block: b,
+                tx: tx.hash
+              })
             }
           }
         }
@@ -205,8 +230,8 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
           if (balance > 0 && balance < 100) {
             const sourcesToDelete = [];
             for (const k of Object.keys(amountsPerKey)) {
-              for (const amPerBlock of Object.keys(amountsPerKey[k])) {
-                for (const src of amountsPerKey[k][amPerBlock].sources) {
+              for (const packet of amountsPerKey[k]) {
+                for (const src of packet.sources) {
                   const id = [src.identifier, src.pos].join('-');
                   if (src.conditions == 'SIG(' + key + ')' && allCreates[id]) {
                     sourcesToDelete.push(src);

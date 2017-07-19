@@ -13,6 +13,7 @@ import {DBWallet} from "./sqliteDAL/WalletDAL"
 import {DBTx} from "./sqliteDAL/TxsDAL"
 import {DBBlock} from "../db/DBBlock"
 import {DBMembership} from "./sqliteDAL/MembershipDAL"
+import {MerkleDTO} from "../dto/MerkleDTO"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -22,7 +23,6 @@ const common = require('duniter-common');
 const indexer = require('../indexer').Indexer
 const logger = require('../logger').NewLogger('filedal');
 const Configuration = require('../entity/configuration');
-const Merkle = require('../entity/merkle');
 const Transaction = require('../entity/transaction');
 const constants = require('../constants');
 
@@ -702,7 +702,7 @@ export class FileDAL {
   async merkleForPeers() {
     let peers = await this.listAllPeersWithStatusNewUP();
     const leaves = peers.map((peer:DBPeer) => peer.hash);
-    const merkle = new Merkle();
+    const merkle = new MerkleDTO();
     merkle.initialize(leaves);
     return merkle;
   }

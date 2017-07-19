@@ -1,20 +1,14 @@
 "use strict";
-const _ = require('underscore');
+
 const merkle = require('merkle');
 
-module.exports = Merkle;
+export class MerkleDTO {
 
-function Merkle(json) {
+  private levels:any[]
+  nodes:any[]
+  depth:number
 
-  _(json || {}).keys().forEach((key) => {
-    let value = json[key];
-    if (key == "number") {
-      value = parseInt(value);
-    }
-    this[key] = value;
-  });
-
-  this.initialize = (leaves) => {
+  initialize(leaves:string[]) {
     const tree = merkle('sha256').sync(leaves);
     this.depth = tree.depth();
     this.nodes = tree.nodes();
@@ -23,9 +17,9 @@ function Merkle(json) {
       this.levels[i] = tree.level(i);
     }
     return this;
-  };
+  }
 
-  this.remove = (leaf) => {
+  remove(leaf:string) {
     // If leaf IS present
     if(~this.levels[this.depth].indexOf(leaf)){
       const leaves = this.leaves();
@@ -37,10 +31,10 @@ function Merkle(json) {
       leaves.sort();
       this.initialize(leaves);
     }
-  };
+  }
 
-  this.removeMany = (leaves) => {
-    leaves.forEach((leaf) => {
+  removeMany(leaves:string[]) {
+    leaves.forEach((leaf:string) => {
       // If leaf IS present
       if(~this.levels[this.depth].indexOf(leaf)){
         const theLeaves = this.leaves();
@@ -55,7 +49,7 @@ function Merkle(json) {
     this.initialize(leaves);
   };
 
-  this.push = (leaf, previous) => {
+  push(leaf:string, previous:string) {
     // If leaf is not present
     if(this.levels[this.depth].indexOf(leaf) == -1){
       const leaves = this.leaves();
@@ -71,9 +65,9 @@ function Merkle(json) {
       leaves.sort();
       this.initialize(leaves);
     }
-  };
+  }
 
-  this.pushMany = (leaves) => {
+  pushMany(leaves:string[]) {
     leaves.forEach((leaf) => {
       // If leaf is not present
       if(this.levels[this.depth].indexOf(leaf) == -1){
@@ -82,11 +76,17 @@ function Merkle(json) {
     });
     leaves.sort();
     this.initialize(leaves);
-  };
+  }
 
-  this.root = () => this.levels.length > 0 ? this.levels[0][0] : '';
+  root() {
+    return this.levels.length > 0 ? this.levels[0][0] : ''
+  }
 
-  this.leaves = () => this.levels[this.depth];
+  leaves() {
+    return this.levels[this.depth]
+  }
 
-  this.count = () => this.leaves().length;
+  count() {
+    return this.leaves().length
+  }
 }

@@ -10,7 +10,7 @@ const duniter   = require('../../index');
 const merkleh   = require('../../app/lib/helpers/merkle');
 const hashf     = require('duniter-common').hashf;
 const constants = require('../../app/lib/constants');
-const Merkle    = require('../../app/lib/entity/merkle');
+const MerkleDTO = require('../../app/lib/dto/MerkleDTO').MerkleDTO
 
 const DB_NAME = "unit_tests";
 
@@ -31,7 +31,7 @@ describe("CLI", function() {
     const onReadBlockchainChunk = (count, from) => Promise.resolve(blockchain.blocks.slice(from, from + count));
     const onReadParticularBlock = (number) => Promise.resolve(blockchain.blocks[number]);
     const onPeersRequested = (req) => co(function*() {
-      const merkle = new Merkle();
+      const merkle = new MerkleDTO();
       merkle.initialize(leaves);
       merkle.leaf = {
         "hash": req.params.leaf,

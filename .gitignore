@@ -32,6 +32,7 @@ test/blockchain/*.js
 test/blockchain/*.js.map
 test/blockchain/lib/*.js
 test/blockchain/lib/*.js.map
+server.js*
 app/cli.js*
 app/lib/*.js*
 app/lib/blockchain/*.js

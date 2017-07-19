@@ -1,5 +1,6 @@
 import {SQLiteDriver} from "../dal/drivers/SQLiteDriver"
 import {CFSCore} from "../dal/fileDALs/CFSCore"
+import {WoTBObject} from "../wot"
 
 const opts = require('optimist').argv;
 const path = require('path');
@@ -29,7 +30,6 @@ const dir = module.exports = {
 
   getHomeFS: async (isMemory:boolean, theHome:string) => {
     const home = theHome || dir.getHome();
-    await someDelayFix();
     const params:any = {
       home: home
     };
@@ -45,10 +45,9 @@ const dir = module.exports = {
   getHomeParams: async (isMemory:boolean, theHome:string) => {
     const params:any = await dir.getHomeFS(isMemory, theHome)
     const home = params.home;
-    await someDelayFix()
     if (isMemory) {
       params.dbf = () => new SQLiteDriver(':memory:');
-      params.wotb = require('../wot').WoTBObject.memoryInstance();
+      params.wotb = WoTBObject.memoryInstance();
     } else {
       const sqlitePath = path.join(home, dir.DUNITER_DB_NAME + '.db');
       params.dbf = () => new SQLiteDriver(sqlitePath);
@@ -57,7 +56,7 @@ const dir = module.exports = {
       if (!existsFile) {
         fs.closeSync(fs.openSync(wotbFilePath, 'w'));
       }
-      params.wotb = require('../wot').WoTBObject.fileInstance(wotbFilePath);
+      params.wotb = WoTBObject.fileInstance(wotbFilePath);
     }
     return params;
   },
@@ -67,8 +66,3 @@ const dir = module.exports = {
     return fsHandler.makeTree('');
   }
 }
-
-const someDelayFix = () => new Promise((resolve) => {
-  setTimeout(resolve, 100);
-})
-

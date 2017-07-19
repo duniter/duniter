@@ -10,6 +10,7 @@
     "noImplicitReturns": true
   },
   "include": [
+    "server.ts",
     "app",
     "bin",
     "test"

@@ -44,14 +44,17 @@ export class ConfDTO {
     public msWindow: number,
     public sigWindow: number,
     public swichOnTimeAheadBy: number,
-    public pair: Keypair | null,
+    public pair: Keypair,
     public remoteport: number,
     public remotehost: string,
     public remoteipv4: string,
     public remoteipv6: string,
+    public port: number,
+    public ipv4: string,
+    public ipv6: string,
 ) {}
 
   static mock() {
-    return new ConfDTO("", "", [], [], 0, 0, 0.6, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, null, 0, "", "", "")
+    return new ConfDTO("", "", [], [], 0, 0, 0.6, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, { pub:'', sec:'' }, 0, "", "", "", 0, "", "")
   }
 }

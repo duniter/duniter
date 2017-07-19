@@ -1013,7 +1013,7 @@ Pius cliquez sur "Find". Vous obtiendrez le résultat suivant :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/48f80f1e07828edab1601f4414f605b995143ddd.png" width="471" height="227">
 
-Double-cliquez sur le résultat trouvé, et vous serez alors amené au fichier `server.js`, ligne 75. Ajoutez-y un point d'arrêt :
+Double-cliquez sur le résultat trouvé, et vous serez alors amené au fichier `server.ts`, ligne 75. Ajoutez-y un point d'arrêt :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/789c7fbb457d3f780316a2cf164ed45f82d0c701.png" width="448" height="94">
 

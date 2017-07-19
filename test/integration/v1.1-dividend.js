@@ -32,7 +32,7 @@ describe("Protocol 1.1 Dividend", function() {
 
   before(() => co(function*() {
 
-    yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+    yield s1.initDalBmaConnections();
 
     yield cat.createIdentity();
     yield tac.createIdentity();

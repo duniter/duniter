@@ -61,8 +61,8 @@ describe("Crosschain transactions", function() {
     let btx0, mtx0; // Source transactions for coins
 
     before(() => co(function *() {
-        yield sB.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-        yield sM.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+        yield sB.initDalBmaConnections();
+        yield sM.initDalBmaConnections();
 
         // Initialize BETA
         yield ticB.createIdentity();
@@ -239,13 +239,8 @@ describe("Crosschain transactions", function() {
     before(function() {
 
       return co(function *() {
-        let server = yield sB.initWithDAL();
-        let bmapi = yield bma(server);
-        yield bmapi.openConnections();
-
-        server = yield sM.initWithDAL();
-        bmapi = yield bma(server);
-        yield bmapi.openConnections();
+        yield sB.initDalBmaConnections();
+        yield sM.initDalBmaConnections()
 
         // Initialize BETA
         yield ticB.createIdentity();

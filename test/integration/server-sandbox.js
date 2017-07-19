@@ -59,9 +59,9 @@ describe("Sandboxes", function() {
 
   before(() => co(function*() {
 
-    yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-    yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-    yield s3.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+    yield s1.initDalBmaConnections();
+    yield s2.initDalBmaConnections();
+    yield s3.initDalBmaConnections();
     s1.dal.idtyDAL.setSandboxSize(3);
     s1.dal.msDAL.setSandboxSize(2);
     s1.dal.txsDAL.setSandboxSize(2);

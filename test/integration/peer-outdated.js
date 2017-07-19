@@ -39,10 +39,7 @@ describe("Peer document expiry", function() {
 
     yield [s1, s2].reduce((p, server) => co(function*() {
       yield p;
-      yield server.initWithDAL();
-      const bmaAPI = yield bma(server);
-      yield bmaAPI.openConnections();
-      server.bma = bmaAPI;
+      yield server.initDalBmaConnections()
       require('../../app/modules/router').duniter.methods.routeToNetwork(server);
     }), Promise.resolve());
 

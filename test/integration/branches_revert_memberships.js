@@ -26,7 +26,7 @@ describe("Revert memberships", function() {
 
   before(() => co(function*() {
 
-    yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+    yield s1.initDalBmaConnections();
 
     yield i1.createIdentity();
     yield i2.createIdentity();

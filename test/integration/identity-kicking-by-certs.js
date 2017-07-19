@@ -33,7 +33,7 @@ const tuc = user('tuc', { pub: '3conGDUXdrTGbQPMQQhEC4Ubu1MCAnFrAYvUaewbUhtk', s
 describe("Identities kicking by certs", function() {
 
   before(() => co(function *() {
-    yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+    yield s1.initDalBmaConnections();
     yield cat.createIdentity();
     yield tac.createIdentity();
     yield toc.createIdentity();

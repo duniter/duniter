@@ -33,7 +33,7 @@ describe("Transaction chaining", function() {
 
   before(() => co(function*() {
 
-    yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+    yield s1.initDalBmaConnections();
     yield tic.createIdentity();
     yield toc.createIdentity();
     yield tic.cert(toc);

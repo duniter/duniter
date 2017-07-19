@@ -306,7 +306,7 @@ export class Server extends stream.Duplex implements HookableServer {
     return archive;
   }
 
-  async importAllDataFromZIP(zipFile:any) {
+  async importAllDataFromZIP(zipFile:string) {
     const params = await this.paramsP
     await this.resetData()
     const output = unzip.Extract({ path: params.home });

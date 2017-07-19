@@ -22,7 +22,7 @@ describe("Identities with shared pubkey", function() {
 
   before(() => co(function*() {
 
-    yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+    yield s1.initDalBmaConnections();
 
     yield cat2.createIdentity();
 

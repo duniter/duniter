@@ -4,11 +4,11 @@ import * as stream from "stream"
 
 export class Prover extends stream.Transform {
 
-  private permaProver:PermanentProver
+  permaProver:PermanentProver
 
   constructor(server:any) {
     super({ objectMode: true })
-    this.permaProver = this.permaProver = new PermanentProver(server)
+    this.permaProver = new PermanentProver(server)
   }
 
   _write(obj:any, enc:any, done:any) {

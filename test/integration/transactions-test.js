@@ -36,7 +36,7 @@ describe("Testing transactions", function() {
 
   before(() => co(function*() {
 
-    yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+    yield s1.initDalBmaConnections();
     // Self certifications
     yield tic.createIdentity();
     yield toc.createIdentity();

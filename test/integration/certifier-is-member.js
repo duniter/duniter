@@ -30,7 +30,7 @@ const tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', s
 describe("Certifier must be a member", function() {
 
   before(() => co(function *() {
-    yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+    yield s1.initDalBmaConnections();
     yield cat.createIdentity();
     yield tac.createIdentity();
     yield cat.cert(tac);

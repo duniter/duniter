@@ -47,6 +47,10 @@ export class BlockDTO {
     return found;
   }
 
+  getRawSigned() {
+    return this.getRawInnerPart() + this.getSignedPart() + this.signature + "\n"
+  }
+
   getSignedPart() {
     return "InnerHash: " + this.inner_hash + "\n" +
       "Nonce: " + this.nonce + "\n"

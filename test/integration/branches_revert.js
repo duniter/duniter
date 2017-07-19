@@ -32,7 +32,7 @@ describe("Revert root", function() {
   before(function() {
 
     return co(function *() {
-      yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+      yield s1.initDalBmaConnections();
       yield cat.createIdentity();
       yield toc.createIdentity();
       yield toc.cert(cat);

@@ -4,9 +4,7 @@ const co        = require('co');
 const should    = require('should');
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
-const until     = require('./tools/until');
 const toolbox   = require('./tools/toolbox');
-const Peer = require('../../app/lib/entity/peer');
 const constants = require('../../app/lib/constants');
 const common    = require('duniter-common');
 

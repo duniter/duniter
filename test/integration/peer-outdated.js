@@ -10,7 +10,7 @@ const commit    = require('./tools/commit');
 const until     = require('./tools/until');
 const toolbox   = require('./tools/toolbox');
 const Multicaster = require('../../app/lib/streams/multicaster').Multicaster
-const Peer = require('../../app/lib/entity/peer');
+const PeerDTO = require('../../app/lib/dto/PeerDTO').PeerDTO
 
 const s1 = toolbox.server({
   pair: {
@@ -62,7 +62,7 @@ describe("Peer document expiry", function() {
   it('sending back V1 peer document should return the latest known one', () => co(function*() {
     let res;
     try {
-      yield s1.post('/network/peering/peers', { peer: Peer.statics.peerize(peer1V1).getRawSigned() });
+      yield s1.post('/network/peering/peers', { peer: PeerDTO.fromJSONObject(peer1V1).getRawSigned() });
     } catch (e) {
       res = e;
     }
@@ -78,7 +78,7 @@ describe("Peer document expiry", function() {
           obj.should.have.property("outdated").equal(true);
           resolve();
         }));
-      caster.sendPeering(Peer.statics.peerize(peer1V1), Peer.statics.peerize(peer1V1));
+      caster.sendPeering(PeerDTO.fromJSONObject(peer1V1), PeerDTO.fromJSONObject(peer1V1));
     });
   }));
 

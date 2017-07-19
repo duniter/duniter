@@ -11,6 +11,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const server_1 = require("../../../server");
 const BlockDTO_1 = require("../../../app/lib/dto/BlockDTO");
 const IdentityDTO_1 = require("../../../app/lib/dto/IdentityDTO");
+const PeerDTO_1 = require("../../../app/lib/dto/PeerDTO");
 const _ = require('underscore');
 const rp = require('request-promise');
 const httpTest = require('../tools/http');
@@ -18,7 +19,6 @@ const sync = require('../tools/sync');
 const commit = require('../tools/commit');
 const user = require('../tools/user');
 const until = require('../tools/until');
-const Peer = require('../../../app/lib/entity/peer');
 const bma = require('duniter-bma').duniter.methods.bma;
 const multicaster = require('../../../app/lib/streams/multicaster');
 const dtos = require('duniter-bma').duniter.methods.dtos;
@@ -300,7 +300,7 @@ class TestingServer {
         return __awaiter(this, void 0, void 0, function* () {
             let p = yield this.get('/network/peering');
             yield otherServer.post('/network/peering/peers', {
-                peer: Peer.statics.peerize(p).getRawSigned()
+                peer: PeerDTO_1.PeerDTO.fromJSONObject(p).getRawSigned()
             });
         });
     }

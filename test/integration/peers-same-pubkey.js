@@ -10,7 +10,7 @@ const sync      = require('./tools/sync');
 const until     = require('./tools/until');
 const toolbox   = require('./tools/toolbox');
 const multicaster = require('../../app/lib/streams/multicaster');
-const Peer = require('../../app/lib/entity/peer');
+const PeerDTO   = require('../../app/lib/dto/PeerDTO').PeerDTO
 
 const catKeyPair = {
   pair: {
@@ -53,7 +53,7 @@ describe("Peer document", function() {
     // // s2 syncs from s1
     yield sync(0, 2, s1, s2);
     yield [
-      s1.get('/network/peering').then((peer) => s2.post('/network/peering/peers', { peer: new Peer(peer).getRawSigned() })), // peer#2
+      s1.get('/network/peering').then((peer) => s2.post('/network/peering/peers', { peer: PeerDTO.fromJSONObject(peer).getRawSigned() })), // peer#2
       until(s2, 'peer', 1)
     ];
 
@@ -67,7 +67,7 @@ describe("Peer document", function() {
     const peer1 = yield s1.get('/network/peering');
     peer1.should.have.property("block").match(/^2-/);
     yield [
-      s3.post('/network/peering/peers', { peer: new Peer(peer1).getRawSigned() }), // peer#3
+      s3.post('/network/peering/peers', { peer: PeerDTO.fromJSONObject(peer1).getRawSigned() }), // peer#3
       until(s3, 'peer', 2)
     ];
     const peer3 = yield s3.get('/network/peering');

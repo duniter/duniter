@@ -6,7 +6,7 @@ var assert = require('assert');
 var dal = require('../../app/lib/dal/fileDAL').FileDAL
 var dir = require('../../app/lib/system/directory');
 var constants = require('../../app/lib/constants');
-var Peer   = require('../../app/lib/entity/peer');
+var PeerDTO   = require('../../app/lib/dto/PeerDTO').PeerDTO
 
 var mocks = {
   peer1: {
@@ -113,7 +113,7 @@ describe("DAL", function(){
   });
 
   it('should have 1 peer if 1 is created', function(){
-    return fileDAL.savePeer(new Peer(mocks.peer1))
+    return fileDAL.savePeer(PeerDTO.fromJSONObject(mocks.peer1))
       .then(() => fileDAL.listAllPeers())
       .then(function(peers){
         peers.should.have.length(1);

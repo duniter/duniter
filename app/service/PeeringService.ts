@@ -4,6 +4,7 @@ import {FileDAL} from "../lib/dal/fileDAL"
 import {DBPeer} from "../lib/dal/sqliteDAL/PeerDAL"
 import {DBBlock} from "../lib/db/DBBlock"
 import {Multicaster} from "../lib/streams/multicaster"
+import {PeerDTO} from "../lib/dto/PeerDTO"
 
 const util           = require('util');
 const _              = require('underscore');
@@ -15,7 +16,6 @@ const dos2unix       = require('duniter-common').dos2unix;
 const hashf          = require('duniter-common').hashf;
 const rawer          = require('duniter-common').rawer;
 const constants      = require('../lib/constants');
-const Peer           = require('../lib/entity/peer');
 
 export interface Keyring {
   publicKey:string
@@ -52,7 +52,7 @@ export class PeeringService {
     if (!thePeer) {
       thePeer = await this.generateSelfPeer(this.conf, 0)
     }
-    return Peer.statics.peerize(thePeer);
+    return PeerDTO.fromJSONObject(thePeer)
   }
 
   async mirrorEndpoints() {
@@ -60,7 +60,7 @@ export class PeeringService {
     return this.getOtherEndpoints(localPeer.endpoints, this.conf);
   }
 
-  checkPeerSignature(p:DBPeer) {
+  checkPeerSignature(p:PeerDTO) {
     const raw = rawer.getPeerWithoutSignature(p);
     const sig = p.signature;
     const pub = p.pubkey;
@@ -72,7 +72,8 @@ export class PeeringService {
     this.logger.info('⬇ PEER %s', peering.pubkey.substr(0, 8))
     // Force usage of local currency name, do not accept other currencies documents
     peering.currency = this.conf.currency || peering.currency;
-    let thePeer = new Peer(peering);
+    let thePeerDTO = PeerDTO.fromJSONObject(peering)
+    let thePeer = thePeerDTO.toDBPeer()
     let sp = thePeer.block.split('-');
     const blockNumber = parseInt(sp[0]);
     let blockHash = sp[1];
@@ -82,7 +83,7 @@ export class PeeringService {
     return GlobalFifoPromise.pushFIFO(async () => {
       try {
         if (makeCheckings) {
-          let goodSignature = this.checkPeerSignature(thePeer);
+          let goodSignature = this.checkPeerSignature(thePeerDTO)
           if (!goodSignature) {
             throw 'Signature from a peer must match';
           }
@@ -103,12 +104,12 @@ export class PeeringService {
         sigTime = block ? block.medianTime : 0;
         thePeer.statusTS = sigTime;
         let found = await this.dal.getPeerOrNull(thePeer.pubkey);
-        let peerEntity = Peer.statics.peerize(found || thePeer);
+        let peerEntityOld = PeerDTO.fromJSONObject(found || thePeer)
         if(found){
           // Already existing peer
           const sp2 = found.block.split('-');
           const previousBlockNumber = parseInt(sp2[0]);
-          const interfacesChanged = Peer.statics.endpointSum(thePeer) != Peer.statics.endpointSum(peerEntity);
+          const interfacesChanged = thePeerDTO.endpointSum() != peerEntityOld.endpointSum()
           const isOutdatedDocument = blockNumber < previousBlockNumber && !eraseIfAlreadyRecorded;
           const isAlreadyKnown = blockNumber == previousBlockNumber && !eraseIfAlreadyRecorded;
           if (isOutdatedDocument){
@@ -118,27 +119,34 @@ export class PeeringService {
           } else if (isAlreadyKnown) {
             throw constants.ERRORS.PEER_DOCUMENT_ALREADY_KNOWN;
           }
-          peerEntity = Peer.statics.peerize(found);
+          peerEntityOld = PeerDTO.fromJSONObject(found)
           if (interfacesChanged) {
             // Warns the old peer of the change
             const caster = new Multicaster();
-            caster.sendPeering(Peer.statics.peerize(peerEntity), Peer.statics.peerize(thePeer));
+            caster.sendPeering(PeerDTO.fromJSONObject(peerEntityOld), PeerDTO.fromJSONObject(thePeer))
           }
-          thePeer.copyValues(peerEntity);
-          peerEntity.sigDate = new Date(sigTime * 1000);
+          peerEntityOld.version = thePeer.version
+          peerEntityOld.currency = thePeer.currency
+          peerEntityOld.pubkey = thePeer.pubkey
+          peerEntityOld.endpoints = thePeer.endpoints
+          peerEntityOld.status = thePeer.status
+          peerEntityOld.signature = thePeer.signature
         }
         // Set the peer as UP again
+        const peerEntity = peerEntityOld.toDBPeer()
+        peerEntity.statusTS = thePeer.statusTS
+        peerEntity.block = thePeer.block
         peerEntity.status = 'UP';
         peerEntity.first_down = null;
         peerEntity.last_try = null;
-        peerEntity.hash = String(hashf(peerEntity.getRawSigned())).toUpperCase();
-        peerEntity.raw = peerEntity.getRaw();
+        peerEntity.hash = peerEntityOld.getHash()
+        peerEntity.raw = peerEntityOld.getRaw();
         await this.dal.savePeer(peerEntity);
         this.logger.info('✔ PEER %s', peering.pubkey.substr(0, 8))
-        let savedPeer = Peer.statics.peerize(peerEntity);
+        let savedPeer = PeerDTO.fromJSONObject(peerEntity).toDBPeer()
         if (peerEntity.pubkey == this.selfPubkey) {
           const localEndpoint = await this.server.getMainEndpoint(this.conf);
-          const localNodeNotListed = !peerEntity.containsEndpoint(localEndpoint);
+          const localNodeNotListed = !peerEntityOld.containsEndpoint(localEndpoint);
           const current = localNodeNotListed && (await this.dal.getCurrentBlockOrNull());
           if (!localNodeNotListed) {
             const indexOfThisNode = peerEntity.endpoints.indexOf(localEndpoint);
@@ -188,7 +196,7 @@ export class PeeringService {
     logger.info('Sibling endpoints:', otherPotentialEndpoints);
     let reals = await otherPotentialEndpoints.map(async (theEndpoint:string) => {
       let real = true;
-      let remote = Peer.statics.endpoint2host(theEndpoint);
+      let remote = PeerDTO.endpoint2host(theEndpoint)
       try {
         // We test only BMA APIs, because other may exist and we cannot judge against them yet
         if (theEndpoint.startsWith('BASIC_MERKLED_API')) {
@@ -230,8 +238,8 @@ export class PeeringService {
       block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
       endpoints: _.uniq([endpoint].concat(toConserve).concat(this.conf.endpoints || []))
     };
-    const raw2 = dos2unix(new Peer(p2).getRaw());
-    logger.info('External access:', new Peer(p2).getURL());
+    const raw2 = dos2unix(PeerDTO.fromJSONObject(p2).getRaw());
+    logger.info('External access:', PeerDTO.fromJSONObject(p2).getURL())
     logger.debug('Generating server\'s peering entry based on block#%s...', p2.block.split('-')[0]);
     p2.signature = await this.server.sign(raw2);
     p2.pubkey = this.selfPubkey;

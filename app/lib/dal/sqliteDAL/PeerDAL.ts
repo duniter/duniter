@@ -1,7 +1,10 @@
-import {SQLiteDriver} from "../drivers/SQLiteDriver";
-import {AbstractSQLite} from "./AbstractSQLite";
+import {SQLiteDriver} from "../drivers/SQLiteDriver"
+import {AbstractSQLite} from "./AbstractSQLite"
 
-export interface DBPeer {
+export class DBPeer {
+
+  readonly documentType = "peer"
+
   version: number
   currency: string
   status: string
@@ -12,8 +15,21 @@ export interface DBPeer {
   pubkey: string
   block: string
   signature: string 
-  endpoints: string
+  endpoints: string[]
   raw: string
+
+  json() {
+    return {
+      version: this.version,
+      currency: this.currency,
+      endpoints: this.endpoints,
+      status: this.status,
+      block: this.block,
+      signature: this.signature,
+      raw: this.raw,
+      pubkey: this.pubkey
+    }
+  }
 }
 
 export class PeerDAL extends AbstractSQLite<DBPeer> {

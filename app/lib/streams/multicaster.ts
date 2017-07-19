@@ -7,10 +7,10 @@ import {IdentityDTO} from "../dto/IdentityDTO"
 import {CertificationDTO} from "../dto/CertificationDTO"
 import {MembershipDTO} from "../dto/MembershipDTO"
 import {TransactionDTO} from "../dto/TransactionDTO"
+import {PeerDTO} from "../dto/PeerDTO"
 
 const request = require('request');
 const constants = require('../../lib/constants');
-const Peer    = require('../../lib/entity/peer');
 const logger  = require('../logger').NewLogger('multicaster');
 
 const WITH_ISOLATION = true;
@@ -103,19 +103,19 @@ export class Multicaster extends stream.Transform {
     return this.forward({
       type: 'Peer',
       uri: '/network/peering/peers',
-      transform: Peer.statics.peerize,
-      getObj: (peering:any) => {
+      transform: (obj:any) => PeerDTO.fromJSONObject(obj),
+      getObj: (peering:PeerDTO) => {
         return {
           peer: peering.getRawSigned()
         };
       },
-      getDocID: (doc:any) => doc.keyID() + '#' + doc.block.match(/(\d+)-/)[1],
+      getDocID: (doc:PeerDTO) => doc.keyID() + '#' + doc.blockNumber(),
       withIsolation: WITH_ISOLATION,
-      onError: (resJSON:any, peering:any, to:any) => {
-        const sentPeer = Peer.statics.peerize(peering);
-        if (Peer.statics.blockNumber(resJSON.peer) > sentPeer.blockNumber()) {
+      onError: (resJSON:{ peer:{ block:string, endpoints:string[] }}, peering:any, to:any) => {
+        const sentPeer = PeerDTO.fromJSONObject(peering)
+        if (PeerDTO.blockNumber(resJSON.peer.block) > sentPeer.blockNumber()) {
           this.push({ outdated: true, peer: resJSON.peer });
-          logger.warn('Outdated peer document (%s) sent to %s', sentPeer.keyID() + '#' + sentPeer.block.match(/(\d+)-/)[1], to);
+          logger.warn('Outdated peer document (%s) sent to %s', sentPeer.keyID() + '#' + sentPeer.blockNumber(), to);
         }
         return Promise.resolve();
       }
@@ -162,7 +162,7 @@ export class Multicaster extends stream.Transform {
           }
           // Parallel treatment for superfast propagation
           await Promise.all(peers.map(async (p) => {
-            let peer = Peer.statics.peerize(p);
+            let peer = PeerDTO.fromJSONObject(p)
             const namedURL = peer.getNamedURL();
             logger.debug(' `--> to peer %s [%s] (%s)', peer.keyID(), peer.member ? 'member' : '------', namedURL);
             try {

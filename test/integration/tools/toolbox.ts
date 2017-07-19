@@ -5,6 +5,7 @@ import {BlockDTO} from "../../../app/lib/dto/BlockDTO"
 import * as stream from "stream"
 import {RevocationDTO} from "../../../app/lib/dto/RevocationDTO"
 import {IdentityDTO} from "../../../app/lib/dto/IdentityDTO"
+import {PeerDTO} from "../../../app/lib/dto/PeerDTO"
 
 const _           = require('underscore');
 const rp          = require('request-promise');
@@ -13,7 +14,6 @@ const sync        = require('../tools/sync');
 const commit      = require('../tools/commit');
 const user        = require('../tools/user');
 const until       = require('../tools/until');
-const Peer        = require('../../../app/lib/entity/peer');
 const bma         = require('duniter-bma').duniter.methods.bma;
 const multicaster = require('../../../app/lib/streams/multicaster');
 const dtos        = require('duniter-bma').duniter.methods.dtos;
@@ -372,7 +372,7 @@ export class TestingServer {
   async sharePeeringWith(otherServer:TestingServer) {
     let p = await this.get('/network/peering');
     await otherServer.post('/network/peering/peers', {
-      peer: Peer.statics.peerize(p).getRawSigned()
+      peer: PeerDTO.fromJSONObject(p).getRawSigned()
     });
   }
 

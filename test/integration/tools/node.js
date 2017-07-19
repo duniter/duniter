@@ -7,7 +7,7 @@ var contacter = require('duniter-crawler').duniter.methods.contacter;
 var duniter  = require('../../../index');
 var multicaster = require('../../../app/lib/streams/multicaster');
 var ConfDTO = require('../../../app/lib/dto/ConfDTO').ConfDTO
-var Peer          = require('../../../app/lib/entity/peer');
+var PeerDTO   = require('../../../app/lib/dto/PeerDTO').PeerDTO
 var user   = require('./user');
 var http   = require('./http');
 const bma = require('duniter-bma').duniter.methods.bma;
@@ -272,7 +272,7 @@ function Node (dbName, options) {
 
   this.submitPeer = function(peer, done) {
     return post('/network/peering/peers', {
-      "peer": Peer.statics.peerize(peer).getRawSigned()
+      "peer": PeerDTO.fromJSONObject(peer).getRawSigned()
     }, done);
   };
 

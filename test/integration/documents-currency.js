@@ -5,7 +5,6 @@ const co = require('co');
 const should = require('should');
 const user = require('./tools/user');
 const commit = require('./tools/commit');
-const Peer = require('../../app/lib/entity/peer');
 const s1 = toolbox_1.NewTestingServer({
     currency: 'currency_one',
     pair: {

@@ -10,7 +10,7 @@ const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
 const until     = require('./tools/until');
 const multicaster = require('../../app/lib/streams/multicaster');
-const Peer = require('../../app/lib/entity/peer');
+const PeerDTO   = require('../../app/lib/dto/PeerDTO').PeerDTO
 const contacter  = require('duniter-crawler').duniter.methods.contacter;
 const sync      = require('./tools/sync');
 
@@ -91,9 +91,9 @@ describe("Generation", function() {
       yield sync(0, 0, s1, s2);
       // Let each node know each other
       let peer1 = yield nodeS1.getPeer();
-      yield nodeS2.postPeer(new Peer(peer1).getRawSigned());
+      yield nodeS2.postPeer(PeerDTO.fromJSONObject(peer1).getRawSigned());
       let peer2 = yield nodeS2.getPeer();
-      yield nodeS1.postPeer(new Peer(peer2).getRawSigned());
+      yield nodeS1.postPeer(PeerDTO.fromJSONObject(peer2).getRawSigned());
       s1.startBlockComputation();
       yield until(s2, 'block', 1);
       s2.startBlockComputation();

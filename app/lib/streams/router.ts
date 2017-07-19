@@ -2,8 +2,8 @@ import * as stream from "stream"
 import {PeeringService} from "../../service/PeeringService"
 import {FileDAL} from "../dal/fileDAL"
 import {DBPeer} from "../dal/sqliteDAL/PeerDAL"
+import {PeerDTO} from "../dto/PeerDTO"
 
-const Peer     = require('../entity/peer');
 const constants = require('../constants');
 
 export class RouterStream extends stream.Transform {
@@ -75,7 +75,7 @@ export class RouterStream extends stream.Transform {
     this.push({
       'type': type,
       'obj': obj,
-      'peers': (peers || []).map(Peer.statics.peerize)
+      'peers': (peers || []).map((p:any) => PeerDTO.fromJSONObject(p))
     })
   }
 
@@ -96,10 +96,11 @@ export class RouterStream extends stream.Transform {
       nonmembers = RouterStream.chooseXin(nonmembers,  isSelfDocument ? constants.NETWORK.MAX_NON_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS : constants.NETWORK.MAX_NON_MEMBERS_TO_FORWARD_TO);
       let mainRoutes:any = members.map((p:any) => (p.member = true) && p).concat(nonmembers);
       let mirrors = await this.peeringService.mirrorEndpoints();
-      return mainRoutes.concat(mirrors.map((mep, index) => { return {
+      const peersToRoute:DBPeer[] = mainRoutes.concat(mirrors.map((mep, index) => { return {
         pubkey: 'M' + index + '_' + this.peeringService.pubkey,
         endpoints: [mep]
       }}));
+      return peersToRoute.map(p => PeerDTO.fromJSONObject(p))
     }
   }
 

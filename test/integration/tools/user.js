@@ -13,7 +13,7 @@ const constants = require('../../../app/lib/constants');
 const CertificationDTO = require('../../../app/lib/dto/CertificationDTO').CertificationDTO
 const MembershipDTO = require('../../../app/lib/dto/MembershipDTO').MembershipDTO
 const RevocationDTO = require('../../../app/lib/dto/RevocationDTO').RevocationDTO
-const Peer = require('../../../app/lib/entity/peer');
+const PeerDTO = require('../../../app/lib/dto/PeerDTO').PeerDTO
 const TransactionDTO = require('../../../app/lib/dto/TransactionDTO').TransactionDTO
 
 module.exports = function (uid, url, node) {
@@ -317,7 +317,7 @@ function User (uid, options, node) {
   };
 
   this.makePeer = (endpoints, overrideProps) => co(function*() {
-    const peer = Peer.statics.fromJSON({
+    const peer = PeerDTO.fromJSONObject({
       currency: node.server.conf.currency,
       pubkey: pub,
       block: '2-00008DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB',
@@ -326,7 +326,7 @@ function User (uid, options, node) {
     _.extend(peer, overrideProps || {});
     const rawPeer = rawer.getPeerWithoutSignature(peer);
     peer.signature = keyring.Key(pub, sec).signSync(rawPeer);
-    return Peer.statics.fromJSON(peer);
+    return PeerDTO.fromJSONObject(peer)
   });
 
   function post(uri, data, done) {

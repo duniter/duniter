@@ -67,3 +67,5 @@ app/modules/export-bc.js*
 app/modules/daemon.js*
 app/modules/check-config.js*
 app/modules/config.js*
+test/integration/tools/toolbox.js*
+test/integration/documents-currency.js*

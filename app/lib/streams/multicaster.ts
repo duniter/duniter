@@ -5,11 +5,11 @@ import {BlockDTO} from "../dto/BlockDTO"
 import {RevocationDTO} from "../dto/RevocationDTO"
 import {IdentityDTO} from "../dto/IdentityDTO"
 import {CertificationDTO} from "../dto/CertificationDTO"
+import {MembershipDTO} from "../dto/MembershipDTO"
 
 const request = require('request');
 const constants = require('../../lib/constants');
 const Peer    = require('../../lib/entity/peer');
-const Membership = require('../../lib/entity/membership');
 const Transaction = require('../../lib/entity/transaction');
 const logger  = require('../logger').NewLogger('multicaster');
 
@@ -124,10 +124,10 @@ export class Multicaster extends stream.Transform {
 
   async msForward(doc:any, peers:DBPeer[]) {
     return this.forward({
-      transform: Membership.statics.fromJSON,
+      transform: (obj:any) => MembershipDTO.fromJSONObject(obj),
       type: 'Membership',
       uri: '/blockchain/membership',
-      getObj: (membership:any) => {
+      getObj: (membership:MembershipDTO) => {
         return {
           "membership": membership.getRaw(),
           "signature": membership.signature

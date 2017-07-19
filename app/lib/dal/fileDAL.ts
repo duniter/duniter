@@ -12,6 +12,7 @@ import {DBCert} from "./sqliteDAL/CertDAL"
 import {DBWallet} from "./sqliteDAL/WalletDAL"
 import {DBTx} from "./sqliteDAL/TxsDAL"
 import {DBBlock} from "../db/DBBlock"
+import {DBMembership} from "./sqliteDAL/MembershipDAL"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -676,7 +677,7 @@ export class FileDAL {
     return true;
   }
 
-  savePendingMembership(ms:any) {
+  savePendingMembership(ms:DBMembership) {
     return this.msDAL.savePendingMembership(ms)
   }
 

@@ -11,7 +11,7 @@ const keyring	= common.keyring;
 const rawer		= common.rawer;
 const constants = require('../../../app/lib/constants');
 const CertificationDTO = require('../../../app/lib/dto/CertificationDTO').CertificationDTO
-const Membership = require('../../../app/lib/entity/membership');
+const MembershipDTO = require('../../../app/lib/dto/MembershipDTO').MembershipDTO
 const RevocationDTO = require('../../../app/lib/dto/RevocationDTO').RevocationDTO
 const Peer = require('../../../app/lib/entity/peer');
 const Transaction = require('../../../app/lib/entity/transaction');
@@ -146,7 +146,7 @@ function User (uid, options, node) {
     _.extend(join, overrideProps || {});
     const rawJoin = rawer.getMembershipWithoutSignature(join);
     join.signature = keyring.Key(pub, sec).signSync(rawJoin);
-    return Membership.statics.fromJSON(join);
+    return MembershipDTO.fromJSONObject(join)
   });
 
   this.sendMembership = (type) => co(function*() {

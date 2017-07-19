@@ -9,10 +9,10 @@ import {CHECK} from "../rules/index"
 import {RevocationDTO} from "../dto/RevocationDTO"
 import {IdentityDTO} from "../dto/IdentityDTO"
 import {CertificationDTO} from "../dto/CertificationDTO"
+import {MembershipDTO} from "../dto/MembershipDTO"
 
 const _ = require('underscore')
 const common          = require('duniter-common')
-const Membership      = require('../entity/membership')
 const Transaction     = require('../entity/transaction')
 
 export class DuniterBlockchain extends MiscIndexedBlockchain {
@@ -292,7 +292,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
   async updateMembers(block:BlockDTO, dal:any) {
     // Joiners (come back)
     for (const inlineMS of block.joiners) {
-      let ms = Membership.statics.fromInline(inlineMS);
+      let ms = MembershipDTO.fromInline(inlineMS)
       const idty = await dal.getWrittenIdtyByPubkey(ms.issuer);
       dal.wotb.setEnabled(true, idty.wotb_id);
     }
@@ -435,8 +435,11 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
   async removeMembershipsFromSandbox(block:BlockDTO, dal:any) {
     const mss = block.joiners.concat(block.actives).concat(block.leavers);
     for (const inlineMS of mss) {
-      let ms = Membership.statics.fromInline(inlineMS);
-      await dal.deleteMS(ms);
+      let ms = MembershipDTO.fromInline(inlineMS)
+      await dal.deleteMS({
+        issuer: ms.issuer,
+        signature: ms.signature
+      });
     }
   }
 

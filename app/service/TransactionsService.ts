@@ -5,9 +5,9 @@ import {FileDAL} from "../lib/dal/fileDAL"
 import {TransactionDTO} from "../lib/dto/TransactionDTO"
 import {LOCAL_RULES_HELPERS} from "../lib/rules/local_rules"
 import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
+import {DBTx} from "../lib/dal/sqliteDAL/TxsDAL"
 
 const constants       = require('../lib/constants');
-const Transaction     = require('../lib/entity/transaction');
 const CHECK_PENDING_TRANSACTIONS = true
 
 export class TransactionService {
@@ -24,7 +24,7 @@ export class TransactionService {
 
   processTx(txObj:any) {
     return GlobalFifoPromise.pushFIFO(async () => {
-      const tx = new Transaction(txObj, this.conf.currency);
+      const tx = TransactionDTO.fromJSONObject(txObj, this.conf.currency)
       try {
         this.logger.info('⬇ TX %s:%s from %s', tx.output_amount, tx.output_base, tx.issuers);
         const existing = await this.dal.getTxByHash(tx.hash);
@@ -33,19 +33,20 @@ export class TransactionService {
           throw constants.ERRORS.TX_ALREADY_PROCESSED;
         }
         // Start checks...
-        const transaction = tx.getTransaction();
         const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
         const dto = TransactionDTO.fromJSONObject(tx)
         await LOCAL_RULES_HELPERS.checkSingleTransactionLocally(dto)
-        await GLOBAL_RULES_HELPERS.checkTxBlockStamp(transaction, this.dal);
+        await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal);
         await GLOBAL_RULES_HELPERS.checkSingleTransaction(dto, nextBlockWithFakeTimeVariation, this.conf, this.dal, CHECK_PENDING_TRANSACTIONS);
         const server_pubkey = this.conf.pair && this.conf.pair.pub;
-        transaction.pubkey = transaction.issuers.indexOf(server_pubkey) !== -1 ? server_pubkey : '';
-        if (!(await this.dal.txsDAL.sandbox.acceptNewSandBoxEntry(transaction, server_pubkey))) {
+        if (!(await this.dal.txsDAL.sandbox.acceptNewSandBoxEntry({
+            pubkey: tx.issuers.indexOf(server_pubkey) !== -1 ? server_pubkey : '',
+            output_base: tx.output_base,
+            output_amount: tx.output_amount
+          }, server_pubkey))) {
           throw constants.ERRORS.SANDBOX_FOR_TRANSACTION_IS_FULL;
         }
-        tx.blockstampTime = transaction.blockstampTime;
-        await this.dal.saveTransaction(tx);
+        await this.dal.saveTransaction(DBTx.fromTransactionDTO(tx));
         this.logger.info('✔ TX %s:%s from %s', tx.output_amount, tx.output_base, tx.issuers);
         return tx;
       } catch (e) {

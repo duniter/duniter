@@ -6,11 +6,11 @@ import {RevocationDTO} from "../dto/RevocationDTO"
 import {IdentityDTO} from "../dto/IdentityDTO"
 import {CertificationDTO} from "../dto/CertificationDTO"
 import {MembershipDTO} from "../dto/MembershipDTO"
+import {TransactionDTO} from "../dto/TransactionDTO"
 
 const request = require('request');
 const constants = require('../../lib/constants');
 const Peer    = require('../../lib/entity/peer');
-const Transaction = require('../../lib/entity/transaction');
 const logger  = require('../logger').NewLogger('multicaster');
 
 const WITH_ISOLATION = true;
@@ -87,10 +87,10 @@ export class Multicaster extends stream.Transform {
 
   async txForward(doc:any, peers:DBPeer[]) {
     return this.forward({
-      transform: Transaction.statics.fromJSON,
+      transform: (obj:any) => TransactionDTO.fromJSONObject(obj),
       type: 'Transaction',
       uri: '/tx/process',
-      getObj: (transaction:any) => {
+      getObj: (transaction:TransactionDTO) => {
         return {
           "transaction": transaction.getRaw(),
           "signature": transaction.signature

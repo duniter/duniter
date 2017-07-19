@@ -13,7 +13,6 @@ const _               = require('underscore');
 const co              = require('co');
 const parsers         = require('duniter-common').parsers;
 const constants       = require('../lib/constants');
-const Transaction     = require('../lib/entity/transaction');
 
 const CHECK_ALL_RULES = true;
 
@@ -129,12 +128,6 @@ export class BlockchainService {
       obj.currency = this.conf.currency || obj.currency;
     } else {
       this.conf.currency = obj.currency;
-    }
-    try {
-      Transaction.statics.cleanSignatories(obj.transactions);
-    }
-    catch (e) {
-      throw e;
     }
     let existing = await this.dal.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
     if (existing) {

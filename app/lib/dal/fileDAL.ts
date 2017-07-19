@@ -22,7 +22,6 @@ const _       = require('underscore');
 const common = require('duniter-common');
 const indexer = require('../indexer').Indexer
 const logger = require('../logger').NewLogger('filedal');
-const Transaction = require('../entity/transaction');
 const constants = require('../constants');
 
 export interface FileDALParams {
@@ -692,7 +691,7 @@ export class FileDAL {
     return Promise.all(txs.map(async (tx) => {
       const sp = tx.blockstamp.split('-');
       tx.blockstampTime = (await this.getBlockByNumberAndHash(parseInt(sp[0]), sp[1])).medianTime;
-      const txEntity = new Transaction(tx);
+      const txEntity = TransactionDTO.fromJSONObject(tx)
       txEntity.computeAllHashes();
       return this.txsDAL.addLinked(TransactionDTO.fromJSONObject(txEntity), block_number, medianTime);
     }))

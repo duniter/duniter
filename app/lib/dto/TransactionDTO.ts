@@ -46,6 +46,18 @@ export class TransactionDTO {
     }
   }
 
+  get signature() {
+    return this.signatures[0]
+  }
+
+  get output_base() {
+    return this.outputs.reduce((sum, output) => sum + parseInt(output.split(':')[0]), 0)
+  }
+
+  get output_amount() {
+    return this.outputs.reduce((maxBase, output) => Math.max(maxBase, parseInt(output.split(':')[1])), 0)
+  }
+
   getLen() {
     return 2 // header + blockstamp
       + this.issuers.length * 2 // issuers + signatures
@@ -96,6 +108,36 @@ export class TransactionDTO {
     })
   }
 
+  getRaw() {
+    let raw = ""
+    raw += "Version: " + (this.version) + "\n"
+    raw += "Type: Transaction\n"
+    raw += "Currency: " + this.currency + "\n"
+    raw += "Blockstamp: " + this.blockstamp + "\n"
+    raw += "Locktime: " + this.locktime + "\n"
+    raw += "Issuers:\n";
+    (this.issuers || []).forEach((issuer) => {
+      raw += issuer + '\n'
+    })
+    raw += "Inputs:\n";
+    this.inputs.forEach((input) => {
+      raw += input + '\n'
+    })
+    raw += "Unlocks:\n";
+    this.unlocks.forEach((unlock) => {
+      raw += unlock + '\n'
+    })
+    raw += "Outputs:\n";
+    this.outputs.forEach((output) => {
+      raw += output + '\n'
+    })
+    raw += "Comment: " + (this.comment || "") + "\n";
+    this.signatures.forEach((signature) => {
+      raw += signature + '\n'
+    })
+    return raw
+  }
+
   getCompactVersion() {
     let issuers = this.issuers;
     let raw = ["TX", this.version, issuers.length, this.inputs.length, this.unlocks.length, this.outputs.length, this.comment ? 1 : 0, this.locktime || 0].join(':') + '\n';
@@ -120,10 +162,32 @@ export class TransactionDTO {
     return raw
   }
 
-  static fromJSONObject(obj:any) {
+  computeAllHashes() {
+    this.hash = hashf(this.getRaw()).toUpperCase();
+  }
+
+  json() {
+    return {
+      'version': this.version,
+      'currency': this.currency,
+      'issuers': this.issuers,
+      'inputs': this.inputs,
+      'unlocks': this.unlocks,
+      'outputs': this.outputs,
+      'comment': this.comment,
+      'locktime': this.locktime,
+      'blockstamp': this.blockstamp,
+      'blockstampTime': this.blockstampTime,
+      'signatures': this.signatures,
+      'raw': this.getRaw(),
+      'hash': this.hash
+    }
+  }
+
+  static fromJSONObject(obj:any, currency:string = "") {
     return new TransactionDTO(
       obj.version || 10,
-      obj.currency || "",
+      currency || obj.currency || "",
       obj.locktime || 0,
       obj.hash || "",
       obj.blockstamp || "",
@@ -167,6 +231,20 @@ export class TransactionDTO {
       })
     }
     return raw
+  }
+
+  static outputObj2Str(o:OutputDTO) {
+    return [o.amount, o.base, o.conditions].join(':')
+  }
+
+  static outputStr2Obj(outputStr:string) {
+    const sp = outputStr.split(':');
+    return {
+      amount: parseInt(sp[0]),
+      base: parseInt(sp[1]),
+      conditions: sp[2],
+      raw: outputStr
+    };
   }
 
   static mock() {

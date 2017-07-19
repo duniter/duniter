@@ -14,7 +14,7 @@ const CertificationDTO = require('../../../app/lib/dto/CertificationDTO').Certif
 const MembershipDTO = require('../../../app/lib/dto/MembershipDTO').MembershipDTO
 const RevocationDTO = require('../../../app/lib/dto/RevocationDTO').RevocationDTO
 const Peer = require('../../../app/lib/entity/peer');
-const Transaction = require('../../../app/lib/entity/transaction');
+const TransactionDTO = require('../../../app/lib/dto/TransactionDTO').TransactionDTO
 
 module.exports = function (uid, url, node) {
   return new User(uid, url, node);
@@ -183,7 +183,7 @@ function User (uid, options, node) {
       outputsToConsume = outputsToConsume.slice(opts.theseOutputsStart);
     }
     let inputs = outputsToConsume.map((out, index) => {
-      const output = Transaction.statics.outputStr2Obj(out);
+      const output = TransactionDTO.outputStr2Obj(out);
       return {
         src: [output.amount, output.base, 'T', obj.hash, (opts.theseOutputsStart || 0) + index].join(':'),
         unlock: unlocks[index]
@@ -196,7 +196,7 @@ function User (uid, options, node) {
     let obj = parsers.parseTransaction.syncWrite(previousTX);
     // Unlocks inputs with given "unlocks" strings
     let inputs = obj.outputs.map((out, index) => {
-      const output = Transaction.statics.outputStr2Obj(out);
+      const output = TransactionDTO.outputStr2Obj(out);
       return {
         src: [output.amount, output.base, 'T', obj.hash, index].join(':'),
         unlock: unlocks[index]

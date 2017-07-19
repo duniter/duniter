@@ -1,12 +1,11 @@
-import {AbstractSQLite} from "./AbstractSQLite";
-import {SQLiteDriver} from "../drivers/SQLiteDriver";
-import {TransactionDTO} from "../../dto/TransactionDTO";
-import {SandBox} from "./SandBox";
+import {AbstractSQLite} from "./AbstractSQLite"
+import {SQLiteDriver} from "../drivers/SQLiteDriver"
+import {TransactionDTO} from "../../dto/TransactionDTO"
+import {SandBox} from "./SandBox"
 
 const _ = require('underscore');
 const moment = require('moment');
 const constants = require('../../constants');
-const Transaction = require('../../entity/transaction');
 
 export class DBTx {
   hash: string
@@ -47,9 +46,21 @@ export class DBTx {
     dbTx.recipients = tx.outputsAsRecipients()
     dbTx.written = false
     dbTx.removed = false
-    dbTx.output_base = tx.outputs.reduce((sum, output) => sum + parseInt(output.split(':')[0]), 0)
-    dbTx.output_amount = tx.outputs.reduce((maxBase, output) => Math.max(maxBase, parseInt(output.split(':')[1])), 0)
+    dbTx.output_base = tx.output_base
+    dbTx.output_amount = tx.output_amount
     return dbTx
+  }
+
+  static setRecipients(txs:DBTx[]) {
+    // Each transaction must have a good "recipients" field for future searchs
+    txs.forEach((tx) => tx.recipients = DBTx.outputs2recipients(tx))
+  }
+
+  static outputs2recipients(tx:DBTx) {
+    return tx.outputs.map(function(out) {
+      const recipent = out.match('SIG\\((.*)\\)')
+      return (recipent && recipent[1]) || 'UNKNOWN'
+    })
   }
 }
 
@@ -201,7 +212,7 @@ export class TxsDAL extends AbstractSQLite<DBTx> {
 
   insertBatchOfTxs(txs:DBTx[]) {
     // // Be sure the recipients field are correctly updated
-    Transaction.statics.setRecipients(txs);
+    DBTx.setRecipients(txs);
     const queries = [];
     const insert = this.getInsertHead();
     const values = txs.map((cert) => this.getInsertValue(cert));

@@ -10,10 +10,10 @@ import {RevocationDTO} from "../dto/RevocationDTO"
 import {IdentityDTO} from "../dto/IdentityDTO"
 import {CertificationDTO} from "../dto/CertificationDTO"
 import {MembershipDTO} from "../dto/MembershipDTO"
+import {TransactionDTO} from "../dto/TransactionDTO"
 
 const _ = require('underscore')
 const common          = require('duniter-common')
-const Transaction     = require('../entity/transaction')
 
 export class DuniterBlockchain extends MiscIndexedBlockchain {
 
@@ -403,7 +403,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
   async undoDeleteTransactions(block:BlockDTO, dal:any) {
     for (const obj of block.transactions) {
       obj.currency = block.currency;
-      let tx = new Transaction(obj);
+      let tx = TransactionDTO.fromJSONObject(obj)
       await dal.saveTransaction(tx);
     }
   }
@@ -453,7 +453,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
   async deleteTransactions(block:BlockDTO, dal:any) {
     for (const obj of block.transactions) {
       obj.currency = block.currency;
-      const tx = new Transaction(obj);
+      const tx = TransactionDTO.fromJSONObject(obj)
       const txHash = tx.getHash();
       await dal.removeTxByHash(txHash);
     }

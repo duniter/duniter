@@ -4,11 +4,11 @@ import {DBPeer} from "../dal/sqliteDAL/PeerDAL"
 import {BlockDTO} from "../dto/BlockDTO"
 import {RevocationDTO} from "../dto/RevocationDTO"
 import {IdentityDTO} from "../dto/IdentityDTO"
+import {CertificationDTO} from "../dto/CertificationDTO"
 
 const request = require('request');
 const constants = require('../../lib/constants');
 const Peer    = require('../../lib/entity/peer');
-const Certification = require('../../lib/entity/certification');
 const Membership = require('../../lib/entity/membership');
 const Transaction = require('../../lib/entity/transaction');
 const logger  = require('../logger').NewLogger('multicaster');
@@ -60,10 +60,10 @@ export class Multicaster extends stream.Transform {
 
   async certForward(doc:any, peers:DBPeer[]) {
     return this.forward({
-      transform: Certification.statics.fromJSON,
+      transform: (obj:any) => CertificationDTO.fromJSONObject(obj),
       type: 'Cert',
       uri: '/wot/certify',
-      getObj: (cert:any) => {
+      getObj: (cert:CertificationDTO) => {
         return {
           "cert": cert.getRaw()
         };

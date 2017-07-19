@@ -6,11 +6,12 @@ import {GLOBAL_RULES_FUNCTIONS, GLOBAL_RULES_HELPERS} from "../lib/rules/global_
 import {BlockDTO} from "../lib/dto/BlockDTO"
 import {RevocationDTO} from "../lib/dto/RevocationDTO"
 import {BasicIdentity, IdentityDTO} from "../lib/dto/IdentityDTO"
+import {CertificationDTO} from "../lib/dto/CertificationDTO"
+import {DBCert} from "../lib/dal/sqliteDAL/CertDAL"
 
 "use strict";
 const keyring          = require('duniter-common').keyring;
 const constants       = require('../lib/constants');
-const Certification   = require('../../app/lib/entity/certification');
 
 const BY_ABSORPTION = true;
 
@@ -129,7 +130,7 @@ export class IdentityService {
     const potentialNext = BlockDTO.fromJSONObject({ currency: this.conf.currency, identities: [], number: current ? current.number + 1 : 0 });
     // Force usage of local currency name, do not accept other currencies documents
     obj.currency = this.conf.currency || obj.currency;
-    const cert = Certification.statics.fromJSON(obj);
+    const cert = CertificationDTO.fromJSONObject(obj)
     const targetHash = cert.getTargetHash();
     let idty = await this.dal.getIdentityByHashOrNull(targetHash);
     let idtyAbsorbed = false
@@ -142,14 +143,15 @@ export class IdentityService {
         sig: cert.idty_sig
       }, BY_ABSORPTION);
     }
+    let anErr:any
     return GlobalFifoPromise.pushFIFO(async () => {
       this.logger.info('⬇ CERT %s block#%s -> %s', cert.from, cert.block_number, idty.uid);
       try {
         await GLOBAL_RULES_HELPERS.checkCertificationIsValid(cert, potentialNext, () => Promise.resolve(idty), this.conf, this.dal);
       } catch (e) {
-        cert.err = e;
+        anErr = e;
       }
-      if (!cert.err) {
+      if (!anErr) {
         try {
           let basedBlock = await this.dal.getBlock(cert.block_number);
           if (cert.block_number == 0 && !basedBlock) {
@@ -157,41 +159,44 @@ export class IdentityService {
               number: 0,
               hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
             };
-          } else {
-            cert.expires_on = basedBlock.medianTime + this.conf.sigWindow;
           }
-          cert.block_hash = basedBlock.hash;
-          const mCert = new Certification({
-            pubkey: cert.from,
+          const mCert:DBCert = {
+            from: cert.from,
             sig: cert.sig,
             block_number: cert.block_number,
-            block_hash: cert.block_hash,
+            block_hash: basedBlock.hash,
             target: targetHash,
             to: idty.pubkey,
-            expires_on: cert.expires_on
-          });
+            expires_on: basedBlock.medianTime + this.conf.sigWindow,
+            linked: false,
+            written: false,
+            expired: false,
+            written_block: null,
+            written_hash: null,
+            block: cert.block_number
+          }
           let existingCert = await this.dal.existsCert(mCert);
           if (!existingCert) {
             if (!(await this.dal.certDAL.getSandboxForKey(cert.from).acceptNewSandBoxEntry(mCert, this.conf.pair && this.conf.pair.pub))) {
               throw constants.ERRORS.SANDBOX_FOR_CERT_IS_FULL;
             }
-            await this.dal.registerNewCertification(new Certification(mCert));
+            await this.dal.registerNewCertification(mCert)
             this.logger.info('✔ CERT %s', mCert.from);
           } else {
             throw constants.ERRORS.ALREADY_UP_TO_DATE;
           }
         } catch (e) {
-          cert.err = e
+          anErr = e
         }
       }
-      if (cert.err) {
+      if (anErr) {
         if (idtyAbsorbed) {
           await this.dal.idtyDAL.deleteByHash(targetHash)
         }
-        const err = cert.err
+        const err = anErr
         const errMessage = (err.uerr && err.uerr.message) || err.message || err
         this.logger.info('✘ CERT %s %s', cert.from, errMessage);
-        throw cert.err;
+        throw anErr;
       }
       return cert;
     })

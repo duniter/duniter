@@ -1,6 +1,6 @@
-import {SQLiteDriver} from "../drivers/SQLiteDriver";
-import {AbstractSQLite} from "./AbstractSQLite";
-import {SandBox} from "./SandBox";
+import {SQLiteDriver} from "../drivers/SQLiteDriver"
+import {AbstractSQLite} from "./AbstractSQLite"
+import {SandBox} from "./SandBox"
 
 const constants = require('../../constants');
 
@@ -114,7 +114,7 @@ export class CertDAL extends AbstractSQLite<DBCert> {
     return this.sqlExisting(cert)
   }
 
-  deleteCert(cert:DBCert) {
+  deleteCert(cert:{ from:string, target:string, sig:string }) {
     return this.deleteEntity(cert)
   }
 

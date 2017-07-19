@@ -10,7 +10,7 @@ const parsers = require('duniter-common').parsers;
 const keyring	= common.keyring;
 const rawer		= common.rawer;
 const constants = require('../../../app/lib/constants');
-const Certification = require('../../../app/lib/entity/certification');
+const CertificationDTO = require('../../../app/lib/dto/CertificationDTO').CertificationDTO
 const Membership = require('../../../app/lib/entity/membership');
 const RevocationDTO = require('../../../app/lib/dto/RevocationDTO').RevocationDTO
 const Peer = require('../../../app/lib/entity/peer');
@@ -83,7 +83,7 @@ function User (uid, options, node) {
     _.extend(cert, overrideProps || {});
     const rawCert = rawer.getOfficialCertification(cert);
     cert.sig = keyring.Key(pub, sec).signSync(rawCert, sec);
-    return Certification.statics.fromJSON(cert);
+    return CertificationDTO.fromJSONObject(cert);
   });
 
   this.cert = (user, fromServer, toServer) => co(function*() {

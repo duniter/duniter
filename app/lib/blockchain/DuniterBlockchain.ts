@@ -8,10 +8,10 @@ import {DBBlock} from "../db/DBBlock"
 import {CHECK} from "../rules/index"
 import {RevocationDTO} from "../dto/RevocationDTO"
 import {IdentityDTO} from "../dto/IdentityDTO"
+import {CertificationDTO} from "../dto/CertificationDTO"
 
 const _ = require('underscore')
 const common          = require('duniter-common')
-const Certification   = require('../entity/certification')
 const Membership      = require('../entity/membership')
 const Transaction     = require('../entity/transaction')
 
@@ -416,10 +416,13 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
    */
   async removeCertificationsFromSandbox(block:BlockDTO, dal:any) {
     for (let inlineCert of block.certifications) {
-      let cert = Certification.statics.fromInline(inlineCert);
+      let cert = CertificationDTO.fromInline(inlineCert)
       let idty = await dal.getWritten(cert.to);
-      cert.target = IdentityDTO.getTargetHash(idty)
-      await dal.deleteCert(cert);
+      await dal.deleteCert({
+        from: cert.from,
+        target: IdentityDTO.getTargetHash(idty),
+        sig: cert.sig,
+      });
     }
   }
 

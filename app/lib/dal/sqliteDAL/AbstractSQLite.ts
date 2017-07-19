@@ -122,7 +122,7 @@ export abstract class AbstractSQLite<T> {
     return (await this.query('SELECT * FROM ' + this.table + ' WHERE ' + conditions, params))[0];
   }
 
-  async deleteEntity(entity:T): Promise<void> {
+  async deleteEntity(entity:any): Promise<void> {
     const toSave = this.toRow(entity);
     if (this.beforeSaveHook) {
       this.beforeSaveHook(toSave);

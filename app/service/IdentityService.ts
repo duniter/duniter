@@ -5,11 +5,11 @@ import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
 import {GLOBAL_RULES_FUNCTIONS, GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
 import {BlockDTO} from "../lib/dto/BlockDTO"
 import {RevocationDTO} from "../lib/dto/RevocationDTO"
+import {BasicIdentity, IdentityDTO} from "../lib/dto/IdentityDTO"
 
 "use strict";
 const keyring          = require('duniter-common').keyring;
 const constants       = require('../lib/constants');
-const Identity        = require('../../app/lib/entity/identity');
 const Certification   = require('../../app/lib/entity/certification');
 
 const BY_ABSORPTION = true;
@@ -43,8 +43,9 @@ export class IdentityService {
     if (!idty) {
       throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
     }
-    await this.dal.fillInMembershipsOfIdentity(Promise.resolve(idty));
-    return new Identity(idty);
+    const obj = DBIdentity.copyFromExisting(idty)
+    await this.dal.fillInMembershipsOfIdentity(Promise.resolve(obj));
+    return obj
   }
 
   async findMemberWithoutMemberships(search:string) {
@@ -58,7 +59,7 @@ export class IdentityService {
     if (!idty) {
       throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
     }
-    return new Identity(idty);
+    return DBIdentity.copyFromExisting(idty)
   }
 
   getWrittenByPubkey(pubkey:string) {
@@ -69,11 +70,12 @@ export class IdentityService {
     return this.dal.getNonWritten(pubkey)
   }
 
-  submitIdentity(obj:DBIdentity, byAbsorption = false) {
-    let idty = new Identity(obj);
+  submitIdentity(idty:BasicIdentity, byAbsorption = false): Promise<any> {
+    const idtyObj = IdentityDTO.fromJSONObject(idty)
+    const toSave = IdentityDTO.fromBasicIdentity(idty)
     // Force usage of local currency name, do not accept other currencies documents
-    idty.currency = this.conf.currency;
-    const createIdentity = idty.rawWithoutSig();
+    idtyObj.currency = this.conf.currency;
+    const createIdentity = idtyObj.rawWithoutSig();
     return GlobalFifoPromise.pushFIFO(async () => {
       this.logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
       // Check signature's validity
@@ -81,11 +83,11 @@ export class IdentityService {
       if (!verified) {
         throw constants.ERRORS.SIGNATURE_DOES_NOT_MATCH;
       }
-      let existing = await this.dal.getIdentityByHashOrNull(idty.hash);
+      let existing = await this.dal.getIdentityByHashOrNull(toSave.hash);
       if (existing) {
         throw constants.ERRORS.ALREADY_UP_TO_DATE;
       }
-      else if (!existing) {
+      else {
         // Create if not already written uid/pubkey
         let used = await this.dal.getWrittenIdtyByPubkey(idty.pubkey);
         if (used) {
@@ -103,19 +105,20 @@ export class IdentityService {
           if (!basedBlock) {
             throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
           }
-          idty.expires_on = basedBlock.medianTime + this.conf.idtyWindow;
+          toSave.expires_on = basedBlock.medianTime + this.conf.idtyWindow;
         }
-        await GLOBAL_RULES_FUNCTIONS.checkIdentitiesAreWritable({ identities: [idty.inline()], version: (current && current.version) || constants.BLOCK_GENERATED_VERSION }, this.conf, this.dal);
-        idty = new Identity(idty);
+        await GLOBAL_RULES_FUNCTIONS.checkIdentitiesAreWritable({ identities: [idtyObj.inline()], version: (current && current.version) || constants.BLOCK_GENERATED_VERSION }, this.conf, this.dal);
         if (byAbsorption !== BY_ABSORPTION) {
-          idty.ref_block = parseInt(idty.buid.split('-')[0]);
-          if (!(await this.dal.idtyDAL.sandbox.acceptNewSandBoxEntry(idty, this.conf.pair && this.conf.pair.pub))) {
+          if (!(await this.dal.idtyDAL.sandbox.acceptNewSandBoxEntry({
+              pubkey: idty.pubkey,
+              ref_block: parseInt(idty.buid.split('-')[0])
+            }, this.conf.pair && this.conf.pair.pub))) {
             throw constants.ERRORS.SANDBOX_FOR_IDENTITY_IS_FULL;
           }
         }
-        await this.dal.savePendingIdentity(idty);
+        await this.dal.savePendingIdentity(toSave)
         this.logger.info('✔ IDTY %s %s', idty.pubkey, idty.uid);
-        return idty;
+        return toSave
       }
     })
   }
@@ -136,20 +139,7 @@ export class IdentityService {
         pubkey: cert.idty_issuer,
         uid: cert.idty_uid,
         buid: cert.idty_buid,
-        sig: cert.idty_sig,
-        written: false,
-        revoked: false,
-        member: false,
-        wasMember: false,
-        kick: false,
-        leaving: false,
-        hash: '',
-        wotb_id: null,
-        expires_on: 0,
-        revoked_on: null,
-        revocation_sig: null,
-        currentMSN: null,
-        currentINN: null
+        sig: cert.idty_sig
       }, BY_ABSORPTION);
     }
     return GlobalFifoPromise.pushFIFO(async () => {
@@ -235,17 +225,13 @@ export class IdentityService {
         }
         else {
           // Create identity given by the revocation
-          const idty = new Identity({
-            uid: revoc.idty_uid,
-            buid: revoc.idty_buid,
-            sig: revoc.idty_sig,
-            pubkey: revoc.pubkey,
-            revocation_sig: revoc.revocation
-          });
+          const idty = IdentityDTO.fromRevocation(revoc);
           idty.revocation_sig = revoc.revocation;
-          idty.certsCount = 0;
-          idty.ref_block = parseInt(idty.buid.split('-')[0]);
-          if (!(await this.dal.idtyDAL.sandbox.acceptNewSandBoxEntry(idty, this.conf.pair && this.conf.pair.pub))) {
+          if (!(await this.dal.idtyDAL.sandbox.acceptNewSandBoxEntry({
+              pubkey: idty.pubkey,
+              ref_block: parseInt(idty.buid.split('-')[0]),
+              certsCount: 0
+            }, this.conf.pair && this.conf.pair.pub))) {
             throw constants.ERRORS.SANDBOX_FOR_IDENTITY_IS_FULL;
           }
           await this.dal.savePendingIdentity(idty);

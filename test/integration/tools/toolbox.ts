@@ -4,6 +4,7 @@ import {Prover} from "../../../app/modules/prover/lib/prover"
 import {BlockDTO} from "../../../app/lib/dto/BlockDTO"
 import * as stream from "stream"
 import {RevocationDTO} from "../../../app/lib/dto/RevocationDTO"
+import {IdentityDTO} from "../../../app/lib/dto/IdentityDTO"
 
 const _           = require('underscore');
 const rp          = require('request-promise');
@@ -13,7 +14,6 @@ const commit      = require('../tools/commit');
 const user        = require('../tools/user');
 const until       = require('../tools/until');
 const Peer        = require('../../../app/lib/entity/peer');
-const Identity    = require('../../../app/lib/entity/identity');
 const bma         = require('duniter-bma').duniter.methods.bma;
 const multicaster = require('../../../app/lib/streams/multicaster');
 const dtos        = require('duniter-bma').duniter.methods.dtos;
@@ -350,13 +350,13 @@ export class TestingServer {
 
   async lookup2identity(search:string) {
     const lookup = await this.get('/wot/lookup/' + search);
-    return Identity.statics.fromJSON({
+    return IdentityDTO.fromJSONObject({
       issuer: lookup.results[0].pubkey,
       currency: this.server.conf.currency,
       uid: lookup.results[0].uids[0].uid,
       buid: lookup.results[0].uids[0].meta.timestamp,
       sig: lookup.results[0].uids[0].self
-    });
+    })
   }
 
   async readBlock(number:number) {
@@ -378,7 +378,7 @@ export class TestingServer {
 
   postIdentity(idty:any) {
     return this.post('/wot/add', {
-      identity: idty.createIdentity()
+      identity: idty.getRawSigned()
     })
   }
 

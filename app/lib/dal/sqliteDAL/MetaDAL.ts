@@ -10,6 +10,7 @@ import {SIndexDAL} from "./index/SIndexDAL"
 import {WalletDAL} from "./WalletDAL"
 import {MIndexDAL} from "./index/MIndexDAL"
 import {DBBlock} from "../../db/DBBlock"
+import {IdentityDTO} from "../../dto/IdentityDTO"
 
 const _ = require('underscore')
 const logger = require('../../logger').NewLogger('metaDAL');
@@ -136,7 +137,6 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
       let blockDAL = new BlockDAL(this.driverCopy)
       let sindexDAL = new SIndexDAL(this.driverCopy)
       const blocks = await blockDAL.query('SELECT * FROM block WHERE NOT fork');
-      const Identity = require('../../../lib/entity/identity');
       type AmountPerKey = {
         amounts: {
           amount: number
@@ -157,7 +157,7 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
       for (const b of blocks) {
         const amountsInForBlockPerKey: { [pub:string]: AmountPerKey } = {};
         for (const idty of b.identities) {
-          members.push(Identity.statics.fromInline(idty).pubkey);
+          members.push(IdentityDTO.fromInline(idty).pubkey)
         }
         if (b.dividend) {
           for (const member of members) {

@@ -3,11 +3,11 @@ import * as stream from "stream"
 import {DBPeer} from "../dal/sqliteDAL/PeerDAL"
 import {BlockDTO} from "../dto/BlockDTO"
 import {RevocationDTO} from "../dto/RevocationDTO"
+import {IdentityDTO} from "../dto/IdentityDTO"
 
 const request = require('request');
 const constants = require('../../lib/constants');
 const Peer    = require('../../lib/entity/peer');
-const Identity = require('../../lib/entity/identity');
 const Certification = require('../../lib/entity/certification');
 const Membership = require('../../lib/entity/membership');
 const Transaction = require('../../lib/entity/transaction');
@@ -46,12 +46,12 @@ export class Multicaster extends stream.Transform {
 
   async idtyForward(doc:any, peers:DBPeer[]) {
     return this.forward({
-      transform: Identity.statics.fromJSON,
+      transform: (obj:any) => IdentityDTO.fromJSONObject(obj),
       type: 'Identity',
       uri: '/wot/add',
-      getObj: (idty:any) => {
+      getObj: (idty:IdentityDTO) => {
         return {
-          "identity": idty.createIdentity()
+          "identity": idty.getRawSigned()
         };
       },
       getDocID: (idty:any) => 'with ' + (idty.certs || []).length + ' certs'
@@ -77,7 +77,7 @@ export class Multicaster extends stream.Transform {
       transform: (json:any) => RevocationDTO.fromJSONObject(json),
       type: 'Revocation',
       uri: '/wot/revoke',
-      getObj: (revocation:any) => {
+      getObj: (revocation:RevocationDTO) => {
         return {
           "revocation": revocation.getRaw()
         };

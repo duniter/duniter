@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const server_1 = require("../../../server");
 const BlockDTO_1 = require("../../../app/lib/dto/BlockDTO");
+const IdentityDTO_1 = require("../../../app/lib/dto/IdentityDTO");
 const _ = require('underscore');
 const rp = require('request-promise');
 const httpTest = require('../tools/http');
@@ -18,7 +19,6 @@ const commit = require('../tools/commit');
 const user = require('../tools/user');
 const until = require('../tools/until');
 const Peer = require('../../../app/lib/entity/peer');
-const Identity = require('../../../app/lib/entity/identity');
 const bma = require('duniter-bma').duniter.methods.bma;
 const multicaster = require('../../../app/lib/streams/multicaster');
 const dtos = require('duniter-bma').duniter.methods.dtos;
@@ -275,7 +275,7 @@ class TestingServer {
     lookup2identity(search) {
         return __awaiter(this, void 0, void 0, function* () {
             const lookup = yield this.get('/wot/lookup/' + search);
-            return Identity.statics.fromJSON({
+            return IdentityDTO_1.IdentityDTO.fromJSONObject({
                 issuer: lookup.results[0].pubkey,
                 currency: this.server.conf.currency,
                 uid: lookup.results[0].uids[0].uid,
@@ -306,7 +306,7 @@ class TestingServer {
     }
     postIdentity(idty) {
         return this.post('/wot/add', {
-            identity: idty.createIdentity()
+            identity: idty.getRawSigned()
         });
     }
     postCert(cert) {

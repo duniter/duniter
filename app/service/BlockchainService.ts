@@ -13,7 +13,6 @@ const _               = require('underscore');
 const co              = require('co');
 const parsers         = require('duniter-common').parsers;
 const constants       = require('../lib/constants');
-const Identity        = require('../lib/entity/identity');
 const Transaction     = require('../lib/entity/transaction');
 
 const CHECK_ALL_RULES = true;
@@ -257,9 +256,8 @@ export class BlockchainService {
     let all = [];
     let current = await this.dal.getCurrentBlockOrNull();
     for (const obj of identities) {
-      let idty = new Identity(obj);
       try {
-        let reqs = await this.requirementsOfIdentity(idty, current);
+        let reqs = await this.requirementsOfIdentity(obj, current);
         all.push(reqs);
       } catch (e) {
         this.logger.warn(e);

@@ -1,9 +1,14 @@
-import {AbstractSQLite} from "./AbstractSQLite";
-import {SQLiteDriver} from "../drivers/SQLiteDriver";
-import {SandBox} from "./SandBox";
+import {AbstractSQLite} from "./AbstractSQLite"
+import {SQLiteDriver} from "../drivers/SQLiteDriver"
+import {SandBox} from "./SandBox"
+import {IdentityDTO} from "../../dto/IdentityDTO"
 const constants = require('../../constants');
 
-export interface DBIdentity {
+export abstract class DBIdentity {
+
+  certs:any[] = []
+  signed:any[] = []
+
   revoked: boolean
   currentMSN: null
   currentINN: null
@@ -21,6 +26,114 @@ export interface DBIdentity {
   wotb_id: number | null
   revoked_on: number | null
   expires_on: number
+
+  getTargetHash() {
+    return IdentityDTO.getTargetHash(this)
+  }
+
+  json() {
+    const others:any[] = [];
+    this.certs.forEach((cert) => {
+      others.push({
+        "pubkey": cert.from,
+        "meta": {
+          "block_number": cert.block_number,
+          "block_hash": cert.block_hash
+        },
+        "uids": cert.uids,
+        "isMember": cert.isMember,
+        "wasMember": cert.wasMember,
+        "signature": cert.sig
+      });
+    });
+    const uids = [{
+      "uid": this.uid,
+      "meta": {
+        "timestamp": this.buid
+      },
+      "revoked": this.revoked,
+      "revoked_on": this.revoked_on,
+      "revocation_sig": this.revocation_sig,
+      "self": this.sig,
+      "others": others
+    }];
+    const signed:any[] = [];
+    this.signed.forEach((cert) => {
+      signed.push({
+        "uid": cert.idty.uid,
+        "pubkey": cert.idty.pubkey,
+        "meta": {
+          "timestamp": cert.idty.buid
+        },
+        "cert_time": {
+          "block": cert.block_number,
+          "block_hash": cert.block_hash
+        },
+        "isMember": cert.idty.member,
+        "wasMember": cert.idty.wasMember,
+        "signature": cert.sig
+      });
+    });
+    return {
+      "pubkey": this.pubkey,
+      "uids": uids,
+      "signed": signed
+    }
+  }
+
+  static copyFromExisting(idty:DBIdentity) {
+    return new ExistingDBIdentity(idty)
+  }
+}
+
+export class NewDBIdentity extends DBIdentity {
+
+  revoked = false
+  currentMSN = null
+  currentINN = null
+  member = false
+  kick = false
+  leaving = false
+  wasMember = false
+  revocation_sig = null
+  written = false
+  wotb_id = null
+  revoked_on = null
+  expires_on = 0
+
+  constructor(
+    public pubkey:string,
+    public sig: string,
+    public buid: string,
+    public uid: string,
+    public hash: string,
+  ) {
+    super()
+  }
+}
+
+export class ExistingDBIdentity extends DBIdentity {
+
+  constructor(idty:DBIdentity) {
+    super()
+    this.pubkey = idty.pubkey
+    this.sig = idty.sig
+    this.buid = idty.buid
+    this.uid = idty.uid
+    this.hash = idty.hash
+    this.revoked = idty.revoked
+    this.currentMSN = idty.currentMSN
+    this.currentINN = idty.currentINN
+    this.member = idty.member
+    this.kick = idty.kick
+    this.leaving = idty.leaving
+    this.wasMember = idty.wasMember
+    this.revocation_sig = idty.revocation_sig
+    this.written = idty.written
+    this.wotb_id = idty.wotb_id
+    this.revoked_on = idty.revoked_on
+    this.expires_on = idty.expires_on
+  }
 }
 
 export interface DBSandboxIdentity extends DBIdentity {

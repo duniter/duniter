@@ -10,7 +10,6 @@ const parsers = require('duniter-common').parsers;
 const keyring	= common.keyring;
 const rawer		= common.rawer;
 const constants = require('../../../app/lib/constants');
-const Identity = require('../../../app/lib/entity/identity');
 const Certification = require('../../../app/lib/entity/certification');
 const Membership = require('../../../app/lib/entity/membership');
 const RevocationDTO = require('../../../app/lib/dto/RevocationDTO').RevocationDTO
@@ -104,11 +103,11 @@ function User (uid, options, node) {
 
   this.makeRevocation = (givenLookupIdty, overrideProps) => co(function*() {
     const res = givenLookupIdty || (yield that.lookup(pub));
-    const idty = Identity.statics.fromJSON({
+    const idty = {
       uid: res.results[0].uids[0].uid,
       buid: res.results[0].uids[0].meta.timestamp,
       sig: res.results[0].uids[0].self
-    });
+    }
     const revocation = {
       "currency": node.server.conf.currency,
       "issuer": pub,

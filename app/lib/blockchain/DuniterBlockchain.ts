@@ -6,10 +6,11 @@ import {BlockDTO} from "../dto/BlockDTO"
 import {DBHead} from "../db/DBHead"
 import {DBBlock} from "../db/DBBlock"
 import {CHECK} from "../rules/index"
+import {RevocationDTO} from "../dto/RevocationDTO"
+import {IdentityDTO} from "../dto/IdentityDTO"
 
 const _ = require('underscore')
 const common          = require('duniter-common')
-const Identity        = require('../entity/identity')
 const Certification   = require('../entity/certification')
 const Membership      = require('../entity/membership')
 const Transaction     = require('../entity/transaction')
@@ -297,7 +298,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
     // Revoked
     for (const inlineRevocation of block.revoked) {
-      let revocation = Identity.statics.revocationFromInline(inlineRevocation);
+      let revocation = RevocationDTO.fromInline(inlineRevocation)
       await dal.revokeIdentity(revocation.pubkey, block.number);
     }
     // Excluded
@@ -417,7 +418,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     for (let inlineCert of block.certifications) {
       let cert = Certification.statics.fromInline(inlineCert);
       let idty = await dal.getWritten(cert.to);
-      cert.target = new Identity(idty).getTargetHash();
+      cert.target = IdentityDTO.getTargetHash(idty)
       await dal.deleteCert(cert);
     }
   }

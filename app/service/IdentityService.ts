@@ -4,13 +4,13 @@ import {ConfDTO} from "../lib/dto/ConfDTO"
 import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
 import {GLOBAL_RULES_FUNCTIONS, GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
 import {BlockDTO} from "../lib/dto/BlockDTO"
+import {RevocationDTO} from "../lib/dto/RevocationDTO"
 
 "use strict";
 const keyring          = require('duniter-common').keyring;
 const constants       = require('../lib/constants');
 const Identity        = require('../../app/lib/entity/identity');
 const Certification   = require('../../app/lib/entity/certification');
-const Revocation      = require('../../app/lib/entity/revocation');
 
 const BY_ABSORPTION = true;
 
@@ -210,11 +210,11 @@ export class IdentityService {
   submitRevocation(obj:any) {
     // Force usage of local currency name, do not accept other currencies documents
     obj.currency = this.conf.currency || obj.currency;
-    const revoc = new Revocation(obj);
+    const revoc = RevocationDTO.fromJSONObject(obj)
     const raw = revoc.rawWithoutSig();
     return GlobalFifoPromise.pushFIFO(async () => {
       try {
-        this.logger.info('⬇ REVOCATION %s %s', revoc.pubkey, revoc.uid);
+        this.logger.info('⬇ REVOCATION %s %s', revoc.pubkey, revoc.idty_uid);
         let verified = keyring.verify(raw, revoc.revocation, revoc.pubkey);
         if (!verified) {
           throw 'Wrong signature for revocation';
@@ -229,35 +229,31 @@ export class IdentityService {
             throw 'Revocation already registered';
           } else {
             await this.dal.setRevocating(existing, revoc.revocation);
-            this.logger.info('✔ REVOCATION %s %s', revoc.pubkey, revoc.uid);
-            revoc.json = function() {
-              return {
-                result: true
-              };
-            };
-            return revoc;
+            this.logger.info('✔ REVOCATION %s %s', revoc.pubkey, revoc.idty_uid);
+            return revoc
           }
         }
         else {
           // Create identity given by the revocation
-          const idty = new Identity(revoc);
-          idty.revocation_sig = revoc.signature;
+          const idty = new Identity({
+            uid: revoc.idty_uid,
+            buid: revoc.idty_buid,
+            sig: revoc.idty_sig,
+            pubkey: revoc.pubkey,
+            revocation_sig: revoc.revocation
+          });
+          idty.revocation_sig = revoc.revocation;
           idty.certsCount = 0;
           idty.ref_block = parseInt(idty.buid.split('-')[0]);
           if (!(await this.dal.idtyDAL.sandbox.acceptNewSandBoxEntry(idty, this.conf.pair && this.conf.pair.pub))) {
             throw constants.ERRORS.SANDBOX_FOR_IDENTITY_IS_FULL;
           }
           await this.dal.savePendingIdentity(idty);
-          this.logger.info('✔ REVOCATION %s %s', revoc.pubkey, revoc.uid);
-          revoc.json = function() {
-            return {
-              result: true
-            };
-          };
-          return revoc;
+          this.logger.info('✔ REVOCATION %s %s', revoc.pubkey, revoc.idty_uid);
+          return revoc
         }
       } catch (e) {
-        this.logger.info('✘ REVOCATION %s %s', revoc.pubkey, revoc.uid);
+        this.logger.info('✘ REVOCATION %s %s', revoc.pubkey, revoc.idty_uid);
         throw e;
       }
     })

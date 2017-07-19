@@ -299,7 +299,7 @@ export class Indexer {
         expires_on: null,
         expired_on: null,
         revokes_on: null,
-        revocation: revocation.sig,
+        revocation: revocation.revocation,
         chainable_on: null,
         revoked_on: [block.number, block.hash].join('-'),
         leaving: false

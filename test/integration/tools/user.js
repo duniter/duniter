@@ -13,7 +13,7 @@ const constants = require('../../../app/lib/constants');
 const Identity = require('../../../app/lib/entity/identity');
 const Certification = require('../../../app/lib/entity/certification');
 const Membership = require('../../../app/lib/entity/membership');
-const Revocation = require('../../../app/lib/entity/revocation');
+const RevocationDTO = require('../../../app/lib/dto/RevocationDTO').RevocationDTO
 const Peer = require('../../../app/lib/entity/peer');
 const Transaction = require('../../../app/lib/entity/transaction');
 
@@ -120,7 +120,7 @@ function User (uid, options, node) {
     _.extend(revocation, overrideProps || {});
     const rawRevocation = rawer.getOfficialRevocation(revocation);
     revocation.revocation = keyring.Key(pub, sec).signSync(rawRevocation);
-    return Revocation.statics.fromJSON(revocation);
+    return RevocationDTO.fromJSONObject(revocation);
   });
 
   this.revoke = (givenLookupIdty) => co(function *() {

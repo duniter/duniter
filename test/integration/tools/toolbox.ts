@@ -3,6 +3,7 @@ import {PermanentProver} from "../../../app/modules/prover/lib/permanentProver"
 import {Prover} from "../../../app/modules/prover/lib/prover"
 import {BlockDTO} from "../../../app/lib/dto/BlockDTO"
 import * as stream from "stream"
+import {RevocationDTO} from "../../../app/lib/dto/RevocationDTO"
 
 const _           = require('underscore');
 const rp          = require('request-promise');
@@ -393,7 +394,7 @@ export class TestingServer {
     })
   }
 
-  postRevocation(rev:any) {
+  postRevocation(rev:RevocationDTO) {
     return this.post('/wot/revoke', {
       revocation: rev.getRaw()
     })

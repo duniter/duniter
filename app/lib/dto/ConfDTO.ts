@@ -1,3 +1,6 @@
+const _ = require('underscore');
+const constants = require('../constants');
+
 export interface Keypair {
   pub: string
   sec: string
@@ -81,5 +84,38 @@ export class ConfDTO implements CurrencyConfDTO {
 
   static mock() {
     return new ConfDTO("", "", [], [], 0, 0, 0.6, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, { pub:'', sec:'' }, 0, "", "", "", 0, "", "", "", true)
+  }
+
+  static defaultConf() {
+    return {
+      "currency": null,
+      "endpoints": [],
+      "rmEndpoints": [],
+      "upInterval": 3600 * 1000,
+      "c": constants.CONTRACT.DEFAULT.C,
+      "dt": constants.CONTRACT.DEFAULT.DT,
+      "dtReeval": constants.CONTRACT.DEFAULT.DT_REEVAL,
+      "ud0": constants.CONTRACT.DEFAULT.UD0,
+      "stepMax": constants.CONTRACT.DEFAULT.STEPMAX,
+      "sigPeriod": constants.CONTRACT.DEFAULT.SIGPERIOD,
+      "sigValidity": constants.CONTRACT.DEFAULT.SIGVALIDITY,
+      "msValidity": constants.CONTRACT.DEFAULT.MSVALIDITY,
+      "sigQty": constants.CONTRACT.DEFAULT.SIGQTY,
+      "xpercent": constants.CONTRACT.DEFAULT.X_PERCENT,
+      "percentRot": constants.CONTRACT.DEFAULT.PERCENTROT,
+      "powDelay": constants.CONTRACT.DEFAULT.POWDELAY,
+      "avgGenTime": constants.CONTRACT.DEFAULT.AVGGENTIME,
+      "dtDiffEval": constants.CONTRACT.DEFAULT.DTDIFFEVAL,
+      "medianTimeBlocks": constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS,
+      "httplogs": false,
+      "udid2": false,
+      "timeout": 3000,
+      "isolate": false,
+      "forksize": constants.BRANCHES.DEFAULT_WINDOW_SIZE
+    };
+  }
+
+  static complete(conf:any) {
+    return _(ConfDTO.defaultConf()).extend(conf);
   }
 }

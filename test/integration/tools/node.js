@@ -6,7 +6,7 @@ var request  = require('request');
 var contacter = require('duniter-crawler').duniter.methods.contacter;
 var duniter  = require('../../../index');
 var multicaster = require('../../../app/lib/streams/multicaster');
-var Configuration = require('../../../app/lib/entity/configuration');
+var ConfDTO = require('../../../app/lib/dto/ConfDTO').ConfDTO
 var Peer          = require('../../../app/lib/entity/peer');
 var user   = require('./user');
 var http   = require('./http');
@@ -161,7 +161,7 @@ function Node (dbName, options) {
               options.remoteipv4 = options.remoteipv4 || null;
               options.remoteipv6 = options.remoteipv6 || null;
               options.remoteport = options.remoteport || 10901;
-              const overConf = Configuration.statics.complete(options);
+              const overConf = ConfDTO.complete(options);
               _.extend(conf, overConf);
             })
           },

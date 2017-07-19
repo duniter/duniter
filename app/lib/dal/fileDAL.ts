@@ -22,7 +22,6 @@ const _       = require('underscore');
 const common = require('duniter-common');
 const indexer = require('../indexer').Indexer
 const logger = require('../logger').NewLogger('filedal');
-const Configuration = require('../entity/configuration');
 const Transaction = require('../entity/transaction');
 const constants = require('../constants');
 
@@ -815,7 +814,7 @@ export class FileDAL {
   }
 
   async loadConf(overrideConf:ConfDTO, defaultConf = false) {
-    let conf = Configuration.statics.complete(overrideConf || {});
+    let conf = ConfDTO.complete(overrideConf || {});
     if (!defaultConf) {
       const savedConf = await this.confDAL.loadConf();
       conf = _(savedConf).extend(overrideConf || {});

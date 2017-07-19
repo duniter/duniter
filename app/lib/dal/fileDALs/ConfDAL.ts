@@ -1,8 +1,6 @@
-import {CFSCore} from "./CFSCore";
-import {AbstractCFS} from "./AbstractCFS";
-import {ConfDTO} from "../../dto/ConfDTO";
+import {AbstractCFS} from "./AbstractCFS"
+import {ConfDTO} from "../../dto/ConfDTO"
 
-const Configuration = require('../../entity/configuration');
 const _ = require('underscore');
 
 export class ConfDAL extends AbstractCFS {
@@ -48,7 +46,7 @@ export class ConfDAL extends AbstractCFS {
   async loadConf() {
     const data = await this.coreFS.readJSON('conf.json');
     if (data) {
-      return _(Configuration.statics.defaultConf()).extend(data);
+      return _(ConfDTO.defaultConf()).extend(data);
     } else {
       // Silent error
       this.logger.warn('No configuration loaded');

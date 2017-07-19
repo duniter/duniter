@@ -416,7 +416,7 @@ export class Server extends stream.Duplex implements HookableServer {
    * @param insteadOfCmd The current command to be replaced by `overrideCommand` command.
    * @returns {*} The daemon handle.
    */
-  getDaemon(overrideCommand:string, insteadOfCmd:string) {
+  getDaemon(overrideCommand:string = "", insteadOfCmd:string = "") {
     const mainModule = process.argv[1]
     const cwd = path.resolve(mainModule, '../..')
     const argv = this.getCommand(overrideCommand, insteadOfCmd)
@@ -449,7 +449,7 @@ export class Server extends stream.Duplex implements HookableServer {
    * @param insteadOfCmd
    * @returns {*}
    */
-  private getCommand(cmd:string, insteadOfCmd:string) {
+  private getCommand(cmd:string = "", insteadOfCmd:string = "") {
     if (insteadOfCmd) {
       // Return the same command args, except the command `insteadOfCmd` which is replaced by `cmd`
       return process.argv.slice(2).map((arg) => {
@@ -480,49 +480,49 @@ export class Server extends stream.Duplex implements HookableServer {
   /**
    * Default endpoint. To be overriden by a module to specify another endpoint value (for ex. BMA).
    */
-  getMainEndpoint() {
+  getMainEndpoint(): Promise<any> {
     return Promise.resolve('DEFAULT_ENDPOINT')
   }
 
   /**
    * Default WoT incoming data for new block. To be overriden by a module.
    */
-  generatorGetJoinData() {
+  generatorGetJoinData(): Promise<any> {
     return Promise.resolve({})
   }
 
   /**
    * Default WoT incoming certifications for new block, filtering wrong certs. To be overriden by a module.
    */
-  generatorComputeNewCerts() {
+  generatorComputeNewCerts(): Promise<any> {
     return Promise.resolve({})
   }
 
   /**
    * Default WoT transforming method for certs => links. To be overriden by a module.
    */
-  generatorNewCertsToLinks() {
+  generatorNewCertsToLinks(): Promise<any> {
     return Promise.resolve({})
   }
 
   /**
    * Default hook on file system plugging. To be overriden by module system.
    */
-  onPluggedFSHook() {
+  onPluggedFSHook(): Promise<any> {
     return Promise.resolve({})
   }
 
   /**
    * Default hook on data reset. To be overriden by module system.
    */
-  resetDataHook() {
+  resetDataHook(): Promise<any> {
     return Promise.resolve({})
   }
 
   /**
    * Default hook on data reset. To be overriden by module system.
    */
-  resetConfigHook() {
+  resetConfigHook(): Promise<any> {
     return Promise.resolve({})
   }
 }

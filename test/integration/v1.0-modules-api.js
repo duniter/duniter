@@ -13,9 +13,9 @@ const querablep = require('querablep');
 describe("v1.0 Module API", () => {
 
   it('should be able to execute `hello` command with quickRun', () => co(function*() {
-    duniter.statics.quickRunGetArgs = () => ['', '', 'hello-world']
-    duniter.statics.onRunDone = () => { /* Do not exit the process */ }
+    duniter.statics.setOnRunDone(() => { /* Do not exit the process */ })
     const absolutePath = path.join(__dirname, './scenarios/hello-plugin.js')
+    process.argv = ['', absolutePath, 'hello-world']
     const res = yield duniter.statics.quickRun(absolutePath)
     res.should.equal('Hello world! from within Duniter.')
   }))

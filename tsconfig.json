@@ -11,6 +11,7 @@
   },
   "include": [
     "server.ts",
+    "index.ts",
     "app",
     "bin",
     "test"

@@ -29,6 +29,14 @@ export interface CurrencyConfDTO {
   udReevalTime0: number
   dtReeval: number
 }
+
+export interface KeypairConfDTO {
+  pair: Keypair
+  oldPair: Keypair
+  salt: string
+  passwd: string
+}
+
 export class ConfDTO implements CurrencyConfDTO {
 
   constructor(

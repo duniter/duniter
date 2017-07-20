@@ -5,7 +5,6 @@ const should    = require('should');
 const user      = require('./tools/user');
 const toolbox   = require('./tools/toolbox');
 const constants = require('../../app/lib/constants');
-const keyring   = require('duniter-common').keyring;
 
 // Trace these errors
 process.on('unhandledRejection', (reason) => {

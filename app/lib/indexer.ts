@@ -7,6 +7,7 @@ import {CertificationDTO} from "./dto/CertificationDTO"
 import {TransactionDTO} from "./dto/TransactionDTO"
 import {DBHead} from "./db/DBHead"
 import {LOCAL_RULES_HELPERS} from "./rules/local_rules"
+import {verify} from "./common/crypto/keyring"
 
 const co              = require('co');
 const _               = require('underscore');
@@ -15,7 +16,6 @@ const common          = require('duniter-common');
 const constants       = common.constants
 const rawer           = common.rawer
 const unlock          = common.txunlock
-const keyring         = common.keyring
 const Block           = common.document.Block
 const Membership      = common.document.Membership
 
@@ -1897,7 +1897,7 @@ async function getNodeIDfromPubkey(nodesCache: any, pubkey: string, dal: any) {
 
 async function sigCheckRevoke(entry: MindexEntry, dal: any, currency: string) {
   try {
-    let pubkey = entry.pub, sig = entry.revocation;
+    let pubkey = entry.pub, sig = entry.revocation || "";
     let idty = await dal.getWrittenIdtyByPubkey(pubkey);
     if (!idty) {
       throw Error("A pubkey who was never a member cannot be revoked");
@@ -1913,7 +1913,7 @@ async function sigCheckRevoke(entry: MindexEntry, dal: any, currency: string) {
       sig: idty.sig,
       revocation: ''
     });
-    let sigOK = keyring.verify(rawRevocation, sig, pubkey);
+    let sigOK = verify(rawRevocation, sig, pubkey);
     if (!sigOK) {
       throw Error("Revocation signature must match");
     }
@@ -1962,7 +1962,7 @@ async function checkCertificationIsValid (block: BlockDTO, cert: CindexEntry, fi
           buid: buid,
           sig: ''
         }));
-        const verified = keyring.verify(raw, cert.sig, cert.issuer);
+        const verified = verify(raw, cert.sig, cert.issuer);
         if (!verified) {
           throw constants.ERRORS.WRONG_SIGNATURE_FOR_CERT
         }

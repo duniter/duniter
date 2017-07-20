@@ -30,5 +30,7 @@ app/modules/check-config.js
 app/modules/config.js
 app/modules/prover/*.js
 app/modules/prover/lib/*.js
+app/modules/keypair/*.js
+app/modules/keypair/lib/*.js
 test/*.js
 test/**/*.js

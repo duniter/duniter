@@ -2,6 +2,8 @@ import {ExecuteCommand} from "./app/cli"
 import * as stream from "stream"
 import {Server} from "./server"
 import {ConfDTO} from "./app/lib/dto/ConfDTO"
+import {ProverDependency} from "./app/modules/prover/index"
+import {KeypairDependency} from "./app/modules/keypair/index"
 
 const path = require('path');
 const _ = require('underscore');
@@ -20,7 +22,6 @@ const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
 const routerDependency    = require('./app/modules/router');
 const pluginDependency    = require('./app/modules/plugin');
-const proverDependency    = require('./app/modules/prover').ProverDependency;
 
 class Stacks {
 
@@ -98,7 +99,8 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-psignal',   required: pSignalDependency },
   { name: 'duniter-router',    required: routerDependency },
   { name: 'duniter-plugin',    required: pluginDependency },
-  { name: 'duniter-prover',    required: proverDependency }
+  { name: 'duniter-prover',    required: ProverDependency },
+  { name: 'duniter-keypair',   required: KeypairDependency }
 ]);
 
 const PRODUCTION_DEPENDENCIES = DEFAULT_DEPENDENCIES.concat([

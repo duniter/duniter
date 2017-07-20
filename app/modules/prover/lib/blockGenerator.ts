@@ -7,13 +7,13 @@ import {LOCAL_RULES_HELPERS} from "../../../lib/rules/local_rules"
 import {Indexer} from "../../../lib/indexer"
 import {FileDAL} from "../../../lib/dal/fileDAL"
 import {DBBlock} from "../../../lib/db/DBBlock"
+import {verify} from "../../../lib/common/crypto/keyring"
 
 const _               = require('underscore');
 const moment          = require('moment');
 const inquirer        = require('inquirer');
 const common          = require('duniter-common');
 
-const keyring       = common.keyring;
 const hashf         = common.hashf;
 const rawer         = common.rawer;
 const Block         = common.document.Block;
@@ -352,7 +352,7 @@ export class BlockGenerator {
     const idty = Identity.fromJSON(identity);
     idty.currency = this.conf.currency;
     const createIdentity = idty.rawWithoutSig();
-    const verified = keyring.verify(createIdentity, idty.sig, idty.pubkey);
+    const verified = verify(createIdentity, idty.sig, idty.pubkey);
     if (!verified) {
       throw constants.ERRORS.IDENTITY_WRONGLY_SIGNED;
     }
@@ -693,7 +693,7 @@ class NextBlockGenerator implements BlockGeneratorInterface {
           cert.idty_sig = targetIdty.sig;
           cert.buid = current ? [cert.block_number, targetBlock.hash].join('-') : common.constants.SPECIAL_BLOCK;
           const rawCert = Certification.fromJSON(cert).getRaw();
-          if (keyring.verify(rawCert, certSig, cert.from)) {
+          if (verify(rawCert, certSig, cert.from)) {
             cert.sig = certSig;
             let exists = false;
             if (current) {

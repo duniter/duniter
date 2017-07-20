@@ -5,13 +5,13 @@ import {DBBlock} from "../db/DBBlock"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import * as local_rules from "./local_rules"
 import {BlockDTO} from "../dto/BlockDTO"
+import {verify} from "../common/crypto/keyring"
 
 const _              = require('underscore');
 const common         = require('duniter-common');
 const indexer        = require('../indexer').Indexer
 
 const constants      = common.constants
-const keyring        = common.keyring
 const rawer          = common.rawer
 const Identity       = common.document.Identity
 const Transaction    = common.document.Transaction
@@ -276,7 +276,7 @@ async function checkCertificationIsValid (block:{ number:number, currency:string
         buid: buid,
         sig: ''
       }));
-      const verified = keyring.verify(raw, cert.sig, cert.from);
+      const verified = verify(raw, cert.sig, cert.from);
       if (!verified) {
         throw constants.ERRORS.WRONG_SIGNATURE_FOR_CERT
       }

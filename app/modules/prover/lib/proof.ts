@@ -3,11 +3,11 @@ import {hashf} from "../../../lib/common"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {Constants} from "./constants"
+import {KeyGen} from "../../../lib/common/crypto/keyring"
 
 const moment = require('moment');
 const dos2unix = require('duniter-common').dos2unix;
 const querablep = require('querablep');
-const keyring = require('duniter-common').keyring;
 const rawer = require('duniter-common').rawer;
 
 const PAUSES_PER_TURN = 5;
@@ -94,7 +94,7 @@ function beginNewProofOfWork(stuff:any) {
     }
     else {
       lastSecret = pair.sec;
-      sigFunc = keyring.Key(pair.pub, pair.sec).signSync;
+      sigFunc = (msg:string) => KeyGen(pair.pub, pair.sec).signSync(msg)
     }
     signatureFunc = sigFunc;
     let pow = "", sig = "", raw = "";

@@ -5,12 +5,12 @@ import {DBPeer} from "../lib/dal/sqliteDAL/PeerDAL"
 import {DBBlock} from "../lib/db/DBBlock"
 import {Multicaster} from "../lib/streams/multicaster"
 import {PeerDTO} from "../lib/dto/PeerDTO"
+import {verify} from "../lib/common/crypto/keyring"
 
 const util           = require('util');
 const _              = require('underscore');
 const events         = require('events');
 const rp             = require('request-promise');
-const keyring        = require('duniter-common').keyring;
 const logger         = require('../lib/logger').NewLogger('peering');
 const dos2unix       = require('duniter-common').dos2unix;
 const hashf          = require('duniter-common').hashf;
@@ -64,7 +64,7 @@ export class PeeringService {
     const raw = rawer.getPeerWithoutSignature(p);
     const sig = p.signature;
     const pub = p.pubkey;
-    const signaturesMatching = keyring.verify(raw, sig, pub);
+    const signaturesMatching = verify(raw, sig, pub);
     return !!signaturesMatching;
   };
 

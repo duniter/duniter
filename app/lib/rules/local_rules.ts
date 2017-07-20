@@ -4,13 +4,13 @@ import {ConfDTO} from "../dto/ConfDTO"
 import {CindexEntry, IndexEntry, Indexer, MindexEntry, SindexEntry} from "../indexer"
 import {BaseDTO, TransactionDTO} from "../dto/TransactionDTO"
 import {DBBlock} from "../db/DBBlock"
+import {verify} from "../common/crypto/keyring"
 
 const _          = require('underscore');
 const common     = require('duniter-common');
 
 const constants       = common.constants
 const hashf           = common.hashf
-const keyring         = common.keyring
 const Block           = common.document.Block
 const Identity        = common.document.Identity
 const Membership      = common.document.Membership
@@ -73,7 +73,7 @@ export const LOCAL_RULES_FUNCTIONS = {
   },
 
   checkBlockSignature: async (block:BlockDTO) => {
-    if (!keyring.verify(block.getSignedPart(), block.signature, block.issuer))
+    if (!verify(block.getSignedPart(), block.signature, block.issuer))
       throw Error('Block\'s signature must match');
     return true;
   },
@@ -94,7 +94,7 @@ export const LOCAL_RULES_FUNCTIONS = {
     while (!wrongSig && i < block.identities.length) {
       const idty = Identity.fromInline(block.identities[i]);
       idty.currency = block.currency;
-      wrongSig = !keyring.verify(idty.rawWithoutSig(), idty.sig, idty.pubkey);
+      wrongSig = !verify(idty.rawWithoutSig(), idty.sig, idty.pubkey);
       if (wrongSig) {
         throw Error('Identity\'s signature must match');
       }
@@ -382,7 +382,7 @@ export const LOCAL_RULES_FUNCTIONS = {
 }
 
 function checkSingleMembershipSignature(ms:any) {
-  return keyring.verify(ms.getRaw(), ms.signature, ms.issuer);
+  return verify(ms.getRaw(), ms.signature, ms.issuer);
 }
 
 function getSigResult(tx:any) {
@@ -401,7 +401,7 @@ function getSigResult(tx:any) {
   while (signaturesMatching && i < tx.signatures.length) {
     const sig = tx.signatures[i];
     const pub = tx.issuers[i];
-    signaturesMatching = keyring.verify(raw, sig, pub);
+    signaturesMatching = verify(raw, sig, pub);
     sigResult.sigs[pub] = {
       matching: signaturesMatching,
       index: i

@@ -8,6 +8,7 @@ import {FileDAL} from "./app/lib/dal/fileDAL"
 import {DuniterBlockchain} from "./app/lib/blockchain/DuniterBlockchain"
 import {SQLBlockchain} from "./app/lib/blockchain/SqlBlockchain"
 import * as stream from "stream"
+import {KeyGen, randomKey} from "./app/lib/common/crypto/keyring"
 
 interface HookableServer {
   getMainEndpoint: (...args:any[]) => Promise<any>
@@ -28,7 +29,6 @@ const daemonize   = require("daemonize2")
 const parsers     = require('duniter-common').parsers;
 const constants   = require('./app/lib/constants');
 const jsonpckg    = require('./package.json');
-const keyring      = require('duniter-common').keyring;
 const directory   = require('./app/lib/system/directory');
 const rawer       = require('duniter-common').rawer;
 const logger      = require('./app/lib/logger').NewLogger('server');
@@ -150,11 +150,11 @@ export class Server extends stream.Duplex implements HookableServer {
     // Default keypair
     if (!this.conf.pair || !this.conf.pair.pub || !this.conf.pair.sec) {
       // Create a random key
-      this.conf.pair = keyring.randomKey().json()
+      this.conf.pair = randomKey().json()
     }
     // Extract key pair
-    this.keyPair = keyring.Key(this.conf.pair.pub, this.conf.pair.sec);
-    this.sign = this.keyPair.sign;
+    this.keyPair = KeyGen(this.conf.pair.pub, this.conf.pair.sec);
+    this.sign = (msg:string) => this.keyPair.sign(msg)
     // Blockchain object
     this.blockchain = new DuniterBlockchain(new SQLBlockchain(this.dal), this.dal);
     // Update services

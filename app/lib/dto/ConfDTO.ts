@@ -32,12 +32,25 @@ export interface CurrencyConfDTO {
 
 export interface KeypairConfDTO {
   pair: Keypair
-  oldPair: Keypair
+  oldPair: Keypair|null
   salt: string
   passwd: string
 }
 
-export class ConfDTO implements CurrencyConfDTO {
+export interface NetworkConfDTO {
+  remoteport: number
+  remotehost: string|null
+  remoteipv4: string|null
+  remoteipv6: string|null
+  port: number
+  ipv4: string
+  ipv6: string
+  dos:any
+  upnp:boolean
+  httplogs:boolean
+}
+
+export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO {
 
   constructor(
     public loglevel: string,
@@ -79,19 +92,24 @@ export class ConfDTO implements CurrencyConfDTO {
     public sigWindow: number,
     public swichOnTimeAheadBy: number,
     public pair: Keypair,
+    public oldPair: Keypair|null,
+    public salt: string,
+    public passwd: string,
     public remoteport: number,
-    public remotehost: string,
-    public remoteipv4: string,
-    public remoteipv6: string,
+    public remotehost: string|null,
+    public remoteipv4: string|null,
+    public remoteipv6: string|null,
     public port: number,
     public ipv4: string,
     public ipv6: string,
+    public dos: any,
+    public upnp: boolean,
     public homename: string,
     public memory: boolean,
 ) {}
 
   static mock() {
-    return new ConfDTO("", "", [], [], 0, 0, 0.6, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, { pub:'', sec:'' }, 0, "", "", "", 0, "", "", "", true)
+    return new ConfDTO("", "", [], [], 0, 0, 0.6, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", 0, "", "", null, false, "", true)
   }
 
   static defaultConf() {

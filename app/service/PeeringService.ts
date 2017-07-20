@@ -261,7 +261,7 @@ export class PeeringService {
     return endpoints.filter((ep) => {
       return !ep.match(constants.BMA_REGEXP) || (
           !(ep.includes(' ' + theConf.remoteport) && (
-          ep.includes(theConf.remotehost) || ep.includes(theConf.remoteipv6) || ep.includes(theConf.remoteipv4))));
+          ep.includes(theConf.remotehost || '') || ep.includes(theConf.remoteipv6 || '') || ep.includes(theConf.remoteipv4 || ''))));
     });
   }
 }

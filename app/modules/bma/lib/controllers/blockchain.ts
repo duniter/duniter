@@ -1,0 +1,141 @@
+"use strict";
+import {Server} from "../../../../../server"
+import {AbstractController} from "./AbstractController"
+import {ParametersService} from "../parameters"
+import {BMAConstants} from "../constants"
+
+const co               = require('co');
+const _                = require('underscore');
+const common           = require('duniter-common');
+const http2raw         = require('../http2raw');
+const toJson = require('../tojson');
+
+const Membership = common.document.Membership
+
+export class BlockchainBinding extends AbstractController {
+
+  with:any
+
+  constructor(server:Server) {
+    super(server)
+    this.with = {
+
+      newcomers: this.getStat('newcomers'),
+      certs:     this.getStat('certs'),
+      joiners:   this.getStat('joiners'),
+      actives:   this.getStat('actives'),
+      leavers:   this.getStat('leavers'),
+      revoked:   this.getStat('revoked'),
+      excluded:  this.getStat('excluded'),
+      ud:        this.getStat('ud'),
+      tx:        this.getStat('tx')
+    }
+  }
+
+  parseMembership = (req:any) => this.pushEntity(req, http2raw.membership, BMAConstants.ENTITY_MEMBERSHIP);
+
+  parseBlock = (req:any) => this.pushEntity(req, http2raw.block, BMAConstants.ENTITY_BLOCK);
+
+  parameters = () => this.server.dal.getParameters();
+
+  private getStat(statName:string) {
+    return async () => {
+      let stat = await this.server.dal.getStat(statName);
+      return { result: toJson.stat(stat) };
+    }
+  }
+
+  async promoted(req:any) {
+    const number = await ParametersService.getNumberP(req);
+    const promoted = await this.BlockchainService.promoted(number);
+    return toJson.block(promoted);
+  }
+
+  async blocks(req:any) {
+    const params = ParametersService.getCountAndFrom(req);
+    const count = parseInt(params.count);
+    const from = parseInt(params.from);
+    let blocks = await this.BlockchainService.blocksBetween(from, count);
+    blocks = blocks.map((b:any) => toJson.block(b));
+    return blocks;
+  }
+
+  async current() {
+    const current = await this.server.dal.getCurrentBlockOrNull();
+    if (!current) throw BMAConstants.ERRORS.NO_CURRENT_BLOCK;
+    return toJson.block(current);
+  }
+
+  async hardship(req:any) {
+    let nextBlockNumber = 0;
+    const search = await ParametersService.getSearchP(req);
+    const idty = await this.IdentityService.findMemberWithoutMemberships(search);
+    if (!idty) {
+      throw BMAConstants.ERRORS.NO_MATCHING_IDENTITY;
+    }
+    if (!idty.member) {
+      throw BMAConstants.ERRORS.NOT_A_MEMBER;
+    }
+    const current = await this.BlockchainService.current();
+    if (current) {
+      nextBlockNumber = current ? current.number + 1 : 0;
+    }
+    const difficulty = await this.server.getBcContext().getIssuerPersonalizedDifficulty(idty.pubkey);
+    return {
+      "block": nextBlockNumber,
+      "level": difficulty
+    };
+  }
+
+  async difficulties() {
+    const current = await this.server.dal.getCurrentBlockOrNull();
+    const number = (current && current.number) || 0;
+    const issuers = await this.server.dal.getUniqueIssuersBetween(number - 1 - current.issuersFrame, number - 1);
+    const difficulties = [];
+    for (const issuer of issuers) {
+      const member = await this.server.dal.getWrittenIdtyByPubkey(issuer);
+      const difficulty = await this.server.getBcContext().getIssuerPersonalizedDifficulty(member.pubkey);
+      difficulties.push({
+        uid: member.uid,
+        level: difficulty
+      });
+    }
+    return {
+      "block": number + 1,
+      "levels": _.sortBy(difficulties, (diff:any) => diff.level)
+    };
+  }
+
+  async memberships(req:any) {
+    const search = await ParametersService.getSearchP(req);
+    const idty:any = await this.IdentityService.findMember(search);
+    const json = {
+      pubkey: idty.pubkey,
+      uid: idty.uid,
+      sigDate: idty.buid,
+      memberships: []
+    };
+    json.memberships = idty.memberships.map((msObj:any) => {
+      const ms = Membership.fromJSON(msObj);
+      return {
+        version: ms.version,
+        currency: this.conf.currency,
+        membership: ms.membership,
+        blockNumber: parseInt(ms.blockNumber),
+        blockHash: ms.blockHash,
+        written: (!msObj.written_number && msObj.written_number !== 0) ? null : msObj.written_number
+      };
+    });
+    json.memberships = _.sortBy(json.memberships, 'blockNumber');
+    json.memberships.reverse();
+    return json;
+  }
+
+  async branches() {
+    const branches = await this.BlockchainService.branches();
+    const blocks = branches.map((b) => toJson.block(b));
+    return {
+      blocks: blocks
+    };
+  }
+}

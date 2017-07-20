@@ -107,8 +107,12 @@ export class BlockDTO {
     return found;
   }
 
+  getRawUnSigned() {
+    return this.getRawInnerPart() + this.getSignedPart()
+  }
+
   getRawSigned() {
-    return this.getRawInnerPart() + this.getSignedPart() + this.signature + "\n"
+    return this.getRawUnSigned() + this.signature + "\n"
   }
 
   getSignedPart() {

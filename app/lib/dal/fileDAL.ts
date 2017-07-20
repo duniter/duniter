@@ -328,7 +328,7 @@ export class FileDAL {
     return this.txsDAL.removeTX(hash)
   }
 
-  getTransactionsPending(versionMin:number) {
+  getTransactionsPending(versionMin = 0) {
     return this.txsDAL.getAllPending(versionMin)
   }
 
@@ -457,7 +457,7 @@ export class FileDAL {
     return _(pending).sortBy((ms:any) => -ms.number)[0];
   }
 
-  async findNewcomers(blockMedianTime:number) {
+  async findNewcomers(blockMedianTime = 0) {
     const pending = await this.msDAL.getPendingIN()
     const mss = await Promise.all(pending.map(async (p:any) => {
       const reduced = await this.mindexDAL.getReducedMS(p.issuer)

@@ -6,6 +6,12 @@ export interface Keypair {
   sec: string
 }
 
+export interface BranchingDTO {
+  swichOnTimeAheadBy:number
+  avgGenTime:number
+  forksize:number
+}
+
 export interface CurrencyConfDTO {
   c: number
   dt: number
@@ -50,7 +56,7 @@ export interface NetworkConfDTO {
   httplogs:boolean
 }
 
-export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO {
+export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO, BranchingDTO {
 
   constructor(
     public loglevel: string,

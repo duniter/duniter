@@ -4,6 +4,7 @@ import {Server} from "./server"
 import {ConfDTO} from "./app/lib/dto/ConfDTO"
 import {ProverDependency} from "./app/modules/prover/index"
 import {KeypairDependency} from "./app/modules/keypair/index"
+import {CrawlerDependency} from "./app/modules/crawler/index"
 
 const path = require('path');
 const _ = require('underscore');
@@ -100,7 +101,8 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-router',    required: routerDependency },
   { name: 'duniter-plugin',    required: pluginDependency },
   { name: 'duniter-prover',    required: ProverDependency },
-  { name: 'duniter-keypair',   required: KeypairDependency }
+  { name: 'duniter-keypair',   required: KeypairDependency },
+  { name: 'duniter-crawler',   required: CrawlerDependency }
 ]);
 
 const PRODUCTION_DEPENDENCIES = DEFAULT_DEPENDENCIES.concat([
@@ -140,10 +142,12 @@ module.exports.statics = {
   }
 };
 
-interface StreamingDuniterModule extends stream.Readable {
+export interface DuniterService {
   startService: () => Promise<any>
   stopService: () => Promise<any>
 }
+export interface ReadableDuniterService extends DuniterService, stream.Readable {}
+export interface TransformableDuniterService extends DuniterService, stream.Transform {}
 
 class Stack {
 
@@ -158,10 +162,10 @@ class Stack {
   private wizardTasks:any
   private definitions:any[] = []
   private streams: {
-    input: stream.Readable[]
-    process: stream.Transform[]
-    output: stream.Transform[]
-    neutral: stream.Transform[]
+    input: ReadableDuniterService[]
+    process: TransformableDuniterService[]
+    output: TransformableDuniterService[]
+    neutral: TransformableDuniterService[]
   } = {
     input: [],
     process: [],
@@ -390,14 +394,14 @@ class Stack {
         // Start services and streaming between them
         async () => {
           const modules = this.streams.input.concat(this.streams.process).concat(this.streams.output).concat(this.streams.neutral);
-          await Promise.all(modules.map((module:StreamingDuniterModule) => module.startService()))
+          await Promise.all(modules.map((module:DuniterService) => module.startService()))
         },
 
         // Stop services and streaming between them
         async () => {
           const modules = this.streams.input.concat(this.streams.process).concat(this.streams.output).concat(this.streams.neutral);
           // Any streaming module must implement a `stopService` method
-          await Promise.all(modules.map((module:StreamingDuniterModule) => module.stopService()))
+          await Promise.all(modules.map((module:DuniterService) => module.stopService()))
           // // Stop reading inputs
           // for (const module of streams.input) module.unpipe();
           // Stop reading from global INPUT

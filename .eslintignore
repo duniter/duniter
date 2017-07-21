@@ -36,5 +36,7 @@ app/modules/bma/*.js
 app/modules/bma/lib/*.js
 app/modules/bma/lib/entity/*.js
 app/modules/bma/lib/controllers/*.js
+app/modules/crawler/*.js
+app/modules/crawler/lib/*.js
 test/*.js
 test/**/*.js

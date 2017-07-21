@@ -276,12 +276,12 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
           }
         }))
         let amountNotDestroyed = 0;
-        await _.values(allUpdates).map(async (src:any) => {
+        await Promise.all(_.values(allUpdates).map(async (src:any) => {
           const exist = await sindexDAL.getSource(src.identifier, src.pos);
           if (exist && !exist.consumed) {
             amountNotDestroyed += src.amount;
           }
-        })
+        }))
       }
       await sindexDAL.insertBatch(sourcesMovements);
     },

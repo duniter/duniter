@@ -40,6 +40,10 @@ export class DBBlock {
   ) {
   }
 
+  toBlockDTO() {
+    return BlockDTO.fromJSONObject(this)
+  }
+
   static fromBlockDTO(b:BlockDTO) {
     const dbb = new DBBlock()
     dbb.version = b.version

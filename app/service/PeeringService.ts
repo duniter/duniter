@@ -194,7 +194,7 @@ export class PeeringService {
     let endpoint = await this.server.getMainEndpoint(theConf);
     let otherPotentialEndpoints = this.getOtherEndpoints(p1.endpoints, theConf);
     logger.info('Sibling endpoints:', otherPotentialEndpoints);
-    let reals = await otherPotentialEndpoints.map(async (theEndpoint:string) => {
+    let reals = await Promise.all(otherPotentialEndpoints.map(async (theEndpoint:string) => {
       let real = true;
       let remote = PeerDTO.endpoint2host(theEndpoint)
       try {
@@ -214,7 +214,7 @@ export class PeeringService {
         real = false;
       }
       return real;
-    })
+    }))
     let toConserve = otherPotentialEndpoints.filter((ep, i) => reals[i]);
     if (!currency || endpoint == 'BASIC_MERKLED_API') {
       logger.error('It seems there is an issue with your configuration.');

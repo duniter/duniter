@@ -300,7 +300,7 @@ export class Indexer {
         expired_on: null,
         revokes_on: null,
         revocation: revocation.revocation,
-        chainable_on: null,
+        chainable_on: block.medianTime + conf.msPeriod, // Note: this is useless, because a revoked identity cannot join back. But we let this property for data consistency
         revoked_on: [block.number, block.hash].join('-'),
         leaving: false
       })

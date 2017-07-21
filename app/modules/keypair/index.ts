@@ -96,7 +96,7 @@ export const KeypairDependency = {
 
       beforeSave: async (conf:KeypairConfDTO, program:any, logger:any, confDAL:any) => {
 
-        if (program.keyprompt || program.keyfile) {
+        if ((program.keyprompt || program.keyfile) && conf.oldPair) {
           // Don't store the given key, but only the default/saved one
           conf.pair = {
             pub: conf.oldPair.pub,

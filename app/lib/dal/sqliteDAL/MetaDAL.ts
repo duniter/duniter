@@ -348,7 +348,22 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
     'UPDATE i_index SET writtenOn = CAST(written_on as integer);' +
     'UPDATE s_index SET writtenOn = CAST(written_on as integer);' +
     'UPDATE c_index SET writtenOn = CAST(written_on as integer);' +
-    'COMMIT;'
+    'COMMIT;',
+
+    /**
+     * Feeds the m_index.chainable_on correctly
+     */
+    24: async (conf:ConfDTO) => {
+      let blockDAL = new BlockDAL(this.driverCopy)
+      let mindexDAL = new MIndexDAL(this.driverCopy)
+      const memberships = await mindexDAL.query('SELECT * FROM m_index')
+      for (const ms of memberships) {
+        const reference = await blockDAL.getBlock(parseInt(ms.written_on.split('-')[0]))
+        const msPeriod = conf.msWindow // It has the same value, as it was not defined on currency init
+        const updateQuery = 'UPDATE m_index SET chainable_on = ' + (reference.medianTime + msPeriod) + ' WHERE pub = \'' + ms.pub + '\' AND written_on = \'' + ms.written_on +  '\''
+        await mindexDAL.exec(updateQuery)
+      }
+    },
   };
 
   async init() {

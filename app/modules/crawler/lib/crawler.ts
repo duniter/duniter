@@ -374,7 +374,7 @@ export class BlockCrawler {
                 return server.dal.getCurrentBlockOrNull()
               }
               async remoteCurrent(source?: any): Promise<BlockDTO | null> {
-                return thePeer.getCurrent()
+                return source.getCurrent()
               }
               async remotePeers(source?: any): Promise<PeerDTO[]> {
                 return Promise.resolve([node])

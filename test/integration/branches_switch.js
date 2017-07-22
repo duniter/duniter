@@ -3,7 +3,7 @@
 const co = require('co');
 const _         = require('underscore');
 const duniter     = require('../../index');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const user      = require('./tools/user');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
@@ -57,8 +57,8 @@ describe("Switch", function() {
   before(() => co(function *() {
     yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
     yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-    s1.getMainEndpoint = require('duniter-bma').duniter.methods.getMainEndpoint
-    s2.getMainEndpoint = require('duniter-bma').duniter.methods.getMainEndpoint
+    s1.getMainEndpoint = require('../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
+    s2.getMainEndpoint = require('../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
     yield cat.createIdentity();
     yield toc.createIdentity();
     yield toc.cert(cat);
@@ -87,7 +87,7 @@ describe("Switch", function() {
     yield s1.singleWritePromise(s2p);
 
     // Forking S1 from S2
-    yield require('duniter-crawler').duniter.methods.pullBlocks(s1, s2p.pubkey);
+    yield require('../../app/modules/crawler').CrawlerDependency.duniter.methods.pullBlocks(s1, s2p.pubkey);
     // S1 should have switched to the other branch
   }));
 

@@ -3,9 +3,9 @@ import {BlockGenerator, BlockGeneratorWhichProves} from "./lib/blockGenerator"
 import {Constants} from "./lib/constants"
 import {BlockProver} from "./lib/blockProver"
 import {Prover} from "./lib/prover"
+import {Contacter} from "../crawler/lib/contacter";
 
 const async = require('async');
-const contacter = require('duniter-crawler').duniter.methods.contacter;
 const common = require('duniter-common');
 
 const Peer = common.document.Peer
@@ -191,7 +191,7 @@ function proveAndSend(program:any, server:any, block:any, issuer:any, difficulty
           program.show && console.log(proven.getRawSigned());
           logger.info('Posted block ' + proven.getRawSigned());
           const p = Peer.fromJSON(peer);
-          const contact = contacter(p.getHostPreferDNS(), p.getPort());
+          const contact = new Contacter(p.getHostPreferDNS(), p.getPort());
           await contact.postBlock(proven.getRawSigned());
         } catch(e) {
           next(e);

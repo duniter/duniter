@@ -3,7 +3,7 @@
 const co        = require('co');
 const _         = require('underscore');
 const duniter     = require('../../index');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const user      = require('./tools/user');
 const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
@@ -15,7 +15,7 @@ const expectJSON     = httpTest.expectJSON;
 const expectHttpCode = httpTest.expectHttpCode;
 
 if (constants.MUTE_LOGS_DURING_UNIT_TESTS) {
-  require('../../app/lib/logger').NewLogger().mute();
+  // require('../../app/lib/logger').NewLogger().mute();
 }
 
 // Trace these errors
@@ -72,8 +72,8 @@ describe("SelfFork", function() {
 
     yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
     yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-    s1.getMainEndpoint = require('duniter-bma').duniter.methods.getMainEndpoint
-    s2.getMainEndpoint = require('duniter-bma').duniter.methods.getMainEndpoint
+    s1.getMainEndpoint = require('../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
+    s2.getMainEndpoint = require('../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
 
     // Server 1
     yield cat.createIdentity();
@@ -106,7 +106,7 @@ describe("SelfFork", function() {
     yield s1.singleWritePromise(s2p);
 
     // Forking S1 from S2
-    return require('duniter-crawler').duniter.methods.pullBlocks(s1, s2p.pubkey);
+    return require('../../app/modules/crawler').CrawlerDependency.duniter.methods.pullBlocks(s1, s2p.pubkey);
   }));
 
   describe("Server 1 /blockchain", function() {

@@ -2,7 +2,7 @@
 
 const co        = require('co');
 const should    = require('should');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const common    = require('duniter-common');
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');

@@ -14,12 +14,12 @@ const sync        = require('../tools/sync');
 const commit      = require('../tools/commit');
 const user        = require('../tools/user');
 const until       = require('../tools/until');
-const bma         = require('duniter-bma').duniter.methods.bma;
+const bma         = require('../../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const multicaster = require('../../../app/lib/streams/multicaster');
-const dtos        = require('duniter-bma').duniter.methods.dtos;
+const dtos        = require('../../../app/modules/bma').BmaDependency.duniter.methods.dtos;
 const logger      = require('../../../app/lib/logger').NewLogger('toolbox');
 
-require('duniter-bma').duniter.methods.noLimit(); // Disables the HTTP limiter
+require('../../../app/modules/bma').BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
 
 const MEMORY_MODE = true;
 const CURRENCY_NAME = 'duniter_unit_test_currency';
@@ -135,7 +135,7 @@ export const fakeSyncServer = async (readBlocksMethod:any, readParticularBlockMe
     processRequest: () => { /* Does nothing */ }
   };
 
-  const fakeServer = await require('duniter-bma').duniter.methods.createServersAndListen("Fake Duniter Server", { conf: {} }, [{
+  const fakeServer = await require('../../../app/modules/bma').BmaDependency.duniter.methods.createServersAndListen("Fake Duniter Server", { conf: {} }, [{
     ip: host,
     port: port
   }], NO_HTTP_LOGS, logger, NO_STATIC_PATH, (app:any, httpMethods:any) => {
@@ -216,7 +216,7 @@ export class TestingServer {
     private port:number,
     private server:Server) {
 
-    server.getMainEndpoint = require('duniter-bma').duniter.methods.getMainEndpoint
+    server.getMainEndpoint = require('../../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
   }
 
   get BlockchainService() {

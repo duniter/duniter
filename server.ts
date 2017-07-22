@@ -66,7 +66,7 @@ export class Server extends stream.Duplex implements HookableServer {
 
     this.paramsP = directory.getHomeParams(memoryOnly, home)
 
-    this.MerkleService       = require("./app/lib/helpers/merkle");
+    this.MerkleService       = require("./app/lib/helpers/merkle").processForURL
     this.IdentityService     = new IdentityService()
     this.MembershipService   = new MembershipService()
     this.PeeringService      = new PeeringService(this)

@@ -98,7 +98,7 @@ describe("Identity pulling", function() {
   it('s1 should be able to pull sandbox data from s2', () => co(function*() {
 
     yield s2.sharePeeringWith(s1)
-    const pullSandbox = require('duniter-crawler').duniter.methods.pullSandbox
+    const pullSandbox = require('../../app/modules/crawler').CrawlerDependency.duniter.methods.pullSandbox
     yield pullSandbox(s1)
     yield pullSandbox(s1)
 

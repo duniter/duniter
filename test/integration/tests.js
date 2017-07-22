@@ -4,7 +4,7 @@ const co = require('co');
 const _ = require('underscore');
 const should = require('should');
 const assert = require('assert');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const constants = require('../../app/lib/constants');
 const node   = require('./tools/node');
 const duniter     = require('../../index');
@@ -17,7 +17,7 @@ const rp        = require('request-promise');
 const expectAnswer   = httpTest.expectAnswer;
 const MEMORY_MODE = true;
 
-require('duniter-bma').duniter.methods.noLimit(); // Disables the HTTP limiter
+require('../../app/modules/bma').BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
 
 describe("Integration", function() {
 

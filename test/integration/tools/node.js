@@ -3,14 +3,14 @@ var co = require('co');
 var _ = require('underscore');
 var async  = require('async');
 var request  = require('request');
-var contacter = require('duniter-crawler').duniter.methods.contacter;
+var contacter = require('../../../app/modules/crawler').CrawlerDependency.duniter.methods.contacter;
 var duniter  = require('../../../index');
 var multicaster = require('../../../app/lib/streams/multicaster');
 var ConfDTO = require('../../../app/lib/dto/ConfDTO').ConfDTO
 var PeerDTO   = require('../../../app/lib/dto/PeerDTO').PeerDTO
 var user   = require('./user');
 var http   = require('./http');
-const bma = require('duniter-bma').duniter.methods.bma;
+const bma = require('../../../app/modules/bma').BmaDependency.duniter.methods.bma;
 
 module.exports = function (dbName, options) {
   return new Node(dbName, options);
@@ -147,9 +147,8 @@ function Node (dbName, options) {
   function service(callback) {
     return function () {
       const stack = duniter.statics.simpleStack();
-      for (const name of ['duniter-keypair', 'duniter-bma']) {
-        stack.registerDependency(require(name), name);
-      }
+      stack.registerDependency(require('../../../app/modules/keypair').KeypairDependency, 'duniter-keypair')
+      stack.registerDependency(require('../../../app/modules/bma').BmaDependency,         'duniter-bma')
       stack.registerDependency({
         duniter: {
           config: {

@@ -1,6 +1,7 @@
 import {AbstractController} from "./AbstractController"
 import {ParametersService} from "../parameters"
 import {Source} from "../entity/source"
+import {BMAConstants} from "../constants";
 
 const _                = require('underscore');
 const common           = require('duniter-common');
@@ -11,7 +12,7 @@ const Transaction = common.document.Transaction
 export class TransactionBinding extends AbstractController {
 
   parseTransaction(req:any) {
-    return this.pushEntity(req, http2raw.transaction, constants.ENTITY_TRANSACTION)
+    return this.pushEntity(req, http2raw.transaction, BMAConstants.ENTITY_TRANSACTION)
   }
 
   async getSources(req:any) {
@@ -32,7 +33,7 @@ export class TransactionBinding extends AbstractController {
     const hash = ParametersService.getHash(req);
     const tx = await this.server.dal.getTxByHash(hash);
     if (!tx) {
-      throw constants.ERRORS.TX_NOT_FOUND;
+      throw BMAConstants.ERRORS.TX_NOT_FOUND;
     }
     if (tx.block_number) {
       tx.written_block = tx.block_number

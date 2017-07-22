@@ -3,7 +3,7 @@
 const co        = require('co');
 const _         = require('underscore');
 const duniter     = require('../../index');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const user      = require('./tools/user');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
@@ -11,7 +11,7 @@ const commit    = require('./tools/commit');
 const until     = require('./tools/until');
 const multicaster = require('../../app/lib/streams/multicaster');
 const PeerDTO   = require('../../app/lib/dto/PeerDTO').PeerDTO
-const contacter  = require('duniter-crawler').duniter.methods.contacter;
+const contacter  = require('../../app/modules/crawler').CrawlerDependency.duniter.methods.contacter;
 const sync      = require('./tools/sync');
 
 const expectJSON     = httpTest.expectJSON;
@@ -67,7 +67,7 @@ describe("Generation", function() {
     return co(function *() {
       let servers = [s1, s2];
       for (const server of servers) {
-        server.getMainEndpoint = require('duniter-bma').duniter.methods.getMainEndpoint
+        server.getMainEndpoint = require('../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
         yield server.initWithDAL();
         server.bma = yield bma(server);
         yield server.bma.openConnections();

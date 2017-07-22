@@ -163,7 +163,7 @@ export const Network = {
     }
 
     // Return API
-    return new BmaApi(interfaces, ddosInstance, httpServers, logger)
+    return new BmaApi(name, interfaces, ddosInstance, httpServers, logger)
   }
 }
 
@@ -172,6 +172,7 @@ export class BmaApi {
   private listenings:boolean[]
 
   constructor(
+    private name:string,
     private interfaces:any,
     private ddosInstance:any,
     private httpServers:any,
@@ -192,7 +193,7 @@ export class BmaApi {
     const isListening = this.listenings[i];
     if (isListening) {
       this.listenings[i] = false;
-      this.logger && this.logger.info(name + ' stop listening');
+      this.logger && this.logger.info(this.name + ' stop listening');
       await Q.Promise((resolve:any, reject:any) => {
         httpServer.errorPropagates((err:any) => {
           reject(err);

@@ -7,8 +7,8 @@ const contacter = require('../../../app/modules/crawler').CrawlerDependency.duni
 const common  = require('../../../app/common');
 const ucp     = common.buid;
 const parsers = require('../../../app/common').parsers;
-const keyring	= common.keyring;
-const rawer		= common.rawer;
+const rawer = require('../../../app/lib/common-libs').rawer
+const keyring = require('../../../app/lib/common-libs/crypto/keyring')
 const constants = require('../../../app/lib/constants');
 const CertificationDTO = require('../../../app/lib/dto/CertificationDTO').CertificationDTO
 const MembershipDTO = require('../../../app/lib/dto/MembershipDTO').MembershipDTO
@@ -55,7 +55,7 @@ function User (uid, options, node) {
       issuer: pub,
       currency: node.server.conf.currency
     });
-    createdIdentity += keyring.Key(pub, sec).signSync(createdIdentity) + '\n';
+    createdIdentity += keyring.KeyGen(pub, sec).signSync(createdIdentity) + '\n';
     yield that.submitIdentity(createdIdentity, fromServer);
   });
 
@@ -82,7 +82,7 @@ function User (uid, options, node) {
     };
     _.extend(cert, overrideProps || {});
     const rawCert = rawer.getOfficialCertification(cert);
-    cert.sig = keyring.Key(pub, sec).signSync(rawCert, sec);
+    cert.sig = keyring.KeyGen(pub, sec).signSync(rawCert, sec);
     return CertificationDTO.fromJSONObject(cert);
   });
 
@@ -118,7 +118,7 @@ function User (uid, options, node) {
     };
     _.extend(revocation, overrideProps || {});
     const rawRevocation = rawer.getOfficialRevocation(revocation);
-    revocation.revocation = keyring.Key(pub, sec).signSync(rawRevocation);
+    revocation.revocation = keyring.KeyGen(pub, sec).signSync(rawRevocation);
     return RevocationDTO.fromJSONObject(revocation);
   });
 
@@ -145,7 +145,7 @@ function User (uid, options, node) {
     };
     _.extend(join, overrideProps || {});
     const rawJoin = rawer.getMembershipWithoutSignature(join);
-    join.signature = keyring.Key(pub, sec).signSync(rawJoin);
+    join.signature = keyring.KeyGen(pub, sec).signSync(rawJoin);
     return MembershipDTO.fromJSONObject(join)
   });
 
@@ -275,9 +275,9 @@ function User (uid, options, node) {
   });
 
   function signed(raw, user2) {
-    let signatures = [keyring.Key(pub, sec).signSync(raw)];
+    let signatures = [keyring.KeyGen(pub, sec).signSync(raw)];
     if (user2) {
-      signatures.push(keyring.Key(user2.pub, user2.sec).signSync(raw));
+      signatures.push(keyring.KeyGen(user2.pub, user2.sec).signSync(raw));
     }
     return raw + signatures.join('\n') + '\n';
   }
@@ -325,7 +325,7 @@ function User (uid, options, node) {
     });
     _.extend(peer, overrideProps || {});
     const rawPeer = rawer.getPeerWithoutSignature(peer);
-    peer.signature = keyring.Key(pub, sec).signSync(rawPeer);
+    peer.signature = keyring.KeyGen(pub, sec).signSync(rawPeer);
     return PeerDTO.fromJSONObject(peer)
   });
 

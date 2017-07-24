@@ -1,4 +1,6 @@
 import {Contacter} from "./contacter"
+import {verify} from "../../../lib/common-libs/crypto/keyring"
+import {rawer} from "../../../lib/common-libs/index";
 
 const common = require('../../../../app/common')
 
@@ -15,7 +17,7 @@ export const req2fwd = async (requirements:any, toHost:string, toPort:number, lo
         logger.info('New identity %s', idty.uid);
         identities[iid] = idty;
         try {
-          const rawIdty = common.rawer.getOfficialIdentity({
+          const rawIdty = rawer.getOfficialIdentity({
             currency: 'g1',
             issuer: idty.pubkey,
             uid: idty.uid,
@@ -33,7 +35,7 @@ export const req2fwd = async (requirements:any, toHost:string, toPort:number, lo
         if (!certs[cid]) {
           await new Promise((res) => setTimeout(res, 300));
           certs[cid] = received;
-          const rawCert = common.rawer.getOfficialCertification({
+          const rawCert = rawer.getOfficialCertification({
             currency: 'g1',
             issuer: received.from,
             idty_issuer: idty.pubkey,
@@ -43,7 +45,7 @@ export const req2fwd = async (requirements:any, toHost:string, toPort:number, lo
             buid: received.blockstamp,
             sig: received.sig
           });
-          const rawCertNoSig = common.rawer.getOfficialCertification({
+          const rawCertNoSig = rawer.getOfficialCertification({
             currency: 'g1',
             issuer: received.from,
             idty_issuer: idty.pubkey,
@@ -53,7 +55,7 @@ export const req2fwd = async (requirements:any, toHost:string, toPort:number, lo
             buid: received.blockstamp
           });
           try {
-            const chkSig = common.keyring.verify(rawCertNoSig, received.sig, received.from)
+            const chkSig = verify(rawCertNoSig, received.sig, received.from)
             if (!chkSig) {
               throw "Wrong signature for certification?!"
             }
@@ -70,7 +72,7 @@ export const req2fwd = async (requirements:any, toHost:string, toPort:number, lo
         if (!mss[id]) {
           mss[id] = theMS
           try {
-            const rawMS = common.rawer.getMembership({
+            const rawMS = rawer.getMembership({
               currency: 'g1',
               issuer: idty.pubkey,
               userid: idty.uid,

@@ -8,14 +8,12 @@ import {TransactionDTO} from "./dto/TransactionDTO"
 import {DBHead} from "./db/DBHead"
 import {LOCAL_RULES_HELPERS} from "./rules/local_rules"
 import {verify} from "./common-libs/crypto/keyring";
+import {rawer, txunlock} from "./common-libs/index";
 
-const co              = require('co');
 const _               = require('underscore');
 const common          = require('../../app/common');
 
 const constants       = common.constants
-const rawer           = common.rawer
-const unlock          = common.txunlock
 const Block           = common.document.Block
 const Membership      = common.document.Membership
 
@@ -2011,7 +2009,7 @@ function txSourceUnlock(ENTRY:SindexEntry, source:SindexEntry, HEAD: DBHead) {
       unlocksMetadata.elapsedTime = HEAD.medianTime - source.written_time;
     }
 
-    if (unlock(source.conditions, unlocksForCondition, unlocksMetadata)) {
+    if (txunlock(source.conditions, unlocksForCondition, unlocksMetadata)) {
       return true;
     }
   }

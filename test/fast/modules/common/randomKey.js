@@ -2,10 +2,11 @@
 const should = require('should');
 const co  = require('co');
 const nacl   = require('tweetnacl');
-const keyring      = require('../../../../app/common/lib/crypto/keyring');
+const keyring      = require('../../../../app/lib/common-libs/crypto/keyring');
 
-const enc = nacl.util.encodeBase64,
-    dec = nacl.util.decodeBase64;
+
+const enc = require('../../../../app/lib/common-libs/crypto/nacl-util').encodeBase64,
+  dec = require('../../../../app/lib/common-libs/crypto/nacl-util').decodeBase64
 
 let key;
 
@@ -18,7 +19,7 @@ describe('Random keypair', function(){
 
   it('good signature from generated key should be verified', function(done){
     const msg = "Some message to be signed";
-    const sig = keyring.Key(key.publicKey, key.secretKey).signSync(msg);
+    const sig = keyring.KeyGen(key.publicKey, key.secretKey).signSync(msg);
     const verified = keyring.verify(msg, sig, key.publicKey);
     verified.should.equal(true);
     done();
@@ -27,7 +28,7 @@ describe('Random keypair', function(){
   it('wrong signature from generated key should NOT be verified', function(done){
     const msg = "Some message to be signed";
     const cor = dec(enc(msg) + 'delta');
-    const sig = keyring.Key(key.publicKey, key.secretKey).signSync(msg);
+    const sig = keyring.KeyGen(key.publicKey, key.secretKey).signSync(msg);
     const verified = keyring.verify(cor, sig, key.publicKey);
     verified.should.equal(false);
     done();

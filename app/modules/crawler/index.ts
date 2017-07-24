@@ -5,6 +5,7 @@ import {Crawler} from "./lib/crawler"
 import {Synchroniser} from "./lib/sync"
 import {req2fwd} from "./lib/req2fwd"
 import {CrawlerConstants} from "./lib/constants"
+import {rawer} from "../../lib/common-libs/index";
 
 const common = require('../../../app/common');
 const Peer = common.document.Peer
@@ -180,7 +181,7 @@ export const CrawlerDependency = {
           const lookup = await sourcePeer.getLookup(search);
           for (const res of lookup.results) {
             for (const uid of res.uids) {
-              const rawIdty = common.rawer.getOfficialIdentity({
+              const rawIdty = rawer.getOfficialIdentity({
                 currency: 'g1',
                 issuer: res.pubkey,
                 uid: uid.uid,
@@ -194,7 +195,7 @@ export const CrawlerDependency = {
                 logger.error(e);
               }
               for (const received of uid.others) {
-                const rawCert = common.rawer.getOfficialCertification({
+                const rawCert = rawer.getOfficialCertification({
                   currency: 'g1',
                   issuer: received.pubkey,
                   idty_issuer: res.pubkey,
@@ -233,7 +234,7 @@ export const CrawlerDependency = {
                 block = await sourcePeer.getBlock(signed.cert_time.block)
                 mapBlocks[block.number] = block
               }
-              const rawCert = common.rawer.getOfficialCertification({
+              const rawCert = rawer.getOfficialCertification({
                 currency: 'g1',
                 issuer: certBy.pubkey,
                 idty_issuer: signed.pubkey,
@@ -302,7 +303,7 @@ export const CrawlerDependency = {
           for (const theMS of pendingMSS) {
             console.log('New membership pending for %s', theMS.uid);
             try {
-              rawMS = common.rawer.getMembership({
+              rawMS = rawer.getMembership({
                 currency: 'g1',
                 issuer: theMS.issuer,
                 block: theMS.block,

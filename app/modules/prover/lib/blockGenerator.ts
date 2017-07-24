@@ -8,14 +8,14 @@ import {Indexer} from "../../../lib/indexer"
 import {FileDAL} from "../../../lib/dal/fileDAL"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {verify} from "../../../lib/common-libs/crypto/keyring"
+import {rawer} from "../../../lib/common-libs/index";
+import {hashf} from "../../../lib/common";
 
 const _               = require('underscore');
 const moment          = require('moment');
 const inquirer        = require('inquirer');
 const common          = require('../../../../app/common');
 
-const hashf         = common.hashf;
-const rawer         = common.rawer;
 const Block         = common.document.Block;
 const Membership    = common.document.Membership;
 const Transaction   = common.document.Transaction;

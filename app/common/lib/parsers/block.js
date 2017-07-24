@@ -2,8 +2,8 @@
 const util          = require('util');
 const GenericParser = require('./GenericParser');
 const Block         = require('../../../../app/common/lib/document/block');
-const hashf         = require('../../../../app/common/lib/hashf');
-const rawer         = require('../../../../app/common/lib/rawer');
+const hashf         = require('../../../../app/lib/common-libs').hashf
+const rawer         = require('../../../../app/lib/common-libs').rawer
 const constants     = require('../../../../app/common/lib/constants');
 
 module.exports = BlockParser;

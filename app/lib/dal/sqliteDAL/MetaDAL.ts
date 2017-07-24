@@ -11,11 +11,11 @@ import {WalletDAL} from "./WalletDAL"
 import {MIndexDAL} from "./index/MIndexDAL"
 import {DBBlock} from "../../db/DBBlock"
 import {IdentityDTO} from "../../dto/IdentityDTO"
+import {rawer} from "../../common-libs/index";
 
 const _ = require('underscore')
 const logger = require('../../logger').NewLogger('metaDAL');
 const common = require('../../../../app/common');
-const rawer = require('../../../../app/common').rawer;
 const constants = require('./../../constants');
 
 export interface DBMeta {

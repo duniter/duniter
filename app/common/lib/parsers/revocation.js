@@ -1,8 +1,8 @@
 "use strict";
 const GenericParser = require('./GenericParser');
 const util          = require('util');
-const rawer         = require('../rawer');
-const hashf         = require('../hashf');
+const rawer         = require('../../../lib/common-libs').rawer
+const hashf         = require('../../../lib/common-libs').hashf
 const constants     = require('../constants');
 
 module.exports = RevocationParser;

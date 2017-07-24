@@ -11,6 +11,9 @@ import { tx_cleaner } from "./tx_cleaner";
 import { AbstractDAO } from "./pulling";
 import { DBBlock } from "../../../lib/db/DBBlock";
 import { BlockchainService } from "../../../service/BlockchainService";
+import {rawer} from "../../../lib/common-libs/index";
+import {dos2unix} from "../../../lib/common-libs/dos2unix"
+import {hashf} from "../../../lib/common"
 
 const util         = require('util');
 const _            = require('underscore');
@@ -19,9 +22,6 @@ const multimeter   = require('multimeter');
 const makeQuerablePromise = require('querablep');
 const common       = require('../../../../app/common');
 const Peer         = common.document.Peer;
-const dos2unix = common.dos2unix;
-const hashf = common.hashf;
-const rawer = common.rawer;
 
 const CONST_BLOCKS_CHUNK = 250;
 const EVAL_REMAINING_INTERVAL = 1000;
@@ -188,7 +188,7 @@ export class Synchroniser extends stream.Duplex {
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = (askedCautious === true || localNumber >= 0);
       const shuffledPeers = noShufflePeers ? peers : _.shuffle(peers);
-      const downloader = new P2PDownloader(localNumber, to, rCurrent.hash, shuffledPeers, this.watcher, this.logger, hashf, rawer, this.dal, this.slowOption);
+      const downloader = new P2PDownloader(localNumber, to, rCurrent.hash, shuffledPeers, this.watcher, this.logger, hashf, this.dal, this.slowOption);
 
       downloader.start();
 
@@ -618,7 +618,6 @@ class P2PDownloader {
     private watcher:Watcher,
     private logger:any,
     private hashf:any,
-    private rawer:any,
     private dal:FileDAL,
     private slowOption:any) {
 

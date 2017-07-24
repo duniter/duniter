@@ -1,6 +1,6 @@
 "use strict";
 
-const unlock    = require('../../../../app/common/lib/txunlock');
+const unlock    = require('../../../../app/lib/common-libs').txunlock
 const should    = require('should');
 
 describe('Grammar', () => {

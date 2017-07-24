@@ -3,10 +3,10 @@ import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {BlockProver} from "./blockProver"
 import {Constants} from "./constants"
 import {DBBlock} from "../../../lib/db/DBBlock"
+import {dos2unix} from "../../../lib/common-libs/dos2unix"
 
 const querablep = require('querablep');
 const common = require('../../../../app/common');
-const dos2unix = common.dos2unix;
 const parsers = common.parsers;
 
 export class PermanentProver {

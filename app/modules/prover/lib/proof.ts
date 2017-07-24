@@ -4,11 +4,11 @@ import {DBBlock} from "../../../lib/db/DBBlock"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {Constants} from "./constants"
 import {KeyGen} from "../../../lib/common-libs/crypto/keyring"
+import {dos2unix} from "../../../lib/common-libs/dos2unix"
+import {rawer} from "../../../lib/common-libs/index";
 
 const moment = require('moment');
-const dos2unix = require('../../../../app/common').dos2unix;
 const querablep = require('querablep');
-const rawer = require('../../../../app/common').rawer;
 
 const PAUSES_PER_TURN = 5;
 

@@ -1,6 +1,5 @@
 import {Server} from "../../../../../server"
-
-const dos2unix = require('../dos2unix')
+import {dos2unix} from "../../../../lib/common-libs/dos2unix"
 
 export abstract class AbstractController {
 

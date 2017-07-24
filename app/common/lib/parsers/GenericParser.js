@@ -1,7 +1,7 @@
 "use strict";
 const util                 = require('util');
 const stream               = require('stream');
-const hashf                = require('../hashf');
+const hashf                = require('../../../lib/common-libs').hashf
 const constants            = require('../constants');
 
 module.exports = GenericParser;

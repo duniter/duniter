@@ -1,8 +1,8 @@
 "use strict";
 import {Contacter} from "./contacter"
 import {Server} from "../../../../server"
+import {rawer} from "../../../lib/common-libs/index";
 
-const rawer = require('../../../../app/common').rawer;
 const parsers = require('../../../../app/common').parsers;
 
 export const pullSandbox = async (currency:string, fromHost:string, fromPort:number, toHost:string, toPort:number, logger:any) => {

@@ -2,7 +2,6 @@
 const _ = require('underscore')
 const constants = require('../constants');
 const regex = require('../regex');
-const hashf = require('../hashf');
 const Transaction = require('./transaction');
 
 // Constants
@@ -151,6 +150,7 @@ module.exports = class Block {
 
   static getHash(json) {
     const raw = Block.toRAWHashAndNonce(json)
+    const hashf = require('../../../lib/common-libs').hashf
     return hashf(raw).toUpperCase()
   }
 

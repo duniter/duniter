@@ -30,7 +30,6 @@ const parsers     = require('./app/common').parsers;
 const constants   = require('./app/lib/constants');
 const jsonpckg    = require('./package.json');
 const directory   = require('./app/lib/system/directory');
-const rawer       = require('./app/common').rawer;
 const logger      = require('./app/lib/logger').NewLogger('server');
 
 export class Server extends stream.Duplex implements HookableServer {
@@ -62,7 +61,6 @@ export class Server extends stream.Duplex implements HookableServer {
     this.conf = ConfDTO.mock()
     this.version = jsonpckg.version;
     this.logger = logger;
-    this.rawer = rawer;
 
     this.paramsP = directory.getHomeParams(memoryOnly, home)
 

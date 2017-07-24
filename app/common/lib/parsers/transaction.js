@@ -1,6 +1,6 @@
 "use strict";
 const GenericParser = require('./GenericParser');
-const rawer         = require('../rawer');
+const rawer         = require('../../../lib/common-libs/index').rawer
 const constants     = require('../constants');
 const util          = require('util');
 

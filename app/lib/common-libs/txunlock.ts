@@ -1,7 +1,7 @@
 "use strict";
 
 let Parser = require("jison").Parser;
-let buid = require('./buid');
+let buid = require('../../../app/common/lib/buid')
 
 let grammar = {
   "lex": {
@@ -43,24 +43,24 @@ let grammar = {
   }
 };
 
-module.exports = function unlock(conditionsStr, executions, metadata) {
+export function unlock(conditionsStr:string, executions:any, metadata:any) {
 
   let parser = new Parser(grammar);
 
   parser.yy = {
     i: 0,
-    sig: function (pubkey) {
+    sig: function (pubkey:string) {
       let sigParam = executions[this.i++];
       return (sigParam && pubkey === sigParam.pubkey && sigParam.sigOK) || false;
     },
-    xHx: function(hash) {
+    xHx: function(hash:string) {
       let xhxParam = executions[this.i++];
       return buid.format.hashf(xhxParam) === hash;
     },
-    cltv: function(deadline) {
+    cltv: function(deadline:string) {
       return metadata.currentTime && metadata.currentTime >= parseInt(deadline);
     },
-    csv: function(amountToWait) {
+    csv: function(amountToWait:string) {
       return metadata.elapsedTime && metadata.elapsedTime >= parseInt(amountToWait);
     }
   };
@@ -70,4 +70,4 @@ module.exports = function unlock(conditionsStr, executions, metadata) {
   } catch(e) {
     return false;
   }
-};
+}

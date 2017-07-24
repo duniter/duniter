@@ -1,7 +1,7 @@
 "use strict";
 const constants = require('../constants');
 const regex = require('../regex');
-const hashf = require('../hashf');
+const hashf = require('../../../lib/common-libs').hashf
 
 // Constants
 const SIGNED = false

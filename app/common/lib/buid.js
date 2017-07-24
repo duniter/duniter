@@ -1,6 +1,4 @@
 "use strict";
-const hashf = require('./hashf');
-
 const BLOCK_UID = /^(0|[1-9]\d{0,18})-[A-F0-9]{64}$/;
 
 const buidFunctions = function(number, hash) {
@@ -20,7 +18,7 @@ module.exports = {
 
   format: {
 
-    hashf: (value) => hashf(String(value)).toUpperCase(),
+    hashf: (value) => require('../../lib/common-libs').hashf(String(value)),
 
     isBuid: (value) => {
       return (typeof value === 'string') && value.match(BLOCK_UID) ? true : false;

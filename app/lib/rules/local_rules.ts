@@ -5,12 +5,12 @@ import {CindexEntry, IndexEntry, Indexer, MindexEntry, SindexEntry} from "../ind
 import {BaseDTO, TransactionDTO} from "../dto/TransactionDTO"
 import {DBBlock} from "../db/DBBlock"
 import {verify} from "../common-libs/crypto/keyring"
+import {hashf} from "../common"
 
 const _          = require('underscore');
 const common     = require('../../../app/common');
 
 const constants       = common.constants
-const hashf           = common.hashf
 const Block           = common.document.Block
 const Identity        = common.document.Identity
 const Membership      = common.document.Membership

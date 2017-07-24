@@ -1,8 +1,8 @@
 "use strict";
 const GenericParser = require('./GenericParser');
 const util          = require('util');
-const rawer         = require('../../../../app/common/lib/rawer');
-const hashf         = require('../../../../app/common/lib/hashf');
+const rawer         = require('../../../../app/lib/common-libs').rawer
+const hashf         = require('../../../../app/lib/common-libs').hashf
 const constants     = require('../../../../app/common/lib/constants');
 
 module.exports = IdentityParser;

@@ -1,7 +1,6 @@
 "use strict";
 const constants = require('../constants');
 const regex = require('../regex');
-const hashf = require('../hashf');
 
 // Constants
 const SIGNED = true
@@ -74,6 +73,7 @@ module.exports = class Identity {
    */
 
   getTargetHash() {
+    const hashf = require('../../../lib/common-libs').hashf
     return hashf(this.uid + this.buid + this.pubkey).toUpperCase();
   }
 

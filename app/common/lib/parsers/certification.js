@@ -1,7 +1,7 @@
 "use strict";
 const GenericParser = require('./GenericParser');
 const util          = require('util');
-const rawer         = require('../../../../app/common/lib/rawer');
+const rawer         = require('../../../../app/lib/common-libs').rawer
 const constants     = require('../../../../app/common/lib/constants');
 
 module.exports = CertificationParser;

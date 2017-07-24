@@ -5,10 +5,10 @@ import {DBBlock} from "../db/DBBlock"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import * as local_rules from "./local_rules"
 import {BlockDTO} from "../dto/BlockDTO"
-import {verify} from "../common/crypto/keyring"
+import {verify} from "../common-libs/crypto/keyring"
 
 const _              = require('underscore');
-const common         = require('duniter-common');
+const common         = require('../../../app/common');
 const indexer        = require('../indexer').Indexer
 
 const constants      = common.constants

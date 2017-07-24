@@ -7,12 +7,12 @@ import {LOCAL_RULES_HELPERS} from "../../../lib/rules/local_rules"
 import {Indexer} from "../../../lib/indexer"
 import {FileDAL} from "../../../lib/dal/fileDAL"
 import {DBBlock} from "../../../lib/db/DBBlock"
-import {verify} from "../../../lib/common/crypto/keyring"
+import {verify} from "../../../lib/common-libs/crypto/keyring"
 
 const _               = require('underscore');
 const moment          = require('moment');
 const inquirer        = require('inquirer');
-const common          = require('duniter-common');
+const common          = require('../../../../app/common');
 
 const hashf         = common.hashf;
 const rawer         = common.rawer;

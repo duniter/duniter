@@ -1,6 +1,6 @@
 import {ConfDTO} from "../dto/ConfDTO"
 
-const common    = require('duniter-common');
+const common    = require('../../../app/common');
 const constants = common.constants
 
 export function maxAcceleration (conf:ConfDTO) {

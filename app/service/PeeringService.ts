@@ -5,16 +5,16 @@ import {DBPeer} from "../lib/dal/sqliteDAL/PeerDAL"
 import {DBBlock} from "../lib/db/DBBlock"
 import {Multicaster} from "../lib/streams/multicaster"
 import {PeerDTO} from "../lib/dto/PeerDTO"
-import {verify} from "../lib/common/crypto/keyring"
+import {verify} from "../lib/common-libs/crypto/keyring"
 
 const util           = require('util');
 const _              = require('underscore');
 const events         = require('events');
 const rp             = require('request-promise');
 const logger         = require('../lib/logger').NewLogger('peering');
-const dos2unix       = require('duniter-common').dos2unix;
-const hashf          = require('duniter-common').hashf;
-const rawer          = require('duniter-common').rawer;
+const dos2unix       = require('../../app/common').dos2unix;
+const hashf          = require('../../app/common').hashf;
+const rawer          = require('../../app/common').rawer;
 const constants      = require('../lib/constants');
 
 export interface Keyring {

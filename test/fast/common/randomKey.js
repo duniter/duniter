@@ -1,8 +1,8 @@
 "use strict";
 const co = require('co')
 const should = require('should');
-const keyring  = require('../../../app/lib/common/crypto/keyring')
-const naclUtil = require('../../../app/lib/common/crypto/nacl-util')
+const keyring  = require('../../../app/lib/common-libs/crypto/keyring')
+const naclUtil = require('../../../app/lib/common-libs/crypto/nacl-util')
 
 const enc = naclUtil.encodeBase64
 const dec = naclUtil.decodeBase64

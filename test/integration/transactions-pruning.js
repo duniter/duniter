@@ -6,7 +6,7 @@ const user      = require('./tools/user');
 const commit    = require('./tools/commit');
 const toolbox   = require('./tools/toolbox');
 const constants = require('../../app/lib/constants');
-const common    = require('duniter-common');
+const common    = require('../../app/common');
 
 const s1 = toolbox.server({
   currency: 'currency_one',

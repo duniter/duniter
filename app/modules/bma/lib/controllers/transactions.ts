@@ -4,7 +4,7 @@ import {Source} from "../entity/source"
 import {BMAConstants} from "../constants";
 
 const _                = require('underscore');
-const common           = require('duniter-common');
+const common           = require('../../../../../app/common');
 const http2raw         = require('../http2raw');
 
 const Transaction = common.document.Transaction

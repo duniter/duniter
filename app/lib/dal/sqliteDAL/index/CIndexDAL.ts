@@ -3,7 +3,7 @@ import {SQLiteDriver} from "../../drivers/SQLiteDriver";
 import {CindexEntry} from "../../../indexer";
 
 const constants = require('./../../../constants');
-const common = require('duniter-common');
+const common = require('../../../../../app/common');
 const indexer         = require('../../../indexer').Indexer
 
 export class CIndexDAL extends AbstractIndex<CindexEntry> {

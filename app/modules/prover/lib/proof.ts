@@ -3,12 +3,12 @@ import {hashf} from "../../../lib/common"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {Constants} from "./constants"
-import {KeyGen} from "../../../lib/common/crypto/keyring"
+import {KeyGen} from "../../../lib/common-libs/crypto/keyring"
 
 const moment = require('moment');
-const dos2unix = require('duniter-common').dos2unix;
+const dos2unix = require('../../../../app/common').dos2unix;
 const querablep = require('querablep');
-const rawer = require('duniter-common').rawer;
+const rawer = require('../../../../app/common').rawer;
 
 const PAUSES_PER_TURN = 5;
 

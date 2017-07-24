@@ -8,7 +8,7 @@ import {FileDAL} from "./app/lib/dal/fileDAL"
 import {DuniterBlockchain} from "./app/lib/blockchain/DuniterBlockchain"
 import {SQLBlockchain} from "./app/lib/blockchain/SqlBlockchain"
 import * as stream from "stream"
-import {KeyGen, randomKey} from "./app/lib/common/crypto/keyring"
+import {KeyGen, randomKey} from "./app/lib/common-libs/crypto/keyring"
 
 interface HookableServer {
   getMainEndpoint: (...args:any[]) => Promise<any>
@@ -26,11 +26,11 @@ const archiver    = require('archiver');
 const unzip       = require('unzip2');
 const fs          = require('fs');
 const daemonize   = require("daemonize2")
-const parsers     = require('duniter-common').parsers;
+const parsers     = require('./app/common').parsers;
 const constants   = require('./app/lib/constants');
 const jsonpckg    = require('./package.json');
 const directory   = require('./app/lib/system/directory');
-const rawer       = require('duniter-common').rawer;
+const rawer       = require('./app/common').rawer;
 const logger      = require('./app/lib/logger').NewLogger('server');
 
 export class Server extends stream.Duplex implements HookableServer {

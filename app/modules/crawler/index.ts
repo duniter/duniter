@@ -6,7 +6,7 @@ import {Synchroniser} from "./lib/sync"
 import {req2fwd} from "./lib/req2fwd"
 import {CrawlerConstants} from "./lib/constants"
 
-const common = require('duniter-common');
+const common = require('../../../app/common');
 const Peer = common.document.Peer
 
 export const CrawlerDependency = {

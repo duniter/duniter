@@ -4,10 +4,10 @@ import {ConfDTO} from "../dto/ConfDTO"
 import {CindexEntry, IndexEntry, Indexer, MindexEntry, SindexEntry} from "../indexer"
 import {BaseDTO, TransactionDTO} from "../dto/TransactionDTO"
 import {DBBlock} from "../db/DBBlock"
-import {verify} from "../common/crypto/keyring"
+import {verify} from "../common-libs/crypto/keyring"
 
 const _          = require('underscore');
-const common     = require('duniter-common');
+const common     = require('../../../app/common');
 
 const constants       = common.constants
 const hashf           = common.hashf

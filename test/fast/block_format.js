@@ -1,6 +1,6 @@
 "use strict";
 const should  = require('should');
-const parsers = require('duniter-common').parsers;
+const parsers = require('../../app/common').parsers;
 
 const raw = "Version: 10\n" +
   "Type: Block\n" +

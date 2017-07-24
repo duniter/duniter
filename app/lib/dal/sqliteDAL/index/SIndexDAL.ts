@@ -2,7 +2,7 @@ import {Indexer, SindexEntry} from "../../../indexer";
 import {SQLiteDriver} from "../../drivers/SQLiteDriver";
 import {AbstractIndex} from "../AbstractIndex";
 const _ = require('underscore');
-const common = require('duniter-common');
+const common = require('../../../../../app/common');
 const constants = require('../../../constants');
 
 export class SIndexDAL extends AbstractIndex<SindexEntry> {

@@ -1,6 +1,6 @@
 import {Contacter} from "./contacter"
 
-const common = require('duniter-common')
+const common = require('../../../../app/common')
 
 export const req2fwd = async (requirements:any, toHost:string, toPort:number, logger:any) => {
   const mss:any = {};

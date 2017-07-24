@@ -4,7 +4,7 @@ import {ConfDTO} from "../dto/ConfDTO"
 import {IndexEntry} from "../indexer"
 import {LOCAL_RULES_FUNCTIONS} from "./local_rules"
 
-const common      = require('duniter-common');
+const common      = require('../../../app/common');
 const Block        = common.document.Block
 
 export const ALIAS = {

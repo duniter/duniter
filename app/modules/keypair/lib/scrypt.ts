@@ -1,6 +1,6 @@
 "use strict";
-import {Base58encode} from "../../../lib/common/crypto/base58"
-import {decodeBase64} from "../../../lib/common/crypto/nacl-util"
+import {Base58encode} from "../../../lib/common-libs/crypto/base58"
+import {decodeBase64} from "../../../lib/common-libs/crypto/nacl-util"
 
 const nacl     = require('tweetnacl');
 const scrypt   = require('scryptb');

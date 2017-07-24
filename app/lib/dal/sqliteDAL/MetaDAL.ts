@@ -14,8 +14,8 @@ import {IdentityDTO} from "../../dto/IdentityDTO"
 
 const _ = require('underscore')
 const logger = require('../../logger').NewLogger('metaDAL');
-const common = require('duniter-common');
-const rawer = require('duniter-common').rawer;
+const common = require('../../../../app/common');
+const rawer = require('../../../../app/common').rawer;
 const constants = require('./../../constants');
 
 export interface DBMeta {

@@ -1,4 +1,4 @@
-import {randomKey} from "../../lib/common/crypto/keyring"
+import {randomKey} from "../../lib/common-libs/crypto/keyring"
 import {ConfDTO, KeypairConfDTO} from "../../lib/dto/ConfDTO"
 import {Scrypt} from "./lib/scrypt"
 

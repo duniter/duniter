@@ -4,7 +4,7 @@ import {PowEngine} from "./engine"
 import {DBBlock} from "../../../lib/db/DBBlock"
 
 const querablep       = require('querablep');
-const common          = require('duniter-common');
+const common          = require('../../../../app/common');
 
 const Block = common.document.Block
 

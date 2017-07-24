@@ -2,9 +2,9 @@
 
 const _       = require('underscore');
 const should  = require('should');
-const parsers = require('duniter-common').parsers;
+const parsers = require('../../app/common').parsers;
 const indexer = require('../../app/lib/indexer').Indexer
-const constants = require('duniter-common').constants;
+const constants = require('../../app/common').constants;
 const BlockDTO = require('../../app/lib/dto/BlockDTO').BlockDTO
 
 const raw = "Version: 10\n" +

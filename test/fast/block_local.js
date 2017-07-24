@@ -1,13 +1,13 @@
 "use strict";
 const co             = require('co');
 const should         = require('should');
-const parsers        = require('duniter-common').parsers;
+const parsers        = require('../../app/common').parsers;
 const indexer        = require('../../app/lib/indexer').Indexer
 const LOCAL_RULES    = require('../../app/lib/rules/local_rules').LOCAL_RULES_FUNCTIONS
 const ALIAS          = require('../../app/lib/rules').ALIAS
 const blocks         = require('../data/blocks.js');
 const parser         = parsers.parseBlock;
-const Block          = require('duniter-common').document.Block
+const Block          = require('../../app/common').document.Block
 const BlockDTO       = require('../../app/lib/dto/BlockDTO').BlockDTO
 
 const conf = {

@@ -13,7 +13,7 @@ import {MembershipDTO} from "../dto/MembershipDTO"
 import {TransactionDTO} from "../dto/TransactionDTO"
 
 const _ = require('underscore')
-const common          = require('duniter-common')
+const common          = require('../../../app/common')
 
 export class DuniterBlockchain extends MiscIndexedBlockchain {
 

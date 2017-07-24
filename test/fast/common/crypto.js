@@ -2,9 +2,9 @@
 const should = require('should');
 const co  = require('co');
 const nacl   = require('tweetnacl');
-const base58 = require('../../../app/lib/common/crypto/base58')
-const naclUtil = require('../../../app/lib/common/crypto/nacl-util')
-const keyring      = require('../../../app/lib/common/crypto/keyring')
+const base58 = require('../../../app/lib/common-libs/crypto/base58')
+const naclUtil = require('../../../app/lib/common-libs/crypto/nacl-util')
+const keyring      = require('../../../app/lib/common-libs/crypto/keyring')
 
 const Base58decode = base58.Base58decode
 const Base58encode = base58.Base58encode

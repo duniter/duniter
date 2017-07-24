@@ -7,11 +7,11 @@ import {CertificationDTO} from "./dto/CertificationDTO"
 import {TransactionDTO} from "./dto/TransactionDTO"
 import {DBHead} from "./db/DBHead"
 import {LOCAL_RULES_HELPERS} from "./rules/local_rules"
-import {verify} from "./common/crypto/keyring"
+import {verify} from "./common-libs/crypto/keyring";
 
 const co              = require('co');
 const _               = require('underscore');
-const common          = require('duniter-common');
+const common          = require('../../app/common');
 
 const constants       = common.constants
 const rawer           = common.rawer

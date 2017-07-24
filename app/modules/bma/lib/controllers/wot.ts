@@ -2,7 +2,7 @@ import {AbstractController} from "./AbstractController"
 import {BMAConstants} from "../constants"
 
 const _        = require('underscore');
-const common   = require('duniter-common');
+const common   = require('../../../../../app/common');
 const http2raw = require('../http2raw');
 
 const Identity = common.document.Identity

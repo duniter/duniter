@@ -6,7 +6,7 @@ import {Prover} from "./lib/prover"
 import {Contacter} from "../crawler/lib/contacter";
 
 const async = require('async');
-const common = require('duniter-common');
+const common = require('../../../app/common');
 
 const Peer = common.document.Peer
 

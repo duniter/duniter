@@ -6,7 +6,7 @@ import {LOCAL_RULES_HELPERS} from "../lib/rules/local_rules"
 import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
 import {MembershipDTO} from "../lib/dto/MembershipDTO"
 
-const hashf           = require('duniter-common').hashf;
+const hashf           = require('../../app/common').hashf;
 const constants       = require('../lib/constants');
 
 export class MembershipService {

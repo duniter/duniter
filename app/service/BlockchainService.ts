@@ -11,7 +11,7 @@ import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
 
 const _               = require('underscore');
 const co              = require('co');
-const parsers         = require('duniter-common').parsers;
+const parsers         = require('../../app/common').parsers;
 const constants       = require('../lib/constants');
 
 const CHECK_ALL_RULES = true;

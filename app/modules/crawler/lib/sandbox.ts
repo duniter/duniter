@@ -2,8 +2,8 @@
 import {Contacter} from "./contacter"
 import {Server} from "../../../../server"
 
-const rawer = require('duniter-common').rawer;
-const parsers = require('duniter-common').parsers;
+const rawer = require('../../../../app/common').rawer;
+const parsers = require('../../../../app/common').parsers;
 
 export const pullSandbox = async (currency:string, fromHost:string, fromPort:number, toHost:string, toPort:number, logger:any) => {
   const from = new Contacter(fromHost, fromPort);

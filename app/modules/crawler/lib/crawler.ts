@@ -15,7 +15,7 @@ import { cleanLongDownPeers } from "./garbager";
 const _ = require('underscore');
 const async = require('async');
 const querablep = require('querablep');
-const Peer = require('duniter-common').document.Peer;
+const Peer = require('../../../../app/common').document.Peer;
 
 /**
  * Service which triggers the server's peering generation (actualization of the Peer document).

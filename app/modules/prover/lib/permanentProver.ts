@@ -5,7 +5,7 @@ import {Constants} from "./constants"
 import {DBBlock} from "../../../lib/db/DBBlock"
 
 const querablep = require('querablep');
-const common = require('duniter-common');
+const common = require('../../../../app/common');
 const dos2unix = common.dos2unix;
 const parsers = common.parsers;
 

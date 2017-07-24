@@ -6,7 +6,7 @@ import {BMAConstants} from "../constants"
 
 const co               = require('co');
 const _                = require('underscore');
-const common           = require('duniter-common');
+const common           = require('../../../../../app/common');
 const http2raw         = require('../http2raw');
 const toJson = require('../tojson');
 

@@ -117,8 +117,8 @@ describe("CLI", function() {
 
   it('config --autoconf', () => co(function*() {
     let res = yield execute(['config', '--autoconf']);
-    res.should.have.property("ipv4").not.equal("a wrong string");
-    res.should.have.property("ipv4").match(constants.IPV4_REGEXP);
+    res.should.have.property("pair").property('pub').not.equal("");
+    res.should.have.property("pair").property('sec').not.equal("");
   }));
 
   it('reset data', () => co(function*() {

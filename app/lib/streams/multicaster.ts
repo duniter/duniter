@@ -65,7 +65,7 @@ export class Multicaster extends stream.Transform {
       uri: '/wot/certify',
       getObj: (cert:CertificationDTO) => {
         return {
-          "cert": cert.getRaw()
+          "cert": cert.getRawSigned()
         };
       },
       getDocID: (idty:any) => 'with ' + (idty.certs || []).length + ' certs'

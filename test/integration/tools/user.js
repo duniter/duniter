@@ -54,7 +54,7 @@ function User (uid, options, node) {
       uid: uid,
       issuer: pub,
       currency: node.server.conf.currency
-    });
+    }, false);
     createdIdentity += keyring.KeyGen(pub, sec).signSync(createdIdentity) + '\n';
     yield that.submitIdentity(createdIdentity, fromServer);
   });
@@ -89,7 +89,7 @@ function User (uid, options, node) {
   this.cert = (user, fromServer, toServer) => co(function*() {
     const cert = yield that.makeCert(user, fromServer);
     yield doPost('/wot/certify', {
-      "cert": cert.getRaw()
+      "cert": cert.getRawSigned()
     }, toServer);
   });
 

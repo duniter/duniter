@@ -1,4 +1,5 @@
 import {IdentityDTO} from "./IdentityDTO"
+import {Buid} from "../common-libs/buid"
 
 const DEFAULT_DOCUMENT_VERSION = 10
 
@@ -48,7 +49,7 @@ export class CertificationDTO extends ShortCertificationDTO {
     })
   }
 
-  getRaw() {
+  getRawUnSigned() {
     let raw = "";
     raw += "Version: " + this.version + "\n";
     raw += "Type: Certification\n";
@@ -59,8 +60,11 @@ export class CertificationDTO extends ShortCertificationDTO {
     raw += "IdtyTimestamp: " + this.idty_buid + '\n';
     raw += "IdtySignature: " + this.idty_sig + '\n';
     raw += "CertTimestamp: " + this.buid + '\n';
-    raw += this.sig + '\n'
     return raw
+  }
+
+  getRawSigned() {
+    return this.getRawUnSigned() + this.sig + '\n'
   }
 
   json() {
@@ -77,6 +81,10 @@ export class CertificationDTO extends ShortCertificationDTO {
     }
   }
 
+  inline() {
+    return [this.pubkey, this.to, this.block_number, this.sig].join(':')
+  }
+
   static fromInline(inline:string): ShortCertificationDTO {
     const [pubkey, to, block_number, sig]: string[] = inline.split(':')
     return new ShortCertificationDTO(pubkey, parseInt(block_number), sig, to)
@@ -86,8 +94,8 @@ export class CertificationDTO extends ShortCertificationDTO {
     return new CertificationDTO(
       obj.version || DEFAULT_DOCUMENT_VERSION,
       obj.currency,
-      obj.pubkey || obj.issuer,
-      obj.buid,
+      obj.pubkey || obj.issuer || obj.from,
+      obj.buid || Buid.format.buid(obj.block_number, obj.block_hash),
       obj.sig,
       obj.idty_issuer || obj.to,
       obj.idty_uid,

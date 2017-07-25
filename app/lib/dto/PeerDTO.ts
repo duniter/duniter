@@ -1,7 +1,6 @@
 import {DBPeer} from "../dal/sqliteDAL/PeerDAL"
 import {hashf} from "../common"
-
-const constants = require('../constants')
+import {CommonConstants} from "../common-libs/constants"
 
 export class PeerDTO {
 
@@ -32,6 +31,10 @@ export class PeerDTO {
 
   keyID() {
     return this.pubkey && this.pubkey.length > 10 ? this.pubkey.substring(0, 10) : "Unknown"
+  }
+
+  getRawUnsigned() {
+    return this.getRaw()
   }
 
   getRaw() {
@@ -68,7 +71,7 @@ export class PeerDTO {
   getBMA() {
     let bma:any = null;
     this.endpoints.forEach((ep) => {
-      const matches = !bma && ep.match(constants.BMA_REGEXP);
+      const matches = !bma && ep.match(CommonConstants.BMA_REGEXP);
       if (matches) {
         bma = {
           "dns": matches[2] || '',
@@ -164,10 +167,10 @@ export class PeerDTO {
   static fromJSONObject(obj:any) {
     return new PeerDTO(
       obj.version,
-      obj.currency,
-      obj.pubkey || obj.issuer,
+      obj.currency || "",
+      obj.pubkey || obj.pub || obj.issuer || "",
       obj.blockstamp || obj.block,
-      obj.endpoints,
+      obj.endpoints || [],
       obj.signature || obj.sig,
       obj.status || "DOWN",
       obj.statusTS || 0,

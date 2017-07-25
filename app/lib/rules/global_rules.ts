@@ -8,13 +8,13 @@ import {BlockDTO} from "../dto/BlockDTO"
 import {verify} from "../common-libs/crypto/keyring"
 import {rawer, txunlock} from "../common-libs/index"
 import {CommonConstants} from "../common-libs/constants"
+import {IdentityDTO} from "../dto/IdentityDTO"
 
 const _              = require('underscore');
 const common         = require('../../../app/common');
 const indexer        = require('../indexer').Indexer
 
 const constants      = CommonConstants
-const Identity       = common.document.Identity
 const Transaction    = common.document.Transaction
 
 // Empty logger by default
@@ -30,7 +30,7 @@ export const GLOBAL_RULES_FUNCTIONS = {
   checkIdentitiesAreWritable: async (block:{ identities:string[], version: number }, conf:ConfDTO, dal:FileDAL) => {
     let current = await dal.getCurrentBlockOrNull();
     for (const obj of block.identities) {
-      let idty = Identity.fromInline(obj);
+      let idty = IdentityDTO.fromInline(obj);
       let found = await dal.getWrittenIdtyByUID(idty.uid);
       if (found) {
         throw Error('Identity already used');

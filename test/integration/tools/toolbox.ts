@@ -384,7 +384,7 @@ export class TestingServer {
 
   postCert(cert:any) {
     return this.post('/wot/certify', {
-      cert: cert.getRaw()
+      cert: cert.getRawSigned()
     })
   }
 

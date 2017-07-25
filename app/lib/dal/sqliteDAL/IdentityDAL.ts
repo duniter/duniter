@@ -133,6 +133,8 @@ export class ExistingDBIdentity extends DBIdentity {
     this.wotb_id = idty.wotb_id
     this.revoked_on = idty.revoked_on
     this.expires_on = idty.expires_on
+    this.certs = idty.certs || []
+    this.signed = idty.signed || []
   }
 }
 

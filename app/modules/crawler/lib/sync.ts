@@ -1,17 +1,17 @@
 import {CrawlerConstants} from "./constants"
-import * as stream from 'stream'
+import * as stream from "stream"
 import {Server} from "../../../../server"
 import {PeerDTO} from "../../../lib/dto/PeerDTO"
 import {FileDAL} from "../../../lib/dal/fileDAL"
-import { BlockDTO } from "../../../lib/dto/BlockDTO";
+import {BlockDTO} from "../../../lib/dto/BlockDTO"
 import {connect} from "./connect"
-import { Contacter } from "./contacter";
-import { pullSandboxToLocalServer } from "./sandbox";
-import { tx_cleaner } from "./tx_cleaner";
-import { AbstractDAO } from "./pulling";
-import { DBBlock } from "../../../lib/db/DBBlock";
-import { BlockchainService } from "../../../service/BlockchainService";
-import {rawer} from "../../../lib/common-libs/index";
+import {Contacter} from "./contacter"
+import {pullSandboxToLocalServer} from "./sandbox"
+import {tx_cleaner} from "./tx_cleaner"
+import {AbstractDAO} from "./pulling"
+import {DBBlock} from "../../../lib/db/DBBlock"
+import {BlockchainService} from "../../../service/BlockchainService"
+import {rawer} from "../../../lib/common-libs/index"
 import {dos2unix} from "../../../lib/common-libs/dos2unix"
 import {hashf} from "../../../lib/common"
 
@@ -20,8 +20,6 @@ const _            = require('underscore');
 const moment       = require('moment');
 const multimeter   = require('multimeter');
 const makeQuerablePromise = require('querablep');
-const common       = require('../../../../app/common');
-const Peer         = common.document.Peer;
 
 const CONST_BLOCKS_CHUNK = 250;
 const EVAL_REMAINING_INTERVAL = 1000;
@@ -106,7 +104,7 @@ export class Synchroniser extends stream.Duplex {
 
   async test() {
     const peering = await Contacter.fetchPeer(this.host, this.port, this.contacterOptions);
-    const node = await connect(Peer.fromJSON(peering));
+    const node = await connect(PeerDTO.fromJSONObject(peering));
     return node.getCurrent();
   }
 
@@ -116,7 +114,7 @@ export class Synchroniser extends stream.Duplex {
 
       const peering = await Contacter.fetchPeer(this.host, this.port, this.contacterOptions);
 
-      let peer = Peer.fromJSON(peering);
+      let peer = PeerDTO.fromJSONObject(peering);
       this.logger.info("Try with %s %s", peer.getURL(), peer.pubkey.substr(0, 6));
       let node:any = await connect(peer);
       node.pubkey = peer.pubkey;
@@ -325,7 +323,7 @@ export class Synchroniser extends stream.Duplex {
 
       const peering = await Contacter.fetchPeer(host, port, this.contacterOptions);
 
-      let peer = Peer.fromJSON(peering);
+      let peer = PeerDTO.fromJSONObject(peering);
       this.logger.info("Try with %s %s", peer.getURL(), peer.pubkey.substr(0, 6));
       let node:any = await connect(peer);
       node.pubkey = peer.pubkey;
@@ -374,12 +372,12 @@ export class Synchroniser extends stream.Duplex {
   private async syncPeer (node:any) {
 
     // Global sync vars
-    const remotePeer = Peer.fromJSON({});
+    const remotePeer = PeerDTO.fromJSONObject({});
     let remoteJsonPeer:any = {};
     const json = await node.getPeer();
     remotePeer.version = json.version
     remotePeer.currency = json.currency
-    remotePeer.pub = json.pub
+    remotePeer.pubkey = json.pub
     remotePeer.endpoints = json.endpoints
     remotePeer.blockstamp = json.block
     remotePeer.signature = json.signature
@@ -737,7 +735,7 @@ class P2PDownloader {
     let promises = this.peers.reduce((chosens:any, other:any, index:number) => {
       if (!this.nodes[index]) {
         // Create the node
-        let p = Peer.fromJSON(this.peers[index]);
+        let p = PeerDTO.fromJSONObject(this.peers[index]);
         this.nodes[index] = makeQuerablePromise((async () => {
           // We wait for the download process to be triggered
           // await downloadStarter;

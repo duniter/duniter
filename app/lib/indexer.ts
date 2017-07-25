@@ -10,13 +10,13 @@ import {LOCAL_RULES_HELPERS} from "./rules/local_rules"
 import {verify} from "./common-libs/crypto/keyring"
 import {rawer, txunlock} from "./common-libs/index"
 import {CommonConstants} from "./common-libs/constants"
+import {MembershipDTO} from "./dto/MembershipDTO"
 
 const _               = require('underscore');
 const common          = require('../../app/common');
 
 const constants       = CommonConstants
 const Block           = common.document.Block
-const Membership      = common.document.Membership
 
 export interface IndexEntry {
   index: string,
@@ -177,7 +177,7 @@ export class Indexer {
      ***************************/
     // Joiners (newcomer or join back)
     for (const inlineMS of block.joiners) {
-      const ms = Membership.fromInline(inlineMS);
+      const ms = MembershipDTO.fromInline(inlineMS);
       const matchesANewcomer = _.filter(index, (row: IindexEntry) => row.index == constants.I_INDEX && row.pub == ms.issuer).length > 0;
       if (matchesANewcomer) {
         // Newcomer
@@ -239,7 +239,7 @@ export class Indexer {
     }
     // Actives
     for (const inlineMS of block.actives) {
-      const ms = Membership.fromInline(inlineMS);
+      const ms = MembershipDTO.fromInline(inlineMS);
       // Renew
       pushMindex(index, {
         index: constants.M_INDEX,
@@ -262,7 +262,7 @@ export class Indexer {
     }
     // Leavers
     for (const inlineMS of block.leavers) {
-      const ms = Membership.fromInline(inlineMS);
+      const ms = MembershipDTO.fromInline(inlineMS);
       pushMindex(index, {
         index: constants.M_INDEX,
         op: constants.IDX_UPDATE,

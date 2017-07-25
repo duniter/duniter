@@ -311,7 +311,7 @@ class TestingServer {
     }
     postCert(cert) {
         return this.post('/wot/certify', {
-            cert: cert.getRaw()
+            cert: cert.getRawSigned()
         });
     }
     postMembership(ms) {

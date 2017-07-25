@@ -3,14 +3,11 @@ import {Server} from "../../../../../server"
 import {AbstractController} from "./AbstractController"
 import {ParametersService} from "../parameters"
 import {BMAConstants} from "../constants"
+import {MembershipDTO} from "../../../../lib/dto/MembershipDTO"
 
-const co               = require('co');
 const _                = require('underscore');
-const common           = require('../../../../../app/common');
 const http2raw         = require('../http2raw');
 const toJson = require('../tojson');
-
-const Membership = common.document.Membership
 
 export class BlockchainBinding extends AbstractController {
 
@@ -116,13 +113,13 @@ export class BlockchainBinding extends AbstractController {
       memberships: []
     };
     json.memberships = idty.memberships.map((msObj:any) => {
-      const ms = Membership.fromJSON(msObj);
+      const ms = MembershipDTO.fromJSONObject(msObj);
       return {
         version: ms.version,
         currency: this.conf.currency,
         membership: ms.membership,
-        blockNumber: parseInt(ms.blockNumber),
-        blockHash: ms.blockHash,
+        blockNumber: ms.block_number,
+        blockHash: ms.block_hash,
         written: (!msObj.written_number && msObj.written_number !== 0) ? null : msObj.written_number
       };
     });

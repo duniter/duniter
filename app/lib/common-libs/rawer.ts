@@ -1,4 +1,7 @@
 import {dos2unix} from "./dos2unix"
+import {PeerDTO} from "../dto/PeerDTO"
+import {IdentityDTO} from "../dto/IdentityDTO"
+import {MembershipDTO} from "../dto/MembershipDTO"
 
 const DOCUMENTS_VERSION = 10;
 const SIGNED = false
@@ -9,7 +12,12 @@ function document() {
 }
 
 export const getOfficialIdentity = (json:any, withSig = true) => {
-  return document().Identity.toRAW(json, withSig !== false) // Defaut with sig
+  const dto = IdentityDTO.fromJSONObject(json)
+  if (withSig !== false) {
+    return dto.getRawSigned()
+  } else {
+    return dto.rawWithoutSig()
+  }
 }
 
 export const getOfficialCertification = (json:any) => {
@@ -37,15 +45,15 @@ export const getOfficialRevocation = (json:any) => {
 }
 
 export const getPeerWithoutSignature = (json:any) => {
-  return document().Peer.fromJSON(json).getRawUnsigned()
+  return PeerDTO.fromJSONObject(json).getRawUnsigned()
 }
 
 export const getPeer = (json:any) => {
-  return document().Peer.fromJSON(json).getRaw()
+  return PeerDTO.fromJSONObject(json).getRawSigned()
 }
 
 export const getMembershipWithoutSignature = (json:any) => {
-  return document().Membership.toRAW(json)
+  return MembershipDTO.fromJSONObject(json).getRaw()
 }
 
 export const getMembership = (json:any) => {

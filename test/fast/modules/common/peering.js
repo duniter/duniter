@@ -2,6 +2,7 @@
 const should   = require('should');
 const assert   = require('assert');
 const parsers  = require('../../../../app/lib/common-libs/parsers').parsers
+const PeerDTO = require('../../../../app/lib/dto/PeerDTO').PeerDTO
 
 const rawPeer = "" +
   "Version: 10\n" +
@@ -14,8 +15,6 @@ const rawPeer = "" +
   "OTHER_PROTOCOL 88.163.127.43 9102\n" +
   "bvuKzc6+cGWMGC8FIkZHN8kdQhaRL/MK60KYyw5vJqkKEgxXbygQHAzfoojeSY4gPKIu4FggBkR1HndSEm2FAQ==\n";
 
-const Peer = require('../../../../app/common/lib/document/peer');
-
 describe('Peer', function(){
 
   describe('of some key', function(){
@@ -23,7 +22,7 @@ describe('Peer', function(){
     var pr;
 
     before(function(done) {
-      pr = Peer.fromJSON(parsers.parsePeer.syncWrite(rawPeer));
+      pr = PeerDTO.fromJSONObject(parsers.parsePeer.syncWrite(rawPeer))
       done();
     });
 

@@ -43,6 +43,20 @@ export class MembershipDTO {
     return parseInt(this.blockstamp)
   }
 
+  get block_hash() {
+    return this.blockstamp.split('-')[1]
+  }
+
+  inline() {
+    return [
+      this.issuer,
+      this.signature,
+      this.blockstamp,
+      this.certts,
+      this.userid
+    ].join(':')
+  }
+
   getIdtyHash() {
     return IdentityDTO.getTargetHash({
       buid: this.certts,
@@ -99,7 +113,7 @@ export class MembershipDTO {
 
   static fromJSONObject(obj:any) {
     return new MembershipDTO(
-      obj.version,
+      obj.version || DEFAULT_DOCUMENT_VERSION,
       obj.currency,
       obj.issuer || obj.pubkey,
       obj.type || obj.membership,

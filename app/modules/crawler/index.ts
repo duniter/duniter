@@ -1,14 +1,13 @@
-import { ConfDTO } from "../../lib/dto/ConfDTO";
-import { Server } from "../../../server";
+import {ConfDTO} from "../../lib/dto/ConfDTO"
+import {Server} from "../../../server"
 import {Contacter} from "./lib/contacter"
 import {Crawler} from "./lib/crawler"
 import {Synchroniser} from "./lib/sync"
 import {req2fwd} from "./lib/req2fwd"
 import {CrawlerConstants} from "./lib/constants"
-import {rawer} from "../../lib/common-libs/index";
-
-const common = require('../../../app/common');
-const Peer = common.document.Peer
+import {rawer} from "../../lib/common-libs/index"
+import {PeerDTO} from "../../lib/dto/PeerDTO"
+import {Buid} from "../../lib/common-libs/buid"
 
 export const CrawlerDependency = {
   duniter: {
@@ -122,9 +121,9 @@ export const CrawlerDependency = {
             selfPeer = await server.dal.getPeer(server.PeeringService.pubkey);
           }
           logger.info('Send self peering ...');
-          const p = Peer.fromJSON(peering);
+          const p = PeerDTO.fromJSONObject(peering)
           const contact = new Contacter(p.getHostPreferDNS(), p.getPort(), {})
-          await contact.postPeer(Peer.fromJSON(selfPeer));
+          await contact.postPeer(PeerDTO.fromJSONObject(selfPeer))
           logger.info('Sent.');
           await server.disconnect();
         } catch(e) {
@@ -146,7 +145,7 @@ export const CrawlerDependency = {
           const peers = fromHost && fromPort ? [{ endpoints: [['BASIC_MERKLED_API', fromHost, fromPort].join(' ')] }] : await server.dal.peerDAL.query('SELECT * FROM peer WHERE status = ?', ['UP'])
           // Memberships
           for (const p of peers) {
-            const peer = Peer.fromJSON(p);
+            const peer = PeerDTO.fromJSONObject(p)
             const fromHost = peer.getHostPreferDNS();
             const fromPort = peer.getPort();
             logger.info('Looking at %s:%s...', fromHost, fromPort);
@@ -202,7 +201,7 @@ export const CrawlerDependency = {
                   idty_uid: uid.uid,
                   idty_buid: uid.meta.timestamp,
                   idty_sig: uid.self,
-                  buid: common.buid.format.buid(received.meta.block_number, received.meta.block_hash),
+                  buid: Buid.format.buid(received.meta.block_number, received.meta.block_hash),
                   sig: received.signature
                 });
                 try {
@@ -241,7 +240,7 @@ export const CrawlerDependency = {
                 idty_uid: signed.uid,
                 idty_buid: idty.meta.timestamp,
                 idty_sig: idty.self,
-                buid: common.buid.format.buid(block.number, block.hash),
+                buid: Buid.format.buid(block.number, block.hash),
                 sig: signed.signature
               });
               try {
@@ -272,7 +271,7 @@ export const CrawlerDependency = {
           const peers = fromHost && fromPort ? [{ endpoints: [['BASIC_MERKLED_API', fromHost, fromPort].join(' ')] }] : await server.dal.peerDAL.query('SELECT * FROM peer WHERE status = ?', ['UP'])
           // Memberships
           for (const p of peers) {
-            const peer = Peer.fromJSON(p);
+            const peer = PeerDTO.fromJSONObject(p)
             const fromHost = peer.getHostPreferDNS();
             const fromPort = peer.getPort();
             logger.info('Looking at %s:%s...', fromHost, fromPort);

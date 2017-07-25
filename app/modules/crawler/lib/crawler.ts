@@ -1,21 +1,20 @@
-import * as stream from 'stream'
+import * as stream from "stream"
 import {Server} from "../../../../server"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
-import {DuniterService} from "../../../../index";
-import { PeerDTO } from "../../../lib/dto/PeerDTO";
-import { AbstractDAO } from "./pulling";
-import { BlockDTO } from "../../../lib/dto/BlockDTO";
-import { DBBlock } from "../../../lib/db/DBBlock";
-import { tx_cleaner } from "./tx_cleaner";
-import { connect } from "./connect";
-import { CrawlerConstants } from "./constants";
-import { pullSandboxToLocalServer } from "./sandbox";
-import { cleanLongDownPeers } from "./garbager";
+import {DuniterService} from "../../../../index"
+import {PeerDTO} from "../../../lib/dto/PeerDTO"
+import {AbstractDAO} from "./pulling"
+import {BlockDTO} from "../../../lib/dto/BlockDTO"
+import {DBBlock} from "../../../lib/db/DBBlock"
+import {tx_cleaner} from "./tx_cleaner"
+import {connect} from "./connect"
+import {CrawlerConstants} from "./constants"
+import {pullSandboxToLocalServer} from "./sandbox"
+import {cleanLongDownPeers} from "./garbager"
 
 const _ = require('underscore');
 const async = require('async');
 const querablep = require('querablep');
-const Peer = require('../../../../app/common').document.Peer;
 
 /**
  * Service which triggers the server's peering generation (actualization of the Peer document).
@@ -96,7 +95,7 @@ export class PeerCrawler implements DuniterService {
     if (peers.length > CrawlerConstants.COUNT_FOR_ENOUGH_PEERS && dontCrawlIfEnoughPeers == this.DONT_IF_MORE_THAN_FOUR_PEERS) {
       return;
     }
-    let peersToTest = peers.slice().map((p:PeerDTO) => Peer.fromJSON(p));
+    let peersToTest = peers.slice().map((p:PeerDTO) => PeerDTO.fromJSONObject(p));
     let tested:string[] = [];
     const found = [];
     while (peersToTest.length > 0) {
@@ -111,7 +110,7 @@ export class PeerCrawler implements DuniterService {
           try {
             const subpeer = res[j].leaf.value;
             if (subpeer.currency && tested.indexOf(subpeer.pubkey) === -1) {
-              const p = Peer.fromJSON(subpeer);
+              const p = PeerDTO.fromJSONObject(subpeer);
               peersToTest.push(p);
               found.push(p);
             }
@@ -128,7 +127,6 @@ export class PeerCrawler implements DuniterService {
       let p = found[i];
       try {
         // Try to write it
-        p.documentType = 'peer';
         await server.singleWritePromise(p);
       } catch(e) {
         // Silent error
@@ -181,7 +179,7 @@ export class SandboxCrawler implements DuniterService {
     this.logger && this.logger.info('Sandbox pulling started...');
       const peers = await server.dal.getRandomlyUPsWithout([this.conf.pair.pub])
       const randoms = chooseXin(peers, CrawlerConstants.SANDBOX_PEERS_COUNT)
-      let peersToTest = randoms.slice().map((p) => Peer.fromJSON(p));
+      let peersToTest = randoms.slice().map((p) => PeerDTO.fromJSONObject(p));
       for (const peer of peersToTest) {
         const fromHost = await connect(peer)
         await pullSandboxToLocalServer(server.conf.currency, fromHost, server, this.logger)
@@ -218,7 +216,7 @@ export class PeerTester implements DuniterService {
     let now = (new Date().getTime());
     peers = _.filter(peers, (p:any) => p.pubkey != conf.pair.pub);
     await Promise.all(peers.map(async (thePeer:any) => {
-      let p = Peer.fromJSON(thePeer);
+      let p = PeerDTO.fromJSONObject(thePeer);
       if (thePeer.status == 'DOWN') {
         let shouldDisplayDelays = displayDelays;
         let downAt = thePeer.first_down || now;
@@ -354,7 +352,7 @@ export class BlockCrawler {
         // Only take at max X of them
         peers = peers.slice(0, CrawlerConstants.MAX_NUMBER_OF_PEERS_FOR_PULLING);
         await Promise.all(peers.map(async (thePeer:any, i:number) => {
-          let p = Peer.fromJSON(thePeer);
+          let p = PeerDTO.fromJSONObject(thePeer);
           this.pullingEvent(server, 'peer', _.extend({number: i, length: peers.length}, p));
           this.logger && this.logger.trace("Try with %s %s", p.getURL(), p.pubkey.substr(0, 6));
           try {
@@ -489,7 +487,7 @@ function chooseXin (peers:PeerDTO[], max:number) {
 const checkPeerValidity = async (server:Server, p:PeerDTO, node:any) => {
   try {
     let document = await node.getPeer();
-    let thePeer = Peer.fromJSON(document);
+    let thePeer = PeerDTO.fromJSONObject(document);
     let goodSignature = server.PeeringService.checkPeerSignature(thePeer);
     if (!goodSignature) {
       throw 'Signature from a peer must match';

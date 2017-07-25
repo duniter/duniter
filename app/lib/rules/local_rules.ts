@@ -7,14 +7,14 @@ import {DBBlock} from "../db/DBBlock"
 import {verify} from "../common-libs/crypto/keyring"
 import {hashf} from "../common"
 import {CommonConstants} from "../common-libs/constants"
+import {IdentityDTO} from "../dto/IdentityDTO"
+import {MembershipDTO} from "../dto/MembershipDTO"
 
 const _          = require('underscore');
 const common     = require('../../../app/common');
 
 const constants       = CommonConstants
 const Block           = common.document.Block
-const Identity        = common.document.Identity
-const Membership      = common.document.Membership
 const Transaction     = common.document.Transaction
 const maxAcceleration = require('./helpers').maxAcceleration
 
@@ -93,7 +93,7 @@ export const LOCAL_RULES_FUNCTIONS = {
     let i = 0;
     let wrongSig = false;
     while (!wrongSig && i < block.identities.length) {
-      const idty = Identity.fromInline(block.identities[i]);
+      const idty = IdentityDTO.fromInline(block.identities[i]);
       idty.currency = block.currency;
       wrongSig = !verify(idty.rawWithoutSig(), idty.sig, idty.pubkey);
       if (wrongSig) {
@@ -173,21 +173,21 @@ export const LOCAL_RULES_FUNCTIONS = {
     let wrongSig = false, ms;
     // Joiners
     while (!wrongSig && i < block.joiners.length) {
-      ms = Membership.fromInline(block.joiners[i], 'IN', block.currency);
+      ms = MembershipDTO.fromInline(block.joiners[i], 'IN', block.currency);
       wrongSig = !checkSingleMembershipSignature(ms);
       i++;
     }
     // Actives
     i = 0;
     while (!wrongSig && i < block.actives.length) {
-      ms = Membership.fromInline(block.actives[i], 'IN', block.currency);
+      ms = MembershipDTO.fromInline(block.actives[i], 'IN', block.currency);
       wrongSig = !checkSingleMembershipSignature(ms);
       i++;
     }
     // Leavers
     i = 0;
     while (!wrongSig && i < block.leavers.length) {
-      ms = Membership.fromInline(block.leavers[i], 'OUT', block.currency);
+      ms = MembershipDTO.fromInline(block.leavers[i], 'OUT', block.currency);
       wrongSig = !checkSingleMembershipSignature(ms);
       i++;
     }

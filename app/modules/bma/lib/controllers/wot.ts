@@ -1,11 +1,10 @@
 import {AbstractController} from "./AbstractController"
 import {BMAConstants} from "../constants"
+import {DBIdentity} from "../../../../lib/dal/sqliteDAL/IdentityDAL"
 
 const _        = require('underscore');
-const common   = require('../../../../../app/common');
 const http2raw = require('../http2raw');
 
-const Identity = common.document.Identity
 const ParametersService = require('../parameters').ParametersService
 
 export class WOTBinding extends AbstractController {
@@ -16,7 +15,7 @@ export class WOTBinding extends AbstractController {
     // Make the research
     const identities:any[] = await this.IdentityService.searchIdentities(search);
     // Entitify each result
-    identities.forEach((idty, index) => identities[index] = Identity.fromJSON(idty));
+    identities.forEach((idty, index) => identities[index] = DBIdentity.copyFromExisting(idty));
     // Prepare some data to avoid displaying expired certifications
     for (const idty of identities) {
       const certs = await this.server.dal.certsToTarget(idty.pubkey, idty.getTargetHash());
@@ -54,7 +53,8 @@ export class WOTBinding extends AbstractController {
     }
     const resultsByPubkey:any = {};
     identities.forEach((identity) => {
-      const jsoned = identity.json();
+      const copy = DBIdentity.copyFromExisting(identity)
+      const jsoned = copy.json();
       if (!resultsByPubkey[jsoned.pubkey]) {
         // Create the first matching identity with this pubkey in the map
         resultsByPubkey[jsoned.pubkey] = jsoned;

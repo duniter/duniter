@@ -5,11 +5,9 @@ import {BlockProver} from "./lib/blockProver"
 import {Prover} from "./lib/prover"
 import {Contacter} from "../crawler/lib/contacter"
 import {parsers} from "../../lib/common-libs/parsers/index"
+import {PeerDTO} from "../../lib/dto/PeerDTO"
 
 const async = require('async');
-const common = require('../../../app/common');
-
-const Peer = common.document.Peer
 
 export const ProverDependency = {
 
@@ -186,12 +184,12 @@ function proveAndSend(program:any, server:any, block:any, issuer:any, difficulty
         try {
           const prover = new BlockProver(server);
           const proven = await prover.prove(block, difficulty);
-          const peer = Peer.fromJSON({
+          const peer = PeerDTO.fromJSONObject({
             endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
           });
           program.show && console.log(proven.getRawSigned());
           logger.info('Posted block ' + proven.getRawSigned());
-          const p = Peer.fromJSON(peer);
+          const p = PeerDTO.fromJSONObject(peer);
           const contact = new Contacter(p.getHostPreferDNS(), p.getPort());
           await contact.postBlock(proven.getRawSigned());
         } catch(e) {

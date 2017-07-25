@@ -11,6 +11,9 @@ import {verify} from "../../../lib/common-libs/crypto/keyring"
 import {rawer} from "../../../lib/common-libs/index"
 import {hashf} from "../../../lib/common"
 import {CommonConstants} from "../../../lib/common-libs/constants"
+import {IdentityDTO} from "../../../lib/dto/IdentityDTO"
+import {CertificationDTO} from "../../../lib/dto/CertificationDTO"
+import {MembershipDTO} from "../../../lib/dto/MembershipDTO"
 
 const _               = require('underscore');
 const moment          = require('moment');
@@ -18,10 +21,7 @@ const inquirer        = require('inquirer');
 const common          = require('../../../../app/common');
 
 const Block         = common.document.Block;
-const Membership    = common.document.Membership;
 const Transaction   = common.document.Transaction;
-const Identity      = common.document.Identity;
-const Certification = common.document.Certification;
 const constants     = CommonConstants
 
 export class BlockGenerator {
@@ -350,7 +350,7 @@ export class BlockGenerator {
         throw constants.ERRORS.TOO_OLD_IDENTITY;
       }
     }
-    const idty = Identity.fromJSON(identity);
+    const idty = IdentityDTO.fromJSONObject(identity);
     idty.currency = this.conf.currency;
     const createIdentity = idty.rawWithoutSig();
     const verified = verify(createIdentity, idty.sig, idty.pubkey);
@@ -501,7 +501,7 @@ export class BlockGenerator {
       const certs = updates[certifiedMember] || [];
       certs.forEach((cert:any) => {
         if (blockLen < maxLenOfBlock) {
-          block.certifications.push(Certification.fromJSON(cert).inline());
+          block.certifications.push(CertificationDTO.fromJSONObject(cert).inline());
           blockLen++;
         }
       });
@@ -512,7 +512,7 @@ export class BlockGenerator {
       // Join only for non-members
       if (data.identity.member) {
         if (blockLen < maxLenOfBlock) {
-          block.actives.push(Membership.fromJSON(data.ms).inline());
+          block.actives.push(MembershipDTO.fromJSONObject(data.ms).inline());
           blockLen++;
         }
       }
@@ -524,7 +524,7 @@ export class BlockGenerator {
       // Join only for non-members
       if (data.identity.member) {
         if (blockLen < maxLenOfBlock) {
-          block.leavers.push(Membership.fromJSON(data.ms).inline());
+          block.leavers.push(MembershipDTO.fromJSONObject(data.ms).inline());
           blockLen++;
         }
       }
@@ -550,11 +550,11 @@ export class BlockGenerator {
       const data = joinData[joiner];
       // Identities only for never-have-been members
       if (!data.identity.member && !data.identity.wasMember) {
-        block.identities.push(Identity.fromJSON(data.identity).inline());
+        block.identities.push(IdentityDTO.fromJSONObject(data.identity).inline());
       }
       // Join only for non-members
       if (!data.identity.member) {
-        block.joiners.push(Membership.fromJSON(data.ms).inline());
+        block.joiners.push(MembershipDTO.fromJSONObject(data.ms).inline());
       }
     });
     block.identities = _.sortBy(block.identities, (line:string) => {
@@ -567,7 +567,7 @@ export class BlockGenerator {
       const data = joinData[joiner] || [];
       data.certs.forEach((cert:any) => {
         countOfCertsToNewcomers++;
-        block.certifications.push(Certification.fromJSON(cert).inline());
+        block.certifications.push(CertificationDTO.fromJSONObject(cert).inline());
       });
     });
 
@@ -693,7 +693,7 @@ class NextBlockGenerator implements BlockGeneratorInterface {
           cert.idty_buid = targetIdty.buid;
           cert.idty_sig = targetIdty.sig;
           cert.buid = current ? [cert.block_number, targetBlock.hash].join('-') : CommonConstants.SPECIAL_BLOCK;
-          const rawCert = Certification.fromJSON(cert).getRaw();
+          const rawCert = CertificationDTO.fromJSONObject(cert).getRawUnSigned();
           if (verify(rawCert, certSig, cert.from)) {
             cert.sig = certSig;
             let exists = false;

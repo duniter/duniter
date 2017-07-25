@@ -13,10 +13,8 @@ import {CommonConstants} from "./common-libs/constants"
 import {MembershipDTO} from "./dto/MembershipDTO"
 
 const _               = require('underscore');
-const common          = require('../../app/common');
 
 const constants       = CommonConstants
-const Block           = common.document.Block
 
 export interface IndexEntry {
   index: string,
@@ -437,8 +435,8 @@ export class Indexer {
 
     HEAD.version = block.version
     HEAD.currency = block.currency
-    HEAD.bsize = Block.getLen(block)
-    HEAD.hash = Block.getHash(block)
+    HEAD.bsize = BlockDTO.getLen(block)
+    HEAD.hash = BlockDTO.getHash(block)
     HEAD.issuer = block.issuer
     HEAD.time = block.time
     HEAD.medianTime = block.medianTime
@@ -515,8 +513,8 @@ export class Indexer {
     const HEAD = new DBHead()
 
     HEAD.version = block.version
-    HEAD.bsize = Block.getLen(block)
-    HEAD.hash = Block.getHash(block)
+    HEAD.bsize = BlockDTO.getLen(block)
+    HEAD.hash = BlockDTO.getHash(block)
     HEAD.issuer = block.issuer
     HEAD.time = block.time
     HEAD.powMin = block.powMin

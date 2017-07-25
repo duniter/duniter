@@ -3,7 +3,6 @@ import {SQLiteDriver} from "../../drivers/SQLiteDriver"
 import {AbstractIndex} from "../AbstractIndex"
 import {CommonConstants} from "../../../common-libs/constants"
 const _ = require('underscore');
-const common = require('../../../../../app/common');
 const constants = require('../../../constants');
 
 export class SIndexDAL extends AbstractIndex<SindexEntry> {

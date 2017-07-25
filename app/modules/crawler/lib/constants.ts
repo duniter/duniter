@@ -1,5 +1,4 @@
 import {CommonConstants} from "../../../lib/common-libs/constants"
-const common = require('../../../../app/common')
 
 export const CrawlerConstants = {
 

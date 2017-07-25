@@ -247,6 +247,18 @@ export class TransactionDTO {
     };
   }
 
+  static inputStr2Obj(inputStr:string) {
+    const sp = inputStr.split(':')
+    return {
+      amount:     sp[0],
+      base:       sp[1],
+      type:       sp[2],
+      identifier: sp[3],
+      pos:        parseInt(sp[4]),
+      raw:        inputStr
+    }
+  }
+
   static mock() {
     return new TransactionDTO(1, "", 0, "", "", 0, [], [], [], [], [], "")
   }

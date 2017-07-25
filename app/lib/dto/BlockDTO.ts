@@ -1,5 +1,9 @@
 import {TransactionDTO} from "./TransactionDTO"
 import {CurrencyConfDTO} from "./ConfDTO"
+import {hashf} from "../common"
+
+const DEFAULT_DOCUMENT_VERSION = 10
+
 export class BlockDTO {
 
   version: number
@@ -18,14 +22,14 @@ export class BlockDTO {
   issuersCount: number
   issuersFrame: number
   issuersFrameVar: number
-  identities: string[]
-  joiners: string[]
-  actives: string[]
-  leavers: string[]
-  revoked: string[]
-  excluded: string[]
-  certifications: string[]
-  transactions: TransactionDTO[]
+  identities: string[] = []
+  joiners: string[] = []
+  actives: string[] = []
+  leavers: string[] = []
+  revoked: string[] = []
+  excluded: string[] = []
+  certifications: string[] = []
+  transactions: TransactionDTO[] = []
   medianTime: number
   nonce: number
   fork: boolean
@@ -120,6 +124,10 @@ export class BlockDTO {
       "Nonce: " + this.nonce + "\n"
   }
 
+  getSignedPartSigned() {
+    return this.getSignedPart() + this.signature + "\n"
+  }
+
   getRawInnerPart() {
     let raw = "";
     raw += "Version: " + this.version + "\n";
@@ -178,15 +186,19 @@ export class BlockDTO {
     return raw
   }
 
+  getHash() {
+    return hashf(this.getSignedPartSigned())
+  }
+
   static fromJSONObject(obj:any) {
     const dto = new BlockDTO()
-    dto.version = parseInt(obj.version)
+    dto.version = parseInt(obj.version) || DEFAULT_DOCUMENT_VERSION
     dto.number = parseInt(obj.number)
-    dto.currency = obj.currency
-    dto.hash = obj.hash
+    dto.currency = obj.currency || ""
+    dto.hash = obj.hash || ""
     dto.inner_hash = obj.inner_hash
     dto.previousHash = obj.previousHash
-    dto.issuer = obj.issuer
+    dto.issuer = obj.issuer || ""
     dto.previousIssuer = obj.previousIssuer
     dto.dividend = obj.dividend || null
     dto.time = parseInt(obj.time)
@@ -203,11 +215,11 @@ export class BlockDTO {
     dto.revoked = obj.revoked || []
     dto.excluded = obj.excluded || []
     dto.certifications = obj.certifications || []
-    dto.transactions = (obj.transactions || []).map(TransactionDTO.fromJSONObject)
+    dto.transactions = (obj.transactions || []).map((tx:any) => TransactionDTO.fromJSONObject(tx))
     dto.medianTime = parseInt(obj.medianTime)
     dto.fork = !!obj.fork
-    dto.parameters = obj.parameters
-    dto.signature = obj.signature
+    dto.parameters = obj.parameters || ""
+    dto.signature = obj.signature || ""
     dto.nonce = parseInt(obj.nonce)
     return dto
   }
@@ -238,5 +250,13 @@ export class BlockDTO {
       // New parameter, defaults to msWindow
       msPeriod: parseInt(sp[9])
     }
+  }
+
+  static getLen(block:any) {
+    return BlockDTO.fromJSONObject(block).len
+  }
+
+  static getHash(block:any) {
+    return BlockDTO.fromJSONObject(block).getHash()
   }
 }

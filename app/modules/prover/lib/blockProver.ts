@@ -3,11 +3,9 @@ import {ConfDTO, Keypair} from "../../../lib/dto/ConfDTO"
 import {PowEngine} from "./engine"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {CommonConstants} from "../../../lib/common-libs/constants"
+import {BlockDTO} from "../../../lib/dto/BlockDTO"
 
 const querablep       = require('querablep');
-const common          = require('../../../../app/common');
-
-const Block = common.document.Block
 
 const POW_FOUND = true;
 const POW_NOT_FOUND_YET = false;
@@ -175,7 +173,7 @@ export class BlockProver {
         const testsPerSecond = (testsCount / (duration / 1000)).toFixed(2);
         this.logger.info('Done: #%s, %s in %ss (%s tests, ~%s tests/s)', block.number, proof.hash, (duration / 1000).toFixed(2), testsCount, testsPerSecond);
         this.logger.info('FOUND proof-of-work with %s leading zeros followed by [0-' + highMark + ']!', nbZeros);
-        return Block.fromJSON(proof);
+        return BlockDTO.fromJSONObject(proof)
       }
     })()
   };

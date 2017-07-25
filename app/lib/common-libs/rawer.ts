@@ -2,14 +2,12 @@ import {dos2unix} from "./dos2unix"
 import {PeerDTO} from "../dto/PeerDTO"
 import {IdentityDTO} from "../dto/IdentityDTO"
 import {MembershipDTO} from "../dto/MembershipDTO"
+import {TransactionDTO} from "../dto/TransactionDTO"
+import {BlockDTO} from "../dto/BlockDTO"
 
 const DOCUMENTS_VERSION = 10;
 const SIGNED = false
 const UNSIGNED = true
-
-function document() {
-  return require('../../common/lib/document')
-}
 
 export const getOfficialIdentity = (json:any, withSig = true) => {
   const dto = IdentityDTO.fromJSONObject(json)
@@ -61,19 +59,15 @@ export const getMembership = (json:any) => {
 }
 
 export const getBlockInnerPart = (json:any) => {
-  return document().Block.toRAWInnerPart(json)
+  return BlockDTO.fromJSONObject(json).getRawInnerPart()
 }
 
 export const getBlockWithInnerHashAndNonce = (json:any) => {
-  return document().Block.toRAWinnerPartWithHashAndNonce(json)
-}
-
-export const getBlockInnerHashAndNonce = (json:any) => {
-  return document().Block.toRAWHashAndNonce(json, UNSIGNED)
+  return BlockDTO.fromJSONObject(json).getRawUnSigned()
 }
 
 export const getBlockInnerHashAndNonceWithSignature = (json:any) => {
-  return document().Block.toRAWHashAndNonce(json, SIGNED)
+  return BlockDTO.fromJSONObject(json).getSignedPartSigned()
 }
 
 export const getBlock = (json:any) => {
@@ -81,11 +75,7 @@ export const getBlock = (json:any) => {
 }
 
 export const getTransaction = (json:any) => {
-  return document().Transaction.toRAW(json)
-}
-
-export const getCompactTransaction = (json:any) => {
-  return document().Transaction.getCompactTransaction(json)
+  return TransactionDTO.toRAW(json)
 }
 
 function getNormalHeader(doctype:string, json:any) {

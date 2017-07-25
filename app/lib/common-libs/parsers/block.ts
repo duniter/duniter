@@ -2,8 +2,7 @@ import {CommonConstants} from "../../../lib/common-libs/constants"
 import {GenericParser} from "./GenericParser"
 import {hashf} from "../../../lib/common"
 import {rawer} from "../../../lib/common-libs/index"
-
-const Block         = require('../../../../app/common/lib/document/block');
+import {BlockDTO} from "../../dto/BlockDTO"
 
 export class BlockParser extends GenericParser {
 
@@ -69,7 +68,7 @@ export class BlockParser extends GenericParser {
       tx.currency = obj.currency;
       tx.hash = hashf(rawer.getTransaction(tx)).toUpperCase();
     });
-    obj.len = Block.getLen(obj);
+    obj.len = BlockDTO.getLen(obj);
   };
 
   _verify(obj:any) {

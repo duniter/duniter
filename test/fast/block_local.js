@@ -7,7 +7,6 @@ const LOCAL_RULES    = require('../../app/lib/rules/local_rules').LOCAL_RULES_FU
 const ALIAS          = require('../../app/lib/rules').ALIAS
 const blocks         = require('../data/blocks.js');
 const parser         = parsers.parseBlock;
-const Block          = require('../../app/common').document.Block
 const BlockDTO       = require('../../app/lib/dto/BlockDTO').BlockDTO
 
 const conf = {

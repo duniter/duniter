@@ -11,11 +11,8 @@ import {IdentityDTO} from "../dto/IdentityDTO"
 import {MembershipDTO} from "../dto/MembershipDTO"
 
 const _          = require('underscore');
-const common     = require('../../../app/common');
 
 const constants       = CommonConstants
-const Block           = common.document.Block
-const Transaction     = common.document.Transaction
 const maxAcceleration = require('./helpers').maxAcceleration
 
 export const LOCAL_RULES_FUNCTIONS = {
@@ -289,7 +286,7 @@ export const LOCAL_RULES_FUNCTIONS = {
     const txs = block.transactions
     // Check rule against each transaction
     for (const tx of txs) {
-      const txLen = Transaction.getLen(tx);
+      const txLen = TransactionDTO.fromJSONObject(tx).getLen()
       if (txLen > constants.MAXIMUM_LEN_OF_COMPACT_TX) {
         throw constants.ERRORS.A_TRANSACTION_HAS_A_MAX_SIZE;
       }
@@ -297,7 +294,7 @@ export const LOCAL_RULES_FUNCTIONS = {
     // Check rule against each output of each transaction
     for (const tx of txs) {
       for (const output of tx.outputs) {
-        const out = typeof output === 'string' ? output : Transaction.outputObj2Str(output)
+        const out = typeof output === 'string' ? output : TransactionDTO.outputObj2Str(output)
         if (out.length > constants.MAXIMUM_LEN_OF_OUTPUT) {
           throw constants.ERRORS.MAXIMUM_LEN_OF_OUTPUT
         }

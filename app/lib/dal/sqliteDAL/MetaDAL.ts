@@ -16,7 +16,6 @@ import {CommonConstants} from "../../common-libs/constants"
 
 const _ = require('underscore')
 const logger = require('../../logger').NewLogger('metaDAL');
-const common = require('../../../../app/common');
 const constants = require('./../../constants');
 
 export interface DBMeta {

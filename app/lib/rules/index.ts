@@ -4,9 +4,6 @@ import {ConfDTO} from "../dto/ConfDTO"
 import {IndexEntry} from "../indexer"
 import {LOCAL_RULES_FUNCTIONS} from "./local_rules"
 
-const common      = require('../../../app/common');
-const Block        = common.document.Block
-
 export const ALIAS = {
 
   ALL_LOCAL: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
@@ -76,7 +73,7 @@ export const CHECK = {
 function checkLocal(contract:(block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => Promise<void>) {
   return async (b:BlockDTO, conf:ConfDTO, index:IndexEntry[], done:any = undefined) => {
     try {
-      const block = Block.fromJSON(b);
+      const block = BlockDTO.fromJSONObject(b)
       await contract(block, conf, index)
       done && done();
     } catch (err) {

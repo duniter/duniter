@@ -1,13 +1,11 @@
 import {AbstractController} from "./AbstractController"
 import {ParametersService} from "../parameters"
 import {Source} from "../entity/source"
-import {BMAConstants} from "../constants";
+import {BMAConstants} from "../constants"
+import {TransactionDTO} from "../../../../lib/dto/TransactionDTO"
 
 const _                = require('underscore');
-const common           = require('../../../../../app/common');
 const http2raw         = require('../http2raw');
-
-const Transaction = common.document.Transaction
 
 export class TransactionBinding extends AbstractController {
 
@@ -90,7 +88,7 @@ export class TransactionBinding extends AbstractController {
       "pending": pending
     };
     pending.map(function(tx:any, index:number) {
-      pending[index] = _.omit(Transaction.fromJSON(tx).json(), 'currency', 'raw');
+      pending[index] = _.omit(TransactionDTO.fromJSONObject(tx).json(), 'currency', 'raw');
     });
     return res;
   }
@@ -104,7 +102,7 @@ export class TransactionBinding extends AbstractController {
     };
     _.keys(history).map((key:any) => {
       history[key].map((tx:any, index:number) => {
-        history[key][index] = _.omit(Transaction.fromJSON(tx).json(), 'currency', 'raw');
+        history[key][index] = _.omit(TransactionDTO.fromJSONObject(tx).json(), 'currency', 'raw');
         _.extend(history[key][index], {block_number: tx && tx.block_number, time: tx && tx.time});
       });
     });

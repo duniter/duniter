@@ -4,7 +4,6 @@ import {CindexEntry} from "../../../indexer"
 import {CommonConstants} from "../../../common-libs/constants"
 
 const constants = require('./../../../constants');
-const common = require('../../../../../app/common');
 const indexer         = require('../../../indexer').Indexer
 
 export class CIndexDAL extends AbstractIndex<CindexEntry> {

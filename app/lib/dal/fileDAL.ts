@@ -20,7 +20,6 @@ const fs      = require('fs')
 const path    = require('path')
 const readline = require('readline')
 const _       = require('underscore');
-const common = require('../../../app/common');
 const indexer = require('../indexer').Indexer
 const logger = require('../logger').NewLogger('filedal');
 const constants = require('../constants');

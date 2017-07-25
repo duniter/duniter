@@ -1,8 +1,6 @@
 import {Contacter} from "./contacter"
 import {verify} from "../../../lib/common-libs/crypto/keyring"
-import {rawer} from "../../../lib/common-libs/index";
-
-const common = require('../../../../app/common')
+import {rawer} from "../../../lib/common-libs/index"
 
 export const req2fwd = async (requirements:any, toHost:string, toPort:number, logger:any) => {
   const mss:any = {};

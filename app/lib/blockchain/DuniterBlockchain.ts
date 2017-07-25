@@ -14,7 +14,6 @@ import {TransactionDTO} from "../dto/TransactionDTO"
 import {CommonConstants} from "../common-libs/constants"
 
 const _ = require('underscore')
-const common          = require('../../../app/common')
 
 export class DuniterBlockchain extends MiscIndexedBlockchain {
 

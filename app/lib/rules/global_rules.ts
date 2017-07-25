@@ -11,11 +11,9 @@ import {CommonConstants} from "../common-libs/constants"
 import {IdentityDTO} from "../dto/IdentityDTO"
 
 const _              = require('underscore');
-const common         = require('../../../app/common');
 const indexer        = require('../indexer').Indexer
 
 const constants      = CommonConstants
-const Transaction    = common.document.Transaction
 
 // Empty logger by default
 let logger = {
@@ -71,12 +69,12 @@ export const GLOBAL_RULES_FUNCTIONS = {
           // For chained transactions which are checked on sandbox submission, we accept them if there is already
           // a previous transaction of the chain already recorded in the pool
           dbSrc = await (async () => {
-            let hypotheticSrc = null;
+            let hypotheticSrc:any = null;
             let targetTX = await dal.getTxByHash(src.identifier);
             if (targetTX) {
               let outputStr = targetTX.outputs[src.pos];
               if (outputStr) {
-                hypotheticSrc = Transaction.outputStr2Obj(outputStr);
+                hypotheticSrc = TransactionDTO.outputStr2Obj(outputStr);
                 hypotheticSrc.consumed = false;
                 hypotheticSrc.time = 0;
               }

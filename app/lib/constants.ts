@@ -1,8 +1,6 @@
 "use strict";
 import {CommonConstants} from "./common-libs/constants"
 
-const common = require('../../app/common')
-
 const UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\d{2}\\.\\d{2}(\\+|-)\\d{3}\\.\\d{2});(\\d+)(;?)";
 const PUBKEY       = CommonConstants.FORMATS.PUBKEY
 const TIMESTAMP    = CommonConstants.FORMATS.TIMESTAMP

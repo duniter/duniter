@@ -14,14 +14,12 @@ import {CommonConstants} from "../../../lib/common-libs/constants"
 import {IdentityDTO} from "../../../lib/dto/IdentityDTO"
 import {CertificationDTO} from "../../../lib/dto/CertificationDTO"
 import {MembershipDTO} from "../../../lib/dto/MembershipDTO"
+import {BlockDTO} from "../../../lib/dto/BlockDTO"
 
 const _               = require('underscore');
 const moment          = require('moment');
 const inquirer        = require('inquirer');
-const common          = require('../../../../app/common');
 
-const Block         = common.document.Block;
-const Transaction   = common.document.Transaction;
 const constants     = CommonConstants
 
 export class BlockGenerator {
@@ -445,7 +443,7 @@ export class BlockGenerator {
       delete updates[leaver];
       delete joinData[leaver];
     });
-    const block = new Block();
+    const block = new BlockDTO();
     block.number = current ? current.number + 1 : 0;
     // Compute the new MedianTime
     if (block.number == 0) {
@@ -572,7 +570,7 @@ export class BlockGenerator {
     });
 
     // Eventually revert newcomers/renewcomer
-    if (block.number > 0 && Block.getLen(block) > maxLenOfBlock) {
+    if (block.number > 0 && BlockDTO.getLen(block) > maxLenOfBlock) {
       for (let i = 0; i < block.identities.length; i++) {
         block.identities.pop();
         block.joiners.pop();
@@ -591,12 +589,13 @@ export class BlockGenerator {
      * Priority 4: transactions
      */
     block.transactions = [];
-    blockLen = Block.getLen(block);
+    blockLen = BlockDTO.getLen(block);
     if (blockLen < maxLenOfBlock) {
       transactions.forEach((tx:any) => {
-        const txLen = Transaction.getLen(tx);
+        const txDTO = TransactionDTO.fromJSONObject(tx)
+        const txLen = txDTO.getLen()
         if (txLen <= CommonConstants.MAXIMUM_LEN_OF_COMPACT_TX && blockLen + txLen <= maxLenOfBlock && tx.version == CommonConstants.TRANSACTION_VERSION) {
-          block.transactions.push({ raw: tx.getCompactVersion() });
+          block.transactions.push(txDTO);
         }
         blockLen += txLen;
       });

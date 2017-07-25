@@ -2,9 +2,9 @@
 
 const _       = require('underscore');
 const should  = require('should');
-const parsers = require('../../app/common').parsers;
+const parsers = require('../../app/lib/common-libs/parsers').parsers
 const indexer = require('../../app/lib/indexer').Indexer
-const constants = require('../../app/common').constants;
+const constants = require('../../app/lib/common-libs/constants').CommonConstants
 const BlockDTO = require('../../app/lib/dto/BlockDTO').BlockDTO
 
 const raw = "Version: 10\n" +

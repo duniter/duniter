@@ -6,7 +6,7 @@ const user      = require('./tools/user');
 const commit    = require('./tools/commit');
 const toolbox   = require('./tools/toolbox');
 const constants = require('../../app/lib/constants');
-const common    = require('../../app/common');
+const CommonConstants = require('../../app/lib/common-libs/constants').CommonConstants
 
 const s1 = toolbox.server({
   currency: 'currency_one',
@@ -59,12 +59,12 @@ describe("Transactions pruning", function() {
   }));
 
   it('double spending transaction should have been pruned', () => co(function*() {
-    const tmp = common.constants.TRANSACTION_MAX_TRIES;
-    common.constants.TRANSACTION_MAX_TRIES = 1;
+    const tmp = CommonConstants.TRANSACTION_MAX_TRIES;
+    CommonConstants.TRANSACTION_MAX_TRIES = 1;
     yield s1.commit();
     yield s1.expect('/tx/history/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (res) => {
       res.history.should.have.property('sending').length(0);
     });
-    common.constants.TRANSACTION_MAX_TRIES = tmp;
+    CommonConstants.TRANSACTION_MAX_TRIES = tmp;
   }));
 });

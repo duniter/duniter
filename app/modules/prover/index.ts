@@ -3,7 +3,8 @@ import {BlockGenerator, BlockGeneratorWhichProves} from "./lib/blockGenerator"
 import {Constants} from "./lib/constants"
 import {BlockProver} from "./lib/blockProver"
 import {Prover} from "./lib/prover"
-import {Contacter} from "../crawler/lib/contacter";
+import {Contacter} from "../crawler/lib/contacter"
+import {parsers} from "../../lib/common-libs/parsers/index"
 
 const async = require('async');
 const common = require('../../../app/common');
@@ -150,7 +151,7 @@ function generateAndSend(program:any, host:string, port:string, difficulty:strin
           program.show && console.log(block.getRawSigned());
           (async() => {
             try {
-              const parsed = common.parsers.parseBlock.syncWrite(block.getRawSigned());
+              const parsed = parsers.parseBlock.syncWrite(block.getRawSigned());
               await server.BlockchainService.checkBlock(parsed, false);
               logger.info('Acceptable block');
               next();

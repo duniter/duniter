@@ -32,13 +32,14 @@ const MAXIMUM_LEN_OF_COMPACT_TX = 100
 const MAXIMUM_LEN_OF_OUTPUT = 2000
 const MAXIMUM_LEN_OF_UNLOCK = MAXIMUM_LEN_OF_OUTPUT
 
-module.exports = {
+export const CommonConstants = {
 
   FORMATS: {
     CURRENCY,
     PUBKEY,
     INTEGER,
-    FINGERPRINT
+    FINGERPRINT,
+    TIMESTAMP
   },
 
   BLOCK_GENERATED_VERSION: 10,
@@ -219,10 +220,10 @@ module.exports = {
   },
 }
 
-function exact (regexpContent) {
+function exact (regexpContent:string) {
   return new RegExp("^" + regexpContent + "$");
 }
 
-function find (regexpContent) {
+function find (regexpContent:string) {
   return new RegExp(regexpContent);
 }

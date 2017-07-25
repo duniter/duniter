@@ -1,6 +1,7 @@
-import {AbstractIndex} from "../AbstractIndex";
-import {SQLiteDriver} from "../../drivers/SQLiteDriver";
-import {CindexEntry} from "../../../indexer";
+import {AbstractIndex} from "../AbstractIndex"
+import {SQLiteDriver} from "../../drivers/SQLiteDriver"
+import {CindexEntry} from "../../../indexer"
+import {CommonConstants} from "../../../common-libs/constants"
 
 const constants = require('./../../../constants');
 const common = require('../../../../../app/common');
@@ -89,7 +90,7 @@ export class CIndexDAL extends AbstractIndex<CindexEntry> {
       ' AND c1.receiver = c2.receiver' +
       ' AND c1.created_on = c2.created_on' +
       ' AND c2.op = ?' +
-      ')', [medianTime, common.constants.IDX_UPDATE])
+      ')', [medianTime, CommonConstants.IDX_UPDATE])
   }
 
   getValidLinksTo(receiver:string) {
@@ -102,7 +103,7 @@ export class CIndexDAL extends AbstractIndex<CindexEntry> {
       ' AND c1.receiver = c2.receiver' +
       ' AND c1.created_on = c2.created_on' +
       ' AND c2.op = ?' +
-      ')', [receiver, common.constants.IDX_UPDATE])
+      ')', [receiver, CommonConstants.IDX_UPDATE])
   }
 
   getValidLinksFrom(issuer:string) {
@@ -115,7 +116,7 @@ export class CIndexDAL extends AbstractIndex<CindexEntry> {
       ' AND c1.receiver = c2.receiver' +
       ' AND c1.created_on = c2.created_on' +
       ' AND c2.op = ?' +
-      ')', [issuer, common.constants.IDX_UPDATE])
+      ')', [issuer, CommonConstants.IDX_UPDATE])
   }
 
   async existsNonReplayableLink(issuer:string, receiver:string) {
@@ -128,7 +129,7 @@ export class CIndexDAL extends AbstractIndex<CindexEntry> {
       ' AND c1.receiver = c2.receiver' +
       ' AND c1.created_on = c2.created_on' +
       ' AND c2.op = ?' +
-      ')', [issuer, receiver, common.constants.IDX_UPDATE]);
+      ')', [issuer, receiver, CommonConstants.IDX_UPDATE]);
     return results.length > 0;
   }
 

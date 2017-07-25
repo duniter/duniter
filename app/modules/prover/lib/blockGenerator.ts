@@ -8,8 +8,9 @@ import {Indexer} from "../../../lib/indexer"
 import {FileDAL} from "../../../lib/dal/fileDAL"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {verify} from "../../../lib/common-libs/crypto/keyring"
-import {rawer} from "../../../lib/common-libs/index";
-import {hashf} from "../../../lib/common";
+import {rawer} from "../../../lib/common-libs/index"
+import {hashf} from "../../../lib/common"
+import {CommonConstants} from "../../../lib/common-libs/constants"
 
 const _               = require('underscore');
 const moment          = require('moment');
@@ -21,7 +22,7 @@ const Membership    = common.document.Membership;
 const Transaction   = common.document.Transaction;
 const Identity      = common.document.Identity;
 const Certification = common.document.Certification;
-const constants     = common.constants
+const constants     = CommonConstants
 
 export class BlockGenerator {
 
@@ -104,7 +105,7 @@ export class BlockGenerator {
   }
 
   private async findTransactions(current:DBBlock) {
-    const versionMin = current ? Math.min(common.constants.LAST_VERSION_FOR_TX, current.version) : common.constants.DOCUMENTS_VERSION;
+    const versionMin = current ? Math.min(CommonConstants.LAST_VERSION_FOR_TX, current.version) : CommonConstants.DOCUMENTS_VERSION;
     const txs = await this.dal.getTransactionsPending(versionMin);
     const transactions = [];
     const passingTxs:any[] = [];
@@ -130,7 +131,7 @@ export class BlockGenerator {
         const blockstamp = tx.blockstamp || (currentNumber + '-');
         const txBlockNumber = parseInt(blockstamp.split('-')[0]);
         // 10 blocks before removing the transaction
-        if (currentNumber - txBlockNumber + 1 >= common.constants.TRANSACTION_MAX_TRIES) {
+        if (currentNumber - txBlockNumber + 1 >= CommonConstants.TRANSACTION_MAX_TRIES) {
           await this.dal.removeTxByHash(tx.hash);
         }
       }
@@ -261,7 +262,7 @@ export class BlockGenerator {
     memberships.forEach((ms:any) => joiners.push(ms.issuer));
     for (const ms of memberships) {
       try {
-        if (ms.block !== common.constants.SPECIAL_BLOCK) {
+        if (ms.block !== CommonConstants.SPECIAL_BLOCK) {
           let msBasedBlock = await this.dal.getBlockByBlockstampOrNull(ms.block);
           if (!msBasedBlock) {
             throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
@@ -339,10 +340,10 @@ export class BlockGenerator {
     if (!identity) {
       throw 'Identity with hash \'' + idHash + '\' not found';
     }
-    if (current && identity.buid == common.constants.SPECIAL_BLOCK && !identity.wasMember) {
+    if (current && identity.buid == CommonConstants.SPECIAL_BLOCK && !identity.wasMember) {
       throw constants.ERRORS.TOO_OLD_IDENTITY;
     }
-    else if (!identity.wasMember && identity.buid != common.constants.SPECIAL_BLOCK) {
+    else if (!identity.wasMember && identity.buid != CommonConstants.SPECIAL_BLOCK) {
       const idtyBasedBlock = await this.dal.getBlock(identity.buid);
       const age = current.medianTime - idtyBasedBlock.medianTime;
       if (age > this.conf.idtyWindow) {
@@ -594,7 +595,7 @@ export class BlockGenerator {
     if (blockLen < maxLenOfBlock) {
       transactions.forEach((tx:any) => {
         const txLen = Transaction.getLen(tx);
-        if (txLen <= common.constants.MAXIMUM_LEN_OF_COMPACT_TX && blockLen + txLen <= maxLenOfBlock && tx.version == common.constants.TRANSACTION_VERSION) {
+        if (txLen <= CommonConstants.MAXIMUM_LEN_OF_COMPACT_TX && blockLen + txLen <= maxLenOfBlock && tx.version == CommonConstants.TRANSACTION_VERSION) {
           block.transactions.push({ raw: tx.getCompactVersion() });
         }
         blockLen += txLen;
@@ -691,7 +692,7 @@ class NextBlockGenerator implements BlockGeneratorInterface {
           cert.idty_uid = targetIdty.uid;
           cert.idty_buid = targetIdty.buid;
           cert.idty_sig = targetIdty.sig;
-          cert.buid = current ? [cert.block_number, targetBlock.hash].join('-') : common.constants.SPECIAL_BLOCK;
+          cert.buid = current ? [cert.block_number, targetBlock.hash].join('-') : CommonConstants.SPECIAL_BLOCK;
           const rawCert = Certification.fromJSON(cert).getRaw();
           if (verify(rawCert, certSig, cert.from)) {
             cert.sig = certSig;

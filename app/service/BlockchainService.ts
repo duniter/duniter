@@ -8,10 +8,9 @@ import {BlockDTO} from "../lib/dto/BlockDTO"
 import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
 import {DBBlock} from "../lib/db/DBBlock"
 import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
+import {parsers} from "../lib/common-libs/parsers/index"
 
 const _               = require('underscore');
-const co              = require('co');
-const parsers         = require('../../app/common').parsers;
 const constants       = require('../lib/constants');
 
 const CHECK_ALL_RULES = true;

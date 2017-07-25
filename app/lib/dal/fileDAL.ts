@@ -14,6 +14,7 @@ import {DBTx} from "./sqliteDAL/TxsDAL"
 import {DBBlock} from "../db/DBBlock"
 import {DBMembership} from "./sqliteDAL/MembershipDAL"
 import {MerkleDTO} from "../dto/MerkleDTO"
+import {CommonConstants} from "../common-libs/constants"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -649,7 +650,7 @@ export class FileDAL {
     for (const entry of cindex) {
       const from = await this.getWrittenIdtyByPubkey(entry.issuer);
       const to = await this.getWrittenIdtyByPubkey(entry.receiver);
-      if (entry.op == common.constants.IDX_CREATE) {
+      if (entry.op == CommonConstants.IDX_CREATE) {
         this.wotb.addLink(from.wotb_id, to.wotb_id);
       } else {
         // Update = removal
@@ -671,7 +672,7 @@ export class FileDAL {
     await this.certDAL.trimExpiredCerts(block.medianTime);
     await this.msDAL.trimExpiredMemberships(block.medianTime);
     await this.idtyDAL.trimExpiredIdentities(block.medianTime);
-    await this.txsDAL.trimExpiredNonWrittenTxs(block.medianTime - common.constants.TX_WINDOW)
+    await this.txsDAL.trimExpiredNonWrittenTxs(block.medianTime - CommonConstants.TX_WINDOW)
     return true;
   }
 

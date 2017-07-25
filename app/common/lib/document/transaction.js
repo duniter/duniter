@@ -1,11 +1,6 @@
 "use strict";
-const constants = require('../constants');
-const regex = require('../regex');
+const constants = require('../../../../app/lib/common-libs/constants').CommonConstants
 const hashf = require('../../../lib/common-libs').hashf
-
-// Constants
-const SIGNED = false
-const UNSIGNED = !SIGNED
 
 module.exports = class Transaction {
 

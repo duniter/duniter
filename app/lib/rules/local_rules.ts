@@ -6,11 +6,12 @@ import {BaseDTO, TransactionDTO} from "../dto/TransactionDTO"
 import {DBBlock} from "../db/DBBlock"
 import {verify} from "../common-libs/crypto/keyring"
 import {hashf} from "../common"
+import {CommonConstants} from "../common-libs/constants"
 
 const _          = require('underscore');
 const common     = require('../../../app/common');
 
-const constants       = common.constants
+const constants       = CommonConstants
 const Block           = common.document.Block
 const Identity        = common.document.Identity
 const Membership      = common.document.Membership

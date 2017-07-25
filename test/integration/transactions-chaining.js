@@ -6,7 +6,7 @@ const should = require('should');
 const assert = require('assert');
 const constants = require('../../app/lib/constants');
 const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
-const common    = require('../../app/common');
+const CommonConstants = require('../../app/lib/common-libs/constants').CommonConstants
 const toolbox   = require('./tools/toolbox');
 const node   = require('./tools/node');
 const user   = require('./tools/user');
@@ -66,8 +66,8 @@ describe("Transaction chaining", function() {
         blockstamp: [current.number, current.hash].join('-'),
         theseOutputsStart: 1
       });
-      const tmp = common.constants.TRANSACTION_MAX_TRIES;
-      common.constants.TRANSACTION_MAX_TRIES = 2;
+      const tmp = CommonConstants.TRANSACTION_MAX_TRIES;
+      CommonConstants.TRANSACTION_MAX_TRIES = 2;
       yield unit.shouldNotFail(toc.sendTX(tx1));
       yield unit.shouldNotFail(toc.sendTX(tx2));
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1);
@@ -78,7 +78,7 @@ describe("Transaction chaining", function() {
       yield s1.commit({ time: now + 7210 }); // TX2 commited
       (yield s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3); // The UD + 1040 + 160 units sent by toc
-      common.constants.TRANSACTION_MAX_TRIES = tmp;
+      CommonConstants.TRANSACTION_MAX_TRIES = tmp;
     }));
   });
 });

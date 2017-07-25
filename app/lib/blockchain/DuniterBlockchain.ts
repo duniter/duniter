@@ -11,6 +11,7 @@ import {IdentityDTO} from "../dto/IdentityDTO"
 import {CertificationDTO} from "../dto/CertificationDTO"
 import {MembershipDTO} from "../dto/MembershipDTO"
 import {TransactionDTO} from "../dto/TransactionDTO"
+import {CommonConstants} from "../common-libs/constants"
 
 const _ = require('underscore')
 const common          = require('../../../app/common')
@@ -278,7 +279,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
 
   async createNewcomers(iindex:IindexEntry[], dal:any, logger:any) {
     for (const entry of iindex) {
-      if (entry.op == common.constants.IDX_CREATE) {
+      if (entry.op == CommonConstants.IDX_CREATE) {
         // Reserves a wotb ID
         entry.wotb_id = dal.wotb.addNode();
         logger.trace('%s was affected wotb_id %s', entry.uid, entry.wotb_id);
@@ -311,8 +312,8 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
   async updateWallets(sindex:SindexEntry[], aDal:any, reverse = false) {
     const differentConditions = _.uniq(sindex.map((entry) => entry.conditions))
     for (const conditions of differentConditions) {
-      const creates = _.filter(sindex, (entry:SindexEntry) => entry.conditions === conditions && entry.op === common.constants.IDX_CREATE)
-      const updates = _.filter(sindex, (entry:SindexEntry) => entry.conditions === conditions && entry.op === common.constants.IDX_UPDATE)
+      const creates = _.filter(sindex, (entry:SindexEntry) => entry.conditions === conditions && entry.op === CommonConstants.IDX_CREATE)
+      const updates = _.filter(sindex, (entry:SindexEntry) => entry.conditions === conditions && entry.op === CommonConstants.IDX_UPDATE)
       const positives = creates.reduce((sum:number, src:SindexEntry) => sum + src.amount * Math.pow(10, src.base), 0)
       const negatives = updates.reduce((sum:number, src:SindexEntry) => sum + src.amount * Math.pow(10, src.base), 0)
       const wallet = await aDal.getWallet(conditions)
@@ -335,7 +336,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     for (const entry of writtenOn) {
       const from = await dal.getWrittenIdtyByPubkey(entry.issuer);
       const to = await dal.getWrittenIdtyByPubkey(entry.receiver);
-      if (entry.op == common.constants.IDX_CREATE) {
+      if (entry.op == CommonConstants.IDX_CREATE) {
         // We remove the created link
         dal.wotb.removeLink(from.wotb_id, to.wotb_id, true);
       } else {
@@ -375,7 +376,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     for (const entry of joiners) {
       // Undo 'join' which can be either newcomers or comebackers
       // => equivalent to i_index.member = true AND i_index.op = 'UPDATE'
-      if (entry.member === true && entry.op === common.constants.IDX_UPDATE) {
+      if (entry.member === true && entry.op === CommonConstants.IDX_UPDATE) {
         const idty = await dal.getWrittenIdtyByPubkey(entry.pub);
         dal.wotb.setEnabled(false, idty.wotb_id);
       }
@@ -384,7 +385,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     for (const entry of newcomers) {
       // Undo newcomers
       // => equivalent to i_index.op = 'CREATE'
-      if (entry.op === common.constants.IDX_CREATE) {
+      if (entry.op === CommonConstants.IDX_CREATE) {
         // Does not matter which one it really was, we pop the last X identities
         dal.wotb.removeNode();
       }
@@ -393,7 +394,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     for (const entry of excluded) {
       // Undo excluded (make them become members again in wotb)
       // => equivalent to m_index.member = false
-      if (entry.member === false && entry.op === common.constants.IDX_UPDATE) {
+      if (entry.member === false && entry.op === CommonConstants.IDX_UPDATE) {
         const idty = await dal.getWrittenIdtyByPubkey(entry.pub);
         dal.wotb.setEnabled(true, idty.wotb_id);
       }

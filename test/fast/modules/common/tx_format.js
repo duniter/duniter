@@ -1,6 +1,6 @@
 "use strict";
 var should  = require('should');
-var parsers = require('../../../../app/common/lib/parsers');
+var parsers = require('../../../../app/lib/common-libs/parsers').parsers
 
 var raw = "Version: 10\n" +
     "Type: Transaction\n" +

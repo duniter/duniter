@@ -1,7 +1,6 @@
 "use strict";
 const _ = require('underscore')
-const constants = require('../constants');
-const regex = require('../regex');
+const constants = require('../../../../app/lib/common-libs/constants').CommonConstants
 const Transaction = require('./transaction');
 
 // Constants

@@ -1,6 +1,5 @@
 "use strict";
-const constants = require('../constants');
-const regex = require('../regex');
+const constants = require('../../../../app/lib/common-libs/constants').CommonConstants
 
 // Constants
 const SIGNED = true

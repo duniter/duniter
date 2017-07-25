@@ -1,3 +1,4 @@
+import {CommonConstants} from "../../../lib/common-libs/constants"
 const common = require('../../../../app/common')
 
 export const CrawlerConstants = {
@@ -7,7 +8,7 @@ export const CrawlerConstants = {
   DEFAULT_TIMEOUT: 10 * 1000, // 10 seconds
 
   SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES: 30,
-  TRANSACTION_VERSION: common.constants.TRANSACTION_VERSION,
+  TRANSACTION_VERSION: CommonConstants.TRANSACTION_VERSION,
   FORK_ALLOWED: true,
   MAX_NUMBER_OF_PEERS_FOR_PULLING: 4,
   PULLING_MINIMAL_DELAY: 20,

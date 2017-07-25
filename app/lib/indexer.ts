@@ -7,13 +7,14 @@ import {CertificationDTO} from "./dto/CertificationDTO"
 import {TransactionDTO} from "./dto/TransactionDTO"
 import {DBHead} from "./db/DBHead"
 import {LOCAL_RULES_HELPERS} from "./rules/local_rules"
-import {verify} from "./common-libs/crypto/keyring";
-import {rawer, txunlock} from "./common-libs/index";
+import {verify} from "./common-libs/crypto/keyring"
+import {rawer, txunlock} from "./common-libs/index"
+import {CommonConstants} from "./common-libs/constants"
 
 const _               = require('underscore');
 const common          = require('../../app/common');
 
-const constants       = common.constants
+const constants       = CommonConstants
 const Block           = common.document.Block
 const Membership      = common.document.Membership
 

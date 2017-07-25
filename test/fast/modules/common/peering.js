@@ -1,7 +1,7 @@
 "use strict";
 const should   = require('should');
 const assert   = require('assert');
-const parsers  = require('../../../../app/common/lib/parsers');
+const parsers  = require('../../../../app/lib/common-libs/parsers').parsers
 
 const rawPeer = "" +
   "Version: 10\n" +

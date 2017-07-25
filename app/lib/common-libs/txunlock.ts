@@ -1,7 +1,8 @@
 "use strict";
+import {hashf} from "../common"
 
 let Parser = require("jison").Parser;
-let buid = require('../../../app/common/lib/buid')
+let buid = require('../../../app/lib/common-libs/buid').Buid
 
 let grammar = {
   "lex": {
@@ -55,7 +56,7 @@ export function unlock(conditionsStr:string, executions:any, metadata:any) {
     },
     xHx: function(hash:string) {
       let xhxParam = executions[this.i++];
-      return buid.format.hashf(xhxParam) === hash;
+      return hashf(xhxParam) === hash;
     },
     cltv: function(deadline:string) {
       return metadata.currentTime && metadata.currentTime >= parseInt(deadline);

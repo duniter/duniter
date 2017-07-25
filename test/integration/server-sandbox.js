@@ -3,11 +3,11 @@
 const co        = require('co');
 const should    = require('should');
 const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
-const common    = require('../../app/common');
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
 const toolbox   = require('./tools/toolbox');
 const constants = require('../../app/lib/constants');
+const CommonConstants = require('../../app/lib/common-libs/constants').CommonConstants
 
 const now = 1482300000;
 
@@ -249,10 +249,10 @@ describe("Sandboxes", function() {
 
   describe('Transaction', () => {
 
-    const tmp = common.constants.TRANSACTION_MAX_TRIES;
+    const tmp = CommonConstants.TRANSACTION_MAX_TRIES;
 
     before(() => {
-      common.constants.TRANSACTION_MAX_TRIES = 2;
+      CommonConstants.TRANSACTION_MAX_TRIES = 2;
     })
 
     it('should accept 2 transactions of 20, 30 units', () => co(function *() {
@@ -273,7 +273,7 @@ describe("Sandboxes", function() {
       yield s1.commit();
       yield s1.commit();
       (yield s1.dal.txsDAL.getSandboxRoom()).should.equal(2);
-      common.constants.TRANSACTION_MAX_TRIES = tmp;
+      CommonConstants.TRANSACTION_MAX_TRIES = tmp;
     }));
   });
 });

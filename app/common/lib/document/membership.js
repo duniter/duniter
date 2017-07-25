@@ -1,10 +1,5 @@
 "use strict";
-const constants = require('../constants');
-const regex = require('../regex');
-
-// Constants
-const SIGNED = false
-const UNSIGNED = !SIGNED
+const constants = require('../../../../app/lib/common-libs/constants').CommonConstants
 
 module.exports = class Membership {
 

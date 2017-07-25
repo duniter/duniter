@@ -11,7 +11,8 @@ import {WalletDAL} from "./WalletDAL"
 import {MIndexDAL} from "./index/MIndexDAL"
 import {DBBlock} from "../../db/DBBlock"
 import {IdentityDTO} from "../../dto/IdentityDTO"
-import {rawer} from "../../common-libs/index";
+import {rawer} from "../../common-libs/index"
+import {CommonConstants} from "../../common-libs/constants"
 
 const _ = require('underscore')
 const logger = require('../../logger').NewLogger('metaDAL');
@@ -255,8 +256,8 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
             amountMissing += src.amount;
             const block = src.block;
             sourcesMovements.push({
-              index: common.constants.I_INDEX,
-              op: common.constants.IDX_CREATE,
+              index: CommonConstants.I_INDEX,
+              op: CommonConstants.IDX_CREATE,
               tx: src.tx,
               identifier: src.identifier,
               pos: src.pos,
@@ -321,7 +322,7 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
       let blockDAL = new BlockDAL(this.driverCopy)
       let mindexDAL = new MIndexDAL(this.driverCopy)
       await mindexDAL.exec('ALTER TABLE m_index ADD COLUMN chainable_on INTEGER NULL;')
-      const memberships = await mindexDAL.query('SELECT * FROM m_index WHERE op = ?', [common.constants.IDX_CREATE])
+      const memberships = await mindexDAL.query('SELECT * FROM m_index WHERE op = ?', [CommonConstants.IDX_CREATE])
       for (const ms of memberships) {
         const reference = await blockDAL.getBlock(parseInt(ms.written_on.split('-')[0]))
         const updateQuery = 'UPDATE m_index SET chainable_on = ' + (reference.medianTime + conf.msPeriod) + ' WHERE pub = \'' + ms.pub + '\' AND op = \'CREATE\''

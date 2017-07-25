@@ -1,7 +1,7 @@
 "use strict";
 const co             = require('co');
 const should         = require('should');
-const parsers        = require('../../app/common').parsers;
+const parsers        = require('../../app/lib/common-libs/parsers').parsers
 const indexer        = require('../../app/lib/indexer').Indexer
 const LOCAL_RULES    = require('../../app/lib/rules/local_rules').LOCAL_RULES_FUNCTIONS
 const ALIAS          = require('../../app/lib/rules').ALIAS

@@ -1,6 +1,7 @@
-import {Indexer, SindexEntry} from "../../../indexer";
-import {SQLiteDriver} from "../../drivers/SQLiteDriver";
-import {AbstractIndex} from "../AbstractIndex";
+import {Indexer, SindexEntry} from "../../../indexer"
+import {SQLiteDriver} from "../../drivers/SQLiteDriver"
+import {AbstractIndex} from "../AbstractIndex"
+import {CommonConstants} from "../../../common-libs/constants"
 const _ = require('underscore');
 const common = require('../../../../../app/common');
 const constants = require('../../../constants');
@@ -107,7 +108,7 @@ export class SIndexDAL extends AbstractIndex<SindexEntry> {
       ' AND s2.pos = s1.pos ' +
       ' AND s2.op = ?' +
       ') ' +
-      'ORDER BY CAST(SUBSTR(written_on, 0, INSTR(written_on, "-")) as number)', [common.constants.IDX_CREATE, conditionsStr, common.constants.IDX_UPDATE]);
+      'ORDER BY CAST(SUBSTR(written_on, 0, INSTR(written_on, "-")) as number)', [CommonConstants.IDX_CREATE, conditionsStr, CommonConstants.IDX_UPDATE]);
     const sources = potentials.map((src) => {
       src.type = src.tx ? 'T' : 'D';
       return src;

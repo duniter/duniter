@@ -1,35 +1,31 @@
-"use strict";
-const GenericParser = require('./GenericParser');
-const rawer         = require('../../../lib/common-libs/index').rawer
-const util          = require('util');
-const constants     = require('../constants');
+import {GenericParser} from "./GenericParser"
+import {CommonConstants} from "../../../lib/common-libs/constants"
+import {rawer} from "../../../lib/common-libs/index"
 
-module.exports = PeerParser;
+export class PeerParser extends GenericParser {
 
-function PeerParser (onError) {
+  constructor() {
+    super([
+      {prop: "version", regexp: /Version: (.*)/},
+      {prop: "currency", regexp: /Currency: (.*)/},
+      {prop: "pubkey", regexp: /PublicKey: (.*)/},
+      {prop: "block", regexp: CommonConstants.PEER.BLOCK},
+      {
+        prop: "endpoints", regexp: /Endpoints:\n([\s\S]*)/, parser: (str:string) => str.split("\n")
+      }
+    ], rawer.getPeer)
+  }
 
-  const captures = [
-    {prop: "version",           regexp: /Version: (.*)/},
-    {prop: "currency",          regexp: /Currency: (.*)/},
-    {prop: "pubkey",            regexp: /PublicKey: (.*)/},
-    {prop: "block",             regexp: constants.PEER.BLOCK},
-    {
-      prop: "endpoints", regexp: /Endpoints:\n([\s\S]*)/, parser: (str) => str.split("\n")
-    }
-  ];
-  const multilineFields = [];
-  GenericParser.call(this, captures, multilineFields, rawer.getPeer, onError);
-
-  this._clean = (obj) => {
+  _clean(obj:any) {
     obj.documentType = 'peer';
     obj.endpoints = obj.endpoints || [];
     // Removes trailing space
     if (obj.endpoints.length > 0)
       obj.endpoints.splice(obj.endpoints.length - 1, 1);
     obj.getBMA = function() {
-      let bma = null;
-      obj.endpoints.forEach((ep) => {
-        let matches = !bma && ep.match(constants.BMA_REGEXP);
+      let bma:any = null;
+      obj.endpoints.forEach((ep:string) => {
+        let matches = !bma && ep.match(CommonConstants.BMA_REGEXP);
         if (matches) {
           bma = {
             "dns": matches[2] || '',
@@ -41,9 +37,9 @@ function PeerParser (onError) {
       });
       return bma || {};
     };
-  };
+  }
 
-  this._verify = (obj) => {
+  _verify(obj:any) {
     let err = null;
     const codes = {
       'BAD_VERSION': 150,
@@ -58,12 +54,12 @@ function PeerParser (onError) {
     };
     if(!err){
       // Version
-      if(!obj.version || !obj.version.match(constants.DOCUMENTS_VERSION_REGEXP))
+      if(!obj.version || !obj.version.match(CommonConstants.DOCUMENTS_VERSION_REGEXP))
         err = {code: codes.BAD_VERSION, message: "Version unknown"};
     }
     if(!err){
       // PublicKey
-      if(!obj.pubkey || !obj.pubkey.match(constants.BASE58))
+      if(!obj.pubkey || !obj.pubkey.match(CommonConstants.BASE58))
         err = {code: codes.BAD_FINGERPRINT, message: "Incorrect PublicKey field"};
     }
     if(!err){
@@ -101,5 +97,3 @@ function PeerParser (onError) {
     return err && err.message;
   };
 }
-
-util.inherits(PeerParser, GenericParser);

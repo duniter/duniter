@@ -1,6 +1,5 @@
 "use strict";
-const constants = require('../constants');
-const regex = require('../regex');
+const constants = require('../../../../app/lib/common-libs/constants').CommonConstants
 
 // Constants
 const SIGNED = false
@@ -68,7 +67,7 @@ module.exports = class Peer {
   getBMA() {
     let bma = null;
     this.endpoints.forEach((ep) => {
-      const matches = !bma && ep.match(regex.BMA_REGEXP);
+      const matches = !bma && ep.match(constants.BMA_REGEXP);
       if (matches) {
         bma = {
           "dns": matches[2] || '',

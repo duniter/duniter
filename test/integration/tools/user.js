@@ -4,9 +4,9 @@ const _ = require('underscore');
 const async		= require('async');
 const request	= require('request');
 const contacter = require('../../../app/modules/crawler').CrawlerDependency.duniter.methods.contacter;
-const common  = require('../../../app/common');
-const ucp     = common.buid;
-const parsers = require('../../../app/common').parsers;
+const CommonConstants = require('../../../app/lib/common-libs/constants').CommonConstants
+const ucp     = require('../../../app/lib/common-libs/buid').Buid
+const parsers = require('../../../app/lib/common-libs/parsers').parsers
 const rawer = require('../../../app/lib/common-libs').rawer
 const keyring = require('../../../app/lib/common-libs/crypto/keyring')
 const constants = require('../../../app/lib/constants');
@@ -214,7 +214,7 @@ function User (uid, options, node) {
     }
     let http = yield getContacter();
     let current = yield http.getCurrent();
-    let version = current && Math.min(common.constants.LAST_VERSION_FOR_TX, current.version);
+    let version = current && Math.min(CommonConstants.LAST_VERSION_FOR_TX, current.version);
     let json = yield http.getSources(pub);
     let i = 0;
     let cumulated = 0;

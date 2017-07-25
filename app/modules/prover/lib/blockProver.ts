@@ -2,6 +2,7 @@ import {Constants} from "./constants"
 import {ConfDTO, Keypair} from "../../../lib/dto/ConfDTO"
 import {PowEngine} from "./engine"
 import {DBBlock} from "../../../lib/db/DBBlock"
+import {CommonConstants} from "../../../lib/common-libs/constants"
 
 const querablep       = require('querablep');
 const common          = require('../../../../app/common');
@@ -139,7 +140,7 @@ export class BlockProver {
 
     const remainder = difficulty % 16;
     const nbZeros = (difficulty - remainder) / 16;
-    const highMark = common.constants.PROOF_OF_WORK.UPPER_BOUND[remainder];
+    const highMark = CommonConstants.PROOF_OF_WORK.UPPER_BOUND[remainder];
 
     return (async () => {
 

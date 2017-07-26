@@ -24,10 +24,10 @@
   "scripts": {
     "postinstall": "tsc",
     "tsc": "tsc",
-    "test": "mocha",
+    "test": "nyc --reporter html mocha",
     "start": "node bin/duniter start",
     "build": "tsc && cd \"node_modules/duniter-ui\" && npm install && npm run build",
-    "test-travis": "nyc mocha --reporter lcovonly"
+    "test-travis": "nyc --reporter lconvonly mocha"
   },
   "nyc": {
     "require": [

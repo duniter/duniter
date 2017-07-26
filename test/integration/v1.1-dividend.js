@@ -53,6 +53,12 @@ describe("Protocol 1.1 Dividend", function() {
     yield s1.commit({ time: now + 10 + 10 * 5 });
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
+
   it('should exit 2 dividends for cat', () => s1.expect('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (res) => {
     res.should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
     res.should.have.property('sources').length(4);

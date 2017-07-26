@@ -11,6 +11,7 @@ const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
+const shutDownEngine = require('./tools/shutDownEngine');
 
 const expectAnswer = httpTest.expectAnswer;
 const expectError  = httpTest.expectError;
@@ -71,6 +72,10 @@ describe("Identities expiry", function() {
       });
     });
   });
+
+  after(() => {
+    return shutDownEngine(s1)
+  })
 
   it('should have requirements failing for tic', function() {
     // tic has been cleaned up, since its identity has expired after the root block

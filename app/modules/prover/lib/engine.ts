@@ -52,4 +52,8 @@ export class PowEngine {
   setOnInfoMessage(callback:any) {
     return this.cluster.onInfoMessage = callback
   }
+
+  async shutDown() {
+    return this.cluster.shutDownWorkers()
+  }
 }

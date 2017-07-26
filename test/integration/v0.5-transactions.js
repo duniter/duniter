@@ -30,6 +30,12 @@ describe("Protocol 0.5 Transaction version", function() {
     yield cat.sendP(51, tac);
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
+
   it('should not have a block with v5 transaction, but v3', () => co(function*() {
     const block = yield s1.commit({ time: now + 100 });
     should.exists(block.transactions[0]);

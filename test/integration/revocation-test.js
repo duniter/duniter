@@ -9,6 +9,7 @@ const user      = require('./tools/user');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
+const shutDownEngine  = require('./tools/shutDownEngine');
 
 const expectAnswer  = httpTest.expectAnswer;
 
@@ -82,6 +83,13 @@ describe("Revocation", function() {
        */
     });
   });
+
+  after(() => {
+    return Promise.all([
+      shutDownEngine(s1),
+      shutDownEngine(s2)
+    ])
+  })
 
   it('should have 3 members', function() {
     return expectAnswer(rp('http://127.0.0.1:9964/wot/members', { json: true }), function(res) {

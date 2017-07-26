@@ -44,6 +44,12 @@ describe("Transactions pruning", function() {
     yield cat1.send(100, tac1);
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
+
   it('double spending transactions should both exist first', () => s1.expect('/tx/history/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (res) => {
     res.history.should.have.property('sending').length(2);
   }));

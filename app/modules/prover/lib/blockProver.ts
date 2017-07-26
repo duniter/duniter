@@ -67,6 +67,10 @@ export class WorkerFarm {
     return this.stopPromise;
   }
 
+  shutDownEngine() {
+    this.theEngine.shutDown()
+  }
+
   /**
    * Starts a new computation of PoW
    * @param stuff The necessary data for computing the PoW
@@ -106,7 +110,7 @@ export class BlockProver {
     }
   }
 
-  getWorker() {
+  getWorker(): Promise<WorkerFarm> {
     if (!this.workerFarmPromise) {
       this.workerFarmPromise = (async () => {
         return new WorkerFarm(this.server, this.logger)
@@ -120,6 +124,9 @@ export class BlockProver {
     if (this.workerFarmPromise) {
       let farm = await this.getWorker();
       if (farm.isComputing() && !farm.isStopping()) {
+        await farm.stopPoW()
+      } else {
+        // We force the stop anyway, just to be sure
         await farm.stopPoW()
       }
       if (this.waitResolve) {

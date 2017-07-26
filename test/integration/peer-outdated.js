@@ -59,6 +59,13 @@ describe("Peer document expiry", function() {
     yield s2.syncFrom(s1, 0, 2);
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster(),
+      s2.closeCluster()
+    ])
+  })
+
   it('sending back V1 peer document should return the latest known one', () => co(function*() {
     let res;
     try {

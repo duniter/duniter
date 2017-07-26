@@ -8,6 +8,7 @@ const user      = require('./tools/user');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const toolbox   = require('./tools/toolbox');
+const shutDownEngine  = require('./tools/shutDownEngine');
 
 const expectAnswer   = httpTest.expectAnswer;
 
@@ -58,6 +59,13 @@ describe("Identity absorption", function() {
       yield tic.cert(cat, s1);
     });
   });
+
+  after(() => {
+    return Promise.all([
+      shutDownEngine(s1),
+      shutDownEngine(s2)
+    ])
+  })
 
   it('cat should exist on server 1', function() {
     return expectAnswer(rp('http://127.0.0.1:4450/wot/lookup/cat', { json: true }), function(res) {

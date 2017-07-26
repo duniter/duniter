@@ -332,7 +332,9 @@ export class TestingServer {
 
 
   async commit(options:any = null) {
+    logger.warn('committing...')
     const raw = await commit(this.server)(options);
+    logger.warn('raw!', raw)
     return JSON.parse(raw);
   }
 
@@ -440,5 +442,13 @@ export class TestingServer {
   // server.startBlockComputation = () => this.prover.startService();
   stopBlockComputation() {
     return this.prover.stopService();
+  }
+
+  async closeCluster() {
+    const server:any = this.server
+    if (server._utProver) {
+      const farm = await server._utProver.getWorker()
+      await farm.shutDownEngine()
+    }
   }
 }

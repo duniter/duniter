@@ -10,6 +10,7 @@ const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
+const shutDownEngine  = require('./tools/shutDownEngine');
 
 const expectAnswer   = httpTest.expectAnswer;
 
@@ -81,6 +82,12 @@ describe("Certification chainability", function() {
       yield commitS1({ time: now + 300 });
     });
   });
+
+  after(() => {
+    return Promise.all([
+      shutDownEngine(s1)
+    ])
+  })
 
   it('block 0 should have 2 certs', function() {
     return expectAnswer(rp('http://127.0.0.1:9225/blockchain/block/0', { json: true }), function(res) {

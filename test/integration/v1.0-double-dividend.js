@@ -50,6 +50,12 @@ describe("Protocol 1.0 Dividend Update", function() {
     yield s1.commit({ time: now + 16 });
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
+
   it('should have block#2 with no UD', () => s1.expectThat('/blockchain/block/2', (json) => {
     should.not.exist(json.dividend);
   }));

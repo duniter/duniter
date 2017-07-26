@@ -13,6 +13,7 @@ const commit    = require('./tools/commit');
 const sync      = require('./tools/sync');
 const contacter  = require('../../app/modules/crawler').CrawlerDependency.duniter.methods.contacter;
 const until     = require('./tools/until');
+const shutDownEngine  = require('./tools/shutDownEngine');
 const multicaster = require('../../app/lib/streams/multicaster');
 const PeerDTO = require('../../app/lib/dto/PeerDTO').PeerDTO
 
@@ -153,6 +154,14 @@ describe("Network", function() {
       })
       ;
   });
+
+  after(() => {
+    return Promise.all([
+      shutDownEngine(s1),
+      shutDownEngine(s2),
+      shutDownEngine(s3)
+    ])
+  })
 
   describe("Server 1", function() {
 

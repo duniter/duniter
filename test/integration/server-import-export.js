@@ -16,12 +16,12 @@ const serverConfig = {
   }
 };
 
-let s1;
+let s0, s1;
 
 describe('Import/Export', () => {
 
   before(() => co(function *() {
-    const s0 = toolbox.server(_.extend({ homename: 'dev_unit_tests1' }, serverConfig));
+    s0 = toolbox.server(_.extend({ homename: 'dev_unit_tests1' }, serverConfig));
     yield s0.resetHome();
 
     s1 = toolbox.server(_.extend({ homename: 'dev_unit_tests1' }, serverConfig));
@@ -38,6 +38,13 @@ describe('Import/Export', () => {
     yield tac.join();
     yield s1.commit();
   }));
+
+  after(() => {
+    return Promise.all([
+      s0.closeCluster(),
+      s1.closeCluster()
+    ])
+  })
 
   it('should be able to export data', () => co(function *() {
     const archive = yield s1.exportAllDataAsZIP();

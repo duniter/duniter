@@ -7,6 +7,7 @@ const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods
 const user      = require('./tools/user');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
+const shutDownEngine  = require('./tools/shutDownEngine');
 
 const MEMORY_MODE = true;
 const commonConf = {
@@ -49,6 +50,12 @@ describe("Lookup identity grouping", () => {
     yield cat.join();
     yield tic1.join();
   }));
+
+  after(() => {
+    return Promise.all([
+      shutDownEngine(s1)
+    ])
+  })
 
   it('cat should have only 1 identity in 1 pubkey', () => httpTest.expectAnswer(rp('http://127.0.0.1:4452/wot/lookup/cat', { json: true }), (res) => {
     res.should.have.property('results').length(1);

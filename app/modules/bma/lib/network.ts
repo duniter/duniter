@@ -229,7 +229,7 @@ export class BmaApi {
               resolve(httpServer);
             });
           });
-          this.logger && this.logger.info(name + ' listening on http://' + (netInterface.match(/:/) ? '[' + netInterface + ']' : netInterface) + ':' + port);
+          this.logger && this.logger.info(this.name + ' listening on http://' + (netInterface.match(/:/) ? '[' + netInterface + ']' : netInterface) + ':' + port);
         } catch (e) {
           this.logger && this.logger.warn('Could NOT listen to http://' + netInterface + ':' + port);
           this.logger && this.logger.warn(e);

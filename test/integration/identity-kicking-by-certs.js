@@ -79,6 +79,12 @@ describe("Identities kicking by certs", function() {
     yield s1.commit({ time: now + 8 });
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
+
   it('block#7 should have kicked 2 member', () => s1.expectJSON('/blockchain/block/7', (res) => {
     assert.deepEqual(res.excluded, [
       '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc',

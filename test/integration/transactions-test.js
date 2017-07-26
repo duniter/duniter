@@ -63,6 +63,12 @@ describe("Testing transactions", function() {
     });
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
+
   describe("Sources", function(){
 
     it('it should exist block#2 with UD of 1200', () => s1.expect('/blockchain/block/2', (block) => {

@@ -23,7 +23,9 @@ const s1 = toolbox.server({
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
   }
-});
+})
+
+let s2, s3
 
 const i1 = user('i1',   { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
 const i2 = user('i2',   { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
@@ -55,6 +57,7 @@ describe("Continous proof-of-work", function() {
     s1.conf.powSecurityRetryDelay = 10 * 60 * 1000;
     yield s1.revert();
     s1.permaProver.loops = 0;
+    yield s1.stopBlockComputation();
   }));
 
   it('should be able to start generation and find a block', () => co(function*() {
@@ -75,6 +78,7 @@ describe("Continous proof-of-work", function() {
     // If we wait a bit, the loop should be ended
     yield new Promise((resolve) => setTimeout(resolve, 100));
     // s1.permaProver.should.have.property('loops').equal(5);
+    yield s1.stopBlockComputation();
   }));
 
   it('should be able to cancel generation because of a blockchain switch', () => co(function*() {
@@ -110,5 +114,12 @@ describe("Continous proof-of-work", function() {
       s3.startBlockComputation()
     ];
     yield s3.expectJSON('/blockchain/current', { number: 15 });
+    yield s3.stopBlockComputation();
   }));
+
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
 });

@@ -27,6 +27,13 @@ describe("Protocol 0.5 Identity blockstamp", function() {
     tuc = yield toolbox.createUser('tuc', '3conGDUXdrTGbQPMQQhEC4Ubu1MCAnFrAYvUaewbUhtk', '5ks7qQ8Fpkin7ycXpxQSxxjVhs8VTzpM3vEBMqM7NfC1ZiFJ93uQryDcoM93Mj77T6hDAABdeHZJDFnkDb35bgiU', s1);
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster(),
+      s2.closeCluster()
+    ])
+  })
+
   it('should be able to create tuc on s1', () => co(function*() {
     yield s1.commit({ time: now });
     yield s1.commit({ time: now });

@@ -7,6 +7,7 @@ const duniter     = require('../../index');
 const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
+const shutDownEngine  = require('./tools/shutDownEngine');
 
 const MEMORY_MODE = true;
 const commonConf = {
@@ -107,6 +108,12 @@ describe("WOTB module", function() {
       });
     });
 
+    after(() => {
+      return Promise.all([
+        shutDownEngine(s1)
+      ])
+    })
+
     it('the wotb_id should be affected to new members', function() {
       return co(function *() {
         let icat = yield s1.dal.getWrittenIdtyByUID("cat");
@@ -198,6 +205,12 @@ describe("WOTB module", function() {
       });
     });
 
+    after(() => {
+      return Promise.all([
+        shutDownEngine(s2)
+      ])
+    })
+
     it('a leaver should still have links but be disabled', function() {
       return co(function *() {
         wotb.isEnabled(0).should.equal(true);
@@ -253,6 +266,12 @@ describe("WOTB module", function() {
         yield tic3.join();
       });
     });
+
+    after(() => {
+      return Promise.all([
+        shutDownEngine(s3)
+      ])
+    })
 
     it('two first commits: the WoT is new and OK', function() {
       return co(function *() {

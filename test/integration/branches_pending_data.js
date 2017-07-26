@@ -8,6 +8,7 @@ const user      = require('./tools/user');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
+const shutDownEngine  = require('./tools/shutDownEngine');
 
 const expectJSON     = httpTest.expectJSON;
 const expectAnswer   = httpTest.expectAnswer;
@@ -64,6 +65,12 @@ describe("Pending data", function() {
       yield commitS1();
     });
   });
+
+  after(() => {
+    return Promise.all([
+      shutDownEngine(s1)
+    ])
+  })
 
   describe("Server 1 /blockchain", function() {
 

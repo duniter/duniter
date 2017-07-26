@@ -42,6 +42,13 @@ describe("Identity pulling", function() {
     yield tac1.join();
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster(),
+      s2.closeCluster()
+    ])
+  })
+
   it('toc, tic and tuc can create their account on s2', () => co(function*() {
     yield toc2.createIdentity();
     yield tic2.createIdentity();

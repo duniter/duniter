@@ -169,6 +169,10 @@ describe("Revert memberships", function() {
     yield shouldHavePendingMS(0); // Undone memberships are lost
   }));
 
+  after(() => {
+    return s1.closeCluster()
+  })
+
   /*********
    *
    * Identity state testing functions

@@ -60,4 +60,8 @@ describe("Revert root", function() {
     yield s1.expectError('/blockchain/block/0', 404, 'Block not found');
     yield s1.expectError('/wot/lookup/cat', 404, 'No matching identity'); // Revert completely removes the identity
   }));
+
+  after(() => {
+    return s1.closeCluster()
+  })
 });

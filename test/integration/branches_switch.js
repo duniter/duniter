@@ -9,6 +9,7 @@ const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
 const sync      = require('./tools/sync');
+const shutDownEngine  = require('./tools/shutDownEngine');
 const constants = require('../../app/lib/constants');
 
 const expectJSON     = httpTest.expectJSON;
@@ -90,6 +91,13 @@ describe("Switch", function() {
     yield require('../../app/modules/crawler').CrawlerDependency.duniter.methods.pullBlocks(s1, s2p.pubkey);
     // S1 should have switched to the other branch
   }));
+
+  after(() => {
+    return Promise.all([
+      shutDownEngine(s1),
+      shutDownEngine(s2)
+    ])
+  })
 
   describe("Server 1 /blockchain", function() {
 

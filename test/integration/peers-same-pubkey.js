@@ -86,6 +86,14 @@ describe("Peer document", function() {
     ];
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster(),
+      s2.closeCluster(),
+      s3.closeCluster()
+    ])
+  })
+
   describe("Server 1", function() {
 
     it('should have a 1 leaves merkle for peers', () => s1.expectJSON('/network/peering/peers', {

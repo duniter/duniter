@@ -100,6 +100,13 @@ describe("Crosschain transactions", function() {
       })
     );
 
+    after(() => {
+      return Promise.all([
+        sB.closeCluster(),
+        sM.closeCluster()
+      ])
+    })
+
     describe("check initial sources", function(){
       it('toc should now have 120 BETA_BROUZOUF from Transaction sources due to initial TX', checkHaveSources(tocB, 1, 120));
       it('tic should now have 120 META_BROUZOUF from Transaction sources due to initial TX', checkHaveSources(ticM, 1, 120));
@@ -277,6 +284,13 @@ describe("Crosschain transactions", function() {
         yield commit(sM)({ time: now + 10 });
       });
     });
+
+    after(() => {
+      return Promise.all([
+        sB.closeCluster(),
+        sM.closeCluster()
+      ])
+    })
 
     describe("check initial sources", function(){
       it('toc should now have 120 BETA_BROUZOUF from Transaction sources due to initial TX', checkHaveSources(tocB, 1, 120));

@@ -22,6 +22,12 @@ describe("Protocol 0.4 Times", function() {
     yield s1.commit({ time: now }); // We must issue a normal root block, because always medianTime(0) == time(0)
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
+
   it('a V4 block should not accept a time = medianTime + avgGenTime * 1.189', () => co(function*() {
     yield s1.commit({ medianTime: now, time: Math.ceil(now + conf.avgGenTime * 1.189) });
     yield s1.revert();

@@ -33,6 +33,12 @@ describe("Sources property", function() {
     yield s1.commit({ time: now + 1 });
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
+
   it('it should exist block#1 with UD of 200', () => s1.expect('/blockchain/block/1', (block) => {
     should.exists(block);
     assert.equal(block.number, 1);

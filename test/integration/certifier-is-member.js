@@ -84,4 +84,8 @@ describe("Certifier must be a member", function() {
     yield s1.commit({ time: now + 23 });
     yield tic.cert(tac);
   }));
+
+  after(() => {
+    return s1.closeCluster()
+  })
 });

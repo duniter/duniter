@@ -54,7 +54,7 @@ export class Master {
       // Stop the slaves' current work
       this.cancelWork()
     }
-    // this.logger.debug(`ENGINE c#${this.clusterId}#${this.slavesMap[worker.id].index}:`, message)
+    this.logger.warn(`ENGINE c#${this.clusterId}#${this.slavesMap[worker.id].index}:`, message)
   }
 
   initCluster() {
@@ -154,6 +154,15 @@ export class Master {
     return p
   }
 
+  async shutDownWorkers() {
+    if (this.workersOnline) {
+      await Promise.all(this.workersOnline)
+      await Promise.all(this.slaves.map(async (s:any) => {
+        s.worker.kill()
+      }))
+    }
+  }
+
   proveByWorkers(stuff:any) {
 
     // Eventually spawn the workers
@@ -166,7 +175,9 @@ export class Master {
     this.currentPromise = this.newPromise(uuid)
 
     return (async () => {
+      this.logger.info(`Waiting workers to be all online...`)
       await Promise.all(this.workersOnline)
+      this.logger.info(`All online!`)
 
       if (!this.currentPromise) {
         this.logger.info(`Proof canceled during workers' initialization`)
@@ -174,7 +185,9 @@ export class Master {
       }
 
       // Start the salves' job
-      this.slaves.forEach((s:any) => {
+      this.logger.info(`Sending newPow signal for each of %s workers...`, this.slaves.length)
+      this.slaves.forEach((s:any, index) => {
+        this.logger.info(`Sending signal for worker #%s`, index)
         s.worker.send({
           uuid,
           command: 'newPoW',

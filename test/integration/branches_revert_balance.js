@@ -78,4 +78,8 @@ describe("Revert balance", () => {
     block.documentType = 'block'
     // yield s1.singleWritePromise(block)
   }))
+
+  after(() => {
+    return s1.closeCluster()
+  })
 })

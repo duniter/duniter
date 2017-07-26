@@ -8,6 +8,7 @@ const duniter     = require('../../index');
 const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const user      = require('./tools/user');
 const http      = require('./tools/http');
+const shutDownEngine  = require('./tools/shutDownEngine');
 const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
 const ws        = require('ws');
@@ -57,6 +58,12 @@ describe("HTTP API", function() {
     yield commit();
     yield commit();
   }));
+
+  after(() => {
+    return Promise.all([
+      shutDownEngine(server)
+    ])
+  })
 
   function makeBlockAndPost(theServer) {
     return function() {

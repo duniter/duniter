@@ -8,6 +8,7 @@ const user      = require('./tools/user');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
+const shutDownEngine  = require('./tools/shutDownEngine');
 
 const expectAnswer   = httpTest.expectAnswer;
 
@@ -70,6 +71,12 @@ describe("Identities cleaned", function() {
        */
     });
   });
+
+  after(() => {
+    return Promise.all([
+      shutDownEngine(s1)
+    ])
+  })
 
   it('should have 2 members', function() {
     return expectAnswer(rp('http://127.0.0.1:7733/wot/members', { json: true }), function(res) {

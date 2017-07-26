@@ -7,6 +7,7 @@ const duniter   = require('../../index');
 const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
+const shutDownEngine  = require('./tools/shutDownEngine');
 
 const expectAnswer   = httpTest.expectAnswer;
 
@@ -37,6 +38,10 @@ describe("Branches", () => co(function*() {
     const bmapi = yield bma(server);
     yield bmapi.openConnections();
   }));
+
+  after(() => {
+    return shutDownEngine(s1)
+  })
 
   describe("Server 1 /blockchain", function() {
 

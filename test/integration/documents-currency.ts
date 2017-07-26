@@ -43,6 +43,13 @@ describe("Document pool currency", function() {
     yield tic2.join();
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster(),
+      s2.closeCluster()
+    ])
+  })
+
   it('Identity with wrong currency should be rejected', () => co(function*() {
     const idtyCat1 = yield s1.lookup2identity(cat1.pub);
     idtyCat1.getRawSigned()

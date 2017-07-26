@@ -35,6 +35,12 @@ describe("Identities with shared pubkey", function() {
     yield cat1.cert(catb);
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
+
   it('should exit 2 pubkey result', () => s1.expect('/wot/lookup/cat', (res) => {
     res.results.should.have.length(2);
     res.results[0].should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');

@@ -56,6 +56,12 @@ describe("Implicit revocation", function() {
     yield s1.commit({ time: now + 20 });
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
+
   it('block#4 should have kicked tic', () => s1.expectThat('/blockchain/block/5', (res) => {
     assert.deepEqual(res.excluded, [
       'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV'

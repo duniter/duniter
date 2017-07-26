@@ -12,6 +12,7 @@ const user   = require('./tools/user');
 const jspckg = require('../../package');
 const commit    = require('./tools/commit');
 const httpTest  = require('./tools/http');
+const shutDownEngine  = require('./tools/shutDownEngine');
 const rp        = require('request-promise');
 
 const expectAnswer   = httpTest.expectAnswer;
@@ -234,6 +235,12 @@ describe("Integration", function() {
         });
       });
     });
+
+    after(() => {
+      return Promise.all([
+        shutDownEngine(node3)
+      ])
+    })
 
     it('toc should give only 1 result with 3 certification by others', () => expectAnswer(rp('http://127.0.0.1:9997/wot/lookup/toc', { json: true }), function(res) {
       should.exists(res);

@@ -13,6 +13,7 @@ const multicaster = require('../../app/lib/streams/multicaster');
 const PeerDTO   = require('../../app/lib/dto/PeerDTO').PeerDTO
 const contacter  = require('../../app/modules/crawler').CrawlerDependency.duniter.methods.contacter;
 const sync      = require('./tools/sync');
+const shutDownEngine  = require('./tools/shutDownEngine');
 
 const expectJSON     = httpTest.expectJSON;
 
@@ -107,6 +108,13 @@ describe("Generation", function() {
       s2.stopBlockComputation();
     });
   });
+
+  after(() => {
+    return Promise.all([
+      shutDownEngine(s1),
+      shutDownEngine(s2)
+    ])
+  })
 
   describe("Server 1 /blockchain", function() {
 

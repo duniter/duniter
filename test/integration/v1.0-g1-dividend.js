@@ -48,6 +48,12 @@ describe("Protocol 1.0 Ğ1 Dividend", function() {
     }
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
+
   it('should have block#0 has no UD', () => s1.expectThat('/blockchain/block/0', (json) => {
     should.not.exist(json.dividend);
     json.should.have.property('medianTime').equal(start); // 2016-03-08 16:03:10 UTC+0

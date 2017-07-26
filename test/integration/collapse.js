@@ -7,6 +7,7 @@ const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
 const httpTest  = require('./tools/http');
+const shutDownEngine  = require('./tools/shutDownEngine');
 const rp        = require('request-promise');
 
 const MEMORY_MODE = true;
@@ -54,6 +55,12 @@ describe("Community collapse", function() {
       yield commit(s1)({ time: now + 10 });
     });
   });
+
+  after(() => {
+    return Promise.all([
+      shutDownEngine(s1)
+    ])
+  })
 
   it('should be handled', function() {
     return httpTest.expectJSON(rp('http://127.0.0.1:9340/blockchain/block/2', { json: true }), {

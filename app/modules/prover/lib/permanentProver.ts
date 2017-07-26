@@ -8,6 +8,12 @@ import {parsers} from "../../../lib/common-libs/parsers/index"
 
 const querablep = require('querablep');
 
+interface Querable<T> extends Promise<T> {
+  isFulfilled(): boolean
+  isResolved(): boolean
+  isRejected(): boolean
+}
+
 export class PermanentProver {
 
   logger:any
@@ -16,7 +22,7 @@ export class PermanentProver {
   generator:BlockGeneratorWhichProves
   loops:number
 
-  private permanenceStarted = false
+  private permanencePromise:Querable<any>|null = null
 
   private blockchainChangedResolver:any = null
   private promiseOfWaitingBetween2BlocksOfOurs:any = null
@@ -25,7 +31,7 @@ export class PermanentProver {
   private continuePromise:any = null
   private pullingResolveCallback:any = null
   private timeoutPullingCallback:any = null
-  private pullingFinishedPromise:any = null
+  private pullingFinishedPromise:Querable<any>|null = null
   private timeoutPulling:any = null
 
   constructor(private server:any) {
@@ -47,8 +53,7 @@ export class PermanentProver {
   }
 
   allowedToStart() {
-    if (!this.permanenceStarted) {
-      this.permanenceStarted = true
+    if (!this.permanencePromise || !this.permanencePromise.isFulfilled()) {
       this.startPermanence()
     }
     this.resolveContinuePromise(true);
@@ -56,7 +61,7 @@ export class PermanentProver {
 
   // When we detected a pulling, we stop the PoW loop
   pullingDetected() {
-    if (this.pullingFinishedPromise.isResolved()) {
+    if (this.pullingFinishedPromise && this.pullingFinishedPromise.isResolved()) {
       this.pullingFinishedPromise = querablep(Promise.race([
         // We wait for end of pulling signal
         new Promise((res) => this.pullingResolveCallback = res),
@@ -79,6 +84,12 @@ export class PermanentProver {
   }
 
   async startPermanence() {
+
+    let permanenceResolve = () => {}
+    this.permanencePromise = querablep(new Promise(res => {
+      permanenceResolve = res
+    }))
+
     /******************
      * Main proof loop
      *****************/
@@ -199,6 +210,8 @@ export class PermanentProver {
       // Informative variable
       this.logger.trace('PoW loops = %s', this.loops);
     }
+
+    permanenceResolve()
   }
 
   async blockchainChanged(gottenBlock:any) {

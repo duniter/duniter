@@ -10,6 +10,7 @@ const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
+const shutDownEngine  = require('./tools/shutDownEngine');
 
 require('../../app/modules/bma').BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
 
@@ -112,6 +113,12 @@ describe("Identities collision", function() {
       }
     });
   });
+
+  after(() => {
+    return Promise.all([
+      shutDownEngine(s1)
+    ])
+  })
 
   it('should have 4 members', function() {
     return expectAnswer(rp('http://127.0.0.1:7799/wot/members', { json: true }), function(res) {

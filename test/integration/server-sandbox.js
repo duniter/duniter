@@ -69,6 +69,14 @@ describe("Sandboxes", function() {
     s3.dal.idtyDAL.setSandboxSize(3);
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster(),
+      s2.closeCluster(),
+      s3.closeCluster()
+    ])
+  })
+
   describe('Identities', () => {
 
 

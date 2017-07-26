@@ -140,5 +140,7 @@ describe("Triming", function(){
     (yield server.dal.bindexDAL.head(13)).should.have.property('number').equal(0);
     yield server.commit();
     should.not.exists(yield server.dal.bindexDAL.head(14)); // Trimed
+
+    yield server.closeCluster()
   }));
 });

@@ -28,6 +28,13 @@ describe("Protocol 0.6 Difficulties", function() {
     ];
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster(),
+      s2.closeCluster()
+    ])
+  })
+
   it('should be able to emit a block#1 by a different user', () => co(function*() {
     yield [
       s1.commit({ time: now }), // medianOfBlocksInFrame = MEDIAN([1]) = 1

@@ -9,7 +9,7 @@ const winston = require('winston');
 
 const util = require('util');
 
-const CallbackLogger = winston.transports.CallbackLogger = function (options:any) {
+const CallbackLogger:any = winston.transports.CallbackLogger = function (options:any) {
 
   this.name = 'customLogger';
   this.level = options.level || 'info';
@@ -118,6 +118,21 @@ logger.mute = () => {
     muted = true;
   }
 };
+
+logger.unmute = () => {
+  if (muted) {
+    muted = false
+    logger.add(winston.transports.Console, {
+      level: 'trace',
+      levels: customLevels.levels,
+      handleExceptions: false,
+      colorize: true,
+      timestamp: function() {
+        return moment().format();
+      }
+    })
+  }
+}
 
 /**
 * Convenience function to get logger directly

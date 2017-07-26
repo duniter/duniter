@@ -27,7 +27,7 @@
     "test": "nyc --reporter html mocha",
     "start": "node bin/duniter start",
     "build": "tsc && cd \"node_modules/duniter-ui\" && npm install && npm run build",
-    "test-travis": "nyc --reporter lconvonly mocha"
+    "test-travis": "nyc --reporter lcovonly mocha"
   },
   "nyc": {
     "require": [

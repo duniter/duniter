@@ -27,7 +27,17 @@
     "test": "mocha --growl --timeout 20000 test test/fast test/integration test/",
     "start": "node bin/duniter start",
     "build": "tsc && cd \"node_modules/duniter-ui\" && npm install && npm run build",
-    "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --timeout 20000 test test/fast test/integration test/"
+    "test-travis": "nyc mocha --reporter=lcov"
+  },
+  "nyc": {
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "html"
+    ],
+    "sourceMap": true,
+    "instrument": true
   },
   "repository": {
     "type": "git",
@@ -53,12 +63,12 @@
     "bs58": "^4.0.1",
     "co": "4.6.0",
     "colors": "1.1.2",
-    "cors": "2.8.2",
     "commander": "2.9.0",
+    "cors": "2.8.2",
     "daemonize2": "0.4.2",
     "ddos": "0.1.16",
-    "event-stream": "3.3.4",
     "errorhandler": "1.5.0",
+    "event-stream": "3.3.4",
     "express": "4.15.2",
     "express-cors": "0.0.3",
     "express-fileupload": "0.0.5",
@@ -77,9 +87,9 @@
     "querablep": "^0.1.0",
     "request": "2.81.0",
     "request-promise": "4.2.0",
+    "scryptb": "6.0.4",
     "seedrandom": "^2.4.3",
     "sha1": "1.1.1",
-    "scryptb": "6.0.4",
     "spawn-sync": "^1.0.15",
     "sqlite3": "3.1.4",
     "superagent": "3.5.2",
@@ -99,14 +109,15 @@
     "coveralls": "2.11.4",
     "eslint": "3.13.1",
     "eslint-plugin-mocha": "4.8.0",
-    "istanbul": "0.4.0",
-    "mocha": "2.2.5",
+    "mocha": "^3.4.2",
     "mocha-eslint": "0.1.7",
-    "mocha-lcov-reporter": "1.0.0",
+    "nyc": "^11.0.3",
     "sha1": "",
     "should": "",
+    "source-map-support": "^0.4.15",
     "supertest": "",
     "tmp": "0.0.29",
+    "ts-node": "^3.3.0",
     "typescript": "^2.4.1"
   },
   "peerDependencies": {

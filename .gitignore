@@ -27,6 +27,10 @@ vagrant/duniter
 # vscode
 .vscode
 
+# istanbul
+.nyc_output
+coverage/
+
 # TS migration
 test/blockchain/*.js*
 test/blockchain/lib/*.js*

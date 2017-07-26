@@ -12,7 +12,7 @@ const constants = require('../../app/lib/constants');
 require('../../app/modules/bma').BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
 
 if (constants.MUTE_LOGS_DURING_UNIT_TESTS) {
-  // require('../../app/lib/logger').NewLogger().mute();
+  require('../../app/lib/logger').NewLogger().mute();
 }
 
 describe("Forwarding", function() {

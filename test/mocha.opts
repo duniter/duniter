@@ -5,6 +5,5 @@
 --growl
 --timeout 20000
 --recursive
---reporter spec
---reporter lcov
+-R spec
 test/

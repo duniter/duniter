@@ -37,6 +37,7 @@ test/blockchain/lib/*.js*
 /index.js*
 /server.js*
 app/**/*.js*
+test/integration/membership_chainability.js*
 test/integration/tools/toolbox.js*
 test/integration/documents-currency.js*
 test/fast/modules/crawler/block_pulling.js*

@@ -6,6 +6,7 @@ import * as stream from "stream"
 import {RevocationDTO} from "../../../app/lib/dto/RevocationDTO"
 import {IdentityDTO} from "../../../app/lib/dto/IdentityDTO"
 import {PeerDTO} from "../../../app/lib/dto/PeerDTO"
+import {Network} from "../../../app/modules/bma/lib/network";
 
 const _           = require('underscore');
 const rp          = require('request-promise');
@@ -135,7 +136,7 @@ export const fakeSyncServer = async (readBlocksMethod:any, readParticularBlockMe
     processRequest: () => { /* Does nothing */ }
   };
 
-  const fakeServer = await require('../../../app/modules/bma').BmaDependency.duniter.methods.createServersAndListen("Fake Duniter Server", { conf: {} }, [{
+  const fakeServer = await Network.createServersAndListen("Fake Duniter Server", new Server("", true, {}), [{
     ip: host,
     port: port
   }], NO_HTTP_LOGS, logger, NO_STATIC_PATH, (app:any, httpMethods:any) => {
@@ -170,7 +171,7 @@ export const fakeSyncServer = async (readBlocksMethod:any, readParticularBlockMe
       return readParticularBlockMethod(number);
 
     }, dtos.Block, noLimit);
-  });
+  }, null)
 
   await fakeServer.openConnections();
   return {

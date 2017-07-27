@@ -1,4 +1,8 @@
 export const BMAConstants = {
+
+  BMA_PORTS_START: 10901,
+  BMA_PORTS_END: 10999,
+
   ENTITY_BLOCK: 'block',
   ENTITY_IDENTITY: 'identity',
   ENTITY_CERTIFICATION: 'certification',

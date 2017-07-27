@@ -147,15 +147,7 @@ export const BmaDependency = {
     methods: {
       noLimit: () => BMALimitation.noLimit(),
       bma, sanitize, dtos,
-      upnpConf: Network.upnpConf,
-      getRandomPort: Network.getRandomPort,
-      listInterfaces: Network.listInterfaces,
-      getEndpoint: getEndpoint,
-      getMainEndpoint: (conf:NetworkConfDTO) => Promise.resolve(getEndpoint(conf)),
-      getBestLocalIPv6: Network.getBestLocalIPv6,
-      getBestLocalIPv4: Network.getBestLocalIPv4,
-      createServersAndListen: Network.createServersAndListen,
-      http2raw
+      getMainEndpoint: (conf:NetworkConfDTO) => Promise.resolve(getEndpoint(conf))
     }
   }
 }

@@ -29,7 +29,7 @@ export const Network = {
 
   listInterfaces: listInterfaces,
 
-  upnpConf: (noupnp:boolean, logger:any) => upnpConf(noupnp, logger),
+  upnpConf,
 
   getRandomPort: getRandomPort,
 
@@ -335,22 +335,22 @@ function listInterfaces() {
 }
 
 async function upnpConf (noupnp:boolean, logger:any) {
+  const client = require('nnupnp').createClient();
+  // Look for 2 random ports
+  const publicPort = await getAvailablePort(client)
+  const privatePort = publicPort
   const conf:NetworkConfDTO = {
-    port: 10901,
+    port: privatePort,
     ipv4: '127.0.0.1',
     ipv6: '::1',
     dos: null,
     upnp: false,
     httplogs: false,
-    remoteport: 10901,
+    remoteport: publicPort,
     remotehost: null,
     remoteipv4: null,
     remoteipv6: null
   }
-  const client = require('nnupnp').createClient();
-  // Look for 2 random ports
-  const privatePort = getRandomPort(conf);
-  const publicPort = privatePort;
   logger && logger.info('Checking UPnP features...');
   if (noupnp) {
     throw Error('No UPnP');
@@ -372,6 +372,19 @@ async function upnpConf (noupnp:boolean, logger:any) {
   conf.port = privatePort;
   conf.ipv4 = privateIP.match(BMAConstants.IPV4_REGEXP) ? privateIP : null;
   return conf;
+}
+
+async function getAvailablePort(client:any) {
+  const mappings:{ public: { port:number }}[] = await Q.nbind(client.getMappings, client)();
+  const externalPortsUsed = mappings.map(m => m.public.port)
+  let availablePort = BMAConstants.BMA_PORTS_START
+  while (externalPortsUsed.indexOf(availablePort) !== -1 && availablePort <= BMAConstants.BMA_PORTS_END) {
+    availablePort++
+  }
+  if (availablePort > BMAConstants.BMA_PORTS_END) {
+    throw "No port available for UPnP"
+  }
+  return availablePort
 }
 
 function getRandomPort(conf:NetworkConfDTO) {

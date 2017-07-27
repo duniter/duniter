@@ -61,7 +61,7 @@ install_from_git() {
   fi
 
   # Download Nodejs
-  local NVER="6.9.4";
+  local NVER="6.11.1";
   local ARCH="x86"
   local X64=`uname -a | grep "x86_64"`
   local ARM=`uname -a | grep "arm"`

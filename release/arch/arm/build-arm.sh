@@ -6,7 +6,7 @@ export NVM_DIR="$HOME/.nvm"
 
 # Prepare
 ARCH="`uname -m | sed -e \"s/86_//\"`"
-NVER="v6.10.2"
+NVER="v6.11.1"
 
 # Folders
 INITIAL_DIRECTORY=`pwd`

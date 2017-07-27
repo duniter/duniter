@@ -53,7 +53,8 @@ export const Network = {
     if (whitelist.indexOf('127.0.0.1') === -1) {
       whitelist.push('127.0.0.1');
     }
-    const ddosConf = server.conf.dos || { silentStart: true };
+    const ddosConf = server.conf.dos || {};
+    ddosConf.silentStart = true
     ddosConf.whitelist = _.uniq((ddosConf.whitelist || []).concat(whitelist));
     const ddosInstance = new ddos(ddosConf);
     app.use(ddosInstance.express);

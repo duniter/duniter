@@ -6,6 +6,7 @@ const nuuid = require('node-uuid');
 const moment = require('moment');
 const cluster = require('cluster')
 const querablep = require('querablep')
+const logger = require('../../../lib/logger').NewLogger()
 
 let clusterId = 0
 
@@ -228,7 +229,7 @@ if (cluster.isMaster) {
 } else {
 
   process.on("SIGTERM", function() {
-    console.log(`SIGTERM received, closing worker ${process.pid}`);
+    logger.info(`SIGTERM received, closing worker ${process.pid}`);
     process.exit(0)
   });
 

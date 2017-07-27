@@ -34,7 +34,6 @@ process.on('uncaughtException', (err:any) => {
 
 process.on('message', async (message) => {
 
-  console.log('proof => command:', message.command)
   switch (message.command) {
 
     case 'newPoW':
@@ -42,15 +41,11 @@ process.on('message', async (message) => {
         askedStop = true
 
         // Very important: do not await if the computation is already done, to keep the lock on JS engine
-        console.log('computing.isFulfilled ?', computing.isFulfilled())
         if (!computing.isFulfilled()) {
           await computing;
         }
 
-        console.log('beginNewProofOfWork()...')
-
         const res = await beginNewProofOfWork(message.value);
-        console.log('proof.res!')
         answer(message, res);
       })()
       break;

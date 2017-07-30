@@ -202,7 +202,7 @@ export class PeerTester implements DuniterService {
   async startService() {
     if (this.testPeerFifoInterval)
       clearInterval(this.testPeerFifoInterval);
-    this.testPeerFifoInterval = setInterval(() => this.testPeerFifo.push((cb:any) => this.testPeers.bind(null, this.server, this.conf, !this.FIRST_CALL)().then(cb).catch(cb)), 1000 * CrawlerConstants.TEST_PEERS_INTERVAL);
+    this.testPeerFifoInterval = setInterval(() => this.testPeerFifo.push((cb:any) => this.testPeers.bind(this, this.server, this.conf, !this.FIRST_CALL)().then(cb).catch(cb)), 1000 * CrawlerConstants.TEST_PEERS_INTERVAL);
     await this.testPeers(this.server, this.conf, this.FIRST_CALL);
   }
 

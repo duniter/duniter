@@ -100,6 +100,24 @@ describe("Peer document", function() {
       leavesCount: 1
     }));
 
+    it('leaf data', () => co(function*() {
+      const data = yield s1.get('/network/peering/peers?leaves=true');
+      const leaf = data.leaves[0];
+      const res = yield s1.get('/network/peering/peers?leaf=' + leaf);
+      res.leaf.value.should.have.property("pubkey").equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
+      res.leaf.value.should.have.property("block").match(new RegExp('^3-'));
+      res.leaf.value.should.have.property("raw").match(new RegExp('.*Block: 3-.*'));
+      res.leaf.value.should.have.property("endpoints").length(3);
+    }));
+
+
+    it('peers', () => s1.expectThat('/network/peering', (res) => {
+      res.should.have.property("pubkey").equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
+      res.should.have.property("block").match(new RegExp('^3-'));
+      res.should.have.property("endpoints").length(3);
+    }));
+
+
     it('peering should have been updated by node 1', () => s1.expectThat('/network/peering', (res) => {
       res.should.have.property("pubkey").equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
       res.should.have.property("block").match(new RegExp('^3-'));
@@ -118,6 +136,18 @@ describe("Peer document", function() {
       leavesCount: 1
     }));
 
+
+    it('leaf data', () => co(function*() {
+      const data = yield s2.get('/network/peering/peers?leaves=true');
+      const leaf = data.leaves[0];
+      const res = yield s2.get('/network/peering/peers?leaf=' + leaf);
+      res.leaf.value.should.have.property("pubkey").equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
+      res.leaf.value.should.have.property("block").match(new RegExp('^3-'));
+      res.leaf.value.should.have.property("raw").match(new RegExp('.*Block: 3-.*'));
+      res.leaf.value.should.have.property("endpoints").length(3);
+    }));
+
+
     it('peering should have been updated by node 1', () => s2.expectThat('/network/peering', (res) => {
       res.should.have.property("pubkey").equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
       res.should.have.property("block").match(new RegExp('^3-'));
@@ -134,6 +164,16 @@ describe("Peer document", function() {
 
     it('should have a 1 leaves merkle for peers', () => s3.expectJSON('/network/peering/peers', {
       leavesCount: 1
+    }));
+
+    it('leaf data', () => co(function*() {
+      const data = yield s3.get('/network/peering/peers?leaves=true');
+      const leaf = data.leaves[0];
+      const res = yield s3.get('/network/peering/peers?leaf=' + leaf);
+      res.leaf.value.should.have.property("pubkey").equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
+      res.leaf.value.should.have.property("block").match(new RegExp('^3-'));
+      res.leaf.value.should.have.property("raw").match(new RegExp('.*Block: 3-.*'));
+      res.leaf.value.should.have.property("endpoints").length(3);
     }));
 
     it('peering should have been updated by node 1', () => s3.expectThat('/network/peering', (res) => {

@@ -130,6 +130,7 @@ export class PeeringService {
           peerEntityOld.endpoints = thePeer.endpoints
           peerEntityOld.status = thePeer.status
           peerEntityOld.signature = thePeer.signature
+          peerEntityOld.blockstamp = thePeer.block
         }
         // Set the peer as UP again
         const peerEntity = peerEntityOld.toDBPeer()

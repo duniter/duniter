@@ -146,10 +146,10 @@ export const fakeSyncServer = async (readBlocksMethod:any, readParticularBlockMe
       return {
         endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
       }
-    }, dtos.Peer, noLimit);
+    }, noLimit);
 
     // Mock BMA method for sync mocking
-    httpMethods.httpGET('/network/peering/peers', onPeersRequested, dtos.MerkleOfPeers, noLimit);
+    httpMethods.httpGET('/network/peering/peers', onPeersRequested, noLimit);
 
     // Another mock BMA method for sync mocking
     httpMethods.httpGET('/blockchain/blocks/:count/:from', (req:any) => {
@@ -160,7 +160,7 @@ export const fakeSyncServer = async (readBlocksMethod:any, readParticularBlockMe
 
       return readBlocksMethod(count, from);
 
-    }, dtos.Blocks, noLimit);
+    }, noLimit);
 
     // Another mock BMA method for sync mocking
     httpMethods.httpGET('/blockchain/block/:number', (req:any) => {
@@ -170,7 +170,7 @@ export const fakeSyncServer = async (readBlocksMethod:any, readParticularBlockMe
 
       return readParticularBlockMethod(number);
 
-    }, dtos.Block, noLimit);
+    }, noLimit);
   }, null)
 
   await fakeServer.openConnections();

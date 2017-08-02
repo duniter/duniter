@@ -25,7 +25,7 @@ export class DBTx {
   recipients: string[]
   written: boolean
   removed: boolean
-  received: boolean
+  received: number
   output_base: number
   output_amount: number
 
@@ -178,7 +178,7 @@ export class TxsDAL extends AbstractSQLite<DBTx> {
     return this.saveEntity(dbTx)
   }
 
-  getLinkedWithIssuer(pubkey:string) {
+  getLinkedWithIssuer(pubkey:string): Promise<DBTx[]> {
     return this.sqlFind({
       issuers: { $contains: pubkey },
       written: true

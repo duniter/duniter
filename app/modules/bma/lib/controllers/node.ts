@@ -1,9 +1,10 @@
 "use strict";
 import {AbstractController} from "./AbstractController"
+import {HttpSandbox, HttpSandboxes, HttpSummary} from "../dtos";
 
 export class NodeBinding extends AbstractController {
 
-  summary = () => {
+  summary = (): HttpSummary => {
     return {
       "duniter": {
         "software": "duniter",
@@ -13,7 +14,7 @@ export class NodeBinding extends AbstractController {
     }
   }
 
-  async sandboxes() {
+  async sandboxes(): Promise<HttpSandboxes> {
     return {
       identities: await sandboxIt(this.server.dal.idtyDAL.sandbox),
       memberships: await sandboxIt(this.server.dal.msDAL.sandbox),
@@ -22,7 +23,7 @@ export class NodeBinding extends AbstractController {
   }
 }
 
-async function sandboxIt(sandbox:any) {
+async function sandboxIt(sandbox:any): Promise<HttpSandbox> {
   return {
     size: sandbox.maxSize,
     free: await sandbox.getSandboxRoom()

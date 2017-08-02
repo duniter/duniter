@@ -14,7 +14,6 @@ const _ = require('underscore');
 const upnp = require('./lib/upnp').Upnp
 const bma = require('./lib/bma').bma
 const dtos = require('./lib/dtos')
-const sanitize = require('./lib/sanitize');
 const http2raw = require('./lib/http2raw');
 const inquirer = require('inquirer');
 
@@ -146,7 +145,7 @@ export const BmaDependency = {
 
     methods: {
       noLimit: () => BMALimitation.noLimit(),
-      bma, sanitize, dtos,
+      bma, dtos,
       getMainEndpoint: (conf:NetworkConfDTO) => Promise.resolve(getEndpoint(conf))
     }
   }

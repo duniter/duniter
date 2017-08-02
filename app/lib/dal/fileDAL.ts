@@ -741,7 +741,13 @@ export class FileDAL {
   }
 
   async getTransactionsHistory(pubkey:string) {
-    const history = {
+    const history:{
+      sent: DBTx[]
+      received: DBTx[]
+      sending: DBTx[]
+      receiving: DBTx[]
+      pending: DBTx[]
+    } = {
       sent: [],
       received: [],
       sending: [],

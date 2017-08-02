@@ -9,6 +9,7 @@ import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
 import {DBBlock} from "../lib/db/DBBlock"
 import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
 import {parsers} from "../lib/common-libs/parsers/index"
+import {HttpIdentityRequirement} from "../modules/bma/lib/dtos";
 
 const _               = require('underscore');
 const constants       = require('../lib/constants');
@@ -245,7 +246,7 @@ export class BlockchainService {
   
 
   async requirementsOfIdentities(identities:DBIdentity[]) {
-    let all = [];
+    let all:HttpIdentityRequirement[] = [];
     let current = await this.dal.getCurrentBlockOrNull();
     for (const obj of identities) {
       try {
@@ -258,7 +259,7 @@ export class BlockchainService {
     return all;
   }
 
-  async requirementsOfIdentity(idty:DBIdentity, current:DBBlock) {
+  async requirementsOfIdentity(idty:DBIdentity, current:DBBlock): Promise<HttpIdentityRequirement> {
     // TODO: this is not clear
     let expired = false;
     let outdistanced = false;

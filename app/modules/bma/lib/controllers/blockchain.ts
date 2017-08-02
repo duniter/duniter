@@ -4,7 +4,10 @@ import {AbstractController} from "./AbstractController";
 import {ParametersService} from "../parameters";
 import {BMAConstants} from "../constants";
 import {MembershipDTO} from "../../../../lib/dto/MembershipDTO";
-import {HttpMembership} from "../dtos";
+import {
+  block2HttpBlock, HttpBlock, HttpBranches, HttpDifficulties, HttpHardship, HttpMembership, HttpMemberships,
+  HttpParameters, HttpStat
+} from "../dtos";
 
 const _                = require('underscore');
 const http2raw         = require('../http2raw');
@@ -46,24 +49,27 @@ export class BlockchainBinding extends AbstractController {
     }
   }
 
-  parseBlock = (req:any) => this.pushEntity(req, http2raw.block, (raw:string) => this.server.writeRawBlock(raw))
+  async parseBlock(req:any): Promise<HttpBlock> {
+    const res = await this.pushEntity(req, http2raw.block, (raw:string) => this.server.writeRawBlock(raw))
+    return block2HttpBlock(res)
+  }
 
-  parameters = () => this.server.dal.getParameters();
+  parameters = (): Promise<HttpParameters> => this.server.dal.getParameters();
 
-  private getStat(statName:string) {
+  private getStat(statName:string): () => Promise<HttpStat> {
     return async () => {
       let stat = await this.server.dal.getStat(statName);
       return { result: toJson.stat(stat) };
     }
   }
 
-  async promoted(req:any) {
+  async promoted(req:any): Promise<HttpBlock> {
     const number = await ParametersService.getNumberP(req);
     const promoted = await this.BlockchainService.promoted(number);
     return toJson.block(promoted);
   }
 
-  async blocks(req:any) {
+  async blocks(req:any): Promise<HttpBlock[]> {
     const params = ParametersService.getCountAndFrom(req);
     const count = parseInt(params.count);
     const from = parseInt(params.from);
@@ -72,13 +78,13 @@ export class BlockchainBinding extends AbstractController {
     return blocks;
   }
 
-  async current() {
+  async current(): Promise<HttpBlock> {
     const current = await this.server.dal.getCurrentBlockOrNull();
     if (!current) throw BMAConstants.ERRORS.NO_CURRENT_BLOCK;
     return toJson.block(current);
   }
 
-  async hardship(req:any) {
+  async hardship(req:any): Promise<HttpHardship> {
     let nextBlockNumber = 0;
     const search = await ParametersService.getSearchP(req);
     const idty = await this.IdentityService.findMemberWithoutMemberships(search);
@@ -99,7 +105,7 @@ export class BlockchainBinding extends AbstractController {
     };
   }
 
-  async difficulties() {
+  async difficulties(): Promise<HttpDifficulties> {
     const current = await this.server.dal.getCurrentBlockOrNull();
     const number = (current && current.number) || 0;
     const issuers = await this.server.dal.getUniqueIssuersBetween(number - 1 - current.issuersFrame, number - 1);
@@ -118,32 +124,31 @@ export class BlockchainBinding extends AbstractController {
     };
   }
 
-  async memberships(req:any) {
+  async memberships(req:any): Promise<HttpMemberships> {
     const search = await ParametersService.getSearchP(req);
     const idty:any = await this.IdentityService.findMember(search);
     const json = {
       pubkey: idty.pubkey,
       uid: idty.uid,
       sigDate: idty.buid,
-      memberships: []
-    };
-    json.memberships = idty.memberships.map((msObj:any) => {
-      const ms = MembershipDTO.fromJSONObject(msObj);
-      return {
-        version: ms.version,
-        currency: this.conf.currency,
-        membership: ms.membership,
-        blockNumber: ms.block_number,
-        blockHash: ms.block_hash,
-        written: (!msObj.written_number && msObj.written_number !== 0) ? null : msObj.written_number
-      };
-    });
+      memberships: idty.memberships.map((msObj:any) => {
+        const ms = MembershipDTO.fromJSONObject(msObj);
+        return {
+          version: ms.version,
+          currency: this.conf.currency,
+          membership: ms.membership,
+          blockNumber: ms.block_number,
+          blockHash: ms.block_hash,
+          written: (!msObj.written_number && msObj.written_number !== 0) ? null : msObj.written_number
+        };
+      })
+    }
     json.memberships = _.sortBy(json.memberships, 'blockNumber');
     json.memberships.reverse();
     return json;
   }
 
-  async branches() {
+  async branches(): Promise<HttpBranches> {
     const branches = await this.BlockchainService.branches();
     const blocks = branches.map((b) => toJson.block(b));
     return {

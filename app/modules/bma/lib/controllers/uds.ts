@@ -1,12 +1,13 @@
 import {AbstractController} from "./AbstractController"
 import {ParametersService} from "../parameters"
 import {Source} from "../entity/source"
+import {HttpUDHistory} from "../dtos";
 
 const _ = require('underscore');
 
 export class UDBinding extends AbstractController {
 
-  async getHistory(req:any) {
+  async getHistory(req:any): Promise<HttpUDHistory> {
     const pubkey = await ParametersService.getPubkeyP(req);
     return this.getUDSources(pubkey, (results:any) => results);
   }

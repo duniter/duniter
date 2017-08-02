@@ -1,13 +1,13 @@
 import {AbstractController} from "./AbstractController";
 import {BMAConstants} from "../constants";
-import {HttpPeer} from "../dtos";
+import {HttpMerkleOfPeers, HttpPeer, HttpPeers} from "../dtos";
 
 const _                = require('underscore');
 const http2raw         = require('../http2raw');
 
 export class NetworkBinding extends AbstractController {
 
-  async peer() {
+  async peer(): Promise<HttpPeer> {
     const p = await this.PeeringService.peer();
     if (!p) {
       throw BMAConstants.ERRORS.SELF_PEER_NOT_FOUND;
@@ -15,7 +15,7 @@ export class NetworkBinding extends AbstractController {
     return p.json();
   }
 
-  async peersGet(req:any) {
+  async peersGet(req:any): Promise<HttpMerkleOfPeers> {
     let merkle = await this.server.dal.merkleForPeers();
     return await this.MerkleService(req, merkle, async (hashes:string[]) => {
       try {
@@ -47,7 +47,7 @@ export class NetworkBinding extends AbstractController {
     }
   }
 
-  async peers() {
+  async peers(): Promise<HttpPeers> {
     let peers = await this.server.dal.listAllPeers();
     return {
       peers: peers.map((p:any) => {

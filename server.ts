@@ -40,7 +40,7 @@ export class Server extends stream.Duplex implements HookableServer {
   dal:FileDAL
 
   home:string
-  version:number
+  version:string
   logger:any
   rawer:any
   keyPair:any

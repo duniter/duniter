@@ -15,7 +15,6 @@ const errorhandler = require('errorhandler');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const fileUpload = require('express-fileupload');
-const sanitize = require('./sanitize');
 
 export interface NetworkInterface {
   ip:string|null
@@ -77,7 +76,7 @@ export const Network = {
       app.use(errorhandler());
     }
 
-    const handleRequest = (method:any, uri:string, promiseFunc:(...args:any[])=>Promise<any>, dtoContract:any, theLimiter:any) => {
+    const handleRequest = (method:any, uri:string, promiseFunc:(...args:any[])=>Promise<any>, theLimiter:any) => {
       const limiter = theLimiter || BMALimitation.limitAsUnlimited();
       method(uri, async function(req:any, res:any) {
         res.set('Access-Control-Allow-Origin', '*');
@@ -88,8 +87,6 @@ export const Network = {
           }
           limiter.processRequest();
           let result = await promiseFunc(req);
-          // Ensure of the answer format
-          result = sanitize(result, dtoContract);
           // HTTP answer
           res.status(200).send(JSON.stringify(result, null, "  "));
         } catch (e) {
@@ -122,9 +119,9 @@ export const Network = {
     };
 
     routingCallback(app, {
-      httpGET:     (uri:string, promiseFunc:(...args:any[])=>Promise<any>, dtoContract:any, limiter:any) => handleRequest(app.get.bind(app), uri, promiseFunc, dtoContract, limiter),
-      httpPOST:    (uri:string, promiseFunc:(...args:any[])=>Promise<any>, dtoContract:any, limiter:any) => handleRequest(app.post.bind(app), uri, promiseFunc, dtoContract, limiter),
-      httpGETFile: (uri:string, promiseFunc:(...args:any[])=>Promise<any>, dtoContract:any, limiter:any) => handleFileRequest(app.get.bind(app), uri, promiseFunc, limiter)
+      httpGET:     (uri:string, promiseFunc:(...args:any[])=>Promise<any>, limiter:any) => handleRequest(app.get.bind(app), uri, promiseFunc, limiter),
+      httpPOST:    (uri:string, promiseFunc:(...args:any[])=>Promise<any>, limiter:any) => handleRequest(app.post.bind(app), uri, promiseFunc, limiter),
+      httpGETFile: (uri:string, promiseFunc:(...args:any[])=>Promise<any>, limiter:any) => handleFileRequest(app.get.bind(app), uri, promiseFunc, limiter)
     });
 
     if (staticPath) {

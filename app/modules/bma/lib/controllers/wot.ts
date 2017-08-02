@@ -1,7 +1,17 @@
 import {AbstractController} from "./AbstractController";
 import {BMAConstants} from "../constants";
 import {DBIdentity} from "../../../../lib/dal/sqliteDAL/IdentityDAL";
-import {HttpCert, HttpCertIdentity} from "../dtos";
+import {
+  HttpCert,
+  HttpCertIdentity, HttpCertifications,
+  HttpIdentity,
+  HttpIdentityRequirement,
+  HttpLookup,
+  HttpMembers,
+  HttpMembershipList,
+  HttpRequirements,
+  HttpResult, HttpSimpleIdentity
+} from "../dtos";
 
 const _        = require('underscore');
 const http2raw = require('../http2raw');
@@ -10,7 +20,7 @@ const ParametersService = require('../parameters').ParametersService
 
 export class WOTBinding extends AbstractController {
 
-  async lookup(req:any) {
+  async lookup(req:any): Promise<HttpLookup> {
     // Get the search parameter from HTTP query
     const search = await ParametersService.getSearchP(req);
     // Make the research
@@ -73,7 +83,7 @@ export class WOTBinding extends AbstractController {
     };
   }
 
-  async members() {
+  async members(): Promise<HttpMembers> {
     const identities = await this.server.dal.getMembers();
     const json:any = {
       results: []
@@ -82,7 +92,7 @@ export class WOTBinding extends AbstractController {
     return json;
   }
 
-  async certifiersOf(req:any) {
+  async certifiersOf(req:any): Promise<HttpCertifications> {
     const search = await ParametersService.getSearchP(req);
     const idty = await this.IdentityService.findMemberWithoutMemberships(search);
     const certs = await this.server.dal.certsToTarget(idty.pubkey, idty.getTargetHash());
@@ -129,10 +139,10 @@ export class WOTBinding extends AbstractController {
     return json;
   }
 
-  async requirements(req:any) {
+  async requirements(req:any): Promise<HttpRequirements> {
     const search = await ParametersService.getSearchP(req);
     const identities:any = await this.IdentityService.searchIdentities(search);
-    const all = await this.BlockchainService.requirementsOfIdentities(identities);
+    const all:HttpIdentityRequirement[] = await this.BlockchainService.requirementsOfIdentities(identities);
     if (!all || !all.length) {
       throw BMAConstants.ERRORS.NO_IDTY_MATCHING_PUB_OR_UID;
     }
@@ -141,7 +151,7 @@ export class WOTBinding extends AbstractController {
     };
   }
 
-  async requirementsOfPending(req:any) {
+  async requirementsOfPending(req:any): Promise<HttpRequirements> {
     const minsig = ParametersService.getMinSig(req)
     const identities = await this.server.dal.idtyDAL.query('SELECT i.*, count(c.sig) as nbSig FROM idty i, cert c WHERE c.target = i.hash group by i.hash having nbSig >= ?', minsig)
     const all = await this.BlockchainService.requirementsOfIdentities(identities);
@@ -153,7 +163,7 @@ export class WOTBinding extends AbstractController {
     };
   }
 
-  async certifiedBy(req:any) {
+  async certifiedBy(req:any): Promise<HttpCertifications> {
     const search = await ParametersService.getSearchP(req);
     const idty = await this.IdentityService.findMemberWithoutMemberships(search);
     const certs = await this.server.dal.certsFrom(idty.pubkey);
@@ -199,7 +209,7 @@ export class WOTBinding extends AbstractController {
     return json;
   }
 
-  async identityOf(req:any) {
+  async identityOf(req:any): Promise<HttpSimpleIdentity> {
     let search = await ParametersService.getSearchP(req);
     let idty = await this.IdentityService.findMemberWithoutMemberships(search);
     if (!idty) {
@@ -215,8 +225,13 @@ export class WOTBinding extends AbstractController {
     };
   }
 
-  add(req:any) {
-    return this.pushEntity(req, http2raw.identity, (raw:string) => this.server.writeRawIdentity(raw))
+  async add(req:any): Promise<HttpIdentity> {
+    const res = await this.pushEntity(req, http2raw.identity, (raw:string) => this.server.writeRawIdentity(raw))
+    return {
+      pubkey: res.pubkey,
+      uids: [],
+      signed: []
+    }
   }
 
   async certify(req:any): Promise<HttpCert> {
@@ -235,27 +250,29 @@ export class WOTBinding extends AbstractController {
     }
   }
 
-  revoke(req:any) {
-    return this.pushEntity(req, http2raw.revocation, (raw:string) => this.server.writeRawRevocation(raw))
+  async revoke(req:any): Promise<HttpResult> {
+    const res = await this.pushEntity(req, http2raw.revocation, (raw:string) => this.server.writeRawRevocation(raw))
+    return {
+      result: true
+    }
   }
 
-  async pendingMemberships() {
+  async pendingMemberships(): Promise<HttpMembershipList> {
     const memberships = await this.server.dal.findNewcomers();
     const json = {
-      memberships: []
+      memberships: memberships.map((ms:any) => {
+        return {
+          pubkey: ms.issuer,
+          uid: ms.userid,
+          version: ms.version || 0,
+          currency: this.server.conf.currency,
+          membership: ms.membership,
+          blockNumber: parseInt(ms.blockNumber),
+          blockHash: ms.blockHash,
+          written: (!ms.written_number && ms.written_number !== 0) ? null : ms.written_number
+        };
+      })
     };
-    json.memberships = memberships.map((ms:any) => {
-      return {
-        pubkey: ms.issuer,
-        uid: ms.userid,
-        version: ms.version,
-        currency: this.server.conf.currency,
-        membership: ms.membership,
-        blockNumber: parseInt(ms.blockNumber),
-        blockHash: ms.blockHash,
-        written: (!ms.written_number && ms.written_number !== 0) ? null : ms.written_number
-      };
-    });
     json.memberships = _.sortBy(json.memberships, 'blockNumber');
     json.memberships.reverse();
     return json;

@@ -1,7 +1,7 @@
 import {CrawlerConstants} from "./constants"
 
 const rp = require('request-promise');
-const sanitize = require('../../../modules/bma').BmaDependency.duniter.methods.sanitize;
+const sanitize = require('../../../modules/bma/lib/sanitize')
 const dtos = require('../../../modules/bma').BmaDependency.duniter.methods.dtos;
 
 export class Contacter {

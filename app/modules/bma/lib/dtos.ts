@@ -91,6 +91,22 @@ export const TransactionOfBlock = {
   "issuers": [String]
 };
 
+export interface HttpTransactionOfBlock {
+  version: number
+  currency: string
+  comment: string
+  locktime: number
+  signatures: string[]
+  outputs: string[]
+  inputs: string[]
+  unlocks: string[]
+  block_number: number
+  blockstamp: string
+  blockstampTime: number
+  time: number
+  issuers: string[]
+}
+
 export const Block = {
   "version": Number,
   "currency": String,
@@ -123,6 +139,39 @@ export const Block = {
   "signature": String,
   "raw": String
 };
+
+export interface HttpBlock {
+  version: number
+  currency: string
+  number: number
+  issuer: string
+  issuersFrame: number
+  issuersFrameVar: number
+  issuersCount: number
+  parameters: string
+  membersCount: number
+  monetaryMass: number
+  powMin: number
+  time: number
+  medianTime: number
+  dividend: number
+  unitbase: number
+  hash: string
+  previousHash: string
+  previousIssuer: string
+  identities: string[]
+  certifications: string[]
+  joiners: string[]
+  actives: string[]
+  leavers: string[]
+  revoked: string[]
+  excluded: string[]
+  transactions: HttpTransactionOfBlock[]
+  nonce: number
+  inner_hash: string
+  signature: string
+  raw: string
+}
 
 export const Hardship = {
   "block": Number,
@@ -160,6 +209,16 @@ export const Peer = {
   "signature": String,
   "raw": String
 };
+
+export interface HttpPeer {
+  version: number
+  currency: string
+  pubkey: string
+  block: string
+  endpoints: string[]
+  signature: string
+  raw: string
+}
 
 export const DBPeer = {
   "version": Number,

@@ -9,6 +9,9 @@ import {NetworkBinding} from "./controllers/network"
 import {WOTBinding} from "./controllers/wot"
 import {TransactionBinding} from "./controllers/transactions"
 import {UDBinding} from "./controllers/uds"
+import {HttpBlock, HttpPeer, HttpTransactionOfBlock} from "./dtos";
+import {PeerDTO} from "../../../lib/dto/PeerDTO";
+import {BlockDTO} from "../../../lib/dto/BlockDTO";
 
 const co = require('co');
 const es = require('event-stream');
@@ -138,11 +141,70 @@ export const bma = function(server:Server, interfaces:NetworkInterface[], httpLo
           // Broadcast block
           if (data.joiners) {
             currentBlock = data;
-            wssBlock.broadcast(JSON.stringify(sanitize(currentBlock, dtos.Block)));
+            const blockDTO:BlockDTO = BlockDTO.fromJSONObject(currentBlock)
+            const blockResult:HttpBlock = {
+              version: blockDTO.version,
+              currency: blockDTO.currency,
+              number: blockDTO.number,
+              issuer: blockDTO.issuer,
+              issuersFrame: blockDTO.issuersFrame,
+              issuersFrameVar: blockDTO.issuersFrameVar,
+              issuersCount: blockDTO.issuersCount,
+              parameters: blockDTO.parameters,
+              membersCount: blockDTO.membersCount,
+              monetaryMass: blockDTO.monetaryMass,
+              powMin: blockDTO.powMin,
+              time: blockDTO.time,
+              medianTime: blockDTO.medianTime,
+              dividend: blockDTO.dividend,
+              unitbase: blockDTO.unitbase,
+              hash: blockDTO.hash,
+              previousHash: blockDTO.previousHash,
+              previousIssuer: blockDTO.previousIssuer,
+              identities: blockDTO.identities,
+              certifications: blockDTO.certifications,
+              joiners: blockDTO.joiners,
+              actives: blockDTO.actives,
+              leavers: blockDTO.leavers,
+              revoked: blockDTO.revoked,
+              excluded: blockDTO.excluded,
+              transactions: blockDTO.transactions.map((tx):HttpTransactionOfBlock => {
+                return {
+                  version: tx.version,
+                  currency: tx.currency,
+                  comment: tx.comment,
+                  locktime: tx.locktime,
+                  issuers: tx.issuers,
+                  signatures: tx.signatures,
+                  outputs: tx.outputs,
+                  inputs: tx.inputs,
+                  unlocks: tx.unlocks,
+                  block_number: tx.blockNumber,
+                  blockstamp: tx.blockstamp,
+                  blockstampTime: tx.blockstampTime,
+                  time: tx.blockstampTime
+                }
+              }),
+              nonce: blockDTO.nonce,
+              inner_hash: blockDTO.inner_hash,
+              signature: blockDTO.signature,
+              raw: blockDTO.getRawSigned()
+            }
+            wssBlock.broadcast(JSON.stringify(blockResult))
           }
           // Broadcast peer
           if (data.endpoints) {
-            wssPeer.broadcast(JSON.stringify(sanitize(data, dtos.Peer)));
+            const peerDTO = PeerDTO.fromJSONObject(data)
+            const peerResult:HttpPeer = {
+              version: peerDTO.version,
+              currency: peerDTO.currency,
+              pubkey: peerDTO.pubkey,
+              block: peerDTO.blockstamp,
+              endpoints: peerDTO.endpoints,
+              signature: peerDTO.signature,
+              raw: peerDTO.getRaw()
+            }
+            wssPeer.broadcast(JSON.stringify(peerResult));
           }
         } catch (e) {
           logger && logger.error('error on ws mapSync:', e);

@@ -25,7 +25,7 @@ export class MembershipService {
   }
 
   submitMembership(ms:any) {
-    return GlobalFifoPromise.pushFIFO(async () => {
+    return GlobalFifoPromise.pushFIFO<MembershipDTO>(async () => {
       const entry = MembershipDTO.fromJSONObject(ms)
       // Force usage of local currency name, do not accept other currencies documents
       entry.currency = this.conf.currency || entry.currency;

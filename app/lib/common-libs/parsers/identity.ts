@@ -17,7 +17,6 @@ export class IdentityParser extends GenericParser {
   }
 
   _clean(obj:any) {
-    obj.documentType = 'identity';
     obj.sig = obj.signature;
     if (obj.uid && obj.buid && obj.pubkey) {
       obj.hash = hashf(obj.uid + obj.buid + obj.pubkey).toUpperCase();

@@ -5,8 +5,6 @@ const keypair = require('../../../../app/modules/keypair/index').KeypairDependen
 const assert = require('assert');
 const duniter = require('../../../../index')
 
-duniter.statics.logger.mute()
-
 describe('Module usage', () => {
 
   it('wrong options should throw', () => co(function*() {

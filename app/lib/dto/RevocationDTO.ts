@@ -1,3 +1,4 @@
+import {Cloneable} from "./Cloneable";
 const DEFAULT_DOCUMENT_VERSION = 10
 
 export interface ShortRevocation {
@@ -5,9 +6,11 @@ export interface ShortRevocation {
   revocation: string
 }
 
-export class RevocationDTO implements ShortRevocation {
+export class RevocationDTO implements ShortRevocation, Cloneable {
 
-  public readonly documentType = 'revocation'
+  clone(): any {
+    return RevocationDTO.fromJSONObject(this)
+  }
 
   constructor(
     public version: number,

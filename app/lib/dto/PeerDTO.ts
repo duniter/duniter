@@ -1,10 +1,14 @@
 import {DBPeer} from "../dal/sqliteDAL/PeerDAL"
 import {hashf} from "../common"
 import {CommonConstants} from "../common-libs/constants"
+import {Cloneable} from "./Cloneable";
 
-export class PeerDTO {
+export class PeerDTO implements Cloneable {
 
-  readonly documentType = "peer"
+  clone(): any {
+    return PeerDTO.fromJSONObject(this)
+  }
+
   member = false
 
   constructor(
@@ -162,6 +166,10 @@ export class PeerDTO {
 
   static blockNumber(blockstamp:string) {
     return parseInt(blockstamp)
+  }
+
+  static fromDBPeer(p:DBPeer) {
+    return new PeerDTO(p.version, p.currency, p.pubkey, p.block, p.endpoints, p.signature, p.status, p.statusTS, false)
   }
 
   static fromJSONObject(obj:any) {

@@ -488,6 +488,9 @@ export class FileDAL {
   async isMember(pubkey:string) {
     try {
       const idty = await this.iindexDAL.getFromPubkey(pubkey);
+      if (!idty) {
+        return false
+      }
       return idty.member;
     } catch (err) {
       return false;

@@ -113,13 +113,13 @@ export class BlockchainService {
     return [];
   }
 
-  submitBlock(obj:any, doCheck:boolean, forkAllowed:boolean) {
+  submitBlock(obj:any, doCheck:boolean, forkAllowed:boolean): Promise<BlockDTO> {
     return GlobalFifoPromise.pushFIFO(() => {
       return this.checkAndAddBlock(obj, doCheck, forkAllowed)
     })
   }
 
-  private async checkAndAddBlock(blockToAdd:any, doCheck:boolean, forkAllowed:boolean = false) {
+  private async checkAndAddBlock(blockToAdd:any, doCheck:boolean, forkAllowed:boolean = false): Promise<BlockDTO> {
     // Check global format, notably version number
     const obj = parsers.parseBlock.syncWrite(BlockDTO.fromJSONObject(blockToAdd).getRawSigned());
     // Force usage of local currency name, do not accept other currencies documents

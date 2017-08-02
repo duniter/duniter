@@ -44,6 +44,19 @@ export const Membership = {
   }
 };
 
+export interface HttpMembership {
+  signature: string
+  membership: {
+    version: number
+    currency: string
+    issuer: string
+    membership: string
+    date: number
+    sigDate: number
+    raw: string
+  }
+}
+
 export const Memberships = {
   "pubkey": String,
   "uid": String,
@@ -295,12 +308,26 @@ export const CertIdentity = {
   "sig": String
 };
 
+export interface HttpCertIdentity {
+  issuer: string
+  uid: string
+  timestamp: string
+  sig: string
+}
+
 export const Cert = {
   "issuer": String,
   "timestamp": String,
   "sig": String,
   "target": CertIdentity
 };
+
+export interface HttpCert {
+  issuer: string
+  timestamp: string
+  sig: string
+  target: HttpCertIdentity
+}
 
 export const Identity = {
   "pubkey": String,

@@ -2,9 +2,14 @@ import {AbstractSQLite} from "./AbstractSQLite"
 import {SQLiteDriver} from "../drivers/SQLiteDriver"
 import {SandBox} from "./SandBox"
 import {IdentityDTO} from "../../dto/IdentityDTO"
+import {Cloneable} from "../../dto/Cloneable";
 const constants = require('../../constants');
 
-export abstract class DBIdentity {
+export abstract class DBIdentity implements Cloneable {
+
+  clone(): any {
+    return DBIdentity.copyFromExisting(this)
+  }
 
   certs:any[] = []
   signed:any[] = []

@@ -1,4 +1,5 @@
 import {hashf} from "../common"
+import {Cloneable} from "./Cloneable";
 
 export interface BaseDTO {
   base: number
@@ -24,7 +25,11 @@ export class OutputDTO implements BaseDTO {
   ) {}
 }
 
-export class TransactionDTO {
+export class TransactionDTO implements Cloneable {
+
+  clone(): any {
+    return TransactionDTO.fromJSONObject(this)
+  }
 
   constructor(
     public version: number,
@@ -56,6 +61,14 @@ export class TransactionDTO {
 
   get output_amount() {
     return this.outputs.reduce((maxBase, output) => Math.max(maxBase, parseInt(output.split(':')[1])), 0)
+  }
+
+  get blockNumber() {
+    return parseInt(this.blockstamp)
+  }
+
+  get block_hash() {
+    return this.blockstamp.split('-')[1]
   }
 
   getLen() {

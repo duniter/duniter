@@ -1,5 +1,6 @@
 import {IdentityDTO} from "./IdentityDTO"
 import {Buid} from "../common-libs/buid"
+import {Cloneable} from "./Cloneable";
 
 const DEFAULT_DOCUMENT_VERSION = 10
 
@@ -25,7 +26,11 @@ export class ShortCertificationDTO {
   }
 }
 
-export class CertificationDTO extends ShortCertificationDTO {
+export class CertificationDTO extends ShortCertificationDTO implements Cloneable {
+
+  clone(): any {
+    return CertificationDTO.fromJSONObject(this)
+  }
 
   constructor(
     public version: number,

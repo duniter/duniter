@@ -18,7 +18,6 @@ export class MembershipParser extends GenericParser {
   }
 
   _clean(obj:any) {
-    obj.documentType = 'membership';
     if (obj.block) {
       obj.number = obj.block.split('-')[0];
       obj.fpr = obj.block.split('-')[1];

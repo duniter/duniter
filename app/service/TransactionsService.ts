@@ -23,7 +23,7 @@ export class TransactionService {
   }
 
   processTx(txObj:any) {
-    return GlobalFifoPromise.pushFIFO(async () => {
+    return GlobalFifoPromise.pushFIFO<TransactionDTO>(async () => {
       const tx = TransactionDTO.fromJSONObject(txObj, this.conf.currency)
       try {
         this.logger.info('⬇ TX %s:%s from %s', tx.output_amount, tx.output_base, tx.issuers);

@@ -85,7 +85,7 @@ describe("Switch", function() {
     // So we now have:
     // S1 01234
     // S2   `3456789
-    yield s1.singleWritePromise(s2p);
+    yield s1.writePeer(s2p)
 
     // Forking S1 from S2
     yield require('../../app/modules/crawler').CrawlerDependency.duniter.methods.pullBlocks(s1, s2p.pubkey);

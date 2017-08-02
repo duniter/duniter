@@ -1,15 +1,17 @@
-import {IdentityService} from "./app/service/IdentityService"
-import {MembershipService} from "./app/service/MembershipService"
-import {PeeringService} from "./app/service/PeeringService"
-import {BlockchainService} from "./app/service/BlockchainService"
-import {TransactionService} from "./app/service/TransactionsService"
-import {ConfDTO} from "./app/lib/dto/ConfDTO"
-import {FileDAL} from "./app/lib/dal/fileDAL"
-import {DuniterBlockchain} from "./app/lib/blockchain/DuniterBlockchain"
-import {SQLBlockchain} from "./app/lib/blockchain/SqlBlockchain"
-import * as stream from "stream"
-import {KeyGen, randomKey} from "./app/lib/common-libs/crypto/keyring"
-import {parsers} from "./app/lib/common-libs/parsers/index"
+import {IdentityService} from "./app/service/IdentityService";
+import {MembershipService} from "./app/service/MembershipService";
+import {PeeringService} from "./app/service/PeeringService";
+import {BlockchainService} from "./app/service/BlockchainService";
+import {TransactionService} from "./app/service/TransactionsService";
+import {ConfDTO, NetworkConfDTO} from "./app/lib/dto/ConfDTO";
+import {FileDAL} from "./app/lib/dal/fileDAL";
+import {DuniterBlockchain} from "./app/lib/blockchain/DuniterBlockchain";
+import {SQLBlockchain} from "./app/lib/blockchain/SqlBlockchain";
+import * as stream from "stream";
+import {KeyGen, randomKey} from "./app/lib/common-libs/crypto/keyring";
+import {parsers} from "./app/lib/common-libs/parsers/index";
+import {Cloneable} from "./app/lib/dto/Cloneable";
+import {DuniterDocument, duniterDocument2str} from "./app/lib/common-libs/constants";
 
 interface HookableServer {
   getMainEndpoint: (...args:any[]) => Promise<any>
@@ -22,7 +24,6 @@ interface HookableServer {
 }
 
 const path        = require('path');
-const _           = require('underscore');
 const archiver    = require('archiver');
 const unzip       = require('unzip2');
 const fs          = require('fs');
@@ -38,7 +39,6 @@ export class Server extends stream.Duplex implements HookableServer {
   conf:ConfDTO
   dal:FileDAL
 
-  documentsMapping:any
   home:string
   version:number
   logger:any
@@ -70,24 +70,28 @@ export class Server extends stream.Duplex implements HookableServer {
     this.PeeringService      = new PeeringService(this)
     this.BlockchainService   = new BlockchainService(this)
     this.TransactionsService = new TransactionService()
-
-    // Create document mapping
-    this.documentsMapping = {
-      'identity':      { action: (obj:any) => this.IdentityService.submitIdentity(obj),                                 parser: parsers.parseIdentity },
-      'certification': { action: (obj:any) => this.IdentityService.submitCertification(obj),                            parser: parsers.parseCertification},
-      'revocation':    { action: (obj:any) => this.IdentityService.submitRevocation(obj),                               parser: parsers.parseRevocation },
-      'membership':    { action: (obj:any) => this.MembershipService.submitMembership(obj),                             parser: parsers.parseMembership },
-      'peer':          { action: (obj:any) => this.PeeringService.submitP(obj),                                         parser: parsers.parsePeer },
-      'transaction':   { action: (obj:any) => this.TransactionsService.processTx(obj),                                  parser: parsers.parseTransaction },
-      'block':         { action: (obj:any) => this.BlockchainService.submitBlock(obj, true, constants.NO_FORK_ALLOWED), parser: parsers.parseBlock }
-    }
   }
 
   // Unused, but made mandatory by Duplex interface
   _read() {}
 
-  _write(obj:any, enc:any, writeDone:any) {
-    return this.submit(obj, false, () => writeDone)
+  async _write(obj:any, enc:any, writeDone:any) {
+    try {
+      if (!obj.documentType) {
+        throw "Unknown document type"
+      }
+      switch (obj.documentType) {
+        case "block": await this.writeBlock(obj); break;
+        case "identity": await this.writeIdentity(obj); break;
+        case "certification": await this.writeCertification(obj); break;
+        case "membership": await this.writeMembership(obj); break;
+        case "transaction": await this.writeTransaction(obj); break;
+        case "peer": await this.writePeer(obj); break;
+      }
+      writeDone()
+    } catch (e) {
+      writeDone()
+    }
   }
 
   /**
@@ -171,43 +175,86 @@ export class Server extends stream.Duplex implements HookableServer {
     return this;
   }
 
-  async submit(obj:any, isInnerWrite:boolean = false, done:any|null = null) {
-    if (!obj.documentType) {
-      throw 'Document type not given';
-    }
-    try {
-      const action = this.documentsMapping[obj.documentType].action;
-      let res;
-      if (typeof action == 'function') {
-        // Handle the incoming object
-        res = await action(obj)
-      } else {
-        throw 'Unknown document type \'' + obj.documentType + '\'';
-      }
-      if (res) {
-        // Only emit valid documents
-        this.emit(obj.documentType, _.clone(res));
-        this.streamPush(_.clone(res));
-      }
-      if (done) {
-        isInnerWrite ? done(null, res) : done();
-      }
-      return res;
-    } catch (err) {
-      if (err && !err.uerr) {
-        // Unhandled error, display it
-        logger.debug('Document write error: ', err);
-      }
-      if (done) {
-        isInnerWrite ? done(err, null) : done();
-      } else {
-        throw err;
-      }
-    }
+  async writeRawBlock(raw:string) {
+    const obj = parsers.parseBlock.syncWrite(raw, logger)
+    return await this.writeBlock(obj)
   }
 
-  submitP(obj:any, isInnerWrite:boolean) {
-    return this.submit(obj, isInnerWrite)
+  async writeBlock(obj:any) {
+    const res = await this.BlockchainService.submitBlock(obj, true, constants.NO_FORK_ALLOWED)
+    this.emitDocument(res, DuniterDocument.ENTITY_BLOCK)
+    return res
+  }
+
+  async writeRawIdentity(raw:string) {
+    const obj = parsers.parseIdentity.syncWrite(raw, logger)
+    return await this.writeIdentity(obj)
+  }
+
+  async writeIdentity(obj:any) {
+    const res = await this.IdentityService.submitIdentity(obj)
+    this.emitDocument(res, DuniterDocument.ENTITY_IDENTITY)
+    return res
+  }
+
+  async writeRawCertification(raw:string) {
+    const obj = parsers.parseCertification.syncWrite(raw, logger)
+    return await this.writeCertification(obj)
+  }
+
+  async writeCertification(obj:any) {
+    const res = await this.IdentityService.submitCertification(obj)
+    this.emitDocument(res, DuniterDocument.ENTITY_CERTIFICATION)
+    return res
+  }
+
+  async writeRawMembership(raw:string) {
+    const obj = parsers.parseMembership.syncWrite(raw, logger)
+    return await this.writeMembership(obj)
+  }
+
+  async writeMembership(obj:any) {
+    const res = await this.MembershipService.submitMembership(obj)
+    this.emitDocument(res, DuniterDocument.ENTITY_MEMBERSHIP)
+    return res
+  }
+
+  async writeRawRevocation(raw:string) {
+    const obj = parsers.parseRevocation.syncWrite(raw, logger)
+    return await this.writeRevocation(obj)
+  }
+
+  async writeRevocation(obj:any) {
+    const res = await this.IdentityService.submitRevocation(obj)
+    this.emitDocument(res, DuniterDocument.ENTITY_REVOCATION)
+    return res
+  }
+
+  async writeRawTransaction(raw:string) {
+    const obj = parsers.parseTransaction.syncWrite(raw, logger)
+    return await this.writeTransaction(obj)
+  }
+
+  async writeTransaction(obj:any) {
+    const res = await this.TransactionsService.processTx(obj)
+    this.emitDocument(res, DuniterDocument.ENTITY_TRANSACTION)
+    return res
+  }
+
+  async writeRawPeer(raw:string) {
+    const obj = parsers.parsePeer.syncWrite(raw, logger)
+    return await this.writePeer(obj)
+  }
+
+  async writePeer(obj:any) {
+    const res = await this.PeeringService.submitP(obj)
+    this.emitDocument(res, DuniterDocument.ENTITY_PEER)
+    return res
+  }
+
+  private async emitDocument(res:Cloneable, type:DuniterDocument) {
+    this.emit(duniterDocument2str(type), res.clone())
+    this.streamPush(res.clone())
   }
 
   async initDAL(conf:ConfDTO|null = null) {
@@ -394,16 +441,6 @@ export class Server extends stream.Duplex implements HookableServer {
     }
   }
 
-  singleWritePromise(obj:any) {
-    return this.submit(obj)
-  }
-
-  async writeRaw(raw:string, type:string) {
-    const parser = this.documentsMapping[type] && this.documentsMapping[type].parser;
-    const obj = parser.syncWrite(raw, logger);
-    return await this.singleWritePromise(obj);
-  }
-
   /*****************
    * DAEMONIZATION
    ****************/
@@ -478,7 +515,7 @@ export class Server extends stream.Duplex implements HookableServer {
   /**
    * Default endpoint. To be overriden by a module to specify another endpoint value (for ex. BMA).
    */
-  getMainEndpoint(): Promise<any> {
+  getMainEndpoint(conf:NetworkConfDTO): Promise<any> {
     return Promise.resolve('DEFAULT_ENDPOINT')
   }
 

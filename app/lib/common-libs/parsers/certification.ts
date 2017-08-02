@@ -19,7 +19,6 @@ export class CertificationParser extends GenericParser {
   }
 
   _clean(obj:any) {
-    obj.documentType = 'certification';
     obj.sig = obj.signature;
     obj.block = obj.buid;
     if (obj.block) {
@@ -31,9 +30,9 @@ export class CertificationParser extends GenericParser {
     }
   }
 
-  _verify(obj:any) {
-    return ["version", "type", "currency", "issuer", "idty_issuer", "idty_sig", "idty_buid", "idty_uid", "block"].reduce(function (p, field) {
-      return p || (!obj[field] && "Wrong format for certification");
-    }, null)
+  _verify(obj:any): string {
+    return ["version", "type", "currency", "issuer", "idty_issuer", "idty_sig", "idty_buid", "idty_uid", "block"].reduce((p, field) => {
+      return p || (!obj[field] && "Wrong format for certification") || ""
+    }, "")
   }
 }

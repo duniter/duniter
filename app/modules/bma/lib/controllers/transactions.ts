@@ -1,8 +1,8 @@
-import {AbstractController} from "./AbstractController"
-import {ParametersService} from "../parameters"
-import {Source} from "../entity/source"
-import {BMAConstants} from "../constants"
-import {TransactionDTO} from "../../../../lib/dto/TransactionDTO"
+import {AbstractController} from "./AbstractController";
+import {ParametersService} from "../parameters";
+import {Source} from "../entity/source";
+import {BMAConstants} from "../constants";
+import {TransactionDTO} from "../../../../lib/dto/TransactionDTO";
 
 const _                = require('underscore');
 const http2raw         = require('../http2raw');
@@ -10,7 +10,7 @@ const http2raw         = require('../http2raw');
 export class TransactionBinding extends AbstractController {
 
   parseTransaction(req:any) {
-    return this.pushEntity(req, http2raw.transaction, BMAConstants.ENTITY_TRANSACTION)
+    return this.pushEntity(req, http2raw.transaction, (raw:string) => this.server.writeRawTransaction(raw))
   }
 
   async getSources(req:any) {

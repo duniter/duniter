@@ -1,5 +1,6 @@
-import {AbstractController} from "./AbstractController"
-import {BMAConstants} from "../constants"
+import {AbstractController} from "./AbstractController";
+import {BMAConstants} from "../constants";
+import {HttpPeer} from "../dtos";
 
 const _                = require('underscore');
 const http2raw         = require('../http2raw');
@@ -33,8 +34,17 @@ export class NetworkBinding extends AbstractController {
     })
   }
 
-  peersPost(req:any) {
-    return this.pushEntity(req, http2raw.peer, BMAConstants.ENTITY_PEER)
+  async peersPost(req:any): Promise<HttpPeer> {
+    const peerDTO = await this.pushEntity(req, http2raw.peer, (raw:string) => this.server.writeRawPeer(raw))
+    return {
+      version: peerDTO.version,
+      currency: peerDTO.currency,
+      pubkey: peerDTO.pubkey,
+      block: peerDTO.blockstamp,
+      endpoints: peerDTO.endpoints,
+      signature: peerDTO.signature,
+      raw: peerDTO.getRaw()
+    }
   }
 
   async peers() {

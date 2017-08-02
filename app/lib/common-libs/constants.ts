@@ -32,6 +32,31 @@ const MAXIMUM_LEN_OF_COMPACT_TX = 100
 const MAXIMUM_LEN_OF_OUTPUT = 2000
 const MAXIMUM_LEN_OF_UNLOCK = MAXIMUM_LEN_OF_OUTPUT
 
+export enum DuniterDocument {
+  ENTITY_NULL,
+  ENTITY_BLOCK,
+  ENTITY_IDENTITY,
+  ENTITY_CERTIFICATION,
+  ENTITY_MEMBERSHIP,
+  ENTITY_REVOCATION,
+  ENTITY_TRANSACTION,
+  ENTITY_PEER
+}
+
+export const duniterDocument2str = (type:DuniterDocument) => {
+  switch (type) {
+    case DuniterDocument.ENTITY_BLOCK: return "block"
+    case DuniterDocument.ENTITY_IDENTITY: return "identity"
+    case DuniterDocument.ENTITY_CERTIFICATION: return "certification"
+    case DuniterDocument.ENTITY_REVOCATION: return "revocation"
+    case DuniterDocument.ENTITY_MEMBERSHIP: return "membership"
+    case DuniterDocument.ENTITY_TRANSACTION: return "transaction"
+    case DuniterDocument.ENTITY_PEER: return "peer"
+    default:
+      return ""
+  }
+}
+
 export const CommonConstants = {
 
   FORMATS: {

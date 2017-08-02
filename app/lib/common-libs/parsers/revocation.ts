@@ -18,7 +18,6 @@ export class RevocationParser extends GenericParser {
   }
 
   _clean(obj:any) {
-    obj.documentType = 'revocation';
     obj.pubkey = obj.issuer;
     obj.revocation = obj.signature;
     if (obj.uid && obj.buid && obj.pubkey) {

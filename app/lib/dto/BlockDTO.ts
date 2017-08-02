@@ -1,10 +1,15 @@
 import {TransactionDTO} from "./TransactionDTO"
 import {CurrencyConfDTO} from "./ConfDTO"
 import {hashf} from "../common"
+import {Cloneable} from "./Cloneable";
 
 const DEFAULT_DOCUMENT_VERSION = 10
 
-export class BlockDTO {
+export class BlockDTO implements Cloneable {
+
+  clone(): any {
+    return BlockDTO.fromJSONObject(this)
+  }
 
   version: number
   number: number
@@ -38,8 +43,8 @@ export class BlockDTO {
   monetaryMass: number
   UDTime: number
 
-  constructor(
-) {}
+  constructor() {
+  }
 
   json() {
     return {

@@ -14,9 +14,8 @@ export class GlobalFifoPromise {
   /**
    * Adds a promise to a FIFO stack of promises, so the given promise will be executed against a shared FIFO stack.
    * @param p
-   * @returns {Promise<T>} A promise wrapping the promise given in the parameter.
    */
-  static pushFIFO(p: () => Promise<any>) {
+  static pushFIFO<T>(p: () => Promise<T>): Promise<T> {
     // Return a promise that will be done after the fifo has executed the given promise
     return new Promise((resolve:any, reject:any) => {
       // Push the promise on the stack
@@ -30,7 +29,7 @@ export class GlobalFifoPromise {
           // Errored, we end the function with an error
           cb(e);
         }
-      }, (err:any, res:any) => {
+      }, (err:any, res:T) => {
         // An error occured => reject promise
         if (err) return reject(err);
         // Success => we resolve with given promise result

@@ -260,10 +260,34 @@ export class TestingServer {
     return this.server.recomputeSelfPeer()
   }
 
-  singleWritePromise(obj:any) {
-    return this.server.singleWritePromise(obj)
+  async writeBlock(obj:any) {
+    return this.server.writeBlock(obj)
   }
-
+  
+  async writeIdentity(obj:any) {
+    return this.server.writeIdentity(obj)
+  }
+  
+  async writeCertification(obj:any) {
+    return this.server.writeCertification(obj)
+  }
+  
+  async writeMembership(obj:any) {
+    return this.server.writeMembership(obj)
+  }
+  
+  async writeRevocation(obj:any) {
+    return this.server.writeRevocation(obj)
+  }
+  
+  async writeTransaction(obj:any) {
+    return this.server.writeTransaction(obj)
+  }
+  
+  async writePeer(obj:any) {
+    return this.server.writePeer(obj)
+  }
+  
   exportAllDataAsZIP() {
     return this.server.exportAllDataAsZIP()
   }

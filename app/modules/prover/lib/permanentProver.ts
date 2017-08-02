@@ -163,7 +163,7 @@ export class PermanentProver {
                 this.lastComputedBlock = await this.generator.makeNextBlock(null, trial2);
                 try {
                   const obj = parsers.parseBlock.syncWrite(dos2unix(this.lastComputedBlock.getRawSigned()));
-                  await this.server.singleWritePromise(obj);
+                  await this.server.writeBlock(obj)
                 } catch (err) {
                   this.logger.warn('Proof-of-work self-submission: %s', err.message || err);
                 }

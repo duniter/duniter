@@ -39,7 +39,6 @@ export class BlockParser extends GenericParser {
   }
 
   _clean(obj:any) {
-    obj.documentType = 'block';
     obj.identities = obj.identities || [];
     obj.joiners = obj.joiners || [];
     obj.actives = obj.actives || [];

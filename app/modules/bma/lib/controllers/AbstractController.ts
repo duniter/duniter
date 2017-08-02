@@ -1,5 +1,5 @@
-import {Server} from "../../../../../server"
-import {dos2unix} from "../../../../lib/common-libs/dos2unix"
+import {Server} from "../../../../../server";
+import {dos2unix} from "../../../../lib/common-libs/dos2unix";
 
 export abstract class AbstractController {
 
@@ -30,14 +30,12 @@ export abstract class AbstractController {
     return this.server.MerkleService
   }
 
-  async pushEntity(req:any, rawer:(req:any)=>string, type:any) {
+  async pushEntity<T>(req:any, rawer:(req:any)=>string, task:(raw:string) => Promise<T>): Promise<T> {
     let rawDocument = rawer(req);
     rawDocument = dos2unix(rawDocument);
-    const written = await this.server.writeRaw(rawDocument, type);
     try {
-      return written.json();
+      return await task(rawDocument)
     } catch (e) {
-      this.logger.error('Written:', written);
       this.logger.error(e);
       throw e;
     }

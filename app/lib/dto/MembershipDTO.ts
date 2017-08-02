@@ -1,9 +1,14 @@
 import {IdentityDTO} from "./IdentityDTO"
 import * as moment from "moment"
+import {Cloneable} from "./Cloneable";
 
 const DEFAULT_DOCUMENT_VERSION = 10
 
-export class MembershipDTO {
+export class MembershipDTO implements Cloneable {
+
+  clone(): any {
+    return MembershipDTO.fromJSONObject(this)
+  }
 
   sigDate?:number
   date?:number

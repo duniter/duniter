@@ -8,6 +8,7 @@ import {PeerDTO} from "../lib/dto/PeerDTO"
 import {verify} from "../lib/common-libs/crypto/keyring"
 import {dos2unix} from "../lib/common-libs/dos2unix"
 import {rawer} from "../lib/common-libs/index";
+import {Server} from "../../server";
 
 const util           = require('util');
 const _              = require('underscore');
@@ -31,7 +32,7 @@ export class PeeringService {
   peerInstance:DBPeer | null
   logger:any
 
-  constructor(private server:any) {
+  constructor(private server:Server) {
   }
 
   setConfDAL(newConf:ConfDTO, newDAL:FileDAL, newPair:Keyring) {
@@ -67,7 +68,7 @@ export class PeeringService {
     return !!signaturesMatching;
   };
 
-  submitP(peering:DBPeer, eraseIfAlreadyRecorded = false, cautious = true) {
+  submitP(peering:DBPeer, eraseIfAlreadyRecorded = false, cautious = true): Promise<PeerDTO> {
     this.logger.info('⬇ PEER %s', peering.pubkey.substr(0, 8))
     // Force usage of local currency name, do not accept other currencies documents
     peering.currency = this.conf.currency || peering.currency;
@@ -79,7 +80,7 @@ export class PeeringService {
     let sigTime = 0;
     let block:DBBlock | null;
     let makeCheckings = cautious || cautious === undefined;
-    return GlobalFifoPromise.pushFIFO(async () => {
+    return GlobalFifoPromise.pushFIFO<PeerDTO>(async () => {
       try {
         if (makeCheckings) {
           let goodSignature = this.checkPeerSignature(thePeerDTO)
@@ -165,7 +166,7 @@ export class PeeringService {
             this.peerInstance = peerEntity;
           }
         }
-        return savedPeer;
+        return PeerDTO.fromDBPeer(savedPeer)
       } catch (e) {
         this.logger.info('✘ PEER %s', peering.pubkey.substr(0, 8))
         throw e
@@ -175,7 +176,7 @@ export class PeeringService {
 
   handleNewerPeer(pretendedNewer:DBPeer) {
     logger.debug('Applying pretended newer peer document %s/%s', pretendedNewer.block);
-    return this.server.singleWritePromise(_.extend({ documentType: 'peer' }, pretendedNewer));
+    return this.server.writePeer(pretendedNewer)
   }
 
   async generateSelfPeer(theConf:ConfDTO, signalTimeInterval:number) {
@@ -243,14 +244,12 @@ export class PeeringService {
     logger.debug('Generating server\'s peering entry based on block#%s...', p2.block.split('-')[0]);
     p2.signature = await this.server.sign(raw2);
     p2.pubkey = this.selfPubkey;
-    p2.documentType = 'peer';
     // Remember this is now local peer value
     this.peerInstance = p2;
     // Submit & share with the network
-    await this.server.submitP(p2, false);
+    await this.server.writePeer(p2)
     const selfPeer = await this.dal.getPeer(this.selfPubkey);
     // Set peer's statut to UP
-    selfPeer.documentType = 'selfPeer';
     await this.peer(selfPeer);
     this.server.streamPush(selfPeer);
     logger.info("Next peering signal in %s min", signalTimeInterval / 1000 / 60);

@@ -3,8 +3,6 @@ import {AbstractSQLite} from "./AbstractSQLite"
 
 export class DBPeer {
 
-  readonly documentType = "peer"
-
   version: number
   currency: string
   status: string

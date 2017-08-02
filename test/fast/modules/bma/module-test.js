@@ -9,9 +9,6 @@ const duniter = require('../../../../index')
 const logger = require('../../../../app/lib/logger').NewLogger()
 const rp = require('request-promise');
 
-// Do not pollute the tests with logs
-logger.mute();
-
 const stack = duniter.statics.minimalStack();
 stack.registerDependency(duniterKeypair, 'duniter-keypair');
 stack.registerDependency(duniterBMA,     'duniter-bma');

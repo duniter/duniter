@@ -100,7 +100,7 @@ describe("Peer document expiry", function() {
 
   it('routing V1 peer document should inject newer peer', () => co(function*() {
     yield [
-      s2.singleWritePromise(_.extend({ documentType: 'peer' }, peer1V1)),
+      s2.writePeer(peer1V1),
       until(s2, 'peer', 2)
     ];
   }));

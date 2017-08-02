@@ -20,7 +20,6 @@ export class TransactionParser extends GenericParser {
   }
 
   _clean(obj:any) {
-    obj.documentType = 'transaction';
     obj.comment = obj.comment || "";
     obj.locktime = parseInt(obj.locktime) || 0;
     obj.signatures.push(obj.signature);

@@ -127,7 +127,7 @@ export class PeerCrawler implements DuniterService {
       let p = found[i];
       try {
         // Try to write it
-        await server.singleWritePromise(p);
+        await server.writePeer(p)
       } catch(e) {
         // Silent error
       }

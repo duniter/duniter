@@ -104,7 +104,7 @@ describe("SelfFork", function() {
     yield commitS2();
     yield commitS2();
 
-    yield s1.singleWritePromise(s2p);
+    yield s1.writePeer(s2p);
 
     // Forking S1 from S2
     return require('../../app/modules/crawler').CrawlerDependency.duniter.methods.pullBlocks(s1, s2p.pubkey);

@@ -17,7 +17,6 @@ export class PeerParser extends GenericParser {
   }
 
   _clean(obj:any) {
-    obj.documentType = 'peer';
     obj.endpoints = obj.endpoints || [];
     // Removes trailing space
     if (obj.endpoints.length > 0)

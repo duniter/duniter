@@ -71,13 +71,13 @@ export class IdentityService {
     return this.dal.getNonWritten(pubkey)
   }
 
-  submitIdentity(idty:BasicIdentity, byAbsorption = false): Promise<any> {
+  submitIdentity(idty:BasicIdentity, byAbsorption = false): Promise<DBIdentity> {
     const idtyObj = IdentityDTO.fromJSONObject(idty)
     const toSave = IdentityDTO.fromBasicIdentity(idty)
     // Force usage of local currency name, do not accept other currencies documents
     idtyObj.currency = this.conf.currency;
     const createIdentity = idtyObj.rawWithoutSig();
-    return GlobalFifoPromise.pushFIFO(async () => {
+    return GlobalFifoPromise.pushFIFO<DBIdentity>(async () => {
       this.logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
       // Check signature's validity
       let verified = verify(createIdentity, idty.sig, idty.pubkey);
@@ -124,7 +124,7 @@ export class IdentityService {
     })
   }
 
-  async submitCertification(obj:any) {
+  async submitCertification(obj:any): Promise<CertificationDTO> {
     const current = await this.dal.getCurrentBlockOrNull();
     // Prepare validator for certifications
     const potentialNext = BlockDTO.fromJSONObject({ currency: this.conf.currency, identities: [], number: current ? current.number + 1 : 0 });
@@ -144,7 +144,7 @@ export class IdentityService {
       }, BY_ABSORPTION);
     }
     let anErr:any
-    return GlobalFifoPromise.pushFIFO(async () => {
+    return GlobalFifoPromise.pushFIFO<CertificationDTO>(async () => {
       this.logger.info('⬇ CERT %s block#%s -> %s', cert.from, cert.block_number, idty.uid);
       try {
         await GLOBAL_RULES_HELPERS.checkCertificationIsValid(cert, potentialNext, () => Promise.resolve(idty), this.conf, this.dal);
@@ -207,7 +207,7 @@ export class IdentityService {
     obj.currency = this.conf.currency || obj.currency;
     const revoc = RevocationDTO.fromJSONObject(obj)
     const raw = revoc.rawWithoutSig();
-    return GlobalFifoPromise.pushFIFO(async () => {
+    return GlobalFifoPromise.pushFIFO<RevocationDTO>(async () => {
       try {
         this.logger.info('⬇ REVOCATION %s %s', revoc.pubkey, revoc.idty_uid);
         let verified = verify(raw, revoc.revocation, revoc.pubkey);

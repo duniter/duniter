@@ -22,7 +22,7 @@ export abstract class GenericParser extends stream.Transform {
   }
 
   syncWrite(str:string, logger:any = null): any {
-    let error;
+    let error = ""
     const obj = {};
     this._parse(str, obj);
     this._clean(obj);
@@ -32,7 +32,7 @@ export abstract class GenericParser extends stream.Transform {
     if (!error) {
       const raw = this.rawerFunc(obj);
       if (hashf(str) !== hashf(raw))
-        error = CommonConstants.ERRORS.WRONG_DOCUMENT;
+        error = CommonConstants.ERRORS.WRONG_DOCUMENT.uerr.message;
       if (error) {
         logger && logger.trace(error);
         logger && logger.trace('-----------------');

@@ -1,7 +1,6 @@
 --compilers ts-node/register
 --require source-map-support/register
 --full-trace
---bail
 --growl
 --timeout 20000
 --recursive

@@ -1,6 +1,7 @@
-import {AbstractController} from "./AbstractController"
-import {BMAConstants} from "../constants"
-import {DBIdentity} from "../../../../lib/dal/sqliteDAL/IdentityDAL"
+import {AbstractController} from "./AbstractController";
+import {BMAConstants} from "../constants";
+import {DBIdentity} from "../../../../lib/dal/sqliteDAL/IdentityDAL";
+import {HttpCert, HttpCertIdentity} from "../dtos";
 
 const _        = require('underscore');
 const http2raw = require('../http2raw');
@@ -215,15 +216,27 @@ export class WOTBinding extends AbstractController {
   }
 
   add(req:any) {
-    return this.pushEntity(req, http2raw.identity, BMAConstants.ENTITY_IDENTITY)
+    return this.pushEntity(req, http2raw.identity, (raw:string) => this.server.writeRawIdentity(raw))
   }
 
-  certify(req:any) {
-    return this.pushEntity(req, http2raw.certification, BMAConstants.ENTITY_CERTIFICATION)
+  async certify(req:any): Promise<HttpCert> {
+    const res = await this.pushEntity(req, http2raw.certification, (raw:string) => this.server.writeRawCertification(raw))
+    const target:HttpCertIdentity = {
+      issuer: res.idty_issuer,
+      uid: res.idty_uid,
+      timestamp: res.idty_buid,
+      sig: res.idty_sig
+    }
+    return {
+      issuer: res.issuer,
+      timestamp: res.buid,
+      sig: res.sig,
+      target
+    }
   }
 
   revoke(req:any) {
-    return this.pushEntity(req, http2raw.revocation, BMAConstants.ENTITY_REVOCATION)
+    return this.pushEntity(req, http2raw.revocation, (raw:string) => this.server.writeRawRevocation(raw))
   }
 
   async pendingMemberships() {

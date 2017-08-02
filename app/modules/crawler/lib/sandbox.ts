@@ -135,8 +135,7 @@ async function submitMembership(ms:any, to:any, logger:any = null) {
 async function submitIdentityToServer(idty:any, toServer:any, logger:any = null) {
   try {
     const obj = parsers.parseIdentity.syncWrite(idty)
-    obj.documentType = 'identity'
-    await toServer.singleWritePromise(obj)
+    await toServer.writeIdentity(obj)
     logger && logger.trace('Sandbox pulling: success with identity \'%s\'', idty.uid)
   } catch (e) {
     // Silent error
@@ -146,8 +145,7 @@ async function submitIdentityToServer(idty:any, toServer:any, logger:any = null)
 async function submitCertificationToServer(cert:any, toServer:any, logger:any = null) {
   try {
     const obj = parsers.parseCertification.syncWrite(cert)
-    obj.documentType = 'certification'
-    await toServer.singleWritePromise(obj)
+    await toServer.writeCertification(obj)
     logger && logger.trace('Sandbox pulling: success with cert key %s => %s', cert.from.substr(0, 6), cert.idty_uid)
   } catch (e) {
     // Silent error
@@ -157,8 +155,7 @@ async function submitCertificationToServer(cert:any, toServer:any, logger:any = 
 async function submitMembershipToServer(ms:any, toServer:any, logger:any = null) {
   try {
     const obj = parsers.parseMembership.syncWrite(ms)
-    obj.documentType = 'membership'
-    await toServer.singleWritePromise(obj)
+    await toServer.writeMembership(obj)
     logger && logger.trace('Sandbox pulling: success with membership \'%s\'', ms.uid)
   } catch (e) {
     // Silent error

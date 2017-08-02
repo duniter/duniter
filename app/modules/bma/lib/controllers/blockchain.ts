@@ -1,9 +1,10 @@
 "use strict";
-import {Server} from "../../../../../server"
-import {AbstractController} from "./AbstractController"
-import {ParametersService} from "../parameters"
-import {BMAConstants} from "../constants"
-import {MembershipDTO} from "../../../../lib/dto/MembershipDTO"
+import {Server} from "../../../../../server";
+import {AbstractController} from "./AbstractController";
+import {ParametersService} from "../parameters";
+import {BMAConstants} from "../constants";
+import {MembershipDTO} from "../../../../lib/dto/MembershipDTO";
+import {HttpMembership} from "../dtos";
 
 const _                = require('underscore');
 const http2raw         = require('../http2raw');
@@ -29,9 +30,23 @@ export class BlockchainBinding extends AbstractController {
     }
   }
 
-  parseMembership = (req:any) => this.pushEntity(req, http2raw.membership, BMAConstants.ENTITY_MEMBERSHIP);
+  async parseMembership(req:any): Promise<HttpMembership> {
+    const res = await this.pushEntity(req, http2raw.membership, (raw:string) => this.server.writeRawMembership(raw))
+    return {
+      signature: res.signature,
+      membership: {
+        version: res.version,
+        currency: res.currency,
+        issuer: res.issuer,
+        membership: res.membership,
+        date: res.date || 0,
+        sigDate: res.sigDate || 0,
+        raw: res.getRaw()
+      }
+    }
+  }
 
-  parseBlock = (req:any) => this.pushEntity(req, http2raw.block, BMAConstants.ENTITY_BLOCK);
+  parseBlock = (req:any) => this.pushEntity(req, http2raw.block, (raw:string) => this.server.writeRawBlock(raw))
 
   parameters = () => this.server.dal.getParameters();
 

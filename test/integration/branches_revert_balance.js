@@ -47,8 +47,7 @@ describe("Revert balance", () => {
       res.sources.should.have.length(3)
     })
     const block = yield s1.dal.blockDAL.getBlock(3)
-    block.documentType = 'block'
-    // yield s1.singleWritePromise(block)
+    // yield s1.writeBlock(block)
   }))
 
   it('revert: cat and tac should have 100 units', () => co(function*() {
@@ -75,8 +74,7 @@ describe("Revert balance", () => {
       res.sources.should.have.length(3)
     })
     const block = yield s1.dal.blockDAL.getBlock(3)
-    block.documentType = 'block'
-    // yield s1.singleWritePromise(block)
+    // yield s1.writeBlock(block)
   }))
 
   after(() => {

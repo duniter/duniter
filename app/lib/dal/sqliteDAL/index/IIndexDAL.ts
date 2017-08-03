@@ -89,12 +89,6 @@ export class IIndexDAL extends AbstractIndex<IindexEntry> {
       ')')
   }
 
-  async getLatestMember() {
-    const res:any = (await this.query('SELECT MAX(wotb_id) as max_wotb_id FROM ' + this.table))[0]
-    const max_wotb_id = res.max_wotb_id
-    return this.entityOrNull('wotb_id', max_wotb_id)
-  }
-
   async getToBeKickedPubkeys() {
     // All those who has been subject to, or who are currently subject to kicking. Make one result per pubkey.
     const reducables = Indexer.DUP_HELPERS.reduceBy(await this.sqlFind({ kick: true }), ['pub']);

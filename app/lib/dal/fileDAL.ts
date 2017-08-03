@@ -110,13 +110,6 @@ export class FileDAL {
     }
     logger.debug("Upgrade database...");
     await this.metaDAL.upgradeDatabase(conf);
-    const latestMember = await this.iindexDAL.getLatestMember();
-    if (latestMember && this.wotb.getWoTSize() > latestMember.wotb_id + 1) {
-      logger.warn('Maintenance: cleaning wotb...');
-      while (this.wotb.getWoTSize() > latestMember.wotb_id + 1) {
-        this.wotb.removeNode();
-      }
-    }
     // Update the maximum certifications count a member can issue into the C++ addon
     const currencyParams = await this.getParameters();
     if (currencyParams && currencyParams.sigStock !== undefined && currencyParams.sigStock !== null) {

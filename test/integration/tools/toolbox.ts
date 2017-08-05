@@ -357,9 +357,7 @@ export class TestingServer {
 
 
   async commit(options:any = null) {
-    logger.warn('committing...')
     const raw = await commit(this.server)(options);
-    logger.warn('raw!', raw)
     return JSON.parse(raw);
   }
 

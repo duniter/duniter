@@ -13,16 +13,12 @@ module.exports = function makeBlockAndPost(theServer, extraProps) {
       manualValues = _.extend(manualValues, extraProps);
     }
     return co(function *() {
-      logger.warn('!utProver?', !theServer._utProver)
       if (!theServer._utProver) {
         theServer._utProver = new BlockProver(theServer)
         theServer._utGenerator = require('../../../app/modules/prover').ProverDependency.duniter.methods.blockGenerator(theServer, theServer._utProver)
       }
-      logger.warn('proving...')
       let proven = yield theServer._utGenerator.makeNextBlock(null, null, manualValues)
-      logger.warn('proven:', proven)
       const block = yield postBlock(theServer)(proven);
-      logger.warn('posted:', block)
       return block
     });
   };

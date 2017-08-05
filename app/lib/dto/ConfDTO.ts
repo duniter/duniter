@@ -1,3 +1,4 @@
+import {CommonConstants} from "../common-libs/constants";
 const _ = require('underscore');
 const constants = require('../constants');
 
@@ -7,12 +8,13 @@ export interface Keypair {
 }
 
 export interface BranchingDTO {
-  swichOnTimeAheadBy:number
+  switchOnHeadAdvance:number
   avgGenTime:number
   forksize:number
 }
 
 export interface CurrencyConfDTO {
+  currency: string
   c: number
   dt: number
   ud0: number
@@ -96,7 +98,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
     public idtyWindow: number,
     public msWindow: number,
     public sigWindow: number,
-    public swichOnTimeAheadBy: number,
+    public switchOnHeadAdvance: number,
     public pair: Keypair,
     public oldPair: Keypair|null,
     public salt: string,
@@ -143,7 +145,8 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
       "udid2": false,
       "timeout": 3000,
       "isolate": false,
-      "forksize": constants.BRANCHES.DEFAULT_WINDOW_SIZE
+      "forksize": constants.BRANCHES.DEFAULT_WINDOW_SIZE,
+      "switchOnHeadAdvance": CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS
     };
   }
 

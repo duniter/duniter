@@ -12,6 +12,7 @@ import {KeyGen, randomKey} from "./app/lib/common-libs/crypto/keyring";
 import {parsers} from "./app/lib/common-libs/parsers/index";
 import {Cloneable} from "./app/lib/dto/Cloneable";
 import {DuniterDocument, duniterDocument2str} from "./app/lib/common-libs/constants";
+import {CrawlerConstants} from "./app/modules/crawler/lib/constants";
 
 interface HookableServer {
   getMainEndpoint: (...args:any[]) => Promise<any>
@@ -181,7 +182,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeBlock(obj:any) {
-    const res = await this.BlockchainService.submitBlock(obj, true, constants.NO_FORK_ALLOWED)
+    const res = await this.BlockchainService.submitBlock(obj, true, CrawlerConstants.FORK_ALLOWED)
     this.emitDocument(res, DuniterDocument.ENTITY_BLOCK)
     return res
   }

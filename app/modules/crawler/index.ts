@@ -12,15 +12,6 @@ import {Buid} from "../../lib/common-libs/buid"
 export const CrawlerDependency = {
   duniter: {
 
-    config: {
-      onLoading: async (conf:ConfDTO) => {
-        conf.swichOnTimeAheadBy = CrawlerConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_MINUTES;
-      },
-      beforeSave: async(conf:ConfDTO) => {
-        delete conf.swichOnTimeAheadBy
-      }
-    },
-
     service: {
       input: (server:Server, conf:ConfDTO, logger:any) => new Crawler(server, conf, logger)
     },

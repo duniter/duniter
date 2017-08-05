@@ -232,6 +232,7 @@ export class BlockDTO implements Cloneable {
   static getConf(block:BlockDTO): CurrencyConfDTO {
     const sp = block.parameters.split(':');
     return {
+      currency: block.currency,
       c: parseFloat(sp[0]),
       dt: parseInt(sp[1]),
       ud0: parseInt(sp[2]),

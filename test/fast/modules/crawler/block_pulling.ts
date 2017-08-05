@@ -6,7 +6,7 @@ const should = require('should');
 const _ = require('underscore');
 
 let commonConf = {
-  swichOnTimeAheadBy: 30,
+  switchOnHeadAdvance: 1,
   avgGenTime: 30 * 60,
   forksize: 100
 };

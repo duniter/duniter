@@ -54,9 +54,9 @@ export class BlockchainService {
     return bb;
   }
 
-  checkBlock(block:any) {
+  checkBlock(block:any, withPoWAndSignature = true) {
     const dto = BlockDTO.fromJSONObject(block)
-    return this.mainContext.checkBlock(dto);
+    return this.mainContext.checkBlock(dto, withPoWAndSignature)
   }
 
   async branches() {
@@ -144,36 +144,37 @@ export class BlockchainService {
       } else {
         return await this.mainContext.addBlock(dto)
       }
-    } else if (forkAllowed) {
+    } else {
       // add it as side chain
-      if (current.number - obj.number + 1 >= this.conf.forksize) {
+      if (parseInt(current.number) - parseInt(obj.number) + 1 >= this.conf.forksize) {
         throw 'Block out of fork window';
       }
       let absolute = await this.dal.getAbsoluteBlockByNumberAndHash(obj.number, obj.hash)
       let res = null;
       if (!absolute) {
         res = await this.mainContext.addSideBlock(obj)
+        // we eventually try to swith **only if** we do not already have this blocK. Otherwise the block will be
+        // spread again to the network, which can end in an infinite ping-pong.
+        if (forkAllowed) {
+          await this.eventuallySwitchOnSideChain(current);
+        }
+      } else {
+        throw "Fork block already known"
       }
-      await this.tryToFork(current);
       return res;
-    } else {
-      throw "Fork block rejected by " + this.selfPubkey;
     }
-  }
-
-
-  tryToFork(current:DBBlock) {
-    return this.eventuallySwitchOnSideChain(current)
   }
 
   private async eventuallySwitchOnSideChain(current:DBBlock) {
     const branches = await this.branches()
-    const blocksAdvance = this.conf.swichOnTimeAheadBy / (this.conf.avgGenTime / 60);
-    const timeAdvance = this.conf.swichOnTimeAheadBy * 60;
+    const blocksAdvanceInBlocks = this.conf.switchOnHeadAdvance
+    const timeAdvance = this.conf.switchOnHeadAdvance * this.conf.avgGenTime
     let potentials = _.without(branches, current);
-    // We switch only to blockchain with X_MIN advance considering both theoretical time by block + written time
-    potentials = _.filter(potentials, (p:DBBlock) => p.number - current.number >= blocksAdvance
-                                  && p.medianTime - current.medianTime >= timeAdvance);
+    // We switch only to blockchain with X_BLOCKS in advance considering both theoretical time by block / avgGenTime, + written time / avgGenTime
+    potentials = _.filter(potentials, (p:DBBlock) => {
+      return p.number - current.number >= blocksAdvanceInBlocks
+      && p.medianTime - current.medianTime >= timeAdvance
+    });
     this.logger.trace('SWITCH: %s branches...', branches.length);
     this.logger.trace('SWITCH: %s potential side chains...', potentials.length);
     for (const potential of potentials) {

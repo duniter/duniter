@@ -100,7 +100,7 @@ export class BlockchainContext {
     this.logger = require('../logger').NewLogger(this.dal.profile);
   }
 
-  checkBlock(block: BlockDTO, withPoWAndSignature = true): Promise<any> {
+  checkBlock(block: BlockDTO, withPoWAndSignature:boolean): Promise<any> {
     return DuniterBlockchain.checkBlock(block, withPoWAndSignature, this.conf, this.dal)
   }
 
@@ -110,8 +110,9 @@ export class BlockchainContext {
     return block
   }
 
-  addSideBlock(obj:BlockDTO): Promise<any> {
-    return this.blockchain.pushSideBlock(obj, this.dal, this.logger)
+  async addSideBlock(obj:BlockDTO): Promise<BlockDTO> {
+    const dbb = await this.blockchain.pushSideBlock(obj, this.dal, this.logger)
+    return dbb.toBlockDTO()
   }
 
   async revertCurrentBlock(): Promise<any> {

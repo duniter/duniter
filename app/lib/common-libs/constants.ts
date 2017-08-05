@@ -73,6 +73,8 @@ export const CommonConstants = {
   DOCUMENTS_VERSION: 10,
   TRANSACTION_MAX_TRIES: 10,
 
+  SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS: 6,
+
   BMA_REGEXP,
   PUBLIC_KEY: exact(PUBKEY),
   INTEGER: /^\d+$/,
@@ -112,6 +114,8 @@ export const CommonConstants = {
       '1' // In case remainder 15 happens for some reason
     ]
   },
+
+  DocumentError: "documentError",
 
   ERRORS: {
     // Technical errors

@@ -56,7 +56,9 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     // BR_G56
     if (Indexer.ruleIssuersFrameVar(block, HEAD) === false) throw Error('ruleIssuersFrameVar');
     // BR_G57
-    if (Indexer.ruleMedianTime(block, HEAD) === false) throw Error('ruleMedianTime');
+    if (Indexer.ruleMedianTime(block, HEAD) === false) {
+      throw Error('ruleMedianTime')
+    }
     // BR_G58
     if (Indexer.ruleDividend(block, HEAD) === false) throw Error('ruleDividend');
     // BR_G59
@@ -269,7 +271,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
       conf.udTime0 = bconf.udTime0;
       conf.udReevalTime0 = bconf.udReevalTime0;
       conf.dtReeval = bconf.dtReeval;
-      conf.currency = block.currency;
+      conf.currency = bconf.currency;
       // Super important: adapt wotb module to handle the correct stock
       dal.wotb.setMaxCert(conf.sigStock);
       return dal.saveConf(conf);
@@ -516,7 +518,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
       // Saves the block (DAL)
       block.wrong = false;
       await dal.saveSideBlockInFile(block);
-      logger.info('SIDE Block #' + block.number + ' added to the blockchain in %s ms', (Date.now() - start));
+      logger.info('SIDE Block #%s-%s added to the blockchain in %s ms', block.number, block.hash.substr(0, 8), (Date.now() - start));
       return block;
     } catch (err) {
       throw err;

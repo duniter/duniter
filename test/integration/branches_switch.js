@@ -28,7 +28,7 @@ const s1 = duniter(
   '/bb11',
   MEMORY_MODE,
   _.extend({
-  swichOnTimeAheadBy: 0,
+  switchOnHeadAdvance: 0,
   port: '7788',
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -42,7 +42,7 @@ const s2 = duniter(
   '/bb12',
   MEMORY_MODE,
   _.extend({
-  swichOnTimeAheadBy: 0,
+  switchOnHeadAdvance: 0,
   port: '7789',
   pair: {
     pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',

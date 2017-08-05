@@ -194,7 +194,7 @@ export const NewTestingServer = (conf:any) => {
     remoteipv4: HOST,
     currency: conf.currency || CURRENCY_NAME,
     httpLogs: true,
-    forksize: 3
+    forksize: conf.forksize || 3
   };
   if (conf.sigQty === undefined) {
     conf.sigQty = 1;

@@ -31,7 +31,7 @@ const commonConf = {
   currency: 'bb',
   httpLogs: true,
   forksize: 10,
-  swichOnTimeAheadBy: 30,
+  switchOnHeadAdvance: 6,
   avgGenTime: 30 * 60,
   sigQty: 1
 };
@@ -98,6 +98,8 @@ describe("SelfFork", function() {
     };
     let s2p = yield s2.PeeringService.peer();
 
+    yield commitS2();
+    yield commitS2();
     yield commitS2();
     yield commitS2();
     yield commitS2();
@@ -197,7 +199,7 @@ describe("SelfFork", function() {
 
     it('/current should exist', function() {
       return expectJSON(rp('http://127.0.0.1:7781/blockchain/current', { json: true }), {
-        number: 7
+        number: 9
       });
     });
 
@@ -229,7 +231,7 @@ describe("SelfFork", function() {
 
     it('/current should exist', function() {
       return expectJSON(rp('http://127.0.0.1:7782/blockchain/current', { json: true }), {
-        number: 7
+        number: 9
       });
     });
 

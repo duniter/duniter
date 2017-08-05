@@ -1,5 +1,6 @@
 import {AbstractCFS} from "./AbstractCFS"
 import {ConfDTO} from "../../dto/ConfDTO"
+import {CommonConstants} from "../../common-libs/constants";
 
 const _ = require('underscore');
 
@@ -39,7 +40,8 @@ export class ConfDAL extends AbstractCFS {
       "percentRot": parseFloat(conf.percentRot),
       "udTime0": parseInt(conf.udTime0),
       "udReevalTime0": parseInt(conf.udReevalTime0),
-      "dtReeval": parseInt(conf.dtReeval)
+      "dtReeval": parseInt(conf.dtReeval),
+      "switchOnHeadAdvance": CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS
     }
   }
 

@@ -198,13 +198,13 @@ export abstract class AbstractDAO extends PullingDao {
       }
       return result;
     });
-    let avgGenTime = conf.avgGenTime;
     memberForks = _.filter(memberForks, (fork:any) => {
-      let blockDistance = (fork.current.number - localCurrent.number) * avgGenTime / 60;
-      let timeDistance = (fork.current.medianTime - localCurrent.medianTime) / 60;
-      logger && logger.debug('Fork of %s has blockDistance %s ; timeDistance %s ; required is >= %s for both values to try to follow the fork', fork.peer.pubkey.substr(0, 6), blockDistance.toFixed(2), timeDistance.toFixed(2), conf.swichOnTimeAheadBy);
-      return blockDistance >= conf.swichOnTimeAheadBy
-        && timeDistance >= conf.swichOnTimeAheadBy;
+      let blockDistanceInBlocks = (fork.current.number - localCurrent.number)
+      let timeDistanceInBlocks = (fork.current.medianTime - localCurrent.medianTime) / conf.avgGenTime
+      const requiredTimeAdvance = conf.switchOnHeadAdvance
+      logger && logger.debug('Fork of %s has blockDistance %s ; timeDistance %s ; required is >= %s for both values to try to follow the fork', fork.peer.pubkey.substr(0, 6), blockDistanceInBlocks.toFixed(2), timeDistanceInBlocks.toFixed(2), requiredTimeAdvance);
+      return blockDistanceInBlocks >= requiredTimeAdvance
+        && timeDistanceInBlocks >= requiredTimeAdvance
     });
     // Remove any previous fork block
     await this.removeForks();

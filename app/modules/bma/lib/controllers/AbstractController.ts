@@ -1,5 +1,6 @@
 import {Server} from "../../../../../server";
 import {dos2unix} from "../../../../lib/common-libs/dos2unix";
+import {CommonConstants} from "../../../../lib/common-libs/constants";
 
 export abstract class AbstractController {
 
@@ -36,6 +37,8 @@ export abstract class AbstractController {
     try {
       return await task(rawDocument)
     } catch (e) {
+      const event = CommonConstants.DocumentError
+      this.server.emit(event, e)
       this.logger.error(e);
       throw e;
     }

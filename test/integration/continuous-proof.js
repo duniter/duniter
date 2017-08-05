@@ -14,25 +14,26 @@ process.on('unhandledRejection', (reason) => {
 
 const NB_CORES_FOR_COMPUTATION = 1 // For simple tests. Can be changed to test multiple cores.
 
-const s1 = toolbox.server({
-  cpu: 1,
-  nbCores: NB_CORES_FOR_COMPUTATION,
-  powDelay: 100,
-  powMin: 1,
-  pair: {
-    pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-    sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
-  }
-})
-
-let s2, s3
-
-const i1 = user('i1',   { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
-const i2 = user('i2',   { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
+let s1, s2, s3, i1, i2
 
 describe("Continous proof-of-work", function() {
 
   before(() => co(function*() {
+
+    s1 = toolbox.server({
+      cpu: 1,
+      nbCores: NB_CORES_FOR_COMPUTATION,
+      powDelay: 100,
+      powMin: 1,
+      pair: {
+        pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+        sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
+      }
+    })
+
+    i1 = user('i1',   { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
+    i2 = user('i2',   { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
+
     yield s1.prepareForNetwork();
     yield i1.createIdentity();
     yield i2.createIdentity();

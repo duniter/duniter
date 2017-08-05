@@ -19,16 +19,18 @@ const catKeyPair = {
   }
 };
 
-const s1 = toolbox.server(_.clone(catKeyPair));
-const s2 = toolbox.server(_.clone(catKeyPair));
-const s3 = toolbox.server(_.clone(catKeyPair));
-
-const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
-const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+let s1, s2, s3, cat, toc
 
 describe("Peer document", function() {
 
   before(() => co(function*() {
+
+    s1 = toolbox.server(_.clone(catKeyPair));
+    s2 = toolbox.server(_.clone(catKeyPair));
+    s3 = toolbox.server(_.clone(catKeyPair));
+
+    cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
+    toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
 
     const commitS1 = commit(s1);
     const commitS2 = commit(s2);

@@ -38,7 +38,7 @@ export class BlockGenerator {
     this.logger = server.logger;
   }
 
-  nextBlock(manualValues:any, simulationValues:any = {}) {
+  nextBlock(manualValues:any = {}, simulationValues:any = {}) {
     return this.generateNextBlock(new NextBlockGenerator(this.mainContext, this.conf, this.dal, this.logger), manualValues, simulationValues)
   }
 

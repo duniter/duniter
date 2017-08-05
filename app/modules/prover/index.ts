@@ -76,7 +76,7 @@ export const ProverDependency = {
         const port = params[1];
         const difficulty = params[2];
         const generator = new BlockGeneratorWhichProves(server, null);
-        return generateAndSend(program, host, port, difficulty, server, () => generator.nextBlock);
+        return generateAndSend(program, host, port, difficulty, server, () => () => generator.nextBlock())
       }
     }, {
       name: 'gen-root [host] [port] [difficulty]',
@@ -90,7 +90,7 @@ export const ProverDependency = {
         let toDelete, catched = true;
         do {
           try {
-            await generateAndSend(program, host, port, difficulty, server, () => generator.nextBlock);
+            await generateAndSend(program, host, port, difficulty, server, () => () => generator.nextBlock())
             catched = false;
           } catch (e) {
             toDelete = await server.dal.idtyDAL.query('SELECT * FROM idty i WHERE 5 > (SELECT count(*) from cert c where c.`to` = i.pubkey)');

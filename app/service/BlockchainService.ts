@@ -250,12 +250,12 @@ export class BlockchainService extends FIFOService {
   }
   
 
-  async requirementsOfIdentities(identities:DBIdentity[]) {
+  async requirementsOfIdentities(identities:DBIdentity[], computeDistance = true) {
     let all:HttpIdentityRequirement[] = [];
     let current = await this.dal.getCurrentBlockOrNull();
     for (const obj of identities) {
       try {
-        let reqs = await this.requirementsOfIdentity(obj, current);
+        let reqs = await this.requirementsOfIdentity(obj, current, computeDistance);
         all.push(reqs);
       } catch (e) {
         this.logger.warn(e);
@@ -264,7 +264,7 @@ export class BlockchainService extends FIFOService {
     return all;
   }
 
-  async requirementsOfIdentity(idty:DBIdentity, current:DBBlock): Promise<HttpIdentityRequirement> {
+  async requirementsOfIdentity(idty:DBIdentity, current:DBBlock, computeDistance = true): Promise<HttpIdentityRequirement> {
     // TODO: this is not clear
     let expired = false;
     let outdistanced = false;
@@ -300,7 +300,9 @@ export class BlockchainService extends FIFOService {
       const newLinks = await this.server.generatorNewCertsToLinks(newCerts, updates);
       const currentTime = current ? current.medianTime : 0;
       certs = await this.getValidCerts(pubkey, newCerts);
-      outdistanced = await GLOBAL_RULES_HELPERS.isOver3Hops(pubkey, newLinks, someNewcomers, current, this.conf, this.dal);
+      if (computeDistance) {
+        outdistanced = await GLOBAL_RULES_HELPERS.isOver3Hops(pubkey, newLinks, someNewcomers, current, this.conf, this.dal);
+      }
       // Expiration of current membershship
       const currentMembership = await this.dal.mindexDAL.getReducedMS(pubkey);
       const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;

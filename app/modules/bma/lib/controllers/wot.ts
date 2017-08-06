@@ -154,7 +154,7 @@ export class WOTBinding extends AbstractController {
   async requirementsOfPending(req:any): Promise<HttpRequirements> {
     const minsig = ParametersService.getMinSig(req)
     const identities = await this.server.dal.idtyDAL.query('SELECT i.*, count(c.sig) as nbSig FROM idty i, cert c WHERE c.target = i.hash group by i.hash having nbSig >= ?', minsig)
-    const all = await this.BlockchainService.requirementsOfIdentities(identities);
+    const all = await this.BlockchainService.requirementsOfIdentities(identities, false);
     if (!all || !all.length) {
       throw BMAConstants.ERRORS.NO_IDTY_MATCHING_PUB_OR_UID;
     }

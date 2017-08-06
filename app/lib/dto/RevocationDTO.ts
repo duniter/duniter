@@ -1,4 +1,5 @@
 import {Cloneable} from "./Cloneable";
+import {hashf} from "../common";
 const DEFAULT_DOCUMENT_VERSION = 10
 
 export interface ShortRevocation {
@@ -60,5 +61,9 @@ export class RevocationDTO implements ShortRevocation, Cloneable {
       json.idty_sig || json.sig,
       json.revocation || json.revocation
     )
+  }
+
+  getHash() {
+    return hashf(this.getRaw())
   }
 }

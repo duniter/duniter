@@ -1,16 +1,21 @@
 "use strict";
-import {GlobalFifoPromise} from "./GlobalFifoPromise"
-import {ConfDTO} from "../lib/dto/ConfDTO"
-import {FileDAL} from "../lib/dal/fileDAL"
-import {TransactionDTO} from "../lib/dto/TransactionDTO"
-import {LOCAL_RULES_HELPERS} from "../lib/rules/local_rules"
-import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
-import {DBTx} from "../lib/dal/sqliteDAL/TxsDAL"
+import {ConfDTO} from "../lib/dto/ConfDTO";
+import {FileDAL} from "../lib/dal/fileDAL";
+import {TransactionDTO} from "../lib/dto/TransactionDTO";
+import {LOCAL_RULES_HELPERS} from "../lib/rules/local_rules";
+import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules";
+import {DBTx} from "../lib/dal/sqliteDAL/TxsDAL";
+import {FIFOService} from "./FIFOService";
+import {GlobalFifoPromise} from "./GlobalFifoPromise";
 
 const constants       = require('../lib/constants');
 const CHECK_PENDING_TRANSACTIONS = true
 
-export class TransactionService {
+export class TransactionService extends FIFOService {
+
+  constructor(fifoPromiseHandler:GlobalFifoPromise) {
+    super(fifoPromiseHandler)
+  }
 
   conf:ConfDTO
   dal:FileDAL
@@ -23,8 +28,9 @@ export class TransactionService {
   }
 
   processTx(txObj:any) {
-    return GlobalFifoPromise.pushFIFO<TransactionDTO>(async () => {
-      const tx = TransactionDTO.fromJSONObject(txObj, this.conf.currency)
+    const tx = TransactionDTO.fromJSONObject(txObj, this.conf.currency)
+    const hash = tx.getHash()
+    return this.pushFIFO<TransactionDTO>(hash, async () => {
       try {
         this.logger.info('⬇ TX %s:%s from %s', tx.output_amount, tx.output_base, tx.issuers);
         const existing = await this.dal.getTxByHash(tx.hash);

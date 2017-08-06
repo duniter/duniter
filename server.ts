@@ -13,6 +13,7 @@ import {parsers} from "./app/lib/common-libs/parsers/index";
 import {Cloneable} from "./app/lib/dto/Cloneable";
 import {DuniterDocument, duniterDocument2str} from "./app/lib/common-libs/constants";
 import {CrawlerConstants} from "./app/modules/crawler/lib/constants";
+import {GlobalFifoPromise} from "./app/service/GlobalFifoPromise";
 
 interface HookableServer {
   getMainEndpoint: (...args:any[]) => Promise<any>
@@ -65,12 +66,14 @@ export class Server extends stream.Duplex implements HookableServer {
 
     this.paramsP = directory.getHomeParams(memoryOnly, home)
 
+    const documentFIFO = new GlobalFifoPromise()
+
     this.MerkleService       = require("./app/lib/helpers/merkle").processForURL
-    this.IdentityService     = new IdentityService()
-    this.MembershipService   = new MembershipService()
-    this.PeeringService      = new PeeringService(this)
-    this.BlockchainService   = new BlockchainService(this)
-    this.TransactionsService = new TransactionService()
+    this.IdentityService     = new IdentityService(documentFIFO)
+    this.MembershipService   = new MembershipService(documentFIFO)
+    this.PeeringService      = new PeeringService(this, documentFIFO)
+    this.BlockchainService   = new BlockchainService(this, documentFIFO)
+    this.TransactionsService = new TransactionService(documentFIFO)
   }
 
   // Unused, but made mandatory by Duplex interface

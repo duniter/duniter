@@ -401,6 +401,10 @@ export class TestingServer {
     });
   }
 
+  async getPeer() {
+    return this.get('/network/peering')
+  }
+
   postIdentity(idty:any) {
     return this.post('/wot/add', {
       identity: idty.getRawSigned()

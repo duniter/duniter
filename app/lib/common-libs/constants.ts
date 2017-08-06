@@ -120,6 +120,7 @@ export const CommonConstants = {
   ERRORS: {
     // Technical errors
     WRONG_DOCUMENT:                       { httpCode: 400, uerr: { ucode: 1005, message: "Document has unkown fields or wrong line ending format" }},
+    DOCUMENT_BEING_TREATED:               { httpCode: 400, uerr: { ucode: 1015, message: "Document already under treatment" }},
 
     // Business errors
     WRONG_UNLOCKER:                       { httpCode: 400, uerr: { ucode: 2013, message: "Wrong unlocker in transaction" }},

@@ -1,6 +1,7 @@
 import {IdentityDTO} from "./IdentityDTO"
 import * as moment from "moment"
 import {Cloneable} from "./Cloneable";
+import {hashf} from "../common";
 
 const DEFAULT_DOCUMENT_VERSION = 10
 
@@ -127,5 +128,9 @@ export class MembershipDTO implements Cloneable {
       obj.certts,
       obj.signature
     )
+  }
+
+  getHash() {
+    return hashf(this.getRawSigned())
   }
 }

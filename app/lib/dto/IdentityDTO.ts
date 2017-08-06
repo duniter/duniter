@@ -108,4 +108,8 @@ export class IdentityDTO {
       })
     )
   }
+
+  getHash() {
+    return hashf(this.getRawSigned())
+  }
 }

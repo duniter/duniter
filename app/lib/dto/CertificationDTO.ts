@@ -1,6 +1,7 @@
 import {IdentityDTO} from "./IdentityDTO"
 import {Buid} from "../common-libs/buid"
 import {Cloneable} from "./Cloneable";
+import {hashf} from "../common";
 
 const DEFAULT_DOCUMENT_VERSION = 10
 
@@ -107,5 +108,9 @@ export class CertificationDTO extends ShortCertificationDTO implements Cloneable
       obj.idty_buid,
       obj.idty_sig
     )
+  }
+
+  getHash() {
+    return hashf(this.getRawSigned())
   }
 }

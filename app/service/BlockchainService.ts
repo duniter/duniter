@@ -1,22 +1,23 @@
 "use strict";
-import {GlobalFifoPromise} from "./GlobalFifoPromise"
-import {BlockchainContext} from "../lib/computation/BlockchainContext"
-import {ConfDTO} from "../lib/dto/ConfDTO"
-import {FileDAL} from "../lib/dal/fileDAL"
-import {QuickSynchronizer} from "../lib/computation/QuickSync"
-import {BlockDTO} from "../lib/dto/BlockDTO"
-import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
-import {DBBlock} from "../lib/db/DBBlock"
-import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
-import {parsers} from "../lib/common-libs/parsers/index"
+import {GlobalFifoPromise} from "./GlobalFifoPromise";
+import {BlockchainContext} from "../lib/computation/BlockchainContext";
+import {ConfDTO} from "../lib/dto/ConfDTO";
+import {FileDAL} from "../lib/dal/fileDAL";
+import {QuickSynchronizer} from "../lib/computation/QuickSync";
+import {BlockDTO} from "../lib/dto/BlockDTO";
+import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL";
+import {DBBlock} from "../lib/db/DBBlock";
+import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules";
+import {parsers} from "../lib/common-libs/parsers/index";
 import {HttpIdentityRequirement} from "../modules/bma/lib/dtos";
+import {FIFOService} from "./FIFOService";
 
 const _               = require('underscore');
 const constants       = require('../lib/constants');
 
 const CHECK_ALL_RULES = true;
 
-export class BlockchainService {
+export class BlockchainService extends FIFOService {
 
   mainContext:BlockchainContext
   conf:ConfDTO
@@ -25,7 +26,8 @@ export class BlockchainService {
   selfPubkey:string
   quickSynchronizer:QuickSynchronizer
 
-  constructor(private server:any) {
+  constructor(private server:any, fifoPromiseHandler:GlobalFifoPromise) {
+    super(fifoPromiseHandler)
     this.mainContext = new BlockchainContext()
   }
 
@@ -115,7 +117,9 @@ export class BlockchainService {
   }
 
   submitBlock(obj:any, doCheck:boolean, forkAllowed:boolean): Promise<BlockDTO> {
-    return GlobalFifoPromise.pushFIFO(() => {
+    const dto = BlockDTO.fromJSONObject(obj)
+    const hash = dto.getHash()
+    return this.pushFIFO(hash, () => {
       return this.checkAndAddBlock(obj, doCheck, forkAllowed)
     })
   }
@@ -237,12 +241,12 @@ export class BlockchainService {
   }
 
   revertCurrentBlock() {
-    return GlobalFifoPromise.pushFIFO(() => this.mainContext.revertCurrentBlock())
+    return this.pushFIFO("revertCurrentBlock", () => this.mainContext.revertCurrentBlock())
   }
   
 
   applyNextAvailableFork() {
-    return GlobalFifoPromise.pushFIFO(() => this.mainContext.applyNextAvailableFork())
+    return this.pushFIFO("applyNextAvailableFork", () => this.mainContext.applyNextAvailableFork())
   }
   
 

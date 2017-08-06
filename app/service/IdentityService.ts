@@ -1,27 +1,30 @@
-import {GlobalFifoPromise} from "./GlobalFifoPromise"
-import {FileDAL} from "../lib/dal/fileDAL"
-import {ConfDTO} from "../lib/dto/ConfDTO"
-import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
-import {GLOBAL_RULES_FUNCTIONS, GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
-import {BlockDTO} from "../lib/dto/BlockDTO"
-import {RevocationDTO} from "../lib/dto/RevocationDTO"
-import {BasicIdentity, IdentityDTO} from "../lib/dto/IdentityDTO"
-import {CertificationDTO} from "../lib/dto/CertificationDTO"
-import {DBCert} from "../lib/dal/sqliteDAL/CertDAL"
-import {verify} from "../lib/common-libs/crypto/keyring"
+import {GlobalFifoPromise} from "./GlobalFifoPromise";
+import {FileDAL} from "../lib/dal/fileDAL";
+import {ConfDTO} from "../lib/dto/ConfDTO";
+import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL";
+import {GLOBAL_RULES_FUNCTIONS, GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules";
+import {BlockDTO} from "../lib/dto/BlockDTO";
+import {RevocationDTO} from "../lib/dto/RevocationDTO";
+import {BasicIdentity, IdentityDTO} from "../lib/dto/IdentityDTO";
+import {CertificationDTO} from "../lib/dto/CertificationDTO";
+import {DBCert} from "../lib/dal/sqliteDAL/CertDAL";
+import {verify} from "../lib/common-libs/crypto/keyring";
+import {FIFOService} from "./FIFOService";
 
 "use strict";
 const constants       = require('../lib/constants');
 
 const BY_ABSORPTION = true;
 
-export class IdentityService {
+export class IdentityService extends FIFOService {
 
   dal:FileDAL
   conf:ConfDTO
   logger:any
 
-  constructor() {}
+  constructor(fifoPromiseHandler:GlobalFifoPromise) {
+    super(fifoPromiseHandler)
+  }
 
   setConfDAL(newConf:ConfDTO, newDAL:FileDAL) {
     this.dal = newDAL;
@@ -77,7 +80,8 @@ export class IdentityService {
     // Force usage of local currency name, do not accept other currencies documents
     idtyObj.currency = this.conf.currency;
     const createIdentity = idtyObj.rawWithoutSig();
-    return GlobalFifoPromise.pushFIFO<DBIdentity>(async () => {
+    const hash = idtyObj.getHash()
+    return this.pushFIFO<DBIdentity>(hash, async () => {
       this.logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
       // Check signature's validity
       let verified = verify(createIdentity, idty.sig, idty.pubkey);
@@ -144,7 +148,8 @@ export class IdentityService {
       }, BY_ABSORPTION);
     }
     let anErr:any
-    return GlobalFifoPromise.pushFIFO<CertificationDTO>(async () => {
+    const hash = cert.getHash()
+    return this.pushFIFO<CertificationDTO>(hash, async () => {
       this.logger.info('⬇ CERT %s block#%s -> %s', cert.from, cert.block_number, idty.uid);
       try {
         await GLOBAL_RULES_HELPERS.checkCertificationIsValid(cert, potentialNext, () => Promise.resolve(idty), this.conf, this.dal);
@@ -207,7 +212,8 @@ export class IdentityService {
     obj.currency = this.conf.currency || obj.currency;
     const revoc = RevocationDTO.fromJSONObject(obj)
     const raw = revoc.rawWithoutSig();
-    return GlobalFifoPromise.pushFIFO<RevocationDTO>(async () => {
+    const hash = revoc.getHash()
+    return this.pushFIFO<RevocationDTO>(hash, async () => {
       try {
         this.logger.info('⬇ REVOCATION %s %s', revoc.pubkey, revoc.idty_uid);
         let verified = verify(raw, revoc.revocation, revoc.pubkey);

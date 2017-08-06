@@ -1,14 +1,19 @@
 "use strict";
-import {GlobalFifoPromise} from "./GlobalFifoPromise"
-import {ConfDTO} from "../lib/dto/ConfDTO"
-import {FileDAL} from "../lib/dal/fileDAL"
-import {LOCAL_RULES_HELPERS} from "../lib/rules/local_rules"
-import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
-import {MembershipDTO} from "../lib/dto/MembershipDTO"
+import {GlobalFifoPromise} from "./GlobalFifoPromise";
+import {ConfDTO} from "../lib/dto/ConfDTO";
+import {FileDAL} from "../lib/dal/fileDAL";
+import {LOCAL_RULES_HELPERS} from "../lib/rules/local_rules";
+import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules";
+import {MembershipDTO} from "../lib/dto/MembershipDTO";
+import {FIFOService} from "./FIFOService";
 
 const constants       = require('../lib/constants');
 
-export class MembershipService {
+export class MembershipService extends FIFOService {
+
+  constructor(fifoPromiseHandler:GlobalFifoPromise) {
+    super(fifoPromiseHandler)
+  }
 
   conf:ConfDTO
   dal:FileDAL
@@ -25,8 +30,9 @@ export class MembershipService {
   }
 
   submitMembership(ms:any) {
-    return GlobalFifoPromise.pushFIFO<MembershipDTO>(async () => {
-      const entry = MembershipDTO.fromJSONObject(ms)
+    const entry = MembershipDTO.fromJSONObject(ms)
+    const hash = entry.getHash()
+    return this.pushFIFO<MembershipDTO>(hash, async () => {
       // Force usage of local currency name, do not accept other currencies documents
       entry.currency = this.conf.currency || entry.currency;
       this.logger.info('⬇ %s %s', entry.issuer, entry.membership);

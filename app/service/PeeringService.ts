@@ -1,14 +1,14 @@
-import {GlobalFifoPromise} from "./GlobalFifoPromise"
-import {ConfDTO} from "../lib/dto/ConfDTO"
-import {FileDAL} from "../lib/dal/fileDAL"
-import {DBPeer} from "../lib/dal/sqliteDAL/PeerDAL"
-import {DBBlock} from "../lib/db/DBBlock"
-import {Multicaster} from "../lib/streams/multicaster"
-import {PeerDTO} from "../lib/dto/PeerDTO"
-import {verify} from "../lib/common-libs/crypto/keyring"
-import {dos2unix} from "../lib/common-libs/dos2unix"
+import {ConfDTO} from "../lib/dto/ConfDTO";
+import {FileDAL} from "../lib/dal/fileDAL";
+import {DBPeer} from "../lib/dal/sqliteDAL/PeerDAL";
+import {DBBlock} from "../lib/db/DBBlock";
+import {Multicaster} from "../lib/streams/multicaster";
+import {PeerDTO} from "../lib/dto/PeerDTO";
+import {verify} from "../lib/common-libs/crypto/keyring";
+import {dos2unix} from "../lib/common-libs/dos2unix";
 import {rawer} from "../lib/common-libs/index";
 import {Server} from "../../server";
+import {GlobalFifoPromise} from "./GlobalFifoPromise";
 
 const util           = require('util');
 const _              = require('underscore');
@@ -22,6 +22,8 @@ export interface Keyring {
   secretKey:string
 }
 
+// Note: for an unknown reason, PeeringService cannot extend FIFOService correctly. When this.pushFIFO() is called
+// from within submitp(), "this.pushFIFO === undefined" is true.
 export class PeeringService {
 
   conf:ConfDTO
@@ -32,7 +34,7 @@ export class PeeringService {
   peerInstance:DBPeer | null
   logger:any
 
-  constructor(private server:Server) {
+  constructor(private server:Server, private fifoPromiseHandler:GlobalFifoPromise) {
   }
 
   setConfDAL(newConf:ConfDTO, newDAL:FileDAL, newPair:Keyring) {
@@ -80,7 +82,8 @@ export class PeeringService {
     let sigTime = 0;
     let block:DBBlock | null;
     let makeCheckings = cautious || cautious === undefined;
-    return GlobalFifoPromise.pushFIFO<PeerDTO>(async () => {
+    const hash = thePeerDTO.getHash()
+    return this.fifoPromiseHandler.pushFIFOPromise<PeerDTO>(hash, async () => {
       try {
         if (makeCheckings) {
           let goodSignature = this.checkPeerSignature(thePeerDTO)

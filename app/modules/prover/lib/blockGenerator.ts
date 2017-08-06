@@ -171,7 +171,8 @@ export class BlockGenerator {
     const members = await this.dal.getMembers();
     const wotMembers = _.pluck(members, 'pubkey');
     // Checking step
-    const newcomers = _(joinData).keys();
+    let newcomers = _(joinData).keys();
+    newcomers = _.shuffle(newcomers)
     const nextBlockNumber = current ? current.number + 1 : 0;
     try {
       const realNewcomers = await this.iteratedChecking(newcomers, async (someNewcomers:string[]) => {

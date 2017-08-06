@@ -20,20 +20,23 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = duniter(
-  '/bb1',
-  MEMORY_MODE,
-  _.extend({
-  port: '7778',
-  pair: {
-    pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-    sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
-  }
-}, commonConf));
+let s1
 
 describe("Branches", () => co(function*() {
 
   before(() => co(function*() {
+
+    s1 = duniter(
+      '/bb1',
+      MEMORY_MODE,
+      _.extend({
+        port: '7778',
+        pair: {
+          pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+          sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
+        }
+      }, commonConf));
+
     const server = yield s1.initWithDAL();
     const bmapi = yield bma(server);
     yield bmapi.openConnections();

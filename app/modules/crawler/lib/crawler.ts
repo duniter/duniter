@@ -168,6 +168,9 @@ export class SandboxCrawler implements DuniterService {
     if (this.pullInterval)
       clearInterval(this.pullInterval);
     this.pullInterval = setInterval(()  => this.pullFifo.push((cb:any) => this.sandboxPull(this.server).then(cb).catch(cb)), 1000 * this.conf.avgGenTime * CrawlerConstants.SANDBOX_CHECK_INTERVAL);
+    setTimeout(() => {
+      this.pullFifo.push((cb:any) => this.sandboxPull(this.server).then(cb).catch(cb))
+    }, CrawlerConstants.SANDBOX_FIRST_PULL_DELAY)
   }
 
   async stopService() {

@@ -296,13 +296,13 @@ function getBestLocal(family:string) {
     }
   }
   const interfacePriorityRegCatcher = [
-    /^tun\d/,
-    /^enp\ds\d/,
-    /^enp\ds\df\d/,
-    /^eth\d/,
+    /^tun\d+/,
+    /^enp\d+s\d+/,
+    /^enp\d+s\d+f\d+/,
+    /^eth\d+/,
     /^Ethernet/,
-    /^wlp\ds\d/,
-    /^wlan\d/,
+    /^wlp\d+s\d+/,
+    /^wlan\d+/,
     /^Wi-Fi/,
     /^lo/,
     /^Loopback/,

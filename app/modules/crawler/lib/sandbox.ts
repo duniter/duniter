@@ -30,7 +30,7 @@ export const pullSandbox = async (currency:string, fromHost:string, fromPort:num
   }
 }
 
-export const pullSandboxToLocalServer = async (currency:string, fromHost:any, toServer:Server, logger:any, watcher:any = null, nbCertsMin = 1) => {
+export const pullSandboxToLocalServer = async (currency:string, fromHost:any, toServer:Server, logger:any, watcher:any = null, nbCertsMin = 1, notify = true) => {
   let res
   try {
     res = await fromHost.getRequirementsPending(nbCertsMin || 1)
@@ -44,19 +44,19 @@ export const pullSandboxToLocalServer = async (currency:string, fromHost:any, to
     for (let i = 0; i < docs.identities.length; i++) {
       const idty = docs.identities[i];
       watcher && watcher.writeStatus('Identity ' + (i+1) + '/' + docs.identities.length)
-      await submitIdentityToServer(idty, toServer, logger)
+      await submitIdentityToServer(idty, toServer, notify, logger)
     }
 
     for (let i = 0; i < docs.certifications.length; i++) {
       const cert = docs.certifications[i];
       watcher && watcher.writeStatus('Certification ' + (i+1) + '/' + docs.certifications.length)
-      await submitCertificationToServer(cert, toServer, logger)
+      await submitCertificationToServer(cert, toServer, notify, logger)
     }
 
     for (let i = 0; i < docs.memberships.length; i++) {
       const ms = docs.memberships[i];
       watcher && watcher.writeStatus('Membership ' + (i+1) + '/' + docs.memberships.length)
-      await submitMembershipToServer(ms, toServer, logger)
+      await submitMembershipToServer(ms, toServer, notify, logger)
     }
   }
 }
@@ -132,30 +132,30 @@ async function submitMembership(ms:any, to:any, logger:any = null) {
   }
 }
 
-async function submitIdentityToServer(idty:any, toServer:any, logger:any = null) {
+async function submitIdentityToServer(idty:any, toServer:any, notify:boolean, logger:any) {
   try {
     const obj = parsers.parseIdentity.syncWrite(idty)
-    await toServer.writeIdentity(obj)
+    await toServer.writeIdentity(obj, notify)
     logger && logger.trace('Sandbox pulling: success with identity \'%s\'', idty.uid)
   } catch (e) {
     // Silent error
   }
 }
 
-async function submitCertificationToServer(cert:any, toServer:any, logger:any = null) {
+async function submitCertificationToServer(cert:any, toServer:any, notify:boolean, logger:any) {
   try {
     const obj = parsers.parseCertification.syncWrite(cert)
-    await toServer.writeCertification(obj)
+    await toServer.writeCertification(obj, notify)
     logger && logger.trace('Sandbox pulling: success with cert key %s => %s', cert.from.substr(0, 6), cert.idty_uid)
   } catch (e) {
     // Silent error
   }
 }
 
-async function submitMembershipToServer(ms:any, toServer:any, logger:any = null) {
+async function submitMembershipToServer(ms:any, toServer:any, notify:boolean, logger:any) {
   try {
     const obj = parsers.parseMembership.syncWrite(ms)
-    await toServer.writeMembership(obj)
+    await toServer.writeMembership(obj, notify)
     logger && logger.trace('Sandbox pulling: success with membership \'%s\'', ms.uid)
   } catch (e) {
     // Silent error

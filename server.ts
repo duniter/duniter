@@ -195,9 +195,11 @@ export class Server extends stream.Duplex implements HookableServer {
     return await this.writeIdentity(obj)
   }
 
-  async writeIdentity(obj:any) {
+  async writeIdentity(obj:any, notify = true) {
     const res = await this.IdentityService.submitIdentity(obj)
-    this.emitDocument(res, DuniterDocument.ENTITY_IDENTITY)
+    if (notify) {
+      this.emitDocument(res, DuniterDocument.ENTITY_IDENTITY)
+    }
     return res
   }
 
@@ -206,9 +208,11 @@ export class Server extends stream.Duplex implements HookableServer {
     return await this.writeCertification(obj)
   }
 
-  async writeCertification(obj:any) {
+  async writeCertification(obj:any, notify = true) {
     const res = await this.IdentityService.submitCertification(obj)
-    this.emitDocument(res, DuniterDocument.ENTITY_CERTIFICATION)
+    if (notify) {
+      this.emitDocument(res, DuniterDocument.ENTITY_CERTIFICATION)
+    }
     return res
   }
 
@@ -217,9 +221,11 @@ export class Server extends stream.Duplex implements HookableServer {
     return await this.writeMembership(obj)
   }
 
-  async writeMembership(obj:any) {
+  async writeMembership(obj:any, notify = true) {
     const res = await this.MembershipService.submitMembership(obj)
-    this.emitDocument(res, DuniterDocument.ENTITY_MEMBERSHIP)
+    if (notify) {
+      this.emitDocument(res, DuniterDocument.ENTITY_MEMBERSHIP)
+    }
     return res
   }
 

@@ -300,7 +300,7 @@ export class Synchroniser extends stream.Duplex {
       // Sandboxes
       //=======
       this.watcher.writeStatus('Synchronizing the sandboxes...');
-      await pullSandboxToLocalServer(this.conf.currency, node, this.server, this.server.logger, this.watcher)
+      await pullSandboxToLocalServer(this.conf.currency, node, this.server, this.server.logger, this.watcher, 1, false)
 
       //=======
       // Peers

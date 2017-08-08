@@ -445,7 +445,7 @@ Voilà, vous connaissez désormais les commandes de base ! Allons maintenant voi
 
 ## Niveau IV : dialoguer via l'API HTTP
 
-Ce 4ème niveau vous amènera à *dialoguer* avec votre nœud une fois lancé. En effet, celui-ci écoute le réseau à travers une API HTTP, nommée [Basic Merkled API (BMA)](https://github.com/duniter/duniter/blob/master/doc/HTTP_API.md). C'est cette via cette interface HTTP que les nœuds dialoguent entre eux, et il est tout à fait possible pour nous de faire de même via un navigateur web : celui-ci est un spécialiste pour faire des requêtes HTTP.
+Ce 4ème niveau vous amènera à *dialoguer* avec votre nœud une fois lancé. En effet, celui-ci écoute le réseau à travers une API HTTP, nommée [Basic Merkled API (BMA)](https://github.com/duniter/duniter/blob/dev/doc/HTTP_API.md). C'est cette via cette interface HTTP que les nœuds dialoguent entre eux, et il est tout à fait possible pour nous de faire de même via un navigateur web : celui-ci est un spécialiste pour faire des requêtes HTTP.
 
 Vous réaliserez donc ici :
 
@@ -637,7 +637,7 @@ Nous voyons ici le tout premier bloc de la blockchain *test_net* ! On peut notam
 
 ### D'autres données à consulter
 
-Nous n'allons pas faire le tour de l'ensemble des méthodes disponibles, mais vous pouvez vous-même les découvrir en lisant [le document technique de l'API HTTP](https://github.com/duniter/duniter/blob/master/doc/HTTP_API.md).
+Nous n'allons pas faire le tour de l'ensemble des méthodes disponibles, mais vous pouvez vous-même les découvrir en lisant [le document technique de l'API HTTP](https://github.com/duniter/duniter/blob/dev/doc/HTTP_API.md).
 
 Entres méthodes intéressantes, on pourra noter :
 
@@ -1071,7 +1071,7 @@ Petit point d'architecture. Il est en fait assez simple de trouver les points de
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/6441a732cca56a89b94ec760b7b721da7526fc1b.png" width="620" height="499">
 
-On retrouve ici l'ensemble des méthodes web accessibles dans [le document technique décrivant l'API HTTP BMA](https://github.com/duniter/duniter/blob/master/doc/HTTP_API.md).
+On retrouve ici l'ensemble des méthodes web accessibles dans [le document technique décrivant l'API HTTP BMA](https://github.com/duniter/duniter/blob/dev/doc/HTTP_API.md).
 
 Comme nous nous intéressons à la méthode `/wot/lookup`, maintenez la touche `Ctrl` enfoncée tout en cliquant sur le mot `lookup` de `wot.lookup` :
 

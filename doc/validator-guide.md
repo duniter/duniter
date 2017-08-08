@@ -79,3 +79,7 @@ Duniter should be able to resolve forks, i.e. switch on a branch that does not c
 >
 > After ~30 minutes, the fork should be resolved.
 >
+
+### Bloc computation
+
+The node should sucessfully compute one block.

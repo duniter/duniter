@@ -6,6 +6,7 @@ import {Prover} from "./lib/prover"
 import {Contacter} from "../crawler/lib/contacter"
 import {parsers} from "../../lib/common-libs/parsers/index"
 import {PeerDTO} from "../../lib/dto/PeerDTO"
+import {Server} from "../../../server";
 
 const async = require('async');
 
@@ -63,34 +64,33 @@ export const ProverDependency = {
     /*********** CLI gen-next + gen-root **************/
 
     cliOptions: [
-      {value: '--show',  desc: 'With gen-next or gen-root commands, displays the generated block.'},
-      {value: '--check', desc: 'With gen-next: just check validity of generated block.'},
+      {value: '--show',  desc: 'With gen-* commands, displays the generated block.'},
+      {value: '--check', desc: 'With gen-* commands: just check validity of generated block.'},
+      {value: '--submit-local', desc: 'With gen-* commands: the generated block is submitted to this node only.'},
+      {value: '--submit-host <host>', desc: 'With gen-* commands: the generated block is submitted to `submit-host` node.'},
+      {value: '--submit-port <port>', desc: 'With gen-* commands: the generated block is submitted to `submit-host` node with port `submit-port`.'},
       {value: '--at <medianTime>', desc: 'With gen-next --show --check: allows to try in a future time.', parser: parseInt }
     ],
 
     cli: [{
-      name: 'gen-next [host] [port] [difficulty]',
+      name: 'gen-next [difficulty]',
       desc: 'Tries to generate the next block of the blockchain.',
       onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
-        const host = params[0];
-        const port = params[1];
-        const difficulty = params[2];
+        const difficulty = params[0]
         const generator = new BlockGeneratorWhichProves(server, null);
-        return generateAndSend(program, host, port, difficulty, server, () => () => generator.nextBlock())
+        return generateAndSend(program, difficulty, server, () => () => generator.nextBlock())
       }
     }, {
-      name: 'gen-root [host] [port] [difficulty]',
+      name: 'gen-root [difficulty]',
       desc: 'Tries to generate the next block of the blockchain.',
       preventIfRunning: true,
       onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
-        const host = params[0];
-        const port = params[1];
-        const difficulty = params[2];
+        const difficulty = params[0]
         const generator = new BlockGeneratorWhichProves(server, null);
         let toDelete, catched = true;
         do {
           try {
-            await generateAndSend(program, host, port, difficulty, server, () => () => generator.nextBlock())
+            await generateAndSend(program, difficulty, server, () => () => generator.nextBlock())
             catched = false;
           } catch (e) {
             toDelete = await server.dal.idtyDAL.query('SELECT * FROM idty i WHERE 5 > (SELECT count(*) from cert c where c.`to` = i.pubkey)');
@@ -103,32 +103,35 @@ export const ProverDependency = {
         console.log('Done');
       }
     }, {
-      name: 'gen-root-choose [host] [port] [difficulty]',
+      name: 'gen-root-choose [difficulty]',
       desc: 'Tries to generate root block, with choice of root members.',
       preventIfRunning: true,
       onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
-        const host = params[0];
-        const port = params[1];
-        const difficulty = params[2];
-        if (!host) {
-          throw 'Host is required.';
-        }
-        if (!port) {
-          throw 'Port is required.';
-        }
+        const difficulty = params[0]
         if (!difficulty) {
           throw 'Difficulty is required.';
         }
         const generator = new BlockGenerator(server);
-        return generateAndSend(program, host, port, difficulty, server, () => generator.manualRoot);
+        return generateAndSend(program, difficulty, server, () => generator.manualRoot);
       }
     }]
   }
 }
 
-function generateAndSend(program:any, host:string, port:string, difficulty:string, server:any, getGenerationMethod:any) {
+function generateAndSend(program:any, difficulty:string, server:any, getGenerationMethod:any) {
   const logger = server.logger;
   return new Promise((resolve, reject) => {
+    if (!program.submitLocal) {
+      if (!program.submitHost) {
+        throw 'Option --submitHost is required.'
+      }
+      if (!program.submitPort) {
+        throw 'Option --submitPort is required.'
+      }
+      if (isNaN(parseInt(program.submitPort))) {
+        throw 'Option --submitPort must be a number.'
+      }
+    }
     async.waterfall([
       function (next:any) {
         const method = getGenerationMethod(server);
@@ -162,7 +165,7 @@ function generateAndSend(program:any, host:string, port:string, difficulty:strin
           logger.debug('Block to be sent: %s', block.getRawInnerPart());
           async.waterfall([
             function (subNext:any) {
-              proveAndSend(program, server, block, server.conf.pair.pub, parseInt(difficulty), host, parseInt(port), subNext);
+              proveAndSend(program, server, block, server.conf.pair.pub, parseInt(difficulty), subNext);
             }
           ], next);
         }
@@ -174,7 +177,7 @@ function generateAndSend(program:any, host:string, port:string, difficulty:strin
   });
 }
 
-function proveAndSend(program:any, server:any, block:any, issuer:any, difficulty:any, host:any, port:any, done:any) {
+function proveAndSend(program:any, server:Server, block:any, issuer:any, difficulty:any, done:any) {
   const logger = server.logger;
   async.waterfall([
     function (next:any) {
@@ -182,16 +185,25 @@ function proveAndSend(program:any, server:any, block:any, issuer:any, difficulty
       program.show && console.log(block.getRawSigned());
       (async () => {
         try {
+          const host:string = program.submitHost
+          const port:string = program.submitPort
+          const trialLevel = isNaN(difficulty) ? await server.getBcContext().getIssuerPersonalizedDifficulty(server.PeeringService.selfPubkey) : difficulty
           const prover = new BlockProver(server);
-          const proven = await prover.prove(block, difficulty);
-          const peer = PeerDTO.fromJSONObject({
-            endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
-          });
-          program.show && console.log(proven.getRawSigned());
-          logger.info('Posted block ' + proven.getRawSigned());
-          const p = PeerDTO.fromJSONObject(peer);
-          const contact = new Contacter(p.getHostPreferDNS(), p.getPort());
-          await contact.postBlock(proven.getRawSigned());
+          const proven = await prover.prove(block, trialLevel);
+          if (program.submitLocal) {
+            await server.writeBlock(proven)
+            next()
+          } else {
+            const peer = PeerDTO.fromJSONObject({
+              endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
+            });
+            program.show && console.log(proven.getRawSigned());
+            logger.info('Posted block ' + proven.getRawSigned());
+            const p = PeerDTO.fromJSONObject(peer);
+            const contact = new Contacter(p.getHostPreferDNS(), p.getPort());
+            await contact.postBlock(proven.getRawSigned());
+            next()
+          }
         } catch(e) {
           next(e);
         }

@@ -25,7 +25,7 @@ module.exports = {
           if (!task) {
             throw 'Unknown task';
           }
-          await task(conf)
+          await task(conf, program)
         }
         // Check config
         await server.checkConfig();

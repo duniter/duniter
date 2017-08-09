@@ -6,7 +6,15 @@ import * as stream from "stream"
 import {RevocationDTO} from "../../../app/lib/dto/RevocationDTO"
 import {IdentityDTO} from "../../../app/lib/dto/IdentityDTO"
 import {PeerDTO} from "../../../app/lib/dto/PeerDTO"
-import {Network} from "../../../app/modules/bma/lib/network";
+import {Network} from "../../../app/modules/bma/lib/network"
+import {DBIdentity} from "../../../app/lib/dal/sqliteDAL/IdentityDAL"
+import {CertificationDTO} from "../../../app/lib/dto/CertificationDTO"
+import {BlockchainService} from "../../../app/service/BlockchainService"
+import {PeeringService} from "../../../app/service/PeeringService"
+import {ConfDTO} from "../../../app/lib/dto/ConfDTO"
+import {FileDAL} from "../../../app/lib/dal/fileDAL"
+import {MembershipDTO} from "../../../app/lib/dto/MembershipDTO"
+import {TransactionDTO} from "../../../app/lib/dto/TransactionDTO"
 
 const _           = require('underscore');
 const rp          = require('request-promise');
@@ -220,19 +228,19 @@ export class TestingServer {
     server.getMainEndpoint = require('../../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
   }
 
-  get BlockchainService() {
+  get BlockchainService(): BlockchainService {
     return this.server.BlockchainService
   }
 
-  get PeeringService() {
+  get PeeringService(): PeeringService {
     return this.server.PeeringService
   }
 
-  get conf() {
+  get conf(): ConfDTO {
     return this.server.conf
   }
 
-  get dal() {
+  get dal(): FileDAL {
     return this.server.dal
   }
 
@@ -264,15 +272,15 @@ export class TestingServer {
     return this.server.writeBlock(obj)
   }
   
-  async writeIdentity(obj:any) {
+  async writeIdentity(obj:any): Promise<DBIdentity> {
     return this.server.writeIdentity(obj)
   }
   
-  async writeCertification(obj:any) {
+  async writeCertification(obj:any): Promise<CertificationDTO> {
     return this.server.writeCertification(obj)
   }
   
-  async writeMembership(obj:any) {
+  async writeMembership(obj:any): Promise<MembershipDTO> {
     return this.server.writeMembership(obj)
   }
   
@@ -280,7 +288,7 @@ export class TestingServer {
     return this.server.writeRevocation(obj)
   }
   
-  async writeTransaction(obj:any) {
+  async writeTransaction(obj:any): Promise<TransactionDTO> {
     return this.server.writeTransaction(obj)
   }
   

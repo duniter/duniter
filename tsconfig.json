@@ -2,6 +2,7 @@
   "compilerOptions": {
     "sourceMap": true,
     "target": "es6",
+    "declaration": true,
     "moduleResolution": "node",
     "module": "commonjs",
     "strictNullChecks": true,

@@ -108,7 +108,7 @@ export interface SindexEntry extends IndexEntry {
   isTimeLocked?: boolean,
 }
 
-interface Ranger {
+export interface Ranger {
   (n:number, m:number, prop?:string): Promise<DBHead[]>
 }
 

@@ -1,6 +1,6 @@
 import {Server} from "../../../../server"
-import {Network, NetworkInterface} from "./network"
-import * as dtos from "./dtos"
+import {BmaApi, Network, NetworkInterface} from "./network"
+import {block2HttpBlock, HttpPeer} from "./dtos"
 import {BMALimitation} from "./limiter"
 import {BlockchainBinding} from "./controllers/blockchain"
 import {NodeBinding} from "./controllers/node"
@@ -8,15 +8,14 @@ import {NetworkBinding} from "./controllers/network"
 import {WOTBinding} from "./controllers/wot"
 import {TransactionBinding} from "./controllers/transactions"
 import {UDBinding} from "./controllers/uds"
-import {block2HttpBlock, HttpBlock, HttpPeer, HttpTransactionOfBlock} from "./dtos";
-import {PeerDTO} from "../../../lib/dto/PeerDTO";
-import {BlockDTO} from "../../../lib/dto/BlockDTO";
+import {PeerDTO} from "../../../lib/dto/PeerDTO"
+import {BlockDTO} from "../../../lib/dto/BlockDTO"
 
 const co = require('co');
 const es = require('event-stream');
 const WebSocketServer = require('ws').Server;
 
-export const bma = function(server:Server, interfaces:NetworkInterface[], httpLogs:boolean, logger:any) {
+export const bma = function(server:Server, interfaces:NetworkInterface[], httpLogs:boolean, logger:any): Promise<BmaApi> {
 
   if (!interfaces) {
     interfaces = [];

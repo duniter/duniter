@@ -6,7 +6,8 @@ import {Prover} from "./lib/prover"
 import {Contacter} from "../crawler/lib/contacter"
 import {parsers} from "../../lib/common-libs/parsers/index"
 import {PeerDTO} from "../../lib/dto/PeerDTO"
-import {Server} from "../../../server";
+import {Server} from "../../../server"
+import {BlockDTO} from "../../lib/dto/BlockDTO"
 
 const async = require('async');
 
@@ -112,7 +113,7 @@ export const ProverDependency = {
           throw 'Difficulty is required.';
         }
         const generator = new BlockGenerator(server);
-        return generateAndSend(program, difficulty, server, () => generator.manualRoot);
+        return generateAndSend(program, difficulty, server, () => (): Promise<BlockDTO> => generator.manualRoot())
       }
     }]
   }

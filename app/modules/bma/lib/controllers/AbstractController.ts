@@ -1,13 +1,17 @@
-import {Server} from "../../../../../server";
-import {dos2unix} from "../../../../lib/common-libs/dos2unix";
-import {CommonConstants} from "../../../../lib/common-libs/constants";
+import {Server} from "../../../../../server"
+import {dos2unix} from "../../../../lib/common-libs/dos2unix"
+import {CommonConstants} from "../../../../lib/common-libs/constants"
+import {BlockchainService} from "../../../../service/BlockchainService"
+import {IdentityService} from "../../../../service/IdentityService"
+import {PeeringService} from "../../../../service/PeeringService"
+import {ConfDTO} from "../../../../lib/dto/ConfDTO"
 
 export abstract class AbstractController {
 
   constructor(protected server:Server) {
   }
 
-  get conf() {
+  get conf(): ConfDTO {
     return this.server.conf
   }
 
@@ -15,15 +19,15 @@ export abstract class AbstractController {
     return this.server.logger
   }
 
-  get BlockchainService() {
+  get BlockchainService(): BlockchainService {
     return this.server.BlockchainService
   }
 
-  get IdentityService() {
+  get IdentityService(): IdentityService {
     return this.server.IdentityService
   }
 
-  get PeeringService() {
+  get PeeringService(): PeeringService {
     return this.server.PeeringService
   }
 

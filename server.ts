@@ -1,21 +1,29 @@
-import {IdentityService} from "./app/service/IdentityService";
-import {MembershipService} from "./app/service/MembershipService";
-import {PeeringService} from "./app/service/PeeringService";
-import {BlockchainService} from "./app/service/BlockchainService";
-import {TransactionService} from "./app/service/TransactionsService";
-import {ConfDTO, NetworkConfDTO} from "./app/lib/dto/ConfDTO";
-import {FileDAL} from "./app/lib/dal/fileDAL";
-import {DuniterBlockchain} from "./app/lib/blockchain/DuniterBlockchain";
-import {SQLBlockchain} from "./app/lib/blockchain/SqlBlockchain";
-import * as stream from "stream";
-import {KeyGen, randomKey} from "./app/lib/common-libs/crypto/keyring";
-import {parsers} from "./app/lib/common-libs/parsers/index";
-import {Cloneable} from "./app/lib/dto/Cloneable";
-import {DuniterDocument, duniterDocument2str} from "./app/lib/common-libs/constants";
-import {CrawlerConstants} from "./app/modules/crawler/lib/constants";
-import {GlobalFifoPromise} from "./app/service/GlobalFifoPromise";
+import {IdentityService} from "./app/service/IdentityService"
+import {MembershipService} from "./app/service/MembershipService"
+import {PeeringService} from "./app/service/PeeringService"
+import {BlockchainService} from "./app/service/BlockchainService"
+import {TransactionService} from "./app/service/TransactionsService"
+import {ConfDTO, NetworkConfDTO} from "./app/lib/dto/ConfDTO"
+import {FileDAL} from "./app/lib/dal/fileDAL"
+import {DuniterBlockchain} from "./app/lib/blockchain/DuniterBlockchain"
+import {SQLBlockchain} from "./app/lib/blockchain/SqlBlockchain"
+import * as stream from "stream"
+import {KeyGen, randomKey} from "./app/lib/common-libs/crypto/keyring"
+import {parsers} from "./app/lib/common-libs/parsers/index"
+import {Cloneable} from "./app/lib/dto/Cloneable"
+import {DuniterDocument, duniterDocument2str} from "./app/lib/common-libs/constants"
+import {CrawlerConstants} from "./app/modules/crawler/lib/constants"
+import {GlobalFifoPromise} from "./app/service/GlobalFifoPromise"
+import {BlockchainContext} from "./app/lib/computation/BlockchainContext"
+import {BlockDTO} from "./app/lib/dto/BlockDTO"
+import {DBIdentity} from "./app/lib/dal/sqliteDAL/IdentityDAL"
+import {CertificationDTO} from "./app/lib/dto/CertificationDTO"
+import {MembershipDTO} from "./app/lib/dto/MembershipDTO"
+import {RevocationDTO} from "./app/lib/dto/RevocationDTO"
+import {TransactionDTO} from "./app/lib/dto/TransactionDTO"
+import {PeerDTO} from "./app/lib/dto/PeerDTO"
 
-interface HookableServer {
+export interface HookableServer {
   getMainEndpoint: (...args:any[]) => Promise<any>
   generatorGetJoinData: (...args:any[]) => Promise<any>
   generatorComputeNewCerts: (...args:any[]) => Promise<any>
@@ -108,7 +116,7 @@ export class Server extends stream.Duplex implements HookableServer {
     }
   }
 
-  getBcContext() {
+  getBcContext(): BlockchainContext {
     return this.BlockchainService.getContext()
   }
 
@@ -179,7 +187,7 @@ export class Server extends stream.Duplex implements HookableServer {
     return this;
   }
 
-  async writeRawBlock(raw:string) {
+  async writeRawBlock(raw:string): Promise<BlockDTO> {
     const obj = parsers.parseBlock.syncWrite(raw, logger)
     return await this.writeBlock(obj)
   }
@@ -190,12 +198,12 @@ export class Server extends stream.Duplex implements HookableServer {
     return res
   }
 
-  async writeRawIdentity(raw:string) {
+  async writeRawIdentity(raw:string): Promise<DBIdentity> {
     const obj = parsers.parseIdentity.syncWrite(raw, logger)
     return await this.writeIdentity(obj)
   }
 
-  async writeIdentity(obj:any, notify = true) {
+  async writeIdentity(obj:any, notify = true): Promise<DBIdentity> {
     const res = await this.IdentityService.submitIdentity(obj)
     if (notify) {
       this.emitDocument(res, DuniterDocument.ENTITY_IDENTITY)
@@ -203,7 +211,7 @@ export class Server extends stream.Duplex implements HookableServer {
     return res
   }
 
-  async writeRawCertification(raw:string) {
+  async writeRawCertification(raw:string): Promise<CertificationDTO> {
     const obj = parsers.parseCertification.syncWrite(raw, logger)
     return await this.writeCertification(obj)
   }
@@ -216,7 +224,7 @@ export class Server extends stream.Duplex implements HookableServer {
     return res
   }
 
-  async writeRawMembership(raw:string) {
+  async writeRawMembership(raw:string): Promise<MembershipDTO> {
     const obj = parsers.parseMembership.syncWrite(raw, logger)
     return await this.writeMembership(obj)
   }
@@ -229,7 +237,7 @@ export class Server extends stream.Duplex implements HookableServer {
     return res
   }
 
-  async writeRawRevocation(raw:string) {
+  async writeRawRevocation(raw:string): Promise<RevocationDTO> {
     const obj = parsers.parseRevocation.syncWrite(raw, logger)
     return await this.writeRevocation(obj)
   }
@@ -240,7 +248,7 @@ export class Server extends stream.Duplex implements HookableServer {
     return res
   }
 
-  async writeRawTransaction(raw:string) {
+  async writeRawTransaction(raw:string): Promise<TransactionDTO> {
     const obj = parsers.parseTransaction.syncWrite(raw, logger)
     return await this.writeTransaction(obj)
   }
@@ -251,7 +259,7 @@ export class Server extends stream.Duplex implements HookableServer {
     return res
   }
 
-  async writeRawPeer(raw:string) {
+  async writeRawPeer(raw:string): Promise<PeerDTO> {
     const obj = parsers.parsePeer.syncWrite(raw, logger)
     return await this.writePeer(obj)
   }

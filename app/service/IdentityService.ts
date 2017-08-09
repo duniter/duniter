@@ -1,15 +1,15 @@
-import {GlobalFifoPromise} from "./GlobalFifoPromise";
-import {FileDAL} from "../lib/dal/fileDAL";
-import {ConfDTO} from "../lib/dto/ConfDTO";
-import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL";
-import {GLOBAL_RULES_FUNCTIONS, GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules";
-import {BlockDTO} from "../lib/dto/BlockDTO";
-import {RevocationDTO} from "../lib/dto/RevocationDTO";
-import {BasicIdentity, IdentityDTO} from "../lib/dto/IdentityDTO";
-import {CertificationDTO} from "../lib/dto/CertificationDTO";
-import {DBCert} from "../lib/dal/sqliteDAL/CertDAL";
-import {verify} from "../lib/common-libs/crypto/keyring";
-import {FIFOService} from "./FIFOService";
+import {GlobalFifoPromise} from "./GlobalFifoPromise"
+import {FileDAL} from "../lib/dal/fileDAL"
+import {ConfDTO} from "../lib/dto/ConfDTO"
+import {DBIdentity, ExistingDBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
+import {GLOBAL_RULES_FUNCTIONS, GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
+import {BlockDTO} from "../lib/dto/BlockDTO"
+import {RevocationDTO} from "../lib/dto/RevocationDTO"
+import {BasicIdentity, IdentityDTO} from "../lib/dto/IdentityDTO"
+import {CertificationDTO} from "../lib/dto/CertificationDTO"
+import {DBCert} from "../lib/dal/sqliteDAL/CertDAL"
+import {verify} from "../lib/common-libs/crypto/keyring"
+import {FIFOService} from "./FIFOService"
 
 "use strict";
 const constants       = require('../lib/constants');
@@ -36,7 +36,7 @@ export class IdentityService extends FIFOService {
     return this.dal.searchJustIdentities(search)
   }
 
-  async findMember(search:string) {
+  async findMember(search:string): Promise<ExistingDBIdentity> {
     let idty = null;
     if (search.match(constants.PUBLIC_KEY)) {
       idty = await this.dal.getWrittenIdtyByPubkey(search);

@@ -14,6 +14,8 @@ import {BlockchainService} from "../../../service/BlockchainService"
 import {rawer} from "../../../lib/common-libs/index"
 import {dos2unix} from "../../../lib/common-libs/dos2unix"
 import {hashf} from "../../../lib/common"
+import {ConfDTO} from "../../../lib/dto/ConfDTO"
+import {PeeringService} from "../../../service/PeeringService"
 
 const util         = require('util');
 const _            = require('underscore');
@@ -65,7 +67,7 @@ export class Synchroniser extends stream.Duplex {
     }
   }
 
-  get conf() {
+  get conf(): ConfDTO {
     return this.server.conf
   }
 
@@ -73,7 +75,7 @@ export class Synchroniser extends stream.Duplex {
     return this.server.logger
   }
 
-  get PeeringService() {
+  get PeeringService(): PeeringService {
     return this.server.PeeringService
   }
 

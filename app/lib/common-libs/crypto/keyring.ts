@@ -7,7 +7,7 @@ const naclBinding = require('naclb');
 
 const crypto_sign_BYTES = 64;
 
-class Key {
+export class Key {
 
   constructor(readonly pub:string, readonly sec:string) {
   }

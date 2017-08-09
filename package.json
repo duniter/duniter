@@ -22,7 +22,7 @@
     "test": "test"
   },
   "scripts": {
-    "postinstall": "tsc",
+    "prepublish": "tsc",
     "tsc": "tsc",
     "test": "nyc --reporter html mocha",
     "start": "node bin/duniter start",

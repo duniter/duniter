@@ -80,6 +80,7 @@
     "multimeter": "0.1.1",
     "naclb": "1.3.9",
     "nnupnp": "1.0.2",
+    "node-uuid": "1.4.8",
     "node-pre-gyp": "0.6.34",
     "optimist": "0.6.1",
     "q-io": "1.13.2",

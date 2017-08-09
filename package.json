@@ -67,7 +67,6 @@
     "cors": "2.8.2",
     "daemonize2": "0.4.2",
     "ddos": "0.1.16",
-    "duniter-ui": "^1.3.11",
     "errorhandler": "1.5.0",
     "event-stream": "3.3.4",
     "express": "4.15.2",
@@ -119,7 +118,6 @@
     "typescript": "^2.4.1"
   },
   "peerDependencies": {
-    "duniter-ui": "1.3.x"
   },
   "bin": {
     "duniter": "./bin/duniter"

@@ -227,7 +227,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
 
     const dbb = DBBlock.fromBlockDTO(block)
-    await this.updateBlocksComputedVars(current, dbb);
+    this.updateBlocksComputedVars(current, dbb)
     // Saves the block (DAL)
     await dal.saveBlock(dbb);
 
@@ -461,13 +461,17 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
   }
 
-  updateBlocksComputedVars(current:DBBlock, block:DBBlock): Promise<void> {
+  updateBlocksComputedVars(
+    current:{ unitbase:number, monetaryMass:number }|null,
+    block:{ number:number, unitbase:number, dividend:number|null, membersCount:number, monetaryMass:number }): void {
     // Unit Base
     block.unitbase = (block.dividend && block.unitbase) || (current && current.unitbase) || 0;
     // Monetary Mass update
     if (current) {
       block.monetaryMass = (current.monetaryMass || 0)
         + (block.dividend || 0) * Math.pow(10, block.unitbase || 0) * block.membersCount;
+    } else {
+      block.monetaryMass = 0
     }
     // UD Time update
     if (block.number == 0) {
@@ -476,7 +480,6 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     else if (!block.dividend) {
       block.dividend = null;
     }
-    return Promise.resolve()
   }
 
   static pushStatsForBlocks(blocks:BlockDTO[], dal:any) {

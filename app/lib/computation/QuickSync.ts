@@ -61,6 +61,8 @@ export class QuickSynchronizer {
     }
     for (const block of blocks) {
       block.fork = false;
+      const current:BlockDTO|null = await getBlock(block.number - 1)
+      this.blockchain.updateBlocksComputedVars(current, block)
     }
     // Transactions recording
     await this.updateTransactionsForBlocks(blocks, getBlockByNumberAndHash);

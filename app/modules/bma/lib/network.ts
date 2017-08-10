@@ -23,7 +23,7 @@ export interface NetworkInterface {
 
 export const Network = {
 
-  getBestLocalIPv4: getBestLocalIPv4,
+  getBestLocalIPv4,
   getBestLocalIPv6: getBestLocalIPv6,
 
   listInterfaces: listInterfaces,
@@ -356,7 +356,7 @@ async function upnpConf (noupnp:boolean, logger:any) {
   await Q.nbind(client.portMapping, client)({
     public: publicPort,
     private: privatePort,
-    ttl: 120
+    ttl: BMAConstants.UPNP_TTL
   });
   const privateIP = await Q.Promise((resolve:any, reject:any) => {
     client.findGateway((err:any, res:any, localIP:any) => {

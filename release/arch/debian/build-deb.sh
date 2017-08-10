@@ -75,11 +75,15 @@ cd ${RELEASES}/duniter
 # Remove git files
 rm -Rf .git
 [[ $? -eq 0 ]] && echo ">> VM: building modules..."
-[[ $? -eq 0 ]] && yarn --production
+[[ $? -eq 0 ]] && yarn
 #[[ $? -eq 0 ]] && echo ">> VM: running tests..."
 #[[ $? -eq 0 ]] && yarn test
 
-[[ $? -eq 0 ]] && node -e "const deps = require('./package.json').peerDependencies; Object.keys(deps).forEach(k => console.log(k + \"@\" + deps[k]))" | xargs yarn add --production
+# Duniter UI
+[[ $? -eq 0 ]] && yarn add duniter-ui@1.4.x
+[[ $? -eq 0 ]] && sed -i "s/duniter\//..\/..\/..\/..\//g" node_modules/duniter-ui/server/controller/webmin.js
+
+[[ $? -eq 0 ]] && npm prune --production
 
 
 # Specific modules that are not needed in a release

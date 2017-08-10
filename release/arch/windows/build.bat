@@ -1,9 +1,6 @@
 
-set DUNITER_BRANCH=1.3.x
+set DUNITER_BRANCH=1.4.x
 set VER_UI=%DUNITER_BRANCH%
-set VER_BMA=%DUNITER_BRANCH%
-set VER_CRAWLER=%DUNITER_BRANCH%
-set VER_KEYPAIR=%DUNITER_BRANCH%
 
 set ADDON_VERSION=48
 set NW_VERSION=0.17.6
@@ -46,18 +43,17 @@ echo %DUNITER_TAG%
 git checkout %DUNITER_TAG%
 
 call npm cache clean
-call npm install --production
+call npm install
 REM call npm test
+echo "Ajout du module 1/1 (duniter-ui)..."
+call npm install duniter-ui@%VER_UI% --save --production
+REM sed -i "s/duniter\//..\/..\/..\/..\//g" node_modules/duniter-ui/server/controller/webmin.js
+cd node_modules\duniter-ui\server\controller\
+powershell -Command "(Get-Content webmin.js) | foreach-object {$_ -replace 'duniter/','../../../../' } | Set-Content webmin.js2"
+move /y webmin.js2 webmin.js
+cd ..\..\..\..
 echo "Retrait des modules 'dev'..."
 call npm prune --production
-echo "Ajout du module 1/4..."
-call npm install duniter-bma@%VER_BMA% --save --production
-echo "Ajout du module 2/4..."
-call npm install duniter-crawler@%VER_CRAWLER% --save --production
-echo "Ajout du module 3/4..."
-call npm install duniter-keypair@%VER_KEYPAIR% --save --production
-echo "Ajout du module 4/4..."
-call npm install duniter-ui@%VER_UI% --save --production
 
 REM echo ">> VM: installing peerDependencies installer..."
 REM call npm i --save-dev @team-griffin/install-self-peers

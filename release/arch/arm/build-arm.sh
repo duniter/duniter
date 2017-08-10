@@ -61,7 +61,10 @@ echo "Copying Nodejs"
 cp -R "$DOWNLOADS/node-${NVER}-linux-${ARCH}" node
 
 echo "npm install"
-node/bin/npm install --production
+node/bin/npm install
+node/bin/npm install duniter-ui@1.4.x
+sed -i "s/duniter\//..\/..\/..\/..\//g" node_modules/duniter-ui/server/controller/webmin.js
+node/bin/npm prune --production
 SRC=`pwd`
 echo $SRC
 

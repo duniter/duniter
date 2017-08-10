@@ -4,7 +4,6 @@ import {Contacter} from "./lib/contacter"
 import {Crawler} from "./lib/crawler"
 import {Synchroniser} from "./lib/sync"
 import {req2fwd} from "./lib/req2fwd"
-import {CrawlerConstants} from "./lib/constants"
 import {rawer} from "../../lib/common-libs/index"
 import {PeerDTO} from "../../lib/dto/PeerDTO"
 import {Buid} from "../../lib/common-libs/buid"
@@ -13,7 +12,7 @@ export const CrawlerDependency = {
   duniter: {
 
     service: {
-      input: (server:Server, conf:ConfDTO, logger:any) => new Crawler(server, conf, logger)
+      process: (server:Server, conf:ConfDTO, logger:any) => new Crawler(server, conf, logger)
     },
 
     methods: {

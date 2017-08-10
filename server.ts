@@ -192,9 +192,11 @@ export class Server extends stream.Duplex implements HookableServer {
     return await this.writeBlock(obj)
   }
 
-  async writeBlock(obj:any) {
+  async writeBlock(obj:any, notify = true) {
     const res = await this.BlockchainService.submitBlock(obj, true, CrawlerConstants.FORK_ALLOWED)
-    this.emitDocument(res, DuniterDocument.ENTITY_BLOCK)
+    if (notify) {
+      this.emitDocument(res, DuniterDocument.ENTITY_BLOCK)
+    }
     return res
   }
 
@@ -242,9 +244,11 @@ export class Server extends stream.Duplex implements HookableServer {
     return await this.writeRevocation(obj)
   }
 
-  async writeRevocation(obj:any) {
+  async writeRevocation(obj:any, notify = true) {
     const res = await this.IdentityService.submitRevocation(obj)
-    this.emitDocument(res, DuniterDocument.ENTITY_REVOCATION)
+    if (notify) {
+      this.emitDocument(res, DuniterDocument.ENTITY_REVOCATION)
+    }
     return res
   }
 
@@ -253,9 +257,11 @@ export class Server extends stream.Duplex implements HookableServer {
     return await this.writeTransaction(obj)
   }
 
-  async writeTransaction(obj:any) {
+  async writeTransaction(obj:any, notify = true) {
     const res = await this.TransactionsService.processTx(obj)
-    this.emitDocument(res, DuniterDocument.ENTITY_TRANSACTION)
+    if (notify) {
+      this.emitDocument(res, DuniterDocument.ENTITY_TRANSACTION)
+    }
     return res
   }
 
@@ -264,9 +270,11 @@ export class Server extends stream.Duplex implements HookableServer {
     return await this.writePeer(obj)
   }
 
-  async writePeer(obj:any) {
+  async writePeer(obj:any, notify = true) {
     const res = await this.PeeringService.submitP(obj)
-    this.emitDocument(res, DuniterDocument.ENTITY_PEER)
+    if (notify) {
+      this.emitDocument(res, DuniterDocument.ENTITY_PEER)
+    }
     return res
   }
 

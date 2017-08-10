@@ -360,6 +360,7 @@ export class BlockCrawler {
           this.logger && this.logger.trace("Try with %s %s", p.getURL(), p.pubkey.substr(0, 6));
           try {
             let node:any = await connect(p);
+            let nodeCurrent:BlockDTO|null = null
             node.pubkey = p.pubkey;
             await checkPeerValidity(server, p, node);
 
@@ -375,7 +376,8 @@ export class BlockCrawler {
                 return server.dal.getCurrentBlockOrNull()
               }
               async remoteCurrent(source?: any): Promise<BlockDTO | null> {
-                return source.getCurrent()
+                nodeCurrent = await source.getCurrent()
+                return nodeCurrent
               }
               async remotePeers(source?: any): Promise<PeerDTO[]> {
                 return Promise.resolve([node])
@@ -396,14 +398,17 @@ export class BlockCrawler {
                 return block;
               }
               async applyMainBranch(block: BlockDTO): Promise<boolean> {
-                let addedBlock = await server.BlockchainService.submitBlock(block, true, CrawlerConstants.FORK_ALLOWED);
+                let addedBlock = await server.writeBlock(block, false)
                 if (!this.lastDownloaded) {
                   this.lastDownloaded = await dao.remoteCurrent(node);
                 }
                 this.crawler.pullingEvent(server, 'applying', {number: block.number, last: this.lastDownloaded && this.lastDownloaded.number});
                 if (addedBlock) {
                   current = addedBlock;
-                  server.streamPush(addedBlock);
+                  // Emit block events (for sharing with the network) only in forkWindowSize
+                  if (nodeCurrent && nodeCurrent.number - addedBlock.number < server.conf.forksize) {
+                    server.streamPush(addedBlock);
+                  }
                 }
                 return true
               }

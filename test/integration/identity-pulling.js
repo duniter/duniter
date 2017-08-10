@@ -64,6 +64,9 @@ describe("Identity pulling", function() {
     // 1 certs for tic
     yield cat1.cert(tic2, s2, s2);
     // 0 certs for tuc
+
+    // tic2 also revokes its pending identity
+    yield tic2.revoke()
   }));
 
   it('toc should not be known of s1', () => co(function*() {
@@ -118,21 +121,25 @@ describe("Identity pulling", function() {
 
       assert.equal(json.identities[3].pubkey, 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd')
       assert.equal(json.identities[3].uid, 'cat')
+      assert.equal(json.identities[3].revocation_sig, null)
       assert.equal(json.identities[3].pendingCerts.length, 1)
       assert.equal(json.identities[3].pendingMemberships.length, 1)
 
       assert.equal(json.identities[0].pubkey, '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc')
       assert.equal(json.identities[0].uid, 'tac')
+      assert.equal(json.identities[0].revocation_sig, null)
       assert.equal(json.identities[0].pendingCerts.length, 1)
       assert.equal(json.identities[0].pendingMemberships.length, 1)
 
       assert.equal(json.identities[2].pubkey, 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')
       assert.equal(json.identities[2].uid, 'tic')
+      assert.equal(json.identities[2].revocation_sig, 'AAFSisqkMb/2L4/YmZXQWoKYxnz/PW1c2wbux+ZRe8Iw8dxthPR4Iw+g+/JKA5nPE+C/lkX2YFrIikgUpZdlAA==')
       assert.equal(json.identities[2].pendingCerts.length, 1)
       assert.equal(json.identities[2].pendingMemberships.length, 1)
 
       assert.equal(json.identities[1].pubkey, 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')
       assert.equal(json.identities[1].uid, 'toc')
+      assert.equal(json.identities[1].revocation_sig, null)
       assert.equal(json.identities[1].pendingCerts.length, 2)
       assert.equal(json.identities[1].pendingMemberships.length, 1)
     })

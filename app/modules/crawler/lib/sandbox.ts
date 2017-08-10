@@ -47,6 +47,12 @@ export const pullSandboxToLocalServer = async (currency:string, fromHost:any, to
       await submitIdentityToServer(idty, toServer, notify, logger)
     }
 
+    for (let i = 0; i < docs.revocations.length; i++) {
+      const idty = docs.revocations[i];
+      watcher && watcher.writeStatus('Revocation ' + (i+1) + '/' + docs.revocations.length)
+      await submitRevocationToServer(idty, toServer, notify, logger)
+    }
+
     for (let i = 0; i < docs.certifications.length; i++) {
       const cert = docs.certifications[i];
       watcher && watcher.writeStatus('Certification ' + (i+1) + '/' + docs.certifications.length)
@@ -65,7 +71,8 @@ function getDocumentsTree(currency:string, res:any) {
   const documents:any = {
     identities: [],
     certifications: [],
-    memberships: []
+    memberships: [],
+    revocations: []
   }
   for(const idty of res.identities) {
     const identity = rawer.getOfficialIdentity({
@@ -75,6 +82,17 @@ function getDocumentsTree(currency:string, res:any) {
       buid:     idty.meta.timestamp,
       sig:      idty.sig
     })
+    if (idty.revocation_sig) {
+      const revocation = rawer.getOfficialRevocation({
+        currency,
+        uid:      idty.uid,
+        issuer:   idty.pubkey,
+        buid:     idty.meta.timestamp,
+        sig:      idty.sig,
+        revocation: idty.revocation_sig
+      })
+      documents.revocations.push(revocation)
+    }
     documents.identities.push(identity)
     for (const cert of idty.pendingCerts) {
       const certification = rawer.getOfficialCertification({
@@ -136,7 +154,17 @@ async function submitIdentityToServer(idty:any, toServer:any, notify:boolean, lo
   try {
     const obj = parsers.parseIdentity.syncWrite(idty)
     await toServer.writeIdentity(obj, notify)
-    logger && logger.trace('Sandbox pulling: success with identity \'%s\'', idty.uid)
+    logger && logger.trace('Sandbox pulling: success with identity \'%s\'', obj.uid)
+  } catch (e) {
+    // Silent error
+  }
+}
+
+async function submitRevocationToServer(revocation:any, toServer:any, notify:boolean, logger:any) {
+  try {
+    const obj = parsers.parseRevocation.syncWrite(revocation)
+    await toServer.writeRevocation(obj, notify)
+    logger && logger.trace('Sandbox pulling: success with revocation \'%s\'', obj.uid)
   } catch (e) {
     // Silent error
   }

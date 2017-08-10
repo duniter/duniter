@@ -188,7 +188,7 @@ export class Synchroniser extends stream.Duplex {
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = (askedCautious === true || localNumber >= 0);
       const shuffledPeers = noShufflePeers ? peers : _.shuffle(peers);
-      const downloader = new P2PDownloader(localNumber, to, rCurrent.hash, shuffledPeers, this.watcher, this.logger, hashf, this.dal, this.slowOption);
+      const downloader = new P2PDownloader(rCurrent.currency, localNumber, to, rCurrent.hash, shuffledPeers, this.watcher, this.logger, hashf, this.dal, this.slowOption);
 
       downloader.start();
 
@@ -611,6 +611,7 @@ class P2PDownloader {
   private downloadStarter:Promise<any>
 
   constructor(
+    private currency:string,
     private localNumber:number,
     private to:number,
     private toHash:string,
@@ -870,7 +871,7 @@ class P2PDownloader {
       count = this.nbBlocksToDownload % CONST_BLOCKS_CHUNK || CONST_BLOCKS_CHUNK;
     }
     try {
-      const fileName = "blockchain/chunk_" + index + "-" + CONST_BLOCKS_CHUNK + ".json";
+      const fileName = this.currency + "/chunk_" + index + "-" + CONST_BLOCKS_CHUNK + ".json";
       if (this.localNumber <= 0 && (await this.dal.confDAL.coreFS.exists(fileName))) {
         this.handler[index] = {
           host: 'filesystem',
@@ -882,7 +883,7 @@ class P2PDownloader {
         const chunk:any = await this.p2pDownload(from, count, index);
         // Store the file to avoid re-downloading
         if (this.localNumber <= 0 && chunk.length === CONST_BLOCKS_CHUNK) {
-          await this.dal.confDAL.coreFS.makeTree('blockchain');
+          await this.dal.confDAL.coreFS.makeTree(this.currency);
           await this.dal.confDAL.coreFS.writeJSON(fileName, { blocks: chunk });
         }
         return chunk;

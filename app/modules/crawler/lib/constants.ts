@@ -14,7 +14,7 @@ export const CrawlerConstants = {
   COUNT_FOR_ENOUGH_PEERS: 4,
   SANDBOX_FIRST_PULL_DELAY: 1000 * 60 * 10, // milliseconds
   SANDBOX_PEERS_COUNT: 2,
-  SANDBOX_CHECK_INTERVAL: 288, // Every day (288 blocks = 1 day)
+  SANDBOX_CHECK_INTERVAL: 48, // Every 4 hours (288 blocks a day / 24 * 4)
   TEST_PEERS_INTERVAL: 10, // In seconds
   SYNC_PEERS_INTERVAL: 3, // Every 3 block average generation time
 

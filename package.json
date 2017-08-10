@@ -1,6 +1,6 @@
 {
   "name": "duniter",
-  "version": "1.4.7",
+  "version": "1.4.8",
   "engines": {
     "node": ">=6.11.1",
     "npm": ">=3.10"
@@ -12,7 +12,7 @@
   "node-main": "./bin/duniter",
   "window": {
     "icon": "duniter.png",
-    "title": "v1.4.7",
+    "title": "v1.4.8",
     "width": 800,
     "height": 800,
     "min_width": 750,

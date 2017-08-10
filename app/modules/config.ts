@@ -3,6 +3,16 @@ import {ConfDTO} from "../lib/dto/ConfDTO"
 
 module.exports = {
   duniter: {
+
+    config: {
+      onLoading: async (conf:ConfDTO) => {
+        conf.msPeriod = conf.msWindow
+      },
+      beforeSave: async (conf:ConfDTO) => {
+        conf.msPeriod = conf.msWindow
+      }
+    },
+
     cli: [{
       name: 'config',
       desc: 'Register configuration in database',

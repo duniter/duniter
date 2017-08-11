@@ -64,11 +64,6 @@ export class Crawler extends stream.Transform implements DuniterService {
       this.sandboxCrawler.stopService()
     ])
   }
-
-  // Unused
-  _write(str:string, enc:any, done:any) {
-    done && done();
-  };
 }
 
 export class PeerCrawler implements DuniterService {

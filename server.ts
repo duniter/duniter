@@ -311,10 +311,11 @@ export class Server extends stream.Duplex implements HookableServer {
     return this.BlockchainService.isMember()
   }
 
-  checkConfig() {
+  checkConfig(): Promise<any> {
     if (!this.conf.pair) {
       throw new Error('No keypair was given.');
     }
+    return Promise.resolve()
   }
 
   async resetHome() {

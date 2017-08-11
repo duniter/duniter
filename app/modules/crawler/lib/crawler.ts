@@ -403,17 +403,23 @@ export class BlockCrawler {
                 return block;
               }
               async applyMainBranch(block: BlockDTO): Promise<boolean> {
-                let addedBlock = await server.writeBlock(block, false)
-                if (!this.lastDownloaded) {
-                  this.lastDownloaded = await dao.remoteCurrent(node);
-                }
-                this.crawler.pullingEvent(server, 'applying', {number: block.number, last: this.lastDownloaded && this.lastDownloaded.number});
-                if (addedBlock) {
-                  current = addedBlock;
-                  // Emit block events (for sharing with the network) only in forkWindowSize
-                  if (nodeCurrent && nodeCurrent.number - addedBlock.number < server.conf.forksize) {
-                    server.streamPush(addedBlock);
+                const existing = await server.dal.getAbsoluteBlockByNumberAndHash(block.number, block.hash)
+                if (!existing) {
+                  let addedBlock = await server.writeBlock(block, false)
+                  if (!this.lastDownloaded) {
+                    this.lastDownloaded = await dao.remoteCurrent(node);
                   }
+                  this.crawler.pullingEvent(server, 'applying', {number: block.number, last: this.lastDownloaded && this.lastDownloaded.number});
+                  if (addedBlock) {
+                    current = addedBlock;
+                    // Emit block events (for sharing with the network) only in forkWindowSize
+                    if (nodeCurrent && nodeCurrent.number - addedBlock.number < server.conf.forksize) {
+                      server.streamPush(addedBlock);
+                    }
+                  }
+                } else {
+                  this.crawler.logger && this.crawler.logger.info('Downloaded already known block#%s-%s, try to fork...', block.number, block.hash)
+                  await server.BlockchainService.tryToFork()
                 }
                 return true
               }

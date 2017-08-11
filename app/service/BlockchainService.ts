@@ -169,6 +169,13 @@ export class BlockchainService extends FIFOService {
     }
   }
 
+  async tryToFork() {
+    return this.pushFIFO("tryToFork", async () => {
+      const current = await this.mainContext.current()
+      await this.eventuallySwitchOnSideChain(current)
+    })
+  }
+
   private async eventuallySwitchOnSideChain(current:DBBlock) {
     const branches = await this.branches()
     const blocksAdvanceInBlocks = this.conf.switchOnHeadAdvance

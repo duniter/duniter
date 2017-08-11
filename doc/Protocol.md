@@ -2094,8 +2094,8 @@ For each ENTRY in local MINDEX where `revoked_on != null`:
     ENTRY.isBeingRevoked = true
    
 ####### BR_G107 - ENTRY.unchainables
-F
-If `HEAD.number > 0`:
+
+If `HEAD.number > 0 AND ENTRY.revocation == null`:
 
     ENTRY.unchainables = COUNT(GLOBAL_MINDEX[issuer=ENTRY.issuer, chainable_on > HEAD~1.medianTime]))
     

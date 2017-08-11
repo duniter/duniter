@@ -671,10 +671,12 @@ export class Indexer {
     // BR_G107
     if (HEAD.number > 0) {
       await Promise.all(mindex.map(async (ENTRY: MindexEntry) => {
-        const rows = await dal.mindexDAL.sqlFind({ pub: ENTRY.pub, chainable_on: { $gt: HEAD_1.medianTime }});
-        // This rule will be enabled on
-        if (HEAD.medianTime >= 1498860000) {
-          ENTRY.unchainables = count(rows);
+        if (ENTRY.revocation === null) {
+          const rows = await dal.mindexDAL.sqlFind({ pub: ENTRY.pub, chainable_on: { $gt: HEAD_1.medianTime }});
+          // This rule will be enabled on
+          if (HEAD.medianTime >= 1498860000) {
+            ENTRY.unchainables = count(rows);
+          }
         }
       }))
     }

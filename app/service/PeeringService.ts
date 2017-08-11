@@ -1,14 +1,14 @@
-import {ConfDTO} from "../lib/dto/ConfDTO";
-import {FileDAL} from "../lib/dal/fileDAL";
-import {DBPeer} from "../lib/dal/sqliteDAL/PeerDAL";
-import {DBBlock} from "../lib/db/DBBlock";
-import {Multicaster} from "../lib/streams/multicaster";
-import {PeerDTO} from "../lib/dto/PeerDTO";
-import {verify} from "../lib/common-libs/crypto/keyring";
-import {dos2unix} from "../lib/common-libs/dos2unix";
-import {rawer} from "../lib/common-libs/index";
-import {Server} from "../../server";
-import {GlobalFifoPromise} from "./GlobalFifoPromise";
+import {ConfDTO} from "../lib/dto/ConfDTO"
+import {FileDAL} from "../lib/dal/fileDAL"
+import {DBPeer} from "../lib/dal/sqliteDAL/PeerDAL"
+import {DBBlock} from "../lib/db/DBBlock"
+import {Multicaster} from "../lib/streams/multicaster"
+import {PeerDTO} from "../lib/dto/PeerDTO"
+import {verify} from "../lib/common-libs/crypto/keyring"
+import {dos2unix} from "../lib/common-libs/dos2unix"
+import {rawer} from "../lib/common-libs/index"
+import {Server} from "../../server"
+import {GlobalFifoPromise} from "./GlobalFifoPromise"
 
 const util           = require('util');
 const _              = require('underscore');
@@ -249,8 +249,12 @@ export class PeeringService {
     p2.pubkey = this.selfPubkey;
     // Remember this is now local peer value
     this.peerInstance = p2;
-    // Submit & share with the network
-    await this.server.writePeer(p2)
+    try {
+      // Submit & share with the network
+      await this.server.writePeer(p2)
+    } catch (e) {
+      logger.error(e)
+    }
     const selfPeer = await this.dal.getPeer(this.selfPubkey);
     // Set peer's statut to UP
     await this.peer(selfPeer);

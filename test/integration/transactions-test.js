@@ -5,7 +5,7 @@ const _ = require('underscore');
 const should = require('should');
 const assert = require('assert');
 const constants = require('../../app/lib/constants');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const toolbox   = require('./tools/toolbox');
 const node   = require('./tools/node');
 const user   = require('./tools/user');
@@ -17,26 +17,28 @@ describe("Testing transactions", function() {
 
   const now = 1490000000;
 
-  const s1 = toolbox.server({
-    pair: {
-      pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
-      sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
-    },
-    nbCores: 1,
-    dt: 7210,
-    ud0: 1200,
-    udTime0: now + 7210,
-    udReevalTime0: now + 7210,
-    avgGenTime: 7210,
-    medianTimeBlocks: 1
-  });
-
-  const tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
-  const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+  let s1, tic, toc
 
   before(() => co(function*() {
 
-    yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+    s1 = toolbox.server({
+      pair: {
+        pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
+        sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
+      },
+      nbCores: 1,
+      dt: 7210,
+      ud0: 1200,
+      udTime0: now + 7210,
+      udReevalTime0: now + 7210,
+      avgGenTime: 7210,
+      medianTimeBlocks: 1
+    });
+
+    tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
+    toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+
+    yield s1.initDalBmaConnections();
     // Self certifications
     yield tic.createIdentity();
     yield toc.createIdentity();
@@ -63,6 +65,12 @@ describe("Testing transactions", function() {
     });
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
+
   describe("Sources", function(){
 
     it('it should exist block#2 with UD of 1200', () => s1.expect('/blockchain/block/2', (block) => {
@@ -79,12 +87,12 @@ describe("Testing transactions", function() {
         const txSrc = _.findWhere(res.sources, { type: 'T' });
         assert.equal(txSrc.amount, 690);
       })
-      const tx = yield s1.get('/tx/hash/0D41759A8FB1350ADCC21ADBD799BC124722BC1CBCBB15355EF00494B4CD44D0')
+      const tx = yield s1.get('/tx/hash/B6DCADFB841AC05A902741A8772A70B4086D5AEAB147AD48987DDC3887DD55C8')
       assert.notEqual(tx, null)
       assert.deepEqual(tx, {
         "comment": "",
         "currency": "duniter_unit_test_currency",
-        "hash": "0D41759A8FB1350ADCC21ADBD799BC124722BC1CBCBB15355EF00494B4CD44D0",
+        "hash": "B6DCADFB841AC05A902741A8772A70B4086D5AEAB147AD48987DDC3887DD55C8",
         "inputs": [
           "1200:0:D:DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV:2"
         ],
@@ -98,7 +106,7 @@ describe("Testing transactions", function() {
         ],
         "raw": "",
         "signatures": [
-          "waKIjrO0lMBU+1pDPOEOC55OQeCUIczEkV7bUI6bgMIs7AzrRZSFsOnRzdbUDAnx/3SqhgRiqedzgtXVD/cYBA=="
+          "Wy2tAKp/aFH2hqZJ5qnUFUNEukFbHwaR4v9gZ/aGoySPfXovDwld9W15w8C0ojVYbma9nlU3eLkVqzVBYz3lAw=="
         ],
         "unlocks": [
           "0:SIG(0)"

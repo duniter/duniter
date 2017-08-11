@@ -25,7 +25,7 @@ module.exports = function(node1) {
   function post(uri, data, done) {
     const postReq = request.post({
       "uri": 'http://' + [node1.server.conf.remoteipv4, node1.server.conf.remoteport].join(':') + uri,
-      "timeout": 1000*10
+      "timeout": 1000 * 10
     }, function (err, res, body) {
       done(err, res, body);
     });

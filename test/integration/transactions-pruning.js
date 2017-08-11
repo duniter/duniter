@@ -4,27 +4,27 @@ const co        = require('co');
 const should    = require('should');
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
-const until     = require('./tools/until');
 const toolbox   = require('./tools/toolbox');
-const Peer = require('../../app/lib/entity/peer');
 const constants = require('../../app/lib/constants');
-const common    = require('duniter-common');
+const CommonConstants = require('../../app/lib/common-libs/constants').CommonConstants
 
-const s1 = toolbox.server({
-  currency: 'currency_one',
-  dt: 600,
-  pair: {
-    pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-    sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
-  }
-});
-
-const cat1 = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
-const tac1 = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: s1 });
+let s1, cat1, tac1
 
 describe("Transactions pruning", function() {
 
   before(() => co(function*() {
+
+    s1 = toolbox.server({
+      currency: 'currency_one',
+      dt: 600,
+      pair: {
+        pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+        sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
+      }
+    });
+
+    cat1 = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
+    tac1 = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: s1 });
 
     yield s1.prepareForNetwork();
 
@@ -46,6 +46,12 @@ describe("Transactions pruning", function() {
     yield cat1.send(100, tac1);
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
+
   it('double spending transactions should both exist first', () => s1.expect('/tx/history/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (res) => {
     res.history.should.have.property('sending').length(2);
   }));
@@ -61,12 +67,12 @@ describe("Transactions pruning", function() {
   }));
 
   it('double spending transaction should have been pruned', () => co(function*() {
-    const tmp = common.constants.TRANSACTION_MAX_TRIES;
-    common.constants.TRANSACTION_MAX_TRIES = 1;
+    const tmp = CommonConstants.TRANSACTION_MAX_TRIES;
+    CommonConstants.TRANSACTION_MAX_TRIES = 1;
     yield s1.commit();
     yield s1.expect('/tx/history/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', (res) => {
       res.history.should.have.property('sending').length(0);
     });
-    common.constants.TRANSACTION_MAX_TRIES = tmp;
+    CommonConstants.TRANSACTION_MAX_TRIES = tmp;
   }));
 });

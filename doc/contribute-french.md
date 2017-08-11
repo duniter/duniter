@@ -445,7 +445,7 @@ Voilà, vous connaissez désormais les commandes de base ! Allons maintenant voi
 
 ## Niveau IV : dialoguer via l'API HTTP
 
-Ce 4ème niveau vous amènera à *dialoguer* avec votre nœud une fois lancé. En effet, celui-ci écoute le réseau à travers une API HTTP, nommée [Basic Merkled API (BMA)](https://github.com/duniter/duniter/blob/master/doc/HTTP_API.md). C'est cette via cette interface HTTP que les nœuds dialoguent entre eux, et il est tout à fait possible pour nous de faire de même via un navigateur web : celui-ci est un spécialiste pour faire des requêtes HTTP.
+Ce 4ème niveau vous amènera à *dialoguer* avec votre nœud une fois lancé. En effet, celui-ci écoute le réseau à travers une API HTTP, nommée [Basic Merkled API (BMA)](https://github.com/duniter/duniter/blob/dev/doc/HTTP_API.md). C'est cette via cette interface HTTP que les nœuds dialoguent entre eux, et il est tout à fait possible pour nous de faire de même via un navigateur web : celui-ci est un spécialiste pour faire des requêtes HTTP.
 
 Vous réaliserez donc ici :
 
@@ -637,7 +637,7 @@ Nous voyons ici le tout premier bloc de la blockchain *test_net* ! On peut notam
 
 ### D'autres données à consulter
 
-Nous n'allons pas faire le tour de l'ensemble des méthodes disponibles, mais vous pouvez vous-même les découvrir en lisant [le document technique de l'API HTTP](https://github.com/duniter/duniter/blob/master/doc/HTTP_API.md).
+Nous n'allons pas faire le tour de l'ensemble des méthodes disponibles, mais vous pouvez vous-même les découvrir en lisant [le document technique de l'API HTTP](https://github.com/duniter/duniter/blob/dev/doc/HTTP_API.md).
 
 Entres méthodes intéressantes, on pourra noter :
 
@@ -975,7 +975,7 @@ On peut donc ainsi comprendre tout ce qui se passe dans Duniter. Ici il s'agit d
 
 ## Niveau XI : point d’arrêt d’une commande
 
-Continuons avec la commande `webwait`, et tentons d'y poser un point d'arrêt. Rendez-vous dans le fichier `app/cli.js` à la ligne 859.
+Continuons avec la commande `webwait`, et tentons d'y poser un point d'arrêt. Rendez-vous dans le fichier `app/cli.ts` à la ligne 859.
 
 Ajoutons deux points d'arrêt : un en ligne 859 et un autre en ligne 860 :
 
@@ -1013,7 +1013,7 @@ Pius cliquez sur "Find". Vous obtiendrez le résultat suivant :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/48f80f1e07828edab1601f4414f605b995143ddd.png" width="471" height="227">
 
-Double-cliquez sur le résultat trouvé, et vous serez alors amené au fichier `server.js`, ligne 75. Ajoutez-y un point d'arrêt :
+Double-cliquez sur le résultat trouvé, et vous serez alors amené au fichier `server.ts`, ligne 75. Ajoutez-y un point d'arrêt :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/789c7fbb457d3f780316a2cf164ed45f82d0c701.png" width="448" height="94">
 
@@ -1025,9 +1025,9 @@ Si vous faites de nouveau F9, vous arriverez alors à cet écran :
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/a6771e01590846568f895871d0d9c9aa8a9666d7.png" width="620" height="499">
 
-Cela signifie une 1ère chose, c'est que ce point d'arrêt intervient manifestement *avant* le celui du fichier `app/cli.js` ligne 859.
+Cela signifie une 1ère chose, c'est que ce point d'arrêt intervient manifestement *avant* le celui du fichier `app/cli.ts` ligne 859.
 
-Et si l'on regarde la pile d'appel (colonne "Frames" de la fenêtre de debug), on peut repérer que c'est la fonction en ligne 890 du fichier `app/cli.js` qui appelle ce code d'information "Plugging file system...".
+Et si l'on regarde la pile d'appel (colonne "Frames" de la fenêtre de debug), on peut repérer que c'est la fonction en ligne 890 du fichier `app/cli.ts` qui appelle ce code d'information "Plugging file system...".
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/5a5f72bbdc39f897fba4ad8a8383dca5e0d67a2f.png" width="620" height="499">
 
@@ -1071,7 +1071,7 @@ Petit point d'architecture. Il est en fait assez simple de trouver les points de
 
 <img src="https://forum.duniter.org/uploads/default/original/1X/6441a732cca56a89b94ec760b7b721da7526fc1b.png" width="620" height="499">
 
-On retrouve ici l'ensemble des méthodes web accessibles dans [le document technique décrivant l'API HTTP BMA](https://github.com/duniter/duniter/blob/master/doc/HTTP_API.md).
+On retrouve ici l'ensemble des méthodes web accessibles dans [le document technique décrivant l'API HTTP BMA](https://github.com/duniter/duniter/blob/dev/doc/HTTP_API.md).
 
 Comme nous nous intéressons à la méthode `/wot/lookup`, maintenez la touche `Ctrl` enfoncée tout en cliquant sur le mot `lookup` de `wot.lookup` :
 
@@ -1094,7 +1094,7 @@ Réessayez avec une valeur autre que `abc` pour voir la valeur changer au niveau
 
 ### Voir le nombre d’identités trouvées
 
-Regardez la ligne 27 du fichier wot.js que nous débogons actuellement :
+Regardez la ligne 27 du fichier wot.ts que nous débogons actuellement :
 
 ```js
 const identities = yield IdentityService.searchIdentities(search);

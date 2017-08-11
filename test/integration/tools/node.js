@@ -1,18 +1,16 @@
 "use strict";
-var Q = require('q');
 var co = require('co');
-var rp     = require('request-promise');
 var _ = require('underscore');
 var async  = require('async');
 var request  = require('request');
-var contacter = require('duniter-crawler').duniter.methods.contacter;
+var contacter = require('../../../app/modules/crawler').CrawlerDependency.duniter.methods.contacter;
 var duniter  = require('../../../index');
 var multicaster = require('../../../app/lib/streams/multicaster');
-var Configuration = require('../../../app/lib/entity/configuration');
-var Peer          = require('../../../app/lib/entity/peer');
+var ConfDTO = require('../../../app/lib/dto/ConfDTO').ConfDTO
+var PeerDTO   = require('../../../app/lib/dto/PeerDTO').PeerDTO
 var user   = require('./user');
 var http   = require('./http');
-const bma = require('duniter-bma').duniter.methods.bma;
+const bma = require('../../../app/modules/bma').BmaDependency.duniter.methods.bma;
 
 module.exports = function (dbName, options) {
   return new Node(dbName, options);
@@ -21,11 +19,11 @@ module.exports = function (dbName, options) {
 module.exports.statics = {
 };
 
-var UNTIL_TIMEOUT = 115000;
+var UNTIL_TIMEOUT = 20000;
 
 function Node (dbName, options) {
 
-  var logger = require('../../../app/lib/logger')(dbName);
+  var logger = require('../../../app/lib/logger').NewLogger(dbName);
   var that = this;
   var started = false;
   that.server = null;
@@ -79,9 +77,9 @@ function Node (dbName, options) {
             block: function(callback){
               co(function *() {
                 try {
-                  const block2 = yield require('duniter-prover').duniter.methods.generateTheNextBlock(that.server, params);
+                  const block2 = yield require('../../../app/modules/prover').ProverDependency.duniter.methods.generateTheNextBlock(that.server, params);
                   const trial2 = yield that.server.getBcContext().getIssuerPersonalizedDifficulty(that.server.keyPair.publicKey);
-                  const block = yield require('duniter-prover').duniter.methods.generateAndProveTheNext(that.server, block2, trial2, params);
+                  const block = yield require('../../../app/modules/prover').ProverDependency.duniter.methods.generateAndProveTheNext(that.server, block2, trial2, params);
                   callback(null, block);
                 } catch (e) {
                   callback(e);
@@ -104,18 +102,26 @@ function Node (dbName, options) {
   };
 
   function post(uri, data, done) {
-    var postReq = request.post({
-      "uri": 'http://' + [that.server.conf.remoteipv4, that.server.conf.remoteport].join(':') + uri,
-      "timeout": 1000 * 10,
-      "json": true
-    }, function (err, res, body) {
-      done(err, res, body);
-    });
-    postReq.form(data);
+    return new Promise((resolve, reject) => {
+      var postReq = request.post({
+        "uri": 'http://' + [that.server.conf.remoteipv4, that.server.conf.remoteport].join(':') + uri,
+        "timeout": 1000 * 10,
+        "json": true
+      }, function (err, res, body) {
+        if (err) {
+          reject(err)
+          done && done(err)
+        } else {
+          resolve(res, body)
+          done && done(err, res, body)
+        }
+      });
+      postReq.form(data);
+    })
   }
-  
+
   this.startTesting = function(done) {
-    return Q.Promise(function(resolve, reject){
+    return new Promise(function(resolve, reject){
       if (started) return done();
       async.waterfall([
         function(next) {
@@ -141,9 +147,8 @@ function Node (dbName, options) {
   function service(callback) {
     return function () {
       const stack = duniter.statics.simpleStack();
-      for (const name of ['duniter-keypair', 'duniter-bma']) {
-        stack.registerDependency(require(name), name);
-      }
+      stack.registerDependency(require('../../../app/modules/keypair').KeypairDependency, 'duniter-keypair')
+      stack.registerDependency(require('../../../app/modules/bma').BmaDependency,         'duniter-bma')
       stack.registerDependency({
         duniter: {
           config: {
@@ -155,7 +160,7 @@ function Node (dbName, options) {
               options.remoteipv4 = options.remoteipv4 || null;
               options.remoteipv6 = options.remoteipv6 || null;
               options.remoteport = options.remoteport || 10901;
-              const overConf = Configuration.statics.complete(options);
+              const overConf = ConfDTO.complete(options);
               _.extend(conf, overConf);
             })
           },
@@ -202,7 +207,7 @@ function Node (dbName, options) {
   this.until = function (eventName, count) {
     var counted = 0;
     var max = count == undefined ? 1 : count;
-    return Q.Promise(function (resolve, reject) {
+    return new Promise(function (resolve, reject) {
       var finished = false;
       that.server.on(eventName, function () {
         counted++;
@@ -262,15 +267,25 @@ function Node (dbName, options) {
     });
   };
 
-  this.peeringP = () => Q.nfcall(this.peering);
+  this.peeringP = () => that.http.getPeer();
 
   this.submitPeer = function(peer, done) {
-    post('/network/peering/peers', {
-      "peer": Peer.statics.peerize(peer).getRawSigned()
+    return post('/network/peering/peers', {
+      "peer": PeerDTO.fromJSONObject(peer).getRawSigned()
     }, done);
   };
 
-  this.submitPeerP = (peer) => Q.nfcall(this.submitPeer, peer);
+  this.submitPeerP = (peer) => new Promise((res, rej) => {
+    that.submitPeer(peer, (err, data) => {
+      if (err) return rej(err)
+      res(data)
+    })
+  })
 
-  this.commitP = (params) => Q.nfcall(this.commit(params));
+  this.commitP = (params) => new Promise((res, rej) => {
+    this.commit(params)((err, data) => {
+      if (err) return rej(err)
+      res(data)
+    })
+  })
 }

@@ -4,12 +4,13 @@ const _         = require('underscore');
 const co        = require('co');
 const should    = require('should');
 const duniter   = require('../../index');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const user      = require('./tools/user');
 const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
+const shutDownEngine  = require('./tools/shutDownEngine');
 
 const expectAnswer   = httpTest.expectAnswer;
 
@@ -25,32 +26,34 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = duniter(
-  '/bb11',
-  MEMORY_MODE,
-  _.extend({
-  port: '8561',
-  pair: {
-    pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-    sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
-  }
-}, commonConf));
+let s1, cat, tac, toc
 
-const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
-const tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: s1 });
-const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+const commitS1 = (opts) => commit(s1)(opts)
 
 describe("Identities kicking", function() {
 
   before(function() {
 
-    const commitS1 = commit(s1);
-
     return co(function *() {
 
-      const now = Math.round(new Date().getTime() / 1000);
+      s1 = duniter(
+        '/bb11',
+        MEMORY_MODE,
+        _.extend({
+          port: '8561',
+          pair: {
+            pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+            sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
+          }
+        }, commonConf));
+
+      cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
+      tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: s1 });
+      toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+
+      const now = 1400000000
       yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-      require('duniter-prover').duniter.methods.hookServer(s1);
+      require('../../app/modules/prover').ProverDependency.duniter.methods.hookServer(s1);
       yield cat.createIdentity();
       yield tac.createIdentity();
       yield cat.cert(tac);
@@ -89,6 +92,12 @@ describe("Identities kicking", function() {
       });
     });
   });
+
+  after(() => {
+    return Promise.all([
+      shutDownEngine(s1)
+    ])
+  })
 
   /**
    *

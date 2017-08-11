@@ -2,11 +2,11 @@
 var should   = require('should');
 var assert   = require('assert');
 
-var Merkle = require('../../app/lib/entity/merkle');
+var MerkleDTO = require('../../app/lib/dto/MerkleDTO').MerkleDTO
 
 describe("Merkle ['a', 'b', 'c', 'd', 'e']", function(){
 
-  var m = new Merkle({ type: 'CollectionName', criteria: '{}'});
+  var m = new MerkleDTO();
   m.initialize(['a', 'b', 'c', 'd', 'e']);
 
   it('should have root 16E6BEB3E080910740A2923D6091618CAA9968AEAD8A52D187D725D199548E2C', function(){
@@ -40,7 +40,7 @@ describe("Merkle ['a', 'b', 'c', 'd', 'e']", function(){
 
 describe("Merkle []", function(){
 
-  var m = new Merkle({ type: 'CollectionName', criteria: '{}'});
+  var m = new MerkleDTO();
   m.initialize([]);
 
   it('should have root empty', function(){

@@ -5,7 +5,7 @@ const _ = require('underscore');
 const assert = require('assert');
 const should = require('should');
 const rp        = require('request-promise');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const commit    = require('./tools/commit');
 const toolbox = require('./tools/toolbox');
 const user   = require('./tools/user');
@@ -31,38 +31,40 @@ describe("Crosschain transactions", function() {
 
   describe('Successfull transaction', () => {
 
-    const sB = toolbox.server(_.extend({
-      memory: MEMORY_MODE,
-      name: 'bb11',
-      currency: 'BETA_BROUZOUF',
-      pair: {
-        pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
-        sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
-      }
-    }, commonConf));
-
-    const sM = toolbox.server(_.extend({
-      memory: MEMORY_MODE,
-      name: 'bb12',
-      currency: 'META_BROUZOUF',
-      pair: {
-        pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
-        sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
-      }
-    }, commonConf));
-
-    // toc is on 2 currencies
-    const tocB = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: sB });
-    const tocM = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: sM });
-    // tic is on 2 currencies
-    const ticB = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: sB });
-    const ticM = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: sM });
-
-    let btx0, mtx0; // Source transactions for coins
+    let sB, sM, tocB, tocM, ticB, ticM, btx0, mtx0; // Source transactions for coins
 
     before(() => co(function *() {
-        yield sB.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-        yield sM.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
+
+
+      sB = toolbox.server(_.extend({
+        memory: MEMORY_MODE,
+        name: 'bb11',
+        currency: 'BETA_BROUZOUF',
+        pair: {
+          pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
+          sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
+        }
+      }, commonConf));
+
+      sM = toolbox.server(_.extend({
+        memory: MEMORY_MODE,
+        name: 'bb12',
+        currency: 'META_BROUZOUF',
+        pair: {
+          pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
+          sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
+        }
+      }, commonConf));
+
+      // toc is on 2 currencies
+      tocB = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: sB });
+      tocM = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: sM });
+      // tic is on 2 currencies
+      ticB = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: sB });
+      ticM = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: sM });
+
+        yield sB.initDalBmaConnections();
+        yield sM.initDalBmaConnections();
 
         // Initialize BETA
         yield ticB.createIdentity();
@@ -100,11 +102,18 @@ describe("Crosschain transactions", function() {
       })
     );
 
+    after(() => {
+      return Promise.all([
+        sB.closeCluster(),
+        sM.closeCluster()
+      ])
+    })
+
     describe("check initial sources", function(){
-      it('toc should now have 120 BETA_BROUZOUF from Transaction sources due to initial TX', checkHaveSources(tocB, 1, 120));
-      it('tic should now have 120 META_BROUZOUF from Transaction sources due to initial TX', checkHaveSources(ticM, 1, 120));
-      it('toc should now have 0 META_BROUZOUF from Transaction sources', checkHaveSources(tocM, 0, 0));
-      it('tic should now have 0 BETA_BROUZOUF from Transaction sources', checkHaveSources(ticB, 0, 0));
+      it('toc should now have 120 BETA_BROUZOUF from Transaction sources due to initial TX', () => checkHaveSources(tocB, 1, 120));
+      it('tic should now have 120 META_BROUZOUF from Transaction sources due to initial TX', () => checkHaveSources(ticM, 1, 120));
+      it('toc should now have 0 META_BROUZOUF from Transaction sources', () => checkHaveSources(tocM, 0, 0));
+      it('tic should now have 0 BETA_BROUZOUF from Transaction sources', () => checkHaveSources(ticB, 0, 0));
     });
 
     describe('Transfering', () => {
@@ -121,13 +130,13 @@ describe("Crosschain transactions", function() {
         // 1. toc secretely chooses X password
         let btx1 = yield tocB.prepareUTX(btx0, ['SIG(0)'], [{ qty: 120, base: 0, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + ticB.pub + ')) || (SIG(' + tocB.pub + ') && SIG(' + ticB.pub + '))'  }], { comment: 'BETA toc to tic', blockstamp: blockstampB });
         // 2. toc makes a rollback transaction from tx1, signed by both parties (through internet): toc and tic
-        let btx2 = yield tocB.prepareMTX(btx1, ticB, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + tocB.pub + ')' }], { comment: 'money back to tocB in 48h', locktime: 3600*48, blockstamp: blockstampB }); // N.B.: locktime should be like 48h in real world
+        let btx2 = yield tocB.prepareMTX(btx1, ticB, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + tocB.pub + ')' }], { comment: 'money back to tocB in 48h', locktime: 3600 * 48, blockstamp: blockstampB }); // N.B.: locktime should be like 48h in real world
 
         // TICM side (META)
         // 3. tic generates a transaction based on H(X) given by toc (through internet)
         let mtx3 = yield ticM.prepareUTX(mtx0, ['SIG(0)'], [{ qty: 120, base: 0, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + tocM.pub + ')) || (SIG(' + ticM.pub + ') && SIG(' + tocM.pub + '))'  }], { comment: 'META tic to toc', blockstamp: blockstampM });
         // 4. tic makes a rollback transaction from tx1, signed by both parties: toc and tic
-        let mtx4 = yield ticM.prepareMTX(mtx3, tocM, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + ticM.pub + ')' }], { comment: 'money back to ticM', locktime: 3600*24, blockstamp: blockstampM }); // N.B.: locktime should be like 24h in real world
+        let mtx4 = yield ticM.prepareMTX(mtx3, tocM, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + ticM.pub + ')' }], { comment: 'money back to ticM', locktime: 3600 * 24, blockstamp: blockstampM }); // N.B.: locktime should be like 24h in real world
 
         // We submit TX1 to the network & write it
         yield tocB.sendTX(btx1);
@@ -207,45 +216,41 @@ describe("Crosschain transactions", function() {
 
   describe('Rollbacked transaction', () => {
 
-    const sB = toolbox.server(_.extend({
-      memory: MEMORY_MODE,
-      name: 'bb11',
-      currency: 'BETA_BROUZOUF2',
-      pair: {
-        pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
-        sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
-      }
-    }, commonConf));
-
-    const sM = toolbox.server(_.extend({
-      memory: MEMORY_MODE,
-      name: 'bb12',
-      currency: 'META_BROUZOUF2',
-      pair: {
-        pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
-        sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
-      }
-    }, commonConf));
-
-    // toc is on 2 currencies
-    const tocB = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: sB });
-    const tocM = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: sM });
-    // tic is on 2 currencies
-    const ticB = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: sB });
-    const ticM = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: sM });
-
-    let btx0, mtx0; // Source transactions for coins
+    let sB, sM, tocB, tocM, ticB, ticM, btx0, mtx0; // Source transactions for coins
 
     before(function() {
 
       return co(function *() {
-        let server = yield sB.initWithDAL();
-        let bmapi = yield bma(server);
-        yield bmapi.openConnections();
 
-        server = yield sM.initWithDAL();
-        bmapi = yield bma(server);
-        yield bmapi.openConnections();
+        sB = toolbox.server(_.extend({
+          memory: MEMORY_MODE,
+          name: 'bb11',
+          currency: 'BETA_BROUZOUF2',
+          pair: {
+            pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
+            sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
+          }
+        }, commonConf));
+
+        sM = toolbox.server(_.extend({
+          memory: MEMORY_MODE,
+          name: 'bb12',
+          currency: 'META_BROUZOUF2',
+          pair: {
+            pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
+            sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
+          }
+        }, commonConf));
+
+        // toc is on 2 currencies
+        tocB = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: sB });
+        tocM = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: sM });
+        // tic is on 2 currencies
+        ticB = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: sB });
+        ticM = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: sM });
+
+        yield sB.initDalBmaConnections();
+        yield sM.initDalBmaConnections()
 
         // Initialize BETA
         yield ticB.createIdentity();
@@ -283,11 +288,18 @@ describe("Crosschain transactions", function() {
       });
     });
 
+    after(() => {
+      return Promise.all([
+        sB.closeCluster(),
+        sM.closeCluster()
+      ])
+    })
+
     describe("check initial sources", function(){
-      it('toc should now have 120 BETA_BROUZOUF from Transaction sources due to initial TX', checkHaveSources(tocB, 1, 120));
-      it('tic should now have 120 META_BROUZOUF from Transaction sources due to initial TX', checkHaveSources(ticM, 1, 120));
-      it('toc should now have 0 META_BROUZOUF from Transaction sources', checkHaveSources(tocM, 0, 0));
-      it('tic should now have 0 BETA_BROUZOUF from Transaction sources', checkHaveSources(ticB, 0, 0));
+      it('toc should now have 120 BETA_BROUZOUF from Transaction sources due to initial TX', () => checkHaveSources(tocB, 1, 120));
+      it('tic should now have 120 META_BROUZOUF from Transaction sources due to initial TX', () => checkHaveSources(ticM, 1, 120));
+      it('toc should now have 0 META_BROUZOUF from Transaction sources', () => checkHaveSources(tocM, 0, 0));
+      it('tic should now have 0 BETA_BROUZOUF from Transaction sources', () => checkHaveSources(ticB, 0, 0));
     });
 
     describe('Transfering', () => {
@@ -364,24 +376,22 @@ describe("Crosschain transactions", function() {
         yield unit.shouldFail(ticM.sendTX(mtx5), 'Source already consumed');
       }));
 
-      it('toc should now have 120 BETA_BROUZOUF from Transaction sources due to rollback TX', checkHaveSources(tocB, 1, 120));
-      it('tic should now have 120 META_BROUZOUF from Transaction sources due to rollback TX', checkHaveSources(ticM, 1, 120));
-      it('toc should now have 0 META_BROUZOUF from Transaction sources', checkHaveSources(tocM, 0, 0));
-      it('tic should now have 0 BETA_BROUZOUF from Transaction sources', checkHaveSources(ticB, 0, 0));
+      it('toc should now have 120 BETA_BROUZOUF from Transaction sources due to rollback TX', () => checkHaveSources(tocB, 1, 120));
+      it('tic should now have 120 META_BROUZOUF from Transaction sources due to rollback TX', () => checkHaveSources(ticM, 1, 120));
+      it('toc should now have 0 META_BROUZOUF from Transaction sources', () => checkHaveSources(tocM, 0, 0));
+      it('tic should now have 0 BETA_BROUZOUF from Transaction sources', () => checkHaveSources(ticB, 0, 0));
     });
   });
 });
 
 function checkHaveSources(theUser, sourcesCount, sourcesTotalAmount) {
-  return function() {
-    return httpTest.expectAnswer(rp('http://' + theUser.node.server.conf.ipv4 + ':' + theUser.node.server.conf.port + '/tx/sources/' + theUser.pub, { json: true }), (res) => {
-      const txRes = _.filter(res.sources, { type: 'T' });
-      txRes.should.have.length(sourcesCount);
-      let sum = 0;
-      for (const res of txRes) {
-        sum += res.amount;
-      }
-      assert.equal(sum, sourcesTotalAmount);
-    });
-  };
+  return httpTest.expectAnswer(rp('http://' + theUser.node.server.conf.ipv4 + ':' + theUser.node.server.conf.port + '/tx/sources/' + theUser.pub, { json: true }), (res) => {
+    const txRes = _.filter(res.sources, { type: 'T' });
+    txRes.should.have.length(sourcesCount);
+    let sum = 0;
+    for (const result of txRes) {
+      sum += result.amount;
+    }
+    assert.equal(sum, sourcesTotalAmount);
+  });
 }

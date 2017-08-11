@@ -2,7 +2,7 @@
 
 const co        = require('co');
 const should    = require('should');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const constants = require('../../app/lib/constants');
 const toolbox   = require('./tools/toolbox');
 
@@ -27,6 +27,13 @@ describe("Protocol 0.6 Difficulties", function() {
       s2.until('block', 1)
     ];
   }));
+
+  after(() => {
+    return Promise.all([
+      s1.closeCluster(),
+      s2.closeCluster()
+    ])
+  })
 
   it('should be able to emit a block#1 by a different user', () => co(function*() {
     yield [

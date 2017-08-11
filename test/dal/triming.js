@@ -1,9 +1,9 @@
 "use strict";
 const co = require('co');
 const should = require('should');
-const FileDAL = require('../../app/lib/dal/fileDAL');
+const FileDAL = require('../../app/lib/dal/fileDAL').FileDAL
 const dir = require('../../app/lib/system/directory');
-const indexer = require('duniter-common').indexer;
+const indexer    = require('../../app/lib/indexer').Indexer
 const toolbox = require('../integration/tools/toolbox');
 
 let dal;
@@ -11,7 +11,7 @@ let dal;
 describe("Triming", function(){
 
   before(() => co(function *() {
-    dal = FileDAL(yield dir.getHomeParams(true, 'db0'));
+    dal = new FileDAL(yield dir.getHomeParams(true, 'db0'));
     yield dal.init();
   }));
 
@@ -40,9 +40,9 @@ describe("Triming", function(){
 
   it('should be able to feed the iindex', () => co(function *() {
     yield dal.iindexDAL.insertBatch([
-      { op: 'CREATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', uid: 'cat', created_on: '121-H', written_on: '122-H', member: true,  wasMember: true, kick: false },
-      { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', uid: null,  created_on: '121-H', written_on: '123-H', member: null,  wasMember: null, kick: true },
-      { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', uid: null,  created_on: '121-H', written_on: '124-H', member: false, wasMember: null, kick: false }
+      { op: 'CREATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', uid: 'cat', created_on: '121-H', written_on: '122-H', writtenOn: 122, member: true,  wasMember: true, kick: false },
+      { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', uid: null,  created_on: '121-H', written_on: '123-H', writtenOn: 123, member: null,  wasMember: null, kick: true },
+      { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', uid: null,  created_on: '121-H', written_on: '124-H', writtenOn: 124, member: false, wasMember: null, kick: false }
     ]);
     let lignes = yield dal.iindexDAL.reducable('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
     lignes.should.have.length(3);
@@ -67,10 +67,10 @@ describe("Triming", function(){
 
   it('should be able to feed the mindex', () => co(function *() {
     yield dal.mindexDAL.insertBatch([
-      { op: 'CREATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', created_on: '121-H', written_on: '122-H', expires_on: 1000, expired_on: null },
-      { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', created_on: '121-H', written_on: '123-H', expires_on: 1200, expired_on: null },
-      { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', created_on: '121-H', written_on: '124-H', expires_on: null, expired_on: null },
-      { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', created_on: '121-H', written_on: '125-H', expires_on: 1400, expired_on: null }
+      { op: 'CREATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', created_on: '121-H', written_on: '122-H', writtenOn: 122, expires_on: 1000, expired_on: null },
+      { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', created_on: '121-H', written_on: '123-H', writtenOn: 123, expires_on: 1200, expired_on: null },
+      { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', created_on: '121-H', written_on: '124-H', writtenOn: 124, expires_on: null, expired_on: null },
+      { op: 'UPDATE', pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', created_on: '121-H', written_on: '125-H', writtenOn: 125, expires_on: 1400, expired_on: null }
     ]);
     const lignes = yield dal.mindexDAL.reducable('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
     lignes.should.have.length(4);
@@ -87,9 +87,9 @@ describe("Triming", function(){
 
   it('should be able to feed the cindex', () => co(function *() {
     yield dal.cindexDAL.insertBatch([
-      { op: 'CREATE', issuer: 'HgTT', receiver: 'DNan', created_on: '121-H', written_on: '126-H', expires_on: 1000, expired_on: null },
-      { op: 'UPDATE', issuer: 'HgTT', receiver: 'DNan', created_on: '121-H', written_on: '126-H', expires_on: null, expired_on: 3000 },
-      { op: 'CREATE', issuer: 'DNan', receiver: 'HgTT', created_on: '125-H', written_on: '126-H', expires_on: null, expired_on: null }
+      { op: 'CREATE', issuer: 'HgTT', receiver: 'DNan', created_on: '121-H', written_on: '126-H', writtenOn: 126, expires_on: 1000, expired_on: null },
+      { op: 'UPDATE', issuer: 'HgTT', receiver: 'DNan', created_on: '121-H', written_on: '126-H', writtenOn: 126, expires_on: null, expired_on: 3000 },
+      { op: 'CREATE', issuer: 'DNan', receiver: 'HgTT', created_on: '125-H', written_on: '126-H', writtenOn: 126, expires_on: null, expired_on: null }
     ]);
     (yield dal.cindexDAL.sqlFind({ issuer: 'HgTT' })).should.have.length(2);
     (yield dal.cindexDAL.sqlFind({ issuer: 'DNan' })).should.have.length(1);
@@ -99,16 +99,16 @@ describe("Triming", function(){
     // Triming
     yield dal.trimIndexes(127);
     (yield dal.cindexDAL.sqlFind({ issuer: 'HgTT' })).should.have.length(0);
-    // { op: 'UPDATE', issuer: 'DNan', receiver: 'HgTT', created_on: '125-H', written_on: '126-H', expires_on: 3600, expired_on: null },/**/
+    // { op: 'UPDATE', issuer: 'DNan', receiver: 'HgTT', created_on: '125-H', written_on: '126-H', writtenOn: 126, expires_on: 3600, expired_on: null },/**/
     (yield dal.cindexDAL.sqlFind({ issuer: 'DNan' })).should.have.length(1);
   }));
 
   it('should be able to feed the sindex', () => co(function *() {
     yield dal.sindexDAL.insertBatch([
-      { op: 'CREATE', identifier: 'SOURCE_1', pos: 4, written_on: '126-H', written_time: 2000, consumed: false },
-      { op: 'UPDATE', identifier: 'SOURCE_1', pos: 4, written_on: '139-H', written_time: 4500, consumed: true },
-      { op: 'CREATE', identifier: 'SOURCE_2', pos: 4, written_on: '126-H', written_time: 2000, consumed: false },
-      { op: 'CREATE', identifier: 'SOURCE_3', pos: 4, written_on: '126-H', written_time: 2000, consumed: false }
+      { op: 'CREATE', identifier: 'SOURCE_1', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false },
+      { op: 'UPDATE', identifier: 'SOURCE_1', pos: 4, written_on: '139-H', writtenOn: 139, written_time: 4500, consumed: true },
+      { op: 'CREATE', identifier: 'SOURCE_2', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false },
+      { op: 'CREATE', identifier: 'SOURCE_3', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false }
     ]);
     (yield dal.sindexDAL.sqlFind({ identifier: 'SOURCE_1' })).should.have.length(2);
     (yield dal.sindexDAL.sqlFind({ pos: 4 })).should.have.length(4);
@@ -140,5 +140,7 @@ describe("Triming", function(){
     (yield server.dal.bindexDAL.head(13)).should.have.property('number').equal(0);
     yield server.commit();
     should.not.exists(yield server.dal.bindexDAL.head(14)); // Trimed
+
+    yield server.closeCluster()
   }));
 });

@@ -1,22 +1,20 @@
 "use strict";
 const co      = require('co');
-const Q		    = require('q');
 const _ = require('underscore');
 const async		= require('async');
 const request	= require('request');
-const contacter = require('duniter-crawler').duniter.methods.contacter;
-const common  = require('duniter-common');
-const ucp     = common.buid;
-const parsers = require('duniter-common').parsers;
-const keyring	= common.keyring;
-const rawer		= common.rawer;
+const contacter = require('../../../app/modules/crawler').CrawlerDependency.duniter.methods.contacter;
+const CommonConstants = require('../../../app/lib/common-libs/constants').CommonConstants
+const ucp     = require('../../../app/lib/common-libs/buid').Buid
+const parsers = require('../../../app/lib/common-libs/parsers').parsers
+const rawer = require('../../../app/lib/common-libs').rawer
+const keyring = require('../../../app/lib/common-libs/crypto/keyring')
 const constants = require('../../../app/lib/constants');
-const Identity = require('../../../app/lib/entity/identity');
-const Certification = require('../../../app/lib/entity/certification');
-const Membership = require('../../../app/lib/entity/membership');
-const Revocation = require('../../../app/lib/entity/revocation');
-const Peer = require('../../../app/lib/entity/peer');
-const Transaction = require('../../../app/lib/entity/transaction');
+const CertificationDTO = require('../../../app/lib/dto/CertificationDTO').CertificationDTO
+const MembershipDTO = require('../../../app/lib/dto/MembershipDTO').MembershipDTO
+const RevocationDTO = require('../../../app/lib/dto/RevocationDTO').RevocationDTO
+const PeerDTO = require('../../../app/lib/dto/PeerDTO').PeerDTO
+const TransactionDTO = require('../../../app/lib/dto/TransactionDTO').TransactionDTO
 
 module.exports = function (uid, url, node) {
   return new User(uid, url, node);
@@ -46,8 +44,9 @@ function User (uid, options, node) {
   }
 
   this.createIdentity = (useRoot, fromServer) => co(function*() {
-    if (!pub)
-      yield Q.nfcall(init);
+    if (!pub) {
+      init(() => {})
+    }
     const current = yield node.server.BlockchainService.current();
     let buid = !useRoot && current ? ucp.format.buid(current.number, current.hash) : '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855';
     createdIdentity = rawer.getOfficialIdentity({
@@ -55,8 +54,8 @@ function User (uid, options, node) {
       uid: uid,
       issuer: pub,
       currency: node.server.conf.currency
-    });
-    createdIdentity += keyring.Key(pub, sec).signSync(createdIdentity) + '\n';
+    }, false);
+    createdIdentity += keyring.KeyGen(pub, sec).signSync(createdIdentity) + '\n';
     yield that.submitIdentity(createdIdentity, fromServer);
   });
 
@@ -83,14 +82,14 @@ function User (uid, options, node) {
     };
     _.extend(cert, overrideProps || {});
     const rawCert = rawer.getOfficialCertification(cert);
-    cert.sig = keyring.Key(pub, sec).signSync(rawCert, sec);
-    return Certification.statics.fromJSON(cert);
+    cert.sig = keyring.KeyGen(pub, sec).signSync(rawCert, sec);
+    return CertificationDTO.fromJSONObject(cert);
   });
 
   this.cert = (user, fromServer, toServer) => co(function*() {
     const cert = yield that.makeCert(user, fromServer);
     yield doPost('/wot/certify', {
-      "cert": cert.getRaw()
+      "cert": cert.getRawSigned()
     }, toServer);
   });
 
@@ -104,11 +103,11 @@ function User (uid, options, node) {
 
   this.makeRevocation = (givenLookupIdty, overrideProps) => co(function*() {
     const res = givenLookupIdty || (yield that.lookup(pub));
-    const idty = Identity.statics.fromJSON({
+    const idty = {
       uid: res.results[0].uids[0].uid,
       buid: res.results[0].uids[0].meta.timestamp,
       sig: res.results[0].uids[0].self
-    });
+    }
     const revocation = {
       "currency": node.server.conf.currency,
       "issuer": pub,
@@ -119,15 +118,15 @@ function User (uid, options, node) {
     };
     _.extend(revocation, overrideProps || {});
     const rawRevocation = rawer.getOfficialRevocation(revocation);
-    revocation.revocation = keyring.Key(pub, sec).signSync(rawRevocation);
-    return Revocation.statics.fromJSON(revocation);
+    revocation.revocation = keyring.KeyGen(pub, sec).signSync(rawRevocation);
+    return RevocationDTO.fromJSONObject(revocation);
   });
 
   this.revoke = (givenLookupIdty) => co(function *() {
     const revocation = yield that.makeRevocation(givenLookupIdty);
-    return Q.nfcall(post, '/wot/revoke', {
+    return post('/wot/revoke', {
       "revocation": revocation.getRaw()
-    });
+    })
   });
 
   this.makeMembership = (type, fromServer, overrideProps) => co(function*() {
@@ -146,13 +145,13 @@ function User (uid, options, node) {
     };
     _.extend(join, overrideProps || {});
     const rawJoin = rawer.getMembershipWithoutSignature(join);
-    join.signature = keyring.Key(pub, sec).signSync(rawJoin);
-    return Membership.statics.fromJSON(join);
+    join.signature = keyring.KeyGen(pub, sec).signSync(rawJoin);
+    return MembershipDTO.fromJSONObject(join)
   });
 
   this.sendMembership = (type) => co(function*() {
     const ms = yield that.makeMembership(type);
-    yield Q.nfcall(post, '/blockchain/membership', {
+    yield post('/blockchain/membership', {
       "membership": ms.getRawSigned()
     });
   });
@@ -184,7 +183,7 @@ function User (uid, options, node) {
       outputsToConsume = outputsToConsume.slice(opts.theseOutputsStart);
     }
     let inputs = outputsToConsume.map((out, index) => {
-      const output = Transaction.statics.outputStr2Obj(out);
+      const output = TransactionDTO.outputStr2Obj(out);
       return {
         src: [output.amount, output.base, 'T', obj.hash, (opts.theseOutputsStart || 0) + index].join(':'),
         unlock: unlocks[index]
@@ -197,7 +196,7 @@ function User (uid, options, node) {
     let obj = parsers.parseTransaction.syncWrite(previousTX);
     // Unlocks inputs with given "unlocks" strings
     let inputs = obj.outputs.map((out, index) => {
-      const output = Transaction.statics.outputStr2Obj(out);
+      const output = TransactionDTO.outputStr2Obj(out);
       return {
         src: [output.amount, output.base, 'T', obj.hash, index].join(':'),
         unlock: unlocks[index]
@@ -215,7 +214,7 @@ function User (uid, options, node) {
     }
     let http = yield getContacter();
     let current = yield http.getCurrent();
-    let version = current && Math.min(common.constants.LAST_VERSION_FOR_TX, current.version);
+    let version = current && Math.min(CommonConstants.LAST_VERSION_FOR_TX, current.version);
     let json = yield http.getSources(pub);
     let i = 0;
     let cumulated = 0;
@@ -242,11 +241,11 @@ function User (uid, options, node) {
     let sources2 = [];
     let total = 0;
     for (let j = 0; j < sources.length && total < amount; j++) {
-      var src = sources[j];
+      let src = sources[j];
       total += src.amount * Math.pow(10, src.base);
       sources2.push(src);
     }
-    var inputSum = 0;
+    let inputSum = 0;
     sources2.forEach((src) => inputSum += src.amount * Math.pow(10, src.base));
     let inputs = sources2.map((src) => {
       return {
@@ -276,9 +275,9 @@ function User (uid, options, node) {
   });
 
   function signed(raw, user2) {
-    let signatures = [keyring.Key(pub, sec).signSync(raw)];
+    let signatures = [keyring.KeyGen(pub, sec).signSync(raw)];
     if (user2) {
-      signatures.push(keyring.Key(user2.pub, user2.sec).signSync(raw));
+      signatures.push(keyring.KeyGen(user2.pub, user2.sec).signSync(raw));
     }
     return raw + signatures.join('\n') + '\n';
   }
@@ -318,7 +317,7 @@ function User (uid, options, node) {
   };
 
   this.makePeer = (endpoints, overrideProps) => co(function*() {
-    const peer = Peer.statics.fromJSON({
+    const peer = PeerDTO.fromJSONObject({
       currency: node.server.conf.currency,
       pubkey: pub,
       block: '2-00008DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB',
@@ -326,19 +325,26 @@ function User (uid, options, node) {
     });
     _.extend(peer, overrideProps || {});
     const rawPeer = rawer.getPeerWithoutSignature(peer);
-    peer.signature = keyring.Key(pub, sec).signSync(rawPeer);
-    return Peer.statics.fromJSON(peer);
+    peer.signature = keyring.KeyGen(pub, sec).signSync(rawPeer);
+    return PeerDTO.fromJSONObject(peer)
   });
 
   function post(uri, data, done) {
-    var postReq = request.post({
-      "uri": 'http://' + [node.server.conf.remoteipv4, node.server.conf.remoteport].join(':') + uri,
-      "timeout": 1000 * 100000
-    }, function (err, res, body) {
-      err = err || (res.statusCode != 200 && body != 'Already up-to-date' && body) || null;
-      done(err, res, body);
-    });
-    postReq.form(data);
+    return new Promise((resolve, reject) => {
+      var postReq = request.post({
+        "uri": 'http://' + [node.server.conf.remoteipv4, node.server.conf.remoteport].join(':') + uri,
+        "timeout": 1000 * 100000
+      }, function (err, res, body) {
+        err = err || (res.statusCode != 200 && body != 'Already up-to-date' && body) || null;
+        if (err) {
+          reject(err)
+        } else {
+          resolve(res, body)
+        }
+        done && done(err, res, body);
+      });
+      postReq.form(data);
+    })
   }
 
   function doPost(uri, data, fromServer) {
@@ -357,7 +363,7 @@ function User (uid, options, node) {
   }
 
   function getContacter(fromServer) {
-    return Q.Promise(function(resolve){
+    return new Promise(function(resolve){
       let theNode = (fromServer && { server: fromServer }) || node;
       resolve(contacter(theNode.server.conf.ipv4, theNode.server.conf.port, {
         timeout: 1000 * 100000
@@ -370,5 +376,10 @@ function User (uid, options, node) {
     return node2.getLookup(pubkey);
   });
 
-  this.sendP = (amount, userid, comment) => Q.nfcall(this.send.apply(this, [amount, userid, comment]));
+  this.sendP = (amount, userid, comment) => new Promise((res, rej) => {
+    that.send(amount, userid, comment)((err, data) => {
+      if (err) return rej(err)
+      res(data)
+    })
+  })
 }

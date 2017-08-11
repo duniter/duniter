@@ -5,38 +5,43 @@ const _         = require('underscore');
 const should    = require('should');
 const assert    = require('assert');
 const duniter     = require('../../index');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const user      = require('./tools/user');
 const http      = require('./tools/http');
+const shutDownEngine  = require('./tools/shutDownEngine');
 const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
 const ws        = require('ws');
 
-const server = duniter(
-  '/bb11',
-  true,
-  {
-  ipv4: '127.0.0.1',
-  port: '7777',
-  currency: 'bb',
-  httpLogs: true,
-  sigQty: 1,
-  dt: 60,
-  dtReeval: 120,
-  udTime0: 1488902199,
-  udReevalTime0: 1520438199,
-  pair: {
-    pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-    sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
-  }
-});
+require('../../app/modules/prover/lib/constants').Constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
 
-const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: server });
-const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: server });
+let server, cat, toc
 
 describe("HTTP API", function() {
 
   before(() => co(function*(){
+
+    server = duniter(
+      '/bb11',
+      true,
+      {
+        ipv4: '127.0.0.1',
+        port: '7777',
+        currency: 'bb',
+        httpLogs: true,
+        sigQty: 1,
+        dt: 60,
+        dtReeval: 120,
+        udTime0: 1488902199,
+        udReevalTime0: 1520438199,
+        pair: {
+          pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+          sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
+        }
+      });
+
+    cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: server });
+    toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: server });
 
     const commit = makeBlockAndPost(server);
 
@@ -56,9 +61,15 @@ describe("HTTP API", function() {
     yield commit();
   }));
 
+  after(() => {
+    return Promise.all([
+      shutDownEngine(server)
+    ])
+  })
+
   function makeBlockAndPost(theServer) {
     return function() {
-      return require('duniter-prover').duniter.methods.generateAndProveTheNext(theServer)
+      return require('../../app/modules/prover').ProverDependency.duniter.methods.generateAndProveTheNext(theServer)
         .then(postBlock(theServer));
     };
   }

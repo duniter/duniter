@@ -15,6 +15,7 @@ code_climate:
     repo_token: 67f8f00d5cf9e5c46b7644aebee5ac9df9d6ee267014a6f61a7a7b1048357a1c
 
 sudo: false
+dist: precise
 
 # Unit Tests (+code coverage)
 script: npm run-script test-travis

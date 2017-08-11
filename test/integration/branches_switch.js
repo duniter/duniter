@@ -3,12 +3,13 @@
 const co = require('co');
 const _         = require('underscore');
 const duniter     = require('../../index');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const user      = require('./tools/user');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
 const sync      = require('./tools/sync');
+const shutDownEngine  = require('./tools/shutDownEngine');
 const constants = require('../../app/lib/constants');
 
 const expectJSON     = httpTest.expectJSON;
@@ -23,42 +24,45 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = duniter(
-  '/bb11',
-  MEMORY_MODE,
-  _.extend({
-  swichOnTimeAheadBy: 0,
-  port: '7788',
-  pair: {
-    pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-    sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
-  },
-  rootoffset: 10,
-  sigQty: 1, dt: 1, ud0: 120
-}, commonConf));
-
-const s2 = duniter(
-  '/bb12',
-  MEMORY_MODE,
-  _.extend({
-  swichOnTimeAheadBy: 0,
-  port: '7789',
-  pair: {
-    pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
-    sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
-  }
-}, commonConf));
-
-const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
-const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+let s1, s2, cat, toc
 
 describe("Switch", function() {
 
   before(() => co(function *() {
+
+    s1 = duniter(
+      '/bb11',
+      MEMORY_MODE,
+      _.extend({
+        switchOnHeadAdvance: 0,
+        port: '7788',
+        pair: {
+          pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+          sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
+        },
+        rootoffset: 10,
+        sigQty: 1, dt: 1, ud0: 120
+      }, commonConf));
+
+    s2 = duniter(
+      '/bb12',
+      MEMORY_MODE,
+      _.extend({
+        switchOnHeadAdvance: 0,
+        port: '7789',
+        pair: {
+          pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
+          sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
+        }
+      }, commonConf));
+
+    cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
+    toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+
     yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
     yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-    s1.getMainEndpoint = require('duniter-bma').duniter.methods.getMainEndpoint
-    s2.getMainEndpoint = require('duniter-bma').duniter.methods.getMainEndpoint
+    s1.getMainEndpoint = require('../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
+    s2.getMainEndpoint = require('../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
     yield cat.createIdentity();
     yield toc.createIdentity();
     yield toc.cert(cat);
@@ -84,12 +88,19 @@ describe("Switch", function() {
     // So we now have:
     // S1 01234
     // S2   `3456789
-    yield s1.singleWritePromise(s2p);
+    yield s1.writePeer(s2p)
 
     // Forking S1 from S2
-    yield require('duniter-crawler').duniter.methods.pullBlocks(s1, s2p.pubkey);
+    yield require('../../app/modules/crawler').CrawlerDependency.duniter.methods.pullBlocks(s1, s2p.pubkey);
     // S1 should have switched to the other branch
   }));
+
+  after(() => {
+    return Promise.all([
+      shutDownEngine(s1),
+      shutDownEngine(s2)
+    ])
+  })
 
   describe("Server 1 /blockchain", function() {
 

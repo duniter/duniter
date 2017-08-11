@@ -8,9 +8,9 @@ const _         = require('underscore');
 const toolbox   = require('./tools/toolbox');
 const duniter   = require('../../index');
 const merkleh   = require('../../app/lib/helpers/merkle');
-const hashf     = require('duniter-common').hashf;
+const hashf     = require('../../app/lib/common-libs').hashf
 const constants = require('../../app/lib/constants');
-const Merkle    = require('../../app/lib/entity/merkle');
+const MerkleDTO = require('../../app/lib/dto/MerkleDTO').MerkleDTO
 
 const DB_NAME = "unit_tests";
 
@@ -31,7 +31,7 @@ describe("CLI", function() {
     const onReadBlockchainChunk = (count, from) => Promise.resolve(blockchain.blocks.slice(from, from + count));
     const onReadParticularBlock = (number) => Promise.resolve(blockchain.blocks[number]);
     const onPeersRequested = (req) => co(function*() {
-      const merkle = new Merkle();
+      const merkle = new MerkleDTO();
       merkle.initialize(leaves);
       merkle.leaf = {
         "hash": req.params.leaf,
@@ -71,8 +71,8 @@ describe("CLI", function() {
          */
         return toolbox.fakeSyncServer((count, from) => {
           // We just need to send the wrong chunk
-          const chunk = blockchain.blocks.slice(from, from + count).map((block, index) => {
-            if (index === 10) {
+          const chunk = blockchain.blocks.slice(from, from + count).map((block, index2) => {
+            if (index2 === 10) {
               const clone = _.clone(block);
               clone.hash = fakeHash;
             }
@@ -87,11 +87,11 @@ describe("CLI", function() {
          */
         return toolbox.fakeSyncServer((count, from) => {
           // We just need to send the wrong chunk
-          const chunk = blockchain.blocks.slice(from, from + count).map((block, index) => {
-            if (index === 10) {
+          const chunk = blockchain.blocks.slice(from, from + count).map((block, index2) => {
+            if (index2 === 10) {
               const clone = _.clone(block);
               clone.hash = fakeHash;
-            } else if (index === 11) {
+            } else if (index2 === 11) {
               const clone = _.clone(block);
               clone.previousHash = fakeHash;
               return clone;
@@ -117,8 +117,8 @@ describe("CLI", function() {
 
   it('config --autoconf', () => co(function*() {
     let res = yield execute(['config', '--autoconf']);
-    res.should.have.property("ipv4").not.equal("a wrong string");
-    res.should.have.property("ipv4").match(constants.IPV4_REGEXP);
+    res.should.have.property("pair").property('pub').not.equal("");
+    res.should.have.property("pair").property('sec').not.equal("");
   }));
 
   it('reset data', () => co(function*() {
@@ -176,16 +176,16 @@ function execute(args) {
 function executeSpawn(command) {
   return co(function*() {
     const finalArgs = [path.join(__dirname, '../../bin/duniter')].concat(command).concat(['--mdb', DB_NAME]);
-    const duniter = spawn(process.argv[0], finalArgs);
+    const duniterCmd = spawn(process.argv[0], finalArgs);
     return new Promise((resolve, reject) => {
       let res = "";
-      duniter.stdout.on('data', (data) => {
+      duniterCmd.stdout.on('data', (data) => {
         res += data.toString('utf8').replace(/\n/, '');
       });
-      duniter.stderr.on('data', (err) => {
+      duniterCmd.stderr.on('data', (err) => {
         console.log(err.toString('utf8').replace(/\n/, ''));
       });
-      duniter.on('close', (code) => code ? reject(code) : resolve(res) );
+      duniterCmd.on('close', (code) => code ? reject(code) : resolve(res) );
     });
   });
 }

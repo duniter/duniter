@@ -1,8 +1,9 @@
 "use strict";
 
 var assert = require('assert');
+var should = require('should');
 var co = require('co');
-var cfs = require('../../app/lib/cfs');
+var CFSCore = require('../../app/lib/dal/fileDALs/CFSCore').CFSCore;
 var mockFS = require('q-io/fs-mock')({
   'B5_a': {
     "A.json": '{ "text": "Content of A from B5_a" }'
@@ -21,11 +22,11 @@ var mockFS = require('q-io/fs-mock')({
 
 describe("CFS", () => {
 
-  var coreB3 = cfs('/B3', mockFS);
-  var coreB4 = cfs('/B4', mockFS, coreB3);
-  var coreB5 = cfs('/B5_a', mockFS, coreB4);
+  var coreB3 = new CFSCore('/B3', mockFS);
+  var coreB4 = new CFSCore('/B4', mockFS);
+  var coreB5 = new CFSCore('/B5_a', mockFS);
 
-  var rootCore = cfs('/OTHER', mockFS);
+  var rootCore = new CFSCore('/OTHER', mockFS);
 
   // ------------ Direct READ ------------
 
@@ -33,22 +34,6 @@ describe("CFS", () => {
     return co(function *() {
       var content = yield coreB5.readJSON('A.json');
       content.should.have.property('text').equal('Content of A from B5_a');
-    });
-  });
-
-  // ------------ Traversal READ ------------
-
-  it('should have the content of B.json from B5 (traversal read to B4)', () => {
-    return co(function *() {
-      var content = yield coreB5.readJSON('B.json');
-      content.should.have.property('text').equal('Content of B');
-    });
-  });
-
-  it('should have the content of C.json from B5 (traversal read to B3)', () => {
-    return co(function *() {
-      var content = yield coreB5.readJSON('C.json');
-      content.should.have.property('text').equal('Content of C from B3');
     });
   });
 
@@ -64,19 +49,18 @@ describe("CFS", () => {
 
   // WRITE of file /D.json
 
-  it('should have the content of C.json modified from B5 (direct read)', () => {
+  it('should have the content of D.json modified from B4 (direct read/write)', () => {
     return co(function *() {
       yield coreB4.writeJSON('D.json', { text: 'Content of D'});
-      var content = yield coreB5.readJSON('D.json');
+      var content = yield coreB4.readJSON('D.json');
       content.should.have.property('text').equal('Content of D');
     });
   });
 
   // REMOVE file /D.json
 
-  it('should have the content of C.json modified from B5 (direct read)', () => {
+  it('should have the content of D.json modified from B5 (direct read/write)', () => {
     return co(function *() {
-      yield coreB4.remove('D.json');
       var exists = yield coreB5.exists('D.json');
       var content = yield coreB5.read('D.json');
       assert.equal(exists, false);
@@ -94,26 +78,9 @@ describe("CFS", () => {
       yield coreB3.writeJSON('/DIR/G.json', { text: 'Content of DIR/I'});
       yield coreB4.writeJSON('/DIR/H.json', { text: 'Content of DIR/H'});
       yield coreB5.writeJSON('/DIR/I.json', { text: 'Content of DIR/G'});
-      var files = yield coreB5.list('/DIR');
-      files.should.have.length(3);
-      files.should.deepEqual(['G.json', 'H.json', 'I.json']);
-    });
-  });
-
-  // WRITE of file /DIR2/I.json in B3
-
-  it('should have I as files from /DIR2', () => {
-    return co(function *() {
-      yield coreB3.makeTree('/DIR2');
-      yield coreB3.writeJSON('/DIR2/I.json', { text: 'Content of DIR2/I in B3'});
-      // Check the list
-      var files = yield coreB5.list('/DIR2');
-      files.should.have.length(1);
-      files.should.deepEqual(['I.json']);
-      // Check its contents
-      var contents = yield coreB5.listJSON('/DIR2');
-      contents.should.have.length(1);
-      contents.should.deepEqual([{ text: 'Content of DIR2/I in B3' }]);
+      (yield coreB3.list('/DIR')).should.deepEqual(['G.json']);
+      (yield coreB4.list('/DIR')).should.deepEqual(['H.json']);
+      (yield coreB5.list('/DIR')).should.deepEqual(['I.json']);
     });
   });
 
@@ -123,11 +90,11 @@ describe("CFS", () => {
     return co(function *() {
       yield coreB3.makeTree('/DIR2');
       yield coreB3.writeJSON('/DIR2/I.json', { text: 'Content of DIR2/I in B4'});
-      var files = yield coreB5.list('/DIR2');
+      var files = yield coreB3.list('/DIR2');
       files.should.have.length(1);
       files.should.deepEqual(['I.json']);
       // Check its contents
-      var contents = yield coreB5.listJSON('/DIR2');
+      var contents = yield coreB3.listJSON('/DIR2');
       contents.should.have.length(1);
       contents.should.deepEqual([{ text: 'Content of DIR2/I in B4' }]);
     });
@@ -137,11 +104,11 @@ describe("CFS", () => {
 
   it('should have no files from /DIR2 after file DELETION', () => {
     return co(function *() {
-      yield coreB5.remove('/DIR2/I.json');
-      var files = yield coreB5.list('/DIR2');
+      yield coreB3.remove('/DIR2/I.json');
+      var files = yield coreB3.list('/DIR2');
       files.should.have.length(0);
       // Check its contents
-      var contents = yield coreB5.listJSON('/DIR2');
+      var contents = yield coreB3.listJSON('/DIR2');
       contents.should.have.length(0);
     });
   });

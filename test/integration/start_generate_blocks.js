@@ -3,16 +3,17 @@
 const co        = require('co');
 const _         = require('underscore');
 const duniter     = require('../../index');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const user      = require('./tools/user');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
 const until     = require('./tools/until');
 const multicaster = require('../../app/lib/streams/multicaster');
-const Peer = require('../../app/lib/entity/peer');
-const contacter  = require('duniter-crawler').duniter.methods.contacter;
+const PeerDTO   = require('../../app/lib/dto/PeerDTO').PeerDTO
+const contacter  = require('../../app/modules/crawler').CrawlerDependency.duniter.methods.contacter;
 const sync      = require('./tools/sync');
+const shutDownEngine  = require('./tools/shutDownEngine');
 
 const expectJSON     = httpTest.expectJSON;
 
@@ -26,34 +27,7 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = duniter(
-  '/bb7',
-  MEMORY_MODE,
-  _.extend({
-  port: '7790',
-  pair: {
-    pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-    sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
-  },
-  powDelay: 1
-}, commonConf));
-
-const s2 = duniter(
-  '/bb7_2',
-  MEMORY_MODE,
-  _.extend({
-  port: '7791',
-  pair: {
-    pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
-    sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
-  },
-  powDelay: 1
-}, commonConf));
-
-const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
-const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
-const tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
-const tuc = user('tuc', { pub: '3conGDUXdrTGbQPMQQhEC4Ubu1MCAnFrAYvUaewbUhtk', sec: '5ks7qQ8Fpkin7ycXpxQSxxjVhs8VTzpM3vEBMqM7NfC1ZiFJ93uQryDcoM93Mj77T6hDAABdeHZJDFnkDb35bgiU'}, { server: s1 });
+let s1, s2, cat, toc, tic, tuc
 
 let nodeS1;
 let nodeS2;
@@ -62,18 +36,48 @@ describe("Generation", function() {
 
   before(function() {
 
-    const commitS1 = commit(s1);
-
     return co(function *() {
+
+      s1 = duniter(
+        '/bb7',
+        MEMORY_MODE,
+        _.extend({
+          port: '7790',
+          pair: {
+            pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+            sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
+          },
+          powDelay: 1
+        }, commonConf));
+
+      s2 = duniter(
+        '/bb7_2',
+        MEMORY_MODE,
+        _.extend({
+          port: '7791',
+          pair: {
+            pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
+            sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
+          },
+          powDelay: 1
+        }, commonConf));
+
+      const commitS1 = commit(s1);
+
+      cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
+      toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+      tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
+      tuc = user('tuc', { pub: '3conGDUXdrTGbQPMQQhEC4Ubu1MCAnFrAYvUaewbUhtk', sec: '5ks7qQ8Fpkin7ycXpxQSxxjVhs8VTzpM3vEBMqM7NfC1ZiFJ93uQryDcoM93Mj77T6hDAABdeHZJDFnkDb35bgiU'}, { server: s1 });
+
       let servers = [s1, s2];
       for (const server of servers) {
-        server.getMainEndpoint = require('duniter-bma').duniter.methods.getMainEndpoint
+        server.getMainEndpoint = require('../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
         yield server.initWithDAL();
         server.bma = yield bma(server);
         yield server.bma.openConnections();
         require('../../app/modules/router').duniter.methods.routeToNetwork(server);
         yield server.PeeringService.generateSelfPeer(server.conf, 0);
-        const prover = require('duniter-prover').duniter.methods.prover(server);
+        const prover = require('../../app/modules/prover').ProverDependency.duniter.methods.prover(server);
         server.startBlockComputation = () => prover.startService();
         server.stopBlockComputation = () => prover.stopService();
       }
@@ -91,9 +95,9 @@ describe("Generation", function() {
       yield sync(0, 0, s1, s2);
       // Let each node know each other
       let peer1 = yield nodeS1.getPeer();
-      yield nodeS2.postPeer(new Peer(peer1).getRawSigned());
+      yield nodeS2.postPeer(PeerDTO.fromJSONObject(peer1).getRawSigned());
       let peer2 = yield nodeS2.getPeer();
-      yield nodeS1.postPeer(new Peer(peer2).getRawSigned());
+      yield nodeS1.postPeer(PeerDTO.fromJSONObject(peer2).getRawSigned());
       s1.startBlockComputation();
       yield until(s2, 'block', 1);
       s2.startBlockComputation();
@@ -107,6 +111,13 @@ describe("Generation", function() {
       s2.stopBlockComputation();
     });
   });
+
+  after(() => {
+    return Promise.all([
+      shutDownEngine(s1),
+      shutDownEngine(s2)
+    ])
+  })
 
   describe("Server 1 /blockchain", function() {
 

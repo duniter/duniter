@@ -2,7 +2,7 @@
 
 const co        = require('co');
 const should    = require('should');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const constants = require('../../app/lib/constants');
 const toolbox   = require('./tools/toolbox');
 
@@ -47,6 +47,12 @@ describe("Protocol 1.0 Ğ1 Dividend", function() {
       yield s1.commit({ time: (start + delayToUD) + aDay * i });
     }
   }));
+
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
 
   it('should have block#0 has no UD', () => s1.expectThat('/blockchain/block/0', (json) => {
     should.not.exist(json.dividend);

@@ -1,34 +1,18 @@
 "use strict";
 
 const co        = require('co');
-const Q         = require('q');
 const should    = require('should');
 const es        = require('event-stream');
 const _         = require('underscore');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
 const until     = require('./tools/until');
 const toolbox   = require('./tools/toolbox');
-const multicaster = require('../../app/lib/streams/multicaster');
-const Peer = require('../../app/lib/entity/peer');
+const Multicaster = require('../../app/lib/streams/multicaster').Multicaster
+const PeerDTO = require('../../app/lib/dto/PeerDTO').PeerDTO
 
-const s1 = toolbox.server({
-  pair: {
-    pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-    sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
-  }
-});
-
-const s2 = toolbox.server({
-  pair: {
-    pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
-    sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
-  }
-});
-
-const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
-const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+let s1, s2, cat, toc
 
 describe("Peer document expiry", function() {
 
@@ -36,16 +20,30 @@ describe("Peer document expiry", function() {
 
   before(() => co(function*() {
 
+    s1 = toolbox.server({
+      pair: {
+        pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+        sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
+      }
+    });
+
+    s2 = toolbox.server({
+      pair: {
+        pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
+        sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
+      }
+    });
+
+    cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
+    toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+
     const commitS1 = commit(s1);
 
     yield [s1, s2].reduce((p, server) => co(function*() {
       yield p;
-      yield server.initWithDAL();
-      const bmaAPI = yield bma(server);
-      yield bmaAPI.openConnections();
-      server.bma = bmaAPI;
+      yield server.initDalBmaConnections()
       require('../../app/modules/router').duniter.methods.routeToNetwork(server);
-    }), Q());
+    }), Promise.resolve());
 
     // Server 1
     yield cat.createIdentity();
@@ -63,10 +61,17 @@ describe("Peer document expiry", function() {
     yield s2.syncFrom(s1, 0, 2);
   }));
 
+  after(() => {
+    return Promise.all([
+      s1.closeCluster(),
+      s2.closeCluster()
+    ])
+  })
+
   it('sending back V1 peer document should return the latest known one', () => co(function*() {
     let res;
     try {
-      yield s1.post('/network/peering/peers', { peer: Peer.statics.peerize(peer1V1).getRawSigned() });
+      yield s1.post('/network/peering/peers', { peer: PeerDTO.fromJSONObject(peer1V1).getRawSigned() });
     } catch (e) {
       res = e;
     }
@@ -75,14 +80,14 @@ describe("Peer document expiry", function() {
   }));
 
   it('routing V1 peer document should raise an "outdated" event', () => co(function*() {
-    const caster = multicaster();
+    const caster = new Multicaster();
     return new Promise((resolve) => {
       caster
         .pipe(es.mapSync((obj) => {
           obj.should.have.property("outdated").equal(true);
           resolve();
         }));
-      caster.sendPeering(Peer.statics.peerize(peer1V1), Peer.statics.peerize(peer1V1));
+      caster.sendPeering(PeerDTO.fromJSONObject(peer1V1), PeerDTO.fromJSONObject(peer1V1));
     });
   }));
 
@@ -97,7 +102,7 @@ describe("Peer document expiry", function() {
 
   it('routing V1 peer document should inject newer peer', () => co(function*() {
     yield [
-      s2.singleWritePromise(_.extend({ documentType: 'peer' }, peer1V1)),
+      s2.writePeer(peer1V1),
       until(s2, 'peer', 2)
     ];
   }));

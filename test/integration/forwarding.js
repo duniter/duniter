@@ -9,11 +9,10 @@ const user   = require('./tools/user');
 const jspckg = require('../../package');
 const constants = require('../../app/lib/constants');
 
-const MEMORY_MODE = true;
-require('duniter-bma').duniter.methods.noLimit(); // Disables the HTTP limiter
+require('../../app/modules/bma').BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
 
 if (constants.MUTE_LOGS_DURING_UNIT_TESTS) {
-  require('../../app/lib/logger')().mute();
+  require('../../app/lib/logger').NewLogger().mute();
 }
 
 describe("Forwarding", function() {
@@ -22,8 +21,8 @@ describe("Forwarding", function() {
 
     const common = { currency: 'bb', ipv4: '127.0.0.1', remoteipv4: '127.0.0.1', rootoffset: 0, sigQty: 1 };
 
-    const node1 = node({ name: 'db_1', memory: MEMORY_MODE }, _({ httplogs: false, port: 9600, remoteport: 9600, pair: { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'} }).extend(common));
-    const node2 = node({ name: 'db_2', memory: MEMORY_MODE }, _({ httplogs: false, port: 9601, remoteport: 9601, pair: { pub: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU', sec: '58LDg8QLmF5pv6Dn9h7X4yFKfMTdP8fdAiWVcyDoTRJu454fwRihCLULH4MW37zncsg4ruoTGJPZneWk22QmG1w4'} }).extend(common));
+    const node1 = node('db_1', _({ httplogs: false, port: 9600, remoteport: 9600, pair: { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'} }).extend(common));
+    const node2 = node('db_2', _({ httplogs: false, port: 9601, remoteport: 9601, pair: { pub: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU', sec: '58LDg8QLmF5pv6Dn9h7X4yFKfMTdP8fdAiWVcyDoTRJu454fwRihCLULH4MW37zncsg4ruoTGJPZneWk22QmG1w4'} }).extend(common));
 
     const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, node1);
     const tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, node1);
@@ -31,7 +30,7 @@ describe("Forwarding", function() {
     const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, node1);
 
     before(() => co(function*(){
-      yield [node1, node2].map((node) => node.startTesting());
+      yield [node1, node2].map((theNode) => theNode.startTesting());
       yield new Promise(function(resolve, reject){
         async.waterfall([
           function(next) {
@@ -108,13 +107,13 @@ describe("Forwarding", function() {
   });
 });
 
-function doTests(node) {
+function doTests(theNode) {
 
   return function(){
 
     describe("user cat", function(){
 
-      it('should give only 1 result', node.lookup('cat', function(res, done){
+      it('should give only 1 result', theNode.lookup('cat', function(res, done){
         try {
           should.exists(res);
           assert.equal(res.results.length, 1);
@@ -124,7 +123,7 @@ function doTests(node) {
         }
       }));
 
-      it('should have sent 1 signature', node.lookup('cat', function(res, done){
+      it('should have sent 1 signature', theNode.lookup('cat', function(res, done){
         try {
           should.exists(res);
           assert.equal(res.results[0].signed.length, 1);
@@ -141,7 +140,7 @@ function doTests(node) {
 
     describe("user tac", function(){
 
-      it('should give only 1 result', node.lookup('tac', function(res, done){
+      it('should give only 1 result', theNode.lookup('tac', function(res, done){
         try {
           should.exists(res);
           assert.equal(res.results.length, 1);
@@ -151,7 +150,7 @@ function doTests(node) {
         }
       }));
 
-      it('should have 1 signature', node.lookup('tac', function(res, done){
+      it('should have 1 signature', theNode.lookup('tac', function(res, done){
         try {
           should.exists(res);
           assert.equal(res.results[0].uids[0].others.length, 1);
@@ -161,7 +160,7 @@ function doTests(node) {
         }
       }));
 
-      it('should have sent 1 signature', node.lookup('tac', function(res, done){
+      it('should have sent 1 signature', theNode.lookup('tac', function(res, done){
         try {
           should.exists(res);
           assert.equal(res.results[0].signed.length, 1);
@@ -172,12 +171,12 @@ function doTests(node) {
       }));
     });
 
-    it('toc should give only 1 result', node.lookup('toc', function(res, done){
+    it('toc should give only 1 result', theNode.lookup('toc', function(res, done){
       should.not.exists(res);
       done();
     }));
 
-    it('tic should give only 1 results', node.lookup('tic', function(res, done){
+    it('tic should give only 1 results', theNode.lookup('tic', function(res, done){
       should.not.exists(res);
       done();
     }));

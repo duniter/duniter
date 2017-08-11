@@ -19,12 +19,9 @@ if [[ $1 =~ ^[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?$ ]]; then
   sed -i "s/title\": .*/title\": \"v$1\",/g" package.json
   sed -i "s/<title>Duniter.*<\/title>/<title>Duniter $1<\/title>/g" gui/index.html
 
-  # Bump the install.sh
-  sed -i "s/echo \"v.*\"/echo \"v$1\"/g" install.sh
-
   # Commit
   git reset HEAD
-  git add install.sh package.json test/integration/branches.js gui/index.html release/arch/debian/package/DEBIAN/control install.sh release/arch/windows/duniter.iss
+  git add package.json test/integration/branches.js gui/index.html release/arch/debian/package/DEBIAN/control release/arch/windows/duniter.iss
   git commit -m "v$1"
   git tag "v$1"
 else

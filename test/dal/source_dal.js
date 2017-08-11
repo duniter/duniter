@@ -1,26 +1,25 @@
 "use strict";
 const co = require('co');
 const should = require('should');
-const FileDAL = require('../../app/lib/dal/fileDAL');
+const FileDAL = require('../../app/lib/dal/fileDAL').FileDAL
 const dir = require('../../app/lib/system/directory');
-const indexer = require('duniter-common').indexer;
-const toolbox = require('../integration/tools/toolbox');
+const indexer    = require('../../app/lib/indexer').Indexer
 
 let dal;
 
 describe("Source DAL", function(){
 
   before(() => co(function *() {
-    dal = FileDAL(yield dir.getHomeParams(true, 'db0'));
+    dal = new FileDAL(yield dir.getHomeParams(true, 'db0'));
     yield dal.init();
   }));
 
   it('should be able to feed the sindex with unordered rows', () => co(function *() {
     yield dal.sindexDAL.insertBatch([
-      { op: 'UPDATE', identifier: 'SOURCE_1', pos: 4, written_on: '139-H', written_time: 4500, consumed: true,  conditions: 'SIG(ABC)' },
-      { op: 'CREATE', identifier: 'SOURCE_1', pos: 4, written_on: '126-H', written_time: 2000, consumed: false, conditions: 'SIG(ABC)' },
-      { op: 'CREATE', identifier: 'SOURCE_2', pos: 4, written_on: '126-H', written_time: 2000, consumed: false, conditions: 'SIG(ABC)' },
-      { op: 'CREATE', identifier: 'SOURCE_3', pos: 4, written_on: '126-H', written_time: 2000, consumed: false, conditions: 'SIG(DEF)' }
+      { op: 'UPDATE', identifier: 'SOURCE_1', pos: 4, written_on: '139-H', writtenOn: 139, written_time: 4500, consumed: true,  conditions: 'SIG(ABC)' },
+      { op: 'CREATE', identifier: 'SOURCE_1', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'SIG(ABC)' },
+      { op: 'CREATE', identifier: 'SOURCE_2', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'SIG(ABC)' },
+      { op: 'CREATE', identifier: 'SOURCE_3', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'SIG(DEF)' }
     ]);
     (yield dal.sindexDAL.sqlFind({ identifier: 'SOURCE_1' })).should.have.length(2);
     (yield dal.sindexDAL.sqlFind({ pos: 4 })).should.have.length(4);

@@ -2,7 +2,7 @@
 
 const co        = require('co');
 const should    = require('should');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const constants = require('../../app/lib/constants');
 const toolbox   = require('./tools/toolbox');
 
@@ -29,6 +29,12 @@ describe("Protocol 0.5 Transaction version", function() {
     yield s1.commit({ time: now + 100 });
     yield cat.sendP(51, tac);
   }));
+
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
 
   it('should not have a block with v5 transaction, but v3', () => co(function*() {
     const block = yield s1.commit({ time: now + 100 });

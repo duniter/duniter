@@ -1,0 +1,503 @@
+"use strict";
+import {BlockDTO} from "../dto/BlockDTO"
+import {ConfDTO} from "../dto/ConfDTO"
+import {CindexEntry, IndexEntry, Indexer, MindexEntry, SindexEntry} from "../indexer"
+import {BaseDTO, TransactionDTO} from "../dto/TransactionDTO"
+import {DBBlock} from "../db/DBBlock"
+import {verify} from "../common-libs/crypto/keyring"
+import {hashf} from "../common"
+import {CommonConstants} from "../common-libs/constants"
+import {IdentityDTO} from "../dto/IdentityDTO"
+import {MembershipDTO} from "../dto/MembershipDTO"
+
+const _          = require('underscore');
+
+const constants       = CommonConstants
+const maxAcceleration = require('./helpers').maxAcceleration
+
+export const LOCAL_RULES_FUNCTIONS = {
+
+  checkParameters: async (block:BlockDTO) => {
+    if (block.number == 0 && !block.parameters) {
+      throw Error('Parameters must be provided for root block');
+    }
+    else if (block.number > 0 && block.parameters) {
+      throw Error('Parameters must not be provided for non-root block');
+    }
+    return true;
+  },
+
+  checkProofOfWork: async (block:BlockDTO) => {
+    let remainder = block.powMin % 16;
+    let nb_zeros = (block.powMin - remainder) / 16;
+    const powRegexp = new RegExp('^0{' + nb_zeros + '}');
+    if (!block.hash.match(powRegexp)) {
+      throw Error('Not a proof-of-work');
+    }
+    return true;
+  },
+
+  checkInnerHash: async (block:BlockDTO) => {
+    let inner_hash = hashf(block.getRawInnerPart()).toUpperCase();
+    if (block.inner_hash != inner_hash) {
+      throw Error('Wrong inner hash');
+    }
+    return true;
+  },
+
+  checkPreviousHash: async (block:BlockDTO) => {
+    if (block.number == 0 && block.previousHash) {
+      throw Error('PreviousHash must not be provided for root block');
+    }
+    else if (block.number > 0 && !block.previousHash) {
+      throw Error('PreviousHash must be provided for non-root block');
+    }
+    return true;
+  },
+
+  checkPreviousIssuer: async (block:BlockDTO) => {
+    if (block.number == 0 && block.previousIssuer)
+      throw Error('PreviousIssuer must not be provided for root block');
+    else if (block.number > 0 && !block.previousIssuer)
+      throw Error('PreviousIssuer must be provided for non-root block');
+    return true;
+  },
+
+  checkUnitBase: async (block:BlockDTO) => {
+    if (block.number == 0 && block.unitbase != 0) {
+      throw Error('UnitBase must equal 0 for root block');
+    }
+    return true;
+  },
+
+  checkBlockSignature: async (block:BlockDTO) => {
+    if (!verify(block.getSignedPart(), block.signature, block.issuer))
+      throw Error('Block\'s signature must match');
+    return true;
+  },
+
+  checkBlockTimes: async (block:BlockDTO, conf:ConfDTO) => {
+    const time = block.time
+    const medianTime = block.medianTime
+    if (block.number > 0 && (time < medianTime || time > medianTime + maxAcceleration(conf)))
+      throw Error('A block must have its Time between MedianTime and MedianTime + ' + maxAcceleration(conf));
+    else if (block.number == 0 && time != medianTime)
+      throw Error('Root block must have Time equal MedianTime');
+    return true;
+  },
+
+  checkIdentitiesSignature: async (block:BlockDTO) => {
+    let i = 0;
+    let wrongSig = false;
+    while (!wrongSig && i < block.identities.length) {
+      const idty = IdentityDTO.fromInline(block.identities[i]);
+      idty.currency = block.currency;
+      wrongSig = !verify(idty.rawWithoutSig(), idty.sig, idty.pubkey);
+      if (wrongSig) {
+        throw Error('Identity\'s signature must match');
+      }
+      i++;
+    }
+    return true;
+  },
+
+  checkIdentitiesUserIDConflict: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    const creates = Indexer.iindexCreate(index);
+    const uids = _.chain(creates).pluck('uid').uniq().value();
+    if (creates.length !== uids.length) {
+      throw Error('Block must not contain twice same identity uid');
+    }
+    return true;
+  },
+
+  checkIdentitiesPubkeyConflict: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    const creates = Indexer.iindexCreate(index);
+    const pubkeys = _.chain(creates).pluck('pub').uniq().value();
+    if (creates.length !== pubkeys.length) {
+      throw Error('Block must not contain twice same identity pubkey');
+    }
+    return true;
+  },
+
+  checkIdentitiesMatchJoin: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    const icreates = Indexer.iindexCreate(index);
+    const mcreates = Indexer.mindexCreate(index);
+    for (const icreate of icreates) {
+      const matching = _(mcreates).filter({ pub: icreate.pub });
+      if (matching.length == 0) {
+        throw Error('Each identity must match a newcomer line with same userid and certts');
+      }
+    }
+    return true;
+  },
+
+  checkRevokedAreExcluded: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    const iindex = Indexer.iindex(index);
+    const mindex = Indexer.mindex(index);
+    const revocations = _.chain(mindex)
+      .filter((row:MindexEntry) => row.op == constants.IDX_UPDATE && row.revoked_on !== null)
+      .pluck('pub')
+      .value();
+    for (const pub of revocations) {
+      const exclusions = _(iindex).where({ op: constants.IDX_UPDATE, member: false, pub });
+      if (exclusions.length == 0) {
+        throw Error('A revoked member must be excluded');
+      }
+    }
+    return true;
+  },
+
+  checkRevokedUnicity: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    try {
+      await LOCAL_RULES_FUNCTIONS.checkMembershipUnicity(block, conf, index);
+    } catch (e) {
+      throw Error('A single revocation per member is allowed');
+    }
+    return true;
+  },
+
+  checkMembershipUnicity: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    const mindex = Indexer.mindex(index);
+    const pubkeys = _.chain(mindex).pluck('pub').uniq().value();
+    if (pubkeys.length !== mindex.length) {
+      throw Error('Unicity constraint PUBLIC_KEY on MINDEX is not respected');
+    }
+    return true;
+  },
+
+  checkMembershipsSignature: async (block:BlockDTO) => {
+    let i = 0;
+    let wrongSig = false, ms;
+    // Joiners
+    while (!wrongSig && i < block.joiners.length) {
+      ms = MembershipDTO.fromInline(block.joiners[i], 'IN', block.currency);
+      wrongSig = !checkSingleMembershipSignature(ms);
+      i++;
+    }
+    // Actives
+    i = 0;
+    while (!wrongSig && i < block.actives.length) {
+      ms = MembershipDTO.fromInline(block.actives[i], 'IN', block.currency);
+      wrongSig = !checkSingleMembershipSignature(ms);
+      i++;
+    }
+    // Leavers
+    i = 0;
+    while (!wrongSig && i < block.leavers.length) {
+      ms = MembershipDTO.fromInline(block.leavers[i], 'OUT', block.currency);
+      wrongSig = !checkSingleMembershipSignature(ms);
+      i++;
+    }
+    if (wrongSig) {
+      throw Error('Membership\'s signature must match');
+    }
+    return true;
+  },
+
+  checkPubkeyUnicity: async (block:BlockDTO) => {
+    const pubkeys = [];
+    let conflict = false;
+    let pubk;
+    // Joiners
+    let i = 0;
+    while (!conflict && i < block.joiners.length) {
+      pubk = block.joiners[i].split(':')[0];
+      conflict = !!(~pubkeys.indexOf(pubk))
+      pubkeys.push(pubk);
+      i++;
+    }
+    // Actives
+    i = 0;
+    while (!conflict && i < block.actives.length) {
+      pubk = block.actives[i].split(':')[0];
+      conflict = !!(~pubkeys.indexOf(pubk))
+      pubkeys.push(pubk);
+      i++;
+    }
+    // Leavers
+    i = 0;
+    while (!conflict && i < block.leavers.length) {
+      pubk = block.leavers[i].split(':')[0];
+      conflict = !!(~pubkeys.indexOf(pubk))
+      pubkeys.push(pubk);
+      i++;
+    }
+    // Excluded
+    i = 0;
+    while (!conflict && i < block.excluded.length) {
+      pubk = block.excluded[i].split(':')[0];
+      conflict = !!(~pubkeys.indexOf(pubk))
+      pubkeys.push(pubk);
+      i++;
+    }
+    if (conflict) {
+      throw Error('Block cannot contain a same pubkey more than once in joiners, actives, leavers and excluded');
+    }
+    return true;
+  },
+
+  checkCertificationOneByIssuer: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    if (block.number > 0) {
+      const cindex = Indexer.cindex(index);
+      const certFromA = _.uniq(cindex.map((row:CindexEntry) => row.issuer));
+      if (certFromA.length !== cindex.length) {
+        throw Error('Block cannot contain two certifications from same issuer');
+      }
+    }
+    return true;
+  },
+
+  checkCertificationUnicity: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    const cindex = Indexer.cindex(index);
+    const certAtoB = _.uniq(cindex.map((row:CindexEntry) => row.issuer + row.receiver));
+    if (certAtoB.length !== cindex.length) {
+      throw Error('Block cannot contain identical certifications (A -> B)');
+    }
+    return true;
+  },
+
+  checkCertificationIsntForLeaverOrExcluded: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    const cindex = Indexer.cindex(index);
+    const iindex = Indexer.iindex(index);
+    const mindex = Indexer.mindex(index);
+    const certified = cindex.map((row:CindexEntry) => row.receiver);
+    for (const pub of certified) {
+      const exclusions = _(iindex).where({ op: constants.IDX_UPDATE, member: false, pub: pub });
+      const leavers    = _(mindex).where({ op: constants.IDX_UPDATE, leaving: true, pub: pub });
+      if (exclusions.length > 0 || leavers.length > 0) {
+        throw Error('Block cannot contain certifications concerning leavers or excluded members');
+      }
+    }
+    return true;
+  },
+
+  checkTxVersion: async (block:BlockDTO) => {
+    const txs = block.transactions
+    // Check rule against each transaction
+    for (const tx of txs) {
+      if (tx.version != 10) {
+        throw Error('A transaction must have the version 10');
+      }
+    }
+    return true;
+  },
+
+  checkTxLen: async (block:BlockDTO) => {
+    const txs = block.transactions
+    // Check rule against each transaction
+    for (const tx of txs) {
+      const txLen = TransactionDTO.fromJSONObject(tx).getLen()
+      if (txLen > constants.MAXIMUM_LEN_OF_COMPACT_TX) {
+        throw constants.ERRORS.A_TRANSACTION_HAS_A_MAX_SIZE;
+      }
+    }
+    // Check rule against each output of each transaction
+    for (const tx of txs) {
+      for (const output of tx.outputs) {
+        const out = typeof output === 'string' ? output : TransactionDTO.outputObj2Str(output)
+        if (out.length > constants.MAXIMUM_LEN_OF_OUTPUT) {
+          throw constants.ERRORS.MAXIMUM_LEN_OF_OUTPUT
+        }
+      }
+    }
+    // Check rule against each unlock of each transaction
+    for (const tx of txs) {
+      for (const unlock of tx.unlocks) {
+        if (unlock.length > constants.MAXIMUM_LEN_OF_UNLOCK) {
+          throw constants.ERRORS.MAXIMUM_LEN_OF_UNLOCK
+        }
+      }
+    }
+    return true;
+  },
+
+  checkTxIssuers: async (block:BlockDTO) => {
+    const txs = block.transactions
+    // Check rule against each transaction
+    for (const tx of txs) {
+      if (tx.issuers.length == 0) {
+        throw Error('A transaction must have at least 1 issuer');
+      }
+    }
+    return true;
+  },
+
+  checkTxSources: async (block:BlockDTO) => {
+    const dto = BlockDTO.fromJSONObject(block)
+    for (const tx of dto.transactions) {
+      if (!tx.inputs || tx.inputs.length == 0) {
+        throw Error('A transaction must have at least 1 source');
+      }
+    }
+    const sindex = Indexer.localSIndex(dto);
+    const inputs = _.filter(sindex, (row:SindexEntry) => row.op == constants.IDX_UPDATE).map((row:SindexEntry) => [row.op, row.identifier, row.pos].join('-'));
+    if (inputs.length !== _.uniq(inputs).length) {
+      throw Error('It cannot exist 2 identical sources for transactions inside a given block');
+    }
+    const outputs = _.filter(sindex, (row:SindexEntry) => row.op == constants.IDX_CREATE).map((row:SindexEntry) => [row.op, row.identifier, row.pos].join('-'));
+    if (outputs.length !== _.uniq(outputs).length) {
+      throw Error('It cannot exist 2 identical sources for transactions inside a given block');
+    }
+    return true;
+  },
+
+  checkTxAmounts: async (block:BlockDTO) => {
+    for (const tx of block.transactions) {
+      LOCAL_RULES_HELPERS.checkTxAmountsValidity(tx);
+    }
+  },
+
+  checkTxRecipients: async (block:BlockDTO) => {
+    const txs = block.transactions
+    // Check rule against each transaction
+    for (const tx of txs) {
+      if (!tx.outputs || tx.outputs.length == 0) {
+        throw Error('A transaction must have at least 1 recipient');
+      }
+      else {
+        // Cannot have empty output condition
+        for (const output of tx.outputsAsObjects()) {
+          if (!output.conditions.match(/(SIG|XHX)/)) {
+            throw Error('Empty conditions are forbidden');
+          }
+        }
+      }
+    }
+    return true;
+  },
+
+  checkTxSignature: async (block:BlockDTO) => {
+    const txs = block.transactions
+    // Check rule against each transaction
+    for (const tx of txs) {
+      let sigResult = getSigResult(tx);
+      if (!sigResult.matching) {
+        throw Error('Signature from a transaction must match');
+      }
+    }
+    return true;
+  }
+}
+
+function checkSingleMembershipSignature(ms:any) {
+  return verify(ms.getRaw(), ms.signature, ms.issuer);
+}
+
+function getSigResult(tx:any) {
+  let sigResult:any = { sigs: {}, matching: true };
+  let json:any = { "version": tx.version, "currency": tx.currency, "blockstamp": tx.blockstamp, "locktime": tx.locktime, "inputs": [], "outputs": [], "issuers": tx.issuers, "signatures": [], "comment": tx.comment, unlocks: [] };
+  tx.inputs.forEach(function (input:any) {
+    json.inputs.push(input.raw);
+  });
+  tx.outputs.forEach(function (output:any) {
+    json.outputs.push(output.raw);
+  });
+  json.unlocks = tx.unlocks;
+  let i = 0;
+  let signaturesMatching = true;
+  const raw = tx.getRawTxNoSig()
+  while (signaturesMatching && i < tx.signatures.length) {
+    const sig = tx.signatures[i];
+    const pub = tx.issuers[i];
+    signaturesMatching = verify(raw, sig, pub);
+    sigResult.sigs[pub] = {
+      matching: signaturesMatching,
+      index: i
+    };
+    i++;
+  }
+  sigResult.matching = signaturesMatching;
+  return sigResult;
+}
+
+function checkBunchOfTransactions(transactions:TransactionDTO[], done:any = undefined){
+  const block:any = { transactions };
+  return (async () => {
+    try {
+      let local_rule = LOCAL_RULES_FUNCTIONS;
+      await local_rule.checkTxLen(block);
+      await local_rule.checkTxIssuers(block);
+      await local_rule.checkTxSources(block);
+      await local_rule.checkTxRecipients(block);
+      await local_rule.checkTxAmounts(block);
+      await local_rule.checkTxSignature(block);
+      done && done();
+    } catch (err) {
+      if (done) return done(err);
+      throw err;
+    }
+  })()
+}
+
+export const LOCAL_RULES_HELPERS = {
+
+  maxAcceleration: (conf:ConfDTO) => maxAcceleration(conf),
+
+  checkSingleMembershipSignature: checkSingleMembershipSignature,
+
+  getSigResult: getSigResult,
+
+  checkBunchOfTransactions: checkBunchOfTransactions,
+
+  checkSingleTransactionLocally: (tx:any, done:any = undefined) => checkBunchOfTransactions([tx], done),
+
+  checkTxAmountsValidity: (tx:TransactionDTO) => {
+    const inputs = tx.inputsAsObjects()
+    const outputs = tx.outputsAsObjects()
+    // Rule of money conservation
+    const commonBase:number = (inputs as BaseDTO[]).concat(outputs).reduce((min:number, input) => {
+      if (min === null) return input.base;
+      return Math.min(min, input.base)
+    }, 0)
+    const inputSumCommonBase = inputs.reduce((sum, input) => {
+      return sum + input.amount * Math.pow(10, input.base - commonBase);
+    }, 0);
+    const outputSumCommonBase = outputs.reduce((sum, output) => {
+      return sum + output.amount * Math.pow(10, output.base - commonBase);
+    }, 0);
+    if (inputSumCommonBase !== outputSumCommonBase) {
+      throw constants.ERRORS.TX_INPUTS_OUTPUTS_NOT_EQUAL;
+    }
+    // Rule of unit base transformation
+    const maxOutputBase = outputs.reduce((max, output) => {
+      return Math.max(max, output.base)
+    }, 0)
+    // Compute deltas
+    const deltas:any = {};
+    for (let i = commonBase; i <= maxOutputBase; i++) {
+      const inputBaseSum = inputs.reduce((sum, input) => {
+        if (input.base == i) {
+          return sum + input.amount * Math.pow(10, input.base - commonBase);
+        } else {
+          return sum;
+        }
+      }, 0);
+      const outputBaseSum = outputs.reduce((sum, output) => {
+        if (output.base == i) {
+          return sum + output.amount * Math.pow(10, output.base - commonBase);
+        } else {
+          return sum;
+        }
+      }, 0);
+      const delta = outputBaseSum - inputBaseSum;
+      let sumUpToBase = 0;
+      for (let j = commonBase; j < i; j++) {
+        sumUpToBase -= deltas[j];
+      }
+      if (delta > 0 && delta > sumUpToBase) {
+        throw constants.ERRORS.TX_OUTPUT_SUM_NOT_EQUALS_PREV_DELTAS;
+      }
+      deltas[i] = delta;
+    }
+  },
+
+  getMaxPossibleVersionNumber: async (current:DBBlock) => {
+    // Looking at current blockchain, find what is the next maximum version we can produce
+
+    // 1. We follow previous block's version
+    let version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
+
+    // 2. If we can, we go to the next version
+    return version;
+  }
+}

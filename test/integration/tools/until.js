@@ -1,13 +1,11 @@
 "use strict";
 
-var Q = require('q');
-
 var UNTIL_TIMEOUT = 115000;
 
 module.exports = function (server, eventName, count) {
   var counted = 0;
   var max = count == undefined ? 1 : count;
-  return Q.Promise(function (resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var finished = false;
     server.on(eventName, function () {
       counted++;

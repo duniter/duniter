@@ -3,19 +3,20 @@
 const co        = require('co');
 const _         = require('underscore');
 const duniter     = require('../../index');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const user      = require('./tools/user');
 const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
 const sync      = require('./tools/sync');
+const shutDownEngine  = require('./tools/shutDownEngine');
 
 const expectJSON     = httpTest.expectJSON;
 const expectHttpCode = httpTest.expectHttpCode;
 
 if (constants.MUTE_LOGS_DURING_UNIT_TESTS) {
-  require('../../app/lib/logger')().mute();
+  require('../../app/lib/logger').NewLogger().mute();
 }
 
 // Trace these errors
@@ -30,41 +31,44 @@ const commonConf = {
   currency: 'bb',
   httpLogs: true,
   forksize: 10,
-  swichOnTimeAheadBy: 30,
+  switchOnHeadAdvance: 6,
   avgGenTime: 30 * 60,
   sigQty: 1
 };
 
-const s1 = duniter(
-  '/bb4',
-  MEMORY_MODE,
-  _.extend({
-  port: '7781',
-  pair: {
-    pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-    sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
-  }
-}, commonConf));
-
-const s2 = duniter(
-  '/bb5',
-  MEMORY_MODE,
-  _.extend({
-  port: '7782',
-  pair: {
-    pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
-    sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
-  }
-}, commonConf));
-
-const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
-const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+let s1, s2, cat, toc
 
 const now = Math.round(new Date().getTime() / 1000);
 
 describe("SelfFork", function() {
 
   before(() => co(function *() {
+
+    s1 = duniter(
+      '/bb4',
+      MEMORY_MODE,
+      _.extend({
+        port: '7781',
+        pair: {
+          pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+          sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
+        }
+      }, commonConf));
+
+    s2 = duniter(
+      '/bb5',
+      MEMORY_MODE,
+      _.extend({
+        port: '7782',
+        pair: {
+          pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
+          sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
+        }
+      }, commonConf));
+
+    cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
+    toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+
     const commitS1 = commit(s1);
     const commitS2 = commit(s2, {
       time: now + 37180
@@ -72,8 +76,8 @@ describe("SelfFork", function() {
 
     yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
     yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-    s1.getMainEndpoint = require('duniter-bma').duniter.methods.getMainEndpoint
-    s2.getMainEndpoint = require('duniter-bma').duniter.methods.getMainEndpoint
+    s1.getMainEndpoint = require('../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
+    s2.getMainEndpoint = require('../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
 
     // Server 1
     yield cat.createIdentity();
@@ -102,12 +106,21 @@ describe("SelfFork", function() {
     yield commitS2();
     yield commitS2();
     yield commitS2();
+    yield commitS2();
+    yield commitS2();
 
-    yield s1.singleWritePromise(s2p);
+    yield s1.writePeer(s2p);
 
     // Forking S1 from S2
-    return require('duniter-crawler').duniter.methods.pullBlocks(s1, s2p.pubkey);
+    return require('../../app/modules/crawler').CrawlerDependency.duniter.methods.pullBlocks(s1, s2p.pubkey);
   }));
+
+  after(() => {
+    return Promise.all([
+      shutDownEngine(s1),
+      shutDownEngine(s2)
+    ])
+  })
 
   describe("Server 1 /blockchain", function() {
 
@@ -189,7 +202,7 @@ describe("SelfFork", function() {
 
     it('/current should exist', function() {
       return expectJSON(rp('http://127.0.0.1:7781/blockchain/current', { json: true }), {
-        number: 7
+        number: 9
       });
     });
 
@@ -221,7 +234,7 @@ describe("SelfFork", function() {
 
     it('/current should exist', function() {
       return expectJSON(rp('http://127.0.0.1:7782/blockchain/current', { json: true }), {
-        number: 7
+        number: 9
       });
     });
 

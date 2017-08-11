@@ -7,15 +7,15 @@ const util    = require('util');
 const path    = require('path');
 const stream  = require('stream');
 const duniter = require('../../index');
-const parsers = require('duniter-common').parsers;
+const parsers = require('../../app/lib/common-libs/parsers').parsers
 const querablep = require('querablep');
 
 describe("v1.0 Module API", () => {
 
   it('should be able to execute `hello` command with quickRun', () => co(function*() {
-    duniter.statics.quickRunGetArgs = () => ['', '', 'hello-world']
-    duniter.statics.onRunDone = () => { /* Do not exit the process */ }
+    duniter.statics.setOnRunDone(() => { /* Do not exit the process */ })
     const absolutePath = path.join(__dirname, './scenarios/hello-plugin.js')
+    process.argv = ['', absolutePath, 'hello-world']
     const res = yield duniter.statics.quickRun(absolutePath)
     res.should.equal('Hello world! from within Duniter.')
   }))
@@ -43,7 +43,7 @@ describe("v1.0 Module API", () => {
 
     sStack.registerDependency(helloDependency, 'duniter-hello');
     sStack.registerDependency(helloDependency, 'duniter-hello'); // Try to load it 2 times, should not throw an error
-    sStack.registerDependency(require('duniter-keypair'), 'duniter-keypair');
+    sStack.registerDependency(require('../../app/modules/keypair').KeypairDependency, 'duniter-keypair');
     aStack.registerDependency(helloDependency, 'duniter-hello');
 
     (yield sStack.executeStack(['node', 'index.js', '--memory', 'hello', 'World', 'TEST', '--opt1', '--option2', '5'])).should.equal('Hello, World. You successfully sent arg \'TEST\' along with opt1 = true and option2 = 5.');
@@ -102,11 +102,11 @@ describe("v1.0 Module API", () => {
               // Gimme the conf!
               return conf;
             })
-          }],
+          }]
         }
       };
 
-      stack.registerDependency(require('duniter-keypair'), 'duniter-keypair');
+      stack.registerDependency(require('../../app/modules/keypair').KeypairDependency, 'duniter-keypair');
       stack.registerDependency(configurationDependency, 'duniter-configuration');
       stack.registerDependency(returnConfDependency, 'duniter-gimme-conf');
     }));
@@ -236,8 +236,8 @@ describe("v1.0 Module API", () => {
         }
       };
 
-      stack.registerDependency(require('duniter-keypair'), 'duniter-keypair');
-      stack.registerDependency(require('duniter-bma'), 'duniter-bma');
+      stack.registerDependency(require('../../app/modules/keypair').KeypairDependency, 'duniter-keypair');
+      stack.registerDependency(require('../../app/modules/bma').BmaDependency, 'duniter-bma');
       stack.registerDependency(dummyStartServiceDependency, 'duniter-dummy-start');
       stack.registerDependency(dummyStopServiceDependency, 'duniter-dummy-stop');
     }));

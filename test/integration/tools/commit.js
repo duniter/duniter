@@ -3,7 +3,8 @@
 var _  = require('underscore');
 var co = require('co');
 var rp = require('request-promise');
-var logger = require('../../../app/lib/logger')('test');
+var logger = require('../../../app/lib/logger').NewLogger('test');
+const BlockProver = require('../../../app/modules/prover/lib/blockProver').BlockProver
 
 module.exports = function makeBlockAndPost(theServer, extraProps) {
   return function(manualValues) {
@@ -12,8 +13,13 @@ module.exports = function makeBlockAndPost(theServer, extraProps) {
       manualValues = _.extend(manualValues, extraProps);
     }
     return co(function *() {
-      let proven = yield require('duniter-prover').duniter.methods.generateAndProveTheNext(theServer, null, null, manualValues);
-      return postBlock(theServer)(proven);
+      if (!theServer._utProver) {
+        theServer._utProver = new BlockProver(theServer)
+        theServer._utGenerator = require('../../../app/modules/prover').ProverDependency.duniter.methods.blockGenerator(theServer, theServer._utProver)
+      }
+      let proven = yield theServer._utGenerator.makeNextBlock(null, null, manualValues)
+      const block = yield postBlock(theServer)(proven);
+      return block
     });
   };
 };

@@ -4,7 +4,7 @@ const co = require('co');
 const _ = require('underscore');
 const should = require('should');
 const assert = require('assert');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const constants = require('../../app/lib/constants');
 const node   = require('./tools/node');
 const duniter     = require('../../index');
@@ -12,12 +12,13 @@ const user   = require('./tools/user');
 const jspckg = require('../../package');
 const commit    = require('./tools/commit');
 const httpTest  = require('./tools/http');
+const shutDownEngine  = require('./tools/shutDownEngine');
 const rp        = require('request-promise');
 
 const expectAnswer   = httpTest.expectAnswer;
 const MEMORY_MODE = true;
 
-require('duniter-bma').duniter.methods.noLimit(); // Disables the HTTP limiter
+require('../../app/modules/bma').BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
 
 describe("Integration", function() {
 
@@ -171,23 +172,25 @@ describe("Integration", function() {
 
   describe("Testing leavers", function(){
 
-    const node3 = duniter('/db3', MEMORY_MODE, {
-      currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, httplogs: false,
-      rootoffset: 0,
-      sigQty: 1, sigPeriod: 0,
-      pair: {
-        pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-        sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
-      }
-    });
-
-    const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: node3 });
-    const tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: node3 });
-    const tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: node3 });
-    const toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: node3 });
+    let node3, cat, tac, tic, toc
 
     before(function() {
       return co(function *() {
+
+        node3 = duniter('/db3', MEMORY_MODE, {
+          currency: 'dd', ipv4: 'localhost', port: 9997, remoteipv4: 'localhost', remoteport: 9997, httplogs: false,
+          rootoffset: 0,
+          sigQty: 1, sigPeriod: 0,
+          pair: {
+            pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+            sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
+          }
+        });
+
+        cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: node3 });
+        tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: node3 });
+        tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: node3 });
+        toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: node3 });
 
         yield node3.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
         const now = 1482220000;
@@ -234,6 +237,12 @@ describe("Integration", function() {
         });
       });
     });
+
+    after(() => {
+      return Promise.all([
+        shutDownEngine(node3)
+      ])
+    })
 
     it('toc should give only 1 result with 3 certification by others', () => expectAnswer(rp('http://127.0.0.1:9997/wot/lookup/toc', { json: true }), function(res) {
       should.exists(res);

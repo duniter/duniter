@@ -3,10 +3,10 @@ var co = require('co');
 var _ = require('underscore');
 var should = require('should');
 var assert = require('assert');
-var dal = require('../../app/lib/dal/fileDAL');
+var dal = require('../../app/lib/dal/fileDAL').FileDAL
 var dir = require('../../app/lib/system/directory');
 var constants = require('../../app/lib/constants');
-var Peer   = require('../../app/lib/entity/peer');
+var PeerDTO   = require('../../app/lib/dto/PeerDTO').PeerDTO
 
 var mocks = {
   peer1: {
@@ -95,7 +95,7 @@ describe("DAL", function(){
 
   before(() => co(function *() {
     let params = yield dir.getHomeParams(true, 'db0');
-    fileDAL = dal(params);
+    fileDAL = new dal(params);
     yield fileDAL.init();
     return fileDAL.saveConf({ currency: "meta_brouzouf" });
   }));
@@ -103,7 +103,7 @@ describe("DAL", function(){
   it('should have DB version 21', () => co(function *() {
     let version = yield fileDAL.getDBVersion();
     should.exist(version);
-    version.should.equal(22);
+    version.should.equal(25);
   }));
 
   it('should have no peer in a first time', function(){
@@ -113,8 +113,8 @@ describe("DAL", function(){
   });
 
   it('should have 1 peer if 1 is created', function(){
-    return fileDAL.savePeer(new Peer(mocks.peer1))
-      .then(fileDAL.listAllPeers)
+    return fileDAL.savePeer(PeerDTO.fromJSONObject(mocks.peer1))
+      .then(() => fileDAL.listAllPeers())
       .then(function(peers){
         peers.should.have.length(1);
         peers[0].should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');

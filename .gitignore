@@ -23,3 +23,30 @@ vagrant/duniter
 *.tar.gz
 *.log
 *.exe
+
+# vscode
+.vscode
+
+# istanbul
+.nyc_output
+coverage/
+
+# TS migration
+test/blockchain/*.js*
+test/blockchain/*.d.ts
+test/blockchain/lib/*.js*
+test/blockchain/lib/*.d.ts
+/index.js*
+/index.d.ts
+/server.js*
+/server.d.ts
+app/**/*.js*
+app/**/*.d.ts
+test/integration/membership_chainability.js*
+test/integration/membership_chainability.d.ts
+test/integration/tools/toolbox.js*
+test/integration/tools/toolbox.d.ts
+test/integration/documents-currency.js*
+test/integration/documents-currency.d.ts
+test/fast/modules/crawler/block_pulling.js*
+test/fast/modules/crawler/block_pulling.d.ts

@@ -5,7 +5,7 @@ const _ = require('underscore');
 const should = require('should');
 const assert = require('assert');
 const constants = require('../../app/lib/constants');
-const bma       = require('duniter-bma').duniter.methods.bma;
+const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const toolbox   = require('./tools/toolbox');
 const node   = require('./tools/node');
 const unit   = require('./tools/unit');
@@ -32,6 +32,12 @@ describe("Transactions: CSV", function() {
     yield s1.commit({ time: now });
     yield s1.commit({ time: now + 1 });
   }));
+
+  after(() => {
+    return Promise.all([
+      s1.closeCluster()
+    ])
+  })
 
   it('it should exist block#1 with UD of 200', () => s1.expect('/blockchain/block/1', (block) => {
     should.exists(block);

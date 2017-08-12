@@ -1,13 +1,20 @@
 "use strict";
-import {Server} from "../../../../../server";
-import {AbstractController} from "./AbstractController";
-import {ParametersService} from "../parameters";
-import {BMAConstants} from "../constants";
-import {MembershipDTO} from "../../../../lib/dto/MembershipDTO";
+import {Server} from "../../../../../server"
+import {AbstractController} from "./AbstractController"
+import {ParametersService} from "../parameters"
+import {BMAConstants} from "../constants"
+import {MembershipDTO} from "../../../../lib/dto/MembershipDTO"
 import {
-  block2HttpBlock, HttpBlock, HttpBranches, HttpDifficulties, HttpHardship, HttpMembership, HttpMemberships,
-  HttpParameters, HttpStat
-} from "../dtos";
+  block2HttpBlock,
+  HttpBlock,
+  HttpBranches,
+  HttpDifficulties,
+  HttpHardship,
+  HttpMembership,
+  HttpMemberships,
+  HttpParameters,
+  HttpStat
+} from "../dtos"
 
 const _                = require('underscore');
 const http2raw         = require('../http2raw');
@@ -54,7 +61,32 @@ export class BlockchainBinding extends AbstractController {
     return block2HttpBlock(res)
   }
 
-  parameters = (): Promise<HttpParameters> => this.server.dal.getParameters();
+  parameters = async (): Promise<HttpParameters> => {
+    const params = await this.server.dal.getParameters()
+    return {
+      "currency": params.currency,
+      "c": params.c,
+      "dt": params.dt,
+      "ud0": params.ud0,
+      "sigPeriod": params.sigPeriod,
+      "sigStock": params.sigStock,
+      "sigWindow": params.sigWindow,
+      "sigValidity": params.sigValidity,
+      "sigQty": params.sigQty,
+      "idtyWindow": params.idtyWindow,
+      "msWindow": params.msWindow,
+      "xpercent": params.xpercent,
+      "msValidity": params.msValidity,
+      "stepMax": params.stepMax,
+      "medianTimeBlocks": params.medianTimeBlocks,
+      "avgGenTime": params.avgGenTime,
+      "dtDiffEval": params.dtDiffEval,
+      "percentRot": params.percentRot,
+      "udTime0": params.udTime0,
+      "udReevalTime0": params.udReevalTime0,
+      "dtReeval": params.dtReeval
+    }
+  }
 
   private getStat(statName:string): () => Promise<HttpStat> {
     return async () => {

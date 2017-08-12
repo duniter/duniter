@@ -21,7 +21,6 @@ export const block = (block:any) => {
   json.issuersCount = parseInt(block.issuersCount)
   json.issuersFrame = parseInt(block.issuersFrame)
   json.issuersFrameVar = parseInt(block.issuersFrameVar)
-  json.len = parseInt(block.len)
   json.currency = block.currency || ""
   json.issuer = block.issuer || ""
   json.signature = block.signature || ""

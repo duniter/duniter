@@ -1,16 +1,16 @@
 "use strict";
-import {GlobalFifoPromise} from "./GlobalFifoPromise";
-import {BlockchainContext} from "../lib/computation/BlockchainContext";
-import {ConfDTO} from "../lib/dto/ConfDTO";
-import {FileDAL} from "../lib/dal/fileDAL";
-import {QuickSynchronizer} from "../lib/computation/QuickSync";
-import {BlockDTO} from "../lib/dto/BlockDTO";
-import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL";
-import {DBBlock} from "../lib/db/DBBlock";
-import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules";
-import {parsers} from "../lib/common-libs/parsers/index";
-import {HttpIdentityRequirement} from "../modules/bma/lib/dtos";
-import {FIFOService} from "./FIFOService";
+import {GlobalFifoPromise} from "./GlobalFifoPromise"
+import {BlockchainContext} from "../lib/computation/BlockchainContext"
+import {ConfDTO} from "../lib/dto/ConfDTO"
+import {FileDAL} from "../lib/dal/fileDAL"
+import {QuickSynchronizer} from "../lib/computation/QuickSync"
+import {BlockDTO} from "../lib/dto/BlockDTO"
+import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
+import {DBBlock} from "../lib/db/DBBlock"
+import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
+import {parsers} from "../lib/common-libs/parsers/index"
+import {HttpIdentityRequirement} from "../modules/bma/lib/dtos"
+import {FIFOService} from "./FIFOService"
 
 const _               = require('underscore');
 const constants       = require('../lib/constants');
@@ -63,22 +63,25 @@ export class BlockchainService extends FIFOService {
 
   async branches() {
     let forkBlocks = await this.dal.blockDAL.getForkBlocks();
+    const current = await this.mainContext.current();
     forkBlocks = _.sortBy(forkBlocks, 'number');
+    forkBlocks = _.filter(forkBlocks, (b:DBBlock) => current.number - b.number < this.conf.forksize)
     // Get the blocks refering current blockchain
     const forkables = [];
     for (const block of forkBlocks) {
-      const refered = await this.dal.getBlockByNumberAndHashOrNull(block.number - 1, block.previousHash);
+      const refered = await this.dal.getAbsoluteBlockByNumberAndHash(block.number - 1, block.previousHash);
       if (refered) {
         forkables.push(block);
+      } else {
+        this.logger.info('Missing block #%s-%s', block.number - 1, block.previousHash.substr(0, 8))
       }
     }
-    const branches = this.getBranches(forkables, _.difference(forkBlocks, forkables));
-    const current = await this.mainContext.current();
+    const branches = BlockchainService.getBranches(forkables, _.difference(forkBlocks, forkables));
     const forks = branches.map((branch) => branch[branch.length - 1]);
     return forks.concat([current]);
   }
 
-  private getBranches(forkables:any[], others:any[]) {
+  static getBranches(forkables:any[], others:any[]) {
     // All starting branches
     let branches = forkables.map((fork) => [fork]);
     // For each "pending" block, we try to add it to all branches
@@ -182,11 +185,16 @@ export class BlockchainService extends FIFOService {
     const timeAdvance = this.conf.switchOnHeadAdvance * this.conf.avgGenTime
     let potentials = _.without(branches, current);
     // We switch only to blockchain with X_BLOCKS in advance considering both theoretical time by block / avgGenTime, + written time / avgGenTime
-    potentials = _.filter(potentials, (p:DBBlock) => {
-      return p.number - current.number >= blocksAdvanceInBlocks
-      && p.medianTime - current.medianTime >= timeAdvance
-    });
     this.logger.trace('SWITCH: %s branches...', branches.length);
+    this.logger.trace('SWITCH: required is >= %s for blockDistance and %s for timeAdvance for both values to try to follow the fork', blocksAdvanceInBlocks, timeAdvance)
+    potentials.reverse()
+    potentials = _.filter(potentials, (p:DBBlock) => {
+      const effectiveBlockAdvance = p.number - current.number
+      const effectiveTimeAdvance = p.medianTime - current.medianTime
+      const retained = effectiveBlockAdvance >= blocksAdvanceInBlocks && effectiveTimeAdvance >= timeAdvance
+      this.logger.trace('SWITCH: found branch #%s-%s has blockDistance %s ; timeDistance %s ; retained: %s', p.number, p.hash.substr(0, 8), effectiveBlockAdvance, effectiveTimeAdvance, retained ? 'YES' : 'NO');
+      return retained
+    });
     this.logger.trace('SWITCH: %s potential side chains...', potentials.length);
     for (const potential of potentials) {
       this.logger.info('SWITCH: get side chain #%s-%s...', potential.number, potential.hash);

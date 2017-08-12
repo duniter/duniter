@@ -53,13 +53,13 @@ export const BmaDependency = {
 
       onLoading: async (conf:NetworkConfDTO, program:any, logger:any) => {
 
-        if (program.port !== undefined) conf.port = program.port;
+        if (program.port !== undefined) conf.port = parseInt(program.port)
         if (program.ipv4 !== undefined) conf.ipv4 = program.ipv4;
         if (program.ipv6 !== undefined) conf.ipv6 = program.ipv6;
         if (program.remoteh !== undefined) conf.remotehost = program.remoteh;
         if (program.remote4 !== undefined) conf.remoteipv4 = program.remote4;
         if (program.remote6 !== undefined) conf.remoteipv6 = program.remote6;
-        if (program.remotep !== undefined) conf.remoteport = program.remotep;
+        if (program.remotep !== undefined) conf.remoteport = parseInt(program.remotep)
 
         if (!conf.ipv4) delete conf.ipv4;
         if (!conf.ipv6) delete conf.ipv6;

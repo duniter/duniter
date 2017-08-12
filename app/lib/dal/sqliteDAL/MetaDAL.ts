@@ -13,6 +13,7 @@ import {DBBlock} from "../../db/DBBlock"
 import {IdentityDTO} from "../../dto/IdentityDTO"
 import {rawer} from "../../common-libs/index"
 import {CommonConstants} from "../../common-libs/constants"
+import {TxsDAL} from "./TxsDAL"
 
 const _ = require('underscore')
 const logger = require('../../logger').NewLogger('metaDAL');
@@ -362,6 +363,36 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
         const msPeriod = conf.msWindow // It has the same value, as it was not defined on currency init
         const updateQuery = 'UPDATE m_index SET chainable_on = ' + (reference.medianTime + msPeriod) + ' WHERE pub = \'' + ms.pub + '\' AND written_on = \'' + ms.written_on +  '\''
         await mindexDAL.exec(updateQuery)
+      }
+    },
+
+    /**
+     * Wrong transaction storage
+     */
+    25: async () => {
+      const txsDAL = new TxsDAL(this.driverCopy)
+      const wrongTXS = await txsDAL.query('SELECT * FROM txs WHERE outputs LIKE ? OR inputs LIKE ?', ['%amount%', '%amount%'])
+      let i = 1
+      for (const tx of wrongTXS) {
+        logger.info('Updating incorrect transaction %s/%s.', i, wrongTXS.length)
+        i++
+        const dto = TransactionDTO.fromJSONObject(tx)
+        dto.outputs = dto.outputs.map(o => {
+          if (typeof o === 'object') {
+            return TransactionDTO.outputObj2Str(o)
+          }
+          return o
+        })
+        dto.inputs = dto.inputs.map(o => {
+          if (typeof o === 'object') {
+            return TransactionDTO.inputObj2Str(o)
+          }
+          return o
+        })
+        await txsDAL.exec('UPDATE txs SET ' +
+          'outputs = \'' + JSON.stringify(dto.outputs) + '\', ' +
+          'inputs = \'' + JSON.stringify(dto.inputs) + '\' ' +
+          'WHERE hash = \'' + tx.hash + '\'')
       }
     },
   };

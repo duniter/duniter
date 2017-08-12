@@ -1,5 +1,5 @@
 import {hashf} from "../common"
-import {Cloneable} from "./Cloneable";
+import {Cloneable} from "./Cloneable"
 
 export interface BaseDTO {
   base: number
@@ -248,6 +248,10 @@ export class TransactionDTO implements Cloneable {
 
   static outputObj2Str(o:OutputDTO) {
     return [o.amount, o.base, o.conditions].join(':')
+  }
+
+  static inputObj2Str(i:InputDTO) {
+    return [i.amount, i.base, i.type, i.identifier, i.pos].join(':')
   }
 
   static outputStr2Obj(outputStr:string) {

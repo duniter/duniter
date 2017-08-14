@@ -50,3 +50,5 @@ test/integration/documents-currency.js*
 test/integration/documents-currency.d.ts
 test/fast/modules/crawler/block_pulling.js*
 test/fast/modules/crawler/block_pulling.d.ts
+test/fast/fork*.js*
+test/fast/fork*.d.ts

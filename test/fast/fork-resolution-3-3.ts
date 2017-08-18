@@ -1,4 +1,5 @@
 import * as assert from 'assert'
+import {SwitchBlock, Switcher, SwitcherDao} from "../../app/lib/blockchain/Switcher"
 
 describe("Fork resolution 3-3 algo", () => {
 
@@ -21,7 +22,7 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C15"),
       Block.from("C16")
     ])
-    const switcher = new BlockchainSwitcher(bc, sbx)
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize)
     switcher.tryToFork()
     assert.equal(bc.current.number, 16)
     assert.equal(bc.current.hash, "C16")
@@ -45,7 +46,7 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C14"),
       Block.from("C15")
     ])
-    const switcher = new BlockchainSwitcher(bc, sbx)
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize)
     switcher.tryToFork()
     assert.equal(bc.current.number, 13)
     assert.equal(bc.current.hash, "B13")
@@ -67,7 +68,7 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C14"),
       Block.from("C15")
     ])
-    const switcher = new BlockchainSwitcher(bc, sbx)
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize)
     switcher.tryToFork()
     assert.equal(bc.current.number, 13)
     assert.equal(bc.current.hash, "B13")
@@ -94,7 +95,7 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C15"),
       Block.from("C16")
     ])
-    const switcher = new BlockchainSwitcher(bc, sbx)
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize)
     switcher.tryToFork()
     assert.equal(bc.current.number, 13)
     assert.equal(bc.current.hash, "B13")
@@ -120,7 +121,7 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C15"),
       Block.from("C16")
     ])
-    const switcher = new BlockchainSwitcher(bc, sbx)
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize)
     switcher.tryToFork()
     assert.equal(bc.current.number, 16)
     assert.equal(bc.current.hash, "C16")
@@ -145,7 +146,7 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C15"),
       Block.from("C16")
     ])
-    const switcher = new BlockchainSwitcher(bc, sbx)
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize)
     switcher.tryToFork()
     assert.equal(bc.current.number, 13)
     assert.equal(bc.current.hash, "B13")
@@ -176,7 +177,7 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("D16"),
       Block.from("D17")
     ])
-    const switcher = new BlockchainSwitcher(bc, sbx)
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize)
     switcher.tryToFork()
     assert.equal(bc.current.number, 17)
     assert.equal(bc.current.hash, "D17")
@@ -186,100 +187,50 @@ describe("Fork resolution 3-3 algo", () => {
 const avgGenTime = 5 * 60
 const forkWindowSize = 3
 
-class BlockchainSwitcher {
+class TestingSwitcherDao implements SwitcherDao {
 
-  constructor(private bc:Blockchain, private sbx:BlockSandbox) {}
-
-  tryToFork() {
-    const current = this.bc.current
-    const numberStart = current.number + 3
-    const timeStart = current.time + 3*avgGenTime
-    const suites:Block[][] = []
-    const potentials:Block[] = this.sbx.getPotentials(numberStart, timeStart)
-    const invalids: { [hash:string]: Block } = {}
-    // Phase 1: find chains
-    for (const candidate of potentials) {
-      const suite:Block[] = []
-      if (!invalids[candidate.hash] && !BlockchainSwitcher.suitesContains(suites, candidate)) {
-        let previous:Block|null = candidate, commonRootFound = false
-        while (previous && previous.number > current.number - forkWindowSize) {
-          suite.push(previous)
-          const previousNumber = previous.number - 1
-          const previousHash = previous.previousHash
-          previous = this.bc.getBlock(previousNumber, previousHash)
-          if (previous) {
-            // Stop the loop: common block has been found
-            previous = null
-            suites.push(suite)
-            commonRootFound = true
-          } else {
-            // Have a look in sandboxes
-            previous = this.sbx.getBlock(previousNumber, previousHash)
-          }
-        }
-        // Forget about invalid blocks
-        if (!commonRootFound) {
-          for (const b of suite) {
-            invalids[b.hash] = b
-          }
-        }
-      }
-    }
-    // Phase 2: select the best chain
-    let longestChain:null|Block[] = null
-    for (const s of suites) {
-      s.reverse()
-      const reverted = this.bc.revertTo(s[0].number - 1)
-      let added = true, i = 0, successfulBlocks:Block[] = []
-      while (added) {
-        try {
-          this.bc.add(s[i])
-          successfulBlocks.push(s[i])
-        } catch (e) {
-          added = false
-        }
-        i++
-      }
-      if (successfulBlocks.length) {
-        this.bc.revertTo(this.bc.current.number - successfulBlocks.length)
-      }
-      reverted.reverse()
-      for (const b of reverted) {
-        this.bc.add(b)
-      }
-      if ((!longestChain && successfulBlocks.length > 0) || (longestChain && longestChain.length < successfulBlocks.length)) {
-        longestChain = successfulBlocks
-      }
-    }
-    // Phase 3: a best exist? apply it if it respects the 3-3 rule
-    if (longestChain) {
-      const b = longestChain[longestChain.length - 1]
-      if (b.number >= numberStart && b.time >= timeStart) {
-        this.bc.revertTo(longestChain[0].number - 1)
-        for (const b of longestChain) {
-          this.bc.add(b)
-        }
-      }
-    }
+  getCurrent(): SwitchBlock {
     return this.bc.current
   }
 
-  static suitesContains(suites:Block[][], block:Block) {
-    for (const suite of suites) {
-      for (const b of suite) {
-        if (b.number === block.number && b.hash === block.hash) {
-          return true
-        }
-      }
-    }
-    return false
+  getPotentials(numberStart:number, timeStart:number) {
+    return this.sbx.getPotentials(numberStart, timeStart)
   }
+
+
+  getBlockchainBlock(number: number, hash: string): SwitchBlock|null {
+    return this.bc.getBlock(number, hash)
+  }
+
+
+  getSandboxBlock(number: number, hash: string): SwitchBlock | any {
+    return this.sbx.getBlock(number, hash)
+  }
+
+  revertTo(number: number): SwitchBlock[] {
+    return this.bc.revertTo(number)
+  }
+
+  addBlock(block: Block): SwitchBlock {
+    return this.bc.add(block)
+  }
+
+  constructor(private bc:Blockchain, private sbx:BlockSandbox) {}
 }
 
+/**
+ * A super simple sandbox for new blocks.
+ */
 class BlockSandbox {
 
   constructor(private blocks:Block[] = []) {}
 
+  /**
+   * Gets a particular block.
+   * @param number The block number.
+   * @param {hash} hash The block hash.
+   * @returns The block or null if it was not found.
+   */
   getBlock(number:number, hash:string) {
     for (const b of this.blocks) {
       if (b.number === number && b.hash === hash) {
@@ -289,10 +240,16 @@ class BlockSandbox {
     return null
   }
 
+  /**
+   * Retrieves all the candidate blocks for the switch.
+   * @param numberStart Will pick blocks whose number >= numberStart
+   * @param timeStart
+   * @returns The candidate blocks.
+   */
   getPotentials(numberStart:number, timeStart:number) {
     const potentials = []
     for (const b of this.blocks) {
-      if (b.number >= numberStart && b.time >= timeStart) {
+      if (b.number >= numberStart && b.medianTime >= timeStart) {
         potentials.push(b)
       }
     }
@@ -300,19 +257,34 @@ class BlockSandbox {
   }
 }
 
-
+/**
+ * A super simple blockchain
+ */
 class Blockchain {
 
   private blocks:Block[] = []
 
+  /**
+   * The root block of the blockchain (does not need to have number `0`).
+   * @param {Block} rootBlock
+   */
   constructor(rootBlock:Block) {
     this.blocks.push(rootBlock)
   }
 
+  /**
+   * Returns the current block (HEAD) of the blockchain.
+   * @returns {Block}
+   */
   get current() {
     return this.blocks[this.blocks.length - 1]
   }
 
+  /**
+   * Adds a block on top of HEAD.
+   * @param {Block} block
+   * @returns {Block}
+   */
   add(block:Block) {
     if (!block.chainsOn(this.current)) {
       throw "Unchainable"
@@ -321,6 +293,12 @@ class Blockchain {
     return block
   }
 
+  /**
+   * Gets a particular block.
+   * @param number The block number.
+   * @param hash The block hash.
+   * @returns The block or null if it was not found.
+   */
   getBlock(number:number, hash:string) {
     for (const b of this.blocks) {
       if (b.number === number && b.hash === hash) {
@@ -330,6 +308,11 @@ class Blockchain {
     return null
   }
 
+  /**
+   * Pops blocks from HEAD to HEAD - number.
+   * @param number The block number that will be our new HEAD.
+   * @returns {Block[]}
+   */
   revertTo(number:number) {
     const reverted:Block[] = []
     if (this.current.number < number) {
@@ -343,7 +326,7 @@ class Blockchain {
   }
 }
 
-class Block {
+class Block implements SwitchBlock {
 
   private constructor(public chain:string, public number:number, private thePreviousHash:string, private chainsOnHook: (previous:Block)=>boolean = () => true) {
   }
@@ -352,7 +335,7 @@ class Block {
     return [this.chain, this.number].join('')
   }
 
-  get time() {
+  get medianTime() {
     return this.number * avgGenTime
   }
 

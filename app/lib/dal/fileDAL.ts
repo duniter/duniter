@@ -223,6 +223,10 @@ export class FileDAL {
     return this.getBlock(0)
   }
 
+  getPotentialRootBlocks() {
+    return this.blockDAL.getPotentialRoots()
+  }
+
   lastBlockOfIssuer(issuer:string) {
     return this.blockDAL.lastBlockOfIssuer(issuer);
   }
@@ -237,6 +241,10 @@ export class FileDAL {
 
   getForkBlocksFollowing(current:DBBlock) {
     return this.blockDAL.getNextForkBlocks(current.number, current.hash)
+  }
+
+  getPotentialForkBlocks(numberStart:number, medianTimeStart:number) {
+    return this.blockDAL.getPotentialForkBlocks(numberStart, medianTimeStart)
   }
 
   async getBlockCurrent() {

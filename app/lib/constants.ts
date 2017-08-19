@@ -1,5 +1,6 @@
 "use strict";
 import {CommonConstants} from "./common-libs/constants"
+import {OtherConstants} from "./other_constants"
 
 const UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\d{2}\\.\\d{2}(\\+|-)\\d{3}\\.\\d{2});(\\d+)(;?)";
 const PUBKEY       = CommonConstants.FORMATS.PUBKEY
@@ -160,7 +161,7 @@ module.exports = {
   SAFE_FACTOR: 3,
   BLOCKS_COLLECT_THRESHOLD: 30, // Blocks to collect from memory and persist
 
-  MUTE_LOGS_DURING_UNIT_TESTS: true,
+  MUTE_LOGS_DURING_UNIT_TESTS: OtherConstants.MUTE_LOGS_DURING_UNIT_TESTS,
 
   SANDBOX_SIZE_TRANSACTIONS: 200,
   SANDBOX_SIZE_IDENTITIES: 5000,

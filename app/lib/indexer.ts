@@ -1066,7 +1066,8 @@ export class Indexer {
       nbPersonalBlocksInFrame = 0;
       medianOfBlocksInFrame = 1;
     } else {
-      const blocksInFrame = _.filter(await range(1, HEAD_1.issuersFrame), (b:BlockDTO) => b.number <= HEAD_1.number);
+      const ranged = await range(1, HEAD_1.issuersFrame)
+      const blocksInFrame = _.filter(ranged, (b:BlockDTO) => b.number <= HEAD_1.number);
       const issuersInFrame = blocksInFrame.map((b:BlockDTO) => b.issuer);
       blocksOfIssuer = _.filter(blocksInFrame, (entry:BlockDTO) => entry.issuer == HEAD.issuer);
       nbPersonalBlocksInFrame = count(blocksOfIssuer);
@@ -1335,7 +1336,9 @@ export class Indexer {
   // BR_G72
   static ruleCertificationSignature(cindex: CindexEntry[]) {
     for (const ENTRY of cindex) {
-      if (!ENTRY.sigOK) return false;
+      if (!ENTRY.sigOK) {
+        return false
+      }
     }
     return true
   }

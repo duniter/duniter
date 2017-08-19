@@ -1,13 +1,8 @@
 "use strict";
 
-const _         = require('underscore');
 const co        = require('co');
 const assert    = require('assert');
-const should    = require('should');
-const duniter   = require('../../index');
-const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const user      = require('./tools/user');
-const constants = require('../../app/lib/constants');
 const toolbox   = require('./tools/toolbox');
 
 const now = 1480000000;
@@ -68,17 +63,7 @@ describe("Identities kicking by certs", function() {
     yield s1.commit({ time: now + 8 });
     yield s1.commit({ time: now + 8 });
     yield cat.revoke();
-    let err;
-    try {
-      yield s1.commit({ time: now + 8, excluded: ['3conGDUXdrTGbQPMQQhEC4Ubu1MCAnFrAYvUaewbUhtk'] });
-    } catch (e) {
-      err = e;
-    }
-    should.exist(err);
-    should.deepEqual(JSON.parse(err.error), {
-      "ucode": 1002,
-      "message": "ruleToBeKickedArePresent"
-    });
+    yield s1.commitWaitError({ time: now + 8, excluded: ['3conGDUXdrTGbQPMQQhEC4Ubu1MCAnFrAYvUaewbUhtk'] }, "ruleToBeKickedArePresent")
     yield s1.commit({ time: now + 8 });
   }));
 

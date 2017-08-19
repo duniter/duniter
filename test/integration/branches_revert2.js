@@ -184,6 +184,7 @@ describe("Revert two blocks", function() {
     before(() => co(function*() {
       yield s1.dal.txsDAL.sqlDeleteAll()
       yield cat.sendP(19, toc);
+      yield s1.dal.blockDAL.exec('DELETE FROM block WHERE fork AND number = 3')
       yield commit(s1)({ time: now + 1 });
     }))
 

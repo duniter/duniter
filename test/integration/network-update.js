@@ -84,6 +84,7 @@ describe("Network updating", function() {
       const b3 = yield s1.makeNext({});
       yield s1.postBlock(b3);
       yield s2.postBlock(b3);
+      yield s2.waitToHaveBlock(b3.number);
       yield s1.recomputeSelfPeer(); // peer#1
       yield s1.sharePeeringWith(s2);
     });

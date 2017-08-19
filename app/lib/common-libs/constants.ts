@@ -138,6 +138,9 @@ export const CommonConstants = {
     TOO_OLD_MEMBERSHIP:                   { httpCode: 400, uerr: { ucode: 2029, message: "Too old membership." }},
     MAXIMUM_LEN_OF_OUTPUT:                { httpCode: 400, uerr: { ucode: 2032, message: 'A transaction output has a maximum size of ' + MAXIMUM_LEN_OF_OUTPUT + ' characters' }},
     MAXIMUM_LEN_OF_UNLOCK:                { httpCode: 400, uerr: { ucode: 2033, message: 'A transaction unlock has a maximum size of ' + MAXIMUM_LEN_OF_UNLOCK + ' characters' }},
+    WRONG_CURRENCY:                       { httpCode: 400, uerr: { ucode: 2500, message: 'Wrong currency' }},
+    WRONG_POW:                            { httpCode: 400, uerr: { ucode: 2501, message: 'Wrong proof-of-work' }},
+    OUT_OF_FORK_WINDOW:                   { httpCode: 400, uerr: { ucode: 2501, message: 'Out of fork window' }},
 
     WRONG_SIGNATURE_FOR_CERT:             { httpCode: 400, uerr: { ucode: 3000, message: 'Wrong signature for certification' }},
   },

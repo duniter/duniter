@@ -12,7 +12,6 @@ import {KeyGen, randomKey} from "./app/lib/common-libs/crypto/keyring"
 import {parsers} from "./app/lib/common-libs/parsers/index"
 import {Cloneable} from "./app/lib/dto/Cloneable"
 import {DuniterDocument, duniterDocument2str} from "./app/lib/common-libs/constants"
-import {CrawlerConstants} from "./app/modules/crawler/lib/constants"
 import {GlobalFifoPromise} from "./app/service/GlobalFifoPromise"
 import {BlockchainContext} from "./app/lib/computation/BlockchainContext"
 import {BlockDTO} from "./app/lib/dto/BlockDTO"
@@ -37,6 +36,7 @@ const path        = require('path');
 const archiver    = require('archiver');
 const unzip       = require('unzip2');
 const fs          = require('fs');
+const es          = require('event-stream');
 const daemonize   = require("daemonize2")
 const constants   = require('./app/lib/constants');
 const jsonpckg    = require('./package.json');
@@ -177,6 +177,13 @@ export class Server extends stream.Duplex implements HookableServer {
     this.PeeringService.setConfDAL(this.conf, this.dal, this.keyPair)
     this.BlockchainService.setConfDAL(this.conf, this.dal, this.keyPair)
     this.TransactionsService.setConfDAL(this.conf, this.dal)
+
+    // Messages piping
+    this.BlockchainService
+      .pipe(es.mapSync((e:any) => {
+        this.streamPush(e)
+      }))
+
     return this.conf;
   }
 
@@ -192,8 +199,8 @@ export class Server extends stream.Duplex implements HookableServer {
     return await this.writeBlock(obj)
   }
 
-  async writeBlock(obj:any, notify = true) {
-    const res = await this.BlockchainService.submitBlock(obj, true, CrawlerConstants.FORK_ALLOWED)
+  async writeBlock(obj:any, notify = true, noResolution = false) {
+    const res = await this.BlockchainService.submitBlock(obj, noResolution)
     if (notify) {
       this.emitDocument(res, DuniterDocument.ENTITY_BLOCK)
     }
@@ -297,6 +304,10 @@ export class Server extends stream.Duplex implements HookableServer {
         await this.revert();
       }
     }
+    // Eventual block resolution
+    await this.BlockchainService.blockResolution()
+    // Eventual fork resolution
+    await this.BlockchainService.forkResolution()
   }
 
   recomputeSelfPeer() {

@@ -4,9 +4,10 @@ var _  = require('underscore');
 var co = require('co');
 var rp = require('request-promise');
 var logger = require('../../../app/lib/logger').NewLogger('test');
+const until = require('./until')
 const BlockProver = require('../../../app/modules/prover/lib/blockProver').BlockProver
 
-module.exports = function makeBlockAndPost(theServer, extraProps) {
+module.exports = function makeBlockAndPost(theServer, extraProps, noWait) {
   return function(manualValues) {
     if (extraProps) {
       manualValues = manualValues || {};
@@ -18,7 +19,20 @@ module.exports = function makeBlockAndPost(theServer, extraProps) {
         theServer._utGenerator = require('../../../app/modules/prover').ProverDependency.duniter.methods.blockGenerator(theServer, theServer._utProver)
       }
       let proven = yield theServer._utGenerator.makeNextBlock(null, null, manualValues)
-      const block = yield postBlock(theServer)(proven);
+      const numberToReach = proven.number
+      const block = yield postBlock(theServer)(proven)
+      yield new Promise((res) => {
+        if (noWait) {
+          return res(block)
+        }
+        const interval = setInterval(() => co(function*() {
+          const current = yield theServer.dal.getCurrentBlockOrNull()
+          if (current && current.number == numberToReach) {
+            res()
+            clearInterval(interval)
+          }
+        }), 1)
+      })
       return block
     });
   };

@@ -185,6 +185,7 @@ describe("Revocation", function() {
   it('if we revert the commit, cat should not be revoked', () => co(function *() {
     yield s1.revert();
     yield s1.revert();
+    yield s1.dal.blockDAL.exec('DELETE FROM block WHERE fork AND number >= 2')
     return expectAnswer(rp('http://127.0.0.1:9964/wot/lookup/cat', { json: true }), function(res) {
       res.should.have.property('results').length(1);
       res.results[0].should.have.property('uids').length(1);

@@ -27,11 +27,15 @@ export const LOCAL_RULES_FUNCTIONS = {
     return true;
   },
 
-  checkProofOfWork: async (block:BlockDTO) => {
+  isProofOfWorkCorrect: (block:BlockDTO) => {
     let remainder = block.powMin % 16;
     let nb_zeros = (block.powMin - remainder) / 16;
     const powRegexp = new RegExp('^0{' + nb_zeros + '}');
-    if (!block.hash.match(powRegexp)) {
+    return !!block.hash.match(powRegexp)
+  },
+
+  checkProofOfWork: async (block:BlockDTO) => {
+    if (!LOCAL_RULES_FUNCTIONS.isProofOfWorkCorrect(block)) {
       throw Error('Not a proof-of-work');
     }
     return true;

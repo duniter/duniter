@@ -2,8 +2,6 @@
 
 const co        = require('co');
 const should    = require('should');
-const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
-const constants = require('../../app/lib/constants');
 const toolbox   = require('./tools/toolbox');
 
 const conf = {
@@ -38,13 +36,13 @@ describe("Protocol 0.6 Difficulties", function() {
   it('should be able to emit a block#1 by a different user', () => co(function*() {
     yield [
       s1.commit({ time: now }), // medianOfBlocksInFrame = MEDIAN([1]) = 1
-      s2.until('block', 1),
-      s1.until('block', 1)
+      toolbox.serverWaitBlock(s1, 1),
+      toolbox.serverWaitBlock(s2, 1)
     ];
     yield [
       s2.commit({ time: now }), // medianOfBlocksInFrame = MEDIAN([1]) = 1
-      s2.until('block', 1),
-      s1.until('block', 1)
+      toolbox.serverWaitBlock(s1, 2),
+      toolbox.serverWaitBlock(s2, 2)
     ];
     yield s1.expectJSON('/blockchain/current', {
       number: 2,

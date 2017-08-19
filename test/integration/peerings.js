@@ -11,6 +11,7 @@ const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
 const sync      = require('./tools/sync');
+const toolbox   = require('./tools/toolbox');
 const contacter  = require('../../app/modules/crawler').CrawlerDependency.duniter.methods.contacter;
 const until     = require('./tools/until');
 const shutDownEngine  = require('./tools/shutDownEngine');
@@ -115,41 +116,44 @@ describe("Network", function() {
           yield commitS1();
           // Server 2 syncs block 0
           yield sync(0, 0, s1, s2);
+          yield toolbox.serverWaitBlock(s1, 0)
           // Server 3 syncs block 0
           yield sync(0, 0, s1, s3);
+          yield toolbox.serverWaitBlock(s3, 0)
           yield nodeS1.getPeer().then((peer) => nodeS2.postPeer(PeerDTO.fromJSONObject(peer).getRawSigned())).catch(e => console.error(e))
           yield nodeS2.getPeer().then((peer) => nodeS1.postPeer(PeerDTO.fromJSONObject(peer).getRawSigned())).catch(e => console.error(e))
           yield nodeS3.getPeer().then((peer) => nodeS1.postPeer(PeerDTO.fromJSONObject(peer).getRawSigned())).catch(e => console.error(e))
           yield commitS1();
           yield [
-            until(s2, 'block', 1),
-            until(s3, 'block', 1)
+            toolbox.serverWaitBlock(s2, 1),
+            toolbox.serverWaitBlock(s3, 1)
           ];
           // A block was successfully spread accross the network
           yield s2.bma.closeConnections();
           yield commitS1();
           yield [
-            until(s3, 'block', 1)
+            toolbox.serverWaitBlock(s3, 2)
           ];
           // Server 2 syncs block number 2 (it did not have it)
           yield sync(2, 2, s1, s2);
+          yield toolbox.serverWaitBlock(s2, 2)
           yield s2.recomputeSelfPeer();
           yield s2.bma.openConnections();
           yield new Promise((resolve) => setTimeout(resolve, 1000));
           yield [
-            until(s2, 'block', 2),
-            until(s3, 'block', 2),
+            toolbox.serverWaitBlock(s2, 4),
+            toolbox.serverWaitBlock(s3, 4),
             commitS1()
               .then(commitS1)
           ];
           yield [
-            until(s1, 'block', 1),
-            until(s2, 'block', 1),
+            toolbox.serverWaitBlock(s1, 5),
+            toolbox.serverWaitBlock(s2, 5),
             commitS3()
           ];
           yield [
-            until(s1, 'block', 1),
-            until(s3, 'block', 1),
+            toolbox.serverWaitBlock(s1, 6),
+            toolbox.serverWaitBlock(s3, 6),
             commitS2()
           ];
         });
@@ -179,7 +183,7 @@ describe("Network", function() {
       });
     });
 
-    it('/current should exist and be 1', function() {
+    it('/current should exist and be 6', function() {
       return expectJSON(rp('http://127.0.0.1:7784/blockchain/current', { json: true }), {
         number: 6
       });

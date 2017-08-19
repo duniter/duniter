@@ -1,14 +1,19 @@
 import * as assert from 'assert'
 import {SwitchBlock, Switcher, SwitcherDao} from "../../app/lib/blockchain/Switcher"
+import {NewLogger} from "../../app/lib/logger"
+
+const logger = NewLogger()
+
+const avgGenTime = 5 * 60
+const forkWindowSize = 5
+const switchOnHeadAdvance = 3
 
 describe("Fork resolution 3-3 algo", () => {
 
-  it('should switch on a valid fork', () => {
+  it('should switch on a valid fork', async () => {
 
     // B10 -- B11 -- B12 -- B13
-    //  |         `- C12 -- C13 -- C14 -- C15 -- C16
-    //  |
-    //  `- (= B13 - ForkWindowSize)
+    //            `- C12 -- C13 -- C14 -- C15 -- C16
 
     const bc = new Blockchain(Block.from("B10"))
     bc.add(Block.from("B11"))
@@ -22,8 +27,8 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C15"),
       Block.from("C16")
     ])
-    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize)
-    switcher.tryToFork()
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize, switchOnHeadAdvance, logger)
+    await switcher.tryToFork()
     assert.equal(bc.current.number, 16)
     assert.equal(bc.current.hash, "C16")
   })
@@ -31,9 +36,7 @@ describe("Fork resolution 3-3 algo", () => {
   it('should not switch if no fork block 3-3 exist', async () => {
 
     // B10 -- B11 -- B12 -- B13
-    //  |         `- C12 -- C13 -- C14 -- C15
-    //  |
-    //  `- (= B13 - ForkWindowSize)
+    //            `- C12 -- C13 -- C14 -- C15
 
     const bc = new Blockchain(Block.from("B10"))
     bc.add(Block.from("B11"))
@@ -46,8 +49,8 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C14"),
       Block.from("C15")
     ])
-    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize)
-    switcher.tryToFork()
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize, switchOnHeadAdvance)
+    await switcher.tryToFork()
     assert.equal(bc.current.number, 13)
     assert.equal(bc.current.hash, "B13")
   })
@@ -55,9 +58,7 @@ describe("Fork resolution 3-3 algo", () => {
   it('should eliminate a fork with missing blocks', async () => {
 
     // B10 -- B11 -- B12 -- B13
-    //  |         `- C12 -- C13 -- C14 -- C15 -- C16
-    //  |
-    //  `- (= B13 - ForkWindowSize)
+    //            `- C12 -- C13 -- C14 -- C15 -- C16
 
     const bc = new Blockchain(Block.from("B10"))
     bc.add(Block.from("B11"))
@@ -68,8 +69,8 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C14"),
       Block.from("C15")
     ])
-    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize)
-    switcher.tryToFork()
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize, switchOnHeadAdvance)
+    await switcher.tryToFork()
     assert.equal(bc.current.number, 13)
     assert.equal(bc.current.hash, "B13")
   })
@@ -77,9 +78,7 @@ describe("Fork resolution 3-3 algo", () => {
   it('should eliminate a fork out of fork window', async () => {
 
     // B10 -- B11 -- B12 -- B13
-    //  +  -- C11 -- C12 -- C13 -- C14 -- C15 -- C16
-    //  |
-    //  `- (= B13 - ForkWindowSize)
+    //     `- C11 -- C12 -- C13 -- C14 -- C15 -- C16
 
     const bc = new Blockchain(Block.from("B10"))
     bc.add(Block.from("B11"))
@@ -95,18 +94,16 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C15"),
       Block.from("C16")
     ])
-    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize)
-    switcher.tryToFork()
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize, switchOnHeadAdvance)
+    await switcher.tryToFork()
     assert.equal(bc.current.number, 13)
     assert.equal(bc.current.hash, "B13")
   })
 
-  it('should accept a fork right on the limit of the fork window', async () => {
+  it('should refuse a fork right on the limit of the fork window', async () => {
 
     // B10 -- B11 -- B12 -- B13
-    //  |` -- C11 -- C12 -- C13 -- C14 -- C15 -- C16
-    //  |
-    //  `- (= B13 - ForkWindowSize)
+    //     `- C11 -- C12 -- C13 -- C14 -- C15 -- C16
 
     const bc = new Blockchain(Block.from("B10"))
     bc.add(Block.from("B11"))
@@ -121,18 +118,16 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C15"),
       Block.from("C16")
     ])
-    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize)
-    switcher.tryToFork()
-    assert.equal(bc.current.number, 16)
-    assert.equal(bc.current.hash, "C16")
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize, switchOnHeadAdvance)
+    await switcher.tryToFork()
+    assert.equal(bc.current.number, 13)
+    assert.equal(bc.current.hash, "B13")
   })
 
   it('should eliminate a fork whose 2nd block is invalid', async () => {
 
     // B10 -- B11 -- B12 -- B13
-    //  |         `- C12 -- C13 -- C14 -- C15 -- C16
-    //  |
-    //  `- (= B13 - ForkWindowSize)
+    //            `- C12 -- C13 -- C14 -- C15 -- C16
 
     const bc = new Blockchain(Block.from("B10"))
     bc.add(Block.from("B11"))
@@ -146,72 +141,67 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C15"),
       Block.from("C16")
     ])
-    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize)
-    switcher.tryToFork()
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize, switchOnHeadAdvance)
+    await switcher.tryToFork()
     assert.equal(bc.current.number, 13)
     assert.equal(bc.current.hash, "B13")
   })
 
   it('should select the longest fork', async () => {
 
-    // B10 -- B11 -- B12 -- B13
-    //  |         `- C12 -- C13 -- C14 -- C15 -- C16
-    //  |                `- D13 -- D14 -- D15 -- D16 -- D17
-    //  |
-    //  `- (= B13 - ForkWindowSize)
+    // B10 -- B11 -- B12 -- B13 -- B14
+    //           `              `- C14 -- C15          <-- "length" 2
+    //           |                     `- D15 -- D16   <-- "length" 3 (should be selected)
+    //            `- E12 -- E13 -- E14 -- E15          <-- "length" 4
 
     const bc = new Blockchain(Block.from("B10"))
     bc.add(Block.from("B11"))
     bc.add(Block.from("B12"))
     bc.add(Block.from("B13"))
-    assert.equal(bc.current.number, 13)
+    bc.add(Block.from("B14"))
+    assert.equal(bc.current.number, 14)
     const sbx = new BlockSandbox([
-      Block.from("C12", "B11"),
-      Block.from("C13"),
-      Block.from("C14"),
+      Block.from("C14", "B13"),
       Block.from("C15"),
-      Block.from("C16"),
-      Block.from("D13", "C12"),
-      Block.from("D14"),
-      Block.from("D15"),
+      Block.from("D15", "C14"),
       Block.from("D16"),
-      Block.from("D17")
+      Block.from("E12", "B11"),
+      Block.from("E13"),
+      Block.from("E14"),
+      Block.from("E15")
     ])
-    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize)
-    switcher.tryToFork()
-    assert.equal(bc.current.number, 17)
-    assert.equal(bc.current.hash, "D17")
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize, 1)
+    await switcher.tryToFork()
+    assert.equal(16, bc.current.number)
+    assert.equal("D16", bc.current.hash)
   })
 })
 
-const avgGenTime = 5 * 60
-const forkWindowSize = 3
+class TestingSwitcherDao implements SwitcherDao<Block> {
 
-class TestingSwitcherDao implements SwitcherDao {
-
-  getCurrent(): SwitchBlock {
+  async getCurrent(): Promise<Block> {
     return this.bc.current
   }
 
-  getPotentials(numberStart:number, timeStart:number) {
+  async getPotentials(numberStart:number, timeStart:number) {
     return this.sbx.getPotentials(numberStart, timeStart)
   }
 
 
-  getBlockchainBlock(number: number, hash: string): SwitchBlock|null {
+  async getBlockchainBlock(number: number, hash: string): Promise<Block|null> {
     return this.bc.getBlock(number, hash)
   }
 
 
-  getSandboxBlock(number: number, hash: string): SwitchBlock | any {
+  async getSandboxBlock(number: number, hash: string): Promise<Block | any> {
     return this.sbx.getBlock(number, hash)
   }
 
-  revertTo(number: number): SwitchBlock[] {
+  async revertTo(number: number): Promise<Block[]> {
     return this.bc.revertTo(number)
   }
 
-  addBlock(block: Block): SwitchBlock {
+  async addBlock(block: Block): Promise<Block> {
     return this.bc.add(block)
   }
 

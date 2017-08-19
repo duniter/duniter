@@ -9,7 +9,7 @@ const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
 const until     = require('./tools/until');
-const multicaster = require('../../app/lib/streams/multicaster');
+const toolbox   = require('./tools/toolbox');
 const PeerDTO   = require('../../app/lib/dto/PeerDTO').PeerDTO
 const contacter  = require('../../app/modules/crawler').CrawlerDependency.duniter.methods.contacter;
 const sync      = require('./tools/sync');
@@ -104,8 +104,8 @@ describe("Generation", function() {
       s1.conf.powDelay = 2000;
       s2.conf.powDelay = 2000;
       yield [
-        until(s1, 'block', 2),
-        until(s2, 'block', 2)
+        toolbox.serverWaitBlock(s1, 3),
+        toolbox.serverWaitBlock(s2, 3)
       ];
       s1.stopBlockComputation();
       s2.stopBlockComputation();

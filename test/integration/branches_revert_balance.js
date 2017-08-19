@@ -62,6 +62,7 @@ describe("Revert balance", () => {
 
   it('cat should be able to RE-send 60 units to tac', () => co(function*() {
     const txsPending = yield s1.dal.txsDAL.getAllPending(1)
+    yield s1.dal.blockDAL.exec('DELETE FROM block WHERE fork AND number = 3')
     txsPending.should.have.length(1)
     yield s1.commit({ time: now + 1 })
     yield s1.expect('/tx/sources/' + cat.pub, (res) => {

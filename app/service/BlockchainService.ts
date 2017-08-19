@@ -11,11 +11,12 @@ import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
 import {parsers} from "../lib/common-libs/parsers/index"
 import {HttpIdentityRequirement} from "../modules/bma/lib/dtos"
 import {FIFOService} from "./FIFOService"
+import {CommonConstants} from "../lib/common-libs/constants"
+import {LOCAL_RULES_FUNCTIONS} from "../lib/rules/local_rules"
+import {Switcher, SwitcherDao} from "../lib/blockchain/Switcher"
 
 const _               = require('underscore');
 const constants       = require('../lib/constants');
-
-const CHECK_ALL_RULES = true;
 
 export class BlockchainService extends FIFOService {
 
@@ -25,16 +26,70 @@ export class BlockchainService extends FIFOService {
   logger:any
   selfPubkey:string
   quickSynchronizer:QuickSynchronizer
+  switcherDao:SwitcherDao<BlockDTO>
 
   constructor(private server:any, fifoPromiseHandler:GlobalFifoPromise) {
     super(fifoPromiseHandler)
     this.mainContext = new BlockchainContext()
+    this.switcherDao = new (class ForkDao implements SwitcherDao<BlockDTO> {
+
+      constructor(private bcService:BlockchainService) {}
+
+      getCurrent(): Promise<BlockDTO> {
+        return this.bcService.current()
+      }
+
+      async getPotentials(numberStart: number, timeStart: number): Promise<BlockDTO[]> {
+        const blocks = await this.bcService.dal.getPotentialForkBlocks(numberStart, timeStart)
+        return blocks.map((b:any) => BlockDTO.fromJSONObject(b))
+      }
+
+      async getBlockchainBlock(number: number, hash: string): Promise<BlockDTO | null> {
+        try {
+          return BlockDTO.fromJSONObject(await this.bcService.dal.getBlockByNumberAndHash(number, hash))
+        } catch (e) {
+          return null
+        }
+      }
+
+      async getSandboxBlock(number: number, hash: string): Promise<BlockDTO | null> {
+        const block = await this.bcService.dal.getAbsoluteBlockByNumberAndHash(number, hash)
+        if (block && block.fork) {
+          return BlockDTO.fromJSONObject(block)
+        } else {
+          return null
+        }
+      }
+
+      async revertTo(number: number): Promise<BlockDTO[]> {
+        const blocks:BlockDTO[] = []
+        const current = await this.bcService.current();
+        for (let i = 0, count = current.number - number; i < count; i++) {
+          const reverted = await this.bcService.mainContext.revertCurrentBlock()
+          blocks.push(BlockDTO.fromJSONObject(reverted))
+        }
+        if (current.number < number) {
+          throw "Already below this number"
+        }
+        return blocks
+      }
+
+      async addBlock(block: BlockDTO): Promise<BlockDTO> {
+        return await this.bcService.mainContext.checkAndAddBlock(block)
+      }
+
+    })(this)
   }
+
+  /**
+   * Mandatory with stream.Readable
+   * @private
+   */
+  _read() {}
 
   getContext() {
     return this.mainContext
   }
-  
 
   setConfDAL(newConf:ConfDTO, newDAL:FileDAL, newKeyPair:any) {
     this.dal = newDAL;
@@ -62,196 +117,96 @@ export class BlockchainService extends FIFOService {
   }
 
   async branches() {
-    let forkBlocks = await this.dal.blockDAL.getForkBlocks();
-    const current = await this.mainContext.current();
-    forkBlocks = _.sortBy(forkBlocks, 'number');
-    forkBlocks = _.filter(forkBlocks, (b:DBBlock) => current.number - b.number < this.conf.forksize)
-    // Get the blocks refering current blockchain
-    const forkables = [];
-    for (const block of forkBlocks) {
-      const refered = await this.dal.getAbsoluteBlockByNumberAndHash(block.number - 1, block.previousHash);
-      if (refered) {
-        forkables.push(block);
-      } else {
-        this.logger.info('Missing block #%s-%s', block.number - 1, block.previousHash.substr(0, 8))
-      }
-    }
-    const branches = BlockchainService.getBranches(forkables, _.difference(forkBlocks, forkables));
-    const forks = branches.map((branch) => branch[branch.length - 1]);
-    return forks.concat([current]);
+    const current = await this.current()
+    const switcher = new Switcher(this.switcherDao, this.conf.avgGenTime, this.conf.forksize, this.conf.switchOnHeadAdvance, this.logger)
+    const heads = await switcher.findPotentialSuitesHeads(current)
+    return heads.concat([current])
   }
 
-  static getBranches(forkables:any[], others:any[]) {
-    // All starting branches
-    let branches = forkables.map((fork) => [fork]);
-    // For each "pending" block, we try to add it to all branches
-    for (const other of others) {
-      for (let j = 0, len2 = branches.length; j < len2; j++) {
-        const branch = branches[j];
-        const last = branch[branch.length - 1];
-        if (other.number == last.number + 1 && other.previousHash == last.hash) {
-          branch.push(other);
-        } else if (branch[1]) {
-          // We try to find out if another fork block can be forked
-          const diff = other.number - branch[0].number;
-          if (diff > 0 && branch[diff - 1] && branch[diff - 1].hash == other.previousHash) {
-            // We duplicate the branch, and we add the block to this second branch
-            branches.push(branch.slice());
-            // First we remove the blocks this are not part of the fork
-            branch.splice(diff, branch.length - diff);
-            branch.push(other);
-            j++;
-          }
-        }
-      }
-    }
-    branches = _.sortBy(branches, (branch:any) => -branch.length);
-    if (branches.length) {
-      const maxSize = branches[0].length;
-      const longestsBranches = [];
-      for (const branch of branches) {
-        if (branch.length == maxSize) {
-          longestsBranches.push(branch);
-        }
-      }
-      return longestsBranches;
-    }
-    return [];
-  }
-
-  submitBlock(obj:any, doCheck:boolean, forkAllowed:boolean): Promise<BlockDTO> {
+  submitBlock(blockToAdd:any, noResolution = false): Promise<BlockDTO> {
+    const obj = parsers.parseBlock.syncWrite(BlockDTO.fromJSONObject(blockToAdd).getRawSigned())
     const dto = BlockDTO.fromJSONObject(obj)
     const hash = dto.getHash()
-    return this.pushFIFO(hash, () => {
-      return this.checkAndAddBlock(obj, doCheck, forkAllowed)
-    })
-  }
-
-  private async checkAndAddBlock(blockToAdd:any, doCheck:boolean, forkAllowed:boolean = false): Promise<BlockDTO> {
-    // Check global format, notably version number
-    const obj = parsers.parseBlock.syncWrite(BlockDTO.fromJSONObject(blockToAdd).getRawSigned());
-    // Force usage of local currency name, do not accept other currencies documents
-    if (this.conf.currency) {
-      obj.currency = this.conf.currency || obj.currency;
-    } else {
-      this.conf.currency = obj.currency;
-    }
-    let existing = await this.dal.getBlockByNumberAndHashOrNull(obj.number, obj.hash);
-    if (existing) {
-      throw constants.ERRORS.BLOCK_ALREADY_PROCESSED;
-    }
-    let current = await this.mainContext.current();
-    let followsCurrent = !current || (obj.number == current.number + 1 && obj.previousHash == current.hash);
-    if (followsCurrent) {
-      // try to add it on main blockchain
-      const dto = BlockDTO.fromJSONObject(obj)
-      if (doCheck) {
-        const { index, HEAD } = await this.mainContext.checkBlock(dto, constants.WITH_SIGNATURES_AND_POW);
-        return await this.mainContext.addBlock(dto, index, HEAD)
-      } else {
-        return await this.mainContext.addBlock(dto)
+    return this.pushFIFO(hash, async () => {
+      // Check basic fields:
+      // * currency relatively to conf
+      if (this.conf && this.conf.currency && this.conf.currency !== dto.currency) {
+        throw CommonConstants.ERRORS.WRONG_CURRENCY
       }
-    } else {
-      // add it as side chain
-      if (parseInt(current.number) - parseInt(obj.number) + 1 >= this.conf.forksize) {
-        throw 'Block out of fork window';
+      // * hash relatively to powMin
+      if (!LOCAL_RULES_FUNCTIONS.isProofOfWorkCorrect(dto)) {
+        throw CommonConstants.ERRORS.WRONG_POW
       }
-      let absolute = await this.dal.getAbsoluteBlockByNumberAndHash(obj.number, obj.hash)
-      let res = null;
+      // * number relatively to fork window and current block
+      if (this.conf && this.conf.forksize !== undefined) {
+        const current = await this.current()
+        if (current && dto.number < current.number - this.conf.forksize) {
+          throw CommonConstants.ERRORS.OUT_OF_FORK_WINDOW
+        }
+      }
+      const absolute = await this.dal.getAbsoluteBlockByNumberAndHash(obj.number, obj.hash)
       if (!absolute) {
-        res = await this.mainContext.addSideBlock(obj)
-        // we eventually try to swith **only if** we do not already have this blocK. Otherwise the block will be
-        // spread again to the network, which can end in an infinite ping-pong.
-        if (forkAllowed) {
-          await this.eventuallySwitchOnSideChain(current);
+        // Save the block in the sandbox
+        await this.mainContext.addSideBlock(dto);
+        // Trigger the save + block resolution in an async way: this allows to answer immediately that the submission
+        // was accepted, and that the document can be rerouted and is under treatment.
+        // This will enhence the block propagation on the network, thus will avoid potential forks to emerge.
+        if (!noResolution) {
+          (() => {
+            return this.pushFIFO('resolution_' + dto.getHash(), async () => {
+              // Resolve the potential new HEAD
+              await this.blockResolution()
+              // Resolve the potential forks
+              await this.forkResolution()
+            })
+          })()
         }
       } else {
-        throw "Fork block already known"
+        throw "Block already known"
       }
-      return res;
-    }
-  }
-
-  async tryToFork() {
-    return this.pushFIFO("tryToFork", async () => {
-      const current = await this.mainContext.current()
-      await this.eventuallySwitchOnSideChain(current)
+      return dto
     })
   }
 
-  private async eventuallySwitchOnSideChain(current:DBBlock) {
-    const branches = await this.branches()
-    const blocksAdvanceInBlocks = this.conf.switchOnHeadAdvance
-    const timeAdvance = this.conf.switchOnHeadAdvance * this.conf.avgGenTime
-    let potentials = _.without(branches, current);
-    // We switch only to blockchain with X_BLOCKS in advance considering both theoretical time by block / avgGenTime, + written time / avgGenTime
-    this.logger.trace('SWITCH: %s branches...', branches.length);
-    this.logger.trace('SWITCH: required is >= %s for blockDistance and %s for timeAdvance for both values to try to follow the fork', blocksAdvanceInBlocks, timeAdvance)
-    potentials.reverse()
-    potentials = _.filter(potentials, (p:DBBlock) => {
-      const effectiveBlockAdvance = p.number - current.number
-      const effectiveTimeAdvance = p.medianTime - current.medianTime
-      const retained = effectiveBlockAdvance >= blocksAdvanceInBlocks && effectiveTimeAdvance >= timeAdvance
-      this.logger.trace('SWITCH: found branch #%s-%s has blockDistance %s ; timeDistance %s ; retained: %s', p.number, p.hash.substr(0, 8), effectiveBlockAdvance, effectiveTimeAdvance, retained ? 'YES' : 'NO');
-      return retained
-    });
-    this.logger.trace('SWITCH: %s potential side chains...', potentials.length);
-    for (const potential of potentials) {
-      this.logger.info('SWITCH: get side chain #%s-%s...', potential.number, potential.hash);
-      const sideChain = await this.getWholeForkBranch(potential)
-      this.logger.info('SWITCH: revert main chain to block #%s...', sideChain[0].number - 1);
-      await this.revertToBlock(sideChain[0].number - 1)
-      try {
-        this.logger.info('SWITCH: apply side chain #%s-%s...', potential.number, potential.hash);
-        await this.applySideChain(sideChain)
-      } catch (e) {
-        this.logger.warn('SWITCH: error %s', e.stack || e);
-        // Revert the revert (so we go back to original chain)
-        const revertedChain = await this.getWholeForkBranch(current)
-        await this.revertToBlock(revertedChain[0].number - 1)
-        await this.applySideChain(revertedChain)
-        await this.markSideChainAsWrong(sideChain)
+  async blockResolution() {
+    let added = true
+    while (added) {
+      const current = await this.current()
+      let potentials = []
+      if (current) {
+        potentials = await this.dal.getForkBlocksFollowing(current)
+        this.logger.info('Block resolution: %s potential blocks after current#%s...', potentials.length, current.number)
+      } else {
+        potentials = await this.dal.getPotentialRootBlocks()
+        this.logger.info('Block resolution: %s potential blocks for root block...', potentials.length)
+      }
+      added = false
+      let i = 0
+      while (!added && i < potentials.length) {
+        const dto = BlockDTO.fromJSONObject(potentials[i])
+        try {
+          await this.mainContext.checkAndAddBlock(dto)
+          added = true
+        } catch (e) {
+          this.logger.error(e)
+          added = false
+          this.push({
+            blockResolutionError: e && e.message
+          })
+        }
+        i++
       }
     }
   }
 
-  private async getWholeForkBranch(topForkBlock:DBBlock) {
-    const fullBranch = [];
-    let isForkBlock = true;
-    let next = topForkBlock;
-    while (isForkBlock) {
-      fullBranch.push(next);
-      this.logger.trace('SWITCH: get absolute #%s-%s...', next.number - 1, next.previousHash);
-      next = await this.dal.getAbsoluteBlockByNumberAndHash(next.number - 1, next.previousHash);
-      isForkBlock = next.fork;
-    }
-    //fullBranch.push(next);
-    // Revert order so we have a crescending branch
-    return fullBranch.reverse();
-  }
-
-  private async revertToBlock(number:number) {
-    let nowCurrent = await this.current();
-    this.logger.trace('SWITCH: main chain current = #%s-%s...', nowCurrent.number, nowCurrent.hash);
-    while (nowCurrent.number > number) {
-      this.logger.trace('SWITCH: main chain revert #%s-%s...', nowCurrent.number, nowCurrent.hash);
-      await this.mainContext.revertCurrentBlock();
-      nowCurrent = await this.current();
-    }
-  }
-
-  private async applySideChain(chain:DBBlock[]) {
-    for (const block of chain) {
-      this.logger.trace('SWITCH: apply side block #%s-%s -> #%s-%s...', block.number, block.hash, block.number - 1, block.previousHash);
-      await this.checkAndAddBlock(block, CHECK_ALL_RULES);
-    }
-  }
-
-  private async markSideChainAsWrong(chain:DBBlock[]) {
-    for (const block of chain) {
-      block.wrong = true;
-      // Saves the block (DAL)
-      await this.dal.saveSideBlockInFile(block);
+  async forkResolution() {
+    const switcher = new Switcher(this.switcherDao, this.conf.avgGenTime, this.conf.forksize, this.conf.switchOnHeadAdvance, this.logger)
+    const newCurrent = await switcher.tryToFork()
+    if (newCurrent) {
+      this.push({
+        bcEvent: 'switched',
+        block: newCurrent
+      })
     }
   }
 

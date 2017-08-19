@@ -219,7 +219,20 @@ function postBlock(server2) {
   return function(block) {
     return post(server2, '/blockchain/block')({
       block: typeof block == 'string' ? block : block.getRawSigned()
-    });
+    })
+      .then((result) => co(function*() {
+        const numberToReach = block.number
+        yield new Promise((res) => {
+          const interval = setInterval(() => co(function*() {
+            const current = yield server2.dal.getCurrentBlockOrNull()
+            if (current && current.number == numberToReach) {
+              res()
+              clearInterval(interval)
+            }
+          }), 1)
+        })
+        return result
+      }))
   };
 }
 

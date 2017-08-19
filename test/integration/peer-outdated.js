@@ -59,6 +59,7 @@ describe("Peer document expiry", function() {
     yield commitS1(); // block#2
     yield s1.recomputeSelfPeer(); // peer#2
     yield s2.syncFrom(s1, 0, 2);
+    yield s2.waitToHaveBlock(2)
   }));
 
   after(() => {

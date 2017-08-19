@@ -18,14 +18,13 @@ import {TransactionDTO} from "../../../app/lib/dto/TransactionDTO"
 
 const _           = require('underscore');
 const rp          = require('request-promise');
+const es          = require('event-stream');
 const httpTest    = require('../tools/http');
 const sync        = require('../tools/sync');
 const commit      = require('../tools/commit');
 const user        = require('../tools/user');
 const until       = require('../tools/until');
 const bma         = require('../../../app/modules/bma').BmaDependency.duniter.methods.bma;
-const multicaster = require('../../../app/lib/streams/multicaster');
-const dtos        = require('../../../app/modules/bma').BmaDependency.duniter.methods.dtos;
 const logger      = require('../../../app/lib/logger').NewLogger('toolbox');
 
 require('../../../app/modules/bma').BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
@@ -215,6 +214,34 @@ export const NewTestingServer = (conf:any) => {
   return new TestingServer(port, server)
 }
 
+export const serverWaitBlock = async (server:Server, number:number) => {
+  await new Promise((res) => {
+    const interval = setInterval(async () => {
+      const current = await server.dal.getCurrentBlockOrNull()
+      if (current && current.number == number) {
+        res()
+        clearInterval(interval)
+      }
+    }, 1)
+  })
+}
+
+export const waitToHaveBlock = async (server:Server, number:number) => {
+  return serverWaitBlock(server, number)
+}
+
+export const waitForkResolution = async (server:Server, number:number) => {
+  await new Promise(res => {
+    server.pipe(es.mapSync((e:any) => {
+      if (e.bcEvent === 'switched' && e.block.number === number) {
+        res()
+      }
+      return e
+    }))
+
+  })
+}
+
 export class TestingServer {
 
   private prover:Prover
@@ -363,10 +390,26 @@ export class TestingServer {
     return until(this.server, type, count);
   }
 
-
   async commit(options:any = null) {
     const raw = await commit(this.server)(options);
     return JSON.parse(raw);
+  }
+
+  async commitWaitError(options:any, expectedError:string) {
+    const results = await Promise.all([
+      new Promise(res => {
+        this.server.pipe(es.mapSync((e:any) => {
+          if (e.blockResolutionError === expectedError) {
+            res()
+          }
+        }))
+      }),
+      (async () => {
+        const raw = await commit(this.server, null, true)(options);
+        return JSON.parse(raw);
+      })()
+    ])
+    return results[1]
   }
 
   async commitExpectError(options:any) {
@@ -411,6 +454,14 @@ export class TestingServer {
 
   async getPeer() {
     return this.get('/network/peering')
+  }
+
+  waitToHaveBlock(number:number) {
+    return waitToHaveBlock(this.server, number)
+  }
+
+  waitForkResolution(number:number) {
+    return waitForkResolution(this.server, number)
   }
 
   postIdentity(idty:any) {

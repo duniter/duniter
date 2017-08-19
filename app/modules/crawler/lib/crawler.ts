@@ -405,7 +405,7 @@ export class BlockCrawler {
               async applyMainBranch(block: BlockDTO): Promise<boolean> {
                 const existing = await server.dal.getAbsoluteBlockByNumberAndHash(block.number, block.hash)
                 if (!existing) {
-                  let addedBlock = await server.writeBlock(block, false)
+                  let addedBlock = await server.writeBlock(block, false, true)
                   if (!this.lastDownloaded) {
                     this.lastDownloaded = await dao.remoteCurrent(node);
                   }
@@ -417,9 +417,6 @@ export class BlockCrawler {
                       server.streamPush(addedBlock);
                     }
                   }
-                } else {
-                  this.crawler.logger && this.crawler.logger.info('Downloaded already known block#%s-%s, try to fork...', block.number, block.hash)
-                  await server.BlockchainService.tryToFork()
                 }
                 return true
               }
@@ -427,8 +424,7 @@ export class BlockCrawler {
                 return true
               }
               async isMemberPeer(thePeer: PeerDTO): Promise<boolean> {
-                let idty = await server.dal.getWrittenIdtyByPubkey(thePeer.pubkey);
-                return (idty && idty.member) || false;
+                return true
               }
               async downloadBlocks(thePeer: any, fromNumber: number, count?: number | undefined): Promise<BlockDTO[]> {
                 if (!count) {
@@ -444,8 +440,7 @@ export class BlockCrawler {
                 return blocks;
               }
             })(this)
-
-            await dao.pull(server.conf, server.logger);
+            await dao.pull(server.conf, server.logger)
           } catch (e) {
             if (this.isConnectionError(e)) {
               this.logger && this.logger.info("Peer %s unreachable: now considered as DOWN.", p.pubkey);
@@ -459,6 +454,12 @@ export class BlockCrawler {
             }
           }
         }))
+
+        await this.server.BlockchainService.pushFIFO("crawlerResolution", async () => {
+          await server.BlockchainService.blockResolution()
+          await server.BlockchainService.forkResolution()
+        })
+
         this.pullingEvent(server, 'end', current.number);
       }
       this.logger && this.logger.info('Will pull blocks from the network in %s min %s sec', Math.floor(this.pullingActualIntervalDuration / 60), Math.floor(this.pullingActualIntervalDuration % 60));

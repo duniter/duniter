@@ -94,6 +94,8 @@ describe("Fork blocks", function() {
     yield s3.writeBlock(b0)
     yield s3.writeBlock(b1)
     yield s3.writeBlock(b2)
+    yield s2.waitToHaveBlock(2)
+    yield s3.waitToHaveBlock(2)
   }))
 
   it('should exist the same block on each node', () => co(function*() {
@@ -110,6 +112,8 @@ describe("Fork blocks", function() {
     const b3b = yield s2.commit({ time: now + 33 })
     yield s1.writeBlock(b3b)
     yield s2.writeBlock(b3a)
+    yield s1.waitToHaveBlock(3)
+    yield s2.waitToHaveBlock(3)
   }))
 
   it('should exist a different third block on each node', () => co(function*() {
@@ -148,6 +152,7 @@ describe("Fork blocks", function() {
     b6a = yield s1.commit({time: now + 66})
     b7a = yield s1.commit({time: now + 77})
     b8a = yield s1.commit({time: now + 88})
+    yield s1.waitToHaveBlock(8)
   }))
 
   it('should refuse known fork blocks', () => co(function*() {
@@ -159,7 +164,7 @@ describe("Fork blocks", function() {
       const event = CommonConstants.DocumentError
       s2.on(event, (e) => {
         try {
-          assert.equal(e, 'Fork block already known')
+          assert.equal(e, 'Block already known')
           res()
         } catch (e) {
           rej(e)
@@ -175,6 +180,8 @@ describe("Fork blocks", function() {
     yield s2.writeBlock(b6a)
     yield s2.writeBlock(b7a)
     yield s2.writeBlock(b8a)
+    yield s2.waitToHaveBlock(8)
+    yield s2.waitForkResolution(8)
   }))
 
   it('should exist a same current block on each node', () => co(function*() {
@@ -192,18 +199,18 @@ describe("Fork blocks", function() {
     yield s1.expect('/blockchain/branches', (res) => {
       assert.equal(res.blocks.length, 3)
       assert.equal(res.blocks[0].number, 3)
-      assert.equal(res.blocks[0].hash, '2C3555F4009461C81F7209EAAD7DA831D8451708D06BB1173CCB40746CD0641B') // This is s2 fork!
+      assert.equal(res.blocks[0].hash, '9A0FA1F0899124444ADC5B2C0AB66AC5B4303A0D851BED2E7382BB57E10AA2C5')
       assert.equal(res.blocks[1].number, 3)
-      assert.equal(res.blocks[1].hash, '9A0FA1F0899124444ADC5B2C0AB66AC5B4303A0D851BED2E7382BB57E10AA2C5')
+      assert.equal(res.blocks[1].hash, '2C3555F4009461C81F7209EAAD7DA831D8451708D06BB1173CCB40746CD0641B') // This is s2 fork!
       assert.equal(res.blocks[2].number, 8)
       assert.equal(res.blocks[2].hash, 'B8D2AA2A5556F7A2837FB4B881FCF50595F855D0BF8F71C0B432E27216BBA40B')
     })
     yield s2.expect('/blockchain/branches', (res) => {
       assert.equal(res.blocks.length, 3)
       assert.equal(res.blocks[0].number, 3)
-      assert.equal(res.blocks[0].hash, '2C3555F4009461C81F7209EAAD7DA831D8451708D06BB1173CCB40746CD0641B') // This is s2 fork!
+      assert.equal(res.blocks[0].hash, '9A0FA1F0899124444ADC5B2C0AB66AC5B4303A0D851BED2E7382BB57E10AA2C5')
       assert.equal(res.blocks[1].number, 3)
-      assert.equal(res.blocks[1].hash, '9A0FA1F0899124444ADC5B2C0AB66AC5B4303A0D851BED2E7382BB57E10AA2C5')
+      assert.equal(res.blocks[1].hash, '2C3555F4009461C81F7209EAAD7DA831D8451708D06BB1173CCB40746CD0641B') // This is s2 fork!
       assert.equal(res.blocks[2].number, 8)
       assert.equal(res.blocks[2].hash, 'B8D2AA2A5556F7A2837FB4B881FCF50595F855D0BF8F71C0B432E27216BBA40B')
     })

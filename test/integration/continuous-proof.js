@@ -1,6 +1,7 @@
 "use strict";
 
 const co        = require('co');
+const es        = require('event-stream');
 const should    = require('should');
 const user      = require('./tools/user');
 const toolbox   = require('./tools/toolbox');
@@ -112,6 +113,15 @@ describe("Continous proof-of-work", function() {
     s2.stopBlockComputation();
     yield [
       require('../../app/modules/crawler').CrawlerDependency.duniter.methods.pullBlocks(s3),
+      new Promise(res => {
+        s3.pipe(es.mapSync((e) => {
+          if (e.number === 15) {
+            res()
+          }
+          return e
+        }))
+
+      }),
       s3.startBlockComputation()
     ];
     const current = yield s3.get('/blockchain/current')

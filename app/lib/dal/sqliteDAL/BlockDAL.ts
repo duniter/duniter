@@ -1,6 +1,7 @@
 import {AbstractSQLite} from "./AbstractSQLite"
 import {SQLiteDriver} from "../drivers/SQLiteDriver"
 import {DBBlock} from "../../db/DBBlock"
+
 const constants = require('../../constants');
 
 const IS_FORK = true;
@@ -113,6 +114,14 @@ export class BlockDAL extends AbstractSQLite<DBBlock> {
 
   getForkBlocks() {
     return this.query('SELECT * FROM block WHERE fork ORDER BY number');
+  }
+
+  getPotentialForkBlocks(numberStart:number, medianTimeStart:number) {
+    return this.query('SELECT * FROM block WHERE fork AND number >= ? AND medianTime >= ? ORDER BY number DESC', [numberStart, medianTimeStart]);
+  }
+
+  getPotentialRoots() {
+    return this.query('SELECT * FROM block WHERE fork AND number = ?', [0])
   }
 
   getDividendBlocks() {

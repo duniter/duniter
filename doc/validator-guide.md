@@ -42,6 +42,10 @@ Duniter should be able to start in a daemonized way with its UI available at `ht
 
 Duniter must respect a set of behaviors once started.
 
+### Memory consumption
+
+Duniter must have a footprint of ~150MB in memory. If this amount grows, there is a memory leak.
+
 ### New blocks detection
 
 Duniter should detect eventual new blocks available on the network on its startup, pull and add them to its HEAD branch.

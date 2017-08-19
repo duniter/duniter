@@ -64,6 +64,7 @@ describe("Single document treatment", function() {
     yield s2.writeBlock(b0)
     yield s2.writeBlock(b1)
     yield s2.writeBlock(b2)
+    yield toolbox.serverWaitBlock(s2, 2)
   }))
 
   it('should exist the same block on each node', () => co(function*() {

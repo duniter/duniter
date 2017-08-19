@@ -130,7 +130,7 @@ describe("Document pool currency", function() {
     } catch (e) {
       should.exist(e.error);
       e.should.be.an.Object();
-      e.error.message.should.match(/Wrong inner hash/); // Because currency is dynamically replaced
+      e.error.message.should.match(/Wrong currency/);
     }
   }));
 

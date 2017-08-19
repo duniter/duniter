@@ -62,10 +62,10 @@ describe("Membership chainability", function() {
     })
 
     it('should refuse a block with a too early membership in it', async () => {
-      await toolbox.shouldFail(s1.commit({
+      await s1.commitWaitError({
         time: now + 20,
         actives: ['HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:SiCD1MSyDiZKWLp/SP/2Vj5T3JMgjNnIIKMI//yvKRdWMzKjEn6/ZT+TCjyjnl85qRfmEuWv1jLmQSoe8GXSDg==:1-0DEE2A8EA05322FCC4355D5F0E7A2830F4A22ACEBDC4B62399484E091A5CCF27:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat']
-      }), '500 - "{\\n  \\"ucode\\": 1002,\\n  \\"message\\": \\"ruleMembershipPeriod\\"\\n}"')
+      }, 'ruleMembershipPeriod')
     })
 
     it('should not be able to renew immediately', async () => {

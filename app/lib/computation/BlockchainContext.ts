@@ -3,6 +3,7 @@ import {BlockDTO} from "../dto/BlockDTO"
 import {DuniterBlockchain} from "../blockchain/DuniterBlockchain"
 import {QuickSynchronizer} from "./QuickSync"
 import {DBHead} from "../db/DBHead"
+
 const _               = require('underscore');
 const indexer         = require('../indexer').Indexer
 const constants       = require('../constants');
@@ -100,11 +101,11 @@ export class BlockchainContext {
     this.logger = require('../logger').NewLogger(this.dal.profile);
   }
 
-  checkBlock(block: BlockDTO, withPoWAndSignature:boolean): Promise<any> {
+  async checkBlock(block: BlockDTO, withPoWAndSignature:boolean): Promise<any> {
     return DuniterBlockchain.checkBlock(block, withPoWAndSignature, this.conf, this.dal)
   }
 
-  async addBlock(obj: BlockDTO, index: any = null, HEAD: DBHead | null = null): Promise<any> {
+  private async addBlock(obj: BlockDTO, index: any = null, HEAD: DBHead | null = null): Promise<any> {
     const block = await this.blockchain.pushTheBlock(obj, index, HEAD, this.conf, this.dal, this.logger)
     this.vHEAD_1 = this.vHEAD = this.HEADrefreshed = null
     return block
@@ -115,11 +116,10 @@ export class BlockchainContext {
     return dbb.toBlockDTO()
   }
 
-  async revertCurrentBlock(): Promise<any> {
+  async revertCurrentBlock(): Promise<BlockDTO> {
     const head_1 = await this.dal.bindexDAL.head(1);
     this.logger.debug('Reverting block #%s...', head_1.number);
     const res = await this.blockchain.revertBlock(head_1.number, head_1.hash, this.dal)
-    this.logger.debug('Reverted block #%s', head_1.number);
     // Invalidates the head, since it has changed.
     await this.refreshHead();
     return res;
@@ -133,9 +133,13 @@ export class BlockchainContext {
       throw constants.ERRORS.NO_POTENTIAL_FORK_AS_NEXT;
     }
     const block = forks[0];
-    const { index, HEAD } = await this.checkBlock(block, constants.WITH_SIGNATURES_AND_POW);
-    await this.addBlock(block, index, HEAD);
+    await this.checkAndAddBlock(block)
     this.logger.debug('Applied block #%s', block.number);
+  }
+
+  async checkAndAddBlock(block:BlockDTO) {
+    const { index, HEAD } = await this.checkBlock(block, constants.WITH_SIGNATURES_AND_POW);
+    return await this.addBlock(block, index, HEAD);
   }
 
   current(): Promise<any> {

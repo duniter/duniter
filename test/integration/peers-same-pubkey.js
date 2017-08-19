@@ -3,13 +3,11 @@
 const co        = require('co');
 const _         = require('underscore');
 const should    = require('should');
-const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const user      = require('./tools/user');
 const commit    = require('./tools/commit');
 const sync      = require('./tools/sync');
 const until     = require('./tools/until');
 const toolbox   = require('./tools/toolbox');
-const multicaster = require('../../app/lib/streams/multicaster');
 const PeerDTO   = require('../../app/lib/dto/PeerDTO').PeerDTO
 
 const catKeyPair = {
@@ -54,6 +52,7 @@ describe("Peer document", function() {
     yield commitS1(); // block#2
     // // s2 syncs from s1
     yield sync(0, 2, s1, s2);
+    yield toolbox.serverWaitBlock(s1, 2)
     yield [
       s1.get('/network/peering').then((peer) => s2.post('/network/peering/peers', { peer: PeerDTO.fromJSONObject(peer).getRawSigned() })), // peer#2
       until(s2, 'peer', 1)
@@ -61,10 +60,11 @@ describe("Peer document", function() {
 
     yield [
       commitS2(), // block#3
-      until(s1, 'block', 1)
+      toolbox.serverWaitBlock(s1, 3)
     ];
 
     yield sync(0, 3, s1, s3);
+    yield toolbox.serverWaitBlock(s3, 3)
 
     const peer1 = yield s1.get('/network/peering');
     peer1.should.have.property("block").match(/^2-/);
@@ -77,14 +77,14 @@ describe("Peer document", function() {
 
     yield [
       commitS2(), // block#4
-      until(s1, 'block', 1),
-      until(s3, 'block', 1)
+      toolbox.serverWaitBlock(s1, 4),
+      toolbox.serverWaitBlock(s3, 4)
     ];
 
     yield [
       commitS1(), // block#5
-      until(s2, 'block', 1),
-      until(s3, 'block', 1)
+      toolbox.serverWaitBlock(s2, 5),
+      toolbox.serverWaitBlock(s3, 5)
     ];
   }));
 

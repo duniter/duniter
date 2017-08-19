@@ -228,8 +228,6 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
 
     const dbb = DBBlock.fromBlockDTO(block)
     this.updateBlocksComputedVars(current, dbb)
-    // Saves the block (DAL)
-    await dal.saveBlock(dbb);
 
     // --> Update links
     await dal.updateWotbLinks(indexes.cindex);
@@ -244,6 +242,8 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     await this.deleteTransactions(block, dal);
 
     await dal.trimSandboxes(block);
+    // Saves the block (DAL)
+    await dal.saveBlock(dbb);
 
     return block;
   }
@@ -370,6 +370,8 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
 
     // Restore block's transaction as incoming transactions
     await this.undoDeleteTransactions(block, dal)
+
+    return block
   }
 
   async undoMembersUpdate(blockstamp:string, dal:any) {

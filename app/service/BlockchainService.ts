@@ -14,6 +14,7 @@ import {FIFOService} from "./FIFOService"
 import {CommonConstants} from "../lib/common-libs/constants"
 import {LOCAL_RULES_FUNCTIONS} from "../lib/rules/local_rules"
 import {Switcher, SwitcherDao} from "../lib/blockchain/Switcher"
+import {OtherConstants} from "../lib/other_constants"
 
 const _               = require('underscore');
 const constants       = require('../lib/constants');
@@ -158,6 +159,11 @@ export class BlockchainService extends FIFOService {
               await this.blockResolution()
               // Resolve the potential forks
               await this.forkResolution()
+              const current = this.current()
+              this.push({
+                bcEvent: OtherConstants.BC_EVENT.RESOLUTION_DONE,
+                block: current
+              })
             })
           })()
         }
@@ -187,6 +193,10 @@ export class BlockchainService extends FIFOService {
         try {
           await this.mainContext.checkAndAddBlock(dto)
           added = true
+          this.push({
+            bcEvent: OtherConstants.BC_EVENT.HEAD_CHANGED,
+            block: dto
+          })
         } catch (e) {
           this.logger.error(e)
           added = false
@@ -204,7 +214,7 @@ export class BlockchainService extends FIFOService {
     const newCurrent = await switcher.tryToFork()
     if (newCurrent) {
       this.push({
-        bcEvent: 'switched',
+        bcEvent: OtherConstants.BC_EVENT.SWITCHED,
         block: newCurrent
       })
     }

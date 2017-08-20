@@ -1,6 +1,7 @@
 "use strict";
 import {PermanentProver} from "./permanentProver"
 import * as stream from "stream"
+import {OtherConstants} from "../../../lib/other_constants"
 
 export class Prover extends stream.Transform {
 
@@ -13,18 +14,20 @@ export class Prover extends stream.Transform {
 
   _write(obj:any, enc:any, done:any) {
     // Never close the stream
-    if (obj && obj.membersCount) {
-      this.permaProver.blockchainChanged(obj);
-    } else if (obj.nodeIndexInPeers !== undefined) {
-      this.permaProver.prover.changePoWPrefix((obj.nodeIndexInPeers + 1) * 10); // We multiply by 10 to give room to computers with < 100 cores
-    } else if (obj.cpu !== undefined) {
-      this.permaProver.prover.changeCPU(obj.cpu); // We multiply by 10 to give room to computers with < 100 cores
-    } else if (obj.pulling !== undefined) {
-      if (obj.pulling === 'processing') {
-        this.permaProver.pullingDetected();
-      }
-      else if (obj.pulling === 'finished') {
-        this.permaProver.pullingFinished();
+    if (obj) {
+      if (obj.bcEvent && obj.bcEvent === OtherConstants.BC_EVENT.HEAD_CHANGED || obj.bcEvent === OtherConstants.BC_EVENT.SWITCHED) {
+        this.permaProver.blockchainChanged(obj.block);
+      } else if (obj.nodeIndexInPeers !== undefined) {
+        this.permaProver.prover.changePoWPrefix((obj.nodeIndexInPeers + 1) * 10); // We multiply by 10 to give room to computers with < 100 cores
+      } else if (obj.cpu !== undefined) {
+        this.permaProver.prover.changeCPU(obj.cpu); // We multiply by 10 to give room to computers with < 100 cores
+      } else if (obj.pulling !== undefined) {
+        if (obj.pulling === 'processing') {
+          this.permaProver.pullingDetected();
+        }
+        else if (obj.pulling === 'finished') {
+          this.permaProver.pullingFinished();
+        }
       }
     }
     done && done();

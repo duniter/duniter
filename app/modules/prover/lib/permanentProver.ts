@@ -164,6 +164,9 @@ export class PermanentProver {
                 try {
                   const obj = parsers.parseBlock.syncWrite(dos2unix(this.lastComputedBlock.getRawSigned()));
                   await this.server.writeBlock(obj)
+                  await new Promise(res => {
+                    this.server.once('bcEvent', () => res())
+                  })
                 } catch (err) {
                   this.logger.warn('Proof-of-work self-submission: %s', err.message || err);
                 }

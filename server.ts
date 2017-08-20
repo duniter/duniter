@@ -21,6 +21,7 @@ import {MembershipDTO} from "./app/lib/dto/MembershipDTO"
 import {RevocationDTO} from "./app/lib/dto/RevocationDTO"
 import {TransactionDTO} from "./app/lib/dto/TransactionDTO"
 import {PeerDTO} from "./app/lib/dto/PeerDTO"
+import {OtherConstants} from "./app/lib/other_constants"
 
 export interface HookableServer {
   getMainEndpoint: (...args:any[]) => Promise<any>
@@ -181,6 +182,10 @@ export class Server extends stream.Duplex implements HookableServer {
     // Messages piping
     this.BlockchainService
       .pipe(es.mapSync((e:any) => {
+        if (e.bcEvent === OtherConstants.BC_EVENT.HEAD_CHANGED || e.bcEvent === OtherConstants.BC_EVENT.SWITCHED) {
+          this.emitDocument(e.block, DuniterDocument.ENTITY_BLOCK)
+          this.emit('bcEvent', e)
+        }
         this.streamPush(e)
       }))
 

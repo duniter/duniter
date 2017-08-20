@@ -85,7 +85,10 @@ function beginNewProofOfWork(stuff:any) {
     const pair = stuff.pair;
     const forcedTime = stuff.forcedTime;
     currentCPU = conf.cpu || Constants.DEFAULT_CPU;
-    prefix = parseInt(conf.prefix || prefix) * 10 * Constants.NONCE_RANGE
+    prefix = parseInt(conf.prefix || prefix)
+    if (prefix && prefix < Constants.NONCE_RANGE) {
+      prefix *= 10 * Constants.NONCE_RANGE
+    }
     const highMark = stuff.highMark;
     const turnDuration = stuff.turnDuration || TURN_DURATION_IN_MILLISEC
     let sigFunc = null;

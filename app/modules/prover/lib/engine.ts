@@ -36,7 +36,7 @@ export class PowEngine {
     }
 
     if (os.arch().match(/arm/)) {
-      stuff.conf.cpu /= 2; // Don't know exactly why is ARM so much saturated by PoW, so let's divide by 2
+      stuff.newPoW.conf.cpu /= 2; // Don't know exactly why is ARM so much saturated by PoW, so let's divide by 2
     }
     return await this.cluster.proveByWorkers(stuff)
   }

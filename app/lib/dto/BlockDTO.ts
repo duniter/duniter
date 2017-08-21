@@ -208,6 +208,7 @@ export class BlockDTO implements Cloneable {
     dto.dividend = obj.dividend || null
     dto.time = parseInt(obj.time)
     dto.powMin = parseInt(obj.powMin)
+    dto.monetaryMass = parseInt(obj.monetaryMass)
     dto.unitbase = parseInt(obj.unitbase)
     dto.membersCount = parseInt(obj.membersCount)
     dto.issuersCount = parseInt(obj.issuersCount)

@@ -9,7 +9,6 @@ const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods
 const user      = require('./tools/user');
 const http      = require('./tools/http');
 const shutDownEngine  = require('./tools/shutDownEngine');
-const constants = require('../../app/lib/constants');
 const rp        = require('request-promise');
 const ws        = require('ws');
 
@@ -18,6 +17,9 @@ require('../../app/modules/prover/lib/constants').Constants.CORES_MAXIMUM_USE_IN
 let server, cat, toc
 
 describe("HTTP API", function() {
+
+  const now = 1500000000
+  let commit
 
   before(() => co(function*(){
 
@@ -30,10 +32,11 @@ describe("HTTP API", function() {
         currency: 'bb',
         httpLogs: true,
         sigQty: 1,
-        dt: 60,
-        dtReeval: 120,
-        udTime0: 1488902199,
-        udReevalTime0: 1520438199,
+        dt: 240,
+        dtReeval: 240,
+        udTime0: now,
+        medianTimeBlocks: 1,
+        udReevalTime0: now + 20000000,
         pair: {
           pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
           sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
@@ -43,7 +46,7 @@ describe("HTTP API", function() {
     cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: server });
     toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: server });
 
-    const commit = makeBlockAndPost(server);
+    commit = makeBlockAndPost(server);
 
     let s = yield server.initWithDAL();
     let bmapi = yield bma(s);
@@ -54,11 +57,11 @@ describe("HTTP API", function() {
     yield cat.cert(toc);
     yield cat.join();
     yield toc.join();
-    yield commit();
-    yield commit();
-    yield commit();
-    yield commit();
-    yield commit();
+    yield commit({ time: now });
+    yield commit({ time: now + 120 });
+    yield commit({ time: now + 120 * 2 });
+    yield commit({ time: now + 120 * 3 });
+    yield commit({ time: now + 120 * 4 });
   }));
 
   after(() => {
@@ -68,8 +71,8 @@ describe("HTTP API", function() {
   })
 
   function makeBlockAndPost(theServer) {
-    return function() {
-      return require('../../app/modules/prover').ProverDependency.duniter.methods.generateAndProveTheNext(theServer)
+    return function(options) {
+      return require('../../app/modules/prover').ProverDependency.duniter.methods.generateAndProveTheNext(theServer, null, null, options)
         .then(postBlock(theServer));
     };
   }
@@ -78,24 +81,44 @@ describe("HTTP API", function() {
 
     it('/parameters/ should give the parameters', function() {
       return expectJSON(rp('http://127.0.0.1:7777/blockchain/parameters', { json: true }), {
-        udTime0: 1488902199,
-        udReevalTime0: 1520438199,
-        dt: 60,
-        dtReeval: 120
+        udTime0: now,
+        udReevalTime0: now + 20000000,
+        dt: 240,
+        dtReeval: 240
       });
     });
 
     it('/block/0 should exist', function() {
       return expectJSON(rp('http://127.0.0.1:7777/blockchain/block/0', { json: true }), {
-        number: 0
+        number: 0,
+        dividend: null,
+        monetaryMass: 0
       });
     });
 
-    it('/block/1 should exist', function() {
+    it('/block/1 should exist and have integer Dividend', function() {
       return expectJSON(rp('http://127.0.0.1:7777/blockchain/block/1', { json: true }), {
-        number: 1
+        number: 1,
+        dividend: 100,
+        monetaryMass: 200
       });
     });
+
+    it('/block/2 should exist and have NULL Dividend', () => {
+      return expectJSON(rp('http://127.0.0.1:7777/blockchain/block/2', { json: true }), {
+        number: 2,
+        dividend: null,
+        monetaryMass: 200
+      });
+    })
+
+    it('/block/3 should exist and have NULL Dividend', () => {
+      return expectJSON(rp('http://127.0.0.1:7777/blockchain/block/3', { json: true }), {
+        number: 3,
+        dividend: 100,
+        monetaryMass: 400
+      });
+    })
 
     it('/block/88 should not exist', function() {
       return http.expectError(404, rp('http://127.0.0.1:7777/blockchain/block/88'));
@@ -175,16 +198,37 @@ describe("HTTP API", function() {
     it('/block should send a block', function(done) {
       let completed = false
       const client = new ws('ws://127.0.0.1:7777/ws/block');
-      client.on('message', function message(data) {
+      client.once('message', function message(data) {
         const block = JSON.parse(data);
         should(block).have.property('number', 4);
-        should(block).have.property('dividend');
+        should(block).have.property('dividend').equal(null)
+        should(block).have.property('monetaryMass').equal(400)
+        should(block).have.property('monetaryMass').not.equal("400")
         if (!completed) {
           completed = true;
           done();
         }
       });
     });
+
+    it('/block (number 5) should send a block', () => co(function*() {
+      let completed = false
+      yield commit({ time: now + 120 * 5 });
+      const client = new ws('ws://127.0.0.1:7777/ws/block');
+      return new Promise(res => {
+        client.once('message', function message(data) {
+          const block = JSON.parse(data);
+          should(block).have.property('number', 5);
+          should(block).have.property('dividend').equal(100)
+          should(block).have.property('monetaryMass').equal(600)
+          should(block).have.property('monetaryMass').not.equal("600")
+          if (!completed) {
+            completed = true;
+            res();
+          }
+        })
+      })
+    }))
 
     it('/block should answer to pings', function(done) {
       const client = new ws('ws://127.0.0.1:7777/ws/block');
@@ -217,6 +261,7 @@ function expectJSON(promise, json) {
 
 function postBlock(server2) {
   return function(block) {
+    console.log(typeof block == 'string' ? block : block.getRawSigned())
     return post(server2, '/blockchain/block')({
       block: typeof block == 'string' ? block : block.getRawSigned()
     })

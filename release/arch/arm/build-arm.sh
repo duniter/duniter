@@ -60,11 +60,10 @@ cd ${RELEASES}/duniter
 echo "Copying Nodejs"
 cp -R "$DOWNLOADS/node-${NVER}-linux-${ARCH}" node
 
-echo "yarn install"
-yarn install
-yarn install duniter-ui@1.4.x --save
+echo "yarn"
+yarn
+yarn add duniter-ui@1.4.x --save --production
 sed -i "s/duniter\//..\/..\/..\/..\//g" node_modules/duniter-ui/server/controller/webmin.js
-yarn prune --production
 SRC=`pwd`
 echo $SRC
 

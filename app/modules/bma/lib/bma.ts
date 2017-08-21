@@ -10,6 +10,7 @@ import {TransactionBinding} from "./controllers/transactions"
 import {UDBinding} from "./controllers/uds"
 import {PeerDTO} from "../../../lib/dto/PeerDTO"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
+import {OtherConstants} from "../../../lib/other_constants"
 
 const co = require('co');
 const es = require('event-stream');
@@ -132,16 +133,24 @@ export const bma = function(server:Server, interfaces:NetworkInterface[], httpLo
     });
     wssPeer.broadcast = (data:any) => wssPeer.clients.forEach((client:any) => client.send(data));
 
-    // Forward blocks & peers
+    // Forward current HEAD change
+    server
+      .on('bcEvent', (e) => {
+        if (e.bcEvent === OtherConstants.BC_EVENT.HEAD_CHANGED || e.bcEvent === OtherConstants.BC_EVENT.SWITCHED) {
+          try {
+            // Broadcast block
+            currentBlock = e.block;
+            const blockDTO:BlockDTO = BlockDTO.fromJSONObject(currentBlock)
+            wssBlock.broadcast(JSON.stringify(block2HttpBlock(blockDTO)))
+          } catch (e) {
+            logger && logger.error('error on ws mapSync:', e);
+          }
+        }
+      })
+    // Forward peers documents
     server
       .pipe(es.mapSync(function(data:any) {
         try {
-          // Broadcast block
-          if (data.joiners) {
-            currentBlock = data;
-            const blockDTO:BlockDTO = BlockDTO.fromJSONObject(currentBlock)
-            wssBlock.broadcast(JSON.stringify(block2HttpBlock(blockDTO)))
-          }
           // Broadcast peer
           if (data.endpoints) {
             const peerDTO = PeerDTO.fromJSONObject(data)

@@ -6,7 +6,7 @@ export NVM_DIR="$HOME/.nvm"
 
 # Prepare
 ARCH="`uname -m | sed -e \"s/86_//\"`"
-NVER="v6.11.1"
+NVER="v6.11.2"
 
 # Folders
 INITIAL_DIRECTORY=`pwd`
@@ -60,17 +60,13 @@ cd ${RELEASES}/duniter
 echo "Copying Nodejs"
 cp -R "$DOWNLOADS/node-${NVER}-linux-${ARCH}" node
 
-echo "npm install"
-node/bin/npm install
-node/bin/npm install duniter-ui@1.4.x --save
+echo "yarn install"
+yarn install
+yarn install duniter-ui@1.4.x --save
 sed -i "s/duniter\//..\/..\/..\/..\//g" node_modules/duniter-ui/server/controller/webmin.js
-node/bin/npm prune --production
+yarn prune --production
 SRC=`pwd`
 echo $SRC
-
-# Install modules
-echo ">> VM: installing peerDependencies..."
-node/bin/node -e "const deps = require('./package.json').peerDependencies; Object.keys(deps).forEach(k => console.log(k + \"@\" + deps[k]))" | xargs node/bin/npm i --production
 
 # Clean unused UI modules
 rm -Rf node_modules/duniter-ui/node_modules

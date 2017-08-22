@@ -6,6 +6,7 @@ const should    = require('should');
 const assert    = require('assert');
 const duniter     = require('../../index');
 const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
+const PeerDTO   = require('../../app/lib/dto/PeerDTO').PeerDTO
 const user      = require('./tools/user');
 const http      = require('./tools/http');
 const shutDownEngine  = require('./tools/shutDownEngine');
@@ -14,7 +15,7 @@ const ws        = require('ws');
 
 require('../../app/modules/prover/lib/constants').Constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
 
-let server, cat, toc
+let server, server2, cat, toc
 
 describe("HTTP API", function() {
 
@@ -43,6 +44,26 @@ describe("HTTP API", function() {
         }
       });
 
+    server2 = duniter(
+      '/bb12',
+      true,
+      {
+        ipv4: '127.0.0.1',
+        port: '7778',
+        currency: 'bb',
+        httpLogs: true,
+        sigQty: 1,
+        dt: 240,
+        dtReeval: 240,
+        udTime0: now,
+        medianTimeBlocks: 1,
+        udReevalTime0: now + 20000000,
+        pair: {
+          pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
+          sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
+        }
+      });
+
     cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: server });
     toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: server });
 
@@ -51,17 +72,27 @@ describe("HTTP API", function() {
     let s = yield server.initWithDAL();
     let bmapi = yield bma(s);
     yield bmapi.openConnections();
+
+    let s2 = yield server2.initWithDAL();
+    let bmapi2 = yield bma(s2);
+    yield bmapi2.openConnections();
+
     yield cat.createIdentity();
     yield toc.createIdentity();
     yield toc.cert(cat);
     yield cat.cert(toc);
     yield cat.join();
     yield toc.join();
-    yield commit({ time: now });
-    yield commit({ time: now + 120 });
-    yield commit({ time: now + 120 * 2 });
-    yield commit({ time: now + 120 * 3 });
-    yield commit({ time: now + 120 * 4 });
+    const b0 = yield commit({ time: now });
+    const b1 = yield commit({ time: now + 120 });
+    yield server2.writeBlock(b0)
+    yield server2.writeBlock(b1)
+    const p1 = yield server.PeeringService.generateSelfPeer(server.conf, 0)
+    yield server2.PeeringService.generateSelfPeer(server2.conf, 0)
+    yield server2.writePeer(p1)
+    server2.writeBlock(yield commit({ time: now + 120 * 2 }))
+    server2.writeBlock(yield commit({ time: now + 120 * 3 }))
+    server2.writeBlock(yield commit({ time: now + 120 * 4 }))
   }));
 
   after(() => {
@@ -72,8 +103,11 @@ describe("HTTP API", function() {
 
   function makeBlockAndPost(theServer) {
     return function(options) {
-      return require('../../app/modules/prover').ProverDependency.duniter.methods.generateAndProveTheNext(theServer, null, null, options)
-        .then(postBlock(theServer));
+      return co(function*() {
+        const block = yield require('../../app/modules/prover').ProverDependency.duniter.methods.generateAndProveTheNext(theServer, null, null, options)
+        const res = yield postBlock(theServer)(block)
+        return JSON.parse(res)
+      })
     };
   }
 
@@ -212,8 +246,7 @@ describe("HTTP API", function() {
     });
 
     it('/block (number 5,6,7) should send a block', () => co(function*() {
-      let completed = false
-      yield commit({ time: now + 120 * 5 });
+      server2.writeBlock(yield commit({ time: now + 120 * 5 }))
       const client = new ws('ws://127.0.0.1:7777/ws/block');
       let resolve5, resolve6, resolve7
       const p5 = new Promise(res => resolve5 = res)
@@ -225,8 +258,8 @@ describe("HTTP API", function() {
         if (block.number === 6) resolve6(block)
         if (block.number === 7) resolve7(block)
       })
-      yield commit({ time: now + 120 * 6 });
-      yield commit({ time: now + 120 * 7 });
+      server2.writeBlock(yield commit({ time: now + 120 * 6 }))
+      server2.writeBlock(yield commit({ time: now + 120 * 7 }))
       const b5 = yield p5
       should(b5).have.property('number', 5);
       should(b5).have.property('dividend').equal(100)
@@ -254,6 +287,32 @@ describe("HTTP API", function() {
         client.ping();
       });
     });
+
+    it('/peer (number 5,6,7) should send a peer document', () => co(function*() {
+      const client = new ws('ws://127.0.0.1:7778/ws/peer');
+      let resolve5, resolve6, resolve7
+      const p5 = new Promise(res => resolve5 = res)
+      const p6 = new Promise(res => resolve6 = res)
+      server.getMainEndpoint = () => "BASIC_MERKLED_API localhost 7777"
+      const p1 = yield server.PeeringService.generateSelfPeer({
+        currency: server.conf.currency
+      }, 0)
+      client.on('message', function message(data) {
+        const peer = JSON.parse(data);
+        if (peer.block.match(/2-/)) {
+          server2.PeeringService.generateSelfPeer(server.conf, 0)
+          return resolve5(peer)
+        }
+        if (peer.block.match(/1-/) && peer.pubkey === 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo') {
+          return resolve6(peer)
+        }
+      })
+      yield server2.writeRawPeer(PeerDTO.fromJSONObject(p1).getRawSigned())
+      const b5 = yield p5
+      should(b5).have.property('version', 10)
+      const b6 = yield p6
+      should(b6).have.property('version', 10)
+    }))
   });
 });
 

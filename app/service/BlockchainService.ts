@@ -191,11 +191,11 @@ export class BlockchainService extends FIFOService {
       while (!added && i < potentials.length) {
         const dto = BlockDTO.fromJSONObject(potentials[i])
         try {
-          await this.mainContext.checkAndAddBlock(dto)
+          const addedBlock = await this.mainContext.checkAndAddBlock(dto)
           added = true
           this.push({
             bcEvent: OtherConstants.BC_EVENT.HEAD_CHANGED,
-            block: dto
+            block: addedBlock
           })
         } catch (e) {
           this.logger.error(e)

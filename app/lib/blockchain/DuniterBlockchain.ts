@@ -167,7 +167,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     try {
       const currentBlock = await dal.getCurrentBlockOrNull();
       block.fork = false;
-      await this.saveBlockData(currentBlock, block, conf, dal, logger, index, HEAD);
+      const added = await this.saveBlockData(currentBlock, block, conf, dal, logger, index, HEAD);
 
       try {
         await DuniterBlockchain.pushStatsForBlocks([block], dal);
@@ -176,7 +176,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
       }
 
       logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (Date.now() - start));
-      return block;
+      return BlockDTO.fromJSONObject(added)
     }
     catch(err) {
       throw err;
@@ -245,7 +245,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     // Saves the block (DAL)
     await dal.saveBlock(dbb);
 
-    return block;
+    return dbb
   }
 
   async saveParametersForRoot(block:BlockDTO, conf:ConfDTO, dal:any) {

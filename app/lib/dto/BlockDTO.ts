@@ -1,7 +1,7 @@
 import {TransactionDTO} from "./TransactionDTO"
 import {CurrencyConfDTO} from "./ConfDTO"
 import {hashf} from "../common"
-import {Cloneable} from "./Cloneable";
+import {Cloneable} from "./Cloneable"
 
 const DEFAULT_DOCUMENT_VERSION = 10
 
@@ -209,6 +209,12 @@ export class BlockDTO implements Cloneable {
     dto.time = parseInt(obj.time)
     dto.powMin = parseInt(obj.powMin)
     dto.monetaryMass = parseInt(obj.monetaryMass)
+    if (isNaN(dto.monetaryMass) && obj.mass !== undefined) {
+      dto.monetaryMass = parseInt(obj.mass)
+    }
+    if (isNaN(dto.monetaryMass)) {
+      dto.monetaryMass = 0
+    }
     dto.unitbase = parseInt(obj.unitbase)
     dto.membersCount = parseInt(obj.membersCount)
     dto.issuersCount = parseInt(obj.issuersCount)

@@ -211,23 +211,37 @@ describe("HTTP API", function() {
       });
     });
 
-    it('/block (number 5) should send a block', () => co(function*() {
+    it('/block (number 5,6,7) should send a block', () => co(function*() {
       let completed = false
       yield commit({ time: now + 120 * 5 });
       const client = new ws('ws://127.0.0.1:7777/ws/block');
-      return new Promise(res => {
-        client.once('message', function message(data) {
-          const block = JSON.parse(data);
-          should(block).have.property('number', 5);
-          should(block).have.property('dividend').equal(100)
-          should(block).have.property('monetaryMass').equal(600)
-          should(block).have.property('monetaryMass').not.equal("600")
-          if (!completed) {
-            completed = true;
-            res();
-          }
-        })
+      let resolve5, resolve6, resolve7
+      const p5 = new Promise(res => resolve5 = res)
+      const p6 = new Promise(res => resolve6 = res)
+      const p7 = new Promise(res => resolve7 = res)
+      client.on('message', function message(data) {
+        const block = JSON.parse(data);
+        if (block.number === 5) resolve5(block)
+        if (block.number === 6) resolve6(block)
+        if (block.number === 7) resolve7(block)
       })
+      yield commit({ time: now + 120 * 6 });
+      yield commit({ time: now + 120 * 7 });
+      const b5 = yield p5
+      should(b5).have.property('number', 5);
+      should(b5).have.property('dividend').equal(100)
+      should(b5).have.property('monetaryMass').equal(600)
+      should(b5).have.property('monetaryMass').not.equal("600")
+      const b6 = yield p6
+      should(b6).have.property('number', 6);
+      should(b6).have.property('dividend').equal(null)
+      should(b6).have.property('monetaryMass').equal(600)
+      should(b6).have.property('monetaryMass').not.equal("600")
+      const b7 = yield p7
+      should(b7).have.property('number', 7);
+      should(b7).have.property('dividend').equal(100)
+      should(b7).have.property('monetaryMass').equal(800)
+      should(b7).have.property('monetaryMass').not.equal("800")
     }))
 
     it('/block should answer to pings', function(done) {

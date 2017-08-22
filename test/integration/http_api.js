@@ -49,7 +49,7 @@ describe("HTTP API", function() {
       true,
       {
         ipv4: '127.0.0.1',
-        port: '7778',
+        port: '30410',
         currency: 'bb',
         httpLogs: true,
         sigQty: 1,
@@ -289,7 +289,7 @@ describe("HTTP API", function() {
     });
 
     it('/peer (number 5,6,7) should send a peer document', () => co(function*() {
-      const client = new ws('ws://127.0.0.1:7778/ws/peer');
+      const client = new ws('ws://127.0.0.1:30410/ws/peer');
       let resolve5, resolve6, resolve7
       const p5 = new Promise(res => resolve5 = res)
       const p6 = new Promise(res => resolve6 = res)

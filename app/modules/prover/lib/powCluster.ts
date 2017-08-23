@@ -118,7 +118,7 @@ export class Master {
 
   changeConf(conf:ConfDTO) {
     this.logger.info(`Changing conf to: ${JSON.stringify(conf)} on PoW cluster`)
-    this.conf.cpu = this.conf.cpu || conf.cpu
+    this.conf.cpu = conf.cpu || this.conf.cpu
     this.conf.prefix = this.conf.prefix || conf.prefix
     this.slaves.forEach(s => {
       s.worker.send({

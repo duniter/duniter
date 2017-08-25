@@ -34,6 +34,22 @@ export const KeypairDependency = {
       config: (conf:ConfDTO, program:any, logger:any, confDAL:any) => confDAL.coreFS.remove('keyring.yml')
     },
 
+    cli: [{
+      name: 'pub',
+      desc: 'Shows the node public key',
+      logs: false,
+      onConfiguredExecute: (server:any, conf:ConfDTO) => {
+        console.log(conf.pair.pub)
+      }
+    }, {
+      name: 'sec',
+      desc: 'Shows the node secret key',
+      logs: false,
+      onConfiguredExecute: (server:any, conf:ConfDTO) => {
+        console.log(conf.pair.sec)
+      }
+    }],
+
     config: {
 
       /*****

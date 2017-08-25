@@ -243,8 +243,8 @@ export class FileDAL {
     return this.blockDAL.getNextForkBlocks(current.number, current.hash)
   }
 
-  getPotentialForkBlocks(numberStart:number, medianTimeStart:number) {
-    return this.blockDAL.getPotentialForkBlocks(numberStart, medianTimeStart)
+  getPotentialForkBlocks(numberStart:number, medianTimeStart:number, maxNumber:number) {
+    return this.blockDAL.getPotentialForkBlocks(numberStart, medianTimeStart, maxNumber)
   }
 
   async getBlockCurrent() {

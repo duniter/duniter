@@ -1,3 +1,4 @@
+import {BlockDTO} from "../dto/BlockDTO"
 export interface SwitchBlock {
 
   number:number
@@ -9,7 +10,7 @@ export interface SwitchBlock {
 export interface SwitcherDao<T extends SwitchBlock> {
 
   getCurrent(): Promise<T>
-  getPotentials(numberStart:number, timeStart:number): Promise<T[]>
+  getPotentials(numberStart:number, timeStart:number, maxNumber:number): Promise<T[]>
   getBlockchainBlock(number:number, hash:string): Promise<T|null>
   getSandboxBlock(number:number, hash:string): Promise<T|null>
   revertTo(number:number): Promise<T[]>
@@ -75,7 +76,11 @@ export class Switcher<T extends SwitchBlock> {
    */
   private async findPotentialSuites(current:T, numberStart:number, timeStart:number) {
     const suites:T[][] = []
-    const potentials:T[] = await this.dao.getPotentials(numberStart, timeStart)
+    const potentials:T[] = await this.dao.getPotentials(numberStart, timeStart, numberStart + this.forkWindowSize)
+    const knownForkBlocks:{ [k:string]: boolean } = {}
+    for (const candidate of potentials) {
+      knownForkBlocks[BlockDTO.fromJSONObject(candidate).blockstamp] = true
+    }
     const invalids: { [hash:string]: T } = {}
     if (potentials.length) {
       this.logger && this.logger.info("Fork resolution: %s potential block(s) found...", potentials.length)
@@ -93,7 +98,13 @@ export class Switcher<T extends SwitchBlock> {
           suite.push(previous)
           previousNumber = previous.number - 1
           previousHash = previous.previousHash
-          previous = await this.dao.getBlockchainBlock(previousNumber, previousHash)
+          previous = null
+          const previousBlockstamp = [previousNumber, previousHash].join('-')
+          // We try to look at blockchain if, of course, it is not already known as a fork block
+          // Otherwise it cost a useless DB access
+          if (!knownForkBlocks[previousBlockstamp]) {
+            previous = await this.dao.getBlockchainBlock(previousNumber, previousHash)
+          }
           if (previous) {
             // Stop the loop: common block has been found
             previous = null
@@ -102,6 +113,9 @@ export class Switcher<T extends SwitchBlock> {
           } else {
             // Have a look in sandboxes
             previous = await this.dao.getSandboxBlock(previousNumber, previousHash)
+            if (previous) {
+              knownForkBlocks[BlockDTO.fromJSONObject(previous).blockstamp] = true
+            }
           }
         }
         // Forget about invalid blocks

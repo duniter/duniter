@@ -116,8 +116,8 @@ export class BlockDAL extends AbstractSQLite<DBBlock> {
     return this.query('SELECT * FROM block WHERE fork ORDER BY number');
   }
 
-  getPotentialForkBlocks(numberStart:number, medianTimeStart:number) {
-    return this.query('SELECT * FROM block WHERE fork AND number >= ? AND medianTime >= ? ORDER BY number DESC', [numberStart, medianTimeStart]);
+  getPotentialForkBlocks(numberStart:number, medianTimeStart:number, maxNumber:number) {
+    return this.query('SELECT * FROM block WHERE fork AND number >= ? AND number <= ? AND medianTime >= ? ORDER BY number DESC', [numberStart, maxNumber, medianTimeStart]);
   }
 
   getPotentialRoots() {

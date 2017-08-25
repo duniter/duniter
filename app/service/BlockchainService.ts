@@ -40,8 +40,8 @@ export class BlockchainService extends FIFOService {
         return this.bcService.current()
       }
 
-      async getPotentials(numberStart: number, timeStart: number): Promise<BlockDTO[]> {
-        const blocks = await this.bcService.dal.getPotentialForkBlocks(numberStart, timeStart)
+      async getPotentials(numberStart: number, timeStart: number, maxNumber:number): Promise<BlockDTO[]> {
+        const blocks = await this.bcService.dal.getPotentialForkBlocks(numberStart, timeStart, maxNumber)
         return blocks.map((b:any) => BlockDTO.fromJSONObject(b))
       }
 

@@ -195,6 +195,10 @@ export class BlockDTO implements Cloneable {
     return hashf(this.getSignedPartSigned())
   }
 
+  get blockstamp() {
+    return [this.number, this.getHash()].join('-')
+  }
+
   static fromJSONObject(obj:any) {
     const dto = new BlockDTO()
     dto.version = parseInt(obj.version) || DEFAULT_DOCUMENT_VERSION

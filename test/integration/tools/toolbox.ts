@@ -16,6 +16,7 @@ import {FileDAL} from "../../../app/lib/dal/fileDAL"
 import {MembershipDTO} from "../../../app/lib/dto/MembershipDTO"
 import {TransactionDTO} from "../../../app/lib/dto/TransactionDTO"
 
+const assert      = require('assert');
 const _           = require('underscore');
 const rp          = require('request-promise');
 const es          = require('event-stream');
@@ -45,6 +46,17 @@ export const shouldFail = async (promise:Promise<any>, message:string|null = nul
       err = JSON.parse(e)
     }
     err.should.have.property('message').equal(message);
+  }
+}
+export const assertThrows = async (promise:Promise<any>, message:string|null = null) => {
+  try {
+    await promise;
+    throw "Should have thrown"
+  } catch(e) {
+    if (e === "Should have thrown") {
+      throw e
+    }
+    assert.equal(e, message)
   }
 }
 

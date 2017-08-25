@@ -7,6 +7,7 @@ import {req2fwd} from "./lib/req2fwd"
 import {rawer} from "../../lib/common-libs/index"
 import {PeerDTO} from "../../lib/dto/PeerDTO"
 import {Buid} from "../../lib/common-libs/buid"
+import {BlockDTO} from "../../lib/dto/BlockDTO"
 
 export const CrawlerDependency = {
   duniter: {
@@ -146,6 +147,33 @@ export const CrawlerDependency = {
             } catch (e) {
               logger.error(e);
             }
+          }
+          await server.disconnect();
+        } catch(e) {
+          logger.error(e);
+          throw Error("Exiting");
+        }
+      }
+    }, {
+      name: 'forward <number> <fromHost> <fromPort> <toHost> <toPort>',
+      desc: 'Forward existing block <number> from a host to another',
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
+        const number = params[0];
+        const fromHost = params[1];
+        const fromPort = params[2];
+        const toHost = params[3];
+        const toPort = params[4];
+        const logger = server.logger;
+        try {
+          logger.info('Looking at %s:%s...', fromHost, fromPort)
+          try {
+            const source = new Contacter(fromHost, fromPort, { timeout: 10000 })
+            const target = new Contacter(toHost, toPort, { timeout: 10000 })
+            const block = await source.getBlock(number)
+            const raw = BlockDTO.fromJSONObject(block).getRawSigned()
+            await target.postBlock(raw)
+          } catch (e) {
+            logger.error(e);
           }
           await server.disconnect();
         } catch(e) {

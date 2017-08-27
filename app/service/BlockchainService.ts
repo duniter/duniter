@@ -399,7 +399,7 @@ export class BlockchainService extends FIFOService {
    * @param blocks An array of blocks to insert.
    * @param to The final block number of the fast insertion.
    */
-  fastBlockInsertions(blocks:BlockDTO[], to:number | null) {
+  fastBlockInsertions(blocks:BlockDTO[], to:number) {
     return this.mainContext.quickApplyBlocks(blocks, to)
   }
 }

@@ -88,7 +88,7 @@ export class QuickSynchronizer {
     return this.dal.updateTransactions(txs);
   }
 
-  async quickApplyBlocks(blocks:BlockDTO[], to: number | null): Promise<void> {
+  async quickApplyBlocks(blocks:BlockDTO[], to: number): Promise<void> {
 
     sync_memoryDAL.sindexDAL = { getAvailableForConditions: (conditions:string) => this.dal.sindexDAL.getAvailableForConditions(conditions) }
     let blocksToSave: BlockDTO[] = [];
@@ -103,7 +103,7 @@ export class QuickSynchronizer {
         sync_currConf = BlockDTO.getConf(block);
       }
 
-      if (block.number != to) {
+      if (block.number <= to - this.conf.forksize) {
         blocksToSave.push(dto);
         const index:any = Indexer.localIndex(dto, sync_currConf);
         const local_iindex = Indexer.iindex(index);
@@ -239,6 +239,9 @@ export class QuickSynchronizer {
         const nonEmptyKeys = _.filter(conditions, (k: any) => sync_memoryWallets[k] && sync_memoryWallets[k].balance > 0)
         const walletsToRecord = nonEmptyKeys.map((k: any) => sync_memoryWallets[k])
         await this.dal.walletDAL.insertBatch(walletsToRecord)
+        for (const cond of conditions) {
+          delete sync_memoryWallets[cond]
+        }
 
         // Last block: cautious mode to trigger all the INDEX expiry mechanisms
         const { index, HEAD } = await DuniterBlockchain.checkBlock(dto, constants.WITH_SIGNATURES_AND_POW, this.conf, this.dal)

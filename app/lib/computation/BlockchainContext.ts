@@ -157,7 +157,7 @@ export class BlockchainContext {
     }
   }
 
-  quickApplyBlocks(blocks:BlockDTO[], to: number | null): Promise<any> {
+  quickApplyBlocks(blocks:BlockDTO[], to: number): Promise<any> {
     return this.quickSynchronizer.quickApplyBlocks(blocks, to)
   }
 }

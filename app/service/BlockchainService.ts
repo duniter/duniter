@@ -28,6 +28,7 @@ export class BlockchainService extends FIFOService {
   selfPubkey:string
   quickSynchronizer:QuickSynchronizer
   switcherDao:SwitcherDao<BlockDTO>
+  invalidForks:string[] = []
 
   constructor(private server:any, fifoPromiseHandler:GlobalFifoPromise) {
     super(fifoPromiseHandler)
@@ -119,7 +120,7 @@ export class BlockchainService extends FIFOService {
 
   async branches() {
     const current = await this.current()
-    const switcher = new Switcher(this.switcherDao, this.conf.avgGenTime, this.conf.forksize, this.conf.switchOnHeadAdvance, this.logger)
+    const switcher = new Switcher(this.switcherDao, this.invalidForks, this.conf.avgGenTime, this.conf.forksize, this.conf.switchOnHeadAdvance, this.logger)
     const heads = await switcher.findPotentialSuitesHeads(current)
     return heads.concat([current])
   }
@@ -197,6 +198,8 @@ export class BlockchainService extends FIFOService {
             bcEvent: OtherConstants.BC_EVENT.HEAD_CHANGED,
             block: addedBlock
           })
+          // Clear invalid forks' cache
+          this.invalidForks.splice(0, this.invalidForks.length)
         } catch (e) {
           this.logger.error(e)
           added = false
@@ -210,7 +213,7 @@ export class BlockchainService extends FIFOService {
   }
 
   async forkResolution() {
-    const switcher = new Switcher(this.switcherDao, this.conf.avgGenTime, this.conf.forksize, this.conf.switchOnHeadAdvance, this.logger)
+    const switcher = new Switcher(this.switcherDao, this.invalidForks, this.conf.avgGenTime, this.conf.forksize, this.conf.switchOnHeadAdvance, this.logger)
     const newCurrent = await switcher.tryToFork()
     if (newCurrent) {
       this.push({

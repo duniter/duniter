@@ -1,9 +1,9 @@
 "use strict"
-import {DuniterBlockchain} from "../blockchain/DuniterBlockchain"
-import {BlockDTO} from "../dto/BlockDTO"
-import {DBTransaction} from "../db/DBTransaction"
-import {Indexer} from "../indexer"
-import {CurrencyConfDTO} from "../dto/ConfDTO"
+import {DuniterBlockchain} from "../blockchain/DuniterBlockchain";
+import {BlockDTO} from "../dto/BlockDTO";
+import {DBTransaction} from "../db/DBTransaction";
+import {Indexer} from "../indexer";
+import {CurrencyConfDTO} from "../dto/ConfDTO";
 
 const _ = require('underscore')
 const constants = require('../constants')
@@ -241,6 +241,10 @@ export class QuickSynchronizer {
         await this.dal.walletDAL.insertBatch(walletsToRecord)
         for (const cond of conditions) {
           delete sync_memoryWallets[cond]
+        }
+
+        if (block.number === 0) {
+          await this.blockchain.saveParametersForRoot(block, this.conf, this.dal)
         }
 
         // Last block: cautious mode to trigger all the INDEX expiry mechanisms

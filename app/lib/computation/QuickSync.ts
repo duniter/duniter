@@ -203,7 +203,7 @@ export class QuickSynchronizer {
         }
 
         // Trim the bindex
-        sync_bindexSize = [
+        sync_bindexSize = this.conf.forksize + [
           block.issuersCount,
           block.issuersFrame,
           this.conf.medianTimeBlocks,

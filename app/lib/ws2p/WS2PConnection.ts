@@ -16,7 +16,6 @@ enum WS2P_ERR {
   ALREADY_AUTHENTICATED_REMOTE,
   ALREADY_AUTHENTICATED_BY_REMOTE,
   INCORRECT_PUBKEY_FOR_REMOTE,
-  INCORRECT_SIGNATURE_FROM_REMOTE,
   MUST_BE_AUTHENTICATED_FIRST,
   REQUEST_FAILED,
   MESSAGE_MUST_BE_AN_OBJECT,
@@ -24,52 +23,27 @@ enum WS2P_ERR {
 }
 
 export interface WS2PAuth {
-  authenticateServer(ws:any, expectedPub?:string): Promise<void>
-  acknowledge(ws:any): Promise<void>
-  registerClientASK(challenge:string, sig: string, pub: string): Promise<boolean>
-  registerClientOK(sig: string): Promise<boolean>
-  registerServerACK(sig:string, pub:string): boolean
-  isAuthenticated(): boolean
-  isAuthenticatedByRemote(): boolean
   isAuthorizedPubkey(pub:string): Promise<boolean>
 }
 
-export class WS2PNoAuth implements WS2PAuth {
-
-  authenticateServer(ws:any, expectedPub:string = ""): Promise<void> {
-    return Promise.resolve()
-  }
-
-  acknowledge(ws: any): Promise<void> {
-    return Promise.resolve()
-  }
-
-  registerClientASK(challenge:string, sig: string, pub: string): Promise<boolean> {
-    return Promise.resolve(true)
-  }
-
-  registerClientOK(sig: string): Promise<boolean> {
-    return Promise.resolve(true)
-  }
-
-  registerServerACK(sig: string, pub: string): boolean {
-    return true
-  }
-
-  isAuthenticated(): boolean {
-    return true
-  }
-
-  isAuthenticatedByRemote(): boolean {
-    return true
-  }
-
-  isAuthorizedPubkey(pub: string): Promise<boolean> {
-    return Promise.resolve(true)
-  }
+export interface WS2PRemoteAuth extends WS2PAuth {
+  sendACK(ws:any): Promise<void>
+  registerCONNECT(challenge:string, sig: string, pub: string): Promise<boolean>
+  registerOK(sig: string): Promise<boolean>
+  isAuthenticated(): boolean
+  isAuthenticatedByRemote(): boolean
 }
 
-export class WS2PPubkeyAuth implements WS2PAuth {
+export interface WS2PLocalAuth extends WS2PAuth {
+  sendCONNECT(ws:any): Promise<void>
+  registerACK(sig: string, pub: string): Promise<boolean>
+  isRemoteAuthenticated(): boolean
+}
+
+/**
+ * A passive authenticator based on our keyring.
+ */
+export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
 
   protected challenge:string
   protected authenticated = false
@@ -87,19 +61,7 @@ export class WS2PPubkeyAuth implements WS2PAuth {
     })
   }
 
-  async authenticateServer(ws:any): Promise<void> {
-    const challengeMessage = `WS2P:ASK:${this.pair.pub}:${this.challenge}`
-    const sig = this.pair.signSync(challengeMessage)
-    await ws.send(JSON.stringify({
-      auth: 'ASK',
-      pub: this.pair.pub,
-      challenge: this.challenge,
-      sig
-    }))
-    return this.serverAuth
-  }
-
-  async acknowledge(ws: any): Promise<void> {
+  async sendACK(ws: any): Promise<void> {
     const challengeMessage = `WS2P:ACK:${this.pair.pub}:${this.challenge}`
     const sig = this.pair.signSync(challengeMessage)
     await ws.send(JSON.stringify({
@@ -109,12 +71,12 @@ export class WS2PPubkeyAuth implements WS2PAuth {
     }))
   }
 
-  async registerClientASK(challenge:string, sig: string, pub: string): Promise<boolean> {
+  async registerCONNECT(challenge:string, sig: string, pub: string): Promise<boolean> {
     const allow = await this.isAuthorizedPubkey(pub)
     if (!allow) {
       return false
     }
-    const challengeMessage = `WS2P:ASK:${pub}:${challenge}`
+    const challengeMessage = `WS2P:CONNECT:${pub}:${challenge}`
     const verified = verify(challengeMessage, sig, pub)
     if (verified) {
       this.challenge = challenge
@@ -123,21 +85,10 @@ export class WS2PPubkeyAuth implements WS2PAuth {
     return verified
   }
 
-  async registerClientOK(sig: string): Promise<boolean> {
+  async registerOK(sig: string): Promise<boolean> {
     const challengeMessage = `WS2P:OK:${this.remotePub}:${this.challenge}`
     this.authenticatedByRemote = verify(challengeMessage, sig, this.remotePub)
     return this.authenticatedByRemote
-  }
-
-  registerServerACK(sig: string, pub: string): boolean {
-    const challengeMessage = `WS2P:ACK:${pub}:${this.challenge}`
-    this.authenticated = verify(challengeMessage, sig, pub)
-    if (!this.authenticated) {
-      this.serverAuthReject("Wrong signature from server ACK")
-    } else {
-      this.serverAuthResolve()
-    }
-    return this.authenticated
   }
 
   isAuthenticated(): boolean {
@@ -148,8 +99,63 @@ export class WS2PPubkeyAuth implements WS2PAuth {
     return this.authenticatedByRemote
   }
 
-  isAuthorizedPubkey(pub: string): Promise<boolean> {
-    return Promise.resolve(true)
+  async isAuthorizedPubkey(pub: string): Promise<boolean> {
+    return true
+  }
+}
+
+/**
+ * An connecting authenticator based on our keyring.
+ */
+export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
+
+  protected challenge:string
+  protected authenticated = false
+  protected serverAuth:Promise<void>
+  protected serverAuthResolve:()=>void
+  protected serverAuthReject:(err:any)=>void
+
+  constructor(protected pair:Key) {
+    this.challenge = nuuid.v4() + nuuid.v4()
+    this.serverAuth = new Promise((resolve, reject) => {
+      this.serverAuthResolve = resolve
+      this.serverAuthReject = reject
+    })
+  }
+
+  async sendCONNECT(ws:any): Promise<void> {
+    const challengeMessage = `WS2P:CONNECT:${this.pair.pub}:${this.challenge}`
+    const sig = this.pair.signSync(challengeMessage)
+    await ws.send(JSON.stringify({
+      auth: 'CONNECT',
+      pub: this.pair.pub,
+      challenge: this.challenge,
+      sig
+    }))
+    return this.serverAuth
+  }
+
+  async registerACK(sig: string, pub: string): Promise<boolean> {
+    const allow = await this.isAuthorizedPubkey(pub)
+    if (!allow) {
+      return false
+    }
+    const challengeMessage = `WS2P:ACK:${pub}:${this.challenge}`
+    this.authenticated = verify(challengeMessage, sig, pub)
+    if (!this.authenticated) {
+      this.serverAuthReject("Wrong signature from server ACK")
+    } else {
+      this.serverAuthResolve()
+    }
+    return this.authenticated
+  }
+
+  isRemoteAuthenticated(): boolean {
+    return this.authenticated
+  }
+
+  async isAuthorizedPubkey(pub: string): Promise<boolean> {
+    return true
   }
 }
 
@@ -158,12 +164,11 @@ export interface WS2PRequest {
 }
 
 /**
- * Symmetrical connection: the same class is used both for server and client
+ * The handler of a WS2P connection.
+ *
+ * Goal: operating an authenticated bidirectionnal communication over a WebSocket connection.
+ * Requires an established WebSocket connection in order to work.
  */
-export class WS2PHeadReq implements WS2PRequest {
-  message = "head"
-}
-
 export class WS2PConnection {
 
   private connectp:Promise<any>|undefined
@@ -186,8 +191,8 @@ export class WS2PConnection {
     private ws:any,
     private onWsOpened:Promise<void>,
     private onDataMessage:(json:any, ws:any)=>void,
-    private authOfRemote:WS2PAuth,
-    private authByRemote:WS2PAuth,
+    private localAuth:WS2PLocalAuth,
+    private remoteAuth:WS2PRemoteAuth,
     private options:{
       connectionTimeout:number
       requestTimeout:number
@@ -201,8 +206,8 @@ export class WS2PConnection {
   static newConnectionToAddress(
     address:string,
     onDataMessage:(json:any, ws:any)=>void,
-    authOfRemote:WS2PAuth,
-    authByRemote:WS2PAuth,
+    localAuth:WS2PLocalAuth,
+    remoteAuth:WS2PRemoteAuth,
     options:{
       connectionTimeout:number
       requestTimeout:number
@@ -216,14 +221,14 @@ export class WS2PConnection {
     const onWsOpened:Promise<void> = new Promise(res => {
       websocket.on('open', () => res())
     })
-    return new WS2PConnection(websocket, onWsOpened, onDataMessage, authOfRemote, authByRemote, options, expectedPub)
+    return new WS2PConnection(websocket, onWsOpened, onDataMessage, localAuth, remoteAuth, options, expectedPub)
   }
 
   static newConnectionFromWebSocketServer(
     websocket:any,
     onDataMessage:(json:any, ws:any)=>void,
-    authOfRemote:WS2PAuth,
-    authByRemote:WS2PAuth,
+    localAuth:WS2PLocalAuth,
+    remoteAuth:WS2PRemoteAuth,
     options:{
       connectionTimeout:number
       requestTimeout:number
@@ -233,7 +238,7 @@ export class WS2PConnection {
     },
     expectedPub:string = "") {
     const onWsOpened = Promise.resolve()
-    return new WS2PConnection(websocket, onWsOpened, onDataMessage, authOfRemote, authByRemote, options, expectedPub)
+    return new WS2PConnection(websocket, onWsOpened, onDataMessage, localAuth, remoteAuth, options, expectedPub)
   }
 
   get nbRequests() {
@@ -265,7 +270,7 @@ export class WS2PConnection {
           (async () => {
             await this.onWsOpened
             try {
-              await this.authOfRemote.authenticateServer(this.ws, this.expectedPub)
+              await this.localAuth.sendCONNECT(this.ws)
               resolve()
             } catch (e) {
               reject(e)
@@ -290,8 +295,8 @@ export class WS2PConnection {
 
               if (data.auth && typeof data.auth === "string") {
 
-                if (data.auth === "ASK") {
-                  if (this.authByRemote.isAuthenticated()) {
+                if (data.auth === "CONNECT") {
+                  if (this.remoteAuth.isAuthenticated()) {
                     return this.errorDetected(WS2P_ERR.ALREADY_AUTHENTICATED_BY_REMOTE)
                   }
                   else if (
@@ -301,9 +306,9 @@ export class WS2PConnection {
                     if (this.expectedPub && data.pub !== this.expectedPub) {
                       await this.errorDetected(WS2P_ERR.INCORRECT_PUBKEY_FOR_REMOTE)
                     } else {
-                      const valid = await this.authByRemote.registerClientASK(data.challenge, data.sig, data.pub)
+                      const valid = await this.remoteAuth.registerCONNECT(data.challenge, data.sig, data.pub)
                       if (valid) {
-                        await this.authByRemote.acknowledge(this.ws)
+                        await this.remoteAuth.sendACK(this.ws)
                       } else {
                         await this.errorDetected(WS2P_ERR.INCORRECT_ASK_SIGNATURE_FROM_REMOTE)
                       }
@@ -312,7 +317,7 @@ export class WS2PConnection {
                 }
 
                 else if (data.auth === "ACK") {
-                  if (this.authOfRemote.isAuthenticated()) {
+                  if (this.localAuth.isRemoteAuthenticated()) {
                     return this.errorDetected(WS2P_ERR.ALREADY_AUTHENTICATED_REMOTE)
                   }
                   if (typeof data.pub !== "string" || typeof data.sig !== "string") {
@@ -322,7 +327,7 @@ export class WS2PConnection {
                       await this.errorDetected(WS2P_ERR.INCORRECT_PUBKEY_FOR_REMOTE)
                     } else {
                       try {
-                        await this.authOfRemote.registerServerACK(data.sig, data.pub)
+                        await this.localAuth.registerACK(data.sig, data.pub)
                       } catch (e) {
                         await this.errorDetected(WS2P_ERR.INCORRECT_ACK_SIGNATURE_FROM_REMOTE)
                       }
@@ -331,13 +336,13 @@ export class WS2PConnection {
                 }
 
                 else if (data.auth === "OK") {
-                  if (this.authByRemote.isAuthenticatedByRemote()) {
+                  if (this.remoteAuth.isAuthenticatedByRemote()) {
                     return this.errorDetected(WS2P_ERR.ALREADY_AUTHENTICATED_AND_CONFIRMED_BY_REMOTE)
                   }
                   if (typeof data.sig !== "string") {
                     await this.errorDetected(WS2P_ERR.AUTH_INVALID_OK_FIELDS)
                   } else {
-                    await this.authByRemote.registerClientOK(data.sig)
+                    await this.remoteAuth.registerOK(data.sig)
                   }
                 }
 
@@ -352,7 +357,7 @@ export class WS2PConnection {
 
               else {
 
-                if (!this.authOfRemote.isAuthenticated()) {
+                if (!this.localAuth.isRemoteAuthenticated()) {
                   await this.errorDetected(WS2P_ERR.MUST_BE_AUTHENTICATED_FIRST)
                 }
 

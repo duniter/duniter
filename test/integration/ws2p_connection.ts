@@ -7,6 +7,8 @@ import {
 } from "../../app/lib/ws2p/WS2PConnection"
 import {Key, verify} from "../../app/lib/common-libs/crypto/keyring"
 import {assertThrows} from "./tools/toolbox"
+import {WS2PMessageHandler} from "../../app/lib/ws2p/impl/WS2PMessageHandler"
+import {WS2PResponse} from "../../app/lib/ws2p/impl/WS2PResponse"
 const assert = require('assert');
 const WebSocketServer = require('ws').Server
 
@@ -35,8 +37,8 @@ describe('WS2P', () => {
       })
 
       it('should be able to create a connection', async () => {
-        const ws2p = WS2PConnection.newConnectionToAddress('localhost:20902', () => {}, new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
-        const res = await ws2p.request({ message: 'head' })
+        const ws2p = WS2PConnection.newConnectionToAddress('localhost:20902', new WS2PMutedHandler(), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
+        const res = await ws2p.request({ name: 'head' })
         assert.deepEqual({ bla: 'aa' }, res)
       })
     })
@@ -86,39 +88,39 @@ describe('WS2P', () => {
 
       it('should refuse the connection if the server does not answer', async () => {
         const keypair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP')
-        const ws2p = WS2PConnection.newConnectionToAddress('localhost:20903', () => {}, new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyRemoteAuth(keypair), {
+        const ws2p = WS2PConnection.newConnectionToAddress('localhost:20903', new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyRemoteAuth(keypair), {
           connectionTimeout: 100,
           requestTimeout: 100
         })
-        await assertThrows(ws2p.request({ message: 'a' }), "WS2P connection timeout")
+        await assertThrows(ws2p.request({ name: 'a' }), "WS2P connection timeout")
       })
 
       it('should refuse the connection if the server answers with a wrong signature', async () => {
         const keypair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP')
-        const ws2p = WS2PConnection.newConnectionToAddress('localhost:20903', () => {}, new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyRemoteAuth(keypair), {
+        const ws2p = WS2PConnection.newConnectionToAddress('localhost:20903', new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyRemoteAuth(keypair), {
           connectionTimeout: 100,
           requestTimeout: 100
         })
-        await assertThrows(ws2p.request({ message: 'a' }), "Wrong signature from server ACK")
+        await assertThrows(ws2p.request({ name: 'a' }), "Wrong signature from server ACK")
       })
 
       it('should refuse the connection if the server refuses our signature', async () => {
         const keypair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP')
-        const ws2p = WS2PConnection.newConnectionToAddress('localhost:20903', () => {}, new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyRemoteAuth(keypair), {
+        const ws2p = WS2PConnection.newConnectionToAddress('localhost:20903', new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyRemoteAuth(keypair), {
           connectionTimeout: 100,
           requestTimeout: 100
         })
-        await assertThrows(ws2p.request({ message: 'a' }), "WS2P connection timeout")
+        await assertThrows(ws2p.request({ name: 'a' }), "WS2P connection timeout")
         assert.equal('Wrong signature from client CONNECT', clientAskError)
       })
 
       it('should accept the connection if the server answers with a good signature', async () => {
         const keypair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP')
-        const ws2p = WS2PConnection.newConnectionToAddress('localhost:20903', () => {}, new WS2PPubkeyLocalAuth(keypair), new WS2PNoRemoteAuth(), {
+        const ws2p = WS2PConnection.newConnectionToAddress('localhost:20903', new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(keypair), new WS2PNoRemoteAuth(), {
           connectionTimeout: 1000,
           requestTimeout: 1000
         })
-        const res = await ws2p.request({ message: 'head' })
+        const res = await ws2p.request({ name: 'head' })
         assert.deepEqual({ bla: 'aa' }, res)
       })
     })
@@ -138,21 +140,24 @@ describe('WS2P', () => {
         wss.on('connection', (ws:any) => {
           switch (i) {
             case 0:
-              s1 = WS2PConnection.newConnectionFromWebSocketServer(ws, (obj:any, ws:any) => {
-                if (obj.reqId) {
-                  ws.send(JSON.stringify({ resId: obj.reqId, body: { answer: 'world' } }))
+              s1 = WS2PConnection.newConnectionFromWebSocketServer(ws, new (class TmpHandler implements WS2PMessageHandler {
+                async handlePushMessage(json: any): Promise<void> {
                 }
-              }, new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
+                async handleRequestMessage(json: any): Promise<WS2PResponse> {
+                  return { answer: 'world' }
+                }
+              }), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
               s1.connect().catch(e => console.error('WS2P: newConnectionFromWebSocketServer connection error'))
               break
             case 1:
               let j = 0
-              s2 = WS2PConnection.newConnectionFromWebSocketServer(ws, (obj:any, ws:any) => {
-                if (obj.reqId) {
-                  ws.send(JSON.stringify({ resId: obj.reqId, body: { answer: 'this is s2![j = ' + j + ']' } }))
-                  j++
+              s2 = WS2PConnection.newConnectionFromWebSocketServer(ws, new (class TmpHandler implements WS2PMessageHandler {
+                async handlePushMessage(json: any): Promise<void> {
                 }
-              }, new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
+                async handleRequestMessage(json: any): Promise<WS2PResponse> {
+                  return { answer: 'this is s2![j = ' + (j++) + ']' }
+                }
+              }), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
               s2.connect().catch(e => console.error('WS2P: newConnectionFromWebSocketServer connection error'))
               break
           }
@@ -166,9 +171,9 @@ describe('WS2P', () => {
 
       it('should be able to create connections and make several requests', async () => {
         // connection 1
-        const c1 = WS2PConnection.newConnectionToAddress('localhost:20902', () => {}, new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
-        assert.deepEqual({ answer: 'world' }, await c1.request({ message: 'hello!' }))
-        assert.deepEqual({ answer: 'world' }, await c1.request({ message: 'hello2!' }))
+        const c1 = WS2PConnection.newConnectionToAddress('localhost:20902', new WS2PMutedHandler(), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
+        assert.deepEqual({ answer: 'world' }, await c1.request({ name: 'hello!' }))
+        assert.deepEqual({ answer: 'world' }, await c1.request({ name: 'hello2!' }))
         assert.equal(s1.nbRequests, 0)
         assert.equal(c1.nbRequests, 2)
         assert.equal(s1.nbResponses, 0)
@@ -178,10 +183,10 @@ describe('WS2P', () => {
         assert.equal(s1.nbPushsByRemote, 0)
         assert.equal(c1.nbPushsByRemote, 0)
         // connection 2
-        const c2 = WS2PConnection.newConnectionToAddress('localhost:20902', () => {}, new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
-        assert.deepEqual({ answer: 'this is s2![j = 0]' }, await c2.request({ message: 'test?' }))
-        assert.deepEqual({ answer: 'this is s2![j = 1]' }, await c2.request({ message: 'test!' }))
-        assert.deepEqual({ answer: 'this is s2![j = 2]' }, await c2.request({ message: 'test!!!' }))
+        const c2 = WS2PConnection.newConnectionToAddress('localhost:20902', new WS2PMutedHandler(), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
+        assert.deepEqual({ answer: 'this is s2![j = 0]' }, await c2.request({ name: 'test?' }))
+        assert.deepEqual({ answer: 'this is s2![j = 1]' }, await c2.request({ name: 'test!' }))
+        assert.deepEqual({ answer: 'this is s2![j = 2]' }, await c2.request({ name: 'test!!!' }))
         assert.equal(s1.nbRequests, 0)
         assert.equal(c2.nbRequests, 3)
         assert.equal(s1.nbResponses, 0)
@@ -216,7 +221,7 @@ describe('WS2P', () => {
         wss.on('connection', async (ws:any) => {
           switch (i) {
             case 1:
-              resolveS1(WS2PConnection.newConnectionFromWebSocketServer(ws, () => {}, new WS2PPubkeyLocalAuth(serverKeypair), new WS2PPubkeyRemoteAuth(serverKeypair), {
+              resolveS1(WS2PConnection.newConnectionFromWebSocketServer(ws, new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(serverKeypair), new WS2PPubkeyRemoteAuth(serverKeypair), {
                 connectionTimeout: 100,
                 requestTimeout: 100
               }));
@@ -230,7 +235,7 @@ describe('WS2P', () => {
               }
             }
 
-              resolveS2(WS2PConnection.newConnectionFromWebSocketServer(ws, () => {}, new WS2PPubkeyLocalAuth(serverKeypair), new WS2PPubkeyNotAnsweringWithOKAuth(serverKeypair), {
+              resolveS2(WS2PConnection.newConnectionFromWebSocketServer(ws, new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(serverKeypair), new WS2PPubkeyNotAnsweringWithOKAuth(serverKeypair), {
                 connectionTimeout: 100,
                 requestTimeout: 100
               }));
@@ -238,7 +243,7 @@ describe('WS2P', () => {
               break
             case 3:
 
-              resolveS3(WS2PConnection.newConnectionFromWebSocketServer(ws, () => {}, new WS2PPubkeyLocalAuth(serverKeypair), new WS2PPubkeyRemoteAuth(serverKeypair), {
+              resolveS3(WS2PConnection.newConnectionFromWebSocketServer(ws, new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(serverKeypair), new WS2PPubkeyRemoteAuth(serverKeypair), {
                 connectionTimeout: 100,
                 requestTimeout: 100
               }));
@@ -246,7 +251,7 @@ describe('WS2P', () => {
               break
             case 4:
 
-              resolveS4(WS2PConnection.newConnectionFromWebSocketServer(ws, () => {}, new WS2PPubkeyLocalAuth(serverKeypair), new WS2PPubkeyRemoteAuth(serverKeypair), {
+              resolveS4(WS2PConnection.newConnectionFromWebSocketServer(ws, new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(serverKeypair), new WS2PPubkeyRemoteAuth(serverKeypair), {
                 connectionTimeout: 100,
                 requestTimeout: 100
               }));
@@ -254,13 +259,13 @@ describe('WS2P', () => {
               break
 
             case 5:
-              resolveS5(WS2PConnection.newConnectionFromWebSocketServer(ws, () => {}, new WS2PPubkeyLocalAuth(serverKeypair), new WS2PPubkeyRemoteAuth(serverKeypair)));
+              resolveS5(WS2PConnection.newConnectionFromWebSocketServer(ws, new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(serverKeypair), new WS2PPubkeyRemoteAuth(serverKeypair)));
               (await s5p).connect().catch((e:any) => console.error('WS2P: newConnectionFromWebSocketServer connection error'))
               break
 
             case 6:
 
-              resolveS6(WS2PConnection.newConnectionFromWebSocketServer(ws, () => {}, new WS2PPubkeyLocalAuth(serverKeypair), new WS2PPubkeyRemoteAuth(serverKeypair), {
+              resolveS6(WS2PConnection.newConnectionFromWebSocketServer(ws, new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(serverKeypair), new WS2PPubkeyRemoteAuth(serverKeypair), {
                 connectionTimeout: 100,
                 requestTimeout: 100
               }));
@@ -284,17 +289,17 @@ describe('WS2P', () => {
         }
 
         const keypair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP')
-        const c1 = WS2PConnection.newConnectionToAddress('localhost:20903', () => {}, new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyNotAnsweringWithACKAuth(keypair))
+        const c1 = WS2PConnection.newConnectionToAddress('localhost:20903', new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyNotAnsweringWithACKAuth(keypair))
         c1.connect()
         const s1 = await s1p
-        await assertThrows(s1.request({ message: 'something' }), "WS2P connection timeout")
+        await assertThrows(s1.request({ name: 'something' }), "WS2P connection timeout")
       })
 
       it('should refuse the connection if the client not confirm with OK', async () => {
         const keypair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP')
-        WS2PConnection.newConnectionToAddress('localhost:20903', () => {}, new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyRemoteAuth(keypair))
+        WS2PConnection.newConnectionToAddress('localhost:20903', new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyRemoteAuth(keypair))
         const s2 = await s2p
-        await assertThrows(s2.request({ message: 'something' }), "WS2P connection timeout")
+        await assertThrows(s2.request({ name: 'something' }), "WS2P connection timeout")
       })
 
       it('should refuse the connection if the client answers with a wrong signature', async () => {
@@ -312,10 +317,10 @@ describe('WS2P', () => {
         }
 
         const keypair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP')
-        const c3 = WS2PConnection.newConnectionToAddress('localhost:20903', () => {}, new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyAnsweringWithWrongSigForACK(keypair))
+        const c3 = WS2PConnection.newConnectionToAddress('localhost:20903', new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyAnsweringWithWrongSigForACK(keypair))
         c3.connect()
         const s3 = await s3p
-        await assertThrows(s3.request({ message: 'something' }), "Wrong signature from server ACK")
+        await assertThrows(s3.request({ name: 'something' }), "Wrong signature from server ACK")
       })
 
       it('should refuse the connection if the client refuses our signature', async () => {
@@ -335,21 +340,23 @@ describe('WS2P', () => {
         }
 
         const keypair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP')
-        const c4 = WS2PConnection.newConnectionToAddress('localhost:20903', () => {}, new WS2PPubkeyRefusingACKSignature(keypair), new WS2PPubkeyRemoteAuth(keypair))
+        const c4 = WS2PConnection.newConnectionToAddress('localhost:20903', new WS2PMutedHandler(), new WS2PPubkeyRefusingACKSignature(keypair), new WS2PPubkeyRemoteAuth(keypair))
         const s4 = await s4p
         await assertThrows(c4.connect(), "Wrong signature from server ACK")
       })
 
       it('should accept the connection if everything is OK on both side', async () => {
         const keypair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP')
-        const c5 = WS2PConnection.newConnectionToAddress('localhost:20903', (obj:any, ws:any) => {
-          if (obj.reqId) {
-            ws.send(JSON.stringify({ resId: obj.reqId, body: { answer: 'success!' } }))
+        const c5 = WS2PConnection.newConnectionToAddress('localhost:20903', new (class TmpHandler implements WS2PMessageHandler {
+          async handlePushMessage(json: any): Promise<void> {
           }
-        }, new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyRemoteAuth(keypair))
+          async handleRequestMessage(json: any): Promise<WS2PResponse> {
+            return { answer: 'success!' }
+          }
+        }), new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyRemoteAuth(keypair))
         await c5.connect()
         const s5 = await s5p
-        assert.deepEqual({ answer: 'success!' }, await s5.request({ message: 'connection?'} ))
+        assert.deepEqual({ answer: 'success!' }, await s5.request({ name: 'connection?'} ))
       })
 
       it('should refuse the connection if the client does not send OK', async () => {
@@ -360,10 +367,10 @@ describe('WS2P', () => {
         }
 
         const keypair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP')
-        const c6 = WS2PConnection.newConnectionToAddress('localhost:20903', () => {}, new WS2PPubkeyNotAnsweringWithOKAuth(keypair), new WS2PPubkeyRemoteAuth(keypair))
+        const c6 = WS2PConnection.newConnectionToAddress('localhost:20903', new WS2PMutedHandler(), new WS2PPubkeyNotAnsweringWithOKAuth(keypair), new WS2PPubkeyRemoteAuth(keypair))
         c6.connect()
         const s6 = await s6p
-        await assertThrows(s6.request({ message: 'something' }), "WS2P connection timeout")
+        await assertThrows(s6.request({ name: 'something' }), "WS2P connection timeout")
       })
     })
   })
@@ -419,5 +426,15 @@ class WS2PNoRemoteAuth implements WS2PRemoteAuth {
   }
 
   async authenticationIsDone(): Promise<void> {
+  }
+}
+
+class WS2PMutedHandler implements WS2PMessageHandler {
+
+  async handlePushMessage(json: any): Promise<void> {
+  }
+
+  async handleRequestMessage(json: any): Promise<WS2PResponse> {
+    return {}
   }
 }

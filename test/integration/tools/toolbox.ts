@@ -15,11 +15,16 @@ import {ConfDTO} from "../../../app/lib/dto/ConfDTO"
 import {FileDAL} from "../../../app/lib/dal/fileDAL"
 import {MembershipDTO} from "../../../app/lib/dto/MembershipDTO"
 import {TransactionDTO} from "../../../app/lib/dto/TransactionDTO"
+import {Key} from "../../../app/lib/common-libs/crypto/keyring"
+import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "../../../app/lib/ws2p/WS2PConnection"
+import {WS2PResponse} from "../../../app/lib/ws2p/impl/WS2PResponse"
+import {WS2PMessageHandler} from "../../../app/lib/ws2p/impl/WS2PMessageHandler"
 
 const assert      = require('assert');
 const _           = require('underscore');
 const rp          = require('request-promise');
 const es          = require('event-stream');
+const WebSocketServer = require('ws').Server
 const httpTest    = require('../tools/http');
 const sync        = require('../tools/sync');
 const commit      = require('../tools/commit');
@@ -549,4 +554,42 @@ export class TestingServer {
       await farm.shutDownEngine()
     }
   }
+}
+
+export async function newWS2PBidirectionnalConnection(k1:Key, k2:Key, serverHandler:WS2PMessageHandler) {
+  let i = 1
+  let port = PORT++
+  const wss = new WebSocketServer({ port })
+  let s1:WS2PConnection
+  let c1:WS2PConnection
+  return await new Promise<{
+    p1:WS2PConnection,
+    p2:WS2PConnection,
+    wss:any
+  }>(resolveBefore => {
+    wss.on('connection', async (ws:any) => {
+      switch (i) {
+        case 1:
+          s1 = WS2PConnection.newConnectionFromWebSocketServer(ws, serverHandler, new WS2PPubkeyLocalAuth(k1), new WS2PPubkeyRemoteAuth(k1), {
+            connectionTimeout: 100,
+            requestTimeout: 100
+          });
+          s1.connect().catch((e:any) => console.error('WS2P: newConnectionFromWebSocketServer connection error'))
+          break;
+      }
+      resolveBefore({
+        p1: s1,
+        p2: c1,
+        wss
+      })
+      i++
+    })
+    c1 = WS2PConnection.newConnectionToAddress('localhost:' + port, new (class EmptyHandler implements WS2PMessageHandler {
+      async handlePushMessage(json: any): Promise<void> {
+      }
+      async handleRequestMessage(json: any): Promise<WS2PResponse> {
+        return {}
+      }
+    }), new WS2PPubkeyLocalAuth(k2), new WS2PPubkeyRemoteAuth(k2))
+  })
 }

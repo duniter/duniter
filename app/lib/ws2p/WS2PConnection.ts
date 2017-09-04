@@ -1,4 +1,5 @@
 import {Key, verify} from "../common-libs/crypto/keyring"
+import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 const ws = require('ws')
 const nuuid = require('node-uuid');
 
@@ -179,7 +180,7 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
 }
 
 export interface WS2PRequest {
-  message:string
+  name:string
 }
 
 /**
@@ -209,7 +210,7 @@ export class WS2PConnection {
   constructor(
     private ws:any,
     private onWsOpened:Promise<void>,
-    private onDataMessage:(json:any, ws:any)=>void,
+    private messageHandler:WS2PMessageHandler,
     private localAuth:WS2PLocalAuth,
     private remoteAuth:WS2PRemoteAuth,
     private options:{
@@ -224,7 +225,7 @@ export class WS2PConnection {
 
   static newConnectionToAddress(
     address:string,
-    onDataMessage:(json:any, ws:any)=>void,
+    messageHandler:WS2PMessageHandler,
     localAuth:WS2PLocalAuth,
     remoteAuth:WS2PRemoteAuth,
     options:{
@@ -240,12 +241,12 @@ export class WS2PConnection {
     const onWsOpened:Promise<void> = new Promise(res => {
       websocket.on('open', () => res())
     })
-    return new WS2PConnection(websocket, onWsOpened, onDataMessage, localAuth, remoteAuth, options, expectedPub)
+    return new WS2PConnection(websocket, onWsOpened, messageHandler, localAuth, remoteAuth, options, expectedPub)
   }
 
   static newConnectionFromWebSocketServer(
     websocket:any,
-    onDataMessage:(json:any, ws:any)=>void,
+    messageHandler:WS2PMessageHandler,
     localAuth:WS2PLocalAuth,
     remoteAuth:WS2PRemoteAuth,
     options:{
@@ -257,7 +258,7 @@ export class WS2PConnection {
     },
     expectedPub:string = "") {
     const onWsOpened = Promise.resolve()
-    return new WS2PConnection(websocket, onWsOpened, onDataMessage, localAuth, remoteAuth, options, expectedPub)
+    return new WS2PConnection(websocket, onWsOpened, messageHandler, localAuth, remoteAuth, options, expectedPub)
   }
 
   get nbRequests() {
@@ -389,7 +390,8 @@ export class WS2PConnection {
 
                 // Request message
                 else if (data.reqId && typeof data.reqId === "string") {
-                  this.onDataMessage(data, this.ws)
+                  const body = await this.messageHandler.handleRequestMessage(data)
+                  this.ws.send(JSON.stringify({ resId: data.reqId, body }))
                 }
 
                 // Answer message
@@ -407,7 +409,7 @@ export class WS2PConnection {
                 // Push message
                 else {
                   this.nbPushsByRemoteCount++
-                  this.onDataMessage(data, this.ws)
+                  await this.messageHandler.handlePushMessage(data)
                 }
               }
             }

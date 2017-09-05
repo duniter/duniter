@@ -17,6 +17,10 @@ export class WS2PServer {
     private port:number) {
   }
 
+  getConnexions() {
+    return this.connections.slice()
+  }
+
   private listenToWebSocketConnections() {
     const key = new Key(this.server.conf.pair.pub, this.server.conf.pair.sec)
     this.wss = new WebSocketServer({ host: this.host, port: this.port })
@@ -52,7 +56,8 @@ export class WS2PServer {
     })
   }
 
-  close() {
+  async close() {
+    await Promise.all(this.connections.map(c => c.close()))
     return this.wss.close()
   }
 

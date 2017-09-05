@@ -324,6 +324,10 @@ export class WS2PConnection {
     return this.onWsClosed
   }
 
+  close() {
+    return this.ws.close()
+  }
+
   async connect() {
     if (!this.connectp) {
       this.connectp = (async () => {

@@ -19,8 +19,8 @@ import {Key} from "../../../app/lib/common-libs/crypto/keyring"
 import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "../../../app/lib/ws2p/WS2PConnection"
 import {WS2PResponse} from "../../../app/lib/ws2p/impl/WS2PResponse"
 import {WS2PMessageHandler} from "../../../app/lib/ws2p/impl/WS2PMessageHandler"
+import {WS2PCluster} from "../../../app/lib/ws2p/WS2PCluster"
 import {WS2PServer} from "../../../app/lib/ws2p/WS2PServer"
-import {WS2PClient} from "../../../app/lib/ws2p/WS2PClient"
 
 const assert      = require('assert');
 const _           = require('underscore');
@@ -609,13 +609,15 @@ export async function newWS2PBidirectionnalConnection(k1:Key, k2:Key, serverHand
   })
 }
 
-export const simpleWS2PNetwork = async (s1:TestingServer, s2:TestingServer) => {
+export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promise<{ w1: WS2PConnection; ws2pc: WS2PConnection; wss: WS2PServer }> = async (s1: TestingServer, s2: TestingServer) => {
   let port = PORT++
   const clientPub = s2.conf.pair.pub
-  let w1:WS2PConnection|null
+  let w1: WS2PConnection | null
 
-  const ws2ps = await WS2PServer.bindOn(s1._server, 'localhost', port)
-  const ws2pc = await WS2PClient.connectTo(s2._server, 'localhost', port)
+  const cluster1 = new WS2PCluster(s1._server)
+  const cluster2 = new WS2PCluster(s2._server)
+  const ws2ps = await cluster1.listen('localhost', port)
+  const ws2pc = await cluster2.connect('localhost', port)
 
   w1 = await ws2ps.getConnection(clientPub)
   if (!w1) {

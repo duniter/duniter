@@ -473,6 +473,20 @@ export class Server extends stream.Duplex implements HookableServer {
     }
   }
 
+  pullingEvent(type:string, number:any = null) {
+    this.push({
+      pulling: {
+        type: type,
+        data: number
+      }
+    })
+    if (type !== 'end') {
+      this.push({ pulling: 'processing' })
+    } else {
+      this.push({ pulling: 'finished' })
+    }
+  }
+
   async reapplyTo(number:number) {
     const current = await this.BlockchainService.current();
     if (current.number == number) {

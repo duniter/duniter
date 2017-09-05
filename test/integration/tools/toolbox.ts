@@ -354,6 +354,10 @@ export class TestingServer {
   async writePeer(obj:any) {
     return this.server.writePeer(obj)
   }
+
+  async pullingEvent(type:string, number:number) {
+    this.server.pullingEvent(type, number)
+  }
   
   exportAllDataAsZIP() {
     return this.server.exportAllDataAsZIP()
@@ -609,7 +613,7 @@ export async function newWS2PBidirectionnalConnection(k1:Key, k2:Key, serverHand
   })
 }
 
-export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promise<{ w1: WS2PConnection; ws2pc: WS2PConnection; wss: WS2PServer }> = async (s1: TestingServer, s2: TestingServer) => {
+export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promise<{ w1: WS2PConnection; ws2pc: WS2PConnection; wss: WS2PServer, cluster1:WS2PCluster, cluster2:WS2PCluster }> = async (s1: TestingServer, s2: TestingServer) => {
   let port = PORT++
   const clientPub = s2.conf.pair.pub
   let w1: WS2PConnection | null
@@ -627,7 +631,9 @@ export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promis
   return {
     w1,
     ws2pc,
-    wss: ws2ps
+    wss: ws2ps,
+    cluster1,
+    cluster2
   }
 }
 

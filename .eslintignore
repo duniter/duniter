@@ -19,6 +19,7 @@ app/lib/system/*.js
 app/lib/streams/*.js
 app/lib/helpers/*.js
 app/lib/ws2p/*.js
+app/lib/ws2p/*/*.js
 app/lib/*.js
 app/modules/wizard.js
 app/modules/router.js

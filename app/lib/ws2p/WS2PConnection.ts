@@ -200,7 +200,8 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
 }
 
 export interface WS2PRequest {
-  name:string
+  name:string,
+  params?:any
 }
 
 /**
@@ -214,7 +215,7 @@ export class WS2PConnection {
   private connectp:Promise<any>|undefined
   private connectedp:Promise<string>
   private connectedResolve:(pub:string)=>void
-  private connectedReject:()=>void
+  private connectedReject:(e:any)=>void
   private nbErrors = 0
   private nbRequestsCount = 0
   private nbResponsesCount = 0
@@ -442,8 +443,12 @@ export class WS2PConnection {
 
                   // Request message
                   else if (data.reqId && typeof data.reqId === "string") {
-                    const answer = await this.messageHandler.answerToRequest(data.body)
-                    this.ws.send(JSON.stringify({ resId: data.reqId, body: answer }))
+                    try {
+                      const answer = await this.messageHandler.answerToRequest(data.body)
+                      this.ws.send(JSON.stringify({ resId: data.reqId, body: answer }))
+                    } catch (e) {
+                      this.ws.send(JSON.stringify({ resId: data.reqId, err: e }))
+                    }
                   }
 
                   // Answer message
@@ -470,7 +475,8 @@ export class WS2PConnection {
 
           this.connectedResolve(this.remoteAuth.getPubkey())
         } catch (e) {
-          this.connectedReject()
+          this.connectedReject(e)
+          throw e
         }
       })()
     }

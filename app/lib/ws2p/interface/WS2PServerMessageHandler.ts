@@ -9,10 +9,7 @@ import {CertificationDTO} from "../../dto/CertificationDTO"
 import {MembershipDTO} from "../../dto/MembershipDTO"
 import {TransactionDTO} from "../../dto/TransactionDTO"
 import {PeerDTO} from "../../dto/PeerDTO"
-
-enum WS2P_REQ {
-  CURRENT
-}
+import {WS2P_REQ} from "../WS2PRequester"
 
 export enum WS2P_REQERROR {
   UNKNOWN_REQUEST
@@ -77,6 +74,24 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
       switch (data.name) {
         case WS2P_REQ[WS2P_REQ.CURRENT]:
           body = await this.mapper.getCurrent()
+          break;
+        case WS2P_REQ[WS2P_REQ.BLOCK_BY_NUMBER]:
+          if (isNaN(data.params.number)) {
+            throw "Wrong param `number`"
+          }
+          const number:number = data.params.number
+          body = await this.mapper.getBlock(number)
+          break;
+        case WS2P_REQ[WS2P_REQ.BLOCKS_CHUNK]:
+          if (isNaN(data.params.count)) {
+            throw "Wrong param `count`"
+          }
+          if (isNaN(data.params.fromNumber)) {
+            throw "Wrong param `fromNumber`"
+          }
+          const count:number = data.params.count
+          const fromNumber:number = data.params.fromNumber
+          body = await this.mapper.getBlocks(count, fromNumber)
           break;
         default:
           throw Error(WS2P_REQERROR[WS2P_REQERROR.UNKNOWN_REQUEST])

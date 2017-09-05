@@ -406,6 +406,10 @@ class WS2PNoLocalAuth implements WS2PLocalAuth {
 
 class WS2PNoRemoteAuth implements WS2PRemoteAuth {
 
+  getPubkey(): string {
+    return ""
+  }
+
   async sendACK(ws: any): Promise<void> {
   }
 
@@ -435,6 +439,6 @@ class WS2PMutedHandler implements WS2PMessageHandler {
   }
 
   async answerToRequest(json: any): Promise<WS2PResponse> {
-    return {}
+    throw "Does not answer"
   }
 }

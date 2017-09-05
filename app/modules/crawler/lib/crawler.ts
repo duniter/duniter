@@ -35,7 +35,7 @@ export class Crawler extends stream.Transform implements DuniterService {
 
     this.peerCrawler = new PeerCrawler(server, conf, logger)
     this.peerTester = new PeerTester(server, conf, logger)
-    this.blockCrawler = new BlockCrawler(server, logger, this)
+    this.blockCrawler = new BlockCrawler(server, logger)
     this.sandboxCrawler = new SandboxCrawler(server, conf, logger)
   }
 
@@ -303,7 +303,7 @@ export class PeerTester implements DuniterService {
 
 export class BlockCrawler {
 
-  private CONST_BLOCKS_CHUNK = 50
+  private CONST_BLOCKS_CHUNK = CrawlerConstants.CRAWL_BLOCK_CHUNK
   private pullingActualIntervalDuration = CrawlerConstants.PULLING_MINIMAL_DELAY
   private programStart = Date.now()
   private syncBlockFifo = async.queue((task:any, callback:any) => task(callback), 1)
@@ -311,8 +311,7 @@ export class BlockCrawler {
 
   constructor(
     private server:Server,
-    private logger:any,
-    private PROCESS:stream.Transform) {
+    private logger:any) {
   }
 
   async startService() {
@@ -470,17 +469,7 @@ export class BlockCrawler {
   }
 
   private pullingEvent(server:Server, type:string, number:any = null) {
-    server.push({
-      pulling: {
-        type: type,
-        data: number
-      }
-    });
-    if (type !== 'end') {
-      this.PROCESS.push({ pulling: 'processing' });
-    } else {
-      this.PROCESS.push({ pulling: 'finished' });
-    }
+    server.pullingEvent(type, number)
   }
 
   private isConnectionError(err:any) {

@@ -6,6 +6,8 @@ import {Key} from "../common-libs/crypto/keyring"
 
 export class WS2PClient {
 
+  private constructor(public connection:WS2PConnection) {}
+
   static async connectTo(server:Server, host:string, port:number) {
     const k2 = new Key(server.conf.pair.pub, server.conf.pair.sec)
     const c = WS2PConnection.newConnectionToAddress(
@@ -23,6 +25,6 @@ export class WS2PClient {
 
     // Connecting
     await c.connect()
-    return c
+    return new WS2PClient(c)
   }
 }

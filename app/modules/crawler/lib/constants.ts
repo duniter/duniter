@@ -10,6 +10,8 @@ export const CrawlerConstants = {
   FORK_ALLOWED: true,
   MAX_NUMBER_OF_PEERS_FOR_PULLING: 4,
   PULLING_MINIMAL_DELAY: 20,
+  CRAWL_BLOCK_CHUNK: 50, // During a crawl, the quantity of blocks to download
+  CRAWL_PEERS_COUNT: 4,
   PULLING_INTERVAL_TARGET: 240,
   COUNT_FOR_ENOUGH_PEERS: 4,
   SANDBOX_FIRST_PULL_DELAY: 1000 * 60 * 10, // milliseconds

@@ -2,7 +2,6 @@ import {WS2PConnection} from "../../app/lib/ws2p/WS2PConnection"
 import {Key} from "../../app/lib/common-libs/crypto/keyring"
 import {newWS2PBidirectionnalConnection} from "./tools/toolbox"
 import {WS2PRequester} from "../../app/lib/ws2p/WS2PRequester"
-import {WS2PResponder} from "../../app/lib/ws2p/WS2PResponder"
 import {WS2PReqMapper} from "../../app/lib/ws2p/WS2PReqMapper"
 import {BlockDTO} from "../../app/lib/dto/BlockDTO"
 import {WS2PMessageHandler} from "../../app/lib/ws2p/impl/WS2PMessageHandler"
@@ -22,12 +21,8 @@ describe('WS2P exchange', () => {
       async handlePushMessage(json: any): Promise<void> {
       }
 
-      async handleRequestMessage(json: any): Promise<WS2PResponse> {
-        return await WS2PResponder(json, new (class TestingMapper implements WS2PReqMapper {
-          async getCurrent(): Promise<BlockDTO> {
-            return BlockDTO.fromJSONObject({ number: 1, hash: 'A' })
-          }
-        }))
+      async answerToRequest(json: any): Promise<WS2PResponse> {
+        return BlockDTO.fromJSONObject({ number: 1, hash: 'A' })
       }
     }))
     s1 = res.p1

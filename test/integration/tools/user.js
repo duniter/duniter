@@ -170,6 +170,13 @@ function User (uid, options, node) {
     };
   };
 
+  this.sendMoney = function (amount, recipient, comment) {
+    return co(function *() {
+      let raw = yield that.prepareITX(amount, recipient, comment);
+      yield that.sendTX(raw);
+    })
+  };
+
   this.sendTX = (rawTX) => co(function *() {
     let http = yield getContacter();
     return http.processTransaction(rawTX);

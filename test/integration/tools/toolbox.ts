@@ -19,6 +19,8 @@ import {Key} from "../../../app/lib/common-libs/crypto/keyring"
 import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "../../../app/lib/ws2p/WS2PConnection"
 import {WS2PResponse} from "../../../app/lib/ws2p/impl/WS2PResponse"
 import {WS2PMessageHandler} from "../../../app/lib/ws2p/impl/WS2PMessageHandler"
+import {WS2PServer} from "../../../app/lib/ws2p/WS2PServer"
+import {WS2PClient} from "../../../app/lib/ws2p/WS2PClient"
 
 const assert      = require('assert');
 const _           = require('underscore');
@@ -63,6 +65,10 @@ export const assertThrows = async (promise:Promise<any>, message:string|null = n
     }
     assert.equal(e, message)
   }
+}
+
+export const simpleUser = (uid:string, keyring:{ pub:string, sec:string }, server:TestingServer) => {
+  return user(uid, keyring, { server });
 }
 
 export const simpleNetworkOf2NodesAnd2Users = async (options:any) => {
@@ -209,6 +215,7 @@ export const fakeSyncServer = async (readBlocksMethod:any, readParticularBlockMe
  * @param conf
  */
 export const server = (conf:any) => NewTestingServer(conf)
+export const simpleTestingServer = (conf:any) => NewTestingServer(conf)
 
 export const NewTestingServer = (conf:any) => {
   const port = PORT++;
@@ -272,6 +279,10 @@ export class TestingServer {
     server.getMainEndpoint = require('../../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
   }
 
+  get _server() {
+    return this.server
+  }
+
   get BlockchainService(): BlockchainService {
     return this.server.BlockchainService
   }
@@ -314,6 +325,10 @@ export class TestingServer {
 
   async writeBlock(obj:any) {
     return this.server.writeBlock(obj)
+  }
+
+  async writeRawBlock(raw:string) {
+    return this.server.writeRawBlock(raw)
   }
   
   async writeIdentity(obj:any): Promise<DBIdentity> {
@@ -587,9 +602,40 @@ export async function newWS2PBidirectionnalConnection(k1:Key, k2:Key, serverHand
     c1 = WS2PConnection.newConnectionToAddress('localhost:' + port, new (class EmptyHandler implements WS2PMessageHandler {
       async handlePushMessage(json: any): Promise<void> {
       }
-      async handleRequestMessage(json: any): Promise<WS2PResponse> {
+      async answerToRequest(json: any): Promise<WS2PResponse> {
         return {}
       }
     }), new WS2PPubkeyLocalAuth(k2), new WS2PPubkeyRemoteAuth(k2))
   })
+}
+
+export const simpleWS2PNetwork = async (s1:TestingServer, s2:TestingServer) => {
+  let port = PORT++
+  const clientPub = s2.conf.pair.pub
+  let w1:WS2PConnection|null
+
+  const ws2ps = await WS2PServer.bindOn(s1._server, 'localhost', port)
+  const ws2pc = await WS2PClient.connectTo(s2._server, 'localhost', port)
+
+  w1 = await ws2ps.getConnection(clientPub)
+  if (!w1) {
+    throw "Connection coming from " + clientPub + " was not found"
+  }
+
+  return {
+    w1,
+    ws2pc,
+    wss: ws2ps
+  }
+}
+
+export function simpleTestingConf(now = 1500000000, pair:{ pub:string, sec:string }) {
+  return {
+    pair,
+    nbCores: 1,
+    udTime0: now,
+    udReevalTime0: now,
+    sigQty: 1,
+    medianTimeBlocks: 1 // The medianTime always equals previous block's medianTime
+  }
 }

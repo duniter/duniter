@@ -1,5 +1,11 @@
 import {Key, verify} from "../common-libs/crypto/keyring"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
+import {BlockDTO} from "../dto/BlockDTO"
+import {IdentityDTO} from "../dto/IdentityDTO"
+import {CertificationDTO} from "../dto/CertificationDTO"
+import {MembershipDTO} from "../dto/MembershipDTO"
+import {TransactionDTO} from "../dto/TransactionDTO"
+import {PeerDTO} from "../dto/PeerDTO"
 const ws = require('ws')
 const nuuid = require('node-uuid');
 
@@ -23,6 +29,15 @@ enum WS2P_ERR {
   ANSWER_TO_UNDEFINED_REQUEST
 }
 
+export enum WS2P_PUSH {
+  PEER,
+  TRANSACTION,
+  MEMBERSHIP,
+  CERTIFICATION,
+  IDENTITY,
+  BLOCK
+}
+
 export interface WS2PAuth {
   isAuthorizedPubkey(pub:string): Promise<boolean>
   authenticationIsDone(): Promise<void>
@@ -33,6 +48,7 @@ export interface WS2PRemoteAuth extends WS2PAuth {
   sendACK(ws:any): Promise<void>
   registerOK(sig: string): Promise<boolean>
   isAuthenticatedByRemote(): boolean
+  getPubkey(): string
 }
 
 export interface WS2PLocalAuth extends WS2PAuth {
@@ -60,6 +76,10 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
       this.serverAuthResolve = resolve
       this.serverAuthReject = reject
     })
+  }
+
+  getPubkey() {
+    return this.remotePub
   }
 
   async sendACK(ws: any): Promise<void> {
@@ -192,6 +212,9 @@ export interface WS2PRequest {
 export class WS2PConnection {
 
   private connectp:Promise<any>|undefined
+  private connectedp:Promise<string>
+  private connectedResolve:(pub:string)=>void
+  private connectedReject:()=>void
   private nbErrors = 0
   private nbRequestsCount = 0
   private nbResponsesCount = 0
@@ -210,6 +233,7 @@ export class WS2PConnection {
   constructor(
     private ws:any,
     private onWsOpened:Promise<void>,
+    private onWsClosed:Promise<void>,
     private messageHandler:WS2PMessageHandler,
     private localAuth:WS2PLocalAuth,
     private remoteAuth:WS2PRemoteAuth,
@@ -221,7 +245,12 @@ export class WS2PConnection {
       requestTimeout: REQUEST_TIMEOUT_VALUE
     },
     private expectedPub:string = ""
-  ) {}
+  ) {
+    this.connectedp = new Promise((resolve, reject) => {
+      this.connectedResolve = resolve
+      this.connectedReject = reject
+    })
+  }
 
   static newConnectionToAddress(
     address:string,
@@ -241,7 +270,10 @@ export class WS2PConnection {
     const onWsOpened:Promise<void> = new Promise(res => {
       websocket.on('open', () => res())
     })
-    return new WS2PConnection(websocket, onWsOpened, messageHandler, localAuth, remoteAuth, options, expectedPub)
+    const onWsClosed:Promise<void> = new Promise(res => {
+      websocket.on('close', () => res())
+    })
+    return new WS2PConnection(websocket, onWsOpened, onWsClosed, messageHandler, localAuth, remoteAuth, options, expectedPub)
   }
 
   static newConnectionFromWebSocketServer(
@@ -258,7 +290,14 @@ export class WS2PConnection {
     },
     expectedPub:string = "") {
     const onWsOpened = Promise.resolve()
-    return new WS2PConnection(websocket, onWsOpened, messageHandler, localAuth, remoteAuth, options, expectedPub)
+    const onWsClosed:Promise<void> = new Promise(res => {
+      websocket.on('close', () => res())
+    })
+    return new WS2PConnection(websocket, onWsOpened, onWsClosed, messageHandler, localAuth, remoteAuth, options, expectedPub)
+  }
+
+  get pubkey() {
+    return this.remoteAuth.getPubkey()
   }
 
   get nbRequests() {
@@ -277,6 +316,14 @@ export class WS2PConnection {
     return this.nbPushsByRemoteCount
   }
 
+  get connected() {
+    return this.connectedp
+  }
+
+  get closed() {
+    return this.onWsClosed
+  }
+
   async connect() {
     if (!this.connectp) {
       this.connectp = (async () => {
@@ -285,136 +332,142 @@ export class WS2PConnection {
             rej("WS2P connection timeout")
           }, this.options.connectionTimeout)
         })
-        return Promise.race([connectionTimeout, new Promise((resolve, reject) => {
+        try {
+          await Promise.race([connectionTimeout, new Promise((resolve, reject) => {
 
-          (async () => {
-            await this.onWsOpened
-            try {
-              await this.localAuth.sendCONNECT(this.ws)
-              await Promise.all([
-                this.localAuth.authenticationIsDone(),
-                this.remoteAuth.authenticationIsDone()
-              ])
-              resolve()
-            } catch (e) {
-              reject(e)
-            }
-          })()
+            (async () => {
+              await this.onWsOpened
+              try {
+                await this.localAuth.sendCONNECT(this.ws)
+                await Promise.all([
+                  this.localAuth.authenticationIsDone(),
+                  this.remoteAuth.authenticationIsDone()
+                ])
+                resolve()
+              } catch (e) {
+                reject(e)
+              }
+            })()
 
-          this.ws.on('message', async (msg:string) => {
-            const data = JSON.parse(msg)
+            this.ws.on('message', async (msg:string) => {
+              const data = JSON.parse(msg)
 
-            // Incorrect data
-            if (typeof data !== 'object') {
-              // We only accept JSON objects
-              await this.errorDetected(WS2P_ERR.MESSAGE_MUST_BE_AN_OBJECT)
-            }
-
-            // OK: JSON object
-            else {
-
-              /************************
-               * CONNECTION STUFF
-               ************************/
-
-              if (data.auth && typeof data.auth === "string") {
-
-                if (data.auth === "CONNECT") {
-                  if (this.remoteAuth.isAuthenticatedByRemote()) {
-                    return this.errorDetected(WS2P_ERR.ALREADY_AUTHENTICATED_BY_REMOTE)
-                  }
-                  else if (
-                    typeof data.pub !== "string" || typeof data.sig !== "string" || typeof data.challenge !== "string") {
-                    await this.errorDetected(WS2P_ERR.AUTH_INVALID_ASK_FIELDS)
-                  } else {
-                    if (this.expectedPub && data.pub !== this.expectedPub) {
-                      await this.errorDetected(WS2P_ERR.INCORRECT_PUBKEY_FOR_REMOTE)
-                    } else {
-                      const valid = await this.remoteAuth.registerCONNECT(data.challenge, data.sig, data.pub)
-                      if (valid) {
-                        await this.remoteAuth.sendACK(this.ws)
-                      } else {
-                        await this.errorDetected(WS2P_ERR.INCORRECT_ASK_SIGNATURE_FROM_REMOTE)
-                      }
-                    }
-                  }
-                }
-
-                else if (data.auth === "ACK") {
-                  if (this.localAuth.isRemoteAuthenticated()) {
-                    return this.errorDetected(WS2P_ERR.ALREADY_AUTHENTICATED_REMOTE)
-                  }
-                  if (typeof data.pub !== "string" || typeof data.sig !== "string") {
-                    await this.errorDetected(WS2P_ERR.AUTH_INVALID_ACK_FIELDS)
-                  } else {
-                    if (this.expectedPub && data.pub !== this.expectedPub) {
-                      await this.errorDetected(WS2P_ERR.INCORRECT_PUBKEY_FOR_REMOTE)
-                    } else {
-                      try {
-                        const valid = await this.localAuth.registerACK(data.sig, data.pub)
-                        if (valid) {
-                          await this.localAuth.sendOK(this.ws)
-                        }
-                      } catch (e) {
-                        await this.errorDetected(WS2P_ERR.INCORRECT_ACK_SIGNATURE_FROM_REMOTE)
-                      }
-                    }
-                  }
-                }
-
-                else if (data.auth === "OK") {
-                  if (this.remoteAuth.isAuthenticatedByRemote()) {
-                    return this.errorDetected(WS2P_ERR.ALREADY_AUTHENTICATED_AND_CONFIRMED_BY_REMOTE)
-                  }
-                  if (typeof data.sig !== "string") {
-                    await this.errorDetected(WS2P_ERR.AUTH_INVALID_OK_FIELDS)
-                  } else {
-                    await this.remoteAuth.registerOK(data.sig)
-                  }
-                }
-
-                else {
-                  await this.errorDetected(WS2P_ERR.UNKNOWN_AUTH_MESSAGE)
-                }
+              // Incorrect data
+              if (typeof data !== 'object') {
+                // We only accept JSON objects
+                await this.errorDetected(WS2P_ERR.MESSAGE_MUST_BE_AN_OBJECT)
               }
 
-              /************************
-               * APPLICATION STUFF
-               ************************/
-
+              // OK: JSON object
               else {
 
-                if (!this.localAuth.isRemoteAuthenticated()) {
-                  await this.errorDetected(WS2P_ERR.MUST_BE_AUTHENTICATED_FIRST)
-                }
+                /************************
+                 * CONNECTION STUFF
+                 ************************/
 
-                // Request message
-                else if (data.reqId && typeof data.reqId === "string") {
-                  const body = await this.messageHandler.handleRequestMessage(data)
-                  this.ws.send(JSON.stringify({ resId: data.reqId, body }))
-                }
+                if (data.auth && typeof data.auth === "string") {
 
-                // Answer message
-                else if (data.resId && typeof data.resId === "string") {
-                  // An answer
-                  const request = this.exchanges[data.resId]
-                  this.nbResponsesCount++
-                  if (request !== undefined) {
-                    request.extras.resolve(data.body)
-                  } else {
-                    await this.errorDetected(WS2P_ERR.ANSWER_TO_UNDEFINED_REQUEST)
+                  if (data.auth === "CONNECT") {
+                    if (this.remoteAuth.isAuthenticatedByRemote()) {
+                      return this.errorDetected(WS2P_ERR.ALREADY_AUTHENTICATED_BY_REMOTE)
+                    }
+                    else if (
+                      typeof data.pub !== "string" || typeof data.sig !== "string" || typeof data.challenge !== "string") {
+                      await this.errorDetected(WS2P_ERR.AUTH_INVALID_ASK_FIELDS)
+                    } else {
+                      if (this.expectedPub && data.pub !== this.expectedPub) {
+                        await this.errorDetected(WS2P_ERR.INCORRECT_PUBKEY_FOR_REMOTE)
+                      } else {
+                        const valid = await this.remoteAuth.registerCONNECT(data.challenge, data.sig, data.pub)
+                        if (valid) {
+                          await this.remoteAuth.sendACK(this.ws)
+                        } else {
+                          await this.errorDetected(WS2P_ERR.INCORRECT_ASK_SIGNATURE_FROM_REMOTE)
+                        }
+                      }
+                    }
+                  }
+
+                  else if (data.auth === "ACK") {
+                    if (this.localAuth.isRemoteAuthenticated()) {
+                      return this.errorDetected(WS2P_ERR.ALREADY_AUTHENTICATED_REMOTE)
+                    }
+                    if (typeof data.pub !== "string" || typeof data.sig !== "string") {
+                      await this.errorDetected(WS2P_ERR.AUTH_INVALID_ACK_FIELDS)
+                    } else {
+                      if (this.expectedPub && data.pub !== this.expectedPub) {
+                        await this.errorDetected(WS2P_ERR.INCORRECT_PUBKEY_FOR_REMOTE)
+                      } else {
+                        try {
+                          const valid = await this.localAuth.registerACK(data.sig, data.pub)
+                          if (valid) {
+                            await this.localAuth.sendOK(this.ws)
+                          }
+                        } catch (e) {
+                          await this.errorDetected(WS2P_ERR.INCORRECT_ACK_SIGNATURE_FROM_REMOTE)
+                        }
+                      }
+                    }
+                  }
+
+                  else if (data.auth === "OK") {
+                    if (this.remoteAuth.isAuthenticatedByRemote()) {
+                      return this.errorDetected(WS2P_ERR.ALREADY_AUTHENTICATED_AND_CONFIRMED_BY_REMOTE)
+                    }
+                    if (typeof data.sig !== "string") {
+                      await this.errorDetected(WS2P_ERR.AUTH_INVALID_OK_FIELDS)
+                    } else {
+                      await this.remoteAuth.registerOK(data.sig)
+                    }
+                  }
+
+                  else {
+                    await this.errorDetected(WS2P_ERR.UNKNOWN_AUTH_MESSAGE)
                   }
                 }
 
-                // Push message
+                /************************
+                 * APPLICATION STUFF
+                 ************************/
+
                 else {
-                  this.nbPushsByRemoteCount++
-                  await this.messageHandler.handlePushMessage(data)
+
+                  if (!this.localAuth.isRemoteAuthenticated()) {
+                    await this.errorDetected(WS2P_ERR.MUST_BE_AUTHENTICATED_FIRST)
+                  }
+
+                  // Request message
+                  else if (data.reqId && typeof data.reqId === "string") {
+                    const answer = await this.messageHandler.answerToRequest(data.body)
+                    this.ws.send(JSON.stringify({ resId: data.reqId, body: answer }))
+                  }
+
+                  // Answer message
+                  else if (data.resId && typeof data.resId === "string") {
+                    // An answer
+                    const request = this.exchanges[data.resId]
+                    this.nbResponsesCount++
+                    if (request !== undefined) {
+                      request.extras.resolve(data.body)
+                    } else {
+                      await this.errorDetected(WS2P_ERR.ANSWER_TO_UNDEFINED_REQUEST)
+                    }
+                  }
+
+                  // Push message
+                  else {
+                    this.nbPushsByRemoteCount++
+                    await this.messageHandler.handlePushMessage(data)
+                  }
                 }
               }
-            }
-          })
-        })])
+            })
+          })])
+
+          this.connectedResolve(this.remoteAuth.getPubkey())
+        } catch (e) {
+          this.connectedReject()
+        }
       })()
     }
     return this.connectp
@@ -466,12 +519,39 @@ export class WS2PConnection {
     })
   }
 
-  async pushData(body:WS2PRequest) {
+  async pushBlock(block:BlockDTO) {
+    return this.pushData(WS2P_PUSH.BLOCK, 'block', block)
+  }
+
+  async pushIdentity(idty:IdentityDTO) {
+    return this.pushData(WS2P_PUSH.IDENTITY, 'identity', idty)
+  }
+
+  async pushCertification(cert:CertificationDTO) {
+    return this.pushData(WS2P_PUSH.CERTIFICATION, 'certification', cert)
+  }
+
+  async pushMembership(ms:MembershipDTO) {
+    return this.pushData(WS2P_PUSH.MEMBERSHIP, 'membership', ms)
+  }
+
+  async pushTransaction(tx:TransactionDTO) {
+    return this.pushData(WS2P_PUSH.TRANSACTION, 'transaction', tx)
+  }
+
+  async pushPeer(peer:PeerDTO) {
+    return this.pushData(WS2P_PUSH.PEER, 'peer', peer)
+  }
+
+  async pushData(type:WS2P_PUSH, key:string, data:any) {
     await this.connect()
     return new Promise((resolve, reject) => {
       this.nbPushsToRemoteCount++
       this.ws.send(JSON.stringify({
-        body
+        body: {
+          name: WS2P_PUSH[type],
+          [key]: data
+        }
       }), async (err:any) => {
         if (err) {
           return reject(err)

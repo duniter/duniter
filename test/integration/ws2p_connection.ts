@@ -143,7 +143,7 @@ describe('WS2P', () => {
               s1 = WS2PConnection.newConnectionFromWebSocketServer(ws, new (class TmpHandler implements WS2PMessageHandler {
                 async handlePushMessage(json: any): Promise<void> {
                 }
-                async handleRequestMessage(json: any): Promise<WS2PResponse> {
+                async answerToRequest(json: any): Promise<WS2PResponse> {
                   return { answer: 'world' }
                 }
               }), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
@@ -154,7 +154,7 @@ describe('WS2P', () => {
               s2 = WS2PConnection.newConnectionFromWebSocketServer(ws, new (class TmpHandler implements WS2PMessageHandler {
                 async handlePushMessage(json: any): Promise<void> {
                 }
-                async handleRequestMessage(json: any): Promise<WS2PResponse> {
+                async answerToRequest(json: any): Promise<WS2PResponse> {
                   return { answer: 'this is s2![j = ' + (j++) + ']' }
                 }
               }), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
@@ -350,7 +350,7 @@ describe('WS2P', () => {
         const c5 = WS2PConnection.newConnectionToAddress('localhost:20903', new (class TmpHandler implements WS2PMessageHandler {
           async handlePushMessage(json: any): Promise<void> {
           }
-          async handleRequestMessage(json: any): Promise<WS2PResponse> {
+          async answerToRequest(json: any): Promise<WS2PResponse> {
             return { answer: 'success!' }
           }
         }), new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyRemoteAuth(keypair))
@@ -434,7 +434,7 @@ class WS2PMutedHandler implements WS2PMessageHandler {
   async handlePushMessage(json: any): Promise<void> {
   }
 
-  async handleRequestMessage(json: any): Promise<WS2PResponse> {
+  async answerToRequest(json: any): Promise<WS2PResponse> {
     return {}
   }
 }

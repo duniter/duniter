@@ -1,7 +1,7 @@
-import {Server} from "../../../server"
+import {Server} from "../../../../server"
 import {WS2PConnection} from "./WS2PConnection"
 import {WS2PRequester} from "./WS2PRequester"
-import {pullSandboxToLocalServer} from "../../modules/crawler/lib/sandbox"
+import {pullSandboxToLocalServer} from "../../crawler/lib/sandbox"
 
 export class WS2PDocpoolPuller {
 

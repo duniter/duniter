@@ -1,8 +1,8 @@
-import {Server} from "../../../server"
+import {Server} from "../../../../server"
 import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "./WS2PConnection"
 import {WS2PServerMessageHandler} from "./interface/WS2PServerMessageHandler"
-import {WS2PStreamer} from "../streams/WS2PStreamer"
-import {Key} from "../common-libs/crypto/keyring"
+import {WS2PStreamer} from "../../../lib/streams/WS2PStreamer"
+import {Key} from "../../../lib/common-libs/crypto/keyring"
 
 export class WS2PClient {
 

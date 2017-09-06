@@ -16,11 +16,11 @@ import {FileDAL} from "../../../app/lib/dal/fileDAL"
 import {MembershipDTO} from "../../../app/lib/dto/MembershipDTO"
 import {TransactionDTO} from "../../../app/lib/dto/TransactionDTO"
 import {Key} from "../../../app/lib/common-libs/crypto/keyring"
-import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "../../../app/lib/ws2p/WS2PConnection"
-import {WS2PResponse} from "../../../app/lib/ws2p/impl/WS2PResponse"
-import {WS2PMessageHandler} from "../../../app/lib/ws2p/impl/WS2PMessageHandler"
-import {WS2PCluster} from "../../../app/lib/ws2p/WS2PCluster"
-import {WS2PServer} from "../../../app/lib/ws2p/WS2PServer"
+import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "../../../app/modules/ws2p/lib/WS2PConnection"
+import {WS2PResponse} from "../../../app/modules/ws2p/lib/impl/WS2PResponse"
+import {WS2PMessageHandler} from "../../../app/modules/ws2p/lib/impl/WS2PMessageHandler"
+import {WS2PCluster} from "../../../app/modules/ws2p/lib/WS2PCluster"
+import {WS2PServer} from "../../../app/modules/ws2p/lib/WS2PServer"
 
 const assert      = require('assert');
 const _           = require('underscore');

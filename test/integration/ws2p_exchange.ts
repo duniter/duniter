@@ -1,11 +1,11 @@
-import {WS2PConnection} from "../../app/lib/ws2p/WS2PConnection"
+import {WS2PConnection} from "../../app/modules/ws2p/lib/WS2PConnection"
 import {Key} from "../../app/lib/common-libs/crypto/keyring"
 import {newWS2PBidirectionnalConnection} from "./tools/toolbox"
-import {WS2PRequester} from "../../app/lib/ws2p/WS2PRequester"
-import {WS2PReqMapper} from "../../app/lib/ws2p/WS2PReqMapper"
+import {WS2PRequester} from "../../app/modules/ws2p/lib/WS2PRequester"
+import {WS2PReqMapper} from "../../app/modules/ws2p/WS2PReqMapper"
 import {BlockDTO} from "../../app/lib/dto/BlockDTO"
-import {WS2PMessageHandler} from "../../app/lib/ws2p/impl/WS2PMessageHandler"
-import {WS2PResponse} from "../../app/lib/ws2p/impl/WS2PResponse"
+import {WS2PMessageHandler} from "../../app/modules/ws2p/lib/impl/WS2PMessageHandler"
+import {WS2PResponse} from "../../app/modules/ws2p/lib/impl/WS2PResponse"
 const assert = require('assert');
 
 describe('WS2P exchange', () => {

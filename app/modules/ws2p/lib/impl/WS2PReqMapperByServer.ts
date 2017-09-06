@@ -1,6 +1,6 @@
-import {Server} from "../../../../server"
+import {Server} from "../../../../../server"
 import {WS2PReqMapper} from "../interface/WS2PReqMapper"
-import {BlockDTO} from "../../dto/BlockDTO"
+import {BlockDTO} from "../../../../lib/dto/BlockDTO"
 
 export class WS2PReqMapperByServer implements WS2PReqMapper {
 

@@ -1,4 +1,4 @@
-import {BlockDTO} from "../../dto/BlockDTO"
+import {BlockDTO} from "../../../../lib/dto/BlockDTO"
 
 export interface WS2PReqMapper {
 

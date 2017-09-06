@@ -1,9 +1,9 @@
 import {WS2PServer} from "./WS2PServer"
-import {Server} from "../../../server"
+import {Server} from "../../../../server"
 import {WS2PClient} from "./WS2PClient"
 import {WS2PConnection} from "./WS2PConnection"
-import {randomPick} from "../common-libs/randomPick"
-import {CrawlerConstants} from "../../modules/crawler/lib/constants"
+import {randomPick} from "../../../lib/common-libs/randomPick"
+import {CrawlerConstants} from "../../crawler/lib/constants"
 import {WS2PBlockPuller} from "./WS2PBlockPuller"
 import {WS2PDocpoolPuller} from "./WS2PDocpoolPuller"
 
@@ -22,6 +22,14 @@ export class WS2PCluster {
     }
     this.ws2pServer = await WS2PServer.bindOn(this.server, host, port)
     return this.ws2pServer
+  }
+
+  async close() {
+    if (this.ws2pServer) {
+      await this.ws2pServer.close()
+    }
+    const connections = await this.getAllConnections()
+    await Promise.all(connections.map(c => c.close()))
   }
 
   clientsCount() {

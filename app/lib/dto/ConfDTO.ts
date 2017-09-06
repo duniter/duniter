@@ -1,4 +1,4 @@
-import {CommonConstants} from "../common-libs/constants";
+import {CommonConstants} from "../common-libs/constants"
 const _ = require('underscore');
 const constants = require('../constants');
 
@@ -56,6 +56,16 @@ export interface NetworkConfDTO {
   dos:any
   upnp:boolean
   httplogs:boolean
+}
+
+export interface WS2PConfDTO {
+  ws2p?: {
+    upnp?: boolean
+    remotehost?: string|null
+    remoteport?: number|null
+    port?: number
+    host?: string
+  }
 }
 
 export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO, BranchingDTO {

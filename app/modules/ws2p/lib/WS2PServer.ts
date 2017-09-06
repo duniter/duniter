@@ -1,8 +1,8 @@
-import {Server} from "../../../server"
+import {Server} from "../../../../server"
 import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "./WS2PConnection"
 import {WS2PServerMessageHandler} from "./interface/WS2PServerMessageHandler"
-import {WS2PStreamer} from "../streams/WS2PStreamer"
-import {Key} from "../common-libs/crypto/keyring"
+import {WS2PStreamer} from "../../../lib/streams/WS2PStreamer"
+import {Key} from "../../../lib/common-libs/crypto/keyring"
 
 const WebSocketServer = require('ws').Server
 
@@ -79,6 +79,7 @@ export class WS2PServer {
   static async bindOn(server:Server, host:string, port:number) {
     const ws2ps = new WS2PServer(server, host, port)
     await ws2ps.listenToWebSocketConnections()
+    server.logger.info('WS2P server listening on %s:%s', host, port)
     return ws2ps
   }
 }

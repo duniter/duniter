@@ -4,11 +4,11 @@ import {
   WS2PPubkeyLocalAuth,
   WS2PPubkeyRemoteAuth,
   WS2PRemoteAuth
-} from "../../app/lib/ws2p/WS2PConnection"
+} from "../../app/modules/ws2p/lib/WS2PConnection"
 import {Key, verify} from "../../app/lib/common-libs/crypto/keyring"
 import {assertThrows} from "./tools/toolbox"
-import {WS2PMessageHandler} from "../../app/lib/ws2p/impl/WS2PMessageHandler"
-import {WS2PResponse} from "../../app/lib/ws2p/impl/WS2PResponse"
+import {WS2PMessageHandler} from "../../app/modules/ws2p/lib/impl/WS2PMessageHandler"
+import {WS2PResponse} from "../../app/modules/ws2p/lib/impl/WS2PResponse"
 const assert = require('assert');
 const WebSocketServer = require('ws').Server
 

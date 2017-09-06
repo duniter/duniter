@@ -1,5 +1,5 @@
 import * as stream from "stream"
-import {WS2PConnection} from "../ws2p/WS2PConnection"
+import {WS2PConnection} from "../../modules/ws2p/lib/WS2PConnection"
 
 export class WS2PStreamer extends stream.Transform {
 

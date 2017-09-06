@@ -1,5 +1,5 @@
 import {WS2PConnection} from "./WS2PConnection"
-import {BlockDTO} from "../dto/BlockDTO"
+import {BlockDTO} from "../../../lib/dto/BlockDTO"
 
 export enum WS2P_REQ {
   WOT_REQUIREMENTS_OF_PENDING,

@@ -1,5 +1,5 @@
 import {simpleTestingConf, simpleTestingServer, simpleUser, simpleWS2PNetwork, TestingServer} from "./tools/toolbox"
-import {WS2PCluster} from "../../app/lib/ws2p/WS2PCluster"
+import {WS2PCluster} from "../../app/modules/ws2p/lib/WS2PCluster"
 import {ProverDependency} from "../../app/modules/prover/index"
 
 const assert = require('assert')

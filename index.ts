@@ -5,7 +5,8 @@ import {ConfDTO} from "./app/lib/dto/ConfDTO"
 import {ProverDependency} from "./app/modules/prover/index"
 import {KeypairDependency} from "./app/modules/keypair/index"
 import {CrawlerDependency} from "./app/modules/crawler/index"
-import {BmaDependency} from "./app/modules/bma/index";
+import {BmaDependency} from "./app/modules/bma/index"
+import {WS2PDependency} from "./app/modules/ws2p/index"
 
 const path = require('path');
 const _ = require('underscore');
@@ -104,7 +105,8 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-prover',    required: ProverDependency },
   { name: 'duniter-keypair',   required: KeypairDependency },
   { name: 'duniter-crawler',   required: CrawlerDependency },
-  { name: 'duniter-bma',       required: BmaDependency }
+  { name: 'duniter-bma',       required: BmaDependency },
+  { name: 'duniter-ws2p',      required: WS2PDependency }
 ]);
 
 const PRODUCTION_DEPENDENCIES = DEFAULT_DEPENDENCIES.concat([

@@ -1,11 +1,11 @@
-import {Key, verify} from "../common-libs/crypto/keyring"
+import {Key, verify} from "../../../lib/common-libs/crypto/keyring"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
-import {BlockDTO} from "../dto/BlockDTO"
-import {IdentityDTO} from "../dto/IdentityDTO"
-import {CertificationDTO} from "../dto/CertificationDTO"
-import {MembershipDTO} from "../dto/MembershipDTO"
-import {TransactionDTO} from "../dto/TransactionDTO"
-import {PeerDTO} from "../dto/PeerDTO"
+import {BlockDTO} from "../../../lib/dto/BlockDTO"
+import {IdentityDTO} from "../../../lib/dto/IdentityDTO"
+import {CertificationDTO} from "../../../lib/dto/CertificationDTO"
+import {MembershipDTO} from "../../../lib/dto/MembershipDTO"
+import {TransactionDTO} from "../../../lib/dto/TransactionDTO"
+import {PeerDTO} from "../../../lib/dto/PeerDTO"
 const ws = require('ws')
 const nuuid = require('node-uuid');
 

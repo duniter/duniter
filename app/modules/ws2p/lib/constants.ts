@@ -1,0 +1,8 @@
+export const WS2PConstants = {
+
+  WS2P_UPNP_TTL: 600,
+  WS2P_PORTS_START: 20900,
+  WS2P_PORTS_END: 20999,
+  WS2P_UPNP_INTERVAL: 300
+
+}

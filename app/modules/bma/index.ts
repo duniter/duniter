@@ -138,7 +138,7 @@ export const BmaDependency = {
 
     service: {
       input: (server:Server, conf:NetworkConfDTO, logger:any) => {
-        server.getMainEndpoint = () => Promise.resolve(getEndpoint(conf))
+        server.addEndpointsDefinitions(() => Promise.resolve(getEndpoint(conf)))
         return new BMAPI(server, conf, logger)
       }
     },

@@ -87,8 +87,8 @@ describe("HTTP API", function() {
     const b1 = yield commit({ time: now + 120 });
     yield server2.writeBlock(b0)
     yield server2.writeBlock(b1)
-    const p1 = yield server.PeeringService.generateSelfPeer(server.conf, 0)
-    yield server2.PeeringService.generateSelfPeer(server2.conf, 0)
+    const p1 = yield server.PeeringService.generateSelfPeer(server.conf)
+    yield server2.PeeringService.generateSelfPeer(server2.conf)
     yield server2.writePeer(p1)
     server2.writeBlock(yield commit({ time: now + 120 * 2 }))
     server2.writeBlock(yield commit({ time: now + 120 * 3 }))
@@ -293,14 +293,14 @@ describe("HTTP API", function() {
       let resolve5, resolve6, resolve7
       const p5 = new Promise(res => resolve5 = res)
       const p6 = new Promise(res => resolve6 = res)
-      server.getMainEndpoint = () => "BASIC_MERKLED_API localhost 7777"
+      server.addEndpointsDefinitions(() => Promise.resolve("BASIC_MERKLED_API localhost 7777"))
       const p1 = yield server.PeeringService.generateSelfPeer({
         currency: server.conf.currency
       }, 0)
       client.on('message', function message(data) {
         const peer = JSON.parse(data);
         if (peer.block.match(/2-/)) {
-          server2.PeeringService.generateSelfPeer(server.conf, 0)
+          server2.PeeringService.generateSelfPeer(server.conf)
           return resolve5(peer)
         }
         if (peer.block.match(/1-/) && peer.pubkey === 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo') {

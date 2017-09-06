@@ -3,7 +3,7 @@ import {MembershipService} from "./app/service/MembershipService"
 import {PeeringService} from "./app/service/PeeringService"
 import {BlockchainService} from "./app/service/BlockchainService"
 import {TransactionService} from "./app/service/TransactionsService"
-import {ConfDTO, NetworkConfDTO} from "./app/lib/dto/ConfDTO"
+import {ConfDTO} from "./app/lib/dto/ConfDTO"
 import {FileDAL} from "./app/lib/dal/fileDAL"
 import {DuniterBlockchain} from "./app/lib/blockchain/DuniterBlockchain"
 import {SQLBlockchain} from "./app/lib/blockchain/SqlBlockchain"
@@ -24,7 +24,6 @@ import {PeerDTO} from "./app/lib/dto/PeerDTO"
 import {OtherConstants} from "./app/lib/other_constants"
 
 export interface HookableServer {
-  getMainEndpoint: (...args:any[]) => Promise<any>
   generatorGetJoinData: (...args:any[]) => Promise<any>
   generatorComputeNewCerts: (...args:any[]) => Promise<any>
   generatorNewCertsToLinks: (...args:any[]) => Promise<any>
@@ -47,6 +46,7 @@ const logger      = require('./app/lib/logger').NewLogger('server');
 export class Server extends stream.Duplex implements HookableServer {
 
   private paramsP:Promise<any>|null
+  private endpointsDefinitions:(()=>Promise<string>)[] = []
   conf:ConfDTO
   dal:FileDAL
 
@@ -316,7 +316,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   recomputeSelfPeer() {
-    return this.PeeringService.generateSelfPeer(this.conf, 0)
+    return this.PeeringService.generateSelfPeer(this.conf)
   }
 
   getCountOfSelfMadePoW() {
@@ -565,16 +565,18 @@ export class Server extends stream.Duplex implements HookableServer {
     return this.dal.getLogContent(linesQuantity)
   }
 
+  addEndpointsDefinitions(definition:()=>Promise<string>) {
+    this.endpointsDefinitions.push(definition)
+  }
+
+  async getEndpoints() {
+    const endpoints = await Promise.all(this.endpointsDefinitions.map(d => d()))
+    return endpoints.filter(ep => !!ep)
+  }
+
   /*****************
    * MODULES PLUGS
    ****************/
-
-  /**
-   * Default endpoint. To be overriden by a module to specify another endpoint value (for ex. BMA).
-   */
-  getMainEndpoint(conf:NetworkConfDTO): Promise<any> {
-    return Promise.resolve('DEFAULT_ENDPOINT')
-  }
 
   /**
    * Default WoT incoming data for new block. To be overriden by a module.

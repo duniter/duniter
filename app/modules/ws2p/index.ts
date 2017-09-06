@@ -46,7 +46,9 @@ export const WS2PDependency = {
 
     service: {
       input: (server:Server, conf:WS2PConfDTO, logger:any) => {
-        return new WS2PAPI(server, conf, logger)
+        const api = new WS2PAPI(server, conf, logger)
+        server.addEndpointsDefinitions(() => api.getEndpoint())
+        return api
       }
     }
   }
@@ -56,7 +58,7 @@ export class WS2PAPI extends stream.Transform {
 
   // Public http interface
   private cluster:WS2PCluster
-  private upnpAPI:WS2PUpnp
+  private upnpAPI:WS2PUpnp|null
 
   constructor(
     private server:Server,
@@ -89,6 +91,7 @@ export class WS2PAPI extends stream.Transform {
         this.upnpAPI = await new WS2PUpnp(this.logger)
         const { host, port } = await this.upnpAPI.startRegular()
         await this.cluster.listen(host, port)
+        await this.server.PeeringService.generateSelfPeer(this.server.conf)
       } catch (e) {
         this.logger.warn(e);
       }
@@ -102,5 +105,9 @@ export class WS2PAPI extends stream.Transform {
     if (this.upnpAPI) {
       this.upnpAPI.stopRegular();
     }
+  }
+
+  async getEndpoint() {
+    return this.upnpAPI ? this.upnpAPI.getRemoteEndpoint() : ''
   }
 }

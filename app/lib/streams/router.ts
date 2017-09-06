@@ -95,7 +95,7 @@ export class RouterStream extends stream.Transform {
       members = RouterStream.chooseXin(members, isSelfDocument ? constants.NETWORK.MAX_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS : constants.NETWORK.MAX_MEMBERS_TO_FORWARD_TO);
       nonmembers = RouterStream.chooseXin(nonmembers,  isSelfDocument ? constants.NETWORK.MAX_NON_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS : constants.NETWORK.MAX_NON_MEMBERS_TO_FORWARD_TO);
       let mainRoutes:any = members.map((p:any) => (p.member = true) && p).concat(nonmembers);
-      let mirrors = await this.peeringService.mirrorEndpoints();
+      let mirrors = await this.peeringService.mirrorBMAEndpoints();
       const peersToRoute:DBPeer[] = mainRoutes.concat(mirrors.map((mep, index) => { return {
         pubkey: 'M' + index + '_' + this.peeringService.pubkey,
         endpoints: [mep]

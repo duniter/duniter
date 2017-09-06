@@ -52,14 +52,15 @@ export class PeeringService {
     }
     let thePeer = this.peerInstance;
     if (!thePeer) {
-      thePeer = await this.generateSelfPeer(this.conf, 0)
+      thePeer = await this.generateSelfPeer(this.conf)
     }
     return PeerDTO.fromJSONObject(thePeer)
   }
 
-  async mirrorEndpoints() {
-    let localPeer = await this.peer();
-    return this.getOtherEndpoints(localPeer.endpoints, this.conf);
+  async mirrorBMAEndpoints() {
+    const localPeer = await this.peer();
+    const localEndpoints = await this.server.getEndpoints()
+    return this.getOtherEndpoints(localPeer.endpoints, localEndpoints).filter((ep) => ep.match(/^BASIC_MERKLED_API/))
   }
 
   checkPeerSignature(p:PeerDTO) {
@@ -149,11 +150,11 @@ export class PeeringService {
         this.logger.info('✔ PEER %s', peering.pubkey.substr(0, 8))
         let savedPeer = PeerDTO.fromJSONObject(peerEntity).toDBPeer()
         if (peerEntity.pubkey == this.selfPubkey) {
-          const localEndpoint = await this.server.getMainEndpoint(this.conf);
-          const localNodeNotListed = !peerEntityOld.containsEndpoint(localEndpoint);
+          const localEndpoints = await this.server.getEndpoints()
+          const localNodeNotListed = !peerEntityOld.containsAllEndpoints(localEndpoints)
           const current = localNodeNotListed && (await this.dal.getCurrentBlockOrNull());
           if (!localNodeNotListed) {
-            const indexOfThisNode = peerEntity.endpoints.indexOf(localEndpoint);
+            const indexOfThisNode = PeerDTO.indexOfFirst(localEndpoints, peerEntity.endpoints)
             if (indexOfThisNode !== -1) {
               this.server.push({
                 nodeIndexInPeers: indexOfThisNode
@@ -164,7 +165,7 @@ export class PeeringService {
           }
           if (localNodeNotListed && (!current || current.number > blockNumber)) {
             // Document with pubkey of local peer, but doesn't contain local interface: we must add it
-            this.generateSelfPeer(this.conf, 0);
+            this.generateSelfPeer(this.conf);
           } else {
             this.peerInstance = peerEntity;
           }
@@ -182,7 +183,7 @@ export class PeeringService {
     return this.server.writePeer(pretendedNewer)
   }
 
-  async generateSelfPeer(theConf:ConfDTO, signalTimeInterval:number) {
+  async generateSelfPeer(theConf:ConfDTO, signalTimeInterval = 0) {
     const current = await this.server.dal.getCurrentBlockOrNull();
     const currency = theConf.currency || constants.DEFAULT_CURRENCY_NAME;
     const peers = await this.dal.findPeers(this.selfPubkey);
@@ -195,8 +196,8 @@ export class PeeringService {
     if (peers.length != 0 && peers[0]) {
       p1 = _(peers[0]).extend({version: constants.DOCUMENTS_VERSION, currency: currency});
     }
-    let endpoint = await this.server.getMainEndpoint(theConf);
-    let otherPotentialEndpoints = this.getOtherEndpoints(p1.endpoints, theConf);
+    const localEndpoints = await this.server.getEndpoints()
+    const otherPotentialEndpoints = this.getOtherEndpoints(p1.endpoints, localEndpoints)
     logger.info('Sibling endpoints:', otherPotentialEndpoints);
     let reals = await Promise.all(otherPotentialEndpoints.map(async (theEndpoint:string) => {
       let real = true;
@@ -220,7 +221,7 @@ export class PeeringService {
       return real;
     }))
     let toConserve = otherPotentialEndpoints.filter((ep, i) => reals[i]);
-    if (!currency || endpoint == 'BASIC_MERKLED_API') {
+    if (!currency) {
       logger.error('It seems there is an issue with your configuration.');
       logger.error('Please restart your node with:');
       logger.error('$ duniter restart');
@@ -240,7 +241,7 @@ export class PeeringService {
       currency: currency,
       pubkey: this.selfPubkey,
       block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
-      endpoints: _.uniq([endpoint].concat(toConserve).concat(this.conf.endpoints || []))
+      endpoints: _.uniq(localEndpoints.concat(toConserve).concat(this.conf.endpoints || []))
     };
     const raw2 = dos2unix(PeerDTO.fromJSONObject(p2).getRaw());
     logger.info('External access:', PeerDTO.fromJSONObject(p2).getURL())
@@ -259,16 +260,14 @@ export class PeeringService {
     // Set peer's statut to UP
     await this.peer(selfPeer);
     this.server.streamPush(selfPeer);
-    logger.info("Next peering signal in %s min", signalTimeInterval / 1000 / 60);
+    if (signalTimeInterval) {
+      logger.info("Next peering signal in %s min", signalTimeInterval / 1000 / 60)
+    }
     return selfPeer;
   }
 
-  private getOtherEndpoints(endpoints:string[], theConf:ConfDTO) {
-    return endpoints.filter((ep) => {
-      return !ep.match(constants.BMA_REGEXP) || (
-          !(ep.includes(' ' + theConf.remoteport) && (
-          ep.includes(theConf.remotehost || '') || ep.includes(theConf.remoteipv6 || '') || ep.includes(theConf.remoteipv4 || ''))));
-    });
+  private getOtherEndpoints(endpoints:string[], localEndpoints:string[]) {
+    return endpoints.filter((ep) => localEndpoints.indexOf(ep) === -1)
   }
 }
 

@@ -2,8 +2,15 @@ import {WS2PConstants} from "./constants"
 const upnp = require('nnupnp');
 const Q = require('q');
 
+interface UPnPBinding {
+  remotehost:string
+  host:string
+  port:number
+}
+
 export class WS2PUpnp {
 
+  private currentConfig:UPnPBinding|null
   private interval:NodeJS.Timer|null
   private client = upnp.createClient()
 
@@ -20,10 +27,14 @@ export class WS2PUpnp {
     }
   }
 
+  async getRemoteEndpoint() {
+    return !this.currentConfig ? '' : ['WS2P', this.currentConfig.remotehost, this.currentConfig.port].join(' ')
+  }
+
   openPort() {
     return Q.Promise(async (resolve:any, reject:any) => {
       const upnpBinding = await WS2PUpnp.getAvailablePort(this.client)
-      this.logger.trace('WS2P: mapping external port %s to local %s using UPnP...', upnpBinding.host, upnpBinding.port)
+      this.logger.trace('WS2P: mapping external port %s to local %s using UPnP...', upnpBinding.port, [upnpBinding.host, upnpBinding.port].join(':'))
       const client = upnp.createClient()
       client.portMapping({
         'public': upnpBinding.port,
@@ -35,6 +46,7 @@ export class WS2PUpnp {
           this.logger.warn(err)
           return reject(err)
         }
+        this.currentConfig = upnpBinding
         resolve(upnpBinding)
       })
     })
@@ -56,7 +68,7 @@ export class WS2PUpnp {
   }
 
   static async getLocalIP(client:any) {
-    return await new Promise((resolve:any, reject:any) => {
+    return await new Promise<string>((resolve:any, reject:any) => {
       client.findGateway((err:any, res:any, localIP:any) => {
         if (err) return reject(err)
         resolve(localIP)
@@ -64,8 +76,18 @@ export class WS2PUpnp {
     })
   }
 
+  static async getRemoteIP(client:any): Promise<string> {
+    return await new Promise<string>((resolve:any, reject:any) => {
+      client.externalIp((err:any, externalIP:string) => {
+        if (err) return reject(err)
+        resolve(externalIP)
+      })
+    })
+  }
+
   static async getAvailablePort(client:any) {
     const localIP = await WS2PUpnp.getLocalIP(client)
+    const remoteIP = await WS2PUpnp.getRemoteIP(client)
     const mappings:{
       private: {
         host:string
@@ -89,6 +111,7 @@ export class WS2PUpnp {
       throw "No port available for UPnP"
     }
     return {
+      remotehost: remoteIP,
       host: localIP,
       port: availablePort
     }

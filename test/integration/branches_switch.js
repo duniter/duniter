@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const index_1 = require("../../app/modules/crawler/index");
+const index_2 = require("../../app/modules/bma/index");
 const co = require('co');
 const _ = require('underscore');
 const duniter = require('../../index');
@@ -46,8 +47,8 @@ describe("Switch", function () {
         toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F' }, { server: s1 });
         yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
         yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-        s1.getMainEndpoint = require('../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint;
-        s2.getMainEndpoint = require('../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint;
+        s1.addEndpointsDefinitions(() => index_2.BmaDependency.duniter.methods.getMainEndpoint(s1.conf));
+        s2.addEndpointsDefinitions(() => index_2.BmaDependency.duniter.methods.getMainEndpoint(s2.conf));
         yield cat.createIdentity();
         yield toc.createIdentity();
         yield toc.cert(cat);

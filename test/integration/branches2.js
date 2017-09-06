@@ -69,8 +69,8 @@ describe("SelfFork", function () {
         });
         yield s1.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
         yield s2.initWithDAL().then(bma).then((bmapi) => bmapi.openConnections());
-        s1.getMainEndpoint = index_1.BmaDependency.duniter.methods.getMainEndpoint;
-        s2.getMainEndpoint = index_1.BmaDependency.duniter.methods.getMainEndpoint;
+        s1.addEndpointsDefinitions(() => index_1.BmaDependency.duniter.methods.getMainEndpoint(s1.conf));
+        s2.addEndpointsDefinitions(() => index_1.BmaDependency.duniter.methods.getMainEndpoint(s2.conf));
         // Server 1
         yield cat.createIdentity();
         yield toc.createIdentity();

@@ -13,6 +13,8 @@ export class WS2PCluster {
 
   private ws2pServer:WS2PServer|null = null
   private ws2pClients:{[k:string]:WS2PClient} = {}
+  private host:string|null = null
+  private port:number|null = null
 
   constructor(private server:Server) {}
 
@@ -21,6 +23,8 @@ export class WS2PCluster {
       await this.ws2pServer.close()
     }
     this.ws2pServer = await WS2PServer.bindOn(this.server, host, port)
+    this.host = host
+    this.port = port
     return this.ws2pServer
   }
 

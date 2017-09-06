@@ -139,6 +139,15 @@ export class PeerDTO implements Cloneable {
     return this.endpoints.reduce((found:boolean, endpoint:string) => found || endpoint == ep, false)
   }
 
+  containsAllEndpoints(endpoints:string[]) {
+    for (const ep of endpoints) {
+      if (!this.containsEndpoint(ep)) {
+        return false
+      }
+    }
+    return true
+  }
+
   endpointSum() {
     return this.endpoints.join('_')
   }
@@ -188,5 +197,15 @@ export class PeerDTO implements Cloneable {
 
   static endpoint2host(endpoint:string) {
     return PeerDTO.fromJSONObject({ endpoints: [endpoint] }).getURL()
+  }
+
+  static indexOfFirst(endpoints:string[], intoEndpoints:string[]) {
+    for (let i = 0; i < intoEndpoints.length; i++) {
+      const index = endpoints.indexOf(intoEndpoints[i])
+      if (index !== -1) {
+        return index
+      }
+    }
+    return 0
   }
 }

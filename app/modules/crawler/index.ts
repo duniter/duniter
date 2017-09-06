@@ -108,7 +108,7 @@ export const CrawlerDependency = {
           logger.info('Applied');
           let selfPeer = await server.dal.getPeer(server.PeeringService.pubkey);
           if (!selfPeer) {
-            await server.PeeringService.generateSelfPeer(server.conf, 0)
+            await server.PeeringService.generateSelfPeer(server.conf)
             selfPeer = await server.dal.getPeer(server.PeeringService.pubkey);
           }
           logger.info('Send self peering ...');

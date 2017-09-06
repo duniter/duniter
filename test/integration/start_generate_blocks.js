@@ -71,12 +71,12 @@ describe("Generation", function() {
 
       let servers = [s1, s2];
       for (const server of servers) {
-        server.getMainEndpoint = require('../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
+        server.addEndpointsDefinitions(() => require('../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint(server.conf))
         yield server.initWithDAL();
         server.bma = yield bma(server);
         yield server.bma.openConnections();
         require('../../app/modules/router').duniter.methods.routeToNetwork(server);
-        yield server.PeeringService.generateSelfPeer(server.conf, 0);
+        yield server.PeeringService.generateSelfPeer(server.conf);
         const prover = require('../../app/modules/prover').ProverDependency.duniter.methods.prover(server);
         server.startBlockComputation = () => prover.startService();
         server.stopBlockComputation = () => prover.stopService();

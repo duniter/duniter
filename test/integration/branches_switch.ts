@@ -1,5 +1,6 @@
 "use strict";
 import {CrawlerDependency} from "../../app/modules/crawler/index"
+import {BmaDependency} from "../../app/modules/bma/index"
 
 const co = require('co');
 const _         = require('underscore');
@@ -61,8 +62,8 @@ describe("Switch", function() {
 
     yield s1.initWithDAL().then(bma).then((bmapi:any) => bmapi.openConnections());
     yield s2.initWithDAL().then(bma).then((bmapi:any) => bmapi.openConnections());
-    s1.getMainEndpoint = require('../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
-    s2.getMainEndpoint = require('../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
+    s1.addEndpointsDefinitions(() => BmaDependency.duniter.methods.getMainEndpoint(s1.conf))
+    s2.addEndpointsDefinitions(() => BmaDependency.duniter.methods.getMainEndpoint(s2.conf))
     yield cat.createIdentity();
     yield toc.createIdentity();
     yield toc.cert(cat);

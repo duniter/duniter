@@ -1,6 +1,6 @@
 import {OtherConstants} from "../../app/lib/other_constants"
 import {NewLogger} from "../../app/lib/logger"
-import {BmaDependency} from "../../app/modules/bma/index";
+import {BmaDependency} from "../../app/modules/bma/index"
 import {CrawlerDependency} from "../../app/modules/crawler/index"
 import {waitForkResolution, waitToHaveBlock} from "./tools/toolbox"
 
@@ -79,8 +79,8 @@ describe("SelfFork", function() {
 
     yield s1.initWithDAL().then(bma).then((bmapi:any) => bmapi.openConnections());
     yield s2.initWithDAL().then(bma).then((bmapi:any) => bmapi.openConnections());
-    s1.getMainEndpoint = BmaDependency.duniter.methods.getMainEndpoint
-    s2.getMainEndpoint = BmaDependency.duniter.methods.getMainEndpoint
+    s1.addEndpointsDefinitions(() => BmaDependency.duniter.methods.getMainEndpoint(s1.conf))
+    s2.addEndpointsDefinitions(() => BmaDependency.duniter.methods.getMainEndpoint(s2.conf))
 
     // Server 1
     yield cat.createIdentity();

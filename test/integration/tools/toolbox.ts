@@ -230,6 +230,10 @@ export const NewTestingServer = (conf:any) => {
   if (conf.sigQty === undefined) {
     conf.sigQty = 1;
   }
+  // Disable UPnP during tests
+  if (!conf.ws2p) {
+    conf.ws2p = { upnp: false }
+  }
   const server = new Server(
     '~/.config/duniter/' + (conf.homename || 'dev_unit_tests'),
     conf.memory !== undefined ? conf.memory : MEMORY_MODE,
@@ -276,7 +280,9 @@ export class TestingServer {
     private port:number,
     private server:Server) {
 
-    server.getMainEndpoint = require('../../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint
+    server.addEndpointsDefinitions(async () => {
+      return require('../../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint(server.conf)
+    })
   }
 
   get _server() {

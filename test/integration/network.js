@@ -23,6 +23,7 @@ const s1 = node('bb33', _.extend({
   ipv4: '127.0.0.1',
   port: '20501',
   remoteport: '20501',
+  ws2p: { upnp: false },
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
@@ -34,6 +35,7 @@ const s1 = node('bb33', _.extend({
 const s2 = node('bb12', _.extend({
   port: '20502',
   remoteport: '20502',
+  ws2p: { upnp: false },
   pair: {
     pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
     sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'

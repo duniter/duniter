@@ -93,6 +93,13 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
           const fromNumber:number = data.params.fromNumber
           body = await this.mapper.getBlocks(count, fromNumber)
           break;
+        case WS2P_REQ[WS2P_REQ.WOT_REQUIREMENTS_OF_PENDING]:
+          if (isNaN(data.params.minCert)) {
+            throw "Wrong param `minCert`"
+          }
+          const minCert:number = data.params.minCert
+          body = await this.mapper.getRequirementsOfPending(minCert)
+          break;
         default:
           throw Error(WS2P_REQERROR[WS2P_REQERROR.UNKNOWN_REQUEST])
       }

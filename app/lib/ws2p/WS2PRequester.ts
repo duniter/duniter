@@ -2,6 +2,7 @@ import {WS2PConnection} from "./WS2PConnection"
 import {BlockDTO} from "../dto/BlockDTO"
 
 export enum WS2P_REQ {
+  WOT_REQUIREMENTS_OF_PENDING,
   BLOCKS_CHUNK,
   BLOCK_BY_NUMBER,
   CURRENT
@@ -26,6 +27,10 @@ export class WS2PRequester {
 
   getBlocks(count:number, fromNumber:number): Promise<BlockDTO[]> {
     return this.query(WS2P_REQ.BLOCKS_CHUNK, { count, fromNumber })
+  }
+
+  async getRequirementsPending(minCert = 1): Promise<any> {
+    return this.query(WS2P_REQ.WOT_REQUIREMENTS_OF_PENDING, { minCert })
   }
 
   private query(req:WS2P_REQ, params:any = {}): Promise<any> {

@@ -5,6 +5,7 @@ import {WS2PConnection} from "./WS2PConnection"
 import {randomPick} from "../common-libs/randomPick"
 import {CrawlerConstants} from "../../modules/crawler/lib/constants"
 import {WS2PBlockPuller} from "./WS2PBlockPuller"
+import {WS2PDocpoolPuller} from "./WS2PDocpoolPuller"
 
 const nuuid = require('node-uuid')
 
@@ -63,5 +64,14 @@ export class WS2PCluster {
     if (current) {
       this.server.pullingEvent('end', current.number)
     }
+  }
+
+  async pullDocpool() {
+    const connections = await this.getAllConnections()
+    const chosen = randomPick(connections, CrawlerConstants.CRAWL_PEERS_COUNT)
+    await Promise.all(chosen.map(async (conn) => {
+      const puller = new WS2PDocpoolPuller(this.server, conn)
+      await puller.pull()
+    }))
   }
 }

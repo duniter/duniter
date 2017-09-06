@@ -25,4 +25,12 @@ export class WS2PReqMapperByServer implements WS2PReqMapper {
     }
     return this.server.dal.getBlocksBetween(from, from + count - 1)
   }
+
+  async getRequirementsOfPending(minsig: number): Promise<any> {
+    const identities = await this.server.dal.idtyDAL.query('SELECT i.*, count(c.sig) as nbSig FROM idty i, cert c WHERE c.target = i.hash group by i.hash having nbSig >= ?', minsig)
+    const all = await this.server.BlockchainService.requirementsOfIdentities(identities, false)
+    return {
+      identities: all
+    }
+  }
 }

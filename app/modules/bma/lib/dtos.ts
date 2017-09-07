@@ -395,6 +395,13 @@ export interface HttpPeers {
   peers: DBPeer2[]
 }
 
+export interface HttpWS2PInfo {
+  peers: {
+    level1: number,
+    level2: number
+  }
+}
+
 export const MerkleOfPeers = {
   "depth": Number,
   "nodesCount": Number,

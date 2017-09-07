@@ -22,6 +22,7 @@ import {RevocationDTO} from "./app/lib/dto/RevocationDTO"
 import {TransactionDTO} from "./app/lib/dto/TransactionDTO"
 import {PeerDTO} from "./app/lib/dto/PeerDTO"
 import {OtherConstants} from "./app/lib/other_constants"
+import {WS2PCluster} from "./app/modules/ws2p/lib/WS2PCluster"
 
 export interface HookableServer {
   generatorGetJoinData: (...args:any[]) => Promise<any>
@@ -48,6 +49,7 @@ export class Server extends stream.Duplex implements HookableServer {
   private paramsP:Promise<any>|null
   private endpointsDefinitions:(()=>Promise<string>)[] = []
   private wrongEndpointsFilters:((endpoints:string[])=>Promise<string[]>)[] = []
+  ws2pCluster:WS2PCluster|undefined
   conf:ConfDTO
   dal:FileDAL
 

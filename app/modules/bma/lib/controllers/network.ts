@@ -1,6 +1,7 @@
 import {AbstractController} from "./AbstractController";
 import {BMAConstants} from "../constants";
-import {HttpMerkleOfPeers, HttpPeer, HttpPeers} from "../dtos";
+import {HttpMerkleOfPeers, HttpPeer, HttpPeers, HttpWS2PInfo} from "../dtos";
+import {WS2PDependency} from "../../../ws2p/index"
 
 const _                = require('underscore');
 const http2raw         = require('../http2raw');
@@ -62,6 +63,22 @@ export class NetworkBinding extends AbstractController {
           'signature',
           'endpoints');
       })
+    };
+  }
+
+  async ws2pInfo(): Promise<HttpWS2PInfo> {
+    const cluster = this.server.ws2pCluster
+    let level1 = 0
+    let level2 = 0
+    if (cluster) {
+      level1 = await cluster.clientsCount()
+      level2 = await cluster.servedCount()
+    }
+    return {
+      peers: {
+        level1,
+        level2
+      }
     };
   }
 }

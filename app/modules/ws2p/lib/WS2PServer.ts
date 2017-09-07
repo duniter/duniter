@@ -35,8 +35,8 @@ export class WS2PServer {
         new WS2PServerMessageHandler(this.server),
         new WS2PPubkeyLocalAuth(key),
         new WS2PPubkeyRemoteAuth(key), {
-        connectionTimeout: 100,
-        requestTimeout: 100
+        connectionTimeout: 5000,
+        requestTimeout: 5000
       })
 
       this.connections.push(c)

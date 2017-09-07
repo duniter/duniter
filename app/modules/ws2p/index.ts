@@ -4,6 +4,9 @@ import {Server} from "../../../server"
 import * as stream from "stream"
 import {WS2PCluster} from "./lib/WS2PCluster"
 import {WS2PUpnp} from "./lib/ws2p-upnp"
+import {CommonConstants} from "../../lib/common-libs/constants"
+
+const nuuid = require('node-uuid')
 
 export const WS2PDependency = {
   duniter: {
@@ -21,7 +24,10 @@ export const WS2PDependency = {
 
       onLoading: async (conf:WS2PConfDTO, program:any, logger:any) => {
 
-        conf.ws2p = conf.ws2p || {}
+        conf.ws2p = conf.ws2p || { uuid: nuuid.v4().slice(0,8) }
+
+        // For config which does not have uuid filled in
+        conf.ws2p.uuid = conf.ws2p.uuid || nuuid.v4().slice(0,8)
 
         if (program.ws2pHost !== undefined)       conf.ws2p.host = program.ws2pHost
         if (program.ws2pPort !== undefined)       conf.ws2p.port = parseInt(program.ws2pPort)
@@ -47,7 +53,8 @@ export const WS2PDependency = {
     service: {
       input: (server:Server, conf:WS2PConfDTO, logger:any) => {
         const api = new WS2PAPI(server, conf, logger)
-        server.addEndpointsDefinitions(() => api.getEndpoint())
+        server.ws2pCluster = api.getCluster()
+        server.addEndpointsDefinitions(async () => api.getEndpoint())
         server.addWrongEndpointFilter((endpoints:string[]) => getWrongEndpoints(endpoints, conf))
         return api
       }
@@ -73,7 +80,11 @@ export class WS2PAPI extends stream.Transform {
     private conf:WS2PConfDTO,
     private logger:any) {
     super({ objectMode: true })
-    this.cluster = new WS2PCluster(server)
+    this.cluster = WS2PCluster.plugOn(server)
+  }
+
+  getCluster() {
+    return this.cluster
   }
 
   startService = async () => {
@@ -104,10 +115,14 @@ export class WS2PAPI extends stream.Transform {
         this.logger.warn(e);
       }
     }
+
+    // In any case, we trigger the Level 1 connection
+    await this.cluster.startCrawling()
   }
 
   stopService = async () => {
     if (this.cluster) {
+      await this.cluster.stopCrawling()
       await this.cluster.close()
     }
     if (this.upnpAPI) {
@@ -116,6 +131,22 @@ export class WS2PAPI extends stream.Transform {
   }
 
   async getEndpoint() {
-    return this.upnpAPI ? this.upnpAPI.getRemoteEndpoint() : ''
+    if (this.upnpAPI && this.server.conf.ws2p) {
+      const config = this.upnpAPI.getCurrentConfig()
+      return !config ? '' : ['WS2P', this.server.conf.ws2p.uuid, config.remotehost, config.port].join(' ')
+    }
+    else if (this.server.conf.ws2p
+      && this.server.conf.ws2p.uuid
+      && this.server.conf.ws2p.remotehost
+      && this.server.conf.ws2p.remoteport) {
+      return ['WS2P',
+        this.server.conf.ws2p.uuid,
+        this.server.conf.ws2p.remotehost,
+        this.server.conf.ws2p.remoteport
+      ].join(' ')
+    }
+    else {
+      return ''
+    }
   }
 }

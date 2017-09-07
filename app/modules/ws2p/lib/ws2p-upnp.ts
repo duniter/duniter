@@ -1,8 +1,7 @@
 import {WS2PConstants} from "./constants"
 const upnp = require('nnupnp');
-const Q = require('q');
 
-interface UPnPBinding {
+export interface UPnPBinding {
   remotehost:string
   host:string
   port:number
@@ -20,25 +19,39 @@ export class WS2PUpnp {
 
   async checkUPnPisAvailable() {
     try {
-      await Q.nbind(this.client.externalIp, this.client)()
+      await new Promise((resolve, reject) => {
+        this.client.externalIp((err:any, res:any) => {
+          if (err) {
+            resolve(true)
+          } else {
+            resolve(false)
+          }
+        })
+      })
       return true
     } catch (err) {
       return false
     }
   }
 
-  async getRemoteEndpoint() {
-    return !this.currentConfig ? '' : ['WS2P', this.currentConfig.remotehost, this.currentConfig.port].join(' ')
+  getCurrentConfig() {
+    return this.currentConfig
   }
 
+  /**
+   * Always open the same port during an execution of Duniter.
+   * @returns { host:string, port:number }
+   */
   openPort() {
-    return Q.Promise(async (resolve:any, reject:any) => {
-      const upnpBinding = await WS2PUpnp.getAvailablePort(this.client)
-      this.logger.trace('WS2P: mapping external port %s to local %s using UPnP...', upnpBinding.port, [upnpBinding.host, upnpBinding.port].join(':'))
+    return new Promise<{ host:string, port:number }>(async (resolve:any, reject:any) => {
+      if (!this.currentConfig) {
+        this.currentConfig = await WS2PUpnp.getAvailablePort(this.client)
+      }
+      this.logger.trace('WS2P: mapping external port %s to local %s using UPnP...', this.currentConfig.port, [this.currentConfig.host, this.currentConfig.port].join(':'))
       const client = upnp.createClient()
       client.portMapping({
-        'public': upnpBinding.port,
-        'private': upnpBinding.port,
+        'public': this.currentConfig.port,
+        'private': this.currentConfig.port,
         'ttl': WS2PConstants.WS2P_UPNP_TTL
       }, (err:any) => {
         client.close()
@@ -46,8 +59,7 @@ export class WS2PUpnp {
           this.logger.warn(err)
           return reject(err)
         }
-        this.currentConfig = upnpBinding
-        resolve(upnpBinding)
+        resolve(this.currentConfig)
       })
     })
   }
@@ -96,14 +108,11 @@ export class WS2PUpnp {
         port:number
       }
     }[] = await WS2PUpnp.getUPnPMappings(client)
-    const ipOfPort:string[] = []
     const externalPortsUsed = mappings.map((m) => {
-      ipOfPort.push(m.private.host)
       return m.public.port
     })
     let availablePort = WS2PConstants.WS2P_PORTS_START
     while (externalPortsUsed.indexOf(availablePort) !== -1
-      && ipOfPort[externalPortsUsed.indexOf(availablePort)] !== localIP
       && availablePort <= WS2PConstants.WS2P_PORTS_END) {
       availablePort++
     }

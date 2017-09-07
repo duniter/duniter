@@ -93,6 +93,10 @@ export class PeerDAL extends AbstractSQLite<DBPeer> {
     return this.sqlFindOne({ pubkey: pubkey })
   }
 
+  getPeersWithEndpointsLike(str:string) {
+    return this.query('SELECT * FROM peer WHERE endpoints LIKE ?', ['%' + str + '%'])
+  }
+
   savePeer(peer:DBPeer) {
     return this.saveEntity(peer)
   }

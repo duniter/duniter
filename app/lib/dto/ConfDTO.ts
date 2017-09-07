@@ -60,6 +60,7 @@ export interface NetworkConfDTO {
 
 export interface WS2PConfDTO {
   ws2p?: {
+    uuid: string
     upnp?: boolean
     remotehost?: string|null
     remoteport?: number|null
@@ -68,7 +69,7 @@ export interface WS2PConfDTO {
   }
 }
 
-export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO, BranchingDTO {
+export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO, BranchingDTO, WS2PConfDTO {
 
   constructor(
     public loglevel: string,
@@ -124,6 +125,14 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
     public upnp: boolean,
     public homename: string,
     public memory: boolean,
+    public ws2p?: {
+      uuid: string
+      upnp?: boolean
+      remotehost?: string|null
+      remoteport?: number|null
+      port?: number
+      host?: string
+    }
 ) {}
 
   static mock() {

@@ -3,6 +3,12 @@ import {hashf} from "../common"
 import {CommonConstants} from "../common-libs/constants"
 import {Cloneable} from "./Cloneable"
 
+export interface WS2PEndpoint {
+  uuid:string
+  host:string
+  port:number
+}
+
 export class PeerDTO implements Cloneable {
 
   clone(): any {
@@ -86,7 +92,22 @@ export class PeerDTO implements Cloneable {
       }
     });
     return bma || {};
-  };
+  }
+
+  getWS2P() {
+    let api:any = null;
+    this.endpoints.forEach((ep) => {
+      const matches = !api && ep.match(CommonConstants.WS2P_REGEXP)
+      if (matches) {
+        api = {
+          uuid: matches[1],
+          host: matches[2] || '',
+          port: parseInt(matches[3]) || 0
+        }
+      }
+    })
+    return api || {}
+  }
 
   getDns() {
     const bma = this.getBMA();

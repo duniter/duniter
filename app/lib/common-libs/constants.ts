@@ -27,6 +27,7 @@ const UNLOCK       = "(SIG\\(" + INTEGER + "\\)|XHX\\(" + XUNLOCK + "\\))"
 const CONDITIONS   = "(&&|\\|\\|| |[()]|(SIG\\(" + PUBKEY + "\\)|(XHX\\([A-F0-9]{64}\\)|CLTV\\(" + CLTV_INTEGER + "\\)|CSV\\(" + CSV_INTEGER + "\\))))*"
 
 const BMA_REGEXP  = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/
+const WS2P_REGEXP = /^WS2P ([a-f0-9]{8}) ([a-z_][a-z0-9-_.]*|[0-9.]+|[0-9a-f:]+) ([0-9]+)$/
 
 const MAXIMUM_LEN_OF_COMPACT_TX = 100
 const MAXIMUM_LEN_OF_OUTPUT = 2000
@@ -76,6 +77,7 @@ export const CommonConstants = {
   SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS: 3,
 
   BMA_REGEXP,
+  WS2P_REGEXP,
   PUBLIC_KEY: exact(PUBKEY),
   INTEGER: /^\d+$/,
   BASE58: exact(BASE58),

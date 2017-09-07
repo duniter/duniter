@@ -141,6 +141,10 @@ export class FileDAL {
     }
   }
 
+  async getWS2Peers() {
+    return this.peerDAL.getPeersWithEndpointsLike('WS2P ')
+  }
+
   async getBlock(number:number) {
     const block = await this.blockDAL.getBlock(number)
     return block || null;

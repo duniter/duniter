@@ -49,7 +49,8 @@ export class PeerParser extends GenericParser {
       'BAD_PORT': 155,
       'BAD_FINGERPRINT': 156,
       'BAD_BLOCK': 157,
-      'NO_IP_GIVEN': 158
+      'NO_IP_GIVEN': 158,
+      'TOO_LONG_ENDPOINT': 159
     };
     if(!err){
       // Version
@@ -65,6 +66,14 @@ export class PeerParser extends GenericParser {
       // Block
       if(!obj.block)
         err = {code: codes.BAD_BLOCK, message: "Incorrect Block field"};
+    }
+    if(!err){
+      // Endpoint length
+      for (const ep of (obj.endpoints || [])) {
+        if (!err && ep.length > 255) {
+          err = {code: codes.TOO_LONG_ENDPOINT, message: "An endpoint has maximum 255 characters length."}
+        }
+      }
     }
     // Basic Merkled API requirements
     let bma = obj.getBMA();

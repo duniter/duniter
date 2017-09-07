@@ -84,6 +84,7 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
 
   async sendACK(ws: any): Promise<void> {
     const challengeMessage = `WS2P:ACK:${this.pair.pub}:${this.challenge}`
+    Logger.log('sendACK >>> ' + challengeMessage)
     const sig = this.pair.signSync(challengeMessage)
     await ws.send(JSON.stringify({
       auth: 'ACK',
@@ -98,6 +99,7 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
       return false
     }
     const challengeMessage = `WS2P:CONNECT:${pub}:${challenge}`
+    Logger.log('registerCONNECT >>> ' + challengeMessage)
     const verified = verify(challengeMessage, sig, pub)
     if (verified) {
       this.challenge = challenge
@@ -108,6 +110,7 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
 
   async registerOK(sig: string): Promise<boolean> {
     const challengeMessage = `WS2P:OK:${this.remotePub}:${this.challenge}`
+    Logger.log('registerOK >>> ' + challengeMessage)
     this.authenticatedByRemote = verify(challengeMessage, sig, this.remotePub)
     if (!this.authenticatedByRemote) {
       this.serverAuthReject("Wrong signature from remote OK")
@@ -151,6 +154,7 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
 
   async sendCONNECT(ws:any): Promise<void> {
     const challengeMessage = `WS2P:CONNECT:${this.pair.pub}:${this.challenge}`
+    Logger.log('sendCONNECT >>> ' + challengeMessage)
     const sig = this.pair.signSync(challengeMessage)
     await ws.send(JSON.stringify({
       auth: 'CONNECT',
@@ -167,6 +171,7 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
       return false
     }
     const challengeMessage = `WS2P:ACK:${pub}:${this.challenge}`
+    Logger.log('registerACK >>> ' + challengeMessage)
     this.authenticated = verify(challengeMessage, sig, pub)
     if (!this.authenticated) {
       this.serverAuthReject("Wrong signature from server ACK")
@@ -178,6 +183,7 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
 
   async sendOK(ws:any): Promise<void> {
     const challengeMessage = `WS2P:OK:${this.pair.pub}:${this.challenge}`
+    Logger.log('sendOK >>> ' + challengeMessage)
     const sig = this.pair.signSync(challengeMessage)
     await ws.send(JSON.stringify({
       auth: 'OK',
@@ -274,6 +280,7 @@ export class WS2PConnection {
     const onWsClosed:Promise<void> = new Promise(res => {
       websocket.on('close', () => res())
     })
+    websocket.on('error', () => websocket.close())
     return new WS2PConnection(websocket, onWsOpened, onWsClosed, messageHandler, localAuth, remoteAuth, options, expectedPub)
   }
 
@@ -573,9 +580,20 @@ export class WS2PConnection {
 
   private async errorDetected(cause:WS2P_ERR) {
     this.nbErrors++
-    // console.error('>>> WS ERROR: %s', WS2P_ERR[cause])
+    Logger.error('>>> WS ERROR: %s', WS2P_ERR[cause])
     if (this.nbErrors >= MAXIMUM_ERRORS_COUNT) {
       this.ws.terminate()
     }
+  }
+}
+
+class Logger {
+
+  static log(message:string) {
+    // console.log('WS2P >>> ' + message)
+  }
+
+  static error(message:string, obj:any) {
+    console.error('WS2P >>> ' + message, obj)
   }
 }

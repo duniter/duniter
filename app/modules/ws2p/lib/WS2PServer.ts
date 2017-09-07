@@ -29,6 +29,7 @@ export class WS2PServer {
       /******************
        * A NEW CONNECTION
        ******************/
+      this.server.logger.info('WS2P: new incoming connection from %s:%s!', ws._sender._socket._handle.owner.remoteAddress, ws._sender._socket._handle.owner.remotePort)
       const c = WS2PConnection.newConnectionFromWebSocketServer(
         ws,
         new WS2PServerMessageHandler(this.server),
@@ -40,7 +41,9 @@ export class WS2PServer {
 
       this.connections.push(c)
 
-      c.connect().catch((e:any) => console.error('WS2P: cannot connect to incoming WebSocket connection: %s', e))
+      c.connect()
+        .then(() => this.server.logger.info('WS2P: established incoming connection from %s:%s', ws._sender._socket._handle.owner.remoteAddress, ws._sender._socket._handle.owner.remotePort))
+        .catch((e:any) => console.error('WS2P: cannot connect to incoming WebSocket connection: %s', e))
 
       // Broadcasting
       const ws2pStreamer = new WS2PStreamer(c)

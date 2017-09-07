@@ -47,6 +47,7 @@ export class Server extends stream.Duplex implements HookableServer {
 
   private paramsP:Promise<any>|null
   private endpointsDefinitions:(()=>Promise<string>)[] = []
+  private wrongEndpointsFilters:((endpoints:string[])=>Promise<string[]>)[] = []
   conf:ConfDTO
   dal:FileDAL
 
@@ -569,9 +570,22 @@ export class Server extends stream.Duplex implements HookableServer {
     this.endpointsDefinitions.push(definition)
   }
 
+  addWrongEndpointFilter(filter:(endpoints:string[])=>Promise<string[]>) {
+    this.wrongEndpointsFilters.push(filter)
+  }
+
   async getEndpoints() {
     const endpoints = await Promise.all(this.endpointsDefinitions.map(d => d()))
     return endpoints.filter(ep => !!ep)
+  }
+
+  async getWrongEndpoints(endpoints:string[]) {
+    let wrongs:string[] = []
+    for (const filter of this.wrongEndpointsFilters) {
+      const newWrongs = await filter(endpoints)
+      wrongs = wrongs.concat(newWrongs)
+    }
+    return wrongs
   }
 
   /*****************

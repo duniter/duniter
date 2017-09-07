@@ -48,10 +48,18 @@ export const WS2PDependency = {
       input: (server:Server, conf:WS2PConfDTO, logger:any) => {
         const api = new WS2PAPI(server, conf, logger)
         server.addEndpointsDefinitions(() => api.getEndpoint())
+        server.addWrongEndpointFilter((endpoints:string[]) => getWrongEndpoints(endpoints, conf))
         return api
       }
     }
   }
+}
+
+async function getWrongEndpoints(endpoints:string[], ws2pConf:WS2PConfDTO) {
+  return endpoints.filter(ep => {
+    const match = ep.match(CommonConstants.WS2P_REGEXP)
+    return ws2pConf.ws2p && match && match[1] === ws2pConf.ws2p.uuid
+  })
 }
 
 export class WS2PAPI extends stream.Transform {

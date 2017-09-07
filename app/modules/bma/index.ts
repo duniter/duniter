@@ -6,9 +6,11 @@ import {BmaApi, Network} from "./lib/network"
 import {UpnpApi} from "./lib/upnp"
 import {BMAConstants} from "./lib/constants"
 import {BMALimitation} from "./lib/limiter"
+import {PeerDTO} from "../../lib/dto/PeerDTO"
 
 const Q = require('q');
 const os = require('os');
+const rp = require('request-promise');
 const async = require('async');
 const _ = require('underscore');
 const upnp = require('./lib/upnp').Upnp
@@ -139,6 +141,7 @@ export const BmaDependency = {
     service: {
       input: (server:Server, conf:NetworkConfDTO, logger:any) => {
         server.addEndpointsDefinitions(() => Promise.resolve(getEndpoint(conf)))
+        server.addWrongEndpointFilter((endpoints:string[]) => getWrongEndpoints(endpoints, server.conf.pair.pub))
         return new BMAPI(server, conf, logger)
       }
     },
@@ -149,6 +152,25 @@ export const BmaDependency = {
       getMainEndpoint: (conf:NetworkConfDTO) => Promise.resolve(getEndpoint(conf))
     }
   }
+}
+
+async function getWrongEndpoints(endpoints:string[], selfPubkey:string) {
+  const wrongs:string[] = []
+  await Promise.all(endpoints.map(async (theEndpoint:string) => {
+    let remote = PeerDTO.endpoint2host(theEndpoint)
+    try {
+      // We test only BMA APIs, because other may exist and we cannot judge against them
+      if (theEndpoint.startsWith('BASIC_MERKLED_API')) {
+        let answer = await rp('http://' + remote + '/network/peering', { json: true });
+        if (!answer || answer.pubkey != selfPubkey) {
+          throw Error("Not same pubkey as local instance");
+        }
+      }
+    } catch (e) {
+      wrongs.push(theEndpoint)
+    }
+  }))
+  return wrongs
 }
 
 export class BMAPI extends stream.Transform {

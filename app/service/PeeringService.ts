@@ -9,11 +9,11 @@ import {dos2unix} from "../lib/common-libs/dos2unix"
 import {rawer} from "../lib/common-libs/index"
 import {Server} from "../../server"
 import {GlobalFifoPromise} from "./GlobalFifoPromise"
+import {server} from "../../test/integration/tools/toolbox"
 
 const util           = require('util');
 const _              = require('underscore');
 const events         = require('events');
-const rp             = require('request-promise');
 const logger         = require('../lib/logger').NewLogger('peering');
 const constants      = require('../lib/constants');
 
@@ -199,28 +199,12 @@ export class PeeringService {
     const localEndpoints = await this.server.getEndpoints()
     const otherPotentialEndpoints = this.getOtherEndpoints(p1.endpoints, localEndpoints)
     logger.info('Sibling endpoints:', otherPotentialEndpoints);
-    let reals = await Promise.all(otherPotentialEndpoints.map(async (theEndpoint:string) => {
-      let real = true;
-      let remote = PeerDTO.endpoint2host(theEndpoint)
-      try {
-        // We test only BMA APIs, because other may exist and we cannot judge against them yet
-        if (theEndpoint.startsWith('BASIC_MERKLED_API')) {
-          let answer = await rp('http://' + remote + '/network/peering', { json: true });
-          if (!answer || answer.pubkey != this.selfPubkey) {
-            throw Error("Not same pubkey as local instance");
-          }
-        }
-        // We also remove endpoints this are *asked* to be removed in the conf file
-        if ((this.conf.rmEndpoints || []).indexOf(theEndpoint) !== -1) {
-          real = false;
-        }
-      } catch (e) {
-        logger.warn('Wrong endpoint \'%s\': \'%s\'', theEndpoint, e.message || e);
-        real = false;
-      }
-      return real;
-    }))
-    let toConserve = otherPotentialEndpoints.filter((ep, i) => reals[i]);
+    const wrongEndpoints = await this.server.getWrongEndpoints(otherPotentialEndpoints)
+    for (const wrong of wrongEndpoints) {
+      logger.warn('Wrong endpoint \'%s\'', wrong)
+    }
+    const toRemoveByConf = (this.conf.rmEndpoints || [])
+    let toConserve = otherPotentialEndpoints.filter(ep => wrongEndpoints.indexOf(ep) === -1 && toRemoveByConf.indexOf(ep) === -1)
     if (!currency) {
       logger.error('It seems there is an issue with your configuration.');
       logger.error('Please restart your node with:');

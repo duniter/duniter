@@ -42,6 +42,8 @@ test/blockchain/lib/*.d.ts
 /server.d.ts
 app/**/*.js*
 app/**/*.d.ts
+test/integration/*.js*
+test/integration/*.d.ts
 test/integration/membership_chainability.js*
 test/integration/membership_chainability.d.ts
 test/integration/tools/toolbox.js*

@@ -6,7 +6,7 @@ import {
   WS2PRemoteAuth
 } from "../../app/modules/ws2p/lib/WS2PConnection"
 import {Key, verify} from "../../app/lib/common-libs/crypto/keyring"
-import {assertThrows} from "./tools/toolbox"
+import {assertThrows, getNewTestingPort} from "./tools/toolbox"
 import {WS2PMessageHandler} from "../../app/modules/ws2p/lib/impl/WS2PMessageHandler"
 import {WS2PResponse} from "../../app/modules/ws2p/lib/impl/WS2PResponse"
 const assert = require('assert');
@@ -18,10 +18,11 @@ describe('WS2P', () => {
 
     describe("no auth", () => {
 
-      let wss:any
+      let wss:any, portA:number
 
       before(async () => {
-        wss = new WebSocketServer({ port: 20902 })
+        portA = getNewTestingPort()
+        wss = new WebSocketServer({ port: portA })
         wss.on('connection', (ws:any) => {
           ws.on('message', (data:any) => {
             const obj = JSON.parse(data)
@@ -37,7 +38,7 @@ describe('WS2P', () => {
       })
 
       it('should be able to create a connection', async () => {
-        const ws2p = WS2PConnection.newConnectionToAddress('localhost:20902', new WS2PMutedHandler(), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
+        const ws2p = WS2PConnection.newConnectionToAddress('localhost:' + portA, new WS2PMutedHandler(), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
         const res = await ws2p.request({ name: 'head' })
         assert.deepEqual({ bla: 'aa' }, res)
       })
@@ -133,10 +134,12 @@ describe('WS2P', () => {
       let wss:any
       let s1:WS2PConnection
       let s2:WS2PConnection
+      let portB:number
 
       before(async () => {
         let i = 0
-        wss = new WebSocketServer({ port: 20902 })
+        portB = getNewTestingPort()
+        wss = new WebSocketServer({ port: portB })
         wss.on('connection', (ws:any) => {
           switch (i) {
             case 0:
@@ -171,7 +174,7 @@ describe('WS2P', () => {
 
       it('should be able to create connections and make several requests', async () => {
         // connection 1
-        const c1 = WS2PConnection.newConnectionToAddress('localhost:20902', new WS2PMutedHandler(), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
+        const c1 = WS2PConnection.newConnectionToAddress('localhost:' + portB, new WS2PMutedHandler(), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
         assert.deepEqual({ answer: 'world' }, await c1.request({ name: 'hello!' }))
         assert.deepEqual({ answer: 'world' }, await c1.request({ name: 'hello2!' }))
         assert.equal(s1.nbRequests, 0)
@@ -183,7 +186,7 @@ describe('WS2P', () => {
         assert.equal(s1.nbPushsByRemote, 0)
         assert.equal(c1.nbPushsByRemote, 0)
         // connection 2
-        const c2 = WS2PConnection.newConnectionToAddress('localhost:20902', new WS2PMutedHandler(), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
+        const c2 = WS2PConnection.newConnectionToAddress('localhost:' + portB, new WS2PMutedHandler(), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
         assert.deepEqual({ answer: 'this is s2![j = 0]' }, await c2.request({ name: 'test?' }))
         assert.deepEqual({ answer: 'this is s2![j = 1]' }, await c2.request({ name: 'test!' }))
         assert.deepEqual({ answer: 'this is s2![j = 2]' }, await c2.request({ name: 'test!!!' }))

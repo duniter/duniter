@@ -42,6 +42,9 @@ const CURRENCY_NAME = 'duniter_unit_test_currency';
 const HOST = '127.0.0.1';
 let PORT = 10000;
 
+export const getNewTestingPort = () => {
+  return PORT++
+}
 
 export const shouldFail = async (promise:Promise<any>, message:string|null = null) => {
   try {
@@ -218,11 +221,12 @@ export const server = (conf:any) => NewTestingServer(conf)
 export const simpleTestingServer = (conf:any) => NewTestingServer(conf)
 
 export const NewTestingServer = (conf:any) => {
-  const port = PORT++;
+  const host = conf.host || HOST
+  const port = conf.port || PORT++
   const commonConf = {
     port: port,
-    ipv4: HOST,
-    remoteipv4: HOST,
+    ipv4: host,
+    remoteipv4: host,
     currency: conf.currency || CURRENCY_NAME,
     httpLogs: true,
     forksize: conf.forksize || 3
@@ -620,12 +624,12 @@ export async function newWS2PBidirectionnalConnection(k1:Key, k2:Key, serverHand
 }
 
 export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promise<{ w1: WS2PConnection; ws2pc: WS2PConnection; wss: WS2PServer, cluster1:WS2PCluster, cluster2:WS2PCluster }> = async (s1: TestingServer, s2: TestingServer) => {
-  let port = PORT++
+  let port = getNewTestingPort()
   const clientPub = s2.conf.pair.pub
   let w1: WS2PConnection | null
 
-  const cluster1 = new WS2PCluster(s1._server)
-  const cluster2 = new WS2PCluster(s2._server)
+  const cluster1 = WS2PCluster.plugOn(s1._server)
+  const cluster2 = WS2PCluster.plugOn(s2._server)
   const ws2ps = await cluster1.listen('localhost', port)
   const ws2pc = await cluster2.connect('localhost', port)
 
@@ -643,7 +647,7 @@ export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promis
   }
 }
 
-export function simpleTestingConf(now = 1500000000, pair:{ pub:string, sec:string }) {
+export function simpleTestingConf(now = 1500000000, pair:{ pub:string, sec:string }): any {
   return {
     pair,
     nbCores: 1,

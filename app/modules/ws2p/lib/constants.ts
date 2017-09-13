@@ -10,4 +10,5 @@ export const WS2PConstants = {
   SANDBOX_FIRST_PULL_DELAY: 300 * 2,  // 10 minutes after the start
 
   MAX_LEVEL_1_PEERS: 10,
+  MAX_LEVEL_2_PEERS: 10,
 }

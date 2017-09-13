@@ -274,6 +274,18 @@ export const waitForkResolution = async (server:Server, number:number) => {
   })
 }
 
+export const waitForkWS2PConnection = async (server:Server, pubkey:string) => {
+  await new Promise(res => {
+    server.pipe(es.mapSync((e:any) => {
+      if (e.ws2p === 'connected' && e.to.pubkey === pubkey) {
+        res()
+      }
+      return e
+    }))
+
+  })
+}
+
 export class TestingServer {
 
   private prover:Prover
@@ -633,6 +645,9 @@ export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promis
   const ws2ps = await cluster1.listen('localhost', port)
   const ws2pc = await cluster2.connect('localhost', port)
 
+  await new Promise(res => {
+    ws2ps.on('newConnection', res)
+  })
   w1 = await ws2ps.getConnection(clientPub)
   if (!w1) {
     throw "Connection coming from " + clientPub + " was not found"

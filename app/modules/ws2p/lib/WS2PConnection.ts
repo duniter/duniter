@@ -39,7 +39,6 @@ export enum WS2P_PUSH {
 }
 
 export interface WS2PAuth {
-  isAuthorizedPubkey(pub:string): Promise<boolean>
   authenticationIsDone(): Promise<void>
 }
 
@@ -70,7 +69,10 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
   protected serverAuthResolve:()=>void
   protected serverAuthReject:(err:any)=>void
 
-  constructor(protected pair:Key) {
+  constructor(
+    protected pair:Key,
+    protected tellIsAuthorizedPubkey:(pub: string) => Promise<boolean> = () => Promise.resolve(true)
+  ) {
     this.challenge = nuuid.v4() + nuuid.v4()
     this.serverAuth = new Promise((resolve, reject) => {
       this.serverAuthResolve = resolve
@@ -94,7 +96,7 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
   }
 
   async registerCONNECT(challenge:string, sig: string, pub: string): Promise<boolean> {
-    const allow = await this.isAuthorizedPubkey(pub)
+    const allow = await this.tellIsAuthorizedPubkey(pub)
     if (!allow) {
       return false
     }
@@ -124,10 +126,6 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
     return this.authenticatedByRemote
   }
 
-  async isAuthorizedPubkey(pub: string): Promise<boolean> {
-    return true
-  }
-
   authenticationIsDone(): Promise<void> {
     return this.serverAuth
   }
@@ -144,7 +142,10 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
   protected serverAuthResolve:()=>void
   protected serverAuthReject:(err:any)=>void
 
-  constructor(protected pair:Key) {
+  constructor(
+    protected pair:Key,
+    protected tellIsAuthorizedPubkey:(pub: string) => Promise<boolean> = () => Promise.resolve(true)
+  ) {
     this.challenge = nuuid.v4() + nuuid.v4()
     this.serverAuth = new Promise((resolve, reject) => {
       this.serverAuthResolve = resolve
@@ -166,7 +167,7 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
   }
 
   async registerACK(sig: string, pub: string): Promise<boolean> {
-    const allow = await this.isAuthorizedPubkey(pub)
+    const allow = await this.tellIsAuthorizedPubkey(pub)
     if (!allow) {
       return false
     }
@@ -198,10 +199,6 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
 
   authenticationIsDone(): Promise<void> {
     return this.serverAuth
-  }
-
-  async isAuthorizedPubkey(pub: string): Promise<boolean> {
-    return true
   }
 }
 

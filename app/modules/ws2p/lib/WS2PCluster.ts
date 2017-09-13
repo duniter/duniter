@@ -8,6 +8,7 @@ import {WS2PBlockPuller} from "./WS2PBlockPuller"
 import {WS2PDocpoolPuller} from "./WS2PDocpoolPuller"
 import {WS2PConstants} from "./constants"
 import {PeerDTO} from "../../../lib/dto/PeerDTO"
+import {GlobalFifoPromise} from "../../../service/GlobalFifoPromise"
 
 const es = require('event-stream')
 const nuuid = require('node-uuid')
@@ -20,6 +21,7 @@ export class WS2PCluster {
   private port:number|null = null
   private syncBlockInterval:NodeJS.Timer
   private syncDocpoolInterval:NodeJS.Timer
+  private fifo:GlobalFifoPromise = new GlobalFifoPromise()
 
   private constructor(private server:Server) {}
 
@@ -33,7 +35,7 @@ export class WS2PCluster {
     if (this.ws2pServer) {
       await this.ws2pServer.close()
     }
-    this.ws2pServer = await WS2PServer.bindOn(this.server, host, port)
+    this.ws2pServer = await WS2PServer.bindOn(this.server, host, port, this.fifo, (pubkey:string, connectedPubkeys:string[]) => this.acceptPubkey(pubkey, connectedPubkeys))
     this.host = host
     this.port = port
     return this.ws2pServer
@@ -65,6 +67,10 @@ export class WS2PCluster {
     })
     try {
       this.server.logger.info('WS2P: connected to peer %s using `WS2P %s %s`!', ws2pc.connection.pubkey.slice(0, 8), host, port)
+      this.server.push({
+        ws2p: 'connected',
+        to: { host, port, pubkey: ws2pc.connection.pubkey }
+      })
       return ws2pc.connection
     } catch (e) {
       this.server.logger.info('WS2P: Could not connect to peer %s using `WS2P %s %s: %s`', ws2pc.connection.pubkey.slice(0, 8), host, port, (e && e.message || e))
@@ -79,7 +85,9 @@ export class WS2PCluster {
     while (i < peers.length && this.clientsCount() < WS2PConstants.MAX_LEVEL_1_PEERS) {
       const p = peers[i]
       const api = p.getWS2P()
-      await this.connect(api.host, api.port)
+      if (p.pubkey !== this.server.conf.pair.pub) {
+        await this.connect(api.host, api.port)
+      }
       i++
     }
 
@@ -88,11 +96,77 @@ export class WS2PCluster {
       if (data.endpoints) {
         const peer = PeerDTO.fromJSONObject(data)
         const ws2pEnpoint = peer.getWS2P()
-        if (ws2pEnpoint) {
-          this.connect(ws2pEnpoint.host, ws2pEnpoint.port)
+        if (ws2pEnpoint && peer.pubkey !== this.server.conf.pair.pub) {
+          await this.fifo.pushFIFOPromise('connect_peer_' + peer.pubkey, async () => {
+            // Check if already connected to the pubkey (in any way: server or client)
+            const connectedPubkeys = this.getConnectedPubkeys()
+            const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys)
+            if (shouldAccept) {
+              await this.connect(ws2pEnpoint.host, ws2pEnpoint.port)
+              // Trim the eventual extra connections
+              await this.trimClientConnections()
+            }
+          })
         }
       }
     }))
+  }
+
+  async trimClientConnections() {
+    let disconnectedOne = true
+    // Disconnect non-members
+    while (disconnectedOne && this.clientsCount() > WS2PConstants.MAX_LEVEL_1_PEERS) {
+      disconnectedOne = false
+      let uuids = Object.keys(this.ws2pClients)
+      uuids = _.shuffle(uuids)
+      for (const uuid of uuids) {
+        const client = this.ws2pClients[uuid]
+        const isMember = await this.server.dal.isMember(client.connection.pubkey)
+        if (!isMember && !disconnectedOne) {
+          client.connection.close()
+          disconnectedOne = true
+        }
+      }
+    }
+    // Disconnect members
+    while (this.clientsCount() > WS2PConstants.MAX_LEVEL_1_PEERS) {
+      let uuids = Object.keys(this.ws2pClients)
+      uuids = _.shuffle(uuids)
+      for (const uuid of uuids) {
+        const client = this.ws2pClients[uuid]
+        client.connection.close()
+      }
+    }
+  }
+
+  protected async acceptPubkey(pub:string, connectedPubkeys:string[]) {
+    let accept = false
+    if (connectedPubkeys.indexOf(pub) === -1) {
+      // Do we have room?
+      if (this.clientsCount() < WS2PConstants.MAX_LEVEL_1_PEERS) {
+        // Yes: just connect to it
+        accept = true
+      }
+      else {
+        // No:
+        // Does this node have the priority over at least one node?
+        const isMemberPeer = await this.server.dal.isMember(pub)
+        if (isMemberPeer) {
+          // The node may have the priority over at least 1 other node
+          let i = 0, existsOneNonMemberNode = false
+          while (!existsOneNonMemberNode && i < connectedPubkeys.length) {
+            const isAlsoAMemberPeer = await this.server.dal.isMember(connectedPubkeys[i])
+            existsOneNonMemberNode = !isAlsoAMemberPeer
+            i++
+          }
+          if (existsOneNonMemberNode) {
+            // The node has the priority over a non-member peer: try to connect
+            accept = true
+          }
+        }
+      }
+    }
+    return accept
   }
 
   async getAllConnections() {
@@ -155,5 +229,11 @@ export class WS2PCluster {
       const puller = new WS2PDocpoolPuller(this.server, conn)
       await puller.pull()
     }))
+  }
+
+  getConnectedPubkeys() {
+    const clients = Object.keys(this.ws2pClients).map(k => this.ws2pClients[k].connection.pubkey)
+    const served = this.ws2pServer ? this.ws2pServer.getConnexions().map(c => c.pubkey) : []
+    return clients.concat(served)
   }
 }

@@ -286,6 +286,21 @@ export const waitForkWS2PConnection = async (server:Server, pubkey:string) => {
   })
 }
 
+export const waitForkWS2PDisconnection = async (server:Server, pubkey:string) => {
+  await new Promise(res => {
+    server.pipe(es.mapSync((e:any) => {
+      if (e.ws2p === 'disconnected') {
+        console.log('>>>>>>> EVENT ', e)
+      }
+      if (e.ws2p === 'disconnected' && e.peer.pub === pubkey) {
+        res()
+      }
+      return e
+    }))
+
+  })
+}
+
 export class TestingServer {
 
   private prover:Prover

@@ -12,6 +12,7 @@ import {GlobalFifoPromise} from "../../../service/GlobalFifoPromise"
 
 const es = require('event-stream')
 const nuuid = require('node-uuid')
+const _ = require('underscore')
 
 export class WS2PCluster {
 
@@ -22,6 +23,7 @@ export class WS2PCluster {
   private syncBlockInterval:NodeJS.Timer
   private syncDocpoolInterval:NodeJS.Timer
   private fifo:GlobalFifoPromise = new GlobalFifoPromise()
+  private maxLevel1Size = WS2PConstants.MAX_LEVEL_1_PEERS
 
   private constructor(private server:Server) {}
 
@@ -31,11 +33,30 @@ export class WS2PCluster {
     return cluster
   }
 
+  set maxLevel1Peers(newValue:number) {
+    this.maxLevel1Size = Math.max(newValue, 0) || 0
+  }
+
+  set maxLevel2Peers(newValue:number) {
+    if (this.ws2pServer) {
+      this.ws2pServer.maxLevel2Peers = Math.max(newValue, 0)
+    }
+  }
+
+  get maxLevel2Peers() {
+    if (this.ws2pServer) {
+      return this.ws2pServer.maxLevel2Peers || 0
+    }
+    return 0
+  }
+
   async listen(host:string, port:number) {
     if (this.ws2pServer) {
       await this.ws2pServer.close()
     }
-    this.ws2pServer = await WS2PServer.bindOn(this.server, host, port, this.fifo, (pubkey:string, connectedPubkeys:string[]) => this.acceptPubkey(pubkey, connectedPubkeys))
+    this.ws2pServer = await WS2PServer.bindOn(this.server, host, port, this.fifo, (pubkey:string, connectedPubkeys:string[]) => {
+      return this.acceptPubkey(pubkey, connectedPubkeys, () => this.servedCount(), this.maxLevel2Peers, (this.server.conf.ws2p && this.server.conf.ws2p.alwaysAccept || []))
+    })
     this.host = host
     this.port = port
     return this.ws2pServer
@@ -63,7 +84,15 @@ export class WS2PCluster {
     this.ws2pClients[uuid] = ws2pc
     ws2pc.connection.closed.then(() => {
       this.server.logger.info('WS2P: connection [%s `WS2P %s %s`] has been closed', ws2pc.connection.pubkey.slice(0, 8), host, port)
-      delete this.ws2pClients[uuid]
+      this.server.push({
+        ws2p: 'disconnected',
+        peer: {
+          pub: ws2pc.connection.pubkey
+        }
+      })
+      if (this.ws2pClients[uuid]) {
+        delete this.ws2pClients[uuid]
+      }
     })
     try {
       this.server.logger.info('WS2P: connected to peer %s using `WS2P %s %s`!', ws2pc.connection.pubkey.slice(0, 8), host, port)
@@ -82,7 +111,7 @@ export class WS2PCluster {
     const potentials = await this.server.dal.getWS2Peers()
     const peers:PeerDTO[] = potentials.map((p:any) => PeerDTO.fromJSONObject(p))
     let i = 0
-    while (i < peers.length && this.clientsCount() < WS2PConstants.MAX_LEVEL_1_PEERS) {
+    while (i < peers.length && this.clientsCount() < this.maxLevel1Size) {
       const p = peers[i]
       const api = p.getWS2P()
       if (p.pubkey !== this.server.conf.pair.pub) {
@@ -97,16 +126,14 @@ export class WS2PCluster {
         const peer = PeerDTO.fromJSONObject(data)
         const ws2pEnpoint = peer.getWS2P()
         if (ws2pEnpoint && peer.pubkey !== this.server.conf.pair.pub) {
-          await this.fifo.pushFIFOPromise('connect_peer_' + peer.pubkey, async () => {
-            // Check if already connected to the pubkey (in any way: server or client)
-            const connectedPubkeys = this.getConnectedPubkeys()
-            const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys)
-            if (shouldAccept) {
-              await this.connect(ws2pEnpoint.host, ws2pEnpoint.port)
-              // Trim the eventual extra connections
-              await this.trimClientConnections()
-            }
-          })
+          // Check if already connected to the pubkey (in any way: server or client)
+          const connectedPubkeys = this.getConnectedPubkeys()
+          const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes || []))
+          if (shouldAccept) {
+            await this.connect(ws2pEnpoint.host, ws2pEnpoint.port)
+            // Trim the eventual extra connections
+            await this.trimClientConnections()
+          }
         }
       }
     }))
@@ -115,7 +142,7 @@ export class WS2PCluster {
   async trimClientConnections() {
     let disconnectedOne = true
     // Disconnect non-members
-    while (disconnectedOne && this.clientsCount() > WS2PConstants.MAX_LEVEL_1_PEERS) {
+    while (disconnectedOne && this.clientsCount() > this.maxLevel1Size) {
       disconnectedOne = false
       let uuids = Object.keys(this.ws2pClients)
       uuids = _.shuffle(uuids)
@@ -124,26 +151,64 @@ export class WS2PCluster {
         const isMember = await this.server.dal.isMember(client.connection.pubkey)
         if (!isMember && !disconnectedOne) {
           client.connection.close()
+          await client.connection.closed
           disconnectedOne = true
         }
       }
     }
-    // Disconnect members
-    while (this.clientsCount() > WS2PConstants.MAX_LEVEL_1_PEERS) {
+    disconnectedOne = true
+    // Disconnect non-prefered members
+    while (disconnectedOne && this.clientsCount() > this.maxLevel1Size) {
+      disconnectedOne = false
       let uuids = Object.keys(this.ws2pClients)
       uuids = _.shuffle(uuids)
       for (const uuid of uuids) {
         const client = this.ws2pClients[uuid]
-        client.connection.close()
+        if (!disconnectedOne && this.getPreferedNodes().indexOf(client.connection.pubkey) === -1) {
+          client.connection.close()
+          disconnectedOne = true
+          await client.connection.closed
+          if (this.ws2pClients[uuid]) {
+            delete this.ws2pClients[uuid]
+          }
+        }
+      }
+    }
+    // Disconnect anything
+    disconnectedOne = true
+    while (disconnectedOne && this.clientsCount() > this.maxLevel1Size) {
+      disconnectedOne = false
+      let uuids = Object.keys(this.ws2pClients)
+      uuids = _.shuffle(uuids)
+      for (const uuid of uuids) {
+        const client = this.ws2pClients[uuid]
+        if (!disconnectedOne) {
+          client.connection.close()
+          disconnectedOne = true
+          await client.connection.closed
+          if (this.ws2pClients[uuid]) {
+            delete this.ws2pClients[uuid]
+          }
+        }
       }
     }
   }
 
-  protected async acceptPubkey(pub:string, connectedPubkeys:string[]) {
-    let accept = false
-    if (connectedPubkeys.indexOf(pub) === -1) {
+  private getPreferedNodes(): string[] {
+    return (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) || []
+  }
+
+  protected async acceptPubkey(
+    pub:string,
+    connectedPubkeys:string[],
+    getConcurrentConnexionsCount:()=>number,
+    maxConcurrentConnexionsSize:number,
+    priorityKeys:string[]
+  ) {
+    let accept = priorityKeys.indexOf(pub) !== -1
+    if (!accept && connectedPubkeys.indexOf(pub) === -1) {
       // Do we have room?
-      if (this.clientsCount() < WS2PConstants.MAX_LEVEL_1_PEERS) {
+      if (getConcurrentConnexionsCount() < maxConcurrentConnexionsSize) {
         // Yes: just connect to it
         accept = true
       }

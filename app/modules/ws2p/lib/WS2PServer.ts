@@ -13,6 +13,7 @@ export class WS2PServer extends events.EventEmitter {
 
   private wss:any
   private connections:WS2PConnection[] = []
+  private maxLevel2Size = WS2PConstants.MAX_LEVEL_2_PEERS
 
   private constructor(
     private server:Server,
@@ -21,6 +22,14 @@ export class WS2PServer extends events.EventEmitter {
     private fifo:GlobalFifoPromise,
     private shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>) {
     super()
+  }
+
+  get maxLevel2Peers() {
+    return this.maxLevel2Size || 0
+  }
+
+  set maxLevel2Peers(newValue:number) {
+    this.maxLevel2Size = Math.max(newValue, 0)
   }
 
   getConnexions() {
@@ -32,81 +41,93 @@ export class WS2PServer extends events.EventEmitter {
     this.wss = new WebSocketServer({ host: this.host, port: this.port })
     this.wss.on('connection', async (ws:any) => {
 
-      this.server.logger.info('WS2P: new incoming connection from %s:%s!', ws._sender._socket._handle.owner.remoteAddress, ws._sender._socket._handle.owner.remotePort)
+      this.server.logger.info('WS2P %s: new incoming connection from %s:%s!', this.server.conf.pair.pub, ws._sender._socket._handle.owner.remoteAddress, ws._sender._socket._handle.owner.remotePort)
 
-      await this.fifo.pushFIFOPromise('wss.connect:' + [ws._sender._socket._handle.owner.remoteAddress, ws._sender._socket._handle.owner.remotePort].join(':'), async () => {
+      /******************
+       * A NEW CONNECTION
+       ******************/
+      let saidPubkey:string = ""
 
-        /******************
-         * A NEW CONNECTION
-         ******************/
-        let saidPubkey:string = ""
-
-        const acceptPubkey = async (pub:string) => {
-          if (!saidPubkey) {
-            saidPubkey = pub
-          }
-          if (saidPubkey !== pub) {
-            // The key must be identical
-            return false
-          }
-          return await this.shouldAcceptConnection(pub, this.getConnexions().map(c => c.pubkey))
+      const acceptPubkey = async (pub:string) => {
+        if (!saidPubkey) {
+          saidPubkey = pub
         }
-
-        const c = WS2PConnection.newConnectionFromWebSocketServer(
-          ws,
-          new WS2PServerMessageHandler(this.server),
-          new WS2PPubkeyLocalAuth(key, acceptPubkey),
-          new WS2PPubkeyRemoteAuth(key, acceptPubkey),
-          {
-            connectionTimeout: 5000,
-            requestTimeout: 5000
-          }
-        )
-
-        try {
-          await c.connect()
-          this.connections.push(c)
-          this.emit('newConnection', c)
-          this.server.logger.info('WS2P: established incoming connection from %s:%s', ws._sender._socket._handle.owner.remoteAddress, ws._sender._socket._handle.owner.remotePort)
-
-          // Broadcasting
-          const ws2pStreamer = new WS2PStreamer(c)
-          this.server.pipe(ws2pStreamer)
-
-          ws.on('error', (e:any) => {
-            this.server.logger.error(e)
-          })
-
-          ws.on('close', () => {
-            this.server.unpipe(ws2pStreamer)
-            this.removeConnection(c)
-          })
-
-          await this.trimConnections()
-        } catch (e) {
-          this.server.logger.warn('WS2P: cannot connect to incoming WebSocket connection: %s', e)
+        if (saidPubkey !== pub) {
+          // The key must be identical
+          return false
         }
-      })
+        return await this.shouldAcceptConnection(pub, this.getConnexions().map(c => c.pubkey))
+      }
+
+      const c = WS2PConnection.newConnectionFromWebSocketServer(
+        ws,
+        new WS2PServerMessageHandler(this.server),
+        new WS2PPubkeyLocalAuth(key, acceptPubkey),
+        new WS2PPubkeyRemoteAuth(key, acceptPubkey),
+        {
+          connectionTimeout: 5000,
+          requestTimeout: 5000
+        }
+      )
+
+      try {
+        this.server.logger.info('WS2P %s: [c.connect()...] new incoming connection from %s:%s!', this.server.conf.pair.pub, ws._sender._socket._handle.owner.remoteAddress, ws._sender._socket._handle.owner.remotePort)
+        await c.connect()
+        const host = ws._sender._socket._handle.owner.remoteAddress
+        const port = ws._sender._socket._handle.owner.remotePort
+        this.server.push({
+          ws2p: 'connected',
+          to: { host, port, pubkey: c.pubkey }
+        })
+        this.connections.push(c)
+        this.emit('newConnection', c)
+        this.server.logger.info('WS2P: established incoming connection from %s:%s', host, port)
+
+        // Broadcasting
+        const ws2pStreamer = new WS2PStreamer(c)
+        this.server.pipe(ws2pStreamer)
+
+        ws.on('error', (e:any) => {
+          this.server.logger.error(e)
+        })
+
+        ws.on('close', () => {
+          this.server.unpipe(ws2pStreamer)
+          this.removeConnection(c)
+          this.server.push({
+            ws2p: 'disconnected',
+            peer: {
+              pub: c.pubkey
+            }
+          })
+        })
+
+        await this.trimConnections()
+      } catch (e) {
+        this.server.logger.warn('WS2P: cannot connect to incoming WebSocket connection: %s', e)
+      }
     })
   }
 
   async trimConnections() {
     let disconnectedOne = true
     // Disconnect non-members
-    while (disconnectedOne && this.connections.length > WS2PConstants.MAX_LEVEL_2_PEERS) {
+    while (disconnectedOne && this.connections.length > this.maxLevel2Size) {
       disconnectedOne = false
       for (const c of this.connections) {
         const isMember = await this.server.dal.isMember(c.pubkey)
         if (!isMember && !disconnectedOne) {
           c.close()
+          this.removeConnection(c)
           disconnectedOne = true
         }
       }
     }
     // Disconnect members
-    while (this.connections.length > WS2PConstants.MAX_LEVEL_2_PEERS) {
+    while (this.connections.length > this.maxLevel2Size) {
       for (const c of this.connections) {
         c.close()
+        this.removeConnection(c)
       }
     }
   }
@@ -142,7 +163,7 @@ export class WS2PServer extends events.EventEmitter {
   static async bindOn(server:Server, host:string, port:number, fifo:GlobalFifoPromise, shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>) {
     const ws2ps = new WS2PServer(server, host, port, fifo, shouldAcceptConnection)
     await ws2ps.listenToWebSocketConnections()
-    server.logger.info('WS2P server listening on %s:%s', host, port)
+    server.logger.info('WS2P server %s listening on %s:%s', server.conf.pair.pub, host, port)
     return ws2ps
   }
 }

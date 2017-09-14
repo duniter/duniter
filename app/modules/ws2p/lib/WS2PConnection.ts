@@ -13,6 +13,7 @@ const MAXIMUM_ERRORS_COUNT = 5
 const REQUEST_TIMEOUT_VALUE = 1000 * 5 // 10 seconds
 
 enum WS2P_ERR {
+  REJECTED_PUBKEY_OR_INCORRECT_ASK_SIGNATURE_FROM_REMOTE,
   AUTH_INVALID_ASK_FIELDS,
   AUTH_INVALID_ACK_FIELDS,
   AUTH_INVALID_OK_FIELDS,
@@ -391,7 +392,7 @@ export class WS2PConnection {
                         if (valid) {
                           await this.remoteAuth.sendACK(this.ws)
                         } else {
-                          await this.errorDetected(WS2P_ERR.INCORRECT_ASK_SIGNATURE_FROM_REMOTE)
+                          await this.errorDetected(WS2P_ERR.REJECTED_PUBKEY_OR_INCORRECT_ASK_SIGNATURE_FROM_REMOTE)
                         }
                       }
                     }

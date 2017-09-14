@@ -66,6 +66,8 @@ export interface WS2PConfDTO {
     remoteport?: number|null
     port?: number
     host?: string
+    preferedNodes?: string[]
+    alwaysAccept?: string[]
   }
 }
 
@@ -132,6 +134,8 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
       remoteport?: number|null
       port?: number
       host?: string
+      preferedNodes?: string[]
+      alwaysAccept?: string[]
     }
 ) {}
 

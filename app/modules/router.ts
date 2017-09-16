@@ -43,6 +43,10 @@ class Router extends stream.Transform {
   };
 
   async startService() {
+    if (this.server.conf.nobma) {
+      // Disable BMA
+      return Promise.resolve()
+    }
     if (!this.theRouter) {
       this.theRouter = new RouterStream(this.server.PeeringService, this.server.dal)
     }
@@ -64,6 +68,10 @@ class Router extends stream.Transform {
   }
 
   async stopService() {
+    if (this.server.conf.nobma) {
+      // Disable BMA
+      return Promise.resolve()
+    }
     this.unpipe();
     this.theRouter && this.theRouter.unpipe();
     this.theMulticaster && this.theMulticaster.unpipe();

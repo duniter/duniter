@@ -48,6 +48,9 @@ export class Crawler extends stream.Transform implements DuniterService {
   }
 
   startService() {
+    if (this.conf.nobma) {
+      return Promise.resolve()
+    }
     return Promise.all([
       this.peerCrawler.startService(),
       this.peerTester.startService(),
@@ -57,6 +60,9 @@ export class Crawler extends stream.Transform implements DuniterService {
   }
 
   stopService() {
+    if (this.conf.nobma) {
+      return Promise.resolve()
+    }
     return Promise.all([
       this.peerCrawler.stopService(),
       this.peerTester.stopService(),

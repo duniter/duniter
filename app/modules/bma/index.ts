@@ -27,6 +27,8 @@ export const BmaDependency = {
     cliOptions: [
       { value: '--upnp', desc: 'Use UPnP to open remote port.' },
       { value: '--noupnp', desc: 'Do not use UPnP to open remote port.' },
+      { value: '--bma',   desc: 'Enables BMA API and its crawlers.' },
+      { value: '--nobma', desc: 'Disables BMA API and its crawlers.' },
       { value: '-p, --port <port>', desc: 'Port to listen for requests', parser: (val:string) => parseInt(val) },
       { value: '--ipv4 <address>', desc: 'IPv4 interface to listen for requests' },
       { value: '--ipv6 <address>', desc: 'IPv6 interface to listen for requests' },
@@ -55,6 +57,22 @@ export const BmaDependency = {
 
       onLoading: async (conf:NetworkConfDTO, program:any, logger:any) => {
 
+        // If the usage of BMA hasn't been defined yet
+        if (conf.nobma === undefined) {
+          // Do we have an existing BMA conf?
+          if (conf.port !== undefined
+            || conf.ipv4 !== undefined
+            || conf.ipv6 !== undefined
+            || conf.remoteport !== undefined
+            || conf.remotehost !== undefined
+            || conf.remoteipv4 !== undefined
+            || conf.remoteipv6 !== undefined) {
+            conf.nobma = false
+          } else {
+            conf.nobma = true
+          }
+        }
+
         if (program.port !== undefined) conf.port = parseInt(program.port)
         if (program.ipv4 !== undefined) conf.ipv4 = program.ipv4;
         if (program.ipv6 !== undefined) conf.ipv6 = program.ipv6;
@@ -62,6 +80,8 @@ export const BmaDependency = {
         if (program.remote4 !== undefined) conf.remoteipv4 = program.remote4;
         if (program.remote6 !== undefined) conf.remoteipv6 = program.remote6;
         if (program.remotep !== undefined) conf.remoteport = parseInt(program.remotep)
+        if (program.bma !== undefined) conf.nobma = false
+        if (program.nobma !== undefined) conf.nobma = true
 
         if (!conf.ipv4) delete conf.ipv4;
         if (!conf.ipv6) delete conf.ipv6;
@@ -140,8 +160,10 @@ export const BmaDependency = {
 
     service: {
       input: (server:Server, conf:NetworkConfDTO, logger:any) => {
-        server.addEndpointsDefinitions(() => Promise.resolve(getEndpoint(conf)))
-        server.addWrongEndpointFilter((endpoints:string[]) => getWrongEndpoints(endpoints, server.conf.pair.pub))
+        if (!conf.nobma) {
+          server.addEndpointsDefinitions(() => Promise.resolve(getEndpoint(conf)))
+          server.addWrongEndpointFilter((endpoints:string[]) => getWrongEndpoints(endpoints, server.conf.pair.pub))
+        }
         return new BMAPI(server, conf, logger)
       }
     },
@@ -187,6 +209,10 @@ export class BMAPI extends stream.Transform {
   }
 
   startService = async () => {
+    if (this.conf.nobma) {
+      // Disable BMA
+      return Promise.resolve()
+    }
     this.bmapi = await bma(this.server, null, this.conf.httplogs, this.logger);
     await this.bmapi.openConnections();
 
@@ -213,6 +239,10 @@ export class BMAPI extends stream.Transform {
   }
 
   stopService = async () => {
+    if (this.conf.nobma) {
+      // Disable BMA
+      return Promise.resolve()
+    }
     if (this.bmapi) {
       await this.bmapi.closeConnections();
     }

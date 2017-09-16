@@ -46,6 +46,7 @@ export interface KeypairConfDTO {
 }
 
 export interface NetworkConfDTO {
+  nobma: boolean
   remoteport: number
   remotehost: string|null
   remoteipv4: string|null
@@ -127,6 +128,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
     public upnp: boolean,
     public homename: string,
     public memory: boolean,
+    public nobma: boolean,
     public ws2p?: {
       uuid: string
       upnp?: boolean
@@ -140,7 +142,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
 ) {}
 
   static mock() {
-    return new ConfDTO("", "", [], [], 0, 0, 0.6, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", 0, "", "", null, false, "", true)
+    return new ConfDTO("", "", [], [], 0, 0, 0.6, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", 0, "", "", null, false, "", true, true)
   }
 
   static defaultConf() {

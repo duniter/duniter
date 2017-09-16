@@ -154,6 +154,14 @@ export class FileDAL {
     return this.blockDAL.getAbsoluteBlock(number, hash)
   }
 
+  getAbsoluteBlockByBlockstamp(blockstamp:string) {
+    if (!blockstamp) throw "Blockstamp is required to find the block"
+    const sp = blockstamp.split('-')
+    const number = parseInt(sp[0])
+    const hash = sp[1]
+    return this.getAbsoluteBlockByNumberAndHash(number, hash)
+  }
+
   getBlockByBlockstampOrNull(blockstamp:string) {
     if (!blockstamp) throw "Blockstamp is required to find the block";
     const sp = blockstamp.split('-');

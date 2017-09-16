@@ -1,5 +1,6 @@
-import {BlockDTO} from "../../../lib/dto/BlockDTO";
-import {DBPeer as DBPeer2} from "../../../lib/dal/sqliteDAL/PeerDAL";
+import {BlockDTO} from "../../../lib/dto/BlockDTO"
+import {DBPeer as DBPeer2} from "../../../lib/dal/sqliteDAL/PeerDAL"
+import {WS2PHead} from "../../ws2p/lib/WS2PCluster"
 
 export const Summary = {
   duniter: {
@@ -400,6 +401,10 @@ export interface HttpWS2PInfo {
     level1: number,
     level2: number
   }
+}
+
+export interface HttpWS2PHeads {
+  heads: WS2PHead[]
 }
 
 export const MerkleOfPeers = {

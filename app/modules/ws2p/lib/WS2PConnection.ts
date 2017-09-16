@@ -8,6 +8,7 @@ import {TransactionDTO} from "../../../lib/dto/TransactionDTO"
 import {PeerDTO} from "../../../lib/dto/PeerDTO"
 const ws = require('ws')
 const nuuid = require('node-uuid');
+const logger = require('../../../lib/logger').NewLogger('ws2p')
 
 const MAXIMUM_ERRORS_COUNT = 5
 const REQUEST_TIMEOUT_VALUE = 1000 * 5 // 10 seconds
@@ -36,7 +37,8 @@ export enum WS2P_PUSH {
   MEMBERSHIP,
   CERTIFICATION,
   IDENTITY,
-  BLOCK
+  BLOCK,
+  HEAD
 }
 
 export interface WS2PAuth {
@@ -481,7 +483,7 @@ export class WS2PConnection {
           this.connectedResolve(this.remoteAuth.getPubkey())
         } catch (e) {
           this.connectedReject(e)
-          throw e
+          await this.connectedp
         }
       })()
     }
@@ -503,7 +505,7 @@ export class WS2PConnection {
           // The request was successfully sent. Now wait for the answer.
           const extras = {
             resolve: () => { console.error('resolution not implemented') },
-            reject:  (err:any) => { console.error('rejection not implemented') }
+            reject:  () => { console.error('rejection not implemented') }
           }
           this.exchanges[uuid] = {
             extras,
@@ -511,9 +513,9 @@ export class WS2PConnection {
               // The answer
               new Promise((res, rej) => {
                 extras.resolve = res
-                extras.reject = (err:any) => {
+                extras.reject = () => {
                   this.errorDetected(WS2P_ERR.REQUEST_FAILED)
-                  rej(err)
+                  rej()
                 }
               }),
               // Timeout
@@ -558,6 +560,10 @@ export class WS2PConnection {
     return this.pushData(WS2P_PUSH.PEER, 'peer', peer)
   }
 
+  async pushHeads(heads:{ message:string, sig:string }[]) {
+    return this.pushData(WS2P_PUSH.HEAD, 'heads', heads)
+  }
+
   async pushData(type:WS2P_PUSH, key:string, data:any) {
     await this.connect()
     return new Promise((resolve, reject) => {
@@ -576,7 +582,7 @@ export class WS2PConnection {
     })
   }
 
-  private async errorDetected(cause:WS2P_ERR) {
+  private errorDetected(cause:WS2P_ERR) {
     this.nbErrors++
     Logger.error('>>> WS ERROR: %s', WS2P_ERR[cause])
     if (this.nbErrors >= MAXIMUM_ERRORS_COUNT) {
@@ -588,10 +594,10 @@ export class WS2PConnection {
 class Logger {
 
   static log(message:string) {
-    // console.log('WS2P >>> ' + message)
+    logger.trace('WS2P >>> ' + message)
   }
 
   static error(message:string, obj:any) {
-    console.error('WS2P >>> ' + message, obj)
+    logger.error('WS2P >>> ' + message, obj)
   }
 }

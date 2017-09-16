@@ -7,12 +7,6 @@ const user      = require('./tools/user');
 const toolbox   = require('./tools/toolbox');
 const constants = require('../../app/lib/constants');
 
-// Trace these errors
-process.on('unhandledRejection', (reason) => {
-  console.error('Unhandled rejection: ' + reason);
-  console.error(reason);
-});
-
 const NB_CORES_FOR_COMPUTATION = 1 // For simple tests. Can be changed to test multiple cores.
 
 let s1, s2, s3, i1, i2

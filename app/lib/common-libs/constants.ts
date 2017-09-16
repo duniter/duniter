@@ -64,6 +64,7 @@ export const CommonConstants = {
     CURRENCY,
     PUBKEY,
     INTEGER,
+    BLOCKSTAMP: BLOCK_UID,
     FINGERPRINT,
     TIMESTAMP
   },

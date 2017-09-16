@@ -71,6 +71,7 @@ export const bma = function(server:Server, interfaces:NetworkInterface[], httpLo
     httpMethods.httpPOST( '/network/peering/peers',                 (req:any) => net.peersPost(req),                        BMALimitation.limitAsHighUsage());
     httpMethods.httpGET(  '/network/peers',                         (req:any) => net.peers(),                               BMALimitation.limitAsHighUsage());
     httpMethods.httpGET(  '/network/ws2p/info',                     (req:any) => net.ws2pInfo(),                            BMALimitation.limitAsHighUsage());
+    httpMethods.httpGET(  '/network/ws2p/heads',                    (req:any) => net.ws2pHeads(),                           BMALimitation.limitAsHighUsage());
     httpMethods.httpPOST( '/wot/add',                               (req:any) => wot.add(req),                              BMALimitation.limitAsHighUsage());
     httpMethods.httpPOST( '/wot/certify',                           (req:any) => wot.certify(req),                          BMALimitation.limitAsHighUsage());
     httpMethods.httpPOST( '/wot/revoke',                            (req:any) => wot.revoke(req),                           BMALimitation.limitAsHighUsage());

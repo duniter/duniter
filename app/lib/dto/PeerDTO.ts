@@ -106,7 +106,7 @@ export class PeerDTO implements Cloneable {
         }
       }
     })
-    return api || {}
+    return api || null
   }
 
   getDns() {

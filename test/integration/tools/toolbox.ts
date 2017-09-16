@@ -21,6 +21,7 @@ import {WS2PResponse} from "../../../app/modules/ws2p/lib/impl/WS2PResponse"
 import {WS2PMessageHandler} from "../../../app/modules/ws2p/lib/impl/WS2PMessageHandler"
 import {WS2PCluster} from "../../../app/modules/ws2p/lib/WS2PCluster"
 import {WS2PServer} from "../../../app/modules/ws2p/lib/WS2PServer"
+import {WS2PServerMessageHandler} from "../../../app/modules/ws2p/lib/interface/WS2PServerMessageHandler"
 
 const assert      = require('assert');
 const _           = require('underscore');
@@ -289,15 +290,25 @@ export const waitForkWS2PConnection = async (server:Server, pubkey:string) => {
 export const waitForkWS2PDisconnection = async (server:Server, pubkey:string) => {
   await new Promise(res => {
     server.pipe(es.mapSync((e:any) => {
-      if (e.ws2p === 'disconnected') {
-        console.log('>>>>>>> EVENT ', e)
-      }
       if (e.ws2p === 'disconnected' && e.peer.pub === pubkey) {
         res()
       }
       return e
     }))
 
+  })
+}
+
+export const waitForHeads = async (server:Server, nbHeads:number) => {
+  return new Promise(res => {
+    server.pipe(es.mapSync((e:any) => {
+      if (e.ws2p === 'heads') {
+        if (e.added.length === nbHeads) {
+          res(e.added)
+        }
+      }
+      return e
+    }))
   })
 }
 
@@ -533,6 +544,10 @@ export class TestingServer {
     return waitToHaveBlock(this.server, number)
   }
 
+  waitForHeads(nbHeads:number) {
+    return waitForHeads(this.server, nbHeads)
+  }
+
   waitForkResolution(number:number) {
     return waitForkResolution(this.server, number)
   }
@@ -658,7 +673,7 @@ export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promis
   const cluster1 = WS2PCluster.plugOn(s1._server)
   const cluster2 = WS2PCluster.plugOn(s2._server)
   const ws2ps = await cluster1.listen('localhost', port)
-  const ws2pc = await cluster2.connect('localhost', port)
+  const ws2pc = await cluster2.connect('localhost', port, new WS2PServerMessageHandler(s2._server, cluster2))
 
   await new Promise(res => {
     ws2ps.on('newConnection', res)

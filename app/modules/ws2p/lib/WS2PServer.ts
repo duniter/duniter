@@ -1,11 +1,11 @@
 import {Server} from "../../../../server"
 import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "./WS2PConnection"
-import {WS2PServerMessageHandler} from "./interface/WS2PServerMessageHandler"
 import {WS2PStreamer} from "../../../lib/streams/WS2PStreamer"
 import {Key} from "../../../lib/common-libs/crypto/keyring"
 import {GlobalFifoPromise} from "../../../service/GlobalFifoPromise"
 import * as events from "events"
 import {WS2PConstants} from "./constants"
+import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 
 const WebSocketServer = require('ws').Server
 
@@ -36,7 +36,7 @@ export class WS2PServer extends events.EventEmitter {
     return this.connections.slice()
   }
 
-  private listenToWebSocketConnections() {
+  private listenToWebSocketConnections(messageHandler:WS2PMessageHandler) {
     const key = new Key(this.server.conf.pair.pub, this.server.conf.pair.sec)
     this.wss = new WebSocketServer({ host: this.host, port: this.port })
     this.wss.on('connection', async (ws:any) => {
@@ -61,7 +61,7 @@ export class WS2PServer extends events.EventEmitter {
 
       const c = WS2PConnection.newConnectionFromWebSocketServer(
         ws,
-        new WS2PServerMessageHandler(this.server),
+        messageHandler,
         new WS2PPubkeyLocalAuth(key, acceptPubkey),
         new WS2PPubkeyRemoteAuth(key, acceptPubkey),
         {
@@ -71,7 +71,6 @@ export class WS2PServer extends events.EventEmitter {
       )
 
       try {
-        this.server.logger.info('WS2P %s: [c.connect()...] new incoming connection from %s:%s!', this.server.conf.pair.pub, ws._sender._socket._handle.owner.remoteAddress, ws._sender._socket._handle.owner.remotePort)
         await c.connect()
         const host = ws._sender._socket._handle.owner.remoteAddress
         const port = ws._sender._socket._handle.owner.remotePort
@@ -160,9 +159,9 @@ export class WS2PServer extends events.EventEmitter {
     }))
   }
 
-  static async bindOn(server:Server, host:string, port:number, fifo:GlobalFifoPromise, shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>) {
+  static async bindOn(server:Server, host:string, port:number, fifo:GlobalFifoPromise, shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>, messageHandler:WS2PMessageHandler) {
     const ws2ps = new WS2PServer(server, host, port, fifo, shouldAcceptConnection)
-    await ws2ps.listenToWebSocketConnections()
+    await ws2ps.listenToWebSocketConnections(messageHandler)
     server.logger.info('WS2P server %s listening on %s:%s', server.conf.pair.pub, host, port)
     return ws2ps
   }

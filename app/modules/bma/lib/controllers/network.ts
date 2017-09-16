@@ -1,7 +1,7 @@
-import {AbstractController} from "./AbstractController";
-import {BMAConstants} from "../constants";
-import {HttpMerkleOfPeers, HttpPeer, HttpPeers, HttpWS2PInfo} from "../dtos";
-import {WS2PDependency} from "../../../ws2p/index"
+import {AbstractController} from "./AbstractController"
+import {BMAConstants} from "../constants"
+import {HttpMerkleOfPeers, HttpPeer, HttpPeers, HttpWS2PHeads, HttpWS2PInfo} from "../dtos"
+import {WS2PHead} from "../../../ws2p/lib/WS2PCluster"
 
 const _                = require('underscore');
 const http2raw         = require('../http2raw');
@@ -80,5 +80,14 @@ export class NetworkBinding extends AbstractController {
         level2
       }
     };
+  }
+
+  async ws2pHeads(): Promise<HttpWS2PHeads> {
+    const cluster = this.server.ws2pCluster
+    let heads: WS2PHead[] = []
+    if (cluster) {
+      heads = await cluster.getKnownHeads()
+    }
+    return { heads }
   }
 }

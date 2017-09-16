@@ -10,6 +10,7 @@ import {MembershipDTO} from "../../../../lib/dto/MembershipDTO"
 import {TransactionDTO} from "../../../../lib/dto/TransactionDTO"
 import {PeerDTO} from "../../../../lib/dto/PeerDTO"
 import {WS2P_REQ} from "../WS2PRequester"
+import {WS2PCluster} from "../WS2PCluster"
 
 export enum WS2P_REQERROR {
   UNKNOWN_REQUEST
@@ -19,7 +20,7 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
 
   protected mapper:WS2PReqMapper
 
-  constructor(protected server:Server) {
+  constructor(protected server:Server, protected cluster:WS2PCluster) {
     this.mapper = new WS2PReqMapperByServer(server)
   }
 
@@ -55,6 +56,9 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
           const dto = PeerDTO.fromJSONObject(json.body.peer)
           const raw = dto.getRawSigned()
           await this.server.writeRawPeer(raw)
+        }
+        else if (json.body.heads) {
+          await this.cluster.headsReceived(json.body.heads || [])
         }
       }
     } catch(e) {

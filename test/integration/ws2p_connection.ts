@@ -11,6 +11,7 @@ import {WS2PMessageHandler} from "../../app/modules/ws2p/lib/impl/WS2PMessageHan
 import {WS2PResponse} from "../../app/modules/ws2p/lib/impl/WS2PResponse"
 const assert = require('assert');
 const WebSocketServer = require('ws').Server
+const logger = require('../../app/lib/logger').NewLogger('ws2p')
 
 describe('WS2P', () => {
 
@@ -150,7 +151,7 @@ describe('WS2P', () => {
                   return { answer: 'world' }
                 }
               }), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
-              s1.connect().catch(e => console.error('WS2P: newConnectionFromWebSocketServer connection error'))
+              s1.connect().catch(e => logger.error('WS2P: newConnectionFromWebSocketServer connection error'))
               break
             case 1:
               let j = 0
@@ -161,7 +162,7 @@ describe('WS2P', () => {
                   return { answer: 'this is s2![j = ' + (j++) + ']' }
                 }
               }), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
-              s2.connect().catch(e => console.error('WS2P: newConnectionFromWebSocketServer connection error'))
+              s2.connect().catch(e => logger.error('WS2P: newConnectionFromWebSocketServer connection error'))
               break
           }
           i++
@@ -228,7 +229,7 @@ describe('WS2P', () => {
                 connectionTimeout: 100,
                 requestTimeout: 100
               }));
-              (await s1p).connect().catch((e:any) => console.error('WS2P: newConnectionFromWebSocketServer connection error'))
+              (await s1p).connect().catch((e:any) => logger.error('WS2P: newConnectionFromWebSocketServer connection error'))
               break
             case 2:
 
@@ -242,7 +243,7 @@ describe('WS2P', () => {
                 connectionTimeout: 100,
                 requestTimeout: 100
               }));
-              (await s2p).connect().catch((e:any) => console.error('WS2P: newConnectionFromWebSocketServer connection error'))
+              (await s2p).connect().catch((e:any) => logger.error('WS2P: newConnectionFromWebSocketServer connection error'))
               break
             case 3:
 
@@ -250,7 +251,7 @@ describe('WS2P', () => {
                 connectionTimeout: 100,
                 requestTimeout: 100
               }));
-              (await s3p).connect().catch((e:any) => console.error('WS2P: newConnectionFromWebSocketServer connection error'))
+              (await s3p).connect().catch((e:any) => logger.error('WS2P: newConnectionFromWebSocketServer connection error'))
               break
             case 4:
 
@@ -258,12 +259,12 @@ describe('WS2P', () => {
                 connectionTimeout: 100,
                 requestTimeout: 100
               }));
-              (await s4p).connect().catch((e:any) => console.error('WS2P: newConnectionFromWebSocketServer connection error'))
+              (await s4p).connect().catch((e:any) => logger.error('WS2P: newConnectionFromWebSocketServer connection error'))
               break
 
             case 5:
               resolveS5(WS2PConnection.newConnectionFromWebSocketServer(ws, new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(serverKeypair), new WS2PPubkeyRemoteAuth(serverKeypair)));
-              (await s5p).connect().catch((e:any) => console.error('WS2P: newConnectionFromWebSocketServer connection error'))
+              (await s5p).connect().catch((e:any) => logger.error('WS2P: newConnectionFromWebSocketServer connection error'))
               break
 
             case 6:
@@ -272,7 +273,7 @@ describe('WS2P', () => {
                 connectionTimeout: 100,
                 requestTimeout: 100
               }));
-              (await s6p).connect().catch((e:any) => console.error('WS2P: newConnectionFromWebSocketServer connection error'))
+              (await s6p).connect().catch((e:any) => logger.error('WS2P: newConnectionFromWebSocketServer connection error'))
               break
           }
           i++
@@ -293,7 +294,7 @@ describe('WS2P', () => {
 
         const keypair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP')
         const c1 = WS2PConnection.newConnectionToAddress('localhost:20903', new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyNotAnsweringWithACKAuth(keypair))
-        c1.connect()
+        c1.connect().catch((e:any) => logger.error('WS2P: connection error'))
         const s1 = await s1p
         await assertThrows(s1.request({ name: 'something' }), "WS2P connection timeout")
       })
@@ -321,7 +322,7 @@ describe('WS2P', () => {
 
         const keypair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP')
         const c3 = WS2PConnection.newConnectionToAddress('localhost:20903', new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyAnsweringWithWrongSigForACK(keypair))
-        c3.connect()
+        c3.connect().catch((e:any) => logger.error('WS2P: connection error'))
         const s3 = await s3p
         await assertThrows(s3.request({ name: 'something' }), "Wrong signature from server ACK")
       })
@@ -357,7 +358,7 @@ describe('WS2P', () => {
             return { answer: 'success!' }
           }
         }), new WS2PPubkeyLocalAuth(keypair), new WS2PPubkeyRemoteAuth(keypair))
-        await c5.connect()
+        await c5.connect().catch((e:any) => logger.error('WS2P: connection error'))
         const s5 = await s5p
         assert.deepEqual({ answer: 'success!' }, await s5.request({ name: 'connection?'} ))
       })
@@ -371,7 +372,7 @@ describe('WS2P', () => {
 
         const keypair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP')
         const c6 = WS2PConnection.newConnectionToAddress('localhost:20903', new WS2PMutedHandler(), new WS2PPubkeyNotAnsweringWithOKAuth(keypair), new WS2PPubkeyRemoteAuth(keypair))
-        c6.connect()
+        c6.connect().catch((e:any) => logger.error('WS2P: connection error'))
         const s6 = await s6p
         await assertThrows(s6.request({ name: 'something' }), "WS2P connection timeout")
       })

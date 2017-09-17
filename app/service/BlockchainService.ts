@@ -159,7 +159,7 @@ export class BlockchainService extends FIFOService {
               await this.blockResolution()
               // Resolve the potential forks
               await this.forkResolution()
-              const current = this.current()
+              const current = await this.current()
               this.push({
                 bcEvent: OtherConstants.BC_EVENT.RESOLUTION_DONE,
                 block: current

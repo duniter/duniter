@@ -252,40 +252,44 @@ export class WS2PCluster {
     }
 
     // Also listen for network updates, and connect to new nodes
-    this.server.pipe(es.mapSync(async (data:any) => {
+    this.server.pipe(es.mapSync((data:any) => {
 
-      // New peer
-      if (data.endpoints) {
-        const peer = PeerDTO.fromJSONObject(data)
-        const ws2pEnpoint = peer.getWS2P()
-        if (ws2pEnpoint && peer.pubkey !== this.server.conf.pair.pub) {
-          // Check if already connected to the pubkey (in any way: server or client)
-          const connectedPubkeys = this.getConnectedPubkeys()
-          const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes || []))
-          if (shouldAccept) {
-            await this.connect(ws2pEnpoint.host, ws2pEnpoint.port, this.messageHandler)
-            // Trim the eventual extra connections
-            await this.trimClientConnections()
+      (async () => {
+        // New peer
+        if (data.endpoints) {
+          const peer = PeerDTO.fromJSONObject(data)
+          const ws2pEnpoint = peer.getWS2P()
+          if (ws2pEnpoint && peer.pubkey !== this.server.conf.pair.pub) {
+            // Check if already connected to the pubkey (in any way: server or client)
+            const connectedPubkeys = this.getConnectedPubkeys()
+            const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes || []))
+            if (shouldAccept) {
+              await this.connect(ws2pEnpoint.host, ws2pEnpoint.port, this.messageHandler)
+              // Trim the eventual extra connections
+              await this.trimClientConnections()
+            }
           }
         }
-      }
 
-      // Block received
-      else if (data.joiners) {
-        // Update the cache
-        this.blockstampsCache[[data.number, data.hash].join('-')] = Date.now()
-      }
-
-      // HEAD changed
-      else if (data.bcEvent === OtherConstants.BC_EVENT.HEAD_CHANGED || data.bcEvent === OtherConstants.BC_EVENT.SWITCHED) {
-        // Propagate this change to the network
-        const { sig, message } = this.sayHeadChangedTo(data.block.number, data.block.hash)
-        try {
-          await this.broadcastHead(message, sig)
-        } catch (e) {
-          this.server.logger.warn(e)
+        // Block received
+        else if (data.joiners) {
+          // Update the cache
+          this.blockstampsCache[[data.number, data.hash].join('-')] = Date.now()
         }
-      }
+
+        // HEAD changed
+        else if (data.bcEvent === OtherConstants.BC_EVENT.HEAD_CHANGED || data.bcEvent === OtherConstants.BC_EVENT.SWITCHED) {
+          // Propagate this change to the network
+          const { sig, message } = this.sayHeadChangedTo(data.block.number, data.block.hash)
+          try {
+            await this.broadcastHead(message, sig)
+          } catch (e) {
+            this.server.logger.warn(e)
+          }
+        }
+      })()
+
+      return data
     }))
   }
 
@@ -296,7 +300,13 @@ export class WS2PCluster {
 
   private async spreadNewHeads(heads:{ message:string, sig:string }[]) {
     const connexions = await this.getAllConnections()
-    return Promise.all(connexions.map(c => c.pushHeads(heads)))
+    return Promise.all(connexions.map(async (c) => {
+      try {
+        await c.pushHeads(heads)
+      } catch (e) {
+        this.server.logger.warn('Could not spread new HEAD info to %s WS2P %s %s', c.pubkey)
+      }
+    }))
   }
 
   private sayHeadChangedTo(number:number, hash:string) {

@@ -190,6 +190,7 @@ export class Server extends stream.Duplex implements HookableServer {
           this.emit('bcEvent', e)
         }
         this.streamPush(e)
+        return e
       }))
 
     return this.conf;

@@ -183,7 +183,7 @@ export const bma = function(server:Server, interfaces:NetworkInterface[], httpLo
             wssPeer.broadcast(JSON.stringify(peerResult));
           }
           // Broadcast heads
-          else if (data.ws2p === 'heads') {
+          else if (data.ws2p === 'heads' && data.added.length) {
             wssHeads.broadcast(JSON.stringify(data.added));
           }
         } catch (e) {

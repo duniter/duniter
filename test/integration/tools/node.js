@@ -147,19 +147,10 @@ function Node (dbName, options) {
   function service(callback) {
     return function () {
       const stack = duniter.statics.simpleStack();
-      stack.registerDependency(require('../../../app/modules/keypair').KeypairDependency, 'duniter-keypair')
-      stack.registerDependency(require('../../../app/modules/bma').BmaDependency,         'duniter-bma')
       stack.registerDependency({
         duniter: {
           config: {
             onLoading: (conf, program) => co(function*() {
-              options.port = options.port || 10901;
-              options.ipv4 = options.ipv4 || "127.0.0.1";
-              options.ipv6 = options.ipv6 || null;
-              options.remotehost = options.remotehost || null;
-              options.remoteipv4 = options.remoteipv4 || null;
-              options.remoteipv6 = options.remoteipv6 || null;
-              options.remoteport = options.remoteport || 10901;
               const overConf = ConfDTO.complete(options);
               _.extend(conf, overConf);
             })
@@ -182,7 +173,46 @@ function Node (dbName, options) {
           }]
         }
       }, 'duniter-automated-test');
-      stack.executeStack(['', '', '--mdb', dbName, '--memory', 'execute']);
+      options.port = options.port || 10901;
+      options.ipv4 = options.ipv4 || "127.0.0.1";
+      options.ipv6 = options.ipv6 || null;
+      options.remotehost = options.remotehost || null;
+      options.remoteipv4 = options.remoteipv4 || null;
+      options.remoteipv6 = options.remoteipv6 || null;
+      options.remoteport = options.remoteport || 10901;
+      const cliOptions = []
+      if (options.port) {
+        cliOptions.push('--port')
+        cliOptions.push(options.port)
+      }
+      if (options.ipv4) {
+        cliOptions.push('--ipv4')
+        cliOptions.push(options.ipv4)
+      }
+      if (options.ipv6) {
+        cliOptions.push('--ipv6')
+        cliOptions.push(options.ipv6)
+      }
+      if (options.remotehost) {
+        cliOptions.push('--remoteh')
+        cliOptions.push(options.remotehost)
+      }
+      if (options.remoteipv4) {
+        cliOptions.push('--remote4')
+        cliOptions.push(options.remoteipv4)
+      }
+      if (options.remoteipv6) {
+        cliOptions.push('--remote6')
+        cliOptions.push(options.remoteipv6)
+      }
+      if (options.remoteport) {
+        cliOptions.push('--remotep')
+        cliOptions.push(options.remoteport)
+      }
+
+      stack.registerDependency(require('../../../app/modules/keypair').KeypairDependency, 'duniter-keypair')
+      stack.registerDependency(require('../../../app/modules/bma').BmaDependency,         'duniter-bma')
+      stack.executeStack(['', '', '--mdb', dbName, '--memory', 'execute'].concat(cliOptions));
     };
   }
 

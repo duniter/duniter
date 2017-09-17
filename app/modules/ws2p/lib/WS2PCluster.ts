@@ -75,7 +75,7 @@ export class WS2PCluster {
   }
 
   async headsReceived(heads:[{ message:string, sig:string }]) {
-    const added:string[] = []
+    const added:{ message:string, sig:string }[] = []
     await Promise.all(heads.map(async (h:{ message:string, sig:string }) => {
       const message = h.message
       const sig = h.sig
@@ -95,7 +95,7 @@ export class WS2PCluster {
                   if (exists) {
                     this.headsCache[pub] = { blockstamp, message, sig }
                     this.newHeads.push({message, sig})
-                    added.push(message)
+                    added.push({message, sig})
                     // Cancel a pending "heads" to be spread
                     if (this.headsTimeout) {
                       clearTimeout(this.headsTimeout)
@@ -103,7 +103,9 @@ export class WS2PCluster {
                     // Reprogram it a few moments later
                     this.headsTimeout = setTimeout(async () => {
                       const heads = this.newHeads.splice(0, this.newHeads.length)
-                      await this.spreadNewHeads(heads)
+                      if (heads.length) {
+                        await this.spreadNewHeads(heads)
+                      }
                     }, WS2PConstants.HEADS_SPREAD_TIMEOUT)
                   }
                 }

@@ -225,6 +225,7 @@ export const NewTestingServer = (conf:any) => {
   const host = conf.host || HOST
   const port = conf.port || PORT++
   const commonConf = {
+    nobma: false,
     port: port,
     ipv4: host,
     remoteipv4: host,

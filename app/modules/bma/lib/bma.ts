@@ -106,6 +106,10 @@ export const bma = function(server:Server, interfaces:NetworkInterface[], httpLo
       server: httpServer,
       path: '/ws/peer'
     });
+    let wssHeads = new WebSocketServer({
+      server: httpServer,
+      path: '/ws/heads'
+    });
 
     wssBlock.on('error', function (error:any) {
       logger && logger.error('Error on WS Server');
@@ -125,6 +129,17 @@ export const bma = function(server:Server, interfaces:NetworkInterface[], httpLo
         }
       });
     });
+
+    wssHeads.on('connection', async (ws:any) => {
+      if (server.ws2pCluster) {
+        try {
+          ws.send(JSON.stringify(await server.ws2pCluster.getKnownHeads()))
+        } catch (e) {
+          logger.error(e);
+        }
+      }
+    })
+    wssHeads.broadcast = (data:any) => wssHeads.clients.forEach((client:any) => client.send(data));
 
     wssBlock.broadcast = (data:any) => wssBlock.clients.forEach((client:any) => {
       try {
@@ -166,6 +181,10 @@ export const bma = function(server:Server, interfaces:NetworkInterface[], httpLo
               raw: peerDTO.getRaw()
             }
             wssPeer.broadcast(JSON.stringify(peerResult));
+          }
+          // Broadcast heads
+          else if (data.ws2p === 'heads') {
+            wssHeads.broadcast(JSON.stringify(data.added));
           }
         } catch (e) {
           logger && logger.error('error on ws mapSync:', e);

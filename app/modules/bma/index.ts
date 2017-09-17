@@ -101,12 +101,8 @@ export const BmaDependency = {
         }
 
         // Network autoconf
-        const autoconfNet = program.autoconf
-          || !(conf.ipv4 || conf.ipv6)
-          || !(conf.remoteipv4 || conf.remoteipv6 || conf.remotehost)
-          || !(conf.port && conf.remoteport);
-        if (autoconfNet) {
-          await Q.nbind(networkReconfiguration, null)(conf, autoconfNet, logger, program.noupnp);
+        if (program.autoconf) {
+          await Q.nbind(networkReconfiguration, null)(conf, true, logger, program.noupnp);
         }
 
         // Default value
@@ -138,14 +134,16 @@ export const BmaDependency = {
         }
 
         // Configuration errors
-        if(!conf.ipv4 && !conf.ipv6){
-          throw new Error("No interface to listen to.");
-        }
-        if(!conf.remoteipv4 && !conf.remoteipv6 && !conf.remotehost){
-          throw new Error('No interface for remote contact.');
-        }
-        if (!conf.remoteport) {
-          throw new Error('No port for remote contact.');
+        if (!conf.nobma) {
+          if(!conf.ipv4 && !conf.ipv6){
+            throw new Error("No interface to listen to.");
+          }
+          if(!conf.remoteipv4 && !conf.remoteipv6 && !conf.remotehost){
+            throw new Error('No interface for remote contact.');
+          }
+          if (!conf.remoteport) {
+            throw new Error('No port for remote contact.');
+          }
         }
       },
 

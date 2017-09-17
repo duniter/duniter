@@ -24,7 +24,7 @@ describe("Integration", function() {
 
   describe("Node 1", function() {
 
-    const node1 = node('db1', { currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, httplogs: false,
+    const node1 = node('db1', { upnp: false, currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, httplogs: false,
       rootoffset: 0,
       sigQty: 1,
       pair: {

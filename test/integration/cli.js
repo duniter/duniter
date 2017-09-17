@@ -116,7 +116,7 @@ describe("CLI", function() {
   }));
 
   it('config --autoconf', () => co(function*() {
-    let res = yield execute(['config', '--autoconf']);
+    let res = yield execute(['config', '--autoconf', '--noupnp']);
     res.should.have.property("pair").property('pub').not.equal("");
     res.should.have.property("pair").property('sec').not.equal("");
   }));

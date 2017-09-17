@@ -29,6 +29,7 @@ describe('Module usage', () => {
     }, 'duniter-automated-test');
     yield stack.executeStack(['node', 'index.js', 'test1',
       '--memory',
+      '--noupnp',
       '--ipv4', '127.0.0.1',
       '--port', '10400'
     ]);

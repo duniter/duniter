@@ -158,7 +158,7 @@ describe("v1.0 Module API", () => {
 
     function run() {
       const args = Array.from(arguments);
-      return stack.executeStack(['node', 'index.js', '--memory'].concat(args));
+      return stack.executeStack(['node', 'index.js', '--memory', '--ws2p-noupnp'].concat(args));
     }
 
     before(() => co(function*() {

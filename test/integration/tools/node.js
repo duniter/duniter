@@ -180,7 +180,7 @@ function Node (dbName, options) {
       options.remoteipv4 = options.remoteipv4 || null;
       options.remoteipv6 = options.remoteipv6 || null;
       options.remoteport = options.remoteport || 10901;
-      const cliOptions = []
+      const cliOptions = ['--ws2p-noupnp']
       if (options.port) {
         cliOptions.push('--port')
         cliOptions.push(options.port)

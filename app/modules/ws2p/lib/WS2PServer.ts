@@ -65,8 +65,8 @@ export class WS2PServer extends events.EventEmitter {
         new WS2PPubkeyLocalAuth(key, acceptPubkey),
         new WS2PPubkeyRemoteAuth(key, acceptPubkey),
         {
-          connectionTimeout: 5000,
-          requestTimeout: 5000
+          connectionTimeout: WS2PConstants.CONNEXION_TIMEOUT,
+          requestTimeout: WS2PConstants.REQUEST_TIMEOUT
         }
       )
 
@@ -153,7 +153,7 @@ export class WS2PServer extends events.EventEmitter {
       if (c.pubkey === pubkeyOfConnection) {
         return c
       } else {
-        await new Promise(resolve => setTimeout(resolve, 5000))
+        await new Promise(resolve => setTimeout(resolve, WS2PConstants.CONNEXION_TIMEOUT))
         throw Error("Pubkey not matching or too long to be obtained")
       }
     }))

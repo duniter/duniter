@@ -6,6 +6,9 @@ export const WS2PConstants = {
   WS2P_PORTS_END: 20999,
   WS2P_UPNP_INTERVAL: 300,
 
+  CONNEXION_TIMEOUT: 10000,
+  REQUEST_TIMEOUT: 10000,
+
   BLOCK_PULLING_INTERVAL: 300 * 2,    // 10 minutes
   DOCPOOL_PULLING_INTERVAL: 3600 * 4, // 4 hours
   SANDBOX_FIRST_PULL_DELAY: 300 * 2,  // 10 minutes after the start

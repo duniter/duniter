@@ -52,7 +52,8 @@ export class WS2PUpnp {
       client.portMapping({
         'public': this.currentConfig.port,
         'private': this.currentConfig.port,
-        'ttl': WS2PConstants.WS2P_UPNP_TTL
+        'ttl': WS2PConstants.WS2P_UPNP_TTL,
+        'description': 'duniter:ws2p:upnp'
       }, (err:any) => {
         client.close()
         if (err) {

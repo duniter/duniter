@@ -43,7 +43,8 @@ export class UpnpApi {
       client.portMapping({
         'public': this.remotePort,
         'private': this.localPort,
-        'ttl': BMAConstants.UPNP_TTL
+        'ttl': BMAConstants.UPNP_TTL,
+        'description': 'duniter:bma:upnp'
       }, (err:any) => {
         client.close();
         if (err) {

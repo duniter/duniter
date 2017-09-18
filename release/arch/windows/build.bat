@@ -1,7 +1,4 @@
 
-set DUNITER_BRANCH=1.4.x
-set VER_UI=%DUNITER_BRANCH%
-
 set ADDON_VERSION=48
 set NW_VERSION=0.17.6
 set NODEJS_VERSION=6.11.1
@@ -46,7 +43,7 @@ call npm cache clean
 call npm install
 REM call npm test
 echo "Ajout du module 1/1 (duniter-ui)..."
-call npm install duniter-ui@%VER_UI% --save --production
+call npm install duniter-ui@1.6.x --save --production
 REM sed -i "s/duniter\//..\/..\/..\/..\//g" node_modules/duniter-ui/server/controller/webmin.js
 cd node_modules\duniter-ui\server\controller\
 powershell -Command "(Get-Content webmin.js) | foreach-object {$_ -replace 'duniter/','../../../../' } | Set-Content webmin.js2"

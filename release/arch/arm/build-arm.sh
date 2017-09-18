@@ -62,7 +62,7 @@ cp -R "$DOWNLOADS/node-${NVER}-linux-${ARCH}" node
 
 echo "yarn"
 yarn
-yarn add duniter-ui@1.4.x --save --production
+yarn add duniter-ui@1.6.x --save --production
 sed -i "s/duniter\//..\/..\/..\/..\//g" node_modules/duniter-ui/server/controller/webmin.js
 SRC=`pwd`
 echo $SRC

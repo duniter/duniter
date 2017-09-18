@@ -80,7 +80,7 @@ rm -Rf .git
 #[[ $? -eq 0 ]] && yarn test
 
 # Duniter UI
-[[ $? -eq 0 ]] && yarn add duniter-ui@1.4.x
+[[ $? -eq 0 ]] && yarn add duniter-ui@1.6.x
 [[ $? -eq 0 ]] && sed -i "s/duniter\//..\/..\/..\/..\//g" node_modules/duniter-ui/server/controller/webmin.js
 
 [[ $? -eq 0 ]] && npm prune --production

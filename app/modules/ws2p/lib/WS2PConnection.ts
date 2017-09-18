@@ -74,6 +74,7 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
   protected serverAuthReject:(err:any)=>void
 
   constructor(
+    protected currency:string,
     protected pair:Key,
     protected tellIsAuthorizedPubkey:(pub: string) => Promise<boolean> = () => Promise.resolve(true)
   ) {
@@ -89,7 +90,7 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
   }
 
   async sendACK(ws: any): Promise<void> {
-    const challengeMessage = `WS2P:ACK:${this.pair.pub}:${this.challenge}`
+    const challengeMessage = `WS2P:ACK:${this.currency}:${this.pair.pub}:${this.challenge}`
     Logger.log('sendACK >>> ' + challengeMessage)
     const sig = this.pair.signSync(challengeMessage)
     await ws.send(JSON.stringify({
@@ -104,7 +105,7 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
     if (!allow) {
       return false
     }
-    const challengeMessage = `WS2P:CONNECT:${pub}:${challenge}`
+    const challengeMessage = `WS2P:CONNECT:${this.currency}:${pub}:${challenge}`
     Logger.log('registerCONNECT >>> ' + challengeMessage)
     const verified = verify(challengeMessage, sig, pub)
     if (verified) {
@@ -115,7 +116,7 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
   }
 
   async registerOK(sig: string): Promise<boolean> {
-    const challengeMessage = `WS2P:OK:${this.remotePub}:${this.challenge}`
+    const challengeMessage = `WS2P:OK:${this.currency}:${this.remotePub}:${this.challenge}`
     Logger.log('registerOK >>> ' + challengeMessage)
     this.authenticatedByRemote = verify(challengeMessage, sig, this.remotePub)
     if (!this.authenticatedByRemote) {
@@ -147,6 +148,7 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
   protected serverAuthReject:(err:any)=>void
 
   constructor(
+    protected currency:string,
     protected pair:Key,
     protected tellIsAuthorizedPubkey:(pub: string) => Promise<boolean> = () => Promise.resolve(true)
   ) {
@@ -158,7 +160,7 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
   }
 
   async sendCONNECT(ws:any): Promise<void> {
-    const challengeMessage = `WS2P:CONNECT:${this.pair.pub}:${this.challenge}`
+    const challengeMessage = `WS2P:CONNECT:${this.currency}:${this.pair.pub}:${this.challenge}`
     Logger.log('sendCONNECT >>> ' + challengeMessage)
     const sig = this.pair.signSync(challengeMessage)
     await ws.send(JSON.stringify({
@@ -175,7 +177,7 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
     if (!allow) {
       return false
     }
-    const challengeMessage = `WS2P:ACK:${pub}:${this.challenge}`
+    const challengeMessage = `WS2P:ACK:${this.currency}:${pub}:${this.challenge}`
     Logger.log('registerACK >>> ' + challengeMessage)
     this.authenticated = verify(challengeMessage, sig, pub)
     if (!this.authenticated) {
@@ -187,7 +189,7 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
   }
 
   async sendOK(ws:any): Promise<void> {
-    const challengeMessage = `WS2P:OK:${this.pair.pub}:${this.challenge}`
+    const challengeMessage = `WS2P:OK:${this.currency}:${this.pair.pub}:${this.challenge}`
     Logger.log('sendOK >>> ' + challengeMessage)
     const sig = this.pair.signSync(challengeMessage)
     await ws.send(JSON.stringify({

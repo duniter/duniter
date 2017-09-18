@@ -13,8 +13,8 @@ export class WS2PClient {
     const c = WS2PConnection.newConnectionToAddress(
       [host, port].join(':'),
       messageHandler,
-      new WS2PPubkeyLocalAuth(k2),
-      new WS2PPubkeyRemoteAuth(k2)
+      new WS2PPubkeyLocalAuth(server.conf.currency , k2),
+      new WS2PPubkeyRemoteAuth(server.conf.currency, k2)
     )
     // Streaming
     const streamer = new WS2PStreamer(c)

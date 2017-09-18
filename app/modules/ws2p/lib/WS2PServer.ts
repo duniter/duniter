@@ -62,8 +62,8 @@ export class WS2PServer extends events.EventEmitter {
       const c = WS2PConnection.newConnectionFromWebSocketServer(
         ws,
         messageHandler,
-        new WS2PPubkeyLocalAuth(key, acceptPubkey),
-        new WS2PPubkeyRemoteAuth(key, acceptPubkey),
+        new WS2PPubkeyLocalAuth(this.server.conf.currency, key, acceptPubkey),
+        new WS2PPubkeyRemoteAuth(this.server.conf.currency, key, acceptPubkey),
         {
           connectionTimeout: WS2PConstants.CONNEXION_TIMEOUT,
           requestTimeout: WS2PConstants.REQUEST_TIMEOUT

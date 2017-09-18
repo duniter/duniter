@@ -628,7 +628,7 @@ export class TestingServer {
   }
 }
 
-export async function newWS2PBidirectionnalConnection(k1:Key, k2:Key, serverHandler:WS2PMessageHandler) {
+export async function newWS2PBidirectionnalConnection(currency:string, k1:Key, k2:Key, serverHandler:WS2PMessageHandler) {
   let i = 1
   let port = PORT++
   const wss = new WebSocketServer({ port })
@@ -642,7 +642,7 @@ export async function newWS2PBidirectionnalConnection(k1:Key, k2:Key, serverHand
     wss.on('connection', async (ws:any) => {
       switch (i) {
         case 1:
-          s1 = WS2PConnection.newConnectionFromWebSocketServer(ws, serverHandler, new WS2PPubkeyLocalAuth(k1), new WS2PPubkeyRemoteAuth(k1), {
+          s1 = WS2PConnection.newConnectionFromWebSocketServer(ws, serverHandler, new WS2PPubkeyLocalAuth(currency, k1), new WS2PPubkeyRemoteAuth(currency, k1), {
             connectionTimeout: 100,
             requestTimeout: 100
           });
@@ -662,7 +662,7 @@ export async function newWS2PBidirectionnalConnection(k1:Key, k2:Key, serverHand
       async answerToRequest(json: any): Promise<WS2PResponse> {
         return {}
       }
-    }), new WS2PPubkeyLocalAuth(k2), new WS2PPubkeyRemoteAuth(k2))
+    }), new WS2PPubkeyLocalAuth(currency, k2), new WS2PPubkeyRemoteAuth(currency, k2))
   })
 }
 

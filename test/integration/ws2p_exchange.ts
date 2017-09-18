@@ -15,7 +15,7 @@ describe('WS2P exchange', () => {
   before(async () => {
     const serverPair = new Key('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F')
     const clientPair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP')
-    const res = await newWS2PBidirectionnalConnection(serverPair, clientPair, new (class TestingHandler implements WS2PMessageHandler {
+    const res = await newWS2PBidirectionnalConnection("gtest", serverPair, clientPair, new (class TestingHandler implements WS2PMessageHandler {
 
       async handlePushMessage(json: any): Promise<void> {
       }

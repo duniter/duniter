@@ -1,5 +1,6 @@
 Package: duniter
 Version: 1.5.9
+Depends: unzip
 Section: misc
 Priority: optional
 Architecture: all

@@ -475,8 +475,12 @@ export class WS2PCluster {
     const chosen = randomPick(connections, CrawlerConstants.CRAWL_PEERS_COUNT)
 
     await Promise.all(chosen.map(async (conn) => {
-      const puller = new WS2PBlockPuller(this.server, conn)
-      await puller.pull()
+      try {
+        const puller = new WS2PBlockPuller(this.server, conn)
+        await puller.pull()
+      } catch (e) {
+        this.server.logger.warn(e)
+      }
     }))
 
     await this.server.BlockchainService.pushFIFO("WS2PCrawlerResolution", async () => {

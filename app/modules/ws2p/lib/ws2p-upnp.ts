@@ -21,10 +21,10 @@ export class WS2PUpnp {
     try {
       await new Promise((resolve, reject) => {
         this.client.externalIp((err:any, res:any) => {
-          if (err) {
-            resolve(true)
+          if (err || !res) {
+            reject()
           } else {
-            resolve(false)
+            resolve()
           }
         })
       })
@@ -67,11 +67,14 @@ export class WS2PUpnp {
 
   async startRegular() {
     this.stopRegular();
-    if (await this.checkUPnPisAvailable()) {
+    const available = await this.checkUPnPisAvailable()
+    if (available) {
       // Update UPnP IGD every INTERVAL seconds
       this.interval = setInterval(() => this.openPort(), 1000 * WS2PConstants.WS2P_UPNP_INTERVAL)
+      const { host, port } = await this.openPort()
+      return { host, port, available }
     }
-    return this.openPort()
+    return { host: '', port: 0, available: false }
   }
 
   stopRegular() {

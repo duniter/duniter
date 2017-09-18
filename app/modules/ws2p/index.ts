@@ -107,10 +107,12 @@ export class WS2PAPI extends stream.Transform {
         this.upnpAPI.stopRegular();
       }
       try {
-        this.upnpAPI = await new WS2PUpnp(this.logger)
-        const { host, port } = await this.upnpAPI.startRegular()
-        await this.cluster.listen(host, port)
-        await this.server.PeeringService.generateSelfPeer(this.server.conf)
+        this.upnpAPI = new WS2PUpnp(this.logger)
+        const { host, port, available } = await this.upnpAPI.startRegular()
+        if (available) {
+          await this.cluster.listen(host, port)
+          await this.server.PeeringService.generateSelfPeer(this.server.conf)
+        }
       } catch (e) {
         this.logger.warn(e);
       }

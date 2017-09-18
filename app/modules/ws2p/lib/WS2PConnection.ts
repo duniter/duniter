@@ -6,12 +6,13 @@ import {CertificationDTO} from "../../../lib/dto/CertificationDTO"
 import {MembershipDTO} from "../../../lib/dto/MembershipDTO"
 import {TransactionDTO} from "../../../lib/dto/TransactionDTO"
 import {PeerDTO} from "../../../lib/dto/PeerDTO"
+import {WS2PConstants} from "./constants"
 const ws = require('ws')
 const nuuid = require('node-uuid');
 const logger = require('../../../lib/logger').NewLogger('ws2p')
 
 const MAXIMUM_ERRORS_COUNT = 5
-const REQUEST_TIMEOUT_VALUE = 1000 * 5 // 10 seconds
+const REQUEST_TIMEOUT_VALUE = WS2PConstants.REQUEST_TIMEOUT
 
 enum WS2P_ERR {
   REJECTED_PUBKEY_OR_INCORRECT_ASK_SIGNATURE_FROM_REMOTE,

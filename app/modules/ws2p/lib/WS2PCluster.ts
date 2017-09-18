@@ -412,6 +412,18 @@ export class WS2PCluster {
     return accept
   }
 
+  async getLevel1Connections() {
+    const all:WS2PConnection[] = []
+    for (const uuid of Object.keys(this.ws2pClients)) {
+      all.push(this.ws2pClients[uuid].connection)
+    }
+    return all
+  }
+
+  async getLevel2Connections(): Promise<WS2PConnection[]> {
+    return this.ws2pServer ? this.ws2pServer.getConnexions() : []
+  }
+
   async getAllConnections() {
     const all:WS2PConnection[] = this.ws2pServer ? this.ws2pServer.getConnexions() : []
     for (const uuid of Object.keys(this.ws2pClients)) {
@@ -446,6 +458,19 @@ export class WS2PCluster {
   }
 
   async pullBlocks() {
+    let current:{number:number} = { number: -1 }
+    let newCurrent:{number:number} = { number: 0 }
+    while (current && newCurrent && newCurrent.number > current.number) {
+      current = newCurrent
+      await this.makeApullShot()
+      newCurrent = await this.server.dal.getCurrentBlockOrNull()
+    }
+    if (current) {
+      this.server.pullingEvent('end', current.number)
+    }
+  }
+
+  private async makeApullShot() {
     const connections = await this.getAllConnections()
     const chosen = randomPick(connections, CrawlerConstants.CRAWL_PEERS_COUNT)
 
@@ -458,11 +483,6 @@ export class WS2PCluster {
       await this.server.BlockchainService.blockResolution()
       await this.server.BlockchainService.forkResolution()
     })
-
-    const current = await this.server.dal.getCurrentBlockOrNull()
-    if (current) {
-      this.server.pullingEvent('end', current.number)
-    }
   }
 
   async pullDocpool() {

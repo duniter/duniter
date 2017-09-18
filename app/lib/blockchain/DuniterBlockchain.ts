@@ -213,15 +213,15 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
 
     const TAIL = await dal.bindexDAL.tail();
     const bindexSize = [
-      block.issuersCount,
-      block.issuersFrame,
+      TAIL.issuersCount,
+      TAIL.issuersFrame,
       conf.medianTimeBlocks,
       conf.dtDiffEval
     ].reduce((max, value) => {
       return Math.max(max, value);
     }, 0);
-    const MAX_BINDEX_SIZE = 2 * bindexSize;
-    const currentSize = indexes.HEAD.number - TAIL.number + 1;
+    const MAX_BINDEX_SIZE = conf.forksize + bindexSize
+    const currentSize = indexes.HEAD.number - TAIL.number + 1
     if (currentSize > MAX_BINDEX_SIZE) {
       await dal.trimIndexes(indexes.HEAD.number - MAX_BINDEX_SIZE);
     }

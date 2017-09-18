@@ -156,11 +156,15 @@ export class PermanentProver {
             // The generation
             (async () => {
               try {
-                const current = await this.server.dal.getCurrentBlockOrNull();
-                const selfPubkey = this.server.keyPair.publicKey;
-                const trial2 = await this.server.getBcContext().getIssuerPersonalizedDifficulty(selfPubkey);
-                this.checkTrialIsNotTooHigh(trial2, current, selfPubkey);
-                this.lastComputedBlock = await this.generator.makeNextBlock(null, trial2);
+                let unsignedBlock = null, trial2 = 0
+                await this.server.BlockchainService.pushFIFO('generatingNextBlock', async () => {
+                  const current = await this.server.dal.getCurrentBlockOrNull();
+                  const selfPubkey = this.server.keyPair.publicKey;
+                  trial2 = await this.server.getBcContext().getIssuerPersonalizedDifficulty(selfPubkey);
+                  this.checkTrialIsNotTooHigh(trial2, current, selfPubkey);
+                  unsignedBlock = await this.generator.nextBlock()
+                })
+                this.lastComputedBlock = await this.prover.prove(unsignedBlock, trial2, null)
                 try {
                   const obj = parsers.parseBlock.syncWrite(dos2unix(this.lastComputedBlock.getRawSigned()));
                   await this.server.writeBlock(obj)

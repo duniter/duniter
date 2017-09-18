@@ -1,4 +1,4 @@
-import * as assert from 'assert'
+import * as assert from "assert"
 import {SwitchBlock, Switcher, SwitcherDao} from "../../app/lib/blockchain/Switcher"
 import {NewLogger} from "../../app/lib/logger"
 
@@ -27,7 +27,7 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C15"),
       Block.from("C16")
     ])
-    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize, switchOnHeadAdvance, logger)
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), [], avgGenTime, forkWindowSize, switchOnHeadAdvance, logger)
     await switcher.tryToFork()
     assert.equal(bc.current.number, 16)
     assert.equal(bc.current.hash, "C16")
@@ -49,7 +49,7 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C14"),
       Block.from("C15")
     ])
-    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize, switchOnHeadAdvance)
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), [], avgGenTime, forkWindowSize, switchOnHeadAdvance)
     await switcher.tryToFork()
     assert.equal(bc.current.number, 13)
     assert.equal(bc.current.hash, "B13")
@@ -69,7 +69,7 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C14"),
       Block.from("C15")
     ])
-    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize, switchOnHeadAdvance)
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), [], avgGenTime, forkWindowSize, switchOnHeadAdvance)
     await switcher.tryToFork()
     assert.equal(bc.current.number, 13)
     assert.equal(bc.current.hash, "B13")
@@ -94,7 +94,7 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C15"),
       Block.from("C16")
     ])
-    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize, switchOnHeadAdvance)
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), [], avgGenTime, forkWindowSize, switchOnHeadAdvance)
     await switcher.tryToFork()
     assert.equal(bc.current.number, 13)
     assert.equal(bc.current.hash, "B13")
@@ -118,7 +118,7 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C15"),
       Block.from("C16")
     ])
-    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize, switchOnHeadAdvance)
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), [], avgGenTime, forkWindowSize, switchOnHeadAdvance)
     await switcher.tryToFork()
     assert.equal(bc.current.number, 13)
     assert.equal(bc.current.hash, "B13")
@@ -141,7 +141,7 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("C15"),
       Block.from("C16")
     ])
-    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize, switchOnHeadAdvance)
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), [], avgGenTime, forkWindowSize, switchOnHeadAdvance)
     await switcher.tryToFork()
     assert.equal(bc.current.number, 13)
     assert.equal(bc.current.hash, "B13")
@@ -170,7 +170,7 @@ describe("Fork resolution 3-3 algo", () => {
       Block.from("E14"),
       Block.from("E15")
     ])
-    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), avgGenTime, forkWindowSize, 1)
+    const switcher = new Switcher(new TestingSwitcherDao(bc, sbx), [], avgGenTime, forkWindowSize, 1)
     await switcher.tryToFork()
     assert.equal(16, bc.current.number)
     assert.equal("D16", bc.current.hash)

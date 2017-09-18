@@ -15,7 +15,7 @@
 #error "Unable to find MyAppExe"
 #endif
 
-#define MyAppVerStr "v1.5.9"
+#define MyAppVerStr "v1.6.0"
 
 [Setup]
 AppName={#MyAppName}

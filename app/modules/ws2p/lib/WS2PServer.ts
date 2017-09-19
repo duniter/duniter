@@ -22,6 +22,10 @@ export class WS2PServer extends events.EventEmitter {
     private fifo:GlobalFifoPromise,
     private shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>) {
     super()
+    // Conf: max public connections
+    if (this.server.conf.ws2p && this.server.conf.ws2p.maxPublic !== undefined) {
+      this.maxLevel2Size = this.server.conf.ws2p.maxPublic
+    }
   }
 
   get maxLevel2Peers() {

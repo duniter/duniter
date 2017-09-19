@@ -18,6 +18,8 @@ export const WS2PDependency = {
       { value: '--ws2p-port <port>',           desc: 'Host to listen to', parser: (val:string) => parseInt(val) },
       { value: '--ws2p-remote-host <address>', desc: 'Availabily host' },
       { value: '--ws2p-remote-port <port>',    desc: 'Availabily port', parser: (val:string) => parseInt(val) },
+      { value: '--ws2p-max-private <count>',   desc: 'Maximum private connections count', parser: (val:string) => parseInt(val) },
+      { value: '--ws2p-max-public <count>',    desc: 'Maximum public connections count', parser: (val:string) => parseInt(val) },
     ],
 
     config: {
@@ -35,6 +37,8 @@ export const WS2PDependency = {
         if (program.ws2pRemoteHost !== undefined) conf.ws2p.remotehost = program.ws2pRemoteHost
         if (program.ws2pUpnp !== undefined)       conf.ws2p.upnp = true
         if (program.ws2pNoupnp !== undefined)     conf.ws2p.upnp = false
+        if (program.ws2pMaxPrivate !== undefined) conf.ws2p.maxPrivate = program.ws2pMaxPrivate
+        if (program.ws2pMaxPublic !== undefined)  conf.ws2p.maxPublic = program.ws2pMaxPublic
 
         // Default value
         if (conf.ws2p.upnp === undefined || conf.ws2p.upnp === null) {

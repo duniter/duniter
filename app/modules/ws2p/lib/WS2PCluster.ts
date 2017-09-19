@@ -52,6 +52,10 @@ export class WS2PCluster {
 
   private constructor(private server:Server) {
     this.messageHandler = new WS2PServerMessageHandler(this.server, this)
+    // Conf: max private connections
+    if (this.server.conf.ws2p && this.server.conf.ws2p.maxPrivate !== undefined) {
+      this.maxLevel1Size = this.server.conf.ws2p.maxPrivate
+    }
   }
 
   async getKnownHeads(): Promise<WS2PHead[]> {

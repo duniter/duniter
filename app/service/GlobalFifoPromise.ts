@@ -1,6 +1,9 @@
-"use strict";
 import {CommonConstants} from "../lib/common-libs/constants"
+import {NewLogger} from "../lib/logger"
+
+const querablep = require('querablep');
 const async = require('async');
+const logger = NewLogger()
 
 export class GlobalFifoPromise {
 
@@ -9,7 +12,7 @@ export class GlobalFifoPromise {
   }, 1)
 
   private operations:{ [k:string]: boolean } = {}
-  private currentPromise:Promise<any>|null
+  private currentPromise:any
 
   constructor() {
   }
@@ -30,7 +33,7 @@ export class GlobalFifoPromise {
       this.fifo.push(async (cb:any) => {
         // OK its the turn of given promise, execute it
         try {
-          this.currentPromise = p()
+          this.currentPromise = querablep(p())
           const res = await this.currentPromise
           delete this.operations[operationId]
           // Finished, we end the function in the FIFO
@@ -51,7 +54,8 @@ export class GlobalFifoPromise {
 
   async closeFIFO() {
     this.fifo.pause()
-    if (this.currentPromise) {
+    if (this.currentPromise && !this.currentPromise.isFulfilled()) {
+      logger.info('Waiting current task of documentFIFO to be finished...')
       await this.currentPromise
     }
   }

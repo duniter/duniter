@@ -31,7 +31,7 @@ export class WS2PStreamer extends stream.Transform {
         await this.ws2pc.pushPeer(obj)
       }
     } catch (e) {
-      logger.warn(e)
+      logger.warn('WS2P >> Streamer >>', e)
     }
     done && done();
   }

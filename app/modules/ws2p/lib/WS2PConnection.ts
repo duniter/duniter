@@ -571,17 +571,21 @@ export class WS2PConnection {
     await this.connect()
     return new Promise((resolve, reject) => {
       this.nbPushsToRemoteCount++
-      this.ws.send(JSON.stringify({
-        body: {
-          name: WS2P_PUSH[type],
-          [key]: data
-        }
-      }), async (err:any) => {
-        if (err) {
-          return reject(err)
-        }
-        resolve()
-      })
+      try {
+        this.ws.send(JSON.stringify({
+          body: {
+            name: WS2P_PUSH[type],
+            [key]: data
+          }
+        }), async (err:any) => {
+          if (err) {
+            return reject(err)
+          }
+          resolve()
+        })
+      } catch (e) {
+        reject(e)
+      }
     })
   }
 

@@ -3,18 +3,24 @@ import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "./WS2PC
 import {WS2PStreamer} from "../../../lib/streams/WS2PStreamer"
 import {Key} from "../../../lib/common-libs/crypto/keyring"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
+import {WS2PConstants} from "./constants"
 
 export class WS2PClient {
 
   private constructor(public connection:WS2PConnection) {}
 
-  static async connectTo(server:Server, host:string, port:number, messageHandler:WS2PMessageHandler) {
+  static async connectTo(server:Server, host:string, port:number, messageHandler:WS2PMessageHandler, expectedPub:string) {
     const k2 = new Key(server.conf.pair.pub, server.conf.pair.sec)
     const c = WS2PConnection.newConnectionToAddress(
       [host, port].join(':'),
       messageHandler,
       new WS2PPubkeyLocalAuth(server.conf.currency , k2),
-      new WS2PPubkeyRemoteAuth(server.conf.currency, k2)
+      new WS2PPubkeyRemoteAuth(server.conf.currency, k2),
+      {
+        connectionTimeout: WS2PConstants.REQUEST_TIMEOUT,
+        requestTimeout: WS2PConstants.REQUEST_TIMEOUT
+      },
+      expectedPub
     )
     // Streaming
     const streamer = new WS2PStreamer(c)

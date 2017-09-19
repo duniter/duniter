@@ -207,11 +207,11 @@ export class WS2PCluster {
     return this.ws2pServer ? this.ws2pServer.getConnexions().length : 0
   }
 
-  async connect(host: string, port: number, messageHandler:WS2PMessageHandler): Promise<WS2PConnection> {
+  async connect(host: string, port: number, messageHandler:WS2PMessageHandler, expectedPub:string): Promise<WS2PConnection> {
     const uuid = nuuid.v4()
     let pub = "--------"
     try {
-      const ws2pc = await WS2PClient.connectTo(this.server, host, port, messageHandler)
+      const ws2pc = await WS2PClient.connectTo(this.server, host, port, messageHandler, expectedPub)
       this.ws2pClients[uuid] = ws2pc
       pub = ws2pc.connection.pubkey
       ws2pc.connection.closed.then(() => {
@@ -247,7 +247,7 @@ export class WS2PCluster {
       const api = p.getWS2P()
       if (p.pubkey !== this.server.conf.pair.pub) {
         try {
-          await this.connect(api.host, api.port, this.messageHandler)
+          await this.connect(api.host, api.port, this.messageHandler, p.pubkey)
         } catch (e) {
           this.server.logger.debug('WS2P: init: failed connection')
         }
@@ -268,8 +268,7 @@ export class WS2PCluster {
             const connectedPubkeys = this.getConnectedPubkeys()
             const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes || []))
             if (shouldAccept) {
-              await this.connect(ws2pEnpoint.host, ws2pEnpoint.port, this.messageHandler)
-              // Trim the eventual extra connections
+              await this.connect(ws2pEnpoint.host, ws2pEnpoint.port, this.messageHandler, peer.pubkey)
               await this.trimClientConnections()
             }
           }

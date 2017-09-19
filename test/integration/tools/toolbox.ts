@@ -674,7 +674,7 @@ export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promis
   const cluster1 = WS2PCluster.plugOn(s1._server)
   const cluster2 = WS2PCluster.plugOn(s2._server)
   const ws2ps = await cluster1.listen('localhost', port)
-  const ws2pc = await cluster2.connect('localhost', port, new WS2PServerMessageHandler(s2._server, cluster2))
+  const ws2pc = await cluster2.connect('localhost', port, new WS2PServerMessageHandler(s2._server, cluster2), s1._server.conf.pair.pub)
 
   await new Promise(res => {
     ws2ps.on('newConnection', res)

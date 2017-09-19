@@ -253,6 +253,8 @@ export class WS2PCluster {
         }
       }
       i++
+      // Trim the eventual extra connections
+      setTimeout(() => this.trimClientConnections(), WS2PConstants.CONNEXION_TIMEOUT)
     }
 
     // Also listen for network updates, and connect to new nodes
@@ -321,7 +323,31 @@ export class WS2PCluster {
   }
 
   async trimClientConnections() {
+    let serverPubkeys:string[] = []
+    if (this.ws2pServer) {
+      serverPubkeys = this.ws2pServer.getConnexions().map(c => c.pubkey)
+    }
     let disconnectedOne = true
+    // Disconnect Private connexions already present under Public
+    while (disconnectedOne) {
+      disconnectedOne = false
+      let uuids = Object.keys(this.ws2pClients)
+      uuids = _.shuffle(uuids)
+      for (const uuid of uuids) {
+        const client = this.ws2pClients[uuid]
+        const pub = client.connection.pubkey
+        const isNotOurself = pub !== this.server.conf.pair.pub
+        const isAlreadyInPublic = serverPubkeys.indexOf(pub) !== -1
+        if (isNotOurself && isAlreadyInPublic) {
+          client.connection.close()
+          await client.connection.closed
+          disconnectedOne = true
+          if (this.ws2pClients[uuid]) {
+            delete this.ws2pClients[uuid]
+          }
+        }
+      }
+    }
     // Disconnect non-members
     while (disconnectedOne && this.clientsCount() > this.maxLevel1Size) {
       disconnectedOne = false
@@ -334,6 +360,9 @@ export class WS2PCluster {
           client.connection.close()
           await client.connection.closed
           disconnectedOne = true
+          if (this.ws2pClients[uuid]) {
+            delete this.ws2pClients[uuid]
+          }
         }
       }
     }
@@ -394,20 +423,26 @@ export class WS2PCluster {
         accept = true
       }
       else {
-        // No:
-        // Does this node have the priority over at least one node?
-        const isMemberPeer = await this.server.dal.isMember(pub)
-        if (isMemberPeer) {
-          // The node may have the priority over at least 1 other node
-          let i = 0, existsOneNonMemberNode = false
-          while (!existsOneNonMemberNode && i < connectedPubkeys.length) {
-            const isAlsoAMemberPeer = await this.server.dal.isMember(connectedPubkeys[i])
-            existsOneNonMemberNode = !isAlsoAMemberPeer
-            i++
-          }
-          if (existsOneNonMemberNode) {
-            // The node has the priority over a non-member peer: try to connect
-            accept = true
+        // No: let's verify some peer has a lower priority
+        if (connectedPubkeys.indexOf(this.server.conf.pair.pub) !== -1) {
+          // Yes, we are connected to ourself. Let's replace this connexion
+          accept = true
+        }
+        else {
+          // Does this node have the priority over at least one node?
+          const isMemberPeer = await this.server.dal.isMember(pub)
+          if (isMemberPeer) {
+            // The node may have the priority over at least 1 other node
+            let i = 0, existsOneNonMemberNode = false
+            while (!existsOneNonMemberNode && i < connectedPubkeys.length) {
+              const isAlsoAMemberPeer = await this.server.dal.isMember(connectedPubkeys[i])
+              existsOneNonMemberNode = !isAlsoAMemberPeer
+              i++
+            }
+            if (existsOneNonMemberNode) {
+              // The node has the priority over a non-member peer: try to connect
+              accept = true
+            }
           }
         }
       }

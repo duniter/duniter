@@ -126,6 +126,15 @@ export class WS2PServer extends events.EventEmitter {
         }
       }
     }
+    // Disconnect eventual self
+    if (this.connections.length > this.maxLevel2Size) {
+      for (const c of this.connections) {
+        if (c.pubkey === this.server.conf.pair.pub) {
+          c.close()
+          this.removeConnection(c)
+        }
+      }
+    }
     // Disconnect members
     while (this.connections.length > this.maxLevel2Size) {
       for (const c of this.connections) {

@@ -1,7 +1,6 @@
 import {BlockGeneratorWhichProves} from "./blockGenerator"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {BlockProver} from "./blockProver"
-import {Constants} from "./constants"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {dos2unix} from "../../../lib/common-libs/dos2unix"
 import {parsers} from "../../../lib/common-libs/parsers/index"
@@ -29,10 +28,6 @@ export class PermanentProver {
   private lastComputedBlock:any = null
   private resolveContinuePromise:any = null
   private continuePromise:any = null
-  private pullingResolveCallback:any = null
-  private timeoutPullingCallback:any = null
-  private pullingFinishedPromise:Querable<any>|null = null
-  private timeoutPulling:any = null
 
   constructor(private server:any) {
     this.logger = server.logger;
@@ -43,9 +38,6 @@ export class PermanentProver {
     // Promises triggering the prooving lopp
     this.resolveContinuePromise = null;
     this.continuePromise = new Promise((resolve) => this.resolveContinuePromise = resolve);
-    this.pullingResolveCallback = null
-    this.timeoutPullingCallback = null
-    this.pullingFinishedPromise = querablep(Promise.resolve());
 
     this.loops = 0;
 
@@ -57,30 +49,6 @@ export class PermanentProver {
       this.startPermanence()
     }
     this.resolveContinuePromise(true);
-  }
-
-  // When we detected a pulling, we stop the PoW loop
-  pullingDetected() {
-    if (this.pullingFinishedPromise && this.pullingFinishedPromise.isResolved()) {
-      this.pullingFinishedPromise = querablep(Promise.race([
-        // We wait for end of pulling signal
-        new Promise((res) => this.pullingResolveCallback = res),
-        // Security: if the end of pulling signal is not emitted after some, we automatically trigger it
-        new Promise((res) => this.timeoutPullingCallback = () => {
-          this.logger.warn('Pulling not finished after %s ms, continue PoW', Constants.PULLING_MAX_DURATION);
-          res();
-        })
-      ]));
-    }
-    // Delay the triggering of pulling timeout
-    if (this.timeoutPulling) {
-      clearTimeout(this.timeoutPulling);
-    }
-    this.timeoutPulling = setTimeout(this.timeoutPullingCallback, Constants.PULLING_MAX_DURATION);
-  }
-
-  pullingFinished() {
-    return this.pullingResolveCallback && this.pullingResolveCallback()
   }
 
   async startPermanence() {
@@ -120,11 +88,6 @@ export class PermanentProver {
           const trial = await this.server.getBcContext().getIssuerPersonalizedDifficulty(selfPubkey);
           this.checkTrialIsNotTooHigh(trial, current, selfPubkey);
           const lastIssuedByUs = current.issuer == selfPubkey;
-          if (this.pullingFinishedPromise && !this.pullingFinishedPromise.isFulfilled()) {
-            this.logger.warn('Waiting for the end of pulling...');
-            await this.pullingFinishedPromise;
-            this.logger.warn('Pulling done. Continue proof-of-work loop.');
-          }
           if (lastIssuedByUs && !this.promiseOfWaitingBetween2BlocksOfOurs) {
             this.promiseOfWaitingBetween2BlocksOfOurs = new Promise((resolve) => setTimeout(resolve, theConf.powDelay));
             this.logger.warn('Waiting ' + theConf.powDelay + 'ms before starting to compute next block...');

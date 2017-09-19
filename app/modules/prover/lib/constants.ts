@@ -1,7 +1,5 @@
 export const Constants = {
 
-  PULLING_MAX_DURATION: 10 * 1000, // 10 seconds
-
   CORES_MAXIMUM_USE_IN_PARALLEL: 8,
 
   MINIMAL_ZEROS_TO_SHOW_IN_LOGS: 3,

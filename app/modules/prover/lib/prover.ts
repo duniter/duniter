@@ -21,13 +21,6 @@ export class Prover extends stream.Transform {
         this.permaProver.prover.changePoWPrefix((obj.nodeIndexInPeers + 1) * 10); // We multiply by 10 to give room to computers with < 100 cores
       } else if (obj.cpu !== undefined) {
         this.permaProver.prover.changeCPU(obj.cpu); // We multiply by 10 to give room to computers with < 100 cores
-      } else if (obj.pulling !== undefined) {
-        if (obj.pulling === 'processing') {
-          this.permaProver.pullingDetected();
-        }
-        else if (obj.pulling === 'finished') {
-          this.permaProver.pullingFinished();
-        }
       }
     }
     done && done();

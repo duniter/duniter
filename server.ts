@@ -67,6 +67,7 @@ export class Server extends stream.Duplex implements HookableServer {
   PeeringService:PeeringService
   BlockchainService:BlockchainService
   TransactionsService:TransactionService
+  private documentFIFO:GlobalFifoPromise
 
   constructor(home:string, memoryOnly:boolean, private overrideConf:any) {
     super({ objectMode: true })
@@ -78,14 +79,18 @@ export class Server extends stream.Duplex implements HookableServer {
 
     this.paramsP = directory.getHomeParams(memoryOnly, home)
 
-    const documentFIFO = new GlobalFifoPromise()
+    this.documentFIFO = new GlobalFifoPromise()
 
     this.MerkleService       = require("./app/lib/helpers/merkle").processForURL
-    this.IdentityService     = new IdentityService(documentFIFO)
-    this.MembershipService   = new MembershipService(documentFIFO)
-    this.PeeringService      = new PeeringService(this, documentFIFO)
-    this.BlockchainService   = new BlockchainService(this, documentFIFO)
-    this.TransactionsService = new TransactionService(documentFIFO)
+    this.IdentityService     = new IdentityService(this.documentFIFO)
+    this.MembershipService   = new MembershipService(this.documentFIFO)
+    this.PeeringService      = new PeeringService(this, this.documentFIFO)
+    this.BlockchainService   = new BlockchainService(this, this.documentFIFO)
+    this.TransactionsService = new TransactionService(this.documentFIFO)
+  }
+
+  getDocumentsFIFO() {
+    return this.documentFIFO
   }
 
   // Unused, but made mandatory by Duplex interface
@@ -459,8 +464,11 @@ export class Server extends stream.Duplex implements HookableServer {
     }
   }
 
-  disconnect() {
-    return Promise.resolve(this.dal && this.dal.close())
+  async disconnect() {
+    await this.documentFIFO.closeFIFO()
+    if (this.dal) {
+      await this.dal.close()
+    }
   }
 
   revert() {

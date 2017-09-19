@@ -1,5 +1,5 @@
 "use strict";
-import {CommonConstants} from "../lib/common-libs/constants";
+import {CommonConstants} from "../lib/common-libs/constants"
 const async = require('async');
 
 export class GlobalFifoPromise {
@@ -9,6 +9,7 @@ export class GlobalFifoPromise {
   }, 1)
 
   private operations:{ [k:string]: boolean } = {}
+  private currentPromise:Promise<any>|null
 
   constructor() {
   }
@@ -29,7 +30,8 @@ export class GlobalFifoPromise {
       this.fifo.push(async (cb:any) => {
         // OK its the turn of given promise, execute it
         try {
-          const res = await p();
+          this.currentPromise = p()
+          const res = await this.currentPromise
           delete this.operations[operationId]
           // Finished, we end the function in the FIFO
           cb(null, res);
@@ -45,5 +47,16 @@ export class GlobalFifoPromise {
         resolve(res);
       });
     });
-  };
+  }
+
+  async closeFIFO() {
+    this.fifo.pause()
+    if (this.currentPromise) {
+      await this.currentPromise
+    }
+  }
+
+  remainingTasksCount() {
+    return this.fifo.length()
+  }
 }

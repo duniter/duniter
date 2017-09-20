@@ -95,9 +95,9 @@ export class PeerDTO implements Cloneable {
   }
 
   getWS2P() {
-    let api:any = null;
-    this.endpoints.forEach((ep) => {
-      const matches = !api && ep.match(CommonConstants.WS2P_REGEXP)
+    let api:{ uuid:string, host:string, port:number }|null = null
+    for (const ep of this.endpoints) {
+      const matches:any = !api && ep.match(CommonConstants.WS2P_REGEXP)
       if (matches) {
         api = {
           uuid: matches[1],
@@ -105,8 +105,8 @@ export class PeerDTO implements Cloneable {
           port: parseInt(matches[3]) || 0
         }
       }
-    })
-    return api || null
+    }
+    return api || null
   }
 
   getDns() {

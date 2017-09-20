@@ -9,13 +9,13 @@ export class WS2PClient {
 
   private constructor(public connection:WS2PConnection) {}
 
-  static async connectTo(server:Server, host:string, port:number, messageHandler:WS2PMessageHandler, expectedPub:string) {
+  static async connectTo(server:Server, host:string, port:number, messageHandler:WS2PMessageHandler, expectedPub:string, allowKey:(pub:string)=>Promise<boolean> ) {
     const k2 = new Key(server.conf.pair.pub, server.conf.pair.sec)
     const c = WS2PConnection.newConnectionToAddress(
       [host, port].join(':'),
       messageHandler,
-      new WS2PPubkeyLocalAuth(server.conf.currency , k2),
-      new WS2PPubkeyRemoteAuth(server.conf.currency, k2),
+      new WS2PPubkeyLocalAuth(server.conf.currency , k2, allowKey),
+      new WS2PPubkeyRemoteAuth(server.conf.currency, k2, allowKey),
       {
         connectionTimeout: WS2PConstants.REQUEST_TIMEOUT,
         requestTimeout: WS2PConstants.REQUEST_TIMEOUT

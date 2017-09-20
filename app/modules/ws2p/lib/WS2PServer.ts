@@ -106,6 +106,9 @@ export class WS2PServer extends events.EventEmitter {
         })
 
         await this.trimConnections()
+
+        await this.server.dal.setPeerUP(c.pubkey)
+
       } catch (e) {
         this.server.logger.warn('WS2P: cannot connect to incoming WebSocket connection: %s', e)
       }
@@ -123,15 +126,6 @@ export class WS2PServer extends events.EventEmitter {
           c.close()
           this.removeConnection(c)
           disconnectedOne = true
-        }
-      }
-    }
-    // Disconnect eventual self
-    if (this.connections.length > this.maxLevel2Size) {
-      for (const c of this.connections) {
-        if (c.pubkey === this.server.conf.pair.pub) {
-          c.close()
-          this.removeConnection(c)
         }
       }
     }

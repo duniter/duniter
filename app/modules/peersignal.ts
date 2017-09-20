@@ -30,6 +30,7 @@ class PeerSignalEmitter {
 
     // The interval duration
     const SIGNAL_INTERVAL = 1000 * this.conf.avgGenTime * constants.NETWORK.STATUS_INTERVAL.UPDATE;
+    const SIGNAL_INITIAL_DELAY = 1000 * 60
 
     // We eventually clean an existing interval
     if (this.INTERVAL)
@@ -47,8 +48,8 @@ class PeerSignalEmitter {
       })
     }, SIGNAL_INTERVAL)
 
-    // Launches it a first time, immediately
-    await this.server.PeeringService.generateSelfPeer(this.conf, SIGNAL_INTERVAL)
+    // Launches it a first time few seconds after startup
+    setTimeout(() => this.server.PeeringService.generateSelfPeer(this.conf, SIGNAL_INTERVAL - SIGNAL_INITIAL_DELAY), SIGNAL_INITIAL_DELAY)
   }
 
   stopService() {

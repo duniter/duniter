@@ -207,11 +207,14 @@ export class WS2PCluster {
     return this.ws2pServer ? this.ws2pServer.getConnexions().length : 0
   }
 
-  async connect(host: string, port: number, messageHandler:WS2PMessageHandler, expectedPub:string): Promise<WS2PConnection> {
+  async connect(host: string, port: number, messageHandler:WS2PMessageHandler, expectedPub:string, ws2pEndpointUUID:string = ""): Promise<WS2PConnection> {
     const uuid = nuuid.v4()
     let pub = "--------"
     try {
-      const ws2pc = await WS2PClient.connectTo(this.server, host, port, messageHandler, expectedPub)
+      const ws2pc = await WS2PClient.connectTo(this.server, host, port, messageHandler, expectedPub, (pub:string) => {
+        const connectedPubkeys = this.getConnectedPubkeys()
+        return this.acceptPubkey(expectedPub, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes || []), ws2pEndpointUUID)
+      })
       this.ws2pClients[uuid] = ws2pc
       pub = ws2pc.connection.pubkey
       ws2pc.connection.closed.then(() => {
@@ -231,6 +234,7 @@ export class WS2PCluster {
         ws2p: 'connected',
         to: { host, port, pubkey: pub }
       })
+      await this.server.dal.setPeerUP(pub)
       return ws2pc.connection
     } catch (e) {
       this.server.logger.info('WS2P: Could not connect to peer %s using `WS2P %s %s: %s`', pub.slice(0, 8), host, port, (e && e.message || e))
@@ -241,7 +245,9 @@ export class WS2PCluster {
   async connectToWS2Peers() {
     const potentials = await this.server.dal.getWS2Peers()
     const peers:PeerDTO[] = potentials.map((p:any) => PeerDTO.fromJSONObject(p))
-    const prefered = (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) || []
+    const prefered = ((this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) || []).slice() // Copy
+    // Our key is also a prefered one, so we connect to our siblings
+    prefered.push(this.server.conf.pair.pub)
     peers.sort((a, b) => {
       const aIsPrefered = prefered.indexOf(a.pubkey) !== -1
       const bIsPrefered = prefered.indexOf(b.pubkey) !== -1
@@ -257,9 +263,9 @@ export class WS2PCluster {
     while (i < peers.length && this.clientsCount() < this.maxLevel1Size) {
       const p = peers[i]
       const api = p.getWS2P()
-      if (p.pubkey !== this.server.conf.pair.pub) {
+      if (api) {
         try {
-          await this.connect(api.host, api.port, this.messageHandler, p.pubkey)
+          await this.connect(api.host, api.port, this.messageHandler, p.pubkey, api.uuid)
         } catch (e) {
           this.server.logger.debug('WS2P: init: failed connection')
         }
@@ -277,10 +283,10 @@ export class WS2PCluster {
         if (data.endpoints) {
           const peer = PeerDTO.fromJSONObject(data)
           const ws2pEnpoint = peer.getWS2P()
-          if (ws2pEnpoint && peer.pubkey !== this.server.conf.pair.pub) {
+          if (ws2pEnpoint) {
             // Check if already connected to the pubkey (in any way: server or client)
             const connectedPubkeys = this.getConnectedPubkeys()
-            const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes || []))
+            const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes || []), ws2pEnpoint.uuid)
             if (shouldAccept) {
               await this.connect(ws2pEnpoint.host, ws2pEnpoint.port, this.messageHandler, peer.pubkey)
               await this.trimClientConnections()
@@ -367,8 +373,10 @@ export class WS2PCluster {
       uuids = _.shuffle(uuids)
       for (const uuid of uuids) {
         const client = this.ws2pClients[uuid]
-        const isMember = await this.server.dal.isMember(client.connection.pubkey)
-        if (!isMember && !disconnectedOne) {
+        const pub = client.connection.pubkey
+        const isNotOurself = pub !== this.server.conf.pair.pub
+        const isMember = await this.server.dal.isMember(pub)
+        if (isNotOurself && !isMember && !disconnectedOne) {
           client.connection.close()
           await client.connection.closed
           disconnectedOne = true
@@ -386,7 +394,9 @@ export class WS2PCluster {
       uuids = _.shuffle(uuids)
       for (const uuid of uuids) {
         const client = this.ws2pClients[uuid]
-        if (!disconnectedOne && this.getPreferedNodes().indexOf(client.connection.pubkey) === -1) {
+        const pub = client.connection.pubkey
+        const isNotOurself = pub !== this.server.conf.pair.pub
+        if (isNotOurself && !disconnectedOne && this.getPreferedNodes().indexOf(pub) === -1) {
           client.connection.close()
           disconnectedOne = true
           await client.connection.closed
@@ -425,12 +435,17 @@ export class WS2PCluster {
     connectedPubkeys:string[],
     getConcurrentConnexionsCount:()=>number,
     maxConcurrentConnexionsSize:number,
-    priorityKeys:string[]
+    priorityKeys:string[],
+    targetWS2PUID = ""
   ) {
     let accept = priorityKeys.indexOf(pub) !== -1
     if (!accept && connectedPubkeys.indexOf(pub) === -1) {
       // Do we have room?
-      if (getConcurrentConnexionsCount() < maxConcurrentConnexionsSize) {
+      if (this.isThisNode(pub, targetWS2PUID)) {
+        // We do not connect to local host
+        return false
+      }
+      else if (getConcurrentConnexionsCount() < maxConcurrentConnexionsSize) {
         // Yes: just connect to it
         accept = true
       }
@@ -458,8 +473,23 @@ export class WS2PCluster {
           }
         }
       }
+    } else {
+      // The pubkey is already connected: we accept only self nodes, and they have a supreme priority (these are siblings)
+      if (targetWS2PUID) {
+        if (this.isSiblingNode(pub, targetWS2PUID)) {
+          accept = true
+        }
+      }
     }
     return accept
+  }
+
+  isThisNode(pub:string, uuid:string) {
+    return !!(this.server.conf.pair.pub === pub && this.server.conf.ws2p && this.server.conf.ws2p.uuid === uuid)
+  }
+
+  isSiblingNode(pub:string, uuid:string) {
+    return !!(this.server.conf.pair.pub === pub && this.server.conf.ws2p && this.server.conf.ws2p.uuid !== uuid)
   }
 
   async getLevel1Connections() {

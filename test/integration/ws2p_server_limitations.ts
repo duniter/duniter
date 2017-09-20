@@ -50,7 +50,7 @@ describe("WS2P server limitations", function() {
       s1._server.conf.ws2p.preferedNodes = ['DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV']
     }
     if (s3._server.conf.ws2p) {
-      s3._server.conf.ws2p.alwaysAccept = ['HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd']
+      s3._server.conf.ws2p.privilegedNodes = ['HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd']
     }
 
     await cat.createIdentity();
@@ -206,7 +206,7 @@ describe("WS2P server limitations", function() {
       port: portWS,
       remotehost: '127.0.0.1',
       remoteport: portWS,
-      alwaysAccept: []
+      privilegedNodes: []
     }
     const server = simpleTestingServer(conf1)
     server._server.addEndpointsDefinitions(async () => 'WS2P 11111111 127.0.0.1 ' + portWS)

@@ -109,7 +109,7 @@ describe("WS2P heads propagation", function() {
       port: portWS,
       remotehost: '127.0.0.1',
       remoteport: portWS,
-      alwaysAccept: []
+      privilegedNodes: []
     }
     const server = simpleTestingServer(conf1)
     server._server.addEndpointsDefinitions(async () => 'WS2P 11111111 127.0.0.1 ' + portWS)

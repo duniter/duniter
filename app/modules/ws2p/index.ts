@@ -1,5 +1,5 @@
 "use strict";
-import {WS2PConfDTO} from "../../lib/dto/ConfDTO"
+import {ConfDTO, WS2PConfDTO} from "../../lib/dto/ConfDTO"
 import {Server} from "../../../server"
 import * as stream from "stream"
 import {WS2PCluster} from "./lib/WS2PCluster"
@@ -14,22 +14,36 @@ export const WS2PDependency = {
     cliOptions: [
       { value: '--ws2p-upnp',                  desc: 'Use UPnP to open remote port.' },
       { value: '--ws2p-noupnp',                desc: 'Do not use UPnP to open remote port.' },
-      { value: '--ws2p-host <host>',           desc: 'Port to listen to' },
-      { value: '--ws2p-port <port>',           desc: 'Host to listen to', parser: (val:string) => parseInt(val) },
-      { value: '--ws2p-remote-host <address>', desc: 'Availabily host' },
-      { value: '--ws2p-remote-port <port>',    desc: 'Availabily port', parser: (val:string) => parseInt(val) },
-      { value: '--ws2p-max-private <count>',   desc: 'Maximum private connections count', parser: (val:string) => parseInt(val) },
-      { value: '--ws2p-max-public <count>',    desc: 'Maximum public connections count', parser: (val:string) => parseInt(val) },
+      { value: '--ws2p-host <host>',           desc: 'Port to listen to.' },
+      { value: '--ws2p-port <port>',           desc: 'Host to listen to.', parser: (val:string) => parseInt(val) },
+      { value: '--ws2p-remote-host <address>', desc: 'Availabily host.' },
+      { value: '--ws2p-remote-port <port>',    desc: 'Availabily port.', parser: (val:string) => parseInt(val) },
+      { value: '--ws2p-max-private <count>',   desc: 'Maximum private connections count.', parser: (val:string) => parseInt(val) },
+      { value: '--ws2p-max-public <count>',    desc: 'Maximum public connections count.', parser: (val:string) => parseInt(val) },
+      { value: '--ws2p-private',               desc: 'Enable WS2P Private access.' },
+      { value: '--ws2p-public',                desc: 'Enable WS2P Public access.' },
+      { value: '--ws2p-noprivate',             desc: 'Disable WS2P Private access.' },
+      { value: '--ws2p-nopublic',              desc: 'Disable WS2P Public access.' },
+      { value: '--ws2p-prefered-add <pubkey>', desc: 'Add a prefered node to connect to through private access.' },
+      { value: '--ws2p-prefered-rm  <pubkey>', desc: 'Remove prefered node.' },
+      { value: '--ws2p-privileged-add <pubkey>', desc: 'Add a privileged node to for our public access.' },
+      { value: '--ws2p-privileged-rm <pubkey>',  desc: 'Remove a privileged.' },
     ],
 
     config: {
 
       onLoading: async (conf:WS2PConfDTO, program:any, logger:any) => {
 
-        conf.ws2p = conf.ws2p || { uuid: nuuid.v4().slice(0,8) }
+        conf.ws2p = conf.ws2p || {
+          uuid: nuuid.v4().slice(0,8),
+          privateAccess: true,
+          publicAccess: false
+        }
 
-        // For config which does not have uuid filled in
+        // For config with missing value
         conf.ws2p.uuid = conf.ws2p.uuid || nuuid.v4().slice(0,8)
+        if (conf.ws2p.privateAccess === undefined) conf.ws2p.privateAccess = true
+        if (conf.ws2p.publicAccess === undefined) conf.ws2p.publicAccess = false
 
         if (program.ws2pHost !== undefined)       conf.ws2p.host = program.ws2pHost
         if (program.ws2pPort !== undefined)       conf.ws2p.port = parseInt(program.ws2pPort)
@@ -39,6 +53,36 @@ export const WS2PDependency = {
         if (program.ws2pNoupnp !== undefined)     conf.ws2p.upnp = false
         if (program.ws2pMaxPrivate !== undefined) conf.ws2p.maxPrivate = program.ws2pMaxPrivate
         if (program.ws2pMaxPublic !== undefined)  conf.ws2p.maxPublic = program.ws2pMaxPublic
+        if (program.ws2pPrivate !== undefined)    conf.ws2p.privateAccess = true
+        if (program.ws2pPublic !== undefined)     conf.ws2p.publicAccess = true
+        if (program.ws2pNoPrivate !== undefined)  conf.ws2p.privateAccess = false
+        if (program.ws2pNoPublic !== undefined)   conf.ws2p.publicAccess = false
+
+        // Prefered nodes
+        if (program.ws2pPreferedAdd !== undefined) {
+          conf.ws2p.preferedNodes = conf.ws2p.preferedNodes || []
+          conf.ws2p.preferedNodes.push(String(program.ws2pPreferedAdd))
+        }
+        if (program.ws2pPreferedRm !== undefined) {
+          conf.ws2p.preferedNodes = conf.ws2p.preferedNodes || []
+          const index = conf.ws2p.preferedNodes.indexOf(program.ws2pPreferedRm)
+          if (index !== -1) {
+            conf.ws2p.preferedNodes.splice(index, 1)
+          }
+        }
+
+        // Privileged nodes
+        if (program.ws2pPrivilegedAdd !== undefined) {
+          conf.ws2p.privilegedNodes = conf.ws2p.privilegedNodes || []
+          conf.ws2p.privilegedNodes.push(String(program.ws2pPrivilegedAdd))
+        }
+        if (program.ws2pPrivilegedRm !== undefined) {
+          conf.ws2p.privilegedNodes = conf.ws2p.privilegedNodes || []
+          const index = conf.ws2p.privilegedNodes.indexOf(program.ws2pPrivilegedRm)
+          if (index !== -1) {
+            conf.ws2p.privilegedNodes.splice(index, 1)
+          }
+        }
 
         // Default value
         if (conf.ws2p.upnp === undefined || conf.ws2p.upnp === null) {
@@ -94,36 +138,50 @@ export class WS2PAPI extends stream.Transform {
   startService = async () => {
 
     /***************
-     *   MANUAL
+     * PUBLIC ACCESS
      **************/
-    if (this.conf.ws2p
-      && !this.conf.ws2p.upnp
-      && this.conf.ws2p.host
-      && this.conf.ws2p.port) {
-      await this.cluster.listen(this.conf.ws2p.host, this.conf.ws2p.port)
+
+    if (this.conf.ws2p && this.conf.ws2p.publicAccess) {
+
+      /***************
+       *   MANUAL
+       **************/
+      if (this.conf.ws2p
+        && !this.conf.ws2p.upnp
+        && this.conf.ws2p.host
+        && this.conf.ws2p.port) {
+        await this.cluster.listen(this.conf.ws2p.host, this.conf.ws2p.port)
+      }
+
+      /***************
+       *    UPnP
+       **************/
+      else if (!this.conf.ws2p || this.conf.ws2p.upnp !== false) {
+        if (this.upnpAPI) {
+          this.upnpAPI.stopRegular();
+        }
+        try {
+          this.upnpAPI = new WS2PUpnp(this.logger)
+          const { host, port, available } = await this.upnpAPI.startRegular()
+          if (available) {
+            // Defaults UPnP to true if not defined and available
+            this.conf.ws2p.upnp = true
+            await this.cluster.listen(host, port)
+            await this.server.PeeringService.generateSelfPeer(this.server.conf)
+          }
+        } catch (e) {
+          this.logger.warn(e);
+        }
+      }
     }
 
     /***************
-     *    UPnP
+     * PRIVATE ACCESS
      **************/
-    else if (!this.conf.ws2p || this.conf.ws2p.upnp !== false) {
-      if (this.upnpAPI) {
-        this.upnpAPI.stopRegular();
-      }
-      try {
-        this.upnpAPI = new WS2PUpnp(this.logger)
-        const { host, port, available } = await this.upnpAPI.startRegular()
-        if (available) {
-          await this.cluster.listen(host, port)
-          await this.server.PeeringService.generateSelfPeer(this.server.conf)
-        }
-      } catch (e) {
-        this.logger.warn(e);
-      }
-    }
 
-    // In any case, we trigger the Level 1 connection
-    await this.cluster.startCrawling()
+    if (!this.conf.ws2p || this.conf.ws2p.privateAccess) {
+      await this.cluster.startCrawling()
+    }
   }
 
   stopService = async () => {

@@ -184,7 +184,7 @@ export class WS2PCluster {
       await this.ws2pServer.close()
     }
     this.ws2pServer = await WS2PServer.bindOn(this.server, host, port, this.fifo, (pubkey:string, connectedPubkeys:string[]) => {
-      return this.acceptPubkey(pubkey, connectedPubkeys, () => this.servedCount(), this.maxLevel2Peers, (this.server.conf.ws2p && this.server.conf.ws2p.alwaysAccept || []))
+      return this.acceptPubkey(pubkey, connectedPubkeys, () => this.servedCount(), this.maxLevel2Peers, (this.server.conf.ws2p && this.server.conf.ws2p.privilegedNodes || []))
     }, this.messageHandler)
     this.host = host
     this.port = port

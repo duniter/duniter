@@ -61,6 +61,8 @@ export interface NetworkConfDTO {
 
 export interface WS2PConfDTO {
   ws2p?: {
+    privateAccess: boolean
+    publicAccess: boolean
     uuid: string
     upnp?: boolean
     remotehost?: string|null
@@ -70,7 +72,7 @@ export interface WS2PConfDTO {
     maxPublic?:number
     maxPrivate?:number
     preferedNodes?: string[]
-    alwaysAccept?: string[]
+    privilegedNodes?: string[]
   }
 }
 
@@ -132,6 +134,8 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
     public memory: boolean,
     public nobma: boolean,
     public ws2p?: {
+      privateAccess: boolean
+      publicAccess: boolean
       uuid: string
       upnp?: boolean
       remotehost?: string|null
@@ -139,7 +143,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
       port?: number
       host?: string
       preferedNodes?: string[]
-      alwaysAccept?: string[]
+      privilegedNodes?: string[]
       maxPublic?:number
       maxPrivate?:number
     }

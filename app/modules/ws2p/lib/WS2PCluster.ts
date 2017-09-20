@@ -241,6 +241,18 @@ export class WS2PCluster {
   async connectToWS2Peers() {
     const potentials = await this.server.dal.getWS2Peers()
     const peers:PeerDTO[] = potentials.map((p:any) => PeerDTO.fromJSONObject(p))
+    const prefered = (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) || []
+    peers.sort((a, b) => {
+      const aIsPrefered = prefered.indexOf(a.pubkey) !== -1
+      const bIsPrefered = prefered.indexOf(b.pubkey) !== -1
+      if ((aIsPrefered && bIsPrefered) || (!aIsPrefered && !bIsPrefered)) {
+        return 0
+      } else if (aIsPrefered) {
+        return -1
+      } else {
+        return 1
+      }
+    })
     let i = 0
     while (i < peers.length && this.clientsCount() < this.maxLevel1Size) {
       const p = peers[i]

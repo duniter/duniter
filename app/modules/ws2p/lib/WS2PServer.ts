@@ -154,7 +154,12 @@ export class WS2PServer extends events.EventEmitter {
 
   async close() {
     await Promise.all(this.connections.map(c => c.close()))
-    return this.wss.close()
+    return new Promise((res, rej) => {
+      this.wss.close((err:any) => {
+        if (err) return rej(err)
+        res()
+      })
+    })
   }
 
   async getConnection(pubkeyOfConnection:string) {

@@ -131,7 +131,9 @@ function Node (dbName, options) {
           // Launching server
           that.server = server;
           started = true;
-          next();
+          server.PeeringService.generateSelfPeer(server.conf, 0)
+            .then(() => next())
+            .catch(next)
         },
         function (next) {
           that.http = contacter(options.remoteipv4, options.remoteport);

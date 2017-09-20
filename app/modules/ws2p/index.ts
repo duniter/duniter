@@ -106,7 +106,48 @@ export const WS2PDependency = {
         server.addWrongEndpointFilter((endpoints:string[]) => getWrongEndpoints(endpoints, conf))
         return api
       }
-    }
+    },
+
+    cli: [{
+      name: 'ws2p [list-prefered|list-privileged|list-nodes|show-conf]',
+      desc: 'WS2P operations for configuration and diagnosis tasks.',
+      logs: false,
+
+      onConfiguredExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+        const subcmd = params[0];
+        if (subcmd === 'list-nodes') {
+          // Needs the DAL plugged
+          await server.initDAL();
+        }
+        switch (subcmd) {
+          case 'show-conf':
+            console.log(JSON.stringify(conf.ws2p, null, ' '))
+            break;
+          case 'list-prefered':
+            for (const p of (conf.ws2p && conf.ws2p.preferedNodes || [])) {
+              console.log(p)
+            }
+            break;
+          case 'list-privileged':
+            for (const p of (conf.ws2p && conf.ws2p.privilegedNodes || [])) {
+              console.log(p)
+            }
+            break;
+          case 'list-nodes':
+            const peers = await server.dal.getWS2Peers()
+            for (const p of peers) {
+              for (const ep of p.endpoints) {
+                if (ep.match(/^WS2P /)) {
+                  console.log(p.pubkey, ep)
+                }
+              }
+            }
+            break;
+          default:
+            throw constants.ERRORS.CLI_CALLERR_WS2P;
+        }
+      }
+    }]
   }
 }
 

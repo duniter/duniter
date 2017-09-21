@@ -101,6 +101,10 @@ export class PeerDAL extends AbstractSQLite<DBPeer> {
     return this.saveEntity(peer)
   }
 
+  removePeerByPubkey(pubkey:string) {
+    return this.exec('DELETE FROM peer WHERE pubkey LIKE \'' + pubkey + '\'')
+  }
+
   async removeAll() {
     await this.sqlDeleteAll()
   }

@@ -87,6 +87,8 @@ describe("HTTP API", function() {
     const b1 = yield commit({ time: now + 120 });
     yield server2.writeBlock(b0)
     yield server2.writeBlock(b1)
+    server.addEndpointsDefinitions(() => Promise.resolve('SOME_FAKE_ENDPOINT_P1'))
+    server2.addEndpointsDefinitions(() => Promise.resolve('SOME_FAKE_ENDPOINT_P2'))
     const p1 = yield server.PeeringService.generateSelfPeer(server.conf)
     yield server2.PeeringService.generateSelfPeer(server2.conf)
     yield server2.writePeer(p1)

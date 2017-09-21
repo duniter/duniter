@@ -14,9 +14,6 @@ const assert = require('assert')
 
 describe("WS2P client limitations", function() {
 
-  WS2PConstants.CONNEXION_TIMEOUT = 100
-  WS2PConstants.REQUEST_TIMEOUT= 100
-
   const now = 1500000000
   let s1:TestingServer, s2:TestingServer, s3:TestingServer, s4:TestingServer
   let cluster1:WS2PCluster, cluster2:WS2PCluster, cluster3:WS2PCluster, cluster4:WS2PCluster
@@ -29,6 +26,10 @@ describe("WS2P client limitations", function() {
   let b0, b1, b2, b3:any, b4:any, portBMA1:number, portWS1:number, portWS2:number, portWS3:number, portWS4:number
 
   before(async () => {
+
+    WS2PConstants.CONNEXION_TIMEOUT = 500
+    WS2PConstants.REQUEST_TIMEOUT= 500
+
     const t1 = getTestingServer(catKeyring)
     const t2 = getTestingServer(tacKeyring)
     const t3 = getTestingServer(tocKeyring)

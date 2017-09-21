@@ -106,42 +106,52 @@ export class PermanentProver {
           /*******************
            * COMPUTING A BLOCK
            ******************/
-          await Promise.race([
 
-            // We still listen at eventual blockchain change
+          try {
+
+            let cancelAlreadyTriggered = false;
+
+            // The canceller
             (async () => {
               // If the blockchain changes
               await new Promise((resolve) => this.blockchainChangedResolver = resolve);
+              cancelAlreadyTriggered = true
               // Then cancel the generation
               await this.prover.cancel();
-            })(),
-
-            // The generation
-            (async () => {
-              try {
-                let unsignedBlock = null, trial2 = 0
-                await this.server.BlockchainService.pushFIFO('generatingNextBlock', async () => {
-                  const current = await this.server.dal.getCurrentBlockOrNull();
-                  const selfPubkey = this.server.keyPair.publicKey;
-                  trial2 = await this.server.getBcContext().getIssuerPersonalizedDifficulty(selfPubkey);
-                  this.checkTrialIsNotTooHigh(trial2, current, selfPubkey);
-                  unsignedBlock = await this.generator.nextBlock()
-                })
-                this.lastComputedBlock = await this.prover.prove(unsignedBlock, trial2, null)
-                try {
-                  const obj = parsers.parseBlock.syncWrite(dos2unix(this.lastComputedBlock.getRawSigned()));
-                  await this.server.writeBlock(obj)
-                  await new Promise(res => {
-                    this.server.once('bcEvent', () => res())
-                  })
-                } catch (err) {
-                  this.logger.warn('Proof-of-work self-submission: %s', err.message || err);
-                }
-              } catch (e) {
-                this.logger.warn('The proof-of-work generation was canceled: %s', (e && e.message) || e || 'unkonwn reason');
-              }
             })()
-          ])
+
+            let unsignedBlock = null, trial2 = 0
+            if (!cancelAlreadyTriggered) {
+              // The pushFIFO is here to get the difficulty level while excluding any new block to be resolved.
+              // Without it, a new block could be added meanwhile and would make the difficulty wrongly computed.
+              await this.server.BlockchainService.pushFIFO('generatingNextBlock', async () => {
+                const current = await this.server.dal.getCurrentBlockOrNull();
+                const selfPubkey = this.server.keyPair.publicKey;
+                if (!cancelAlreadyTriggered) {
+                  trial2 = await this.server.getBcContext().getIssuerPersonalizedDifficulty(selfPubkey)
+                }
+                this.checkTrialIsNotTooHigh(trial2, current, selfPubkey);
+                if (!cancelAlreadyTriggered) {
+                  unsignedBlock = await this.generator.nextBlock()
+                }
+              });
+              if (!cancelAlreadyTriggered) {
+                this.lastComputedBlock = await this.prover.prove(unsignedBlock, trial2, null)
+              }
+              try {
+                const obj = parsers.parseBlock.syncWrite(dos2unix(this.lastComputedBlock.getRawSigned()));
+                await this.server.writeBlock(obj)
+                await new Promise(res => {
+                  this.server.once('bcEvent', () => res())
+                })
+              } catch (err) {
+                this.logger.warn('Proof-of-work self-submission: %s', err.message || err);
+              }
+            }
+          } catch (e) {
+            this.logger.warn('The proof-of-work generation was canceled: %s', (e && e.message) || (e && e.uerr && e.uerr.message) || e || 'unkonwn reason');
+          }
+
         } else {
 
           /*******************

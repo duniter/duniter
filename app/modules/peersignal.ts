@@ -8,7 +8,7 @@ module.exports = {
   duniter: {
     service: {
       neutral: (server:any, conf:ConfDTO) => {
-        for (const ep of conf.endpoints) {
+        for (const ep of conf.endpoints || []) {
           server.addEndpointsDefinitions(async () => ep)
         }
         return new PeerSignalEmitter(server, conf)

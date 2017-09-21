@@ -7,7 +7,12 @@ const constants = require('../lib/constants');
 module.exports = {
   duniter: {
     service: {
-      neutral: (server:any, conf:ConfDTO) => new PeerSignalEmitter(server, conf)
+      neutral: (server:any, conf:ConfDTO) => {
+        for (const ep of conf.endpoints) {
+          server.addEndpointsDefinitions(async () => ep)
+        }
+        return new PeerSignalEmitter(server, conf)
+      }
     }
   }
 }
@@ -49,7 +54,7 @@ class PeerSignalEmitter {
     }, SIGNAL_INTERVAL)
 
     // Launches it a first time few seconds after startup
-    setTimeout(() => this.server.PeeringService.generateSelfPeer(this.conf, SIGNAL_INTERVAL - SIGNAL_INITIAL_DELAY), SIGNAL_INITIAL_DELAY)
+    setTimeout(() => this.server.PeeringService.generateSelfPeer(this.conf, SIGNAL_INTERVAL - SIGNAL_INITIAL_DELAY), 0)
   }
 
   stopService() {

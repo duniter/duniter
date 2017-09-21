@@ -8,10 +8,14 @@ import {
   waitForkWS2PDisconnection
 } from "./tools/toolbox"
 import {WS2PCluster} from "../../app/modules/ws2p/lib/WS2PCluster"
+import {WS2PConstants} from "../../app/modules/ws2p/lib/constants"
 
 const assert = require('assert')
 
 describe("WS2P server limitations", function() {
+
+  WS2PConstants.CONNEXION_TIMEOUT = 100
+  WS2PConstants.REQUEST_TIMEOUT= 100
 
   const now = 1500000000
   let s1:TestingServer, s2:TestingServer, s3:TestingServer, s4:TestingServer

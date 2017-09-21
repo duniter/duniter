@@ -5,9 +5,13 @@ import {WS2PRequester} from "../../app/modules/ws2p/lib/WS2PRequester"
 import {BlockDTO} from "../../app/lib/dto/BlockDTO"
 import {WS2PMessageHandler} from "../../app/modules/ws2p/lib/impl/WS2PMessageHandler"
 import {WS2PResponse} from "../../app/modules/ws2p/lib/impl/WS2PResponse"
+import {WS2PConstants} from "../../app/modules/ws2p/lib/constants"
 const assert = require('assert');
 
 describe('WS2P exchange', () => {
+
+  WS2PConstants.CONNEXION_TIMEOUT = 100
+  WS2PConstants.REQUEST_TIMEOUT= 100
 
   let wss:any
   let c1:WS2PConnection, s1:WS2PConnection

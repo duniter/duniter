@@ -1,9 +1,13 @@
 import {simpleTestingConf, simpleTestingServer, simpleUser, simpleWS2PNetwork, TestingServer} from "./tools/toolbox"
 import {WS2PCluster} from "../../app/modules/ws2p/lib/WS2PCluster"
+import {WS2PConstants} from "../../app/modules/ws2p/lib/constants"
 
 const assert = require('assert')
 
 describe("WS2P block pulling", function() {
+
+  WS2PConstants.CONNEXION_TIMEOUT = 100
+  WS2PConstants.REQUEST_TIMEOUT= 100
 
   const now = 1500000000
   let s1:TestingServer, s2:TestingServer, wss:any

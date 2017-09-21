@@ -9,12 +9,16 @@ import {Key, verify} from "../../app/lib/common-libs/crypto/keyring"
 import {assertThrows, getNewTestingPort} from "./tools/toolbox"
 import {WS2PMessageHandler} from "../../app/modules/ws2p/lib/impl/WS2PMessageHandler"
 import {WS2PResponse} from "../../app/modules/ws2p/lib/impl/WS2PResponse"
+import {WS2PConstants} from "../../app/modules/ws2p/lib/constants"
 const assert = require('assert');
 const WebSocketServer = require('ws').Server
 const logger = require('../../app/lib/logger').NewLogger('ws2p')
 const gtest = "gtest"
 
 describe('WS2P', () => {
+
+  WS2PConstants.CONNEXION_TIMEOUT = 100
+  WS2PConstants.REQUEST_TIMEOUT= 100
 
   describe("WS2P client connection", function() {
 

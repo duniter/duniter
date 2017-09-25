@@ -600,6 +600,14 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   /*****************
+   * MODULES UTILITIES
+   ****************/
+
+  requireFile(path:string) {
+    return require('./' + path)
+  }
+
+  /*****************
    * MODULES PLUGS
    ****************/
 

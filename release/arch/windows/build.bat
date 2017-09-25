@@ -44,11 +44,6 @@ call npm install
 REM call npm test
 echo "Ajout du module 1/1 (duniter-ui)..."
 call npm install duniter-ui@1.6.x --save --production
-REM sed -i "s/duniter\//..\/..\/..\/..\//g" node_modules/duniter-ui/server/controller/webmin.js
-cd node_modules\duniter-ui\server\controller\
-powershell -Command "(Get-Content webmin.js) | foreach-object {$_ -replace 'duniter/','../../../../' } | Set-Content webmin.js2"
-move /y webmin.js2 webmin.js
-cd ..\..\..\..
 echo "Retrait des modules 'dev'..."
 call npm prune --production
 

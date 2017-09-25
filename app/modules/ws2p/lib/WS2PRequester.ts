@@ -29,6 +29,10 @@ export class WS2PRequester {
     return this.query(WS2P_REQ.BLOCKS_CHUNK, { count, fromNumber })
   }
 
+  getPubkey() {
+    return this.ws2pc.pubkey || "########"
+  }
+
   async getRequirementsPending(minCert = 1): Promise<any> {
     return this.query(WS2P_REQ.WOT_REQUIREMENTS_OF_PENDING, { minCert })
   }

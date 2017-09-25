@@ -27,6 +27,7 @@ interface RemoteNode {
   getCurrent: () => Promise<BlockDTO>
   getBlock: (number:number) => Promise<BlockDTO>
   getBlocks: (count:number, fromNumber:number) => Promise<BlockDTO[]>
+  pubkey:string
 }
 
 class WS2PDao extends AbstractDAO {
@@ -50,7 +51,8 @@ class WS2PDao extends AbstractDAO {
       },
       getBlocks: async (count:number, fromNumber:number) => {
         return this.requester.getBlocks(count, fromNumber)
-      }
+      },
+      pubkey: this.requester.getPubkey()
     }
   }
 

@@ -22,9 +22,15 @@ export class WS2PClient {
       },
       expectedPub
     )
-    // Streaming
     const streamer = new WS2PStreamer(c)
-    server.pipe(streamer)
+    c.connected
+      .then(() => {
+        // Streaming
+        server.pipe(streamer)
+      })
+      .catch(() => {
+        server.unpipe(streamer)
+      })
     c.closed.then(() => {
       server.unpipe(streamer)
     })

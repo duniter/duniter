@@ -32,6 +32,7 @@ export class WS2PStreamer extends stream.Transform {
       }
     } catch (e) {
       logger.warn('WS2P >> Streamer >>', e)
+      this.ws2pc.close()
     }
     done && done();
   }

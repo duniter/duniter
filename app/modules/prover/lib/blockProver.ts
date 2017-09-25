@@ -5,7 +5,8 @@ import {DBBlock} from "../../../lib/db/DBBlock"
 import {CommonConstants} from "../../../lib/common-libs/constants"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
 
-const querablep       = require('querablep');
+const os        = require('os')
+const querablep = require('querablep')
 
 const POW_FOUND = true;
 const POW_NOT_FOUND_YET = false;
@@ -168,12 +169,20 @@ export class BlockProver {
       this.logger.info('Generating proof-of-work with %s leading zeros followed by [0-' + highMark + ']... (CPU usage set to %s%) for block#%s', nbZeros, (this.conf.cpu * 100).toFixed(0), block.number, block.issuer.slice(0,6));
       const start = Date.now();
       let result = await powFarm.askNewProof({
-        newPoW: { conf: {
-          cpu: this.conf.cpu,
-          prefix: this.conf.prefix,
-          avgGenTime: this.conf.avgGenTime,
-          medianTimeBlocks: this.conf.medianTimeBlocks
-        }, block: block, zeros: nbZeros, highMark: highMark, forcedTime: forcedTime, pair: this.pair }
+        newPoW: {
+          turnDuration: os.arch().match(/arm/) ? CommonConstants.POW_TURN_DURATION_ARM : CommonConstants.POW_TURN_DURATION_PC,
+          conf: {
+            cpu: this.conf.cpu,
+            prefix: this.conf.prefix,
+            avgGenTime: this.conf.avgGenTime,
+            medianTimeBlocks: this.conf.medianTimeBlocks
+          },
+          block: block,
+          zeros: nbZeros,
+          highMark: highMark,
+          forcedTime: forcedTime,
+          pair: this.pair
+        }
       });
       if (!result) {
         this.logger.info('GIVEN proof-of-work for block#%s with %s leading zeros followed by [0-' + highMark + ']! stop PoW for %s', block.number, nbZeros, this.pair && this.pair.pub.slice(0,6));

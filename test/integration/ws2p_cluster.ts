@@ -93,7 +93,7 @@ describe("WS2P cluster", function() {
     ])
     await s2.writePeer(p1)
     WS2PCluster.plugOn(s2._server);
-    await (s2._server.ws2pCluster as WS2PCluster).startCrawling()
+    await (s2._server.ws2pCluster as WS2PCluster).startCrawling(true)
     await s1.expect('/network/ws2p/info', (res:any) => {
       assert.equal(res.peers.level1, 0)
       assert.equal(res.peers.level2, 1)
@@ -105,7 +105,7 @@ describe("WS2P cluster", function() {
   })
 
   it('should not start another connection if peer is already connected', async () => {
-    await (s1._server.ws2pCluster as WS2PCluster).startCrawling()
+    await (s1._server.ws2pCluster as WS2PCluster).startCrawling(true)
     await s1.expect('/network/ws2p/info', (res:any) => {
       assert.equal(res.peers.level1, 0) // <- Does not increase!
       assert.equal(res.peers.level2, 1)

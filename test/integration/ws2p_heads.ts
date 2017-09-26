@@ -70,8 +70,8 @@ describe("WS2P heads propagation", function() {
       'WS2P 11111111 127.0.0.1 ' + portWS1
     ])
     await s2.writePeer(p1)
-    await (s1._server.ws2pCluster as WS2PCluster).startCrawling()
-    await (s2._server.ws2pCluster as WS2PCluster).startCrawling()
+    await (s1._server.ws2pCluster as WS2PCluster).startCrawling(true)
+    await (s2._server.ws2pCluster as WS2PCluster).startCrawling(true)
     await s1.expect('/network/ws2p/info', (res:any) => {
       assert.equal(res.peers.level1, 0)
       assert.equal(res.peers.level2, 1)

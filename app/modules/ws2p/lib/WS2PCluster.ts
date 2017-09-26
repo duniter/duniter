@@ -512,14 +512,25 @@ export class WS2PCluster {
     return all
   }
 
-  async startCrawling() {
+  async startCrawling(waitConnection = false) {
     // For blocks
     if (this.syncBlockInterval)
       clearInterval(this.syncBlockInterval);
-    this.syncBlockInterval = setInterval(() => this.pullBlocks(), 1000 * WS2PConstants.BLOCK_PULLING_INTERVAL)
+    this.syncBlockInterval = setInterval(() => this.pullBlocks(), 1000 * WS2PConstants.BLOCK_PULLING_INTERVAL);
     // Pull blocks right on start
-    await this.connectToWS2Peers()
-    await this.pullBlocks()
+    const init = async () => {
+      try {
+        await this.connectToWS2Peers()
+        await this.pullBlocks()
+      } catch (e) {
+        this.server.logger.error(e)
+      }
+    }
+    if (waitConnection) {
+      await init()
+    } else {
+      init()
+    }
     // For docpool
     if (this.syncDocpoolInterval)
       clearInterval(this.syncDocpoolInterval);

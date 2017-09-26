@@ -84,7 +84,7 @@ describe("WS2P network", function() {
     ])
     await s2.writePeer(p1)
     WS2PCluster.plugOn(s2._server);
-    await (s2._server.ws2pCluster as WS2PCluster).startCrawling()
+    await (s2._server.ws2pCluster as WS2PCluster).startCrawling(true)
     // const network = await simpleWS2PNetwork(s1, s2)
     // wss = network.wss
     // cluster2 = network.cluster2

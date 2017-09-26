@@ -57,7 +57,7 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
           const raw = dto.getRawSigned()
           await this.server.writeRawPeer(raw)
         }
-        else if (json.body.heads) {
+        else if (json.body.heads && typeof json.body.heads === "object" && json.body.heads.length !== undefined) {
           await this.cluster.headsReceived(json.body.heads || [])
         }
       }

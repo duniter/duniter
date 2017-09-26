@@ -37,13 +37,13 @@ export const WS2PDependency = {
         conf.ws2p = conf.ws2p || {
           uuid: nuuid.v4().slice(0,8),
           privateAccess: true,
-          publicAccess: false
+          publicAccess: true
         }
 
         // For config with missing value
         conf.ws2p.uuid = conf.ws2p.uuid || nuuid.v4().slice(0,8)
         if (conf.ws2p.privateAccess === undefined) conf.ws2p.privateAccess = true
-        if (conf.ws2p.publicAccess === undefined) conf.ws2p.publicAccess = false
+        if (conf.ws2p.publicAccess === undefined) conf.ws2p.publicAccess = true
 
         if (program.ws2pHost !== undefined)       conf.ws2p.host = program.ws2pHost
         if (program.ws2pPort !== undefined)       conf.ws2p.port = parseInt(program.ws2pPort)

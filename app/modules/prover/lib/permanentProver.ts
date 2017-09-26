@@ -45,7 +45,7 @@ export class PermanentProver {
   }
 
   allowedToStart() {
-    if (!this.permanencePromise || !this.permanencePromise.isFulfilled()) {
+    if (!this.permanencePromise || this.permanencePromise.isFulfilled()) {
       this.startPermanence()
     }
     this.resolveContinuePromise(true);
@@ -205,6 +205,7 @@ export class PermanentProver {
 
   async stopEveryting() {
     // First: avoid continuing the main loop
+    this.resolveContinuePromise(true)
     this.continuePromise = new Promise((resolve) => this.resolveContinuePromise = resolve);
     // Second: stop any started proof
     await this.prover.cancel();

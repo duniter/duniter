@@ -31,6 +31,6 @@ export class Prover extends stream.Transform {
   }
 
   async stopService() {
-    this.permaProver.stopEveryting();
+    await this.permaProver.stopEveryting();
   }
 }

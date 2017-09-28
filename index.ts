@@ -443,6 +443,7 @@ function commandLineConf(program:any, conf:any = {}) {
   const cli = {
     currency: program.currency,
     cpu: program.cpu,
+    prefix: program.prefix,
     server: {
       port: program.port,
     },
@@ -467,6 +468,7 @@ function commandLineConf(program:any, conf:any = {}) {
   if (cli.currency)                         conf.currency = cli.currency;
   if (cli.server.port)                      conf.port = cli.server.port;
   if (cli.cpu)                              conf.cpu = Math.max(0.01, Math.min(1.0, cli.cpu));
+  if (cli.prefix)                           conf.prefix = Math.max(1, Math.min(9, cli.prefix));
   if (cli.logs.http)                        conf.httplogs = true;
   if (cli.logs.nohttp)                      conf.httplogs = false;
   if (cli.db.mport)                         conf.mport = cli.db.mport;

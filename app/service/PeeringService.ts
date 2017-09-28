@@ -161,7 +161,7 @@ export class PeeringService {
           const localEndpoints = await this.server.getEndpoints()
           const localNodeNotListed = !peerEntityOld.containsAllEndpoints(localEndpoints)
           const current = localNodeNotListed && (await this.dal.getCurrentBlockOrNull());
-          if (!localNodeNotListed) {
+          /*if (!localNodeNotListed) {
             const indexOfThisNode = PeerDTO.indexOfFirst(localEndpoints, peerEntity.endpoints)
             if (indexOfThisNode !== -1) {
               this.server.push({
@@ -170,7 +170,7 @@ export class PeeringService {
             } else {
               logger.warn('This node has his interface listed in the peer document, but its index cannot be found.');
             }
-          }
+          }*/
           if (localNodeNotListed && (!current || current.number > blockNumber)) {
             // Document with pubkey of local peer, but doesn't contain local interface: we must add it
             this.generateSelfPeer(this.conf);

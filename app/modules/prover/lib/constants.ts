@@ -6,6 +6,7 @@ export const Constants = {
 
   POW_MINIMAL_TO_SHOW: 2,
   DEFAULT_CPU: 0.6,
+  DEFAULT_PEER_ID: 1,
 
   NONCE_RANGE: 1000 * 1000 * 1000 * 100,
 

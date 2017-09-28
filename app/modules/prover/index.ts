@@ -14,12 +14,15 @@ const async = require('async');
 export const ProverDependency = {
 
   duniter: {
-
+    
     /*********** Permanent prover **************/
     config: {
       onLoading: async (conf:ConfDTO) => {
         if (conf.cpu === null || conf.cpu === undefined) {
           conf.cpu = Constants.DEFAULT_CPU;
+        }
+        if (conf.prefix === null || conf.prefix === undefined) {
+          conf.prefix = Constants.DEFAULT_PEER_ID;
         }
         conf.powSecurityRetryDelay = Constants.POW_SECURITY_RETRY_DELAY;
         conf.powMaxHandicap = Constants.POW_MAXIMUM_ACCEPTABLE_HANDICAP;

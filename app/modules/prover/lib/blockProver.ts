@@ -206,6 +206,7 @@ export class BlockProver {
   }
 
   async changePoWPrefix(prefix:any) {
+    this.conf.prefix = prefix
     const farm = await this.getWorker()
     return farm.changePoWPrefix(prefix)
   }

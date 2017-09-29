@@ -17,9 +17,7 @@ export class Prover extends stream.Transform {
     if (obj) {
       if (obj.bcEvent && obj.bcEvent === OtherConstants.BC_EVENT.HEAD_CHANGED || obj.bcEvent === OtherConstants.BC_EVENT.SWITCHED) {
         this.permaProver.blockchainChanged(obj.block);
-      } /*else if (obj.nodeIndexInPeers !== undefined) {
-        this.permaProver.prover.changePoWPrefix((obj.nodeIndexInPeers + 1) * 10); // We multiply by 10 to give room to computers with < 100 cores
-      }*/ else if (obj.cpu !== undefined) {
+      } else if (obj.cpu !== undefined) {
         this.permaProver.prover.changeCPU(obj.cpu); // We multiply by 10 to give room to computers with < 100 cores
       }
     }

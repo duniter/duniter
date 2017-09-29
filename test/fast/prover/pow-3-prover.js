@@ -68,6 +68,19 @@ describe('PoW block prover', () => {
     });
   }));
 
+  it('should be able to use a prefix with 6 digits', () => co(function*(){
+    const block = {
+      number: 1,
+      issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd'
+    }
+    const params = yield prover.changePoWPrefix('123456')
+    params.should.deepEqual({ prefix: '123456' })
+    const forcedTime = 1;
+    const proof = yield prover.prove(block, 1, forcedTime)
+    proof.nonce.should.equal(123456000000000000)
+    String(proof.nonce).should.have.length(18)
+  }));
+
   it('should be able to stop a proof', () => co(function*(){
     const block = {
       number: 35,

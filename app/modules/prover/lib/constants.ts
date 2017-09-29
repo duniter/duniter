@@ -8,7 +8,7 @@ export const Constants = {
   DEFAULT_CPU: 0.6,
   DEFAULT_PEER_ID: 1,
   MIN_PEER_ID: 1,
-  MAX_PEER_ID: 999999,
+  MAX_PEER_ID: 899, // Due to MAX_SAFE_INTEGER = 9007199254740991 (16 digits, and we use 11 digits for the nonce + 2 digits for core number => 3 digits for the peer, must be below 900)
 
   NONCE_RANGE: 1000 * 1000 * 1000 * 100,
 

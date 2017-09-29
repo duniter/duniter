@@ -614,7 +614,7 @@ The necessary condition `XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8
 
 #### Example 1
 
-Key `HsLShA` sending 30 coins to key `BYfWYF` using 1 source transaction written in block #3.
+Key `HsLShA` sending 25 coins to key `BYfWYF` using 1 source transaction written in block #3.
 
 ```yml
 Version: 10

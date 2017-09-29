@@ -5,7 +5,7 @@ import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {Constants} from "./constants"
 import {KeyGen} from "../../../lib/common-libs/crypto/keyring"
 import {dos2unix} from "../../../lib/common-libs/dos2unix"
-import {rawer} from "../../../lib/common-libs/index";
+import {rawer} from "../../../lib/common-libs/index"
 
 const moment = require('moment');
 const querablep = require('querablep');
@@ -87,7 +87,7 @@ function beginNewProofOfWork(stuff:any) {
     currentCPU = conf.cpu || Constants.DEFAULT_CPU;
     prefix = parseInt(conf.prefix || prefix)
     if (prefix && prefix < Constants.NONCE_RANGE) {
-      prefix *= 10 * Constants.NONCE_RANGE
+      prefix *= 100 * Constants.NONCE_RANGE
     }
     const highMark = stuff.highMark;
     const turnDuration = stuff.turnDuration || TURN_DURATION_IN_MILLISEC

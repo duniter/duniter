@@ -69,8 +69,10 @@ module.exports = {
         const pid = server.getDaemon().status()
         if (pid) {
           console.log('Duniter is running using PID %s.', pid)
+          process.exit(0)
         } else {
           console.log('Duniter is not running.')
+          process.exit(2)
         }
       }
     }, {

@@ -35,6 +35,9 @@ export class WS2PCluster {
   private maxLevel1Size = WS2PConstants.MAX_LEVEL_1_PEERS
   private messageHandler: WS2PServerMessageHandler
 
+  // A cache to remember the banned keys
+  private banned:{ [k:string]: string } = {}
+
   // A cache to know if a block exists or not in the DB
   private blockstampsCache:{ [k:string]: number } = {}
 
@@ -83,42 +86,43 @@ export class WS2PCluster {
     await Promise.all(heads.map(async (h:{ message:string, sig:string }) => {
       const message = h.message
       const sig = h.sig
-      try {
-        if (message && message.match(WS2PConstants.HEAD_REGEXP)) {
-          const [,, pub, blockstamp]:string[] = message.split(':')
-          const sigOK = verify(message, sig, pub)
-          if (sigOK) {
-            // Already known?
-            if (!this.headsCache[pub] || this.headsCache[pub].blockstamp !== blockstamp) {
-              // More recent?
-              if (!this.headsCache[pub] || parseInt(this.headsCache[pub].blockstamp) < parseInt(blockstamp)) {
-                // Check that issuer is a member and that the block exists
-                const memberKey = await this.isMemberKey(pub)
-                if (memberKey) {
-                  const exists = await this.existsBlock(blockstamp)
-                  if (exists) {
-                    this.headsCache[pub] = { blockstamp, message, sig }
-                    this.newHeads.push({message, sig})
-                    added.push({message, sig})
-                    // Cancel a pending "heads" to be spread
-                    if (this.headsTimeout) {
-                      clearTimeout(this.headsTimeout)
-                    }
-                    // Reprogram it a few moments later
-                    this.headsTimeout = setTimeout(async () => {
-                      const heads = this.newHeads.splice(0, this.newHeads.length)
-                      if (heads.length) {
-                        await this.spreadNewHeads(heads)
-                      }
-                    }, WS2PConstants.HEADS_SPREAD_TIMEOUT)
+      if (!message) {
+        throw "EMPTY_MESSAGE_FOR_HEAD"
+      }
+      if (message.match(WS2PConstants.HEAD_REGEXP)) {
+        const [,, pub, blockstamp]:string[] = message.split(':')
+        const sigOK = verify(message, sig, pub)
+        if (sigOK) {
+          // Already known?
+          if (!this.headsCache[pub] || this.headsCache[pub].blockstamp !== blockstamp) {
+            // More recent?
+            if (!this.headsCache[pub] || parseInt(this.headsCache[pub].blockstamp) < parseInt(blockstamp)) {
+              // Check that issuer is a member and that the block exists
+              const memberKey = await this.isMemberKey(pub)
+              if (memberKey) {
+                const exists = await this.existsBlock(blockstamp)
+                if (exists) {
+                  this.headsCache[pub] = { blockstamp, message, sig }
+                  this.newHeads.push({message, sig})
+                  added.push({message, sig})
+                  // Cancel a pending "heads" to be spread
+                  if (this.headsTimeout) {
+                    clearTimeout(this.headsTimeout)
                   }
+                  // Reprogram it a few moments later
+                  this.headsTimeout = setTimeout(async () => {
+                    const heads = this.newHeads.splice(0, this.newHeads.length)
+                    if (heads.length) {
+                      await this.spreadNewHeads(heads)
+                    }
+                  }, WS2PConstants.HEADS_SPREAD_TIMEOUT)
                 }
               }
             }
           }
+        } else {
+          throw "HEAD_MESSAGE_WRONGLY_SIGNED"
         }
-      } catch (e) {
-        this.server.logger.trace('Rejected message %s:', message, e)
       }
     }))
     this.server.push({
@@ -195,7 +199,7 @@ export class WS2PCluster {
     if (this.ws2pServer) {
       await this.ws2pServer.close()
     }
-    const connections = await this.getAllConnections()
+    const connections = this.getAllConnections()
     await Promise.all(connections.map(c => c.close()))
   }
 
@@ -322,7 +326,7 @@ export class WS2PCluster {
   }
 
   private async spreadNewHeads(heads:{ message:string, sig:string }[]) {
-    const connexions = await this.getAllConnections()
+    const connexions = this.getAllConnections()
     return Promise.all(connexions.map(async (c) => {
       try {
         await c.pushHeads(heads)
@@ -438,6 +442,11 @@ export class WS2PCluster {
     priorityKeys:string[],
     targetWS2PUID = ""
   ) {
+    // We do not accept banned keys
+    if (this.banned[pub]) {
+      this.server.logger.warn('Connection to %s refused, reason: %s', pub.slice(0, 8), this.banned[pub])
+      return false
+    }
     let accept = priorityKeys.indexOf(pub) !== -1
     if (!accept && connectedPubkeys.indexOf(pub) === -1) {
       // Do we have room?
@@ -504,7 +513,7 @@ export class WS2PCluster {
     return this.ws2pServer ? this.ws2pServer.getConnexions() : []
   }
 
-  async getAllConnections() {
+  getAllConnections() {
     const all:WS2PConnection[] = this.ws2pServer ? this.ws2pServer.getConnexions() : []
     for (const uuid of Object.keys(this.ws2pClients)) {
       all.push(this.ws2pClients[uuid].connection)
@@ -562,7 +571,7 @@ export class WS2PCluster {
   }
 
   private async makeApullShot() {
-    const connections = await this.getAllConnections()
+    const connections = this.getAllConnections()
     const chosen = randomPick(connections, CrawlerConstants.CRAWL_PEERS_COUNT)
 
     await Promise.all(chosen.map(async (conn) => {
@@ -581,7 +590,7 @@ export class WS2PCluster {
   }
 
   async pullDocpool() {
-    const connections = await this.getAllConnections()
+    const connections = this.getAllConnections()
     const chosen = randomPick(connections, CrawlerConstants.CRAWL_PEERS_COUNT)
     await Promise.all(chosen.map(async (conn) => {
       const puller = new WS2PDocpoolPuller(this.server, conn)
@@ -593,5 +602,21 @@ export class WS2PCluster {
     const clients = Object.keys(this.ws2pClients).map(k => this.ws2pClients[k].connection.pubkey)
     const served = this.ws2pServer ? this.ws2pServer.getConnexions().map(c => c.pubkey) : []
     return clients.concat(served)
+  }
+
+  banConnection(c:WS2PConnection, reason:string) {
+    this.server.logger.warn('Banning connections of %s for %ss, reason: %s', c.pubkey.slice(0, 8), WS2PConstants.BAN_DURATION_IN_SECONDS, reason)
+    if (c.pubkey) {
+      this.banned[c.pubkey] = reason
+      setTimeout(() => {
+        delete this.banned[c.pubkey]
+      }, 1000 * WS2PConstants.BAN_DURATION_IN_SECONDS)
+      const connections = this.getAllConnections()
+      for (const connection of connections) {
+        if (c.pubkey == connection.pubkey) {
+          connection.close()
+        }
+      }
+    }
   }
 }

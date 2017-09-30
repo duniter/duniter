@@ -476,7 +476,7 @@ export class WS2PConnection {
                   // Push message
                   else {
                     this.nbPushsByRemoteCount++
-                    await this.messageHandler.handlePushMessage(data)
+                    await this.messageHandler.handlePushMessage(data, this)
                   }
                 }
               }

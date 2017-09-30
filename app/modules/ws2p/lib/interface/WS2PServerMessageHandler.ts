@@ -11,6 +11,8 @@ import {TransactionDTO} from "../../../../lib/dto/TransactionDTO"
 import {PeerDTO} from "../../../../lib/dto/PeerDTO"
 import {WS2P_REQ} from "../WS2PRequester"
 import {WS2PCluster} from "../WS2PCluster"
+import {WS2PConnection} from "../WS2PConnection"
+import {WS2PConstants} from "../constants"
 
 export enum WS2P_REQERROR {
   UNKNOWN_REQUEST
@@ -19,49 +21,86 @@ export enum WS2P_REQERROR {
 export class WS2PServerMessageHandler implements WS2PMessageHandler {
 
   protected mapper:WS2PReqMapper
+  private errors:{
+    [k:string]: {
+      createdOn: number,
+      pubkeys: {
+        [p:string]: boolean
+      }
+    }
+  } = {}
 
   constructor(protected server:Server, protected cluster:WS2PCluster) {
     this.mapper = new WS2PReqMapperByServer(server)
   }
 
-  async handlePushMessage(json: any): Promise<void> {
+  async handlePushMessage(json: any, c:WS2PConnection): Promise<void> {
+    let documentHash = ''
     try {
       if (json.body) {
         if (json.body.block) {
           const dto = BlockDTO.fromJSONObject(json.body.block)
           const raw = dto.getRawSigned()
+          documentHash = dto.getHash()
           await this.server.writeRawBlock(raw)
         }
         else if (json.body.identity) {
           const dto = IdentityDTO.fromJSONObject(json.body.identity)
           const raw = dto.getRawSigned()
+          documentHash = dto.getHash()
           await this.server.writeRawIdentity(raw)
         }
         else if (json.body.certification) {
           const dto = CertificationDTO.fromJSONObject(json.body.certification)
           const raw = dto.getRawSigned()
+          documentHash = dto.getHash()
           await this.server.writeRawCertification(raw)
         }
         else if (json.body.membership) {
           const dto = MembershipDTO.fromJSONObject(json.body.membership)
           const raw = dto.getRawSigned()
+          documentHash = dto.getHash()
           await this.server.writeRawMembership(raw)
         }
         else if (json.body.transaction) {
           const dto = TransactionDTO.fromJSONObject(json.body.transaction)
           const raw = dto.getRaw()
+          documentHash = dto.getHash()
           await this.server.writeRawTransaction(raw)
         }
         else if (json.body.peer) {
           const dto = PeerDTO.fromJSONObject(json.body.peer)
           const raw = dto.getRawSigned()
+          documentHash = dto.getHash()
           await this.server.writeRawPeer(raw)
         }
         else if (json.body.heads && typeof json.body.heads === "object" && json.body.heads.length !== undefined) {
+          if (!json.body.heads.length) {
+            documentHash = 'HEADs'
+            throw "Heads empty HEADs received"
+          }
           await this.cluster.headsReceived(json.body.heads || [])
         }
       }
     } catch(e) {
+      if (documentHash
+        && this.errors[documentHash]
+        && this.errors[documentHash].pubkeys[c.pubkey] !== undefined
+        && this.server.conf.pair.pub !== c.pubkey) { // We do not want to ban ourselves
+        this.cluster.banConnection(c, "Peer " + (c.pubkey || '--unknown--') + " sending again a wrong document")
+      } else {
+        // Remember the error for some time
+        if (!this.errors[documentHash]) {
+          this.errors[documentHash] = {
+            createdOn: Date.now(),
+            pubkeys: {}
+          }
+        }
+        this.errors[documentHash].pubkeys[c.pubkey] = true
+        setTimeout(() => {
+          delete this.errors[documentHash]
+        }, WS2PConstants.ERROR_RECALL_DURATION_IN_SECONDS)
+      }
       this.server.logger.warn(e)
     }
   }

@@ -116,6 +116,7 @@ export class WS2PServer extends events.EventEmitter {
   }
 
   async trimConnections() {
+    /*** OVERFLOW TRIMMING ***/
     let disconnectedOne = true
     // Disconnect non-members
     while (disconnectedOne && this.connections.length > this.maxLevel2Size) {
@@ -134,6 +135,22 @@ export class WS2PServer extends events.EventEmitter {
       for (const c of this.connections) {
         c.close()
         this.removeConnection(c)
+      }
+    }
+    /*** DUPLICATES TRIMMING ***/
+    disconnectedOne = true
+    while (disconnectedOne) {
+      disconnectedOne = false
+      const pubkeysFound = []
+      for (const c of this.connections) {
+        if (pubkeysFound.indexOf(c.pubkey) !== -1) {
+          c.close()
+          this.removeConnection(c)
+          disconnectedOne = true
+        }
+        else if (c.pubkey !== this.server.conf.pair.pub) {
+          pubkeysFound.push(c.pubkey)
+        }
       }
     }
   }

@@ -191,7 +191,6 @@ export class Server extends stream.Duplex implements HookableServer {
     this.BlockchainService
       .pipe(es.mapSync((e:any) => {
         if (e.bcEvent === OtherConstants.BC_EVENT.HEAD_CHANGED || e.bcEvent === OtherConstants.BC_EVENT.SWITCHED) {
-          this.emitDocument(e.block, DuniterDocument.ENTITY_BLOCK)
           this.emit('bcEvent', e)
         }
         this.streamPush(e)

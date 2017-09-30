@@ -111,12 +111,6 @@ export class PeeringService {
         if(!found && thePeerDTO.endpoints.length === 0){
           throw 'Peer with zero endpoints that is not already known'
         }
-        if(found && thePeerDTO.endpoints.length === 0){
-          // This peer is saying "I'm no more joinable"
-          // ==> Remove it from the database
-          await this.dal.removePeerByPubkey(thePeerDTO.pubkey)
-          return thePeerDTO
-        }
         else if(found){
           // Already existing peer
           const sp2 = found.block.split('-');

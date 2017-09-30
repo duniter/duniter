@@ -99,7 +99,7 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
         this.errors[documentHash].pubkeys[c.pubkey] = true
         setTimeout(() => {
           delete this.errors[documentHash]
-        }, WS2PConstants.ERROR_RECALL_DURATION_IN_SECONDS)
+        }, 1000 * WS2PConstants.ERROR_RECALL_DURATION_IN_SECONDS)
       }
       this.server.logger.warn(e)
     }

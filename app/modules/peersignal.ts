@@ -1,5 +1,6 @@
 "use strict";
 import {ConfDTO} from "../lib/dto/ConfDTO"
+import {Server} from "../../server"
 
 const async = require('async');
 const constants = require('../lib/constants');
@@ -7,7 +8,7 @@ const constants = require('../lib/constants');
 module.exports = {
   duniter: {
     service: {
-      neutral: (server:any, conf:ConfDTO) => {
+      neutral: (server:Server, conf:ConfDTO) => {
         for (const ep of conf.endpoints || []) {
           server.addEndpointsDefinitions(async () => ep)
         }
@@ -28,7 +29,7 @@ class PeerSignalEmitter {
     task(callback);
   }, 1)
 
-  constructor(private server:any, private conf:ConfDTO) {
+  constructor(private server:Server, private conf:ConfDTO) {
   }
 
   async startService() {

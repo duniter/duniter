@@ -1,5 +1,6 @@
 "use strict";
 import {ConfDTO} from "../lib/dto/ConfDTO"
+import {Server} from "../../server"
 
 const constants = require('../lib/constants');
 const wizard = require('../lib/wizard');
@@ -13,7 +14,7 @@ module.exports = {
       desc: 'Reset configuration, data, peers, transactions or everything in the database',
       preventIfRunning: true,
 
-      onConfiguredExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const type = params[0];
         if (type === 'peers') {
           // Needs the DAL plugged

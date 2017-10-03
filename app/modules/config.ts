@@ -1,5 +1,6 @@
 "use strict";
 import {ConfDTO} from "../lib/dto/ConfDTO"
+import {Server} from "../../server"
 import {CommonConstants} from "../lib/common-libs/constants"
 
 module.exports = {
@@ -20,7 +21,7 @@ module.exports = {
       name: 'config',
       desc: 'Register configuration in database',
       // The command does nothing particular, it just stops the process right after configuration phase is over
-      onConfiguredExecute: (server:any, conf:ConfDTO) => Promise.resolve(conf)
+      onConfiguredExecute: (server:Server, conf:ConfDTO) => Promise.resolve(conf)
     }]
   }
 }

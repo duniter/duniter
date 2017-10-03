@@ -1,4 +1,5 @@
 "use strict";
+import {Server} from "../../server"
 import {GlobalFifoPromise} from "./GlobalFifoPromise"
 import {BlockchainContext} from "../lib/computation/BlockchainContext"
 import {ConfDTO} from "../lib/dto/ConfDTO"
@@ -30,7 +31,7 @@ export class BlockchainService extends FIFOService {
   switcherDao:SwitcherDao<BlockDTO>
   invalidForks:string[] = []
 
-  constructor(private server:any, fifoPromiseHandler:GlobalFifoPromise) {
+  constructor(private server:Server, fifoPromiseHandler:GlobalFifoPromise) {
     super(fifoPromiseHandler)
     this.mainContext = new BlockchainContext()
     this.switcherDao = new (class ForkDao implements SwitcherDao<BlockDTO> {

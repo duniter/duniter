@@ -1,5 +1,6 @@
 import {Constants} from "./constants"
 import {ConfDTO, Keypair} from "../../../lib/dto/ConfDTO"
+import {Server} from "../../../../server"
 import {PowEngine} from "./engine"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {CommonConstants} from "../../../lib/common-libs/constants"
@@ -19,7 +20,7 @@ export class WorkerFarm {
   private stopPromise:any = null
   private checkPoWandNotify:any = null
 
-  constructor(private server:any, private logger:any) {
+  constructor(private server:Server, private logger:any) {
 
     this.theEngine = new PowEngine(server.conf, server.logger)
 
@@ -99,7 +100,7 @@ export class BlockProver {
   waitResolve:any
   workerFarmPromise:any
 
-  constructor(private server:any) {
+  constructor(private server:Server) {
     this.conf = server.conf
     this.pair = this.conf.pair
     this.logger = server.logger

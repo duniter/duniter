@@ -5,6 +5,8 @@ import {DBBlock} from "../../../lib/db/DBBlock"
 import {dos2unix} from "../../../lib/common-libs/dos2unix"
 import {parsers} from "../../../lib/common-libs/parsers/index"
 
+import {Server} from "../../../../server"
+
 const querablep = require('querablep');
 
 interface Querable<T> extends Promise<T> {
@@ -29,7 +31,7 @@ export class PermanentProver {
   private resolveContinuePromise:any = null
   private continuePromise:any = null
 
-  constructor(private server:any) {
+  constructor(private server:Server) {
     this.logger = server.logger;
     this.conf = server.conf;
     this.prover = new BlockProver(server)

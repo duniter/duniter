@@ -1,4 +1,5 @@
 import {ConfDTO} from "../lib/dto/ConfDTO"
+import {Server} from "../../server"
 
 "use strict";
 
@@ -19,7 +20,7 @@ module.exports = {
       name: 'plug [what]',
       desc: 'Plugs in a duniter module to this Duniter codebase, making it available for the node.',
       logs: false,
-      onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const what = params[0];
         try {
           console.log('Trying to install module "%s"...', what)
@@ -36,7 +37,7 @@ module.exports = {
       name: 'unplug [what]',
       desc: 'Plugs in a duniter module to this Duniter codebase, making it available for the node.',
       logs: false,
-      onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const what = params[0];
         try {
           console.log('Trying to remove module "%s"...', what)

@@ -1,4 +1,6 @@
 import {ConfDTO} from "../lib/dto/ConfDTO"
+import {Server} from "../../server"
+
 module.exports = {
   duniter: {
     cli: [{
@@ -6,7 +8,7 @@ module.exports = {
       desc: 'Revert (undo + remove) the top [count] blocks from the blockchain. EXPERIMENTAL',
       preventIfRunning: true,
 
-      onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const count = params[0];
         const logger = server.logger;
         try {
@@ -22,7 +24,7 @@ module.exports = {
     },{
       name: 'revert-to [number]',
       desc: 'Revert (undo + remove) top blockchain blocks until block #[number] is reached. EXPERIMENTAL',
-      onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const number = params[0];
         const logger = server.logger;
         try {

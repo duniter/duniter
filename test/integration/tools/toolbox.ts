@@ -656,7 +656,7 @@ export async function newWS2PBidirectionnalConnection(currency:string, k1:Key, k
       })
       i++
     })
-    c1 = WS2PConnection.newConnectionToAddress('localhost:' + port, new (class EmptyHandler implements WS2PMessageHandler {
+    c1 = WS2PConnection.newConnectionToAddress('ws://localhost:' + port, new (class EmptyHandler implements WS2PMessageHandler {
       async handlePushMessage(json: any): Promise<void> {
       }
       async answerToRequest(json: any): Promise<WS2PResponse> {
@@ -677,7 +677,7 @@ export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promis
   const connexionPromise = new Promise(res => {
     ws2ps.on('newConnection', res)
   })
-  const ws2pc = await cluster2.connect('localhost', port, new WS2PServerMessageHandler(s2._server, cluster2), s1._server.conf.pair.pub)
+  const ws2pc = await cluster2.connectToRemoteWS('localhost', port, '', new WS2PServerMessageHandler(s2._server, cluster2), s1._server.conf.pair.pub)
 
   await connexionPromise
   w1 = await ws2ps.getConnection(clientPub)

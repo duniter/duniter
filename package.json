@@ -24,6 +24,7 @@
   "scripts": {
     "prepublish": "tsc",
     "tsc": "tsc",
+    "tscw": "tsc -w",
     "test": "nyc --reporter html mocha",
     "start": "node bin/duniter start",
     "build": "tsc && cd \"node_modules/duniter-ui\" && npm install && npm run build",

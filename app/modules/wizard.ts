@@ -1,4 +1,5 @@
 import {ConfDTO} from "../lib/dto/ConfDTO"
+import {Server} from "../../server"
 import {Wizard} from "../lib/wizard"
 
 const _ = require('underscore')
@@ -18,7 +19,7 @@ module.exports = {
       name: 'wizard [key|network|network-reconfigure|currency|pow|parameters]',
       desc: 'Launch the configuration wizard.',
 
-      onConfiguredExecute: async (server:any, conf:ConfDTO, program:any, params:any, wizardTasks:any) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any, wizardTasks:any) => {
         const step = params[0];
         const tasks = step ? [wizardTasks[step]] : _.values(wizardTasks);
         for (const task of tasks) {

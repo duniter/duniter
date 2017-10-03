@@ -1,4 +1,5 @@
 import {ConfDTO} from "../lib/dto/ConfDTO"
+import {Server} from "../../server"
 
 "use strict";
 
@@ -16,7 +17,7 @@ module.exports = {
     ],
 
     service: {
-      process: (server:any) => ServerService(server)
+      process: (server:Server) => ServerService(server)
     },
 
     config: {
@@ -34,7 +35,7 @@ module.exports = {
       name: 'start',
       desc: 'Starts Duniter as a daemon (background task).',
       logs: false,
-      onConfiguredExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         await server.checkConfig()
         const daemon = server.getDaemon('direct_start', 'start')
         await startDaemon(daemon)
@@ -44,7 +45,7 @@ module.exports = {
       name: 'stop',
       desc: 'Stops Duniter daemon if it is running.',
       logs: false,
-      onConfiguredExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const daemon = server.getDaemon()
         await stopDaemon(daemon)
       }
@@ -53,7 +54,7 @@ module.exports = {
       name: 'restart',
       desc: 'Stops Duniter daemon and restart it.',
       logs: false,
-      onConfiguredExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         await server.checkConfig()
         const daemon = server.getDaemon('direct_start', 'restart')
         await stopDaemon(daemon)
@@ -64,7 +65,7 @@ module.exports = {
       name: 'status',
       desc: 'Get Duniter daemon status.',
       logs: false,
-      onConfiguredExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         await server.checkConfig()
         const pid = server.getDaemon().status()
         if (pid) {
@@ -80,7 +81,7 @@ module.exports = {
       name: 'logs',
       desc: 'Follow duniter logs.',
       logs: false,
-      onConfiguredExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         printTailAndWatchFile(directory.INSTANCE_HOMELOG_FILE, constants.NB_INITIAL_LINES_TO_SHOW)
         // Never ending command
         return new Promise(res => null)
@@ -89,7 +90,7 @@ module.exports = {
 
       name: 'direct_start',
       desc: 'Start Duniter node with direct output, non-daemonized.',
-      onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any, startServices:any) => {
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any, startServices:any) => {
         const logger = server.logger;
 
         logger.info(">> Server starting...");
@@ -110,7 +111,7 @@ module.exports = {
   }
 };
 
-function ServerService(server:any) {
+function ServerService(server:Server) {
   server.startService = () => Promise.resolve();
   server.stopService = () => Promise.resolve();
   return server;

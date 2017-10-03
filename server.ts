@@ -23,6 +23,7 @@ import {TransactionDTO} from "./app/lib/dto/TransactionDTO"
 import {PeerDTO} from "./app/lib/dto/PeerDTO"
 import {OtherConstants} from "./app/lib/other_constants"
 import {WS2PCluster} from "./app/modules/ws2p/lib/WS2PCluster"
+import {DBBlock} from "./app/lib/db/DBBlock"
 
 export interface HookableServer {
   generatorGetJoinData: (...args:any[]) => Promise<any>
@@ -49,6 +50,8 @@ export class Server extends stream.Duplex implements HookableServer {
   private paramsP:Promise<any>|null
   private endpointsDefinitions:(()=>Promise<string>)[] = []
   private wrongEndpointsFilters:((endpoints:string[])=>Promise<string[]>)[] = []
+  startService:()=>Promise<void>
+  stopService:()=>Promise<void>
   ws2pCluster:WS2PCluster|undefined
   conf:ConfDTO
   dal:FileDAL
@@ -352,7 +355,7 @@ export class Server extends stream.Duplex implements HookableServer {
     }
   }
 
-  async resetAll(done:any) {
+  async resetAll(done:any = null) {
     await this.resetDataHook()
     await this.resetConfigHook()
     const files = ['stats', 'cores', 'current', directory.DUNITER_DB_NAME, directory.DUNITER_DB_NAME + '.db', directory.DUNITER_DB_NAME + '.log', directory.WOTB_FILE, 'export.zip', 'import.zip', 'conf'];
@@ -367,20 +370,20 @@ export class Server extends stream.Duplex implements HookableServer {
     await this.resetFiles(files, dirs, done);
   }
 
-  async resetConf(done:any) {
+  async resetConf(done:any = null) {
     await this.resetConfigHook()
     const files = ['conf'];
     const dirs:string[]  = [];
     return this.resetFiles(files, dirs, done);
   }
 
-  resetStats(done:any) {
+  resetStats(done:any = null) {
     const files = ['stats'];
     const dirs  = ['ud_history'];
     return this.resetFiles(files, dirs, done);
   }
 
-  resetPeers(done:any) {
+  resetPeers() {
     return this.dal.resetPeers()
   }
 
@@ -613,21 +616,21 @@ export class Server extends stream.Duplex implements HookableServer {
   /**
    * Default WoT incoming data for new block. To be overriden by a module.
    */
-  generatorGetJoinData(): Promise<any> {
+  generatorGetJoinData(current:DBBlock, idtyHash:string , char:string): Promise<any> {
     return Promise.resolve({})
   }
 
   /**
    * Default WoT incoming certifications for new block, filtering wrong certs. To be overriden by a module.
    */
-  generatorComputeNewCerts(): Promise<any> {
+  generatorComputeNewCerts(...args:any[]): Promise<any> {
     return Promise.resolve({})
   }
 
   /**
    * Default WoT transforming method for certs => links. To be overriden by a module.
    */
-  generatorNewCertsToLinks(): Promise<any> {
+  generatorNewCertsToLinks(...args:any[]): Promise<any> {
     return Promise.resolve({})
   }
 

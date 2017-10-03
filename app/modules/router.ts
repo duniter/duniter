@@ -1,5 +1,6 @@
 "use strict";
 import {ConfDTO} from "../lib/dto/ConfDTO"
+import {Server} from "../../server"
 import * as stream from "stream"
 import {Multicaster} from "../lib/streams/multicaster"
 import {RouterStream} from "../lib/streams/router"
@@ -9,10 +10,10 @@ const constants = require('../lib/constants');
 module.exports = {
   duniter: {
     service: {
-      output: (server:any, conf:ConfDTO, logger:any) => new Router(server)
+      output: (server:Server, conf:ConfDTO, logger:any) => new Router(server)
     },
     methods: {
-      routeToNetwork: (server:any) => {
+      routeToNetwork: (server:Server) => {
         const theRouter = new Router(server);
         theRouter.startService();
         server.pipe(theRouter);
@@ -30,7 +31,7 @@ class Router extends stream.Transform {
   theRouter:any
   theMulticaster:Multicaster = new Multicaster()
 
-  constructor(private server:any) {
+  constructor(private server:Server) {
     super({ objectMode: true })
   }
 

@@ -5,6 +5,7 @@ import * as stream from "stream"
 import {WS2PCluster} from "./lib/WS2PCluster"
 import {WS2PUpnp} from "./lib/ws2p-upnp"
 import {CommonConstants} from "../../lib/common-libs/constants"
+const constants = require("../../lib/constants");
 
 const nuuid = require('node-uuid')
 
@@ -113,7 +114,7 @@ export const WS2PDependency = {
       desc: 'WS2P operations for configuration and diagnosis tasks.',
       logs: false,
 
-      onConfiguredExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const subcmd = params[0];
         if (subcmd === 'list-nodes') {
           // Needs the DAL plugged

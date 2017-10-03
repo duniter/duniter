@@ -1,5 +1,6 @@
 "use strict";
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
+import {Server} from "../../../../server"
 import {BlockchainContext} from "../../../lib/computation/BlockchainContext"
 import {TransactionDTO} from "../../../lib/dto/TransactionDTO"
 import {GLOBAL_RULES_HELPERS} from "../../../lib/rules/global_rules"
@@ -30,7 +31,7 @@ export class BlockGenerator {
   selfPubkey:string
   logger:any
 
-  constructor(private server:any) {
+  constructor(private server:Server) {
     this.conf = server.conf;
     this.dal = server.dal;
     this.mainContext = server.BlockchainService.getContext();
@@ -641,7 +642,7 @@ export class BlockGenerator {
 
 export class BlockGeneratorWhichProves extends BlockGenerator {
 
-  constructor(server:any, private prover:any) {
+  constructor(server:Server, private prover:any) {
     super(server)
   }
 

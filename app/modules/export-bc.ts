@@ -1,5 +1,6 @@
 "use strict";
 import {ConfDTO} from "../lib/dto/ConfDTO"
+import {Server} from "../../server"
 import {BlockDTO} from "../lib/dto/BlockDTO"
 
 const _ = require('underscore');
@@ -10,7 +11,7 @@ module.exports = {
       name: 'export-bc [upto]',
       desc: 'Exports the whole blockchain as JSON array, up to [upto] block number (excluded).',
       logs: false,
-      onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const upto = params[0];
         const logger = server.logger;
         try {

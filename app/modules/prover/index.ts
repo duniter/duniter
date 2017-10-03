@@ -34,7 +34,7 @@ export const ProverDependency = {
     },
 
     service: {
-      output: (server:any) => {
+      output: (server:Server) => {
         const generator = new BlockGenerator(server);
         server.generatorGetJoinData     = generator.getSinglePreJoinData.bind(generator)
         server.generatorComputeNewCerts = generator.computeNewCerts.bind(generator)
@@ -44,20 +44,20 @@ export const ProverDependency = {
     },
 
     methods: {
-      hookServer: (server:any) => {
+      hookServer: (server:Server) => {
         const generator = new BlockGenerator(server);
         server.generatorGetJoinData     = generator.getSinglePreJoinData.bind(generator)
         server.generatorComputeNewCerts = generator.computeNewCerts.bind(generator)
         server.generatorNewCertsToLinks = generator.newCertsToLinks.bind(generator)
       },
-      prover: (server:any, conf:ConfDTO, logger:any) => new Prover(server),
-      blockGenerator: (server:any, prover:any) => new BlockGeneratorWhichProves(server, prover),
-      generateTheNextBlock: async (server:any, manualValues:any) => {
+      prover: (server:Server, conf:ConfDTO, logger:any) => new Prover(server),
+      blockGenerator: (server:Server, prover:any) => new BlockGeneratorWhichProves(server, prover),
+      generateTheNextBlock: async (server:Server, manualValues:any) => {
         const prover = new BlockProver(server);
         const generator = new BlockGeneratorWhichProves(server, prover);
         return generator.nextBlock(manualValues);
       },
-      generateAndProveTheNext: async (server:any, block:any, trial:any, manualValues:any) => {
+      generateAndProveTheNext: async (server:Server, block:any, trial:any, manualValues:any) => {
         const prover = new BlockProver(server);
         const generator = new BlockGeneratorWhichProves(server, prover);
         let res = await generator.makeNextBlock(block, trial, manualValues);
@@ -79,7 +79,7 @@ export const ProverDependency = {
     cli: [{
       name: 'gen-next [difficulty]',
       desc: 'Tries to generate the next block of the blockchain.',
-      onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const difficulty = params[0]
         const generator = new BlockGeneratorWhichProves(server, null);
         return generateAndSend(program, difficulty, server, () => () => generator.nextBlock())
@@ -88,7 +88,7 @@ export const ProverDependency = {
       name: 'gen-root [difficulty]',
       desc: 'Tries to generate the next block of the blockchain.',
       preventIfRunning: true,
-      onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const difficulty = params[0]
         const generator = new BlockGeneratorWhichProves(server, null);
         let toDelete, catched = true;
@@ -110,7 +110,7 @@ export const ProverDependency = {
       name: 'gen-root-choose [difficulty]',
       desc: 'Tries to generate root block, with choice of root members.',
       preventIfRunning: true,
-      onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const difficulty = params[0]
         if (!difficulty) {
           throw 'Difficulty is required.';
@@ -122,7 +122,7 @@ export const ProverDependency = {
   }
 }
 
-function generateAndSend(program:any, difficulty:string, server:any, getGenerationMethod:any) {
+function generateAndSend(program:any, difficulty:string, server:Server, getGenerationMethod:any) {
   const logger = server.logger;
   return new Promise((resolve, reject) => {
     if (!program.submitLocal) {

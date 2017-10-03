@@ -2,12 +2,13 @@
 import {PermanentProver} from "./permanentProver"
 import * as stream from "stream"
 import {OtherConstants} from "../../../lib/other_constants"
+import {Server} from "../../../../server"
 
 export class Prover extends stream.Transform {
 
   permaProver:PermanentProver
 
-  constructor(server:any) {
+  constructor(server:Server) {
     super({ objectMode: true })
     this.permaProver = new PermanentProver(server)
   }

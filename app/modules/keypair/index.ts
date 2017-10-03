@@ -1,5 +1,6 @@
 import {randomKey} from "../../lib/common-libs/crypto/keyring"
 import {ConfDTO, KeypairConfDTO} from "../../lib/dto/ConfDTO"
+import {Server} from "../../../server"
 import {Scrypt} from "./lib/scrypt"
 
 const inquirer = require('inquirer');
@@ -38,14 +39,14 @@ export const KeypairDependency = {
       name: 'pub',
       desc: 'Shows the node public key',
       logs: false,
-      onConfiguredExecute: (server:any, conf:ConfDTO) => {
+      onConfiguredExecute: (server:Server, conf:ConfDTO) => {
         console.log(conf.pair.pub)
       }
     }, {
       name: 'sec',
       desc: 'Shows the node secret key',
       logs: false,
-      onConfiguredExecute: (server:any, conf:ConfDTO) => {
+      onConfiguredExecute: (server:Server, conf:ConfDTO) => {
         console.log(conf.pair.sec)
       }
     }],

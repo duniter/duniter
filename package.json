@@ -91,7 +91,7 @@
     "scryptb": "6.0.4",
     "seedrandom": "^2.4.3",
     "sha1": "1.1.1",
-    "sqlite3": "3.1.4",
+    "sqlite3": "3.1.13",
     "tail": "^1.2.1",
     "tweetnacl": "0.14.3",
     "underscore": "1.8.3",

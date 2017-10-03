@@ -1,6 +1,6 @@
 import * as stream from "stream"
-import {WS2PConnection} from "../../modules/ws2p/lib/WS2PConnection"
-import {NewLogger} from "../logger"
+import { NewLogger } from "../../../lib/logger";
+import { WS2PConnection } from "./WS2PConnection";
 
 const logger = NewLogger()
 

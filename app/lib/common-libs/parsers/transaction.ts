@@ -22,6 +22,10 @@ export class TransactionParser extends GenericParser {
   _clean(obj:any) {
     obj.comment = obj.comment || "";
     obj.locktime = parseInt(obj.locktime) || 0;
+    obj.signatures = obj.signatures || []
+    obj.issuers = obj.issuers || []
+    obj.inputs = obj.inputs || []
+    obj.outputs = obj.outputs || []
     obj.signatures.push(obj.signature);
     const compactSize = 2 // Header + blockstamp
       + obj.issuers.length

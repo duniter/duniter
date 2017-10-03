@@ -13,6 +13,7 @@ import {OtherConstants} from "../../../lib/other_constants"
 import {Key, verify} from "../../../lib/common-libs/crypto/keyring"
 import {WS2PServerMessageHandler} from "./interface/WS2PServerMessageHandler"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
+import { CommonConstants } from "../../../lib/common-libs/constants";
 
 const es = require('event-stream')
 const nuuid = require('node-uuid')
@@ -24,6 +25,14 @@ export interface WS2PHead {
 }
 
 export class WS2PCluster {
+
+  static getFullAddress(host: string, port: number, path: string): string {
+    if (host.match(CommonConstants.IPV6_REGEXP)) {
+      host = "[" + host + "]"
+    }
+    const protocol = port == 443 ? "wss://": "ws://"
+    return [protocol, host, ':', port, path].join('')
+  }
 
   private ws2pServer:WS2PServer|null = null
   private ws2pClients:{[k:string]:WS2PClient} = {}
@@ -211,11 +220,12 @@ export class WS2PCluster {
     return this.ws2pServer ? this.ws2pServer.getConnexions().length : 0
   }
 
-  async connect(host: string, port: number, messageHandler:WS2PMessageHandler, expectedPub:string, ws2pEndpointUUID:string = ""): Promise<WS2PConnection> {
+  async connectToRemoteWS(host: string, port: number, path:string, messageHandler:WS2PMessageHandler, expectedPub:string, ws2pEndpointUUID:string = ""): Promise<WS2PConnection> {
     const uuid = nuuid.v4()
     let pub = "--------"
     try {
-      const ws2pc = await WS2PClient.connectTo(this.server, host, port, messageHandler, expectedPub, (pub:string) => {
+      const fullEndpointAddress = WS2PCluster.getFullAddress(host, port, path)
+      const ws2pc = await WS2PClient.connectTo(this.server, fullEndpointAddress, messageHandler, expectedPub, (pub:string) => {
         const connectedPubkeys = this.getConnectedPubkeys()
         return this.acceptPubkey(expectedPub, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes || []), ws2pEndpointUUID)
       })
@@ -269,7 +279,7 @@ export class WS2PCluster {
       const api = p.getWS2P()
       if (api) {
         try {
-          await this.connect(api.host, api.port, this.messageHandler, p.pubkey, api.uuid)
+          await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
         } catch (e) {
           this.server.logger.debug('WS2P: init: failed connection')
         }
@@ -292,7 +302,7 @@ export class WS2PCluster {
             const connectedPubkeys = this.getConnectedPubkeys()
             const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes || []), ws2pEnpoint.uuid)
             if (shouldAccept) {
-              await this.connect(ws2pEnpoint.host, ws2pEnpoint.port, this.messageHandler, peer.pubkey)
+              await this.connectToRemoteWS(ws2pEnpoint.host, ws2pEnpoint.port, ws2pEnpoint.path, this.messageHandler, peer.pubkey)
               await this.trimClientConnections()
             }
           }

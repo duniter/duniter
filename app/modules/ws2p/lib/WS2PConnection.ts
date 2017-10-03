@@ -275,8 +275,7 @@ export class WS2PConnection {
       requestTimeout: REQUEST_TIMEOUT_VALUE
     },
     expectedPub:string = "") {
-    const protocol = address.match(/:443$/) ? 'wss' : 'ws'
-    const websocket = new ws(protocol + '://' + address)
+    const websocket = new ws(address)
     const onWsOpened:Promise<void> = new Promise(res => {
       websocket.on('open', () => res())
     })

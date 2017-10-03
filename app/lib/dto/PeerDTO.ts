@@ -95,14 +95,15 @@ export class PeerDTO implements Cloneable {
   }
 
   getWS2P() {
-    let api:{ uuid:string, host:string, port:number }|null = null
+    let api:{ uuid:string, host:string, port:number, path:string }|null = null
     for (const ep of this.endpoints) {
       const matches:any = !api && ep.match(CommonConstants.WS2P_REGEXP)
       if (matches) {
         api = {
           uuid: matches[1],
           host: matches[2] || '',
-          port: parseInt(matches[3]) || 0
+          port: parseInt(matches[3]) || 0,
+          path: matches[4]
         }
       }
     }

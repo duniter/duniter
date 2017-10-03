@@ -54,3 +54,5 @@ test/fast/modules/crawler/block_pulling.js*
 test/fast/modules/crawler/block_pulling.d.ts
 test/fast/fork*.js*
 test/fast/fork*.d.ts
+test/fast/modules/ws2p/*.js*
+test/fast/modules/ws2p/*.d.ts

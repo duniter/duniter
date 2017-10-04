@@ -619,13 +619,13 @@ export class TestingServer {
     return this.prover.stopService();
   }
 
-  /*async closeCluster() {
+  async closeCluster() {
     const server:Server = this.server
-    if (server._utProver) {
-      const farm = await server._utProver.getWorker()
+    if ((server as any)._utProver) {
+      const farm = await (server as any)._utProver.getWorker()
       await farm.shutDownEngine()
     }
-  }*/
+  }
 }
 
 export async function newWS2PBidirectionnalConnection(currency:string, k1:Key, k2:Key, serverHandler:WS2PMessageHandler) {

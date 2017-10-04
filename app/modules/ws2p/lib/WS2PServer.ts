@@ -1,11 +1,11 @@
 import {Server} from "../../../../server"
 import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "./WS2PConnection"
-import {WS2PStreamer} from "../../../lib/streams/WS2PStreamer"
 import {Key} from "../../../lib/common-libs/crypto/keyring"
 import {GlobalFifoPromise} from "../../../service/GlobalFifoPromise"
 import * as events from "events"
 import {WS2PConstants} from "./constants"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
+import { WS2PStreamer } from "./WS2PStreamer";
 
 const WebSocketServer = require('ws').Server
 

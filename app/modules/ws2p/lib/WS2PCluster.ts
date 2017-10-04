@@ -26,10 +26,13 @@ export interface WS2PHead {
 
 export class WS2PCluster {
 
-  static getFullAddress(host: string, port: number, path: string): string {
+  static getFullAddress(host: string, port: number, path: string|null|undefined = null): string {
     if (host.match(CommonConstants.IPV6_REGEXP)) {
       host = "[" + host + "]"
     }
+    // Make the path be a string
+    path = path || ''
+    // Choose the web protocol depending on the port
     const protocol = port == 443 ? "wss://": "ws://"
     return [protocol, host, ':', port, path].join('')
   }

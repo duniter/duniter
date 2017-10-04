@@ -67,6 +67,7 @@ export interface WS2PConfDTO {
     upnp?: boolean
     remotehost?: string|null
     remoteport?: number|null
+    remotepath?: string
     port?: number
     host?: string
     maxPublic?:number
@@ -140,6 +141,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
       upnp?: boolean
       remotehost?: string|null
       remoteport?: number|null
+      remotepath?: string
       port?: number
       host?: string
       preferedNodes?: string[]

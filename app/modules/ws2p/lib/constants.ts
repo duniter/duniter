@@ -19,7 +19,19 @@ export const WS2PConstants = {
   BAN_DURATION_IN_SECONDS: 120,
   ERROR_RECALL_DURATION_IN_SECONDS: 60,
 
-  HEAD_REGEXP: new RegExp('^WS2P:HEAD:' + CommonConstants.FORMATS.PUBKEY + ':' + CommonConstants.FORMATS.BLOCKSTAMP + '$'),
+  HEAD_V0_REGEXP: new RegExp('^WS2P:HEAD:'
+    + CommonConstants.FORMATS.PUBKEY + ':'
+    + CommonConstants.FORMATS.BLOCKSTAMP
+    + '$'),
+
+  HEAD_V1_REGEXP: new RegExp('^WS2P:HEAD:1:'
+  + '(' + CommonConstants.FORMATS.PUBKEY + '):'
+  + '(' + CommonConstants.FORMATS.BLOCKSTAMP + '):'
+  + '(' + CommonConstants.FORMATS.WS2PID + '):'
+  + '(' + CommonConstants.FORMATS.SOFTWARE + '):'
+  + '(' + CommonConstants.FORMATS.SOFT_VERSION + '):'
+  + '(' + CommonConstants.FORMATS.POW_PREFIX + ')'
+  + '$'),
 
   HEADS_SPREAD_TIMEOUT: 100 // Wait 100ms before sending a bunch of signed heads
 }

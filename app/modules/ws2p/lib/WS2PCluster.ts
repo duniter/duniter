@@ -14,6 +14,8 @@ import {Key, verify} from "../../../lib/common-libs/crypto/keyring"
 import {WS2PServerMessageHandler} from "./interface/WS2PServerMessageHandler"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 import { CommonConstants } from "../../../lib/common-libs/constants";
+import { Package } from "../../../lib/common/package";
+import { Constants } from "../../prover/lib/constants";
 
 const es = require('event-stream')
 const nuuid = require('node-uuid')
@@ -57,7 +59,7 @@ export class WS2PCluster {
   private memberkeysCache:{ [k:string]: number } = {}
 
   // A cache of the current HEAD for a given pubkey
-  private headsCache:{ [pubkey:string]: { blockstamp:string, message:string, sig:string } } = {}
+  private headsCache:{ [ws2pFullId:string]: { blockstamp:string, message:string, sig:string } } = {}
 
   // A buffer of "to be sent" heads
   private newHeads:{ message:string, sig:string }[] = []
@@ -75,19 +77,21 @@ export class WS2PCluster {
 
   async getKnownHeads(): Promise<WS2PHead[]> {
     const heads:WS2PHead[] = []
+    const ws2pId = (this.server.conf.ws2p && this.server.conf.ws2p.uuid) || '000000'
     const localPub = this.server.conf.pair.pub
-    if (!this.headsCache[localPub]) {
+    const fullId = [localPub, ws2pId].join('-')
+    if (!this.headsCache[fullId]) {
       const current = await this.server.dal.getCurrentBlockOrNull()
       if (current) {
         const { sig, message } = this.sayHeadChangedTo(current.number, current.hash)
         const blockstamp = [current.number, current.hash].join('-')
-        this.headsCache[localPub] = { blockstamp, message, sig }
+        this.headsCache[fullId] = { blockstamp, message, sig }
       }
     }
-    for (const pubkey of Object.keys(this.headsCache)) {
+    for (const ws2pFullId of Object.keys(this.headsCache)) {
       heads.push({
-        message: this.headsCache[pubkey].message,
-        sig: this.headsCache[pubkey].sig
+        message: this.headsCache[ws2pFullId].message,
+        sig: this.headsCache[ws2pFullId].sig
       })
     }
     return heads
@@ -101,20 +105,58 @@ export class WS2PCluster {
       if (!message) {
         throw "EMPTY_MESSAGE_FOR_HEAD"
       }
-      if (message.match(WS2PConstants.HEAD_REGEXP)) {
+      if (message.match(WS2PConstants.HEAD_V0_REGEXP)) {
         const [,, pub, blockstamp]:string[] = message.split(':')
+        const ws2pId = (this.server.conf.ws2p && this.server.conf.ws2p.uuid) || '000000'
+        const fullId = [pub, ws2pId].join('-')
         const sigOK = verify(message, sig, pub)
         if (sigOK) {
           // Already known?
-          if (!this.headsCache[pub] || this.headsCache[pub].blockstamp !== blockstamp) {
+          if (!this.headsCache[fullId] || this.headsCache[fullId].blockstamp !== blockstamp) {
             // More recent?
-            if (!this.headsCache[pub] || parseInt(this.headsCache[pub].blockstamp) < parseInt(blockstamp)) {
+            if (!this.headsCache[fullId] || parseInt(this.headsCache[fullId].blockstamp) < parseInt(blockstamp)) {
               // Check that issuer is a member and that the block exists
               const memberKey = await this.isMemberKey(pub)
               if (memberKey) {
                 const exists = await this.existsBlock(blockstamp)
                 if (exists) {
-                  this.headsCache[pub] = { blockstamp, message, sig }
+                  this.headsCache[fullId] = { blockstamp, message, sig }
+                  this.newHeads.push({message, sig})
+                  added.push({message, sig})
+                  // Cancel a pending "heads" to be spread
+                  if (this.headsTimeout) {
+                    clearTimeout(this.headsTimeout)
+                  }
+                  // Reprogram it a few moments later
+                  this.headsTimeout = setTimeout(async () => {
+                    const heads = this.newHeads.splice(0, this.newHeads.length)
+                    if (heads.length) {
+                      await this.spreadNewHeads(heads)
+                    }
+                  }, WS2PConstants.HEADS_SPREAD_TIMEOUT)
+                }
+              }
+            }
+          }
+        } else {
+          throw "HEAD_MESSAGE_WRONGLY_SIGNED"
+        }
+      }
+      else if (message.match(WS2PConstants.HEAD_V1_REGEXP)) {
+        const [,,, pub, blockstamp, software, ws2pId, softVersion, prefix]:string[] = message.split(':')
+        const sigOK = verify(message, sig, pub)
+        const fullId = [pub, ws2pId].join('-')
+        if (sigOK) {
+          // Already known?
+          if (!this.headsCache[fullId] || this.headsCache[fullId].blockstamp !== blockstamp) {
+            // More recent?
+            if (!this.headsCache[fullId] || parseInt(this.headsCache[fullId].blockstamp) < parseInt(blockstamp)) {
+              // Check that issuer is a member and that the block exists
+              const memberKey = await this.isMemberKey(pub)
+              if (memberKey) {
+                const exists = await this.existsBlock(blockstamp)
+                if (exists) {
+                  this.headsCache[fullId] = { blockstamp, message, sig }
                   this.newHeads.push({message, sig})
                   added.push({message, sig})
                   // Cancel a pending "heads" to be spread
@@ -352,7 +394,11 @@ export class WS2PCluster {
   private sayHeadChangedTo(number:number, hash:string) {
     const key = new Key(this.server.conf.pair.pub, this.server.conf.pair.sec)
     const pub = key.publicKey
-    const message = `WS2P:HEAD:${pub}:${number}-${hash}`
+    const software = 'duniter'
+    const softVersion = Package.getInstance().version
+    const ws2pId = (this.server.conf.ws2p && this.server.conf.ws2p.uuid) || '00000000'
+    const prefix = this.server.conf.prefix || Constants.DEFAULT_PEER_ID
+    const message = `WS2P:HEAD:1:${pub}:${number}-${hash}:${ws2pId}:${software}:${softVersion}:${prefix}`
     const sig = key.signSync(message)
     return { sig, message, pub }
   }

@@ -7,16 +7,20 @@ const SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}"
 const USER_ID      = "[A-Za-z0-9_-]{2,100}"
 const INTEGER      = "(0|[1-9]\\d{0,18})"
 const FINGERPRINT  = "[A-F0-9]{64}"
-const BLOCK_UID    = INTEGER + "-" + FINGERPRINT
 const BLOCK_VERSION = "(10)"
 const TX_VERSION   = "(10)"
 const DIVIDEND     = "[1-9][0-9]{0,5}"
 const ZERO_OR_POSITIVE_INT = "0|[1-9][0-9]{0,18}"
+const BLOCK_UID    = "(" + ZERO_OR_POSITIVE_INT + ")-" + FINGERPRINT
 const RELATIVE_INTEGER = "(0|-?[1-9]\\d{0,18})"
 const FLOAT        = "\\d+\.\\d+"
 const POSITIVE_INT = "[1-9][0-9]{0,18}"
 const TIMESTAMP    = "[1-9][0-9]{0,18}"
 const BOOLEAN      = "[01]"
+const WS2PID       = "[0-9a-f]{8}"
+const SOFTWARE     = "[a-z0-9]{2,15}"
+const SOFT_VERSION = "[0-9a-z.-_]{2,15}"
+const POW_PREFIX   = "([1-9]|[1-9][0-9]|[1-8][0-9][0-9])" // 1-899
 const SPECIAL_BLOCK = '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
 const META_TS      = "META:TS:" + BLOCK_UID
 const COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}"
@@ -68,7 +72,12 @@ export const CommonConstants = {
     INTEGER,
     BLOCKSTAMP: BLOCK_UID,
     FINGERPRINT,
-    TIMESTAMP
+    TIMESTAMP,
+    WS2PID,
+    SOFTWARE,
+    SOFT_VERSION,
+    POW_PREFIX,
+    ZERO_OR_POSITIVE_INT
   },
 
   BLOCK_GENERATED_VERSION: 10,

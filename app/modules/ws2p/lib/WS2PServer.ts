@@ -5,7 +5,7 @@ import {GlobalFifoPromise} from "../../../service/GlobalFifoPromise"
 import * as events from "events"
 import {WS2PConstants} from "./constants"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
-import { WS2PStreamer } from "./WS2PStreamer";
+import {WS2PStreamer} from "./WS2PStreamer"
 
 const WebSocketServer = require('ws').Server
 
@@ -110,6 +110,7 @@ export class WS2PServer extends events.EventEmitter {
         await this.server.dal.setPeerUP(c.pubkey)
 
       } catch (e) {
+        ws.close()
         this.server.logger.warn('WS2P: cannot connect to incoming WebSocket connection: %s', e)
       }
     })

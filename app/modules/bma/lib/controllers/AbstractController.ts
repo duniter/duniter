@@ -43,8 +43,12 @@ export abstract class AbstractController {
     } catch (e) {
       const event = CommonConstants.DocumentError
       this.server.emit(event, e)
-      this.logger.error(e);
-      throw e;
+      if (e !== "Block already known" && (!e || !e.uerr || (
+        e.uerr.ucode !== CommonConstants.ERRORS.PEER_DOCUMENT_ALREADY_KNOWN.uerr.ucode
+        && e.uerr.ucode !== CommonConstants.ERRORS.DOCUMENT_BEING_TREATED.uerr.ucode))) {
+        this.logger.error(e)
+      }
+      throw e
     }
   }
 }

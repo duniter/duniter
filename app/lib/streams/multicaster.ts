@@ -171,17 +171,15 @@ export class Multicaster extends stream.Transform {
       try {
         if(!params.withIsolation || !(this.conf && this.conf.isolate)) {
           let theDoc = params.transform ? params.transform(doc) : doc;
-          logger.debug('--> new %s to be sent to %s peer(s)', params.type, peers.length);
           if (params.getDocID) {
-            logger.info('POST %s %s', params.type, params.getDocID(theDoc));
+            logger.info('POST %s %s to %s peers', params.type, params.getDocID(theDoc), peers.length)
           } else {
-            logger.info('POST %s', params.type);
+            logger.info('POST %s to %s peers', params.type, peers.length);
           }
           // Parallel treatment for superfast propagation
           await Promise.all(peers.map(async (p) => {
             let peer = PeerDTO.fromJSONObject(p)
             const namedURL = peer.getNamedURL();
-            logger.debug(' `--> to peer %s [%s] (%s)', peer.keyID(), peer.member ? 'member' : '------', namedURL);
             try {
               await this.post(peer, params.uri, params.getObj(theDoc))
             } catch (e) {
@@ -190,7 +188,7 @@ export class Multicaster extends stream.Transform {
                   const json = JSON.parse(e.body);
                   await params.onError(json, doc, namedURL)
                 } catch (ex) {
-                  logger.warn('Could not reach %s', namedURL);
+                  logger.warn('Could not reach %s, reason: %s', namedURL, (ex && ex.message || ex))
                 }
               }
             }

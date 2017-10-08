@@ -13,6 +13,7 @@ import {WS2P_REQ} from "../WS2PRequester"
 import {WS2PCluster} from "../WS2PCluster"
 import {WS2PConnection} from "../WS2PConnection"
 import {WS2PConstants} from "../constants"
+import {CommonConstants} from "../../../../lib/common-libs/constants"
 
 export enum WS2P_REQERROR {
   UNKNOWN_REQUEST
@@ -101,7 +102,12 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
           delete this.errors[documentHash]
         }, 1000 * WS2PConstants.ERROR_RECALL_DURATION_IN_SECONDS)
       }
-      this.server.logger.warn(e)
+      if (e !== "Block already known"
+        && (!e.uerr
+            || !(e.uerr.ucode == CommonConstants.ERRORS.DOCUMENT_BEING_TREATED.uerr.ucode
+                || e.uerr.ucode == CommonConstants.ERRORS.PEER_DOCUMENT_ALREADY_KNOWN.uerr.ucode))) {
+        this.server.logger.warn(e)
+      }
     }
   }
 

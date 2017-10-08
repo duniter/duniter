@@ -71,7 +71,6 @@ export class PeeringService {
   };
 
   submitP(peering:DBPeer, eraseIfAlreadyRecorded = false, cautious = true): Promise<PeerDTO> {
-    this.logger.info('⬇ PEER %s', peering.pubkey.substr(0, 8))
     // Force usage of local currency name, do not accept other currencies documents
     peering.currency = this.conf.currency || peering.currency;
     let thePeerDTO = PeerDTO.fromJSONObject(peering)
@@ -164,7 +163,6 @@ export class PeeringService {
         }
         return PeerDTO.fromDBPeer(savedPeer)
       } catch (e) {
-        this.logger.info('✘ PEER %s', peering.pubkey.substr(0, 8))
         throw e
       }
     })

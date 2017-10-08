@@ -243,7 +243,7 @@ function getResultingError(e:any, logger:any) {
   let error = BMAConstants.ERRORS.UNKNOWN;
   if (e) {
     // Print eventual stack trace
-    typeof e == 'string' && logger && logger.error(e);
+    typeof e == 'string' && e !== "Block already known" && logger && logger.error(e);
     e.stack && logger && logger.error(e.stack);
     e.message && logger && logger.warn(e.message);
     // BusinessException

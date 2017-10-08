@@ -8,6 +8,7 @@ import {CertificationDTO} from "../dto/CertificationDTO"
 import {MembershipDTO} from "../dto/MembershipDTO"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import {PeerDTO} from "../dto/PeerDTO"
+import {CommonConstants} from "../common-libs/constants"
 
 const request = require('request');
 const constants = require('../../lib/constants');
@@ -111,13 +112,29 @@ export class Multicaster extends stream.Transform {
       },
       getDocID: (doc:PeerDTO) => doc.keyID() + '#' + doc.blockNumber(),
       withIsolation: WITH_ISOLATION,
-      onError: (resJSON:{ peer:{ block:string, endpoints:string[] }}, peering:any, to:any) => {
-        const sentPeer = PeerDTO.fromJSONObject(peering)
-        if (PeerDTO.blockNumber(resJSON.peer.block) > sentPeer.blockNumber()) {
-          this.push({ outdated: true, peer: resJSON.peer });
-          logger.warn('Outdated peer document (%s) sent to %s', sentPeer.keyID() + '#' + sentPeer.blockNumber(), to);
+      onError: (resJSON:{
+        peer: {
+          block:string,
+          endpoints:string[]
+        },
+        ucode?:number,
+        message?:string
+      }, peering:any, to:any) => {
+        if (resJSON.ucode !== undefined && resJSON.ucode !== CommonConstants.ERRORS.NEWER_PEER_DOCUMENT_AVAILABLE.uerr.ucode) {
+          if (resJSON.ucode == CommonConstants.ERRORS.DOCUMENT_BEING_TREATED.uerr.ucode || resJSON.ucode == constants.ERRORS.PEER_DOCUMENT_ALREADY_KNOWN.uerr.ucode) {
+            return Promise.resolve()
+          } else {
+            throw Error(resJSON.message)
+          }
+        } else {
+          // Handle possibly outdated peering document
+          const sentPeer = PeerDTO.fromJSONObject(peering)
+          if (PeerDTO.blockNumber(resJSON.peer.block) > sentPeer.blockNumber()) {
+            this.push({ outdated: true, peer: resJSON.peer });
+            logger.warn('Outdated peer document (%s) sent to %s', sentPeer.keyID() + '#' + sentPeer.blockNumber(), to);
+          }
+          return Promise.resolve()
         }
-        return Promise.resolve();
       }
     })(doc, peers)
   }

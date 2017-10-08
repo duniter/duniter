@@ -36,7 +36,13 @@ export class WS2PClient {
     })
 
     // Connecting
-    await c.connect()
+    try {
+      await c.connect()
+    } catch (e) {
+      // Immediately close the connection
+      c.close()
+      throw e
+    }
     return new WS2PClient(c)
   }
 }

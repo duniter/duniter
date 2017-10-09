@@ -1,10 +1,10 @@
 import {Constants} from "./constants"
-import {ConfDTO, Keypair} from "../../../lib/dto/ConfDTO"
 import {Server} from "../../../../server"
 import {PowEngine} from "./engine"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {CommonConstants} from "../../../lib/common-libs/constants"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
+import {ConfDTO, Keypair} from "../../../lib/dto/ConfDTO"
 
 const os        = require('os')
 const querablep = require('querablep')
@@ -94,15 +94,11 @@ export class WorkerFarm {
 
 export class BlockProver {
 
-  conf:ConfDTO
-  pair:Keypair|null
   logger:any
   waitResolve:any
   workerFarmPromise:any
 
   constructor(private server:Server) {
-    this.conf = server.conf
-    this.pair = this.conf.pair
     this.logger = server.logger
 
     const debug = process.execArgv.toString().indexOf('--debug') !== -1;
@@ -110,6 +106,14 @@ export class BlockProver {
       //Set an unused port number.
       process.execArgv = [];
     }
+  }
+
+  get conf():ConfDTO {
+    return this.server.conf
+  }
+
+  get pair(): Keypair|null {
+    return this.conf.pair
   }
 
   getWorker(): Promise<WorkerFarm> {

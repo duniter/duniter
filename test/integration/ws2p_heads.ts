@@ -82,10 +82,12 @@ describe("WS2P heads propagation", function() {
     })
   })
 
-  it('should be able to connect to s3 if the we increase size limit', async () => {
+  it('should be able to receive HEADs', async () => {
     b3 = s1.commit({ time: now })
-    await s2.waitToHaveBlock(3)
-    await s2.waitForHeads(1)
+    await Promise.all([
+      s2.waitToHaveBlock(3),
+      s2.waitForHeads(1)
+    ])
     await s1.expect('/network/ws2p/info', (res:any) => {
       assert.equal(res.peers.level1, 0)
       assert.equal(res.peers.level2, 1)

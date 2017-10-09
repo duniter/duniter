@@ -26,7 +26,7 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
     [k:string]: {
       createdOn: number,
       pubkeys: {
-        [p:string]: boolean
+        [p:string]: any[]
       }
     }
   } = {}
@@ -88,7 +88,20 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
         && this.errors[documentHash]
         && this.errors[documentHash].pubkeys[c.pubkey] !== undefined
         && this.server.conf.pair.pub !== c.pubkey) { // We do not want to ban ourselves
-        this.cluster.banConnection(c, "Peer " + (c.pubkey || '--unknown--') + " sending again a wrong document")
+        this.errors[documentHash].pubkeys[c.pubkey].push(json.body)
+        if (this.errors[documentHash].pubkeys[c.pubkey].length >= WS2PConstants.BAN_ON_REPEAT_THRESHOLD) {
+          let message = "peer " + (c.pubkey || '--unknown--') + " sent " + WS2PConstants.BAN_ON_REPEAT_THRESHOLD + " times a same wrong document: " + (e && (e.message || (e.uerr && e.uerr.message)) || JSON.stringify(e))
+          this.cluster.banConnection(c, message)
+          for (const body of this.errors[documentHash].pubkeys[c.pubkey]) {
+            message += '\n => ' + JSON.stringify(body)
+          }
+        } else {
+          let message = "WS2P IN => " + (c.pubkey || '--unknown--') + " sent " + this.errors[documentHash].pubkeys[c.pubkey].length + " times a same wrong document: " + (e && (e.message || (e.uerr && e.uerr.message)) || JSON.stringify(e))
+          for (const body of this.errors[documentHash].pubkeys[c.pubkey]) {
+            message += '\n => ' + JSON.stringify(body)
+          }
+          this.server.logger.warn(message)
+        }
       } else {
         // Remember the error for some time
         if (!this.errors[documentHash]) {
@@ -97,7 +110,7 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
             pubkeys: {}
           }
         }
-        this.errors[documentHash].pubkeys[c.pubkey] = true
+        this.errors[documentHash].pubkeys[c.pubkey] = [json.body]
         setTimeout(() => {
           delete this.errors[documentHash]
         }, 1000 * WS2PConstants.ERROR_RECALL_DURATION_IN_SECONDS)

@@ -6,6 +6,7 @@ import * as events from "events"
 import {WS2PConstants} from "./constants"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 import {WS2PStreamer} from "./WS2PStreamer"
+import {WS2PSingleWriteStream} from "./WS2PSingleWriteStream"
 
 const WebSocketServer = require('ws').Server
 
@@ -87,15 +88,19 @@ export class WS2PServer extends events.EventEmitter {
         this.server.logger.info('WS2P: established incoming connection from %s:%s', host, port)
 
         // Broadcasting
+        const singleWriteProtection = new WS2PSingleWriteStream()
         const ws2pStreamer = new WS2PStreamer(c)
-        this.server.pipe(ws2pStreamer)
+        this.server
+          .pipe(singleWriteProtection)
+          .pipe(ws2pStreamer)
 
         ws.on('error', (e:any) => {
           this.server.logger.error(e)
         })
 
         ws.on('close', () => {
-          this.server.unpipe(ws2pStreamer)
+          this.server.unpipe(singleWriteProtection)
+          singleWriteProtection.unpipe(ws2pStreamer)
           this.removeConnection(c)
           this.server.push({
             ws2p: 'disconnected',

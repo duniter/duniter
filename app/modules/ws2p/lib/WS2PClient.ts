@@ -3,7 +3,8 @@ import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "./WS2PC
 import {Key} from "../../../lib/common-libs/crypto/keyring"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 import {WS2PConstants} from "./constants"
-import { WS2PStreamer } from "./WS2PStreamer";
+import {WS2PStreamer} from "./WS2PStreamer"
+import {WS2PSingleWriteStream} from "./WS2PSingleWriteStream"
 
 export class WS2PClient {
 
@@ -22,17 +23,22 @@ export class WS2PClient {
       },
       expectedPub
     )
+    const singleWriteProtection = new WS2PSingleWriteStream()
     const streamer = new WS2PStreamer(c)
     c.connected
       .then(() => {
         // Streaming
-        server.pipe(streamer)
+        server
+          .pipe(singleWriteProtection)
+          .pipe(streamer)
       })
       .catch(() => {
-        server.unpipe(streamer)
+        server.unpipe(singleWriteProtection)
+        singleWriteProtection.unpipe(streamer)
       })
     c.closed.then(() => {
-      server.unpipe(streamer)
+      server.unpipe(singleWriteProtection)
+      singleWriteProtection.unpipe(streamer)
     })
 
     // Connecting

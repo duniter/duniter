@@ -116,8 +116,8 @@ export class WS2PCluster {
             // More recent?
             if (!this.headsCache[fullId] || parseInt(this.headsCache[fullId].blockstamp) < parseInt(blockstamp)) {
               // Check that issuer is a member and that the block exists
-              const memberKey = await this.isMemberKey(pub)
-              if (memberKey) {
+              const isAllowed = pub === this.server.conf.pair.pub || this.isConnectedKey(pub) || (await this.isMemberKey(pub))
+              if (isAllowed) {
                 const exists = await this.existsBlock(blockstamp)
                 if (exists) {
                   this.headsCache[fullId] = { blockstamp, message, sig }
@@ -152,8 +152,8 @@ export class WS2PCluster {
             // More recent?
             if (!this.headsCache[fullId] || parseInt(this.headsCache[fullId].blockstamp) < parseInt(blockstamp)) {
               // Check that issuer is a member and that the block exists
-              const memberKey = await this.isMemberKey(pub)
-              if (memberKey) {
+              const isAllowed = pub === this.server.conf.pair.pub || this.isConnectedKey(pub) || (await this.isMemberKey(pub))
+              if (isAllowed) {
                 const exists = await this.existsBlock(blockstamp)
                 if (exists) {
                   this.headsCache[fullId] = { blockstamp, message, sig }
@@ -195,9 +195,15 @@ export class WS2PCluster {
       // Do we have this block in the DB?
       isMember = !!(await this.server.dal.isMember(pub))
     }
-    // Update the last time it was checked
-    this.memberkeysCache[pub] = Date.now()
+    if (isMember) {
+      // Update the last time it was checked
+      this.memberkeysCache[pub] = Date.now()
+    }
     return isMember
+  }
+
+  private isConnectedKey(pub:string) {
+    return this.getConnectedPubkeys().indexOf(pub) !== -1
   }
 
   private async existsBlock(blockstamp:string) {

@@ -144,7 +144,7 @@ export class WS2PCluster {
           }
         }
         else if (message.match(WS2PConstants.HEAD_V1_REGEXP)) {
-          const [,,, pub, blockstamp, software, ws2pId, softVersion, prefix]:string[] = message.split(':')
+          const [,,, pub, blockstamp, ws2pId, software, softVersion, prefix]:string[] = message.split(':')
           const sigOK = verify(message, sig, pub)
           const fullId = [pub, ws2pId].join('-')
           if (sigOK) {

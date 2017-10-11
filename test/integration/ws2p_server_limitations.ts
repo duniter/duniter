@@ -166,7 +166,8 @@ describe("WS2P server limitations", function() {
 
   it('should connect to s3 because of configuration favorism', async () => {
     cluster3.maxLevel2Peers = 1
-    if (s3.conf.ws2p !== undefined) s3.conf.ws2p.publicAccess = true
+    if (s1._server.conf.ws2p) s1._server.conf.ws2p.privateAccess = true
+    if (s3._server.conf.ws2p) s3._server.conf.ws2p.publicAccess = true
     await s3.writeBlock(b3)
     await s3._server.PeeringService.generateSelfPeer(s3._server.conf)
     await s3._server.PeeringService.generateSelfPeer(s3._server.conf)

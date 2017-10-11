@@ -239,26 +239,27 @@ export class WS2PAPI extends stream.Transform {
   }
 
   async getEndpoint() {
-    if (this.upnpAPI && this.server.conf.ws2p) {
-      const config = this.upnpAPI.getCurrentConfig()
-      return !config ? '' : ['WS2P', this.server.conf.ws2p.uuid, config.remotehost, config.port].join(' ')
-    }
-    else if (this.server.conf.ws2p
-      && this.server.conf.ws2p.uuid
-      && this.server.conf.ws2p.remotehost
-      && this.server.conf.ws2p.remoteport) {
-      let ep = ['WS2P',
-        this.server.conf.ws2p.uuid,
-        this.server.conf.ws2p.remotehost,
-        this.server.conf.ws2p.remoteport
-      ].join(' ')
-      if (this.server.conf.ws2p.remotepath) {
-        ep += ` ${this.server.conf.ws2p.remotepath}`
+    // If WS2P defined and enabled
+    if (this.server.conf.ws2p !== undefined && (this.server.conf.ws2p.publicAccess || this.server.conf.ws2p.privateAccess))
+    {
+      if (this.server.conf.upnp && this.upnpAPI) {
+        const config = this.upnpAPI.getCurrentConfig()
+        return !config ? '' : ['WS2P', this.server.conf.ws2p.uuid, config.remotehost, config.port].join(' ')
       }
-      return ep
+      else if (this.server.conf.ws2p.uuid
+        && this.server.conf.ws2p.remotehost
+        && this.server.conf.ws2p.remoteport) {
+        let ep = ['WS2P',
+          this.server.conf.ws2p.uuid,
+          this.server.conf.ws2p.remotehost,
+          this.server.conf.ws2p.remoteport
+        ].join(' ')
+        if (this.server.conf.ws2p.remotepath) {
+          ep += ` ${this.server.conf.ws2p.remotepath}`
+        }
+        return ep
+      }
     }
-    else {
-      return ''
-    }
+    return ''
   }
 }

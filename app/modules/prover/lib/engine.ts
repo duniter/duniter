@@ -1,4 +1,4 @@
-import {Constants} from "./constants"
+import {ProverConstants} from "./constants"
 import {Master as PowCluster} from "./powCluster"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 
@@ -20,7 +20,7 @@ export class PowEngine {
   constructor(private conf:ConfDTO, logger:any) {
 
     // We use as much cores as available, but not more than CORES_MAXIMUM_USE_IN_PARALLEL
-    this.nbWorkers = (conf && conf.nbCores) || Math.min(Constants.CORES_MAXIMUM_USE_IN_PARALLEL, require('os').cpus().length)
+    this.nbWorkers = (conf && conf.nbCores) || Math.min(ProverConstants.CORES_MAXIMUM_USE_IN_PARALLEL, require('os').cpus().length)
     this.cluster = new PowCluster(this.nbWorkers, logger)
     this.id = this.cluster.clusterId
   }

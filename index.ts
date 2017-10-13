@@ -7,7 +7,7 @@ import {KeypairDependency} from "./app/modules/keypair/index"
 import {CrawlerDependency} from "./app/modules/crawler/index"
 import {BmaDependency} from "./app/modules/bma/index"
 import {WS2PDependency} from "./app/modules/ws2p/index"
-import {Constants} from "./app/modules/prover/lib/constants"
+import {ProverConstants} from "./app/modules/prover/lib/constants"
 
 const path = require('path');
 const _ = require('underscore');
@@ -469,7 +469,7 @@ function commandLineConf(program:any, conf:any = {}) {
   if (cli.currency)                         conf.currency = cli.currency;
   if (cli.server.port)                      conf.port = cli.server.port;
   if (cli.cpu)                              conf.cpu = Math.max(0.01, Math.min(1.0, cli.cpu));
-  if (cli.prefix)                           conf.prefix = Math.max(Constants.MIN_PEER_ID, Math.min(Constants.MAX_PEER_ID, cli.prefix));
+  if (cli.prefix)                           conf.prefix = Math.max(ProverConstants.MIN_PEER_ID, Math.min(ProverConstants.MAX_PEER_ID, cli.prefix));
   if (cli.logs.http)                        conf.httplogs = true;
   if (cli.logs.nohttp)                      conf.httplogs = false;
   if (cli.db.mport)                         conf.mport = cli.db.mport;

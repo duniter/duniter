@@ -218,11 +218,11 @@ export const fakeSyncServer = async (readBlocksMethod:any, readParticularBlockMe
  * Creates a new memory duniter server for Unit Test purposes.
  * @param conf
  */
-export const server = (conf:any) => NewTestingServer(conf)
-export const simpleTestingServer = (conf:any) => NewTestingServer(conf)
+export const server = (conf:ConfDTO) => NewTestingServer(conf)
+export const simpleTestingServer = (conf:ConfDTO) => NewTestingServer(conf)
 
-export const NewTestingServer = (conf:any) => {
-  const host = conf.host || HOST
+export const NewTestingServer = (conf:ConfDTO) => {
+  const host = conf.remotehost || HOST
   const port = conf.port || PORT++
   const commonConf = {
     nobma: false,

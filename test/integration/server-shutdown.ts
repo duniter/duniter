@@ -1,3 +1,5 @@
+import { ConfDTO } from '../../app/lib/dto/ConfDTO';
+import { setTimeout } from 'timers';
 import {NewTestingServer} from "./tools/toolbox"
 
 const should = require('should')
@@ -6,7 +8,7 @@ const querablep = require('querablep')
 describe("Server shutdown", () => {
 
   it('should not interrupt a task in the documents FIFO', async () => {
-    const s1 = NewTestingServer({})
+    const s1 = NewTestingServer(ConfDTO.defaultConf())
 
     const fifo = s1._server.getDocumentsFIFO()
     const ops:any[] = []

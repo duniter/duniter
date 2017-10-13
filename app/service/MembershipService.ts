@@ -63,6 +63,7 @@ export class MembershipService extends FIFOService {
       }
       // Saves entry
       await this.dal.savePendingMembership({
+        issuers: [entry.issuer],
         membership: entry.membership,
         issuer: entry.issuer,
         number: entry.number,

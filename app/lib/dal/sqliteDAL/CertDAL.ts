@@ -1,10 +1,10 @@
 import {SQLiteDriver} from "../drivers/SQLiteDriver"
 import {AbstractSQLite} from "./AbstractSQLite"
-import {SandBox} from "./SandBox"
+import { SandBox, sandboxDocument } from './SandBox';
 
 const constants = require('../../constants');
 
-export interface DBCert {
+export interface DBCert extends sandboxDocument {
   linked:boolean
   written:boolean
   written_block:null

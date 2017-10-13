@@ -754,7 +754,7 @@ export class FileDAL {
   }
 
   saveTransaction(tx:DBTx) {
-    return this.txsDAL.addPending(TransactionDTO.fromJSONObject(tx))
+    return this.txsDAL.addPending(tx)
   }
 
   async getTransactionsHistory(pubkey:string) {

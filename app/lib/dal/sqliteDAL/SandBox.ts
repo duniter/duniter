@@ -1,4 +1,8 @@
-export class SandBox<T> {
+export interface sandboxDocument {
+  issuers: string[];
+}
+
+export class SandBox<T extends sandboxDocument> {
 
   maxSize:number
   
@@ -10,8 +14,8 @@ export class SandBox<T> {
     this.maxSize = maxSize || 10
   }
   
-  async acceptNewSandBoxEntry(element:any, pubkey:string) {
-    if (element.pubkey === pubkey) {
+  async acceptNewSandBoxEntry(element:T, pubkey:string) {
+    if (element.issuers.indexOf(pubkey) !== -1) {
       return true;
     }
     const elements = await this.findElements()

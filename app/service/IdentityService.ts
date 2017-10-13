@@ -166,6 +166,7 @@ export class IdentityService extends FIFOService {
             };
           }
           const mCert:DBCert = {
+            issuers: [cert.from],
             from: cert.from,
             sig: cert.sig,
             block_number: cert.block_number,

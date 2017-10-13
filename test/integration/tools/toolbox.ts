@@ -222,7 +222,7 @@ export const server = (conf:ConfDTO) => NewTestingServer(conf)
 export const simpleTestingServer = (conf:ConfDTO) => NewTestingServer(conf)
 
 export const NewTestingServer = (conf:ConfDTO) => {
-  const host = conf.remotehost || HOST
+  const host = conf.host || HOST
   const port = conf.port || PORT++
   const commonConf = {
     nobma: false,

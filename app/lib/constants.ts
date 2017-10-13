@@ -1,6 +1,7 @@
 "use strict";
 import {CommonConstants} from "./common-libs/constants"
 import {OtherConstants} from "./other_constants"
+import { ProverConstants } from '../modules/prover/lib/constants';
 
 const UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\d{2}\\.\\d{2}(\\+|-)\\d{3}\\.\\d{2});(\\d+)(;?)";
 const PUBKEY       = CommonConstants.FORMATS.PUBKEY
@@ -113,7 +114,11 @@ module.exports = {
   },
   PROOF_OF_WORK: {
     EVALUATION: 1000,
-    UPPER_BOUND: CommonConstants.PROOF_OF_WORK.UPPER_BOUND.slice()
+    UPPER_BOUND: CommonConstants.PROOF_OF_WORK.UPPER_BOUND.slice(),
+    DEFAULT: {
+      CPU: ProverConstants.DEFAULT_CPU,
+      PREFIX: ProverConstants.DEFAULT_PEER_ID
+    }
   },
 
   DEFAULT_CURRENCY_NAME: "no_currency",

@@ -126,6 +126,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
     public remotehost: string|null,
     public remoteipv4: string|null,
     public remoteipv6: string|null,
+    public host: string,
     public port: number,
     public ipv4: string,
     public ipv6: string,
@@ -152,11 +153,11 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
 ) {}
 
   static mock() {
-    return new ConfDTO("", "", [], [], 0, 0, 0.6, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", 0, "", "", null, false, "", true, true)
+    return new ConfDTO("", "", [], [], 0, 3600 * 1000, constants.PROOF_OF_WORK.DEFAULT.CPU, 1, constants.PROOF_OF_WORK.DEFAULT.PREFIX, 0, 0, constants.CONTRACT.DEFAULT.C, constants.CONTRACT.DEFAULT.DT, constants.CONTRACT.DEFAULT.DT_REEVAL, 0, constants.CONTRACT.DEFAULT.UD0, 0, 0, constants.CONTRACT.DEFAULT.STEPMAX, constants.CONTRACT.DEFAULT.SIGPERIOD, 0, constants.CONTRACT.DEFAULT.SIGVALIDITY, constants.CONTRACT.DEFAULT.MSVALIDITY, constants.CONTRACT.DEFAULT.SIGQTY, constants.CONTRACT.DEFAULT.SIGSTOCK, constants.CONTRACT.DEFAULT.X_PERCENT, constants.CONTRACT.DEFAULT.PERCENTROT, constants.CONTRACT.DEFAULT.POWDELAY, constants.CONTRACT.DEFAULT.AVGGENTIME, constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS, false, 3000, false, constants.BRANCHES.DEFAULT_WINDOW_SIZE, constants.CONTRACT.DEFAULT.IDTYWINDOW, constants.CONTRACT.DEFAULT.MSWINDOW, constants.CONTRACT.DEFAULT.SIGWINDOW, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", "", 0, "", "", null, false, "", true, true)
   }
 
   static defaultConf() {
-    return new ConfDTO("", "", [], [], 0, 3600 * 1000, constants.CONTRACT.DEFAULT.C, 1, 1, 0, 0, constants.CONTRACT.DEFAULT.C, constants.CONTRACT.DEFAULT.DT, constants.CONTRACT.DEFAULT.DT_REEVAL, 0, constants.CONTRACT.DEFAULT.UD0, 0, 0, constants.CONTRACT.DEFAULT.STEPMAX, constants.CONTRACT.DEFAULT.SIGPERIOD, 0, constants.CONTRACT.DEFAULT.SIGVALIDITY, constants.CONTRACT.DEFAULT.MSVALIDITY, constants.CONTRACT.DEFAULT.SIGQTY, constants.CONTRACT.DEFAULT.SIGSTOCK, constants.CONTRACT.DEFAULT.X_PERCENT, constants.CONTRACT.DEFAULT.PERCENTROT, constants.CONTRACT.DEFAULT.POWDELAY, constants.CONTRACT.DEFAULT.AVGGENTIME, constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS, false, 3000, false, constants.BRANCHES.DEFAULT_WINDOW_SIZE, constants.CONTRACT.DEFAULT_IDTYWINDOW, constants.CONTRACT.DEFAULT.MSWINDOW, constants.CONTRACT.DEFAULT.SIGWINDOW, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", 0, "", "", null, false, "", true, true)
+    return new ConfDTO("", "", [], [], 0, 3600 * 1000, constants.PROOF_OF_WORK.DEFAULT.CPU, 1, constants.PROOF_OF_WORK.DEFAULT.PREFIX, 0, 0, constants.CONTRACT.DEFAULT.C, constants.CONTRACT.DEFAULT.DT, constants.CONTRACT.DEFAULT.DT_REEVAL, 0, constants.CONTRACT.DEFAULT.UD0, 0, 0, constants.CONTRACT.DEFAULT.STEPMAX, constants.CONTRACT.DEFAULT.SIGPERIOD, 0, constants.CONTRACT.DEFAULT.SIGVALIDITY, constants.CONTRACT.DEFAULT.MSVALIDITY, constants.CONTRACT.DEFAULT.SIGQTY, constants.CONTRACT.DEFAULT.SIGSTOCK, constants.CONTRACT.DEFAULT.X_PERCENT, constants.CONTRACT.DEFAULT.PERCENTROT, constants.CONTRACT.DEFAULT.POWDELAY, constants.CONTRACT.DEFAULT.AVGGENTIME, constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS, false, 3000, false, constants.BRANCHES.DEFAULT_WINDOW_SIZE, constants.CONTRACT.DEFAULT.IDTYWINDOW, constants.CONTRACT.DEFAULT.MSWINDOW, constants.CONTRACT.DEFAULT.SIGWINDOW, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", "", 0, "", "", null, false, "", true, true)
     /*return {
       "currency": null,
       "endpoints": [],
@@ -186,7 +187,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
     };*/
   }
 
-  static complete(conf:ConfDTO) {
+  static complete(conf:any) {
     return _(ConfDTO.defaultConf()).extend(conf);
   }
 }

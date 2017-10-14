@@ -1,6 +1,6 @@
 import {AbstractSQLite} from "./AbstractSQLite"
 import {SQLiteDriver} from "../drivers/SQLiteDriver"
-import { SandBox, sandboxDocument } from './SandBox';
+import { SandBox, SandboxDocument } from './SandBox';
 import {IdentityDTO} from "../../dto/IdentityDTO"
 import {Cloneable} from "../../dto/Cloneable";
 const constants = require('../../constants');
@@ -143,7 +143,7 @@ export class ExistingDBIdentity extends DBIdentity {
   }
 }
 
-export interface DBSandboxIdentity extends DBIdentity,sandboxDocument {
+export interface DBSandboxIdentity extends DBIdentity,SandboxDocument {
   certsCount: number
   ref_block: number
 }

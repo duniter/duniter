@@ -1,8 +1,8 @@
-export interface sandboxDocument {
+export interface SandboxDocument {
   issuers: string[];
 }
 
-export class SandBox<T extends sandboxDocument> {
+export class SandBox<T extends SandboxDocument> {
 
   maxSize:number
   

@@ -1,10 +1,11 @@
 import {SQLiteDriver} from "../drivers/SQLiteDriver";
 import {AbstractSQLite} from "./AbstractSQLite";
-import { SandBox, SandboxDocument } from './SandBox';
+import { SandBox } from './SandBox';
+import { DBDocument } from './DocumentDAL';
 const _ = require('underscore');
 const constants = require('../../constants');
 
-export interface DBMembership extends SandboxDocument {
+export interface DBMembership extends DBDocument {
   membership: string
   issuer: string
   number: number

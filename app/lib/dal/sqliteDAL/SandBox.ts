@@ -1,8 +1,6 @@
-export interface SandboxDocument {
-  issuers: string[];
-}
+import { DBDocument } from './DocumentDAL';
 
-export class SandBox<T extends SandboxDocument> {
+export class SandBox<T extends DBDocument> {
 
   maxSize:number
   

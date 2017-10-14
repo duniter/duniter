@@ -15,7 +15,7 @@ export class SandBox<T extends sandboxDocument> {
   }
   
   async acceptNewSandBoxEntry(element:T, pubkey:string) {
-    if (element.issuers.indexOf(pubkey) !== -1) {
+    if (element.issuers !== undefined && element.issuers.indexOf(pubkey) !== -1) {
       return true;
     }
     const elements = await this.findElements()

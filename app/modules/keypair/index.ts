@@ -126,7 +126,7 @@ async function promptKey (conf:KeypairConfDTO, program:any) {
   const answersWantToChange = await inquirer.prompt([{
     type: "confirm",
     name: "change",
-    message: "Modify you keypair?",
+    message: "Modify your keypair?",
     default: changeKeypair
   }]);
 

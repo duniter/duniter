@@ -34,6 +34,11 @@ export class WS2PCluster {
     }
     // Make the path be a string
     path = path || ''
+    // Check that the path starts well with / (added if not)
+    if (!path.match('/^\//'))
+    {
+      path = '/'+path
+    }
     // Choose the web protocol depending on the port
     const protocol = port == 443 ? "wss://": "ws://"
     return [protocol, host, ':', port, path].join('')

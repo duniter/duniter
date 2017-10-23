@@ -40,7 +40,7 @@ export class WS2PCluster {
       path = path.substr(1)
     }
     // Check that the path starts well with / (added if not)
-    if (!path.match(/^\//))
+    if (path.length > 0 && !path.match(/^\//))
     {
       path = '/'+path
     }

@@ -34,8 +34,13 @@ export class WS2PCluster {
     }
     // Make the path be a string
     path = path || ''
+    // delete the space at the beginning of the path
+    if (path.match(/^ /))
+    {
+      path = path.substr(1)
+    }
     // Check that the path starts well with / (added if not)
-    if (!path.match('/^\//'))
+    if (!path.match(/^\//))
     {
       path = '/'+path
     }

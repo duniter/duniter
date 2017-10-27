@@ -58,8 +58,8 @@ export const WS2PDependency = {
         if (program.ws2pMaxPublic !== undefined)  conf.ws2p.maxPublic = program.ws2pMaxPublic
         if (program.ws2pPrivate !== undefined)    conf.ws2p.privateAccess = true
         if (program.ws2pPublic !== undefined)     conf.ws2p.publicAccess = true
-        if (program.ws2pNoPrivate !== undefined)  conf.ws2p.privateAccess = false
-        if (program.ws2pNoPublic !== undefined)   conf.ws2p.publicAccess = false
+        if (program.ws2pNoprivate !== undefined)  conf.ws2p.privateAccess = false
+        if (program.ws2pNopublic !== undefined)   conf.ws2p.publicAccess = false
 
         // Prefered nodes
         if (program.ws2pPreferedAdd !== undefined) {

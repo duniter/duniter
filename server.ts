@@ -211,7 +211,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawBlock(raw:string): Promise<BlockDTO> {
-    const obj = parsers.parseBlock.syncWrite(raw, logger)
+    const obj = parsers.parseBlock.syncWrite(raw)
     return await this.writeBlock(obj)
   }
 
@@ -224,7 +224,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawIdentity(raw:string): Promise<DBIdentity> {
-    const obj = parsers.parseIdentity.syncWrite(raw, logger)
+    const obj = parsers.parseIdentity.syncWrite(raw)
     return await this.writeIdentity(obj)
   }
 
@@ -237,7 +237,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawCertification(raw:string): Promise<CertificationDTO> {
-    const obj = parsers.parseCertification.syncWrite(raw, logger)
+    const obj = parsers.parseCertification.syncWrite(raw)
     return await this.writeCertification(obj)
   }
 
@@ -250,7 +250,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawMembership(raw:string): Promise<MembershipDTO> {
-    const obj = parsers.parseMembership.syncWrite(raw, logger)
+    const obj = parsers.parseMembership.syncWrite(raw)
     return await this.writeMembership(obj)
   }
 
@@ -263,7 +263,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawRevocation(raw:string): Promise<RevocationDTO> {
-    const obj = parsers.parseRevocation.syncWrite(raw, logger)
+    const obj = parsers.parseRevocation.syncWrite(raw)
     return await this.writeRevocation(obj)
   }
 
@@ -276,7 +276,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawTransaction(raw:string): Promise<TransactionDTO> {
-    const obj = parsers.parseTransaction.syncWrite(raw, logger)
+    const obj = parsers.parseTransaction.syncWrite(raw)
     return await this.writeTransaction(obj)
   }
 
@@ -289,7 +289,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawPeer(raw:string): Promise<PeerDTO> {
-    const obj = parsers.parsePeer.syncWrite(raw, logger)
+    const obj = parsers.parsePeer.syncWrite(raw)
     return await this.writePeer(obj)
   }
 

@@ -478,7 +478,8 @@ export class WS2PCluster {
         const pub = client.connection.pubkey
         const isNotOurself = pub !== this.server.conf.pair.pub
         const isMember = await this.server.dal.isMember(pub)
-        if (isNotOurself && !isMember && !disconnectedOne) {
+        const isPrefered = this.getPreferedNodes().indexOf(pub) !== -1
+        if (isNotOurself && !isMember && !disconnectedOne && !isPrefered) {
           client.connection.close()
           await client.connection.closed
           disconnectedOne = true
@@ -498,7 +499,8 @@ export class WS2PCluster {
         const client = this.ws2pClients[uuid]
         const pub = client.connection.pubkey
         const isNotOurself = pub !== this.server.conf.pair.pub
-        if (isNotOurself && !disconnectedOne && this.getPreferedNodes().indexOf(pub) === -1) {
+        const isPrefered = this.getPreferedNodes().indexOf(pub) !== -1
+        if (isNotOurself && !disconnectedOne && !isPrefered) {
           client.connection.close()
           disconnectedOne = true
           await client.connection.closed

@@ -77,6 +77,9 @@ export class WS2PCluster {
   // The triggerer of a buffer of heads' sending
   private headsTimeout:NodeJS.Timer|null = null
 
+  // A timer to regularly reconnect to the network in case we are below the minimum connections' count
+  private reconnectionInteval:NodeJS.Timer|null = null
+
   private constructor(private server:Server) {
     this.messageHandler = new WS2PServerMessageHandler(this.server, this)
     // Conf: max private connections
@@ -622,6 +625,8 @@ export class WS2PCluster {
   }
 
   async startCrawling(waitConnection = false) {
+    // For connectivity
+    this.reconnectionInteval = setInterval(() => this.server.push({ ws2p: 'disconnected' }), 1000 * 60 * 10)
     // For blocks
     if (this.syncBlockInterval)
       clearInterval(this.syncBlockInterval);
@@ -650,6 +655,9 @@ export class WS2PCluster {
   }
 
   async stopCrawling() {
+    if (this.reconnectionInteval) {
+      clearInterval(this.reconnectionInteval)
+    }
     if (this.syncBlockInterval) {
       clearInterval(this.syncBlockInterval)
     }

@@ -1,6 +1,7 @@
 import {CommonConstants} from "../../../lib/common-libs/constants"
 import {GenericParser} from "./GenericParser"
 import {rawer} from "../../../lib/common-libs/index"
+import { unlock } from '../txunlock';
 
 export class TransactionParser extends GenericParser {
 
@@ -105,6 +106,10 @@ function extractOutputs(raw:string) {
   for (const line of lines) {
     if (line.match(CommonConstants.TRANSACTION.TARGET)) {
       outputs.push(line);
+      const unlocked = unlock(line.split(':')[2], [], {})
+      if (unlocked === null) {
+        throw Error("Wrong output format")
+      }
     } else {
       // Not a transaction input, stop reading
       break;

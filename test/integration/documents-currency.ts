@@ -1,13 +1,14 @@
-import {NewTestingServer} from "./tools/toolbox"
+import { NewTestingServer } from './tools/toolbox';
 
 const co        = require('co');
 const should    = require('should');
 const user      = require('./tools/user');
-const commit    = require('./tools/commit');
 
 let s1:any, s2:any, cat1:any, tac1:any, toc2:any, tic2:any;
 
 describe("Document pool currency", function() {
+
+  const now = 1500000000
 
   before(() => co(function*() {
 
@@ -16,7 +17,10 @@ describe("Document pool currency", function() {
       pair: {
         pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
         sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
-      }
+      },
+      udTime0: now - 1,
+      dt: 1,
+      ud0: 1500
     });
     s2 = NewTestingServer({
       currency: 'currency_two',
@@ -138,17 +142,17 @@ describe("Document pool currency", function() {
     try {
       yield cat1.cert(tac1);
       yield tac1.cert(cat1);
-      yield s1.commit();
-      yield s1.commit();
+      yield s1.commit({ time: now });
+      yield s1.commit({ time: now });
       const current = yield s1.get('/blockchain/current');
       const tx = cat1.makeTX(
         [{
-          src: "1500:1:D:DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:1",
+          src: "1500:0:D:DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:1",
           unlock: "SIG(0)"
         }],
         [{
           qty: 1500,
-          base: 1,
+          base: 0,
           lock: "XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)"
         }],
         {
@@ -161,6 +165,31 @@ describe("Document pool currency", function() {
       should.exist(e.error);
       e.should.be.an.Object();
       e.error.message.should.match(/Signature from a transaction must match/);
+    }
+  }));
+
+  it('Transaction with wrong XHX should be rejected', () => co(function*() {
+    try {
+      const current = yield s1.get('/blockchain/current');
+      const tx = cat1.makeTX(
+        [{
+          src: "1500:1:D:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1",
+          unlock: "SIG(0)"
+        }],
+        [{
+          qty: 1500,
+          base: 1,
+          lock: "XHX(6B86B273FF34FCE19D6B804EFF5A3F5747ADA4EAA22F1D49C01E52DDB7875B4B))"
+        }],
+        {
+          blockstamp: [current.number, current.hash].join('-')
+        });
+      yield s1.postRawTX(tx);
+      throw "Transaction should not have been accepted, since it has wrong output format";
+    } catch (e) {
+      should.exist(e.error);
+      e.should.be.an.Object();
+      e.error.message.should.match(/Wrong output format/);
     }
   }));
 

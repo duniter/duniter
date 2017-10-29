@@ -37,7 +37,5 @@ export const WS2PConstants = {
   + '(' + CommonConstants.FORMATS.POW_PREFIX + ')'
   + '$'),
 
-  ONION_ENDPOINT_REGEX: new RegExp('(?:wss?:\/\/)?(?:www)?(\S*?\.onion)(\/[-\w]*)*'),
-
   HEADS_SPREAD_TIMEOUT: 100 // Wait 100ms before sending a bunch of signed heads
 }

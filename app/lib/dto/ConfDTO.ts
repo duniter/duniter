@@ -1,4 +1,5 @@
 import {CommonConstants} from "../common-libs/constants"
+import { Proxy, ProxyConf } from '../proxy';
 const _ = require('underscore');
 const constants = require('../constants');
 
@@ -46,6 +47,7 @@ export interface KeypairConfDTO {
 }
 
 export interface NetworkConfDTO {
+  proxyConf: ProxyConf|undefined
   nobma: boolean
   remoteport: number
   remotehost: string|null
@@ -134,6 +136,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
     public homename: string,
     public memory: boolean,
     public nobma: boolean,
+    public proxyConf: ProxyConf|undefined,
     public ws2p?: {
       privateAccess: boolean
       publicAccess: boolean
@@ -152,7 +155,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
 ) {}
 
   static mock() {
-    return new ConfDTO("", "", [], [], 0, 0, 0.6, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", 0, "", "", null, false, "", true, true)
+    return new ConfDTO("", "", [], [], 0, 0, 0.6, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", 0, "", "", null, false, "", true, true, undefined)
   }
 
   static defaultConf() {

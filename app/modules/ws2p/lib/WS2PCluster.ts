@@ -293,7 +293,7 @@ export class WS2PCluster {
     let pub = "--------"
     try {
       const fullEndpointAddress = WS2PCluster.getFullAddress(host, port, path)
-      const ws2pc = await WS2PClient.connectTo(this.server, fullEndpointAddress, messageHandler, expectedPub, (pub:string) => {
+      const ws2pc = await WS2PClient.connectTo(this.server, fullEndpointAddress, ws2pEndpointUUID, messageHandler, expectedPub, (pub:string) => {
         const connectedPubkeys = this.getConnectedPubkeys()
         return this.acceptPubkey(expectedPub, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes || []), ws2pEndpointUUID)
       })
@@ -626,7 +626,7 @@ export class WS2PCluster {
 
   async startCrawling(waitConnection = false) {
     // For connectivity
-    this.reconnectionInteval = setInterval(() => this.server.push({ ws2p: 'disconnected' }), 1000 * 60 * 10)
+    this.reconnectionInteval = setInterval(() => this.server.push({ ws2p: 'disconnected' }), 1000 * WS2PConstants.RECONNEXION_INTERVAL_IN_SEC)
     // For blocks
     if (this.syncBlockInterval)
       clearInterval(this.syncBlockInterval);

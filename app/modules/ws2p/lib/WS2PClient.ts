@@ -1,3 +1,4 @@
+import { WS2PCluster } from './WS2PCluster';
 import {Server} from "../../../../server"
 import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "./WS2PConnection"
 import {Key} from "../../../lib/common-libs/crypto/keyring"
@@ -5,18 +6,25 @@ import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 import {WS2PConstants} from "./constants"
 import {WS2PStreamer} from "./WS2PStreamer"
 import {WS2PSingleWriteStream} from "./WS2PSingleWriteStream"
+import { Proxies, ProxyConf, Proxy } from '../../../lib/proxy';
+import { server } from '../../../../test/integration/tools/toolbox';
 
 export class WS2PClient {
 
   private constructor(public connection:WS2PConnection) {}
 
-  static async connectTo(server:Server, fullEndpointAddress:string, messageHandler:WS2PMessageHandler, expectedPub:string, allowKey:(pub:string)=>Promise<boolean> ) {
+  static async connectTo(server:Server, fullEndpointAddress:string, uuid:string, messageHandler:WS2PMessageHandler, expectedPub:string, allowKey:(pub:string)=>Promise<boolean> ) {
     const k2 = new Key(server.conf.pair.pub, server.conf.pair.sec)
+    let mySelf = false;
+    if (server.conf.ws2p && server.conf.ws2p.uuid === uuid) {
+      let mySelf = true;
+    }
     const c = WS2PConnection.newConnectionToAddress(
       fullEndpointAddress,
       messageHandler,
       new WS2PPubkeyLocalAuth(server.conf.currency , k2, allowKey),
       new WS2PPubkeyRemoteAuth(server.conf.currency, k2, allowKey),
+      Proxy.wsProxy(fullEndpointAddress, server.conf.proxyConf, mySelf),
       {
         connectionTimeout: WS2PConstants.REQUEST_TIMEOUT,
         requestTimeout: WS2PConstants.REQUEST_TIMEOUT

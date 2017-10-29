@@ -452,7 +452,8 @@ function commandLineConf(program:any, conf:ConfDTO = ConfDTO.mock()) {
       proxySocks: program.proxySocks,
       proxyTor: program.proxyTor,
       torAlways: program.torAlways,
-      torMixed: program.torMixed
+      torMixed: program.torMixed,
+      rmProxies: program.rmProxies
     },
     logs: {
       http: program.httplogs,
@@ -467,7 +468,7 @@ function commandLineConf(program:any, conf:ConfDTO = ConfDTO.mock()) {
   };
 
   // Declare proxyConf
-  if (cli.proxies.proxySocks || cli.proxies.proxyTor || cli.proxies.torAlways || cli.proxies.torMixed) {
+  if (cli.proxies.proxySocks || cli.proxies.proxyTor || cli.proxies.torAlways || cli.proxies.torMixed || cli.proxies.rmProxies) {
     conf.proxyConf = Proxy.defaultConf()
   }
 

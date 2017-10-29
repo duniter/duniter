@@ -53,6 +53,7 @@ export const ExecuteCommand = () => {
         .option('--proxy-tor <host:port>', 'Use Tor Socks Proxy')
         .option('--tor-always', 'Pass all outgoing requests through the tor network')
         .option('--tor-mixed', 'Pass only ".onion" outgoing requests through the tor network. It\'s the default behavior')
+        .option('--rm-proxies', 'Remove all proxies')
 
         .option('--timeout <milliseconds>', 'Timeout to use when contacting peers', parseInt)
         .option('--httplogs', 'Enable HTTP logs')

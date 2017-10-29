@@ -170,7 +170,7 @@ export const fakeSyncServer = async (readBlocksMethod:any, readParticularBlockMe
     processRequest: () => { /* Does nothing */ }
   };
 
-  const fakeServer = await Network.createServersAndListen("Fake Duniter Server", new Server("", true, {}), [{
+  const fakeServer = await Network.createServersAndListen("Fake Duniter Server", new Server("", true, ConfDTO.mock()), [{
     ip: host,
     port: port
   }], NO_HTTP_LOGS, logger, NO_STATIC_PATH, (app:any, httpMethods:any) => {

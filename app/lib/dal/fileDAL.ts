@@ -15,6 +15,7 @@ import {DBBlock} from "../db/DBBlock"
 import {DBMembership} from "./sqliteDAL/MembershipDAL"
 import {MerkleDTO} from "../dto/MerkleDTO"
 import {CommonConstants} from "../common-libs/constants"
+import { ProxyConf } from '../proxy';
 
 const fs      = require('fs')
 const path    = require('path')
@@ -842,7 +843,11 @@ export class FileDAL {
     let conf = ConfDTO.complete(overrideConf || {});
     if (!defaultConf) {
       const savedConf = await this.confDAL.loadConf();
+      const savedProxyConf = _(savedConf.proxyConf).extend({});
       conf = _(savedConf).extend(overrideConf || {});
+      if (overrideConf.proxyConf !== undefined) {} else {
+        conf.proxyConf = _(savedProxyConf).extend({});
+      }
     }
     if (this.loadConfHook) {
       await this.loadConfHook(conf)

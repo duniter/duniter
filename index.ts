@@ -438,7 +438,7 @@ class Stack {
   }
 }
 
-function commandLineConf(program:any, conf:ConfDTO = ConfDTO.mock()) {
+function commandLineConf(program:any, conf:any = {}) {
 
   conf = conf || {};
   const cli = {

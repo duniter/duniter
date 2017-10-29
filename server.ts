@@ -73,7 +73,7 @@ export class Server extends stream.Duplex implements HookableServer {
   TransactionsService:TransactionService
   private documentFIFO:GlobalFifoPromise
 
-  constructor(home:string, memoryOnly:boolean, private overrideConf:ConfDTO) {
+  constructor(home:string, memoryOnly:boolean, private overrideConf:any) {
     super({ objectMode: true })
 
     this.home = home;

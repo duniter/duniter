@@ -8,6 +8,7 @@ export const WS2PConstants = {
 
   CONNEXION_TIMEOUT: 10000,
   REQUEST_TIMEOUT: 10000,
+  RECONNEXION_INTERVAL_IN_SEC: 60 * 10, // 10 minutes
 
   BLOCK_PULLING_INTERVAL: 300 * 2,    // 10 minutes
   DOCPOOL_PULLING_INTERVAL: 3600 * 4, // 4 hours
@@ -35,6 +36,8 @@ export const WS2PConstants = {
   + '(' + CommonConstants.FORMATS.SOFT_VERSION + '):'
   + '(' + CommonConstants.FORMATS.POW_PREFIX + ')'
   + '$'),
+
+  ONION_ENDPOINT_REGEX: new RegExp('(?:wss?:\/\/)?(?:www)?(\S*?\.onion)(\/[-\w]*)*'),
 
   HEADS_SPREAD_TIMEOUT: 100 // Wait 100ms before sending a bunch of signed heads
 }

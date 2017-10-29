@@ -49,6 +49,11 @@ export const ExecuteCommand = () => {
         .option('--nostdout', 'Disable stdout printing for `export-bc` command')
         .option('--noshuffle', 'Disable peers shuffling for `sync` command')
 
+        .option('--proxy-socks <host:port>', 'Use Socks Proxy')
+        .option('--proxy-tor <host:port>', 'Use Tor Socks Proxy')
+        .option('--tor-always', 'Pass all outgoing requests through the tor network')
+        .option('--tor-mixed', 'Pass only ".onion" outgoing requests through the tor network. It\'s the default behavior')
+
         .option('--timeout <milliseconds>', 'Timeout to use when contacting peers', parseInt)
         .option('--httplogs', 'Enable HTTP logs')
         .option('--nohttplogs', 'Disable HTTP logs')

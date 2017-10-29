@@ -8,6 +8,7 @@ import {CrawlerDependency} from "./app/modules/crawler/index"
 import {BmaDependency} from "./app/modules/bma/index"
 import {WS2PDependency} from "./app/modules/ws2p/index"
 import {Constants} from "./app/modules/prover/lib/constants"
+import { Proxy } from './app/lib/proxy';
 
 const path = require('path');
 const _ = require('underscore');
@@ -437,10 +438,9 @@ class Stack {
   }
 }
 
-function commandLineConf(program:any, conf:any = {}) {
+function commandLineConf(program:any, conf:ConfDTO = ConfDTO.mock()) {
 
   conf = conf || {};
-  conf.sync = conf.sync || {};
   const cli = {
     currency: program.currency,
     cpu: program.cpu,
@@ -448,10 +448,11 @@ function commandLineConf(program:any, conf:any = {}) {
     server: {
       port: program.port,
     },
-    db: {
-      mport: program.mport,
-      mdb: program.mdb,
-      home: program.home
+    proxies: {
+      proxySocks: program.proxySocks,
+      proxyTor: program.proxyTor,
+      torAlways: program.torAlways,
+      torMixed: program.torMixed
     },
     logs: {
       http: program.httplogs,
@@ -465,19 +466,25 @@ function commandLineConf(program:any, conf:any = {}) {
     timeout: program.timeout
   };
 
+  // Declare proxyConf
+  if (cli.proxies.proxySocks || cli.proxies.proxyTor || cli.proxies.torAlways || cli.proxies.torMixed) {
+    conf.proxyConf = Proxy.defaultConf()
+  }
+
   // Update conf
-  if (cli.currency)                         conf.currency = cli.currency;
-  if (cli.server.port)                      conf.port = cli.server.port;
-  if (cli.cpu)                              conf.cpu = Math.max(0.01, Math.min(1.0, cli.cpu));
-  if (cli.prefix)                           conf.prefix = Math.max(Constants.MIN_PEER_ID, Math.min(Constants.MAX_PEER_ID, cli.prefix));
-  if (cli.logs.http)                        conf.httplogs = true;
-  if (cli.logs.nohttp)                      conf.httplogs = false;
-  if (cli.db.mport)                         conf.mport = cli.db.mport;
-  if (cli.db.home)                          conf.home = cli.db.home;
-  if (cli.db.mdb)                           conf.mdb = cli.db.mdb;
-  if (cli.isolate)                          conf.isolate = cli.isolate;
-  if (cli.timeout)                          conf.timeout = cli.timeout;
-  if (cli.forksize != null)                 conf.forksize = cli.forksize;
+  if (cli.currency)                             conf.currency = cli.currency;
+  if (cli.server.port)                          conf.port = cli.server.port;
+  if (cli.cpu)                                  conf.cpu = Math.max(0.01, Math.min(1.0, cli.cpu));
+  if (cli.prefix)                               conf.prefix = Math.max(Constants.MIN_PEER_ID, Math.min(Constants.MAX_PEER_ID, cli.prefix));
+  if (cli.proxies.proxySocks && conf.proxyConf) conf.proxyConf.proxySocksAddress = cli.proxies.proxySocks;
+  if (cli.proxies.proxyTor && conf.proxyConf)   conf.proxyConf.proxyTorAddress = cli.proxies.proxyTor;
+  if (cli.proxies.torAlways && conf.proxyConf)  conf.proxyConf.alwaysUseTor = true;
+  if (cli.proxies.torMixed && conf.proxyConf)   conf.proxyConf.alwaysUseTor = false;
+  if (cli.logs.http)                            conf.httplogs = true;
+  if (cli.logs.nohttp)                          conf.httplogs = false;
+  if (cli.isolate)                              conf.isolate = cli.isolate;
+  if (cli.timeout)                              conf.timeout = cli.timeout;
+  if (cli.forksize != null)                     conf.forksize = cli.forksize;
 
   return conf;
 }

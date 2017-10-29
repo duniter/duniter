@@ -24,6 +24,7 @@ import {PeerDTO} from "./app/lib/dto/PeerDTO"
 import {OtherConstants} from "./app/lib/other_constants"
 import {WS2PCluster} from "./app/modules/ws2p/lib/WS2PCluster"
 import {DBBlock} from "./app/lib/db/DBBlock"
+import { Proxy } from './app/lib/proxy';
 
 export interface HookableServer {
   generatorGetJoinData: (...args:any[]) => Promise<any>
@@ -72,7 +73,7 @@ export class Server extends stream.Duplex implements HookableServer {
   TransactionsService:TransactionService
   private documentFIFO:GlobalFifoPromise
 
-  constructor(home:string, memoryOnly:boolean, private overrideConf:any) {
+  constructor(home:string, memoryOnly:boolean, private overrideConf:ConfDTO) {
     super({ objectMode: true })
 
     this.home = home;
@@ -148,6 +149,8 @@ export class Server extends stream.Duplex implements HookableServer {
     logger.debug('Loading conf...');
     this.conf = await this.dal.loadConf(this.overrideConf, useDefaultConf)
     // Default values
+    this.conf.proxyConf        = this.conf.proxyConf === undefined ?         Proxy.defaultConf()                           : this.conf.proxyConf
+    this.conf.proxyConf.alwaysUseTor = this.conf.proxyConf.alwaysUseTor === undefined ? false                 : this.conf.proxyConf.alwaysUseTor
     this.conf.remoteipv6       = this.conf.remoteipv6 === undefined ?        this.conf.ipv6                               : this.conf.remoteipv6
     this.conf.remoteport       = this.conf.remoteport === undefined ?        this.conf.port                               : this.conf.remoteport
     this.conf.c                = this.conf.c === undefined ?                 constants.CONTRACT.DEFAULT.C                 : this.conf.c

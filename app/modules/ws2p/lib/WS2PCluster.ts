@@ -13,7 +13,7 @@ import {OtherConstants} from "../../../lib/other_constants"
 import {Key, verify} from "../../../lib/common-libs/crypto/keyring"
 import {WS2PServerMessageHandler} from "./interface/WS2PServerMessageHandler"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
-import { CommonConstants } from "../../../lib/common-libs/constants";
+import { CommonConstants } from '../../../lib/common-libs/constants';
 import { Package } from "../../../lib/common/package";
 import { Constants } from "../../prover/lib/constants";
 
@@ -330,21 +330,44 @@ export class WS2PCluster {
     const prefered = ((this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) || []).slice() // Copy
     // Our key is also a prefered one, so we connect to our siblings
     prefered.push(this.server.conf.pair.pub)
+    const imTorPeer = this.server.conf.proxyConf && this.server.conf.proxyConf.proxies && this.server.conf.proxyConf.proxies.proxyTor
     peers.sort((a, b) => {
       const aIsPrefered = prefered.indexOf(a.pubkey) !== -1
       const bIsPrefered = prefered.indexOf(b.pubkey) !== -1
-      if ((aIsPrefered && bIsPrefered) || (!aIsPrefered && !bIsPrefered)) {
-        return 0
-      } else if (aIsPrefered) {
-        return -1
+
+      if (imTorPeer) {
+        const aAtWs2pTorEnpoint = a.endpoints.filter(function (element) { return element.match(CommonConstants.WS2PTOR_REGEXP); }).length > 0
+        const bAtWs2pTorEnpoint = b.endpoints.filter(function (element) { return element.match(CommonConstants.WS2PTOR_REGEXP); }).length > 0
+
+        if ( (aAtWs2pTorEnpoint && bAtWs2pTorEnpoint) || (!aAtWs2pTorEnpoint && !bAtWs2pTorEnpoint) ) {
+          if ((aIsPrefered && bIsPrefered) || (!aIsPrefered && !bIsPrefered))  {
+            return 0
+          } else if (aIsPrefered) {
+            return -1
+          } else {
+            return 1
+          }
+        } else {
+          if (aAtWs2pTorEnpoint) {
+            return -1
+          } else {
+            return 1
+          }
+        }
       } else {
-        return 1
+        if ((aIsPrefered && bIsPrefered) || (!aIsPrefered && !bIsPrefered))  {
+          return 0
+        } else if (aIsPrefered) {
+          return -1
+        } else {
+          return 1
+        }
       }
     })
     let i = 0
     while (i < peers.length && this.clientsCount() < this.maxLevel1Size) {
       const p = peers[i]
-      const api = p.getWS2P()
+      const api = p.getWS2P(imTorPeer !== undefined)
       if (api) {
         try {
           await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)

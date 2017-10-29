@@ -143,7 +143,7 @@ export class FileDAL {
   }
 
   async getWS2Peers() {
-    return this.peerDAL.getPeersWithEndpointsLike('WS2P ')
+    return this.peerDAL.getPeersWithEndpointsLike('WS2P ').concat(this.peerDAL.getPeersWithEndpointsLike('WS2PTOR '))
   }
 
   async getBlock(number:number) {

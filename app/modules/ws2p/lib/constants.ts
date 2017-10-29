@@ -37,5 +37,7 @@ export const WS2PConstants = {
   + '(' + CommonConstants.FORMATS.POW_PREFIX + ')'
   + '$'),
 
+  HOST_ONION_REGEX: new RegExp('(\S*?\.onion)$'),
+
   HEADS_SPREAD_TIMEOUT: 100 // Wait 100ms before sending a bunch of signed heads
 }

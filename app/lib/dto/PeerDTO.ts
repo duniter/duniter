@@ -94,8 +94,9 @@ export class PeerDTO implements Cloneable {
     return bma || {};
   }
 
-  getWS2P() {
+  getWS2P(tor:boolean = false) {
     let api:{ uuid:string, host:string, port:number, path:string }|null = null
+    const endpointRegexp = (tor) ? CommonConstants.WS2PTOR_REGEXP:CommonConstants.WS2P_REGEXP
     for (const ep of this.endpoints) {
       const matches:any = !api && ep.match(CommonConstants.WS2P_REGEXP)
       if (matches) {

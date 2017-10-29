@@ -337,6 +337,7 @@ async function upnpConf (noupnp:boolean, logger:any) {
   const publicPort = await getAvailablePort(client)
   const privatePort = publicPort
   const conf:NetworkConfDTO = {
+    proxyConf: undefined,
     nobma: true,
     port: privatePort,
     ipv4: '127.0.0.1',

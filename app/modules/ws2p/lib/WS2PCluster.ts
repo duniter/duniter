@@ -16,6 +16,7 @@ import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 import { CommonConstants } from '../../../lib/common-libs/constants';
 import { Package } from "../../../lib/common/package";
 import { Constants } from "../../prover/lib/constants";
+import { ProxyConf, Proxy } from '../../../lib/proxy';
 
 const es = require('event-stream')
 const nuuid = require('node-uuid')
@@ -291,6 +292,7 @@ export class WS2PCluster {
   async connectToRemoteWS(host: string, port: number, path:string, messageHandler:WS2PMessageHandler, expectedPub:string, ws2pEndpointUUID:string = ""): Promise<WS2PConnection> {
     const uuid = nuuid.v4()
     let pub = "--------"
+    const api:string = (host.match(WS2PConstants.HOST_ONION_REGEX) !== null) ? 'WS2PTOR':'WS2P'
     try {
       const fullEndpointAddress = WS2PCluster.getFullAddress(host, port, path)
       const ws2pc = await WS2PClient.connectTo(this.server, fullEndpointAddress, ws2pEndpointUUID, messageHandler, expectedPub, (pub:string) => {
@@ -300,7 +302,7 @@ export class WS2PCluster {
       this.ws2pClients[uuid] = ws2pc
       pub = ws2pc.connection.pubkey
       ws2pc.connection.closed.then(() => {
-        this.server.logger.info('WS2P: connection [%s `WS2P %s %s`] has been closed', pub.slice(0, 8), host, port)
+        this.server.logger.info(api+': connection [%s `'+api+' %s %s`] has been closed', pub.slice(0, 8), host, port)
         this.server.push({
           ws2p: 'disconnected',
           peer: {
@@ -311,7 +313,7 @@ export class WS2PCluster {
           delete this.ws2pClients[uuid]
         }
       })
-      this.server.logger.info('WS2P: connected to peer %s using `WS2P %s %s`!', pub.slice(0, 8), host, port)
+      this.server.logger.info(api+': connected to peer %s using `'+api+' %s %s`!', pub.slice(0, 8), host, port)
       this.server.push({
         ws2p: 'connected',
         to: { host, port, pubkey: pub }
@@ -319,7 +321,7 @@ export class WS2PCluster {
       await this.server.dal.setPeerUP(pub)
       return ws2pc.connection
     } catch (e) {
-      this.server.logger.info('WS2P: Could not connect to peer %s using `WS2P %s %s: %s`', pub.slice(0, 8), host, port, (e && e.message || e))
+      this.server.logger.info(api+': Could not connect to peer %s using `'+api+' %s %s: %s`', pub.slice(0, 8), host, port, (e && e.message || e))
       throw e
     }
   }
@@ -330,12 +332,12 @@ export class WS2PCluster {
     const prefered = ((this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) || []).slice() // Copy
     // Our key is also a prefered one, so we connect to our siblings
     prefered.push(this.server.conf.pair.pub)
-    const imTorPeer = this.server.conf.proxyConf && this.server.conf.proxyConf.proxies && this.server.conf.proxyConf.proxies.proxyTor
+    const imCanReachTorEndpoint = Proxy.canReachTorEndpoint(this.server.conf.proxyConf)
     peers.sort((a, b) => {
       const aIsPrefered = prefered.indexOf(a.pubkey) !== -1
       const bIsPrefered = prefered.indexOf(b.pubkey) !== -1
 
-      if (imTorPeer) {
+      if (imCanReachTorEndpoint) {
         const aAtWs2pTorEnpoint = a.endpoints.filter(function (element) { return element.match(CommonConstants.WS2PTOR_REGEXP); }).length > 0
         const bAtWs2pTorEnpoint = b.endpoints.filter(function (element) { return element.match(CommonConstants.WS2PTOR_REGEXP); }).length > 0
 
@@ -367,7 +369,7 @@ export class WS2PCluster {
     let i = 0
     while (i < peers.length && this.clientsCount() < this.maxLevel1Size) {
       const p = peers[i]
-      const api = p.getWS2P(imTorPeer !== undefined)
+      const api = p.getWS2P(imCanReachTorEndpoint !== undefined)
       if (api) {
         try {
           await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)

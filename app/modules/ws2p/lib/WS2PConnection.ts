@@ -279,11 +279,11 @@ export class WS2PConnection {
     expectedPub:string = "") {
       if (proxy !== undefined) {
         options = {
-          connectionTimeout: proxy.getTimeout(),
-          requestTimeout: proxy.getTimeout()
+          connectionTimeout: proxy.timeout,
+          requestTimeout: proxy.timeout
         }
       }
-      const websocket = (proxy !== undefined) ? new ws(address, { agent: proxy.getAgent() }):new ws(address)
+      const websocket = (proxy !== undefined) ? new ws(address, { agent: proxy.agent }):new ws(address)
     const onWsOpened:Promise<void> = new Promise(res => {
       websocket.on('open', () => res())
     })

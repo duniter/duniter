@@ -21,25 +21,23 @@ export interface ProxyConf {
 }
 
 export class Proxy {
-  private agent: any
-  private timeout:number
+  public agent: any
+  private url:string
 
-  constructor(proxy:string, type:string = "socks", timeout:number = DEFAULT_PROXY_TIMEOUT) {
+  constructor(proxy:string, type:string = "socks", public timeout:number = DEFAULT_PROXY_TIMEOUT) {
     if (type === "socks") {
         this.agent = SocksProxyAgent("socks://"+proxy)
+        this.url = "socks://"+proxy
     }
     else {
+        this.url = ""
         this.agent = undefined
     }
     this.timeout = timeout
   }
 
-  getAgent() {
-    return this.agent;
-  }
-
-  getTimeout() {
-    return this.timeout;
+  getUrl() {
+    return this.url;
   }
 
   static defaultConf():ProxyConf {
@@ -49,6 +47,10 @@ export class Proxy {
         alwaysUseTor: undefined,
         proxies: undefined
     }
+  }
+
+  static canReachTorEndpoint(proxyConf: ProxyConf|undefined):boolean {
+    return (proxyConf !== undefined && (proxyConf.alwaysUseTor === true || (proxyConf.proxies !== undefined && proxyConf.proxies.proxyTor !== undefined) ) )
   }
 
   static createProxies(proxyConf: ProxyConf|undefined) : Proxies|undefined
@@ -77,11 +79,11 @@ export class Proxy {
             proxyConf.proxies = Proxy.createProxies(proxyConf)
         }
         if (proxyConf.proxies !== undefined) {
-            if ( proxyConf.proxies.proxyTor !== undefined && proxyConf.proxies.proxyTor.getAgent() !== undefined && (proxyConf.alwaysUseTor || address.match(onionRegex)) && !mySelf )
+            if ( proxyConf.proxies.proxyTor !== undefined && proxyConf.proxies.proxyTor.agent !== undefined && (proxyConf.alwaysUseTor || address.match(onionRegex)) && !mySelf )
             {
                 return proxyConf.proxies.proxyTor
             }
-            else if (proxyConf.proxies.proxySocks !== undefined && proxyConf.proxies.proxySocks.getAgent() !== undefined) {
+            else if (proxyConf.proxies.proxySocks !== undefined && proxyConf.proxies.proxySocks.agent !== undefined) {
                 return proxyConf.proxies.proxySocks
             }
         }

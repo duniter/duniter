@@ -369,7 +369,7 @@ export class WS2PCluster {
     let i = 0
     while (i < peers.length && this.clientsCount() < this.maxLevel1Size) {
       const p = peers[i]
-      const api = p.getWS2P(imCanReachTorEndpoint !== undefined)
+      const api = p.getWS2P(imCanReachTorEndpoint)
       if (api) {
         try {
           await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)

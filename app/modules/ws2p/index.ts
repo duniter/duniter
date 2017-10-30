@@ -141,7 +141,7 @@ export const WS2PDependency = {
             const peers = await server.dal.getWS2Peers()
             for (const p of peers) {
               for (const ep of p.endpoints) {
-                if (ep.match(/^WS2P /)) {
+                if (ep.match(/^WS2P/)) {
                   console.log(p.pubkey, ep)
                 }
               }

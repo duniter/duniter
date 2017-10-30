@@ -1,8 +1,5 @@
 const SocksProxyAgent = require('socks-proxy-agent');
 
-const constants = require('./constants');
-const WS2PConstants = require('../modules/ws2p/lib/constants');
-
 const DEFAULT_PROXY_TIMEOUT:number = 30000
 const TOR_PROXY_TIMEOUT:number = 60000
 const HTTP_ENDPOINT_ONION_REGEX = new RegExp('(?:https?:\/\/)?(?:www)?(\S*?\.onion)(\/[-\w]*)*')
@@ -21,23 +18,30 @@ export interface ProxyConf {
 }
 
 export class Proxy {
-  public agent: any
+  private agent: any
   private url:string
 
-  constructor(proxy:string, type:string = "socks", public timeout:number = DEFAULT_PROXY_TIMEOUT) {
+  constructor(proxy:string, type:string = "socks", private timeout:number = DEFAULT_PROXY_TIMEOUT) {
     if (type === "socks") {
-        this.agent = SocksProxyAgent("socks://"+proxy)
-        this.url = "socks://"+proxy
+      this.agent = SocksProxyAgent("socks://"+proxy)
+      this.url = "socks://"+proxy
     }
     else {
-        this.url = ""
-        this.agent = undefined
+      this.agent = undefined  
+      this.url = ""
     }
-    this.timeout = timeout
+  }
+
+  getAgent() {
+    return this.agent;
   }
 
   getUrl() {
     return this.url;
+  }
+
+  getTimeout() {
+    return this.timeout;
   }
 
   static defaultConf():ProxyConf {

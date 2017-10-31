@@ -1,5 +1,5 @@
 import {CommonConstants} from "../common-libs/constants"
-import { Proxy, ProxyConf } from '../proxy';
+import { ProxiesConf } from '../proxy';
 const _ = require('underscore');
 const constants = require('../constants');
 
@@ -47,7 +47,7 @@ export interface KeypairConfDTO {
 }
 
 export interface NetworkConfDTO {
-  proxyConf: ProxyConf|undefined
+  proxyConf: ProxiesConf|undefined
   nobma: boolean
   remoteport: number
   remotehost: string|null
@@ -136,7 +136,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
     public homename: string,
     public memory: boolean,
     public nobma: boolean,
-    public proxyConf: ProxyConf|undefined,
+    public proxyConf: ProxiesConf|undefined,
     public ws2p?: {
       privateAccess: boolean
       publicAccess: boolean

@@ -15,7 +15,7 @@ import {DBBlock} from "../db/DBBlock"
 import {DBMembership} from "./sqliteDAL/MembershipDAL"
 import {MerkleDTO} from "../dto/MerkleDTO"
 import {CommonConstants} from "../common-libs/constants"
-import { ProxyConf } from '../proxy';
+import { ProxiesConf } from '../proxy';
 
 const fs      = require('fs')
 const path    = require('path')

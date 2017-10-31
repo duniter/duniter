@@ -16,7 +16,7 @@ import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 import { CommonConstants } from '../../../lib/common-libs/constants';
 import { Package } from "../../../lib/common/package";
 import { Constants } from "../../prover/lib/constants";
-import { ProxyConf, Proxy } from '../../../lib/proxy';
+import { ProxiesConf } from '../../../lib/proxy';
 
 const es = require('event-stream')
 const nuuid = require('node-uuid')
@@ -332,7 +332,7 @@ export class WS2PCluster {
     const prefered = ((this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) || []).slice() // Copy
     // Our key is also a prefered one, so we connect to our siblings
     prefered.push(this.server.conf.pair.pub)
-    const imCanReachTorEndpoint = Proxy.canReachTorEndpoint(this.server.conf.proxyConf)
+    const imCanReachTorEndpoint = ProxiesConf.canReachTorEndpoint(this.server.conf.proxyConf)
     peers.sort((a, b) => {
       const aIsPrefered = prefered.indexOf(a.pubkey) !== -1
       const bIsPrefered = prefered.indexOf(b.pubkey) !== -1

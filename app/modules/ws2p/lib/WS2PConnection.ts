@@ -7,8 +7,9 @@ import {MembershipDTO} from "../../../lib/dto/MembershipDTO"
 import {TransactionDTO} from "../../../lib/dto/TransactionDTO"
 import {PeerDTO} from "../../../lib/dto/PeerDTO"
 import {WS2PConstants} from "./constants"
-import { Proxy } from '../../../lib/proxy';
+import { ProxiesConf } from '../../../lib/proxy';
 const ws = require('ws')
+const SocksProxyAgent = require('socks-proxy-agent');
 const nuuid = require('node-uuid');
 const logger = require('../../../lib/logger').NewLogger('ws2p')
 
@@ -268,7 +269,7 @@ export class WS2PConnection {
     messageHandler:WS2PMessageHandler,
     localAuth:WS2PLocalAuth,
     remoteAuth:WS2PRemoteAuth,
-    proxy:Proxy|undefined = undefined,
+    proxySocksAddress:string|undefined = undefined,
     options:{
       connectionTimeout:number,
       requestTimeout:number
@@ -277,13 +278,13 @@ export class WS2PConnection {
       requestTimeout: REQUEST_TIMEOUT_VALUE
     },
     expectedPub:string = "") {
-      if (proxy !== undefined) {
+      if (proxySocksAddress !== undefined) {
         options = {
-          connectionTimeout: proxy.getTimeout(),
-          requestTimeout: proxy.getTimeout()
+          connectionTimeout: WS2PConstants.PROXY_TIMEOUT,
+          requestTimeout: WS2PConstants.PROXY_TIMEOUT
         }
       }
-      const websocket = (proxy !== undefined) ? new ws(address, { agent: proxy.getAgent() }):new ws(address)
+      const websocket = (proxySocksAddress !== undefined) ? new ws(address, { agent: SocksProxyAgent("socks://"+proxySocksAddress) }):new ws(address)
     const onWsOpened:Promise<void> = new Promise(res => {
       websocket.on('open', () => res())
     })

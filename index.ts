@@ -8,7 +8,7 @@ import {CrawlerDependency} from "./app/modules/crawler/index"
 import {BmaDependency} from "./app/modules/bma/index"
 import {WS2PDependency} from "./app/modules/ws2p/index"
 import {Constants} from "./app/modules/prover/lib/constants"
-import { Proxy } from './app/lib/proxy';
+import { ProxiesConf } from './app/lib/proxy';
 
 const path = require('path');
 const _ = require('underscore');
@@ -469,7 +469,7 @@ function commandLineConf(program:any, conf:any = {}) {
 
   // Declare proxyConf
   if (cli.proxies.proxySocks || cli.proxies.proxyTor || cli.proxies.torAlways || cli.proxies.torMixed || cli.proxies.rmProxies) {
-    conf.proxyConf = Proxy.defaultConf()
+    conf.proxyConf = new ProxiesConf()
   }
 
   // Update conf

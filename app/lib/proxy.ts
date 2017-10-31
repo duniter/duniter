@@ -1,96 +1,40 @@
 const SocksProxyAgent = require('socks-proxy-agent');
 
-const DEFAULT_PROXY_TIMEOUT:number = 30000
-const TOR_PROXY_TIMEOUT:number = 60000
-const HTTP_ENDPOINT_ONION_REGEX = new RegExp('(?:https?:\/\/)?(?:www)?(\S*?\.onion)(\/[-\w]*)*')
-const WS_ENDPOINT_ONION_REGEX = new RegExp('(?:wss?:\/\/)?(?:www)?(\S*?\.onion)(\/[-\w]*)*')
+const HOST_ONION_REGEX = new RegExp('(\S*?\.onion)$');
+const WS_ENDPOINT_ONION_REGEX =  new RegExp('(?:wss?:\/\/)?(?:www)?(\S*?\.onion)(\/[-\w]*)*');
 
-export interface Proxies {
-    proxySocks: Proxy|undefined,
-    proxyTor: Proxy|undefined
-}
+export class ProxiesConf {
+  public proxySocksAddress: string|undefined
+  public proxyTorAddress: string|undefined
+  public alwaysUseTor: boolean|undefined
 
-export interface ProxyConf {
-    proxySocksAddress: string|undefined,
-    proxyTorAddress: string|undefined,
-    alwaysUseTor: boolean|undefined,
-    proxies: Proxies|undefined
-}
-
-export class Proxy {
-  private agent: any
-  private url:string
-
-  constructor(proxy:string, type:string = "socks", private timeout:number = DEFAULT_PROXY_TIMEOUT) {
-    if (type === "socks") {
-      this.agent = SocksProxyAgent("socks://"+proxy)
-      this.url = "socks://"+proxy
-    }
-    else {
-      this.agent = undefined  
-      this.url = ""
-    }
+  constructor () {
+    this.proxySocksAddress = undefined
+    this.proxyTorAddress = undefined
+    this.alwaysUseTor = undefined
   }
 
-  getAgent() {
-    return this.agent;
+  static canReachTorEndpoint(proxyConf: ProxiesConf|undefined):boolean {
+    return (proxyConf !== undefined && (proxyConf.alwaysUseTor === true || (proxyConf.proxyTorAddress !== undefined) ) )
   }
 
-  getUrl() {
-    return this.url;
+  static httpProxy(url:string, proxyConf: ProxiesConf|undefined):string|undefined {
+    return ProxiesConf.chooseProxyAgent(url, proxyConf, HOST_ONION_REGEX)
   }
 
-  getTimeout() {
-    return this.timeout;
+  static wsProxy(address:string, proxyConf: ProxiesConf|undefined):string|undefined {
+    return ProxiesConf.chooseProxyAgent(address, proxyConf, WS_ENDPOINT_ONION_REGEX)
   }
 
-  static defaultConf():ProxyConf {
-    return {
-        proxySocksAddress: undefined,
-        proxyTorAddress: undefined,
-        alwaysUseTor: undefined,
-        proxies: undefined
-    }
-  }
-
-  static canReachTorEndpoint(proxyConf: ProxyConf|undefined):boolean {
-    return (proxyConf !== undefined && (proxyConf.alwaysUseTor === true || (proxyConf.proxies !== undefined && proxyConf.proxies.proxyTor !== undefined) ) )
-  }
-
-  static createProxies(proxyConf: ProxyConf|undefined) : Proxies|undefined
-  {
+  private static chooseProxyAgent(address:string, proxyConf: ProxiesConf|undefined,  onionRegex:RegExp):string|undefined {
     if (proxyConf !== undefined) {
-      return  {
-        proxySocks: (proxyConf.proxySocksAddress !== undefined) ? new Proxy(proxyConf.proxySocksAddress, "socks"):undefined,
-        proxyTor: (proxyConf.proxyTorAddress !== undefined) ? new Proxy(proxyConf.proxyTorAddress, "socks", TOR_PROXY_TIMEOUT):undefined
+      if ( proxyConf.proxyTorAddress !== undefined && (proxyConf.alwaysUseTor || address.match(onionRegex)))
+      {
+          return proxyConf.proxyTorAddress
       }
-    } else {
-        return undefined
-    }
-  }
-
-  static httpProxy(url:string, proxyConf: ProxyConf|undefined) {
-    return Proxy.chooseProxy(url, proxyConf, HTTP_ENDPOINT_ONION_REGEX)
-  }
-
-  static wsProxy(address:string, proxyConf: ProxyConf|undefined, mySelf:boolean = false) {
-    return Proxy.chooseProxy(address, proxyConf, WS_ENDPOINT_ONION_REGEX, mySelf)
-  }
-
-  private static chooseProxy(address:string, proxyConf: ProxyConf|undefined,  onionRegex:RegExp, mySelf:boolean = false): Proxy|undefined {
-    if (proxyConf !== undefined) {
-        if (proxyConf.proxies === undefined) {
-            proxyConf.proxies = Proxy.createProxies(proxyConf)
-        }
-        if (proxyConf.proxies !== undefined) {
-            if ( proxyConf.proxies.proxyTor !== undefined && proxyConf.proxies.proxyTor.agent !== undefined && (proxyConf.alwaysUseTor || address.match(onionRegex)) && !mySelf )
-            {
-                return proxyConf.proxies.proxyTor
-            }
-            else if (proxyConf.proxies.proxySocks !== undefined && proxyConf.proxies.proxySocks.agent !== undefined) {
-                return proxyConf.proxies.proxySocks
-            }
-        }
+      else if (proxyConf.proxySocksAddress !== undefined) {
+          return proxyConf.proxySocksAddress
+      }
     }
     return undefined
   }

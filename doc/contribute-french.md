@@ -294,7 +294,7 @@ Duniter a besoin d'une configuration minimale pour fonctionner, résumable en 2 
 
 #### Configuration automatique avec `config`
 
-Pour obtenir ces 2 éléments, le plus simple dans est d'utiliser la commande `config` avec l'option `--autoconf` qui tente de résoudre par elle-même ces 2 paramètres :
+Pour obtenir ces 2 éléments, le plus simple est d'utiliser la commande `config` avec l'option `--autoconf` qui tente de résoudre par elle-même ces 2 paramètres :
 
 * la configuration réseau est automatiquement détectée
 * une paire de clés cryptographiques est générée aléatoirement

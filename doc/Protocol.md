@@ -2591,7 +2591,7 @@ If `reduce(GLOBAL_CINDEX[issuer=CERT.issuer,receiver=CERT.receiver,created_on=CE
 
 ###### BR_G93 - Membership expiry
 
-For each `REDUCE_BY(GLOBAL_MINDEX[expires_on<=HEAD.medianTime], 'pub') as POTENTIAL` then consider `REDUCE(GLOBAL_MINDEX[pub=POTENTIAL.pub]) AS MS`.
+For each `REDUCE_BY(GLOBAL_MINDEX[expires_on<=HEAD.medianTime AND revokes_on>HEAD.medianTime], 'pub') as POTENTIAL` then consider `REDUCE(GLOBAL_MINDEX[pub=POTENTIAL.pub]) AS MS`.
 
 If `MS.expired_on == null OR MS.expired_on == 0`, add a new LOCAL_MINDEX entry:
 

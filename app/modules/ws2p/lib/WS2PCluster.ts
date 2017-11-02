@@ -556,11 +556,7 @@ export class WS2PCluster {
     let accept = priorityKeys.indexOf(pub) !== -1
     if (!accept && connectedPubkeys.indexOf(pub) === -1) {
       // Do we have room?
-      if (this.isThisNode(pub, targetWS2PUID)) {
-        // We do not connect to local host
-        return false
-      }
-      else if (getConcurrentConnexionsCount() < maxConcurrentConnexionsSize) {
+      if (getConcurrentConnexionsCount() < maxConcurrentConnexionsSize) {
         // Yes: just connect to it
         accept = true
       }
@@ -597,10 +593,6 @@ export class WS2PCluster {
       }
     }
     return accept
-  }
-
-  isThisNode(pub:string, uuid:string) {
-    return !!(this.server.conf.pair.pub === pub && this.server.conf.ws2p && this.server.conf.ws2p.uuid === uuid)
   }
 
   isSiblingNode(pub:string, uuid:string) {

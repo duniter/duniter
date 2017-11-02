@@ -376,7 +376,7 @@ export class WS2PCluster {
             // Check if already connected to the pubkey (in any way: server or client)
             const connectedPubkeys = this.getConnectedPubkeys()
             const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes || []), ws2pEnpoint.uuid)
-            if (shouldAccept) {
+            if (shouldAccept && (!this.server.conf.ws2p || ws2pEnpoint.uuid !== this.server.conf.ws2p.uuid)) {
               await this.connectToRemoteWS(ws2pEnpoint.host, ws2pEnpoint.port, ws2pEnpoint.path, this.messageHandler, peer.pubkey)
               await this.trimClientConnections()
             }

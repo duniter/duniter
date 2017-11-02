@@ -372,7 +372,10 @@ export class WS2PCluster {
       const api = p.getWS2P(imCanReachTorEndpoint)
       if (api) {
         try {
-          await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
+          // We do not connect to local host
+          if (!this.server.conf.ws2p || api.uuid !== this.server.conf.ws2p.uuid) {
+            await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
+          }
         } catch (e) {
           this.server.logger.debug('WS2P: init: failed connection')
         }

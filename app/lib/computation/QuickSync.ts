@@ -126,7 +126,7 @@ export class QuickSynchronizer {
 
         // Remember expiration dates
         for (const entry of index) {
-          if (entry.op === 'CREATE' && (entry.expires_on || entry.revokes_on)) {
+          if (entry.expires_on || entry.revokes_on) {
             sync_expires.push(entry.expires_on || entry.revokes_on);
           }
         }

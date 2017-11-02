@@ -373,7 +373,7 @@ export class WS2PCluster {
       if (api) {
         try {
           // We do not connect to local host
-          if (!this.server.conf.ws2p || api.uuid !== this.server.conf.ws2p.uuid) {
+          if (!this.server.conf.ws2p || api.uuid !== this.server.conf.ws2p.uuid || p.pubkey !== this.server.conf.pair.pub || api.uuid === '11111111') {
             await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
           }
         } catch (e) {
@@ -401,7 +401,7 @@ export class WS2PCluster {
             // Check if already connected to the pubkey (in any way: server or client)
             const connectedPubkeys = this.getConnectedPubkeys()
             const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes || []), ws2pEnpoint.uuid)
-            if (shouldAccept) {
+            if (shouldAccept && (!this.server.conf.ws2p || ws2pEnpoint.uuid !== this.server.conf.ws2p.uuid || peer.pubkey !== this.server.conf.pair.pub || ws2pEnpoint.uuid === '11111111')) {
               await this.connectToRemoteWS(ws2pEnpoint.host, ws2pEnpoint.port, ws2pEnpoint.path, this.messageHandler, peer.pubkey)
               await this.trimClientConnections()
             }
@@ -581,9 +581,8 @@ export class WS2PCluster {
     let accept = priorityKeys.indexOf(pub) !== -1
     if (!accept && connectedPubkeys.indexOf(pub) === -1) {
       // Do we have room?
-      if (this.isThisNode(pub, targetWS2PUID)) {
-        // We do not connect to local host
-        return false
+      if (this.server.conf.pair.pub === pub && this.server.conf.ws2p && this.server.conf.ws2p.uuid === targetWS2PUID) {
+        accept = false
       }
       else if (getConcurrentConnexionsCount() < maxConcurrentConnexionsSize) {
         // Yes: just connect to it
@@ -622,10 +621,6 @@ export class WS2PCluster {
       }
     }
     return accept
-  }
-
-  isThisNode(pub:string, uuid:string) {
-    return !!(this.server.conf.pair.pub === pub && this.server.conf.ws2p && this.server.conf.ws2p.uuid === uuid)
   }
 
   isSiblingNode(pub:string, uuid:string) {

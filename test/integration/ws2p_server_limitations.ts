@@ -9,7 +9,6 @@ import {
 } from "./tools/toolbox"
 import {WS2PCluster} from "../../app/modules/ws2p/lib/WS2PCluster"
 import {WS2PConstants} from "../../app/modules/ws2p/lib/constants"
-import {hashf} from "../../app/lib/common";
 
 const assert = require('assert')
 
@@ -116,7 +115,7 @@ describe("WS2P server limitations", function() {
     const p1 = await s1.getPeer()
     assert.deepEqual(p1.endpoints, [
       'BASIC_MERKLED_API 127.0.0.1 ' + portBMA1,
-      'WS2P '+hashf(catKeyring.pub).slice(0, 8).toUpperCase()+' 127.0.0.1 ' + portWS1
+      'WS2P 11111111 127.0.0.1 ' + portWS1
     ])
     await s2.writePeer(p1)
     await (s1._server.ws2pCluster as WS2PCluster).startCrawling(true)
@@ -209,7 +208,7 @@ describe("WS2P server limitations", function() {
     // A server
     conf1.ws2p = {
       upnp: false,
-      uuid:  hashf(keyring.pub).slice(0, 8).toUpperCase(),
+      uuid: '11111111',
       host: '127.0.0.1',
       port: portWS,
       remotehost: '127.0.0.1',
@@ -217,7 +216,7 @@ describe("WS2P server limitations", function() {
       privilegedNodes: []
     }
     const server = simpleTestingServer(conf1)
-    server._server.addEndpointsDefinitions(async () => 'WS2P '+conf1.ws2p.uuid+' 127.0.0.1 ' + portWS)
+    server._server.addEndpointsDefinitions(async () => 'WS2P 11111111 127.0.0.1 ' + portWS)
     return { server, portWS, portBMA }
   }
 })

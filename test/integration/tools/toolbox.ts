@@ -697,6 +697,7 @@ export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promis
 
 export function simpleTestingConf(now = 1500000000, pair:{ pub:string, sec:string }): any {
   return {
+    bmaWithCrawler: true,
     pair,
     nbCores: 1,
     udTime0: now,

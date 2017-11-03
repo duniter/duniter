@@ -6,9 +6,10 @@ export const WS2PConstants = {
   WS2P_PORTS_END: 20999,
   WS2P_UPNP_INTERVAL: 300,
 
-  CONNEXION_TIMEOUT: 10000,
-  REQUEST_TIMEOUT: 10000,
-  PROXY_TIMEOUT: 30000,
+  CONNEXION_TIMEOUT: 15000,
+  REQUEST_TIMEOUT: 15000,
+  CONNEXION_TOR_TIMEOUT: 30000,
+  REQUEST_TOR_TIMEOUT: 30000,
   RECONNEXION_INTERVAL_IN_SEC: 60 * 10, // 10 minutes
 
   BLOCK_PULLING_INTERVAL: 300 * 2,    // 10 minutes
@@ -38,7 +39,8 @@ export const WS2PConstants = {
   + '(' + CommonConstants.FORMATS.POW_PREFIX + ')'
   + '$'),
 
-  HOST_ONION_REGEX: new RegExp('(\S*?\.onion)$'),
+  HOST_ONION_REGEX: new RegExp('^(?:www\.)?([0-9a-z]{16}\.onion)$'),
+  FULL_ADDRESS_ONION_REGEX: new RegExp('^(?:wss?:\/\/)(?:www\.)?([0-9a-z]{16}\.onion)(:[0-9]+)?(\/[-\w]*)*'),
 
   HEADS_SPREAD_TIMEOUT: 100 // Wait 100ms before sending a bunch of signed heads
 }

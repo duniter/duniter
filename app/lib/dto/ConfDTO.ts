@@ -47,7 +47,7 @@ export interface KeypairConfDTO {
 }
 
 export interface NetworkConfDTO {
-  proxyConf: ProxiesConf|undefined
+  proxiesConf: ProxiesConf|undefined
   nobma: boolean
   remoteport: number
   remotehost: string|null
@@ -136,7 +136,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
     public homename: string,
     public memory: boolean,
     public nobma: boolean,
-    public proxyConf: ProxiesConf|undefined,
+    public proxiesConf: ProxiesConf|undefined,
     public ws2p?: {
       privateAccess: boolean
       publicAccess: boolean

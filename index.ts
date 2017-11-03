@@ -449,10 +449,10 @@ function commandLineConf(program:any, conf:any = {}) {
       port: program.port,
     },
     proxies: {
-      proxySocks: program.proxySocks,
-      proxyTor: program.proxyTor,
-      torAlways: program.torAlways,
-      torMixed: program.torMixed,
+      proxySocks: program.socksProxy,
+      proxyTor: program.torProxy,
+      reachingClearEp: program.reachingClearEp,
+      forceTor: program.forceTor,
       rmProxies: program.rmProxies
     },
     logs: {
@@ -467,20 +467,25 @@ function commandLineConf(program:any, conf:any = {}) {
     timeout: program.timeout
   };
 
-  // Declare proxyConf
-  if (cli.proxies.proxySocks || cli.proxies.proxyTor || cli.proxies.torAlways || cli.proxies.torMixed || cli.proxies.rmProxies) {
-    conf.proxyConf = new ProxiesConf()
+  // Declare and update proxiesConf
+  if (cli.proxies.proxySocks || cli.proxies.proxyTor || cli.proxies.reachingClearEp || cli.proxies.forceTor || cli.proxies.rmProxies) {
+    conf.proxiesConf = new ProxiesConf()
+    if (cli.proxies.proxySocks) conf.proxiesConf.proxySocksAddress = cli.proxies.proxySocks;
+    if (cli.proxies.proxyTor)   conf.proxiesConf.proxyTorAddress = cli.proxies.proxyTor;
+    if (cli.proxies.reachingClearEp)  {
+      switch (cli.proxies.reachingClearEp) {
+        case 'tor': conf.proxiesConf.reachingClearEp = 'tor'; break;
+        case 'none': conf.proxiesConf.reachingClearEp = 'none'; break;
+      }
+    }
+    if (cli.proxies.forceTor) conf.proxiesConf.forceTor = true
   }
 
-  // Update conf
+  // Update the rest of the conf
   if (cli.currency)                             conf.currency = cli.currency;
   if (cli.server.port)                          conf.port = cli.server.port;
   if (cli.cpu)                                  conf.cpu = Math.max(0.01, Math.min(1.0, cli.cpu));
   if (cli.prefix)                               conf.prefix = Math.max(Constants.MIN_PEER_ID, Math.min(Constants.MAX_PEER_ID, cli.prefix));
-  if (cli.proxies.proxySocks && conf.proxyConf) conf.proxyConf.proxySocksAddress = cli.proxies.proxySocks;
-  if (cli.proxies.proxyTor && conf.proxyConf)   conf.proxyConf.proxyTorAddress = cli.proxies.proxyTor;
-  if (cli.proxies.torAlways && conf.proxyConf)  conf.proxyConf.alwaysUseTor = true;
-  if (cli.proxies.torMixed && conf.proxyConf)   conf.proxyConf.alwaysUseTor = false;
   if (cli.logs.http)                            conf.httplogs = true;
   if (cli.logs.nohttp)                          conf.httplogs = false;
   if (cli.isolate)                              conf.isolate = cli.isolate;

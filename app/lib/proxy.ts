@@ -1,39 +1,51 @@
 const SocksProxyAgent = require('socks-proxy-agent');
 
-const HOST_ONION_REGEX = new RegExp('(\S*?\.onion)$');
-const WS_ENDPOINT_ONION_REGEX =  new RegExp('(?:wss?:\/\/)?(?:www)?(\S*?\.onion)(\/[-\w]*)*');
+const HOST_ONION_REGEX = new RegExp('(?:www\.)?([0-9a-z]{16}?\.onion)$');
+const WS_FULL_ADDRESS_ONION_REGEX =  new RegExp('^(?:wss?:\/\/)(?:www\.)?([0-9a-z]{16}\.onion)(:[0-9]+)?(\/[-\w]*)*');
 
 export class ProxiesConf {
   public proxySocksAddress: string|undefined
   public proxyTorAddress: string|undefined
-  public alwaysUseTor: boolean|undefined
+  public reachingClearEp: string
+  public forceTor: boolean
 
   constructor () {
     this.proxySocksAddress = undefined
     this.proxyTorAddress = undefined
-    this.alwaysUseTor = undefined
+    this.reachingClearEp = 'clear'
+    this.forceTor = false
   }
 
-  static canReachTorEndpoint(proxyConf: ProxiesConf|undefined):boolean {
-    return (proxyConf !== undefined && (proxyConf.alwaysUseTor === true || (proxyConf.proxyTorAddress !== undefined) ) )
+  static canReachClearEndpoint(proxiesConf: ProxiesConf|undefined):boolean {
+    return (proxiesConf === undefined || proxiesConf.reachingClearEp !== 'none')
   }
 
-  static httpProxy(url:string, proxyConf: ProxiesConf|undefined):string|undefined {
-    return ProxiesConf.chooseProxyAgent(url, proxyConf, HOST_ONION_REGEX)
+  static canReachTorEndpoint(proxiesConf: ProxiesConf|undefined):boolean {
+    return (proxiesConf !== undefined && (proxiesConf.forceTor || proxiesConf.proxyTorAddress !== undefined) )
   }
 
-  static wsProxy(address:string, proxyConf: ProxiesConf|undefined):string|undefined {
-    return ProxiesConf.chooseProxyAgent(address, proxyConf, WS_ENDPOINT_ONION_REGEX)
+  static httpProxy(url:string, proxiesConf: ProxiesConf|undefined):string|undefined {
+    return ProxiesConf.chooseProxyAgent(url, proxiesConf, HOST_ONION_REGEX)
   }
 
-  private static chooseProxyAgent(address:string, proxyConf: ProxiesConf|undefined,  onionRegex:RegExp):string|undefined {
-    if (proxyConf !== undefined) {
-      if ( proxyConf.proxyTorAddress !== undefined && (proxyConf.alwaysUseTor || address.match(onionRegex)))
-      {
-          return proxyConf.proxyTorAddress
-      }
-      else if (proxyConf.proxySocksAddress !== undefined) {
-          return proxyConf.proxySocksAddress
+  static wsProxy(address:string, proxiesConf: ProxiesConf|undefined):string|undefined {
+    return ProxiesConf.chooseProxyAgent(address, proxiesConf, WS_FULL_ADDRESS_ONION_REGEX)
+  }
+
+  private static chooseProxyAgent(address:string, proxiesConf: ProxiesConf|undefined,  onionRegex:RegExp):string|undefined {
+    if (proxiesConf !== undefined) {
+      if (address.match(onionRegex)) {
+        if (ProxiesConf.canReachTorEndpoint(proxiesConf)) {
+          return proxiesConf.proxyTorAddress
+        }
+      } else {
+        if (ProxiesConf.canReachClearEndpoint(proxiesConf)) {
+          if (proxiesConf.reachingClearEp == 'tor') {
+            return proxiesConf.proxyTorAddress
+          } else {
+            return proxiesConf.proxySocksAddress
+          }
+        }
       }
     }
     return undefined

@@ -332,12 +332,12 @@ export class WS2PCluster {
     const prefered = ((this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) || []).slice() // Copy
     // Our key is also a prefered one, so we connect to our siblings
     prefered.push(this.server.conf.pair.pub)
-    const imCanReachTorEndpoint = ProxiesConf.canReachTorEndpoint(this.server.conf.proxyConf)
+    const canReachTorEndpoint = ProxiesConf.canReachTorEndpoint(this.server.conf.proxiesConf)
     peers.sort((a, b) => {
       const aIsPrefered = prefered.indexOf(a.pubkey) !== -1
       const bIsPrefered = prefered.indexOf(b.pubkey) !== -1
 
-      if (imCanReachTorEndpoint) {
+      if (canReachTorEndpoint) {
         const aAtWs2pTorEnpoint = a.endpoints.filter(function (element) { return element.match(CommonConstants.WS2PTOR_REGEXP); }).length > 0
         const bAtWs2pTorEnpoint = b.endpoints.filter(function (element) { return element.match(CommonConstants.WS2PTOR_REGEXP); }).length > 0
 
@@ -367,9 +367,10 @@ export class WS2PCluster {
       }
     })
     let i = 0
+    const canReachClearEndpoint = ProxiesConf.canReachClearEndpoint(this.server.conf.proxiesConf)
     while (i < peers.length && this.clientsCount() < this.maxLevel1Size) {
       const p = peers[i]
-      const api = p.getWS2P(imCanReachTorEndpoint)
+      const api = p.getWS2P(canReachTorEndpoint, canReachClearEndpoint)
       if (api) {
         try {
           // We do not connect to local host
@@ -396,7 +397,7 @@ export class WS2PCluster {
         // New peer
         if (data.endpoints) {
           const peer = PeerDTO.fromJSONObject(data)
-          const ws2pEnpoint = peer.getWS2P()
+          const ws2pEnpoint = peer.getWS2P(ProxiesConf.canReachTorEndpoint(this.server.conf.proxiesConf), ProxiesConf.canReachClearEndpoint(this.server.conf.proxiesConf))
           if (ws2pEnpoint) {
             // Check if already connected to the pubkey (in any way: server or client)
             const connectedPubkeys = this.getConnectedPubkeys()

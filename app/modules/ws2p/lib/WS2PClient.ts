@@ -20,7 +20,7 @@ export class WS2PClient {
       messageHandler,
       new WS2PPubkeyLocalAuth(server.conf.currency , k2, allowKey),
       new WS2PPubkeyRemoteAuth(server.conf.currency, k2, allowKey),
-      ProxiesConf.wsProxy(fullEndpointAddress, server.conf.proxyConf),
+      ProxiesConf.wsProxy(fullEndpointAddress, server.conf.proxiesConf),
       {
         connectionTimeout: WS2PConstants.REQUEST_TIMEOUT,
         requestTimeout: WS2PConstants.REQUEST_TIMEOUT

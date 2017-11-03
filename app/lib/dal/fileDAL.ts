@@ -845,7 +845,7 @@ export class FileDAL {
       const savedConf = await this.confDAL.loadConf();
       const savedProxyConf = _(savedConf.proxyConf).extend({});
       conf = _(savedConf).extend(overrideConf || {});
-      if (overrideConf.proxyConf !== undefined) {} else {
+      if (overrideConf.proxiesConf !== undefined) {} else {
         conf.proxyConf = _(savedProxyConf).extend({});
       }
     }

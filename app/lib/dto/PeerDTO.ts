@@ -94,11 +94,11 @@ export class PeerDTO implements Cloneable {
     return bma || {};
   }
 
-  getWS2P(tor:boolean = false) {
+  getWS2P(canReachTorEp:boolean, canReachClearEp:boolean) {
     let api:{ uuid:string, host:string, port:number, path:string }|null = null
-    const endpointRegexp = (tor) ? CommonConstants.WS2PTOR_REGEXP:CommonConstants.WS2P_REGEXP
+    const endpointRegexp = (canReachTorEp) ? CommonConstants.WS2PTOR_REGEXP:CommonConstants.WS2P_REGEXP
     for (const ep of this.endpoints) {
-      if (tor) {
+      if (canReachTorEp) {
         const matches:any = ep.match(CommonConstants.WS2PTOR_REGEXP)
         if (matches) {
           return {
@@ -109,13 +109,15 @@ export class PeerDTO implements Cloneable {
           }
         }
       }
-      const matches:any = !api && ep.match(CommonConstants.WS2P_REGEXP)
-      if (matches) {
-        api = {
-          uuid: matches[1],
-          host: matches[2] || '',
-          port: parseInt(matches[3]) || 0,
-          path: matches[4]
+      if (canReachClearEp) {
+        const matches:any = !api && ep.match(CommonConstants.WS2P_REGEXP)
+        if (matches) {
+          api = {
+            uuid: matches[1],
+            host: matches[2] || '',
+            port: parseInt(matches[3]) || 0,
+            path: matches[4]
+          }
         }
       }
     }

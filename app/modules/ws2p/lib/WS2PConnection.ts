@@ -278,10 +278,10 @@ export class WS2PConnection {
       requestTimeout: REQUEST_TIMEOUT_VALUE
     },
     expectedPub:string = "") {
-      if (proxySocksAddress !== undefined) {
+      if (address.match(WS2PConstants.FULL_ADDRESS_ONION_REGEX)) {
         options = {
-          connectionTimeout: WS2PConstants.PROXY_TIMEOUT,
-          requestTimeout: WS2PConstants.PROXY_TIMEOUT
+          connectionTimeout: WS2PConstants.CONNEXION_TOR_TIMEOUT,
+          requestTimeout: WS2PConstants.REQUEST_TOR_TIMEOUT
         }
       }
       const websocket = (proxySocksAddress !== undefined) ? new ws(address, { agent: SocksProxyAgent("socks://"+proxySocksAddress) }):new ws(address)

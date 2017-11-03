@@ -149,8 +149,7 @@ export class Server extends stream.Duplex implements HookableServer {
     logger.debug('Loading conf...');
     this.conf = await this.dal.loadConf(this.overrideConf, useDefaultConf)
     // Default values
-    this.conf.proxyConf        = this.conf.proxyConf === undefined ?         new ProxiesConf()                           : this.conf.proxyConf
-    this.conf.proxyConf.alwaysUseTor = this.conf.proxyConf.alwaysUseTor === undefined ? false                 : this.conf.proxyConf.alwaysUseTor
+    this.conf.proxiesConf      = this.conf.proxiesConf === undefined ?       new ProxiesConf()                            : this.conf.proxiesConf
     this.conf.remoteipv6       = this.conf.remoteipv6 === undefined ?        this.conf.ipv6                               : this.conf.remoteipv6
     this.conf.remoteport       = this.conf.remoteport === undefined ?        this.conf.port                               : this.conf.remoteport
     this.conf.c                = this.conf.c === undefined ?                 constants.CONTRACT.DEFAULT.C                 : this.conf.c

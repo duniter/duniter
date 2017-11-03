@@ -260,6 +260,9 @@ export class BMAPI extends stream.Transform {
 function getEndpoint(theConf:NetworkConfDTO) {
   let endpoint = 'BASIC_MERKLED_API';
   if (theConf.remotehost) {
+    if (theConf.remotehost.match(BMAConstants.HOST_ONION_REGEX)) {
+      endpoint = 'BMATOR';
+    }
     endpoint += ' ' + theConf.remotehost;
   }
   if (theConf.remoteipv4) {

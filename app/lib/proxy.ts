@@ -1,3 +1,5 @@
+import {CommonConstants} from "./common-libs/constants"
+
 const SocksProxyAgent = require('socks-proxy-agent');
 
 const HOST_ONION_REGEX = new RegExp('(?:www\.)?([0-9a-z]{16}?\.onion)$');

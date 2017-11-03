@@ -39,8 +39,8 @@ export const WS2PConstants = {
   + '(' + CommonConstants.FORMATS.POW_PREFIX + ')'
   + '$'),
 
-  HOST_ONION_REGEX: new RegExp('^(?:www\.)?([0-9a-z]{16}\.onion)$'),
-  FULL_ADDRESS_ONION_REGEX: new RegExp('^(?:wss?:\/\/)(?:www\.)?([0-9a-z]{16}\.onion)(:[0-9]+)?(\/[-\w]*)*'),
+  HOST_ONION_REGEX: CommonConstants.HOST_ONION_REGEX,
+  FULL_ADDRESS_ONION_REGEX: CommonConstants.WS_FULL_ADDRESS_ONION_REGEX,
 
   HEADS_SPREAD_TIMEOUT: 100 // Wait 100ms before sending a bunch of signed heads
 }

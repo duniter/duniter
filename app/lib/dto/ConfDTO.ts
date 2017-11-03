@@ -49,6 +49,7 @@ export interface KeypairConfDTO {
 export interface NetworkConfDTO {
   proxiesConf: ProxiesConf|undefined
   nobma: boolean
+  bmaWithCrawler: boolean
   remoteport: number
   remotehost: string|null
   remoteipv4: string|null
@@ -136,6 +137,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
     public homename: string,
     public memory: boolean,
     public nobma: boolean,
+    public bmaWithCrawler: boolean,
     public proxiesConf: ProxiesConf|undefined,
     public ws2p?: {
       privateAccess: boolean
@@ -155,7 +157,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
 ) {}
 
   static mock() {
-    return new ConfDTO("", "", [], [], 0, 0, 0.6, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", 0, "", "", null, false, "", true, true, undefined)
+    return new ConfDTO("", "", [], [], 0, 0, 0.6, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", 0, "", "", null, false, "", true, false, true, undefined)
   }
 
   static defaultConf() {

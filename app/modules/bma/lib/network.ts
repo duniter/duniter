@@ -339,6 +339,7 @@ async function upnpConf (noupnp:boolean, logger:any) {
   const conf:NetworkConfDTO = {
     proxiesConf: undefined,
     nobma: true,
+    bmaWithCrawler: false,
     port: privatePort,
     ipv4: '127.0.0.1',
     ipv6: '::1',

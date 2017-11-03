@@ -44,7 +44,7 @@ class Router extends stream.Transform {
   };
 
   async startService() {
-    if (this.server.conf.nobma) {
+    if (this.server.conf.nobma || !this.server.conf.bmaWithCrawler) {
       // Disable BMA
       return Promise.resolve()
     }
@@ -69,7 +69,7 @@ class Router extends stream.Transform {
   }
 
   async stopService() {
-    if (this.server.conf.nobma) {
+    if (this.server.conf.nobma || !this.server.conf.bmaWithCrawler) {
       // Disable BMA
       return Promise.resolve()
     }

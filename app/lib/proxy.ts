@@ -2,9 +2,6 @@ import {CommonConstants} from "./common-libs/constants"
 
 const SocksProxyAgent = require('socks-proxy-agent');
 
-const HOST_ONION_REGEX = new RegExp('(?:www\.)?([0-9a-z]{16}?\.onion)$');
-const WS_FULL_ADDRESS_ONION_REGEX =  new RegExp('^(?:wss?:\/\/)(?:www\.)?([0-9a-z]{16}\.onion)(:[0-9]+)?(\/[-\w]*)*');
-
 export class ProxiesConf {
   public proxySocksAddress: string|undefined
   public proxyTorAddress: string|undefined
@@ -27,11 +24,11 @@ export class ProxiesConf {
   }
 
   static httpProxy(url:string, proxiesConf: ProxiesConf|undefined):string|undefined {
-    return ProxiesConf.chooseProxyAgent(url, proxiesConf, HOST_ONION_REGEX)
+    return ProxiesConf.chooseProxyAgent(url, proxiesConf, CommonConstants.HOST_ONION_REGEX)
   }
 
   static wsProxy(address:string, proxiesConf: ProxiesConf|undefined):string|undefined {
-    return ProxiesConf.chooseProxyAgent(address, proxiesConf, WS_FULL_ADDRESS_ONION_REGEX)
+    return ProxiesConf.chooseProxyAgent(address, proxiesConf, CommonConstants.WS_FULL_ADDRESS_ONION_REGEX)
   }
 
   private static chooseProxyAgent(address:string, proxiesConf: ProxiesConf|undefined,  onionRegex:RegExp):string|undefined {

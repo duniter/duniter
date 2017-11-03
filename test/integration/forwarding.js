@@ -19,7 +19,7 @@ describe("Forwarding", function() {
 
   describe("Nodes", function() {
 
-    const common = { currency: 'bb', nobma: false, ws2p: { upnp: false }, ipv4: '127.0.0.1', remoteipv4: '127.0.0.1', rootoffset: 0, sigQty: 1 };
+    const common = { currency: 'bb', nobma: false, bmaWithCrawler:true, ws2p: { upnp: false }, ipv4: '127.0.0.1', remoteipv4: '127.0.0.1', rootoffset: 0, sigQty: 1 };
 
     const node1 = node('db_1', _({ upnp: false, httplogs: false, port: 9600, remoteport: 9600, pair: { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'} }).extend(common));
     const node2 = node('db_2', _({ upnp: false, httplogs: false, port: 9601, remoteport: 9601, pair: { pub: 'G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU', sec: '58LDg8QLmF5pv6Dn9h7X4yFKfMTdP8fdAiWVcyDoTRJu454fwRihCLULH4MW37zncsg4ruoTGJPZneWk22QmG1w4'} }).extend(common));

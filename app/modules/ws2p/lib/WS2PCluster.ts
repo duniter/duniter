@@ -291,7 +291,7 @@ export class WS2PCluster {
 
   async connectToRemoteWS(host: string, port: number, path:string, messageHandler:WS2PMessageHandler, expectedPub:string, ws2pEndpointUUID:string = ""): Promise<WS2PConnection> {
     const uuid = nuuid.v4()
-    let pub = "--------"
+    let pub = expectedPub.slice(0, 8)
     const api:string = (host.match(WS2PConstants.HOST_ONION_REGEX) !== null) ? 'WS2PTOR':'WS2P'
     try {
       const fullEndpointAddress = WS2PCluster.getFullAddress(host, port, path)
@@ -463,13 +463,14 @@ export class WS2PCluster {
   }
 
   private sayHeadChangedTo(number:number, hash:string) {
+    const api = (this.server.conf.ws2p && this.server.conf.ws2p.remotehost && this.server.conf.ws2p.remotehost.match(WS2PConstants.HOST_ONION_REGEX)) ? 'WS2P':'WS2P'
     const key = new Key(this.server.conf.pair.pub, this.server.conf.pair.sec)
     const pub = key.publicKey
     const software = 'duniter'
     const softVersion = Package.getInstance().version
     const ws2pId = (this.server.conf.ws2p && this.server.conf.ws2p.uuid) || '00000000'
     const prefix = this.server.conf.prefix || Constants.DEFAULT_PEER_ID
-    const message = `WS2P:HEAD:1:${pub}:${number}-${hash}:${ws2pId}:${software}:${softVersion}:${prefix}`
+    const message = `${api}:HEAD:1:${pub}:${number}-${hash}:${ws2pId}:${software}:${softVersion}:${prefix}`
     const sig = key.signSync(message)
     return { sig, message, pub }
   }

@@ -30,7 +30,7 @@ export const WS2PConstants = {
     + CommonConstants.FORMATS.BLOCKSTAMP
     + '$'),
 
-  HEAD_V1_REGEXP: new RegExp('^WS2P(?:TOR)?:HEAD:1:'
+  HEAD_V1_REGEXP: new RegExp('^WS2P(?:O[CT][SAM])?(?:I[CT])?:HEAD:1:'
   + '(' + CommonConstants.FORMATS.PUBKEY + '):'
   + '(' + CommonConstants.FORMATS.BLOCKSTAMP + '):'
   + '(' + CommonConstants.FORMATS.WS2PID + '):'

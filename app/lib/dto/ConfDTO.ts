@@ -73,7 +73,9 @@ export interface WS2PConfDTO {
     maxPublic?:number
     maxPrivate?:number
     preferedNodes?: string[]
+    preferedOnly: boolean
     privilegedNodes?: string[]
+    privilegedOnly: boolean
   }
 }
 
@@ -145,7 +147,9 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
       port?: number
       host?: string
       preferedNodes?: string[]
+      preferedOnly: boolean
       privilegedNodes?: string[]
+      privilegedOnly: boolean
       maxPublic?:number
       maxPrivate?:number
     }

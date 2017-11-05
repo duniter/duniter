@@ -28,8 +28,10 @@ export const WS2PDependency = {
       { value: '--ws2p-nopublic',              desc: 'Disable WS2P Public access.' },
       { value: '--ws2p-prefered-add <pubkey>', desc: 'Add a prefered node to connect to through private access.' },
       { value: '--ws2p-prefered-rm  <pubkey>', desc: 'Remove prefered node.' },
+      { value: '--ws2p-prefered-only  <pubkey>', desc: 'Only connect to prefered node.' },
       { value: '--ws2p-privileged-add <pubkey>', desc: 'Add a privileged node to for our public access.' },
       { value: '--ws2p-privileged-rm <pubkey>',  desc: 'Remove a privileged.' },
+      { value: '--ws2p-privileged-only <pubkey>',  desc: 'Accept only connections from a privileged node.' },
     ],
 
     config: {
@@ -39,7 +41,9 @@ export const WS2PDependency = {
         conf.ws2p = conf.ws2p || {
           uuid: nuuid.v4().slice(0,8),
           privateAccess: true,
-          publicAccess: true
+          publicAccess: true,
+          preferedOnly: false,
+          privilegedOnly: false
         }
 
         // For config with missing value
@@ -73,6 +77,7 @@ export const WS2PDependency = {
             conf.ws2p.preferedNodes.splice(index, 1)
           }
         }
+        if (program.ws2pPreferedOnly !== undefined) conf.ws2p.preferedOnly = true
 
         // Privileged nodes
         if (program.ws2pPrivilegedAdd !== undefined) {
@@ -86,6 +91,7 @@ export const WS2PDependency = {
             conf.ws2p.privilegedNodes.splice(index, 1)
           }
         }
+        if (program.ws2pPrivilegedOnly !== undefined) conf.ws2p.privilegedOnly = true
 
         // Default value
         if (conf.ws2p.upnp === undefined || conf.ws2p.upnp === null) {

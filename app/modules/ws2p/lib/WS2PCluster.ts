@@ -265,7 +265,8 @@ export class WS2PCluster {
       await this.ws2pServer.close()
     }
     this.ws2pServer = await WS2PServer.bindOn(this.server, host, port, this.fifo, (pubkey:string, connectedPubkeys:string[]) => {
-      return this.acceptPubkey(pubkey, connectedPubkeys, () => this.servedCount(), this.maxLevel2Peers, (this.server.conf.ws2p && this.server.conf.ws2p.privilegedNodes || []))
+      const privilegedNodes = (this.server.conf.ws2p && this.server.conf.ws2p.privilegedNodes) ? this.server.conf.ws2p.privilegedNodes:[]
+      return this.acceptPubkey(pubkey, connectedPubkeys, () => this.servedCount(), this.maxLevel2Peers, privilegedNodes, (this.server.conf.ws2p && this.server.conf.ws2p.privilegedOnly || false))
     }, this.messageHandler)
     this.host = host
     this.port = port
@@ -295,7 +296,8 @@ export class WS2PCluster {
       const fullEndpointAddress = WS2PCluster.getFullAddress(host, port, path)
       const ws2pc = await WS2PClient.connectTo(this.server, fullEndpointAddress, messageHandler, expectedPub, (pub:string) => {
         const connectedPubkeys = this.getConnectedPubkeys()
-        return this.acceptPubkey(expectedPub, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes || []), ws2pEndpointUUID)
+        const preferedNodes = (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) ? this.server.conf.ws2p.preferedNodes:[]
+        return this.acceptPubkey(expectedPub, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, preferedNodes, (this.server.conf.ws2p && this.server.conf.ws2p.preferedOnly) || false, ws2pEndpointUUID)
       })
       this.ws2pClients[uuid] = ws2pc
       pub = ws2pc.connection.pubkey
@@ -375,7 +377,8 @@ export class WS2PCluster {
           if (ws2pEnpoint) {
             // Check if already connected to the pubkey (in any way: server or client)
             const connectedPubkeys = this.getConnectedPubkeys()
-            const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes || []), ws2pEnpoint.uuid)
+            const preferedNodes = (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) ? this.server.conf.ws2p.preferedNodes:[]
+            const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, preferedNodes, (this.server.conf.ws2p && this.server.conf.ws2p.preferedOnly) || false, ws2pEnpoint.uuid)
             if (shouldAccept && (!this.server.conf.ws2p || ws2pEnpoint.uuid !== this.server.conf.ws2p.uuid || peer.pubkey !== this.server.conf.pair.pub || ws2pEnpoint.uuid === '11111111')) {
               await this.connectToRemoteWS(ws2pEnpoint.host, ws2pEnpoint.port, ws2pEnpoint.path, this.messageHandler, peer.pubkey)
               await this.trimClientConnections()
@@ -546,6 +549,7 @@ export class WS2PCluster {
     getConcurrentConnexionsCount:()=>number,
     maxConcurrentConnexionsSize:number,
     priorityKeys:string[],
+    priorityKeysOnly:boolean,
     targetWS2PUID = ""
   ) {
     // We do not accept banned keys
@@ -554,7 +558,7 @@ export class WS2PCluster {
       return false
     }
     let accept = priorityKeys.indexOf(pub) !== -1
-    if (!accept && connectedPubkeys.indexOf(pub) === -1) {
+    if (!accept && !priorityKeysOnly && connectedPubkeys.indexOf(pub) === -1) {
       // Do we have room?
       if (this.server.conf.pair.pub === pub && this.server.conf.ws2p && this.server.conf.ws2p.uuid === targetWS2PUID) {
         accept = false

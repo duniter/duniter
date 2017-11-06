@@ -24,6 +24,7 @@ import {PeerDTO} from "./app/lib/dto/PeerDTO"
 import {OtherConstants} from "./app/lib/other_constants"
 import {WS2PCluster} from "./app/modules/ws2p/lib/WS2PCluster"
 import {DBBlock} from "./app/lib/db/DBBlock"
+import { ProxiesConf } from './app/lib/proxy';
 
 export interface HookableServer {
   generatorGetJoinData: (...args:any[]) => Promise<any>
@@ -148,6 +149,7 @@ export class Server extends stream.Duplex implements HookableServer {
     logger.debug('Loading conf...');
     this.conf = await this.dal.loadConf(this.overrideConf, useDefaultConf)
     // Default values
+    this.conf.proxiesConf      = this.conf.proxiesConf === undefined ?       new ProxiesConf()                            : this.conf.proxiesConf
     this.conf.remoteipv6       = this.conf.remoteipv6 === undefined ?        this.conf.ipv6                               : this.conf.remoteipv6
     this.conf.remoteport       = this.conf.remoteport === undefined ?        this.conf.port                               : this.conf.remoteport
     this.conf.c                = this.conf.c === undefined ?                 constants.CONTRACT.DEFAULT.C                 : this.conf.c

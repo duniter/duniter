@@ -1,7 +1,8 @@
 "use strict";
+import { WS2PConstants } from './lib/constants';
 import {ConfDTO, WS2PConfDTO} from "../../lib/dto/ConfDTO"
 import {Server} from "../../../server"
-import * as stream from "stream"
+import * as stream from 'stream';
 import {WS2PCluster} from "./lib/WS2PCluster"
 import {WS2PUpnp} from "./lib/ws2p-upnp"
 import {CommonConstants} from "../../lib/common-libs/constants"
@@ -146,7 +147,7 @@ export const WS2PDependency = {
             const peers = await server.dal.getWS2Peers()
             for (const p of peers) {
               for (const ep of p.endpoints) {
-                if (ep.match(/^WS2P /)) {
+                if (ep.match(/^WS2P/)) {
                   console.log(p.pubkey, ep)
                 }
               }
@@ -248,22 +249,29 @@ export class WS2PAPI extends stream.Transform {
     // If WS2P defined and enabled
     if (this.server.conf.ws2p !== undefined && (this.server.conf.ws2p.publicAccess || this.server.conf.ws2p.privateAccess))
     {
+      let endpointType = "WS2P"
       if (this.server.conf.upnp && this.upnpAPI) {
         const config = this.upnpAPI.getCurrentConfig()
-        return !config ? '' : ['WS2P', this.server.conf.ws2p.uuid, config.remotehost, config.port].join(' ')
+        if (config) {
+          if (config.remotehost.match(WS2PConstants.HOST_ONION_REGEX)) { endpointType += "TOR"; }
+          return [endpointType, this.server.conf.ws2p.uuid, config.remotehost, config.port].join(' ')
+        } else {
+          return ''
+        }
       }
       else if (this.server.conf.ws2p.uuid
         && this.server.conf.ws2p.remotehost
         && this.server.conf.ws2p.remoteport) {
-        let ep = ['WS2P',
-          this.server.conf.ws2p.uuid,
-          this.server.conf.ws2p.remotehost,
-          this.server.conf.ws2p.remoteport
-        ].join(' ')
-        if (this.server.conf.ws2p.remotepath) {
-          ep += ` ${this.server.conf.ws2p.remotepath}`
-        }
-        return ep
+          if (this.server.conf.ws2p.remotehost.match(WS2PConstants.HOST_ONION_REGEX)) { endpointType += "TOR"; }
+          let ep = [endpointType,
+            this.server.conf.ws2p.uuid,
+            this.server.conf.ws2p.remotehost,
+            this.server.conf.ws2p.remoteport
+          ].join(' ')
+          if (this.server.conf.ws2p.remotepath) {
+            ep += ` ${this.server.conf.ws2p.remotepath}`
+          }
+          return ep
       }
     }
     return ''

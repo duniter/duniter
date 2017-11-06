@@ -48,7 +48,7 @@ export class Crawler extends stream.Transform implements DuniterService {
   }
 
   startService() {
-    if (this.conf.nobma) {
+    if (this.conf.nobma || !this.conf.bmaWithCrawler) {
       return Promise.resolve()
     }
     return Promise.all([
@@ -60,7 +60,7 @@ export class Crawler extends stream.Transform implements DuniterService {
   }
 
   stopService() {
-    if (this.conf.nobma) {
+    if (this.conf.nobma || !this.conf.bmaWithCrawler) {
       return Promise.resolve()
     }
     return Promise.all([

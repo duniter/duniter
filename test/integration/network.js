@@ -11,6 +11,7 @@ const expectAnswer = httpTest.expectAnswer;
 
 const MEMORY_MODE = true;
 const commonConf = {
+  bmaWithCrawler: true,
   ipv4: '127.0.0.1',
   remoteipv4: '127.0.0.1',
   currency: 'bb',

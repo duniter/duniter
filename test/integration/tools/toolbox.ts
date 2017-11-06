@@ -170,7 +170,7 @@ export const fakeSyncServer = async (readBlocksMethod:any, readParticularBlockMe
     processRequest: () => { /* Does nothing */ }
   };
 
-  const fakeServer = await Network.createServersAndListen("Fake Duniter Server", new Server("", true, {}), [{
+  const fakeServer = await Network.createServersAndListen("Fake Duniter Server", new Server("", true, ConfDTO.mock()), [{
     ip: host,
     port: port
   }], NO_HTTP_LOGS, logger, NO_STATIC_PATH, (app:any, httpMethods:any) => {
@@ -226,6 +226,7 @@ export const NewTestingServer = (conf:any) => {
   const port = conf.port || PORT++
   const commonConf = {
     nobma: false,
+    bmaWithCrawler: true,
     port: port,
     ipv4: host,
     remoteipv4: host,
@@ -696,6 +697,7 @@ export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promis
 
 export function simpleTestingConf(now = 1500000000, pair:{ pub:string, sec:string }): any {
   return {
+    bmaWithCrawler: true,
     pair,
     nbCores: 1,
     udTime0: now,

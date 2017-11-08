@@ -17,6 +17,7 @@ import { CommonConstants } from '../../../lib/common-libs/constants';
 import { Package } from "../../../lib/common/package";
 import { Constants } from "../../prover/lib/constants";
 import { ProxiesConf } from '../../../lib/proxy';
+import { Keypair } from '../../../lib/dto/ConfDTO';
 
 const es = require('event-stream')
 const nuuid = require('node-uuid')
@@ -268,7 +269,7 @@ export class WS2PCluster {
     this.ws2pServer = await WS2PServer.bindOn(this.server, host, port, this.fifo, (pubkey:string, connectedPubkeys:string[]) => {
       const privilegedNodes = (this.server.conf.ws2p && this.server.conf.ws2p.privilegedNodes) ? this.server.conf.ws2p.privilegedNodes:[]
       return this.acceptPubkey(pubkey, connectedPubkeys, [], () => this.servedCount(), this.maxLevel2Peers, privilegedNodes, (this.server.conf.ws2p !== undefined && this.server.conf.ws2p.privilegedOnly)) 
-    }, this.messageHandler)
+    }, this.keyPriorityLevel, this.messageHandler)
     this.host = host
     this.port = port
     return this.ws2pServer
@@ -330,13 +331,20 @@ export class WS2PCluster {
   }
 
   async connectToWS2Peers() {
+    const myUUID = (this.server.conf.ws2p && this.server.conf.ws2p.uuid) ? this.server.conf.ws2p.uuid:""
     const potentials = await this.server.dal.getWS2Peers()
     const peers:PeerDTO[] = potentials.map((p:any) => PeerDTO.fromJSONObject(p))
     const prefered = ((this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) || []).slice() // Copy
     // Our key is also a prefered one, so we connect to our siblings
-    prefered.push(this.server.conf.pair.pub)
     const canReachTorEndpoint = ProxiesConf.canReachTorEndpoint(this.server.conf.proxiesConf)
     peers.sort((a, b) => {
+      // Top priority at our own nodes
+      if (a.pubkey === this.server.conf.pair.pub && b.pubkey !== this.server.conf.pair.pub) {
+          return -1
+      } else if (a.pubkey !== this.server.conf.pair.pub && b.pubkey === this.server.conf.pair.pub) {
+        return 1
+      }
+
       const aIsPrefered = prefered.indexOf(a.pubkey) !== -1
       const bIsPrefered = prefered.indexOf(b.pubkey) !== -1
 
@@ -373,20 +381,34 @@ export class WS2PCluster {
     const canReachClearEndpoint = ProxiesConf.canReachClearEndpoint(this.server.conf.proxiesConf)
     while (i < peers.length && this.clientsCount() < this.maxLevel1Size) {
       const p = peers[i]
-      const api = p.getWS2P(canReachTorEndpoint, canReachClearEndpoint)
-      if (api) {
-        try {
-          // We do not connect to local host
-          if (!this.server.conf.ws2p || api.uuid !== this.server.conf.ws2p.uuid || p.pubkey !== this.server.conf.pair.pub || api.uuid === '11111111') {
-            await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
+      if (p.pubkey === this.server.conf.pair.pub) {
+        const apis = p.getAllWS2PEndpoints(canReachTorEndpoint, canReachClearEndpoint, myUUID)
+        for (const api of apis) {
+          try {
+            // We do not connect to local host
+            if (api.uuid !== myUUID || api.uuid === '11111111') {
+              await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
+            }
+          } catch (e) {
+            this.server.logger.debug('WS2P: init: failed connection')
           }
-        } catch (e) {
-          this.server.logger.debug('WS2P: init: failed connection')
+        }
+      } else {
+      const api = p.getOnceWS2PEndpoint(canReachTorEndpoint, canReachClearEndpoint)
+        if (api) {
+          try {
+            // We do not connect to local host
+            if (api.uuid !== myUUID || api.uuid === '11111111') {
+              await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
+            }
+          } catch (e) {
+            this.server.logger.debug('WS2P: init: failed connection')
+          }
         }
       }
       i++
       // Trim the eventual extra connections
-      setTimeout(() => this.trimClientConnections(), WS2PConstants.CONNEXION_TIMEOUT)
+      setTimeout(() => this.trimClientConnections(prefered), WS2PConstants.CONNEXION_TIMEOUT)
     }
   }
 
@@ -400,16 +422,16 @@ export class WS2PCluster {
         // New peer
         if (data.endpoints) {
           const peer = PeerDTO.fromJSONObject(data)
-          const ws2pEnpoint = peer.getWS2P(ProxiesConf.canReachTorEndpoint(this.server.conf.proxiesConf), ProxiesConf.canReachClearEndpoint(this.server.conf.proxiesConf))
+          const ws2pEnpoint = peer.getOnceWS2PEndpoint(ProxiesConf.canReachTorEndpoint(this.server.conf.proxiesConf), ProxiesConf.canReachClearEndpoint(this.server.conf.proxiesConf))
           if (ws2pEnpoint) {
             // Check if already connected to the pubkey (in any way: server or client)
             const connectedPubkeys = this.getConnectedPubkeys()
             const connectedWS2PUID = this.getConnectedWS2PUID()
-            const preferedNodes = (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) ? this.server.conf.ws2p.preferedNodes:[]
-            const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, connectedWS2PUID, () => this.clientsCount(), this.maxLevel1Size, preferedNodes, (this.server.conf.ws2p && this.server.conf.ws2p.preferedOnly) || false, ws2pEnpoint.uuid)
+            const preferedKeys = (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) ? this.server.conf.ws2p.preferedNodes:[]
+            const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, connectedWS2PUID, () => this.clientsCount(), this.maxLevel1Size, preferedKeys, (this.server.conf.ws2p && this.server.conf.ws2p.preferedOnly) || false, ws2pEnpoint.uuid)
             if (shouldAccept && (!this.server.conf.ws2p || ws2pEnpoint.uuid !== this.server.conf.ws2p.uuid || peer.pubkey !== this.server.conf.pair.pub || ws2pEnpoint.uuid === '11111111')) {
               await this.connectToRemoteWS(ws2pEnpoint.host, ws2pEnpoint.port, ws2pEnpoint.path, this.messageHandler, peer.pubkey, ws2pEnpoint.uuid)
-              await this.trimClientConnections()
+              await this.trimClientConnections(preferedKeys)
             }
           }
         }
@@ -480,7 +502,60 @@ export class WS2PCluster {
     return { sig, message, pub }
   }
 
-  async trimClientConnections() {
+  async removeLowPriorityConnections(privilegedKeys:string[]) {
+    let serverPubkeys:string[] = []
+    if (this.ws2pServer) {
+      serverPubkeys = this.ws2pServer.getConnexions().map(c => c.pubkey)
+    }
+    let disconnectedOne = true
+    // Disconnect Private connexions already present under Public
+    while (disconnectedOne) {
+      disconnectedOne = false
+      let uuids = Object.keys(this.ws2pClients)
+      uuids = _.shuffle(uuids)
+      for (const uuid of uuids) {
+        const client = this.ws2pClients[uuid]
+        const pub = client.connection.pubkey
+        const isNotOurself = pub !== this.server.conf.pair.pub
+        const isAlreadyInPublic = serverPubkeys.indexOf(pub) !== -1
+        if (isNotOurself && isAlreadyInPublic) {
+          client.connection.close()
+          await client.connection.closed
+          disconnectedOne = true
+          if (this.ws2pClients[uuid]) {
+            delete this.ws2pClients[uuid]
+          }
+        }
+      }
+    }
+    // Disconnect Private connexions until the maximum size is respected
+    while (disconnectedOne && this.clientsCount() > this.maxLevel1Size) {
+      let uuids = Object.keys(this.ws2pClients)
+      uuids = _.shuffle(uuids)
+      let lowPriorityConnectionUUID:string = uuids[0]
+      let minPriorityLevel = this.keyPriorityLevel(this.ws2pClients[lowPriorityConnectionUUID].connection.pubkey, privilegedKeys)
+      for (const uuid of uuids) {
+        const client = this.ws2pClients[uuid]
+          if (uuid !== lowPriorityConnectionUUID) {
+            let uuidPriorityLevel = this.keyPriorityLevel(client.connection.pubkey, privilegedKeys)
+            if (uuidPriorityLevel < minPriorityLevel) {
+              lowPriorityConnectionUUID = uuid
+              minPriorityLevel = uuidPriorityLevel
+            }
+          }
+        delete this.ws2pClients[lowPriorityConnectionUUID]
+      }
+    }
+  }
+
+  keyPriorityLevel(pubkey:string, preferedOrPrivilegedKeys:string[]) {
+    let priorityLevel = (this.server.dal.isMember(pubkey)) ? WS2PConstants.CONNECTIONS_PRIORITY.MEMBER_KEY_LEVEL:0
+    priorityLevel += (preferedOrPrivilegedKeys.indexOf(pubkey) !== -1) ? WS2PConstants.CONNECTIONS_PRIORITY.PREFERED_PRIVILEGED_KEY_LEVEL:0
+    priorityLevel += (this.server.conf.pair.pub === pubkey) ? WS2PConstants.CONNECTIONS_PRIORITY.SELF_KEY_LEVEL:0
+    return priorityLevel
+  }
+
+  async trimClientConnections(preferedKeys:string[]) {
     let serverPubkeys:string[] = []
     if (this.ws2pServer) {
       serverPubkeys = this.ws2pServer.getConnexions().map(c => c.pubkey)
@@ -587,9 +662,19 @@ export class WS2PCluster {
       return false
     }
 
-    // We do not accept oneself connetion
-    if (this.server.conf.pair.pub === pub && this.server.conf.ws2p && this.server.conf.ws2p.uuid === targetWS2PUID) {
-      return false
+    if (this.server.conf.pair.pub === pub) {
+      // We do not accept oneself connetion
+      if (this.server.conf.ws2p && this.server.conf.ws2p.uuid === targetWS2PUID) {
+        return false
+      } else {
+        // We always accept self nodes, and they have a supreme priority (these are siblings)
+        if (targetWS2PUID === "" ||  this.isNewSiblingNode(pub, targetWS2PUID, connectedWS2PUID) ) {
+            return true
+        } else {
+          // We are already connected to this self node (same WS2PUID)
+          return false
+        }
+      }
     }
 
     // We do not accept banned keys
@@ -613,17 +698,10 @@ export class WS2PCluster {
     if (getConcurrentConnexionsCount() < maxConcurrentConnexionsSize) {
       // Yes: just connect to it
       return true
-    } else if (this.server.conf.pair.pub === pub) {
-      // We always accept self nodes, and they have a supreme priority (these are siblings)
-      if (targetWS2PUID !== "") {
-        if (this.isNewSiblingNode(pub, targetWS2PUID, connectedWS2PUID)) {
-          return true
-        }
-      }
     }
     else if (connectedPubkeys.indexOf(pub) === -1)
     {
-      let minPriorityLevel = WS2PConstants.MAX_PRIORITY_LEVEL
+      let minPriorityLevel = WS2PConstants.CONNECTIONS_PRIORITY.MAX_PRIORITY_LEVEL
       for (const connectedPubkey of connectedPubkeys) {
         let connectedPubkeyPriorityLevel = this.ws2pServer.keyPriorityLevel(connectedPubkey, priorityKeys)
         if (connectedPubkeyPriorityLevel < minPriorityLevel) {

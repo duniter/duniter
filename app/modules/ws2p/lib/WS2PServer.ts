@@ -116,8 +116,8 @@ export class WS2PServer extends events.EventEmitter {
             }
           })
         })
-
-        await this.trimConnections()
+        let privilegedKeys = (this.server.conf.ws2p && this.server.conf.ws2p.privilegedNodes) ? this.server.conf.ws2p.privilegedNodes:[]
+        await this.removeLowPriorityConnection(privilegedKeys)
 
         await this.server.dal.setPeerUP(c.pubkey)
 
@@ -128,44 +128,26 @@ export class WS2PServer extends events.EventEmitter {
     })
   }
 
-  async trimConnections() {
-    /*** OVERFLOW TRIMMING ***/
-    let disconnectedOne = true
-    // Disconnect non-members
-    while (disconnectedOne && this.connections.length > this.maxLevel2Size) {
-      disconnectedOne = false
-      for (const c of this.connections) {
-        const isMember = await this.server.dal.isMember(c.pubkey)
-        if (!isMember && !disconnectedOne) {
-          c.close()
-          this.removeConnection(c)
-          disconnectedOne = true
+  async removeLowPriorityConnection(privilegedKeys:string[]) {
+    let lowPriorityConnection:WS2PConnection = this.connections[0]
+    let minPriorityLevel = this.keyPriorityLevel(lowPriorityConnection.pubkey, privilegedKeys)
+    for (const c of this.connections) {
+      if (c !== lowPriorityConnection) {
+        let cPriorityLevel = this.keyPriorityLevel(c.pubkey, privilegedKeys)
+        if (cPriorityLevel < minPriorityLevel) {
+          lowPriorityConnection = c
+          minPriorityLevel = cPriorityLevel
         }
       }
     }
-    // Disconnect members
-    while (this.connections.length > this.maxLevel2Size) {
-      for (const c of this.connections) {
-        c.close()
-        this.removeConnection(c)
-      }
-    }
-    /*** DUPLICATES TRIMMING ***/
-    disconnectedOne = true
-    while (disconnectedOne) {
-      disconnectedOne = false
-      const pubkeysFound = []
-      for (const c of this.connections) {
-        if (pubkeysFound.indexOf(c.pubkey) !== -1) {
-          c.close()
-          this.removeConnection(c)
-          disconnectedOne = true
-        }
-        else if (c.pubkey !== this.server.conf.pair.pub) {
-          pubkeysFound.push(c.pubkey)
-        }
-      }
-    }
+    this.removeConnection(lowPriorityConnection)
+  }
+
+  keyPriorityLevel(pubkey:string, privilegedKeys:string[]) {
+    let priorityLevel = (this.server.dal.isMember(pubkey)) ? 1:0
+    priorityLevel += (privilegedKeys.indexOf(pubkey) !== -1) ? 2:0
+    priorityLevel += (this.server.conf.pair.pub === pubkey) ? 4:0
+    return priorityLevel
   }
 
   private removeConnection(c:WS2PConnection) {

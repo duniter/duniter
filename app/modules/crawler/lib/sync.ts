@@ -799,14 +799,14 @@ class P2PDownloader {
         this.handler[chunkIndex] = node;
         node.downloading = true;
         this.nbDownloading++;
-        this.watcher.writeStatus('Getting chunck #' + chunkIndex + '/' + (this.numberOfChunksToDownload - 1) + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + [node.host, node.port].join(':'));
+        this.watcher.writeStatus('Getting chunk #' + chunkIndex + '/' + (this.numberOfChunksToDownload - 1) + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + [node.host, node.port].join(':'));
         let blocks = await node.getBlocks(count, from);
         node.ttas.push(Date.now() - start);
         // Only keep a flow of 5 ttas for the node
         if (node.ttas.length > 5) node.ttas.shift();
         // Average time to answer
         node.tta = Math.round(node.ttas.reduce((sum:number, tta:number) => sum + tta, 0) / node.ttas.length);
-        this.watcher.writeStatus('GOT chunck #' + chunkIndex + '/' + (this.numberOfChunksToDownload - 1) + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + [node.host, node.port].join(':'));
+        this.watcher.writeStatus('GOT chunk #' + chunkIndex + '/' + (this.numberOfChunksToDownload - 1) + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + [node.host, node.port].join(':'));
         node.nbSuccess++;
 
         // Opening/Closing slots depending on the Interne connection

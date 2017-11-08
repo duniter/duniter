@@ -8,7 +8,7 @@
 
 DEB_PACKAGING=
 
-if [[ $DEB_PACKAGING ]]; then
+if [ -n "$DEB_PACKAGING" ]; then
   DUNITER_DIR=/opt/duniter/
 fi
 

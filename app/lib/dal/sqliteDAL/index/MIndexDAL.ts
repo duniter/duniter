@@ -2,8 +2,6 @@ import {SQLiteDriver} from "../../drivers/SQLiteDriver";
 import {AbstractIndex} from "../AbstractIndex";
 import {Indexer, MindexEntry} from "../../../indexer";
 
-const _ = require('underscore');
-
 export class MIndexDAL extends AbstractIndex<MindexEntry> {
 
   constructor(driver:SQLiteDriver) {

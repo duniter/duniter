@@ -62,6 +62,7 @@ export class BlockGenerator {
     const current = await this.dal.getCurrentBlockOrNull();
     const revocations = await this.dal.getRevocatingMembers();
     const exclusions = await this.dal.getToBeKickedPubkeys();
+    const wereExcludeds = await this.dal.getRevokedPubkeys();
     const newCertsFromWoT = await generator.findNewCertsFromWoT(current);
     const newcomersLeavers = await this.findNewcomersAndLeavers(current, (joinersData:any) => generator.filterJoiners(joinersData));
     const transactions = await this.findTransactions(current);
@@ -88,7 +89,7 @@ export class BlockGenerator {
     });
     // Revocations
     // Create the block
-    return this.createBlock(current, joinData, leaveData, newCertsFromWoT, revocations, exclusions, transactions, manualValues);
+    return this.createBlock(current, joinData, leaveData, newCertsFromWoT, revocations, exclusions, wereExcludeds, transactions, manualValues);
   }
 
   private async findNewcomersAndLeavers(current:DBBlock, filteringFunc: (joinData: { [pub:string]: any }) => Promise<{ [pub:string]: any }>) {
@@ -419,7 +420,7 @@ export class BlockGenerator {
     };
   }
 
-  private async createBlock(current:DBBlock, joinData:any, leaveData:any, updates:any, revocations:any, exclusions:any, transactions:any, manualValues:any) {
+  private async createBlock(current:DBBlock, joinData:any, leaveData:any, updates:any, revocations:any, exclusions:any, wereExcluded:any, transactions:any, manualValues:any) {
 
     if (manualValues && manualValues.excluded) {
       exclusions = manualValues.excluded;
@@ -434,9 +435,16 @@ export class BlockGenerator {
     let blockLen = 0;
     // Revocations have an impact on exclusions
     revocations.forEach((idty:any) => exclusions.push(idty.pubkey));
-    // Prevent writing joins/updates for excluded members
+    // Prevent writing joins/updates for members who will be excluded
     exclusions = _.uniq(exclusions);
     exclusions.forEach((excluded:any) => {
+      delete updates[excluded];
+      delete joinData[excluded];
+      delete leaveData[excluded];
+    });
+    // Prevent writing joins/updates for excluded members
+    wereExcluded = _.uniq(wereExcluded);
+    wereExcluded.forEach((excluded:any) => {
       delete updates[excluded];
       delete joinData[excluded];
       delete leaveData[excluded];

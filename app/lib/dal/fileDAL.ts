@@ -16,6 +16,7 @@ import {DBMembership} from "./sqliteDAL/MembershipDAL"
 import {MerkleDTO} from "../dto/MerkleDTO"
 import {CommonConstants} from "../common-libs/constants"
 import { ProxiesConf } from '../proxy';
+import { getOfficialRevocation } from '../common-libs/rawer';
 
 const fs      = require('fs')
 const path    = require('path')
@@ -365,6 +366,10 @@ export class FileDAL {
 
   getToBeKickedPubkeys() {
     return this.iindexDAL.getToBeKickedPubkeys()
+  }
+
+  getRevokedPubkeys() {
+    return this.mindexDAL.getRevokedPubkeys()
   }
 
   async searchJustIdentities(search:string) {

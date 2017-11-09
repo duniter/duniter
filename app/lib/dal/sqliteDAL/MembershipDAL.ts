@@ -1,7 +1,6 @@
 import {SQLiteDriver} from "../drivers/SQLiteDriver";
 import {AbstractSQLite} from "./AbstractSQLite";
 import {SandBox} from "./SandBox";
-import { Indexer } from '../../indexer';
 const _ = require('underscore');
 const constants = require('../../constants');
 

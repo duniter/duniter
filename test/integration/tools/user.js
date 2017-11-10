@@ -26,6 +26,7 @@ function User (uid, options, node) {
   var pub, sec;
   var createdIdentity = "";
   that.node = node;
+  that.uid = uid
 
   // For sync code
   if (options.pub && options.sec) {
@@ -68,7 +69,7 @@ function User (uid, options, node) {
   this.makeCert = (user, fromServer, overrideProps) => co(function*() {
     const lookup = yield that.lookup(user.pub, fromServer);
     const current = yield node.server.BlockchainService.current();
-    const idty = lookup.results[0].uids[0];
+    const idty = _.filter(lookup.results[0].uids, (uidEntry) => uidEntry.uid === user.uid)[0]
     let buid = current ? ucp.format.buid(current.number, current.hash) : ucp.format.buid();
     const cert = {
       "version": constants.DOCUMENTS_VERSION,
@@ -103,10 +104,11 @@ function User (uid, options, node) {
 
   this.makeRevocation = (givenLookupIdty, overrideProps) => co(function*() {
     const res = givenLookupIdty || (yield that.lookup(pub));
+    const matchingResult = _.filter(res.results[0].uids, (uidEntry) => uidEntry.uid === uid)[0]
     const idty = {
-      uid: res.results[0].uids[0].uid,
-      buid: res.results[0].uids[0].meta.timestamp,
-      sig: res.results[0].uids[0].self
+      uid: matchingResult.uid,
+      buid: matchingResult.meta.timestamp,
+      sig: matchingResult.self
     }
     const revocation = {
       "currency": node.server.conf.currency,

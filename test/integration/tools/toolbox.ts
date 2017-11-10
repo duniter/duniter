@@ -476,8 +476,8 @@ export class TestingServer {
     return until(this.server, type, count);
   }
 
-  async commit(options:any = null) {
-    const raw = await commit(this.server)(options);
+  async commit(options:any = null, noWait = false) {
+    const raw = await commit(this.server, null, noWait)(options);
     return JSON.parse(raw);
   }
 

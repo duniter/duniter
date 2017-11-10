@@ -93,7 +93,7 @@ Any integer field has a maximum length of 19 digits.
 
 #### Format
 
-Signatures follow the [Ed55219 pattern](http://en.wikipedia.org/wiki/EdDSA), and are written under [Base64](http://en.wikipedia.org/wiki/Base64) encoding.
+Signatures follow the [Ed25519 pattern](http://en.wikipedia.org/wiki/EdDSA), and are written under [Base64](http://en.wikipedia.org/wiki/Base64) encoding.
 
 Here is an example of an expected signature:
 
@@ -111,7 +111,7 @@ This section deals with the various data formats used by UCP.
 
 #### Definition
 
-A public key is to be understood as an [Ed55219](http://en.wikipedia.org/wiki/EdDSA) public key.
+A public key is to be understood as an [Ed25519](http://en.wikipedia.org/wiki/EdDSA) public key.
 
 Its format is a [Base58](http://en.wikipedia.org/wiki/Base58) string of 43 or 44 characters, such as the following:
 

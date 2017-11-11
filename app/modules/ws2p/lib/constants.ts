@@ -1,6 +1,8 @@
 import {CommonConstants} from "../../../lib/common-libs/constants"
 export const WS2PConstants = {
 
+  WS2P_VERSION: 2,
+
   WS2P_UPNP_TTL: 600,
   WS2P_PORTS_START: 20900,
   WS2P_PORTS_END: 20999,
@@ -19,7 +21,13 @@ export const WS2PConstants = {
   MAX_LEVEL_1_PEERS: 10,
   MAX_LEVEL_2_PEERS: 10,
   CONNECTIONS_LOW_LEVEL: 3,
-  MAX_PRIORITY_LEVEL: 7,
+
+  CONNECTIONS_PRIORITY: {
+    MEMBER_KEY_LEVEL: 1,
+    PREFERED_PRIVILEGED_KEY_LEVEL: 2,
+    SELF_KEY_LEVEL: 4,
+    MAX_PRIORITY_LEVEL: 7,
+  },
 
   BAN_DURATION_IN_SECONDS: 120,
   BAN_ON_REPEAT_THRESHOLD: 5,

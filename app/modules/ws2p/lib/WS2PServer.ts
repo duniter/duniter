@@ -7,7 +7,6 @@ import {WS2PConstants} from "./constants"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 import {WS2PStreamer} from "./WS2PStreamer"
 import {WS2PSingleWriteStream} from "./WS2PSingleWriteStream"
-import { WS2PCluster } from './WS2PCluster';
 
 const WebSocketServer = require('ws').Server
 
@@ -22,8 +21,7 @@ export class WS2PServer extends events.EventEmitter {
     private host:string,
     private port:number,
     private fifo:GlobalFifoPromise,
-    private shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>,
-    public keyPriorityLevel:(pubkey:string, privilegedKeys:string[])=>number) {
+    private shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>) {
     super()
     // Conf: max public connections
     if (this.server.conf.ws2p && this.server.conf.ws2p.maxPublic !== undefined) {
@@ -145,6 +143,13 @@ export class WS2PServer extends events.EventEmitter {
     this.removeConnection(lowPriorityConnection)
   }
 
+  keyPriorityLevel(pubkey:string, privilegedKeys:string[]) {
+    let priorityLevel = (this.server.dal.isMember(pubkey)) ? 1:0
+    priorityLevel += (privilegedKeys.indexOf(pubkey) !== -1) ? 2:0
+    priorityLevel += (this.server.conf.pair.pub === pubkey) ? 4:0
+    return priorityLevel
+  }
+
   private removeConnection(c:WS2PConnection) {
     const index = this.connections.indexOf(c)
     if (index !== -1) {
@@ -178,8 +183,8 @@ export class WS2PServer extends events.EventEmitter {
     }))
   }
 
-  static async bindOn(server:Server, host:string, port:number, fifo:GlobalFifoPromise, shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>, keyPriorityLevel:(pubkey:string, privilegedKeys:string[])=>number, messageHandler:WS2PMessageHandler) {
-    const ws2ps = new WS2PServer(server, host, port, fifo, shouldAcceptConnection, keyPriorityLevel)
+  static async bindOn(server:Server, host:string, port:number, fifo:GlobalFifoPromise, shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>, messageHandler:WS2PMessageHandler) {
+    const ws2ps = new WS2PServer(server, host, port, fifo, shouldAcceptConnection)
     await ws2ps.listenToWebSocketConnections(messageHandler)
     server.logger.info('WS2P server %s listening on %s:%s', server.conf.pair.pub, host, port)
     return ws2ps

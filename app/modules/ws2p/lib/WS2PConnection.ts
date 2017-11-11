@@ -256,8 +256,7 @@ export class WS2PConnection {
       connectionTimeout: REQUEST_TIMEOUT_VALUE,
       requestTimeout: REQUEST_TIMEOUT_VALUE
     },
-    private expectedPub:string = "",
-    private expectedWS2PUID:string = ""
+    private expectedPub:string = ""
   ) {
     this.connectedp = new Promise((resolve, reject) => {
       this.connectedResolve = resolve
@@ -278,8 +277,7 @@ export class WS2PConnection {
       connectionTimeout: REQUEST_TIMEOUT_VALUE,
       requestTimeout: REQUEST_TIMEOUT_VALUE
     },
-    expectedPub:string = "", 
-    expectedWS2PUID:string = "") {
+    expectedPub:string = "") {
       if (address.match(WS2PConstants.FULL_ADDRESS_ONION_REGEX)) {
         options = {
           connectionTimeout: WS2PConstants.CONNEXION_TOR_TIMEOUT,
@@ -294,7 +292,7 @@ export class WS2PConnection {
       websocket.on('close', () => res())
     })
     websocket.on('error', () => websocket.close())
-    return new WS2PConnection(websocket, onWsOpened, onWsClosed, messageHandler, localAuth, remoteAuth, options, expectedPub, expectedWS2PUID)
+    return new WS2PConnection(websocket, onWsOpened, onWsClosed, messageHandler, localAuth, remoteAuth, options, expectedPub)
   }
 
   static newConnectionFromWebSocketServer(
@@ -319,10 +317,6 @@ export class WS2PConnection {
 
   get pubkey() {
     return this.remoteAuth.getPubkey()
-  }
-
-  get uuid() {
-    return this.expectedWS2PUID
   }
 
   get nbRequests() {

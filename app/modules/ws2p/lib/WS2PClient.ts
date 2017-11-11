@@ -13,7 +13,7 @@ export class WS2PClient {
 
   private constructor(public connection:WS2PConnection) {}
 
-  static async connectTo(server:Server, fullEndpointAddress:string, expectedWS2PUID:string, messageHandler:WS2PMessageHandler, expectedPub:string, allowKey:(pub:string)=>Promise<boolean> ) {
+  static async connectTo(server:Server, fullEndpointAddress:string, uuid:string, messageHandler:WS2PMessageHandler, expectedPub:string, allowKey:(pub:string)=>Promise<boolean> ) {
     const k2 = new Key(server.conf.pair.pub, server.conf.pair.sec)
     const c = WS2PConnection.newConnectionToAddress(
       fullEndpointAddress,
@@ -25,8 +25,7 @@ export class WS2PClient {
         connectionTimeout: WS2PConstants.REQUEST_TIMEOUT,
         requestTimeout: WS2PConstants.REQUEST_TIMEOUT
       },
-      expectedPub,
-      expectedWS2PUID
+      expectedPub
     )
     const singleWriteProtection = new WS2PSingleWriteStream()
     const streamer = new WS2PStreamer(c)

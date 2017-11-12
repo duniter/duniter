@@ -490,7 +490,7 @@ export class WS2PCluster {
       try {
         await c.pushHeads(heads)
       } catch (e) {
-        this.server.logger.warn('Could not spread new HEAD info to %s WS2P %s %s', c.pubkey)
+        this.server.logger.warn('Could not spread new HEAD info to %s WS2PID %s', c.pubkey, c.uuid)
       }
     }))
   }

@@ -105,7 +105,7 @@ export class WS2PServer extends events.EventEmitter {
         })
         this.connections.push(c)
         this.emit('newConnection', c)
-        this.server.logger.info('WS2P: established incoming connection from %s:%s', host, port)
+        this.server.logger.info('WS2P: established incoming connection from %s %s:%s', c.pubkey.slice(0, 8), host, port)
 
         // Broadcasting
         const singleWriteProtection = new WS2PSingleWriteStream()

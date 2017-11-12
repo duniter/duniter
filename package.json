@@ -101,7 +101,7 @@
     "unzip2": "0.2.5",
     "winston": "2.3.1",
     "wotb": "0.6.x",
-    "ws": "1.1.1"
+    "ws": "1.1.5"
   },
   "devDependencies": {
     "@types/mocha": "^2.2.41",

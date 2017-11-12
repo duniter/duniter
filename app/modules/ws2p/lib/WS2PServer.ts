@@ -121,6 +121,7 @@ export class WS2PServer extends events.EventEmitter {
         ws.on('close', () => {
           this.server.unpipe(singleWriteProtection)
           singleWriteProtection.unpipe(ws2pStreamer)
+          this.server.logger.info('WS2P: close incoming connection from %s %s:%s', c.pubkey.slice(0, 8), host, port)
           this.removeConnection(c)
           this.server.push({
             ws2p: 'disconnected',

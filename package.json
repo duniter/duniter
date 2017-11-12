@@ -1,8 +1,8 @@
 {
   "name": "duniter",
-  "version": "1.6.10",
+  "version": "1.6.13",
   "engines": {
-    "node": ">=6.11.1",
+    "node": ">=6 <9",
     "npm": ">=3.10"
   },
   "engineStrict": true,
@@ -12,7 +12,7 @@
   "node-main": "./bin/duniter",
   "window": {
     "icon": "duniter.png",
-    "title": "v1.6.10",
+    "title": "v1.6.13",
     "width": 800,
     "height": 800,
     "min_width": 750,
@@ -92,6 +92,7 @@
     "scryptb": "6.0.4",
     "seedrandom": "^2.4.3",
     "sha1": "1.1.1",
+    "socks-proxy-agent": "^3.0.1",
     "sqlite3": "3.1.4",
     "tail": "^1.2.1",
     "tweetnacl": "0.14.3",
@@ -100,7 +101,7 @@
     "unzip2": "0.2.5",
     "winston": "2.3.1",
     "wotb": "0.6.x",
-    "ws": "1.1.1"
+    "ws": "1.1.5"
   },
   "devDependencies": {
     "@types/mocha": "^2.2.41",

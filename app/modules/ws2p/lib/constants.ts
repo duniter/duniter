@@ -6,8 +6,11 @@ export const WS2PConstants = {
   WS2P_PORTS_END: 20999,
   WS2P_UPNP_INTERVAL: 300,
 
-  CONNEXION_TIMEOUT: 10000,
-  REQUEST_TIMEOUT: 10000,
+  CONNEXION_TIMEOUT: 15000,
+  REQUEST_TIMEOUT: 15000,
+  CONNEXION_TOR_TIMEOUT: 30000,
+  REQUEST_TOR_TIMEOUT: 60000,
+  RECONNEXION_INTERVAL_IN_SEC: 60 * 10, // 10 minutes
 
   BLOCK_PULLING_INTERVAL: 300 * 2,    // 10 minutes
   DOCPOOL_PULLING_INTERVAL: 3600 * 4, // 4 hours
@@ -27,7 +30,7 @@ export const WS2PConstants = {
     + CommonConstants.FORMATS.BLOCKSTAMP
     + '$'),
 
-  HEAD_V1_REGEXP: new RegExp('^WS2P:HEAD:1:'
+  HEAD_V1_REGEXP: new RegExp('^WS2P(?:O[CT][SAM])?(?:I[CT])?:HEAD:1:'
   + '(' + CommonConstants.FORMATS.PUBKEY + '):'
   + '(' + CommonConstants.FORMATS.BLOCKSTAMP + '):'
   + '(' + CommonConstants.FORMATS.WS2PID + '):'
@@ -35,6 +38,9 @@ export const WS2PConstants = {
   + '(' + CommonConstants.FORMATS.SOFT_VERSION + '):'
   + '(' + CommonConstants.FORMATS.POW_PREFIX + ')'
   + '$'),
+
+  HOST_ONION_REGEX: CommonConstants.HOST_ONION_REGEX,
+  FULL_ADDRESS_ONION_REGEX: CommonConstants.WS_FULL_ADDRESS_ONION_REGEX,
 
   HEADS_SPREAD_TIMEOUT: 100 // Wait 100ms before sending a bunch of signed heads
 }

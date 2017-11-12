@@ -1,0 +1,36 @@
+{
+    // Utilisez IntelliSense pour en savoir plus sur les attributs possibles.
+    // Pointez pour afficher la description des attributs existants.
+    // Pour plus d'informations, visitez : https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "direct_start",
+            "program": "${workspaceFolder}/bin/duniter",
+            "args": [
+                "direct_start"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Mocha CURRENT FILE",
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "args": [
+                "--opts", "\"\"",
+                "${fileDirname}/${fileBasenameNoExtension}.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Mocha ALL TESTS",
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "args": [
+                "${workspaceFolder}/test"
+            ]
+        }
+    ]
+}

@@ -24,6 +24,7 @@ import {PeerDTO} from "./app/lib/dto/PeerDTO"
 import {OtherConstants} from "./app/lib/other_constants"
 import {WS2PCluster} from "./app/modules/ws2p/lib/WS2PCluster"
 import {DBBlock} from "./app/lib/db/DBBlock"
+import { ProxiesConf } from './app/lib/proxy';
 
 export interface HookableServer {
   generatorGetJoinData: (...args:any[]) => Promise<any>
@@ -148,6 +149,7 @@ export class Server extends stream.Duplex implements HookableServer {
     logger.debug('Loading conf...');
     this.conf = await this.dal.loadConf(this.overrideConf, useDefaultConf)
     // Default values
+    this.conf.proxiesConf      = this.conf.proxiesConf === undefined ?       new ProxiesConf()                            : this.conf.proxiesConf
     this.conf.remoteipv6       = this.conf.remoteipv6 === undefined ?        this.conf.ipv6                               : this.conf.remoteipv6
     this.conf.remoteport       = this.conf.remoteport === undefined ?        this.conf.port                               : this.conf.remoteport
     this.conf.c                = this.conf.c === undefined ?                 constants.CONTRACT.DEFAULT.C                 : this.conf.c
@@ -211,7 +213,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawBlock(raw:string): Promise<BlockDTO> {
-    const obj = parsers.parseBlock.syncWrite(raw, logger)
+    const obj = parsers.parseBlock.syncWrite(raw)
     return await this.writeBlock(obj)
   }
 
@@ -224,7 +226,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawIdentity(raw:string): Promise<DBIdentity> {
-    const obj = parsers.parseIdentity.syncWrite(raw, logger)
+    const obj = parsers.parseIdentity.syncWrite(raw)
     return await this.writeIdentity(obj)
   }
 
@@ -237,7 +239,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawCertification(raw:string): Promise<CertificationDTO> {
-    const obj = parsers.parseCertification.syncWrite(raw, logger)
+    const obj = parsers.parseCertification.syncWrite(raw)
     return await this.writeCertification(obj)
   }
 
@@ -250,7 +252,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawMembership(raw:string): Promise<MembershipDTO> {
-    const obj = parsers.parseMembership.syncWrite(raw, logger)
+    const obj = parsers.parseMembership.syncWrite(raw)
     return await this.writeMembership(obj)
   }
 
@@ -263,7 +265,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawRevocation(raw:string): Promise<RevocationDTO> {
-    const obj = parsers.parseRevocation.syncWrite(raw, logger)
+    const obj = parsers.parseRevocation.syncWrite(raw)
     return await this.writeRevocation(obj)
   }
 
@@ -276,7 +278,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawTransaction(raw:string): Promise<TransactionDTO> {
-    const obj = parsers.parseTransaction.syncWrite(raw, logger)
+    const obj = parsers.parseTransaction.syncWrite(raw)
     return await this.writeTransaction(obj)
   }
 
@@ -289,7 +291,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawPeer(raw:string): Promise<PeerDTO> {
-    const obj = parsers.parsePeer.syncWrite(raw, logger)
+    const obj = parsers.parsePeer.syncWrite(raw)
     return await this.writePeer(obj)
   }
 

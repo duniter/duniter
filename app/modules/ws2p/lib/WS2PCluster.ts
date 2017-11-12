@@ -13,9 +13,10 @@ import {OtherConstants} from "../../../lib/other_constants"
 import {Key, verify} from "../../../lib/common-libs/crypto/keyring"
 import {WS2PServerMessageHandler} from "./interface/WS2PServerMessageHandler"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
-import { CommonConstants } from "../../../lib/common-libs/constants";
+import { CommonConstants } from '../../../lib/common-libs/constants';
 import { Package } from "../../../lib/common/package";
 import { ProverConstants } from "../../prover/lib/constants";
+import { ProxiesConf } from '../../../lib/proxy';
 
 const es = require('event-stream')
 const nuuid = require('node-uuid')
@@ -34,6 +35,16 @@ export class WS2PCluster {
     }
     // Make the path be a string
     path = path || ''
+    // delete the space at the beginning of the path
+    if (path.match(/^ /))
+    {
+      path = path.substr(1)
+    }
+    // Check that the path starts well with / (added if not)
+    if (path.length > 0 && !path.match(/^\//))
+    {
+      path = '/'+path
+    }
     // Choose the web protocol depending on the port
     const protocol = port == 443 ? "wss://": "ws://"
     return [protocol, host, ':', port, path].join('')
@@ -66,6 +77,9 @@ export class WS2PCluster {
 
   // The triggerer of a buffer of heads' sending
   private headsTimeout:NodeJS.Timer|null = null
+
+  // A timer to regularly reconnect to the network in case we are below the minimum connections' count
+  private reconnectionInteval:NodeJS.Timer|null = null
 
   private constructor(private server:Server) {
     this.messageHandler = new WS2PServerMessageHandler(this.server, this)
@@ -252,7 +266,8 @@ export class WS2PCluster {
       await this.ws2pServer.close()
     }
     this.ws2pServer = await WS2PServer.bindOn(this.server, host, port, this.fifo, (pubkey:string, connectedPubkeys:string[]) => {
-      return this.acceptPubkey(pubkey, connectedPubkeys, () => this.servedCount(), this.maxLevel2Peers, (this.server.conf.ws2p && this.server.conf.ws2p.privilegedNodes || []))
+      const privilegedNodes = (this.server.conf.ws2p && this.server.conf.ws2p.privilegedNodes) ? this.server.conf.ws2p.privilegedNodes:[]
+      return this.acceptPubkey(pubkey, connectedPubkeys, () => this.servedCount(), this.maxLevel2Peers, privilegedNodes, (this.server.conf.ws2p && this.server.conf.ws2p.privilegedOnly || false))
     }, this.messageHandler)
     this.host = host
     this.port = port
@@ -277,17 +292,19 @@ export class WS2PCluster {
 
   async connectToRemoteWS(host: string, port: number, path:string, messageHandler:WS2PMessageHandler, expectedPub:string, ws2pEndpointUUID:string = ""): Promise<WS2PConnection> {
     const uuid = nuuid.v4()
-    let pub = "--------"
+    let pub = expectedPub.slice(0, 8)
+    const api:string = (host.match(WS2PConstants.HOST_ONION_REGEX) !== null) ? 'WS2PTOR':'WS2P'
     try {
       const fullEndpointAddress = WS2PCluster.getFullAddress(host, port, path)
-      const ws2pc = await WS2PClient.connectTo(this.server, fullEndpointAddress, messageHandler, expectedPub, (pub:string) => {
+      const ws2pc = await WS2PClient.connectTo(this.server, fullEndpointAddress, ws2pEndpointUUID, messageHandler, expectedPub, (pub:string) => {
         const connectedPubkeys = this.getConnectedPubkeys()
-        return this.acceptPubkey(expectedPub, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes || []), ws2pEndpointUUID)
+        const preferedNodes = (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) ? this.server.conf.ws2p.preferedNodes:[]
+        return this.acceptPubkey(expectedPub, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, preferedNodes, (this.server.conf.ws2p && this.server.conf.ws2p.preferedOnly) || false, ws2pEndpointUUID)
       })
       this.ws2pClients[uuid] = ws2pc
       pub = ws2pc.connection.pubkey
       ws2pc.connection.closed.then(() => {
-        this.server.logger.info('WS2P: connection [%s `WS2P %s %s`] has been closed', pub.slice(0, 8), host, port)
+        this.server.logger.info(api+': connection [%s `'+api+' %s %s`] has been closed', pub.slice(0, 8), host, port)
         this.server.push({
           ws2p: 'disconnected',
           peer: {
@@ -298,7 +315,7 @@ export class WS2PCluster {
           delete this.ws2pClients[uuid]
         }
       })
-      this.server.logger.info('WS2P: connected to peer %s using `WS2P %s %s`!', pub.slice(0, 8), host, port)
+      this.server.logger.info(api+': connected to peer %s using `'+api+' %s %s`!', pub.slice(0, 8), host, port)
       this.server.push({
         ws2p: 'connected',
         to: { host, port, pubkey: pub }
@@ -306,7 +323,7 @@ export class WS2PCluster {
       await this.server.dal.setPeerUP(pub)
       return ws2pc.connection
     } catch (e) {
-      this.server.logger.info('WS2P: Could not connect to peer %s using `WS2P %s %s: %s`', pub.slice(0, 8), host, port, (e && e.message || e))
+      this.server.logger.info(api+': Could not connect to peer %s using `'+api+' %s %s: %s`', pub.slice(0, 8), host, port, (e && e.message || e))
       throw e
     }
   }
@@ -317,24 +334,51 @@ export class WS2PCluster {
     const prefered = ((this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) || []).slice() // Copy
     // Our key is also a prefered one, so we connect to our siblings
     prefered.push(this.server.conf.pair.pub)
+    const canReachTorEndpoint = ProxiesConf.canReachTorEndpoint(this.server.conf.proxiesConf)
     peers.sort((a, b) => {
       const aIsPrefered = prefered.indexOf(a.pubkey) !== -1
       const bIsPrefered = prefered.indexOf(b.pubkey) !== -1
-      if ((aIsPrefered && bIsPrefered) || (!aIsPrefered && !bIsPrefered)) {
-        return 0
-      } else if (aIsPrefered) {
-        return -1
+
+      if (canReachTorEndpoint) {
+        const aAtWs2pTorEnpoint = a.endpoints.filter(function (element) { return element.match(CommonConstants.WS2PTOR_REGEXP); }).length > 0
+        const bAtWs2pTorEnpoint = b.endpoints.filter(function (element) { return element.match(CommonConstants.WS2PTOR_REGEXP); }).length > 0
+
+        if ( (aAtWs2pTorEnpoint && bAtWs2pTorEnpoint) || (!aAtWs2pTorEnpoint && !bAtWs2pTorEnpoint) ) {
+          if ((aIsPrefered && bIsPrefered) || (!aIsPrefered && !bIsPrefered))  {
+            return 0
+          } else if (aIsPrefered) {
+            return -1
+          } else {
+            return 1
+          }
+        } else {
+          if (aAtWs2pTorEnpoint) {
+            return -1
+          } else {
+            return 1
+          }
+        }
       } else {
-        return 1
+        if ((aIsPrefered && bIsPrefered) || (!aIsPrefered && !bIsPrefered))  {
+          return 0
+        } else if (aIsPrefered) {
+          return -1
+        } else {
+          return 1
+        }
       }
     })
     let i = 0
+    const canReachClearEndpoint = ProxiesConf.canReachClearEndpoint(this.server.conf.proxiesConf)
     while (i < peers.length && this.clientsCount() < this.maxLevel1Size) {
       const p = peers[i]
-      const api = p.getWS2P()
+      const api = p.getWS2P(canReachTorEndpoint, canReachClearEndpoint)
       if (api) {
         try {
-          await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
+          // We do not connect to local host
+          if (!this.server.conf.ws2p || api.uuid !== this.server.conf.ws2p.uuid || p.pubkey !== this.server.conf.pair.pub || api.uuid === '11111111') {
+            await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
+          }
         } catch (e) {
           this.server.logger.debug('WS2P: init: failed connection')
         }
@@ -355,12 +399,13 @@ export class WS2PCluster {
         // New peer
         if (data.endpoints) {
           const peer = PeerDTO.fromJSONObject(data)
-          const ws2pEnpoint = peer.getWS2P()
+          const ws2pEnpoint = peer.getWS2P(ProxiesConf.canReachTorEndpoint(this.server.conf.proxiesConf), ProxiesConf.canReachClearEndpoint(this.server.conf.proxiesConf))
           if (ws2pEnpoint) {
             // Check if already connected to the pubkey (in any way: server or client)
             const connectedPubkeys = this.getConnectedPubkeys()
-            const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes || []), ws2pEnpoint.uuid)
-            if (shouldAccept) {
+            const preferedNodes = (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) ? this.server.conf.ws2p.preferedNodes:[]
+            const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, () => this.clientsCount(), this.maxLevel1Size, preferedNodes, (this.server.conf.ws2p && this.server.conf.ws2p.preferedOnly) || false, ws2pEnpoint.uuid)
+            if (shouldAccept && (!this.server.conf.ws2p || ws2pEnpoint.uuid !== this.server.conf.ws2p.uuid || peer.pubkey !== this.server.conf.pair.pub || ws2pEnpoint.uuid === '11111111')) {
               await this.connectToRemoteWS(ws2pEnpoint.host, ws2pEnpoint.port, ws2pEnpoint.path, this.messageHandler, peer.pubkey)
               await this.trimClientConnections()
             }
@@ -421,13 +466,14 @@ export class WS2PCluster {
   }
 
   private sayHeadChangedTo(number:number, hash:string) {
+    const api = (this.server.conf.ws2p && this.server.conf.ws2p.remotehost && this.server.conf.ws2p.remotehost.match(WS2PConstants.HOST_ONION_REGEX)) ? 'WS2P':'WS2P'
     const key = new Key(this.server.conf.pair.pub, this.server.conf.pair.sec)
     const pub = key.publicKey
     const software = 'duniter'
     const softVersion = Package.getInstance().version
     const ws2pId = (this.server.conf.ws2p && this.server.conf.ws2p.uuid) || '00000000'
     const prefix = this.server.conf.prefix || ProverConstants.DEFAULT_PEER_ID
-    const message = `WS2P:HEAD:1:${pub}:${number}-${hash}:${ws2pId}:${software}:${softVersion}:${prefix}`
+    const message = `${api}:HEAD:1:${pub}:${number}-${hash}:${ws2pId}:${software}:${softVersion}:${prefix}`
     const sig = key.signSync(message)
     return { sig, message, pub }
   }
@@ -468,7 +514,8 @@ export class WS2PCluster {
         const pub = client.connection.pubkey
         const isNotOurself = pub !== this.server.conf.pair.pub
         const isMember = await this.server.dal.isMember(pub)
-        if (isNotOurself && !isMember && !disconnectedOne) {
+        const isPrefered = this.getPreferedNodes().indexOf(pub) !== -1
+        if (isNotOurself && !isMember && !disconnectedOne && !isPrefered) {
           client.connection.close()
           await client.connection.closed
           disconnectedOne = true
@@ -488,7 +535,8 @@ export class WS2PCluster {
         const client = this.ws2pClients[uuid]
         const pub = client.connection.pubkey
         const isNotOurself = pub !== this.server.conf.pair.pub
-        if (isNotOurself && !disconnectedOne && this.getPreferedNodes().indexOf(pub) === -1) {
+        const isPrefered = this.getPreferedNodes().indexOf(pub) !== -1
+        if (isNotOurself && !disconnectedOne && !isPrefered) {
           client.connection.close()
           disconnectedOne = true
           await client.connection.closed
@@ -528,6 +576,7 @@ export class WS2PCluster {
     getConcurrentConnexionsCount:()=>number,
     maxConcurrentConnexionsSize:number,
     priorityKeys:string[],
+    priorityKeysOnly:boolean,
     targetWS2PUID = ""
   ) {
     // We do not accept banned keys
@@ -536,11 +585,10 @@ export class WS2PCluster {
       return false
     }
     let accept = priorityKeys.indexOf(pub) !== -1
-    if (!accept && connectedPubkeys.indexOf(pub) === -1) {
+    if (!accept && !priorityKeysOnly && connectedPubkeys.indexOf(pub) === -1) {
       // Do we have room?
-      if (this.isThisNode(pub, targetWS2PUID)) {
-        // We do not connect to local host
-        return false
+      if (this.server.conf.pair.pub === pub && this.server.conf.ws2p && this.server.conf.ws2p.uuid === targetWS2PUID) {
+        accept = false
       }
       else if (getConcurrentConnexionsCount() < maxConcurrentConnexionsSize) {
         // Yes: just connect to it
@@ -581,10 +629,6 @@ export class WS2PCluster {
     return accept
   }
 
-  isThisNode(pub:string, uuid:string) {
-    return !!(this.server.conf.pair.pub === pub && this.server.conf.ws2p && this.server.conf.ws2p.uuid === uuid)
-  }
-
   isSiblingNode(pub:string, uuid:string) {
     return !!(this.server.conf.pair.pub === pub && this.server.conf.ws2p && this.server.conf.ws2p.uuid !== uuid)
   }
@@ -610,6 +654,8 @@ export class WS2PCluster {
   }
 
   async startCrawling(waitConnection = false) {
+    // For connectivity
+    this.reconnectionInteval = setInterval(() => this.server.push({ ws2p: 'disconnected' }), 1000 * WS2PConstants.RECONNEXION_INTERVAL_IN_SEC)
     // For blocks
     if (this.syncBlockInterval)
       clearInterval(this.syncBlockInterval);
@@ -638,6 +684,9 @@ export class WS2PCluster {
   }
 
   async stopCrawling() {
+    if (this.reconnectionInteval) {
+      clearInterval(this.reconnectionInteval)
+    }
     if (this.syncBlockInterval) {
       clearInterval(this.syncBlockInterval)
     }

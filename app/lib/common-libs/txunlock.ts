@@ -44,7 +44,7 @@ let grammar = {
   }
 };
 
-export function unlock(conditionsStr:string, executions:any, metadata:any) {
+export function unlock(conditionsStr:string, executions:any, metadata:any): boolean|null {
 
   let parser = new Parser(grammar);
 
@@ -56,6 +56,9 @@ export function unlock(conditionsStr:string, executions:any, metadata:any) {
     },
     xHx: function(hash:string) {
       let xhxParam = executions[this.i++];
+      if (xhxParam === undefined) {
+        xhxParam = ""
+      }
       return hashf(xhxParam) === hash;
     },
     cltv: function(deadline:string) {
@@ -69,6 +72,6 @@ export function unlock(conditionsStr:string, executions:any, metadata:any) {
   try {
     return parser.parse(conditionsStr);
   } catch(e) {
-    return false;
+    return null;
   }
 }

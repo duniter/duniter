@@ -1,3 +1,4 @@
+import { IdentityForRequirements } from './BlockchainService';
 "use strict";
 import {Server} from "../../server"
 import {GlobalFifoPromise} from "./GlobalFifoPromise"
@@ -20,6 +21,18 @@ import {OtherConstants} from "../lib/other_constants"
 const _               = require('underscore');
 const constants       = require('../lib/constants');
 
+export interface IdentityForRequirements {
+  hash:string
+  member:boolean
+  wasMember:boolean
+  pubkey:string
+  uid:string
+  buid:string
+  sig:string
+  revocation_sig:string
+  revoked:boolean
+  revoked_on:number
+}
 export class BlockchainService extends FIFOService {
 
   mainContext:BlockchainContext
@@ -234,7 +247,7 @@ export class BlockchainService extends FIFOService {
   }
   
 
-  async requirementsOfIdentities(identities:DBIdentity[], computeDistance = true) {
+  async requirementsOfIdentities(identities:IdentityForRequirements[], computeDistance = true) {
     let all:HttpIdentityRequirement[] = [];
     let current = await this.dal.getCurrentBlockOrNull();
     for (const obj of identities) {
@@ -248,7 +261,7 @@ export class BlockchainService extends FIFOService {
     return all;
   }
 
-  async requirementsOfIdentity(idty:DBIdentity, current:DBBlock, computeDistance = true): Promise<HttpIdentityRequirement> {
+  async requirementsOfIdentity(idty:IdentityForRequirements, current:DBBlock, computeDistance = true): Promise<HttpIdentityRequirement> {
     // TODO: this is not clear
     let expired = false;
     let outdistanced = false;

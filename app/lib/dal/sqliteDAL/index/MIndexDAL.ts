@@ -70,4 +70,12 @@ export class MIndexDAL extends AbstractIndex<MindexEntry> {
   async removeBlock(blockstamp:string) {
     return this.exec('DELETE FROM ' + this.table + ' WHERE written_on = \'' + blockstamp + '\'')
   }
+
+  async getRevokedPubkeys() {
+    // All those who has been revoked. Make one result per pubkey.
+    const revovedMemberships = await this.sqlFind({ revoked_on: { $null: false} });
+
+    // Filter on those to be revoked, return their pubkey
+    return revovedMemberships.map((entry:MindexEntry) => entry.pub);
+  }
 }

@@ -1,6 +1,9 @@
 import {CommonConstants} from "../../../lib/common-libs/constants"
 import * as stream from "stream"
 import {hashf} from "../../../lib/common"
+import {NewLogger} from "../../logger"
+
+const logger = NewLogger()
 
 export abstract class GenericParser extends stream.Transform {
 
@@ -21,7 +24,7 @@ export abstract class GenericParser extends stream.Transform {
     return;
   }
 
-  syncWrite(str:string, logger:any = null): any {
+  syncWrite(str:string): any {
     let error = ""
     const obj = {};
     this._parse(str, obj);

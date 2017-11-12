@@ -29,6 +29,8 @@ export const BmaDependency = {
       { value: '--noupnp', desc: 'Do not use UPnP to open remote port.' },
       { value: '--bma',   desc: 'Enables BMA API and its crawlers.' },
       { value: '--nobma', desc: 'Disables BMA API and its crawlers.' },
+      { value: '--bma-with-crawler',   desc: 'Enables BMA Crawler.' },
+      { value: '--bma-without-crawler', desc: 'Disable BMA Crawler.' },
       { value: '-p, --port <port>', desc: 'Port to listen for requests', parser: (val:string) => parseInt(val) },
       { value: '--ipv4 <address>', desc: 'IPv4 interface to listen for requests' },
       { value: '--ipv6 <address>', desc: 'IPv6 interface to listen for requests' },
@@ -73,6 +75,9 @@ export const BmaDependency = {
           }
         }
 
+        // If bmaWithCrawler hasn't been defined yet
+        if (conf.bmaWithCrawler === undefined) { conf.bmaWithCrawler = false }
+
         if (program.port !== undefined) conf.port = parseInt(program.port)
         if (program.ipv4 !== undefined) conf.ipv4 = program.ipv4;
         if (program.ipv6 !== undefined) conf.ipv6 = program.ipv6;
@@ -82,6 +87,8 @@ export const BmaDependency = {
         if (program.remotep !== undefined) conf.remoteport = parseInt(program.remotep)
         if (program.bma !== undefined) conf.nobma = false
         if (program.nobma !== undefined) conf.nobma = true
+        if (program.bmaWithCrawler !== undefined) conf.bmaWithCrawler = true
+        if (program.bmaWithoutCrawler !== undefined) conf.bmaWithCrawler = false
 
         if (!conf.ipv4) delete conf.ipv4;
         if (!conf.ipv6) delete conf.ipv6;
@@ -253,6 +260,9 @@ export class BMAPI extends stream.Transform {
 function getEndpoint(theConf:NetworkConfDTO) {
   let endpoint = 'BASIC_MERKLED_API';
   if (theConf.remotehost) {
+    if (theConf.remotehost.match(BMAConstants.HOST_ONION_REGEX)) {
+      endpoint = 'BMATOR';
+    }
     endpoint += ' ' + theConf.remotehost;
   }
   if (theConf.remoteipv4) {

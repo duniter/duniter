@@ -49,6 +49,12 @@ export const ExecuteCommand = () => {
         .option('--nostdout', 'Disable stdout printing for `export-bc` command')
         .option('--noshuffle', 'Disable peers shuffling for `sync` command')
 
+        .option('--socks-proxy <host:port>', 'Use Socks Proxy')
+        .option('--tor-proxy <host:port>', 'Use Tor Socks Proxy')
+        .option('--reaching-clear-ep <clear|tor|none>', 'method for reaching an clear endpoint')
+        .option('--force-tor', 'force duniter to contact endpoint tor (if you redirect the traffic to tor yourself)')
+        .option('--rm-proxies', 'Remove all proxies')
+
         .option('--timeout <milliseconds>', 'Timeout to use when contacting peers', parseInt)
         .option('--httplogs', 'Enable HTTP logs')
         .option('--nohttplogs', 'Disable HTTP logs')

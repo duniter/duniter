@@ -63,16 +63,23 @@ export class WS2PServer extends events.EventEmitter {
         }
         return await this.shouldAcceptConnection(pub, this.getConnexions().map(c => c.pubkey))
       }
+      let timeout = {
+        connectionTimeout: WS2PConstants.CONNEXION_TIMEOUT,
+        requestTimeout: WS2PConstants.REQUEST_TIMEOUT
+      }
+      if (this.server.conf.ws2p && this.server.conf.ws2p.remotehost && this.server.conf.ws2p.remotehost.match(WS2PConstants.HOST_ONION_REGEX)) {
+        timeout = {
+          connectionTimeout: WS2PConstants.CONNEXION_TOR_TIMEOUT,
+          requestTimeout: WS2PConstants.REQUEST_TOR_TIMEOUT
+        }
+      }
 
       const c = WS2PConnection.newConnectionFromWebSocketServer(
         ws,
         messageHandler,
         new WS2PPubkeyLocalAuth(this.server.conf.currency, key, acceptPubkey),
         new WS2PPubkeyRemoteAuth(this.server.conf.currency, key, acceptPubkey),
-        {
-          connectionTimeout: WS2PConstants.CONNEXION_TIMEOUT,
-          requestTimeout: WS2PConstants.REQUEST_TIMEOUT
-        }
+        timeout
       )
 
       try {

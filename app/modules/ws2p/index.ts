@@ -1,7 +1,8 @@
 "use strict";
+import { WS2PConstants } from './lib/constants';
 import {ConfDTO, WS2PConfDTO} from "../../lib/dto/ConfDTO"
 import {Server} from "../../../server"
-import * as stream from "stream"
+import * as stream from 'stream';
 import {WS2PCluster} from "./lib/WS2PCluster"
 import {WS2PUpnp} from "./lib/ws2p-upnp"
 import {CommonConstants} from "../../lib/common-libs/constants"
@@ -28,8 +29,10 @@ export const WS2PDependency = {
       { value: '--ws2p-nopublic',              desc: 'Disable WS2P Public access.' },
       { value: '--ws2p-prefered-add <pubkey>', desc: 'Add a prefered node to connect to through private access.' },
       { value: '--ws2p-prefered-rm  <pubkey>', desc: 'Remove prefered node.' },
+      { value: '--ws2p-prefered-only  <pubkey>', desc: 'Only connect to prefered node.' },
       { value: '--ws2p-privileged-add <pubkey>', desc: 'Add a privileged node to for our public access.' },
       { value: '--ws2p-privileged-rm <pubkey>',  desc: 'Remove a privileged.' },
+      { value: '--ws2p-privileged-only <pubkey>',  desc: 'Accept only connections from a privileged node.' },
     ],
 
     config: {
@@ -39,7 +42,9 @@ export const WS2PDependency = {
         conf.ws2p = conf.ws2p || {
           uuid: nuuid.v4().slice(0,8),
           privateAccess: true,
-          publicAccess: true
+          publicAccess: true,
+          preferedOnly: false,
+          privilegedOnly: false
         }
 
         // For config with missing value
@@ -58,8 +63,8 @@ export const WS2PDependency = {
         if (program.ws2pMaxPublic !== undefined)  conf.ws2p.maxPublic = program.ws2pMaxPublic
         if (program.ws2pPrivate !== undefined)    conf.ws2p.privateAccess = true
         if (program.ws2pPublic !== undefined)     conf.ws2p.publicAccess = true
-        if (program.ws2pNoPrivate !== undefined)  conf.ws2p.privateAccess = false
-        if (program.ws2pNoPublic !== undefined)   conf.ws2p.publicAccess = false
+        if (program.ws2pNoprivate !== undefined)  conf.ws2p.privateAccess = false
+        if (program.ws2pNopublic !== undefined)   conf.ws2p.publicAccess = false
 
         // Prefered nodes
         if (program.ws2pPreferedAdd !== undefined) {
@@ -73,6 +78,7 @@ export const WS2PDependency = {
             conf.ws2p.preferedNodes.splice(index, 1)
           }
         }
+        if (program.ws2pPreferedOnly !== undefined) conf.ws2p.preferedOnly = true
 
         // Privileged nodes
         if (program.ws2pPrivilegedAdd !== undefined) {
@@ -86,6 +92,7 @@ export const WS2PDependency = {
             conf.ws2p.privilegedNodes.splice(index, 1)
           }
         }
+        if (program.ws2pPrivilegedOnly !== undefined) conf.ws2p.privilegedOnly = true
 
         // Default value
         if (conf.ws2p.upnp === undefined || conf.ws2p.upnp === null) {
@@ -140,7 +147,7 @@ export const WS2PDependency = {
             const peers = await server.dal.getWS2Peers()
             for (const p of peers) {
               for (const ep of p.endpoints) {
-                if (ep.match(/^WS2P /)) {
+                if (ep.match(/^WS2P/)) {
                   console.log(p.pubkey, ep)
                 }
               }
@@ -242,22 +249,29 @@ export class WS2PAPI extends stream.Transform {
     // If WS2P defined and enabled
     if (this.server.conf.ws2p !== undefined && (this.server.conf.ws2p.publicAccess || this.server.conf.ws2p.privateAccess))
     {
+      let endpointType = "WS2P"
       if (this.server.conf.upnp && this.upnpAPI) {
         const config = this.upnpAPI.getCurrentConfig()
-        return !config ? '' : ['WS2P', this.server.conf.ws2p.uuid, config.remotehost, config.port].join(' ')
+        if (config) {
+          if (config.remotehost.match(WS2PConstants.HOST_ONION_REGEX)) { endpointType += "TOR"; }
+          return [endpointType, this.server.conf.ws2p.uuid, config.remotehost, config.port].join(' ')
+        } else {
+          return ''
+        }
       }
       else if (this.server.conf.ws2p.uuid
         && this.server.conf.ws2p.remotehost
         && this.server.conf.ws2p.remoteport) {
-        let ep = ['WS2P',
-          this.server.conf.ws2p.uuid,
-          this.server.conf.ws2p.remotehost,
-          this.server.conf.ws2p.remoteport
-        ].join(' ')
-        if (this.server.conf.ws2p.remotepath) {
-          ep += ` ${this.server.conf.ws2p.remotepath}`
-        }
-        return ep
+          if (this.server.conf.ws2p.remotehost.match(WS2PConstants.HOST_ONION_REGEX)) { endpointType += "TOR"; }
+          let ep = [endpointType,
+            this.server.conf.ws2p.uuid,
+            this.server.conf.ws2p.remotehost,
+            this.server.conf.ws2p.remoteport
+          ].join(' ')
+          if (this.server.conf.ws2p.remotepath) {
+            ep += ` ${this.server.conf.ws2p.remotepath}`
+          }
+          return ep
       }
     }
     return ''

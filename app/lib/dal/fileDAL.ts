@@ -15,6 +15,7 @@ import {DBBlock} from "../db/DBBlock"
 import {DBMembership} from "./sqliteDAL/MembershipDAL"
 import {MerkleDTO} from "../dto/MerkleDTO"
 import {CommonConstants} from "../common-libs/constants"
+import { ProxiesConf } from '../proxy';
 
 const fs      = require('fs')
 const path    = require('path')
@@ -142,7 +143,7 @@ export class FileDAL {
   }
 
   async getWS2Peers() {
-    return this.peerDAL.getPeersWithEndpointsLike('WS2P ')
+    return  this.peerDAL.getPeersWithEndpointsLike('WS2P')
   }
 
   async getBlock(number:number) {
@@ -364,6 +365,10 @@ export class FileDAL {
 
   getToBeKickedPubkeys() {
     return this.iindexDAL.getToBeKickedPubkeys()
+  }
+
+  getRevokedPubkeys() {
+    return this.mindexDAL.getRevokedPubkeys()
   }
 
   async searchJustIdentities(search:string) {
@@ -842,7 +847,11 @@ export class FileDAL {
     let conf = ConfDTO.complete(overrideConf || {});
     if (!defaultConf) {
       const savedConf = await this.confDAL.loadConf();
+      const savedProxyConf = _(savedConf.proxyConf).extend({});
       conf = _(savedConf).extend(overrideConf || {});
+      if (overrideConf.proxiesConf !== undefined) {} else {
+        conf.proxyConf = _(savedProxyConf).extend({});
+      }
     }
     if (this.loadConfHook) {
       await this.loadConfHook(conf)

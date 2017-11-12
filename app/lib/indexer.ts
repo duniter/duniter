@@ -1622,7 +1622,8 @@ export class Indexer {
   // BR_G93
   static async ruleIndexGenMembershipExpiry(HEAD: DBHead, dal:any) {
     const expiries = [];
-    const memberships: MindexEntry[] = reduceBy(await dal.mindexDAL.sqlFind({ expires_on: { $lte: HEAD.medianTime } }), ['pub']);
+
+    const memberships: MindexEntry[] = reduceBy(await dal.mindexDAL.sqlFind({ expires_on: { $lte: HEAD.medianTime }, revokes_on: { $gt: HEAD.medianTime} }), ['pub']);
     for (const POTENTIAL of memberships) {
       const MS = await dal.mindexDAL.getReducedMS(POTENTIAL.pub);
       const hasRenewedSince = MS.expires_on > HEAD.medianTime;

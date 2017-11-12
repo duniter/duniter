@@ -392,7 +392,7 @@ export class WS2PCluster {
         for (const api of apis) {
           try {
             // We do not connect to local host
-            if (api.uuid !== myUUID || api.uuid === '11111111') {
+            if (api.uuid !== myUUID) {
               await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
             }
           } catch (e) {
@@ -404,9 +404,7 @@ export class WS2PCluster {
         if (api) {
           try {
             // We do not connect to local host
-            if (api.uuid !== myUUID || api.uuid === '11111111') {
-              await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
-            }
+            await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
           } catch (e) {
             this.server.logger.debug('WS2P: init: failed connection')
           }
@@ -435,7 +433,7 @@ export class WS2PCluster {
             const connectedWS2PUID = this.getConnectedWS2PUID()
             const preferedKeys = (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) ? this.server.conf.ws2p.preferedNodes:[]
             const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, connectedWS2PUID, () => this.clientsCount(), this.maxLevel1Size, preferedKeys, (this.server.conf.ws2p && this.server.conf.ws2p.preferedOnly) || false, ws2pEnpoint.uuid)
-            if (shouldAccept && (!this.server.conf.ws2p || ws2pEnpoint.uuid !== this.server.conf.ws2p.uuid || peer.pubkey !== this.server.conf.pair.pub || ws2pEnpoint.uuid === '11111111')) {
+            if (shouldAccept && (!this.server.conf.ws2p || ws2pEnpoint.uuid !== this.server.conf.ws2p.uuid || peer.pubkey !== this.server.conf.pair.pub)) {
               await this.connectToRemoteWS(ws2pEnpoint.host, ws2pEnpoint.port, ws2pEnpoint.path, this.messageHandler, peer.pubkey, ws2pEnpoint.uuid)
               await this.trimClientConnections(preferedKeys)
             }
@@ -663,11 +661,6 @@ export class WS2PCluster {
     priorityKeysOnly:boolean,
     targetWS2PUID = ""
   ) {
-    // We need ws2pServer instance
-    if (!this.ws2pServer) {
-      return false
-    }
-
     if (this.server.conf.pair.pub === pub) {
       // We do not accept oneself connetion
       if (this.server.conf.ws2p && this.server.conf.ws2p.uuid === targetWS2PUID) {
@@ -709,12 +702,12 @@ export class WS2PCluster {
     {
       let minPriorityLevel = WS2PConstants.CONNECTIONS_PRIORITY.MAX_PRIORITY_LEVEL
       for (const connectedPubkey of connectedPubkeys) {
-        let connectedPubkeyPriorityLevel = this.ws2pServer.keyPriorityLevel(connectedPubkey, priorityKeys)
+        let connectedPubkeyPriorityLevel = this.keyPriorityLevel(connectedPubkey, priorityKeys)
         if (connectedPubkeyPriorityLevel < minPriorityLevel) {
           minPriorityLevel = connectedPubkeyPriorityLevel
         }
       }
-      if (this.ws2pServer.keyPriorityLevel(pub, priorityKeys) > minPriorityLevel) {
+      if (this.keyPriorityLevel(pub, priorityKeys) > minPriorityLevel) {
         return true
       }
     }

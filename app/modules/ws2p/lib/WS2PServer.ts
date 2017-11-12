@@ -43,6 +43,17 @@ export class WS2PServer extends events.EventEmitter {
     return this.connections.slice()
   }
 
+  countConnexions() {
+    const connections = this.getConnexions()
+    let count = 0
+    for (const c of connections) {
+      if (c.pubkey != this.server.conf.pair.pub) {
+        count++
+      }
+    }
+    return count
+  }
+
   private listenToWebSocketConnections(messageHandler:WS2PMessageHandler) {
     const key = new Key(this.server.conf.pair.pub, this.server.conf.pair.sec)
     this.wss = new WebSocketServer({ host: this.host, port: this.port })
@@ -118,8 +129,9 @@ export class WS2PServer extends events.EventEmitter {
             }
           })
         })
-        let privilegedKeys = (this.server.conf.ws2p && this.server.conf.ws2p.privilegedNodes) ? this.server.conf.ws2p.privilegedNodes:[]
-        await this.removeLowPriorityConnection(privilegedKeys)
+
+        // Remove excess incoming connections
+        this.removeExcessIncomingConnections()
 
         await this.server.dal.setPeerUP(c.pubkey)
 
@@ -128,6 +140,14 @@ export class WS2PServer extends events.EventEmitter {
         this.server.logger.warn('WS2P: cannot connect to incoming WebSocket connection: %s', e)
       }
     })
+  }
+
+  async removeExcessIncomingConnections() {
+    const ws2pPublicMax = (this.server.conf.ws2p && this.server.conf.ws2p.maxPublic) ? this.server.conf.ws2p.maxPublic:10
+    let privilegedKeys = (this.server.conf.ws2p && this.server.conf.ws2p.privilegedNodes) ? this.server.conf.ws2p.privilegedNodes:[]
+    while (this.countConnexions() > ws2pPublicMax) {
+      await this.removeLowPriorityConnection(privilegedKeys)
+    }
   }
 
   async removeLowPriorityConnection(privilegedKeys:string[]) {

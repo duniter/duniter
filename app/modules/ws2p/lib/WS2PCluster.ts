@@ -52,7 +52,7 @@ export class WS2PCluster {
   }
 
   private ws2pServer:WS2PServer|null = null
-  private ws2pClients:{[k:string]:WS2PClient} = {}
+  private ws2pClients:{[ws2puid:string]:WS2PClient} = {}
   private host:string|null = null
   private port:number|null = null
   private syncBlockInterval:NodeJS.Timer
@@ -284,11 +284,17 @@ export class WS2PCluster {
   }
 
   clientsCount() {
-    return Object.keys(this.ws2pClients).length
+    let count = 0
+    for (const ws2pid of Object.keys(this.ws2pClients)) {
+      if (this.ws2pClients[ws2pid].connection.pubkey != this.server.conf.pair.pub) {
+        count++
+      }
+    }
+    return count
   }
 
   servedCount() {
-    return this.ws2pServer ? this.ws2pServer.getConnexions().length : 0
+    return (this.ws2pServer) ? this.ws2pServer.countConnexions():0
   }
 
   async connectToRemoteWS(host: string, port: number, path:string, messageHandler:WS2PMessageHandler, expectedPub:string, ws2pEndpointUUID:string = ""): Promise<WS2PConnection> {

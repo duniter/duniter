@@ -156,7 +156,7 @@ export class PeerDTO implements Cloneable {
   }
 
   getAllWS2PEndpoints(canReachTorEp:boolean, canReachClearEp:boolean, myUUID:string) {
-    let apis:{ uuid:string, host:string, port:number, path:string }[] = []
+    let apis:{ version:number, uuid:string, host:string, port:number, path:string }[] = []
     let uuidExcluded:string[] = [myUUID]
     let api = this.getOnceWS2PEndpoint(canReachTorEp, canReachClearEp, uuidExcluded)
     while (api !== null) {

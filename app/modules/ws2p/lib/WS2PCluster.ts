@@ -297,13 +297,13 @@ export class WS2PCluster {
     return (this.ws2pServer) ? this.ws2pServer.countConnexions():0
   }
 
-  async connectToRemoteWS(host: string, port: number, path:string, messageHandler:WS2PMessageHandler, expectedPub:string, ws2pEndpointUUID:string = ""): Promise<WS2PConnection> {
+  async connectToRemoteWS(endpointVersion:number, host: string, port: number, path:string, messageHandler:WS2PMessageHandler, expectedPub:string, ws2pEndpointUUID:string = ""): Promise<WS2PConnection> {
     const uuid = nuuid.v4()
     let pub = expectedPub.slice(0, 8)
     const api:string = (host.match(WS2PConstants.HOST_ONION_REGEX) !== null) ? 'WS2PTOR':'WS2P'
     try {
       const fullEndpointAddress = WS2PCluster.getFullAddress(host, port, path)
-      const ws2pc = await WS2PClient.connectTo(this.server, fullEndpointAddress, ws2pEndpointUUID, messageHandler, expectedPub, (pub:string) => {
+      const ws2pc = await WS2PClient.connectTo(this.server, fullEndpointAddress, endpointVersion, ws2pEndpointUUID, messageHandler, expectedPub, (pub:string) => {
         const connectedPubkeys = this.getConnectedPubkeys()
         const connectedWS2PUID = this.getConnectedWS2PUID()
         const preferedNodes = (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) ? this.server.conf.ws2p.preferedNodes:[]
@@ -393,7 +393,7 @@ export class WS2PCluster {
           try {
             // We do not connect to local host
             if (api.uuid !== myUUID) {
-              await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
+              await this.connectToRemoteWS(api.version, api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
             }
           } catch (e) {
             this.server.logger.debug('WS2P: init: failed connection')
@@ -404,7 +404,7 @@ export class WS2PCluster {
         if (api) {
           try {
             // We do not connect to local host
-            await this.connectToRemoteWS(api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
+            await this.connectToRemoteWS(api.version, api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
           } catch (e) {
             this.server.logger.debug('WS2P: init: failed connection')
           }
@@ -434,7 +434,7 @@ export class WS2PCluster {
             const preferedKeys = (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) ? this.server.conf.ws2p.preferedNodes:[]
             const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, connectedWS2PUID, () => this.clientsCount(), this.maxLevel1Size, preferedKeys, (this.server.conf.ws2p && this.server.conf.ws2p.preferedOnly) || false, ws2pEnpoint.uuid)
             if (shouldAccept && (!this.server.conf.ws2p || ws2pEnpoint.uuid !== this.server.conf.ws2p.uuid || peer.pubkey !== this.server.conf.pair.pub)) {
-              await this.connectToRemoteWS(ws2pEnpoint.host, ws2pEnpoint.port, ws2pEnpoint.path, this.messageHandler, peer.pubkey, ws2pEnpoint.uuid)
+              await this.connectToRemoteWS(ws2pEnpoint.version, ws2pEnpoint.host, ws2pEnpoint.port, ws2pEnpoint.path, this.messageHandler, peer.pubkey, ws2pEnpoint.uuid)
               await this.trimClientConnections(preferedKeys)
             }
           }

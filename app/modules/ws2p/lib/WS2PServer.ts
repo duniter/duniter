@@ -86,11 +86,11 @@ export class WS2PServer extends events.EventEmitter {
           requestTimeout: WS2PConstants.REQUEST_TOR_TIMEOUT
         }
       }
-
+      const myWs2pId = (this.server.conf.ws2p && this.server.conf.ws2p.uuid) ? this.server.conf.ws2p.uuid:""
       const c = WS2PConnection.newConnectionFromWebSocketServer(
         ws,
         messageHandler,
-        new WS2PPubkeyLocalAuth(this.server.conf.currency, key, acceptPubkey),
+        new WS2PPubkeyLocalAuth(this.server.conf.currency, key, myWs2pId, acceptPubkey),
         new WS2PPubkeyRemoteAuth(this.server.conf.currency, key, acceptPubkey),
         timeout
       )

@@ -65,7 +65,7 @@ Optional modules:
 
 ## Theoretical
 * [[en] Relative theory of money](http://en.trm.creationmonetaire.info)
-* [[fr] Théorie relative de la monaie](http://trm.creationmonetaire.info)
+* [[fr] Théorie relative de la monnaie](http://trm.creationmonetaire.info)
 
 ## OpenUDC
 

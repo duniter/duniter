@@ -8,7 +8,6 @@ var duniter  = require('../../../index');
 var multicaster = require('../../../app/lib/streams/multicaster');
 var ConfDTO = require('../../../app/lib/dto/ConfDTO').ConfDTO
 var PeerDTO   = require('../../../app/lib/dto/PeerDTO').PeerDTO
-var user   = require('./user');
 var http   = require('./http');
 const bma = require('../../../app/modules/bma').BmaDependency.duniter.methods.bma;
 

@@ -3,7 +3,7 @@
 // const co = require('co');
 // const limiter = require('../lib/limiter');
 // const toolbox = require('../integration/tools/toolbox');
-// const user    = require('../integration/tools/user');
+// const TestUser = require('../integration/tools/TestUser').TestUser
 // const bma     = require('duniter-bma').duniter.methods.bma;
 //
 // limiter.noLimit();
@@ -15,7 +15,7 @@
 //   }
 // });
 //
-// const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
+// const cat = new TestUser('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
 //
 // let theLimiter;
 //

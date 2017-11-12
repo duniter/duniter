@@ -183,7 +183,7 @@ export class TestUser {
     };
   };
 
-  public async sendMoney(amount:number, recipient:string, comment?:string) {
+  public async sendMoney(amount:number, recipient:TestUser, comment?:string) {
     const raw = await this.prepareITX(amount, recipient, comment)
     await this.sendTX(raw)
   }

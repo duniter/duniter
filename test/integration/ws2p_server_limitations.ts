@@ -183,23 +183,23 @@ describe("WS2P server limitations", function() {
     const p3 = await s3.getPeer()
     await s2.writePeer(p3)
     await waitForkWS2PConnection(s3._server, 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd')
-    await waitForkWS2PDisconnection(s3._server, '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc')
-    await s1.expect('/network/ws2p/info', (res:any) => {
-      assert.equal(res.peers.level1, 1) // <- New connection to s3
-      assert.equal(res.peers.level2, 1)
-    })
-    await s2.expect('/network/ws2p/info', (res:any) => {
-      assert.equal(res.peers.level1, 1)
-      assert.equal(res.peers.level2, 0)
-    })
-    await s3.expect('/network/ws2p/info', (res:any) => {
-      assert.equal(res.peers.level1, 0)
-      assert.equal(res.peers.level2, 1) // <- New connection from s1
-    })
-    await s4.expect('/network/ws2p/info', (res:any) => {
-      assert.equal(res.peers.level1, 0)
-      assert.equal(res.peers.level2, 0)
-    })
+    //await waitForkWS2PDisconnection(s3._server, '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc')
+      await s1.expect('/network/ws2p/info', (res:any) => {
+        assert.equal(res.peers.level1, 1) // <- New connection to s3
+        assert.equal(res.peers.level2, 1)
+      })
+      await s2.expect('/network/ws2p/info', (res:any) => {
+        assert.equal(res.peers.level1, 1)
+        assert.equal(res.peers.level2, 0)
+      })
+      await s3.expect('/network/ws2p/info', (res:any) => {
+        assert.equal(res.peers.level1, 0)
+        assert.equal(res.peers.level2, 1) // <- New connection from s1
+      })
+      await s4.expect('/network/ws2p/info', (res:any) => {
+        assert.equal(res.peers.level1, 0)
+        assert.equal(res.peers.level2, 0)
+      })
   })
 
   function getTestingServer(keyring:{ pub:string, sec:string }) {

@@ -5,9 +5,11 @@ import {Cloneable} from "./Cloneable"
 import { WS2PConstants } from '../../modules/ws2p/lib/constants';
 
 export interface WS2PEndpoint {
+  version:number
   uuid:string
   host:string
   port:number
+  path:string
 }
 
 export class PeerDTO implements Cloneable {
@@ -96,7 +98,7 @@ export class PeerDTO implements Cloneable {
   }
 
   getOnceWS2PEndpoint(canReachTorEp:boolean, canReachClearEp:boolean, uuidExcluded:string[] = []) {
-    let api:{ version:number, uuid:string, host:string, port:number, path:string }|null = null
+    let api:WS2PEndpoint|null = null
     let bestWS2PVersionAvailable:number = 0
     let bestWS2PTORVersionAvailable:number = 0
     for (const ep of this.endpoints) {
@@ -156,7 +158,7 @@ export class PeerDTO implements Cloneable {
   }
 
   getAllWS2PEndpoints(canReachTorEp:boolean, canReachClearEp:boolean, myUUID:string) {
-    let apis:{ version:number, uuid:string, host:string, port:number, path:string }[] = []
+    let apis:WS2PEndpoint[] = []
     let uuidExcluded:string[] = [myUUID]
     let api = this.getOnceWS2PEndpoint(canReachTorEp, canReachClearEp, uuidExcluded)
     while (api !== null) {

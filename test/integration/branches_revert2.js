@@ -23,6 +23,7 @@ const MEMORY_MODE = true;
 const commonConf = {
   ipv4: '127.0.0.1',
   currency: 'bb',
+  nbCores:1,
   httpLogs: true,
   forksize: 3,
   sigQty: 1

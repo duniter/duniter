@@ -20,6 +20,7 @@ describe("Fork blocks", function() {
     s1 = toolbox.server({
 
       // The common conf
+      nbCores:1,
       medianTimeBlocks: 1,
       avgGenTime: 11,
       udTime0: now,
@@ -35,6 +36,7 @@ describe("Fork blocks", function() {
     s2 = toolbox.server({
 
       // Particular conf
+      nbCores:1,
       switchOnHeadAdvance: 5,
       forksize,
 
@@ -47,6 +49,7 @@ describe("Fork blocks", function() {
     s3 = toolbox.server({
 
       // Particular conf
+      nbCores:1,
       switchOnHeadAdvance: 5,
       forksize,
 

@@ -690,6 +690,11 @@ export class WS2PCluster {
       return false
     }
 
+    // We do not accept keys already connected
+    if (connectedPubkeys.indexOf(pub) !== -1) {
+      return false
+    }
+
     // Is member key ?
     const isMemberPeer = await this.server.dal.isMember(pub)
 
@@ -698,8 +703,7 @@ export class WS2PCluster {
       // Yes: just connect to it
       return true
     }
-    else if (connectedPubkeys.indexOf(pub) === -1)
-    {
+    else {
       let minPriorityLevel = WS2PConstants.CONNECTIONS_PRIORITY.MAX_PRIORITY_LEVEL
       for (const connectedPubkey of connectedPubkeys) {
         let connectedPubkeyPriorityLevel = this.keyPriorityLevel(connectedPubkey, priorityKeys)
@@ -711,6 +715,7 @@ export class WS2PCluster {
         return true
       }
     }
+
     return false
   }
 

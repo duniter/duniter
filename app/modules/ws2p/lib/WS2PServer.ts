@@ -171,6 +171,7 @@ export class WS2PServer extends events.EventEmitter {
     if (index !== -1) {
       // Remove the connection
       this.connections.splice(index, 1)
+      c.close()
     }
   }
 

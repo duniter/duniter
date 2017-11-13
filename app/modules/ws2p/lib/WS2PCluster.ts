@@ -663,7 +663,7 @@ export class WS2PCluster {
   ) {
     if (this.server.conf.pair.pub === pub) {
       // We do not accept oneself connetion
-      if (this.server.conf.ws2p && this.server.conf.ws2p.uuid === targetWS2PUID) {
+      if (this.server.conf.ws2p && this.server.conf.ws2p.uuid === targetWS2PUID || targetWS2PUID === '11111111') {
         return false
       } else {
         // We always accept self nodes, and they have a supreme priority (these are siblings)

@@ -17,7 +17,7 @@ export class WS2PClient {
     const k2 = new Key(server.conf.pair.pub, server.conf.pair.sec)
     const myWs2pId = (server.conf.ws2p && server.conf.ws2p.uuid) ? server.conf.ws2p.uuid:""
     const c = WS2PConnection.newConnectionToAddress(
-      endpointVersion,
+      Math.min(endpointVersion, WS2PConstants.WS2P_VERSION),
       fullEndpointAddress,
       messageHandler,
       new WS2PPubkeyLocalAuth(server.conf.currency , k2, myWs2pId, allowKey),

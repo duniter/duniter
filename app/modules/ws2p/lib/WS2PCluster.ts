@@ -7,7 +7,7 @@ import {CrawlerConstants} from "../../crawler/lib/constants"
 import {WS2PBlockPuller} from "./WS2PBlockPuller"
 import {WS2PDocpoolPuller} from "./WS2PDocpoolPuller"
 import {WS2PConstants} from "./constants"
-import {PeerDTO} from "../../../lib/dto/PeerDTO"
+import { PeerDTO, WS2PEndpoint } from '../../../lib/dto/PeerDTO';
 import {GlobalFifoPromise} from "../../../service/GlobalFifoPromise"
 import {OtherConstants} from "../../../lib/other_constants"
 import {Key, verify} from "../../../lib/common-libs/crypto/keyring"
@@ -293,6 +293,16 @@ export class WS2PCluster {
     return count
   }
 
+  numberOfConnectedPublicNodesWithSameKey() {
+    let count = 0
+    for (const ws2pid of Object.keys(this.ws2pClients)) {
+      if (this.ws2pClients[ws2pid].connection.pubkey === this.server.conf.pair.pub) {
+        count++
+      }
+    }
+    return count
+  }
+
   servedCount() {
     return (this.ws2pServer) ? this.ws2pServer.countConnexions():0
   }
@@ -383,13 +393,16 @@ export class WS2PCluster {
         }
       }
     })
-    let i = 0
     const canReachClearEndpoint = ProxiesConf.canReachClearEndpoint(this.server.conf.proxiesConf)
-    while (i < peers.length && this.clientsCount() < this.maxLevel1Size) {
+    let i = 0
+    let countPublicNodesWithSameKey:number = 1 // Necessary if maxPrivate = 0
+    let endpointsNodesWithSameKey:WS2PEndpoint[] = []
+    while (i < peers.length && (this.clientsCount() < this.maxLevel1Size || this.numberOfConnectedPublicNodesWithSameKey() < countPublicNodesWithSameKey) ) {
       const p = peers[i]
       if (p.pubkey === this.server.conf.pair.pub) {
-        const apis = p.getAllWS2PEndpoints(canReachTorEndpoint, canReachClearEndpoint, myUUID)
-        for (const api of apis) {
+        endpointsNodesWithSameKey = p.getAllWS2PEndpoints(canReachTorEndpoint, canReachClearEndpoint, myUUID)
+        countPublicNodesWithSameKey = endpointsNodesWithSameKey.length
+        for (const api of endpointsNodesWithSameKey) {
           try {
             // We do not connect to local host
             if (api.uuid !== myUUID) {
@@ -414,6 +427,8 @@ export class WS2PCluster {
       // Trim the eventual extra connections
       setTimeout(() => this.trimClientConnections(prefered), WS2PConstants.CONNEXION_TIMEOUT)
     }
+    // Retry to connect to ws2p peers every WS2PConstants.RECONNEXION_INTERVAL_IN_SEC
+    setTimeout(() => this.connectToWS2Peers(), WS2PConstants.RECONNEXION_INTERVAL_IN_SEC)
   }
 
   listenServerFlow() {
@@ -565,7 +580,7 @@ export class WS2PCluster {
       serverPubkeys = this.ws2pServer.getConnexions().map(c => c.pubkey)
     }
     let disconnectedOne = true
-    // Disconnect Private connexions already present under Public
+    // Disconnect Private connexions already present (under Public or under Private)
     while (disconnectedOne) {
       disconnectedOne = false
       let uuids = Object.keys(this.ws2pClients)
@@ -575,7 +590,14 @@ export class WS2PCluster {
         const pub = client.connection.pubkey
         const isNotOurself = pub !== this.server.conf.pair.pub
         const isAlreadyInPublic = serverPubkeys.indexOf(pub) !== -1
-        if (isNotOurself && isAlreadyInPublic) {
+        // Check if isAlreadyInPrivate
+        let isAlreadyInPrivate = 0
+        for (const ws2pid of Object.keys(this.ws2pClients)) {
+          if (this.ws2pClients[ws2pid].connection.pubkey === pub) {
+            isAlreadyInPrivate++
+          }
+        }
+        if (isNotOurself && (isAlreadyInPublic || isAlreadyInPrivate > 1)) {
           client.connection.close()
           await client.connection.closed
           disconnectedOne = true

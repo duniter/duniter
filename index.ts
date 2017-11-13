@@ -444,6 +444,7 @@ function commandLineConf(program:any, conf:any = {}) {
   const cli = {
     currency: program.currency,
     cpu: program.cpu,
+    nbCores: program.nbCores,
     prefix: program.prefix,
     server: {
       port: program.port,

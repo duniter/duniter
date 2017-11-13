@@ -21,6 +21,9 @@ export const ProverDependency = {
         if (conf.cpu === null || conf.cpu === undefined) {
           conf.cpu = Constants.DEFAULT_CPU;
         }
+        if (conf.nbCores === null || conf.nbCores === undefined) {
+          conf.nbCores = Math.min(Constants.CORES_MAXIMUM_USE_IN_PARALLEL, require('os').cpus().length)
+        }
         if (conf.prefix === null || conf.prefix === undefined) {
           conf.prefix = Constants.DEFAULT_PEER_ID;
         }

@@ -427,8 +427,6 @@ export class WS2PCluster {
       // Trim the eventual extra connections
       setTimeout(() => this.trimClientConnections(prefered), WS2PConstants.CONNEXION_TIMEOUT)
     }
-    // Retry to connect to ws2p peers every WS2PConstants.RECONNEXION_INTERVAL_IN_SEC
-    setTimeout(() => this.connectToWS2Peers(), WS2PConstants.RECONNEXION_INTERVAL_IN_SEC)
   }
 
   listenServerFlow() {
@@ -469,21 +467,6 @@ export class WS2PCluster {
             await this.broadcastHead(message, sig)
           } catch (e) {
             this.server.logger.warn(e)
-          }
-        }
-
-        // WS2P disconnection
-        else if (data.ws2p === 'disconnected') {
-          const nbConnections = this.getAllConnections().length
-          if (nbConnections < WS2PConstants.CONNECTIONS_LOW_LEVEL && !connectingToNodesByFlow) {
-            try {
-              connectingToNodesByFlow = true
-              await this.connectToWS2Peers()
-            } catch (e) {
-              throw e
-            } finally {
-              connectingToNodesByFlow = false
-            }
           }
         }
       })()
@@ -772,7 +755,7 @@ export class WS2PCluster {
 
   async startCrawling(waitConnection = false) {
     // For connectivity
-    this.reconnectionInteval = setInterval(() => this.server.push({ ws2p: 'disconnected' }), 1000 * WS2PConstants.RECONNEXION_INTERVAL_IN_SEC)
+    this.reconnectionInteval = setInterval(() => this.connectToWS2Peers(), 1000 * WS2PConstants.RECONNEXION_INTERVAL_IN_SEC)
     // For blocks
     if (this.syncBlockInterval)
       clearInterval(this.syncBlockInterval);

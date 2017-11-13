@@ -38,7 +38,7 @@ export class PowEngine {
     const cpus = os.cpus()
 
     if (os.arch().match(/arm/) || cpus[0].model.match(/Atom/)) {
-      stuff.newPoW.conf.cpu /= 2; // Don't know exactly why is ARM and Atom so much saturated by PoW, so let's divide by 2
+      stuff.newPoW.conf.nbCores /= 2; // Make sure that only once each physical core is used (for Hyperthreading).
     }
     return await this.cluster.proveByWorkers(stuff)
   }

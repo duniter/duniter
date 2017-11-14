@@ -1,8 +1,8 @@
-"use strict";
 import {hashf} from "../common"
+import {evalParams} from "../rules/global_rules"
+import {TxSignatureResult} from "../dto/TransactionDTO"
 
-let Parser = require("jison").Parser;
-let buid = require('../../../app/lib/common-libs/buid').Buid
+let Parser = require("jison").Parser
 
 let grammar = {
   "lex": {
@@ -42,36 +42,91 @@ let grammar = {
       [ "( e )",   "$$ = $2;" ]
     ]
   }
-};
+}
 
-export function unlock(conditionsStr:string, executions:any, metadata:any): boolean|null {
+export interface UnlockMetadata {
+  currentTime?:number
+  elapsedTime?:number
+}
+
+export function unlock(conditionsStr:string, unlockParams:string[], sigResult:TxSignatureResult, metadata?:UnlockMetadata): boolean|null {
+
+  const params = evalParams(unlockParams, conditionsStr, sigResult)
+  let parser = new Parser(grammar)
+  let nbFunctions = 0
+
+  parser.yy = {
+    i: 0,
+    sig: function (pubkey:string) {
+      // Counting functions
+      nbFunctions++
+      // Make the test
+      let success = false
+      let i = 0
+      while (!success && i < params.length) {
+        const p = params[i]
+        success = p.successful && p.funcName === 'SIG' && p.parameter === pubkey
+        i++
+      }
+      return success
+    },
+    xHx: function(hash:string) {
+      // Counting functions
+      nbFunctions++
+      // Make the test
+      let success = false
+      let i = 0
+      while (!success && i < params.length) {
+        const p = params[i]
+        success = p.successful && p.funcName === 'XHX' && hashf(p.parameter) === hash
+        i++
+      }
+      return success
+    },
+    cltv: function(deadline:string) {
+      // Counting functions
+      nbFunctions++
+      // Make the test
+      return metadata && metadata.currentTime && metadata.currentTime >= parseInt(deadline)
+    },
+    csv: function(amountToWait:string) {
+      // Counting functions
+      nbFunctions++
+      // Make the test
+      return metadata && metadata.elapsedTime && metadata.elapsedTime >= parseInt(amountToWait)
+    }
+  }
+
+  try {
+    const areAllValidParameters = params.reduce((success, p) => success && !!(p.successful), true)
+    if (!areAllValidParameters) {
+      throw "All parameters must be successful"
+    }
+    const unlocked = parser.parse(conditionsStr)
+    if (unlockParams.length > nbFunctions) {
+      throw "There must be at most as much params as function calls"
+    }
+    return unlocked
+  } catch(e) {
+    return null
+  }
+}
+
+export function checkGrammar(conditionsStr:string): boolean|null {
 
   let parser = new Parser(grammar);
 
   parser.yy = {
     i: 0,
-    sig: function (pubkey:string) {
-      let sigParam = executions[this.i++];
-      return (sigParam && pubkey === sigParam.pubkey && sigParam.sigOK) || false;
-    },
-    xHx: function(hash:string) {
-      let xhxParam = executions[this.i++];
-      if (xhxParam === undefined) {
-        xhxParam = ""
-      }
-      return hashf(xhxParam) === hash;
-    },
-    cltv: function(deadline:string) {
-      return metadata.currentTime && metadata.currentTime >= parseInt(deadline);
-    },
-    csv: function(amountToWait:string) {
-      return metadata.elapsedTime && metadata.elapsedTime >= parseInt(amountToWait);
-    }
-  };
+    sig: () => true,
+    xHx: () => true,
+    cltv: () => true,
+    csv: () => true
+  }
 
   try {
-    return parser.parse(conditionsStr);
+    return parser.parse(conditionsStr)
   } catch(e) {
-    return null;
+    return null
   }
 }

@@ -14,10 +14,7 @@ export class SandBox<T extends DBDocument> {
   
   async acceptNewSandBoxEntry(element:T, pubkey:string) {
     // Accept any document which has the exception pubkey (= the node pubkey)
-    if (element.pubkey === pubkey
-      || element.from === pubkey
-      || element.issuer === pubkey
-      || (element.issuers !== undefined && element.issuers.indexOf(pubkey) !== -1)) {
+    if (element.issuers !== undefined && element.issuers.indexOf(pubkey) !== -1) {
       return true;
     }
     const elements = await this.findElements()

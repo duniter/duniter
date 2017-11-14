@@ -20,7 +20,7 @@ export class PowEngine {
   constructor(private conf:ConfDTO, logger:any) {
 
     // We use as much cores as available, but not more than CORES_MAXIMUM_USE_IN_PARALLEL
-    this.nbWorkers = (conf && conf.nbCores) || Math.min(ProverConstants.CORES_MAXIMUM_USE_IN_PARALLEL, require('os').cpus().length)
+    this.nbWorkers = conf.nbCores
     this.cluster = new PowCluster(this.nbWorkers, logger)
     this.id = this.cluster.clusterId
   }
@@ -35,8 +35,10 @@ export class PowEngine {
       await this.cluster.cancelWork()
     }
 
-    if (os.arch().match(/arm/)) {
-      stuff.newPoW.conf.cpu /= 2; // Don't know exactly why is ARM so much saturated by PoW, so let's divide by 2
+    const cpus = os.cpus()
+
+    if (os.arch().match(/arm/) || cpus[0].model.match(/Atom/)) {
+      stuff.newPoW.conf.nbCores /= 2; // Make sure that only once each physical core is used (for Hyperthreading).
     }
     return await this.cluster.proveByWorkers(stuff)
   }

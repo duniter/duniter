@@ -1,5 +1,6 @@
 import {Cloneable} from "./Cloneable";
 import {hashf} from "../common";
+
 const DEFAULT_DOCUMENT_VERSION = 10
 
 export interface ShortRevocation {
@@ -37,6 +38,10 @@ export class RevocationDTO implements ShortRevocation, Cloneable {
 
   getRaw() {
     return this.rawWithoutSig() + this.revocation + "\n"
+  }
+
+  getRawUnsigned() {
+    return this.rawWithoutSig()
   }
 
   // TODO: to remove when BMA has been merged in duniter/duniter repo

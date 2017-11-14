@@ -316,13 +316,13 @@ describe("Crosschain transactions", function() {
         // 1. toc secretely chooses X password
         let btx1 = yield tocB.prepareUTX(btx0, ['SIG(0)'], [{ qty: 120, base: 0, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + ticB.pub + ')) || (SIG(' + tocB.pub + ') && SIG(' + ticB.pub + '))'  }], { comment: 'BETA toc to tic', blockstamp: blockstampB });
         // 2. toc makes a rollback transaction from tx1, signed by both parties (through internet): toc and tic
-        let btx2 = yield tocB.prepareMTX(btx1, ticB, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + tocB.pub + ')' }], { comment: 'money back to tocB in 48h', locktime: 3, blockstamp: blockstampB }); // N.B.: locktime should be like 48h in real world
+        let btx2 = yield tocB.prepareMTX(btx1, ticB, ['SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + tocB.pub + ')' }], { comment: 'money back to tocB in 48h', locktime: 3, blockstamp: blockstampB }); // N.B.: locktime should be like 48h in real world
 
         // TICM side (META)
         // 3. tic generates a transaction based on H(X) given by toc (through internet)
         let mtx3 = yield ticM.prepareUTX(mtx0, ['SIG(0)'], [{ qty: 120, base: 0, lock: '(XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB) && SIG(' + tocM.pub + ')) || (SIG(' + ticM.pub + ') && SIG(' + tocM.pub + '))'  }], { comment: 'META tic to toc', blockstamp: blockstampM });
         // 4. tic makes a rollback transaction from tx1, signed by both parties: toc and tic
-        let mtx4 = yield ticM.prepareMTX(mtx3, tocM, ['XHX(0) SIG(1) SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + ticM.pub + ')' }], { comment: 'money back to ticM', locktime: 2, blockstamp: blockstampM }); // N.B.: locktime should be like 24h in real world
+        let mtx4 = yield ticM.prepareMTX(mtx3, tocM, ['SIG(0) SIG(1)'], [{ qty: 120, base: 0, lock: 'SIG(' + ticM.pub + ')' }], { comment: 'money back to ticM', locktime: 2, blockstamp: blockstampM }); // N.B.: locktime should be like 24h in real world
 
         // We submit TX1 to the network & write it
         yield tocB.sendTX(btx1);

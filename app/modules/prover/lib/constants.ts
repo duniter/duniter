@@ -1,4 +1,4 @@
-export const Constants = {
+export const ProverConstants = {
 
   CORES_MAXIMUM_USE_IN_PARALLEL: 8,
 

@@ -1,5 +1,6 @@
 import {hashf} from "../common"
 import {Cloneable} from "./Cloneable"
+import {verify} from "../common-libs/crypto/keyring"
 
 export interface BaseDTO {
   base: number
@@ -23,6 +24,32 @@ export class OutputDTO implements BaseDTO {
     public conditions: string,
     public raw: string
   ) {}
+}
+
+export interface TxSignatureResult {
+  sigs:{
+    k:string
+    ok:boolean
+  }[]
+}
+
+export class TxSignatureResultImpl implements TxSignatureResult {
+
+  // The signature results
+  public sigs:{
+    k:string
+    ok:boolean
+  }[]
+
+  constructor(issuers:string[]) {
+    this.sigs = issuers.map(k => {
+      return { k, ok: false }
+    })
+  }
+
+  get allMatching() {
+    return this.sigs.reduce((ok, s) => ok && s.ok, true)
+  }
 }
 
 export class TransactionDTO implements Cloneable {
@@ -197,6 +224,24 @@ export class TransactionDTO implements Cloneable {
     }
   }
 
+  getTransactionSigResult() {
+    const sigResult = new TxSignatureResultImpl(this.issuers.slice())
+    let i = 0
+    const raw = this.getRawTxNoSig()
+    let matching = true
+    while (matching && i < this.signatures.length) {
+      const sig = this.signatures[i]
+      const pub = this.issuers[i]
+      sigResult.sigs[i].ok = matching = verify(raw, sig, pub)
+      i++
+    }
+    return sigResult
+  }
+
+  checkSignatures() {
+    return this.getTransactionSigResult().allMatching
+  }
+
   static fromJSONObject(obj:any, currency:string = "") {
     return new TransactionDTO(
       obj.version || 10,
@@ -274,6 +319,14 @@ export class TransactionDTO implements Cloneable {
       pos:        parseInt(sp[4]),
       raw:        inputStr
     }
+  }
+
+  static unlock2params(unlock:string) {
+    const match = unlock.match(/^\d+:(.*)$/)
+    if (match) {
+      return match[1].split(' ')
+    }
+    return []
   }
 
   static mock() {

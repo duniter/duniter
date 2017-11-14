@@ -15,7 +15,7 @@ import {WS2PServerMessageHandler} from "./interface/WS2PServerMessageHandler"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 import { CommonConstants } from '../../../lib/common-libs/constants';
 import { Package } from "../../../lib/common/package";
-import { Constants } from "../../prover/lib/constants";
+import { ProverConstants } from "../../prover/lib/constants";
 import { ProxiesConf } from '../../../lib/proxy';
 import { Keypair } from '../../../lib/dto/ConfDTO';
 
@@ -498,7 +498,7 @@ export class WS2PCluster {
     const software = 'duniter'
     const softVersion = Package.getInstance().version
     const ws2pId = (this.server.conf.ws2p && this.server.conf.ws2p.uuid) || '00000000'
-    const prefix = this.server.conf.prefix || Constants.DEFAULT_PEER_ID
+    const prefix = this.server.conf.prefix || ProverConstants.DEFAULT_PEER_ID
     const message = `${api}:HEAD:1:${pub}:${number}-${hash}:${ws2pId}:${software}:${softVersion}:${prefix}`
     const sig = key.signSync(message)
     return { sig, message, pub }

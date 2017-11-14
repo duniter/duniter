@@ -44,6 +44,7 @@ export const BmaDependency = {
 
       'network': async (conf:NetworkConfDTO, program:any, logger:any) => {
         await Q.nbind(networkConfiguration, null, conf, logger)()
+        conf.nobma = false
         networkWizardDone = true;
       },
 

@@ -1,5 +1,5 @@
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
-import {Constants} from "./constants"
+import {ProverConstants} from "./constants"
 
 const _ = require('underscore')
 const nuuid = require('node-uuid');
@@ -84,7 +84,7 @@ export class Master {
         })(),
 
         // Each worker has his own chunk of possible nonces
-        nonceBeginning: this.nbCores === 1 ? 0 : (index + 1) * Constants.NONCE_RANGE
+        nonceBeginning: this.nbCores === 1 ? 0 : (index + 1) * ProverConstants.NONCE_RANGE
       }
       return this.slavesMap[worker.id]
     })

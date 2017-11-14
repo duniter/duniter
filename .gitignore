@@ -42,7 +42,11 @@ test/blockchain/lib/*.d.ts
 /server.d.ts
 app/**/*.js*
 app/**/*.d.ts
-test/integration/*.js*
+test/integration/revoked_pubkey_replay.js
+test/integration/server-shutdown.js
+test/integration/transactions-csv-cltv-sig.js
+test/integration/ws2p*js
+test/integration/*.js.map
 test/integration/*.d.ts
 test/integration/membership_chainability.js*
 test/integration/membership_chainability.d.ts
@@ -58,3 +62,5 @@ test/fast/proxies*.js*
 test/fast/proxies*.d.ts
 test/fast/modules/ws2p/*.js*
 test/fast/modules/ws2p/*.d.ts
+test/fast/modules/common/grammar.js*
+test/fast/modules/common/grammar.d.ts

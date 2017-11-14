@@ -1,4 +1,3 @@
-"use strict";
 import {BlockDTO} from "./dto/BlockDTO"
 import {ConfDTO, CurrencyConfDTO} from "./dto/ConfDTO"
 import {IdentityDTO} from "./dto/IdentityDTO"
@@ -6,11 +5,11 @@ import {RevocationDTO} from "./dto/RevocationDTO"
 import {CertificationDTO} from "./dto/CertificationDTO"
 import {TransactionDTO} from "./dto/TransactionDTO"
 import {DBHead} from "./db/DBHead"
-import {LOCAL_RULES_HELPERS} from "./rules/local_rules"
 import {verify} from "./common-libs/crypto/keyring"
 import {rawer, txunlock} from "./common-libs/index"
 import {CommonConstants} from "./common-libs/constants"
 import {MembershipDTO} from "./dto/MembershipDTO"
+import {UnlockMetadata} from "./common-libs/txunlock"
 
 const _               = require('underscore');
 
@@ -1777,7 +1776,7 @@ export class Indexer {
     reduce: reduce,
     reduceBy: reduceBy,
     getMaxBlockSize: (HEAD: DBHead) => Math.max(500, Math.ceil(1.1 * HEAD.avgBlockSize)),
-    checkPeopleAreNotOudistanced: checkPeopleAreNotOudistanced
+    checkPeopleAreNotOudistanced
   }
 }
 
@@ -1979,44 +1978,14 @@ async function checkCertificationIsValid (block: BlockDTO, cert: CindexEntry, fi
 
 function txSourceUnlock(ENTRY:SindexEntry, source:SindexEntry, HEAD: DBHead) {
   const tx = ENTRY.txObj;
-  let sigResults = LOCAL_RULES_HELPERS.getSigResult(tx)
-  let unlocksForCondition = [];
-  let unlocksMetadata: any = {};
-  let unlockValues = ENTRY.unlock;
-  if (source.conditions) {
-    if (unlockValues) {
-      // Evaluate unlock values
-      let sp = unlockValues.split(' ');
-      for (const func of sp) {
-        const match = func.match(/\((.+)\)/)
-        let param = match && match[1];
-        if (param && func.match(/SIG/)) {
-          let pubkey = tx.issuers[parseInt(param)];
-          if (!pubkey) {
-            return false;
-          }
-          unlocksForCondition.push({
-            pubkey: pubkey,
-            sigOK: sigResults.sigs[pubkey] && sigResults.sigs[pubkey].matching || false
-          });
-        } else {
-          // XHX
-          unlocksForCondition.push(param);
-        }
-      }
-    }
-
-    if (source.conditions.match(/CLTV/)) {
-      unlocksMetadata.currentTime = HEAD.medianTime;
-    }
-
-    if (source.conditions.match(/CSV/)) {
-      unlocksMetadata.elapsedTime = HEAD.medianTime - source.written_time;
-    }
-
-    if (txunlock(source.conditions, unlocksForCondition, unlocksMetadata)) {
-      return true;
-    }
+  const unlockParams:string[] = TransactionDTO.unlock2params(ENTRY.unlock || '')
+  const unlocksMetadata:UnlockMetadata = {}
+  const sigResult = TransactionDTO.fromJSONObject(tx).getTransactionSigResult()
+  if (source.conditions.match(/CLTV/)) {
+    unlocksMetadata.currentTime = HEAD.medianTime;
   }
-  return false;
+  if (source.conditions.match(/CSV/)) {
+    unlocksMetadata.elapsedTime = HEAD.medianTime - source.written_time;
+  }
+  return txunlock(source.conditions, unlockParams, sigResult, unlocksMetadata)
 }

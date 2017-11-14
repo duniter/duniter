@@ -374,9 +374,8 @@ export const LOCAL_RULES_FUNCTIONS = {
     const txs = block.transactions
     // Check rule against each transaction
     for (const tx of txs) {
-      let sigResult = getSigResult(tx);
-      if (!sigResult.matching) {
-        throw Error('Signature from a transaction must match');
+      if (!tx.checkSignatures()) {
+        throw Error('Signature from a transaction must match')
       }
     }
     return true;
@@ -385,33 +384,6 @@ export const LOCAL_RULES_FUNCTIONS = {
 
 function checkSingleMembershipSignature(ms:any) {
   return verify(ms.getRaw(), ms.signature, ms.issuer);
-}
-
-function getSigResult(tx:any) {
-  let sigResult:any = { sigs: {}, matching: true };
-  let json:any = { "version": tx.version, "currency": tx.currency, "blockstamp": tx.blockstamp, "locktime": tx.locktime, "inputs": [], "outputs": [], "issuers": tx.issuers, "signatures": [], "comment": tx.comment, unlocks: [] };
-  tx.inputs.forEach(function (input:any) {
-    json.inputs.push(input.raw);
-  });
-  tx.outputs.forEach(function (output:any) {
-    json.outputs.push(output.raw);
-  });
-  json.unlocks = tx.unlocks;
-  let i = 0;
-  let signaturesMatching = true;
-  const raw = tx.getRawTxNoSig()
-  while (signaturesMatching && i < tx.signatures.length) {
-    const sig = tx.signatures[i];
-    const pub = tx.issuers[i];
-    signaturesMatching = verify(raw, sig, pub);
-    sigResult.sigs[pub] = {
-      matching: signaturesMatching,
-      index: i
-    };
-    i++;
-  }
-  sigResult.matching = signaturesMatching;
-  return sigResult;
 }
 
 function checkBunchOfTransactions(transactions:TransactionDTO[], done:any = undefined){
@@ -438,8 +410,6 @@ export const LOCAL_RULES_HELPERS = {
   maxAcceleration: (conf:ConfDTO) => maxAcceleration(conf),
 
   checkSingleMembershipSignature: checkSingleMembershipSignature,
-
-  getSigResult: getSigResult,
 
   checkBunchOfTransactions: checkBunchOfTransactions,
 

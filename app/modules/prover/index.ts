@@ -22,7 +22,7 @@ export const ProverDependency = {
           conf.cpu = ProverConstants.DEFAULT_CPU;
         }
         if (conf.nbCores === null || conf.nbCores === undefined) {
-          conf.nbCores = Math.min(Constants.CORES_MAXIMUM_USE_IN_PARALLEL, require('os').cpus().length)
+          conf.nbCores = Math.min(ProverConstants.CORES_MAXIMUM_USE_IN_PARALLEL, require('os').cpus().length)
         } else if (conf.nbCores <= 0) {
           conf.nbCores = 1
         }

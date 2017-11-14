@@ -173,7 +173,6 @@ export class TxsDAL extends AbstractSQLite<DBTx> {
     dbTx.received = moment().unix()
     dbTx.written = false
     dbTx.removed = false
-    //dbTx.hash = tx.getHash()
     return this.saveEntity(dbTx)
   }
 

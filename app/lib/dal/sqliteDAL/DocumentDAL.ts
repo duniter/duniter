@@ -1,3 +1,5 @@
 export interface DBDocument {
-  issuers: string[];
+  pubkey?: string
+  issuer?: string
+  issuers?: string[]
 }

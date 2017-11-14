@@ -1,4 +1,4 @@
-import { DBDocument } from './DocumentDAL';
+import {DBDocument} from './DocumentDAL';
 
 export class SandBox<T extends DBDocument> {
 
@@ -13,7 +13,9 @@ export class SandBox<T extends DBDocument> {
   }
   
   async acceptNewSandBoxEntry(element:T, pubkey:string) {
-    if (element.issuers !== undefined && element.issuers.indexOf(pubkey) !== -1) {
+    if (element.pubkey === pubkey
+      || element.issuer === pubkey
+      || (element.issuers !== undefined && element.issuers.indexOf(pubkey) !== -1)) {
       return true;
     }
     const elements = await this.findElements()

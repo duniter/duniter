@@ -258,7 +258,8 @@ export class Synchroniser extends stream.Duplex {
           return block;
         }
         async applyMainBranch(block: BlockDTO): Promise<boolean> {
-          const addedBlock = await this.BlockchainService.submitBlock(block)
+          const addedBlock = await this.BlockchainService.submitBlock(block, true)
+          await this.BlockchainService.blockResolution()
           this.server.streamPush(addedBlock);
           this.watcher.appliedPercent(Math.floor(block.number / to * 100));
           return true

@@ -1,5 +1,6 @@
 export interface DBDocument {
-  pubkey?: string
-  issuer?: string
-  issuers?: string[]
+  pubkey?: string     // idty table
+  from?: string       // cert table
+  issuer?: string     // membership table
+  issuers?: string[]  // txs table
 }

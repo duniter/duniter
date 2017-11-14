@@ -115,7 +115,7 @@ export class IdentityService extends FIFOService {
         await GLOBAL_RULES_FUNCTIONS.checkIdentitiesAreWritable({ identities: [idtyObj.inline()], version: (current && current.version) || constants.BLOCK_GENERATED_VERSION }, this.conf, this.dal);
         if (byAbsorption !== BY_ABSORPTION) {
           if (!(await this.dal.idtyDAL.sandbox.acceptNewSandBoxEntry({
-              pubkey: idty.pubkey,
+              issuers: [idty.pubkey],
               ref_block: parseInt(idty.buid.split('-')[0])
             }, this.conf.pair && this.conf.pair.pub))) {
             throw constants.ERRORS.SANDBOX_FOR_IDENTITY_IS_FULL;
@@ -166,6 +166,7 @@ export class IdentityService extends FIFOService {
             };
           }
           const mCert:DBCert = {
+            issuers: [cert.from],
             from: cert.from,
             sig: cert.sig,
             block_number: cert.block_number,
@@ -239,7 +240,7 @@ export class IdentityService extends FIFOService {
           const idty = IdentityDTO.fromRevocation(revoc);
           idty.revocation_sig = revoc.revocation;
           if (!(await this.dal.idtyDAL.sandbox.acceptNewSandBoxEntry({
-              pubkey: idty.pubkey,
+              issuers: [idty.pubkey],
               ref_block: parseInt(idty.buid.split('-')[0]),
               certsCount: 0
             }, this.conf.pair && this.conf.pair.pub))) {

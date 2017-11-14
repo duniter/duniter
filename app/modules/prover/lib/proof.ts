@@ -2,7 +2,7 @@ import {LOCAL_RULES_HELPERS} from "../../../lib/rules/local_rules"
 import {hashf} from "../../../lib/common"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
-import {Constants} from "./constants"
+import {ProverConstants} from "./constants"
 import {KeyGen} from "../../../lib/common-libs/crypto/keyring"
 import {dos2unix} from "../../../lib/common-libs/dos2unix"
 import {rawer} from "../../../lib/common-libs/index"
@@ -84,10 +84,10 @@ function beginNewProofOfWork(stuff:any) {
     const nbZeros = stuff.zeros;
     const pair = stuff.pair;
     const forcedTime = stuff.forcedTime;
-    currentCPU = conf.cpu || Constants.DEFAULT_CPU;
+    currentCPU = conf.cpu || ProverConstants.DEFAULT_CPU;
     prefix = parseInt(conf.prefix || prefix)
-    if (prefix && prefix < Constants.NONCE_RANGE) {
-      prefix *= 100 * Constants.NONCE_RANGE
+    if (prefix && prefix < ProverConstants.NONCE_RANGE) {
+      prefix *= 100 * ProverConstants.NONCE_RANGE
     }
     const highMark = stuff.highMark;
     const turnDuration = stuff.turnDuration || TURN_DURATION_IN_MILLISEC
@@ -184,7 +184,7 @@ function beginNewProofOfWork(stuff:any) {
             if (charOK) {
               found = !!(pow[nbZeros].match(new RegExp('[0-' + highMark + ']')))
             }
-            if (!found && nbZeros > 0 && j - 1 >= Constants.POW_MINIMAL_TO_SHOW) {
+            if (!found && nbZeros > 0 && j - 1 >= ProverConstants.POW_MINIMAL_TO_SHOW) {
               pSend({ pow: { pow: pow, block: block, nbZeros: nbZeros }});
             }
 

@@ -1,4 +1,4 @@
-import {Constants} from "./constants"
+import {ProverConstants} from "./constants"
 import {Master as PowCluster} from "./powCluster"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 

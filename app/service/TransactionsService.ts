@@ -46,7 +46,7 @@ export class TransactionService extends FIFOService {
         await GLOBAL_RULES_HELPERS.checkSingleTransaction(dto, nextBlockWithFakeTimeVariation, this.conf, this.dal, CHECK_PENDING_TRANSACTIONS);
         const server_pubkey = this.conf.pair && this.conf.pair.pub;
         if (!(await this.dal.txsDAL.sandbox.acceptNewSandBoxEntry({
-            pubkey: tx.issuers.indexOf(server_pubkey) !== -1 ? server_pubkey : '',
+            issuers: tx.issuers,
             output_base: tx.output_base,
             output_amount: tx.output_amount
           }, server_pubkey))) {

@@ -10,7 +10,7 @@ const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
 const shutDownEngine  = require('./tools/shutDownEngine');
 
-require('../../app/modules/prover/lib/constants').Constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
+require('../../app/modules/prover/lib/constants').ProverConstants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
 require('../../app/modules/bma').BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
 
 const expectJSON     = httpTest.expectJSON;

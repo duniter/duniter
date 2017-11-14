@@ -13,7 +13,7 @@ const shutDownEngine  = require('./tools/shutDownEngine');
 const rp        = require('request-promise');
 const ws        = require('ws');
 
-require('../../app/modules/prover/lib/constants').Constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
+require('../../app/modules/prover/lib/constants').ProverConstants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
 
 let server, server2, cat, toc
 

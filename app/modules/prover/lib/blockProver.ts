@@ -1,4 +1,4 @@
-import {Constants} from "./constants"
+import {ProverConstants} from "./constants"
 import {Server} from "../../../../server"
 import {PowEngine} from "./engine"
 import {DBBlock} from "../../../lib/db/DBBlock"
@@ -165,7 +165,7 @@ export class BlockProver {
       // Start
       powFarm.setOnAlmostPoW((pow:any, matches:any, aBlock:any, found:boolean) => {
         this.powEvent(found, pow);
-        if (matches && matches[1].length >= Constants.MINIMAL_ZEROS_TO_SHOW_IN_LOGS) {
+        if (matches && matches[1].length >= ProverConstants.MINIMAL_ZEROS_TO_SHOW_IN_LOGS) {
           this.logger.info('Matched %s zeros %s with Nonce = %s for block#%s by %s', matches[1].length, pow, aBlock.nonce, aBlock.number, aBlock.issuer.slice(0,6));
         }
       });

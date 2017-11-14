@@ -1,3 +1,5 @@
+import { ConfDTO } from '../../app/lib/dto/ConfDTO';
+import { setTimeout } from 'timers';
 import {NewTestingServer} from "./tools/toolbox"
 
 const should = require('should')

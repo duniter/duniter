@@ -28,5 +28,9 @@ export const Buid = {
     },
 
     buid: buidFunctions
+  },
+
+  getBlockstamp: (block:{ number:number, hash:string }) => {
+    return [block.number, block.hash].join('-')
   }
 };

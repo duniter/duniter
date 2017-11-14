@@ -1,6 +1,7 @@
 import {RevocationDTO} from "./RevocationDTO"
 import {hashf} from "../common"
 import {DBIdentity, NewDBIdentity} from "../dal/sqliteDAL/IdentityDAL"
+
 const DEFAULT_DOCUMENT_VERSION = 10
 
 export interface HashableIdentity {
@@ -48,6 +49,10 @@ export class IdentityDTO {
     raw += "UniqueID: " + this.uid + '\n'
     raw += "Timestamp: " + this.buid + '\n'
     return raw
+  }
+
+  getRawUnSigned() {
+    return this.rawWithoutSig()
   }
 
   getRawSigned() {

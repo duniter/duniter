@@ -22,6 +22,7 @@ import {WS2PMessageHandler} from "../../../app/modules/ws2p/lib/impl/WS2PMessage
 import {WS2PCluster} from "../../../app/modules/ws2p/lib/WS2PCluster"
 import {WS2PServer} from "../../../app/modules/ws2p/lib/WS2PServer"
 import {WS2PServerMessageHandler} from "../../../app/modules/ws2p/lib/interface/WS2PServerMessageHandler"
+import {TestUser} from "./TestUser"
 
 const assert      = require('assert');
 const _           = require('underscore');
@@ -31,7 +32,6 @@ const WebSocketServer = require('ws').Server
 const httpTest    = require('../tools/http');
 const sync        = require('../tools/sync');
 const commit      = require('../tools/commit');
-const user        = require('../tools/user');
 const until       = require('../tools/until');
 const bma         = require('../../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const logger      = require('../../../app/lib/logger').NewLogger('toolbox');
@@ -72,7 +72,7 @@ export const assertThrows = async (promise:Promise<any>, message:string|null = n
 }
 
 export const simpleUser = (uid:string, keyring:{ pub:string, sec:string }, server:TestingServer) => {
-  return user(uid, keyring, { server });
+  return new TestUser(uid, keyring, { server });
 }
 
 export const simpleNetworkOf2NodesAnd2Users = async (options:any) => {
@@ -82,8 +82,8 @@ export const simpleNetworkOf2NodesAnd2Users = async (options:any) => {
   const s1 = NewTestingServer(_.extend({ pair: catKeyring }, options || {}));
   const s2 = NewTestingServer(_.extend({ pair: tacKeyring }, options || {}));
 
-  const cat = user('cat', catKeyring, { server: s1 });
-  const tac = user('tac', tacKeyring, { server: s1 });
+  const cat = new TestUser('cat', catKeyring, { server: s1 });
+  const tac = new TestUser('tac', tacKeyring, { server: s1 });
 
   await s1.initDalBmaConnections()
   await s2.initDalBmaConnections()
@@ -113,8 +113,8 @@ export const simpleNodeWith2Users = async (options:any) => {
 
   const s1 = NewTestingServer(_.extend({ pair: catKeyring }, options || {}));
 
-  const cat = user('cat', catKeyring, { server: s1 });
-  const tac = user('tac', tacKeyring, { server: s1 });
+  const cat = new TestUser('cat', catKeyring, { server: s1 });
+  const tac = new TestUser('tac', tacKeyring, { server: s1 });
 
   await s1.initDalBmaConnections()
 
@@ -135,8 +135,8 @@ export const simpleNodeWith2otherUsers = async (options:any) => {
 
   const s1 = NewTestingServer(_.extend({ pair: ticKeyring }, options || {}));
 
-  const tic = user('cat', ticKeyring, { server: s1 });
-  const toc = user('tac', tocKeyring, { server: s1 });
+  const tic = new TestUser('cat', ticKeyring, { server: s1 });
+  const toc = new TestUser('tac', tocKeyring, { server: s1 });
 
   await s1.initDalBmaConnections()
 
@@ -152,7 +152,7 @@ export const simpleNodeWith2otherUsers = async (options:any) => {
 
 export const createUser = async (uid:string, pub:string, sec:string, defaultServer:Server) => {
   const keyring = { pub: pub, sec: sec };
-  return user(uid, keyring, { server: defaultServer });
+  return new TestUser(uid, keyring, { server: defaultServer });
 }
 
 export const fakeSyncServer = async (readBlocksMethod:any, readParticularBlockMethod:any, onPeersRequested:any) => {

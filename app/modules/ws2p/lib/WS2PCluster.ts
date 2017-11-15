@@ -267,8 +267,7 @@ export class WS2PCluster {
       await this.ws2pServer.close()
     }
     this.ws2pServer = await WS2PServer.bindOn(this.server, host, port, this.fifo, (pubkey:string, connectedPubkeys:string[]) => {
-      const privilegedNodes = (this.server.conf.ws2p && this.server.conf.ws2p.privilegedNodes) ? this.server.conf.ws2p.privilegedNodes:[]
-      return this.acceptPubkey(pubkey, connectedPubkeys, [], () => this.servedCount(), this.maxLevel2Peers, privilegedNodes, (this.server.conf.ws2p !== undefined && this.server.conf.ws2p.privilegedOnly)) 
+      return this.acceptPubkey(pubkey, connectedPubkeys, [], () => this.servedCount(), this.maxLevel2Peers, this.privilegedNodes(), (this.server.conf.ws2p !== undefined && this.server.conf.ws2p.privilegedOnly)) 
     }, this.keyPriorityLevel, this.messageHandler)
     this.host = host
     this.port = port
@@ -285,7 +284,7 @@ export class WS2PCluster {
 
   clientsCount() {
     let count = 0
-    for (const ws2pid of Object.keys(this.ws2pClients)) {
+    for (const ws2pid in this.ws2pClients) {
       if (this.ws2pClients[ws2pid].connection.pubkey != this.server.conf.pair.pub) {
         count++
       }
@@ -295,7 +294,7 @@ export class WS2PCluster {
 
   numberOfConnectedPublicNodesWithSameKey() {
     let count = 0
-    for (const ws2pid of Object.keys(this.ws2pClients)) {
+    for (const ws2pid in this.ws2pClients) {
       if (this.ws2pClients[ws2pid].connection.pubkey === this.server.conf.pair.pub) {
         count++
       }
@@ -305,6 +304,14 @@ export class WS2PCluster {
 
   servedCount() {
     return (this.ws2pServer) ? this.ws2pServer.countConnexions():0
+  }
+
+  privilegedNodes() {
+    if (this.server.conf.ws2p && this.server.conf.ws2p.privilegedNodes) {
+      return this.server.conf.ws2p.privilegedNodes
+    } else {
+      return  []
+    }
   }
 
   async connectToRemoteWS(endpointVersion:number, host: string, port: number, path:string, messageHandler:WS2PMessageHandler, expectedPub:string, ws2pEndpointUUID:string = ""): Promise<WS2PConnection> {

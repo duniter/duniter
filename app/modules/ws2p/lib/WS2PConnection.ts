@@ -430,7 +430,7 @@ export class WS2PConnection {
                       return this.errorDetected(WS2P_ERR.ALREADY_AUTHENTICATED_BY_REMOTE)
                     }
                     else if (
-                      typeof data.pub !== "string" || typeof data.sig !== "string" || typeof data.challenge !== "string" || (this.ws2pVersion > 1 && data.ws2pId !== "string") ) {
+                      typeof data.pub !== "string" || typeof data.sig !== "string" || typeof data.challenge !== "string" || (this.ws2pVersion > 1 && typeof data.ws2pId !== "string") ) {
                       await this.errorDetected(WS2P_ERR.AUTH_INVALID_ASK_FIELDS)
                     } else {
                       if (this.expectedPub && data.pub !== this.expectedPub) {

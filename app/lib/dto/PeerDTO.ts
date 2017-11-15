@@ -103,9 +103,9 @@ export class PeerDTO implements Cloneable {
     let bestWS2PTORVersionAvailable:number = 0
     for (const ep of this.endpoints) {
       if (canReachTorEp) {
-        let matches:any = ep.match(CommonConstants.WS2PTOR_V2_REGEXP)
+        let matches:RegExpMatchArray | null = ep.match(CommonConstants.WS2PTOR_V2_REGEXP)
         if (matches && parseInt(matches[1]) > bestWS2PTORVersionAvailable && (uuidExcluded.indexOf(matches[2]) === -1)) {
-          bestWS2PTORVersionAvailable = matches[1]
+          bestWS2PTORVersionAvailable = parseInt(matches[1])
           api = {
             version: parseInt(matches[1]),
             uuid: matches[2],

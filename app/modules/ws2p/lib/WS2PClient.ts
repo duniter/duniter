@@ -13,7 +13,7 @@ export class WS2PClient {
 
   private constructor(public connection:WS2PConnection) {}
 
-  static async connectTo(server:Server, fullEndpointAddress:string, endpointVersion:number, expectedWS2PUID:string, messageHandler:WS2PMessageHandler, expectedPub:string, allowKey:(pub:string)=>Promise<boolean> ) {
+  static async connectTo(server:Server, fullEndpointAddress:string, endpointVersion:number, expectedWS2PUID:string, messageHandler:WS2PMessageHandler, expectedPub:string, allowKey:(pub:string, ws2pID?:string)=>Promise<boolean> ) {
     const k2 = new Key(server.conf.pair.pub, server.conf.pair.sec)
     const myWs2pId = (server.conf.ws2p && server.conf.ws2p.uuid) ? server.conf.ws2p.uuid:""
     const c = WS2PConnection.newConnectionToAddress(

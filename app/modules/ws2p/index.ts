@@ -1,4 +1,5 @@
 "use strict";
+import { WS2PEndpoint, PeerDTO } from '../../lib/dto/PeerDTO';
 import { WS2PConstants } from './lib/constants';
 import {ConfDTO, WS2PConfDTO} from "../../lib/dto/ConfDTO"
 import {Server} from "../../../server"
@@ -112,6 +113,7 @@ export const WS2PDependency = {
       input: (server:Server, conf:WS2PConfDTO, logger:any) => {
         const api = new WS2PAPI(server, conf, logger)
         server.ws2pCluster = api.getCluster()
+        server.addEndpointsDefinitions(async () => api.getV1Endpoint())
         server.addEndpointsDefinitions(async () => api.getEndpoint())
         server.addWrongEndpointFilter((endpoints:string[]) => getWrongEndpoints(endpoints, conf))
         return api
@@ -245,35 +247,49 @@ export class WS2PAPI extends stream.Transform {
     }
   }
 
-  async getEndpoint() {
-    // If WS2P defined and enabled
-    if (this.server.conf.ws2p !== undefined && (this.server.conf.ws2p.publicAccess || this.server.conf.ws2p.privateAccess))
-    {
-      let endpointType = "WS2P"
-      if (this.server.conf.upnp && this.upnpAPI) {
-        const config = this.upnpAPI.getCurrentConfig()
-        if (config) {
-          if (config.remotehost.match(WS2PConstants.HOST_ONION_REGEX)) { endpointType += "TOR"; }
-          return [endpointType, this.server.conf.ws2p.uuid, config.remotehost, config.port].join(' ')
-        } else {
-          return ''
-        }
-      }
-      else if (this.server.conf.ws2p.uuid
-        && this.server.conf.ws2p.remotehost
-        && this.server.conf.ws2p.remoteport) {
-          if (this.server.conf.ws2p.remotehost.match(WS2PConstants.HOST_ONION_REGEX)) { endpointType += "TOR"; }
-          let ep = [endpointType,
-            this.server.conf.ws2p.uuid,
-            this.server.conf.ws2p.remotehost,
-            this.server.conf.ws2p.remoteport
-          ].join(' ')
-          if (this.server.conf.ws2p.remotepath) {
-            ep += ` ${this.server.conf.ws2p.remotepath}`
-          }
-          return ep
-      }
+  async getV1Endpoint():Promise<string> {
+    let endpointV1 = await this.getWS2PEndpoint()
+    if (endpointV1 !== undefined) {
+      endpointV1.version = 1
+      return PeerDTO.ws2pEndpointToString(endpointV1)
     }
     return ''
+  }
+
+  async getEndpoint():Promise<string> {
+    let endpoint = await this.getWS2PEndpoint()
+    if (endpoint !== undefined) {
+      return PeerDTO.ws2pEndpointToString(endpoint)
+    }
+    return ''
+  }
+
+  async getWS2PEndpoint():Promise<WS2PEndpoint | undefined> {
+    // If WS2P defined and enabled
+    if (this.server.conf.ws2p !== undefined && this.server.conf.ws2p.uuid && this.server.conf.ws2p.publicAccess)
+    {
+      let api = "WS2P"
+      let remotehost = this.server.conf.ws2p.remotehost
+      let remoteport = this.server.conf.ws2p.remoteport
+      if (this.server.conf.upnp && this.upnpAPI) {
+        const config = this.upnpAPI.getCurrentConfig()
+        if (config && this.server.conf.ws2p.uuid) {
+          remotehost = config.remotehost
+          remoteport = config.port
+        }
+      }
+      if (remotehost != undefined && remotehost != null && remoteport!= undefined && remoteport != null) {
+        if (remotehost.match(WS2PConstants.HOST_ONION_REGEX)) { api += "TOR"; }
+        return {
+          api: api,
+          version: WS2PConstants.WS2P_VERSION,
+          uuid: this.server.conf.ws2p.uuid,
+          host: remotehost,
+          port: remoteport,
+          path: (this.server.conf.ws2p.remotepath) ? this.server.conf.ws2p.remotepath:""
+        }
+      }
+    }
+    return undefined
   }
 }

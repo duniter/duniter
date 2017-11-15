@@ -2,7 +2,7 @@ import {CommonConstants} from "../../../lib/common-libs/constants"
 export const WS2PConstants = {
 
   WS2P_DEFAULT_VERSION:1,
-  WS2P_VERSION: 1,
+  WS2P_VERSION: 2,
 
   WS2P_UPNP_TTL: 600,
   WS2P_PORTS_START: 20900,

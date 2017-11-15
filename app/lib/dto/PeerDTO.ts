@@ -5,6 +5,7 @@ import {Cloneable} from "./Cloneable"
 import { WS2PConstants } from '../../modules/ws2p/lib/constants';
 
 export interface WS2PEndpoint {
+  api?:string
   version:number
   uuid:string
   host:string
@@ -13,6 +14,18 @@ export interface WS2PEndpoint {
 }
 
 export class PeerDTO implements Cloneable {
+
+  static ws2pEndpointToString(endpoint :WS2PEndpoint) {
+    let stringEndpoint = (endpoint.api !== undefined) ? endpoint.api:'WS2P'
+    if (endpoint.version > 1) {
+      stringEndpoint += ' ' + endpoint.version
+    }
+    stringEndpoint += ' ' + endpoint.uuid + ' ' + endpoint.host + ' ' + endpoint.port
+    if (endpoint.path.length > 0) {
+      stringEndpoint += ' ' + endpoint.path
+    }
+    return stringEndpoint
+  }
 
   clone(): any {
     return PeerDTO.fromJSONObject(this)

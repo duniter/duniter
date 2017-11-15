@@ -313,11 +313,11 @@ export class WS2PCluster {
     const api:string = (host.match(WS2PConstants.HOST_ONION_REGEX) !== null) ? 'WS2PTOR':'WS2P'
     try {
       const fullEndpointAddress = WS2PCluster.getFullAddress(host, port, path)
-      const ws2pc = await WS2PClient.connectTo(this.server, fullEndpointAddress, endpointVersion, ws2pEndpointUUID, messageHandler, expectedPub, (pub:string) => {
+      const ws2pc = await WS2PClient.connectTo(this.server, fullEndpointAddress, endpointVersion, ws2pEndpointUUID, messageHandler, expectedPub, (pub:string, remoteWs2pId?:string) => {
         const connectedPubkeys = this.getConnectedPubkeys()
         const connectedWS2PUID = this.getConnectedWS2PUID()
         const preferedNodes = (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) ? this.server.conf.ws2p.preferedNodes:[]
-        return this.acceptPubkey(expectedPub, connectedPubkeys, connectedWS2PUID, () => this.clientsCount(), this.maxLevel1Size, preferedNodes, (this.server.conf.ws2p && this.server.conf.ws2p.preferedOnly) || false, ws2pEndpointUUID)
+        return this.acceptPubkey(expectedPub, connectedPubkeys, connectedWS2PUID, () => this.clientsCount(), this.maxLevel1Size, preferedNodes, (this.server.conf.ws2p && this.server.conf.ws2p.preferedOnly) || false, (remoteWs2pId !== undefined) ? remoteWs2pId:ws2pEndpointUUID)
       })
       this.ws2pClients[uuid] = ws2pc
       pub = ws2pc.connection.pubkey
@@ -394,9 +394,11 @@ export class WS2PCluster {
       }
     })
     const canReachClearEndpoint = ProxiesConf.canReachClearEndpoint(this.server.conf.proxiesConf)
-    let i = 0
     let countPublicNodesWithSameKey:number = 1 // Necessary if maxPrivate = 0
     let endpointsNodesWithSameKey:WS2PEndpoint[] = []
+    const preferedNodes = (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) ? this.server.conf.ws2p.preferedNodes:[]
+    const preferedOnly = (this.server.conf.ws2p && this.server.conf.ws2p.preferedOnly === true) ? true:false
+    let i = 0
     while (i < peers.length && (this.clientsCount() < this.maxLevel1Size || this.numberOfConnectedPublicNodesWithSameKey() < countPublicNodesWithSameKey) ) {
       const p = peers[i]
       if (p.pubkey === this.server.conf.pair.pub) {
@@ -404,8 +406,10 @@ export class WS2PCluster {
         countPublicNodesWithSameKey = endpointsNodesWithSameKey.length
         for (const api of endpointsNodesWithSameKey) {
           try {
-            // We do not connect to local host
-            if (api.uuid !== myUUID) {
+            
+            let allow = this.acceptPubkey(p.pubkey, this.getConnectedPubkeys(), this.getConnectedWS2PUID(), () => this.clientsCount(), this.maxLevel1Size, preferedNodes, preferedOnly, api.uuid)
+            // We do not connect to local host or not allowed key
+            if (api.uuid !== myUUID && allow) {
               await this.connectToRemoteWS(api.version, api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
             }
           } catch (e) {
@@ -664,15 +668,15 @@ export class WS2PCluster {
     maxConcurrentConnexionsSize:number,
     priorityKeys:string[],
     priorityKeysOnly:boolean,
-    targetWS2PUID = ""
+    remoteWS2PUID = ""
   ) {
     if (this.server.conf.pair.pub === pub) {
       // We do not accept oneself connetion
-      if (this.server.conf.ws2p && this.server.conf.ws2p.uuid === targetWS2PUID || targetWS2PUID === '11111111') {
+      if (this.server.conf.ws2p && this.server.conf.ws2p.uuid === remoteWS2PUID || remoteWS2PUID === '11111111') {
         return false
       } else {
         // We always accept self nodes, and they have a supreme priority (these are siblings)
-        if (targetWS2PUID === "" ||  this.isNewSiblingNode(pub, targetWS2PUID, connectedWS2PUID) ) {
+        if (remoteWS2PUID === "" || connectedWS2PUID.indexOf(remoteWS2PUID) === -1) {
             return true
         } else {
           // We are already connected to this self node (same WS2PUID)
@@ -722,15 +726,6 @@ export class WS2PCluster {
     }
 
     return false
-  }
-
-  isNewSiblingNode(pub:string, targetWS2PUID:string, connectedWS2PUID:string[]) {
-    for (const uuid of connectedWS2PUID) {
-      if (uuid === targetWS2PUID) {
-        return false
-      }
-    }
-    return true
   }
 
   async getLevel1Connections() {

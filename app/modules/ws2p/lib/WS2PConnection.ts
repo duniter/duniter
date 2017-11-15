@@ -6,7 +6,7 @@ import {CertificationDTO} from "../../../lib/dto/CertificationDTO"
 import {MembershipDTO} from "../../../lib/dto/MembershipDTO"
 import {TransactionDTO} from "../../../lib/dto/TransactionDTO"
 import {PeerDTO} from "../../../lib/dto/PeerDTO"
-import {WS2PConstants} from "./constants"
+import { WS2PConstants } from './constants';
 import { ProxiesConf } from '../../../lib/proxy';
 const ws = require('ws')
 const SocksProxyAgent = require('socks-proxy-agent');
@@ -31,7 +31,8 @@ enum WS2P_ERR {
   MUST_BE_AUTHENTICATED_FIRST,
   REQUEST_FAILED,
   MESSAGE_MUST_BE_AN_OBJECT,
-  ANSWER_TO_UNDEFINED_REQUEST
+  ANSWER_TO_UNDEFINED_REQUEST,
+  NOT_SUPPORTED_VERSION
 }
 
 export enum WS2P_PUSH {
@@ -80,7 +81,7 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
   constructor(
     protected currency:string,
     protected pair:Key,
-    protected tellIsAuthorizedPubkey:(pub: string) => Promise<boolean> = () => Promise.resolve(true)
+    protected tellIsAuthorizedPubkey:(pub: string, ws2pId?:string) => Promise<boolean> = () => Promise.resolve(true)
   ) {
     this.challenge = nuuid.v4() + nuuid.v4()
     this.serverAuth = new Promise((resolve, reject) => {
@@ -104,19 +105,19 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
     }))
   }
 
-  async registerCONNECT(ws2pVersion:number, challenge:string, sig: string, pub: string, ws2pId:string = ""): Promise<boolean> {
-    const allow = await this.tellIsAuthorizedPubkey(pub)
+  async registerCONNECT(ws2pVersion:number, challenge:string, sig: string, pub: string, remoteWs2pId:string = ""): Promise<boolean> {
+    const allow = await this.tellIsAuthorizedPubkey(pub, remoteWs2pId)
     if (!allow) {
       return false
     }
-    const challengeMessage = (ws2pVersion > 1) ? `WS2P:CONNECT:${this.currency}:${pub}:${ws2pId}:${challenge}`:`WS2P:CONNECT:${this.currency}:${pub}:${challenge}`
+    const challengeMessage = (ws2pVersion > 1) ? `WS2P:${ws2pVersion}:CONNECT:${this.currency}:${pub}:${remoteWs2pId}:${challenge}`:`WS2P:CONNECT:${this.currency}:${pub}:${challenge}`
     Logger.log('registerCONNECT >>> ' + challengeMessage)
     const verified = verify(challengeMessage, sig, pub)
     if (verified) {
       this.remoteVersion = ws2pVersion
       this.challenge = challenge
       this.remotePub = pub
-      this.remoteWs2pId = ws2pId
+      this.remoteWs2pId = remoteWs2pId
     }
     return verified
   }
@@ -195,10 +196,6 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
   }
 
   async registerACK(sig: string, pub: string): Promise<boolean> {
-    const allow = await this.tellIsAuthorizedPubkey(pub)
-    if (!allow) {
-      return false
-    }
     const challengeMessage = `WS2P:ACK:${this.currency}:${pub}:${this.challenge}`
     Logger.log('registerACK >>> ' + challengeMessage)
     this.authenticated = verify(challengeMessage, sig, pub)
@@ -422,6 +419,8 @@ export class WS2PConnection {
                     if (data.version) {
                       if (typeof data.version !== "number") {
                         await this.errorDetected(WS2P_ERR.AUTH_INVALID_ASK_FIELDS)
+                      } else if (data.version > WS2PConstants.WS2P_VERSION) {
+                        await this.errorDetected(WS2P_ERR.NOT_SUPPORTED_VERSION)
                       } else {
                         this.ws2pVersion = data.version
                       }

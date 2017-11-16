@@ -25,6 +25,11 @@ const _ = require('underscore')
 export interface WS2PHead {
   message:string
   sig:string
+  step?:number
+}
+
+export interface WS2pHeadCache extends WS2PHead {
+  blockstamp:string
 }
 
 export class WS2PCluster {
@@ -69,11 +74,11 @@ export class WS2PCluster {
   // A cache to know wether a pubkey is a member or not
   private memberkeysCache:{ [k:string]: number } = {}
 
-  // A cache of the current HEAD for a given pubkey
-  private headsCache:{ [ws2pFullId:string]: { blockstamp:string, message:string, sig:string } } = {}
+  // A cache of the current HEAD for a given ws2pFullId
+  private headsCache:{ [ws2pFullId:string]:WS2pHeadCache } = {}
 
   // A buffer of "to be sent" heads
-  private newHeads:{ message:string, sig:string }[] = []
+  private newHeads:WS2PHead[] = []
 
   // The triggerer of a buffer of heads' sending
   private headsTimeout:NodeJS.Timer|null = null
@@ -111,10 +116,11 @@ export class WS2PCluster {
     return heads
   }
 
-  async headsReceived(heads:[{ message:string, sig:string }]) {
-    const added:{ message:string, sig:string }[] = []
-    await Promise.all(heads.map(async (h:{ message:string, sig:string }) => {
+  async headsReceived(heads:WS2PHead[]) {
+    const added:WS2PHead[] = []
+    await Promise.all(heads.map(async (h:WS2PHead) => {
       try {
+        const step = (h.step !== undefined) ? h.step:undefined 
         const message = h.message
         const sig = h.sig
         if (!message) {

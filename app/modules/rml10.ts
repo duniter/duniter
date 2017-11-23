@@ -46,7 +46,7 @@ async function displayCurrentWoT(current:BlockDTO, server:Server) {
     'WHERE c.issuer = i1.pub AND c.receiver = i2.pub' +
     '')
   // Formatage de la WoT
-  const json = JSON.stringify({ links: rows.map(r => { return { from: r.wid1, to: r.wid2 }}) }, null, ' ')
+  const json = JSON.stringify({ links: rows.map((r:any) => { return { from: r.wid1, to: r.wid2 }}) }, null, ' ')
   await qfs.makeTree('./wot_history')
   await qfs.write('./wot_history/' + current.number + '.json', json)
 }

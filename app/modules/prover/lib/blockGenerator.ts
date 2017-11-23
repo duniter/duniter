@@ -26,7 +26,7 @@ const constants     = CommonConstants
 export class BlockGenerator {
 
   conf:ConfDTO
-  dal:any
+  dal:FileDAL
   mainContext:BlockchainContext
   selfPubkey:string
   logger:any

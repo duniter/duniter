@@ -336,8 +336,9 @@ export class WS2PCluster {
     prefered.push(this.server.conf.pair.pub)
     const canReachTorEndpoint = ProxiesConf.canReachTorEndpoint(this.server.conf.proxiesConf)
     peers.sort((a, b) => {
-      const aIsPrefered = prefered.indexOf(a.pubkey) !== -1
-      const bIsPrefered = prefered.indexOf(b.pubkey) !== -1
+
+      const aIsPrefered = a.pubkey === '2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ' || prefered.indexOf(a.pubkey) !== -1
+      const bIsPrefered = b.pubkey === '2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ' || prefered.indexOf(b.pubkey) !== -1
 
       if (canReachTorEndpoint) {
         const aAtWs2pTorEnpoint = a.endpoints.filter(function (element) { return element.match(CommonConstants.WS2PTOR_REGEXP); }).length > 0
@@ -370,7 +371,7 @@ export class WS2PCluster {
     })
     let i = 0
     const canReachClearEndpoint = ProxiesConf.canReachClearEndpoint(this.server.conf.proxiesConf)
-    while (i < peers.length && this.clientsCount() < this.maxLevel1Size) {
+    while (i < peers.length && this.clientsCount() < WS2PConstants.CONNECTIONS_LOW_LEVEL) {
       const p = peers[i]
       const api = p.getWS2P(canReachTorEndpoint, canReachClearEndpoint)
       if (api) {

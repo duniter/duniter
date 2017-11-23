@@ -27,6 +27,7 @@ const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
 const routerDependency    = require('./app/modules/router');
 const pluginDependency    = require('./app/modules/plugin');
+const rml10Dependency    = require('./app/modules/rml10');
 
 class Stacks {
 
@@ -108,7 +109,8 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-keypair',   required: KeypairDependency },
   { name: 'duniter-crawler',   required: CrawlerDependency },
   { name: 'duniter-bma',       required: BmaDependency },
-  { name: 'duniter-ws2p',      required: WS2PDependency }
+  { name: 'duniter-ws2p',      required: WS2PDependency },
+  { name: 'duniter-rml10',     required: rml10Dependency }
 ]);
 
 const PRODUCTION_DEPENDENCIES = DEFAULT_DEPENDENCIES.concat([

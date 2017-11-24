@@ -29,6 +29,7 @@ const routerDependency    = require('./app/modules/router');
 const pluginDependency    = require('./app/modules/plugin');
 const rml10CertDependency    = require('./app/modules/rml10-basique');
 const rml10WotDependency    = require('./app/modules/rml10-wot');
+const crowdfMeterDependency    = require('./app/modules/crowdf-meter');
 
 class Stacks {
 
@@ -112,7 +113,8 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-bma',       required: BmaDependency },
   { name: 'duniter-ws2p',      required: WS2PDependency },
   { name: 'duniter-rml10-cert',     required: rml10CertDependency },
-  { name: 'duniter-rml10-wot',      required: rml10WotDependency }
+  { name: 'duniter-rml10-wot',      required: rml10WotDependency },
+  { name: 'duniter-crowdf-meter',      required: crowdfMeterDependency }
 ]);
 
 const PRODUCTION_DEPENDENCIES = DEFAULT_DEPENDENCIES.concat([

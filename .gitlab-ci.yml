@@ -43,7 +43,7 @@ test:
     stage: test
     tags:
       - pages
-    image: registry.duniter.org/docker/ubuntu-node:17.10-DUNITER-1
+    image: registry.duniter.org/docker/ubuntu-node:17.10-DUNITER-2
     script:
       - bash -c ". ~/.nvm/nvm.sh && npm install -g yarn"
       - bash -c ". ~/.nvm/nvm.sh && yarn install"

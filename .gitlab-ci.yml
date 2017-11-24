@@ -5,6 +5,8 @@ push_to_github:
     stage: github-sync
     variables:
         GIT_STRATEGY: none
+        tags:
+          - github
     script:
         - rm -rf ./*
         - rm -rf .git

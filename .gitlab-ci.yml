@@ -45,5 +45,9 @@ test:
       - pages
     image: registry.duniter.org/docker/ubuntu-node:17.10-DUNITER-1
     script:
+      - bash -c ". ~/.nvm/nvm.sh && npm install"
       - bash -c ". ~/.nvm/nvm.sh && npm run-script test-travis"
+    cache:
+      paths:
+        - node_modules/
 

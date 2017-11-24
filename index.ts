@@ -9,7 +9,7 @@ import {BmaDependency} from "./app/modules/bma/index"
 import {WS2PDependency} from "./app/modules/ws2p/index"
 import {ProverConstants} from "./app/modules/prover/lib/constants"
 import { ProxiesConf } from './app/lib/proxy';
-
+ 
 const path = require('path');
 const _ = require('underscore');
 const directory = require('./app/lib/system/directory');

@@ -1,5 +1,6 @@
 stages:
     - github-sync
+    - test
 
 push_to_github:
     stage: github-sync
@@ -37,3 +38,12 @@ enforce_readme:
       - mv README.md.new README.md
       - git commit -am "Enforce github readme"
       - git push origin master
+      
+test:
+    stage: test
+    tags:
+      - pages
+    image: registry.duniter.org/docker/ubuntu-node:17.10-DUNITER-1
+    script:
+      - npm run-script test-travis
+

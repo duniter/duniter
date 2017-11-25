@@ -2,6 +2,7 @@ stages:
     - github-sync
     - test
 
+
 push_to_github:
     stage: github-sync
     variables:

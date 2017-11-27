@@ -46,6 +46,7 @@ export const WS2PConstants = {
   + '(' + CommonConstants.FORMATS.SOFTWARE + '):'
   + '(' + CommonConstants.FORMATS.SOFT_VERSION + '):'
   + '(' + CommonConstants.FORMATS.POW_PREFIX + ')'
+  + '(?::' + CommonConstants.FORMATS.TIMESTAMP + ')?'
   + '$'),
 
   HOST_ONION_REGEX: CommonConstants.HOST_ONION_REGEX,

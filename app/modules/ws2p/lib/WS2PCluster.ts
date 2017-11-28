@@ -142,7 +142,7 @@ export class WS2PCluster {
           }
           const [,,, pub, blockstamp, ws2pId,,,,,]:string[] = messageV2.split(':')
           const fullId = [pub, ws2pId].join('-')
-          this.headReceived(messageV2, sigV2, pub, fullId, blockstamp)
+          this.headReceived(messageV2, sigV2, pub, fullId, blockstamp, step)
         }
           if (!message) {
             throw "EMPTY_MESSAGE_FOR_HEAD"
@@ -170,7 +170,7 @@ export class WS2PCluster {
     this.newHeads = []
   }
 
-  private async headReceived(message:string, sig:string, pub:string, fullId:string, blockstamp:string) {
+  private async headReceived(message:string, sig:string, pub:string, fullId:string, blockstamp:string, step?:number) {
     try {
       const sigOK = verify(message, sig, pub)
       if (sigOK) {
@@ -183,8 +183,8 @@ export class WS2PCluster {
             if (isAllowed) {
               const exists = await this.existsBlock(blockstamp)
               if (exists) {
-                this.headsCache[fullId] = { blockstamp, message, sig }
-                this.newHeads.push({message, sig})
+                this.headsCache[fullId] = { blockstamp, message, sig, step }
+                this.newHeads.push({message, sig, step})
                 // Cancel a pending "heads" to be spread
                 if (this.headsTimeout) {
                   clearTimeout(this.headsTimeout)

@@ -107,14 +107,17 @@ export class WS2PCluster {
       if (current) {
         const myHead = this.sayHeadChangedTo(current.number, current.hash)
         const blockstamp = [current.number, current.hash].join('-')
-        this.headsCache[myFullId] = { blockstamp, message: myHead.message,sig: myHead.sig, messageV2: myHead.message, sigV2: myHead.sig }
+        this.headsCache[myFullId] = { blockstamp, message: myHead.message, sig: myHead.sig, messageV2: myHead.messageV2, sigV2: myHead.sigV2, step:myHead.step  }
 
       }
     }
     for (const ws2pFullId of Object.keys(this.headsCache)) {
       heads.push({
         message: this.headsCache[ws2pFullId].message,
-        sig: this.headsCache[ws2pFullId].sig
+        sig: this.headsCache[ws2pFullId].sig,
+        messageV2: this.headsCache[ws2pFullId].messageV2,
+        sigV2: this.headsCache[ws2pFullId].sigV2,
+        step: this.headsCache[ws2pFullId].step
       })
     }
     return heads

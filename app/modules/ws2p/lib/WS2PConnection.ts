@@ -6,7 +6,7 @@ import {CertificationDTO} from "../../../lib/dto/CertificationDTO"
 import {MembershipDTO} from "../../../lib/dto/MembershipDTO"
 import {TransactionDTO} from "../../../lib/dto/TransactionDTO"
 import {PeerDTO} from "../../../lib/dto/PeerDTO"
-import {WS2PConstants} from "./constants"
+import { WS2PConstants } from './constants';
 import { ProxiesConf } from '../../../lib/proxy';
 const ws = require('ws')
 const SocksProxyAgent = require('socks-proxy-agent');
@@ -54,6 +54,7 @@ export interface WS2PRemoteAuth extends WS2PAuth {
   registerOK(sig: string): Promise<boolean>
   isAuthenticatedByRemote(): boolean
   getPubkey(): string
+  getVersion(): number
 }
 
 export interface WS2PLocalAuth extends WS2PAuth {
@@ -87,6 +88,10 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
       this.serverAuthResolve = resolve
       this.serverAuthReject = reject
     })
+  }
+
+  getVersion() {
+    return this.remoteVersion
   }
 
   getPubkey() {
@@ -337,6 +342,10 @@ export class WS2PConnection {
       websocket.on('close', () => res())
     })
     return new WS2PConnection(WS2PConstants.WS2P_DEFAULT_VERSION, websocket, onWsOpened, onWsClosed, messageHandler, localAuth, remoteAuth, options, expectedPub)
+  }
+
+  get version() {
+    return Math.min(WS2PConstants.WS2P_HEAD_VERSION, this.remoteAuth.getVersion())
   }
 
   get pubkey() {
@@ -607,6 +616,10 @@ export class WS2PConnection {
   }
 
   async pushHeads(heads:{ message:string, sig:string }[]) {
+    return this.pushData(WS2P_PUSH.HEAD, 'heads', heads)
+  }
+
+  async pushHeadsV2(heads:{ message:string, sig:string, messageV2?:string, sigV2?:string, step?:number }[]) {
     return this.pushData(WS2P_PUSH.HEAD, 'heads', heads)
   }
 

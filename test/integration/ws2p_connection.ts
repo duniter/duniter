@@ -415,6 +415,10 @@ class WS2PNoLocalAuth implements WS2PLocalAuth {
 
 class WS2PNoRemoteAuth implements WS2PRemoteAuth {
 
+  getVersion(): number {
+    return 1
+  }
+
   getPubkey(): string {
     return ""
   }

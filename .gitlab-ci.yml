@@ -1,6 +1,5 @@
 stages:
     - github-sync
-    - test
 
 
 push_to_github:
@@ -39,17 +38,4 @@ enforce_readme:
       - mv README.md.new README.md
       - git commit -am "Enforce github readme"
       - git push origin master
-      
-test:
-    stage: test
-    tags:
-      - nodejs
-    image: registry.duniter.org/docker/ubuntu-node:17.10-DUNITER-2
-    script:
-      - bash -c ". ~/.nvm/nvm.sh && npm install -g yarn"
-      - bash -c ". ~/.nvm/nvm.sh && yarn install"
-      - bash -c ". ~/.nvm/nvm.sh && yarn run test-travis"
-    cache:
-      paths:
-        - node_modules/
 

@@ -164,29 +164,30 @@ export class WS2PCluster {
       const sigOK = verify(head.message, head.sig, pub)
       const sigV2OK = (head.messageV2 !== undefined && head.sigV2 !== undefined) ? verify(head.messageV2, head.sigV2, pub):false
       if ((sigV2OK && sigOK) || sigOK) {
-        // Already known?
-        if (!this.headsCache[fullId] || this.headsCache[fullId].blockstamp !== blockstamp) {
-          // More recent?
-          if (!this.headsCache[fullId] || parseInt(this.headsCache[fullId].blockstamp) < parseInt(blockstamp)) {
-            // Check that issuer is a member and that the block exists
-            const isAllowed = pub === this.server.conf.pair.pub || this.isConnectedKey(pub) || (await this.isMemberKey(pub))
-            if (isAllowed) {
-              const exists = await this.existsBlock(blockstamp)
-              if (exists) {
-                this.headsCache[fullId] = { blockstamp, message: head.message, sig: head.sig, messageV2: head.messageV2, sigV2: head.sigV2, step: head.step }
-                this.newHeads.push(head)
-                // Cancel a pending "heads" to be spread
-                if (this.headsTimeout) {
-                  clearTimeout(this.headsTimeout)
-                }
-                // Reprogram it a few moments later
-                this.headsTimeout = setTimeout(async () => {
-                  const heads = this.newHeads.splice(0, this.newHeads.length)
-                  if (heads.length) {
-                    await this.spreadNewHeads(heads)
-                  }
-                }, WS2PConstants.HEADS_SPREAD_TIMEOUT)
+        // Already known or more recent or closer ?
+        const step = this.headsCache[fullId].step || 0
+        if (!this.headsCache[fullId] // unknow head
+          || parseInt(this.headsCache[fullId].blockstamp) < parseInt(blockstamp) // more recent head
+          || (head.step !== undefined && head.step < step && this.headsCache[fullId].blockstamp === blockstamp) // closer head
+        ) {
+          // Check that issuer is a member and that the block exists
+          const isAllowed = pub === this.server.conf.pair.pub || this.isConnectedKey(pub) || (await this.isMemberKey(pub))
+          if (isAllowed) {
+            const exists = await this.existsBlock(blockstamp)
+            if (exists) {
+              this.headsCache[fullId] = { blockstamp, message: head.message, sig: head.sig, messageV2: head.messageV2, sigV2: head.sigV2, step: head.step }
+              this.newHeads.push(head)
+              // Cancel a pending "heads" to be spread
+              if (this.headsTimeout) {
+                clearTimeout(this.headsTimeout)
               }
+              // Reprogram it a few moments later
+              this.headsTimeout = setTimeout(async () => {
+                 const heads = this.newHeads.splice(0, this.newHeads.length)
+                if (heads.length) {
+                  await this.spreadNewHeads(heads)
+                }
+              }, WS2PConstants.HEADS_SPREAD_TIMEOUT)
             }
           }
         }

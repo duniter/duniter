@@ -606,7 +606,7 @@ export class WS2PCluster {
     }
 
 
-    api += network + ws2pPrivate + ws2pPublic
+    api += ws2pPrivate + ws2pPublic
     return api
   }
 

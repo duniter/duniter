@@ -348,6 +348,11 @@ export class WS2PCluster {
   }
 
   async connectToWS2Peers() {
+    // If incoming connections quota is full, delete one low-priority connection
+    if (this.ws2pServer !== null && this.ws2pServer.countConnexions() === this.ws2pServer.maxLevel2Peers) {
+      const privilegedKeys = ((this.server.conf.ws2p && this.server.conf.ws2p.privilegedNodes) || []).slice() // Copy
+      this.ws2pServer.removeLowPriorityConnection(privilegedKeys)
+    }
     const myUUID = (this.server.conf.ws2p && this.server.conf.ws2p.uuid) ? this.server.conf.ws2p.uuid:""
     const potentials = await this.server.dal.getWS2Peers()
     const peers:PeerDTO[] = potentials.map((p:any) => PeerDTO.fromJSONObject(p))

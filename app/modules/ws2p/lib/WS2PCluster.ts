@@ -140,7 +140,7 @@ export class WS2PCluster {
           }
           if (h.message.match(WS2PConstants.HEAD_V0_REGEXP)) {
             const [,, pub, blockstamp]:string[] = h.message.split(':')
-            const ws2pId = (this.server.conf.ws2p && this.server.conf.ws2p.uuid) || '000000'
+            const ws2pId = (this.server.conf.ws2p && this.server.conf.ws2p.uuid) || '00000000'
             this.headReceived(h, pub, [pub, ws2pId].join('-'), blockstamp)
           }
           else if (h.message.match(WS2PConstants.HEAD_V1_REGEXP)) {
@@ -165,7 +165,7 @@ export class WS2PCluster {
       const sigV2OK = (head.messageV2 !== undefined && head.sigV2 !== undefined) ? verify(head.messageV2, head.sigV2, pub):false
       if ((sigV2OK && sigOK) || sigOK) {
         // Already known or more recent or closer ?
-        const step = this.headsCache[fullId].step || 0
+        const step = (this.headsCache[fullId]) ? this.headsCache[fullId].step || 0:0
         if (!this.headsCache[fullId] // unknow head
           || parseInt(this.headsCache[fullId].blockstamp) < parseInt(blockstamp) // more recent head
           || (head.step !== undefined && head.step < step && this.headsCache[fullId].blockstamp === blockstamp) // closer head

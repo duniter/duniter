@@ -1,7 +1,19 @@
 import {CommonConstants} from "../../../lib/common-libs/constants"
 export const WS2PConstants = {
 
-  WS2P_DEFAULT_VERSION:1,
+  NETWORK: {
+    INCOMING: {
+      DEFAULT: 0,
+      TOR: 1
+    },
+    OUTCOMING: {
+      DEFAULT: 0,
+      TOR: 1
+    },
+  },
+
+  WS2P_DEFAULT_API_VERSION:1,
+  WS2P_DEFAULT_HEAD_VERSION:1,
   WS2P_API_VERSION: 1,
   WS2P_HEAD_VERSION: 2,
 

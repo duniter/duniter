@@ -341,7 +341,7 @@ export class WS2PConnection {
     const onWsClosed:Promise<void> = new Promise(res => {
       websocket.on('close', () => res())
     })
-    return new WS2PConnection(WS2PConstants.WS2P_DEFAULT_VERSION, websocket, onWsOpened, onWsClosed, messageHandler, localAuth, remoteAuth, options, expectedPub)
+    return new WS2PConnection(WS2PConstants.WS2P_DEFAULT_API_VERSION, websocket, onWsOpened, onWsClosed, messageHandler, localAuth, remoteAuth, options, expectedPub)
   }
 
   get version() {

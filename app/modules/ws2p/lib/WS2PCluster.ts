@@ -1,3 +1,4 @@
+import { DEFAULT_ENCODING } from 'crypto';
 import {WS2PServer} from "./WS2PServer"
 import {Server} from "../../../../server"
 import {WS2PClient} from "./WS2PClient"
@@ -565,29 +566,32 @@ export class WS2PCluster {
 
   private getApi() {
     let api = 'WS2P'
-    let network = ''
+    let network = {
+      in: WS2PConstants.NETWORK.INCOMING.DEFAULT,
+      out: WS2PConstants.NETWORK.OUTCOMING.DEFAULT,
+    }
     let ws2pPrivate = ''
     let ws2pPublic = ''
     if (this.server.conf.proxiesConf && (this.server.conf.proxiesConf.proxyTorAddress || this.server.conf.proxiesConf.forceTor)) {
-      network = 'TOR'
+      network.out = WS2PConstants.NETWORK.OUTCOMING.TOR
     }
     if (this.server.conf.ws2p) {
       if (this.server.conf.ws2p.remotehost) {
         if (this.server.conf.ws2p.remotehost.match(WS2PConstants.HOST_ONION_REGEX)) {
-          network = 'TOR'
+          network.in = WS2PConstants.NETWORK.INCOMING.TOR
         }
         if (this.server.conf.ws2p.publicAccess) {
           ws2pPublic = 'I'
-          switch (network) {
-            case 'TOR': ws2pPublic += 'T'; break;
+          switch (network.in) {
+            case WS2PConstants.NETWORK.INCOMING.TOR: ws2pPublic += 'T'; break;
             default: ws2pPublic += 'C'; break;
           }
         }
       }
       if (this.server.conf.ws2p.privateAccess) {
         ws2pPrivate = 'O'
-        switch (network) {
-          case 'TOR': ws2pPrivate += 'T';
+        switch (network.out) {
+          case WS2PConstants.NETWORK.OUTCOMING.TOR: ws2pPrivate += 'T';
             if (this.server.conf.proxiesConf && this.server.conf.proxiesConf.reachingClearEp) {
               switch (this.server.conf.proxiesConf.reachingClearEp) {
                 case 'none': ws2pPrivate += 'S'; break;

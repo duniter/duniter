@@ -128,37 +128,25 @@ export class WS2PCluster {
     const added:WS2PHead[] = []
     await Promise.all(heads.map(async (h:WS2PHead) => {
       try {
-        const step = h.step
-        const message = h.message
-        const sig = h.sig
-        const messageV2 = h.messageV2
-        const sigV2 = h.sigV2
-        let sigOK = false
-        let fullId = ''
-        let pubkey = ''
-        let blockstamp = ''
-        if (messageV2) {
-          if (!sigV2) {
+        if (h.messageV2) {
+          if (!h.sigV2) {
             throw "HEAD_MESSAGE_WRONGLY_SIGNED"
           }
-          const [,,, pub, blockstamp, ws2pId,,,,,]:string[] = messageV2.split(':')
-          const fullId = [pub, ws2pId].join('-')
-          this.headReceived(messageV2, sigV2, pub, fullId, blockstamp, step)
+          const [,,, pub, blockstamp, ws2pId,,,,,]:string[] = h.messageV2.split(':')
+          this.headReceived(h, pub, [pub, ws2pId].join('-'), blockstamp)
         }
-          if (!message) {
+          if (!h.message) {
             throw "EMPTY_MESSAGE_FOR_HEAD"
           }
-          if (message.match(WS2PConstants.HEAD_V0_REGEXP)) {
-            const [,, pub, blockstamp]:string[] = message.split(':')
+          if (h.message.match(WS2PConstants.HEAD_V0_REGEXP)) {
+            const [,, pub, blockstamp]:string[] = h.message.split(':')
             const ws2pId = (this.server.conf.ws2p && this.server.conf.ws2p.uuid) || '000000'
-            const fullId = [pub, ws2pId].join('-')
-            this.headReceived(message, sig, pub, fullId, blockstamp)
+            this.headReceived(h, pub, [pub, ws2pId].join('-'), blockstamp)
           }
-          else if (message.match(WS2PConstants.HEAD_V1_REGEXP)) {
-            const [,,, pub, blockstamp, ws2pId, software, softVersion, prefix]:string[] = message.split(':')
-            const sigOK = verify(message, sig, pub)
-            const fullId = [pub, ws2pId].join('-')
-            await this.headReceived(message, sig, pub, fullId, blockstamp)
+          else if (h.message.match(WS2PConstants.HEAD_V1_REGEXP)) {
+            const [,,, pub, blockstamp, ws2pId, software, softVersion, prefix]:string[] = h.message.split(':')
+            const fullId = 
+            await this.headReceived(h, pub, [pub, ws2pId].join('-'), blockstamp)
           }
         } catch (e) {
           this.server.logger.trace(e)
@@ -171,10 +159,11 @@ export class WS2PCluster {
     this.newHeads = []
   }
 
-  private async headReceived(message:string, sig:string, pub:string, fullId:string, blockstamp:string, step?:number) {
+  private async headReceived(head:WS2PHead, pub:string, fullId:string, blockstamp:string) {
     try {
-      const sigOK = verify(message, sig, pub)
-      if (sigOK) {
+      const sigOK = verify(head.message, head.sig, pub)
+      const sigV2OK = (head.messageV2 !== undefined && head.sigV2 !== undefined) ? verify(head.messageV2, head.sigV2, pub):false
+      if ((sigV2OK && sigOK) || sigOK) {
         // Already known?
         if (!this.headsCache[fullId] || this.headsCache[fullId].blockstamp !== blockstamp) {
           // More recent?
@@ -184,8 +173,8 @@ export class WS2PCluster {
             if (isAllowed) {
               const exists = await this.existsBlock(blockstamp)
               if (exists) {
-                this.headsCache[fullId] = { blockstamp, message, sig, step }
-                this.newHeads.push({message, sig, step})
+                this.headsCache[fullId] = { blockstamp, message: head.message, sig: head.sig, messageV2: head.messageV2, sigV2: head.sigV2, step: head.step }
+                this.newHeads.push(head)
                 // Cancel a pending "heads" to be spread
                 if (this.headsTimeout) {
                   clearTimeout(this.headsTimeout)
@@ -521,11 +510,7 @@ export class WS2PCluster {
     const connexions = this.getAllConnections()
     return Promise.all(connexions.map(async (c) => {
       try {
-        if (c.version >= 2) {
-          await c.pushHeadsV2(heads)
-        } else {
           await c.pushHeads(heads)
-        }
       } catch (e) {
         this.server.logger.warn('Could not spread new HEAD info to %s WS2PID %s', c.pubkey, c.uuid)
       }

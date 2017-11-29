@@ -615,11 +615,7 @@ export class WS2PConnection {
     return this.pushData(WS2P_PUSH.PEER, 'peer', peer)
   }
 
-  async pushHeads(heads:{ message:string, sig:string }[]) {
-    return this.pushData(WS2P_PUSH.HEAD, 'heads', heads)
-  }
-
-  async pushHeadsV2(heads:{ message:string, sig:string, messageV2?:string, sigV2?:string, step?:number }[]) {
+  async pushHeads(heads:{ message:string, sig:string, messageV2?:string, sigV2?:string, step?:number }[]) {
     return this.pushData(WS2P_PUSH.HEAD, 'heads', heads)
   }
 

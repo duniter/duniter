@@ -278,9 +278,12 @@ export class WS2PCluster {
 
   clientsCount() {
     let count = 0
+    let connectedKeys:string[] = []
     for (const ws2pid in this.ws2pClients) {
-      if (this.ws2pClients[ws2pid].connection.pubkey != this.server.conf.pair.pub) {
+      if (this.ws2pClients[ws2pid].connection.pubkey != this.server.conf.pair.pub
+        && connectedKeys.indexOf(this.ws2pClients[ws2pid].connection.pubkey) == -1) {
         count++
+        connectedKeys.push(this.ws2pClients[ws2pid].connection.pubkey)
       }
     }
     return count

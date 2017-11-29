@@ -533,7 +533,7 @@ export class WS2PCluster {
 
   private incrementHeadsStep(heads:WS2PHead[]) {
     for (let head of heads) {
-      if (head.step) {
+      if (head.step !== undefined) {
         head.step++
       }
     }

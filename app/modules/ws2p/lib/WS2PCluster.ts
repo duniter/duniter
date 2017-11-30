@@ -125,7 +125,6 @@ export class WS2PCluster {
   }
 
   async headsReceived(heads:WS2PHead[]) {
-    const added:WS2PHead[] = []
     await Promise.all(heads.map(async (h:WS2PHead) => {
       try {
         if (h.messageV2) {
@@ -134,29 +133,42 @@ export class WS2PCluster {
           }
           const [,,, pub, blockstamp, ws2pId,,,,,]:string[] = h.messageV2.split(':')
           this.headReceived(h, pub, [pub, ws2pId].join('-'), blockstamp)
-        }
-          if (!h.message) {
+        } else if (!h.message) {
             throw "EMPTY_MESSAGE_FOR_HEAD"
-          }
+        } else if (!h.sig) {
+          throw "HEAD_MESSAGE_WRONGLY_SIGNED"
+        } else {
           if (h.message.match(WS2PConstants.HEAD_V0_REGEXP)) {
             const [,, pub, blockstamp]:string[] = h.message.split(':')
             const ws2pId = (this.server.conf.ws2p && this.server.conf.ws2p.uuid) || '00000000'
             this.headReceived(h, pub, [pub, ws2pId].join('-'), blockstamp)
           }
           else if (h.message.match(WS2PConstants.HEAD_V1_REGEXP)) {
-            const [,,, pub, blockstamp, ws2pId, software, softVersion, prefix]:string[] = h.message.split(':')
+            const [,,, pub, blockstamp, ws2pId,,,]:string[] = h.message.split(':')
             const fullId = 
             await this.headReceived(h, pub, [pub, ws2pId].join('-'), blockstamp)
           }
-        } catch (e) {
-          this.server.logger.trace(e)
         }
+      } catch (e) {
+          this.server.logger.trace(e)
+      }
     }))
+    // Cancel a pending "heads" to be spread
+    if (this.headsTimeout) {
+      clearTimeout(this.headsTimeout)
+    }
+    // Reprogram it a few moments later
+    this.headsTimeout = setTimeout(async () => {
+       const heads = this.newHeads.splice(0, this.newHeads.length)
+      if (heads.length) {
+        await this.spreadNewHeads(heads)
+      }
+    }, WS2PConstants.HEADS_SPREAD_TIMEOUT)
+    
     this.server.push({
       ws2p: 'heads',
       added: this.newHeads
     })
-    this.newHeads = []
   }
 
   private async headReceived(head:WS2PHead, pub:string, fullId:string, blockstamp:string) {
@@ -177,17 +189,6 @@ export class WS2PCluster {
             if (exists) {
               this.headsCache[fullId] = { blockstamp, message: head.message, sig: head.sig, messageV2: head.messageV2, sigV2: head.sigV2, step: head.step }
               this.newHeads.push(head)
-              // Cancel a pending "heads" to be spread
-              if (this.headsTimeout) {
-                clearTimeout(this.headsTimeout)
-              }
-              // Reprogram it a few moments later
-              this.headsTimeout = setTimeout(async () => {
-                 const heads = this.newHeads.splice(0, this.newHeads.length)
-                if (heads.length) {
-                  await this.spreadNewHeads(heads)
-                }
-              }, WS2PConstants.HEADS_SPREAD_TIMEOUT)
             }
           }
         }
@@ -526,11 +527,20 @@ export class WS2PCluster {
     }))
   }
 
-  private incrementHeadsStep(heads:WS2PHead[]) {
-    for (let head of heads) {
+  private incrementHeadsStep(heads_:WS2PHead[]) {
+    let heads:WS2PHead[] = []
+    for (let head of heads_) {
       if (head.step !== undefined) {
         head.step++
       }
+      // Prevent injections
+      heads.push({
+        message: head.message,
+        sig: head.sig,
+        messageV2: head.messageV2,
+        sigV2: head.sigV2,
+        step: head.step
+      })
     }
     return heads
   }

@@ -1,6 +1,6 @@
 # Initial disclaimer
 This project is now tracked on our hosted gitlab server at:
-https://git-sandbox.duniter.org/nodes/typescript/duniter
+https://git.duniter.org/nodes/typescript/duniter
 
 The current github repository is a simple clone taken up to date at each push on the main gitlab repository.
 

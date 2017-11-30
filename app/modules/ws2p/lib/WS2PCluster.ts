@@ -106,7 +106,7 @@ export class WS2PCluster {
     if (!this.headsCache[myFullId]) {
       const current = await this.server.dal.getCurrentBlockOrNull()
       if (current) {
-        const myHead = this.sayHeadChangedTo(current.number, current.hash)
+        const myHead = await this.sayHeadChangedTo(current.number, current.hash)
         const blockstamp = [current.number, current.hash].join('-')
         this.headsCache[myFullId] = { blockstamp, message: myHead.message, sig: myHead.sig, messageV2: myHead.messageV2, sigV2: myHead.sigV2, step:myHead.step  }
 
@@ -496,7 +496,7 @@ export class WS2PCluster {
         // HEAD changed
         else if (data.bcEvent === OtherConstants.BC_EVENT.HEAD_CHANGED || data.bcEvent === OtherConstants.BC_EVENT.SWITCHED) {
           // Propagate this change to the network
-          const myHead = this.sayHeadChangedTo(data.block.number, data.block.hash)
+          const myHead = await this.sayHeadChangedTo(data.block.number, data.block.hash)
           try {
             await this.broadcastHead(myHead)
           } catch (e) {
@@ -535,14 +535,14 @@ export class WS2PCluster {
     return heads
   }
 
-  private sayHeadChangedTo(number:number, hash:string) {
+  private async sayHeadChangedTo(number:number, hash:string) {
     const api = this.getApi()
     const key = new Key(this.server.conf.pair.pub, this.server.conf.pair.sec)
     const software = 'duniter'
     const softVersion = Package.getInstance().version
     const ws2pId = (this.server.conf.ws2p && this.server.conf.ws2p.uuid) || '00000000'
     const prefix = this.server.conf.prefix || ProverConstants.DEFAULT_PEER_ID
-    const { freeMemberRoom , freeMirorRoom }  = this.countFreeRooms()
+    const { freeMemberRoom , freeMirorRoom }  = await this.countFreeRooms()
     const message = `${api}:HEAD:1:${key.publicKey}:${number}-${hash}:${ws2pId}:${software}:${softVersion}:${prefix}`
     const sig = key.signSync(message)
     const messageV2 = `${api}:HEAD:2:${key.publicKey}:${number}-${hash}:${ws2pId}:${software}:${softVersion}:${prefix}:${freeMemberRoom}:${freeMirorRoom}`
@@ -604,7 +604,7 @@ export class WS2PCluster {
     return api
   }
 
-  private countFreeRooms() {
+  private async countFreeRooms() {
     if (!this.ws2pServer) {
       return {
         freeMemberRoom: 0,
@@ -616,7 +616,8 @@ export class WS2PCluster {
     let freeMemberRoom = freeMirorRoom
     const privilegedNodes = (this.server.conf.ws2p && this.server.conf.ws2p.privilegedNodes) ? this.server.conf.ws2p.privilegedNodes:[]
     for (const c of this.ws2pServer.getConnexions()) {
-      if (this.keyPriorityLevel(c.pubkey, privilegedNodes) < WS2PConstants.CONNECTIONS_PRIORITY.MEMBER_KEY_LEVEL) {
+      const connexionPriority = await this.keyPriorityLevel(c.pubkey, privilegedNodes)
+      if (connexionPriority < WS2PConstants.CONNECTIONS_PRIORITY.MEMBER_KEY_LEVEL) {
         freeMemberRoom++
       }
     }
@@ -673,8 +674,9 @@ export class WS2PCluster {
     }
   }
 
-  keyPriorityLevel(pubkey:string, preferedOrPrivilegedKeys:string[]) {
-    let priorityLevel = (this.server.dal.isMember(pubkey)) ? WS2PConstants.CONNECTIONS_PRIORITY.MEMBER_KEY_LEVEL:0
+  async keyPriorityLevel(pubkey:string, preferedOrPrivilegedKeys:string[]) {
+    const isMember = await this.server.dal.isMember(pubkey)
+    let priorityLevel = (isMember) ? WS2PConstants.CONNECTIONS_PRIORITY.MEMBER_KEY_LEVEL:0
     priorityLevel += (preferedOrPrivilegedKeys.indexOf(pubkey) !== -1) ? WS2PConstants.CONNECTIONS_PRIORITY.PREFERED_PRIVILEGED_KEY_LEVEL:0
     priorityLevel += (this.server.conf.pair.pub === pubkey) ? WS2PConstants.CONNECTIONS_PRIORITY.SELF_KEY_LEVEL:0
     return priorityLevel
@@ -834,12 +836,13 @@ export class WS2PCluster {
     else {
       let minPriorityLevel = WS2PConstants.CONNECTIONS_PRIORITY.MAX_PRIORITY_LEVEL
       for (const connectedPubkey of connectedPubkeys) {
-        let connectedPubkeyPriorityLevel = this.keyPriorityLevel(connectedPubkey, priorityKeys)
+        const connectedPubkeyPriorityLevel = await this.keyPriorityLevel(connectedPubkey, priorityKeys)
         if (connectedPubkeyPriorityLevel < minPriorityLevel) {
           minPriorityLevel = connectedPubkeyPriorityLevel
         }
       }
-      if (this.keyPriorityLevel(pub, priorityKeys) > minPriorityLevel) {
+      const pubkeyPriorityLevel = await this.keyPriorityLevel(pub, priorityKeys)
+      if (pubkeyPriorityLevel > minPriorityLevel) {
         return true
       }
     }

@@ -23,7 +23,7 @@ export class WS2PServer extends events.EventEmitter {
     private port:number,
     private fifo:GlobalFifoPromise,
     private shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>,
-    public keyPriorityLevel:(pubkey:string, privilegedKeys:string[])=>number) {
+    public keyPriorityLevel:(pubkey:string, privilegedKeys:string[])=>Promise<number>) {
     super()
     // Conf: max public connections
     if (this.server.conf.ws2p && this.server.conf.ws2p.maxPublic !== undefined) {
@@ -212,7 +212,7 @@ export class WS2PServer extends events.EventEmitter {
     }))
   }
 
-  static async bindOn(server:Server, host:string, port:number, fifo:GlobalFifoPromise, shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>, keyPriorityLevel:(pubkey:string, privilegedKeys:string[])=>number, messageHandler:WS2PMessageHandler) {
+  static async bindOn(server:Server, host:string, port:number, fifo:GlobalFifoPromise, shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>, keyPriorityLevel:(pubkey:string, privilegedKeys:string[])=>Promise<number>, messageHandler:WS2PMessageHandler) {
     const ws2ps = new WS2PServer(server, host, port, fifo, shouldAcceptConnection, keyPriorityLevel)
     await ws2ps.listenToWebSocketConnections(messageHandler)
     server.logger.info('WS2P server %s listening on %s:%s', server.conf.pair.pub, host, port)

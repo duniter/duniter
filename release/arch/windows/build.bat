@@ -74,9 +74,6 @@ call npm install --build-from-source
 call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
 call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
 copy %cd%\lib\binding\node-webkit-%NW_RELEASE%-win32-x64\node_sqlite3.node %cd%\lib\binding\node-v%ADDON_VERSION%-win32-x64\node_sqlite3.node /Y
-cd ../heapdump
-call nw-gyp --target=%NW_VERSION% --msvs_version=2015 configure
-call nw-gyp --target=%NW_VERSION% --msvs_version=2015 build
 cd ../../..
 mkdir duniter_release
 mkdir duniter_release\nodejs

@@ -124,9 +124,6 @@ cd "$RELEASES/desktop_/node_modules/sqlite3"
 node-pre-gyp --runtime=node-webkit --target=$NW_VERSION configure
 node-pre-gyp --runtime=node-webkit --target=$NW_VERSION build
 cp lib/binding/node-webkit-$NW_RELEASE-linux-x64/node_sqlite3.node lib/binding/node-v$ADDON_VERSION-linux-x64/node_sqlite3.node
-cd "$RELEASES/desktop_/node_modules/heapdump"
-nw-gyp --target=$NW_VERSION configure
-nw-gyp --target=$NW_VERSION build
 
 # Unused binaries
 cd "$RELEASES/desktop_/"

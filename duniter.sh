@@ -35,8 +35,8 @@ duniter() {
 
 	VERSION=`$NODE -v`
 
-	if [[ $VERSION != v6* ]]; then
-	  echo "$NODE v6 is required";
+	if [[ $VERSION != v6.* && $VERSION != v8.* ]]; then
+	  echo "$NODE v6 or v8 is required";
 	else
 
 	  # Calls duniter JS command

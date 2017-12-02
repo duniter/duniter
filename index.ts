@@ -443,6 +443,7 @@ function commandLineConf(program:any, conf:any = {}) {
   conf = conf || {};
   const cli = {
     currency: program.currency,
+    ecoMode: program.ecoMode,
     cpu: program.cpu,
     nbCores: program.nbCores,
     prefix: program.prefix,
@@ -485,6 +486,7 @@ function commandLineConf(program:any, conf:any = {}) {
   // Update the rest of the conf
   if (cli.currency)                             conf.currency = cli.currency;
   if (cli.server.port)                          conf.port = cli.server.port;
+  if (cli.ecoMode)                              conf.ecoMode = cli.ecoMode
   if (cli.cpu)                                  conf.cpu = Math.max(0.01, Math.min(1.0, cli.cpu));
   if (cli.prefix)                               conf.prefix = Math.max(ProverConstants.MIN_PEER_ID, Math.min(ProverConstants.MAX_PEER_ID, cli.prefix));
   if (cli.logs.http)                            conf.httplogs = true;

@@ -16,13 +16,15 @@ keyring from Key
 ***/
 
 const intermediateProofs = [];
-const NB_CORES_FOR_COMPUTATION = 1 // For simple tests. Can be changed to test multiple cores.
+const NB_CORES_FOR_COMPUTATION = 2 // For simple tests. Can be changed to test multiple cores.
 
 const prover = new BlockProver({
   push: (data) => intermediateProofs.push(data),
   conf: {
+    avgGenTime: 20,//1*60,
+    ecoMode: true,
     nbCores: NB_CORES_FOR_COMPUTATION,
-    cpu: 1.0, // 80%,
+    cpu: 0.8, // 80%,
     pair: {
       pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
       sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
@@ -34,9 +36,11 @@ const prover = new BlockProver({
 const now = 1474382274 * 1000;
 const MUST_START_WITH_A_ZERO = 16;
 const MUST_START_WITH_TWO_ZEROS = 32;
+const MUST_START_WITH_THREE_ZEROS = 58;
 
 describe("Proof-of-work", function() {
 
+  this.timeout(6*60000)
   it('should be able to find an easy PoW', () => co(function*() {
     let block = yield prover.prove({
       issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -48,6 +52,14 @@ describe("Proof-of-work", function() {
     intermediateProofs[intermediateProofs.length - 1].pow.should.have.property('hash').equal(block.hash);
   }));
 
+  it('should be reducing cpu when the PoW is too easy for the cpu', () => co(function*() {
+    for(let i=0; i<8; ++i) {
+      let block = yield prover.prove({
+        issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+        number: i+2
+      }, MUST_START_WITH_THREE_ZEROS, now);
+    }
+  }));
   // Too randomly successing test
   // it('should be able to cancel a proof-of-work on other PoW receival', () => co(function*() {
   //   const now = 1474464489;

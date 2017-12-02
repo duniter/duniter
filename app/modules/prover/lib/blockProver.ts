@@ -177,6 +177,7 @@ export class BlockProver {
         newPoW: {
           turnDuration: os.arch().match(/arm/) ? CommonConstants.POW_TURN_DURATION_ARM : CommonConstants.POW_TURN_DURATION_PC,
           conf: {
+            nbCores: this.conf.nbCores,
             cpu: this.conf.cpu,
             prefix: this.conf.prefix,
             avgGenTime: this.conf.avgGenTime,
@@ -196,16 +197,28 @@ export class BlockProver {
         const proof = result.block;
         const testsCount = result.testsCount;
         const duration = (Date.now() - start);
-        const testsPerSecond = (testsCount / (duration / 1000)).toFixed(2);
-        this.logger.info('Done: #%s, %s in %ss (%s tests, ~%s tests/s)', block.number, proof.hash, (duration / 1000).toFixed(2), testsCount, testsPerSecond);
+        const testsPerSecond = (testsCount / (duration / 1000));
+        this.logger.info('Done: #%s, %s in %ss instead of %ss (%s tests, ~%s tests/s)', block.number, proof.hash, (duration / 1000).toFixed(2),
+                                                                        this.conf.avgGenTime, testsCount, testsPerSecond.toFixed(2));
         this.logger.info('FOUND proof-of-work with %s leading zeros followed by [0-' + highMark + ']!', nbZeros);
+        if(this.conf.ecoMode && this.conf.nbCores*testsPerSecond > 300) {
+          if(this.conf.nbCores > 1) {
+            this.logger.info("Reducing number of CPU cores "+this.conf.nbCores)
+            this.conf.nbCores = this.conf.nbCores -1
+          }
+          else if(this.conf.cpu > 0.19){
+            let cpu:number = this.conf.cpu - 0.1
+            this.logger.info("Slowing down the CPU to "+cpu)
+            this.changeCPU(cpu)
+          }
+        }
         return BlockDTO.fromJSONObject(proof)
       }
     })()
   };
 
   async changeCPU(cpu:number) {
-    this.conf.cpu = cpu;
+    this.conf.cpu = Math.max(0.01, Math.min(1.0, cpu));
     const farm = await this.getWorker()
     return farm.changeCPU(cpu)
   }

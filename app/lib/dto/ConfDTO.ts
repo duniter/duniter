@@ -91,6 +91,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
     public rmEndpoints: string[],
     public rootoffset: number,
     public upInterval: number,
+    public ecoMode: boolean|true,
     public cpu: number,
     public nbCores: number,
     public prefix: number,
@@ -162,7 +163,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
 ) {}
 
   static mock() {
-    return new ConfDTO("", "", [], [], 0, 3600 * 1000, constants.PROOF_OF_WORK.DEFAULT.CPU, 1, constants.PROOF_OF_WORK.DEFAULT.PREFIX, 0, 0, constants.CONTRACT.DEFAULT.C, constants.CONTRACT.DEFAULT.DT, constants.CONTRACT.DEFAULT.DT_REEVAL, 0, constants.CONTRACT.DEFAULT.UD0, 0, 0, constants.CONTRACT.DEFAULT.STEPMAX, constants.CONTRACT.DEFAULT.SIGPERIOD, 0, constants.CONTRACT.DEFAULT.SIGVALIDITY, constants.CONTRACT.DEFAULT.MSVALIDITY, constants.CONTRACT.DEFAULT.SIGQTY, constants.CONTRACT.DEFAULT.SIGSTOCK, constants.CONTRACT.DEFAULT.X_PERCENT, constants.CONTRACT.DEFAULT.PERCENTROT, constants.CONTRACT.DEFAULT.POWDELAY, constants.CONTRACT.DEFAULT.AVGGENTIME, constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS, false, 3000, false, constants.BRANCHES.DEFAULT_WINDOW_SIZE, constants.CONTRACT.DEFAULT.IDTYWINDOW, constants.CONTRACT.DEFAULT.MSWINDOW, constants.CONTRACT.DEFAULT.SIGWINDOW, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", "", 0, "", "", null, false, "", true, true, false, new ProxiesConf(), undefined)
+    return new ConfDTO("", "", [], [], 0, 3600 * 1000, true, constants.PROOF_OF_WORK.DEFAULT.CPU, 1, constants.PROOF_OF_WORK.DEFAULT.PREFIX, 0, 0, constants.CONTRACT.DEFAULT.C, constants.CONTRACT.DEFAULT.DT, constants.CONTRACT.DEFAULT.DT_REEVAL, 0, constants.CONTRACT.DEFAULT.UD0, 0, 0, constants.CONTRACT.DEFAULT.STEPMAX, constants.CONTRACT.DEFAULT.SIGPERIOD, 0, constants.CONTRACT.DEFAULT.SIGVALIDITY, constants.CONTRACT.DEFAULT.MSVALIDITY, constants.CONTRACT.DEFAULT.SIGQTY, constants.CONTRACT.DEFAULT.SIGSTOCK, constants.CONTRACT.DEFAULT.X_PERCENT, constants.CONTRACT.DEFAULT.PERCENTROT, constants.CONTRACT.DEFAULT.POWDELAY, constants.CONTRACT.DEFAULT.AVGGENTIME, constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS, false, 3000, false, constants.BRANCHES.DEFAULT_WINDOW_SIZE, constants.CONTRACT.DEFAULT.IDTYWINDOW, constants.CONTRACT.DEFAULT.MSWINDOW, constants.CONTRACT.DEFAULT.SIGWINDOW, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", "", 0, "", "", null, false, "", true, true, false, new ProxiesConf(), undefined)
   }
 
   static defaultConf() {

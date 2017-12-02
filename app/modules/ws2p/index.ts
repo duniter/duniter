@@ -16,8 +16,8 @@ export const WS2PDependency = {
     cliOptions: [
       { value: '--ws2p-upnp',                  desc: 'Use UPnP to open remote port.' },
       { value: '--ws2p-noupnp',                desc: 'Do not use UPnP to open remote port.' },
-      { value: '--ws2p-host <host>',           desc: 'Port to listen to.' },
-      { value: '--ws2p-port <port>',           desc: 'Host to listen to.', parser: (val:string) => parseInt(val) },
+      { value: '--ws2p-host <host>',           desc: 'Host to listen to.' },
+      { value: '--ws2p-port <port>',           desc: 'Port to listen to.', parser: (val:string) => parseInt(val) },
       { value: '--ws2p-remote-host <address>', desc: 'Availabily host.' },
       { value: '--ws2p-remote-port <port>',    desc: 'Availabily port.', parser: (val:string) => parseInt(val) },
       { value: '--ws2p-remote-path <path>',    desc: 'Availabily web path.' },

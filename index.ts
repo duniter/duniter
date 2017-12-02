@@ -486,6 +486,7 @@ function commandLineConf(program:any, conf:any = {}) {
   if (cli.currency)                             conf.currency = cli.currency;
   if (cli.server.port)                          conf.port = cli.server.port;
   if (cli.cpu)                                  conf.cpu = Math.max(0.01, Math.min(1.0, cli.cpu));
+  if (cli.nbCores)                              conf.nbCores = Math.max(1, Math.min(ProverConstants.CORES_MAXIMUM_USE_IN_PARALLEL, cli.nbCores));
   if (cli.prefix)                               conf.prefix = Math.max(ProverConstants.MIN_PEER_ID, Math.min(ProverConstants.MAX_PEER_ID, cli.prefix));
   if (cli.logs.http)                            conf.httplogs = true;
   if (cli.logs.nohttp)                          conf.httplogs = false;

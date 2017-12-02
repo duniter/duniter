@@ -18,6 +18,9 @@ export const ProverDependency = {
     /*********** Permanent prover **************/
     config: {
       onLoading: async (conf:ConfDTO) => {
+        if (conf.ecoMode === null || conf.ecoMode === undefined) {
+          conf.ecoMode = ProverConstants.DEFAULT_ECO_MODE;
+         }
         if (conf.cpu === null || conf.cpu === undefined) {
           conf.cpu = ProverConstants.DEFAULT_CPU;
         }

@@ -201,7 +201,7 @@ export class BlockProver {
         this.logger.info('Done: #%s, %s in %ss instead of %ss (%s tests, ~%s tests/s)', block.number, proof.hash, (duration / 1000).toFixed(2),
                                                                         this.conf.avgGenTime, testsCount, testsPerSecond.toFixed(2));
         this.logger.info('FOUND proof-of-work with %s leading zeros followed by [0-' + highMark + ']!', nbZeros);
-        if(this.conf.ecoMode && this.conf.nbCores*testsPerSecond > 300) {
+        if(this.conf.ecoMode === true && this.conf.nbCores*testsPerSecond > 300) {
           if(this.conf.nbCores > 1) {
             this.logger.info("Reducing number of CPU cores "+this.conf.nbCores)
             this.conf.nbCores = this.conf.nbCores -1

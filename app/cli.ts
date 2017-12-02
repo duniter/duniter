@@ -41,6 +41,7 @@ export const ExecuteCommand = () => {
         .option('--addep <endpoint>', 'With `config` command, add given endpoint to the list of endpoints of this node')
         .option('--remep <endpoint>', 'With `config` command, remove given endpoint to the list of endpoints of this node')
 
+        .option('--eco-mode', 'reduce CPU usage for proof-of-work computation')
         .option('--no-eco-mode', 'Do not reduce CPU usage for proof-of-work computation')
         .option('--cpu <percent>', 'Percent of CPU usage for proof-of-work computation', parsePercent)
         .option('--nb-cores <number>', 'Number of cores uses for proof-of-work computation', parseInt)

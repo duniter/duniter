@@ -217,7 +217,7 @@ function beginNewProofOfWork(stuff:any) {
              ****************/
             // We wait for a maximum time of `turnDuration`.
             // This will trigger the end of the turn by the concurrent race I. During that time, the proof.js script
-            // just does nothing: this gives of a bit of breath to the CPU. Tthe amount of "breath" depends on the "cpu"
+            // just does nothing: this gives of a bit of breath to the CPU. The amount of "breath" depends on the "cpu"
             // parameter.
             await countDown(turnDuration);
           }

@@ -6,9 +6,9 @@ export NVM_DIR="$HOME/.nvm"
 
 # Prepare
 NVER=`node -v`
-DUNITER_TAG=
 ADDON_VERSION=48
 NW_VERSION=0.17.6
+DUNITER_TAG=$1
 NW_RELEASE="v${NW_VERSION}"
 NW="nwjs-${NW_RELEASE}-linux-x64"
 NW_GZ="${NW}.tar.gz"
@@ -35,10 +35,8 @@ rm -rf /vagrant/*.tar.gz
 cd "$DOWNLOADS"
 
 if [ ! -d "$DOWNLOADS/duniter" ]; then
-  git clone https://github.com/duniter/duniter.git
+  mv /vagrant/duniter-source duniter
   cd duniter
-  COMMIT=`git rev-list --tags --max-count=1`
-  DUNITER_TAG=`echo $(git describe --tags $COMMIT) | sed 's/^v//'`
   git checkout "v${DUNITER_TAG}"
   cd ..
 fi

@@ -7,6 +7,7 @@ export NVM_DIR="$HOME/.nvm"
 # Prepare
 ARCH="`uname -m | sed -e \"s/86_//\"`"
 NVER="v6.11.2"
+DUNITER_TAG=$1
 
 # Folders
 INITIAL_DIRECTORY=`pwd`
@@ -28,10 +29,8 @@ mkdir -p "$DOWNLOADS"
 cd "$DOWNLOADS"
 
 if [ ! -d "$DOWNLOADS/duniter" ]; then
-  git clone https://github.com/duniter/duniter.git
+  mv "$INITIAL_DIRECTORY/duniter-source" duniter
   cd duniter
-  COMMIT=`git rev-list --tags --max-count=1`
-  DUNITER_TAG=`echo $(git describe --tags $COMMIT) | sed 's/^v//'`
   git checkout "v${DUNITER_TAG}"
   cd ..
 fi

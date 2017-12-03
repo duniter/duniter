@@ -30,11 +30,11 @@ rd /s /q duniter
 rd /s /q duniter_release
 rd /s /q %NW%
 echo "Clonage de Duniter..."
-git clone https://github.com/duniter/duniter.git
+mkdir duniter
+xcopy C:\vagrant\duniter-source\* %cd%\duniter\* /s /e /Y
 cd duniter
 
-for /f "delims=" %%a in ('git rev-list --tags --max-count=1') do @set DUNITER_REV=%%a
-for /f "delims=" %%a in ('git describe --tags %DUNITER_REV%') do @set DUNITER_TAG=%%a
+for /f "delims=" %%x in (C:\vagrant\duniter_tag.txt) do set DUNITER_TAG=%%x
 echo %DUNITER_TAG%
 
 git checkout %DUNITER_TAG%

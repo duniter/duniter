@@ -5,14 +5,19 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 
 # Prepare
-NVER=`node -v`
-ADDON_VERSION=48
-NW_VERSION=0.17.6
+NODE_VERSION=8.9.1
+NVER="v$NODE_VERSION"
 DUNITER_TAG=$1
+ADDON_VERSION=57
+NW_VERSION=0.24.4
 NW_RELEASE="v${NW_VERSION}"
 NW="nwjs-${NW_RELEASE}-linux-x64"
 NW_GZ="${NW}.tar.gz"
 
+nvm install ${NVER}
+nvm use ${NVER}
+npm install -g node-pre-gyp
+npm install -g nw-gyp
 # Folders
 ROOT=`pwd`
 DOWNLOADS="$ROOT/downloads"
@@ -103,6 +108,11 @@ cd "$RELEASES/desktop_"
 echo "$NW_RELEASE"
 
 cd "$RELEASES/desktop_/node_modules/wotb"
+
+# FIX: bug of nw.js, we need to patch first.
+# TODO: remove this patch once a correct version of Nw.js is out (NodeJS 8 or 9 if the above modules are compliant)
+cp /vagrant/0.24.4_common.gypi ~/.nw-gyp/0.24.4/common.gypi
+
 #yarn --build-from-source
 node-pre-gyp --runtime=node-webkit --target=$NW_VERSION configure
 node-pre-gyp --runtime=node-webkit --target=$NW_VERSION build

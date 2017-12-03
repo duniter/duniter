@@ -1,0 +1,34 @@
+stages:
+  - build-all
+  - release
+
+all-platforms:
+  stage: build-all
+  tags:
+    - cgeek-test
+  script:
+    - >-
+        echo "pouetpouet" > test_windows.txt
+    - >-
+        echo "bidule" > test_linux.txt
+  artifacts:
+    name: all
+    when: always
+    paths:
+      - test_windows.txt
+      - test_linux.txt
+  only:
+    - tags
+
+linux:
+  stage: release
+  tags:
+    - cgeek-test
+  script:
+    - ls -l test_linux.txt
+  artifacts:
+    name: linux
+    paths:
+      - test_linux.txt
+  only:
+    - tags

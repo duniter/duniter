@@ -118,9 +118,6 @@ export const CommonConstants = {
   MAXIMUM_LEN_OF_OUTPUT,
   MAXIMUM_LEN_OF_UNLOCK,
 
-  POW_TURN_DURATION_PC: 100,
-  POW_TURN_DURATION_ARM: 500,
-
   PROOF_OF_WORK: {
     UPPER_BOUND: [
       '9A-F',

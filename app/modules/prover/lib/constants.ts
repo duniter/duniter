@@ -11,6 +11,9 @@ export const ProverConstants = {
   MIN_PEER_ID: 1,
   MAX_PEER_ID: 899, // Due to MAX_SAFE_INTEGER = 9007199254740991 (16 digits, and we use 11 digits for the nonce + 2 digits for core number => 3 digits for the peer, must be below 900)
 
+  ECO_MODE_MINIMAL_TESTS_PER_SECONDS: 300,
+  ECO_MODE_MINIMAL_CPU: 0.19,
+
   NONCE_RANGE: 1000 * 1000 * 1000 * 100,
 
   POW_MAXIMUM_ACCEPTABLE_HANDICAP: 64,

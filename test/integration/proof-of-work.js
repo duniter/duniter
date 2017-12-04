@@ -36,11 +36,10 @@ const prover = new BlockProver({
 const now = 1474382274 * 1000;
 const MUST_START_WITH_A_ZERO = 16;
 const MUST_START_WITH_TWO_ZEROS = 32;
-const MUST_START_WITH_THREE_ZEROS = 58;
+const MUST_START_WITH_A_ZERO_AND_A_NUMBER = 22
 
 describe("Proof-of-work", function() {
 
-  this.timeout(6*60000)
   it('should be able to find an easy PoW', () => co(function*() {
     let block = yield prover.prove({
       issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -53,12 +52,19 @@ describe("Proof-of-work", function() {
   }));
 
   it('should be reducing cpu when the PoW is too easy for the cpu', () => co(function*() {
+    prover.conf.nbCores = 2
+    prover.conf.cpu = 0.9
+    prover.conf.nbCores.should.equal(2)
+    prover.conf.cpu.should.equal(0.9)
     for(let i=0; i<8; ++i) {
-      let block = yield prover.prove({
+      yield prover.prove({
         issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-        number: i+2
-      }, MUST_START_WITH_THREE_ZEROS, now);
+        number: i+2,
+        now
+      }, MUST_START_WITH_A_ZERO_AND_A_NUMBER, now);
     }
+    prover.conf.nbCores.should.equal(1)
+    prover.conf.cpu.should.be.below(0.9)
   }));
   // Too randomly successing test
   // it('should be able to cancel a proof-of-work on other PoW receival', () => co(function*() {

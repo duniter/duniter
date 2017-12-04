@@ -5,7 +5,7 @@ export const ProverConstants = {
   MINIMAL_ZEROS_TO_SHOW_IN_LOGS: 3,
 
   POW_MINIMAL_TO_SHOW: 2,
-  DEFAULT_ECO_MODE: true,
+  DEFAULT_ECO_MODE: false,
   DEFAULT_CPU: 0.6,
   DEFAULT_PEER_ID: 1,
   MIN_PEER_ID: 1,

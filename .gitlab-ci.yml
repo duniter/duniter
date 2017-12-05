@@ -1,0 +1,13 @@
+yarn-build:
+  stage: build
+  tags:
+    - nodejs
+  script:
+    - yarn
+
+yarn-test:
+  stage: test
+  tags:
+    - nodejs
+  script:
+    - yarn test

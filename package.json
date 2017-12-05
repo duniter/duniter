@@ -2,7 +2,7 @@
   "name": "duniter",
   "version": "1.6.14",
   "engines": {
-    "node": ">=6.11.1",
+    "node": ">=8.2.1 <9",
     "npm": ">=3.10"
   },
   "engineStrict": true,
@@ -72,7 +72,6 @@
     "event-stream": "3.3.4",
     "express": "4.15.2",
     "express-fileupload": "0.0.5",
-    "heapdump": "^0.3.9",
     "inquirer": "3.0.6",
     "jison": "0.4.17",
     "js-yaml": "3.8.2",
@@ -82,8 +81,8 @@
     "multimeter": "0.1.1",
     "naclb": "1.3.9",
     "nnupnp": "1.0.2",
-    "node-uuid": "1.4.8",
     "node-pre-gyp": "0.6.34",
+    "node-uuid": "1.4.8",
     "optimist": "0.6.1",
     "q-io": "1.13.2",
     "querablep": "^0.1.0",
@@ -114,15 +113,14 @@
     "mocha-eslint": "0.1.7",
     "nyc": "^11.0.3",
     "sha1": "",
-    "should": "",
+    "should": "*",
     "source-map-support": "^0.4.15",
     "supertest": "",
     "tmp": "0.0.29",
     "ts-node": "^3.3.0",
     "typescript": "^2.4.1"
   },
-  "peerDependencies": {
-  },
+  "peerDependencies": {},
   "bin": {
     "duniter": "./bin/duniter"
   }

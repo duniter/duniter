@@ -25,6 +25,10 @@ export class PowEngine {
     this.id = this.cluster.clusterId
   }
 
+  getNbWorkers() {
+    return this.cluster.nbWorkers
+  }
+
   forceInit() {
     return this.cluster.initCluster()
   }
@@ -35,9 +39,6 @@ export class PowEngine {
       await this.cluster.cancelWork()
     }
 
-    if (os.arch().match(/arm/)) {
-      stuff.newPoW.conf.cpu /= 2; // Don't know exactly why is ARM so much saturated by PoW, so let's divide by 2
-    }
     return await this.cluster.proveByWorkers(stuff)
   }
 
@@ -46,9 +47,6 @@ export class PowEngine {
   }
 
   setConf(value:any) {
-    if (os.arch().match(/arm/) && value.cpu !== undefined) {
-      value.cpu /= 2; // Don't know exactly why is ARM so much saturated by PoW, so let's divide by 2
-    }
     return this.cluster.changeConf(value)
   }
 

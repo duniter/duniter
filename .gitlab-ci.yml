@@ -16,5 +16,6 @@ yarn-test:
   tags:
     - redshift
   script:
+    - yarn
     - yarn test
     - echo "Success!"

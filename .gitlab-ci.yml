@@ -1,5 +1,7 @@
 before_script:
-    - /home/user/use_node.sh
+    - echo "HOME = $HOME"
+    - echo "NVM_DIR = $NVM_DIR"
+    - . "$NVM_DIR/nvm.sh"
 
 yarn-build:
   stage: build

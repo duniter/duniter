@@ -11,3 +11,4 @@ yarn-test:
     - nodejs
   script:
     - yarn test
+    - echo "Success!"

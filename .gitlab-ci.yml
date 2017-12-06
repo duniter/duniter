@@ -1,14 +1,14 @@
 yarn-build:
   stage: build
   tags:
-    - nodejs
+    - redshift
   script:
     - yarn
 
 yarn-test:
   stage: test
   tags:
-    - nodejs
+    - redshift
   script:
     - yarn test
     - echo "Success!"

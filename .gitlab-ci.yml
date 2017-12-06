@@ -1,21 +1,11 @@
 before_script:
-    - echo "HOME = $HOME"
     - export NVM_DIR="$HOME/.nvm"
-    - echo "NVM_DIR = $NVM_DIR"
     - . "$NVM_DIR/nvm.sh"
 
-yarn-build:
-  stage: build
-  tags:
-    - redshift
-  script:
-    - yarn
-
-yarn-test:
+test:
   stage: test
   tags:
     - redshift
   script:
     - yarn
     - yarn test
-    - echo "Success!"

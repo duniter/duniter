@@ -83,7 +83,8 @@ export const CommonConstants = {
     SOFTWARE,
     SOFT_VERSION,
     POW_PREFIX,
-    ZERO_OR_POSITIVE_INT
+    ZERO_OR_POSITIVE_INT,
+    SIGNATURE
   },
 
   BLOCK_GENERATED_VERSION: 10,

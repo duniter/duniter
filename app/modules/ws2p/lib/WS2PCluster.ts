@@ -127,27 +127,33 @@ export class WS2PCluster {
   async headsReceived(heads:WS2PHead[]) {
     await Promise.all(heads.map(async (h:WS2PHead) => {
       try {
-        if (h.messageV2) {
+        // HEAD v2
+        if (h.messageV2 && h.messageV2.match(WS2PConstants.HEAD_V2_REGEXP)) {
           if (!h.sigV2) {
             throw "HEAD_MESSAGE_WRONGLY_SIGNED"
+          } else {
+            const [,,, pub, blockstamp, ws2pId,,,,,]:string[] = h.messageV2.split(':')
+            this.headReceived(h, pub, [pub, ws2pId].join('-'), blockstamp)
           }
-          const [,,, pub, blockstamp, ws2pId,,,,,]:string[] = h.messageV2.split(':')
-          this.headReceived(h, pub, [pub, ws2pId].join('-'), blockstamp)
-        } else if (!h.message) {
-            throw "EMPTY_MESSAGE_FOR_HEAD"
+        } 
+        // HEAD v1 and HEAD v0
+        else if (h.message && h.sig) {
+          if (h.message.match(WS2PConstants.HEAD_V1_REGEXP)) {
+            const [,,, pub, blockstamp, ws2pId,,,]:string[] = h.message.split(':')
+            await this.headReceived(h, pub, [pub, ws2pId].join('-'), blockstamp)
+          } else if (h.message.match(WS2PConstants.HEAD_V0_REGEXP)) {
+            const [,,pub, blockstamp]:string[] = h.message.split(':')
+            await this.headReceived(h, pub, [pub, "00000000"].join('-'), blockstamp)
+          } else {
+            throw "HEAD_WRONG_FORMAT"
+          }
+        }
+        else if (!h.message) {
+          throw "EMPTY_MESSAGE_FOR_HEAD"
         } else if (!h.sig) {
           throw "HEAD_MESSAGE_WRONGLY_SIGNED"
         } else {
-          if (h.message.match(WS2PConstants.HEAD_V0_REGEXP)) {
-            const [,, pub, blockstamp]:string[] = h.message.split(':')
-            const ws2pId = (this.server.conf.ws2p && this.server.conf.ws2p.uuid) || '00000000'
-            this.headReceived(h, pub, [pub, ws2pId].join('-'), blockstamp)
-          }
-          else if (h.message.match(WS2PConstants.HEAD_V1_REGEXP)) {
-            const [,,, pub, blockstamp, ws2pId,,,]:string[] = h.message.split(':')
-            const fullId = 
-            await this.headReceived(h, pub, [pub, ws2pId].join('-'), blockstamp)
-          }
+          throw "HEAD_WRONG_FORMAT"
         }
       } catch (e) {
           this.server.logger.trace(e)
@@ -171,29 +177,41 @@ export class WS2PCluster {
     })
   }
 
-  private async headReceived(head:WS2PHead, pub:string, fullId:string, blockstamp:string) {
+  private async headReceived(h:WS2PHead, pub:string, fullId:string, blockstamp:string) {
     try {
-      const sigOK = verify(head.message, head.sig, pub)
-      const sigV2OK = (head.messageV2 !== undefined && head.sigV2 !== undefined) ? verify(head.messageV2, head.sigV2, pub):false
-      if ((sigV2OK && sigOK) || sigOK) {
-        // Already known or more recent or closer ?
-        const step = (this.headsCache[fullId]) ? this.headsCache[fullId].step || 0:0
-        if (!this.headsCache[fullId] // unknow head
-          || parseInt(this.headsCache[fullId].blockstamp) < parseInt(blockstamp) // more recent head
-          || (head.step !== undefined && head.step < step && this.headsCache[fullId].blockstamp === blockstamp) // closer head
-        ) {
-          // Check that issuer is a member and that the block exists
-          const isAllowed = pub === this.server.conf.pair.pub || this.isConnectedKey(pub) || (await this.isMemberKey(pub))
-          if (isAllowed) {
-            const exists = await this.existsBlock(blockstamp)
-            if (exists) {
-              this.headsCache[fullId] = { blockstamp, message: head.message, sig: head.sig, messageV2: head.messageV2, sigV2: head.sigV2, step: head.step }
-              this.newHeads.push(head)
+      // Prevent fields injection
+      if ( (h.message.match(WS2PConstants.HEAD_V1_REGEXP) || h.message.match(WS2PConstants.HEAD_V0_REGEXP))
+      && h.sig.match(WS2PConstants.HEAD_SIG_REGEXP)
+      && (!h.messageV2 || h.messageV2.match(WS2PConstants.HEAD_V2_REGEXP))
+      && (!h.sigV2 || h.sigV2.match(WS2PConstants.HEAD_SIG_REGEXP))
+      && (!h.step || h.step.toFixed(0).match(/^[0-9]*$/))
+      ) {
+        const head:WS2PHead = { message: h.message, sig: h.sig, messageV2: h.messageV2, sigV2: h.sigV2, step: h.step }
+
+        const sigOK = verify(head.message, head.sig, pub)
+        const sigV2OK = (head.messageV2 !== undefined && head.sigV2 !== undefined) ? verify(head.messageV2, head.sigV2, pub):false
+        if ((sigV2OK && sigOK) || sigOK) {
+          // Already known or more recent or closer ?
+          const step = (this.headsCache[fullId]) ? this.headsCache[fullId].step || 0:0
+          if (!this.headsCache[fullId] // unknow head
+            || parseInt(this.headsCache[fullId].blockstamp) < parseInt(blockstamp) // more recent head
+            || (head.step !== undefined && head.step < step && this.headsCache[fullId].blockstamp === blockstamp) // closer head
+          ) {
+            // Check that issuer is a member and that the block exists
+            const isAllowed = pub === this.server.conf.pair.pub || this.isConnectedKey(pub) || (await this.isMemberKey(pub))
+            if (isAllowed) {
+              const exists = await this.existsBlock(blockstamp)
+              if (exists) {
+                this.headsCache[fullId] = { blockstamp, message: head.message, sig: head.sig, messageV2: head.messageV2, sigV2: head.sigV2, step: head.step }
+                this.newHeads.push(head)
+              }
             }
           }
+        } else {
+          throw "HEAD_MESSAGE_WRONGLY_SIGNED"
         }
       } else {
-        throw "HEAD_MESSAGE_WRONGLY_SIGNED"
+        throw "HEAD_WRONG_FORMAT"
       }
     } catch (e) {
       this.server.logger.trace(e)

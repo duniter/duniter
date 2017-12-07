@@ -59,8 +59,21 @@ export const WS2PConstants = {
   + '(' + CommonConstants.FORMATS.SOFTWARE + '):'
   + '(' + CommonConstants.FORMATS.SOFT_VERSION + '):'
   + '(' + CommonConstants.FORMATS.POW_PREFIX + ')'
+  + '$'),
+
+  HEAD_V2_REGEXP: new RegExp('^WS2P(?:O[CT][SAM])?(?:I[CT])?:HEAD:2:'
+  + '(' + CommonConstants.FORMATS.PUBKEY + '):'
+  + '(' + CommonConstants.FORMATS.BLOCKSTAMP + '):'
+  + '(' + CommonConstants.FORMATS.WS2PID + '):'
+  + '(' + CommonConstants.FORMATS.SOFTWARE + '):'
+  + '(' + CommonConstants.FORMATS.SOFT_VERSION + '):'
+  + '(' + CommonConstants.FORMATS.POW_PREFIX + '):'
+  + '(' + CommonConstants.FORMATS.ZERO_OR_POSITIVE_INT + '):'
+  + '(' + CommonConstants.FORMATS.ZERO_OR_POSITIVE_INT + ')'
   + '(?::' + CommonConstants.FORMATS.TIMESTAMP + ')?'
   + '$'),
+  
+  HEAD_SIG_REGEXP: new RegExp(CommonConstants.FORMATS.SIGNATURE),
 
   HOST_ONION_REGEX: CommonConstants.HOST_ONION_REGEX,
   FULL_ADDRESS_ONION_REGEX: CommonConstants.WS_FULL_ADDRESS_ONION_REGEX,

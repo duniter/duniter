@@ -1,0 +1,11 @@
+before_script:
+    - export NVM_DIR="$HOME/.nvm"
+    - . "$NVM_DIR/nvm.sh"
+
+test:
+  stage: test
+  tags:
+    - redshift
+  script:
+    - yarn
+    - yarn test

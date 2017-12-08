@@ -13,10 +13,10 @@ import {OtherConstants} from "../../../lib/other_constants"
 import {Key, verify} from "../../../lib/common-libs/crypto/keyring"
 import {WS2PServerMessageHandler} from "./interface/WS2PServerMessageHandler"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
-import { CommonConstants } from '../../../lib/common-libs/constants';
-import { Package } from "../../../lib/common/package";
-import { Constants } from "../../prover/lib/constants";
-import { ProxiesConf } from '../../../lib/proxy';
+import {CommonConstants} from '../../../lib/common-libs/constants';
+import {Package} from "../../../lib/common/package";
+import {Constants} from "../../prover/lib/constants";
+import {ProxiesConf} from '../../../lib/proxy';
 
 const es = require('event-stream')
 const nuuid = require('node-uuid')
@@ -254,12 +254,6 @@ export class WS2PCluster {
     this.maxLevel1Size = Math.max(newValue, 0) || 0
   }
 
-  set maxLevel2Peers(newValue:number) {
-    if (this.ws2pServer) {
-      this.ws2pServer.maxLevel2Peers = Math.max(newValue, 0)
-    }
-  }
-
   get maxLevel2Peers() {
     if (this.ws2pServer) {
       return this.ws2pServer.maxLevel2Peers || 0
@@ -482,6 +476,12 @@ export class WS2PCluster {
     const message = `${api}:HEAD:1:${pub}:${number}-${hash}:${ws2pId}:${software}:${softVersion}:${prefix}`
     const sig = key.signSync(message)
     return { sig, message, pub }
+  }
+
+  async trimServerConnections() {
+    if (this.ws2pServer) {
+      await this.ws2pServer.trimConnections()
+    }
   }
 
   async trimClientConnections() {

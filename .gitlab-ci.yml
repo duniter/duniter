@@ -1,4 +1,3 @@
-
 stages:
     - github-sync
     - test
@@ -39,10 +38,6 @@ enforce_readme:
       - mv README.md.new README.md
       - git commit -am "Enforce github readme"
       - git push origin master
-
-before_script:
-    - export NVM_DIR="$HOME/.nvm"
-    - . "$NVM_DIR/nvm.sh"
 
 test:
   stage: test

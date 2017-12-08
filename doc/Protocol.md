@@ -2706,5 +2706,5 @@ At this stage, only the [Duniter HTTP API](/HTTP_API.md) (named BASIC_MERKLED_AP
 ## References
 
 * [Relative Theory of the Money](http://en.trm.creationmonetaire.info), the theoretical reference behind Universal Dividend
-* [OpenUDC](www.openudc.org), the inspiration project of Duniter
+* [OpenUDC](http://www.openudc.org/), the inspiration project of Duniter
 * [Bitcoin](https://github.com/bitcoin/bitcoin), the well known crypto-currency system

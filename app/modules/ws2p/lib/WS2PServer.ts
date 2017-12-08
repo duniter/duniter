@@ -139,7 +139,7 @@ export class WS2PServer extends events.EventEmitter {
 
   async removeExcessIncomingConnections() {
     await this.removeDuplicateConnections()
-    const ws2pPublicMax = (this.server.conf.ws2p && this.server.conf.ws2p.maxPublic) ? this.server.conf.ws2p.maxPublic:10
+    const ws2pPublicMax = (this.server.conf.ws2p && this.server.conf.ws2p.maxPublic) ? this.server.conf.ws2p.maxPublic:WS2PConstants.MAX_LEVEL_2_PEERS
     let privilegedKeys = (this.server.conf.ws2p && this.server.conf.ws2p.privilegedNodes) ? this.server.conf.ws2p.privilegedNodes:[]
     while (this.countConnexions() > ws2pPublicMax) {
       await this.removeLowPriorityConnection(privilegedKeys)

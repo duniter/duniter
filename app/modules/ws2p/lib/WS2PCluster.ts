@@ -14,11 +14,10 @@ import {OtherConstants} from "../../../lib/other_constants"
 import {Key, verify} from "../../../lib/common-libs/crypto/keyring"
 import {WS2PServerMessageHandler} from "./interface/WS2PServerMessageHandler"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
-import { CommonConstants } from '../../../lib/common-libs/constants';
-import { Package } from "../../../lib/common/package";
-import { ProverConstants } from "../../prover/lib/constants";
-import { ProxiesConf } from '../../../lib/proxy';
-import { Keypair } from '../../../lib/dto/ConfDTO';
+import {CommonConstants} from '../../../lib/common-libs/constants';
+import {Package} from "../../../lib/common/package";
+import {ProverConstants} from "../../prover/lib/constants";
+import {ProxiesConf} from '../../../lib/proxy';
 
 const es = require('event-stream')
 const nuuid = require('node-uuid')
@@ -260,12 +259,6 @@ export class WS2PCluster {
 
   set maxLevel1Peers(newValue:number) {
     this.maxLevel1Size = Math.max(newValue, 0) || 0
-  }
-
-  set maxLevel2Peers(newValue:number) {
-    if (this.ws2pServer) {
-      this.ws2pServer.maxLevel2Peers = Math.max(newValue, 0)
-    }
   }
 
   get maxLevel2Peers() {
@@ -653,6 +646,12 @@ export class WS2PCluster {
     return {
       freeMemberRoom,
       freeMirorRoom
+    }
+  }
+
+  async trimServerConnections() {
+    if (this.ws2pServer) {
+      await this.ws2pServer.removeExcessIncomingConnections()
     }
   }
 

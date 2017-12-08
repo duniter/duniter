@@ -15,7 +15,6 @@ export class WS2PServer extends events.EventEmitter {
 
   private wss:any
   private connections:WS2PConnection[] = []
-  private maxLevel2Size = WS2PConstants.MAX_LEVEL_2_PEERS
 
   private constructor(
     private server:Server,
@@ -25,18 +24,13 @@ export class WS2PServer extends events.EventEmitter {
     private shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>,
     public keyPriorityLevel:(pubkey:string, privilegedKeys:string[])=>Promise<number>) {
     super()
-    // Conf: max public connections
-    if (this.server.conf.ws2p && this.server.conf.ws2p.maxPublic !== undefined) {
-      this.maxLevel2Size = this.server.conf.ws2p.maxPublic
-    }
   }
 
   get maxLevel2Peers() {
-    return this.maxLevel2Size || 0
-  }
-
-  set maxLevel2Peers(newValue:number) {
-    this.maxLevel2Size = Math.max(newValue, 0)
+    if (this.server.conf.ws2p && this.server.conf.ws2p.maxPublic !== undefined && this.server.conf.ws2p.maxPublic !== null) {
+      return this.server.conf.ws2p.maxPublic
+    }
+    return WS2PConstants.MAX_LEVEL_2_PEERS
   }
 
   getConnexions() {

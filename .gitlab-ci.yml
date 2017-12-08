@@ -1,6 +1,7 @@
+
 stages:
     - github-sync
-
+    - test
 
 push_to_github:
     stage: github-sync
@@ -39,3 +40,14 @@ enforce_readme:
       - git commit -am "Enforce github readme"
       - git push origin master
 
+before_script:
+    - export NVM_DIR="$HOME/.nvm"
+    - . "$NVM_DIR/nvm.sh"
+
+test:
+  stage: test
+  tags:
+    - redshift
+  script:
+    - yarn
+    - yarn test

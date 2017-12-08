@@ -140,7 +140,7 @@ describe("WS2P server limitations", function() {
   })
 
   it('should not connect to s3 because of connection size limit', async () => {
-    cluster3.maxLevel2Peers = 0
+    if (s3.conf.ws2p) s3.conf.ws2p.maxPublic = 0
     const p3 = await s3.getPeer()
     await s2.writePeer(p3)
     b3 = await s1.commit({ time: now })
@@ -164,42 +164,72 @@ describe("WS2P server limitations", function() {
     })
   })
 
-  it('should connect to s3 because of configuration favorism', async () => {
-    cluster3.maxLevel2Peers = 1
+  it('should be able to fully disconnect the WS2P network', async () => {
     if (s1._server.conf.ws2p) s1._server.conf.ws2p.privateAccess = true
     if (s3._server.conf.ws2p) {
       s3._server.conf.ws2p.publicAccess = true
       s3._server.conf.ws2p.maxPublic = 1
     }
     await s3.writeBlock(b3)
-    await s3._server.PeeringService.generateSelfPeer(s3._server.conf)
-    await s3._server.PeeringService.generateSelfPeer(s3._server.conf)
     await s1.waitToHaveBlock(3)
     await s2.waitToHaveBlock(3)
     // await waitForkWS2PConnection(s3._server, 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd')
     b4 = await s1.commit({ time: now })
     await s2.waitToHaveBlock(4)
+    // The test
+    if (s3.conf.ws2p) s3.conf.ws2p.maxPublic = 0
+    if (s1.conf.ws2p) s1.conf.ws2p.maxPublic = 0 // <-- Breaks the connection s2 -> s1
+    await cluster1.trimServerConnections()
+    await waitForkWS2PDisconnection(s1._server, '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc')
+    await cluster3.trimServerConnections()
+    await s1.expect('/network/ws2p/info', (res:any) => {
+      assert.equal(res.peers.level1, 0)
+      assert.equal(res.peers.level2, 0)
+    })
+    await s2.expect('/network/ws2p/info', (res:any) => {
+      assert.equal(res.peers.level1, 0)
+      assert.equal(res.peers.level2, 0)
+    })
+    await s3.expect('/network/ws2p/info', (res:any) => {
+      assert.equal(res.peers.level1, 0)
+      assert.equal(res.peers.level2, 0)
+    })
+    await s4.expect('/network/ws2p/info', (res:any) => {
+      assert.equal(res.peers.level1, 0)
+      assert.equal(res.peers.level2, 0)
+    })
+  })
+
+  it('should connect to s3 because of configuration favorism', async () => {
+    if (s1._server.conf.ws2p) s1._server.conf.ws2p.privateAccess = true
+    if (s3._server.conf.ws2p) s3._server.conf.ws2p.publicAccess = true
+    if (s3._server.conf.ws2p) {
+      s3._server.conf.ws2p.publicAccess = true
+      s3._server.conf.ws2p.maxPublic = 1
+    }
     await s3._server.PeeringService.generateSelfPeer(s3._server.conf)
     const p3 = await s3.getPeer()
     await s2.writePeer(p3)
+    await waitForkWS2PConnection(s3._server, '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc')
+    await s1.writePeer(p3)
     await waitForkWS2PConnection(s3._server, 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd')
-    //await waitForkWS2PDisconnection(s3._server, '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc')
-      await s1.expect('/network/ws2p/info', (res:any) => {
-        assert.equal(res.peers.level1, 1) // <- New connection to s3
-        assert.equal(res.peers.level2, 1)
-      })
-      await s2.expect('/network/ws2p/info', (res:any) => {
-        assert.equal(res.peers.level1, 1)
-        assert.equal(res.peers.level2, 0)
-      })
-      await s3.expect('/network/ws2p/info', (res:any) => {
-        assert.equal(res.peers.level1, 0)
-        assert.equal(res.peers.level2, 1) // <- New connection from s1
-      })
-      await s4.expect('/network/ws2p/info', (res:any) => {
-        assert.equal(res.peers.level1, 0)
-        assert.equal(res.peers.level2, 0)
-      })
+    await waitForkWS2PDisconnection(s3._server, '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc') // <-- s2 is kicked! s1 is prefered
+    await s1.expect('/network/ws2p/info', (res:any) => {
+      assert.equal(res.peers.level1, 1) // <- New connection to s3
+      assert.equal(res.peers.level2, 0)
+    })
+    await s2.expect('/network/ws2p/info', (res:any) => {
+      assert.equal(res.peers.level1, 0)
+      assert.equal(res.peers.level2, 0)
+    })
+    await s3.expect('/network/ws2p/info', (res:any) => {
+      assert.equal(res.peers.level1, 0)
+      assert.equal(res.peers.level2, 1) // <- New connection from s1
+    })
+    await s4.expect('/network/ws2p/info', (res:any) => {
+      assert.equal(res.peers.level1, 0)
+      assert.equal(res.peers.level2, 0)
+    })
   })
 
   function getTestingServer(keyring:{ pub:string, sec:string }) {

@@ -455,7 +455,7 @@ export class WS2PCluster {
       }
       i++
       // Trim the eventual extra connections
-      setTimeout(() => this.trimClientConnections(prefered), WS2PConstants.CONNEXION_TIMEOUT)
+      setTimeout(() => this.removeLowPriorityConnections(prefered), WS2PConstants.CONNEXION_TIMEOUT)
     }
   }
 
@@ -494,7 +494,7 @@ export class WS2PCluster {
             const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, connectedWS2PUID, () => this.clientsCount(), this.maxLevel1Size, preferedKeys, (this.server.conf.ws2p && this.server.conf.ws2p.preferedOnly) || false, ws2pEnpoint.uuid)
             if (shouldAccept && (!this.server.conf.ws2p || ws2pEnpoint.uuid !== this.server.conf.ws2p.uuid || peer.pubkey !== this.server.conf.pair.pub)) {
               await this.connectToRemoteWS(ws2pEnpoint.version, ws2pEnpoint.host, ws2pEnpoint.port, ws2pEnpoint.path, this.messageHandler, peer.pubkey, ws2pEnpoint.uuid)
-              await this.trimClientConnections(preferedKeys)
+              await this.removeLowPriorityConnections(preferedKeys)
             }
           }
         }
@@ -655,49 +655,46 @@ export class WS2PCluster {
     }
   }
 
-  async removeLowPriorityConnections(privilegedKeys:string[]) {
+  async removeLowPriorityConnections(preferedKeys:string[]) {
     let serverPubkeys:string[] = []
     if (this.ws2pServer) {
       serverPubkeys = this.ws2pServer.getConnexions().map(c => c.pubkey)
     }
-    let disconnectedOne = true
     // Disconnect Private connexions already present under Public
-    while (disconnectedOne) {
-      disconnectedOne = false
-      let uuids = Object.keys(this.ws2pClients)
-      uuids = _.shuffle(uuids)
-      for (const uuid of uuids) {
-        const client = this.ws2pClients[uuid]
-        const pub = client.connection.pubkey
-        const isNotOurself = pub !== this.server.conf.pair.pub
-        const isAlreadyInPublic = serverPubkeys.indexOf(pub) !== -1
-        if (isNotOurself && isAlreadyInPublic) {
-          client.connection.close()
-          await client.connection.closed
-          disconnectedOne = true
-          if (this.ws2pClients[uuid]) {
-            delete this.ws2pClients[uuid]
-          }
+    let uuids = Object.keys(this.ws2pClients)
+    uuids = _.shuffle(uuids)
+    for (const uuid of uuids) {
+      const client = this.ws2pClients[uuid]
+      const pub = client.connection.pubkey
+      const isNotOurself = pub !== this.server.conf.pair.pub
+      const isAlreadyInPublic = serverPubkeys.indexOf(pub) !== -1
+      if (isNotOurself && isAlreadyInPublic) {
+        client.connection.close()
+        await client.connection.closed
+        if (this.ws2pClients[uuid]) {
+          delete this.ws2pClients[uuid]
         }
       }
     }
     // Disconnect Private connexions until the maximum size is respected
-    while (disconnectedOne && this.clientsCount() > this.maxLevel1Size) {
+    while (this.clientsCount() > this.maxLevel1Size) {
       let uuids = Object.keys(this.ws2pClients)
       uuids = _.shuffle(uuids)
       let lowPriorityConnectionUUID:string = uuids[0]
-      let minPriorityLevel = this.keyPriorityLevel(this.ws2pClients[lowPriorityConnectionUUID].connection.pubkey, privilegedKeys)
+      let minPriorityLevel = this.keyPriorityLevel(this.ws2pClients[lowPriorityConnectionUUID].connection.pubkey, preferedKeys)
       for (const uuid of uuids) {
         const client = this.ws2pClients[uuid]
           if (uuid !== lowPriorityConnectionUUID) {
-            let uuidPriorityLevel = this.keyPriorityLevel(client.connection.pubkey, privilegedKeys)
+            let uuidPriorityLevel = this.keyPriorityLevel(client.connection.pubkey, preferedKeys)
             if (uuidPriorityLevel < minPriorityLevel) {
               lowPriorityConnectionUUID = uuid
               minPriorityLevel = uuidPriorityLevel
             }
           }
-        delete this.ws2pClients[lowPriorityConnectionUUID]
       }
+      this.ws2pClients[lowPriorityConnectionUUID].connection.close()
+      await this.ws2pClients[lowPriorityConnectionUUID].connection.closed
+      delete this.ws2pClients[lowPriorityConnectionUUID]
     }
   }
 
@@ -707,101 +704,6 @@ export class WS2PCluster {
     priorityLevel += (preferedOrPrivilegedKeys.indexOf(pubkey) !== -1) ? WS2PConstants.CONNECTIONS_PRIORITY.PREFERED_PRIVILEGED_KEY_LEVEL:0
     priorityLevel += (this.server.conf.pair.pub === pubkey) ? WS2PConstants.CONNECTIONS_PRIORITY.SELF_KEY_LEVEL:0
     return priorityLevel
-  }
-
-  async trimClientConnections(preferedKeys:string[]) {
-    let serverPubkeys:string[] = []
-    if (this.ws2pServer) {
-      serverPubkeys = this.ws2pServer.getConnexions().map(c => c.pubkey)
-    }
-    let disconnectedOne = true
-    // Disconnect Private connexions already present (under Public or under Private)
-    while (disconnectedOne) {
-      disconnectedOne = false
-      let uuids = Object.keys(this.ws2pClients)
-      uuids = _.shuffle(uuids)
-      for (const uuid of uuids) {
-        const client = this.ws2pClients[uuid]
-        const pub = client.connection.pubkey
-        const isNotOurself = pub !== this.server.conf.pair.pub
-        const isAlreadyInPublic = serverPubkeys.indexOf(pub) !== -1
-        // Check if isAlreadyInPrivate
-        let isAlreadyInPrivate = 0
-        for (const ws2pid of Object.keys(this.ws2pClients)) {
-          if (this.ws2pClients[ws2pid].connection.pubkey === pub) {
-            isAlreadyInPrivate++
-          }
-        }
-        if (isNotOurself && (isAlreadyInPublic || isAlreadyInPrivate > 1)) {
-          client.connection.close()
-          await client.connection.closed
-          disconnectedOne = true
-          if (this.ws2pClients[uuid]) {
-            delete this.ws2pClients[uuid]
-          }
-        }
-      }
-    }
-    // Disconnect non-members
-    while (disconnectedOne && this.clientsCount() > this.maxLevel1Size) {
-      disconnectedOne = false
-      let uuids = Object.keys(this.ws2pClients)
-      uuids = _.shuffle(uuids)
-      for (const uuid of uuids) {
-        const client = this.ws2pClients[uuid]
-        const pub = client.connection.pubkey
-        const isNotOurself = pub !== this.server.conf.pair.pub
-        const isMember = await this.server.dal.isMember(pub)
-        const isPrefered = this.getPreferedNodes().indexOf(pub) !== -1
-        if (isNotOurself && !isMember && !disconnectedOne && !isPrefered) {
-          client.connection.close()
-          await client.connection.closed
-          disconnectedOne = true
-          if (this.ws2pClients[uuid]) {
-            delete this.ws2pClients[uuid]
-          }
-        }
-      }
-    }
-    disconnectedOne = true
-    // Disconnect non-prefered members
-    while (disconnectedOne && this.clientsCount() > this.maxLevel1Size) {
-      disconnectedOne = false
-      let uuids = Object.keys(this.ws2pClients)
-      uuids = _.shuffle(uuids)
-      for (const uuid of uuids) {
-        const client = this.ws2pClients[uuid]
-        const pub = client.connection.pubkey
-        const isNotOurself = pub !== this.server.conf.pair.pub
-        const isPrefered = this.getPreferedNodes().indexOf(pub) !== -1
-        if (isNotOurself && !disconnectedOne && !isPrefered) {
-          client.connection.close()
-          disconnectedOne = true
-          await client.connection.closed
-          if (this.ws2pClients[uuid]) {
-            delete this.ws2pClients[uuid]
-          }
-        }
-      }
-    }
-    // Disconnect anything
-    disconnectedOne = true
-    while (disconnectedOne && this.clientsCount() > this.maxLevel1Size) {
-      disconnectedOne = false
-      let uuids = Object.keys(this.ws2pClients)
-      uuids = _.shuffle(uuids)
-      for (const uuid of uuids) {
-        const client = this.ws2pClients[uuid]
-        if (!disconnectedOne) {
-          client.connection.close()
-          disconnectedOne = true
-          await client.connection.closed
-          if (this.ws2pClients[uuid]) {
-            delete this.ws2pClients[uuid]
-          }
-        }
-      }
-    }
   }
 
   private getPreferedNodes(): string[] {

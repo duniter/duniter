@@ -180,6 +180,8 @@ describe("WS2P server limitations", function() {
     if (s3.conf.ws2p) s3.conf.ws2p.maxPublic = 0
     if (s1.conf.ws2p) s1.conf.ws2p.maxPublic = 0 // <-- Breaks the connection s2 -> s1
     await cluster1.trimServerConnections()
+    const s2PreferedKeys = (s2.conf.ws2p && s2.conf.ws2p.preferedNodes) ? s2.conf.ws2p.preferedNodes:[]
+    await cluster2.removeLowPriorityConnections(s2PreferedKeys)
     await waitForkWS2PDisconnection(s1._server, '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc')
     await cluster3.trimServerConnections()
     await s1.expect('/network/ws2p/info', (res:any) => {

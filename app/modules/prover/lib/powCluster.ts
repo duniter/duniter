@@ -195,6 +195,7 @@ export class Master {
             highMark: stuff.newPoW.highMark,
             pair: _.clone(stuff.newPoW.pair),
             forcedTime: stuff.newPoW.forcedTime,
+            turnDuration: stuff.newPoW.turnDuration,
             conf: {
               medianTimeBlocks: stuff.newPoW.conf.medianTimeBlocks,
               avgGenTime: stuff.newPoW.conf.avgGenTime,

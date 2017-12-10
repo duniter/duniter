@@ -30,7 +30,6 @@ export class PowEngine {
   }
 
   async prove(stuff:any) {
-    
         if (this.cluster.hasProofPending) {
           await this.cluster.cancelWork()
         }
@@ -41,10 +40,6 @@ export class PowEngine {
           stuff.newPoW.conf.nbCores /= 2; // Make sure that only once each physical core is used (for Hyperthreading).
         }
         return await this.cluster.proveByWorkers(stuff)
-  }    
-
-  cancel() {
-    return this.cluster.cancelWork()
   }
 
   setConf(value:any) {

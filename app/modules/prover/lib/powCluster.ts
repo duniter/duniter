@@ -185,27 +185,24 @@ export class Master {
 
       // Start the salves' job
       this.slaves.forEach((s:any, index) => {
-        if(index < stuff.newPoW.conf.nbCores) {
-          s.worker.send({
-            uuid,
-            command: 'newPoW',
-            value: {
-              block: stuff.newPoW.block,
-              nonceBeginning: s.nonceBeginning,
-              zeros: stuff.newPoW.zeros,
-              highMark: stuff.newPoW.highMark,
-              pair: _.clone(stuff.newPoW.pair),
-              forcedTime: stuff.newPoW.forcedTime,
-              turnDuration: stuff.newPoW.turnDuration,
-              conf: {
-                medianTimeBlocks: stuff.newPoW.conf.medianTimeBlocks,
-                avgGenTime: stuff.newPoW.conf.avgGenTime,
-                cpu: stuff.newPoW.conf.cpu,
-                prefix: stuff.newPoW.conf.prefix
-              }
+        s.worker.send({
+          uuid,
+          command: 'newPoW',
+          value: {
+            block: stuff.newPoW.block,
+            nonceBeginning: s.nonceBeginning,
+            zeros: stuff.newPoW.zeros,
+            highMark: stuff.newPoW.highMark,
+            pair: _.clone(stuff.newPoW.pair),
+            forcedTime: stuff.newPoW.forcedTime,
+            turnDuration: stuff.newPoW.turnDuration,conf: {
+              medianTimeBlocks: stuff.newPoW.conf.medianTimeBlocks,
+              avgGenTime: stuff.newPoW.conf.avgGenTime,
+              cpu: stuff.newPoW.conf.cpu,
+              prefix: stuff.newPoW.conf.prefix
             }
-          })
-        }
+          }
+        })
       })
 
       return await this.currentPromise

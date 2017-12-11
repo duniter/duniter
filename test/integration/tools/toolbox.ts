@@ -22,6 +22,7 @@ import {WS2PMessageHandler} from "../../../app/modules/ws2p/lib/impl/WS2PMessage
 import {WS2PCluster} from "../../../app/modules/ws2p/lib/WS2PCluster"
 import {WS2PServer} from "../../../app/modules/ws2p/lib/WS2PServer"
 import {WS2PServerMessageHandler} from "../../../app/modules/ws2p/lib/interface/WS2PServerMessageHandler"
+import {TestUser} from "./TestUser"
 
 const assert      = require('assert');
 const _           = require('underscore');
@@ -31,7 +32,6 @@ const WebSocketServer = require('ws').Server
 const httpTest    = require('../tools/http');
 const sync        = require('../tools/sync');
 const commit      = require('../tools/commit');
-const user        = require('../tools/user');
 const until       = require('../tools/until');
 const bma         = require('../../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const logger      = require('../../../app/lib/logger').NewLogger('toolbox');
@@ -72,7 +72,7 @@ export const assertThrows = async (promise:Promise<any>, message:string|null = n
 }
 
 export const simpleUser = (uid:string, keyring:{ pub:string, sec:string }, server:TestingServer) => {
-  return user(uid, keyring, { server });
+  return new TestUser(uid, keyring, { server });
 }
 
 export const simpleNetworkOf2NodesAnd2Users = async (options:any) => {
@@ -82,8 +82,8 @@ export const simpleNetworkOf2NodesAnd2Users = async (options:any) => {
   const s1 = NewTestingServer(_.extend({ pair: catKeyring }, options || {}));
   const s2 = NewTestingServer(_.extend({ pair: tacKeyring }, options || {}));
 
-  const cat = user('cat', catKeyring, { server: s1 });
-  const tac = user('tac', tacKeyring, { server: s1 });
+  const cat = new TestUser('cat', catKeyring, { server: s1 });
+  const tac = new TestUser('tac', tacKeyring, { server: s1 });
 
   await s1.initDalBmaConnections()
   await s2.initDalBmaConnections()
@@ -113,8 +113,8 @@ export const simpleNodeWith2Users = async (options:any) => {
 
   const s1 = NewTestingServer(_.extend({ pair: catKeyring }, options || {}));
 
-  const cat = user('cat', catKeyring, { server: s1 });
-  const tac = user('tac', tacKeyring, { server: s1 });
+  const cat = new TestUser('cat', catKeyring, { server: s1 });
+  const tac = new TestUser('tac', tacKeyring, { server: s1 });
 
   await s1.initDalBmaConnections()
 
@@ -135,8 +135,8 @@ export const simpleNodeWith2otherUsers = async (options:any) => {
 
   const s1 = NewTestingServer(_.extend({ pair: ticKeyring }, options || {}));
 
-  const tic = user('cat', ticKeyring, { server: s1 });
-  const toc = user('tac', tocKeyring, { server: s1 });
+  const tic = new TestUser('cat', ticKeyring, { server: s1 });
+  const toc = new TestUser('tac', tocKeyring, { server: s1 });
 
   await s1.initDalBmaConnections()
 
@@ -152,7 +152,7 @@ export const simpleNodeWith2otherUsers = async (options:any) => {
 
 export const createUser = async (uid:string, pub:string, sec:string, defaultServer:Server) => {
   const keyring = { pub: pub, sec: sec };
-  return user(uid, keyring, { server: defaultServer });
+  return new TestUser(uid, keyring, { server: defaultServer });
 }
 
 export const fakeSyncServer = async (readBlocksMethod:any, readParticularBlockMethod:any, onPeersRequested:any) => {
@@ -643,7 +643,7 @@ export async function newWS2PBidirectionnalConnection(currency:string, k1:Key, k
     wss.on('connection', async (ws:any) => {
       switch (i) {
         case 1:
-          s1 = WS2PConnection.newConnectionFromWebSocketServer(ws, serverHandler, new WS2PPubkeyLocalAuth(currency, k1), new WS2PPubkeyRemoteAuth(currency, k1), {
+          s1 = WS2PConnection.newConnectionFromWebSocketServer(ws, serverHandler, new WS2PPubkeyLocalAuth(currency, k1, ""), new WS2PPubkeyRemoteAuth(currency, k1), {
             connectionTimeout: 100,
             requestTimeout: 100
           });
@@ -657,13 +657,13 @@ export async function newWS2PBidirectionnalConnection(currency:string, k1:Key, k
       })
       i++
     })
-    c1 = WS2PConnection.newConnectionToAddress('ws://localhost:' + port, new (class EmptyHandler implements WS2PMessageHandler {
+    c1 = WS2PConnection.newConnectionToAddress(1, 'ws://localhost:' + port, new (class EmptyHandler implements WS2PMessageHandler {
       async handlePushMessage(json: any): Promise<void> {
       }
       async answerToRequest(json: any): Promise<WS2PResponse> {
         return {}
       }
-    }), new WS2PPubkeyLocalAuth(currency, k2), new WS2PPubkeyRemoteAuth(currency, k2))
+    }), new WS2PPubkeyLocalAuth(currency, k2, ""), new WS2PPubkeyRemoteAuth(currency, k2))
   })
 }
 
@@ -678,7 +678,7 @@ export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promis
   const connexionPromise = new Promise(res => {
     ws2ps.on('newConnection', res)
   })
-  const ws2pc = await cluster2.connectToRemoteWS('localhost', port, '', new WS2PServerMessageHandler(s2._server, cluster2), s1._server.conf.pair.pub)
+  const ws2pc = await cluster2.connectToRemoteWS(1, 'localhost', port, '', new WS2PServerMessageHandler(s2._server, cluster2), s1._server.conf.pair.pub)
 
   await connexionPromise
   w1 = await ws2ps.getConnection(clientPub)

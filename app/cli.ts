@@ -1,7 +1,7 @@
 const Command = require('commander').Command;
 const pjson = require('../package.json');
 const duniter = require('../index');
-
+ 
 export const ExecuteCommand = () => {
 
   const options:any = [];
@@ -42,6 +42,7 @@ export const ExecuteCommand = () => {
         .option('--remep <endpoint>', 'With `config` command, remove given endpoint to the list of endpoints of this node')
 
         .option('--cpu <percent>', 'Percent of CPU usage for proof-of-work computation', parsePercent)
+        .option('--nb-cores <number>', 'Number of cores uses for proof-of-work computation', parseInt)
         .option('--prefix <nodeId>', 'Prefix node id for the first character of nonce', parseInt)
 
         .option('-c, --currency <name>', 'Name of the currency managed by this node.')

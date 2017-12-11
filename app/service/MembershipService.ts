@@ -56,13 +56,14 @@ export class MembershipService extends FIFOService {
       const current = await this.dal.getCurrentBlockOrNull();
       const basedBlock = await GLOBAL_RULES_HELPERS.checkMembershipBlock(entry, current, this.conf, this.dal);
       if (!(await this.dal.msDAL.sandbox.acceptNewSandBoxEntry({
-          pubkey: entry.pubkey,
+          issuers: [entry.pubkey],
           block_number: entry.block_number
         }, this.conf.pair && this.conf.pair.pub))) {
         throw constants.ERRORS.SANDBOX_FOR_MEMERSHIP_IS_FULL;
       }
       // Saves entry
       await this.dal.savePendingMembership({
+        issuers: [entry.pubkey],
         membership: entry.membership,
         issuer: entry.issuer,
         number: entry.number,

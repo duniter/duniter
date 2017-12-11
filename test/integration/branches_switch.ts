@@ -6,7 +6,7 @@ const co = require('co');
 const _         = require('underscore');
 const duniter     = require('../../index');
 const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
-const user      = require('./tools/user');
+const TestUser  = require('./tools/TestUser').TestUser
 const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
@@ -57,8 +57,8 @@ describe("Switch", function() {
         }
       }, commonConf));
 
-    cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
-    toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+    cat = new TestUser('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
+    toc = new TestUser('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
 
     yield s1.initWithDAL().then(bma).then((bmapi:any) => bmapi.openConnections());
     yield s2.initWithDAL().then(bma).then((bmapi:any) => bmapi.openConnections());

@@ -7,13 +7,13 @@ const assert    = require('assert');
 const duniter     = require('../../index');
 const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const PeerDTO   = require('../../app/lib/dto/PeerDTO').PeerDTO
-const user      = require('./tools/user');
+const TestUser  = require('./tools/TestUser').TestUser
 const http      = require('./tools/http');
 const shutDownEngine  = require('./tools/shutDownEngine');
 const rp        = require('request-promise');
 const ws        = require('ws');
 
-require('../../app/modules/prover/lib/constants').Constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
+require('../../app/modules/prover/lib/constants').ProverConstants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
 
 let server, server2, cat, toc
 
@@ -64,8 +64,8 @@ describe("HTTP API", function() {
         }
       });
 
-    cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: server });
-    toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: server });
+    cat = new TestUser('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: server });
+    toc = new TestUser('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: server });
 
     commit = makeBlockAndPost(server);
 

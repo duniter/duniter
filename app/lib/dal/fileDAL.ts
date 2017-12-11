@@ -503,13 +503,13 @@ export class FileDAL {
     return this.sindexDAL.getSource(identifier, pos)
   }
 
-  async isMember(pubkey:string) {
+  async isMember(pubkey:string):Promise<boolean> {
     try {
       const idty = await this.iindexDAL.getFromPubkey(pubkey);
-      if (!idty) {
+      if (idty === null) {
         return false
       }
-      return idty.member;
+      return true;
     } catch (err) {
       return false;
     }
@@ -759,7 +759,7 @@ export class FileDAL {
   }
 
   saveTransaction(tx:DBTx) {
-    return this.txsDAL.addPending(TransactionDTO.fromJSONObject(tx))
+    return this.txsDAL.addPending(tx)
   }
 
   async getTransactionsHistory(pubkey:string) {

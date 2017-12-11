@@ -3,7 +3,7 @@
 // const co = require('co');
 // const limiter = require('../../app/lib/system/limiter');
 // const toolbox = require('../integration/tools/toolbox');
-// const user    = require('../integration/tools/user');
+// const TestUser = require('../integration/tools/TestUser').TestUser
 // const bma     = require('../lib/bma');
 //
 // limiter.noLimit();

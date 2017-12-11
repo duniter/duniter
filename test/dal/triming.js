@@ -124,10 +124,6 @@ describe("Triming", function(){
   it('should be able to trim the bindex', () => co(function *() {
     // Triming
     const server = (yield toolbox.simpleNodeWith2Users({
-      pair: {
-        pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-        sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
-      },
       forksize: 9,
       sigQty: 1,
       dtDiffEval: 2,

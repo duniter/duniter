@@ -169,12 +169,10 @@ export class TxsDAL extends AbstractSQLite<DBTx> {
     return this.saveEntity(dbTx)
   }
 
-  addPending(tx:TransactionDTO) {
-    const dbTx = DBTx.fromTransactionDTO(tx)
+  addPending(dbTx:DBTx) {
     dbTx.received = moment().unix()
     dbTx.written = false
     dbTx.removed = false
-    dbTx.hash = tx.getHash()
     return this.saveEntity(dbTx)
   }
 

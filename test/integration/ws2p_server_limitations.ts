@@ -165,7 +165,11 @@ describe("WS2P server limitations", function() {
   })
 
   it('should be able to fully disconnect the WS2P network', async () => {
-    // Preparation for next test of configuration favorism
+    if (s1._server.conf.ws2p) s1._server.conf.ws2p.privateAccess = true
+    if (s3._server.conf.ws2p) {
+      s3._server.conf.ws2p.publicAccess = true
+      s3._server.conf.ws2p.maxPublic = 1
+    }
     await s3.writeBlock(b3)
     await s1.waitToHaveBlock(3)
     await s2.waitToHaveBlock(3)
@@ -176,6 +180,8 @@ describe("WS2P server limitations", function() {
     if (s3.conf.ws2p) s3.conf.ws2p.maxPublic = 0
     if (s1.conf.ws2p) s1.conf.ws2p.maxPublic = 0 // <-- Breaks the connection s2 -> s1
     await cluster1.trimServerConnections()
+    const s2PreferedKeys = (s2.conf.ws2p && s2.conf.ws2p.preferedNodes) ? s2.conf.ws2p.preferedNodes:[]
+    await cluster2.removeLowPriorityConnections(s2PreferedKeys)
     await waitForkWS2PDisconnection(s1._server, '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc')
     await cluster3.trimServerConnections()
     await s1.expect('/network/ws2p/info', (res:any) => {

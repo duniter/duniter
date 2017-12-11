@@ -1,6 +1,22 @@
 import {CommonConstants} from "../../../lib/common-libs/constants"
 export const WS2PConstants = {
 
+  NETWORK: {
+    INCOMING: {
+      DEFAULT: 0,
+      TOR: 1
+    },
+    OUTCOMING: {
+      DEFAULT: 0,
+      TOR: 1
+    },
+  },
+
+  WS2P_DEFAULT_API_VERSION:1,
+  WS2P_DEFAULT_HEAD_VERSION:1,
+  WS2P_API_VERSION: 1,
+  WS2P_HEAD_VERSION: 2,
+
   WS2P_UPNP_TTL: 600,
   WS2P_PORTS_START: 20900,
   WS2P_PORTS_END: 20999,
@@ -18,7 +34,13 @@ export const WS2PConstants = {
 
   MAX_LEVEL_1_PEERS: 5,
   MAX_LEVEL_2_PEERS: 20,
-  CONNECTIONS_LOW_LEVEL: 3,
+
+  CONNECTIONS_PRIORITY: {
+    MEMBER_KEY_LEVEL: 1,
+    PREFERED_PRIVILEGED_KEY_LEVEL: 2,
+    SELF_KEY_LEVEL: 4,
+    MAX_PRIORITY_LEVEL: 7,
+  },
 
   BAN_DURATION_IN_SECONDS: 120,
   BAN_ON_REPEAT_THRESHOLD: 5,
@@ -37,8 +59,21 @@ export const WS2PConstants = {
   + '(' + CommonConstants.FORMATS.SOFTWARE + '):'
   + '(' + CommonConstants.FORMATS.SOFT_VERSION + '):'
   + '(' + CommonConstants.FORMATS.POW_PREFIX + ')'
+  + '$'),
+
+  HEAD_V2_REGEXP: new RegExp('^WS2P(?:O[CT][SAM])?(?:I[CT])?:HEAD:2:'
+  + '(' + CommonConstants.FORMATS.PUBKEY + '):'
+  + '(' + CommonConstants.FORMATS.BLOCKSTAMP + '):'
+  + '(' + CommonConstants.FORMATS.WS2PID + '):'
+  + '(' + CommonConstants.FORMATS.SOFTWARE + '):'
+  + '(' + CommonConstants.FORMATS.SOFT_VERSION + '):'
+  + '(' + CommonConstants.FORMATS.POW_PREFIX + '):'
+  + '(' + CommonConstants.FORMATS.ZERO_OR_POSITIVE_INT + '):'
+  + '(' + CommonConstants.FORMATS.ZERO_OR_POSITIVE_INT + ')'
   + '(?::' + CommonConstants.FORMATS.TIMESTAMP + ')?'
   + '$'),
+  
+  HEAD_SIG_REGEXP: new RegExp(CommonConstants.FORMATS.SIGNATURE),
 
   HOST_ONION_REGEX: CommonConstants.HOST_ONION_REGEX,
   FULL_ADDRESS_ONION_REGEX: CommonConstants.WS_FULL_ADDRESS_ONION_REGEX,

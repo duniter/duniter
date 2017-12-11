@@ -126,8 +126,11 @@ export class QuickSynchronizer {
 
         // Remember expiration dates
         for (const entry of index) {
-          if (entry.expires_on || entry.revokes_on) {
-            sync_expires.push(entry.expires_on || entry.revokes_on);
+          if (entry.expires_on) {
+            sync_expires.push(entry.expires_on)
+          }
+          if (entry.revokes_on) {
+            sync_expires.push(entry.revokes_on)
           }
         }
         sync_expires = _.uniq(sync_expires);
@@ -151,8 +154,8 @@ export class QuickSynchronizer {
               i--;
             }
           }
-          let currentNextExpiring = sync_nextExpiring
-          sync_nextExpiring = sync_expires.reduce((max, value) => max ? Math.min(max, value) : value, sync_nextExpiring);
+          const currentNextExpiring = sync_nextExpiring
+          sync_nextExpiring = sync_expires.reduce((max, value) => max ? Math.min(max, value) : value, 9007199254740991); // Far far away date
           const nextExpiringChanged = currentNextExpiring !== sync_nextExpiring
 
           // Fills in correctly the SINDEX

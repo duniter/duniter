@@ -13,11 +13,11 @@ const logger_1 = require("../../app/lib/logger");
 const index_1 = require("../../app/modules/bma/index");
 const index_2 = require("../../app/modules/crawler/index");
 const toolbox_1 = require("./tools/toolbox");
+const TestUser_1 = require("./tools/TestUser");
 const co = require('co');
 const _ = require('underscore');
 const duniter = require('../../index');
 const bma = index_1.BmaDependency.duniter.methods.bma;
-const user = require('./tools/user');
 const rp = require('request-promise');
 const httpTest = require('./tools/http');
 const commit = require('./tools/commit');
@@ -61,8 +61,8 @@ describe("SelfFork", function () {
                 sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'
             }
         }, commonConf));
-        cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP' }, { server: s1 });
-        toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F' }, { server: s1 });
+        cat = new TestUser_1.TestUser('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP' }, { server: s1 });
+        toc = new TestUser_1.TestUser('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F' }, { server: s1 });
         const commitS1 = commit(s1);
         const commitS2 = commit(s2, {
             time: now + 37180

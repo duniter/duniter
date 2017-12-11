@@ -52,6 +52,8 @@ test/integration/membership_chainability.js*
 test/integration/membership_chainability.d.ts
 test/integration/tools/toolbox.js*
 test/integration/tools/toolbox.d.ts
+test/integration/tools/TestUser.js*
+test/integration/tools/TestUser.d.ts
 test/integration/documents-currency.js*
 test/integration/documents-currency.d.ts
 test/fast/modules/crawler/block_pulling.js*

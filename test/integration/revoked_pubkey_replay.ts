@@ -1,7 +1,7 @@
 import {simpleNodeWith2Users, TestingServer} from "./tools/toolbox"
 
 const _ = require('underscore')
-const user = require('./tools/user')
+const TestUser = require('./tools/TestUser').TestUser
 
 describe("Revoked pubkey replay", function() {
 
@@ -15,7 +15,7 @@ describe("Revoked pubkey replay", function() {
     const res1 = await simpleNodeWith2Users(conf)
     s1 = res1.s1
     cat = res1.cat
-    tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 })
+    tic = new TestUser('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 })
     await s1.commit({ time: now })
     await s1.commit({ time: now })
     // Create the tested identity « tic »

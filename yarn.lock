@@ -57,6 +57,10 @@ agent-base@^4.1.0:
   dependencies:
     es6-promisify "^5.0.0"
 
+adm-zip@0.4.7:
+  version "0.4.7"
+  resolved "https://registry.yarnpkg.com/adm-zip/-/adm-zip-0.4.7.tgz#8606c2cbf1c426ce8c8ec00174447fd49b6eafc1"
+
 ajv-keywords@^1.0.0:
   version "1.5.1"
   resolved "https://registry.yarnpkg.com/ajv-keywords/-/ajv-keywords-1.5.1.tgz#314dd0a4b3368fad3dfcdc54ede6171b886daf3c"
@@ -977,6 +981,28 @@ doctrine@^1.2.2:
     esutils "^2.0.2"
     isarray "^1.0.0"
 
+duniter-ui@^1.6.13:
+  version "1.6.13"
+  resolved "https://registry.yarnpkg.com/duniter-ui/-/duniter-ui-1.6.13.tgz#3f203152fc0e3e1cbae74c1a0353a620c82d72ee"
+  dependencies:
+    adm-zip "0.4.7"
+    body-parser "1.17.1"
+    co "4.6.0"
+    cors "2.8.2"
+    event-stream "3.3.4"
+    express "4.15.2"
+    express-fileupload "0.0.5"
+    fs-extra "2.1.2"
+    materialize-css "0.98.1"
+    moment "2.18.1"
+    node-pre-gyp "0.6.34"
+    q "1.5.0"
+    request "2.81.0"
+    request-promise "4.2.0"
+    rimraf "2.6.1"
+    tmp "0.0.31"
+    underscore "1.8.3"
+
 duplexer@~0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/duplexer/-/duplexer-0.1.1.tgz#ace6ff808c1ce66b57d1ebf97977acb02334cfc1"
@@ -1519,6 +1545,13 @@ from@~0:
   version "0.1.7"
   resolved "https://registry.yarnpkg.com/from/-/from-0.1.7.tgz#83c60afc58b9c56997007ed1a768b3ab303a44fe"
 
+fs-extra@2.1.2:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-2.1.2.tgz#046c70163cef9aad46b0e4a7fa467fb22d71de35"
+  dependencies:
+    graceful-fs "^4.1.2"
+    jsonfile "^2.1.0"
+
 fs-extra@^0.22.1:
   version "0.22.1"
   resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-0.22.1.tgz#5fd6f8049dc976ca19eb2355d658173cabcce056"
@@ -1685,6 +1718,10 @@ graceful-fs@~3.0.2:
 growl@1.9.2:
   version "1.9.2"
   resolved "https://registry.yarnpkg.com/growl/-/growl-1.9.2.tgz#0ea7743715db8d8de2c5ede1775e1b45ac85c02f"
+
+hammerjs@^2.0.4:
+  version "2.0.8"
+  resolved "https://registry.yarnpkg.com/hammerjs/-/hammerjs-2.0.8.tgz#04ef77862cff2bb79d30f7692095930222bf60f1"
 
 handlebars@^4.0.3:
   version "4.0.11"
@@ -2152,6 +2189,7 @@ jison@0.4.17:
     lex-parser "~0.1.3"
     nomnom "1.5.2"
 
+
 js-tokens@^3.0.0, js-tokens@^3.0.2:
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-3.0.2.tgz#9866df395102130e38f7f996bceb65443209c25b"
@@ -2407,6 +2445,14 @@ map-stream@~0.1.0:
     buffers "~0.1.1"
     readable-stream "~1.0.0"
 
+materialize-css@0.98.1:
+  version "0.98.1"
+  resolved "https://registry.yarnpkg.com/materialize-css/-/materialize-css-0.98.1.tgz#7276895b2c998b53e26deaa0c23a0484c0851d99"
+  dependencies:
+    hammerjs "^2.0.4"
+    jquery "^2.1.4"
+    node-archiver "^0.3.0"
+
 md5-hex@^1.2.0:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/md5-hex/-/md5-hex-1.3.0.tgz#d2c4afe983c4370662179b8cad145219135046c4"
@@ -2635,6 +2681,13 @@ nnupnp@1.0.2:
     ip "0.0.1"
     request "2.10.0"
     xml2js "0.1.14"
+
+node-archiver@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/node-archiver/-/node-archiver-0.3.0.tgz#b9f1afe5006d0bdf29260181833a070978bc6947"
+  dependencies:
+    fstream "^1.0.10"
+    tar "^2.2.1"
 
 node-pre-gyp@0.6.23:
   version "0.6.23"

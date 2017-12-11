@@ -1,8 +1,9 @@
 import {AbstractSQLite} from "./AbstractSQLite"
 import {SQLiteDriver} from "../drivers/SQLiteDriver"
-import {SandBox} from "./SandBox"
+import { SandBox } from './SandBox';
 import {IdentityDTO} from "../../dto/IdentityDTO"
 import {Cloneable} from "../../dto/Cloneable";
+import { DBDocument } from './DocumentDAL';
 const constants = require('../../constants');
 
 export abstract class DBIdentity implements Cloneable {
@@ -143,7 +144,7 @@ export class ExistingDBIdentity extends DBIdentity {
   }
 }
 
-export interface DBSandboxIdentity extends DBIdentity {
+export interface DBSandboxIdentity extends DBIdentity,DBDocument {
   certsCount: number
   ref_block: number
 }

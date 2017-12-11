@@ -1,4 +1,6 @@
-export class SandBox<T> {
+import {DBDocument} from './DocumentDAL';
+
+export class SandBox<T extends DBDocument> {
 
   maxSize:number
   
@@ -10,8 +12,9 @@ export class SandBox<T> {
     this.maxSize = maxSize || 10
   }
   
-  async acceptNewSandBoxEntry(element:any, pubkey:string) {
-    if (element.pubkey === pubkey) {
+  async acceptNewSandBoxEntry(element:T, pubkey:string) {
+    // Accept any document which has the exception pubkey (= the node pubkey)
+    if (element.issuers.indexOf(pubkey) !== -1) {
       return true;
     }
     const elements = await this.findElements()

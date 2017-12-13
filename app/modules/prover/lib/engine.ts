@@ -1,4 +1,3 @@
-import {ProverConstants} from "./constants"
 import {Master as PowCluster} from "./powCluster"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 
@@ -25,22 +24,25 @@ export class PowEngine {
     this.id = this.cluster.clusterId
   }
 
+  getNbWorkers() {
+    return this.cluster.nbWorkers
+  }
+
   forceInit() {
     return this.cluster.initCluster()
   }
 
   async prove(stuff:any) {
-
-    if (this.cluster.hasProofPending) {
-      await this.cluster.cancelWork()
-    }
-
-    const cpus = os.cpus()
-
-    if (os.arch().match(/arm/) || cpus[0].model.match(/Atom/)) {
-      stuff.newPoW.conf.nbCores /= 2; // Make sure that only once each physical core is used (for Hyperthreading).
-    }
-    return await this.cluster.proveByWorkers(stuff)
+        if (this.cluster.hasProofPending) {
+          await this.cluster.cancelWork()
+        }
+    
+        const cpus = os.cpus()
+    
+        if (os.arch().match(/arm/) || cpus[0].model.match(/Atom/)) {
+          stuff.newPoW.conf.nbCores /= 2; // Make sure that only once each physical core is used (for Hyperthreading).
+        }
+        return await this.cluster.proveByWorkers(stuff)
   }
 
   cancel() {
@@ -48,9 +50,6 @@ export class PowEngine {
   }
 
   setConf(value:any) {
-    if (os.arch().match(/arm/) && value.cpu !== undefined) {
-      value.cpu /= 2; // Don't know exactly why is ARM so much saturated by PoW, so let's divide by 2
-    }
     return this.cluster.changeConf(value)
   }
 

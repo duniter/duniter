@@ -15,6 +15,8 @@ let clusterId = 0
  */
 export class Master {
 
+  nbCancels = 0
+
   clusterId:number
   currentPromise:any|null = null
   slaves:any[] = []
@@ -54,6 +56,8 @@ export class Master {
       this.currentPromise.extras.resolve(message.answer)
       // Stop the slaves' current work
       this.cancelWork()
+    } else if (message.canceled) {
+      this.nbCancels++
     }
     // this.logger.debug(`ENGINE c#${this.clusterId}#${this.slavesMap[worker.id].index}:`, message)
   }
@@ -130,7 +134,7 @@ export class Master {
   }
 
   cancelWork() {
-    this.logger.info(`Cancelling the work on PoW cluster`)
+    this.logger.info(`Cancelling the work on PoW cluster of %s slaves`, this.slaves.length)
     this.slaves.forEach(s => {
       s.worker.send({
         command: 'cancel'
@@ -189,7 +193,8 @@ export class Master {
           uuid,
           command: 'newPoW',
           value: {
-            block: stuff.newPoW.block,
+            initialTestsPerRound: stuff.initialTestsPerRound,
+            maxDuration: stuff.maxDuration,block: stuff.newPoW.block,
             nonceBeginning: s.nonceBeginning,
             zeros: stuff.newPoW.zeros,
             highMark: stuff.newPoW.highMark,

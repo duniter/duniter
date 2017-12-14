@@ -74,6 +74,7 @@ function beginNewProofOfWork(stuff:any) {
      ****************/
 
     let nonce = 0;
+    const maxDuration = stuff.maxDuration || 1000
     const conf = stuff.conf;
     const block = stuff.block;
     const nonceBeginning = stuff.nonceBeginning;
@@ -101,13 +102,14 @@ function beginNewProofOfWork(stuff:any) {
      * GO!
      ****************/
 
+    let pausePeriod = 1;
     let testsCount = 0;
     let found = false;
     let turn = 0;
     const profiler = new ProcessCpuProfiler(100)
     let cpuUsage = profiler.cpuUsageOverLastMilliseconds(1)
     // We limit the number of tests according to CPU usage
-    let testsPerRound = 1
+    let testsPerRound = stuff.initialTestsPerRound || 1
     let turnDuration = 20 // We initially goes quickly to the max speed = 50 reevaluations per second (1000 / 20)
 
     while (!found && !askedStop) {
@@ -178,7 +180,7 @@ function beginNewProofOfWork(stuff:any) {
             if (!found && !askedStop) {
               i++;
               testsCount++;
-              if (i % testsPerRound === 0) {
+              if (i % pausePeriod === 0) {
                 await countDown(0); // Very low pause, just the time to process eventual end of the turn
               }
             }
@@ -191,7 +193,6 @@ function beginNewProofOfWork(stuff:any) {
 
             // CPU speed recording
             if (turn > 0) {
-              const oldTestsPerRound = testsPerRound
               cpuUsage = profiler.cpuUsageOverLastMilliseconds(turnDuration)
               if (cpuUsage > currentCPU + 0.005 || cpuUsage < currentCPU - 0.005) {
                 let powVariationFactor
@@ -203,6 +204,7 @@ function beginNewProofOfWork(stuff:any) {
                   powVariationFactor = 0.99
                   testsPerRound = Math.max(1, Math.floor(testsPerRound * powVariationFactor))
                 }
+                pausePeriod = Math.floor(testsPerRound / ProverConstants.POW_NB_PAUSES_PER_ROUND)
               }
             }
 
@@ -222,7 +224,7 @@ function beginNewProofOfWork(stuff:any) {
       turn++
 
       turnDuration += 1
-      turnDuration = Math.min(turnDuration, 1000) // Max 1 second per turn
+      turnDuration = Math.min(turnDuration, maxDuration) // Max 1 second per turn
     }
 
     /*****************
@@ -236,6 +238,7 @@ function beginNewProofOfWork(stuff:any) {
 
       // PoW stopped
       askedStop = false;
+      pSend({ canceled: true })
       return null
 
     } else {

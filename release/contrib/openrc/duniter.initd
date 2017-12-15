@@ -1,0 +1,50 @@
+#!/sbin/openrc-run
+
+: ${DUNITER_GROUP:=duniter}
+: ${DUNITER_USER:=duniter}
+
+: ${DUNITER_HOME:=/var/lib/duniter}
+: ${DUNITER_DATA:=duniter_default}
+
+command="/usr/bin/duniter"
+if yesno "${DUNITER_WEB}"; then
+	command_args="webstart"
+	if [[ ! -z ${DUNITER_WEB_HOST} ]]; then
+		command_args="${command_args} --webmhost \"${DUNITER_WEB_HOST}\""
+	fi
+	if [[ ! -z ${DUNITER_WEB_PORT} ]]; then
+		command_args="${command_args} \"--webmport ${DUNITER_WEB_PORT}\""
+	fi
+else
+	command_args="start"
+fi
+if [[ ! -z ${DUNITER_KEYS} ]] && [[ -r ${DUNITER_KEYS} ]]; then
+	command_args="${command_args} --keyfile \"${DUNITER_KEYS}\""
+fi
+command_args="${command_args} --home \"${DUNITER_HOME}\" --mdb \"${DUNITER_DATA}\""
+start_stop_daemon_args="--user \"${DUNITER_USER}\":\"${DUNITER_GROUP}\""
+description="Duniter node"
+
+depend() {
+	need net
+}
+
+status() {
+	if ${command} status --home "${DUNITER_HOME}" --mdb "${DUNITER_DATA}" | grep -q "is running"; then
+		einfo "status: started"
+		return 0
+	else
+		if service_started; then
+			mark_service_stopped
+			eerror "status: crashed"
+			return 32
+		else
+			einfo "status: stopped"
+			return 3
+		fi
+	fi
+}
+
+stop() {
+	${command} stop --home "${DUNITER_HOME}" --mdb "${DUNITER_DATA}"
+}

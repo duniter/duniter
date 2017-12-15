@@ -1,0 +1,22 @@
+[Unit]
+Description=Duniter node
+After=network.target
+
+[Service]
+# Should be set to web in order to start with web GUI
+Environment=DUNITER_WEB=
+Environment=DUNITER_HOME="/var/lib/duniter"
+Environment=DUNITER_DATA="duniter_default"
+# If using a key file, DUNITER_OPTS can be defined like so:
+#Environment=DUNITER_OPTS=--keyfile "/etc/duniter/keys.yml"
+Environment=DUNITER_OPTS=
+Group=duniter
+User=duniter
+Type=forking
+ExecStart=/usr/bin/duniter ${DUNITER_WEB}start --home ${DUNITER_HOME} --mdb ${DUNITER_DATA} $DUNITER_OPTS
+ExecReload=/usr/bin/duniter ${DUNITER_WEB}restart --home ${DUNITER_HOME} --mdb ${DUNITER_DATA} $DUNITER_OPTS
+ExecStop=/usr/bin/duniter stop --home ${DUNITER_HOME} --mdb ${DUNITER_DATA}
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

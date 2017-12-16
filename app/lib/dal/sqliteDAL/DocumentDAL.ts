@@ -1,3 +1,3 @@
 export interface DBDocument {
-  issuers?: string[]
+  issuers: string[]
 }

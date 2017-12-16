@@ -7,6 +7,7 @@ import {WS2PConstants} from "./constants"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 import {WS2PStreamer} from "./WS2PStreamer"
 import {WS2PSingleWriteStream} from "./WS2PSingleWriteStream"
+import { WS2PCluster } from './WS2PCluster';
 
 const WebSocketServer = require('ws').Server
 
@@ -14,31 +15,37 @@ export class WS2PServer extends events.EventEmitter {
 
   private wss:any
   private connections:WS2PConnection[] = []
-  private maxLevel2Size = WS2PConstants.MAX_LEVEL_2_PEERS
 
   private constructor(
     private server:Server,
     private host:string,
     private port:number,
     private fifo:GlobalFifoPromise,
-    private shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>) {
+    private shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>,
+    public keyPriorityLevel:(pubkey:string, privilegedKeys:string[])=>Promise<number>) {
     super()
-    // Conf: max public connections
-    if (this.server.conf.ws2p && this.server.conf.ws2p.maxPublic !== undefined) {
-      this.maxLevel2Size = this.server.conf.ws2p.maxPublic
-    }
   }
 
   get maxLevel2Peers() {
-    return this.maxLevel2Size || 0
-  }
-
-  set maxLevel2Peers(newValue:number) {
-    this.maxLevel2Size = Math.max(newValue, 0)
+    if (this.server.conf.ws2p && this.server.conf.ws2p.maxPublic !== undefined && this.server.conf.ws2p.maxPublic !== null) {
+      return this.server.conf.ws2p.maxPublic
+    }
+    return WS2PConstants.MAX_LEVEL_2_PEERS
   }
 
   getConnexions() {
     return this.connections.slice()
+  }
+
+  countConnexions() {
+    const connections = this.getConnexions()
+    let count = 0
+    for (const c of connections) {
+      if (c.pubkey != this.server.conf.pair.pub) {
+        count++
+      }
+    }
+    return count
   }
 
   private listenToWebSocketConnections(messageHandler:WS2PMessageHandler) {
@@ -73,11 +80,11 @@ export class WS2PServer extends events.EventEmitter {
           requestTimeout: WS2PConstants.REQUEST_TOR_TIMEOUT
         }
       }
-
+      const myWs2pId = (this.server.conf.ws2p && this.server.conf.ws2p.uuid) ? this.server.conf.ws2p.uuid:""
       const c = WS2PConnection.newConnectionFromWebSocketServer(
         ws,
         messageHandler,
-        new WS2PPubkeyLocalAuth(this.server.conf.currency, key, acceptPubkey),
+        new WS2PPubkeyLocalAuth(this.server.conf.currency, key, myWs2pId, acceptPubkey),
         new WS2PPubkeyRemoteAuth(this.server.conf.currency, key, acceptPubkey),
         timeout
       )
@@ -92,7 +99,7 @@ export class WS2PServer extends events.EventEmitter {
         })
         this.connections.push(c)
         this.emit('newConnection', c)
-        this.server.logger.info('WS2P: established incoming connection from %s:%s', host, port)
+        this.server.logger.info('WS2P: established incoming connection from %s %s:%s', c.pubkey.slice(0, 8), host, port)
 
         // Broadcasting
         const singleWriteProtection = new WS2PSingleWriteStream()
@@ -108,6 +115,7 @@ export class WS2PServer extends events.EventEmitter {
         ws.on('close', () => {
           this.server.unpipe(singleWriteProtection)
           singleWriteProtection.unpipe(ws2pStreamer)
+          this.server.logger.info('WS2P: close incoming connection from %s %s:%s', c.pubkey.slice(0, 8), host, port)
           this.removeConnection(c)
           this.server.push({
             ws2p: 'disconnected',
@@ -117,7 +125,8 @@ export class WS2PServer extends events.EventEmitter {
           })
         })
 
-        await this.trimConnections()
+        // Remove excess incoming connections
+        this.removeExcessIncomingConnections()
 
         await this.server.dal.setPeerUP(c.pubkey)
 
@@ -128,44 +137,39 @@ export class WS2PServer extends events.EventEmitter {
     })
   }
 
-  async trimConnections() {
-    /*** OVERFLOW TRIMMING ***/
-    let disconnectedOne = true
-    // Disconnect non-members
-    while (disconnectedOne && this.connections.length > this.maxLevel2Size) {
-      disconnectedOne = false
-      for (const c of this.connections) {
-        const isMember = await this.server.dal.isMember(c.pubkey)
-        if (!isMember && !disconnectedOne) {
-          c.close()
-          this.removeConnection(c)
-          disconnectedOne = true
-        }
-      }
+  async removeExcessIncomingConnections() {
+    await this.removeDuplicateConnections()
+    const ws2pPublicMax = (this.server.conf.ws2p && this.server.conf.ws2p.maxPublic) ? this.server.conf.ws2p.maxPublic:WS2PConstants.MAX_LEVEL_2_PEERS
+    let privilegedKeys = (this.server.conf.ws2p && this.server.conf.ws2p.privilegedNodes) ? this.server.conf.ws2p.privilegedNodes:[]
+    while (this.countConnexions() > this.maxLevel2Peers) {
+      await this.removeLowPriorityConnection(privilegedKeys)
     }
-    // Disconnect members
-    while (this.connections.length > this.maxLevel2Size) {
-      for (const c of this.connections) {
-        c.close()
+  }
+
+  async removeDuplicateConnections() {
+    let connectedPubkeys:string[] = []
+    for (const c of this.connections) {
+      if (connectedPubkeys.indexOf(c.pubkey) !== -1) {
         this.removeConnection(c)
+      } else if (c.pubkey !== this.server.conf.pair.pub) {
+        connectedPubkeys.push(c.pubkey)
       }
     }
-    /*** DUPLICATES TRIMMING ***/
-    disconnectedOne = true
-    while (disconnectedOne) {
-      disconnectedOne = false
-      const pubkeysFound = []
-      for (const c of this.connections) {
-        if (pubkeysFound.indexOf(c.pubkey) !== -1) {
-          c.close()
-          this.removeConnection(c)
-          disconnectedOne = true
-        }
-        else if (c.pubkey !== this.server.conf.pair.pub) {
-          pubkeysFound.push(c.pubkey)
+  }
+
+  async removeLowPriorityConnection(privilegedKeys:string[]) {
+    let lowPriorityConnection:WS2PConnection = this.connections[0]
+    let minPriorityLevel = this.keyPriorityLevel(lowPriorityConnection.pubkey, privilegedKeys)
+    for (const c of this.connections) {
+      if (c !== lowPriorityConnection) {
+        let cPriorityLevel = this.keyPriorityLevel(c.pubkey, privilegedKeys)
+        if (cPriorityLevel < minPriorityLevel) {
+          lowPriorityConnection = c
+          minPriorityLevel = cPriorityLevel
         }
       }
     }
+    this.removeConnection(lowPriorityConnection)
   }
 
   private removeConnection(c:WS2PConnection) {
@@ -173,6 +177,7 @@ export class WS2PServer extends events.EventEmitter {
     if (index !== -1) {
       // Remove the connection
       this.connections.splice(index, 1)
+      c.close()
     }
   }
 
@@ -201,8 +206,8 @@ export class WS2PServer extends events.EventEmitter {
     }))
   }
 
-  static async bindOn(server:Server, host:string, port:number, fifo:GlobalFifoPromise, shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>, messageHandler:WS2PMessageHandler) {
-    const ws2ps = new WS2PServer(server, host, port, fifo, shouldAcceptConnection)
+  static async bindOn(server:Server, host:string, port:number, fifo:GlobalFifoPromise, shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>, keyPriorityLevel:(pubkey:string, privilegedKeys:string[])=>Promise<number>, messageHandler:WS2PMessageHandler) {
+    const ws2ps = new WS2PServer(server, host, port, fifo, shouldAcceptConnection, keyPriorityLevel)
     await ws2ps.listenToWebSocketConnections(messageHandler)
     server.logger.info('WS2P server %s listening on %s:%s', server.conf.pair.pub, host, port)
     return ws2ps

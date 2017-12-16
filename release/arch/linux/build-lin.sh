@@ -168,15 +168,26 @@ tar czf "${BIN}/duniter-desktop-${DUNITER_TAG}-linux-x64.tar.gz" * || exit 1
 # -----------------------
 
 # Parameters
+# 1: Building directory.
+build_extra_desktop() {
+	cp -r "${ROOT}/release/extra/desktop/"* "${1}" || exit 1
+}
+
+# Parameters
+# 1: Building directory.
+build_extra_server() {
+	mkdir -p "${1}/lib/systemd/system" || exit 1
+	cp "${ROOT}/release/extra/systemd/duniter.service" "${1}/lib/systemd/system" || exit 1
+}
+
+# Parameters
 # 1: either "server" or "desktop".
 # 2: package name for Debian.
 build_deb_pack() {
 	rm -rf "${RELEASES}/duniter-x64"
 	mkdir "${RELEASES}/duniter-x64" || exit 1
 	cp -r "${ROOT}/release/extra/debian/package/"* "${RELEASES}/duniter-x64" || exit 1
-	if [[ "${1}" == "desktop" ]]; then
-		cp -r "${ROOT}/release/extra/desktop/"* "${RELEASES}/duniter-x64" || exit 1
-	fi
+	build_extra_${1} "${RELEASES}/duniter-x64"
 	mkdir -p "${RELEASES}/duniter-x64/opt/duniter/" || exit 1
 	chmod 755 "${RELEASES}/duniter-x64/DEBIAN/"post* || exit 1
 	chmod 755 "${RELEASES}/duniter-x64/DEBIAN/"pre* || exit 1

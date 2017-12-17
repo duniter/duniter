@@ -9,6 +9,7 @@ import {BmaDependency} from "./app/modules/bma/index"
 import {WS2PDependency} from "./app/modules/ws2p/index"
 import {ProverConstants} from "./app/modules/prover/lib/constants"
 import { ProxiesConf } from './app/lib/proxy';
+import {RouterDependency} from "./app/modules/router"
 
 const path = require('path');
 const _ = require('underscore');
@@ -25,7 +26,6 @@ const reapplyDependency   = require('./app/modules/reapply');
 const revertDependency    = require('./app/modules/revert');
 const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
-const routerDependency    = require('./app/modules/router');
 const pluginDependency    = require('./app/modules/plugin');
 
 class Stacks {
@@ -102,7 +102,7 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-revert',    required: revertDependency },
   { name: 'duniter-daemon',    required: daemonDependency },
   { name: 'duniter-psignal',   required: pSignalDependency },
-  { name: 'duniter-router',    required: routerDependency },
+  { name: 'duniter-router',    required: RouterDependency },
   { name: 'duniter-plugin',    required: pluginDependency },
   { name: 'duniter-prover',    required: ProverDependency },
   { name: 'duniter-keypair',   required: KeypairDependency },

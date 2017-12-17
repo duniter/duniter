@@ -23,6 +23,7 @@ import {WS2PCluster} from "../../../app/modules/ws2p/lib/WS2PCluster"
 import {WS2PServer} from "../../../app/modules/ws2p/lib/WS2PServer"
 import {WS2PServerMessageHandler} from "../../../app/modules/ws2p/lib/interface/WS2PServerMessageHandler"
 import {TestUser} from "./TestUser"
+import {RouterDependency} from "../../../app/modules/router"
 
 const assert      = require('assert');
 const _           = require('underscore');
@@ -100,8 +101,8 @@ export const simpleNetworkOf2NodesAnd2Users = async (options:any) => {
   await tac.join();
 
   // Each server forwards to each other
-  require('../../../app/modules/router').duniter.methods.routeToNetwork(s1);
-  require('../../../app/modules/router').duniter.methods.routeToNetwork(s2);
+  RouterDependency.duniter.methods.routeToNetwork(s1._server)
+  RouterDependency.duniter.methods.routeToNetwork(s2._server)
 
   return { s1, s2, cat, tac };
 }
@@ -601,7 +602,7 @@ export class TestingServer {
     const bmaAPI = await bma(this.server);
     await bmaAPI.openConnections();
     this.bma = bmaAPI;
-    require('../../../app/modules/router').duniter.methods.routeToNetwork(this.server);
+    RouterDependency.duniter.methods.routeToNetwork(this.server)
     // Extra: for /wot/requirements URL
     require('../../../app/modules/prover').ProverDependency.duniter.methods.hookServer(this.server);
   }

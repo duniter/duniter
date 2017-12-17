@@ -33,16 +33,10 @@ export class PowEngine {
   }
 
   async prove(stuff:any) {
-        if (this.cluster.hasProofPending) {
-          await this.cluster.cancelWork()
-        }
-    
-        const cpus = os.cpus()
-    
-        if (os.arch().match(/arm/) || cpus[0].model.match(/Atom/)) {
-          stuff.newPoW.conf.nbCores /= 2; // Make sure that only once each physical core is used (for Hyperthreading).
-        }
-        return await this.cluster.proveByWorkers(stuff)
+    if (this.cluster.hasProofPending) {
+      await this.cluster.cancelWork()
+    }
+    return await this.cluster.proveByWorkers(stuff)
   }
 
   cancel() {

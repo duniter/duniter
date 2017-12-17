@@ -30,6 +30,12 @@ const pluginDependency    = require('./app/modules/plugin');
 
 let sigintListening = false
 
+// Trace errors
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled rejection: ' + reason);
+  logger.error(reason);
+});
+
 class Stacks {
 
   static todoOnRunDone:() => any = () => process.exit()
@@ -440,12 +446,6 @@ class Stack {
   }
 
   executeStack(argv:string[]) {
-
-    // Trace these errors
-    process.on('unhandledRejection', (reason) => {
-      logger.error('Unhandled rejection: ' + reason);
-      logger.error(reason);
-    });
 
     // Executes the command
     return this.cli.execute(argv);

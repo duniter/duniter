@@ -11,7 +11,7 @@ push_to_github:
     variables:
         GIT_STRATEGY: none
     tags:
-        - github
+        - redshift
     before_script:
         - ''
     script:
@@ -31,7 +31,7 @@ enforce_readme:
     variables:
         GIT_STRATEGY: none
     tags:
-        - github
+        - redshift
     before_script:
         - ''
     script:

@@ -73,7 +73,7 @@ export class WorkerFarm {
   }
 
   shutDownEngine() {
-    this.theEngine.shutDown()
+    return this.theEngine.shutDown()
   }
 
   /**

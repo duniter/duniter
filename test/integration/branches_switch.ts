@@ -11,6 +11,7 @@ const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
 const sync      = require('./tools/sync');
+const cluster   = require('cluster')
 const shutDownEngine  = require('./tools/shutDownEngine');
 
 const expectJSON     = httpTest.expectJSON;
@@ -30,6 +31,8 @@ let s1:any, s2:any, cat, toc
 describe("Switch", function() {
 
   before(() => co(function *() {
+
+    cluster.setMaxListeners(6)
 
     s1 = duniter(
       '/bb11',
@@ -97,6 +100,7 @@ describe("Switch", function() {
   }));
 
   after(() => {
+    cluster.setMaxListeners(3)
     return Promise.all([
       shutDownEngine(s1),
       shutDownEngine(s2)

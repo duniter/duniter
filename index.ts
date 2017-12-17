@@ -28,6 +28,8 @@ const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
 const pluginDependency    = require('./app/modules/plugin');
 
+let sigintListening = false
+
 class Stacks {
 
   static todoOnRunDone:() => any = () => process.exit()
@@ -157,6 +159,8 @@ export interface TransformableDuniterService extends DuniterService, stream.Tran
 
 class Stack {
 
+  private injectedServices = false
+
   private cli:any
   private configLoadingCallbacks:any[]
   private configBeforeSaveCallbacks:any[]
@@ -279,10 +283,12 @@ class Stack {
     }
 
     const server = new Server(home, program.memory === true, commandLineConf(program));
+    let piped = false
 
     // If ever the process gets interrupted
     let isSaving = false;
-    process.on('SIGINT', async () => {
+    if (!sigintListening) {
+      process.on('SIGINT', async () => {
         if (!isSaving) {
           isSaving = true;
           // Save DB
@@ -294,7 +300,9 @@ class Stack {
             process.exit(3);
           }
         }
-    });
+      })
+      sigintListening = true
+    }
 
     // Config or Data reset hooks
     server.resetDataHook = async () => {
@@ -366,26 +374,30 @@ class Stack {
        * Service injection
        * -----------------
        */
-      for (const def of this.definitions) {
-        if (def.service) {
-          // To feed data coming from some I/O (network, disk, other module, ...)
-          if (def.service.input) {
-            this.streams.input.push(def.service.input(server, conf, logger));
-          }
-          // To handle data this has been submitted by INPUT stream
-          if (def.service.process) {
-            this.streams.process.push(def.service.process(server, conf, logger));
-          }
-          // To handle data this has been validated by PROCESS stream
-          if (def.service.output) {
-            this.streams.output.push(def.service.output(server, conf, logger));
-          }
-          // Special service which does not stream anything particular (ex.: piloting the `server` object)
-          if (def.service.neutral) {
-            this.streams.neutral.push(def.service.neutral(server, conf, logger));
+      if (!this.injectedServices) {
+        this.injectedServices = true
+        for (const def of this.definitions) {
+          if (def.service) {
+            // To feed data coming from some I/O (network, disk, other module, ...)
+            if (def.service.input) {
+              this.streams.input.push(def.service.input(server, conf, logger));
+            }
+            // To handle data this has been submitted by INPUT stream
+            if (def.service.process) {
+              this.streams.process.push(def.service.process(server, conf, logger));
+            }
+            // To handle data this has been validated by PROCESS stream
+            if (def.service.output) {
+              this.streams.output.push(def.service.output(server, conf, logger));
+            }
+            // Special service which does not stream anything particular (ex.: piloting the `server` object)
+            if (def.service.neutral) {
+              this.streams.neutral.push(def.service.neutral(server, conf, logger));
+            }
           }
         }
       }
+      piped = true
       // All inputs write to global INPUT stream
       for (const module of this.streams.input) module.pipe(this.INPUT);
       // All processes read from global INPUT stream
@@ -408,13 +420,6 @@ class Stack {
           const modules = this.streams.input.concat(this.streams.process).concat(this.streams.output).concat(this.streams.neutral);
           // Any streaming module must implement a `stopService` method
           await Promise.all(modules.map((module:DuniterService) => module.stopService()))
-          // // Stop reading inputs
-          // for (const module of streams.input) module.unpipe();
-          // Stop reading from global INPUT
-          // INPUT.unpipe();
-          // for (const module of streams.process) module.unpipe();
-          // // Stop reading from global PROCESS
-          // PROCESS.unpipe();
         },
 
         this);
@@ -422,6 +427,15 @@ class Stack {
     } catch (e) {
       server.disconnect();
       throw e;
+    } finally {
+      if (piped) {
+        // Unpipe everything, as the command is done
+        for (const module of this.streams.input) module.unpipe()
+        for (const module of this.streams.process) module.unpipe()
+        for (const module of this.streams.output) module.unpipe()
+        this.INPUT.unpipe()
+        this.PROCESS.unpipe()
+      }
     }
   }
 

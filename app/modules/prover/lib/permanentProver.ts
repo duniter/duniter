@@ -213,6 +213,8 @@ export class PermanentProver {
     await this.prover.cancel();
     // If we were waiting, stop it and process the continuous generation
     this.blockchainChangedResolver && this.blockchainChangedResolver();
+    const farm = await this.prover.getWorker()
+    await farm.shutDownEngine()
   }
 
   private checkTrialIsNotTooHigh(trial:number, current:DBBlock, selfPubkey:string) {

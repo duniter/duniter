@@ -12,6 +12,10 @@ describe('PoW Cluster', () => {
     master = new Master(1, logger)
   })
 
+  after(() => {
+    return master.shutDownWorkers()
+  })
+
   it('should have an empty cluster if no PoW was asked', () => {
     master.nbWorkers.should.equal(0)
   })

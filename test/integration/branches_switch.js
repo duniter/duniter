@@ -11,6 +11,7 @@ const rp = require('request-promise');
 const httpTest = require('./tools/http');
 const commit = require('./tools/commit');
 const sync = require('./tools/sync');
+const cluster = require('cluster');
 const shutDownEngine = require('./tools/shutDownEngine');
 const expectJSON = httpTest.expectJSON;
 const MEMORY_MODE = true;
@@ -25,6 +26,7 @@ const commonConf = {
 let s1, s2, cat, toc;
 describe("Switch", function () {
     before(() => co(function* () {
+        cluster.setMaxListeners(6);
         s1 = duniter('/bb11', MEMORY_MODE, _.extend({
             switchOnHeadAdvance: 0,
             port: '7788',
@@ -78,6 +80,7 @@ describe("Switch", function () {
         // S1 should have switched to the other branch
     }));
     after(() => {
+        cluster.setMaxListeners(3);
         return Promise.all([
             shutDownEngine(s1),
             shutDownEngine(s2)

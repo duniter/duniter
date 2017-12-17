@@ -3,12 +3,11 @@ import {ProverConstants} from "./constants"
 
 const _ = require('underscore')
 const nuuid = require('node-uuid');
-const moment = require('moment');
 const cluster = require('cluster')
 const querablep = require('querablep')
-const logger = require('../../../lib/logger').NewLogger()
 
 let clusterId = 0
+cluster.setMaxListeners(3)
 
 /**
  * Cluster controller, handles the messages between the main program and the PoW cluster.
@@ -25,12 +24,38 @@ export class Master {
   logger:any
   onInfoCallback:any
   workersOnline:Promise<any>[]
+  private exitHandler: (worker: any, code: any, signal: any) => void
+  private onlineHandler: (worker: any) => void
+  private messageHandler: (worker: any, msg: any) => void
 
   constructor(private nbCores:number, logger:any) {
     this.clusterId = clusterId++
     this.logger = logger || Master.defaultLogger()
     this.onInfoMessage = (message:any) => {
       this.logger.info(`${message.pow.pow} nonce = ${message.pow.block.nonce}`)
+    }
+
+    this.exitHandler = (worker:any, code:any, signal:any) => {
+      this.logger.info(`worker ${worker.process.pid} died with code ${code} and signal ${signal}`)
+    }
+
+    this.onlineHandler = (worker:any) => {
+      // We just listen to the workers of this Master
+      if (this.slavesMap[worker.id]) {
+        this.logger.info(`[online] worker c#${this.clusterId}#w#${worker.id}`)
+        this.slavesMap[worker.id].online.extras.resolve()
+        worker.send({
+          command: 'conf',
+          value: this.conf
+        })
+      }
+    }
+
+    this.messageHandler = (worker:any, msg:any) => {
+      // Message for this cluster
+      if (this.slavesMap[worker.id]) {
+        this.onWorkerMessage(worker, msg)
+      }
     }
   }
 
@@ -61,6 +86,10 @@ export class Master {
     }
     // this.logger.debug(`ENGINE c#${this.clusterId}#${this.slavesMap[worker.id].index}:`, message)
   }
+
+  /*****************
+   * CLUSTER METHODS
+   ****************/
 
   initCluster() {
     // Setup master
@@ -93,28 +122,9 @@ export class Master {
       return this.slavesMap[worker.id]
     })
 
-    cluster.on('exit', (worker:any, code:any, signal:any) => {
-      this.logger.info(`worker ${worker.process.pid} died with code ${code} and signal ${signal}`)
-    })
-
-    cluster.on('online', (worker:any) => {
-      // We just listen to the workers of this Master
-      if (this.slavesMap[worker.id]) {
-        this.logger.info(`[online] worker c#${this.clusterId}#w#${worker.id}`)
-        this.slavesMap[worker.id].online.extras.resolve()
-        worker.send({
-          command: 'conf',
-          value: this.conf
-        })
-      }
-    })
-
-    cluster.on('message', (worker:any, msg:any) => {
-      // Message for this cluster
-      if (this.slavesMap[worker.id]) {
-        this.onWorkerMessage(worker, msg)
-      }
-    })
+    cluster.on('exit', this.exitHandler)
+    cluster.on('online', this.onlineHandler)
+    cluster.on('message', this.messageHandler)
 
     this.workersOnline = this.slaves.map((s:any) => s.online)
     return Promise.all(this.workersOnline)
@@ -165,7 +175,11 @@ export class Master {
       await Promise.all(this.slaves.map(async (s:any) => {
         s.worker.kill()
       }))
+      cluster.removeListener('exit', this.exitHandler)
+      cluster.removeListener('online', this.onlineHandler)
+      cluster.removeListener('message', this.messageHandler)
     }
+    this.slaves = []
   }
 
   proveByWorkers(stuff:any) {

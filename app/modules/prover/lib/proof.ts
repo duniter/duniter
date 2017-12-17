@@ -28,6 +28,10 @@ process.on('uncaughtException', (err:any) => {
   }
 });
 
+process.on('unhandledRejection', () => {
+  process.exit()
+})
+
 process.on('message', async (message) => {
 
   switch (message.command) {

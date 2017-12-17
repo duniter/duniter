@@ -233,7 +233,6 @@ if (cluster.isMaster) {
 } else {
 
   process.on("SIGTERM", function() {
-    logger.info(`SIGTERM received, closing worker ${process.pid}`);
     process.exit(0)
   });
 

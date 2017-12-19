@@ -56,16 +56,13 @@ make)
         cd ..
       fi
 
-      [[ $? -eq 0 ]] && echo ">> Starting Vagrant Ubuntu VM..."
-      [[ $? -eq 0 ]] && vagrant up
-      [[ $? -eq 0 ]] && echo ">> VM: building Duniter..."
-      [[ $? -eq 0 ]] && vagrant ssh -- "bash -s ${TAG}" < ./build-deb.sh
+      docker pull duniter/release-builder:17.12.1
+      docker run --rm -it -v ${PWD}:/dunidata duniter/release-builder:17.12.1 ${TAG}
       if [ ! $? -eq 0 ]; then
         echo ">> Something went wrong. Stopping build."
       else
         echo ">> Build success. Shutting the VM down."
       fi
-      vagrant halt
       echo ">> VM closed."
     else
       echo "Debian binaries already built. Ready for upload."

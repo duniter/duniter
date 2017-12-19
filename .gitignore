@@ -23,6 +23,7 @@ vagrant/duniter
 *.tar.gz
 *.log
 *.exe
+/release/arch/debian/duniter-source
 
 # vscode
 .vscode

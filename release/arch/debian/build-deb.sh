@@ -78,24 +78,11 @@ cd ${RELEASES}/duniter
 # Remove git files
 rm -Rf .git
 [[ $? -eq 0 ]] && echo ">> VM: building modules..."
-[[ $? -eq 0 ]] && yarn
-#[[ $? -eq 0 ]] && echo ">> VM: running tests..."
-#[[ $? -eq 0 ]] && yarn test
+[[ $? -eq 0 ]] && npm install
 
 # Duniter UI
-[[ $? -eq 0 ]] && yarn add duniter-ui@1.6.x
-
+[[ $? -eq 0 ]] && npm install duniter-ui@1.6.x
 [[ $? -eq 0 ]] && npm prune --production
-
-
-# Specific modules that are not needed in a release
-rm -rf node_modules/materialize-css
-rm -rf node_modules/duniter-ui/app
-rm -rf node_modules/duniter-ui/vendor
-rm -rf node_modules/scryptb/node_modules/node-pre-gyp
-rm -rf node_modules/naclb/node_modules/node-pre-gyp
-rm -rf node_modules/wotb/node_modules/node-pre-gyp
-rm -rf node_modules/sqlite3/build
 
 cp -r "$RELEASES/duniter" "$RELEASES/desktop_"
 cp -r "$RELEASES/duniter" "$RELEASES/server_"

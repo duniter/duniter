@@ -75,6 +75,27 @@ cp -r "$RELEASES/duniter" "$RELEASES/server_" || exit 1
 # Build Desktop version (Nw.js is embedded)
 # -------------------------------------------------
 
+nw_copy() {
+	[[ -z ${1} ]] && exit 1
+	cp lib/binding/Release/node-webkit-v${NW_VERSION}-linux-x64/${1}.node \
+		lib/binding/Release/node-v${ADDON_VERSION}-linux-x64/${1}.node || exit 1
+}
+
+nw_copy_node() {
+	[[ -z ${1} ]] && exit 1
+	cp lib/binding/node-webkit-v${NW_VERSION}-linux-x64/node_${1}.node \
+		lib/binding/node-v${ADDON_VERSION}-linux-x64/node_${1}.node || exit 1
+}
+
+nw_compile() {
+	[[ -z ${1} ]] && exit 1
+	cd ${1} || exit 1
+	node-pre-gyp --runtime=node-webkit --target=${NW_VERSION} configure || exit 1
+	node-pre-gyp --runtime=node-webkit --target=${NW_VERSION} build || exit 1
+	[[ -z ${2} ]] || ${2} ${1}
+	cd ..
+}
+
 echo "$NW_RELEASE"
 
 # FIX: bug of nw.js, we need to patch first.
@@ -84,30 +105,11 @@ node-pre-gyp --runtime=node-webkit --target=$NW_VERSION configure \
   || echo "This failure is expected"
 cp /dunidata/0.24.4_common.gypi ~/.nw-gyp/0.24.4/common.gypi || exit 1
 
-cd "$RELEASES/desktop_/node_modules/wotb"
-#yarn --build-from-source
-node-pre-gyp --runtime=node-webkit --target=$NW_VERSION configure || exit 1
-node-pre-gyp --runtime=node-webkit --target=$NW_VERSION build || exit 1
-cp lib/binding/Release/node-webkit-$NW_RELEASE-linux-x64/wotb.node \
-  lib/binding/Release/node-v$ADDON_VERSION-linux-x64/wotb.node || exit 1
-cd "$RELEASES/desktop_/node_modules/naclb"
-#npm install --build-from-source
-node-pre-gyp --runtime=node-webkit --target=$NW_VERSION configure || exit 1
-node-pre-gyp --runtime=node-webkit --target=$NW_VERSION build || exit 1
-cp lib/binding/Release/node-webkit-$NW_RELEASE-linux-x64/naclb.node \
-  lib/binding/Release/node-v$ADDON_VERSION-linux-x64/naclb.node || exit 1
-cd "$RELEASES/desktop_/node_modules/scryptb"
-#npm install --build-from-source
-node-pre-gyp --runtime=node-webkit --target=$NW_VERSION configure || exit 1
-node-pre-gyp --runtime=node-webkit --target=$NW_VERSION build || exit 1
-cp lib/binding/Release/node-webkit-$NW_RELEASE-linux-x64/scryptb.node \
-  lib/binding/Release/node-v$ADDON_VERSION-linux-x64/scryptb.node || exit 1
-cd "$RELEASES/desktop_/node_modules/sqlite3"
-#npm install --build-from-source
-node-pre-gyp --runtime=node-webkit --target=$NW_VERSION configure || exit 1
-node-pre-gyp --runtime=node-webkit --target=$NW_VERSION build || exit 1
-cp lib/binding/node-webkit-$NW_RELEASE-linux-x64/node_sqlite3.node \
-  lib/binding/node-v$ADDON_VERSION-linux-x64/node_sqlite3.node || exit 1
+cd "$RELEASES/desktop_/node_modules/"
+nw_compile wotb nw_copy
+nw_compile naclb nw_copy
+nw_compile scryptb nw_copy
+nw_compile sqlite3 nw_copy_node
 
 # Unused binaries
 cd "$RELEASES/desktop_/"

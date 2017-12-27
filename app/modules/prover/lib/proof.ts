@@ -187,7 +187,7 @@ export function createPowWorker() {
                 i++;
                 testsCount++;
                 if (i % pausePeriod === 0) {
-                  await countDown(0); // Very low pause, just the time to process eventual end of the turn
+                  await countDown(1); // Very low pause, just the time to process eventual end of the turn
                 }
               }
             }

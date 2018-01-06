@@ -9,7 +9,7 @@ import {Server} from "../../../../server"
 
 const querablep = require('querablep');
 
-interface Querable<T> extends Promise<T> {
+export interface Querable<T> extends Promise<T> {
   isFulfilled(): boolean
   isResolved(): boolean
   isRejected(): boolean

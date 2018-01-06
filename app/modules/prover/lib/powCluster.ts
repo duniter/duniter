@@ -1,5 +1,7 @@
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {ProverConstants} from "./constants"
+import {createPowWorker} from "./proof"
+import {PowWorker} from "./PowWorker"
 
 const _ = require('underscore')
 const nuuid = require('node-uuid');
@@ -8,6 +10,13 @@ const querablep = require('querablep')
 
 let clusterId = 0
 cluster.setMaxListeners(3)
+
+export interface SlaveWorker {
+  worker:PowWorker,
+  index:number,
+  online:Promise<void>,
+  nonceBeginning:number
+}
 
 /**
  * Cluster controller, handles the messages between the main program and the PoW cluster.
@@ -18,15 +27,14 @@ export class Master {
 
   clusterId:number
   currentPromise:any|null = null
-  slaves:any[] = []
-  slavesMap:any = {}
+  slaves:SlaveWorker[] = []
+  slavesMap:{
+    [k:number]: SlaveWorker|null
+  } = {}
   conf:any = {}
   logger:any
   onInfoCallback:any
   workersOnline:Promise<any>[]
-  private exitHandler: (worker: any, code: any, signal: any) => void
-  private onlineHandler: (worker: any) => void
-  private messageHandler: (worker: any, msg: any) => void
 
   constructor(private nbCores:number, logger:any) {
     this.clusterId = clusterId++
@@ -34,53 +42,23 @@ export class Master {
     this.onInfoMessage = (message:any) => {
       this.logger.info(`${message.pow.pow} nonce = ${message.pow.block.nonce}`)
     }
-
-    this.exitHandler = (worker:any, code:any, signal:any) => {
-      this.logger.info(`worker ${worker.process.pid} died with code ${code} and signal ${signal}`)
-    }
-
-    this.onlineHandler = (worker:any) => {
-      // We just listen to the workers of this Master
-      if (this.slavesMap[worker.id]) {
-        this.logger.info(`[online] worker c#${this.clusterId}#w#${worker.id}`)
-        this.slavesMap[worker.id].online.extras.resolve()
-        worker.send({
-          command: 'conf',
-          value: this.conf
-        })
-      }
-    }
-
-    this.messageHandler = (worker:any, msg:any) => {
-      // Message for this cluster
-      if (this.slavesMap[worker.id]) {
-        this.onWorkerMessage(worker, msg)
-      }
-    }
   }
 
   get nbWorkers() {
     return this.slaves.length
   }
 
-  get hasProofPending() {
-    return !!this.currentPromise
-  }
-
   set onInfoMessage(callback:any) {
     this.onInfoCallback = callback
   }
 
-  onWorkerMessage(worker:any, message:any) {
+  onWorkerMessage(workerIndex:number, message:any) {
     // this.logger.info(`worker#${this.slavesMap[worker.id].index} sent message:${message}`)
-    if (message.pow && message.pow.pow) {
+    if (message && message.pow) {
       this.onInfoCallback && this.onInfoCallback(message)
     }
-    if (this.currentPromise && message.uuid === this.currentPromise.extras.uuid && !this.currentPromise.isResolved() && message.answer) {
-      this.logger.info(`ENGINE c#${this.clusterId}#${this.slavesMap[worker.id].index} HAS FOUND A PROOF #${message.answer.pow.pow}`)
-      this.currentPromise.extras.resolve(message.answer)
-      // Stop the slaves' current work
-      this.cancelWork()
+    if (this.currentPromise && message.uuid && !this.currentPromise.isResolved() && message.answer) {
+      this.logger.info(`ENGINE c#${this.clusterId}#${workerIndex} HAS FOUND A PROOF #${message.answer.pow.pow}`)
     } else if (message.canceled) {
       this.nbCancels++
     }
@@ -94,13 +72,26 @@ export class Master {
   initCluster() {
     // Setup master
     cluster.setupMaster({
-      exec: __filename
+      exec: __filename,
+      execArgv: [] // Do not try to debug forks
     })
 
     this.slaves = Array.from({ length: this.nbCores }).map((value, index) => {
-      const worker = cluster.fork()
-      this.logger.info(`Creating worker c#${this.clusterId}#w#${worker.id}`)
-      this.slavesMap[worker.id] = {
+      const nodejsWorker = cluster.fork()
+      const worker = new PowWorker(nodejsWorker, message => {
+        this.onWorkerMessage(index, message)
+      }, () => {
+        this.logger.info(`[online] worker c#${this.clusterId}#w#${index}`)
+        worker.sendConf({
+          command: 'conf',
+          value: this.conf
+        })
+      }, (code:any, signal:any) => {
+        this.logger.info(`worker ${worker.pid} died with code ${code} and signal ${signal}`)
+      })
+
+      this.logger.info(`Creating worker c#${this.clusterId}#w#${nodejsWorker.id}`)
+      const slave = {
 
         // The Node.js worker
         worker,
@@ -109,24 +100,16 @@ export class Master {
         index,
 
         // Worker ready
-        online: (function onlinePromise() {
-          let resolve
-          const p = querablep(new Promise(res => resolve = res))
-          p.extras = { resolve }
-          return p
-        })(),
+        online: worker.online,
 
         // Each worker has his own chunk of possible nonces
         nonceBeginning: this.nbCores === 1 ? 0 : (index + 1) * ProverConstants.NONCE_RANGE
       }
-      return this.slavesMap[worker.id]
+      this.slavesMap[nodejsWorker.id] = slave
+      return slave
     })
 
-    cluster.on('exit', this.exitHandler)
-    cluster.on('online', this.onlineHandler)
-    cluster.on('message', this.messageHandler)
-
-    this.workersOnline = this.slaves.map((s:any) => s.online)
+    this.workersOnline = this.slaves.map((s) => s.online)
     return Promise.all(this.workersOnline)
   }
 
@@ -135,7 +118,7 @@ export class Master {
     this.conf.cpu = conf.cpu || this.conf.cpu
     this.conf.prefix = this.conf.prefix || conf.prefix
     this.slaves.forEach(s => {
-      s.worker.send({
+      s.worker.sendConf({
         command: 'conf',
         value: this.conf
       })
@@ -143,41 +126,26 @@ export class Master {
     return Promise.resolve(_.clone(conf))
   }
 
-  cancelWork() {
-    this.logger.info(`Cancelling the work on PoW cluster of %s slaves`, this.slaves.length)
+  private cancelWorkersWork() {
     this.slaves.forEach(s => {
-      s.worker.send({
-        command: 'cancel'
-      })
+      s.worker.sendCancel()
     })
-
-    // Eventually force the end of current promise
-    if (this.currentPromise && !this.currentPromise.isFulfilled()) {
-      this.currentPromise.extras.resolve(null)
-    }
-
-    // Current promise is done
-    this.currentPromise = null
-
-    return Promise.resolve()
   }
 
-  newPromise(uuid:string) {
-    let resolve
-    const p = querablep(new Promise(res => resolve = res))
-    p.extras = { resolve, uuid }
-    return p
+  async cancelWork() {
+    this.cancelWorkersWork()
+    const workEnded = this.currentPromise
+    // Current promise is done
+    this.currentPromise = null
+    return await workEnded
   }
 
   async shutDownWorkers() {
     if (this.workersOnline) {
       await Promise.all(this.workersOnline)
-      await Promise.all(this.slaves.map(async (s:any) => {
+      await Promise.all(this.slaves.map(async (s) => {
         s.worker.kill()
       }))
-      cluster.removeListener('exit', this.exitHandler)
-      cluster.removeListener('online', this.onlineHandler)
-      cluster.removeListener('message', this.messageHandler)
     }
     this.slaves = []
   }
@@ -191,9 +159,7 @@ export class Master {
 
     // Register the new proof uuid
     const uuid = nuuid.v4()
-    this.currentPromise = this.newPromise(uuid)
-
-    return (async () => {
+    this.currentPromise = querablep((async () => {
       await Promise.all(this.workersOnline)
 
       if (!this.currentPromise) {
@@ -202,8 +168,8 @@ export class Master {
       }
 
       // Start the salves' job
-      this.slaves.forEach((s:any, index) => {
-        s.worker.send({
+      const asks = this.slaves.map(async (s, index) => {
+        const proof = await s.worker.askProof({
           uuid,
           command: 'newPoW',
           value: {
@@ -222,10 +188,29 @@ export class Master {
             }
           }
         })
+        this.logger.info(`[done] worker c#${this.clusterId}#w#${index}`)
+        return {
+          workerID: index,
+          proof
+        }
       })
 
-      return await this.currentPromise
-    })()
+      // Find a proof
+      const result = await Promise.race(asks)
+      this.cancelWorkersWork()
+      // Wait for all workers to have stopped looking for a proof
+      await Promise.all(asks)
+
+      if (!result.proof || !result.proof.message.answer) {
+        this.logger.info('No engine found the proof. It was probably cancelled.')
+        return null
+      } else {
+        this.logger.info(`ENGINE c#${this.clusterId}#${result.workerID} HAS FOUND A PROOF #${result.proof.message.answer.pow.pow}`)
+        return result.proof.message.answer
+      }
+    })())
+
+    return this.currentPromise
   }
 
   static defaultLogger() {
@@ -250,5 +235,5 @@ if (cluster.isMaster) {
     process.exit(0)
   });
 
-  require('./proof')
+  createPowWorker()
 }

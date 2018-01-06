@@ -33,9 +33,7 @@ export class PowEngine {
   }
 
   async prove(stuff:any) {
-    if (this.cluster.hasProofPending) {
-      await this.cluster.cancelWork()
-    }
+    await this.cluster.cancelWork()
     return await this.cluster.proveByWorkers(stuff)
   }
 

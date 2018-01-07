@@ -279,7 +279,9 @@ export class BlockGenerator {
         const currentMembership = await this.dal.mindexDAL.getReducedMS(ms.issuer);
         const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
         if (!join.identity.revoked && currentMSN < parseInt(join.ms.number)) {
-          preJoinData[join.identity.pubkey] = join;
+          if (!preJoinData[join.identity.pubkey] || preJoinData[join.identity.pubkey].certs.length < join.certs.length) {
+            preJoinData[join.identity.pubkey] = join;
+          }
         }
       } catch (err) {
         if (err && !err.uerr) {

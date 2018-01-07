@@ -1,5 +1,7 @@
 #!/bin/bash
 
+BUILDER_TAG="v0.0.6"
+
 TAG="$3"
 ORIGIN="$4"
 IS_LOCAL_TAG=0
@@ -56,8 +58,8 @@ make)
         cd ..
       fi
 
-      docker pull duniter/release-builder:17.12.1
-      docker run --rm -it -v ${PWD}:/dunidata duniter/release-builder:17.12.1 ${TAG}
+      docker pull duniter/release-builder:${BUILDER_TAG}
+      docker run --rm -it -v ${PWD}:/dunidata duniter/release-builder:${BUILDER_TAG} ${TAG}
       if [ ! $? -eq 0 ]; then
         echo ">> Something went wrong. Stopping build."
       else

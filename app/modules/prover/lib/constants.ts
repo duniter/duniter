@@ -13,6 +13,7 @@ export const ProverConstants = {
   NONCE_RANGE: 1000 * 1000 * 1000 * 100,
 
   POW_MAXIMUM_ACCEPTABLE_HANDICAP: 64,
+  POW_NB_PAUSES_PER_ROUND: 10,
 
   // When to trigger the PoW process again if no PoW is triggered for a while. In milliseconds.
   POW_SECURITY_RETRY_DELAY: 10 * 60 * 1000

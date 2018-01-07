@@ -76,7 +76,7 @@ describe("Generation", function() {
         yield server.initWithDAL();
         server.bma = yield bma(server);
         yield server.bma.openConnections();
-        require('../../app/modules/router').duniter.methods.routeToNetwork(server);
+        require('../../app/modules/router').RouterDependency.duniter.methods.routeToNetwork(server);
         yield server.PeeringService.generateSelfPeer(server.conf);
         const prover = require('../../app/modules/prover').ProverDependency.duniter.methods.prover(server);
         server.startBlockComputation = () => prover.startService();

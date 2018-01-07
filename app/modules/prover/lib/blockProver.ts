@@ -44,6 +44,9 @@ export class WorkerFarm {
     })
   }
 
+  get nbWorkers() {
+    return this.theEngine.getNbWorkers()
+  }
 
   changeCPU(cpu:any) {
     return this.theEngine.setConf({ cpu })
@@ -70,7 +73,7 @@ export class WorkerFarm {
   }
 
   shutDownEngine() {
-    this.theEngine.shutDown()
+    return this.theEngine.shutDown()
   }
 
   /**
@@ -175,7 +178,6 @@ export class BlockProver {
       const start = Date.now();
       let result = await powFarm.askNewProof({
         newPoW: {
-          turnDuration: os.arch().match(/arm/) ? CommonConstants.POW_TURN_DURATION_ARM : CommonConstants.POW_TURN_DURATION_PC,
           conf: {
             cpu: this.conf.cpu,
             prefix: this.conf.prefix,
@@ -194,10 +196,10 @@ export class BlockProver {
         throw 'Proof-of-work computation canceled because block received';
       } else {
         const proof = result.block;
-        const testsCount = result.testsCount;
+        const testsCount = result.testsCount * powFarm.nbWorkers
         const duration = (Date.now() - start);
-        const testsPerSecond = (testsCount / (duration / 1000)).toFixed(2);
-        this.logger.info('Done: #%s, %s in %ss (%s tests, ~%s tests/s)', block.number, proof.hash, (duration / 1000).toFixed(2), testsCount, testsPerSecond);
+        const testsPerSecond = testsCount / (duration / 1000)
+        this.logger.info('Done: #%s, %s in %ss (~%s tests, ~%s tests/s, using %s cores, CPU %s%)', block.number, proof.hash, (duration / 1000).toFixed(2), testsCount, testsPerSecond.toFixed(2), powFarm.nbWorkers, Math.floor(100*this.conf.cpu))
         this.logger.info('FOUND proof-of-work with %s leading zeros followed by [0-' + highMark + ']!', nbZeros);
         return BlockDTO.fromJSONObject(proof)
       }

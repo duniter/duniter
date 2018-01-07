@@ -9,6 +9,7 @@ import {BmaDependency} from "./app/modules/bma/index"
 import {WS2PDependency} from "./app/modules/ws2p/index"
 import {ProverConstants} from "./app/modules/prover/lib/constants"
 import { ProxiesConf } from './app/lib/proxy';
+import {RouterDependency} from "./app/modules/router"
 
 const path = require('path');
 const _ = require('underscore');
@@ -25,8 +26,15 @@ const reapplyDependency   = require('./app/modules/reapply');
 const revertDependency    = require('./app/modules/revert');
 const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
-const routerDependency    = require('./app/modules/router');
 const pluginDependency    = require('./app/modules/plugin');
+
+let sigintListening = false
+
+// Trace errors
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled rejection: ' + reason);
+  logger.error(reason);
+});
 
 class Stacks {
 
@@ -102,7 +110,7 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-revert',    required: revertDependency },
   { name: 'duniter-daemon',    required: daemonDependency },
   { name: 'duniter-psignal',   required: pSignalDependency },
-  { name: 'duniter-router',    required: routerDependency },
+  { name: 'duniter-router',    required: RouterDependency },
   { name: 'duniter-plugin',    required: pluginDependency },
   { name: 'duniter-prover',    required: ProverDependency },
   { name: 'duniter-keypair',   required: KeypairDependency },
@@ -156,6 +164,8 @@ export interface ReadableDuniterService extends DuniterService, stream.Readable 
 export interface TransformableDuniterService extends DuniterService, stream.Transform {}
 
 class Stack {
+
+  private injectedServices = false
 
   private cli:any
   private configLoadingCallbacks:any[]
@@ -279,10 +289,12 @@ class Stack {
     }
 
     const server = new Server(home, program.memory === true, commandLineConf(program));
+    let piped = false
 
     // If ever the process gets interrupted
     let isSaving = false;
-    process.on('SIGINT', async () => {
+    if (!sigintListening) {
+      process.on('SIGINT', async () => {
         if (!isSaving) {
           isSaving = true;
           // Save DB
@@ -294,7 +306,9 @@ class Stack {
             process.exit(3);
           }
         }
-    });
+      })
+      sigintListening = true
+    }
 
     // Config or Data reset hooks
     server.resetDataHook = async () => {
@@ -366,26 +380,30 @@ class Stack {
        * Service injection
        * -----------------
        */
-      for (const def of this.definitions) {
-        if (def.service) {
-          // To feed data coming from some I/O (network, disk, other module, ...)
-          if (def.service.input) {
-            this.streams.input.push(def.service.input(server, conf, logger));
-          }
-          // To handle data this has been submitted by INPUT stream
-          if (def.service.process) {
-            this.streams.process.push(def.service.process(server, conf, logger));
-          }
-          // To handle data this has been validated by PROCESS stream
-          if (def.service.output) {
-            this.streams.output.push(def.service.output(server, conf, logger));
-          }
-          // Special service which does not stream anything particular (ex.: piloting the `server` object)
-          if (def.service.neutral) {
-            this.streams.neutral.push(def.service.neutral(server, conf, logger));
+      if (!this.injectedServices) {
+        this.injectedServices = true
+        for (const def of this.definitions) {
+          if (def.service) {
+            // To feed data coming from some I/O (network, disk, other module, ...)
+            if (def.service.input) {
+              this.streams.input.push(def.service.input(server, conf, logger));
+            }
+            // To handle data this has been submitted by INPUT stream
+            if (def.service.process) {
+              this.streams.process.push(def.service.process(server, conf, logger));
+            }
+            // To handle data this has been validated by PROCESS stream
+            if (def.service.output) {
+              this.streams.output.push(def.service.output(server, conf, logger));
+            }
+            // Special service which does not stream anything particular (ex.: piloting the `server` object)
+            if (def.service.neutral) {
+              this.streams.neutral.push(def.service.neutral(server, conf, logger));
+            }
           }
         }
       }
+      piped = true
       // All inputs write to global INPUT stream
       for (const module of this.streams.input) module.pipe(this.INPUT);
       // All processes read from global INPUT stream
@@ -408,13 +426,6 @@ class Stack {
           const modules = this.streams.input.concat(this.streams.process).concat(this.streams.output).concat(this.streams.neutral);
           // Any streaming module must implement a `stopService` method
           await Promise.all(modules.map((module:DuniterService) => module.stopService()))
-          // // Stop reading inputs
-          // for (const module of streams.input) module.unpipe();
-          // Stop reading from global INPUT
-          // INPUT.unpipe();
-          // for (const module of streams.process) module.unpipe();
-          // // Stop reading from global PROCESS
-          // PROCESS.unpipe();
         },
 
         this);
@@ -422,16 +433,19 @@ class Stack {
     } catch (e) {
       server.disconnect();
       throw e;
+    } finally {
+      if (piped) {
+        // Unpipe everything, as the command is done
+        for (const module of this.streams.input) module.unpipe()
+        for (const module of this.streams.process) module.unpipe()
+        for (const module of this.streams.output) module.unpipe()
+        this.INPUT.unpipe()
+        this.PROCESS.unpipe()
+      }
     }
   }
 
   executeStack(argv:string[]) {
-
-    // Trace these errors
-    process.on('unhandledRejection', (reason) => {
-      logger.error('Unhandled rejection: ' + reason);
-      logger.error(reason);
-    });
 
     // Executes the command
     return this.cli.execute(argv);

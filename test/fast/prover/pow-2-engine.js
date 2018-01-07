@@ -10,6 +10,7 @@ describe('PoW Engine', () => {
   it('should be configurable', () => co(function*(){
     const e1 = new PowEngine({ nbCores: 1 }, logger);
     (yield e1.setConf({ cpu: 0.2, prefix: '34' })).should.deepEqual({ cpu: 0.2, prefix: '34' });
+    yield e1.shutDown()
   }));
 
   it('should be able to make a proof', () => co(function*(){
@@ -52,6 +53,7 @@ describe('PoW Engine', () => {
         pow: '009A52E6E2E4EA7DE950A2DA673114FA55B070EBE350D75FF0C62C6AAE9A37E5'
       }
     });
+    yield e1.shutDown()
   }));
 
   it('should be able to stop a proof', () => co(function*(){
@@ -85,5 +87,6 @@ describe('PoW Engine', () => {
     yield e1.cancel()
     // const proof = yield proofPromise;
     // should.not.exist(proof);
+    yield e1.shutDown()
   }));
 });

@@ -7,7 +7,6 @@ import {WS2PConstants} from "./constants"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 import {WS2PStreamer} from "./WS2PStreamer"
 import {WS2PSingleWriteStream} from "./WS2PSingleWriteStream"
-import { WS2PCluster } from './WS2PCluster';
 
 const WebSocketServer = require('ws').Server
 
@@ -159,10 +158,10 @@ export class WS2PServer extends events.EventEmitter {
 
   async removeLowPriorityConnection(privilegedKeys:string[]) {
     let lowPriorityConnection:WS2PConnection = this.connections[0]
-    let minPriorityLevel = this.keyPriorityLevel(lowPriorityConnection.pubkey, privilegedKeys)
+    let minPriorityLevel = await this.keyPriorityLevel(lowPriorityConnection.pubkey, privilegedKeys)
     for (const c of this.connections) {
       if (c !== lowPriorityConnection) {
-        let cPriorityLevel = this.keyPriorityLevel(c.pubkey, privilegedKeys)
+        let cPriorityLevel = await this.keyPriorityLevel(c.pubkey, privilegedKeys)
         if (cPriorityLevel < minPriorityLevel) {
           lowPriorityConnection = c
           minPriorityLevel = cPriorityLevel

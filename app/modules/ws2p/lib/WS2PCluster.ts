@@ -1,4 +1,4 @@
-import { DEFAULT_ENCODING } from 'crypto';
+import {DEFAULT_ENCODING} from 'crypto';
 import {WS2PServer} from "./WS2PServer"
 import {Server} from "../../../../server"
 import {WS2PClient} from "./WS2PClient"
@@ -8,7 +8,7 @@ import {CrawlerConstants} from "../../crawler/lib/constants"
 import {WS2PBlockPuller} from "./WS2PBlockPuller"
 import {WS2PDocpoolPuller} from "./WS2PDocpoolPuller"
 import {WS2PConstants} from "./constants"
-import { PeerDTO, WS2PEndpoint } from '../../../lib/dto/PeerDTO';
+import {PeerDTO, WS2PEndpoint} from '../../../lib/dto/PeerDTO';
 import {GlobalFifoPromise} from "../../../service/GlobalFifoPromise"
 import {OtherConstants} from "../../../lib/other_constants"
 import {Key, verify} from "../../../lib/common-libs/crypto/keyring"
@@ -681,11 +681,11 @@ export class WS2PCluster {
       let uuids = Object.keys(this.ws2pClients)
       uuids = _.shuffle(uuids)
       let lowPriorityConnectionUUID:string = uuids[0]
-      let minPriorityLevel = this.keyPriorityLevel(this.ws2pClients[lowPriorityConnectionUUID].connection.pubkey, preferedKeys)
+      let minPriorityLevel = await this.keyPriorityLevel(this.ws2pClients[lowPriorityConnectionUUID].connection.pubkey, preferedKeys)
       for (const uuid of uuids) {
         const client = this.ws2pClients[uuid]
           if (uuid !== lowPriorityConnectionUUID) {
-            let uuidPriorityLevel = this.keyPriorityLevel(client.connection.pubkey, preferedKeys)
+            let uuidPriorityLevel = await this.keyPriorityLevel(client.connection.pubkey, preferedKeys)
             if (uuidPriorityLevel < minPriorityLevel) {
               lowPriorityConnectionUUID = uuid
               minPriorityLevel = uuidPriorityLevel

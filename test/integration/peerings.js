@@ -93,7 +93,7 @@ describe("Network", function() {
               return bmaAPI.openConnections()
                 .then(() => {
                   server.bma = bmaAPI;
-                  require('../../app/modules/router').duniter.methods.routeToNetwork(server);
+                  require('../../app/modules/router').RouterDependency.duniter.methods.routeToNetwork(server);
                 });
             });
         });

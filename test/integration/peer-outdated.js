@@ -42,7 +42,7 @@ describe("Peer document expiry", function() {
     yield [s1, s2].reduce((p, server) => co(function*() {
       yield p;
       yield server.initDalBmaConnections()
-      require('../../app/modules/router').duniter.methods.routeToNetwork(server);
+      require('../../app/modules/router').RouterDependency.duniter.methods.routeToNetwork(server);
     }), Promise.resolve());
 
     // Server 1

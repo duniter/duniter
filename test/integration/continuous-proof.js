@@ -37,6 +37,7 @@ describe("Continous proof-of-work", function() {
     yield i1.join();
     yield i2.join();
     yield s1.commit();
+    yield s1.closeCluster();
   }));
 
   it('should automatically stop waiting if nothing happens', () => co(function*() {
@@ -104,7 +105,7 @@ describe("Continous proof-of-work", function() {
     s2.conf.cpu = 1.0;
     s2.startBlockComputation();
     yield s2.until('block', 15);
-    s2.stopBlockComputation();
+    yield s2.stopBlockComputation();
     yield [
       require('../../app/modules/crawler').CrawlerDependency.duniter.methods.pullBlocks(s3),
       new Promise(res => {
@@ -121,11 +122,6 @@ describe("Continous proof-of-work", function() {
     const current = yield s3.get('/blockchain/current')
     yield s3.stopBlockComputation();
     current.number.should.be.aboveOrEqual(14)
+    yield s1.closeCluster()
   }));
-
-  after(() => {
-    return Promise.all([
-      s1.closeCluster()
-    ])
-  })
 });

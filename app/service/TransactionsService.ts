@@ -41,7 +41,7 @@ export class TransactionService extends FIFOService {
         // Start checks...
         const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
         const dto = TransactionDTO.fromJSONObject(tx)
-        await LOCAL_RULES_HELPERS.checkSingleTransactionLocally(dto)
+        await LOCAL_RULES_HELPERS.checkSingleTransactionLocally(dto, this.conf)
         await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal);
         await GLOBAL_RULES_HELPERS.checkSingleTransaction(dto, nextBlockWithFakeTimeVariation, this.conf, this.dal, CHECK_PENDING_TRANSACTIONS);
         const server_pubkey = this.conf.pair && this.conf.pair.pub;

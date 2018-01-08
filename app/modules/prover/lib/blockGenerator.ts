@@ -65,7 +65,7 @@ export class BlockGenerator {
     const wereExcludeds = await this.dal.getRevokedPubkeys();
     const newCertsFromWoT = await generator.findNewCertsFromWoT(current);
     const newcomersLeavers = await this.findNewcomersAndLeavers(current, (joinersData:any) => generator.filterJoiners(joinersData));
-    const transactions = await this.findTransactions(current);
+    const transactions = await this.findTransactions(current, manualValues);
     const joinData = newcomersLeavers[2];
     const leaveData = newcomersLeavers[3];
     const newCertsFromNewcomers = newcomersLeavers[4];
@@ -104,7 +104,8 @@ export class BlockGenerator {
     return [cur, newWoTMembers, finalJoinData, leavers, updates];
   }
 
-  private async findTransactions(current:DBBlock) {
+  private async findTransactions(current:DBBlock, options:{ dontCareAboutChaining?:boolean }) {
+    const ALSO_CHECK_PENDING_TXS = true
     const versionMin = current ? Math.min(CommonConstants.LAST_VERSION_FOR_TX, current.version) : CommonConstants.DOCUMENTS_VERSION;
     const txs = await this.dal.getTransactionsPending(versionMin);
     const transactions = [];
@@ -113,14 +114,9 @@ export class BlockGenerator {
       obj.currency = this.conf.currency
       const tx = TransactionDTO.fromJSONObject(obj);
       try {
-        await new Promise((resolve, reject) => {
-          LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), (err:any, res:any) => {
-            if (err) return reject(err)
-            return resolve(res)
-          })
-        })
+        await LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), this.conf, options)
         const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
-        await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal);
+        await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal, ALSO_CHECK_PENDING_TXS);
         await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal);
         transactions.push(tx);
         passingTxs.push(tx);

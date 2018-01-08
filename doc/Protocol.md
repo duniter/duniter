@@ -2244,7 +2244,7 @@ Else:
 
 ####### BR_G102 - ENTRY.age
 
-For each ENTRY in local IINDEX where `op = 'UPDATE'`:
+For each ENTRY in local SINDEX where `op = 'UPDATE'`:
 
     REF_BLOCK = HEAD~<HEAD~1.number + 1 - NUMBER(ENTRY.hash)>[hash=HASH(ENTRY.created_on)]
     
@@ -2266,17 +2266,31 @@ EndIf
 
 For each `LOCAL_SINDEX[op='UPDATE'] as ENTRY`:
 
-    INPUT = REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base])
+    INPUT_ENTRIES = LOCAL_SINDEX[op='CREATE',identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    If COUNT(INPUT_ENTRIES) == 0 Then
+        INPUT_ENTRIES = GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    EndIf
+    INPUT = REDUCE(INPUT_ENTRIES)
     ENTRY.conditions = INPUT.conditions
     ENTRY.available = INPUT.consumed == false
 
 ####### BR_G47 - ENTRY.isLocked
 
-    ENTRY.isLocked = TX_SOURCE_UNLOCK(REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]).conditions, ENTRY)
+    INPUT_ENTRIES = LOCAL_SINDEX[op='CREATE',identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    If COUNT(INPUT_ENTRIES) == 0 Then
+        INPUT_ENTRIES = GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    EndIf
+    INPUT = REDUCE(INPUT_ENTRIES)
+    ENTRY.isLocked = TX_SOURCE_UNLOCK(INPUT.conditions, ENTRY)
     
 ####### BR_G48 - ENTRY.isTimeLocked
 
-    ENTRY.isTimeLocked = ENTRY.written_time - REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]).written_time < ENTRY.locktime
+    INPUT_ENTRIES = LOCAL_SINDEX[op='CREATE',identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    If COUNT(INPUT_ENTRIES) == 0 Then
+        INPUT_ENTRIES = GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    EndIf
+    INPUT = REDUCE(INPUT_ENTRIES)
+    ENTRY.isTimeLocked = ENTRY.written_time - INPUT.written_time < ENTRY.locktime
 
 ##### Rules
 

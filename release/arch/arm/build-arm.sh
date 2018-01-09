@@ -4,15 +4,23 @@
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 
+
 # Prepare
+NODE_VERSION=8.9.1
 ARCH="`uname -m | sed -e \"s/86_//\"`"
-NVER="v6.11.2"
+NVER="v$NODE_VERSION"
+DUNITER_TAG=$1
 
 # Folders
 INITIAL_DIRECTORY=`pwd`
 ROOT="/tmp/build_duniter"
 DOWNLOADS="$ROOT/downloads"
 RELEASES="$ROOT/releases"
+
+nvm install ${NODE_VERSION}
+nvm use ${NODE_VERSION}
+
+echo "Version de NodeJS : `node -v`"
 
 # -----------
 # Clean sources + releases
@@ -28,10 +36,8 @@ mkdir -p "$DOWNLOADS"
 cd "$DOWNLOADS"
 
 if [ ! -d "$DOWNLOADS/duniter" ]; then
-  git clone https://github.com/duniter/duniter.git
+  mv "$INITIAL_DIRECTORY/duniter-source" duniter
   cd duniter
-  COMMIT=`git rev-list --tags --max-count=1`
-  DUNITER_TAG=`echo $(git describe --tags $COMMIT) | sed 's/^v//'`
   git checkout "v${DUNITER_TAG}"
   cd ..
 fi
@@ -40,10 +46,10 @@ DUNITER_VER="$DUNITER_TAG"
 DUNITER_DEB_VER=" $DUNITER_TAG"
 DUNITER_TAG="v$DUNITER_TAG"
 
-echo "$ARCH"
-echo "$NVER"
-echo "$DUNITER_VER"
-echo "$DUNITER_DEB_VER"
+echo "Arch: $ARCH"
+echo "Nver: $NVER"
+echo "DuniterVer: $DUNITER_VER"
+echo "DebianVer: $DUNITER_DEB_VER"
 
 if [ ! -f "$DOWNLOADS/node-${NVER}-linux-${ARCH}.tar.gz" ]; then
   # Download Node.js and package it with the sources
@@ -60,9 +66,9 @@ cd ${RELEASES}/duniter
 echo "Copying Nodejs"
 cp -R "$DOWNLOADS/node-${NVER}-linux-${ARCH}" node
 
-echo "yarn"
-yarn
-yarn add duniter-ui@1.6.x --save --production
+npm install
+
+npm install duniter-ui@1.6.x --save --production
 SRC=`pwd`
 echo $SRC
 

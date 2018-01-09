@@ -23,6 +23,7 @@ import {WS2PCluster} from "../../../app/modules/ws2p/lib/WS2PCluster"
 import {WS2PServer} from "../../../app/modules/ws2p/lib/WS2PServer"
 import {WS2PServerMessageHandler} from "../../../app/modules/ws2p/lib/interface/WS2PServerMessageHandler"
 import {TestUser} from "./TestUser"
+import {RouterDependency} from "../../../app/modules/router"
 
 const assert      = require('assert');
 const _           = require('underscore');
@@ -100,8 +101,8 @@ export const simpleNetworkOf2NodesAnd2Users = async (options:any) => {
   await tac.join();
 
   // Each server forwards to each other
-  require('../../../app/modules/router').duniter.methods.routeToNetwork(s1);
-  require('../../../app/modules/router').duniter.methods.routeToNetwork(s2);
+  RouterDependency.duniter.methods.routeToNetwork(s1._server)
+  RouterDependency.duniter.methods.routeToNetwork(s2._server)
 
   return { s1, s2, cat, tac };
 }
@@ -601,7 +602,7 @@ export class TestingServer {
     const bmaAPI = await bma(this.server);
     await bmaAPI.openConnections();
     this.bma = bmaAPI;
-    require('../../../app/modules/router').duniter.methods.routeToNetwork(this.server);
+    RouterDependency.duniter.methods.routeToNetwork(this.server)
     // Extra: for /wot/requirements URL
     require('../../../app/modules/prover').ProverDependency.duniter.methods.hookServer(this.server);
   }
@@ -643,7 +644,7 @@ export async function newWS2PBidirectionnalConnection(currency:string, k1:Key, k
     wss.on('connection', async (ws:any) => {
       switch (i) {
         case 1:
-          s1 = WS2PConnection.newConnectionFromWebSocketServer(ws, serverHandler, new WS2PPubkeyLocalAuth(currency, k1), new WS2PPubkeyRemoteAuth(currency, k1), {
+          s1 = WS2PConnection.newConnectionFromWebSocketServer(ws, serverHandler, new WS2PPubkeyLocalAuth(currency, k1, ""), new WS2PPubkeyRemoteAuth(currency, k1), {
             connectionTimeout: 100,
             requestTimeout: 100
           });
@@ -657,13 +658,13 @@ export async function newWS2PBidirectionnalConnection(currency:string, k1:Key, k
       })
       i++
     })
-    c1 = WS2PConnection.newConnectionToAddress('ws://localhost:' + port, new (class EmptyHandler implements WS2PMessageHandler {
+    c1 = WS2PConnection.newConnectionToAddress(1, 'ws://localhost:' + port, new (class EmptyHandler implements WS2PMessageHandler {
       async handlePushMessage(json: any): Promise<void> {
       }
       async answerToRequest(json: any): Promise<WS2PResponse> {
         return {}
       }
-    }), new WS2PPubkeyLocalAuth(currency, k2), new WS2PPubkeyRemoteAuth(currency, k2))
+    }), new WS2PPubkeyLocalAuth(currency, k2, ""), new WS2PPubkeyRemoteAuth(currency, k2))
   })
 }
 
@@ -678,7 +679,7 @@ export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promis
   const connexionPromise = new Promise(res => {
     ws2ps.on('newConnection', res)
   })
-  const ws2pc = await cluster2.connectToRemoteWS('localhost', port, '', new WS2PServerMessageHandler(s2._server, cluster2), s1._server.conf.pair.pub)
+  const ws2pc = await cluster2.connectToRemoteWS(1, 'localhost', port, '', new WS2PServerMessageHandler(s2._server, cluster2), s1._server.conf.pair.pub)
 
   await connexionPromise
   w1 = await ws2ps.getConnection(clientPub)

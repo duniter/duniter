@@ -86,7 +86,7 @@ describe("WS2P heads propagation", function() {
     b3 = s1.commit({ time: now })
     await Promise.all([
       s2.waitToHaveBlock(3),
-      s2.waitForHeads(1)
+      s2.waitForHeads(2) // head v2 + head v1
     ])
     await s1.expect('/network/ws2p/info', (res:any) => {
       assert.equal(res.peers.level1, 0)

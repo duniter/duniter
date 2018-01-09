@@ -56,6 +56,9 @@ test/integration/tools/TestUser.js*
 test/integration/tools/TestUser.d.ts
 test/integration/documents-currency.js*
 test/integration/documents-currency.d.ts
+test/integration/forwarding.js
+test/integration/branches_switch.js
+test/integration/branches2.js
 test/fast/modules/crawler/block_pulling.js*
 test/fast/modules/crawler/block_pulling.d.ts
 test/fast/fork*.js*
@@ -66,3 +69,6 @@ test/fast/modules/ws2p/*.js*
 test/fast/modules/ws2p/*.d.ts
 test/fast/modules/common/grammar.js*
 test/fast/modules/common/grammar.d.ts
+test/fast/prover/pow-1-cluster.d.ts
+test/fast/prover/pow-1-cluster.js
+test/fast/prover/pow-1-cluster.js.map

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILDER_TAG="v0.0.6"
+BUILDER_TAG="v1.0.0"
 
 TAG="$3"
 ORIGIN="$4"
@@ -43,31 +43,36 @@ make)
       echo ">> Build success."
     fi
     ;;
-  deb)
-    cd release/arch/debian
+  lin)
+    cd release/arch/linux
     if [[ ! -f "duniter-desktop-$TAG-linux-x64.deb" ]]; then
 
       #### PREPARE SOURCE CODE ####
-      rm -rf duniter-source
       # Clone from remote
       echo ">> VM: Cloning sources from ${ORIGIN}..."
       git clone "${ORIGIN}" duniter-source
-      if [ ${IS_LOCAL_TAG} -eq 1 ]; then
-        cd duniter-source
-        ./release/new_version.sh "$TAG"
-        cd ..
-      fi
+      cd duniter-source
+      [[ ${IS_LOCAL_TAG} -eq 1 ]] && ./release/new_version.sh "${TAG}"
+      git checkout "v${TAG}"
+      cd ..
 
       docker pull duniter/release-builder:${BUILDER_TAG}
-      docker run --rm -it -v ${PWD}:/dunidata duniter/release-builder:${BUILDER_TAG} ${TAG}
+cat <<EOF |
+      cd /builds/duniter-source
+      bash "release/arch/linux/build-lin.sh" "${TAG}" || exit 1
+      exit 0
+EOF
+      docker run --rm -i -v ${PWD}/duniter-source:/builds/duniter-source duniter/release-builder:${BUILDER_TAG}
       if [ ! $? -eq 0 ]; then
         echo ">> Something went wrong. Stopping build."
       else
+        mv duniter-source/work/bin/* .
         echo ">> Build success. Shutting the VM down."
       fi
+      rm -rf duniter-source
       echo ">> VM closed."
     else
-      echo "Debian binaries already built. Ready for upload."
+      echo "Linux binaries already built. Ready for upload."
     fi
     ;;
   win)

@@ -1,10 +1,7 @@
 stages:
-    - github-sync
-    - test
-
-before_script:
-    - export NVM_DIR="$HOME/.nvm"
-    - . "$NVM_DIR/nvm.sh"
+  - github-sync
+  - build
+  - test
 
 push_to_github:
     stage: github-sync
@@ -12,8 +9,6 @@ push_to_github:
         GIT_STRATEGY: none
     tags:
         - redshift
-    before_script:
-        - ''
     script:
         - rm -rf ./*
         - rm -rf .git
@@ -32,8 +27,6 @@ enforce_readme:
         GIT_STRATEGY: none
     tags:
         - redshift
-    before_script:
-        - ''
     script:
       - rm -rf ./*
       - rm -rf .git
@@ -47,10 +40,42 @@ enforce_readme:
       - git commit -am "Enforce github readme"
       - git push origin master
 
+build_linux:test:
+  stage: build
+  image: duniter/release-builder:v1.0.0
+  tags:
+    - nodejs
+    - nwjs
+  script:
+    - bash "release/arch/linux/build-lin.sh" "$(date +%Y%m%d).$(date +%H%M).$(date +%S)"
+  artifacts:
+    paths:
+      - work/bin/
+    expire_in: 8h
+  except:
+    - tags
+
+build_linux:deploy:
+  stage: build
+  image: duniter/release-builder:v1.0.0
+  tags:
+    - nodejs
+    - nwjs
+  script:
+    - bash "release/arch/linux/build-lin.sh" "${CI_COMMIT_TAG#v}"
+  artifacts:
+    paths:
+      - work/bin/
+  only:
+    - tags
+
 test:
   stage: test
   tags:
     - redshift
+  before_script:
+    - export NVM_DIR="$HOME/.nvm"
+    - . "$NVM_DIR/nvm.sh"
   script:
     - yarn
     - yarn test

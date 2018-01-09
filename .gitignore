@@ -19,11 +19,11 @@ vagrant/*.log
 vagrant/duniter
 
 # Releases
+/work
 *.deb
 *.tar.gz
 *.log
 *.exe
-/release/arch/debian/duniter-source
 
 # vscode
 .vscode

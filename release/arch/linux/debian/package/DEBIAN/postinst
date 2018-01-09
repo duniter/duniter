@@ -5,9 +5,9 @@ DUN_SOURCES=$DUN_ROOT/
 mkdir -p $DUN_SOURCES
 
 # Duniter sources extraction
-if [[ -f $DUN_ROOT/duniter-desktop.nw ]]; then
-  unzip -q -d $DUN_SOURCES/ $DUN_ROOT/duniter-desktop.nw
-  rm -rf $DUN_ROOT/duniter-desktop.nw
+if [[ -f $DUN_ROOT/duniter.zip ]]; then
+  unzip -q -d $DUN_SOURCES/ $DUN_ROOT/duniter.zip
+  rm -rf $DUN_ROOT/duniter.zip
 fi
 
 # Duniter-Desktop

@@ -93,6 +93,16 @@ export class BlockchainContext {
     return local_vHEAD.issuerDiff;
   }
 
+  /**
+   * Utility method: gives the number of block in the current frame for a given issuer.
+   * @param issuer The issuer we want.
+   */
+  async getIssuerNbBlockInFrame(issuer: string): Promise<number> {
+    const local_vHEAD = await this.getvHeadCopy({ issuer })
+    let issuerNbBlockInFrame = await indexer.preparePersonalizedPoW(local_vHEAD, this.vHEAD_1, (n:number, m:number, p = "") => this.dal.range(n,m,p), this.conf)
+    return issuerNbBlockInFrame
+  }
+
   setConfDAL(newConf: any, newDAL: any, theBlockchain: DuniterBlockchain, theQuickSynchronizer: QuickSynchronizer): void {
     this.dal = newDAL;
     this.conf = newConf;

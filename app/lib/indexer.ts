@@ -1092,6 +1092,8 @@ export class Indexer {
 
     HEAD.powRemainder = HEAD.issuerDiff  % 16;
     HEAD.powZeros = (HEAD.issuerDiff - HEAD.powRemainder) / 16;
+
+    return nbPersonalBlocksInFrame;
   }
 
   // BR_G19

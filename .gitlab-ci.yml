@@ -42,7 +42,7 @@ enforce_readme:
 
 build_linux:test:
   stage: build
-  image: duniter/release-builder:v1.0.0
+  image: duniter/release-builder:v1.0.1
   tags:
     - redshift-duniter-builder
   script:
@@ -56,7 +56,7 @@ build_linux:test:
 
 build_linux:deploy:
   stage: build
-  image: duniter/release-builder:v1.0.0
+  image: duniter/release-builder:v1.0.1
   tags:
     - redshift-duniter-builder
   script:

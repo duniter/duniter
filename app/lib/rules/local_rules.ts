@@ -385,7 +385,7 @@ export const LOCAL_RULES_FUNCTIONS = {
     const sindex = Indexer.sindex(index)
     const max = getMaxTransactionDepth(sindex)
     //
-    const allowedMax = block.medianTime > 1517443200 ? CommonConstants.BLOCK_MAX_TX_CHAINING_DEPTH : 1
+    const allowedMax = block.medianTime > 1519862400 ? CommonConstants.BLOCK_MAX_TX_CHAINING_DEPTH : 1
     if (max > allowedMax) {
       throw "The maximum transaction chaining length per block is " + CommonConstants.BLOCK_MAX_TX_CHAINING_DEPTH
     }

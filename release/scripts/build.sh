@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILDER_TAG="v1.0.0"
+BUILDER_TAG="v1.0.1"
 
 TAG="$3"
 ORIGIN="$4"

@@ -44,8 +44,7 @@ build_linux:test:
   stage: build
   image: duniter/release-builder:v1.0.0
   tags:
-    - nodejs
-    - nwjs
+    - redshift-duniter-builder
   script:
     - bash "release/arch/linux/build-lin.sh" "$(date +%Y%m%d).$(date +%H%M).$(date +%S)"
   artifacts:
@@ -59,8 +58,7 @@ build_linux:deploy:
   stage: build
   image: duniter/release-builder:v1.0.0
   tags:
-    - nodejs
-    - nwjs
+    - redshift-duniter-builder
   script:
     - bash "release/arch/linux/build-lin.sh" "${CI_COMMIT_TAG#v}"
   artifacts:

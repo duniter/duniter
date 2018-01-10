@@ -94,7 +94,7 @@ def build_compiled_message(current_message):
             'icon': ':package:'
         }
         artifacts_list.append(artifact_dict)
-    expected_sources = ['tar.gz', 'zip']
+    expected_sources = ['tar.gz', 'deb']
     for source in expected_sources:
         source_url = build_artifact_url(source, True)
         artifact_dict = {

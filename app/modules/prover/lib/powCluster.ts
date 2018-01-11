@@ -35,6 +35,7 @@ export class Master {
   logger:any
   onInfoCallback:any
   workersOnline:Promise<any>[]
+  maxNbCores:number = Math.min(ProverConstants.CORES_MAXIMUM_USE_IN_PARALLEL, require('os').cpus().length)
 
   constructor(private nbCores:number, logger:any) {
     this.clusterId = clusterId++
@@ -65,6 +66,56 @@ export class Master {
     // this.logger.debug(`ENGINE c#${this.clusterId}#${this.slavesMap[worker.id].index}:`, message)
   }
 
+  createSlave(index:number) {
+    const nodejsWorker = cluster.fork()
+    const worker = new PowWorker(nodejsWorker, message => {
+      this.onWorkerMessage(index, message)
+    }, () => {
+      this.logger.info(`[online] worker c#${this.clusterId}#w#${index}`)
+      worker.sendConf({
+        command: 'conf',
+        value: this.conf
+      })
+    }, (code:any, signal:any) => {
+      this.logger.info(`worker ${worker.pid} died with code ${code} and signal ${signal}`)
+    })
+
+    this.logger.info(`Creating worker c#${this.clusterId}#w#${nodejsWorker.id}`)
+    const slave = {
+
+      // The Node.js worker
+      worker,
+
+      // Inner identifier
+      index,
+
+      // Worker ready
+      online: worker.online,
+
+      // Each worker has his own chunk of possible nonces
+      nonceBeginning: this.nbCores === 1 ? 0 : (index + 1) * ProverConstants.NONCE_RANGE
+    }
+    this.slavesMap[nodejsWorker.id] = slave
+    return slave
+  }
+
+  boostCPU() {
+    if(this.nbWorkers < this.maxNbCores) {
+      while(this.nbWorkers < this.maxNbCores) {
+        this.slaves.push(this.createSlave(this.nbWorkers))
+      }
+    }
+    let conf:any = {cpu: 1}
+    this.changeConf(conf)
+  }
+
+  async removeSlave() {
+    let nb_workers = this.nbWorkers
+    await this.slaves[nb_workers-1].worker.kill()
+    this.slaves.pop()
+    this.logger.info('Remove slave number '+ (nb_workers-1))
+  }
+
   /*****************
    * CLUSTER METHODS
    ****************/
@@ -77,36 +128,7 @@ export class Master {
     })
 
     this.slaves = Array.from({ length: this.nbCores }).map((value, index) => {
-      const nodejsWorker = cluster.fork()
-      const worker = new PowWorker(nodejsWorker, message => {
-        this.onWorkerMessage(index, message)
-      }, () => {
-        this.logger.info(`[online] worker c#${this.clusterId}#w#${index}`)
-        worker.sendConf({
-          command: 'conf',
-          value: this.conf
-        })
-      }, (code:any, signal:any) => {
-        this.logger.info(`worker ${worker.pid} died with code ${code} and signal ${signal}`)
-      })
-
-      this.logger.info(`Creating worker c#${this.clusterId}#w#${nodejsWorker.id}`)
-      const slave = {
-
-        // The Node.js worker
-        worker,
-
-        // Inner identifier
-        index,
-
-        // Worker ready
-        online: worker.online,
-
-        // Each worker has his own chunk of possible nonces
-        nonceBeginning: this.nbCores === 1 ? 0 : (index + 1) * ProverConstants.NONCE_RANGE
-      }
-      this.slavesMap[nodejsWorker.id] = slave
-      return slave
+      return this.createSlave(index)
     })
 
     this.workersOnline = this.slaves.map((s) => s.online)

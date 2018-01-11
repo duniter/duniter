@@ -48,6 +48,14 @@ export class WorkerFarm {
     return this.theEngine.getNbWorkers()
   }
 
+  reduceNbCores() {
+    return this.theEngine.reduceNbCores()
+  }
+
+  boostCPU(){
+    return this.theEngine.boostCPU()
+  }
+
   changeCPU(cpu:any) {
     return this.theEngine.setConf({ cpu })
   }
@@ -194,13 +202,12 @@ export class BlockProver {
       });
       if (!result) {
         this.logger.info('GIVEN proof-of-work for block#%s with %s leading zeros followed by [0-' + highMark + ']! stop PoW for %s', block.number, nbZeros, this.pair && this.pair.pub.slice(0,6));
-        let selfNbBlockInFrame = await this.server.getBcContext().getIssuerNbBlockInFrame(this.server.PeeringService.selfPubkey)
         if(this.conf.ecoMode === true) {
           let selfNbBlockInFrame = await this.server.getBcContext().getIssuerNbBlockInFrame(this.server.PeeringService.selfPubkey)
           if(selfNbBlockInFrame < 2) {
-            this.changeCPU(1)
-            this.conf.nbCores = this.server.conf.nbCores
-            this.logger.info("Boost number of CPU cores "+this.conf.nbCores+" with only "+selfNbBlockInFrame+" block member in frame")
+            this.boostCPU()
+            this.conf.nbCores = powFarm.nbWorkers
+            this.logger.info("Boost number of CPU cores "+powFarm.nbWorkers+" with only "+selfNbBlockInFrame+" block member in frame")
           }
         }
         throw 'Proof-of-work computation canceled because block received';
@@ -214,14 +221,15 @@ export class BlockProver {
         if(this.conf.ecoMode === true) {
           let selfNbBlockInFrame = await this.server.getBcContext().getIssuerNbBlockInFrame(this.server.PeeringService.selfPubkey)
           if(selfNbBlockInFrame < 2) {
-            this.changeCPU(1)
-            this.conf.nbCores = this.server.conf.nbCores
-            this.logger.info("Boost number of CPU cores "+this.conf.nbCores+" with only "+selfNbBlockInFrame+" block member in frame")
+            this.boostCPU()
+            this.conf.nbCores = powFarm.nbWorkers
+            this.logger.info("Boost number of CPU cores "+powFarm.nbWorkers+" with only "+selfNbBlockInFrame+" block member in frame")
           }
-          else if(this.conf.nbCores*testsPerSecond > ProverConstants.ECO_MODE_MINIMAL_TESTS_PER_SECONDS) {
-            if(this.conf.nbCores > 1) {
-              this.logger.info("Reducing number of CPU cores "+this.conf.nbCores)
-              this.conf.nbCores = this.conf.nbCores -1
+          else if(testsPerSecond > ProverConstants.ECO_MODE_MINIMAL_TESTS_PER_SECONDS) {
+            if(powFarm.nbWorkers > 1) {
+              this.logger.info("Reducing number of CPU cores "+powFarm.nbWorkers)
+              this.reduceNbCores()
+              this.conf.nbCores = powFarm.nbWorkers
             }
             else if(this.conf.cpu > ProverConstants.ECO_MODE_MINIMAL_CPU){
               let cpu:number = this.conf.cpu - 0.1
@@ -234,6 +242,17 @@ export class BlockProver {
       }
     })()
   };
+
+  async reduceNbCores() {
+    const farm = await this.getWorker()
+    return farm.reduceNbCores()
+  }
+
+  async boostCPU() {
+    this.conf.cpu = 1.0
+    const farm = await this.getWorker()
+    return farm.boostCPU()
+  }
 
   async changeCPU(cpu:number) {
     this.conf.cpu = Math.max(0.01, Math.min(1.0, cpu));

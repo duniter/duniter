@@ -12,15 +12,12 @@ if(debug) {
 
 export class PowEngine {
 
-  private nbWorkers:number
   private cluster:PowCluster
   readonly id:number
 
   constructor(private conf:ConfDTO, logger:any) {
-
     // We use as much cores as available, but not more than CORES_MAXIMUM_USE_IN_PARALLEL
-    this.nbWorkers = conf.nbCores
-    this.cluster = new PowCluster(this.nbWorkers, logger)
+    this.cluster = new PowCluster(conf.nbCores, logger)
     this.id = this.cluster.clusterId
   }
 
@@ -39,6 +36,14 @@ export class PowEngine {
 
   cancel() {
     return this.cluster.cancelWork()
+  }
+
+  reduceNbCores() {
+    return this.cluster.removeSlave()
+  }
+
+  boostCPU() {
+    return this.cluster.boostCPU()
   }
 
   setConf(value:any) {

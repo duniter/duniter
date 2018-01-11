@@ -1549,6 +1549,40 @@ TRUE
 > Functionally: we cannot create nor lose money through transactions. We can only transfer coins we own.
 > Functionally: also, we cannot convert a superiod unit base into a lower one.
 
+##### Transactions chaining max depth
+
+    FUNCTION `getTransactionDepth(txHash, LOCAL_DEPTH)`:
+
+        INPUTS = LOCAL_SINDEX[op='UPDATE',tx=txHash]
+        DEPTH = LOCAL_DEPTH
+
+        FOR EACH `INPUT` OF `INPUTS`
+            CONSUMED = LOCAL_SINDEX[op='CREATE',identifier=INPUT.identifier,pos=INPUT.pos]
+            IF (CONSUMED != NULL)
+                IF (LOCAL_DEPTH < 5)
+                    DEPTH = MAX(DEPTH, getTransactionDepth(CONSUMED.tx, LOCAL_DEPTH +1)
+                ELSE
+                    DEPTH++
+                END_IF
+            END_IF
+        END_FOR
+
+        RETURN DEPTH
+
+    END_FUNCTION
+
+Then:
+
+    maxTxChainingDepth = 0
+
+For each `TX_HASH` of `UNIQ(PICK(LOCAL_SINDEX, 'tx))`:
+
+    maxTxChainingDepth = MAX(maxTxChainingDepth, getTransactionDepth(TX_HASH, 0))
+
+Rule:
+
+    maxTxChainingDepth <= 5
+
 #### Global
 
 Global validation verifies the coherence of a locally-validated block, in the context of the whole blockchain, including the block.
@@ -1580,6 +1614,7 @@ Function references:
 > If values count is even, the median is computed over the 2 centered values by an arithmetical median on them, *NOT* rounded.
 
 * *UNIQ* returns a list of the unique values in a list of values
+* *PICK* returns a list of the values by picking a particular property on each record
 * *INTEGER_PART* return the integer part of a number
 * *FIRST* return the first element in a list of values matching the given condition
 * *REDUCE* merges a set of elements into a single one, by extending the non-null properties from each record into the resulting record.
@@ -2244,7 +2279,7 @@ Else:
 
 ####### BR_G102 - ENTRY.age
 
-For each ENTRY in local IINDEX where `op = 'UPDATE'`:
+For each ENTRY in local SINDEX where `op = 'UPDATE'`:
 
     REF_BLOCK = HEAD~<HEAD~1.number + 1 - NUMBER(ENTRY.hash)>[hash=HASH(ENTRY.created_on)]
     
@@ -2266,17 +2301,31 @@ EndIf
 
 For each `LOCAL_SINDEX[op='UPDATE'] as ENTRY`:
 
-    INPUT = REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base])
+    INPUT_ENTRIES = LOCAL_SINDEX[op='CREATE',identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    If COUNT(INPUT_ENTRIES) == 0 Then
+        INPUT_ENTRIES = GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    EndIf
+    INPUT = REDUCE(INPUT_ENTRIES)
     ENTRY.conditions = INPUT.conditions
     ENTRY.available = INPUT.consumed == false
 
 ####### BR_G47 - ENTRY.isLocked
 
-    ENTRY.isLocked = TX_SOURCE_UNLOCK(REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]).conditions, ENTRY)
+    INPUT_ENTRIES = LOCAL_SINDEX[op='CREATE',identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    If COUNT(INPUT_ENTRIES) == 0 Then
+        INPUT_ENTRIES = GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    EndIf
+    INPUT = REDUCE(INPUT_ENTRIES)
+    ENTRY.isLocked = TX_SOURCE_UNLOCK(INPUT.conditions, ENTRY)
     
 ####### BR_G48 - ENTRY.isTimeLocked
 
-    ENTRY.isTimeLocked = ENTRY.written_time - REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]).written_time < ENTRY.locktime
+    INPUT_ENTRIES = LOCAL_SINDEX[op='CREATE',identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    If COUNT(INPUT_ENTRIES) == 0 Then
+        INPUT_ENTRIES = GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    EndIf
+    INPUT = REDUCE(INPUT_ENTRIES)
+    ENTRY.isTimeLocked = ENTRY.written_time - INPUT.written_time < ENTRY.locktime
 
 ##### Rules
 

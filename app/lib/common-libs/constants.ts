@@ -285,6 +285,8 @@ export const CommonConstants = {
     BLOCK: find("Block: (" + INTEGER + "-" + FINGERPRINT + ")"),
     SPECIAL_BLOCK
   },
+
+  BLOCK_MAX_TX_CHAINING_DEPTH: 5
 }
 
 function exact (regexpContent:string) {

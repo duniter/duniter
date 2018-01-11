@@ -33,6 +33,7 @@ export const ALIAS = {
     await LOCAL_RULES_FUNCTIONS.checkTxRecipients(block);
     await LOCAL_RULES_FUNCTIONS.checkTxAmounts(block);
     await LOCAL_RULES_FUNCTIONS.checkTxSignature(block);
+    await LOCAL_RULES_FUNCTIONS.checkMaxTransactionChainingDepth(block, conf, index);
   },
 
   ALL_LOCAL_BUT_POW_AND_SIGNATURE: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
@@ -60,6 +61,7 @@ export const ALIAS = {
     await LOCAL_RULES_FUNCTIONS.checkTxRecipients(block);
     await LOCAL_RULES_FUNCTIONS.checkTxAmounts(block);
     await LOCAL_RULES_FUNCTIONS.checkTxSignature(block);
+    await LOCAL_RULES_FUNCTIONS.checkMaxTransactionChainingDepth(block, conf, index);
   }
 }
 

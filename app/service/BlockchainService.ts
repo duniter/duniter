@@ -217,8 +217,9 @@ export class BlockchainService extends FIFOService {
         } catch (e) {
           this.logger.error(e)
           added = false
+          const theError = e && (e.message || e)
           this.push({
-            blockResolutionError: e && e.message
+            blockResolutionError: theError
           })
         }
         i++

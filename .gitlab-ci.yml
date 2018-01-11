@@ -49,6 +49,7 @@ release_linux:deploy:
       - work/bin/
   when: manual
   only:
+  - tags
   - master
     
 enforce-message:
@@ -62,4 +63,5 @@ enforce-message:
     - python3 .gitlab/releaser.py
   when: manual
   only:
+  - tags
   - master

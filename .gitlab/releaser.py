@@ -38,6 +38,7 @@ def get_current_message():
     tag_url += '/repository/tags/'
     tag_url += ci_commit_tag
     request = urllib.request.Request(tag_url)
+    print(tag_url)
     request.add_header('Private-Token', releaser_token)
     response = urllib.request.urlopen(request)
     data = json.load(response)

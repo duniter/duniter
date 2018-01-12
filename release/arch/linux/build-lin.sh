@@ -173,9 +173,9 @@ tar czf "${BIN}/duniter-desktop-${DUNITER_TAG}-linux-x64.tar.gz" * || exit 1
 build_deb_pack() {
 	rm -rf "${RELEASES}/duniter-x64"
 	mkdir "${RELEASES}/duniter-x64" || exit 1
-	cp -r "${ROOT}/release/arch/linux/debian/package/"* "${RELEASES}/duniter-x64" || exit 1
+	cp -r "${ROOT}/release/extra/debian/package/"* "${RELEASES}/duniter-x64" || exit 1
 	if [[ "${1}" == "desktop" ]]; then
-		cp -r "${ROOT}/release/contrib/desktop/"* "${RELEASES}/duniter-x64" || exit 1
+		cp -r "${ROOT}/release/extra/desktop/"* "${RELEASES}/duniter-x64" || exit 1
 	fi
 	mkdir -p "${RELEASES}/duniter-x64/opt/duniter/" || exit 1
 	chmod 755 "${RELEASES}/duniter-x64/DEBIAN/"post* || exit 1

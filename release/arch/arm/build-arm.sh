@@ -86,7 +86,7 @@ mkdir -p duniter_release
 cp -R ${SRC}/* duniter_release/
 
 # Creating DEB packaging
-mv duniter_release/release/arch/debian/package duniter-${ARCH}
+mv duniter_release/release/extra/debian/package duniter-${ARCH}
 mkdir -p duniter-${ARCH}/opt/duniter/
 chmod 755 duniter-${ARCH}/DEBIAN/post*
 chmod 755 duniter-${ARCH}/DEBIAN/pre*

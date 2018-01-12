@@ -8,7 +8,7 @@ if [[ $1 =~ ^[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?$ ]]; then
   echo "Changing to version: $1"
   # Change the version in package.json and test file
   sed -i "s/version\": .*/version\": \"$1\",/g" package.json
-  sed -i "s/Version: .*/Version: $1/g" release/arch/debian/package/DEBIAN/control
+  sed -i "s/Version: .*/Version: $1/g" release/extra/debian/package/DEBIAN/control
   sed -i "s/version').equal('.*/version').equal('$1');/g" test/integration/branches.js
   sed -i "s/ release: .*/ release: v$1/g" appveyor.yml
 
@@ -21,7 +21,7 @@ if [[ $1 =~ ^[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?$ ]]; then
 
   # Commit
   git reset HEAD
-  git add package.json test/integration/branches.js gui/index.html release/arch/debian/package/DEBIAN/control release/arch/windows/duniter.iss
+  git add package.json test/integration/branches.js gui/index.html release/extra/debian/package/DEBIAN/control release/arch/windows/duniter.iss
   git commit -m "v$1"
   git tag "v$1"
 else

@@ -40,8 +40,8 @@ def get_current_message():
     request = urllib.request.Request(tag_url)
     print(tag_url)
     request.add_header('Private-Token', releaser_token)
-    print(response)
     response = urllib.request.urlopen(request)
+    print(response)
     data = json.load(response)
     if data['release'] is None:
         return False, ''

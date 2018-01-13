@@ -22,27 +22,6 @@ push_to_github:
         - bash -c "cat packed-refs | grep -v 'refs/pull' > packed-refs-new; echo 'Removed pull refs.'"
         - mv packed-refs-new packed-refs
         - bash -c "git push --force --mirror github 2>&1 | grep -v duniter-gitlab; echo $?"
-        
-build:
-  stage: build
-  tags:
-    - redshift
-  before_script:
-    - export NVM_DIR="$HOME/.nvm"
-    - . "$NVM_DIR/nvm.sh"
-  script:
-    - yarn
-
-test:
-  stage: test
-  tags:
-    - redshift
-  before_script:
-    - export NVM_DIR="$HOME/.nvm"
-    - . "$NVM_DIR/nvm.sh"
-  script:
-    - yarn
-    - yarn test
 
 release_linux:test:
   stage: release

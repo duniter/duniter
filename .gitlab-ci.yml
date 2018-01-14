@@ -25,7 +25,7 @@ push_to_github:
 
 release_linux:test:
   stage: release
-  image: duniter/release-builder:v1.0.1
+  image: duniter/release-builder:v1.0.3
   tags:
     - redshift-duniter-builder
   script:
@@ -41,7 +41,7 @@ release_linux:test:
 
 release_linux:deploy:
   stage: release
-  image: duniter/release-builder:v1.0.1
+  image: duniter/release-builder:v1.0.3
   tags:
     - redshift-duniter-builder
   script:
@@ -56,7 +56,9 @@ release_linux:deploy:
     
 enforce-message:
   stage: release-message
-  image: tensorflow/tensorflow:latest-py3
+  image: duniter/release-builder:v1.0.3
+  tags:
+    - redshift-duniter-builder
   variables:
     JOB_ARTIFACTS: 'release'
     EXPECTED_ARTIFACTS: '["duniter-desktop-${CI_COMMIT_TAG}-linux-x64.deb","duniter-desktop-${CI_COMMIT_TAG}-linux-x64.tar.gz","duniter-server-${CI_COMMIT_TAG}-linux-x64.deb"]'

@@ -30,7 +30,6 @@ def convert_size(size_bytes):
 
 def get_current_message():
     '''Get current release message'''
-    releaser_token = os.environ['RELEASER_TOKEN']
     ci_project_id = os.environ['CI_PROJECT_ID']
     ci_commit_tag = os.environ['CI_COMMIT_TAG']
     tag_url = 'https://git.duniter.org/api/v4/projects/'
@@ -38,10 +37,7 @@ def get_current_message():
     tag_url += '/repository/tags/'
     tag_url += ci_commit_tag
     request = urllib.request.Request(tag_url)
-    print(tag_url)
-    request.add_header('Private-Token', releaser_token)
     response = urllib.request.urlopen(request)
-    print(response)
     data = json.load(response)
     if data['release'] is None:
         return False, ''

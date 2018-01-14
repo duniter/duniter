@@ -25,7 +25,7 @@ push_to_github:
 
 release_linux:test:
   stage: release
-  image: duniter/release-builder:v1.0.3
+  image: duniter/release-builder:v1.0.1
   tags:
     - redshift-duniter-builder
   script:
@@ -41,7 +41,7 @@ release_linux:test:
 
 release_linux:deploy:
   stage: release
-  image: duniter/release-builder:v1.0.3
+  image: duniter/release-builder:v1.0.1
   tags:
     - redshift-duniter-builder
   script:

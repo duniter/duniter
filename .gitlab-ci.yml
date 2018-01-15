@@ -47,6 +47,7 @@ release_linux:deploy:
   artifacts:
     paths:
       - work/bin/
+    expire_in: 8h
   when: manual
   only:
   - tags

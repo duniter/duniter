@@ -39,7 +39,7 @@ def get_current_message():
     request = urllib.request.Request(tag_url)
     response = urllib.request.urlopen(request)
 
-    data = json.load(response)
+    data = json.load(response.read().decode())
     if data['release'] is None:
         return False, ''
     else:

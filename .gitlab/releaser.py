@@ -41,7 +41,7 @@ def get_current_message():
     '''debug'''
     print('status: %s' % response.status)
     print('headers:', response.headers)
-    print('body:' + response.read().decode('utf-8'))
+    print('body:' + response.read())
 
     data = json.load(response)
     if data['release'] is None:
@@ -150,7 +150,7 @@ def send_compiled_message(exists_release, compiled_message):
     '''debug'''
     print('status: %s' % response.status)
     print('headers:', response.headers)
-    print('body:' + response.read().decode('utf-8'))
+    print('body:' + response.read())
 
 def main():
     '''Execute main scenario'''

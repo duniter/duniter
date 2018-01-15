@@ -14,7 +14,8 @@ def get_current_message():
     response = urllib.request.urlopen(request)
     print('status: %s' % response.status)
     print('headers:', response.headers)
-    data = json.load(response)
+    response_body = response.read()
+    data = json.load(response_body)
     if data['release'] is None:
         return False, ''
     else:

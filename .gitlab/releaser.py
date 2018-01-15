@@ -38,7 +38,8 @@ def get_current_message():
     tag_url += ci_commit_tag
     request = urllib.request.Request(tag_url)
     response = urllib.request.urlopen(request)
-    data = json.load(response.decode())
+    response_data = response.read().decode()
+    data = json.loads(response_data)
     if data['release'] is None:
         return False, ''
     else:

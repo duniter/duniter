@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
+import math
 import urllib.request
+import urllib.error
+import json
+import os
+import jinja2
 
 def get_current_message():
     '''Get current release message'''
@@ -15,3 +20,9 @@ def get_current_message():
         return False, ''
     else:
         return True, data['release']['description'].split('# Downloads')[0]
+
+def main():
+    '''Execute main scenario'''
+    exists_release, current_message = get_current_message()
+    print('end')
+main()

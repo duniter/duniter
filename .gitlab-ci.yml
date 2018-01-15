@@ -1,5 +1,4 @@
 stages:
-  - debug
   - github-sync
   - release
   - release-message

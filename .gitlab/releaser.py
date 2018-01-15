@@ -38,6 +38,11 @@ def get_current_message():
     tag_url += ci_commit_tag
     request = urllib.request.Request(tag_url)
     response = urllib.request.urlopen(request)
+    '''debug'''
+    print('status: %s' % response.status)
+    print('headers:', response.headers)
+    print('body:' + response.read().decode('utf-8'))
+
     data = json.load(response)
     if data['release'] is None:
         return False, ''
@@ -141,7 +146,11 @@ def send_compiled_message(exists_release, compiled_message):
     request = urllib.request.Request(release_url, data=send_data_serialized, method=method)
     request.add_header('Private-Token', releaser_token)
     request.add_header('Content-Type', 'application/json')
-    urllib.request.urlopen(request)
+    response = urllib.request.urlopen(request)
+    '''debug'''
+    print('status: %s' % response.status)
+    print('headers:', response.headers)
+    print('body:' + response.read().decode('utf-8'))
 
 def main():
     '''Execute main scenario'''

@@ -63,7 +63,7 @@ release_linux:deploy:
     
 enforce-message:
   stage: release-message
-  image: duniter/release-builder:v1.0.3
+  image: tensorflow/tensorflow:latest-py3
   tags:
     - redshift-duniter-builder
   variables:

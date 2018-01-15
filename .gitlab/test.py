@@ -15,7 +15,7 @@ def get_current_message():
     print('status: %s' % response.status)
     print('headers:', response.headers)
     print('body:' + response.read().decode('utf-8'))
-    data = json.load(response.read().decode())
+    data = json.load(response)
     if data['release'] is None:
         return False, ''
     else:

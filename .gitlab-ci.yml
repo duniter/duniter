@@ -31,12 +31,10 @@ release_linux:test:
     HOUR: $(date +%H%M)
     SEC: $(date +%S)
   script:
-    - bash "release/arch/linux/build-lin.sh" "${DAY}.${HOUR}.${SEC}"
+    - bash "release/arch/linux/build-lin.sh" "$(date +%Y%m%d).$(date +%H%M).$(date +%S)"
   artifacts:
     paths:
-      - work/bin/duniter-desktop-v"${DAY}.${HOUR}.${SEC}"-linux-x64.deb
-      - work/bin/duniter-desktop-v"${DAY}.${HOUR}.${SEC}"-linux-x64.tar.gz
-      - work/bin/duniter-server-v"${DAY}.${HOUR}.${SEC}"-linux-x64.deb
+      - work/bin/
     expire_in: 8h
   when: manual
   except:

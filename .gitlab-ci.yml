@@ -1,7 +1,16 @@
 stages:
+  - debug
   - github-sync
   - release
   - release-message
+  
+debug:
+    stage: debug
+    image: tensorflow/tensorflow:latest-py3
+    tags:
+      - redshift-duniter-builder
+    script:
+      - python3 .gitlab/test.py
 
 push_to_github:
     stage: github-sync

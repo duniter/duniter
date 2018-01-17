@@ -66,7 +66,7 @@ enforce-message:
     - redshift-duniter-builder
   variables:
     JOB_ARTIFACTS: 'release'
-    EXPECTED_ARTIFACTS: '["duniter-desktop-${CI_COMMIT_TAG}-linux-x64.deb","duniter-desktop-${CI_COMMIT_TAG}-linux-x64.tar.gz","duniter-server-${CI_COMMIT_TAG}-linux-x64.deb"]'
+    EXPECTED_ARTIFACTS: '["work/bin/duniter-desktop-${CI_COMMIT_TAG}-linux-x64.deb","work/bin/duniter-desktop-${CI_COMMIT_TAG}-linux-x64.tar.gz","work/bin/duniter-server-${CI_COMMIT_TAG}-linux-x64.deb"]'
   script:
     - python3 .gitlab/releaser.py
   when: manual

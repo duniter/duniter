@@ -87,7 +87,7 @@ def build_compiled_message(current_message):
     artifacts_list = []
     for artifact in expected_artifacts:
         artifact_dict = {
-            'name': artifact,
+            'name': artifact.split('/')[-1],
             'url': build_artifact_url(artifact, False),
             'size': get_artifact_weight(artifact),
             'icon': ':package:'

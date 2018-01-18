@@ -58,7 +58,7 @@ releases:
   - tags
   - master
     
-enforce-message:
+releases-message:
   stage: releases-message
   image: tensorflow/tensorflow:latest-py3
   tags:

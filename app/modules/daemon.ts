@@ -95,6 +95,9 @@ module.exports = {
 
         logger.info(">> Server starting...");
 
+        // Log NodeJS version
+        logger.info('NodeJS version: ' + process.version);
+
         await server.checkConfig();
         // Add signing & public key functions to PeeringService
         logger.info('Node version: ' + server.version);

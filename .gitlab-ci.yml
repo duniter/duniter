@@ -59,7 +59,7 @@ releases:
   - master
     
 releases-message:
-  stage: releases-message
+  stage: releases-page
   image: tensorflow/tensorflow:latest-py3
   tags:
     - redshift-duniter-builder

@@ -93,16 +93,6 @@ def build_compiled_message(current_message):
             'icon': ':package:'
         }
         artifacts_list.append(artifact_dict)
-    expected_sources = ['tar.gz', 'deb']
-    for source in expected_sources:
-        source_url = build_artifact_url(source, True)
-        artifact_dict = {
-            'name': 'Source code ' + source,
-            'url': source_url,
-            'size': get_artifact_weight(source_url),
-            'icon': ':compression:'
-        }
-        artifacts_list.append(artifact_dict)
 
     j2_env = jinja2.Environment(
         loader=jinja2.FileSystemLoader(

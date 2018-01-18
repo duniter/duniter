@@ -42,13 +42,13 @@ for asset in $EXPECTED_ASSETS; do
 
     echo "Missing asset: $asset"
 
-    # Debian
+    # Linux
     if [[ $asset == *"linux-x64.deb" ]] || [[ $asset == *"linux-x64.tar.gz" ]]; then
       if [[ $ARCH == "x86_64" ]]; then
-        echo "Starting Debian build..."
-        ./release/scripts/build.sh make deb $TAG
-        DEB_PATH="$PWD/release/arch/debian/$asset"
-        node ./release/scripts/upload-release.js $TOKEN $TAG $DEB_PATH
+        echo "Starting Linux build..."
+        ./release/scripts/build.sh make lin $TAG
+        LIN_PATH="$PWD/release/arch/linux/$asset"
+        node ./release/scripts/upload-release.js $TOKEN $TAG $LIN_PATH
       else
         echo "This computer cannot build this asset, required architecture is 'x86_64'. Skipping."
       fi

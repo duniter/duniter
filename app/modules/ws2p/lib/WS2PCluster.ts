@@ -587,24 +587,31 @@ export class WS2PCluster {
     }
     let ws2pPrivate = ''
     let ws2pPublic = ''
-    if (this.server.conf.proxiesConf && (this.server.conf.proxiesConf.proxyTorAddress || this.server.conf.proxiesConf.forceTor)) {
-      network.out = WS2PConstants.NETWORK.OUTCOMING.TOR
-    }
     if (this.server.conf.ws2p) {
-      if (this.server.conf.ws2p.remotehost) {
-        if (this.server.conf.ws2p.remotehost.match(WS2PConstants.HOST_ONION_REGEX)) {
+      if (this.server.conf.ws2p.publicAccess &&
+          (this.server.conf.ws2p.remotehost && this.server.conf.ws2p.remoteport)
+          ||
+          (this.server.conf.ws2p.upnp && this.server.conf.upnp)
+        )
+      {
+        ws2pPublic = 'I'
+        // Determine the network layer
+        if (this.server.conf.ws2p.remotehost && this.server.conf.ws2p.remotehost.match(WS2PConstants.HOST_ONION_REGEX)) {
           network.in = WS2PConstants.NETWORK.INCOMING.TOR
         }
-        if (this.server.conf.ws2p.publicAccess) {
-          ws2pPublic = 'I'
-          switch (network.in) {
-            case WS2PConstants.NETWORK.INCOMING.TOR: ws2pPublic += 'T'; break;
-            default: ws2pPublic += 'C'; break;
-          }
+        // Apply the network layer
+        switch (network.in) {
+          case WS2PConstants.NETWORK.INCOMING.TOR: ws2pPublic += 'T'; break;
+          default: ws2pPublic += 'C'; break;
         }
       }
       if (this.server.conf.ws2p.privateAccess) {
         ws2pPrivate = 'O'
+        // Determine the network layer
+        if (this.server.conf.proxiesConf && (this.server.conf.proxiesConf.proxyTorAddress || this.server.conf.proxiesConf.forceTor)) {
+          network.out = WS2PConstants.NETWORK.OUTCOMING.TOR
+        }
+        // Apply the network layer
         switch (network.out) {
           case WS2PConstants.NETWORK.OUTCOMING.TOR: ws2pPrivate += 'T';
             if (this.server.conf.proxiesConf && this.server.conf.proxiesConf.reachingClearEp) {
@@ -615,7 +622,7 @@ export class WS2PCluster {
               }
             }
           break;
-          default: ws2pPrivate += 'C'; break;
+          default: ws2pPrivate += 'CA'; break;
         }
       }
     }

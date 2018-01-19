@@ -32,27 +32,12 @@ echo "Remote tag: $REMOTE_TAG"
 
 echo "Creating the pre-release..."
 ASSETS=`node ./release/scripts/create-release.js $TOKEN $TAG create`
-EXPECTED_ASSETS="duniter-desktop-$TAG-linux-x64.deb
-duniter-desktop-$TAG-linux-x64.tar.gz
-duniter-server-$TAG-linux-x64.deb
-duniter-desktop-$TAG-windows-x64.exe
+EXPECTED_ASSETS="duniter-desktop-$TAG-windows-x64.exe
 duniter-server-$TAG-linux-armv7l.deb"
 for asset in $EXPECTED_ASSETS; do
   if [[ -z `echo $ASSETS | grep -F "$asset"` ]]; then
 
     echo "Missing asset: $asset"
-
-    # Linux
-    if [[ $asset == *"linux-x64.deb" ]] || [[ $asset == *"linux-x64.tar.gz" ]]; then
-      if [[ $ARCH == "x86_64" ]]; then
-        echo "Starting Linux build..."
-        ./release/scripts/build.sh make lin $TAG
-        LIN_PATH="$PWD/release/arch/linux/$asset"
-        node ./release/scripts/upload-release.js $TOKEN $TAG $LIN_PATH
-      else
-        echo "This computer cannot build this asset, required architecture is 'x86_64'. Skipping."
-      fi
-    fi
 
     # Windows
     if [[ $asset == *".exe" ]]; then

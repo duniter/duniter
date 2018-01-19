@@ -52,7 +52,7 @@ export const WS2PConstants = {
     + CommonConstants.FORMATS.BLOCKSTAMP
     + '$'),
 
-  HEAD_V1_REGEXP: new RegExp('^WS2P(?:O[CT][SAM])?(?:I[CT])?:HEAD:1:'
+  HEAD_V1_REGEXP: new RegExp('^WS2P(?:O[CT][SAM]?)?(?:I[CT])?:HEAD:1:'
   + '(' + CommonConstants.FORMATS.PUBKEY + '):'
   + '(' + CommonConstants.FORMATS.BLOCKSTAMP + '):'
   + '(' + CommonConstants.FORMATS.WS2PID + '):'
@@ -61,7 +61,7 @@ export const WS2PConstants = {
   + '(' + CommonConstants.FORMATS.POW_PREFIX + ')'
   + '$'),
 
-  HEAD_V2_REGEXP: new RegExp('^WS2P(?:O[CT][SAM])?(?:I[CT])?:HEAD:2:'
+  HEAD_V2_REGEXP: new RegExp('^WS2P(?:O[CT][SAM]?)?(?:I[CT])?:HEAD:2:'
   + '(' + CommonConstants.FORMATS.PUBKEY + '):'
   + '(' + CommonConstants.FORMATS.BLOCKSTAMP + '):'
   + '(' + CommonConstants.FORMATS.WS2PID + '):'

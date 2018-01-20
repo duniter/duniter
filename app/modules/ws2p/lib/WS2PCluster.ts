@@ -427,32 +427,49 @@ export class WS2PCluster {
     let i = 0
     let countPublicNodesWithSameKey:number = 1 // Necessary if maxPrivate = 0
     let endpointsNodesWithSameKey:WS2PEndpoint[] = []
-    while (i < peers.length && (this.clientsCount() < this.maxLevel1Size || this.numberOfConnectedPublicNodesWithSameKey() < countPublicNodesWithSameKey) ) {
-      const p = peers[i]
-      if (p.pubkey === this.server.conf.pair.pub) {
-        endpointsNodesWithSameKey = p.getAllWS2PEndpoints(canReachTorEndpoint, canReachClearEndpoint, myUUID)
-        countPublicNodesWithSameKey = endpointsNodesWithSameKey.length
-        for (const api of endpointsNodesWithSameKey) {
-          try {
-            // We do not connect to local host
-            if (api.uuid !== myUUID) {
-              await this.connectToRemoteWS(api.version, api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
-            }
-          } catch (e) {
-            this.server.logger.debug('WS2P: init: failed connection')
-          }
-        }
-      } else {
-        const api = p.getOnceWS2PEndpoint(canReachTorEndpoint, canReachClearEndpoint)
-        if (api) {
-          try {
-            // We do not connect to local host
-            await this.connectToRemoteWS(api.version, api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
-          } catch (e) {
-            this.server.logger.debug('WS2P: init: failed connection')
-          }
-        }
+    // Group the peers by bunches
+    const bunchsOfPeers = peers.reduce((bundles:PeerDTO[][], p:PeerDTO) => {
+      let bundleIndex = (bundles.length || 1) - 1
+      // Maximum size of a bundle of peers
+      if (bundles[bundleIndex] && bundles[bundleIndex].length >= WS2PConstants.INITIAL_CONNECTION_PEERS_BUNDLE_SIZE) {
+        bundleIndex++
       }
+      // We create the bundle of it doesn't exist yet
+      if (!bundles[bundleIndex]) {
+        bundles[bundleIndex] = []
+      }
+      // We feed it with this peer
+      bundles[bundleIndex].push(p)
+      return bundles
+    }, [])
+    while (i < bunchsOfPeers.length && (this.clientsCount() < this.maxLevel1Size || this.numberOfConnectedPublicNodesWithSameKey() < countPublicNodesWithSameKey) ) {
+      this.server.logger.info("WS2P: init: bundle of peers %s/%s", i+1, bunchsOfPeers.length)
+      await Promise.all(bunchsOfPeers[i].map(async p => {
+        if (p.pubkey === this.server.conf.pair.pub) {
+          endpointsNodesWithSameKey = p.getAllWS2PEndpoints(canReachTorEndpoint, canReachClearEndpoint, myUUID)
+          countPublicNodesWithSameKey = endpointsNodesWithSameKey.length
+          for (const api of endpointsNodesWithSameKey) {
+            try {
+              // We do not connect to local host
+              if (api.uuid !== myUUID) {
+                await this.connectToRemoteWS(api.version, api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
+              }
+            } catch (e) {
+              this.server.logger.debug('WS2P: init: failed connection')
+            }
+          }
+        } else {
+          const api = p.getOnceWS2PEndpoint(canReachTorEndpoint, canReachClearEndpoint)
+          if (api) {
+            try {
+              // We do not connect to local host
+              await this.connectToRemoteWS(api.version, api.host, api.port, api.path, this.messageHandler, p.pubkey, api.uuid)
+            } catch (e) {
+              this.server.logger.debug('WS2P: init: failed connection')
+            }
+          }
+        }
+      }))
       i++
       // Trim the eventual extra connections
       setTimeout(() => this.removeLowPriorityConnections(prefered), WS2PConstants.CONNEXION_TIMEOUT)

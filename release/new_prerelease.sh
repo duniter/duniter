@@ -1,7 +1,6 @@
 #!/bin/bash
 
 TAG="v$1"
-TOKEN=`cat $HOME/.config/duniter/.github`
 ARCH=`uname -m`
 # Check that the tag exists remotely
 
@@ -31,7 +30,6 @@ fi
 echo "Remote tag: $REMOTE_TAG"
 
 echo "Creating the pre-release..."
-ASSETS=`node ./release/scripts/create-release.js $TOKEN $TAG create`
 EXPECTED_ASSETS="duniter-desktop-$TAG-windows-x64.exe
 duniter-server-$TAG-linux-armv7l.deb"
 for asset in $EXPECTED_ASSETS; do
@@ -44,8 +42,7 @@ for asset in $EXPECTED_ASSETS; do
       if [[ $ARCH == "x86_64" ]]; then
         echo "Starting Windows build..."
         ./release/scripts/build.sh make win $TAG
-        WIN_PATH="$PWD/release/arch/windows/$asset"
-        node ./release/scripts/upload-release.js $TOKEN $TAG $WIN_PATH
+        echo "Windows asset has been successfully built, it is available here : $PWD/release/arch/windows/$asset"
       else
         echo "This computer cannot build this asset, required architecture is 'x86_64'. Skipping."
       fi
@@ -56,8 +53,7 @@ for asset in $EXPECTED_ASSETS; do
       if [[ $ARCH == "armv7l" ]]; then
         echo "Starting ARM build..."
         ./release/scripts/build.sh make arm $TAG
-        ARM_PATH="$PWD/release/arch/arm/$asset"
-        node ./release/scripts/upload-release.js $TOKEN $TAG $ARM_PATH
+        echo "Arm asset has been successfully built, it is available here : $PWD/release/arch/arm/$asset"
       else
         echo "This computer cannot build this asset, required architecture is 'armv7l'. Skipping."
       fi

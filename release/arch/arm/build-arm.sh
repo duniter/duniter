@@ -95,9 +95,9 @@ cd duniter_release
 pwd
 rm -Rf .git
 echo "Zipping..."
-zip -qr ../duniter-desktop.nw *
+zip -qr ../duniter.zip *
 cd ../
-mv duniter-desktop.nw duniter-${ARCH}/opt/duniter/
+mv duniter.zip duniter-${ARCH}/opt/duniter/
 echo "Making package package"
 fakeroot dpkg-deb --build duniter-${ARCH}
 mv duniter-${ARCH}.deb "$INITIAL_DIRECTORY/duniter-server-v${DUNITER_VER}-linux-${ARCH}.deb"

@@ -78,5 +78,7 @@ export const WS2PConstants = {
   HOST_ONION_REGEX: CommonConstants.HOST_ONION_REGEX,
   FULL_ADDRESS_ONION_REGEX: CommonConstants.WS_FULL_ADDRESS_ONION_REGEX,
 
+  INITIAL_CONNECTION_PEERS_BUNDLE_SIZE: 5,
+
   HEADS_SPREAD_TIMEOUT: 100 // Wait 100ms before sending a bunch of signed heads
 }

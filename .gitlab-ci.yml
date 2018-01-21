@@ -24,67 +24,61 @@ push_to_github:
     - bash -c "git push --force --mirror github 2>&1 | grep -v duniter-gitlab; echo $?"
   only:
     - nodes/typescript/duniter
-        
-build:
-  stage: build
+
+.nvm_env: &nvm_env
   tags:
     - redshift
   before_script:
     - export NVM_DIR="$HOME/.nvm"
     - . "$NVM_DIR/nvm.sh"
+  
+build:
+  <<: *nvm_env
+  stage: build
   script:
     - yarn
 
 test:
+  <<: *nvm_env
   stage: test
-  tags:
-    - redshift
-  before_script:
-    - export NVM_DIR="$HOME/.nvm"
-    - . "$NVM_DIR/nvm.sh"
   script:
     - yarn
     - yarn test
 
-releases:test:
+.build_releases: &build_releases
   stage: releases
+  allow_failure: false
   image: duniter/release-builder:v1.0.1
   tags:
     - redshift-duniter-builder
-  variables:
-    DAY: $(date +%Y%m%d)
-    HOUR: $(date +%H%M)
-    SEC: $(date +%S)
+  when: manual
+  artifacts:
+    paths: &releases_artifacts
+      - work/bin/
+
+releases:test:
+  <<: *build_releases
   script:
     - bash "release/arch/linux/build-lin.sh" "$(date +%Y%m%d).$(date +%H%M).$(date +%S)"
   artifacts:
-    paths:
-      - work/bin/
-    expire_in: 8h
-  when: manual
+    paths: *releases_artifacts
+    expire_in: 4h
   except:
     - tags
 
 releases:
-  stage: releases
-  image: duniter/release-builder:v1.0.1
-  tags:
-    - redshift-duniter-builder
+  <<: *build_releases
   script:
     - bash "release/arch/linux/build-lin.sh" "${CI_COMMIT_TAG#v}"
   artifacts:
-    paths:
-      - work/bin/duniter-desktop-${CI_COMMIT_TAG}-linux-x64.deb
-      - work/bin/duniter-desktop-${CI_COMMIT_TAG}-linux-x64.tar.gz
-      - work/bin/duniter-server-${CI_COMMIT_TAG}-linux-x64.deb
-    expire_in: 8h
-  when: manual
+    paths: *releases_artifacts
+    expire_in: 2 weeks
   only:
-  - tags
-  - master
-    
+    - tags
+
 releases-message:
   stage: releases-page
+  allow_failure: false
   image: tensorflow/tensorflow:latest-py3
   tags:
     - redshift-duniter-builder
@@ -95,5 +89,4 @@ releases-message:
     - python3 .gitlab/releaser.py
   when: manual
   only:
-  - tags
-  - master
+    - tags

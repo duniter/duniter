@@ -11,6 +11,105 @@ else
 	exit 1
 fi
 
+# ---------
+# Functions
+# ---------
+
+# Copy nw.js compiled module released library to node libraries.
+# -
+# Parameters:
+# 1. Module name.
+nw_copy() {
+	[[ -z ${1} ]] && exit 1
+	cp lib/binding/Release/node-webkit-v${NW_VERSION}-linux-x64/${1}.node \
+		lib/binding/Release/node-v${ADDON_VERSION}-linux-x64/${1}.node || exit 1
+}
+
+# Copy nw.js compiled module library to node libraries, prefixing with node_.
+# -
+# Parameters:
+# 1. Module name.
+nw_copy_node() {
+	[[ -z ${1} ]] && exit 1
+	cp lib/binding/node-webkit-v${NW_VERSION}-linux-x64/node_${1}.node \
+		lib/binding/node-v${ADDON_VERSION}-linux-x64/node_${1}.node || exit 1
+}
+
+# Compile the module with nw.js.
+# -
+# Parameters:
+# 1. Module name.
+# 2. Action to be done to module after compilation, if needed.
+nw_compile() {
+	[[ -z ${1} ]] && exit 1
+	cd ${1} || exit 1
+	node-pre-gyp --runtime=node-webkit --target=${NW_VERSION} configure || exit 1
+	node-pre-gyp --runtime=node-webkit --target=${NW_VERSION} build || exit 1
+	[[ -z ${2} ]] || ${2} ${1}
+	cd ..
+}
+
+# Create description.
+# -
+# Parameters:
+# 1. Initial file name.
+# 2. Building type (either “desktop” or “server”).
+# 3. Category (OS, distribution).
+create_desc() {
+	cat >"${1}".desc <<-EOF
+	{
+	  "version": "${DUNITER_TAG}",
+	  "job": "${CI_JOB_NAME}",
+	  "type": "${2^}",
+	  "category": "${3}",
+	  "arch": "x64"
+	}
+	EOF
+}
+
+# Desktop specific building phase.
+# -
+# Parameters:
+# 1. Building directory.
+build_extra_desktop() {
+	cp -r "${ROOT}/release/extra/desktop/"* "${1}" || exit 1
+}
+
+# Server specific building phase.
+# -
+# Parameters:
+# 1. Building directory.
+build_extra_server() {
+	mkdir -p "${1}/lib/systemd/system" || exit 1
+	cp "${ROOT}/release/extra/systemd/duniter.service" "${1}/lib/systemd/system" || exit 1
+}
+
+# Debian package building.
+# -
+# Parameters:
+# 1. Building type (either “desktop” or “server”).
+# 2. Debian package name.
+build_deb_pack() {
+	rm -rf "${RELEASES}/duniter-x64"
+	mkdir "${RELEASES}/duniter-x64" || exit 1
+	cp -r "${ROOT}/release/extra/debian/package/"* "${RELEASES}/duniter-x64" || exit 1
+	build_extra_${1} "${RELEASES}/duniter-x64"
+	mkdir -p "${RELEASES}/duniter-x64/opt/duniter/" || exit 1
+	chmod 755 "${RELEASES}/duniter-x64/DEBIAN/"post* || exit 1
+	chmod 755 "${RELEASES}/duniter-x64/DEBIAN/"pre* || exit 1
+	sed -i "s/Version:.*/Version:${DUNITER_DEB_VER}/g" "${RELEASES}/duniter-x64/DEBIAN/control" || exit 1
+
+	cd "${RELEASES}/${1}_/"
+	zip -qr "${RELEASES}/duniter-x64/opt/duniter/duniter.zip" * || exit 1
+
+	sed -i "s/Package: .*/Package: ${2}/g" "${RELEASES}/duniter-x64/DEBIAN/control" || exit 1
+
+	cd "${RELEASES}"
+	fakeroot dpkg-deb --build duniter-x64 || exit 1
+	mv duniter-x64.deb "${BIN}/duniter-${1}-${DUNITER_TAG}-linux-x64.deb" || exit 1
+	create_desc "${BIN}/duniter-${1}-${DUNITER_TAG}-linux-x64.deb" "${1}" "Linux (Ubuntu/Debian)"
+}
+
 # -----------
 # Prepare
 # -----------
@@ -43,7 +142,7 @@ RELEASES="${WORK}/releases"
 BIN="${WORK}/bin"
 
 mkdir -p "${DOWNLOADS}" "${RELEASES}" "${BIN}" || exit 1
-rm -rf "${BIN}/"*.{deb,tar.gz} # Clean up
+rm -rf "${BIN}/"*.{deb,tar.gz}{,.desc} # Clean up
 
 # -----------
 # Downloads
@@ -82,27 +181,6 @@ cp -r "${RELEASES}/duniter" "${RELEASES}/server_" || exit 1
 # -------------------------------------
 # Build Desktop version against nw.js
 # -------------------------------------
-
-nw_copy() {
-	[[ -z ${1} ]] && exit 1
-	cp lib/binding/Release/node-webkit-v${NW_VERSION}-linux-x64/${1}.node \
-		lib/binding/Release/node-v${ADDON_VERSION}-linux-x64/${1}.node || exit 1
-}
-
-nw_copy_node() {
-	[[ -z ${1} ]] && exit 1
-	cp lib/binding/node-webkit-v${NW_VERSION}-linux-x64/node_${1}.node \
-		lib/binding/node-v${ADDON_VERSION}-linux-x64/node_${1}.node || exit 1
-}
-
-nw_compile() {
-	[[ -z ${1} ]] && exit 1
-	cd ${1} || exit 1
-	node-pre-gyp --runtime=node-webkit --target=${NW_VERSION} configure || exit 1
-	node-pre-gyp --runtime=node-webkit --target=${NW_VERSION} build || exit 1
-	[[ -z ${2} ]] || ${2} ${1}
-	cd ..
-}
 
 echo "${NW_RELEASE}"
 
@@ -162,46 +240,11 @@ cp -r "${DOWNLOADS}/node-${NVER}-linux-x64" "${RELEASES}/server_/node" || exit 1
 
 cd "${RELEASES}/desktop_"
 tar czf "${BIN}/duniter-desktop-${DUNITER_TAG}-linux-x64.tar.gz" * || exit 1
+create_desc "${BIN}/duniter-desktop-${DUNITER_TAG}-linux-x64.tar.gz" "Desktop" "Linux (generic)"
 
 # -----------------------
 # Build Debian packages
 # -----------------------
-
-# Parameters
-# 1: Building directory.
-build_extra_desktop() {
-	cp -r "${ROOT}/release/extra/desktop/"* "${1}" || exit 1
-}
-
-# Parameters
-# 1: Building directory.
-build_extra_server() {
-	mkdir -p "${1}/lib/systemd/system" || exit 1
-	cp "${ROOT}/release/extra/systemd/duniter.service" "${1}/lib/systemd/system" || exit 1
-}
-
-# Parameters
-# 1: either "server" or "desktop".
-# 2: package name for Debian.
-build_deb_pack() {
-	rm -rf "${RELEASES}/duniter-x64"
-	mkdir "${RELEASES}/duniter-x64" || exit 1
-	cp -r "${ROOT}/release/extra/debian/package/"* "${RELEASES}/duniter-x64" || exit 1
-	build_extra_${1} "${RELEASES}/duniter-x64"
-	mkdir -p "${RELEASES}/duniter-x64/opt/duniter/" || exit 1
-	chmod 755 "${RELEASES}/duniter-x64/DEBIAN/"post* || exit 1
-	chmod 755 "${RELEASES}/duniter-x64/DEBIAN/"pre* || exit 1
-	sed -i "s/Version:.*/Version:${DUNITER_DEB_VER}/g" "${RELEASES}/duniter-x64/DEBIAN/control" || exit 1
-
-	cd "${RELEASES}/${1}_/"
-	zip -qr "${RELEASES}/duniter-x64/opt/duniter/duniter.zip" * || exit 1
-
-	sed -i "s/Package: .*/Package: ${2}/g" "${RELEASES}/duniter-x64/DEBIAN/control" || exit 1
-
-	cd "${RELEASES}"
-	fakeroot dpkg-deb --build duniter-x64 || exit 1
-	mv duniter-x64.deb "${BIN}/duniter-${1}-${DUNITER_TAG}-linux-x64.deb" || exit 1
-}
 
 build_deb_pack desktop duniter-desktop
 build_deb_pack server duniter

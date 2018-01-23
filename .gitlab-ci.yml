@@ -2,8 +2,9 @@ stages:
   - github-sync
   - build
   - test
-  - releases
-  - releases-page
+  - package
+  - prerelease
+  - release
 
 push_to_github:
   stage: github-sync
@@ -46,7 +47,7 @@ test:
     - yarn test
 
 .build_releases: &build_releases
-  stage: releases
+  stage: package
   allow_failure: false
   image: duniter/release-builder:v1.0.1
   tags:
@@ -66,7 +67,7 @@ releases:test:
   except:
     - tags
 
-releases:
+releases:x64:
   <<: *build_releases
   script:
     - bash "release/arch/linux/build-lin.sh" "${CI_COMMIT_TAG#v}"
@@ -76,17 +77,27 @@ releases:
   only:
     - tags
 
-releases-message:
-  stage: releases-page
-  allow_failure: false
+.release_jobs: &release_jobs
   image: tensorflow/tensorflow:latest-py3
   tags:
     - redshift-duniter-builder
-  variables:
-    JOB_ARTIFACTS: 'releases'
-    EXPECTED_ARTIFACTS: '["work/bin/duniter-desktop-${CI_COMMIT_TAG}-linux-x64.deb","work/bin/duniter-desktop-${CI_COMMIT_TAG}-linux-x64.tar.gz","work/bin/duniter-server-${CI_COMMIT_TAG}-linux-x64.deb"]'
   script:
     - python3 .gitlab/releaser.py
-  when: manual
   only:
     - tags
+
+prerelease:
+  <<: *release_jobs
+  stage: prerelease
+  variables:
+    RELEASE_BIN_DIR: work/bin/
+    SOURCE_EXT: '["tar.gz", "zip"]'
+    RELEASE_JOB: publish
+
+publish:
+  <<: *release_jobs
+  stage: release
+  variables:
+    WIKI_RELEASE: Releases
+  allow_failure: false
+  when: manual

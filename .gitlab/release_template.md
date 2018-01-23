@@ -1,9 +1,12 @@
+<placeholder content="end-title" />
+<placeholder content="note">
 {{current_message}}
+</placeholder>
 
-# Downloads
+## Downloads
+
+| Category | Arch | Type | Size | File |
+|----------|------|------|------|------|
 {% for artifact in artifacts %}
-***
-[{{artifact.icon}} {{artifact.name}}]({{artifact.url}})  
-_{{artifact.size}}_
-***
+| {{artifact.category}} | {{artifact.arch}} | {{artifact.type}} | {{artifact.size}} | [{{artifact.icon}} {{artifact.name}}]({{artifact.url}}) |
 {% endfor %}

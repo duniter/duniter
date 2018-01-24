@@ -33,11 +33,11 @@ export class PowEngine {
   }
 
   async prove(stuff:any) {
-    this.cluster.cancelWork()
+    Promise.all([this.cluster.cancelWork()])
     return await this.cluster.proveByWorkers(stuff)
   }
 
-  cancel() {
+  async cancel() {
     return this.cluster.cancelWork()
   }
 

@@ -1,7 +1,6 @@
 import {CommonConstants} from "../../app/lib/common-libs/constants"
 import {TestUser} from "./tools/TestUser"
 import {TestingServer} from "./tools/toolbox"
-import {NewLogger} from "../../app/lib/logger"
 
 const should = require('should');
 const assert = require('assert');
@@ -71,9 +70,12 @@ describe("Transaction chaining", () => {
       CommonConstants.TRANSACTION_MAX_TRIES = 2;
       await unit.shouldNotFail(toc.sendTX(tx1));
       await unit.shouldNotFail(toc.sendTX(tx2));
-      (await s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1);
-      (await s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(1);
-      await s1.commit({ time: now + 7210 }); // TX1 + TX2 commited
+      (await s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1); // 1200
+      (await s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(1); // 1200
+      await s1.commit({ time: now + 7210 }); // TX1 commited only
+      (await s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1); // 1200 - 1040 = 160 remaining
+      (await s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(2); // The UD + 1040 units sent by toc
+      await s1.commit({ time: now + 7210 }); // TX2 commited now (cause it couldn't be chained before)
       (await s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
       (await s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3); // The UD + 1040 + 160 units sent by toc
       CommonConstants.TRANSACTION_MAX_TRIES = tmp;

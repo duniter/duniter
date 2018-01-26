@@ -82,7 +82,7 @@ releases:x64:
   tags:
     - redshift-duniter-builder
   script:
-    - python3 .gitlab/releaser.py
+    - python3 .gitlab/releaser
   only:
     - tags
 
@@ -92,12 +92,12 @@ prerelease:
   variables:
     RELEASE_BIN_DIR: work/bin/
     SOURCE_EXT: '["tar.gz", "zip"]'
-    RELEASE_JOB: publish
 
 publish:
   <<: *release_jobs
   stage: release
   variables:
+    RELEASE_BIN_DIR: work/bin/
     WIKI_RELEASE: Releases
   allow_failure: false
   when: manual

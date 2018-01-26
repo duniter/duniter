@@ -7,7 +7,6 @@ bin/jpgp*.jar
 naclb/build
 naclb/node_modules
 gui/nw
-yarn.lock
 
 # Vim swap files
 *~

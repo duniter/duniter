@@ -19,6 +19,9 @@ yarn.lock
 vagrant/*.log
 vagrant/duniter
 
+# Python compiled
+*.pyc
+
 # Releases
 /work
 *.deb

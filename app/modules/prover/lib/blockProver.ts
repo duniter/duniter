@@ -22,7 +22,7 @@ export class WorkerFarm {
 
   constructor(private server:Server, private logger:any) {
 
-    this.theEngine = new PowEngine(server.conf, server.logger)
+    this.theEngine = new PowEngine(server.conf, server.logger, server.dal)
 
     // An utility method to filter the pow notifications
     this.checkPoWandNotify = (hash:string, block:DBBlock, found:boolean) => {
@@ -132,12 +132,7 @@ export class BlockProver {
     // If no farm was instanciated, there is nothing to do yet
     if (this.workerFarmPromise) {
       let farm = await this.getWorker();
-      if (farm.isComputing() && !farm.isStopping()) {
-        await farm.stopPoW()
-      } else {
-        // We force the stop anyway, just to be sure
-        await farm.stopPoW()
-      }
+      await farm.stopPoW()
       if (this.waitResolve) {
         this.waitResolve();
         this.waitResolve = null;
@@ -179,6 +174,7 @@ export class BlockProver {
       let result = await powFarm.askNewProof({
         newPoW: {
           conf: {
+            powNoSecurity: this.conf.powNoSecurity,
             cpu: this.conf.cpu,
             prefix: this.conf.prefix,
             avgGenTime: this.conf.avgGenTime,

@@ -67,8 +67,8 @@ export class WorkerFarm {
   /**
    * Eventually stops the engine PoW if one was computing
    */
-  async stopPoW() {
-    this.stopPromise = querablep(Promise.resolve(this.theEngine.cancel()))
+  stopPoW() {
+    this.stopPromise = querablep(this.theEngine.cancel())
     return this.stopPromise;
   }
 
@@ -133,10 +133,10 @@ export class BlockProver {
     if (this.workerFarmPromise) {
       let farm = await this.getWorker();
       if (farm.isComputing() && !farm.isStopping()) {
-        Promise.resolve(farm.stopPoW())
+        await farm.stopPoW()
       } else {
         // We force the stop anyway, just to be sure
-        Promise.resolve(farm.stopPoW())
+        await farm.stopPoW()
       }
       if (this.waitResolve) {
         this.waitResolve();

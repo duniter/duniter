@@ -28,7 +28,7 @@ const dir = module.exports = {
 
   getHome: (profile:string|null = null, directory:string|null = null) => getHomePath(profile, directory),
 
-  getHomeFS: async (isMemory:boolean, theHome:string) => {
+  getHomeFS: async (isMemory:boolean, theHome:string, makeTree = true) => {
     const home = theHome || dir.getHome();
     const params:any = {
       home: home
@@ -38,7 +38,9 @@ const dir = module.exports = {
     } else {
       params.fs = qfs;
     }
-    await params.fs.makeTree(home);
+    if (makeTree) {
+      await params.fs.makeTree(home)
+    }
     return params;
   },
 

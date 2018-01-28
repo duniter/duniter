@@ -1,5 +1,6 @@
 import {Master as PowCluster} from "./powCluster"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
+import {FileDAL} from "../../../lib/dal/fileDAL";
 
 const os         = require('os')
 
@@ -16,11 +17,11 @@ export class PowEngine {
   private cluster:PowCluster
   readonly id:number
 
-  constructor(private conf:ConfDTO, logger:any) {
+  constructor(private conf:ConfDTO, logger:any, private dal?:FileDAL) {
 
     // We use as much cores as available, but not more than CORES_MAXIMUM_USE_IN_PARALLEL
     this.nbWorkers = conf.nbCores
-    this.cluster = new PowCluster(this.nbWorkers, logger)
+    this.cluster = new PowCluster(this.nbWorkers, logger, dal)
     this.id = this.cluster.clusterId
   }
 
@@ -33,7 +34,7 @@ export class PowEngine {
   }
 
   async prove(stuff:any) {
-    this.cluster.cancelWork()
+    await this.cluster.cancelWork()
     return await this.cluster.proveByWorkers(stuff)
   }
 

@@ -79,7 +79,7 @@ export class PowWorker {
     return this.proofPromise
   }
 
-  sendConf(confMessage:{ command:string, value:any }) {
+  sendConf(confMessage:{ rootPath: string, command:string, value:any }) {
     this.nodejsWorker.send(confMessage)
   }
 

@@ -2,6 +2,7 @@ import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {ProverConstants} from "./constants"
 import {createPowWorker} from "./proof"
 import {PowWorker} from "./PowWorker"
+import {FileDAL} from "../../../lib/dal/fileDAL";
 
 const _ = require('underscore')
 const nuuid = require('node-uuid');
@@ -36,7 +37,7 @@ export class Master {
   onInfoCallback:any
   workersOnline:Promise<any>[]
 
-  constructor(private nbCores:number, logger:any) {
+  constructor(private nbCores:number, logger:any, private dal?:FileDAL) {
     this.clusterId = clusterId++
     this.logger = logger || Master.defaultLogger()
     this.onInfoMessage = (message:any) => {
@@ -83,6 +84,7 @@ export class Master {
       }, () => {
         this.logger.info(`[online] worker c#${this.clusterId}#w#${index}`)
         worker.sendConf({
+          rootPath: this.dal ? this.dal.rootPath : '',
           command: 'conf',
           value: this.conf
         })
@@ -119,6 +121,7 @@ export class Master {
     this.conf.prefix = this.conf.prefix || conf.prefix
     this.slaves.forEach(s => {
       s.worker.sendConf({
+        rootPath: '',
         command: 'conf',
         value: this.conf
       })
@@ -130,11 +133,15 @@ export class Master {
     this.slaves.forEach(s => {
       s.worker.sendCancel()
     })
+    if (this.dal) {
+      this.dal.powDAL.writeCurrent("")
+    }
   }
 
   async cancelWork() {
-    this.cancelWorkersWork()
     const workEnded = this.currentPromise
+    // Don't await the cancellation!
+    this.cancelWorkersWork()
     // Current promise is done
     this.currentPromise = null
     return await workEnded
@@ -150,11 +157,15 @@ export class Master {
     this.slaves = []
   }
 
-  proveByWorkers(stuff:any) {
+  async proveByWorkers(stuff:any) {
 
     // Eventually spawn the workers
     if (this.slaves.length === 0) {
       this.initCluster()
+    }
+
+    if (this.dal) {
+      await this.dal.powDAL.writeCurrent([stuff.newPoW.block.number - 1, stuff.newPoW.block.previousHash].join('-'))
     }
 
     // Register the new proof uuid
@@ -173,14 +184,17 @@ export class Master {
           uuid,
           command: 'newPoW',
           value: {
+            rootPath: this.dal ? this.dal.rootPath : '',
             initialTestsPerRound: stuff.initialTestsPerRound,
-            maxDuration: stuff.maxDuration,block: stuff.newPoW.block,
+            maxDuration: stuff.maxDuration,
+            block: stuff.newPoW.block,
             nonceBeginning: s.nonceBeginning,
             zeros: stuff.newPoW.zeros,
             highMark: stuff.newPoW.highMark,
             pair: _.clone(stuff.newPoW.pair),
             forcedTime: stuff.newPoW.forcedTime,
             conf: {
+              powNoSecurity: stuff.newPoW.conf.powNoSecurity,
               medianTimeBlocks: stuff.newPoW.conf.medianTimeBlocks,
               avgGenTime: stuff.newPoW.conf.avgGenTime,
               cpu: stuff.newPoW.conf.cpu,
@@ -197,6 +211,7 @@ export class Master {
 
       // Find a proof
       const result = await Promise.race(asks)
+      // Don't await the cancellation!
       this.cancelWorkersWork()
       // Wait for all workers to have stopped looking for a proof
       await Promise.all(asks)

@@ -7,12 +7,15 @@ import {KeyGen} from "../../../lib/common-libs/crypto/keyring"
 import {dos2unix} from "../../../lib/common-libs/dos2unix"
 import {rawer} from "../../../lib/common-libs/index"
 import {ProcessCpuProfiler} from "../../../ProcessCpuProfiler"
+import {PowDAL} from "../../../lib/dal/fileDALs/PowDAL";
 
 const moment = require('moment');
 const querablep = require('querablep');
+const directory = require('../../../lib/system/directory');
 
 export function createPowWorker() {
 
+  let powDAL:PowDAL|null = null
   let computing = querablep(Promise.resolve(null));
   let askedStop = false;
 
@@ -45,6 +48,11 @@ export function createPowWorker() {
           // Very important: do not await if the computation is already done, to keep the lock on JS engine
           if (!computing.isFulfilled()) {
             await computing;
+          }
+
+          if (message.value.rootPath) {
+            const params = await directory.getHomeFS(false, message.value.rootPath, false)
+            powDAL = new PowDAL(message.value.rootPath, params.fs)
           }
 
           const res = await beginNewProofOfWork(message.value);
@@ -225,6 +233,22 @@ export function createPowWorker() {
             }
           })()
         ]);
+
+        // console.log('W#%s.powDAL = ', process.pid, powDAL)
+
+        if (powDAL && !conf.powNoSecurity) {
+          const currentProofCheck = await powDAL.getCurrent()
+          if (currentProofCheck !== null) {
+            if (currentProofCheck === "") {
+              askedStop = true
+            } else {
+              const [currentNumber, currentHash] = currentProofCheck.split('-')
+              if (block.number !== parseInt(currentNumber) + 1 || block.previousHash !== currentHash) {
+                askedStop = true
+              }
+            }
+          }
+        }
 
         // Next turn
         turn++

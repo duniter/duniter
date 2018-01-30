@@ -59,7 +59,7 @@ create_desc() {
 	cat >"${1}".desc <<-EOF
 	{
 	  "version": "${DUNITER_TAG}",
-	  "job": "${CI_JOB_NAME}",
+	  "job": "${CI_JOB_ID}",
 	  "type": "${2^}",
 	  "category": "${3}",
 	  "arch": "x64"

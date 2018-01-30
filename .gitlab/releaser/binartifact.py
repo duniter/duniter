@@ -33,5 +33,5 @@ class BinArtifact(Artifact):
         return FSItemSize(int(os.path.getsize(self.file_name)))
 
     def _build_url(self):
-        return '{}/-/jobs/artifacts/{}/raw/{}?job={}'.format(
-            os.environ['CI_PROJECT_URL'], self.tag, self.file_name, self.job)
+        return '{}/-/jobs/{}/artifacts/raw/{}'.format(
+            os.environ['CI_PROJECT_URL'], self.job, self.file_name)

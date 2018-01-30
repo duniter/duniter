@@ -5,7 +5,6 @@ import os
 
 from binartifact import BinArtifact
 from job import Job
-from pipeline import Pipeline
 from placeholder import PlaceHolder
 from releasenote import ReleaseNote
 from releasewikipage import ReleaseWikiPage
@@ -91,7 +90,6 @@ class Releaser:
         for artifact in self._get_bin_artifacts():
             if not artifact.job in jobs:
                 jobs.append(artifact.job)
-        jobs = map(lambda j: Pipeline().find_job_id(j), jobs)
         for job_id in jobs: Job(job_id).keep_artifacts()
 
         print('Release published')

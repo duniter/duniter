@@ -1,7 +1,6 @@
 stages:
   - github-sync
   - build
-  - test
   - package
   - prerelease
   - release
@@ -38,13 +37,6 @@ build:
   stage: build
   script:
     - yarn
-
-test:
-  <<: *nvm_env
-  stage: test
-  script:
-    - yarn
-    - yarn test
 
 .build_releases: &build_releases
   stage: package

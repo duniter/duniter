@@ -1,4 +1,7 @@
 ﻿# Contribuer au code de Duniter
+
+  **ATTENTION : Ce tutoriel est obsolète ! Le nouveau tutoriel est ici : https://duniter.org/fr/wiki/duniter/tutoriel-dev/ **
+
 ## Introduction
 
 Cet article est un tutoriel d'initiation au code source du logiciel Duniter. Celui-ci vous permettra, à travers une succession d'étapes, d'accéder à la maîtrise des outils et méthodes utilisés quotidiennement par les développeurs de Duniter pour créer et modifier le logiciel.

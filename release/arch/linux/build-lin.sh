@@ -114,12 +114,12 @@ build_deb_pack() {
 # Prepare
 # -----------
 
-NODE_VERSION=8.9.1
+NODE_VERSION=9.4.0
 NVER="v${NODE_VERSION}"
 DUNITER_TAG="v${1}"
 DUNITER_DEB_VER=" ${1}"
-ADDON_VERSION=57
-NW_VERSION=0.24.4
+ADDON_VERSION=59
+NW_VERSION=0.28.0
 NW_RELEASE="v${NW_VERSION}"
 NW="nwjs-${NW_RELEASE}-linux-x64"
 NW_GZ="${NW}.tar.gz"
@@ -189,7 +189,6 @@ echo "${NW_RELEASE}"
 cd "${RELEASES}/desktop_/node_modules/wotb"
 node-pre-gyp --runtime=node-webkit --target=$NW_VERSION configure \
   || echo "This failure is expected"
-cp ${ROOT}/release/arch/linux/0.24.4_common.gypi ~/.nw-gyp/0.24.4/common.gypi || exit 1
 
 cd "${RELEASES}/desktop_/node_modules/"
 nw_compile wotb nw_copy

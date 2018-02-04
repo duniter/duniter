@@ -234,10 +234,6 @@ assert-plus@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/assert-plus/-/assert-plus-0.2.0.tgz#d74e1b87e7affc0db8aadb7021f3fe48101ab234"
 
-async@0.1.22:
-  version "0.1.22"
-  resolved "https://registry.yarnpkg.com/async/-/async-0.1.22.tgz#0fc1aaa088a0e3ef0ebe2d8831bab0dcf8845061"
-
 async@2.2.0:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/async/-/async-2.2.0.tgz#c324eba010a237e4fbd55a12dee86367d5c0ef32"
@@ -248,7 +244,7 @@ async@^1.4.0:
   version "1.5.2"
   resolved "https://registry.yarnpkg.com/async/-/async-1.5.2.tgz#ec6a61ae56480c0c3cb241c95618e20892f9672a"
 
-async@^2.0.0:
+async@^2.0.0, async@^2.1.5:
   version "2.6.0"
   resolved "https://registry.yarnpkg.com/async/-/async-2.6.0.tgz#61a29abb6fcc026fea77e56d1c6ec53a795951f4"
   dependencies:
@@ -1926,10 +1922,6 @@ invert-kv@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/invert-kv/-/invert-kv-1.0.0.tgz#104a8e4aaca6d3d8cd157a8ef8bfab2d7a3ffdb6"
 
-ip@0.0.1:
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/ip/-/ip-0.0.1.tgz#bbc68d7cc448560a63fbe99237a01bc50fdca7ec"
-
 ip@^1.1.4:
   version "1.1.5"
   resolved "https://registry.yarnpkg.com/ip/-/ip-1.1.5.tgz#bdded70114290828c0a039e72ef25f5aaec4354a"
@@ -2615,6 +2607,15 @@ nan@~2.7.0:
   version "2.7.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.7.0.tgz#d95bf721ec877e08db276ed3fc6eb78f9083ad46"
 
+nat-upnp@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/nat-upnp/-/nat-upnp-1.1.1.tgz#b18365e4faf44652549bb593c69e6b690df22043"
+  dependencies:
+    async "^2.1.5"
+    ip "^1.1.4"
+    request "^2.79.0"
+    xml2js "~0.1.14"
+
 natives@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/natives/-/natives-1.1.0.tgz#e9ff841418a6b2ec7a495e939984f78f163e6e31"
@@ -2626,15 +2627,6 @@ natural-compare@^1.4.0:
 negotiator@0.6.1:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/negotiator/-/negotiator-0.6.1.tgz#2b327184e8992101177b28563fb5e7102acd0ca9"
-
-nnupnp@1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/nnupnp/-/nnupnp-1.0.2.tgz#1f76e283a0c8fc3a70ae84db762d999f650e0929"
-  dependencies:
-    async "0.1.22"
-    ip "0.0.1"
-    request "2.10.0"
-    xml2js "0.1.14"
 
 node-pre-gyp@0.6.23:
   version "0.6.23"
@@ -3262,10 +3254,6 @@ request-promise@4.2.0:
     bluebird "^3.5.0"
     request-promise-core "1.1.1"
     stealthy-require "^1.0.0"
-
-request@2.10.0:
-  version "2.10.0"
-  resolved "https://registry.yarnpkg.com/request/-/request-2.10.0.tgz#9911b5ef669b6500da2ae0b133fa1cfc92b1c48a"
 
 request@2.40.0:
   version "2.40.0"
@@ -4252,7 +4240,7 @@ xml-escape@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/xml-escape/-/xml-escape-1.0.0.tgz#00963d697b2adf0c185c4e04e73174ba9b288eb2"
 
-xml2js@0.1.14:
+xml2js@~0.1.14:
   version "0.1.14"
   resolved "https://registry.yarnpkg.com/xml2js/-/xml2js-0.1.14.tgz#5274e67f5a64c5f92974cd85139e0332adc6b90c"
   dependencies:

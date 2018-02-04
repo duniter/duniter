@@ -80,7 +80,7 @@
     "morgan": "1.8.1",
     "multimeter": "0.1.1",
     "naclb": "1.3.10",
-    "nnupnp": "1.0.2",
+    "nat-upnp": "^1.1.1",
     "node-pre-gyp": "0.6.34",
     "node-uuid": "1.4.8",
     "optimist": "0.6.1",

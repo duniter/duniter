@@ -332,7 +332,7 @@ function listInterfaces() {
 }
 
 async function upnpConf (noupnp:boolean, logger:any) {
-  const client = require('nnupnp').createClient();
+  const client = require('nat-upnp').createClient();
   // Look for 2 random ports
   const publicPort = await getAvailablePort(client)
   const privatePort = publicPort

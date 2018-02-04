@@ -16,6 +16,7 @@ import {DBMembership} from "./sqliteDAL/MembershipDAL"
 import {MerkleDTO} from "../dto/MerkleDTO"
 import {CommonConstants} from "../common-libs/constants"
 import { ProxiesConf } from '../proxy';
+import {PowDAL} from "./fileDALs/PowDAL";
 
 const fs      = require('fs')
 const path    = require('path')
@@ -40,6 +41,7 @@ export class FileDAL {
   wotb:any
   profile:string
 
+  powDAL:PowDAL
   confDAL:any
   metaDAL:any
   peerDAL:any
@@ -68,6 +70,7 @@ export class FileDAL {
     this.profile = 'DAL'
 
     // DALs
+    this.powDAL = new PowDAL(this.rootPath, this.myFS)
     this.confDAL = new ConfDAL(this.rootPath, this.myFS)
     this.metaDAL = new (require('./sqliteDAL/MetaDAL').MetaDAL)(this.sqliteDriver);
     this.peerDAL = new (require('./sqliteDAL/PeerDAL').PeerDAL)(this.sqliteDriver);
@@ -85,6 +88,7 @@ export class FileDAL {
     this.cindexDAL = new (require('./sqliteDAL/index/CIndexDAL').CIndexDAL)(this.sqliteDriver);
 
     this.newDals = {
+      'powDAL': this.powDAL,
       'metaDAL': this.metaDAL,
       'blockDAL': this.blockDAL,
       'certDAL': this.certDAL,
@@ -503,13 +507,13 @@ export class FileDAL {
     return this.sindexDAL.getSource(identifier, pos)
   }
 
-  async isMember(pubkey:string) {
+  async isMember(pubkey:string):Promise<boolean> {
     try {
       const idty = await this.iindexDAL.getFromPubkey(pubkey);
-      if (!idty) {
+      if (idty === null) {
         return false
       }
-      return idty.member;
+      return true;
     } catch (err) {
       return false;
     }

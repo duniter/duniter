@@ -8,6 +8,10 @@ export interface Keypair {
   sec: string
 }
 
+export interface PowDTO {
+  powNoSecurity:boolean
+}
+
 export interface BranchingDTO {
   switchOnHeadAdvance:number
   avgGenTime:number
@@ -82,7 +86,7 @@ export interface WS2PConfDTO {
   }
 }
 
-export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO, BranchingDTO, WS2PConfDTO {
+export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO, BranchingDTO, WS2PConfDTO, PowDTO {
 
   constructor(
     public loglevel: string,
@@ -158,7 +162,8 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
       privilegedOnly: boolean
       maxPublic?:number
       maxPrivate?:number
-    }
+    },
+    public powNoSecurity = false
 ) {}
 
   static mock() {

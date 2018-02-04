@@ -2,11 +2,14 @@ import {DBPeer} from "../dal/sqliteDAL/PeerDAL"
 import {hashf} from "../common"
 import {CommonConstants} from "../common-libs/constants"
 import {Cloneable} from "./Cloneable"
+import { WS2PConstants } from '../../modules/ws2p/lib/constants';
 
 export interface WS2PEndpoint {
+  version:number
   uuid:string
   host:string
   port:number
+  path:string
 }
 
 export class PeerDTO implements Cloneable {
@@ -94,34 +97,76 @@ export class PeerDTO implements Cloneable {
     return bma || {};
   }
 
-  getWS2P(canReachTorEp:boolean, canReachClearEp:boolean) {
-    let api:{ uuid:string, host:string, port:number, path:string }|null = null
-    const endpointRegexp = (canReachTorEp) ? CommonConstants.WS2PTOR_REGEXP:CommonConstants.WS2P_REGEXP
+  getOnceWS2PEndpoint(canReachTorEp:boolean, canReachClearEp:boolean, uuidExcluded:string[] = []) {
+    let api:WS2PEndpoint|null = null
+    let bestWS2PVersionAvailable:number = 0
+    let bestWS2PTORVersionAvailable:number = 0
     for (const ep of this.endpoints) {
       if (canReachTorEp) {
-        const matches:any = ep.match(CommonConstants.WS2PTOR_REGEXP)
-        if (matches) {
-          return {
-            uuid: matches[1],
-            host: matches[2] || '',
-            port: parseInt(matches[3]) || 0,
-            path: matches[4]
+        let matches:RegExpMatchArray | null = ep.match(CommonConstants.WS2PTOR_V2_REGEXP)
+        if (matches && parseInt(matches[1]) > bestWS2PTORVersionAvailable && (uuidExcluded.indexOf(matches[2]) === -1)) {
+          bestWS2PTORVersionAvailable = parseInt(matches[1])
+          api = {
+            version: parseInt(matches[1]),
+            uuid: matches[2],
+            host: matches[3] || '',
+            port: parseInt(matches[4]) || 0,
+            path: matches[5]
+          }
+        } else {
+          matches = ep.match(CommonConstants.WS2PTOR_REGEXP)
+          if (matches && bestWS2PTORVersionAvailable == 0 && (uuidExcluded.indexOf(matches[1]) === -1)) {
+            bestWS2PTORVersionAvailable = 1
+            api = {
+              version: 1,
+              uuid: matches[1],
+              host: matches[2] || '',
+              port: parseInt(matches[3]) || 0,
+              path: matches[4]
+            }
           }
         }
       }
-      if (canReachClearEp) {
-        const matches:any = !api && ep.match(CommonConstants.WS2P_REGEXP)
-        if (matches) {
+      // If can reach clear endpoint and not found tor endpoint
+      if (canReachClearEp && bestWS2PTORVersionAvailable == 0) {
+        let matches:any = ep.match(CommonConstants.WS2P_V2_REGEXP)
+        if (matches && parseInt(matches[1]) > bestWS2PVersionAvailable && (uuidExcluded.indexOf(matches[2]) === -1)) {
+          bestWS2PVersionAvailable = parseInt(matches[1])
           api = {
-            uuid: matches[1],
-            host: matches[2] || '',
-            port: parseInt(matches[3]) || 0,
-            path: matches[4]
+            version: parseInt(matches[1]),
+            uuid: matches[2],
+            host: matches[3] || '',
+            port: parseInt(matches[4]) || 0,
+            path: matches[5]
+          }
+        } else {
+          matches = ep.match(CommonConstants.WS2P_REGEXP)
+          if (matches && bestWS2PVersionAvailable == 0 && (uuidExcluded.indexOf(matches[1]) === -1)) {
+            bestWS2PVersionAvailable = 1
+            api = {
+              version: 1,
+              uuid: matches[1],
+              host: matches[2] || '',
+              port: parseInt(matches[3]) || 0,
+              path: matches[4]
+            }
           }
         }
       }
     }
     return api || null
+  }
+
+  getAllWS2PEndpoints(canReachTorEp:boolean, canReachClearEp:boolean, myUUID:string) {
+    let apis:WS2PEndpoint[] = []
+    let uuidExcluded:string[] = [myUUID]
+    let api = this.getOnceWS2PEndpoint(canReachTorEp, canReachClearEp, uuidExcluded)
+    while (api !== null) {
+      uuidExcluded.push(api.uuid)
+      apis.push(api)
+      api = this.getOnceWS2PEndpoint(canReachTorEp, canReachClearEp, uuidExcluded)
+    }
+    return apis
   }
 
   getDns() {

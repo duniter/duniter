@@ -336,7 +336,6 @@ function expectJSON(promise, json) {
 
 function postBlock(server2) {
   return function(block) {
-    console.log(typeof block == 'string' ? block : block.getRawSigned())
     return post(server2, '/blockchain/block')({
       block: typeof block == 'string' ? block : block.getRawSigned()
     })

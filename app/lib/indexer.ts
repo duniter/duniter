@@ -865,21 +865,12 @@ export class Indexer {
       }
     }))
 
-    // BR_G46
-    await Promise.all(_.where(sindex, { op: constants.IDX_UPDATE }).map(async (ENTRY: SindexEntry) => {
-      const reducable = await dal.sindexDAL.sqlFind({
-        identifier: ENTRY.identifier,
-        pos: ENTRY.pos,
-        amount: ENTRY.amount,
-        base: ENTRY.base
-      });
-      ENTRY.conditions = reduce(reducable).conditions; // We valuate the input conditions, so we can map these records to a same account
-      ENTRY.available = reduce(reducable).consumed === false;
-    }))
-
-    // BR_G47
-    await Promise.all(_.where(sindex, { op: constants.IDX_UPDATE }).map(async (ENTRY: SindexEntry) => {
-      let source = _.filter(sindex, (src:SindexEntry) => src.identifier == ENTRY.identifier && src.pos == ENTRY.pos && src.conditions && src.op === constants.IDX_CREATE)[0];
+    const getInputLocalFirstOrFallbackGlobally = async (sindex:SindexEntry[], ENTRY:SindexEntry) => {
+      let source = _.filter(sindex, (src:SindexEntry) =>
+        src.identifier == ENTRY.identifier
+        && src.pos == ENTRY.pos
+        && src.conditions
+        && src.op === constants.IDX_CREATE)[0];
       if (!source) {
         const reducable = await dal.sindexDAL.sqlFind({
           identifier: ENTRY.identifier,
@@ -887,20 +878,29 @@ export class Indexer {
           amount: ENTRY.amount,
           base: ENTRY.base
         });
-        source = reduce(reducable);
+        source = reduce(reducable)
       }
+      return source
+    }
+
+    // BR_G46
+    await Promise.all(_.where(sindex, { op: constants.IDX_UPDATE }).map(async (ENTRY: SindexEntry) => {
+      const source = await getInputLocalFirstOrFallbackGlobally(sindex, ENTRY)
+      ENTRY.conditions = source.conditions; // We valuate the input conditions, so we can map these records to a same account
+      ENTRY.available = source.consumed === false;
+    }))
+
+    // BR_G47
+    await Promise.all(_.where(sindex, { op: constants.IDX_UPDATE }).map(async (ENTRY: SindexEntry) => {
+      const source = await getInputLocalFirstOrFallbackGlobally(sindex, ENTRY)
       ENTRY.conditions = source.conditions;
       ENTRY.isLocked = !txSourceUnlock(ENTRY, source, HEAD);
     }))
 
     // BR_G48
     await Promise.all(_.where(sindex, { op: constants.IDX_UPDATE }).map(async (ENTRY: SindexEntry) => {
-      ENTRY.isTimeLocked = ENTRY.written_time - reduce(await dal.sindexDAL.sqlFind({
-          identifier: ENTRY.identifier,
-          pos: ENTRY.pos,
-          amount: ENTRY.amount,
-          base: ENTRY.base
-        })).written_time < ENTRY.locktime;
+      const source = await getInputLocalFirstOrFallbackGlobally(sindex, ENTRY)
+      ENTRY.isTimeLocked = ENTRY.written_time - source.written_time < ENTRY.locktime;
     }))
 
     return HEAD;

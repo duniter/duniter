@@ -43,5 +43,7 @@ app/modules/bma/lib/entity/*.js
 app/modules/bma/lib/controllers/*.js
 app/modules/crawler/*.js
 app/modules/crawler/lib/*.js
+app/ProcessCpuProfiler.js
+app/lib/common/package.js
 test/*.js
 test/**/*.js

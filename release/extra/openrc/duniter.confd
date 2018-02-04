@@ -1,0 +1,19 @@
+# File containing crypto keys
+#DUNITER_KEYS=/etc/duniter/keys.yml
+
+# Uncomment the following line to start the web GUI
+#DUNITER_WEB=yes
+
+# Parameters for the web GUI
+#DUNITER_WEB_HOST=localhost
+#DUNITER_WEB_PORT=9220
+
+# User and group of running process
+#DUNITER_GROUP=duniter
+#DUNITER_USER=duniter
+
+# Directory of duniter files
+#DUNITER_HOME=/var/lib/duniter
+
+# Directory of duniter data
+#DUNITER_DATA=duniter_default

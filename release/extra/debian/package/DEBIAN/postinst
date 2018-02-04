@@ -5,9 +5,9 @@ DUN_SOURCES=$DUN_ROOT/
 mkdir -p $DUN_SOURCES
 
 # Duniter sources extraction
-if [[ -f $DUN_ROOT/duniter-desktop.nw ]]; then
-  unzip -q -d $DUN_SOURCES/ $DUN_ROOT/duniter-desktop.nw
-  rm -rf $DUN_ROOT/duniter-desktop.nw
+if [[ -f $DUN_ROOT/duniter.zip ]]; then
+  unzip -q -d $DUN_SOURCES/ $DUN_ROOT/duniter.zip
+  rm -rf $DUN_ROOT/duniter.zip
 fi
 
 # Duniter-Desktop
@@ -34,6 +34,10 @@ if [[ -d $DUN_SOURCES/node ]]; then
   cd $DUN_SOURCES
   cd node/bin/
   ln -s ../lib/node_modules/npm/bin/npm-cli.js ./npm -f
+  # Add duniter user for service
+  mkdir -p /var/lib/duniter
+  adduser --system --quiet --home /var/lib/duniter --no-create-home --disabled-password --group duniter
+  chown duniter:duniter /var/lib/duniter
 fi
 # Else will execute with environment node
 

@@ -5,9 +5,7 @@ import * as stream from "stream"
 import {Multicaster} from "../lib/streams/multicaster"
 import {RouterStream} from "../lib/streams/router"
 
-const constants = require('../lib/constants');
-
-module.exports = {
+export const RouterDependency = {
   duniter: {
     service: {
       output: (server:Server, conf:ConfDTO, logger:any) => new Router(server)
@@ -26,7 +24,7 @@ module.exports = {
  * Service which triggers the server's peering generation (actualization of the Peer document).
  * @constructor
  */
-class Router extends stream.Transform {
+export class Router extends stream.Transform {
 
   theRouter:any
   theMulticaster:Multicaster = new Multicaster()

@@ -407,14 +407,14 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
       'COMMIT;')
   }
 
-  private async executeMigration(migration: any[], conf:ConfDTO) {
+  private async executeMigration(migration: (string|((conf:ConfDTO)=>void)), conf:ConfDTO) {
     try {
       if (typeof migration == "string") {
 
         // Simple SQL script to pass
         await this.exec(migration);
 
-      } else if (typeof migration == "function") {
+      } else {
 
         // JS function to execute
         await migration(conf);

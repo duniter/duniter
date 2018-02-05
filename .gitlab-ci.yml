@@ -45,6 +45,7 @@ test:
   script:
     - yarn
     - yarn test
+    - sed -n 23p coverage/index.html
 
 .build_releases: &build_releases
   stage: package

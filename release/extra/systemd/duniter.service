@@ -5,7 +5,7 @@ After=network.target
 [Service]
 # Should be set to web in order to start with web GUI
 Environment="DUNITER_WEB="
-Environment="DUNITER_HOME=/var/lib/duniter"
+Environment="DUNITER_HOME=/var/lib/duniter/.config/duniter"
 Environment="DUNITER_DATA=duniter_default"
 # If using a key file, DUNITER_OPTS can be defined like so:
 #Environment="DUNITER_OPTS=--keyfile /etc/duniter/keys.yml"

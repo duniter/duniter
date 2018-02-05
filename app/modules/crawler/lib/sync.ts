@@ -759,7 +759,7 @@ class P2PDownloader {
       // Continue
       return chosens;
     }, []);
-    let candidates = await Promise.all(promises)
+    let candidates:any[] = await Promise.all(promises)
     candidates.forEach((c:any) => {
       c.tta = c.tta || 0; // By default we say a node is super slow to answer
       c.ttas = c.ttas || []; // Memorize the answer delays

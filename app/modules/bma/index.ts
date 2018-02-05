@@ -230,7 +230,7 @@ export class BMAPI extends stream.Transform {
     }
     if (this.server.conf.upnp) {
       try {
-        this.upnpAPI = await upnp(this.server.conf.port, this.server.conf.remoteport, this.logger);
+        this.upnpAPI = await upnp(this.server.conf.port, this.server.conf.remoteport, this.logger, this.server.conf);
         this.upnpAPI.startRegular();
         const gateway = await this.upnpAPI.findGateway();
         if (gateway) {

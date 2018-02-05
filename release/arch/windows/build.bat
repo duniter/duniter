@@ -1,7 +1,7 @@
 
-set ADDON_VERSION=57
-set NW_VERSION=0.24.4
-set NODEJS_VERSION=8.9.1
+set ADDON_VERSION=59
+set NW_VERSION=0.27.1
+set NODEJS_VERSION=9.1.0
 
 set NW_RELEASE=v%NW_VERSION%
 set NW=nwjs-%NW_RELEASE%-win-x64
@@ -82,7 +82,6 @@ call npm install --build-from-source
 
 REM PREPARE common.gypi
 call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
-xcopy C:\vagrant\0.24.4_common.gypi C:\Users\vagrant\.nw-gyp\0.24.4\common.gypi /s /e /Y
 
 call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
 call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build

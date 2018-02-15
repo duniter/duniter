@@ -114,10 +114,10 @@ export class BlockGenerator {
       obj.currency = this.conf.currency
       const tx = TransactionDTO.fromJSONObject(obj);
       try {
-        const tx_check_1 = await LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), this.conf, options)
+        const tx_check_1 = Promise.all([await LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), this.conf, options)])
         const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
-        const tx_check_2 = await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal, ALSO_CHECK_PENDING_TXS);
-        const tx_check_3 = await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal);
+        const tx_check_2 = Promise.all([await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal, ALSO_CHECK_PENDING_TXS)])
+        const tx_check_3 = Promise.all([await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal)])
         if (tx_check_1 && tx_check_2 && tx_check_3) {
           transactions.push(tx);
           passingTxs.push(tx);

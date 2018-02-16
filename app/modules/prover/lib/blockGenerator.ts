@@ -108,13 +108,13 @@ export class BlockGenerator {
     const ALSO_CHECK_PENDING_TXS = true
     const versionMin = current ? Math.min(CommonConstants.LAST_VERSION_FOR_TX, current.version) : CommonConstants.DOCUMENTS_VERSION;
     const txs = await this.dal.getTransactionsPending(versionMin);
-    const transactions = [];
+    const transactions:any[] = [];
     const passingTxs:any[] = [];
     for (const obj of txs) {
       obj.currency = this.conf.currency
       const tx = TransactionDTO.fromJSONObject(obj);
       try {
-        const tx_check_1 = Promise.all([await LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), this.conf, options)])
+        /*const tx_check_1 = Promise.all([await LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), this.conf, options)])
         const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
         const tx_check_2 = Promise.all([await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal, ALSO_CHECK_PENDING_TXS)])
         const tx_check_3 = Promise.all([await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal)])
@@ -122,7 +122,7 @@ export class BlockGenerator {
           transactions.push(tx);
           passingTxs.push(tx);
           this.logger.info('Transaction %s added to block', tx.hash);
-        }
+        }*/
       } catch (err) {
         this.logger.error(err);
         const currentNumber = (current && current.number) || 0;

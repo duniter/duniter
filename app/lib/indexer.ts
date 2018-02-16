@@ -1981,11 +1981,13 @@ function txSourceUnlock(ENTRY:SindexEntry, source:SindexEntry, HEAD: DBHead) {
   const unlockParams:string[] = TransactionDTO.unlock2params(ENTRY.unlock || '')
   const unlocksMetadata:UnlockMetadata = {}
   const sigResult = TransactionDTO.fromJSONObject(tx).getTransactionSigResult()
-  if (source.conditions.match(/CLTV/)) {
-    unlocksMetadata.currentTime = HEAD.medianTime;
-  }
-  if (source.conditions.match(/CSV/)) {
-    unlocksMetadata.elapsedTime = HEAD.medianTime - source.written_time;
+  if(source.conditions) {
+    if (source.conditions.match(/CLTV/)) {
+      unlocksMetadata.currentTime = HEAD.medianTime;
+    }
+    if (source.conditions.match(/CSV/)) {
+      unlocksMetadata.elapsedTime = HEAD.medianTime - source.written_time;
+    }
   }
   return txunlock(source.conditions, unlockParams, sigResult, unlocksMetadata)
 }

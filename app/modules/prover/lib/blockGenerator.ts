@@ -120,10 +120,11 @@ export class BlockGenerator {
           await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal, ALSO_CHECK_PENDING_TXS),
           await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal)
         ]).then(function(values) {
-          if (values[0] && values[1])
-          transactions.push(tx);
-          passingTxs.push(tx);
-          logger.info('Transaction %s added to block', tx.hash);
+          if (values[0] && values[1]) {
+            transactions.push(tx);
+            passingTxs.push(tx);
+            logger.info('Transaction %s added to block', tx.hash);
+          }
         }).catch (function(err) {
           logger.error(err);
           const currentNumber = (current && current.number) || 0;

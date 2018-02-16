@@ -346,9 +346,13 @@ export const LOCAL_RULES_FUNCTIONS = {
   },
 
   checkTxAmounts: async (block:BlockDTO) => {
+    let result = true;
     for (const tx of block.transactions) {
-      LOCAL_RULES_HELPERS.checkTxAmountsValidity(tx);
+      if (!LOCAL_RULES_HELPERS.checkTxAmountsValidity(tx)) {
+        result = false;
+      }
     }
+    return result;
   },
 
   checkTxRecipients: async (block:BlockDTO) => {
@@ -430,21 +434,26 @@ function checkSingleMembershipSignature(ms:any) {
   return verify(ms.getRaw(), ms.signature, ms.issuer);
 }
 
-function checkBunchOfTransactions(transactions:TransactionDTO[], conf:ConfDTO, options?:{ dontCareAboutChaining?:boolean }){
+function checkBunchOfTransactions(transactions:TransactionDTO[], conf:ConfDTO, options?:{ dontCareAboutChaining?:boolean }):Promise<boolean>{
   const block:any = { transactions, identities: [], joiners: [], actives: [], leavers: [], revoked: [], excluded: [], certifications: [] };
   const index = Indexer.localIndex(block, conf)
-  return (async () => {
-    let local_rule = LOCAL_RULES_FUNCTIONS;
-    await local_rule.checkTxLen(block);
-    await local_rule.checkTxIssuers(block);
-    await local_rule.checkTxSources(block);
-    await local_rule.checkTxRecipients(block);
-    await local_rule.checkTxAmounts(block);
-    await local_rule.checkTxSignature(block);
-    if (!options || !options.dontCareAboutChaining) {
-      await local_rule.checkMaxTransactionChainingDepth(block, conf, index);
+  let local_rule = LOCAL_RULES_FUNCTIONS;
+  return Promise.all([
+    local_rule.checkTxLen(block),
+    local_rule.checkTxIssuers(block),
+    local_rule.checkTxSources(block),
+    local_rule.checkTxRecipients(block),
+    local_rule.checkTxAmounts(block),
+    local_rule.checkTxSignature(block),
+    local_rule.checkMaxTransactionChainingDepth(block, conf, index),
+  ]).then(function(values) {
+    for (const value of values) {
+      if (!value) {
+        return false;
+      }
     }
-  })()
+    return true;
+  });
 }
 
 export const LOCAL_RULES_HELPERS = {
@@ -509,6 +518,7 @@ export const LOCAL_RULES_HELPERS = {
       }
       deltas[i] = delta;
     }
+    return true;
   },
 
   getMaxPossibleVersionNumber: async (current:DBBlock) => {

@@ -104,7 +104,7 @@ export class BlockGenerator {
     return [cur, newWoTMembers, finalJoinData, leavers, updates];
   }
 
-  private async findTransactions(current:DBBlock, options:{ dontCareAboutChaining?:boolean }) {
+  private async findTransactions(current:DBBlock, options:{ dontCareAboutChaining:boolean }) {
     const ALSO_CHECK_PENDING_TXS = true
     const versionMin = current ? Math.min(CommonConstants.LAST_VERSION_FOR_TX, current.version) : CommonConstants.DOCUMENTS_VERSION;
     const txs = await this.dal.getTransactionsPending(versionMin);
@@ -113,26 +113,23 @@ export class BlockGenerator {
     for (const obj of txs) {
       obj.currency = this.conf.currency
       const tx = TransactionDTO.fromJSONObject(obj);
-      try {
-        /*const tx_check_1 = Promise.all([await LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), this.conf, options)])
         const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
-        const tx_check_2 = Promise.all([await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal, ALSO_CHECK_PENDING_TXS)])
-        const tx_check_3 = Promise.all([await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal)])
-        if (tx_check_1 && tx_check_2 && tx_check_3) {
+        let logger = this.logger;
+        Promise.all([
+          await LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), this.conf, options),
+          await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal, ALSO_CHECK_PENDING_TXS),
+          await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal)
+        ]).then(function(values) {
+          if (values[0] && values[1])
           transactions.push(tx);
           passingTxs.push(tx);
-          this.logger.info('Transaction %s added to block', tx.hash);
-        }*/
-      } catch (err) {
-        this.logger.error(err);
-        const currentNumber = (current && current.number) || 0;
-        const blockstamp = tx.blockstamp || (currentNumber + '-');
-        const txBlockNumber = parseInt(blockstamp.split('-')[0]);
-        // 10 blocks before removing the transaction
-        if (currentNumber - txBlockNumber + 1 >= CommonConstants.TRANSACTION_MAX_TRIES) {
-          await this.dal.removeTxByHash(tx.hash);
-        }
-      }
+          logger.info('Transaction %s added to block', tx.hash);
+        }).catch (function(err) {
+          logger.error(err);
+          const currentNumber = (current && current.number) || 0;
+          const blockstamp = tx.blockstamp || (currentNumber + '-');
+          const txBlockNumber = parseInt(blockstamp.split('-')[0]);
+        });
     }
     return transactions;
   }

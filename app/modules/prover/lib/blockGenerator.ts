@@ -105,7 +105,6 @@ export class BlockGenerator {
   }
 
   private async findTransactions(current:DBBlock, options:{ dontCareAboutChaining?:boolean }) {
-    const ALSO_CHECK_PENDING_TXS = true
     const versionMin = current ? Math.min(CommonConstants.LAST_VERSION_FOR_TX, current.version) : CommonConstants.DOCUMENTS_VERSION;
     const txs = await this.dal.getTransactionsPending(versionMin);
     const transactions = [];
@@ -116,7 +115,9 @@ export class BlockGenerator {
       try {
         await LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), this.conf, options)
         const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
-        await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal, ALSO_CHECK_PENDING_TXS);
+        await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal, async (txHash:string) => {
+          return _.findWhere(passingTxs, { hash: txHash }) || null
+        });
         await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal);
         transactions.push(tx);
         passingTxs.push(tx);
@@ -779,12 +780,12 @@ class ManualRootGenerator implements BlockGeneratorInterface {
 
     if (newcomers.length > 0) {
       const answers = await inquirer.prompt([{
-          type: "checkbox",
-          name: "uids",
-          message: "Newcomers to add",
-          choices: uids,
-          default: uids[0]
-        }]);
+        type: "checkbox",
+        name: "uids",
+        message: "Newcomers to add",
+        choices: uids,
+        default: uids[0]
+      }]);
       newcomers.forEach((newcomer:string) => {
         if (~answers.uids.indexOf(preJoinData[newcomer].ms.userid))
           filtered[newcomer] = preJoinData[newcomer];

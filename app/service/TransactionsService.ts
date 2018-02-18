@@ -9,7 +9,6 @@ import {FIFOService} from "./FIFOService";
 import {GlobalFifoPromise} from "./GlobalFifoPromise";
 
 const constants       = require('../lib/constants');
-const CHECK_PENDING_TRANSACTIONS = true
 
 export class TransactionService extends FIFOService {
 
@@ -43,7 +42,7 @@ export class TransactionService extends FIFOService {
         const dto = TransactionDTO.fromJSONObject(tx)
         await LOCAL_RULES_HELPERS.checkSingleTransactionLocally(dto, this.conf)
         await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal);
-        await GLOBAL_RULES_HELPERS.checkSingleTransaction(dto, nextBlockWithFakeTimeVariation, this.conf, this.dal, CHECK_PENDING_TRANSACTIONS);
+        await GLOBAL_RULES_HELPERS.checkSingleTransaction(dto, nextBlockWithFakeTimeVariation, this.conf, this.dal, this.dal.getTxByHash.bind(this.dal));
         const server_pubkey = this.conf.pair && this.conf.pair.pub;
         if (!(await this.dal.txsDAL.sandbox.acceptNewSandBoxEntry({
             issuers: tx.issuers,

@@ -22,6 +22,7 @@ const _            = require('underscore');
 const moment       = require('moment');
 const multimeter   = require('multimeter');
 const makeQuerablePromise = require('querablep');
+const directory = require('../../../lib/system/directory')
 
 const CONST_BLOCKS_CHUNK = 250;
 const EVAL_REMAINING_INTERVAL = 1000;
@@ -610,6 +611,7 @@ class P2PDownloader {
   private downloads:any = {};
   private startResolver:any
   private downloadStarter:Promise<any>
+  private getDAL: Promise<FileDAL>
 
   constructor(
     private currency:string,
@@ -622,6 +624,11 @@ class P2PDownloader {
     private hashf:any,
     private dal:FileDAL,
     private slowOption:any) {
+
+    this.getDAL = (async () => {
+      const params = await directory.getHomeParams(false, '/home/cgeek/.config/duniter/duniter_default')
+      return new FileDAL(params)
+    })()
 
     this.TOO_LONG_TIME_DOWNLOAD = "No answer after " + this.MAX_DELAY_PER_DOWNLOAD + "ms, will retry download later.";
     this.nbBlocksToDownload = Math.max(0, to - localNumber);
@@ -866,6 +873,7 @@ class P2PDownloader {
    */
   private async downloadChunk(index:number): Promise<BlockDTO[]> {
     // The algorithm to download a chunk
+    const tmpDAL = await this.getDAL
     const from = this.localNumber + 1 + index * CONST_BLOCKS_CHUNK;
     let count = CONST_BLOCKS_CHUNK;
     if (index == this.numberOfChunksToDownload - 1) {
@@ -873,19 +881,19 @@ class P2PDownloader {
     }
     try {
       const fileName = this.currency + "/chunk_" + index + "-" + CONST_BLOCKS_CHUNK + ".json";
-      if (this.localNumber <= 0 && (await this.dal.confDAL.coreFS.exists(fileName))) {
+      if (this.localNumber <= 0 && (await tmpDAL.confDAL.coreFS.exists(fileName))) {
         this.handler[index] = {
           host: 'filesystem',
           port: 'blockchain',
-          resetFunction: () => this.dal.confDAL.coreFS.remove(fileName)
+          resetFunction: () => tmpDAL.confDAL.coreFS.remove(fileName)
         };
-        return (await this.dal.confDAL.coreFS.readJSON(fileName)).blocks;
+        return (await tmpDAL.confDAL.coreFS.readJSON(fileName)).blocks;
       } else {
         const chunk:any = await this.p2pDownload(from, count, index);
         // Store the file to avoid re-downloading
         if (this.localNumber <= 0 && chunk.length === CONST_BLOCKS_CHUNK) {
-          await this.dal.confDAL.coreFS.makeTree(this.currency);
-          await this.dal.confDAL.coreFS.writeJSON(fileName, { blocks: chunk });
+          await tmpDAL.confDAL.coreFS.makeTree(this.currency);
+          await tmpDAL.confDAL.coreFS.writeJSON(fileName, { blocks: chunk });
         }
         return chunk;
       }

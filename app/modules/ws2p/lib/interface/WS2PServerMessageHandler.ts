@@ -115,6 +115,11 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
           }
           this.server.logger.warn(message)
         }
+        setTimeout(() => {
+          if (this.errors[documentHash]) {
+            delete this.errors[documentHash]
+          }
+        }, 1000 * WS2PConstants.ERROR_RECALL_DURATION_IN_SECONDS)
       } else {
         // Remember the error for some time
         if (!this.errors[documentHash]) {
@@ -125,7 +130,9 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
         }
         this.errors[documentHash].pubkeys[c.pubkey] = [json.body]
         setTimeout(() => {
-          delete this.errors[documentHash]
+          if (this.errors[documentHash]) {
+            delete this.errors[documentHash]
+          }
         }, 1000 * WS2PConstants.ERROR_RECALL_DURATION_IN_SECONDS)
       }
       if (e !== "Block already known"

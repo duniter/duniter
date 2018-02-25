@@ -222,7 +222,7 @@ export class Indexer {
           unchainables: 0,
           type: 'JOIN',
           expires_on: conf.msValidity,
-          expired_on: null,
+          expired_on: 0,
           revokes_on: conf.msValidity * constants.REVOCATION_FACTOR,
           revocation: null,
           chainable_on: block.medianTime + conf.msPeriod,

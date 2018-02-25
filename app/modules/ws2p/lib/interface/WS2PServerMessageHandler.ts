@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {WS2PMessageHandler} from "../impl/WS2PMessageHandler"
 import {WS2PResponse} from "../impl/WS2PResponse"
 import {Server} from "../../../../../server"
@@ -102,6 +115,11 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
           }
           this.server.logger.warn(message)
         }
+        setTimeout(() => {
+          if (this.errors[documentHash]) {
+            delete this.errors[documentHash]
+          }
+        }, 1000 * WS2PConstants.ERROR_RECALL_DURATION_IN_SECONDS)
       } else {
         // Remember the error for some time
         if (!this.errors[documentHash]) {
@@ -112,7 +130,9 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
         }
         this.errors[documentHash].pubkeys[c.pubkey] = [json.body]
         setTimeout(() => {
-          delete this.errors[documentHash]
+          if (this.errors[documentHash]) {
+            delete this.errors[documentHash]
+          }
         }, 1000 * WS2PConstants.ERROR_RECALL_DURATION_IN_SECONDS)
       }
       if (e !== "Block already known"

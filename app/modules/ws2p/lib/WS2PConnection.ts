@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {Key, verify} from "../../../lib/common-libs/crypto/keyring"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
@@ -6,8 +19,8 @@ import {CertificationDTO} from "../../../lib/dto/CertificationDTO"
 import {MembershipDTO} from "../../../lib/dto/MembershipDTO"
 import {TransactionDTO} from "../../../lib/dto/TransactionDTO"
 import {PeerDTO} from "../../../lib/dto/PeerDTO"
-import { WS2PConstants } from './constants';
-import { ProxiesConf } from '../../../lib/proxy';
+import {WS2PConstants} from './constants';
+
 const ws = require('ws')
 const SocksProxyAgent = require('socks-proxy-agent');
 const nuuid = require('node-uuid');
@@ -240,6 +253,20 @@ export interface WS2PRequest {
   params?:any
 }
 
+export class WS2PMessageExchange {
+
+  promise: Promise<any>
+  extras: {
+    resolve: (data:any) => void
+    reject: (err:any) => void
+  }
+
+  constructor(extras: { resolve: () => void; reject: () => void }, race: any) {
+    this.promise = race
+    this.extras = extras
+  }
+}
+
 /**
  * The handler of a WS2P connection.
  *
@@ -257,14 +284,8 @@ export class WS2PConnection {
   private nbResponsesCount = 0
   private nbPushsToRemoteCount = 0
   private nbPushsByRemoteCount = 0
-  private exchanges:{
-    [uuid:string]: {
-      promise: Promise<any>,
-      extras: {
-        resolve: (data:any) => void
-        reject: (err:any) => void
-      }
-    }
+  private exchanges: {
+    [uuid: string]: WS2PMessageExchange
   } = {}
 
   constructor(
@@ -562,9 +583,9 @@ export class WS2PConnection {
             resolve: () => { console.error('resolution not implemented') },
             reject:  () => { console.error('rejection not implemented') }
           }
-          this.exchanges[uuid] = {
+          this.exchanges[uuid] = new WS2PMessageExchange(
             extras,
-            promise: Promise.race([
+            Promise.race([
               // The answer
               new Promise((res, rej) => {
                 extras.resolve = res
@@ -580,11 +601,13 @@ export class WS2PConnection {
                 }, this.options.requestTimeout)
               })
             ])
-          }
+          )
           try {
             resolve(await this.exchanges[uuid].promise)
           } catch(e) {
             reject(e)
+          } finally {
+            delete this.exchanges[uuid]
           }
         }
       })

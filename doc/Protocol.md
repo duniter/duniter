@@ -2133,6 +2133,8 @@ For each ENTRY in local MINDEX where `op = 'UPDATE', expired_on = 0`:
 
     ENTRY.joinsTwice = REDUCE(GLOBAL_IINDEX[pub=ENTRY.pub]).member == true
 
+> This rule ensures that someone who is in the `Joiners` field isn't already a member.
+
 ####### BR_G27 - ENTRY.enoughCerts
 
 For each ENTRY in local MINDEX where `type == 'JOIN' OR type == 'ACTIVE'`:

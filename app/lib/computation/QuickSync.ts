@@ -179,9 +179,6 @@ export class QuickSynchronizer {
             }
           }))
 
-          if (sync_cindex.length) sync_cindex.map(c => console.log(c))
-          if (sync_mindex.length) sync_mindex.map(c => console.log(c))
-          if (sync_iindex.length) sync_iindex.map(c => console.log(c))
           // Flush the INDEX (not bindex, which is particular)
           await this.dal.mindexDAL.insertBatch(sync_mindex);
           await this.dal.iindexDAL.insertBatch(sync_iindex);

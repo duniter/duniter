@@ -314,12 +314,24 @@ export class FileDAL {
     }
   }
 
-  getWrittenIdtyByPubkey(pubkey:string) {
-    return this.iindexDAL.getFromPubkey(pubkey)
+  async getWrittenIdtyByPubkey(pubkey:string) {
+    const idty = await this.iindexDAL.getFromPubkey(pubkey)
+    if (!idty) {
+      return null;
+    }
+    const membership = await this.mindexDAL.getReducedMS(pubkey)
+    idty.revoked_on = membership.revoked_on
+    return idty;
   }
 
-  getWrittenIdtyByUID(uid:string) {
-    return this.iindexDAL.getFromUID(uid)
+  async getWrittenIdtyByUID(uid:string) {
+    const idty = await this.iindexDAL.getFromUID(uid)
+    if (!idty) {
+      return null;
+    }
+    const membership = await this.mindexDAL.getReducedMS(idty.pub)
+    idty.revoked_on = membership.revoked_on
+    return idty;
   }
 
   async fillInMembershipsOfIdentity(queryPromise:Promise<DBIdentity>) {

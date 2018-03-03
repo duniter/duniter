@@ -1,12 +1,27 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {BMAConstants} from "./constants"
-const upnp = require('nnupnp');
+import {ConfDTO} from "../../../lib/dto/ConfDTO"
+
+const upnp = require('nat-upnp');
 const Q = require('q');
 
-export const Upnp = async function (localPort:number, remotePort:number, logger:any) {
+export const Upnp = async function (localPort:number, remotePort:number, logger:any, conf:ConfDTO) {
   "use strict";
 
   logger.info('UPnP: configuring...');
-  const api = new UpnpApi(localPort, remotePort, logger)
+  const api = new UpnpApi(localPort, remotePort, logger, conf)
   try {
     await api.openPort()
   } catch (e) {
@@ -32,19 +47,21 @@ export class UpnpApi {
   constructor(
     private localPort:number,
     private remotePort:number,
-    private logger:any
+    private logger:any,
+    private conf:ConfDTO
   ) {}
 
   openPort() {
     "use strict";
     return Q.Promise((resolve:any, reject:any) => {
+      const suffix = this.conf.pair.pub.substr(0, 6)
       this.logger.trace('UPnP: mapping external port %s to local %s...', this.remotePort, this.localPort);
       const client = upnp.createClient();
       client.portMapping({
         'public': this.remotePort,
         'private': this.localPort,
         'ttl': BMAConstants.UPNP_TTL,
-        'description': 'duniter:bma:upnp'
+        'description': 'duniter:bma:' + suffix
       }, (err:any) => {
         client.close();
         if (err) {

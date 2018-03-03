@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {ConfDTO} from "../dto/ConfDTO"
 import {FileDAL} from "../dal/fileDAL"
 import {DBBlock} from "../db/DBBlock"
@@ -9,6 +22,7 @@ import {CommonConstants} from "../common-libs/constants"
 import {IdentityDTO} from "../dto/IdentityDTO"
 import {hashf} from "../common"
 import {Indexer} from "../indexer"
+import {DBTx} from "../dal/sqliteDAL/TxsDAL"
 
 const _ = require('underscore')
 
@@ -80,7 +94,7 @@ export const GLOBAL_RULES_FUNCTIONS = {
     return true;
   },
 
-  checkSourcesAvailability: async (block:{ transactions:TransactionDTO[], medianTime: number }, conf:ConfDTO, dal:FileDAL, alsoCheckPendingTransactions:boolean) => {
+  checkSourcesAvailability: async (block:{ transactions:TransactionDTO[], medianTime: number }, conf:ConfDTO, dal:FileDAL, findSourceTx:(txHash:string) => Promise<DBTx|null>) => {
     const txs = block.transactions
     const current = await dal.getCurrentBlockOrNull();
     for (const tx of txs) {
@@ -98,12 +112,12 @@ export const GLOBAL_RULES_FUNCTIONS = {
         let src = inputs[k];
         let dbSrc = await dal.getSource(src.identifier, src.pos);
         logger.debug('Source %s:%s:%s:%s = %s', src.amount, src.base, src.identifier, src.pos, dbSrc && dbSrc.consumed);
-        if (!dbSrc && alsoCheckPendingTransactions) {
+        if (!dbSrc) {
           // For chained transactions which are checked on sandbox submission, we accept them if there is already
           // a previous transaction of the chain already recorded in the pool
           dbSrc = await (async () => {
             let hypotheticSrc:any = null;
-            let targetTX = await dal.getTxByHash(src.identifier);
+            let targetTX = await findSourceTx(src.identifier);
             if (targetTX) {
               let outputStr = targetTX.outputs[src.pos];
               if (outputStr) {
@@ -193,10 +207,15 @@ export const GLOBAL_RULES_HELPERS = {
 
   checkExistsPubkey: (pub:string, dal:FileDAL) => dal.getWrittenIdtyByPubkey(pub),
 
-  checkSingleTransaction: (tx:TransactionDTO, block:{ medianTime: number }, conf:ConfDTO, dal:FileDAL, alsoCheckPendingTransactions:boolean = false) => GLOBAL_RULES_FUNCTIONS.checkSourcesAvailability({
+  checkSingleTransaction: (
+    tx:TransactionDTO,
+    block:{ medianTime: number },
+    conf:ConfDTO,
+    dal:FileDAL,
+    findSourceTx:(txHash:string) => Promise<DBTx|null>) => GLOBAL_RULES_FUNCTIONS.checkSourcesAvailability({
     transactions: [tx],
     medianTime: block.medianTime
-  }, conf, dal, alsoCheckPendingTransactions),
+  }, conf, dal, findSourceTx),
 
   checkTxBlockStamp: async (tx:TransactionDTO, dal:FileDAL) => {
     const number = parseInt(tx.blockstamp.split('-')[0])

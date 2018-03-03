@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {Server} from "../../../../server"
@@ -105,7 +118,6 @@ export class BlockGenerator {
   }
 
   private async findTransactions(current:DBBlock, options:{ dontCareAboutChaining?:boolean }) {
-    const ALSO_CHECK_PENDING_TXS = true
     const versionMin = current ? Math.min(CommonConstants.LAST_VERSION_FOR_TX, current.version) : CommonConstants.DOCUMENTS_VERSION;
     const txs = await this.dal.getTransactionsPending(versionMin);
     const transactions = [];
@@ -116,7 +128,9 @@ export class BlockGenerator {
       try {
         await LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), this.conf, options)
         const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
-        await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal, ALSO_CHECK_PENDING_TXS);
+        await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal, async (txHash:string) => {
+          return _.findWhere(passingTxs, { hash: txHash }) || null
+        });
         await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal);
         transactions.push(tx);
         passingTxs.push(tx);
@@ -779,12 +793,12 @@ class ManualRootGenerator implements BlockGeneratorInterface {
 
     if (newcomers.length > 0) {
       const answers = await inquirer.prompt([{
-          type: "checkbox",
-          name: "uids",
-          message: "Newcomers to add",
-          choices: uids,
-          default: uids[0]
-        }]);
+        type: "checkbox",
+        name: "uids",
+        message: "Newcomers to add",
+        choices: uids,
+        default: uids[0]
+      }]);
       newcomers.forEach((newcomer:string) => {
         if (~answers.uids.indexOf(preJoinData[newcomer].ms.userid))
           filtered[newcomer] = preJoinData[newcomer];

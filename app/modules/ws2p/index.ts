@@ -1,11 +1,25 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
-import { WS2PConstants } from './lib/constants';
+import {WS2PConstants} from './lib/constants';
 import {ConfDTO, WS2PConfDTO} from "../../lib/dto/ConfDTO"
 import {Server} from "../../../server"
 import * as stream from 'stream';
 import {WS2PCluster} from "./lib/WS2PCluster"
 import {WS2PUpnp} from "./lib/ws2p-upnp"
 import {CommonConstants} from "../../lib/common-libs/constants"
+
 const constants = require("../../lib/constants");
 
 const nuuid = require('node-uuid')
@@ -109,7 +123,7 @@ export const WS2PDependency = {
     },
 
     service: {
-      input: (server:Server, conf:WS2PConfDTO, logger:any) => {
+      input: (server:Server, conf:ConfDTO, logger:any) => {
         const api = new WS2PAPI(server, conf, logger)
         server.ws2pCluster = api.getCluster()
         server.addEndpointsDefinitions(async () => api.getEndpoint())
@@ -176,7 +190,7 @@ export class WS2PAPI extends stream.Transform {
 
   constructor(
     private server:Server,
-    private conf:WS2PConfDTO,
+    private conf:ConfDTO,
     private logger:any) {
     super({ objectMode: true })
     this.cluster = WS2PCluster.plugOn(server)
@@ -212,7 +226,7 @@ export class WS2PAPI extends stream.Transform {
           this.upnpAPI.stopRegular();
         }
         try {
-          this.upnpAPI = new WS2PUpnp(this.logger)
+          this.upnpAPI = new WS2PUpnp(this.logger, this.conf)
           const { host, port, available } = await this.upnpAPI.startRegular()
           if (available) {
             // Defaults UPnP to true if not defined and available

@@ -1,5 +1,17 @@
-import { IdentityForRequirements } from './BlockchainService';
-"use strict";
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+import {IdentityForRequirements} from './BlockchainService';
 import {Server} from "../../server"
 import {GlobalFifoPromise} from "./GlobalFifoPromise"
 import {BlockchainContext} from "../lib/computation/BlockchainContext"
@@ -7,7 +19,6 @@ import {ConfDTO} from "../lib/dto/ConfDTO"
 import {FileDAL} from "../lib/dal/fileDAL"
 import {QuickSynchronizer} from "../lib/computation/QuickSync"
 import {BlockDTO} from "../lib/dto/BlockDTO"
-import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
 import {DBBlock} from "../lib/db/DBBlock"
 import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
 import {parsers} from "../lib/common-libs/parsers/index"
@@ -17,6 +28,8 @@ import {CommonConstants} from "../lib/common-libs/constants"
 import {LOCAL_RULES_FUNCTIONS} from "../lib/rules/local_rules"
 import {Switcher, SwitcherDao} from "../lib/blockchain/Switcher"
 import {OtherConstants} from "../lib/other_constants"
+
+"use strict";
 
 const _               = require('underscore');
 const constants       = require('../lib/constants');
@@ -206,6 +219,11 @@ export class BlockchainService extends FIFOService {
       while (!added && i < potentials.length) {
         const dto = BlockDTO.fromJSONObject(potentials[i])
         try {
+          if (dto.issuer === this.conf.pair.pub) {
+            for (const tx of dto.transactions) {
+              await this.dal.removeTxByHash(tx.hash);
+            }
+          }
           const addedBlock = await this.mainContext.checkAndAddBlock(dto)
           added = true
           this.push({

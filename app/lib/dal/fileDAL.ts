@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {SQLiteDriver} from "./drivers/SQLiteDriver"
 import {ConfDAL} from "./fileDALs/ConfDAL"
 import {StatDAL} from "./fileDALs/StatDAL"
@@ -301,12 +314,24 @@ export class FileDAL {
     }
   }
 
-  getWrittenIdtyByPubkey(pubkey:string) {
-    return this.iindexDAL.getFromPubkey(pubkey)
+  async getWrittenIdtyByPubkey(pubkey:string) {
+    const idty = await this.iindexDAL.getFromPubkey(pubkey)
+    if (!idty) {
+      return null;
+    }
+    const membership = await this.mindexDAL.getReducedMS(pubkey)
+    idty.revoked_on = membership.revoked_on
+    return idty;
   }
 
-  getWrittenIdtyByUID(uid:string) {
-    return this.iindexDAL.getFromUID(uid)
+  async getWrittenIdtyByUID(uid:string) {
+    const idty = await this.iindexDAL.getFromUID(uid)
+    if (!idty) {
+      return null;
+    }
+    const membership = await this.mindexDAL.getReducedMS(idty.pub)
+    idty.revoked_on = membership.revoked_on
+    return idty;
   }
 
   async fillInMembershipsOfIdentity(queryPromise:Promise<DBIdentity>) {

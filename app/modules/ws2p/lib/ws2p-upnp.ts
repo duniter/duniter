@@ -1,5 +1,20 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {WS2PConstants} from "./constants"
-const upnp = require('nnupnp');
+import {ConfDTO} from "../../../lib/dto/ConfDTO"
+
+const upnp = require('nat-upnp');
 
 export interface UPnPBinding {
   remotehost:string
@@ -13,9 +28,7 @@ export class WS2PUpnp {
   private interval:NodeJS.Timer|null
   private client = upnp.createClient()
 
-  constructor(
-    private logger:any
-  ) {}
+  constructor(private logger:any, private conf:ConfDTO) {}
 
   async checkUPnPisAvailable() {
     try {
@@ -38,6 +51,12 @@ export class WS2PUpnp {
     return this.currentConfig
   }
 
+  getUpnpDescription() {
+    const uuid = (this.conf.ws2p && this.conf.ws2p.uuid) || "no-uuid-yet"
+    const suffix = this.conf.pair.pub.substr(0, 6) + ":" + uuid
+    return 'duniter:ws2p:' + suffix
+  }
+
   /**
    * Always open the same port during an execution of Duniter.
    * @returns { host:string, port:number }
@@ -45,7 +64,7 @@ export class WS2PUpnp {
   openPort() {
     return new Promise<{ host:string, port:number }>(async (resolve:any, reject:any) => {
       if (!this.currentConfig) {
-        this.currentConfig = await WS2PUpnp.getAvailablePort(this.client)
+        this.currentConfig = await this.getAvailablePort(this.client)
       }
       this.logger.trace('WS2P: mapping external port %s to local %s using UPnP...', this.currentConfig.port, [this.currentConfig.host, this.currentConfig.port].join(':'))
       const client = upnp.createClient()
@@ -53,7 +72,7 @@ export class WS2PUpnp {
         'public': this.currentConfig.port,
         'private': this.currentConfig.port,
         'ttl': WS2PConstants.WS2P_UPNP_TTL,
-        'description': 'duniter:ws2p:upnp'
+        'description': this.getUpnpDescription()
       }, (err:any) => {
         client.close()
         if (err) {
@@ -101,7 +120,7 @@ export class WS2PUpnp {
     })
   }
 
-  static async getAvailablePort(client:any) {
+  private async getAvailablePort(client:any) {
     const localIP = await WS2PUpnp.getLocalIP(client)
     const remoteIP = await WS2PUpnp.getRemoteIP(client)
     const mappings:{
@@ -111,10 +130,10 @@ export class WS2PUpnp {
       public: {
         port:number
       }
+      description:string
     }[] = await WS2PUpnp.getUPnPMappings(client)
-    const externalPortsUsed = mappings.map((m) => {
-      return m.public.port
-    })
+    const thisDesc = this.getUpnpDescription()
+    const externalPortsUsed = mappings.filter((m) => m.description !== thisDesc).map((m) => m.public.port)
     let availablePort = WS2PConstants.WS2P_PORTS_START
     while (externalPortsUsed.indexOf(availablePort) !== -1
       && availablePort <= WS2PConstants.WS2P_PORTS_END) {

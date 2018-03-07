@@ -1764,7 +1764,7 @@ Else:
 
 If `HEAD.number > 0`:
 
-    HEAD.medianTime = MEDIAN((HEAD~1..<MIN(medianTimeBlocks, HEAD.number)>).time)
+    HEAD.medianTime = MAX(HEAD~1.medianTime, AVG((HEAD~1..<MIN(medianTimeBlocks, HEAD.number)>).time))
 
 Else:
 

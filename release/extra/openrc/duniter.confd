@@ -13,7 +13,7 @@
 #DUNITER_USER=duniter
 
 # Directory of duniter files
-#DUNITER_HOME=/var/lib/duniter
+#DUNITER_HOME=/var/lib/duniter/.config/duniter
 
 # Directory of duniter data
 #DUNITER_DATA=duniter_default

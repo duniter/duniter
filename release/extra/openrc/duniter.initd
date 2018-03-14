@@ -3,7 +3,7 @@
 : ${DUNITER_GROUP:=duniter}
 : ${DUNITER_USER:=duniter}
 
-: ${DUNITER_HOME:=/var/lib/duniter}
+: ${DUNITER_HOME:=/var/lib/duniter/.config/duniter}
 : ${DUNITER_DATA:=duniter_default}
 
 command="/usr/bin/duniter"

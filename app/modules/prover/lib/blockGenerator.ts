@@ -151,7 +151,7 @@ export class BlockGenerator {
 
   private async findLeavers(current:DBBlock) {
     const leaveData: { [pub:string]: any } = {};
-    const memberships = await this.dal.findLeavers();
+    const memberships = await this.dal.findLeavers(current && current.medianTime);
     const leavers:string[] = [];
     memberships.forEach((ms:any) => leavers.push(ms.issuer));
     for (const ms of memberships) {

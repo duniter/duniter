@@ -33,6 +33,7 @@ import {Initiable} from "./sqliteDAL/Initiable"
 import {MetaDAL} from "./sqliteDAL/MetaDAL"
 import {BIndexDAL} from "./sqliteDAL/index/BIndexDAL"
 import {MIndexDAL} from "./sqliteDAL/index/MIndexDAL"
+import {CIndexDAL} from "./sqliteDAL/index/CIndexDAL"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -72,7 +73,7 @@ export class FileDAL {
   mindexDAL:MIndexDAL
   iindexDAL:any
   sindexDAL:any
-  cindexDAL:any
+  cindexDAL:CIndexDAL
   newDals:{ [k:string]: Initiable }
 
   loadConfHook: (conf:ConfDTO) => Promise<void>

@@ -46,6 +46,15 @@ export interface IdentityForRequirements {
   revoked:boolean
   revoked_on:number
 }
+
+export interface ValidCert {
+  from:string
+  to:string
+  sig:string
+  timestamp:number
+  expiresIn:number
+}
+
 export class BlockchainService extends FIFOService {
 
   mainContext:BlockchainContext
@@ -288,7 +297,7 @@ export class BlockchainService extends FIFOService {
     let wasMember = false;
     let expiresMS = 0;
     let expiresPending = 0;
-    let certs = [];
+    let certs:ValidCert[] = [];
     let certsPending = [];
     let mssPending = [];
     try {
@@ -315,7 +324,7 @@ export class BlockchainService extends FIFOService {
       const newCerts = await this.server.generatorComputeNewCerts(nextBlockNumber, [join.identity.pubkey], joinData, updates);
       const newLinks = await this.server.generatorNewCertsToLinks(newCerts, updates);
       const currentTime = current ? current.medianTime : 0;
-      certs = await this.getValidCerts(pubkey, newCerts);
+      certs = await this.getValidCerts(pubkey, newCerts, currentTime);
       if (computeDistance) {
         outdistanced = await GLOBAL_RULES_HELPERS.isOver3Hops(pubkey, newLinks, someNewcomers, current, this.conf, this.dal);
       }
@@ -348,10 +357,6 @@ export class BlockchainService extends FIFOService {
       }
       wasMember = idty.wasMember;
       isSentry = idty.member && (await this.dal.isSentry(idty.pubkey, this.conf));
-      // Expiration of certifications
-      for (const cert of certs) {
-        cert.expiresIn = Math.max(0, cert.timestamp + this.conf.sigValidity - currentTime);
-      }
     } catch (e) {
       // We throw whatever isn't "Too old identity" error
       if (!(e && e.uerr && e.uerr.ucode == constants.ERRORS.TOO_OLD_IDENTITY.uerr.ucode)) {
@@ -382,9 +387,16 @@ export class BlockchainService extends FIFOService {
     };
   }
 
-  async getValidCerts(newcomer:string, newCerts:any) {
+  async getValidCerts(newcomer:string, newCerts:any, currentTime:number): Promise<ValidCert[]> {
     const links = await this.dal.getValidLinksTo(newcomer);
-    const certsFromLinks = links.map((lnk:any) => { return { from: lnk.issuer, to: lnk.receiver, timestamp: lnk.expires_on - this.conf.sigValidity }; });
+    const certsFromLinks = links.map((lnk:any) => { return {
+        from: lnk.issuer,
+        to: lnk.receiver,
+        sig: lnk.sig,
+        timestamp: lnk.expires_on - this.conf.sigValidity,
+        expiresIn: 0
+      }
+    })
     const certsFromCerts = [];
     const certs = newCerts[newcomer] || [];
     for (const cert of certs) {
@@ -393,10 +405,14 @@ export class BlockchainService extends FIFOService {
         from: cert.from,
         to: cert.to,
         sig: cert.sig,
-        timestamp: block.medianTime
+        timestamp: block.medianTime,
+        expiresIn: 0
       });
     }
-    return certsFromLinks.concat(certsFromCerts);
+    return certsFromLinks.concat(certsFromCerts).map(c => {
+      c.expiresIn = Math.max(0, c.timestamp + this.conf.sigValidity - currentTime)
+      return c
+    })
   }
 
   isMember() {

@@ -14,7 +14,7 @@
 import {GlobalFifoPromise} from "./GlobalFifoPromise"
 import {FileDAL} from "../lib/dal/fileDAL"
 import {ConfDTO} from "../lib/dto/ConfDTO"
-import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
+import {DBIdentity, ExistingDBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
 import {GLOBAL_RULES_FUNCTIONS, GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
 import {BlockDTO} from "../lib/dto/BlockDTO"
 import {RevocationDTO} from "../lib/dto/RevocationDTO"
@@ -50,7 +50,7 @@ export class IdentityService extends FIFOService {
     return this.dal.searchJustIdentities(search)
   }
 
-  async findMember(search:string) {
+  async findMember(search:string): Promise<{ idty: ExistingDBIdentity; memberships: { blockstamp: string; membership: string; number: number; fpr: string; written_number: number | null }[] }> {
     let idty = null;
     if (search.match(constants.PUBLIC_KEY)) {
       idty = await this.dal.getWrittenIdtyByPubkey(search);

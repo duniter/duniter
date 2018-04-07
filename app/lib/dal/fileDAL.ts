@@ -30,6 +30,7 @@ import {MerkleDTO} from "../dto/MerkleDTO"
 import {CommonConstants} from "../common-libs/constants"
 import {PowDAL} from "./fileDALs/PowDAL";
 import {Initiable} from "./sqliteDAL/Initiable"
+import {MetaDAL} from "./sqliteDAL/MetaDAL"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -56,7 +57,7 @@ export class FileDAL {
 
   powDAL:PowDAL
   confDAL:any
-  metaDAL:any
+  metaDAL:MetaDAL
   peerDAL:any
   blockDAL:any
   txsDAL:any

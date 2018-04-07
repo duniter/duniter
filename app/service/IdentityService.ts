@@ -14,7 +14,7 @@
 import {GlobalFifoPromise} from "./GlobalFifoPromise"
 import {FileDAL} from "../lib/dal/fileDAL"
 import {ConfDTO} from "../lib/dto/ConfDTO"
-import {DBIdentity, ExistingDBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
+import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
 import {GLOBAL_RULES_FUNCTIONS, GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
 import {BlockDTO} from "../lib/dto/BlockDTO"
 import {RevocationDTO} from "../lib/dto/RevocationDTO"
@@ -23,6 +23,7 @@ import {CertificationDTO} from "../lib/dto/CertificationDTO"
 import {DBCert} from "../lib/dal/sqliteDAL/CertDAL"
 import {verify} from "../lib/common-libs/crypto/keyring"
 import {FIFOService} from "./FIFOService"
+import {MindexEntry} from "../lib/indexer"
 
 "use strict";
 const constants       = require('../lib/constants');
@@ -49,7 +50,7 @@ export class IdentityService extends FIFOService {
     return this.dal.searchJustIdentities(search)
   }
 
-  async findMember(search:string): Promise<ExistingDBIdentity> {
+  async findMember(search:string) {
     let idty = null;
     if (search.match(constants.PUBLIC_KEY)) {
       idty = await this.dal.getWrittenIdtyByPubkey(search);
@@ -61,8 +62,40 @@ export class IdentityService extends FIFOService {
       throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
     }
     const obj = DBIdentity.copyFromExisting(idty)
-    await this.dal.fillInMembershipsOfIdentity(Promise.resolve(obj));
-    return obj
+
+    let memberships: {
+      blockstamp:string
+      membership:string
+      number:number
+      fpr:string
+      written_number:number|null
+    }[] = []
+
+    if (obj) {
+      const mss = await this.dal.msDAL.getMembershipsOfIssuer(obj.pubkey);
+      const mssFromMindex = await this.dal.mindexDAL.reducable(obj.pubkey);
+      memberships = mss.map(m => {
+        return {
+          blockstamp: [m.blockNumber, m.blockHash].join('-'),
+          membership: m.membership,
+          number: m.blockNumber,
+          fpr: m.blockHash,
+          written_number: m.written_number
+        }
+      })
+      memberships = memberships.concat(mssFromMindex.map((ms:MindexEntry) => {
+        const sp = ms.created_on.split('-');
+        return {
+          blockstamp: ms.created_on,
+          membership: ms.leaving ? 'OUT' : 'IN',
+          number: parseInt(sp[0]),
+          fpr: sp[1],
+          written_number: parseInt(ms.written_on)
+        }
+      }))
+    }
+
+    return { idty: obj, memberships }
   }
 
   async findMemberWithoutMemberships(search:string) {

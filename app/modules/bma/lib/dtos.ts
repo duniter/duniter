@@ -125,16 +125,14 @@ export interface HttpMemberships {
   pubkey: string
   uid: string
   sigDate: string
-  memberships: [
-    {
-      version: number
-      currency: string
-      membership: string
-      blockNumber: number
-      blockHash: string
-      written: number
-    }
-  ]
+  memberships: {
+    version: number
+    currency: string
+    membership: string
+    blockNumber: number
+    blockHash: string
+    written: number
+  }[]
 }
 
 export const MembershipList = {

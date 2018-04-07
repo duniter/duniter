@@ -18,7 +18,7 @@ import {ConfDTO} from "../dto/ConfDTO"
 import {BlockDTO} from "../dto/BlockDTO"
 import {DBHead} from "../db/DBHead"
 import {DBIdentity, IdentityDAL} from "./sqliteDAL/IdentityDAL"
-import {CindexEntry, IindexEntry, IndexEntry, MindexEntry, SindexEntry} from "../indexer"
+import {CindexEntry, IindexEntry, IndexEntry, SindexEntry} from "../indexer"
 import {DBPeer} from "./sqliteDAL/PeerDAL"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import {CertDAL, DBCert} from "./sqliteDAL/CertDAL"
@@ -32,6 +32,7 @@ import {PowDAL} from "./fileDALs/PowDAL";
 import {Initiable} from "./sqliteDAL/Initiable"
 import {MetaDAL} from "./sqliteDAL/MetaDAL"
 import {BIndexDAL} from "./sqliteDAL/index/BIndexDAL"
+import {MIndexDAL} from "./sqliteDAL/index/MIndexDAL"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -68,7 +69,7 @@ export class FileDAL {
   msDAL:MembershipDAL
   walletDAL:WalletDAL
   bindexDAL:BIndexDAL
-  mindexDAL:any
+  mindexDAL:MIndexDAL
   iindexDAL:any
   sindexDAL:any
   cindexDAL:any
@@ -306,16 +307,6 @@ export class FileDAL {
     return this.iindexDAL.getMembers()
   }
 
-  // TODO: this should definitely be reduced by removing fillInMembershipsOfIdentity
-  async getWritten(pubkey:string) {
-    try {
-      return await this.fillInMembershipsOfIdentity(this.iindexDAL.getFromPubkey(pubkey));
-    } catch (err) {
-      logger.error(err);
-      return null;
-    }
-  }
-
   async getWrittenIdtyByPubkey(pubkey:string) {
     const idty = await this.iindexDAL.getFromPubkey(pubkey)
     if (!idty) {
@@ -334,30 +325,6 @@ export class FileDAL {
     const membership = await this.mindexDAL.getReducedMS(idty.pub)
     idty.revoked_on = membership.revoked_on
     return idty;
-  }
-
-  async fillInMembershipsOfIdentity(queryPromise:Promise<DBIdentity>) {
-    try {
-      const idty:any = await Promise.resolve(queryPromise)
-      if (idty) {
-        const mss = await this.msDAL.getMembershipsOfIssuer(idty.pubkey);
-        const mssFromMindex = await this.mindexDAL.reducable(idty.pubkey);
-        idty.memberships = mss.concat(mssFromMindex.map((ms:MindexEntry) => {
-          const sp = ms.created_on.split('-');
-          return {
-            blockstamp: ms.created_on,
-            membership: ms.leaving ? 'OUT' : 'IN',
-            number: sp[0],
-            fpr: sp[1],
-            written_number: parseInt(ms.written_on)
-          }
-        }));
-        return idty;
-      }
-    } catch (err) {
-      logger.error(err);
-    }
-    return null;
   }
 
   async findPeersWhoseHashIsIn(hashes:string[]) {

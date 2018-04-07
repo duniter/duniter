@@ -171,12 +171,12 @@ export class BlockchainBinding extends AbstractController {
 
   async memberships(req:any): Promise<HttpMemberships> {
     const search = await ParametersService.getSearchP(req);
-    const idty:any = await this.IdentityService.findMember(search);
+    const { idty, memberships } = await this.IdentityService.findMember(search);
     const json = {
       pubkey: idty.pubkey,
       uid: idty.uid,
       sigDate: idty.buid,
-      memberships: idty.memberships.map((msObj:any) => {
+      memberships: memberships.map((msObj:any) => {
         const ms = MembershipDTO.fromJSONObject(msObj);
         return {
           version: ms.version,

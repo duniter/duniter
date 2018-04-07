@@ -25,6 +25,7 @@ import {CertificationDTO} from "../dto/CertificationDTO"
 import {MembershipDTO} from "../dto/MembershipDTO"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import {CommonConstants} from "../common-libs/constants"
+import {FileDAL} from "../dal/fileDAL"
 
 const _ = require('underscore')
 
@@ -246,7 +247,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     await dal.updateWotbLinks(indexes.cindex);
 
     // Create/Update certifications
-    await this.removeCertificationsFromSandbox(block, dal);
+    await DuniterBlockchain.removeCertificationsFromSandbox(block, dal);
     // Create/Update memberships
     await this.removeMembershipsFromSandbox(block, dal);
     // Compute to be revoked members
@@ -431,10 +432,10 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
    * @param block Block in which are contained the certifications to remove from sandbox.
    * @param dal The DAL
    */
-  async removeCertificationsFromSandbox(block:BlockDTO, dal:any) {
+  static async removeCertificationsFromSandbox(block:BlockDTO, dal:FileDAL) {
     for (let inlineCert of block.certifications) {
       let cert = CertificationDTO.fromInline(inlineCert)
-      let idty = await dal.getWritten(cert.to);
+      let idty = await dal.getWrittenIdtyByPubkey(cert.to);
       await dal.deleteCert({
         from: cert.from,
         target: IdentityDTO.getTargetHash(idty),

@@ -21,8 +21,9 @@ import {CrawlerDependency} from "./app/modules/crawler/index"
 import {BmaDependency} from "./app/modules/bma/index"
 import {WS2PDependency} from "./app/modules/ws2p/index"
 import {ProverConstants} from "./app/modules/prover/lib/constants"
-import { ProxiesConf } from './app/lib/proxy';
+import {ProxiesConf} from './app/lib/proxy';
 import {RouterDependency} from "./app/modules/router"
+import {OtherConstants} from "./app/lib/other_constants"
 
 const path = require('path');
 const _ = require('underscore');
@@ -288,6 +289,7 @@ class Stack {
     const params  = args.slice(2);
     params.pop(); // Don't need the command argument
 
+    OtherConstants.SQL_TRACES = program.sqlTraces === true
     const dbName = program.mdb;
     const dbHome = program.home;
     const home = directory.getHome(dbName, dbHome);

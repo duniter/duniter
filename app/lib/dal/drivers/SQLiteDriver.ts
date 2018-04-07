@@ -11,6 +11,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
+import {OtherConstants} from "../../other_constants"
+
 const qfs     = require('q-io/fs')
 const sqlite3 = require("sqlite3").verbose()
 
@@ -34,6 +36,11 @@ export class SQLiteDriver {
         let sqlite = new sqlite3.Database(this.path)
         await new Promise<any>((resolve) => sqlite.once('open', resolve))
         // Database is opened
+        if (OtherConstants.SQL_TRACES) {
+          sqlite.on('trace', (trace:any) => {
+            this.logger.trace(trace)
+          })
+        }
 
         // Force case sensitiveness on LIKE operator
         const sql = 'PRAGMA case_sensitive_like=ON'

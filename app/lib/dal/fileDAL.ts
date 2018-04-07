@@ -54,7 +54,7 @@ export class FileDAL {
   wotb:any
   profile:string
 
-  powDAL:any
+  powDAL:PowDAL
   confDAL:any
   metaDAL:any
   peerDAL:any

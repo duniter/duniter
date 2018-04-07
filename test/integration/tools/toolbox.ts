@@ -37,6 +37,8 @@ import {WS2PServer} from "../../../app/modules/ws2p/lib/WS2PServer"
 import {WS2PServerMessageHandler} from "../../../app/modules/ws2p/lib/interface/WS2PServerMessageHandler"
 import {TestUser} from "./TestUser"
 import {RouterDependency} from "../../../app/modules/router"
+import {ProverDependency} from "../../../app/modules/prover/index"
+import {WS2PClient} from "../../../app/modules/ws2p/lib/WS2PClient"
 
 const assert      = require('assert');
 const _           = require('underscore');
@@ -337,6 +339,8 @@ export class TestingServer {
   constructor(
     private port:number,
     private server:Server) {
+
+    ProverDependency.duniter.methods.hookServer(server)
 
     server.addEndpointsDefinitions(async () => {
       return require('../../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint(server.conf)
@@ -681,7 +685,7 @@ export async function newWS2PBidirectionnalConnection(currency:string, k1:Key, k
   })
 }
 
-export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promise<{ w1: WS2PConnection; ws2pc: WS2PConnection; wss: WS2PServer, cluster1:WS2PCluster, cluster2:WS2PCluster }> = async (s1: TestingServer, s2: TestingServer) => {
+export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promise<{ w1: WS2PConnection; ws2pc: WS2PClient; wss: WS2PServer, cluster1:WS2PCluster, cluster2:WS2PCluster }> = async (s1: TestingServer, s2: TestingServer) => {
   let port = getNewTestingPort()
   const clientPub = s2.conf.pair.pub
   let w1: WS2PConnection | null

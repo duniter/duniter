@@ -14,6 +14,8 @@
 import {simpleTestingConf, simpleTestingServer, simpleUser, simpleWS2PNetwork, TestingServer} from "./tools/toolbox"
 import {WS2PCluster} from "../../app/modules/ws2p/lib/WS2PCluster"
 import {WS2PConstants} from "../../app/modules/ws2p/lib/constants"
+import {WS2PClient} from "../../app/modules/ws2p/lib/WS2PClient"
+import {TestUser} from "./tools/TestUser"
 
 const assert = require('assert')
 
@@ -24,10 +26,13 @@ describe("WS2P block pulling", function() {
 
   const now = 1500000000
   let s1:TestingServer, s2:TestingServer, wss:any
+  let ws2pc:WS2PClient
+  let cluster1:WS2PCluster
   let cluster2:WS2PCluster
-  let cat:any, tac:any
+  let cat:TestUser, tac:TestUser, toc:TestUser
   const catKeyring = { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}
   const tacKeyring = { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}
+  const tocKeyring = { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}
 
   let b0, b1, b2
 
@@ -38,6 +43,7 @@ describe("WS2P block pulling", function() {
     s2 = simpleTestingServer(conf2)
     cat = simpleUser('cat', catKeyring, s1)
     tac = simpleUser('tac', tacKeyring, s1)
+    toc = simpleUser('toc', tocKeyring, s2) // On S2
     await s1.initDalBmaConnections()
     await s2.initDalBmaConnections()
 
@@ -63,6 +69,8 @@ describe("WS2P block pulling", function() {
 
     const network = await simpleWS2PNetwork(s1, s2)
     wss = network.wss
+    ws2pc = network.ws2pc
+    cluster1 = network.cluster1
     cluster2 = network.cluster2
   })
 
@@ -81,5 +89,19 @@ describe("WS2P block pulling", function() {
     const currentS2 = await s2.BlockchainService.current()
     assert.equal(currentS1.number, 6)
     assert.equal(currentS2.number, 6)
+  })
+
+  it('should be able to pull pending identities', async () => {
+    assert.equal((await s1.dal.idtyDAL.getPendingIdentities()).length, 0)
+    assert.equal((await s2.dal.idtyDAL.getPendingIdentities()).length, 0)
+    // Toc is on S2 by default: we disable the stream s2 => s1 so we can test the pulling
+    await ws2pc.disableStream()
+    await toc.createIdentity();
+    await toc.join();
+    await cat.cert(toc, s2, s2);
+    await tac.cert(toc, s2, s2);
+    await cluster1.pullDocpool()
+    assert.equal((await s1.dal.idtyDAL.getPendingIdentities()).length, 1)
+    assert.equal((await s2.dal.idtyDAL.getPendingIdentities()).length, 1)
   })
 })

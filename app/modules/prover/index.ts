@@ -21,6 +21,7 @@ import {parsers} from "../../lib/common-libs/parsers/index"
 import {PeerDTO} from "../../lib/dto/PeerDTO"
 import {Server} from "../../../server"
 import {BlockDTO} from "../../lib/dto/BlockDTO"
+import {DBIdentity} from "../../lib/dal/sqliteDAL/IdentityDAL"
 
 const async = require('async');
 
@@ -109,7 +110,7 @@ export const ProverDependency = {
       onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const difficulty = params[0]
         const generator = new BlockGeneratorWhichProves(server, null);
-        let toDelete, catched = true;
+        let toDelete:DBIdentity[] = [], catched = true;
         do {
           try {
             await generateAndSend(program, difficulty, server, () => () => generator.nextBlock())

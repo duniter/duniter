@@ -12,18 +12,31 @@
 // GNU Affero General Public License for more details.
 
 import * as stream from "stream"
-import { NewLogger } from "../../../lib/logger";
-import { WS2PConnection } from "./WS2PConnection";
+import {NewLogger} from "../../../lib/logger";
+import {WS2PConnection} from "./WS2PConnection";
 
 const logger = NewLogger()
 
 export class WS2PStreamer extends stream.Transform {
 
+  private enabled = true
+
   constructor(private ws2pc:WS2PConnection) {
     super({ objectMode: true })
   }
 
+  enable() {
+    this.enabled = true
+  }
+
+  disable() {
+    this.enabled = false
+  }
+
   async _write(obj:any, enc:any, done:any) {
+    if (!this.enabled) {
+      return done && done()
+    }
     try {
       if (obj.joiners) {
         await this.ws2pc.pushBlock(obj)

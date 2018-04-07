@@ -19,14 +19,14 @@ import {Server} from "../../server"
 const qfs       = require('q-io/fs');
 const directory = require('../lib/system/directory');
 const constants = require('../lib/constants');
-const path      = require('path');
 const Tail      = require("tail").Tail
 
 module.exports = {
   duniter: {
 
     cliOptions: [
-      { value: '--loglevel <level>', desc: 'Logs level, either [error,warning,info,debug,trace]. default to `info`.' }
+      { value: '--loglevel <level>', desc: 'Logs level, either [error,warning,info,debug,trace]. default to `info`.' },
+      { value: '--sql-traces', desc: 'Will log every SQL query that is executed. Requires --loglevel \'trace\'.' }
     ],
 
     service: {

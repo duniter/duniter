@@ -30,7 +30,6 @@ import {TxsDAL} from "./TxsDAL"
 
 const _ = require('underscore')
 const logger = require('../../logger').NewLogger('metaDAL');
-const constants = require('./../../constants');
 
 export interface DBMeta {
   id: number,

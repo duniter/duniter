@@ -11,7 +11,6 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import { WS2PCluster } from './WS2PCluster';
 import {Server} from "../../../../server"
 import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "./WS2PConnection"
 import {Key} from "../../../lib/common-libs/crypto/keyring"
@@ -19,12 +18,18 @@ import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 import {WS2PConstants} from "./constants"
 import {WS2PStreamer} from "./WS2PStreamer"
 import {WS2PSingleWriteStream} from "./WS2PSingleWriteStream"
-import { ProxiesConf } from '../../../lib/proxy';
-import { server } from '../../../../test/integration/tools/toolbox';
+import {ProxiesConf} from '../../../lib/proxy';
 
 export class WS2PClient {
 
-  private constructor(public connection:WS2PConnection) {}
+  private constructor(
+    public connection:WS2PConnection,
+    private streamer:WS2PStreamer) {
+  }
+
+  disableStream() {
+    this.streamer.disable()
+  }
 
   static async connectTo(server:Server, fullEndpointAddress:string, endpointVersion:number, expectedWS2PUID:string, messageHandler:WS2PMessageHandler, expectedPub:string, allowKey:(pub:string)=>Promise<boolean> ) {
     const k2 = new Key(server.conf.pair.pub, server.conf.pair.sec)
@@ -69,6 +74,6 @@ export class WS2PClient {
       c.close()
       throw e
     }
-    return new WS2PClient(c)
+    return new WS2PClient(c, streamer)
   }
 }

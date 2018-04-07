@@ -12,13 +12,15 @@
 // GNU Affero General Public License for more details.
 
 import {CFSCore} from "./CFSCore";
+import {Initiable} from "../sqliteDAL/Initiable"
 
-export class AbstractCFS {
+export abstract class AbstractCFS extends Initiable {
 
   protected coreFS:CFSCore
   protected dal:any
 
   constructor(rootPath:string, qioFS:any) {
+    super()
     this.coreFS = new CFSCore(rootPath, qioFS)
   }
 }

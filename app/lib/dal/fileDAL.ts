@@ -17,7 +17,7 @@ import {StatDAL} from "./fileDALs/StatDAL"
 import {ConfDTO} from "../dto/ConfDTO"
 import {BlockDTO} from "../dto/BlockDTO"
 import {DBHead} from "../db/DBHead"
-import {DBIdentity} from "./sqliteDAL/IdentityDAL"
+import {DBIdentity, IdentityDAL} from "./sqliteDAL/IdentityDAL"
 import {CindexEntry, IindexEntry, IndexEntry, MindexEntry, SindexEntry} from "../indexer"
 import {DBPeer} from "./sqliteDAL/PeerDAL"
 import {TransactionDTO} from "../dto/TransactionDTO"
@@ -28,8 +28,8 @@ import {DBBlock} from "../db/DBBlock"
 import {DBMembership} from "./sqliteDAL/MembershipDAL"
 import {MerkleDTO} from "../dto/MerkleDTO"
 import {CommonConstants} from "../common-libs/constants"
-import { ProxiesConf } from '../proxy';
 import {PowDAL} from "./fileDALs/PowDAL";
+import {Initiable} from "./sqliteDAL/Initiable"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -54,14 +54,14 @@ export class FileDAL {
   wotb:any
   profile:string
 
-  powDAL:PowDAL
+  powDAL:any
   confDAL:any
   metaDAL:any
   peerDAL:any
   blockDAL:any
   txsDAL:any
   statDAL:any
-  idtyDAL:any
+  idtyDAL:IdentityDAL
   certDAL:any
   msDAL:any
   walletDAL:any
@@ -70,7 +70,7 @@ export class FileDAL {
   iindexDAL:any
   sindexDAL:any
   cindexDAL:any
-  newDals:any
+  newDals:{ [k:string]: Initiable }
 
   loadConfHook: (conf:ConfDTO) => Promise<void>
   saveConfHook: (conf:ConfDTO) => Promise<ConfDTO>
@@ -292,7 +292,7 @@ export class FileDAL {
     return this.sindexDAL.getAvailableForPubkey(pubkey)
   }
 
-  async getIdentityByHashOrNull(hash:string) {
+  async getIdentityByHashOrNull(hash:string): Promise<DBIdentity|null> {
     const pending = await this.idtyDAL.getByHash(hash);
     if (!pending) {
       return this.iindexDAL.getFromHash(hash);

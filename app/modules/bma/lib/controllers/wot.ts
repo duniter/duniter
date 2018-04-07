@@ -11,21 +11,23 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import { IindexEntry } from './../../../../lib/indexer';
+import {IindexEntry} from './../../../../lib/indexer';
 import {AbstractController} from "./AbstractController";
 import {BMAConstants} from "../constants";
 import {DBIdentity} from "../../../../lib/dal/sqliteDAL/IdentityDAL";
-import { IdentityForRequirements } from '../../../../service/BlockchainService';
+import {IdentityForRequirements} from '../../../../service/BlockchainService';
 import {
   HttpCert,
-  HttpCertIdentity, HttpCertifications,
+  HttpCertIdentity,
+  HttpCertifications,
   HttpIdentity,
   HttpIdentityRequirement,
   HttpLookup,
   HttpMembers,
   HttpMembershipList,
   HttpRequirements,
-  HttpResult, HttpSimpleIdentity
+  HttpResult,
+  HttpSimpleIdentity
 } from "../dtos";
 
 const _        = require('underscore');
@@ -168,16 +170,27 @@ export class WOTBinding extends AbstractController {
 
   async requirementsOfPending(req:any): Promise<HttpRequirements> {
     const minsig = ParametersService.getMinSig(req)
-    let identities:IdentityForRequirements[] = await this.server.dal.idtyDAL.query(
+    let identities:IdentityForRequirements[] = (await this.server.dal.idtyDAL.query(
       'SELECT i.*, count(c.sig) as nbSig ' +
       'FROM idty i, cert c ' +
       'WHERE c.target = i.hash group by i.hash having nbSig >= ?',
-      minsig)
-    const members:IdentityForRequirements[] = (await this.server.dal.idtyDAL.query(
+      [minsig])).map(i => ({
+      hash: i.hash || "",
+      member: i.member || false,
+      wasMember: i.wasMember || false,
+      pubkey: i.pubkey,
+      uid: i.uid || "",
+      buid: i.buid || "",
+      sig: i.sig || "",
+      revocation_sig: i.revocation_sig,
+      revoked: i.revoked,
+      revoked_on: i.revoked_on ? 1 : 0
+    }))
+    const members:IdentityForRequirements[] = (await this.server.dal.iindexDAL.query(
       'SELECT i.*, count(c.sig) as nbSig ' +
       'FROM i_index i, cert c ' +
       'WHERE c.`to` = i.pub group by i.pub having nbSig >= ?',
-      minsig)).map((i:IindexEntry):IdentityForRequirements => {
+      [minsig])).map((i:IindexEntry):IdentityForRequirements => {
         return {
           hash: i.hash || "",
           member: i.member || false,

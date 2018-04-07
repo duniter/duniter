@@ -336,7 +336,7 @@ export class WS2PCluster {
     }
   }
 
-  async connectToRemoteWS(endpointVersion:number, host: string, port: number, path:string, messageHandler:WS2PMessageHandler, expectedPub:string, ws2pEndpointUUID:string = ""): Promise<WS2PConnection> {
+  async connectToRemoteWS(endpointVersion:number, host: string, port: number, path:string, messageHandler:WS2PMessageHandler, expectedPub:string, ws2pEndpointUUID:string = ""): Promise<WS2PClient> {
     const uuid = nuuid.v4()
     let pub = expectedPub.slice(0, 8)
     const api:string = (host.match(WS2PConstants.HOST_ONION_REGEX) !== null) ? 'WS2PTOR':'WS2P'
@@ -368,7 +368,7 @@ export class WS2PCluster {
         to: { host, port, pubkey: pub }
       })
       await this.server.dal.setPeerUP(pub)
-      return ws2pc.connection
+      return ws2pc
     } catch (e) {
       this.server.logger.info(api+': Could not connect to peer %s using `'+api+' %s %s: %s`', pub.slice(0, 8), host, port, (e && e.message || e))
       throw e

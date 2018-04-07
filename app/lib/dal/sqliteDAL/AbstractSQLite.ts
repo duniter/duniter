@@ -12,12 +12,13 @@
 // GNU Affero General Public License for more details.
 
 import {SQLiteDriver} from "../drivers/SQLiteDriver"
+import {Initiable} from "./Initiable"
+
 /**
  * Created by cgeek on 22/08/15.
  */
 
 const _ = require('underscore');
-const co = require('co');
 const colors = require('colors');
 const logger = require('../../logger').NewLogger('sqlite');
 
@@ -25,7 +26,7 @@ export interface BeforeSaveHook<T> {
   (t:T): void
 }
 
-export abstract class AbstractSQLite<T> {
+export abstract class AbstractSQLite<T> extends Initiable {
 
   constructor(
     private driver:SQLiteDriver,
@@ -38,6 +39,7 @@ export abstract class AbstractSQLite<T> {
     private transientFields: string[] = [],
     private beforeSaveHook: BeforeSaveHook<T> | null = null
   ) {
+    super()
   }
 
   async query(sql:string, params: any[] = []): Promise<T[]> {

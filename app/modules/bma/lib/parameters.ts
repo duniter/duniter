@@ -62,7 +62,7 @@ export class ParametersService {
     return req.params.hash;
   };
 
-  static getMinSig(req:any){
+  static getMinSig(req:any): number {
     if(!req.params.minsig){
       return 4 // Default value
     }

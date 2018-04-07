@@ -128,6 +128,7 @@ export class IdentityService extends FIFOService {
         await GLOBAL_RULES_FUNCTIONS.checkIdentitiesAreWritable({ identities: [idtyObj.inline()], version: (current && current.version) || constants.BLOCK_GENERATED_VERSION }, this.conf, this.dal);
         if (byAbsorption !== BY_ABSORPTION) {
           if (!(await this.dal.idtyDAL.sandbox.acceptNewSandBoxEntry({
+              certsCount: 0,
               issuers: [idty.pubkey],
               ref_block: parseInt(idty.buid.split('-')[0])
             }, this.conf.pair && this.conf.pair.pub))) {
@@ -149,16 +150,16 @@ export class IdentityService extends FIFOService {
     obj.currency = this.conf.currency || obj.currency;
     const cert = CertificationDTO.fromJSONObject(obj)
     const targetHash = cert.getTargetHash();
-    let idty = await this.dal.getIdentityByHashOrNull(targetHash);
+    let possiblyNullIdty = await this.dal.getIdentityByHashOrNull(targetHash);
     let idtyAbsorbed = false
-    if (!idty) {
+    const idty: DBIdentity = possiblyNullIdty !== null ? possiblyNullIdty : await this.submitIdentity({
+      pubkey: cert.idty_issuer,
+      uid: cert.idty_uid,
+      buid: cert.idty_buid,
+      sig: cert.idty_sig
+    }, BY_ABSORPTION);
+    if (possiblyNullIdty === null) {
       idtyAbsorbed = true
-      idty = await this.submitIdentity({
-        pubkey: cert.idty_issuer,
-        uid: cert.idty_uid,
-        buid: cert.idty_buid,
-        sig: cert.idty_sig
-      }, BY_ABSORPTION);
     }
     let anErr:any
     const hash = cert.getHash()

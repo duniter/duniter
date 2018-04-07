@@ -42,7 +42,7 @@ export interface IdentityForRequirements {
   uid:string
   buid:string
   sig:string
-  revocation_sig:string
+  revocation_sig:string|null
   revoked:boolean
   revoked_on:number
 }

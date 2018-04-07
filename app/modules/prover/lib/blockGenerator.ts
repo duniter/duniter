@@ -12,14 +12,12 @@
 // GNU Affero General Public License for more details.
 
 "use strict";
-import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {Server} from "../../../../server"
 import {BlockchainContext} from "../../../lib/computation/BlockchainContext"
 import {TransactionDTO} from "../../../lib/dto/TransactionDTO"
 import {GLOBAL_RULES_HELPERS} from "../../../lib/rules/global_rules"
 import {LOCAL_RULES_HELPERS} from "../../../lib/rules/local_rules"
 import {Indexer} from "../../../lib/indexer"
-import {FileDAL} from "../../../lib/dal/fileDAL"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {verify} from "../../../lib/common-libs/crypto/keyring"
 import {rawer} from "../../../lib/common-libs/index"
@@ -29,6 +27,9 @@ import {IdentityDTO} from "../../../lib/dto/IdentityDTO"
 import {CertificationDTO} from "../../../lib/dto/CertificationDTO"
 import {MembershipDTO} from "../../../lib/dto/MembershipDTO"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
+import {DBIdentity} from "../../../lib/dal/sqliteDAL/IdentityDAL"
+import {ConfDTO} from "../../../lib/dto/ConfDTO"
+import {FileDAL} from "../../../lib/dal/fileDAL"
 
 const _               = require('underscore');
 const moment          = require('moment');
@@ -38,22 +39,26 @@ const constants     = CommonConstants
 
 export class BlockGenerator {
 
-  conf:ConfDTO
-  dal:any
   mainContext:BlockchainContext
   selfPubkey:string
   logger:any
 
   constructor(private server:Server) {
-    this.conf = server.conf;
-    this.dal = server.dal;
     this.mainContext = server.BlockchainService.getContext();
     this.selfPubkey = (this.conf.pair && this.conf.pair.pub) || ''
     this.logger = server.logger;
   }
 
+  get conf(): ConfDTO {
+    return this.server.conf
+  }
+
+  get dal(): FileDAL {
+    return this.server.dal
+  }
+
   nextBlock(manualValues:any = {}, simulationValues:any = {}) {
-    return this.generateNextBlock(new NextBlockGenerator(this.mainContext, this.conf, this.dal, this.logger), manualValues, simulationValues)
+    return this.generateNextBlock(new NextBlockGenerator(this.mainContext, this.server, this.logger), manualValues, simulationValues)
   }
 
   async manualRoot() {
@@ -155,7 +160,7 @@ export class BlockGenerator {
     const leavers:string[] = [];
     memberships.forEach((ms:any) => leavers.push(ms.issuer));
     for (const ms of memberships) {
-      const leave = { identity: null, ms: ms, key: null, idHash: '' };
+      const leave: { identity: DBIdentity|null, ms: any, key: any, idHash: string } = { identity: null, ms: ms, key: null, idHash: '' };
       leave.idHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
       let block;
       if (current) {
@@ -357,7 +362,7 @@ export class BlockGenerator {
       throw constants.ERRORS.TOO_OLD_IDENTITY;
     }
     else if (!identity.wasMember && identity.buid != CommonConstants.SPECIAL_BLOCK) {
-      const idtyBasedBlock = await this.dal.getBlock(identity.buid);
+      const idtyBasedBlock = await this.dal.getBlock(parseInt(identity.buid.split('-')[0]))
       const age = current.medianTime - idtyBasedBlock.medianTime;
       if (age > this.conf.idtyWindow) {
         throw constants.ERRORS.TOO_OLD_IDENTITY;
@@ -686,9 +691,16 @@ class NextBlockGenerator implements BlockGeneratorInterface {
 
   constructor(
     private mainContext:BlockchainContext,
-    private conf:ConfDTO,
-    private dal:FileDAL,
+    private server:Server,
     private logger:any) {
+  }
+
+  get conf() {
+    return this.server.conf
+  }
+
+  get dal() {
+    return this.server.dal
   }
 
   async findNewCertsFromWoT(current:DBBlock) {

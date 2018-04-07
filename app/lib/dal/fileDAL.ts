@@ -31,6 +31,7 @@ import {CommonConstants} from "../common-libs/constants"
 import {PowDAL} from "./fileDALs/PowDAL";
 import {Initiable} from "./sqliteDAL/Initiable"
 import {MetaDAL} from "./sqliteDAL/MetaDAL"
+import {BIndexDAL} from "./sqliteDAL/index/BIndexDAL"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -66,7 +67,7 @@ export class FileDAL {
   certDAL:CertDAL
   msDAL:MembershipDAL
   walletDAL:WalletDAL
-  bindexDAL:any
+  bindexDAL:BIndexDAL
   mindexDAL:any
   iindexDAL:any
   sindexDAL:any

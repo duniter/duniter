@@ -19,6 +19,7 @@ import {IdentityForRequirements} from '../../../../service/BlockchainService';
 import {
   HttpCert,
   HttpCertIdentity,
+  HttpCertification,
   HttpCertifications,
   HttpIdentity,
   HttpIdentityRequirement,
@@ -46,7 +47,7 @@ export class WOTBinding extends AbstractController {
     identities.forEach((idty, index) => identities[index] = DBIdentity.copyFromExisting(idty));
     // Prepare some data to avoid displaying expired certifications
     for (const idty of identities) {
-      const certs = await this.server.dal.certsToTarget(idty.pubkey, idty.getTargetHash());
+      const certs: any[] = await this.server.dal.certsToTarget(idty.pubkey, idty.getTargetHash());
       const validCerts = [];
       for (const cert of certs) {
         const member = await this.IdentityService.getWrittenByPubkey(cert.from);
@@ -79,7 +80,7 @@ export class WOTBinding extends AbstractController {
     if (identities.length == 0) {
       throw BMAConstants.ERRORS.NO_MATCHING_IDENTITY;
     }
-    const resultsByPubkey:any = {};
+    const resultsByPubkey:{[k:string]:HttpIdentity} = {};
     identities.forEach((identity) => {
       const copy = DBIdentity.copyFromExisting(identity)
       const jsoned = copy.json();
@@ -113,47 +114,36 @@ export class WOTBinding extends AbstractController {
     const search = await ParametersService.getSearchP(req);
     const idty = await this.IdentityService.findMemberWithoutMemberships(search);
     const certs = await this.server.dal.certsToTarget(idty.pubkey, idty.getTargetHash());
-    idty.certs = [];
+    const theCerts:HttpCertification[] = [];
     for (const cert of certs) {
       const certifier = await this.server.dal.getWrittenIdtyByPubkey(cert.from);
       if (certifier) {
-        cert.uid = certifier.uid;
-        cert.isMember = certifier.member;
-        cert.sigDate = certifier.buid;
-        cert.wasMember = true; // As we checked if(certified)
-        if (!cert.cert_time) {
-          let certBlock = await this.server.dal.getBlock(cert.block_number);
-          cert.cert_time = {
+        let certBlock = await this.server.dal.getBlock(cert.block_number)
+        theCerts.push({
+          pubkey: cert.from,
+          uid: certifier.uid,
+          isMember: certifier.member,
+          wasMember: true, // a member is necessarily certified by members
+          cert_time: {
             block: certBlock.number,
             medianTime: certBlock.medianTime
-          };
-        }
-        idty.certs.push(cert);
+          },
+          sigDate: certifier.buid,
+          written: (cert.written_block !== null && cert.written_hash) ? {
+            number: cert.written_block,
+            hash: cert.written_hash
+          } : null,
+          signature: cert.sig
+        })
       }
     }
-    const json:any = {
+    return {
       pubkey: idty.pubkey,
       uid: idty.uid,
       sigDate: idty.buid,
       isMember: idty.member,
-      certifications: []
-    };
-    idty.certs.forEach(function(cert){
-      json.certifications.push({
-        pubkey: cert.from,
-        uid: cert.uid,
-        isMember: cert.isMember,
-        wasMember: cert.wasMember,
-        cert_time: cert.cert_time,
-        sigDate: cert.sigDate,
-        written: cert.linked ? {
-          number: cert.written_block,
-          hash: cert.written_hash
-        } : null,
-        signature: cert.sig
-      });
-    });
-    return json;
+      certifications: theCerts
+    }
   }
 
   async requirements(req:any): Promise<HttpRequirements> {
@@ -218,46 +208,36 @@ export class WOTBinding extends AbstractController {
     const search = await ParametersService.getSearchP(req);
     const idty = await this.IdentityService.findMemberWithoutMemberships(search);
     const certs = await this.server.dal.certsFrom(idty.pubkey);
-    idty.certs = [];
+    const theCerts:HttpCertification[] = [];
     for (const cert of certs) {
       const certified = await this.server.dal.getWrittenIdtyByPubkey(cert.to);
       if (certified) {
-        cert.uid = certified.uid;
-        cert.isMember = certified.member;
-        cert.sigDate = certified.buid;
-        cert.wasMember = true; // As we checked if(certified)
-        if (!cert.cert_time) {
-          let certBlock = await this.server.dal.getBlock(cert.block_number);
-          cert.cert_time = {
+        let certBlock = await this.server.dal.getBlock(cert.block_number)
+        theCerts.push({
+          pubkey: cert.to,
+          uid: certified.uid,
+          isMember: certified.member,
+          wasMember: true, // a member is necessarily certified by members
+          cert_time: {
             block: certBlock.number,
             medianTime: certBlock.medianTime
-          };
-        }
-        idty.certs.push(cert);
+          },
+          sigDate: certified.buid,
+          written: (cert.written_block !== null && cert.written_hash) ? {
+            number: cert.written_block,
+            hash: cert.written_hash
+          } : null,
+          signature: cert.sig
+        })
       }
     }
-    const json:any = {
+    return {
       pubkey: idty.pubkey,
       uid: idty.uid,
       sigDate: idty.buid,
       isMember: idty.member,
-      certifications: []
-    };
-    idty.certs.forEach((cert) => json.certifications.push({
-        pubkey: cert.to,
-        uid: cert.uid,
-        isMember: cert.isMember,
-        wasMember: cert.wasMember,
-        cert_time: cert.cert_time,
-        sigDate: cert.sigDate,
-        written: cert.linked ? {
-          number: cert.written_block,
-          hash: cert.written_hash
-        } : null,
-        signature: cert.sig
-      })
-    );
-    return json;
+      certifications: theCerts
+    }
   }
 
   async identityOf(req:any): Promise<HttpSimpleIdentity> {

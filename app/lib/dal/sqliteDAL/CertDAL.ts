@@ -13,16 +13,16 @@
 
 import {SQLiteDriver} from "../drivers/SQLiteDriver"
 import {AbstractSQLite} from "./AbstractSQLite"
-import { SandBox } from './SandBox';
-import { DBDocument } from './DocumentDAL';
+import {SandBox} from './SandBox';
+import {DBDocument} from './DocumentDAL';
 
 const constants = require('../../constants');
 
 export interface DBCert extends DBDocument {
   linked:boolean
   written:boolean
-  written_block:null
-  written_hash:null
+  written_block:number|null
+  written_hash:string|null
   sig:string
   block_number:number
   block_hash:string

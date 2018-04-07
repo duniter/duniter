@@ -486,9 +486,9 @@ export interface HttpUID {
     timestamp: string
   },
   self: string,
-  revocation_sig: string,
+  revocation_sig: string|null,
   revoked: boolean,
-  revoked_on: number,
+  revoked_on: number|null,
   others: HttpOther[]
 }
 
@@ -712,7 +712,7 @@ export interface HttpCertification {
   written: {
     number: number
     hash: string
-  }
+  } | null
   signature: string
 }
 

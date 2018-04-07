@@ -21,7 +21,7 @@ import {DBIdentity, IdentityDAL} from "./sqliteDAL/IdentityDAL"
 import {CindexEntry, IindexEntry, IndexEntry, MindexEntry, SindexEntry} from "../indexer"
 import {DBPeer} from "./sqliteDAL/PeerDAL"
 import {TransactionDTO} from "../dto/TransactionDTO"
-import {DBCert} from "./sqliteDAL/CertDAL"
+import {CertDAL, DBCert} from "./sqliteDAL/CertDAL"
 import {DBWallet} from "./sqliteDAL/WalletDAL"
 import {DBTx} from "./sqliteDAL/TxsDAL"
 import {DBBlock} from "../db/DBBlock"
@@ -62,7 +62,7 @@ export class FileDAL {
   txsDAL:any
   statDAL:any
   idtyDAL:IdentityDAL
-  certDAL:any
+  certDAL:CertDAL
   msDAL:any
   walletDAL:any
   bindexDAL:any

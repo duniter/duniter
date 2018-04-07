@@ -60,7 +60,7 @@ export class FileDAL {
   peerDAL:any
   blockDAL:any
   txsDAL:any
-  statDAL:any
+  statDAL:StatDAL
   idtyDAL:IdentityDAL
   certDAL:CertDAL
   msDAL:MembershipDAL

@@ -13,8 +13,9 @@
 
 import {SQLiteDriver} from "../drivers/SQLiteDriver";
 import {AbstractSQLite} from "./AbstractSQLite";
-import { SandBox } from './SandBox';
-import { DBDocument } from './DocumentDAL';
+import {SandBox} from './SandBox';
+import {DBDocument} from './DocumentDAL';
+
 const _ = require('underscore');
 const constants = require('../../constants');
 
@@ -146,7 +147,7 @@ export class MembershipDAL extends AbstractSQLite<DBMembership> {
     return this.query('SELECT * FROM sandbox_memberships LIMIT ' + (this.sandbox.maxSize), [])
   }
 
-  sandbox = new SandBox(constants.SANDBOX_SIZE_MEMBERSHIPS, this.getSandboxMemberships.bind(this), (compared:DBMembership, reference:DBMembership) => {
+  sandbox = new SandBox(constants.SANDBOX_SIZE_MEMBERSHIPS, this.getSandboxMemberships.bind(this), (compared:{ block_number: number, issuers: string[] }, reference:{ block_number: number, issuers: string[] }) => {
     if (compared.block_number < reference.block_number) {
       return -1;
     }

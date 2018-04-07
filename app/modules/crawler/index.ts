@@ -331,7 +331,7 @@ export const CrawlerDependency = {
           // Membership
           let rawMS
           for (const theMS of pendingMSS) {
-            console.log('New membership pending for %s', theMS.uid);
+            console.log('New membership pending for %s', theMS.userid);
             try {
               rawMS = rawer.getMembership({
                 currency: 'g1',

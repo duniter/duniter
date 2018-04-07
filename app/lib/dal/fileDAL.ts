@@ -25,7 +25,7 @@ import {CertDAL, DBCert} from "./sqliteDAL/CertDAL"
 import {DBWallet} from "./sqliteDAL/WalletDAL"
 import {DBTx} from "./sqliteDAL/TxsDAL"
 import {DBBlock} from "../db/DBBlock"
-import {DBMembership} from "./sqliteDAL/MembershipDAL"
+import {DBMembership, MembershipDAL} from "./sqliteDAL/MembershipDAL"
 import {MerkleDTO} from "../dto/MerkleDTO"
 import {CommonConstants} from "../common-libs/constants"
 import {PowDAL} from "./fileDALs/PowDAL";
@@ -63,7 +63,7 @@ export class FileDAL {
   statDAL:any
   idtyDAL:IdentityDAL
   certDAL:CertDAL
-  msDAL:any
+  msDAL:MembershipDAL
   walletDAL:any
   bindexDAL:any
   mindexDAL:any

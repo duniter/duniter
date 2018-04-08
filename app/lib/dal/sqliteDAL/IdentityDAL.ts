@@ -27,7 +27,19 @@ export abstract class DBIdentity implements Cloneable {
   }
 
   certs:any[] = []
-  signed:any[] = []
+  signed: {
+    idty: {
+      pubkey: string
+      uid: string
+      buid: string
+      sig: string
+      member: string
+      wasMember: string
+    }
+    block_number: number
+    block_hash: string
+    sig: string
+  }[] = []
 
   revoked: boolean
   currentMSN: null
@@ -48,7 +60,11 @@ export abstract class DBIdentity implements Cloneable {
   expires_on: number
 
   getTargetHash() {
-    return IdentityDTO.getTargetHash(this)
+    return IdentityDTO.getTargetHash({
+      pub: this.pubkey,
+      created_on: this.buid,
+      uid: this.uid
+    })
   }
 
   json() {
@@ -72,7 +88,7 @@ export abstract class DBIdentity implements Cloneable {
         "timestamp": this.buid
       },
       "revoked": this.revoked,
-      "revoked_on": this.revoked_on,
+      "revoked_on": parseInt(String(this.revoked_on)),
       "revocation_sig": this.revocation_sig,
       "self": this.sig,
       "others": others
@@ -253,6 +269,10 @@ export class IdentityDAL extends AbstractSQLite<DBIdentity> {
       uid: uid,
       written: false
     })
+  }
+
+  setRevoked(pubkey: string) {
+    return this.query('UPDATE ' + this.table + ' SET revoked = ? WHERE pubkey = ?', [true, pubkey])
   }
 
   getByHash(hash:string) {

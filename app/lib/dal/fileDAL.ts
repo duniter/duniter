@@ -18,7 +18,7 @@ import {ConfDTO} from "../dto/ConfDTO"
 import {BlockDTO} from "../dto/BlockDTO"
 import {DBHead} from "../db/DBHead"
 import {DBIdentity, IdentityDAL} from "./sqliteDAL/IdentityDAL"
-import {CindexEntry, IindexEntry, IndexEntry, SindexEntry} from "../indexer"
+import {CindexEntry, FullMindexEntry, IindexEntry, IndexEntry, SindexEntry} from "../indexer"
 import {DBPeer} from "./sqliteDAL/PeerDAL"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import {CertDAL, DBCert} from "./sqliteDAL/CertDAL"
@@ -35,6 +35,9 @@ import {BIndexDAL} from "./sqliteDAL/index/BIndexDAL"
 import {MIndexDAL} from "./sqliteDAL/index/MIndexDAL"
 import {CIndexDAL} from "./sqliteDAL/index/CIndexDAL"
 import {SIndexDAL} from "./sqliteDAL/index/SIndexDAL"
+import {IIndexDAL} from "./sqliteDAL/index/IIndexDAL"
+import {DataErrors} from "../common-libs/errors"
+import {BasicRevocableIdentity, IdentityDTO} from "../dto/IdentityDTO"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -72,7 +75,7 @@ export class FileDAL {
   walletDAL:WalletDAL
   bindexDAL:BIndexDAL
   mindexDAL:MIndexDAL
-  iindexDAL:any
+  iindexDAL:IIndexDAL
   sindexDAL:SIndexDAL
   cindexDAL:CIndexDAL
   newDals:{ [k:string]: Initiable }
@@ -297,36 +300,231 @@ export class FileDAL {
     return this.sindexDAL.getAvailableForPubkey(pubkey)
   }
 
-  async getIdentityByHashOrNull(hash:string): Promise<DBIdentity|null> {
-    const pending = await this.idtyDAL.getByHash(hash);
+  async getGlobalIdentityByHashForExistence(hash:string): Promise<boolean> {
+    const pending = await this.idtyDAL.getByHash(hash)
     if (!pending) {
-      return this.iindexDAL.getFromHash(hash);
+      const idty = await this.iindexDAL.getFullFromHash(hash)
+      if (!idty) {
+        return false
+      }
     }
-    return pending;
+    return true
+  }
+
+  async getGlobalIdentityByHashForHashingAndSig(hash:string): Promise<{ pubkey:string, uid:string, buid:string, sig:string }|null> {
+    const pending = await this.idtyDAL.getByHash(hash)
+    if (!pending) {
+      const idty = await this.iindexDAL.getFullFromHash(hash)
+      if (!idty) {
+        return null
+      }
+      return {
+        pubkey: idty.pub,
+        uid: idty.uid,
+        buid: idty.created_on,
+        sig: idty.sig
+      }
+    }
+    return pending
+  }
+
+  async getGlobalIdentityByHashForLookup(hash:string): Promise<{ pubkey:string, uid:string, buid:string, sig:string, member:boolean, wasMember:boolean }|null> {
+    const pending = await this.idtyDAL.getByHash(hash)
+    if (!pending) {
+      const idty = await this.iindexDAL.getFullFromHash(hash)
+      if (!idty) {
+        return null
+      }
+      return {
+        pubkey: idty.pub,
+        uid: idty.uid,
+        buid: idty.created_on,
+        sig: idty.sig,
+        member: idty.member,
+        wasMember: idty.wasMember
+      }
+    }
+    return pending
+  }
+
+  async getGlobalIdentityByHashForJoining(hash:string): Promise<{ pubkey:string, uid:string, buid:string, sig:string, member:boolean, wasMember:boolean, revoked:boolean }|null> {
+    const pending = await this.idtyDAL.getByHash(hash)
+    if (!pending) {
+      const idty = await this.iindexDAL.getFullFromHash(hash)
+      if (!idty) {
+        return null
+      }
+      const membership = await this.mindexDAL.getReducedMS(idty.pub) as FullMindexEntry
+      return {
+        pubkey: idty.pub,
+        uid: idty.uid,
+        buid: idty.created_on,
+        sig: idty.sig,
+        member: idty.member,
+        wasMember: idty.wasMember,
+        revoked: !!(membership.revoked_on)
+      }
+    }
+    return pending
+  }
+
+  async getGlobalIdentityByHashForIsMember(hash:string): Promise<{ pub:string, member:boolean }|null> {
+    const pending = await this.idtyDAL.getByHash(hash)
+    if (!pending) {
+      const idty = await this.iindexDAL.getFullFromHash(hash)
+      if (!idty) {
+        return null
+      }
+      return {
+        pub: idty.pub,
+        member: idty.member
+      }
+    }
+    return {
+      pub: pending.pubkey,
+      member: pending.member
+    }
+  }
+
+  async getGlobalIdentityByHashForRevocation(hash:string): Promise<{ pub:string, uid:string, created_on:string, sig:string, member:boolean, wasMember:boolean, revoked:boolean, revocation_sig:string|null, expires_on:number }|null> {
+    const pending = await this.idtyDAL.getByHash(hash)
+    if (!pending) {
+      const idty = await this.iindexDAL.getFullFromHash(hash)
+      if (!idty) {
+        return null
+      }
+      const membership = await this.mindexDAL.getReducedMS(idty.pub) as FullMindexEntry
+      return {
+        pub: idty.pub,
+        uid: idty.uid,
+        sig: idty.sig,
+        member: idty.member,
+        wasMember: idty.wasMember,
+        expires_on: membership.expires_on,
+        created_on: idty.created_on,
+        revoked: !!(membership.revoked_on),
+        revocation_sig: membership.revocation
+      }
+    }
+    return {
+      pub: pending.pubkey,
+      uid: pending.uid,
+      sig: pending.sig,
+      expires_on: pending.expires_on,
+      created_on: pending.buid,
+      member: pending.member,
+      wasMember: pending.wasMember,
+      revoked: pending.revoked,
+      revocation_sig: pending.revocation_sig
+    }
   }
 
   getMembers() {
     return this.iindexDAL.getMembers()
   }
 
-  async getWrittenIdtyByPubkey(pubkey:string) {
-    const idty = await this.iindexDAL.getFromPubkey(pubkey)
-    if (!idty) {
-      return null;
-    }
-    const membership = await this.mindexDAL.getReducedMS(pubkey)
-    idty.revoked_on = membership.revoked_on
-    return idty;
+  async getWrittenIdtyByPubkeyForHash(pubkey:string): Promise<{ hash:string }> {
+    return this.getWrittenForSureIdtyByPubkey(pubkey)
   }
 
-  async getWrittenIdtyByUID(uid:string) {
-    const idty = await this.iindexDAL.getFromUID(uid)
+  async getWrittenIdtyByPubkeyForHashing(pubkey:string): Promise<{ uid:string, created_on:string, pub:string }> {
+    return this.getWrittenForSureIdtyByPubkey(pubkey)
+  }
+
+  async getWrittenIdtyByPubkeyForWotbID(pubkey:string): Promise<{ wotb_id:number }> {
+    return this.getWrittenForSureIdtyByPubkey(pubkey)
+  }
+
+  async getWrittenIdtyByPubkeyForUidAndPubkey(pubkey:string): Promise<{ pub:string, uid:string }> {
+    return this.getWrittenForSureIdtyByPubkey(pubkey)
+  }
+
+  async getWrittenIdtyByPubkeyForIsMember(pubkey:string): Promise<{ member:boolean }|null> {
+    return this.iindexDAL.getFromPubkey(pubkey)
+  }
+
+  async getWrittenIdtyByPubkeyForUidAndIsMemberAndWasMember(pubkey:string): Promise<{ uid:string, member:boolean, wasMember:boolean }|null> {
+    return this.iindexDAL.getFromPubkey(pubkey)
+  }
+
+  async getWrittenIdtyByPubkeyOrUidForIsMemberAndPubkey(search:string): Promise<{ pub:string, member:boolean }|null> {
+    return this.iindexDAL.getFromPubkeyOrUid(search)
+  }
+
+  async getWrittenIdtyByPubkeyOrUIdForHashingAndIsMember(search:string): Promise<{ uid:string, created_on:string, pub:string, member:boolean }|null> {
+    return await this.iindexDAL.getFromPubkeyOrUid(search)
+  }
+
+  async getWrittenIdtyByPubkeyForRevocationCheck(pubkey:string): Promise<{ pub:string, uid:string, created_on:string, sig:string, revoked_on:number|null }|null> {
+    const idty = await this.iindexDAL.getFromPubkey(pubkey)
     if (!idty) {
-      return null;
+      return null
     }
-    const membership = await this.mindexDAL.getReducedMS(idty.pub)
-    idty.revoked_on = membership.revoked_on
-    return idty;
+    const membership = await this.mindexDAL.getReducedMS(pubkey) as FullMindexEntry
+    return {
+      pub: idty.pub,
+      uid: idty.uid,
+      sig: idty.sig,
+      created_on: idty.created_on,
+      revoked_on: membership.revoked_on
+    }
+  }
+
+  async getWrittenIdtyByPubkeyForCertificationCheck(pubkey:string): Promise<{ pub:string, uid:string, created_on:string, sig:string }|null> {
+    const idty = await this.iindexDAL.getFromPubkey(pubkey)
+    if (!idty) {
+      return null
+    }
+    return {
+      pub: idty.pub,
+      uid: idty.uid,
+      sig: idty.sig,
+      created_on: idty.created_on,
+    }
+  }
+
+  async getWrittenIdtyByPubkeyForUidAndMemberAndCreatedOn(pubkey:string): Promise<{ uid:string, member:boolean, created_on:string }|null> {
+    const idty = await this.iindexDAL.getFromPubkey(pubkey)
+    if (!idty) {
+      return null
+    }
+    return {
+      uid: idty.uid,
+      member: idty.member,
+      created_on: idty.created_on,
+    }
+  }
+
+  private async getWrittenForSureIdtyByPubkey(pubkey:string) {
+    const idty = await this.iindexDAL.getFromPubkey(pubkey)
+    if (!idty) {
+      throw Error(DataErrors[DataErrors.MEMBER_NOT_FOUND])
+    }
+    return idty
+  }
+
+  private async getWrittenForSureIdtyByUid(pubkey:string) {
+    const idty = (await this.iindexDAL.getFullFromUID(pubkey))
+    if (!idty) {
+      throw Error(DataErrors[DataErrors.MEMBER_NOT_FOUND])
+    }
+    return idty
+  }
+
+  async getWrittenIdtyByPubkeyForExistence(uid:string) {
+    return !!(await this.iindexDAL.getFromPubkey(uid))
+  }
+
+  async getWrittenIdtyByUIDForExistence(uid:string) {
+    return !!(await this.iindexDAL.getFromUID(uid))
+  }
+
+  async getWrittenIdtyByUidForHashing(uid:string): Promise<{ uid:string, created_on:string, pub:string }> {
+    return this.getWrittenForSureIdtyByUid(uid)
+  }
+
+  async getWrittenIdtyByUIDForWotbId(uid:string): Promise<{ wotb_id:number }> {
+    return this.getWrittenForSureIdtyByUid(uid)
   }
 
   async findPeersWhoseHashIsIn(hashes:string[]) {
@@ -355,8 +553,8 @@ export class FileDAL {
     const revoking = await this.idtyDAL.getToRevoke();
     const toRevoke = [];
     for (const pending of revoking) {
-      const idty = await this.getWrittenIdtyByPubkey(pending.pubkey);
-      if (!idty.revoked_on) {
+      const idty = await this.getWrittenIdtyByPubkeyForRevocationCheck(pending.pubkey)
+      if (idty && !idty.revoked_on) {
         toRevoke.push(pending);
       }
     }
@@ -385,7 +583,7 @@ export class FileDAL {
     return await Promise.all(found.map(async (f:any) => {
       const ms = await this.mindexDAL.getReducedMS(f.pub);
       if (ms) {
-        f.revoked_on = ms.revoked_on ? parseInt(ms.revoked_on) : null;
+        f.revoked_on = ms.revoked_on ? ms.revoked_on : null;
         f.revoked = !!f.revoked_on;
         f.revocation_sig = ms.revocation || null;
       }
@@ -420,7 +618,7 @@ export class FileDAL {
     const links = await this.cindexDAL.getValidLinksFrom(pubkey);
     let matching = certs;
     await Promise.all(links.map(async (entry:any) => {
-      const idty = await this.getWrittenIdtyByPubkey(entry.receiver);
+      const idty = await this.getWrittenIdtyByPubkeyForHash(entry.receiver)
       entry.from = entry.issuer;
       entry.to = entry.receiver;
       const cbt = entry.created_on.split('-');
@@ -558,15 +756,17 @@ export class FileDAL {
   }
 
   async setRevoked(pubkey:string) {
-    const idty = await this.getWrittenIdtyByPubkey(pubkey);
-    idty.revoked = true;
-    return await this.idtyDAL.saveIdentity(idty);
+    return await this.idtyDAL.setRevoked(pubkey)
   }
 
-  setRevocating = (existing:DBIdentity, revocation_sig:string) => {
-    existing.revocation_sig = revocation_sig;
-    existing.revoked = false;
-    return this.idtyDAL.saveIdentity(existing);
+  setRevocating = (idty:BasicRevocableIdentity, revocation_sig:string) => {
+    const dbIdentity = IdentityDTO.fromBasicIdentity(idty)
+    dbIdentity.member = idty.member
+    dbIdentity.wasMember = idty.wasMember
+    dbIdentity.expires_on = idty.expires_on
+    dbIdentity.revocation_sig = revocation_sig
+    dbIdentity.revoked = false
+    return this.idtyDAL.saveIdentity(dbIdentity)
   }
 
   async getPeerOrNull(pubkey:string) {
@@ -682,8 +882,8 @@ export class FileDAL {
 
   async updateWotbLinks(cindex:CindexEntry[]) {
     for (const entry of cindex) {
-      const from = await this.getWrittenIdtyByPubkey(entry.issuer);
-      const to = await this.getWrittenIdtyByPubkey(entry.receiver);
+      const from = await this.getWrittenIdtyByPubkeyForWotbID(entry.issuer);
+      const to = await this.getWrittenIdtyByPubkeyForWotbID(entry.receiver);
       if (entry.op == CommonConstants.IDX_CREATE) {
         this.wotb.addLink(from.wotb_id, to.wotb_id);
       } else {

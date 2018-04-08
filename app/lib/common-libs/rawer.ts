@@ -31,7 +31,17 @@ export const getOfficialIdentity = (json:any, withSig = true) => {
   }
 }
 
-export const getOfficialCertification = (json:any) => {
+export const getOfficialCertification = (json:{
+  version?:number
+  currency:string
+  issuer:string
+  idty_issuer:string
+  idty_uid:string
+  idty_buid:string
+  idty_sig:string
+  buid:string
+  sig?:string
+}) => {
   let raw = getNormalHeader('Certification', json);
   raw += "IdtyIssuer: " + json.idty_issuer + '\n';
   raw += "IdtyUniqueID: " + json.idty_uid + '\n';
@@ -91,7 +101,11 @@ export const getTransaction = (json:any) => {
   return TransactionDTO.toRAW(json)
 }
 
-function getNormalHeader(doctype:string, json:any) {
+function getNormalHeader(doctype:string, json:{
+  version?:number
+  currency:string
+  issuer:string
+}) {
   let raw = "";
   raw += "Version: " + (json.version || DOCUMENTS_VERSION) + "\n";
   raw += "Type: " + doctype + "\n";

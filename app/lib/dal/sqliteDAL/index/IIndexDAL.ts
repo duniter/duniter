@@ -13,7 +13,7 @@
 
 import {SQLiteDriver} from "../../drivers/SQLiteDriver";
 import {AbstractIndex} from "../AbstractIndex";
-import {IindexEntry, Indexer} from "../../../indexer";
+import {FullIindexEntry, IindexEntry, Indexer} from "../../../indexer";
 
 const _ = require('underscore');
 
@@ -126,15 +126,19 @@ export class IIndexDAL extends AbstractIndex<IindexEntry> {
   }
 
   getFromPubkey(pubkey:string) {
-    return this.entityOrNull('pub', pubkey)
+    return this.entityOrNull('pub', pubkey) as Promise<FullIindexEntry|null>
   }
 
-  getFromUID(uid:string) {
-    return this.entityOrNull('uid', uid)
+  getFromUID(uid:string, retrieveOnPubkey = false) {
+    return this.entityOrNull('uid', uid, retrieveOnPubkey)
   }
 
-  getFromHash(hash:string) {
-    return this.entityOrNull('hash', hash, true)
+  getFullFromUID(uid:string): Promise<FullIindexEntry|null> {
+    return this.entityOrNull('uid', uid, true) as Promise<FullIindexEntry|null>
+  }
+
+  getFullFromHash(hash:string): Promise<FullIindexEntry|null> {
+    return this.entityOrNull('hash', hash, true) as Promise<FullIindexEntry|null>
   }
 
   reducable(pub:string) {
@@ -178,5 +182,13 @@ export class IIndexDAL extends AbstractIndex<IindexEntry> {
       writtenOn: row.writtenOn,
       written_on: row.written_on
     }
+  }
+
+  async getFromPubkeyOrUid(search: string) {
+    const idty = await this.getFromPubkey(search)
+    if (idty) {
+      return idty
+    }
+    return this.getFromUID(search, true) as Promise<FullIindexEntry|null>
   }
 }

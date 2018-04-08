@@ -15,9 +15,7 @@
 
 const co        = require('co');
 const should    = require('should');
-const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const TestUser  = require('./tools/TestUser').TestUser
-const commit    = require('./tools/commit');
 const toolbox   = require('./tools/toolbox');
 
 let s1, i1, i2, i3

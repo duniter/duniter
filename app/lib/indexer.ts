@@ -23,6 +23,7 @@ import {rawer, txunlock} from "./common-libs/index"
 import {CommonConstants} from "./common-libs/constants"
 import {MembershipDTO} from "./dto/MembershipDTO"
 import {UnlockMetadata} from "./common-libs/txunlock"
+import {FileDAL} from "./dal/fileDAL"
 
 const _               = require('underscore');
 
@@ -61,6 +62,21 @@ export interface MindexEntry extends IndexEntry {
   revocationSigOK?: boolean,
 }
 
+export interface FullMindexEntry {
+  op: string
+  pub: string
+  created_on: string
+  written_on: string
+  expires_on: number
+  expired_on: null|number
+  revokes_on: number
+  revoked_on: null|number
+  leaving: boolean
+  revocation: null|string
+  chainable_on: number
+  writtenOn: number
+}
+
 export interface IindexEntry extends IndexEntry {
   uid: string | null,
   pub: string,
@@ -77,6 +93,21 @@ export interface IindexEntry extends IndexEntry {
   isBeingKicked?: boolean,
   uidUnique?: boolean,
   hasToBeExcluded?: boolean,
+}
+
+export interface FullIindexEntry {
+  op: string
+  uid: string
+  pub: string
+  hash: string
+  sig: string
+  created_on: string
+  written_on: string
+  writtenOn: number
+  member: boolean
+  wasMember: boolean
+  kick: boolean
+  wotb_id: number
 }
 
 export interface CindexEntry extends IndexEntry {
@@ -855,12 +886,21 @@ export class Indexer {
 
     // BR_G45
     await Promise.all(cindex.map(async (ENTRY: CindexEntry) => {
-      ENTRY.sigOK = await checkCertificationIsValid(block, ENTRY, async (block:BlockDTO,pub:string,dal:any) => {
+      ENTRY.sigOK = await checkCertificationIsValid(block, ENTRY, async (block:BlockDTO,pub:string,dal:FileDAL) => {
         let localInlineIdty = block.getInlineIdentity(pub);
         if (localInlineIdty) {
           return IdentityDTO.fromInline(localInlineIdty)
         }
-        return dal.getWrittenIdtyByPubkey(pub)
+        const idty = await dal.getWrittenIdtyByPubkeyForCertificationCheck(pub)
+        if (!idty) {
+          return null
+        }
+        return {
+          pubkey: idty.pub,
+          uid: idty.uid,
+          sig: idty.sig,
+          buid: idty.created_on
+        }
       }, conf, dal);
     }))
 
@@ -1903,28 +1943,28 @@ async function getNodeIDfromPubkey(nodesCache: any, pubkey: string, dal: any) {
   let toNode = nodesCache[pubkey];
   // Eventually cache the target nodeID
   if (toNode === null || toNode === undefined) {
-    let idty = await dal.getWrittenIdtyByPubkey(pubkey);
+    let idty = await dal.getWrittenIdtyByPubkeyForWotbID(pubkey)
     toNode = idty.wotb_id;
     nodesCache[pubkey] = toNode;
   }
   return toNode;
 }
 
-async function sigCheckRevoke(entry: MindexEntry, dal: any, currency: string) {
+async function sigCheckRevoke(entry: MindexEntry, dal: FileDAL, currency: string) {
   try {
     let pubkey = entry.pub, sig = entry.revocation || "";
-    let idty = await dal.getWrittenIdtyByPubkey(pubkey);
+    let idty = await dal.getWrittenIdtyByPubkeyForRevocationCheck(pubkey);
     if (!idty) {
       throw Error("A pubkey who was never a member cannot be revoked");
     }
-    if (idty.revoked) {
+    if (idty.revoked_on) {
       throw Error("A revoked identity cannot be revoked again");
     }
     let rawRevocation = rawer.getOfficialRevocation({
       currency: currency,
-      issuer: idty.pubkey,
+      issuer: idty.pub,
       uid: idty.uid,
-      buid: idty.buid,
+      buid: idty.created_on,
       sig: idty.sig,
       revocation: ''
     });
@@ -1940,7 +1980,12 @@ async function sigCheckRevoke(entry: MindexEntry, dal: any, currency: string) {
 
 
 
-async function checkCertificationIsValid (block: BlockDTO, cert: CindexEntry, findIdtyFunc: (b:BlockDTO,to:string,dal:any)=>Promise<IdentityDTO>, conf: ConfDTO, dal: any) {
+async function checkCertificationIsValid (block: BlockDTO, cert: CindexEntry, findIdtyFunc: (b:BlockDTO,to:string,dal:FileDAL)=>Promise<{
+  pubkey:string
+  uid:string
+  buid:string
+  sig:string
+}|null>, conf: ConfDTO, dal: any) {
   if (block.number == 0 && cert.created_on != 0) {
     throw Error('Number must be 0 for root block\'s certifications');
   } else {
@@ -1955,7 +2000,7 @@ async function checkCertificationIsValid (block: BlockDTO, cert: CindexEntry, fi
           throw Error('Certification based on an unexisting block');
         }
       }
-      let idty = await findIdtyFunc(block, cert.receiver, dal)
+      const idty = await findIdtyFunc(block, cert.receiver, dal)
       let current = block.number == 0 ? null : await dal.getCurrentBlockOrNull();
       if (!idty) {
         throw Error('Identity does not exist for certified');
@@ -1967,8 +2012,8 @@ async function checkCertificationIsValid (block: BlockDTO, cert: CindexEntry, fi
         throw Error('Rejected certification: certifying its own self-certification has no meaning');
       else {
         const buid = [cert.created_on, basedBlock.hash].join('-');
-        idty.currency = conf.currency;
-        const raw = rawer.getOfficialCertification(_.extend(idty, {
+        const raw = rawer.getOfficialCertification({
+          currency: conf.currency,
           idty_issuer: idty.pubkey,
           idty_uid: idty.uid,
           idty_buid: idty.buid,
@@ -1976,7 +2021,7 @@ async function checkCertificationIsValid (block: BlockDTO, cert: CindexEntry, fi
           issuer: cert.issuer,
           buid: buid,
           sig: ''
-        }));
+        })
         const verified = verify(raw, cert.sig, cert.issuer);
         if (!verified) {
           throw constants.ERRORS.WRONG_SIGNATURE_FOR_CERT

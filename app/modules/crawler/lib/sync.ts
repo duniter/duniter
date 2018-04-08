@@ -283,7 +283,7 @@ export class Synchroniser extends stream.Duplex {
         }
         // Tells wether given peer is a member peer
         async isMemberPeer(thePeer: PeerDTO): Promise<boolean> {
-          let idty = await this.dal.getWrittenIdtyByPubkey(thePeer.pubkey);
+          let idty = await this.dal.getWrittenIdtyByPubkeyForIsMember(thePeer.pubkey);
           return (idty && idty.member) || false;
         }
         downloadBlocks(thePeer: PeerDTO, fromNumber: number, count?: number | undefined): Promise<BlockDTO[]> {

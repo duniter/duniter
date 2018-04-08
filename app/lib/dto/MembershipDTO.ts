@@ -78,9 +78,9 @@ export class MembershipDTO implements Cloneable {
 
   getIdtyHash() {
     return IdentityDTO.getTargetHash({
-      buid: this.certts,
+      created_on: this.certts,
       uid: this.userid,
-      pubkey: this.issuer
+      pub: this.issuer
     })
   }
 

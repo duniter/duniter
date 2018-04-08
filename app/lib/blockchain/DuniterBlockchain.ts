@@ -305,21 +305,21 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
   }
 
-  async updateMembers(block:BlockDTO, dal:any) {
+  async updateMembers(block:BlockDTO, dal:FileDAL) {
     // Joiners (come back)
     for (const inlineMS of block.joiners) {
       let ms = MembershipDTO.fromInline(inlineMS)
-      const idty = await dal.getWrittenIdtyByPubkey(ms.issuer);
+      const idty = await dal.getWrittenIdtyByPubkeyForWotbID(ms.issuer);
       dal.wotb.setEnabled(true, idty.wotb_id);
     }
     // Revoked
     for (const inlineRevocation of block.revoked) {
       let revocation = RevocationDTO.fromInline(inlineRevocation)
-      await dal.revokeIdentity(revocation.pubkey, block.number);
+      await dal.revokeIdentity(revocation.pubkey)
     }
     // Excluded
     for (const excluded of block.excluded) {
-      const idty = await dal.getWrittenIdtyByPubkey(excluded);
+      const idty = await dal.getWrittenIdtyByPubkeyForWotbID(excluded);
       dal.wotb.setEnabled(false, idty.wotb_id);
     }
   }
@@ -349,8 +349,8 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     // Revert links
     const writtenOn = await dal.cindexDAL.getWrittenOn(blockstamp);
     for (const entry of writtenOn) {
-      const from = await dal.getWrittenIdtyByPubkey(entry.issuer);
-      const to = await dal.getWrittenIdtyByPubkey(entry.receiver);
+      const from = await dal.getWrittenIdtyByPubkeyForWotbID(entry.issuer);
+      const to = await dal.getWrittenIdtyByPubkeyForWotbID(entry.receiver);
       if (entry.op == CommonConstants.IDX_CREATE) {
         // We remove the created link
         dal.wotb.removeLink(from.wotb_id, to.wotb_id, true);
@@ -394,7 +394,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
       // Undo 'join' which can be either newcomers or comebackers
       // => equivalent to i_index.member = true AND i_index.op = 'UPDATE'
       if (entry.member === true && entry.op === CommonConstants.IDX_UPDATE) {
-        const idty = await dal.getWrittenIdtyByPubkey(entry.pub);
+        const idty = await dal.getWrittenIdtyByPubkeyForWotbID(entry.pub);
         dal.wotb.setEnabled(false, idty.wotb_id);
       }
     }
@@ -412,7 +412,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
       // Undo excluded (make them become members again in wotb)
       // => equivalent to m_index.member = false
       if (entry.member === false && entry.op === CommonConstants.IDX_UPDATE) {
-        const idty = await dal.getWrittenIdtyByPubkey(entry.pub);
+        const idty = await dal.getWrittenIdtyByPubkeyForWotbID(entry.pub);
         dal.wotb.setEnabled(true, idty.wotb_id);
       }
     }
@@ -435,7 +435,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
   static async removeCertificationsFromSandbox(block:BlockDTO, dal:FileDAL) {
     for (let inlineCert of block.certifications) {
       let cert = CertificationDTO.fromInline(inlineCert)
-      let idty = await dal.getWrittenIdtyByPubkey(cert.to);
+      let idty = await dal.getWrittenIdtyByPubkeyForHashing(cert.to);
       await dal.deleteCert({
         from: cert.from,
         target: IdentityDTO.getTargetHash(idty),

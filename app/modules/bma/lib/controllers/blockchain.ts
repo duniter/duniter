@@ -132,7 +132,7 @@ export class BlockchainBinding extends AbstractController {
   async hardship(req:any): Promise<HttpHardship> {
     let nextBlockNumber = 0;
     const search = await ParametersService.getSearchP(req);
-    const idty = await this.IdentityService.findMemberWithoutMemberships(search);
+    const idty = await this.server.dal.getWrittenIdtyByPubkeyOrUidForIsMemberAndPubkey(search);
     if (!idty) {
       throw BMAConstants.ERRORS.NO_MATCHING_IDENTITY;
     }
@@ -143,7 +143,7 @@ export class BlockchainBinding extends AbstractController {
     if (current) {
       nextBlockNumber = current ? current.number + 1 : 0;
     }
-    const difficulty = await this.server.getBcContext().getIssuerPersonalizedDifficulty(idty.pubkey);
+    const difficulty = await this.server.getBcContext().getIssuerPersonalizedDifficulty(idty.pub);
     return {
       "block": nextBlockNumber,
       "level": difficulty
@@ -156,8 +156,8 @@ export class BlockchainBinding extends AbstractController {
     const issuers = await this.server.dal.getUniqueIssuersBetween(number - 1 - current.issuersFrame, number - 1);
     const difficulties = [];
     for (const issuer of issuers) {
-      const member = await this.server.dal.getWrittenIdtyByPubkey(issuer);
-      const difficulty = await this.server.getBcContext().getIssuerPersonalizedDifficulty(member.pubkey);
+      const member = await this.server.dal.getWrittenIdtyByPubkeyForUidAndPubkey(issuer);
+      const difficulty = await this.server.getBcContext().getIssuerPersonalizedDifficulty(member.pub);
       difficulties.push({
         uid: member.uid,
         level: difficulty

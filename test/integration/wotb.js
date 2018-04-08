@@ -132,8 +132,8 @@ describe("WOTB module", function() {
 
     it('the wotb_id should be affected to new members', function() {
       return co(function *() {
-        let icat = yield s1.dal.getWrittenIdtyByUID("cat");
-        let itoc = yield s1.dal.getWrittenIdtyByUID("toc");
+        let icat = yield s1.dal.getWrittenIdtyByUIDForWotbId("cat");
+        let itoc = yield s1.dal.getWrittenIdtyByUIDForWotbId("toc");
         icat.should.have.property('wotb_id').equal(0);
         itoc.should.have.property('wotb_id').equal(1);
         wotb.isEnabled(0).should.equal(true);
@@ -157,7 +157,7 @@ describe("WOTB module", function() {
         yield toc.cert(tic);
         yield tic.join();
         yield commit(s1)();
-        let itic = yield s1.dal.getWrittenIdtyByUID("tic");
+        let itic = yield s1.dal.getWrittenIdtyByUIDForWotbId("tic");
         itic.should.have.property('wotb_id').equal(2);
         wotb.isEnabled(2).should.equal(true);
         wotb.existsLink(1, 2).should.equal(true);

@@ -76,7 +76,7 @@ export const GLOBAL_RULES_FUNCTIONS = {
     let current = await dal.getCurrentBlockOrNull();
     for (const obj of block.identities) {
       let idty = IdentityDTO.fromInline(obj);
-      let found = await dal.getWrittenIdtyByUID(idty.uid);
+      let found = await dal.getWrittenIdtyByUIDForExistence(idty.uid)
       if (found) {
         throw Error('Identity already used');
       }
@@ -184,12 +184,16 @@ export const GLOBAL_RULES_HELPERS = {
   // Functions used in an external context too
   checkMembershipBlock: (ms:any, current:DBBlock, conf:ConfDTO, dal:FileDAL) => checkMSTarget(ms, current ? { number: current.number + 1} : { number: 0 }, conf, dal),
 
-  checkCertificationIsValid: (cert:any, current:BlockDTO, findIdtyFunc:any, conf:ConfDTO, dal:FileDAL) => {
-    return checkCertificationIsValid(current ? current : { number: 0, currency: '' }, cert, findIdtyFunc, conf, dal)
+  checkCertificationIsValidInSandbox: (cert:any, current:BlockDTO, findIdtyFunc:any, conf:ConfDTO, dal:FileDAL) => {
+    return checkCertificationShouldBeValid(current ? current : { number: 0, currency: '' }, cert, findIdtyFunc, conf, dal)
   },
 
-  checkCertificationIsValidForBlock: (cert:any, block:{ number:number, currency:string }, findIdtyFunc:(b:{ number:number, currency:string }, pubkey:string, dal:FileDAL) => Promise<any>, conf:ConfDTO, dal:FileDAL) => {
-    return checkCertificationIsValid(block, cert, findIdtyFunc, conf, dal)
+  checkCertificationIsValidForBlock: (cert:any, block:{ number:number, currency:string }, findIdtyFunc:(b:{ number:number, currency:string }, pubkey:string, dal:FileDAL) => Promise<{
+    pubkey:string
+    uid:string
+    buid:string
+    sig:string}|null>, conf:ConfDTO, dal:FileDAL) => {
+    return checkCertificationShouldBeValid(block, cert, findIdtyFunc, conf, dal)
   },
 
   isOver3Hops: async (member:any, newLinks:any, newcomers:string[], current:DBBlock, conf:ConfDTO, dal:FileDAL) => {
@@ -203,9 +207,9 @@ export const GLOBAL_RULES_HELPERS = {
     }
   },
 
-  checkExistsUserID: (uid:string, dal:FileDAL) => dal.getWrittenIdtyByUID(uid),
+  checkExistsUserID: (uid:string, dal:FileDAL) => dal.getWrittenIdtyByUIDForExistence(uid),
 
-  checkExistsPubkey: (pub:string, dal:FileDAL) => dal.getWrittenIdtyByPubkey(pub),
+  checkExistsPubkey: (pub:string, dal:FileDAL) => dal.getWrittenIdtyByPubkeyForExistence(pub),
 
   checkSingleTransaction: (
     tx:TransactionDTO,
@@ -263,7 +267,12 @@ async function checkMSTarget (ms:any, block:any, conf:ConfDTO, dal:FileDAL) {
   }
 }
 
-async function checkCertificationIsValid (block:{ number:number, currency:string }, cert:any, findIdtyFunc:(b:{ number:number, currency:string }, pubkey:string, dal:FileDAL) => Promise<any>, conf:ConfDTO, dal:FileDAL) {
+async function checkCertificationShouldBeValid (block:{ number:number, currency:string }, cert:any, findIdtyFunc:(b:{ number:number, currency:string }, pubkey:string, dal:FileDAL) => Promise<{
+  pubkey:string
+  uid:string
+  buid:string
+  sig:string
+}|null>, conf:ConfDTO, dal:FileDAL) {
   if (block.number == 0 && cert.block_number != 0) {
     throw Error('Number must be 0 for root block\'s certifications');
   } else {
@@ -277,7 +286,7 @@ async function checkCertificationIsValid (block:{ number:number, currency:string
         throw Error('Certification based on an unexisting block');
       }
       try {
-        const issuer = await dal.getWrittenIdtyByPubkey(cert.from)
+        const issuer = await dal.getWrittenIdtyByPubkeyForIsMember(cert.from)
         if (!issuer || !issuer.member) {
           throw Error('Issuer is not a member')
         }
@@ -299,8 +308,8 @@ async function checkCertificationIsValid (block:{ number:number, currency:string
       const buid = [cert.block_number, basedBlock.hash].join('-');
       if (cert.block_hash && buid != [cert.block_number, cert.block_hash].join('-'))
         throw Error('Certification based on an unexisting block buid. from ' + cert.from.substring(0,8) + ' to ' + idty.pubkey.substring(0,8));
-      idty.currency = conf.currency;
-      const raw = rawer.getOfficialCertification(_.extend(idty, {
+      const raw = rawer.getOfficialCertification({
+        currency: conf.currency,
         idty_issuer: idty.pubkey,
         idty_uid: idty.uid,
         idty_buid: idty.buid,
@@ -308,7 +317,7 @@ async function checkCertificationIsValid (block:{ number:number, currency:string
         issuer: cert.from,
         buid: buid,
         sig: ''
-      }));
+      })
       const verified = verify(raw, cert.sig, cert.from);
       if (!verified) {
         throw constants.ERRORS.WRONG_SIGNATURE_FOR_CERT

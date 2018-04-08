@@ -27,7 +27,6 @@ import {IdentityDTO} from "../../../lib/dto/IdentityDTO"
 import {CertificationDTO} from "../../../lib/dto/CertificationDTO"
 import {MembershipDTO} from "../../../lib/dto/MembershipDTO"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
-import {DBIdentity} from "../../../lib/dal/sqliteDAL/IdentityDAL"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {FileDAL} from "../../../lib/dal/fileDAL"
 
@@ -36,6 +35,31 @@ const moment          = require('moment');
 const inquirer        = require('inquirer');
 
 const constants     = CommonConstants
+
+interface PreJoin {
+  identity: {
+    pubkey: string
+    uid: string
+    buid: string
+    sig: string
+    member: boolean
+    wasMember: boolean
+    revoked: boolean
+  }
+  key: null
+  idHash: string
+  certs: any[]
+  ms: any
+}
+
+interface LeaveData {
+  identity: {
+    member: boolean
+  } | null
+  ms: any
+  key: any
+  idHash: string
+}
 
 export class BlockGenerator {
 
@@ -82,13 +106,11 @@ export class BlockGenerator {
     const exclusions = await this.dal.getToBeKickedPubkeys();
     const wereExcludeds = await this.dal.getRevokedPubkeys();
     const newCertsFromWoT = await generator.findNewCertsFromWoT(current);
-    const newcomersLeavers = await this.findNewcomersAndLeavers(current, (joinersData:any) => generator.filterJoiners(joinersData));
+    const newcomers = await this.findNewcomers(current, (joinersData:any) => generator.filterJoiners(joinersData))
+    const leavers = await this.findLeavers(current)
     const transactions = await this.findTransactions(current, manualValues);
-    const joinData = newcomersLeavers[2];
-    const leaveData = newcomersLeavers[3];
-    const newCertsFromNewcomers = newcomersLeavers[4];
-    const certifiersOfNewcomers = _.uniq(_.keys(joinData).reduce((theCertifiers:any, newcomer:string) => {
-      return theCertifiers.concat(_.pluck(joinData[newcomer].certs, 'from'));
+    const certifiersOfNewcomers = _.uniq(_.keys(newcomers).reduce((theCertifiers:any, newcomer:string) => {
+      return theCertifiers.concat(_.pluck(newcomers[newcomer].certs, 'from'));
     }, []));
     const certifiers:string[] = [].concat(certifiersOfNewcomers);
     // Merges updates
@@ -102,24 +124,8 @@ export class BlockGenerator {
         return !isCertifier;
       });
     });
-    _(newCertsFromNewcomers).keys().forEach((certified:string) => {
-      newCertsFromWoT[certified] = (newCertsFromWoT[certified] || []).concat(newCertsFromNewcomers[certified]);
-    });
-    // Revocations
     // Create the block
-    return this.createBlock(current, joinData, leaveData, newCertsFromWoT, revocations, exclusions, wereExcludeds, transactions, manualValues);
-  }
-
-  private async findNewcomersAndLeavers(current:DBBlock, filteringFunc: (joinData: { [pub:string]: any }) => Promise<{ [pub:string]: any }>) {
-    const newcomers = await this.findNewcomers(current, filteringFunc);
-    const leavers = await this.findLeavers(current);
-
-    const cur = newcomers.current;
-    const newWoTMembers = newcomers.newWotMembers;
-    const finalJoinData = newcomers.finalJoinData;
-    const updates = newcomers.updates;
-
-    return [cur, newWoTMembers, finalJoinData, leavers, updates];
+    return this.createBlock(current, newcomers, leavers, newCertsFromWoT, revocations, exclusions, wereExcludeds, transactions, manualValues);
   }
 
   private async findTransactions(current:DBBlock, options:{ dontCareAboutChaining?:boolean }) {
@@ -155,12 +161,12 @@ export class BlockGenerator {
   }
 
   private async findLeavers(current:DBBlock) {
-    const leaveData: { [pub:string]: any } = {};
+    const leaveData: { [pub:string]: { identity: { member:boolean }|null, ms: any, key: any, idHash: string } } = {};
     const memberships = await this.dal.findLeavers(current && current.medianTime);
     const leavers:string[] = [];
     memberships.forEach((ms:any) => leavers.push(ms.issuer));
     for (const ms of memberships) {
-      const leave: { identity: DBIdentity|null, ms: any, key: any, idHash: string } = { identity: null, ms: ms, key: null, idHash: '' };
+      const leave: { identity: { member:boolean }|null, ms: any, key: any, idHash: string } = { identity: null, ms: ms, key: null, idHash: '' };
       leave.idHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
       let block;
       if (current) {
@@ -169,20 +175,19 @@ export class BlockGenerator {
       else {
         block = {};
       }
-      const identity = await this.dal.getIdentityByHashOrNull(leave.idHash);
+      const identity = await this.dal.getGlobalIdentityByHashForIsMember(leave.idHash)
       const currentMembership = await this.dal.mindexDAL.getReducedMS(ms.issuer);
       const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
       if (identity && block && currentMSN < leave.ms.number && identity.member) {
         // MS + matching cert are found
         leave.identity = identity;
-        leaveData[identity.pubkey] = leave;
+        leaveData[identity.pub] = leave;
       }
     }
     return leaveData;
   }
 
   private async findNewcomers(current:DBBlock, filteringFunc: (joinData: { [pub:string]: any }) => Promise<{ [pub:string]: any }>) {
-    const updates = {};
     const preJoinData = await this.getPreJoinData(current);
     const joinData = await filteringFunc(preJoinData);
     const members = await this.dal.getMembers();
@@ -198,12 +203,12 @@ export class BlockGenerator {
           joiners: someNewcomers,
           identities: _.filter(newcomers.map((pub:string) => joinData[pub].identity), { wasMember: false }).map((idty:any) => idty.pubkey)
         };
-        const theNewLinks = await this.computeNewLinks(nextBlockNumber, someNewcomers, joinData, updates)
+        const theNewLinks = await this.computeNewLinks(nextBlockNumber, someNewcomers, joinData)
         await this.checkWoTConstraints(nextBlock, theNewLinks, current);
       })
-      const newLinks = await this.computeNewLinks(nextBlockNumber, realNewcomers, joinData, updates);
+      const newLinks = await this.computeNewLinks(nextBlockNumber, realNewcomers, joinData)
       const newWoT = wotMembers.concat(realNewcomers);
-      const finalJoinData: { [pub:string]: any } = {};
+      const finalJoinData: { [pub:string]: PreJoin } = {};
       realNewcomers.forEach((newcomer:string) => {
         // Only keep membership of selected newcomers
         finalJoinData[newcomer] = joinData[newcomer];
@@ -217,12 +222,7 @@ export class BlockGenerator {
         });
         joinData[newcomer].certs = keptCerts;
       });
-      return {
-        current: current,
-        newWotMembers: wotMembers.concat(realNewcomers),
-        finalJoinData: finalJoinData,
-        updates: updates
-      }
+      return finalJoinData
     } catch(err) {
       this.logger.error(err);
       throw err;
@@ -272,7 +272,7 @@ export class BlockGenerator {
   }
 
   private async getPreJoinData(current:DBBlock) {
-    const preJoinData:any = {};
+    const preJoinData:{ [k:string]: PreJoin } = {}
     const memberships = await this.dal.findNewcomers(current && current.medianTime)
     const joiners:string[] = [];
     memberships.forEach((ms:any) => joiners.push(ms.issuer));
@@ -289,7 +289,7 @@ export class BlockGenerator {
           }
         }
         const idtyHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
-        const join:any = await this.getSinglePreJoinData(current, idtyHash, joiners);
+        const join = await this.getSinglePreJoinData(current, idtyHash, joiners);
         join.ms = ms;
         const currentMembership = await this.dal.mindexDAL.getReducedMS(ms.issuer);
         const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
@@ -307,18 +307,15 @@ export class BlockGenerator {
     return preJoinData;
   }
 
-  private async computeNewLinks(forBlock:number, theNewcomers:any, joinData:any, updates:any) {
+  private async computeNewLinks(forBlock:number, theNewcomers:any, joinData:any) {
     let newCerts = await this.computeNewCerts(forBlock, theNewcomers, joinData);
-    return this.newCertsToLinks(newCerts, updates);
+    return this.newCertsToLinks(newCerts);
   }
 
-  newCertsToLinks(newCerts:any, updates:any) {
+  newCertsToLinks(newCerts:any) {
     let newLinks:any = {};
     _.mapObject(newCerts, function(certs:any, pubkey:string) {
       newLinks[pubkey] = _.pluck(certs, 'from');
-    });
-    _.mapObject(updates, function(certs:any, pubkey:string) {
-      newLinks[pubkey] = (newLinks[pubkey] || []).concat(_.pluck(certs, 'pubkey'));
     });
     return newLinks;
   }
@@ -352,7 +349,7 @@ export class BlockGenerator {
   }
 
   async getSinglePreJoinData(current:DBBlock, idHash:string, joiners:string[]) {
-    const identity = await this.dal.getIdentityByHashOrNull(idHash);
+    const identity = await this.dal.getGlobalIdentityByHashForJoining(idHash)
     let foundCerts = [];
     const vHEAD_1 = await this.mainContext.getvHEAD_1();
     if (!identity) {
@@ -413,10 +410,12 @@ export class BlockGenerator {
             const isMember = await this.dal.isMember(cert.from);
             const doubleSignature = !!(~certifiers.indexOf(cert.from))
             if (isMember && !doubleSignature) {
-              const isValid = await GLOBAL_RULES_HELPERS.checkCertificationIsValidForBlock(cert, { number: current.number + 1, currency: current.currency }, async () => {
-                const idty = await this.dal.getIdentityByHashOrNull(idHash)
-                return idty
-              }, this.conf, this.dal);
+              const isValid = await GLOBAL_RULES_HELPERS.checkCertificationIsValidForBlock(
+                cert,
+                { number: current.number + 1, currency: current.currency },
+                async () => this.dal.getGlobalIdentityByHashForHashingAndSig(idHash),
+                this.conf,
+                this.dal)
               if (isValid) {
                 certifiers.push(cert.from);
                 foundCerts.push(cert);
@@ -429,15 +428,26 @@ export class BlockGenerator {
         }
       }
     }
+    const ms:any = null // TODO: refactor
     return {
       identity: identity,
       key: null,
       idHash: idHash,
-      certs: foundCerts
+      certs: foundCerts,
+      ms
     };
   }
 
-  private async createBlock(current:DBBlock, joinData:any, leaveData:any, updates:any, revocations:any, exclusions:any, wereExcluded:any, transactions:any, manualValues:any) {
+  private async createBlock(
+    current:DBBlock,
+    joinData:{ [pub:string]: PreJoin },
+    leaveData:{ [pub:string]: LeaveData },
+    updates:any,
+    revocations:any,
+    exclusions:any,
+    wereExcluded:any,
+    transactions:any,
+    manualValues:any) {
 
     if (manualValues && manualValues.excluded) {
       exclusions = manualValues.excluded;
@@ -547,7 +557,7 @@ export class BlockGenerator {
     leavers.forEach((leaver:any) => {
       const data = leaveData[leaver];
       // Join only for non-members
-      if (data.identity.member) {
+      if (data.identity && data.identity.member) {
         if (blockLen < maxLenOfBlock) {
           block.leavers.push(MembershipDTO.fromJSONObject(data.ms).inline());
           blockLen++;
@@ -709,7 +719,7 @@ class NextBlockGenerator implements BlockGeneratorInterface {
     const certs = await this.dal.certsFindNew();
     const vHEAD_1 = await this.mainContext.getvHEAD_1();
     for (const cert of certs) {
-      const targetIdty = await this.dal.getIdentityByHashOrNull(cert.target);
+      const targetIdty = await this.dal.getGlobalIdentityByHashForHashingAndSig(cert.target)
       // The identity must be known
       if (targetIdty) {
         const certSig = cert.sig;

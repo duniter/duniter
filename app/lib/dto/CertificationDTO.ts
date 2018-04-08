@@ -63,8 +63,8 @@ export class CertificationDTO extends ShortCertificationDTO implements Cloneable
   getTargetHash() {
     return IdentityDTO.getTargetHash({
       uid: this.idty_uid,
-      buid: this.idty_buid,
-      pubkey: this.idty_issuer
+      created_on: this.idty_buid,
+      pub: this.idty_issuer
     })
   }
 

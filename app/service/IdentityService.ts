@@ -14,7 +14,7 @@
 import {GlobalFifoPromise} from "./GlobalFifoPromise"
 import {FileDAL} from "../lib/dal/fileDAL"
 import {ConfDTO} from "../lib/dto/ConfDTO"
-import {DBIdentity, ExistingDBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
+import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
 import {GLOBAL_RULES_FUNCTIONS, GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
 import {BlockDTO} from "../lib/dto/BlockDTO"
 import {RevocationDTO} from "../lib/dto/RevocationDTO"
@@ -50,18 +50,17 @@ export class IdentityService extends FIFOService {
     return this.dal.searchJustIdentities(search)
   }
 
-  async findMember(search:string): Promise<{ idty: ExistingDBIdentity; memberships: { blockstamp: string; membership: string; number: number; fpr: string; written_number: number | null }[] }> {
+  async findMember(search:string) {
     let idty = null;
     if (search.match(constants.PUBLIC_KEY)) {
-      idty = await this.dal.getWrittenIdtyByPubkey(search);
+      idty = await this.dal.getWrittenIdtyByPubkeyForHashing(search);
     }
     else {
-      idty = await this.dal.getWrittenIdtyByUID(search);
+      idty = await this.dal.getWrittenIdtyByUidForHashing(search);
     }
     if (!idty) {
       throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
     }
-    const obj = DBIdentity.copyFromExisting(idty)
 
     let memberships: {
       blockstamp:string
@@ -71,9 +70,9 @@ export class IdentityService extends FIFOService {
       written_number:number|null
     }[] = []
 
-    if (obj) {
-      const mss = await this.dal.msDAL.getMembershipsOfIssuer(obj.pubkey);
-      const mssFromMindex = await this.dal.mindexDAL.reducable(obj.pubkey);
+    if (idty) {
+      const mss = await this.dal.msDAL.getMembershipsOfIssuer(idty.pub);
+      const mssFromMindex = await this.dal.mindexDAL.reducable(idty.pub);
       memberships = mss.map(m => {
         return {
           blockstamp: [m.blockNumber, m.blockHash].join('-'),
@@ -95,25 +94,14 @@ export class IdentityService extends FIFOService {
       }))
     }
 
-    return { idty: obj, memberships }
-  }
-
-  async findMemberWithoutMemberships(search:string) {
-    let idty = null;
-    if (search.match(constants.PUBLIC_KEY)) {
-      idty = await this.dal.getWrittenIdtyByPubkey(search)
+    return {
+      idty: {
+        pubkey: idty.pub,
+        uid: idty.uid,
+        buid: idty.created_on
+      },
+      memberships
     }
-    else {
-      idty = await this.dal.getWrittenIdtyByUID(search)
-    }
-    if (!idty) {
-      throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
-    }
-    return DBIdentity.copyFromExisting(idty)
-  }
-
-  getWrittenByPubkey(pubkey:string) {
-    return this.dal.getWrittenIdtyByPubkey(pubkey)
   }
 
   getPendingFromPubkey(pubkey:string) {
@@ -134,17 +122,17 @@ export class IdentityService extends FIFOService {
       if (!verified) {
         throw constants.ERRORS.SIGNATURE_DOES_NOT_MATCH;
       }
-      let existing = await this.dal.getIdentityByHashOrNull(toSave.hash);
+      let existing = await this.dal.getGlobalIdentityByHashForExistence(toSave.hash);
       if (existing) {
         throw constants.ERRORS.ALREADY_UP_TO_DATE;
       }
       else {
         // Create if not already written uid/pubkey
-        let used = await this.dal.getWrittenIdtyByPubkey(idty.pubkey);
+        let used = await GLOBAL_RULES_HELPERS.checkExistsPubkey(idty.pubkey, this.dal)
         if (used) {
           throw constants.ERRORS.PUBKEY_ALREADY_USED;
         }
-        used = await this.dal.getWrittenIdtyByUID(idty.uid);
+        used = await GLOBAL_RULES_HELPERS.checkExistsUserID(idty.uid, this.dal)
         if (used) {
           throw constants.ERRORS.UID_ALREADY_USED;
         }
@@ -183,9 +171,14 @@ export class IdentityService extends FIFOService {
     obj.currency = this.conf.currency || obj.currency;
     const cert = CertificationDTO.fromJSONObject(obj)
     const targetHash = cert.getTargetHash();
-    let possiblyNullIdty = await this.dal.getIdentityByHashOrNull(targetHash);
+    let possiblyNullIdty = await this.dal.getGlobalIdentityByHashForHashingAndSig(targetHash);
     let idtyAbsorbed = false
-    const idty: DBIdentity = possiblyNullIdty !== null ? possiblyNullIdty : await this.submitIdentity({
+    const idty:{
+      pubkey:string
+      uid:string
+      buid:string
+      sig:string
+    } = possiblyNullIdty !== null ? possiblyNullIdty : await this.submitIdentity({
       pubkey: cert.idty_issuer,
       uid: cert.idty_uid,
       buid: cert.idty_buid,
@@ -199,7 +192,7 @@ export class IdentityService extends FIFOService {
     return this.pushFIFO<CertificationDTO>(hash, async () => {
       this.logger.info('⬇ CERT %s block#%s -> %s', cert.from, cert.block_number, idty.uid);
       try {
-        await GLOBAL_RULES_HELPERS.checkCertificationIsValid(cert, potentialNext, () => Promise.resolve(idty), this.conf, this.dal);
+        await GLOBAL_RULES_HELPERS.checkCertificationIsValidInSandbox(cert, potentialNext, () => Promise.resolve(idty), this.conf, this.dal);
       } catch (e) {
         anErr = e;
       }
@@ -268,7 +261,7 @@ export class IdentityService extends FIFOService {
         if (!verified) {
           throw 'Wrong signature for revocation';
         }
-        const existing = await this.dal.getIdentityByHashOrNull(obj.hash);
+        const existing = await this.dal.getGlobalIdentityByHashForRevocation(obj.hash)
         if (existing) {
           // Modify
           if (existing.revoked) {
@@ -277,7 +270,15 @@ export class IdentityService extends FIFOService {
           else if (existing.revocation_sig) {
             throw 'Revocation already registered';
           } else {
-            await this.dal.setRevocating(existing, revoc.revocation);
+            await this.dal.setRevocating({
+              pubkey: existing.pub,
+              buid: existing.created_on,
+              sig: existing.sig,
+              uid: existing.uid,
+              expires_on: existing.expires_on,
+              member: existing.member,
+              wasMember: existing.wasMember,
+            }, revoc.revocation);
             this.logger.info('✔ REVOCATION %s %s', revoc.pubkey, revoc.idty_uid);
             return revoc
           }

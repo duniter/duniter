@@ -13,7 +13,7 @@
 
 import {SQLiteDriver} from "../../drivers/SQLiteDriver";
 import {AbstractIndex} from "../AbstractIndex";
-import {Indexer, MindexEntry} from "../../../indexer";
+import {FullMindexEntry, Indexer, MindexEntry} from "../../../indexer";
 
 export class MIndexDAL extends AbstractIndex<MindexEntry> {
 
@@ -68,12 +68,12 @@ export class MIndexDAL extends AbstractIndex<MindexEntry> {
       'COMMIT;')
   }
 
-  async getReducedMS(pub:string) {
+  async getReducedMS(pub:string): Promise<FullMindexEntry|null> {
     const reducables = await this.reducable(pub);
     if (reducables.length) {
-      return Indexer.DUP_HELPERS.reduce(reducables);
+      return Indexer.DUP_HELPERS.reduce(reducables) as FullMindexEntry
     }
-    return null;
+    return null
   }
 
   reducable(pub:string) {

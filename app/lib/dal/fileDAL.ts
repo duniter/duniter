@@ -34,6 +34,7 @@ import {MetaDAL} from "./sqliteDAL/MetaDAL"
 import {BIndexDAL} from "./sqliteDAL/index/BIndexDAL"
 import {MIndexDAL} from "./sqliteDAL/index/MIndexDAL"
 import {CIndexDAL} from "./sqliteDAL/index/CIndexDAL"
+import {SIndexDAL} from "./sqliteDAL/index/SIndexDAL"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -72,7 +73,7 @@ export class FileDAL {
   bindexDAL:BIndexDAL
   mindexDAL:MIndexDAL
   iindexDAL:any
-  sindexDAL:any
+  sindexDAL:SIndexDAL
   cindexDAL:CIndexDAL
   newDals:{ [k:string]: Initiable }
 

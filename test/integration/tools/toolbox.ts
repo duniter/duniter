@@ -39,6 +39,7 @@ import {TestUser} from "./TestUser"
 import {RouterDependency} from "../../../app/modules/router"
 import {ProverDependency} from "../../../app/modules/prover/index"
 import {WS2PClient} from "../../../app/modules/ws2p/lib/WS2PClient"
+import {DBPeer} from "../../../app/lib/dal/sqliteDAL/PeerDAL"
 
 const assert      = require('assert');
 const _           = require('underscore');
@@ -387,7 +388,7 @@ export class TestingServer {
     return this.server.on(event, f)
   }
 
-  recomputeSelfPeer() {
+  recomputeSelfPeer(): Promise<DBPeer | null> {
     return this.server.recomputeSelfPeer()
   }
 

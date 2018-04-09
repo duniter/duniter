@@ -186,7 +186,7 @@ export class PeeringService {
     return this.server.writePeer(pretendedNewer)
   }
 
-  async generateSelfPeer(theConf:ConfDTO, signalTimeInterval = 0) {
+  async generateSelfPeer(theConf:ConfDTO, signalTimeInterval = 0): Promise<DBPeer|null> {
     const current = await this.server.dal.getCurrentBlockOrNull();
     const currency = theConf.currency || constants.DEFAULT_CURRENCY_NAME;
     const peers = await this.dal.findPeers(this.selfPubkey);
@@ -213,7 +213,7 @@ export class PeeringService {
       logger.error('It seems there is an issue with your configuration.');
       logger.error('Please restart your node with:');
       logger.error('$ duniter restart');
-      return new Promise(() => null);
+      return null
     }
     const endpointsToDeclare = localEndpoints.concat(toConserve).concat(this.conf.endpoints || [])
     if (currentSelfPeer && endpointsToDeclare.length === 0 && currentSelfPeer.endpoints.length === 0) {

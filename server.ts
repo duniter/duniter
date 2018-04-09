@@ -37,7 +37,8 @@ import {PeerDTO} from "./app/lib/dto/PeerDTO"
 import {OtherConstants} from "./app/lib/other_constants"
 import {WS2PCluster} from "./app/modules/ws2p/lib/WS2PCluster"
 import {DBBlock} from "./app/lib/db/DBBlock"
-import { ProxiesConf } from './app/lib/proxy';
+import {ProxiesConf} from './app/lib/proxy';
+import {DBPeer} from "./app/lib/dal/sqliteDAL/PeerDAL"
 
 export interface HookableServer {
   generatorGetJoinData: (...args:any[]) => Promise<any>
@@ -341,7 +342,7 @@ export class Server extends stream.Duplex implements HookableServer {
     await this.BlockchainService.forkResolution()
   }
 
-  recomputeSelfPeer() {
+  recomputeSelfPeer(): Promise<DBPeer | null> {
     return this.PeeringService.generateSelfPeer(this.conf)
   }
 

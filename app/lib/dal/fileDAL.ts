@@ -19,7 +19,7 @@ import {BlockDTO} from "../dto/BlockDTO"
 import {DBHead} from "../db/DBHead"
 import {DBIdentity, IdentityDAL} from "./sqliteDAL/IdentityDAL"
 import {CindexEntry, FullMindexEntry, IindexEntry, IndexEntry, SindexEntry} from "../indexer"
-import {DBPeer} from "./sqliteDAL/PeerDAL"
+import {DBPeer, PeerDAL} from "./sqliteDAL/PeerDAL"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import {CertDAL, DBCert} from "./sqliteDAL/CertDAL"
 import {DBWallet, WalletDAL} from "./sqliteDAL/WalletDAL"
@@ -65,7 +65,7 @@ export class FileDAL {
   powDAL:PowDAL
   confDAL:any
   metaDAL:MetaDAL
-  peerDAL:any
+  peerDAL:PeerDAL
   blockDAL:any
   txsDAL:TxsDAL
   statDAL:StatDAL
@@ -161,7 +161,7 @@ export class FileDAL {
 
   async getPeer(pubkey:string) {
     try {
-      return this.peerDAL.getPeer(pubkey)
+      return await this.peerDAL.getPeer(pubkey)
     } catch (err) {
       throw Error('Unknown peer ' + pubkey);
     }
@@ -803,7 +803,7 @@ export class FileDAL {
     return _.chain(peers).filter((p:DBPeer) => p.status == 'UP').filter((p:DBPeer) => p.pubkey !== pub).value();
   }
 
-  async findPeers(pubkey:string) {
+  async findPeers(pubkey:string): Promise<DBPeer[]> {
     try {
       const peer = await this.getPeer(pubkey);
       return [peer];

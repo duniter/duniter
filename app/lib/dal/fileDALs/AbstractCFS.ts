@@ -13,13 +13,15 @@
 
 import {CFSCore} from "./CFSCore";
 import {Initiable} from "../sqliteDAL/Initiable"
+import {FileSystem} from "../../system/directory"
+import {FileDAL} from "../fileDAL"
 
 export abstract class AbstractCFS extends Initiable {
 
   public coreFS:CFSCore
-  protected dal:any
+  protected dal:FileDAL
 
-  constructor(rootPath:string, qioFS:any) {
+  constructor(rootPath:string, qioFS:FileSystem) {
     super()
     this.coreFS = new CFSCore(rootPath, qioFS)
   }

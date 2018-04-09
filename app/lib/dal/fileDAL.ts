@@ -59,7 +59,6 @@ export interface FileDALParams {
 export class FileDAL {
 
   rootPath:string
-  myFS:any
   sqliteDriver:SQLiteDriver
   wotb:any
   profile:string
@@ -87,19 +86,18 @@ export class FileDAL {
 
   constructor(params:FileDALParams) {
     this.rootPath = params.home
-    this.myFS = params.fs
     this.sqliteDriver = params.dbf()
     this.wotb = params.wotb
     this.profile = 'DAL'
 
     // DALs
-    this.powDAL = new PowDAL(this.rootPath, this.myFS)
-    this.confDAL = new ConfDAL(this.rootPath, this.myFS)
+    this.powDAL = new PowDAL(this.rootPath, params.fs)
+    this.confDAL = new ConfDAL(this.rootPath, params.fs)
     this.metaDAL = new (require('./sqliteDAL/MetaDAL').MetaDAL)(this.sqliteDriver);
     this.peerDAL = new (require('./sqliteDAL/PeerDAL').PeerDAL)(this.sqliteDriver);
     this.blockDAL = new (require('./sqliteDAL/BlockDAL').BlockDAL)(this.sqliteDriver);
     this.txsDAL = new (require('./sqliteDAL/TxsDAL').TxsDAL)(this.sqliteDriver);
-    this.statDAL = new StatDAL(this.rootPath, this.myFS)
+    this.statDAL = new StatDAL(this.rootPath, params.fs)
     this.idtyDAL = new (require('./sqliteDAL/IdentityDAL').IdentityDAL)(this.sqliteDriver);
     this.certDAL = new (require('./sqliteDAL/CertDAL').CertDAL)(this.sqliteDriver);
     this.msDAL = new (require('./sqliteDAL/MembershipDAL').MembershipDAL)(this.sqliteDriver);

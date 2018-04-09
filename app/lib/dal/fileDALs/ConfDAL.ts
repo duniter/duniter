@@ -14,6 +14,7 @@
 import {AbstractCFS} from "./AbstractCFS"
 import {ConfDTO} from "../../dto/ConfDTO"
 import {CommonConstants} from "../../common-libs/constants";
+import {FileSystem} from "../../system/directory"
 
 const _ = require('underscore');
 
@@ -21,7 +22,7 @@ export class ConfDAL extends AbstractCFS {
 
   private logger:any
 
-  constructor(rootPath:string, qioFS:any) {
+  constructor(rootPath:string, qioFS:FileSystem) {
     super(rootPath, qioFS)
     this.logger = require('../../logger').NewLogger()
   }

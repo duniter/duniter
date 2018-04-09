@@ -12,12 +12,13 @@
 // GNU Affero General Public License for more details.
 
 import {AbstractCFS} from "./AbstractCFS";
-import {CFSCore} from "./CFSCore";
+import {FileSystem} from "../../system/directory"
+
 const _ = require('underscore');
 
 export class StatDAL extends AbstractCFS {
 
-  constructor(rootPath:string, qioFS:any) {
+  constructor(rootPath:string, qioFS:FileSystem) {
     super(rootPath, qioFS)
   }
 

@@ -251,7 +251,12 @@ export class TxsDAL extends AbstractSQLite<DBTx> {
     return this.query('SELECT * FROM sandbox_txs LIMIT ' + (this.sandbox.maxSize), [])
   }
 
-  sandbox = new SandBox(constants.SANDBOX_SIZE_TRANSACTIONS, this.getSandboxTxs.bind(this), (compared:DBTx, reference:DBTx) => {
+  sandbox:SandBox<{ issuers: string[], output_base:number, output_amount:number }> = new SandBox(
+    constants.SANDBOX_SIZE_TRANSACTIONS,
+    () => this.getSandboxTxs(),
+    (compared:{ issuers: string[], output_base:number, output_amount:number },
+     reference:{ issuers: string[], output_base:number, output_amount:number }
+   ) => {
     if (compared.output_base < reference.output_base) {
       return -1;
     }

@@ -772,6 +772,18 @@ export interface HttpTransaction {
   hash: string
 }
 
+export interface HttpTransactionPending {
+  version: number
+  issuers: string[]
+  inputs: string[]
+  unlocks: string[]
+  outputs: string[]
+  comment: string
+  locktime: number
+  signatures: string[]
+  hash: string
+}
+
 export const Source = {
   "type": String,
   "noffset": Number,
@@ -867,7 +879,7 @@ export const TxPending = {
 
 export interface HttpTxPending {
   currency: string
-  pending: HttpTransaction[]
+  pending: HttpTransactionPending[]
 }
 
 export const UD = {

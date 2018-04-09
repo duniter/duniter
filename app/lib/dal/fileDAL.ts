@@ -23,7 +23,7 @@ import {DBPeer} from "./sqliteDAL/PeerDAL"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import {CertDAL, DBCert} from "./sqliteDAL/CertDAL"
 import {DBWallet, WalletDAL} from "./sqliteDAL/WalletDAL"
-import {DBTx} from "./sqliteDAL/TxsDAL"
+import {DBTx, TxsDAL} from "./sqliteDAL/TxsDAL"
 import {DBBlock} from "../db/DBBlock"
 import {DBMembership, MembershipDAL} from "./sqliteDAL/MembershipDAL"
 import {MerkleDTO} from "../dto/MerkleDTO"
@@ -67,7 +67,7 @@ export class FileDAL {
   metaDAL:MetaDAL
   peerDAL:any
   blockDAL:any
-  txsDAL:any
+  txsDAL:TxsDAL
   statDAL:StatDAL
   idtyDAL:IdentityDAL
   certDAL:CertDAL

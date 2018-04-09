@@ -127,14 +127,25 @@ export class TransactionBinding extends AbstractController {
 
   async getPending(): Promise<HttpTxPending> {
     const pending = await this.server.dal.getTransactionsPending();
-    const res = {
-      "currency": this.conf.currency,
-      "pending": pending
-    };
-    pending.map(function(tx:any, index:number) {
-      pending[index] = _.omit(TransactionDTO.fromJSONObject(tx).json(), 'currency', 'raw');
-    });
-    return res;
+    return {
+      currency: this.conf.currency,
+      pending: pending.map(t => {
+        const tx = TransactionDTO.fromJSONObject(t)
+        return {
+          version: tx.version,
+          issuers: tx.issuers,
+          inputs: tx.inputs,
+          unlocks: tx.unlocks,
+          outputs: tx.outputs,
+          comment: tx.comment,
+          locktime: tx.locktime,
+          blockstamp: tx.blockstamp,
+          blockstampTime: tx.blockstampTime,
+          signatures: tx.signatures,
+          hash: tx.hash
+        }
+      })
+    }
   }
 
   private async getFilteredHistory(pubkey:string, filter:any): Promise<HttpTxHistory> {

@@ -140,7 +140,7 @@ export class PermanentProver {
               // The pushFIFO is here to get the difficulty level while excluding any new block to be resolved.
               // Without it, a new block could be added meanwhile and would make the difficulty wrongly computed.
               await this.server.BlockchainService.pushFIFO('generatingNextBlock', async () => {
-                const current = await this.server.dal.getCurrentBlockOrNull();
+                const current = (await this.server.dal.getCurrentBlockOrNull()) as DBBlock
                 const selfPubkey = this.server.keyPair.publicKey;
                 if (!cancelAlreadyTriggered) {
                   trial2 = await this.server.getBcContext().getIssuerPersonalizedDifficulty(selfPubkey)

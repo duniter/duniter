@@ -15,6 +15,7 @@ import {Indexer, SindexEntry} from "../../../indexer"
 import {SQLiteDriver} from "../../drivers/SQLiteDriver"
 import {AbstractIndex} from "../AbstractIndex"
 import {CommonConstants} from "../../../common-libs/constants"
+
 const _ = require('underscore');
 const constants = require('../../../constants');
 
@@ -109,7 +110,7 @@ export class SIndexDAL extends AbstractIndex<SindexEntry> {
     return this.getAvailableForConditions('%SIG(' + pubkey + ')%')
   }
 
-  async getAvailableForConditions(conditionsStr:string) {
+  async getAvailableForConditions(conditionsStr:string): Promise<{ amount:number, base:number }[]> {
     const potentials = await this.query('SELECT * FROM ' + this.table + ' s1 ' +
       'WHERE s1.op = ? ' +
       'AND conditions LIKE ? ' +

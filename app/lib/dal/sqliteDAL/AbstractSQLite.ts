@@ -199,6 +199,12 @@ export abstract class AbstractSQLite<T> extends Initiable {
     }
   }
 
+  /**
+   * To redefine if necessary in subclasses.
+   */
+  cleanCache() {
+  }
+
   private toConditionsArray(obj:any): string[] {
     return _.keys(obj).map((k:string) => {
       if (obj[k].$lte !== undefined) {

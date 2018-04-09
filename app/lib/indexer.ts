@@ -24,6 +24,8 @@ import {CommonConstants} from "./common-libs/constants"
 import {MembershipDTO} from "./dto/MembershipDTO"
 import {UnlockMetadata} from "./common-libs/txunlock"
 import {FileDAL} from "./dal/fileDAL"
+import {DBWallet} from "./dal/sqliteDAL/WalletDAL"
+import {DataErrors} from "./common-libs/errors"
 
 const _               = require('underscore');
 
@@ -165,6 +167,19 @@ function pushMindex(index: any[], entry: MindexEntry): void {
 
 function pushCindex(index: any[], entry: CindexEntry): void {
   index.push(entry)
+}
+
+export interface AccountsGarbagingDAL {
+  getWallet: (conditions: string) => Promise<DBWallet>
+  saveWallet: (wallet: DBWallet) => Promise<void>
+  sindexDAL: {
+    getAvailableForConditions: (conditions: string) => any
+  }
+}
+
+export interface BlockchainBlocksDAL {
+  getBlock(number: number): Promise<BlockDTO>
+  getBlockByBlockstamp(blockstamp: string): Promise<BlockDTO>
 }
 
 export class Indexer {
@@ -451,7 +466,7 @@ export class Indexer {
     return index;
   }
 
-  static async quickCompleteGlobalScope(block: BlockDTO, conf: CurrencyConfDTO, bindex: DBHead[], iindex: IindexEntry[], mindex: MindexEntry[], cindex: CindexEntry[], dal: any) {
+  static async quickCompleteGlobalScope(block: BlockDTO, conf: CurrencyConfDTO, bindex: DBHead[], iindex: IindexEntry[], mindex: MindexEntry[], cindex: CindexEntry[], dal:FileDAL) {
 
     function range(start: number, end: number, property = ""): any {
       let theRange;
@@ -543,7 +558,7 @@ export class Indexer {
     return HEAD;
   }
 
-  static async completeGlobalScope(block: BlockDTO, conf: ConfDTO, index: IndexEntry[], dal: any) {
+  static async completeGlobalScope(block: BlockDTO, conf: ConfDTO, index: IndexEntry[], dal:FileDAL) {
 
     const iindex = Indexer.iindex(index);
     const mindex = Indexer.mindex(index);
@@ -909,7 +924,7 @@ export class Indexer {
       if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
         ENTRY.age = 0;
       } else {
-        let ref = await dal.getBlockByBlockstamp(ENTRY.created_on);
+        let ref = await dal.getBlockByBlockstamp(ENTRY.created_on as string);
         if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
           ENTRY.age = HEAD_1.medianTime - ref.medianTime;
         } else {
@@ -1096,7 +1111,7 @@ export class Indexer {
   }
 
   // BR_G16
-  static async prepareSpeed(HEAD: DBHead, head: (n:number) => Promise<BlockDTO>, conf: CurrencyConfDTO) {
+  static async prepareSpeed(HEAD: DBHead, head: (n:number) => Promise<DBHead>, conf: CurrencyConfDTO) {
     if (HEAD.number == 0) {
       HEAD.speed = 0;
     } else {
@@ -1111,7 +1126,7 @@ export class Indexer {
   }
 
   // BR_G18
-  static async preparePersonalizedPoW(HEAD: DBHead, HEAD_1: DBHead, range: (n:number,m:number)=>Promise<BlockDTO>, conf: ConfDTO) {
+  static async preparePersonalizedPoW(HEAD: DBHead, HEAD_1: DBHead, range: (n:number,m:number)=>Promise<DBHead[]>, conf: ConfDTO) {
     let nbPersonalBlocksInFrame, medianOfBlocksInFrame, blocksOfIssuer;
     let nbPreviousIssuers = 0, nbBlocksSince = 0;
     if (HEAD.number == 0) {
@@ -1119,7 +1134,7 @@ export class Indexer {
       medianOfBlocksInFrame = 1;
     } else {
       const ranged = await range(1, HEAD_1.issuersFrame)
-      const blocksInFrame = _.filter(ranged, (b:BlockDTO) => b.number <= HEAD_1.number);
+      const blocksInFrame = _.filter(ranged, (b:DBHead) => b.number <= HEAD_1.number);
       const issuersInFrame = blocksInFrame.map((b:BlockDTO) => b.issuer);
       blocksOfIssuer = _.filter(blocksInFrame, (entry:BlockDTO) => entry.issuer == HEAD.issuer);
       nbPersonalBlocksInFrame = count(blocksOfIssuer);
@@ -1148,12 +1163,12 @@ export class Indexer {
   }
 
   // BR_G19
-  static async prepareIdentitiesAge(iindex: IindexEntry[], HEAD: DBHead, HEAD_1: DBHead, conf: CurrencyConfDTO, dal: any) {
+  static async prepareIdentitiesAge(iindex: IindexEntry[], HEAD: DBHead, HEAD_1: DBHead, conf: CurrencyConfDTO, dal:FileDAL) {
     await Promise.all(_.where(iindex, { op: constants.IDX_CREATE }).map(async (ENTRY: IindexEntry) => {
       if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
         ENTRY.age = 0;
       } else {
-        let ref = await dal.getBlockByBlockstamp(ENTRY.created_on);
+        let ref = await dal.getBlockByBlockstamp(ENTRY.created_on as string);
         if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
           ENTRY.age = HEAD_1.medianTime - ref.medianTime;
         } else {
@@ -1164,7 +1179,7 @@ export class Indexer {
   }
 
   // BR_G22
-  static async prepareMembershipsAge(mindex: MindexEntry[], HEAD: DBHead, HEAD_1: DBHead, conf: CurrencyConfDTO, dal: any) {
+  static async prepareMembershipsAge(mindex: MindexEntry[], HEAD: DBHead, HEAD_1: DBHead, conf: CurrencyConfDTO, dal:FileDAL) {
     await Promise.all(_.filter(mindex, (entry: MindexEntry) => !entry.revoked_on).map(async (ENTRY:MindexEntry) => {
       if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
         ENTRY.age = 0;
@@ -1180,7 +1195,7 @@ export class Indexer {
   }
 
   // BR_G37
-  static async prepareCertificationsAge(cindex: CindexEntry[], HEAD: DBHead, HEAD_1: DBHead, conf: CurrencyConfDTO, dal: any) {
+  static async prepareCertificationsAge(cindex: CindexEntry[], HEAD: DBHead, HEAD_1: DBHead, conf: CurrencyConfDTO, dal:FileDAL) {
     await Promise.all(cindex.map(async (ENTRY) => {
       if (HEAD.number == 0) {
         ENTRY.age = 0;
@@ -1513,7 +1528,7 @@ export class Indexer {
   }
 
   // BR_G86
-  static async ruleToBeKickedArePresent(iindex: IindexEntry[], dal:any) {
+  static async ruleToBeKickedArePresent(iindex: IindexEntry[], dal:FileDAL) {
     const toBeKicked = await dal.iindexDAL.getToBeKickedPubkeys();
     for (const toKick of toBeKicked) {
       if (count(_.where(iindex, { pub: toKick, isBeingKicked: true })) !== 1) {
@@ -1582,7 +1597,7 @@ export class Indexer {
   }
 
   // BR_G91
-  static async ruleIndexGenDividend(HEAD: DBHead, dal: any) {
+  static async ruleIndexGenDividend(HEAD: DBHead, dal:FileDAL) {
     const dividends = [];
     if (HEAD.new_dividend) {
       const members = await dal.iindexDAL.getMembersPubkeys()
@@ -1606,7 +1621,7 @@ export class Indexer {
   }
 
   // BR_G106
-  static async ruleIndexGarbageSmallAccounts(HEAD: DBHead, sindex: SindexEntry[], dal: any) {
+  static async ruleIndexGarbageSmallAccounts(HEAD: DBHead, sindex: SindexEntry[], dal:AccountsGarbagingDAL) {
     const garbages = [];
     const accounts = Object.keys(sindex.reduce((acc: { [k:string]: boolean }, src) => {
       acc[src.conditions] = true;
@@ -1654,7 +1669,7 @@ export class Indexer {
   }
 
   // BR_G92
-  static async ruleIndexGenCertificationExpiry(HEAD: DBHead, dal:any) {
+  static async ruleIndexGenCertificationExpiry(HEAD: DBHead, dal:FileDAL) {
     const expiries = [];
     const certs = await dal.cindexDAL.findExpired(HEAD.medianTime);
     for (const CERT of certs) {
@@ -1672,12 +1687,12 @@ export class Indexer {
   }
 
   // BR_G93
-  static async ruleIndexGenMembershipExpiry(HEAD: DBHead, dal:any) {
+  static async ruleIndexGenMembershipExpiry(HEAD: DBHead, dal:FileDAL) {
     const expiries = [];
 
     const memberships: MindexEntry[] = reduceBy(await dal.mindexDAL.sqlFind({ expires_on: { $lte: HEAD.medianTime }, revokes_on: { $gt: HEAD.medianTime} }), ['pub']);
     for (const POTENTIAL of memberships) {
-      const MS = await dal.mindexDAL.getReducedMS(POTENTIAL.pub);
+      const MS = await dal.mindexDAL.getReducedMS(POTENTIAL.pub) as FullMindexEntry // We are sure because `memberships` already comes from the MINDEX
       const hasRenewedSince = MS.expires_on > HEAD.medianTime;
       if (!MS.expired_on && !hasRenewedSince) {
         expiries.push({
@@ -1694,11 +1709,11 @@ export class Indexer {
   }
 
   // BR_G94
-  static async ruleIndexGenExclusionByMembership(HEAD: DBHead, mindex: MindexEntry[], dal:any) {
+  static async ruleIndexGenExclusionByMembership(HEAD: DBHead, mindex: MindexEntry[], dal:FileDAL) {
     const exclusions = [];
     const memberships = _.filter(mindex, (entry: MindexEntry) => entry.expired_on);
     for (const MS of memberships) {
-      const idty = await dal.iindexDAL.getFromPubkey(MS.pub);
+      const idty = await dal.iindexDAL.getFullFromPubkey(MS.pub);
       if (idty.member) {
         exclusions.push({
           op: 'UPDATE',
@@ -1713,7 +1728,7 @@ export class Indexer {
   }
 
   // BR_G95
-  static async ruleIndexGenExclusionByCertificatons(HEAD: DBHead, cindex: CindexEntry[], iindex: IindexEntry[], conf: ConfDTO, dal: any) {
+  static async ruleIndexGenExclusionByCertificatons(HEAD: DBHead, cindex: CindexEntry[], iindex: IindexEntry[], conf: ConfDTO, dal:FileDAL) {
     const exclusions = [];
     const expiredCerts = _.filter(cindex, (c: CindexEntry) => c.expired_on > 0);
     for (const CERT of expiredCerts) {
@@ -1722,7 +1737,7 @@ export class Indexer {
       const non_expired_global = await dal.cindexDAL.getValidLinksTo(CERT.receiver);
       if ((count(non_expired_global) - count(just_expired) + count(just_received)) < conf.sigQty) {
         const isInExcluded = _.filter(iindex, (i: IindexEntry) => i.member === false && i.pub === CERT.receiver)[0];
-        const idty = await dal.iindexDAL.getFromPubkey(CERT.receiver);
+        const idty = (await dal.iindexDAL.getFromPubkey(CERT.receiver)) as FullIindexEntry
         if (!isInExcluded && idty.member) {
           exclusions.push({
             op: 'UPDATE',
@@ -1738,7 +1753,7 @@ export class Indexer {
   }
 
   // BR_G96
-  static async ruleIndexGenImplicitRevocation(HEAD: DBHead, dal:any) {
+  static async ruleIndexGenImplicitRevocation(HEAD: DBHead, dal:FileDAL) {
     const revocations = [];
     const pending = await dal.mindexDAL.sqlFind({ revokes_on: { $lte: HEAD.medianTime}, revoked_on: { $null: true } })
     for (const MS of pending) {
@@ -1758,7 +1773,7 @@ export class Indexer {
   }
 
   // BR_G104
-  static async ruleIndexCorrectMembershipExpiryDate(HEAD: DBHead, mindex: MindexEntry[], dal:any) {
+  static async ruleIndexCorrectMembershipExpiryDate(HEAD: DBHead, mindex: MindexEntry[], dal:FileDAL) {
     for (const MS of mindex) {
       if (MS.type == 'JOIN' || MS.type == 'ACTIVE') {
         let basedBlock = { medianTime: 0 };
@@ -1784,16 +1799,16 @@ export class Indexer {
   }
 
   // BR_G105
-  static async ruleIndexCorrectCertificationExpiryDate(HEAD: DBHead, cindex: CindexEntry[], dal:any) {
+  static async ruleIndexCorrectCertificationExpiryDate(HEAD: DBHead, cindex: CindexEntry[], dal:FileDAL) {
     for (const CERT of cindex) {
       let basedBlock = { medianTime: 0 };
       if (HEAD.number == 0) {
         basedBlock = HEAD;
       } else {
         if (HEAD.currency === 'gtest') {
-          basedBlock = await dal.getBlock(CERT.created_on);
+          basedBlock = await dal.getBlockWeHaveItForSure(CERT.created_on);
         } else {
-          basedBlock = await dal.getBlock(CERT.created_on);
+          basedBlock = await dal.getBlockWeHaveItForSure(CERT.created_on);
         }
       }
       CERT.expires_on += basedBlock.medianTime;
@@ -1896,7 +1911,7 @@ function reduceBy(reducables: IndexEntry[], properties: string[]): any[] {
   return _.values(reduced).map((value: SindexEntry[]) => Indexer.DUP_HELPERS.reduce(value));
 }
 
-async function checkPeopleAreNotOudistanced (pubkeys: string[], newLinks: any, newcomers: string[], conf: ConfDTO, dal: any) {
+async function checkPeopleAreNotOudistanced (pubkeys: string[], newLinks: any, newcomers: string[], conf: ConfDTO, dal:FileDAL) {
   // let wotb = dal.wotb;
   let wotb = dal.wotb.memCopy();
   let current = await dal.getCurrentBlockOrNull();
@@ -1939,7 +1954,7 @@ async function checkPeopleAreNotOudistanced (pubkeys: string[], newLinks: any, n
   return error ? true : false;
 }
 
-async function getNodeIDfromPubkey(nodesCache: any, pubkey: string, dal: any) {
+async function getNodeIDfromPubkey(nodesCache: any, pubkey: string, dal:FileDAL) {
   let toNode = nodesCache[pubkey];
   // Eventually cache the target nodeID
   if (toNode === null || toNode === undefined) {
@@ -1985,7 +2000,7 @@ async function checkCertificationIsValid (block: BlockDTO, cert: CindexEntry, fi
   uid:string
   buid:string
   sig:string
-}|null>, conf: ConfDTO, dal: any) {
+}|null>, conf: ConfDTO, dal:FileDAL) {
   if (block.number == 0 && cert.created_on != 0) {
     throw Error('Number must be 0 for root block\'s certifications');
   } else {
@@ -1995,7 +2010,11 @@ async function checkCertificationIsValid (block: BlockDTO, cert: CindexEntry, fi
 
       if (block.number != 0) {
         try {
-          basedBlock = await dal.getBlock(cert.created_on);
+          const b = await dal.getBlock(cert.created_on)
+          if (!b) {
+            throw Error(DataErrors[DataErrors.CERT_BASED_ON_UNKNOWN_BLOCK])
+          }
+          basedBlock = BlockDTO.fromJSONObject(b)
         } catch (e) {
           throw Error('Certification based on an unexisting block');
         }

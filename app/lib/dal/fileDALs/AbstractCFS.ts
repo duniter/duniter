@@ -25,4 +25,7 @@ export abstract class AbstractCFS extends Initiable {
     super()
     this.coreFS = new CFSCore(rootPath, qioFS)
   }
+
+  cleanCache() {
+  }
 }

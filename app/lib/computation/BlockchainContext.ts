@@ -16,6 +16,8 @@ import {BlockDTO} from "../dto/BlockDTO"
 import {DuniterBlockchain} from "../blockchain/DuniterBlockchain"
 import {QuickSynchronizer} from "./QuickSync"
 import {DBHead} from "../db/DBHead"
+import {FileDAL} from "../dal/fileDAL"
+import {DBBlock} from "../db/DBBlock"
 
 const _               = require('underscore');
 const indexer         = require('../indexer').Indexer
@@ -24,7 +26,7 @@ const constants       = require('../constants');
 export class BlockchainContext {
 
   private conf:any
-  private dal:any
+  private dal:FileDAL
   private logger:any
   private blockchain:DuniterBlockchain
   private quickSynchronizer:QuickSynchronizer
@@ -129,7 +131,7 @@ export class BlockchainContext {
     return dbb.toBlockDTO()
   }
 
-  async revertCurrentBlock(): Promise<BlockDTO> {
+  async revertCurrentBlock(): Promise<DBBlock> {
     const head_1 = await this.dal.bindexDAL.head(1);
     this.logger.debug('Reverting block #%s...', head_1.number);
     const res = await this.blockchain.revertBlock(head_1.number, head_1.hash, this.dal)
@@ -146,7 +148,7 @@ export class BlockchainContext {
       throw constants.ERRORS.NO_POTENTIAL_FORK_AS_NEXT;
     }
     const block = forks[0];
-    await this.checkAndAddBlock(block)
+    await this.checkAndAddBlock(BlockDTO.fromJSONObject(block))
     this.logger.debug('Applied block #%s', block.number);
   }
 

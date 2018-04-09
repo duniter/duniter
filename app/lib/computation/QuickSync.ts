@@ -15,8 +15,11 @@
 import {DuniterBlockchain} from "../blockchain/DuniterBlockchain";
 import {BlockDTO} from "../dto/BlockDTO";
 import {DBTransaction} from "../db/DBTransaction";
-import {Indexer} from "../indexer";
+import {AccountsGarbagingDAL, Indexer} from "../indexer";
 import {CurrencyConfDTO} from "../dto/ConfDTO";
+import {FileDAL} from "../dal/fileDAL"
+import {DBBlock} from "../db/DBBlock"
+import {DBTx} from "../dal/sqliteDAL/TxsDAL"
 
 const _ = require('underscore')
 const constants = require('../constants')
@@ -32,7 +35,7 @@ let sync_expires: number[] = [];
 let sync_nextExpiring = 0;
 let sync_currConf: CurrencyConfDTO;
 const sync_memoryWallets: any = {}
-const sync_memoryDAL = {
+const sync_memoryDAL:AccountsGarbagingDAL = {
   getWallet: (conditions: string) => Promise.resolve(sync_memoryWallets[conditions] || { conditions, balance: 0 }),
   saveWallet: async (wallet: any) => {
     // Make a copy
@@ -48,7 +51,7 @@ const sync_memoryDAL = {
 
 export class QuickSynchronizer {
 
-  constructor(private blockchain:DuniterBlockchain, private conf: any, private dal: any, private logger: any) {
+  constructor(private blockchain:DuniterBlockchain, private conf: any, private dal:FileDAL, private logger: any) {
   }
 
   async saveBlocksInMainBranch(blocks: BlockDTO[]): Promise<void> {
@@ -57,13 +60,13 @@ export class QuickSynchronizer {
       await this.blockchain.saveParametersForRoot(blocks[0], this.conf, this.dal)
     }
     // Helper to retrieve a block with local cache
-    const getBlock = (number: number): Promise<BlockDTO> => {
+    const getBlock = async (number: number): Promise<BlockDTO> => {
       const firstLocalNumber = blocks[0].number;
       if (number >= firstLocalNumber) {
         let offset = number - firstLocalNumber;
         return Promise.resolve(blocks[offset])
       }
-      return this.dal.getBlock(number);
+      return BlockDTO.fromJSONObject(await this.dal.getBlockWeHaveItForSure(number))
     };
     const getBlockByNumberAndHash = async (number: number, hash: string): Promise<BlockDTO> => {
       const block = await getBlock(number);
@@ -79,7 +82,7 @@ export class QuickSynchronizer {
     }
     // Transactions recording
     await this.updateTransactionsForBlocks(blocks, getBlockByNumberAndHash);
-    await this.dal.blockDAL.saveBunch(blocks);
+    await this.dal.blockDAL.saveBunch(blocks.map(b => DBBlock.fromBlockDTO(b)));
     await DuniterBlockchain.pushStatsForBlocks(blocks, this.dal);
   }
 
@@ -98,7 +101,7 @@ export class QuickSynchronizer {
       }
       txs = txs.concat(newOnes);
     }
-    return this.dal.updateTransactions(txs);
+    return this.dal.updateTransactions(txs.map(t => DBTx.fromTransactionDTO(t)))
   }
 
   async quickApplyBlocks(blocks:BlockDTO[], to: number): Promise<void> {
@@ -127,14 +130,14 @@ export class QuickSynchronizer {
         sync_cindex = sync_cindex.concat(local_cindex);
         sync_mindex = sync_mindex.concat(local_mindex);
 
-        const HEAD = await Indexer.quickCompleteGlobalScope(block, sync_currConf, sync_bindex, sync_iindex, sync_mindex, sync_cindex, {
+        const HEAD = await Indexer.quickCompleteGlobalScope(block, sync_currConf, sync_bindex, sync_iindex, sync_mindex, sync_cindex, ({
           getBlock: (number: number) => {
             return Promise.resolve(sync_allBlocks[number]);
           },
           getBlockByBlockstamp: (blockstamp: string) => {
             return Promise.resolve(sync_allBlocks[parseInt(blockstamp)]);
           }
-        });
+        }) as any);
         sync_bindex.push(HEAD);
 
         // Remember expiration dates

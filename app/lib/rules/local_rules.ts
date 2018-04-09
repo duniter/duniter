@@ -524,7 +524,7 @@ export const LOCAL_RULES_HELPERS = {
     }
   },
 
-  getMaxPossibleVersionNumber: async (current:DBBlock) => {
+  getMaxPossibleVersionNumber: async (current:DBBlock|null) => {
     // Looking at current blockchain, find what is the next maximum version we can produce
 
     // 1. We follow previous block's version

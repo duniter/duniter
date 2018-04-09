@@ -26,8 +26,8 @@ export class WS2PReqMapperByServer implements WS2PReqMapper {
     return this.server.BlockchainService.current()
   }
 
-  getBlock(number: number): Promise<BlockDTO> {
-    return Promise.resolve(BlockDTO.fromJSONObject(this.server.dal.getBlock(number)))
+  async getBlock(number: number): Promise<BlockDTO> {
+    return Promise.resolve(BlockDTO.fromJSONObject(await this.server.dal.getBlock(number)))
   }
 
   async getBlocks(count: number, from: number): Promise<BlockDTO[]> {
@@ -35,6 +35,9 @@ export class WS2PReqMapperByServer implements WS2PReqMapper {
       throw 'Count is too high'
     }
     const current = await this.server.dal.getCurrentBlockOrNull()
+    if (!current) {
+      return []
+    }
     count = Math.min(current.number - from + 1, count)
     if (!current || current.number < from) {
       return []

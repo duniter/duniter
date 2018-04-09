@@ -364,7 +364,7 @@ export class BlockCrawler {
     }
 
     try {
-      let current = await server.dal.getCurrentBlockOrNull();
+      let current: DBBlock|null = await server.dal.getCurrentBlockOrNull();
       if (current) {
         this.pullingEvent(server, 'start', current.number);
         this.logger && this.logger.info("Pulling blocks from the network...");
@@ -406,7 +406,7 @@ export class BlockCrawler {
                 return Promise.resolve([node])
               }
               async getLocalBlock(number: number): Promise<DBBlock> {
-                return server.dal.getBlock(number)
+                return server.dal.getBlockWeHaveItForSure(number)
               }
               async getRemoteBlock(thePeer: any, number: number): Promise<BlockDTO> {
                 let block = null;
@@ -429,7 +429,7 @@ export class BlockCrawler {
                   }
                   this.crawler.pullingEvent(server, 'applying', {number: block.number, last: this.lastDownloaded && this.lastDownloaded.number});
                   if (addedBlock) {
-                    current = addedBlock;
+                    current = DBBlock.fromBlockDTO(addedBlock);
                     // Emit block events (for sharing with the network) only in forkWindowSize
                     if (nodeCurrent && nodeCurrent.number - addedBlock.number < server.conf.forksize) {
                       server.streamPush(addedBlock);

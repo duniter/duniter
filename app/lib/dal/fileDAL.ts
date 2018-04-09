@@ -172,9 +172,13 @@ export class FileDAL {
     return  this.peerDAL.getPeersWithEndpointsLike('WS2P')
   }
 
-  async getBlock(number:number) {
+  async getBlock(number:number): Promise<DBBlock|null> {
     const block = await this.blockDAL.getBlock(number)
     return block || null;
+  }
+
+  async getBlockWeHaveItForSure(number:number): Promise<DBBlock> {
+    return (await this.blockDAL.getBlock(number)) as DBBlock
   }
 
   getAbsoluteBlockByNumberAndHash(number:number, hash:string) {
@@ -205,7 +209,7 @@ export class FileDAL {
     return this.getBlockByNumberAndHash(number, hash);
   }
 
-  async getBlockByNumberAndHash(number:number, hash:string) {
+  async getBlockByNumberAndHash(number:number, hash:string): Promise<DBBlock> {
     try {
       const block = await this.getBlock(number);
       if (!block || block.hash != hash)
@@ -217,7 +221,7 @@ export class FileDAL {
     }
   }
 
-  async getBlockByNumberAndHashOrNull(number:number, hash:string) {
+  async getBlockByNumberAndHashOrNull(number:number, hash:string): Promise<DBBlock|null> {
     try {
       return await this.getBlockByNumberAndHash(number, hash)
     } catch (e) {
@@ -238,7 +242,7 @@ export class FileDAL {
 
 
   async getCurrentBlockOrNull() {
-    let current = null;
+    let current:DBBlock|null = null;
     try {
       current = await this.getBlockCurrent()
     } catch (e) {
@@ -850,20 +854,22 @@ export class FileDAL {
     }
   }
 
-  async saveBlock(block:BlockDTO) {
-    const dbb = DBBlock.fromBlockDTO(block)
+  async saveBlock(dbb:DBBlock) {
     dbb.wrong = false;
     await Promise.all([
       this.saveBlockInFile(dbb),
-      this.saveTxsInFiles(block.transactions, block.number, block.medianTime)
+      this.saveTxsInFiles(dbb.transactions, dbb.number, dbb.medianTime)
     ])
   }
 
-  async generateIndexes(block:DBBlock, conf:ConfDTO, index:IndexEntry[], HEAD:DBHead) {
+  async generateIndexes(block:BlockDTO, conf:ConfDTO, index:IndexEntry[], aHEAD:DBHead|null) {
     // We need to recompute the indexes for block#0
-    if (!index || !HEAD || HEAD.number == 0) {
+    let HEAD:DBHead
+    if (!index || !aHEAD || aHEAD.number == 0) {
       index = indexer.localIndex(block, conf)
       HEAD = await indexer.completeGlobalScope(block, conf, index, this)
+    } else {
+      HEAD = aHEAD
     }
     let mindex = indexer.mindex(index);
     let iindex = indexer.iindex(index);
@@ -903,7 +909,7 @@ export class FileDAL {
     return true;
   }
 
-  async trimSandboxes(block:DBBlock) {
+  async trimSandboxes(block:{ medianTime: number }) {
     await this.certDAL.trimExpiredCerts(block.medianTime);
     await this.msDAL.trimExpiredMemberships(block.medianTime);
     await this.idtyDAL.trimExpiredIdentities(block.medianTime);
@@ -926,7 +932,8 @@ export class FileDAL {
   async saveTxsInFiles(txs:TransactionDTO[], block_number:number, medianTime:number) {
     return Promise.all(txs.map(async (tx) => {
       const sp = tx.blockstamp.split('-');
-      tx.blockstampTime = (await this.getBlockByNumberAndHash(parseInt(sp[0]), sp[1])).medianTime;
+      const basedBlock = (await this.getBlockByNumberAndHash(parseInt(sp[0]), sp[1])) as DBBlock
+      tx.blockstampTime = basedBlock.medianTime;
       const txEntity = TransactionDTO.fromJSONObject(tx)
       txEntity.computeAllHashes();
       return this.txsDAL.addLinked(TransactionDTO.fromJSONObject(txEntity), block_number, medianTime);
@@ -1111,11 +1118,11 @@ export class FileDAL {
   }
 
   async cleanCaches() {
-    await _.values(this.newDals).map((dal:any) => dal.cleanCache && dal.cleanCache())
+    await _.values(this.newDals).map((dal:Initiable) => dal.cleanCache && dal.cleanCache())
   }
 
   async close() {
-    await _.values(this.newDals).map((dal:any) => dal.cleanCache && dal.cleanCache())
+    await _.values(this.newDals).map((dal:Initiable) => dal.cleanCache && dal.cleanCache())
     return this.sqliteDriver.closeConnection();
   }
 

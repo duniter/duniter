@@ -12,6 +12,7 @@
 // GNU Affero General Public License for more details.
 
 import {BlockDTO} from "../dto/BlockDTO"
+
 export interface SwitchBlock {
 
   number:number
@@ -22,7 +23,7 @@ export interface SwitchBlock {
 
 export interface SwitcherDao<T extends SwitchBlock> {
 
-  getCurrent(): Promise<T>
+  getCurrent(): Promise<T|null>
   getPotentials(numberStart:number, timeStart:number, maxNumber:number): Promise<T[]>
   getBlockchainBlock(number:number, hash:string): Promise<T|null>
   getSandboxBlock(number:number, hash:string): Promise<T|null>
@@ -73,7 +74,7 @@ export class Switcher<T extends SwitchBlock> {
    * Find all the suites' HEAD that we could potentially fork on, in the current fork window.
    * @param current
    */
-  async findPotentialSuitesHeads(current:T) {
+  async findPotentialSuitesHeads(current:{ number:number, medianTime:number }) {
     const numberStart = current.number - this.forkWindowSize
     const timeStart = current.medianTime - this.forkWindowSize * this.avgGenTime
     const suites = await this.findPotentialSuites(numberStart, timeStart)

@@ -29,6 +29,7 @@ import {
   HttpStat
 } from "../dtos"
 import {TransactionDTO} from "../../../../lib/dto/TransactionDTO"
+import {DataErrors} from "../../../../lib/common-libs/errors"
 
 const _                = require('underscore');
 const http2raw         = require('../http2raw');
@@ -196,7 +197,10 @@ export class BlockchainBinding extends AbstractController {
   }
 
   async difficulties(): Promise<HttpDifficulties> {
-    const current = await this.server.dal.getCurrentBlockOrNull();
+    const current = await this.server.dal.getCurrentBlockOrNull()
+    if (!current) {
+      throw Error(DataErrors[DataErrors.BLOCKCHAIN_NOT_INITIALIZED_YET])
+    }
     const number = (current && current.number) || 0;
     const issuers = await this.server.dal.getUniqueIssuersBetween(number - 1 - current.issuersFrame, number - 1);
     const difficulties = [];

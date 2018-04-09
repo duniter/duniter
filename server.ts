@@ -40,6 +40,7 @@ import {DBBlock} from "./app/lib/db/DBBlock"
 import {ProxiesConf} from './app/lib/proxy';
 import {DBPeer} from "./app/lib/dal/sqliteDAL/PeerDAL"
 import {Directory, FileSystem} from "./app/lib/system/directory"
+import {DataErrors} from "./app/lib/common-libs/errors"
 
 export interface HookableServer {
   generatorGetJoinData: (...args:any[]) => Promise<any>
@@ -495,6 +496,9 @@ export class Server extends stream.Duplex implements HookableServer {
 
   async revertTo(number:number) {
     const current = await this.BlockchainService.current();
+    if (!current) {
+      throw Error(DataErrors[DataErrors.CANNOT_REVERT_NO_CURRENT_BLOCK])
+    }
     for (let i = 0, count = current.number - number; i < count; i++) {
       await this.BlockchainService.revertCurrentBlock()
     }
@@ -519,6 +523,9 @@ export class Server extends stream.Duplex implements HookableServer {
 
   async reapplyTo(number:number) {
     const current = await this.BlockchainService.current();
+    if (!current) {
+      throw Error(DataErrors[DataErrors.CANNOT_REAPPLY_NO_CURRENT_BLOCK])
+    }
     if (current.number == number) {
       logger.warn('Already reached');
     } else {
@@ -632,7 +639,7 @@ export class Server extends stream.Duplex implements HookableServer {
   /**
    * Default WoT incoming data for new block. To be overriden by a module.
    */
-  generatorGetJoinData(current:DBBlock, idtyHash:string , char:string): Promise<any> {
+  generatorGetJoinData(current:DBBlock|null, idtyHash:string , char:string): Promise<any> {
     return Promise.resolve({})
   }
 

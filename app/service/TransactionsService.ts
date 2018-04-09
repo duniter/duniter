@@ -20,6 +20,7 @@ import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules";
 import {DBTx} from "../lib/dal/sqliteDAL/TxsDAL";
 import {FIFOService} from "./FIFOService";
 import {GlobalFifoPromise} from "./GlobalFifoPromise";
+import {DataErrors} from "../lib/common-libs/errors"
 
 const constants       = require('../lib/constants');
 
@@ -47,6 +48,9 @@ export class TransactionService extends FIFOService {
         this.logger.info('⬇ TX %s:%s from %s', tx.output_amount, tx.output_base, tx.issuers);
         const existing = await this.dal.getTxByHash(tx.hash);
         const current = await this.dal.getCurrentBlockOrNull();
+        if (!current) {
+          throw Error(DataErrors[DataErrors.NO_TRANSACTION_POSSIBLE_IF_NOT_CURRENT_BLOCK])
+        }
         if (existing) {
           throw constants.ERRORS.TX_ALREADY_PROCESSED;
         }

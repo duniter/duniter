@@ -29,6 +29,7 @@ import {MembershipDTO} from "../../../lib/dto/MembershipDTO"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {FileDAL} from "../../../lib/dal/fileDAL"
+import {DataErrors} from "../../../lib/common-libs/errors"
 
 const _               = require('underscore');
 const moment          = require('moment');
@@ -128,7 +129,10 @@ export class BlockGenerator {
     return this.createBlock(current, newcomers, leavers, newCertsFromWoT, revocations, exclusions, wereExcludeds, transactions, manualValues);
   }
 
-  private async findTransactions(current:DBBlock, options:{ dontCareAboutChaining?:boolean }) {
+  private async findTransactions(current:DBBlock|null, options:{ dontCareAboutChaining?:boolean }) {
+    if (!current) {
+      return []
+    }
     const versionMin = current ? Math.min(CommonConstants.LAST_VERSION_FOR_TX, current.version) : CommonConstants.DOCUMENTS_VERSION;
     const txs = await this.dal.getTransactionsPending(versionMin);
     const transactions = [];
@@ -160,9 +164,9 @@ export class BlockGenerator {
     return transactions;
   }
 
-  private async findLeavers(current:DBBlock) {
+  private async findLeavers(current:DBBlock|null) {
     const leaveData: { [pub:string]: { identity: { member:boolean }|null, ms: any, key: any, idHash: string } } = {};
-    const memberships = await this.dal.findLeavers(current && current.medianTime);
+    const memberships = await this.dal.findLeavers((current && current.medianTime) || 0)
     const leavers:string[] = [];
     memberships.forEach((ms:any) => leavers.push(ms.issuer));
     for (const ms of memberships) {
@@ -187,7 +191,7 @@ export class BlockGenerator {
     return leaveData;
   }
 
-  private async findNewcomers(current:DBBlock, filteringFunc: (joinData: { [pub:string]: any }) => Promise<{ [pub:string]: any }>) {
+  private async findNewcomers(current:DBBlock|null, filteringFunc: (joinData: { [pub:string]: any }) => Promise<{ [pub:string]: any }>) {
     const preJoinData = await this.getPreJoinData(current);
     const joinData = await filteringFunc(preJoinData);
     const members = await this.dal.getMembers();
@@ -229,7 +233,7 @@ export class BlockGenerator {
     }
   }
 
-  private async checkWoTConstraints(block:{ number:number, joiners:string[], identities:string[] }, newLinks:any, current:DBBlock) {
+  private async checkWoTConstraints(block:{ number:number, joiners:string[], identities:string[] }, newLinks:any, current:DBBlock|null) {
     if (block.number < 0) {
       throw 'Cannot compute WoT constraint for negative block number';
     }
@@ -271,9 +275,9 @@ export class BlockGenerator {
     }
   }
 
-  private async getPreJoinData(current:DBBlock) {
+  private async getPreJoinData(current:DBBlock|null) {
     const preJoinData:{ [k:string]: PreJoin } = {}
-    const memberships = await this.dal.findNewcomers(current && current.medianTime)
+    const memberships = await this.dal.findNewcomers((current && current.medianTime) || 0)
     const joiners:string[] = [];
     memberships.forEach((ms:any) => joiners.push(ms.issuer));
     for (const ms of memberships) {
@@ -282,6 +286,9 @@ export class BlockGenerator {
           let msBasedBlock = await this.dal.getBlockByBlockstampOrNull(ms.block);
           if (!msBasedBlock) {
             throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
+          }
+          if (!current) {
+            throw Error(DataErrors[DataErrors.CANNOT_DETERMINATE_MEMBERSHIP_AGE])
           }
           let age = current.medianTime - msBasedBlock.medianTime;
           if (age > this.conf.msWindow) {
@@ -348,7 +355,7 @@ export class BlockGenerator {
     return newCerts;
   }
 
-  async getSinglePreJoinData(current:DBBlock, idHash:string, joiners:string[]) {
+  async getSinglePreJoinData(current:DBBlock|null, idHash:string, joiners:string[]) {
     const identity = await this.dal.getGlobalIdentityByHashForJoining(idHash)
     let foundCerts = [];
     const vHEAD_1 = await this.mainContext.getvHEAD_1();
@@ -360,6 +367,9 @@ export class BlockGenerator {
     }
     else if (!identity.wasMember && identity.buid != CommonConstants.SPECIAL_BLOCK) {
       const idtyBasedBlock = await this.dal.getBlock(parseInt(identity.buid.split('-')[0]))
+      if (!current || !idtyBasedBlock) {
+        throw Error(DataErrors[DataErrors.CANNOT_DETERMINATE_IDENTITY_AGE])
+      }
       const age = current.medianTime - idtyBasedBlock.medianTime;
       if (age > this.conf.idtyWindow) {
         throw constants.ERRORS.TOO_OLD_IDENTITY;
@@ -439,7 +449,7 @@ export class BlockGenerator {
   }
 
   private async createBlock(
-    current:DBBlock,
+    current:DBBlock|null,
     joinData:{ [pub:string]: PreJoin },
     leaveData:{ [pub:string]: LeaveData },
     updates:any,
@@ -658,7 +668,7 @@ export class BlockGenerator {
       block.dividend = vHEAD.dividend;
       block.unitbase = vHEAD.unitBase;
     } else {
-      block.unitbase = block.number == 0 ? 0 : current.unitbase;
+      block.unitbase = block.number == 0 ? 0 : (current as DBBlock).unitbase; // For sur current is not null, as UD is only on blocks# > 0
     }
     // Rotation
     block.issuersCount = vHEAD.issuersCount;
@@ -689,7 +699,7 @@ export class BlockGeneratorWhichProves extends BlockGenerator {
 }
 
 interface BlockGeneratorInterface {
-  findNewCertsFromWoT(current:DBBlock): Promise<any>
+  findNewCertsFromWoT(current:DBBlock|null): Promise<any>
   filterJoiners(preJoinData:any): Promise<any>
 }
 
@@ -713,7 +723,7 @@ class NextBlockGenerator implements BlockGeneratorInterface {
     return this.server.dal
   }
 
-  async findNewCertsFromWoT(current:DBBlock) {
+  async findNewCertsFromWoT(current:DBBlock|null) {
     const updates:any = {};
     const updatesToFrom:any = {};
     const certs = await this.dal.certsFindNew();

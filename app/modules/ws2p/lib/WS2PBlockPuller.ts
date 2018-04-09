@@ -84,7 +84,7 @@ class WS2PDao extends AbstractDAO {
   }
 
   async getLocalBlock(number: number): Promise<DBBlock> {
-    return this.server.dal.getBlock(number)
+    return this.server.dal.getBlockWeHaveItForSure(number)
   }
 
   async getRemoteBlock(thePeer: any, number: number): Promise<BlockDTO> {

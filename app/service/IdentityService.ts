@@ -24,6 +24,7 @@ import {DBCert} from "../lib/dal/sqliteDAL/CertDAL"
 import {verify} from "../lib/common-libs/crypto/keyring"
 import {FIFOService} from "./FIFOService"
 import {MindexEntry} from "../lib/indexer"
+import {DataErrors} from "../lib/common-libs/errors"
 
 "use strict";
 const constants       = require('../lib/constants');
@@ -198,12 +199,15 @@ export class IdentityService extends FIFOService {
       }
       if (!anErr) {
         try {
-          let basedBlock: { number:number, hash:string, medianTime?:number } = await this.dal.getBlock(cert.block_number);
+          let basedBlock: { number:number, hash:string, medianTime?:number }|null = await this.dal.getBlock(cert.block_number);
           if (cert.block_number == 0 && !basedBlock) {
             basedBlock = {
               number: 0,
               hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
             };
+          }
+          if (!basedBlock) {
+            throw Error(DataErrors[DataErrors.CERT_BASED_ON_UNKNOWN_BLOCK])
           }
           const mCert:DBCert = {
             issuers: [cert.from],

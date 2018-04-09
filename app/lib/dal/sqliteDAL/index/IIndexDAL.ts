@@ -133,6 +133,10 @@ export class IIndexDAL extends AbstractIndex<IindexEntry> {
     return this.entityOrNull('uid', uid, retrieveOnPubkey)
   }
 
+  getFullFromPubkey(pub:string): Promise<FullIindexEntry> {
+    return this.entityOrNull('pub', pub) as Promise<FullIindexEntry>
+  }
+
   getFullFromUID(uid:string): Promise<FullIindexEntry|null> {
     return this.entityOrNull('uid', uid, true) as Promise<FullIindexEntry|null>
   }

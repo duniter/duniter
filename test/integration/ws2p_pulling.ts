@@ -79,16 +79,16 @@ describe("WS2P block pulling", function() {
   it('should have b#6 on s1, b#2 on s2', async () => {
     const currentS1 = await s1.BlockchainService.current()
     const currentS2 = await s2.BlockchainService.current()
-    assert.equal(currentS1.number, 6)
-    assert.equal(currentS2.number, 2)
+    assert.equal(currentS1 && currentS1.number, 6)
+    assert.equal(currentS2 && currentS2.number, 2)
   })
 
   it('should be able to pull and have the same current block as a result', async () => {
     await cluster2.pullBlocks()
     const currentS1 = await s1.BlockchainService.current()
     const currentS2 = await s2.BlockchainService.current()
-    assert.equal(currentS1.number, 6)
-    assert.equal(currentS2.number, 6)
+    assert.equal(currentS1 && currentS1.number, 6)
+    assert.equal(currentS2 && currentS2.number, 6)
   })
 
   it('should be able to pull pending identities', async () => {

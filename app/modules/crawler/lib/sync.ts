@@ -30,7 +30,6 @@ import {hashf} from "../../../lib/common"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {PeeringService} from "../../../service/PeeringService"
 
-const util         = require('util');
 const _            = require('underscore');
 const moment       = require('moment');
 const multimeter   = require('multimeter');
@@ -142,7 +141,7 @@ export class Synchroniser extends stream.Duplex {
       //============
       this.logger.info('Getting remote blockchain info...');
       this.watcher.writeStatus('Connecting to ' + this.host + '...');
-      const lCurrent:DBBlock = await this.dal.getCurrentBlockOrNull();
+      const lCurrent:DBBlock|null = await this.dal.getCurrentBlockOrNull();
       const localNumber = lCurrent ? lCurrent.number : -1;
       let rCurrent:BlockDTO
       if (isNaN(to)) {
@@ -256,7 +255,7 @@ export class Synchroniser extends stream.Duplex {
           return [node]
         }
         async getLocalBlock(number: number): Promise<DBBlock> {
-          return this.dal.getBlock(number)
+          return this.dal.getBlockWeHaveItForSure(number)
         }
         async getRemoteBlock(thePeer: PeerDTO, number: number): Promise<BlockDTO> {
           let block = null;

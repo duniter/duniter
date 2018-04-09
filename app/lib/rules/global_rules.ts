@@ -102,7 +102,7 @@ export const GLOBAL_RULES_FUNCTIONS = {
       const outputs = tx.outputsAsObjects()
       let unlocks:any = {};
       let sumOfInputs = 0;
-      let maxOutputBase = current.unitbase;
+      let maxOutputBase = current && current.unitbase || 0;
       for (const theUnlock of tx.unlocks) {
         let sp = theUnlock.split(':');
         let index = parseInt(sp[0]);
@@ -182,7 +182,7 @@ export const GLOBAL_RULES_FUNCTIONS = {
 export const GLOBAL_RULES_HELPERS = {
 
   // Functions used in an external context too
-  checkMembershipBlock: (ms:any, current:DBBlock, conf:ConfDTO, dal:FileDAL) => checkMSTarget(ms, current ? { number: current.number + 1} : { number: 0 }, conf, dal),
+  checkMembershipBlock: (ms:any, current:DBBlock|null, conf:ConfDTO, dal:FileDAL) => checkMSTarget(ms, current ? { number: current.number + 1} : { number: 0 }, conf, dal),
 
   checkCertificationIsValidInSandbox: (cert:any, current:BlockDTO, findIdtyFunc:any, conf:ConfDTO, dal:FileDAL) => {
     return checkCertificationShouldBeValid(current ? current : { number: 0, currency: '' }, cert, findIdtyFunc, conf, dal)
@@ -196,7 +196,7 @@ export const GLOBAL_RULES_HELPERS = {
     return checkCertificationShouldBeValid(block, cert, findIdtyFunc, conf, dal)
   },
 
-  isOver3Hops: async (member:any, newLinks:any, newcomers:string[], current:DBBlock, conf:ConfDTO, dal:FileDAL) => {
+  isOver3Hops: async (member:any, newLinks:any, newcomers:string[], current:DBBlock|null, conf:ConfDTO, dal:FileDAL) => {
     if (!current) {
       return Promise.resolve(false);
     }

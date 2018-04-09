@@ -21,7 +21,7 @@ import {
 } from "./tools/toolbox"
 import {WS2PCluster} from "../../app/modules/ws2p/lib/WS2PCluster"
 import {WS2PConstants} from "../../app/modules/ws2p/lib/constants"
-import { TestUser } from './tools/TestUser';
+import {TestUser} from './tools/TestUser';
 
 const assert = require('assert')
 
@@ -94,9 +94,9 @@ describe("WS2P cluster", function() {
     const currentS1 = await s1.BlockchainService.current()
     const currentS2 = await s2.BlockchainService.current()
     const currentS3 = await s3.BlockchainService.current()
-    assert.equal(currentS1.number, 2)
-    assert.equal(currentS2.number, 2)
-    assert.equal(currentS3.number, 2)
+    assert.equal(currentS1 && currentS1.number, 2)
+    assert.equal(currentS2 && currentS2.number, 2)
+    assert.equal(currentS3 && currentS3.number, 2)
   })
 
   it('should be able to have a connected network on s2 start', async () => {

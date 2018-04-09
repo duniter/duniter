@@ -22,7 +22,7 @@ const IS_NOT_FORK = false;
 
 export class BlockDAL extends AbstractSQLite<DBBlock> {
 
-  private current: any
+  private current: DBBlock|null
 
   constructor(driver:SQLiteDriver) {
     super(
@@ -97,14 +97,14 @@ export class BlockDAL extends AbstractSQLite<DBBlock> {
     if (!this.current) {
       this.current = (await this.query('SELECT * FROM block WHERE NOT fork ORDER BY number DESC LIMIT 1'))[0];
     }
-    return Promise.resolve(this.current)
+    return this.current
   }
 
-  async getBlock(number:string | number) {
+  async getBlock(number:string | number): Promise<DBBlock|null> {
     return (await this.query('SELECT * FROM block WHERE number = ? and NOT fork', [parseInt(String(number))]))[0];
   }
 
-  async getAbsoluteBlock(number:number, hash:string) {
+  async getAbsoluteBlock(number:number, hash:string): Promise<DBBlock|null> {
     return (await this.query('SELECT * FROM block WHERE number = ? and hash = ?', [number, hash]))[0];
   }
 
@@ -171,7 +171,7 @@ export class BlockDAL extends AbstractSQLite<DBBlock> {
     return await this.saveEntity(block);
   }
 
-  async setSideBlock(number:number, previousBlock:DBBlock) {
+  async setSideBlock(number:number, previousBlock:DBBlock|null) {
     await this.query('UPDATE block SET fork = ? WHERE number = ?', [true, number]);
     this.current = previousBlock;
   }

@@ -19,6 +19,7 @@ import {LOCAL_RULES_HELPERS} from "../lib/rules/local_rules";
 import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules";
 import {MembershipDTO} from "../lib/dto/MembershipDTO";
 import {FIFOService} from "./FIFOService";
+import {DBBlock} from "../lib/db/DBBlock"
 
 const constants       = require('../lib/constants');
 
@@ -38,7 +39,7 @@ export class MembershipService extends FIFOService {
     this.logger = require('../lib/logger').NewLogger(this.dal.profile);
   }
 
-  current() {
+  current(): Promise<DBBlock | null> {
     return this.dal.getCurrentBlockOrNull()
   }
 

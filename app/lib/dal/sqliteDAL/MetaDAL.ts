@@ -336,7 +336,7 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
       await mindexDAL.exec('ALTER TABLE m_index ADD COLUMN chainable_on INTEGER NULL;')
       const memberships = await mindexDAL.query('SELECT * FROM m_index WHERE op = ?', [CommonConstants.IDX_CREATE])
       for (const ms of memberships) {
-        const reference = await blockDAL.getBlock(parseInt(ms.written_on.split('-')[0]))
+        const reference = (await blockDAL.getBlock(parseInt(ms.written_on.split('-')[0]))) as DBBlock
         const updateQuery = 'UPDATE m_index SET chainable_on = ' + (reference.medianTime + conf.msPeriod) + ' WHERE pub = \'' + ms.pub + '\' AND op = \'CREATE\''
         await mindexDAL.exec(updateQuery)
       }
@@ -371,7 +371,7 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
       let mindexDAL = new MIndexDAL(this.driverCopy)
       const memberships = await mindexDAL.query('SELECT * FROM m_index')
       for (const ms of memberships) {
-        const reference = await blockDAL.getBlock(parseInt(ms.written_on.split('-')[0]))
+        const reference = (await blockDAL.getBlock(parseInt(ms.written_on.split('-')[0]))) as DBBlock
         const msPeriod = conf.msWindow // It has the same value, as it was not defined on currency init
         const updateQuery = 'UPDATE m_index SET chainable_on = ' + (reference.medianTime + msPeriod) + ' WHERE pub = \'' + ms.pub + '\' AND written_on = \'' + ms.written_on +  '\''
         await mindexDAL.exec(updateQuery)

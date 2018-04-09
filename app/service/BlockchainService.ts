@@ -28,6 +28,7 @@ import {CommonConstants} from "../lib/common-libs/constants"
 import {LOCAL_RULES_FUNCTIONS} from "../lib/rules/local_rules"
 import {Switcher, SwitcherDao} from "../lib/blockchain/Switcher"
 import {OtherConstants} from "../lib/other_constants"
+import {DataErrors} from "../lib/common-libs/errors"
 
 "use strict";
 
@@ -73,8 +74,12 @@ export class BlockchainService extends FIFOService {
 
       constructor(private bcService:BlockchainService) {}
 
-      getCurrent(): Promise<BlockDTO> {
-        return this.bcService.current()
+      async getCurrent(): Promise<BlockDTO|null> {
+        const current = await this.bcService.current()
+        if (!current) {
+          return null
+        }
+        return BlockDTO.fromJSONObject(current)
       }
 
       async getPotentials(numberStart: number, timeStart: number, maxNumber:number): Promise<BlockDTO[]> {
@@ -102,6 +107,9 @@ export class BlockchainService extends FIFOService {
       async revertTo(number: number): Promise<BlockDTO[]> {
         const blocks:BlockDTO[] = []
         const current = await this.bcService.current();
+        if (!current) {
+          throw Error(DataErrors[DataErrors.CANNOT_REVERT_NO_CURRENT_BLOCK])
+        }
         for (let i = 0, count = current.number - number; i < count; i++) {
           const reverted = await this.bcService.mainContext.revertCurrentBlock()
           blocks.push(BlockDTO.fromJSONObject(reverted))
@@ -156,9 +164,12 @@ export class BlockchainService extends FIFOService {
 
   async branches() {
     const current = await this.current()
+    if (!current) {
+      throw Error(DataErrors[DataErrors.CANNOT_REVERT_NO_CURRENT_BLOCK])
+    }
     const switcher = new Switcher(this.switcherDao, this.invalidForks, this.conf.avgGenTime, this.conf.forksize, this.conf.switchOnHeadAdvance, this.logger)
     const heads = await switcher.findPotentialSuitesHeads(current)
-    return heads.concat([current])
+    return heads.concat([BlockDTO.fromJSONObject(current)])
   }
 
   submitBlock(blockToAdd:any, noResolution = false): Promise<BlockDTO> {
@@ -289,7 +300,7 @@ export class BlockchainService extends FIFOService {
     return all;
   }
 
-  async requirementsOfIdentity(idty:IdentityForRequirements, current:DBBlock, computeDistance = true): Promise<HttpIdentityRequirement> {
+  async requirementsOfIdentity(idty:IdentityForRequirements, current:DBBlock|null, computeDistance = true): Promise<HttpIdentityRequirement> {
     // TODO: this is not clear
     let expired = false;
     let outdistanced = false;
@@ -401,13 +412,15 @@ export class BlockchainService extends FIFOService {
     const certs = newCerts[newcomer] || [];
     for (const cert of certs) {
       const block = await this.dal.getBlock(cert.block_number);
-      certsFromCerts.push({
-        from: cert.from,
-        to: cert.to,
-        sig: cert.sig,
-        timestamp: block.medianTime,
-        expiresIn: 0
-      });
+      if (block) {
+        certsFromCerts.push({
+          from: cert.from,
+          to: cert.to,
+          sig: cert.sig,
+          timestamp: block.medianTime,
+          expiresIn: 0
+        })
+      }
     }
     return certsFromLinks.concat(certsFromCerts).map(c => {
       c.expiresIn = Math.max(0, c.timestamp + this.conf.sigValidity - currentTime)
@@ -429,11 +442,14 @@ export class BlockchainService extends FIFOService {
     return this.server.blockchain.saveParametersForRoot(block, this.conf, this.dal)
   }
 
-  async blocksBetween(from:number, count:number) {
+  async blocksBetween(from:number, count:number): Promise<DBBlock[]> {
     if (count > 5000) {
       throw 'Count is too high';
     }
     const current = await this.current()
+    if (!current) {
+      return []
+    }
     count = Math.min(current.number - from + 1, count);
     if (!current || current.number < from) {
       return [];

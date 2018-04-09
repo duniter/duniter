@@ -40,6 +40,7 @@ import {RouterDependency} from "../../../app/modules/router"
 import {ProverDependency} from "../../../app/modules/prover/index"
 import {WS2PClient} from "../../../app/modules/ws2p/lib/WS2PClient"
 import {DBPeer} from "../../../app/lib/dal/sqliteDAL/PeerDAL"
+import {DBBlock} from "../../../app/lib/db/DBBlock"
 
 const assert      = require('assert');
 const _           = require('underscore');
@@ -376,7 +377,7 @@ export class TestingServer {
     return this.server.home
   }
 
-  revert() {
+  revert(): Promise<DBBlock> {
     return this.server.revert()
   }
 

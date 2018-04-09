@@ -889,7 +889,7 @@ export class WS2PCluster {
 
   async pullBlocks() {
     let current:{number:number} = { number: -1 }
-    let newCurrent:{number:number} = { number: 0 }
+    let newCurrent:{number:number}|null = { number: 0 }
     while (current && newCurrent && newCurrent.number > current.number) {
       current = newCurrent
       await this.makeApullShot()

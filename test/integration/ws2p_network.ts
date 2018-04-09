@@ -85,8 +85,8 @@ describe("WS2P network", function() {
   it('should have b#2 on s1 and s2', async () => {
     const currentS1 = await s1.BlockchainService.current()
     const currentS2 = await s2.BlockchainService.current()
-    assert.equal(currentS1.number, 2)
-    assert.equal(currentS2.number, 2)
+    assert.equal(currentS1 && currentS1.number, 2)
+    assert.equal(currentS2 && currentS2.number, 2)
   })
 
   it('should be able to have a connected network on s2 start', async () => {

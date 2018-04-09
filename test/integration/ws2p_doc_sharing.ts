@@ -11,7 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import { TestUser } from './tools/TestUser';
+import {TestUser} from './tools/TestUser';
 import {simpleTestingConf, simpleTestingServer, simpleUser, simpleWS2PNetwork, TestingServer} from "./tools/toolbox"
 import {WS2PConstants} from "../../app/modules/ws2p/lib/constants"
 
@@ -72,9 +72,9 @@ describe("WS2P doc sharing", function() {
     await s2.waitToHaveBlock(1)
     const b1s1 = await s1.BlockchainService.current()
     const b1s2 = await s2.BlockchainService.current()
-    assert.equal(b1s1.number, 1)
-    assert.equal(b1s2.number, 1)
-    assert.equal(b1s1.hash, b1s2.hash)
+    assert.equal(b1s1 && b1s1.number, 1)
+    assert.equal(b1s2 && b1s2.number, 1)
+    assert.equal(b1s1 && b1s1.hash, b1s2 && b1s2.hash)
   })
 
   it('should see the identity, certs and memberships in the docpool', async () => {
@@ -90,10 +90,10 @@ describe("WS2P doc sharing", function() {
     await s2.waitToHaveBlock(2)
     const b2s1 = await s1.BlockchainService.current()
     const b2s2 = await s2.BlockchainService.current()
-    assert.equal(b2s1.number, 2)
-    assert.equal(b2s2.number, 2)
-    assert.equal(b2s1.hash, b2s2.hash)
-    assert.equal(b2s2.joiners.length, 1)
+    assert.equal(b2s1 && b2s1.number, 2)
+    assert.equal(b2s2 && b2s2.number, 2)
+    assert.equal(b2s1 && b2s1.hash, b2s2 && b2s2.hash)
+    assert.equal(b2s2 && b2s2.joiners.length, 1)
   })
 
   it('should see the transactions pending', async () => {
@@ -110,10 +110,10 @@ describe("WS2P doc sharing", function() {
     await s2.waitToHaveBlock(3)
     const b3s1 = await s1.BlockchainService.current()
     const b3s2 = await s2.BlockchainService.current()
-    assert.equal(b3s1.number, 3)
-    assert.equal(b3s2.number, 3)
-    assert.equal(b3s1.hash, b3s2.hash)
-    assert.equal(b3s2.transactions.length, 1)
+    assert.equal(b3s1 && b3s1.number, 3)
+    assert.equal(b3s2 && b3s2.number, 3)
+    assert.equal(b3s1 && b3s1.hash, b3s2 && b3s2.hash)
+    assert.equal(b3s2 && b3s2.transactions.length, 1)
   })
 
   it('should see the peer documents', async () => {

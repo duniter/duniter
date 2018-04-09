@@ -121,7 +121,7 @@ export class WOTBinding extends AbstractController {
     for (const cert of certs) {
       const certifier = await this.server.dal.getWrittenIdtyByPubkeyForUidAndMemberAndCreatedOn(cert.from);
       if (certifier) {
-        let certBlock = await this.server.dal.getBlock(cert.block_number)
+        let certBlock = await this.server.dal.getBlockWeHaveItForSure(cert.block_number)
         theCerts.push({
           pubkey: cert.from,
           uid: certifier.uid,
@@ -215,7 +215,7 @@ export class WOTBinding extends AbstractController {
     for (const cert of certs) {
       const certified = await this.server.dal.getWrittenIdtyByPubkeyForUidAndMemberAndCreatedOn(cert.to);
       if (certified) {
-        let certBlock = await this.server.dal.getBlock(cert.block_number)
+        let certBlock = await this.server.dal.getBlockWeHaveItForSure(cert.block_number)
         theCerts.push({
           pubkey: cert.to,
           uid: certified.uid,

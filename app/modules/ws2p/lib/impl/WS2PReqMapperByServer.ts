@@ -16,6 +16,7 @@ import {Server} from "../../../../../server"
 import {WS2PReqMapper} from "../interface/WS2PReqMapper"
 import {BlockDTO} from "../../../../lib/dto/BlockDTO"
 import {IindexEntry} from '../../../../lib/indexer';
+import {DBBlock} from "../../../../lib/db/DBBlock"
 
 export class WS2PReqMapperByServer implements WS2PReqMapper {
 
@@ -25,8 +26,8 @@ export class WS2PReqMapperByServer implements WS2PReqMapper {
     return this.server.BlockchainService.current()
   }
 
-  getBlock(number: number): Promise<BlockDTO[]> {
-    return this.server.dal.getBlock(number)
+  getBlock(number: number): Promise<BlockDTO> {
+    return Promise.resolve(BlockDTO.fromJSONObject(this.server.dal.getBlock(number)))
   }
 
   async getBlocks(count: number, from: number): Promise<BlockDTO[]> {
@@ -38,7 +39,7 @@ export class WS2PReqMapperByServer implements WS2PReqMapper {
     if (!current || current.number < from) {
       return []
     }
-    return this.server.dal.getBlocksBetween(from, from + count - 1)
+    return (await this.server.dal.getBlocksBetween(from, from + count - 1)).map((b:DBBlock) => BlockDTO.fromJSONObject(b))
   }
 
   async getRequirementsOfPending(minsig: number): Promise<any> {

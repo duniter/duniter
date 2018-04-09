@@ -28,6 +28,7 @@ import {
   HttpParameters,
   HttpStat
 } from "../dtos"
+import {TransactionDTO} from "../../../../lib/dto/TransactionDTO"
 
 const _                = require('underscore');
 const http2raw         = require('../http2raw');
@@ -118,9 +119,53 @@ export class BlockchainBinding extends AbstractController {
     const params = ParametersService.getCountAndFrom(req);
     const count = parseInt(params.count);
     const from = parseInt(params.from);
-    let blocks = await this.BlockchainService.blocksBetween(from, count);
+    let blocks: any[] = await this.BlockchainService.blocksBetween(from, count);
     blocks = blocks.map((b:any) => toJson.block(b));
-    return blocks;
+    return blocks.map(b => ({
+      version: b.version,
+      currency: b.currency,
+      number: b.number,
+      issuer: b.issuer,
+      issuersFrame: b.issuersFrame,
+      issuersFrameVar: b.issuersFrameVar,
+      issuersCount: b.issuersCount,
+      parameters: b.parameters,
+      membersCount: b.membersCount,
+      monetaryMass: b.monetaryMass,
+      powMin: b.powMin,
+      time: b.time,
+      medianTime: b.medianTime,
+      dividend: b.dividend,
+      unitbase: b.unitbase,
+      hash: b.hash,
+      previousHash: b.previousHash,
+      previousIssuer: b.previousIssuer,
+      identities: b.identities,
+      certifications: b.certifications,
+      joiners: b.joiners,
+      actives: b.actives,
+      leavers: b.leavers,
+      revoked: b.revoked,
+      excluded: b.excluded,
+      transactions: b.transactions.map((t:TransactionDTO) => ({
+        version: t.version,
+        currency: t.currency,
+        comment: t.comment,
+        locktime: t.locktime,
+        signatures: t.signatures,
+        outputs: t.outputs,
+        inputs: t.inputs,
+        unlocks: t.unlocks,
+        blockstamp: t.blockstamp,
+        blockstampTime: t.blockstampTime,
+        issuers: t.issuers,
+        hash: t.hash,
+      })),
+      nonce: b.nonce,
+      inner_hash: b.inner_hash,
+      signature: b.signature,
+      raw: b.raw,
+    }))
   }
 
   async current(): Promise<HttpBlock> {

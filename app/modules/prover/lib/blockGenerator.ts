@@ -726,7 +726,7 @@ class NextBlockGenerator implements BlockGeneratorInterface {
         // Do not rely on certification block UID, prefer using the known hash of the block by its given number
         const targetBlock = await this.dal.getBlock(cert.block_number);
         // Check if writable
-        let duration = current && targetBlock ? current.medianTime - parseInt(targetBlock.medianTime) : 0;
+        let duration = current && targetBlock ? current.medianTime - targetBlock.medianTime : 0;
         if (targetBlock && duration <= this.conf.sigWindow) {
           cert.sig = '';
           cert.currency = this.conf.currency;

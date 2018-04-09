@@ -89,7 +89,7 @@ export class MembershipService extends FIFOService {
         idtyHash: entry.getIdtyHash(),
         written: false,
         written_number: null,
-        expires_on: basedBlock ? basedBlock.medianTime + this.conf.msWindow : null,
+        expires_on: basedBlock ? basedBlock.medianTime + this.conf.msWindow : 0,
         signature: entry.signature,
         expired: false,
         block_number: entry.number

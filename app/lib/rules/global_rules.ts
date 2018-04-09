@@ -85,7 +85,7 @@ export const GLOBAL_RULES_FUNCTIONS = {
         // From DUP 0.5: we fully check the blockstamp
         const basedBlock = await dal.getBlockByBlockstamp(idty.buid);
         // Check if writable
-        let duration = current.medianTime - parseInt(basedBlock.medianTime);
+        let duration = current.medianTime - basedBlock.medianTime
         if (duration > conf.idtyWindow) {
           throw Error('Identity is too old and cannot be written');
         }

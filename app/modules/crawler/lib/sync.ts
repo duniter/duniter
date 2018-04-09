@@ -309,7 +309,7 @@ export class Synchroniser extends stream.Duplex {
 
       // Save currency parameters given by root block
       const rootBlock = await this.server.dal.getBlock(0);
-      await this.BlockchainService.saveParametersForRootBlock(rootBlock);
+      await this.BlockchainService.saveParametersForRootBlock(BlockDTO.fromJSONObject(rootBlock))
       this.server.dal.blockDAL.cleanCache();
 
       //=======

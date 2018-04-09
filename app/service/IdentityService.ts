@@ -198,7 +198,7 @@ export class IdentityService extends FIFOService {
       }
       if (!anErr) {
         try {
-          let basedBlock = await this.dal.getBlock(cert.block_number);
+          let basedBlock: { number:number, hash:string, medianTime?:number } = await this.dal.getBlock(cert.block_number);
           if (cert.block_number == 0 && !basedBlock) {
             basedBlock = {
               number: 0,
@@ -213,7 +213,7 @@ export class IdentityService extends FIFOService {
             block_hash: basedBlock.hash,
             target: targetHash,
             to: idty.pubkey,
-            expires_on: basedBlock.medianTime + this.conf.sigWindow,
+            expires_on: (basedBlock.medianTime || 0) + this.conf.sigWindow,
             linked: false,
             written: false,
             expired: false,

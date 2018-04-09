@@ -184,17 +184,16 @@ export const TransactionOfBlock = {
 export interface HttpTransactionOfBlock {
   version: number
   currency: string
-  comment: string
   locktime: number
-  signatures: string[]
-  outputs: string[]
-  inputs: string[]
-  unlocks: string[]
-  block_number: number
+  hash: string
   blockstamp: string
   blockstampTime: number
-  time: number
   issuers: string[]
+  inputs: string[]
+  outputs: string[]
+  unlocks: string[]
+  signatures: string[]
+  comment: string
 }
 
 export const Block = {
@@ -244,7 +243,7 @@ export interface HttpBlock {
   powMin: number
   time: number
   medianTime: number
-  dividend: number
+  dividend: number|null
   unitbase: number
   hash: string
   previousHash: string
@@ -301,10 +300,9 @@ export function block2HttpBlock(blockDTO:BlockDTO): HttpBlock {
         outputs: tx.outputs,
         inputs: tx.inputs,
         unlocks: tx.unlocks,
-        block_number: tx.blockNumber,
+        hash: tx.hash,
         blockstamp: tx.blockstamp,
         blockstampTime: tx.blockstampTime,
-        time: tx.blockstampTime
       }
     }),
     nonce: blockDTO.nonce,

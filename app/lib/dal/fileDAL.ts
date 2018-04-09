@@ -38,6 +38,7 @@ import {SIndexDAL} from "./sqliteDAL/index/SIndexDAL"
 import {IIndexDAL} from "./sqliteDAL/index/IIndexDAL"
 import {DataErrors} from "../common-libs/errors"
 import {BasicRevocableIdentity, IdentityDTO} from "../dto/IdentityDTO"
+import {BlockDAL} from "./sqliteDAL/BlockDAL"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -66,7 +67,7 @@ export class FileDAL {
   confDAL:ConfDAL
   metaDAL:MetaDAL
   peerDAL:PeerDAL
-  blockDAL:any
+  blockDAL:BlockDAL
   txsDAL:TxsDAL
   statDAL:StatDAL
   idtyDAL:IdentityDAL
@@ -274,7 +275,7 @@ export class FileDAL {
   }
 
   getBlocksBetween (start:number, end:number) {
-    return Promise.resolve(this.blockDAL.getBlocks(Math.max(0, start), end))
+    return this.blockDAL.getBlocks(Math.max(0, start), end)
   }
 
   getForkBlocksFollowing(current:DBBlock) {

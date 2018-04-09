@@ -16,7 +16,7 @@ import {Initiable} from "../sqliteDAL/Initiable"
 
 export abstract class AbstractCFS extends Initiable {
 
-  protected coreFS:CFSCore
+  public coreFS:CFSCore
   protected dal:any
 
   constructor(rootPath:string, qioFS:any) {

@@ -63,7 +63,7 @@ export class FileDAL {
   profile:string
 
   powDAL:PowDAL
-  confDAL:any
+  confDAL:ConfDAL
   metaDAL:MetaDAL
   peerDAL:PeerDAL
   blockDAL:any

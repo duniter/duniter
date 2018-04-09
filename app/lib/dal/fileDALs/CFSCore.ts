@@ -111,7 +111,7 @@ export class CFSCore {
    * @param deep Wether to remove the file in the root core or not.
    * @returns {*} Promise of removal.
    */
-  async remove(filePath:string, deep:boolean): Promise<void> {
+  async remove(filePath:string, deep = false): Promise<void> {
     // Make a deep physical deletion
     // Root core: physical deletion
     return this.qfs.remove(path.join(this.rootPath, filePath));

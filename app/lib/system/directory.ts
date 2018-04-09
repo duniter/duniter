@@ -13,7 +13,7 @@
 
 import {SQLiteDriver} from "../dal/drivers/SQLiteDriver"
 import {CFSCore} from "../dal/fileDALs/CFSCore"
-import {WoTBObject} from "../wot"
+import {WoTBInstance, WoTBObject} from "../wot"
 import {FileDALParams} from "../dal/fileDAL"
 
 const opts = require('optimist').argv;
@@ -109,7 +109,7 @@ export const Directory = {
     const params = await Directory.getHomeFS(isMemory, theHome)
     const home = params.home;
     let dbf: () => SQLiteDriver
-    let wotb: any
+    let wotb: WoTBInstance
     if (isMemory) {
       dbf = () => new SQLiteDriver(':memory:');
       wotb = WoTBObject.memoryInstance();

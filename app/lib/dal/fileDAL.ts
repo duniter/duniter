@@ -40,6 +40,7 @@ import {DataErrors} from "../common-libs/errors"
 import {BasicRevocableIdentity, IdentityDTO} from "../dto/IdentityDTO"
 import {BlockDAL} from "./sqliteDAL/BlockDAL"
 import {FileSystem} from "../system/directory"
+import {WoTBInstance} from "../wot"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -53,14 +54,14 @@ export interface FileDALParams {
   home:string
   fs:FileSystem
   dbf:() => SQLiteDriver
-  wotb:any
+  wotb:WoTBInstance
 }
 
 export class FileDAL {
 
   rootPath:string
   sqliteDriver:SQLiteDriver
-  wotb:any
+  wotb:WoTBInstance
   profile:string
 
   powDAL:PowDAL

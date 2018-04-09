@@ -39,6 +39,7 @@ import {IIndexDAL} from "./sqliteDAL/index/IIndexDAL"
 import {DataErrors} from "../common-libs/errors"
 import {BasicRevocableIdentity, IdentityDTO} from "../dto/IdentityDTO"
 import {BlockDAL} from "./sqliteDAL/BlockDAL"
+import {FileSystem} from "../system/directory"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -50,7 +51,7 @@ const constants = require('../constants');
 
 export interface FileDALParams {
   home:string
-  fs:any
+  fs:FileSystem
   dbf:() => SQLiteDriver
   wotb:any
 }

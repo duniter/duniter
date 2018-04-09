@@ -50,7 +50,7 @@ export class Master {
   onInfoCallback:any
   workersOnline:Promise<any>[]
 
-  constructor(private nbCores:number, logger:any, private dal?:FileDAL) {
+  constructor(private nbCores:number|null|undefined, logger:any, private dal?:FileDAL) {
     this.clusterId = clusterId++
     this.logger = logger || Master.defaultLogger()
     this.onInfoMessage = (message:any) => {
@@ -90,7 +90,8 @@ export class Master {
       execArgv: [] // Do not try to debug forks
     })
 
-    this.slaves = Array.from({ length: this.nbCores }).map((value, index) => {
+    const nbCores = this.nbCores !== undefined && this.nbCores !== null ? this.nbCores : 1
+    this.slaves = Array.from({ length: nbCores }).map((value, index) => {
       const nodejsWorker = cluster.fork()
       const worker = new PowWorker(nodejsWorker, message => {
         this.onWorkerMessage(index, message)

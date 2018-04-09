@@ -12,8 +12,8 @@
 // GNU Affero General Public License for more details.
 
 import {OtherConstants} from "../../other_constants"
+import {RealFS} from "../../system/directory"
 
-const qfs     = require('q-io/fs')
 const sqlite3 = require("sqlite3").verbose()
 
 const MEMORY_PATH = ':memory:'
@@ -82,7 +82,7 @@ export class SQLiteDriver {
     this.logger.debug('Removing SQLite database...')
     await this.closeConnection()
     if (this.path !== MEMORY_PATH) {
-      await qfs.remove(this.path)
+      await RealFS().fsUnlink(this.path)
     }
     this.logger.debug('Database removed')
   }

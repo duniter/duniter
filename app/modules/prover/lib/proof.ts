@@ -21,10 +21,10 @@ import {dos2unix} from "../../../lib/common-libs/dos2unix"
 import {rawer} from "../../../lib/common-libs/index"
 import {ProcessCpuProfiler} from "../../../ProcessCpuProfiler"
 import {PowDAL} from "../../../lib/dal/fileDALs/PowDAL";
+import {Directory} from "../../../lib/system/directory"
 
 const moment = require('moment');
 const querablep = require('querablep');
-const directory = require('../../../lib/system/directory');
 
 export function createPowWorker() {
 
@@ -64,7 +64,7 @@ export function createPowWorker() {
           }
 
           if (message.value.rootPath) {
-            const params = await directory.getHomeFS(false, message.value.rootPath, false)
+            const params = await Directory.getHomeFS(false, message.value.rootPath, false)
             powDAL = new PowDAL(message.value.rootPath, params.fs)
           }
 

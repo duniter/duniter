@@ -15,7 +15,7 @@
 const co = require('co');
 const should = require('should');
 const FileDAL = require('../../app/lib/dal/fileDAL').FileDAL
-const dir = require('../../app/lib/system/directory');
+const dir = require('../../app/lib/system/directory').Directory
 const indexer    = require('../../app/lib/indexer').Indexer
 const toolbox = require('../integration/tools/toolbox');
 

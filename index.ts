@@ -24,10 +24,10 @@ import {ProverConstants} from "./app/modules/prover/lib/constants"
 import {ProxiesConf} from './app/lib/proxy';
 import {RouterDependency} from "./app/modules/router"
 import {OtherConstants} from "./app/lib/other_constants"
+import {Directory} from "./app/lib/system/directory"
 
 const path = require('path');
 const _ = require('underscore');
-const directory = require('./app/lib/system/directory');
 const constants = require('./app/lib/constants');
 const logger = require('./app/lib/logger').NewLogger('duniter');
 
@@ -292,7 +292,7 @@ class Stack {
     OtherConstants.SQL_TRACES = program.sqlTraces === true
     const dbName = program.mdb;
     const dbHome = program.home;
-    const home = directory.getHome(dbName, dbHome);
+    const home = Directory.getHome(dbName, dbHome);
 
     if (command.logs === false) {
       logger.mute();

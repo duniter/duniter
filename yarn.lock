@@ -3059,15 +3059,15 @@ punycode@^1.4.1:
   version "1.4.1"
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-1.4.1.tgz#c0d5a63b2718800ad8e1eb0fa5269c84dd41845e"
 
-q-io@1.13.2:
-  version "1.13.2"
-  resolved "https://registry.yarnpkg.com/q-io/-/q-io-1.13.2.tgz#eea130d481ddb5e1aa1bc5a66855f7391d06f003"
+q-io@^1.13.5:
+  version "1.13.5"
+  resolved "https://registry.yarnpkg.com/q-io/-/q-io-1.13.5.tgz#6ac39deb5cfe0dc68436e6f8c33d0d7c3f471bb2"
   dependencies:
     collections "^0.2.0"
     mime "^1.2.11"
     mimeparse "^0.1.4"
     q "^1.0.1"
-    qs "^1.2.1"
+    qs "^6.4.0"
     url2 "^0.0.0"
 
 q@^1.0.1:
@@ -3078,11 +3078,7 @@ qs@6.4.0, qs@~6.4.0:
   version "6.4.0"
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.4.0.tgz#13e26d28ad6b0ffaa91312cd3bf708ed351e7233"
 
-qs@^1.2.1:
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/qs/-/qs-1.2.2.tgz#19b57ff24dc2a99ce1f8bdf6afcda59f8ef61f88"
-
-qs@^6.5.1, qs@~6.5.1:
+qs@^6.4.0, qs@^6.5.1, qs@~6.5.1:
   version "6.5.1"
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.5.1.tgz#349cdf6eef89ec45c12d7d5eb3fc0c870343a6d8"
 

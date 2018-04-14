@@ -26,6 +26,7 @@ import {UnlockMetadata} from "./common-libs/txunlock"
 import {FileDAL} from "./dal/fileDAL"
 import {DBWallet} from "./dal/sqliteDAL/WalletDAL"
 import {DataErrors} from "./common-libs/errors"
+import {DBBlock} from "./db/DBBlock"
 
 const _               = require('underscore');
 
@@ -1805,11 +1806,7 @@ export class Indexer {
       if (HEAD.number == 0) {
         basedBlock = HEAD;
       } else {
-        if (HEAD.currency === 'gtest') {
-          basedBlock = await dal.getBlockWeHaveItForSure(CERT.created_on);
-        } else {
-          basedBlock = await dal.getBlockWeHaveItForSure(CERT.created_on);
-        }
+        basedBlock = (await dal.getBlock(CERT.created_on)) as DBBlock;
       }
       CERT.expires_on += basedBlock.medianTime;
     }

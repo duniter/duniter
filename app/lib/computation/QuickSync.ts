@@ -15,7 +15,7 @@
 import {DuniterBlockchain} from "../blockchain/DuniterBlockchain";
 import {BlockDTO} from "../dto/BlockDTO";
 import {DBTransaction} from "../db/DBTransaction";
-import {AccountsGarbagingDAL, Indexer} from "../indexer";
+import {AccountsGarbagingDAL, FullSindexEntry, Indexer} from "../indexer";
 import {CurrencyConfDTO} from "../dto/ConfDTO";
 import {FileDAL} from "../dal/fileDAL"
 import {DBBlock} from "../db/DBBlock"
@@ -131,11 +131,11 @@ export class QuickSynchronizer {
         sync_mindex = sync_mindex.concat(local_mindex);
 
         const HEAD = await Indexer.quickCompleteGlobalScope(block, sync_currConf, sync_bindex, sync_iindex, sync_mindex, sync_cindex, ({
-          getBlock: (number: number) => {
-            return Promise.resolve(sync_allBlocks[number]);
+          async getBlock(number: number) {
+            return sync_allBlocks[number]
           },
-          getBlockByBlockstamp: (blockstamp: string) => {
-            return Promise.resolve(sync_allBlocks[parseInt(blockstamp)]);
+          async getBlockByBlockstamp(blockstamp: string) {
+            return sync_allBlocks[parseInt(blockstamp)]
           }
         }) as any);
         sync_bindex.push(HEAD);
@@ -148,8 +148,10 @@ export class QuickSynchronizer {
           if (entry.revokes_on) {
             sync_expires.push(entry.revokes_on)
           }
+          if (entry.expires_on || entry.revokes_on) {
+            sync_expires = _.uniq(sync_expires)
+          }
         }
-        sync_expires = _.uniq(sync_expires);
 
         await this.blockchain.createNewcomers(local_iindex, this.dal, this.logger)
 
@@ -177,7 +179,7 @@ export class QuickSynchronizer {
           // Fills in correctly the SINDEX
           await Promise.all(_.where(sync_sindex.concat(local_sindex), { op: 'UPDATE' }).map(async (entry: any) => {
             if (!entry.conditions) {
-              const src = await this.dal.sindexDAL.getSource(entry.identifier, entry.pos);
+              const src = (await this.dal.sindexDAL.getSource(entry.identifier, entry.pos)) as FullSindexEntry
               entry.conditions = src.conditions;
             }
           }))

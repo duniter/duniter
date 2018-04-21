@@ -104,16 +104,16 @@ describe("Triming", function(){
       { op: 'UPDATE', issuer: 'HgTT', receiver: 'DNan', created_on: '121-H', written_on: '126-H', writtenOn: 126, expires_on: null, expired_on: 3000 },
       { op: 'CREATE', issuer: 'DNan', receiver: 'HgTT', created_on: '125-H', written_on: '126-H', writtenOn: 126, expires_on: null, expired_on: null }
     ]);
-    (yield dal.cindexDAL.sqlFind({ issuer: 'HgTT' })).should.have.length(2);
-    (yield dal.cindexDAL.sqlFind({ issuer: 'DNan' })).should.have.length(1);
+    (yield dal.cindexDAL.findRaw({ issuer: 'HgTT' })).should.have.length(2);
+    (yield dal.cindexDAL.findRaw({ issuer: 'DNan' })).should.have.length(1);
   }));
 
   it('should be able to trim the cindex', () => co(function *() {
     // Triming
     yield dal.trimIndexes(127);
-    (yield dal.cindexDAL.sqlFind({ issuer: 'HgTT' })).should.have.length(0);
+    (yield dal.cindexDAL.findRaw({ issuer: 'HgTT' })).should.have.length(0);
     // { op: 'UPDATE', issuer: 'DNan', receiver: 'HgTT', created_on: '125-H', written_on: '126-H', writtenOn: 126, expires_on: 3600, expired_on: null },/**/
-    (yield dal.cindexDAL.sqlFind({ issuer: 'DNan' })).should.have.length(1);
+    (yield dal.cindexDAL.findRaw({ issuer: 'DNan' })).should.have.length(1);
   }));
 
   it('should be able to feed the sindex', () => co(function *() {
@@ -123,15 +123,15 @@ describe("Triming", function(){
       { op: 'CREATE', identifier: 'SOURCE_2', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false },
       { op: 'CREATE', identifier: 'SOURCE_3', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false }
     ]);
-    (yield dal.sindexDAL.sqlFind({ identifier: 'SOURCE_1' })).should.have.length(2);
-    (yield dal.sindexDAL.sqlFind({ pos: 4 })).should.have.length(4);
+    (yield dal.sindexDAL.findRaw({ identifier: 'SOURCE_1' })).should.have.length(2);
+    (yield dal.sindexDAL.findRaw({ pos: 4 })).should.have.length(4);
   }));
 
   it('should be able to trim the sindex', () => co(function *() {
     // Triming
     yield dal.trimIndexes(140);
-    (yield dal.sindexDAL.sqlFind({ identifier: 'SOURCE_1' })).should.have.length(0);
-    (yield dal.sindexDAL.sqlFind({ pos: 4 })).should.have.length(2);
+    (yield dal.sindexDAL.findRaw({ identifier: 'SOURCE_1' })).should.have.length(0);
+    (yield dal.sindexDAL.findRaw({ pos: 4 })).should.have.length(2);
   }));
 
   it('should be able to trim the bindex', () => co(function *() {

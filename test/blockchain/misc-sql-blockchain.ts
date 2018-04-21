@@ -24,7 +24,7 @@ import {ConfDTO} from "../../app/lib/dto/ConfDTO";
 
 const assert = require('assert')
 
-describe('MISC SQL Blockchain', () => {
+describe.skip('MISC SQL Blockchain', () => {
 
   let blockchain:any
 

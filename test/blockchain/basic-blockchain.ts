@@ -80,7 +80,7 @@ describe('Basic Memory Blockchain', () => {
 
 })
 
-describe('Basic SQL Blockchain', () => {
+describe.skip('Basic SQL Blockchain', () => {
 
   before(async () => {
 

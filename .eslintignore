@@ -9,6 +9,9 @@ app/lib/dto/*.js
 app/lib/indexer.js
 app/lib/common.js
 app/lib/dal/drivers/*.js
+app/lib/dal/indexDAL/*.js
+app/lib/dal/indexDAL/loki/*.js
+app/lib/dal/indexDAL/abstract/*.js
 app/lib/dal/sqliteDAL/*.js
 app/lib/dal/sqliteDAL/index/*.js
 app/lib/dal/fileDALs/*.js

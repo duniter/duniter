@@ -29,13 +29,13 @@ describe("Source DAL", function(){
 
   it('should be able to feed the sindex with unordered rows', () => co(function *() {
     yield dal.sindexDAL.insertBatch([
-      { op: 'UPDATE', identifier: 'SOURCE_1', pos: 4, written_on: '139-H', writtenOn: 139, written_time: 4500, consumed: true,  conditions: 'SIG(ABC)' },
-      { op: 'CREATE', identifier: 'SOURCE_1', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'SIG(ABC)' },
-      { op: 'CREATE', identifier: 'SOURCE_2', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'SIG(ABC)' },
-      { op: 'CREATE', identifier: 'SOURCE_3', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'SIG(DEF)' }
+      { op: 'UPDATE', tx: null, identifier: 'SOURCE_1', pos: 4, written_on: '139-H', writtenOn: 139, written_time: 4500, consumed: true,  conditions: 'SIG(ABC)' },
+      { op: 'CREATE', tx: null, identifier: 'SOURCE_1', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'SIG(ABC)' },
+      { op: 'CREATE', tx: null, identifier: 'SOURCE_2', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'SIG(ABC)' },
+      { op: 'CREATE', tx: null, identifier: 'SOURCE_3', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'SIG(DEF)' }
     ]);
-    (yield dal.sindexDAL.sqlFind({ identifier: 'SOURCE_1' })).should.have.length(2);
-    (yield dal.sindexDAL.sqlFind({ pos: 4 })).should.have.length(4);
+    (yield dal.sindexDAL.findRaw({ identifier: 'SOURCE_1' })).should.have.length(2);
+    (yield dal.sindexDAL.findRaw({ pos: 4 })).should.have.length(4);
     // Source availability
     const sourcesOfDEF = yield dal.sindexDAL.getAvailableForPubkey('DEF');
     sourcesOfDEF.should.have.length(1);

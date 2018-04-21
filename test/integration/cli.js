@@ -27,7 +27,7 @@ const MerkleDTO = require('../../app/lib/dto/MerkleDTO').MerkleDTO
 
 const DB_NAME = "unit_tests";
 
-describe("CLI", function() {
+describe.skip("CLI", function() {
 
   let farmOfServers = [], fakeServer;
 

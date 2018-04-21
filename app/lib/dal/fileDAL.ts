@@ -18,7 +18,10 @@ import {ConfDTO} from "../dto/ConfDTO"
 import {BlockDTO} from "../dto/BlockDTO"
 import {DBHead} from "../db/DBHead"
 import {DBIdentity, IdentityDAL} from "./sqliteDAL/IdentityDAL"
-import {CindexEntry, FullMindexEntry, IindexEntry, IndexEntry, SindexEntry} from "../indexer"
+import {
+  CindexEntry, FullCindexEntry, FullMindexEntry, FullSindexEntry, IindexEntry, IndexEntry,
+  SindexEntry
+} from "../indexer"
 import {DBPeer, PeerDAL} from "./sqliteDAL/PeerDAL"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import {CertDAL, DBCert} from "./sqliteDAL/CertDAL"
@@ -31,18 +34,26 @@ import {CommonConstants} from "../common-libs/constants"
 import {PowDAL} from "./fileDALs/PowDAL";
 import {Initiable} from "./sqliteDAL/Initiable"
 import {MetaDAL} from "./sqliteDAL/MetaDAL"
-import {BIndexDAL} from "./sqliteDAL/index/BIndexDAL"
-import {MIndexDAL} from "./sqliteDAL/index/MIndexDAL"
-import {CIndexDAL} from "./sqliteDAL/index/CIndexDAL"
-import {SIndexDAL} from "./sqliteDAL/index/SIndexDAL"
-import {IIndexDAL} from "./sqliteDAL/index/IIndexDAL"
 import {DataErrors} from "../common-libs/errors"
 import {BasicRevocableIdentity, IdentityDTO} from "../dto/IdentityDTO"
 import {BlockDAL} from "./sqliteDAL/BlockDAL"
 import {FileSystem} from "../system/directory"
 import {WoTBInstance} from "../wot"
+import {IIndexDAO} from "./indexDAL/abstract/IIndexDAO"
+import {LokiIIndex} from "./indexDAL/loki/LokiIIndex"
+import {BIndexDAO} from "./indexDAL/abstract/BIndexDAO"
+import {MIndexDAO} from "./indexDAL/abstract/MIndexDAO"
+import {SIndexDAO} from "./indexDAL/abstract/SIndexDAO"
+import {CIndexDAO} from "./indexDAL/abstract/CIndexDAO"
+import {IdentityForRequirements} from "../../service/BlockchainService"
+import {LokiSIndex} from "./indexDAL/loki/LokiSIndex"
+import {LokiCIndex} from "./indexDAL/loki/LokiCIndex"
+import {LokiMIndex} from "./indexDAL/loki/LokiMIndex";
+import {LokiBIndex} from "./indexDAL/loki/LokiBIndex"
+import {NewLogger} from "../logger"
 
 const fs      = require('fs')
+const loki    = require('lokijs')
 const path    = require('path')
 const readline = require('readline')
 const _       = require('underscore');
@@ -64,6 +75,7 @@ export class FileDAL {
   wotb:WoTBInstance
   profile:string
 
+  loki:any
   powDAL:PowDAL
   confDAL:ConfDAL
   metaDAL:MetaDAL
@@ -75,11 +87,11 @@ export class FileDAL {
   certDAL:CertDAL
   msDAL:MembershipDAL
   walletDAL:WalletDAL
-  bindexDAL:BIndexDAL
-  mindexDAL:MIndexDAL
-  iindexDAL:IIndexDAL
-  sindexDAL:SIndexDAL
-  cindexDAL:CIndexDAL
+  bindexDAL:BIndexDAO
+  mindexDAL:MIndexDAO
+  iindexDAL:IIndexDAO
+  sindexDAL:SIndexDAO
+  cindexDAL:CIndexDAO
   newDals:{ [k:string]: Initiable }
 
   loadConfHook: (conf:ConfDTO) => Promise<void>
@@ -90,6 +102,7 @@ export class FileDAL {
     this.sqliteDriver = params.dbf()
     this.wotb = params.wotb
     this.profile = 'DAL'
+    this.loki = new loki('index.db')
 
     // DALs
     this.powDAL = new PowDAL(this.rootPath, params.fs)
@@ -103,11 +116,11 @@ export class FileDAL {
     this.certDAL = new (require('./sqliteDAL/CertDAL').CertDAL)(this.sqliteDriver);
     this.msDAL = new (require('./sqliteDAL/MembershipDAL').MembershipDAL)(this.sqliteDriver);
     this.walletDAL = new (require('./sqliteDAL/WalletDAL').WalletDAL)(this.sqliteDriver);
-    this.bindexDAL = new (require('./sqliteDAL/index/BIndexDAL').BIndexDAL)(this.sqliteDriver);
-    this.mindexDAL = new (require('./sqliteDAL/index/MIndexDAL').MIndexDAL)(this.sqliteDriver);
-    this.iindexDAL = new (require('./sqliteDAL/index/IIndexDAL').IIndexDAL)(this.sqliteDriver);
-    this.sindexDAL = new (require('./sqliteDAL/index/SIndexDAL').SIndexDAL)(this.sqliteDriver);
-    this.cindexDAL = new (require('./sqliteDAL/index/CIndexDAL').CIndexDAL)(this.sqliteDriver);
+    this.bindexDAL = new LokiBIndex(this.loki)
+    this.mindexDAL = new LokiMIndex(this.loki)
+    this.iindexDAL = new LokiIIndex(this.loki)
+    this.sindexDAL = new LokiSIndex(this.loki)
+    this.cindexDAL = new LokiCIndex(this.loki)
 
     this.newDals = {
       'powDAL': this.powDAL,
@@ -232,7 +245,7 @@ export class FileDAL {
   async existsNonChainableLink(from:string, vHEAD_1:DBHead, sigStock:number) {
     // Cert period rule
     const medianTime = vHEAD_1 ? vHEAD_1.medianTime : 0;
-    const linksFrom = await this.cindexDAL.reducablesFrom(from)
+    const linksFrom:FullCindexEntry[] = await this.cindexDAL.reducablesFrom(from)
     const unchainables = _.filter(linksFrom, (link:CindexEntry) => link.chainable_on > medianTime);
     if (unchainables.length > 0) return true;
     // Max stock rule
@@ -601,17 +614,7 @@ export class FileDAL {
     const links = await this.cindexDAL.getValidLinksTo(pub);
     let matching = certs;
     await Promise.all(links.map(async (entry:any) => {
-      entry.from = entry.issuer;
-      const wbt = entry.written_on.split('-');
-      const blockNumber = parseInt(entry.created_on); // created_on field of `c_index` does not have the full blockstamp
-      const basedBlock = await this.getBlock(blockNumber);
-      entry.block = blockNumber;
-      entry.block_number = blockNumber;
-      entry.block_hash = basedBlock ? basedBlock.hash : null;
-      entry.linked = true;
-      entry.written_block = parseInt(wbt[0]);
-      entry.written_hash = wbt[1];
-      matching.push(entry);
+      matching.push(await this.cindexEntry2DBCert(entry))
     }))
     matching  = _.sortBy(matching, (c:DBCert) => -c.block);
     matching.reverse();
@@ -622,24 +625,34 @@ export class FileDAL {
     const certs = await this.certDAL.getFromPubkeyCerts(pubkey);
     const links = await this.cindexDAL.getValidLinksFrom(pubkey);
     let matching = certs;
-    await Promise.all(links.map(async (entry:any) => {
-      const idty = await this.getWrittenIdtyByPubkeyForHash(entry.receiver)
-      entry.from = entry.issuer;
-      entry.to = entry.receiver;
-      const cbt = entry.created_on.split('-');
-      const wbt = entry.written_on.split('-');
-      entry.block = parseInt(cbt[0]);
-      entry.block_number = parseInt(cbt[0]);
-      entry.block_hash = cbt[1];
-      entry.target = idty.hash;
-      entry.linked = true;
-      entry.written_block = parseInt(wbt[0]);
-      entry.written_hash = wbt[1];
-      matching.push(entry);
+    await Promise.all(links.map(async (entry:CindexEntry) => {
+      matching.push(await this.cindexEntry2DBCert(entry))
     }))
     matching  = _.sortBy(matching, (c:DBCert) => -c.block);
     matching.reverse();
     return matching;
+  }
+
+  async cindexEntry2DBCert(entry:CindexEntry): Promise<DBCert> {
+    const idty = await this.getWrittenIdtyByPubkeyForHash(entry.receiver)
+    const wbt = entry.written_on.split('-')
+    const block = (await this.blockDAL.getBlock(entry.created_on)) as DBBlock
+    return {
+      issuers: [entry.issuer],
+      linked: true,
+      written: true,
+      written_block: parseInt(wbt[0]),
+      written_hash: wbt[1],
+      sig: entry.sig,
+      block_number: block.number,
+      block_hash: block.hash,
+      target: idty.hash,
+      to: entry.receiver,
+      from: entry.issuer,
+      block: block.number,
+      expired: !!entry.expired_on,
+      expires_on: entry.expires_on,
+    }
   }
 
   async isSentry(pubkey:string, conf:ConfDTO) {
@@ -712,7 +725,7 @@ export class FileDAL {
     return  this.cindexDAL.existsNonReplayableLink(from, to)
   }
 
-  getSource(identifier:string, pos:number) {
+  getSource(identifier:string, pos:number): Promise<FullSindexEntry | null> {
     return this.sindexDAL.getSource(identifier, pos)
   }
 
@@ -892,9 +905,11 @@ export class FileDAL {
       const from = await this.getWrittenIdtyByPubkeyForWotbID(entry.issuer);
       const to = await this.getWrittenIdtyByPubkeyForWotbID(entry.receiver);
       if (entry.op == CommonConstants.IDX_CREATE) {
+        NewLogger().trace('addLink %s -> %s', from.wotb_id, to.wotb_id)
         this.wotb.addLink(from.wotb_id, to.wotb_id);
       } else {
         // Update = removal
+        NewLogger().trace('removeLink %s -> %s', from.wotb_id, to.wotb_id)
         this.wotb.removeLink(from.wotb_id, to.wotb_id);
       }
     }
@@ -1153,5 +1168,26 @@ export class FileDAL {
         reject(e);
       }
     })
+  }
+
+  async findReceiversAbove(minsig: number) {
+    const receiversAbove:string[] = await this.cindexDAL.getReceiversAbove(minsig)
+    const members:IdentityForRequirements[] = []
+    for (const r of receiversAbove) {
+      const i = await this.iindexDAL.getFullFromPubkey(r)
+      members.push({
+        hash: i.hash || "",
+        member: i.member || false,
+        wasMember: i.wasMember || false,
+        pubkey: i.pub,
+        uid: i.uid || "",
+        buid: i.created_on || "",
+        sig: i.sig || "",
+        revocation_sig: "",
+        revoked: false,
+        revoked_on: 0
+      })
+    }
+    return members
   }
 }

@@ -63,6 +63,7 @@ export interface MindexEntry extends IndexEntry {
   revokedIsMember?: boolean,
   alreadyRevoked?: boolean,
   revocationSigOK?: boolean,
+  created_on_ref?: { medianTime: number, number:number, hash:string }
 }
 
 export interface FullMindexEntry {
@@ -132,6 +133,17 @@ export interface CindexEntry extends IndexEntry {
   toLeaver?: boolean,
   isReplay?: boolean,
   sigOK?: boolean,
+  created_on_ref?: { medianTime: number },
+}
+
+export interface FullCindexEntry {
+  issuer: string
+  receiver: string
+  created_on: number
+  sig: string
+  chainable_on: number
+  expires_on: number
+  expired_on: number
 }
 
 export interface SindexEntry extends IndexEntry {
@@ -152,6 +164,20 @@ export interface SindexEntry extends IndexEntry {
   available?: boolean,
   isLocked?: boolean,
   isTimeLocked?: boolean,
+}
+
+export interface FullSindexEntry {
+  tx: string | null
+  identifier: string
+  pos: number
+  created_on: string | null
+  written_time: number
+  locktime: number
+  unlock: string | null
+  amount: number
+  base: number
+  conditions: string
+  consumed: boolean
 }
 
 export interface Ranger {
@@ -541,20 +567,20 @@ export class Indexer {
     // BR_G16
     await Indexer.prepareSpeed(HEAD, head, conf)
 
-    // BR_G19
-    await Indexer.prepareIdentitiesAge(iindex, HEAD, HEAD_1, conf, dal);
+    // // BR_G19
+    // await Indexer.prepareIdentitiesAge(iindex, HEAD, HEAD_1, conf, dal);
 
-    // BR_G22
-    await Indexer.prepareMembershipsAge(mindex, HEAD, HEAD_1, conf, dal);
-
-    // BR_G37
-    await Indexer.prepareCertificationsAge(cindex, HEAD, HEAD_1, conf, dal);
-
-    // BR_G104
-    await Indexer.ruleIndexCorrectMembershipExpiryDate(HEAD, mindex, dal);
-
-    // BR_G105
-    await Indexer.ruleIndexCorrectCertificationExpiryDate(HEAD, cindex, dal);
+    // // BR_G22
+    // await Indexer.prepareMembershipsAge(mindex, HEAD, HEAD_1, conf, dal);
+    //
+    // // BR_G37
+    // await Indexer.prepareCertificationsAge(cindex, HEAD, HEAD_1, conf, dal);
+    //
+    // // BR_G104
+    // await Indexer.ruleIndexCorrectMembershipExpiryDate(HEAD, mindex, dal);
+    //
+    // // BR_G105
+    // await Indexer.ruleIndexCorrectCertificationExpiryDate(HEAD, cindex, dal);
 
     return HEAD;
   }
@@ -698,7 +724,7 @@ export class Indexer {
     // BR_G20
     await Promise.all(iindex.map(async (ENTRY: IindexEntry) => {
       if (ENTRY.op == constants.IDX_CREATE) {
-        ENTRY.uidUnique = count(await dal.iindexDAL.sqlFind({ uid: ENTRY.uid })) == 0;
+        ENTRY.uidUnique = count(await dal.iindexDAL.findByUid(ENTRY.uid as string)) == 0;
       } else {
         ENTRY.uidUnique = true;
       }
@@ -707,7 +733,7 @@ export class Indexer {
     // BR_G21
     await Promise.all(iindex.map(async (ENTRY: IindexEntry) => {
       if (ENTRY.op == constants.IDX_CREATE) {
-        ENTRY.pubUnique = count(await dal.iindexDAL.sqlFind({pub: ENTRY.pub})) == 0;
+        ENTRY.pubUnique = count(await dal.iindexDAL.findByPub(ENTRY.pub)) == 0;
       } else {
         ENTRY.pubUnique = true;
       }
@@ -731,7 +757,7 @@ export class Indexer {
     if (HEAD.number > 0) {
       await Promise.all(mindex.map(async (ENTRY: MindexEntry) => {
         if (ENTRY.revocation === null) {
-          const rows = await dal.mindexDAL.sqlFind({ pub: ENTRY.pub, chainable_on: { $gt: HEAD_1.medianTime }});
+          const rows = await dal.mindexDAL.findByPubAndChainableOnGt(ENTRY.pub, HEAD_1.medianTime)
           // This rule will be enabled on
           if (HEAD.medianTime >= 1498860000) {
             ENTRY.unchainables = count(rows);
@@ -804,7 +830,7 @@ export class Indexer {
     // BR_G27
     await Promise.all(mindex.map(async (ENTRY: MindexEntry) => {
       if (ENTRY.type == 'JOIN' || ENTRY.type == 'ACTIVE') {
-        const existing = count(await dal.cindexDAL.sqlFind({ receiver: ENTRY.pub, expired_on: 0 }))
+        const existing = count(await dal.cindexDAL.findByReceiverAndExpiredOn(ENTRY.pub, 0))
         const pending = count(_.filter(cindex, (c:CindexEntry) => c.receiver == ENTRY.pub && c.expired_on == 0))
         ENTRY.enoughCerts = (existing + pending) >= conf.sigQty;
       } else {
@@ -864,7 +890,7 @@ export class Indexer {
     // BR_G38
     if (HEAD.number > 0) {
       await Promise.all(cindex.map(async (ENTRY: CindexEntry) => {
-        const rows = await dal.cindexDAL.sqlFind({ issuer: ENTRY.issuer, chainable_on: { $gt: HEAD_1.medianTime }});
+        const rows = await dal.cindexDAL.findByIssuerAndChainableOnGt(ENTRY.issuer, HEAD_1.medianTime)
         ENTRY.unchainables = count(rows);
       }))
     }
@@ -896,7 +922,7 @@ export class Indexer {
 
     // BR_G44
     await Promise.all(cindex.map(async (ENTRY: CindexEntry) => {
-      const reducable = await dal.cindexDAL.sqlFind({ issuer: ENTRY.issuer, receiver: ENTRY.receiver })
+      const reducable = await dal.cindexDAL.findByIssuerAndReceiver(ENTRY.issuer, ENTRY.receiver)
       ENTRY.isReplay = count(reducable) > 0 && reduce(reducable).expired_on === 0
     }))
 
@@ -941,12 +967,12 @@ export class Indexer {
         && src.conditions
         && src.op === constants.IDX_CREATE)[0];
       if (!source) {
-        const reducable = await dal.sindexDAL.sqlFind({
-          identifier: ENTRY.identifier,
-          pos: ENTRY.pos,
-          amount: ENTRY.amount,
-          base: ENTRY.base
-        });
+        const reducable = await dal.sindexDAL.findByIdentifierPosAmountBase(
+          ENTRY.identifier,
+          ENTRY.pos,
+          ENTRY.amount,
+          ENTRY.base
+        );
         source = reduce(reducable)
       }
       return source
@@ -1185,8 +1211,9 @@ export class Indexer {
       if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
         ENTRY.age = 0;
       } else {
-        let ref = await dal.getBlockByBlockstamp(ENTRY.created_on);
+        let ref = ENTRY.created_on_ref || await dal.getBlockByBlockstamp(ENTRY.created_on)
         if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
+          ENTRY.created_on_ref = ref
           ENTRY.age = HEAD_1.medianTime - ref.medianTime;
         } else {
           ENTRY.age = conf.msWindow + 1;
@@ -1201,8 +1228,11 @@ export class Indexer {
       if (HEAD.number == 0) {
         ENTRY.age = 0;
       } else {
-        let ref = await dal.getBlock(ENTRY.created_on)
+        let ref = ENTRY.created_on_ref || await dal.getBlock(ENTRY.created_on)
         if (ref) {
+          if (!ENTRY.created_on_ref) {
+            ENTRY.created_on_ref = ref
+          }
           ENTRY.age = HEAD_1.medianTime - ref.medianTime;
         } else {
           ENTRY.age = conf.sigWindow + 1;
@@ -1691,7 +1721,7 @@ export class Indexer {
   static async ruleIndexGenMembershipExpiry(HEAD: DBHead, dal:FileDAL) {
     const expiries = [];
 
-    const memberships: MindexEntry[] = reduceBy(await dal.mindexDAL.sqlFind({ expires_on: { $lte: HEAD.medianTime }, revokes_on: { $gt: HEAD.medianTime} }), ['pub']);
+    const memberships: MindexEntry[] = reduceBy(await dal.mindexDAL.findExpiresOnLteAndRevokesOnGt(HEAD.medianTime), ['pub']);
     for (const POTENTIAL of memberships) {
       const MS = await dal.mindexDAL.getReducedMS(POTENTIAL.pub) as FullMindexEntry // We are sure because `memberships` already comes from the MINDEX
       const hasRenewedSince = MS.expires_on > HEAD.medianTime;
@@ -1738,7 +1768,7 @@ export class Indexer {
       const non_expired_global = await dal.cindexDAL.getValidLinksTo(CERT.receiver);
       if ((count(non_expired_global) - count(just_expired) + count(just_received)) < conf.sigQty) {
         const isInExcluded = _.filter(iindex, (i: IindexEntry) => i.member === false && i.pub === CERT.receiver)[0];
-        const idty = (await dal.iindexDAL.getFromPubkey(CERT.receiver)) as FullIindexEntry
+        const idty = await dal.iindexDAL.getFullFromPubkey(CERT.receiver)
         if (!isInExcluded && idty.member) {
           exclusions.push({
             op: 'UPDATE',
@@ -1756,9 +1786,9 @@ export class Indexer {
   // BR_G96
   static async ruleIndexGenImplicitRevocation(HEAD: DBHead, dal:FileDAL) {
     const revocations = [];
-    const pending = await dal.mindexDAL.sqlFind({ revokes_on: { $lte: HEAD.medianTime}, revoked_on: { $null: true } })
+    const pending = await dal.mindexDAL.findRevokesOnLteAndRevokedOnIsNull(HEAD.medianTime)
     for (const MS of pending) {
-      const REDUCED = reduce(await dal.mindexDAL.sqlFind({ pub: MS.pub }))
+      const REDUCED = (await dal.mindexDAL.getReducedMS(MS.pub)) as FullMindexEntry
       if (REDUCED.revokes_on <= HEAD.medianTime && !REDUCED.revoked_on) {
         revocations.push({
           op: 'UPDATE',
@@ -1781,11 +1811,7 @@ export class Indexer {
         if (HEAD.number == 0) {
           basedBlock = HEAD;
         } else {
-          if (HEAD.currency === 'gtest') {
-            basedBlock = await dal.getBlockByBlockstamp(MS.created_on);
-          } else {
-            basedBlock = await dal.getBlockByBlockstamp(MS.created_on);
-          }
+          basedBlock = MS.created_on_ref || await dal.getBlockByBlockstamp(MS.created_on)
         }
         if (MS.expires_on === null) {
           MS.expires_on = 0
@@ -1806,7 +1832,7 @@ export class Indexer {
       if (HEAD.number == 0) {
         basedBlock = HEAD;
       } else {
-        basedBlock = (await dal.getBlock(CERT.created_on)) as DBBlock;
+        basedBlock = CERT.created_on_ref || ((await dal.getBlock(CERT.created_on)) as DBBlock)
       }
       CERT.expires_on += basedBlock.medianTime;
     }
@@ -1838,7 +1864,8 @@ export class Indexer {
 
   static DUP_HELPERS = {
 
-    reduce: reduce,
+    reduce,
+    reduceTyped,
     reduceBy: reduceBy,
     getMaxBlockSize: (HEAD: DBHead) => Math.max(500, Math.ceil(1.1 * HEAD.avgBlockSize)),
     checkPeopleAreNotOudistanced
@@ -1896,6 +1923,20 @@ function reduce(records: any[]) {
     }
     return obj;
   }, {});
+}
+
+function reduceTyped<T>(records: T[]): T {
+  const map:any = {}
+  return records.reduce((obj, record:any) => {
+    // Overwrite properties of the object `obj`
+    const keys = Object.keys(record);
+    for (const k of keys) {
+      if (record[k] !== undefined && record[k] !== null) {
+        obj[k] = record[k]
+      }
+    }
+    return obj
+  }, map)
 }
 
 function reduceBy(reducables: IndexEntry[], properties: string[]): any[] {

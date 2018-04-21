@@ -301,7 +301,7 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
 
     18: 'BEGIN;' +
       // Add a `massReeval` column
-    'ALTER TABLE b_index ADD COLUMN massReeval VARCHAR(100) NOT NULL DEFAULT \'0\';' +
+    // 'ALTER TABLE b_index ADD COLUMN massReeval VARCHAR(100) NOT NULL DEFAULT \'0\';' +
     'COMMIT;',
 
     19: 'BEGIN;' +
@@ -313,33 +313,9 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
      * Feeds the table of wallets with balances
      */
     20: async () => {
-      let walletDAL = new WalletDAL(this.driverCopy)
-      let sindexDAL = new SIndexDAL(this.driverCopy)
-      const conditions = await sindexDAL.query('SELECT DISTINCT(conditions) FROM s_index')
-      for (const row of conditions) {
-        const wallet = {
-          conditions: row.conditions,
-          balance: 0
-        }
-        const amountsRemaining = await sindexDAL.getAvailableForConditions(row.conditions)
-        wallet.balance = amountsRemaining.reduce((sum:number, src:SindexEntry) => sum + src.amount * Math.pow(10, src.base), 0)
-        await walletDAL.saveWallet(wallet)
-      }
     },
 
-    /**
-     * Feeds the m_index.chainable_on
-     */
     21: async (conf:ConfDTO) => {
-      let blockDAL = new BlockDAL(this.driverCopy)
-      let mindexDAL = new MIndexDAL(this.driverCopy)
-      await mindexDAL.exec('ALTER TABLE m_index ADD COLUMN chainable_on INTEGER NULL;')
-      const memberships = await mindexDAL.query('SELECT * FROM m_index WHERE op = ?', [CommonConstants.IDX_CREATE])
-      for (const ms of memberships) {
-        const reference = (await blockDAL.getBlock(parseInt(ms.written_on.split('-')[0]))) as DBBlock
-        const updateQuery = 'UPDATE m_index SET chainable_on = ' + (reference.medianTime + conf.msPeriod) + ' WHERE pub = \'' + ms.pub + '\' AND op = \'CREATE\''
-        await mindexDAL.exec(updateQuery)
-      }
     },
 
     // Replay the wallet table feeding, because of a potential bug
@@ -348,34 +324,12 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
     },
 
     23: 'BEGIN;' +
-    // Add a `writtenOn` column for MISC Index
-    'ALTER TABLE m_index ADD COLUMN writtenOn INTEGER NOT NULL DEFAULT 0;' +
-    'ALTER TABLE i_index ADD COLUMN writtenOn INTEGER NOT NULL DEFAULT 0;' +
-    'ALTER TABLE s_index ADD COLUMN writtenOn INTEGER NOT NULL DEFAULT 0;' +
-    'ALTER TABLE c_index ADD COLUMN writtenOn INTEGER NOT NULL DEFAULT 0;' +
-    'CREATE INDEX IF NOT EXISTS idx_mindex_writtenOn ON m_index (writtenOn);' +
-    'CREATE INDEX IF NOT EXISTS idx_iindex_writtenOn ON i_index (writtenOn);' +
-    'CREATE INDEX IF NOT EXISTS idx_sindex_writtenOn ON s_index (writtenOn);' +
-    'CREATE INDEX IF NOT EXISTS idx_cindex_writtenOn ON c_index (writtenOn);' +
-    'UPDATE m_index SET writtenOn = CAST(written_on as integer);' +
-    'UPDATE i_index SET writtenOn = CAST(written_on as integer);' +
-    'UPDATE s_index SET writtenOn = CAST(written_on as integer);' +
-    'UPDATE c_index SET writtenOn = CAST(written_on as integer);' +
     'COMMIT;',
 
     /**
      * Feeds the m_index.chainable_on correctly
      */
     24: async (conf:ConfDTO) => {
-      let blockDAL = new BlockDAL(this.driverCopy)
-      let mindexDAL = new MIndexDAL(this.driverCopy)
-      const memberships = await mindexDAL.query('SELECT * FROM m_index')
-      for (const ms of memberships) {
-        const reference = (await blockDAL.getBlock(parseInt(ms.written_on.split('-')[0]))) as DBBlock
-        const msPeriod = conf.msWindow // It has the same value, as it was not defined on currency init
-        const updateQuery = 'UPDATE m_index SET chainable_on = ' + (reference.medianTime + msPeriod) + ' WHERE pub = \'' + ms.pub + '\' AND written_on = \'' + ms.written_on +  '\''
-        await mindexDAL.exec(updateQuery)
-      }
     },
 
     /**

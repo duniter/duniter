@@ -95,14 +95,14 @@ describe("Protocol 1.1 Dividend", function() {
       res.sources[1].should.have.property('amount').equal(100);
       res.sources[2].should.have.property('amount').equal(101);
       res.sources[3].should.have.property('amount').equal(103);
-      res.sources[4].should.have.property('amount').equal(106);
-      res.sources[5].should.have.property('amount').equal(105);
+      res.sources[4].should.have.property('amount').equal(105);
+      res.sources[5].should.have.property('amount').equal(106);
       res.sources[0].should.have.property('type').equal('D');
       res.sources[1].should.have.property('type').equal('D');
       res.sources[2].should.have.property('type').equal('D');
       res.sources[3].should.have.property('type').equal('D');
-      res.sources[4].should.have.property('type').equal('D');
-      res.sources[5].should.have.property('type').equal('T');
+      res.sources[4].should.have.property('type').equal('T');
+      res.sources[5].should.have.property('type').equal('D');
     })
   }));
 

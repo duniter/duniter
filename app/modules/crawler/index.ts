@@ -21,6 +21,8 @@ import {rawer} from "../../lib/common-libs/index"
 import {PeerDTO} from "../../lib/dto/PeerDTO"
 import {Buid} from "../../lib/common-libs/buid"
 import {BlockDTO} from "../../lib/dto/BlockDTO"
+import {Directory} from "../../lib/system/directory"
+import {FileDAL} from "../../lib/dal/fileDAL"
 
 export const CrawlerDependency = {
   duniter: {
@@ -65,6 +67,7 @@ export const CrawlerDependency = {
       { value: '--nopeers',       desc: 'Do not retrieve peers during sync.'},
       { value: '--onlypeers',     desc: 'Will only try to sync peers.'},
       { value: '--slow',          desc: 'Download slowly the blokchcain (for low connnections).'},
+      { value: '--readfilesystem',desc: 'Also read the filesystem to speed up block downloading.'},
       { value: '--minsig <minsig>', desc: 'Minimum pending signatures count for `crawl-lookup`. Default is 5.'}
     ],
 
@@ -97,7 +100,17 @@ export const CrawlerDependency = {
         const askedCautious = cautious;
         const nopeers = program.nopeers;
         const noShufflePeers = program.noshuffle;
-        const remote = new Synchroniser(server, onHost, onPort, interactive === true, program.slow === true);
+
+        let otherDAL = undefined
+        if (program.readfilesystem) {
+          const dbName = program.mdb;
+          const dbHome = program.home;
+          const home = Directory.getHome(dbName, dbHome);
+          const params = await Directory.getHomeParams(false, home)
+          otherDAL = new FileDAL(params)
+        }
+
+        const remote = new Synchroniser(server, onHost, onPort, interactive === true, program.slow === true, otherDAL);
         if (program.onlypeers === true) {
           return remote.syncPeers(nopeers, true, onHost, onPort)
         } else {

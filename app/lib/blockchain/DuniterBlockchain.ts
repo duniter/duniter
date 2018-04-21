@@ -28,6 +28,7 @@ import {CommonConstants} from "../common-libs/constants"
 import {FileDAL} from "../dal/fileDAL"
 import {DBTx} from "../dal/sqliteDAL/TxsDAL"
 import {DataErrors} from "../common-libs/errors"
+import {NewLogger} from "../logger"
 
 const _ = require('underscore')
 
@@ -58,7 +59,9 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     // BR_G98
     if (Indexer.ruleCurrency(block, HEAD) === false) throw Error('ruleCurrency');
     // BR_G51
-    if (Indexer.ruleNumber(block, HEAD) === false) throw Error('ruleNumber');
+    if (Indexer.ruleNumber(block, HEAD) === false) {
+      throw Error('ruleNumber')
+    }
     // BR_G52
     if (Indexer.rulePreviousHash(block, HEAD) === false) throw Error('rulePreviousHash');
     // BR_G53
@@ -106,7 +109,9 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     // BR_G70
     if (Indexer.ruleCertificationToLeaver(cindex) === false) throw Error('ruleCertificationToLeaver');
     // BR_G71
-    if (Indexer.ruleCertificationReplay(cindex) === false) throw Error('ruleCertificationReplay');
+    if (Indexer.ruleCertificationReplay(cindex) === false) {
+      throw Error('ruleCertificationReplay')
+    }
     // BR_G72
     if (Indexer.ruleCertificationSignature(cindex) === false) throw Error('ruleCertificationSignature');
     // BR_G73
@@ -126,7 +131,9 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     // BR_G80
     if (Indexer.ruleMembershipLeaverIsMember(mindex) === false) throw Error('ruleMembershipLeaverIsMember');
     // BR_G81
-    if (Indexer.ruleMembershipActiveIsMember(mindex) === false) throw Error('ruleMembershipActiveIsMember');
+    if (Indexer.ruleMembershipActiveIsMember(mindex) === false) {
+      throw Error('ruleMembershipActiveIsMember')
+    }
     // BR_G82
     if (Indexer.ruleMembershipRevokedIsMember(mindex) === false) throw Error('ruleMembershipRevokedIsMember');
     // BR_G83
@@ -215,7 +222,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     await this.createNewcomers(indexes.iindex, dal, logger);
 
     // Save indexes
-    await dal.bindexDAL.saveEntity(indexes.HEAD);
+    await dal.bindexDAL.insert(indexes.HEAD);
     await dal.mindexDAL.insertBatch(indexes.mindex);
     await dal.iindexDAL.insertBatch(indexes.iindex);
     await dal.sindexDAL.insertBatch(indexes.sindex);
@@ -375,7 +382,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     const REVERSE_BALANCE = true
     const sindexOfBlock = await dal.sindexDAL.getWrittenOn(blockstamp)
 
-    await dal.bindexDAL.removeBlock(number);
+    await dal.bindexDAL.removeBlock(blockstamp);
     await dal.mindexDAL.removeBlock(blockstamp);
     await dal.iindexDAL.removeBlock(blockstamp);
     await dal.cindexDAL.removeBlock(blockstamp);
@@ -411,6 +418,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
       // => equivalent to i_index.op = 'CREATE'
       if (entry.op === CommonConstants.IDX_CREATE) {
         // Does not matter which one it really was, we pop the last X identities
+        NewLogger().trace('removeNode')
         dal.wotb.removeNode();
       }
     }

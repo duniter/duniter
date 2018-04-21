@@ -11,7 +11,6 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {IindexEntry} from './../../../../lib/indexer';
 import {AbstractController} from "./AbstractController";
 import {BMAConstants} from "../constants";
 import {DBIdentity} from "../../../../lib/dal/sqliteDAL/IdentityDAL";
@@ -179,24 +178,7 @@ export class WOTBinding extends AbstractController {
       revoked: i.revoked,
       revoked_on: i.revoked_on ? 1 : 0
     }))
-    const members:IdentityForRequirements[] = (await this.server.dal.iindexDAL.query(
-      'SELECT i.*, count(c.sig) as nbSig ' +
-      'FROM i_index i, cert c ' +
-      'WHERE c.`to` = i.pub group by i.pub having nbSig >= ?',
-      [minsig])).map((i:IindexEntry):IdentityForRequirements => {
-        return {
-          hash: i.hash || "",
-          member: i.member || false,
-          wasMember: i.wasMember || false,
-          pubkey: i.pub,
-          uid: i.uid || "",
-          buid: i.created_on || "",
-          sig: i.sig || "",
-          revocation_sig: "",
-          revoked: false,
-          revoked_on: 0
-        }
-      })
+    const members = await this.server.dal.findReceiversAbove(minsig)
     identities = identities.concat(members)
     const all = await this.BlockchainService.requirementsOfIdentities(identities, false);
     if (!all || !all.length) {

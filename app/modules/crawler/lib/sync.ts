@@ -51,7 +51,8 @@ export class Synchroniser extends stream.Duplex {
     private host:string,
     private port:number,
     interactive = false,
-    private slowOption = false) {
+    private slowOption = false,
+    private otherDAL?:FileDAL) {
 
     super({ objectMode: true })
 
@@ -200,7 +201,7 @@ export class Synchroniser extends stream.Duplex {
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = (askedCautious === true || localNumber >= 0);
       const shuffledPeers = noShufflePeers ? peers : _.shuffle(peers);
-      const downloader = new P2PDownloader(rCurrent.currency, localNumber, to, rCurrent.hash, shuffledPeers, this.watcher, this.logger, hashf, this.dal, this.slowOption);
+      const downloader = new P2PDownloader(rCurrent.currency, localNumber, to, rCurrent.hash, shuffledPeers, this.watcher, this.logger, hashf, this.dal, this.slowOption, this.otherDAL);
 
       downloader.start();
 
@@ -633,7 +634,8 @@ class P2PDownloader {
     private logger:any,
     private hashf:any,
     private dal:FileDAL,
-    private slowOption:any) {
+    private slowOption:any,
+    private otherDAL?:FileDAL) {
 
     this.TOO_LONG_TIME_DOWNLOAD = "No answer after " + this.MAX_DELAY_PER_DOWNLOAD + "ms, will retry download later.";
     this.nbBlocksToDownload = Math.max(0, to - localNumber);
@@ -885,13 +887,19 @@ class P2PDownloader {
     }
     try {
       const fileName = this.currency + "/chunk_" + index + "-" + CONST_BLOCKS_CHUNK + ".json";
-      if (this.localNumber <= 0 && (await this.dal.confDAL.coreFS.exists(fileName))) {
+      let existsOnDAL = await this.dal.confDAL.coreFS.exists(fileName)
+      let existsOnOtherDAL = this.otherDAL && await this.otherDAL.confDAL.coreFS.exists(fileName)
+      if (this.localNumber <= 0 && (existsOnDAL || existsOnOtherDAL)) {
         this.handler[index] = {
           host: 'filesystem',
           port: 'blockchain',
           resetFunction: () => this.dal.confDAL.coreFS.remove(fileName)
         };
-        return (await this.dal.confDAL.coreFS.readJSON(fileName)).blocks;
+        let theDAL:FileDAL = this.dal
+        if (!existsOnDAL) {
+          theDAL = this.otherDAL as FileDAL
+        }
+        return (await theDAL.confDAL.coreFS.readJSON(fileName)).blocks;
       } else {
         const chunk:any = await this.p2pDownload(from, count, index);
         // Store the file to avoid re-downloading

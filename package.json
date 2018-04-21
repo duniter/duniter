@@ -75,6 +75,7 @@
     "inquirer": "3.0.6",
     "jison": "0.4.17",
     "js-yaml": "3.8.2",
+    "lokijs": "^1.5.3",
     "merkle": "0.5.1",
     "moment": "2.19.3",
     "morgan": "1.8.1",
@@ -103,6 +104,7 @@
     "ws": "1.1.5"
   },
   "devDependencies": {
+    "@types/lokijs": "^1.5.2",
     "@types/mocha": "^2.2.41",
     "@types/node": "^8.0.9",
     "@types/should": "^8.3.0",
@@ -118,7 +120,7 @@
     "supertest": "",
     "tmp": "0.0.29",
     "ts-node": "^3.3.0",
-    "typescript": "^2.4.1"
+    "typescript": "^2.8.1"
   },
   "peerDependencies": {},
   "bin": {

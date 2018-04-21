@@ -63,20 +63,18 @@ module.exports = {
     });
   },
 
-  expectJSON: function expectJSON(promise, json) {
-    return co(function*(){
-      try {
-        const resJson = yield promise;
-        _.keys(json).forEach(function(key){
-          resJson.should.have.property(key).equal(json[key]);
-        });
-      } catch (err) {
-        if (err.response) {
-          assert.equal(err.response.statusCode, 200);
-        }
-        else throw err;
+  expectJSON: async function expectJSON(promise, json) {
+    try {
+      const resJson = await promise;
+      _.keys(json).forEach(function(key){
+        resJson.should.have.property(key).equal(json[key]);
+      });
+    } catch (err) {
+      if (err.response) {
+        assert.equal(err.response.statusCode, 200);
       }
-    });
+      else throw err;
+    }
   },
 
   expectAnswer: function expectJSON(promise, testFunc) {

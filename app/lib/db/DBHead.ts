@@ -45,6 +45,8 @@ export class DBHead {
   dividend: number
   new_dividend: number | null
   issuerIsMember: boolean
+  written_on: string
+  writtenOn: number
 
   constructor(
   ) {}

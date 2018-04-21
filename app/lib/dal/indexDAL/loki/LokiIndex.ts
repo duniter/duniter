@@ -17,16 +17,25 @@ export interface IndexData {
 export abstract class LokiIndex<T extends IndexData> implements GenericDAO<T> {
 
   protected collection:LokiCollection<T>
+  protected collectionIsInitialized: Promise<void>
+  private resolveCollection: () => void
 
   public constructor(
     protected loki:any,
     protected collectionName:'iindex'|'mindex'|'cindex'|'sindex'|'bindex',
-    indices: (keyof T)[]) {
-    const coll = loki.addCollection(collectionName, { indices })
-    this.collection = new LokiProxyCollection(coll, collectionName)
+    protected indices: (keyof T)[]) {
+    this.collectionIsInitialized = new Promise<void>(res => this.resolveCollection = res)
+  }
+
+  public triggerInit() {
+    const coll = this.loki.addCollection(this.collectionName, { indices: this.indices })
+    this.collection = new LokiProxyCollection(coll, this.collectionName)
+    this.resolveCollection()
   }
 
   async init(): Promise<void> {
+    await this.collectionIsInitialized
+    logger.info('Collection %s ready', this.collectionName)
   }
 
   cleanCache(): void {

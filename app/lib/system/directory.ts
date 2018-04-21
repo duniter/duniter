@@ -88,6 +88,7 @@ export const Directory = {
   INSTANCE_NAME: getDomain(opts.mdb),
   INSTANCE_HOME: getHomePath(opts.mdb, opts.home),
   INSTANCE_HOMELOG_FILE: getLogsPath(opts.mdb, opts.home),
+  INDEX_DB_FILE: 'index.db',
   DUNITER_DB_NAME: 'duniter',
   WOTB_FILE: 'wotb.bin',
 

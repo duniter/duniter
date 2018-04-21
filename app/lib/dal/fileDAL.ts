@@ -37,7 +37,7 @@ import {MetaDAL} from "./sqliteDAL/MetaDAL"
 import {DataErrors} from "../common-libs/errors"
 import {BasicRevocableIdentity, IdentityDTO} from "../dto/IdentityDTO"
 import {BlockDAL} from "./sqliteDAL/BlockDAL"
-import {FileSystem} from "../system/directory"
+import {Directory, FileSystem} from "../system/directory"
 import {WoTBInstance} from "../wot"
 import {IIndexDAO} from "./indexDAL/abstract/IIndexDAO"
 import {LokiIIndex} from "./indexDAL/loki/LokiIIndex"
@@ -102,7 +102,24 @@ export class FileDAL {
     this.sqliteDriver = params.dbf()
     this.wotb = params.wotb
     this.profile = 'DAL'
-    this.loki = new loki('index.db')
+    const that = this
+    this.loki = new loki(path.join(this.rootPath, Directory.INDEX_DB_FILE), {
+      autoload: true,
+      autoloadCallback : () => {
+        const dals = [
+          that.bindexDAL,
+          that.mindexDAL,
+          that.iindexDAL,
+          that.sindexDAL,
+          that.cindexDAL,
+        ]
+        for (const indexDAL of dals) {
+          indexDAL.triggerInit()
+        }
+      },
+      autosave: true,
+      autosaveInterval: 4000
+    })
 
     // DALs
     this.powDAL = new PowDAL(this.rootPath, params.fs)

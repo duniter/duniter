@@ -11,7 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-const wotb = require('wotb');
+const wotb = require('wotb-rs');
 
 export interface WoTBInterface {
   fileInstance: (filepath:string) => any
@@ -21,7 +21,7 @@ export interface WoTBInterface {
 
 export const WoTBObject:WoTBInterface = {
 
-  fileInstance: (filepath:string) => wotb.newFileInstance(filepath),
-  memoryInstance: () => wotb.newMemoryInstance(),
+  fileInstance: (filepath:string) => wotb.newFileInstance(filepath, 100),
+  memoryInstance: () => wotb.newMemoryInstance(100),
   setVerbose: wotb.setVerbose
 }

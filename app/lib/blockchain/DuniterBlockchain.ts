@@ -143,7 +143,9 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     // BR_G85
     if (Indexer.ruleMembershipExcludedIsMember(iindex) === false) throw Error('ruleMembershipExcludedIsMember');
     // BR_G86
-    if ((await Indexer.ruleToBeKickedArePresent(iindex, dal)) === false) throw Error('ruleToBeKickedArePresent');
+    if ((await Indexer.ruleToBeKickedArePresent(iindex, dal)) === false) {
+      throw Error('ruleToBeKickedArePresent')
+    }
     // BR_G103
     if (Indexer.ruleTxWritability(sindex) === false) throw Error('ruleTxWritability');
     // BR_G87

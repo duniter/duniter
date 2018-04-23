@@ -25,12 +25,12 @@ export class LokiPubkeySharingIndex<T extends { written_on:string, writtenOn:num
     for (const pub of Object.keys(trimmableByPub)) {
       if (trimmableByPub[pub].length > 1) {
         // Remove the existing records
-        for (const t of trimmableByPub[pub]) {
-          this.collection.remove(t)
-        }
-        // Insert a new one that gathers them
-        const reduced = Indexer.DUP_HELPERS.reduce(trimmableByPub[pub])
-        this.collection.insert(reduced)
+        // for (const t of trimmableByPub[pub]) {
+        //   this.collection.remove(t)
+        // }
+        // // Insert a new one that gathers them
+        // const reduced = Indexer.DUP_HELPERS.reduce(trimmableByPub[pub])
+        // this.collection.insert(reduced)
       }
     }
   }

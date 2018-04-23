@@ -14,7 +14,7 @@
 export const OtherConstants = {
 
   MUTE_LOGS_DURING_UNIT_TESTS: false,
-  SQL_TRACES: false,
+  SQL_TRACES: true,
 
   BC_EVENT: {
     SWITCHED: 'switched',

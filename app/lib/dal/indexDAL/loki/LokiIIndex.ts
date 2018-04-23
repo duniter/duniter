@@ -17,6 +17,13 @@ export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements I
     return this.findByPub(pub)
   }
 
+  async findAllByWrittenOn(): Promise<IindexEntry[]> {
+    return this.collection.chain()
+      .find({})
+      .simplesort('writtenOn')
+      .data()
+  }
+
   async findByPub(pub: string): Promise<IindexEntry[]> {
     return this.collection.chain()
       .find({ pub })

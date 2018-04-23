@@ -567,20 +567,20 @@ export class Indexer {
     // BR_G16
     await Indexer.prepareSpeed(HEAD, head, conf)
 
-    // // BR_G19
-    // await Indexer.prepareIdentitiesAge(iindex, HEAD, HEAD_1, conf, dal);
+    // BR_G19
+    await Indexer.prepareIdentitiesAge(iindex, HEAD, HEAD_1, conf, dal);
 
-    // // BR_G22
-    // await Indexer.prepareMembershipsAge(mindex, HEAD, HEAD_1, conf, dal);
-    //
-    // // BR_G37
-    // await Indexer.prepareCertificationsAge(cindex, HEAD, HEAD_1, conf, dal);
-    //
-    // // BR_G104
-    // await Indexer.ruleIndexCorrectMembershipExpiryDate(HEAD, mindex, dal);
-    //
-    // // BR_G105
-    // await Indexer.ruleIndexCorrectCertificationExpiryDate(HEAD, cindex, dal);
+    // BR_G22
+    await Indexer.prepareMembershipsAge(mindex, HEAD, HEAD_1, conf, dal);
+
+    // BR_G37
+    await Indexer.prepareCertificationsAge(cindex, HEAD, HEAD_1, conf, dal);
+
+    // BR_G104
+    await Indexer.ruleIndexCorrectMembershipExpiryDate(HEAD, mindex, dal);
+
+    // BR_G105
+    await Indexer.ruleIndexCorrectCertificationExpiryDate(HEAD, cindex, dal);
 
     return HEAD;
   }

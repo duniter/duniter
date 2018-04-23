@@ -54,6 +54,7 @@ import {NewLogger} from "../logger"
 
 const fs      = require('fs')
 const loki    = require('lokijs')
+const lokiAdapter = require('./lokifsadapater')
 const path    = require('path')
 const readline = require('readline')
 const _       = require('underscore');
@@ -104,6 +105,7 @@ export class FileDAL {
     this.profile = 'DAL'
     const that = this
     this.loki = new loki(path.join(this.rootPath, Directory.INDEX_DB_FILE), {
+      adapter: new lokiAdapter(),
       autoload: true,
       autoloadCallback : () => {
         const dals = [

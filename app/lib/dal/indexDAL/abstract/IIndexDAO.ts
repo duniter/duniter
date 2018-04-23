@@ -29,4 +29,6 @@ export interface IIndexDAO extends ReduceableDAO<IindexEntry> {
   getMembersPubkeys(): Promise<{ pub:string }[]>
 
   getToBeKickedPubkeys(): Promise<string[]>
+
+  findAllByWrittenOn(): Promise<IindexEntry[]>
 }

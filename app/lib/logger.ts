@@ -15,6 +15,7 @@
 const moment = require('moment');
 const path = require('path');
 const winston = require('winston');
+const directory = require('../lib/system/directory');
 
 /***************
  * CALLBACK LOGGER
@@ -146,6 +147,11 @@ logger.unmute = () => {
     })
   }
 }
+
+/**
+ * Default logging path
+ */
+logger.addHomeLogs(directory.INSTANCE_HOME)
 
 /**
 * Convenience function to get logger directly

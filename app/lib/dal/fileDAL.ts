@@ -519,9 +519,19 @@ export class FileDAL {
       .value()
   }
 
-  async findLeavers() {
-    const mss = await this.msDAL.getPendingOUT();
-    return _.chain(mss).sortBy((ms:any) => -ms.sigDate).value();
+  async findLeavers(blockMedianTime = 0) {
+    const pending = await this.msDAL.getPendingOUT();
+    const mss = await Promise.all(pending.map(async (p:any) => {
+      const reduced = await this.mindexDAL.getReducedMS(p.issuer)
+      if (!reduced || !reduced.chainable_on || blockMedianTime >= reduced.chainable_on || blockMedianTime < constants.TIME_TO_TURN_ON_BRG_107) {
+        return p
+      }
+      return null
+    }))
+    return _.chain(mss)
+      .filter((ms:any) => ms)
+      .sortBy((ms:any) => -ms.sigDate)
+      .value();
   }
 
   existsNonReplayableLink(from:string, to:string) {

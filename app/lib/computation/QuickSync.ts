@@ -112,6 +112,9 @@ export class QuickSynchronizer {
       // The new kind of object stored
       const dto = BlockDTO.fromJSONObject(block)
 
+      // Check if block contain wot events
+      let wotEvents = false;
+
       if (block.number == 0) {
         sync_currConf = BlockDTO.getConf(block);
       }
@@ -140,6 +143,7 @@ export class QuickSynchronizer {
         // Remember expiration dates
         for (const entry of index) {
           if (entry.expires_on) {
+            wotEvents = true;
             sync_expires.push(entry.expires_on)
           }
           if (entry.revokes_on) {
@@ -149,6 +153,15 @@ export class QuickSynchronizer {
         sync_expires = _.uniq(sync_expires);
 
         await this.blockchain.createNewcomers(local_iindex, this.dal, this.logger)
+
+        // If block contain wot events
+        if (block.joiners.length
+          || block.actives.length
+          || block.revoked.length
+          || block.excluded.length
+          || block.certifications.length) {
+          wotEvents = true;
+        }
 
         if (block.dividend
           || block.joiners.length
@@ -237,6 +250,8 @@ export class QuickSynchronizer {
           await this.dal.trimIndexes(sync_bindex[0].number);
         }
       } else {
+        // Save wotb for each block in fork window
+        wotEvents = true;
 
         if (blocksToSave.length) {
           await this.saveBlocksInMainBranch(blocksToSave);
@@ -278,6 +293,10 @@ export class QuickSynchronizer {
         sync_expires = [];
         sync_nextExpiring = 0;
         // sync_currConf = {};
+      }
+      // Save wotb file
+      if (wotEvents) {
+        this.dal.wotb.write();
       }
     }
     if (blocksToSave.length) {

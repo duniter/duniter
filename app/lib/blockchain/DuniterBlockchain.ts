@@ -258,6 +258,9 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     // Saves the block (DAL)
     await dal.saveBlock(dbb);
 
+    // Save wotb in file
+    dal.wotb.write();
+
     return dbb
   }
 

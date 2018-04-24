@@ -1,6 +1,6 @@
 stages:
   - github-sync
-  - build
+  - build_and_tests
   - test
   - package
   - prerelease
@@ -32,16 +32,13 @@ push_to_github:
   before_script:
     - export NVM_DIR="$HOME/.nvm"
     - . "$NVM_DIR/nvm.sh"
-  
-build:
-  <<: *nvm_env
-  stage: build
-  script:
-    - yarn
+    - nvm install 9.4.0
+    - nvm use 9.4.0
+    - export PATH="$HOME/.cargo/bin:$PATH"
 
-test:
+build_and_tests:
   <<: *nvm_env
-  stage: test
+  stage: build_and_tests
   script:
     - yarn
     - yarn test
@@ -50,7 +47,7 @@ test:
 .build_releases: &build_releases
   stage: package
   allow_failure: false
-  image: duniter/release-builder:v1.0.1
+  image: duniter/release-builder:v1.1.0
   tags:
     - redshift-duniter-builder
   when: manual

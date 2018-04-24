@@ -37,6 +37,7 @@ const dir = module.exports = {
   INSTANCE_HOME: getHomePath(opts.mdb, opts.home),
   INSTANCE_HOMELOG_FILE: getLogsPath(opts.mdb, opts.home),
   DUNITER_DB_NAME: 'duniter',
+  WOTB_RS_FILE: 'wotbrs.bin',
   WOTB_FILE: 'wotb.bin',
 
   getHome: (profile:string|null = null, directory:string|null = null) => getHomePath(profile, directory),
@@ -66,12 +67,13 @@ const dir = module.exports = {
     } else {
       const sqlitePath = path.join(home, dir.DUNITER_DB_NAME + '.db');
       params.dbf = () => new SQLiteDriver(sqlitePath);
-      const wotbFilePath = path.join(home, dir.WOTB_FILE);
-      let existsFile = await qfs.exists(wotbFilePath)
+      const wotbrsFilePath = path.join(home, dir.WOTB_RS_FILE);
+      let existsFile = await qfs.exists(wotbrsFilePath)
       if (!existsFile) {
-        fs.closeSync(fs.openSync(wotbFilePath, 'w'));
+        params.wotb = WoTBObject.emptyFileInstance(wotbrsFilePath);
+      } else {
+        params.wotb = WoTBObject.fileInstance(wotbrsFilePath);
       }
-      params.wotb = WoTBObject.fileInstance(wotbFilePath);
     }
     return params;
   },

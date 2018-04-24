@@ -15,6 +15,7 @@ const wotb = require('wotb-rs');
 
 export interface WoTBInterface {
   fileInstance: (filepath:string) => any
+  emptyFileInstance: (filepath:string) => any
   memoryInstance: () => any
   setVerbose: (verbose:boolean) => void
 }
@@ -22,6 +23,7 @@ export interface WoTBInterface {
 export const WoTBObject:WoTBInterface = {
 
   fileInstance: (filepath:string) => wotb.newFileInstance(filepath, 100),
+  emptyFileInstance: (filepath:string) => wotb.newEmptyFileInstance(filepath, 100),
   memoryInstance: () => wotb.newMemoryInstance(100),
   setVerbose: wotb.setVerbose
 }

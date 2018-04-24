@@ -99,7 +99,7 @@
     "unzip": "0.1.11",
     "unzip2": "0.2.5",
     "winston": "2.3.1",
-    "wotb-rs": "^0.1.2",
+    "wotb-rs": "^0.1.3",
     "ws": "1.1.5"
   },
   "devDependencies": {

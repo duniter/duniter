@@ -22,6 +22,10 @@ set PATH="C:\Program Files (x86)\Inno Setup 5";%PATH%
 
 cd C:\Users\vagrant
 
+echo "Telechargement de Rust..."
+powershell -Command "(New-Object System.Net.WebClient).DownloadFile(\"https://static.rust-lang.org/rustup/dist/i686-pc-windows-gnu/rustup-init.exe\", \"rustup-init.exe\")"
+call rustup-init.exe -y
+
 if not exist %NODE_ZIP% (
   echo "Telechargement de %NODE_ZIP%..."
   powershell -Command "(New-Object System.Net.WebClient).DownloadFile(\"https://nodejs.org/dist/%NODE_RELEASE%/%NODE_ZIP%\", \"%NODE_ZIP%\")"

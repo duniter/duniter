@@ -34,11 +34,12 @@ push_to_github:
     - . "$NVM_DIR/nvm.sh"
     - nvm install 9.4.0
     - nvm use 9.4.0
-    - export PATH="$HOME/.cargo/bin:$PATH"
+    - export PATH="$HOME/.cargo/bin:$PATH
 
 build_and_tests:
   <<: *nvm_env
   stage: build_and_tests
+  image: duniter/release-builder:v1.1.0
   script:
     - yarn
     - yarn test

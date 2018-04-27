@@ -34,7 +34,7 @@ push_to_github:
     - . "$NVM_DIR/nvm.sh"
     - nvm install 9.4.0
     - nvm use 9.4.0
-    - export PATH="$HOME/.cargo/bin:$PATH
+    - export PATH="$HOME/.cargo/bin:$PATH"
 
 build_and_tests:
   <<: *nvm_env

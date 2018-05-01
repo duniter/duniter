@@ -65,6 +65,11 @@ export class Synchroniser extends stream.Duplex {
         }
       },
       (pct:number, innerWatcher:Watcher) => {
+        if (pct !== undefined && innerWatcher.savedPercent() < pct) {
+          this.push({ saved: pct });
+        }
+      },
+      (pct:number, innerWatcher:Watcher) => {
         if (pct !== undefined && innerWatcher.appliedPercent() < pct) {
           this.push({ applied: pct });
         }
@@ -449,6 +454,7 @@ class NodesMerkle {
 interface Watcher {
   writeStatus(str: string): void
   downloadPercent(pct?: number): number
+  savedPercent(pct?: number): number
   appliedPercent(pct?: number): number
   end(): void
 }
@@ -458,6 +464,7 @@ class EventWatcher implements Watcher {
   constructor(
     private innerWatcher:Watcher,
     private beforeDownloadPercentHook: (pct:number, innerWatcher:Watcher) => void,
+    private beforeSavedPercentHook: (pct:number, innerWatcher:Watcher) => void,
     private beforeAppliedPercentHook: (pct:number, innerWatcher:Watcher) => void) {
   }
 
@@ -468,6 +475,11 @@ class EventWatcher implements Watcher {
   downloadPercent(pct?: number): number {
     this.beforeDownloadPercentHook(pct || 0, this.innerWatcher)
     return this.innerWatcher.downloadPercent(pct)
+  }
+
+  savedPercent(pct?: number): number {
+    this.beforeSavedPercentHook(pct || 0, this.innerWatcher)
+    return this.innerWatcher.savedPercent(pct)
   }
 
   appliedPercent(pct?: number): number {
@@ -487,6 +499,7 @@ class MultimeterWatcher implements Watcher {
   private multi:any
   private charm:any
   private appliedBar:any
+  private savedBar:any
   private downloadBar:any
   private writtens:string[] = []
 
@@ -498,8 +511,8 @@ class MultimeterWatcher implements Watcher {
 
     this.multi.write('Progress:\n\n');
 
-    this.multi.write("Download: \n");
-    this.downloadBar = this.multi("Download: \n".length, 3, {
+    this.multi.write("Download:   \n");
+    this.downloadBar = this.multi("Download:   \n".length, 3, {
       width : 20,
       solid : {
         text : '|',
@@ -509,8 +522,19 @@ class MultimeterWatcher implements Watcher {
       empty : { text : ' ' }
     });
 
-    this.multi.write("Apply:    \n");
-    this.appliedBar = this.multi("Apply:    \n".length, 4, {
+    this.multi.write("Blockchain: \n");
+    this.savedBar = this.multi("Blockchain: \n".length, 4, {
+      width : 20,
+      solid : {
+        text : '|',
+        foreground : 'white',
+        background : 'blue'
+      },
+      empty : { text : ' ' }
+    });
+
+    this.multi.write("Apply:      \n");
+    this.appliedBar = this.multi("Apply:      \n".length, 5, {
       width : 20,
       solid : {
         text : '|',
@@ -530,6 +554,7 @@ class MultimeterWatcher implements Watcher {
     this.writtens = [];
 
     this.downloadBar.percent(0);
+    this.savedBar.percent(0);
     this.appliedBar.percent(0);
   }
 
@@ -547,6 +572,10 @@ class MultimeterWatcher implements Watcher {
     return this.downloadBar.percent(pct)
   }
 
+  savedPercent(pct:number) {
+    return this.savedBar.percent(pct)
+  }
+
   appliedPercent(pct:number) {
     return this.appliedBar.percent(pct)
   }
@@ -560,6 +589,7 @@ class MultimeterWatcher implements Watcher {
 class LoggerWatcher implements Watcher {
 
   private downPct = 0
+  private savedPct = 0
   private appliedPct = 0
   private lastMsg = ""
 
@@ -567,7 +597,7 @@ class LoggerWatcher implements Watcher {
   }
 
   showProgress() {
-    return this.logger.info('Downloaded %s%, Applied %s%', this.downPct, this.appliedPct)
+    return this.logger.info('Downloaded %s%, Blockchained %s%, Applied %s%', this.downPct, this.savedPct, this.appliedPct)
   }
 
   writeStatus(str:string) {
@@ -584,6 +614,15 @@ class LoggerWatcher implements Watcher {
       if (changed) this.showProgress();
     }
     return this.downPct;
+  }
+
+  savedPercent(pct:number) {
+    if (pct !== undefined) {
+      let changed = pct > this.savedPct;
+      this.savedPct = pct;
+      if (changed) this.showProgress();
+    }
+    return this.savedPct;
   }
 
   appliedPercent(pct:number) {
@@ -609,6 +648,7 @@ class P2PDownloader {
   private nbBlocksToDownload:number
   private numberOfChunksToDownload:number
   private downloadSlots:number
+  private writtenChunks = 0
   private chunks:any
   private processing:any
   private handler:any
@@ -714,6 +754,8 @@ class P2PDownloader {
                         this.logger.warn("Chunk #%s is COMPLETE from %s", realIndex, [this.handler[realIndex].host, this.handler[realIndex].port].join(':'));
                         this.chunks[realIndex] = blocks;
                         await this.dal.blockDAL.insertBatch(blocks.map((b:any) => BlockDTO.fromJSONObject(b)))
+                        this.writtenChunks++
+                        watcher.savedPercent(Math.round(this.writtenChunks / this.numberOfChunksToDownload * 100));
                         this.resultsDeferers[realIndex].resolve(this.chunks[realIndex]);
                       } else {
                         this.logger.warn("Chunk #%s DOES NOT CHAIN CORRECTLY from %s", realIndex, [this.handler[realIndex].host, this.handler[realIndex].port].join(':'));

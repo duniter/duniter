@@ -11,12 +11,30 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
+import {NewLogger} from "./lib/logger"
+
 const SAMPLING_PERIOD = 150 // milliseconds
 const MAX_SAMPLES_DISTANCE = 20 * 1000000 // seconds
 
-function getMicrosecondsTime() {
+export function getMicrosecondsTime() {
   const [ seconds, nanoseconds ] = process.hrtime()
   return seconds * 1000000 + nanoseconds / 1000
+}
+
+export function getNanosecondsTime() {
+  const [ seconds, nanoseconds ] = process.hrtime()
+  return seconds * 1000000 + nanoseconds
+}
+
+export function getDurationInMicroSeconds(before:number) {
+  return parseInt(String(getMicrosecondsTime() - before))
+}
+
+export async function profileFunc<T>(name:string, f: () => Promise<T>): Promise<T> {
+  const now = getMicrosecondsTime()
+  const res = await f()
+  NewLogger().trace('%s %sµs', name, getDurationInMicroSeconds(now))
+  return res
 }
 
 interface CpuUsage {

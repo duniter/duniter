@@ -2,6 +2,7 @@ import {LokiIndex} from "./LokiIndex"
 import {DBHead} from "../../../db/DBHead"
 import {BIndexDAO} from "../abstract/BIndexDAO"
 import {NewLogger} from "../../../logger"
+import {getDurationInMicroSeconds, getMicrosecondsTime} from "../../../../ProcessCpuProfiler"
 
 const logger = NewLogger()
 
@@ -82,10 +83,10 @@ export class LokiBIndex extends LokiIndex<DBHead> implements BIndexDAO {
   }
 
   async getWrittenOn(blockstamp: string): Promise<DBHead[]> {
-    const now = Date.now()
+    const now = getMicrosecondsTime()
     const criterion:any = { number: parseInt(blockstamp) }
     const res = this.collection.find(criterion)
-    logger.trace('[loki][%s][getWrittenOn] %sms', this.collectionName, (Date.now() - now), blockstamp)
+    logger.trace('[loki][%s][getWrittenOn] %sµs', this.collectionName, getDurationInMicroSeconds(now), blockstamp)
     return res
   }
 }

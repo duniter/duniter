@@ -51,10 +51,14 @@ import {LokiCIndex} from "./indexDAL/loki/LokiCIndex"
 import {LokiMIndex} from "./indexDAL/loki/LokiMIndex";
 import {LokiBIndex} from "./indexDAL/loki/LokiBIndex"
 import {NewLogger} from "../logger"
+import {LokiBlockchain} from "./indexDAL/loki/LokiBlockchain"
+import {BlockchainDAO} from "./indexDAL/abstract/BlockchainDAO"
+import {LokiTransactions} from "./indexDAL/loki/LokiTransactions"
+import {profileFunc} from "../../ProcessCpuProfiler"
+import {TxsDAO} from "./indexDAL/abstract/TxsDAO"
+import {LokiJsDriver} from "./drivers/LokiJsDriver"
 
 const fs      = require('fs')
-const loki    = require('lokijs')
-const lokiAdapter = require('./lokifsadapater')
 const path    = require('path')
 const readline = require('readline')
 const _       = require('underscore');
@@ -66,6 +70,7 @@ export interface FileDALParams {
   home:string
   fs:FileSystem
   dbf:() => SQLiteDriver
+  dbf2: () => LokiJsDriver
   wotb:WoTBInstance
 }
 
@@ -76,13 +81,15 @@ export class FileDAL {
   wotb:WoTBInstance
   profile:string
 
-  loki:any
+  loki:LokiJsDriver
   powDAL:PowDAL
   confDAL:ConfDAL
   metaDAL:MetaDAL
   peerDAL:PeerDAL
-  blockDAL:BlockDAL
-  txsDAL:TxsDAL
+  fakeBlockDAL:BlockDAL
+  fakeTxsDAL:TxsDAL
+  blockDAL:BlockchainDAO
+  txsDAL:TxsDAO
   statDAL:StatDAL
   idtyDAL:IdentityDAL
   certDAL:CertDAL
@@ -101,50 +108,36 @@ export class FileDAL {
   constructor(params:FileDALParams) {
     this.rootPath = params.home
     this.sqliteDriver = params.dbf()
+    this.loki = params.dbf2()
     this.wotb = params.wotb
     this.profile = 'DAL'
-    const that = this
-    this.loki = new loki(path.join(this.rootPath, Directory.INDEX_DB_FILE), {
-      adapter: new lokiAdapter(),
-      autoload: true,
-      autoloadCallback : () => {
-        const dals = [
-          that.bindexDAL,
-          that.mindexDAL,
-          that.iindexDAL,
-          that.sindexDAL,
-          that.cindexDAL,
-        ]
-        for (const indexDAL of dals) {
-          indexDAL.triggerInit()
-        }
-      },
-      autosave: true,
-      autosaveInterval: 4000
-    })
 
     // DALs
     this.powDAL = new PowDAL(this.rootPath, params.fs)
     this.confDAL = new ConfDAL(this.rootPath, params.fs)
     this.metaDAL = new (require('./sqliteDAL/MetaDAL').MetaDAL)(this.sqliteDriver);
     this.peerDAL = new (require('./sqliteDAL/PeerDAL').PeerDAL)(this.sqliteDriver);
-    this.blockDAL = new (require('./sqliteDAL/BlockDAL').BlockDAL)(this.sqliteDriver);
-    this.txsDAL = new (require('./sqliteDAL/TxsDAL').TxsDAL)(this.sqliteDriver);
+    this.fakeBlockDAL = new (require('./sqliteDAL/BlockDAL').BlockDAL)(this.sqliteDriver);
+    this.blockDAL = new LokiBlockchain(this.loki.getLokiInstance())
+    this.fakeTxsDAL = new (require('./sqliteDAL/TxsDAL').TxsDAL)(this.sqliteDriver);
+    this.txsDAL = new LokiTransactions(this.loki.getLokiInstance())
     this.statDAL = new StatDAL(this.rootPath, params.fs)
     this.idtyDAL = new (require('./sqliteDAL/IdentityDAL').IdentityDAL)(this.sqliteDriver);
     this.certDAL = new (require('./sqliteDAL/CertDAL').CertDAL)(this.sqliteDriver);
     this.msDAL = new (require('./sqliteDAL/MembershipDAL').MembershipDAL)(this.sqliteDriver);
     this.walletDAL = new (require('./sqliteDAL/WalletDAL').WalletDAL)(this.sqliteDriver);
-    this.bindexDAL = new LokiBIndex(this.loki)
-    this.mindexDAL = new LokiMIndex(this.loki)
-    this.iindexDAL = new LokiIIndex(this.loki)
-    this.sindexDAL = new LokiSIndex(this.loki)
-    this.cindexDAL = new LokiCIndex(this.loki)
+    this.bindexDAL = new LokiBIndex(this.loki.getLokiInstance())
+    this.mindexDAL = new LokiMIndex(this.loki.getLokiInstance())
+    this.iindexDAL = new LokiIIndex(this.loki.getLokiInstance())
+    this.sindexDAL = new LokiSIndex(this.loki.getLokiInstance())
+    this.cindexDAL = new LokiCIndex(this.loki.getLokiInstance())
 
     this.newDals = {
       'powDAL': this.powDAL,
       'metaDAL': this.metaDAL,
       'blockDAL': this.blockDAL,
+      'fakeBlockDAL': this.fakeBlockDAL,
+      'fakeTxsDAL': this.fakeTxsDAL,
       'certDAL': this.certDAL,
       'msDAL': this.msDAL,
       'idtyDAL': this.idtyDAL,
@@ -162,6 +155,20 @@ export class FileDAL {
   }
 
   async init(conf:ConfDTO) {
+    // Init LokiJS
+    await this.loki.loadDatabase()
+    const dals = [
+      this.blockDAL,
+      this.txsDAL,
+      this.bindexDAL,
+      this.mindexDAL,
+      this.iindexDAL,
+      this.sindexDAL,
+      this.cindexDAL,
+    ]
+    for (const indexDAL of dals) {
+      indexDAL.triggerInit()
+    }
     const dalNames = _.keys(this.newDals);
     for (const dalName of dalNames) {
       const dal = this.newDals[dalName];
@@ -290,9 +297,6 @@ export class FileDAL {
   }
 
   // Block
-  lastUDBlock() {
-    return this.blockDAL.lastBlockWithDividend()
-  }
 
   getRootBlock() {
     return this.getBlock(0)
@@ -935,11 +939,11 @@ export class FileDAL {
   }
 
   async trimIndexes(maxNumber:number) {
-    await this.bindexDAL.trimBlocks(maxNumber);
-    await this.iindexDAL.trimRecords(maxNumber);
-    await this.mindexDAL.trimRecords(maxNumber);
-    await this.cindexDAL.trimExpiredCerts(maxNumber);
-    await this.sindexDAL.trimConsumedSource(maxNumber);
+    await profileFunc('[loki][bindex][trim]', () => this.bindexDAL.trimBlocks(maxNumber))
+    await profileFunc('[loki][iindex][trim]', () => this.iindexDAL.trimRecords(maxNumber))
+    await profileFunc('[loki][mindex][trim]', () => this.mindexDAL.trimRecords(maxNumber))
+    await profileFunc('[loki][cindex][trim]', () => this.cindexDAL.trimExpiredCerts(maxNumber))
+    await profileFunc('[loki][sindex][trim]', () => this.sindexDAL.trimConsumedSource(maxNumber))
     return true;
   }
 
@@ -1056,7 +1060,7 @@ export class FileDAL {
   }
 
   async getUniqueIssuersBetween(start:number, end:number) {
-    const current = await this.blockDAL.getCurrent();
+    const current = (await this.blockDAL.getCurrent()) as DBBlock
     const firstBlock = Math.max(0, start);
     const lastBlock = Math.max(0, Math.min(current.number, end));
     const blocks = await this.blockDAL.getBlocks(firstBlock, lastBlock);

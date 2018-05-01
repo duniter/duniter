@@ -112,10 +112,6 @@ export class BlockDAL extends AbstractSQLite<DBBlock> {
     return this.query('SELECT * FROM block WHERE number BETWEEN ? and ? and NOT fork ORDER BY number ASC', [start, end]);
   }
 
-  async lastBlockWithDividend() {
-    return (await this.query('SELECT * FROM block WHERE dividend > 0 and NOT fork ORDER BY number DESC LIMIT 1'))[0];
-  }
-
   async lastBlockOfIssuer(issuer:string) {
     return (await this.query('SELECT * FROM block WHERE issuer = ? and NOT fork ORDER BY number DESC LIMIT 1', [issuer]))[0]
   }
@@ -125,20 +121,12 @@ export class BlockDAL extends AbstractSQLite<DBBlock> {
     return res[0].quantity;
   }
 
-  getForkBlocks() {
-    return this.query('SELECT * FROM block WHERE fork ORDER BY number');
-  }
-
   getPotentialForkBlocks(numberStart:number, medianTimeStart:number, maxNumber:number) {
     return this.query('SELECT * FROM block WHERE fork AND number >= ? AND number <= ? AND medianTime >= ? ORDER BY number DESC', [numberStart, maxNumber, medianTimeStart]);
   }
 
   getPotentialRoots() {
     return this.query('SELECT * FROM block WHERE fork AND number = ?', [0])
-  }
-
-  getDividendBlocks() {
-    return this.query('SELECT * FROM block WHERE dividend IS NOT NULL ORDER BY number');
   }
 
   async saveBunch(blocks:DBBlock[]) {

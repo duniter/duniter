@@ -329,10 +329,10 @@ export class Server extends stream.Duplex implements HookableServer {
     let head_1 = await this.dal.bindexDAL.head(1);
     if (head_1) {
       // Case 1: b_index < block
-      await this.dal.blockDAL.exec('DELETE FROM block WHERE NOT fork AND number > ' + head_1.number);
+      await this.dal.blockDAL.dropNonForkBlocksAbove(head_1.number)
       // Case 2: b_index > block
       const current = await this.dal.blockDAL.getCurrent();
-      const nbBlocksToRevert = (head_1.number - current.number);
+      const nbBlocksToRevert = (head_1.number - (current as DBBlock).number);
       for (let i = 0; i < nbBlocksToRevert; i++) {
         await this.revert();
       }
@@ -375,15 +375,15 @@ export class Server extends stream.Duplex implements HookableServer {
   async resetAll(done:any = null) {
     await this.resetDataHook()
     await this.resetConfigHook()
-    const files = ['stats', 'cores', 'current', Directory.INDEX_DB_FILE, Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log', Directory.WOTB_FILE, 'export.zip', 'import.zip', 'conf'];
-    const dirs  = ['blocks', 'blockchain', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+    const files = ['stats', 'cores', 'current', Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log', Directory.WOTB_FILE, 'export.zip', 'import.zip', 'conf'];
+    const dirs  = ['loki', 'blocks', 'blockchain', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return this.resetFiles(files, dirs, done);
   }
 
   async resetData(done:any = null) {
     await this.resetDataHook()
-    const files = ['stats', 'cores', 'current', Directory.INDEX_DB_FILE, Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log', Directory.WOTB_FILE];
-    const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+    const files = ['stats', 'cores', 'current', Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log', Directory.WOTB_FILE];
+    const dirs  = ['loki', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     await this.resetFiles(files, dirs, done);
   }
 
@@ -436,8 +436,8 @@ export class Server extends stream.Duplex implements HookableServer {
   async cleanDBData() {
     await this.dal.cleanCaches();
     this.dal.wotb.resetWoT();
-    const files = ['stats', 'cores', 'current', Directory.INDEX_DB_FILE, Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log'];
-    const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+    const files = ['stats', 'cores', 'current', Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log'];
+    const dirs  = ['loki', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return this.resetFiles(files, dirs);
   }
 

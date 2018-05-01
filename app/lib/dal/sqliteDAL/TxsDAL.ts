@@ -41,6 +41,8 @@ export class DBTx {
   received: number
   output_base: number
   output_amount: number
+  written_on: string
+  writtenOn: number
 
   static fromTransactionDTO(tx:TransactionDTO) {
     const dbTx = new DBTx()

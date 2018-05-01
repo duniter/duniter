@@ -30,7 +30,6 @@ let sync_mindex: any[] = [];
 let sync_cindex: any[] = [];
 let sync_sindex: any[] = [];
 let sync_bindexSize = 0;
-let sync_allBlocks: BlockDTO[] = [];
 let sync_expires: number[] = [];
 let sync_nextExpiring = 0;
 let sync_currConf: CurrencyConfDTO;
@@ -55,10 +54,6 @@ export class QuickSynchronizer {
   }
 
   async saveBlocksInMainBranch(blocks: BlockDTO[]): Promise<void> {
-    // VERY FIRST: parameters, otherwise we compute wrong variables such as UDTime
-    if (blocks[0].number == 0) {
-      await this.blockchain.saveParametersForRoot(blocks[0], this.conf, this.dal)
-    }
     // Helper to retrieve a block with local cache
     const getBlock = async (number: number): Promise<BlockDTO> => {
       const firstLocalNumber = blocks[0].number;
@@ -107,10 +102,13 @@ export class QuickSynchronizer {
   async quickApplyBlocks(blocks:BlockDTO[], to: number): Promise<void> {
 
     sync_memoryDAL.sindexDAL = { getAvailableForConditions: (conditions:string) => this.dal.sindexDAL.getAvailableForConditions(conditions) }
-    let blocksToSave: BlockDTO[] = [];
 
     for (const block of blocks) {
-      sync_allBlocks.push(block);
+
+      // VERY FIRST: parameters, otherwise we compute wrong variables such as UDTime
+      if (block.number == 0) {
+        await this.blockchain.saveParametersForRoot(block, this.conf, this.dal)
+      }
 
       // The new kind of object stored
       const dto = BlockDTO.fromJSONObject(block)
@@ -120,7 +118,6 @@ export class QuickSynchronizer {
       }
 
       if (block.number <= to - this.conf.forksize) {
-        blocksToSave.push(dto);
         const index:any = Indexer.localIndex(dto, sync_currConf);
         const local_iindex = Indexer.iindex(index);
         const local_cindex = Indexer.cindex(index);
@@ -130,14 +127,7 @@ export class QuickSynchronizer {
         sync_cindex = sync_cindex.concat(local_cindex);
         sync_mindex = sync_mindex.concat(local_mindex);
 
-        const HEAD = await Indexer.quickCompleteGlobalScope(block, sync_currConf, sync_bindex, sync_iindex, sync_mindex, sync_cindex, ({
-          async getBlock(number: number) {
-            return sync_allBlocks[number]
-          },
-          async getBlockByBlockstamp(blockstamp: string) {
-            return sync_allBlocks[parseInt(blockstamp)]
-          }
-        }) as any);
+        const HEAD = await Indexer.quickCompleteGlobalScope(block, sync_currConf, sync_bindex, sync_iindex, sync_mindex, sync_cindex, this.dal)
         sync_bindex.push(HEAD);
 
         // Remember expiration dates
@@ -147,9 +137,6 @@ export class QuickSynchronizer {
           }
           if (entry.revokes_on) {
             sync_expires.push(entry.revokes_on)
-          }
-          if (entry.expires_on || entry.revokes_on) {
-            sync_expires = _.uniq(sync_expires)
           }
         }
 
@@ -243,11 +230,6 @@ export class QuickSynchronizer {
         }
       } else {
 
-        if (blocksToSave.length) {
-          await this.saveBlocksInMainBranch(blocksToSave);
-        }
-        blocksToSave = [];
-
         // Save the INDEX
         await this.dal.bindexDAL.insertBatch(sync_bindex);
         await this.dal.mindexDAL.insertBatch(sync_mindex);
@@ -279,14 +261,10 @@ export class QuickSynchronizer {
         sync_cindex = [];
         sync_sindex = [];
         sync_bindexSize = 0;
-        sync_allBlocks = [];
         sync_expires = [];
         sync_nextExpiring = 0;
         // sync_currConf = {};
       }
-    }
-    if (blocksToSave.length) {
-      await this.saveBlocksInMainBranch(blocksToSave);
     }
   }
 }

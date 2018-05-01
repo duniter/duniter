@@ -47,6 +47,8 @@ export class DBBlock {
   monetaryMass: number
   dividend: number | null
   UDTime: number
+  writtenOn: number
+  written_on: string
   wrong = false
 
   constructor(
@@ -90,6 +92,8 @@ export class DBBlock {
     dbb.nonce = b.nonce
     dbb.UDTime = b.UDTime
     dbb.monetaryMass = b.monetaryMass
+    dbb.writtenOn = b.number
+    dbb.written_on = [b.number, b.hash].join('-')
     return dbb
   }
 }

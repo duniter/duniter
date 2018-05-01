@@ -713,6 +713,7 @@ class P2PDownloader {
                         // Chunk is COMPLETE
                         this.logger.warn("Chunk #%s is COMPLETE from %s", realIndex, [this.handler[realIndex].host, this.handler[realIndex].port].join(':'));
                         this.chunks[realIndex] = blocks;
+                        await this.dal.blockDAL.insertBatch(blocks.map((b:any) => BlockDTO.fromJSONObject(b)))
                         this.resultsDeferers[realIndex].resolve(this.chunks[realIndex]);
                       } else {
                         this.logger.warn("Chunk #%s DOES NOT CHAIN CORRECTLY from %s", realIndex, [this.handler[realIndex].host, this.handler[realIndex].port].join(':'));

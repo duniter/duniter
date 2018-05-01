@@ -1,5 +1,6 @@
 import {LokiChainableFind, LokiCollection} from "./LokiTypes"
 import {NewLogger} from "../../../logger"
+import {getDurationInMicroSeconds, getMicrosecondsTime} from "../../../../ProcessCpuProfiler"
 
 const logger = NewLogger()
 
@@ -25,9 +26,9 @@ export class LokiProxyCollection<T> implements LokiCollection<T> {
   }
 
   find(criterion:{ [t in keyof T|'$or'|'$and']?: any }) {
-    const now = Date.now()
+    const now = getMicrosecondsTime()
     const res = this.collection.find(criterion)
-    logger.trace('[loki][%s][find] %sms', this.collectionName, (Date.now() - now), criterion)
+    // logger.trace('[loki][%s][find] %sµs', this.collectionName, getDurationInMicroSeconds(now), criterion)
     return res
   }
 

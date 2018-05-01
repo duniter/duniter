@@ -13,6 +13,7 @@
 
 import {SQLiteDriver} from "../drivers/SQLiteDriver"
 import {Initiable} from "./Initiable"
+import {getDurationInMicroSeconds, getMicrosecondsTime} from "../../../ProcessCpuProfiler"
 
 /**
  * Created by cgeek on 22/08/15.
@@ -44,10 +45,10 @@ export abstract class AbstractSQLite<T> extends Initiable {
 
   async query(sql:string, params: any[] = []): Promise<T[]> {
     try {
-      //logger.trace(sql, JSON.stringify(params || []));
-      const start = Date.now()
+      const start = getMicrosecondsTime()
       const res = await this.driver.executeAll(sql, params || []);
-      const duration = Date.now() - start;
+      const duration = getDurationInMicroSeconds(start)
+      logger.trace('[sqlite][query] %s %s %sµs', sql, JSON.stringify(params || []), duration)
       const entities = res.map((t:T) => this.toEntity(t))
       // Display result
       let msg = sql + ' | %s\t==> %s rows in %s ms';
@@ -147,10 +148,12 @@ export abstract class AbstractSQLite<T> extends Initiable {
     await this.query('DELETE FROM ' + this.table + ' WHERE ' + conditions, condValues)
   }
 
-  exec(sql:string): Promise<void> {
+  async exec(sql:string) {
     try {
-      //console.warn(sql);
-      return this.driver.executeSql(sql);
+      const start = getMicrosecondsTime()
+      await this.driver.executeSql(sql);
+      const duration = getDurationInMicroSeconds(start)
+      logger.trace('[sqlite][exec] %s %sµs', sql.substring(0, 50) + '...', duration)
     } catch (e) {
       //console.error('ERROR >> %s', sql);
       throw e;

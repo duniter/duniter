@@ -7,7 +7,7 @@ const _ = require('underscore')
 export class LokiSIndex extends LokiIndex<SindexEntry> implements SIndexDAO {
 
   constructor(loki:any) {
-    super(loki, 'sindex', ['identifier', 'pos', 'conditions'])
+    super(loki, 'sindex', ['identifier', 'conditions', 'writtenOn'])
   }
 
   async findByIdentifierPosAmountBase(identifier: string, pos: number, amount: number, base: number): Promise<SindexEntry[]> {
@@ -84,12 +84,9 @@ export class LokiSIndex extends LokiIndex<SindexEntry> implements SIndexDAO {
   }
 
   async trimConsumedSource(belowNumber: number): Promise<void> {
-    const consumed = this.collection.find({
-      $and: [
-        { consumed: true },
-        { writtenOn: { $lt: belowNumber }},
-      ]
-    })
+    const consumed = this.collection
+      .find({ writtenOn: { $lt: belowNumber }})
+      .filter(s => s.consumed)
     for (const e of consumed) {
       this.collection
         .chain()

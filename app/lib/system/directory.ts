@@ -11,15 +11,16 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
+import * as path from "path"
+import * as fs from "fs"
 import {SQLiteDriver} from "../dal/drivers/SQLiteDriver"
 import {CFSCore} from "../dal/fileDALs/CFSCore"
 import {WoTBInstance, WoTBObject} from "../wot"
 import {FileDALParams} from "../dal/fileDAL"
+import {LokiJsDriver} from "../dal/drivers/LokiJsDriver"
 
 const opts = require('optimist').argv;
-const path = require('path');
 const qfs  = require('q-io/fs');
-const fs   = require('fs');
 
 const DEFAULT_DOMAIN = "duniter_default";
 const DEFAULT_HOME = (process.platform == 'win32' ? process.env.USERPROFILE : process.env.HOME) + '/.config/duniter/';
@@ -88,8 +89,8 @@ export const Directory = {
   INSTANCE_NAME: getDomain(opts.mdb),
   INSTANCE_HOME: getHomePath(opts.mdb, opts.home),
   INSTANCE_HOMELOG_FILE: getLogsPath(opts.mdb, opts.home),
-  INDEX_DB_FILE: 'index.db',
   DUNITER_DB_NAME: 'duniter',
+  LOKI_DB_DIR: 'loki',
   WOTB_FILE: 'wotb.bin',
 
   getHome: (profile:string|null = null, directory:string|null = null) => getHomePath(profile, directory),
@@ -110,11 +111,18 @@ export const Directory = {
     const params = await Directory.getHomeFS(isMemory, theHome)
     const home = params.home;
     let dbf: () => SQLiteDriver
+    let dbf2: () => LokiJsDriver
     let wotb: WoTBInstance
     if (isMemory) {
+
+      // Memory DB
       dbf = () => new SQLiteDriver(':memory:');
+      dbf2 = () => new LokiJsDriver()
       wotb = WoTBObject.memoryInstance();
+
     } else {
+
+      // File DB
       const sqlitePath = path.join(home, Directory.DUNITER_DB_NAME + '.db');
       dbf = () => new SQLiteDriver(sqlitePath);
       const wotbFilePath = path.join(home, Directory.WOTB_FILE);
@@ -122,12 +130,14 @@ export const Directory = {
       if (!existsFile) {
         fs.closeSync(fs.openSync(wotbFilePath, 'w'));
       }
+      dbf2 = () => new LokiJsDriver(path.join(home, Directory.LOKI_DB_DIR))
       wotb = WoTBObject.fileInstance(wotbFilePath);
     }
     return {
       home: params.home,
       fs: params.fs,
       dbf,
+      dbf2,
       wotb
     }
   },

@@ -20,7 +20,13 @@ export interface LokiChainableFind<T> {
 
   simplesort(prop:keyof T, desc?:boolean): LokiChainableFind<T>
 
+  limit(l:number): LokiChainableFind<T>
+
+  update(cb:(t:T) => void): LokiChainableFind<T>
+
   remove(): LokiChainableFind<T>
+
+  compoundsort(sort:((string|((string|boolean)[]))[])): LokiChainableFind<T>
 
   data(): T[]
 }

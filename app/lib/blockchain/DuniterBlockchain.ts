@@ -270,6 +270,8 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     // Saves the block (DAL)
     await dal.saveBlock(dbb);
 
+    await dal.loki.commitData()
+
     return dbb
   }
 

@@ -227,4 +227,8 @@ export class CFSCore {
   private toRemoveFileName(filePath:string) {
     return path.normalize(filePath).replace(/\//g, '__').replace(/\\/g, '__');
   }
+
+  getPath(file: string) {
+    return path.join(this.rootPath, file)
+  }
 }

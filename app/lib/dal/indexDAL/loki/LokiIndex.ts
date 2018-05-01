@@ -6,6 +6,7 @@ import {Initiable} from "../../sqliteDAL/Initiable"
 import {GenericDAO} from "../abstract/GenericDAO"
 import {NewLogger} from "../../../logger"
 import {LokiProxyCollection} from "./LokiCollection"
+import {getMicrosecondsTime} from "../../../../ProcessCpuProfiler"
 
 const logger = NewLogger()
 
@@ -22,7 +23,7 @@ export abstract class LokiIndex<T extends IndexData> implements GenericDAO<T> {
 
   public constructor(
     protected loki:any,
-    protected collectionName:'iindex'|'mindex'|'cindex'|'sindex'|'bindex',
+    protected collectionName:'iindex'|'mindex'|'cindex'|'sindex'|'bindex'|'blockchain'|'txs',
     protected indices: (keyof T)[]) {
     this.collectionIsInitialized = new Promise<void>(res => this.resolveCollection = res)
   }
@@ -42,38 +43,38 @@ export abstract class LokiIndex<T extends IndexData> implements GenericDAO<T> {
   }
 
   async insert(record: T): Promise<void> {
-    const now = Date.now()
+    const now = getMicrosecondsTime()
     this.collection.insert(record)
-    // logger.trace('[loki][%s][insert] %sms', this.collectionName, (Date.now() - now), JSON.stringify(record, null, ' '))
+    // logger.trace('[loki][%s][insert] %sµs', this.collectionName, (getMicrosecondsTime() - now))
   }
 
   async findRaw(criterion?:any) {
-    const now = Date.now()
+    const now = getMicrosecondsTime()
     const res = this.collection.find(criterion)
-    logger.trace('[loki][%s][findRaw] %sms', this.collectionName, (Date.now() - now), criterion)
+    logger.trace('[loki][%s][findRaw] => %sµs', this.collectionName, (getMicrosecondsTime() - now), criterion)
     return res
   }
 
   async insertBatch(records: T[]): Promise<void> {
-    const now = Date.now()
+    const now = getMicrosecondsTime()
     records.map(r => this.insert(r))
     if (records.length) {
-      logger.trace('[loki][%s][insertBatch] %s record(s) in %sms', this.collectionName, records.length, (Date.now() - now))
+      logger.trace('[loki][%s][insertBatch] %s record(s) in %sµs', this.collectionName, records.length, getMicrosecondsTime() - now)
     }
   }
 
   async getWrittenOn(blockstamp: string): Promise<T[]> {
-    const now = Date.now()
+    const now = getMicrosecondsTime()
     const criterion:any = { writtenOn: parseInt(blockstamp) }
     const res = this.collection.find(criterion)
-    logger.trace('[loki][%s][getWrittenOn] %sms', this.collectionName, (Date.now() - now), blockstamp)
+    logger.trace('[loki][%s][getWrittenOn] %sµs', this.collectionName, (getMicrosecondsTime() - now), blockstamp)
     return res
   }
 
   async removeBlock(blockstamp: string): Promise<void> {
-    const now = Date.now()
+    const now = getMicrosecondsTime()
     const data = await this.getWrittenOn(blockstamp)
     data.map(d => this.collection.remove(d))
-    logger.trace('[loki][%s][removeBlock] %sms', this.collectionName, (Date.now() - now), blockstamp)
+    logger.trace('[loki][%s][removeBlock] %sµs', this.collectionName, (getMicrosecondsTime() - now), blockstamp)
   }
 }

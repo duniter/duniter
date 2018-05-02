@@ -17,6 +17,9 @@ export interface WoTBInterface {
   fileInstance: (filepath:string) => any
   emptyFileInstance: (filepath:string) => any
   memoryInstance: () => any
+  safeFileInstance: (filepath:string) => any
+  emptySafeFileInstance: (filepath:string) => any
+  safeMemoryInstance: () => any
   setVerbose: (verbose:boolean) => void
 }
 
@@ -25,5 +28,8 @@ export const WoTBObject:WoTBInterface = {
   fileInstance: (filepath:string) => wotb.newFileInstance(filepath, 100),
   emptyFileInstance: (filepath:string) => wotb.newEmptyFileInstance(filepath, 100),
   memoryInstance: () => wotb.newMemoryInstance(100),
+  safeFileInstance: (filepath:string) => wotb.newSafeFileInstance(filepath, 100),
+  emptySafeFileInstance: (filepath:string) => wotb.newEmptySafeFileInstance(filepath, 100),
+  safeMemoryInstance: () => wotb.newEmptySafeMemoryInstance(100),
   setVerbose: wotb.setVerbose
 }

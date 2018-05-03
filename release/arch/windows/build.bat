@@ -25,6 +25,7 @@ cd C:\Users\vagrant
 echo "Telechargement de Rust..."
 powershell -Command "(New-Object System.Net.WebClient).DownloadFile(\"https://static.rust-lang.org/rustup/dist/i686-pc-windows-gnu/rustup-init.exe\", \"rustup-init.exe\")"
 call rustup-init.exe -y
+set PATH="C:\Users\vagrant\.cargo\bin";%PATH%
 
 if not exist %NODE_ZIP% (
   echo "Telechargement de %NODE_ZIP%..."

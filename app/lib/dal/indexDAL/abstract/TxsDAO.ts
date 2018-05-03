@@ -27,5 +27,7 @@ export interface TxsDAO extends GenericDAO<DBTx> {
 
   removeTX(hash:string): Promise<DBTx|null>
 
+  removeAll(): Promise<void>
+
   sandbox:SandBox<{ issuers: string[], output_base:number, output_amount:number }>
 }

@@ -115,7 +115,7 @@ describe("SelfFork", function() {
     yield waitToHaveBlock(s2, 2)
     let s2p = yield s2.PeeringService.peer();
 
-    yield commitS2();
+    yield commitS2(); // <-- block#3 is a fork block, S2 is committing another one than S1 issued
     yield commitS2();
     yield commitS2();
     yield commitS2();
@@ -223,7 +223,7 @@ describe("SelfFork", function() {
     });
 
     it('should have 2 branch', async () => {
-      const branches:any[] = await s1.BlockchainService.branches()
+      const branches = await s1.BlockchainService.branches()
       branches.should.have.length(1)
     })
   });

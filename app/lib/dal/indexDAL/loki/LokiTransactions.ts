@@ -1,7 +1,4 @@
 import {LokiIndex} from "./LokiIndex"
-import {NewLogger} from "../../../logger"
-import {BlockchainDAO} from "../abstract/BlockchainDAO"
-import {DBBlock} from "../../../db/DBBlock"
 import {DBTx} from "../../sqliteDAL/TxsDAL"
 import {TxsDAO} from "../abstract/TxsDAO"
 import {SandBox} from "../../sqliteDAL/SandBox"
@@ -53,7 +50,7 @@ export class LokiTransactions extends LokiIndex<DBTx> implements TxsDAO {
     dbTx.written = true
     dbTx.removed = false
     dbTx.hash = tx.getHash()
-    await this.insert(dbTx)
+    await this.insertOrUpdate(dbTx)
     return dbTx
   }
 
@@ -61,7 +58,30 @@ export class LokiTransactions extends LokiIndex<DBTx> implements TxsDAO {
     dbTx.received = moment().unix()
     dbTx.written = false
     dbTx.removed = false
-    await this.insert(dbTx)
+    await this.insertOrUpdate(dbTx)
+    return dbTx
+  }
+
+  async insertOrUpdate(dbTx: DBTx): Promise<DBTx> {
+    const conditions = { hash: dbTx.hash }
+    const existing = (await this.findRaw(conditions))[0]
+    if (existing) {
+      // Existing block: we only allow to change the fork flag
+      this.collection
+        .chain()
+        .find(conditions)
+        .update(tx => {
+          tx.block_number = dbTx.block_number
+          tx.time = dbTx.time
+          tx.received = dbTx.received
+          tx.written = dbTx.written
+          tx.removed = dbTx.removed
+          tx.hash = dbTx.hash
+        })
+    }
+    else if (!existing) {
+      await this.insert(dbTx)
+    }
     return dbTx
   }
 
@@ -112,14 +132,24 @@ export class LokiTransactions extends LokiIndex<DBTx> implements TxsDAO {
   }
 
   async removeTX(hash: string): Promise<DBTx | null> {
-    const tx = (await this.findRaw({
-      hash: hash
-    }))[0]
-    if (tx) {
-      tx.removed = true;
-      await this.insert(tx)
-    }
-    return tx
+    let txRemoved = null
+    await this.collection
+      .chain()
+      .find({
+        hash: hash
+      })
+      .update(tx => {
+        tx.removed = true
+        txRemoved = tx
+      })
+    return txRemoved
+  }
+
+  async removeAll(): Promise<void> {
+    await this.collection
+      .chain()
+      .find({})
+      .remove()
   }
 
   async trimExpiredNonWrittenTxs(limitTime: number): Promise<void> {

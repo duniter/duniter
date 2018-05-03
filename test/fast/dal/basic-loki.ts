@@ -29,8 +29,10 @@ class TheIndex extends LokiIndex<TestEntity> {
 
 describe("Basic LokiJS database", () => {
 
-  before(() => {
+  before(async () => {
     lokiIndex = new TheIndex(new loki('index.db'), 'iindex', [])
+    await lokiIndex.triggerInit()
+    await lokiIndex.init()
   })
 
   it('should be able instanciate the index', async () => {

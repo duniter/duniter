@@ -42,14 +42,14 @@ export class BlockchainContext {
    */
   private vHEAD_1:any
 
-  private HEADrefreshed: Promise<any> | null = Promise.resolve();
+  private HEADrefreshed: Promise<void> = Promise.resolve();
 
   /**
    * Refresh the virtual HEAD value for determined variables of the next coming block, avoiding to recompute them
    * each time a new block arrives to check if the values are correct. We can know and store them early on, in vHEAD.
    */
   private refreshHead(): Promise<void> {
-    this.HEADrefreshed = (async (): Promise<void> => {
+    this.HEADrefreshed = (async () => {
       this.vHEAD_1 = await this.dal.head(1);
       // We suppose next block will have same version #, and no particular data in the block (empty index)
       let block;
@@ -122,7 +122,7 @@ export class BlockchainContext {
 
   private async addBlock(obj: BlockDTO, index: any = null, HEAD: DBHead | null = null): Promise<any> {
     const block = await this.blockchain.pushTheBlock(obj, index, HEAD, this.conf, this.dal, this.logger)
-    this.vHEAD_1 = this.vHEAD = this.HEADrefreshed = null
+    this.vHEAD_1 = this.vHEAD = null
     return block
   }
 
@@ -150,6 +150,10 @@ export class BlockchainContext {
     const block = forks[0];
     await this.checkAndAddBlock(BlockDTO.fromJSONObject(block))
     this.logger.debug('Applied block #%s', block.number);
+    if (block.number % 100 === 0) {
+      // Database trimming
+      await this.dal.loki.flushAndTrimData()
+    }
   }
 
   async checkAndAddBlock(block:BlockDTO) {

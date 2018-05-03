@@ -45,7 +45,7 @@ describe("Source DAL", function(){
     source1.should.have.property('consumed').equal(true);
     const udSources = yield dal.sindexDAL.getUDSources('ABC');
     udSources.should.have.length(2);
-    udSources[0].should.have.property('consumed').equal(true);
-    udSources[1].should.have.property('consumed').equal(false);
+    udSources[0].should.have.property('consumed').equal(false);
+    udSources[1].should.have.property('consumed').equal(true);
   }));
 });

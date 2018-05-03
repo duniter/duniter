@@ -196,9 +196,9 @@ describe("Revert two blocks", function() {
   describe("commit again (but send less, to check that the account is not cleaned this time)", () => {
 
     before(() => co(function*() {
-      yield s1.dal.txsDAL.sqlDeleteAll()
+      yield s1.dal.txsDAL.removeAll()
       yield cat.sendP(19, toc);
-      yield s1.dal.blockDAL.exec('DELETE FROM block WHERE fork AND number = 3')
+      yield s1.dal.blockDAL.removeBlock('DELETE FROM block WHERE fork AND number = 3')
       yield commit(s1)({ time: now + 1 });
     }))
 

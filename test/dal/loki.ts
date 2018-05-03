@@ -31,10 +31,10 @@ describe("Loki data layer", () => {
   })
 
   it('should be able to commit data', async () => {
-    const coll = driver.getLokiInstance().addCollection('block')
+    const coll = driver.getLokiInstance().addCollection('block', { disableChangesApi: false })
     coll.insert({ a: 1 })
     coll.insert({ b: 2 })
-    await driver.commitData()
+    await driver.flushAndTrimData()
   })
 
   it('should be able restart the DB and read the data', async () => {
@@ -43,6 +43,42 @@ describe("Loki data layer", () => {
     const coll = driver2.getLokiInstance().getCollection('block')
     assert.notEqual(null, coll)
     assert.equal(coll.find().length, 2)
+  })
+
+  it('should be able to add few changes data', async () => {
+    const driver2 = new LokiJsDriver(dbPath)
+    await driver2.loadDatabase()
+    const coll = driver2.getLokiInstance().getCollection('block')
+    coll.insert({ c: 3 })
+    coll.chain().find({ c: 3 }).update((o:any) => o.c = 4)
+    coll.chain().find({ a: 1 }).remove()
+    const changesCount1 = await driver2.commitData()
+    assert.equal(changesCount1, 3)
+    const changesCount2 = await driver2.commitData()
+    assert.equal(changesCount2, 0)
+  })
+
+  it('should be able restart the DB and read the commited data', async () => {
+    const driver2 = new LokiJsDriver(dbPath)
+    await driver2.loadDatabase()
+    const coll = driver2.getLokiInstance().getCollection('block')
+    assert.equal(coll.find().length, 2)
+    assert.equal(coll.find({ a: 1 }).length, 0)
+    assert.equal(coll.find({ b: 2 }).length, 1)
+    assert.equal(coll.find({ c: 4 }).length, 1)
+  })
+
+  it('should be able to trim then restart the DB and read the commited data', async () => {
+    const driverTrim = new LokiJsDriver(dbPath)
+    await driverTrim.loadDatabase()
+    await driverTrim.flushAndTrimData()
+    const driver2 = new LokiJsDriver(dbPath)
+    await driver2.loadDatabase()
+    const coll = driver2.getLokiInstance().getCollection('block')
+    assert.equal(coll.find().length, 2)
+    assert.equal(coll.find({ a: 1 }).length, 0)
+    assert.equal(coll.find({ b: 2 }).length, 1)
+    assert.equal(coll.find({ c: 4 }).length, 1)
   })
 
   it('should not see any data if commit file is absent', async () => {
@@ -70,7 +106,7 @@ describe("Loki data layer", () => {
     const coll = driver4.getLokiInstance().addCollection('block')
     coll.insert({ a: 1 })
     coll.insert({ b: 2 })
-    await driver.commitData()
+    await driver.flushAndTrimData()
     const oldCommit:DBCommit = JSON.parse(await rfs.fsReadFile(path.join(dbPath, 'commit.json')))
     oldCommit.collections['block'] = 'wrong-file.json'
     const driver5 = new LokiJsDriver(dbPath)

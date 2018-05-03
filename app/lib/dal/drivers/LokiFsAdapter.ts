@@ -11,10 +11,11 @@
   serialization.
 */
 
-import {RealFS} from "../../system/directory"
+import {FileSystem} from "../../system/directory"
 import {DataErrors} from "../../common-libs/errors"
 import {CFSCore} from "../fileDALs/CFSCore"
 import {getNanosecondsTime} from "../../../ProcessCpuProfiler"
+import {NewLogger} from "../../logger"
 
 const fs = require('fs');
 const readline = require('readline');
@@ -33,6 +34,7 @@ interface IteratorResult<T> {
 
 export interface DBCommit {
   indexFile:string,
+  changes: string[]
   collections: {
     [coll:string]: string
   }
@@ -47,17 +49,43 @@ export class LokiFsAdapter {
   protected dbref = null
   protected dirtyPartitions: string[] = [];
 
-  constructor(dbDir:string) {
-    this.cfs = new CFSCore(dbDir, RealFS())
+  constructor(dbDir:string, fs:FileSystem) {
+    this.cfs = new CFSCore(dbDir, fs)
   }
 
   /**
-   * Main method to manually pilot the DB saving to disk.
+   * Main method to manually pilot the full DB saving to disk.
    * @param loki
    * @returns {Promise}
    */
-  async flush(loki:any) {
+  async dbDump(loki:any) {
     return new Promise(res => loki.saveDatabaseInternal(res))
+  }
+
+  /**
+   * Flushes the DB changes to disk.
+   * @param loki
+   * @returns {Promise<number>} The number of changes detected.
+   */
+  async flush(loki:any): Promise<number> {
+    // If the database already has a commit file: incremental changes
+    if (await this.cfs.exists(LokiFsAdapter.COMMIT_FILE)) {
+      const commit = (await this.cfs.readJSON(LokiFsAdapter.COMMIT_FILE)) as DBCommit
+      const changesFilename = 'changes.' + getNanosecondsTime() + ".json"
+      const changes = JSON.parse(loki.serializeChanges())
+      await this.cfs.writeJSON(changesFilename, changes)
+      // Mark the changes as commited
+      commit.changes.push(changesFilename)
+      await this.cfs.writeJSON(LokiFsAdapter.COMMIT_FILE, commit)
+      // Forget about the changes now that we saved them
+      loki.clearChanges()
+      return changes.length
+    } else {
+      // Otherwise we make a full dump
+      await this.dbDump(loki)
+      loki.clearChanges()
+      return 0
+    }
   }
 
   /**
@@ -81,6 +109,7 @@ export class LokiFsAdapter {
     // Prepare the commit: inherit from existing commit
     let commit:DBCommit = {
       indexFile: 'index.db.' + getNanosecondsTime() + ".json",
+      changes: [],
       collections: {}
     }
     if (await this.cfs.exists(LokiFsAdapter.COMMIT_FILE)) {
@@ -193,6 +222,7 @@ export class LokiFsAdapter {
 
       for(idx=0; idx < dbcopy.collections.length; idx++) {
         dbcopy.collections[idx].data = [];
+        dbcopy.collections[idx].changes = [];
       }
 
       yield dbcopy.serialize({
@@ -219,7 +249,7 @@ export class LokiFsAdapter {
 
   /**
    *
-   * Automatically called by Loki.js on startup.
+   * Automatically called on startup.
    *
    * Loki persistence adapter interface function which outputs un-prototype db object reference to load from.
    *
@@ -242,7 +272,9 @@ export class LokiFsAdapter {
 
     // make sure file exists
     const dbname = this.cfs.getPath(commitObj.indexFile)
-    return new Promise((res, rej) => {
+
+    // Trimmed data first
+    await new Promise((res, rej) => {
       fs.stat(dbname, function (err:any, stats:any) {
         if (!err && stats.isFile()) {
           instream = fs.createReadStream(dbname);
@@ -274,6 +306,27 @@ export class LokiFsAdapter {
         }
       })
     })
+
+    // Changes data
+    for (const changeFile of commitObj.changes) {
+      const changes = await this.cfs.readJSON(changeFile)
+      let len = changes.length
+      for (let i = 1; i <= len; i++) {
+        const c = changes[i - 1]
+        const coll = loki.getCollection(c.name)
+        if (c.operation === 'I') {
+          c.obj.$loki = undefined
+          await coll.insert(c.obj)
+        }
+        else if (c.operation === 'U') {
+          await coll.update(c.obj)
+        }
+        else if (c.operation === 'R') {
+          await coll.remove(c.obj)
+        }
+        NewLogger().trace('[loki] Processed change %s (%s/%s)', c.name, i, len)
+      }
+    }
   };
 
 

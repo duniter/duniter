@@ -23,6 +23,8 @@ export interface BlockchainDAO extends GenericDAO<DBBlock> {
 
   lastBlockOfIssuer(issuer:string): Promise<DBBlock|null>
 
+  lastBlockWithDividend(): Promise<DBBlock|null>
+
   getCountOfBlocksIssuedBy(issuer:string): Promise<number>
 
   saveBunch(blocks:DBBlock[]): Promise<void>
@@ -30,4 +32,8 @@ export interface BlockchainDAO extends GenericDAO<DBBlock> {
   dropNonForkBlocksAbove(number: number): Promise<void>
 
   setSideBlock(number:number, previousBlock:DBBlock|null): Promise<void>
+
+  removeForkBlock(number:number): Promise<void>
+
+  removeForkBlockAboveOrEqual(number:number): Promise<void>
 }

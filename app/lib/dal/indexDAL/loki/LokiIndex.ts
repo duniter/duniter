@@ -1,8 +1,4 @@
 import {LokiCollection} from "./LokiTypes"
-import {IindexEntry} from "../../../indexer"
-import {CIndexDAO} from "../abstract/CIndexDAO"
-import {ReduceableDAO} from "../abstract/ReduceableDAO"
-import {Initiable} from "../../sqliteDAL/Initiable"
 import {GenericDAO} from "../abstract/GenericDAO"
 import {NewLogger} from "../../../logger"
 import {LokiProxyCollection} from "./LokiCollection"
@@ -29,7 +25,10 @@ export abstract class LokiIndex<T extends IndexData> implements GenericDAO<T> {
   }
 
   public triggerInit() {
-    const coll = this.loki.addCollection(this.collectionName, { indices: this.indices })
+    const coll = this.loki.addCollection(this.collectionName, {
+      indices: this.indices,
+      disableChangesApi: false
+    })
     this.collection = new LokiProxyCollection(coll, this.collectionName)
     this.resolveCollection()
   }

@@ -13,7 +13,7 @@ process.on('uncaughtException', (err) => {
   }
 });
 
-return co(function*() {
+return co(function* () {
 
   try {
     const duniter = require('../index');

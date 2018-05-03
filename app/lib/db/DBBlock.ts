@@ -68,7 +68,7 @@ export class DBBlock {
     dbb.previousHash = b.previousHash
     dbb.issuer = b.issuer
     dbb.previousIssuer = b.previousIssuer
-    dbb.dividend = b.dividend
+    dbb.dividend = (b.dividend === null || b.dividend === undefined ? b.dividend : parseInt(String(b.dividend)))
     dbb.time = b.time
     dbb.powMin = b.powMin
     dbb.unitbase = b.unitbase

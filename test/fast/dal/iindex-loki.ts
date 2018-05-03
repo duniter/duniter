@@ -12,7 +12,6 @@
 // GNU Affero General Public License for more details.
 
 import * as assert from "assert"
-import {LokiIndex} from "../../../app/lib/dal/indexDAL/loki/LokiIndex"
 import {LokiIIndex} from "../../../app/lib/dal/indexDAL/loki/LokiIIndex"
 
 const loki = require('lokijs')
@@ -21,8 +20,10 @@ let lokiIndex:LokiIIndex
 
 describe("IIndex LokiJS", () => {
 
-  before(() => {
+  before(async () => {
     lokiIndex = new LokiIIndex(new loki('index.db'))
+    await lokiIndex.triggerInit()
+    await lokiIndex.init()
   })
 
   it('should be able instanciate the index', async () => {

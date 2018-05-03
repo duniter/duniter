@@ -162,6 +162,10 @@ export class BlockchainService extends FIFOService {
     return this.mainContext.checkBlock(dto, withPoWAndSignature)
   }
 
+  /**
+   * Return the potential HEADs we could fork to (necessarily above us, since we don't fork on older branches).
+   * @returns {Promise<any>}
+   */
   async branches() {
     const current = await this.current()
     if (!current) {
@@ -193,7 +197,7 @@ export class BlockchainService extends FIFOService {
           throw CommonConstants.ERRORS.OUT_OF_FORK_WINDOW
         }
       }
-      const absolute = await this.dal.getAbsoluteBlockByNumberAndHash(obj.number, obj.hash)
+      const absolute = await this.dal.getAbsoluteBlockByNumberAndHash(parseInt(obj.number), obj.hash)
       if (!absolute) {
         // Save the block in the sandbox
         await this.mainContext.addSideBlock(dto);
@@ -207,6 +211,7 @@ export class BlockchainService extends FIFOService {
               await this.blockResolution()
               // Resolve the potential forks
               await this.forkResolution()
+              console.log(dto)
               const current = await this.current()
               this.push({
                 bcEvent: OtherConstants.BC_EVENT.RESOLUTION_DONE,

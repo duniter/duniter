@@ -19,7 +19,12 @@ import {BlockDTO} from "../dto/BlockDTO"
 import {DBHead} from "../db/DBHead"
 import {DBIdentity, IdentityDAL} from "./sqliteDAL/IdentityDAL"
 import {
-  CindexEntry, FullCindexEntry, FullMindexEntry, FullSindexEntry, IindexEntry, IndexEntry,
+  CindexEntry,
+  FullCindexEntry,
+  FullMindexEntry,
+  FullSindexEntry,
+  IindexEntry,
+  IndexEntry,
   SindexEntry
 } from "../indexer"
 import {DBPeer, PeerDAL} from "./sqliteDAL/PeerDAL"
@@ -37,7 +42,7 @@ import {MetaDAL} from "./sqliteDAL/MetaDAL"
 import {DataErrors} from "../common-libs/errors"
 import {BasicRevocableIdentity, IdentityDTO} from "../dto/IdentityDTO"
 import {BlockDAL} from "./sqliteDAL/BlockDAL"
-import {Directory, FileSystem} from "../system/directory"
+import {FileSystem} from "../system/directory"
 import {WoTBInstance} from "../wot"
 import {IIndexDAO} from "./indexDAL/abstract/IIndexDAO"
 import {LokiIIndex} from "./indexDAL/loki/LokiIIndex"
@@ -550,6 +555,11 @@ export class FileDAL {
       throw Error(DataErrors[DataErrors.MEMBER_NOT_FOUND])
     }
     return idty
+  }
+
+  // Duniter-UI dependency
+  async getWrittenIdtyByPubkey(pub:string) {
+    return !!(await this.iindexDAL.getFromPubkey(pub))
   }
 
   async getWrittenIdtyByPubkeyForExistence(uid:string) {

@@ -17,7 +17,7 @@ var assert = require('assert');
 var should = require('should');
 var co = require('co');
 var CFSCore = require('../../app/lib/dal/fileDALs/CFSCore').CFSCore;
-const mockFS = require('../../app/lib/system/directory').MockFS({
+const mockFS = require('../../app/lib/system/directory').MemFS({
   'B5_a': {
     "A.json": '{ "text": "Content of A from B5_a" }'
   },

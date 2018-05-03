@@ -80,7 +80,7 @@ export const RealFS = (): FileSystem => {
   return new QioFileSystem(qfs)
 }
 
-export const MockFS = (initialTree:{ [folder:string]: { [file:string]: string }} = {}): FileSystem => {
+export const MemFS = (initialTree:{ [folder:string]: { [file:string]: string }} = {}): FileSystem => {
   return new QioFileSystem(require('q-io/fs-mock')(initialTree))
 }
 
@@ -99,7 +99,7 @@ export const Directory = {
     const home = theHome || Directory.getHome()
     const params = {
       home: home,
-      fs: isMemory ? MockFS() : RealFS()
+      fs: isMemory ? MemFS() : RealFS()
     }
     if (makeTree) {
       await params.fs.fsMakeDirectory(home)

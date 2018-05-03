@@ -196,8 +196,10 @@ describe("Fork blocks", function() {
     yield s2.writeBlock(b6a)
     yield s2.writeBlock(b7a)
     yield s2.writeBlock(b8a)
-    yield s2.waitToHaveBlock(8)
-    yield s2.waitForkResolution(8)
+    yield Promise.all([
+      s2.waitToHaveBlock(8),
+      s2.waitForkResolution(8)
+    ])
   }))
 
   it('should exist a same current block on each node', () => co(function*() {

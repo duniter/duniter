@@ -266,5 +266,7 @@ export class QuickSynchronizer {
         // sync_currConf = {};
       }
     }
+
+    await this.dal.loki.commitData()
   }
 }

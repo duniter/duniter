@@ -55,12 +55,31 @@ export class LokiBlockchain extends LokiIndex<DBBlock> implements BlockchainDAO 
   }
 
   async insert(record: DBBlock): Promise<void> {
-    this.current = record
     return super.insert(record);
   }
 
   async removeBlock(blockstamp: string): Promise<void> {
     // Never remove blocks
+  }
+
+  async removeForkBlock(number:number): Promise<void> {
+    await this.collection
+      .chain()
+      .find({
+        fork: true,
+        number
+      })
+      .remove()
+  }
+
+  async removeForkBlockAboveOrEqual(number:number): Promise<void> {
+    await this.collection
+      .chain()
+      .find({
+        fork: true,
+        number: { $gte: number }
+      })
+      .remove()
   }
 
   async getAbsoluteBlock(number: number, hash: string): Promise<DBBlock | null> {
@@ -113,7 +132,7 @@ export class LokiBlockchain extends LokiIndex<DBBlock> implements BlockchainDAO 
       .find({
         fork: true,
         number: { $between: [numberStart, maxNumber] },
-        medianTime: { $gt: medianTimeStart }
+        medianTime: { $gte: medianTimeStart }
       })
       .simplesort('number')
       .data()
@@ -130,18 +149,46 @@ export class LokiBlockchain extends LokiIndex<DBBlock> implements BlockchainDAO 
       .data()[0]
   }
 
+  async lastBlockWithDividend(): Promise<DBBlock | null> {
+    return this.collection
+      .chain()
+      .find({
+        fork: false,
+        dividend: { $gt: 0 }
+      })
+      .simplesort('number', true)
+      .data()[0]
+  }
+
   async saveBlock(block: DBBlock): Promise<DBBlock> {
-    block.fork = false
-    await this.insert(block)
     if (!this.current || this.current.number < block.number) {
-      this.current = block
+      this.current = block;
     }
-    return block
+    return this.insertOrUpdate(block, false)
   }
 
   async saveSideBlock(block: DBBlock): Promise<DBBlock> {
-    block.fork = true
-    await this.insert(block)
+    return this.insertOrUpdate(block, true)
+  }
+
+  async insertOrUpdate(block: DBBlock, isFork:boolean): Promise<DBBlock> {
+    block.fork = isFork
+    const conditions = { number: block.number, hash: block.hash }
+    const existing = (await this.findRaw(conditions))[0]
+    if (existing && existing.fork !== isFork) {
+      // Existing block: we only allow to change the fork flag
+      this.collection
+        .chain()
+        .find(conditions)
+        .update(b => {
+          b.fork = isFork
+          b.monetaryMass = block.monetaryMass
+          b.dividend = block.dividend
+        })
+    }
+    else if (!existing) {
+      await this.insert(block)
+    }
     return block
   }
 
@@ -164,6 +211,14 @@ export class LokiBlockchain extends LokiIndex<DBBlock> implements BlockchainDAO 
       .update((b:DBBlock) => {
         b.fork = true
       })
+    // Also update the cache if concerned
+    if (this.current && this.current.number === number) {
+      if (previousBlock && this.current.previousHash === previousBlock.hash) {
+        this.current = previousBlock
+      } else {
+        this.current = null
+      }
+    }
   }
 
 }

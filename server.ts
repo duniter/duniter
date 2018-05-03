@@ -337,6 +337,8 @@ export class Server extends stream.Duplex implements HookableServer {
         await this.revert();
       }
     }
+    // Database trimming
+    await this.dal.loki.flushAndTrimData()
     // Eventual block resolution
     await this.BlockchainService.blockResolution()
     // Eventual fork resolution

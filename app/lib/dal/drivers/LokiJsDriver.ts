@@ -1,4 +1,5 @@
 import {LokiFsAdapter} from "./LokiFsAdapter"
+import {MemFS, RealFS} from "../../system/directory"
 
 const loki = require('lokijs')
 
@@ -10,7 +11,7 @@ export class LokiJsDriver {
   constructor(
     private dbFilePath:string = ''
   ) {
-    this.adapter = new LokiFsAdapter(dbFilePath)
+    this.adapter = new LokiFsAdapter(dbFilePath, dbFilePath ? RealFS() : MemFS())
     this.lokiInstance = new loki(dbFilePath + '/loki.db' || 'mem' + Date.now() + '.db', {
       adapter: this.adapter
     })
@@ -29,5 +30,9 @@ export class LokiJsDriver {
 
   async commitData() {
     return this.adapter.flush(this.lokiInstance)
+  }
+
+  async flushAndTrimData() {
+    return this.adapter.dbDump(this.lokiInstance)
   }
 }

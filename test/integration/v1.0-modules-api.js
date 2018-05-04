@@ -28,7 +28,7 @@ describe("v1.0 Module API", () => {
   it('should be able to execute `hello` command with quickRun', () => co(function*() {
     duniter.statics.setOnRunDone(() => { /* Do not exit the process */ })
     const absolutePath = path.join(__dirname, './scenarios/hello-plugin.js')
-    process.argv = ['', absolutePath, 'hello-world']
+    process.argv = ['', absolutePath, 'hello-world', '--memory']
     const res = yield duniter.statics.quickRun(absolutePath)
     res.should.equal('Hello world! from within Duniter.')
   }))
@@ -111,7 +111,7 @@ describe("v1.0 Module API", () => {
           cli: [{
             name: 'gimme-conf',
             desc: 'Returns the configuration object.',
-            onDatabaseExecute: (server, conf, program, params, startServices, stopServices) => co(function*() {
+            onConfiguredExecute: (server, conf, program, params, startServices, stopServices) => co(function*() {
               // Gimme the conf!
               return conf;
             })

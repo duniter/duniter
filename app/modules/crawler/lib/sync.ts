@@ -328,6 +328,9 @@ export class Synchroniser extends stream.Duplex {
       //=======
       await this.syncPeers(nopeers, fullSync, this.host, this.port, to)
 
+      // Trim the loki data
+      await this.server.dal.loki.flushAndTrimData()
+
       this.watcher.end();
       this.push({ sync: true });
       this.logger.info('Sync finished.');

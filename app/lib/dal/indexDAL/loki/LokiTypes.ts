@@ -24,6 +24,8 @@ export interface LokiChainableFind<T> {
 
   update(cb:(t:T) => void): LokiChainableFind<T>
 
+  where(filter:(t:T) => boolean): LokiChainableFind<T>
+
   remove(): LokiChainableFind<T>
 
   compoundsort(sort:((string|((string|boolean)[]))[])): LokiChainableFind<T>

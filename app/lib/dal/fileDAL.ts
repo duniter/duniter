@@ -27,7 +27,7 @@ import {
   IndexEntry,
   SindexEntry
 } from "../indexer"
-import {DBPeer, PeerDAL} from "./sqliteDAL/PeerDAL"
+import {DBPeer} from "./sqliteDAL/PeerDAL"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import {CertDAL, DBCert} from "./sqliteDAL/CertDAL"
 import {DBWallet} from "./sqliteDAL/WalletDAL"
@@ -64,6 +64,8 @@ import {TxsDAO} from "./indexDAL/abstract/TxsDAO"
 import {LokiJsDriver} from "./drivers/LokiJsDriver"
 import {WalletDAO} from "./indexDAL/abstract/WalletDAO"
 import {LokiWallet} from "./indexDAL/loki/LokiWallet"
+import {PeerDAO} from "./indexDAL/abstract/PeerDAO"
+import {LokiPeer} from "./indexDAL/loki/LokiPeer"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -100,7 +102,6 @@ export class FileDAL {
 
   // SQLite DALs
   metaDAL:MetaDAL
-  peerDAL:PeerDAL
   idtyDAL:IdentityDAL
   certDAL:CertDAL
   msDAL:MembershipDAL
@@ -108,6 +109,7 @@ export class FileDAL {
   // New DAO entities
   blockDAL:BlockchainDAO
   txsDAL:TxsDAO
+  peerDAL:PeerDAO
   walletDAL:WalletDAO
   bindexDAL:BIndexDAO
   mindexDAL:MIndexDAO
@@ -130,7 +132,6 @@ export class FileDAL {
     this.powDAL = new PowDAL(this.rootPath, params.fs)
     this.confDAL = new ConfDAL(this.rootPath, params.fs)
     this.metaDAL = new (require('./sqliteDAL/MetaDAL').MetaDAL)(this.sqliteDriver);
-    this.peerDAL = new (require('./sqliteDAL/PeerDAL').PeerDAL)(this.sqliteDriver);
     this.fakeBlockDAL = new (require('./sqliteDAL/BlockDAL').BlockDAL)(this.sqliteDriver);
     this.blockDAL = new LokiBlockchain(this.loki.getLokiInstance())
     this.fakeTxsDAL = new (require('./sqliteDAL/TxsDAL').TxsDAL)(this.sqliteDriver);
@@ -139,6 +140,7 @@ export class FileDAL {
     this.idtyDAL = new (require('./sqliteDAL/IdentityDAL').IdentityDAL)(this.sqliteDriver);
     this.certDAL = new (require('./sqliteDAL/CertDAL').CertDAL)(this.sqliteDriver);
     this.msDAL = new (require('./sqliteDAL/MembershipDAL').MembershipDAL)(this.sqliteDriver);
+    this.peerDAL = new LokiPeer(this.loki.getLokiInstance())
     this.walletDAL = new LokiWallet(this.loki.getLokiInstance())
     this.bindexDAL = new LokiBIndex(this.loki.getLokiInstance())
     this.mindexDAL = new LokiMIndex(this.loki.getLokiInstance())
@@ -174,6 +176,7 @@ export class FileDAL {
     const dals = [
       this.blockDAL,
       this.txsDAL,
+      this.peerDAL,
       this.walletDAL,
       this.bindexDAL,
       this.mindexDAL,

@@ -159,7 +159,7 @@ export const CrawlerDependency = {
         const toPort = params[4];
         const logger = server.logger;
         try {
-          const peers = fromHost && fromPort ? [{ endpoints: [['BASIC_MERKLED_API', fromHost, fromPort].join(' ')] }] : await server.dal.peerDAL.query('SELECT * FROM peer WHERE status = ?', ['UP'])
+          const peers = fromHost && fromPort ? [{ endpoints: [['BASIC_MERKLED_API', fromHost, fromPort].join(' ')] }] : await server.dal.peerDAL.withUPStatus()
           // Memberships
           for (const p of peers) {
             const peer = PeerDTO.fromJSONObject(p)
@@ -312,7 +312,7 @@ export const CrawlerDependency = {
         const fromPort = params[3]
         const logger = server.logger;
         try {
-          const peers = fromHost && fromPort ? [{ endpoints: [['BASIC_MERKLED_API', fromHost, fromPort].join(' ')] }] : await server.dal.peerDAL.query('SELECT * FROM peer WHERE status = ?', ['UP'])
+          const peers = fromHost && fromPort ? [{ endpoints: [['BASIC_MERKLED_API', fromHost, fromPort].join(' ')] }] : await server.dal.peerDAL.withUPStatus()
           // Memberships
           for (const p of peers) {
             const peer = PeerDTO.fromJSONObject(p)

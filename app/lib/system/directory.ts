@@ -41,6 +41,7 @@ export interface FileSystem {
   fsWrite(file:string, content:string): Promise<void>
   fsMakeDirectory(dir:string): Promise<void>
   fsRemoveTree(dir:string): Promise<void>
+  fsAppend(file: string, content: string): Promise<void>
 }
 
 class QioFileSystem implements FileSystem {
@@ -65,6 +66,10 @@ class QioFileSystem implements FileSystem {
 
   fsWrite(file: string, content: string): Promise<void> {
     return this.qio.write(file, content)
+  }
+
+  fsAppend(file: string, content: string): Promise<void> {
+    return this.qio.append(file, content)
   }
 
   fsMakeDirectory(dir: string): Promise<void> {

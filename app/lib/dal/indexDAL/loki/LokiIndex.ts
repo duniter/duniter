@@ -1,8 +1,7 @@
-import {LokiCollection} from "./LokiTypes"
 import {GenericDAO} from "../abstract/GenericDAO"
 import {NewLogger} from "../../../logger"
-import {LokiProxyCollection} from "./LokiCollection"
 import {getMicrosecondsTime} from "../../../../ProcessCpuProfiler"
+import {LokiCollectionManager} from "./LokiCollectionManager"
 
 const logger = NewLogger()
 
@@ -11,32 +10,7 @@ export interface IndexData {
   writtenOn: number
 }
 
-export abstract class LokiIndex<T extends IndexData> implements GenericDAO<T> {
-
-  protected collection:LokiCollection<T>
-  protected collectionIsInitialized: Promise<void>
-  private resolveCollection: () => void
-
-  public constructor(
-    protected loki:any,
-    protected collectionName:'iindex'|'mindex'|'cindex'|'sindex'|'bindex'|'blockchain'|'txs',
-    protected indices: (keyof T)[]) {
-    this.collectionIsInitialized = new Promise<void>(res => this.resolveCollection = res)
-  }
-
-  public triggerInit() {
-    const coll = this.loki.addCollection(this.collectionName, {
-      indices: this.indices,
-      disableChangesApi: false
-    })
-    this.collection = new LokiProxyCollection(coll, this.collectionName)
-    this.resolveCollection()
-  }
-
-  async init(): Promise<void> {
-    await this.collectionIsInitialized
-    logger.info('Collection %s ready', this.collectionName)
-  }
+export abstract class LokiIndex<T extends IndexData> extends LokiCollectionManager<T> implements GenericDAO<T> {
 
   cleanCache(): void {
   }

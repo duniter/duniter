@@ -309,19 +309,19 @@ describe("HTTP API", function() {
       const p5 = new Promise(res => resolve5 = res)
       const p6 = new Promise(res => resolve6 = res)
       server.addEndpointsDefinitions(() => Promise.resolve("BASIC_MERKLED_API localhost 7777"))
-      const p1 = yield server.PeeringService.generateSelfPeer({
-        currency: server.conf.currency
-      }, 0)
       client.on('message', function message(data) {
         const peer = JSON.parse(data);
         if (peer.block.match(/2-/)) {
           server2.PeeringService.generateSelfPeer(server.conf)
           return resolve5(peer)
         }
-        if (peer.block.match(/1-/) && peer.pubkey === 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo') {
+        if ((peer.block.match(/1-/) || peer.block.match(/3-/)) && peer.pubkey === 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo') {
           return resolve6(peer)
         }
       })
+      const p1 = yield server.PeeringService.generateSelfPeer({
+        currency: server.conf.currency
+      }, 0)
       yield server2.writeRawPeer(PeerDTO.fromJSONObject(p1).getRawSigned())
       const b5 = yield p5
       should(b5).have.property('version', 10)

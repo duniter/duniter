@@ -14,6 +14,11 @@ export class LokiBlockchain extends LokiIndex<DBBlock> implements BlockchainDAO 
     super(loki, 'blockchain', ['number', 'hash', 'fork'])
   }
 
+  cleanCache(): void {
+    super.cleanCache()
+    this.current = null
+  }
+
   async getCurrent() {
     if (this.current) {
       // Cached

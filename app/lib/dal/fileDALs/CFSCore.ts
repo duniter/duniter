@@ -231,4 +231,8 @@ export class CFSCore {
   getPath(file: string) {
     return path.join(this.rootPath, file)
   }
+
+  appendFile(filename: string, content: string) {
+    return this.qfs.fsAppend(path.join(this.rootPath, filename), content)
+  }
 }

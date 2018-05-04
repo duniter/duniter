@@ -150,7 +150,8 @@ export class BlockchainContext {
     const block = forks[0];
     await this.checkAndAddBlock(BlockDTO.fromJSONObject(block))
     this.logger.debug('Applied block #%s', block.number);
-    if (block.number % 100 === 0) {
+    // Periodically, we trim the blockchain
+    if (block.number % 30 === 0) {
       // Database trimming
       await this.dal.loki.flushAndTrimData()
     }

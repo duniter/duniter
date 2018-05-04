@@ -84,3 +84,5 @@ test/fast/protocol-local-rule-chained-tx-depth.js.map
 test/fast/protocol-local-rule-chained-tx-depth.d.ts
 test/fast/dal/*-loki.d.ts
 test/fast/dal/*-loki.js*
+test/dal/loki.d.ts
+test/dal/loki.js*

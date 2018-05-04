@@ -22,12 +22,11 @@ const toolbox   = require('./tools/toolbox');
 const duniter   = require('../../index');
 const merkleh   = require('../../app/lib/helpers/merkle');
 const hashf     = require('../../app/lib/common-libs').hashf
-const constants = require('../../app/lib/constants');
 const MerkleDTO = require('../../app/lib/dto/MerkleDTO').MerkleDTO
 
 const DB_NAME = "unit_tests";
 
-describe.skip("CLI", function() {
+describe("CLI", function() {
 
   let farmOfServers = [], fakeServer;
 

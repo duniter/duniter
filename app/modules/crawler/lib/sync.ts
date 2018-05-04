@@ -206,7 +206,7 @@ export class Synchroniser extends stream.Duplex {
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = (askedCautious === true || localNumber >= 0);
       const shuffledPeers = noShufflePeers ? peers : _.shuffle(peers);
-      const downloader = new P2PDownloader(rCurrent.currency, localNumber, to, rCurrent.hash, shuffledPeers, this.watcher, this.logger, hashf, this.dal, this.slowOption, this.otherDAL);
+      const downloader = new P2PDownloader(rCurrent.currency, localNumber, to, rCurrent.hash, shuffledPeers, this.watcher, this.logger, hashf, this.dal, this.slowOption, !cautious, this.otherDAL);
 
       downloader.start();
 
@@ -678,6 +678,7 @@ class P2PDownloader {
     private hashf:any,
     private dal:FileDAL,
     private slowOption:any,
+    private nocautious:boolean,
     private otherDAL?:FileDAL) {
 
     this.TOO_LONG_TIME_DOWNLOAD = "No answer after " + this.MAX_DELAY_PER_DOWNLOAD + "ms, will retry download later.";
@@ -756,9 +757,12 @@ class P2PDownloader {
                         // Chunk is COMPLETE
                         this.logger.warn("Chunk #%s is COMPLETE from %s", realIndex, [this.handler[realIndex].host, this.handler[realIndex].port].join(':'));
                         this.chunks[realIndex] = blocks;
-                        await this.dal.blockDAL.insertBatch(blocks.map((b:any) => BlockDTO.fromJSONObject(b)))
-                        this.writtenChunks++
-                        watcher.savedPercent(Math.round(this.writtenChunks / this.numberOfChunksToDownload * 100));
+                        // We pre-save blocks only for non-cautious sync
+                        if (this.nocautious) {
+                          await this.dal.blockDAL.insertBatch(blocks.map((b:any) => BlockDTO.fromJSONObject(b)))
+                          this.writtenChunks++
+                          watcher.savedPercent(Math.round(this.writtenChunks / this.numberOfChunksToDownload * 100));
+                        }
                         this.resultsDeferers[realIndex].resolve(this.chunks[realIndex]);
                       } else {
                         this.logger.warn("Chunk #%s DOES NOT CHAIN CORRECTLY from %s", realIndex, [this.handler[realIndex].host, this.handler[realIndex].port].join(':'));

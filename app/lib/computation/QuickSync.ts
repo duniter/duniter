@@ -11,7 +11,6 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict"
 import {DuniterBlockchain} from "../blockchain/DuniterBlockchain";
 import {BlockDTO} from "../dto/BlockDTO";
 import {DBTransaction} from "../db/DBTransaction";
@@ -50,7 +49,7 @@ const sync_memoryDAL:AccountsGarbagingDAL = {
 
 export class QuickSynchronizer {
 
-  constructor(private blockchain:DuniterBlockchain, private conf: any, private dal:FileDAL, private logger: any) {
+  constructor(private conf: any, private dal:FileDAL, private logger: any) {
   }
 
   async saveBlocksInMainBranch(blocks: BlockDTO[]): Promise<void> {
@@ -73,7 +72,7 @@ export class QuickSynchronizer {
     for (const block of blocks) {
       block.fork = false;
       const current:BlockDTO|null = block.number > 0 ? await getBlock(block.number - 1) : null
-      this.blockchain.updateBlocksComputedVars(current, block)
+      DuniterBlockchain.updateBlocksComputedVars(current, block)
     }
     // Transactions recording
     await this.updateTransactionsForBlocks(blocks, getBlockByNumberAndHash);
@@ -107,7 +106,7 @@ export class QuickSynchronizer {
 
       // VERY FIRST: parameters, otherwise we compute wrong variables such as UDTime
       if (block.number == 0) {
-        await this.blockchain.saveParametersForRoot(block, this.conf, this.dal)
+        await DuniterBlockchain.saveParametersForRoot(block, this.conf, this.dal)
       }
 
       // The new kind of object stored
@@ -140,7 +139,7 @@ export class QuickSynchronizer {
           }
         }
 
-        await this.blockchain.createNewcomers(local_iindex, this.dal, this.logger)
+        await DuniterBlockchain.createNewcomers(local_iindex, this.dal, this.logger)
 
         if (block.dividend
           || block.joiners.length
@@ -191,7 +190,7 @@ export class QuickSynchronizer {
             sync_mindex = sync_mindex.concat(await Indexer.ruleIndexGenImplicitRevocation(HEAD, this.dal));
           }
           // Update balances with UD + local garbagings
-          await this.blockchain.updateWallets(sync_sindex, sync_memoryDAL)
+          await DuniterBlockchain.updateWallets(sync_sindex, sync_memoryDAL)
 
           // --> Update links
           await this.dal.updateWotbLinks(local_cindex.concat(sync_cindex));
@@ -207,7 +206,7 @@ export class QuickSynchronizer {
           sync_sindex = [];
 
           // Create/Update nodes in wotb
-          await this.blockchain.updateMembers(block, this.dal)
+          await DuniterBlockchain.updateMembers(block, this.dal)
         }
 
         // Trim the bindex
@@ -247,12 +246,12 @@ export class QuickSynchronizer {
         }
 
         if (block.number === 0) {
-          await this.blockchain.saveParametersForRoot(block, this.conf, this.dal)
+          await DuniterBlockchain.saveParametersForRoot(block, this.conf, this.dal)
         }
 
         // Last block: cautious mode to trigger all the INDEX expiry mechanisms
         const { index, HEAD } = await DuniterBlockchain.checkBlock(dto, constants.WITH_SIGNATURES_AND_POW, this.conf, this.dal)
-        await this.blockchain.pushTheBlock(dto, index, HEAD, this.conf, this.dal, this.logger)
+        await DuniterBlockchain.pushTheBlock(dto, index, HEAD, this.conf, this.dal, this.logger)
 
         // Clean temporary variables
         sync_bindex = [];

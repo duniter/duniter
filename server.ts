@@ -18,8 +18,6 @@ import {BlockchainService} from "./app/service/BlockchainService"
 import {TransactionService} from "./app/service/TransactionsService"
 import {ConfDTO} from "./app/lib/dto/ConfDTO"
 import {FileDAL, FileDALParams} from "./app/lib/dal/fileDAL"
-import {DuniterBlockchain} from "./app/lib/blockchain/DuniterBlockchain"
-import {SQLBlockchain} from "./app/lib/blockchain/SqlBlockchain"
 import * as stream from "stream"
 import {KeyGen, randomKey} from "./app/lib/common-libs/crypto/keyring"
 import {parsers} from "./app/lib/common-libs/parsers/index"
@@ -198,8 +196,6 @@ export class Server extends stream.Duplex implements HookableServer {
     // Extract key pair
     this.keyPair = KeyGen(this.conf.pair.pub, this.conf.pair.sec);
     this.sign = (msg:string) => this.keyPair.sign(msg)
-    // Blockchain object
-    this.blockchain = new DuniterBlockchain(new SQLBlockchain(this.dal), this.dal);
     // Update services
     this.IdentityService.setConfDAL(this.conf, this.dal)
     this.MembershipService.setConfDAL(this.conf, this.dal)

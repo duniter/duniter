@@ -29,6 +29,7 @@ import {LOCAL_RULES_FUNCTIONS} from "../lib/rules/local_rules"
 import {Switcher, SwitcherDao} from "../lib/blockchain/Switcher"
 import {OtherConstants} from "../lib/other_constants"
 import {DataErrors} from "../lib/common-libs/errors"
+import {DuniterBlockchain} from "../lib/blockchain/DuniterBlockchain"
 
 "use strict";
 
@@ -141,8 +142,8 @@ export class BlockchainService extends FIFOService {
     this.dal = newDAL;
     this.conf = newConf;
     this.logger = require('../lib/logger').NewLogger(this.dal.profile)
-    this.quickSynchronizer = new QuickSynchronizer(this.server.blockchain, this.conf, this.dal, this.logger)
-    this.mainContext.setConfDAL(this.conf, this.dal, this.server.blockchain, this.quickSynchronizer)
+    this.quickSynchronizer = new QuickSynchronizer(this.conf, this.dal, this.logger)
+    this.mainContext.setConfDAL(this.conf, this.dal, this.quickSynchronizer)
     this.selfPubkey = newKeyPair.publicKey;
   }
 
@@ -444,7 +445,7 @@ export class BlockchainService extends FIFOService {
 
   // This method is called by duniter-crawler 1.3.x
   saveParametersForRootBlock(block:BlockDTO) {
-    return this.server.blockchain.saveParametersForRoot(block, this.conf, this.dal)
+    return DuniterBlockchain.saveParametersForRoot(block, this.conf, this.dal)
   }
 
   async blocksBetween(from:number, count:number): Promise<DBBlock[]> {

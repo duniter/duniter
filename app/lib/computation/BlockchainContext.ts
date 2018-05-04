@@ -108,10 +108,9 @@ export class BlockchainContext {
     return local_vHEAD.issuerDiff;
   }
 
-  setConfDAL(newConf: any, newDAL: any, theBlockchain: DuniterBlockchain, theQuickSynchronizer: QuickSynchronizer): void {
+  setConfDAL(newConf: any, newDAL: any, theQuickSynchronizer: QuickSynchronizer): void {
     this.dal = newDAL;
     this.conf = newConf;
-    this.blockchain = theBlockchain
     this.quickSynchronizer = theQuickSynchronizer
     this.logger = require('../logger').NewLogger(this.dal.profile);
   }
@@ -121,20 +120,20 @@ export class BlockchainContext {
   }
 
   private async addBlock(obj: BlockDTO, index: any = null, HEAD: DBHead | null = null): Promise<any> {
-    const block = await this.blockchain.pushTheBlock(obj, index, HEAD, this.conf, this.dal, this.logger)
+    const block = await DuniterBlockchain.pushTheBlock(obj, index, HEAD, this.conf, this.dal, this.logger)
     this.vHEAD_1 = this.vHEAD = null
     return block
   }
 
   async addSideBlock(obj:BlockDTO): Promise<BlockDTO> {
-    const dbb = await this.blockchain.pushSideBlock(obj, this.dal, this.logger)
+    const dbb = await DuniterBlockchain.pushSideBlock(obj, this.dal, this.logger)
     return dbb.toBlockDTO()
   }
 
   async revertCurrentBlock(): Promise<DBBlock> {
     const head_1 = await this.dal.bindexDAL.head(1);
     this.logger.debug('Reverting block #%s...', head_1.number);
-    const res = await this.blockchain.revertBlock(head_1.number, head_1.hash, this.dal)
+    const res = await DuniterBlockchain.revertBlock(head_1.number, head_1.hash, this.dal)
     // Invalidates the head, since it has changed.
     await this.refreshHead();
     return res;

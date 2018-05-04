@@ -106,7 +106,7 @@ export const RealFS = (): FileSystem => {
 }
 
 export const MemFS = (initialTree:{ [folder:string]: { [file:string]: string }} = {}): FileSystem => {
-  return new QioFileSystem(require('q-io/fs-mock')(initialTree))
+  return new QioFileSystem(require('q-io/fs-mock')(initialTree), true)
 }
 
 export const Directory = {

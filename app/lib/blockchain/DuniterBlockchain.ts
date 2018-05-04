@@ -11,9 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {MiscIndexedBlockchain} from "./MiscIndexedBlockchain"
 import {FullIindexEntry, IindexEntry, IndexEntry, Indexer, MindexEntry, SindexEntry} from "../indexer"
-import {BlockchainOperator} from "./interfaces/BlockchainOperator"
 import {ConfDTO} from "../dto/ConfDTO"
 import {BlockDTO} from "../dto/BlockDTO"
 import {DBHead} from "../db/DBHead"
@@ -32,11 +30,7 @@ import {NewLogger} from "../logger"
 
 const _ = require('underscore')
 
-export class DuniterBlockchain extends MiscIndexedBlockchain {
-
-  constructor(blockchainStorage:BlockchainOperator, dal:FileDAL) {
-    super(blockchainStorage, dal.mindexDAL, dal.iindexDAL, dal.sindexDAL, dal.cindexDAL)
-  }
+export class DuniterBlockchain {
 
   static async checkBlock(block:BlockDTO, withPoWAndSignature:boolean, conf: ConfDTO, dal:FileDAL) {
     const index = Indexer.localIndex(block, conf)
@@ -186,7 +180,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     return { index, HEAD }
   }
 
-  async pushTheBlock(obj:BlockDTO, index:IndexEntry[], HEAD:DBHead | null, conf:ConfDTO, dal:FileDAL, logger:any) {
+  static async pushTheBlock(obj:BlockDTO, index:IndexEntry[], HEAD:DBHead | null, conf:ConfDTO, dal:FileDAL, logger:any) {
     const start = Date.now();
     const block = BlockDTO.fromJSONObject(obj)
     try {
@@ -213,7 +207,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     // await supra.recordIndex(index)
   }
 
-  async saveBlockData(current:DBBlock|null, block:BlockDTO, conf:ConfDTO, dal:FileDAL, logger:any, index:IndexEntry[], HEAD:DBHead | null) {
+  static async saveBlockData(current:DBBlock|null, block:BlockDTO, conf:ConfDTO, dal:FileDAL, logger:any, index:IndexEntry[], HEAD:DBHead | null) {
     if (block.number == 0) {
       await this.saveParametersForRoot(block, conf, dal);
     }
@@ -275,7 +269,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     return dbb
   }
 
-  async saveParametersForRoot(block:BlockDTO, conf:ConfDTO, dal:FileDAL) {
+  static async saveParametersForRoot(block:BlockDTO, conf:ConfDTO, dal:FileDAL) {
     if (block.parameters) {
       const bconf = BlockDTO.getConf(block)
       conf.c = bconf.c;
@@ -305,7 +299,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
   }
 
-  async createNewcomers(iindex:IindexEntry[], dal:FileDAL, logger:any) {
+  static async createNewcomers(iindex:IindexEntry[], dal:FileDAL, logger:any) {
     for (const i of iindex) {
       if (i.op == CommonConstants.IDX_CREATE) {
         const entry = i as FullIindexEntry
@@ -319,7 +313,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
   }
 
-  async updateMembers(block:BlockDTO, dal:FileDAL) {
+  static async updateMembers(block:BlockDTO, dal:FileDAL) {
     // Joiners (come back)
     for (const inlineMS of block.joiners) {
       let ms = MembershipDTO.fromInline(inlineMS)
@@ -338,7 +332,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
   }
 
-  async updateWallets(sindex:SindexEntry[], aDal:any, reverse = false) {
+  static async updateWallets(sindex:SindexEntry[], aDal:any, reverse = false) {
     const differentConditions = _.uniq(sindex.map((entry) => entry.conditions))
     for (const conditions of differentConditions) {
       const creates = _.filter(sindex, (entry:SindexEntry) => entry.conditions === conditions && entry.op === CommonConstants.IDX_CREATE)
@@ -356,7 +350,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
   }
 
-  async revertBlock(number:number, hash:string, dal:FileDAL) {
+  static async revertBlock(number:number, hash:string, dal:FileDAL) {
 
     const blockstamp = [number, hash].join('-');
     const block = await dal.getBlockByBlockstampOrNull(blockstamp)
@@ -406,7 +400,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     return block
   }
 
-  async undoMembersUpdate(blockstamp:string, dal:FileDAL) {
+  static async undoMembersUpdate(blockstamp:string, dal:FileDAL) {
     const joiners = await dal.iindexDAL.getWrittenOn(blockstamp);
     for (const entry of joiners) {
       // Undo 'join' which can be either newcomers or comebackers
@@ -437,7 +431,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
   }
 
-  async undoDeleteTransactions(block:DBBlock, dal:FileDAL) {
+  static async undoDeleteTransactions(block:DBBlock, dal:FileDAL) {
     for (const obj of block.transactions) {
       obj.currency = block.currency;
       let tx = TransactionDTO.fromJSONObject(obj)
@@ -469,7 +463,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
    * @param block Block in which are contained the certifications to remove from sandbox.
    * @param dal The DAL
    */
-  async removeMembershipsFromSandbox(block:BlockDTO, dal:FileDAL) {
+  static async removeMembershipsFromSandbox(block:BlockDTO, dal:FileDAL) {
     const mss = block.joiners.concat(block.actives).concat(block.leavers);
     for (const inlineMS of mss) {
       let ms = MembershipDTO.fromInline(inlineMS)
@@ -480,14 +474,14 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
   }
 
-  async computeToBeRevoked(mindex:MindexEntry[], dal:FileDAL) {
+  static async computeToBeRevoked(mindex:MindexEntry[], dal:FileDAL) {
     const revocations = _.filter(mindex, (entry:MindexEntry) => entry.revoked_on);
     for (const revoked of revocations) {
       await dal.setRevoked(revoked.pub)
     }
   }
 
-  async deleteTransactions(block:BlockDTO, dal:FileDAL) {
+  static async deleteTransactions(block:BlockDTO, dal:FileDAL) {
     for (const obj of block.transactions) {
       obj.currency = block.currency;
       const tx = TransactionDTO.fromJSONObject(obj)
@@ -496,7 +490,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     }
   }
 
-  updateBlocksComputedVars(
+  static updateBlocksComputedVars(
     current:{ unitbase:number, monetaryMass:number }|null,
     block:{ number:number, unitbase:number, dividend:number|null, membersCount:number, monetaryMass:number }): void {
     // Unit Base
@@ -548,7 +542,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     return dal.pushStats(stats);
   }
 
-  async pushSideBlock(obj:BlockDTO, dal:FileDAL, logger:any) {
+  static async pushSideBlock(obj:BlockDTO, dal:FileDAL, logger:any) {
     const start = Date.now();
     const block = DBBlock.fromBlockDTO(BlockDTO.fromJSONObject(obj))
     block.fork = true;
@@ -561,12 +555,5 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     } catch (err) {
       throw err;
     }
-  }
-
-  async revertHead() {
-    const indexRevert = super.indexRevert
-    const headf = super.head
-    const head = await headf()
-    await indexRevert(head.number)
   }
 }

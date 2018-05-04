@@ -12,7 +12,7 @@
 // GNU Affero General Public License for more details.
 
 import * as path from "path"
-import * as fs from "fs"
+import * as fs from 'fs'
 import {SQLiteDriver} from "../dal/drivers/SQLiteDriver"
 import {CFSCore} from "../dal/fileDALs/CFSCore"
 import {WoTBInstance, WoTBObject} from "../wot"
@@ -41,12 +41,12 @@ export interface FileSystem {
   fsWrite(file:string, content:string): Promise<void>
   fsMakeDirectory(dir:string): Promise<void>
   fsRemoveTree(dir:string): Promise<void>
-  fsAppend(file: string, content: string): Promise<void>
+  fsStreamTo(file: string, iterator: IterableIterator<string>): Promise<void>
 }
 
 class QioFileSystem implements FileSystem {
 
-  constructor(private qio:any) {}
+  constructor(private qio:any, private isMemory:boolean = false) {}
 
   async fsExists(file:string) {
     return this.qio.exists(file)
@@ -68,8 +68,28 @@ class QioFileSystem implements FileSystem {
     return this.qio.write(file, content)
   }
 
-  fsAppend(file: string, content: string): Promise<void> {
-    return this.qio.append(file, content)
+  async fsStreamTo(file: string, iterator: IterableIterator<string>): Promise<void> {
+    if (this.isMemory) {
+      for (const line of iterator) {
+        await this.qio.append(file, line)
+      }
+    } else {
+      // Use NodeJS streams for faster writing
+      let wstream = fs.createWriteStream(file)
+      await new Promise(async (res, rej) => {
+        // When done, return
+        wstream.on('close', (err:any) => {
+          if (err) return rej(err)
+          res()
+        })
+        // Write each line
+        for (const line of iterator) {
+          wstream.write(line + "\n")
+        }
+        // End the writing
+        wstream.end()
+      })
+    }
   }
 
   fsMakeDirectory(dir: string): Promise<void> {

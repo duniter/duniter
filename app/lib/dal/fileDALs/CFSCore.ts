@@ -228,11 +228,7 @@ export class CFSCore {
     return path.normalize(filePath).replace(/\//g, '__').replace(/\\/g, '__');
   }
 
-  getPath(file: string) {
-    return path.join(this.rootPath, file)
-  }
-
-  appendFile(filename: string, content: string) {
-    return this.qfs.fsAppend(path.join(this.rootPath, filename), content)
+  fsStreamTo(filename: string, iterator: IterableIterator<string>) {
+    return this.qfs.fsStreamTo(path.join(this.rootPath, filename), iterator)
   }
 }

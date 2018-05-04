@@ -18,7 +18,7 @@ import {AccountsGarbagingDAL, FullSindexEntry, Indexer} from "../indexer";
 import {CurrencyConfDTO} from "../dto/ConfDTO";
 import {FileDAL} from "../dal/fileDAL"
 import {DBBlock} from "../db/DBBlock"
-import {DBTx} from "../dal/sqliteDAL/TxsDAL"
+import {DBTx} from "../db/DBTx"
 
 const _ = require('underscore')
 const constants = require('../constants')

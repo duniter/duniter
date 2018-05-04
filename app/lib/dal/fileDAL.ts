@@ -30,8 +30,6 @@ import {
 import {DBPeer} from "./sqliteDAL/PeerDAL"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import {CertDAL, DBCert} from "./sqliteDAL/CertDAL"
-import {DBWallet} from "./sqliteDAL/WalletDAL"
-import {DBTx, TxsDAL} from "./sqliteDAL/TxsDAL"
 import {DBBlock} from "../db/DBBlock"
 import {DBMembership, MembershipDAL} from "./sqliteDAL/MembershipDAL"
 import {MerkleDTO} from "../dto/MerkleDTO"
@@ -41,7 +39,6 @@ import {Initiable} from "./sqliteDAL/Initiable"
 import {MetaDAL} from "./sqliteDAL/MetaDAL"
 import {DataErrors} from "../common-libs/errors"
 import {BasicRevocableIdentity, IdentityDTO} from "../dto/IdentityDTO"
-import {BlockDAL} from "./sqliteDAL/BlockDAL"
 import {FileSystem} from "../system/directory"
 import {WoTBInstance} from "../wot"
 import {IIndexDAO} from "./indexDAL/abstract/IIndexDAO"
@@ -66,6 +63,8 @@ import {WalletDAO} from "./indexDAL/abstract/WalletDAO"
 import {LokiWallet} from "./indexDAL/loki/LokiWallet"
 import {PeerDAO} from "./indexDAL/abstract/PeerDAO"
 import {LokiPeer} from "./indexDAL/loki/LokiPeer"
+import {DBTx} from "../db/DBTx"
+import {DBWallet} from "../db/DBWallet"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -95,10 +94,6 @@ export class FileDAL {
   powDAL:PowDAL
   confDAL:ConfDAL
   statDAL:StatDAL
-
-  // DALs to be removed
-  fakeBlockDAL:BlockDAL
-  fakeTxsDAL:TxsDAL
 
   // SQLite DALs
   metaDAL:MetaDAL
@@ -132,9 +127,7 @@ export class FileDAL {
     this.powDAL = new PowDAL(this.rootPath, params.fs)
     this.confDAL = new ConfDAL(this.rootPath, params.fs)
     this.metaDAL = new (require('./sqliteDAL/MetaDAL').MetaDAL)(this.sqliteDriver);
-    this.fakeBlockDAL = new (require('./sqliteDAL/BlockDAL').BlockDAL)(this.sqliteDriver);
     this.blockDAL = new LokiBlockchain(this.loki.getLokiInstance())
-    this.fakeTxsDAL = new (require('./sqliteDAL/TxsDAL').TxsDAL)(this.sqliteDriver);
     this.txsDAL = new LokiTransactions(this.loki.getLokiInstance())
     this.statDAL = new StatDAL(this.rootPath, params.fs)
     this.idtyDAL = new (require('./sqliteDAL/IdentityDAL').IdentityDAL)(this.sqliteDriver);
@@ -152,8 +145,6 @@ export class FileDAL {
       'powDAL': this.powDAL,
       'metaDAL': this.metaDAL,
       'blockDAL': this.blockDAL,
-      'fakeBlockDAL': this.fakeBlockDAL,
-      'fakeTxsDAL': this.fakeTxsDAL,
       'certDAL': this.certDAL,
       'msDAL': this.msDAL,
       'idtyDAL': this.idtyDAL,

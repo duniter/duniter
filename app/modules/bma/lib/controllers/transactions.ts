@@ -17,7 +17,7 @@ import {Source} from "../entity/source";
 import {BMAConstants} from "../constants";
 import {TransactionDTO} from "../../../../lib/dto/TransactionDTO";
 import {HttpSources, HttpTransaction, HttpTxHistory, HttpTxOfHistory, HttpTxPending} from "../dtos";
-import {DBTx} from "../../../../lib/dal/sqliteDAL/TxsDAL";
+import {DBTx} from "../../../../lib/db/DBTx"
 
 const _                = require('underscore');
 const http2raw         = require('../http2raw');

@@ -11,16 +11,15 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
 import {ConfDTO} from "../lib/dto/ConfDTO";
 import {FileDAL} from "../lib/dal/fileDAL";
 import {TransactionDTO} from "../lib/dto/TransactionDTO";
 import {LOCAL_RULES_HELPERS} from "../lib/rules/local_rules";
 import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules";
-import {DBTx} from "../lib/dal/sqliteDAL/TxsDAL";
 import {FIFOService} from "./FIFOService";
 import {GlobalFifoPromise} from "./GlobalFifoPromise";
 import {DataErrors} from "../lib/common-libs/errors"
+import {DBTx} from "../lib/db/DBTx"
 
 const constants       = require('../lib/constants');
 

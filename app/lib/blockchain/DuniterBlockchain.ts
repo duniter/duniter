@@ -24,9 +24,9 @@ import {MembershipDTO} from "../dto/MembershipDTO"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import {CommonConstants} from "../common-libs/constants"
 import {FileDAL} from "../dal/fileDAL"
-import {DBTx} from "../dal/sqliteDAL/TxsDAL"
 import {DataErrors} from "../common-libs/errors"
 import {NewLogger} from "../logger"
+import {DBTx} from "../db/DBTx"
 
 const _ = require('underscore')
 

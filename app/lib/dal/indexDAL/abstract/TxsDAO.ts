@@ -1,7 +1,7 @@
 import {GenericDAO} from "./GenericDAO"
-import {DBTx} from "../../sqliteDAL/TxsDAL"
 import {TransactionDTO} from "../../../dto/TransactionDTO"
 import {SandBox} from "../../sqliteDAL/SandBox"
+import {DBTx} from "../../../db/DBTx"
 
 export interface TxsDAO extends GenericDAO<DBTx> {
 

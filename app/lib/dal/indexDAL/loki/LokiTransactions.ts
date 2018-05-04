@@ -1,8 +1,8 @@
 import {LokiIndex} from "./LokiIndex"
-import {DBTx} from "../../sqliteDAL/TxsDAL"
 import {TxsDAO} from "../abstract/TxsDAO"
 import {SandBox} from "../../sqliteDAL/SandBox"
 import {TransactionDTO} from "../../../dto/TransactionDTO"
+import {DBTx} from "../../../db/DBTx"
 
 const _ = require('underscore')
 const moment = require('moment')

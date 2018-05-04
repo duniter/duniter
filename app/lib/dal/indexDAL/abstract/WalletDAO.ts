@@ -1,5 +1,5 @@
 import {Initiable} from "../../sqliteDAL/Initiable"
-import {DBWallet} from "../../sqliteDAL/WalletDAL"
+import {DBWallet} from "../../../db/DBWallet"
 
 export interface WalletDAO extends Initiable {
 

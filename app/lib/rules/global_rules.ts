@@ -22,7 +22,7 @@ import {CommonConstants} from "../common-libs/constants"
 import {IdentityDTO} from "../dto/IdentityDTO"
 import {hashf} from "../common"
 import {Indexer} from "../indexer"
-import {DBTx} from "../dal/sqliteDAL/TxsDAL"
+import {DBTx} from "../db/DBTx"
 
 const _ = require('underscore')
 

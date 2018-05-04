@@ -24,9 +24,9 @@ import {CommonConstants} from "./common-libs/constants"
 import {MembershipDTO} from "./dto/MembershipDTO"
 import {UnlockMetadata} from "./common-libs/txunlock"
 import {FileDAL} from "./dal/fileDAL"
-import {DBWallet} from "./dal/sqliteDAL/WalletDAL"
 import {DataErrors} from "./common-libs/errors"
 import {DBBlock} from "./db/DBBlock"
+import {DBWallet} from "./db/DBWallet"
 
 const _               = require('underscore');
 

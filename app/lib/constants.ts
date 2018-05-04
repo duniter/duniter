@@ -14,7 +14,7 @@
 "use strict";
 import {CommonConstants} from "./common-libs/constants"
 import {OtherConstants} from "./other_constants"
-import { ProverConstants } from '../modules/prover/lib/constants';
+import {ProverConstants} from '../modules/prover/lib/constants';
 
 const UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\d{2}\\.\\d{2}(\\+|-)\\d{3}\\.\\d{2});(\\d+)(;?)";
 const PUBKEY       = CommonConstants.FORMATS.PUBKEY
@@ -184,8 +184,6 @@ module.exports = {
   SANDBOX_SIZE_IDENTITIES: 5000,
   SANDBOX_SIZE_CERTIFICATIONS: 12,
   SANDBOX_SIZE_MEMBERSHIPS: 5000,
-
-  CURRENT_BLOCK_CACHE_DURATION: 10 * 1000, // 30 seconds
 
   // With `logs` command, the number of tail lines to show
   NB_INITIAL_LINES_TO_SHOW: 100

@@ -1,6 +1,6 @@
 import {WalletDAO} from "../abstract/WalletDAO"
-import {DBWallet} from "../../sqliteDAL/WalletDAL"
 import {LokiCollectionManager} from "./LokiCollectionManager"
+import {DBWallet} from "../../../db/DBWallet"
 
 export class LokiWallet extends LokiCollectionManager<DBWallet> implements WalletDAO {
 

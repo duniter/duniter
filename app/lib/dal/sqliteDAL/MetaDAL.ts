@@ -17,16 +17,12 @@ import {ConfDTO} from "../../dto/ConfDTO"
 import {SindexEntry} from "../../indexer"
 import {hashf} from "../../common"
 import {TransactionDTO} from "../../dto/TransactionDTO"
-import {BlockDAL} from "./BlockDAL"
 import {IdentityDAL} from "./IdentityDAL"
 import {SIndexDAL} from "./index/SIndexDAL"
-import {WalletDAL} from "./WalletDAL"
-import {MIndexDAL} from "./index/MIndexDAL"
 import {DBBlock} from "../../db/DBBlock"
 import {IdentityDTO} from "../../dto/IdentityDTO"
 import {rawer} from "../../common-libs/index"
 import {CommonConstants} from "../../common-libs/constants"
-import {TxsDAL} from "./TxsDAL"
 
 const _ = require('underscore')
 const logger = require('../../logger').NewLogger('metaDAL');
@@ -66,7 +62,71 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
   private migrations:any = {
 
     // Test
-    0: 'BEGIN; COMMIT;',
+    0: 'BEGIN;' +
+
+    // This table was initially created by BlockDAL, but now it has been removed so we keep it here
+    // to keep the unit tests work
+    'CREATE TABLE IF NOT EXISTS block (' +
+    'fork BOOLEAN NOT NULL,' +
+    'hash VARCHAR(64) NOT NULL,' +
+    'inner_hash VARCHAR(64) NOT NULL,' +
+    'signature VARCHAR(100) NOT NULL,' +
+    'currency VARCHAR(50) NOT NULL,' +
+    'issuer VARCHAR(50) NOT NULL,' +
+    'parameters VARCHAR(255),' +
+    'previousHash VARCHAR(64),' +
+    'previousIssuer VARCHAR(50),' +
+    'version INTEGER NOT NULL,' +
+    'membersCount INTEGER NOT NULL,' +
+    'monetaryMass VARCHAR(100) DEFAULT \'0\',' +
+    'UDTime DATETIME,' +
+    'medianTime DATETIME NOT NULL,' +
+    'dividend INTEGER DEFAULT \'0\',' +
+    'unitbase INTEGER NULL,' +
+    'time DATETIME NOT NULL,' +
+    'powMin INTEGER NOT NULL,' +
+    'number INTEGER NOT NULL,' +
+    'nonce INTEGER NOT NULL,' +
+    'transactions TEXT,' +
+    'certifications TEXT,' +
+    'identities TEXT,' +
+    'joiners TEXT,' +
+    'actives TEXT,' +
+    'leavers TEXT,' +
+    'revoked TEXT,' +
+    'excluded TEXT,' +
+    'created DATETIME DEFAULT NULL,' +
+    'updated DATETIME DEFAULT NULL,' +
+    'PRIMARY KEY (number,hash)' +
+    ');' +
+    'CREATE INDEX IF NOT EXISTS idx_block_hash ON block (hash);' +
+    'CREATE INDEX IF NOT EXISTS idx_block_fork ON block (fork);' +
+
+    // Same, but for Transactions
+    'CREATE TABLE IF NOT EXISTS txs (' +
+    'hash CHAR(64) NOT NULL,' +
+    'block_number INTEGER,' +
+    'locktime INTEGER NOT NULL,' +
+    'version INTEGER NOT NULL,' +
+    'currency VARCHAR(50) NOT NULL,' +
+    'comment VARCHAR(255) NOT NULL,' +
+    'time DATETIME,' +
+    'inputs TEXT NOT NULL,' +
+    'unlocks TEXT NOT NULL,' +
+    'outputs TEXT NOT NULL,' +
+    'issuers TEXT NOT NULL,' +
+    'signatures TEXT NOT NULL,' +
+    'recipients TEXT NOT NULL,' +
+    'written BOOLEAN NOT NULL,' +
+    'removed BOOLEAN NOT NULL,' +
+    'PRIMARY KEY (hash)' +
+    ');' +
+    'CREATE INDEX IF NOT EXISTS idx_txs_issuers ON txs (issuers);' +
+    'CREATE INDEX IF NOT EXISTS idx_txs_written ON txs (written);' +
+    'CREATE INDEX IF NOT EXISTS idx_txs_removed ON txs (removed);' +
+    'CREATE INDEX IF NOT EXISTS idx_txs_hash ON txs (hash);' +
+
+    'COMMIT;',
 
     // Test
     1: 'BEGIN;' +
@@ -105,7 +165,7 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
     'ALTER TABLE block ADD COLUMN issuersCount INTEGER NULL;' +
     'COMMIT;',
     12: async () => {
-      let blockDAL = new BlockDAL(this.driverCopy)
+      let blockDAL = new MetaDAL(this.driverCopy)
       await blockDAL.exec('ALTER TABLE block ADD COLUMN len INTEGER NULL;');
       await blockDAL.exec('ALTER TABLE txs ADD COLUMN len INTEGER NULL;');
     },
@@ -147,7 +207,7 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
     16: async () => {},
 
     17: async () => {
-      let blockDAL = new BlockDAL(this.driverCopy)
+      let blockDAL:any = new MetaDAL(this.driverCopy)
       let sindexDAL = new SIndexDAL(this.driverCopy)
       const blocks = await blockDAL.query('SELECT * FROM block WHERE NOT fork');
       type AmountPerKey = {
@@ -336,7 +396,7 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
      * Wrong transaction storage
      */
     25: async () => {
-      const txsDAL = new TxsDAL(this.driverCopy)
+      const txsDAL:any = new MetaDAL(this.driverCopy)
       const wrongTXS = await txsDAL.query('SELECT * FROM txs WHERE outputs LIKE ? OR inputs LIKE ?', ['%amount%', '%amount%'])
       let i = 1
       for (const tx of wrongTXS) {

@@ -145,13 +145,13 @@ function generateAndSend(program:any, difficulty:string, server:Server, getGener
   return new Promise((resolve, reject) => {
     if (!program.submitLocal) {
       if (!program.submitHost) {
-        throw 'Option --submitHost is required.'
+        throw 'Option --submit-host is required.'
       }
       if (!program.submitPort) {
-        throw 'Option --submitPort is required.'
+        throw 'Option --submit-port is required.'
       }
       if (isNaN(parseInt(program.submitPort))) {
-        throw 'Option --submitPort must be a number.'
+        throw 'Option --submit-port must be a number.'
       }
     }
     async.waterfall([

@@ -151,18 +151,16 @@ export const MembershipList = {
 };
 
 export interface HttpMembershipList {
-  memberships: [
-    {
-      pubkey: string
-      uid: string
-      version: number
-      currency: string
-      membership: string
-      blockNumber: number
-      blockHash: string
-      written: number
-    }
-  ]
+  memberships: {
+    pubkey: string
+    uid: string
+    version: number
+    currency: string
+    membership: string
+    blockNumber: number
+    blockHash: string
+    written: number|null
+  }[]
 }
 
 export const TransactionOfBlock = {

@@ -65,6 +65,7 @@ import {PeerDAO} from "./indexDAL/abstract/PeerDAO"
 import {LokiPeer} from "./indexDAL/loki/LokiPeer"
 import {DBTx} from "../db/DBTx"
 import {DBWallet} from "../db/DBWallet"
+import {Tristamp} from "../common/Tristamp"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -220,61 +221,67 @@ export class FileDAL {
     return  this.peerDAL.getPeersWithEndpointsLike('WS2P')
   }
 
-  async getBlock(number:number): Promise<DBBlock|null> {
-    const block = await this.blockDAL.getBlock(number)
-    return block || null;
+  getAbsoluteBlockInForkWindowByBlockstamp(blockstamp:string) {
+    if (!blockstamp) throw "Blockstamp is required to find the block";
+    const sp = blockstamp.split('-');
+    const number = parseInt(sp[0]);
+    const hash = sp[1];
+    return this.getAbsoluteBlockInForkWindow(number, hash)
+  }
+
+  getAbsoluteValidBlockInForkWindowByBlockstamp(blockstamp:string) {
+    if (!blockstamp) throw "Blockstamp is required to find the block";
+    const sp = blockstamp.split('-');
+    const number = parseInt(sp[0]);
+    const hash = sp[1];
+    return this.getAbsoluteValidBlockInForkWindow(number, hash)
   }
 
   async getBlockWeHaveItForSure(number:number): Promise<DBBlock> {
     return (await this.blockDAL.getBlock(number)) as DBBlock
   }
 
-  getAbsoluteBlockByNumberAndHash(number:number, hash:string) {
+  async getFullBlockOf(number: number): Promise<DBBlock|null> {
+    // TODO
+    return this.blockDAL.getBlock(number)
+  }
+
+  async getBlockstampOf(number: number): Promise<string|null> {
+    // TODO
+    const block = await this.blockDAL.getBlock(number)
+    if (block) {
+      return [block.number, block.hash].join('-')
+    }
+    return null
+  }
+
+  async getTristampOf(number: number): Promise<Tristamp|null> {
+    // TODO
+    return this.blockDAL.getBlock(number)
+  }
+
+  async existsAbsoluteBlockInForkWindow(number:number, hash:string): Promise<boolean> {
+    // TODO
+    return !!(await this.blockDAL.getAbsoluteBlock(number, hash))
+  }
+
+  async getAbsoluteBlockInForkWindow(number:number, hash:string): Promise<DBBlock|null> {
+    // TODO
     return this.blockDAL.getAbsoluteBlock(number, hash)
   }
 
-  getAbsoluteBlockByBlockstamp(blockstamp:string) {
-    if (!blockstamp) throw "Blockstamp is required to find the block"
-    const sp = blockstamp.split('-')
-    const number = parseInt(sp[0])
-    const hash = sp[1]
-    return this.getAbsoluteBlockByNumberAndHash(number, hash)
-  }
-
-  getBlockByBlockstampOrNull(blockstamp:string) {
-    if (!blockstamp) throw "Blockstamp is required to find the block";
-    const sp = blockstamp.split('-');
-    const number = parseInt(sp[0]);
-    const hash = sp[1];
-    return this.getBlockByNumberAndHashOrNull(number, hash);
-  }
-
-  getBlockByBlockstamp(blockstamp:string) {
-    if (!blockstamp) throw "Blockstamp is required to find the block";
-    const sp = blockstamp.split('-');
-    const number = parseInt(sp[0]);
-    const hash = sp[1];
-    return this.getBlockByNumberAndHash(number, hash);
-  }
-
-  async getBlockByNumberAndHash(number:number, hash:string): Promise<DBBlock> {
-    try {
-      const block = await this.getBlock(number);
-      if (!block || block.hash != hash)
-        throw "Not found";
-      else
-        return block;
-    } catch (err) {
-      throw 'Block ' + [number, hash].join('-') + ' not found';
+  async getAbsoluteValidBlockInForkWindow(number:number, hash:string): Promise<DBBlock|null> {
+    // TODO: blocks that are not forks
+    const block = await this.blockDAL.getAbsoluteBlock(number, hash)
+    if (block && !block.fork) {
+      return block
     }
+    return null
   }
 
-  async getBlockByNumberAndHashOrNull(number:number, hash:string): Promise<DBBlock|null> {
-    try {
-      return await this.getBlockByNumberAndHash(number, hash)
-    } catch (e) {
-      return null;
-    }
+  getAbsoluteBlockByNumberAndHash(number:number, hash:string): Promise<DBBlock|null> {
+    // TODO: first, look at fork window, and then fallback on archives
+    return this.blockDAL.getAbsoluteBlock(number, hash)
   }
 
   async existsNonChainableLink(from:string, vHEAD_1:DBHead, sigStock:number) {
@@ -302,14 +309,10 @@ export class FileDAL {
   }
 
   getPromoted(number:number) {
-    return this.getBlock(number)
+    return this.getFullBlockOf(number)
   }
 
   // Block
-
-  getRootBlock() {
-    return this.getBlock(0)
-  }
 
   getPotentialRootBlocks() {
     return this.blockDAL.getPotentialRoots()
@@ -728,9 +731,9 @@ export class FileDAL {
     return _(pending).sortBy((ms:any) => -ms.number)[0];
   }
 
-  async findNewcomers(blockMedianTime = 0) {
+  async findNewcomers(blockMedianTime = 0): Promise<DBMembership[]> {
     const pending = await this.msDAL.getPendingIN()
-    const mss = await Promise.all(pending.map(async (p:any) => {
+    const mss: DBMembership[] = await Promise.all<DBMembership>(pending.map(async (p:any) => {
       const reduced = await this.mindexDAL.getReducedMS(p.issuer)
       if (!reduced || !reduced.chainable_on || blockMedianTime >= reduced.chainable_on || blockMedianTime < constants.TIME_TO_TURN_ON_BRG_107) {
         return p
@@ -738,12 +741,12 @@ export class FileDAL {
       return null
     }))
     return _.chain(mss)
-      .filter((ms:any) => ms)
-      .sortBy((ms:any) => -ms.sigDate)
+      .filter((ms:DBMembership) => ms)
+      .sortBy((ms:DBMembership) => -ms.blockNumber)
       .value()
   }
 
-  async findLeavers(blockMedianTime = 0) {
+  async findLeavers(blockMedianTime = 0): Promise<DBMembership[]> {
     const pending = await this.msDAL.getPendingOUT();
     const mss = await Promise.all(pending.map(async (p:any) => {
       const reduced = await this.mindexDAL.getReducedMS(p.issuer)
@@ -753,8 +756,8 @@ export class FileDAL {
       return null
     }))
     return _.chain(mss)
-      .filter((ms:any) => ms)
-      .sortBy((ms:any) => -ms.sigDate)
+      .filter((ms:DBMembership) => ms)
+      .sortBy((ms:DBMembership) => -ms.blockNumber)
       .value();
   }
 
@@ -984,7 +987,7 @@ export class FileDAL {
   async saveTxsInFiles(txs:TransactionDTO[], block_number:number, medianTime:number) {
     return Promise.all(txs.map(async (tx) => {
       const sp = tx.blockstamp.split('-');
-      const basedBlock = (await this.getBlockByNumberAndHash(parseInt(sp[0]), sp[1])) as DBBlock
+      const basedBlock = (await this.getAbsoluteBlockByNumberAndHash(parseInt(sp[0]), sp[1])) as DBBlock
       tx.blockstampTime = basedBlock.medianTime;
       const txEntity = TransactionDTO.fromJSONObject(tx)
       txEntity.computeAllHashes();

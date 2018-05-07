@@ -26,7 +26,7 @@ export interface SwitcherDao<T extends SwitchBlock> {
   getCurrent(): Promise<T|null>
   getPotentials(numberStart:number, timeStart:number, maxNumber:number): Promise<T[]>
   getBlockchainBlock(number:number, hash:string): Promise<T|null>
-  getSandboxBlock(number:number, hash:string): Promise<T|null>
+  getAbsoluteBlockInForkWindow(number:number, hash:string): Promise<T|null>
   revertTo(number:number): Promise<T[]>
   addBlock(block:T): Promise<T>
 }
@@ -126,7 +126,7 @@ export class Switcher<T extends SwitchBlock> {
             commonRootFound = true
           } else {
             // Have a look in sandboxes
-            previous = await this.dao.getSandboxBlock(previousNumber, previousHash)
+            previous = await this.dao.getAbsoluteBlockInForkWindow(previousNumber, previousHash)
             if (previous) {
               knownForkBlocks[BlockDTO.fromJSONObject(previous).blockstamp] = true
               const alreadyKnownInvalidBlock = this.invalidForks.indexOf([previous.number, previous.hash].join('-')) !== -1

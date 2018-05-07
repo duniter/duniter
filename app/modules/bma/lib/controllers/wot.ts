@@ -31,6 +31,7 @@ import {
 } from "../dtos";
 import {IdentityDTO} from "../../../../lib/dto/IdentityDTO"
 import {FullIindexEntry} from "../../../../lib/indexer"
+import {DBMembership} from "../../../../lib/dal/sqliteDAL/MembershipDAL"
 
 const _        = require('underscore');
 const http2raw = require('../http2raw');
@@ -276,14 +277,14 @@ export class WOTBinding extends AbstractController {
   async pendingMemberships(): Promise<HttpMembershipList> {
     const memberships = await this.server.dal.findNewcomers();
     const json = {
-      memberships: memberships.map((ms:any) => {
+      memberships: memberships.map((ms:DBMembership) => {
         return {
           pubkey: ms.issuer,
           uid: ms.userid,
-          version: ms.version || 0,
+          version: 10,
           currency: this.server.conf.currency,
           membership: ms.membership,
-          blockNumber: parseInt(ms.blockNumber),
+          blockNumber: ms.blockNumber,
           blockHash: ms.blockHash,
           written: (!ms.written_number && ms.written_number !== 0) ? null : ms.written_number
         };

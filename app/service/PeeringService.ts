@@ -107,7 +107,7 @@ export class PeeringService {
           thePeer.statusTS = 0;
           thePeer.status = 'UP';
         } else {
-          block = await this.dal.getBlockByNumberAndHashOrNull(blockNumber, blockHash);
+          block = await this.dal.getAbsoluteValidBlockInForkWindow(blockNumber, blockHash)
           if (!block && makeCheckings) {
             throw constants.ERROR.PEER.UNKNOWN_REFERENCE_BLOCK;
           } else if (!block) {
@@ -233,12 +233,12 @@ export class PeeringService {
       }
       // The number cannot be superior to current block
       minBlock = Math.min(minBlock, current ? current.number : minBlock);
-      let targetBlock = await this.server.dal.getBlock(minBlock);
+      const targetBlockstamp: string|null = await this.server.dal.getBlockstampOf(minBlock)
       const p2:any = {
         version: constants.DOCUMENTS_VERSION,
         currency: currency,
         pubkey: this.selfPubkey,
-        block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
+        block: targetBlockstamp ? targetBlockstamp : constants.PEER.SPECIAL_BLOCK,
         endpoints: _.uniq(endpointsToDeclare)
       };
       const raw2 = dos2unix(PeerDTO.fromJSONObject(p2).getRaw());

@@ -139,7 +139,7 @@ export class LokiBlockchain extends LokiIndex<DBBlock> implements BlockchainDAO 
         number: { $between: [numberStart, maxNumber] },
         medianTime: { $gte: medianTimeStart }
       })
-      .simplesort('number')
+      .simplesort('number', true)
       .data()
   }
 

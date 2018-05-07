@@ -353,7 +353,7 @@ export class DuniterBlockchain {
   static async revertBlock(number:number, hash:string, dal:FileDAL) {
 
     const blockstamp = [number, hash].join('-');
-    const block = await dal.getBlockByBlockstampOrNull(blockstamp)
+    const block = await dal.getAbsoluteValidBlockInForkWindow(number, hash)
 
     if (!block) {
       throw DataErrors[DataErrors.BLOCK_TO_REVERT_NOT_FOUND]
@@ -387,7 +387,7 @@ export class DuniterBlockchain {
     await dal.sindexDAL.removeBlock(blockstamp);
 
     // Then: normal updates
-    const previousBlock = await dal.getBlock(number - 1);
+    const previousBlock = await dal.getFullBlockOf(number - 1)
     // Set the block as SIDE block (equivalent to removal from main branch)
     await dal.blockDAL.setSideBlock(number, previousBlock);
 

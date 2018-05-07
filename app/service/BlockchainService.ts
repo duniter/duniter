@@ -89,16 +89,14 @@ export class BlockchainService extends FIFOService {
       }
 
       async getBlockchainBlock(number: number, hash: string): Promise<BlockDTO | null> {
-        try {
-          return BlockDTO.fromJSONObject(await this.bcService.dal.getBlockByNumberAndHash(number, hash))
-        } catch (e) {
-          return null
-        }
+        const b = await this.bcService.dal.getAbsoluteValidBlockInForkWindow(number, hash)
+        if (!b) return null
+        return BlockDTO.fromJSONObject(b)
       }
 
-      async getSandboxBlock(number: number, hash: string): Promise<BlockDTO | null> {
-        const block = await this.bcService.dal.getAbsoluteBlockByNumberAndHash(number, hash)
-        if (block && block.fork) {
+      async getAbsoluteBlockInForkWindow(number: number, hash: string): Promise<BlockDTO | null> {
+        const block = await this.bcService.dal.getAbsoluteBlockInForkWindow(number, hash)
+        if (block) {
           return BlockDTO.fromJSONObject(block)
         } else {
           return null
@@ -198,7 +196,7 @@ export class BlockchainService extends FIFOService {
           throw CommonConstants.ERRORS.OUT_OF_FORK_WINDOW
         }
       }
-      const absolute = await this.dal.getAbsoluteBlockByNumberAndHash(parseInt(obj.number), obj.hash)
+      const absolute = await this.dal.existsAbsoluteBlockInForkWindow(parseInt(obj.number), obj.hash)
       if (!absolute) {
         // Save the block in the sandbox
         await this.mainContext.addSideBlock(dto);
@@ -350,8 +348,8 @@ export class BlockchainService extends FIFOService {
       const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
       if (currentMSN >= 0) {
         if (join.identity.member) {
-          const msBlock = await this.dal.getBlock(currentMSN);
-          if (msBlock && msBlock.medianTime) { // special case for block #0
+          const msBlock = await this.dal.getTristampOf(currentMSN)
+          if (msBlock) { // special case for block #0
             expiresMS = Math.max(0, (msBlock.medianTime + this.conf.msValidity - currentTime));
           }
           else {
@@ -364,8 +362,8 @@ export class BlockchainService extends FIFOService {
       // Expiration of pending membership
       const lastJoin = await this.dal.lastJoinOfIdentity(idty.hash);
       if (lastJoin) {
-        const msBlock = await this.dal.getBlock(lastJoin.blockNumber);
-        if (msBlock && msBlock.medianTime) { // Special case for block#0
+        const msBlock = await this.dal.getTristampOf(lastJoin.blockNumber)
+        if (msBlock) { // Special case for block#0
           expiresPending = Math.max(0, (msBlock.medianTime + this.conf.msValidity - currentTime));
         }
         else {
@@ -417,7 +415,7 @@ export class BlockchainService extends FIFOService {
     const certsFromCerts = [];
     const certs = newCerts[newcomer] || [];
     for (const cert of certs) {
-      const block = await this.dal.getBlock(cert.block_number);
+      const block = await this.dal.getTristampOf(cert.block_number)
       if (block) {
         certsFromCerts.push({
           from: cert.from,

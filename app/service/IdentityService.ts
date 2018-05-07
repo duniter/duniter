@@ -25,6 +25,7 @@ import {verify} from "../lib/common-libs/crypto/keyring"
 import {FIFOService} from "./FIFOService"
 import {MindexEntry} from "../lib/indexer"
 import {DataErrors} from "../lib/common-libs/errors"
+import {Tristamp} from "../lib/common/Tristamp"
 
 "use strict";
 const constants       = require('../lib/constants');
@@ -141,7 +142,7 @@ export class IdentityService extends FIFOService {
         if (idty.buid == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855' && current) {
           throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
         } else if (current) {
-          let basedBlock = await this.dal.getBlockByBlockstamp(idty.buid);
+          let basedBlock = await this.dal.getAbsoluteValidBlockInForkWindowByBlockstamp(idty.buid);
           if (!basedBlock) {
             throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
           }
@@ -199,11 +200,12 @@ export class IdentityService extends FIFOService {
       }
       if (!anErr) {
         try {
-          let basedBlock: { number:number, hash:string, medianTime?:number }|null = await this.dal.getBlock(cert.block_number);
+          let basedBlock: Tristamp|null = await this.dal.getTristampOf(cert.block_number);
           if (cert.block_number == 0 && !basedBlock) {
             basedBlock = {
               number: 0,
-              hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
+              hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855',
+              medianTime: 0
             };
           }
           if (!basedBlock) {
@@ -217,7 +219,7 @@ export class IdentityService extends FIFOService {
             block_hash: basedBlock.hash,
             target: targetHash,
             to: idty.pubkey,
-            expires_on: (basedBlock.medianTime || 0) + this.conf.sigWindow,
+            expires_on: basedBlock.medianTime + this.conf.sigWindow,
             linked: false,
             written: false,
             expired: false,

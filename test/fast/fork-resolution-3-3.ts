@@ -206,7 +206,7 @@ class TestingSwitcherDao implements SwitcherDao<Block> {
   }
 
 
-  async getSandboxBlock(number: number, hash: string): Promise<Block | any> {
+  async getAbsoluteBlockInForkWindow(number: number, hash: string): Promise<Block | any> {
     return this.sbx.getBlock(number, hash)
   }
 

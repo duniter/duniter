@@ -15,7 +15,6 @@ import {IdentityForRequirements} from './../../../../service/BlockchainService';
 import {Server} from "../../../../../server"
 import {WS2PReqMapper} from "../interface/WS2PReqMapper"
 import {BlockDTO} from "../../../../lib/dto/BlockDTO"
-import {IindexEntry} from '../../../../lib/indexer';
 import {DBBlock} from "../../../../lib/db/DBBlock"
 
 export class WS2PReqMapperByServer implements WS2PReqMapper {
@@ -27,7 +26,7 @@ export class WS2PReqMapperByServer implements WS2PReqMapper {
   }
 
   async getBlock(number: number): Promise<BlockDTO> {
-    return Promise.resolve(BlockDTO.fromJSONObject(await this.server.dal.getBlock(number)))
+    return Promise.resolve(BlockDTO.fromJSONObject(await this.server.dal.getFullBlockOf(number)))
   }
 
   async getBlocks(count: number, from: number): Promise<BlockDTO[]> {

@@ -23,6 +23,7 @@ import {IdentityDTO} from "../dto/IdentityDTO"
 import {hashf} from "../common"
 import {Indexer} from "../indexer"
 import {DBTx} from "../db/DBTx"
+import {Tristamp} from "../common/Tristamp"
 
 const _ = require('underscore')
 
@@ -83,7 +84,7 @@ export const GLOBAL_RULES_FUNCTIONS = {
       // Because the window rule does not apply on initial certifications
       if (current && idty.buid != constants.SPECIAL_BLOCK) {
         // From DUP 0.5: we fully check the blockstamp
-        const basedBlock = await dal.getBlockByBlockstamp(idty.buid);
+        const basedBlock = await dal.getAbsoluteValidBlockInForkWindowByBlockstamp(idty.buid) || { medianTime: 0 }
         // Check if writable
         let duration = current.medianTime - basedBlock.medianTime
         if (duration > conf.idtyWindow) {
@@ -224,7 +225,7 @@ export const GLOBAL_RULES_HELPERS = {
   checkTxBlockStamp: async (tx:TransactionDTO, dal:FileDAL) => {
     const number = parseInt(tx.blockstamp.split('-')[0])
     const hash = tx.blockstamp.split('-')[1];
-    const basedBlock = await dal.getBlockByNumberAndHashOrNull(number, hash);
+    const basedBlock = await dal.getAbsoluteValidBlockInForkWindow(number, hash)
     if (!basedBlock) {
       throw "Wrong blockstamp for transaction";
     }
@@ -253,11 +254,9 @@ async function checkMSTarget (ms:any, block:any, conf:ConfDTO, dal:FileDAL) {
   else if (block.number == 0) {
     return null; // Valid for root block
   } else {
-    let basedBlock;
-    try {
-      basedBlock = await dal.getBlockByNumberAndHash(ms.number, ms.fpr);
-    } catch (e) {
-      throw Error('Membership based on an unexisting block');
+    const basedBlock = await dal.getAbsoluteValidBlockInForkWindow(ms.number, ms.fpr)
+    if (!basedBlock) {
+      throw Error('Membership based on an unexisting block')
     }
     let current = await dal.getCurrentBlockOrNull();
     if (current && current.medianTime > basedBlock.medianTime + conf.msValidity) {
@@ -276,13 +275,14 @@ async function checkCertificationShouldBeValid (block:{ number:number, currency:
   if (block.number == 0 && cert.block_number != 0) {
     throw Error('Number must be 0 for root block\'s certifications');
   } else {
-    let basedBlock:any = {
-      hash: constants.SPECIAL_HASH
-    };
+    let basedBlock:Tristamp|null = {
+      number: 0,
+      hash: constants.SPECIAL_HASH,
+      medianTime: 0
+    }
     if (block.number != 0) {
-      try {
-        basedBlock = await dal.getBlock(cert.block_number);
-      } catch (e) {
+      basedBlock = await dal.getTristampOf(cert.block_number)
+      if (!basedBlock) {
         throw Error('Certification based on an unexisting block');
       }
       try {

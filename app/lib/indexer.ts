@@ -24,9 +24,9 @@ import {CommonConstants} from "./common-libs/constants"
 import {MembershipDTO} from "./dto/MembershipDTO"
 import {UnlockMetadata} from "./common-libs/txunlock"
 import {FileDAL} from "./dal/fileDAL"
-import {DataErrors} from "./common-libs/errors"
 import {DBBlock} from "./db/DBBlock"
 import {DBWallet} from "./db/DBWallet"
+import {Tristamp} from "./common/Tristamp"
 
 const _               = require('underscore');
 
@@ -951,7 +951,7 @@ export class Indexer {
       if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
         ENTRY.age = 0;
       } else {
-        let ref = await dal.getBlockByBlockstamp(ENTRY.created_on as string);
+        let ref = await dal.getAbsoluteValidBlockInForkWindowByBlockstamp(ENTRY.created_on as string);
         if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
           ENTRY.age = HEAD_1.medianTime - ref.medianTime;
         } else {
@@ -1195,7 +1195,7 @@ export class Indexer {
       if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
         ENTRY.age = 0;
       } else {
-        let ref = await dal.getBlockByBlockstamp(ENTRY.created_on as string);
+        let ref = await dal.getAbsoluteValidBlockInForkWindowByBlockstamp(ENTRY.created_on as string);
         if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
           ENTRY.age = HEAD_1.medianTime - ref.medianTime;
         } else {
@@ -1211,7 +1211,7 @@ export class Indexer {
       if (HEAD.number == 0 && ENTRY.created_on == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855') {
         ENTRY.age = 0;
       } else {
-        let ref = ENTRY.created_on_ref || await dal.getBlockByBlockstamp(ENTRY.created_on)
+        let ref = ENTRY.created_on_ref || await dal.getAbsoluteValidBlockInForkWindowByBlockstamp(ENTRY.created_on)
         if (ref && blockstamp(ref.number, ref.hash) == ENTRY.created_on) {
           ENTRY.created_on_ref = ref
           ENTRY.age = HEAD_1.medianTime - ref.medianTime;
@@ -1228,7 +1228,7 @@ export class Indexer {
       if (HEAD.number == 0) {
         ENTRY.age = 0;
       } else {
-        let ref = ENTRY.created_on_ref || await dal.getBlock(ENTRY.created_on)
+        let ref = ENTRY.created_on_ref || await dal.getTristampOf(ENTRY.created_on)
         if (ref) {
           if (!ENTRY.created_on_ref) {
             ENTRY.created_on_ref = ref
@@ -1811,7 +1811,7 @@ export class Indexer {
         if (HEAD.number == 0) {
           basedBlock = HEAD;
         } else {
-          basedBlock = MS.created_on_ref || await dal.getBlockByBlockstamp(MS.created_on)
+          basedBlock = MS.created_on_ref || await dal.getAbsoluteValidBlockInForkWindowByBlockstamp(MS.created_on) || basedBlock
         }
         if (MS.expires_on === null) {
           MS.expires_on = 0
@@ -1832,7 +1832,7 @@ export class Indexer {
       if (HEAD.number == 0) {
         basedBlock = HEAD;
       } else {
-        basedBlock = CERT.created_on_ref || ((await dal.getBlock(CERT.created_on)) as DBBlock)
+        basedBlock = CERT.created_on_ref || ((await dal.getTristampOf(CERT.created_on)) as DBBlock) // We are sure at this point in the rules
       }
       CERT.expires_on += basedBlock.medianTime;
     }
@@ -2043,18 +2043,15 @@ async function checkCertificationIsValid (block: BlockDTO, cert: CindexEntry, fi
     throw Error('Number must be 0 for root block\'s certifications');
   } else {
     try {
-      let basedBlock = new BlockDTO()
-      basedBlock.hash = constants.SPECIAL_HASH
-
+      let basedBlock:Tristamp|null = {
+        number: 0,
+        hash: constants.SPECIAL_HASH,
+        medianTime: 0
+      }
       if (block.number != 0) {
-        try {
-          const b = await dal.getBlock(cert.created_on)
-          if (!b) {
-            throw Error(DataErrors[DataErrors.CERT_BASED_ON_UNKNOWN_BLOCK])
-          }
-          basedBlock = BlockDTO.fromJSONObject(b)
-        } catch (e) {
-          throw Error('Certification based on an unexisting block');
+        basedBlock = await dal.getTristampOf(cert.created_on)
+        if (!basedBlock) {
+          throw Error('Certification based on an unexisting block')
         }
       }
       const idty = await findIdtyFunc(block, cert.receiver, dal)

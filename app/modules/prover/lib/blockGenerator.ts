@@ -174,7 +174,7 @@ export class BlockGenerator {
       leave.idHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
       let block;
       if (current) {
-        block = await this.dal.getBlock(ms.number);
+        block = await this.dal.getAbsoluteValidBlockInForkWindowByBlockstamp(ms.block)
       }
       else {
         block = {};
@@ -283,7 +283,7 @@ export class BlockGenerator {
     for (const ms of memberships) {
       try {
         if (ms.block !== CommonConstants.SPECIAL_BLOCK) {
-          let msBasedBlock = await this.dal.getBlockByBlockstampOrNull(ms.block);
+          let msBasedBlock = await this.dal.getAbsoluteValidBlockInForkWindow(ms.blockNumber, ms.blockHash)
           if (!msBasedBlock) {
             throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
           }
@@ -366,7 +366,7 @@ export class BlockGenerator {
       throw constants.ERRORS.TOO_OLD_IDENTITY;
     }
     else if (!identity.wasMember && identity.buid != CommonConstants.SPECIAL_BLOCK) {
-      const idtyBasedBlock = await this.dal.getBlock(parseInt(identity.buid.split('-')[0]))
+      const idtyBasedBlock = await this.dal.getTristampOf(parseInt(identity.buid.split('-')[0]))
       if (!current || !idtyBasedBlock) {
         throw Error(DataErrors[DataErrors.CANNOT_DETERMINATE_IDENTITY_AGE])
       }
@@ -397,7 +397,7 @@ export class BlockGenerator {
         const certifiers = [];
         for (const cert of certs) {
           try {
-            const basedBlock = await this.dal.getBlock(cert.block_number);
+            const basedBlock = await this.dal.getTristampOf(cert.block_number)
             if (!basedBlock) {
               throw 'Unknown timestamp block for identity';
             }
@@ -734,7 +734,7 @@ class NextBlockGenerator implements BlockGeneratorInterface {
       if (targetIdty) {
         const certSig = cert.sig;
         // Do not rely on certification block UID, prefer using the known hash of the block by its given number
-        const targetBlock = await this.dal.getBlock(cert.block_number);
+        const targetBlock = await this.dal.getTristampOf(cert.block_number)
         // Check if writable
         let duration = current && targetBlock ? current.medianTime - targetBlock.medianTime : 0;
         if (targetBlock && duration <= this.conf.sigWindow) {

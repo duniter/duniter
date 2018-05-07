@@ -100,7 +100,7 @@ describe("Lookup identity grouping", () => {
     res.should.have.property('memberships').length(2);
     res.memberships[0].should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
     res.memberships[0].should.have.property('uid').equal('tic1');
-    res.memberships[0].should.have.property('version').equal(0);
+    res.memberships[0].should.have.property('version').equal(10);
     res.memberships[0].should.have.property('currency').equal('bb');
     res.memberships[0].should.have.property('membership').equal('IN');
     res.memberships[0].should.have.property('blockNumber').equal(0);

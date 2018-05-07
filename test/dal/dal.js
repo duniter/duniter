@@ -153,7 +153,7 @@ describe("DAL", function(){
   it('should be able to save a Block', function(){
     return co(function *() {
       yield fileDAL.saveBlock(_.extend({ fork: false }, mocks.block0));
-      let block = yield fileDAL.getBlock(0);
+      let block = yield fileDAL.getFullBlockOf(0);
       block.should.have.property('hash').equal(mocks.block0.hash);
       block.should.have.property('signature').equal(mocks.block0.signature);
       block.should.have.property('version').equal(mocks.block0.version);

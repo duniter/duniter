@@ -257,7 +257,7 @@ export class WS2PCluster {
     }
     if (!exists) {
       // Do we have this block in the DB?
-      exists = !!(await this.server.dal.getAbsoluteBlockByBlockstamp(blockstamp))
+      exists = !!(await this.server.dal.getAbsoluteBlockInForkWindowByBlockstamp(blockstamp))
     }
     // Update the last time it was checked
     this.blockstampsCache[blockstamp] = Date.now()

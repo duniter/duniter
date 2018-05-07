@@ -10,7 +10,7 @@ export class LokiCIndex extends LokiIndex<CindexEntry> implements CIndexDAO {
   }
 
   async existsNonReplayableLink(issuer: string, receiver: string): Promise<boolean> {
-    return Indexer.DUP_HELPERS.reduceTyped<CindexEntry>(
+    return Indexer.DUP_HELPERS.reduce<CindexEntry>(
       this.collection
         .chain()
         .find({

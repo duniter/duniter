@@ -39,7 +39,7 @@ export class LokiMIndex extends LokiPubkeySharingIndex<MindexEntry> implements M
   }
 
   async getReducedMS(pub: string): Promise<FullMindexEntry | null> {
-    const reducable = await this.reducable(pub)
+    const reducable = (await this.reducable(pub)) as (FullMindexEntry)[]
     if (reducable.length) {
       return Indexer.DUP_HELPERS.reduce(reducable)
     }

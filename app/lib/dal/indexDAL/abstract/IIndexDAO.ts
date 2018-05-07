@@ -1,6 +1,6 @@
 import {FullIindexEntry, IindexEntry} from "../../../indexer"
 import {ReduceableDAO} from "./ReduceableDAO"
-import {OldIindexEntry} from "../../sqliteDAL/index/IIndexDAL"
+import {OldIindexEntry} from "../../../db/OldIindexEntry"
 
 export interface IIndexDAO extends ReduceableDAO<IindexEntry> {
 

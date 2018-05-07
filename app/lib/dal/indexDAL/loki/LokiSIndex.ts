@@ -22,7 +22,7 @@ export class LokiSIndex extends LokiIndex<SindexEntry> implements SIndexDAO {
       })
   }
 
-  async getAvailableForConditions(conditionsStr: string): Promise<{ amount: number; base: number }[]> {
+  async getAvailableForConditions(conditionsStr: string): Promise<SindexEntry[]> {
     const sources = this.collection
       .chain()
       .find({ conditions: { $regex: conditionsStr } })

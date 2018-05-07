@@ -11,7 +11,7 @@ export interface SIndexDAO extends ReduceableDAO<SindexEntry> {
 
   getAvailableForPubkey(pubkey:string): Promise<{ amount:number, base:number }[]>
 
-  getAvailableForConditions(conditionsStr:string): Promise<{ amount:number, base:number }[]>
+  getAvailableForConditions(conditionsStr:string): Promise<SindexEntry[]>
 
   trimConsumedSource(belowNumber:number): Promise<void>
 

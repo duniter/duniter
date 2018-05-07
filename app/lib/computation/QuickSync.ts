@@ -43,7 +43,7 @@ const sync_memoryDAL:AccountsGarbagingDAL = {
     }
   },
   sindexDAL: {
-    getAvailableForConditions: (conditions:string) => null
+    getAvailableForConditions: (conditions:string) => Promise.resolve([])
   }
 }
 
@@ -100,7 +100,9 @@ export class QuickSynchronizer {
 
   async quickApplyBlocks(blocks:BlockDTO[], to: number): Promise<void> {
 
-    sync_memoryDAL.sindexDAL = { getAvailableForConditions: (conditions:string) => this.dal.sindexDAL.getAvailableForConditions(conditions) }
+    sync_memoryDAL.sindexDAL = {
+      getAvailableForConditions: (conditions:string) => this.dal.sindexDAL.getAvailableForConditions(conditions)
+    }
 
     await this.dal.blockDAL.insertBatch(blocks.map((b:any) => {
       const block = DBBlock.fromBlockDTO(b)

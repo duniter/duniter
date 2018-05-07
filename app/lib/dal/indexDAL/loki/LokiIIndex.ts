@@ -1,9 +1,9 @@
 import {FullIindexEntry, IindexEntry, Indexer} from "../../../indexer"
 import {IIndexDAO} from "../abstract/IIndexDAO"
-import {OldIindexEntry} from "../../sqliteDAL/index/IIndexDAL"
 import {LokiPubkeySharingIndex} from "./LokiPubkeySharingIndex"
 import {getDurationInMicroSeconds, getMicrosecondsTime} from "../../../../ProcessCpuProfiler"
 import {NewLogger} from "../../../logger"
+import {OldIindexEntry} from "../../../db/OldIindexEntry"
 
 export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements IIndexDAO {
 

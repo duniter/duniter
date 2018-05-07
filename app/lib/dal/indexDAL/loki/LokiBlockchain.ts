@@ -87,6 +87,15 @@ export class LokiBlockchain extends LokiIndex<DBBlock> implements BlockchainDAO 
       .remove()
   }
 
+  async trimBlocks(number:number): Promise<void> {
+    await this.collection
+      .chain()
+      .find({
+        number: { $lte: number }
+      })
+      .remove()
+  }
+
   async getAbsoluteBlock(number: number, hash: string): Promise<DBBlock | null> {
     return this.collection
       .chain()
@@ -226,4 +235,14 @@ export class LokiBlockchain extends LokiIndex<DBBlock> implements BlockchainDAO 
     }
   }
 
+  async getNonForkChunk(start: number, end: number): Promise<DBBlock[]> {
+    return this.collection
+      .chain()
+      .find({
+        fork: false,
+        number: { $between: [start, end ]}
+      })
+      .simplesort('number')
+      .data()
+  }
 }

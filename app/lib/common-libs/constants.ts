@@ -299,7 +299,10 @@ export const CommonConstants = {
     SPECIAL_BLOCK
   },
 
-  BLOCK_MAX_TX_CHAINING_DEPTH: 5
+  BLOCK_MAX_TX_CHAINING_DEPTH: 5,
+
+  CONST_BLOCKS_CHUNK: 250,
+  BLOCKS_IN_MEMORY_MAX: 288 * 60 // 60 days of blocks
 }
 
 function exact (regexpContent:string) {

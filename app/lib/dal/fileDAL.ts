@@ -11,6 +11,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
+import * as fs from 'fs'
+import * as path from 'path'
 import {SQLiteDriver} from "./drivers/SQLiteDriver"
 import {ConfDAL} from "./fileDALs/ConfDAL"
 import {StatDAL} from "./fileDALs/StatDAL"
@@ -21,6 +23,7 @@ import {DBIdentity, IdentityDAL} from "./sqliteDAL/IdentityDAL"
 import {
   CindexEntry,
   FullCindexEntry,
+  FullIindexEntry,
   FullMindexEntry,
   FullSindexEntry,
   IindexEntry,
@@ -66,9 +69,10 @@ import {LokiPeer} from "./indexDAL/loki/LokiPeer"
 import {DBTx} from "../db/DBTx"
 import {DBWallet} from "../db/DBWallet"
 import {Tristamp} from "../common/Tristamp"
+import {CFSBlockchainArchive} from "./indexDAL/CFSBlockchainArchive"
+import {CFSCore} from "./fileDALs/CFSCore"
+import {BlockchainArchiveDAO} from "./indexDAL/abstract/BlockchainArchiveDAO"
 
-const fs      = require('fs')
-const path    = require('path')
 const readline = require('readline')
 const _       = require('underscore');
 const indexer = require('../indexer').Indexer
@@ -95,6 +99,7 @@ export class FileDAL {
   powDAL:PowDAL
   confDAL:ConfDAL
   statDAL:StatDAL
+  blockchainArchiveDAL:BlockchainArchiveDAO<DBBlock>
 
   // SQLite DALs
   metaDAL:MetaDAL
@@ -128,6 +133,7 @@ export class FileDAL {
     this.powDAL = new PowDAL(this.rootPath, params.fs)
     this.confDAL = new ConfDAL(this.rootPath, params.fs)
     this.metaDAL = new (require('./sqliteDAL/MetaDAL').MetaDAL)(this.sqliteDriver);
+    this.blockchainArchiveDAL = new CFSBlockchainArchive(new CFSCore(path.join(this.rootPath, '/archives'), params.fs), CommonConstants.CONST_BLOCKS_CHUNK)
     this.blockDAL = new LokiBlockchain(this.loki.getLokiInstance())
     this.txsDAL = new LokiTransactions(this.loki.getLokiInstance())
     this.statDAL = new StatDAL(this.rootPath, params.fs)
@@ -158,7 +164,8 @@ export class FileDAL {
       'mindexDAL': this.mindexDAL,
       'iindexDAL': this.iindexDAL,
       'sindexDAL': this.sindexDAL,
-      'cindexDAL': this.cindexDAL
+      'cindexDAL': this.cindexDAL,
+      'blockchainArchiveDAL': this.blockchainArchiveDAL,
     }
   }
 
@@ -175,6 +182,7 @@ export class FileDAL {
       this.iindexDAL,
       this.sindexDAL,
       this.cindexDAL,
+      this.blockchainArchiveDAL,
     ]
     for (const indexDAL of dals) {
       indexDAL.triggerInit()
@@ -195,6 +203,33 @@ export class FileDAL {
 
   getDBVersion() {
     return this.metaDAL.getVersion()
+  }
+
+  /**
+   * Transfer a chunk of blocks from memory DB to archives if the memory DB overflows.
+   * @returns {Promise<void>}
+   */
+  async archiveBlocks() {
+    const lastArchived = await this.blockchainArchiveDAL.getLastSavedBlock()
+    const current = await this.blockDAL.getCurrent()
+    const lastNumber = lastArchived ? lastArchived.number : -1
+    const currentNumber = current ? current.number : -1
+    const difference = currentNumber - lastNumber
+    if (difference > CommonConstants.BLOCKS_IN_MEMORY_MAX) {
+      const CHUNK_SIZE = this.blockchainArchiveDAL.chunkSize
+      const nbBlocksOverflow = difference - CommonConstants.BLOCKS_IN_MEMORY_MAX
+      const chunks = (nbBlocksOverflow - (nbBlocksOverflow % CHUNK_SIZE)) / CHUNK_SIZE
+      for (let i = 0; i < chunks; i++) {
+        const start = lastNumber + (i*CHUNK_SIZE) + 1
+        const end = lastNumber + (i*CHUNK_SIZE) + CHUNK_SIZE
+        const memBlocks = await this.blockDAL.getNonForkChunk(start, end)
+        if (memBlocks.length !== CHUNK_SIZE) {
+          throw Error(DataErrors[DataErrors.CANNOT_ARCHIVE_CHUNK_WRONG_SIZE])
+        }
+        await this.blockchainArchiveDAL.archive(memBlocks)
+        await this.blockDAL.trimBlocks(end)
+      }
+    }
   }
 
   writeFileOfBlock(block:DBBlock) {
@@ -241,14 +276,17 @@ export class FileDAL {
     return (await this.blockDAL.getBlock(number)) as DBBlock
   }
 
+  // Duniter-UI dependency
+  async getBlock(number: number): Promise<DBBlock|null> {
+    return this.getFullBlockOf(number)
+  }
+
   async getFullBlockOf(number: number): Promise<DBBlock|null> {
-    // TODO
-    return this.blockDAL.getBlock(number)
+    return (await this.blockDAL.getBlock(number)) || (await this.blockchainArchiveDAL.getBlockByNumber(number))
   }
 
   async getBlockstampOf(number: number): Promise<string|null> {
-    // TODO
-    const block = await this.blockDAL.getBlock(number)
+    const block = await this.getTristampOf(number)
     if (block) {
       return [block.number, block.hash].join('-')
     }
@@ -256,32 +294,27 @@ export class FileDAL {
   }
 
   async getTristampOf(number: number): Promise<Tristamp|null> {
-    // TODO
-    return this.blockDAL.getBlock(number)
+    return (await this.blockDAL.getBlock(number)) || (await this.blockchainArchiveDAL.getBlockByNumber(number))
   }
 
   async existsAbsoluteBlockInForkWindow(number:number, hash:string): Promise<boolean> {
-    // TODO
-    return !!(await this.blockDAL.getAbsoluteBlock(number, hash))
+    return !!(await this.getAbsoluteBlockByNumberAndHash(number, hash))
   }
 
   async getAbsoluteBlockInForkWindow(number:number, hash:string): Promise<DBBlock|null> {
-    // TODO
-    return this.blockDAL.getAbsoluteBlock(number, hash)
+    return this.getAbsoluteBlockByNumberAndHash(number, hash)
   }
 
   async getAbsoluteValidBlockInForkWindow(number:number, hash:string): Promise<DBBlock|null> {
-    // TODO: blocks that are not forks
-    const block = await this.blockDAL.getAbsoluteBlock(number, hash)
+    const block = await this.getAbsoluteBlockByNumberAndHash(number, hash)
     if (block && !block.fork) {
       return block
     }
     return null
   }
 
-  getAbsoluteBlockByNumberAndHash(number:number, hash:string): Promise<DBBlock|null> {
-    // TODO: first, look at fork window, and then fallback on archives
-    return this.blockDAL.getAbsoluteBlock(number, hash)
+  async getAbsoluteBlockByNumberAndHash(number:number, hash:string): Promise<DBBlock|null> {
+    return (await this.blockDAL.getAbsoluteBlock(number, hash)) || (await this.blockchainArchiveDAL.getBlock(number, hash))
   }
 
   async existsNonChainableLink(from:string, vHEAD_1:DBHead, sigStock:number) {
@@ -565,8 +598,8 @@ export class FileDAL {
   }
 
   // Duniter-UI dependency
-  async getWrittenIdtyByPubkey(pub:string) {
-    return !!(await this.iindexDAL.getFromPubkey(pub))
+  async getWrittenIdtyByPubkey(pub:string): Promise<FullIindexEntry | null> {
+    return await this.iindexDAL.getFromPubkey(pub)
   }
 
   async getWrittenIdtyByPubkeyForExistence(uid:string) {

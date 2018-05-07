@@ -29,13 +29,14 @@ import {dos2unix} from "../../../lib/common-libs/dos2unix"
 import {hashf} from "../../../lib/common"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {PeeringService} from "../../../service/PeeringService"
+import {CommonConstants} from "../../../lib/common-libs/constants"
 
 const _            = require('underscore');
 const moment       = require('moment');
 const multimeter   = require('multimeter');
 const makeQuerablePromise = require('querablep');
 
-const CONST_BLOCKS_CHUNK = 250;
+const CONST_BLOCKS_CHUNK = CommonConstants.CONST_BLOCKS_CHUNK
 const EVAL_REMAINING_INTERVAL = 1000;
 const INITIAL_DOWNLOAD_SLOTS = 1;
 
@@ -759,7 +760,6 @@ class P2PDownloader {
                         this.chunks[realIndex] = blocks;
                         // We pre-save blocks only for non-cautious sync
                         if (this.nocautious) {
-                          await this.dal.blockDAL.insertBatch(blocks.map((b:any) => BlockDTO.fromJSONObject(b)))
                           this.writtenChunks++
                           watcher.savedPercent(Math.round(this.writtenChunks / this.numberOfChunksToDownload * 100));
                         }
@@ -955,7 +955,7 @@ class P2PDownloader {
         // Store the file to avoid re-downloading
         if (this.localNumber <= 0 && chunk.length === CONST_BLOCKS_CHUNK) {
           await this.dal.confDAL.coreFS.makeTree(this.currency);
-          await this.dal.confDAL.coreFS.writeJSON(fileName, { blocks: chunk });
+          await this.dal.confDAL.coreFS.writeJSON(fileName, { blocks: chunk.map((b:any) => DBBlock.fromBlockDTO(b)) });
         }
         return chunk;
       }

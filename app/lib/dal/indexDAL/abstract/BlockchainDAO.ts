@@ -36,4 +36,8 @@ export interface BlockchainDAO extends GenericDAO<DBBlock> {
   removeForkBlock(number:number): Promise<void>
 
   removeForkBlockAboveOrEqual(number:number): Promise<void>
+
+  trimBlocks(number:number): Promise<void>
+
+  getNonForkChunk(start:number, end:number): Promise<DBBlock[]>
 }

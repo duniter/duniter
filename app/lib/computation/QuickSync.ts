@@ -102,6 +102,12 @@ export class QuickSynchronizer {
 
     sync_memoryDAL.sindexDAL = { getAvailableForConditions: (conditions:string) => this.dal.sindexDAL.getAvailableForConditions(conditions) }
 
+    await this.dal.blockDAL.insertBatch(blocks.map((b:any) => {
+      const block = DBBlock.fromBlockDTO(b)
+      block.fork = false
+      return block
+    }))
+
     for (const block of blocks) {
 
       // VERY FIRST: parameters, otherwise we compute wrong variables such as UDTime
@@ -224,8 +230,9 @@ export class QuickSynchronizer {
           // We trim it, not necessary to store it all (we already store the full blocks)
           sync_bindex.splice(0, sync_bindexSize);
 
-          // Process triming continuously to avoid super long ending of sync
+          // Process triming & archiving continuously to avoid super long ending of sync
           await this.dal.trimIndexes(sync_bindex[0].number);
+          await this.dal.archiveBlocks()
         }
       } else {
 

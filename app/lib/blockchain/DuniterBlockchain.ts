@@ -242,6 +242,7 @@ export class DuniterBlockchain {
     const MAX_BINDEX_SIZE = conf.forksize + bindexSize
     const currentSize = indexes.HEAD.number - TAIL.number + 1
     if (currentSize > MAX_BINDEX_SIZE) {
+      await dal.archiveBlocks()
       await dal.trimIndexes(indexes.HEAD.number - MAX_BINDEX_SIZE);
     }
 

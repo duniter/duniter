@@ -86,3 +86,5 @@ test/fast/dal/*-loki.d.ts
 test/fast/dal/*-loki.js*
 test/dal/loki.d.ts
 test/dal/loki.js*
+test/dal/blockchain-archive.d.ts
+test/dal/blockchain-archive.js*

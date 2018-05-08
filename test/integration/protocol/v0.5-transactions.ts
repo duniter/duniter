@@ -38,7 +38,7 @@ describe("Protocol 0.5 Transaction version", function() {
     await s1.commit({ time: now });
     await s1.commit({ time: now + 100 });
     await s1.commit({ time: now + 100 });
-    await cat.sendP(51, tac);
+    await cat.sendMoney(51, tac);
   })
 
   after(() => {

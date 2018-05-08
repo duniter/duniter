@@ -184,19 +184,6 @@ export class TestUser {
     })
   }
 
-  public send(amount:number, recipient:TestUser|string, comment?:string) {
-    const that = this
-    return async function(done:(e?:any)=>void) {
-      try {
-        let raw = await that.prepareITX(amount, recipient, comment)
-        await that.sendTX(raw)
-        done()
-      } catch (e) {
-        done(e)
-      }
-    };
-  };
-
   public async sendMoney(amount:number, recipient:TestUser, comment?:string) {
     const raw = await this.prepareITX(amount, recipient, comment)
     await this.sendTX(raw)
@@ -404,14 +391,5 @@ export class TestUser {
   public async lookup(pubkey:string, fromServer?:TestingServer): Promise<HttpLookup> {
     const node2 = await this.getContacter(fromServer)
     return node2.getLookup(pubkey);
-  }
-
-  public async sendP(amount:number, userid:TestUser|string, comment?:string) {
-    return new Promise((res, rej) => {
-      this.send(amount, userid, comment)((err:any) => {
-        if (err) return rej(err)
-        res()
-      })
-    })
   }
 }

@@ -70,7 +70,7 @@ describe("Revert two blocks", function() {
     await s1.commit({ time: now });
     await s1.commit({ time: now + 1 });
     await s1.commit({ time: now + 1 });
-    await cat.sendP(51, toc);
+    await cat.sendMoney(51, toc);
     await s1.commit({ time: now + 1 });
   });
 
@@ -189,7 +189,7 @@ describe("Revert two blocks", function() {
 
     before(async () => {
       await s1.dal.txsDAL.removeAll()
-      await cat.sendP(19, toc);
+      await cat.sendMoney(19, toc);
       await s1.dal.blockDAL.removeBlock('DELETE FROM block WHERE fork AND number = 3')
       await s1.commit({ time: now + 1 });
     })

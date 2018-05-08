@@ -60,7 +60,7 @@ describe("Testing transactions", function() {
     await s1.commit({
       time: now + 7210
     });
-    await tic.sendP(510, toc);
+    await tic.sendMoney(510, toc);
     await s1.expect('/tx/history/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', (res:any) => {
       res.should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
       res.should.have.property('history').property('pending').length(1);

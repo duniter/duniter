@@ -156,6 +156,6 @@ logger.addHomeLogs(Directory.INSTANCE_HOME)
 /**
 * Convenience function to get logger directly
 */
-export function NewLogger() {
+export function NewLogger(name?:string) {
   return logger
 }

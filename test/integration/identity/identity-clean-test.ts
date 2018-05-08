@@ -11,19 +11,15 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {TestingServer} from "../tools/toolbox"
+import {NewTestingServer, TestingServer} from "../tools/toolbox"
 import {TestUser} from "../tools/TestUser"
 import {BmaDependency} from "../../../app/modules/bma/index"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {HttpMembers} from "../../../app/modules/bma/lib/dtos"
+import {shutDownEngine} from "../tools/shutdown-engine"
+import {expectAnswer} from "../tools/http-expect"
 
-const duniter     = require('../../../index');
 const rp        = require('request-promise');
-const httpTest  = require('../tools/http');
-const commit    = require('../tools/commit');
-const shutDownEngine  = require('../tools/shutDownEngine');
-
-const expectAnswer   = httpTest.expectAnswer;
 
 const MEMORY_MODE = true;
 const commonConf = {
@@ -42,10 +38,10 @@ describe("Identities cleaned", function() {
 
   before(async () => {
 
-    s1 = duniter(
-      '/bb12',
-      MEMORY_MODE,
+    s1 = NewTestingServer(
       Underscore.extend({
+        name: 'bb12',
+        memory: MEMORY_MODE,
         port: '7733',
         pair: {
           pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -57,8 +53,6 @@ describe("Identities cleaned", function() {
     tic = new TestUser('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
     toc = new TestUser('cat', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
     tac = new TestUser('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: s1 });
-
-    const commitS1 = commit(s1);
 
     await s1.initWithDAL().then(BmaDependency.duniter.methods.bma).then((bmapi) => bmapi.openConnections());
     await cat.createIdentity();
@@ -76,7 +70,7 @@ describe("Identities cleaned", function() {
     await tic.cert(cat);
     await cat.join();
     await tic.join();
-    await commitS1();
+    await s1.commit()
 
     // We have the following WoT (diameter 1):
 

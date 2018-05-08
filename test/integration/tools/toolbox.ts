@@ -42,17 +42,19 @@ import {WS2PClient} from "../../../app/modules/ws2p/lib/WS2PClient"
 import {DBBlock} from "../../../app/lib/db/DBBlock"
 import {DBPeer} from "../../../app/lib/db/DBPeer"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
+import {BmaDependency} from "../../../app/modules/bma/index"
+import {NewLogger} from "../../../app/lib/logger"
+import {BlockProver} from "../../../app/modules/prover/lib/blockProver"
+import {DataErrors} from "../../../app/lib/common-libs/errors"
+import {until} from "./test-until"
+import {sync} from "./test-sync"
+import {expectAnswer, expectError, expectJSON} from "./http-expect"
 
 const assert      = require('assert');
 const rp          = require('request-promise');
 const es          = require('event-stream');
 const WebSocketServer = require('ws').Server
-const httpTest    = require('../tools/http');
-const sync        = require('../tools/sync');
-const commit      = require('../tools/commit');
-const until       = require('../tools/until');
-const bma         = require('../../../app/modules/bma').BmaDependency.duniter.methods.bma;
-const logger      = require('../../../app/lib/logger').NewLogger('toolbox');
+const logger      = NewLogger();
 
 require('../../../app/modules/bma').BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
 
@@ -311,7 +313,7 @@ export const waitForHeads = async (server:Server, nbHeads:number) => {
 export class TestingServer {
 
   private prover:Prover
-  private permaProver:PermanentProver
+  public permaProver:PermanentProver
   public bma:BmaApi
 
   constructor(
@@ -431,7 +433,7 @@ export class TestingServer {
 
   async initDalBmaConnections() {
     await this.server.initWithDAL()
-    const bmapi = await bma(this.server)
+    const bmapi = await BmaDependency.duniter.methods.bma(this.server)
     this.bma = bmapi
     const res = await bmapi.openConnections()
     return res
@@ -451,34 +453,53 @@ export class TestingServer {
 
 
   expect(uri:string, expectations:any) {
-    return typeof expectations == 'function' ? httpTest.expectAnswer(rp(this.url(uri), { json: true }), expectations) : httpTest.expectJSON(rp(this.url(uri), { json: true }), expectations);
+    return typeof expectations == 'function' ? expectAnswer(rp(this.url(uri), { json: true }), expectations) : expectJSON(rp(this.url(uri), { json: true }), expectations);
   }
 
   expectThat(uri:string, expectations:any) {
-    return httpTest.expectAnswer(rp(this.url(uri), { json: true }), expectations);
+    return expectAnswer(rp(this.url(uri), { json: true }), expectations);
   }
 
   expectJSON(uri:string, expectations:any) {
-    return httpTest.expectJSON(rp(this.url(uri), { json: true }), expectations);
+    return expectJSON(rp(this.url(uri), { json: true }), expectations);
   }
 
   expectError(uri:string, code:number, message = '') {
-    return httpTest.expectError(code, message, rp(this.url(uri), { json: true }));
+    return expectError(code, message, rp(this.url(uri), { json: true }));
   }
-
 
   syncFrom(otherServer:Server, fromIncuded:number, toIncluded:number) {
     return sync(fromIncuded, toIncluded, otherServer, this.server);
   }
 
-
   until(type:string, count:number) {
-    return until(this.server, type, count);
+    return until(this, type, count);
   }
 
-  async commit(options:any = null, noWait = false) {
-    const raw = await commit(this.server, null, noWait)(options);
-    return JSON.parse(raw);
+  async justCommit(options:any = null) {
+    const proven = await this.generateNext(options)
+    await this.server.writeBlock(proven, true, false)
+    return proven
+  }
+
+  async commit(options:any = null) {
+    const proven = await this.generateNext(options)
+    await this.server.writeBlock(proven, true, true) // The resolution is done manually
+    const blocksResolved = await this.server.BlockchainService.blockResolution()
+    if (!blocksResolved) {
+      throw Error(DataErrors[DataErrors.BLOCK_WASNT_COMMITTED])
+    }
+    return blocksResolved
+  }
+
+  private generateNext(options:any) {
+    const server = this.server as any
+    // Brings a priver to the server
+    if (!server._utProver) {
+      server._utProver = new BlockProver(server)
+      server._utGenerator = ProverDependency.duniter.methods.blockGenerator(server, server._utProver)
+    }
+    return server._utGenerator.makeNextBlock(null, null, options)
   }
 
   async commitWaitError(options:any, expectedError:string) {
@@ -491,8 +512,8 @@ export class TestingServer {
         }))
       }),
       (async () => {
-        const raw = await commit(this.server, null, true)(options);
-        return JSON.parse(raw);
+        const proven = await this.generateNext(options)
+        await this.server.writeBlock(proven, false)
       })()
     ])
     return results[1]
@@ -500,8 +521,7 @@ export class TestingServer {
 
   async commitExpectError(options:any) {
     try {
-      const raw = await commit(this.server)(options);
-      JSON.parse(raw);
+      await this.commit(options)
       throw { message: 'Commit operation should have thrown an error' };
     } catch (e) {
       if (e.statusCode) {
@@ -598,7 +618,7 @@ export class TestingServer {
 
   async prepareForNetwork() {
     await this.server.initWithDAL();
-    const bmaAPI = await bma(this.server);
+    const bmaAPI = await BmaDependency.duniter.methods.bma(this.server);
     await bmaAPI.openConnections();
     this.bma = bmaAPI;
     RouterDependency.duniter.methods.routeToNetwork(this.server)

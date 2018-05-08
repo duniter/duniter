@@ -13,13 +13,11 @@
 
 import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {HttpMerkleOfPeers} from "../../../app/modules/bma/lib/dtos"
+import {NewTestingServer} from "../tools/toolbox"
+import {BmaDependency} from "../../../app/modules/bma/index"
+import {expectAnswer, expectHttpCode} from "../tools/http-expect"
 
 const rp        = require('request-promise');
-const httpTest  = require('../tools/http');
-const node      = require('../tools/node');
-
-const expectHttpCode = httpTest.expectHttpCode;
-const expectAnswer = httpTest.expectAnswer;
 
 const commonConf = {
   bmaWithCrawler: true,
@@ -31,7 +29,8 @@ const commonConf = {
   sigQty: 1
 };
 
-const s1 = node('bb33', Underscore.extend({
+const s1 = NewTestingServer(Underscore.extend({
+  name: 'bb33',
   ipv4: '127.0.0.1',
   port: '20501',
   remoteport: '20501',
@@ -44,7 +43,8 @@ const s1 = node('bb33', Underscore.extend({
   sigQty: 1, dt: 0, ud0: 120
 }, commonConf));
 
-const s2 = node('bb12', Underscore.extend({
+const s2 = NewTestingServer(Underscore.extend({
+  name: 'bb12',
   port: '20502',
   remoteport: '20502',
   ws2p: { upnp: false },
@@ -57,10 +57,11 @@ const s2 = node('bb12', Underscore.extend({
 describe("Network Merkle", function() {
 
   before(async () => {
-    await s1.startTesting();
-    await s2.startTesting();
-    let peer1 = await s1.peeringP();
-    await s2.submitPeerP(peer1);
+    await s1.initDalBmaConnections()
+    await s2.initDalBmaConnections()
+    await s1._server.PeeringService.generateSelfPeer(s1._server.conf, 0)
+    await s2._server.PeeringService.generateSelfPeer(s1._server.conf, 0)
+    await s1.sharePeeringWith(s2)
   })
 
   describe("Server 1 /network/peering", function() {

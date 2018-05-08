@@ -16,10 +16,10 @@ import {TestUser} from "../tools/TestUser"
 import {BmaDependency} from "../../../app/modules/bma/index"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {HttpLookup, HttpMemberships} from "../../../app/modules/bma/lib/dtos"
+import {shutDownEngine} from "../tools/shutdown-engine"
+import {expectAnswer} from "../tools/http-expect"
 
 const rp        = require('request-promise');
-const httpTest  = require('../tools/http');
-const shutDownEngine  = require('../tools/shutDownEngine');
 
 const MEMORY_MODE = true;
 const commonConf = {
@@ -72,7 +72,7 @@ describe("Lookup identity grouping", () => {
     ])
   })
 
-  it('cat should have only 1 identity in 1 pubkey', () => httpTest.expectAnswer(rp('http://127.0.0.1:4452/wot/lookup/cat', { json: true }), (res:HttpLookup) => {
+  it('cat should have only 1 identity in 1 pubkey', () => expectAnswer(rp('http://127.0.0.1:4452/wot/lookup/cat', { json: true }), (res:HttpLookup) => {
     res.should.have.property('results').length(1);
     // cat pubkey
     res.results[0].should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
@@ -82,7 +82,7 @@ describe("Lookup identity grouping", () => {
     res.results[0].uids[0].should.have.property('uid').equal('cat');
   }));
 
-  it('tic should have only 2 identities in 1 pubkey', () => httpTest.expectAnswer(rp('http://127.0.0.1:4452/wot/lookup/tic', { json: true }), (res:HttpLookup) => {
+  it('tic should have only 2 identities in 1 pubkey', () => expectAnswer(rp('http://127.0.0.1:4452/wot/lookup/tic', { json: true }), (res:HttpLookup) => {
     // We want to have only 1 result for the 2 identities
     res.should.have.property('results').length(1);
     // because they share the same pubkey
@@ -95,7 +95,7 @@ describe("Lookup identity grouping", () => {
     res.results[0].uids[1].should.have.property('uid').equal('tic2');
   }));
 
-  it('should exist 2 pending memberships', () => httpTest.expectAnswer(rp('http://127.0.0.1:4452/wot/pending', { json: true }), (res:HttpMemberships) => {
+  it('should exist 2 pending memberships', () => expectAnswer(rp('http://127.0.0.1:4452/wot/pending', { json: true }), (res:HttpMemberships) => {
     res.should.have.property('memberships').length(2);
     res.memberships[0].should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
     res.memberships[0].should.have.property('uid').equal('tic1');

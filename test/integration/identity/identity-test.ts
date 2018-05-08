@@ -23,16 +23,14 @@ import {
 } from "../../../app/modules/bma/lib/dtos"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {ProverDependency} from "../../../app/modules/prover/index"
+import {shutDownEngine} from "../tools/shutdown-engine"
+import {expectAnswer, expectError} from "../tools/http-expect"
 
 const should    = require('should');
 const constants = require('../../../app/lib/constants');
 const rp        = require('request-promise');
-const httpTest  = require('../tools/http');
-const shutDownEngine  = require('../tools/shutDownEngine');
 
 BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
-
-const expectAnswer   = httpTest.expectAnswer;
 
 const MEMORY_MODE = true;
 const commonConf = {
@@ -168,7 +166,7 @@ describe("Identities collision", function() {
   });
 
   it('should have identity-of/aaa', function() {
-    return httpTest.expectError(404, "No member matching this pubkey or uid", rp('http://127.0.0.1:7799/wot/identity-of/aaa'));
+    return expectError(404, "No member matching this pubkey or uid", rp('http://127.0.0.1:7799/wot/identity-of/aaa'));
   });
 
   it('should have certifiers-of/cat giving results', function() {
@@ -414,7 +412,7 @@ describe("Identities collision", function() {
   })
 
   // it('memberships of man3', function() {
-  //   return httpTest.expectHttpCode(404, rp('http://127.0.0.1:7799/blockchain/memberships/man3'));
+  //   return expectHttpCode(404, rp('http://127.0.0.1:7799/blockchain/memberships/man3'));
   // });
   //
   // it('difficulties', function() {

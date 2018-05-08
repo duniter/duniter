@@ -19,7 +19,6 @@ const TestUser = require('./tools/TestUser').TestUser
 describe("Revoked pubkey replay", function() {
 
   const now = 1500000000
-  const DONT_WAIT_FOR_BLOCKCHAIN_CHANGE = true
   let s1:TestingServer, cat:any, tic:any
 
   const conf = { nbCores: 1, sigQty: 1 }
@@ -71,7 +70,7 @@ describe("Revoked pubkey replay", function() {
   it('should not try to include tic2 in a new block', async () => {
     await s1.commit()
     await tic.join()
-    const block = await s1.commit(null, DONT_WAIT_FOR_BLOCKCHAIN_CHANGE)
+    const block = await s1.justCommit()
     block.should.have.property('joiners').length(0)
   })
 

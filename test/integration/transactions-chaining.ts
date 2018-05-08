@@ -14,11 +14,11 @@
 import {CommonConstants} from "../../app/lib/common-libs/constants"
 import {TestUser} from "./tools/TestUser"
 import {TestingServer} from "./tools/toolbox"
+import {shouldNotFail} from "../unit-tools"
 
 const should = require('should');
 const assert = require('assert');
 const toolbox   = require('./tools/toolbox');
-const unit   = require('./tools/unit');
 
 describe("Transaction chaining", () => {
 
@@ -81,8 +81,8 @@ describe("Transaction chaining", () => {
       });
       const tmp = CommonConstants.TRANSACTION_MAX_TRIES;
       CommonConstants.TRANSACTION_MAX_TRIES = 2;
-      await unit.shouldNotFail(toc.sendTX(tx1));
-      await unit.shouldNotFail(toc.sendTX(tx2));
+      await shouldNotFail(toc.sendTX(tx1));
+      await shouldNotFail(toc.sendTX(tx2));
       (await s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1); // 1200
       (await s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(1); // 1200
       await s1.commit({ time: now + 7210 }); // TX1 commited only
@@ -110,13 +110,13 @@ describe("Transaction chaining", () => {
       let tx7 = await tic.prepareUTX(tx6, ['SIG(0)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { blockstamp, comment: "PING-PONG TX7" });
       const tmp = CommonConstants.TRANSACTION_MAX_TRIES;
       CommonConstants.TRANSACTION_MAX_TRIES = 2;
-      await unit.shouldNotFail(toc.sendTX(tx1));
-      await unit.shouldNotFail(toc.sendTX(tx2));
-      await unit.shouldNotFail(toc.sendTX(tx3));
-      await unit.shouldNotFail(toc.sendTX(tx4));
-      await unit.shouldNotFail(toc.sendTX(tx5));
-      await unit.shouldNotFail(toc.sendTX(tx6));
-      await unit.shouldNotFail(toc.sendTX(tx7));
+      await shouldNotFail(toc.sendTX(tx1));
+      await shouldNotFail(toc.sendTX(tx2));
+      await shouldNotFail(toc.sendTX(tx3));
+      await shouldNotFail(toc.sendTX(tx4));
+      await shouldNotFail(toc.sendTX(tx5));
+      await shouldNotFail(toc.sendTX(tx6));
+      await shouldNotFail(toc.sendTX(tx7));
       await s1.commitWaitError({ dontCareAboutChaining: true }, 'The maximum transaction chaining length per block is 5')
       CommonConstants.TRANSACTION_MAX_TRIES = tmp;
     })

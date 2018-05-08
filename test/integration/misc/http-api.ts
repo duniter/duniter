@@ -22,13 +22,13 @@ import {ProverDependency} from "../../../app/modules/prover/index"
 import {HttpBlock, HttpDifficulties} from "../../../app/modules/bma/lib/dtos"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {BlockDTO} from "../../../app/lib/dto/BlockDTO"
+import {shutDownEngine} from "../tools/shutdown-engine"
+import {expectAnswer, expectError} from "../tools/http-expect"
 
 const should    = require('should');
 const assert    = require('assert');
 const rp        = require('request-promise');
 const ws        = require('ws');
-const http      = require('../tools/http');
-const shutDownEngine  = require('../tools/shutDownEngine');
 
 ProverConstants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
 
@@ -170,7 +170,7 @@ describe("HTTP API", function() {
     })
 
     it('/block/88 should not exist', function() {
-      return http.expectError(404, rp('http://127.0.0.1:7777/blockchain/block/88'));
+      return expectError(404, rp('http://127.0.0.1:7777/blockchain/block/88'));
     });
 
     it('/current should exist', function() {
@@ -180,7 +180,7 @@ describe("HTTP API", function() {
     });
 
     it('/membership should not accept wrong signature', function() {
-      return http.expectError(400, 'wrong signature for membership', rp.post('http://127.0.0.1:7777/blockchain/membership', {
+      return expectError(400, 'wrong signature for membership', rp.post('http://127.0.0.1:7777/blockchain/membership', {
         json: {
           membership: 'Version: 10\n' +
           'Type: Membership\n' +
@@ -196,7 +196,7 @@ describe("HTTP API", function() {
     });
 
     it('/membership should not accept wrong signature 2', function() {
-      return http.expectError(400, 'Document has unkown fields or wrong line ending format', rp.post('http://127.0.0.1:7777/blockchain/membership', {
+      return expectError(400, 'Document has unkown fields or wrong line ending format', rp.post('http://127.0.0.1:7777/blockchain/membership', {
         json: {
           membership: 'Version: 2\n' +
           'Type: Membership\n' +
@@ -211,7 +211,7 @@ describe("HTTP API", function() {
     });
 
     it('/membership should not accept wrong signature 3', function() {
-      return http.expectError(400, 'Document has unkown fields or wrong line ending format', rp.post('http://127.0.0.1:7777/blockchain/membership', {
+      return expectError(400, 'Document has unkown fields or wrong line ending format', rp.post('http://127.0.0.1:7777/blockchain/membership', {
         json: {
           membership: 'Version: 2\n' +
           'Type: Membership\n' +
@@ -227,7 +227,7 @@ describe("HTTP API", function() {
     });
 
     it('/difficulties should have current block number + 1', function() {
-      return http.expectAnswer(rp('http://127.0.0.1:7777/blockchain/difficulties', { json: true }), function(res:HttpDifficulties) {
+      return expectAnswer(rp('http://127.0.0.1:7777/blockchain/difficulties', { json: true }), function(res:HttpDifficulties) {
         res.should.have.property('block').equal(5);
         res.should.have.property('levels').have.length(1);
       });

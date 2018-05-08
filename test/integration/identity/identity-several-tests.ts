@@ -16,108 +16,77 @@ import {BmaDependency} from "../../../app/modules/bma/index"
 import {HttpBlock, HttpLookup, HttpSigned, HttpSummary} from "../../../app/modules/bma/lib/dtos"
 import {NewTestingServer, TestingServer} from "../tools/toolbox"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
+import {shutDownEngine} from "../tools/shutdown-engine"
+import {shouldFail} from "../../unit-tools"
+import {expectAnswer} from "../tools/http-expect"
 
 const should = require('should');
 const assert = require('assert');
-const request = require('request');
 const constants = require('../../../app/lib/constants');
-const node   = require('../tools/node');
 const jspckg = require('../../../package');
-const httpTest  = require('../tools/http');
-const shutDownEngine  = require('../tools/shutDownEngine');
 const rp        = require('request-promise');
 
-const expectAnswer   = httpTest.expectAnswer;
 const MEMORY_MODE = true;
 
 BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
 
 describe("Integration", function() {
 
-  describe("Node 1", function() {
+  let node1:TestingServer, cat:TestUser, tac:TestUser, tic:TestUser, toc:TestUser
 
-    const node1 = node('db1', { upnp: false, currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, httplogs: false,
+  before(async () => {
+    node1 = NewTestingServer({
+      name: 'db1',
+      memory: MEMORY_MODE,
+      currency: 'bb', ipv4: 'localhost', port: 9999, remoteipv4: 'localhost', remoteport: 9999, httplogs: false,
       rootoffset: 0,
-      sigQty: 1,
+      sigQty: 1, sigPeriod: 0,
       pair: {
         pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
         sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
       }
-    });
+    })
 
-    const cat = new TestUser('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, node1);
-    const tac = new TestUser('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, node1);
-    const tic = new TestUser('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, node1);
-    const toc = new TestUser('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, node1);
+    cat = new TestUser('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: node1 })
+    tac = new TestUser('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: node1 })
+    tic = new TestUser('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: node1 })
+    toc = new TestUser('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: node1 })
+    await node1.initWithDAL().then(BmaDependency.duniter.methods.bma).then((bmapi) => bmapi.openConnections());
+  })
 
-    before(function(done) {
-      node1.startTesting()
-        .then(function(){
-          node1.before([])(done);
-        });
-    });
+  describe("Node 1", function() {
 
     describe("Testing technical API", function(){
 
-      before(function(done) {
-        node1.before([])(done);
-      });
-      after(node1.after());
-
-      it('/node/summary should give package.json version', node1.summary(function(summary:HttpSummary, done:any){
+      it('/node/summary should give package.json version', () => node1.expectJSON('/node/summary', (summary:HttpSummary) => {
         should.exists(summary);
         should.exists(summary.duniter);
         should.exists(summary.duniter.software);
         should.exists(summary.duniter.version);
         assert.equal(summary.duniter.software, "duniter");
         assert.equal(summary.duniter.version, jspckg.version);
-        done();
-      }));
-    });
+      }))
+    })
 
-    describe("Testing malformed documents", function(){
+    describe("Testing malformed documents", () => {
 
-      before(function(done) {
-        node1.before(function(node1) {
+      it('should not have crashed because of wrong tx', async () => {
+        const malformedTransaction = "Version: 2\n" +
+          "Type: Transaction\n" +
+          "Currency: null\n" +
+          "Issuers:\n" +
+          "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
+          "Inputs:\n" +
+          "0:T:1536:539CB0E60CD5F55CF1BE96F067E73BF55C052112:1.0\n" +
+          "Outputs:Comment: mon comments\n";
 
-          const malformedTransaction = "Version: 2\n" +
-            "Type: Transaction\n" +
-            "Currency: null\n" +
-            "Issuers:\n" +
-            "G2CBgZBPLe6FSFUgpx2Jf1Aqsgta6iib3vmDRA1yLiqU\n" +
-            "Inputs:\n" +
-            "0:T:1536:539CB0E60CD5F55CF1BE96F067E73BF55C052112:1.0\n" +
-            "Outputs:Comment: mon comments\n";
-
-
-          function sendRaw (raw:string) {
-            return function(done:any) {
-              post('/tx/process', {
-                "transaction": raw
-              }, done);
-            }
+        await shouldFail(node1.post('/tx/process', {
+          json: {
+            transaction: malformedTransaction
           }
-
-          function post(uri:string, data:any, done:any) {
-            const postReq = request.post({
-              "uri": 'http://' + [node1.server.conf.remoteipv4, node1.server.conf.remoteport].join(':') + uri,
-              "timeout": 1000 * 10
-            }, function (err:any, res:any, body:any) {
-              done(err, res, body);
-            });
-            postReq.form(data);
-          }
-          return [
-            sendRaw(malformedTransaction)
-          ];
-        }(node1))(done);
-      });
-      after(node1.after());
-
-      it('should not have crashed because of wrong tx', function(){
-        assert.equal(true, true);
-      });
-    });
+        }), '400 - {"ucode":1106,"message":"Requires a transaction"}')
+      })
+    })
 
     describe("Lookup on", function(){
 
@@ -131,8 +100,6 @@ describe("Integration", function() {
         // Certifications
         await cat.cert(tac);
       });
-
-      after(node1.after());
 
       describe("identities collisions", () => {
 
@@ -161,54 +128,47 @@ describe("Integration", function() {
 
       describe("user cat", function(){
 
-        it('should give only 1 result', node1.lookup('cat', function(res:HttpLookup, done:any){
+        it('should give only 1 result', () => node1.expectJSON('/wot/lookup/cat', (res:HttpLookup) => {
           should.exists(res);
           assert.equal(res.results.length, 1);
-          done();
         }));
 
-        it('should have sent 1 signature', node1.lookup('cat', function(res:HttpLookup, done:any){
+        it('should have sent 1 signature', () => node1.expectJSON('/wot/lookup/cat', (res:HttpLookup) => {
           should.exists(res);
           assert.equal(res.results[0].signed.length, 1);
           should.exists(res.results[0].signed[0].isMember);
           should.exists(res.results[0].signed[0].wasMember);
           assert.equal(res.results[0].signed[0].isMember, false);
           assert.equal(res.results[0].signed[0].wasMember, false);
-          done();
         }));
       });
 
       describe("user tac", function(){
 
-        it('should give only 1 result', node1.lookup('tac', function(res:HttpLookup, done:any){
+        it('should give only 1 result', () => node1.expectJSON('/wot/lookup/tac', (res:HttpLookup) => {
           should.exists(res);
           assert.equal(res.results.length, 1);
-          done();
         }));
 
-        it('should have 1 signature', node1.lookup('tac', function(res:HttpLookup, done:any){
+        it('should have 1 signature', () => node1.expectJSON('/wot/lookup/tac', (res:HttpLookup) => {
           should.exists(res);
           assert.equal(res.results[0].uids[0].others.length, 1);
-          done();
         }));
 
-        it('should have sent 0 signature', node1.lookup('tac', function(res:HttpLookup, done:any){
+        it('should have sent 0 signature', () => node1.expectJSON('/wot/lookup/tac', (res:HttpLookup) => {
           should.exists(res);
           assert.equal(res.results[0].signed.length, 0);
-          done();
         }));
       });
 
-      it('toc should give only 1 result', node1.lookup('toc', function(res:HttpLookup, done:any){
+      it('toc should give only 1 result', () => node1.expectJSON('/wot/lookup/toc', (res:HttpLookup) => {
         should.exists(res);
         assert.equal(res.results.length, 1);
-        done();
       }));
 
-      it('tic should give only 1 result', node1.lookup('tic', function(res:HttpLookup, done:any){
+      it('tic should give only 1 result', () => node1.expectJSON('/wot/lookup/tic', (res:HttpLookup) => {
         should.exists(res);
         assert.equal(res.results.length, 1);
-        done();
       }));
     });
   });

@@ -11,7 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {NewTestingServer, TestingServer} from "../tools/toolbox"
+import {NewTestingServer, serverWaitBlock, TestingServer} from "../tools/toolbox"
 import {TestUser} from "../tools/TestUser"
 import {CrawlerDependency} from "../../../app/modules/crawler/index"
 import {Contacter} from "../../../app/modules/crawler/lib/contacter"
@@ -19,15 +19,12 @@ import {PeerDTO} from "../../../app/lib/dto/PeerDTO"
 import {BmaDependency} from "../../../app/modules/bma/index"
 import {RouterDependency} from "../../../app/modules/router"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
+import {sync} from "../tools/test-sync"
+import {shutDownEngine} from "../tools/shutdown-engine"
+import {expectJSON} from "../tools/http-expect"
 
 const should    = require('should');
 const rp        = require('request-promise');
-const httpTest  = require('../tools/http');
-const sync      = require('../tools/sync');
-const toolbox   = require('../tools/toolbox');
-const shutDownEngine  = require('../tools/shutDownEngine');
-
-const expectJSON     = httpTest.expectJSON;
 
 const MEMORY_MODE = true;
 const commonConf = {
@@ -120,42 +117,42 @@ describe("Network peering", function() {
         await tic.join();
         await s1.commit();
         // Server 2 syncs block 0
-        await sync(0, 0, s1, s2);
-        await toolbox.serverWaitBlock(s1._server, 0)
+        await sync(0, 0, s1._server, s2._server);
+        await serverWaitBlock(s1._server, 0)
         // Server 3 syncs block 0
-        await sync(0, 0, s1, s3);
-        await toolbox.serverWaitBlock(s3._server, 0)
+        await sync(0, 0, s1._server, s3._server);
+        await serverWaitBlock(s3._server, 0)
         await nodeS1.getPeer().then((peer) => nodeS2.postPeer(PeerDTO.fromJSONObject(peer).getRawSigned())).catch(e => console.error(e))
         await nodeS2.getPeer().then((peer) => nodeS1.postPeer(PeerDTO.fromJSONObject(peer).getRawSigned())).catch(e => console.error(e))
         await nodeS3.getPeer().then((peer) => nodeS1.postPeer(PeerDTO.fromJSONObject(peer).getRawSigned())).catch(e => console.error(e))
         await s1.commit();
         await Promise.all([
-          toolbox.serverWaitBlock(s2._server, 1),
-          toolbox.serverWaitBlock(s3._server, 1)
+          serverWaitBlock(s2._server, 1),
+          serverWaitBlock(s3._server, 1)
         ])
         // A block was successfully spread accross the network
         await s2.bma.closeConnections();
         await s1.commit();
-        await toolbox.serverWaitBlock(s3._server, 2)
+        await serverWaitBlock(s3._server, 2)
         // Server 2 syncs block number 2 (it did not have it)
-        await sync(2, 2, s1, s2);
-        await toolbox.serverWaitBlock(s2._server, 2)
+        await sync(2, 2, s1._server, s2._server);
+        await serverWaitBlock(s2._server, 2)
         await s2.recomputeSelfPeer();
         await s2.bma.openConnections();
         await new Promise((resolve) => setTimeout(resolve, 1000));
         await Promise.all([
-          toolbox.serverWaitBlock(s2._server, 4),
-          toolbox.serverWaitBlock(s3._server, 4),
+          serverWaitBlock(s2._server, 4),
+          serverWaitBlock(s3._server, 4),
           s1.commit().then(() => s1.commit())
          ])
         await Promise.all([
-          toolbox.serverWaitBlock(s1._server, 5),
-          toolbox.serverWaitBlock(s2._server, 5),
+          serverWaitBlock(s1._server, 5),
+          serverWaitBlock(s2._server, 5),
           s3.commit()
         ])
         await Promise.all([
-          toolbox.serverWaitBlock(s1._server, 6),
-          toolbox.serverWaitBlock(s3._server, 6),
+          serverWaitBlock(s1._server, 6),
+          serverWaitBlock(s3._server, 6),
           s2.commit()
         ])
       })

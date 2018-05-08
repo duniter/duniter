@@ -15,12 +15,12 @@ import {NewTestingServer, TestingServer} from "../tools/toolbox"
 import {TestUser} from "../tools/TestUser"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {HttpSources} from "../../../app/modules/bma/lib/dtos"
+import {shouldFail, shouldNotFail} from "../../unit-tools"
+import {expectAnswer} from "../tools/http-expect"
 
 const assert = require('assert');
 const should = require('should');
 const rp        = require('request-promise');
-const unit   = require('../tools/unit');
-const httpTest  = require('../tools/http');
 
 /**
  * Test Crosschain algorithm described at https://en.bitcoin.it/wiki/Atomic_cross-chain_trading
@@ -163,8 +163,8 @@ describe("Crosschain transactions", function() {
         /**
          * Note: the ROLLBACK transactions have a locktime, and cannot be used before that delay.
          */
-        await unit.shouldFail(ticM.sendTX(mtx4), 'Locktime not elapsed yet');
-        await unit.shouldFail(tocB.sendTX(btx2), 'Locktime not elapsed yet');
+        await shouldFail(ticM.sendTX(mtx4), 'Locktime not elapsed yet');
+        await shouldFail(tocB.sendTX(btx2), 'Locktime not elapsed yet');
 
         /**
          * Let's say TOC agrees & and start COMMIT.
@@ -186,8 +186,8 @@ describe("Crosschain transactions", function() {
          * Now the transaction is fully COMMITTED! Look at rollback transactions: they will fail.
          */
 
-        await unit.shouldFail(tocB.sendTX(btx2), 'Source already consumed');
-        await unit.shouldFail(ticM.sendTX(mtx4), 'Source already consumed');
+        await shouldFail(tocB.sendTX(btx2), 'Source already consumed');
+        await shouldFail(ticM.sendTX(mtx4), 'Source already consumed');
       })
 
       it('toc should now have 0 BETA_BROUZOUF from Transaction sources due to COMMIT', () => {
@@ -348,15 +348,15 @@ describe("Crosschain transactions", function() {
         /**
          * Note: the ROLLBACK transactions have a locktime, and cannot be used before that delay.
          */
-        await unit.shouldFail(ticM.sendTX(mtx4), 'Locktime not elapsed yet');
-        await unit.shouldFail(tocB.sendTX(btx2), 'Locktime not elapsed yet');
+        await shouldFail(ticM.sendTX(mtx4), 'Locktime not elapsed yet');
+        await shouldFail(tocB.sendTX(btx2), 'Locktime not elapsed yet');
 
         // Increment the medianTime by 1
         await sM.commit({ time: now + 12 });
         await sB.commit({ time: now + 14 });
 
-        await unit.shouldNotFail(ticM.sendTX(mtx4)); // tic can rollback early (24h in real case) if toc does not reveal X
-        await unit.shouldFail(tocB.sendTX(btx2), 'Locktime not elapsed yet'); // This one has a longer locktime (48h in real case)
+        await shouldNotFail(ticM.sendTX(mtx4)); // tic can rollback early (24h in real case) if toc does not reveal X
+        await shouldFail(tocB.sendTX(btx2), 'Locktime not elapsed yet'); // This one has a longer locktime (48h in real case)
 
         // Rollback for TIC(M) should be done
         await sM.commit({ time: now + 12 });
@@ -364,7 +364,7 @@ describe("Crosschain transactions", function() {
         // Make the medianTime increment by 1
         await sB.commit({ time: now + 14 });
 
-        await unit.shouldNotFail(tocB.sendTX(btx2)); // toc can rollback now (48h has passed). He has not revealed X, so he is safe.
+        await shouldNotFail(tocB.sendTX(btx2)); // toc can rollback now (48h has passed). He has not revealed X, so he is safe.
         await sB.commit({ time: now + 14 });
 
         /**
@@ -377,8 +377,8 @@ describe("Crosschain transactions", function() {
         // Assuming X was revealed ... but actually it is not since TOCM did succeed to send the TX
         let btx6 = await ticB.prepareUTX(btx1, ['XHX(1872767826647264) SIG(0)'], [{ qty: 120, base: 0, lock: 'SIG(' + ticB.pub + ')' }], { comment: 'tic takes money on BETA_BROUZOUF', blockstamp: blockstampB });
 
-        await unit.shouldFail(tocB.sendTX(btx6), 'Source already consumed');
-        await unit.shouldFail(ticM.sendTX(mtx5), 'Source already consumed');
+        await shouldFail(tocB.sendTX(btx6), 'Source already consumed');
+        await shouldFail(ticM.sendTX(mtx5), 'Source already consumed');
       })
 
       it('toc should now have 120 BETA_BROUZOUF from Transaction sources due to rollback TX', () => checkHaveSources(tocB, 1, 120));
@@ -390,7 +390,7 @@ describe("Crosschain transactions", function() {
 });
 
 function checkHaveSources(theUser:TestUser, sourcesCount:number, sourcesTotalAmount:number) {
-  return httpTest.expectAnswer(rp('http://' + theUser.node.server.conf.ipv4 + ':' + theUser.node.server.conf.port + '/tx/sources/' + theUser.pub, { json: true }), (res:HttpSources) => {
+  return expectAnswer(rp('http://' + theUser.node.server.conf.ipv4 + ':' + theUser.node.server.conf.port + '/tx/sources/' + theUser.pub, { json: true }), (res:HttpSources) => {
     const txRes = Underscore.where(res.sources, { type: 'T' })
     txRes.should.have.length(sourcesCount);
     let sum = 0;

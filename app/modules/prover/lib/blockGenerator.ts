@@ -691,7 +691,7 @@ export class BlockGeneratorWhichProves extends BlockGenerator {
     super(server)
   }
 
-  async makeNextBlock(block:DBBlock|null, trial:number, manualValues:any = null) {
+  async makeNextBlock(block:DBBlock|null, trial?:number|null, manualValues:any = null) {
     const unsignedBlock = block || (await this.nextBlock(manualValues))
     const trialLevel = trial || (await this.mainContext.getIssuerPersonalizedDifficulty(this.selfPubkey))
     return this.prover.prove(unsignedBlock, trialLevel, (manualValues && manualValues.time) || null);

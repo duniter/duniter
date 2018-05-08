@@ -209,7 +209,7 @@ export class PermanentProver {
     permanenceResolve()
   }
 
-  async blockchainChanged(gottenBlock:any) {
+  async blockchainChanged(gottenBlock?:any) {
     if (this.server && (!gottenBlock || !this.lastComputedBlock || gottenBlock.hash !== this.lastComputedBlock.hash)) {
       // Cancel any processing proof
       await this.prover.cancel()

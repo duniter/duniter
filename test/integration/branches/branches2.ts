@@ -16,21 +16,14 @@ import {BmaDependency} from "../../../app/modules/bma/index"
 import {OtherConstants} from "../../../app/lib/other_constants"
 import {NewLogger} from "../../../app/lib/logger"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
-import {waitForkResolution, waitToHaveBlock} from "../tools/toolbox"
+import {NewTestingServer, TestingServer, waitForkResolution, waitToHaveBlock} from "../tools/toolbox"
 import {TestUser} from "../tools/TestUser"
 import {CrawlerDependency} from "../../../app/modules/crawler/index"
+import {sync} from "../tools/test-sync"
+import {shutDownEngine} from "../tools/shutdown-engine"
+import {expectHttpCode, expectJSON} from "../tools/http-expect"
 
-const co        = require('co');
-const duniter     = require('../../../index');
-const bma       = BmaDependency.duniter.methods.bma;
 const rp        = require('request-promise');
-const httpTest  = require('../tools/http');
-const commit    = require('../tools/commit');
-const sync      = require('../tools/sync');
-const shutDownEngine  = require('../tools/shutDownEngine');
-
-const expectJSON     = httpTest.expectJSON;
-const expectHttpCode = httpTest.expectHttpCode;
 
 if (OtherConstants.MUTE_LOGS_DURING_UNIT_TESTS) {
   NewLogger().mute();
@@ -53,18 +46,18 @@ const commonConf = {
   sigQty: 1
 };
 
-let s1:any, s2:any, cat, toc
+let s1:TestingServer, s2:TestingServer, cat:TestUser, toc:TestUser
 
 const now = Math.round(new Date().getTime() / 1000);
 
 describe("SelfFork", function() {
 
-  before(() => co(function *() {
+  before(async () => {
 
-    s1 = duniter(
-      '/bb4',
-      MEMORY_MODE,
+    s1 = NewTestingServer(
       Underscore.extend({
+        name: 'bb4',
+        memory: MEMORY_MODE,
         port: '7781',
         pair: {
           pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -72,10 +65,10 @@ describe("SelfFork", function() {
         }
       }, commonConf));
 
-    s2 = duniter(
-      '/bb5',
-      MEMORY_MODE,
+    s2 = NewTestingServer(
       Underscore.extend({
+        name: 'bb5',
+        memory: MEMORY_MODE,
         port: '7782',
         pair: {
           pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
@@ -86,51 +79,46 @@ describe("SelfFork", function() {
     cat = new TestUser('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
     toc = new TestUser('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
 
-    const commitS1 = commit(s1);
-    const commitS2 = commit(s2, {
-      time: now + 37180
-    });
-
-    yield s1.initWithDAL().then(bma).then((bmapi:any) => bmapi.openConnections());
-    yield s2.initWithDAL().then(bma).then((bmapi:any) => bmapi.openConnections());
-    s1.addEndpointsDefinitions(() => BmaDependency.duniter.methods.getMainEndpoint(s1.conf))
-    s2.addEndpointsDefinitions(() => BmaDependency.duniter.methods.getMainEndpoint(s2.conf))
+    await s1.initWithDAL().then(BmaDependency.duniter.methods.bma).then((bmapi:any) => bmapi.openConnections());
+    await s2.initWithDAL().then(BmaDependency.duniter.methods.bma).then((bmapi:any) => bmapi.openConnections());
+    s1._server.addEndpointsDefinitions(() => BmaDependency.duniter.methods.getMainEndpoint(s1.conf))
+    s2._server.addEndpointsDefinitions(() => BmaDependency.duniter.methods.getMainEndpoint(s2.conf))
 
     // Server 1
-    yield cat.createIdentity();
-    yield toc.createIdentity();
-    yield toc.cert(cat);
-    yield cat.cert(toc);
-    yield cat.join();
-    yield toc.join();
+    await cat.createIdentity();
+    await toc.createIdentity();
+    await toc.cert(cat);
+    await cat.cert(toc);
+    await cat.join();
+    await toc.join();
 
-    yield commitS1({
+    await s1.commit({
       time: now
     });
-    yield commitS1();
-    yield commitS1();
-    yield commitS1();
+    await s1.commit();
+    await s1.commit();
+    await s1.commit();
 
     // Server 2
-    yield sync(0, 2, s1, s2);
-    yield waitToHaveBlock(s2, 2)
-    let s2p = yield s2.PeeringService.peer();
+    await sync(0, 2, s1._server, s2._server);
+    await waitToHaveBlock(s2._server, 2)
+    let s2p = await s2.PeeringService.peer();
 
-    yield commitS2(); // <-- block#3 is a fork block, S2 is committing another one than S1 issued
-    yield commitS2();
-    yield commitS2();
-    yield commitS2();
-    yield commitS2();
-    yield commitS2();
-    yield commitS2();
+    await s2.commit({ time: now + 37180 }); // <-- block#3 is a fork block, S2 is committing another one than S1 issued
+    await s2.commit({ time: now + 37180 });
+    await s2.commit({ time: now + 37180 });
+    await s2.commit({ time: now + 37180 });
+    await s2.commit({ time: now + 37180 });
+    await s2.commit({ time: now + 37180 });
+    await s2.commit({ time: now + 37180 });
 
-    yield s1.writePeer(s2p);
+    await s1.writePeer(s2p);
     // Forking S1 from S2
-    yield Promise.all([
-      waitForkResolution(s1, 9),
-      CrawlerDependency.duniter.methods.pullBlocks(s1, s2p.pubkey)
+    await Promise.all([
+      waitForkResolution(s1._server, 9),
+      CrawlerDependency.duniter.methods.pullBlocks(s1._server, s2p.pubkey)
     ])
-  }));
+  })
 
   after(() => {
     return Promise.all([
@@ -253,9 +241,9 @@ describe("SelfFork", function() {
       });
     });
 
-    it('should have 1 branch', () => co(function*() {
-      const branches = yield s2.BlockchainService.branches();
+    it('should have 1 branch', async () => {
+      const branches = await s2.BlockchainService.branches();
       branches.should.have.length(1);
-    }));
-  });
-});
+    })
+  })
+})

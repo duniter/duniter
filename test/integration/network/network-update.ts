@@ -17,8 +17,7 @@ import {TestUser} from "../tools/TestUser"
 import {NewTestingServer, TestingServer} from "../tools/toolbox"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {RouterDependency} from "../../../app/modules/router"
-
-const sync      = require('../tools/sync');
+import {sync} from "../tools/test-sync"
 
 const catKeyPair = {
   pair: {
@@ -64,7 +63,7 @@ describe("Network updating", function() {
       await s1.commit(); // block#0
     }
     // // s2 syncs from s1
-    await sync(0, 31, s1, s2);
+    await sync(0, 31, s1._server, s2._server);
 
     const b2 = await s1.makeNext({});
     await s1.postBlock(b2);

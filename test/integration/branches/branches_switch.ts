@@ -14,19 +14,14 @@
 import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {BmaDependency} from "../../../app/modules/bma/index"
 import {CrawlerDependency} from "../../../app/modules/crawler/index"
+import {NewTestingServer, TestingServer} from "../tools/toolbox"
+import {TestUser} from "../tools/TestUser"
+import {sync} from "../tools/test-sync"
+import {shutDownEngine} from "../tools/shutdown-engine"
+import {expectJSON} from "../tools/http-expect"
 
-const co = require('co');
-const duniter     = require('../../../index');
-const bma       = require('../../../app/modules/bma').BmaDependency.duniter.methods.bma;
-const TestUser  = require('../tools/TestUser').TestUser
 const rp        = require('request-promise');
-const httpTest  = require('../tools/http');
-const commit    = require('../tools/commit');
-const sync      = require('../tools/sync');
 const cluster   = require('cluster')
-const shutDownEngine  = require('../tools/shutDownEngine');
-
-const expectJSON     = httpTest.expectJSON;
 
 const MEMORY_MODE = true;
 const commonConf = {
@@ -38,18 +33,18 @@ const commonConf = {
   sigQty: 1
 };
 
-let s1:any, s2:any, cat, toc
+let s1:TestingServer, s2:TestingServer, cat:TestUser, toc:TestUser
 
 describe("Switch", function() {
 
-  before(() => co(function *() {
+  before(async () => {
 
     cluster.setMaxListeners(6)
 
-    s1 = duniter(
-      '/bb11',
-      MEMORY_MODE,
+    s1 = NewTestingServer(
       Underscore.extend({
+        name: 'bb11',
+        memory: MEMORY_MODE,
         switchOnHeadAdvance: 0,
         port: '7788',
         pair: {
@@ -60,10 +55,10 @@ describe("Switch", function() {
         sigQty: 1, dt: 1, ud0: 120
       }, commonConf));
 
-    s2 = duniter(
-      '/bb12',
-      MEMORY_MODE,
+    s2 = NewTestingServer(
       Underscore.extend({
+        name: 'bb12',
+        memory: MEMORY_MODE,
         switchOnHeadAdvance: 0,
         port: '7789',
         pair: {
@@ -75,41 +70,41 @@ describe("Switch", function() {
     cat = new TestUser('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
     toc = new TestUser('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
 
-    yield s1.initWithDAL().then(bma).then((bmapi:any) => bmapi.openConnections());
-    yield s2.initWithDAL().then(bma).then((bmapi:any) => bmapi.openConnections());
-    s1.addEndpointsDefinitions(() => BmaDependency.duniter.methods.getMainEndpoint(s1.conf))
-    s2.addEndpointsDefinitions(() => BmaDependency.duniter.methods.getMainEndpoint(s2.conf))
-    yield cat.createIdentity();
-    yield toc.createIdentity();
-    yield toc.cert(cat);
-    yield cat.cert(toc);
-    yield cat.join();
-    yield toc.join();
-    yield commit(s1)();
-    yield commit(s1)();
-    yield commit(s1)();
-    yield sync(0, 2, s1, s2);
+    await s1.initWithDAL().then(BmaDependency.duniter.methods.bma).then((bmapi:any) => bmapi.openConnections());
+    await s2.initWithDAL().then(BmaDependency.duniter.methods.bma).then((bmapi:any) => bmapi.openConnections());
+    s1._server.addEndpointsDefinitions(() => BmaDependency.duniter.methods.getMainEndpoint(s1.conf))
+    s2._server.addEndpointsDefinitions(() => BmaDependency.duniter.methods.getMainEndpoint(s2.conf))
+    await cat.createIdentity();
+    await toc.createIdentity();
+    await toc.cert(cat);
+    await cat.cert(toc);
+    await cat.join();
+    await toc.join();
+    await s1.commit();
+    await s1.commit();
+    await s1.commit();
+    await sync(0, 2, s1._server, s2._server);
 
-    let s2p = yield s2.PeeringService.peer();
+    let s2p = await s2.PeeringService.peer();
 
-    yield commit(s1)();
-    yield commit(s1)();
-    yield commit(s2)();
-    yield commit(s2)();
-    yield commit(s2)();
-    yield commit(s2)();
-    yield commit(s2)();
-    yield commit(s2)();
-    yield commit(s2)();
+    await s1.commit();
+    await s1.commit();
+    await s2.commit();
+    await s2.commit();
+    await s2.commit();
+    await s2.commit();
+    await s2.commit();
+    await s2.commit();
+    await s2.commit();
     // So we now have:
     // S1 01234
     // S2   `3456789
-    yield s1.writePeer(s2p)
+    await s1.writePeer(s2p)
 
     // Forking S1 from S2
-    yield CrawlerDependency.duniter.methods.pullBlocks(s1, s2p.pubkey);
+    await CrawlerDependency.duniter.methods.pullBlocks(s1._server, s2p.pubkey);
     // S1 should have switched to the other branch
-  }));
+  })
 
   after(() => {
     cluster.setMaxListeners(3)

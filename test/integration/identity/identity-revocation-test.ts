@@ -18,13 +18,11 @@ import {TestUser} from "../tools/TestUser"
 import {BmaDependency} from "../../../app/modules/bma/index"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {HttpLookup, HttpMembers} from "../../../app/modules/bma/lib/dtos"
+import {shutDownEngine} from "../tools/shutdown-engine"
+import {expectAnswer} from "../tools/http-expect"
 
 const should    = require('should');
 const rp        = require('request-promise');
-const httpTest  = require('../tools/http');
-const shutDownEngine  = require('../tools/shutDownEngine');
-
-const expectAnswer  = httpTest.expectAnswer;
 
 BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
 

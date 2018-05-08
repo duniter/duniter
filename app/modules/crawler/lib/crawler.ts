@@ -51,7 +51,7 @@ export class Crawler extends stream.Transform implements DuniterService {
     this.sandboxCrawler = new SandboxCrawler(server, conf, logger)
   }
 
-  pullBlocks(server:Server, pubkey:string) {
+  pullBlocks(server:Server, pubkey = "") {
     return this.blockCrawler.pullBlocks(server, pubkey)
   }
 
@@ -344,7 +344,7 @@ export class BlockCrawler {
     this.syncBlockFifo.kill();
   }
 
-  pullBlocks(server:Server, pubkey:string) {
+  pullBlocks(server:Server, pubkey = "") {
     return this.syncBlock(server, pubkey)
   }
 

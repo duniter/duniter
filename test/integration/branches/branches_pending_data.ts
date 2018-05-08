@@ -15,13 +15,10 @@ import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {NewTestingServer, TestingServer} from "../tools/toolbox"
 import {TestUser} from "../tools/TestUser"
 import {BmaDependency} from "../../../app/modules/bma/index"
+import {shutDownEngine} from "../tools/shutdown-engine"
+import {expectAnswer, expectJSON} from "../tools/http-expect"
 
 const rp        = require('request-promise');
-const httpTest  = require('../tools/http');
-const shutDownEngine  = require('../tools/shutDownEngine');
-
-const expectJSON     = httpTest.expectJSON;
-const expectAnswer   = httpTest.expectAnswer;
 
 const MEMORY_MODE = true;
 const commonConf = {

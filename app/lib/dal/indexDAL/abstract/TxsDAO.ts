@@ -30,4 +30,8 @@ export interface TxsDAO extends GenericDAO<DBTx> {
   removeAll(): Promise<void>
 
   sandbox:SandBox<{ issuers: string[], output_base:number, output_amount:number }>
+
+  getSandboxRoom(): Promise<number>
+
+  setSandboxSize(size:number): void
 }

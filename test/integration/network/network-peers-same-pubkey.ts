@@ -17,10 +17,10 @@ import {PeerDTO} from "../../../app/lib/dto/PeerDTO"
 import {HttpPeer} from "../../../app/modules/bma/lib/dtos"
 import {RouterDependency} from "../../../app/modules/router"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
+import {until} from "../tools/test-until"
+import {sync} from "../tools/test-sync"
 
 const should    = require('should');
-const sync      = require('../tools/sync');
-const until     = require('../tools/until');
 
 const catKeyPair = {
   pair: {
@@ -60,7 +60,7 @@ describe("Peer document", function() {
     await s1.recomputeSelfPeer(); // peer#1
     await s1.commit(); // block#2
     // // s2 syncs from s1
-    await sync(0, 2, s1, s2);
+    await sync(0, 2, s1._server, s2._server);
     await serverWaitBlock(s1._server, 2)
     await Promise.all([
       s1.get('/network/peering').then((peer:HttpPeer) => s2.post('/network/peering/peers', { peer: PeerDTO.fromJSONObject(peer).getRawSigned() })), // peer#2
@@ -72,7 +72,7 @@ describe("Peer document", function() {
       serverWaitBlock(s1._server, 3)
     ])
 
-    await sync(0, 3, s1, s3);
+    await sync(0, 3, s1._server, s3._server);
     await serverWaitBlock(s3._server, 3)
 
     const peer1 = await s1.get('/network/peering');

@@ -223,9 +223,10 @@ export class BlockchainService extends FIFOService {
     })
   }
 
-  async blockResolution() {
-    let added = true
-    while (added) {
+  async blockResolution(): Promise<BlockDTO|null> {
+    let lastAdded:BlockDTO|null = null
+    let added:BlockDTO|null
+    do {
       const current = await this.current()
       let potentials = []
       if (current) {
@@ -235,7 +236,7 @@ export class BlockchainService extends FIFOService {
         potentials = await this.dal.getPotentialRootBlocks()
         this.logger.info('Block resolution: %s potential blocks for root block...', potentials.length)
       }
-      added = false
+      added = null
       let i = 0
       while (!added && i < potentials.length) {
         const dto = BlockDTO.fromJSONObject(potentials[i])
@@ -245,17 +246,16 @@ export class BlockchainService extends FIFOService {
               await this.dal.removeTxByHash(tx.hash);
             }
           }
-          const addedBlock = await this.mainContext.checkAndAddBlock(dto)
-          added = true
+          lastAdded = added = await this.mainContext.checkAndAddBlock(dto)
           this.push({
             bcEvent: OtherConstants.BC_EVENT.HEAD_CHANGED,
-            block: addedBlock
+            block: added
           })
           // Clear invalid forks' cache
           this.invalidForks.splice(0, this.invalidForks.length)
         } catch (e) {
           this.logger.error(e)
-          added = false
+          added = null
           const theError = e && (e.message || e)
           this.push({
             blockResolutionError: theError
@@ -263,7 +263,8 @@ export class BlockchainService extends FIFOService {
         }
         i++
       }
-    }
+    } while (added)
+    return lastAdded
   }
 
   async forkResolution() {

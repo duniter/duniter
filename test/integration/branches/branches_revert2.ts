@@ -11,24 +11,18 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {TestingServer} from "../tools/toolbox"
+import {NewTestingServer, TestingServer} from "../tools/toolbox"
 import {TestUser} from "../tools/TestUser"
 import {BmaDependency} from "../../../app/modules/bma/index"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {ProverConstants} from "../../../app/modules/prover/lib/constants"
+import {shutDownEngine} from "../tools/shutdown-engine"
+import {expectAnswer, expectHttpCode, expectJSON} from "../tools/http-expect"
 
-const duniter     = require('../../../index');
 const rp        = require('request-promise');
-const httpTest  = require('../tools/http');
-const commit    = require('../tools/commit');
-const shutDownEngine  = require('../tools/shutDownEngine');
 
 ProverConstants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
 BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
-
-const expectJSON     = httpTest.expectJSON;
-const expectHttpCode = httpTest.expectHttpCode;
-const expectAnswer = httpTest.expectAnswer;
 
 const now = 1490000000;
 
@@ -48,10 +42,10 @@ describe("Revert two blocks", function() {
 
   before(async () => {
 
-    s1 = duniter(
-      '/bb11',
-      MEMORY_MODE,
+    s1 = NewTestingServer(
       Underscore.extend({
+        name: 'bb11',
+        memory: MEMORY_MODE,
         port: '7712',
         pair: {
           pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -73,11 +67,11 @@ describe("Revert two blocks", function() {
     await cat.cert(toc);
     await cat.join();
     await toc.join();
-    await commit(s1)({ time: now });
-    await commit(s1)({ time: now + 1 });
-    await commit(s1)({ time: now + 1 });
+    await s1.commit({ time: now });
+    await s1.commit({ time: now + 1 });
+    await s1.commit({ time: now + 1 });
     await cat.sendP(51, toc);
-    await commit(s1)({ time: now + 1 });
+    await s1.commit({ time: now + 1 });
   });
 
   after(() => {
@@ -197,7 +191,7 @@ describe("Revert two blocks", function() {
       await s1.dal.txsDAL.removeAll()
       await cat.sendP(19, toc);
       await s1.dal.blockDAL.removeBlock('DELETE FROM block WHERE fork AND number = 3')
-      await commit(s1)({ time: now + 1 });
+      await s1.commit({ time: now + 1 });
     })
 
     it('/block/0 should exist', function() {

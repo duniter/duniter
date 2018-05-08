@@ -17,14 +17,11 @@ import {TestUser} from "../tools/TestUser"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {HttpRequirements} from "../../../app/modules/bma/lib/dtos"
 import {ProverDependency} from "../../../app/modules/prover/index"
+import {shutDownEngine} from "../tools/shutdown-engine"
+import {expectAnswer, expectError} from "../tools/http-expect"
 
 const should    = require('should');
 const rp        = require('request-promise');
-const httpTest  = require('../tools/http');
-const shutDownEngine = require('../tools/shutDownEngine');
-
-const expectAnswer = httpTest.expectAnswer;
-const expectError  = httpTest.expectError;
 
 const MEMORY_MODE = true;
 const commonConf = {

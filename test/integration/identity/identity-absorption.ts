@@ -16,13 +16,11 @@ import {TestUser} from "../tools/TestUser"
 import {BmaDependency} from "../../../app/modules/bma/index"
 import {shouldFail} from "../../unit-tools"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
+import {shutDownEngine} from "../tools/shutdown-engine"
+import {expectAnswer} from "../tools/http-expect"
 
 const duniter     = require('../../../index');
 const rp        = require('request-promise');
-const httpTest  = require('../tools/http');
-const shutDownEngine  = require('../tools/shutDownEngine');
-
-const expectAnswer   = httpTest.expectAnswer;
 
 const MEMORY_MODE = true;
 const commonConf = {

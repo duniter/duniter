@@ -12,15 +12,13 @@
 // GNU Affero General Public License for more details.
 
 import {TestUser} from "../tools/TestUser"
-import {TestingServer} from "../tools/toolbox"
+import {NewTestingServer, TestingServer} from "../tools/toolbox"
 import {BmaDependency} from "../../../app/modules/bma/index"
 import {WoTBInstance} from "../../../app/lib/wot"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
+import {shutDownEngine} from "../tools/shutdown-engine"
 
 const should    = require('should');
-const duniter     = require('../../../index');
-const commit    = require('../tools/commit');
-const shutDownEngine  = require('../tools/shutDownEngine');
 
 const MEMORY_MODE = true;
 const commonConf = {
@@ -59,10 +57,10 @@ describe("WOTB module", () => {
     let wotb:WoTBInstance
 
     before(async () => {
-      s1 = duniter(
-        '/bb11',
-        MEMORY_MODE,
+      s1 = NewTestingServer(
         Underscore.extend({
+          name: 'bb11',
+          memory: MEMORY_MODE,
           port: '9337',
           pair: {
             pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -72,10 +70,10 @@ describe("WOTB module", () => {
           sigQty: 1, dt: 1, ud0: 120
         }, commonConf));
 
-      s2 = duniter(
-        '/bb41',
-        MEMORY_MODE,
+      s2 = NewTestingServer(
         Underscore.extend({
+          name: 'bb41',
+          memory: MEMORY_MODE,
           port: '9338',
           pair: {
             pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -86,10 +84,10 @@ describe("WOTB module", () => {
           msValidity: 400 // Memberships expire after 400 second delay
         }, commonConf));
 
-      s3 = duniter(
-        '/bb11',
-        MEMORY_MODE,
+      s3 = NewTestingServer(
         Underscore.extend({
+          name: 'bb11',
+          memory: MEMORY_MODE,
           port: '9339',
           pair: {
             pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
@@ -123,10 +121,10 @@ describe("WOTB module", () => {
       await cat.cert(toc);
       await cat.join();
       await toc.join();
-      await commit(s1)({
+      await s1.commit({
         time: now + 500
       });
-      await commit(s1)({
+      await s1.commit({
         time: now + 500
       });
     })
@@ -160,7 +158,7 @@ describe("WOTB module", () => {
       await tic.createIdentity();
       await toc.cert(tic);
       await tic.join();
-      await commit(s1)();
+      await s1.commit();
       let itic = await s1.dal.getWrittenIdtyByUIDForWotbId("tic");
       itic.should.have.property('wotb_id').equal(2);
       wotb.isEnabled(2).should.equal(true);
@@ -197,26 +195,26 @@ describe("WOTB module", () => {
       await cat2.join();
       await toc2.join();
       await tic2.join();
-      await commit(s2)({
+      await s2.commit({
         time: now
       });
       // Should make MS expire for toc2
-      await commit(s2)({
+      await s2.commit({
         time: now + 500
       });
-      await commit(s2)({
+      await s2.commit({
         time: now + 600
       });
       await cat2.join(); // Renew for not to be kicked!
       await tic2.join(); // Renew for not to be kicked!
-      await commit(s2)({
+      await s2.commit({
         time: now + 800
       });
-      await commit(s2)({
+      await s2.commit({
         time: now + 800
       });
       // Members excluded
-      await commit(s2)({
+      await s2.commit({
         time: now + 800
       });
     });
@@ -244,7 +242,7 @@ describe("WOTB module", () => {
 
     it('a leaver who joins back should be enabled', async () => {
       await toc2.join();
-      await commit(s2)();
+      await s2.commit();
       wotb.isEnabled(0).should.equal(true);
       wotb.isEnabled(1).should.equal(true);
       wotb.isEnabled(2).should.equal(true);
@@ -283,8 +281,8 @@ describe("WOTB module", () => {
     })
 
     it('two first commits: the WoT is new and OK', async () => {
-      await commit(s3)({ time: now });
-      await commit(s3)({
+      await s3.commit({ time: now });
+      await s3.commit({
         time: now + 1200
       });
       /**
@@ -301,14 +299,14 @@ describe("WOTB module", () => {
     });
 
     it('third & fourth commits: toc should have joined', async () => {
-      await commit(s3)({
+      await s3.commit({
         time: now + 2400
       });
       // MedianTime is now +500 for next certs
       await toc3.createIdentity();
       await toc3.join();
       await tic3.cert(toc3);
-      await commit(s3)({
+      await s3.commit({
         time: now + 4000
       });
       // MedianTime is now +1000 for next certs
@@ -328,7 +326,7 @@ describe("WOTB module", () => {
 
     it('fifth commit: cat still here, but not its certs', async () => {
       await toc3.cert(tic3);
-      await commit(s3)({
+      await s3.commit({
         time: now + 4000
       });
       /**
@@ -346,7 +344,7 @@ describe("WOTB module", () => {
     });
 
     it('sixth commit: cat is gone with its certs', async () => {
-      await commit(s3)({
+      await s3.commit({
         time: now + 2500
       });
       /**
@@ -366,7 +364,7 @@ describe("WOTB module", () => {
     it('seventh commit: toc is gone, but not its cert to tic', async () => {
       await tic3.cert(cat3);
       await cat3.join();
-      await commit(s3)({
+      await s3.commit({
         time: now + 5000
       });
       /**

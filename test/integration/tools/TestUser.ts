@@ -64,7 +64,7 @@ export class TestUser {
     }
   }
 
-  public async createIdentity(useRoot?:boolean, fromServer?:any) {
+  public async createIdentity(useRoot?:boolean|null, fromServer?:any) {
     if (!this.pub) {
       this.init(() => {})
     }

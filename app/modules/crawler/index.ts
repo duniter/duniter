@@ -35,7 +35,7 @@ export const CrawlerDependency = {
 
       contacter: (host:string, port:number, opts?:any) => new Contacter(host, port, opts),
 
-      pullBlocks: async (server:Server, pubkey:string) => {
+      pullBlocks: async (server:Server, pubkey = "") => {
         const crawler = new Crawler(server, server.conf, server.logger);
         return crawler.pullBlocks(server, pubkey);
       },

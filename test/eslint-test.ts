@@ -20,7 +20,6 @@ describe('Linting', () => {
   // matches a glob pattern
     const paths = [
       'app',
-      'bin/duniter',
       'test'
     ];
 

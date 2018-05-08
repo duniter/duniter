@@ -11,20 +11,17 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
+import {BlockProver} from "../../../app/modules/prover/lib/blockProver"
 
-const co = require('co')
 const should = require('should')
-const moment = require('moment')
 const winston = require('winston')
-const BlockProver = require('../../../app/modules/prover/lib/blockProver').BlockProver
 
 // Mute logger
 winston.remove(winston.transports.Console)
 
 describe('PoW block prover', () => {
 
-  let prover
+  let prover:BlockProver
 
   before(() => {
     prover = new BlockProver({
@@ -39,23 +36,23 @@ describe('PoW block prover', () => {
       },
       push: () => {},
       logger: winston
-    })
+    } as any)
   })
 
-  it('should be configurable', () => co(function*(){
-    const res1 = yield prover.changeCPU(0.2)
+  it('should be configurable', async () => {
+    const res1 = await prover.changeCPU(0.2)
     res1.should.deepEqual({ cpu: 0.2 })
-    const res2 = yield prover.changePoWPrefix('34')
+    const res2 = await prover.changePoWPrefix('34')
     res2.should.deepEqual({ prefix: '34' })
-  }));
+  })
 
-  it('should be able to make a proof', () => co(function*(){
+  it('should be able to make a proof', async () => {
     const block = {
       number: 35,
       issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd'
     }
     const forcedTime = 1;
-    const proof = yield prover.prove(block, 24, forcedTime)
+    const proof = await prover.prove(block, 24, forcedTime)
     proof.should.containEql({
       version: 10,
       nonce: 340000000000034,
@@ -79,33 +76,33 @@ describe('PoW block prover', () => {
       certifications: [],
       transactions: []
     });
-  }));
+  })
 
-  it('should be able to use a prefix maxed at 899', () => co(function*(){
+  it('should be able to use a prefix maxed at 899', async () => {
     const block = {
       number: 1,
       issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd'
     }
-    const params = yield prover.changePoWPrefix('899')
+    const params = await prover.changePoWPrefix('899')
     params.should.deepEqual({ prefix: '899' })
     const forcedTime = 1;
-    const proof = yield prover.prove(block, 1, forcedTime)
+    const proof = await prover.prove(block, 1, forcedTime)
     proof.nonce.should.equal(8990000000000001)
     String(proof.nonce).should.have.length(16)
-  }));
+  })
 
-  it('should be able to stop a proof', () => co(function*(){
+  it('should be able to stop a proof', async () => {
     const block = {
       number: 35,
       issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd'
     }
     const forcedTime = 1;
     const proofPromise = prover.prove(block, 70, forcedTime)
-    yield new Promise((res) => setTimeout(res, 20))
-    yield prover.cancel()
+    await new Promise((res) => setTimeout(res, 20))
+    await prover.cancel()
     let err = ''
     try {
-      yield proofPromise
+      await proofPromise
     } catch (e) {
       err = e
     } finally {
@@ -114,5 +111,5 @@ describe('PoW block prover', () => {
       }
       err.should.equal('Proof-of-work computation canceled because block received')
     }
-  }));
-});
+  })
+})

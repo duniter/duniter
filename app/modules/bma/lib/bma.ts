@@ -25,7 +25,6 @@ import {PeerDTO} from "../../../lib/dto/PeerDTO"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
 import {OtherConstants} from "../../../lib/other_constants"
 
-const co = require('co');
 const es = require('event-stream');
 const WebSocketServer = require('ws').Server;
 
@@ -110,7 +109,7 @@ export const bma = function(server:Server, interfaces:NetworkInterface[]|null, h
 
   }, (httpServer:any) => {
 
-    let currentBlock = {};
+    let currentBlock:any = {};
     let wssBlock = new WebSocketServer({
       server: httpServer,
       path: '/ws/block'
@@ -129,18 +128,16 @@ export const bma = function(server:Server, interfaces:NetworkInterface[]|null, h
       logger && logger.error(error);
     });
 
-    wssBlock.on('connection', function connection(ws:any) {
-      co(function *() {
-        try {
-          currentBlock = yield server.dal.getCurrentBlockOrNull();
-          if (currentBlock) {
-            const blockDTO:BlockDTO = BlockDTO.fromJSONObject(currentBlock)
-            ws.send(JSON.stringify(block2HttpBlock(blockDTO)))
-          }
-        } catch (e) {
-          logger.error(e);
+    wssBlock.on('connection', async function connection(ws:any) {
+      try {
+        currentBlock = await server.dal.getCurrentBlockOrNull();
+        if (currentBlock) {
+          const blockDTO:BlockDTO = BlockDTO.fromJSONObject(currentBlock)
+          ws.send(JSON.stringify(block2HttpBlock(blockDTO)))
         }
-      });
+      } catch (e) {
+        logger.error(e);
+      }
     });
 
     wssHeads.on('connection', async (ws:any) => {

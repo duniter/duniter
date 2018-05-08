@@ -15,7 +15,6 @@ import {CommonConstants} from "../../../app/lib/common-libs/constants"
 import {NewTestingServer, TestingServer} from "../tools/toolbox"
 import {TestUser} from "../tools/TestUser"
 
-const co        = require('co');
 const should    = require('should');
 const constants = require('../../../app/lib/constants');
 
@@ -24,8 +23,8 @@ const now = 1482300000;
 let s1:TestingServer, s2:TestingServer, s3:TestingServer, i1:TestUser, i2:TestUser, i3:TestUser, i4:TestUser, i5:TestUser, i6:TestUser, i7:TestUser, i7onS2:TestUser, i8:TestUser, i9:TestUser, i10:TestUser, i11:TestUser, i12:TestUser, i13:TestUser, i14:TestUser
 
 describe("Sandboxes", function() {
-
-  before(() => co(function*() {
+  
+  before(async () => {
 
     s1 = NewTestingServer({
       idtyWindow: 10,
@@ -71,15 +70,15 @@ describe("Sandboxes", function() {
 // i15 = new TestUser('i15', { pub: '8cHWEmVrdT249w8vJdiBms9mbu6CguQgXx2gRVE8gfnT', sec: '5Fy9GXiLMyhvRLCpoFf35XXNj24WXX29wM6xeCQiy5Uk7ggNhRcZjjp8GcpjRyE94oNR2jRNK4eAGiYUFnvbEnGB' }, { server: s1 });
 // i16 = new TestUser('i16', { pub: 'vi8hUTxss825cFCQE4SzmqBaAwLS236NmtrTQZBAAhG',  sec: '5dVvAdWKcndQSaR9pzjEriRhGkCjef74HzecqKnydBVHdxXDewpAu3mcSU72PRKcCkTYTJPpgWmwuCyZubDKmoy4' }, { server: s1 });
 
-    yield s1.initDalBmaConnections();
-    yield s2.initDalBmaConnections();
-    yield s3.initDalBmaConnections();
+    await s1.initDalBmaConnections();
+    await s2.initDalBmaConnections();
+    await s3.initDalBmaConnections();
     s1.dal.idtyDAL.setSandboxSize(3);
     s1.dal.msDAL.setSandboxSize(2);
     s1.dal.txsDAL.setSandboxSize(2);
     s2.dal.idtyDAL.setSandboxSize(10);
     s3.dal.idtyDAL.setSandboxSize(3);
-  }));
+  })
 
   after(() => {
     return Promise.all([
@@ -92,108 +91,108 @@ describe("Sandboxes", function() {
   describe('Identities', () => {
 
 
-    it('should i1, i2, i3', () => co(function *() {
-      (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(3);
-      yield i1.createIdentity();
-      yield i2.createIdentity();
-      yield i3.createIdentity();
-      (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
-    }));
+    it('should i1, i2, i3', async () => {
+      (await s1.dal.idtyDAL.getSandboxRoom()).should.equal(3);
+      await i1.createIdentity();
+      await i2.createIdentity();
+      await i3.createIdentity();
+      (await s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
+    })
 
-    it('should reject i4', () => shouldThrow(co(function *() {
-      (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
-      yield i4.createIdentity();
-    })));
+    it('should reject i4', () => shouldThrow((async () => {
+      (await s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
+      await i4.createIdentity();
+    })()))
 
-    it('should create i4 by i1->i4', () => co(function *() {
-      yield i4.createIdentity(null, s2);
-      yield i1.cert(i4, s2);
-    }));
+    it('should create i4 by i1->i4', async () => {
+      await i4.createIdentity(null, s2);
+      await i1.cert(i4, s2);
+    })
 
-    it('should accept i1 (already here) by i4->i1', () => co(function *() {
-      yield i4.cert(i1);
-    }));
+    it('should accept i1 (already here) by i4->i1', async () => {
+      await i4.cert(i1);
+    })
 
-    it('should commit & make room for sandbox, and commit again', () => co(function *() {
-      yield i1.join();
-      yield i4.join();
-      (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
-      yield s1.commit({ time: now });
-      (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(3); // i2, i3 were removed for too old identities (based on virtual root block)
-      yield i2.createIdentity();
-      yield i3.createIdentity();
-      (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(1);
-      yield s1.commit({ time: now });
-      yield s2.syncFrom(s1._server, 0, 1);
-      yield s3.syncFrom(s1._server, 0, 1);
-    }));
+    it('should commit & make room for sandbox, and commit again', async () => {
+      await i1.join();
+      await i4.join();
+      (await s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
+      await s1.commit({ time: now });
+      (await s1.dal.idtyDAL.getSandboxRoom()).should.equal(3); // i2, i3 were removed for too old identities (based on virtual root block)
+      await i2.createIdentity();
+      await i3.createIdentity();
+      (await s1.dal.idtyDAL.getSandboxRoom()).should.equal(1);
+      await s1.commit({ time: now });
+      await s2.syncFrom(s1._server, 0, 1);
+      await s3.syncFrom(s1._server, 0, 1);
+    })
 
-    it('should create i5(1)', () => co(function *() {
-      yield i5.createIdentity();
-      (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
-    }));
+    it('should create i5(1)', async () => {
+      await i5.createIdentity();
+      (await s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
+    })
 
     it('should reject i7(1)', () => shouldThrow(i7.createIdentity(true)));
 
-    it('should reject i7(1) by revocation', () => shouldThrow(co(function *() {
-      yield i7onS2.createIdentity(true);
-      const idty = yield i7onS2.lookup(i7onS2.pub);
-      yield i7.revoke(idty);
-    })));
+    it('should reject i7(1) by revocation', () => shouldThrow((async () => {
+      await i7onS2.createIdentity(true);
+      const idty = await i7onS2.lookup(i7onS2.pub);
+      await i7.revoke(idty);
+    })()))
 
-    it('should reject i1 -> i7 by revocation', () => shouldThrow(co(function *() {
-      yield i1.cert(i7, s2);
-    })));
+    it('should reject i1 -> i7 by revocation', () => shouldThrow((async () => {
+      await i1.cert(i7, s2);
+    })()))
 
-    it('should accept i7(1), i8(1), i9(1) by i1->i7(1), i1->i8(1), i1->i9(1)', () => co(function *() {
-      (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
-      yield i8.createIdentity(null, s2);
-      yield i1.cert(i8, s2);
-      (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
-      yield i9.createIdentity(null, s2);
-      yield i1.cert(i9, s2);
-      (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
-    }));
+    it('should accept i7(1), i8(1), i9(1) by i1->i7(1), i1->i8(1), i1->i9(1)', async () => {
+      (await s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
+      await i8.createIdentity(null, s2);
+      await i1.cert(i8, s2);
+      (await s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
+      await i9.createIdentity(null, s2);
+      await i1.cert(i9, s2);
+      (await s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
+    })
 
-    it('should reject i10(1) by i1->i10(1)', () => shouldThrow(co(function *() {
-      (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
-      yield i10.createIdentity(true, s2);
-      yield i1.cert(i10, s2);
-    })));
+    it('should reject i10(1) by i1->i10(1)', () => shouldThrow((async () => {
+      (await s1.dal.idtyDAL.getSandboxRoom()).should.equal(0);
+      await i10.createIdentity(true, s2);
+      await i1.cert(i10, s2);
+    })()))
 
-    it('should accept i10(0) by i1->i10(0) because of an superior date compared to others in sandbox', () => co(function *() {
-      yield i10.createIdentity(null, s3);
-      yield i1.cert(i10, s3);
-    }));
+    it('should accept i10(0) by i1->i10(0) because of an superior date compared to others in sandbox', async () => {
+      await i10.createIdentity(null, s3);
+      await i1.cert(i10, s3);
+    })
 
-    it('should accept i11(0) and i12(0) for the same reason', () => co(function *() {
-      yield i11.createIdentity(null, s3);
-      yield i12.createIdentity(null, s3);
-    }));
+    it('should accept i11(0) and i12(0) for the same reason', async () => {
+      await i11.createIdentity(null, s3);
+      await i12.createIdentity(null, s3);
+    })
 
-    it('should reject i13(0) because absolutely no more room is available', () => shouldThrow(co(function *() {
-      yield i13.createIdentity(true, s3);
-      yield i1.cert(i13, s3);
-    })));
+    it('should reject i13(0) because absolutely no more room is available', () => shouldThrow((async () => {
+      await i13.createIdentity(true, s3);
+      await i1.cert(i13, s3);
+    })()))
 
-    it('should accept an identity with the same key as server, always', () => co(function *() {
-      (yield s3.dal.idtyDAL.getSandboxRoom()).should.equal(0);
-      yield i14.createIdentity(null, s3);
-    }));
+    it('should accept an identity with the same key as server, always', async () => {
+      (await s3.dal.idtyDAL.getSandboxRoom()).should.equal(0);
+      await i14.createIdentity(null, s3);
+    })
 
-    it('should make room as identities get expired', () => co(function *() {
-      yield s1.commit({
+    it('should make room as identities get expired', async () => {
+      await s1.commit({
         time: now + 1000
       });
-      yield s1.commit({
+      await s1.commit({
         time: now + 1000
       });
-      yield s1.commit({
+      await s1.commit({
         time: now + 1000
       });
-      (yield s1.dal.idtyDAL.getSandboxRoom()).should.equal(3);
-    }));
-  });
+      (await s1.dal.idtyDAL.getSandboxRoom()).should.equal(3);
+    })
+  })
 
   describe('Certifications', () => {
 
@@ -204,34 +203,34 @@ describe("Sandboxes", function() {
       constants.SANDBOX_SIZE_CERTIFICATIONS = NEW_VALUE
     })
 
-    it('should accept i4->i7(0),i4->i8(0),i4->i9(0)', () => co(function *() {
-      yield i7.createIdentity();
-      yield i8.createIdentity();
-      yield i9.createIdentity();
-      (yield s1.dal.certDAL.getSandboxForKey('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc').getSandboxRoom()).should.equal(3);
-      yield i4.cert(i7);
-      yield i4.cert(i8);
-      yield i4.cert(i9);
-      (yield s1.dal.certDAL.getSandboxForKey('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc').getSandboxRoom()).should.equal(0);
-      (yield s1.dal.certDAL.getSandboxForKey('91dWdiyf7KaC4GAiKrwU7nGuue1vvmHqjCXbPziJFYtE').getSandboxRoom()).should.equal(3);
-    }));
+    it('should accept i4->i7(0),i4->i8(0),i4->i9(0)', async () => {
+      await i7.createIdentity();
+      await i8.createIdentity();
+      await i9.createIdentity();
+      (await s1.dal.certDAL.getSandboxForKey('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc').getSandboxRoom()).should.equal(3);
+      await i4.cert(i7);
+      await i4.cert(i8);
+      await i4.cert(i9);
+      (await s1.dal.certDAL.getSandboxForKey('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc').getSandboxRoom()).should.equal(0);
+      (await s1.dal.certDAL.getSandboxForKey('91dWdiyf7KaC4GAiKrwU7nGuue1vvmHqjCXbPziJFYtE').getSandboxRoom()).should.equal(3);
+    })
 
-    it('should reject i4->i10(0)', () => shouldThrow(co(function *() {
-      (yield s1.dal.certDAL.getSandboxForKey('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc').getSandboxRoom()).should.equal(0);
-      yield i4.cert(i10);
-    })));
+    it('should reject i4->i10(0)', () => shouldThrow((async () => {
+      (await s1.dal.certDAL.getSandboxForKey('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc').getSandboxRoom()).should.equal(0);
+      await i4.cert(i10);
+    })()))
 
-    it('should accept a certification from the same key as server, always', () => co(function *() {
-      (yield s1.dal.certDAL.getSandboxForKey('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc').getSandboxRoom()).should.equal(0);
-      yield i1.cert(i8);
-    }));
+    it('should accept a certification from the same key as server, always', async () => {
+      (await s1.dal.certDAL.getSandboxForKey('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc').getSandboxRoom()).should.equal(0);
+      await i1.cert(i8);
+    })
 
-    it('should make room as certs get expired', () => co(function *() {
-      yield s1.commit({
+    it('should make room as certs get expired', async () => {
+      await s1.commit({
         time: now + 1000
       });
-      (yield s1.dal.certDAL.getSandboxForKey('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc').getSandboxRoom()).should.equal(3);
-    }));
+      (await s1.dal.certDAL.getSandboxForKey('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc').getSandboxRoom()).should.equal(3);
+    })
 
     after(() => {
       constants.SANDBOX_SIZE_CERTIFICATIONS = OLD_VALUE
@@ -240,31 +239,31 @@ describe("Sandboxes", function() {
 
   describe('Memberships', () => {
 
-    it('should accept i8,i9', () => co(function *() {
-      yield i8.createIdentity(); // Identities have changed
-      yield i9.createIdentity();
-      (yield s1.dal.msDAL.getSandboxRoom()).should.equal(2);
-      yield i8.join();
-      yield i9.join();
-      (yield s1.dal.msDAL.getSandboxRoom()).should.equal(0);
-    }));
+    it('should accept i8,i9', async () => {
+      await i8.createIdentity(); // Identities have changed
+      await i9.createIdentity();
+      (await s1.dal.msDAL.getSandboxRoom()).should.equal(2);
+      await i8.join();
+      await i9.join();
+      (await s1.dal.msDAL.getSandboxRoom()).should.equal(0);
+    })
 
-    it('should reject i7', () => shouldThrow(co(function *() {
-      (yield s1.dal.msDAL.getSandboxRoom()).should.equal(0);
-      yield i7.join();
-    })));
+    it('should reject i7', () => shouldThrow((async () => {
+      (await s1.dal.msDAL.getSandboxRoom()).should.equal(0);
+      await i7.join();
+    })()))
 
-    it('should accept a membership from the same key as server, always', () => co(function *() {
-      (yield s1.dal.msDAL.getSandboxRoom()).should.equal(0);
-      yield i1.join();
-    }));
+    it('should accept a membership from the same key as server, always', async () => {
+      (await s1.dal.msDAL.getSandboxRoom()).should.equal(0);
+      await i1.join();
+    })
 
-    it('should make room as membership get expired', () => co(function *() {
-      yield s1.commit({
+    it('should make room as membership get expired', async () => {
+      await s1.commit({
         time: now + 1000
       });
-      (yield s1.dal.msDAL.getSandboxRoom()).should.equal(2);
-    }));
+      (await s1.dal.msDAL.getSandboxRoom()).should.equal(2);
+    })
   });
 
   describe('Transaction', () => {
@@ -275,28 +274,28 @@ describe("Sandboxes", function() {
       CommonConstants.TRANSACTION_MAX_TRIES = 2;
     })
 
-    it('should accept 2 transactions of 20, 30 units', () => co(function *() {
-      yield i4.send(20, i1);
-      yield i4.send(30, i1);
-      (yield s1.dal.txsDAL.getSandboxRoom()).should.equal(0);
-    }));
+    it('should accept 2 transactions of 20, 30 units', async () => {
+      await i4.sendMoney(20, i1);
+      await i4.sendMoney(30, i1);
+      (await s1.dal.txsDAL.getSandboxRoom()).should.equal(0);
+    })
 
-    it('should reject amount of 10', () => shouldThrow(co(function *() {
-      yield i4.send(10, i1);
-    })));
+    it('should reject amount of 10', () => shouldThrow((async () => {
+      await i4.sendMoney(10, i1);
+    })()))
 
-    it('should accept a transaction from the same key as server, always', () => co(function *() {
-      yield i1.send(10, i4);
-    }));
+    it('should accept a transaction from the same key as server, always', async () => {
+      await i1.sendMoney(10, i4);
+    })
 
-    it('should make room as transactions get commited', () => co(function *() {
-      yield s1.commit();
-      yield s1.commit();
-      (yield s1.dal.txsDAL.getSandboxRoom()).should.equal(2);
+    it('should make room as transactions get commited', async () => {
+      await s1.commit();
+      await s1.commit();
+      (await s1.dal.txsDAL.getSandboxRoom()).should.equal(2);
       CommonConstants.TRANSACTION_MAX_TRIES = tmp;
-    }));
-  });
-});
+    })
+  })
+})
 
 function shouldThrow<T>(promise:Promise<T>) {
   return promise.should.be.rejected();

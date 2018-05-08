@@ -1,11 +1,14 @@
 {
+  "parserOptions": {
+    "ecmaVersion": 8
+  },
   "plugins": [
     "mocha"
   ],
-//  "ecmaFeatures": {
-//    "arrowFunctions": true,
-//    "generators": true
-//  },
+  "ecmaFeatures": {
+    "arrowFunctions": true,
+    "generators": true
+  },
   "rules": {
 
     "curly": 0,

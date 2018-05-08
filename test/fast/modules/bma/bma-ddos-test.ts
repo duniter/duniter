@@ -13,7 +13,6 @@
 
 "use strict";
 // const should = require('should');
-// const co = require('co');
 // const limiter = require('../../app/lib/system/limiter');
 // const toolbox = require('../integration/tools/toolbox');
 // const TestUser = require('../integration/tools/TestUser').TestUser

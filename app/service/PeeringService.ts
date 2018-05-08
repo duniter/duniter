@@ -13,7 +13,6 @@
 
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {FileDAL} from "../lib/dal/fileDAL"
-import {DBPeer} from "../lib/dal/sqliteDAL/PeerDAL"
 import {DBBlock} from "../lib/db/DBBlock"
 import {Multicaster} from "../lib/streams/multicaster"
 import {PeerDTO} from "../lib/dto/PeerDTO"
@@ -22,9 +21,10 @@ import {dos2unix} from "../lib/common-libs/dos2unix"
 import {rawer} from "../lib/common-libs/index"
 import {Server} from "../../server"
 import {GlobalFifoPromise} from "./GlobalFifoPromise"
+import {DBPeer} from "../lib/db/DBPeer"
+import {Underscore} from "../lib/common-libs/underscore"
 
 const util           = require('util');
-const _              = require('underscore');
 const events         = require('events');
 const logger         = require('../lib/logger').NewLogger('peering');
 const constants      = require('../lib/constants');
@@ -131,8 +131,8 @@ export class PeeringService {
           const isOutdatedDocument = blockNumber < previousBlockNumber && !eraseIfAlreadyRecorded;
           const isAlreadyKnown = blockNumber == previousBlockNumber && !eraseIfAlreadyRecorded;
           if (isOutdatedDocument){
-            const error = _.extend({}, constants.ERRORS.NEWER_PEER_DOCUMENT_AVAILABLE);
-            _.extend(error.uerr, { peer: found });
+            const error = Underscore.extend({}, constants.ERRORS.NEWER_PEER_DOCUMENT_AVAILABLE);
+            Underscore.extend(error.uerr, { peer: found });
             throw error;
           } else if (isAlreadyKnown) {
             throw constants.ERRORS.PEER_DOCUMENT_ALREADY_KNOWN;
@@ -186,7 +186,7 @@ export class PeeringService {
     return this.server.writePeer(pretendedNewer)
   }
 
-  async generateSelfPeer(theConf:ConfDTO, signalTimeInterval = 0): Promise<DBPeer|null> {
+  async generateSelfPeer(theConf:{ currency: string }, signalTimeInterval = 0): Promise<DBPeer|null> {
     const current = await this.server.dal.getCurrentBlockOrNull();
     const currency = theConf.currency || constants.DEFAULT_CURRENCY_NAME;
     const peers = await this.dal.findPeers(this.selfPubkey);
@@ -194,11 +194,13 @@ export class PeeringService {
       version: constants.DOCUMENTS_VERSION,
       currency: currency,
       block: '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855',
-      endpoints: []
+      endpoints: <string[]>[]
     };
     const currentSelfPeer = peers[0]
     if (peers.length != 0 && currentSelfPeer) {
-      p1 = _(currentSelfPeer).extend({version: constants.DOCUMENTS_VERSION, currency: currency});
+      p1 = currentSelfPeer
+      p1.version = constants.DOCUMENTS_VERSION
+      p1.currency = currency
     }
     const localEndpoints = await this.server.getEndpoints()
     const otherPotentialEndpoints = this.getOtherEndpoints(p1.endpoints, localEndpoints)
@@ -239,7 +241,7 @@ export class PeeringService {
         currency: currency,
         pubkey: this.selfPubkey,
         block: targetBlockstamp ? targetBlockstamp : constants.PEER.SPECIAL_BLOCK,
-        endpoints: _.uniq(endpointsToDeclare)
+        endpoints: Underscore.uniq(endpointsToDeclare)
       };
       const raw2 = dos2unix(PeerDTO.fromJSONObject(p2).getRaw());
       const bmaAccess = PeerDTO.fromJSONObject(p2).getURL()

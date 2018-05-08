@@ -13,7 +13,6 @@
 
 import {LOCAL_RULES_HELPERS} from "../../app/lib/rules/local_rules"
 
-const _ = require('underscore')
 const assert = require('assert')
 
 describe("Protocol BR_G110 - chained tx depth", () => {

@@ -14,7 +14,6 @@
 "use strict";
 
 const co = require('co');
-const _ = require('underscore');
 const should = require('should');
 const assert = require('assert');
 const constants = require('../../app/lib/constants');

@@ -16,8 +16,7 @@ import {ConfDTO} from "../lib/dto/ConfDTO"
 import {Server} from "../../server"
 import {CommonConstants} from "../lib/common-libs/constants"
 import {Directory} from "../lib/system/directory"
-
-const _ = require('underscore')
+import {Underscore} from "../lib/common-libs/underscore"
 
 module.exports = {
   duniter: {
@@ -45,7 +44,7 @@ module.exports = {
       onConfiguredExecute: async (server:Server, conf:ConfDTO) => {
         const fs = await Directory.getHomeFS(false, Directory.INSTANCE_HOME, false)
         const lines = (await fs.fs.fsReadFile(Directory.INSTANCE_HOMELOG_FILE)).split('\n')
-        const aggregates = _.uniq(
+        const aggregates = Underscore.uniq(
           lines
           .map(l => l.match(/: (\[\w+\](\[\w+\])*)/))
           .filter(l => l)

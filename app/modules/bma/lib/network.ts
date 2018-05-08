@@ -11,15 +11,14 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
 import {NetworkConfDTO} from "../../../lib/dto/ConfDTO"
 import {Server} from "../../../../server"
 import {BMAConstants} from "./constants"
 import {BMALimitation} from "./limiter"
+import {Underscore} from "../../../lib/common-libs/underscore"
 
 const os = require('os');
 const Q = require('q');
-const _ = require('underscore');
 const ddos = require('ddos');
 const http = require('http');
 const express = require('express');
@@ -67,7 +66,7 @@ export const Network = {
     }
     const ddosConf = server.conf.dos || {};
     ddosConf.silentStart = true
-    ddosConf.whitelist = _.uniq((ddosConf.whitelist || []).concat(whitelist));
+    ddosConf.whitelist = Underscore.uniq((ddosConf.whitelist || []).concat(whitelist));
     const ddosInstance = new ddos(ddosConf);
     app.use(ddosInstance.express);
 
@@ -162,7 +161,7 @@ export const Network = {
       return {
         http: httpServer,
         closeSockets: () => {
-          _.keys(sockets).map((socketId:number) => {
+          Underscore.keys(sockets).map((socketId:string) => {
             sockets[socketId].destroy();
           });
         }
@@ -284,8 +283,8 @@ function getBestLocalIPv6() {
   const osInterfaces = listInterfaces();
   for (let netInterface of osInterfaces) {
     const addresses = netInterface.addresses;
-    const filtered = _(addresses).where({family: 'IPv6', scopeid: 0, internal: false });
-    const filtered2 = _.filter(filtered, (address:any) => !address.address.match(/^fe80/) && !address.address.match(/^::1/));
+    const filtered = Underscore.where(addresses, {family: 'IPv6', scopeid: 0, internal: false })
+    const filtered2 = Underscore.filter(filtered, (address:any) => !address.address.match(/^fe80/) && !address.address.match(/^::1/));
     if (filtered2[0]) {
       return filtered2[0].address;
     }
@@ -295,7 +294,7 @@ function getBestLocalIPv6() {
 
 function getBestLocal(family:string) {
   let netInterfaces = os.networkInterfaces();
-  let keys = _.keys(netInterfaces);
+  let keys = Underscore.keys(netInterfaces);
   let res = [];
   for (const name of keys) {
     let addresses = netInterfaces[name];
@@ -321,7 +320,7 @@ function getBestLocal(family:string) {
     /^Loopback/,
     /^None/
   ];
-  const best = _.sortBy(res, function(entry:any) {
+  const best = Underscore.sortBy(res, function(entry:any) {
     for (let i = 0; i < interfacePriorityRegCatcher.length; i++) {
       // `i` is the priority (0 is the better, 1 is the second, ...)
       if (entry.name.match(interfacePriorityRegCatcher[i])) return i;
@@ -333,7 +332,7 @@ function getBestLocal(family:string) {
 
 function listInterfaces() {
   const netInterfaces = os.networkInterfaces();
-  const keys = _.keys(netInterfaces);
+  const keys = Underscore.keys(netInterfaces);
   const res = [];
   for (const name of keys) {
     res.push({

@@ -25,9 +25,9 @@ import {ProxiesConf} from './app/lib/proxy';
 import {RouterDependency} from "./app/modules/router"
 import {OtherConstants} from "./app/lib/other_constants"
 import {Directory} from "./app/lib/system/directory"
+import {Underscore} from "./app/lib/common-libs/underscore"
 
 const path = require('path');
-const _ = require('underscore');
 const constants = require('./app/lib/constants');
 const logger = require('./app/lib/logger').NewLogger('duniter');
 
@@ -351,7 +351,7 @@ class Stack {
 
         // Register the configuration hook for saving phase (overrides the saved data)
         server.dal.saveConfHook = async (conf:ConfDTO) => {
-          const clonedConf = _.clone(conf);
+          const clonedConf = Underscore.clone(conf)
           for (const callback of this.configBeforeSaveCallbacks) {
             await callback(clonedConf, program, logger, server.dal.confDAL);
           }

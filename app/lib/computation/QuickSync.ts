@@ -19,8 +19,8 @@ import {CurrencyConfDTO} from "../dto/ConfDTO";
 import {FileDAL} from "../dal/fileDAL"
 import {DBBlock} from "../db/DBBlock"
 import {DBTx} from "../db/DBTx"
+import {Underscore} from "../common-libs/underscore"
 
-const _ = require('underscore')
 const constants = require('../constants')
 
 let sync_bindex: any [] = [];
@@ -171,7 +171,7 @@ export class QuickSynchronizer {
           const nextExpiringChanged = currentNextExpiring !== sync_nextExpiring
 
           // Fills in correctly the SINDEX
-          await Promise.all(_.where(sync_sindex.concat(local_sindex), { op: 'UPDATE' }).map(async (entry: any) => {
+          await Promise.all(Underscore.where(sync_sindex.concat(local_sindex), { op: 'UPDATE' }).map(async (entry: any) => {
             if (!entry.conditions) {
               const src = (await this.dal.sindexDAL.getSource(entry.identifier, entry.pos)) as FullSindexEntry
               entry.conditions = src.conditions;
@@ -246,8 +246,8 @@ export class QuickSynchronizer {
         await this.dal.cindexDAL.insertBatch(sync_cindex);
 
         // Save the intermediary table of wallets
-        const conditions = _.keys(sync_memoryWallets)
-        const nonEmptyKeys = _.filter(conditions, (k: any) => sync_memoryWallets[k] && sync_memoryWallets[k].balance > 0)
+        const conditions = Underscore.keys(sync_memoryWallets)
+        const nonEmptyKeys = Underscore.filter(conditions, (k: any) => sync_memoryWallets[k] && sync_memoryWallets[k].balance > 0)
         const walletsToRecord = nonEmptyKeys.map((k: any) => sync_memoryWallets[k])
         await this.dal.walletDAL.insertBatch(walletsToRecord)
         for (const cond of conditions) {

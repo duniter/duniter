@@ -29,7 +29,7 @@ const co = require('co');
 const es = require('event-stream');
 const WebSocketServer = require('ws').Server;
 
-export const bma = function(server:Server, interfaces:NetworkInterface[], httpLogs:boolean, logger:any): Promise<BmaApi> {
+export const bma = function(server:Server, interfaces:NetworkInterface[]|null, httpLogs:boolean, logger:any): Promise<BmaApi> {
 
   if (!interfaces) {
     interfaces = [];

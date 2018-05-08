@@ -210,7 +210,13 @@ export interface BlockchainBlocksDAL {
 
 export class Indexer {
 
-  static localIndex(block:BlockDTO, conf:CurrencyConfDTO): IndexEntry[] {
+  static localIndex(block:BlockDTO, conf:{
+    sigValidity:number,
+    msValidity:number,
+    msPeriod:number,
+    sigPeriod:number,
+    sigStock:number
+  }): IndexEntry[] {
 
     /********************
      * GENERAL BEHAVIOR
@@ -1628,7 +1634,9 @@ export class Indexer {
       const members = await dal.iindexDAL.getMembersPubkeys()
       for (const MEMBER of members) {
         dividends.push({
+          index: constants.S_INDEX,
           op: 'CREATE',
+          tx: null,
           identifier: MEMBER.pub,
           pos: HEAD.number,
           written_on: [HEAD.number, HEAD.hash].join('-'),
@@ -1833,27 +1841,27 @@ export class Indexer {
   }
 
   static iindexCreate(index: IndexEntry[]): IindexEntry[] {
-    return _(index).filter({ index: constants.I_INDEX, op: constants.IDX_CREATE })
+    return Underscore.where(index, { index: constants.I_INDEX, op: constants.IDX_CREATE }) as IindexEntry[]
   }
 
   static mindexCreate(index: IndexEntry[]): MindexEntry[] {
-    return _(index).filter({ index: constants.M_INDEX, op: constants.IDX_CREATE })
+    return Underscore.where(index, { index: constants.M_INDEX, op: constants.IDX_CREATE }) as MindexEntry[]
   }
 
   static iindex(index: IndexEntry[]): IindexEntry[] {
-    return _(index).filter({ index: constants.I_INDEX })
+    return Underscore.where(index, { index: constants.I_INDEX }) as IindexEntry[]
   }
 
   static mindex(index: IndexEntry[]): MindexEntry[] {
-    return _(index).filter({ index: constants.M_INDEX })
+    return Underscore.where(index, { index: constants.M_INDEX }) as MindexEntry[]
   }
 
   static cindex(index: IndexEntry[]): CindexEntry[] {
-    return _(index).filter({ index: constants.C_INDEX })
+    return Underscore.where(index, { index: constants.C_INDEX }) as CindexEntry[]
   }
 
   static sindex(index: IndexEntry[]): SindexEntry[] {
-    return _(index).filter({ index: constants.S_INDEX })
+    return Underscore.where(index, { index: constants.S_INDEX }) as SindexEntry[]
   }
 
   static DUP_HELPERS = {

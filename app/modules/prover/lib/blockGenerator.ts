@@ -11,7 +11,6 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
 import {Server} from "../../../../server"
 import {BlockchainContext} from "../../../lib/computation/BlockchainContext"
 import {TransactionDTO} from "../../../lib/dto/TransactionDTO"
@@ -30,14 +29,16 @@ import {BlockDTO} from "../../../lib/dto/BlockDTO"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {FileDAL} from "../../../lib/dal/fileDAL"
 import {DataErrors} from "../../../lib/common-libs/errors"
+import {Underscore} from "../../../lib/common-libs/underscore"
+import {DBCert} from "../../../lib/dal/sqliteDAL/CertDAL"
+import {Map} from "../../../lib/common-libs/crypto/map"
 
-const _               = require('underscore');
 const moment          = require('moment');
 const inquirer        = require('inquirer');
 
 const constants     = CommonConstants
 
-interface PreJoin {
+export interface PreJoin {
   identity: {
     pubkey: string
     uid: string
@@ -49,7 +50,7 @@ interface PreJoin {
   }
   key: null
   idHash: string
-  certs: any[]
+  certs: DBCert[]
   ms: any
 }
 
@@ -107,20 +108,19 @@ export class BlockGenerator {
     const exclusions = await this.dal.getToBeKickedPubkeys();
     const wereExcludeds = await this.dal.getRevokedPubkeys();
     const newCertsFromWoT = await generator.findNewCertsFromWoT(current);
-    const newcomers = await this.findNewcomers(current, (joinersData:any) => generator.filterJoiners(joinersData))
+    const newcomers = await this.findNewcomers(current, joinersData => generator.filterJoiners(joinersData))
     const leavers = await this.findLeavers(current)
     const transactions = await this.findTransactions(current, manualValues);
-    const certifiersOfNewcomers = _.uniq(_.keys(newcomers).reduce((theCertifiers:any, newcomer:string) => {
-      return theCertifiers.concat(_.pluck(newcomers[newcomer].certs, 'from'));
-    }, []));
-    const certifiers:string[] = [].concat(certifiersOfNewcomers);
+    const certifiersOfNewcomers = Underscore.uniq(Underscore.keys(newcomers).reduce((theCertifiers, newcomer:string) => {
+      return theCertifiers.concat(Underscore.pluck(newcomers[newcomer].certs, 'from'));
+    }, <string[]>[]))
     // Merges updates
-    _(newCertsFromWoT).keys().forEach(function(certified:string){
+    Underscore.keys(newCertsFromWoT).forEach(function(certified:string){
       newCertsFromWoT[certified] = newCertsFromWoT[certified].filter((cert:any) => {
         // Must not certify a newcomer, since it would mean multiple certifications at same time from one member
-        const isCertifier = certifiers.indexOf(cert.from) != -1;
+        const isCertifier = certifiersOfNewcomers.indexOf(cert.from) != -1;
         if (!isCertifier) {
-          certifiers.push(cert.from);
+          certifiersOfNewcomers.push(cert.from);
         }
         return !isCertifier;
       });
@@ -144,7 +144,7 @@ export class BlockGenerator {
         await LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), this.conf, options)
         const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
         await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal, async (txHash:string) => {
-          return _.findWhere(passingTxs, { hash: txHash }) || null
+          return Underscore.findWhere(passingTxs, { hash: txHash }) || null
         });
         await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal);
         transactions.push(tx);
@@ -191,21 +191,21 @@ export class BlockGenerator {
     return leaveData;
   }
 
-  private async findNewcomers(current:DBBlock|null, filteringFunc: (joinData: { [pub:string]: any }) => Promise<{ [pub:string]: any }>) {
+  private async findNewcomers(current:DBBlock|null, filteringFunc: (joinData: Map<PreJoin>) => Promise<Map<PreJoin>>) {
     const preJoinData = await this.getPreJoinData(current);
     const joinData = await filteringFunc(preJoinData);
     const members = await this.dal.getMembers();
-    const wotMembers = _.pluck(members, 'pubkey');
+    const wotMembers = Underscore.pluck(members, 'pubkey');
     // Checking step
-    let newcomers = _(joinData).keys();
-    newcomers = _.shuffle(newcomers)
+    let newcomers = Underscore.keys(joinData)
+    newcomers = Underscore.shuffle(newcomers)
     const nextBlockNumber = current ? current.number + 1 : 0;
     try {
       const realNewcomers = await this.iteratedChecking(newcomers, async (someNewcomers:string[]) => {
         const nextBlock = {
           number: nextBlockNumber,
           joiners: someNewcomers,
-          identities: _.filter(newcomers.map((pub:string) => joinData[pub].identity), { wasMember: false }).map((idty:any) => idty.pubkey)
+          identities: Underscore.where(newcomers.map((pub:string) => joinData[pub].identity), { wasMember: false }).map((idty:any) => idty.pubkey)
         };
         const theNewLinks = await this.computeNewLinks(nextBlockNumber, someNewcomers, joinData)
         await this.checkWoTConstraints(nextBlock, theNewLinks, current);
@@ -314,22 +314,22 @@ export class BlockGenerator {
     return preJoinData;
   }
 
-  private async computeNewLinks(forBlock:number, theNewcomers:any, joinData:any) {
+  private async computeNewLinks(forBlock:number, theNewcomers:any, joinData:Map<PreJoin>) {
     let newCerts = await this.computeNewCerts(forBlock, theNewcomers, joinData);
     return this.newCertsToLinks(newCerts);
   }
 
-  newCertsToLinks(newCerts:any) {
-    let newLinks:any = {};
-    _.mapObject(newCerts, function(certs:any, pubkey:string) {
-      newLinks[pubkey] = _.pluck(certs, 'from');
-    });
-    return newLinks;
+  newCertsToLinks(newCerts:Map<DBCert[]>) {
+    let newLinks: Map<string[]> = {}
+    for (const pubkey of Underscore.keys(newCerts)) {
+      newLinks[pubkey] = Underscore.pluck(newCerts[pubkey], 'from')
+    }
+    return newLinks
   }
 
-  async computeNewCerts(forBlock:number, theNewcomers:any, joinData:any) {
-    const newCerts:any = {}, certifiers = [];
-    const certsByKey = _.mapObject(joinData, function(val:any){ return val.certs; });
+  async computeNewCerts(forBlock:number, theNewcomers:any, joinData:Map<PreJoin>) {
+    const newCerts:Map<DBCert[]> = {}, certifiers:string[] = []
+    const certsByKey = Underscore.mapObjectByProp(joinData, 'certs')
     for (const newcomer of theNewcomers) {
       // New array of certifiers
       newCerts[newcomer] = newCerts[newcomer] || [];
@@ -352,10 +352,10 @@ export class BlockGenerator {
         }
       }
     }
-    return newCerts;
+    return newCerts
   }
 
-  async getSinglePreJoinData(current:DBBlock|null, idHash:string, joiners:string[]) {
+  async getSinglePreJoinData(current:DBBlock|null, idHash:string, joiners:string[]): Promise<PreJoin> {
     const identity = await this.dal.getGlobalIdentityByHashForJoining(idHash)
     let foundCerts = [];
     const vHEAD_1 = await this.mainContext.getvHEAD_1();
@@ -387,9 +387,9 @@ export class BlockGenerator {
       if (!current) {
         // Look for certifications from initial joiners
         const certs = await this.dal.certsNotLinkedToTarget(idHash);
-        foundCerts = _.filter(certs, function(cert:any){
+        foundCerts = Underscore.filter(certs, (cert:any) => {
           // Add 'joiners && ': special case when block#0 not written ANd not joiner yet (avoid undefined error)
-          return joiners && ~joiners.indexOf(cert.from);
+          return !!(joiners && ~joiners.indexOf(cert.from))
         });
       } else {
         // Look for certifications from WoT members
@@ -473,20 +473,20 @@ export class BlockGenerator {
     // Revocations have an impact on exclusions
     revocations.forEach((idty:any) => exclusions.push(idty.pubkey));
     // Prevent writing joins/updates for members who will be excluded
-    exclusions = _.uniq(exclusions);
+    exclusions = Underscore.uniq(exclusions);
     exclusions.forEach((excluded:any) => {
       delete updates[excluded];
       delete joinData[excluded];
       delete leaveData[excluded];
     });
     // Prevent writing joins/updates for excluded members
-    wereExcluded = _.uniq(wereExcluded);
+    wereExcluded = Underscore.uniq(wereExcluded);
     wereExcluded.forEach((excluded:any) => {
       delete updates[excluded];
       delete joinData[excluded];
       delete leaveData[excluded];
     });
-    _(leaveData).keys().forEach((leaver:any) => {
+    Underscore.keys(leaveData).forEach((leaver:any) => {
       delete updates[leaver];
       delete joinData[leaver];
     });
@@ -528,7 +528,7 @@ export class BlockGenerator {
       block.issuer = this.selfPubkey
     }
     // Members merkle
-    const joiners = _(joinData).keys();
+    const joiners = Underscore.keys(joinData)
     joiners.sort()
     const previousCount = current ? current.membersCount : 0;
     if (joiners.length == 0 && !current) {
@@ -542,7 +542,7 @@ export class BlockGenerator {
      * Priority 1: keep the WoT sane
      */
     // Certifications from the WoT, to the WoT
-    _(updates).keys().forEach((certifiedMember:any) => {
+    Underscore.keys(updates).forEach((certifiedMember:any) => {
       const certs = updates[certifiedMember] || [];
       certs.forEach((cert:any) => {
         if (blockLen < maxLenOfBlock) {
@@ -563,7 +563,7 @@ export class BlockGenerator {
       }
     });
     // Leavers
-    const leavers = _(leaveData).keys();
+    const leavers = Underscore.keys(leaveData)
     leavers.forEach((leaver:any) => {
       const data = leaveData[leaver];
       // Join only for non-members
@@ -602,7 +602,7 @@ export class BlockGenerator {
         block.joiners.push(MembershipDTO.fromJSONObject(data.ms).inline());
       }
     });
-    block.identities = _.sortBy(block.identities, (line:string) => {
+    block.identities = Underscore.sortBy(block.identities, (line:string) => {
       const sp = line.split(':');
       return sp[2] + sp[3];
     });
@@ -676,7 +676,7 @@ export class BlockGenerator {
     block.issuersFrameVar = vHEAD.issuersFrameVar;
     // Manual values before hashing
     if (manualValues) {
-      _.extend(block, _.omit(manualValues, 'time'));
+      Underscore.extend(block, Underscore.omit(manualValues, 'time'));
     }
     // InnerHash
     block.time = block.medianTime;
@@ -738,15 +738,16 @@ class NextBlockGenerator implements BlockGeneratorInterface {
         // Check if writable
         let duration = current && targetBlock ? current.medianTime - targetBlock.medianTime : 0;
         if (targetBlock && duration <= this.conf.sigWindow) {
-          cert.sig = '';
-          cert.currency = this.conf.currency;
-          cert.issuer = cert.from;
-          cert.idty_issuer = targetIdty.pubkey;
-          cert.idty_uid = targetIdty.uid;
-          cert.idty_buid = targetIdty.buid;
-          cert.idty_sig = targetIdty.sig;
-          cert.buid = current ? [cert.block_number, targetBlock.hash].join('-') : CommonConstants.SPECIAL_BLOCK;
-          const rawCert = CertificationDTO.fromJSONObject(cert).getRawUnSigned();
+          const rawCert = CertificationDTO.fromJSONObject({
+            sig: '',
+            currency: this.conf.currency,
+            issuer: cert.from,
+            idty_issuer: targetIdty.pubkey,
+            idty_uid: targetIdty.uid,
+            idty_buid: targetIdty.buid,
+            idty_sig: targetIdty.sig,
+            buid: current ? [cert.block_number, targetBlock.hash].join('-') : CommonConstants.SPECIAL_BLOCK,
+          }).getRawUnSigned();
           if (verify(rawCert, certSig, cert.from)) {
             cert.sig = certSig;
             let exists = false;
@@ -801,7 +802,7 @@ class NextBlockGenerator implements BlockGeneratorInterface {
         this.logger.warn(err);
       }
     }
-    _.keys(preJoinData).forEach( (joinPubkey:any) => filterings.push(filter(joinPubkey)));
+    Underscore.keys(preJoinData).forEach( (joinPubkey:any) => filterings.push(filter(joinPubkey)));
     await Promise.all(filterings)
     return filtered;
   }
@@ -819,7 +820,7 @@ class ManualRootGenerator implements BlockGeneratorInterface {
 
   async filterJoiners(preJoinData:any) {
     const filtered:any = {};
-    const newcomers = _(preJoinData).keys();
+    const newcomers = Underscore.keys(preJoinData)
     const uids:string[] = [];
     newcomers.forEach((newcomer:string) => uids.push(preJoinData[newcomer].ms.userid));
 

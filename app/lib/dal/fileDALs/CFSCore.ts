@@ -14,8 +14,8 @@
 "use strict";
 
 import {FileSystem} from "../../system/directory"
+import {Underscore} from "../../common-libs/underscore"
 
-const _ = require('underscore');
 const path = require('path');
 
 const DEEP_WRITE = true;
@@ -92,9 +92,9 @@ export class CFSCore {
       const deletedOfThisPath = deletedFiles.filter((f:string) => f.match(new RegExp('^' + this.toRemoveDirName(dirPath))));
       const locallyDeletedFiles = deletedOfThisPath.map((f:string) => f.replace(this.toRemoveDirName(dirPath), '')
         .replace(/^__/, ''));
-      files = _.difference(files, locallyDeletedFiles);
+      files = Underscore.difference(files, locallyDeletedFiles)
     }
-    return _.uniq(files);
+    return Underscore.uniq(files)
   };
 
   /**

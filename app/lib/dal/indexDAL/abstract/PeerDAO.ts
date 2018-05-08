@@ -1,5 +1,5 @@
 import {Initiable} from "../../sqliteDAL/Initiable"
-import {DBPeer} from "../../sqliteDAL/PeerDAL"
+import {DBPeer} from "../../../db/DBPeer"
 
 export interface PeerDAO extends Initiable {
 

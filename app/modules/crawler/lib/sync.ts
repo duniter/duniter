@@ -30,8 +30,10 @@ import {hashf} from "../../../lib/common"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {PeeringService} from "../../../service/PeeringService"
 import {CommonConstants} from "../../../lib/common-libs/constants"
+import {Underscore} from "../../../lib/common-libs/underscore"
+import {HttpMerkleOfPeers} from "../../bma/lib/dtos"
+import {DBPeer, JSONDBPeer} from "../../../lib/db/DBPeer"
 
-const _            = require('underscore');
 const moment       = require('moment');
 const multimeter   = require('multimeter');
 const makeQuerablePromise = require('querablep');
@@ -161,17 +163,17 @@ export class Synchroniser extends stream.Duplex {
       //=======
       // Peers (just for P2P download)
       //=======
-      let peers:PeerDTO[] = [];
+      let peers:(JSONDBPeer|null)[] = [];
       if (!nopeers && (to - localNumber > 1000)) { // P2P download if more than 1000 blocs
         this.watcher.writeStatus('Peers...');
         const merkle = await this.dal.merkleForPeers();
-        const getPeers = node.getPeers.bind(node);
+        const getPeers:(params:any) => Promise<HttpMerkleOfPeers> = node.getPeers.bind(node);
         const json2 = await getPeers({});
         const rm = new NodesMerkle(json2);
         if(rm.root() != merkle.root()){
           const leavesToAdd:string[] = [];
           const json = await getPeers({ leaves: true });
-          _(json.leaves).forEach((leaf:string) => {
+          json.leaves.forEach((leaf:string) => {
             if(merkle.leaves().indexOf(leaf) == -1){
               leavesToAdd.push(leaf);
             }
@@ -195,7 +197,7 @@ export class Synchroniser extends stream.Duplex {
       }
 
       if (!peers.length) {
-        peers.push(peer);
+        peers.push(DBPeer.fromPeerDTO(peer))
       }
       peers = peers.filter((p) => p);
 
@@ -206,7 +208,7 @@ export class Synchroniser extends stream.Duplex {
 
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = (askedCautious === true || localNumber >= 0);
-      const shuffledPeers = noShufflePeers ? peers : _.shuffle(peers);
+      const shuffledPeers = (noShufflePeers ? peers : Underscore.shuffle(peers)).filter(p => !!(p)) as JSONDBPeer[]
       const downloader = new P2PDownloader(rCurrent.currency, localNumber, to, rCurrent.hash, shuffledPeers, this.watcher, this.logger, hashf, this.dal, this.slowOption, !cautious, this.otherDAL);
 
       downloader.start();
@@ -224,7 +226,7 @@ export class Synchroniser extends stream.Duplex {
         }
 
         async applyBranch(blocks:BlockDTO[]) {
-          blocks = _.filter(blocks, (b:BlockDTO) => b.number <= to);
+          blocks = Underscore.filter(blocks, (b:BlockDTO) => b.number <= to);
           if (cautious) {
             for (const block of blocks) {
               if (block.number == 0) {
@@ -357,13 +359,13 @@ export class Synchroniser extends stream.Duplex {
       this.watcher.writeStatus('Peers...');
       await this.syncPeer(node);
       const merkle = await this.dal.merkleForPeers();
-      const getPeers = node.getPeers.bind(node);
+      const getPeers:(params:any) => Promise<HttpMerkleOfPeers> = node.getPeers.bind(node);
       const json2 = await getPeers({});
       const rm = new NodesMerkle(json2);
       if(rm.root() != merkle.root()){
         const leavesToAdd:string[] = [];
         const json = await getPeers({ leaves: true });
-        _(json.leaves).forEach((leaf:string) => {
+        json.leaves.forEach((leaf:string) => {
           if(merkle.leaves().indexOf(leaf) == -1){
             leavesToAdd.push(leaf);
           }
@@ -374,9 +376,11 @@ export class Synchroniser extends stream.Duplex {
             const jsonEntry = json3.leaf.value;
             const sign = json3.leaf.value.signature;
             const entry:any = {};
-            ["version", "currency", "pubkey", "endpoints", "block"].forEach((key) => {
-              entry[key] = jsonEntry[key];
-            });
+            entry.version = jsonEntry.version
+            entry.currency = jsonEntry.currency
+            entry.pubkey = jsonEntry.pubkey
+            entry.endpoints = jsonEntry.endpoints
+            entry.block = jsonEntry.block
             entry.signature = sign;
             this.watcher.writeStatus('Peer ' + entry.pubkey);
             await this.PeeringService.submitP(entry, false, to === undefined);
@@ -673,7 +677,7 @@ class P2PDownloader {
     private localNumber:number,
     private to:number,
     private toHash:string,
-    private peers:PeerDTO[],
+    private peers:JSONDBPeer[],
     private watcher:Watcher,
     private logger:any,
     private hashf:any,
@@ -832,7 +836,7 @@ class P2PDownloader {
       throw this.NO_NODES_AVAILABLE;
     }
     // We remove the nodes impossible to reach (timeout)
-    let withGoodDelays = _.filter(candidates, (c:any) => c.tta <= this.MAX_DELAY_PER_DOWNLOAD);
+    let withGoodDelays = Underscore.filter(candidates, (c:any) => c.tta <= this.MAX_DELAY_PER_DOWNLOAD);
     if (withGoodDelays.length === 0) {
       // No node can be reached, we can try to lower the number of nodes on which we download
       this.downloadSlots = Math.floor(this.downloadSlots / 2);
@@ -842,7 +846,7 @@ class P2PDownloader {
       return this.getP2Pcandidates();
     }
     const parallelMax = Math.min(this.PARALLEL_PER_CHUNK, withGoodDelays.length);
-    withGoodDelays = _.sortBy(withGoodDelays, (c:any) => c.tta);
+    withGoodDelays = Underscore.sortBy(withGoodDelays, (c:any) => c.tta);
     withGoodDelays = withGoodDelays.slice(0, parallelMax);
     // We temporarily augment the tta to avoid asking several times to the same node in parallel
     withGoodDelays.forEach((c:any) => c.tta = this.MAX_DELAY_PER_DOWNLOAD);
@@ -876,8 +880,8 @@ class P2PDownloader {
 
         // Opening/Closing slots depending on the Interne connection
         if (this.slots.length == this.downloadSlots) {
-          const peers = await Promise.all(_.values(this.nodes))
-          const downloading = _.filter(peers, (p:any) => p.downloading && p.ttas.length);
+          const peers = await Promise.all(Underscore.values(this.nodes))
+          const downloading = Underscore.filter(peers, (p:any) => p.downloading && p.ttas.length);
           const currentAvgDelay = downloading.reduce((sum:number, c:any) => {
               const tta = Math.round(c.ttas.reduce((sum:number, tta:number) => sum + tta, 0) / c.ttas.length);
               return sum + tta;

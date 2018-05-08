@@ -15,8 +15,8 @@ import {AbstractController} from "./AbstractController"
 import {BMAConstants} from "../constants"
 import {HttpMerkleOfPeers, HttpPeer, HttpPeers, HttpWS2PHeads, HttpWS2PInfo} from "../dtos"
 import {WS2PHead} from "../../../ws2p/lib/WS2PCluster"
+import {DBPeer} from "../../../../lib/db/DBPeer"
 
-const _                = require('underscore');
 const http2raw         = require('../http2raw');
 
 export class NetworkBinding extends AbstractController {
@@ -64,19 +64,8 @@ export class NetworkBinding extends AbstractController {
   async peers(): Promise<HttpPeers> {
     let peers = await this.server.dal.listAllPeers();
     return {
-      peers: peers.map((p:any) => {
-        return _.pick(p,
-          'version',
-          'currency',
-          'status',
-          'first_down',
-          'last_try',
-          'pubkey',
-          'block',
-          'signature',
-          'endpoints');
-      })
-    };
+      peers: peers.map(p => DBPeer.json(p))
+    }
   }
 
   async ws2pInfo(): Promise<HttpWS2PInfo> {

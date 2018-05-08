@@ -62,7 +62,7 @@ export class Contacter {
     return this.get('/network/peering', dtos.Peer)
   }
   
-  getPeers(obj:any) {
+  getPeers(obj?:any) {
     return this.get('/network/peering/peers', dtos.MerkleOfPeers, obj)
   }
   

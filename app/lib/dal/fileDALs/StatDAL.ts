@@ -13,8 +13,7 @@
 
 import {AbstractCFS} from "./AbstractCFS";
 import {FileSystem} from "../../system/directory"
-
-const _ = require('underscore');
+import {Underscore} from "../../common-libs/underscore"
 
 export class StatDAL extends AbstractCFS {
 
@@ -40,7 +39,7 @@ export class StatDAL extends AbstractCFS {
 
   async pushStats(statsToPush:any) {
     const stats = (await this.loadStats()) || {};
-    _.keys(statsToPush).forEach(function(statName:string){
+    Underscore.keys(statsToPush).forEach(function(statName:string){
       if (!stats[statName]) {
         stats[statName] = { blocks: [] };
       }

@@ -15,8 +15,8 @@ import {SQLiteDriver} from "../drivers/SQLiteDriver";
 import {AbstractSQLite} from "./AbstractSQLite";
 import {SandBox} from './SandBox';
 import {DBDocument} from './DocumentDAL';
+import {Underscore} from "../../common-libs/underscore"
 
-const _ = require('underscore');
 const constants = require('../../constants');
 
 export interface DBMembership extends DBDocument {
@@ -128,7 +128,7 @@ export class MembershipDAL extends AbstractSQLite<DBMembership> {
   savePendingMembership(ms:DBMembership) {
     ms.membership = ms.membership.toUpperCase();
     ms.written = false;
-    return this.saveEntity(_.pick(ms, 'membership', 'issuer', 'number', 'blockNumber', 'blockHash', 'userid', 'certts', 'block', 'fpr', 'idtyHash', 'expires_on', 'written', 'written_number', 'signature'))
+    return this.saveEntity(Underscore.pick(ms, 'membership', 'issuer', 'number', 'blockNumber', 'blockHash', 'userid', 'certts', 'block', 'fpr', 'idtyHash', 'expires_on', 'written', 'written_number', 'signature'))
   }
 
   async deleteMS(ms:DBMembership) {

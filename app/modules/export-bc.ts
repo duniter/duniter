@@ -11,12 +11,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {Server} from "../../server"
 import {BlockDTO} from "../lib/dto/BlockDTO"
-
-const _ = require('underscore');
 
 module.exports = {
   duniter: {
@@ -48,7 +45,7 @@ module.exports = {
           for (const chunk of chunks) {
             let blocks = await server.dal.getBlocksBetween(chunk.start, chunk.to);
             blocks.forEach(function (block:any) {
-              jsoned.push(_(BlockDTO.fromJSONObject(block).json()).omit('raw'));
+              jsoned.push(BlockDTO.fromJSONObject(block).json())
             });
           }
           if (!program.nostdout) {

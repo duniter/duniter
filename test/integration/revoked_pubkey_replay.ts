@@ -12,8 +12,8 @@
 // GNU Affero General Public License for more details.
 
 import {simpleNodeWith2Users, TestingServer} from "./tools/toolbox"
+import {Underscore} from "../../app/lib/common-libs/underscore"
 
-const _ = require('underscore')
 const TestUser = require('./tools/TestUser').TestUser
 
 describe("Revoked pubkey replay", function() {
@@ -47,7 +47,7 @@ describe("Revoked pubkey replay", function() {
     await s1.commit()
     await s1.expect('/wot/members', (res:any) => {
       res.should.have.property('results').length(3)
-      const ticEntries = _.filter(res.results, (entry:any) => entry.uid === 'tic')
+      const ticEntries = Underscore.filter(res.results, (entry:any) => entry.uid === 'tic')
       ticEntries.should.have.length(1)
     })
   })
@@ -63,7 +63,7 @@ describe("Revoked pubkey replay", function() {
     await s1.commit()
     await s1.expect('/wot/members', (res:any) => {
       res.should.have.property('results').length(2)
-      const ticEntries = _.filter(res.results, (entry:any) => entry.uid === 'tic')
+      const ticEntries = Underscore.filter(res.results, (entry:any) => entry.uid === 'tic')
       ticEntries.should.have.length(0)
     })
   })

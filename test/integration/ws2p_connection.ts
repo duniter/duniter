@@ -19,10 +19,12 @@ import {
   WS2PRemoteAuth
 } from "../../app/modules/ws2p/lib/WS2PConnection"
 import {Key, verify} from "../../app/lib/common-libs/crypto/keyring"
-import {assertThrows, getNewTestingPort} from "./tools/toolbox"
+import {getNewTestingPort} from "./tools/toolbox"
 import {WS2PMessageHandler} from "../../app/modules/ws2p/lib/impl/WS2PMessageHandler"
 import {WS2PResponse} from "../../app/modules/ws2p/lib/impl/WS2PResponse"
 import {WS2PConstants} from "../../app/modules/ws2p/lib/constants"
+import {assertThrows} from "../unit-tools"
+
 const assert = require('assert');
 const WebSocketServer = require('ws').Server
 const logger = require('../../app/lib/logger').NewLogger('ws2p')

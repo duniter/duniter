@@ -14,8 +14,8 @@
 import * as stream from "stream"
 import {PeeringService} from "../../service/PeeringService"
 import {FileDAL} from "../dal/fileDAL"
-import {DBPeer} from "../dal/sqliteDAL/PeerDAL"
 import {PeerDTO} from "../dto/PeerDTO"
+import {DBPeer} from "../db/DBPeer"
 
 const constants = require('../constants');
 

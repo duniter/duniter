@@ -36,9 +36,9 @@ import {OtherConstants} from "./app/lib/other_constants"
 import {WS2PCluster} from "./app/modules/ws2p/lib/WS2PCluster"
 import {DBBlock} from "./app/lib/db/DBBlock"
 import {ProxiesConf} from './app/lib/proxy';
-import {DBPeer} from "./app/lib/dal/sqliteDAL/PeerDAL"
 import {Directory, FileSystem} from "./app/lib/system/directory"
 import {DataErrors} from "./app/lib/common-libs/errors"
+import {DBPeer} from "./app/lib/db/DBPeer"
 
 export interface HookableServer {
   generatorGetJoinData: (...args:any[]) => Promise<any>

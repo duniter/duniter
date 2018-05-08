@@ -31,10 +31,10 @@ import {CommonConstants} from '../../../lib/common-libs/constants';
 import {Package} from "../../../lib/common/package";
 import {ProverConstants} from "../../prover/lib/constants";
 import {ProxiesConf} from '../../../lib/proxy';
+import {Underscore} from "../../../lib/common-libs/underscore"
 
 const es = require('event-stream')
 const nuuid = require('node-uuid')
-const _ = require('underscore')
 
 export interface WS2PHead {
   message:string
@@ -699,7 +699,7 @@ export class WS2PCluster {
     }
     // Disconnect Private connexions already present under Public
     let uuids = Object.keys(this.ws2pClients)
-    uuids = _.shuffle(uuids)
+    uuids = Underscore.shuffle(uuids)
     for (const uuid of uuids) {
       const client = this.ws2pClients[uuid]
       const pub = client.connection.pubkey
@@ -716,7 +716,7 @@ export class WS2PCluster {
     // Disconnect Private connexions until the maximum size is respected
     while (this.clientsCount() > this.maxLevel1Size) {
       let uuids = Object.keys(this.ws2pClients)
-      uuids = _.shuffle(uuids)
+      uuids = Underscore.shuffle(uuids)
       let lowPriorityConnectionUUID:string = uuids[0]
       let minPriorityLevel = await this.keyPriorityLevel(this.ws2pClients[lowPriorityConnectionUUID].connection.pubkey, preferedKeys)
       for (const uuid of uuids) {

@@ -11,10 +11,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
-
-const _ = require('underscore')
+import {Underscore} from "../../../lib/common-libs/underscore"
 
 export const stat = (stat:any) => {
   return { "blocks": stat.blocks }
@@ -52,7 +50,7 @@ export const block = (block:any) => {
   json.certifications = (block.certifications || [])
   json.transactions = [];
   block.transactions.forEach((obj:any) => {
-    json.transactions.push(_(obj).omit('raw', 'certifiers', 'hash'));
+    json.transactions.push(Underscore.omit(obj, 'raw', 'certifiers', 'hash'))
   });
   json.transactions = block.transactions.map((tx:any) => {
     tx.inputs = tx.inputs.map((i:any) => i.raw || i)

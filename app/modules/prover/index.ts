@@ -69,7 +69,7 @@ export const ProverDependency = {
         server.generatorComputeNewCerts = generator.computeNewCerts.bind(generator)
         server.generatorNewCertsToLinks = generator.newCertsToLinks.bind(generator)
       },
-      prover: (server:Server, conf:ConfDTO, logger:any) => new Prover(server),
+      prover: (server:Server) => new Prover(server),
       blockGenerator: (server:Server, prover:any) => new BlockGeneratorWhichProves(server, prover),
       generateTheNextBlock: async (server:Server, manualValues:any) => {
         const prover = new BlockProver(server);

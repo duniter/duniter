@@ -11,11 +11,10 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {DBPeer} from "../dal/sqliteDAL/PeerDAL"
 import {hashf} from "../common"
 import {CommonConstants} from "../common-libs/constants"
 import {Cloneable} from "./Cloneable"
-import { WS2PConstants } from '../../modules/ws2p/lib/constants';
+import {DBPeer} from "../db/DBPeer"
 
 export interface WS2PEndpoint {
   version:number

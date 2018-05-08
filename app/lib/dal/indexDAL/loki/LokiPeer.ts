@@ -1,6 +1,6 @@
 import {LokiCollectionManager} from "./LokiCollectionManager"
 import {PeerDAO} from "../abstract/PeerDAO"
-import {DBPeer} from "../../sqliteDAL/PeerDAL"
+import {DBPeer} from "../../../db/DBPeer"
 
 export class LokiPeer extends LokiCollectionManager<DBPeer> implements PeerDAO {
 

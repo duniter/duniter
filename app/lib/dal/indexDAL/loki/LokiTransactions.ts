@@ -3,8 +3,8 @@ import {TxsDAO} from "../abstract/TxsDAO"
 import {SandBox} from "../../sqliteDAL/SandBox"
 import {TransactionDTO} from "../../../dto/TransactionDTO"
 import {DBTx} from "../../../db/DBTx"
+import {Underscore} from "../../../common-libs/underscore"
 
-const _ = require('underscore')
 const moment = require('moment')
 const constants = require('../../../constants')
 
@@ -106,7 +106,7 @@ export class LokiTransactions extends LokiIndex<DBTx> implements TxsDAO {
       written: true
     })
     // Which does not contains the key as issuer
-    return _.filter(rows, (row: DBTx) => row.issuers.indexOf(pubkey) === -1);
+    return Underscore.filter(rows, (row: DBTx) => row.issuers.indexOf(pubkey) === -1);
   }
 
   async getPendingWithIssuer(pubkey: string): Promise<DBTx[]> {

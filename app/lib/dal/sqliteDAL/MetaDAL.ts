@@ -17,7 +17,6 @@ import {ConfDTO} from "../../dto/ConfDTO"
 import {TransactionDTO} from "../../dto/TransactionDTO"
 import {IdentityDAL} from "./IdentityDAL"
 
-const _ = require('underscore')
 const logger = require('../../logger').NewLogger('metaDAL');
 
 export interface DBMeta {

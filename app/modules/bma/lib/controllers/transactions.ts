@@ -18,8 +18,8 @@ import {BMAConstants} from "../constants";
 import {TransactionDTO} from "../../../../lib/dto/TransactionDTO";
 import {HttpSources, HttpTransaction, HttpTxHistory, HttpTxOfHistory, HttpTxPending} from "../dtos";
 import {DBTx} from "../../../../lib/db/DBTx"
+import {Underscore} from "../../../../lib/common-libs/underscore"
 
-const _                = require('underscore');
 const http2raw         = require('../http2raw');
 
 export class TransactionBinding extends AbstractController {
@@ -96,9 +96,9 @@ export class TransactionBinding extends AbstractController {
     const to = await ParametersService.getToP(req);
     return this.getFilteredHistory(pubkey, (res:any) => {
       const histo = res.history;
-      histo.sent =     _.filter(histo.sent, function(tx:any){ return tx && tx.block_number >= from && tx.block_number <= to; });
-      histo.received = _.filter(histo.received, function(tx:any){ return tx && tx.block_number >= from && tx.block_number <= to; });
-      _.extend(histo, { sending: [], receiving: [] });
+      histo.sent =     Underscore.filter(histo.sent, function(tx:any){ return tx && tx.block_number >= from && tx.block_number <= to; });
+      histo.received = Underscore.filter(histo.received, function(tx:any){ return tx && tx.block_number >= from && tx.block_number <= to; });
+      Underscore.extend(histo, { sending: [], receiving: [] });
       return res;
     });
   }
@@ -109,9 +109,9 @@ export class TransactionBinding extends AbstractController {
     const to = await ParametersService.getToP(req);
     return this.getFilteredHistory(pubkey, (res:any) => {
       const histo = res.history;
-      histo.sent =     _.filter(histo.sent, function(tx:any){ return tx && tx.time >= from && tx.time <= to; });
-      histo.received = _.filter(histo.received, function(tx:any){ return tx && tx.time >= from && tx.time <= to; });
-      _.extend(histo, { sending: [], receiving: [] });
+      histo.sent =     Underscore.filter(histo.sent, function(tx:any){ return tx && tx.time >= from && tx.time <= to; });
+      histo.received = Underscore.filter(histo.received, function(tx:any){ return tx && tx.time >= from && tx.time <= to; });
+      Underscore.extend(histo, { sending: [], receiving: [] });
       return res;
     });
   }
@@ -120,7 +120,7 @@ export class TransactionBinding extends AbstractController {
     const pubkey = await ParametersService.getPubkeyP(req);
     return this.getFilteredHistory(pubkey, function(res:any) {
       const histo = res.history;
-      _.extend(histo, { sent: [], received: [] });
+      Underscore.extend(histo, { sent: [], received: [] });
       return res;
     });
   }

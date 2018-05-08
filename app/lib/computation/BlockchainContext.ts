@@ -11,15 +11,14 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
 import {BlockDTO} from "../dto/BlockDTO"
 import {DuniterBlockchain} from "../blockchain/DuniterBlockchain"
 import {QuickSynchronizer} from "./QuickSync"
 import {DBHead} from "../db/DBHead"
 import {FileDAL} from "../dal/fileDAL"
 import {DBBlock} from "../db/DBBlock"
+import {Underscore} from "../common-libs/underscore"
 
-const _               = require('underscore');
 const indexer         = require('../indexer').Indexer
 const constants       = require('../constants');
 
@@ -28,7 +27,6 @@ export class BlockchainContext {
   private conf:any
   private dal:FileDAL
   private logger:any
-  private blockchain:DuniterBlockchain
   private quickSynchronizer:QuickSynchronizer
 
   /**
@@ -84,7 +82,7 @@ export class BlockchainContext {
     for (const k of keys) {
       copy[k] = this.vHEAD[k];
     }
-    _.extend(copy, props);
+    Underscore.extend(copy, props);
     return copy;
   }
 

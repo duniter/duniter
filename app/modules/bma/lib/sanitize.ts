@@ -11,9 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
-
-let _ = require('underscore');
+import {Underscore} from "../../../lib/common-libs/underscore"
 
 module.exports = function sanitize (json:any, contract:any) {
 
@@ -44,9 +42,9 @@ module.exports = function sanitize (json:any, contract:any) {
         }
       }
 
-      let contractFields = _(contract).keys();
-      let objectFields = _(json).keys();
-      let toDeleteFromObj = _.difference(objectFields, contractFields);
+      let contractFields = Underscore.keys(contract)
+      let objectFields = Underscore.keys(json)
+      let toDeleteFromObj = Underscore.difference(objectFields, contractFields)
 
       // Remove unwanted fields
       for (let i = 0, len = toDeleteFromObj.length; i < len; i++) {
@@ -74,7 +72,7 @@ module.exports = function sanitize (json:any, contract:any) {
           }
         }
         // Check coherence & alter member if needed
-        if (!_(json[prop]).isNull() && t.toLowerCase() != tjson.toLowerCase()) {
+        if (json[prop] !== null && t.toLowerCase() != tjson.toLowerCase()) {
           try {
             if (t == "String") {
               let s = json[prop] == undefined ? '' : json[prop];

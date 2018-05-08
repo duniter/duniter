@@ -13,7 +13,7 @@
 
 "use strict";
 
-var _  = require('underscore');
+const Underscore = require('../../../app/lib/common-libs/underscore').Underscore;
 var co = require('co');
 var rp = require('request-promise');
 var logger = require('../../../app/lib/logger').NewLogger('test');
@@ -24,7 +24,7 @@ module.exports = function makeBlockAndPost(theServer, extraProps, noWait) {
   return function(manualValues) {
     if (extraProps) {
       manualValues = manualValues || {};
-      manualValues = _.extend(manualValues, extraProps);
+      manualValues = Underscore.extend(manualValues, extraProps);
     }
     return co(function *() {
       if (!theServer._utProver) {

@@ -15,8 +15,7 @@ import {AbstractCFS} from "./AbstractCFS"
 import {ConfDTO} from "../../dto/ConfDTO"
 import {CommonConstants} from "../../common-libs/constants";
 import {FileSystem} from "../../system/directory"
-
-const _ = require('underscore');
+import {Underscore} from "../../common-libs/underscore"
 
 export class ConfDAL extends AbstractCFS {
 
@@ -62,7 +61,7 @@ export class ConfDAL extends AbstractCFS {
   async loadConf() {
     const data = await this.coreFS.readJSON('conf.json');
     if (data) {
-      return _(ConfDTO.defaultConf()).extend(data);
+      return Underscore.extend(ConfDTO.defaultConf(), data)
     } else {
       // Silent error
       this.logger.warn('No configuration loaded');

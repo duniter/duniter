@@ -13,7 +13,6 @@
 
 "use strict";
 
-const _ = require('underscore');
 const co        = require('co');
 const assert    = require('assert');
 const TestUser  = require('./tools/TestUser').TestUser

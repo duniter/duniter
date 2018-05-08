@@ -11,15 +11,14 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
-const _ = require('underscore');
+import {Underscore} from "../../../../lib/common-libs/underscore"
 
 export class Source {
 
   [k:string]: any
 
   constructor(json:any) {
-    _(json || {}).keys().forEach((key:string) => {
+    Underscore.keys(json || {}).forEach((key:string) => {
       let value = json[key];
       if (key == "number") {
         value = parseInt(value);

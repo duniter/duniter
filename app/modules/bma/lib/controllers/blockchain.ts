@@ -11,7 +11,6 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
 import {Server} from "../../../../../server"
 import {AbstractController} from "./AbstractController"
 import {ParametersService} from "../parameters"
@@ -30,8 +29,8 @@ import {
 } from "../dtos"
 import {TransactionDTO} from "../../../../lib/dto/TransactionDTO"
 import {DataErrors} from "../../../../lib/common-libs/errors"
+import {Underscore} from "../../../../lib/common-libs/underscore"
 
-const _                = require('underscore');
 const http2raw         = require('../http2raw');
 const toJson = require('../tojson');
 
@@ -214,7 +213,7 @@ export class BlockchainBinding extends AbstractController {
     }
     return {
       "block": number + 1,
-      "levels": _.sortBy(difficulties, (diff:any) => diff.level)
+      "levels": Underscore.sortBy(difficulties, (diff:any) => diff.level)
     };
   }
 
@@ -237,7 +236,7 @@ export class BlockchainBinding extends AbstractController {
         };
       })
     }
-    json.memberships = _.sortBy(json.memberships, 'blockNumber');
+    json.memberships = Underscore.sortBy(json.memberships, 'blockNumber')
     json.memberships.reverse();
     return json;
   }

@@ -1,8 +1,7 @@
 import {LokiIndex} from "./LokiIndex"
 import {FullSindexEntry, Indexer, SindexEntry} from "../../../indexer"
 import {SIndexDAO} from "../abstract/SIndexDAO"
-
-const _ = require('underscore')
+import {Underscore} from "../../../common-libs/underscore"
 
 export class LokiSIndex extends LokiIndex<SindexEntry> implements SIndexDAO {
 
@@ -33,7 +32,7 @@ export class LokiSIndex extends LokiIndex<SindexEntry> implements SIndexDAO {
         src.type = src.tx ? 'T' : 'D'
         return src
       })
-    return _.sortBy(sources, (row:SindexEntry) => row.type == 'D' ? 0 : 1);
+    return Underscore.sortBy(sources, (row:SindexEntry) => row.type == 'D' ? 0 : 1)
   }
 
   async getAvailableForPubkey(pubkey: string): Promise<{ amount: number; base: number }[]> {

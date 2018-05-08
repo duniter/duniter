@@ -14,8 +14,8 @@
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {Server} from "../../server"
 import {Wizard} from "../lib/wizard"
+import {Underscore} from "../lib/common-libs/underscore"
 
-const _ = require('underscore')
 const logger = require('../lib/logger').NewLogger('wizard');
 
 module.exports = {
@@ -34,7 +34,7 @@ module.exports = {
 
       onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any, wizardTasks:any) => {
         const step = params[0];
-        const tasks = step ? [wizardTasks[step]] : _.values(wizardTasks);
+        const tasks = step ? [wizardTasks[step]] : Underscore.values(wizardTasks);
         for (const task of tasks) {
           if (!task) {
             throw 'Unknown task';

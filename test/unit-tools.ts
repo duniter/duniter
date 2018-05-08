@@ -11,6 +11,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
+import * as assert from 'assert'
+
 export async function shouldThrow(promise:Promise<any>) {
   let error = false
   try {
@@ -20,4 +22,41 @@ export async function shouldThrow(promise:Promise<any>) {
   }
   promise.should.be.rejected()
   error.should.equal(true)
+}
+
+export async function shouldNotFail<T>(promise:Promise<T>) {
+  try {
+    await promise
+  } catch(e) {
+    let err = e;
+    if (typeof e === 'string') {
+      err = JSON.parse((e as any).message)
+    }
+    should.not.exist(err);
+  }
+}
+
+export const shouldFail = async (promise:Promise<any>, message:string|null = null) => {
+  try {
+    await promise;
+    throw '{ "message": "Should have thrown an error" }'
+  } catch(e) {
+    let err = e
+    if (typeof e === "string") {
+      err = JSON.parse(e)
+    }
+    err.should.have.property('message').equal(message);
+  }
+}
+
+export const assertThrows = async (promise:Promise<any>, message:string|null = null) => {
+  try {
+    await promise;
+    throw "Should have thrown"
+  } catch(e) {
+    if (e === "Should have thrown") {
+      throw e
+    }
+    assert.equal(e, message)
+  }
 }

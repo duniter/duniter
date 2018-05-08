@@ -16,7 +16,7 @@
 const co = require('co');
 const should    = require('should');
 const assert    = require('assert');
-const _         = require('underscore');
+const Underscore = require('../../../app/lib/common-libs/underscore').Underscore;
 
 module.exports = {
 
@@ -66,7 +66,7 @@ module.exports = {
   expectJSON: async function expectJSON(promise, json) {
     try {
       const resJson = await promise;
-      _.keys(json).forEach(function(key){
+      Underscore.keys(json).forEach(function(key){
         resJson.should.have.property(key).equal(json[key]);
       });
     } catch (err) {

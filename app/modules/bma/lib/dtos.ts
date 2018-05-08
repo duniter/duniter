@@ -12,8 +12,8 @@
 // GNU Affero General Public License for more details.
 
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
-import {DBPeer as DBPeer2} from "../../../lib/dal/sqliteDAL/PeerDAL"
 import {WS2PHead} from "../../ws2p/lib/WS2PCluster"
+import {JSONDBPeer} from "../../../lib/db/DBPeer"
 
 export const Summary = {
   duniter: {
@@ -400,7 +400,7 @@ export const Peers = {
 };
 
 export interface HttpPeers {
-  peers: DBPeer2[]
+  peers: JSONDBPeer[]
 }
 
 export interface HttpWS2PInfo {
@@ -434,7 +434,7 @@ export interface HttpMerkleOfPeers {
   leaves: string[]
   leaf: {
     hash: string
-    value: DBPeer2
+    value: JSONDBPeer
   }
 }
 

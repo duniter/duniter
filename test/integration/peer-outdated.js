@@ -16,7 +16,6 @@
 const co        = require('co');
 const should    = require('should');
 const es        = require('event-stream');
-const _         = require('underscore');
 const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const TestUser  = require('./tools/TestUser').TestUser
 const commit    = require('./tools/commit');

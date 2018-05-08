@@ -88,3 +88,25 @@ test/dal/loki.d.ts
 test/dal/loki.js*
 test/dal/blockchain-archive.d.ts
 test/dal/blockchain-archive.js*
+test/dal/basic-dal-tests.d.ts
+test/dal/basic-dal-tests.js*
+
+# In test folders
+test/integration/wot/*.d.ts
+test/integration/wot/*.js*
+test/integration/transactions/*.d.ts
+test/integration/transactions/*.js*
+test/integration/network/*.d.ts
+test/integration/network/*.js*
+test/integration/misc/*.d.ts
+test/integration/misc/*.js*
+test/integration/identity/*.d.ts
+test/integration/identity/*.js*
+test/integration/certification/*.d.ts
+test/integration/certification/*.js*
+test/integration/branches/*.d.ts
+test/integration/branches/*.js*
+test/integration/blocks/*.d.ts
+test/integration/blocks/*.js*
+test/fast/index/*.d.ts
+test/fast/index/*.js*

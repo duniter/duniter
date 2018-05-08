@@ -30,7 +30,6 @@ import {
   IndexEntry,
   SindexEntry
 } from "../indexer"
-import {DBPeer} from "./sqliteDAL/PeerDAL"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import {CertDAL, DBCert} from "./sqliteDAL/CertDAL"
 import {DBBlock} from "../db/DBBlock"
@@ -72,9 +71,10 @@ import {Tristamp} from "../common/Tristamp"
 import {CFSBlockchainArchive} from "./indexDAL/CFSBlockchainArchive"
 import {CFSCore} from "./fileDALs/CFSCore"
 import {BlockchainArchiveDAO} from "./indexDAL/abstract/BlockchainArchiveDAO"
+import {Underscore} from "../common-libs/underscore"
+import {DBPeer} from "../db/DBPeer"
 
 const readline = require('readline')
-const _       = require('underscore');
 const indexer = require('../indexer').Indexer
 const logger = require('../logger').NewLogger('filedal');
 const constants = require('../constants');
@@ -187,7 +187,7 @@ export class FileDAL {
     for (const indexDAL of dals) {
       indexDAL.triggerInit()
     }
-    const dalNames = _.keys(this.newDals);
+    const dalNames = Underscore.keys(this.newDals);
     for (const dalName of dalNames) {
       const dal = this.newDals[dalName];
       await dal.init();
@@ -321,10 +321,10 @@ export class FileDAL {
     // Cert period rule
     const medianTime = vHEAD_1 ? vHEAD_1.medianTime : 0;
     const linksFrom:FullCindexEntry[] = await this.cindexDAL.reducablesFrom(from)
-    const unchainables = _.filter(linksFrom, (link:CindexEntry) => link.chainable_on > medianTime);
+    const unchainables = Underscore.filter(linksFrom, (link:CindexEntry) => link.chainable_on > medianTime);
     if (unchainables.length > 0) return true;
     // Max stock rule
-    let activeLinks = _.filter(linksFrom, (link:CindexEntry) => !link.expired_on);
+    let activeLinks = Underscore.filter(linksFrom, (link:CindexEntry) => !link.expired_on);
     return activeLinks.length >= sigStock;
   }
 
@@ -620,7 +620,7 @@ export class FileDAL {
 
   async findPeersWhoseHashIsIn(hashes:string[]) {
     const peers = await this.peerDAL.listAll();
-    return _.chain(peers).filter((p:DBPeer) => hashes.indexOf(p.hash) !== -1).value();
+    return Underscore.chain(peers).filter((p:DBPeer) => hashes.indexOf(p.hash) !== -1).value()
   }
 
   getTxByHash(hash:string) {
@@ -637,7 +637,7 @@ export class FileDAL {
 
   async getNonWritten(pubkey:string) {
     const pending = await this.idtyDAL.getPendingIdentities();
-    return _.chain(pending).where({pubkey: pubkey}).value();
+    return Underscore.chain(pending).where({pubkey: pubkey}).value()
   }
 
   async getRevocatingMembers() {
@@ -660,18 +660,18 @@ export class FileDAL {
     return this.mindexDAL.getRevokedPubkeys()
   }
 
-  async searchJustIdentities(search:string) {
+  async searchJustIdentities(search:string): Promise<DBIdentity[]> {
     const pendings = await this.idtyDAL.searchThoseMatching(search);
     const writtens = await this.iindexDAL.searchThoseMatching(search);
-    const nonPendings = _.filter(writtens, (w:IindexEntry) => {
-      return _.where(pendings, { pubkey: w.pub }).length == 0;
+    const nonPendings = Underscore.filter(writtens, (w:IindexEntry) => {
+      return Underscore.where(pendings, { pubkey: w.pub }).length == 0;
     });
     const found = pendings.concat(nonPendings.map((i:any) => {
       // Use the correct field
       i.pubkey = i.pub
       return i
     }));
-    return await Promise.all(found.map(async (f:any) => {
+    return await Promise.all<DBIdentity>(found.map(async (f:any) => {
       const ms = await this.mindexDAL.getReducedMS(f.pub);
       if (ms) {
         f.revoked_on = ms.revoked_on ? ms.revoked_on : null;
@@ -689,7 +689,7 @@ export class FileDAL {
     await Promise.all(links.map(async (entry:any) => {
       matching.push(await this.cindexEntry2DBCert(entry))
     }))
-    matching  = _.sortBy(matching, (c:DBCert) => -c.block);
+    matching  = Underscore.sortBy(matching, (c:DBCert) => -c.block);
     matching.reverse();
     return matching;
   }
@@ -701,7 +701,7 @@ export class FileDAL {
     await Promise.all(links.map(async (entry:CindexEntry) => {
       matching.push(await this.cindexEntry2DBCert(entry))
     }))
-    matching  = _.sortBy(matching, (c:DBCert) => -c.block);
+    matching  = Underscore.sortBy(matching, (c:DBCert) => -c.block);
     matching.reverse();
     return matching;
   }
@@ -741,12 +741,12 @@ export class FileDAL {
 
   async certsFindNew() {
     const certs = await this.certDAL.getNotLinked();
-    return _.chain(certs).where({linked: false}).sortBy((c:DBCert) => -c.block).value();
+    return Underscore.chain(certs).where({linked: false}).sortBy((c:DBCert) => -c.block).value()
   }
 
   async certsNotLinkedToTarget(hash:string) {
     const certs = await this.certDAL.getNotLinkedToTarget(hash);
-    return _.chain(certs).sortBy((c:any) => -c.block).value();
+    return Underscore.chain(certs).sortBy((c:any) => -c.block).value();
   }
 
   async getMostRecentMembershipNumberForIssuer(issuer:string) {
@@ -761,7 +761,7 @@ export class FileDAL {
 
   async lastJoinOfIdentity(target:string) {
     let pending = await this.msDAL.getPendingINOfTarget(target);
-    return _(pending).sortBy((ms:any) => -ms.number)[0];
+    return Underscore.sortBy(pending, (ms:any) => -ms.number)[0];
   }
 
   async findNewcomers(blockMedianTime = 0): Promise<DBMembership[]> {
@@ -773,24 +773,22 @@ export class FileDAL {
       }
       return null
     }))
-    return _.chain(mss)
-      .filter((ms:DBMembership) => ms)
+    return Underscore.chain(Underscore.filter(mss, ms => !!ms) as DBMembership[])
       .sortBy((ms:DBMembership) => -ms.blockNumber)
       .value()
   }
 
   async findLeavers(blockMedianTime = 0): Promise<DBMembership[]> {
     const pending = await this.msDAL.getPendingOUT();
-    const mss = await Promise.all(pending.map(async (p:any) => {
+    const mss = await Promise.all<DBMembership|null>(pending.map(async p => {
       const reduced = await this.mindexDAL.getReducedMS(p.issuer)
       if (!reduced || !reduced.chainable_on || blockMedianTime >= reduced.chainable_on || blockMedianTime < constants.TIME_TO_TURN_ON_BRG_107) {
         return p
       }
       return null
     }))
-    return _.chain(mss)
-      .filter((ms:DBMembership) => ms)
-      .sortBy((ms:DBMembership) => -ms.blockNumber)
+    return Underscore.chain(Underscore.filter(mss, ms => !!ms) as DBMembership[])
+      .sortBy(ms => -ms.blockNumber)
       .value();
   }
 
@@ -884,14 +882,14 @@ export class FileDAL {
 
   async listAllPeersWithStatusNewUP() {
     const peers = await this.peerDAL.listAll();
-    return _.chain(peers)
+    return Underscore.chain(peers)
         .filter((p:DBPeer) => ['UP']
             .indexOf(p.status) !== -1).value();
   }
 
   async listAllPeersWithStatusNewUPWithtout(pub:string) {
     const peers = await this.peerDAL.listAll();
-    return _.chain(peers).filter((p:DBPeer) => p.status == 'UP').filter((p:DBPeer) => p.pubkey !== pub).value();
+    return Underscore.chain(peers).filter((p:DBPeer) => p.status == 'UP').filter((p:DBPeer) => p.pubkey !== pub).value();
   }
 
   async findPeers(pubkey:string): Promise<DBPeer[]> {
@@ -903,9 +901,9 @@ export class FileDAL {
     }
   }
 
-  async getRandomlyUPsWithout(pubkeys:string[]) {
+  async getRandomlyUPsWithout(pubkeys:string[]): Promise<DBPeer[]> {
     const peers = await this.listAllPeersWithStatusNewUP();
-    return peers.filter((peer:DBPeer) => pubkeys.indexOf(peer.pubkey) == -1);
+    return peers.filter(peer => pubkeys.indexOf(peer.pubkey) == -1)
   }
 
   async setPeerUP(pubkey:string) {
@@ -1098,7 +1096,7 @@ export class FileDAL {
   async getUDHistory(pubkey:string) {
     const sources = await this.sindexDAL.getUDSources(pubkey)
     return {
-      history: sources.map((src:SindexEntry) => _.extend({
+      history: sources.map((src:SindexEntry) => Underscore.extend({
         block_number: src.pos,
         time: src.written_time
       }, src))
@@ -1114,7 +1112,7 @@ export class FileDAL {
     const firstBlock = Math.max(0, start);
     const lastBlock = Math.max(0, Math.min(current.number, end));
     const blocks = await this.blockDAL.getBlocks(firstBlock, lastBlock);
-    return _.chain(blocks).pluck('issuer').uniq().value();
+    return Underscore.uniq(blocks.map(b => b.issuer))
   }
 
   /**
@@ -1152,11 +1150,11 @@ export class FileDAL {
   async loadConf(overrideConf:ConfDTO, defaultConf = false) {
     let conf = ConfDTO.complete(overrideConf || {});
     if (!defaultConf) {
-      const savedConf = await this.confDAL.loadConf();
-      const savedProxyConf = _(savedConf.proxyConf).extend({});
-      conf = _(savedConf).extend(overrideConf || {});
+      const savedConf = await this.confDAL.loadConf()
+      const savedProxyConf = Underscore.extend(savedConf.proxyConf, {})
+      conf = Underscore.extend(savedConf, overrideConf || {})
       if (overrideConf.proxiesConf !== undefined) {} else {
-        conf.proxyConf = _(savedProxyConf).extend({});
+        conf.proxyConf = Underscore.extend(savedProxyConf, {})
       }
     }
     if (this.loadConfHook) {
@@ -1206,11 +1204,11 @@ export class FileDAL {
   }
 
   async cleanCaches() {
-    await _.values(this.newDals).map((dal:Initiable) => dal.cleanCache && dal.cleanCache())
+    await Underscore.values(this.newDals).map((dal:Initiable) => dal.cleanCache && dal.cleanCache())
   }
 
   async close() {
-    await _.values(this.newDals).map((dal:Initiable) => dal.cleanCache && dal.cleanCache())
+    await Underscore.values(this.newDals).map((dal:Initiable) => dal.cleanCache && dal.cleanCache())
     return this.sqliteDriver.closeConnection();
   }
 

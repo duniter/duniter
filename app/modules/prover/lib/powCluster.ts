@@ -16,8 +16,8 @@ import {ProverConstants} from "./constants"
 import {createPowWorker} from "./proof"
 import {PowWorker} from "./PowWorker"
 import {FileDAL} from "../../../lib/dal/fileDAL";
+import {Underscore} from "../../../lib/common-libs/underscore"
 
-const _ = require('underscore')
 const nuuid = require('node-uuid');
 const cluster = require('cluster')
 const querablep = require('querablep')
@@ -140,7 +140,7 @@ export class Master {
         value: this.conf
       })
     })
-    return Promise.resolve(_.clone(conf))
+    return Promise.resolve(Underscore.clone(conf))
   }
 
   private cancelWorkersWork() {
@@ -205,7 +205,7 @@ export class Master {
             nonceBeginning: s.nonceBeginning,
             zeros: stuff.newPoW.zeros,
             highMark: stuff.newPoW.highMark,
-            pair: _.clone(stuff.newPoW.pair),
+            pair: Underscore.clone(stuff.newPoW.pair),
             forcedTime: stuff.newPoW.forcedTime,
             conf: {
               powNoSecurity: stuff.newPoW.conf.powNoSecurity,

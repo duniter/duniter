@@ -25,8 +25,6 @@ import {Indexer} from "../indexer"
 import {DBTx} from "../db/DBTx"
 import {Tristamp} from "../common/Tristamp"
 
-const _ = require('underscore')
-
 const constants      = CommonConstants
 
 // Empty logger by default

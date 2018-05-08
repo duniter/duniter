@@ -13,7 +13,7 @@
 
 "use strict";
 var co = require('co');
-var _ = require('underscore');
+const Underscore = require('../../../app/lib/common-libs/underscore').Underscore;
 var async  = require('async');
 var request  = require('request');
 var contacter = require('../../../app/modules/crawler').CrawlerDependency.duniter.methods.contacter;
@@ -166,11 +166,11 @@ function Node (dbName, options) {
           config: {
             onLoading: (conf, program) => co(function*() {
               const overConf = ConfDTO.complete(options);
-              _.extend(conf, overConf);
+              Underscore.extend(conf, overConf);
             })
           },
           service: {
-            process: (server) => _.extend(server, {
+            process: (server) => Underscore.extend(server, {
               startService: () => {
                 logger.debug('Server Servie Started!');
               }

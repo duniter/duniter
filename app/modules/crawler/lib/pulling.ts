@@ -15,9 +15,8 @@
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {PeerDTO} from "../../../lib/dto/PeerDTO"
-import {BranchingDTO, ConfDTO} from "../../../lib/dto/ConfDTO"
-
-const _ = require('underscore');
+import {BranchingDTO} from "../../../lib/dto/ConfDTO"
+import {Underscore} from "../../../lib/common-libs/underscore"
 
 export abstract class PullingDao {
   abstract applyBranch(blocks:BlockDTO[]): Promise<boolean>
@@ -211,7 +210,7 @@ export abstract class AbstractDAO extends PullingDao {
       }
       return result;
     });
-    memberForks = _.filter(memberForks, (fork:any) => {
+    memberForks = Underscore.filter(memberForks, (fork:any) => {
       let blockDistanceInBlocks = (fork.current.number - localCurrent.number)
       let timeDistanceInBlocks = (fork.current.medianTime - localCurrent.medianTime) / conf.avgGenTime
       const requiredTimeAdvance = conf.switchOnHeadAdvance

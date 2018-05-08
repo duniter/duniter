@@ -31,9 +31,6 @@ import {OtherConstants} from "../lib/other_constants"
 import {DataErrors} from "../lib/common-libs/errors"
 import {DuniterBlockchain} from "../lib/blockchain/DuniterBlockchain"
 
-"use strict";
-
-const _               = require('underscore');
 const constants       = require('../lib/constants');
 
 export interface IdentityForRequirements {

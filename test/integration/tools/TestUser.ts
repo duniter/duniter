@@ -24,9 +24,10 @@ import {parsers} from "../../../app/lib/common-libs/parsers/index"
 import {TransactionDTO} from "../../../app/lib/dto/TransactionDTO"
 import {PeerDTO} from "../../../app/lib/dto/PeerDTO"
 import {Contacter} from "../../../app/modules/crawler/lib/contacter"
+import {Underscore} from "../../../app/lib/common-libs/underscore"
+import {HttpLookup} from "../../../app/modules/bma/lib/dtos"
 
 const request	= require('request')
-const _ = require('underscore')
 
 export interface TestInput {
   src:string
@@ -92,7 +93,7 @@ export class TestUser {
   public async makeCert(user:TestUser, fromServer?:TestingServer, overrideProps?:any) {
     const lookup = await this.lookup(user.pub, fromServer)
     const current = await this.node.server.BlockchainService.current()
-    const idty = _.filter(lookup.results[0].uids, (uidEntry:{ uid: string }) => uidEntry.uid === user.uid)[0]
+    const idty = Underscore.filter(lookup.results[0].uids, uidEntry => uidEntry.uid === user.uid)[0]
     let buid = current ? Buid.format.buid(current.number, current.hash) : CommonConstants.SPECIAL_BLOCK
     const cert = {
       "version": CommonConstants.DOCUMENTS_VERSION,
@@ -105,7 +106,7 @@ export class TestUser {
       "buid": buid,
       "sig": ""
     }
-    _.extend(cert, overrideProps || {});
+    Underscore.extend(cert, overrideProps || {});
     const rawCert = CertificationDTO.fromJSONObject(cert).getRawUnSigned()
     cert.sig = KeyGen(this.pub, this.sec).signSync(rawCert)
     return CertificationDTO.fromJSONObject(cert)
@@ -126,9 +127,9 @@ export class TestUser {
     return await this.sendMembership("OUT")
   }
 
-  public async makeRevocation(givenLookupIdty?:any, overrideProps?:any) {
+  public async makeRevocation(givenLookupIdty?:HttpLookup, overrideProps?:any) {
     const res = givenLookupIdty || (await this.lookup(this.pub));
-    const matchingResult = _.filter(res.results[0].uids, (uidEntry: { uid:string }) => uidEntry.uid === this.uid)[0]
+    const matchingResult = Underscore.filter(res.results[0].uids, uidEntry => uidEntry.uid === this.uid)[0]
     const idty = {
       uid: matchingResult.uid,
       buid: matchingResult.meta.timestamp,
@@ -142,7 +143,7 @@ export class TestUser {
       "buid": idty.buid,
       "revocation": ''
     };
-    _.extend(revocation, overrideProps || {});
+    Underscore.extend(revocation, overrideProps || {});
     const rawRevocation = RevocationDTO.fromJSONObject(revocation).getRawUnsigned()
     revocation.revocation = KeyGen(this.pub, this.sec).signSync(rawRevocation);
     return RevocationDTO.fromJSONObject(revocation)
@@ -170,7 +171,7 @@ export class TestUser {
       "certts": idty.meta.timestamp,
       "signature": ""
     };
-    _.extend(join, overrideProps || {});
+    Underscore.extend(join, overrideProps || {});
     const rawJoin = MembershipDTO.fromJSONObject(join).getRaw()
     join.signature = KeyGen(this.pub, this.sec).signSync(rawJoin)
     return MembershipDTO.fromJSONObject(join)
@@ -183,7 +184,7 @@ export class TestUser {
     })
   }
 
-  public send(amount:number, recipient:string, comment?:string) {
+  public send(amount:number, recipient:TestUser|string, comment?:string) {
     const that = this
     return async function(done:(e?:any)=>void) {
       try {
@@ -351,7 +352,7 @@ export class TestUser {
       block: '2-00008DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB',
       endpoints: endpoints
     });
-    _.extend(peer, overrideProps || {});
+    Underscore.extend(peer, overrideProps || {});
     const rawPeer = PeerDTO.fromJSONObject(peer).getRawUnsigned()
     peer.signature = KeyGen(this.pub, this.sec).signSync(rawPeer)
     return PeerDTO.fromJSONObject(peer)
@@ -400,14 +401,14 @@ export class TestUser {
     });
   }
 
-  public async lookup(pubkey:string, fromServer?:TestingServer) {
+  public async lookup(pubkey:string, fromServer?:TestingServer): Promise<HttpLookup> {
     const node2 = await this.getContacter(fromServer)
     return node2.getLookup(pubkey);
   }
 
-  public async sendP(amount:number, userid:string, comment?:string) {
+  public async sendP(amount:number, userid:TestUser|string, comment?:string) {
     return new Promise((res, rej) => {
-      this.send(amount, userid, comment)((err) => {
+      this.send(amount, userid, comment)((err:any) => {
         if (err) return rej(err)
         res()
       })

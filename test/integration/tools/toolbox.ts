@@ -19,7 +19,7 @@ import * as stream from "stream"
 import {RevocationDTO} from "../../../app/lib/dto/RevocationDTO"
 import {IdentityDTO} from "../../../app/lib/dto/IdentityDTO"
 import {PeerDTO} from "../../../app/lib/dto/PeerDTO"
-import {Network} from "../../../app/modules/bma/lib/network"
+import {BmaApi, Network} from "../../../app/modules/bma/lib/network"
 import {DBIdentity} from "../../../app/lib/dal/sqliteDAL/IdentityDAL"
 import {CertificationDTO} from "../../../app/lib/dto/CertificationDTO"
 import {BlockchainService} from "../../../app/service/BlockchainService"
@@ -39,11 +39,11 @@ import {TestUser} from "./TestUser"
 import {RouterDependency} from "../../../app/modules/router"
 import {ProverDependency} from "../../../app/modules/prover/index"
 import {WS2PClient} from "../../../app/modules/ws2p/lib/WS2PClient"
-import {DBPeer} from "../../../app/lib/dal/sqliteDAL/PeerDAL"
 import {DBBlock} from "../../../app/lib/db/DBBlock"
+import {DBPeer} from "../../../app/lib/db/DBPeer"
+import {Underscore} from "../../../app/lib/common-libs/underscore"
 
 const assert      = require('assert');
-const _           = require('underscore');
 const rp          = require('request-promise');
 const es          = require('event-stream');
 const WebSocketServer = require('ws').Server
@@ -65,30 +65,6 @@ export const getNewTestingPort = () => {
   return PORT++
 }
 
-export const shouldFail = async (promise:Promise<any>, message:string|null = null) => {
-  try {
-    await promise;
-    throw '{ "message": "Should have thrown an error" }'
-  } catch(e) {
-    let err = e
-    if (typeof e === "string") {
-      err = JSON.parse(e)
-    }
-    err.should.have.property('message').equal(message);
-  }
-}
-export const assertThrows = async (promise:Promise<any>, message:string|null = null) => {
-  try {
-    await promise;
-    throw "Should have thrown"
-  } catch(e) {
-    if (e === "Should have thrown") {
-      throw e
-    }
-    assert.equal(e, message)
-  }
-}
-
 export const simpleUser = (uid:string, keyring:{ pub:string, sec:string }, server:TestingServer) => {
   return new TestUser(uid, keyring, { server });
 }
@@ -97,8 +73,8 @@ export const simpleNetworkOf2NodesAnd2Users = async (options:any) => {
   const catKeyring = { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'};
   const tacKeyring = { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'};
 
-  const s1 = NewTestingServer(_.extend({ pair: catKeyring }, options || {}));
-  const s2 = NewTestingServer(_.extend({ pair: tacKeyring }, options || {}));
+  const s1 = NewTestingServer(Underscore.extend({ pair: catKeyring }, options || {}));
+  const s2 = NewTestingServer(Underscore.extend({ pair: tacKeyring }, options || {}));
 
   const cat = new TestUser('cat', catKeyring, { server: s1 });
   const tac = new TestUser('tac', tacKeyring, { server: s1 });
@@ -129,7 +105,7 @@ export const simpleNodeWith2Users = async (options:any) => {
   const catKeyring = { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'};
   const tacKeyring = { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'};
 
-  const s1 = NewTestingServer(_.extend({ pair: catKeyring }, options || {}));
+  const s1 = NewTestingServer(Underscore.extend({ pair: catKeyring }, options || {}));
 
   const cat = new TestUser('cat', catKeyring, { server: s1 });
   const tac = new TestUser('tac', tacKeyring, { server: s1 });
@@ -151,7 +127,7 @@ export const simpleNodeWith2otherUsers = async (options:any) => {
   const ticKeyring = { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'};
   const tocKeyring = { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'};
 
-  const s1 = NewTestingServer(_.extend({ pair: ticKeyring }, options || {}));
+  const s1 = NewTestingServer(Underscore.extend({ pair: ticKeyring }, options || {}));
 
   const tic = new TestUser('cat', ticKeyring, { server: s1 });
   const toc = new TestUser('tac', tocKeyring, { server: s1 });
@@ -262,7 +238,7 @@ export const NewTestingServer = (conf:any) => {
   const server = new Server(
     '~/.config/duniter/' + (conf.homename || 'dev_unit_tests'),
     conf.memory !== undefined ? conf.memory : MEMORY_MODE,
-    _.extend(conf, commonConf));
+    Underscore.extend(conf, commonConf));
 
   return new TestingServer(port, server)
 }
@@ -336,7 +312,7 @@ export class TestingServer {
 
   private prover:Prover
   private permaProver:PermanentProver
-  private bma:any
+  public bma:BmaApi
 
   constructor(
     private port:number,
@@ -375,6 +351,10 @@ export class TestingServer {
 
   get home() {
     return this.server.home
+  }
+
+  initWithDAL() {
+    return this.server.initWithDAL()
   }
 
   revert(): Promise<DBBlock> {
@@ -482,7 +462,7 @@ export class TestingServer {
     return httpTest.expectJSON(rp(this.url(uri), { json: true }), expectations);
   }
 
-  expectError(uri:string, code:number, message:string) {
+  expectError(uri:string, code:number, message = '') {
     return httpTest.expectError(code, message, rp(this.url(uri), { json: true }));
   }
 

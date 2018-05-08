@@ -32,8 +32,9 @@ import {
 import {IdentityDTO} from "../../../../lib/dto/IdentityDTO"
 import {FullIindexEntry} from "../../../../lib/indexer"
 import {DBMembership} from "../../../../lib/dal/sqliteDAL/MembershipDAL"
+import {Underscore} from "../../../../lib/common-libs/underscore"
+import {Map} from "../../../../lib/common-libs/crypto/map"
 
-const _        = require('underscore');
 const http2raw = require('../http2raw');
 const constants = require('../../../../lib/constants');
 
@@ -45,7 +46,7 @@ export class WOTBinding extends AbstractController {
     // Get the search parameter from HTTP query
     const search = await ParametersService.getSearchP(req);
     // Make the research
-    const identities:any[] = await this.IdentityService.searchIdentities(search);
+    const identities = await this.IdentityService.searchIdentities(search);
     // Entitify each result
     identities.forEach((idty, index) => identities[index] = DBIdentity.copyFromExisting(idty));
     // Prepare some data to avoid displaying expired certifications
@@ -60,17 +61,17 @@ export class WOTBinding extends AbstractController {
           cert.wasMember = member.wasMember;
         } else {
           const potentials = await this.IdentityService.getPendingFromPubkey(cert.from);
-          cert.uids = _(potentials).pluck('uid');
+          cert.uids = potentials.map(p => p.uid)
           cert.isMember = false;
           cert.wasMember = false;
         }
         validCerts.push(cert);
       }
       idty.certs = validCerts;
-      const signed = await this.server.dal.certsFrom(idty.pubkey);
+      const signed:any = await this.server.dal.certsFrom(idty.pubkey);
       const validSigned = [];
       for (let j = 0; j < signed.length; j++) {
-        const cert = _.clone(signed[j]);
+        const cert = Underscore.clone(signed[j]);
         cert.idty = await this.server.dal.getGlobalIdentityByHashForLookup(cert.target)
         if (cert.idty) {
           validSigned.push(cert);
@@ -83,7 +84,7 @@ export class WOTBinding extends AbstractController {
     if (identities.length == 0) {
       throw BMAConstants.ERRORS.NO_MATCHING_IDENTITY;
     }
-    const resultsByPubkey:{[k:string]:HttpIdentity} = {};
+    const resultsByPubkey:Map<HttpIdentity> = {};
     identities.forEach((identity) => {
       const copy = DBIdentity.copyFromExisting(identity)
       const jsoned = copy.json();
@@ -100,7 +101,7 @@ export class WOTBinding extends AbstractController {
     });
     return {
       partial: false,
-      results: _.values(resultsByPubkey)
+      results: Underscore.values(resultsByPubkey)
     };
   }
 
@@ -290,7 +291,7 @@ export class WOTBinding extends AbstractController {
         };
       })
     };
-    json.memberships = _.sortBy(json.memberships, 'blockNumber');
+    json.memberships = Underscore.sortBy(json.memberships, 'blockNumber');
     json.memberships.reverse();
     return json;
   }

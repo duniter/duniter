@@ -27,8 +27,7 @@ import {FileDAL} from "../dal/fileDAL"
 import {DataErrors} from "../common-libs/errors"
 import {NewLogger} from "../logger"
 import {DBTx} from "../db/DBTx"
-
-const _ = require('underscore')
+import {Underscore} from "../common-libs/underscore"
 
 export class DuniterBlockchain {
 
@@ -334,10 +333,10 @@ export class DuniterBlockchain {
   }
 
   static async updateWallets(sindex:SindexEntry[], aDal:any, reverse = false) {
-    const differentConditions = _.uniq(sindex.map((entry) => entry.conditions))
+    const differentConditions = Underscore.uniq(sindex.map((entry) => entry.conditions))
     for (const conditions of differentConditions) {
-      const creates = _.filter(sindex, (entry:SindexEntry) => entry.conditions === conditions && entry.op === CommonConstants.IDX_CREATE)
-      const updates = _.filter(sindex, (entry:SindexEntry) => entry.conditions === conditions && entry.op === CommonConstants.IDX_UPDATE)
+      const creates = Underscore.filter(sindex, (entry:SindexEntry) => entry.conditions === conditions && entry.op === CommonConstants.IDX_CREATE)
+      const updates = Underscore.filter(sindex, (entry:SindexEntry) => entry.conditions === conditions && entry.op === CommonConstants.IDX_UPDATE)
       const positives = creates.reduce((sum:number, src:SindexEntry) => sum + src.amount * Math.pow(10, src.base), 0)
       const negatives = updates.reduce((sum:number, src:SindexEntry) => sum + src.amount * Math.pow(10, src.base), 0)
       const wallet = await aDal.getWallet(conditions)
@@ -476,7 +475,7 @@ export class DuniterBlockchain {
   }
 
   static async computeToBeRevoked(mindex:MindexEntry[], dal:FileDAL) {
-    const revocations = _.filter(mindex, (entry:MindexEntry) => entry.revoked_on);
+    const revocations = Underscore.filter(mindex, (entry:MindexEntry) => !!(entry.revoked_on))
     for (const revoked of revocations) {
       await dal.setRevoked(revoked.pub)
     }

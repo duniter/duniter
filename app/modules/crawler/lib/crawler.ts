@@ -24,10 +24,9 @@ import {connect} from "./connect"
 import {CrawlerConstants} from "./constants"
 import {pullSandboxToLocalServer} from "./sandbox"
 import {cleanLongDownPeers} from "./garbager"
+import {Underscore} from "../../../lib/common-libs/underscore"
 
-const _ = require('underscore');
 const async = require('async');
-const querablep = require('querablep');
 
 /**
  * Service which triggers the server's peering generation (actualization of the Peer document).
@@ -119,7 +118,7 @@ export class PeerCrawler implements DuniterService {
     if (peers.length > CrawlerConstants.COUNT_FOR_ENOUGH_PEERS && dontCrawlIfEnoughPeers == this.DONT_IF_MORE_THAN_FOUR_PEERS) {
       return;
     }
-    let peersToTest = peers.slice().map((p:PeerDTO) => PeerDTO.fromJSONObject(p));
+    let peersToTest = peers.slice().map(p => PeerDTO.fromJSONObject(p))
     let tested:string[] = [];
     const found = [];
     while (peersToTest.length > 0) {
@@ -144,7 +143,7 @@ export class PeerCrawler implements DuniterService {
         }
       }
       // Make unique list
-      peersToTest = _.uniq(peersToTest, false, (p:PeerDTO) => p.pubkey);
+      peersToTest = Underscore.uniq(peersToTest, false, (p:PeerDTO) => p.pubkey)
     }
     this.logger.info('Crawling done.');
     for (let i = 0, len = found.length; i < len; i++) {
@@ -205,7 +204,7 @@ export class SandboxCrawler implements DuniterService {
   async sandboxPull(server:Server) {
     this.logger && this.logger.info('Sandbox pulling started...');
       const peers = await server.dal.getRandomlyUPsWithout([this.conf.pair.pub])
-      const randoms = chooseXin(peers, CrawlerConstants.SANDBOX_PEERS_COUNT)
+      const randoms = chooseXin(peers.map(p => PeerDTO.fromDBPeer(p)), CrawlerConstants.SANDBOX_PEERS_COUNT)
       let peersToTest = randoms.slice().map((p) => PeerDTO.fromJSONObject(p));
       for (const peer of peersToTest) {
         const fromHost = await connect(peer)
@@ -241,7 +240,7 @@ export class PeerTester implements DuniterService {
   private async testPeers(server:Server, conf:ConfDTO, displayDelays:boolean) {
     let peers = await server.dal.listAllPeers();
     let now = (new Date().getTime());
-    peers = _.filter(peers, (p:any) => p.pubkey != conf.pair.pub);
+    peers = Underscore.filter(peers, (p:any) => p.pubkey != conf.pair.pub);
     await Promise.all(peers.map(async (thePeer:any) => {
       let p = PeerDTO.fromJSONObject(thePeer);
       if (thePeer.status == 'DOWN') {
@@ -369,17 +368,17 @@ export class BlockCrawler {
         this.pullingEvent(server, 'start', current.number);
         this.logger && this.logger.info("Pulling blocks from the network...");
         let peers = await server.dal.findAllPeersNEWUPBut([server.conf.pair.pub]);
-        peers = _.shuffle(peers);
+        peers = Underscore.shuffle(peers);
         if (pubkey) {
-          _(peers).filter((p:any) => p.pubkey == pubkey);
+          peers = Underscore.filter(peers, (p:any) => p.pubkey == pubkey)
         }
         // Shuffle the peers
-        peers = _.shuffle(peers);
+        peers = Underscore.shuffle(peers);
         // Only take at max X of them
         peers = peers.slice(0, CrawlerConstants.MAX_NUMBER_OF_PEERS_FOR_PULLING);
         await Promise.all(peers.map(async (thePeer:any, i:number) => {
           let p = PeerDTO.fromJSONObject(thePeer);
-          this.pullingEvent(server, 'peer', _.extend({number: i, length: peers.length}, p));
+          this.pullingEvent(server, 'peer', Underscore.extend({number: i, length: peers.length}, p));
           this.logger && this.logger.trace("Try with %s %s", p.getURL(), p.pubkey.substr(0, 6));
           try {
             let node:any = await connect(p);

@@ -11,8 +11,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {IdentityDTO} from "./IdentityDTO"
 import * as moment from "moment"
+import {IdentityDTO} from "./IdentityDTO"
 import {Cloneable} from "./Cloneable";
 import {hashf} from "../common";
 

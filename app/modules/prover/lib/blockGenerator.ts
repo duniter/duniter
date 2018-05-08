@@ -11,6 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
+import * as moment from "moment"
 import {Server} from "../../../../server"
 import {BlockchainContext} from "../../../lib/computation/BlockchainContext"
 import {TransactionDTO} from "../../../lib/dto/TransactionDTO"
@@ -33,7 +34,6 @@ import {Underscore} from "../../../lib/common-libs/underscore"
 import {DBCert} from "../../../lib/dal/sqliteDAL/CertDAL"
 import {Map} from "../../../lib/common-libs/crypto/map"
 
-const moment          = require('moment');
 const inquirer        = require('inquirer');
 
 const constants     = CommonConstants

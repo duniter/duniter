@@ -11,6 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
+import * as moment from "moment"
 import {LOCAL_RULES_HELPERS} from "../../../lib/rules/local_rules"
 import {hashf} from "../../../lib/common"
 import {DBBlock} from "../../../lib/db/DBBlock"
@@ -23,7 +24,6 @@ import {ProcessCpuProfiler} from "../../../ProcessCpuProfiler"
 import {PowDAL} from "../../../lib/dal/fileDALs/PowDAL";
 import {Directory} from "../../../lib/system/directory"
 
-const moment = require('moment');
 const querablep = require('querablep');
 
 export function createPowWorker() {

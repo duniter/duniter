@@ -11,8 +11,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {CrawlerConstants} from "./constants"
 import * as stream from "stream"
+import * as moment from "moment"
+import {CrawlerConstants} from "./constants"
 import {Server} from "../../../../server"
 import {PeerDTO} from "../../../lib/dto/PeerDTO"
 import {FileDAL} from "../../../lib/dal/fileDAL"
@@ -34,7 +35,6 @@ import {Underscore} from "../../../lib/common-libs/underscore"
 import {HttpMerkleOfPeers} from "../../bma/lib/dtos"
 import {DBPeer, JSONDBPeer} from "../../../lib/db/DBPeer"
 
-const moment       = require('moment');
 const multimeter   = require('multimeter');
 const makeQuerablePromise = require('querablep');
 

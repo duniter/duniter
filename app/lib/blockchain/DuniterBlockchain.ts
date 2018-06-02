@@ -174,13 +174,13 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     return { index, HEAD }
   }
 
-  async pushTheBlock(obj:BlockDTO, index:IndexEntry[], HEAD:DBHead | null, conf:ConfDTO, dal:any, logger:any) {
+  async pushTheBlock(obj: BlockDTO, index: IndexEntry[], HEAD: DBHead | null, conf: ConfDTO, dal: any, logger: any, trim = true) {
     const start = Date.now();
     const block = BlockDTO.fromJSONObject(obj)
     try {
       const currentBlock = await dal.getCurrentBlockOrNull();
       block.fork = false;
-      const added = await this.saveBlockData(currentBlock, block, conf, dal, logger, index, HEAD);
+      const added = await this.saveBlockData(currentBlock, block, conf, dal, logger, index, HEAD, trim);
 
       try {
         await DuniterBlockchain.pushStatsForBlocks([block], dal);
@@ -201,7 +201,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     // await supra.recordIndex(index)
   }
 
-  async saveBlockData(current:DBBlock, block:BlockDTO, conf:ConfDTO, dal:any, logger:any, index:IndexEntry[], HEAD:DBHead | null) {
+  async saveBlockData(current: DBBlock, block: BlockDTO, conf: ConfDTO, dal: any, logger: any, index: IndexEntry[], HEAD: DBHead | null, trim: boolean) {
     if (block.number == 0) {
       await this.saveParametersForRoot(block, conf, dal);
     }
@@ -224,19 +224,21 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     // Update the wallets' blances
     await this.updateWallets(indexes.sindex, dal)
 
-    const TAIL = await dal.bindexDAL.tail();
-    const bindexSize = [
-      TAIL.issuersCount,
-      TAIL.issuersFrame,
-      conf.medianTimeBlocks,
-      conf.dtDiffEval
-    ].reduce((max, value) => {
-      return Math.max(max, value);
-    }, 0);
-    const MAX_BINDEX_SIZE = conf.forksize + bindexSize
-    const currentSize = indexes.HEAD.number - TAIL.number + 1
-    if (currentSize > MAX_BINDEX_SIZE) {
-      await dal.trimIndexes(indexes.HEAD.number - MAX_BINDEX_SIZE);
+    if (trim) {
+      const TAIL = await dal.bindexDAL.tail();
+      const bindexSize = [
+        TAIL.issuersCount,
+        TAIL.issuersFrame,
+        conf.medianTimeBlocks,
+        conf.dtDiffEval
+      ].reduce((max, value) => {
+        return Math.max(max, value);
+      }, 0);
+      const MAX_BINDEX_SIZE = conf.forksize + bindexSize
+      const currentSize = indexes.HEAD.number - TAIL.number + 1
+      if (currentSize > MAX_BINDEX_SIZE) {
+        await dal.trimIndexes(indexes.HEAD.number - MAX_BINDEX_SIZE);
+      }
     }
 
     const dbb = DBBlock.fromBlockDTO(block)

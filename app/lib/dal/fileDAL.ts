@@ -28,7 +28,6 @@ import {DBBlock} from "../db/DBBlock"
 import {DBMembership} from "./sqliteDAL/MembershipDAL"
 import {MerkleDTO} from "../dto/MerkleDTO"
 import {CommonConstants} from "../common-libs/constants"
-import { ProxiesConf } from '../proxy';
 import {PowDAL} from "./fileDALs/PowDAL";
 
 const fs      = require('fs')
@@ -697,7 +696,7 @@ export class FileDAL {
     let iindex = indexer.iindex(index);
     let sindex = indexer.sindex(index);
     let cindex = indexer.cindex(index);
-    sindex = sindex.concat(await indexer.ruleIndexGenDividend(HEAD, this));
+    sindex = sindex.concat(await indexer.ruleIndexGenDividend(HEAD, iindex, this));
     sindex = sindex.concat(await indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex, this));
     cindex = cindex.concat(await indexer.ruleIndexGenCertificationExpiry(HEAD, this));
     mindex = mindex.concat(await indexer.ruleIndexGenMembershipExpiry(HEAD, this));

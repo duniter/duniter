@@ -123,11 +123,8 @@ export class QuickSynchronizer {
         const local_cindex = Indexer.cindex(index);
         const local_sindex = Indexer.sindex(index);
         const local_mindex = Indexer.mindex(index);
-        sync_iindex = sync_iindex.concat(local_iindex);
-        sync_cindex = sync_cindex.concat(local_cindex);
-        sync_mindex = sync_mindex.concat(local_mindex);
 
-        const HEAD = await Indexer.quickCompleteGlobalScope(block, sync_currConf, sync_bindex, sync_iindex, sync_mindex, sync_cindex, {
+        const HEAD = await Indexer.quickCompleteGlobalScope(block, sync_currConf, sync_bindex, local_iindex, local_mindex, local_cindex, {
           getBlock: (number: number) => {
             return Promise.resolve(sync_allBlocks[number]);
           },
@@ -184,12 +181,12 @@ export class QuickSynchronizer {
           await this.dal.iindexDAL.insertBatch(sync_iindex);
           await this.dal.sindexDAL.insertBatch(sync_sindex);
           await this.dal.cindexDAL.insertBatch(sync_cindex);
-          sync_mindex = [];
-          sync_iindex = [];
-          sync_cindex = [];
-          sync_sindex = local_sindex;
+          sync_iindex = local_iindex
+          sync_cindex = local_cindex
+          sync_mindex = local_mindex
+          sync_sindex = local_sindex
 
-          sync_sindex = sync_sindex.concat(await Indexer.ruleIndexGenDividend(HEAD, this.dal));
+          sync_sindex = sync_sindex.concat(await Indexer.ruleIndexGenDividend(HEAD, local_iindex, this.dal));
           sync_sindex = sync_sindex.concat(await Indexer.ruleIndexGarbageSmallAccounts(HEAD, sync_sindex, sync_memoryDAL));
           if (nextExpiringChanged) {
             sync_cindex = sync_cindex.concat(await Indexer.ruleIndexGenCertificationExpiry(HEAD, this.dal));
@@ -201,21 +198,26 @@ export class QuickSynchronizer {
           // Update balances with UD + local garbagings
           await this.blockchain.updateWallets(sync_sindex, sync_memoryDAL)
 
-          // --> Update links
-          await this.dal.updateWotbLinks(local_cindex.concat(sync_cindex));
-
-          // Flush the INDEX again
-          await this.dal.mindexDAL.insertBatch(sync_mindex);
+          // Flush the INDEX again (needs to be done *before* the update of wotb links because of block#0)
           await this.dal.iindexDAL.insertBatch(sync_iindex);
+          await this.dal.mindexDAL.insertBatch(sync_mindex);
           await this.dal.sindexDAL.insertBatch(sync_sindex);
           await this.dal.cindexDAL.insertBatch(sync_cindex);
-          sync_mindex = [];
+
+          // --> Update links
+          await this.dal.updateWotbLinks(local_cindex.concat(sync_cindex));
           sync_iindex = [];
+          sync_mindex = [];
           sync_cindex = [];
           sync_sindex = [];
 
           // Create/Update nodes in wotb
           await this.blockchain.updateMembers(block, this.dal)
+        } else {
+          // Concat the results to the pending data
+          sync_iindex = sync_iindex.concat(local_iindex);
+          sync_cindex = sync_cindex.concat(local_cindex);
+          sync_mindex = sync_mindex.concat(local_mindex);
         }
 
         // Trim the bindex

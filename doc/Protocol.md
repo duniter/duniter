@@ -2678,6 +2678,21 @@ For each `REDUCE_BY(GLOBAL_IINDEX[member=true], 'pub') as IDTY` then if `IDTY.me
         consumed = false
     )
 
+For each `LOCAL_IINDEX[member=true] as IDTY` add a new LOCAL_SINDEX entry:
+
+    SINDEX (
+        op = 'CREATE'
+        identifier = IDTY.pub
+        pos = HEAD.number
+        written_on = BLOCKSTAMP
+        written_time = MedianTime
+        amount = HEAD.dividend
+        base = HEAD.unitBase
+        locktime = null
+        conditions = REQUIRE_SIG(MEMBER.pub)
+        consumed = false
+    )
+
 ###### BR_G106 - Low accounts
 
 Set:

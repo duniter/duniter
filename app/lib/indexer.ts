@@ -1628,10 +1628,10 @@ export class Indexer {
   }
 
   // BR_G91
-  static async ruleIndexGenDividend(HEAD: DBHead, dal:FileDAL) {
+  static async ruleIndexGenDividend(HEAD: DBHead, local_iindex: IindexEntry[], dal: FileDAL) {
     const dividends = [];
     if (HEAD.new_dividend) {
-      const members = await dal.iindexDAL.getMembersPubkeys()
+      const members = (await dal.iindexDAL.getMembersPubkeys()).concat(local_iindex.filter(i => i.member))
       for (const MEMBER of members) {
         dividends.push({
           index: constants.S_INDEX,

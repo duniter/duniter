@@ -959,7 +959,7 @@ export class FileDAL {
     let iindex = indexer.iindex(index);
     let sindex = indexer.sindex(index);
     let cindex = indexer.cindex(index);
-    sindex = sindex.concat(await indexer.ruleIndexGenDividend(HEAD, this));
+    sindex = sindex.concat(await indexer.ruleIndexGenDividend(HEAD, iindex, this));
     sindex = sindex.concat(await indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex, this));
     cindex = cindex.concat(await indexer.ruleIndexGenCertificationExpiry(HEAD, this));
     mindex = mindex.concat(await indexer.ruleIndexGenMembershipExpiry(HEAD, this));

@@ -117,7 +117,7 @@ export class BlockchainService extends FIFOService {
       }
 
       async addBlock(block: BlockDTO): Promise<BlockDTO> {
-        return await this.bcService.mainContext.checkAndAddBlock(block)
+        return await this.bcService.mainContext.checkAndAddBlock(block, false)
       }
 
     })(this)

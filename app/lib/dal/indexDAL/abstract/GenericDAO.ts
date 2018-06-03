@@ -15,6 +15,14 @@ export interface GenericDAO<T> extends Initiable {
   findRaw(criterion: any): Promise<any>
 
   /**
+   * Make a generic find with some ordering.
+   * @param criterion Criterion object, LokiJS's find object format.
+   * @param sort A LokiJS's compunded sort object.
+   * @returns {Promise<any>} A set of records.
+   */
+  findRawWithOrder(criterion: any, sort:((string|((string|boolean)[]))[])): Promise<any>
+
+  /**
    * Make a single insert.
    * @param record The record to insert.
    */

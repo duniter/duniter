@@ -41,6 +41,7 @@ const revertDependency    = require('./app/modules/revert');
 const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
 const pluginDependency    = require('./app/modules/plugin');
+const dumpDependency      = require('./app/modules/dump');
 
 let sigintListening = false
 
@@ -130,7 +131,8 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-keypair',   required: KeypairDependency },
   { name: 'duniter-crawler',   required: CrawlerDependency },
   { name: 'duniter-bma',       required: BmaDependency },
-  { name: 'duniter-ws2p',      required: WS2PDependency }
+  { name: 'duniter-ws2p',      required: WS2PDependency },
+  { name: 'duniter-dump',      required: dumpDependency },
 ]);
 
 const PRODUCTION_DEPENDENCIES = DEFAULT_DEPENDENCIES.concat([

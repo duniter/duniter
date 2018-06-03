@@ -28,6 +28,16 @@ export abstract class LokiIndex<T extends IndexData> extends LokiCollectionManag
     return res
   }
 
+  async findRawWithOrder(criterion:any, sort:((string|((string|boolean)[]))[])) {
+    const now = getMicrosecondsTime()
+    const res = this.collection
+      .chain()
+      .find(criterion)
+      .compoundsort(sort)
+    logger.trace('[loki][%s][findRaw] => %sµs', this.collectionName, (getMicrosecondsTime() - now), criterion)
+    return res.data()
+  }
+
   async insertBatch(records: T[]): Promise<void> {
     const now = getMicrosecondsTime()
     records.map(r => this.insert(r))

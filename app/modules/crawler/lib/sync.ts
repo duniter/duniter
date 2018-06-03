@@ -651,6 +651,7 @@ class P2PDownloader {
 
   private PARALLEL_PER_CHUNK = 1;
   private MAX_DELAY_PER_DOWNLOAD = 15000;
+  private WAIT_DELAY_WHEN_MAX_DOWNLOAD_IS_REACHED = 3000;
   private NO_NODES_AVAILABLE = "No node available for download";
   private TOO_LONG_TIME_DOWNLOAD:string
   private nbBlocksToDownload:number
@@ -838,6 +839,7 @@ class P2PDownloader {
     // We remove the nodes impossible to reach (timeout)
     let withGoodDelays = Underscore.filter(candidates, (c:any) => c.tta <= this.MAX_DELAY_PER_DOWNLOAD);
     if (withGoodDelays.length === 0) {
+      await new Promise(res => setTimeout(res, this.WAIT_DELAY_WHEN_MAX_DOWNLOAD_IS_REACHED)) // We wait a bit before continuing the downloads
       // No node can be reached, we can try to lower the number of nodes on which we download
       this.downloadSlots = Math.floor(this.downloadSlots / 2);
       // We reinitialize the nodes

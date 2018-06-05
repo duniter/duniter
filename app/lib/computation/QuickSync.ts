@@ -154,18 +154,16 @@ export class QuickSynchronizer {
           || block.certifications.length
           || block.transactions.length
           || block.medianTime >= sync_nextExpiring) {
-          // logger.warn('>> Block#%s', block.number)
+          const nextExpiringChanged = block.medianTime >= sync_nextExpiring
 
           for (let i = 0; i < sync_expires.length; i++) {
             let expire = sync_expires[i];
-            if (block.medianTime > expire) {
+            if (block.medianTime >= expire) {
               sync_expires.splice(i, 1);
               i--;
             }
           }
-          const currentNextExpiring = sync_nextExpiring
           sync_nextExpiring = sync_expires.reduce((max, value) => max ? Math.min(max, value) : value, 9007199254740991); // Far far away date
-          const nextExpiringChanged = currentNextExpiring !== sync_nextExpiring
 
           // Fills in correctly the SINDEX
           await Promise.all(Underscore.where(sync_sindex.concat(local_sindex), { op: 'UPDATE' }).map(async (entry: any) => {

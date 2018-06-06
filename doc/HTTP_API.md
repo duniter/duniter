@@ -45,6 +45,7 @@
       * [process](#txprocess)
       * [sources/[pubkey]](#txsourcespubkey)
       * [history/[pubkey]](#txhistorypubkey)
+      * [history/[pubkey]/pending](#txhistorypubkeypending)
       * [history/[pubkey]/blocks/[from]/[to]](#txhistorypubkeyblocksfromto)
       * [history/[pubkey]/times/[from]/[to]](#txhistorypubkeytimesfromto)
   * [ud/](#ud)
@@ -1506,6 +1507,99 @@ The full transaction history for the given `pubkey`
 	]
   }
 }
+```
+
+#### `tx/history/[pubkey]pending`
+
+**Goal**
+
+Get the wallet transaction pending history
+
+**parameters**
+
+Name              | Value							| Method
+----              | -----							| ------
+`pubkey`          | Wallet public key.				| URL
+
+**Returns**
+
+The pending transaction history for the given `pubkey`
+```json
+{
+  "currency": "g1",
+  "pubkey": "8MPJrxpkd8E5VeKTMrgD7ZjL8SYRPrC6hi2KeP4QFbaD",
+  "history": {
+    "sending": [
+      {
+        "version": 10,
+        "locktime": 0,
+        "blockstamp": "126087-000005A3F03F05E57D538265068948AFAC839B149FF6ABE1CFE62F3568EC2453",
+        "blockstampTime": 1528309130,
+        "issuers": [
+          "8MPJrxpkd8E5VeKTMrgD7ZjL8SYRPrC6hi2KeP4QFbaD"
+        ],
+        "inputs": [
+          "1002:0:D:8MPJrxpkd8E5VeKTMrgD7ZjL8SYRPrC6hi2KeP4QFbaD:124577",
+          "1002:0:D:8MPJrxpkd8E5VeKTMrgD7ZjL8SYRPrC6hi2KeP4QFbaD:124863",
+          "1002:0:D:8MPJrxpkd8E5VeKTMrgD7ZjL8SYRPrC6hi2KeP4QFbaD:125149"
+        ],
+        "outputs": [
+          "3000:0:SIG(DfAT7wGnRG4c3vnCDSfF5CW8HkwLRL6bMb1ykQPiAgCX)",
+          "6:0:SIG(8MPJrxpkd8E5VeKTMrgD7ZjL8SYRPrC6hi2KeP4QFbaD)"
+        ],
+        "unlocks": [
+          "0:SIG(0)",
+          "1:SIG(0)",
+          "2:SIG(0)"
+        ],
+        "signatures": [
+          "ySMUI6qn1S2vCdXiLdDBKF8XgvzrCvgOUeMkrdDdkU2v2S0c0RhZrOrMxxq8iymx6i7k5EmA+6BRBIOPMa7mCg=="
+        ],
+        "comment": "merci pour les moufles et a mardi pour l apero monnaie libre",
+        "hash": "C7138CEFB2BF6C92C92EA809AF8C90DEC79B5E6F6C0A0E34434260EF706A1BF2",
+        "time": null,
+        "block_number": null,
+        "received": 1528311498
+      }
+    ],
+    "received": [],
+    "receiving": [],
+    "sent": [],
+    "pending": [
+      {
+        "version": 10,
+        "locktime": 0,
+        "blockstamp": "126087-000005A3F03F05E57D538265068948AFAC839B149FF6ABE1CFE62F3568EC2453",
+        "blockstampTime": 1528309130,
+        "issuers": [
+          "8MPJrxpkd8E5VeKTMrgD7ZjL8SYRPrC6hi2KeP4QFbaD"
+        ],
+        "inputs": [
+          "1002:0:D:8MPJrxpkd8E5VeKTMrgD7ZjL8SYRPrC6hi2KeP4QFbaD:124577",
+          "1002:0:D:8MPJrxpkd8E5VeKTMrgD7ZjL8SYRPrC6hi2KeP4QFbaD:124863",
+          "1002:0:D:8MPJrxpkd8E5VeKTMrgD7ZjL8SYRPrC6hi2KeP4QFbaD:125149"
+        ],
+        "outputs": [
+          "3000:0:SIG(DfAT7wGnRG4c3vnCDSfF5CW8HkwLRL6bMb1ykQPiAgCX)",
+          "6:0:SIG(8MPJrxpkd8E5VeKTMrgD7ZjL8SYRPrC6hi2KeP4QFbaD)"
+        ],
+        "unlocks": [
+          "0:SIG(0)",
+          "1:SIG(0)",
+          "2:SIG(0)"
+        ],
+        "signatures": [
+          "ySMUI6qn1S2vCdXiLdDBKF8XgvzrCvgOUeMkrdDdkU2v2S0c0RhZrOrMxxq8iymx6i7k5EmA+6BRBIOPMa7mCg=="
+        ],
+        "comment": "merci pour les moufles et a mardi pour l apero monnaie libre",
+        "hash": "C7138CEFB2BF6C92C92EA809AF8C90DEC79B5E6F6C0A0E34434260EF706A1BF2",
+        "time": null,
+        "block_number": null,
+        "received": 1528311498
+      }
+    ]
+  }
+}⏎
 ```
 
 #### `tx/history/[PUBKEY]/blocks/[from]/[to]`

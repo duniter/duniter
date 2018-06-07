@@ -1,6 +1,7 @@
 stages:
   - github-sync
   - build
+  - pages
   - test
   - package
   - prerelease
@@ -38,6 +39,17 @@ build:
   stage: build
   script:
     - yarn
+
+pages:
+  <<: *nvm_env
+  stage: pages
+  script:
+    - ls public
+  artifacts:
+    untracked: true
+    paths:
+      - typedoc
+
 
 test:
   <<: *nvm_env

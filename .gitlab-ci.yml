@@ -44,6 +44,7 @@ pages:
   <<: *nvm_env
   stage: pages
   script:
+    - yarn
     - yarn doc
     - mv typedoc public
     - ls public

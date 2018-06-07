@@ -35,6 +35,9 @@ vagrant/duniter
 .nyc_output
 coverage/
 
+# typecode
+typedoc/
+
 /index.js*
 /index.d.ts
 /server.js*

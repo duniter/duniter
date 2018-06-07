@@ -25,7 +25,7 @@ export class LokiSIndex extends LokiIndex<SindexEntry> implements SIndexDAO {
   async getAvailableForConditions(conditionsStr: string): Promise<SindexEntry[]> {
     const sources = this.collection
       .chain()
-      .find({ conditions: { $regex: conditionsStr } })
+      .find({ conditions: { $contains: conditionsStr } })
       .simplesort('writtenOn')
       .data()
       .filter(s => this.collection.find({ identifier: s.identifier, pos: s.pos, consumed: true }).length === 0)

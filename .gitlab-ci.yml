@@ -44,6 +44,7 @@ pages:
   <<: *nvm_env
   stage: pages
   script:
+    - mv typedoc public
     - ls public
   artifacts:
     untracked: true

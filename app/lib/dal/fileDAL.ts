@@ -326,6 +326,11 @@ export class FileDAL {
     return (await this.blockDAL.getAbsoluteBlock(number, hash)) || (await this.blockchainArchiveDAL.getBlock(number, hash))
   }
 
+  async getAbsoluteBlockByBlockstamp(blockstamp: string): Promise<DBBlock|null> {
+    const sp = blockstamp.split('-')
+    return this.getAbsoluteBlockByNumberAndHash(parseInt(sp[0]), sp[1])
+  }
+
   async existsNonChainableLink(from:string, vHEAD_1:DBHead, sigStock:number) {
     // Cert period rule
     const medianTime = vHEAD_1 ? vHEAD_1.medianTime : 0;

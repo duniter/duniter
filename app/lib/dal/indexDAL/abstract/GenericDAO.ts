@@ -20,7 +20,7 @@ export interface GenericDAO<T> extends Initiable {
    * @param sort A LokiJS's compunded sort object.
    * @returns {Promise<any>} A set of records.
    */
-  findRawWithOrder(criterion: any, sort:((string|((string|boolean)[]))[])): Promise<any>
+  findRawWithOrder(criterion: any, sort:((string|((string|boolean)[]))[])): Promise<T[]>
 
   /**
    * Make a single insert.

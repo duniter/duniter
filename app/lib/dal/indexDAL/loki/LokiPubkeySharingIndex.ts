@@ -1,8 +1,10 @@
 import {Indexer} from "../../../indexer"
 import {LokiIndex} from "./LokiIndex"
+import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
 
 export class LokiPubkeySharingIndex<T extends { written_on:string, writtenOn:number, pub:string }> extends LokiIndex<T> {
 
+  @MonitorLokiExecutionTime(true)
   async trimRecords(belowNumber: number): Promise<void> {
     // TODO: may be optimized by only selecting new offseted records
     const criterion:any = {

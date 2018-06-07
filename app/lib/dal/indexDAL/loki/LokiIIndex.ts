@@ -1,9 +1,8 @@
 import {FullIindexEntry, IindexEntry, Indexer} from "../../../indexer"
 import {IIndexDAO} from "../abstract/IIndexDAO"
 import {LokiPubkeySharingIndex} from "./LokiPubkeySharingIndex"
-import {getDurationInMicroSeconds, getMicrosecondsTime} from "../../../../ProcessCpuProfiler"
-import {NewLogger} from "../../../logger"
 import {OldIindexEntry} from "../../../db/OldIindexEntry"
+import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
 
 export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements IIndexDAO {
 
@@ -130,11 +129,9 @@ export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements I
     ) as Promise<FullIindexEntry|null>
   }
 
+  @MonitorLokiExecutionTime()
   async getMembersPubkeys(): Promise<{ pub: string }[]> {
-    const now = getMicrosecondsTime()
-    const res = (await this.getMembers()).map(m => ({ pub: m.pubkey }))
-    NewLogger().trace('[getMembersPubkeys] %sµs', getDurationInMicroSeconds(now))
-    return res
+    return (await this.getMembers()).map(m => ({ pub: m.pubkey }))
   }
 
   async getToBeKickedPubkeys(): Promise<string[]> {

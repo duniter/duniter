@@ -2,6 +2,7 @@ import {CIndexDAO} from "../abstract/CIndexDAO"
 import {LokiIndex} from "./LokiIndex"
 import {CindexEntry, FullCindexEntry, Indexer} from "../../../indexer"
 import {CommonConstants} from "../../../common-libs/constants"
+import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
 
 export class LokiCIndex extends LokiIndex<CindexEntry> implements CIndexDAO {
 
@@ -118,6 +119,7 @@ export class LokiCIndex extends LokiIndex<CindexEntry> implements CIndexDAO {
       .filter(r => this.collection.find({ issuer: r.issuer, receiver: r.receiver, created_on: r.created_on, expired_on: { $gt: 0 } }).length === 0)
   }
 
+  @MonitorLokiExecutionTime(true)
   async trimExpiredCerts(belowNumber: number): Promise<void> {
     const expired = this.collection.find({
       $and: [

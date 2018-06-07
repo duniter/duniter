@@ -1,10 +1,7 @@
 import {LokiIndex} from "./LokiIndex"
-import {NewLogger} from "../../../logger"
 import {BlockchainDAO} from "../abstract/BlockchainDAO"
 import {DBBlock} from "../../../db/DBBlock"
-import {getMicrosecondsTime} from "../../../../ProcessCpuProfiler"
-
-const logger = NewLogger()
+import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
 
 export class LokiBlockchain extends LokiIndex<DBBlock> implements BlockchainDAO {
 
@@ -35,17 +32,15 @@ export class LokiBlockchain extends LokiIndex<DBBlock> implements BlockchainDAO 
     }
   }
 
+  @MonitorLokiExecutionTime(true)
   async getBlock(number:string | number) {
-    const now = getMicrosecondsTime()
-    const b = this.collection
+    return this.collection
       .chain()
       .find({
         number: parseInt(String(number)),
         fork: false
       })
       .data()[0]
-    logger.trace('[loki][%s][getBlock] %sµs', this.collectionName, (getMicrosecondsTime() - now), number)
-    return b
   }
 
   async getPotentialRoots() {

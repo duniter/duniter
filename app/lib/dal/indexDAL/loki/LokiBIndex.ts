@@ -3,6 +3,7 @@ import {DBHead} from "../../../db/DBHead"
 import {BIndexDAO} from "../abstract/BIndexDAO"
 import {NewLogger} from "../../../logger"
 import {getDurationInMicroSeconds, getMicrosecondsTime} from "../../../../ProcessCpuProfiler"
+import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
 
 const logger = NewLogger()
 
@@ -75,6 +76,7 @@ export class LokiBIndex extends LokiIndex<DBHead> implements BIndexDAO {
       .find({ number: HEAD.number - nbHEADs + 1 })[0]
   }
 
+  @MonitorLokiExecutionTime(true)
   async trimBlocks(maxnumber: number): Promise<void> {
     this.collection
       .chain()

@@ -15,13 +15,10 @@ import {SQLiteDriver} from "../drivers/SQLiteDriver"
 import {Initiable} from "./Initiable"
 import {getDurationInMicroSeconds, getMicrosecondsTime} from "../../../ProcessCpuProfiler"
 import {Underscore} from "../../common-libs/underscore"
+import {NewLogger} from "../../logger"
+import {MonitorSQLExecutionTime} from "../../debug/MonitorSQLExecutionTime"
 
-/**
- * Created by cgeek on 22/08/15.
- */
-
-const colors = require('colors');
-const logger = require('../../logger').NewLogger('sqlite');
+const logger = NewLogger('sqlite')
 
 export interface BeforeSaveHook<T> {
   (t:T): void
@@ -43,26 +40,11 @@ export abstract class AbstractSQLite<T> extends Initiable {
     super()
   }
 
+  @MonitorSQLExecutionTime()
   async query(sql:string, params: any[] = []): Promise<T[]> {
     try {
-      const start = getMicrosecondsTime()
       const res = await this.driver.executeAll(sql, params || []);
-      const duration = getDurationInMicroSeconds(start)
-      logger.trace('[sqlite][query] %s %s %sµs', sql, JSON.stringify(params || []), duration)
-      const entities = res.map((t:T) => this.toEntity(t))
-      // Display result
-      let msg = sql + ' | %s\t==> %s rows in %s ms';
-      if (duration <= 2) {
-        msg = colors.green(msg);
-      } else if(duration <= 5) {
-        msg = colors.yellow(msg);
-      } else if (duration <= 10) {
-        msg = colors.magenta(msg);
-      } else if (duration <= 100) {
-        msg = colors.red(msg);
-      }
-      logger.query(msg, JSON.stringify(params || []), entities.length, duration);
-      return entities;
+      return res.map((t:T) => this.toEntity(t))
     } catch (e) {
       logger.error('ERROR >> %s', sql, JSON.stringify(params || []), e.stack || e.message || e);
       throw e;

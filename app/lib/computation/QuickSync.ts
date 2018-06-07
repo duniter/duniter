@@ -174,10 +174,12 @@ export class QuickSynchronizer {
           }))
 
           // Flush the INDEX (not bindex, which is particular)
-          await this.dal.mindexDAL.insertBatch(sync_mindex);
-          await this.dal.iindexDAL.insertBatch(sync_iindex);
-          await this.dal.sindexDAL.insertBatch(sync_sindex);
-          await this.dal.cindexDAL.insertBatch(sync_cindex);
+          await this.dal.flushIndexes({
+            mindex: sync_mindex,
+            iindex: sync_iindex,
+            sindex: sync_sindex,
+            cindex: sync_cindex,
+          })
           sync_iindex = local_iindex
           sync_cindex = local_cindex
           sync_mindex = local_mindex
@@ -196,10 +198,12 @@ export class QuickSynchronizer {
           await DuniterBlockchain.updateWallets(sync_sindex, sync_memoryDAL)
 
           // Flush the INDEX again (needs to be done *before* the update of wotb links because of block#0)
-          await this.dal.iindexDAL.insertBatch(sync_iindex);
-          await this.dal.mindexDAL.insertBatch(sync_mindex);
-          await this.dal.sindexDAL.insertBatch(sync_sindex);
-          await this.dal.cindexDAL.insertBatch(sync_cindex);
+          await this.dal.flushIndexes({
+            mindex: sync_mindex,
+            iindex: sync_iindex,
+            sindex: sync_sindex,
+            cindex: sync_cindex,
+          })
 
           // --> Update links
           await this.dal.updateWotbLinks(local_cindex.concat(sync_cindex));
@@ -240,10 +244,12 @@ export class QuickSynchronizer {
 
         // Save the INDEX
         await this.dal.bindexDAL.insertBatch(sync_bindex);
-        await this.dal.mindexDAL.insertBatch(sync_mindex);
-        await this.dal.iindexDAL.insertBatch(sync_iindex);
-        await this.dal.sindexDAL.insertBatch(sync_sindex);
-        await this.dal.cindexDAL.insertBatch(sync_cindex);
+        await this.dal.flushIndexes({
+          mindex: sync_mindex,
+          iindex: sync_iindex,
+          sindex: sync_sindex,
+          cindex: sync_cindex,
+        })
 
         // Save the intermediary table of wallets
         const conditions = Underscore.keys(sync_memoryWallets)

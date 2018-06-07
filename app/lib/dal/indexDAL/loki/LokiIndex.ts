@@ -1,9 +1,6 @@
 import {GenericDAO} from "../abstract/GenericDAO"
-import {NewLogger} from "../../../logger"
-import {getMicrosecondsTime} from "../../../../ProcessCpuProfiler"
 import {LokiCollectionManager} from "./LokiCollectionManager"
-
-const logger = NewLogger()
+import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
 
 export interface IndexData {
   written_on: string
@@ -16,48 +13,37 @@ export abstract class LokiIndex<T extends IndexData> extends LokiCollectionManag
   }
 
   async insert(record: T): Promise<void> {
-    const now = getMicrosecondsTime()
     this.collection.insert(record)
-    // logger.trace('[loki][%s][insert] %sµs', this.collectionName, (getMicrosecondsTime() - now))
   }
 
+  @MonitorLokiExecutionTime(true)
   async findRaw(criterion?:any) {
-    const now = getMicrosecondsTime()
-    const res = this.collection.find(criterion)
-    logger.trace('[loki][%s][findRaw] => %sµs', this.collectionName, (getMicrosecondsTime() - now), criterion)
-    return res
+    return this.collection.find(criterion)
   }
 
+  @MonitorLokiExecutionTime(true)
   async findRawWithOrder(criterion:any, sort:((string|((string|boolean)[]))[])) {
-    const now = getMicrosecondsTime()
     const res = this.collection
       .chain()
       .find(criterion)
       .compoundsort(sort)
-    logger.trace('[loki][%s][findRaw] => %sµs', this.collectionName, (getMicrosecondsTime() - now), criterion)
     return res.data()
   }
 
+  @MonitorLokiExecutionTime()
   async insertBatch(records: T[]): Promise<void> {
-    const now = getMicrosecondsTime()
     records.map(r => this.insert(r))
-    if (records.length) {
-      logger.trace('[loki][%s][insertBatch] %s record(s) in %sµs', this.collectionName, records.length, getMicrosecondsTime() - now)
-    }
   }
 
+  @MonitorLokiExecutionTime(true)
   async getWrittenOn(blockstamp: string): Promise<T[]> {
-    const now = getMicrosecondsTime()
     const criterion:any = { writtenOn: parseInt(blockstamp) }
-    const res = this.collection.find(criterion)
-    logger.trace('[loki][%s][getWrittenOn] %sµs', this.collectionName, (getMicrosecondsTime() - now), blockstamp)
-    return res
+    return this.collection.find(criterion)
   }
 
+  @MonitorLokiExecutionTime(true)
   async removeBlock(blockstamp: string): Promise<void> {
-    const now = getMicrosecondsTime()
     const data = await this.getWrittenOn(blockstamp)
     data.map(d => this.collection.remove(d))
-    logger.trace('[loki][%s][removeBlock] %sµs', this.collectionName, (getMicrosecondsTime() - now), blockstamp)
   }
 }

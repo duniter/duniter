@@ -28,6 +28,7 @@ import {
   FullSindexEntry,
   IindexEntry,
   IndexEntry,
+  MindexEntry,
   SindexEntry
 } from "../indexer"
 import {TransactionDTO} from "../dto/TransactionDTO"
@@ -58,7 +59,6 @@ import {NewLogger} from "../logger"
 import {LokiBlockchain} from "./indexDAL/loki/LokiBlockchain"
 import {BlockchainDAO} from "./indexDAL/abstract/BlockchainDAO"
 import {LokiTransactions} from "./indexDAL/loki/LokiTransactions"
-import {profileFunc} from "../../ProcessCpuProfiler"
 import {TxsDAO} from "./indexDAL/abstract/TxsDAO"
 import {LokiJsDriver} from "./drivers/LokiJsDriver"
 import {WalletDAO} from "./indexDAL/abstract/WalletDAO"
@@ -73,6 +73,8 @@ import {CFSCore} from "./fileDALs/CFSCore"
 import {BlockchainArchiveDAO} from "./indexDAL/abstract/BlockchainArchiveDAO"
 import {Underscore} from "../common-libs/underscore"
 import {DBPeer} from "../db/DBPeer"
+import {MonitorFlushedIndex} from "../debug/MonitorFlushedIndex"
+import {cliprogram} from "../common-libs/programOptions"
 
 const readline = require('readline')
 const indexer = require('../indexer').Indexer
@@ -85,6 +87,13 @@ export interface FileDALParams {
   dbf:() => SQLiteDriver
   dbf2: () => LokiJsDriver
   wotb:WoTBInstance
+}
+
+export interface IndexBatch {
+  mindex: MindexEntry[]
+  iindex: IindexEntry[]
+  sindex: SindexEntry[]
+  cindex: CindexEntry[]
 }
 
 export class FileDAL {
@@ -987,12 +996,13 @@ export class FileDAL {
   }
 
   async trimIndexes(maxNumber:number) {
-    await profileFunc('[loki][bindex][trim]', () => this.bindexDAL.trimBlocks(maxNumber))
-    await profileFunc('[loki][iindex][trim]', () => this.iindexDAL.trimRecords(maxNumber))
-    await profileFunc('[loki][mindex][trim]', () => this.mindexDAL.trimRecords(maxNumber))
-    await profileFunc('[loki][cindex][trim]', () => this.cindexDAL.trimExpiredCerts(maxNumber))
-    await profileFunc('[loki][sindex][trim]', () => this.sindexDAL.trimConsumedSource(maxNumber))
-    return true;
+    if (!cliprogram.notrim) {
+      await this.bindexDAL.trimBlocks(maxNumber)
+      await this.iindexDAL.trimRecords(maxNumber)
+      await this.mindexDAL.trimRecords(maxNumber)
+      await this.cindexDAL.trimExpiredCerts(maxNumber)
+      await this.sindexDAL.trimConsumedSource(maxNumber)
+    }
   }
 
   async trimSandboxes(block:{ medianTime: number }) {
@@ -1260,5 +1270,13 @@ export class FileDAL {
       })
     }
     return members
+  }
+
+  @MonitorFlushedIndex()
+  async flushIndexes(indexes: IndexBatch) {
+    await this.mindexDAL.insertBatch(indexes.mindex)
+    await this.iindexDAL.insertBatch(indexes.iindex)
+    await this.sindexDAL.insertBatch(indexes.sindex)
+    await this.cindexDAL.insertBatch(indexes.cindex)
   }
 }

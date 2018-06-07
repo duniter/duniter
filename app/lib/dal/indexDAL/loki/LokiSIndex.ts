@@ -2,6 +2,7 @@ import {LokiIndex} from "./LokiIndex"
 import {FullSindexEntry, Indexer, SindexEntry} from "../../../indexer"
 import {SIndexDAO} from "../abstract/SIndexDAO"
 import {Underscore} from "../../../common-libs/underscore"
+import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
 
 export class LokiSIndex extends LokiIndex<SindexEntry> implements SIndexDAO {
 
@@ -82,6 +83,7 @@ export class LokiSIndex extends LokiIndex<SindexEntry> implements SIndexDAO {
     return Indexer.DUP_HELPERS.reduceBy(reducables, ['identifier', 'pos'])
   }
 
+  @MonitorLokiExecutionTime(true)
   async trimConsumedSource(belowNumber: number): Promise<void> {
     const consumed = this.collection
       .find({ writtenOn: { $lt: belowNumber }})

@@ -218,10 +218,7 @@ export class DuniterBlockchain {
 
     // Save indexes
     await dal.bindexDAL.insert(indexes.HEAD);
-    await dal.mindexDAL.insertBatch(indexes.mindex);
-    await dal.iindexDAL.insertBatch(indexes.iindex);
-    await dal.sindexDAL.insertBatch(indexes.sindex);
-    await dal.cindexDAL.insertBatch(indexes.cindex);
+    await dal.flushIndexes(indexes)
 
     // Create/Update nodes in wotb
     await this.updateMembers(block, dal);

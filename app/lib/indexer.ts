@@ -183,6 +183,14 @@ export interface Ranger {
   (n:number, m:number): Promise<DBHead[]>
 }
 
+export interface ExclusionByCert {
+  op: 'UPDATE'
+  pub: string
+  written_on: string
+  writtenOn: number
+  kick: true
+}
+
 function pushIindex(index: IndexEntry[], entry: IindexEntry): void {
   index.push(entry)
 }
@@ -1766,16 +1774,17 @@ export class Indexer {
 
   // BR_G95
   static async ruleIndexGenExclusionByCertificatons(HEAD: DBHead, cindex: CindexEntry[], iindex: IindexEntry[], conf: ConfDTO, dal:FileDAL) {
-    const exclusions = [];
+    const exclusions: ExclusionByCert[] = [];
     const expiredCerts = Underscore.filter(cindex, (c: CindexEntry) => c.expired_on > 0);
     for (const CERT of expiredCerts) {
       const just_expired = Underscore.filter(cindex, (c: CindexEntry) => c.receiver == CERT.receiver && c.expired_on > 0);
       const just_received = Underscore.filter(cindex, (c: CindexEntry) => c.receiver == CERT.receiver && c.expired_on == 0);
       const non_expired_global = await dal.cindexDAL.getValidLinksTo(CERT.receiver);
       if ((count(non_expired_global) - count(just_expired) + count(just_received)) < conf.sigQty) {
-        const isInExcluded = Underscore.filter(iindex, (i: IindexEntry) => i.member === false && i.pub === CERT.receiver)[0];
+        const isInExcluded = Underscore.filter(iindex, (i: IindexEntry) => i.member === false && i.pub === CERT.receiver)[0]
+        const isInKicked = Underscore.filter(exclusions, e => e.pub === CERT.receiver)[0]
         const idty = await dal.iindexDAL.getFullFromPubkey(CERT.receiver)
-        if (!isInExcluded && idty.member) {
+        if (!isInExcluded && !isInKicked && idty.member) {
           exclusions.push({
             op: 'UPDATE',
             pub: CERT.receiver,

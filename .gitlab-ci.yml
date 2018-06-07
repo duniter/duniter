@@ -52,6 +52,8 @@ pages:
     untracked: true
     paths:
       - public
+  only:
+    - loki
 
 
 test:

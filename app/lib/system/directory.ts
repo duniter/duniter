@@ -18,16 +18,17 @@ import {CFSCore} from "../dal/fileDALs/CFSCore"
 import {WoTBInstance, WoTBObject} from "../wot"
 import {FileDALParams} from "../dal/fileDAL"
 import {LokiJsDriver} from "../dal/drivers/LokiJsDriver"
+import {cliprogram} from "../common-libs/programOptions"
 
-const opts = require('optimist').argv;
+const opts = cliprogram
 const qfs  = require('q-io/fs');
 
 const DEFAULT_DOMAIN = "duniter_default";
 const DEFAULT_HOME = (process.platform == 'win32' ? process.env.USERPROFILE : process.env.HOME) + '/.config/duniter/';
 
-const getLogsPath = (profile:string, directory:string|null = null) => path.join(getHomePath(profile, directory), 'duniter.log');
+const getLogsPath = (profile:string|undefined, directory:string|null = null) => path.join(getHomePath(profile, directory), 'duniter.log');
 
-const getHomePath = (profile:string|null, directory:string|null = null) => path.normalize(getUserHome(directory) + '/') + getDomain(profile);
+const getHomePath = (profile:string|null|undefined, directory:string|null = null) => path.normalize(getUserHome(directory) + '/') + getDomain(profile);
 
 const getUserHome = (directory:string|null = null) => (directory || DEFAULT_HOME);
 

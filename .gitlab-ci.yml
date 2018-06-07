@@ -49,7 +49,7 @@ pages:
   artifacts:
     untracked: true
     paths:
-      - typedoc
+      - public
 
 
 test:

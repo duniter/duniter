@@ -25,7 +25,7 @@
     "prepublish": "tsc",
     "tsc": "tsc",
     "tscw": "tsc -w",
-    "doc": "typedoc --out typedoc/ index.ts app/ --mode file --includeDeclarations --sourcefile-url-prefix \"https://git.duniter.org/nodes/typescript/duniter/blob/loki/\"",
+    "doc": "typedoc --out typedoc/ index.ts app/ --mode file --readme README.md --includeDeclarations --sourcefile-url-prefix \"https://git.duniter.org/nodes/typescript/duniter/blob/loki/\"",
     "test": "nyc --reporter html mocha",
     "start": "node bin/duniter start",
     "build": "tsc && cd \"node_modules/duniter-ui\" && npm install && npm run build",

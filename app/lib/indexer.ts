@@ -86,7 +86,7 @@ export interface IindexEntry extends IndexEntry {
   hash: string | null,
   sig: string | null,
   created_on: string | null,
-  member: boolean,
+  member: boolean|null,
   wasMember: boolean | null,
   kick: boolean | null,
   wotb_id: number | null,
@@ -582,6 +582,10 @@ export class Indexer {
     // BR_G105
     await Indexer.ruleIndexCorrectCertificationExpiryDate(HEAD, cindex, dal);
 
+    // Cleaning
+    cindex.forEach(c => c.created_on_ref = undefined)
+    mindex.forEach(m => m.created_on_ref = undefined)
+
     return HEAD;
   }
 
@@ -635,9 +639,9 @@ export class Indexer {
 
     // BR_G03
     if (HEAD.number > 0) {
-      HEAD.issuerIsMember = reduce(await dal.iindexDAL.reducable(HEAD.issuer)).member;
+      HEAD.issuerIsMember = !!reduce(await dal.iindexDAL.reducable(HEAD.issuer)).member;
     } else {
-      HEAD.issuerIsMember = reduce(Underscore.where(iindex, { pub: HEAD.issuer })).member;
+      HEAD.issuerIsMember = !!reduce(Underscore.where(iindex, { pub: HEAD.issuer })).member;
     }
 
     // BR_G04
@@ -744,7 +748,7 @@ export class Indexer {
       if (ENTRY.member !== false) {
         ENTRY.excludedIsMember = true;
       } else {
-        ENTRY.excludedIsMember = reduce(await dal.iindexDAL.reducable(ENTRY.pub)).member;
+        ENTRY.excludedIsMember = !!reduce(await dal.iindexDAL.reducable(ENTRY.pub)).member;
       }
     }))
 
@@ -841,7 +845,7 @@ export class Indexer {
     // BR_G28
     await Promise.all(mindex.map(async (ENTRY: MindexEntry) => {
       if (ENTRY.type == 'LEAVE') {
-        ENTRY.leaverIsMember = reduce(await dal.iindexDAL.reducable(ENTRY.pub)).member
+        ENTRY.leaverIsMember = !!reduce(await dal.iindexDAL.reducable(ENTRY.pub)).member
       } else {
         ENTRY.leaverIsMember = true;
       }
@@ -851,7 +855,7 @@ export class Indexer {
     await Promise.all(mindex.map(async (ENTRY: MindexEntry) => {
       if (ENTRY.type == 'ACTIVE') {
         const reducable = await dal.iindexDAL.reducable(ENTRY.pub)
-        ENTRY.activeIsMember = reduce(reducable).member;
+        ENTRY.activeIsMember = !!reduce(reducable).member;
       } else {
         ENTRY.activeIsMember = true;
       }
@@ -862,7 +866,7 @@ export class Indexer {
       if (!ENTRY.revoked_on) {
         ENTRY.revokedIsMember = true;
       } else {
-        ENTRY.revokedIsMember = reduce(await dal.iindexDAL.reducable(ENTRY.pub)).member
+        ENTRY.revokedIsMember = !!reduce(await dal.iindexDAL.reducable(ENTRY.pub)).member
       }
     }))
 
@@ -902,12 +906,12 @@ export class Indexer {
 
     // BR_G40
     await Promise.all(cindex.map(async (ENTRY: CindexEntry) => {
-      ENTRY.fromMember = reduce(await dal.iindexDAL.reducable(ENTRY.issuer)).member
+      ENTRY.fromMember = !!reduce(await dal.iindexDAL.reducable(ENTRY.issuer)).member
     }))
 
     // BR_G41
     await Promise.all(cindex.map(async (ENTRY: CindexEntry) => {
-      ENTRY.toMember = reduce(await dal.iindexDAL.reducable(ENTRY.receiver)).member
+      ENTRY.toMember = !!reduce(await dal.iindexDAL.reducable(ENTRY.receiver)).member
     }))
 
     // BR_G42

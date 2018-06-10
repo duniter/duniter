@@ -13,24 +13,27 @@
 
 import {getDurationInMicroSeconds, getMicrosecondsTime} from "../../ProcessCpuProfiler"
 import {NewLogger} from "../logger"
+import {OtherConstants} from "../other_constants"
 
 const theLogger = NewLogger()
 
 export const MonitorSQLExecutionTime = function () {
   return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-    const original = descriptor.value
-    if (original.__proto__.constructor.name === "AsyncFunction") {
-      descriptor.value = async function (...args:any[]) {
-        const start = getMicrosecondsTime()
-        const sql: string = args[0]
-        const params: any[] = args[1]
-        const entities: any[] = await original.apply(this, args)
-        const duration = getDurationInMicroSeconds(start)
-        theLogger.trace('[sqlite][query] %s %s %sµs', sql, JSON.stringify(params || []), duration)
-        return entities
+    if (OtherConstants.ENABLE_SQL_MONITORING) {
+      const original = descriptor.value
+      if (original.__proto__.constructor.name === "AsyncFunction") {
+        descriptor.value = async function (...args: any[]) {
+          const start = getMicrosecondsTime()
+          const sql: string = args[0]
+          const params: any[] = args[1]
+          const entities: any[] = await original.apply(this, args)
+          const duration = getDurationInMicroSeconds(start)
+          theLogger.trace('[sqlite][query] %s %s %sµs', sql, JSON.stringify(params || []), duration)
+          return entities
+        }
+      } else {
+        throw Error("Monitoring an SQL synchronous function is not allowed.")
       }
-    } else {
-      throw Error("Monitoring an SQL synchronous function is not allowed.")
     }
   }
 }

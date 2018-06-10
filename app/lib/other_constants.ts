@@ -20,5 +20,8 @@ export const OtherConstants = {
     SWITCHED: 'switched',
     HEAD_CHANGED: 'newHEAD',
     RESOLUTION_DONE: 'resolution_done'
-  }
+  },
+
+  ENABLE_LOKI_MONITORING: false,
+  ENABLE_SQL_MONITORING: false,
 }

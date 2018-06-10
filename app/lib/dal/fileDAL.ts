@@ -25,10 +25,11 @@ import {
   FullCindexEntry,
   FullIindexEntry,
   FullMindexEntry,
-  FullSindexEntry,
   IindexEntry,
   IndexEntry,
   MindexEntry,
+  SimpleTxInput,
+  SimpleUdEntryForWallet,
   SindexEntry
 } from "../indexer"
 import {TransactionDTO} from "../dto/TransactionDTO"
@@ -75,6 +76,9 @@ import {Underscore} from "../common-libs/underscore"
 import {DBPeer} from "../db/DBPeer"
 import {MonitorFlushedIndex} from "../debug/MonitorFlushedIndex"
 import {cliprogram} from "../common-libs/programOptions"
+import {DividendDAO, UDSource} from "./indexDAL/abstract/DividendDAO"
+import {LokiDividend} from "./indexDAL/loki/LokiDividend"
+import {HttpSource, HttpUD} from "../../modules/bma/lib/dtos"
 
 const readline = require('readline')
 const indexer = require('../indexer').Indexer
@@ -126,6 +130,7 @@ export class FileDAL {
   iindexDAL:IIndexDAO
   sindexDAL:SIndexDAO
   cindexDAL:CIndexDAO
+  dividendDAL:DividendDAO
   newDals:{ [k:string]: Initiable }
 
   loadConfHook: (conf:ConfDTO) => Promise<void>
@@ -156,6 +161,7 @@ export class FileDAL {
     this.iindexDAL = new LokiIIndex(this.loki.getLokiInstance())
     this.sindexDAL = new LokiSIndex(this.loki.getLokiInstance())
     this.cindexDAL = new LokiCIndex(this.loki.getLokiInstance())
+    this.dividendDAL = new LokiDividend(this.loki.getLokiInstance())
 
     this.newDals = {
       'powDAL': this.powDAL,
@@ -174,6 +180,7 @@ export class FileDAL {
       'iindexDAL': this.iindexDAL,
       'sindexDAL': this.sindexDAL,
       'cindexDAL': this.cindexDAL,
+      'dividendDAL': this.dividendDAL,
       'blockchainArchiveDAL': this.blockchainArchiveDAL,
     }
   }
@@ -191,6 +198,7 @@ export class FileDAL {
       this.iindexDAL,
       this.sindexDAL,
       this.cindexDAL,
+      this.dividendDAL,
       this.blockchainArchiveDAL,
     ]
     for (const indexDAL of dals) {
@@ -396,8 +404,36 @@ export class FileDAL {
     return this.cindexDAL.getValidLinksTo(to)
   }
 
-  getAvailableSourcesByPubkey(pubkey:string) {
-    return this.sindexDAL.getAvailableForPubkey(pubkey)
+  async getAvailableSourcesByPubkey(pubkey:string): Promise<HttpSource[]> {
+    const txAvailable = await this.sindexDAL.getAvailableForPubkey(pubkey)
+    const sources: UDSource[] = await this.dividendDAL.getUDSources(pubkey)
+    return sources.map(d => {
+      return {
+        type: 'D',
+        noffset: d.pos,
+        identifier: pubkey,
+        amount: d.amount,
+        base: d.base,
+        conditions: 'SIG(' + pubkey + ')'
+      }
+    }).concat(txAvailable.map(s => {
+      return {
+        type: 'T',
+        noffset: s.pos,
+        identifier: s.identifier,
+        amount: s.amount,
+        base: s.base,
+        conditions: s.conditions
+      }
+    }))
+  }
+
+  async findByIdentifierPosAmountBase(identifier: string, pos: number, amount: number, base: number, isDividend: boolean): Promise<SimpleTxInput[]> {
+    if (isDividend) {
+      return this.dividendDAL.findUdSourceByIdentifierPosAmountBase(identifier, pos, amount, base)
+    } else {
+      return this.sindexDAL.findTxSourceByIdentifierPosAmountBase(identifier, pos, amount, base)
+    }
   }
 
   async getGlobalIdentityByHashForExistence(hash:string): Promise<boolean> {
@@ -810,8 +846,12 @@ export class FileDAL {
     return  this.cindexDAL.existsNonReplayableLink(from, to)
   }
 
-  getSource(identifier:string, pos:number): Promise<FullSindexEntry | null> {
-    return this.sindexDAL.getSource(identifier, pos)
+  async getSource(identifier:string, pos:number, isDividend: boolean): Promise<SimpleTxInput | null> {
+    if (isDividend) {
+      return this.dividendDAL.getUDSource(identifier, pos)
+    } else {
+      return this.sindexDAL.getTxSource(identifier, pos)
+    }
   }
 
   async isMember(pubkey:string):Promise<boolean> {
@@ -973,8 +1013,8 @@ export class FileDAL {
     let iindex = indexer.iindex(index);
     let sindex = indexer.sindex(index);
     let cindex = indexer.cindex(index);
-    sindex = sindex.concat(await indexer.ruleIndexGenDividend(HEAD, iindex, this));
-    sindex = sindex.concat(await indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex, this));
+    const dividends = await indexer.ruleIndexGenDividend(HEAD, iindex, this) // Requires that newcomers are already in DividendDAO
+    sindex = sindex.concat(await indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex, dividends, this));
     cindex = cindex.concat(await indexer.ruleIndexGenCertificationExpiry(HEAD, this));
     mindex = mindex.concat(await indexer.ruleIndexGenMembershipExpiry(HEAD, this));
     iindex = iindex.concat(await indexer.ruleIndexGenExclusionByMembership(HEAD, mindex, this));
@@ -982,7 +1022,7 @@ export class FileDAL {
     mindex = mindex.concat(await indexer.ruleIndexGenImplicitRevocation(HEAD, this));
     await indexer.ruleIndexCorrectMembershipExpiryDate(HEAD, mindex, this);
     await indexer.ruleIndexCorrectCertificationExpiryDate(HEAD, cindex, this);
-    return { HEAD, mindex, iindex, sindex, cindex };
+    return { HEAD, mindex, iindex, sindex, cindex, dividends };
   }
 
   async updateWotbLinks(cindex:CindexEntry[]) {
@@ -990,7 +1030,7 @@ export class FileDAL {
       const from = await this.getWrittenIdtyByPubkeyForWotbID(entry.issuer);
       const to = await this.getWrittenIdtyByPubkeyForWotbID(entry.receiver);
       if (entry.op == CommonConstants.IDX_CREATE) {
-        NewLogger().trace('addLink %s -> %s', from.wotb_id, to.wotb_id)
+        // NewLogger().trace('addLink %s -> %s', from.wotb_id, to.wotb_id)
         this.wotb.addLink(from.wotb_id, to.wotb_id);
       } else {
         // Update = removal
@@ -1108,13 +1148,19 @@ export class FileDAL {
     return history;
   }
 
-  async getUDHistory(pubkey:string) {
-    const sources = await this.sindexDAL.getUDSources(pubkey)
+  async getUDHistory(pubkey:string): Promise<{ history: HttpUD[] }> {
+    const sources: UDSource[] = await this.dividendDAL.getUDSources(pubkey)
     return {
-      history: sources.map((src:SindexEntry) => Underscore.extend({
-        block_number: src.pos,
-        time: src.written_time
-      }, src))
+      history: (await Promise.all<HttpUD>(sources.map(async (src) => {
+        const block = await this.getBlockWeHaveItForSure(src.pos)
+        return {
+          block_number: src.pos,
+          time: block.medianTime,
+          consumed: src.consumed,
+          amount: src.amount,
+          base: src.base
+        }
+      })))
     }
   }
 
@@ -1281,7 +1327,15 @@ export class FileDAL {
   async flushIndexes(indexes: IndexBatch) {
     await this.mindexDAL.insertBatch(indexes.mindex)
     await this.iindexDAL.insertBatch(indexes.iindex)
-    await this.sindexDAL.insertBatch(indexes.sindex)
+    await this.sindexDAL.insertBatch(indexes.sindex.filter(s => s.srcType === 'T')) // We don't store dividends in SINDEX
     await this.cindexDAL.insertBatch(indexes.cindex)
+    await this.dividendDAL.consume(indexes.sindex.filter(s => s.srcType === 'D'))
+  }
+
+  async updateDividend(blockNumber: number, dividend: number|null, unitbase: number, local_iindex: IindexEntry[]): Promise<SimpleUdEntryForWallet[]> {
+    if (dividend) {
+      return this.dividendDAL.produceDividend(blockNumber, dividend, unitbase, local_iindex)
+    }
+    return []
   }
 }

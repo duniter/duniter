@@ -39,11 +39,9 @@ describe("Source DAL", function(){
     sourcesOfDEF.should.have.length(1);
     const sourcesOfABC = await dal.sindexDAL.getAvailableForPubkey('ABC');
     sourcesOfABC.should.have.length(1);
-    const source1 = await dal.sindexDAL.getSource('SOURCE_1', 4) as any
+    const source1 = await dal.sindexDAL.getTxSource('SOURCE_1', 4) as any
     source1.should.have.property('consumed').equal(true);
-    const udSources = await dal.sindexDAL.getUDSources('ABC');
-    udSources.should.have.length(2);
-    udSources[0].should.have.property('consumed').equal(false);
-    udSources[1].should.have.property('consumed').equal(true);
+    const source2 = await dal.sindexDAL.getTxSource('SOURCE_2', 4) as any
+    source2.should.have.property('consumed').equal(false);
   })
 })

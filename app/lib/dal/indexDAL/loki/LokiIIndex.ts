@@ -2,7 +2,6 @@ import {FullIindexEntry, IindexEntry, Indexer} from "../../../indexer"
 import {IIndexDAO} from "../abstract/IIndexDAO"
 import {LokiPubkeySharingIndex} from "./LokiPubkeySharingIndex"
 import {OldIindexEntry} from "../../../db/OldIindexEntry"
-import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
 
 export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements IIndexDAO {
 
@@ -127,11 +126,6 @@ export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements I
         .simplesort('writtenOn')
         .data()
     ) as Promise<FullIindexEntry|null>
-  }
-
-  @MonitorLokiExecutionTime()
-  async getMembersPubkeys(): Promise<{ pub: string }[]> {
-    return (await this.getMembers()).map(m => ({ pub: m.pubkey }))
   }
 
   async getToBeKickedPubkeys(): Promise<string[]> {

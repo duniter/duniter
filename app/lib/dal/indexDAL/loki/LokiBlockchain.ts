@@ -1,9 +1,9 @@
-import {LokiIndex} from "./LokiIndex"
 import {BlockchainDAO} from "../abstract/BlockchainDAO"
 import {DBBlock} from "../../../db/DBBlock"
 import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
+import {LokiProtocolIndex} from "./LokiProtocolIndex"
 
-export class LokiBlockchain extends LokiIndex<DBBlock> implements BlockchainDAO {
+export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements BlockchainDAO {
 
   private current:DBBlock|null = null
 
@@ -54,8 +54,12 @@ export class LokiBlockchain extends LokiIndex<DBBlock> implements BlockchainDAO 
     return this.insertBatch(blocks)
   }
 
-  async insert(record: DBBlock): Promise<void> {
-    return super.insert(record);
+  async insertBatch(records: DBBlock[]): Promise<void> {
+    const lastInBatch = records[records.length - 1]
+    if (!this.current || this.current.number < lastInBatch.number) {
+      this.current = lastInBatch
+    }
+    return super.insertBatch(records)
   }
 
   async removeBlock(blockstamp: string): Promise<void> {

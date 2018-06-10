@@ -11,7 +11,16 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {FullIindexEntry, IindexEntry, IndexEntry, Indexer, MindexEntry, SindexEntry} from "../indexer"
+import {
+  BasedAmount,
+  FullIindexEntry,
+  IindexEntry,
+  IndexEntry,
+  Indexer,
+  MindexEntry,
+  SimpleSindexEntryForWallet, SimpleTxEntryForWallet, SimpleUdEntryForWallet,
+  SindexEntry
+} from "../indexer"
 import {ConfDTO} from "../dto/ConfDTO"
 import {BlockDTO} from "../dto/BlockDTO"
 import {DBHead} from "../db/DBHead"
@@ -28,6 +37,8 @@ import {DataErrors} from "../common-libs/errors"
 import {NewLogger} from "../logger"
 import {DBTx} from "../db/DBTx"
 import {Underscore} from "../common-libs/underscore"
+import {DividendEntry, UDSource} from "../dal/indexDAL/abstract/DividendDAO"
+import {OtherConstants} from "../other_constants"
 
 export class DuniterBlockchain {
 
@@ -224,7 +235,7 @@ export class DuniterBlockchain {
     await this.updateMembers(block, dal);
 
     // Update the wallets' blances
-    await this.updateWallets(indexes.sindex, dal)
+    await this.updateWallets(indexes.sindex, indexes.dividends, dal)
 
     if (trim) {
       const TAIL = await dal.bindexDAL.tail();
@@ -318,6 +329,7 @@ export class DuniterBlockchain {
       let ms = MembershipDTO.fromInline(inlineMS)
       const idty = await dal.getWrittenIdtyByPubkeyForWotbID(ms.issuer);
       dal.wotb.setEnabled(true, idty.wotb_id);
+      await dal.dividendDAL.setMember(true, ms.issuer)
     }
     // Revoked
     for (const inlineRevocation of block.revoked) {
@@ -328,21 +340,26 @@ export class DuniterBlockchain {
     for (const excluded of block.excluded) {
       const idty = await dal.getWrittenIdtyByPubkeyForWotbID(excluded);
       dal.wotb.setEnabled(false, idty.wotb_id);
+      await dal.dividendDAL.setMember(false, excluded)
     }
   }
 
-  static async updateWallets(sindex:SindexEntry[], aDal:any, reverse = false) {
-    const differentConditions = Underscore.uniq(sindex.map((entry) => entry.conditions))
+  static async updateWallets(sindex:SimpleTxEntryForWallet[], dividends:SimpleUdEntryForWallet[], aDal:any, reverse = false) {
+    const differentConditions = Underscore.uniq(sindex.map((entry) => entry.conditions).concat(dividends.map(d => d.conditions)))
     for (const conditions of differentConditions) {
-      const creates = Underscore.filter(sindex, (entry:SindexEntry) => entry.conditions === conditions && entry.op === CommonConstants.IDX_CREATE)
-      const updates = Underscore.filter(sindex, (entry:SindexEntry) => entry.conditions === conditions && entry.op === CommonConstants.IDX_UPDATE)
-      const positives = creates.reduce((sum:number, src:SindexEntry) => sum + src.amount * Math.pow(10, src.base), 0)
-      const negatives = updates.reduce((sum:number, src:SindexEntry) => sum + src.amount * Math.pow(10, src.base), 0)
+      const udsOfKey: BasedAmount[] = dividends.filter(d => d.conditions === conditions).map(d => ({ amount: d.amount, base: d.base }))
+      const creates: BasedAmount[] = sindex.filter(entry => entry.conditions === conditions && entry.op === CommonConstants.IDX_CREATE)
+      const updates: BasedAmount[] = sindex.filter(entry => entry.conditions === conditions && entry.op === CommonConstants.IDX_UPDATE)
+      const positives = creates.concat(udsOfKey).reduce((sum, src) => sum + src.amount * Math.pow(10, src.base), 0)
+      const negatives = updates.reduce((sum, src) => sum + src.amount * Math.pow(10, src.base), 0)
       const wallet = await aDal.getWallet(conditions)
       let variation = positives - negatives
       if (reverse) {
         // To do the opposite operations, for a reverted block
         variation *= -1
+      }
+      if (OtherConstants.TRACE_BALANCES) {
+        NewLogger().trace('Balance of %s: %s (%s %s %s)', wallet.conditions, wallet.balance + variation, wallet.balance, variation < 0 ? '-' : '+', Math.abs(variation))
       }
       wallet.balance += variation
       await aDal.saveWallet(wallet)
@@ -377,21 +394,25 @@ export class DuniterBlockchain {
 
     // Get the money movements to revert in the balance
     const REVERSE_BALANCE = true
-    const sindexOfBlock = await dal.sindexDAL.getWrittenOn(blockstamp)
+    const sindexOfBlock = await dal.sindexDAL.getWrittenOnTxs(blockstamp)
 
     await dal.bindexDAL.removeBlock(blockstamp);
     await dal.mindexDAL.removeBlock(blockstamp);
     await dal.iindexDAL.removeBlock(blockstamp);
     await dal.cindexDAL.removeBlock(blockstamp);
     await dal.sindexDAL.removeBlock(blockstamp);
+    const { createdUDsDestroyedByRevert, consumedUDsRecoveredByRevert } = await dal.dividendDAL.revertUDs(number)
 
     // Then: normal updates
     const previousBlock = await dal.getFullBlockOf(number - 1)
     // Set the block as SIDE block (equivalent to removal from main branch)
     await dal.blockDAL.setSideBlock(number, previousBlock);
 
+    // Update the dividends in our wallet
+    await this.updateWallets([], createdUDsDestroyedByRevert, dal, REVERSE_BALANCE)
+    await this.updateWallets([], consumedUDsRecoveredByRevert, dal)
     // Revert the balances variations for this block
-    await this.updateWallets(sindexOfBlock, dal, REVERSE_BALANCE)
+    await this.updateWallets(sindexOfBlock, [], dal, REVERSE_BALANCE)
 
     // Restore block's transaction as incoming transactions
     await this.undoDeleteTransactions(block, dal)
@@ -407,6 +428,7 @@ export class DuniterBlockchain {
       if (entry.member === true && entry.op === CommonConstants.IDX_UPDATE) {
         const idty = await dal.getWrittenIdtyByPubkeyForWotbID(entry.pub);
         dal.wotb.setEnabled(false, idty.wotb_id);
+        await dal.dividendDAL.setMember(false, entry.pub)
       }
     }
     const newcomers = await dal.iindexDAL.getWrittenOn(blockstamp);
@@ -417,6 +439,7 @@ export class DuniterBlockchain {
         // Does not matter which one it really was, we pop the last X identities
         NewLogger().trace('removeNode')
         dal.wotb.removeNode();
+        await dal.dividendDAL.deleteMember(entry.pub)
       }
     }
     const excluded = await dal.iindexDAL.getWrittenOn(blockstamp);
@@ -426,6 +449,7 @@ export class DuniterBlockchain {
       if (entry.member === false && entry.op === CommonConstants.IDX_UPDATE) {
         const idty = await dal.getWrittenIdtyByPubkeyForWotbID(entry.pub);
         dal.wotb.setEnabled(true, idty.wotb_id);
+        await dal.dividendDAL.setMember(true, entry.pub)
       }
     }
   }

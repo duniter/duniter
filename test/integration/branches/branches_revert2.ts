@@ -102,7 +102,7 @@ describe("Revert two blocks", function() {
       });
     });
 
-    it('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd should have only UD', function() {
+    it('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd should have nothing left because of garbaging', function() {
       return expectAnswer(rp('http://127.0.0.1:7712/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd'), (body:string) => {
         let res = JSON.parse(body);
         res.sources.should.have.length(0)
@@ -132,7 +132,7 @@ describe("Revert two blocks", function() {
     });
   })
 
-  describe("after revert", () => {
+  describe("after revert of transaction", () => {
 
     before(async () => {
       await s1.revert();
@@ -185,10 +185,49 @@ describe("Revert two blocks", function() {
     });
   })
 
+  describe("after revert of UD", () => {
+
+    before(async () => {
+      await s1.revert();
+    })
+
+    it('/block/0 should exist', function() {
+      return expectJSON(rp('http://127.0.0.1:7712/blockchain/block/0', { json: true }), {
+        number: 0
+      });
+    });
+
+    it('/block/2 should NOT exist', function() {
+      return expectHttpCode(404, rp('http://127.0.0.1:7712/blockchain/block/2', { json: true }));
+    });
+
+    it('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd should have nothing', function() {
+      return expectAnswer(rp('http://127.0.0.1:7712/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd'), (body:string) => {
+        let res = JSON.parse(body);
+        res.sources.should.have.length(0)
+      });
+    });
+
+    it('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo should have nothing', function() {
+      return expectAnswer(rp('http://127.0.0.1:7712/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo'), (body:string) => {
+        let res = JSON.parse(body);
+        res.sources.should.have.length(0)
+      });
+    });
+
+    it('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV should have nothing', function() {
+      return expectAnswer(rp('http://127.0.0.1:7712/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV'), (body:string) => {
+        let res = JSON.parse(body);
+        res.sources.should.have.length(0)
+      });
+    });
+  })
+
   describe("commit again (but send less, to check that the account is not cleaned this time)", () => {
 
     before(async () => {
       await s1.dal.txsDAL.removeAll()
+      await s1.resolveExistingBlock(1) // UD block
       await cat.sendMoney(19, toc);
       await s1.dal.blockDAL.removeBlock('DELETE FROM block WHERE fork AND number = 3')
       await s1.commit({ time: now + 1 });

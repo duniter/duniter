@@ -1,10 +1,10 @@
 import {CIndexDAO} from "../abstract/CIndexDAO"
-import {LokiIndex} from "./LokiIndex"
 import {CindexEntry, FullCindexEntry, Indexer} from "../../../indexer"
 import {CommonConstants} from "../../../common-libs/constants"
 import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
+import {LokiProtocolIndex} from "./LokiProtocolIndex"
 
-export class LokiCIndex extends LokiIndex<CindexEntry> implements CIndexDAO {
+export class LokiCIndex extends LokiProtocolIndex<CindexEntry> implements CIndexDAO {
 
   constructor(loki:any) {
     super(loki, 'cindex', ['issuer', 'receiver'])

@@ -1,16 +1,27 @@
 import {LokiIndex} from "./LokiIndex"
-import {FullSindexEntry, Indexer, SindexEntry} from "../../../indexer"
+import {
+  FullSindexEntry,
+  Indexer,
+  SimpleSindexEntryForWallet,
+  SimpleTxEntryForWallet,
+  SindexEntry
+} from "../../../indexer"
 import {SIndexDAO} from "../abstract/SIndexDAO"
 import {Underscore} from "../../../common-libs/underscore"
 import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
+import {LokiProtocolIndex} from "./LokiProtocolIndex"
+import {LokiDividend} from "./LokiDividend"
 
-export class LokiSIndex extends LokiIndex<SindexEntry> implements SIndexDAO {
+export class LokiSIndex extends LokiProtocolIndex<SindexEntry> implements SIndexDAO {
+
+  private lokiDividend: LokiDividend
 
   constructor(loki:any) {
     super(loki, 'sindex', ['identifier', 'conditions', 'writtenOn'])
+    this.lokiDividend = new LokiDividend(loki)
   }
 
-  async findByIdentifierPosAmountBase(identifier: string, pos: number, amount: number, base: number): Promise<SindexEntry[]> {
+  async findTxSourceByIdentifierPosAmountBase(identifier: string, pos: number, amount: number, base: number): Promise<SindexEntry[]> {
     return this.collection
       .chain()
       .find({ identifier, pos, amount, base })
@@ -36,7 +47,7 @@ export class LokiSIndex extends LokiIndex<SindexEntry> implements SIndexDAO {
     return Underscore.sortBy(sources, (row:SindexEntry) => row.type == 'D' ? 0 : 1)
   }
 
-  async getAvailableForPubkey(pubkey: string): Promise<{ amount: number; base: number }[]> {
+  async getAvailableForPubkey(pubkey: string): Promise<{ amount: number; base: number, conditions: string, identifier: string, pos: number }[]> {
     return this.collection
       .chain()
       .find({ conditions: { $regex: 'SIG\\(' + pubkey + '\\)' } })
@@ -49,11 +60,11 @@ export class LokiSIndex extends LokiIndex<SindexEntry> implements SIndexDAO {
       })
   }
 
-  async getSource(identifier: string, pos: number): Promise<FullSindexEntry | null> {
+  async getTxSource(identifier: string, pos: number): Promise<FullSindexEntry | null> {
     const reducables = this.collection
       .chain()
       .find({ identifier, pos })
-      .simplesort('writtenOn')
+      .compoundsort([['writtenOn', false], ['op', false]])
       .data()
       .map(src => {
         src.type = src.tx ? 'T' : 'D'
@@ -63,24 +74,6 @@ export class LokiSIndex extends LokiIndex<SindexEntry> implements SIndexDAO {
       return null
     }
     return Indexer.DUP_HELPERS.reduce(reducables)
-  }
-
-  async getUDSources(pubkey: string): Promise<FullSindexEntry[]> {
-    const reducables = this.collection
-      .chain()
-      .find({
-        $and: [
-          { tx: null },
-          { conditions: 'SIG(' + pubkey + ')' },
-        ]
-      })
-      .simplesort('writtenOn')
-      .data()
-      .map(src => {
-        src.type = src.tx ? 'T' : 'D'
-        return src
-      })
-    return Indexer.DUP_HELPERS.reduceBy(reducables, ['identifier', 'pos'])
   }
 
   @MonitorLokiExecutionTime(true)
@@ -108,5 +101,20 @@ export class LokiSIndex extends LokiIndex<SindexEntry> implements SIndexDAO {
     return this.trimConsumedSource(belowNumber)
   }
 
-
+  async getWrittenOnTxs(blockstamp: string): Promise<SimpleTxEntryForWallet[]> {
+    const entries = (await this.getWrittenOn(blockstamp))
+    const res: SimpleTxEntryForWallet[] = []
+    entries.forEach(s => {
+      res.push({
+        srcType: 'T',
+        op: s.op,
+        conditions: s.conditions,
+        amount: s.amount,
+        base: s.base,
+        identifier: s.identifier,
+        pos: s.pos
+      })
+    })
+    return res
+  }
 }

@@ -28,6 +28,7 @@ import {DBBlock} from "./db/DBBlock"
 import {DBWallet} from "./db/DBWallet"
 import {Tristamp} from "./common/Tristamp"
 import {Underscore} from "./common-libs/underscore"
+import {DataErrors} from "./common-libs/errors"
 
 const constants       = CommonConstants
 
@@ -146,6 +147,7 @@ export interface FullCindexEntry {
 }
 
 export interface SindexEntry extends IndexEntry {
+  srcType: 'T'|'D'
   tx: string | null,
   identifier: string,
   pos: number,
@@ -177,6 +179,37 @@ export interface FullSindexEntry {
   base: number
   conditions: string
   consumed: boolean
+}
+
+export interface SimpleTxInput {
+  conditions: string
+  consumed: boolean
+  written_time: number
+  amount: number
+  base: number
+}
+
+export interface BasedAmount {
+  amount: number
+  base: number
+}
+
+export interface SimpleSindexEntryForWallet {
+  op: string
+  srcType: 'T'|'D'
+  conditions: string
+  amount: number
+  base: number
+  identifier: string
+  pos: number
+}
+
+export interface SimpleTxEntryForWallet extends SimpleSindexEntryForWallet {
+  srcType: 'T'
+}
+
+export interface SimpleUdEntryForWallet extends SimpleSindexEntryForWallet {
+  srcType: 'D'
 }
 
 export interface Ranger {
@@ -461,6 +494,7 @@ export class Indexer {
         index.push({
           index: constants.S_INDEX,
           op: constants.IDX_UPDATE,
+          srcType: input.type,
           tx: txHash,
           identifier: input.identifier,
           pos: input.pos,
@@ -485,6 +519,7 @@ export class Indexer {
         index.push({
           index: constants.S_INDEX,
           op: constants.IDX_CREATE,
+          srcType: 'T',
           tx: txHash,
           identifier: txHash,
           pos: i++,
@@ -537,7 +572,7 @@ export class Indexer {
     HEAD.powMin = block.powMin
     HEAD.unitBase = block.unitbase
     HEAD.membersCount = block.membersCount
-    HEAD.dividend = block.dividend
+    HEAD.dividend = block.dividend || 0
     HEAD.new_dividend = null
 
     const HEAD_1 = await head(1);
@@ -972,18 +1007,19 @@ export class Indexer {
       }
     }))
 
-    const getInputLocalFirstOrFallbackGlobally = async (sindex:SindexEntry[], ENTRY:SindexEntry) => {
-      let source = Underscore.filter(sindex, src =>
+    const getInputLocalFirstOrFallbackGlobally = async (sindex:SindexEntry[], ENTRY:SindexEntry): Promise<SimpleTxInput> => {
+      let source: SimpleTxInput|null = Underscore.filter(sindex, src =>
         src.identifier == ENTRY.identifier
         && src.pos == ENTRY.pos
         && src.conditions !== ''
         && src.op === constants.IDX_CREATE)[0];
       if (!source) {
-        const reducable = await dal.sindexDAL.findByIdentifierPosAmountBase(
+        const reducable = await dal.findByIdentifierPosAmountBase(
           ENTRY.identifier,
           ENTRY.pos,
           ENTRY.amount,
-          ENTRY.base
+          ENTRY.base,
+          ENTRY.srcType === 'D'
         );
         source = reduce(reducable)
       }
@@ -994,7 +1030,7 @@ export class Indexer {
     await Promise.all(Underscore.where(sindex, { op: constants.IDX_UPDATE }).map(async (ENTRY: SindexEntry) => {
       const source = await getInputLocalFirstOrFallbackGlobally(sindex, ENTRY)
       ENTRY.conditions = source.conditions; // We valuate the input conditions, so we can map these records to a same account
-      ENTRY.available = source.consumed === false;
+      ENTRY.available = !source.consumed
     }))
 
     // BR_G47
@@ -1640,34 +1676,22 @@ export class Indexer {
   }
 
   // BR_G91
-  static async ruleIndexGenDividend(HEAD: DBHead, local_iindex: IindexEntry[], dal: FileDAL) {
-    const dividends = [];
-    if (HEAD.new_dividend) {
-      const members = (await dal.iindexDAL.getMembersPubkeys()).concat(local_iindex.filter(i => i.member))
-      for (const MEMBER of members) {
-        dividends.push({
-          index: constants.S_INDEX,
-          op: 'CREATE',
-          tx: null,
-          identifier: MEMBER.pub,
-          pos: HEAD.number,
-          written_on: [HEAD.number, HEAD.hash].join('-'),
-          writtenOn: HEAD.number,
-          written_time: HEAD.medianTime,
-          amount: HEAD.dividend,
-          base: HEAD.unitBase,
-          locktime: null,
-          conditions: 'SIG(' + MEMBER.pub + ')',
-          consumed: false
-        });
-      }
+  static async ruleIndexGenDividend(HEAD: DBHead, local_iindex: IindexEntry[], dal: FileDAL): Promise<SimpleUdEntryForWallet[]> {
+    // Create the newcomers first, as they will produce a dividend too
+    for (const newcomer of local_iindex) {
+      await dal.dividendDAL.createMember(newcomer.pub)
     }
-    return dividends;
+    if (HEAD.new_dividend) {
+      return dal.updateDividend(HEAD.number, HEAD.new_dividend, HEAD.unitBase, local_iindex)
+    }
+    return []
   }
 
   // BR_G106
-  static async ruleIndexGarbageSmallAccounts(HEAD: DBHead, sindex: SindexEntry[], dal:AccountsGarbagingDAL) {
-    const garbages = [];
+  static async ruleIndexGarbageSmallAccounts(HEAD: DBHead, transactions: SindexEntry[], dividends: SimpleUdEntryForWallet[], dal:AccountsGarbagingDAL) {
+    let sindex: SimpleSindexEntryForWallet[] = transactions
+    sindex = sindex.concat(dividends)
+    const garbages: SindexEntry[] = [];
     const accounts = Object.keys(sindex.reduce((acc: { [k:string]: boolean }, src) => {
       acc[src.conditions] = true;
       return acc;
@@ -1677,7 +1701,7 @@ export class Indexer {
       return map;
     }, {});
     for (const account of accounts) {
-      const localAccountEntries = Underscore.filter(sindex, (src:SindexEntry) => src.conditions == account);
+      const localAccountEntries = Underscore.filter(sindex, src => src.conditions == account)
       const wallet = await wallets[account];
       const balance = wallet.balance
       const variations = localAccountEntries.reduce((sum:number, src:SindexEntry) => {
@@ -1687,15 +1711,19 @@ export class Indexer {
           return sum - src.amount * Math.pow(10, src.base);
         }
       }, 0)
-      // console.log('Balance of %s = %s (%s)', account, balance, variations > 0 ? '+' + variations : variations)
-      if (balance + variations < constants.ACCOUNT_MINIMUM_CURRENT_BASED_AMOUNT * Math.pow(10, HEAD.unitBase)) {
+      if (balance + variations < 0) {
+        throw Error(DataErrors[DataErrors.NEGATIVE_BALANCE])
+      }
+      else if (balance + variations < constants.ACCOUNT_MINIMUM_CURRENT_BASED_AMOUNT * Math.pow(10, HEAD.unitBase)) {
         const globalAccountEntries = await dal.sindexDAL.getAvailableForConditions(account)
         for (const src of localAccountEntries.concat(globalAccountEntries)) {
-          const sourceBeingConsumed = Underscore.filter(sindex, (entry:SindexEntry) => entry.op === 'UPDATE' && entry.identifier == src.identifier && entry.pos == src.pos).length > 0;
+          const sourceBeingConsumed = Underscore.filter(sindex, entry => entry.op === 'UPDATE' && entry.identifier == src.identifier && entry.pos == src.pos).length > 0;
           if (!sourceBeingConsumed) {
             garbages.push({
+              index: 'SINDEX',
               op: 'UPDATE',
-              tx: src.tx,
+              srcType: 'T',
+              tx: null,
               identifier: src.identifier,
               pos: src.pos,
               amount: src.amount,
@@ -1704,7 +1732,14 @@ export class Indexer {
               writtenOn: HEAD.number,
               written_time: HEAD.medianTime,
               conditions: src.conditions,
-              consumed: true // It is now consumed
+              consumed: true, // It is now consumed
+
+              // TODO: make these fields not required using good types
+              created_on: '',
+              locktime: 0,
+              unlock: null,
+              txObj: {} as TransactionDTO,
+              age: 0,
             });
           }
         }
@@ -1929,7 +1964,7 @@ function blockstamp(aNumber: number, aHash: string) {
 
 function reduce<T>(records: T[]): T {
   return records.reduce((obj:T, record) => {
-    const keys = Underscore.keys(record)
+    const keys = Object.keys(record) as (keyof T)[]
     for (const k of keys) {
       if (record[k] !== undefined && record[k] !== null) {
         obj[k] = record[k];
@@ -2087,7 +2122,7 @@ async function checkCertificationIsValid (block: BlockDTO, cert: CindexEntry, fi
   }
 }
 
-function txSourceUnlock(ENTRY:SindexEntry, source:SindexEntry, HEAD: DBHead) {
+function txSourceUnlock(ENTRY:SindexEntry, source:{ conditions: string, written_time: number}, HEAD: DBHead) {
   const tx = ENTRY.txObj;
   const unlockParams:string[] = TransactionDTO.unlock2params(ENTRY.unlock || '')
   const unlocksMetadata:UnlockMetadata = {}

@@ -18,10 +18,11 @@ import {SandBox} from "../../sqliteDAL/SandBox"
 import {TransactionDTO} from "../../../dto/TransactionDTO"
 import {DBTx} from "../../../db/DBTx"
 import {Underscore} from "../../../common-libs/underscore"
+import {LokiProtocolIndex} from "./LokiProtocolIndex"
 
 const constants = require('../../../constants')
 
-export class LokiTransactions extends LokiIndex<DBTx> implements TxsDAO {
+export class LokiTransactions extends LokiProtocolIndex<DBTx> implements TxsDAO {
 
   constructor(loki: any) {
     super(loki, 'txs', [])

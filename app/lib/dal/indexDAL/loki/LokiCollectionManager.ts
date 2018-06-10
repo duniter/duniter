@@ -12,7 +12,7 @@ export abstract class LokiCollectionManager<T> {
 
   public constructor(
     protected loki:any,
-    protected collectionName:'iindex'|'mindex'|'cindex'|'sindex'|'bindex'|'blockchain'|'txs'|'wallet'|'peer',
+    protected collectionName:'iindex'|'mindex'|'cindex'|'sindex'|'bindex'|'blockchain'|'txs'|'wallet'|'peer'|'dividend',
     protected indices: (keyof T)[]) {
     this.collectionIsInitialized = new Promise<void>(res => this.resolveCollection = res)
   }

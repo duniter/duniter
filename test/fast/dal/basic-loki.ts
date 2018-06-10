@@ -13,6 +13,7 @@
 
 import * as assert from "assert"
 import {LokiIndex} from "../../../app/lib/dal/indexDAL/loki/LokiIndex"
+import {LokiProtocolIndex} from "../../../app/lib/dal/indexDAL/loki/LokiProtocolIndex"
 
 const loki = require('lokijs')
 
@@ -24,7 +25,7 @@ interface TestEntity {
 
 let lokiIndex:LokiIndex<TestEntity>
 
-class TheIndex extends LokiIndex<TestEntity> {
+class TheIndex extends LokiProtocolIndex<TestEntity> {
 }
 
 describe("Basic LokiJS database", () => {

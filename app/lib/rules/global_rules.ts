@@ -21,7 +21,7 @@ import {rawer, txunlock} from "../common-libs/index"
 import {CommonConstants} from "../common-libs/constants"
 import {IdentityDTO} from "../dto/IdentityDTO"
 import {hashf} from "../common"
-import {Indexer} from "../indexer"
+import {Indexer, SimpleTxInput} from "../indexer"
 import {DBTx} from "../db/DBTx"
 import {Tristamp} from "../common/Tristamp"
 
@@ -109,7 +109,7 @@ export const GLOBAL_RULES_FUNCTIONS = {
       }
       for (let k = 0, len2 = inputs.length; k < len2; k++) {
         let src = inputs[k];
-        let dbSrc = await dal.getSource(src.identifier, src.pos);
+        let dbSrc: SimpleTxInput|null = await dal.getSource(src.identifier, src.pos, src.type === 'D');
         logger.debug('Source %s:%s:%s:%s = %s', src.amount, src.base, src.identifier, src.pos, dbSrc && dbSrc.consumed);
         if (!dbSrc) {
           // For chained transactions which are checked on sandbox submission, we accept them if there is already

@@ -1,13 +1,13 @@
-import {LokiIndex} from "./LokiIndex"
 import {DBHead} from "../../../db/DBHead"
 import {BIndexDAO} from "../abstract/BIndexDAO"
 import {NewLogger} from "../../../logger"
 import {getDurationInMicroSeconds, getMicrosecondsTime} from "../../../../ProcessCpuProfiler"
 import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
+import {LokiProtocolIndex} from "./LokiProtocolIndex"
 
 const logger = NewLogger()
 
-export class LokiBIndex extends LokiIndex<DBHead> implements BIndexDAO {
+export class LokiBIndex extends LokiProtocolIndex<DBHead> implements BIndexDAO {
 
   private HEAD:DBHead|null = null
 

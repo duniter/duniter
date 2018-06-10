@@ -2,12 +2,7 @@ import {GenericDAO} from "../abstract/GenericDAO"
 import {LokiCollectionManager} from "./LokiCollectionManager"
 import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
 
-export interface IndexData {
-  written_on: string
-  writtenOn: number
-}
-
-export abstract class LokiIndex<T extends IndexData> extends LokiCollectionManager<T> implements GenericDAO<T> {
+export abstract class LokiIndex<T> extends LokiCollectionManager<T> implements GenericDAO<T> {
 
   cleanCache(): void {
   }
@@ -35,15 +30,6 @@ export abstract class LokiIndex<T extends IndexData> extends LokiCollectionManag
     records.map(r => this.insert(r))
   }
 
-  @MonitorLokiExecutionTime(true)
-  async getWrittenOn(blockstamp: string): Promise<T[]> {
-    const criterion:any = { writtenOn: parseInt(blockstamp) }
-    return this.collection.find(criterion)
-  }
-
-  @MonitorLokiExecutionTime(true)
-  async removeBlock(blockstamp: string): Promise<void> {
-    const data = await this.getWrittenOn(blockstamp)
-    data.map(d => this.collection.remove(d))
-  }
+  abstract getWrittenOn(blockstamp: string): Promise<T[]>
+  abstract removeBlock(blockstamp: string): Promise<void>
 }

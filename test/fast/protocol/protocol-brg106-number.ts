@@ -62,33 +62,33 @@ describe("Protocol BR_G106 - Garbaging", function(){
       // C sends 100 to E --> C keeps 0
       { op: 'UPDATE', conditions: 'pubkeyC', amount: 100, base: 0, identifier: 'I8', pos: 0 },
       { op: 'CREATE', conditions: 'pubkeyE', amount: 100, base: 0, identifier: 'I9', pos: 0 }
-      ] as any, dal as any);
+      ] as any, [], dal as any);
     cleaning.should.have.length(5);
     cleaning[0].should.have.property('identifier').equal('I3');
     cleaning[0].should.have.property('amount').equal(3);
     cleaning[0].should.have.property('base').equal(0);
-    cleaning[0].should.have.property('tx').equal(undefined);
+    cleaning[0].should.have.property('tx').equal(null);
     cleaning[0].should.have.property('consumed').equal(true);
     cleaning[0].should.have.property('op').equal('UPDATE');
 
     cleaning[1].should.have.property('identifier').equal('I7');
     cleaning[1].should.have.property('amount').equal(5);
     cleaning[1].should.have.property('base').equal(0);
-    cleaning[1].should.have.property('tx').equal(undefined);
+    cleaning[1].should.have.property('tx').equal(null);
     cleaning[1].should.have.property('consumed').equal(true);
     cleaning[1].should.have.property('op').equal('UPDATE');
 
     cleaning[2].should.have.property('identifier').equal('I5');
     cleaning[2].should.have.property('amount').equal(9);
     cleaning[2].should.have.property('base').equal(0);
-    cleaning[2].should.have.property('tx').equal(undefined);
+    cleaning[2].should.have.property('tx').equal(null);
     cleaning[2].should.have.property('consumed').equal(true);
     cleaning[2].should.have.property('op').equal('UPDATE');
 
     cleaning[3].should.have.property('identifier').equal('I10');
     cleaning[3].should.have.property('amount').equal(22);
     cleaning[3].should.have.property('base').equal(0);
-    cleaning[3].should.have.property('tx').equal('B2');
+    cleaning[3].should.have.property('tx').equal(null);
     cleaning[3].should.have.property('consumed').equal(true);
     cleaning[3].should.have.property('op').equal('UPDATE');
 

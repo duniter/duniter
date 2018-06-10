@@ -16,7 +16,7 @@ import {ParametersService} from "../parameters";
 import {Source} from "../entity/source";
 import {BMAConstants} from "../constants";
 import {TransactionDTO} from "../../../../lib/dto/TransactionDTO";
-import {HttpSources, HttpTransaction, HttpTxHistory, HttpTxOfHistory, HttpTxPending} from "../dtos";
+import {HttpSource, HttpSources, HttpTransaction, HttpTxHistory, HttpTxOfHistory, HttpTxPending} from "../dtos";
 import {DBTx} from "../../../../lib/db/DBTx"
 import {Underscore} from "../../../../lib/common-libs/underscore"
 
@@ -45,15 +45,11 @@ export class TransactionBinding extends AbstractController {
   async getSources(req:any): Promise<HttpSources> {
     const pubkey = await ParametersService.getPubkeyP(req);
     const sources = await this.server.dal.getAvailableSourcesByPubkey(pubkey);
-    const result:any = {
-      "currency": this.conf.currency,
-      "pubkey": pubkey,
-      "sources": []
-    };
-    sources.forEach(function (src:any) {
-      result.sources.push(new Source(src).json());
-    });
-    return result;
+    return {
+      currency: this.conf.currency,
+      pubkey,
+      sources
+    }
   }
 
   async getByHash(req:any): Promise<HttpTransaction> {

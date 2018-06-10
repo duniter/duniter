@@ -166,9 +166,9 @@ export class QuickSynchronizer {
           sync_nextExpiring = sync_expires.reduce((max, value) => max ? Math.min(max, value) : value, 9007199254740991); // Far far away date
 
           // Fills in correctly the SINDEX
-          await Promise.all(Underscore.where(sync_sindex.concat(local_sindex), { op: 'UPDATE' }).map(async (entry: any) => {
+          await Promise.all(Underscore.where(sync_sindex.concat(local_sindex), { op: 'UPDATE' }).map(async entry => {
             if (!entry.conditions) {
-              const src = (await this.dal.sindexDAL.getSource(entry.identifier, entry.pos)) as FullSindexEntry
+              const src = (await this.dal.getSource(entry.identifier, entry.pos, entry.srcType === 'D')) as FullSindexEntry
               entry.conditions = src.conditions;
             }
           }))
@@ -185,8 +185,10 @@ export class QuickSynchronizer {
           sync_mindex = local_mindex
           sync_sindex = local_sindex
 
-          sync_sindex = sync_sindex.concat(await Indexer.ruleIndexGenDividend(HEAD, local_iindex, this.dal));
-          sync_sindex = sync_sindex.concat(await Indexer.ruleIndexGarbageSmallAccounts(HEAD, sync_sindex, sync_memoryDAL));
+          // Dividends and account garbaging
+          const dividends = await Indexer.ruleIndexGenDividend(HEAD, local_iindex, this.dal)
+          sync_sindex = sync_sindex.concat(await Indexer.ruleIndexGarbageSmallAccounts(HEAD, sync_sindex, dividends, sync_memoryDAL));
+
           if (nextExpiringChanged) {
             sync_cindex = sync_cindex.concat(await Indexer.ruleIndexGenCertificationExpiry(HEAD, this.dal));
             sync_mindex = sync_mindex.concat(await Indexer.ruleIndexGenMembershipExpiry(HEAD, this.dal));
@@ -195,7 +197,7 @@ export class QuickSynchronizer {
             sync_mindex = sync_mindex.concat(await Indexer.ruleIndexGenImplicitRevocation(HEAD, this.dal));
           }
           // Update balances with UD + local garbagings
-          await DuniterBlockchain.updateWallets(sync_sindex, sync_memoryDAL)
+          await DuniterBlockchain.updateWallets(sync_sindex, dividends, sync_memoryDAL)
 
           // Flush the INDEX again (needs to be done *before* the update of wotb links because of block#0)
           await this.dal.flushIndexes({

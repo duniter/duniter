@@ -489,6 +489,16 @@ export class TestingServer {
     if (!blocksResolved) {
       throw Error(DataErrors[DataErrors.BLOCK_WASNT_COMMITTED])
     }
+    console.log(blocksResolved.getRawSigned())
+    return blocksResolved
+  }
+
+  async resolveExistingBlock(max = 0) {
+    const blocksResolved = await this.server.BlockchainService.blockResolution(max)
+    if (!blocksResolved) {
+      throw Error(DataErrors[DataErrors.BLOCK_WASNT_COMMITTED])
+    }
+    console.log(blocksResolved.getRawSigned())
     return blocksResolved
   }
 

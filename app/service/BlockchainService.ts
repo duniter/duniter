@@ -223,9 +223,10 @@ export class BlockchainService extends FIFOService {
     })
   }
 
-  async blockResolution(): Promise<BlockDTO|null> {
+  async blockResolution(max = 0): Promise<BlockDTO|null> {
     let lastAdded:BlockDTO|null = null
     let added:BlockDTO|null
+    let nbAdded = 0
     do {
       const current = await this.current()
       let potentials = []
@@ -238,7 +239,7 @@ export class BlockchainService extends FIFOService {
       }
       added = null
       let i = 0
-      while (!added && i < potentials.length) {
+      while (!added && i < potentials.length && (!max || nbAdded < max)) {
         const dto = BlockDTO.fromJSONObject(potentials[i])
         try {
           if (dto.issuer === this.conf.pair.pub) {
@@ -251,6 +252,7 @@ export class BlockchainService extends FIFOService {
             bcEvent: OtherConstants.BC_EVENT.HEAD_CHANGED,
             block: added
           })
+          nbAdded++
           // Clear invalid forks' cache
           this.invalidForks.splice(0, this.invalidForks.length)
         } catch (e) {

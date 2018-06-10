@@ -17,6 +17,8 @@ export interface ProgramOptions {
   mdb?: string
   home?: string
   notrim?: boolean
+  nosbx?: boolean
+  nopeers?: boolean
   syncTrace?: string
 }
 
@@ -24,5 +26,7 @@ export const cliprogram: ProgramOptions = {
   mdb: opts.mdb,
   home: opts.home,
   notrim: opts.notrim,
+  nosbx: opts.nosbx,
+  nopeers: opts.nopeers,
   syncTrace: opts['sync-trace'],
 }

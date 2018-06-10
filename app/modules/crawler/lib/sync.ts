@@ -34,6 +34,7 @@ import {CommonConstants} from "../../../lib/common-libs/constants"
 import {Underscore} from "../../../lib/common-libs/underscore"
 import {HttpMerkleOfPeers} from "../../bma/lib/dtos"
 import {DBPeer, JSONDBPeer} from "../../../lib/db/DBPeer"
+import {cliprogram} from "../../../lib/common-libs/programOptions"
 
 const multimeter   = require('multimeter');
 const makeQuerablePromise = require('querablep');
@@ -131,7 +132,7 @@ export class Synchroniser extends stream.Duplex {
     return node.getCurrent();
   }
 
-  async sync(to:number, chunkLen:number, askedCautious = false, nopeers = false, noShufflePeers = false) {
+  async sync(to:number, chunkLen:number, askedCautious = false, noShufflePeers = false) {
 
     try {
 
@@ -164,7 +165,7 @@ export class Synchroniser extends stream.Duplex {
       // Peers (just for P2P download)
       //=======
       let peers:(JSONDBPeer|null)[] = [];
-      if (!nopeers && (to - localNumber > 1000)) { // P2P download if more than 1000 blocs
+      if (!cliprogram.nopeers && (to - localNumber > 1000)) { // P2P download if more than 1000 blocs
         this.watcher.writeStatus('Peers...');
         const merkle = await this.dal.merkleForPeers();
         const getPeers:(params:any) => Promise<HttpMerkleOfPeers> = node.getPeers.bind(node);
@@ -320,16 +321,20 @@ export class Synchroniser extends stream.Duplex {
       await this.BlockchainService.saveParametersForRootBlock(BlockDTO.fromJSONObject(rootBlock))
       this.server.dal.blockDAL.cleanCache();
 
-      //=======
-      // Sandboxes
-      //=======
-      this.watcher.writeStatus('Synchronizing the sandboxes...');
-      await pullSandboxToLocalServer(this.conf.currency, node, this.server, this.server.logger, this.watcher, 1, false)
+      if (!cliprogram.nosbx) {
+        //=======
+        // Sandboxes
+        //=======
+        this.watcher.writeStatus('Synchronizing the sandboxes...');
+        await pullSandboxToLocalServer(this.conf.currency, node, this.server, this.server.logger, this.watcher, 1, false)
+      }
 
-      //=======
-      // Peers
-      //=======
-      await this.syncPeers(nopeers, fullSync, this.host, this.port, to)
+      if (!cliprogram.nopeers) {
+        //=======
+        // Peers
+        //=======
+        await this.syncPeers(fullSync, this.host, this.port, to)
+      }
 
       // Trim the loki data
       await this.server.dal.loki.flushAndTrimData()
@@ -345,8 +350,8 @@ export class Synchroniser extends stream.Duplex {
     }
   }
 
-  async syncPeers(nopeers:boolean, fullSync:boolean, host:string, port:number, to?:number) {
-    if (!nopeers && fullSync) {
+  async syncPeers(fullSync:boolean, host:string, port:number, to?:number) {
+    if (!cliprogram.nopeers && fullSync) {
 
       const peering = await Contacter.fetchPeer(host, port, this.contacterOptions);
 

@@ -65,6 +65,7 @@ export const CrawlerDependency = {
       { value: '--nocautious',    desc: 'Do not check blocks validity during sync.'},
       { value: '--cautious',      desc: 'Check blocks validity during sync (overrides --nocautious option).'},
       { value: '--nopeers',       desc: 'Do not retrieve peers during sync.'},
+      { value: '--nosbx',         desc: 'Do not retrieve sandboxes during sync.'},
       { value: '--onlypeers',     desc: 'Will only try to sync peers.'},
       { value: '--slow',          desc: 'Download slowly the blokchcain (for low connnections).'},
       { value: '--readfilesystem',desc: 'Also read the filesystem to speed up block downloading.'},
@@ -98,7 +99,6 @@ export const CrawlerDependency = {
         const chunkLength = 0;
         const interactive = !program.nointeractive;
         const askedCautious = cautious;
-        const nopeers = program.nopeers;
         const noShufflePeers = program.noshuffle;
 
         let otherDAL = undefined
@@ -112,9 +112,9 @@ export const CrawlerDependency = {
 
         const remote = new Synchroniser(server, onHost, onPort, interactive === true, program.slow === true, otherDAL);
         if (program.onlypeers === true) {
-          return remote.syncPeers(nopeers, true, onHost, onPort)
+          return remote.syncPeers(true, onHost, onPort)
         } else {
-          return remote.sync(upTo, chunkLength, askedCautious, nopeers, noShufflePeers === true)
+          return remote.sync(upTo, chunkLength, askedCautious, noShufflePeers === true)
         }
       }
     }, {

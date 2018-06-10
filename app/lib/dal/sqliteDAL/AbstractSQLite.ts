@@ -13,7 +13,6 @@
 
 import {SQLiteDriver} from "../drivers/SQLiteDriver"
 import {Initiable} from "./Initiable"
-import {getDurationInMicroSeconds, getMicrosecondsTime} from "../../../ProcessCpuProfiler"
 import {Underscore} from "../../common-libs/underscore"
 import {NewLogger} from "../../logger"
 import {MonitorSQLExecutionTime} from "../../debug/MonitorSQLExecutionTime"
@@ -130,16 +129,9 @@ export abstract class AbstractSQLite<T> extends Initiable {
     await this.query('DELETE FROM ' + this.table + ' WHERE ' + conditions, condValues)
   }
 
+  @MonitorSQLExecutionTime()
   async exec(sql:string) {
-    try {
-      const start = getMicrosecondsTime()
-      await this.driver.executeSql(sql);
-      const duration = getDurationInMicroSeconds(start)
-      logger.trace('[sqlite][exec] %s %sµs', sql.substring(0, 50) + '...', duration)
-    } catch (e) {
-      //console.error('ERROR >> %s', sql);
-      throw e;
-    }
+    await this.driver.executeSql(sql)
   }
 
   getInsertQuery(): string {

@@ -84,11 +84,9 @@ export class LokiBIndex extends LokiIndex<DBHead> implements BIndexDAO {
       .remove()
   }
 
+  @MonitorLokiExecutionTime(true)
   async getWrittenOn(blockstamp: string): Promise<DBHead[]> {
-    const now = getMicrosecondsTime()
     const criterion:any = { number: parseInt(blockstamp) }
-    const res = this.collection.find(criterion)
-    logger.trace('[loki][%s][getWrittenOn] %sµs', this.collectionName, getDurationInMicroSeconds(now), blockstamp)
-    return res
+    return this.collection.find(criterion)
   }
 }

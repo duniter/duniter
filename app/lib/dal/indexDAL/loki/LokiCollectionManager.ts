@@ -1,6 +1,7 @@
 import {LokiCollection} from "./LokiTypes"
 import {LokiProxyCollection} from "./LokiCollection"
 import {NewLogger} from "../../../logger"
+import {cliprogram} from "../../../common-libs/programOptions"
 
 const logger = NewLogger()
 
@@ -20,7 +21,7 @@ export abstract class LokiCollectionManager<T> {
   public triggerInit() {
     const coll = this.loki.addCollection(this.collectionName, {
       indices: this.indices,
-      disableChangesApi: false
+      disableChangesApi: cliprogram.isSync
     })
     this.collection = new LokiProxyCollection(coll, this.collectionName)
     this.resolveCollection()

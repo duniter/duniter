@@ -36,7 +36,7 @@ export class LokiSIndex extends LokiProtocolIndex<SindexEntry> implements SIndex
   async getAvailableForConditions(conditionsStr: string): Promise<SindexEntry[]> {
     const sources = this.collection
       .chain()
-      .find({ conditions: { $contains: conditionsStr } })
+      .find({ conditions: conditionsStr })
       .simplesort('writtenOn')
       .data()
       .filter(s => this.collection.find({ identifier: s.identifier, pos: s.pos, consumed: true }).length === 0)

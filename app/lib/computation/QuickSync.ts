@@ -244,7 +244,6 @@ export class QuickSynchronizer {
 
           // Process triming & archiving continuously to avoid super long ending of sync
           await this.dal.trimIndexes(sync_bindex[0].number);
-          await this.dal.archiveBlocks()
         }
       } else {
 
@@ -286,7 +285,5 @@ export class QuickSynchronizer {
         // sync_currConf = {};
       }
     }
-
-    await this.dal.loki.commitData()
   }
 }

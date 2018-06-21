@@ -305,6 +305,7 @@ export const CommonConstants = {
   BLOCKS_IN_MEMORY_MAX: 288 * 60, // 60 days of blocks
 
   MAX_AGE_OF_PEER_IN_BLOCKS: 200, // blocks
+  INITIAL_DOWNLOAD_SLOTS: 1, // 1 peer
 }
 
 function exact (regexpContent:string) {

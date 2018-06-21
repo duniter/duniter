@@ -19,14 +19,7 @@ import {dos2unix} from "../../../lib/common-libs/dos2unix"
 import {parsers} from "../../../lib/common-libs/parsers/index"
 
 import {Server} from "../../../../server"
-
-const querablep = require('querablep');
-
-export interface Querable<T> extends Promise<T> {
-  isFulfilled(): boolean
-  isResolved(): boolean
-  isRejected(): boolean
-}
+import {Querable, querablep} from "../../../lib/common-libs/querable"
 
 export class PermanentProver {
 
@@ -36,7 +29,7 @@ export class PermanentProver {
   generator:BlockGeneratorWhichProves
   loops:number
 
-  private permanencePromise:Querable<any>|null = null
+  private permanencePromise:Querable<void>|null = null
 
   private blockchainChangedResolver:any = null
   private promiseOfWaitingBetween2BlocksOfOurs:any = null

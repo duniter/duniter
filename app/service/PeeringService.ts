@@ -23,6 +23,8 @@ import {Server} from "../../server"
 import {GlobalFifoPromise} from "./GlobalFifoPromise"
 import {DBPeer} from "../lib/db/DBPeer"
 import {Underscore} from "../lib/common-libs/underscore"
+import {CommonConstants} from "../lib/common-libs/constants"
+import {DataErrors} from "../lib/common-libs/errors"
 
 const util           = require('util');
 const events         = require('events');
@@ -104,6 +106,7 @@ export class PeeringService {
           }
         }
         if (thePeer.block == constants.PEER.SPECIAL_BLOCK) {
+          thePeer.block = constants.PEER.SPECIAL_BLOCK;
           thePeer.statusTS = 0;
           thePeer.status = 'UP';
         } else {
@@ -114,6 +117,10 @@ export class PeeringService {
             thePeer.block = constants.PEER.SPECIAL_BLOCK;
             thePeer.statusTS = 0;
             thePeer.status = 'UP';
+          }
+          const current = await this.dal.getBlockCurrent()
+          if ((!block && current.number > CommonConstants.MAX_AGE_OF_PEER_IN_BLOCKS) || (block && current.number - block.number > CommonConstants.MAX_AGE_OF_PEER_IN_BLOCKS)) {
+            throw Error(DataErrors[DataErrors.TOO_OLD_PEER])
           }
         }
         sigTime = block ? block.medianTime : 0;

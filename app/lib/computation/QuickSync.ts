@@ -21,6 +21,7 @@ import {DBBlock} from "../db/DBBlock"
 import {DBTx} from "../db/DBTx"
 import {Underscore} from "../common-libs/underscore"
 import {CommonConstants} from "../common-libs/constants"
+import {cliprogram} from "../common-libs/programOptions"
 
 const constants = require('../constants')
 
@@ -128,11 +129,11 @@ export class QuickSynchronizer {
         sync_currConf = BlockDTO.getConf(block);
       }
 
-      if (block.number <= to - this.conf.forksize) {
+      if (block.number <= to - this.conf.forksize || cliprogram.noSources) { // If we require nosources option, this blockchain can't be valid so we don't make checks
         const index:any = Indexer.localIndex(dto, sync_currConf);
         const local_iindex = Indexer.iindex(index);
         const local_cindex = Indexer.cindex(index);
-        const local_sindex = Indexer.sindex(index);
+        const local_sindex = cliprogram.noSources ? [] : Indexer.sindex(index);
         const local_mindex = Indexer.mindex(index);
 
         const HEAD = await Indexer.quickCompleteGlobalScope(block, sync_currConf, sync_bindex, local_iindex, local_mindex, local_cindex, this.dal)
@@ -150,13 +151,13 @@ export class QuickSynchronizer {
 
         await DuniterBlockchain.createNewcomers(local_iindex, this.dal, this.logger)
 
-        if (block.dividend
+        if ((block.dividend && !cliprogram.noSources)
           || block.joiners.length
           || block.actives.length
           || block.revoked.length
           || block.excluded.length
           || block.certifications.length
-          || block.transactions.length
+          || (block.transactions.length && !cliprogram.noSources)
           || block.medianTime >= sync_nextExpiring) {
           const nextExpiringChanged = block.medianTime >= sync_nextExpiring
 
@@ -170,12 +171,14 @@ export class QuickSynchronizer {
           sync_nextExpiring = sync_expires.reduce((max, value) => max ? Math.min(max, value) : value, 9007199254740991); // Far far away date
 
           // Fills in correctly the SINDEX
-          await Promise.all(Underscore.where(sync_sindex.concat(local_sindex), { op: 'UPDATE' }).map(async entry => {
-            if (!entry.conditions) {
-              const src = (await this.dal.getSource(entry.identifier, entry.pos, entry.srcType === 'D')) as FullSindexEntry
-              entry.conditions = src.conditions;
-            }
-          }))
+          if (!cliprogram.noSources) {
+            await Promise.all(Underscore.where(sync_sindex.concat(local_sindex), {op: 'UPDATE'}).map(async entry => {
+              if (!entry.conditions) {
+                const src = (await this.dal.getSource(entry.identifier, entry.pos, entry.srcType === 'D')) as FullSindexEntry
+                entry.conditions = src.conditions;
+              }
+            }))
+          }
 
           // Flush the INDEX (not bindex, which is particular)
           await this.dal.flushIndexes({
@@ -190,8 +193,10 @@ export class QuickSynchronizer {
           sync_sindex = local_sindex
 
           // Dividends and account garbaging
-          const dividends = await Indexer.ruleIndexGenDividend(HEAD, local_iindex, this.dal)
-          sync_sindex = sync_sindex.concat(await Indexer.ruleIndexGarbageSmallAccounts(HEAD, sync_sindex, dividends, sync_memoryDAL));
+          const dividends = cliprogram.noSources ? [] : await Indexer.ruleIndexGenDividend(HEAD, local_iindex, this.dal)
+          if (!cliprogram.noSources) {
+            sync_sindex = sync_sindex.concat(await Indexer.ruleIndexGarbageSmallAccounts(HEAD, sync_sindex, dividends, sync_memoryDAL));
+          }
 
           if (nextExpiringChanged) {
             sync_cindex = sync_cindex.concat(await Indexer.ruleIndexGenCertificationExpiry(HEAD, this.dal));
@@ -200,8 +205,11 @@ export class QuickSynchronizer {
             sync_iindex = sync_iindex.concat(await Indexer.ruleIndexGenExclusionByCertificatons(HEAD, sync_cindex, local_iindex, this.conf, this.dal));
             sync_mindex = sync_mindex.concat(await Indexer.ruleIndexGenImplicitRevocation(HEAD, this.dal));
           }
-          // Update balances with UD + local garbagings
-          await DuniterBlockchain.updateWallets(sync_sindex, dividends, sync_memoryDAL)
+
+          if (!cliprogram.noSources) {
+            // Update balances with UD + local garbagings
+            await DuniterBlockchain.updateWallets(sync_sindex, dividends, sync_memoryDAL)
+          }
 
           // Flush the INDEX again (needs to be done *before* the update of wotb links because of block#0)
           await this.dal.flushIndexes({

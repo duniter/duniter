@@ -21,6 +21,7 @@ export interface ProgramOptions {
   nopeers?: boolean
   syncTrace?: string
   isSync: boolean
+  noSources: boolean
 }
 
 export const cliprogram: ProgramOptions = {
@@ -29,6 +30,7 @@ export const cliprogram: ProgramOptions = {
   notrim: opts.notrim,
   nosbx: opts.nosbx,
   nopeers: opts.nopeers,
+  noSources: !!opts.nosources,
   syncTrace: opts['sync-trace'],
   isSync: opts._[0] === 'sync'
 }

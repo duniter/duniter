@@ -20,6 +20,7 @@ import {FileDAL} from "../dal/fileDAL"
 import {DBBlock} from "../db/DBBlock"
 import {DBTx} from "../db/DBTx"
 import {Underscore} from "../common-libs/underscore"
+import {CommonConstants} from "../common-libs/constants"
 
 const constants = require('../constants')
 
@@ -109,6 +110,9 @@ export class QuickSynchronizer {
       block.fork = false
       return block
     }))
+
+    // We only keep approx 2 months of blocks in memory, so memory consumption keeps approximately constant during the sync
+    await this.dal.blockDAL.trimBlocks(blocks[blocks.length - 1].number - CommonConstants.BLOCKS_IN_MEMORY_MAX)
 
     for (const block of blocks) {
 

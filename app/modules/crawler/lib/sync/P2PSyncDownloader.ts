@@ -6,13 +6,14 @@ import {BlockDTO} from "../../../../lib/dto/BlockDTO"
 import {Watcher} from "./Watcher"
 import {CommonConstants} from "../../../../lib/common-libs/constants"
 import {ISyncDownloader} from "./ISyncDownloader"
+import {cliprogram} from "../../../../lib/common-libs/programOptions"
 
 const makeQuerablePromise = require('querablep');
 
 export class P2PSyncDownloader implements ISyncDownloader {
 
   private PARALLEL_PER_CHUNK = 1;
-  private MAX_DELAY_PER_DOWNLOAD = 10000;
+  private MAX_DELAY_PER_DOWNLOAD = cliprogram.slow ? 15000 : 5000;
   private WAIT_DELAY_WHEN_MAX_DOWNLOAD_IS_REACHED = 3000;
   private NO_NODES_AVAILABLE = "No node available for download";
   private TOO_LONG_TIME_DOWNLOAD:string
@@ -85,7 +86,7 @@ export class P2PSyncDownloader implements ISyncDownloader {
       throw this.NO_NODES_AVAILABLE;
     }
     // We remove the nodes impossible to reach (timeout)
-    let withGoodDelays = Underscore.filter(candidates, (c:any) => c.tta <= this.MAX_DELAY_PER_DOWNLOAD && !c.excluded);
+    let withGoodDelays = Underscore.filter(candidates, (c:any) => c.tta <= this.MAX_DELAY_PER_DOWNLOAD && !c.excluded && !c.downloading);
     if (withGoodDelays.length === 0) {
       await new Promise(res => setTimeout(res, this.WAIT_DELAY_WHEN_MAX_DOWNLOAD_IS_REACHED)) // We wait a bit before continuing the downloads
       // We reinitialize the nodes

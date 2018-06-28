@@ -215,6 +215,8 @@ export class Synchroniser extends stream.Duplex {
         this.watcher,
         this.otherDAL)
 
+      downloader.start()
+
       let lastPullBlock:BlockDTO|null = null;
 
       let dao = new (class extends AbstractDAO {

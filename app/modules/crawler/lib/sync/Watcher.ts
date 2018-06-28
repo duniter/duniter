@@ -1,4 +1,5 @@
 import * as events from "events"
+import {cliprogram} from "../../../../lib/common-libs/programOptions"
 
 const multimeter   = require('multimeter')
 
@@ -8,10 +9,11 @@ export interface Watcher {
   storagePercent(pct?: number): number
   appliedPercent(pct?: number): number
   sbxPercent(pct?: number): number
+  peersPercent(pct?: number): number
   end(): void
 }
 
-export type EventName = 'downloadChange'|'storageChange'|'appliedChange'|'sbxChange'
+export type EventName = 'downloadChange'|'storageChange'|'appliedChange'|'sbxChange'|'peersChange'
 
 export class EventWatcher extends events.EventEmitter implements Watcher {
 
@@ -37,6 +39,10 @@ export class EventWatcher extends events.EventEmitter implements Watcher {
 
   sbxPercent(pct?: number): number {
     return this.change('sbxChange', (pct) => this.innerWatcher.sbxPercent(pct), pct)
+  }
+
+  peersPercent(pct?: number): number {
+    return this.change('peersChange', (pct) => this.innerWatcher.peersPercent(pct), pct)
   }
 
   change(changeName: EventName, method: (pct?: number) => number, pct?: number) {
@@ -65,6 +71,7 @@ export class MultimeterWatcher implements Watcher {
   private savedBar:any
   private downloadBar:any
   private sbxBar:any
+  private peersBar:any
   private writtens:string[] = []
 
   constructor() {
@@ -80,6 +87,10 @@ export class MultimeterWatcher implements Watcher {
     this.appliedBar  = this.createBar('Apply',    5)
     this.sbxBar      = this.createBar('Sandbox',  6)
 
+    if (!cliprogram.nopeers) {
+      this.peersBar  = this.createBar('Peers',    7)
+    }
+
     this.multi.write('\nStatus: ');
 
     this.charm.position( (x:number, y:number) => {
@@ -93,6 +104,9 @@ export class MultimeterWatcher implements Watcher {
     this.savedBar.percent(0);
     this.appliedBar.percent(0);
     this.sbxBar.percent(0);
+    if (!cliprogram.nopeers) {
+      this.peersBar.percent(0);
+    }
   }
 
   writeStatus(str:string) {
@@ -118,6 +132,13 @@ export class MultimeterWatcher implements Watcher {
 
   sbxPercent(pct:number) {
     return this.sbxBar.percent(pct)
+  }
+
+  peersPercent(pct:number) {
+    if (!cliprogram.nopeers) {
+      return this.peersBar.percent(pct)
+    }
+    return 0
   }
 
   end() {
@@ -174,6 +195,10 @@ export class LoggerWatcher implements Watcher {
   }
 
   sbxPercent(pct:number) {
+    return 0
+  }
+
+  peersPercent(pct:number) {
     return 0
   }
 

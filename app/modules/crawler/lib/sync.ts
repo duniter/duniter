@@ -60,6 +60,7 @@ export class Synchroniser extends stream.Duplex {
     this.watcher.onEvent('storageChange',  (pct: number) => this.push({ saved: pct }))
     this.watcher.onEvent('appliedChange',  (pct: number) => this.push({ applied: pct }))
     this.watcher.onEvent('sbxChange',      (pct: number) => this.push({ sandbox: pct }))
+    this.watcher.onEvent('peersChange',    (pct: number) => this.push({ peersSync: pct }))
 
     if (interactive) {
       this.logger.mute();
@@ -366,8 +367,9 @@ export class Synchroniser extends stream.Duplex {
             leavesToAdd.push(leaf);
           }
         });
-        for (const leaf of leavesToAdd) {
+        for (let i = 0; i < leavesToAdd.length; i++) {
           try {
+            const leaf = leavesToAdd[i]
             const json3 = await getPeers({ "leaf": leaf });
             const jsonEntry = json3.leaf.value;
             const sign = json3.leaf.value.signature;
@@ -379,11 +381,13 @@ export class Synchroniser extends stream.Duplex {
             entry.block = jsonEntry.block
             entry.signature = sign;
             this.watcher.writeStatus('Peer ' + entry.pubkey);
+            this.watcher.peersPercent((i + 1) / leavesToAdd.length * 100)
             await this.PeeringService.submitP(entry, false, to === undefined);
           } catch (e) {
             this.logger.warn(e && e.message || e)
           }
         }
+        this.watcher.peersPercent(100)
       }
       else {
         this.watcher.writeStatus('Peers already known');

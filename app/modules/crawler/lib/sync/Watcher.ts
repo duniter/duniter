@@ -82,13 +82,15 @@ export class MultimeterWatcher implements Watcher {
 
     this.multi.write('Progress:\n\n');
 
-    this.downloadBar = this.createBar('Download', 3)
-    this.savedBar    = this.createBar('Storage',  4)
-    this.appliedBar  = this.createBar('Apply',    5)
-    this.sbxBar      = this.createBar('Sandbox',  6)
-
+    let line = 3
+    this.downloadBar = this.createBar('Download', line++)
+    this.savedBar    = this.createBar('Storage',  line++)
+    this.appliedBar  = this.createBar('Apply',    line++)
+    if (!cliprogram.nosbx) {
+      this.sbxBar    = this.createBar('Sandbox',  line++)
+    }
     if (!cliprogram.nopeers) {
-      this.peersBar  = this.createBar('Peers',    7)
+      this.peersBar  = this.createBar('Peers',    line++)
     }
 
     this.multi.write('\nStatus: ');
@@ -103,7 +105,9 @@ export class MultimeterWatcher implements Watcher {
     this.downloadBar.percent(0);
     this.savedBar.percent(0);
     this.appliedBar.percent(0);
-    this.sbxBar.percent(0);
+    if (!cliprogram.nosbx) {
+      this.sbxBar.percent(0);
+    }
     if (!cliprogram.nopeers) {
       this.peersBar.percent(0);
     }
@@ -131,7 +135,10 @@ export class MultimeterWatcher implements Watcher {
   }
 
   sbxPercent(pct:number) {
-    return this.sbxBar.percent(pct)
+    if (!cliprogram.nosbx) {
+      return this.sbxBar.percent(pct)
+    }
+    return 0
   }
 
   peersPercent(pct:number) {

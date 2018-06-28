@@ -54,6 +54,8 @@ export class ChunkGetter {
   private parallelDownloads = cliprogram.slow ? 1 : 5
   private maxDownloadAdvance = 10 // 10 chunks can be downloaded even if 10th chunk above is not completed
   private MAX_DOWNLOAD_TIMEOUT = 15000
+  private readDAL: FileDAL
+  private writeDAL: FileDAL
 
   constructor(
     private currency:string,
@@ -61,15 +63,17 @@ export class ChunkGetter {
     private to:number,
     private toHash:string,
     private peers:JSONDBPeer[],
-    private dal:FileDAL,
+    dal:FileDAL,
     private nocautious:boolean,
     private watcher:Watcher,
-    private otherDAL?:FileDAL,
+    otherDAL?:FileDAL,
   ) {
+    this.readDAL = otherDAL || dal
+    this.writeDAL = dal
     const nbBlocksToDownload = Math.max(0, to - localNumber)
     this.numberOfChunksToDownload = Math.ceil(nbBlocksToDownload / CommonConstants.CONST_BLOCKS_CHUNK)
     this.p2PDownloader = new P2PSyncDownloader(localNumber, to, peers, this.watcher, logger)
-    this.fsDownloader = new FsSyncDownloader(localNumber, to, otherDAL || dal, this.getChunkName.bind(this), this.getChunksDir.bind(this))
+    this.fsDownloader = new FsSyncDownloader(localNumber, to, this.readDAL, this.getChunkName.bind(this), this.getChunksDir.bind(this))
 
     this.resultsDeferers = Array.from({ length: this.numberOfChunksToDownload }).map(() => ({
       resolve: () => { throw Error('resolve should not be called here') },
@@ -170,8 +174,8 @@ export class ChunkGetter {
               } else if (handler.downloader !== this.fsDownloader) {
                 // Store the file to avoid re-downloading
                 if (this.localNumber <= 0 && chunk.length === CommonConstants.CONST_BLOCKS_CHUNK) {
-                  await this.dal.confDAL.coreFS.makeTree(this.currency);
-                  await this.dal.confDAL.coreFS.writeJSON(fileName, { blocks: chunk.map((b:any) => DBBlock.fromBlockDTO(b)) });
+                  await this.writeDAL.confDAL.coreFS.makeTree(this.currency);
+                  await this.writeDAL.confDAL.coreFS.writeJSON(fileName, { blocks: chunk.map((b:any) => DBBlock.fromBlockDTO(b)) });
                 }
               } else {
                 logger.warn("Chunk #%s read from filesystem.", i)
@@ -182,11 +186,14 @@ export class ChunkGetter {
                 // Chunk is COMPLETE
                 logger.warn("Chunk #%s is COMPLETE", i)
                 ;(handler as any).state = 'COMPLETED'
+                if (!isTopChunk) {
+                  (handler as any).chunk = undefined
+                }
                 this.downloadedChunks++
                 this.watcher.downloadPercent(parseInt((this.downloadedChunks / this.numberOfChunksToDownload * 100).toFixed(0)))
                 // We pre-save blocks only for non-cautious sync
                 if (this.nocautious) {
-                  await this.dal.blockchainArchiveDAL.archive(chunk.map(b => {
+                  await this.writeDAL.blockchainArchiveDAL.archive(chunk.map(b => {
                     const block = DBBlock.fromBlockDTO(b)
                     block.fork = false
                     return block
@@ -198,9 +205,9 @@ export class ChunkGetter {
                 // Returns a promise of file content
                 this.resultsDeferers[i].resolve(async () => {
                   if (isTopChunk) {
-                    return chunk
+                    return await handler.chunk // don't return directly "chunk" as it would prevent the GC to collect it
                   }
-                  return (await this.dal.confDAL.coreFS.readJSON(fileName)).blocks
+                  return (await this.readDAL.confDAL.coreFS.readJSON(fileName)).blocks
                 })
               }
             } else {

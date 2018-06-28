@@ -66,7 +66,7 @@ export class P2PSyncDownloader implements ISyncDownloader {
           node.tta = 1;
           node.nbSuccess = 0;
           if (node.host.match(/^(localhost|192|127)/)) {
-            node.excluded = true
+            node.tta = this.MAX_DELAY_PER_DOWNLOAD
           }
           return node;
         })())

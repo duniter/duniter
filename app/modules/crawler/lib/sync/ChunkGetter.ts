@@ -199,7 +199,7 @@ export class ChunkGetter {
                     return block
                   }))
                   this.writtenChunks++
-                  this.watcher.savedPercent(Math.round(this.writtenChunks / this.numberOfChunksToDownload * 100));
+                  this.watcher.storagePercent(Math.round(this.writtenChunks / this.numberOfChunksToDownload * 100));
                 }
 
                 // Returns a promise of file content

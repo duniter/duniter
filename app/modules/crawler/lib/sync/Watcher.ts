@@ -5,11 +5,13 @@ const multimeter   = require('multimeter')
 export interface Watcher {
   writeStatus(str: string): void
   downloadPercent(pct?: number): number
-  savedPercent(pct?: number): number
+  storagePercent(pct?: number): number
   appliedPercent(pct?: number): number
   sbxPercent(pct?: number): number
   end(): void
 }
+
+export type EventName = 'downloadChange'|'storageChange'|'appliedChange'|'sbxChange'
 
 export class EventWatcher extends events.EventEmitter implements Watcher {
 
@@ -25,8 +27,8 @@ export class EventWatcher extends events.EventEmitter implements Watcher {
     return this.change('downloadChange', (pct) => this.innerWatcher.downloadPercent(pct), pct)
   }
 
-  savedPercent(pct?: number): number {
-    return this.change('savedChange', (pct) => this.innerWatcher.savedPercent(pct), pct)
+  storagePercent(pct?: number): number {
+    return this.change('storageChange', (pct) => this.innerWatcher.storagePercent(pct), pct)
   }
 
   appliedPercent(pct?: number): number {
@@ -37,7 +39,7 @@ export class EventWatcher extends events.EventEmitter implements Watcher {
     return this.change('sbxChange', (pct) => this.innerWatcher.sbxPercent(pct), pct)
   }
 
-  change(changeName: string, method: (pct?: number) => number, pct?: number) {
+  change(changeName: EventName, method: (pct?: number) => number, pct?: number) {
     if (pct !== undefined && method() < pct) {
       this.emit(changeName, pct || 0)
     }
@@ -46,6 +48,10 @@ export class EventWatcher extends events.EventEmitter implements Watcher {
 
   end(): void {
     this.innerWatcher.end()
+  }
+
+  onEvent(e: EventName, cb: (pct: number) => void) {
+    this.on(e, cb)
   }
 }
 
@@ -102,7 +108,7 @@ export class MultimeterWatcher implements Watcher {
     return this.downloadBar.percent(pct)
   }
 
-  savedPercent(pct:number) {
+  storagePercent(pct:number) {
     return this.savedBar.percent(pct)
   }
 
@@ -159,7 +165,7 @@ export class LoggerWatcher implements Watcher {
     return this.change('downPct', pct)
   }
 
-  savedPercent(pct:number) {
+  storagePercent(pct:number) {
     return this.change('savedPct', pct)
   }
 

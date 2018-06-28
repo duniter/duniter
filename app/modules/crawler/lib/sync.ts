@@ -56,10 +56,10 @@ export class Synchroniser extends stream.Duplex {
 
     // Wrapper to also push event stream
     this.watcher = new EventWatcher(interactive ? new MultimeterWatcher() : new LoggerWatcher(this.logger))
-    this.watcher.on('downloadChange', (pct: number) => this.push({ download: pct }))
-    this.watcher.on('savedChange',    (pct: number) => this.push({ saved: pct }))
-    this.watcher.on('appliedChange',  (pct: number) => this.push({ applied: pct }))
-    this.watcher.on('certChange',     (pct: number) => this.push({ sbx_cert: pct }))
+    this.watcher.onEvent('downloadChange', (pct: number) => this.push({ download: pct }))
+    this.watcher.onEvent('storageChange',  (pct: number) => this.push({ saved: pct }))
+    this.watcher.onEvent('appliedChange',  (pct: number) => this.push({ applied: pct }))
+    this.watcher.onEvent('sbxChange',      (pct: number) => this.push({ sandbox: pct }))
 
     if (interactive) {
       this.logger.mute();
@@ -300,6 +300,7 @@ export class Synchroniser extends stream.Duplex {
 
       // Finished blocks
       this.watcher.downloadPercent(100.0);
+      this.watcher.storagePercent(100.0);
       this.watcher.appliedPercent(100.0);
 
       if (logInterval) {

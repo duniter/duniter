@@ -22,6 +22,7 @@ export interface ProgramOptions {
   syncTrace?: string
   isSync: boolean
   noSources: boolean
+  slow?: boolean
 }
 
 export const cliprogram: ProgramOptions = {
@@ -32,5 +33,6 @@ export const cliprogram: ProgramOptions = {
   nopeers: opts.nopeers,
   noSources: !!opts.nosources,
   syncTrace: opts['sync-trace'],
-  isSync: opts._[0] === 'sync'
+  isSync: opts._[0] === 'sync',
+  slow: opts.slow,
 }

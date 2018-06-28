@@ -26,7 +26,6 @@ import {AbstractDAO} from "./pulling"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {BlockchainService} from "../../../service/BlockchainService"
 import {dos2unix} from "../../../lib/common-libs/dos2unix"
-import {hashf} from "../../../lib/common"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {PeeringService} from "../../../service/PeeringService"
 import {CommonConstants} from "../../../lib/common-libs/constants"
@@ -34,8 +33,8 @@ import {Underscore} from "../../../lib/common-libs/underscore"
 import {HttpMerkleOfPeers} from "../../bma/lib/dtos"
 import {DBPeer, JSONDBPeer} from "../../../lib/db/DBPeer"
 import {cliprogram} from "../../../lib/common-libs/programOptions"
-import {P2PDownloader} from "./sync/P2PDownloader"
 import {EventWatcher, LoggerWatcher, MultimeterWatcher, Watcher} from "./sync/Watcher"
+import {ChunkGetter} from "./sync/ChunkGetter"
 
 const EVAL_REMAINING_INTERVAL = 1000;
 
@@ -51,7 +50,6 @@ export class Synchroniser extends stream.Duplex {
     private host:string,
     private port:number,
     interactive = false,
-    private slowOption = false,
     private otherDAL?:FileDAL) {
 
     super({ objectMode: true })
@@ -206,9 +204,16 @@ export class Synchroniser extends stream.Duplex {
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = (askedCautious === true || localNumber >= 0);
       const shuffledPeers = (noShufflePeers ? peers : Underscore.shuffle(peers)).filter(p => !!(p)) as JSONDBPeer[]
-      const downloader = new P2PDownloader(rCurrent.currency, localNumber, to, rCurrent.hash, shuffledPeers, this.watcher, this.logger, hashf, this.dal, this.slowOption, !cautious, this.otherDAL);
-
-      downloader.start();
+      const downloader = new ChunkGetter(
+        rCurrent.currency,
+        localNumber,
+        to,
+        rCurrent.hash,
+        shuffledPeers,
+        this.dal,
+        !cautious,
+        this.watcher,
+        this.otherDAL)
 
       let lastPullBlock:BlockDTO|null = null;
 
@@ -458,8 +463,4 @@ class NodesMerkle {
   root() {
     return this.merkleRoot
   }
-}
-
-export interface PromiseOfBlocksReading {
-  (): Promise<BlockDTO[]>
 }

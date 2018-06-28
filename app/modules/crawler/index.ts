@@ -111,7 +111,7 @@ export const CrawlerDependency = {
           otherDAL = new FileDAL(params)
         }
 
-        const remote = new Synchroniser(server, onHost, onPort, interactive === true, program.slow === true, otherDAL);
+        const remote = new Synchroniser(server, onHost, onPort, interactive === true, otherDAL);
         if (program.onlypeers === true) {
           return remote.syncPeers(true, onHost, onPort)
         } else {

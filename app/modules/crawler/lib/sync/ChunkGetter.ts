@@ -200,6 +200,8 @@ export class ChunkGetter {
                   }))
                   this.writtenChunks++
                   this.watcher.storagePercent(Math.round(this.writtenChunks / this.numberOfChunksToDownload * 100));
+                } else {
+                  this.watcher.storagePercent(parseInt((this.downloadedChunks / this.numberOfChunksToDownload * 100).toFixed(0)))
                 }
 
                 // Returns a promise of file content

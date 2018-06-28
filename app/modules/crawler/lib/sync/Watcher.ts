@@ -1,3 +1,5 @@
+import * as events from "events"
+
 const multimeter   = require('multimeter')
 
 export interface Watcher {
@@ -5,16 +7,14 @@ export interface Watcher {
   downloadPercent(pct?: number): number
   savedPercent(pct?: number): number
   appliedPercent(pct?: number): number
+  sbxPercent(pct?: number): number
   end(): void
 }
 
-export class EventWatcher implements Watcher {
+export class EventWatcher extends events.EventEmitter implements Watcher {
 
-  constructor(
-    private innerWatcher:Watcher,
-    private beforeDownloadPercentHook: (pct:number, innerWatcher:Watcher) => void,
-    private beforeSavedPercentHook: (pct:number, innerWatcher:Watcher) => void,
-    private beforeAppliedPercentHook: (pct:number, innerWatcher:Watcher) => void) {
+  constructor(private innerWatcher:Watcher) {
+    super()
   }
 
   writeStatus(str: string): void {
@@ -22,18 +22,26 @@ export class EventWatcher implements Watcher {
   }
 
   downloadPercent(pct?: number): number {
-    this.beforeDownloadPercentHook(pct || 0, this.innerWatcher)
-    return this.innerWatcher.downloadPercent(pct)
+    return this.change('downloadChange', (pct) => this.innerWatcher.downloadPercent(pct), pct)
   }
 
   savedPercent(pct?: number): number {
-    this.beforeSavedPercentHook(pct || 0, this.innerWatcher)
-    return this.innerWatcher.savedPercent(pct)
+    return this.change('savedChange', (pct) => this.innerWatcher.savedPercent(pct), pct)
   }
 
   appliedPercent(pct?: number): number {
-    this.beforeAppliedPercentHook(pct || 0, this.innerWatcher)
-    return this.innerWatcher.appliedPercent(pct)
+    return this.change('appliedChange', (pct) => this.innerWatcher.appliedPercent(pct), pct)
+  }
+
+  sbxPercent(pct?: number): number {
+    return this.change('sbxChange', (pct) => this.innerWatcher.sbxPercent(pct), pct)
+  }
+
+  change(changeName: string, method: (pct?: number) => number, pct?: number) {
+    if (pct !== undefined && method() < pct) {
+      this.emit(changeName, pct || 0)
+    }
+    return method(pct)
   }
 
   end(): void {
@@ -50,6 +58,7 @@ export class MultimeterWatcher implements Watcher {
   private appliedBar:any
   private savedBar:any
   private downloadBar:any
+  private sbxBar:any
   private writtens:string[] = []
 
   constructor() {
@@ -60,38 +69,10 @@ export class MultimeterWatcher implements Watcher {
 
     this.multi.write('Progress:\n\n');
 
-    this.multi.write("Download:   \n");
-    this.downloadBar = this.multi("Download:   \n".length, 3, {
-      width : 20,
-      solid : {
-        text : '|',
-        foreground : 'white',
-        background : 'blue'
-      },
-      empty : { text : ' ' }
-    });
-
-    this.multi.write("Blockchain: \n");
-    this.savedBar = this.multi("Blockchain: \n".length, 4, {
-      width : 20,
-      solid : {
-        text : '|',
-        foreground : 'white',
-        background : 'blue'
-      },
-      empty : { text : ' ' }
-    });
-
-    this.multi.write("Apply:      \n");
-    this.appliedBar = this.multi("Apply:      \n".length, 5, {
-      width : 20,
-      solid : {
-        text : '|',
-        foreground : 'white',
-        background : 'blue'
-      },
-      empty : { text : ' ' }
-    });
+    this.downloadBar = this.createBar('Download', 3)
+    this.savedBar    = this.createBar('Storage',  4)
+    this.appliedBar  = this.createBar('Apply',    5)
+    this.sbxBar      = this.createBar('Sandbox',  6)
 
     this.multi.write('\nStatus: ');
 
@@ -105,11 +86,11 @@ export class MultimeterWatcher implements Watcher {
     this.downloadBar.percent(0);
     this.savedBar.percent(0);
     this.appliedBar.percent(0);
+    this.sbxBar.percent(0);
   }
 
   writeStatus(str:string) {
     this.writtens.push(str);
-    //require('fs').writeFileSync('writtens.json', JSON.stringify(writtens));
     this.charm
       .position(this.xPos, this.yPos)
       .erase('end')
@@ -129,9 +110,27 @@ export class MultimeterWatcher implements Watcher {
     return this.appliedBar.percent(pct)
   }
 
+  sbxPercent(pct:number) {
+    return this.sbxBar.percent(pct)
+  }
+
   end() {
     this.multi.write('\nAll done.\n');
     this.multi.destroy();
+  }
+
+  private createBar(title: string, line: number) {
+    const header = (title + ':').padEnd(14, ' ') + '\n'
+    this.multi.write(header)
+    return this.multi(header.length, line, {
+      width : 20,
+      solid : {
+        text : '|',
+        foreground : 'white',
+        background : 'blue'
+      },
+      empty : { text : ' ' }
+    })
   }
 }
 
@@ -157,30 +156,28 @@ export class LoggerWatcher implements Watcher {
   }
 
   downloadPercent(pct:number) {
-    if (pct !== undefined) {
-      let changed = pct > this.downPct;
-      this.downPct = pct;
-      if (changed) this.showProgress();
-    }
-    return this.downPct;
+    return this.change('downPct', pct)
   }
 
   savedPercent(pct:number) {
-    if (pct !== undefined) {
-      let changed = pct > this.savedPct;
-      this.savedPct = pct;
-      if (changed) this.showProgress();
-    }
-    return this.savedPct;
+    return this.change('savedPct', pct)
   }
 
   appliedPercent(pct:number) {
+    return this.change('appliedPct', pct)
+  }
+
+  sbxPercent(pct:number) {
+    return 0
+  }
+
+  change(prop: 'downPct'|'savedPct'|'appliedPct', pct:number) {
     if (pct !== undefined) {
-      let changed = pct > this.appliedPct;
-      this.appliedPct = pct;
-      if (changed) this.showProgress();
+      let changed = pct > this[prop]
+      this[prop] = pct
+      if (changed) this.showProgress()
     }
-    return this.appliedPct;
+    return this[prop]
   }
 
   end() {

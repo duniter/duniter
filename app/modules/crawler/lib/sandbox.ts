@@ -54,29 +54,38 @@ export const pullSandboxToLocalServer = async (currency:string, fromHost:any, to
   if (res) {
     const docs = getDocumentsTree(currency, res)
 
+    let t = 0
+    let T = docs.identities.length + docs.certifications.length + docs.revocations.length + docs.memberships.length
+
     for (let i = 0; i < docs.identities.length; i++) {
       const idty = docs.identities[i];
       watcher && watcher.writeStatus('Identity ' + (i+1) + '/' + docs.identities.length)
+      watcher && watcher.sbxPercent((t++) / T * 100)
       await submitIdentityToServer(idty, toServer, notify, logger)
     }
 
     for (let i = 0; i < docs.revocations.length; i++) {
       const idty = docs.revocations[i];
       watcher && watcher.writeStatus('Revocation ' + (i+1) + '/' + docs.revocations.length)
+      watcher && watcher.sbxPercent((t++) / T * 100)
       await submitRevocationToServer(idty, toServer, notify, logger)
     }
 
     for (let i = 0; i < docs.certifications.length; i++) {
       const cert = docs.certifications[i];
       watcher && watcher.writeStatus('Certification ' + (i+1) + '/' + docs.certifications.length)
+      watcher && watcher.sbxPercent((t++) / T * 100)
       await submitCertificationToServer(cert, toServer, notify, logger)
     }
 
     for (let i = 0; i < docs.memberships.length; i++) {
       const ms = docs.memberships[i];
       watcher && watcher.writeStatus('Membership ' + (i+1) + '/' + docs.memberships.length)
+      watcher && watcher.sbxPercent((t++) / T * 100)
       await submitMembershipToServer(ms, toServer, notify, logger)
     }
+
+    watcher && watcher.sbxPercent(100)
   }
 }
 

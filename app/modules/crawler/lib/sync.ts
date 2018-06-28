@@ -40,7 +40,7 @@ const EVAL_REMAINING_INTERVAL = 1000;
 
 export class Synchroniser extends stream.Duplex {
 
-  private watcher:Watcher
+  private watcher:EventWatcher
   private speed = 0
   private blocksApplied = 0
   private contacterOptions:any
@@ -55,24 +55,11 @@ export class Synchroniser extends stream.Duplex {
     super({ objectMode: true })
 
     // Wrapper to also push event stream
-    this.watcher = new EventWatcher(
-      interactive ? new MultimeterWatcher() : new LoggerWatcher(this.logger),
-      (pct:number, innerWatcher:Watcher) => {
-        if (pct !== undefined && innerWatcher.downloadPercent() < pct) {
-          this.push({ download: pct });
-        }
-      },
-      (pct:number, innerWatcher:Watcher) => {
-        if (pct !== undefined && innerWatcher.savedPercent() < pct) {
-          this.push({ saved: pct });
-        }
-      },
-      (pct:number, innerWatcher:Watcher) => {
-        if (pct !== undefined && innerWatcher.appliedPercent() < pct) {
-          this.push({ applied: pct });
-        }
-      }
-    )
+    this.watcher = new EventWatcher(interactive ? new MultimeterWatcher() : new LoggerWatcher(this.logger))
+    this.watcher.on('downloadChange', (pct: number) => this.push({ download: pct }))
+    this.watcher.on('savedChange',    (pct: number) => this.push({ saved: pct }))
+    this.watcher.on('appliedChange',  (pct: number) => this.push({ applied: pct }))
+    this.watcher.on('certChange',     (pct: number) => this.push({ sbx_cert: pct }))
 
     if (interactive) {
       this.logger.mute();

@@ -15,6 +15,7 @@ import {ConfDTO} from "../lib/dto/ConfDTO"
 import {Server} from "../../server"
 import {moment} from "../lib/common-libs/moment"
 import {DBBlock} from "../lib/db/DBBlock"
+import {SindexEntry} from "../lib/indexer"
 
 const Table = require('cli-table')
 
@@ -82,8 +83,11 @@ async function dumpTable(server: Server, name: string, condition?: string) {
       dump(rows, ['op','issuer','receiver','created_on','written_on','sig','expires_on','expired_on','chainable_on','from_wid','to_wid'])
       break
     case 's_index':
-      rows = await server.dal.sindexDAL.findRawWithOrder(criterion, [['writtenOn', false], ['identifier', false], ['pos', false]])
-      dump(rows, ['op','tx','identifier','pos','created_on','written_on','written_time','amount','base','locktime','consumed','conditions'])
+      const rowsTX = await server.dal.sindexDAL.findRawWithOrder(criterion, [['writtenOn', false], ['identifier', false], ['pos', false]])
+      const rowsUD = await server.dal.dividendDAL.findForDump(criterion)
+      rows = rowsTX.concat(rowsUD)
+      sortSindex(rows)
+      dump(rows, ['op','tx','identifier','pos','created_on','amount','base','locktime','consumed','conditions', 'writtenOn'])
       break
     default:
       console.error(`Unknown dump table ${name}`)
@@ -158,4 +162,25 @@ async function getDateFor(server: Server, blockstamp: string) {
 
 function formatTimestamp(ts: number) {
   return moment(ts * 1000).format('YYYY-MM-DD hh:mm:ss')
+}
+
+function sortSindex(rows: SindexEntry[]) {
+  // We sort by writtenOn, identifier, pos
+  rows.sort((a, b) => {
+    if (a.writtenOn === b.writtenOn) {
+      if (a.identifier === b.identifier) {
+        if (a.pos === b.pos) {
+          return a.op === 'CREATE' && b.op === 'UPDATE' ? -1 : (a.op === 'UPDATE' && b.op === 'CREATE' ? 1 : 0)
+        } else {
+          return a.pos < b.pos ? -1 : 1
+        }
+      }
+      else {
+        return a.identifier < b.identifier ? -1 : 1
+      }
+    }
+    else {
+      return a.writtenOn < b.writtenOn ? -1 : 1
+    }
+  })
 }

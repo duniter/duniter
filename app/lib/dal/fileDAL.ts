@@ -1047,6 +1047,7 @@ export class FileDAL {
       await this.mindexDAL.trimRecords(maxNumber)
       await this.cindexDAL.trimExpiredCerts(maxNumber)
       await this.sindexDAL.trimConsumedSource(maxNumber)
+      await this.dividendDAL.trimConsumedUDs(maxNumber)
     }
   }
 

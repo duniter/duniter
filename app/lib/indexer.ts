@@ -1723,7 +1723,6 @@ export class Indexer {
               index: 'SINDEX',
               op: 'UPDATE',
               srcType: 'T',
-              tx: null,
               identifier: src.identifier,
               pos: src.pos,
               amount: src.amount,
@@ -1734,9 +1733,12 @@ export class Indexer {
               conditions: src.conditions,
               consumed: true, // It is now consumed
 
-              // TODO: make these fields not required using good types
-              created_on: '',
-              locktime: 0,
+              // TODO: change types to avoid casting
+              tx: (src as SindexEntry).tx,
+              created_on: (src as SindexEntry).created_on,
+              locktime: null as any,
+
+              // TODO: make these fields being not required using good types
               unlock: null,
               txObj: {} as TransactionDTO,
               age: 0,

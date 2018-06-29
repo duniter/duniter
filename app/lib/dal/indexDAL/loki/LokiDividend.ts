@@ -1,18 +1,9 @@
 import {LokiIndex} from "./LokiIndex"
 import {DividendDAO, DividendEntry, UDSource} from "../abstract/DividendDAO"
-import {
-  IindexEntry,
-  SimpleSindexEntryForWallet,
-  SimpleTxEntryForWallet,
-  SimpleTxInput,
-  SimpleUdEntryForWallet,
-  SindexEntry
-} from "../../../indexer"
+import {IindexEntry, SimpleTxInput, SimpleUdEntryForWallet, SindexEntry} from "../../../indexer"
 import {DataErrors} from "../../../common-libs/errors"
 
 export class LokiDividend extends LokiIndex<DividendEntry> implements DividendDAO {
-
-  // private lokiDividend:
 
   constructor(loki:any) {
     super(loki, 'dividend', ['pub'])
@@ -69,17 +60,22 @@ export class LokiDividend extends LokiIndex<DividendEntry> implements DividendDA
     for (const dividendToConsume of filter) {
       this.collection
         .chain()
+        // We look at the dividends of this member
         .find({
           pub: dividendToConsume.identifier
         })
+        // Then we try to consume the dividend being spent
         .update(m => {
           const index = m.availables.indexOf(dividendToConsume.pos)
 
           // We add it to the consumption history
-          m.consumed.push(dividendToConsume.writtenOn)
+          m.consumed.push(dividendToConsume.writtenOn) // `writtenOn` is the date (block#) of consumption
           m.consumedUDs.push({
             dividendNumber: dividendToConsume.pos,
-            dividend: m.dividends[index]
+            dividend: m.dividends[index],
+            txCreatedOn: dividendToConsume.created_on as string,
+            txLocktime: dividendToConsume.locktime,
+            txHash: dividendToConsume.tx as string,
           })
 
           // We remove it from available dividends
@@ -239,5 +235,101 @@ export class LokiDividend extends LokiIndex<DividendEntry> implements DividendDA
       createdUDsDestroyedByRevert,
       consumedUDsRecoveredByRevert,
     }
+  }
+
+  async findForDump(criterion: any): Promise<SindexEntry[]> {
+    const entries: SindexEntry[] = []
+    const rows = await this.findRaw(criterion)
+    for (const m of rows) {
+      // Generate for unspent UDs
+      for (let i = 0; i < m.availables.length; i++) {
+        const writtenOn = m.availables[i]
+        const ud = m.dividends[i]
+        entries.push({
+          op: 'CREATE',
+          index: 'SINDEX',
+          srcType: 'D',
+          tx: null,
+          identifier: m.pub,
+          writtenOn,
+          pos: writtenOn,
+          created_on: 'NULL', // TODO
+          written_on: writtenOn + '', // TODO
+          written_time: 0, // TODO
+          amount: ud.amount,
+          base: ud.base,
+          locktime: null as any,
+          consumed: false,
+          conditions: 'SIG(' + m.pub + ')',
+          unlock: null,
+          txObj: null as any, // TODO
+          age: 0,
+        })
+      }
+      // Generate for spent UDs
+      for (let i = 0; i < m.consumed.length; i++) {
+        const writtenOn = m.consumed[i]
+        const ud = m.consumedUDs[i]
+        entries.push({
+          op: 'CREATE',
+          index: 'SINDEX',
+          srcType: 'D',
+          tx: null,
+          identifier: m.pub,
+          writtenOn: ud.dividendNumber,
+          pos: ud.dividendNumber,
+          created_on: 'NULL', // TODO
+          written_on: writtenOn + '', // TODO
+          written_time: 0, // TODO
+          amount: ud.dividend.amount,
+          base: ud.dividend.base,
+          locktime: null as any,
+          consumed: false,
+          conditions: 'SIG(' + m.pub + ')',
+          unlock: null,
+          txObj: null as any, // TODO
+          age: 0,
+        })
+        entries.push({
+          op: 'UPDATE',
+          index: 'SINDEX',
+          srcType: 'D',
+          tx: ud.txHash,
+          identifier: m.pub,
+          writtenOn,
+          pos: ud.dividendNumber,
+          created_on: ud.txCreatedOn,
+          written_on: writtenOn + '', // TODO
+          written_time: 0, // TODO
+          amount: ud.dividend.amount,
+          base: ud.dividend.base,
+          locktime: ud.txLocktime,
+          consumed: true,
+          conditions: 'SIG(' + m.pub + ')',
+          unlock: null,
+          txObj: null as any, // TODO
+          age: 0,
+        })
+      }
+    }
+    return entries
+  }
+
+  async trimConsumedUDs(belowNumber: number): Promise<void> {
+    // Remove dividends consumed before `belowNumber`
+    this.collection
+      .chain()
+      .find({})
+      .update(m => {
+        for (let i = 0; i < m.consumed.length; i++) {
+          const consumedBlockNumber = m.consumed[i]
+          if (consumedBlockNumber < belowNumber) {
+            // We trim this entry as it can't be reverted now
+            m.consumed.splice(i, 1)
+            m.consumedUDs.splice(i, 1)
+            i-- // The array changed, we loop back before i++
+          }
+        }
+      })
   }
 }

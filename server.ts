@@ -39,6 +39,7 @@ import {ProxiesConf} from './app/lib/proxy';
 import {Directory, FileSystem} from "./app/lib/system/directory"
 import {DataErrors} from "./app/lib/common-libs/errors"
 import {DBPeer} from "./app/lib/db/DBPeer"
+import {Underscore} from "./app/lib/common-libs/underscore"
 
 export interface HookableServer {
   generatorGetJoinData: (...args:any[]) => Promise<any>
@@ -158,9 +159,18 @@ export class Server extends stream.Duplex implements HookableServer {
     await this.dal.close()
   }
 
-  async loadConf(useDefaultConf:any = false) {
+  async reloadConf() {
+    await this.loadConf(false, true)
+  }
+
+  async loadConf(useDefaultConf:any = false, reuseExisting = false) {
     logger.debug('Loading conf...');
-    this.conf = await this.dal.loadConf(this.overrideConf, useDefaultConf)
+    const loaded = await this.dal.loadConf(this.overrideConf, useDefaultConf)
+    if (!reuseExisting || !this.conf) {
+      this.conf = loaded
+    } else {
+      Underscore.extend(this.conf, loaded) // Overwrite the current conf
+    }
     // Default values
     this.conf.proxiesConf      = this.conf.proxiesConf === undefined ?       new ProxiesConf()                            : this.conf.proxiesConf
     this.conf.remoteipv6       = this.conf.remoteipv6 === undefined ?        this.conf.ipv6                               : this.conf.remoteipv6

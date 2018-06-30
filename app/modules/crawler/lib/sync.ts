@@ -125,6 +125,13 @@ export class Synchroniser extends stream.Duplex {
       }
       to = rCurrent.number || 0
 
+      const rootBlock = await this.syncStrategy.getBlock(0)
+      if (!rootBlock) {
+        throw 'Could not get root block. Sync aborted.'
+      }
+      await this.BlockchainService.saveParametersForRootBlock(rootBlock)
+      await this.server.reloadConf()
+
       await this.syncStrategy.initWithKnownLocalAndToAndCurrency(to, localNumber, rCurrent.currency)
 
       //============
@@ -256,9 +263,6 @@ export class Synchroniser extends stream.Duplex {
         clearInterval(logInterval);
       }
 
-      // Save currency parameters given by root block
-      const rootBlock = await this.server.dal.getFullBlockOf(0)
-      await this.BlockchainService.saveParametersForRootBlock(BlockDTO.fromJSONObject(rootBlock))
       this.server.dal.blockDAL.cleanCache();
 
       if (!cliprogram.nosbx) {

@@ -18,4 +18,5 @@ build:
     - mkdir -p artifacts/
     - mv node_modules.tar.gz artifacts/
   artifacts:
-    - artifacts/
+    paths:
+      - artifacts/

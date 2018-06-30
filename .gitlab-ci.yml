@@ -1,8 +1,8 @@
 stages:
   - github-sync
   - build
-  - pages
   - test
+  - pages
   - package
   - prerelease
   - release
@@ -37,6 +37,10 @@ push_to_github:
 build:
   <<: *nvm_env
   stage: build
+  cache:
+    untracked: true
+    paths:
+      - node_modules/
   script:
     - yarn
 
@@ -61,8 +65,11 @@ pages:
 test:
   <<: *nvm_env
   stage: test
+  cache:
+    untracked: true
+    paths:
+      - node_modules/
   script:
-    - yarn
     - yarn test
     # Clean the dump directory before testing
     - rm -rf /tmp/duniter_ci_dump/

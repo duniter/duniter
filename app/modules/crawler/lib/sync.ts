@@ -143,7 +143,7 @@ export class Synchroniser extends stream.Duplex {
         !cautious,
         this.watcher)
 
-      downloader.start()
+      const startp = downloader.start()
 
       let lastPullBlock:BlockDTO|null = null;
       let syncStrategy = this.syncStrategy
@@ -242,7 +242,10 @@ export class Synchroniser extends stream.Duplex {
       })(this.server, this.watcher, this.dal, this.BlockchainService)
 
       const logInterval = setInterval(() => this.logRemaining(to), EVAL_REMAINING_INTERVAL);
-      await dao.pull(this.conf, this.logger)
+      await Promise.all([
+        dao.pull(this.conf, this.logger),
+        await startp // In case of errors, will stop the process
+      ])
 
       // Finished blocks
       this.watcher.downloadPercent(100.0);

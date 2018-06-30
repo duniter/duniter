@@ -61,8 +61,10 @@ pages:
 test:
   <<: *nvm_env
   stage: test
+  cache:
+    paths:
+      - node_modules/
   script:
-    - yarn
     - yarn test
     # Clean the dump directory before testing
     - rm -rf /tmp/duniter_ci_dump/

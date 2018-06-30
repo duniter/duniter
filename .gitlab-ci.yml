@@ -62,6 +62,7 @@ test:
   script:
     - yarn
     - yarn test
+    - bash .gitlab/test/check_indexes.sh
     - sed -n 23p coverage/index.html
 
 .build_releases: &build_releases

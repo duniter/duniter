@@ -1,11 +1,5 @@
 stages:
-  - github-sync
   - build
-  - test
-  - pages
-  - package
-  - prerelease
-  - release
 
 .nvm_env: &nvm_env
   tags:

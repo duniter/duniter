@@ -133,14 +133,14 @@ describe("CLI", function() {
 
   it('sync 7 blocks (fast)', async () => {
     await execute(['reset', 'data']);
-    await execute(['sync', fakeServer.host, String(fakeServer.port), '7', '--nocautious', '--nointeractive', '--noshuffle']);
+    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '7', '--nocautious', '--nointeractive', '--noshuffle']);
     const res = await execute(['export-bc', '--nostdout']);
     res[res.length - 1].should.have.property('number').equal(7);
     res.should.have.length(7 + 1); // blocks #0..#7
   })
 
   it('sync 4 blocks (cautious)', async () => {
-    await execute(['sync', fakeServer.host, String(fakeServer.port), '11', '--nointeractive']);
+    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '11', '--nointeractive']);
     const res = await execute(['export-bc', '--nostdout']);
     res[res.length - 1].should.have.property('number').equal(11);
     res.should.have.length(11 + 1);
@@ -153,7 +153,7 @@ describe("CLI", function() {
   })
 
   it('[spawn] sync 10 first blocks --memory', async () => {
-    await execute(['sync', fakeServer.host, String(fakeServer.port), '10', '--memory', '--cautious', '--nointeractive']);
+    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '10', '--memory', '--cautious', '--nointeractive']);
   })
 });
 

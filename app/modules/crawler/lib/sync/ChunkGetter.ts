@@ -93,7 +93,7 @@ export class ChunkGetter {
     }
 
     // Download loop
-    (async () => {
+    return (async () => {
       let downloadFinished = false
       while(!downloadFinished) {
 
@@ -233,7 +233,12 @@ export class ChunkGetter {
   }
 
   async getChunk(i: number): Promise<PromiseOfBlocksReading> {
-    return this.resultsData[i] || Promise.resolve(async (): Promise<BlockDTO[]> => [])
+    const reading = this.resultsData[i] || Promise.resolve(async (): Promise<BlockDTO[]> => [])
+    // We don't want blocks above `to`
+    return async () => {
+      const blocks = await (await reading)()
+      return blocks.filter(b => b.number <= this.to)
+    }
   }
 }
 

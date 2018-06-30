@@ -16,6 +16,7 @@ import {Server} from "../../server"
 import {moment} from "../lib/common-libs/moment"
 import {DBBlock} from "../lib/db/DBBlock"
 import {SindexEntry} from "../lib/indexer"
+import {BlockDTO} from "../lib/dto/BlockDTO"
 
 const Table = require('cli-table')
 
@@ -33,6 +34,10 @@ module.exports = {
         const cond: string = params[2] || ''
         switch (what) {
 
+          case 'current':
+            await dumpCurrent(server)
+            break
+
           case 'table':
             await dumpTable(server, name, cond)
             break
@@ -49,6 +54,16 @@ module.exports = {
         await server.disconnect();
       }
     }]
+  }
+}
+
+async function dumpCurrent(server: Server) {
+  const current = await server.dal.getCurrentBlockOrNull()
+  if (!current) {
+    console.log('')
+  }
+  else {
+    console.log(BlockDTO.fromJSONObject(current).getRawSigned())
   }
 }
 

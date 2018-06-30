@@ -489,7 +489,6 @@ export class TestingServer {
     if (!blocksResolved) {
       throw Error(DataErrors[DataErrors.BLOCK_WASNT_COMMITTED])
     }
-    console.log(blocksResolved.getRawSigned())
     return blocksResolved
   }
 
@@ -498,7 +497,6 @@ export class TestingServer {
     if (!blocksResolved) {
       throw Error(DataErrors[DataErrors.BLOCK_WASNT_COMMITTED])
     }
-    console.log(blocksResolved.getRawSigned())
     return blocksResolved
   }
 

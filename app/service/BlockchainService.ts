@@ -207,7 +207,6 @@ export class BlockchainService extends FIFOService {
               await this.blockResolution()
               // Resolve the potential forks
               await this.forkResolution()
-              console.log(dto)
               const current = await this.current()
               this.push({
                 bcEvent: OtherConstants.BC_EVENT.RESOLUTION_DONE,

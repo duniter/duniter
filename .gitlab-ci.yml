@@ -42,6 +42,14 @@ build:
     paths:
       - node_modules/
   script:
+    # Load pre-built modules + verify the yarn.lock matches
+    - curl -O https://git.duniter.org/nodes/typescript/duniter/-/jobs/7115/artifacts/raw/artifacts/node_modules.tar.gz
+    - echo "45b3a1c4487ba476c3dcde01d85cb5f1de6fb14d  node_modules.tar.gz" > node_modules.tar.gz.sha1
+    - echo "30d9f6bc843dec2e0b37b721f2174989e2b7c78a  yarn.lock" > yarn.lock.sha1
+    - sha1sum -c node_modules.tar.gz.sha1
+    - sha1sum -c yarn.lock.sha1
+    - tar xzf node_modules.tar.gz
+    # Transpile
     - yarn
 
 pages:

@@ -23,6 +23,9 @@ import {Buid} from "../../lib/common-libs/buid"
 import {BlockDTO} from "../../lib/dto/BlockDTO"
 import {Directory} from "../../lib/system/directory"
 import {FileDAL} from "../../lib/dal/fileDAL"
+import {RemoteSynchronizer} from "./lib/sync/RemoteSynchronizer"
+import {AbstractSynchronizer} from "./lib/sync/AbstractSynchronizer"
+import {LocalPathSynchronizer} from "./lib/sync/LocalPathSynchronizer"
 
 export const CrawlerDependency = {
   duniter: {
@@ -46,7 +49,8 @@ export const CrawlerDependency = {
       },
 
       synchronize: (server:Server, onHost:string, onPort:number, upTo:number, chunkLength:number) => {
-        const remote = new Synchroniser(server, onHost, onPort);
+        const strategy = new RemoteSynchronizer(onHost, onPort, server)
+        const remote = new Synchroniser(server, strategy)
         const syncPromise = remote.sync(upTo, chunkLength)
         return {
           flow: remote,
@@ -54,9 +58,15 @@ export const CrawlerDependency = {
         };
       },
 
+      /**
+       * Used by duniter-ui
+       * @param {Server} server
+       * @param {string} onHost
+       * @param {number} onPort
+       * @returns {Promise<any>}
+       */
       testForSync: (server:Server, onHost:string, onPort:number) => {
-        const remote = new Synchroniser(server, onHost, onPort);
-        return remote.test();
+        return RemoteSynchronizer.test(onHost, onPort)
       }
     },
 
@@ -74,18 +84,16 @@ export const CrawlerDependency = {
     ],
 
     cli: [{
-      name: 'sync [host] [port] [to]',
+      name: 'sync [source] [to]',
       desc: 'Synchronize blockchain from a remote Duniter node',
       preventIfRunning: true,
       onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
-        const host = params[0];
-        const port = params[1];
-        const to   = params[2];
-        if (!host) {
-          throw 'Host is required.';
-        }
-        if (!port) {
-          throw 'Port is required.';
+        const source = params[0]
+        const to     = params[1]
+        const HOST_PATTERN = /^[^:/]+(:[0-9]{1,5})?$/
+        const FILE_PATTERN = /^(\/.+)$/
+        if (!source || !(source.match(HOST_PATTERN) || source.match(FILE_PATTERN))) {
+          throw 'Source of sync is required. (either a host:port or a file path)'
         }
         let cautious;
         if (program.nocautious) {
@@ -94,8 +102,6 @@ export const CrawlerDependency = {
         if (program.cautious) {
           cautious = true;
         }
-        const onHost = host;
-        const onPort = port;
         const upTo = parseInt(to);
         const chunkLength = 0;
         const interactive = !program.nointeractive;
@@ -111,11 +117,20 @@ export const CrawlerDependency = {
           otherDAL = new FileDAL(params)
         }
 
-        const remote = new Synchroniser(server, onHost, onPort, interactive === true, otherDAL);
-        if (program.onlypeers === true) {
-          return remote.syncPeers(true, onHost, onPort)
+        let strategy: AbstractSynchronizer
+        if (source.match(HOST_PATTERN)) {
+          const sp = source.split(':')
+          const onHost = sp[0]
+          const onPort = parseInt(sp[1] ? sp[1] : '443') // Defaults to 443
+          strategy = new RemoteSynchronizer(onHost, onPort, server, noShufflePeers === true, otherDAL)
         } else {
-          return remote.sync(upTo, chunkLength, askedCautious, noShufflePeers === true)
+          strategy = new LocalPathSynchronizer(source, server)
+        }
+        if (program.onlypeers === true) {
+          return strategy.syncPeers(true)
+        } else {
+          const remote = new Synchroniser(server, strategy, interactive === true)
+          return remote.sync(upTo, chunkLength, askedCautious)
         }
       }
     }, {

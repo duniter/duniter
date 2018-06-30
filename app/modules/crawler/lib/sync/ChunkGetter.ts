@@ -10,10 +10,8 @@ import {DBBlock} from "../../../../lib/db/DBBlock"
 import {FileDAL} from "../../../../lib/dal/fileDAL"
 import {Watcher} from "./Watcher"
 import {cliprogram} from "../../../../lib/common-libs/programOptions"
-import {P2PSyncDownloader} from "./P2PSyncDownloader"
-import {JSONDBPeer} from "../../../../lib/db/DBPeer"
-import {FsSyncDownloader} from "./FsSyncDownloader"
 import {Querable, querablep} from "../../../../lib/common-libs/querable"
+import {AbstractSynchronizer} from "./AbstractSynchronizer"
 
 const logger = NewLogger()
 
@@ -54,26 +52,22 @@ export class ChunkGetter {
   private parallelDownloads = cliprogram.slow ? 1 : 5
   private maxDownloadAdvance = 10 // 10 chunks can be downloaded even if 10th chunk above is not completed
   private MAX_DOWNLOAD_TIMEOUT = 15000
-  private readDAL: FileDAL
   private writeDAL: FileDAL
 
   constructor(
-    private currency:string,
     private localNumber:number,
     private to:number,
     private toHash:string,
-    private peers:JSONDBPeer[],
+    private syncStrategy: AbstractSynchronizer,
     dal:FileDAL,
     private nocautious:boolean,
     private watcher:Watcher,
-    otherDAL?:FileDAL,
   ) {
-    this.readDAL = otherDAL || dal
     this.writeDAL = dal
     const nbBlocksToDownload = Math.max(0, to - localNumber)
     this.numberOfChunksToDownload = Math.ceil(nbBlocksToDownload / CommonConstants.CONST_BLOCKS_CHUNK)
-    this.p2PDownloader = new P2PSyncDownloader(localNumber, to, peers, this.watcher, logger)
-    this.fsDownloader = new FsSyncDownloader(localNumber, to, this.readDAL, this.getChunkName.bind(this), this.getChunksDir.bind(this))
+    this.p2PDownloader = syncStrategy.p2pDownloader()
+    this.fsDownloader = syncStrategy.fsDownloader()
 
     this.resultsDeferers = Array.from({ length: this.numberOfChunksToDownload }).map(() => ({
       resolve: () => { throw Error('resolve should not be called here') },
@@ -154,7 +148,7 @@ export class ChunkGetter {
               ;(handler as any).state = 'WAITING'
             }
             if (isTopChunk || this.downloadHandlers[i + 1].state === 'COMPLETED') {
-              const fileName = this.getChunkName(i)
+              const fileName = this.syncStrategy.getChunkRelativePath(i)
               let promiseOfUpperChunk: PromiseOfBlocksReading = async () => []
               if (!isTopChunk && chunk.length) {
                 // We need to wait for upper chunk to be completed to be able to check blocks' correct chaining
@@ -174,8 +168,9 @@ export class ChunkGetter {
               } else if (handler.downloader !== this.fsDownloader) {
                 // Store the file to avoid re-downloading
                 if (this.localNumber <= 0 && chunk.length === CommonConstants.CONST_BLOCKS_CHUNK) {
-                  await this.writeDAL.confDAL.coreFS.makeTree(this.currency);
-                  await this.writeDAL.confDAL.coreFS.writeJSON(fileName, { blocks: chunk.map((b:any) => DBBlock.fromBlockDTO(b)) });
+                  await this.writeDAL.confDAL.coreFS.makeTree(this.syncStrategy.getCurrency())
+                  const content = { blocks: chunk.map((b:any) => DBBlock.fromBlockDTO(b)) }
+                  await this.writeDAL.confDAL.coreFS.writeJSON(fileName, content)
                 }
               } else {
                 logger.warn("Chunk #%s read from filesystem.", i)
@@ -209,7 +204,12 @@ export class ChunkGetter {
                   if (isTopChunk) {
                     return await handler.chunk // don't return directly "chunk" as it would prevent the GC to collect it
                   }
-                  return (await this.readDAL.confDAL.coreFS.readJSON(fileName)).blocks
+                  let content: { blocks: BlockDTO[] } = await this.syncStrategy.readDAL.confDAL.coreFS.readJSON(fileName)
+                  if (!content) {
+                    // Reading from classical DAL doesn't work, maybe we are using --readfilesystem option.
+                    content = await this.writeDAL.confDAL.coreFS.readJSON(fileName)
+                  }
+                  return content.blocks
                 })
               }
             } else {
@@ -234,14 +234,6 @@ export class ChunkGetter {
 
   async getChunk(i: number): Promise<PromiseOfBlocksReading> {
     return this.resultsData[i] || Promise.resolve(async (): Promise<BlockDTO[]> => [])
-  }
-
-  private getChunkName(i: number) {
-    return this.getChunksDir() + "chunk_" + i + "-" + CommonConstants.CONST_BLOCKS_CHUNK + ".json"
-  }
-
-  private getChunksDir() {
-    return this.currency + "/"
   }
 }
 

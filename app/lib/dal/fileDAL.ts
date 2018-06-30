@@ -103,6 +103,7 @@ export interface IndexBatch {
 export class FileDAL {
 
   rootPath:string
+  fs: FileSystem
   loki:LokiJsDriver
   sqliteDriver:SQLiteDriver
   wotb:WoTBInstance
@@ -142,6 +143,7 @@ export class FileDAL {
     this.loki = params.dbf2()
     this.wotb = params.wotb
     this.profile = 'DAL'
+    this.fs = params.fs
 
     // DALs
     this.powDAL = new PowDAL(this.rootPath, params.fs)
@@ -290,7 +292,7 @@ export class FileDAL {
   }
 
   async getBlockWeHaveItForSure(number:number): Promise<DBBlock> {
-    return (await this.blockDAL.getBlock(number)) as DBBlock
+    return (await this.blockDAL.getBlock(number)) as DBBlock || (await this.blockchainArchiveDAL.getBlockByNumber(number))
   }
 
   // Duniter-UI dependency

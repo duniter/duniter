@@ -13,28 +13,22 @@
 
 import * as stream from "stream"
 import * as moment from "moment"
-import {CrawlerConstants} from "./constants"
 import {Server} from "../../../../server"
 import {PeerDTO} from "../../../lib/dto/PeerDTO"
 import {FileDAL} from "../../../lib/dal/fileDAL"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
-import {connect} from "./connect"
-import {Contacter} from "./contacter"
-import {pullSandboxToLocalServer} from "./sandbox"
 import {tx_cleaner} from "./tx_cleaner"
 import {AbstractDAO} from "./pulling"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {BlockchainService} from "../../../service/BlockchainService"
-import {dos2unix} from "../../../lib/common-libs/dos2unix"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {PeeringService} from "../../../service/PeeringService"
 import {CommonConstants} from "../../../lib/common-libs/constants"
 import {Underscore} from "../../../lib/common-libs/underscore"
-import {HttpMerkleOfPeers} from "../../bma/lib/dtos"
-import {DBPeer, JSONDBPeer} from "../../../lib/db/DBPeer"
 import {cliprogram} from "../../../lib/common-libs/programOptions"
 import {EventWatcher, LoggerWatcher, MultimeterWatcher, Watcher} from "./sync/Watcher"
 import {ChunkGetter} from "./sync/ChunkGetter"
+import {AbstractSynchronizer} from "./sync/AbstractSynchronizer"
 
 const EVAL_REMAINING_INTERVAL = 1000;
 
@@ -43,14 +37,11 @@ export class Synchroniser extends stream.Duplex {
   private watcher:EventWatcher
   private speed = 0
   private blocksApplied = 0
-  private contacterOptions:any
 
   constructor(
     private server:Server,
-    private host:string,
-    private port:number,
-    interactive = false,
-    private otherDAL?:FileDAL) {
+    private syncStrategy: AbstractSynchronizer,
+    interactive = false) {
 
     super({ objectMode: true })
 
@@ -62,12 +53,10 @@ export class Synchroniser extends stream.Duplex {
     this.watcher.onEvent('sbxChange',      (pct: number) => this.push({ sandbox: pct }))
     this.watcher.onEvent('peersChange',    (pct: number) => this.push({ peersSync: pct }))
 
+    this.syncStrategy.setWatcher(this.watcher)
+
     if (interactive) {
       this.logger.mute();
-    }
-
-    this.contacterOptions = {
-      timeout: CrawlerConstants.SYNC_LONG_TIMEOUT
     }
   }
 
@@ -108,22 +97,10 @@ export class Synchroniser extends stream.Duplex {
     }
   }
 
-  async test() {
-    const peering = await Contacter.fetchPeer(this.host, this.port, this.contacterOptions);
-    const node = await connect(PeerDTO.fromJSONObject(peering));
-    return node.getCurrent();
-  }
-
-  async sync(to:number, chunkLen:number, askedCautious = false, noShufflePeers = false) {
+  async sync(to:number, chunkLen:number, askedCautious = false) {
 
     try {
-
-      const peering = await Contacter.fetchPeer(this.host, this.port, this.contacterOptions);
-
-      let peer = PeerDTO.fromJSONObject(peering);
-      this.logger.info("Try with %s %s", peer.getURL(), peer.pubkey.substr(0, 6));
-      let node:any = await connect(peer);
-      node.pubkey = peer.pubkey;
+      await this.syncStrategy.init()
       this.logger.info('Sync started.');
 
       const fullSync = !to;
@@ -132,57 +109,23 @@ export class Synchroniser extends stream.Duplex {
       // Blockchain headers
       //============
       this.logger.info('Getting remote blockchain info...');
-      this.watcher.writeStatus('Connecting to ' + this.host + '...');
       const lCurrent:DBBlock|null = await this.dal.getCurrentBlockOrNull();
       const localNumber = lCurrent ? lCurrent.number : -1;
-      let rCurrent:BlockDTO
+      let rCurrent:BlockDTO|null
       if (isNaN(to)) {
-        rCurrent = await node.getCurrent();
+        rCurrent = await this.syncStrategy.getCurrent();
+        if (!rCurrent) {
+          throw 'Remote does not have a current block. Sync aborted.'
+        }
       } else {
-        rCurrent = await node.getBlock(to);
+        rCurrent = await this.syncStrategy.getBlock(to)
+        if (!rCurrent) {
+          throw 'Remote does not have a target block. Sync aborted.'
+        }
       }
       to = rCurrent.number || 0
 
-      //=======
-      // Peers (just for P2P download)
-      //=======
-      let peers:(JSONDBPeer|null)[] = [];
-      if (!cliprogram.nopeers && (to - localNumber > 1000)) { // P2P download if more than 1000 blocs
-        this.watcher.writeStatus('Peers...');
-        const merkle = await this.dal.merkleForPeers();
-        const getPeers:(params:any) => Promise<HttpMerkleOfPeers> = node.getPeers.bind(node);
-        const json2 = await getPeers({});
-        const rm = new NodesMerkle(json2);
-        if(rm.root() != merkle.root()){
-          const leavesToAdd:string[] = [];
-          const json = await getPeers({ leaves: true });
-          json.leaves.forEach((leaf:string) => {
-            if(merkle.leaves().indexOf(leaf) == -1){
-              leavesToAdd.push(leaf);
-            }
-          });
-          peers = await Promise.all(leavesToAdd.map(async (leaf) => {
-            try {
-              const json3 = await getPeers({ "leaf": leaf });
-              const jsonEntry = json3.leaf.value;
-              const endpoint = jsonEntry.endpoints[0];
-              this.watcher.writeStatus('Peer ' + endpoint);
-              return jsonEntry;
-            } catch (e) {
-              this.logger.warn("Could not get peer of leaf %s, continue...", leaf);
-              return null;
-            }
-          }))
-        }
-        else {
-          this.watcher.writeStatus('Peers already known');
-        }
-      }
-
-      if (!peers.length) {
-        peers.push(DBPeer.fromPeerDTO(peer))
-      }
-      peers = peers.filter((p) => p);
+      await this.syncStrategy.initWithKnownLocalAndToAndCurrency(to, localNumber, rCurrent.currency)
 
       //============
       // Blockchain
@@ -191,21 +134,20 @@ export class Synchroniser extends stream.Duplex {
 
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = (askedCautious === true || localNumber >= 0);
-      const shuffledPeers = (noShufflePeers ? peers : Underscore.shuffle(peers)).filter(p => !!(p)) as JSONDBPeer[]
       const downloader = new ChunkGetter(
-        rCurrent.currency,
         localNumber,
         to,
         rCurrent.hash,
-        shuffledPeers,
+        this.syncStrategy,
         this.dal,
         !cautious,
-        this.watcher,
-        this.otherDAL)
+        this.watcher)
 
       downloader.start()
 
       let lastPullBlock:BlockDTO|null = null;
+      let syncStrategy = this.syncStrategy
+      let node = this.syncStrategy.getPeer()
 
       let dao = new (class extends AbstractDAO {
 
@@ -261,14 +203,17 @@ export class Synchroniser extends stream.Duplex {
         async getRemoteBlock(thePeer: PeerDTO, number: number): Promise<BlockDTO> {
           let block = null;
           try {
-            block = await node.getBlock(number);
+            block = await syncStrategy.getBlock(number)
+            if (!block) {
+              throw 'Could not get remote block'
+            }
             tx_cleaner(block.transactions);
           } catch (e) {
             if (e.httpCode != 404) {
               throw e;
             }
           }
-          return block;
+          return block as BlockDTO
         }
         async applyMainBranch(block: BlockDTO): Promise<boolean> {
           const addedBlock = await this.BlockchainService.submitBlock(block, true)
@@ -317,15 +262,14 @@ export class Synchroniser extends stream.Duplex {
         //=======
         // Sandboxes
         //=======
-        this.watcher.writeStatus('Synchronizing the sandboxes...');
-        await pullSandboxToLocalServer(this.conf.currency, node, this.server, this.server.logger, this.watcher, 1, false)
+        await this.syncStrategy.syncSandbox()
       }
 
       if (!cliprogram.nopeers) {
         //=======
         // Peers
         //=======
-        await this.syncPeers(fullSync, this.host, this.port, to)
+        await this.syncStrategy.syncPeers(fullSync, to)
       }
 
       // Trim the loki data
@@ -340,121 +284,5 @@ export class Synchroniser extends stream.Duplex {
       this.watcher.end();
       throw err;
     }
-  }
-
-  async syncPeers(fullSync:boolean, host:string, port:number, to?:number) {
-    if (!cliprogram.nopeers && fullSync) {
-
-      const peering = await Contacter.fetchPeer(host, port, this.contacterOptions);
-
-      let peer = PeerDTO.fromJSONObject(peering);
-      this.logger.info("Try with %s %s", peer.getURL(), peer.pubkey.substr(0, 6));
-      let node:any = await connect(peer);
-      node.pubkey = peer.pubkey;
-      this.logger.info('Sync started.');
-
-      this.watcher.writeStatus('Peers...');
-      await this.syncPeer(node);
-      const merkle = await this.dal.merkleForPeers();
-      const getPeers:(params:any) => Promise<HttpMerkleOfPeers> = node.getPeers.bind(node);
-      const json2 = await getPeers({});
-      const rm = new NodesMerkle(json2);
-      if(rm.root() != merkle.root()){
-        const leavesToAdd:string[] = [];
-        const json = await getPeers({ leaves: true });
-        json.leaves.forEach((leaf:string) => {
-          if(merkle.leaves().indexOf(leaf) == -1){
-            leavesToAdd.push(leaf);
-          }
-        });
-        for (let i = 0; i < leavesToAdd.length; i++) {
-          try {
-            const leaf = leavesToAdd[i]
-            const json3 = await getPeers({ "leaf": leaf });
-            const jsonEntry = json3.leaf.value;
-            const sign = json3.leaf.value.signature;
-            const entry:any = {};
-            entry.version = jsonEntry.version
-            entry.currency = jsonEntry.currency
-            entry.pubkey = jsonEntry.pubkey
-            entry.endpoints = jsonEntry.endpoints
-            entry.block = jsonEntry.block
-            entry.signature = sign;
-            this.watcher.writeStatus('Peer ' + entry.pubkey);
-            this.watcher.peersPercent((i + 1) / leavesToAdd.length * 100)
-            await this.PeeringService.submitP(entry, false, to === undefined);
-          } catch (e) {
-            this.logger.warn(e && e.message || e)
-          }
-        }
-        this.watcher.peersPercent(100)
-      }
-      else {
-        this.watcher.writeStatus('Peers already known');
-      }
-    }
-  }
-
-  //============
-  // Peer
-  //============
-  private async syncPeer (node:any) {
-
-    // Global sync vars
-    const remotePeer = PeerDTO.fromJSONObject({});
-    let remoteJsonPeer:any = {};
-    const json = await node.getPeer();
-    remotePeer.version = json.version
-    remotePeer.currency = json.currency
-    remotePeer.pubkey = json.pub
-    remotePeer.endpoints = json.endpoints
-    remotePeer.blockstamp = json.block
-    remotePeer.signature = json.signature
-    const entry = remotePeer.getRawUnsigned();
-    const signature = dos2unix(remotePeer.signature);
-    // Parameters
-    if(!(entry && signature)){
-      throw 'Requires a peering entry + signature';
-    }
-
-    remoteJsonPeer = json;
-    remoteJsonPeer.pubkey = json.pubkey;
-    let signatureOK = this.PeeringService.checkPeerSignature(remoteJsonPeer);
-    if (!signatureOK) {
-      this.watcher.writeStatus('Wrong signature for peer #' + remoteJsonPeer.pubkey);
-    }
-    try {
-      await this.PeeringService.submitP(remoteJsonPeer);
-    } catch (err) {
-      if (err.indexOf !== undefined && err.indexOf(CrawlerConstants.ERRORS.NEWER_PEER_DOCUMENT_AVAILABLE.uerr.message) !== -1 && err != CrawlerConstants.ERROR.PEER.UNKNOWN_REFERENCE_BLOCK) {
-        throw err;
-      }
-    }
-  }
-}
-
-class NodesMerkle {
-
-  private depth:number
-  private nodesCount:number
-  private leavesCount:number
-  private merkleRoot:string
-
-  constructor(json:any) {
-    this.depth = json.depth
-    this.nodesCount = json.nodesCount
-    this.leavesCount = json.leavesCount
-    this.merkleRoot = json.root;
-  }
-
-  // var i = 0;
-  // this.levels = [];
-  // while(json && json.levels[i]){
-  //   this.levels.push(json.levels[i]);
-  //   i++;
-  // }
-
-  root() {
-    return this.merkleRoot
   }
 }

@@ -37,6 +37,9 @@ push_to_github:
 build:
   <<: *nvm_env
   stage: build
+  cache:
+    paths:
+      - node_modules/
   script:
     - yarn
 

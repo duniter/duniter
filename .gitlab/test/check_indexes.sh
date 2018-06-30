@@ -31,7 +31,7 @@ sync_data() {
   local db=$1
   local target=$2
   local target_block=$3
-  local reset_data="bin/duniter --mdb ${db} reset data"
+  local reset_data="bin/duniter --mdb ${db} reset all"
   local sync="bin/duniter --mdb ${db} sync ${target} --nointeractive ${target_block}"
   echo "$reset_data"
   ${reset_data}

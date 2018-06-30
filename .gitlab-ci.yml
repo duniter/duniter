@@ -64,7 +64,10 @@ test:
   script:
     - yarn
     - yarn test
-    - bash .gitlab/test/check_indexes.sh
+    # Clean the dump directory before testing
+    - rm -rf /tmp/duniter_ci_dump/
+    - bash .gitlab/test/check_indexes.sh /tmp/duniter_ci_dump/
+    # Code coverage
     - cp -R coverage /tmp/coverage
     - sed -n 23p coverage/index.html
 

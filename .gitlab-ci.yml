@@ -62,8 +62,9 @@ test:
   <<: *nvm_env
   stage: test
   cache:
+    untracked: true
     paths:
-      - *
+      - node_modules/
   script:
     - yarn test
     # Clean the dump directory before testing

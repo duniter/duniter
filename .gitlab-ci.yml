@@ -55,12 +55,15 @@ build:
 pages:
   <<: *nvm_env
   stage: pages
+  cache:
+    paths:
+      - coverage/
   script:
     - yarn
     - yarn doc
     - mkdir -p public
     - mv typedoc public/
-    - mv /tmp/coverage public/
+    - mv coverage public/
     - ls public
   artifacts:
     untracked: true
@@ -77,14 +80,14 @@ test:
     untracked: true
     paths:
       - node_modules/
+      - coverage/
   script:
     - yarn test
     # Clean the dump directory before testing
     - rm -rf /tmp/duniter_ci_dump/
     - mkdir -p /tmp/duniter_ci_dump/
     - bash .gitlab/test/check_indexes.sh /tmp/duniter_ci_dump/
-    # Code coverage
-    - cp -R coverage /tmp/coverage
+    # Code coverage display in GitLab
     - sed -n 23p coverage/index.html
 
 .build_releases: &build_releases

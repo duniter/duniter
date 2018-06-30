@@ -7,26 +7,6 @@ stages:
   - prerelease
   - release
 
-push_to_github:
-  stage: github-sync
-  variables:
-    GIT_STRATEGY: none
-  tags:
-    - redshift
-  script:
-    - rm -rf ./*
-    - rm -rf .git
-    - git clone --mirror $CI_REPOSITORY_URL .
-    - git remote add github $GITHUB_URL_AND_KEY
-    - git config --global user.email "contact@duniter.org"
-    - git config --global user.name "Duniter"
-    # Job would fail if we don't remove refs about pull requests
-    - bash -c "cat packed-refs | grep -v 'refs/pull' > packed-refs-new; echo 'Removed pull refs.'"
-    - mv packed-refs-new packed-refs
-    - bash -c "git push --force --mirror github 2>&1 | grep -v duniter-gitlab; echo $?"
-  only:
-    - nodes/typescript/duniter
-
 .nvm_env: &nvm_env
   tags:
     - redshift
@@ -37,99 +17,11 @@ push_to_github:
 build:
   <<: *nvm_env
   stage: build
-  cache:
-    untracked: true
-    paths:
-      - node_modules/
+  when: manual
   script:
     - yarn
-
-pages:
-  <<: *nvm_env
-  stage: pages
-  script:
-    - yarn
-    - yarn doc
-    - mkdir -p public
-    - mv typedoc public/
-    - mv /tmp/coverage public/
-    - ls public
+    - tar czf node_modules.tar.gz node_modules/
+    - mkdir -p artifacts/
+    - mv node_modules.tar.gz artifacts/
   artifacts:
-    untracked: true
-    paths:
-      - public
-  only:
-    - loki
-
-
-test:
-  <<: *nvm_env
-  stage: test
-  cache:
-    untracked: true
-    paths:
-      - node_modules/
-  script:
-    - yarn test
-    # Clean the dump directory before testing
-    - rm -rf /tmp/duniter_ci_dump/
-    - bash .gitlab/test/check_indexes.sh /tmp/duniter_ci_dump/
-    # Code coverage
-    - cp -R coverage /tmp/coverage
-    - sed -n 23p coverage/index.html
-
-.build_releases: &build_releases
-  stage: package
-  allow_failure: false
-  image: duniter/release-builder:v1.0.1
-  tags:
-    - redshift-duniter-builder
-  when: manual
-  artifacts:
-    paths: &releases_artifacts
-      - work/bin/
-
-releases:test:
-  <<: *build_releases
-  script:
-    - bash "release/arch/linux/build-lin.sh" "$(date +%Y%m%d).$(date +%H%M).$(date +%S)"
-  artifacts:
-    paths: *releases_artifacts
-    expire_in: 4h
-  except:
-    - tags
-
-releases:x64:
-  <<: *build_releases
-  script:
-    - bash "release/arch/linux/build-lin.sh" "${CI_COMMIT_TAG#v}"
-  artifacts:
-    paths: *releases_artifacts
-    expire_in: 2 weeks
-  only:
-    - tags
-
-.release_jobs: &release_jobs
-  image: tensorflow/tensorflow:latest-py3
-  tags:
-    - redshift-duniter-builder
-  script:
-    - python3 .gitlab/releaser
-  only:
-    - tags
-
-prerelease:
-  <<: *release_jobs
-  stage: prerelease
-  variables:
-    RELEASE_BIN_DIR: work/bin/
-    SOURCE_EXT: '["tar.gz", "zip"]'
-
-publish:
-  <<: *release_jobs
-  stage: release
-  variables:
-    RELEASE_BIN_DIR: work/bin/
-    WIKI_RELEASE: Releases
-  allow_failure: false
-  when: manual
+    - artifacts/

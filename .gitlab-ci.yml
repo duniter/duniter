@@ -46,7 +46,9 @@ pages:
   script:
     - yarn
     - yarn doc
-    - mv typedoc public
+    - mkdir -p public
+    - mv typedoc public/
+    - mv coverage_raw public/
     - ls public
   artifacts:
     untracked: true
@@ -63,6 +65,7 @@ test:
     - yarn
     - yarn test
     - bash .gitlab/test/check_indexes.sh
+    - cp -R coverage coverage_raw
     - sed -n 23p coverage/index.html
 
 .build_releases: &build_releases

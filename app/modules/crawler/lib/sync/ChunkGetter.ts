@@ -165,15 +165,18 @@ export class ChunkGetter {
                 handler.downloader = this.p2PDownloader // If ever the first call does not chains well, we try using P2P
                 ;(handler as any).state = 'WAITING'
                 i++
-              } else if (handler.downloader !== this.fsDownloader) {
-                // Store the file to avoid re-downloading
-                if (this.localNumber <= 0 && chunk.length === CommonConstants.CONST_BLOCKS_CHUNK) {
-                  await this.writeDAL.confDAL.coreFS.makeTree(this.syncStrategy.getCurrency())
-                  const content = { blocks: chunk.map((b:any) => DBBlock.fromBlockDTO(b)) }
-                  await this.writeDAL.confDAL.coreFS.writeJSON(fileName, content)
-                }
               } else {
                 logger.warn("Chunk #%s read from filesystem.", i)
+                let doWrite = handler.downloader !== this.fsDownloader
+                  || !(await this.writeDAL.confDAL.coreFS.exists(fileName))
+                if (doWrite) {
+                  // Store the file to avoid re-downloading
+                  if (this.localNumber <= 0 && chunk.length === CommonConstants.CONST_BLOCKS_CHUNK) {
+                    await this.writeDAL.confDAL.coreFS.makeTree(this.syncStrategy.getCurrency())
+                    const content = { blocks: chunk.map((b:any) => DBBlock.fromBlockDTO(b)) }
+                    await this.writeDAL.confDAL.coreFS.writeJSON(fileName, content)
+                  }
+                }
               }
 
               if (chainsWell) {

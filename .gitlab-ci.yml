@@ -55,7 +55,7 @@ pages:
     - yarn doc
     - mkdir -p public
     - mv typedoc public/
-    - mv /tmp/coverage public/
+    - mv coverage public/
     - ls public
   artifacts:
     untracked: true

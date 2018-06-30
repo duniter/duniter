@@ -7,11 +7,6 @@ stages:
   - prerelease
   - release
 
-cache:
-  untracked: true
-  paths:
-    - node_modules/
-
 push_to_github:
   stage: github-sync
   variables:
@@ -42,6 +37,10 @@ push_to_github:
 build:
   <<: *nvm_env
   stage: build
+  cache:
+    untracked: true
+    paths:
+      - node_modules/
   script:
     - yarn
 
@@ -66,6 +65,10 @@ pages:
 test:
   <<: *nvm_env
   stage: test
+  cache:
+    untracked: true
+    paths:
+      - node_modules/
   script:
     - yarn test
     # Clean the dump directory before testing

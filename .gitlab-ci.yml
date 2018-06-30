@@ -37,9 +37,6 @@ push_to_github:
 build:
   <<: *nvm_env
   stage: build
-  cache:
-    paths:
-      - node_modules/
   script:
     - yarn
 
@@ -66,7 +63,7 @@ test:
   stage: test
   cache:
     paths:
-      - node_modules/
+      - *
   script:
     - yarn test
     # Clean the dump directory before testing

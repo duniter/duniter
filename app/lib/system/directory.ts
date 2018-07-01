@@ -61,7 +61,10 @@ class QioFileSystem implements FileSystem {
     return this.qio.remove(file)
   }
 
-  async fsList(dir: string) {
+  async fsList(dir: string): Promise<string[]> {
+    if (!(await this.qio.exists(dir))) {
+      return []
+    }
     return this.qio.list(dir)
   }
 

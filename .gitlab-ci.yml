@@ -2,7 +2,7 @@ stages:
   - github-sync
   - build
   - test
-  - pages
+#  - pages
   - package
   - prerelease
   - release

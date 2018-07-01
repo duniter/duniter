@@ -80,7 +80,7 @@ test:
     - mkdir -p /tmp/duniter_ci_dump/
     - bash .gitlab/test/check_indexes.sh /tmp/duniter_ci_dump/
     # Code coverage display in GitLab
-    - sed -n 23p coverage/index.html
+    - sed -n 23p coverage/index.html | grep -Po "\d+.\d+" | sed -e "s/\(.*\)/<coverage>\1%<\/coverage>/"
 
 .build_releases: &build_releases
   stage: package

@@ -44,25 +44,25 @@ build:
   script:
     - yarn
 
-#pages:
-#  <<: *nvm_env
-#  stage: pages
-#  cache:
-#    paths:
-#      - coverage/
-#  script:
-#    - yarn
-#    - yarn doc
-#    - mkdir -p public
-#    - mv typedoc public/
-#    - mv coverage public/
-#    - ls public
-#  artifacts:
-#    untracked: true
-#    paths:
-#      - public
-#  only:
-#    - loki
+pages:
+  <<: *nvm_env
+  stage: pages
+  cache:
+    paths:
+      - coverage/
+  script:
+    - yarn
+    - yarn doc
+    - mkdir -p public
+    - mv typedoc public/
+    - mv coverage public/
+    - ls public
+  artifacts:
+    untracked: true
+    paths:
+      - public
+  only:
+    - loki
 
 
 test:

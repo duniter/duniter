@@ -83,7 +83,8 @@ test:
     - sed -n 23p coverage/index.html | grep -Po "\d+.\d+" | sed -e "s/\(.*\)/<coverage>\1%<\/coverage>/"
   coverage: '/<coverage>(\d+.\d+\%)<\/coverage>/'
   artifacts:
-    paths: coverage
+    paths:
+      - coverage
     expire_in: 4h
 
 .build_releases: &build_releases

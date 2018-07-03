@@ -80,11 +80,12 @@ test:
     - mkdir -p /tmp/duniter_ci_dump/
     - bash .gitlab/test/check_indexes.sh /tmp/duniter_ci_dump/
     # Code coverage display in GitLab
+    - tar cvzf coverage.tar.gz coverage/
     - sed -n 23p coverage/index.html | grep -Po "\d+.\d+" | sed -e "s/\(.*\)/<coverage>\1%<\/coverage>/"
   coverage: '/<coverage>(\d+.\d+\%)<\/coverage>/'
   artifacts:
     paths:
-      - coverage
+      - coverage.tar.gz
     expire_in: 4h
 
 .build_releases: &build_releases

@@ -54,7 +54,11 @@ export const CrawlerDependency = {
         const syncPromise = remote.sync(upTo, chunkLength)
         return {
           flow: remote,
-          syncPromise: syncPromise
+          syncPromise: (async () => {
+            await server.dal.disableChangesAPI()
+            await syncPromise
+            await server.dal.enableChangesAPI()
+          })()
         };
       },
 

@@ -79,6 +79,8 @@ import {cliprogram} from "../common-libs/programOptions"
 import {DividendDAO, UDSource} from "./indexDAL/abstract/DividendDAO"
 import {LokiDividend} from "./indexDAL/loki/LokiDividend"
 import {HttpSource, HttpUD} from "../../modules/bma/lib/dtos"
+import {GenericDAO} from "./indexDAL/abstract/GenericDAO"
+import {LokiDAO} from "./indexDAL/loki/LokiDAO"
 
 const readline = require('readline')
 const indexer = require('../indexer').Indexer
@@ -133,6 +135,8 @@ export class FileDAL {
   cindexDAL:CIndexDAO
   dividendDAL:DividendDAO
   newDals:{ [k:string]: Initiable }
+  private dals:(BlockchainArchiveDAO<any>|PeerDAO|WalletDAO|GenericDAO<any>)[]
+  private daos:LokiDAO[]
 
   loadConfHook: (conf:ConfDTO) => Promise<void>
   saveConfHook: (conf:ConfDTO) => Promise<ConfDTO>
@@ -187,10 +191,30 @@ export class FileDAL {
     }
   }
 
+  public enableChangesAPI() {
+    this.daos.map(d => d.enableChangesAPI())
+  }
+
+  public disableChangesAPI() {
+    this.daos.map(d => d.disableChangesAPI())
+  }
+
   async init(conf:ConfDTO) {
     // Init LokiJS
     await this.loki.loadDatabase()
-    const dals = [
+    this.daos = [
+      this.blockDAL,
+      this.txsDAL,
+      this.peerDAL,
+      this.walletDAL,
+      this.bindexDAL,
+      this.mindexDAL,
+      this.iindexDAL,
+      this.sindexDAL,
+      this.cindexDAL,
+      this.dividendDAL
+    ]
+    this.dals = [
       this.blockDAL,
       this.txsDAL,
       this.peerDAL,
@@ -203,7 +227,7 @@ export class FileDAL {
       this.dividendDAL,
       this.blockchainArchiveDAL,
     ]
-    for (const indexDAL of dals) {
+    for (const indexDAL of this.dals) {
       indexDAL.triggerInit()
     }
     const dalNames = Underscore.keys(this.newDals);

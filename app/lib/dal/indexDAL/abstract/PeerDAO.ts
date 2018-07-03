@@ -1,7 +1,8 @@
 import {Initiable} from "../../sqliteDAL/Initiable"
 import {DBPeer} from "../../../db/DBPeer"
+import {LokiDAO} from "../loki/LokiDAO"
 
-export interface PeerDAO extends Initiable {
+export interface PeerDAO extends Initiable, LokiDAO {
 
   /**
    * Trigger the initialization of the DAO. Called when the underlying DB is ready.

@@ -1,11 +1,12 @@
 import {LokiCollection} from "./LokiTypes"
 import {LokiProxyCollection} from "./LokiCollection"
 import {NewLogger} from "../../../logger"
+import {LokiDAO} from "./LokiDAO"
 import {cliprogram} from "../../../common-libs/programOptions"
 
 const logger = NewLogger()
 
-export abstract class LokiCollectionManager<T> {
+export abstract class LokiCollectionManager<T> implements LokiDAO {
 
   protected collection:LokiCollection<T>
   protected collectionIsInitialized: Promise<void>
@@ -25,6 +26,14 @@ export abstract class LokiCollectionManager<T> {
     })
     this.collection = new LokiProxyCollection(coll, this.collectionName)
     this.resolveCollection()
+  }
+
+  public enableChangesAPI() {
+    this.collection.setDisableChangesAPI(false)
+  }
+
+  public disableChangesAPI() {
+    this.collection.setDisableChangesAPI(true)
   }
 
   async init(): Promise<void> {

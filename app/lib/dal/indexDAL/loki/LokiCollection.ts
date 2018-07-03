@@ -1,6 +1,6 @@
 import {LokiChainableFind, LokiCollection} from "./LokiTypes"
 import {NewLogger} from "../../../logger"
-import {getDurationInMicroSeconds, getMicrosecondsTime} from "../../../../ProcessCpuProfiler"
+import {getMicrosecondsTime} from "../../../../ProcessCpuProfiler"
 
 const logger = NewLogger()
 
@@ -34,5 +34,9 @@ export class LokiProxyCollection<T> implements LokiCollection<T> {
 
   chain(): LokiChainableFind<T> {
     return this.collection.chain()
+  }
+
+  setDisableChangesAPI(disable: boolean) {
+    this.collection.setDisableChangesAPI(disable)
   }
 }

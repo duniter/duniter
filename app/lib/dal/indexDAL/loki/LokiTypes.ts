@@ -12,6 +12,8 @@ export interface LokiCollection<T> {
   find(criterion:{ [t in keyof T|'$or'|'$and']?: any }): T[]
 
   chain(): LokiChainableFind<T>
+
+  setDisableChangesAPI(disable: boolean): void
 }
 
 export interface LokiChainableFind<T> {

@@ -1,7 +1,8 @@
 import {Initiable} from "../../sqliteDAL/Initiable"
 import {DBWallet} from "../../../db/DBWallet"
+import {LokiDAO} from "../loki/LokiDAO"
 
-export interface WalletDAO extends Initiable {
+export interface WalletDAO extends Initiable, LokiDAO {
 
   /**
    * Trigger the initialization of the DAO. Called when the underlying DB is ready.

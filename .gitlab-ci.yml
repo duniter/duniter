@@ -47,14 +47,14 @@ build:
 pages:
   <<: *nvm_env
   stage: pages
-  cache:
-    paths:
-      - coverage/
   script:
     - yarn
     - yarn doc
     - mkdir -p public
     - mv typedoc public/
+    - echo "$CI_JOB_ID"
+    - curl "https://git.duniter.org/nodes/typescript/duniter/-/jobs/$CI_JOB_ID/artifacts/raw/coverage.tar.gz"
+    - tar xzf coverage.tar.gz
     - mv coverage public/
     - ls public
   artifacts:

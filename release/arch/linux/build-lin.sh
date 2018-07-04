@@ -180,7 +180,7 @@ yarn || exit 1
 
 # Duniter UI
 yarn add "duniter-ui@${DUNITER_UI_VER}" || exit 1
-npm prune --production || exit 1
+yarn --production || exit 1
 
 rm -rf release coverage test # Non production folders
 cp -r "${RELEASES}/duniter" "${RELEASES}/desktop_" || exit 1

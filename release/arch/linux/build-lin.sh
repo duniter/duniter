@@ -15,6 +15,14 @@ fi
 # Functions
 # ---------
 
+# Install yarn, npm equivalent
+# -
+# Parameters:
+install_yarn() {
+  curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+  echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+  sudo apt-get update && sudo apt-get install yarn
+}
 # Copy nw.js compiled module released library to node libraries.
 # -
 # Parameters:
@@ -127,8 +135,8 @@ DUNITER_UI_VER="1.6.x"
 
 nvm install ${NVER} || exit 1
 nvm use ${NVER} || exit 1
-npm install -g node-pre-gyp || exit 1
-npm install -g nw-gyp || exit 1
+yarn global node-pre-gyp || exit 1
+yarn global nw-gyp || exit 1
 
 # -----------
 # Folders
@@ -168,10 +176,10 @@ rm -Rf .gitignore .git || exit 1 # Remove git files
 
 # Build
 echo ">> VM: building modules..."
-npm install || exit 1
+yarn || exit 1
 
 # Duniter UI
-npm install "duniter-ui@${DUNITER_UI_VER}" || exit 1
+yarn add "duniter-ui@${DUNITER_UI_VER}" || exit 1
 npm prune --production || exit 1
 
 rm -rf release coverage test # Non production folders

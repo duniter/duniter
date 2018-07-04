@@ -55,7 +55,7 @@ pages:
     - echo "$CI_JOB_ID"
     - curl "https://git.duniter.org/nodes/typescript/duniter/-/jobs/$CI_JOB_ID/artifacts/raw/coverage.tar.gz"
     - tar xzf coverage.tar.gz
-    - mv coverage public/
+    - mv coverage "public/coverage-$CI_COMMIT_REF_NAME"
     - ls public
   artifacts:
     untracked: true

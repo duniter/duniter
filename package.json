@@ -22,7 +22,7 @@
     "test": "test"
   },
   "scripts": {
-    "prepare": "tsc",
+    "prepublish": "tsc",
     "tsc": "tsc",
     "tscw": "tsc -w",
     "doc": "typedoc --out typedoc/ index.ts app/ --mode file --readme README.md --includeDeclarations --sourcefile-url-prefix \"https://git.duniter.org/nodes/typescript/duniter/blob/loki/\"",
@@ -123,7 +123,7 @@
     "tmp": "0.0.29",
     "ts-node": "^3.3.0",
     "typedoc-plugin-sourcefile-url": "^1.0.3",
-    "typescript": "2.8.1"
+    "typescript": "^2.8.1"
   },
   "peerDependencies": {},
   "bin": {

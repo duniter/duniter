@@ -127,8 +127,8 @@ DUNITER_UI_VER="1.6.x"
 
 nvm install ${NVER} || exit 1
 nvm use ${NVER} || exit 1
-yarn global node-pre-gyp || exit 1
-yarn global nw-gyp || exit 1
+yarn global add node-pre-gyp || exit 1
+yarn global add nw-gyp || exit 1
 
 # -----------
 # Folders

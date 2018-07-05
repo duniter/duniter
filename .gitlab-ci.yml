@@ -95,7 +95,6 @@ test:
   image: duniter/release-builder:v1.0.1
   tags:
     - redshift-duniter-builder
-  when: manual
   artifacts:
     paths: &releases_artifacts
       - work/bin/

@@ -15,14 +15,6 @@ fi
 # Functions
 # ---------
 
-# Install yarn, npm equivalent
-# -
-# Parameters:
-install_yarn() {
-  curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-  echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
-  apt-get update && apt-get install yarn
-}
 # Copy nw.js compiled module released library to node libraries.
 # -
 # Parameters:
@@ -135,7 +127,6 @@ DUNITER_UI_VER="1.6.x"
 
 nvm install ${NVER} || exit 1
 nvm use ${NVER} || exit 1
-install_yarn
 yarn global node-pre-gyp || exit 1
 yarn global nw-gyp || exit 1
 

@@ -92,7 +92,7 @@ test:
 .build_releases: &build_releases
   stage: package
   allow_failure: false
-  image: duniter/release-builder:v1.0.1
+  image: duniter/release-builder:v1.2.0
   tags:
     - redshift-duniter-builder
   artifacts:

@@ -47,6 +47,7 @@ build:
 pages:
   <<: *nvm_env
   stage: pages
+  cache: {}
   script:
     - yarn
     - yarn doc

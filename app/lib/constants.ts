@@ -176,7 +176,6 @@ module.exports = {
   NO_FORK_ALLOWED: false,
 
   SAFE_FACTOR: 3,
-  BLOCKS_COLLECT_THRESHOLD: 30, // Blocks to collect from memory and persist
 
   MUTE_LOGS_DURING_UNIT_TESTS: OtherConstants.MUTE_LOGS_DURING_UNIT_TESTS,
 

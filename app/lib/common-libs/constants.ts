@@ -307,6 +307,8 @@ export const CommonConstants = {
 
   MAX_AGE_OF_PEER_IN_BLOCKS: 200, // blocks
   INITIAL_DOWNLOAD_SLOTS: 1, // 1 peer
+
+  BLOCKS_COLLECT_THRESHOLD: 30, // Number of blocks to wait before trimming the loki data
 }
 
 function exact (regexpContent:string) {

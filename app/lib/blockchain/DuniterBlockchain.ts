@@ -18,8 +18,8 @@ import {
   IndexEntry,
   Indexer,
   MindexEntry,
-  SimpleSindexEntryForWallet, SimpleTxEntryForWallet, SimpleUdEntryForWallet,
-  SindexEntry
+  SimpleTxEntryForWallet,
+  SimpleUdEntryForWallet
 } from "../indexer"
 import {ConfDTO} from "../dto/ConfDTO"
 import {BlockDTO} from "../dto/BlockDTO"
@@ -37,7 +37,6 @@ import {DataErrors} from "../common-libs/errors"
 import {NewLogger} from "../logger"
 import {DBTx} from "../db/DBTx"
 import {Underscore} from "../common-libs/underscore"
-import {DividendEntry, UDSource} from "../dal/indexDAL/abstract/DividendDAO"
 import {OtherConstants} from "../other_constants"
 
 export class DuniterBlockchain {
@@ -205,6 +204,13 @@ export class DuniterBlockchain {
       }
 
       logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (Date.now() - start));
+
+      // Periodically, we trim the blockchain
+      if (block.number % CommonConstants.BLOCKS_COLLECT_THRESHOLD === 0) {
+        // Database trimming
+        await dal.loki.flushAndTrimData()
+      }
+
       return BlockDTO.fromJSONObject(added)
     }
     catch(err) {

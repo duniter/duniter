@@ -69,6 +69,7 @@ test:
   <<: *nvm_env
   stage: test
   cache:
+    policy: pull
     untracked: true
     paths:
       - node_modules/
@@ -91,6 +92,8 @@ test:
   stage: package
   allow_failure: false
   image: duniter/release-builder:v1.2.0
+  cache: {}
+  when: manual
   tags:
     - redshift-duniter-builder
   artifacts:

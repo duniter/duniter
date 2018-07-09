@@ -13,7 +13,7 @@ export interface LokiCollection<T> {
 
   chain(): LokiChainableFind<T>
 
-  setDisableChangesAPI(disable: boolean): void
+  setChangesApi(disable: boolean): void
 }
 
 export interface LokiChainableFind<T> {

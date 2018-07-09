@@ -36,7 +36,8 @@ export class LokiProxyCollection<T> implements LokiCollection<T> {
     return this.collection.chain()
   }
 
-  setDisableChangesAPI(disable: boolean) {
-    this.collection.setDisableChangesAPI(disable)
+  setChangesApi(enabled: boolean) {
+    this.collection.setChangesApi(enabled)
+    ;(this.collection as any).disableDeltaChangesApi = true
   }
 }

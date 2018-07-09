@@ -51,14 +51,14 @@ export const CrawlerDependency = {
       synchronize: (server:Server, onHost:string, onPort:number, upTo:number, chunkLength:number) => {
         const strategy = new RemoteSynchronizer(onHost, onPort, server)
         const remote = new Synchroniser(server, strategy)
-        const syncPromise = remote.sync(upTo, chunkLength)
+        const syncPromise = (async () => {
+          await server.dal.disableChangesAPI()
+          await remote.sync(upTo, chunkLength)
+          await server.dal.enableChangesAPI()
+        })()
         return {
           flow: remote,
-          syncPromise: (async () => {
-            await server.dal.disableChangesAPI()
-            await syncPromise
-            await server.dal.enableChangesAPI()
-          })()
+          syncPromise
         };
       },
 
@@ -91,7 +91,7 @@ export const CrawlerDependency = {
       name: 'sync [source] [to]',
       desc: 'Synchronize blockchain from a remote Duniter node',
       preventIfRunning: true,
-      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any): Promise<any> => {
         const source = params[0]
         const to     = params[1]
         const HOST_PATTERN = /^[^:/]+(:[0-9]{1,5})?$/

@@ -29,11 +29,11 @@ export abstract class LokiCollectionManager<T> implements LokiDAO {
   }
 
   public enableChangesAPI() {
-    this.collection.setDisableChangesAPI(false)
+    this.collection.setChangesApi(true)
   }
 
   public disableChangesAPI() {
-    this.collection.setDisableChangesAPI(true)
+    this.collection.setChangesApi(false)
   }
 
   async init(): Promise<void> {

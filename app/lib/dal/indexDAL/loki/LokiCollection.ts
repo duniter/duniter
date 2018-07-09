@@ -38,6 +38,7 @@ export class LokiProxyCollection<T> implements LokiCollection<T> {
 
   setChangesApi(enabled: boolean) {
     this.collection.setChangesApi(enabled)
-    ;(this.collection as any).disableDeltaChangesApi = true
+    // This is a Loki bug: `disableDeltaChangesApi` should be impacted just like `disableChangesApi`:
+    ;(this.collection as any).disableDeltaChangesApi = !enabled
   }
 }

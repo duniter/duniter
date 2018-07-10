@@ -103,6 +103,7 @@ test:
 releases:test:
   <<: *build_releases
   script:
+    - rm -rf node_modules/
     - bash "release/arch/linux/build-lin.sh" "$(date +%Y%m%d).$(date +%H%M).$(date +%S)"
   artifacts:
     paths: *releases_artifacts
@@ -113,6 +114,7 @@ releases:test:
 releases:x64:
   <<: *build_releases
   script:
+    - rm -rf node_modules/
     - bash "release/arch/linux/build-lin.sh" "${CI_COMMIT_TAG#v}"
   artifacts:
     paths: *releases_artifacts

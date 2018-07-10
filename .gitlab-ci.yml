@@ -52,11 +52,13 @@ pages:
     - yarn
     - yarn doc
     - mkdir -p public
+    - cp .gitlab/pages/pages-index.html public/index.html
+    - sed -i "s/{BRANCH}/$CI_COMMIT_REF_NAME/g" public/index.html
     - mv typedoc public/
     - echo "$CI_JOB_ID"
     - curl "https://git.duniter.org/nodes/typescript/duniter/-/jobs/$CI_JOB_ID/artifacts/raw/coverage.tar.gz"
     - tar xzf coverage.tar.gz
-    - mv coverage "public/coverage-$CI_COMMIT_REF_NAME"
+    - mv coverage "public/coverage"
     - ls public
   artifacts:
     untracked: true
@@ -64,7 +66,8 @@ pages:
       - public
   only:
     - loki
-
+    - dev
+    - pages
 
 test:
   <<: *nvm_env
@@ -78,7 +81,7 @@ test:
     # Clean the dump directory before testing
     - rm -rf /tmp/duniter_ci_dump/
     - mkdir -p /tmp/duniter_ci_dump/
-    - bash .gitlab/test/check_indexes.sh /tmp/duniter_ci_dump/
+    #- bash .gitlab/test/check_indexes.sh /tmp/duniter_ci_dump/
     # Code coverage display in GitLab
     - tar cvzf coverage.tar.gz coverage/
     - sed -n 23p coverage/index.html | grep -Po "\d+.\d+" | sed -e "s/\(.*\)/<coverage>\1%<\/coverage>/"

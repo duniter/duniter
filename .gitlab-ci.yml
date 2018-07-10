@@ -67,7 +67,6 @@ pages:
   only:
     - loki
     - dev
-    - pages
 
 test:
   <<: *nvm_env

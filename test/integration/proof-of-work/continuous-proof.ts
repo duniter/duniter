@@ -104,7 +104,7 @@ describe("Continous proof-of-work", function() {
 
     // If we wait a bit, the loop should be ended
     await new Promise((resolve) => setTimeout(resolve, 100));
-    s1.permaProver.should.have.property('loops').greaterThanOrEqual(6);
+    s1.permaProver.should.have.property('loops').greaterThanOrEqual(5);
   })
 
   it('testing proof-of-work during a block pulling', async () => {

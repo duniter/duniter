@@ -19,6 +19,10 @@ export abstract class LokiCollectionManager<T> implements LokiDAO {
     this.collectionIsInitialized = new Promise<void>(res => this.resolveCollection = res)
   }
 
+  get lokiCollection(): LokiCollection<T> {
+    return this.collection
+  }
+
   public triggerInit() {
     const coll = this.loki.addCollection(this.collectionName, {
       indices: this.indices,

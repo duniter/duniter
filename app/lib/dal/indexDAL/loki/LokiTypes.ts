@@ -1,5 +1,5 @@
 
-export interface LokiCollection<T> {
+export interface RealLokiCollection<T> {
 
   data: T[]
 
@@ -14,6 +14,17 @@ export interface LokiCollection<T> {
   chain(): LokiChainableFind<T>
 
   setChangesApi(disable: boolean): void
+
+  disableChangesApi: boolean
+
+  disableDeltaChangesApi: boolean
+
+  changes: any[]
+}
+
+export interface LokiCollection<T> extends RealLokiCollection<T> {
+
+  collection: RealLokiCollection<T>
 }
 
 export interface LokiChainableFind<T> {

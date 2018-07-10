@@ -734,3 +734,21 @@ export function simpleTestingConf(now = 1500000000, pair:{ pub:string, sec:strin
     medianTimeBlocks: 1 // The medianTime always equals previous block's medianTime
   }
 }
+
+export function catUser(server: TestingServer) {
+  return new TestUser('cat', {
+    pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+    sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'},
+    {
+      server
+    })
+}
+
+export function tacUser(server: TestingServer) {
+  return new TestUser('tac', {
+    pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc',
+    sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'},
+    {
+      server
+    })
+}

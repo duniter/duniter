@@ -35,4 +35,8 @@ export class LokiJsDriver {
   async flushAndTrimData() {
     return this.adapter.dbDump(this.lokiInstance)
   }
+
+  async listChangesFilesPending(): Promise<string[]> {
+    return this.adapter.listPendingChanges()
+  }
 }

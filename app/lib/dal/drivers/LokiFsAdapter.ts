@@ -58,6 +58,14 @@ export class LokiFsAdapter {
     return new Promise(res => loki.saveDatabaseInternal(res))
   }
 
+  async listPendingChanges(): Promise<string[]> {
+    if (!(await this.cfs.exists(LokiFsAdapter.COMMIT_FILE))) {
+      return []
+    }
+    const commitObj = await this.cfs.readJSON(LokiFsAdapter.COMMIT_FILE)
+    return commitObj.changes
+  }
+
   /**
    * Flushes the DB changes to disk.
    * @param loki

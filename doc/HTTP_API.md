@@ -8,7 +8,7 @@
 * [API](#api)
   * [node/](#node)
       * [summary](#nodesummary)
-      * [sandboxes](#sandboxes)
+      * [sandboxes](#nodesandboxes)
   * [wot/](#wot)
       * [add](#wotadd)
       * [certify](#wotcertify)

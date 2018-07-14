@@ -11,7 +11,7 @@ push_to_github:
   variables:
     GIT_STRATEGY: none
   tags:
-    - redshift
+    - github
   script:
     - rm -rf ./*
     - rm -rf .git

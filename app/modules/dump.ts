@@ -162,6 +162,8 @@ async function dumpHistory(server: Server, pub: string) {
       console.log('%s: join/renew', date)
     } else if (e.expired_on) {
       console.log('%s: expired', date)
+    } else if (e.revoked_on) {
+      console.log('%s: revoked', date)
     } else {
       console.log('Non displayable MINDEX entry')
     }

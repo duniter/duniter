@@ -34,7 +34,8 @@ push_to_github:
     - export NVM_DIR="$HOME/.nvm"
     - . "$NVM_DIR/nvm.sh"
 
-.cached: &cached
+.cached_nvm: &cached
+  <<: *nvm_env
   cache:
     untracked: true
     paths:
@@ -72,15 +73,13 @@ pages:
     - dev
 
 test:
-  <<: *nvm_env
-  <<: *cached
+  <<: *cached_nvm
   stage: test
   script:
     - yarn test
-    # Clean the dump directory before testing
-    - rm -rf /tmp/duniter_ci_dump/
-    # Code coverage display in GitLab
+    # Push coverage to GitLab pages
     - tar cvzf coverage.tar.gz coverage/
+    # Code coverage display in GitLab
     - sed -n 23p coverage/index.html | grep -Po "\d+.\d+" | sed -e "s/\(.*\)/<coverage>\1%<\/coverage>/"
   coverage: '/<coverage>(\d+.\d+\%)<\/coverage>/'
   artifacts:
@@ -89,15 +88,13 @@ test:
     expire_in: 4h
 
 sync_g1:
-  <<: *nvm_env
-  <<: *cached
+  <<: *cached_nvm
   stage: test
   script:
     - bash .gitlab/test/check_g1_sync.sh
 
 sync_gtest:
-  <<: *nvm_env
-  <<: *cached
+  <<: *cached_nvm
   stage: test
   script:
     - bash .gitlab/test/check_gt_sync.sh

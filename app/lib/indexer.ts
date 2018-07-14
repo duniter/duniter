@@ -1970,6 +1970,9 @@ function reduce<T>(records: T[]): T {
     for (const k of keys) {
       if (record[k] !== undefined && record[k] !== null) {
         obj[k] = record[k];
+      } else if (record[k] === null && obj[k] === undefined) {
+        // null overrides undefined
+        (obj[k] as any) = null
       }
     }
     return obj

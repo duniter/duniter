@@ -11,8 +11,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {IdentityDTO} from "./IdentityDTO"
 import * as moment from "moment"
+import {IdentityDTO} from "./IdentityDTO"
 import {Cloneable} from "./Cloneable";
 import {hashf} from "../common";
 
@@ -78,9 +78,9 @@ export class MembershipDTO implements Cloneable {
 
   getIdtyHash() {
     return IdentityDTO.getTargetHash({
-      buid: this.certts,
+      created_on: this.certts,
       uid: this.userid,
-      pubkey: this.issuer
+      pub: this.issuer
     })
   }
 

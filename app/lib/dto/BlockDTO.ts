@@ -32,7 +32,7 @@ export class BlockDTO implements Cloneable {
   previousHash: string
   issuer: string
   previousIssuer: string
-  dividend: number
+  dividend: number|null
   time: number
   powMin: number
   unitbase: number

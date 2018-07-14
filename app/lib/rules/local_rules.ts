@@ -11,7 +11,6 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
 import {BlockDTO} from "../dto/BlockDTO"
 import {ConfDTO} from "../dto/ConfDTO"
 import {CindexEntry, IndexEntry, Indexer, MindexEntry, SindexEntry} from "../indexer"
@@ -22,8 +21,7 @@ import {hashf} from "../common"
 import {CommonConstants} from "../common-libs/constants"
 import {IdentityDTO} from "../dto/IdentityDTO"
 import {MembershipDTO} from "../dto/MembershipDTO"
-
-const _          = require('underscore');
+import {Underscore} from "../common-libs/underscore"
 
 const constants       = CommonConstants
 const maxAcceleration = require('./helpers').maxAcceleration
@@ -120,7 +118,7 @@ export const LOCAL_RULES_FUNCTIONS = {
 
   checkIdentitiesUserIDConflict: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
     const creates = Indexer.iindexCreate(index);
-    const uids = _.chain(creates).pluck('uid').uniq().value();
+    const uids = Underscore.chain(creates).pluck('uid').uniq().value();
     if (creates.length !== uids.length) {
       throw Error('Block must not contain twice same identity uid');
     }
@@ -129,7 +127,7 @@ export const LOCAL_RULES_FUNCTIONS = {
 
   checkIdentitiesPubkeyConflict: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
     const creates = Indexer.iindexCreate(index);
-    const pubkeys = _.chain(creates).pluck('pub').uniq().value();
+    const pubkeys = Underscore.chain(creates).pluck('pub').uniq().value();
     if (creates.length !== pubkeys.length) {
       throw Error('Block must not contain twice same identity pubkey');
     }
@@ -140,7 +138,7 @@ export const LOCAL_RULES_FUNCTIONS = {
     const icreates = Indexer.iindexCreate(index);
     const mcreates = Indexer.mindexCreate(index);
     for (const icreate of icreates) {
-      const matching = _(mcreates).filter({ pub: icreate.pub });
+      const matching = Underscore.where(mcreates, { pub: icreate.pub });
       if (matching.length == 0) {
         throw Error('Each identity must match a newcomer line with same userid and certts');
       }
@@ -151,12 +149,11 @@ export const LOCAL_RULES_FUNCTIONS = {
   checkRevokedAreExcluded: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
     const iindex = Indexer.iindex(index);
     const mindex = Indexer.mindex(index);
-    const revocations = _.chain(mindex)
-      .filter((row:MindexEntry) => row.op == constants.IDX_UPDATE && row.revoked_on !== null)
-      .pluck('pub')
-      .value();
+    const revocations = mindex
+      .filter((row:MindexEntry) => !!(row.op == constants.IDX_UPDATE && row.revoked_on !== null))
+      .map(e => e.pub)
     for (const pub of revocations) {
-      const exclusions = _(iindex).where({ op: constants.IDX_UPDATE, member: false, pub });
+      const exclusions = Underscore.where(iindex, { op: constants.IDX_UPDATE, member: false, pub })
       if (exclusions.length == 0) {
         throw Error('A revoked member must be excluded');
       }
@@ -175,7 +172,7 @@ export const LOCAL_RULES_FUNCTIONS = {
 
   checkMembershipUnicity: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
     const mindex = Indexer.mindex(index);
-    const pubkeys = _.chain(mindex).pluck('pub').uniq().value();
+    const pubkeys = Underscore.chain(mindex).pluck('pub').uniq().value();
     if (pubkeys.length !== mindex.length) {
       throw Error('Unicity constraint PUBLIC_KEY on MINDEX is not respected');
     }
@@ -256,7 +253,7 @@ export const LOCAL_RULES_FUNCTIONS = {
   checkCertificationOneByIssuer: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
     if (block.number > 0) {
       const cindex = Indexer.cindex(index);
-      const certFromA = _.uniq(cindex.map((row:CindexEntry) => row.issuer));
+      const certFromA = Underscore.uniq(cindex.map((row:CindexEntry) => row.issuer));
       if (certFromA.length !== cindex.length) {
         throw Error('Block cannot contain two certifications from same issuer');
       }
@@ -266,7 +263,7 @@ export const LOCAL_RULES_FUNCTIONS = {
 
   checkCertificationUnicity: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
     const cindex = Indexer.cindex(index);
-    const certAtoB = _.uniq(cindex.map((row:CindexEntry) => row.issuer + row.receiver));
+    const certAtoB = Underscore.uniq(cindex.map((row:CindexEntry) => row.issuer + row.receiver));
     if (certAtoB.length !== cindex.length) {
       throw Error('Block cannot contain identical certifications (A -> B)');
     }
@@ -279,8 +276,8 @@ export const LOCAL_RULES_FUNCTIONS = {
     const mindex = Indexer.mindex(index);
     const certified = cindex.map((row:CindexEntry) => row.receiver);
     for (const pub of certified) {
-      const exclusions = _(iindex).where({ op: constants.IDX_UPDATE, member: false, pub: pub });
-      const leavers    = _(mindex).where({ op: constants.IDX_UPDATE, leaving: true, pub: pub });
+      const exclusions = Underscore.where(iindex, { op: constants.IDX_UPDATE, member: false, pub: pub })
+      const leavers    = Underscore.where(mindex, { op: constants.IDX_UPDATE, leaving: true, pub: pub })
       if (exclusions.length > 0 || leavers.length > 0) {
         throw Error('Block cannot contain certifications concerning leavers or excluded members');
       }
@@ -347,12 +344,12 @@ export const LOCAL_RULES_FUNCTIONS = {
       }
     }
     const sindex = Indexer.localSIndex(dto);
-    const inputs = _.filter(sindex, (row:SindexEntry) => row.op == constants.IDX_UPDATE).map((row:SindexEntry) => [row.op, row.identifier, row.pos].join('-'));
-    if (inputs.length !== _.uniq(inputs).length) {
+    const inputs = Underscore.filter(sindex, (row:SindexEntry) => row.op == constants.IDX_UPDATE).map((row:SindexEntry) => [row.op, row.identifier, row.pos].join('-'));
+    if (inputs.length !== Underscore.uniq(inputs).length) {
       throw Error('It cannot exist 2 identical sources for transactions inside a given block');
     }
-    const outputs = _.filter(sindex, (row:SindexEntry) => row.op == constants.IDX_CREATE).map((row:SindexEntry) => [row.op, row.identifier, row.pos].join('-'));
-    if (outputs.length !== _.uniq(outputs).length) {
+    const outputs = Underscore.filter(sindex, (row:SindexEntry) => row.op == constants.IDX_CREATE).map((row:SindexEntry) => [row.op, row.identifier, row.pos].join('-'));
+    if (outputs.length !== Underscore.uniq(outputs).length) {
       throw Error('It cannot exist 2 identical sources for transactions inside a given block');
     }
     return true;
@@ -414,7 +411,7 @@ export interface SindexShortEntry {
 }
 
 function getMaxTransactionDepth(sindex:SindexShortEntry[]) {
-  const ids = _.uniq(_.pluck(sindex, 'tx'))
+  const ids = Underscore.uniq(Underscore.pluck(sindex, 'tx')) as string[] // We are sure because at this moment no UD is in the sources
   let maxTxChainingDepth = 0
   for (let id of ids) {
     maxTxChainingDepth = Math.max(maxTxChainingDepth, getTransactionDepth(id, sindex, 0))
@@ -423,13 +420,14 @@ function getMaxTransactionDepth(sindex:SindexShortEntry[]) {
 }
 
 function getTransactionDepth(txHash:string, sindex:SindexShortEntry[], localDepth = 0) {
-  const inputs = _.filter(sindex, (s:SindexShortEntry) => s.op === 'UPDATE' && s.tx === txHash)
+  const inputs = Underscore.filter(sindex, (s:SindexShortEntry) => s.op === 'UPDATE' && s.tx === txHash)
   let depth = localDepth
   for (let input of inputs) {
-    const consumedOutput = _.findWhere(sindex, { op: 'CREATE', identifier: input.identifier, pos: input.pos })
+    const consumedOutput = Underscore.findWhere(sindex, { op: 'CREATE', identifier: input.identifier, pos: input.pos })
     if (consumedOutput) {
       if (localDepth < 5) {
-        const subTxDepth = getTransactionDepth(consumedOutput.tx, sindex, localDepth + 1)
+        // Cast: we are sure because at this moment no UD is in the sources
+        const subTxDepth = getTransactionDepth(consumedOutput.tx as string, sindex, localDepth + 1)
         depth = Math.max(depth, subTxDepth)
       } else {
         depth++
@@ -524,7 +522,7 @@ export const LOCAL_RULES_HELPERS = {
     }
   },
 
-  getMaxPossibleVersionNumber: async (current:DBBlock) => {
+  getMaxPossibleVersionNumber: async (current:DBBlock|null) => {
     // Looking at current blockchain, find what is the next maximum version we can produce
 
     // 1. We follow previous block's version

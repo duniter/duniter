@@ -12,20 +12,18 @@
 // GNU Affero General Public License for more details.
 
 import {SQLiteDriver} from "../drivers/SQLiteDriver"
-/**
- * Created by cgeek on 22/08/15.
- */
+import {Initiable} from "./Initiable"
+import {Underscore} from "../../common-libs/underscore"
+import {NewLogger} from "../../logger"
+import {MonitorSQLExecutionTime} from "../../debug/MonitorSQLExecutionTime"
 
-const _ = require('underscore');
-const co = require('co');
-const colors = require('colors');
-const logger = require('../../logger').NewLogger('sqlite');
+const logger = NewLogger('sqlite')
 
 export interface BeforeSaveHook<T> {
   (t:T): void
 }
 
-export abstract class AbstractSQLite<T> {
+export abstract class AbstractSQLite<T> extends Initiable {
 
   constructor(
     private driver:SQLiteDriver,
@@ -38,28 +36,14 @@ export abstract class AbstractSQLite<T> {
     private transientFields: string[] = [],
     private beforeSaveHook: BeforeSaveHook<T> | null = null
   ) {
+    super()
   }
 
+  @MonitorSQLExecutionTime()
   async query(sql:string, params: any[] = []): Promise<T[]> {
     try {
-      //logger.trace(sql, JSON.stringify(params || []));
-      const start = Date.now()
       const res = await this.driver.executeAll(sql, params || []);
-      const duration = Date.now() - start;
-      const entities = res.map((t:T) => this.toEntity(t))
-      // Display result
-      let msg = sql + ' | %s\t==> %s rows in %s ms';
-      if (duration <= 2) {
-        msg = colors.green(msg);
-      } else if(duration <= 5) {
-        msg = colors.yellow(msg);
-      } else if (duration <= 10) {
-        msg = colors.magenta(msg);
-      } else if (duration <= 100) {
-        msg = colors.red(msg);
-      }
-      logger.query(msg, JSON.stringify(params || []), entities.length, duration);
-      return entities;
+      return res.map((t:T) => this.toEntity(t))
     } catch (e) {
       logger.error('ERROR >> %s', sql, JSON.stringify(params || []), e.stack || e.message || e);
       throw e;
@@ -81,7 +65,7 @@ export abstract class AbstractSQLite<T> {
   sqlFind(obj:any, sortObj:any = {}): Promise<T[]> {
     const conditions = this.toConditionsArray(obj).join(' and ');
     const values = this.toParams(obj);
-    const sortKeys: string[] = _.keys(sortObj);
+    const sortKeys: string[] = Underscore.keys(sortObj)
     const sort = sortKeys.length ? ' ORDER BY ' + sortKeys.map((k) => "`" + k + "` " + (sortObj[k] ? 'DESC' : 'ASC')).join(',') : '';
     return this.query('SELECT * FROM ' + this.table + ' WHERE ' + conditions + sort, values);
   }
@@ -92,12 +76,12 @@ export abstract class AbstractSQLite<T> {
   }
 
   sqlFindLikeAny(obj:any): Promise<T[]> {
-    const keys:string[] = _.keys(obj);
+    const keys:string[] = Underscore.keys(obj)
     return this.query('SELECT * FROM ' + this.table + ' WHERE ' + keys.map((k) => 'UPPER(`' + k + '`) like ?').join(' or '), keys.map((k) => obj[k].toUpperCase()))
   }
 
   async sqlRemoveWhere(obj:any): Promise<void> {
-    const keys:string[] = _.keys(obj);
+    const keys:string[] = Underscore.keys(obj)
     await this.query('DELETE FROM ' + this.table + ' WHERE ' + keys.map((k) => '`' + k + '` = ?').join(' and '), keys.map((k) => obj[k]))
   }
 
@@ -145,14 +129,9 @@ export abstract class AbstractSQLite<T> {
     await this.query('DELETE FROM ' + this.table + ' WHERE ' + conditions, condValues)
   }
 
-  exec(sql:string): Promise<void> {
-    try {
-      //console.warn(sql);
-      return this.driver.executeSql(sql);
-    } catch (e) {
-      //console.error('ERROR >> %s', sql);
-      throw e;
-    }
+  @MonitorSQLExecutionTime()
+  async exec(sql:string) {
+    await this.driver.executeSql(sql)
   }
 
   getInsertQuery(): string {
@@ -197,8 +176,14 @@ export abstract class AbstractSQLite<T> {
     }
   }
 
+  /**
+   * To redefine if necessary in subclasses.
+   */
+  cleanCache() {
+  }
+
   private toConditionsArray(obj:any): string[] {
-    return _.keys(obj).map((k:string) => {
+    return Underscore.keys(obj).map((k:string) => {
       if (obj[k].$lte !== undefined) {
         return '`' + k + '` <= ?';
       } else if (obj[k].$gte !== undefined) {
@@ -219,7 +204,7 @@ export abstract class AbstractSQLite<T> {
 
   private toParams(obj:any, fields:string[] | null = null): any[] {
     let params:any[] = [];
-    (fields || _.keys(obj)).forEach((f:string) => {
+    (fields || Underscore.keys(obj)).forEach((f:string) => {
       if (obj[f].$null === undefined) {
         let pValue;
         if      (obj[f].$lte  !== undefined)      { pValue = obj[f].$lte;  }

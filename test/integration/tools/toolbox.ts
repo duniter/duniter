@@ -19,7 +19,7 @@ import * as stream from "stream"
 import {RevocationDTO} from "../../../app/lib/dto/RevocationDTO"
 import {IdentityDTO} from "../../../app/lib/dto/IdentityDTO"
 import {PeerDTO} from "../../../app/lib/dto/PeerDTO"
-import {Network} from "../../../app/modules/bma/lib/network"
+import {BmaApi, Network} from "../../../app/modules/bma/lib/network"
 import {DBIdentity} from "../../../app/lib/dal/sqliteDAL/IdentityDAL"
 import {CertificationDTO} from "../../../app/lib/dto/CertificationDTO"
 import {BlockchainService} from "../../../app/service/BlockchainService"
@@ -37,18 +37,24 @@ import {WS2PServer} from "../../../app/modules/ws2p/lib/WS2PServer"
 import {WS2PServerMessageHandler} from "../../../app/modules/ws2p/lib/interface/WS2PServerMessageHandler"
 import {TestUser} from "./TestUser"
 import {RouterDependency} from "../../../app/modules/router"
+import {ProverDependency} from "../../../app/modules/prover/index"
+import {WS2PClient} from "../../../app/modules/ws2p/lib/WS2PClient"
+import {DBBlock} from "../../../app/lib/db/DBBlock"
+import {DBPeer} from "../../../app/lib/db/DBPeer"
+import {Underscore} from "../../../app/lib/common-libs/underscore"
+import {BmaDependency} from "../../../app/modules/bma/index"
+import {NewLogger} from "../../../app/lib/logger"
+import {BlockProver} from "../../../app/modules/prover/lib/blockProver"
+import {DataErrors} from "../../../app/lib/common-libs/errors"
+import {until} from "./test-until"
+import {sync} from "./test-sync"
+import {expectAnswer, expectError, expectJSON} from "./http-expect"
+import {WebSocketServer} from "../../../app/lib/common-libs/websocket"
 
 const assert      = require('assert');
-const _           = require('underscore');
 const rp          = require('request-promise');
 const es          = require('event-stream');
-const WebSocketServer = require('ws').Server
-const httpTest    = require('../tools/http');
-const sync        = require('../tools/sync');
-const commit      = require('../tools/commit');
-const until       = require('../tools/until');
-const bma         = require('../../../app/modules/bma').BmaDependency.duniter.methods.bma;
-const logger      = require('../../../app/lib/logger').NewLogger('toolbox');
+const logger      = NewLogger();
 
 require('../../../app/modules/bma').BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
 
@@ -61,30 +67,6 @@ export const getNewTestingPort = () => {
   return PORT++
 }
 
-export const shouldFail = async (promise:Promise<any>, message:string|null = null) => {
-  try {
-    await promise;
-    throw '{ "message": "Should have thrown an error" }'
-  } catch(e) {
-    let err = e
-    if (typeof e === "string") {
-      err = JSON.parse(e)
-    }
-    err.should.have.property('message').equal(message);
-  }
-}
-export const assertThrows = async (promise:Promise<any>, message:string|null = null) => {
-  try {
-    await promise;
-    throw "Should have thrown"
-  } catch(e) {
-    if (e === "Should have thrown") {
-      throw e
-    }
-    assert.equal(e, message)
-  }
-}
-
 export const simpleUser = (uid:string, keyring:{ pub:string, sec:string }, server:TestingServer) => {
   return new TestUser(uid, keyring, { server });
 }
@@ -93,8 +75,8 @@ export const simpleNetworkOf2NodesAnd2Users = async (options:any) => {
   const catKeyring = { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'};
   const tacKeyring = { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'};
 
-  const s1 = NewTestingServer(_.extend({ pair: catKeyring }, options || {}));
-  const s2 = NewTestingServer(_.extend({ pair: tacKeyring }, options || {}));
+  const s1 = NewTestingServer(Underscore.extend({ pair: catKeyring }, options || {}));
+  const s2 = NewTestingServer(Underscore.extend({ pair: tacKeyring }, options || {}));
 
   const cat = new TestUser('cat', catKeyring, { server: s1 });
   const tac = new TestUser('tac', tacKeyring, { server: s1 });
@@ -125,7 +107,7 @@ export const simpleNodeWith2Users = async (options:any) => {
   const catKeyring = { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'};
   const tacKeyring = { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'};
 
-  const s1 = NewTestingServer(_.extend({ pair: catKeyring }, options || {}));
+  const s1 = NewTestingServer(Underscore.extend({ pair: catKeyring }, options || {}));
 
   const cat = new TestUser('cat', catKeyring, { server: s1 });
   const tac = new TestUser('tac', tacKeyring, { server: s1 });
@@ -147,7 +129,7 @@ export const simpleNodeWith2otherUsers = async (options:any) => {
   const ticKeyring = { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'};
   const tocKeyring = { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'};
 
-  const s1 = NewTestingServer(_.extend({ pair: ticKeyring }, options || {}));
+  const s1 = NewTestingServer(Underscore.extend({ pair: ticKeyring }, options || {}));
 
   const tic = new TestUser('cat', ticKeyring, { server: s1 });
   const toc = new TestUser('tac', tocKeyring, { server: s1 });
@@ -258,7 +240,7 @@ export const NewTestingServer = (conf:any) => {
   const server = new Server(
     '~/.config/duniter/' + (conf.homename || 'dev_unit_tests'),
     conf.memory !== undefined ? conf.memory : MEMORY_MODE,
-    _.extend(conf, commonConf));
+    Underscore.extend(conf, commonConf));
 
   return new TestingServer(port, server)
 }
@@ -331,12 +313,14 @@ export const waitForHeads = async (server:Server, nbHeads:number) => {
 export class TestingServer {
 
   private prover:Prover
-  private permaProver:PermanentProver
-  private bma:any
+  public permaProver:PermanentProver
+  public bma:BmaApi
 
   constructor(
     private port:number,
     private server:Server) {
+
+    ProverDependency.duniter.methods.hookServer(server)
 
     server.addEndpointsDefinitions(async () => {
       return require('../../../app/modules/bma').BmaDependency.duniter.methods.getMainEndpoint(server.conf)
@@ -371,7 +355,11 @@ export class TestingServer {
     return this.server.home
   }
 
-  revert() {
+  initWithDAL() {
+    return this.server.initWithDAL()
+  }
+
+  revert(): Promise<DBBlock> {
     return this.server.revert()
   }
 
@@ -383,7 +371,7 @@ export class TestingServer {
     return this.server.on(event, f)
   }
 
-  recomputeSelfPeer() {
+  recomputeSelfPeer(): Promise<DBPeer | null> {
     return this.server.recomputeSelfPeer()
   }
 
@@ -445,7 +433,7 @@ export class TestingServer {
 
   async initDalBmaConnections() {
     await this.server.initWithDAL()
-    const bmapi = await bma(this.server)
+    const bmapi = await BmaDependency.duniter.methods.bma(this.server)
     this.bma = bmapi
     const res = await bmapi.openConnections()
     return res
@@ -465,34 +453,61 @@ export class TestingServer {
 
 
   expect(uri:string, expectations:any) {
-    return typeof expectations == 'function' ? httpTest.expectAnswer(rp(this.url(uri), { json: true }), expectations) : httpTest.expectJSON(rp(this.url(uri), { json: true }), expectations);
+    return typeof expectations == 'function' ? expectAnswer(rp(this.url(uri), { json: true }), expectations) : expectJSON(rp(this.url(uri), { json: true }), expectations);
   }
 
   expectThat(uri:string, expectations:any) {
-    return httpTest.expectAnswer(rp(this.url(uri), { json: true }), expectations);
+    return expectAnswer(rp(this.url(uri), { json: true }), expectations);
   }
 
   expectJSON(uri:string, expectations:any) {
-    return httpTest.expectJSON(rp(this.url(uri), { json: true }), expectations);
+    return expectJSON(rp(this.url(uri), { json: true }), expectations);
   }
 
-  expectError(uri:string, code:number, message:string) {
-    return httpTest.expectError(code, message, rp(this.url(uri), { json: true }));
+  expectError(uri:string, code:number, message = '') {
+    return expectError(code, message, rp(this.url(uri), { json: true }));
   }
-
 
   syncFrom(otherServer:Server, fromIncuded:number, toIncluded:number) {
     return sync(fromIncuded, toIncluded, otherServer, this.server);
   }
 
-
   until(type:string, count:number) {
-    return until(this.server, type, count);
+    return until(this, type, count);
   }
 
-  async commit(options:any = null, noWait = false) {
-    const raw = await commit(this.server, null, noWait)(options);
-    return JSON.parse(raw);
+  async justCommit(options:any = null) {
+    const proven = await this.generateNext(options)
+    await this.server.writeBlock(proven, true, false)
+    return proven
+  }
+
+  async commit(options:any = null) {
+    const proven = await this.generateNext(options)
+    await this.server.writeBlock(proven, true, true) // The resolution is done manually
+    const blocksResolved = await this.server.BlockchainService.blockResolution()
+    if (!blocksResolved) {
+      throw Error(DataErrors[DataErrors.BLOCK_WASNT_COMMITTED])
+    }
+    return blocksResolved
+  }
+
+  async resolveExistingBlock(max = 0) {
+    const blocksResolved = await this.server.BlockchainService.blockResolution(max)
+    if (!blocksResolved) {
+      throw Error(DataErrors[DataErrors.BLOCK_WASNT_COMMITTED])
+    }
+    return blocksResolved
+  }
+
+  private generateNext(options:any) {
+    const server = this.server as any
+    // Brings a priver to the server
+    if (!server._utProver) {
+      server._utProver = new BlockProver(server)
+      server._utGenerator = ProverDependency.duniter.methods.blockGenerator(server, server._utProver)
+    }
+    return server._utGenerator.makeNextBlock(null, null, options)
   }
 
   async commitWaitError(options:any, expectedError:string) {
@@ -505,8 +520,8 @@ export class TestingServer {
         }))
       }),
       (async () => {
-        const raw = await commit(this.server, null, true)(options);
-        return JSON.parse(raw);
+        const proven = await this.generateNext(options)
+        await this.server.writeBlock(proven, false)
       })()
     ])
     return results[1]
@@ -514,8 +529,7 @@ export class TestingServer {
 
   async commitExpectError(options:any) {
     try {
-      const raw = await commit(this.server)(options);
-      JSON.parse(raw);
+      await this.commit(options)
       throw { message: 'Commit operation should have thrown an error' };
     } catch (e) {
       if (e.statusCode) {
@@ -612,7 +626,7 @@ export class TestingServer {
 
   async prepareForNetwork() {
     await this.server.initWithDAL();
-    const bmaAPI = await bma(this.server);
+    const bmaAPI = await BmaDependency.duniter.methods.bma(this.server);
     await bmaAPI.openConnections();
     this.bma = bmaAPI;
     RouterDependency.duniter.methods.routeToNetwork(this.server)
@@ -658,10 +672,10 @@ export async function newWS2PBidirectionnalConnection(currency:string, k1:Key, k
       switch (i) {
         case 1:
           s1 = WS2PConnection.newConnectionFromWebSocketServer(ws, serverHandler, new WS2PPubkeyLocalAuth(currency, k1, ""), new WS2PPubkeyRemoteAuth(currency, k1), {
-            connectionTimeout: 100,
-            requestTimeout: 100
+            connectionTimeout: 1000,
+            requestTimeout: 1000
           });
-          s1.connect().catch((e:any) => console.error('WS2P: newConnectionFromWebSocketServer connection error'))
+          s1.connect().catch((e:any) => console.error('WS2P: newConnectionFromWebSocketServer connection error:', e))
           break;
       }
       resolveBefore({
@@ -681,7 +695,7 @@ export async function newWS2PBidirectionnalConnection(currency:string, k1:Key, k
   })
 }
 
-export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promise<{ w1: WS2PConnection; ws2pc: WS2PConnection; wss: WS2PServer, cluster1:WS2PCluster, cluster2:WS2PCluster }> = async (s1: TestingServer, s2: TestingServer) => {
+export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promise<{ w1: WS2PConnection; ws2pc: WS2PClient; wss: WS2PServer, cluster1:WS2PCluster, cluster2:WS2PCluster }> = async (s1: TestingServer, s2: TestingServer) => {
   let port = getNewTestingPort()
   const clientPub = s2.conf.pair.pub
   let w1: WS2PConnection | null
@@ -719,4 +733,22 @@ export function simpleTestingConf(now = 1500000000, pair:{ pub:string, sec:strin
     sigQty: 1,
     medianTimeBlocks: 1 // The medianTime always equals previous block's medianTime
   }
+}
+
+export function catUser(server: TestingServer) {
+  return new TestUser('cat', {
+    pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
+    sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'},
+    {
+      server
+    })
+}
+
+export function tacUser(server: TestingServer) {
+  return new TestUser('tac', {
+    pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc',
+    sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'},
+    {
+      server
+    })
 }

@@ -14,10 +14,15 @@
 export const OtherConstants = {
 
   MUTE_LOGS_DURING_UNIT_TESTS: true,
+  SQL_TRACES: false,
 
   BC_EVENT: {
     SWITCHED: 'switched',
     HEAD_CHANGED: 'newHEAD',
     RESOLUTION_DONE: 'resolution_done'
-  }
+  },
+
+  ENABLE_LOKI_MONITORING: false,
+  ENABLE_SQL_MONITORING: false,
+  TRACE_BALANCES: false
 }

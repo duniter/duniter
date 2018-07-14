@@ -11,93 +11,163 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
+import * as fs from 'fs'
+import * as path from 'path'
 import {SQLiteDriver} from "./drivers/SQLiteDriver"
 import {ConfDAL} from "./fileDALs/ConfDAL"
 import {StatDAL} from "./fileDALs/StatDAL"
 import {ConfDTO} from "../dto/ConfDTO"
 import {BlockDTO} from "../dto/BlockDTO"
 import {DBHead} from "../db/DBHead"
-import {DBIdentity} from "./sqliteDAL/IdentityDAL"
-import {CindexEntry, IindexEntry, IndexEntry, MindexEntry, SindexEntry} from "../indexer"
-import {DBPeer} from "./sqliteDAL/PeerDAL"
+import {DBIdentity, IdentityDAL} from "./sqliteDAL/IdentityDAL"
+import {
+  CindexEntry,
+  FullCindexEntry,
+  FullIindexEntry,
+  FullMindexEntry,
+  IindexEntry,
+  IndexEntry,
+  MindexEntry,
+  SimpleTxInput,
+  SimpleUdEntryForWallet,
+  SindexEntry
+} from "../indexer"
 import {TransactionDTO} from "../dto/TransactionDTO"
-import {DBCert} from "./sqliteDAL/CertDAL"
-import {DBWallet} from "./sqliteDAL/WalletDAL"
-import {DBTx} from "./sqliteDAL/TxsDAL"
+import {CertDAL, DBCert} from "./sqliteDAL/CertDAL"
 import {DBBlock} from "../db/DBBlock"
-import {DBMembership} from "./sqliteDAL/MembershipDAL"
+import {DBMembership, MembershipDAL} from "./sqliteDAL/MembershipDAL"
 import {MerkleDTO} from "../dto/MerkleDTO"
 import {CommonConstants} from "../common-libs/constants"
 import {PowDAL} from "./fileDALs/PowDAL";
+import {Initiable} from "./sqliteDAL/Initiable"
+import {MetaDAL} from "./sqliteDAL/MetaDAL"
+import {DataErrors} from "../common-libs/errors"
+import {BasicRevocableIdentity, IdentityDTO} from "../dto/IdentityDTO"
+import {FileSystem} from "../system/directory"
+import {WoTBInstance} from "../wot"
+import {IIndexDAO} from "./indexDAL/abstract/IIndexDAO"
+import {LokiIIndex} from "./indexDAL/loki/LokiIIndex"
+import {BIndexDAO} from "./indexDAL/abstract/BIndexDAO"
+import {MIndexDAO} from "./indexDAL/abstract/MIndexDAO"
+import {SIndexDAO} from "./indexDAL/abstract/SIndexDAO"
+import {CIndexDAO} from "./indexDAL/abstract/CIndexDAO"
+import {IdentityForRequirements} from "../../service/BlockchainService"
+import {LokiSIndex} from "./indexDAL/loki/LokiSIndex"
+import {LokiCIndex} from "./indexDAL/loki/LokiCIndex"
+import {LokiMIndex} from "./indexDAL/loki/LokiMIndex";
+import {LokiBIndex} from "./indexDAL/loki/LokiBIndex"
+import {NewLogger} from "../logger"
+import {LokiBlockchain} from "./indexDAL/loki/LokiBlockchain"
+import {BlockchainDAO} from "./indexDAL/abstract/BlockchainDAO"
+import {LokiTransactions} from "./indexDAL/loki/LokiTransactions"
+import {TxsDAO} from "./indexDAL/abstract/TxsDAO"
+import {LokiJsDriver} from "./drivers/LokiJsDriver"
+import {WalletDAO} from "./indexDAL/abstract/WalletDAO"
+import {LokiWallet} from "./indexDAL/loki/LokiWallet"
+import {PeerDAO} from "./indexDAL/abstract/PeerDAO"
+import {LokiPeer} from "./indexDAL/loki/LokiPeer"
+import {DBTx} from "../db/DBTx"
+import {DBWallet} from "../db/DBWallet"
+import {Tristamp} from "../common/Tristamp"
+import {CFSBlockchainArchive} from "./indexDAL/CFSBlockchainArchive"
+import {CFSCore} from "./fileDALs/CFSCore"
+import {BlockchainArchiveDAO} from "./indexDAL/abstract/BlockchainArchiveDAO"
+import {Underscore} from "../common-libs/underscore"
+import {DBPeer} from "../db/DBPeer"
+import {MonitorFlushedIndex} from "../debug/MonitorFlushedIndex"
+import {cliprogram} from "../common-libs/programOptions"
+import {DividendDAO, UDSource} from "./indexDAL/abstract/DividendDAO"
+import {LokiDividend} from "./indexDAL/loki/LokiDividend"
+import {HttpSource, HttpUD} from "../../modules/bma/lib/dtos"
+import {GenericDAO} from "./indexDAL/abstract/GenericDAO"
+import {LokiDAO} from "./indexDAL/loki/LokiDAO"
 
-const fs      = require('fs')
-const path    = require('path')
 const readline = require('readline')
-const _       = require('underscore');
 const indexer = require('../indexer').Indexer
 const logger = require('../logger').NewLogger('filedal');
 const constants = require('../constants');
 
 export interface FileDALParams {
   home:string
-  fs:any
+  fs:FileSystem
   dbf:() => SQLiteDriver
-  wotb:any
+  dbf2: () => LokiJsDriver
+  wotb:WoTBInstance
+}
+
+export interface IndexBatch {
+  mindex: MindexEntry[]
+  iindex: IindexEntry[]
+  sindex: SindexEntry[]
+  cindex: CindexEntry[]
 }
 
 export class FileDAL {
 
   rootPath:string
-  myFS:any
+  fs: FileSystem
+  loki:LokiJsDriver
   sqliteDriver:SQLiteDriver
-  wotb:any
+  wotb:WoTBInstance
   profile:string
 
+  // Simple file accessors
   powDAL:PowDAL
-  confDAL:any
-  metaDAL:any
-  peerDAL:any
-  blockDAL:any
-  txsDAL:any
-  statDAL:any
-  idtyDAL:any
-  certDAL:any
-  msDAL:any
-  walletDAL:any
-  bindexDAL:any
-  mindexDAL:any
-  iindexDAL:any
-  sindexDAL:any
-  cindexDAL:any
-  newDals:any
+  confDAL:ConfDAL
+  statDAL:StatDAL
+  blockchainArchiveDAL:BlockchainArchiveDAO<DBBlock>
+
+  // SQLite DALs
+  metaDAL:MetaDAL
+  idtyDAL:IdentityDAL
+  certDAL:CertDAL
+  msDAL:MembershipDAL
+
+  // New DAO entities
+  blockDAL:BlockchainDAO
+  txsDAL:TxsDAO
+  peerDAL:PeerDAO
+  walletDAL:WalletDAO
+  bindexDAL:BIndexDAO
+  mindexDAL:MIndexDAO
+  iindexDAL:IIndexDAO
+  sindexDAL:SIndexDAO
+  cindexDAL:CIndexDAO
+  dividendDAL:DividendDAO
+  newDals:{ [k:string]: Initiable }
+  private dals:(BlockchainArchiveDAO<any>|PeerDAO|WalletDAO|GenericDAO<any>)[]
+  private daos:LokiDAO[]
 
   loadConfHook: (conf:ConfDTO) => Promise<void>
   saveConfHook: (conf:ConfDTO) => Promise<ConfDTO>
 
   constructor(params:FileDALParams) {
     this.rootPath = params.home
-    this.myFS = params.fs
     this.sqliteDriver = params.dbf()
+    this.loki = params.dbf2()
     this.wotb = params.wotb
     this.profile = 'DAL'
+    this.fs = params.fs
 
     // DALs
-    this.powDAL = new PowDAL(this.rootPath, this.myFS)
-    this.confDAL = new ConfDAL(this.rootPath, this.myFS)
+    this.powDAL = new PowDAL(this.rootPath, params.fs)
+    this.confDAL = new ConfDAL(this.rootPath, params.fs)
     this.metaDAL = new (require('./sqliteDAL/MetaDAL').MetaDAL)(this.sqliteDriver);
-    this.peerDAL = new (require('./sqliteDAL/PeerDAL').PeerDAL)(this.sqliteDriver);
-    this.blockDAL = new (require('./sqliteDAL/BlockDAL').BlockDAL)(this.sqliteDriver);
-    this.txsDAL = new (require('./sqliteDAL/TxsDAL').TxsDAL)(this.sqliteDriver);
-    this.statDAL = new StatDAL(this.rootPath, this.myFS)
+    this.blockchainArchiveDAL = new CFSBlockchainArchive(new CFSCore(path.join(this.rootPath, '/archives'), params.fs), CommonConstants.CONST_BLOCKS_CHUNK)
+    this.blockDAL = new LokiBlockchain(this.loki.getLokiInstance())
+    this.txsDAL = new LokiTransactions(this.loki.getLokiInstance())
+    this.statDAL = new StatDAL(this.rootPath, params.fs)
     this.idtyDAL = new (require('./sqliteDAL/IdentityDAL').IdentityDAL)(this.sqliteDriver);
     this.certDAL = new (require('./sqliteDAL/CertDAL').CertDAL)(this.sqliteDriver);
     this.msDAL = new (require('./sqliteDAL/MembershipDAL').MembershipDAL)(this.sqliteDriver);
-    this.walletDAL = new (require('./sqliteDAL/WalletDAL').WalletDAL)(this.sqliteDriver);
-    this.bindexDAL = new (require('./sqliteDAL/index/BIndexDAL').BIndexDAL)(this.sqliteDriver);
-    this.mindexDAL = new (require('./sqliteDAL/index/MIndexDAL').MIndexDAL)(this.sqliteDriver);
-    this.iindexDAL = new (require('./sqliteDAL/index/IIndexDAL').IIndexDAL)(this.sqliteDriver);
-    this.sindexDAL = new (require('./sqliteDAL/index/SIndexDAL').SIndexDAL)(this.sqliteDriver);
-    this.cindexDAL = new (require('./sqliteDAL/index/CIndexDAL').CIndexDAL)(this.sqliteDriver);
+    this.peerDAL = new LokiPeer(this.loki.getLokiInstance())
+    this.walletDAL = new LokiWallet(this.loki.getLokiInstance())
+    this.bindexDAL = new LokiBIndex(this.loki.getLokiInstance())
+    this.mindexDAL = new LokiMIndex(this.loki.getLokiInstance())
+    this.iindexDAL = new LokiIIndex(this.loki.getLokiInstance())
+    this.sindexDAL = new LokiSIndex(this.loki.getLokiInstance())
+    this.cindexDAL = new LokiCIndex(this.loki.getLokiInstance())
+    this.dividendDAL = new LokiDividend(this.loki.getLokiInstance())
 
     this.newDals = {
       'powDAL': this.powDAL,
@@ -115,12 +185,52 @@ export class FileDAL {
       'mindexDAL': this.mindexDAL,
       'iindexDAL': this.iindexDAL,
       'sindexDAL': this.sindexDAL,
-      'cindexDAL': this.cindexDAL
+      'cindexDAL': this.cindexDAL,
+      'dividendDAL': this.dividendDAL,
+      'blockchainArchiveDAL': this.blockchainArchiveDAL,
     }
   }
 
+  public enableChangesAPI() {
+    this.daos.map(d => d.enableChangesAPI())
+  }
+
+  public disableChangesAPI() {
+    this.daos.map(d => d.disableChangesAPI())
+  }
+
   async init(conf:ConfDTO) {
-    const dalNames = _.keys(this.newDals);
+    // Init LokiJS
+    await this.loki.loadDatabase()
+    this.daos = [
+      this.blockDAL,
+      this.txsDAL,
+      this.peerDAL,
+      this.walletDAL,
+      this.bindexDAL,
+      this.mindexDAL,
+      this.iindexDAL,
+      this.sindexDAL,
+      this.cindexDAL,
+      this.dividendDAL
+    ]
+    this.dals = [
+      this.blockDAL,
+      this.txsDAL,
+      this.peerDAL,
+      this.walletDAL,
+      this.bindexDAL,
+      this.mindexDAL,
+      this.iindexDAL,
+      this.sindexDAL,
+      this.cindexDAL,
+      this.dividendDAL,
+      this.blockchainArchiveDAL,
+    ]
+    for (const indexDAL of this.dals) {
+      indexDAL.triggerInit()
+    }
+    const dalNames = Underscore.keys(this.newDals);
     for (const dalName of dalNames) {
       const dal = this.newDals[dalName];
       await dal.init();
@@ -138,6 +248,33 @@ export class FileDAL {
     return this.metaDAL.getVersion()
   }
 
+  /**
+   * Transfer a chunk of blocks from memory DB to archives if the memory DB overflows.
+   * @returns {Promise<void>}
+   */
+  async archiveBlocks() {
+    const lastArchived = await this.blockchainArchiveDAL.getLastSavedBlock()
+    const current = await this.blockDAL.getCurrent()
+    const lastNumber = lastArchived ? lastArchived.number : -1
+    const currentNumber = current ? current.number : -1
+    const difference = currentNumber - lastNumber
+    if (difference > CommonConstants.BLOCKS_IN_MEMORY_MAX) {
+      const CHUNK_SIZE = this.blockchainArchiveDAL.chunkSize
+      const nbBlocksOverflow = difference - CommonConstants.BLOCKS_IN_MEMORY_MAX
+      const chunks = (nbBlocksOverflow - (nbBlocksOverflow % CHUNK_SIZE)) / CHUNK_SIZE
+      for (let i = 0; i < chunks; i++) {
+        const start = lastNumber + (i*CHUNK_SIZE) + 1
+        const end = lastNumber + (i*CHUNK_SIZE) + CHUNK_SIZE
+        const memBlocks = await this.blockDAL.getNonForkChunk(start, end)
+        if (memBlocks.length !== CHUNK_SIZE) {
+          throw Error(DataErrors[DataErrors.CANNOT_ARCHIVE_CHUNK_WRONG_SIZE])
+        }
+        await this.blockchainArchiveDAL.archive(memBlocks)
+        await this.blockDAL.trimBlocks(end)
+      }
+    }
+  }
+
   writeFileOfBlock(block:DBBlock) {
     return this.blockDAL.saveBlock(block)
   }
@@ -152,7 +289,7 @@ export class FileDAL {
 
   async getPeer(pubkey:string) {
     try {
-      return this.peerDAL.getPeer(pubkey)
+      return await this.peerDAL.getPeer(pubkey)
     } catch (err) {
       throw Error('Unknown peer ' + pubkey);
     }
@@ -162,73 +299,91 @@ export class FileDAL {
     return  this.peerDAL.getPeersWithEndpointsLike('WS2P')
   }
 
-  async getBlock(number:number) {
-    const block = await this.blockDAL.getBlock(number)
-    return block || null;
+  getAbsoluteBlockInForkWindowByBlockstamp(blockstamp:string) {
+    if (!blockstamp) throw "Blockstamp is required to find the block";
+    const sp = blockstamp.split('-');
+    const number = parseInt(sp[0]);
+    const hash = sp[1];
+    return this.getAbsoluteBlockInForkWindow(number, hash)
   }
 
-  getAbsoluteBlockByNumberAndHash(number:number, hash:string) {
-    return this.blockDAL.getAbsoluteBlock(number, hash)
+  getAbsoluteValidBlockInForkWindowByBlockstamp(blockstamp:string) {
+    if (!blockstamp) throw "Blockstamp is required to find the block";
+    const sp = blockstamp.split('-');
+    const number = parseInt(sp[0]);
+    const hash = sp[1];
+    return this.getAbsoluteValidBlockInForkWindow(number, hash)
   }
 
-  getAbsoluteBlockByBlockstamp(blockstamp:string) {
-    if (!blockstamp) throw "Blockstamp is required to find the block"
-    const sp = blockstamp.split('-')
-    const number = parseInt(sp[0])
-    const hash = sp[1]
+  async getBlockWeHaveItForSure(number:number): Promise<DBBlock> {
+    return (await this.blockDAL.getBlock(number)) as DBBlock || (await this.blockchainArchiveDAL.getBlockByNumber(number))
+  }
+
+  // Duniter-UI dependency
+  async getBlock(number: number): Promise<DBBlock|null> {
+    return this.getFullBlockOf(number)
+  }
+
+  async getFullBlockOf(number: number): Promise<DBBlock|null> {
+    return (await this.blockDAL.getBlock(number)) || (await this.blockchainArchiveDAL.getBlockByNumber(number))
+  }
+
+  async getBlockstampOf(number: number): Promise<string|null> {
+    const block = await this.getTristampOf(number)
+    if (block) {
+      return [block.number, block.hash].join('-')
+    }
+    return null
+  }
+
+  async getTristampOf(number: number): Promise<Tristamp|null> {
+    return (await this.blockDAL.getBlock(number)) || (await this.blockchainArchiveDAL.getBlockByNumber(number))
+  }
+
+  async existsAbsoluteBlockInForkWindow(number:number, hash:string): Promise<boolean> {
+    return !!(await this.getAbsoluteBlockByNumberAndHash(number, hash))
+  }
+
+  async getAbsoluteBlockInForkWindow(number:number, hash:string): Promise<DBBlock|null> {
     return this.getAbsoluteBlockByNumberAndHash(number, hash)
   }
 
-  getBlockByBlockstampOrNull(blockstamp:string) {
-    if (!blockstamp) throw "Blockstamp is required to find the block";
-    const sp = blockstamp.split('-');
-    const number = parseInt(sp[0]);
-    const hash = sp[1];
-    return this.getBlockByNumberAndHashOrNull(number, hash);
+  async getAbsoluteValidBlockInForkWindow(number:number, hash:string): Promise<DBBlock|null> {
+    const block = await this.getAbsoluteBlockByNumberAndHash(number, hash)
+    if (block && !block.fork) {
+      return block
+    }
+    return null
   }
 
-  getBlockByBlockstamp(blockstamp:string) {
-    if (!blockstamp) throw "Blockstamp is required to find the block";
-    const sp = blockstamp.split('-');
-    const number = parseInt(sp[0]);
-    const hash = sp[1];
-    return this.getBlockByNumberAndHash(number, hash);
-  }
-
-  async getBlockByNumberAndHash(number:number, hash:string) {
-    try {
-      const block = await this.getBlock(number);
-      if (!block || block.hash != hash)
-        throw "Not found";
-      else
-        return block;
-    } catch (err) {
-      throw 'Block ' + [number, hash].join('-') + ' not found';
+  async getAbsoluteBlockByNumberAndHash(number:number, hash:string): Promise<DBBlock|null> {
+    if (number > 0) {
+      return (await this.blockDAL.getAbsoluteBlock(number, hash)) || (await this.blockchainArchiveDAL.getBlock(number, hash))
+    } else {
+      // Block#0 is special
+      return (await this.blockDAL.getBlock(number)) || (await this.blockchainArchiveDAL.getBlockByNumber(number))
     }
   }
 
-  async getBlockByNumberAndHashOrNull(number:number, hash:string) {
-    try {
-      return await this.getBlockByNumberAndHash(number, hash)
-    } catch (e) {
-      return null;
-    }
+  async getAbsoluteBlockByBlockstamp(blockstamp: string): Promise<DBBlock|null> {
+    const sp = blockstamp.split('-')
+    return this.getAbsoluteBlockByNumberAndHash(parseInt(sp[0]), sp[1])
   }
 
   async existsNonChainableLink(from:string, vHEAD_1:DBHead, sigStock:number) {
     // Cert period rule
     const medianTime = vHEAD_1 ? vHEAD_1.medianTime : 0;
-    const linksFrom = await this.cindexDAL.reducablesFrom(from)
-    const unchainables = _.filter(linksFrom, (link:CindexEntry) => link.chainable_on > medianTime);
+    const linksFrom:FullCindexEntry[] = await this.cindexDAL.reducablesFrom(from)
+    const unchainables = Underscore.filter(linksFrom, (link:CindexEntry) => link.chainable_on > medianTime);
     if (unchainables.length > 0) return true;
     // Max stock rule
-    let activeLinks = _.filter(linksFrom, (link:CindexEntry) => !link.expired_on);
+    let activeLinks = Underscore.filter(linksFrom, (link:CindexEntry) => !link.expired_on);
     return activeLinks.length >= sigStock;
   }
 
 
   async getCurrentBlockOrNull() {
-    let current = null;
+    let current:DBBlock|null = null;
     try {
       current = await this.getBlockCurrent()
     } catch (e) {
@@ -240,17 +395,10 @@ export class FileDAL {
   }
 
   getPromoted(number:number) {
-    return this.getBlock(number)
+    return this.getFullBlockOf(number)
   }
 
   // Block
-  lastUDBlock() {
-    return this.blockDAL.lastBlockWithDividend()
-  }
-
-  getRootBlock() {
-    return this.getBlock(0)
-  }
 
   getPotentialRootBlocks() {
     return this.blockDAL.getPotentialRoots()
@@ -265,7 +413,7 @@ export class FileDAL {
   }
 
   getBlocksBetween (start:number, end:number) {
-    return Promise.resolve(this.blockDAL.getBlocks(Math.max(0, start), end))
+    return this.blockDAL.getBlocks(Math.max(0, start), end)
   }
 
   getForkBlocksFollowing(current:DBBlock) {
@@ -287,79 +435,273 @@ export class FileDAL {
     return this.cindexDAL.getValidLinksTo(to)
   }
 
-  getAvailableSourcesByPubkey(pubkey:string) {
-    return this.sindexDAL.getAvailableForPubkey(pubkey)
+  async getAvailableSourcesByPubkey(pubkey:string): Promise<HttpSource[]> {
+    const txAvailable = await this.sindexDAL.getAvailableForPubkey(pubkey)
+    const sources: UDSource[] = await this.dividendDAL.getUDSources(pubkey)
+    return sources.map(d => {
+      return {
+        type: 'D',
+        noffset: d.pos,
+        identifier: pubkey,
+        amount: d.amount,
+        base: d.base,
+        conditions: 'SIG(' + pubkey + ')'
+      }
+    }).concat(txAvailable.map(s => {
+      return {
+        type: 'T',
+        noffset: s.pos,
+        identifier: s.identifier,
+        amount: s.amount,
+        base: s.base,
+        conditions: s.conditions
+      }
+    }))
   }
 
-  async getIdentityByHashOrNull(hash:string) {
-    const pending = await this.idtyDAL.getByHash(hash);
-    if (!pending) {
-      return this.iindexDAL.getFromHash(hash);
+  async findByIdentifierPosAmountBase(identifier: string, pos: number, amount: number, base: number, isDividend: boolean): Promise<SimpleTxInput[]> {
+    if (isDividend) {
+      return this.dividendDAL.findUdSourceByIdentifierPosAmountBase(identifier, pos, amount, base)
+    } else {
+      return this.sindexDAL.findTxSourceByIdentifierPosAmountBase(identifier, pos, amount, base)
     }
-    return pending;
+  }
+
+  async getGlobalIdentityByHashForExistence(hash:string): Promise<boolean> {
+    const pending = await this.idtyDAL.getByHash(hash)
+    if (!pending) {
+      const idty = await this.iindexDAL.getFullFromHash(hash)
+      if (!idty) {
+        return false
+      }
+    }
+    return true
+  }
+
+  async getGlobalIdentityByHashForHashingAndSig(hash:string): Promise<{ pubkey:string, uid:string, buid:string, sig:string }|null> {
+    const pending = await this.idtyDAL.getByHash(hash)
+    if (!pending) {
+      const idty = await this.iindexDAL.getFullFromHash(hash)
+      if (!idty) {
+        return null
+      }
+      return {
+        pubkey: idty.pub,
+        uid: idty.uid,
+        buid: idty.created_on,
+        sig: idty.sig
+      }
+    }
+    return pending
+  }
+
+  async getGlobalIdentityByHashForLookup(hash:string): Promise<{ pubkey:string, uid:string, buid:string, sig:string, member:boolean, wasMember:boolean }|null> {
+    const pending = await this.idtyDAL.getByHash(hash)
+    if (!pending) {
+      const idty = await this.iindexDAL.getFullFromHash(hash)
+      if (!idty) {
+        return null
+      }
+      return {
+        pubkey: idty.pub,
+        uid: idty.uid,
+        buid: idty.created_on,
+        sig: idty.sig,
+        member: idty.member,
+        wasMember: idty.wasMember
+      }
+    }
+    return pending
+  }
+
+  async getGlobalIdentityByHashForJoining(hash:string): Promise<{ pubkey:string, uid:string, buid:string, sig:string, member:boolean, wasMember:boolean, revoked:boolean }|null> {
+    const pending = await this.idtyDAL.getByHash(hash)
+    if (!pending) {
+      const idty = await this.iindexDAL.getFullFromHash(hash)
+      if (!idty) {
+        return null
+      }
+      const membership = await this.mindexDAL.getReducedMS(idty.pub) as FullMindexEntry
+      return {
+        pubkey: idty.pub,
+        uid: idty.uid,
+        buid: idty.created_on,
+        sig: idty.sig,
+        member: idty.member,
+        wasMember: idty.wasMember,
+        revoked: !!(membership.revoked_on)
+      }
+    }
+    return pending
+  }
+
+  async getGlobalIdentityByHashForIsMember(hash:string): Promise<{ pub:string, member:boolean }|null> {
+    const pending = await this.idtyDAL.getByHash(hash)
+    if (!pending) {
+      const idty = await this.iindexDAL.getFullFromHash(hash)
+      if (!idty) {
+        return null
+      }
+      return {
+        pub: idty.pub,
+        member: idty.member
+      }
+    }
+    return {
+      pub: pending.pubkey,
+      member: pending.member
+    }
+  }
+
+  async getGlobalIdentityByHashForRevocation(hash:string): Promise<{ pub:string, uid:string, created_on:string, sig:string, member:boolean, wasMember:boolean, revoked:boolean, revocation_sig:string|null, expires_on:number }|null> {
+    const pending = await this.idtyDAL.getByHash(hash)
+    if (!pending) {
+      const idty = await this.iindexDAL.getFullFromHash(hash)
+      if (!idty) {
+        return null
+      }
+      const membership = await this.mindexDAL.getReducedMS(idty.pub) as FullMindexEntry
+      return {
+        pub: idty.pub,
+        uid: idty.uid,
+        sig: idty.sig,
+        member: idty.member,
+        wasMember: idty.wasMember,
+        expires_on: membership.expires_on,
+        created_on: idty.created_on,
+        revoked: !!(membership.revoked_on),
+        revocation_sig: membership.revocation
+      }
+    }
+    return {
+      pub: pending.pubkey,
+      uid: pending.uid,
+      sig: pending.sig,
+      expires_on: pending.expires_on,
+      created_on: pending.buid,
+      member: pending.member,
+      wasMember: pending.wasMember,
+      revoked: pending.revoked,
+      revocation_sig: pending.revocation_sig
+    }
   }
 
   getMembers() {
     return this.iindexDAL.getMembers()
   }
 
-  // TODO: this should definitely be reduced by removing fillInMembershipsOfIdentity
-  async getWritten(pubkey:string) {
-    try {
-      return await this.fillInMembershipsOfIdentity(this.iindexDAL.getFromPubkey(pubkey));
-    } catch (err) {
-      logger.error(err);
-      return null;
-    }
+  async getWrittenIdtyByPubkeyForHash(pubkey:string): Promise<{ hash:string }> {
+    return this.getWrittenForSureIdtyByPubkey(pubkey)
   }
 
-  async getWrittenIdtyByPubkey(pubkey:string) {
+  async getWrittenIdtyByPubkeyForHashing(pubkey:string): Promise<{ uid:string, created_on:string, pub:string }> {
+    return this.getWrittenForSureIdtyByPubkey(pubkey)
+  }
+
+  async getWrittenIdtyByPubkeyForWotbID(pubkey:string): Promise<{ wotb_id:number }> {
+    return this.getWrittenForSureIdtyByPubkey(pubkey)
+  }
+
+  async getWrittenIdtyByPubkeyForUidAndPubkey(pubkey:string): Promise<{ pub:string, uid:string }> {
+    return this.getWrittenForSureIdtyByPubkey(pubkey)
+  }
+
+  async getWrittenIdtyByPubkeyForIsMember(pubkey:string): Promise<{ member:boolean }|null> {
+    return this.iindexDAL.getFromPubkey(pubkey)
+  }
+
+  async getWrittenIdtyByPubkeyForUidAndIsMemberAndWasMember(pubkey:string): Promise<{ uid:string, member:boolean, wasMember:boolean }|null> {
+    return this.iindexDAL.getFromPubkey(pubkey)
+  }
+
+  async getWrittenIdtyByPubkeyOrUidForIsMemberAndPubkey(search:string): Promise<{ pub:string, member:boolean }|null> {
+    return this.iindexDAL.getFromPubkeyOrUid(search)
+  }
+
+  async getWrittenIdtyByPubkeyOrUIdForHashingAndIsMember(search:string): Promise<{ uid:string, created_on:string, pub:string, member:boolean }|null> {
+    return await this.iindexDAL.getFromPubkeyOrUid(search)
+  }
+
+  async getWrittenIdtyByPubkeyForRevocationCheck(pubkey:string): Promise<{ pub:string, uid:string, created_on:string, sig:string, revoked_on:number|null }|null> {
     const idty = await this.iindexDAL.getFromPubkey(pubkey)
     if (!idty) {
-      return null;
+      return null
     }
-    const membership = await this.mindexDAL.getReducedMS(pubkey)
-    idty.revoked_on = membership.revoked_on
-    return idty;
+    const membership = await this.mindexDAL.getReducedMS(pubkey) as FullMindexEntry
+    return {
+      pub: idty.pub,
+      uid: idty.uid,
+      sig: idty.sig,
+      created_on: idty.created_on,
+      revoked_on: membership.revoked_on
+    }
   }
 
-  async getWrittenIdtyByUID(uid:string) {
-    const idty = await this.iindexDAL.getFromUID(uid)
+  async getWrittenIdtyByPubkeyForCertificationCheck(pubkey:string): Promise<{ pub:string, uid:string, created_on:string, sig:string }|null> {
+    const idty = await this.iindexDAL.getFromPubkey(pubkey)
     if (!idty) {
-      return null;
+      return null
     }
-    const membership = await this.mindexDAL.getReducedMS(idty.pub)
-    idty.revoked_on = membership.revoked_on
-    return idty;
+    return {
+      pub: idty.pub,
+      uid: idty.uid,
+      sig: idty.sig,
+      created_on: idty.created_on,
+    }
   }
 
-  async fillInMembershipsOfIdentity(queryPromise:Promise<DBIdentity>) {
-    try {
-      const idty:any = await Promise.resolve(queryPromise)
-      if (idty) {
-        const mss = await this.msDAL.getMembershipsOfIssuer(idty.pubkey);
-        const mssFromMindex = await this.mindexDAL.reducable(idty.pubkey);
-        idty.memberships = mss.concat(mssFromMindex.map((ms:MindexEntry) => {
-          const sp = ms.created_on.split('-');
-          return {
-            blockstamp: ms.created_on,
-            membership: ms.leaving ? 'OUT' : 'IN',
-            number: sp[0],
-            fpr: sp[1],
-            written_number: parseInt(ms.written_on)
-          }
-        }));
-        return idty;
-      }
-    } catch (err) {
-      logger.error(err);
+  async getWrittenIdtyByPubkeyForUidAndMemberAndCreatedOn(pubkey:string): Promise<{ uid:string, member:boolean, created_on:string }|null> {
+    const idty = await this.iindexDAL.getFromPubkey(pubkey)
+    if (!idty) {
+      return null
     }
-    return null;
+    return {
+      uid: idty.uid,
+      member: idty.member,
+      created_on: idty.created_on,
+    }
+  }
+
+  private async getWrittenForSureIdtyByPubkey(pubkey:string) {
+    const idty = await this.iindexDAL.getFromPubkey(pubkey)
+    if (!idty) {
+      throw Error(DataErrors[DataErrors.MEMBER_NOT_FOUND])
+    }
+    return idty
+  }
+
+  private async getWrittenForSureIdtyByUid(pubkey:string) {
+    const idty = (await this.iindexDAL.getFullFromUID(pubkey))
+    if (!idty) {
+      throw Error(DataErrors[DataErrors.MEMBER_NOT_FOUND])
+    }
+    return idty
+  }
+
+  // Duniter-UI dependency
+  async getWrittenIdtyByPubkey(pub:string): Promise<FullIindexEntry | null> {
+    return await this.iindexDAL.getFromPubkey(pub)
+  }
+
+  async getWrittenIdtyByPubkeyForExistence(uid:string) {
+    return !!(await this.iindexDAL.getFromPubkey(uid))
+  }
+
+  async getWrittenIdtyByUIDForExistence(uid:string) {
+    return !!(await this.iindexDAL.getFromUID(uid))
+  }
+
+  async getWrittenIdtyByUidForHashing(uid:string): Promise<{ uid:string, created_on:string, pub:string }> {
+    return this.getWrittenForSureIdtyByUid(uid)
+  }
+
+  async getWrittenIdtyByUIDForWotbId(uid:string): Promise<{ wotb_id:number }> {
+    return this.getWrittenForSureIdtyByUid(uid)
   }
 
   async findPeersWhoseHashIsIn(hashes:string[]) {
     const peers = await this.peerDAL.listAll();
-    return _.chain(peers).filter((p:DBPeer) => hashes.indexOf(p.hash) !== -1).value();
+    return Underscore.chain(peers).filter((p:DBPeer) => hashes.indexOf(p.hash) !== -1).value()
   }
 
   getTxByHash(hash:string) {
@@ -376,15 +718,15 @@ export class FileDAL {
 
   async getNonWritten(pubkey:string) {
     const pending = await this.idtyDAL.getPendingIdentities();
-    return _.chain(pending).where({pubkey: pubkey}).value();
+    return Underscore.chain(pending).where({pubkey: pubkey}).value()
   }
 
   async getRevocatingMembers() {
     const revoking = await this.idtyDAL.getToRevoke();
     const toRevoke = [];
     for (const pending of revoking) {
-      const idty = await this.getWrittenIdtyByPubkey(pending.pubkey);
-      if (!idty.revoked_on) {
+      const idty = await this.getWrittenIdtyByPubkeyForRevocationCheck(pending.pubkey)
+      if (idty && !idty.revoked_on) {
         toRevoke.push(pending);
       }
     }
@@ -399,21 +741,21 @@ export class FileDAL {
     return this.mindexDAL.getRevokedPubkeys()
   }
 
-  async searchJustIdentities(search:string) {
+  async searchJustIdentities(search:string): Promise<DBIdentity[]> {
     const pendings = await this.idtyDAL.searchThoseMatching(search);
     const writtens = await this.iindexDAL.searchThoseMatching(search);
-    const nonPendings = _.filter(writtens, (w:IindexEntry) => {
-      return _.where(pendings, { pubkey: w.pub }).length == 0;
+    const nonPendings = Underscore.filter(writtens, (w:IindexEntry) => {
+      return Underscore.where(pendings, { pubkey: w.pub }).length == 0;
     });
     const found = pendings.concat(nonPendings.map((i:any) => {
       // Use the correct field
       i.pubkey = i.pub
       return i
     }));
-    return await Promise.all(found.map(async (f:any) => {
+    return await Promise.all<DBIdentity>(found.map(async (f:any) => {
       const ms = await this.mindexDAL.getReducedMS(f.pub);
       if (ms) {
-        f.revoked_on = ms.revoked_on ? parseInt(ms.revoked_on) : null;
+        f.revoked_on = ms.revoked_on ? ms.revoked_on : null;
         f.revoked = !!f.revoked_on;
         f.revocation_sig = ms.revocation || null;
       }
@@ -426,19 +768,9 @@ export class FileDAL {
     const links = await this.cindexDAL.getValidLinksTo(pub);
     let matching = certs;
     await Promise.all(links.map(async (entry:any) => {
-      entry.from = entry.issuer;
-      const wbt = entry.written_on.split('-');
-      const blockNumber = parseInt(entry.created_on); // created_on field of `c_index` does not have the full blockstamp
-      const basedBlock = await this.getBlock(blockNumber);
-      entry.block = blockNumber;
-      entry.block_number = blockNumber;
-      entry.block_hash = basedBlock ? basedBlock.hash : null;
-      entry.linked = true;
-      entry.written_block = parseInt(wbt[0]);
-      entry.written_hash = wbt[1];
-      matching.push(entry);
+      matching.push(await this.cindexEntry2DBCert(entry))
     }))
-    matching  = _.sortBy(matching, (c:DBCert) => -c.block);
+    matching  = Underscore.sortBy(matching, (c:DBCert) => -c.block);
     matching.reverse();
     return matching;
   }
@@ -447,24 +779,34 @@ export class FileDAL {
     const certs = await this.certDAL.getFromPubkeyCerts(pubkey);
     const links = await this.cindexDAL.getValidLinksFrom(pubkey);
     let matching = certs;
-    await Promise.all(links.map(async (entry:any) => {
-      const idty = await this.getWrittenIdtyByPubkey(entry.receiver);
-      entry.from = entry.issuer;
-      entry.to = entry.receiver;
-      const cbt = entry.created_on.split('-');
-      const wbt = entry.written_on.split('-');
-      entry.block = parseInt(cbt[0]);
-      entry.block_number = parseInt(cbt[0]);
-      entry.block_hash = cbt[1];
-      entry.target = idty.hash;
-      entry.linked = true;
-      entry.written_block = parseInt(wbt[0]);
-      entry.written_hash = wbt[1];
-      matching.push(entry);
+    await Promise.all(links.map(async (entry:CindexEntry) => {
+      matching.push(await this.cindexEntry2DBCert(entry))
     }))
-    matching  = _.sortBy(matching, (c:DBCert) => -c.block);
+    matching  = Underscore.sortBy(matching, (c:DBCert) => -c.block);
     matching.reverse();
     return matching;
+  }
+
+  async cindexEntry2DBCert(entry:CindexEntry): Promise<DBCert> {
+    const idty = await this.getWrittenIdtyByPubkeyForHash(entry.receiver)
+    const wbt = entry.written_on.split('-')
+    const block = (await this.blockDAL.getBlock(entry.created_on)) as DBBlock
+    return {
+      issuers: [entry.issuer],
+      linked: true,
+      written: true,
+      written_block: parseInt(wbt[0]),
+      written_hash: wbt[1],
+      sig: entry.sig,
+      block_number: block.number,
+      block_hash: block.hash,
+      target: idty.hash,
+      to: entry.receiver,
+      from: entry.issuer,
+      block: block.number,
+      expired: !!entry.expired_on,
+      expires_on: entry.expires_on,
+    }
   }
 
   async isSentry(pubkey:string, conf:ConfDTO) {
@@ -480,12 +822,12 @@ export class FileDAL {
 
   async certsFindNew() {
     const certs = await this.certDAL.getNotLinked();
-    return _.chain(certs).where({linked: false}).sortBy((c:DBCert) => -c.block).value();
+    return Underscore.chain(certs).where({linked: false}).sortBy((c:DBCert) => -c.block).value()
   }
 
   async certsNotLinkedToTarget(hash:string) {
     const certs = await this.certDAL.getNotLinkedToTarget(hash);
-    return _.chain(certs).sortBy((c:any) => -c.block).value();
+    return Underscore.chain(certs).sortBy((c:any) => -c.block).value();
   }
 
   async getMostRecentMembershipNumberForIssuer(issuer:string) {
@@ -500,36 +842,34 @@ export class FileDAL {
 
   async lastJoinOfIdentity(target:string) {
     let pending = await this.msDAL.getPendingINOfTarget(target);
-    return _(pending).sortBy((ms:any) => -ms.number)[0];
+    return Underscore.sortBy(pending, (ms:any) => -ms.number)[0];
   }
 
-  async findNewcomers(blockMedianTime = 0) {
+  async findNewcomers(blockMedianTime = 0): Promise<DBMembership[]> {
     const pending = await this.msDAL.getPendingIN()
-    const mss = await Promise.all(pending.map(async (p:any) => {
+    const mss: DBMembership[] = await Promise.all<DBMembership>(pending.map(async (p:any) => {
       const reduced = await this.mindexDAL.getReducedMS(p.issuer)
       if (!reduced || !reduced.chainable_on || blockMedianTime >= reduced.chainable_on || blockMedianTime < constants.TIME_TO_TURN_ON_BRG_107) {
         return p
       }
       return null
     }))
-    return _.chain(mss)
-      .filter((ms:any) => ms)
-      .sortBy((ms:any) => -ms.sigDate)
+    return Underscore.chain(Underscore.filter(mss, ms => !!ms) as DBMembership[])
+      .sortBy((ms:DBMembership) => -ms.blockNumber)
       .value()
   }
 
-  async findLeavers(blockMedianTime = 0) {
+  async findLeavers(blockMedianTime = 0): Promise<DBMembership[]> {
     const pending = await this.msDAL.getPendingOUT();
-    const mss = await Promise.all(pending.map(async (p:any) => {
+    const mss = await Promise.all<DBMembership|null>(pending.map(async p => {
       const reduced = await this.mindexDAL.getReducedMS(p.issuer)
       if (!reduced || !reduced.chainable_on || blockMedianTime >= reduced.chainable_on || blockMedianTime < constants.TIME_TO_TURN_ON_BRG_107) {
         return p
       }
       return null
     }))
-    return _.chain(mss)
-      .filter((ms:any) => ms)
-      .sortBy((ms:any) => -ms.sigDate)
+    return Underscore.chain(Underscore.filter(mss, ms => !!ms) as DBMembership[])
+      .sortBy(ms => -ms.blockNumber)
       .value();
   }
 
@@ -537,8 +877,12 @@ export class FileDAL {
     return  this.cindexDAL.existsNonReplayableLink(from, to)
   }
 
-  getSource(identifier:string, pos:number) {
-    return this.sindexDAL.getSource(identifier, pos)
+  async getSource(identifier:string, pos:number, isDividend: boolean): Promise<SimpleTxInput | null> {
+    if (isDividend) {
+      return this.dividendDAL.getUDSource(identifier, pos)
+    } else {
+      return this.sindexDAL.getTxSource(identifier, pos)
+    }
   }
 
   async isMember(pubkey:string):Promise<boolean> {
@@ -586,15 +930,17 @@ export class FileDAL {
   }
 
   async setRevoked(pubkey:string) {
-    const idty = await this.getWrittenIdtyByPubkey(pubkey);
-    idty.revoked = true;
-    return await this.idtyDAL.saveIdentity(idty);
+    return await this.idtyDAL.setRevoked(pubkey)
   }
 
-  setRevocating = (existing:DBIdentity, revocation_sig:string) => {
-    existing.revocation_sig = revocation_sig;
-    existing.revoked = false;
-    return this.idtyDAL.saveIdentity(existing);
+  setRevocating = (idty:BasicRevocableIdentity, revocation_sig:string) => {
+    const dbIdentity = IdentityDTO.fromBasicIdentity(idty)
+    dbIdentity.member = idty.member
+    dbIdentity.wasMember = idty.wasMember
+    dbIdentity.expires_on = idty.expires_on
+    dbIdentity.revocation_sig = revocation_sig
+    dbIdentity.revoked = false
+    return this.idtyDAL.saveIdentity(dbIdentity)
   }
 
   async getPeerOrNull(pubkey:string) {
@@ -621,17 +967,17 @@ export class FileDAL {
 
   async listAllPeersWithStatusNewUP() {
     const peers = await this.peerDAL.listAll();
-    return _.chain(peers)
+    return Underscore.chain(peers)
         .filter((p:DBPeer) => ['UP']
             .indexOf(p.status) !== -1).value();
   }
 
   async listAllPeersWithStatusNewUPWithtout(pub:string) {
     const peers = await this.peerDAL.listAll();
-    return _.chain(peers).filter((p:DBPeer) => p.status == 'UP').filter((p:DBPeer) => p.pubkey !== pub).value();
+    return Underscore.chain(peers).filter((p:DBPeer) => p.status == 'UP').filter((p:DBPeer) => p.pubkey !== pub).value();
   }
 
-  async findPeers(pubkey:string) {
+  async findPeers(pubkey:string): Promise<DBPeer[]> {
     try {
       const peer = await this.getPeer(pubkey);
       return [peer];
@@ -640,9 +986,9 @@ export class FileDAL {
     }
   }
 
-  async getRandomlyUPsWithout(pubkeys:string[]) {
+  async getRandomlyUPsWithout(pubkeys:string[]): Promise<DBPeer[]> {
     const peers = await this.listAllPeersWithStatusNewUP();
-    return peers.filter((peer:DBPeer) => pubkeys.indexOf(peer.pubkey) == -1);
+    return peers.filter(peer => pubkeys.indexOf(peer.pubkey) == -1)
   }
 
   async setPeerUP(pubkey:string) {
@@ -677,27 +1023,29 @@ export class FileDAL {
     }
   }
 
-  async saveBlock(block:BlockDTO) {
-    const dbb = DBBlock.fromBlockDTO(block)
+  async saveBlock(dbb:DBBlock) {
     dbb.wrong = false;
     await Promise.all([
       this.saveBlockInFile(dbb),
-      this.saveTxsInFiles(block.transactions, block.number, block.medianTime)
+      this.saveTxsInFiles(dbb.transactions, dbb.number, dbb.medianTime)
     ])
   }
 
-  async generateIndexes(block:DBBlock, conf:ConfDTO, index:IndexEntry[], HEAD:DBHead) {
+  async generateIndexes(block:BlockDTO, conf:ConfDTO, index:IndexEntry[], aHEAD:DBHead|null) {
     // We need to recompute the indexes for block#0
-    if (!index || !HEAD || HEAD.number == 0) {
+    let HEAD:DBHead
+    if (!index || !aHEAD || aHEAD.number == 0) {
       index = indexer.localIndex(block, conf)
       HEAD = await indexer.completeGlobalScope(block, conf, index, this)
+    } else {
+      HEAD = aHEAD
     }
     let mindex = indexer.mindex(index);
     let iindex = indexer.iindex(index);
     let sindex = indexer.sindex(index);
     let cindex = indexer.cindex(index);
-    sindex = sindex.concat(await indexer.ruleIndexGenDividend(HEAD, iindex, this));
-    sindex = sindex.concat(await indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex, this));
+    const dividends = await indexer.ruleIndexGenDividend(HEAD, iindex, this) // Requires that newcomers are already in DividendDAO
+    sindex = sindex.concat(await indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex, dividends, this));
     cindex = cindex.concat(await indexer.ruleIndexGenCertificationExpiry(HEAD, this));
     mindex = mindex.concat(await indexer.ruleIndexGenMembershipExpiry(HEAD, this));
     iindex = iindex.concat(await indexer.ruleIndexGenExclusionByMembership(HEAD, mindex, this));
@@ -705,32 +1053,36 @@ export class FileDAL {
     mindex = mindex.concat(await indexer.ruleIndexGenImplicitRevocation(HEAD, this));
     await indexer.ruleIndexCorrectMembershipExpiryDate(HEAD, mindex, this);
     await indexer.ruleIndexCorrectCertificationExpiryDate(HEAD, cindex, this);
-    return { HEAD, mindex, iindex, sindex, cindex };
+    return { HEAD, mindex, iindex, sindex, cindex, dividends };
   }
 
   async updateWotbLinks(cindex:CindexEntry[]) {
     for (const entry of cindex) {
-      const from = await this.getWrittenIdtyByPubkey(entry.issuer);
-      const to = await this.getWrittenIdtyByPubkey(entry.receiver);
+      const from = await this.getWrittenIdtyByPubkeyForWotbID(entry.issuer);
+      const to = await this.getWrittenIdtyByPubkeyForWotbID(entry.receiver);
       if (entry.op == CommonConstants.IDX_CREATE) {
+        // NewLogger().trace('addLink %s -> %s', from.wotb_id, to.wotb_id)
         this.wotb.addLink(from.wotb_id, to.wotb_id);
       } else {
         // Update = removal
+        NewLogger().trace('removeLink %s -> %s', from.wotb_id, to.wotb_id)
         this.wotb.removeLink(from.wotb_id, to.wotb_id);
       }
     }
   }
 
   async trimIndexes(maxNumber:number) {
-    await this.bindexDAL.trimBlocks(maxNumber);
-    await this.iindexDAL.trimRecords(maxNumber);
-    await this.mindexDAL.trimRecords(maxNumber);
-    await this.cindexDAL.trimExpiredCerts(maxNumber);
-    await this.sindexDAL.trimConsumedSource(maxNumber);
-    return true;
+    if (!cliprogram.notrim) {
+      await this.bindexDAL.trimBlocks(maxNumber)
+      await this.iindexDAL.trimRecords(maxNumber)
+      await this.mindexDAL.trimRecords(maxNumber)
+      await this.cindexDAL.trimExpiredCerts(maxNumber)
+    }
+    await this.sindexDAL.trimConsumedSource(maxNumber)
+    await this.dividendDAL.trimConsumedUDs(maxNumber)
   }
 
-  async trimSandboxes(block:DBBlock) {
+  async trimSandboxes(block:{ medianTime: number }) {
     await this.certDAL.trimExpiredCerts(block.medianTime);
     await this.msDAL.trimExpiredMemberships(block.medianTime);
     await this.idtyDAL.trimExpiredIdentities(block.medianTime);
@@ -753,7 +1105,8 @@ export class FileDAL {
   async saveTxsInFiles(txs:TransactionDTO[], block_number:number, medianTime:number) {
     return Promise.all(txs.map(async (tx) => {
       const sp = tx.blockstamp.split('-');
-      tx.blockstampTime = (await this.getBlockByNumberAndHash(parseInt(sp[0]), sp[1])).medianTime;
+      const basedBlock = (await this.getAbsoluteBlockByNumberAndHash(parseInt(sp[0]), sp[1])) as DBBlock
+      tx.blockstampTime = basedBlock.medianTime;
       const txEntity = TransactionDTO.fromJSONObject(tx)
       txEntity.computeAllHashes();
       return this.txsDAL.addLinked(TransactionDTO.fromJSONObject(txEntity), block_number, medianTime);
@@ -766,14 +1119,6 @@ export class FileDAL {
     const merkle = new MerkleDTO();
     merkle.initialize(leaves);
     return merkle;
-  }
-
-  removeAllSourcesOfBlock(blockstamp:string) {
-    return this.sindexDAL.removeBlock(blockstamp)
-  }
-
-  updateTransactions(txs:DBTx[]) {
-    return this.txsDAL.insertBatchOfTxs(txs)
   }
 
   savePendingIdentity(idty:DBIdentity) {
@@ -827,13 +1172,19 @@ export class FileDAL {
     return history;
   }
 
-  async getUDHistory(pubkey:string) {
-    const sources = await this.sindexDAL.getUDSources(pubkey)
+  async getUDHistory(pubkey:string): Promise<{ history: HttpUD[] }> {
+    const sources: UDSource[] = await this.dividendDAL.getUDSources(pubkey)
     return {
-      history: sources.map((src:SindexEntry) => _.extend({
-        block_number: src.pos,
-        time: src.written_time
-      }, src))
+      history: (await Promise.all<HttpUD>(sources.map(async (src) => {
+        const block = await this.getBlockWeHaveItForSure(src.pos)
+        return {
+          block_number: src.pos,
+          time: block.medianTime,
+          consumed: src.consumed,
+          amount: src.amount,
+          base: src.base
+        }
+      })))
     }
   }
 
@@ -842,11 +1193,11 @@ export class FileDAL {
   }
 
   async getUniqueIssuersBetween(start:number, end:number) {
-    const current = await this.blockDAL.getCurrent();
+    const current = (await this.blockDAL.getCurrent()) as DBBlock
     const firstBlock = Math.max(0, start);
     const lastBlock = Math.max(0, Math.min(current.number, end));
     const blocks = await this.blockDAL.getBlocks(firstBlock, lastBlock);
-    return _.chain(blocks).pluck('issuer').uniq().value();
+    return Underscore.uniq(blocks.map(b => b.issuer))
   }
 
   /**
@@ -884,11 +1235,11 @@ export class FileDAL {
   async loadConf(overrideConf:ConfDTO, defaultConf = false) {
     let conf = ConfDTO.complete(overrideConf || {});
     if (!defaultConf) {
-      const savedConf = await this.confDAL.loadConf();
-      const savedProxyConf = _(savedConf.proxyConf).extend({});
-      conf = _(savedConf).extend(overrideConf || {});
+      const savedConf = await this.confDAL.loadConf()
+      const savedProxyConf = Underscore.extend(savedConf.proxyConf, {})
+      conf = Underscore.extend(savedConf, overrideConf || {})
       if (overrideConf.proxiesConf !== undefined) {} else {
-        conf.proxyConf = _(savedProxyConf).extend({});
+        conf.proxyConf = Underscore.extend(savedProxyConf, {})
       }
     }
     if (this.loadConfHook) {
@@ -938,11 +1289,11 @@ export class FileDAL {
   }
 
   async cleanCaches() {
-    await _.values(this.newDals).map((dal:any) => dal.cleanCache && dal.cleanCache())
+    await Underscore.values(this.newDals).map((dal:Initiable) => dal.cleanCache && dal.cleanCache())
   }
 
   async close() {
-    await _.values(this.newDals).map((dal:any) => dal.cleanCache && dal.cleanCache())
+    await Underscore.values(this.newDals).map((dal:Initiable) => dal.cleanCache && dal.cleanCache())
     return this.sqliteDriver.closeConnection();
   }
 
@@ -973,5 +1324,42 @@ export class FileDAL {
         reject(e);
       }
     })
+  }
+
+  async findReceiversAbove(minsig: number) {
+    const receiversAbove:string[] = await this.cindexDAL.getReceiversAbove(minsig)
+    const members:IdentityForRequirements[] = []
+    for (const r of receiversAbove) {
+      const i = await this.iindexDAL.getFullFromPubkey(r)
+      members.push({
+        hash: i.hash || "",
+        member: i.member || false,
+        wasMember: i.wasMember || false,
+        pubkey: i.pub,
+        uid: i.uid || "",
+        buid: i.created_on || "",
+        sig: i.sig || "",
+        revocation_sig: "",
+        revoked: false,
+        revoked_on: 0
+      })
+    }
+    return members
+  }
+
+  @MonitorFlushedIndex()
+  async flushIndexes(indexes: IndexBatch) {
+    await this.mindexDAL.insertBatch(indexes.mindex)
+    await this.iindexDAL.insertBatch(indexes.iindex)
+    await this.sindexDAL.insertBatch(indexes.sindex.filter(s => s.srcType === 'T')) // We don't store dividends in SINDEX
+    await this.cindexDAL.insertBatch(indexes.cindex)
+    await this.dividendDAL.consume(indexes.sindex.filter(s => s.srcType === 'D'))
+  }
+
+  async updateDividend(blockNumber: number, dividend: number|null, unitbase: number, local_iindex: IindexEntry[]): Promise<SimpleUdEntryForWallet[]> {
+    if (dividend) {
+      return this.dividendDAL.produceDividend(blockNumber, dividend, unitbase, local_iindex)
+    }
+    return []
   }
 }

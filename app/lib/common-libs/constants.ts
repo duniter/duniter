@@ -299,7 +299,16 @@ export const CommonConstants = {
     SPECIAL_BLOCK
   },
 
-  BLOCK_MAX_TX_CHAINING_DEPTH: 5
+  BLOCK_MAX_TX_CHAINING_DEPTH: 5,
+
+  CONST_BLOCKS_CHUNK: 250,
+  CHUNK_PREFIX: 'chunk_',
+  BLOCKS_IN_MEMORY_MAX: 288 * 60, // 60 days of blocks
+
+  MAX_AGE_OF_PEER_IN_BLOCKS: 200, // blocks
+  INITIAL_DOWNLOAD_SLOTS: 1, // 1 peer
+
+  BLOCKS_COLLECT_THRESHOLD: 30, // Number of blocks to wait before trimming the loki data
 }
 
 function exact (regexpContent:string) {

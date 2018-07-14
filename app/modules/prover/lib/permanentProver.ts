@@ -19,14 +19,7 @@ import {dos2unix} from "../../../lib/common-libs/dos2unix"
 import {parsers} from "../../../lib/common-libs/parsers/index"
 
 import {Server} from "../../../../server"
-
-const querablep = require('querablep');
-
-export interface Querable<T> extends Promise<T> {
-  isFulfilled(): boolean
-  isResolved(): boolean
-  isRejected(): boolean
-}
+import {Querable, querablep} from "../../../lib/common-libs/querable"
 
 export class PermanentProver {
 
@@ -36,7 +29,7 @@ export class PermanentProver {
   generator:BlockGeneratorWhichProves
   loops:number
 
-  private permanencePromise:Querable<any>|null = null
+  private permanencePromise:Querable<void>|null = null
 
   private blockchainChangedResolver:any = null
   private promiseOfWaitingBetween2BlocksOfOurs:any = null
@@ -140,7 +133,7 @@ export class PermanentProver {
               // The pushFIFO is here to get the difficulty level while excluding any new block to be resolved.
               // Without it, a new block could be added meanwhile and would make the difficulty wrongly computed.
               await this.server.BlockchainService.pushFIFO('generatingNextBlock', async () => {
-                const current = await this.server.dal.getCurrentBlockOrNull();
+                const current = (await this.server.dal.getCurrentBlockOrNull()) as DBBlock
                 const selfPubkey = this.server.keyPair.publicKey;
                 if (!cancelAlreadyTriggered) {
                   trial2 = await this.server.getBcContext().getIssuerPersonalizedDifficulty(selfPubkey)
@@ -209,7 +202,7 @@ export class PermanentProver {
     permanenceResolve()
   }
 
-  async blockchainChanged(gottenBlock:any) {
+  async blockchainChanged(gottenBlock?:any) {
     if (this.server && (!gottenBlock || !this.lastComputedBlock || gottenBlock.hash !== this.lastComputedBlock.hash)) {
       // Cancel any processing proof
       await this.prover.cancel()

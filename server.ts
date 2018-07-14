@@ -17,9 +17,7 @@ import {PeeringService} from "./app/service/PeeringService"
 import {BlockchainService} from "./app/service/BlockchainService"
 import {TransactionService} from "./app/service/TransactionsService"
 import {ConfDTO} from "./app/lib/dto/ConfDTO"
-import {FileDAL} from "./app/lib/dal/fileDAL"
-import {DuniterBlockchain} from "./app/lib/blockchain/DuniterBlockchain"
-import {SQLBlockchain} from "./app/lib/blockchain/SqlBlockchain"
+import {FileDAL, FileDALParams} from "./app/lib/dal/fileDAL"
 import * as stream from "stream"
 import {KeyGen, randomKey} from "./app/lib/common-libs/crypto/keyring"
 import {parsers} from "./app/lib/common-libs/parsers/index"
@@ -37,7 +35,11 @@ import {PeerDTO} from "./app/lib/dto/PeerDTO"
 import {OtherConstants} from "./app/lib/other_constants"
 import {WS2PCluster} from "./app/modules/ws2p/lib/WS2PCluster"
 import {DBBlock} from "./app/lib/db/DBBlock"
-import { ProxiesConf } from './app/lib/proxy';
+import {ProxiesConf} from './app/lib/proxy';
+import {Directory, FileSystem} from "./app/lib/system/directory"
+import {DataErrors} from "./app/lib/common-libs/errors"
+import {DBPeer} from "./app/lib/db/DBPeer"
+import {Underscore} from "./app/lib/common-libs/underscore"
 
 export interface HookableServer {
   generatorGetJoinData: (...args:any[]) => Promise<any>
@@ -56,12 +58,11 @@ const es          = require('event-stream');
 const daemonize   = require("daemonize2")
 const constants   = require('./app/lib/constants');
 const jsonpckg    = require('./package.json');
-const directory   = require('./app/lib/system/directory');
 const logger      = require('./app/lib/logger').NewLogger('server');
 
 export class Server extends stream.Duplex implements HookableServer {
 
-  private paramsP:Promise<any>|null
+  private paramsP:Promise<FileDALParams>
   private endpointsDefinitions:(()=>Promise<string>)[] = []
   private wrongEndpointsFilters:((endpoints:string[])=>Promise<string[]>)[] = []
   startService:()=>Promise<void>
@@ -94,7 +95,7 @@ export class Server extends stream.Duplex implements HookableServer {
     this.version = jsonpckg.version;
     this.logger = logger;
 
-    this.paramsP = directory.getHomeParams(memoryOnly, home)
+    this.paramsP = Directory.getHomeParams(memoryOnly, home)
 
     this.documentFIFO = new GlobalFifoPromise()
 
@@ -158,9 +159,18 @@ export class Server extends stream.Duplex implements HookableServer {
     await this.dal.close()
   }
 
-  async loadConf(useDefaultConf:any = false) {
+  async reloadConf() {
+    await this.loadConf(false, true)
+  }
+
+  async loadConf(useDefaultConf:any = false, reuseExisting = false) {
     logger.debug('Loading conf...');
-    this.conf = await this.dal.loadConf(this.overrideConf, useDefaultConf)
+    const loaded = await this.dal.loadConf(this.overrideConf, useDefaultConf)
+    if (!reuseExisting || !this.conf) {
+      this.conf = loaded
+    } else {
+      Underscore.extend(this.conf, loaded) // Overwrite the current conf
+    }
     // Default values
     this.conf.proxiesConf      = this.conf.proxiesConf === undefined ?       new ProxiesConf()                            : this.conf.proxiesConf
     this.conf.remoteipv6       = this.conf.remoteipv6 === undefined ?        this.conf.ipv6                               : this.conf.remoteipv6
@@ -196,8 +206,6 @@ export class Server extends stream.Duplex implements HookableServer {
     // Extract key pair
     this.keyPair = KeyGen(this.conf.pair.pub, this.conf.pair.sec);
     this.sign = (msg:string) => this.keyPair.sign(msg)
-    // Blockchain object
-    this.blockchain = new DuniterBlockchain(new SQLBlockchain(this.dal), this.dal);
     // Update services
     this.IdentityService.setConfDAL(this.conf, this.dal)
     this.MembershipService.setConfDAL(this.conf, this.dal)
@@ -327,21 +335,23 @@ export class Server extends stream.Duplex implements HookableServer {
     let head_1 = await this.dal.bindexDAL.head(1);
     if (head_1) {
       // Case 1: b_index < block
-      await this.dal.blockDAL.exec('DELETE FROM block WHERE NOT fork AND number > ' + head_1.number);
+      await this.dal.blockDAL.dropNonForkBlocksAbove(head_1.number)
       // Case 2: b_index > block
       const current = await this.dal.blockDAL.getCurrent();
-      const nbBlocksToRevert = (head_1.number - current.number);
+      const nbBlocksToRevert = (head_1.number - (current as DBBlock).number);
       for (let i = 0; i < nbBlocksToRevert; i++) {
-        await this.revert();
+        await this.revertHead();
       }
     }
+    // Database trimming
+    await this.dal.loki.flushAndTrimData()
     // Eventual block resolution
     await this.BlockchainService.blockResolution()
     // Eventual fork resolution
     await this.BlockchainService.forkResolution()
   }
 
-  recomputeSelfPeer() {
+  recomputeSelfPeer(): Promise<DBPeer | null> {
     return this.PeeringService.generateSelfPeer(this.conf)
   }
 
@@ -364,24 +374,24 @@ export class Server extends stream.Duplex implements HookableServer {
     const params = await this.paramsP;
     const myFS = params.fs;
     const rootPath = params.home;
-    const existsDir = await myFS.exists(rootPath);
+    const existsDir = await myFS.fsExists(rootPath);
     if (existsDir) {
-      await myFS.removeTree(rootPath);
+      await myFS.fsRemoveTree(rootPath);
     }
   }
 
   async resetAll(done:any = null) {
     await this.resetDataHook()
     await this.resetConfigHook()
-    const files = ['stats', 'cores', 'current', directory.DUNITER_DB_NAME, directory.DUNITER_DB_NAME + '.db', directory.DUNITER_DB_NAME + '.log', directory.WOTB_FILE, 'export.zip', 'import.zip', 'conf'];
-    const dirs  = ['blocks', 'blockchain', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+    const files = ['stats', 'cores', 'current', Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log', Directory.WOTB_FILE, 'export.zip', 'import.zip', 'conf'];
+    const dirs  = ['archives', 'loki', 'blocks', 'blockchain', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return this.resetFiles(files, dirs, done);
   }
 
   async resetData(done:any = null) {
     await this.resetDataHook()
-    const files = ['stats', 'cores', 'current', directory.DUNITER_DB_NAME, directory.DUNITER_DB_NAME + '.db', directory.DUNITER_DB_NAME + '.log', directory.WOTB_FILE];
-    const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+    const files = ['stats', 'cores', 'current', Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log', Directory.WOTB_FILE];
+    const dirs  = ['archives', 'loki', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     await this.resetFiles(files, dirs, done);
   }
 
@@ -407,12 +417,12 @@ export class Server extends stream.Duplex implements HookableServer {
     const rootPath = params.home;
     const myFS = params.fs;
     const archive = archiver('zip');
-    if (await myFS.exists(path.join(rootPath, 'indicators'))) {
+    if (await myFS.fsExists(path.join(rootPath, 'indicators'))) {
       archive.directory(path.join(rootPath, 'indicators'), '/indicators', undefined, { name: 'indicators'});
     }
     const files = ['duniter.db', 'stats.json', 'wotb.bin'];
     for (const file of files) {
-      if (await myFS.exists(path.join(rootPath, file))) {
+      if (await myFS.fsExists(path.join(rootPath, file))) {
         archive.file(path.join(rootPath, file), { name: file });
       }
     }
@@ -434,42 +444,42 @@ export class Server extends stream.Duplex implements HookableServer {
   async cleanDBData() {
     await this.dal.cleanCaches();
     this.dal.wotb.resetWoT();
-    const files = ['stats', 'cores', 'current', directory.DUNITER_DB_NAME, directory.DUNITER_DB_NAME + '.db', directory.DUNITER_DB_NAME + '.log'];
-    const dirs  = ['blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+    const files = ['stats', 'cores', 'current', Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log'];
+    const dirs  = ['loki', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
     return this.resetFiles(files, dirs);
   }
 
   private async resetFiles(files:string[], dirs:string[], done:any = null) {
     try {
       const params = await this.paramsP;
-      const myFS = params.fs;
+      const myFS:FileSystem = params.fs;
       const rootPath = params.home;
       for (const fName of files) {
         // JSON file?
-        const existsJSON = await myFS.exists(rootPath + '/' + fName + '.json');
+        const existsJSON = await myFS.fsExists(rootPath + '/' + fName + '.json');
         if (existsJSON) {
           const theFilePath = rootPath + '/' + fName + '.json';
-          await myFS.remove(theFilePath);
-          if (await myFS.exists(theFilePath)) {
+          await myFS.fsUnlink(theFilePath);
+          if (await myFS.fsExists(theFilePath)) {
             throw Error('Failed to delete file "' + theFilePath + '"');
           }
         } else {
           // Normal file?
           const normalFile = path.join(rootPath, fName);
-          const existsFile = await myFS.exists(normalFile);
+          const existsFile = await myFS.fsExists(normalFile);
           if (existsFile) {
-            await myFS.remove(normalFile);
-            if (await myFS.exists(normalFile)) {
+            await myFS.fsUnlink(normalFile);
+            if (await myFS.fsExists(normalFile)) {
               throw Error('Failed to delete file "' + normalFile + '"');
             }
           }
         }
       }
       for (const dirName of dirs) {
-        const existsDir = await myFS.exists(rootPath + '/' + dirName);
+        const existsDir = await myFS.fsExists(rootPath + '/' + dirName);
         if (existsDir) {
-          await myFS.removeTree(rootPath + '/' + dirName);
-          if (await myFS.exists(rootPath + '/' + dirName)) {
+          await myFS.fsRemoveTree(rootPath + '/' + dirName);
+          if (await myFS.fsExists(rootPath + '/' + dirName)) {
             throw Error('Failed to delete folder "' + rootPath + '/' + dirName + '"');
           }
         }
@@ -492,8 +502,15 @@ export class Server extends stream.Duplex implements HookableServer {
     return this.BlockchainService.revertCurrentBlock()
   }
 
+  revertHead() {
+    return this.BlockchainService.revertCurrentHead()
+  }
+
   async revertTo(number:number) {
     const current = await this.BlockchainService.current();
+    if (!current) {
+      throw Error(DataErrors[DataErrors.CANNOT_REVERT_NO_CURRENT_BLOCK])
+    }
     for (let i = 0, count = current.number - number; i < count; i++) {
       await this.BlockchainService.revertCurrentBlock()
     }
@@ -518,6 +535,9 @@ export class Server extends stream.Duplex implements HookableServer {
 
   async reapplyTo(number:number) {
     const current = await this.BlockchainService.current();
+    if (!current) {
+      throw Error(DataErrors[DataErrors.CANNOT_REAPPLY_NO_CURRENT_BLOCK])
+    }
     if (current.number == number) {
       logger.warn('Already reached');
     } else {
@@ -543,8 +563,8 @@ export class Server extends stream.Duplex implements HookableServer {
     const argv = this.getCommand(overrideCommand, insteadOfCmd)
     return daemonize.setup({
       main: mainModule,
-      name: directory.INSTANCE_NAME,
-      pidfile: path.join(directory.INSTANCE_HOME, "app.pid"),
+      name: Directory.INSTANCE_NAME,
+      pidfile: path.join(Directory.INSTANCE_HOME, "app.pid"),
       argv,
       cwd
     });
@@ -631,7 +651,7 @@ export class Server extends stream.Duplex implements HookableServer {
   /**
    * Default WoT incoming data for new block. To be overriden by a module.
    */
-  generatorGetJoinData(current:DBBlock, idtyHash:string , char:string): Promise<any> {
+  generatorGetJoinData(current:DBBlock|null, idtyHash:string , char:string): Promise<any> {
     return Promise.resolve({})
   }
 

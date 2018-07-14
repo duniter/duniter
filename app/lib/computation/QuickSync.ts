@@ -11,14 +11,16 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict"
 import {DuniterBlockchain} from "../blockchain/DuniterBlockchain";
 import {BlockDTO} from "../dto/BlockDTO";
-import {DBTransaction} from "../db/DBTransaction";
-import {Indexer} from "../indexer";
+import {AccountsGarbagingDAL, FullSindexEntry, Indexer} from "../indexer";
 import {CurrencyConfDTO} from "../dto/ConfDTO";
+import {FileDAL} from "../dal/fileDAL"
+import {DBBlock} from "../db/DBBlock"
+import {Underscore} from "../common-libs/underscore"
+import {CommonConstants} from "../common-libs/constants"
+import {cliprogram} from "../common-libs/programOptions"
 
-const _ = require('underscore')
 const constants = require('../constants')
 
 let sync_bindex: any [] = [];
@@ -27,12 +29,11 @@ let sync_mindex: any[] = [];
 let sync_cindex: any[] = [];
 let sync_sindex: any[] = [];
 let sync_bindexSize = 0;
-let sync_allBlocks: BlockDTO[] = [];
 let sync_expires: number[] = [];
 let sync_nextExpiring = 0;
 let sync_currConf: CurrencyConfDTO;
 const sync_memoryWallets: any = {}
-const sync_memoryDAL = {
+const sync_memoryDAL:AccountsGarbagingDAL = {
   getWallet: (conditions: string) => Promise.resolve(sync_memoryWallets[conditions] || { conditions, balance: 0 }),
   saveWallet: async (wallet: any) => {
     // Make a copy
@@ -42,72 +43,36 @@ const sync_memoryDAL = {
     }
   },
   sindexDAL: {
-    getAvailableForConditions: (conditions:string) => null
+    getAvailableForConditions: (conditions:string) => Promise.resolve([])
   }
 }
 
 export class QuickSynchronizer {
 
-  constructor(private blockchain:DuniterBlockchain, private conf: any, private dal: any, private logger: any) {
-  }
-
-  async saveBlocksInMainBranch(blocks: BlockDTO[]): Promise<void> {
-    // VERY FIRST: parameters, otherwise we compute wrong variables such as UDTime
-    if (blocks[0].number == 0) {
-      await this.blockchain.saveParametersForRoot(blocks[0], this.conf, this.dal)
-    }
-    // Helper to retrieve a block with local cache
-    const getBlock = (number: number): Promise<BlockDTO> => {
-      const firstLocalNumber = blocks[0].number;
-      if (number >= firstLocalNumber) {
-        let offset = number - firstLocalNumber;
-        return Promise.resolve(blocks[offset])
-      }
-      return this.dal.getBlock(number);
-    };
-    const getBlockByNumberAndHash = async (number: number, hash: string): Promise<BlockDTO> => {
-      const block = await getBlock(number);
-      if (!block || block.hash != hash) {
-        throw 'Block #' + [number, hash].join('-') + ' not found neither in DB nor in applying blocks';
-      }
-      return block;
-    }
-    for (const block of blocks) {
-      block.fork = false;
-      const current:BlockDTO|null = await getBlock(block.number - 1)
-      this.blockchain.updateBlocksComputedVars(current, block)
-    }
-    // Transactions recording
-    await this.updateTransactionsForBlocks(blocks, getBlockByNumberAndHash);
-    await this.dal.blockDAL.saveBunch(blocks);
-    await DuniterBlockchain.pushStatsForBlocks(blocks, this.dal);
-  }
-
-  private async updateTransactionsForBlocks(blocks: BlockDTO[], getBlockByNumberAndHash: (number: number, hash: string) => Promise<BlockDTO>): Promise<any> {
-    let txs: DBTransaction[] = [];
-    for (const block of blocks) {
-      const newOnes: DBTransaction[] = [];
-      for (const tx of block.transactions) {
-        const [number, hash] = tx.blockstamp.split('-')
-        const refBlock: BlockDTO = (await getBlockByNumberAndHash(parseInt(number), hash))
-        // We force the usage of the reference block's currency
-        tx.currency = refBlock.currency
-        tx.hash = tx.getHash()
-        const dbTx: DBTransaction = DBTransaction.fromTransactionDTO(tx, refBlock.medianTime, true, false, refBlock.number, refBlock.medianTime)
-        newOnes.push(dbTx)
-      }
-      txs = txs.concat(newOnes);
-    }
-    return this.dal.updateTransactions(txs);
+  constructor(private conf: any, private dal:FileDAL, private logger: any) {
   }
 
   async quickApplyBlocks(blocks:BlockDTO[], to: number): Promise<void> {
 
-    sync_memoryDAL.sindexDAL = { getAvailableForConditions: (conditions:string) => this.dal.sindexDAL.getAvailableForConditions(conditions) }
-    let blocksToSave: BlockDTO[] = [];
+    sync_memoryDAL.sindexDAL = {
+      getAvailableForConditions: (conditions:string) => this.dal.sindexDAL.getAvailableForConditions(conditions)
+    }
+
+    await this.dal.blockDAL.insertBatch(blocks.map((b:any) => {
+      const block = DBBlock.fromBlockDTO(b)
+      block.fork = false
+      return block
+    }))
+
+    // We only keep approx 2 months of blocks in memory, so memory consumption keeps approximately constant during the sync
+    await this.dal.blockDAL.trimBlocks(blocks[blocks.length - 1].number - CommonConstants.BLOCKS_IN_MEMORY_MAX)
 
     for (const block of blocks) {
-      sync_allBlocks.push(block);
+
+      // VERY FIRST: parameters, otherwise we compute wrong variables such as UDTime
+      if (block.number == 0) {
+        await DuniterBlockchain.saveParametersForRoot(block, this.conf, this.dal)
+      }
 
       // The new kind of object stored
       const dto = BlockDTO.fromJSONObject(block)
@@ -116,22 +81,14 @@ export class QuickSynchronizer {
         sync_currConf = BlockDTO.getConf(block);
       }
 
-      if (block.number <= to - this.conf.forksize) {
-        blocksToSave.push(dto);
+      if (block.number <= to - this.conf.forksize || cliprogram.noSources) { // If we require nosources option, this blockchain can't be valid so we don't make checks
         const index:any = Indexer.localIndex(dto, sync_currConf);
         const local_iindex = Indexer.iindex(index);
         const local_cindex = Indexer.cindex(index);
-        const local_sindex = Indexer.sindex(index);
+        const local_sindex = cliprogram.noSources ? [] : Indexer.sindex(index);
         const local_mindex = Indexer.mindex(index);
 
-        const HEAD = await Indexer.quickCompleteGlobalScope(block, sync_currConf, sync_bindex, local_iindex, local_mindex, local_cindex, {
-          getBlock: (number: number) => {
-            return Promise.resolve(sync_allBlocks[number]);
-          },
-          getBlockByBlockstamp: (blockstamp: string) => {
-            return Promise.resolve(sync_allBlocks[parseInt(blockstamp)]);
-          }
-        });
+        const HEAD = await Indexer.quickCompleteGlobalScope(block, sync_currConf, sync_bindex, local_iindex, local_mindex, local_cindex, this.dal)
         sync_bindex.push(HEAD);
 
         // Remember expiration dates
@@ -143,17 +100,16 @@ export class QuickSynchronizer {
             sync_expires.push(entry.revokes_on)
           }
         }
-        sync_expires = _.uniq(sync_expires);
 
-        await this.blockchain.createNewcomers(local_iindex, this.dal, this.logger)
+        await DuniterBlockchain.createNewcomers(local_iindex, this.dal, this.logger)
 
-        if (block.dividend
+        if ((block.dividend && !cliprogram.noSources)
           || block.joiners.length
           || block.actives.length
           || block.revoked.length
           || block.excluded.length
           || block.certifications.length
-          || block.transactions.length
+          || (block.transactions.length && !cliprogram.noSources)
           || block.medianTime >= sync_nextExpiring) {
           const nextExpiringChanged = block.medianTime >= sync_nextExpiring
 
@@ -167,25 +123,33 @@ export class QuickSynchronizer {
           sync_nextExpiring = sync_expires.reduce((max, value) => max ? Math.min(max, value) : value, 9007199254740991); // Far far away date
 
           // Fills in correctly the SINDEX
-          await Promise.all(_.where(sync_sindex.concat(local_sindex), { op: 'UPDATE' }).map(async (entry: any) => {
-            if (!entry.conditions) {
-              const src = await this.dal.sindexDAL.getSource(entry.identifier, entry.pos);
-              entry.conditions = src.conditions;
-            }
-          }))
+          if (!cliprogram.noSources) {
+            await Promise.all(Underscore.where(sync_sindex.concat(local_sindex), {op: 'UPDATE'}).map(async entry => {
+              if (!entry.conditions) {
+                const src = (await this.dal.getSource(entry.identifier, entry.pos, entry.srcType === 'D')) as FullSindexEntry
+                entry.conditions = src.conditions;
+              }
+            }))
+          }
 
           // Flush the INDEX (not bindex, which is particular)
-          await this.dal.mindexDAL.insertBatch(sync_mindex);
-          await this.dal.iindexDAL.insertBatch(sync_iindex);
-          await this.dal.sindexDAL.insertBatch(sync_sindex);
-          await this.dal.cindexDAL.insertBatch(sync_cindex);
+          await this.dal.flushIndexes({
+            mindex: sync_mindex,
+            iindex: sync_iindex,
+            sindex: sync_sindex,
+            cindex: sync_cindex,
+          })
           sync_iindex = local_iindex
           sync_cindex = local_cindex
           sync_mindex = local_mindex
           sync_sindex = local_sindex
 
-          sync_sindex = sync_sindex.concat(await Indexer.ruleIndexGenDividend(HEAD, local_iindex, this.dal));
-          sync_sindex = sync_sindex.concat(await Indexer.ruleIndexGarbageSmallAccounts(HEAD, sync_sindex, sync_memoryDAL));
+          // Dividends and account garbaging
+          const dividends = cliprogram.noSources ? [] : await Indexer.ruleIndexGenDividend(HEAD, local_iindex, this.dal)
+          if (!cliprogram.noSources) {
+            sync_sindex = sync_sindex.concat(await Indexer.ruleIndexGarbageSmallAccounts(HEAD, sync_sindex, dividends, sync_memoryDAL));
+          }
+
           if (nextExpiringChanged) {
             sync_cindex = sync_cindex.concat(await Indexer.ruleIndexGenCertificationExpiry(HEAD, this.dal));
             sync_mindex = sync_mindex.concat(await Indexer.ruleIndexGenMembershipExpiry(HEAD, this.dal));
@@ -193,14 +157,19 @@ export class QuickSynchronizer {
             sync_iindex = sync_iindex.concat(await Indexer.ruleIndexGenExclusionByCertificatons(HEAD, sync_cindex, local_iindex, this.conf, this.dal));
             sync_mindex = sync_mindex.concat(await Indexer.ruleIndexGenImplicitRevocation(HEAD, this.dal));
           }
-          // Update balances with UD + local garbagings
-          await this.blockchain.updateWallets(sync_sindex, sync_memoryDAL)
+
+          if (!cliprogram.noSources) {
+            // Update balances with UD + local garbagings
+            await DuniterBlockchain.updateWallets(sync_sindex, dividends, sync_memoryDAL)
+          }
 
           // Flush the INDEX again (needs to be done *before* the update of wotb links because of block#0)
-          await this.dal.iindexDAL.insertBatch(sync_iindex);
-          await this.dal.mindexDAL.insertBatch(sync_mindex);
-          await this.dal.sindexDAL.insertBatch(sync_sindex);
-          await this.dal.cindexDAL.insertBatch(sync_cindex);
+          await this.dal.flushIndexes({
+            mindex: sync_mindex,
+            iindex: sync_iindex,
+            sindex: sync_sindex,
+            cindex: sync_cindex,
+          })
 
           // --> Update links
           await this.dal.updateWotbLinks(local_cindex.concat(sync_cindex));
@@ -210,7 +179,7 @@ export class QuickSynchronizer {
           sync_sindex = [];
 
           // Create/Update nodes in wotb
-          await this.blockchain.updateMembers(block, this.dal)
+          await DuniterBlockchain.updateMembers(block, this.dal)
         } else {
           // Concat the results to the pending data
           sync_iindex = sync_iindex.concat(local_iindex);
@@ -233,26 +202,23 @@ export class QuickSynchronizer {
           // We trim it, not necessary to store it all (we already store the full blocks)
           sync_bindex.splice(0, sync_bindexSize);
 
-          // Process triming continuously to avoid super long ending of sync
+          // Process triming & archiving continuously to avoid super long ending of sync
           await this.dal.trimIndexes(sync_bindex[0].number);
         }
       } else {
 
-        if (blocksToSave.length) {
-          await this.saveBlocksInMainBranch(blocksToSave);
-        }
-        blocksToSave = [];
-
         // Save the INDEX
         await this.dal.bindexDAL.insertBatch(sync_bindex);
-        await this.dal.mindexDAL.insertBatch(sync_mindex);
-        await this.dal.iindexDAL.insertBatch(sync_iindex);
-        await this.dal.sindexDAL.insertBatch(sync_sindex);
-        await this.dal.cindexDAL.insertBatch(sync_cindex);
+        await this.dal.flushIndexes({
+          mindex: sync_mindex,
+          iindex: sync_iindex,
+          sindex: sync_sindex,
+          cindex: sync_cindex,
+        })
 
         // Save the intermediary table of wallets
-        const conditions = _.keys(sync_memoryWallets)
-        const nonEmptyKeys = _.filter(conditions, (k: any) => sync_memoryWallets[k] && sync_memoryWallets[k].balance > 0)
+        const conditions = Underscore.keys(sync_memoryWallets)
+        const nonEmptyKeys = Underscore.filter(conditions, (k: any) => sync_memoryWallets[k] && sync_memoryWallets[k].balance > 0)
         const walletsToRecord = nonEmptyKeys.map((k: any) => sync_memoryWallets[k])
         await this.dal.walletDAL.insertBatch(walletsToRecord)
         for (const cond of conditions) {
@@ -260,12 +226,12 @@ export class QuickSynchronizer {
         }
 
         if (block.number === 0) {
-          await this.blockchain.saveParametersForRoot(block, this.conf, this.dal)
+          await DuniterBlockchain.saveParametersForRoot(block, this.conf, this.dal)
         }
 
         // Last block: cautious mode to trigger all the INDEX expiry mechanisms
         const { index, HEAD } = await DuniterBlockchain.checkBlock(dto, constants.WITH_SIGNATURES_AND_POW, this.conf, this.dal)
-        await this.blockchain.pushTheBlock(dto, index, HEAD, this.conf, this.dal, this.logger)
+        await DuniterBlockchain.pushTheBlock(dto, index, HEAD, this.conf, this.dal, this.logger)
 
         // Clean temporary variables
         sync_bindex = [];
@@ -274,14 +240,10 @@ export class QuickSynchronizer {
         sync_cindex = [];
         sync_sindex = [];
         sync_bindexSize = 0;
-        sync_allBlocks = [];
         sync_expires = [];
         sync_nextExpiring = 0;
         // sync_currConf = {};
       }
-    }
-    if (blocksToSave.length) {
-      await this.saveBlocksInMainBranch(blocksToSave);
     }
   }
 }

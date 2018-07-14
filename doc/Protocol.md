@@ -1,4 +1,4 @@
-# DUP - Duniter Protocol
+DifferentIssuersCount# DUP - Duniter Protocol
 
 > This document reflects Duniter in-production protocol. It is updated only for clarifications (2017).
 

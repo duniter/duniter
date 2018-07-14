@@ -11,25 +11,21 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
 import {NetworkConfDTO} from "../../lib/dto/ConfDTO"
 import {Server} from "../../../server"
 import * as stream from "stream"
-import {BmaApi, Network} from "./lib/network"
-import {UpnpApi} from "./lib/upnp"
+import {BmaApi, Network, NetworkInterface} from "./lib/network"
+import {Upnp, UpnpApi} from "./lib/upnp"
 import {BMAConstants} from "./lib/constants"
 import {BMALimitation} from "./lib/limiter"
 import {PeerDTO} from "../../lib/dto/PeerDTO"
+import {Underscore} from "../../lib/common-libs/underscore"
+import {bma} from "./lib/bma"
 
 const Q = require('q');
-const os = require('os');
 const rp = require('request-promise');
 const async = require('async');
-const _ = require('underscore');
-const upnp = require('./lib/upnp').Upnp
-const bma = require('./lib/bma').bma
 const dtos = require('./lib/dtos')
-const http2raw = require('./lib/http2raw');
 const inquirer = require('inquirer');
 
 let networkWizardDone = false;
@@ -173,7 +169,7 @@ export const BmaDependency = {
         if (!conf.ipv6) delete conf.ipv6;
         if (!conf.remoteipv4) delete conf.remoteipv4;
         if (!conf.remoteipv6) delete conf.remoteipv6;
-        conf.dos.whitelist = _.uniq(conf.dos.whitelist);
+        conf.dos.whitelist = Underscore.uniq(conf.dos.whitelist);
       }
     },
 
@@ -189,7 +185,8 @@ export const BmaDependency = {
 
     methods: {
       noLimit: () => BMALimitation.noLimit(),
-      bma, dtos,
+      bma: async (server: Server, interfaces: (NetworkInterface[] | null) = null, httpLogs = false, logger?: any) => bma(server, interfaces, httpLogs, logger),
+      dtos,
       getMainEndpoint: (conf:NetworkConfDTO) => Promise.resolve(getEndpoint(conf))
     }
   }
@@ -243,7 +240,7 @@ export class BMAPI extends stream.Transform {
     }
     if (this.server.conf.upnp) {
       try {
-        this.upnpAPI = await upnp(this.server.conf.port, this.server.conf.remoteport, this.logger, this.server.conf);
+        this.upnpAPI = await Upnp(this.server.conf.port, this.server.conf.remoteport, this.logger, this.server.conf);
         this.upnpAPI.startRegular();
         const gateway = await this.upnpAPI.findGateway();
         if (gateway) {
@@ -306,7 +303,7 @@ function networkReconfiguration(conf:NetworkConfDTO, autoconf:boolean, logger:an
       const useUPnPOperations = getUseUPnPOperations(conf, logger, autoconf);
 
       if (upnpSuccess) {
-        _.extend(conf, upnpConf);
+        Underscore.extend(conf, upnpConf)
         const local = [conf.ipv4, conf.port].join(':');
         const remote = [conf.remoteipv4, conf.remoteport].join(':');
         if (autoconf) {
@@ -408,7 +405,7 @@ function getLocalNetworkOperations(conf:NetworkConfDTO, autoconf:boolean = false
       const interfaces = [{ name: "None", value: null }];
       osInterfaces.forEach(function(netInterface:any){
         const addresses = netInterface.addresses;
-        const filtered = _(addresses).where({family: 'IPv4'});
+        const filtered = Underscore.where(addresses, {family: 'IPv4'});
         filtered.forEach(function(addr:any){
           interfaces.push({
             name: [netInterface.name, addr.address].join(' '),
@@ -436,7 +433,7 @@ function getLocalNetworkOperations(conf:NetworkConfDTO, autoconf:boolean = false
       const interfaces:any = [{ name: "None", value: null }];
       osInterfaces.forEach(function(netInterface:any){
         const addresses = netInterface.addresses;
-        const filtered = _(addresses).where({ family: 'IPv6' });
+        const filtered = Underscore.where(addresses, { family: 'IPv6' });
         filtered.forEach(function(addr:any){
           let address = addr.address
           if (addr.scopeid)
@@ -495,7 +492,7 @@ function getRemoteNetworkOperations(conf:NetworkConfDTO, remoteipv4:string|null)
       const osInterfaces = Network.listInterfaces();
       osInterfaces.forEach(function(netInterface:any){
         const addresses = netInterface.addresses;
-        const filtered = _(addresses).where({family: 'IPv4'});
+        const filtered = Underscore.where(addresses, {family: 'IPv4'});
         filtered.forEach(function(addr:any){
           choices.push({
             name: [netInterface.name, addr.address].join(' '),

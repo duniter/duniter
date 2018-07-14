@@ -1,4 +1,4 @@
-![Duniter logo](https://raw.github.com/duniter/duniter/master/images/250×250.png)
+![Duniter logo](https://git.duniter.org/nodes/typescript/duniter/raw/dev/images/250%C3%97250.png)
 
 # Duniter [![Build Status](https://api.travis-ci.org/duniter/duniter.png)](https://travis-ci.org/duniter/duniter) [![Coverage Status](https://coveralls.io/repos/github/duniter/duniter/badge.svg?branch=master)](https://coveralls.io/github/duniter/duniter?branch=master) [![Dependencies](https://david-dm.org/duniter/duniter.svg)](https://david-dm.org/duniter/duniter)
 
@@ -6,7 +6,7 @@ Duniter (previously uCoin) is a libre software allowing to create a new kind of 
 
 Inspired by [Bitcoin](https://github.com/bitcoin/bitcoin) and [OpenUDC](https://github.com/Open-UDC/open-udc) projects.
 
-<p align="center"><img src="https://github.com/duniter/duniter/blob/master/images/duniter_admin_g1.png" /></p>
+<p align="center"><img src="https://git.duniter.org/nodes/typescript/duniter/raw/dev/images/duniter_admin_g1.png" /></p>
 
 ## Development state
 

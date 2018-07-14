@@ -11,25 +11,32 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import { IindexEntry } from './../../../../lib/indexer';
 import {AbstractController} from "./AbstractController";
 import {BMAConstants} from "../constants";
 import {DBIdentity} from "../../../../lib/dal/sqliteDAL/IdentityDAL";
-import { IdentityForRequirements } from '../../../../service/BlockchainService';
+import {IdentityForRequirements} from '../../../../service/BlockchainService';
 import {
   HttpCert,
-  HttpCertIdentity, HttpCertifications,
+  HttpCertIdentity,
+  HttpCertification,
+  HttpCertifications,
   HttpIdentity,
   HttpIdentityRequirement,
   HttpLookup,
   HttpMembers,
   HttpMembershipList,
   HttpRequirements,
-  HttpResult, HttpSimpleIdentity
+  HttpResult,
+  HttpSimpleIdentity
 } from "../dtos";
+import {IdentityDTO} from "../../../../lib/dto/IdentityDTO"
+import {FullIindexEntry} from "../../../../lib/indexer"
+import {DBMembership} from "../../../../lib/dal/sqliteDAL/MembershipDAL"
+import {Underscore} from "../../../../lib/common-libs/underscore"
+import {Map} from "../../../../lib/common-libs/crypto/map"
 
-const _        = require('underscore');
 const http2raw = require('../http2raw');
+const constants = require('../../../../lib/constants');
 
 const ParametersService = require('../parameters').ParametersService
 
@@ -39,33 +46,33 @@ export class WOTBinding extends AbstractController {
     // Get the search parameter from HTTP query
     const search = await ParametersService.getSearchP(req);
     // Make the research
-    const identities:any[] = await this.IdentityService.searchIdentities(search);
+    const identities = await this.IdentityService.searchIdentities(search);
     // Entitify each result
     identities.forEach((idty, index) => identities[index] = DBIdentity.copyFromExisting(idty));
     // Prepare some data to avoid displaying expired certifications
     for (const idty of identities) {
-      const certs = await this.server.dal.certsToTarget(idty.pubkey, idty.getTargetHash());
+      const certs: any[] = await this.server.dal.certsToTarget(idty.pubkey, idty.getTargetHash());
       const validCerts = [];
       for (const cert of certs) {
-        const member = await this.IdentityService.getWrittenByPubkey(cert.from);
+        const member = await this.server.dal.getWrittenIdtyByPubkeyForUidAndIsMemberAndWasMember(cert.from);
         if (member) {
           cert.uids = [member.uid];
           cert.isMember = member.member;
           cert.wasMember = member.wasMember;
         } else {
           const potentials = await this.IdentityService.getPendingFromPubkey(cert.from);
-          cert.uids = _(potentials).pluck('uid');
+          cert.uids = potentials.map(p => p.uid)
           cert.isMember = false;
           cert.wasMember = false;
         }
         validCerts.push(cert);
       }
       idty.certs = validCerts;
-      const signed = await this.server.dal.certsFrom(idty.pubkey);
+      const signed:any = await this.server.dal.certsFrom(idty.pubkey);
       const validSigned = [];
       for (let j = 0; j < signed.length; j++) {
-        const cert = _.clone(signed[j]);
-        cert.idty = await this.server.dal.getIdentityByHashOrNull(cert.target);
+        const cert = Underscore.clone(signed[j]);
+        cert.idty = await this.server.dal.getGlobalIdentityByHashForLookup(cert.target)
         if (cert.idty) {
           validSigned.push(cert);
         } else {
@@ -77,7 +84,7 @@ export class WOTBinding extends AbstractController {
     if (identities.length == 0) {
       throw BMAConstants.ERRORS.NO_MATCHING_IDENTITY;
     }
-    const resultsByPubkey:any = {};
+    const resultsByPubkey:Map<HttpIdentity> = {};
     identities.forEach((identity) => {
       const copy = DBIdentity.copyFromExisting(identity)
       const jsoned = copy.json();
@@ -94,7 +101,7 @@ export class WOTBinding extends AbstractController {
     });
     return {
       partial: false,
-      results: _.values(resultsByPubkey)
+      results: Underscore.values(resultsByPubkey)
     };
   }
 
@@ -109,49 +116,38 @@ export class WOTBinding extends AbstractController {
 
   async certifiersOf(req:any): Promise<HttpCertifications> {
     const search = await ParametersService.getSearchP(req);
-    const idty = await this.IdentityService.findMemberWithoutMemberships(search);
-    const certs = await this.server.dal.certsToTarget(idty.pubkey, idty.getTargetHash());
-    idty.certs = [];
+    const idty = (await this.server.dal.getWrittenIdtyByPubkeyOrUIdForHashingAndIsMember(search)) as FullIindexEntry
+    const certs = await this.server.dal.certsToTarget(idty.pub, IdentityDTO.getTargetHash(idty))
+    const theCerts:HttpCertification[] = [];
     for (const cert of certs) {
-      const certifier = await this.server.dal.getWrittenIdtyByPubkey(cert.from);
+      const certifier = await this.server.dal.getWrittenIdtyByPubkeyForUidAndMemberAndCreatedOn(cert.from);
       if (certifier) {
-        cert.uid = certifier.uid;
-        cert.isMember = certifier.member;
-        cert.sigDate = certifier.buid;
-        cert.wasMember = true; // As we checked if(certified)
-        if (!cert.cert_time) {
-          let certBlock = await this.server.dal.getBlock(cert.block_number);
-          cert.cert_time = {
+        let certBlock = await this.server.dal.getBlockWeHaveItForSure(cert.block_number)
+        theCerts.push({
+          pubkey: cert.from,
+          uid: certifier.uid,
+          isMember: certifier.member,
+          wasMember: true, // a member is necessarily certified by members
+          cert_time: {
             block: certBlock.number,
             medianTime: certBlock.medianTime
-          };
-        }
-        idty.certs.push(cert);
+          },
+          sigDate: certifier.created_on,
+          written: (cert.written_block !== null && cert.written_hash) ? {
+            number: cert.written_block,
+            hash: cert.written_hash
+          } : null,
+          signature: cert.sig
+        })
       }
     }
-    const json:any = {
-      pubkey: idty.pubkey,
+    return {
+      pubkey: idty.pub,
       uid: idty.uid,
-      sigDate: idty.buid,
+      sigDate: idty.created_on,
       isMember: idty.member,
-      certifications: []
-    };
-    idty.certs.forEach(function(cert){
-      json.certifications.push({
-        pubkey: cert.from,
-        uid: cert.uid,
-        isMember: cert.isMember,
-        wasMember: cert.wasMember,
-        cert_time: cert.cert_time,
-        sigDate: cert.sigDate,
-        written: cert.linked ? {
-          number: cert.written_block,
-          hash: cert.written_hash
-        } : null,
-        signature: cert.sig
-      });
-    });
-    return json;
+      certifications: theCerts
+    }
   }
 
   async requirements(req:any): Promise<HttpRequirements> {
@@ -168,29 +164,23 @@ export class WOTBinding extends AbstractController {
 
   async requirementsOfPending(req:any): Promise<HttpRequirements> {
     const minsig = ParametersService.getMinSig(req)
-    let identities:IdentityForRequirements[] = await this.server.dal.idtyDAL.query(
+    let identities:IdentityForRequirements[] = (await this.server.dal.idtyDAL.query(
       'SELECT i.*, count(c.sig) as nbSig ' +
       'FROM idty i, cert c ' +
       'WHERE c.target = i.hash group by i.hash having nbSig >= ?',
-      minsig)
-    const members:IdentityForRequirements[] = (await this.server.dal.idtyDAL.query(
-      'SELECT i.*, count(c.sig) as nbSig ' +
-      'FROM i_index i, cert c ' +
-      'WHERE c.`to` = i.pub group by i.pub having nbSig >= ?',
-      minsig)).map((i:IindexEntry):IdentityForRequirements => {
-        return {
-          hash: i.hash || "",
-          member: i.member || false,
-          wasMember: i.wasMember || false,
-          pubkey: i.pub,
-          uid: i.uid || "",
-          buid: i.created_on || "",
-          sig: i.sig || "",
-          revocation_sig: "",
-          revoked: false,
-          revoked_on: 0
-        }
-      })
+      [minsig])).map(i => ({
+      hash: i.hash || "",
+      member: i.member || false,
+      wasMember: i.wasMember || false,
+      pubkey: i.pubkey,
+      uid: i.uid || "",
+      buid: i.buid || "",
+      sig: i.sig || "",
+      revocation_sig: i.revocation_sig,
+      revoked: i.revoked,
+      revoked_on: i.revoked_on ? 1 : 0
+    }))
+    const members = await this.server.dal.findReceiversAbove(minsig)
     identities = identities.concat(members)
     const all = await this.BlockchainService.requirementsOfIdentities(identities, false);
     if (!all || !all.length) {
@@ -203,63 +193,53 @@ export class WOTBinding extends AbstractController {
 
   async certifiedBy(req:any): Promise<HttpCertifications> {
     const search = await ParametersService.getSearchP(req);
-    const idty = await this.IdentityService.findMemberWithoutMemberships(search);
-    const certs = await this.server.dal.certsFrom(idty.pubkey);
-    idty.certs = [];
+    const idty = (await this.server.dal.getWrittenIdtyByPubkeyOrUIdForHashingAndIsMember(search)) as FullIindexEntry
+    const certs = await this.server.dal.certsFrom(idty.pub);
+    const theCerts:HttpCertification[] = [];
     for (const cert of certs) {
-      const certified = await this.server.dal.getWrittenIdtyByPubkey(cert.to);
+      const certified = await this.server.dal.getWrittenIdtyByPubkeyForUidAndMemberAndCreatedOn(cert.to);
       if (certified) {
-        cert.uid = certified.uid;
-        cert.isMember = certified.member;
-        cert.sigDate = certified.buid;
-        cert.wasMember = true; // As we checked if(certified)
-        if (!cert.cert_time) {
-          let certBlock = await this.server.dal.getBlock(cert.block_number);
-          cert.cert_time = {
+        let certBlock = await this.server.dal.getBlockWeHaveItForSure(cert.block_number)
+        theCerts.push({
+          pubkey: cert.to,
+          uid: certified.uid,
+          isMember: certified.member,
+          wasMember: true, // a member is necessarily certified by members
+          cert_time: {
             block: certBlock.number,
             medianTime: certBlock.medianTime
-          };
-        }
-        idty.certs.push(cert);
+          },
+          sigDate: certified.created_on,
+          written: (cert.written_block !== null && cert.written_hash) ? {
+            number: cert.written_block,
+            hash: cert.written_hash
+          } : null,
+          signature: cert.sig
+        })
       }
     }
-    const json:any = {
-      pubkey: idty.pubkey,
+    return {
+      pubkey: idty.pub,
       uid: idty.uid,
-      sigDate: idty.buid,
+      sigDate: idty.created_on,
       isMember: idty.member,
-      certifications: []
-    };
-    idty.certs.forEach((cert) => json.certifications.push({
-        pubkey: cert.to,
-        uid: cert.uid,
-        isMember: cert.isMember,
-        wasMember: cert.wasMember,
-        cert_time: cert.cert_time,
-        sigDate: cert.sigDate,
-        written: cert.linked ? {
-          number: cert.written_block,
-          hash: cert.written_hash
-        } : null,
-        signature: cert.sig
-      })
-    );
-    return json;
+      certifications: theCerts
+    }
   }
 
   async identityOf(req:any): Promise<HttpSimpleIdentity> {
     let search = await ParametersService.getSearchP(req);
-    let idty = await this.IdentityService.findMemberWithoutMemberships(search);
+    const idty = await this.server.dal.getWrittenIdtyByPubkeyOrUIdForHashingAndIsMember(search)
     if (!idty) {
-      throw 'Identity not found';
+      throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
     }
     if (!idty.member) {
       throw 'Not a member';
     }
     return {
-      pubkey: idty.pubkey,
+      pubkey: idty.pub,
       uid: idty.uid,
-      sigDate: idty.buid
+      sigDate: idty.created_on
     };
   }
 
@@ -298,20 +278,20 @@ export class WOTBinding extends AbstractController {
   async pendingMemberships(): Promise<HttpMembershipList> {
     const memberships = await this.server.dal.findNewcomers();
     const json = {
-      memberships: memberships.map((ms:any) => {
+      memberships: memberships.map((ms:DBMembership) => {
         return {
           pubkey: ms.issuer,
           uid: ms.userid,
-          version: ms.version || 0,
+          version: 10,
           currency: this.server.conf.currency,
           membership: ms.membership,
-          blockNumber: parseInt(ms.blockNumber),
+          blockNumber: ms.blockNumber,
           blockHash: ms.blockHash,
           written: (!ms.written_number && ms.written_number !== 0) ? null : ms.written_number
         };
       })
     };
-    json.memberships = _.sortBy(json.memberships, 'blockNumber');
+    json.memberships = Underscore.sortBy(json.memberships, 'blockNumber');
     json.memberships.reverse();
     return json;
   }

@@ -15,6 +15,8 @@
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {Server} from "../../server"
 import {CommonConstants} from "../lib/common-libs/constants"
+import {Directory} from "../lib/system/directory"
+import {Underscore} from "../lib/common-libs/underscore"
 
 module.exports = {
   duniter: {
@@ -35,6 +37,98 @@ module.exports = {
       desc: 'Register configuration in database',
       // The command does nothing particular, it just stops the process right after configuration phase is over
       onConfiguredExecute: (server:Server, conf:ConfDTO) => Promise.resolve(conf)
+    }, {
+      name: 'parse-logs',
+      desc: 'Extract data from logs.',
+      logs: true,
+      onConfiguredExecute: async (server:Server, conf:ConfDTO) => {
+        const fs = await Directory.getHomeFS(false, Directory.INSTANCE_HOME, false)
+        const lines = (await fs.fs.fsReadFile(Directory.INSTANCE_HOMELOG_FILE)).split('\n')
+        const aggregates = Underscore.uniq(
+          lines
+          .map(l => l.match(/: (\[\w+\](\[\w+\])*)/))
+          .filter(l => l)
+          .map((l:string[]) => l[1])
+        )
+        console.log(aggregates)
+        const results = aggregates.map((a:string) => {
+          return {
+            name: a,
+            time: lines
+              .filter(l => l.match(new RegExp(a
+                .replace(/\[/g, '\\[')
+                .replace(/\]/g, '\\]')
+              )))
+              .map(l => {
+                const m = l.match(/ (\d+)(\.\d+)?(ms|µs)( \d+)?$/)
+                if (!m) {
+                  throw Error('Wrong match')
+                }
+                return m
+              })
+              .map(match => {
+                return {
+                  qty: parseInt(match[1]),
+                  unit: match[3],
+                }
+              })
+              .reduce((sumMicroSeconds, entry) => {
+                return sumMicroSeconds + (entry.qty * (entry.unit === 'ms' ? 1000 : 1))
+              }, 0) / 1000000
+          }
+        })
+        const root:Tree = {
+          name: 'root',
+          leaves: {}
+        }
+        for (const r of results) {
+          recursiveReduce(root, r.name, r.time)
+        }
+        recursiveDump(root)
+      }
     }]
+  }
+}
+
+interface Leaf {
+  name:string
+  value:number
+}
+
+interface Tree {
+  name:string
+  leaves: { [k:string]: Tree|Leaf }
+}
+
+function recursiveReduce(tree:Tree, path:string, duration:number) {
+  if (path.match(/\]\[/)) {
+    const m = (path.match(/^(\[\w+\])(\[.+)/) as string[])
+    const key = m[1]
+    if (!tree.leaves[key]) {
+      tree.leaves[key] = {
+        name: key,
+        leaves: {}
+      }
+    }
+    recursiveReduce(tree.leaves[key] as Tree, m[2], duration)
+  } else {
+    tree.leaves[path] = {
+      name: path,
+      value: duration
+    }
+  }
+}
+
+function recursiveDump(tree:Tree, level = -1) {
+  if (level >= 0) {
+    console.log("  ".repeat(level), tree.name)
+  }
+  for (const k of Object.keys(tree.leaves)) {
+    const element = tree.leaves[k]
+    if ((<Tree>element).leaves) {
+      recursiveDump(<Tree>element, level + 1)
+    } else {
+      console.log("  ".repeat(level + 1), (<Leaf>element).name, (<Leaf>element).value + 's')
+    }
   }
 }

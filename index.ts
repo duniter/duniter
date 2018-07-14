@@ -21,12 +21,13 @@ import {CrawlerDependency} from "./app/modules/crawler/index"
 import {BmaDependency} from "./app/modules/bma/index"
 import {WS2PDependency} from "./app/modules/ws2p/index"
 import {ProverConstants} from "./app/modules/prover/lib/constants"
-import { ProxiesConf } from './app/lib/proxy';
+import {ProxiesConf} from './app/lib/proxy';
 import {RouterDependency} from "./app/modules/router"
+import {OtherConstants} from "./app/lib/other_constants"
+import {Directory} from "./app/lib/system/directory"
+import {Underscore} from "./app/lib/common-libs/underscore"
 
 const path = require('path');
-const _ = require('underscore');
-const directory = require('./app/lib/system/directory');
 const constants = require('./app/lib/constants');
 const logger = require('./app/lib/logger').NewLogger('duniter');
 
@@ -40,6 +41,7 @@ const revertDependency    = require('./app/modules/revert');
 const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
 const pluginDependency    = require('./app/modules/plugin');
+const dumpDependency      = require('./app/modules/dump');
 
 let sigintListening = false
 
@@ -129,7 +131,8 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-keypair',   required: KeypairDependency },
   { name: 'duniter-crawler',   required: CrawlerDependency },
   { name: 'duniter-bma',       required: BmaDependency },
-  { name: 'duniter-ws2p',      required: WS2PDependency }
+  { name: 'duniter-ws2p',      required: WS2PDependency },
+  { name: 'duniter-dump',      required: dumpDependency },
 ]);
 
 const PRODUCTION_DEPENDENCIES = DEFAULT_DEPENDENCIES.concat([
@@ -288,9 +291,10 @@ class Stack {
     const params  = args.slice(2);
     params.pop(); // Don't need the command argument
 
+    OtherConstants.SQL_TRACES = program.sqlTraces === true
     const dbName = program.mdb;
     const dbHome = program.home;
-    const home = directory.getHome(dbName, dbHome);
+    const home = Directory.getHome(dbName, dbHome);
 
     if (command.logs === false) {
       logger.mute();
@@ -349,7 +353,7 @@ class Stack {
 
         // Register the configuration hook for saving phase (overrides the saved data)
         server.dal.saveConfHook = async (conf:ConfDTO) => {
-          const clonedConf = _.clone(conf);
+          const clonedConf = Underscore.clone(conf)
           for (const callback of this.configBeforeSaveCallbacks) {
             await callback(clonedConf, program, logger, server.dal.confDAL);
           }

@@ -13,20 +13,17 @@
 
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {Server} from "../../server"
+import {Directory, RealFS} from "../lib/system/directory"
 
-"use strict";
-
-const qfs       = require('q-io/fs');
-const directory = require('../lib/system/directory');
 const constants = require('../lib/constants');
-const path      = require('path');
 const Tail      = require("tail").Tail
 
 module.exports = {
   duniter: {
 
     cliOptions: [
-      { value: '--loglevel <level>', desc: 'Logs level, either [error,warning,info,debug,trace]. default to `info`.' }
+      { value: '--loglevel <level>', desc: 'Logs level, either [error,warning,info,debug,trace]. default to `info`.' },
+      { value: '--sql-traces', desc: 'Will log every SQL query that is executed. Requires --loglevel \'trace\'.' }
     ],
 
     service: {
@@ -95,7 +92,7 @@ module.exports = {
       desc: 'Follow duniter logs.',
       logs: false,
       onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
-        printTailAndWatchFile(directory.INSTANCE_HOMELOG_FILE, constants.NB_INITIAL_LINES_TO_SHOW)
+        printTailAndWatchFile(Directory.INSTANCE_HOMELOG_FILE, constants.NB_INITIAL_LINES_TO_SHOW)
         // Never ending command
         return new Promise(res => null)
       }
@@ -149,8 +146,9 @@ function stopDaemon(daemon:any) {
 }
 
 async function printTailAndWatchFile(file:any, tailSize:number) {
-    if (await qfs.exists(file)) {
-      const content = await qfs.read(file)
+    const fs = RealFS()
+    if (await fs.fsExists(file)) {
+      const content = await fs.fsReadFile(file)
       const lines = content.split('\n')
       const from = Math.max(0, lines.length - tailSize)
       const lastLines = lines.slice(from).join('\n')

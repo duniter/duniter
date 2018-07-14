@@ -16,8 +16,8 @@ import {ProverConstants} from "./constants"
 import {createPowWorker} from "./proof"
 import {PowWorker} from "./PowWorker"
 import {FileDAL} from "../../../lib/dal/fileDAL";
+import {Underscore} from "../../../lib/common-libs/underscore"
 
-const _ = require('underscore')
 const nuuid = require('node-uuid');
 const cluster = require('cluster')
 const querablep = require('querablep')
@@ -50,7 +50,7 @@ export class Master {
   onInfoCallback:any
   workersOnline:Promise<any>[]
 
-  constructor(private nbCores:number, logger:any, private dal?:FileDAL) {
+  constructor(private nbCores:number|null|undefined, logger:any, private dal?:FileDAL) {
     this.clusterId = clusterId++
     this.logger = logger || Master.defaultLogger()
     this.onInfoMessage = (message:any) => {
@@ -90,7 +90,8 @@ export class Master {
       execArgv: [] // Do not try to debug forks
     })
 
-    this.slaves = Array.from({ length: this.nbCores }).map((value, index) => {
+    const nbCores = this.nbCores !== undefined && this.nbCores !== null ? this.nbCores : 1
+    this.slaves = Array.from({ length: nbCores }).map((value, index) => {
       const nodejsWorker = cluster.fork()
       const worker = new PowWorker(nodejsWorker, message => {
         this.onWorkerMessage(index, message)
@@ -139,7 +140,7 @@ export class Master {
         value: this.conf
       })
     })
-    return Promise.resolve(_.clone(conf))
+    return Promise.resolve(Underscore.clone(conf))
   }
 
   private cancelWorkersWork() {
@@ -204,7 +205,7 @@ export class Master {
             nonceBeginning: s.nonceBeginning,
             zeros: stuff.newPoW.zeros,
             highMark: stuff.newPoW.highMark,
-            pair: _.clone(stuff.newPoW.pair),
+            pair: Underscore.clone(stuff.newPoW.pair),
             forcedTime: stuff.newPoW.forcedTime,
             conf: {
               powNoSecurity: stuff.newPoW.conf.powNoSecurity,

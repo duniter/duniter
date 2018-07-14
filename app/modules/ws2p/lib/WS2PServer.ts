@@ -20,8 +20,7 @@ import {WS2PConstants} from "./constants"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 import {WS2PStreamer} from "./WS2PStreamer"
 import {WS2PSingleWriteStream} from "./WS2PSingleWriteStream"
-
-const WebSocketServer = require('ws').Server
+import {WebSocketServer} from "../../../lib/common-libs/websocket"
 
 export class WS2PServer extends events.EventEmitter {
 

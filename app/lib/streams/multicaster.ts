@@ -13,7 +13,6 @@
 
 import {ConfDTO} from "../dto/ConfDTO"
 import * as stream from "stream"
-import {DBPeer} from "../dal/sqliteDAL/PeerDAL"
 import {BlockDTO} from "../dto/BlockDTO"
 import {RevocationDTO} from "../dto/RevocationDTO"
 import {IdentityDTO} from "../dto/IdentityDTO"
@@ -22,6 +21,7 @@ import {MembershipDTO} from "../dto/MembershipDTO"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import {PeerDTO} from "../dto/PeerDTO"
 import {CommonConstants} from "../common-libs/constants"
+import {DBPeer} from "../db/DBPeer"
 
 const request = require('request');
 const constants = require('../../lib/constants');

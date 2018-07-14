@@ -11,7 +11,6 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
 import {Server} from "../../../../../server"
 import {AbstractController} from "./AbstractController"
 import {ParametersService} from "../parameters"
@@ -28,8 +27,10 @@ import {
   HttpParameters,
   HttpStat
 } from "../dtos"
+import {TransactionDTO} from "../../../../lib/dto/TransactionDTO"
+import {DataErrors} from "../../../../lib/common-libs/errors"
+import {Underscore} from "../../../../lib/common-libs/underscore"
 
-const _                = require('underscore');
 const http2raw         = require('../http2raw');
 const toJson = require('../tojson');
 
@@ -118,9 +119,53 @@ export class BlockchainBinding extends AbstractController {
     const params = ParametersService.getCountAndFrom(req);
     const count = parseInt(params.count);
     const from = parseInt(params.from);
-    let blocks = await this.BlockchainService.blocksBetween(from, count);
+    let blocks: any[] = await this.BlockchainService.blocksBetween(from, count);
     blocks = blocks.map((b:any) => toJson.block(b));
-    return blocks;
+    return blocks.map(b => ({
+      version: b.version,
+      currency: b.currency,
+      number: b.number,
+      issuer: b.issuer,
+      issuersFrame: b.issuersFrame,
+      issuersFrameVar: b.issuersFrameVar,
+      issuersCount: b.issuersCount,
+      parameters: b.parameters,
+      membersCount: b.membersCount,
+      monetaryMass: b.monetaryMass,
+      powMin: b.powMin,
+      time: b.time,
+      medianTime: b.medianTime,
+      dividend: b.dividend,
+      unitbase: b.unitbase,
+      hash: b.hash,
+      previousHash: b.previousHash,
+      previousIssuer: b.previousIssuer,
+      identities: b.identities,
+      certifications: b.certifications,
+      joiners: b.joiners,
+      actives: b.actives,
+      leavers: b.leavers,
+      revoked: b.revoked,
+      excluded: b.excluded,
+      transactions: b.transactions.map((t:TransactionDTO) => ({
+        version: t.version,
+        currency: t.currency,
+        comment: t.comment,
+        locktime: t.locktime,
+        signatures: t.signatures,
+        outputs: t.outputs,
+        inputs: t.inputs,
+        unlocks: t.unlocks,
+        blockstamp: t.blockstamp,
+        blockstampTime: t.blockstampTime,
+        issuers: t.issuers,
+        hash: t.hash,
+      })),
+      nonce: b.nonce,
+      inner_hash: b.inner_hash,
+      signature: b.signature,
+      raw: b.raw,
+    }))
   }
 
   async current(): Promise<HttpBlock> {
@@ -132,7 +177,7 @@ export class BlockchainBinding extends AbstractController {
   async hardship(req:any): Promise<HttpHardship> {
     let nextBlockNumber = 0;
     const search = await ParametersService.getSearchP(req);
-    const idty = await this.IdentityService.findMemberWithoutMemberships(search);
+    const idty = await this.server.dal.getWrittenIdtyByPubkeyOrUidForIsMemberAndPubkey(search);
     if (!idty) {
       throw BMAConstants.ERRORS.NO_MATCHING_IDENTITY;
     }
@@ -143,7 +188,7 @@ export class BlockchainBinding extends AbstractController {
     if (current) {
       nextBlockNumber = current ? current.number + 1 : 0;
     }
-    const difficulty = await this.server.getBcContext().getIssuerPersonalizedDifficulty(idty.pubkey);
+    const difficulty = await this.server.getBcContext().getIssuerPersonalizedDifficulty(idty.pub);
     return {
       "block": nextBlockNumber,
       "level": difficulty
@@ -151,13 +196,16 @@ export class BlockchainBinding extends AbstractController {
   }
 
   async difficulties(): Promise<HttpDifficulties> {
-    const current = await this.server.dal.getCurrentBlockOrNull();
+    const current = await this.server.dal.getCurrentBlockOrNull()
+    if (!current) {
+      throw Error(DataErrors[DataErrors.BLOCKCHAIN_NOT_INITIALIZED_YET])
+    }
     const number = (current && current.number) || 0;
     const issuers = await this.server.dal.getUniqueIssuersBetween(number - 1 - current.issuersFrame, number - 1);
     const difficulties = [];
     for (const issuer of issuers) {
-      const member = await this.server.dal.getWrittenIdtyByPubkey(issuer);
-      const difficulty = await this.server.getBcContext().getIssuerPersonalizedDifficulty(member.pubkey);
+      const member = await this.server.dal.getWrittenIdtyByPubkeyForUidAndPubkey(issuer);
+      const difficulty = await this.server.getBcContext().getIssuerPersonalizedDifficulty(member.pub);
       difficulties.push({
         uid: member.uid,
         level: difficulty
@@ -165,18 +213,18 @@ export class BlockchainBinding extends AbstractController {
     }
     return {
       "block": number + 1,
-      "levels": _.sortBy(difficulties, (diff:any) => diff.level)
+      "levels": Underscore.sortBy(difficulties, (diff:any) => diff.level)
     };
   }
 
   async memberships(req:any): Promise<HttpMemberships> {
     const search = await ParametersService.getSearchP(req);
-    const idty:any = await this.IdentityService.findMember(search);
+    const { idty, memberships } = await this.IdentityService.findMember(search);
     const json = {
       pubkey: idty.pubkey,
       uid: idty.uid,
       sigDate: idty.buid,
-      memberships: idty.memberships.map((msObj:any) => {
+      memberships: memberships.map((msObj:any) => {
         const ms = MembershipDTO.fromJSONObject(msObj);
         return {
           version: ms.version,
@@ -188,7 +236,7 @@ export class BlockchainBinding extends AbstractController {
         };
       })
     }
-    json.memberships = _.sortBy(json.memberships, 'blockNumber');
+    json.memberships = Underscore.sortBy(json.memberships, 'blockNumber')
     json.memberships.reverse();
     return json;
   }

@@ -11,15 +11,15 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
 import {ConfDTO} from "../lib/dto/ConfDTO";
 import {FileDAL} from "../lib/dal/fileDAL";
 import {TransactionDTO} from "../lib/dto/TransactionDTO";
 import {LOCAL_RULES_HELPERS} from "../lib/rules/local_rules";
 import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules";
-import {DBTx} from "../lib/dal/sqliteDAL/TxsDAL";
 import {FIFOService} from "./FIFOService";
 import {GlobalFifoPromise} from "./GlobalFifoPromise";
+import {DataErrors} from "../lib/common-libs/errors"
+import {DBTx} from "../lib/db/DBTx"
 
 const constants       = require('../lib/constants');
 
@@ -47,6 +47,9 @@ export class TransactionService extends FIFOService {
         this.logger.info('⬇ TX %s:%s from %s', tx.output_amount, tx.output_base, tx.issuers);
         const existing = await this.dal.getTxByHash(tx.hash);
         const current = await this.dal.getCurrentBlockOrNull();
+        if (!current) {
+          throw Error(DataErrors[DataErrors.NO_TRANSACTION_POSSIBLE_IF_NOT_CURRENT_BLOCK])
+        }
         if (existing) {
           throw constants.ERRORS.TX_ALREADY_PROCESSED;
         }

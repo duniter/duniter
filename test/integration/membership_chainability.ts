@@ -11,7 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-const toolbox = require('./tools/toolbox')
+import {simpleNodeWith2Users} from "./tools/toolbox"
 
 describe("Membership chainability", function() {
 
@@ -31,7 +31,7 @@ describe("Membership chainability", function() {
     }
 
     before(async () => {
-      const res1 = await toolbox.simpleNodeWith2Users(conf)
+      const res1 = await simpleNodeWith2Users(conf)
       s1 = res1.s1
       cat = res1.cat
       await s1.commit({ time: now })
@@ -67,7 +67,7 @@ describe("Membership chainability", function() {
     }
 
     before(async () => {
-      const res1 = await toolbox.simpleNodeWith2Users(conf)
+      const res1 = await simpleNodeWith2Users(conf)
       s1 = res1.s1
       cat = res1.cat
       await s1.commit({ time: now })

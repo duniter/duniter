@@ -11,11 +11,11 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
-const moment = require('moment');
+import * as moment from "moment"
+import {Directory} from "./system/directory"
+
 const path = require('path');
 const winston = require('winston');
-const directory = require('../lib/system/directory');
 
 /***************
  * CALLBACK LOGGER
@@ -151,11 +151,11 @@ logger.unmute = () => {
 /**
  * Default logging path
  */
-logger.addHomeLogs(directory.INSTANCE_HOME)
+logger.addHomeLogs(Directory.INSTANCE_HOME)
 
 /**
 * Convenience function to get logger directly
 */
-export function NewLogger() {
+export function NewLogger(name?:string) {
   return logger
 }

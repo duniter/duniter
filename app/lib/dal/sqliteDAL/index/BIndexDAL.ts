@@ -94,7 +94,7 @@ export class BIndexDAL extends AbstractSQLite<DBHead> {
    * Get HEAD~n
    * @param n Position
    */
-  async head(n:number) {
+  async head(n:number): Promise<DBHead> {
     if (!n) {
       throw "Cannot read HEAD~0, which is the incoming block"
     }

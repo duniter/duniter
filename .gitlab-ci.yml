@@ -2,6 +2,7 @@ stages:
   - github-sync
   - build
   - test
+  - pages
   - package
   - prerelease
   - release
@@ -33,28 +34,81 @@ push_to_github:
   before_script:
     - export NVM_DIR="$HOME/.nvm"
     - . "$NVM_DIR/nvm.sh"
+
+.cached_nvm: &cached_nvm
+  <<: *nvm_env
+  cache:
+    untracked: true
+    paths:
+      - node_modules/
   
 build:
-  <<: *nvm_env
+  <<: *cached_nvm
   stage: build
   script:
     - yarn
 
+pages:
+  <<: *nvm_env
+  stage: pages
+  cache: {}
+  script:
+    - yarn
+    - yarn doc
+    - mkdir -p public
+    - cp .gitlab/pages/pages-index.html public/index.html
+    - sed -i "s/{BRANCH}/$CI_COMMIT_REF_NAME/g" public/index.html
+    - mv typedoc public/
+    - echo "$CI_JOB_ID"
+    - curl "https://git.duniter.org/nodes/typescript/duniter/-/jobs/$CI_JOB_ID/artifacts/raw/coverage.tar.gz"
+    - tar xzf coverage.tar.gz
+    - mv coverage "public/coverage"
+    - ls public
+  artifacts:
+    untracked: true
+    paths:
+      - public
+  only:
+    - loki
+    - dev
+
 test:
+  <<: *cached_nvm
+  stage: test
+  script:
+    - yarn test
+    # Push coverage to GitLab pages
+    - tar cvzf coverage.tar.gz coverage/
+    # Code coverage display in GitLab
+    - sed -n 23p coverage/index.html | grep -Po "\d+.\d+" | sed -e "s/\(.*\)/<coverage>\1%<\/coverage>/"
+  coverage: '/<coverage>(\d+.\d+\%)<\/coverage>/'
+  artifacts:
+    paths:
+      - coverage.tar.gz
+    expire_in: 4h
+
+sync_g1:
   <<: *nvm_env
   stage: test
   script:
     - yarn
-    - yarn test
-    - sed -n 23p coverage/index.html
+    - bash .gitlab/test/check_g1_sync.sh
+
+sync_gtest:
+  <<: *nvm_env
+  stage: test
+  script:
+    - yarn
+    - bash .gitlab/test/check_gt_sync.sh
 
 .build_releases: &build_releases
   stage: package
   allow_failure: false
-  image: duniter/release-builder:v1.0.1
+  image: duniter/release-builder:v1.2.0
+  cache: {}
+  when: manual
   tags:
     - redshift-duniter-builder
-  when: manual
   artifacts:
     paths: &releases_artifacts
       - work/bin/
@@ -62,6 +116,7 @@ test:
 releases:test:
   <<: *build_releases
   script:
+    - rm -rf node_modules/
     - bash "release/arch/linux/build-lin.sh" "$(date +%Y%m%d).$(date +%H%M).$(date +%S)"
   artifacts:
     paths: *releases_artifacts
@@ -72,6 +127,7 @@ releases:test:
 releases:x64:
   <<: *build_releases
   script:
+    - rm -rf node_modules/
     - bash "release/arch/linux/build-lin.sh" "${CI_COMMIT_TAG#v}"
   artifacts:
     paths: *releases_artifacts

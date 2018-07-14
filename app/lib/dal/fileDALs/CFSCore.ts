@@ -13,7 +13,9 @@
 
 "use strict";
 
-const _ = require('underscore');
+import {FileSystem} from "../../system/directory"
+import {Underscore} from "../../common-libs/underscore"
+
 const path = require('path');
 
 const DEEP_WRITE = true;
@@ -24,7 +26,7 @@ export class CFSCore {
   private deletionFolderPromise: Promise<any> | null
   private createDeletionFolder: () => Promise<any> | null
 
-  constructor(private rootPath:string, private qfs:any) {
+  constructor(private rootPath:string, private qfs:FileSystem) {
     this.deletedFolder = path.join(rootPath, '.deleted')
     this.deletionFolderPromise = null
 
@@ -42,12 +44,12 @@ export class CFSCore {
    */
   async read(filePath:string): Promise<string | null> {
     try {
-      const isDeleted = await this.qfs.exists(path.join(this.deletedFolder, this.toRemoveFileName(filePath)));
+      const isDeleted = await this.qfs.fsExists(path.join(this.deletedFolder, this.toRemoveFileName(filePath)));
       if (isDeleted) {
         // A deleted file must be considered non-existant
         return null;
       }
-      return await this.qfs.read(path.join(this.rootPath, filePath));
+      return await this.qfs.fsReadFile(path.join(this.rootPath, filePath));
     } catch (e) {
       return null
     }
@@ -60,12 +62,12 @@ export class CFSCore {
    */
   async exists(filePath:string): Promise<boolean | null> {
     try {
-      const isDeleted = await this.qfs.exists(path.join(this.deletedFolder, this.toRemoveFileName(filePath)));
+      const isDeleted = await this.qfs.fsExists(path.join(this.deletedFolder, this.toRemoveFileName(filePath)));
       if (isDeleted) {
         // A deleted file must be considered non-existant
         return false;
       }
-      return await this.qfs.exists(path.join(this.rootPath, filePath))
+      return await this.qfs.fsExists(path.join(this.rootPath, filePath))
     } catch (e) {
       return null
     }
@@ -80,19 +82,19 @@ export class CFSCore {
   async list(ofPath:string): Promise<string[]> {
     const dirPath = path.normalize(ofPath);
     let files: string[] = [], folder = path.join(this.rootPath, dirPath);
-    const hasDir = await this.qfs.exists(folder);
+    const hasDir = await this.qfs.fsExists(folder);
     if (hasDir) {
-      files = files.concat(await this.qfs.list(folder));
+      files = files.concat(await this.qfs.fsList(folder));
     }
-    const hasDeletedFiles = await this.qfs.exists(this.deletedFolder);
+    const hasDeletedFiles = await this.qfs.fsExists(this.deletedFolder);
     if (hasDeletedFiles) {
-      const deletedFiles = await this.qfs.list(this.deletedFolder);
+      const deletedFiles = await this.qfs.fsList(this.deletedFolder);
       const deletedOfThisPath = deletedFiles.filter((f:string) => f.match(new RegExp('^' + this.toRemoveDirName(dirPath))));
       const locallyDeletedFiles = deletedOfThisPath.map((f:string) => f.replace(this.toRemoveDirName(dirPath), '')
         .replace(/^__/, ''));
-      files = _.difference(files, locallyDeletedFiles);
+      files = Underscore.difference(files, locallyDeletedFiles)
     }
-    return _.uniq(files);
+    return Underscore.uniq(files)
   };
 
   /**
@@ -102,7 +104,7 @@ export class CFSCore {
    * @param deep Wether to make a deep write or not.
    */
   async write(filePath:string, content:string, deep:boolean): Promise<void> {
-    return this.qfs.write(path.join(this.rootPath, filePath), content);
+    return this.qfs.fsWrite(path.join(this.rootPath, filePath), content);
   };
 
   /**
@@ -111,10 +113,10 @@ export class CFSCore {
    * @param deep Wether to remove the file in the root core or not.
    * @returns {*} Promise of removal.
    */
-  async remove(filePath:string, deep:boolean): Promise<void> {
+  async remove(filePath:string, deep = false): Promise<void> {
     // Make a deep physical deletion
     // Root core: physical deletion
-    return this.qfs.remove(path.join(this.rootPath, filePath));
+    await this.qfs.fsUnlink(path.join(this.rootPath, filePath));
   }
 
   /**
@@ -138,9 +140,9 @@ export class CFSCore {
       let folder = this.rootPath;
       for (let i = 0, len = folders.length; i < len; i++) {
         folder = folder ? path.join(folder, folders[i]) : folders[i];
-        let exists = await this.qfs.exists(folder);
+        let exists = await this.qfs.fsExists(folder);
         if (!exists) {
-          await this.qfs.makeDirectory(folder);
+          await this.qfs.fsMakeDirectory(folder);
         }
       }
     } catch (e) {
@@ -224,5 +226,9 @@ export class CFSCore {
    */
   private toRemoveFileName(filePath:string) {
     return path.normalize(filePath).replace(/\//g, '__').replace(/\\/g, '__');
+  }
+
+  fsStreamTo(filename: string, iterator: IterableIterator<string>) {
+    return this.qfs.fsStreamTo(path.join(this.rootPath, filename), iterator)
   }
 }

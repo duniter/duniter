@@ -12,8 +12,9 @@
 // GNU Affero General Public License for more details.
 
 import {CommonConstants} from "../common-libs/constants"
-import { ProxiesConf } from '../proxy';
-const _ = require('underscore');
+import {ProxiesConf} from '../proxy';
+import {Underscore} from "../common-libs/underscore"
+
 const constants = require('../constants');
 
 export interface Keypair {
@@ -215,6 +216,6 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
   }
 
   static complete(conf:any) {
-    return _(ConfDTO.defaultConf()).extend(conf);
+    return Underscore.extend(ConfDTO.defaultConf(), conf)
   }
 }

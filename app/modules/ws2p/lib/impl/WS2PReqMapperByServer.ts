@@ -11,11 +11,11 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import { IdentityForRequirements } from './../../../../service/BlockchainService';
+import {IdentityForRequirements} from './../../../../service/BlockchainService';
 import {Server} from "../../../../../server"
 import {WS2PReqMapper} from "../interface/WS2PReqMapper"
 import {BlockDTO} from "../../../../lib/dto/BlockDTO"
-import { IindexEntry } from '../../../../lib/indexer';
+import {DBBlock} from "../../../../lib/db/DBBlock"
 
 export class WS2PReqMapperByServer implements WS2PReqMapper {
 
@@ -25,8 +25,8 @@ export class WS2PReqMapperByServer implements WS2PReqMapper {
     return this.server.BlockchainService.current()
   }
 
-  getBlock(number: number): Promise<BlockDTO[]> {
-    return this.server.dal.getBlock(number)
+  async getBlock(number: number): Promise<BlockDTO> {
+    return Promise.resolve(BlockDTO.fromJSONObject(await this.server.dal.getFullBlockOf(number)))
   }
 
   async getBlocks(count: number, from: number): Promise<BlockDTO[]> {
@@ -34,37 +34,34 @@ export class WS2PReqMapperByServer implements WS2PReqMapper {
       throw 'Count is too high'
     }
     const current = await this.server.dal.getCurrentBlockOrNull()
+    if (!current) {
+      return []
+    }
     count = Math.min(current.number - from + 1, count)
     if (!current || current.number < from) {
       return []
     }
-    return this.server.dal.getBlocksBetween(from, from + count - 1)
+    return (await this.server.dal.getBlocksBetween(from, from + count - 1)).map((b:DBBlock) => BlockDTO.fromJSONObject(b))
   }
 
   async getRequirementsOfPending(minsig: number): Promise<any> {
-    let identities:IdentityForRequirements[] = await this.server.dal.idtyDAL.query(
+    let identities:IdentityForRequirements[] = (await this.server.dal.idtyDAL.query(
       'SELECT i.*, count(c.sig) as nbSig ' +
       'FROM idty i, cert c ' +
       'WHERE c.target = i.hash group by i.hash having nbSig >= ?',
-      minsig)
-    const members:IdentityForRequirements[] = (await this.server.dal.idtyDAL.query(
-      'SELECT i.*, count(c.sig) as nbSig ' +
-      'FROM i_index i, cert c ' +
-      'WHERE c.`to` = i.pub group by i.pub having nbSig >= ?',
-      minsig)).map((i:IindexEntry):IdentityForRequirements => {
-        return {
-          hash: i.hash || "",
-          member: i.member || false,
-          wasMember: i.wasMember || false,
-          pubkey: i.pub,
-          uid: i.uid || "",
-          buid: i.created_on || "",
-          sig: i.sig || "",
-          revocation_sig: "",
-          revoked: false,
-          revoked_on: 0
-        }
-      })
+      [minsig])).map(i => ({
+      hash: i.hash || "",
+      member: i.member || false,
+      wasMember: i.wasMember || false,
+      pubkey: i.pubkey,
+      uid: i.uid || "",
+      buid: i.buid || "",
+      sig: i.sig || "",
+      revocation_sig: i.revocation_sig,
+      revoked: i.revoked,
+      revoked_on: i.revoked_on ? 1 : 0
+    }))
+    const members = await this.server.dal.findReceiversAbove(minsig)
     identities = identities.concat(members)
     const all = await this.server.BlockchainService.requirementsOfIdentities(identities, false)
     return {

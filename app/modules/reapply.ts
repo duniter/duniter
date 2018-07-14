@@ -34,6 +34,18 @@ module.exports = {
           await server.disconnect();
         }
       }
+    }, {
+      name: 'db-dump',
+      desc: 'Dump some db data',
+      preventIfRunning: true,
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
+        const data = await server.dal.iindexDAL.findAllByWrittenOn()
+        for (const d of data) {
+          if (d.pub === "9DDn592RMWfka6fPtTGkmAS54CkYxohDGuk41EECxioD") {
+            console.log("%s %s", d.pub, d.kick)
+          }
+        }
+      }
     }]
   }
 }

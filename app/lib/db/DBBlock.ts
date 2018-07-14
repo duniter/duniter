@@ -47,6 +47,8 @@ export class DBBlock {
   monetaryMass: number
   dividend: number | null
   UDTime: number
+  writtenOn: number
+  written_on: string
   wrong = false
 
   constructor(
@@ -66,7 +68,7 @@ export class DBBlock {
     dbb.previousHash = b.previousHash
     dbb.issuer = b.issuer
     dbb.previousIssuer = b.previousIssuer
-    dbb.dividend = b.dividend
+    dbb.dividend = (b.dividend === null || b.dividend === undefined ? b.dividend : parseInt(String(b.dividend)))
     dbb.time = b.time
     dbb.powMin = b.powMin
     dbb.unitbase = b.unitbase
@@ -90,6 +92,8 @@ export class DBBlock {
     dbb.nonce = b.nonce
     dbb.UDTime = b.UDTime
     dbb.monetaryMass = b.monetaryMass
+    dbb.writtenOn = b.number
+    dbb.written_on = [b.number, b.hash].join('-')
     return dbb
   }
 }

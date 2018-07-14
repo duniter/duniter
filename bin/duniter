@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 "use strict";
 
-const co = require('co');
 const logger = require("../app/lib/logger").NewLogger();
 
 // Specific errors handling
@@ -13,12 +12,12 @@ process.on('uncaughtException', (err) => {
   }
 });
 
-return co(function*() {
+(async () => {
 
   try {
     const duniter = require('../index');
     const stack = duniter.statics.autoStack();
-    yield stack.executeStack(process.argv);
+    await stack.executeStack(process.argv);
     // Everything went well, close Duniter quietly.
     process.exit();
   } catch (e) {
@@ -29,4 +28,4 @@ return co(function*() {
     // If we did not succeed to close before, force close with error.
     process.exit(100);
   }
-});
+})()

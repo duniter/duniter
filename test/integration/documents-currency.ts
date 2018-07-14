@@ -12,14 +12,10 @@
 // GNU Affero General Public License for more details.
 
 
-import { NewTestingServer, TestingServer } from './tools/toolbox';
-import { unlock } from '../../app/lib/common-libs/txunlock';
-import { ConfDTO, CurrencyConfDTO } from '../../app/lib/dto/ConfDTO';
-import { Server } from '../../server';
+import {NewTestingServer} from './tools/toolbox';
+import {TestUser} from "./tools/TestUser"
 
-const co        = require('co');
 const should    = require('should');
-const TestUser  = require('./tools/TestUser').TestUser
 
 let s1:any, s2:any, cat1:any, tac1:any, toc2:any, tic2:any;
 
@@ -27,7 +23,7 @@ describe("Document pool currency", function() {
 
   const now = 1500000000
 
-  before(() => co(function*() {
+  before(async () => {
 
     s1 = NewTestingServer({
       currency: 'currency_one',
@@ -52,19 +48,19 @@ describe("Document pool currency", function() {
     toc2 = new TestUser('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s2 });
     tic2 = new TestUser('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s2 });
 
-    yield s1.prepareForNetwork();
-    yield s2.prepareForNetwork();
+    await s1.prepareForNetwork();
+    await s2.prepareForNetwork();
 
     // Publishing identities
-    yield cat1.createIdentity();
-    yield tac1.createIdentity();
-    yield cat1.join();
-    yield tac1.join();
-    yield toc2.createIdentity();
-    yield tic2.createIdentity();
-    yield toc2.join();
-    yield tic2.join();
-  }));
+    await cat1.createIdentity();
+    await tac1.createIdentity();
+    await cat1.join();
+    await tac1.join();
+    await toc2.createIdentity();
+    await tic2.createIdentity();
+    await toc2.join();
+    await tic2.join();
+  })
 
   after(() => {
     return Promise.all([
@@ -73,95 +69,95 @@ describe("Document pool currency", function() {
     ])
   })
 
-  it('Identity with wrong currency should be rejected', () => co(function*() {
-    const idtyCat1 = yield s1.lookup2identity(cat1.pub);
+  it('Identity with wrong currency should be rejected', async () => {
+    const idtyCat1 = await s1.lookup2identity(cat1.pub);
     idtyCat1.getRawSigned()
     try {
-      yield s2.postIdentity(idtyCat1);
+      await s2.postIdentity(idtyCat1);
       throw "Identity should not have been accepted, since it has an unknown currency name";
     } catch (e) {
       should.exist(e.error);
       e.should.be.an.Object();
       e.error.message.should.match(/Signature does not match/);
     }
-  }));
+  })
 
-  it('Identity absorption with wrong currency should be rejected', () => co(function*() {
+  it('Identity absorption with wrong currency should be rejected', async () => {
     try {
-      const cert = yield toc2.makeCert(cat1, s1);
-      yield s2.postCert(cert);
+      const cert = await toc2.makeCert(cat1, s1);
+      await s2.postCert(cert);
       throw "Certification should not have been accepted, since it has an unknown currency name";
     } catch (e) {
       should.exist(e.error);
       e.should.be.an.Object();
       e.error.message.should.match(/Signature does not match/);
     }
-  }));
+  })
 
-  it('Certification with wrong currency should be rejected', () => co(function*() {
+  it('Certification with wrong currency should be rejected', async () => {
     try {
-      const cert = yield toc2.makeCert(tic2, null, {
+      const cert = await toc2.makeCert(tic2, null, {
         currency: "wrong_currency"
       });
-      yield s2.postCert(cert);
+      await s2.postCert(cert);
       throw "Certification should not have been accepted, since it has an unknown currency name";
     } catch (e) {
       should.exist(e.error);
       e.should.be.an.Object();
       e.error.message.should.match(/Wrong signature for certification/);
     }
-  }));
+  })
 
-  it('Membership with wrong currency should be rejected', () => co(function*() {
+  it('Membership with wrong currency should be rejected', async () => {
     try {
-      const join = yield toc2.makeMembership('IN', null, {
+      const join = await toc2.makeMembership('IN', null, {
         currency: "wrong_currency"
       });
-      yield s2.postMembership(join);
+      await s2.postMembership(join);
       throw "Membership should not have been accepted, since it has an unknown currency name";
     } catch (e) {
       should.exist(e.error);
       e.should.be.an.Object();
       e.error.message.should.match(/wrong signature for membership/);
     }
-  }));
+  })
 
-  it('Revocation with wrong currency should be rejected', () => co(function*() {
+  it('Revocation with wrong currency should be rejected', async () => {
     try {
-      const revocation = yield toc2.makeRevocation(null, {
+      const revocation = await toc2.makeRevocation(null, {
         currency: "wrong_currency"
       });
-      yield s2.postRevocation(revocation);
+      await s2.postRevocation(revocation);
       throw "Revocation should not have been accepted, since it has an unknown currency name";
     } catch (e) {
       should.exist(e.error);
       e.should.be.an.Object();
       e.error.message.should.match(/Wrong signature for revocation/);
     }
-  }));
+  })
 
-  it('Block with wrong currency should be rejected', () => co(function*() {
-    yield toc2.cert(tic2);
-    yield tic2.cert(toc2);
-    yield s2.commit();
-    const b2 = yield s2.makeNext({ currency: "wrong_currency" });
+  it('Block with wrong currency should be rejected', async () => {
+    await toc2.cert(tic2);
+    await tic2.cert(toc2);
+    await s2.commit();
+    const b2 = await s2.makeNext({ currency: "wrong_currency" });
     try {
-      yield s2.postBlock(b2);
+      await s2.postBlock(b2);
       throw "Currency should have been rejected";
     } catch (e) {
       should.exist(e.error);
       e.should.be.an.Object();
       e.error.message.should.match(/Wrong currency/);
     }
-  }));
+  })
 
-  it('Transaction with wrong currency should be rejected', () => co(function*() {
+  it('Transaction with wrong currency should be rejected', async () => {
     try {
-      yield cat1.cert(tac1);
-      yield tac1.cert(cat1);
-      yield s1.commit({ time: now });
-      yield s1.commit({ time: now });
-      const current = yield s1.get('/blockchain/current');
+      await cat1.cert(tac1);
+      await tac1.cert(cat1);
+      await s1.commit({ time: now });
+      await s1.commit({ time: now });
+      const current = await s1.get('/blockchain/current');
       const tx = cat1.makeTX(
         [{
           src: "1500:0:D:DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo:1",
@@ -176,18 +172,18 @@ describe("Document pool currency", function() {
           currency: "wrong_currency",
           blockstamp: [current.number, current.hash].join('-')
         });
-      yield s1.postRawTX(tx);
+      await s1.postRawTX(tx);
       throw "Transaction should not have been accepted, since it has an unknown currency name";
     } catch (e) {
       should.exist(e.error);
       e.should.be.an.Object();
       e.error.message.should.match(/Signature from a transaction must match/);
     }
-  }));
+  })
 
-  it('Transaction with wrong XHX should be rejected', () => co(function*() {
+  it('Transaction with wrong XHX should be rejected', async () => {
     try {
-      const current = yield s1.get('/blockchain/current');
+      const current = await s1.get('/blockchain/current');
       const tx = cat1.makeTX(
         [{
           src: "1500:1:D:HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:1",
@@ -201,27 +197,27 @@ describe("Document pool currency", function() {
         {
           blockstamp: [current.number, current.hash].join('-')
         });
-      yield s1.postRawTX(tx);
+      await s1.postRawTX(tx);
       throw "Transaction should not have been accepted, since it has wrong output format";
     } catch (e) {
       should.exist(e.error);
       e.should.be.an.Object();
       e.error.message.should.match(/Wrong output format/);
     }
-  }));
+  })
 
-  it('Peer with wrong currency should be rejected', () => co(function*() {
+  it('Peer with wrong currency should be rejected', async () => {
     try {
-      const peer = yield toc2.makePeer(['BASIC_MERKLED_API localhost 10901'], {
+      const peer = await toc2.makePeer(['BASIC_MERKLED_API localhost 10901'], {
         version: 10,
         currency: "wrong_currency"
       });
-      yield s2.postPeer(peer);
+      await s2.postPeer(peer);
       throw "Peer should not have been accepted, since it has an unknown currency name";
     } catch (e) {
       should.exist(e.error);
       e.should.be.an.Object();
       e.error.message.should.match(/Signature from a peer must match/);
     }
-  }));
-});
+  })
+})

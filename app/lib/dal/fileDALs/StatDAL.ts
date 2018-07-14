@@ -12,12 +12,12 @@
 // GNU Affero General Public License for more details.
 
 import {AbstractCFS} from "./AbstractCFS";
-import {CFSCore} from "./CFSCore";
-const _ = require('underscore');
+import {FileSystem} from "../../system/directory"
+import {Underscore} from "../../common-libs/underscore"
 
 export class StatDAL extends AbstractCFS {
 
-  constructor(rootPath:string, qioFS:any) {
+  constructor(rootPath:string, qioFS:FileSystem) {
     super(rootPath, qioFS)
   }
 
@@ -39,7 +39,7 @@ export class StatDAL extends AbstractCFS {
 
   async pushStats(statsToPush:any) {
     const stats = (await this.loadStats()) || {};
-    _.keys(statsToPush).forEach(function(statName:string){
+    Underscore.keys(statsToPush).forEach(function(statName:string){
       if (!stats[statName]) {
         stats[statName] = { blocks: [] };
       }

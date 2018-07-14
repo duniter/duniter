@@ -12,8 +12,8 @@
 // GNU Affero General Public License for more details.
 
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
-import {DBPeer as DBPeer2} from "../../../lib/dal/sqliteDAL/PeerDAL"
 import {WS2PHead} from "../../ws2p/lib/WS2PCluster"
+import {JSONDBPeer} from "../../../lib/db/DBPeer"
 
 export const Summary = {
   duniter: {
@@ -125,16 +125,14 @@ export interface HttpMemberships {
   pubkey: string
   uid: string
   sigDate: string
-  memberships: [
-    {
-      version: number
-      currency: string
-      membership: string
-      blockNumber: number
-      blockHash: string
-      written: number
-    }
-  ]
+  memberships: {
+    version: number
+    currency: string
+    membership: string
+    blockNumber: number
+    blockHash: string
+    written: number
+  }[]
 }
 
 export const MembershipList = {
@@ -153,18 +151,16 @@ export const MembershipList = {
 };
 
 export interface HttpMembershipList {
-  memberships: [
-    {
-      pubkey: string
-      uid: string
-      version: number
-      currency: string
-      membership: string
-      blockNumber: number
-      blockHash: string
-      written: number
-    }
-  ]
+  memberships: {
+    pubkey: string
+    uid: string
+    version: number
+    currency: string
+    membership: string
+    blockNumber: number
+    blockHash: string
+    written: number|null
+  }[]
 }
 
 export const TransactionOfBlock = {
@@ -186,17 +182,16 @@ export const TransactionOfBlock = {
 export interface HttpTransactionOfBlock {
   version: number
   currency: string
-  comment: string
   locktime: number
-  signatures: string[]
-  outputs: string[]
-  inputs: string[]
-  unlocks: string[]
-  block_number: number
+  hash: string
   blockstamp: string
   blockstampTime: number
-  time: number
   issuers: string[]
+  inputs: string[]
+  outputs: string[]
+  unlocks: string[]
+  signatures: string[]
+  comment: string
 }
 
 export const Block = {
@@ -246,7 +241,7 @@ export interface HttpBlock {
   powMin: number
   time: number
   medianTime: number
-  dividend: number
+  dividend: number|null
   unitbase: number
   hash: string
   previousHash: string
@@ -303,10 +298,9 @@ export function block2HttpBlock(blockDTO:BlockDTO): HttpBlock {
         outputs: tx.outputs,
         inputs: tx.inputs,
         unlocks: tx.unlocks,
-        block_number: tx.blockNumber,
+        hash: tx.hash,
         blockstamp: tx.blockstamp,
         blockstampTime: tx.blockstampTime,
-        time: tx.blockstampTime
       }
     }),
     nonce: blockDTO.nonce,
@@ -406,7 +400,7 @@ export const Peers = {
 };
 
 export interface HttpPeers {
-  peers: DBPeer2[]
+  peers: JSONDBPeer[]
 }
 
 export interface HttpWS2PInfo {
@@ -440,7 +434,7 @@ export interface HttpMerkleOfPeers {
   leaves: string[]
   leaf: {
     hash: string
-    value: DBPeer2
+    value: JSONDBPeer
   }
 }
 
@@ -486,9 +480,9 @@ export interface HttpUID {
     timestamp: string
   },
   self: string,
-  revocation_sig: string,
+  revocation_sig: string|null,
   revoked: boolean,
-  revoked_on: number,
+  revoked_on: number|null,
   others: HttpOther[]
 }
 
@@ -712,7 +706,7 @@ export interface HttpCertification {
   written: {
     number: number
     hash: string
-  }
+  } | null
   signature: string
 }
 
@@ -771,6 +765,18 @@ export interface HttpTransaction {
   signatures: string[]
   raw: string
   written_block: number|null
+  hash: string
+}
+
+export interface HttpTransactionPending {
+  version: number
+  issuers: string[]
+  inputs: string[]
+  unlocks: string[]
+  outputs: string[]
+  comment: string
+  locktime: number
+  signatures: string[]
   hash: string
 }
 
@@ -869,7 +875,7 @@ export const TxPending = {
 
 export interface HttpTxPending {
   currency: string
-  pending: HttpTransaction[]
+  pending: HttpTransactionPending[]
 }
 
 export const UD = {

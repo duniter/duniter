@@ -14,7 +14,7 @@
 import {GlobalFifoPromise} from "./GlobalFifoPromise"
 import {FileDAL} from "../lib/dal/fileDAL"
 import {ConfDTO} from "../lib/dto/ConfDTO"
-import {DBIdentity, ExistingDBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
+import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
 import {GLOBAL_RULES_FUNCTIONS, GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
 import {BlockDTO} from "../lib/dto/BlockDTO"
 import {RevocationDTO} from "../lib/dto/RevocationDTO"
@@ -23,6 +23,9 @@ import {CertificationDTO} from "../lib/dto/CertificationDTO"
 import {DBCert} from "../lib/dal/sqliteDAL/CertDAL"
 import {verify} from "../lib/common-libs/crypto/keyring"
 import {FIFOService} from "./FIFOService"
+import {MindexEntry} from "../lib/indexer"
+import {DataErrors} from "../lib/common-libs/errors"
+import {Tristamp} from "../lib/common/Tristamp"
 
 "use strict";
 const constants       = require('../lib/constants');
@@ -49,38 +52,58 @@ export class IdentityService extends FIFOService {
     return this.dal.searchJustIdentities(search)
   }
 
-  async findMember(search:string): Promise<ExistingDBIdentity> {
+  async findMember(search:string) {
     let idty = null;
     if (search.match(constants.PUBLIC_KEY)) {
-      idty = await this.dal.getWrittenIdtyByPubkey(search);
+      idty = await this.dal.getWrittenIdtyByPubkeyForHashing(search);
     }
     else {
-      idty = await this.dal.getWrittenIdtyByUID(search);
+      idty = await this.dal.getWrittenIdtyByUidForHashing(search);
     }
     if (!idty) {
       throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
     }
-    const obj = DBIdentity.copyFromExisting(idty)
-    await this.dal.fillInMembershipsOfIdentity(Promise.resolve(obj));
-    return obj
-  }
 
-  async findMemberWithoutMemberships(search:string) {
-    let idty = null;
-    if (search.match(constants.PUBLIC_KEY)) {
-      idty = await this.dal.getWrittenIdtyByPubkey(search)
-    }
-    else {
-      idty = await this.dal.getWrittenIdtyByUID(search)
-    }
-    if (!idty) {
-      throw constants.ERRORS.NO_MEMBER_MATCHING_PUB_OR_UID;
-    }
-    return DBIdentity.copyFromExisting(idty)
-  }
+    let memberships: {
+      blockstamp:string
+      membership:string
+      number:number
+      fpr:string
+      written_number:number|null
+    }[] = []
 
-  getWrittenByPubkey(pubkey:string) {
-    return this.dal.getWrittenIdtyByPubkey(pubkey)
+    if (idty) {
+      const mss = await this.dal.msDAL.getMembershipsOfIssuer(idty.pub);
+      const mssFromMindex = await this.dal.mindexDAL.reducable(idty.pub);
+      memberships = mss.map(m => {
+        return {
+          blockstamp: [m.blockNumber, m.blockHash].join('-'),
+          membership: m.membership,
+          number: m.blockNumber,
+          fpr: m.blockHash,
+          written_number: m.written_number
+        }
+      })
+      memberships = memberships.concat(mssFromMindex.map((ms:MindexEntry) => {
+        const sp = ms.created_on.split('-');
+        return {
+          blockstamp: ms.created_on,
+          membership: ms.leaving ? 'OUT' : 'IN',
+          number: parseInt(sp[0]),
+          fpr: sp[1],
+          written_number: parseInt(ms.written_on)
+        }
+      }))
+    }
+
+    return {
+      idty: {
+        pubkey: idty.pub,
+        uid: idty.uid,
+        buid: idty.created_on
+      },
+      memberships
+    }
   }
 
   getPendingFromPubkey(pubkey:string) {
@@ -101,17 +124,17 @@ export class IdentityService extends FIFOService {
       if (!verified) {
         throw constants.ERRORS.SIGNATURE_DOES_NOT_MATCH;
       }
-      let existing = await this.dal.getIdentityByHashOrNull(toSave.hash);
+      let existing = await this.dal.getGlobalIdentityByHashForExistence(toSave.hash);
       if (existing) {
         throw constants.ERRORS.ALREADY_UP_TO_DATE;
       }
       else {
         // Create if not already written uid/pubkey
-        let used = await this.dal.getWrittenIdtyByPubkey(idty.pubkey);
+        let used = await GLOBAL_RULES_HELPERS.checkExistsPubkey(idty.pubkey, this.dal)
         if (used) {
           throw constants.ERRORS.PUBKEY_ALREADY_USED;
         }
-        used = await this.dal.getWrittenIdtyByUID(idty.uid);
+        used = await GLOBAL_RULES_HELPERS.checkExistsUserID(idty.uid, this.dal)
         if (used) {
           throw constants.ERRORS.UID_ALREADY_USED;
         }
@@ -119,7 +142,7 @@ export class IdentityService extends FIFOService {
         if (idty.buid == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855' && current) {
           throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
         } else if (current) {
-          let basedBlock = await this.dal.getBlockByBlockstamp(idty.buid);
+          let basedBlock = await this.dal.getAbsoluteValidBlockInForkWindowByBlockstamp(idty.buid);
           if (!basedBlock) {
             throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
           }
@@ -128,6 +151,7 @@ export class IdentityService extends FIFOService {
         await GLOBAL_RULES_FUNCTIONS.checkIdentitiesAreWritable({ identities: [idtyObj.inline()], version: (current && current.version) || constants.BLOCK_GENERATED_VERSION }, this.conf, this.dal);
         if (byAbsorption !== BY_ABSORPTION) {
           if (!(await this.dal.idtyDAL.sandbox.acceptNewSandBoxEntry({
+              certsCount: 0,
               issuers: [idty.pubkey],
               ref_block: parseInt(idty.buid.split('-')[0])
             }, this.conf.pair && this.conf.pair.pub))) {
@@ -149,34 +173,43 @@ export class IdentityService extends FIFOService {
     obj.currency = this.conf.currency || obj.currency;
     const cert = CertificationDTO.fromJSONObject(obj)
     const targetHash = cert.getTargetHash();
-    let idty = await this.dal.getIdentityByHashOrNull(targetHash);
+    let possiblyNullIdty = await this.dal.getGlobalIdentityByHashForHashingAndSig(targetHash);
     let idtyAbsorbed = false
-    if (!idty) {
+    const idty:{
+      pubkey:string
+      uid:string
+      buid:string
+      sig:string
+    } = possiblyNullIdty !== null ? possiblyNullIdty : await this.submitIdentity({
+      pubkey: cert.idty_issuer,
+      uid: cert.idty_uid,
+      buid: cert.idty_buid,
+      sig: cert.idty_sig
+    }, BY_ABSORPTION);
+    if (possiblyNullIdty === null) {
       idtyAbsorbed = true
-      idty = await this.submitIdentity({
-        pubkey: cert.idty_issuer,
-        uid: cert.idty_uid,
-        buid: cert.idty_buid,
-        sig: cert.idty_sig
-      }, BY_ABSORPTION);
     }
     let anErr:any
     const hash = cert.getHash()
     return this.pushFIFO<CertificationDTO>(hash, async () => {
       this.logger.info('⬇ CERT %s block#%s -> %s', cert.from, cert.block_number, idty.uid);
       try {
-        await GLOBAL_RULES_HELPERS.checkCertificationIsValid(cert, potentialNext, () => Promise.resolve(idty), this.conf, this.dal);
+        await GLOBAL_RULES_HELPERS.checkCertificationIsValidInSandbox(cert, potentialNext, () => Promise.resolve(idty), this.conf, this.dal);
       } catch (e) {
         anErr = e;
       }
       if (!anErr) {
         try {
-          let basedBlock = await this.dal.getBlock(cert.block_number);
+          let basedBlock: Tristamp|null = await this.dal.getTristampOf(cert.block_number);
           if (cert.block_number == 0 && !basedBlock) {
             basedBlock = {
               number: 0,
-              hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
+              hash: 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855',
+              medianTime: 0
             };
+          }
+          if (!basedBlock) {
+            throw Error(DataErrors[DataErrors.CERT_BASED_ON_UNKNOWN_BLOCK])
           }
           const mCert:DBCert = {
             issuers: [cert.from],
@@ -234,7 +267,7 @@ export class IdentityService extends FIFOService {
         if (!verified) {
           throw 'Wrong signature for revocation';
         }
-        const existing = await this.dal.getIdentityByHashOrNull(obj.hash);
+        const existing = await this.dal.getGlobalIdentityByHashForRevocation(obj.hash)
         if (existing) {
           // Modify
           if (existing.revoked) {
@@ -243,7 +276,15 @@ export class IdentityService extends FIFOService {
           else if (existing.revocation_sig) {
             throw 'Revocation already registered';
           } else {
-            await this.dal.setRevocating(existing, revoc.revocation);
+            await this.dal.setRevocating({
+              pubkey: existing.pub,
+              buid: existing.created_on,
+              sig: existing.sig,
+              uid: existing.uid,
+              expires_on: existing.expires_on,
+              member: existing.member,
+              wasMember: existing.wasMember,
+            }, revoc.revocation);
             this.logger.info('✔ REVOCATION %s %s', revoc.pubkey, revoc.idty_uid);
             return revoc
           }

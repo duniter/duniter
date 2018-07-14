@@ -14,9 +14,9 @@
 import {AbstractDAO} from "../../../../app/modules/crawler/lib/pulling"
 import {BlockDTO} from "../../../../app/lib/dto/BlockDTO"
 import {NewLogger} from "../../../../app/lib/logger"
+import {Underscore} from "../../../../app/lib/common-libs/underscore"
 
 const should = require('should');
-const _ = require('underscore');
 
 let commonConf = {
   switchOnHeadAdvance: 1,
@@ -240,7 +240,7 @@ class mockDao extends AbstractDAO {
     let block = bc[number] || null;
     // Quantum block implementation
     if (block && block.quantum) {
-      bc[number] = _.clone(block);
+      bc[number] = Underscore.clone(block);
       bc[number].hash = 'Q' + block.hash;
     }
     return block;

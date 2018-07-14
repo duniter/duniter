@@ -13,10 +13,11 @@
 
 import {AbstractSQLite} from "./AbstractSQLite"
 import {SQLiteDriver} from "../drivers/SQLiteDriver"
-import { SandBox } from './SandBox';
+import {SandBox} from './SandBox';
 import {IdentityDTO} from "../../dto/IdentityDTO"
 import {Cloneable} from "../../dto/Cloneable";
-import { DBDocument } from './DocumentDAL';
+import {DBDocument} from './DocumentDAL';
+
 const constants = require('../../constants');
 
 export abstract class DBIdentity implements Cloneable {
@@ -26,7 +27,19 @@ export abstract class DBIdentity implements Cloneable {
   }
 
   certs:any[] = []
-  signed:any[] = []
+  signed: {
+    idty: {
+      pubkey: string
+      uid: string
+      buid: string
+      sig: string
+      member: string
+      wasMember: string
+    }
+    block_number: number
+    block_hash: string
+    sig: string
+  }[] = []
 
   revoked: boolean
   currentMSN: null
@@ -47,7 +60,11 @@ export abstract class DBIdentity implements Cloneable {
   expires_on: number
 
   getTargetHash() {
-    return IdentityDTO.getTargetHash(this)
+    return IdentityDTO.getTargetHash({
+      pub: this.pubkey,
+      created_on: this.buid,
+      uid: this.uid
+    })
   }
 
   json() {
@@ -71,7 +88,7 @@ export abstract class DBIdentity implements Cloneable {
         "timestamp": this.buid
       },
       "revoked": this.revoked,
-      "revoked_on": this.revoked_on,
+      "revoked_on": parseInt(String(this.revoked_on)),
       "revocation_sig": this.revocation_sig,
       "self": this.sig,
       "others": others
@@ -157,7 +174,7 @@ export class ExistingDBIdentity extends DBIdentity {
   }
 }
 
-export interface DBSandboxIdentity extends DBIdentity,DBDocument {
+export interface DBSandboxIdentity extends DBDocument {
   certsCount: number
   ref_block: number
 }
@@ -254,6 +271,10 @@ export class IdentityDAL extends AbstractSQLite<DBIdentity> {
     })
   }
 
+  setRevoked(pubkey: string) {
+    return this.query('UPDATE ' + this.table + ' SET revoked = ? WHERE pubkey = ?', [true, pubkey])
+  }
+
   getByHash(hash:string) {
     return this.sqlFindOne({
       hash: hash
@@ -278,7 +299,7 @@ export class IdentityDAL extends AbstractSQLite<DBIdentity> {
 
   getPendingIdentities() {
     return this.sqlFind({
-      revocation_sig: { $null: false },
+      revocation_sig: { $null: true },
       revoked: false
     })
   }

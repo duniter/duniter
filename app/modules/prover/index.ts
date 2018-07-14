@@ -21,6 +21,7 @@ import {parsers} from "../../lib/common-libs/parsers/index"
 import {PeerDTO} from "../../lib/dto/PeerDTO"
 import {Server} from "../../../server"
 import {BlockDTO} from "../../lib/dto/BlockDTO"
+import {DBIdentity} from "../../lib/dal/sqliteDAL/IdentityDAL"
 
 const async = require('async');
 
@@ -68,7 +69,7 @@ export const ProverDependency = {
         server.generatorComputeNewCerts = generator.computeNewCerts.bind(generator)
         server.generatorNewCertsToLinks = generator.newCertsToLinks.bind(generator)
       },
-      prover: (server:Server, conf:ConfDTO, logger:any) => new Prover(server),
+      prover: (server:Server) => new Prover(server),
       blockGenerator: (server:Server, prover:any) => new BlockGeneratorWhichProves(server, prover),
       generateTheNextBlock: async (server:Server, manualValues:any) => {
         const prover = new BlockProver(server);
@@ -109,7 +110,7 @@ export const ProverDependency = {
       onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const difficulty = params[0]
         const generator = new BlockGeneratorWhichProves(server, null);
-        let toDelete, catched = true;
+        let toDelete:DBIdentity[] = [], catched = true;
         do {
           try {
             await generateAndSend(program, difficulty, server, () => () => generator.nextBlock())

@@ -11,7 +11,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-const qfs     = require('q-io/fs')
+import {OtherConstants} from "../../other_constants"
+import {RealFS} from "../../system/directory"
+
 const sqlite3 = require("sqlite3").verbose()
 
 const MEMORY_PATH = ':memory:'
@@ -34,6 +36,11 @@ export class SQLiteDriver {
         let sqlite = new sqlite3.Database(this.path)
         await new Promise<any>((resolve) => sqlite.once('open', resolve))
         // Database is opened
+        if (OtherConstants.SQL_TRACES) {
+          sqlite.on('trace', (trace:any) => {
+            this.logger.trace(trace)
+          })
+        }
 
         // Force case sensitiveness on LIKE operator
         const sql = 'PRAGMA case_sensitive_like=ON'
@@ -75,7 +82,7 @@ export class SQLiteDriver {
     this.logger.debug('Removing SQLite database...')
     await this.closeConnection()
     if (this.path !== MEMORY_PATH) {
-      await qfs.remove(this.path)
+      await RealFS().fsUnlink(this.path)
     }
     this.logger.debug('Database removed')
   }

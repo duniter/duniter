@@ -123,7 +123,7 @@ NW_VERSION=0.28.0
 NW_RELEASE="v${NW_VERSION}"
 NW="nwjs-${NW_RELEASE}-linux-x64"
 NW_GZ="${NW}.tar.gz"
-DUNITER_UI_VER="1.6.x"
+DUNITER_UI_VER="1.7.x"
 
 nvm install ${NVER} || exit 1
 nvm use ${NVER} || exit 1
@@ -168,11 +168,11 @@ rm -Rf .gitignore .git || exit 1 # Remove git files
 
 # Build
 echo ">> VM: building modules..."
-npm install || exit 1
+yarn || exit 1
 
 # Duniter UI
-npm install "duniter-ui@${DUNITER_UI_VER}" || exit 1
-npm prune --production || exit 1
+yarn add "duniter-ui@${DUNITER_UI_VER}" || exit 1
+yarn --production || exit 1
 
 rm -rf release coverage test # Non production folders
 cp -r "${RELEASES}/duniter" "${RELEASES}/desktop_" || exit 1

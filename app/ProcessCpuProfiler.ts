@@ -14,9 +14,18 @@
 const SAMPLING_PERIOD = 150 // milliseconds
 const MAX_SAMPLES_DISTANCE = 20 * 1000000 // seconds
 
-function getMicrosecondsTime() {
+export function getMicrosecondsTime() {
   const [ seconds, nanoseconds ] = process.hrtime()
   return seconds * 1000000 + nanoseconds / 1000
+}
+
+export function getNanosecondsTime() {
+  const [ seconds, nanoseconds ] = process.hrtime()
+  return seconds * 1000000 + nanoseconds
+}
+
+export function getDurationInMicroSeconds(before:number) {
+  return parseInt(String(getMicrosecondsTime() - before))
 }
 
 interface CpuUsage {

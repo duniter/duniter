@@ -11,22 +11,23 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
 import {BlockDTO} from "../dto/BlockDTO"
 import {DuniterBlockchain} from "../blockchain/DuniterBlockchain"
 import {QuickSynchronizer} from "./QuickSync"
 import {DBHead} from "../db/DBHead"
+import {FileDAL} from "../dal/fileDAL"
+import {DBBlock} from "../db/DBBlock"
+import {Underscore} from "../common-libs/underscore"
+import {DataErrors} from "../common-libs/errors"
 
-const _               = require('underscore');
 const indexer         = require('../indexer').Indexer
 const constants       = require('../constants');
 
 export class BlockchainContext {
 
   private conf:any
-  private dal:any
+  private dal:FileDAL
   private logger:any
-  private blockchain:DuniterBlockchain
   private quickSynchronizer:QuickSynchronizer
 
   /**
@@ -40,14 +41,14 @@ export class BlockchainContext {
    */
   private vHEAD_1:any
 
-  private HEADrefreshed: Promise<any> | null = Promise.resolve();
+  private HEADrefreshed: Promise<void> = Promise.resolve();
 
   /**
    * Refresh the virtual HEAD value for determined variables of the next coming block, avoiding to recompute them
    * each time a new block arrives to check if the values are correct. We can know and store them early on, in vHEAD.
    */
   private refreshHead(): Promise<void> {
-    this.HEADrefreshed = (async (): Promise<void> => {
+    this.HEADrefreshed = (async () => {
       this.vHEAD_1 = await this.dal.head(1);
       // We suppose next block will have same version #, and no particular data in the block (empty index)
       let block;
@@ -82,7 +83,7 @@ export class BlockchainContext {
     for (const k of keys) {
       copy[k] = this.vHEAD[k];
     }
-    _.extend(copy, props);
+    Underscore.extend(copy, props);
     return copy;
   }
 
@@ -106,10 +107,9 @@ export class BlockchainContext {
     return local_vHEAD.issuerDiff;
   }
 
-  setConfDAL(newConf: any, newDAL: any, theBlockchain: DuniterBlockchain, theQuickSynchronizer: QuickSynchronizer): void {
+  setConfDAL(newConf: any, newDAL: any, theQuickSynchronizer: QuickSynchronizer): void {
     this.dal = newDAL;
     this.conf = newConf;
-    this.blockchain = theBlockchain
     this.quickSynchronizer = theQuickSynchronizer
     this.logger = require('../logger').NewLogger(this.dal.profile);
   }
@@ -118,24 +118,36 @@ export class BlockchainContext {
     return DuniterBlockchain.checkBlock(block, withPoWAndSignature, this.conf, this.dal)
   }
 
-  private async addBlock(obj: BlockDTO, index: any = null, HEAD: DBHead | null = null, trim: boolean): Promise<any> {
-    const block = await this.blockchain.pushTheBlock(obj, index, HEAD, this.conf, this.dal, this.logger, trim)
-    this.vHEAD_1 = this.vHEAD = this.HEADrefreshed = null
+  private async addBlock(obj: BlockDTO, index: any = null, HEAD: DBHead | null = null, trim: boolean): Promise<BlockDTO> {
+    const block = await DuniterBlockchain.pushTheBlock(obj, index, HEAD, this.conf, this.dal, this.logger, trim)
+    this.vHEAD_1 = this.vHEAD = null
     return block
   }
 
   async addSideBlock(obj:BlockDTO): Promise<BlockDTO> {
-    const dbb = await this.blockchain.pushSideBlock(obj, this.dal, this.logger)
+    const dbb = await DuniterBlockchain.pushSideBlock(obj, this.dal, this.logger)
     return dbb.toBlockDTO()
   }
 
-  async revertCurrentBlock(): Promise<BlockDTO> {
+  async revertCurrentBlock(): Promise<DBBlock> {
     const head_1 = await this.dal.bindexDAL.head(1);
     this.logger.debug('Reverting block #%s...', head_1.number);
-    const res = await this.blockchain.revertBlock(head_1.number, head_1.hash, this.dal)
+    const block = await this.dal.getAbsoluteValidBlockInForkWindow(head_1.number, head_1.hash)
+    if (!block) {
+      throw DataErrors[DataErrors.BLOCK_TO_REVERT_NOT_FOUND]
+    }
+    await DuniterBlockchain.revertBlock(head_1.number, head_1.hash, this.dal, block)
     // Invalidates the head, since it has changed.
     await this.refreshHead();
-    return res;
+    return block
+  }
+
+  async revertCurrentHead() {
+    const head_1 = await this.dal.bindexDAL.head(1);
+    this.logger.debug('Reverting HEAD~1... (b#%s)', head_1.number);
+    await DuniterBlockchain.revertBlock(head_1.number, head_1.hash, this.dal)
+    // Invalidates the head, since it has changed.
+    await this.refreshHead();
   }
 
   async applyNextAvailableFork(): Promise<any> {
@@ -146,7 +158,7 @@ export class BlockchainContext {
       throw constants.ERRORS.NO_POTENTIAL_FORK_AS_NEXT;
     }
     const block = forks[0];
-    await this.checkAndAddBlock(block)
+    await this.checkAndAddBlock(BlockDTO.fromJSONObject(block))
     this.logger.debug('Applied block #%s', block.number);
   }
 

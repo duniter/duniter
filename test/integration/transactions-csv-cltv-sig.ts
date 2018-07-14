@@ -18,7 +18,6 @@ import {Buid} from "../../app/lib/common-libs/buid"
 describe("Transaction: CSV+CLTV+1of2SIG", function() {
 
   const now = 1500000000
-  const DONT_WAIT_FOR_BLOCKCHAIN_CHANGE = true
   let s1:TestingServer
   let cat:any
   let tac:any
@@ -59,7 +58,7 @@ describe("Transaction: CSV+CLTV+1of2SIG", function() {
     })
     txHash = hashf(tx)
     await cat.sendTX(tx)
-    const block = await s1.commit({ time: now }, DONT_WAIT_FOR_BLOCKCHAIN_CHANGE)
+    const block = await s1.justCommit({ time: now })
     block.should.have.property('transactions').length(1)
     await s1.waitToHaveBlock(2)
   })
@@ -79,7 +78,7 @@ describe("Transaction: CSV+CLTV+1of2SIG", function() {
       blockstamp: Buid.format.buid(current)
     })
     await tac.sendTX(tx)
-    const block = await s1.commit(null, DONT_WAIT_FOR_BLOCKCHAIN_CHANGE)
+    const block = await s1.justCommit(null)
     block.should.have.property('transactions').length(1)
   })
 

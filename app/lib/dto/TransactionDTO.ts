@@ -23,7 +23,7 @@ export class InputDTO implements BaseDTO {
   constructor(
     public amount: number,
     public base: number,
-    public type: string,
+    public type: 'T'|'D',
     public identifier: string,
     public pos: number,
     public raw: string
@@ -134,7 +134,7 @@ export class TransactionDTO implements Cloneable {
       return new InputDTO(
         parseInt(amount),
         parseInt(base),
-        type,
+        type as 'T'|'D',
         identifier,
         parseInt(pos),
         input

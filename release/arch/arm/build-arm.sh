@@ -68,7 +68,7 @@ cp -R "$DOWNLOADS/node-${NVER}-linux-${ARCH}" node
 
 npm install
 
-npm install duniter-ui@1.6.x --save --production
+npm install duniter-ui@1.7.x --save --production
 SRC=`pwd`
 echo $SRC
 

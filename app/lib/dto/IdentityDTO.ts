@@ -18,9 +18,9 @@ import {DBIdentity, NewDBIdentity} from "../dal/sqliteDAL/IdentityDAL"
 const DEFAULT_DOCUMENT_VERSION = 10
 
 export interface HashableIdentity {
-  buid: string
+  created_on: string
   uid: string
-  pubkey: string
+  pub: string
 }
 
 export interface BasicIdentity {
@@ -28,6 +28,16 @@ export interface BasicIdentity {
   uid: string
   pubkey: string
   sig: string
+}
+
+export interface BasicRevocableIdentity {
+  buid: string
+  uid: string
+  pubkey: string
+  sig: string
+  member: boolean
+  wasMember: boolean
+  expires_on: number
 }
 
 export class IdentityDTO {
@@ -85,7 +95,7 @@ export class IdentityDTO {
   }
 
   static getTargetHash(idty:HashableIdentity) {
-    return hashf(idty.uid + idty.buid + idty.pubkey)
+    return hashf(idty.uid + idty.created_on + idty.pub)
   }
 
   static fromJSONObject(obj:any) {
@@ -106,8 +116,8 @@ export class IdentityDTO {
       basic.buid,
       basic.uid,
       IdentityDTO.getTargetHash({
-        pubkey: basic.pubkey,
-        buid: basic.buid,
+        pub: basic.pubkey,
+        created_on: basic.buid,
         uid: basic.uid
       })
     )
@@ -120,8 +130,8 @@ export class IdentityDTO {
       revoc.idty_buid,
       revoc.idty_uid,
       IdentityDTO.getTargetHash({
-        pubkey: revoc.pubkey,
-        buid: revoc.idty_buid,
+        pub: revoc.pubkey,
+        created_on: revoc.idty_buid,
         uid: revoc.idty_uid
       })
     )

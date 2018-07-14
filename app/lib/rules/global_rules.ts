@@ -21,10 +21,9 @@ import {rawer, txunlock} from "../common-libs/index"
 import {CommonConstants} from "../common-libs/constants"
 import {IdentityDTO} from "../dto/IdentityDTO"
 import {hashf} from "../common"
-import {Indexer} from "../indexer"
-import {DBTx} from "../dal/sqliteDAL/TxsDAL"
-
-const _ = require('underscore')
+import {Indexer, SimpleTxInput} from "../indexer"
+import {DBTx} from "../db/DBTx"
+import {Tristamp} from "../common/Tristamp"
 
 const constants      = CommonConstants
 
@@ -76,16 +75,16 @@ export const GLOBAL_RULES_FUNCTIONS = {
     let current = await dal.getCurrentBlockOrNull();
     for (const obj of block.identities) {
       let idty = IdentityDTO.fromInline(obj);
-      let found = await dal.getWrittenIdtyByUID(idty.uid);
+      let found = await dal.getWrittenIdtyByUIDForExistence(idty.uid)
       if (found) {
         throw Error('Identity already used');
       }
       // Because the window rule does not apply on initial certifications
       if (current && idty.buid != constants.SPECIAL_BLOCK) {
         // From DUP 0.5: we fully check the blockstamp
-        const basedBlock = await dal.getBlockByBlockstamp(idty.buid);
+        const basedBlock = await dal.getAbsoluteValidBlockInForkWindowByBlockstamp(idty.buid) || { medianTime: 0 }
         // Check if writable
-        let duration = current.medianTime - parseInt(basedBlock.medianTime);
+        let duration = current.medianTime - basedBlock.medianTime
         if (duration > conf.idtyWindow) {
           throw Error('Identity is too old and cannot be written');
         }
@@ -102,7 +101,7 @@ export const GLOBAL_RULES_FUNCTIONS = {
       const outputs = tx.outputsAsObjects()
       let unlocks:any = {};
       let sumOfInputs = 0;
-      let maxOutputBase = current.unitbase;
+      let maxOutputBase = current && current.unitbase || 0;
       for (const theUnlock of tx.unlocks) {
         let sp = theUnlock.split(':');
         let index = parseInt(sp[0]);
@@ -110,7 +109,7 @@ export const GLOBAL_RULES_FUNCTIONS = {
       }
       for (let k = 0, len2 = inputs.length; k < len2; k++) {
         let src = inputs[k];
-        let dbSrc = await dal.getSource(src.identifier, src.pos);
+        let dbSrc: SimpleTxInput|null = await dal.getSource(src.identifier, src.pos, src.type === 'D');
         logger.debug('Source %s:%s:%s:%s = %s', src.amount, src.base, src.identifier, src.pos, dbSrc && dbSrc.consumed);
         if (!dbSrc) {
           // For chained transactions which are checked on sandbox submission, we accept them if there is already
@@ -182,17 +181,21 @@ export const GLOBAL_RULES_FUNCTIONS = {
 export const GLOBAL_RULES_HELPERS = {
 
   // Functions used in an external context too
-  checkMembershipBlock: (ms:any, current:DBBlock, conf:ConfDTO, dal:FileDAL) => checkMSTarget(ms, current ? { number: current.number + 1} : { number: 0 }, conf, dal),
+  checkMembershipBlock: (ms:any, current:DBBlock|null, conf:ConfDTO, dal:FileDAL) => checkMSTarget(ms, current ? { number: current.number + 1} : { number: 0 }, conf, dal),
 
-  checkCertificationIsValid: (cert:any, current:BlockDTO, findIdtyFunc:any, conf:ConfDTO, dal:FileDAL) => {
-    return checkCertificationIsValid(current ? current : { number: 0, currency: '' }, cert, findIdtyFunc, conf, dal)
+  checkCertificationIsValidInSandbox: (cert:any, current:BlockDTO, findIdtyFunc:any, conf:ConfDTO, dal:FileDAL) => {
+    return checkCertificationShouldBeValid(current ? current : { number: 0, currency: '' }, cert, findIdtyFunc, conf, dal)
   },
 
-  checkCertificationIsValidForBlock: (cert:any, block:{ number:number, currency:string }, findIdtyFunc:(b:{ number:number, currency:string }, pubkey:string, dal:FileDAL) => Promise<any>, conf:ConfDTO, dal:FileDAL) => {
-    return checkCertificationIsValid(block, cert, findIdtyFunc, conf, dal)
+  checkCertificationIsValidForBlock: (cert:any, block:{ number:number, currency:string }, findIdtyFunc:(b:{ number:number, currency:string }, pubkey:string, dal:FileDAL) => Promise<{
+    pubkey:string
+    uid:string
+    buid:string
+    sig:string}|null>, conf:ConfDTO, dal:FileDAL) => {
+    return checkCertificationShouldBeValid(block, cert, findIdtyFunc, conf, dal)
   },
 
-  isOver3Hops: async (member:any, newLinks:any, newcomers:string[], current:DBBlock, conf:ConfDTO, dal:FileDAL) => {
+  isOver3Hops: async (member:any, newLinks:any, newcomers:string[], current:DBBlock|null, conf:ConfDTO, dal:FileDAL) => {
     if (!current) {
       return Promise.resolve(false);
     }
@@ -203,9 +206,9 @@ export const GLOBAL_RULES_HELPERS = {
     }
   },
 
-  checkExistsUserID: (uid:string, dal:FileDAL) => dal.getWrittenIdtyByUID(uid),
+  checkExistsUserID: (uid:string, dal:FileDAL) => dal.getWrittenIdtyByUIDForExistence(uid),
 
-  checkExistsPubkey: (pub:string, dal:FileDAL) => dal.getWrittenIdtyByPubkey(pub),
+  checkExistsPubkey: (pub:string, dal:FileDAL) => dal.getWrittenIdtyByPubkeyForExistence(pub),
 
   checkSingleTransaction: (
     tx:TransactionDTO,
@@ -220,7 +223,7 @@ export const GLOBAL_RULES_HELPERS = {
   checkTxBlockStamp: async (tx:TransactionDTO, dal:FileDAL) => {
     const number = parseInt(tx.blockstamp.split('-')[0])
     const hash = tx.blockstamp.split('-')[1];
-    const basedBlock = await dal.getBlockByNumberAndHashOrNull(number, hash);
+    const basedBlock = await dal.getAbsoluteValidBlockInForkWindow(number, hash)
     if (!basedBlock) {
       throw "Wrong blockstamp for transaction";
     }
@@ -249,11 +252,9 @@ async function checkMSTarget (ms:any, block:any, conf:ConfDTO, dal:FileDAL) {
   else if (block.number == 0) {
     return null; // Valid for root block
   } else {
-    let basedBlock;
-    try {
-      basedBlock = await dal.getBlockByNumberAndHash(ms.number, ms.fpr);
-    } catch (e) {
-      throw Error('Membership based on an unexisting block');
+    const basedBlock = await dal.getAbsoluteValidBlockInForkWindow(ms.number, ms.fpr)
+    if (!basedBlock) {
+      throw Error('Membership based on an unexisting block')
     }
     let current = await dal.getCurrentBlockOrNull();
     if (current && current.medianTime > basedBlock.medianTime + conf.msValidity) {
@@ -263,21 +264,27 @@ async function checkMSTarget (ms:any, block:any, conf:ConfDTO, dal:FileDAL) {
   }
 }
 
-async function checkCertificationIsValid (block:{ number:number, currency:string }, cert:any, findIdtyFunc:(b:{ number:number, currency:string }, pubkey:string, dal:FileDAL) => Promise<any>, conf:ConfDTO, dal:FileDAL) {
+async function checkCertificationShouldBeValid (block:{ number:number, currency:string }, cert:any, findIdtyFunc:(b:{ number:number, currency:string }, pubkey:string, dal:FileDAL) => Promise<{
+  pubkey:string
+  uid:string
+  buid:string
+  sig:string
+}|null>, conf:ConfDTO, dal:FileDAL) {
   if (block.number == 0 && cert.block_number != 0) {
     throw Error('Number must be 0 for root block\'s certifications');
   } else {
-    let basedBlock:any = {
-      hash: constants.SPECIAL_HASH
-    };
+    let basedBlock:Tristamp|null = {
+      number: 0,
+      hash: constants.SPECIAL_HASH,
+      medianTime: 0
+    }
     if (block.number != 0) {
-      try {
-        basedBlock = await dal.getBlock(cert.block_number);
-      } catch (e) {
+      basedBlock = await dal.getTristampOf(cert.block_number)
+      if (!basedBlock) {
         throw Error('Certification based on an unexisting block');
       }
       try {
-        const issuer = await dal.getWrittenIdtyByPubkey(cert.from)
+        const issuer = await dal.getWrittenIdtyByPubkeyForIsMember(cert.from)
         if (!issuer || !issuer.member) {
           throw Error('Issuer is not a member')
         }
@@ -299,8 +306,8 @@ async function checkCertificationIsValid (block:{ number:number, currency:string
       const buid = [cert.block_number, basedBlock.hash].join('-');
       if (cert.block_hash && buid != [cert.block_number, cert.block_hash].join('-'))
         throw Error('Certification based on an unexisting block buid. from ' + cert.from.substring(0,8) + ' to ' + idty.pubkey.substring(0,8));
-      idty.currency = conf.currency;
-      const raw = rawer.getOfficialCertification(_.extend(idty, {
+      const raw = rawer.getOfficialCertification({
+        currency: conf.currency,
         idty_issuer: idty.pubkey,
         idty_uid: idty.uid,
         idty_buid: idty.buid,
@@ -308,7 +315,7 @@ async function checkCertificationIsValid (block:{ number:number, currency:string
         issuer: cert.from,
         buid: buid,
         sig: ''
-      }));
+      })
       const verified = verify(raw, cert.sig, cert.from);
       if (!verified) {
         throw constants.ERRORS.WRONG_SIGNATURE_FOR_CERT

@@ -11,7 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {Querable} from "./permanentProver"
+import {Querable} from "../../../lib/common-libs/querable"
 
 const querablep = require('querablep')
 

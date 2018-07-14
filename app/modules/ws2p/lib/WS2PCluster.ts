@@ -31,10 +31,10 @@ import {CommonConstants} from '../../../lib/common-libs/constants';
 import {Package} from "../../../lib/common/package";
 import {ProverConstants} from "../../prover/lib/constants";
 import {ProxiesConf} from '../../../lib/proxy';
+import {Underscore} from "../../../lib/common-libs/underscore"
 
 const es = require('event-stream')
 const nuuid = require('node-uuid')
-const _ = require('underscore')
 
 export interface WS2PHead {
   message:string
@@ -257,7 +257,7 @@ export class WS2PCluster {
     }
     if (!exists) {
       // Do we have this block in the DB?
-      exists = !!(await this.server.dal.getAbsoluteBlockByBlockstamp(blockstamp))
+      exists = !!(await this.server.dal.getAbsoluteBlockInForkWindowByBlockstamp(blockstamp))
     }
     // Update the last time it was checked
     this.blockstampsCache[blockstamp] = Date.now()
@@ -336,7 +336,7 @@ export class WS2PCluster {
     }
   }
 
-  async connectToRemoteWS(endpointVersion:number, host: string, port: number, path:string, messageHandler:WS2PMessageHandler, expectedPub:string, ws2pEndpointUUID:string = ""): Promise<WS2PConnection> {
+  async connectToRemoteWS(endpointVersion:number, host: string, port: number, path:string, messageHandler:WS2PMessageHandler, expectedPub:string, ws2pEndpointUUID:string = ""): Promise<WS2PClient> {
     const uuid = nuuid.v4()
     let pub = expectedPub.slice(0, 8)
     const api:string = (host.match(WS2PConstants.HOST_ONION_REGEX) !== null) ? 'WS2PTOR':'WS2P'
@@ -368,7 +368,7 @@ export class WS2PCluster {
         to: { host, port, pubkey: pub }
       })
       await this.server.dal.setPeerUP(pub)
-      return ws2pc.connection
+      return ws2pc
     } catch (e) {
       this.server.logger.info(api+': Could not connect to peer %s using `'+api+' %s %s: %s`', pub.slice(0, 8), host, port, (e && e.message || e))
       throw e
@@ -699,7 +699,7 @@ export class WS2PCluster {
     }
     // Disconnect Private connexions already present under Public
     let uuids = Object.keys(this.ws2pClients)
-    uuids = _.shuffle(uuids)
+    uuids = Underscore.shuffle(uuids)
     for (const uuid of uuids) {
       const client = this.ws2pClients[uuid]
       const pub = client.connection.pubkey
@@ -716,7 +716,7 @@ export class WS2PCluster {
     // Disconnect Private connexions until the maximum size is respected
     while (this.clientsCount() > this.maxLevel1Size) {
       let uuids = Object.keys(this.ws2pClients)
-      uuids = _.shuffle(uuids)
+      uuids = Underscore.shuffle(uuids)
       let lowPriorityConnectionUUID:string = uuids[0]
       let minPriorityLevel = await this.keyPriorityLevel(this.ws2pClients[lowPriorityConnectionUUID].connection.pubkey, preferedKeys)
       for (const uuid of uuids) {
@@ -889,7 +889,7 @@ export class WS2PCluster {
 
   async pullBlocks() {
     let current:{number:number} = { number: -1 }
-    let newCurrent:{number:number} = { number: 0 }
+    let newCurrent:{number:number}|null = { number: 0 }
     while (current && newCurrent && newCurrent.number > current.number) {
       current = newCurrent
       await this.makeApullShot()

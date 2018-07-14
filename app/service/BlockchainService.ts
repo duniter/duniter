@@ -28,10 +28,9 @@ import {CommonConstants} from "../lib/common-libs/constants"
 import {LOCAL_RULES_FUNCTIONS} from "../lib/rules/local_rules"
 import {Switcher, SwitcherDao} from "../lib/blockchain/Switcher"
 import {OtherConstants} from "../lib/other_constants"
+import {DataErrors} from "../lib/common-libs/errors"
+import {DuniterBlockchain} from "../lib/blockchain/DuniterBlockchain"
 
-"use strict";
-
-const _               = require('underscore');
 const constants       = require('../lib/constants');
 
 export interface IdentityForRequirements {
@@ -42,10 +41,19 @@ export interface IdentityForRequirements {
   uid:string
   buid:string
   sig:string
-  revocation_sig:string
+  revocation_sig:string|null
   revoked:boolean
   revoked_on:number
 }
+
+export interface ValidCert {
+  from:string
+  to:string
+  sig:string
+  timestamp:number
+  expiresIn:number
+}
+
 export class BlockchainService extends FIFOService {
 
   mainContext:BlockchainContext
@@ -64,8 +72,12 @@ export class BlockchainService extends FIFOService {
 
       constructor(private bcService:BlockchainService) {}
 
-      getCurrent(): Promise<BlockDTO> {
-        return this.bcService.current()
+      async getCurrent(): Promise<BlockDTO|null> {
+        const current = await this.bcService.current()
+        if (!current) {
+          return null
+        }
+        return BlockDTO.fromJSONObject(current)
       }
 
       async getPotentials(numberStart: number, timeStart: number, maxNumber:number): Promise<BlockDTO[]> {
@@ -74,16 +86,14 @@ export class BlockchainService extends FIFOService {
       }
 
       async getBlockchainBlock(number: number, hash: string): Promise<BlockDTO | null> {
-        try {
-          return BlockDTO.fromJSONObject(await this.bcService.dal.getBlockByNumberAndHash(number, hash))
-        } catch (e) {
-          return null
-        }
+        const b = await this.bcService.dal.getAbsoluteValidBlockInForkWindow(number, hash)
+        if (!b) return null
+        return BlockDTO.fromJSONObject(b)
       }
 
-      async getSandboxBlock(number: number, hash: string): Promise<BlockDTO | null> {
-        const block = await this.bcService.dal.getAbsoluteBlockByNumberAndHash(number, hash)
-        if (block && block.fork) {
+      async getAbsoluteBlockInForkWindow(number: number, hash: string): Promise<BlockDTO | null> {
+        const block = await this.bcService.dal.getAbsoluteBlockInForkWindow(number, hash)
+        if (block) {
           return BlockDTO.fromJSONObject(block)
         } else {
           return null
@@ -93,6 +103,9 @@ export class BlockchainService extends FIFOService {
       async revertTo(number: number): Promise<BlockDTO[]> {
         const blocks:BlockDTO[] = []
         const current = await this.bcService.current();
+        if (!current) {
+          throw Error(DataErrors[DataErrors.CANNOT_REVERT_NO_CURRENT_BLOCK])
+        }
         for (let i = 0, count = current.number - number; i < count; i++) {
           const reverted = await this.bcService.mainContext.revertCurrentBlock()
           blocks.push(BlockDTO.fromJSONObject(reverted))
@@ -124,8 +137,8 @@ export class BlockchainService extends FIFOService {
     this.dal = newDAL;
     this.conf = newConf;
     this.logger = require('../lib/logger').NewLogger(this.dal.profile)
-    this.quickSynchronizer = new QuickSynchronizer(this.server.blockchain, this.conf, this.dal, this.logger)
-    this.mainContext.setConfDAL(this.conf, this.dal, this.server.blockchain, this.quickSynchronizer)
+    this.quickSynchronizer = new QuickSynchronizer(this.conf, this.dal, this.logger)
+    this.mainContext.setConfDAL(this.conf, this.dal, this.quickSynchronizer)
     this.selfPubkey = newKeyPair.publicKey;
   }
 
@@ -145,11 +158,18 @@ export class BlockchainService extends FIFOService {
     return this.mainContext.checkBlock(dto, withPoWAndSignature)
   }
 
+  /**
+   * Return the potential HEADs we could fork to (necessarily above us, since we don't fork on older branches).
+   * @returns {Promise<any>}
+   */
   async branches() {
     const current = await this.current()
+    if (!current) {
+      throw Error(DataErrors[DataErrors.CANNOT_REVERT_NO_CURRENT_BLOCK])
+    }
     const switcher = new Switcher(this.switcherDao, this.invalidForks, this.conf.avgGenTime, this.conf.forksize, this.conf.switchOnHeadAdvance, this.logger)
     const heads = await switcher.findPotentialSuitesHeads(current)
-    return heads.concat([current])
+    return heads.concat([BlockDTO.fromJSONObject(current)])
   }
 
   submitBlock(blockToAdd:any, noResolution = false): Promise<BlockDTO> {
@@ -173,7 +193,7 @@ export class BlockchainService extends FIFOService {
           throw CommonConstants.ERRORS.OUT_OF_FORK_WINDOW
         }
       }
-      const absolute = await this.dal.getAbsoluteBlockByNumberAndHash(obj.number, obj.hash)
+      const absolute = await this.dal.existsAbsoluteBlockInForkWindow(parseInt(obj.number), obj.hash)
       if (!absolute) {
         // Save the block in the sandbox
         await this.mainContext.addSideBlock(dto);
@@ -202,9 +222,11 @@ export class BlockchainService extends FIFOService {
     })
   }
 
-  async blockResolution() {
-    let added = true
-    while (added) {
+  async blockResolution(max = 0): Promise<BlockDTO|null> {
+    let lastAdded:BlockDTO|null = null
+    let added:BlockDTO|null
+    let nbAdded = 0
+    do {
       const current = await this.current()
       let potentials = []
       if (current) {
@@ -214,9 +236,9 @@ export class BlockchainService extends FIFOService {
         potentials = await this.dal.getPotentialRootBlocks()
         this.logger.info('Block resolution: %s potential blocks for root block...', potentials.length)
       }
-      added = false
+      added = null
       let i = 0
-      while (!added && i < potentials.length) {
+      while (!added && i < potentials.length && (!max || nbAdded < max)) {
         const dto = BlockDTO.fromJSONObject(potentials[i])
         try {
           if (dto.issuer === this.conf.pair.pub) {
@@ -224,17 +246,17 @@ export class BlockchainService extends FIFOService {
               await this.dal.removeTxByHash(tx.hash);
             }
           }
-          const addedBlock = await this.mainContext.checkAndAddBlock(dto)
-          added = true
+          lastAdded = added = await this.mainContext.checkAndAddBlock(dto)
           this.push({
             bcEvent: OtherConstants.BC_EVENT.HEAD_CHANGED,
-            block: addedBlock
+            block: added
           })
+          nbAdded++
           // Clear invalid forks' cache
           this.invalidForks.splice(0, this.invalidForks.length)
         } catch (e) {
           this.logger.error(e)
-          added = false
+          added = null
           const theError = e && (e.message || e)
           this.push({
             blockResolutionError: theError
@@ -242,7 +264,8 @@ export class BlockchainService extends FIFOService {
         }
         i++
       }
-    }
+    } while (added)
+    return lastAdded
   }
 
   async forkResolution() {
@@ -258,6 +281,10 @@ export class BlockchainService extends FIFOService {
 
   revertCurrentBlock() {
     return this.pushFIFO("revertCurrentBlock", () => this.mainContext.revertCurrentBlock())
+  }
+
+  revertCurrentHead() {
+    return this.pushFIFO("revertCurrentHead", () => this.mainContext.revertCurrentHead())
   }
   
 
@@ -280,7 +307,7 @@ export class BlockchainService extends FIFOService {
     return all;
   }
 
-  async requirementsOfIdentity(idty:IdentityForRequirements, current:DBBlock, computeDistance = true): Promise<HttpIdentityRequirement> {
+  async requirementsOfIdentity(idty:IdentityForRequirements, current:DBBlock|null, computeDistance = true): Promise<HttpIdentityRequirement> {
     // TODO: this is not clear
     let expired = false;
     let outdistanced = false;
@@ -288,7 +315,7 @@ export class BlockchainService extends FIFOService {
     let wasMember = false;
     let expiresMS = 0;
     let expiresPending = 0;
-    let certs = [];
+    let certs:ValidCert[] = [];
     let certsPending = [];
     let mssPending = [];
     try {
@@ -315,7 +342,7 @@ export class BlockchainService extends FIFOService {
       const newCerts = await this.server.generatorComputeNewCerts(nextBlockNumber, [join.identity.pubkey], joinData, updates);
       const newLinks = await this.server.generatorNewCertsToLinks(newCerts, updates);
       const currentTime = current ? current.medianTime : 0;
-      certs = await this.getValidCerts(pubkey, newCerts);
+      certs = await this.getValidCerts(pubkey, newCerts, currentTime);
       if (computeDistance) {
         outdistanced = await GLOBAL_RULES_HELPERS.isOver3Hops(pubkey, newLinks, someNewcomers, current, this.conf, this.dal);
       }
@@ -324,8 +351,8 @@ export class BlockchainService extends FIFOService {
       const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
       if (currentMSN >= 0) {
         if (join.identity.member) {
-          const msBlock = await this.dal.getBlock(currentMSN);
-          if (msBlock && msBlock.medianTime) { // special case for block #0
+          const msBlock = await this.dal.getTristampOf(currentMSN)
+          if (msBlock) { // special case for block #0
             expiresMS = Math.max(0, (msBlock.medianTime + this.conf.msValidity - currentTime));
           }
           else {
@@ -338,8 +365,8 @@ export class BlockchainService extends FIFOService {
       // Expiration of pending membership
       const lastJoin = await this.dal.lastJoinOfIdentity(idty.hash);
       if (lastJoin) {
-        const msBlock = await this.dal.getBlock(lastJoin.blockNumber);
-        if (msBlock && msBlock.medianTime) { // Special case for block#0
+        const msBlock = await this.dal.getTristampOf(lastJoin.blockNumber)
+        if (msBlock) { // Special case for block#0
           expiresPending = Math.max(0, (msBlock.medianTime + this.conf.msValidity - currentTime));
         }
         else {
@@ -348,10 +375,6 @@ export class BlockchainService extends FIFOService {
       }
       wasMember = idty.wasMember;
       isSentry = idty.member && (await this.dal.isSentry(idty.pubkey, this.conf));
-      // Expiration of certifications
-      for (const cert of certs) {
-        cert.expiresIn = Math.max(0, cert.timestamp + this.conf.sigValidity - currentTime);
-      }
     } catch (e) {
       // We throw whatever isn't "Too old identity" error
       if (!(e && e.uerr && e.uerr.ucode == constants.ERRORS.TOO_OLD_IDENTITY.uerr.ucode)) {
@@ -382,21 +405,34 @@ export class BlockchainService extends FIFOService {
     };
   }
 
-  async getValidCerts(newcomer:string, newCerts:any) {
+  async getValidCerts(newcomer:string, newCerts:any, currentTime:number): Promise<ValidCert[]> {
     const links = await this.dal.getValidLinksTo(newcomer);
-    const certsFromLinks = links.map((lnk:any) => { return { from: lnk.issuer, to: lnk.receiver, timestamp: lnk.expires_on - this.conf.sigValidity }; });
+    const certsFromLinks = links.map((lnk:any) => { return {
+        from: lnk.issuer,
+        to: lnk.receiver,
+        sig: lnk.sig,
+        timestamp: lnk.expires_on - this.conf.sigValidity,
+        expiresIn: 0
+      }
+    })
     const certsFromCerts = [];
     const certs = newCerts[newcomer] || [];
     for (const cert of certs) {
-      const block = await this.dal.getBlock(cert.block_number);
-      certsFromCerts.push({
-        from: cert.from,
-        to: cert.to,
-        sig: cert.sig,
-        timestamp: block.medianTime
-      });
+      const block = await this.dal.getTristampOf(cert.block_number)
+      if (block) {
+        certsFromCerts.push({
+          from: cert.from,
+          to: cert.to,
+          sig: cert.sig,
+          timestamp: block.medianTime,
+          expiresIn: 0
+        })
+      }
     }
-    return certsFromLinks.concat(certsFromCerts);
+    return certsFromLinks.concat(certsFromCerts).map(c => {
+      c.expiresIn = Math.max(0, c.timestamp + this.conf.sigValidity - currentTime)
+      return c
+    })
   }
 
   isMember() {
@@ -410,14 +446,17 @@ export class BlockchainService extends FIFOService {
 
   // This method is called by duniter-crawler 1.3.x
   saveParametersForRootBlock(block:BlockDTO) {
-    return this.server.blockchain.saveParametersForRoot(block, this.conf, this.dal)
+    return DuniterBlockchain.saveParametersForRoot(block, this.conf, this.dal)
   }
 
-  async blocksBetween(from:number, count:number) {
+  async blocksBetween(from:number, count:number): Promise<DBBlock[]> {
     if (count > 5000) {
       throw 'Count is too high';
     }
     const current = await this.current()
+    if (!current) {
+      return []
+    }
     count = Math.min(current.number - from + 1, count);
     if (!current || current.number < from) {
       return [];

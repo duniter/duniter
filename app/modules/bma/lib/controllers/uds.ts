@@ -15,8 +15,7 @@ import {AbstractController} from "./AbstractController"
 import {ParametersService} from "../parameters"
 import {Source} from "../entity/source"
 import {HttpUDHistory} from "../dtos";
-
-const _ = require('underscore');
+import {Underscore} from "../../../../lib/common-libs/underscore"
 
 export class UDBinding extends AbstractController {
 
@@ -30,7 +29,7 @@ export class UDBinding extends AbstractController {
     const from = await ParametersService.getFromP(req);
     const to = await ParametersService.getToP(req);
     return this.getUDSources(pubkey, (results:any) => {
-      results.history.history = _.filter(results.history.history, function(ud:any){ return ud.block_number >= from && ud.block_number <= to; });
+      results.history.history = Underscore.filter(results.history.history, function(ud:any){ return ud.block_number >= from && ud.block_number <= to; });
       return results;
     })
   }
@@ -40,7 +39,7 @@ export class UDBinding extends AbstractController {
     const from = await ParametersService.getFromP(req);
     const to = await ParametersService.getToP(req);
     return this.getUDSources(pubkey, (results:any) => {
-      results.history.history = _.filter(results.history.history, function(ud:any){ return ud.time >= from && ud.time <= to; });
+      results.history.history = Underscore.filter(results.history.history, function(ud:any){ return ud.time >= from && ud.time <= to; });
       return results;
     });
   }
@@ -52,10 +51,10 @@ export class UDBinding extends AbstractController {
         "pubkey": pubkey,
         "history": history
       };
-      _.keys(history).map((key:any) => {
+      Underscore.keys(history).map((key:any) => {
         history[key].map((src:any, index:number) => {
-          history[key][index] = _.omit(new Source(src).UDjson(), 'currency', 'raw');
-          _.extend(history[key][index], { block_number: src && src.block_number, time: src && src.time });
+          history[key][index] = new Source(src).UDjson()
+          Underscore.extend(history[key][index], { block_number: src && src.block_number, time: src && src.time });
         });
       });
       return filter(result);

@@ -282,6 +282,10 @@ export class BlockchainService extends FIFOService {
   revertCurrentBlock() {
     return this.pushFIFO("revertCurrentBlock", () => this.mainContext.revertCurrentBlock())
   }
+
+  revertCurrentHead() {
+    return this.pushFIFO("revertCurrentHead", () => this.mainContext.revertCurrentHead())
+  }
   
 
   applyNextAvailableFork() {

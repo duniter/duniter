@@ -340,7 +340,7 @@ export class Server extends stream.Duplex implements HookableServer {
       const current = await this.dal.blockDAL.getCurrent();
       const nbBlocksToRevert = (head_1.number - (current as DBBlock).number);
       for (let i = 0; i < nbBlocksToRevert; i++) {
-        await this.revert();
+        await this.revertHead();
       }
     }
     // Database trimming
@@ -500,6 +500,10 @@ export class Server extends stream.Duplex implements HookableServer {
 
   revert() {
     return this.BlockchainService.revertCurrentBlock()
+  }
+
+  revertHead() {
+    return this.BlockchainService.revertCurrentHead()
   }
 
   async revertTo(number:number) {

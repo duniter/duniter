@@ -18,6 +18,7 @@ import {DBHead} from "../db/DBHead"
 import {FileDAL} from "../dal/fileDAL"
 import {DBBlock} from "../db/DBBlock"
 import {Underscore} from "../common-libs/underscore"
+import {DataErrors} from "../common-libs/errors"
 
 const indexer         = require('../indexer').Indexer
 const constants       = require('../constants');
@@ -131,10 +132,22 @@ export class BlockchainContext {
   async revertCurrentBlock(): Promise<DBBlock> {
     const head_1 = await this.dal.bindexDAL.head(1);
     this.logger.debug('Reverting block #%s...', head_1.number);
-    const res = await DuniterBlockchain.revertBlock(head_1.number, head_1.hash, this.dal)
+    const block = await this.dal.getAbsoluteValidBlockInForkWindow(head_1.number, head_1.hash)
+    if (!block) {
+      throw DataErrors[DataErrors.BLOCK_TO_REVERT_NOT_FOUND]
+    }
+    await DuniterBlockchain.revertBlock(head_1.number, head_1.hash, this.dal, block)
     // Invalidates the head, since it has changed.
     await this.refreshHead();
-    return res;
+    return block
+  }
+
+  async revertCurrentHead() {
+    const head_1 = await this.dal.bindexDAL.head(1);
+    this.logger.debug('Reverting HEAD~1... (b#%s)', head_1.number);
+    await DuniterBlockchain.revertBlock(head_1.number, head_1.hash, this.dal)
+    // Invalidates the head, since it has changed.
+    await this.refreshHead();
   }
 
   async applyNextAvailableFork(): Promise<any> {

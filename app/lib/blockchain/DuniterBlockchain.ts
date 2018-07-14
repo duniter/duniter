@@ -33,7 +33,6 @@ import {MembershipDTO} from "../dto/MembershipDTO"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import {CommonConstants} from "../common-libs/constants"
 import {FileDAL} from "../dal/fileDAL"
-import {DataErrors} from "../common-libs/errors"
 import {NewLogger} from "../logger"
 import {DBTx} from "../db/DBTx"
 import {Underscore} from "../common-libs/underscore"
@@ -372,14 +371,9 @@ export class DuniterBlockchain {
     }
   }
 
-  static async revertBlock(number:number, hash:string, dal:FileDAL) {
+  static async revertBlock(number:number, hash:string, dal:FileDAL, block?: DBBlock) {
 
     const blockstamp = [number, hash].join('-');
-    const block = await dal.getAbsoluteValidBlockInForkWindow(number, hash)
-
-    if (!block) {
-      throw DataErrors[DataErrors.BLOCK_TO_REVERT_NOT_FOUND]
-    }
 
     // Revert links
     const writtenOn = await dal.cindexDAL.getWrittenOn(blockstamp);
@@ -421,9 +415,9 @@ export class DuniterBlockchain {
     await this.updateWallets(sindexOfBlock, [], dal, REVERSE_BALANCE)
 
     // Restore block's transaction as incoming transactions
-    await this.undoDeleteTransactions(block, dal)
-
-    return block
+    if (block) {
+      await this.undoDeleteTransactions(block, dal)
+    }
   }
 
   static async undoMembersUpdate(blockstamp:string, dal:FileDAL) {

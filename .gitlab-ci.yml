@@ -34,7 +34,7 @@ push_to_github:
     - export NVM_DIR="$HOME/.nvm"
     - . "$NVM_DIR/nvm.sh"
 
-.cached_nvm: &cached
+.cached_nvm: &cached_nvm
   <<: *nvm_env
   cache:
     untracked: true
@@ -42,8 +42,7 @@ push_to_github:
       - node_modules/
   
 build:
-  <<: *nvm_env
-  <<: *cached
+  <<: *cached_nvm
   stage: build
   script:
     - yarn

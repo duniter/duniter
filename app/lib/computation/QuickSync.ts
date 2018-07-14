@@ -13,12 +13,10 @@
 
 import {DuniterBlockchain} from "../blockchain/DuniterBlockchain";
 import {BlockDTO} from "../dto/BlockDTO";
-import {DBTransaction} from "../db/DBTransaction";
 import {AccountsGarbagingDAL, FullSindexEntry, Indexer} from "../indexer";
 import {CurrencyConfDTO} from "../dto/ConfDTO";
 import {FileDAL} from "../dal/fileDAL"
 import {DBBlock} from "../db/DBBlock"
-import {DBTx} from "../db/DBTx"
 import {Underscore} from "../common-libs/underscore"
 import {CommonConstants} from "../common-libs/constants"
 import {cliprogram} from "../common-libs/programOptions"
@@ -52,52 +50,6 @@ const sync_memoryDAL:AccountsGarbagingDAL = {
 export class QuickSynchronizer {
 
   constructor(private conf: any, private dal:FileDAL, private logger: any) {
-  }
-
-  async saveBlocksInMainBranch(blocks: BlockDTO[]): Promise<void> {
-    // Helper to retrieve a block with local cache
-    const getBlock = async (number: number): Promise<BlockDTO> => {
-      const firstLocalNumber = blocks[0].number;
-      if (number >= firstLocalNumber) {
-        let offset = number - firstLocalNumber;
-        return Promise.resolve(blocks[offset])
-      }
-      return BlockDTO.fromJSONObject(await this.dal.getBlockWeHaveItForSure(number))
-    };
-    const getBlockByNumberAndHash = async (number: number, hash: string): Promise<BlockDTO> => {
-      const block = await getBlock(number);
-      if (!block || block.hash != hash) {
-        throw 'Block #' + [number, hash].join('-') + ' not found neither in DB nor in applying blocks';
-      }
-      return block;
-    }
-    for (const block of blocks) {
-      block.fork = false;
-      const current:BlockDTO|null = block.number > 0 ? await getBlock(block.number - 1) : null
-      DuniterBlockchain.updateBlocksComputedVars(current, block)
-    }
-    // Transactions recording
-    await this.updateTransactionsForBlocks(blocks, getBlockByNumberAndHash);
-    await this.dal.blockDAL.saveBunch(blocks.map(b => DBBlock.fromBlockDTO(b)));
-    await DuniterBlockchain.pushStatsForBlocks(blocks, this.dal);
-  }
-
-  private async updateTransactionsForBlocks(blocks: BlockDTO[], getBlockByNumberAndHash: (number: number, hash: string) => Promise<BlockDTO>): Promise<any> {
-    let txs: DBTransaction[] = [];
-    for (const block of blocks) {
-      const newOnes: DBTransaction[] = [];
-      for (const tx of block.transactions) {
-        const [number, hash] = tx.blockstamp.split('-')
-        const refBlock: BlockDTO = (await getBlockByNumberAndHash(parseInt(number), hash))
-        // We force the usage of the reference block's currency
-        tx.currency = refBlock.currency
-        tx.hash = tx.getHash()
-        const dbTx: DBTransaction = DBTransaction.fromTransactionDTO(tx, refBlock.medianTime, true, false, refBlock.number, refBlock.medianTime)
-        newOnes.push(dbTx)
-      }
-      txs = txs.concat(newOnes);
-    }
-    return this.dal.updateTransactions(txs.map(t => DBTx.fromTransactionDTO(t)))
   }
 
   async quickApplyBlocks(blocks:BlockDTO[], to: number): Promise<void> {

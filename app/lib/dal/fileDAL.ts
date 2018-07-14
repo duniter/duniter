@@ -1121,14 +1121,6 @@ export class FileDAL {
     return merkle;
   }
 
-  removeAllSourcesOfBlock(blockstamp:string) {
-    return this.sindexDAL.removeBlock(blockstamp)
-  }
-
-  updateTransactions(txs:DBTx[]) {
-    return this.txsDAL.insertBatchOfTxs(txs)
-  }
-
   savePendingIdentity(idty:DBIdentity) {
     return this.idtyDAL.saveIdentity(idty)
   }

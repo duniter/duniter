@@ -5,8 +5,6 @@ import {DBTx} from "../../../db/DBTx"
 
 export interface TxsDAO extends GenericDAO<DBTx> {
 
-  insertBatchOfTxs(txs:DBTx[]): Promise<void>
-
   trimExpiredNonWrittenTxs(limitTime:number): Promise<void>
 
   getAllPending(versionMin:number): Promise<DBTx[]>

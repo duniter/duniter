@@ -12,7 +12,6 @@
 // GNU Affero General Public License for more details.
 
 import * as moment from "moment"
-import {LokiIndex} from "./LokiIndex"
 import {TxsDAO} from "../abstract/TxsDAO"
 import {SandBox} from "../../sqliteDAL/SandBox"
 import {TransactionDTO} from "../../../dto/TransactionDTO"
@@ -48,10 +47,6 @@ export class LokiTransactions extends LokiProtocolIndex<DBTx> implements TxsDAO 
           return 0;
         }
       })
-  }
-
-  async insertBatchOfTxs(txs: DBTx[]) {
-    return this.insertBatch(txs)
   }
 
   sandbox: SandBox<{ issuers: string[]; output_base: number; output_amount: number }>

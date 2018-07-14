@@ -49,11 +49,11 @@ import {DataErrors} from "../../../app/lib/common-libs/errors"
 import {until} from "./test-until"
 import {sync} from "./test-sync"
 import {expectAnswer, expectError, expectJSON} from "./http-expect"
+import {WebSocketServer} from "../../../app/lib/common-libs/websocket"
 
 const assert      = require('assert');
 const rp          = require('request-promise');
 const es          = require('event-stream');
-const WebSocketServer = require('ws').Server
 const logger      = NewLogger();
 
 require('../../../app/modules/bma').BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
@@ -672,10 +672,10 @@ export async function newWS2PBidirectionnalConnection(currency:string, k1:Key, k
       switch (i) {
         case 1:
           s1 = WS2PConnection.newConnectionFromWebSocketServer(ws, serverHandler, new WS2PPubkeyLocalAuth(currency, k1, ""), new WS2PPubkeyRemoteAuth(currency, k1), {
-            connectionTimeout: 100,
-            requestTimeout: 100
+            connectionTimeout: 1000,
+            requestTimeout: 1000
           });
-          s1.connect().catch((e:any) => console.error('WS2P: newConnectionFromWebSocketServer connection error'))
+          s1.connect().catch((e:any) => console.error('WS2P: newConnectionFromWebSocketServer connection error:', e))
           break;
       }
       resolveBefore({

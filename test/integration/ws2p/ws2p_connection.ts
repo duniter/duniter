@@ -25,9 +25,9 @@ import {WS2PResponse} from "../../../app/modules/ws2p/lib/impl/WS2PResponse"
 import {WS2PConstants} from "../../../app/modules/ws2p/lib/constants"
 import {assertThrows} from "../../unit-tools"
 import {NewLogger} from "../../../app/lib/logger"
+import {WebSocketServer} from "../../../app/lib/common-libs/websocket"
 
 const assert = require('assert');
-const WebSocketServer = require('ws').Server
 const logger = NewLogger()
 const gtest = "gtest"
 

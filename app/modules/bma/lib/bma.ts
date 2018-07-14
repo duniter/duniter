@@ -24,9 +24,9 @@ import {UDBinding} from "./controllers/uds"
 import {PeerDTO} from "../../../lib/dto/PeerDTO"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
 import {OtherConstants} from "../../../lib/other_constants"
+import {WebSocketServer} from "../../../lib/common-libs/websocket"
 
 const es = require('event-stream');
-const WebSocketServer = require('ws').Server;
 
 export const bma = function(server:Server, interfaces:NetworkInterface[]|null, httpLogs:boolean, logger:any): Promise<BmaApi> {
 
@@ -149,16 +149,17 @@ export const bma = function(server:Server, interfaces:NetworkInterface[]|null, h
         }
       }
     })
-    wssHeads.broadcast = (data:any) => wssHeads.clients.forEach((client:any) => client.send(data));
+    const wssHeadsBroadcast = (data:any) => wssHeads.clients.forEach((client:any) => client.send(data));
 
-    wssBlock.broadcast = (data:any) => wssBlock.clients.forEach((client:any) => {
+    const wssBlockBroadcast = (data:any) => wssBlock.clients.forEach((client:any) => {
       try {
         client.send(data);
       } catch (e) {
         logger && logger.error('error on ws: %s', e);
       }
     });
-    wssPeer.broadcast = (data:any) => wssPeer.clients.forEach((client:any) => client.send(data));
+
+    const wssPeerBroadcast = (data:any) => wssPeer.clients.forEach((client:any) => client.send(data));
 
     // Forward current HEAD change
     server
@@ -168,7 +169,7 @@ export const bma = function(server:Server, interfaces:NetworkInterface[]|null, h
             // Broadcast block
             currentBlock = e.block;
             const blockDTO:BlockDTO = BlockDTO.fromJSONObject(currentBlock)
-            wssBlock.broadcast(JSON.stringify(block2HttpBlock(blockDTO)))
+            wssBlockBroadcast(JSON.stringify(block2HttpBlock(blockDTO)))
           } catch (e) {
             logger && logger.error('error on ws mapSync:', e);
           }
@@ -190,11 +191,11 @@ export const bma = function(server:Server, interfaces:NetworkInterface[]|null, h
               signature: peerDTO.signature,
               raw: peerDTO.getRaw()
             }
-            wssPeer.broadcast(JSON.stringify(peerResult));
+            wssPeerBroadcast(JSON.stringify(peerResult));
           }
           // Broadcast heads
           else if (data.ws2p === 'heads' && data.added.length) {
-            wssHeads.broadcast(JSON.stringify(data.added));
+            wssHeadsBroadcast(JSON.stringify(data.added));
           }
         } catch (e) {
           logger && logger.error('error on ws mapSync:', e);

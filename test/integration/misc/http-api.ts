@@ -11,8 +11,6 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
-
 import {ProverConstants} from "../../../app/modules/prover/lib/constants"
 import {NewTestingServer, TestingServer} from "../tools/toolbox"
 import {TestUser} from "../tools/TestUser"
@@ -24,11 +22,11 @@ import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {BlockDTO} from "../../../app/lib/dto/BlockDTO"
 import {shutDownEngine} from "../tools/shutdown-engine"
 import {expectAnswer, expectError} from "../tools/http-expect"
+import {WebSocket} from "../../../app/lib/common-libs/websocket"
 
 const should    = require('should');
 const assert    = require('assert');
 const rp        = require('request-promise');
-const ws        = require('ws');
 
 ProverConstants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
 
@@ -237,7 +235,7 @@ describe("HTTP API", function() {
   describe("/ws", function() {
 
     it('/block should exist', function(done) {
-      const client = new ws('ws://127.0.0.1:7777/ws/block');
+      const client = new WebSocket('ws://127.0.0.1:7777/ws/block');
       client.on('open', function open() {
         client.terminate();
         done();
@@ -246,7 +244,7 @@ describe("HTTP API", function() {
 
     it('/block should send a block', function(done) {
       let completed = false
-      const client = new ws('ws://127.0.0.1:7777/ws/block');
+      const client = new WebSocket('ws://127.0.0.1:7777/ws/block');
       client.once('message', function message(data:any) {
         const block = JSON.parse(data);
         should(block).have.property('number', 4);
@@ -262,7 +260,7 @@ describe("HTTP API", function() {
 
     it('/block (number 5,6,7) should send a block', async () => {
       server2.writeBlock(await commit({ time: now + 120 * 5 }))
-      const client = new ws('ws://127.0.0.1:7777/ws/block');
+      const client = new WebSocket('ws://127.0.0.1:7777/ws/block');
       let resolve5:any, resolve6:any, resolve7:any
       const p5 = new Promise(res => resolve5 = res)
       const p6 = new Promise(res => resolve6 = res)
@@ -293,7 +291,7 @@ describe("HTTP API", function() {
     })
 
     it('/block should answer to pings', function(done) {
-      const client = new ws('ws://127.0.0.1:7777/ws/block');
+      const client = new WebSocket('ws://127.0.0.1:7777/ws/block');
       client.on('pong', function message() {
         client.terminate();
         done();
@@ -304,7 +302,7 @@ describe("HTTP API", function() {
     });
 
     it('/peer (number 5,6,7) should send a peer document', async () => {
-      const client = new ws('ws://127.0.0.1:30410/ws/peer');
+      const client = new WebSocket('ws://127.0.0.1:30410/ws/peer');
       let resolve5:any, resolve6:any
       const p5 = new Promise(res => resolve5 = res)
       const p6 = new Promise(res => resolve6 = res)

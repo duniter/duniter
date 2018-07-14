@@ -33,14 +33,17 @@ push_to_github:
   before_script:
     - export NVM_DIR="$HOME/.nvm"
     - . "$NVM_DIR/nvm.sh"
-  
-build:
-  <<: *nvm_env
-  stage: build
+
+.cached: &cached
   cache:
     untracked: true
     paths:
       - node_modules/
+  
+build:
+  <<: *nvm_env
+  <<: *cached
+  stage: build
   script:
     - yarn
 
@@ -70,16 +73,12 @@ pages:
 
 test:
   <<: *nvm_env
+  <<: *cached
   stage: test
-  cache:
-    untracked: true
-    paths:
-      - node_modules/
   script:
     - yarn test
     # Clean the dump directory before testing
     - rm -rf /tmp/duniter_ci_dump/
-    - mkdir -p /tmp/duniter_ci_dump/
     # Code coverage display in GitLab
     - tar cvzf coverage.tar.gz coverage/
     - sed -n 23p coverage/index.html | grep -Po "\d+.\d+" | sed -e "s/\(.*\)/<coverage>\1%<\/coverage>/"
@@ -89,18 +88,18 @@ test:
       - coverage.tar.gz
     expire_in: 4h
 
-test_sync:
+sync_g1:
   <<: *nvm_env
+  <<: *cached
   stage: test
-  cache:
-    untracked: true
-    paths:
-      - node_modules/
   script:
-    # Clean the dump directory before testing
-    - rm -rf /tmp/duniter_ci_dump/
-    - mkdir -p /tmp/duniter_ci_dump/
     - bash .gitlab/test/check_g1_sync.sh
+
+sync_gtest:
+  <<: *nvm_env
+  <<: *cached
+  stage: test
+  script:
     - bash .gitlab/test/check_gt_sync.sh
 
 .build_releases: &build_releases

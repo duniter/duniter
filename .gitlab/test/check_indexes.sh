@@ -3,8 +3,8 @@
 ORIGIN_DIR=`pwd`
 mkdir -p $1
 DUMP_DIR=`cd $1 && pwd`
-ARCHIVES="$DUMP_DIR/archives"
 CURRENCY=$2
+ARCHIVES="$DUMP_DIR/archives_$CURRENCY"
 DB_TEST="gitlab_ci_sync_test_$CURRENCY"
 G1_TARGET_BLOCK=$3 # This is a fixed block# which determines to the sha1 hashes
 G1_IINDEX_CS=$4

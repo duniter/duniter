@@ -66,7 +66,7 @@ call npm cache clean
 call npm install
 REM call npm test
 echo "Ajout du module 1/1 (duniter-ui)..."
-call npm install duniter-ui@1.6.x --save --production
+call npm install duniter-ui@1.7.x --save --production
 echo "Retrait des modules 'dev'..."
 call npm prune --production
 

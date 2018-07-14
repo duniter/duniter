@@ -123,7 +123,7 @@ NW_VERSION=0.28.0
 NW_RELEASE="v${NW_VERSION}"
 NW="nwjs-${NW_RELEASE}-linux-x64"
 NW_GZ="${NW}.tar.gz"
-DUNITER_UI_VER="1.6.x"
+DUNITER_UI_VER="1.7.x"
 
 nvm install ${NVER} || exit 1
 nvm use ${NVER} || exit 1

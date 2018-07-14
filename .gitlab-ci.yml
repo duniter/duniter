@@ -80,7 +80,8 @@ test:
     # Clean the dump directory before testing
     - rm -rf /tmp/duniter_ci_dump/
     - mkdir -p /tmp/duniter_ci_dump/
-    #- bash .gitlab/test/check_indexes.sh /tmp/duniter_ci_dump/
+    - bash .gitlab/test/check_g1_sync.sh
+    - bash .gitlab/test/check_gt_sync.sh
     # Code coverage display in GitLab
     - tar cvzf coverage.tar.gz coverage/
     - sed -n 23p coverage/index.html | grep -Po "\d+.\d+" | sed -e "s/\(.*\)/<coverage>\1%<\/coverage>/"

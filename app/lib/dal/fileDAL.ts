@@ -357,7 +357,12 @@ export class FileDAL {
   }
 
   async getAbsoluteBlockByNumberAndHash(number:number, hash:string): Promise<DBBlock|null> {
-    return (await this.blockDAL.getAbsoluteBlock(number, hash)) || (await this.blockchainArchiveDAL.getBlock(number, hash))
+    if (number > 0) {
+      return (await this.blockDAL.getAbsoluteBlock(number, hash)) || (await this.blockchainArchiveDAL.getBlock(number, hash))
+    } else {
+      // Block#0 is special
+      return (await this.blockDAL.getBlock(number)) || (await this.blockchainArchiveDAL.getBlockByNumber(number))
+    }
   }
 
   async getAbsoluteBlockByBlockstamp(blockstamp: string): Promise<DBBlock|null> {
@@ -1072,9 +1077,9 @@ export class FileDAL {
       await this.iindexDAL.trimRecords(maxNumber)
       await this.mindexDAL.trimRecords(maxNumber)
       await this.cindexDAL.trimExpiredCerts(maxNumber)
-      await this.sindexDAL.trimConsumedSource(maxNumber)
-      await this.dividendDAL.trimConsumedUDs(maxNumber)
     }
+    await this.sindexDAL.trimConsumedSource(maxNumber)
+    await this.dividendDAL.trimConsumedUDs(maxNumber)
   }
 
   async trimSandboxes(block:{ medianTime: number }) {

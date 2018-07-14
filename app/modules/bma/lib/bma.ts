@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {Server} from "../../../../server"
 import {BmaApi, Network, NetworkInterface} from "./network"
 import {block2HttpBlock, HttpPeer} from "./dtos"
@@ -70,6 +83,8 @@ export const bma = function(server:Server, interfaces:NetworkInterface[], httpLo
     httpMethods.httpGET(  '/network/peering/peers',                 (req:any) => net.peersGet(req),                         BMALimitation.limitAsVeryHighUsage());
     httpMethods.httpPOST( '/network/peering/peers',                 (req:any) => net.peersPost(req),                        BMALimitation.limitAsHighUsage());
     httpMethods.httpGET(  '/network/peers',                         (req:any) => net.peers(),                               BMALimitation.limitAsHighUsage());
+    httpMethods.httpGET(  '/network/ws2p/info',                     (req:any) => net.ws2pInfo(),                            BMALimitation.limitAsHighUsage());
+    httpMethods.httpGET(  '/network/ws2p/heads',                    (req:any) => net.ws2pHeads(),                           BMALimitation.limitAsHighUsage());
     httpMethods.httpPOST( '/wot/add',                               (req:any) => wot.add(req),                              BMALimitation.limitAsHighUsage());
     httpMethods.httpPOST( '/wot/certify',                           (req:any) => wot.certify(req),                          BMALimitation.limitAsHighUsage());
     httpMethods.httpPOST( '/wot/revoke',                            (req:any) => wot.revoke(req),                           BMALimitation.limitAsHighUsage());
@@ -104,6 +119,10 @@ export const bma = function(server:Server, interfaces:NetworkInterface[], httpLo
       server: httpServer,
       path: '/ws/peer'
     });
+    let wssHeads = new WebSocketServer({
+      server: httpServer,
+      path: '/ws/heads'
+    });
 
     wssBlock.on('error', function (error:any) {
       logger && logger.error('Error on WS Server');
@@ -123,6 +142,17 @@ export const bma = function(server:Server, interfaces:NetworkInterface[], httpLo
         }
       });
     });
+
+    wssHeads.on('connection', async (ws:any) => {
+      if (server.ws2pCluster) {
+        try {
+          ws.send(JSON.stringify(await server.ws2pCluster.getKnownHeads()))
+        } catch (e) {
+          logger.error(e);
+        }
+      }
+    })
+    wssHeads.broadcast = (data:any) => wssHeads.clients.forEach((client:any) => client.send(data));
 
     wssBlock.broadcast = (data:any) => wssBlock.clients.forEach((client:any) => {
       try {
@@ -164,6 +194,10 @@ export const bma = function(server:Server, interfaces:NetworkInterface[], httpLo
               raw: peerDTO.getRaw()
             }
             wssPeer.broadcast(JSON.stringify(peerResult));
+          }
+          // Broadcast heads
+          else if (data.ws2p === 'heads' && data.added.length) {
+            wssHeads.broadcast(JSON.stringify(data.added));
           }
         } catch (e) {
           logger && logger.error('error on ws mapSync:', e);

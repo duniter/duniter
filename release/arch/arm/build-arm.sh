@@ -4,15 +4,23 @@
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 
+
 # Prepare
+NODE_VERSION=9.4.0
 ARCH="`uname -m | sed -e \"s/86_//\"`"
-NVER="v6.11.2"
+NVER="v$NODE_VERSION"
+DUNITER_TAG=$1
 
 # Folders
 INITIAL_DIRECTORY=`pwd`
 ROOT="/tmp/build_duniter"
 DOWNLOADS="$ROOT/downloads"
 RELEASES="$ROOT/releases"
+
+nvm install ${NODE_VERSION}
+nvm use ${NODE_VERSION}
+
+echo "Version de NodeJS : `node -v`"
 
 # -----------
 # Clean sources + releases
@@ -28,10 +36,8 @@ mkdir -p "$DOWNLOADS"
 cd "$DOWNLOADS"
 
 if [ ! -d "$DOWNLOADS/duniter" ]; then
-  git clone https://github.com/duniter/duniter.git
+  mv "$INITIAL_DIRECTORY/duniter-source" duniter
   cd duniter
-  COMMIT=`git rev-list --tags --max-count=1`
-  DUNITER_TAG=`echo $(git describe --tags $COMMIT) | sed 's/^v//'`
   git checkout "v${DUNITER_TAG}"
   cd ..
 fi
@@ -40,10 +46,10 @@ DUNITER_VER="$DUNITER_TAG"
 DUNITER_DEB_VER=" $DUNITER_TAG"
 DUNITER_TAG="v$DUNITER_TAG"
 
-echo "$ARCH"
-echo "$NVER"
-echo "$DUNITER_VER"
-echo "$DUNITER_DEB_VER"
+echo "Arch: $ARCH"
+echo "Nver: $NVER"
+echo "DuniterVer: $DUNITER_VER"
+echo "DebianVer: $DUNITER_DEB_VER"
 
 if [ ! -f "$DOWNLOADS/node-${NVER}-linux-${ARCH}.tar.gz" ]; then
   # Download Node.js and package it with the sources
@@ -60,10 +66,9 @@ cd ${RELEASES}/duniter
 echo "Copying Nodejs"
 cp -R "$DOWNLOADS/node-${NVER}-linux-${ARCH}" node
 
-echo "yarn"
-yarn
-yarn add duniter-ui@1.4.x --save --production
-sed -i "s/duniter\//..\/..\/..\/..\//g" node_modules/duniter-ui/server/controller/webmin.js
+npm install
+
+npm install duniter-ui@1.6.x --save --production
 SRC=`pwd`
 echo $SRC
 
@@ -81,7 +86,7 @@ mkdir -p duniter_release
 cp -R ${SRC}/* duniter_release/
 
 # Creating DEB packaging
-mv duniter_release/release/arch/debian/package duniter-${ARCH}
+mv duniter_release/release/extra/debian/package duniter-${ARCH}
 mkdir -p duniter-${ARCH}/opt/duniter/
 chmod 755 duniter-${ARCH}/DEBIAN/post*
 chmod 755 duniter-${ARCH}/DEBIAN/pre*
@@ -90,9 +95,9 @@ cd duniter_release
 pwd
 rm -Rf .git
 echo "Zipping..."
-zip -qr ../duniter-desktop.nw *
+zip -qr ../duniter.zip *
 cd ../
-mv duniter-desktop.nw duniter-${ARCH}/opt/duniter/
+mv duniter.zip duniter-${ARCH}/opt/duniter/
 echo "Making package package"
 fakeroot dpkg-deb --build duniter-${ARCH}
 mv duniter-${ARCH}.deb "$INITIAL_DIRECTORY/duniter-server-v${DUNITER_VER}-linux-${ARCH}.deb"

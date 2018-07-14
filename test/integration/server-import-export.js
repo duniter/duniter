@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
 const _ = require('underscore');
 const should = require('should');
@@ -5,7 +18,7 @@ const fs = require('fs');
 const co = require('co');
 const unzip = require('unzip');
 const toolbox = require('../integration/tools/toolbox');
-const user    = require('../integration/tools/user');
+const TestUser = require('../integration/tools/TestUser').TestUser
 const bma     = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 
 const serverConfig = {
@@ -21,13 +34,13 @@ let s0, s1;
 describe('Import/Export', () => {
 
   before(() => co(function *() {
-    s0 = toolbox.server(_.extend({ homename: 'dev_unit_tests1' }, serverConfig));
+    s0 = toolbox.server(_.extend({ homename: 'dev_unit_tests1', powNoSecurity: true }, serverConfig));
     yield s0.resetHome();
 
-    s1 = toolbox.server(_.extend({ homename: 'dev_unit_tests1' }, serverConfig));
+    s1 = toolbox.server(_.extend({ homename: 'dev_unit_tests1', powNoSecurity: true }, serverConfig));
 
-    const cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
-    const tac = user('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: s1 });
+    const cat = new TestUser('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
+    const tac = new TestUser('tac', { pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'}, { server: s1 });
 
     yield s1.initDalBmaConnections();
     yield cat.createIdentity();
@@ -53,8 +66,6 @@ describe('Import/Export', () => {
     return new Promise((resolve, reject) => {
       archive.on('error', reject);
       output.on('close', function() {
-        console.log(archive.pointer() + ' total bytes');
-        console.log('archiver has been finalized and the output file descriptor has closed.');
         resolve();
       });
     });

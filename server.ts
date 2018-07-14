@@ -1,9 +1,22 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {IdentityService} from "./app/service/IdentityService"
 import {MembershipService} from "./app/service/MembershipService"
 import {PeeringService} from "./app/service/PeeringService"
 import {BlockchainService} from "./app/service/BlockchainService"
 import {TransactionService} from "./app/service/TransactionsService"
-import {ConfDTO, NetworkConfDTO} from "./app/lib/dto/ConfDTO"
+import {ConfDTO} from "./app/lib/dto/ConfDTO"
 import {FileDAL} from "./app/lib/dal/fileDAL"
 import {DuniterBlockchain} from "./app/lib/blockchain/DuniterBlockchain"
 import {SQLBlockchain} from "./app/lib/blockchain/SqlBlockchain"
@@ -22,9 +35,11 @@ import {RevocationDTO} from "./app/lib/dto/RevocationDTO"
 import {TransactionDTO} from "./app/lib/dto/TransactionDTO"
 import {PeerDTO} from "./app/lib/dto/PeerDTO"
 import {OtherConstants} from "./app/lib/other_constants"
+import {WS2PCluster} from "./app/modules/ws2p/lib/WS2PCluster"
+import {DBBlock} from "./app/lib/db/DBBlock"
+import { ProxiesConf } from './app/lib/proxy';
 
 export interface HookableServer {
-  getMainEndpoint: (...args:any[]) => Promise<any>
   generatorGetJoinData: (...args:any[]) => Promise<any>
   generatorComputeNewCerts: (...args:any[]) => Promise<any>
   generatorNewCertsToLinks: (...args:any[]) => Promise<any>
@@ -47,6 +62,11 @@ const logger      = require('./app/lib/logger').NewLogger('server');
 export class Server extends stream.Duplex implements HookableServer {
 
   private paramsP:Promise<any>|null
+  private endpointsDefinitions:(()=>Promise<string>)[] = []
+  private wrongEndpointsFilters:((endpoints:string[])=>Promise<string[]>)[] = []
+  startService:()=>Promise<void>
+  stopService:()=>Promise<void>
+  ws2pCluster:WS2PCluster|undefined
   conf:ConfDTO
   dal:FileDAL
 
@@ -64,6 +84,7 @@ export class Server extends stream.Duplex implements HookableServer {
   PeeringService:PeeringService
   BlockchainService:BlockchainService
   TransactionsService:TransactionService
+  private documentFIFO:GlobalFifoPromise
 
   constructor(home:string, memoryOnly:boolean, private overrideConf:any) {
     super({ objectMode: true })
@@ -75,14 +96,18 @@ export class Server extends stream.Duplex implements HookableServer {
 
     this.paramsP = directory.getHomeParams(memoryOnly, home)
 
-    const documentFIFO = new GlobalFifoPromise()
+    this.documentFIFO = new GlobalFifoPromise()
 
     this.MerkleService       = require("./app/lib/helpers/merkle").processForURL
-    this.IdentityService     = new IdentityService(documentFIFO)
-    this.MembershipService   = new MembershipService(documentFIFO)
-    this.PeeringService      = new PeeringService(this, documentFIFO)
-    this.BlockchainService   = new BlockchainService(this, documentFIFO)
-    this.TransactionsService = new TransactionService(documentFIFO)
+    this.IdentityService     = new IdentityService(this.documentFIFO)
+    this.MembershipService   = new MembershipService(this.documentFIFO)
+    this.PeeringService      = new PeeringService(this, this.documentFIFO)
+    this.BlockchainService   = new BlockchainService(this, this.documentFIFO)
+    this.TransactionsService = new TransactionService(this.documentFIFO)
+  }
+
+  getDocumentsFIFO() {
+    return this.documentFIFO
   }
 
   // Unused, but made mandatory by Duplex interface
@@ -137,6 +162,7 @@ export class Server extends stream.Duplex implements HookableServer {
     logger.debug('Loading conf...');
     this.conf = await this.dal.loadConf(this.overrideConf, useDefaultConf)
     // Default values
+    this.conf.proxiesConf      = this.conf.proxiesConf === undefined ?       new ProxiesConf()                            : this.conf.proxiesConf
     this.conf.remoteipv6       = this.conf.remoteipv6 === undefined ?        this.conf.ipv6                               : this.conf.remoteipv6
     this.conf.remoteport       = this.conf.remoteport === undefined ?        this.conf.port                               : this.conf.remoteport
     this.conf.c                = this.conf.c === undefined ?                 constants.CONTRACT.DEFAULT.C                 : this.conf.c
@@ -183,10 +209,10 @@ export class Server extends stream.Duplex implements HookableServer {
     this.BlockchainService
       .pipe(es.mapSync((e:any) => {
         if (e.bcEvent === OtherConstants.BC_EVENT.HEAD_CHANGED || e.bcEvent === OtherConstants.BC_EVENT.SWITCHED) {
-          this.emitDocument(e.block, DuniterDocument.ENTITY_BLOCK)
           this.emit('bcEvent', e)
         }
         this.streamPush(e)
+        return e
       }))
 
     return this.conf;
@@ -200,7 +226,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawBlock(raw:string): Promise<BlockDTO> {
-    const obj = parsers.parseBlock.syncWrite(raw, logger)
+    const obj = parsers.parseBlock.syncWrite(raw)
     return await this.writeBlock(obj)
   }
 
@@ -213,7 +239,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawIdentity(raw:string): Promise<DBIdentity> {
-    const obj = parsers.parseIdentity.syncWrite(raw, logger)
+    const obj = parsers.parseIdentity.syncWrite(raw)
     return await this.writeIdentity(obj)
   }
 
@@ -226,7 +252,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawCertification(raw:string): Promise<CertificationDTO> {
-    const obj = parsers.parseCertification.syncWrite(raw, logger)
+    const obj = parsers.parseCertification.syncWrite(raw)
     return await this.writeCertification(obj)
   }
 
@@ -239,7 +265,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawMembership(raw:string): Promise<MembershipDTO> {
-    const obj = parsers.parseMembership.syncWrite(raw, logger)
+    const obj = parsers.parseMembership.syncWrite(raw)
     return await this.writeMembership(obj)
   }
 
@@ -252,7 +278,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawRevocation(raw:string): Promise<RevocationDTO> {
-    const obj = parsers.parseRevocation.syncWrite(raw, logger)
+    const obj = parsers.parseRevocation.syncWrite(raw)
     return await this.writeRevocation(obj)
   }
 
@@ -265,7 +291,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawTransaction(raw:string): Promise<TransactionDTO> {
-    const obj = parsers.parseTransaction.syncWrite(raw, logger)
+    const obj = parsers.parseTransaction.syncWrite(raw)
     return await this.writeTransaction(obj)
   }
 
@@ -278,7 +304,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawPeer(raw:string): Promise<PeerDTO> {
-    const obj = parsers.parsePeer.syncWrite(raw, logger)
+    const obj = parsers.parsePeer.syncWrite(raw)
     return await this.writePeer(obj)
   }
 
@@ -316,7 +342,7 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   recomputeSelfPeer() {
-    return this.PeeringService.generateSelfPeer(this.conf, 0)
+    return this.PeeringService.generateSelfPeer(this.conf)
   }
 
   getCountOfSelfMadePoW() {
@@ -344,7 +370,7 @@ export class Server extends stream.Duplex implements HookableServer {
     }
   }
 
-  async resetAll(done:any) {
+  async resetAll(done:any = null) {
     await this.resetDataHook()
     await this.resetConfigHook()
     const files = ['stats', 'cores', 'current', directory.DUNITER_DB_NAME, directory.DUNITER_DB_NAME + '.db', directory.DUNITER_DB_NAME + '.log', directory.WOTB_FILE, 'export.zip', 'import.zip', 'conf'];
@@ -359,20 +385,20 @@ export class Server extends stream.Duplex implements HookableServer {
     await this.resetFiles(files, dirs, done);
   }
 
-  async resetConf(done:any) {
+  async resetConf(done:any = null) {
     await this.resetConfigHook()
     const files = ['conf'];
     const dirs:string[]  = [];
     return this.resetFiles(files, dirs, done);
   }
 
-  resetStats(done:any) {
+  resetStats(done:any = null) {
     const files = ['stats'];
     const dirs  = ['ud_history'];
     return this.resetFiles(files, dirs, done);
   }
 
-  resetPeers(done:any) {
+  resetPeers() {
     return this.dal.resetPeers()
   }
 
@@ -455,8 +481,11 @@ export class Server extends stream.Duplex implements HookableServer {
     }
   }
 
-  disconnect() {
-    return Promise.resolve(this.dal && this.dal.close())
+  async disconnect() {
+    await this.documentFIFO.closeFIFO()
+    if (this.dal) {
+      await this.dal.close()
+    }
   }
 
   revert() {
@@ -470,6 +499,20 @@ export class Server extends stream.Duplex implements HookableServer {
     }
     if (current.number <= number) {
       logger.warn('Already reached');
+    }
+  }
+
+  pullingEvent(type:string, number:any = null) {
+    this.push({
+      pulling: {
+        type: type,
+        data: number
+      }
+    })
+    if (type !== 'end') {
+      this.push({ pulling: 'processing' })
+    } else {
+      this.push({ pulling: 'finished' })
     }
   }
 
@@ -551,35 +594,58 @@ export class Server extends stream.Duplex implements HookableServer {
     return this.dal.getLogContent(linesQuantity)
   }
 
+  addEndpointsDefinitions(definition:()=>Promise<string>) {
+    this.endpointsDefinitions.push(definition)
+  }
+
+  addWrongEndpointFilter(filter:(endpoints:string[])=>Promise<string[]>) {
+    this.wrongEndpointsFilters.push(filter)
+  }
+
+  async getEndpoints() {
+    const endpoints = await Promise.all(this.endpointsDefinitions.map(d => d()))
+    return endpoints.filter(ep => !!ep)
+  }
+
+  async getWrongEndpoints(endpoints:string[]) {
+    let wrongs:string[] = []
+    for (const filter of this.wrongEndpointsFilters) {
+      const newWrongs = await filter(endpoints)
+      wrongs = wrongs.concat(newWrongs)
+    }
+    return wrongs
+  }
+
+  /*****************
+   * MODULES UTILITIES
+   ****************/
+
+  requireFile(path:string) {
+    return require('./' + path)
+  }
+
   /*****************
    * MODULES PLUGS
    ****************/
 
   /**
-   * Default endpoint. To be overriden by a module to specify another endpoint value (for ex. BMA).
-   */
-  getMainEndpoint(conf:NetworkConfDTO): Promise<any> {
-    return Promise.resolve('DEFAULT_ENDPOINT')
-  }
-
-  /**
    * Default WoT incoming data for new block. To be overriden by a module.
    */
-  generatorGetJoinData(): Promise<any> {
+  generatorGetJoinData(current:DBBlock, idtyHash:string , char:string): Promise<any> {
     return Promise.resolve({})
   }
 
   /**
    * Default WoT incoming certifications for new block, filtering wrong certs. To be overriden by a module.
    */
-  generatorComputeNewCerts(): Promise<any> {
+  generatorComputeNewCerts(...args:any[]): Promise<any> {
     return Promise.resolve({})
   }
 
   /**
    * Default WoT transforming method for certs => links. To be overriden by a module.
    */
-  generatorNewCertsToLinks(): Promise<any> {
+  generatorNewCertsToLinks(...args:any[]): Promise<any> {
     return Promise.resolve({})
   }
 

@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {CrawlerConstants} from "./constants"
 import * as stream from "stream"
 import {Server} from "../../../../server"
@@ -258,7 +271,8 @@ export class Synchroniser extends stream.Duplex {
           return block;
         }
         async applyMainBranch(block: BlockDTO): Promise<boolean> {
-          const addedBlock = await this.BlockchainService.submitBlock(block)
+          const addedBlock = await this.BlockchainService.submitBlock(block, true)
+          await this.BlockchainService.blockResolution()
           this.server.streamPush(addedBlock);
           this.watcher.appliedPercent(Math.floor(block.number / to * 100));
           return true
@@ -758,7 +772,7 @@ class P2PDownloader {
       // Continue
       return chosens;
     }, []);
-    let candidates = await Promise.all(promises)
+    let candidates:any[] = await Promise.all(promises)
     candidates.forEach((c:any) => {
       c.tta = c.tta || 0; // By default we say a node is super slow to answer
       c.ttas = c.ttas || []; // Memorize the answer delays

@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {FileDAL} from "../lib/dal/fileDAL"
 import {DBPeer} from "../lib/dal/sqliteDAL/PeerDAL"
@@ -13,7 +26,6 @@ import {GlobalFifoPromise} from "./GlobalFifoPromise"
 const util           = require('util');
 const _              = require('underscore');
 const events         = require('events');
-const rp             = require('request-promise');
 const logger         = require('../lib/logger').NewLogger('peering');
 const constants      = require('../lib/constants');
 
@@ -52,14 +64,15 @@ export class PeeringService {
     }
     let thePeer = this.peerInstance;
     if (!thePeer) {
-      thePeer = await this.generateSelfPeer(this.conf, 0)
+      thePeer = await this.generateSelfPeer(this.conf)
     }
     return PeerDTO.fromJSONObject(thePeer)
   }
 
-  async mirrorEndpoints() {
-    let localPeer = await this.peer();
-    return this.getOtherEndpoints(localPeer.endpoints, this.conf);
+  async mirrorBMAEndpoints() {
+    const localPeer = await this.peer();
+    const localEndpoints = await this.server.getEndpoints()
+    return this.getOtherEndpoints(localPeer.endpoints, localEndpoints).filter((ep) => ep.match(/^BASIC_MERKLED_API/))
   }
 
   checkPeerSignature(p:PeerDTO) {
@@ -71,7 +84,6 @@ export class PeeringService {
   };
 
   submitP(peering:DBPeer, eraseIfAlreadyRecorded = false, cautious = true): Promise<PeerDTO> {
-    this.logger.info('⬇ PEER %s', peering.pubkey.substr(0, 8))
     // Force usage of local currency name, do not accept other currencies documents
     peering.currency = this.conf.currency || peering.currency;
     let thePeerDTO = PeerDTO.fromJSONObject(peering)
@@ -108,7 +120,10 @@ export class PeeringService {
         thePeer.statusTS = sigTime;
         let found = await this.dal.getPeerOrNull(thePeer.pubkey);
         let peerEntityOld = PeerDTO.fromJSONObject(found || thePeer)
-        if(found){
+        if(!found && thePeerDTO.endpoints.length === 0){
+          throw 'Peer with zero endpoints that is not already known'
+        }
+        else if(found){
           // Already existing peer
           const sp2 = found.block.split('-');
           const previousBlockNumber = parseInt(sp2[0]);
@@ -149,29 +164,18 @@ export class PeeringService {
         this.logger.info('✔ PEER %s', peering.pubkey.substr(0, 8))
         let savedPeer = PeerDTO.fromJSONObject(peerEntity).toDBPeer()
         if (peerEntity.pubkey == this.selfPubkey) {
-          const localEndpoint = await this.server.getMainEndpoint(this.conf);
-          const localNodeNotListed = !peerEntityOld.containsEndpoint(localEndpoint);
+          const localEndpoints = await this.server.getEndpoints()
+          const localNodeNotListed = !peerEntityOld.containsAllEndpoints(localEndpoints)
           const current = localNodeNotListed && (await this.dal.getCurrentBlockOrNull());
-          if (!localNodeNotListed) {
-            const indexOfThisNode = peerEntity.endpoints.indexOf(localEndpoint);
-            if (indexOfThisNode !== -1) {
-              this.server.push({
-                nodeIndexInPeers: indexOfThisNode
-              });
-            } else {
-              logger.warn('This node has his interface listed in the peer document, but its index cannot be found.');
-            }
-          }
           if (localNodeNotListed && (!current || current.number > blockNumber)) {
             // Document with pubkey of local peer, but doesn't contain local interface: we must add it
-            this.generateSelfPeer(this.conf, 0);
+            this.generateSelfPeer(this.conf);
           } else {
             this.peerInstance = peerEntity;
           }
         }
         return PeerDTO.fromDBPeer(savedPeer)
       } catch (e) {
-        this.logger.info('✘ PEER %s', peering.pubkey.substr(0, 8))
         throw e
       }
     })
@@ -182,7 +186,7 @@ export class PeeringService {
     return this.server.writePeer(pretendedNewer)
   }
 
-  async generateSelfPeer(theConf:ConfDTO, signalTimeInterval:number) {
+  async generateSelfPeer(theConf:ConfDTO, signalTimeInterval = 0) {
     const current = await this.server.dal.getCurrentBlockOrNull();
     const currency = theConf.currency || constants.DEFAULT_CURRENCY_NAME;
     const peers = await this.dal.findPeers(this.selfPubkey);
@@ -192,83 +196,80 @@ export class PeeringService {
       block: '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855',
       endpoints: []
     };
-    if (peers.length != 0 && peers[0]) {
-      p1 = _(peers[0]).extend({version: constants.DOCUMENTS_VERSION, currency: currency});
+    const currentSelfPeer = peers[0]
+    if (peers.length != 0 && currentSelfPeer) {
+      p1 = _(currentSelfPeer).extend({version: constants.DOCUMENTS_VERSION, currency: currency});
     }
-    let endpoint = await this.server.getMainEndpoint(theConf);
-    let otherPotentialEndpoints = this.getOtherEndpoints(p1.endpoints, theConf);
+    const localEndpoints = await this.server.getEndpoints()
+    const otherPotentialEndpoints = this.getOtherEndpoints(p1.endpoints, localEndpoints)
     logger.info('Sibling endpoints:', otherPotentialEndpoints);
-    let reals = await Promise.all(otherPotentialEndpoints.map(async (theEndpoint:string) => {
-      let real = true;
-      let remote = PeerDTO.endpoint2host(theEndpoint)
-      try {
-        // We test only BMA APIs, because other may exist and we cannot judge against them yet
-        if (theEndpoint.startsWith('BASIC_MERKLED_API')) {
-          let answer = await rp('http://' + remote + '/network/peering', { json: true });
-          if (!answer || answer.pubkey != this.selfPubkey) {
-            throw Error("Not same pubkey as local instance");
-          }
-        }
-        // We also remove endpoints this are *asked* to be removed in the conf file
-        if ((this.conf.rmEndpoints || []).indexOf(theEndpoint) !== -1) {
-          real = false;
-        }
-      } catch (e) {
-        logger.warn('Wrong endpoint \'%s\': \'%s\'', theEndpoint, e.message || e);
-        real = false;
-      }
-      return real;
-    }))
-    let toConserve = otherPotentialEndpoints.filter((ep, i) => reals[i]);
-    if (!currency || endpoint == 'BASIC_MERKLED_API') {
+    const wrongEndpoints = await this.server.getWrongEndpoints(otherPotentialEndpoints)
+    for (const wrong of wrongEndpoints) {
+      logger.warn('Wrong endpoint \'%s\'', wrong)
+    }
+    const toRemoveByConf = (this.conf.rmEndpoints || [])
+    let toConserve = otherPotentialEndpoints.filter(ep => wrongEndpoints.indexOf(ep) === -1 && toRemoveByConf.indexOf(ep) === -1)
+    if (!currency) {
       logger.error('It seems there is an issue with your configuration.');
       logger.error('Please restart your node with:');
       logger.error('$ duniter restart');
       return new Promise(() => null);
     }
-    // Choosing next based-block for our peer record: we basically want the most distant possible from current
-    let minBlock = current ? current.number - 30 : 0;
-    if (p1) {
-      // But if already have a peer record within this distance, we need to take the next block of it
-      minBlock = Math.max(minBlock, parseInt(p1.block.split('-')[0], 10) + 1);
+    const endpointsToDeclare = localEndpoints.concat(toConserve).concat(this.conf.endpoints || [])
+    if (currentSelfPeer && endpointsToDeclare.length === 0 && currentSelfPeer.endpoints.length === 0) {
+      /*********************
+       * Conserver peer document
+       *********************/
+      return currentSelfPeer
+    } else {
+      /*********************
+       * Renew peer document
+       *********************/
+      // Choosing next based-block for our peer record: we basically want the most distant possible from current
+      let minBlock = current ? current.number - 30 : 0;
+      if (p1) {
+        // But if already have a peer record within this distance, we need to take the next block of it
+        minBlock = Math.max(minBlock, parseInt(p1.block.split('-')[0], 10) + 1);
+      }
+      // The number cannot be superior to current block
+      minBlock = Math.min(minBlock, current ? current.number : minBlock);
+      let targetBlock = await this.server.dal.getBlock(minBlock);
+      const p2:any = {
+        version: constants.DOCUMENTS_VERSION,
+        currency: currency,
+        pubkey: this.selfPubkey,
+        block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
+        endpoints: _.uniq(endpointsToDeclare)
+      };
+      const raw2 = dos2unix(PeerDTO.fromJSONObject(p2).getRaw());
+      const bmaAccess = PeerDTO.fromJSONObject(p2).getURL()
+      if (bmaAccess) {
+        logger.info('BMA access:', bmaAccess)
+      }
+      logger.debug('Generating server\'s peering entry based on block#%s...', p2.block.split('-')[0]);
+      p2.signature = await this.server.sign(raw2);
+      p2.pubkey = this.selfPubkey;
+      // Remember this is now local peer value
+      this.peerInstance = p2;
+      try {
+        // Submit & share with the network
+        await this.server.writePeer(p2)
+      } catch (e) {
+        logger.error(e)
+      }
+      const selfPeer = await this.dal.getPeer(this.selfPubkey);
+      // Set peer's statut to UP
+      await this.peer(selfPeer);
+      this.server.streamPush(selfPeer);
+      if (signalTimeInterval) {
+        logger.info("Next peering signal in %s min", signalTimeInterval / 1000 / 60)
+      }
+      return selfPeer
     }
-    // The number cannot be superior to current block
-    minBlock = Math.min(minBlock, current ? current.number : minBlock);
-    let targetBlock = await this.server.dal.getBlock(minBlock);
-    const p2:any = {
-      version: constants.DOCUMENTS_VERSION,
-      currency: currency,
-      pubkey: this.selfPubkey,
-      block: targetBlock ? [targetBlock.number, targetBlock.hash].join('-') : constants.PEER.SPECIAL_BLOCK,
-      endpoints: _.uniq([endpoint].concat(toConserve).concat(this.conf.endpoints || []))
-    };
-    const raw2 = dos2unix(PeerDTO.fromJSONObject(p2).getRaw());
-    logger.info('External access:', PeerDTO.fromJSONObject(p2).getURL())
-    logger.debug('Generating server\'s peering entry based on block#%s...', p2.block.split('-')[0]);
-    p2.signature = await this.server.sign(raw2);
-    p2.pubkey = this.selfPubkey;
-    // Remember this is now local peer value
-    this.peerInstance = p2;
-    try {
-      // Submit & share with the network
-      await this.server.writePeer(p2)
-    } catch (e) {
-      logger.error(e)
-    }
-    const selfPeer = await this.dal.getPeer(this.selfPubkey);
-    // Set peer's statut to UP
-    await this.peer(selfPeer);
-    this.server.streamPush(selfPeer);
-    logger.info("Next peering signal in %s min", signalTimeInterval / 1000 / 60);
-    return selfPeer;
   }
 
-  private getOtherEndpoints(endpoints:string[], theConf:ConfDTO) {
-    return endpoints.filter((ep) => {
-      return !ep.match(constants.BMA_REGEXP) || (
-          !(ep.includes(' ' + theConf.remoteport) && (
-          ep.includes(theConf.remotehost || '') || ep.includes(theConf.remoteipv6 || '') || ep.includes(theConf.remoteipv4 || ''))));
-    });
+  private getOtherEndpoints(endpoints:string[], localEndpoints:string[]) {
+    return endpoints.filter((ep) => localEndpoints.indexOf(ep) === -1)
   }
 }
 

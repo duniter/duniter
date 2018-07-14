@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
 import {BlockDTO} from "../dto/BlockDTO"
 import {ConfDTO} from "../dto/ConfDTO"
@@ -374,61 +387,75 @@ export const LOCAL_RULES_FUNCTIONS = {
     const txs = block.transactions
     // Check rule against each transaction
     for (const tx of txs) {
-      let sigResult = getSigResult(tx);
-      if (!sigResult.matching) {
-        throw Error('Signature from a transaction must match');
+      if (!tx.checkSignatures()) {
+        throw Error('Signature from a transaction must match')
       }
     }
     return true;
+  },
+
+  checkMaxTransactionChainingDepth: async (block:BlockDTO, conf:ConfDTO, index:IndexEntry[]) => {
+    const sindex = Indexer.sindex(index)
+    const max = getMaxTransactionDepth(sindex)
+    //
+    const allowedMax = block.medianTime > 1519862400 ? CommonConstants.BLOCK_MAX_TX_CHAINING_DEPTH : 0
+    if (max > allowedMax) {
+      throw "The maximum transaction chaining length per block is " + CommonConstants.BLOCK_MAX_TX_CHAINING_DEPTH
+    }
+    return true
   }
+}
+
+export interface SindexShortEntry {
+  op:string,
+  identifier:string,
+  pos:number,
+  tx:string|null
+}
+
+function getMaxTransactionDepth(sindex:SindexShortEntry[]) {
+  const ids = _.uniq(_.pluck(sindex, 'tx'))
+  let maxTxChainingDepth = 0
+  for (let id of ids) {
+    maxTxChainingDepth = Math.max(maxTxChainingDepth, getTransactionDepth(id, sindex, 0))
+  }
+  return maxTxChainingDepth
+}
+
+function getTransactionDepth(txHash:string, sindex:SindexShortEntry[], localDepth = 0) {
+  const inputs = _.filter(sindex, (s:SindexShortEntry) => s.op === 'UPDATE' && s.tx === txHash)
+  let depth = localDepth
+  for (let input of inputs) {
+    const consumedOutput = _.findWhere(sindex, { op: 'CREATE', identifier: input.identifier, pos: input.pos })
+    if (consumedOutput) {
+      if (localDepth < 5) {
+        const subTxDepth = getTransactionDepth(consumedOutput.tx, sindex, localDepth + 1)
+        depth = Math.max(depth, subTxDepth)
+      } else {
+        depth++
+      }
+    }
+  }
+  return depth
 }
 
 function checkSingleMembershipSignature(ms:any) {
   return verify(ms.getRaw(), ms.signature, ms.issuer);
 }
 
-function getSigResult(tx:any) {
-  let sigResult:any = { sigs: {}, matching: true };
-  let json:any = { "version": tx.version, "currency": tx.currency, "blockstamp": tx.blockstamp, "locktime": tx.locktime, "inputs": [], "outputs": [], "issuers": tx.issuers, "signatures": [], "comment": tx.comment, unlocks: [] };
-  tx.inputs.forEach(function (input:any) {
-    json.inputs.push(input.raw);
-  });
-  tx.outputs.forEach(function (output:any) {
-    json.outputs.push(output.raw);
-  });
-  json.unlocks = tx.unlocks;
-  let i = 0;
-  let signaturesMatching = true;
-  const raw = tx.getRawTxNoSig()
-  while (signaturesMatching && i < tx.signatures.length) {
-    const sig = tx.signatures[i];
-    const pub = tx.issuers[i];
-    signaturesMatching = verify(raw, sig, pub);
-    sigResult.sigs[pub] = {
-      matching: signaturesMatching,
-      index: i
-    };
-    i++;
-  }
-  sigResult.matching = signaturesMatching;
-  return sigResult;
-}
-
-function checkBunchOfTransactions(transactions:TransactionDTO[], done:any = undefined){
-  const block:any = { transactions };
+function checkBunchOfTransactions(transactions:TransactionDTO[], conf:ConfDTO, options?:{ dontCareAboutChaining?:boolean }){
+  const block:any = { transactions, identities: [], joiners: [], actives: [], leavers: [], revoked: [], excluded: [], certifications: [] };
+  const index = Indexer.localIndex(block, conf)
   return (async () => {
-    try {
-      let local_rule = LOCAL_RULES_FUNCTIONS;
-      await local_rule.checkTxLen(block);
-      await local_rule.checkTxIssuers(block);
-      await local_rule.checkTxSources(block);
-      await local_rule.checkTxRecipients(block);
-      await local_rule.checkTxAmounts(block);
-      await local_rule.checkTxSignature(block);
-      done && done();
-    } catch (err) {
-      if (done) return done(err);
-      throw err;
+    let local_rule = LOCAL_RULES_FUNCTIONS;
+    await local_rule.checkTxLen(block);
+    await local_rule.checkTxIssuers(block);
+    await local_rule.checkTxSources(block);
+    await local_rule.checkTxRecipients(block);
+    await local_rule.checkTxAmounts(block);
+    await local_rule.checkTxSignature(block);
+    if (!options || !options.dontCareAboutChaining) {
+      await local_rule.checkMaxTransactionChainingDepth(block, conf, index);
     }
   })()
 }
@@ -439,11 +466,13 @@ export const LOCAL_RULES_HELPERS = {
 
   checkSingleMembershipSignature: checkSingleMembershipSignature,
 
-  getSigResult: getSigResult,
+  checkBunchOfTransactions,
 
-  checkBunchOfTransactions: checkBunchOfTransactions,
+  getTransactionDepth,
 
-  checkSingleTransactionLocally: (tx:any, done:any = undefined) => checkBunchOfTransactions([tx], done),
+  getMaxTransactionDepth,
+
+  checkSingleTransactionLocally: (tx:any, conf:ConfDTO) => checkBunchOfTransactions([tx], conf),
 
   checkTxAmountsValidity: (tx:TransactionDTO) => {
     const inputs = tx.inputsAsObjects()

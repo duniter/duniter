@@ -1,6 +1,19 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {ConfDTO} from "../../lib/dto/ConfDTO"
 import {BlockGenerator, BlockGeneratorWhichProves} from "./lib/blockGenerator"
-import {Constants} from "./lib/constants"
+import {ProverConstants} from "./lib/constants"
 import {BlockProver} from "./lib/blockProver"
 import {Prover} from "./lib/prover"
 import {Contacter} from "../crawler/lib/contacter"
@@ -14,15 +27,23 @@ const async = require('async');
 export const ProverDependency = {
 
   duniter: {
-
+    
     /*********** Permanent prover **************/
     config: {
       onLoading: async (conf:ConfDTO) => {
         if (conf.cpu === null || conf.cpu === undefined) {
-          conf.cpu = Constants.DEFAULT_CPU;
+          conf.cpu = ProverConstants.DEFAULT_CPU;
         }
-        conf.powSecurityRetryDelay = Constants.POW_SECURITY_RETRY_DELAY;
-        conf.powMaxHandicap = Constants.POW_MAXIMUM_ACCEPTABLE_HANDICAP;
+        if (conf.nbCores === null || conf.nbCores === undefined) {
+          conf.nbCores = Math.min(ProverConstants.CORES_MAXIMUM_USE_IN_PARALLEL, require('os').cpus().length)
+        } else if (conf.nbCores <= 0) {
+          conf.nbCores = 1
+        }
+        if (conf.prefix === null || conf.prefix === undefined) {
+          conf.prefix = ProverConstants.DEFAULT_PEER_ID;
+        }
+        conf.powSecurityRetryDelay = ProverConstants.POW_SECURITY_RETRY_DELAY;
+        conf.powMaxHandicap = ProverConstants.POW_MAXIMUM_ACCEPTABLE_HANDICAP;
       },
       beforeSave: async (conf:ConfDTO) => {
         delete conf.powSecurityRetryDelay;
@@ -31,7 +52,7 @@ export const ProverDependency = {
     },
 
     service: {
-      output: (server:any) => {
+      output: (server:Server) => {
         const generator = new BlockGenerator(server);
         server.generatorGetJoinData     = generator.getSinglePreJoinData.bind(generator)
         server.generatorComputeNewCerts = generator.computeNewCerts.bind(generator)
@@ -41,20 +62,20 @@ export const ProverDependency = {
     },
 
     methods: {
-      hookServer: (server:any) => {
+      hookServer: (server:Server) => {
         const generator = new BlockGenerator(server);
         server.generatorGetJoinData     = generator.getSinglePreJoinData.bind(generator)
         server.generatorComputeNewCerts = generator.computeNewCerts.bind(generator)
         server.generatorNewCertsToLinks = generator.newCertsToLinks.bind(generator)
       },
-      prover: (server:any, conf:ConfDTO, logger:any) => new Prover(server),
-      blockGenerator: (server:any, prover:any) => new BlockGeneratorWhichProves(server, prover),
-      generateTheNextBlock: async (server:any, manualValues:any) => {
+      prover: (server:Server, conf:ConfDTO, logger:any) => new Prover(server),
+      blockGenerator: (server:Server, prover:any) => new BlockGeneratorWhichProves(server, prover),
+      generateTheNextBlock: async (server:Server, manualValues:any) => {
         const prover = new BlockProver(server);
         const generator = new BlockGeneratorWhichProves(server, prover);
         return generator.nextBlock(manualValues);
       },
-      generateAndProveTheNext: async (server:any, block:any, trial:any, manualValues:any) => {
+      generateAndProveTheNext: async (server:Server, block:any, trial:any, manualValues:any) => {
         const prover = new BlockProver(server);
         const generator = new BlockGeneratorWhichProves(server, prover);
         let res = await generator.makeNextBlock(block, trial, manualValues);
@@ -76,7 +97,7 @@ export const ProverDependency = {
     cli: [{
       name: 'gen-next [difficulty]',
       desc: 'Tries to generate the next block of the blockchain.',
-      onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const difficulty = params[0]
         const generator = new BlockGeneratorWhichProves(server, null);
         return generateAndSend(program, difficulty, server, () => () => generator.nextBlock())
@@ -85,7 +106,7 @@ export const ProverDependency = {
       name: 'gen-root [difficulty]',
       desc: 'Tries to generate the next block of the blockchain.',
       preventIfRunning: true,
-      onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const difficulty = params[0]
         const generator = new BlockGeneratorWhichProves(server, null);
         let toDelete, catched = true;
@@ -107,7 +128,7 @@ export const ProverDependency = {
       name: 'gen-root-choose [difficulty]',
       desc: 'Tries to generate root block, with choice of root members.',
       preventIfRunning: true,
-      onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const difficulty = params[0]
         if (!difficulty) {
           throw 'Difficulty is required.';
@@ -119,7 +140,7 @@ export const ProverDependency = {
   }
 }
 
-function generateAndSend(program:any, difficulty:string, server:any, getGenerationMethod:any) {
+function generateAndSend(program:any, difficulty:string, server:Server, getGenerationMethod:any) {
   const logger = server.logger;
   return new Promise((resolve, reject) => {
     if (!program.submitLocal) {

@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {SQLiteDriver} from "./drivers/SQLiteDriver"
 import {ConfDAL} from "./fileDALs/ConfDAL"
 import {StatDAL} from "./fileDALs/StatDAL"
@@ -15,6 +28,7 @@ import {DBBlock} from "../db/DBBlock"
 import {DBMembership} from "./sqliteDAL/MembershipDAL"
 import {MerkleDTO} from "../dto/MerkleDTO"
 import {CommonConstants} from "../common-libs/constants"
+import {PowDAL} from "./fileDALs/PowDAL";
 
 const fs      = require('fs')
 const path    = require('path')
@@ -39,6 +53,7 @@ export class FileDAL {
   wotb:any
   profile:string
 
+  powDAL:PowDAL
   confDAL:any
   metaDAL:any
   peerDAL:any
@@ -67,6 +82,7 @@ export class FileDAL {
     this.profile = 'DAL'
 
     // DALs
+    this.powDAL = new PowDAL(this.rootPath, this.myFS)
     this.confDAL = new ConfDAL(this.rootPath, this.myFS)
     this.metaDAL = new (require('./sqliteDAL/MetaDAL').MetaDAL)(this.sqliteDriver);
     this.peerDAL = new (require('./sqliteDAL/PeerDAL').PeerDAL)(this.sqliteDriver);
@@ -84,6 +100,7 @@ export class FileDAL {
     this.cindexDAL = new (require('./sqliteDAL/index/CIndexDAL').CIndexDAL)(this.sqliteDriver);
 
     this.newDals = {
+      'powDAL': this.powDAL,
       'metaDAL': this.metaDAL,
       'blockDAL': this.blockDAL,
       'certDAL': this.certDAL,
@@ -141,6 +158,10 @@ export class FileDAL {
     }
   }
 
+  async getWS2Peers() {
+    return  this.peerDAL.getPeersWithEndpointsLike('WS2P')
+  }
+
   async getBlock(number:number) {
     const block = await this.blockDAL.getBlock(number)
     return block || null;
@@ -148,6 +169,14 @@ export class FileDAL {
 
   getAbsoluteBlockByNumberAndHash(number:number, hash:string) {
     return this.blockDAL.getAbsoluteBlock(number, hash)
+  }
+
+  getAbsoluteBlockByBlockstamp(blockstamp:string) {
+    if (!blockstamp) throw "Blockstamp is required to find the block"
+    const sp = blockstamp.split('-')
+    const number = parseInt(sp[0])
+    const hash = sp[1]
+    return this.getAbsoluteBlockByNumberAndHash(number, hash)
   }
 
   getBlockByBlockstampOrNull(blockstamp:string) {
@@ -243,8 +272,8 @@ export class FileDAL {
     return this.blockDAL.getNextForkBlocks(current.number, current.hash)
   }
 
-  getPotentialForkBlocks(numberStart:number, medianTimeStart:number) {
-    return this.blockDAL.getPotentialForkBlocks(numberStart, medianTimeStart)
+  getPotentialForkBlocks(numberStart:number, medianTimeStart:number, maxNumber:number) {
+    return this.blockDAL.getPotentialForkBlocks(numberStart, medianTimeStart, maxNumber)
   }
 
   async getBlockCurrent() {
@@ -284,12 +313,24 @@ export class FileDAL {
     }
   }
 
-  getWrittenIdtyByPubkey(pubkey:string) {
-    return this.iindexDAL.getFromPubkey(pubkey)
+  async getWrittenIdtyByPubkey(pubkey:string) {
+    const idty = await this.iindexDAL.getFromPubkey(pubkey)
+    if (!idty) {
+      return null;
+    }
+    const membership = await this.mindexDAL.getReducedMS(pubkey)
+    idty.revoked_on = membership.revoked_on
+    return idty;
   }
 
-  getWrittenIdtyByUID(uid:string) {
-    return this.iindexDAL.getFromUID(uid)
+  async getWrittenIdtyByUID(uid:string) {
+    const idty = await this.iindexDAL.getFromUID(uid)
+    if (!idty) {
+      return null;
+    }
+    const membership = await this.mindexDAL.getReducedMS(idty.pub)
+    idty.revoked_on = membership.revoked_on
+    return idty;
   }
 
   async fillInMembershipsOfIdentity(queryPromise:Promise<DBIdentity>) {
@@ -352,6 +393,10 @@ export class FileDAL {
 
   getToBeKickedPubkeys() {
     return this.iindexDAL.getToBeKickedPubkeys()
+  }
+
+  getRevokedPubkeys() {
+    return this.mindexDAL.getRevokedPubkeys()
   }
 
   async searchJustIdentities(search:string) {
@@ -473,9 +518,19 @@ export class FileDAL {
       .value()
   }
 
-  async findLeavers() {
-    const mss = await this.msDAL.getPendingOUT();
-    return _.chain(mss).sortBy((ms:any) => -ms.sigDate).value();
+  async findLeavers(blockMedianTime = 0) {
+    const pending = await this.msDAL.getPendingOUT();
+    const mss = await Promise.all(pending.map(async (p:any) => {
+      const reduced = await this.mindexDAL.getReducedMS(p.issuer)
+      if (!reduced || !reduced.chainable_on || blockMedianTime >= reduced.chainable_on || blockMedianTime < constants.TIME_TO_TURN_ON_BRG_107) {
+        return p
+      }
+      return null
+    }))
+    return _.chain(mss)
+      .filter((ms:any) => ms)
+      .sortBy((ms:any) => -ms.sigDate)
+      .value();
   }
 
   existsNonReplayableLink(from:string, to:string) {
@@ -486,13 +541,13 @@ export class FileDAL {
     return this.sindexDAL.getSource(identifier, pos)
   }
 
-  async isMember(pubkey:string) {
+  async isMember(pubkey:string):Promise<boolean> {
     try {
       const idty = await this.iindexDAL.getFromPubkey(pubkey);
-      if (!idty) {
+      if (idty === null) {
         return false
       }
-      return idty.member;
+      return true;
     } catch (err) {
       return false;
     }
@@ -552,6 +607,10 @@ export class FileDAL {
       }
     }
     return peer;
+  }
+
+  async removePeerByPubkey(pubkey:string) {
+    return this.peerDAL.removePeerByPubkey(pubkey)
   }
 
   async findAllPeersNEWUPBut(pubkeys:string[]) {
@@ -637,7 +696,7 @@ export class FileDAL {
     let iindex = indexer.iindex(index);
     let sindex = indexer.sindex(index);
     let cindex = indexer.cindex(index);
-    sindex = sindex.concat(await indexer.ruleIndexGenDividend(HEAD, this));
+    sindex = sindex.concat(await indexer.ruleIndexGenDividend(HEAD, iindex, this));
     sindex = sindex.concat(await indexer.ruleIndexGarbageSmallAccounts(HEAD, sindex, this));
     cindex = cindex.concat(await indexer.ruleIndexGenCertificationExpiry(HEAD, this));
     mindex = mindex.concat(await indexer.ruleIndexGenMembershipExpiry(HEAD, this));
@@ -738,7 +797,7 @@ export class FileDAL {
   }
 
   saveTransaction(tx:DBTx) {
-    return this.txsDAL.addPending(TransactionDTO.fromJSONObject(tx))
+    return this.txsDAL.addPending(tx)
   }
 
   async getTransactionsHistory(pubkey:string) {
@@ -826,7 +885,11 @@ export class FileDAL {
     let conf = ConfDTO.complete(overrideConf || {});
     if (!defaultConf) {
       const savedConf = await this.confDAL.loadConf();
+      const savedProxyConf = _(savedConf.proxyConf).extend({});
       conf = _(savedConf).extend(overrideConf || {});
+      if (overrideConf.proxiesConf !== undefined) {} else {
+        conf.proxyConf = _(savedProxyConf).extend({});
+      }
     }
     if (this.loadConfHook) {
       await this.loadConfHook(conf)

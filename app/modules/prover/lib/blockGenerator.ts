@@ -1,5 +1,19 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
+import {Server} from "../../../../server"
 import {BlockchainContext} from "../../../lib/computation/BlockchainContext"
 import {TransactionDTO} from "../../../lib/dto/TransactionDTO"
 import {GLOBAL_RULES_HELPERS} from "../../../lib/rules/global_rules"
@@ -30,7 +44,7 @@ export class BlockGenerator {
   selfPubkey:string
   logger:any
 
-  constructor(private server:any) {
+  constructor(private server:Server) {
     this.conf = server.conf;
     this.dal = server.dal;
     this.mainContext = server.BlockchainService.getContext();
@@ -61,9 +75,10 @@ export class BlockGenerator {
     const current = await this.dal.getCurrentBlockOrNull();
     const revocations = await this.dal.getRevocatingMembers();
     const exclusions = await this.dal.getToBeKickedPubkeys();
+    const wereExcludeds = await this.dal.getRevokedPubkeys();
     const newCertsFromWoT = await generator.findNewCertsFromWoT(current);
     const newcomersLeavers = await this.findNewcomersAndLeavers(current, (joinersData:any) => generator.filterJoiners(joinersData));
-    const transactions = await this.findTransactions(current);
+    const transactions = await this.findTransactions(current, manualValues);
     const joinData = newcomersLeavers[2];
     const leaveData = newcomersLeavers[3];
     const newCertsFromNewcomers = newcomersLeavers[4];
@@ -87,7 +102,7 @@ export class BlockGenerator {
     });
     // Revocations
     // Create the block
-    return this.createBlock(current, joinData, leaveData, newCertsFromWoT, revocations, exclusions, transactions, manualValues);
+    return this.createBlock(current, joinData, leaveData, newCertsFromWoT, revocations, exclusions, wereExcludeds, transactions, manualValues);
   }
 
   private async findNewcomersAndLeavers(current:DBBlock, filteringFunc: (joinData: { [pub:string]: any }) => Promise<{ [pub:string]: any }>) {
@@ -102,7 +117,7 @@ export class BlockGenerator {
     return [cur, newWoTMembers, finalJoinData, leavers, updates];
   }
 
-  private async findTransactions(current:DBBlock) {
+  private async findTransactions(current:DBBlock, options:{ dontCareAboutChaining?:boolean }) {
     const versionMin = current ? Math.min(CommonConstants.LAST_VERSION_FOR_TX, current.version) : CommonConstants.DOCUMENTS_VERSION;
     const txs = await this.dal.getTransactionsPending(versionMin);
     const transactions = [];
@@ -111,14 +126,11 @@ export class BlockGenerator {
       obj.currency = this.conf.currency
       const tx = TransactionDTO.fromJSONObject(obj);
       try {
-        await new Promise((resolve, reject) => {
-          LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), (err:any, res:any) => {
-            if (err) return reject(err)
-            return resolve(res)
-          })
-        })
+        await LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), this.conf, options)
         const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
-        await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal);
+        await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal, async (txHash:string) => {
+          return _.findWhere(passingTxs, { hash: txHash }) || null
+        });
         await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal);
         transactions.push(tx);
         passingTxs.push(tx);
@@ -139,7 +151,7 @@ export class BlockGenerator {
 
   private async findLeavers(current:DBBlock) {
     const leaveData: { [pub:string]: any } = {};
-    const memberships = await this.dal.findLeavers();
+    const memberships = await this.dal.findLeavers(current && current.medianTime);
     const leavers:string[] = [];
     memberships.forEach((ms:any) => leavers.push(ms.issuer));
     for (const ms of memberships) {
@@ -277,7 +289,9 @@ export class BlockGenerator {
         const currentMembership = await this.dal.mindexDAL.getReducedMS(ms.issuer);
         const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
         if (!join.identity.revoked && currentMSN < parseInt(join.ms.number)) {
-          preJoinData[join.identity.pubkey] = join;
+          if (!preJoinData[join.identity.pubkey] || preJoinData[join.identity.pubkey].certs.length < join.certs.length) {
+            preJoinData[join.identity.pubkey] = join;
+          }
         }
       } catch (err) {
         if (err && !err.uerr) {
@@ -418,7 +432,7 @@ export class BlockGenerator {
     };
   }
 
-  private async createBlock(current:DBBlock, joinData:any, leaveData:any, updates:any, revocations:any, exclusions:any, transactions:any, manualValues:any) {
+  private async createBlock(current:DBBlock, joinData:any, leaveData:any, updates:any, revocations:any, exclusions:any, wereExcluded:any, transactions:any, manualValues:any) {
 
     if (manualValues && manualValues.excluded) {
       exclusions = manualValues.excluded;
@@ -433,9 +447,16 @@ export class BlockGenerator {
     let blockLen = 0;
     // Revocations have an impact on exclusions
     revocations.forEach((idty:any) => exclusions.push(idty.pubkey));
-    // Prevent writing joins/updates for excluded members
+    // Prevent writing joins/updates for members who will be excluded
     exclusions = _.uniq(exclusions);
     exclusions.forEach((excluded:any) => {
+      delete updates[excluded];
+      delete joinData[excluded];
+      delete leaveData[excluded];
+    });
+    // Prevent writing joins/updates for excluded members
+    wereExcluded = _.uniq(wereExcluded);
+    wereExcluded.forEach((excluded:any) => {
       delete updates[excluded];
       delete joinData[excluded];
       delete leaveData[excluded];
@@ -641,7 +662,7 @@ export class BlockGenerator {
 
 export class BlockGeneratorWhichProves extends BlockGenerator {
 
-  constructor(server:any, private prover:any) {
+  constructor(server:Server, private prover:any) {
     super(server)
   }
 
@@ -772,12 +793,12 @@ class ManualRootGenerator implements BlockGeneratorInterface {
 
     if (newcomers.length > 0) {
       const answers = await inquirer.prompt([{
-          type: "checkbox",
-          name: "uids",
-          message: "Newcomers to add",
-          choices: uids,
-          default: uids[0]
-        }]);
+        type: "checkbox",
+        name: "uids",
+        message: "Newcomers to add",
+        choices: uids,
+        default: uids[0]
+      }]);
       newcomers.forEach((newcomer:string) => {
         if (~answers.uids.indexOf(preJoinData[newcomer].ms.userid))
           filtered[newcomer] = preJoinData[newcomer];

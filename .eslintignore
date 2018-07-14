@@ -18,6 +18,9 @@ app/lib/rules/*.js
 app/lib/system/*.js
 app/lib/streams/*.js
 app/lib/helpers/*.js
+app/modules/ws2p/*.js
+app/modules/ws2p/lib/*.js
+app/modules/ws2p/lib/*/*.js
 app/lib/*.js
 app/modules/wizard.js
 app/modules/router.js
@@ -40,5 +43,7 @@ app/modules/bma/lib/entity/*.js
 app/modules/bma/lib/controllers/*.js
 app/modules/crawler/*.js
 app/modules/crawler/lib/*.js
+app/ProcessCpuProfiler.js
+app/lib/common/package.js
 test/*.js
 test/**/*.js

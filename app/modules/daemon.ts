@@ -1,4 +1,18 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {ConfDTO} from "../lib/dto/ConfDTO"
+import {Server} from "../../server"
 
 "use strict";
 
@@ -16,7 +30,7 @@ module.exports = {
     ],
 
     service: {
-      process: (server:any) => ServerService(server)
+      process: (server:Server) => ServerService(server)
     },
 
     config: {
@@ -34,7 +48,7 @@ module.exports = {
       name: 'start',
       desc: 'Starts Duniter as a daemon (background task).',
       logs: false,
-      onConfiguredExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         await server.checkConfig()
         const daemon = server.getDaemon('direct_start', 'start')
         await startDaemon(daemon)
@@ -44,7 +58,7 @@ module.exports = {
       name: 'stop',
       desc: 'Stops Duniter daemon if it is running.',
       logs: false,
-      onConfiguredExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const daemon = server.getDaemon()
         await stopDaemon(daemon)
       }
@@ -53,7 +67,7 @@ module.exports = {
       name: 'restart',
       desc: 'Stops Duniter daemon and restart it.',
       logs: false,
-      onConfiguredExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         await server.checkConfig()
         const daemon = server.getDaemon('direct_start', 'restart')
         await stopDaemon(daemon)
@@ -64,13 +78,15 @@ module.exports = {
       name: 'status',
       desc: 'Get Duniter daemon status.',
       logs: false,
-      onConfiguredExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         await server.checkConfig()
         const pid = server.getDaemon().status()
         if (pid) {
           console.log('Duniter is running using PID %s.', pid)
+          process.exit(0)
         } else {
           console.log('Duniter is not running.')
+          process.exit(2)
         }
       }
     }, {
@@ -78,7 +94,7 @@ module.exports = {
       name: 'logs',
       desc: 'Follow duniter logs.',
       logs: false,
-      onConfiguredExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         printTailAndWatchFile(directory.INSTANCE_HOMELOG_FILE, constants.NB_INITIAL_LINES_TO_SHOW)
         // Never ending command
         return new Promise(res => null)
@@ -87,10 +103,13 @@ module.exports = {
 
       name: 'direct_start',
       desc: 'Start Duniter node with direct output, non-daemonized.',
-      onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any, startServices:any) => {
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any, startServices:any) => {
         const logger = server.logger;
 
         logger.info(">> Server starting...");
+
+        // Log NodeJS version
+        logger.info('NodeJS version: ' + process.version);
 
         await server.checkConfig();
         // Add signing & public key functions to PeeringService
@@ -108,7 +127,7 @@ module.exports = {
   }
 };
 
-function ServerService(server:any) {
+function ServerService(server:Server) {
   server.startService = () => Promise.resolve();
   server.stopService = () => Promise.resolve();
   return server;

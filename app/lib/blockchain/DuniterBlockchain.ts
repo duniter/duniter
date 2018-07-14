@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {MiscIndexedBlockchain} from "./MiscIndexedBlockchain"
 import {IindexEntry, IndexEntry, Indexer, MindexEntry, SindexEntry} from "../indexer"
 import {BlockchainOperator} from "./interfaces/BlockchainOperator"
@@ -161,13 +174,13 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     return { index, HEAD }
   }
 
-  async pushTheBlock(obj:BlockDTO, index:IndexEntry[], HEAD:DBHead | null, conf:ConfDTO, dal:any, logger:any) {
+  async pushTheBlock(obj: BlockDTO, index: IndexEntry[], HEAD: DBHead | null, conf: ConfDTO, dal: any, logger: any, trim = true) {
     const start = Date.now();
     const block = BlockDTO.fromJSONObject(obj)
     try {
       const currentBlock = await dal.getCurrentBlockOrNull();
       block.fork = false;
-      const added = await this.saveBlockData(currentBlock, block, conf, dal, logger, index, HEAD);
+      const added = await this.saveBlockData(currentBlock, block, conf, dal, logger, index, HEAD, trim);
 
       try {
         await DuniterBlockchain.pushStatsForBlocks([block], dal);
@@ -188,7 +201,7 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     // await supra.recordIndex(index)
   }
 
-  async saveBlockData(current:DBBlock, block:BlockDTO, conf:ConfDTO, dal:any, logger:any, index:IndexEntry[], HEAD:DBHead | null) {
+  async saveBlockData(current: DBBlock, block: BlockDTO, conf: ConfDTO, dal: any, logger: any, index: IndexEntry[], HEAD: DBHead | null, trim: boolean) {
     if (block.number == 0) {
       await this.saveParametersForRoot(block, conf, dal);
     }
@@ -211,19 +224,21 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
     // Update the wallets' blances
     await this.updateWallets(indexes.sindex, dal)
 
-    const TAIL = await dal.bindexDAL.tail();
-    const bindexSize = [
-      block.issuersCount,
-      block.issuersFrame,
-      conf.medianTimeBlocks,
-      conf.dtDiffEval
-    ].reduce((max, value) => {
-      return Math.max(max, value);
-    }, 0);
-    const MAX_BINDEX_SIZE = 2 * bindexSize;
-    const currentSize = indexes.HEAD.number - TAIL.number + 1;
-    if (currentSize > MAX_BINDEX_SIZE) {
-      await dal.trimIndexes(indexes.HEAD.number - MAX_BINDEX_SIZE);
+    if (trim) {
+      const TAIL = await dal.bindexDAL.tail();
+      const bindexSize = [
+        TAIL.issuersCount,
+        TAIL.issuersFrame,
+        conf.medianTimeBlocks,
+        conf.dtDiffEval
+      ].reduce((max, value) => {
+        return Math.max(max, value);
+      }, 0);
+      const MAX_BINDEX_SIZE = conf.forksize + bindexSize
+      const currentSize = indexes.HEAD.number - TAIL.number + 1
+      if (currentSize > MAX_BINDEX_SIZE) {
+        await dal.trimIndexes(indexes.HEAD.number - MAX_BINDEX_SIZE);
+      }
     }
 
     const dbb = DBBlock.fromBlockDTO(block)

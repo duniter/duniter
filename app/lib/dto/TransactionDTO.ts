@@ -1,5 +1,19 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {hashf} from "../common"
 import {Cloneable} from "./Cloneable"
+import {verify} from "../common-libs/crypto/keyring"
 
 export interface BaseDTO {
   base: number
@@ -23,6 +37,32 @@ export class OutputDTO implements BaseDTO {
     public conditions: string,
     public raw: string
   ) {}
+}
+
+export interface TxSignatureResult {
+  sigs:{
+    k:string
+    ok:boolean
+  }[]
+}
+
+export class TxSignatureResultImpl implements TxSignatureResult {
+
+  // The signature results
+  public sigs:{
+    k:string
+    ok:boolean
+  }[]
+
+  constructor(issuers:string[]) {
+    this.sigs = issuers.map(k => {
+      return { k, ok: false }
+    })
+  }
+
+  get allMatching() {
+    return this.sigs.reduce((ok, s) => ok && s.ok, true)
+  }
 }
 
 export class TransactionDTO implements Cloneable {
@@ -197,6 +237,24 @@ export class TransactionDTO implements Cloneable {
     }
   }
 
+  getTransactionSigResult() {
+    const sigResult = new TxSignatureResultImpl(this.issuers.slice())
+    let i = 0
+    const raw = this.getRawTxNoSig()
+    let matching = true
+    while (matching && i < this.signatures.length) {
+      const sig = this.signatures[i]
+      const pub = this.issuers[i]
+      sigResult.sigs[i].ok = matching = verify(raw, sig, pub)
+      i++
+    }
+    return sigResult
+  }
+
+  checkSignatures() {
+    return this.getTransactionSigResult().allMatching
+  }
+
   static fromJSONObject(obj:any, currency:string = "") {
     return new TransactionDTO(
       obj.version || 10,
@@ -274,6 +332,14 @@ export class TransactionDTO implements Cloneable {
       pos:        parseInt(sp[4]),
       raw:        inputStr
     }
+  }
+
+  static unlock2params(unlock:string) {
+    const match = unlock.match(/^\d+:(.*)$/)
+    if (match) {
+      return match[1].split(' ')
+    }
+    return []
   }
 
   static mock() {

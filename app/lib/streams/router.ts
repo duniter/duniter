@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import * as stream from "stream"
 import {PeeringService} from "../../service/PeeringService"
 import {FileDAL} from "../dal/fileDAL"
@@ -95,7 +108,7 @@ export class RouterStream extends stream.Transform {
       members = RouterStream.chooseXin(members, isSelfDocument ? constants.NETWORK.MAX_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS : constants.NETWORK.MAX_MEMBERS_TO_FORWARD_TO);
       nonmembers = RouterStream.chooseXin(nonmembers,  isSelfDocument ? constants.NETWORK.MAX_NON_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS : constants.NETWORK.MAX_NON_MEMBERS_TO_FORWARD_TO);
       let mainRoutes:any = members.map((p:any) => (p.member = true) && p).concat(nonmembers);
-      let mirrors = await this.peeringService.mirrorEndpoints();
+      let mirrors = await this.peeringService.mirrorBMAEndpoints();
       const peersToRoute:DBPeer[] = mainRoutes.concat(mirrors.map((mep, index) => { return {
         pubkey: 'M' + index + '_' + this.peeringService.pubkey,
         endpoints: [mep]

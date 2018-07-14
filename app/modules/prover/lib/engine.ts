@@ -1,6 +1,19 @@
-import {Constants} from "./constants"
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {Master as PowCluster} from "./powCluster"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
+import {FileDAL} from "../../../lib/dal/fileDAL";
 
 const os         = require('os')
 
@@ -17,12 +30,16 @@ export class PowEngine {
   private cluster:PowCluster
   readonly id:number
 
-  constructor(private conf:ConfDTO, logger:any) {
+  constructor(private conf:ConfDTO, logger:any, private dal?:FileDAL) {
 
     // We use as much cores as available, but not more than CORES_MAXIMUM_USE_IN_PARALLEL
-    this.nbWorkers = (conf && conf.nbCores) || Math.min(Constants.CORES_MAXIMUM_USE_IN_PARALLEL, require('os').cpus().length)
-    this.cluster = new PowCluster(this.nbWorkers, logger)
+    this.nbWorkers = conf.nbCores
+    this.cluster = new PowCluster(this.nbWorkers, logger, dal)
     this.id = this.cluster.clusterId
+  }
+
+  getNbWorkers() {
+    return this.cluster.nbWorkers
   }
 
   forceInit() {
@@ -30,14 +47,7 @@ export class PowEngine {
   }
 
   async prove(stuff:any) {
-
-    if (this.cluster.hasProofPending) {
-      await this.cluster.cancelWork()
-    }
-
-    if (os.arch().match(/arm/)) {
-      stuff.newPoW.conf.cpu /= 2; // Don't know exactly why is ARM so much saturated by PoW, so let's divide by 2
-    }
+    await this.cluster.cancelWork()
     return await this.cluster.proveByWorkers(stuff)
   }
 

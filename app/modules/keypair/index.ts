@@ -1,5 +1,19 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {randomKey} from "../../lib/common-libs/crypto/keyring"
 import {ConfDTO, KeypairConfDTO} from "../../lib/dto/ConfDTO"
+import {Server} from "../../../server"
 import {Scrypt} from "./lib/scrypt"
 
 const inquirer = require('inquirer');
@@ -33,6 +47,22 @@ export const KeypairDependency = {
     onReset: {
       config: (conf:ConfDTO, program:any, logger:any, confDAL:any) => confDAL.coreFS.remove('keyring.yml')
     },
+
+    cli: [{
+      name: 'pub',
+      desc: 'Shows the node public key',
+      logs: false,
+      onConfiguredExecute: (server:Server, conf:ConfDTO) => {
+        console.log(conf.pair.pub)
+      }
+    }, {
+      name: 'sec',
+      desc: 'Shows the node secret key',
+      logs: false,
+      onConfiguredExecute: (server:Server, conf:ConfDTO) => {
+        console.log(conf.pair.sec)
+      }
+    }],
 
     config: {
 
@@ -126,7 +156,7 @@ async function promptKey (conf:KeypairConfDTO, program:any) {
   const answersWantToChange = await inquirer.prompt([{
     type: "confirm",
     name: "change",
-    message: "Modify you keypair?",
+    message: "Modify your keypair?",
     default: changeKeypair
   }]);
 

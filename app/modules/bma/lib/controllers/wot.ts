@@ -1,6 +1,21 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+import { IindexEntry } from './../../../../lib/indexer';
 import {AbstractController} from "./AbstractController";
 import {BMAConstants} from "../constants";
 import {DBIdentity} from "../../../../lib/dal/sqliteDAL/IdentityDAL";
+import { IdentityForRequirements } from '../../../../service/BlockchainService';
 import {
   HttpCert,
   HttpCertIdentity, HttpCertifications,
@@ -153,7 +168,30 @@ export class WOTBinding extends AbstractController {
 
   async requirementsOfPending(req:any): Promise<HttpRequirements> {
     const minsig = ParametersService.getMinSig(req)
-    const identities = await this.server.dal.idtyDAL.query('SELECT i.*, count(c.sig) as nbSig FROM idty i, cert c WHERE c.target = i.hash group by i.hash having nbSig >= ?', minsig)
+    let identities:IdentityForRequirements[] = await this.server.dal.idtyDAL.query(
+      'SELECT i.*, count(c.sig) as nbSig ' +
+      'FROM idty i, cert c ' +
+      'WHERE c.target = i.hash group by i.hash having nbSig >= ?',
+      minsig)
+    const members:IdentityForRequirements[] = (await this.server.dal.idtyDAL.query(
+      'SELECT i.*, count(c.sig) as nbSig ' +
+      'FROM i_index i, cert c ' +
+      'WHERE c.`to` = i.pub group by i.pub having nbSig >= ?',
+      minsig)).map((i:IindexEntry):IdentityForRequirements => {
+        return {
+          hash: i.hash || "",
+          member: i.member || false,
+          wasMember: i.wasMember || false,
+          pubkey: i.pub,
+          uid: i.uid || "",
+          buid: i.created_on || "",
+          sig: i.sig || "",
+          revocation_sig: "",
+          revoked: false,
+          revoked_on: 0
+        }
+      })
+    identities = identities.concat(members)
     const all = await this.BlockchainService.requirementsOfIdentities(identities, false);
     if (!all || !all.length) {
       throw BMAConstants.ERRORS.NO_IDTY_MATCHING_PUB_OR_UID;

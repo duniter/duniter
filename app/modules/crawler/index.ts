@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {ConfDTO} from "../../lib/dto/ConfDTO"
 import {Server} from "../../../server"
 import {Contacter} from "./lib/contacter"
@@ -7,6 +20,7 @@ import {req2fwd} from "./lib/req2fwd"
 import {rawer} from "../../lib/common-libs/index"
 import {PeerDTO} from "../../lib/dto/PeerDTO"
 import {Buid} from "../../lib/common-libs/buid"
+import {BlockDTO} from "../../lib/dto/BlockDTO"
 
 export const CrawlerDependency = {
   duniter: {
@@ -107,7 +121,7 @@ export const CrawlerDependency = {
           logger.info('Applied');
           let selfPeer = await server.dal.getPeer(server.PeeringService.pubkey);
           if (!selfPeer) {
-            await server.PeeringService.generateSelfPeer(server.conf, 0)
+            await server.PeeringService.generateSelfPeer(server.conf)
             selfPeer = await server.dal.getPeer(server.PeeringService.pubkey);
           }
           logger.info('Send self peering ...');
@@ -146,6 +160,33 @@ export const CrawlerDependency = {
             } catch (e) {
               logger.error(e);
             }
+          }
+          await server.disconnect();
+        } catch(e) {
+          logger.error(e);
+          throw Error("Exiting");
+        }
+      }
+    }, {
+      name: 'forward <number> <fromHost> <fromPort> <toHost> <toPort>',
+      desc: 'Forward existing block <number> from a host to another',
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
+        const number = params[0];
+        const fromHost = params[1];
+        const fromPort = params[2];
+        const toHost = params[3];
+        const toPort = params[4];
+        const logger = server.logger;
+        try {
+          logger.info('Looking at %s:%s...', fromHost, fromPort)
+          try {
+            const source = new Contacter(fromHost, fromPort, { timeout: 10000 })
+            const target = new Contacter(toHost, toPort, { timeout: 10000 })
+            const block = await source.getBlock(number)
+            const raw = BlockDTO.fromJSONObject(block).getRawSigned()
+            await target.postBlock(raw)
+          } catch (e) {
+            logger.error(e);
           }
           await server.disconnect();
         } catch(e) {

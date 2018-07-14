@@ -1,4 +1,18 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {ConfDTO} from "../lib/dto/ConfDTO"
+import {Server} from "../../server"
 
 "use strict";
 
@@ -19,7 +33,7 @@ module.exports = {
       name: 'plug [what]',
       desc: 'Plugs in a duniter module to this Duniter codebase, making it available for the node.',
       logs: false,
-      onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const what = params[0];
         try {
           console.log('Trying to install module "%s"...', what)
@@ -36,7 +50,7 @@ module.exports = {
       name: 'unplug [what]',
       desc: 'Plugs in a duniter module to this Duniter codebase, making it available for the node.',
       logs: false,
-      onDatabaseExecute: async (server:any, conf:ConfDTO, program:any, params:any) => {
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const what = params[0];
         try {
           console.log('Trying to remove module "%s"...', what)

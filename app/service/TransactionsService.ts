@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
 import {ConfDTO} from "../lib/dto/ConfDTO";
 import {FileDAL} from "../lib/dal/fileDAL";
@@ -9,7 +22,6 @@ import {FIFOService} from "./FIFOService";
 import {GlobalFifoPromise} from "./GlobalFifoPromise";
 
 const constants       = require('../lib/constants');
-const CHECK_PENDING_TRANSACTIONS = true
 
 export class TransactionService extends FIFOService {
 
@@ -41,12 +53,12 @@ export class TransactionService extends FIFOService {
         // Start checks...
         const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
         const dto = TransactionDTO.fromJSONObject(tx)
-        await LOCAL_RULES_HELPERS.checkSingleTransactionLocally(dto)
+        await LOCAL_RULES_HELPERS.checkSingleTransactionLocally(dto, this.conf)
         await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal);
-        await GLOBAL_RULES_HELPERS.checkSingleTransaction(dto, nextBlockWithFakeTimeVariation, this.conf, this.dal, CHECK_PENDING_TRANSACTIONS);
+        await GLOBAL_RULES_HELPERS.checkSingleTransaction(dto, nextBlockWithFakeTimeVariation, this.conf, this.dal, this.dal.getTxByHash.bind(this.dal));
         const server_pubkey = this.conf.pair && this.conf.pair.pub;
         if (!(await this.dal.txsDAL.sandbox.acceptNewSandBoxEntry({
-            pubkey: tx.issuers.indexOf(server_pubkey) !== -1 ? server_pubkey : '',
+            issuers: tx.issuers,
             output_base: tx.output_base,
             output_amount: tx.output_amount
           }, server_pubkey))) {

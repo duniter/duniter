@@ -1,55 +1,104 @@
 stages:
-    - github-sync
-    - test
-
+  - github-sync
+  - build
+  - test
+  - package
+  - prerelease
+  - release
 
 push_to_github:
-    stage: github-sync
-    variables:
-        GIT_STRATEGY: none
-    tags:
-        - github
-    script:
-        - rm -rf ./*
-        - rm -rf .git
-        - git clone --mirror $CI_REPOSITORY_URL .
-        - git remote add github $GITHUB_URL_AND_KEY
-        - git config --global user.email "contact@duniter.org"
-        - git config --global user.name "Duniter"
-        # Job would fail if we don't remove refs about pull requests
-        - bash -c "cat packed-refs | grep -v 'refs/pull' > packed-refs-new; echo 'Removed pull refs.'"
-        - mv packed-refs-new packed-refs
-        - bash -c "git push --force --mirror github 2>&1 | grep -v duniter-gitlab; echo $?"
+  stage: github-sync
+  variables:
+    GIT_STRATEGY: none
+  tags:
+    - redshift
+  script:
+    - rm -rf ./*
+    - rm -rf .git
+    - git clone --mirror $CI_REPOSITORY_URL .
+    - git remote add github $GITHUB_URL_AND_KEY
+    - git config --global user.email "contact@duniter.org"
+    - git config --global user.name "Duniter"
+    # Job would fail if we don't remove refs about pull requests
+    - bash -c "cat packed-refs | grep -v 'refs/pull' > packed-refs-new; echo 'Removed pull refs.'"
+    - mv packed-refs-new packed-refs
+    - bash -c "git push --force --mirror github 2>&1 | grep -v duniter-gitlab; echo $?"
+  only:
+    - nodes/typescript/duniter
 
-enforce_readme:
-    stage: github-sync
-    variables:
-        GIT_STRATEGY: none
-    tags:
-        - github
-    script:
-      - rm -rf ./*
-      - rm -rf .git
-      - git clone $GITHUB_URL_AND_KEY .
-      - git config --global user.email "contact@duniter.org"
-      - git config --global user.name "Duniter"
-      - git checkout master
-      - cat .github/github_disclaimer.md > README.md.new
-      - cat README.md >> README.md.new
-      - mv README.md.new README.md
-      - git commit -am "Enforce github readme"
-      - git push origin master
-      
+.nvm_env: &nvm_env
+  tags:
+    - redshift
+  before_script:
+    - export NVM_DIR="$HOME/.nvm"
+    - . "$NVM_DIR/nvm.sh"
+  
+build:
+  <<: *nvm_env
+  stage: build
+  script:
+    - yarn
+
 test:
-    stage: test
-    tags:
-      - nodejs
-    image: registry.duniter.org/docker/ubuntu-node:17.10-DUNITER-2
-    script:
-      - bash -c ". ~/.nvm/nvm.sh && npm install -g yarn"
-      - bash -c ". ~/.nvm/nvm.sh && yarn install"
-      - bash -c ". ~/.nvm/nvm.sh && yarn run test-travis"
-    cache:
-      paths:
-        - node_modules/
+  <<: *nvm_env
+  stage: test
+  script:
+    - yarn
+    - yarn test
+    - sed -n 23p coverage/index.html
 
+.build_releases: &build_releases
+  stage: package
+  allow_failure: false
+  image: duniter/release-builder:v1.0.1
+  tags:
+    - redshift-duniter-builder
+  when: manual
+  artifacts:
+    paths: &releases_artifacts
+      - work/bin/
+
+releases:test:
+  <<: *build_releases
+  script:
+    - bash "release/arch/linux/build-lin.sh" "$(date +%Y%m%d).$(date +%H%M).$(date +%S)"
+  artifacts:
+    paths: *releases_artifacts
+    expire_in: 4h
+  except:
+    - tags
+
+releases:x64:
+  <<: *build_releases
+  script:
+    - bash "release/arch/linux/build-lin.sh" "${CI_COMMIT_TAG#v}"
+  artifacts:
+    paths: *releases_artifacts
+    expire_in: 2 weeks
+  only:
+    - tags
+
+.release_jobs: &release_jobs
+  image: tensorflow/tensorflow:latest-py3
+  tags:
+    - redshift-duniter-builder
+  script:
+    - python3 .gitlab/releaser
+  only:
+    - tags
+
+prerelease:
+  <<: *release_jobs
+  stage: prerelease
+  variables:
+    RELEASE_BIN_DIR: work/bin/
+    SOURCE_EXT: '["tar.gz", "zip"]'
+
+publish:
+  <<: *release_jobs
+  stage: release
+  variables:
+    RELEASE_BIN_DIR: work/bin/
+    WIKI_RELEASE: Releases
+  allow_failure: false
+  when: manual

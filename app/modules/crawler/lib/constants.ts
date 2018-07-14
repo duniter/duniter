@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {CommonConstants} from "../../../lib/common-libs/constants"
 
 export const CrawlerConstants = {
@@ -9,8 +22,10 @@ export const CrawlerConstants = {
   TRANSACTION_VERSION: CommonConstants.TRANSACTION_VERSION,
   FORK_ALLOWED: true,
   MAX_NUMBER_OF_PEERS_FOR_PULLING: 4,
-  PULLING_MINIMAL_DELAY: 20,
-  PULLING_INTERVAL_TARGET: 240,
+  PULLING_MINIMAL_DELAY: 120,
+  CRAWL_BLOCK_CHUNK: 50, // During a crawl, the quantity of blocks to download
+  CRAWL_PEERS_COUNT: 4,
+  PULLING_INTERVAL_TARGET: 600,
   COUNT_FOR_ENOUGH_PEERS: 4,
   SANDBOX_FIRST_PULL_DELAY: 1000 * 60 * 10, // milliseconds
   SANDBOX_PEERS_COUNT: 2,

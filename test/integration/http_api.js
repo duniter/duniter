@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
 
 const co        = require('co');
@@ -7,13 +20,13 @@ const assert    = require('assert');
 const duniter     = require('../../index');
 const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const PeerDTO   = require('../../app/lib/dto/PeerDTO').PeerDTO
-const user      = require('./tools/user');
+const TestUser  = require('./tools/TestUser').TestUser
 const http      = require('./tools/http');
 const shutDownEngine  = require('./tools/shutDownEngine');
 const rp        = require('request-promise');
 const ws        = require('ws');
 
-require('../../app/modules/prover/lib/constants').Constants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
+require('../../app/modules/prover/lib/constants').ProverConstants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
 
 let server, server2, cat, toc
 
@@ -49,7 +62,7 @@ describe("HTTP API", function() {
       true,
       {
         ipv4: '127.0.0.1',
-        port: '7778',
+        port: '30410',
         currency: 'bb',
         httpLogs: true,
         sigQty: 1,
@@ -64,8 +77,8 @@ describe("HTTP API", function() {
         }
       });
 
-    cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: server });
-    toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: server });
+    cat = new TestUser('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: server });
+    toc = new TestUser('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: server });
 
     commit = makeBlockAndPost(server);
 
@@ -87,8 +100,10 @@ describe("HTTP API", function() {
     const b1 = yield commit({ time: now + 120 });
     yield server2.writeBlock(b0)
     yield server2.writeBlock(b1)
-    const p1 = yield server.PeeringService.generateSelfPeer(server.conf, 0)
-    yield server2.PeeringService.generateSelfPeer(server2.conf, 0)
+    server.addEndpointsDefinitions(() => Promise.resolve('SOME_FAKE_ENDPOINT_P1'))
+    server2.addEndpointsDefinitions(() => Promise.resolve('SOME_FAKE_ENDPOINT_P2'))
+    const p1 = yield server.PeeringService.generateSelfPeer(server.conf)
+    yield server2.PeeringService.generateSelfPeer(server2.conf)
     yield server2.writePeer(p1)
     server2.writeBlock(yield commit({ time: now + 120 * 2 }))
     server2.writeBlock(yield commit({ time: now + 120 * 3 }))
@@ -289,18 +304,18 @@ describe("HTTP API", function() {
     });
 
     it('/peer (number 5,6,7) should send a peer document', () => co(function*() {
-      const client = new ws('ws://127.0.0.1:7778/ws/peer');
+      const client = new ws('ws://127.0.0.1:30410/ws/peer');
       let resolve5, resolve6, resolve7
       const p5 = new Promise(res => resolve5 = res)
       const p6 = new Promise(res => resolve6 = res)
-      server.getMainEndpoint = () => "BASIC_MERKLED_API localhost 7777"
+      server.addEndpointsDefinitions(() => Promise.resolve("BASIC_MERKLED_API localhost 7777"))
       const p1 = yield server.PeeringService.generateSelfPeer({
         currency: server.conf.currency
       }, 0)
       client.on('message', function message(data) {
         const peer = JSON.parse(data);
         if (peer.block.match(/2-/)) {
-          server2.PeeringService.generateSelfPeer(server.conf, 0)
+          server2.PeeringService.generateSelfPeer(server.conf)
           return resolve5(peer)
         }
         if (peer.block.match(/1-/) && peer.pubkey === 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo') {
@@ -334,7 +349,6 @@ function expectJSON(promise, json) {
 
 function postBlock(server2) {
   return function(block) {
-    console.log(typeof block == 'string' ? block : block.getRawSigned())
     return post(server2, '/blockchain/block')({
       block: typeof block == 'string' ? block : block.getRawSigned()
     })

@@ -1,10 +1,28 @@
-import {CommonConstants} from "../common-libs/constants";
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+import {CommonConstants} from "../common-libs/constants"
+import { ProxiesConf } from '../proxy';
 const _ = require('underscore');
 const constants = require('../constants');
 
 export interface Keypair {
   pub: string
   sec: string
+}
+
+export interface PowDTO {
+  powNoSecurity:boolean
 }
 
 export interface BranchingDTO {
@@ -46,6 +64,9 @@ export interface KeypairConfDTO {
 }
 
 export interface NetworkConfDTO {
+  proxiesConf: ProxiesConf|undefined
+  nobma: boolean
+  bmaWithCrawler: boolean
   remoteport: number
   remotehost: string|null
   remoteipv4: string|null
@@ -58,7 +79,27 @@ export interface NetworkConfDTO {
   httplogs:boolean
 }
 
-export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO, BranchingDTO {
+export interface WS2PConfDTO {
+  ws2p?: {
+    privateAccess?: boolean
+    publicAccess?: boolean
+    uuid?: string
+    upnp?: boolean
+    remotehost?: string|null
+    remoteport?: number|null
+    remotepath?: string
+    port?: number
+    host?: string
+    maxPublic?:number
+    maxPrivate?:number
+    preferedNodes?: string[]
+    preferedOnly: boolean
+    privilegedNodes?: string[]
+    privilegedOnly: boolean
+  }
+}
+
+export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO, BranchingDTO, WS2PConfDTO, PowDTO {
 
   constructor(
     public loglevel: string,
@@ -107,6 +148,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
     public remotehost: string|null,
     public remoteipv4: string|null,
     public remoteipv6: string|null,
+    public host: string,
     public port: number,
     public ipv4: string,
     public ipv6: string,
@@ -114,13 +156,35 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
     public upnp: boolean,
     public homename: string,
     public memory: boolean,
+    public nobma: boolean,
+    public bmaWithCrawler: boolean,
+    public proxiesConf: ProxiesConf|undefined,
+    public ws2p?: {
+      privateAccess?: boolean
+      publicAccess?: boolean
+      uuid?: string
+      upnp?: boolean
+      remotehost?: string|null
+      remoteport?: number|null
+      remotepath?: string
+      port?: number
+      host?: string
+      preferedNodes?: string[]
+      preferedOnly: boolean
+      privilegedNodes?: string[]
+      privilegedOnly: boolean
+      maxPublic?:number
+      maxPrivate?:number
+    },
+    public powNoSecurity = false
 ) {}
 
   static mock() {
-    return new ConfDTO("", "", [], [], 0, 0, 0.6, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, 0, false, 0, 0, 0, 0, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", 0, "", "", null, false, "", true)
+    return new ConfDTO("", "", [], [], 0, 3600 * 1000, constants.PROOF_OF_WORK.DEFAULT.CPU, 1, constants.PROOF_OF_WORK.DEFAULT.PREFIX, 0, 0, constants.CONTRACT.DEFAULT.C, constants.CONTRACT.DEFAULT.DT, constants.CONTRACT.DEFAULT.DT_REEVAL, 0, constants.CONTRACT.DEFAULT.UD0, 0, 0, constants.CONTRACT.DEFAULT.STEPMAX, constants.CONTRACT.DEFAULT.SIGPERIOD, 0, constants.CONTRACT.DEFAULT.SIGVALIDITY, constants.CONTRACT.DEFAULT.MSVALIDITY, constants.CONTRACT.DEFAULT.SIGQTY, constants.CONTRACT.DEFAULT.SIGSTOCK, constants.CONTRACT.DEFAULT.X_PERCENT, constants.CONTRACT.DEFAULT.PERCENTROT, constants.CONTRACT.DEFAULT.POWDELAY, constants.CONTRACT.DEFAULT.AVGGENTIME, constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS, false, 3000, false, constants.BRANCHES.DEFAULT_WINDOW_SIZE, constants.CONTRACT.DEFAULT.IDTYWINDOW, constants.CONTRACT.DEFAULT.MSWINDOW, constants.CONTRACT.DEFAULT.SIGWINDOW, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", "", 0, "", "", null, false, "", true, true, false, new ProxiesConf(), undefined)
   }
 
   static defaultConf() {
+    /*return new ConfDTO("", "", [], [], 0, 3600 * 1000, constants.PROOF_OF_WORK.DEFAULT.CPU, 1, constants.PROOF_OF_WORK.DEFAULT.PREFIX, 0, 0, constants.CONTRACT.DEFAULT.C, constants.CONTRACT.DEFAULT.DT, constants.CONTRACT.DEFAULT.DT_REEVAL, 0, constants.CONTRACT.DEFAULT.UD0, 0, 0, constants.CONTRACT.DEFAULT.STEPMAX, constants.CONTRACT.DEFAULT.SIGPERIOD, 0, constants.CONTRACT.DEFAULT.SIGVALIDITY, constants.CONTRACT.DEFAULT.MSVALIDITY, constants.CONTRACT.DEFAULT.SIGQTY, constants.CONTRACT.DEFAULT.SIGSTOCK, constants.CONTRACT.DEFAULT.X_PERCENT, constants.CONTRACT.DEFAULT.PERCENTROT, constants.CONTRACT.DEFAULT.POWDELAY, constants.CONTRACT.DEFAULT.AVGGENTIME, constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS, false, 3000, false, constants.BRANCHES.DEFAULT_WINDOW_SIZE, constants.CONTRACT.DEFAULT.IDTYWINDOW, constants.CONTRACT.DEFAULT.MSWINDOW, constants.CONTRACT.DEFAULT.SIGWINDOW, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", "", 0, "", "", null, false, "", true, true)*/
     return {
       "currency": null,
       "endpoints": [],

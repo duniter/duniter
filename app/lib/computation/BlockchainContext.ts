@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
 import {BlockDTO} from "../dto/BlockDTO"
 import {DuniterBlockchain} from "../blockchain/DuniterBlockchain"
@@ -105,8 +118,8 @@ export class BlockchainContext {
     return DuniterBlockchain.checkBlock(block, withPoWAndSignature, this.conf, this.dal)
   }
 
-  private async addBlock(obj: BlockDTO, index: any = null, HEAD: DBHead | null = null): Promise<any> {
-    const block = await this.blockchain.pushTheBlock(obj, index, HEAD, this.conf, this.dal, this.logger)
+  private async addBlock(obj: BlockDTO, index: any = null, HEAD: DBHead | null = null, trim: boolean): Promise<any> {
+    const block = await this.blockchain.pushTheBlock(obj, index, HEAD, this.conf, this.dal, this.logger, trim)
     this.vHEAD_1 = this.vHEAD = this.HEADrefreshed = null
     return block
   }
@@ -137,9 +150,9 @@ export class BlockchainContext {
     this.logger.debug('Applied block #%s', block.number);
   }
 
-  async checkAndAddBlock(block:BlockDTO) {
+  async checkAndAddBlock(block:BlockDTO, trim = true) {
     const { index, HEAD } = await this.checkBlock(block, constants.WITH_SIGNATURES_AND_POW);
-    return await this.addBlock(block, index, HEAD);
+    return await this.addBlock(block, index, HEAD, trim);
   }
 
   current(): Promise<any> {
@@ -157,7 +170,7 @@ export class BlockchainContext {
     }
   }
 
-  quickApplyBlocks(blocks:BlockDTO[], to: number | null): Promise<any> {
+  quickApplyBlocks(blocks:BlockDTO[], to: number): Promise<any> {
     return this.quickSynchronizer.quickApplyBlocks(blocks, to)
   }
 }

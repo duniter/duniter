@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import * as stream from "stream"
 import {Server} from "../../../../server"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
@@ -35,7 +48,7 @@ export class Crawler extends stream.Transform implements DuniterService {
 
     this.peerCrawler = new PeerCrawler(server, conf, logger)
     this.peerTester = new PeerTester(server, conf, logger)
-    this.blockCrawler = new BlockCrawler(server, logger, this)
+    this.blockCrawler = new BlockCrawler(server, logger)
     this.sandboxCrawler = new SandboxCrawler(server, conf, logger)
   }
 
@@ -48,6 +61,9 @@ export class Crawler extends stream.Transform implements DuniterService {
   }
 
   startService() {
+    if (this.conf.nobma || !this.conf.bmaWithCrawler) {
+      return Promise.resolve()
+    }
     return Promise.all([
       this.peerCrawler.startService(),
       this.peerTester.startService(),
@@ -57,6 +73,9 @@ export class Crawler extends stream.Transform implements DuniterService {
   }
 
   stopService() {
+    if (this.conf.nobma || !this.conf.bmaWithCrawler) {
+      return Promise.resolve()
+    }
     return Promise.all([
       this.peerCrawler.stopService(),
       this.peerTester.stopService(),
@@ -303,7 +322,7 @@ export class PeerTester implements DuniterService {
 
 export class BlockCrawler {
 
-  private CONST_BLOCKS_CHUNK = 50
+  private CONST_BLOCKS_CHUNK = CrawlerConstants.CRAWL_BLOCK_CHUNK
   private pullingActualIntervalDuration = CrawlerConstants.PULLING_MINIMAL_DELAY
   private programStart = Date.now()
   private syncBlockFifo = async.queue((task:any, callback:any) => task(callback), 1)
@@ -311,8 +330,7 @@ export class BlockCrawler {
 
   constructor(
     private server:Server,
-    private logger:any,
-    private PROCESS:stream.Transform) {
+    private logger:any) {
   }
 
   async startService() {
@@ -470,17 +488,7 @@ export class BlockCrawler {
   }
 
   private pullingEvent(server:Server, type:string, number:any = null) {
-    server.push({
-      pulling: {
-        type: type,
-        data: number
-      }
-    });
-    if (type !== 'end') {
-      this.PROCESS.push({ pulling: 'processing' });
-    } else {
-      this.PROCESS.push({ pulling: 'finished' });
-    }
+    server.pullingEvent(type, number)
   }
 
   private isConnectionError(err:any) {

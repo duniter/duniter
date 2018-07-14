@@ -1,9 +1,22 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
 
 const co        = require('co');
 const _         = require('underscore');
 const should    = require('should');
-const user      = require('./tools/user');
+const TestUser  = require('./tools/TestUser').TestUser
 const commit    = require('./tools/commit');
 const sync      = require('./tools/sync');
 const until     = require('./tools/until');
@@ -27,8 +40,8 @@ describe("Peer document", function() {
     s2 = toolbox.server(_.clone(catKeyPair));
     s3 = toolbox.server(_.clone(catKeyPair));
 
-    cat = user('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
-    toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+    cat = new TestUser('cat', { pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'}, { server: s1 });
+    toc = new TestUser('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
 
     const commitS1 = commit(s1);
     const commitS2 = commit(s2);
@@ -36,7 +49,7 @@ describe("Peer document", function() {
     yield [s1, s2, s3].reduce((p, server) => co(function*() {
       yield p;
       yield server.initDalBmaConnections()
-      require('../../app/modules/router').duniter.methods.routeToNetwork(server);
+      require('../../app/modules/router').RouterDependency.duniter.methods.routeToNetwork(server);
     }), Promise.resolve());
 
     // Server 1

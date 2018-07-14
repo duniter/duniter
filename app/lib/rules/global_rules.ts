@@ -1,17 +1,30 @@
-"use strict";
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {ConfDTO} from "../dto/ConfDTO"
 import {FileDAL} from "../dal/fileDAL"
 import {DBBlock} from "../db/DBBlock"
-import {TransactionDTO} from "../dto/TransactionDTO"
-import * as local_rules from "./local_rules"
+import {TransactionDTO, TxSignatureResult} from "../dto/TransactionDTO"
 import {BlockDTO} from "../dto/BlockDTO"
 import {verify} from "../common-libs/crypto/keyring"
 import {rawer, txunlock} from "../common-libs/index"
 import {CommonConstants} from "../common-libs/constants"
 import {IdentityDTO} from "../dto/IdentityDTO"
+import {hashf} from "../common"
+import {Indexer} from "../indexer"
+import {DBTx} from "../dal/sqliteDAL/TxsDAL"
 
-const _              = require('underscore');
-const indexer        = require('../indexer').Indexer
+const _ = require('underscore')
 
 const constants      = CommonConstants
 
@@ -22,6 +35,40 @@ let logger = {
 }
 
 // TODO: all the global rules should be replaced by index rule someday
+
+export interface ParamEval {
+  successful:boolean
+  funcName:string
+  parameter:string
+}
+
+export function evalParams(params:string[], conditions = '', sigResult:TxSignatureResult): ParamEval[] {
+  const res:ParamEval[] = []
+  const issuers = sigResult.sigs.map(s => s.k)
+  for (const func of params) {
+    if (func.match(/^SIG/)) {
+      const param = (func.match(/^SIG\((.*)\)$/) as string[])[1]
+      const index = parseInt(param)
+      const sigEntry = !isNaN(index) && index < issuers.length && sigResult.sigs[index]
+      const signatory:{ k:string, ok:boolean } = sigEntry || { k: '', ok: false }
+      res.push({
+        funcName: 'SIG',
+        parameter: signatory.k,
+        successful: signatory.ok
+      })
+    }
+    else if (func.match(/^XHX/)) {
+      const password = (func.match(/^XHX\((.*)\)$/) as string[])[1]
+      const hash = hashf(password)
+      res.push({
+        funcName: 'XHX',
+        parameter: password,
+        successful: conditions.indexOf('XHX(' + hash + ')') !== -1
+      })
+    }
+  }
+  return res
+}
 
 export const GLOBAL_RULES_FUNCTIONS = {
 
@@ -47,7 +94,7 @@ export const GLOBAL_RULES_FUNCTIONS = {
     return true;
   },
 
-  checkSourcesAvailability: async (block:{ transactions:TransactionDTO[], medianTime: number }, conf:ConfDTO, dal:FileDAL, alsoCheckPendingTransactions:boolean) => {
+  checkSourcesAvailability: async (block:{ transactions:TransactionDTO[], medianTime: number }, conf:ConfDTO, dal:FileDAL, findSourceTx:(txHash:string) => Promise<DBTx|null>) => {
     const txs = block.transactions
     const current = await dal.getCurrentBlockOrNull();
     for (const tx of txs) {
@@ -65,12 +112,12 @@ export const GLOBAL_RULES_FUNCTIONS = {
         let src = inputs[k];
         let dbSrc = await dal.getSource(src.identifier, src.pos);
         logger.debug('Source %s:%s:%s:%s = %s', src.amount, src.base, src.identifier, src.pos, dbSrc && dbSrc.consumed);
-        if (!dbSrc && alsoCheckPendingTransactions) {
+        if (!dbSrc) {
           // For chained transactions which are checked on sandbox submission, we accept them if there is already
           // a previous transaction of the chain already recorded in the pool
           dbSrc = await (async () => {
             let hypotheticSrc:any = null;
-            let targetTX = await dal.getTxByHash(src.identifier);
+            let targetTX = await findSourceTx(src.identifier);
             if (targetTX) {
               let outputStr = targetTX.outputs[src.pos];
               if (outputStr) {
@@ -90,31 +137,10 @@ export const GLOBAL_RULES_FUNCTIONS = {
         if (block.medianTime - dbSrc.written_time < tx.locktime) {
           throw constants.ERRORS.LOCKTIME_PREVENT;
         }
-        let sigResults = local_rules.LOCAL_RULES_HELPERS.getSigResult(tx);
-        let unlocksForCondition = [];
+        let unlockValues = unlocks[k]
+        let unlocksForCondition:string[] = (unlockValues || '').split(' ')
         let unlocksMetadata:any = {};
-        let unlockValues = unlocks[k];
         if (dbSrc.conditions) {
-          if (unlockValues) {
-            // Evaluate unlock values
-            let sp = unlockValues.split(' ');
-            for (const func of sp) {
-              let param = func.match(/\((.+)\)/)[1];
-              if (func.match(/^SIG/)) {
-                let pubkey = tx.issuers[parseInt(param)];
-                if (!pubkey) {
-                  logger.warn('Source ' + [src.amount, src.base, src.type, src.identifier, src.pos].join(':') + ' unlock fail (unreferenced signatory)');
-                  throw constants.ERRORS.WRONG_UNLOCKER;
-                }
-                unlocksForCondition.push({
-                  pubkey: pubkey,
-                  sigOK: sigResults.sigs[pubkey] && sigResults.sigs[pubkey].matching || false
-                });
-              } else if (func.match(/^XHX/)) {
-                unlocksForCondition.push(param);
-              }
-            }
-          }
 
           if (dbSrc.conditions.match(/CLTV/)) {
             unlocksMetadata.currentTime = block.medianTime;
@@ -124,14 +150,18 @@ export const GLOBAL_RULES_FUNCTIONS = {
             unlocksMetadata.elapsedTime = block.medianTime - dbSrc.written_time;
           }
 
+          const sigs = tx.getTransactionSigResult()
+
           try {
-            if (!txunlock(dbSrc.conditions, unlocksForCondition, unlocksMetadata)) {
+            if (!txunlock(dbSrc.conditions, unlocksForCondition, sigs, unlocksMetadata)) {
               throw Error('Locked');
             }
           } catch (e) {
             logger.warn('Source ' + [src.amount, src.base, src.type, src.identifier, src.pos].join(':') + ' unlock fail');
             throw constants.ERRORS.WRONG_UNLOCKER;
           }
+        } else {
+          throw Error("Source with no conditions")
         }
       }
       let sumOfOutputs = outputs.reduce(function(p, output) {
@@ -167,7 +197,7 @@ export const GLOBAL_RULES_HELPERS = {
       return Promise.resolve(false);
     }
     try {
-      return indexer.DUP_HELPERS.checkPeopleAreNotOudistanced([member], newLinks, newcomers, conf, dal);
+      return Indexer.DUP_HELPERS.checkPeopleAreNotOudistanced([member], newLinks, newcomers, conf, dal);
     } catch (e) {
       return true;
     }
@@ -177,10 +207,15 @@ export const GLOBAL_RULES_HELPERS = {
 
   checkExistsPubkey: (pub:string, dal:FileDAL) => dal.getWrittenIdtyByPubkey(pub),
 
-  checkSingleTransaction: (tx:TransactionDTO, block:{ medianTime: number }, conf:ConfDTO, dal:FileDAL, alsoCheckPendingTransactions:boolean = false) => GLOBAL_RULES_FUNCTIONS.checkSourcesAvailability({
+  checkSingleTransaction: (
+    tx:TransactionDTO,
+    block:{ medianTime: number },
+    conf:ConfDTO,
+    dal:FileDAL,
+    findSourceTx:(txHash:string) => Promise<DBTx|null>) => GLOBAL_RULES_FUNCTIONS.checkSourcesAvailability({
     transactions: [tx],
     medianTime: block.medianTime
-  }, conf, dal, alsoCheckPendingTransactions),
+  }, conf, dal, findSourceTx),
 
   checkTxBlockStamp: async (tx:TransactionDTO, dal:FileDAL) => {
     const number = parseInt(tx.blockstamp.split('-')[0])

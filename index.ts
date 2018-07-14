@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {ExecuteCommand} from "./app/cli"
 import * as stream from "stream"
 import {Server} from "./server"
@@ -5,7 +18,11 @@ import {ConfDTO} from "./app/lib/dto/ConfDTO"
 import {ProverDependency} from "./app/modules/prover/index"
 import {KeypairDependency} from "./app/modules/keypair/index"
 import {CrawlerDependency} from "./app/modules/crawler/index"
-import {BmaDependency} from "./app/modules/bma/index";
+import {BmaDependency} from "./app/modules/bma/index"
+import {WS2PDependency} from "./app/modules/ws2p/index"
+import {ProverConstants} from "./app/modules/prover/lib/constants"
+import { ProxiesConf } from './app/lib/proxy';
+import {RouterDependency} from "./app/modules/router"
 
 const path = require('path');
 const _ = require('underscore');
@@ -22,8 +39,15 @@ const reapplyDependency   = require('./app/modules/reapply');
 const revertDependency    = require('./app/modules/revert');
 const daemonDependency    = require('./app/modules/daemon');
 const pSignalDependency   = require('./app/modules/peersignal');
-const routerDependency    = require('./app/modules/router');
 const pluginDependency    = require('./app/modules/plugin');
+
+let sigintListening = false
+
+// Trace errors
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled rejection: ' + reason);
+  logger.error(reason);
+});
 
 class Stacks {
 
@@ -99,12 +123,13 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
   { name: 'duniter-revert',    required: revertDependency },
   { name: 'duniter-daemon',    required: daemonDependency },
   { name: 'duniter-psignal',   required: pSignalDependency },
-  { name: 'duniter-router',    required: routerDependency },
+  { name: 'duniter-router',    required: RouterDependency },
   { name: 'duniter-plugin',    required: pluginDependency },
   { name: 'duniter-prover',    required: ProverDependency },
   { name: 'duniter-keypair',   required: KeypairDependency },
   { name: 'duniter-crawler',   required: CrawlerDependency },
-  { name: 'duniter-bma',       required: BmaDependency }
+  { name: 'duniter-bma',       required: BmaDependency },
+  { name: 'duniter-ws2p',      required: WS2PDependency }
 ]);
 
 const PRODUCTION_DEPENDENCIES = DEFAULT_DEPENDENCIES.concat([
@@ -152,6 +177,8 @@ export interface ReadableDuniterService extends DuniterService, stream.Readable 
 export interface TransformableDuniterService extends DuniterService, stream.Transform {}
 
 class Stack {
+
+  private injectedServices = false
 
   private cli:any
   private configLoadingCallbacks:any[]
@@ -275,10 +302,12 @@ class Stack {
     }
 
     const server = new Server(home, program.memory === true, commandLineConf(program));
+    let piped = false
 
     // If ever the process gets interrupted
     let isSaving = false;
-    process.on('SIGINT', async () => {
+    if (!sigintListening) {
+      process.on('SIGINT', async () => {
         if (!isSaving) {
           isSaving = true;
           // Save DB
@@ -290,7 +319,9 @@ class Stack {
             process.exit(3);
           }
         }
-    });
+      })
+      sigintListening = true
+    }
 
     // Config or Data reset hooks
     server.resetDataHook = async () => {
@@ -362,26 +393,30 @@ class Stack {
        * Service injection
        * -----------------
        */
-      for (const def of this.definitions) {
-        if (def.service) {
-          // To feed data coming from some I/O (network, disk, other module, ...)
-          if (def.service.input) {
-            this.streams.input.push(def.service.input(server, conf, logger));
-          }
-          // To handle data this has been submitted by INPUT stream
-          if (def.service.process) {
-            this.streams.process.push(def.service.process(server, conf, logger));
-          }
-          // To handle data this has been validated by PROCESS stream
-          if (def.service.output) {
-            this.streams.output.push(def.service.output(server, conf, logger));
-          }
-          // Special service which does not stream anything particular (ex.: piloting the `server` object)
-          if (def.service.neutral) {
-            this.streams.neutral.push(def.service.neutral(server, conf, logger));
+      if (!this.injectedServices) {
+        this.injectedServices = true
+        for (const def of this.definitions) {
+          if (def.service) {
+            // To feed data coming from some I/O (network, disk, other module, ...)
+            if (def.service.input) {
+              this.streams.input.push(def.service.input(server, conf, logger));
+            }
+            // To handle data this has been submitted by INPUT stream
+            if (def.service.process) {
+              this.streams.process.push(def.service.process(server, conf, logger));
+            }
+            // To handle data this has been validated by PROCESS stream
+            if (def.service.output) {
+              this.streams.output.push(def.service.output(server, conf, logger));
+            }
+            // Special service which does not stream anything particular (ex.: piloting the `server` object)
+            if (def.service.neutral) {
+              this.streams.neutral.push(def.service.neutral(server, conf, logger));
+            }
           }
         }
       }
+      piped = true
       // All inputs write to global INPUT stream
       for (const module of this.streams.input) module.pipe(this.INPUT);
       // All processes read from global INPUT stream
@@ -404,13 +439,6 @@ class Stack {
           const modules = this.streams.input.concat(this.streams.process).concat(this.streams.output).concat(this.streams.neutral);
           // Any streaming module must implement a `stopService` method
           await Promise.all(modules.map((module:DuniterService) => module.stopService()))
-          // // Stop reading inputs
-          // for (const module of streams.input) module.unpipe();
-          // Stop reading from global INPUT
-          // INPUT.unpipe();
-          // for (const module of streams.process) module.unpipe();
-          // // Stop reading from global PROCESS
-          // PROCESS.unpipe();
         },
 
         this);
@@ -418,16 +446,19 @@ class Stack {
     } catch (e) {
       server.disconnect();
       throw e;
+    } finally {
+      if (piped) {
+        // Unpipe everything, as the command is done
+        for (const module of this.streams.input) module.unpipe()
+        for (const module of this.streams.process) module.unpipe()
+        for (const module of this.streams.output) module.unpipe()
+        this.INPUT.unpipe()
+        this.PROCESS.unpipe()
+      }
     }
   }
 
   executeStack(argv:string[]) {
-
-    // Trace these errors
-    process.on('unhandledRejection', (reason) => {
-      logger.error('Unhandled rejection: ' + reason);
-      logger.error(reason);
-    });
 
     // Executes the command
     return this.cli.execute(argv);
@@ -437,17 +468,20 @@ class Stack {
 function commandLineConf(program:any, conf:any = {}) {
 
   conf = conf || {};
-  conf.sync = conf.sync || {};
   const cli = {
     currency: program.currency,
     cpu: program.cpu,
+    nbCores: program.nbCores,
+    prefix: program.prefix,
     server: {
       port: program.port,
     },
-    db: {
-      mport: program.mport,
-      mdb: program.mdb,
-      home: program.home
+    proxies: {
+      proxySocks: program.socksProxy,
+      proxyTor: program.torProxy,
+      reachingClearEp: program.reachingClearEp,
+      forceTor: program.forceTor,
+      rmProxies: program.rmProxies
     },
     logs: {
       http: program.httplogs,
@@ -461,18 +495,31 @@ function commandLineConf(program:any, conf:any = {}) {
     timeout: program.timeout
   };
 
-  // Update conf
-  if (cli.currency)                         conf.currency = cli.currency;
-  if (cli.server.port)                      conf.port = cli.server.port;
-  if (cli.cpu)                              conf.cpu = Math.max(0.01, Math.min(1.0, cli.cpu));
-  if (cli.logs.http)                        conf.httplogs = true;
-  if (cli.logs.nohttp)                      conf.httplogs = false;
-  if (cli.db.mport)                         conf.mport = cli.db.mport;
-  if (cli.db.home)                          conf.home = cli.db.home;
-  if (cli.db.mdb)                           conf.mdb = cli.db.mdb;
-  if (cli.isolate)                          conf.isolate = cli.isolate;
-  if (cli.timeout)                          conf.timeout = cli.timeout;
-  if (cli.forksize != null)                 conf.forksize = cli.forksize;
+  // Declare and update proxiesConf
+  if (cli.proxies.proxySocks || cli.proxies.proxyTor || cli.proxies.reachingClearEp || cli.proxies.forceTor || cli.proxies.rmProxies) {
+    conf.proxiesConf = new ProxiesConf()
+    if (cli.proxies.proxySocks) conf.proxiesConf.proxySocksAddress = cli.proxies.proxySocks;
+    if (cli.proxies.proxyTor)   conf.proxiesConf.proxyTorAddress = cli.proxies.proxyTor;
+    if (cli.proxies.reachingClearEp)  {
+      switch (cli.proxies.reachingClearEp) {
+        case 'tor': conf.proxiesConf.reachingClearEp = 'tor'; break;
+        case 'none': conf.proxiesConf.reachingClearEp = 'none'; break;
+      }
+    }
+    if (cli.proxies.forceTor) conf.proxiesConf.forceTor = true
+  }
+
+  // Update the rest of the conf
+  if (cli.currency)                             conf.currency = cli.currency;
+  if (cli.server.port)                          conf.port = cli.server.port;
+  if (cli.cpu)                                  conf.cpu = Math.max(0.01, Math.min(1.0, cli.cpu));
+  if (cli.nbCores)                              conf.nbCores = Math.max(1, Math.min(ProverConstants.CORES_MAXIMUM_USE_IN_PARALLEL, cli.nbCores));
+  if (cli.prefix)                               conf.prefix = Math.max(ProverConstants.MIN_PEER_ID, Math.min(ProverConstants.MAX_PEER_ID, cli.prefix));
+  if (cli.logs.http)                            conf.httplogs = true;
+  if (cli.logs.nohttp)                          conf.httplogs = false;
+  if (cli.isolate)                              conf.isolate = cli.isolate;
+  if (cli.timeout)                              conf.timeout = cli.timeout;
+  if (cli.forksize != null)                     conf.forksize = cli.forksize;
 
   return conf;
 }

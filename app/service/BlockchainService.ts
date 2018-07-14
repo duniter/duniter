@@ -1,11 +1,24 @@
-"use strict";
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+import {IdentityForRequirements} from './BlockchainService';
+import {Server} from "../../server"
 import {GlobalFifoPromise} from "./GlobalFifoPromise"
 import {BlockchainContext} from "../lib/computation/BlockchainContext"
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {FileDAL} from "../lib/dal/fileDAL"
 import {QuickSynchronizer} from "../lib/computation/QuickSync"
 import {BlockDTO} from "../lib/dto/BlockDTO"
-import {DBIdentity} from "../lib/dal/sqliteDAL/IdentityDAL"
 import {DBBlock} from "../lib/db/DBBlock"
 import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
 import {parsers} from "../lib/common-libs/parsers/index"
@@ -16,9 +29,23 @@ import {LOCAL_RULES_FUNCTIONS} from "../lib/rules/local_rules"
 import {Switcher, SwitcherDao} from "../lib/blockchain/Switcher"
 import {OtherConstants} from "../lib/other_constants"
 
+"use strict";
+
 const _               = require('underscore');
 const constants       = require('../lib/constants');
 
+export interface IdentityForRequirements {
+  hash:string
+  member:boolean
+  wasMember:boolean
+  pubkey:string
+  uid:string
+  buid:string
+  sig:string
+  revocation_sig:string
+  revoked:boolean
+  revoked_on:number
+}
 export class BlockchainService extends FIFOService {
 
   mainContext:BlockchainContext
@@ -28,8 +55,9 @@ export class BlockchainService extends FIFOService {
   selfPubkey:string
   quickSynchronizer:QuickSynchronizer
   switcherDao:SwitcherDao<BlockDTO>
+  invalidForks:string[] = []
 
-  constructor(private server:any, fifoPromiseHandler:GlobalFifoPromise) {
+  constructor(private server:Server, fifoPromiseHandler:GlobalFifoPromise) {
     super(fifoPromiseHandler)
     this.mainContext = new BlockchainContext()
     this.switcherDao = new (class ForkDao implements SwitcherDao<BlockDTO> {
@@ -40,8 +68,8 @@ export class BlockchainService extends FIFOService {
         return this.bcService.current()
       }
 
-      async getPotentials(numberStart: number, timeStart: number): Promise<BlockDTO[]> {
-        const blocks = await this.bcService.dal.getPotentialForkBlocks(numberStart, timeStart)
+      async getPotentials(numberStart: number, timeStart: number, maxNumber:number): Promise<BlockDTO[]> {
+        const blocks = await this.bcService.dal.getPotentialForkBlocks(numberStart, timeStart, maxNumber)
         return blocks.map((b:any) => BlockDTO.fromJSONObject(b))
       }
 
@@ -76,7 +104,7 @@ export class BlockchainService extends FIFOService {
       }
 
       async addBlock(block: BlockDTO): Promise<BlockDTO> {
-        return await this.bcService.mainContext.checkAndAddBlock(block)
+        return await this.bcService.mainContext.checkAndAddBlock(block, false)
       }
 
     })(this)
@@ -119,7 +147,7 @@ export class BlockchainService extends FIFOService {
 
   async branches() {
     const current = await this.current()
-    const switcher = new Switcher(this.switcherDao, this.conf.avgGenTime, this.conf.forksize, this.conf.switchOnHeadAdvance, this.logger)
+    const switcher = new Switcher(this.switcherDao, this.invalidForks, this.conf.avgGenTime, this.conf.forksize, this.conf.switchOnHeadAdvance, this.logger)
     const heads = await switcher.findPotentialSuitesHeads(current)
     return heads.concat([current])
   }
@@ -159,7 +187,7 @@ export class BlockchainService extends FIFOService {
               await this.blockResolution()
               // Resolve the potential forks
               await this.forkResolution()
-              const current = this.current()
+              const current = await this.current()
               this.push({
                 bcEvent: OtherConstants.BC_EVENT.RESOLUTION_DONE,
                 block: current
@@ -191,17 +219,25 @@ export class BlockchainService extends FIFOService {
       while (!added && i < potentials.length) {
         const dto = BlockDTO.fromJSONObject(potentials[i])
         try {
+          if (dto.issuer === this.conf.pair.pub) {
+            for (const tx of dto.transactions) {
+              await this.dal.removeTxByHash(tx.hash);
+            }
+          }
           const addedBlock = await this.mainContext.checkAndAddBlock(dto)
           added = true
           this.push({
             bcEvent: OtherConstants.BC_EVENT.HEAD_CHANGED,
             block: addedBlock
           })
+          // Clear invalid forks' cache
+          this.invalidForks.splice(0, this.invalidForks.length)
         } catch (e) {
           this.logger.error(e)
           added = false
+          const theError = e && (e.message || e)
           this.push({
-            blockResolutionError: e && e.message
+            blockResolutionError: theError
           })
         }
         i++
@@ -210,7 +246,7 @@ export class BlockchainService extends FIFOService {
   }
 
   async forkResolution() {
-    const switcher = new Switcher(this.switcherDao, this.conf.avgGenTime, this.conf.forksize, this.conf.switchOnHeadAdvance, this.logger)
+    const switcher = new Switcher(this.switcherDao, this.invalidForks, this.conf.avgGenTime, this.conf.forksize, this.conf.switchOnHeadAdvance, this.logger)
     const newCurrent = await switcher.tryToFork()
     if (newCurrent) {
       this.push({
@@ -230,7 +266,7 @@ export class BlockchainService extends FIFOService {
   }
   
 
-  async requirementsOfIdentities(identities:DBIdentity[], computeDistance = true) {
+  async requirementsOfIdentities(identities:IdentityForRequirements[], computeDistance = true) {
     let all:HttpIdentityRequirement[] = [];
     let current = await this.dal.getCurrentBlockOrNull();
     for (const obj of identities) {
@@ -244,7 +280,7 @@ export class BlockchainService extends FIFOService {
     return all;
   }
 
-  async requirementsOfIdentity(idty:DBIdentity, current:DBBlock, computeDistance = true): Promise<HttpIdentityRequirement> {
+  async requirementsOfIdentity(idty:IdentityForRequirements, current:DBBlock, computeDistance = true): Promise<HttpIdentityRequirement> {
     // TODO: this is not clear
     let expired = false;
     let outdistanced = false;
@@ -399,7 +435,7 @@ export class BlockchainService extends FIFOService {
    * @param blocks An array of blocks to insert.
    * @param to The final block number of the fast insertion.
    */
-  fastBlockInsertions(blocks:BlockDTO[], to:number | null) {
+  fastBlockInsertions(blocks:BlockDTO[], to:number) {
     return this.mainContext.quickApplyBlocks(blocks, to)
   }
 }

@@ -1,7 +1,20 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 const Command = require('commander').Command;
 const pjson = require('../package.json');
 const duniter = require('../index');
-
+ 
 export const ExecuteCommand = () => {
 
   const options:any = [];
@@ -42,11 +55,19 @@ export const ExecuteCommand = () => {
         .option('--remep <endpoint>', 'With `config` command, remove given endpoint to the list of endpoints of this node')
 
         .option('--cpu <percent>', 'Percent of CPU usage for proof-of-work computation', parsePercent)
+        .option('--nb-cores <number>', 'Number of cores uses for proof-of-work computation', parseInt)
+        .option('--prefix <nodeId>', 'Prefix node id for the first character of nonce', parseInt)
 
         .option('-c, --currency <name>', 'Name of the currency managed by this node.')
 
         .option('--nostdout', 'Disable stdout printing for `export-bc` command')
         .option('--noshuffle', 'Disable peers shuffling for `sync` command')
+
+        .option('--socks-proxy <host:port>', 'Use Socks Proxy')
+        .option('--tor-proxy <host:port>', 'Use Tor Socks Proxy')
+        .option('--reaching-clear-ep <clear|tor|none>', 'method for reaching an clear endpoint')
+        .option('--force-tor', 'force duniter to contact endpoint tor (if you redirect the traffic to tor yourself)')
+        .option('--rm-proxies', 'Remove all proxies')
 
         .option('--timeout <milliseconds>', 'Timeout to use when contacting peers', parseInt)
         .option('--httplogs', 'Enable HTTP logs')

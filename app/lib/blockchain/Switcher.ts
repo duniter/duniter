@@ -1,3 +1,17 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+import {BlockDTO} from "../dto/BlockDTO"
 export interface SwitchBlock {
 
   number:number
@@ -9,7 +23,7 @@ export interface SwitchBlock {
 export interface SwitcherDao<T extends SwitchBlock> {
 
   getCurrent(): Promise<T>
-  getPotentials(numberStart:number, timeStart:number): Promise<T[]>
+  getPotentials(numberStart:number, timeStart:number, maxNumber:number): Promise<T[]>
   getBlockchainBlock(number:number, hash:string): Promise<T|null>
   getSandboxBlock(number:number, hash:string): Promise<T|null>
   revertTo(number:number): Promise<T[]>
@@ -20,6 +34,7 @@ export class Switcher<T extends SwitchBlock> {
 
   constructor(
     private dao:SwitcherDao<T>,
+    private invalidForks:string[],
     private avgGenTime:number,
     private forkWindowSize:number,
     private switchOnHeadAdvance:number,
@@ -35,7 +50,7 @@ export class Switcher<T extends SwitchBlock> {
       const numberStart = current.number + this.switchOnHeadAdvance
       const timeStart = current.medianTime + this.switchOnHeadAdvance * this.avgGenTime
       // Phase 1: find potential chains
-      const suites = await this.findPotentialSuites(current, numberStart, timeStart)
+      const suites = await this.findPotentialSuites(numberStart, timeStart)
       if (suites.length) {
         this.logger && this.logger.info("Fork resolution: %s potential suite(s) found...", suites.length)
       }
@@ -61,21 +76,24 @@ export class Switcher<T extends SwitchBlock> {
   async findPotentialSuitesHeads(current:T) {
     const numberStart = current.number - this.forkWindowSize
     const timeStart = current.medianTime - this.forkWindowSize * this.avgGenTime
-    const suites = await this.findPotentialSuites(current, numberStart, timeStart)
+    const suites = await this.findPotentialSuites(numberStart, timeStart)
     return suites.map(suite => suite[suite.length - 1])
   }
 
   /**
    * Looks at the potential blocks that could form fork chains in the sandbox, and sort them to have a maximum of unique
    * chains.
-   * @param {SwitchBlock} current HEAD of local blockchain.
    * @param numberStart The minimum number of a fork block.
    * @param timeStart The minimum medianTime of a fork block.
    * @returns {SwitchBlock[][]} The suites found.
    */
-  private async findPotentialSuites(current:T, numberStart:number, timeStart:number) {
+  private async findPotentialSuites(numberStart:number, timeStart:number) {
     const suites:T[][] = []
-    const potentials:T[] = await this.dao.getPotentials(numberStart, timeStart)
+    const potentials:T[] = await this.dao.getPotentials(numberStart, timeStart, numberStart + this.forkWindowSize)
+    const knownForkBlocks:{ [k:string]: boolean } = {}
+    for (const candidate of potentials) {
+      knownForkBlocks[BlockDTO.fromJSONObject(candidate).blockstamp] = true
+    }
     const invalids: { [hash:string]: T } = {}
     if (potentials.length) {
       this.logger && this.logger.info("Fork resolution: %s potential block(s) found...", potentials.length)
@@ -93,7 +111,13 @@ export class Switcher<T extends SwitchBlock> {
           suite.push(previous)
           previousNumber = previous.number - 1
           previousHash = previous.previousHash
-          previous = await this.dao.getBlockchainBlock(previousNumber, previousHash)
+          previous = null
+          const previousBlockstamp = [previousNumber, previousHash].join('-')
+          // We try to look at blockchain if, of course, it is not already known as a fork block
+          // Otherwise it cost a useless DB access
+          if (!knownForkBlocks[previousBlockstamp]) {
+            previous = await this.dao.getBlockchainBlock(previousNumber, previousHash)
+          }
           if (previous) {
             // Stop the loop: common block has been found
             previous = null
@@ -102,6 +126,15 @@ export class Switcher<T extends SwitchBlock> {
           } else {
             // Have a look in sandboxes
             previous = await this.dao.getSandboxBlock(previousNumber, previousHash)
+            if (previous) {
+              knownForkBlocks[BlockDTO.fromJSONObject(previous).blockstamp] = true
+              const alreadyKnownInvalidBlock = this.invalidForks.indexOf([previous.number, previous.hash].join('-')) !== -1
+              if (alreadyKnownInvalidBlock) {
+                // Incorrect = not found
+                this.logger && this.logger.info("Fork resolution: block #%s-%s is known as incorrect. Skipping.", previous.number, previous.hash.substr(0, 8))
+                previous = null
+              }
+            }
           }
         }
         // Forget about invalid blocks
@@ -150,6 +183,7 @@ export class Switcher<T extends SwitchBlock> {
           this.logger && this.logger.info("Fork resolution: suite %s/%s added block#%s-%s", j, suites.length, s[i].number, s[i].hash)
           successfulBlocks.push(s[i])
         } catch (e) {
+          this.invalidForks.push([s[i].number, s[i].hash].join('-'))
           this.logger && this.logger.info("Fork resolution: suite %s/%s REFUSED block#%s: %s", j, suites.length, s[0].number + i, e && e.message)
           added = false
         }
@@ -157,6 +191,9 @@ export class Switcher<T extends SwitchBlock> {
       }
       // Pop the successfuly added blocks
       if (successfulBlocks.length) {
+        for (const b of successfulBlocks) {
+          this.invalidForks.push([b.number, b.hash].join('-'))
+        }
         const addedToHeadLevel = successfulBlocks[successfulBlocks.length-1].number - current.number
         this.logger && this.logger.info("Fork resolution: suite %s/%s reached HEAD + %s. Now rolling back.", j, suites.length, addedToHeadLevel)
         await this.dao.revertTo(forkPoint)

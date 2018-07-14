@@ -475,14 +475,28 @@ It follows a machine-readable BNF grammar composed of
 
 #### Condition matching
 
-Each `Unlock` of TX2 refers to an input of TX2 through `IN_INDEX`, input itself refering to an `Output` of TX1 through `T_HASH` reference and `T_INDEX`.
+Considering a transaction `TX` consuming some money: each unlock line `UNLOCK` of TX tries to unlock the input `INPUT = TX.Inputs[IN_INDEX]` refering to an ouput `Output` whose value is:
 
-* An output contains `F` functions in its conditions (read from left to right)
-* An unlock contains `P` parameters (or less, min. is zero), each separated by a space (read from left to right)
+If `INPUT.TYPE = 'T'`:
 
-A function of TX1 at position `f` returns TRUE if parameter at position `p` resolves the function. Otherwise it returns FALSE.
+    Output = TRANSACTIONS_IN_BLOCKCHAIN_OR_IN_LOCAL_BLOCK[T_HASH].OUPUTS[T_INDEX]
 
-The condition of an `Output` is unlocked if, evaluated globally with `(`, `)`, `&&`, and `||`, the condition returns TRUE.
+If `INPUT.TYPE = 'D'`:
+
+    Output = BLOCKCHAIN[BLOCK_ID].Dividend[PUBLIC_KEY]
+
+Let's name:
+
+* `CONDITIONS` the conditions of a given output `Output`
+* `NB_FUNCTIONS` the number of functions present in `CONDITIONS` (read from left to right)
+* `NB_PARAMETERS` the number of parameters present in `UNLOCK`, each separated by a space (read from left to right)
+
+Then, an `UNLOCK` line is considered *successful* if:
+
+* `Output` exists
+* `NB_PARAMETERS <= NB_FUNCTIONS`
+* Each `UNLOCK` parameter returns TRUE
+* `CONDITIONS` evaluated globally with `(`, `)`, `&&`, `||` and its locking functions returns TRUE
 
 ##### Example 1
 
@@ -524,18 +538,35 @@ Unlocks:
 
 Because `SIG(1)` refers to the signature `DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo`, considering that signature `DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo` is good over TX2.
 
-#### Unlocking functions
+#### Locking and unlocking functions
 
-These functions may be present under both `Unlocks` and `Outputs` fields.
+The *locking* functions are present under `Outputs` field.
 
-* When present under `Outputs`, these functions define the *necessary conditions* to spend each output.
-* When present under `Unlocks`, these functions define the *sufficient proofs* that each input can be spent.
+The *unlocking* functions are present under `Unlocks` field.
 
 ##### SIG function
 
+###### Definition
+
+Lock:
+
+    SIG(PUBKEY_A)
+
+Unlock:
+
+    SIG(INDEX)
+
+###### Condition
+
+Lock `SIG(PUBKEY_A)` returns TRUE if it exists a parameter `SIG(INDEX)` returning TRUE where `Issuers[INDEX] == PUBKEY_A`.
+
+Unlock `SIG(INDEX)` returns TRUE if `Signatures[INDEX]` is a valid valid signature of TX against `Issuers[INDEX]` public key.
+
+###### Description
+
 This function is a control over the signature.
 
-* in an `Output` of TX1, `SIG(PUBKEY_A)` requires from a future transaction TX2 unlocking the output to give as parameter a valid signature of TX2 by `PUBKEY_A`
+* in an `Output` of a transaction TX1, `SIG(PUBKEY_A)` requires from a future transaction TX2 unlocking the output to give as parameter a valid signature of TX2 by `PUBKEY_A`
   * if TX2 does not give `SIG(INDEX)` parameter as [matching parameter](#condition-matching), the condition fails
   * if TX2's `Issuers[INDEX]` does not equal `PUBKEY_A`, the condition fails
   * if TX2's `SIG(INDEX)` does not return TRUE, the condition fails
@@ -578,6 +609,24 @@ The necessary condition `SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)` is m
 
 ##### XHX function
 
+###### Definition
+
+Lock:
+
+    XHX(HASH)
+
+Unlock:
+
+    XHX(PASSWORD)
+
+###### Condition
+
+`XHX(HASH)` returns true if it exists a parameter `XHX(PASSWORD)` where `SHA256(PASSWORD) = HASH`.
+
+`XHX(PASSWORD)` returns true if it exists a locking function `XHX(HASH)` where `SHA256(PASSWORD) = HASH` in the conditions.
+
+###### Description
+
 This function is a password control.
 
 So if we have, in TX1:
@@ -608,9 +657,9 @@ Where:
 
 * `6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3` is the hash of TX1.
 
-The necessary condition `XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)` is matched here if `XHX(1872767826647264) = 8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB`.
+Then `XHX(PASSWORD)` returns TRUE if it exists `XHX(HASH)` in the output's conditions of TX1, with the relation `SHA256(PASSWORD) = HASH`.
 
-`XHX(1872767826647264)` is to be evaluated as `SHA256(1872767826647264)`.
+Here `XHX(1872767826647264)` returns TRUE if it exists `XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)` in the output's conditions of TX1, as it matches the link `SHA256(1872767826647264) = 8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB`.
 
 #### Example 1
 
@@ -710,6 +759,20 @@ Signatures (fakes here):
 
 ##### CLTV function
 
+###### Definition
+
+Lock:
+
+    CLVT(TIMESTAMP)
+
+Unlock: no unlocking function.
+
+###### Condition
+
+`CLVT(TIMESTAMP)` returns true if and only if the transaction including block's `MedianTime >= TIMESTAMP`.
+
+###### Description
+
 This function locks an output in the future, which will be unlocked at a given date.
 
 So if we have, in TX1:
@@ -722,11 +785,27 @@ Outputs
 25:2:CLTV(1489677041)
 ```
 
-Then the `25` units can be spent *exclusively* in a block whose `MedianTime >= 1489677041`
+So here, the `25` units can be spent *exclusively* in a block whose `MedianTime >= 1489677041`
 
 `CLTV`'s parameter must be an integer with a length between `1` and `10` chars.
 
 ##### CSV function
+
+###### Definition
+
+Lock:
+
+    CSV(DELAY)
+
+Unlock: no unlocking function.
+
+We define `TxTime` as the `MedianTime` of the block referenced by the transaction's `Blockstamp` field.
+
+###### Condition
+
+`CSV(DELAY)` returns true if and only if the transaction including block's `MedianTime - TxTime >= DELAY`.
+
+###### Description
 
 This function locks an output in the future, which will be unlocked after the given amount of time has elapsed.
 
@@ -741,8 +820,6 @@ Blockstamp: 204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
 Outputs
 25:2:CSV(3600)
 ```
-
-We define `TxTime` as the `MedianTime` of block `204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B`.
 
 Then the `25` units can be spent *exclusively* in a block whose `MedianTime - TxTime >= 3600`.
 
@@ -1472,6 +1549,40 @@ TRUE
 > Functionally: we cannot create nor lose money through transactions. We can only transfer coins we own.
 > Functionally: also, we cannot convert a superiod unit base into a lower one.
 
+##### Transactions chaining max depth
+
+    FUNCTION `getTransactionDepth(txHash, LOCAL_DEPTH)`:
+
+        INPUTS = LOCAL_SINDEX[op='UPDATE',tx=txHash]
+        DEPTH = LOCAL_DEPTH
+
+        FOR EACH `INPUT` OF `INPUTS`
+            CONSUMED = LOCAL_SINDEX[op='CREATE',identifier=INPUT.identifier,pos=INPUT.pos]
+            IF (CONSUMED != NULL)
+                IF (LOCAL_DEPTH < 5)
+                    DEPTH = MAX(DEPTH, getTransactionDepth(CONSUMED.tx, LOCAL_DEPTH +1)
+                ELSE
+                    DEPTH++
+                END_IF
+            END_IF
+        END_FOR
+
+        RETURN DEPTH
+
+    END_FUNCTION
+
+Then:
+
+    maxTxChainingDepth = 0
+
+For each `TX_HASH` of `UNIQ(PICK(LOCAL_SINDEX, 'tx))`:
+
+    maxTxChainingDepth = MAX(maxTxChainingDepth, getTransactionDepth(TX_HASH, 0))
+
+Rule:
+
+    maxTxChainingDepth <= 5
+
 #### Global
 
 Global validation verifies the coherence of a locally-validated block, in the context of the whole blockchain, including the block.
@@ -1503,6 +1614,7 @@ Function references:
 > If values count is even, the median is computed over the 2 centered values by an arithmetical median on them, *NOT* rounded.
 
 * *UNIQ* returns a list of the unique values in a list of values
+* *PICK* returns a list of the values by picking a particular property on each record
 * *INTEGER_PART* return the integer part of a number
 * *FIRST* return the first element in a list of values matching the given condition
 * *REDUCE* merges a set of elements into a single one, by extending the non-null properties from each record into the resulting record.
@@ -2021,6 +2133,8 @@ For each ENTRY in local MINDEX where `op = 'UPDATE', expired_on = 0`:
 
     ENTRY.joinsTwice = REDUCE(GLOBAL_IINDEX[pub=ENTRY.pub]).member == true
 
+> This rule ensures that someone who is in the `Joiners` field isn't already a member.
+
 ####### BR_G27 - ENTRY.enoughCerts
 
 For each ENTRY in local MINDEX where `type == 'JOIN' OR type == 'ACTIVE'`:
@@ -2167,7 +2281,7 @@ Else:
 
 ####### BR_G102 - ENTRY.age
 
-For each ENTRY in local IINDEX where `op = 'UPDATE'`:
+For each ENTRY in local SINDEX where `op = 'UPDATE'`:
 
     REF_BLOCK = HEAD~<HEAD~1.number + 1 - NUMBER(ENTRY.hash)>[hash=HASH(ENTRY.created_on)]
     
@@ -2189,17 +2303,31 @@ EndIf
 
 For each `LOCAL_SINDEX[op='UPDATE'] as ENTRY`:
 
-    INPUT = REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base])
+    INPUT_ENTRIES = LOCAL_SINDEX[op='CREATE',identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    If COUNT(INPUT_ENTRIES) == 0 Then
+        INPUT_ENTRIES = GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    EndIf
+    INPUT = REDUCE(INPUT_ENTRIES)
     ENTRY.conditions = INPUT.conditions
     ENTRY.available = INPUT.consumed == false
 
 ####### BR_G47 - ENTRY.isLocked
 
-    ENTRY.isLocked = TX_SOURCE_UNLOCK(REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]).conditions, ENTRY)
+    INPUT_ENTRIES = LOCAL_SINDEX[op='CREATE',identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    If COUNT(INPUT_ENTRIES) == 0 Then
+        INPUT_ENTRIES = GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    EndIf
+    INPUT = REDUCE(INPUT_ENTRIES)
+    ENTRY.isLocked = TX_SOURCE_UNLOCK(INPUT.conditions, ENTRY)
     
 ####### BR_G48 - ENTRY.isTimeLocked
 
-    ENTRY.isTimeLocked = ENTRY.written_time - REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]).written_time < ENTRY.locktime
+    INPUT_ENTRIES = LOCAL_SINDEX[op='CREATE',identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    If COUNT(INPUT_ENTRIES) == 0 Then
+        INPUT_ENTRIES = GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    EndIf
+    INPUT = REDUCE(INPUT_ENTRIES)
+    ENTRY.isTimeLocked = ENTRY.written_time - INPUT.written_time < ENTRY.locktime
 
 ##### Rules
 
@@ -2536,6 +2664,21 @@ Rule:
 If `HEAD.new_dividend != null`:
 
 For each `REDUCE_BY(GLOBAL_IINDEX[member=true], 'pub') as IDTY` then if `IDTY.member`, add a new LOCAL_SINDEX entry:
+
+    SINDEX (
+        op = 'CREATE'
+        identifier = IDTY.pub
+        pos = HEAD.number
+        written_on = BLOCKSTAMP
+        written_time = MedianTime
+        amount = HEAD.dividend
+        base = HEAD.unitBase
+        locktime = null
+        conditions = REQUIRE_SIG(MEMBER.pub)
+        consumed = false
+    )
+
+For each `LOCAL_IINDEX[member=true] as IDTY` add a new LOCAL_SINDEX entry:
 
     SINDEX (
         op = 'CREATE'

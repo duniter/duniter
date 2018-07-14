@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
 
 const co = require('co');
@@ -10,6 +23,7 @@ describe('PoW Engine', () => {
   it('should be configurable', () => co(function*(){
     const e1 = new PowEngine({ nbCores: 1 }, logger);
     (yield e1.setConf({ cpu: 0.2, prefix: '34' })).should.deepEqual({ cpu: 0.2, prefix: '34' });
+    yield e1.shutDown()
   }));
 
   it('should be able to make a proof', () => co(function*(){
@@ -52,6 +66,7 @@ describe('PoW Engine', () => {
         pow: '009A52E6E2E4EA7DE950A2DA673114FA55B070EBE350D75FF0C62C6AAE9A37E5'
       }
     });
+    yield e1.shutDown()
   }));
 
   it('should be able to stop a proof', () => co(function*(){
@@ -85,5 +100,6 @@ describe('PoW Engine', () => {
     yield e1.cancel()
     // const proof = yield proofPromise;
     // should.not.exist(proof);
+    yield e1.shutDown()
   }));
 });

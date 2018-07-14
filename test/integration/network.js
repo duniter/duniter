@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
 
 const co = require('co');
@@ -11,6 +24,7 @@ const expectAnswer = httpTest.expectAnswer;
 
 const MEMORY_MODE = true;
 const commonConf = {
+  bmaWithCrawler: true,
   ipv4: '127.0.0.1',
   remoteipv4: '127.0.0.1',
   currency: 'bb',
@@ -23,6 +37,7 @@ const s1 = node('bb33', _.extend({
   ipv4: '127.0.0.1',
   port: '20501',
   remoteport: '20501',
+  ws2p: { upnp: false },
   pair: {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
     sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
@@ -34,6 +49,7 @@ const s1 = node('bb33', _.extend({
 const s2 = node('bb12', _.extend({
   port: '20502',
   remoteport: '20502',
+  ws2p: { upnp: false },
   pair: {
     pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
     sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'

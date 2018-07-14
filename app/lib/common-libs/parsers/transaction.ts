@@ -1,6 +1,20 @@
-import {CommonConstants} from "../../../lib/common-libs/constants"
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+import {CommonConstants} from "../constants"
 import {GenericParser} from "./GenericParser"
 import {rawer} from "../../../lib/common-libs/index"
+import {checkGrammar} from '../txunlock';
 
 export class TransactionParser extends GenericParser {
 
@@ -22,6 +36,10 @@ export class TransactionParser extends GenericParser {
   _clean(obj:any) {
     obj.comment = obj.comment || "";
     obj.locktime = parseInt(obj.locktime) || 0;
+    obj.signatures = obj.signatures || []
+    obj.issuers = obj.issuers || []
+    obj.inputs = obj.inputs || []
+    obj.outputs = obj.outputs || []
     obj.signatures.push(obj.signature);
     const compactSize = 2 // Header + blockstamp
       + obj.issuers.length
@@ -101,6 +119,10 @@ function extractOutputs(raw:string) {
   for (const line of lines) {
     if (line.match(CommonConstants.TRANSACTION.TARGET)) {
       outputs.push(line);
+      const unlocked = checkGrammar(line.split(':')[2])
+      if (unlocked === null) {
+        throw Error("Wrong output format")
+      }
     } else {
       // Not a transaction input, stop reading
       break;

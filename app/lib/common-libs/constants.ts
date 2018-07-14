@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
 
 const CURRENCY     = "[a-zA-Z0-9-_ ]{2,50}"
@@ -7,16 +20,20 @@ const SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}"
 const USER_ID      = "[A-Za-z0-9_-]{2,100}"
 const INTEGER      = "(0|[1-9]\\d{0,18})"
 const FINGERPRINT  = "[A-F0-9]{64}"
-const BLOCK_UID    = INTEGER + "-" + FINGERPRINT
 const BLOCK_VERSION = "(10)"
 const TX_VERSION   = "(10)"
 const DIVIDEND     = "[1-9][0-9]{0,5}"
 const ZERO_OR_POSITIVE_INT = "0|[1-9][0-9]{0,18}"
+const BLOCK_UID    = "(" + ZERO_OR_POSITIVE_INT + ")-" + FINGERPRINT
 const RELATIVE_INTEGER = "(0|-?[1-9]\\d{0,18})"
 const FLOAT        = "\\d+\.\\d+"
 const POSITIVE_INT = "[1-9][0-9]{0,18}"
 const TIMESTAMP    = "[1-9][0-9]{0,18}"
 const BOOLEAN      = "[01]"
+const WS2PID       = "[0-9a-f]{8}"
+const SOFTWARE     = "[a-z0-9._-]{2,15}"
+const SOFT_VERSION = "[0-9a-z._-]{2,15}"
+const POW_PREFIX   = "([1-9]|[1-9][0-9]|[1-8][0-9][0-9])" // 1-899
 const SPECIAL_BLOCK = '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'
 const META_TS      = "META:TS:" + BLOCK_UID
 const COMMENT      = "[ a-zA-Z0-9-_:/;*\\[\\]()?!^\\+=@&~#{}|\\\\<>%.]{0,255}"
@@ -27,6 +44,15 @@ const UNLOCK       = "(SIG\\(" + INTEGER + "\\)|XHX\\(" + XUNLOCK + "\\))"
 const CONDITIONS   = "(&&|\\|\\|| |[()]|(SIG\\(" + PUBKEY + "\\)|(XHX\\([A-F0-9]{64}\\)|CLTV\\(" + CLTV_INTEGER + "\\)|CSV\\(" + CSV_INTEGER + "\\))))*"
 
 const BMA_REGEXP  = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/
+const BMATOR_REGEXP = /^BMATOR( ([a-z0-9]{16})\.onion)( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/
+const WS2P_REGEXP = /^WS2P (?:[1-9][0-9]* )?([a-f0-9]{8}) ([a-z_][a-z0-9-_.]*|[0-9.]+|[0-9a-f:]+) ([0-9]+)(?: (.+))?$/
+const WS2P_V2_REGEXP = /^WS2P ([1-9][0-9]*) ([a-f0-9]{8}) ([a-z_][a-z0-9-_.]*|[0-9.]+|[0-9a-f:]+) ([0-9]+)(?: (.+))?$/
+const WS2PTOR_REGEXP = /^WS2PTOR (?:[1-9][0-9]* )?([a-f0-9]{8}) ([a-z0-9-_.]*|[0-9.]+|[0-9a-f:]+.onion) ([0-9]+)(?: (.+))?$/
+const WS2PTOR_V2_REGEXP = /^WS2PTOR ([1-9][0-9]*) ([a-f0-9]{8}) ([a-z0-9-_.]*|[0-9.]+|[0-9a-f:]+.onion) ([0-9]+)(?: (.+))?$/
+const WS_FULL_ADDRESS_ONION_REGEX = /^(?:wss?:\/\/)(?:www\.)?([0-9a-z]{16}\.onion)(:[0-9]+)?$/
+const IPV4_REGEXP = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
+const IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/;
+const HOST_ONION_REGEX = /^(?:www\.)?([0-9a-z]{16}\.onion)$/
 
 const MAXIMUM_LEN_OF_COMPACT_TX = 100
 const MAXIMUM_LEN_OF_OUTPUT = 2000
@@ -63,8 +89,15 @@ export const CommonConstants = {
     CURRENCY,
     PUBKEY,
     INTEGER,
+    BLOCKSTAMP: BLOCK_UID,
     FINGERPRINT,
-    TIMESTAMP
+    TIMESTAMP,
+    WS2PID,
+    SOFTWARE,
+    SOFT_VERSION,
+    POW_PREFIX,
+    ZERO_OR_POSITIVE_INT,
+    SIGNATURE
   },
 
   BLOCK_GENERATED_VERSION: 10,
@@ -76,6 +109,15 @@ export const CommonConstants = {
   SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS: 3,
 
   BMA_REGEXP,
+  BMATOR_REGEXP,
+  WS2P_REGEXP,
+  WS2P_V2_REGEXP,
+  WS2PTOR_REGEXP,
+  WS2PTOR_V2_REGEXP,
+  WS_FULL_ADDRESS_ONION_REGEX,
+  IPV4_REGEXP,
+  IPV6_REGEXP,
+  HOST_ONION_REGEX,
   PUBLIC_KEY: exact(PUBKEY),
   INTEGER: /^\d+$/,
   BASE58: exact(BASE58),
@@ -93,6 +135,9 @@ export const CommonConstants = {
   MAXIMUM_LEN_OF_COMPACT_TX,
   MAXIMUM_LEN_OF_OUTPUT,
   MAXIMUM_LEN_OF_UNLOCK,
+
+  POW_TURN_DURATION_PC: 100,
+  POW_TURN_DURATION_ARM: 500,
 
   PROOF_OF_WORK: {
     UPPER_BOUND: [
@@ -131,6 +176,8 @@ export const CommonConstants = {
     CANNOT_ROOT_BLOCK_NO_MEMBERS:         { httpCode: 400, uerr: { ucode: 2018, message: "Wrong new block: cannot make a root block without members" }},
     IDENTITY_WRONGLY_SIGNED:              { httpCode: 400, uerr: { ucode: 2019, message: "Weird, the signature is wrong and in the database." }},
     TOO_OLD_IDENTITY:                     { httpCode: 400, uerr: { ucode: 2020, message: "Identity has expired and cannot be written in the blockchain anymore." }},
+    NEWER_PEER_DOCUMENT_AVAILABLE:        { httpCode: 409, uerr: { ucode: 2022, message: "A newer peer document is available" }},
+    PEER_DOCUMENT_ALREADY_KNOWN:          { httpCode: 400, uerr: { ucode: 2023, message: "Peer document already known" }},
     TX_INPUTS_OUTPUTS_NOT_EQUAL:          { httpCode: 400, uerr: { ucode: 2024, message: "Transaction inputs sum must equal outputs sum" }},
     TX_OUTPUT_SUM_NOT_EQUALS_PREV_DELTAS: { httpCode: 400, uerr: { ucode: 2025, message: "Transaction output base amount does not equal previous base deltas" }},
     BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK:    { httpCode: 400, uerr: { ucode: 2026, message: "Blockstamp does not match a block" }},
@@ -251,6 +298,8 @@ export const CommonConstants = {
     BLOCK: find("Block: (" + INTEGER + "-" + FINGERPRINT + ")"),
     SPECIAL_BLOCK
   },
+
+  BLOCK_MAX_TX_CHAINING_DEPTH: 5
 }
 
 function exact (regexpContent:string) {

@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {ConfDTO} from "../dto/ConfDTO"
 import * as stream from "stream"
 import {DBPeer} from "../dal/sqliteDAL/PeerDAL"
@@ -8,6 +21,7 @@ import {CertificationDTO} from "../dto/CertificationDTO"
 import {MembershipDTO} from "../dto/MembershipDTO"
 import {TransactionDTO} from "../dto/TransactionDTO"
 import {PeerDTO} from "../dto/PeerDTO"
+import {CommonConstants} from "../common-libs/constants"
 
 const request = require('request');
 const constants = require('../../lib/constants');
@@ -111,13 +125,29 @@ export class Multicaster extends stream.Transform {
       },
       getDocID: (doc:PeerDTO) => doc.keyID() + '#' + doc.blockNumber(),
       withIsolation: WITH_ISOLATION,
-      onError: (resJSON:{ peer:{ block:string, endpoints:string[] }}, peering:any, to:any) => {
-        const sentPeer = PeerDTO.fromJSONObject(peering)
-        if (PeerDTO.blockNumber(resJSON.peer.block) > sentPeer.blockNumber()) {
-          this.push({ outdated: true, peer: resJSON.peer });
-          logger.warn('Outdated peer document (%s) sent to %s', sentPeer.keyID() + '#' + sentPeer.blockNumber(), to);
+      onError: (resJSON:{
+        peer: {
+          block:string,
+          endpoints:string[]
+        },
+        ucode?:number,
+        message?:string
+      }, peering:any, to:any) => {
+        if (resJSON.ucode !== undefined && resJSON.ucode !== CommonConstants.ERRORS.NEWER_PEER_DOCUMENT_AVAILABLE.uerr.ucode) {
+          if (resJSON.ucode == CommonConstants.ERRORS.DOCUMENT_BEING_TREATED.uerr.ucode || resJSON.ucode == constants.ERRORS.PEER_DOCUMENT_ALREADY_KNOWN.uerr.ucode) {
+            return Promise.resolve()
+          } else {
+            throw Error(resJSON.message)
+          }
+        } else {
+          // Handle possibly outdated peering document
+          const sentPeer = PeerDTO.fromJSONObject(peering)
+          if (PeerDTO.blockNumber(resJSON.peer.block) > sentPeer.blockNumber()) {
+            this.push({ outdated: true, peer: resJSON.peer });
+            logger.warn('Outdated peer document (%s) sent to %s', sentPeer.keyID() + '#' + sentPeer.blockNumber(), to);
+          }
+          return Promise.resolve()
         }
-        return Promise.resolve();
       }
     })(doc, peers)
   }
@@ -154,17 +184,15 @@ export class Multicaster extends stream.Transform {
       try {
         if(!params.withIsolation || !(this.conf && this.conf.isolate)) {
           let theDoc = params.transform ? params.transform(doc) : doc;
-          logger.debug('--> new %s to be sent to %s peer(s)', params.type, peers.length);
           if (params.getDocID) {
-            logger.info('POST %s %s', params.type, params.getDocID(theDoc));
+            logger.info('POST %s %s to %s peers', params.type, params.getDocID(theDoc), peers.length)
           } else {
-            logger.info('POST %s', params.type);
+            logger.info('POST %s to %s peers', params.type, peers.length);
           }
           // Parallel treatment for superfast propagation
           await Promise.all(peers.map(async (p) => {
             let peer = PeerDTO.fromJSONObject(p)
             const namedURL = peer.getNamedURL();
-            logger.debug(' `--> to peer %s [%s] (%s)', peer.keyID(), peer.member ? 'member' : '------', namedURL);
             try {
               await this.post(peer, params.uri, params.getObj(theDoc))
             } catch (e) {
@@ -173,7 +201,7 @@ export class Multicaster extends stream.Transform {
                   const json = JSON.parse(e.body);
                   await params.onError(json, doc, namedURL)
                 } catch (ex) {
-                  logger.warn('Could not reach %s', namedURL);
+                  logger.warn('Could not reach %s, reason: %s', namedURL, (ex && ex.message || ex))
                 }
               }
             }

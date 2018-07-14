@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
 
 const co = require('co')
@@ -45,13 +58,13 @@ describe('PoW block prover', () => {
     const proof = yield prover.prove(block, 24, forcedTime)
     proof.should.containEql({
       version: 10,
-      nonce: 34000000000010,
+      nonce: 340000000000034,
       number: 35,
       time: 1,
       currency: '',
       issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-      signature: 'iG9XEEIoGvCuFLRXqXIcGKFeK88K/A0J9MfKWAGvkRHtf6+VtMR/VDtPP67UzfnVdJb4QfMqrNsPMH2+7bTTAA==',
-      hash: '07573FEA1248562F47B1FA7DABDAF93C93B7328AA528F470B488249D5806F66D',
+      signature: 'E2sL6bFC9yOZSqBlSGYF158gsAXfJlWsHRHy1oVn3e7ZR6e6SXQ5Sq2fm1ex6Wv4BqO3n9qq0OHsxajUxshICg==',
+      hash: '03B176DE082DC451235763D4087305BBD01FD6B6C3248C74EF93B0839DFE9A05',
       parameters: '',
       previousHash: undefined,
       previousIssuer: undefined,
@@ -66,6 +79,19 @@ describe('PoW block prover', () => {
       certifications: [],
       transactions: []
     });
+  }));
+
+  it('should be able to use a prefix maxed at 899', () => co(function*(){
+    const block = {
+      number: 1,
+      issuer: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd'
+    }
+    const params = yield prover.changePoWPrefix('899')
+    params.should.deepEqual({ prefix: '899' })
+    const forcedTime = 1;
+    const proof = yield prover.prove(block, 1, forcedTime)
+    proof.nonce.should.equal(8990000000000001)
+    String(proof.nonce).should.have.length(16)
   }));
 
   it('should be able to stop a proof', () => co(function*(){

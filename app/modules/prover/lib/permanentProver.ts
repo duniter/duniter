@@ -1,14 +1,28 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {BlockGeneratorWhichProves} from "./blockGenerator"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {BlockProver} from "./blockProver"
-import {Constants} from "./constants"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {dos2unix} from "../../../lib/common-libs/dos2unix"
 import {parsers} from "../../../lib/common-libs/parsers/index"
 
+import {Server} from "../../../../server"
+
 const querablep = require('querablep');
 
-interface Querable<T> extends Promise<T> {
+export interface Querable<T> extends Promise<T> {
   isFulfilled(): boolean
   isResolved(): boolean
   isRejected(): boolean
@@ -29,12 +43,8 @@ export class PermanentProver {
   private lastComputedBlock:any = null
   private resolveContinuePromise:any = null
   private continuePromise:any = null
-  private pullingResolveCallback:any = null
-  private timeoutPullingCallback:any = null
-  private pullingFinishedPromise:Querable<any>|null = null
-  private timeoutPulling:any = null
 
-  constructor(private server:any) {
+  constructor(private server:Server) {
     this.logger = server.logger;
     this.conf = server.conf;
     this.prover = new BlockProver(server)
@@ -43,9 +53,6 @@ export class PermanentProver {
     // Promises triggering the prooving lopp
     this.resolveContinuePromise = null;
     this.continuePromise = new Promise((resolve) => this.resolveContinuePromise = resolve);
-    this.pullingResolveCallback = null
-    this.timeoutPullingCallback = null
-    this.pullingFinishedPromise = querablep(Promise.resolve());
 
     this.loops = 0;
 
@@ -53,34 +60,10 @@ export class PermanentProver {
   }
 
   allowedToStart() {
-    if (!this.permanencePromise || !this.permanencePromise.isFulfilled()) {
+    if (!this.permanencePromise || this.permanencePromise.isFulfilled()) {
       this.startPermanence()
     }
     this.resolveContinuePromise(true);
-  }
-
-  // When we detected a pulling, we stop the PoW loop
-  pullingDetected() {
-    if (this.pullingFinishedPromise && this.pullingFinishedPromise.isResolved()) {
-      this.pullingFinishedPromise = querablep(Promise.race([
-        // We wait for end of pulling signal
-        new Promise((res) => this.pullingResolveCallback = res),
-        // Security: if the end of pulling signal is not emitted after some, we automatically trigger it
-        new Promise((res) => this.timeoutPullingCallback = () => {
-          this.logger.warn('Pulling not finished after %s ms, continue PoW', Constants.PULLING_MAX_DURATION);
-          res();
-        })
-      ]));
-    }
-    // Delay the triggering of pulling timeout
-    if (this.timeoutPulling) {
-      clearTimeout(this.timeoutPulling);
-    }
-    this.timeoutPulling = setTimeout(this.timeoutPullingCallback, Constants.PULLING_MAX_DURATION);
-  }
-
-  pullingFinished() {
-    return this.pullingResolveCallback && this.pullingResolveCallback()
   }
 
   async startPermanence() {
@@ -120,11 +103,6 @@ export class PermanentProver {
           const trial = await this.server.getBcContext().getIssuerPersonalizedDifficulty(selfPubkey);
           this.checkTrialIsNotTooHigh(trial, current, selfPubkey);
           const lastIssuedByUs = current.issuer == selfPubkey;
-          if (this.pullingFinishedPromise && !this.pullingFinishedPromise.isFulfilled()) {
-            this.logger.warn('Waiting for the end of pulling...');
-            await this.pullingFinishedPromise;
-            this.logger.warn('Pulling done. Continue proof-of-work loop.');
-          }
           if (lastIssuedByUs && !this.promiseOfWaitingBetween2BlocksOfOurs) {
             this.promiseOfWaitingBetween2BlocksOfOurs = new Promise((resolve) => setTimeout(resolve, theConf.powDelay));
             this.logger.warn('Waiting ' + theConf.powDelay + 'ms before starting to compute next block...');
@@ -143,38 +121,52 @@ export class PermanentProver {
           /*******************
            * COMPUTING A BLOCK
            ******************/
-          await Promise.race([
 
-            // We still listen at eventual blockchain change
+          try {
+
+            let cancelAlreadyTriggered = false;
+
+            // The canceller
             (async () => {
               // If the blockchain changes
               await new Promise((resolve) => this.blockchainChangedResolver = resolve);
+              cancelAlreadyTriggered = true
               // Then cancel the generation
               await this.prover.cancel();
-            })(),
+            })()
 
-            // The generation
-            (async () => {
-              try {
+            let unsignedBlock = null, trial2 = 0
+            if (!cancelAlreadyTriggered) {
+              // The pushFIFO is here to get the difficulty level while excluding any new block to be resolved.
+              // Without it, a new block could be added meanwhile and would make the difficulty wrongly computed.
+              await this.server.BlockchainService.pushFIFO('generatingNextBlock', async () => {
                 const current = await this.server.dal.getCurrentBlockOrNull();
                 const selfPubkey = this.server.keyPair.publicKey;
-                const trial2 = await this.server.getBcContext().getIssuerPersonalizedDifficulty(selfPubkey);
-                this.checkTrialIsNotTooHigh(trial2, current, selfPubkey);
-                this.lastComputedBlock = await this.generator.makeNextBlock(null, trial2);
-                try {
-                  const obj = parsers.parseBlock.syncWrite(dos2unix(this.lastComputedBlock.getRawSigned()));
-                  await this.server.writeBlock(obj)
-                  await new Promise(res => {
-                    this.server.once('bcEvent', () => res())
-                  })
-                } catch (err) {
-                  this.logger.warn('Proof-of-work self-submission: %s', err.message || err);
+                if (!cancelAlreadyTriggered) {
+                  trial2 = await this.server.getBcContext().getIssuerPersonalizedDifficulty(selfPubkey)
                 }
-              } catch (e) {
-                this.logger.warn('The proof-of-work generation was canceled: %s', (e && e.message) || e || 'unkonwn reason');
+                this.checkTrialIsNotTooHigh(trial2, current, selfPubkey);
+                if (!cancelAlreadyTriggered) {
+                  unsignedBlock = await this.generator.nextBlock()
+                }
+              });
+              if (!cancelAlreadyTriggered) {
+                this.lastComputedBlock = await this.prover.prove(unsignedBlock, trial2, null)
               }
-            })()
-          ])
+              try {
+                const obj = parsers.parseBlock.syncWrite(dos2unix(this.lastComputedBlock.getRawSigned()));
+                await this.server.writeBlock(obj)
+                await new Promise(res => {
+                  this.server.once('bcEvent', () => res())
+                })
+              } catch (err) {
+                this.logger.warn('Proof-of-work self-submission: %s', err.message || err);
+              }
+            }
+          } catch (e) {
+            this.logger.warn('The proof-of-work generation was canceled: %s', (e && e.message) || (e && e.uerr && e.uerr.message) || e || 'unkonwn reason');
+          }
+
         } else {
 
           /*******************
@@ -228,11 +220,14 @@ export class PermanentProver {
 
   async stopEveryting() {
     // First: avoid continuing the main loop
+    this.resolveContinuePromise(true)
     this.continuePromise = new Promise((resolve) => this.resolveContinuePromise = resolve);
     // Second: stop any started proof
     await this.prover.cancel();
     // If we were waiting, stop it and process the continuous generation
     this.blockchainChangedResolver && this.blockchainChangedResolver();
+    const farm = await this.prover.getWorker()
+    await farm.shutDownEngine()
   }
 
   private checkTrialIsNotTooHigh(trial:number, current:DBBlock, selfPubkey:string) {

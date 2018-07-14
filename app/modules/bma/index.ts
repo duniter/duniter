@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
 import {NetworkConfDTO} from "../../lib/dto/ConfDTO"
 import {Server} from "../../../server"
@@ -6,9 +19,11 @@ import {BmaApi, Network} from "./lib/network"
 import {UpnpApi} from "./lib/upnp"
 import {BMAConstants} from "./lib/constants"
 import {BMALimitation} from "./lib/limiter"
+import {PeerDTO} from "../../lib/dto/PeerDTO"
 
 const Q = require('q');
 const os = require('os');
+const rp = require('request-promise');
 const async = require('async');
 const _ = require('underscore');
 const upnp = require('./lib/upnp').Upnp
@@ -25,6 +40,10 @@ export const BmaDependency = {
     cliOptions: [
       { value: '--upnp', desc: 'Use UPnP to open remote port.' },
       { value: '--noupnp', desc: 'Do not use UPnP to open remote port.' },
+      { value: '--bma',   desc: 'Enables BMA API and its crawlers.' },
+      { value: '--nobma', desc: 'Disables BMA API and its crawlers.' },
+      { value: '--bma-with-crawler',   desc: 'Enables BMA Crawler.' },
+      { value: '--bma-without-crawler', desc: 'Disable BMA Crawler.' },
       { value: '-p, --port <port>', desc: 'Port to listen for requests', parser: (val:string) => parseInt(val) },
       { value: '--ipv4 <address>', desc: 'IPv4 interface to listen for requests' },
       { value: '--ipv6 <address>', desc: 'IPv6 interface to listen for requests' },
@@ -38,6 +57,7 @@ export const BmaDependency = {
 
       'network': async (conf:NetworkConfDTO, program:any, logger:any) => {
         await Q.nbind(networkConfiguration, null, conf, logger)()
+        conf.nobma = false
         networkWizardDone = true;
       },
 
@@ -53,6 +73,25 @@ export const BmaDependency = {
 
       onLoading: async (conf:NetworkConfDTO, program:any, logger:any) => {
 
+        // If the usage of BMA hasn't been defined yet
+        if (conf.nobma === undefined) {
+          // Do we have an existing BMA conf?
+          if (conf.port !== undefined
+            || conf.ipv4 !== undefined
+            || conf.ipv6 !== undefined
+            || conf.remoteport !== undefined
+            || conf.remotehost !== undefined
+            || conf.remoteipv4 !== undefined
+            || conf.remoteipv6 !== undefined) {
+            conf.nobma = false
+          } else {
+            conf.nobma = true
+          }
+        }
+
+        // If bmaWithCrawler hasn't been defined yet
+        if (conf.bmaWithCrawler === undefined) { conf.bmaWithCrawler = false }
+
         if (program.port !== undefined) conf.port = parseInt(program.port)
         if (program.ipv4 !== undefined) conf.ipv4 = program.ipv4;
         if (program.ipv6 !== undefined) conf.ipv6 = program.ipv6;
@@ -60,6 +99,10 @@ export const BmaDependency = {
         if (program.remote4 !== undefined) conf.remoteipv4 = program.remote4;
         if (program.remote6 !== undefined) conf.remoteipv6 = program.remote6;
         if (program.remotep !== undefined) conf.remoteport = parseInt(program.remotep)
+        if (program.bma !== undefined) conf.nobma = false
+        if (program.nobma !== undefined) conf.nobma = true
+        if (program.bmaWithCrawler !== undefined) conf.bmaWithCrawler = true
+        if (program.bmaWithoutCrawler !== undefined) conf.bmaWithCrawler = false
 
         if (!conf.ipv4) delete conf.ipv4;
         if (!conf.ipv6) delete conf.ipv6;
@@ -79,12 +122,8 @@ export const BmaDependency = {
         }
 
         // Network autoconf
-        const autoconfNet = program.autoconf
-          || !(conf.ipv4 || conf.ipv6)
-          || !(conf.remoteipv4 || conf.remoteipv6 || conf.remotehost)
-          || !(conf.port && conf.remoteport);
-        if (autoconfNet) {
-          await Q.nbind(networkReconfiguration, null)(conf, autoconfNet, logger, program.noupnp);
+        if (program.autoconf) {
+          await Q.nbind(networkReconfiguration, null)(conf, true, logger, program.noupnp);
         }
 
         // Default value
@@ -116,14 +155,16 @@ export const BmaDependency = {
         }
 
         // Configuration errors
-        if(!conf.ipv4 && !conf.ipv6){
-          throw new Error("No interface to listen to.");
-        }
-        if(!conf.remoteipv4 && !conf.remoteipv6 && !conf.remotehost){
-          throw new Error('No interface for remote contact.');
-        }
-        if (!conf.remoteport) {
-          throw new Error('No port for remote contact.');
+        if (!conf.nobma) {
+          if(!conf.ipv4 && !conf.ipv6){
+            throw new Error("No interface to listen to.");
+          }
+          if(!conf.remoteipv4 && !conf.remoteipv6 && !conf.remotehost){
+            throw new Error('No interface for remote contact.');
+          }
+          if (!conf.remoteport) {
+            throw new Error('No port for remote contact.');
+          }
         }
       },
 
@@ -138,7 +179,10 @@ export const BmaDependency = {
 
     service: {
       input: (server:Server, conf:NetworkConfDTO, logger:any) => {
-        server.getMainEndpoint = () => Promise.resolve(getEndpoint(conf))
+        if (!conf.nobma) {
+          server.addEndpointsDefinitions(() => Promise.resolve(getEndpoint(conf)))
+          server.addWrongEndpointFilter((endpoints:string[]) => getWrongEndpoints(endpoints, server.conf.pair.pub))
+        }
         return new BMAPI(server, conf, logger)
       }
     },
@@ -149,6 +193,25 @@ export const BmaDependency = {
       getMainEndpoint: (conf:NetworkConfDTO) => Promise.resolve(getEndpoint(conf))
     }
   }
+}
+
+async function getWrongEndpoints(endpoints:string[], selfPubkey:string) {
+  const wrongs:string[] = []
+  await Promise.all(endpoints.map(async (theEndpoint:string) => {
+    let remote = PeerDTO.endpoint2host(theEndpoint)
+    try {
+      // We test only BMA APIs, because other may exist and we cannot judge against them
+      if (theEndpoint.startsWith('BASIC_MERKLED_API')) {
+        let answer = await rp('http://' + remote + '/network/peering', { json: true });
+        if (!answer || answer.pubkey != selfPubkey) {
+          throw Error("Not same pubkey as local instance");
+        }
+      }
+    } catch (e) {
+      wrongs.push(theEndpoint)
+    }
+  }))
+  return wrongs
 }
 
 export class BMAPI extends stream.Transform {
@@ -165,6 +228,10 @@ export class BMAPI extends stream.Transform {
   }
 
   startService = async () => {
+    if (this.conf.nobma) {
+      // Disable BMA
+      return Promise.resolve()
+    }
     this.bmapi = await bma(this.server, null, this.conf.httplogs, this.logger);
     await this.bmapi.openConnections();
 
@@ -176,7 +243,7 @@ export class BMAPI extends stream.Transform {
     }
     if (this.server.conf.upnp) {
       try {
-        this.upnpAPI = await upnp(this.server.conf.port, this.server.conf.remoteport, this.logger);
+        this.upnpAPI = await upnp(this.server.conf.port, this.server.conf.remoteport, this.logger, this.server.conf);
         this.upnpAPI.startRegular();
         const gateway = await this.upnpAPI.findGateway();
         if (gateway) {
@@ -191,6 +258,10 @@ export class BMAPI extends stream.Transform {
   }
 
   stopService = async () => {
+    if (this.conf.nobma) {
+      // Disable BMA
+      return Promise.resolve()
+    }
     if (this.bmapi) {
       await this.bmapi.closeConnections();
     }
@@ -203,6 +274,9 @@ export class BMAPI extends stream.Transform {
 function getEndpoint(theConf:NetworkConfDTO) {
   let endpoint = 'BASIC_MERKLED_API';
   if (theConf.remotehost) {
+    if (theConf.remotehost.match(BMAConstants.HOST_ONION_REGEX)) {
+      endpoint = 'BMATOR';
+    }
     endpoint += ' ' + theConf.remotehost;
   }
   if (theConf.remoteipv4) {

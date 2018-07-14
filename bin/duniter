@@ -1,29 +1,29 @@
 #!/usr/bin/env node
 "use strict";
 
-const heapdump = require('heapdump'); // Allow to take heap snapshots on will with "kill -USR2 <pid>" --> generates a heapdump-<id>.heapsnapshot file from where duniter was launched
 const co = require('co');
-const duniter = require('../index');
-const stack = duniter.statics.autoStack();
+const logger = require("../app/lib/logger").NewLogger();
+
+// Specific errors handling
+process.on('uncaughtException', (err) => {
+  // Dunno why this specific exception is not caught
+  if (err.code && err.code !== "EADDRNOTAVAIL" && err.code !== "EINVAL" && err.code !== "ENOENT") {
+    logger.error(err.stack || err.message || err);
+    process.exit(2);
+  }
+});
 
 return co(function*() {
 
-  // Specific errors handling
-  process.on('uncaughtException', (err) => {
-    // Dunno why this specific exception is not caught
-    if (err.code !== "EADDRNOTAVAIL" && err.code !== "EINVAL" && err.code !== "ENOENT") {
-      duniter.statics.logger.error(err);
-      process.exit(2);
-    }
-  });
-
   try {
+    const duniter = require('../index');
+    const stack = duniter.statics.autoStack();
     yield stack.executeStack(process.argv);
     // Everything went well, close Duniter quietly.
     process.exit();
   } catch (e) {
     // If an unhandled error occured
-    duniter.statics.logger.error(e);
+    logger.error(e.stack || e.message || e);
     process.exit(1);
   } finally {
     // If we did not succeed to close before, force close with error.

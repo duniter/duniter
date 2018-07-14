@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {SQLiteDriver} from "../../drivers/SQLiteDriver";
 import {AbstractIndex} from "../AbstractIndex";
 import {Indexer, MindexEntry} from "../../../indexer";
@@ -69,5 +82,13 @@ export class MIndexDAL extends AbstractIndex<MindexEntry> {
 
   async removeBlock(blockstamp:string) {
     return this.exec('DELETE FROM ' + this.table + ' WHERE written_on = \'' + blockstamp + '\'')
+  }
+
+  async getRevokedPubkeys() {
+    // All those who has been revoked. Make one result per pubkey.
+    const revovedMemberships = await this.sqlFind({ revoked_on: { $null: false} });
+
+    // Filter on those to be revoked, return their pubkey
+    return revovedMemberships.map((entry:MindexEntry) => entry.pub);
   }
 }

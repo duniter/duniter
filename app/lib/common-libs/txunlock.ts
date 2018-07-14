@@ -1,8 +1,21 @@
-"use strict";
-import {hashf} from "../common"
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
 
-let Parser = require("jison").Parser;
-let buid = require('../../../app/lib/common-libs/buid').Buid
+import {hashf} from "../common"
+import {evalParams} from "../rules/global_rules"
+import {TxSignatureResult} from "../dto/TransactionDTO"
+
+let Parser = require("jison").Parser
 
 let grammar = {
   "lex": {
@@ -42,33 +55,91 @@ let grammar = {
       [ "( e )",   "$$ = $2;" ]
     ]
   }
-};
+}
 
-export function unlock(conditionsStr:string, executions:any, metadata:any) {
+export interface UnlockMetadata {
+  currentTime?:number
+  elapsedTime?:number
+}
+
+export function unlock(conditionsStr:string, unlockParams:string[], sigResult:TxSignatureResult, metadata?:UnlockMetadata): boolean|null {
+
+  const params = evalParams(unlockParams, conditionsStr, sigResult)
+  let parser = new Parser(grammar)
+  let nbFunctions = 0
+
+  parser.yy = {
+    i: 0,
+    sig: function (pubkey:string) {
+      // Counting functions
+      nbFunctions++
+      // Make the test
+      let success = false
+      let i = 0
+      while (!success && i < params.length) {
+        const p = params[i]
+        success = p.successful && p.funcName === 'SIG' && p.parameter === pubkey
+        i++
+      }
+      return success
+    },
+    xHx: function(hash:string) {
+      // Counting functions
+      nbFunctions++
+      // Make the test
+      let success = false
+      let i = 0
+      while (!success && i < params.length) {
+        const p = params[i]
+        success = p.successful && p.funcName === 'XHX' && hashf(p.parameter) === hash
+        i++
+      }
+      return success
+    },
+    cltv: function(deadline:string) {
+      // Counting functions
+      nbFunctions++
+      // Make the test
+      return metadata && metadata.currentTime && metadata.currentTime >= parseInt(deadline)
+    },
+    csv: function(amountToWait:string) {
+      // Counting functions
+      nbFunctions++
+      // Make the test
+      return metadata && metadata.elapsedTime && metadata.elapsedTime >= parseInt(amountToWait)
+    }
+  }
+
+  try {
+    const areAllValidParameters = params.reduce((success, p) => success && !!(p.successful), true)
+    if (!areAllValidParameters) {
+      throw "All parameters must be successful"
+    }
+    const unlocked = parser.parse(conditionsStr)
+    if (unlockParams.length > nbFunctions) {
+      throw "There must be at most as much params as function calls"
+    }
+    return unlocked
+  } catch(e) {
+    return null
+  }
+}
+
+export function checkGrammar(conditionsStr:string): boolean|null {
 
   let parser = new Parser(grammar);
 
   parser.yy = {
     i: 0,
-    sig: function (pubkey:string) {
-      let sigParam = executions[this.i++];
-      return (sigParam && pubkey === sigParam.pubkey && sigParam.sigOK) || false;
-    },
-    xHx: function(hash:string) {
-      let xhxParam = executions[this.i++];
-      return hashf(xhxParam) === hash;
-    },
-    cltv: function(deadline:string) {
-      return metadata.currentTime && metadata.currentTime >= parseInt(deadline);
-    },
-    csv: function(amountToWait:string) {
-      return metadata.elapsedTime && metadata.elapsedTime >= parseInt(amountToWait);
-    }
-  };
+    sig: () => true,
+    xHx: () => true,
+    cltv: () => true,
+    csv: () => true
+  }
 
   try {
-    return parser.parse(conditionsStr);
+    return parser.parse(conditionsStr)
   } catch(e) {
-    return false;
+    return null
   }
 }

@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {SQLiteDriver} from "../dal/drivers/SQLiteDriver"
 import {CFSCore} from "../dal/fileDALs/CFSCore"
 import {WoTBObject} from "../wot"
@@ -28,7 +41,7 @@ const dir = module.exports = {
 
   getHome: (profile:string|null = null, directory:string|null = null) => getHomePath(profile, directory),
 
-  getHomeFS: async (isMemory:boolean, theHome:string) => {
+  getHomeFS: async (isMemory:boolean, theHome:string, makeTree = true) => {
     const home = theHome || dir.getHome();
     const params:any = {
       home: home
@@ -38,7 +51,9 @@ const dir = module.exports = {
     } else {
       params.fs = qfs;
     }
-    await params.fs.makeTree(home);
+    if (makeTree) {
+      await params.fs.makeTree(home)
+    }
     return params;
   },
 

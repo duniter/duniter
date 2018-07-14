@@ -1,6 +1,20 @@
-import {AbstractController} from "./AbstractController";
-import {BMAConstants} from "../constants";
-import {HttpMerkleOfPeers, HttpPeer, HttpPeers} from "../dtos";
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+import {AbstractController} from "./AbstractController"
+import {BMAConstants} from "../constants"
+import {HttpMerkleOfPeers, HttpPeer, HttpPeers, HttpWS2PHeads, HttpWS2PInfo} from "../dtos"
+import {WS2PHead} from "../../../ws2p/lib/WS2PCluster"
 
 const _                = require('underscore');
 const http2raw         = require('../http2raw');
@@ -63,5 +77,30 @@ export class NetworkBinding extends AbstractController {
           'endpoints');
       })
     };
+  }
+
+  async ws2pInfo(): Promise<HttpWS2PInfo> {
+    const cluster = this.server.ws2pCluster
+    let level1 = 0
+    let level2 = 0
+    if (cluster) {
+      level1 = await cluster.clientsCount()
+      level2 = await cluster.servedCount()
+    }
+    return {
+      peers: {
+        level1,
+        level2
+      }
+    };
+  }
+
+  async ws2pHeads(): Promise<HttpWS2PHeads> {
+    const cluster = this.server.ws2pCluster
+    let heads: WS2PHead[] = []
+    if (cluster) {
+      heads = await cluster.getKnownHeads()
+    }
+    return { heads }
   }
 }

@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
 
 const co = require('co');
@@ -8,7 +21,7 @@ const constants = require('../../app/lib/constants');
 const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods.bma;
 const toolbox   = require('./tools/toolbox');
 const node   = require('./tools/node');
-const user   = require('./tools/user');
+const TestUser = require('./tools/TestUser').TestUser
 const unit   = require('./tools/unit');
 const http   = require('./tools/http');
 
@@ -35,8 +48,8 @@ describe("Testing transactions", function() {
       medianTimeBlocks: 1
     });
 
-    tic = user('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
-    toc = user('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
+    tic = new TestUser('tic', { pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV', sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'}, { server: s1 });
+    toc = new TestUser('toc', { pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'}, { server: s1 });
 
     yield s1.initDalBmaConnections();
     // Self certifications
@@ -193,8 +206,8 @@ describe("Testing transactions", function() {
       (yield s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(4); // As well as tic
       let tx3 = yield tic.prepareUTX(tx2, ['XHX(1872767826647264) SIG(0)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong', blockstamp: [current.number, current.hash].join('-') });
       let tx4 = yield toc.prepareUTX(tx2, ['XHX(1872767826647264) SIG(0)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'ok', blockstamp: [current.number, current.hash].join('-') });
-      let tx5 = yield tic.prepareMTX(tx2, toc, ['XHX(1872767826647264) SIG(1) SIG(0) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789) XHX(123456789)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'multi OK', blockstamp: [current.number, current.hash].join('-') });
-      let tx6 = yield toc.prepareMTX(tx2, tic, ['XHX(1872767826647264) SIG(1) SIG(0)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'multi WRONG', blockstamp: [current.number, current.hash].join('-') });
+      let tx5 = yield tic.prepareMTX(tx2, toc, ['XHX(1872767826647264) SIG(1) SIG(0)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'multi OK', blockstamp: [current.number, current.hash].join('-') });
+      let tx6 = yield toc.prepareMTX(tx2, tic, ['XHX(1872767826647264) SIG(1) SIG(0) SIG(0) SIG(0)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'multi WRONG', blockstamp: [current.number, current.hash].join('-') });
       // nLocktime
       let tx7 = yield tic.prepareMTX(tx2, toc, ['XHX(1872767826647264) SIG(1) SIG(0)'], [{ qty: 1200, base: 0, lock: 'SIG(' + toc.pub + ')' }], { comment: 'wrong locktime', locktime: 100, blockstamp: [current.number, current.hash].join('-') });
       yield unit.shouldFail(toc.sendTX(tx3), 'Wrong unlocker in transaction');

@@ -1,9 +1,22 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict"
-import {DuniterBlockchain} from "../blockchain/DuniterBlockchain"
-import {BlockDTO} from "../dto/BlockDTO"
-import {DBTransaction} from "../db/DBTransaction"
-import {Indexer} from "../indexer"
-import {CurrencyConfDTO} from "../dto/ConfDTO"
+import {DuniterBlockchain} from "../blockchain/DuniterBlockchain";
+import {BlockDTO} from "../dto/BlockDTO";
+import {DBTransaction} from "../db/DBTransaction";
+import {Indexer} from "../indexer";
+import {CurrencyConfDTO} from "../dto/ConfDTO";
 
 const _ = require('underscore')
 const constants = require('../constants')
@@ -88,7 +101,7 @@ export class QuickSynchronizer {
     return this.dal.updateTransactions(txs);
   }
 
-  async quickApplyBlocks(blocks:BlockDTO[], to: number | null): Promise<void> {
+  async quickApplyBlocks(blocks:BlockDTO[], to: number): Promise<void> {
 
     sync_memoryDAL.sindexDAL = { getAvailableForConditions: (conditions:string) => this.dal.sindexDAL.getAvailableForConditions(conditions) }
     let blocksToSave: BlockDTO[] = [];
@@ -103,18 +116,15 @@ export class QuickSynchronizer {
         sync_currConf = BlockDTO.getConf(block);
       }
 
-      if (block.number != to) {
+      if (block.number <= to - this.conf.forksize) {
         blocksToSave.push(dto);
         const index:any = Indexer.localIndex(dto, sync_currConf);
         const local_iindex = Indexer.iindex(index);
         const local_cindex = Indexer.cindex(index);
         const local_sindex = Indexer.sindex(index);
         const local_mindex = Indexer.mindex(index);
-        sync_iindex = sync_iindex.concat(local_iindex);
-        sync_cindex = sync_cindex.concat(local_cindex);
-        sync_mindex = sync_mindex.concat(local_mindex);
 
-        const HEAD = await Indexer.quickCompleteGlobalScope(block, sync_currConf, sync_bindex, sync_iindex, sync_mindex, sync_cindex, {
+        const HEAD = await Indexer.quickCompleteGlobalScope(block, sync_currConf, sync_bindex, local_iindex, local_mindex, local_cindex, {
           getBlock: (number: number) => {
             return Promise.resolve(sync_allBlocks[number]);
           },
@@ -126,8 +136,11 @@ export class QuickSynchronizer {
 
         // Remember expiration dates
         for (const entry of index) {
-          if (entry.op === 'CREATE' && (entry.expires_on || entry.revokes_on)) {
-            sync_expires.push(entry.expires_on || entry.revokes_on);
+          if (entry.expires_on) {
+            sync_expires.push(entry.expires_on)
+          }
+          if (entry.revokes_on) {
+            sync_expires.push(entry.revokes_on)
           }
         }
         sync_expires = _.uniq(sync_expires);
@@ -142,18 +155,16 @@ export class QuickSynchronizer {
           || block.certifications.length
           || block.transactions.length
           || block.medianTime >= sync_nextExpiring) {
-          // logger.warn('>> Block#%s', block.number)
+          const nextExpiringChanged = block.medianTime >= sync_nextExpiring
 
           for (let i = 0; i < sync_expires.length; i++) {
             let expire = sync_expires[i];
-            if (block.medianTime > expire) {
+            if (block.medianTime >= expire) {
               sync_expires.splice(i, 1);
               i--;
             }
           }
-          let currentNextExpiring = sync_nextExpiring
-          sync_nextExpiring = sync_expires.reduce((max, value) => max ? Math.min(max, value) : value, sync_nextExpiring);
-          const nextExpiringChanged = currentNextExpiring !== sync_nextExpiring
+          sync_nextExpiring = sync_expires.reduce((max, value) => max ? Math.min(max, value) : value, 9007199254740991); // Far far away date
 
           // Fills in correctly the SINDEX
           await Promise.all(_.where(sync_sindex.concat(local_sindex), { op: 'UPDATE' }).map(async (entry: any) => {
@@ -168,12 +179,12 @@ export class QuickSynchronizer {
           await this.dal.iindexDAL.insertBatch(sync_iindex);
           await this.dal.sindexDAL.insertBatch(sync_sindex);
           await this.dal.cindexDAL.insertBatch(sync_cindex);
-          sync_mindex = [];
-          sync_iindex = [];
-          sync_cindex = [];
-          sync_sindex = local_sindex;
+          sync_iindex = local_iindex
+          sync_cindex = local_cindex
+          sync_mindex = local_mindex
+          sync_sindex = local_sindex
 
-          sync_sindex = sync_sindex.concat(await Indexer.ruleIndexGenDividend(HEAD, this.dal));
+          sync_sindex = sync_sindex.concat(await Indexer.ruleIndexGenDividend(HEAD, local_iindex, this.dal));
           sync_sindex = sync_sindex.concat(await Indexer.ruleIndexGarbageSmallAccounts(HEAD, sync_sindex, sync_memoryDAL));
           if (nextExpiringChanged) {
             sync_cindex = sync_cindex.concat(await Indexer.ruleIndexGenCertificationExpiry(HEAD, this.dal));
@@ -185,25 +196,30 @@ export class QuickSynchronizer {
           // Update balances with UD + local garbagings
           await this.blockchain.updateWallets(sync_sindex, sync_memoryDAL)
 
-          // --> Update links
-          await this.dal.updateWotbLinks(local_cindex.concat(sync_cindex));
-
-          // Flush the INDEX again
-          await this.dal.mindexDAL.insertBatch(sync_mindex);
+          // Flush the INDEX again (needs to be done *before* the update of wotb links because of block#0)
           await this.dal.iindexDAL.insertBatch(sync_iindex);
+          await this.dal.mindexDAL.insertBatch(sync_mindex);
           await this.dal.sindexDAL.insertBatch(sync_sindex);
           await this.dal.cindexDAL.insertBatch(sync_cindex);
-          sync_mindex = [];
+
+          // --> Update links
+          await this.dal.updateWotbLinks(local_cindex.concat(sync_cindex));
           sync_iindex = [];
+          sync_mindex = [];
           sync_cindex = [];
           sync_sindex = [];
 
           // Create/Update nodes in wotb
           await this.blockchain.updateMembers(block, this.dal)
+        } else {
+          // Concat the results to the pending data
+          sync_iindex = sync_iindex.concat(local_iindex);
+          sync_cindex = sync_cindex.concat(local_cindex);
+          sync_mindex = sync_mindex.concat(local_mindex);
         }
 
         // Trim the bindex
-        sync_bindexSize = [
+        sync_bindexSize = this.conf.forksize + [
           block.issuersCount,
           block.issuersFrame,
           this.conf.medianTimeBlocks,
@@ -239,6 +255,13 @@ export class QuickSynchronizer {
         const nonEmptyKeys = _.filter(conditions, (k: any) => sync_memoryWallets[k] && sync_memoryWallets[k].balance > 0)
         const walletsToRecord = nonEmptyKeys.map((k: any) => sync_memoryWallets[k])
         await this.dal.walletDAL.insertBatch(walletsToRecord)
+        for (const cond of conditions) {
+          delete sync_memoryWallets[cond]
+        }
+
+        if (block.number === 0) {
+          await this.blockchain.saveParametersForRoot(block, this.conf, this.dal)
+        }
 
         // Last block: cautious mode to trigger all the INDEX expiry mechanisms
         const { index, HEAD } = await DuniterBlockchain.checkBlock(dto, constants.WITH_SIGNATURES_AND_POW, this.conf, this.dal)

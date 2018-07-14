@@ -1,6 +1,22 @@
-"use strict";
-import {CommonConstants} from "../lib/common-libs/constants";
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+import {CommonConstants} from "../lib/common-libs/constants"
+import {NewLogger} from "../lib/logger"
+
+const querablep = require('querablep');
 const async = require('async');
+const logger = NewLogger()
 
 export class GlobalFifoPromise {
 
@@ -9,6 +25,7 @@ export class GlobalFifoPromise {
   }, 1)
 
   private operations:{ [k:string]: boolean } = {}
+  private currentPromise:any
 
   constructor() {
   }
@@ -29,7 +46,8 @@ export class GlobalFifoPromise {
       this.fifo.push(async (cb:any) => {
         // OK its the turn of given promise, execute it
         try {
-          const res = await p();
+          this.currentPromise = querablep(p())
+          const res = await this.currentPromise
           delete this.operations[operationId]
           // Finished, we end the function in the FIFO
           cb(null, res);
@@ -45,5 +63,17 @@ export class GlobalFifoPromise {
         resolve(res);
       });
     });
-  };
+  }
+
+  async closeFIFO() {
+    this.fifo.pause()
+    if (this.currentPromise && !this.currentPromise.isFulfilled()) {
+      logger.info('Waiting current task of documentFIFO to be finished...')
+      await this.currentPromise
+    }
+  }
+
+  remainingTasksCount() {
+    return this.fifo.length()
+  }
 }

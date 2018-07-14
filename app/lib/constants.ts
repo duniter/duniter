@@ -1,13 +1,24 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
 import {CommonConstants} from "./common-libs/constants"
 import {OtherConstants} from "./other_constants"
+import { ProverConstants } from '../modules/prover/lib/constants';
 
 const UDID2        = "udid2;c;([A-Z-]*);([A-Z-]*);(\\d{4}-\\d{2}-\\d{2});(e\\+\\d{2}\\.\\d{2}(\\+|-)\\d{3}\\.\\d{2});(\\d+)(;?)";
 const PUBKEY       = CommonConstants.FORMATS.PUBKEY
 const TIMESTAMP    = CommonConstants.FORMATS.TIMESTAMP
-
-const IPV4_REGEXP = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
-const IPV6_REGEXP = /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/;
 
 module.exports = {
 
@@ -40,6 +51,7 @@ module.exports = {
     INCONSISTENT_DB_MULTI_TXS_SAME_HASH:  { httpCode: 503, uerr: { ucode: 1012, message: "Several transactions written with the same hash." }},
     CLI_CALLERR_RESET:                    { httpCode: 503, uerr: { ucode: 1013, message: "Bad command: usage is `reset config`, `reset data`, `reset peers`, `reset stats` or `reset all`" }},
     CLI_CALLERR_CONFIG:                   { httpCode: 503, uerr: { ucode: 1014, message: "Bad command: usage is `config`." }},
+    CLI_CALLERR_WS2P:                     { httpCode: 503, uerr: { ucode: 1014, message: "Bad command: usage is `ws2p [subcmd]`." }},
 
     // Business errors
     NO_MATCHING_IDENTITY:                 { httpCode: 404, uerr: { ucode: 2001, message: "No matching identity" }},
@@ -60,8 +72,8 @@ module.exports = {
     IDENTITY_WRONGLY_SIGNED:              CommonConstants.ERRORS.IDENTITY_WRONGLY_SIGNED,
     TOO_OLD_IDENTITY:                     CommonConstants.ERRORS.TOO_OLD_IDENTITY,
     NO_IDTY_MATCHING_PUB_OR_UID:          { httpCode: 404, uerr: { ucode: 2021, message: "No identity matching this pubkey or uid" }},
-    NEWER_PEER_DOCUMENT_AVAILABLE:        { httpCode: 409, uerr: { ucode: 2022, message: "A newer peer document is available" }},
-    PEER_DOCUMENT_ALREADY_KNOWN:          { httpCode: 400, uerr: { ucode: 2023, message: "Peer document already known" }},
+    NEWER_PEER_DOCUMENT_AVAILABLE:        CommonConstants.ERRORS.NEWER_PEER_DOCUMENT_AVAILABLE,
+    PEER_DOCUMENT_ALREADY_KNOWN:          CommonConstants.ERRORS.PEER_DOCUMENT_ALREADY_KNOWN,
     TX_INPUTS_OUTPUTS_NOT_EQUAL:          CommonConstants.ERRORS.TX_INPUTS_OUTPUTS_NOT_EQUAL,
     TX_OUTPUT_SUM_NOT_EQUALS_PREV_DELTAS: CommonConstants.ERRORS.TX_OUTPUT_SUM_NOT_EQUALS_PREV_DELTAS,
     BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK:    CommonConstants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK,
@@ -79,8 +91,8 @@ module.exports = {
   },
 
   BMA_REGEXP: CommonConstants.BMA_REGEXP,
-  IPV4_REGEXP: IPV4_REGEXP,
-  IPV6_REGEXP: IPV6_REGEXP,
+  IPV4_REGEXP: CommonConstants.IPV4_REGEXP,
+  IPV6_REGEXP: CommonConstants.IPV6_REGEXP,
 
   TIMESTAMP: exact(TIMESTAMP),
   UDID2_FORMAT: exact(UDID2),
@@ -111,11 +123,16 @@ module.exports = {
     STATUS_INTERVAL: {
       UPDATE: 2, // Every X blocks
       MAX: 20 // MAX Y blocks
-    }
+    },
+    ONION_ENDPOINT_REGEX: new RegExp('(?:https?:\/\/)?(?:www)?(\S*?\.onion)(\/[-\w]*)*')
   },
   PROOF_OF_WORK: {
     EVALUATION: 1000,
-    UPPER_BOUND: CommonConstants.PROOF_OF_WORK.UPPER_BOUND.slice()
+    UPPER_BOUND: CommonConstants.PROOF_OF_WORK.UPPER_BOUND.slice(),
+    DEFAULT: {
+      CPU: ProverConstants.DEFAULT_CPU,
+      PREFIX: ProverConstants.DEFAULT_PEER_ID
+    }
   },
 
   DEFAULT_CURRENCY_NAME: "no_currency",

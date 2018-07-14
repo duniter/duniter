@@ -1,0 +1,9 @@
+Package: duniter
+Version: 1.6.25
+Depends: unzip
+Section: misc
+Priority: optional
+Architecture: all
+Installed-Size: 200000
+Maintainer: Cedric Moreau <cem.moreau@gmail.com>
+Description: Crypto-currency software to powering Ğ1 libre currency

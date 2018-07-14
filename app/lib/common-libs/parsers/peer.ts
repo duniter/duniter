@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {GenericParser} from "./GenericParser"
 import {CommonConstants} from "../../../lib/common-libs/constants"
 import {rawer} from "../../../lib/common-libs/index"
@@ -21,7 +34,7 @@ export class PeerParser extends GenericParser {
     // Removes trailing space
     if (obj.endpoints.length > 0)
       obj.endpoints.splice(obj.endpoints.length - 1, 1);
-    obj.getBMA = function() {
+    obj.getBMAOrNull = function() {
       let bma:any = null;
       obj.endpoints.forEach((ep:string) => {
         let matches = !bma && ep.match(CommonConstants.BMA_REGEXP);
@@ -34,7 +47,7 @@ export class PeerParser extends GenericParser {
           };
         }
       });
-      return bma || {};
+      return bma || null
     };
   }
 
@@ -49,7 +62,8 @@ export class PeerParser extends GenericParser {
       'BAD_PORT': 155,
       'BAD_FINGERPRINT': 156,
       'BAD_BLOCK': 157,
-      'NO_IP_GIVEN': 158
+      'NO_IP_GIVEN': 158,
+      'TOO_LONG_ENDPOINT': 159
     };
     if(!err){
       // Version
@@ -66,32 +80,42 @@ export class PeerParser extends GenericParser {
       if(!obj.block)
         err = {code: codes.BAD_BLOCK, message: "Incorrect Block field"};
     }
+    if(!err){
+      // Endpoint length
+      for (const ep of (obj.endpoints || [])) {
+        if (!err && ep.length > 255) {
+          err = {code: codes.TOO_LONG_ENDPOINT, message: "An endpoint has maximum 255 characters length."}
+        }
+      }
+    }
     // Basic Merkled API requirements
-    let bma = obj.getBMA();
-    if(!err){
-      // DNS
-      if(bma.dns && !bma.dns.match(/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/))
-        err = {code: codes.BAD_DNS, message: "Incorrect Dns field"};
-    }
-    if(!err){
-      // IPv4
-      if(bma.ipv4 && !bma.ipv4.match(/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/))
-        err = {code: codes.BAD_IPV4, message: "Incorrect IPv4 field"};
-    }
-    if(!err){
-      // IPv6
-      if(bma.ipv6 && !bma.ipv6.match(/^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/))
-        err = {code: codes.BAD_IPV6, message: "Incorrect IPv6 field"};
-    }
-    if(!err){
-      // IP
-      if(!bma.dns && !bma.ipv4 && !bma.ipv6)
-        err = {code: codes.NO_IP_GIVEN, message: "It must be given at least DNS or one IP, either v4 or v6"};
-    }
-    if(!err){
-      // Port
-      if(bma.port && !(bma.port + "").match(/^\d+$/))
-        err = {code: codes.BAD_PORT, message: "Port must be provided and match an integer format"};
+    let bma = obj.getBMAOrNull()
+    if (bma) {
+      if(!err){
+        // DNS
+        if(bma.dns && !bma.dns.match(/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/))
+          err = {code: codes.BAD_DNS, message: "Incorrect Dns field"};
+      }
+      if(!err){
+        // IPv4
+        if(bma.ipv4 && !bma.ipv4.match(/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/))
+          err = {code: codes.BAD_IPV4, message: "Incorrect IPv4 field"};
+      }
+      if(!err){
+        // IPv6
+        if(bma.ipv6 && !bma.ipv6.match(/^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/))
+          err = {code: codes.BAD_IPV6, message: "Incorrect IPv6 field"};
+      }
+      if(!err){
+        // IP
+        if(!bma.dns && !bma.ipv4 && !bma.ipv6)
+          err = {code: codes.NO_IP_GIVEN, message: "It must be given at least DNS or one IP, either v4 or v6"};
+      }
+      if(!err){
+        // Port
+        if(bma.port && !(bma.port + "").match(/^\d+$/))
+          err = {code: codes.BAD_PORT, message: "Port must be provided and match an integer format"};
+      }
     }
     return err && err.message;
   };

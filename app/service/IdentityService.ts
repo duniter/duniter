@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {GlobalFifoPromise} from "./GlobalFifoPromise"
 import {FileDAL} from "../lib/dal/fileDAL"
 import {ConfDTO} from "../lib/dto/ConfDTO"
@@ -115,7 +128,7 @@ export class IdentityService extends FIFOService {
         await GLOBAL_RULES_FUNCTIONS.checkIdentitiesAreWritable({ identities: [idtyObj.inline()], version: (current && current.version) || constants.BLOCK_GENERATED_VERSION }, this.conf, this.dal);
         if (byAbsorption !== BY_ABSORPTION) {
           if (!(await this.dal.idtyDAL.sandbox.acceptNewSandBoxEntry({
-              pubkey: idty.pubkey,
+              issuers: [idty.pubkey],
               ref_block: parseInt(idty.buid.split('-')[0])
             }, this.conf.pair && this.conf.pair.pub))) {
             throw constants.ERRORS.SANDBOX_FOR_IDENTITY_IS_FULL;
@@ -166,6 +179,7 @@ export class IdentityService extends FIFOService {
             };
           }
           const mCert:DBCert = {
+            issuers: [cert.from],
             from: cert.from,
             sig: cert.sig,
             block_number: cert.block_number,
@@ -239,7 +253,7 @@ export class IdentityService extends FIFOService {
           const idty = IdentityDTO.fromRevocation(revoc);
           idty.revocation_sig = revoc.revocation;
           if (!(await this.dal.idtyDAL.sandbox.acceptNewSandBoxEntry({
-              pubkey: idty.pubkey,
+              issuers: [idty.pubkey],
               ref_block: parseInt(idty.buid.split('-')[0]),
               certsCount: 0
             }, this.conf.pair && this.conf.pair.pub))) {

@@ -1,4 +1,16 @@
-"use strict";
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 import {BlockDTO} from "./dto/BlockDTO"
 import {ConfDTO, CurrencyConfDTO} from "./dto/ConfDTO"
 import {IdentityDTO} from "./dto/IdentityDTO"
@@ -6,11 +18,11 @@ import {RevocationDTO} from "./dto/RevocationDTO"
 import {CertificationDTO} from "./dto/CertificationDTO"
 import {TransactionDTO} from "./dto/TransactionDTO"
 import {DBHead} from "./db/DBHead"
-import {LOCAL_RULES_HELPERS} from "./rules/local_rules"
 import {verify} from "./common-libs/crypto/keyring"
 import {rawer, txunlock} from "./common-libs/index"
 import {CommonConstants} from "./common-libs/constants"
 import {MembershipDTO} from "./dto/MembershipDTO"
+import {UnlockMetadata} from "./common-libs/txunlock"
 
 const _               = require('underscore');
 
@@ -210,7 +222,7 @@ export class Indexer {
           unchainables: 0,
           type: 'JOIN',
           expires_on: conf.msValidity,
-          expired_on: null,
+          expired_on: 0,
           revokes_on: conf.msValidity * constants.REVOCATION_FACTOR,
           revocation: null,
           chainable_on: block.medianTime + conf.msPeriod,
@@ -866,21 +878,12 @@ export class Indexer {
       }
     }))
 
-    // BR_G46
-    await Promise.all(_.where(sindex, { op: constants.IDX_UPDATE }).map(async (ENTRY: SindexEntry) => {
-      const reducable = await dal.sindexDAL.sqlFind({
-        identifier: ENTRY.identifier,
-        pos: ENTRY.pos,
-        amount: ENTRY.amount,
-        base: ENTRY.base
-      });
-      ENTRY.conditions = reduce(reducable).conditions; // We valuate the input conditions, so we can map these records to a same account
-      ENTRY.available = reduce(reducable).consumed === false;
-    }))
-
-    // BR_G47
-    await Promise.all(_.where(sindex, { op: constants.IDX_UPDATE }).map(async (ENTRY: SindexEntry) => {
-      let source = _.filter(sindex, (src:SindexEntry) => src.identifier == ENTRY.identifier && src.pos == ENTRY.pos && src.conditions && src.op === constants.IDX_CREATE)[0];
+    const getInputLocalFirstOrFallbackGlobally = async (sindex:SindexEntry[], ENTRY:SindexEntry) => {
+      let source = _.filter(sindex, (src:SindexEntry) =>
+        src.identifier == ENTRY.identifier
+        && src.pos == ENTRY.pos
+        && src.conditions
+        && src.op === constants.IDX_CREATE)[0];
       if (!source) {
         const reducable = await dal.sindexDAL.sqlFind({
           identifier: ENTRY.identifier,
@@ -888,20 +891,29 @@ export class Indexer {
           amount: ENTRY.amount,
           base: ENTRY.base
         });
-        source = reduce(reducable);
+        source = reduce(reducable)
       }
+      return source
+    }
+
+    // BR_G46
+    await Promise.all(_.where(sindex, { op: constants.IDX_UPDATE }).map(async (ENTRY: SindexEntry) => {
+      const source = await getInputLocalFirstOrFallbackGlobally(sindex, ENTRY)
+      ENTRY.conditions = source.conditions; // We valuate the input conditions, so we can map these records to a same account
+      ENTRY.available = source.consumed === false;
+    }))
+
+    // BR_G47
+    await Promise.all(_.where(sindex, { op: constants.IDX_UPDATE }).map(async (ENTRY: SindexEntry) => {
+      const source = await getInputLocalFirstOrFallbackGlobally(sindex, ENTRY)
       ENTRY.conditions = source.conditions;
       ENTRY.isLocked = !txSourceUnlock(ENTRY, source, HEAD);
     }))
 
     // BR_G48
     await Promise.all(_.where(sindex, { op: constants.IDX_UPDATE }).map(async (ENTRY: SindexEntry) => {
-      ENTRY.isTimeLocked = ENTRY.written_time - reduce(await dal.sindexDAL.sqlFind({
-          identifier: ENTRY.identifier,
-          pos: ENTRY.pos,
-          amount: ENTRY.amount,
-          base: ENTRY.base
-        })).written_time < ENTRY.locktime;
+      const source = await getInputLocalFirstOrFallbackGlobally(sindex, ENTRY)
+      ENTRY.isTimeLocked = ENTRY.written_time - source.written_time < ENTRY.locktime;
     }))
 
     return HEAD;
@@ -1530,10 +1542,10 @@ export class Indexer {
   }
 
   // BR_G91
-  static async ruleIndexGenDividend(HEAD: DBHead, dal: any) {
+  static async ruleIndexGenDividend(HEAD: DBHead, local_iindex: IindexEntry[], dal: any) {
     const dividends = [];
     if (HEAD.new_dividend) {
-      const members = await dal.iindexDAL.getMembersPubkeys()
+      const members = (await dal.iindexDAL.getMembersPubkeys()).concat(local_iindex.filter(i => i.member))
       for (const MEMBER of members) {
         dividends.push({
           op: 'CREATE',
@@ -1622,7 +1634,8 @@ export class Indexer {
   // BR_G93
   static async ruleIndexGenMembershipExpiry(HEAD: DBHead, dal:any) {
     const expiries = [];
-    const memberships: MindexEntry[] = reduceBy(await dal.mindexDAL.sqlFind({ expires_on: { $lte: HEAD.medianTime } }), ['pub']);
+
+    const memberships: MindexEntry[] = reduceBy(await dal.mindexDAL.sqlFind({ expires_on: { $lte: HEAD.medianTime }, revokes_on: { $gt: HEAD.medianTime} }), ['pub']);
     for (const POTENTIAL of memberships) {
       const MS = await dal.mindexDAL.getReducedMS(POTENTIAL.pub);
       const hasRenewedSince = MS.expires_on > HEAD.medianTime;
@@ -1776,7 +1789,7 @@ export class Indexer {
     reduce: reduce,
     reduceBy: reduceBy,
     getMaxBlockSize: (HEAD: DBHead) => Math.max(500, Math.ceil(1.1 * HEAD.avgBlockSize)),
-    checkPeopleAreNotOudistanced: checkPeopleAreNotOudistanced
+    checkPeopleAreNotOudistanced
   }
 }
 
@@ -1978,44 +1991,14 @@ async function checkCertificationIsValid (block: BlockDTO, cert: CindexEntry, fi
 
 function txSourceUnlock(ENTRY:SindexEntry, source:SindexEntry, HEAD: DBHead) {
   const tx = ENTRY.txObj;
-  let sigResults = LOCAL_RULES_HELPERS.getSigResult(tx)
-  let unlocksForCondition = [];
-  let unlocksMetadata: any = {};
-  let unlockValues = ENTRY.unlock;
-  if (source.conditions) {
-    if (unlockValues) {
-      // Evaluate unlock values
-      let sp = unlockValues.split(' ');
-      for (const func of sp) {
-        const match = func.match(/\((.+)\)/)
-        let param = match && match[1];
-        if (param && func.match(/SIG/)) {
-          let pubkey = tx.issuers[parseInt(param)];
-          if (!pubkey) {
-            return false;
-          }
-          unlocksForCondition.push({
-            pubkey: pubkey,
-            sigOK: sigResults.sigs[pubkey] && sigResults.sigs[pubkey].matching || false
-          });
-        } else {
-          // XHX
-          unlocksForCondition.push(param);
-        }
-      }
-    }
-
-    if (source.conditions.match(/CLTV/)) {
-      unlocksMetadata.currentTime = HEAD.medianTime;
-    }
-
-    if (source.conditions.match(/CSV/)) {
-      unlocksMetadata.elapsedTime = HEAD.medianTime - source.written_time;
-    }
-
-    if (txunlock(source.conditions, unlocksForCondition, unlocksMetadata)) {
-      return true;
-    }
+  const unlockParams:string[] = TransactionDTO.unlock2params(ENTRY.unlock || '')
+  const unlocksMetadata:UnlockMetadata = {}
+  const sigResult = TransactionDTO.fromJSONObject(tx).getTransactionSigResult()
+  if (source.conditions.match(/CLTV/)) {
+    unlocksMetadata.currentTime = HEAD.medianTime;
   }
-  return false;
+  if (source.conditions.match(/CSV/)) {
+    unlocksMetadata.elapsedTime = HEAD.medianTime - source.written_time;
+  }
+  return txunlock(source.conditions, unlockParams, sigResult, unlocksMetadata)
 }

@@ -1,11 +1,26 @@
-import {Constants} from "./constants"
-import {ConfDTO, Keypair} from "../../../lib/dto/ConfDTO"
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
+import {ProverConstants} from "./constants"
+import {Server} from "../../../../server"
 import {PowEngine} from "./engine"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {CommonConstants} from "../../../lib/common-libs/constants"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
+import {ConfDTO, Keypair} from "../../../lib/dto/ConfDTO"
 
-const querablep       = require('querablep');
+const os        = require('os')
+const querablep = require('querablep')
 
 const POW_FOUND = true;
 const POW_NOT_FOUND_YET = false;
@@ -18,9 +33,9 @@ export class WorkerFarm {
   private stopPromise:any = null
   private checkPoWandNotify:any = null
 
-  constructor(private server:any, private logger:any) {
+  constructor(private server:Server, private logger:any) {
 
-    this.theEngine = new PowEngine(server.conf, server.logger)
+    this.theEngine = new PowEngine(server.conf, server.logger, server.dal)
 
     // An utility method to filter the pow notifications
     this.checkPoWandNotify = (hash:string, block:DBBlock, found:boolean) => {
@@ -42,6 +57,9 @@ export class WorkerFarm {
     })
   }
 
+  get nbWorkers() {
+    return this.theEngine.getNbWorkers()
+  }
 
   changeCPU(cpu:any) {
     return this.theEngine.setConf({ cpu })
@@ -68,7 +86,7 @@ export class WorkerFarm {
   }
 
   shutDownEngine() {
-    this.theEngine.shutDown()
+    return this.theEngine.shutDown()
   }
 
   /**
@@ -92,15 +110,11 @@ export class WorkerFarm {
 
 export class BlockProver {
 
-  conf:ConfDTO
-  pair:Keypair|null
   logger:any
   waitResolve:any
   workerFarmPromise:any
 
-  constructor(private server:any) {
-    this.conf = server.conf
-    this.pair = this.conf.pair
+  constructor(private server:Server) {
     this.logger = server.logger
 
     const debug = process.execArgv.toString().indexOf('--debug') !== -1;
@@ -108,6 +122,14 @@ export class BlockProver {
       //Set an unused port number.
       process.execArgv = [];
     }
+  }
+
+  get conf():ConfDTO {
+    return this.server.conf
+  }
+
+  get pair(): Keypair|null {
+    return this.conf.pair
   }
 
   getWorker(): Promise<WorkerFarm> {
@@ -123,12 +145,7 @@ export class BlockProver {
     // If no farm was instanciated, there is nothing to do yet
     if (this.workerFarmPromise) {
       let farm = await this.getWorker();
-      if (farm.isComputing() && !farm.isStopping()) {
-        await farm.stopPoW()
-      } else {
-        // We force the stop anyway, just to be sure
-        await farm.stopPoW()
-      }
+      await farm.stopPoW()
       if (this.waitResolve) {
         this.waitResolve();
         this.waitResolve = null;
@@ -159,7 +176,7 @@ export class BlockProver {
       // Start
       powFarm.setOnAlmostPoW((pow:any, matches:any, aBlock:any, found:boolean) => {
         this.powEvent(found, pow);
-        if (matches && matches[1].length >= Constants.MINIMAL_ZEROS_TO_SHOW_IN_LOGS) {
+        if (matches && matches[1].length >= ProverConstants.MINIMAL_ZEROS_TO_SHOW_IN_LOGS) {
           this.logger.info('Matched %s zeros %s with Nonce = %s for block#%s by %s', matches[1].length, pow, aBlock.nonce, aBlock.number, aBlock.issuer.slice(0,6));
         }
       });
@@ -168,22 +185,30 @@ export class BlockProver {
       this.logger.info('Generating proof-of-work with %s leading zeros followed by [0-' + highMark + ']... (CPU usage set to %s%) for block#%s', nbZeros, (this.conf.cpu * 100).toFixed(0), block.number, block.issuer.slice(0,6));
       const start = Date.now();
       let result = await powFarm.askNewProof({
-        newPoW: { conf: {
-          cpu: this.conf.cpu,
-          prefix: this.conf.prefix,
-          avgGenTime: this.conf.avgGenTime,
-          medianTimeBlocks: this.conf.medianTimeBlocks
-        }, block: block, zeros: nbZeros, highMark: highMark, forcedTime: forcedTime, pair: this.pair }
+        newPoW: {
+          conf: {
+            powNoSecurity: this.conf.powNoSecurity,
+            cpu: this.conf.cpu,
+            prefix: this.conf.prefix,
+            avgGenTime: this.conf.avgGenTime,
+            medianTimeBlocks: this.conf.medianTimeBlocks
+          },
+          block: block,
+          zeros: nbZeros,
+          highMark: highMark,
+          forcedTime: forcedTime,
+          pair: this.pair
+        }
       });
       if (!result) {
         this.logger.info('GIVEN proof-of-work for block#%s with %s leading zeros followed by [0-' + highMark + ']! stop PoW for %s', block.number, nbZeros, this.pair && this.pair.pub.slice(0,6));
         throw 'Proof-of-work computation canceled because block received';
       } else {
         const proof = result.block;
-        const testsCount = result.testsCount;
+        const testsCount = result.testsCount * powFarm.nbWorkers
         const duration = (Date.now() - start);
-        const testsPerSecond = (testsCount / (duration / 1000)).toFixed(2);
-        this.logger.info('Done: #%s, %s in %ss (%s tests, ~%s tests/s)', block.number, proof.hash, (duration / 1000).toFixed(2), testsCount, testsPerSecond);
+        const testsPerSecond = testsCount / (duration / 1000)
+        this.logger.info('Done: #%s, %s in %ss (~%s tests, ~%s tests/s, using %s cores, CPU %s%)', block.number, proof.hash, (duration / 1000).toFixed(2), testsCount, testsPerSecond.toFixed(2), powFarm.nbWorkers, Math.floor(100*this.conf.cpu))
         this.logger.info('FOUND proof-of-work with %s leading zeros followed by [0-' + highMark + ']!', nbZeros);
         return BlockDTO.fromJSONObject(proof)
       }
@@ -197,6 +222,7 @@ export class BlockProver {
   }
 
   async changePoWPrefix(prefix:any) {
+    this.conf.prefix = prefix
     const farm = await this.getWorker()
     return farm.changePoWPrefix(prefix)
   }

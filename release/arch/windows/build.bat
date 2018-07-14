@@ -1,18 +1,18 @@
 
-set DUNITER_BRANCH=1.4.x
-set VER_UI=%DUNITER_BRANCH%
+set ADDON_VERSION=59
+set NW_VERSION=0.28.1
+set NODEJS_VERSION=9.5.0
 
-set ADDON_VERSION=48
-set NW_VERSION=0.17.6
-set NODEJS_VERSION=6.11.1
-
-set NW_RELEASE=v0.17.6
+set NW_RELEASE=v%NW_VERSION%
 set NW=nwjs-%NW_RELEASE%-win-x64
 set NW_GZ=%NW%.zip
 
 set NODE_RELEASE=v%NODEJS_VERSION%
 set NODE=node-v%NODEJS_VERSION%-win-x64
 set NODE_ZIP=node-v%NODEJS_VERSION%-win-x64.zip
+set NODE_MSI=node-v%NODEJS_VERSION%-x64.msi
+
+echo "Version courante de NodeJS : "
 node -v
 
 REM NPM
@@ -28,16 +28,36 @@ if not exist %NODE_ZIP% (
   call 7z x %NODE_ZIP%
 )
 
+if not exist %NODE_MSI% (
+  echo "Telechargement de %NODE_MSI%..."
+  powershell -Command "(New-Object System.Net.WebClient).DownloadFile(\"https://nodejs.org/dist/%NODE_RELEASE%/%NODE_MSI%\", \"%NODE_MSI%\")"
+  powershell -Command "Start-Process msiexec.exe -Wait -ArgumentList '/I %cd%\%NODE_MSI% /quiet'"
+)
+
+powershell -Command "Start-Process msiexec.exe -Wait -ArgumentList '/I %cd%\%NODE_MSI% /quiet'"
+
+if not exist %NW_GZ% (
+  echo "Telechargement de %NW_GZ%..."
+  powershell -Command "(New-Object System.Net.WebClient).DownloadFile(\"https://dl.nwjs.io/%NW_RELEASE%/%NW_GZ%\", \"%NW_GZ%\")"
+  call 7z x %NW_GZ%
+)
+
+echo "Version courante de NodeJS : "
+node -v
+
+call npm install -g node-pre-gyp
+call npm install -g nw-gyp
+
 echo "Suppression des anciennes sources..."
 rd /s /q duniter
 rd /s /q duniter_release
 rd /s /q %NW%
 echo "Clonage de Duniter..."
-git clone https://github.com/duniter/duniter.git
+mkdir duniter
+xcopy C:\vagrant\duniter-source\* %cd%\duniter\* /s /e /Y
 cd duniter
 
-for /f "delims=" %%a in ('git rev-list --tags --max-count=1') do @set DUNITER_REV=%%a
-for /f "delims=" %%a in ('git describe --tags %DUNITER_REV%') do @set DUNITER_TAG=%%a
+for /f "delims=" %%x in (C:\vagrant\duniter_tag.txt) do set DUNITER_TAG=%%x
 echo %DUNITER_TAG%
 
 git checkout %DUNITER_TAG%
@@ -46,12 +66,7 @@ call npm cache clean
 call npm install
 REM call npm test
 echo "Ajout du module 1/1 (duniter-ui)..."
-call npm install duniter-ui@%VER_UI% --save --production
-REM sed -i "s/duniter\//..\/..\/..\/..\//g" node_modules/duniter-ui/server/controller/webmin.js
-cd node_modules\duniter-ui\server\controller\
-powershell -Command "(Get-Content webmin.js) | foreach-object {$_ -replace 'duniter/','../../../../' } | Set-Content webmin.js2"
-move /y webmin.js2 webmin.js
-cd ..\..\..\..
+call npm install duniter-ui@1.6.x --save --production
 echo "Retrait des modules 'dev'..."
 call npm prune --production
 
@@ -64,6 +79,10 @@ set SRC=%cd%
 echo %SRC%
 cd node_modules/wotb
 call npm install --build-from-source
+
+REM PREPARE common.gypi
+call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
+
 call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
 call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
 copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\wotb.node %cd%\lib\binding\Release\node-v%ADDON_VERSION%-win32-x64\wotb.node /Y
@@ -82,9 +101,6 @@ call npm install --build-from-source
 call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
 call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
 copy %cd%\lib\binding\node-webkit-%NW_RELEASE%-win32-x64\node_sqlite3.node %cd%\lib\binding\node-v%ADDON_VERSION%-win32-x64\node_sqlite3.node /Y
-cd ../heapdump
-call nw-gyp --target=%NW_VERSION% --msvs_version=2015 configure
-call nw-gyp --target=%NW_VERSION% --msvs_version=2015 build
 cd ../../..
 mkdir duniter_release
 mkdir duniter_release\nodejs

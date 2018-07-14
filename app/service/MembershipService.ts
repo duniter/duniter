@@ -1,3 +1,16 @@
+// Source file from duniter: Crypto-currency software to manage libre currency such as Ğ1
+// Copyright (C) 2018  Cedric Moreau <cem.moreau@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+
 "use strict";
 import {GlobalFifoPromise} from "./GlobalFifoPromise";
 import {ConfDTO} from "../lib/dto/ConfDTO";
@@ -56,13 +69,14 @@ export class MembershipService extends FIFOService {
       const current = await this.dal.getCurrentBlockOrNull();
       const basedBlock = await GLOBAL_RULES_HELPERS.checkMembershipBlock(entry, current, this.conf, this.dal);
       if (!(await this.dal.msDAL.sandbox.acceptNewSandBoxEntry({
-          pubkey: entry.pubkey,
+          issuers: [entry.pubkey],
           block_number: entry.block_number
         }, this.conf.pair && this.conf.pair.pub))) {
         throw constants.ERRORS.SANDBOX_FOR_MEMERSHIP_IS_FULL;
       }
       // Saves entry
       await this.dal.savePendingMembership({
+        issuers: [entry.pubkey],
         membership: entry.membership,
         issuer: entry.issuer,
         number: entry.number,

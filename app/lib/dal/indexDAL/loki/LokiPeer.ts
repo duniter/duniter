@@ -8,6 +8,11 @@ export class LokiPeer extends LokiCollectionManager<DBPeer> implements PeerDAO {
     super(loki, 'peer', ['pubkey'])
   }
 
+  async init(): Promise<void> {
+    await super.init();
+    this.cleanEmptyPeers()
+  }
+
   cleanCache(): void {
   }
 
@@ -81,6 +86,14 @@ export class LokiPeer extends LokiCollectionManager<DBPeer> implements PeerDAO {
     this.collection
       .chain()
       .find({})
+      .remove()
+  }
+
+  async cleanEmptyPeers(): Promise<void> {
+    this.collection
+      .chain()
+      .find({})
+      .where(p => !p.endpoints || !p.endpoints.length)
       .remove()
   }
 

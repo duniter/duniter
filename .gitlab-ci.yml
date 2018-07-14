@@ -87,15 +87,17 @@ test:
     expire_in: 4h
 
 sync_g1:
-  <<: *cached_nvm
+  <<: *nvm_env
   stage: test
   script:
+    - yarn
     - bash .gitlab/test/check_g1_sync.sh
 
 sync_gtest:
-  <<: *cached_nvm
+  <<: *nvm_env
   stage: test
   script:
+    - yarn
     - bash .gitlab/test/check_gt_sync.sh
 
 .build_releases: &build_releases

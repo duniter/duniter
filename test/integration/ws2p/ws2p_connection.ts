@@ -442,7 +442,7 @@ class WS2PNoRemoteAuth implements WS2PRemoteAuth {
   async sendACK(ws: any): Promise<void> {
   }
 
-  async registerCONNECT(version:number, challenge:string, sig: string, pub: string, ws2pId:string): Promise<boolean> {
+  async registerCONNECT(type: 'CONNECT'|'SYNC', version:number, challenge:string, sig: string, pub: string, ws2pId:string): Promise<boolean> {
     return true
   }
 
@@ -459,6 +459,10 @@ class WS2PNoRemoteAuth implements WS2PRemoteAuth {
   }
 
   async authenticationIsDone(): Promise<void> {
+  }
+
+  isSync(): boolean {
+    return false
   }
 }
 

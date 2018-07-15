@@ -27,6 +27,7 @@ import {WS2PCluster} from "../WS2PCluster"
 import {WS2PConnection} from "../WS2PConnection"
 import {WS2PConstants} from "../constants"
 import {CommonConstants} from "../../../../lib/common-libs/constants"
+import {DataErrors} from "../../../../lib/common-libs/errors"
 
 export enum WS2P_REQERROR {
   UNKNOWN_REQUEST
@@ -49,6 +50,13 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
   }
 
   async handlePushMessage(json: any, c:WS2PConnection): Promise<void> {
+
+    if (c.isSync) {
+      // Push messages are forbidden on sync connection
+      c.close()
+      return
+    }
+
     let documentHash = ''
     try {
       if (json.body) {
@@ -144,7 +152,7 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
     }
   }
 
-  async answerToRequest(data: any): Promise<WS2PResponse> {
+  async answerToRequest(data: any, c:WS2PConnection): Promise<WS2PResponse> {
 
     /**********
      * REQUEST
@@ -152,11 +160,20 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
 
     let body:any = {}
 
+    const forbiddenRequestsForSync: string[] = [] // For now, no WS2P requests are forbidden
+    if (c.isSync && (!data || !data.name || forbiddenRequestsForSync.indexOf(data.name) !== -1)) {
+      // Some messages are forbidden on sync connection
+      c.close()
+      throw Error(DataErrors[DataErrors.WS2P_SYNC_PERIMETER_IS_LIMITED])
+    }
+
     if (data && data.name) {
       switch (data.name) {
+
         case WS2P_REQ[WS2P_REQ.CURRENT]:
           body = await this.mapper.getCurrent()
           break;
+
         case WS2P_REQ[WS2P_REQ.BLOCK_BY_NUMBER]:
           if (isNaN(data.params.number)) {
             throw "Wrong param `number`"
@@ -164,6 +181,7 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
           const number:number = data.params.number
           body = await this.mapper.getBlock(number)
           break;
+
         case WS2P_REQ[WS2P_REQ.BLOCKS_CHUNK]:
           if (isNaN(data.params.count)) {
             throw "Wrong param `count`"
@@ -175,6 +193,7 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
           const fromNumber:number = data.params.fromNumber
           body = await this.mapper.getBlocks(count, fromNumber)
           break;
+
         case WS2P_REQ[WS2P_REQ.WOT_REQUIREMENTS_OF_PENDING]:
           if (isNaN(data.params.minCert)) {
             throw "Wrong param `minCert`"
@@ -182,6 +201,15 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
           const minCert:number = data.params.minCert
           body = await this.mapper.getRequirementsOfPending(minCert)
           break;
+
+        case WS2P_REQ[WS2P_REQ.PEER_DOCUMENT]:
+          body = await this.mapper.getPeer()
+          break;
+
+        case WS2P_REQ[WS2P_REQ.KNOWN_PEERS]:
+          body = await this.mapper.getKnownPeers()
+          break;
+
         default:
           throw Error(WS2P_REQERROR[WS2P_REQERROR.UNKNOWN_REQUEST])
       }

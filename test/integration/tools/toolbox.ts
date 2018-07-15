@@ -29,7 +29,12 @@ import {FileDAL} from "../../../app/lib/dal/fileDAL"
 import {MembershipDTO} from "../../../app/lib/dto/MembershipDTO"
 import {TransactionDTO} from "../../../app/lib/dto/TransactionDTO"
 import {Key} from "../../../app/lib/common-libs/crypto/keyring"
-import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "../../../app/modules/ws2p/lib/WS2PConnection"
+import {
+  WS2PConnection,
+  WS2PPubkeyLocalAuth,
+  WS2PPubkeyRemoteAuth,
+  WS2PPubkeySyncLocalAuth
+} from "../../../app/modules/ws2p/lib/WS2PConnection"
 import {WS2PResponse} from "../../../app/modules/ws2p/lib/impl/WS2PResponse"
 import {WS2PMessageHandler} from "../../../app/modules/ws2p/lib/impl/WS2PMessageHandler"
 import {WS2PCluster} from "../../../app/modules/ws2p/lib/WS2PCluster"
@@ -51,6 +56,7 @@ import {sync} from "./test-sync"
 import {expectAnswer, expectError, expectJSON} from "./http-expect"
 import {WebSocketServer} from "../../../app/lib/common-libs/websocket"
 import {CommonConstants} from "../../../app/lib/common-libs/constants"
+import {WS2PRequester} from "../../../app/modules/ws2p/lib/WS2PRequester"
 
 const assert      = require('assert');
 const rp          = require('request-promise');
@@ -655,6 +661,32 @@ export class TestingServer {
     if ((server as any)._utProver) {
       const farm = await (server as any)._utProver.getWorker()
       await farm.shutDownEngine()
+    }
+  }
+
+  async enableWS2P(port: number = PORT++) {
+    const cluster = WS2PCluster.plugOn(this._server)
+    await (this._server.ws2pCluster as WS2PCluster).listen(HOST, port)
+    const doConnection = (pair: Key, ws2pId: string, constructor: new (
+      currency:string,
+      pair:Key,
+      ws2pId:string,
+    ) => WS2PPubkeyLocalAuth) => {
+      const connection = WS2PConnection.newConnectionToAddress(1,
+        `ws://${HOST}:${port}`,
+        new WS2PServerMessageHandler(this._server, cluster),
+        new constructor(this.conf.currency, pair, ws2pId),
+        new WS2PPubkeyRemoteAuth(this.conf.currency, pair)
+      )
+      return WS2PRequester.fromConnection(connection)
+    }
+    return {
+      connect: (pair: Key, ws2pId: string) => {
+        return doConnection(pair, ws2pId, WS2PPubkeyLocalAuth)
+      },
+      connectForSync: (pair: Key, ws2pId: string) => {
+        return doConnection(pair, ws2pId, WS2PPubkeySyncLocalAuth)
+      }
     }
   }
 }

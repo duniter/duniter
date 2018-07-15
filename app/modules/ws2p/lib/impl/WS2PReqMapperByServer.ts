@@ -11,11 +11,12 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {IdentityForRequirements} from './../../../../service/BlockchainService';
+import {IdentityForRequirements} from '../../../../service/BlockchainService';
 import {Server} from "../../../../../server"
 import {WS2PReqMapper} from "../interface/WS2PReqMapper"
 import {BlockDTO} from "../../../../lib/dto/BlockDTO"
 import {DBBlock} from "../../../../lib/db/DBBlock"
+import {PeerDTO} from "../../../../lib/dto/PeerDTO"
 
 export class WS2PReqMapperByServer implements WS2PReqMapper {
 
@@ -67,5 +68,13 @@ export class WS2PReqMapperByServer implements WS2PReqMapper {
     return {
       identities: all
     }
+  }
+
+  async getPeer(): Promise<PeerDTO> {
+    return this.server.PeeringService.peer()
+  }
+
+  async getKnownPeers(): Promise<PeerDTO[]> {
+    return (await this.server.dal.findAllPeersBut([])).map(p => PeerDTO.fromDBPeer(p))
   }
 }

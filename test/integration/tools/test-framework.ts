@@ -26,12 +26,28 @@ export function writeBasicTestWith2Users(writeTests: (test: (testTitle: string, 
   })
 }
 
+export async function createCurrencyWith2Blocks(s: TestingServer, cat: TestUser, tac: TestUser) {
+  await cat.createIdentity()
+  await tac.createIdentity()
+  await cat.cert(tac)
+  await tac.cert(cat)
+  await cat.join()
+  await tac.join()
+  await s.commit()
+  await s.commit()
+  await s.commit()
+}
+
 export function assertEqual(value: number, expected: number) {
   assert.equal(value, expected)
 }
 
 export function assertTrue(expected: boolean) {
   assert.equal(true, expected)
+}
+
+export function assertNotNull(value: any) {
+  assert.notEqual(value, null)
 }
 
 export function assertFalse(expected: boolean) {

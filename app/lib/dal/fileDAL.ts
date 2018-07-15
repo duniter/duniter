@@ -959,7 +959,7 @@ export class FileDAL {
     return this.peerDAL.removePeerByPubkey(pubkey)
   }
 
-  async findAllPeersNEWUPBut(pubkeys:string[]) {
+  async findAllPeersBut(pubkeys:string[]) {
     const peers = await this.listAllPeers();
     return peers.filter((peer:DBPeer) => pubkeys.indexOf(peer.pubkey) == -1
     && ['UP'].indexOf(peer.status) !== -1);

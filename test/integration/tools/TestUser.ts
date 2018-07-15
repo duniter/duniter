@@ -11,7 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {KeyGen} from "../../../app/lib/common-libs/crypto/keyring"
+import {Key, KeyGen} from "../../../app/lib/common-libs/crypto/keyring"
 import {IdentityDTO} from "../../../app/lib/dto/IdentityDTO";
 import {TestingServer} from "./toolbox"
 import {CommonConstants} from "../../../app/lib/common-libs/constants"
@@ -52,6 +52,10 @@ export class TestUser {
       this.pub = this.options.pub
       this.sec = this.options.sec
     }
+  }
+
+  get keypair(): Key {
+    return new Key(this.pub, this.sec)
   }
 
   private init(done:()=>void) {

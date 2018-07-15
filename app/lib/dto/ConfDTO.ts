@@ -98,6 +98,7 @@ export interface WS2PConfDTO {
     preferedOnly: boolean
     privilegedNodes?: string[]
     privilegedOnly: boolean
+    syncLimit?: number
   }
 }
 
@@ -178,6 +179,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
       privilegedOnly: boolean
       maxPublic?:number
       maxPrivate?:number
+      syncLimit?:number
     },
     public powNoSecurity = false
 ) {}

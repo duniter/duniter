@@ -26,13 +26,14 @@ export class WS2PServer extends events.EventEmitter {
 
   private wss:any
   private connections:WS2PConnection[] = []
+  private synConnections:WS2PConnection[] = []
 
   private constructor(
     private server:Server,
     private host:string,
     private port:number,
     private fifo:GlobalFifoPromise,
-    private shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>,
+    private shouldAcceptConnection:(pubkey:string, isSync: boolean, syncConnectedPubkeys:string[], connectedPubkeys:string[])=>Promise<boolean>,
     public keyPriorityLevel:(pubkey:string, privilegedKeys:string[])=>Promise<number>) {
     super()
   }
@@ -46,6 +47,10 @@ export class WS2PServer extends events.EventEmitter {
 
   getConnexions() {
     return this.connections.slice()
+  }
+
+  getConnexionsForSync() {
+    return this.synConnections.slice()
   }
 
   countConnexions() {
@@ -71,7 +76,7 @@ export class WS2PServer extends events.EventEmitter {
        ******************/
       let saidPubkey:string = ""
 
-      const acceptPubkey = async (pub:string) => {
+      const acceptPubkey = async (pub:string, isSync: boolean) => {
         if (!saidPubkey) {
           saidPubkey = pub
         }
@@ -79,7 +84,7 @@ export class WS2PServer extends events.EventEmitter {
           // The key must be identical
           return false
         }
-        return await this.shouldAcceptConnection(pub, this.getConnexions().map(c => c.pubkey))
+        return await this.shouldAcceptConnection(pub, isSync, this.getConnexionsForSync().map(c => c.pubkey), this.getConnexions().map(c => c.pubkey))
       }
       let timeout = {
         connectionTimeout: WS2PConstants.CONNEXION_TIMEOUT,
@@ -95,13 +100,40 @@ export class WS2PServer extends events.EventEmitter {
       const c = WS2PConnection.newConnectionFromWebSocketServer(
         ws,
         messageHandler,
-        new WS2PPubkeyLocalAuth(this.server.conf.currency, key, myWs2pId, acceptPubkey),
+        new WS2PPubkeyLocalAuth(this.server.conf.currency, key, myWs2pId, pub => acceptPubkey(pub, false)),
         new WS2PPubkeyRemoteAuth(this.server.conf.currency, key, acceptPubkey),
         timeout
       )
 
       try {
         await c.connect()
+
+        /**
+         * Sync is a particular case:
+         *   - we remember the connection
+         *   - we allow it to run for a limited period of time
+         *   - we don't broadcast any data to it
+         *   - we only allow blocks+peering fetching, any other request is forbidden and closes the connection
+         */
+        if (c.isSync) {
+          // We remember it
+          this.synConnections.push(c)
+          // When the connection closes:
+          ws.on('close', () => {
+            // Remove the connection
+            const index = this.synConnections.indexOf(c)
+            if (index !== -1) {
+              // Remove the connection
+              this.synConnections.splice(index, 1)
+              c.close()
+            }
+          })
+          // We close the connection after a given delay
+          setTimeout(() => c.close(), WS2PConstants.SYNC_CONNECTION_DURATION_IN_SECONDS)
+          // We don't broadcast or pipe data
+          return
+        }
+
         const host = ws._sender._socket._handle.owner.remoteAddress
         const port = ws._sender._socket._handle.owner.remotePort
         this.server.push({
@@ -217,7 +249,7 @@ export class WS2PServer extends events.EventEmitter {
     }))
   }
 
-  static async bindOn(server:Server, host:string, port:number, fifo:GlobalFifoPromise, shouldAcceptConnection:(pubkey:string, connectedPubkeys:string[])=>Promise<boolean>, keyPriorityLevel:(pubkey:string, privilegedKeys:string[])=>Promise<number>, messageHandler:WS2PMessageHandler) {
+  static async bindOn(server:Server, host:string, port:number, fifo:GlobalFifoPromise, shouldAcceptConnection:(pubkey:string, isSync: boolean, syncConnectedPubkeys:string[], connectedPubkeys:string[])=>Promise<boolean>, keyPriorityLevel:(pubkey:string, privilegedKeys:string[])=>Promise<number>, messageHandler:WS2PMessageHandler) {
     const ws2ps = new WS2PServer(server, host, port, fifo, shouldAcceptConnection, keyPriorityLevel)
     await ws2ps.listenToWebSocketConnections(messageHandler)
     server.logger.info('WS2P server %s listening on %s:%s', server.conf.pair.pub, host, port)

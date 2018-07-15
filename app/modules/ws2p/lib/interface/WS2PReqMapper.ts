@@ -13,6 +13,7 @@
 
 import {BlockDTO} from "../../../../lib/dto/BlockDTO"
 import {DBBlock} from "../../../../lib/db/DBBlock"
+import {PeerDTO} from "../../../../lib/dto/PeerDTO"
 
 export interface WS2PReqMapper {
 
@@ -20,4 +21,6 @@ export interface WS2PReqMapper {
   getBlock(number:number): Promise<BlockDTO>
   getBlocks(count:number, fromNumber:number): Promise<BlockDTO[]>
   getRequirementsOfPending(minCert:number): Promise<any>
+  getPeer(): Promise<PeerDTO>
+  getKnownPeers(): Promise<PeerDTO[]>
 }

@@ -84,6 +84,9 @@ export class WS2PCluster {
   // A cache to remember the banned keys
   private banned:{ [k:string]: string } = {}
 
+  // A cache to remember the banned keys for synchronization
+  private banned4Sync:{ [k:string]: string } = {}
+
   // A cache to know if a block exists or not in the DB
   private blockstampsCache:{ [k:string]: number } = {}
 
@@ -285,8 +288,8 @@ export class WS2PCluster {
     if (this.ws2pServer) {
       await this.ws2pServer.close()
     }
-    this.ws2pServer = await WS2PServer.bindOn(this.server, host, port, this.fifo, (pubkey:string, connectedPubkeys:string[]) => {
-      return this.acceptPubkey(pubkey, connectedPubkeys, [], () => this.servedCount(), this.maxLevel2Peers, this.privilegedNodes(), (this.server.conf.ws2p !== undefined && this.server.conf.ws2p.privilegedOnly)) 
+    this.ws2pServer = await WS2PServer.bindOn(this.server, host, port, this.fifo, (pubkey:string, isSync: boolean, syncConnectedPubkeys:string[], connectedPubkeys:string[]) => {
+      return this.acceptPubkey(pubkey, isSync, syncConnectedPubkeys, connectedPubkeys, [], () => this.servedCount(), this.maxLevel2Peers, this.privilegedNodes(), (this.server.conf.ws2p !== undefined && this.server.conf.ws2p.privilegedOnly))
     }, this.keyPriorityLevel, this.messageHandler)
     this.host = host
     this.port = port
@@ -343,10 +346,11 @@ export class WS2PCluster {
     try {
       const fullEndpointAddress = WS2PCluster.getFullAddress(host, port, path)
       const ws2pc = await WS2PClient.connectTo(this.server, fullEndpointAddress, endpointVersion, ws2pEndpointUUID, messageHandler, expectedPub, (pub:string) => {
+        const syncPubkeys: string[] = [] // The connection won't be considered as a SYNC connection, so there is no check to do
         const connectedPubkeys = this.getConnectedPubkeys()
         const connectedWS2PUID = this.getConnectedWS2PUID()
         const preferedNodes = (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) ? this.server.conf.ws2p.preferedNodes:[]
-        return this.acceptPubkey(expectedPub, connectedPubkeys, connectedWS2PUID, () => this.clientsCount(), this.maxLevel1Size, preferedNodes, (this.server.conf.ws2p && this.server.conf.ws2p.preferedOnly) || false, ws2pEndpointUUID)
+        return this.acceptPubkey(expectedPub, false, syncPubkeys, connectedPubkeys, connectedWS2PUID, () => this.clientsCount(), this.maxLevel1Size, preferedNodes, (this.server.conf.ws2p && this.server.conf.ws2p.preferedOnly) || false, ws2pEndpointUUID)
       })
       this.ws2pClients[uuid] = ws2pc
       pub = ws2pc.connection.pubkey
@@ -518,10 +522,11 @@ export class WS2PCluster {
           const ws2pEnpoint = peer.getOnceWS2PEndpoint(ProxiesConf.canReachTorEndpoint(this.server.conf.proxiesConf), ProxiesConf.canReachClearEndpoint(this.server.conf.proxiesConf))
           if (ws2pEnpoint) {
             // Check if already connected to the pubkey (in any way: server or client)
+            const syncPubkeys: string[] = [] // The connection won't be considered as a SYNC connection, so there is no check to do
             const connectedPubkeys = this.getConnectedPubkeys()
             const connectedWS2PUID = this.getConnectedWS2PUID()
             const preferedKeys = (this.server.conf.ws2p && this.server.conf.ws2p.preferedNodes) ? this.server.conf.ws2p.preferedNodes:[]
-            const shouldAccept = await this.acceptPubkey(peer.pubkey, connectedPubkeys, connectedWS2PUID, () => this.clientsCount(), this.maxLevel1Size, preferedKeys, (this.server.conf.ws2p && this.server.conf.ws2p.preferedOnly) || false, ws2pEnpoint.uuid)
+            const shouldAccept = await this.acceptPubkey(peer.pubkey, false, syncPubkeys, connectedPubkeys, connectedWS2PUID, () => this.clientsCount(), this.maxLevel1Size, preferedKeys, (this.server.conf.ws2p && this.server.conf.ws2p.preferedOnly) || false, ws2pEnpoint.uuid)
             if (shouldAccept && (!this.server.conf.ws2p || ws2pEnpoint.uuid !== this.server.conf.ws2p.uuid || peer.pubkey !== this.server.conf.pair.pub)) {
               await this.connectToRemoteWS(ws2pEnpoint.version, ws2pEnpoint.host, ws2pEnpoint.port, ws2pEnpoint.path, this.messageHandler, peer.pubkey, ws2pEnpoint.uuid)
               await this.removeLowPriorityConnections(preferedKeys)
@@ -749,6 +754,8 @@ export class WS2PCluster {
 
   protected async acceptPubkey(
     pub:string,
+    isSync: boolean,
+    syncConnectedPubkeys:string[],
     connectedPubkeys:string[],
     connectedWS2PUID:string[],
     getConcurrentConnexionsCount:()=>number,
@@ -757,6 +764,25 @@ export class WS2PCluster {
     priorityKeysOnly:boolean,
     targetWS2PUID = ""
   ) {
+
+    // Sync case is specific
+    if (isSync) {
+      if (this.banned4Sync[pub]) {
+        return false
+      }
+      // Already connected
+      if (syncConnectedPubkeys.indexOf(pub) !== -1) {
+        return false
+      }
+      const limit = (this.server.conf.ws2p && this.server.conf.ws2p.syncLimit) || WS2PConstants.WS2P_SYNC_LIMIT
+      const ok = syncConnectedPubkeys.length < limit
+      if (ok) {
+        // The connection will OK: we prepare the ban right now to give room for future users
+        this.banSyncConnection(pub)
+      }
+      return ok
+    }
+
     if (this.server.conf.pair.pub === pub) {
       // We do not accept oneself connetion
       if (this.server.conf.ws2p && this.server.conf.ws2p.uuid === targetWS2PUID || targetWS2PUID === '11111111') {
@@ -838,7 +864,7 @@ export class WS2PCluster {
   }
 
   getAllConnections() {
-    const all:WS2PConnection[] = this.ws2pServer ? this.ws2pServer.getConnexions() : []
+    const all:WS2PConnection[] = this.ws2pServer ? this.ws2pServer.getConnexions().concat(this.ws2pServer.getConnexionsForSync()) : []
     for (const uuid of Object.keys(this.ws2pClients)) {
       all.push(this.ws2pClients[uuid].connection)
     }
@@ -954,5 +980,13 @@ export class WS2PCluster {
         }
       }
     }
+  }
+
+  banSyncConnection(pub: string) {
+    this.server.logger.warn('Banning SYNC connection of %s for %ss (for room)', pub.slice(0, 8), WS2PConstants.SYNC_BAN_DURATION_IN_SECONDS)
+    this.banned4Sync[pub] = 'sync'
+    setTimeout(() => {
+      delete this.banned4Sync[pub]
+    }, 1000 * WS2PConstants.SYNC_BAN_DURATION_IN_SECONDS)
   }
 }

@@ -367,7 +367,7 @@ export class BlockCrawler {
       if (current) {
         this.pullingEvent(server, 'start', current.number);
         this.logger && this.logger.info("Pulling blocks from the network...");
-        let peers = await server.dal.findAllPeersNEWUPBut([server.conf.pair.pub]);
+        let peers = await server.dal.findAllPeersBut([server.conf.pair.pub]);
         peers = Underscore.shuffle(peers);
         if (pubkey) {
           peers = Underscore.filter(peers, (p:any) => p.pubkey == pubkey)

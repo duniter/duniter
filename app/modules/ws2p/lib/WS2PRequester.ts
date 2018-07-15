@@ -15,6 +15,8 @@ import {WS2PConnection} from "./WS2PConnection"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
 
 export enum WS2P_REQ {
+  KNOWN_PEERS,
+  PEER_DOCUMENT,
   WOT_REQUIREMENTS_OF_PENDING,
   BLOCKS_CHUNK,
   BLOCK_BY_NUMBER,

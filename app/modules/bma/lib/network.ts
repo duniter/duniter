@@ -16,6 +16,7 @@ import {Server} from "../../../../server"
 import {BMAConstants} from "./constants"
 import {BMALimitation} from "./limiter"
 import {Underscore} from "../../../lib/common-libs/underscore"
+import {CommonConstants} from "../../../lib/common-libs/constants"
 
 const os = require('os');
 const Q = require('q');
@@ -361,7 +362,8 @@ async function upnpConf (noupnp:boolean, logger:any) {
     remoteport: publicPort,
     remotehost: null,
     remoteipv4: null,
-    remoteipv6: null
+    remoteipv6: null,
+    nonWoTPeersLimit: CommonConstants.DEFAULT_NON_WOT_PEERS_LIMIT
   }
   logger && logger.info('Checking UPnP features...');
   if (noupnp) {

@@ -150,7 +150,7 @@ export const CrawlerDependency = {
           logger.info('Fetching peering record at %s:%s...', host, port);
           let peering = await Contacter.fetchPeer(host, port);
           logger.info('Apply peering ...');
-          await server.PeeringService.submitP(peering, ERASE_IF_ALREADY_RECORDED, !program.nocautious);
+          await server.PeeringService.submitP(peering, ERASE_IF_ALREADY_RECORDED, !program.nocautious, true);
           logger.info('Applied');
           let selfPeer = await server.dal.getPeer(server.PeeringService.pubkey);
           if (!selfPeer) {

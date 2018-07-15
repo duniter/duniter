@@ -309,6 +309,7 @@ export const CommonConstants = {
   INITIAL_DOWNLOAD_SLOTS: 1, // 1 peer
 
   BLOCKS_COLLECT_THRESHOLD: 30, // Number of blocks to wait before trimming the loki data
+  DEFAULT_NON_WOT_PEERS_LIMIT: 100, // Number of non-wot peers accepted in our peer document pool
 }
 
 function exact (regexpContent:string) {

@@ -91,6 +91,8 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
   async init(): Promise<void> {
     const peering = await Contacter.fetchPeer(this.host, this.port, RemoteSynchronizer.contacterOptions)
     this.peer = PeerDTO.fromJSONObject(peering)
+    // We save this peer as a trusted peer for future contact
+    await this.server.PeeringService.submitP(DBPeer.fromPeerDTO(this.peer), false, false, true)
     logger.info("Try with %s %s", this.peer.getURL(), this.peer.pubkey.substr(0, 6))
     this.node = await connect(this.peer)
     ;(this.node as any).pubkey = this.peer.pubkey

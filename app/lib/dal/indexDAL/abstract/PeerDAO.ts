@@ -48,15 +48,21 @@ export interface PeerDAO extends Initiable, LokiDAO {
   removePeerByPubkey(pubkey:string): Promise<void>
 
   /**
-   * Remove peers that were set down before a certain datetime.
-   * @param {number} thresholdTime
-   * @returns {Promise<void>}
-   */
-  removePeersDownBefore(thresholdTime:number): Promise<void>
-
-  /**
    * Remove all the peers.
    * @returns {Promise<void>}
    */
   removeAll(): Promise<void>
+
+  /**
+   * Count the number of non-WoT peers known is the DB.
+   * @returns {Promise<number>} The number of nonWoT peers.
+   */
+  countNonWoTPeers(): Promise<number>
+
+  /**
+   * Remove all **non-WoT** peers whose last contact is above given time (timestamp in seconds).
+   * @param {number} threshold
+   * @returns {Promise<void>}
+   */
+  deletePeersWhoseLastContactIsAbove(threshold: number): Promise<void>
 }

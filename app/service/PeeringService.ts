@@ -25,6 +25,7 @@ import {DBPeer} from "../lib/db/DBPeer"
 import {Underscore} from "../lib/common-libs/underscore"
 import {CommonConstants} from "../lib/common-libs/constants"
 import {DataErrors} from "../lib/common-libs/errors"
+import {cleanLongDownPeers} from "../modules/crawler/lib/garbager"
 
 const util           = require('util');
 const events         = require('events');
@@ -85,7 +86,7 @@ export class PeeringService {
     return !!signaturesMatching;
   };
 
-  submitP(peering:DBPeer, eraseIfAlreadyRecorded = false, cautious = true): Promise<PeerDTO> {
+  submitP(peering:DBPeer, eraseIfAlreadyRecorded = false, cautious = true, acceptNonWoT = false): Promise<PeerDTO> {
     // Force usage of local currency name, do not accept other currencies documents
     peering.currency = this.conf.currency || peering.currency;
     let thePeerDTO = PeerDTO.fromJSONObject(peering)
@@ -99,10 +100,40 @@ export class PeeringService {
     const hash = thePeerDTO.getHash()
     return this.fifoPromiseHandler.pushFIFOPromise<PeerDTO>(hash, async () => {
       try {
+        // First: let's make a cleanup of old peers
+        await cleanLongDownPeers(this.server, Date.now())
         if (makeCheckings) {
           let goodSignature = this.checkPeerSignature(thePeerDTO)
           if (!goodSignature) {
             throw 'Signature from a peer must match';
+          }
+        }
+        // We accept peer documents up to 100 entries, then only member or specific peers are accepted
+        let isNonWoT = false
+        if (!acceptNonWoT) {
+          // Of course we accept our own key
+          if (peering.pubkey !== this.conf.pair.pub) {
+            // As well as prefered/priviledged nodes
+            const isInPrivileged = this.conf.ws2p
+              && this.conf.ws2p.privilegedNodes
+              && this.conf.ws2p.privilegedNodes.length
+              && this.conf.ws2p.privilegedNodes.indexOf(peering.pubkey) !== -1
+            const isInPrefered = this.conf.ws2p
+              && this.conf.ws2p.preferedNodes
+              && this.conf.ws2p.preferedNodes.length
+              && this.conf.ws2p.preferedNodes.indexOf(peering.pubkey) !== -1
+            if (!isInPrefered && !isInPrivileged) {
+              // We also accept all members
+              const isMember = await this.dal.isMember(this.conf.pair.pub)
+              if (!isMember) {
+                isNonWoT = true
+                // Then as long as we have some room, we accept peers
+                const hasEnoughRoom = (await this.dal.peerDAL.countNonWoTPeers()) < this.conf.nonWoTPeersLimit
+                if (!hasEnoughRoom) {
+                  throw Error(DataErrors[DataErrors.PEER_REJECTED])
+                }
+              }
+            }
           }
         }
         if (thePeer.block == constants.PEER.SPECIAL_BLOCK) {
@@ -118,8 +149,8 @@ export class PeeringService {
             thePeer.statusTS = 0;
             thePeer.status = 'UP';
           }
-          const current = await this.dal.getBlockCurrent()
-          if ((!block && current.number > CommonConstants.MAX_AGE_OF_PEER_IN_BLOCKS) || (block && current.number - block.number > CommonConstants.MAX_AGE_OF_PEER_IN_BLOCKS)) {
+          const current = await this.dal.getCurrentBlockOrNull()
+          if (current && ((!block && current.number > CommonConstants.MAX_AGE_OF_PEER_IN_BLOCKS) || (block && current.number - block.number > CommonConstants.MAX_AGE_OF_PEER_IN_BLOCKS))) {
             throw Error(DataErrors[DataErrors.TOO_OLD_PEER])
           }
         }
@@ -167,6 +198,8 @@ export class PeeringService {
         peerEntity.last_try = null;
         peerEntity.hash = peerEntityOld.getHash()
         peerEntity.raw = peerEntityOld.getRaw();
+        peerEntity.nonWoT = isNonWoT
+        peerEntity.lastContact = Math.floor(Date.now() / 1000)
         await this.dal.savePeer(peerEntity);
         this.logger.info('✔ PEER %s', peering.pubkey.substr(0, 8))
         let savedPeer = PeerDTO.fromJSONObject(peerEntity).toDBPeer()

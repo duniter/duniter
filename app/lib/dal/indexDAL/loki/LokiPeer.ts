@@ -5,7 +5,7 @@ import {DBPeer} from "../../../db/DBPeer"
 export class LokiPeer extends LokiCollectionManager<DBPeer> implements PeerDAO {
 
   constructor(loki:any) {
-    super(loki, 'peer', ['pubkey'])
+    super(loki, 'peer', ['pubkey', 'nonWoT', 'lastContact'])
   }
 
   async init(): Promise<void> {
@@ -55,6 +55,8 @@ export class LokiPeer extends LokiCollectionManager<DBPeer> implements PeerDAO {
         p.signature = peer.signature
         p.endpoints = peer.endpoints
         p.raw = peer.raw
+        p.nonWoT = peer.nonWoT
+        p.lastContact = peer.lastContact
         updated = true
       })
     if (!updated) {
@@ -67,18 +69,6 @@ export class LokiPeer extends LokiCollectionManager<DBPeer> implements PeerDAO {
     this.collection
       .chain()
       .find({ pubkey })
-      .remove()
-  }
-
-  async removePeersDownBefore(thresholdTime:number): Promise<void> {
-    this.collection
-      .chain()
-      .find({
-        $and: [
-          { first_down: { $lt: thresholdTime } },
-          { first_down: { $gt: 0 } },
-        ]
-      })
       .remove()
   }
 
@@ -103,5 +93,23 @@ export class LokiPeer extends LokiCollectionManager<DBPeer> implements PeerDAO {
       .find({})
       .where(p => p.endpoints.filter(ep => ep.indexOf(ep) !== -1).length > 0)
       .data()
+  }
+
+  async countNonWoTPeers(): Promise<number> {
+    return this.collection
+      .find({ nonWoT: true })
+      .length
+  }
+
+  async deletePeersWhoseLastContactIsAbove(threshold: number) {
+    this.collection
+      .chain()
+      .find({
+        $or: [
+          { lastContact: { $lt: threshold } },
+          { lastContact: null },
+        ]
+      })
+      .remove()
   }
 }

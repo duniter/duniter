@@ -50,6 +50,7 @@ import {until} from "./test-until"
 import {sync} from "./test-sync"
 import {expectAnswer, expectError, expectJSON} from "./http-expect"
 import {WebSocketServer} from "../../../app/lib/common-libs/websocket"
+import {CommonConstants} from "../../../app/lib/common-libs/constants"
 
 const assert      = require('assert');
 const rp          = require('request-promise');
@@ -228,7 +229,8 @@ export const NewTestingServer = (conf:any) => {
     remoteipv4: host,
     currency: conf.currency || CURRENCY_NAME,
     httpLogs: true,
-    forksize: conf.forksize || 3
+    forksize: conf.forksize || 3,
+    nonWoTPeersLimit: CommonConstants.DEFAULT_NON_WOT_PEERS_LIMIT,
   };
   if (conf.sigQty === undefined) {
     conf.sigQty = 1;

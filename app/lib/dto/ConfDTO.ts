@@ -78,6 +78,7 @@ export interface NetworkConfDTO {
   dos:any
   upnp:boolean
   httplogs:boolean
+  nonWoTPeersLimit: number
 }
 
 export interface WS2PConfDTO {
@@ -159,6 +160,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
     public memory: boolean,
     public nobma: boolean,
     public bmaWithCrawler: boolean,
+    public nonWoTPeersLimit: number,
     public proxiesConf: ProxiesConf|undefined,
     public ws2p?: {
       privateAccess?: boolean
@@ -181,7 +183,7 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
 ) {}
 
   static mock() {
-    return new ConfDTO("", "", [], [], 0, 3600 * 1000, constants.PROOF_OF_WORK.DEFAULT.CPU, 1, constants.PROOF_OF_WORK.DEFAULT.PREFIX, 0, 0, constants.CONTRACT.DEFAULT.C, constants.CONTRACT.DEFAULT.DT, constants.CONTRACT.DEFAULT.DT_REEVAL, 0, constants.CONTRACT.DEFAULT.UD0, 0, 0, constants.CONTRACT.DEFAULT.STEPMAX, constants.CONTRACT.DEFAULT.SIGPERIOD, 0, constants.CONTRACT.DEFAULT.SIGVALIDITY, constants.CONTRACT.DEFAULT.MSVALIDITY, constants.CONTRACT.DEFAULT.SIGQTY, constants.CONTRACT.DEFAULT.SIGSTOCK, constants.CONTRACT.DEFAULT.X_PERCENT, constants.CONTRACT.DEFAULT.PERCENTROT, constants.CONTRACT.DEFAULT.POWDELAY, constants.CONTRACT.DEFAULT.AVGGENTIME, constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS, false, 3000, false, constants.BRANCHES.DEFAULT_WINDOW_SIZE, constants.CONTRACT.DEFAULT.IDTYWINDOW, constants.CONTRACT.DEFAULT.MSWINDOW, constants.CONTRACT.DEFAULT.SIGWINDOW, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", "", 0, "", "", null, false, "", true, true, false, new ProxiesConf(), undefined)
+    return new ConfDTO("", "", [], [], 0, 3600 * 1000, constants.PROOF_OF_WORK.DEFAULT.CPU, 1, constants.PROOF_OF_WORK.DEFAULT.PREFIX, 0, 0, constants.CONTRACT.DEFAULT.C, constants.CONTRACT.DEFAULT.DT, constants.CONTRACT.DEFAULT.DT_REEVAL, 0, constants.CONTRACT.DEFAULT.UD0, 0, 0, constants.CONTRACT.DEFAULT.STEPMAX, constants.CONTRACT.DEFAULT.SIGPERIOD, 0, constants.CONTRACT.DEFAULT.SIGVALIDITY, constants.CONTRACT.DEFAULT.MSVALIDITY, constants.CONTRACT.DEFAULT.SIGQTY, constants.CONTRACT.DEFAULT.SIGSTOCK, constants.CONTRACT.DEFAULT.X_PERCENT, constants.CONTRACT.DEFAULT.PERCENTROT, constants.CONTRACT.DEFAULT.POWDELAY, constants.CONTRACT.DEFAULT.AVGGENTIME, constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS, false, 3000, false, constants.BRANCHES.DEFAULT_WINDOW_SIZE, constants.CONTRACT.DEFAULT.IDTYWINDOW, constants.CONTRACT.DEFAULT.MSWINDOW, constants.CONTRACT.DEFAULT.SIGWINDOW, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", "", 0, "", "", null, false, "", true, true, false, 100, new ProxiesConf(), undefined)
   }
 
   static defaultConf() {
@@ -211,7 +213,8 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
       "timeout": 3000,
       "isolate": false,
       "forksize": constants.BRANCHES.DEFAULT_WINDOW_SIZE,
-      "switchOnHeadAdvance": CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS
+      "switchOnHeadAdvance": CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS,
+      "nonWoTPeersLimit": CommonConstants.DEFAULT_NON_WOT_PEERS_LIMIT,
     };
   }
 

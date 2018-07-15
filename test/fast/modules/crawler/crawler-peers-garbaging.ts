@@ -33,14 +33,14 @@ describe('Peers garbaging', () => {
             desc: 'Garbage testing',
             logs: false,
             onDatabaseExecute: async (server:Server) => {
-              await server.dal.peerDAL.savePeer({ pubkey: 'A', version: 1, currency: 'c', first_down: null,          statusTS: 1485000000000, block: '2393-H' } as any);
-              await server.dal.peerDAL.savePeer({ pubkey: 'B', version: 1, currency: 'c', first_down: 1484827199999, statusTS: 1485000000000, block: '2393-H' } as any);
-              await server.dal.peerDAL.savePeer({ pubkey: 'C', version: 1, currency: 'c', first_down: 1484827200000, statusTS: 1485000000000, block: '2393-H' } as any);
-              await server.dal.peerDAL.savePeer({ pubkey: 'D', version: 1, currency: 'c', first_down: 1484820000000, statusTS: 1485000000000, block: '2393-H' } as any);
+              await server.dal.peerDAL.savePeer({ pubkey: 'A', version: 1, currency: 'c', lastContact: null,       statusTS: 1485000000000, block: '2393-H' } as any);
+              await server.dal.peerDAL.savePeer({ pubkey: 'B', version: 1, currency: 'c', lastContact: 1484827199, statusTS: 1485000000000, block: '2393-H' } as any);
+              await server.dal.peerDAL.savePeer({ pubkey: 'C', version: 1, currency: 'c', lastContact: 1484827200, statusTS: 1485000000000, block: '2393-H' } as any);
+              await server.dal.peerDAL.savePeer({ pubkey: 'D', version: 1, currency: 'c', lastContact: 1484820000, statusTS: 1485000000000, block: '2393-H' } as any);
               (await server.dal.peerDAL.listAll()).should.have.length(4);
-              const now = 1485000000000;
+              const now = 1485000000000
               await cleanLongDownPeers(server, now);
-              (await server.dal.peerDAL.listAll()).should.have.length(2);
+              (await server.dal.peerDAL.listAll()).should.have.length(1);
             }
           }]
         }

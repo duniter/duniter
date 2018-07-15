@@ -9,11 +9,13 @@ export class DBPeer {
   hash: string
   first_down: number | null
   last_try: number | null
+  lastContact: number = Math.floor(Date.now() / 1000)
   pubkey: string
   block: string
   signature: string
   endpoints: string[]
   raw: string
+  nonWoT: boolean = true // Security measure: a peer is presumed nonWoT.
 
   static json(peer:DBPeer): JSONDBPeer {
     return {
@@ -25,7 +27,7 @@ export class DBPeer {
       pubkey: peer.pubkey,
       block: peer.block,
       signature: peer.signature,
-      endpoints: peer.endpoints
+      endpoints: peer.endpoints,
     }
   }
 

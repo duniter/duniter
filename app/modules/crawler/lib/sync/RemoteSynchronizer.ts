@@ -14,7 +14,6 @@
 import {ISyncDownloader} from "./ISyncDownloader"
 import {BlockDTO} from "../../../../lib/dto/BlockDTO"
 import {PeerDTO} from "../../../../lib/dto/PeerDTO"
-import {Contacter} from "../contacter"
 import {connect} from "../connect"
 import {NewLogger} from "../../../../lib/logger"
 import {CrawlerConstants} from "../constants"
@@ -32,25 +31,37 @@ import {FsSyncDownloader} from "./FsSyncDownloader"
 import {AbstractSynchronizer} from "./AbstractSynchronizer"
 import {pullSandboxToLocalServer} from "../sandbox"
 import * as path from 'path'
+import {IRemoteContacter} from "./IRemoteContacter";
+import {BMARemoteContacter} from "./BMARemoteContacter";
+import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "../../../ws2p/lib/WS2PConnection";
+import {WS2PRequester} from "../../../ws2p/lib/WS2PRequester";
+import {WS2PServerMessageHandler} from "../../../ws2p/lib/interface/WS2PServerMessageHandler";
+import {WS2PMessageHandler} from "../../../ws2p/lib/impl/WS2PMessageHandler";
+import {WS2PResponse} from "../../../ws2p/lib/impl/WS2PResponse";
+import {DataErrors} from "../../../../lib/common-libs/errors";
+import {Key, KeyGen} from "../../../../lib/common-libs/crypto/keyring";
+import {WS2PRemoteContacter} from "./WS2PRemoteContacter";
+import {Keypair} from "../../../../lib/dto/ConfDTO";
+import {cat} from "shelljs";
 
 const logger = NewLogger()
 
 export class RemoteSynchronizer extends AbstractSynchronizer {
 
-  private node:Contacter
+  private node:IRemoteContacter
   private peer:PeerDTO
   private shuffledPeers: JSONDBPeer[]
   private theP2pDownloader: ISyncDownloader
   private theFsDownloader: ISyncDownloader
   private to: number
   private localNumber: number
-  private currency: string
   private watcher: Watcher
   private static contacterOptions = {
     timeout: CrawlerConstants.SYNC_LONG_TIMEOUT
   }
 
   constructor(
+    private readonly currency: string,
     private host: string,
     private port: number,
     private server:Server,
@@ -89,54 +100,75 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
   }
 
   async init(): Promise<void> {
-    const peering = await Contacter.fetchPeer(this.host, this.port, RemoteSynchronizer.contacterOptions)
-    this.peer = PeerDTO.fromJSONObject(peering)
+    const syncApi = await RemoteSynchronizer.getSyncAPI(this.currency, this.host, this.port, this.server.conf.pair)
+    if (!syncApi.api) {
+      throw Error(DataErrors[DataErrors.CANNOT_CONNECT_TO_REMOTE_FOR_SYNC])
+    }
+    this.node = syncApi.api
+    this.peer = PeerDTO.fromJSONObject(syncApi.peering)
+    logger.info("Try with %s %s", this.peer.getURL(), this.peer.pubkey.substr(0, 6))
     // We save this peer as a trusted peer for future contact
     await this.server.PeeringService.submitP(DBPeer.fromPeerDTO(this.peer), false, false, true)
-    logger.info("Try with %s %s", this.peer.getURL(), this.peer.pubkey.substr(0, 6))
-    this.node = await connect(this.peer)
     ;(this.node as any).pubkey = this.peer.pubkey
-    this.watcher.writeStatus('Connecting to ' + this.host + '...')
   }
 
-  async initWithKnownLocalAndToAndCurrency(to: number, localNumber: number, currency: string): Promise<void> {
+  private static async getSyncAPI(currency: string, host: string, port: number, keypair: Keypair) {
+    let api: IRemoteContacter|undefined
+    let peering: any
+    logger.info('Connecting to ' + host + '...')
+    try {
+      const contacter = await connect(PeerDTO.fromJSONObject({ endpoints: [`BASIC_MERKLED_API ${host} ${port}`]}), RemoteSynchronizer.contacterOptions.timeout)
+      peering = await contacter.getPeer()
+      api = new BMARemoteContacter(contacter)
+    } catch (e) {
+      logger.warn(`Node does not support BMA, trying WS2P...`)
+    }
+
+    // If BMA is unreachable, let's try WS2P
+    if (!api) {
+      const pair = KeyGen(keypair.pub, keypair.sec)
+      const connection = WS2PConnection.newConnectionToAddress(1,
+        `ws://${host}:${port}`,
+        new (class SyncMessageHandler implements WS2PMessageHandler {
+          async answerToRequest(json: any, c: WS2PConnection): Promise<WS2PResponse> {
+            throw Error(DataErrors[DataErrors.CANNOT_ARCHIVE_CHUNK_WRONG_SIZE])
+          }
+          async handlePushMessage(json: any, c: WS2PConnection): Promise<void> {
+            logger.warn('Receiving push messages, which are not allowed during a SYNC.', json)
+          }
+        }),
+        new WS2PPubkeyLocalAuth(currency, pair, '00000000'),
+        new WS2PPubkeyRemoteAuth(currency, pair)
+      )
+      const requester = WS2PRequester.fromConnection(connection)
+      peering = await requester.getPeer()
+      api = new WS2PRemoteContacter(requester)
+    }
+    if (!api) {
+      throw Error(DataErrors[DataErrors.CANNOT_CONNECT_TO_REMOTE_FOR_SYNC])
+    }
+    if (!peering) {
+      throw Error(DataErrors[DataErrors.NO_PEERING_AVAILABLE_FOR_SYNC])
+    }
+    if (peering.currency !== currency) {
+      throw Error(DataErrors[DataErrors.WRONG_CURRENCY_DETECTED])
+    }
+    return {
+      api,
+      peering
+    }
+  }
+
+  async initWithKnownLocalAndToAndCurrency(to: number, localNumber: number): Promise<void> {
     this.to = to
     this.localNumber = localNumber
-    this.currency = currency
     //=======
     // Peers (just for P2P download)
     //=======
     let peers:(JSONDBPeer|null)[] = [];
     if (!cliprogram.nopeers && (to - localNumber > 1000)) { // P2P download if more than 1000 blocs
       this.watcher.writeStatus('Peers...');
-      const merkle = await this.dal.merkleForPeers();
-      const getPeers:(params:any) => Promise<HttpMerkleOfPeers> = this.node.getPeers.bind(this.node);
-      const json2 = await getPeers({});
-      const rm = new NodesMerkle(json2);
-      if(rm.root() != merkle.root()){
-        const leavesToAdd:string[] = [];
-        const json = await getPeers({ leaves: true });
-        json.leaves.forEach((leaf:string) => {
-          if(merkle.leaves().indexOf(leaf) == -1){
-            leavesToAdd.push(leaf);
-          }
-        });
-        peers = await Promise.all(leavesToAdd.map(async (leaf) => {
-          try {
-            const json3 = await getPeers({ "leaf": leaf });
-            const jsonEntry = json3.leaf.value;
-            const endpoint = jsonEntry.endpoints[0];
-            this.watcher.writeStatus('Peer ' + endpoint);
-            return jsonEntry;
-          } catch (e) {
-            logger.warn("Could not get peer of leaf %s, continue...", leaf);
-            return null;
-          }
-        }))
-      }
-      else {
-        this.watcher.writeStatus('Peers already known');
-      }
+      peers = await this.node.getPeers()
     }
 
     if (!peers.length) {
@@ -168,97 +200,21 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
     return this.node.getBlock(number)
   }
 
-  static async test(host: string, port: number): Promise<BlockDTO> {
-    const peering = await Contacter.fetchPeer(host, port, this.contacterOptions);
-    const node = await connect(PeerDTO.fromJSONObject(peering));
-    return node.getCurrent()
+  static async test(currency: string, host: string, port: number, keypair: Keypair): Promise<BlockDTO> {
+    const syncApi = await RemoteSynchronizer.getSyncAPI(currency, host, port, keypair)
+    const current = await syncApi.api.getCurrent()
+    if (!current) {
+      throw Error(DataErrors[DataErrors.REMOTE_HAS_NO_CURRENT_BLOCK])
+    }
+    return current
   }
 
   async syncPeers(fullSync: boolean, to?: number): Promise<void> {
-    if (!cliprogram.nopeers && fullSync) {
-
-      const peering = await Contacter.fetchPeer(this.host, this.port, RemoteSynchronizer.contacterOptions);
-
-      let peer = PeerDTO.fromJSONObject(peering);
-      logger.info("Try with %s %s", peer.getURL(), peer.pubkey.substr(0, 6));
-      let node:any = await connect(peer);
-      node.pubkey = peer.pubkey;
-      logger.info('Sync started.');
-
-      this.watcher.writeStatus('Peers...');
-      await this.syncPeer(node);
-      const merkle = await this.dal.merkleForPeers();
-      const getPeers:(params:any) => Promise<HttpMerkleOfPeers> = node.getPeers.bind(node);
-      const json2 = await getPeers({});
-      const rm = new NodesMerkle(json2);
-      if(rm.root() != merkle.root()){
-        const leavesToAdd:string[] = [];
-        const json = await getPeers({ leaves: true });
-        json.leaves.forEach((leaf:string) => {
-          if(merkle.leaves().indexOf(leaf) == -1){
-            leavesToAdd.push(leaf);
-          }
-        });
-        for (let i = 0; i < leavesToAdd.length; i++) {
-          try {
-            const leaf = leavesToAdd[i]
-            const json3 = await getPeers({ "leaf": leaf });
-            const jsonEntry = json3.leaf.value;
-            const sign = json3.leaf.value.signature;
-            const entry:any = {};
-            entry.version = jsonEntry.version
-            entry.currency = jsonEntry.currency
-            entry.pubkey = jsonEntry.pubkey
-            entry.endpoints = jsonEntry.endpoints
-            entry.block = jsonEntry.block
-            entry.signature = sign;
-            this.watcher.writeStatus('Peer ' + entry.pubkey);
-            this.watcher.peersPercent((i + 1) / leavesToAdd.length * 100)
-            await this.PeeringService.submitP(entry, false, to === undefined);
-          } catch (e) {
-            logger.warn(e && e.message || e)
-          }
-        }
-        this.watcher.peersPercent(100)
-      }
-      else {
-        this.watcher.writeStatus('Peers already known');
-      }
-    }
-  }
-
-  //============
-  // Peer
-  //============
-  private async syncPeer (node:any) {
-
-    // Global sync vars
-    const remotePeer = PeerDTO.fromJSONObject({});
-    const json = await node.getPeer();
-    remotePeer.version = json.version
-    remotePeer.currency = json.currency
-    remotePeer.pubkey = json.pub
-    remotePeer.endpoints = json.endpoints
-    remotePeer.blockstamp = json.block
-    remotePeer.signature = json.signature
-    const entry = remotePeer.getRawUnsigned();
-    const signature = dos2unix(remotePeer.signature);
-    // Parameters
-    if(!(entry && signature)){
-      throw 'Requires a peering entry + signature';
-    }
-
-    let remoteJsonPeer:any = json
-    remoteJsonPeer.pubkey = json.pubkey;
-    let signatureOK = this.PeeringService.checkPeerSignature(remoteJsonPeer);
-    if (!signatureOK) {
-      this.watcher.writeStatus('Wrong signature for peer #' + remoteJsonPeer.pubkey);
-    }
-    try {
-      await this.PeeringService.submitP(remoteJsonPeer);
-    } catch (err) {
-      if (err.indexOf !== undefined && err.indexOf(CrawlerConstants.ERRORS.NEWER_PEER_DOCUMENT_AVAILABLE.uerr.message) !== -1 && err != CrawlerConstants.ERROR.PEER.UNKNOWN_REFERENCE_BLOCK) {
-        throw err;
+    const peers = await this.node.getPeers()
+    for (const p of peers) {
+      try {
+        await this.PeeringService.submitP(DBPeer.fromPeerDTO(PeerDTO.fromJSONObject(p)))
+      } catch (e) {
       }
     }
   }
@@ -266,31 +222,5 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
   async syncSandbox(): Promise<void> {
     this.watcher.writeStatus('Synchronizing the sandboxes...');
     await pullSandboxToLocalServer(this.currency, this.node, this.server, this.server.logger, this.watcher, 1, false)
-  }
-}
-
-class NodesMerkle {
-
-  private depth:number
-  private nodesCount:number
-  private leavesCount:number
-  private merkleRoot:string
-
-  constructor(json:any) {
-    this.depth = json.depth
-    this.nodesCount = json.nodesCount
-    this.leavesCount = json.leavesCount
-    this.merkleRoot = json.root;
-  }
-
-  // var i = 0;
-  // this.levels = [];
-  // while(json && json.levels[i]){
-  //   this.levels.push(json.levels[i]);
-  //   i++;
-  // }
-
-  root() {
-    return this.merkleRoot
   }
 }

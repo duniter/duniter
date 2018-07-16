@@ -48,8 +48,8 @@ export const CrawlerDependency = {
         return crawler.sandboxPull(server)
       },
 
-      synchronize: (server:Server, onHost:string, onPort:number, upTo:number, chunkLength:number) => {
-        const strategy = new RemoteSynchronizer(onHost, onPort, server)
+      synchronize: (currency: string, server:Server, onHost:string, onPort:number, upTo:number, chunkLength:number) => {
+        const strategy = new RemoteSynchronizer(currency, onHost, onPort, server)
         const remote = new Synchroniser(server, strategy)
         const syncPromise = (async () => {
           await server.dal.disableChangesAPI()
@@ -69,8 +69,8 @@ export const CrawlerDependency = {
        * @param {number} onPort
        * @returns {Promise<any>}
        */
-      testForSync: (server:Server, onHost:string, onPort:number) => {
-        return RemoteSynchronizer.test(onHost, onPort)
+      testForSync: (currency: string, server:Server, onHost:string, onPort:number) => {
+        return RemoteSynchronizer.test(currency, onHost, onPort, server.conf.pair)
       }
     },
 
@@ -88,12 +88,13 @@ export const CrawlerDependency = {
     ],
 
     cli: [{
-      name: 'sync [source] [to]',
+      name: 'sync [source] [to] [currency]',
       desc: 'Synchronize blockchain from a remote Duniter node',
       preventIfRunning: true,
       onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any): Promise<any> => {
-        const source = params[0]
-        const to     = params[1]
+        const source   = params[0]
+        const to       = params[1]
+        const currency = params[2]
         const HOST_PATTERN = /^[^:/]+(:[0-9]{1,5})?$/
         const FILE_PATTERN = /^(\/.+)$/
         if (!source || !(source.match(HOST_PATTERN) || source.match(FILE_PATTERN))) {
@@ -126,7 +127,10 @@ export const CrawlerDependency = {
           const sp = source.split(':')
           const onHost = sp[0]
           const onPort = parseInt(sp[1] ? sp[1] : '443') // Defaults to 443
-          strategy = new RemoteSynchronizer(onHost, onPort, server, noShufflePeers === true, otherDAL)
+          if (!currency) {
+            throw 'currency parameter is required for network synchronization'
+          }
+          strategy = new RemoteSynchronizer(currency, onHost, onPort, server, noShufflePeers === true, otherDAL)
         } else {
           strategy = new LocalPathSynchronizer(source, server)
         }

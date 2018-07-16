@@ -29,7 +29,11 @@ export class WS2PDocpoolPuller {
     return pullSandboxToLocalServer(this.server.conf.currency, {
       getRequirementsPending: (minCert = 1) => {
         return requester.getRequirementsPending(minCert)
-      }
+      },
+      getName: () => this.connection.pubkey,
+      getPeers: async () => [],
+      getCurrent: async () => null,
+      getBlock: async () => null,
     }, this.server, this.server.logger)
   }
 }

@@ -13,21 +13,48 @@
 
 import {WS2PConstants} from "../../../app/modules/ws2p/lib/constants"
 import {assertEqual, assertNotNull, createCurrencyWith2Blocks, writeBasicTestWith2Users} from "../tools/test-framework"
+import {NewTestingServer, TestWS2PAPI} from "../tools/toolbox";
+import {assertThrows} from "../../unit-tools";
+import {CrawlerDependency} from "../../../app/modules/crawler/index";
 
 describe('WS2P sync', () => writeBasicTestWith2Users((test) => {
 
-  WS2PConstants.CONNEXION_TIMEOUT = 100
-  WS2PConstants.REQUEST_TIMEOUT= 100
+
+  // We want the test to fail quickly
+  WS2PConstants.CONNEXION_TIMEOUT = 1000
+  WS2PConstants.REQUEST_TIMEOUT = 1000
+
+  let ws2p: TestWS2PAPI
 
   test('should be able to init with 2 blocks', async (s1, cat, tac) => {
     await createCurrencyWith2Blocks(s1, cat, tac)
   })
 
-  test('if we disable the changes API', async (s1, cat, tac) => {
-    const ws2p = await s1.enableWS2P()
-    const ws = (await ws2p).connectForSync(tac.keypair, '12345678')
+  test('we should be able to connect for SYNC', async (s1, cat, tac) => {
+    ws2p = await s1.enableWS2P()
+    const ws = ws2p.connectForSync(tac.keypair, '12345678')
     const current = await ws.getCurrent()
     assertNotNull(current)
     assertEqual(2, current.number)
+  })
+
+  test('we should NOT be able to reconnect for SYNC', async (s1, cat, tac) => {
+    const ws = ws2p.connectForSync(tac.keypair, '22222222')
+    await assertThrows(ws.getCurrent(), 'WS2P connection timeout')
+  })
+
+  test('we should be able to connect for SYNC with toc', async (s1, cat, tac, toc) => {
+    const ws = ws2p.connectForSync(toc.keypair, '33333333')
+    const current = await ws.getCurrent()
+    assertNotNull(current)
+    assertEqual(2, current.number)
+  })
+
+  test('we should be able to make a full sync with cat', async (s1, cat, tac, toc) => {
+    const s2 = NewTestingServer({ pair: cat.keypair })
+    await s2.initWithDAL()
+    // We sync on s1
+    await CrawlerDependency.duniter.methods.synchronize(s1.conf.currency, s2._server, ws2p.host, ws2p.port, 2, 250).syncPromise
+    assertNotNull(await s2.dal.getCurrentBlockOrNull())
   })
 }))

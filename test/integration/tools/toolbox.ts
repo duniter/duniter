@@ -158,7 +158,7 @@ export const createUser = async (uid:string, pub:string, sec:string, defaultServ
   return new TestUser(uid, keyring, { server: defaultServer });
 }
 
-export const fakeSyncServer = async (readBlocksMethod:any, readParticularBlockMethod:any, onPeersRequested:any) => {
+export const fakeSyncServer = async (currency: string, readBlocksMethod:any, readParticularBlockMethod:any, onPeersRequested:any) => {
 
   const host = HOST;
   const port = PORT++;
@@ -181,6 +181,7 @@ export const fakeSyncServer = async (readBlocksMethod:any, readParticularBlockMe
     // Mock BMA method for sync mocking
     httpMethods.httpGET('/network/peering', async () => {
       return {
+        currency,
         endpoints: [['BASIC_MERKLED_API', host, port].join(' ')]
       }
     }, noLimit);
@@ -664,7 +665,7 @@ export class TestingServer {
     }
   }
 
-  async enableWS2P(port: number = PORT++) {
+  async enableWS2P(port: number = PORT++): Promise<TestWS2PAPI> {
     const cluster = WS2PCluster.plugOn(this._server)
     await (this._server.ws2pCluster as WS2PCluster).listen(HOST, port)
     const doConnection = (pair: Key, ws2pId: string, constructor: new (
@@ -686,9 +687,18 @@ export class TestingServer {
       },
       connectForSync: (pair: Key, ws2pId: string) => {
         return doConnection(pair, ws2pId, WS2PPubkeySyncLocalAuth)
-      }
+      },
+      host: HOST,
+      port
     }
   }
+}
+
+export interface TestWS2PAPI {
+  connect: (pair: Key, ws2pId: string) => WS2PRequester
+  connectForSync: (pair: Key, ws2pId: string) => WS2PRequester
+  host: string
+  port: number
 }
 
 export async function newWS2PBidirectionnalConnection(currency:string, k1:Key, k2:Key, serverHandler:WS2PMessageHandler) {
@@ -782,6 +792,15 @@ export function tacUser(server: TestingServer) {
   return new TestUser('tac', {
     pub: '2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc',
     sec: '2HuRLWgKgED1bVio1tdpeXrf7zuUszv1yPHDsDj7kcMC4rVSN9RC58ogjtKNfTbH1eFz7rn38U1PywNs3m6Q7UxE'},
+    {
+      server
+    })
+}
+
+export function tocUser(server: TestingServer) {
+  return new TestUser('toc', {
+    pub: 'DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo',
+    sec: '64EYRvdPpTfLGGmaX5nijLXRqWXaVz8r1Z1GtaahXwVSJGQRn7tqkxLb288zwSYzELMEG5ZhXSBYSxsTsz1m9y8F'},
     {
       server
     })

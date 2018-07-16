@@ -58,13 +58,13 @@ describe("CLI", function() {
         /***************
          * Normal nodes
          */
-        return fakeSyncServer(onReadBlockchainChunk, onReadParticularBlock, onPeersRequested);
+        return fakeSyncServer('duniter_unit_test_currency', onReadBlockchainChunk, onReadParticularBlock, onPeersRequested);
       } else if (index == 2) {
         
         /***************
          * Node with wrong chaining between 2 chunks of blocks
          */
-        return fakeSyncServer((count:number, from:number) => {
+        return fakeSyncServer('duniter_unit_test_currency', (count:number, from:number) => {
           // We just need to send the wrong chunk
           from = from - count;
           return Promise.resolve(blockchain.blocks.slice(from, from + count));
@@ -74,7 +74,7 @@ describe("CLI", function() {
         /***************
          * Node with wrong chaining between 2 blocks
          */
-        return fakeSyncServer((count:number, from:number) => {
+        return fakeSyncServer('duniter_unit_test_currency', (count:number, from:number) => {
           // We just need to send the wrong chunk
           const chunk = blockchain.blocks.slice(from, from + count).map((block:any, index2:number) => {
             if (index2 === 10) {
@@ -90,7 +90,7 @@ describe("CLI", function() {
         /***************
          * Node with apparent good chaining, but one of the hashs is WRONG
          */
-        return fakeSyncServer((count:number, from:number) => {
+        return fakeSyncServer('duniter_unit_test_currency', (count:number, from:number) => {
           // We just need to send the wrong chunk
           const chunk = blockchain.blocks.slice(from, from + count).map((block:any, index2:number) => {
             if (index2 === 10) {
@@ -109,6 +109,7 @@ describe("CLI", function() {
     }))
     farmOfServers.map((server, index) => {
       const peer = {
+        currency: 'duniter_unit_test_currency',
         endpoints: [['BASIC_MERKLED_API', server.host, server.port].join(' ')],
         pubkey: hashf(index + ""),
         hash: hashf(index + "").toUpperCase()
@@ -133,14 +134,14 @@ describe("CLI", function() {
 
   it('sync 7 blocks (fast)', async () => {
     await execute(['reset', 'data']);
-    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '7', '--nocautious', '--nointeractive', '--noshuffle']);
+    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '7', 'duniter_unit_test_currency', '--nocautious', '--nointeractive', '--noshuffle']);
     const res = await execute(['export-bc', '--nostdout']);
     res[res.length - 1].should.have.property('number').equal(7);
     res.should.have.length(7 + 1); // blocks #0..#7
   })
 
   it('sync 4 blocks (cautious)', async () => {
-    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '11', '--nointeractive']);
+    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '11', 'duniter_unit_test_currency', '--nointeractive']);
     const res = await execute(['export-bc', '--nostdout']);
     res[res.length - 1].should.have.property('number').equal(11);
     res.should.have.length(11 + 1);
@@ -153,7 +154,7 @@ describe("CLI", function() {
   })
 
   it('[spawn] sync 10 first blocks --memory', async () => {
-    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '10', '--memory', '--cautious', '--nointeractive']);
+    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '10', 'duniter_unit_test_currency', '--memory', '--cautious', '--nointeractive']);
   })
 });
 

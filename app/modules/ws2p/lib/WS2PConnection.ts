@@ -27,7 +27,6 @@ const nuuid = require('node-uuid');
 const logger = require('../../../lib/logger').NewLogger('ws2p')
 
 const MAXIMUM_ERRORS_COUNT = 5
-const REQUEST_TIMEOUT_VALUE = WS2PConstants.REQUEST_TIMEOUT
 
 enum WS2P_ERR {
   REJECTED_PUBKEY_OR_INCORRECT_ASK_SIGNATURE_FROM_REMOTE,
@@ -323,8 +322,8 @@ export class WS2PConnection {
       connectionTimeout:number
       requestTimeout:number
     } = {
-      connectionTimeout: REQUEST_TIMEOUT_VALUE,
-      requestTimeout: REQUEST_TIMEOUT_VALUE
+      connectionTimeout: WS2PConstants.REQUEST_TIMEOUT,
+      requestTimeout: WS2PConstants.REQUEST_TIMEOUT
     },
     private expectedPub:string = "",
     private expectedWS2PUID:string = ""
@@ -346,8 +345,8 @@ export class WS2PConnection {
       connectionTimeout:number,
       requestTimeout:number
     } = {
-      connectionTimeout: REQUEST_TIMEOUT_VALUE,
-      requestTimeout: REQUEST_TIMEOUT_VALUE
+      connectionTimeout: WS2PConstants.REQUEST_TIMEOUT,
+      requestTimeout: WS2PConstants.REQUEST_TIMEOUT
     },
     expectedPub:string = "", 
     expectedWS2PUID:string = "") {
@@ -377,8 +376,8 @@ export class WS2PConnection {
       connectionTimeout:number
       requestTimeout:number
     } = {
-      connectionTimeout: REQUEST_TIMEOUT_VALUE,
-      requestTimeout: REQUEST_TIMEOUT_VALUE
+      connectionTimeout: WS2PConstants.REQUEST_TIMEOUT,
+      requestTimeout: WS2PConstants.REQUEST_TIMEOUT
     },
     expectedPub:string = "") {
     const onWsOpened = Promise.resolve()

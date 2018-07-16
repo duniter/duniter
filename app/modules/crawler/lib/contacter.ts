@@ -65,6 +65,10 @@ export class Contacter {
   getPeers(obj?:any) {
     return this.get('/network/peering/peers', dtos.MerkleOfPeers, obj)
   }
+
+  getPeersArray() {
+    return this.get('/network/peering/peers', dtos.Peers)
+  }
   
   getSources(pubkey:string) {
     return this.get('/tx/sources/', dtos.Sources, pubkey)

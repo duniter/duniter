@@ -13,6 +13,7 @@
 
 import {WS2PConnection} from "./WS2PConnection"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
+import {PeerDTO} from "../../../lib/dto/PeerDTO";
 
 export enum WS2P_REQ {
   KNOWN_PEERS,
@@ -30,6 +31,14 @@ export class WS2PRequester {
 
   static fromConnection(ws2pc:WS2PConnection) {
     return new WS2PRequester(ws2pc)
+  }
+
+  getPeer(): Promise<PeerDTO> {
+    return this.query(WS2P_REQ.PEER_DOCUMENT)
+  }
+
+  getPeers(): Promise<PeerDTO[]> {
+    return this.query(WS2P_REQ.KNOWN_PEERS)
   }
 
   getCurrent(): Promise<BlockDTO> {

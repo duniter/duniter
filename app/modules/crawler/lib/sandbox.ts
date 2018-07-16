@@ -16,6 +16,7 @@ import {Contacter} from "./contacter"
 import {Server} from "../../../../server"
 import {rawer} from "../../../lib/common-libs/index"
 import {parsers} from "../../../lib/common-libs/parsers/index"
+import {IRemoteContacter} from "./sync/IRemoteContacter";
 
 export const pullSandbox = async (currency:string, fromHost:string, fromPort:number, toHost:string, toPort:number, logger:any) => {
   const from = new Contacter(fromHost, fromPort);
@@ -43,12 +44,12 @@ export const pullSandbox = async (currency:string, fromHost:string, fromPort:num
   }
 }
 
-export const pullSandboxToLocalServer = async (currency:string, fromHost:any, toServer:Server, logger:any, watcher:any = null, nbCertsMin = 1, notify = true) => {
+export const pullSandboxToLocalServer = async (currency:string, fromHost:IRemoteContacter, toServer:Server, logger:any, watcher:any = null, nbCertsMin = 1, notify = true) => {
   let res
   try {
     res = await fromHost.getRequirementsPending(nbCertsMin || 1)
   } catch (e) {
-    watcher && watcher.writeStatus('Sandbox pulling: could not fetch requirements on %s', [fromHost.host, fromHost.port].join(':'))
+    watcher && watcher.writeStatus('Sandbox pulling: could not fetch requirements on %s', fromHost.getName())
   }
 
   if (res) {

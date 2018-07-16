@@ -13,10 +13,11 @@
 
 import {CrawlerConstants} from "./constants"
 import {Contacter} from "./contacter"
+import {PeerDTO} from "../../../lib/dto/PeerDTO";
 
 const DEFAULT_HOST = 'localhost';
 
-export const connect = (peer:any, timeout:number|null = null) => {
+export const connect = (peer:PeerDTO, timeout:number|null = null) => {
   return Promise.resolve(new Contacter(peer.getDns() || peer.getIPv4() || peer.getIPv6() || DEFAULT_HOST, peer.getPort(), {
     timeout: timeout || CrawlerConstants.DEFAULT_TIMEOUT
   }))

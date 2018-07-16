@@ -1,10 +1,15 @@
-import {catUser, NewTestingServer, tacUser, TestingServer} from "./toolbox"
+import {catUser, NewTestingServer, tacUser, TestingServer, tocUser} from "./toolbox"
 import {TestUser} from "./TestUser"
 import * as assert from 'assert'
 
-export function writeBasicTestWith2Users(writeTests: (test: (testTitle: string, fn: (server: TestingServer, cat: TestUser, tac: TestUser) => Promise<void>) => void) => void) {
+export function writeBasicTestWith2Users(writeTests: (
+  test: (
+    testTitle: string,
+    fn: (server: TestingServer, cat: TestUser, tac: TestUser, toc: TestUser) => Promise<void>
+  ) => void
+) => void) {
 
-  let s1:TestingServer, cat:TestUser, tac:TestUser
+  let s1:TestingServer, cat:TestUser, tac:TestUser, toc:TestUser
 
   before(async () => {
     s1 = NewTestingServer({
@@ -16,12 +21,13 @@ export function writeBasicTestWith2Users(writeTests: (test: (testTitle: string, 
     })
     cat = catUser(s1)
     tac = tacUser(s1)
+    toc = tocUser(s1)
     await s1.prepareForNetwork()
   })
 
-  writeTests((title, cb: (server: TestingServer, cat: TestUser, tac: TestUser) => Promise<void>) => {
+  writeTests((title, cb: (server: TestingServer, cat: TestUser, tac: TestUser, toc: TestUser) => Promise<void>) => {
     it(title, async () => {
-      await cb(s1, cat, tac)
+      await cb(s1, cat, tac, toc)
     })
   })
 }

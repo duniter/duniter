@@ -11,18 +11,19 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-export const OtherConstants = {
+import {JSONDBPeer} from "../../../../lib/db/DBPeer";
+import {BlockDTO} from "../../../../lib/dto/BlockDTO";
+import {HttpRequirements} from "../../../bma/lib/dtos";
 
-  MUTE_LOGS_DURING_UNIT_TESTS: false,
-  SQL_TRACES: false,
+export interface IRemoteContacter {
 
-  BC_EVENT: {
-    SWITCHED: 'switched',
-    HEAD_CHANGED: 'newHEAD',
-    RESOLUTION_DONE: 'resolution_done'
-  },
+  getName(): string
 
-  ENABLE_LOKI_MONITORING: false,
-  ENABLE_SQL_MONITORING: false,
-  TRACE_BALANCES: false
+  getPeers(): Promise<(JSONDBPeer|null)[]>
+
+  getCurrent(): Promise<BlockDTO|null>
+
+  getBlock(number: number): Promise<BlockDTO|null>
+
+  getRequirementsPending(number: number): Promise<HttpRequirements>
 }

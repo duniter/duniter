@@ -48,7 +48,7 @@ export const bma = function(server:Server, interfaces:NetworkInterface[]|null, h
     }
   }
 
-  return Network.createServersAndListen('Duniter server', server, interfaces, httpLogs, logger, null, (app:any, httpMethods:any) => {
+  return Network.createServersAndListen('BMA server', server, interfaces, httpLogs, logger, null, (app:any, httpMethods:any) => {
 
     const node         = new NodeBinding(server);
     const blockchain   = new BlockchainBinding(server)

@@ -32,9 +32,11 @@ import {Package} from "../../../lib/common/package";
 import {ProverConstants} from "../../prover/lib/constants";
 import {ProxiesConf} from '../../../lib/proxy';
 import {Underscore} from "../../../lib/common-libs/underscore"
+import {NewLogger} from "../../../lib/logger";
 
 const es = require('event-stream')
 const nuuid = require('node-uuid')
+const logger = NewLogger()
 
 export interface WS2PHead {
   message:string
@@ -83,6 +85,9 @@ export class WS2PCluster {
 
   // A cache to remember the banned keys
   private banned:{ [k:string]: string } = {}
+
+  // A cache to remember the keys OK for reconnect
+  private ok4reconnect:{ [k:string]: string } = {}
 
   // A cache to remember the banned keys for synchronization
   private banned4Sync:{ [k:string]: string } = {}
@@ -772,13 +777,13 @@ export class WS2PCluster {
       }
       // Already connected
       if (syncConnectedPubkeys.indexOf(pub) !== -1) {
-        return false
+        return !!this.ok4reconnect[pub]
       }
       const limit = (this.server.conf.ws2p && this.server.conf.ws2p.syncLimit) || WS2PConstants.WS2P_SYNC_LIMIT
       const ok = syncConnectedPubkeys.length < limit
       if (ok) {
         // The connection will OK: we prepare the ban right now to give room for future users
-        this.banSyncConnection(pub)
+        this.rememberAndPrepareBanSyncConnection(pub)
       }
       return ok
     }
@@ -982,11 +987,24 @@ export class WS2PCluster {
     }
   }
 
-  banSyncConnection(pub: string) {
-    this.server.logger.warn('Banning SYNC connection of %s for %ss (for room)', pub.slice(0, 8), WS2PConstants.SYNC_BAN_DURATION_IN_SECONDS)
-    this.banned4Sync[pub] = 'sync'
-    setTimeout(() => {
-      delete this.banned4Sync[pub]
-    }, 1000 * WS2PConstants.SYNC_BAN_DURATION_IN_SECONDS)
+  rememberAndPrepareBanSyncConnection(pub: string) {
+    if (!this.ok4reconnect[pub]) {
+
+      // 1. Remember that the key can reconnect within the next few minutes without issue
+      this.ok4reconnect[pub] = 'reconnect'
+      setTimeout(() => {
+        delete this.ok4reconnect[pub]
+      }, 1000 * WS2PConstants.SYNC_CONNECTION_DURATION_IN_SECONDS)
+
+      // 2. Remember that the key will be banned between the reconnection period and the ban period
+      this.server.logger.warn('Prepare banning SYNC connection of %s for %ss (for room)', pub.slice(0, 8), WS2PConstants.SYNC_BAN_DURATION_IN_SECONDS)
+      this.banned4Sync[pub] = 'sync'
+      setTimeout(() => {
+        delete this.banned4Sync[pub]
+      }, 1000 * WS2PConstants.SYNC_BAN_DURATION_IN_SECONDS)
+
+      // Anyway, the connection will be closed after the reconnection period (see WS2PServer),
+      // through the usage of constant SYNC_CONNECTION_DURATION_IN_SECONDS
+    }
   }
 }

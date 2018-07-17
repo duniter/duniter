@@ -153,7 +153,7 @@ export class FileDAL {
     this.powDAL = new PowDAL(this.rootPath, params.fs)
     this.confDAL = new ConfDAL(this.rootPath, params.fs)
     this.metaDAL = new (require('./sqliteDAL/MetaDAL').MetaDAL)(this.sqliteDriver);
-    this.blockchainArchiveDAL = new CFSBlockchainArchive(new CFSCore(path.join(this.rootPath, '/archives'), params.fs), CommonConstants.CONST_BLOCKS_CHUNK)
+    this.blockchainArchiveDAL = new CFSBlockchainArchive(new CFSCore(path.join(this.rootPath, '/archives'), params.fs), CommonConstants.ARCHIVES_BLOCKS_CHUNK)
     this.blockDAL = new LokiBlockchain(this.loki.getLokiInstance())
     this.txsDAL = new LokiTransactions(this.loki.getLokiInstance())
     this.statDAL = new StatDAL(this.rootPath, params.fs)

@@ -13,7 +13,6 @@
 
 import {NewLogger} from "../../../../lib/logger"
 import {IRemoteContacter} from "./IRemoteContacter";
-import {Contacter} from "../contacter";
 import {WS2PRequester} from "../../../ws2p/lib/WS2PRequester";
 import {DBPeer, JSONDBPeer} from "../../../../lib/db/DBPeer";
 import {BlockDTO} from "../../../../lib/dto/BlockDTO";
@@ -39,11 +38,19 @@ export class WS2PRemoteContacter implements IRemoteContacter {
     return this.requester.getCurrent()
   }
 
+  getBlocks(count: number, from: number): Promise<BlockDTO[]> {
+    return this.requester.getBlocks(count, from)
+  }
+
   async getPeers(): Promise<(JSONDBPeer | null)[]> {
     return (await this.requester.getPeers()).map(p => DBPeer.fromPeerDTO(PeerDTO.fromJSONObject(p)))
   }
 
   getName(): string {
     return "WS2P remote"
+  }
+
+  get hostName() {
+    return this.requester.hostName
   }
 }

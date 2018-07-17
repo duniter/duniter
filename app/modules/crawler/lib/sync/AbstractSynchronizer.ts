@@ -21,7 +21,7 @@ import * as path from 'path'
 
 export abstract class AbstractSynchronizer {
 
-  constructor() {
+  constructor(public readonly chunkSize: number) {
   }
 
   abstract init(): Promise<void>
@@ -43,6 +43,6 @@ export abstract class AbstractSynchronizer {
   }
 
   public getChunkName(i: number) {
-    return CommonConstants.CHUNK_PREFIX + i + "-" + CommonConstants.CONST_BLOCKS_CHUNK + ".json"
+    return CommonConstants.CHUNK_PREFIX + i + "-" + this.chunkSize + ".json"
   }
 }

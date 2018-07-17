@@ -1,12 +1,15 @@
 import {JSONDBPeer} from "../../../../lib/db/DBPeer"
 import {PeerDTO} from "../../../../lib/dto/PeerDTO"
-import {connect} from "../connect"
 import {Underscore} from "../../../../lib/common-libs/underscore"
 import {BlockDTO} from "../../../../lib/dto/BlockDTO"
 import {Watcher} from "./Watcher"
-import {CommonConstants} from "../../../../lib/common-libs/constants"
 import {ISyncDownloader} from "./ISyncDownloader"
 import {cliprogram} from "../../../../lib/common-libs/programOptions"
+import {RemoteSynchronizer} from "./RemoteSynchronizer";
+import {Keypair} from "../../../../lib/dto/ConfDTO";
+import {IRemoteContacter} from "./IRemoteContacter";
+import {Querable} from "../../../../lib/common-libs/querable";
+import {cat} from "shelljs";
 
 const makeQuerablePromise = require('querablep');
 
@@ -21,23 +24,26 @@ export class P2PSyncDownloader implements ISyncDownloader {
   private numberOfChunksToDownload:number
   private processing:any
   private handler:any
-  private nodes:any = {}
+  private nodes: Querable<ProfiledNode>[] = []
   private nbDownloadsTried = 0
   private nbDownloading = 0
   private lastAvgDelay:number
   private downloads: { [chunk: number]: any } = {}
 
   constructor(
+    private currency: string,
+    private keypair: Keypair,
     private localNumber:number,
     private to:number,
     private peers:JSONDBPeer[],
     private watcher:Watcher,
     private logger:any,
+    private chunkSize: number,
     ) {
 
     this.TOO_LONG_TIME_DOWNLOAD = "No answer after " + this.MAX_DELAY_PER_DOWNLOAD + "ms, will retry download later.";
     this.nbBlocksToDownload = Math.max(0, to - localNumber);
-    this.numberOfChunksToDownload = Math.ceil(this.nbBlocksToDownload / CommonConstants.CONST_BLOCKS_CHUNK);
+    this.numberOfChunksToDownload = Math.ceil(this.nbBlocksToDownload / this.chunkSize);
     this.processing      = Array.from({ length: this.numberOfChunksToDownload }).map(() => false);
     this.handler         = Array.from({ length: this.numberOfChunksToDownload }).map(() => null);
 
@@ -51,24 +57,44 @@ export class P2PSyncDownloader implements ISyncDownloader {
    * this method would not return it.
    */
   private async getP2Pcandidates(): Promise<any[]> {
-    let promises = this.peers.reduce((chosens:any, other:any, index:number) => {
+    let promises = this.peers.reduce((chosens:Querable<ProfiledNode>[], thePeer, index:number) => {
       if (!this.nodes[index]) {
         // Create the node
-        let p = PeerDTO.fromJSONObject(this.peers[index]);
+        let p = PeerDTO.fromJSONObject(thePeer)
         this.nodes[index] = makeQuerablePromise((async () => {
-          // We wait for the download process to be triggered
-          // await downloadStarter;
-          // if (nodes[index - 1]) {
-          //   try { await nodes[index - 1]; } catch (e) {}
-          // }
-          const node:any = await connect(p)
-          // We initialize nodes with the near worth possible notation
-          node.tta = 1;
-          node.nbSuccess = 0;
-          if (node.host.match(/^(localhost|192|127)/)) {
+          const bmaAPI = p.getBMA()
+          const ws2pAPI = p.getFirstNonTorWS2P()
+          const apis: { host: string, port: number, path?: string }[] = []
+          const bmaHost = bmaAPI.dns || bmaAPI.ipv4 || bmaAPI.ipv6
+          if (bmaAPI.port && bmaHost) {
+            apis.push({
+              port: bmaAPI.port,
+              host: bmaHost
+            })
+          }
+          if (ws2pAPI) {
+            apis.push(ws2pAPI)
+          }
+          let syncApi: any = null
+          try {
+            syncApi = await RemoteSynchronizer.getSyncAPI(this.currency, apis, this.keypair)
+          } catch (e) {
+
+          }
+          const node: ProfiledNode = {
+            api: syncApi && syncApi.api,
+            connected: !!syncApi,
+            tta: 1,
+            ttas: [],
+            nbSuccess: 1,
+            excluded: false,
+            downloading: false,
+            hostName: syncApi && syncApi.api.hostName || '',
+          }
+          if (node.hostName.match(/^(localhost|192|127)/)) {
             node.tta = this.MAX_DELAY_PER_DOWNLOAD
           }
-          return node;
+          return node
         })())
         chosens.push(this.nodes[index]);
       } else {
@@ -77,8 +103,9 @@ export class P2PSyncDownloader implements ISyncDownloader {
       // Continue
       return chosens;
     }, []);
-    let candidates:any[] = await Promise.all(promises)
-    candidates.forEach((c:any) => {
+    const eventuals:ProfiledNode[] = await Promise.all(promises)
+    const candidates: ProfiledNode[] = eventuals.filter(c => c.connected) as ProfiledNode[]
+    candidates.forEach((c) => {
       c.tta = c.tta || 0; // By default we say a node is super slow to answer
       c.ttas = c.ttas || []; // Memorize the answer delays
     });
@@ -86,11 +113,11 @@ export class P2PSyncDownloader implements ISyncDownloader {
       throw this.NO_NODES_AVAILABLE;
     }
     // We remove the nodes impossible to reach (timeout)
-    let withGoodDelays = Underscore.filter(candidates, (c:any) => c.tta <= this.MAX_DELAY_PER_DOWNLOAD && !c.excluded && !c.downloading);
+    let withGoodDelays = Underscore.filter(candidates, (c) => c.tta <= this.MAX_DELAY_PER_DOWNLOAD && !c.excluded && !c.downloading);
     if (withGoodDelays.length === 0) {
       await new Promise(res => setTimeout(res, this.WAIT_DELAY_WHEN_MAX_DOWNLOAD_IS_REACHED)) // We wait a bit before continuing the downloads
       // We reinitialize the nodes
-      this.nodes = {};
+      this.nodes = []
       // And try it all again
       return this.getP2Pcandidates();
     }
@@ -117,27 +144,27 @@ export class P2PSyncDownloader implements ISyncDownloader {
     }
     let candidates = await this.getP2Pcandidates();
     // Book the nodes
-    return await this.raceOrCancelIfTimeout(this.MAX_DELAY_PER_DOWNLOAD, candidates.map(async (node:any) => {
+    return await this.raceOrCancelIfTimeout(this.MAX_DELAY_PER_DOWNLOAD, candidates.map(async (node:ProfiledNode) => {
       try {
         const start = Date.now();
         this.handler[chunkIndex] = node;
         node.downloading = true;
         this.nbDownloading++;
-        this.watcher.writeStatus('Getting chunck #' + chunkIndex + '/' + (this.numberOfChunksToDownload - 1) + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + [node.host, node.port].join(':'));
-        let blocks = await node.getBlocks(count, from);
+        this.watcher.writeStatus('Getting chunck #' + chunkIndex + '/' + (this.numberOfChunksToDownload - 1) + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + node.hostName);
+        let blocks = await node.api.getBlocks(count, from);
         node.ttas.push(Date.now() - start);
         // Only keep a flow of 5 ttas for the node
         if (node.ttas.length > 5) node.ttas.shift();
         // Average time to answer
         node.tta = Math.round(node.ttas.reduce((sum:number, tta:number) => sum + tta, 0) / node.ttas.length);
-        this.watcher.writeStatus('GOT chunck #' + chunkIndex + '/' + (this.numberOfChunksToDownload - 1) + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + [node.host, node.port].join(':'));
+        this.watcher.writeStatus('GOT chunck #' + chunkIndex + '/' + (this.numberOfChunksToDownload - 1) + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + node.hostName);
         if (this.PARALLEL_PER_CHUNK === 1) {
           // Only works if we have 1 concurrent peer per chunk
           this.downloads[chunkIndex] = node
         }
         node.nbSuccess++;
 
-        const peers = await Promise.all(Underscore.values(this.nodes))
+        const peers = await Promise.all(this.nodes)
         const downloading = Underscore.filter(peers, (p:any) => p.downloading && p.ttas.length);
         this.lastAvgDelay = downloading.reduce((sum:number, c:any) => {
           const tta = Math.round(c.ttas.reduce((sum:number, tta:number) => sum + tta, 0) / c.ttas.length)
@@ -167,15 +194,16 @@ export class P2PSyncDownloader implements ISyncDownloader {
    */
   private async downloadChunk(index:number): Promise<BlockDTO[]> {
     // The algorithm to download a chunk
-    const from = this.localNumber + 1 + index * CommonConstants.CONST_BLOCKS_CHUNK;
-    let count = CommonConstants.CONST_BLOCKS_CHUNK;
+    const from = this.localNumber + 1 + index * this.chunkSize;
+    let count = this.chunkSize;
     if (index == this.numberOfChunksToDownload - 1) {
-      count = this.nbBlocksToDownload % CommonConstants.CONST_BLOCKS_CHUNK || CommonConstants.CONST_BLOCKS_CHUNK;
+      count = this.nbBlocksToDownload % this.chunkSize || this.chunkSize;
     }
     try {
       return await this.p2pDownload(from, count, index) as BlockDTO[]
     } catch (e) {
       this.logger.error(e);
+      await new Promise(res => setTimeout(res, 1000)) // Wait 1s before retrying
       return this.downloadChunk(index);
     }
   }
@@ -208,4 +236,15 @@ export class P2PSyncDownloader implements ISyncDownloader {
   getChunk(index:number): Promise<BlockDTO[]> {
     return this.downloadChunk(index)
   }
+}
+
+interface ProfiledNode {
+  api: IRemoteContacter
+  tta: number
+  ttas: number[]
+  nbSuccess: number
+  hostName: string
+  connected: boolean
+  excluded: boolean
+  downloading: boolean
 }

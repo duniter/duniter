@@ -17,10 +17,8 @@ import {PeerDTO} from "../../../../lib/dto/PeerDTO"
 import {connect} from "../connect"
 import {NewLogger} from "../../../../lib/logger"
 import {CrawlerConstants} from "../constants"
-import {HttpMerkleOfPeers} from "../../../bma/lib/dtos"
 import {cliprogram} from "../../../../lib/common-libs/programOptions"
 import {Watcher} from "./Watcher"
-import {dos2unix} from "../../../../lib/common-libs/dos2unix"
 import {PeeringService} from "../../../../service/PeeringService"
 import {Server} from "../../../../../server"
 import {DBPeer, JSONDBPeer} from "../../../../lib/db/DBPeer"
@@ -35,11 +33,10 @@ import {IRemoteContacter} from "./IRemoteContacter";
 import {BMARemoteContacter} from "./BMARemoteContacter";
 import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "../../../ws2p/lib/WS2PConnection";
 import {WS2PRequester} from "../../../ws2p/lib/WS2PRequester";
-import {WS2PServerMessageHandler} from "../../../ws2p/lib/interface/WS2PServerMessageHandler";
 import {WS2PMessageHandler} from "../../../ws2p/lib/impl/WS2PMessageHandler";
 import {WS2PResponse} from "../../../ws2p/lib/impl/WS2PResponse";
 import {DataErrors} from "../../../../lib/common-libs/errors";
-import {Key, KeyGen} from "../../../../lib/common-libs/crypto/keyring";
+import {KeyGen} from "../../../../lib/common-libs/crypto/keyring";
 import {WS2PRemoteContacter} from "./WS2PRemoteContacter";
 import {Keypair} from "../../../../lib/dto/ConfDTO";
 import {cat} from "shelljs";
@@ -65,10 +62,11 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
     private host: string,
     private port: number,
     private server:Server,
+    chunkSize: number,
     private noShufflePeers = false,
     private otherDAL?:FileDAL,
   ) {
-    super()
+    super(chunkSize)
   }
 
   get dal(): FileDAL {
@@ -100,7 +98,7 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
   }
 
   async init(): Promise<void> {
-    const syncApi = await RemoteSynchronizer.getSyncAPI(this.currency, this.host, this.port, this.server.conf.pair)
+    const syncApi = await RemoteSynchronizer.getSyncAPI(this.currency, [{ host: this.host, port: this.port }], this.server.conf.pair)
     if (!syncApi.api) {
       throw Error(DataErrors[DataErrors.CANNOT_CONNECT_TO_REMOTE_FOR_SYNC])
     }
@@ -108,41 +106,63 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
     this.peer = PeerDTO.fromJSONObject(syncApi.peering)
     logger.info("Try with %s %s", this.peer.getURL(), this.peer.pubkey.substr(0, 6))
     // We save this peer as a trusted peer for future contact
-    await this.server.PeeringService.submitP(DBPeer.fromPeerDTO(this.peer), false, false, true)
+    try {
+      await this.server.PeeringService.submitP(DBPeer.fromPeerDTO(this.peer), false, false, true)
+    } catch (e) {
+      logger.debug(e)
+    }
     ;(this.node as any).pubkey = this.peer.pubkey
   }
 
-  private static async getSyncAPI(currency: string, host: string, port: number, keypair: Keypair) {
+  public static async getSyncAPI(currency: string, hosts: { host: string, port: number, path?: string }[], keypair: Keypair) {
     let api: IRemoteContacter|undefined
     let peering: any
-    logger.info('Connecting to ' + host + '...')
-    try {
-      const contacter = await connect(PeerDTO.fromJSONObject({ endpoints: [`BASIC_MERKLED_API ${host} ${port}`]}), RemoteSynchronizer.contacterOptions.timeout)
-      peering = await contacter.getPeer()
-      api = new BMARemoteContacter(contacter)
-    } catch (e) {
-      logger.warn(`Node does not support BMA, trying WS2P...`)
-    }
+    for (const access of hosts) {
+      const host = access.host
+      const port = access.port
+      const path = access.path
+      logger.info(`Connecting to address ${host} :${port}...`)
+      try {
+        const contacter = await connect(PeerDTO.fromJSONObject({ endpoints: [`BASIC_MERKLED_API ${host} ${port}${path && ' ' + path || ''}`]}), 3000)
+        peering = await contacter.getPeer()
+        api = new BMARemoteContacter(contacter)
+      } catch (e) {
+        logger.warn(`Node does not support BMA at address ${host} :${port}, trying WS2P...`)
+      }
 
-    // If BMA is unreachable, let's try WS2P
-    if (!api) {
-      const pair = KeyGen(keypair.pub, keypair.sec)
-      const connection = WS2PConnection.newConnectionToAddress(1,
-        `ws://${host}:${port}`,
-        new (class SyncMessageHandler implements WS2PMessageHandler {
-          async answerToRequest(json: any, c: WS2PConnection): Promise<WS2PResponse> {
-            throw Error(DataErrors[DataErrors.CANNOT_ARCHIVE_CHUNK_WRONG_SIZE])
+      // If BMA is unreachable, let's try WS2P
+      if (!api) {
+        const pair = KeyGen(keypair.pub, keypair.sec)
+        const connection = WS2PConnection.newConnectionToAddress(1,
+          `ws://${host}:${port}${path && ' ' + path || ''}`,
+          new (class SyncMessageHandler implements WS2PMessageHandler {
+            async answerToRequest(json: any, c: WS2PConnection): Promise<WS2PResponse> {
+              throw Error(DataErrors[DataErrors.CANNOT_ARCHIVE_CHUNK_WRONG_SIZE])
+            }
+            async handlePushMessage(json: any, c: WS2PConnection): Promise<void> {
+              logger.warn('Receiving push messages, which are not allowed during a SYNC.', json)
+            }
+          }),
+          new WS2PPubkeyLocalAuth(currency, pair, '00000000'),
+          new WS2PPubkeyRemoteAuth(currency, pair),
+          undefined,
+          {
+            connectionTimeout: 1500,
+            requestTimeout: 1500,
           }
-          async handlePushMessage(json: any, c: WS2PConnection): Promise<void> {
-            logger.warn('Receiving push messages, which are not allowed during a SYNC.', json)
-          }
-        }),
-        new WS2PPubkeyLocalAuth(currency, pair, '00000000'),
-        new WS2PPubkeyRemoteAuth(currency, pair)
-      )
-      const requester = WS2PRequester.fromConnection(connection)
-      peering = await requester.getPeer()
-      api = new WS2PRemoteContacter(requester)
+        )
+        try {
+          const requester = WS2PRequester.fromConnection(connection)
+          peering = await requester.getPeer()
+          api = new WS2PRemoteContacter(requester)
+        } catch (e) {
+          logger.warn(`Node does not support WS2P at address ${host} :${port} either.`)
+        }
+      }
+      // If we have a working API: stop!
+      if (api && peering) {
+        break;
+      }
     }
     if (!api) {
       throw Error(DataErrors[DataErrors.CANNOT_CONNECT_TO_REMOTE_FOR_SYNC])
@@ -166,7 +186,7 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
     // Peers (just for P2P download)
     //=======
     let peers:(JSONDBPeer|null)[] = [];
-    if (!cliprogram.nopeers && (to - localNumber > 1000)) { // P2P download if more than 1000 blocs
+    if (!cliprogram.nopeers) {
       this.watcher.writeStatus('Peers...');
       peers = await this.node.getPeers()
     }
@@ -180,7 +200,7 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
 
   p2pDownloader(): ISyncDownloader {
     if (!this.theP2pDownloader) {
-      this.theP2pDownloader = new P2PSyncDownloader(this.localNumber, this.to, this.shuffledPeers, this.watcher, logger)
+      this.theP2pDownloader = new P2PSyncDownloader(this.currency, this.server.conf.pair, this.localNumber, this.to, this.shuffledPeers, this.watcher, logger, this.chunkSize)
     }
     return this.theP2pDownloader
   }
@@ -201,7 +221,7 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
   }
 
   static async test(currency: string, host: string, port: number, keypair: Keypair): Promise<BlockDTO> {
-    const syncApi = await RemoteSynchronizer.getSyncAPI(currency, host, port, keypair)
+    const syncApi = await RemoteSynchronizer.getSyncAPI(currency, [{ host, port }], keypair)
     const current = await syncApi.api.getCurrent()
     if (!current) {
       throw Error(DataErrors[DataErrors.REMOTE_HAS_NO_CURRENT_BLOCK])

@@ -14,7 +14,6 @@
 import {WS2PConstants} from "../../../app/modules/ws2p/lib/constants"
 import {assertEqual, assertNotNull, createCurrencyWith2Blocks, writeBasicTestWith2Users} from "../tools/test-framework"
 import {NewTestingServer, TestWS2PAPI} from "../tools/toolbox";
-import {assertThrows} from "../../unit-tools";
 import {CrawlerDependency} from "../../../app/modules/crawler/index";
 
 describe('WS2P sync', () => writeBasicTestWith2Users((test) => {
@@ -28,6 +27,7 @@ describe('WS2P sync', () => writeBasicTestWith2Users((test) => {
 
   test('should be able to init with 2 blocks', async (s1, cat, tac) => {
     await createCurrencyWith2Blocks(s1, cat, tac)
+    await s1.disableBMA()
   })
 
   test('we should be able to connect for SYNC', async (s1, cat, tac) => {
@@ -38,9 +38,9 @@ describe('WS2P sync', () => writeBasicTestWith2Users((test) => {
     assertEqual(2, current.number)
   })
 
-  test('we should NOT be able to reconnect for SYNC', async (s1, cat, tac) => {
+  test('we should be able to reconnect for SYNC', async (s1, cat, tac) => {
     const ws = ws2p.connectForSync(tac.keypair, '22222222')
-    await assertThrows(ws.getCurrent(), 'WS2P connection timeout')
+    await assertNotNull(ws.getCurrent())
   })
 
   test('we should be able to connect for SYNC with toc', async (s1, cat, tac, toc) => {
@@ -54,7 +54,7 @@ describe('WS2P sync', () => writeBasicTestWith2Users((test) => {
     const s2 = NewTestingServer({ pair: cat.keypair })
     await s2.initWithDAL()
     // We sync on s1
-    await CrawlerDependency.duniter.methods.synchronize(s1.conf.currency, s2._server, ws2p.host, ws2p.port, 2, 250).syncPromise
+    await CrawlerDependency.duniter.methods.synchronize(s1.conf.currency, s2._server, ws2p.host, ws2p.port, 2, 2).syncPromise
     assertNotNull(await s2.dal.getCurrentBlockOrNull())
   })
 }))

@@ -223,7 +223,7 @@ function proveAndSend(program:any, server:Server, block:any, issuer:any, difficu
             program.show && console.log(proven.getRawSigned());
             logger.info('Posted block ' + proven.getRawSigned());
             const p = PeerDTO.fromJSONObject(peer);
-            const contact = new Contacter(p.getHostPreferDNS(), p.getPort());
+            const contact = new Contacter(p.getHostPreferDNS(), p.getPort() as number);
             await contact.postBlock(proven.getRawSigned());
             next()
           }

@@ -17,6 +17,7 @@ import {BMAConstants} from "./constants"
 import {BMALimitation} from "./limiter"
 import {Underscore} from "../../../lib/common-libs/underscore"
 import {CommonConstants} from "../../../lib/common-libs/constants"
+import {NewLogger} from "../../../lib/logger";
 
 const os = require('os');
 const Q = require('q');
@@ -28,6 +29,7 @@ const errorhandler = require('errorhandler');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const fileUpload = require('express-fileupload');
+const logger = NewLogger()
 
 export interface NetworkInterface {
   ip:string|null
@@ -240,10 +242,10 @@ export class BmaApi {
               resolve(httpServer);
             });
           });
-          this.logger && this.logger.info(this.name + ' listening on http://' + (netInterface.match(/:/) ? '[' + netInterface + ']' : netInterface) + ':' + port);
+          logger.info(this.name + ' listening on http://' + (netInterface.match(/:/) ? '[' + netInterface + ']' : netInterface) + ':' + port);
         } catch (e) {
-          this.logger && this.logger.warn('Could NOT listen to http://' + netInterface + ':' + port);
-          this.logger && this.logger.warn(e);
+          logger.warn('Could NOT listen to http://' + netInterface + ':' + port);
+          logger.warn(e);
         }
       }
     }

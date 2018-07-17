@@ -67,4 +67,8 @@ export class WS2PRequester {
       params: params
     })
   }
+
+  get hostName() {
+    return this.ws2pc.hostName
+  }
 }

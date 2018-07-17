@@ -22,7 +22,7 @@ export class Contacter {
   options:{ timeout:number }
   fullyQualifiedHost:string
 
-  constructor(private host:string, private port:number, opts:any = {}) {
+  constructor(public readonly host:string, public readonly port:number, opts:any = {}) {
     this.options = {
       timeout: (opts && opts.timeout) || CrawlerConstants.DEFAULT_TIMEOUT
     }
@@ -67,7 +67,7 @@ export class Contacter {
   }
 
   getPeersArray() {
-    return this.get('/network/peering/peers', dtos.Peers)
+    return this.get('/network/peers', dtos.Peers)
   }
   
   getSources(pubkey:string) {

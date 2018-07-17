@@ -3,7 +3,6 @@ import {BlockDTO} from "../../../../lib/dto/BlockDTO"
 import {CrawlerConstants} from "../constants"
 import {hashf} from "../../../../lib/common"
 import {getBlockInnerHashAndNonceWithSignature, getBlockInnerPart} from "../../../../lib/common-libs/rawer"
-import {CommonConstants} from "../../../../lib/common-libs/constants"
 import {NewLogger} from "../../../../lib/logger"
 import {ISyncDownloader} from "./ISyncDownloader"
 import {DBBlock} from "../../../../lib/db/DBBlock"
@@ -65,7 +64,7 @@ export class ChunkGetter {
   ) {
     this.writeDAL = dal
     const nbBlocksToDownload = Math.max(0, to - localNumber)
-    this.numberOfChunksToDownload = Math.ceil(nbBlocksToDownload / CommonConstants.CONST_BLOCKS_CHUNK)
+    this.numberOfChunksToDownload = Math.ceil(nbBlocksToDownload / syncStrategy.chunkSize)
     this.p2PDownloader = syncStrategy.p2pDownloader()
     this.fsDownloader = syncStrategy.fsDownloader()
 
@@ -154,7 +153,7 @@ export class ChunkGetter {
                 // We need to wait for upper chunk to be completed to be able to check blocks' correct chaining
                 promiseOfUpperChunk = await this.resultsData[i + 1]
               }
-              const chainsWell = await chainsCorrectly(chunk, promiseOfUpperChunk, this.to, this.toHash)
+              const chainsWell = await chainsCorrectly(chunk, promiseOfUpperChunk, this.to, this.toHash, this.syncStrategy.chunkSize)
               if (!chainsWell) {
                 if (handler.downloader === this.p2PDownloader) {
                   if (chunk.length === 0) {
@@ -171,7 +170,7 @@ export class ChunkGetter {
                   || !(await this.writeDAL.confDAL.coreFS.exists(fileName))
                 if (doWrite) {
                   // Store the file to avoid re-downloading
-                  if (this.localNumber <= 0 && chunk.length === CommonConstants.CONST_BLOCKS_CHUNK) {
+                  if (this.localNumber <= 0 && chunk.length === this.syncStrategy.chunkSize) {
                     await this.writeDAL.confDAL.coreFS.makeTree(this.syncStrategy.getCurrency())
                     const content = { blocks: chunk.map((b:any) => DBBlock.fromBlockDTO(b)) }
                     await this.writeDAL.confDAL.coreFS.writeJSON(fileName, content)
@@ -245,7 +244,7 @@ export class ChunkGetter {
   }
 }
 
-export async function chainsCorrectly(blocks:BlockDTO[], readNextChunk: PromiseOfBlocksReading, topNumber: number, topHash: string) {
+export async function chainsCorrectly(blocks:BlockDTO[], readNextChunk: PromiseOfBlocksReading, topNumber: number, topHash: string, chunkSize: number) {
 
   if (!blocks.length) {
     return false
@@ -281,7 +280,7 @@ export async function chainsCorrectly(blocks:BlockDTO[], readNextChunk: PromiseO
   }
 
   const lastBlockOfChunk = blocks[blocks.length - 1];
-  if ((lastBlockOfChunk.number === topNumber || blocks.length < CommonConstants.CONST_BLOCKS_CHUNK) && lastBlockOfChunk.hash != topHash) {
+  if ((lastBlockOfChunk.number === topNumber || blocks.length < chunkSize) && lastBlockOfChunk.hash != topHash) {
     // Top chunk
     logger.error('Top block is not on the right chain')
     return false

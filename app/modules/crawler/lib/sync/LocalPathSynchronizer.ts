@@ -34,8 +34,9 @@ export class LocalPathSynchronizer extends AbstractSynchronizer {
   constructor(
     private path: string,
     private server:Server,
+    chunkSize: number,
   ) {
-    super()
+    super(chunkSize)
     const fs = RealFS()
     this.ls = fs.fsList(path)
     // We read from the real file system here, directly.
@@ -98,8 +99,8 @@ export class LocalPathSynchronizer extends AbstractSynchronizer {
   }
 
   async getBlock(number: number): Promise<BlockDTO|null> {
-    const chunkNumber = parseInt(String(number / CommonConstants.CONST_BLOCKS_CHUNK))
-    const position = number % CommonConstants.CONST_BLOCKS_CHUNK
+    const chunkNumber = parseInt(String(number / this.chunkSize))
+    const position = number % this.chunkSize
     const chunk = await this.theFsDownloader.getChunk(chunkNumber)
     return chunk[position]
   }

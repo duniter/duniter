@@ -702,6 +702,12 @@ export class WS2PConnection {
       this.ws.terminate()
     }
   }
+
+  get hostName(): string {
+    return (this.ws as any).url
+      .replace('ws://', '')
+      .replace('wss://', '')
+  }
 }
 
 class Logger {

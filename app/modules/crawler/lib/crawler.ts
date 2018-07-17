@@ -25,6 +25,7 @@ import {CrawlerConstants} from "./constants"
 import {pullSandboxToLocalServer} from "./sandbox"
 import {cleanLongDownPeers} from "./garbager"
 import {Underscore} from "../../../lib/common-libs/underscore"
+import {BMARemoteContacter} from "./sync/BMARemoteContacter"
 
 const async = require('async');
 
@@ -208,7 +209,8 @@ export class SandboxCrawler implements DuniterService {
       let peersToTest = randoms.slice().map((p) => PeerDTO.fromJSONObject(p));
       for (const peer of peersToTest) {
         const fromHost = await connect(peer)
-        await pullSandboxToLocalServer(server.conf.currency, fromHost, server, this.logger)
+        const api = new BMARemoteContacter(fromHost)
+        await pullSandboxToLocalServer(server.conf.currency, api, server, this.logger)
       }
       this.logger && this.logger.info('Sandbox pulling done.');
   }

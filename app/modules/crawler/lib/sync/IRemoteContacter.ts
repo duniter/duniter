@@ -25,5 +25,9 @@ export interface IRemoteContacter {
 
   getBlock(number: number): Promise<BlockDTO|null>
 
+  getBlocks(count: number, from: number): Promise<BlockDTO[]>
+
   getRequirementsPending(number: number): Promise<HttpRequirements>
+
+  hostName: string
 }

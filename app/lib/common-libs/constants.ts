@@ -301,7 +301,8 @@ export const CommonConstants = {
 
   BLOCK_MAX_TX_CHAINING_DEPTH: 5,
 
-  CONST_BLOCKS_CHUNK: 250,
+  ARCHIVES_BLOCKS_CHUNK: 250,
+  SYNC_BLOCKS_CHUNK: 250,
   CHUNK_PREFIX: 'chunk_',
   BLOCKS_IN_MEMORY_MAX: 288 * 60, // 60 days of blocks
 

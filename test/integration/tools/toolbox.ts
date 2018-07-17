@@ -57,6 +57,7 @@ import {expectAnswer, expectError, expectJSON} from "./http-expect"
 import {WebSocketServer} from "../../../app/lib/common-libs/websocket"
 import {CommonConstants} from "../../../app/lib/common-libs/constants"
 import {WS2PRequester} from "../../../app/modules/ws2p/lib/WS2PRequester"
+import {WS2PDependency} from "../../../app/modules/ws2p/index"
 
 const assert      = require('assert');
 const rp          = require('request-promise');
@@ -643,6 +644,10 @@ export class TestingServer {
     require('../../../app/modules/prover').ProverDependency.duniter.methods.hookServer(this.server);
   }
 
+  async disableBMA() {
+    await this.bma.closeConnections()
+  }
+
   startBlockComputation() {
     if (!this.prover) {
       this.prover = require('../../../app/modules/prover').ProverDependency.duniter.methods.prover(this.server);
@@ -666,8 +671,26 @@ export class TestingServer {
   }
 
   async enableWS2P(port: number = PORT++): Promise<TestWS2PAPI> {
-    const cluster = WS2PCluster.plugOn(this._server)
-    await (this._server.ws2pCluster as WS2PCluster).listen(HOST, port)
+    // Configure
+    this._server.conf.ws2p = {
+      host: HOST,
+      port,
+      remotehost: HOST,
+      remoteport: port,
+      upnp: false,
+      uuid: '00000000',
+      preferedOnly: false,
+      privilegedOnly: false,
+      privateAccess: true,
+      publicAccess: true,
+    }
+    // Plug cluster
+    const api = WS2PDependency.duniter.methods.bindWS2P(this._server)
+    // Bind cluster
+    await api.getCluster().listen(HOST, port)
+    // Recompute the peer
+    await this._server.recomputeSelfPeer()
+    // Then, create testing facilities to connect to the node
     const doConnection = (pair: Key, ws2pId: string, constructor: new (
       currency:string,
       pair:Key,
@@ -675,7 +698,7 @@ export class TestingServer {
     ) => WS2PPubkeyLocalAuth) => {
       const connection = WS2PConnection.newConnectionToAddress(1,
         `ws://${HOST}:${port}`,
-        new WS2PServerMessageHandler(this._server, cluster),
+        new WS2PServerMessageHandler(this._server, api.getCluster()),
         new constructor(this.conf.currency, pair, ws2pId),
         new WS2PPubkeyRemoteAuth(this.conf.currency, pair)
       )

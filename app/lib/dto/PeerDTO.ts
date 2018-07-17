@@ -94,19 +94,21 @@ export class PeerDTO implements Cloneable {
   }
 
   getBMA() {
-    let bma:any = null;
+    let bma: { dns?: string, ipv4?: string, ipv6?: string, port?: number } = {}
+    let notFound = true
     this.endpoints.forEach((ep) => {
-      const matches = !bma && ep.match(CommonConstants.BMA_REGEXP);
+      const matches = notFound && ep.match(CommonConstants.BMA_REGEXP);
       if (matches) {
+        notFound = false
         bma = {
           "dns": matches[2] || '',
           "ipv4": matches[4] || '',
           "ipv6": matches[6] || '',
-          "port": matches[8] || 9101
+          "port": parseInt(matches[8]) || 9101
         };
       }
     });
-    return bma || {};
+    return bma
   }
 
   getOnceWS2PEndpoint(canReachTorEp:boolean, canReachClearEp:boolean, uuidExcluded:string[] = []) {
@@ -179,6 +181,10 @@ export class PeerDTO implements Cloneable {
       api = this.getOnceWS2PEndpoint(canReachTorEp, canReachClearEp, uuidExcluded)
     }
     return apis
+  }
+
+  getFirstNonTorWS2P() {
+    return this.getOnceWS2PEndpoint(false, true)
   }
 
   getDns() {

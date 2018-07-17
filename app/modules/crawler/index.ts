@@ -26,6 +26,7 @@ import {FileDAL} from "../../lib/dal/fileDAL"
 import {RemoteSynchronizer} from "./lib/sync/RemoteSynchronizer"
 import {AbstractSynchronizer} from "./lib/sync/AbstractSynchronizer"
 import {LocalPathSynchronizer} from "./lib/sync/LocalPathSynchronizer"
+import {CommonConstants} from "../../lib/common-libs/constants";
 
 export const CrawlerDependency = {
   duniter: {
@@ -49,7 +50,7 @@ export const CrawlerDependency = {
       },
 
       synchronize: (currency: string, server:Server, onHost:string, onPort:number, upTo:number, chunkLength:number) => {
-        const strategy = new RemoteSynchronizer(currency, onHost, onPort, server)
+        const strategy = new RemoteSynchronizer(currency, onHost, onPort, server, chunkLength)
         const remote = new Synchroniser(server, strategy)
         const syncPromise = (async () => {
           await server.dal.disableChangesAPI()
@@ -84,7 +85,8 @@ export const CrawlerDependency = {
       { value: '--onlypeers',     desc: 'Will only try to sync peers.'},
       { value: '--slow',          desc: 'Download slowly the blokchcain (for low connnections).'},
       { value: '--readfilesystem',desc: 'Also read the filesystem to speed up block downloading.'},
-      { value: '--minsig <minsig>', desc: 'Minimum pending signatures count for `crawl-lookup`. Default is 5.'}
+      { value: '--minsig <minsig>', desc: 'Minimum pending signatures count for `crawl-lookup`. Default is 5.'},
+      { value: '--up-to <block-number>', desc: 'Block number to reach.'},
     ],
 
     cli: [{
@@ -92,9 +94,9 @@ export const CrawlerDependency = {
       desc: 'Synchronize blockchain from a remote Duniter node',
       preventIfRunning: true,
       onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any): Promise<any> => {
-        const source   = params[0]
-        const to       = params[1]
-        const currency = params[2]
+        const source = params[0]
+        let currency = params[1]
+        const to = params.upTo
         const HOST_PATTERN = /^[^:/]+(:[0-9]{1,5})?$/
         const FILE_PATTERN = /^(\/.+)$/
         if (!source || !(source.match(HOST_PATTERN) || source.match(FILE_PATTERN))) {
@@ -130,9 +132,9 @@ export const CrawlerDependency = {
           if (!currency) {
             throw 'currency parameter is required for network synchronization'
           }
-          strategy = new RemoteSynchronizer(currency, onHost, onPort, server, noShufflePeers === true, otherDAL)
+          strategy = new RemoteSynchronizer(currency, onHost, onPort, server, CommonConstants.SYNC_BLOCKS_CHUNK, noShufflePeers === true, otherDAL)
         } else {
-          strategy = new LocalPathSynchronizer(source, server)
+          strategy = new LocalPathSynchronizer(source, server, CommonConstants.SYNC_BLOCKS_CHUNK)
         }
         if (program.onlypeers === true) {
           return strategy.syncPeers(true)
@@ -163,7 +165,7 @@ export const CrawlerDependency = {
           }
           logger.info('Send self peering ...');
           const p = PeerDTO.fromJSONObject(peering)
-          const contact = new Contacter(p.getHostPreferDNS(), p.getPort(), {})
+          const contact = new Contacter(p.getHostPreferDNS(), p.getPort() as number, {})
           await contact.postPeer(PeerDTO.fromJSONObject(selfPeer))
           logger.info('Sent.');
           await server.disconnect();
@@ -191,7 +193,7 @@ export const CrawlerDependency = {
             const fromPort = peer.getPort();
             logger.info('Looking at %s:%s...', fromHost, fromPort);
             try {
-              const node = new Contacter(fromHost, fromPort, { timeout: 10000 });
+              const node = new Contacter(fromHost, fromPort as number, { timeout: 10000 });
               const requirements = await node.getRequirements(search);
               await req2fwd(requirements, toHost, toPort, logger)
             } catch (e) {
@@ -344,7 +346,7 @@ export const CrawlerDependency = {
             const fromPort = peer.getPort();
             logger.info('Looking at %s:%s...', fromHost, fromPort);
             try {
-              const node = new Contacter(fromHost, fromPort, { timeout: 10000 });
+              const node = new Contacter(fromHost, fromPort as number, { timeout: 10000 });
               const requirements = await node.getRequirementsPending(program.minsig || 5);
               await req2fwd(requirements, toHost, toPort, logger)
             } catch (e) {

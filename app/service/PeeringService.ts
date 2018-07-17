@@ -288,6 +288,10 @@ export class PeeringService {
       if (bmaAccess) {
         logger.info('BMA access:', bmaAccess)
       }
+      const ws2pAccess = PeerDTO.fromJSONObject(p2).getFirstNonTorWS2P()
+      if (ws2pAccess) {
+        logger.info(`WS2P access: ${ws2pAccess.host} :${ws2pAccess.port}${ws2pAccess.path && ' ' + ws2pAccess.path || ''}`)
+      }
       logger.debug('Generating server\'s peering entry based on block#%s...', p2.block.split('-')[0]);
       p2.signature = await this.server.sign(raw2);
       p2.pubkey = this.selfPubkey;

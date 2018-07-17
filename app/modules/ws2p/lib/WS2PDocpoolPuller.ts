@@ -34,6 +34,8 @@ export class WS2PDocpoolPuller {
       getPeers: async () => [],
       getCurrent: async () => null,
       getBlock: async () => null,
+      getBlocks: async () => [],
+      hostName: ''
     }, this.server, this.server.logger)
   }
 }

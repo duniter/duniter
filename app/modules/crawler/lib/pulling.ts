@@ -137,6 +137,7 @@ export abstract class AbstractDAO extends PullingDao {
     const applyCoroutine = async (peer:PeerDTO, blocks:BlockDTO[]) => {
       if (blocks.length > 0) {
         let isFork = localCurrent
+          // && localCurrent.number !== -1
           && !(blocks[0].previousHash == localCurrent.hash
           && blocks[0].number == localCurrent.number + 1);
         if (!isFork) {

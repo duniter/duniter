@@ -14,17 +14,8 @@
 import {NewLogger} from "../../../../lib/logger"
 import {IRemoteContacter} from "./IRemoteContacter";
 import {Contacter} from "../contacter";
-import {HttpMerkleOfPeers, HttpRequirements} from "../../../bma/lib/dtos";
+import {HttpRequirements} from "../../../bma/lib/dtos";
 import {JSONDBPeer} from "../../../../lib/db/DBPeer";
-import {FileDAL} from "../../../../lib/dal/fileDAL";
-import {Watcher} from "./Watcher";
-import {cliprogram} from "../../../../lib/common-libs/programOptions";
-import {connect} from "../connect";
-import {RemoteSynchronizer} from "./RemoteSynchronizer";
-import {PeerDTO} from "../../../../lib/dto/PeerDTO";
-import {CrawlerConstants} from "../constants";
-import {dos2unix} from "../../../../lib/common-libs/dos2unix";
-import {PeeringService} from "../../../../service/PeeringService";
 import {BlockDTO} from "../../../../lib/dto/BlockDTO";
 
 const logger = NewLogger()
@@ -42,6 +33,10 @@ export class BMARemoteContacter implements IRemoteContacter {
     return this.contacter.getCurrent()
   }
 
+  getBlocks(count: number, from: number): Promise<BlockDTO[]> {
+    return this.contacter.getBlocks(count, from)
+  }
+
   async getPeers(): Promise<(JSONDBPeer|null)[]> {
     return (await this.contacter.getPeersArray()).peers
   }
@@ -52,5 +47,9 @@ export class BMARemoteContacter implements IRemoteContacter {
 
   getName(): string {
     return "BMA remote '" + this.contacter.fullyQualifiedHost + "'"
+  }
+
+  get hostName() {
+    return this.contacter.host
   }
 }

@@ -23,7 +23,6 @@ import {DBBlock} from "../../../lib/db/DBBlock"
 import {BlockchainService} from "../../../service/BlockchainService"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {PeeringService} from "../../../service/PeeringService"
-import {CommonConstants} from "../../../lib/common-libs/constants"
 import {Underscore} from "../../../lib/common-libs/underscore"
 import {cliprogram} from "../../../lib/common-libs/programOptions"
 import {EventWatcher, LoggerWatcher, MultimeterWatcher, Watcher} from "./sync/Watcher"
@@ -241,7 +240,7 @@ export class Synchroniser extends stream.Duplex {
         async downloadBlocks(thePeer: PeerDTO, fromNumber: number, count?: number | undefined): Promise<BlockDTO[]> {
           // Note: we don't care about the particular peer asked by the method. We use the network instead.
           const numberOffseted = fromNumber - (localNumber + 1);
-          const targetChunk = Math.floor(numberOffseted / CommonConstants.CONST_BLOCKS_CHUNK);
+          const targetChunk = Math.floor(numberOffseted / syncStrategy.chunkSize);
           // Return the download promise! Simple.
           return (await downloader.getChunk(targetChunk))()
         }

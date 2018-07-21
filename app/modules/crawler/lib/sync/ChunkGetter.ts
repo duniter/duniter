@@ -165,7 +165,7 @@ export class ChunkGetter {
                 ;(handler as any).state = 'WAITING'
                 i++
               } else {
-                logger.warn("Chunk #%s read from filesystem.", i)
+                logger.info("Chunk #%s read from filesystem.", i)
                 let doWrite = handler.downloader !== this.fsDownloader
                   || !(await this.writeDAL.confDAL.coreFS.exists(fileName))
                 if (doWrite) {
@@ -181,7 +181,7 @@ export class ChunkGetter {
               if (chainsWell) {
 
                 // Chunk is COMPLETE
-                logger.warn("Chunk #%s is COMPLETE", i)
+                logger.info("Chunk #%s is COMPLETE", i)
                 ;(handler as any).state = 'COMPLETED'
                 if (!isTopChunk) {
                   (handler as any).chunk = undefined

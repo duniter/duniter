@@ -30,6 +30,14 @@ export interface BlockchainArchiveDAO<T extends BlockLike> extends Initiable {
   getBlockByNumber(number:number): Promise<T|null>
 
   /**
+   * Get the blocks whose number is between [start ; end].
+   * @param {number} start Starting number to be included.
+   * @param {number} end Ending number to be included.
+   * @returns {Promise<T[]>} The corresponding blocks.
+   */
+  getBlocks(start: number, end: number): Promise<T[]>
+
+  /**
    * Archives a suite of blocks.
    *
    * Throws an exception is blocks does not follow each other, or does not follow previously archived blocks.

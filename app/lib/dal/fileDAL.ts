@@ -412,8 +412,25 @@ export class FileDAL {
     return this.blockDAL.getCountOfBlocksIssuedBy(issuer)
   }
 
-  getBlocksBetween (start:number, end:number) {
-    return this.blockDAL.getBlocks(Math.max(0, start), end)
+  async getBlocksBetween (start:number, end:number) {
+    start = Math.max(0, start)
+    end= Math.max(0, end)
+    const blocks = await this.blockDAL.getBlocks(Math.max(0, start), end)
+    if (blocks[0] && blocks[0].number === start) {
+      // OK: we have all the blocks from memory
+      return blocks
+    }
+    // Else: we have to pick them from archives
+    const last = blocks[0] ? blocks[0].number - 1 : end
+    const archiveBlocks = await this.blockchainArchiveDAL.getBlocks(start, last)
+    const lastInArchives = archiveBlocks[archiveBlocks.length - 1] ? archiveBlocks[archiveBlocks.length - 1].number - 1 : end
+    if (lastInArchives === end) {
+      // OK: we have all the blocks from archives
+      return archiveBlocks
+    }
+    // Otherwise: what is not taken in the archives are in memory
+    const memBlocks = await this.blockDAL.getBlocks(archiveBlocks[archiveBlocks.length - 1].number + 1, end)
+    return archiveBlocks.concat(memBlocks)
   }
 
   getForkBlocksFollowing(current:DBBlock) {

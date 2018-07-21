@@ -1,5 +1,6 @@
 import {BlockchainArchiveDAO, BlockLike} from "./abstract/BlockchainArchiveDAO"
 import {CFSCore} from "../fileDALs/CFSCore"
+import {Underscore} from "../../common-libs/underscore"
 
 export class CFSBlockchainArchive<T extends BlockLike> implements BlockchainArchiveDAO<T> {
 
@@ -15,7 +16,7 @@ export class CFSBlockchainArchive<T extends BlockLike> implements BlockchainArch
     }
     const chunks = this.splitIntoChunks(records)
     for (const c of chunks) {
-      const fileName = this.getFileName(c[0].number)
+      const fileName = this.getFileNameForBlock(c[0].number)
       await this.cfs.writeJSON(fileName, c)
     }
     return chunks.length
@@ -62,7 +63,7 @@ export class CFSBlockchainArchive<T extends BlockLike> implements BlockchainArch
     if (number < 0) {
       return null
     }
-    const content = await this.getChunk(number)
+    const content = await this.getChunkForBlock(number)
     if (!content) {
       // The block's chunk is not archived
       return null
@@ -70,8 +71,38 @@ export class CFSBlockchainArchive<T extends BlockLike> implements BlockchainArch
     return content[this.getPositionInChunk(number)]
   }
 
+  async getBlocks(start: number, end: number): Promise<T[]> {
+    const chunkStart = this.getChunkNumber(start)
+    const chunkLast = this.getChunkNumber(end)
+    const chunkRange = Underscore.range(chunkStart, chunkLast + 1)
+    const chunks = await Promise.all(chunkRange.map(c => this.getChunk(c)))
+    const startInFirst = start - chunkStart * this._chunkSize
+    const endInLast = end % this._chunkSize + 1
+    let blocks: T[] = []
+    for (let i = 0; i < chunks.length; i++) {
+      let toConcat: T[] = []
+      const chunk = chunks[i]
+      if (chunk) {
+        if (i === 0) {
+          toConcat = chunk.slice(startInFirst, chunkStart === chunkLast ? endInLast : this._chunkSize)
+        } else if (i === chunks.length - 1) {
+          toConcat = chunk.slice(0, endInLast)
+        } else {
+          toConcat = chunk.slice()
+        }
+      }
+      blocks = blocks.concat(toConcat)
+    }
+    return blocks
+  }
+
   async getChunk(number:number): Promise<(T[])|null> {
-    const file = this.getFileName(number)
+    const file = this.getFileNameForChunk(number)
+    return this.cfs.readJSON(file)
+  }
+
+  async getChunkForBlock(number:number): Promise<(T[])|null> {
+    const file = this.getFileNameForBlock(number)
     return this.cfs.readJSON(file)
   }
 
@@ -84,17 +115,25 @@ export class CFSBlockchainArchive<T extends BlockLike> implements BlockchainArch
       .reduce((v, max) => {
         return Math.max(v, max)
       }, 0)
-    const content = await this.getChunk(max * this._chunkSize)
+    const content = await this.getChunkForBlock(max * this._chunkSize)
     if (!content) {
       return null
     }
     return this.getBlock(content[content.length - 1].number, content[content.length - 1].hash)
   }
 
-  private getFileName(number:number) {
-    const rest = number % this._chunkSize
-    const chunk = (number - rest) / this._chunkSize
+  private getFileNameForChunk(number:number) {
+    return CFSBlockchainArchive.getChunkName(number, this._chunkSize)
+  }
+
+  private getFileNameForBlock(number:number) {
+    const chunk = this.getChunkNumber(number)
     return CFSBlockchainArchive.getChunkName(chunk, this._chunkSize)
+  }
+
+  private getChunkNumber(number:number) {
+    const rest = number % this._chunkSize
+    return (number - rest) / this._chunkSize
   }
 
   private static getChunkName(chunkNumber:number, chunkSize:number) {

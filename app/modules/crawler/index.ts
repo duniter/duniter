@@ -96,7 +96,7 @@ export const CrawlerDependency = {
       onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any): Promise<any> => {
         const source = params[0]
         let currency = params[1]
-        const to = params.upTo
+        const to = program.upTo
         const HOST_PATTERN = /^[^:/]+(:[0-9]{1,5})?$/
         const FILE_PATTERN = /^(\/.+)$/
         if (!source || !(source.match(HOST_PATTERN) || source.match(FILE_PATTERN))) {

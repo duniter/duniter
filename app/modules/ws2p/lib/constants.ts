@@ -57,7 +57,7 @@ export const WS2PConstants = {
   },
 
   BAN_DURATION_IN_SECONDS: 120,
-  SYNC_BAN_DURATION_IN_SECONDS: 240,
+  SYNC_BAN_DURATION_IN_SECONDS: 2400,
   BAN_ON_REPEAT_THRESHOLD: 5,
   ERROR_RECALL_DURATION_IN_SECONDS: 60,
   SINGLE_RECORD_PROTECTION_IN_SECONDS: 60,
@@ -98,5 +98,5 @@ export const WS2PConstants = {
   HEADS_SPREAD_TIMEOUT: 100, // Wait 100ms before sending a bunch of signed heads
 
   WS2P_SYNC_LIMIT: 15, // Number of concurrent peers for sync
-  SYNC_CONNECTION_DURATION_IN_SECONDS: 120, // Duration of the SYNC connection
+  SYNC_CONNECTION_DURATION_IN_SECONDS: 1200, // Duration of the SYNC connection
 }

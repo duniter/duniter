@@ -129,7 +129,7 @@ export class WS2PServer extends events.EventEmitter {
             }
           })
           // We close the connection after a given delay
-          setTimeout(() => c.close(), WS2PConstants.SYNC_CONNECTION_DURATION_IN_SECONDS)
+          setTimeout(() => c.close(), 1000 * WS2PConstants.SYNC_CONNECTION_DURATION_IN_SECONDS)
           // We don't broadcast or pipe data
           return
         }

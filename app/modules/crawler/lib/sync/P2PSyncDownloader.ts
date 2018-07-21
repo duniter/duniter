@@ -10,6 +10,12 @@ import {Keypair} from "../../../../lib/dto/ConfDTO";
 import {IRemoteContacter} from "./IRemoteContacter";
 import {Querable} from "../../../../lib/common-libs/querable";
 import {cat} from "shelljs";
+import {ManualPromise, newManualPromise} from "../../../../lib/common-libs/manual-promise"
+import {GlobalFifoPromise} from "../../../../service/GlobalFifoPromise"
+import {getNanosecondsTime} from "../../../../ProcessCpuProfiler"
+import {CommonConstants} from "../../../../lib/common-libs/constants"
+import {DataErrors} from "../../../../lib/common-libs/errors"
+import {newRejectTimeoutPromise} from "../../../../lib/common-libs/timeout-promise"
 
 const makeQuerablePromise = require('querablep');
 
@@ -17,8 +23,6 @@ export class P2PSyncDownloader implements ISyncDownloader {
 
   private PARALLEL_PER_CHUNK = 1;
   private MAX_DELAY_PER_DOWNLOAD = cliprogram.slow ? 15000 : 5000;
-  private WAIT_DELAY_WHEN_MAX_DOWNLOAD_IS_REACHED = 3000;
-  private NO_NODES_AVAILABLE = "No node available for download";
   private TOO_LONG_TIME_DOWNLOAD:string
   private nbBlocksToDownload:number
   private numberOfChunksToDownload:number
@@ -29,6 +33,8 @@ export class P2PSyncDownloader implements ISyncDownloader {
   private nbDownloading = 0
   private lastAvgDelay:number
   private downloads: { [chunk: number]: any } = {}
+  private fifoPromise = new GlobalFifoPromise()
+  private nbWaitFailed = 0
 
   constructor(
     private currency: string,
@@ -49,6 +55,67 @@ export class P2PSyncDownloader implements ISyncDownloader {
 
     // Create slots of download, in a ready stage
     this.lastAvgDelay = this.MAX_DELAY_PER_DOWNLOAD;
+
+    for (const thePeer of peers) {
+      // Create the node
+      let p = PeerDTO.fromJSONObject(thePeer)
+      this.nodes.push(makeQuerablePromise((async () => {
+        const bmaAPI = p.getBMA()
+        const ws2pAPI = p.getFirstNonTorWS2P()
+        const apis: { isBMA?: boolean, isWS2P?: boolean, host: string, port: number, path?: string }[] = []
+        const bmaHost = bmaAPI.dns || bmaAPI.ipv4 || bmaAPI.ipv6
+        if (bmaAPI.port && bmaHost) {
+          apis.push({
+            isBMA: true,
+            port: bmaAPI.port,
+            host: bmaHost
+          })
+        }
+        if (ws2pAPI) {
+          apis.push({
+            isWS2P: true,
+            host: ws2pAPI.host,
+            port: ws2pAPI.port,
+            path: ws2pAPI.path,
+          })
+        }
+        let syncApi: any = null
+        try {
+          syncApi = await RemoteSynchronizer.getSyncAPI(this.currency, apis, this.keypair)
+          const manualp = newManualPromise<boolean>()
+          manualp.resolve(true)
+          const node: ProfiledNode = {
+            api: syncApi.api,
+            tta: 1,
+            ttas: [],
+            nbSuccess: 1,
+            readyForDownload: manualp,
+            hostName: syncApi && syncApi.api.hostName || '',
+          }
+          if (node.hostName.match(/^(localhost|192|127)/)) {
+            node.tta = this.MAX_DELAY_PER_DOWNLOAD
+          }
+          return node
+        } catch (e) {
+          this.logger.warn(e)
+          return newManualPromise() // Which never resolves, so this node won't be used
+        }
+      })()))
+    }
+  }
+
+  private async wait4AnAvailableNode(): Promise<any> {
+    let promises: Promise<any>[] = this.nodes
+    return await Promise.race(promises.concat(newRejectTimeoutPromise(CommonConstants.REJECT_WAIT_FOR_AVAILABLE_NODES_IN_SYNC_AFTER)
+      .catch(() => {
+        if (this.nbWaitFailed >= CommonConstants.REJECT_WAIT_FOR_AVAILABLE_NODES_IN_SYNC_MAX_FAILS) {
+          this.logger.error("Impossible sync: no more compliant nodes to download from")
+          process.exit(2)
+        }
+        else {
+          throw Error(DataErrors[DataErrors.REJECT_WAIT_FOR_AVAILABLE_NODES_BUT_CONTINUE])
+        }
+      })))
   }
 
   /**
@@ -56,77 +123,28 @@ export class P2PSyncDownloader implements ISyncDownloader {
    * If a node is not yet correctly initialized (we can test a node before considering it good for downloading), then
    * this method would not return it.
    */
-  private async getP2Pcandidates(): Promise<any[]> {
-    let promises = this.peers.reduce((chosens:Querable<ProfiledNode>[], thePeer, index:number) => {
-      if (!this.nodes[index]) {
-        // Create the node
-        let p = PeerDTO.fromJSONObject(thePeer)
-        this.nodes[index] = makeQuerablePromise((async () => {
-          const bmaAPI = p.getBMA()
-          const ws2pAPI = p.getFirstNonTorWS2P()
-          const apis: { host: string, port: number, path?: string }[] = []
-          const bmaHost = bmaAPI.dns || bmaAPI.ipv4 || bmaAPI.ipv6
-          if (bmaAPI.port && bmaHost) {
-            apis.push({
-              port: bmaAPI.port,
-              host: bmaHost
-            })
+  private async getP2Pcandidates(): Promise<ProfiledNode[]> {
+    return this.fifoPromise.pushFIFOPromise('getP2Pcandidates_' + getNanosecondsTime(), async () => {
+      // We wait to have at least 1 available node
+      await this.wait4AnAvailableNode()
+      // We filter on all the available nodes, since serveral can be ready at the same time
+      const readyNodes:ProfiledNode[] = await Promise.all(this.nodes.filter(p => p.isResolved()))
+      // We remove the nodes impossible to reach (timeout)
+      let withGoodDelays = Underscore.filter(readyNodes, (c) => c.tta <= this.MAX_DELAY_PER_DOWNLOAD)
+      if (withGoodDelays.length === 0) {
+        readyNodes.map(c => {
+          if (c.tta >= this.MAX_DELAY_PER_DOWNLOAD) {
+            c.tta = this.MAX_DELAY_PER_DOWNLOAD - 1
           }
-          if (ws2pAPI) {
-            apis.push(ws2pAPI)
-          }
-          let syncApi: any = null
-          try {
-            syncApi = await RemoteSynchronizer.getSyncAPI(this.currency, apis, this.keypair)
-          } catch (e) {
-
-          }
-          const node: ProfiledNode = {
-            api: syncApi && syncApi.api,
-            connected: !!syncApi,
-            tta: 1,
-            ttas: [],
-            nbSuccess: 1,
-            excluded: false,
-            downloading: false,
-            hostName: syncApi && syncApi.api.hostName || '',
-          }
-          if (node.hostName.match(/^(localhost|192|127)/)) {
-            node.tta = this.MAX_DELAY_PER_DOWNLOAD
-          }
-          return node
-        })())
-        chosens.push(this.nodes[index]);
-      } else {
-        chosens.push(this.nodes[index]);
+        })
       }
-      // Continue
-      return chosens;
-    }, []);
-    const eventuals:ProfiledNode[] = await Promise.all(promises)
-    const candidates: ProfiledNode[] = eventuals.filter(c => c.connected) as ProfiledNode[]
-    candidates.forEach((c) => {
-      c.tta = c.tta || 0; // By default we say a node is super slow to answer
-      c.ttas = c.ttas || []; // Memorize the answer delays
-    });
-    if (candidates.length === 0) {
-      throw this.NO_NODES_AVAILABLE;
-    }
-    // We remove the nodes impossible to reach (timeout)
-    let withGoodDelays = Underscore.filter(candidates, (c) => c.tta <= this.MAX_DELAY_PER_DOWNLOAD && !c.excluded && !c.downloading);
-    if (withGoodDelays.length === 0) {
-      await new Promise(res => setTimeout(res, this.WAIT_DELAY_WHEN_MAX_DOWNLOAD_IS_REACHED)) // We wait a bit before continuing the downloads
-      // We reinitialize the nodes
-      this.nodes = []
-      // And try it all again
-      return this.getP2Pcandidates();
-    }
-    const parallelMax = Math.min(this.PARALLEL_PER_CHUNK, withGoodDelays.length);
-    withGoodDelays = Underscore.sortBy(withGoodDelays, (c:any) => c.tta);
-    withGoodDelays = withGoodDelays.slice(0, parallelMax);
-    // We temporarily augment the tta to avoid asking several times to the same node in parallel
-    withGoodDelays.forEach((c:any) => c.tta = this.MAX_DELAY_PER_DOWNLOAD);
-    return withGoodDelays;
+      const parallelMax = Math.min(this.PARALLEL_PER_CHUNK, withGoodDelays.length)
+      withGoodDelays = Underscore.sortBy(withGoodDelays, c => c.tta)
+      withGoodDelays = withGoodDelays.slice(0, parallelMax)
+      // We temporarily augment the tta to avoid asking several times to the same node in parallel
+      withGoodDelays.forEach(c => c.tta = this.MAX_DELAY_PER_DOWNLOAD)
+      return withGoodDelays
+    })
   }
 
   /**
@@ -143,12 +161,16 @@ export class P2PSyncDownloader implements ISyncDownloader {
       this.logger.warn('Excluding node %s as it returns unchainable chunks', [lastSupplier.host, lastSupplier.port].join(':'))
     }
     let candidates = await this.getP2Pcandidates();
+    if (candidates.length === 0) {
+      this.logger.warn('No node found to download this chunk.')
+      throw Error(DataErrors[DataErrors.NO_NODE_FOUND_TO_DOWNLOAD_CHUNK])
+    }
     // Book the nodes
     return await this.raceOrCancelIfTimeout(this.MAX_DELAY_PER_DOWNLOAD, candidates.map(async (node:ProfiledNode) => {
       try {
         const start = Date.now();
         this.handler[chunkIndex] = node;
-        node.downloading = true;
+        node.readyForDownload = newManualPromise()
         this.nbDownloading++;
         this.watcher.writeStatus('Getting chunck #' + chunkIndex + '/' + (this.numberOfChunksToDownload - 1) + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + node.hostName);
         let blocks = await node.api.getBlocks(count, from);
@@ -173,12 +195,12 @@ export class P2PSyncDownloader implements ISyncDownloader {
 
         this.nbDownloadsTried++;
         this.nbDownloading--;
-        node.downloading = false;
+        node.readyForDownload.resolve(true)
 
         return blocks;
       } catch (e) {
         this.nbDownloading--;
-        node.downloading = false;
+        node.readyForDownload.resolve(true)
         this.nbDownloadsTried++;
         node.ttas.push(this.MAX_DELAY_PER_DOWNLOAD + 1); // No more ask on this node
         // Average time to answer
@@ -244,7 +266,5 @@ interface ProfiledNode {
   ttas: number[]
   nbSuccess: number
   hostName: string
-  connected: boolean
-  excluded: boolean
-  downloading: boolean
+  readyForDownload: ManualPromise<boolean>
 }

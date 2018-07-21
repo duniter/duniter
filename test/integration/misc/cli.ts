@@ -11,9 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {MerkleDTO} from "../../../app/lib/dto/MerkleDTO"
 import {hashf} from "../../../app/lib/common"
-import {processForURL} from "../../../app/lib/helpers/merkle"
 import {fakeSyncServer} from "../tools/toolbox"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
 
@@ -39,13 +37,7 @@ describe("CLI", function() {
      */
     const onReadBlockchainChunk = (count:number, from:number) => Promise.resolve(blockchain.blocks.slice(from, from + count));
     const onReadParticularBlock = (number:number) => Promise.resolve(blockchain.blocks[number]);
-    const onPeersRequested = async (req:any) => {
-      const merkle = new MerkleDTO();
-      merkle.initialize(leaves);
-      return processForURL(req, merkle, async () => {
-        return peersMap;
-      })
-    }
+    const onPeersRequested = async () => []
 
     /**
      * The fake hash in the blockchain
@@ -134,14 +126,14 @@ describe("CLI", function() {
 
   it('sync 7 blocks (fast)', async () => {
     await execute(['reset', 'data']);
-    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '7', 'duniter_unit_test_currency', '--nocautious', '--nointeractive', '--noshuffle']);
+    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), 'duniter_unit_test_currency', '--nocautious', '--nointeractive', '--noshuffle', '--up-to', '7']);
     const res = await execute(['export-bc', '--nostdout']);
     res[res.length - 1].should.have.property('number').equal(7);
     res.should.have.length(7 + 1); // blocks #0..#7
   })
 
   it('sync 4 blocks (cautious)', async () => {
-    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '11', 'duniter_unit_test_currency', '--nointeractive']);
+    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), 'duniter_unit_test_currency', '--nointeractive', '--up-to', '11']);
     const res = await execute(['export-bc', '--nostdout']);
     res[res.length - 1].should.have.property('number').equal(11);
     res.should.have.length(11 + 1);
@@ -154,7 +146,7 @@ describe("CLI", function() {
   })
 
   it('[spawn] sync 10 first blocks --memory', async () => {
-    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '10', 'duniter_unit_test_currency', '--memory', '--cautious', '--nointeractive']);
+    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), 'duniter_unit_test_currency', '--memory', '--cautious', '--nointeractive', '--up-to', '10']);
   })
 });
 

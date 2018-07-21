@@ -772,12 +772,12 @@ export class WS2PCluster {
 
     // Sync case is specific
     if (isSync) {
+      // OK for reconnection period of time
+      if (this.ok4reconnect[pub]) {
+        return true
+      }
       if (this.banned4Sync[pub]) {
         return false
-      }
-      // Already connected
-      if (syncConnectedPubkeys.indexOf(pub) !== -1) {
-        return !!this.ok4reconnect[pub]
       }
       const limit = (this.server.conf.ws2p && this.server.conf.ws2p.syncLimit) || WS2PConstants.WS2P_SYNC_LIMIT
       const ok = syncConnectedPubkeys.length < limit

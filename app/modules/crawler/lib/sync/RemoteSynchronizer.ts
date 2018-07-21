@@ -31,7 +31,7 @@ import {pullSandboxToLocalServer} from "../sandbox"
 import * as path from 'path'
 import {IRemoteContacter} from "./IRemoteContacter";
 import {BMARemoteContacter} from "./BMARemoteContacter";
-import {WS2PConnection, WS2PPubkeyLocalAuth, WS2PPubkeyRemoteAuth} from "../../../ws2p/lib/WS2PConnection";
+import {WS2PConnection, WS2PPubkeyRemoteAuth, WS2PPubkeySyncLocalAuth} from "../../../ws2p/lib/WS2PConnection";
 import {WS2PRequester} from "../../../ws2p/lib/WS2PRequester";
 import {WS2PMessageHandler} from "../../../ws2p/lib/impl/WS2PMessageHandler";
 import {WS2PResponse} from "../../../ws2p/lib/impl/WS2PResponse";
@@ -114,7 +114,7 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
     ;(this.node as any).pubkey = this.peer.pubkey
   }
 
-  public static async getSyncAPI(currency: string, hosts: { host: string, port: number, path?: string }[], keypair: Keypair) {
+  public static async getSyncAPI(currency: string, hosts: { isBMA?: boolean, isWS2P?: boolean, host: string, port: number, path?: string }[], keypair: Keypair) {
     let api: IRemoteContacter|undefined
     let peering: any
     for (const access of hosts) {
@@ -122,16 +122,20 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
       const port = access.port
       const path = access.path
       logger.info(`Connecting to address ${host} :${port}...`)
-      try {
-        const contacter = await connect(PeerDTO.fromJSONObject({ endpoints: [`BASIC_MERKLED_API ${host} ${port}${path && ' ' + path || ''}`]}), 3000)
-        peering = await contacter.getPeer()
-        api = new BMARemoteContacter(contacter)
-      } catch (e) {
-        logger.warn(`Node does not support BMA at address ${host} :${port}, trying WS2P...`)
+
+      // If we know this is a WS2P connection, don't try BMA
+      if (access.isWS2P !== true) {
+        try {
+          const contacter = await connect(PeerDTO.fromJSONObject({ endpoints: [`BASIC_MERKLED_API ${host} ${port}${path && ' ' + path || ''}`]}), 3000)
+          peering = await contacter.getPeer()
+          api = new BMARemoteContacter(contacter)
+        } catch (e) {
+          logger.warn(`Node does not support BMA at address ${host} :${port}, trying WS2P...`)
+        }
       }
 
-      // If BMA is unreachable, let's try WS2P
-      if (!api) {
+      // If BMA is unreachable and the connection is not marked as strict BMA, let's try WS2P
+      if (!api && access.isBMA !== true) {
         const pair = KeyGen(keypair.pub, keypair.sec)
         const connection = WS2PConnection.newConnectionToAddress(1,
           `ws://${host}:${port}${path && ' ' + path || ''}`,
@@ -143,13 +147,9 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
               logger.warn('Receiving push messages, which are not allowed during a SYNC.', json)
             }
           }),
-          new WS2PPubkeyLocalAuth(currency, pair, '00000000'),
+          new WS2PPubkeySyncLocalAuth(currency, pair, '00000000'),
           new WS2PPubkeyRemoteAuth(currency, pair),
-          undefined,
-          {
-            connectionTimeout: 1500,
-            requestTimeout: 1500,
-          }
+          undefined
         )
         try {
           const requester = WS2PRequester.fromConnection(connection)

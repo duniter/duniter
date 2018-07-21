@@ -188,7 +188,7 @@ export const fakeSyncServer = async (currency: string, readBlocksMethod:any, rea
     }, noLimit);
 
     // Mock BMA method for sync mocking
-    httpMethods.httpGET('/network/peering/peers', onPeersRequested, noLimit);
+    httpMethods.httpGET('/network/peers', onPeersRequested, noLimit);
 
     // Another mock BMA method for sync mocking
     httpMethods.httpGET('/blockchain/blocks/:count/:from', (req:any) => {

@@ -311,6 +311,9 @@ export const CommonConstants = {
 
   BLOCKS_COLLECT_THRESHOLD: 30, // Number of blocks to wait before trimming the loki data
   DEFAULT_NON_WOT_PEERS_LIMIT: 100, // Number of non-wot peers accepted in our peer document pool
+
+  REJECT_WAIT_FOR_AVAILABLE_NODES_IN_SYNC_AFTER: 20000, // Reject after 20 seconds without any change
+  REJECT_WAIT_FOR_AVAILABLE_NODES_IN_SYNC_MAX_FAILS: 5, // Maximum number of rejections of waiting for an available node
 }
 
 function exact (regexpContent:string) {

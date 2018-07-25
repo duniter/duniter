@@ -191,10 +191,24 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
       peers = await this.node.getPeers()
     }
 
+    peers = peers.filter(p => {
+      if (!p) return false
+      let hasWS2P = false
+      let hasBMA = false
+      for (const e of p.endpoints) {
+        if (e.indexOf('MERKLED')) {
+          hasBMA = true
+        }
+        if (e.indexOf('WS2P') !== -1) {
+          hasWS2P = true
+        }
+      }
+      return (hasWS2P || hasBMA) && p.status === 'UP'
+    })
+
     if (!peers.length) {
       peers.push(DBPeer.fromPeerDTO(this.peer))
     }
-    peers = peers.filter((p) => p);
     this.shuffledPeers = (this.noShufflePeers ? peers : Underscore.shuffle(peers)).filter(p => !!(p)) as JSONDBPeer[]
   }
 

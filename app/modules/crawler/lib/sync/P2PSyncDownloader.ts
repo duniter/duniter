@@ -186,7 +186,7 @@ export class P2PSyncDownloader implements ISyncDownloader {
         }
         node.nbSuccess++;
 
-        const peers = await Promise.all(this.nodes)
+        const peers = await Promise.all(this.nodes.filter(p => p.isResolved()))
         const downloading = Underscore.filter(peers, (p:any) => p.downloading && p.ttas.length);
         this.lastAvgDelay = downloading.reduce((sum:number, c:any) => {
           const tta = Math.round(c.ttas.reduce((sum:number, tta:number) => sum + tta, 0) / c.ttas.length)

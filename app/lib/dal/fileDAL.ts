@@ -807,7 +807,7 @@ export class FileDAL {
   async cindexEntry2DBCert(entry:CindexEntry): Promise<DBCert> {
     const idty = await this.getWrittenIdtyByPubkeyForHash(entry.receiver)
     const wbt = entry.written_on.split('-')
-    const block = (await this.blockDAL.getBlock(entry.created_on)) as DBBlock
+    const block = (await this.getBlock(entry.created_on)) as DBBlock
     return {
       issuers: [entry.issuer],
       linked: true,
@@ -1315,7 +1315,9 @@ export class FileDAL {
   }
 
   async resetPeers() {
-    this.peerDAL.removeAll();
+    await this.peerDAL.removeAll();
+    await this.loki.commitData();
+    await this.loki.flushAndTrimData();
     return await this.close()
   }
 

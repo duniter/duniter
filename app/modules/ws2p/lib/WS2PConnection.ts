@@ -21,6 +21,8 @@ import {TransactionDTO} from "../../../lib/dto/TransactionDTO"
 import {PeerDTO} from "../../../lib/dto/PeerDTO"
 import {WS2PConstants} from './constants';
 import {WebSocket} from "../../../lib/common-libs/websocket"
+import {ManualPromise, newManualPromise} from "../../../lib/common-libs/manual-promise"
+import {DataErrors} from "../../../lib/common-libs/errors"
 
 const SocksProxyAgent = require('socks-proxy-agent');
 const nuuid = require('node-uuid');
@@ -61,7 +63,8 @@ export interface WS2PAuth {
 }
 
 export interface WS2PRemoteAuth extends WS2PAuth {
-  registerCONNECT(type: 'CONNECT'|'SYNC', ws2pVersion:number, challenge:string, sig: string, pub: string, ws2pId:string): Promise<boolean>
+  givenCurrency: Promise<string>
+  registerCONNECT(type: 'CONNECT'|'SYNC', ws2pVersion:number, challenge:string, sig: string, pub: string, currency: string, ws2pId:string): Promise<boolean>
   sendACK(ws:any): Promise<void>
   registerOK(sig: string): Promise<boolean>
   isAuthenticatedByRemote(): boolean
@@ -75,6 +78,7 @@ export interface WS2PLocalAuth extends WS2PAuth {
   registerACK(sig: string, pub: string): Promise<boolean>
   sendOK(ws:any): Promise<void>
   isRemoteAuthenticated(): boolean
+  currency: string
 }
 
 /**
@@ -91,6 +95,7 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
   protected serverAuthResolve:()=>void
   protected serverAuthReject:(err:any)=>void
   protected isSyncConnection = false
+  public givenCurrency: ManualPromise<string>
 
   constructor(
     protected currency:string,
@@ -102,6 +107,11 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
       this.serverAuthResolve = resolve
       this.serverAuthReject = reject
     })
+    this.givenCurrency = newManualPromise()
+    // If the currency is already provided, resolve the promise immediately
+    if (currency) {
+      this.givenCurrency.resolve(currency)
+    }
   }
 
   getVersion() {
@@ -127,12 +137,20 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
     }))
   }
 
-  async registerCONNECT(type: 'CONNECT'|'SYNC', ws2pVersion:number, challenge:string, sig: string, pub: string, ws2pId:string = ""): Promise<boolean> {
+  async registerCONNECT(type: 'CONNECT'|'SYNC', ws2pVersion:number, challenge:string, sig: string, pub: string, currency: string, ws2pId:string = ""): Promise<boolean> {
     this.isSyncConnection = type === 'SYNC'
     const allow = await this.tellIsAuthorizedPubkey(pub, this.isSyncConnection)
     if (!allow) {
       return false
     }
+    // If the connection was not aware of the currency beforehand, let's give the remote node's value
+    if (!this.currency && currency) {
+      this.currency = currency
+    }
+    else if (this.currency && this.currency !== currency && currency) {
+      throw Error(DataErrors[DataErrors.WRONG_CURRENCY_DETECTED])
+    }
+    this.givenCurrency.resolve(this.currency)
     const challengeMessage = (ws2pVersion > 1) ? `WS2P:${type}:${this.currency}:${pub}:${ws2pId}:${challenge}`:`WS2P:${type}:${this.currency}:${pub}:${challenge}`
     Logger.log('registerCONNECT >>> ' + challengeMessage)
     const verified = verify(challengeMessage, sig, pub)
@@ -179,7 +197,7 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
   protected isSync: boolean
 
   constructor(
-    protected currency:string,
+    public currency:string,
     protected pair:Key,
     protected ws2pId:string,
     protected tellIsAuthorizedPubkey:(pub: string) => Promise<boolean> = () => Promise.resolve(true)
@@ -204,7 +222,8 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
         pub: this.pair.pub,
         ws2pid: this.ws2pId,
         challenge: this.challenge,
-        sig
+        sig,
+        currency: this.currency, // This is necessary for SYNC: because the currency is supposed not to be known by the remote
       }))
       return this.serverAuth
     } else if (ws2pVersion == 1) {
@@ -215,7 +234,8 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
         auth: `${connectWord}`,
         pub: this.pair.pub,
         challenge: this.challenge,
-        sig
+        sig,
+        currency: this.currency, // This is necessary for SYNC: because the currency is supposed not to be known by the remote
       }))
       return this.serverAuth
     }
@@ -260,12 +280,12 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
 export class WS2PPubkeySyncLocalAuth extends WS2PPubkeyLocalAuth {
 
   constructor(
-    protected currency:string,
+    currency:string, // Only here for function signature purpose
     protected pair:Key,
     protected ws2pId:string,
     protected tellIsAuthorizedPubkey:(pub: string) => Promise<boolean> = () => Promise.resolve(true)
   ) {
-    super(currency, pair, ws2pId, tellIsAuthorizedPubkey)
+    super("", pair, ws2pId, tellIsAuthorizedPubkey)
     this.isSync = true
   }
 }
@@ -450,6 +470,19 @@ export class WS2PConnection {
             (async () => {
               await this.onWsOpened
               try {
+
+                // First: wait to know about the currency name. It can be given spontaneously by the remote node,
+                // or be already given if we know it before any exchange.
+                const currency = await this.remoteAuth.givenCurrency
+                // Then make some checks about its value
+                if (this.localAuth.currency && this.localAuth.currency !== currency) {
+                  throw Error(DataErrors[DataErrors.WRONG_CURRENCY_DETECTED])
+                }
+                // Eventually give the information to localAuth, which will now be able to start the connection (currency is required for WS2P messages)
+                if (!this.localAuth.currency) {
+                  this.localAuth.currency = currency
+                }
+
                 await this.localAuth.sendCONNECT(this.ws, this.ws2pVersion)
                 await Promise.all([
                   this.localAuth.authenticationIsDone(),
@@ -497,7 +530,7 @@ export class WS2PConnection {
                       if (this.expectedPub && data.pub !== this.expectedPub) {
                         await this.errorDetected(WS2P_ERR.INCORRECT_PUBKEY_FOR_REMOTE)
                       } else {
-                        const valid = await this.remoteAuth.registerCONNECT(data.auth, this.ws2pVersion, data.challenge, data.sig, data.pub, (this.ws2pVersion > 1) ? data.ws2pID:"")
+                        const valid = await this.remoteAuth.registerCONNECT(data.auth, this.ws2pVersion, data.challenge, data.sig, data.pub, data.currency, (this.ws2pVersion > 1) ? data.ws2pID:"")
                         if (valid) {
                           await this.remoteAuth.sendACK(this.ws)
                         } else {

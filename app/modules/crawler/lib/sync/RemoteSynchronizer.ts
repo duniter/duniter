@@ -16,7 +16,6 @@ import {BlockDTO} from "../../../../lib/dto/BlockDTO"
 import {PeerDTO} from "../../../../lib/dto/PeerDTO"
 import {connect} from "../connect"
 import {NewLogger} from "../../../../lib/logger"
-import {CrawlerConstants} from "../constants"
 import {cliprogram} from "../../../../lib/common-libs/programOptions"
 import {Watcher} from "./Watcher"
 import {PeeringService} from "../../../../service/PeeringService"
@@ -45,6 +44,7 @@ const logger = NewLogger()
 
 export class RemoteSynchronizer extends AbstractSynchronizer {
 
+  private currency:string
   private node:IRemoteContacter
   private peer:PeerDTO
   private shuffledPeers: JSONDBPeer[]
@@ -53,12 +53,9 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
   private to: number
   private localNumber: number
   private watcher: Watcher
-  private static contacterOptions = {
-    timeout: CrawlerConstants.SYNC_LONG_TIMEOUT
-  }
+  private endpoint: string = ""
 
   constructor(
-    private readonly currency: string,
     private host: string,
     private port: number,
     private server:Server,
@@ -82,7 +79,7 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
   }
 
   getCurrency(): string {
-    return this.currency
+    return this.currency || 'unknown-currency'
   }
 
   getPeer(): PeerDTO {
@@ -98,10 +95,12 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
   }
 
   async init(): Promise<void> {
-    const syncApi = await RemoteSynchronizer.getSyncAPI(this.currency, [{ host: this.host, port: this.port }], this.server.conf.pair)
+    const syncApi = await RemoteSynchronizer.getSyncAPI([{ host: this.host, port: this.port }], this.server.conf.pair)
     if (!syncApi.api) {
       throw Error(DataErrors[DataErrors.CANNOT_CONNECT_TO_REMOTE_FOR_SYNC])
     }
+    this.currency = syncApi.currency
+    this.endpoint = syncApi.endpoint
     this.node = syncApi.api
     this.peer = PeerDTO.fromJSONObject(syncApi.peering)
     logger.info("Try with %s %s", this.peer.getURL(), this.peer.pubkey.substr(0, 6))
@@ -114,9 +113,10 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
     ;(this.node as any).pubkey = this.peer.pubkey
   }
 
-  public static async getSyncAPI(currency: string, hosts: { isBMA?: boolean, isWS2P?: boolean, host: string, port: number, path?: string }[], keypair: Keypair) {
+  public static async getSyncAPI(hosts: { isBMA?: boolean, isWS2P?: boolean, host: string, port: number, path?: string }[], keypair: Keypair) {
     let api: IRemoteContacter|undefined
     let peering: any
+    let endpoint = ""
     for (const access of hosts) {
       const host = access.host
       const port = access.port
@@ -129,6 +129,7 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
           const contacter = await connect(PeerDTO.fromJSONObject({ endpoints: [`BASIC_MERKLED_API ${host} ${port}${path && ' ' + path || ''}`]}), 3000)
           peering = await contacter.getPeer()
           api = new BMARemoteContacter(contacter)
+          endpoint = 'BASIC_MERKLED_API ' + host + ' ' + port + ((path && ' ' + path) || '')
         } catch (e) {
           logger.warn(`Node does not support BMA at address ${host} :${port}, trying WS2P...`)
         }
@@ -147,14 +148,15 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
               logger.warn('Receiving push messages, which are not allowed during a SYNC.', json)
             }
           }),
-          new WS2PPubkeySyncLocalAuth(currency, pair, '00000000'),
-          new WS2PPubkeyRemoteAuth(currency, pair),
+          new WS2PPubkeySyncLocalAuth("", pair, '00000000'),
+          new WS2PPubkeyRemoteAuth("", pair), // The currency will be set by the remote node
           undefined
         )
         try {
           const requester = WS2PRequester.fromConnection(connection)
           peering = await requester.getPeer()
           api = new WS2PRemoteContacter(requester)
+          endpoint = 'WS2P 99999999 ' + host + ' ' + port + ((path && ' ' + path) || '')
         } catch (e) {
           logger.warn(`Node does not support WS2P at address ${host} :${port} either.`)
         }
@@ -170,12 +172,11 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
     if (!peering) {
       throw Error(DataErrors[DataErrors.NO_PEERING_AVAILABLE_FOR_SYNC])
     }
-    if (peering.currency !== currency) {
-      throw Error(DataErrors[DataErrors.WRONG_CURRENCY_DETECTED])
-    }
     return {
       api,
-      peering
+      peering,
+      endpoint,
+      currency: peering.currency
     }
   }
 
@@ -190,6 +191,19 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
       this.watcher.writeStatus('Peers...');
       peers = await this.node.getPeers()
     }
+
+    // Add current peer if it is not returned (example of a local node)
+    peers.push({
+      version: 1,
+      currency: '',
+      status: 'UP',
+      first_down: null,
+      last_try: null,
+      pubkey: '',
+      block: '',
+      signature: '',
+      endpoints: [this.endpoint]
+    })
 
     peers = peers.filter(p => {
       if (!p) return false
@@ -234,8 +248,8 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
     return this.node.getBlock(number)
   }
 
-  static async test(currency: string, host: string, port: number, keypair: Keypair): Promise<BlockDTO> {
-    const syncApi = await RemoteSynchronizer.getSyncAPI(currency, [{ host, port }], keypair)
+  static async test(host: string, port: number, keypair: Keypair): Promise<BlockDTO> {
+    const syncApi = await RemoteSynchronizer.getSyncAPI([{ host, port }], keypair)
     const current = await syncApi.api.getCurrent()
     if (!current) {
       throw Error(DataErrors[DataErrors.REMOTE_HAS_NO_CURRENT_BLOCK])

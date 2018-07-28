@@ -49,8 +49,8 @@ export const CrawlerDependency = {
         return crawler.sandboxPull(server)
       },
 
-      synchronize: (currency: string, server:Server, onHost:string, onPort:number, upTo:number, chunkLength:number) => {
-        const strategy = new RemoteSynchronizer(currency, onHost, onPort, server, chunkLength)
+      synchronize: (server:Server, onHost:string, onPort:number, upTo:number, chunkLength:number) => {
+        const strategy = new RemoteSynchronizer(onHost, onPort, server, chunkLength)
         const remote = new Synchroniser(server, strategy)
         const syncPromise = (async () => {
           await server.dal.disableChangesAPI()
@@ -70,8 +70,8 @@ export const CrawlerDependency = {
        * @param {number} onPort
        * @returns {Promise<any>}
        */
-      testForSync: (currency: string, server:Server, onHost:string, onPort:number) => {
-        return RemoteSynchronizer.test(currency, onHost, onPort, server.conf.pair)
+      testForSync: (server:Server, onHost:string, onPort:number) => {
+        return RemoteSynchronizer.test(onHost, onPort, server.conf.pair)
       }
     },
 
@@ -86,7 +86,6 @@ export const CrawlerDependency = {
       { value: '--slow',          desc: 'Download slowly the blokchcain (for low connnections).'},
       { value: '--readfilesystem',desc: 'Also read the filesystem to speed up block downloading.'},
       { value: '--minsig <minsig>', desc: 'Minimum pending signatures count for `crawl-lookup`. Default is 5.'},
-      { value: '--up-to <block-number>', desc: 'Block number to reach.'},
     ],
 
     cli: [{
@@ -95,8 +94,7 @@ export const CrawlerDependency = {
       preventIfRunning: true,
       onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any): Promise<any> => {
         const source = params[0]
-        let currency = params[1]
-        const to = program.upTo
+        const to     = params[1]
         const HOST_PATTERN = /^[^:/]+(:[0-9]{1,5})?$/
         const FILE_PATTERN = /^(\/.+)$/
         if (!source || !(source.match(HOST_PATTERN) || source.match(FILE_PATTERN))) {
@@ -129,10 +127,7 @@ export const CrawlerDependency = {
           const sp = source.split(':')
           const onHost = sp[0]
           const onPort = parseInt(sp[1] ? sp[1] : '443') // Defaults to 443
-          if (!currency) {
-            throw 'currency parameter is required for network synchronization'
-          }
-          strategy = new RemoteSynchronizer(currency, onHost, onPort, server, CommonConstants.SYNC_BLOCKS_CHUNK, noShufflePeers === true, otherDAL)
+          strategy = new RemoteSynchronizer(onHost, onPort, server, CommonConstants.SYNC_BLOCKS_CHUNK, noShufflePeers === true, otherDAL)
         } else {
           strategy = new LocalPathSynchronizer(source, server, CommonConstants.SYNC_BLOCKS_CHUNK)
         }

@@ -54,7 +54,7 @@ describe('WS2P sync', () => writeBasicTestWith2Users((test) => {
     const s2 = NewTestingServer({ pair: cat.keypair })
     await s2.initWithDAL()
     // We sync on s1
-    await CrawlerDependency.duniter.methods.synchronize(s1.conf.currency, s2._server, ws2p.host, ws2p.port, 2, 2).syncPromise
+    await CrawlerDependency.duniter.methods.synchronize(s2._server, ws2p.host, ws2p.port, 2, 2).syncPromise
     assertNotNull(await s2.dal.getCurrentBlockOrNull())
   })
 }))

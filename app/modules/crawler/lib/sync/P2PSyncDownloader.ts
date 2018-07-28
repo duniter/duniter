@@ -81,7 +81,7 @@ export class P2PSyncDownloader implements ISyncDownloader {
         }
         let syncApi: any = null
         try {
-          syncApi = await RemoteSynchronizer.getSyncAPI(this.currency, apis, this.keypair)
+          syncApi = await RemoteSynchronizer.getSyncAPI(apis, this.keypair)
           const manualp = newManualPromise<boolean>()
           manualp.resolve(true)
           const node: ProfiledNode = {

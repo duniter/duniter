@@ -699,7 +699,7 @@ export class TestingServer {
       const connection = WS2PConnection.newConnectionToAddress(1,
         `ws://${HOST}:${port}`,
         new WS2PServerMessageHandler(this._server, api.getCluster()),
-        new constructor(this.conf.currency, pair, ws2pId),
+        new constructor("", pair, ws2pId),
         new WS2PPubkeyRemoteAuth(this.conf.currency, pair)
       )
       return WS2PRequester.fromConnection(connection)

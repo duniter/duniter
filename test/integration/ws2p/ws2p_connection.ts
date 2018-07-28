@@ -60,7 +60,7 @@ describe('WS2P', () => {
       })
 
       it('should be able to create a connection', async () => {
-        const ws2p = WS2PConnection.newConnectionToAddress(1, 'ws://localhost:' + portA, new WS2PMutedHandler(), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
+        const ws2p = WS2PConnection.newConnectionToAddress(1, 'ws://localhost:' + portA, new WS2PMutedHandler(), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth(gtest))
         const res = await ws2p.request({ name: 'head' })
         assert.deepEqual({ bla: 'aa' }, res)
       })
@@ -139,7 +139,7 @@ describe('WS2P', () => {
 
       it('should accept the connection if the server answers with a good signature', async () => {
         const keypair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP')
-        const ws2p = WS2PConnection.newConnectionToAddress(1, 'ws://localhost:20903', new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(gtest, keypair, ""), new WS2PNoRemoteAuth(), undefined, {
+        const ws2p = WS2PConnection.newConnectionToAddress(1, 'ws://localhost:20903', new WS2PMutedHandler(), new WS2PPubkeyLocalAuth(gtest, keypair, ""), new WS2PNoRemoteAuth(gtest), undefined, {
           connectionTimeout: 1000,
           requestTimeout: 1000
         })
@@ -171,7 +171,7 @@ describe('WS2P', () => {
                 async answerToRequest(json: any): Promise<WS2PResponse> {
                   return { answer: 'world' }
                 }
-              }), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
+              }), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth(gtest))
               s1.connect().catch(e => logger.error('WS2P: newConnectionFromWebSocketServer connection error'))
               break
             case 1:
@@ -182,7 +182,7 @@ describe('WS2P', () => {
                 async answerToRequest(json: any): Promise<WS2PResponse> {
                   return { answer: 'this is s2![j = ' + (j++) + ']' }
                 }
-              }), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
+              }), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth(gtest))
               s2.connect().catch(e => logger.error('WS2P: newConnectionFromWebSocketServer connection error'))
               break
           }
@@ -196,7 +196,7 @@ describe('WS2P', () => {
 
       it('should be able to create connections and make several requests', async () => {
         // connection 1
-        const c1 = WS2PConnection.newConnectionToAddress(1, 'ws://localhost:' + portB, new WS2PMutedHandler(), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
+        const c1 = WS2PConnection.newConnectionToAddress(1, 'ws://localhost:' + portB, new WS2PMutedHandler(), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth(gtest))
         assert.deepEqual({ answer: 'world' }, await c1.request({ name: 'hello!' }))
         assert.deepEqual({ answer: 'world' }, await c1.request({ name: 'hello2!' }))
         assert.equal(s1.nbRequests, 0)
@@ -208,7 +208,7 @@ describe('WS2P', () => {
         assert.equal(s1.nbPushsByRemote, 0)
         assert.equal(c1.nbPushsByRemote, 0)
         // connection 2
-        const c2 = WS2PConnection.newConnectionToAddress(1 ,'ws://localhost:' + portB, new WS2PMutedHandler(), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth())
+        const c2 = WS2PConnection.newConnectionToAddress(1 ,'ws://localhost:' + portB, new WS2PMutedHandler(), new WS2PNoLocalAuth(), new WS2PNoRemoteAuth(gtest))
         assert.deepEqual({ answer: 'this is s2![j = 0]' }, await c2.request({ name: 'test?' }))
         assert.deepEqual({ answer: 'this is s2![j = 1]' }, await c2.request({ name: 'test!' }))
         assert.deepEqual({ answer: 'this is s2![j = 2]' }, await c2.request({ name: 'test!!!' }))
@@ -427,9 +427,17 @@ class WS2PNoLocalAuth implements WS2PLocalAuth {
 
   async authenticationIsDone(): Promise<void> {
   }
+
+  currency: string
 }
 
 class WS2PNoRemoteAuth implements WS2PRemoteAuth {
+
+  givenCurrency: Promise<string>
+
+  constructor(currency: string) {
+    this.givenCurrency = Promise.resolve(currency)
+  }
 
   getVersion(): number {
     return 1
@@ -442,7 +450,8 @@ class WS2PNoRemoteAuth implements WS2PRemoteAuth {
   async sendACK(ws: any): Promise<void> {
   }
 
-  async registerCONNECT(type: 'CONNECT'|'SYNC', version:number, challenge:string, sig: string, pub: string, ws2pId:string): Promise<boolean> {
+  async registerCONNECT(type: 'CONNECT'|'SYNC', version:number, challenge:string, sig: string, pub: string, currency:string, ws2pId:string): Promise<boolean> {
+    this.givenCurrency = Promise.resolve(currency)
     return true
   }
 

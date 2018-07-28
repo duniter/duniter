@@ -11,6 +11,7 @@ import {Watcher} from "./Watcher"
 import {cliprogram} from "../../../../lib/common-libs/programOptions"
 import {Querable, querablep} from "../../../../lib/common-libs/querable"
 import {AbstractSynchronizer} from "./AbstractSynchronizer"
+import {Underscore} from "../../../../lib/common-libs/underscore"
 
 const logger = NewLogger()
 
@@ -48,7 +49,13 @@ export class ChunkGetter {
   private downloadedChunks = 0
   private writtenChunks = 0
   private numberOfChunksToDownload:number
+
+  // --- Downloading slots and speed handling ---
   private parallelDownloads = cliprogram.slow ? 1 : 5
+  private aSlotWasAdded = 0
+  private MAX_DELAY_PER_DOWNLOAD = cliprogram.slow ? 15000 : 5000
+  private lastAvgDelay = this.MAX_DELAY_PER_DOWNLOAD
+
   private maxDownloadAdvance = 10 // 10 chunks can be downloaded even if 10th chunk above is not completed
   private MAX_DOWNLOAD_TIMEOUT = 15000
   private writeDAL: FileDAL
@@ -139,12 +146,15 @@ export class ChunkGetter {
             }
           }
           else if (handler.state === 'DOWNLOADED') {
+
             // Chaining test: we must wait for upper chunk to be completed (= downloaded + chained)
             const chunk = await handler.chunk
             if (chunk.length === 0 && handler.downloader === this.fsDownloader) {
               // Retry with P2P
               handler.downloader = this.p2PDownloader
               ;(handler as any).state = 'WAITING'
+              remainingDownloads++
+              continue
             }
             if (isTopChunk || this.downloadHandlers[i + 1].state === 'COMPLETED') {
               const fileName = this.syncStrategy.getChunkRelativePath(i)
@@ -157,15 +167,19 @@ export class ChunkGetter {
               if (!chainsWell) {
                 if (handler.downloader === this.p2PDownloader) {
                   if (chunk.length === 0) {
-                    logger.error('No block was downloaded')
+                    logger.error('No block was downloaded for chunk#%s', i)
                   }
-                  logger.warn("Chunk #%s is DOES NOT CHAIN CORRECTLY. Retrying.", i)
+                  logger.warn("Chunk #%s DOES NOT CHAIN CORRECTLY. Retrying.", i)
                 }
                 handler.downloader = this.p2PDownloader // If ever the first call does not chains well, we try using P2P
                 ;(handler as any).state = 'WAITING'
                 i++
               } else {
-                logger.info("Chunk #%s read from filesystem.", i)
+                if (handler.downloader === this.fsDownloader) {
+                  logger.info("Chunk #%s read from filesystem.", i)
+
+                }
+                logger.info("Chunk #%s chains well.", i)
                 let doWrite = handler.downloader !== this.fsDownloader
                   || !(await this.writeDAL.confDAL.coreFS.exists(fileName))
                 if (doWrite) {
@@ -187,6 +201,40 @@ export class ChunkGetter {
                   (handler as any).chunk = undefined
                 }
                 this.downloadedChunks++
+
+                if (handler.downloader === this.p2PDownloader) {
+
+                  // Speed resolution
+                  const peers = await this.p2PDownloader.getTimesToAnswer()
+                  const downloading = Underscore.filter(peers, (p) => p.ttas.length > 0)
+                  const currentAvgDelay = downloading.length === 0 ? 0 : downloading.reduce((sum:number, c) => {
+                    const tta = Math.round(c.ttas.reduce((sum:number, tta:number) => sum + tta, 0) / c.ttas.length)
+                    return sum + tta;
+                  }, 0) / downloading.length
+                  if (!cliprogram.slow) {
+                    // Check the impact of an added node (not first time)
+                    if (!this.aSlotWasAdded) {
+                      // We try to add a node
+                      const newValue = Math.min(this.p2PDownloader.maxSlots, this.parallelDownloads + 1)
+                      if (newValue !== this.parallelDownloads) {
+                        this.parallelDownloads = newValue
+                        this.aSlotWasAdded = i
+                        logger.info('AUGMENTED DOWNLOAD SLOTS! Now has %s slots', this.parallelDownloads)
+                      }
+                    } else if (this.aSlotWasAdded && this.aSlotWasAdded - i > 5) { // We measure every 5 blocks
+                      this.aSlotWasAdded = 0
+                      const decelerationPercent = !this.lastAvgDelay ? 0 : currentAvgDelay / this.lastAvgDelay - 1
+                      const addedNodePercent = 1 / downloading.length
+                      logger.info('Deceleration = %s (%s/%s), AddedNodePercent = %s', decelerationPercent, currentAvgDelay, this.lastAvgDelay, addedNodePercent)
+                      if (decelerationPercent > addedNodePercent) {
+                        this.parallelDownloads = Math.max(1, this.parallelDownloads - 1); // We reduce the number of slots, but we keep at least 1 slot
+                        logger.info('REDUCED DOWNLOAD SLOT! Now has %s slots', this.parallelDownloads)
+                      }
+                    }
+                  }
+                  this.lastAvgDelay = currentAvgDelay
+                }
+
                 this.watcher.downloadPercent(parseInt((this.downloadedChunks / this.numberOfChunksToDownload * 100).toFixed(0)))
                 // We pre-save blocks only for non-cautious sync
                 if (this.nocautious) {

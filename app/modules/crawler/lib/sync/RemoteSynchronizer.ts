@@ -259,12 +259,16 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
 
   async syncPeers(fullSync: boolean, to?: number): Promise<void> {
     const peers = await this.node.getPeers()
-    for (const p of peers) {
+    for (let i = 0; i < peers.length; i++) {
+      const peer = PeerDTO.fromJSONObject(peers[i])
+      this.watcher.writeStatus('Peer ' + peer.pubkey)
+      this.watcher.peersPercent(Math.ceil(i / peers.length * 100))
       try {
-        await this.PeeringService.submitP(DBPeer.fromPeerDTO(PeerDTO.fromJSONObject(p)))
+        await this.PeeringService.submitP(DBPeer.fromPeerDTO(peer))
       } catch (e) {
       }
     }
+    this.watcher.peersPercent(100)
   }
 
   async syncSandbox(): Promise<void> {

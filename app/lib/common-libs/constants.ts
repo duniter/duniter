@@ -314,6 +314,8 @@ export const CommonConstants = {
 
   REJECT_WAIT_FOR_AVAILABLE_NODES_IN_SYNC_AFTER: 20000, // Reject after 20 seconds without any change
   REJECT_WAIT_FOR_AVAILABLE_NODES_IN_SYNC_MAX_FAILS: 5, // Maximum number of rejections of waiting for an available node
+
+  MAX_READING_SLOTS_FOR_FILE_SYNC: 20, // Number of file reading in parallel
 }
 
 function exact (regexpContent:string) {

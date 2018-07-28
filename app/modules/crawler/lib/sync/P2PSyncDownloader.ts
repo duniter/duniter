@@ -31,7 +31,6 @@ export class P2PSyncDownloader implements ISyncDownloader {
   private nodes: Querable<ProfiledNode>[] = []
   private nbDownloadsTried = 0
   private nbDownloading = 0
-  private lastAvgDelay:number
   private downloads: { [chunk: number]: any } = {}
   private fifoPromise = new GlobalFifoPromise()
   private nbWaitFailed = 0
@@ -52,9 +51,6 @@ export class P2PSyncDownloader implements ISyncDownloader {
     this.numberOfChunksToDownload = Math.ceil(this.nbBlocksToDownload / this.chunkSize);
     this.processing      = Array.from({ length: this.numberOfChunksToDownload }).map(() => false);
     this.handler         = Array.from({ length: this.numberOfChunksToDownload }).map(() => null);
-
-    // Create slots of download, in a ready stage
-    this.lastAvgDelay = this.MAX_DELAY_PER_DOWNLOAD;
 
     for (const thePeer of peers) {
       // Create the node
@@ -102,6 +98,10 @@ export class P2PSyncDownloader implements ISyncDownloader {
         }
       })()))
     }
+  }
+
+  get maxSlots(): number {
+    return this.nodes.length
   }
 
   private async wait4AnAvailableNode(): Promise<any> {
@@ -185,14 +185,6 @@ export class P2PSyncDownloader implements ISyncDownloader {
           this.downloads[chunkIndex] = node
         }
         node.nbSuccess++;
-
-        const peers = await Promise.all(this.nodes.filter(p => p.isResolved()))
-        const downloading = Underscore.filter(peers, (p:any) => p.downloading && p.ttas.length);
-        this.lastAvgDelay = downloading.reduce((sum:number, c:any) => {
-          const tta = Math.round(c.ttas.reduce((sum:number, tta:number) => sum + tta, 0) / c.ttas.length)
-          return sum + tta
-        }, 0) / downloading.length
-
         this.nbDownloadsTried++;
         this.nbDownloading--;
         node.readyForDownload.resolve(true)
@@ -257,6 +249,11 @@ export class P2PSyncDownloader implements ISyncDownloader {
    */
   getChunk(index:number): Promise<BlockDTO[]> {
     return this.downloadChunk(index)
+  }
+
+  async getTimesToAnswer(): Promise<{ ttas: number[] }[]> {
+    const nodes = await Promise.all(this.nodes.filter(p => p.isResolved()))
+    return nodes.filter(n => n.ttas.length > 0)
   }
 }
 

@@ -43,7 +43,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:duniter/duniter.git"
+    "url": "https://git.duniter.org/nodes/typescript/duniter.git"
   },
   "keywords": [
     "duniter",
@@ -55,7 +55,7 @@
   "license": "AGPL-3.0",
   "readmeFilename": "README.md",
   "bugs": {
-    "url": "https://github.com/duniter/duniter/issues"
+    "url": "https://git.duniter.org/nodes/typescript/duniter/issues"
   },
   "dependencies": {
     "@types/ws": "^5.1.2",

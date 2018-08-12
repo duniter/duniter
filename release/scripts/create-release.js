@@ -76,6 +76,8 @@ const value        = process.argv[5]
   process.exit(0);
 })()
 
+// FIXME: still used ? still depend of github and not gitlab ?
+// FIXME: code duplicate with upload-release.js
 async function github(url, method = 'GET', body = undefined) {
   await new Promise((resolve) => setTimeout(resolve, 1));
   return await rp({

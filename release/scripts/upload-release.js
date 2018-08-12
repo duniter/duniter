@@ -37,6 +37,8 @@ const fileType     = getFileType(filePath)
   process.exit(0);
 })()
 
+// FIXME: still used ? still depend of github and not gitlab ?
+// FIXME: code duplicate with create-release.js
 async function github(url) {
   await new Promise((resolve) => setTimeout(resolve, 1));
   return await rp({

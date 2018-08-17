@@ -122,12 +122,12 @@ build_deb_pack() {
 # Prepare
 # -----------
 
-NODE_VERSION=9.4.0
+NODE_VERSION=10.14.0
 NVER="v${NODE_VERSION}"
 DUNITER_TAG="v${1}"
 DUNITER_DEB_VER=" ${1}"
 ADDON_VERSION=59
-NW_VERSION=0.28.0
+NW_VERSION=0.35.2
 NW_RELEASE="v${NW_VERSION}"
 NW="nwjs-${NW_RELEASE}-linux-x64"
 NW_GZ="${NW}.tar.gz"

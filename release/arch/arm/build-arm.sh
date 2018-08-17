@@ -6,7 +6,7 @@ export NVM_DIR="$HOME/.nvm"
 
 
 # Prepare
-NODE_VERSION=9.4.0
+NODE_VERSION=10.14.0
 ARCH="`uname -m | sed -e \"s/86_//\"`"
 NVER="v$NODE_VERSION"
 DUNITER_TAG=$1

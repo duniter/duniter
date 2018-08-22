@@ -41,6 +41,8 @@ export const WS2PDependency = {
       { value: '--ws2p-public',                desc: 'Enable WS2P Public access.' },
       { value: '--ws2p-noprivate',             desc: 'Disable WS2P Private access.' },
       { value: '--ws2p-nopublic',              desc: 'Disable WS2P Public access.' },
+      { value: '--ws2p-sync',                  desc: 'Enable WS2P SYNC access.' },
+      { value: '--ws2p-nosync',                desc: 'Disable WS2P SYNC access.' },
       { value: '--ws2p-prefered-add <pubkey>', desc: 'Add a prefered node to connect to through private access.' },
       { value: '--ws2p-prefered-rm  <pubkey>', desc: 'Remove prefered node.' },
       { value: '--ws2p-prefered-only  <pubkey>', desc: 'Only connect to prefered node.' },
@@ -79,6 +81,8 @@ export const WS2PDependency = {
         if (program.ws2pPublic !== undefined)     conf.ws2p.publicAccess = true
         if (program.ws2pNoprivate !== undefined)  conf.ws2p.privateAccess = false
         if (program.ws2pNopublic !== undefined)   conf.ws2p.publicAccess = false
+        if (program.ws2pSync !== undefined)       conf.ws2p.sync = true
+        if (program.ws2pNosync !== undefined)     conf.ws2p.sync = false
 
         // Prefered nodes
         if (program.ws2pPreferedAdd !== undefined) {

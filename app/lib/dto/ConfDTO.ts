@@ -85,6 +85,7 @@ export interface WS2PConfDTO {
   ws2p?: {
     privateAccess?: boolean
     publicAccess?: boolean
+    sync?: boolean
     uuid?: string
     upnp?: boolean
     remotehost?: string|null

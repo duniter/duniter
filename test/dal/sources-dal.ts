@@ -21,7 +21,7 @@ let dal:FileDAL
 describe("Source DAL", function(){
 
   before(async () => {
-    dal = new FileDAL(await Directory.getHomeParams(true, 'db0'));
+    dal = new FileDAL(await Directory.getHomeParams(true, 'db0'), async (name: string) => Directory.getHomeDB(true, name), async (name: string) => Directory.getHomeLevelDB(true, name))
     await dal.init({} as any)
   })
 
@@ -32,8 +32,8 @@ describe("Source DAL", function(){
       { op: 'CREATE', tx: null, identifier: 'SOURCE_2', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'SIG(ABC)' },
       { op: 'CREATE', tx: null, identifier: 'SOURCE_3', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'SIG(DEF)' }
     ] as any);
-    (await dal.sindexDAL.findRaw({ identifier: 'SOURCE_1' })).should.have.length(2);
-    (await dal.sindexDAL.findRaw({ pos: 4 })).should.have.length(4);
+    (await dal.sindexDAL.findByIdentifier('SOURCE_1')).should.have.length(2);
+    (await dal.sindexDAL.findByPos(4)).should.have.length(4);
     // Source availability
     const sourcesOfDEF = await dal.sindexDAL.getAvailableForPubkey('DEF');
     sourcesOfDEF.should.have.length(1);

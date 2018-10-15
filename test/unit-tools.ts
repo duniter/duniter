@@ -60,3 +60,15 @@ export const assertThrows = async (promise:Promise<any>, message:string|null = n
     assert.equal(e, message)
   }
 }
+
+
+export const assertThrowsSync = (f:() => any) => {
+  try {
+    f()
+    throw "Should have thrown"
+  } catch(e) {
+    if (e === "Should have thrown") {
+      throw e
+    }
+  }
+}

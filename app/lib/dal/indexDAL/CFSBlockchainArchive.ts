@@ -148,6 +148,9 @@ export class CFSBlockchainArchive<T extends BlockLike> implements BlockchainArch
     return this.cfs.makeTree('/')
   }
 
+  async close(): Promise<void> {
+  }
+
   triggerInit(): void {
     // TODO: remove triggerInit from all the DAOs, it is a wrong implementation
   }

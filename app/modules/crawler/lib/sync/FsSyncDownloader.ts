@@ -3,8 +3,9 @@ import {BlockDTO} from "../../../../lib/dto/BlockDTO"
 import {FileSystem} from "../../../../lib/system/directory"
 import * as path from 'path'
 import {CommonConstants} from "../../../../lib/common-libs/constants"
+import {ASyncDownloader} from "./ASyncDownloader"
 
-export class FsSyncDownloader implements ISyncDownloader {
+export class FsSyncDownloader extends ASyncDownloader implements ISyncDownloader {
 
   private ls: Promise<string[]>
   private ttas: number[] = []
@@ -13,7 +14,9 @@ export class FsSyncDownloader implements ISyncDownloader {
     private fs: FileSystem,
     private basePath: string,
     private getChunkName:(i: number) => string,
+    public chunkSize: number
     ) {
+    super(chunkSize)
     this.ls = this.fs.fsList(basePath)
   }
 

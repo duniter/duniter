@@ -58,8 +58,6 @@ describe("Revert balance", () => {
     await s1.expect('/tx/sources/' + tac.pub, (res:any) => {
       res.sources.should.have.length(3)
     })
-    const block = await s1.dal.blockDAL.getBlock(3)
-    // await s1.writeBlock(block)
   })
 
   it('revert: cat and tac should have 100 units', async () =>  {
@@ -86,8 +84,6 @@ describe("Revert balance", () => {
     await s1.expect('/tx/sources/' + tac.pub, (res:any) => {
       res.sources.should.have.length(3)
     })
-    const block = await s1.dal.blockDAL.getBlock(3)
-    // await s1.writeBlock(block)
   })
 
   after(() => {

@@ -29,6 +29,7 @@ import {DBWallet} from "./db/DBWallet"
 import {Tristamp} from "./common/Tristamp"
 import {Underscore} from "./common-libs/underscore"
 import {DataErrors} from "./common-libs/errors"
+import {MonitorExecutionTime} from "./debug/MonitorExecutionTime"
 
 const constants       = CommonConstants
 
@@ -74,7 +75,7 @@ export interface FullMindexEntry {
   expires_on: number
   expired_on: null|number
   revokes_on: number
-  revoked_on: null|number
+  revoked_on: null|string
   leaving: boolean
   revocation: null|string
   chainable_on: number
@@ -251,6 +252,7 @@ export interface BlockchainBlocksDAL {
 
 export class Indexer {
 
+  @MonitorExecutionTime()
   static localIndex(block:BlockDTO, conf:{
     sigValidity:number,
     msValidity:number,
@@ -541,6 +543,7 @@ export class Indexer {
     return index;
   }
 
+  @MonitorExecutionTime()
   static async quickCompleteGlobalScope(block: BlockDTO, conf: CurrencyConfDTO, bindex: DBHead[], iindex: IindexEntry[], mindex: MindexEntry[], cindex: CindexEntry[], dal:FileDAL) {
 
     async function range(start: number, end: number) {
@@ -1693,7 +1696,7 @@ export class Indexer {
     sindex = sindex.concat(dividends)
     const garbages: SindexEntry[] = [];
     const accounts = Object.keys(sindex.reduce((acc: { [k:string]: boolean }, src) => {
-      acc[src.conditions] = true;
+      acc[src.conditions] = acc[src.conditions] || src.srcType === 'T' // We don't touch accounts that only received an UD
       return acc;
     }, {}));
     const wallets: { [k:string]: Promise<DBWallet> } = accounts.reduce((map: { [k:string]: Promise<DBWallet> }, acc) => {
@@ -1715,7 +1718,10 @@ export class Indexer {
         throw Error(DataErrors[DataErrors.NEGATIVE_BALANCE])
       }
       else if (balance + variations < constants.ACCOUNT_MINIMUM_CURRENT_BASED_AMOUNT * Math.pow(10, HEAD.unitBase)) {
+        // console.log('GARBAGE ACCOUNT on B#%s %s! (has %s units left)', HEAD.number, account, balance + variations)
         const globalAccountEntries = await dal.sindexDAL.getAvailableForConditions(account)
+        // localAccountEntries.forEach(e => console.log('local: %s %s %s', e.identifier, e.pos, e.amount))
+        // globalAccountEntries.forEach(e => console.log('global: %s %s %s', e.identifier, e.pos, e.amount))
         for (const src of localAccountEntries.concat(globalAccountEntries)) {
           const sourceBeingConsumed = Underscore.filter(sindex, entry => entry.op === 'UPDATE' && entry.identifier == src.identifier && entry.pos == src.pos).length > 0;
           if (!sourceBeingConsumed) {
@@ -1770,24 +1776,16 @@ export class Indexer {
 
   // BR_G93
   static async ruleIndexGenMembershipExpiry(HEAD: DBHead, dal:FileDAL) {
-    const expiries = [];
-
-    const memberships: MindexEntry[] = reduceBy(await dal.mindexDAL.findExpiresOnLteAndRevokesOnGt(HEAD.medianTime), ['pub']);
-    for (const POTENTIAL of memberships) {
-      const MS = await dal.mindexDAL.getReducedMS(POTENTIAL.pub) as FullMindexEntry // We are sure because `memberships` already comes from the MINDEX
-      const hasRenewedSince = MS.expires_on > HEAD.medianTime;
-      if (!MS.expired_on && !hasRenewedSince) {
-        expiries.push({
-          op: 'UPDATE',
-          pub: MS.pub,
-          created_on: MS.created_on,
-          written_on: [HEAD.number, HEAD.hash].join('-'),
-          writtenOn: HEAD.number,
-          expired_on: HEAD.medianTime
-        });
+    return (await dal.mindexDAL.findPubkeysThatShouldExpire(HEAD.medianTime)).map(MS => {
+      return {
+        op: 'UPDATE',
+        pub: MS.pub,
+        created_on: MS.created_on,
+        written_on: [HEAD.number, HEAD.hash].join('-'),
+        writtenOn: HEAD.number,
+        expired_on: HEAD.medianTime
       }
-    }
-    return expiries;
+    })
   }
 
   // BR_G94
@@ -1840,7 +1838,7 @@ export class Indexer {
     const revocations = [];
     const pending = await dal.mindexDAL.findRevokesOnLteAndRevokedOnIsNull(HEAD.medianTime)
     for (const MS of pending) {
-      const REDUCED = (await dal.mindexDAL.getReducedMS(MS.pub)) as FullMindexEntry
+      const REDUCED = (await dal.mindexDAL.getReducedMSForImplicitRevocation(MS.pub)) as FullMindexEntry
       if (REDUCED.revokes_on <= HEAD.medianTime && !REDUCED.revoked_on) {
         revocations.push({
           op: 'UPDATE',
@@ -1848,7 +1846,7 @@ export class Indexer {
           created_on: REDUCED.created_on,
           written_on: [HEAD.number, HEAD.hash].join('-'),
           writtenOn: HEAD.number,
-          revoked_on: HEAD.medianTime
+          revoked_on: [HEAD.number, HEAD.hash].join('-'),
         });
       }
     }
@@ -1879,7 +1877,7 @@ export class Indexer {
 
   // BR_G105
   static async ruleIndexCorrectCertificationExpiryDate(HEAD: DBHead, cindex: CindexEntry[], dal:FileDAL) {
-    for (const CERT of cindex) {
+    for (const CERT of cindex.filter(c => c.op === 'CREATE')) {
       let basedBlock = { medianTime: 0 };
       if (HEAD.number == 0) {
         basedBlock = HEAD;
@@ -1917,6 +1915,7 @@ export class Indexer {
   static DUP_HELPERS = {
 
     reduce,
+    reduceOrNull,
     reduceBy: reduceBy,
     getMaxBlockSize: (HEAD: DBHead) => Math.max(500, Math.ceil(1.1 * HEAD.avgBlockSize)),
     checkPeopleAreNotOudistanced
@@ -1964,6 +1963,13 @@ function blockstamp(aNumber: number, aHash: string) {
   return [aNumber, aHash].join('-');
 }
 
+function reduceOrNull<T>(records: T[]): T|null {
+  if (records.length === 0) {
+    return null
+  }
+  return reduce(records)
+}
+
 function reduce<T>(records: T[]): T {
   return records.reduce((obj:T, record) => {
     const keys = Object.keys(record) as (keyof T)[]
@@ -1979,7 +1985,7 @@ function reduce<T>(records: T[]): T {
   }, <T>{})
 }
 
-function reduceBy<T extends IndexEntry>(reducables: T[], properties: (keyof T)[]): T[] {
+export function reduceBy<T extends IndexEntry>(reducables: T[], properties: (keyof T)[]): T[] {
   const reduced: { [k:string]: T[] } = reducables.reduce((map, entry) => {
     const id = properties.map((prop) => entry[prop]).join('-')
     map[id] = map[id] || []

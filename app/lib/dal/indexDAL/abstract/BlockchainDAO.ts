@@ -1,7 +1,8 @@
 import {GenericDAO} from "./GenericDAO"
 import {DBBlock} from "../../../db/DBBlock"
+import {ForksDAO} from "./software/ForksDAO"
 
-export interface BlockchainDAO extends GenericDAO<DBBlock> {
+export interface BlockchainDAO extends GenericDAO<DBBlock>, ForksDAO {
 
   getCurrent(): Promise<DBBlock|null>
 
@@ -11,15 +12,7 @@ export interface BlockchainDAO extends GenericDAO<DBBlock> {
 
   saveBlock(block:DBBlock): Promise<DBBlock>
 
-  saveSideBlock(block:DBBlock): Promise<DBBlock>
-
-  getPotentialRoots(): Promise<DBBlock[]>
-
   getBlocks(start:number, end:number): Promise<DBBlock[]>
-
-  getNextForkBlocks(number:number, hash:string): Promise<DBBlock[]>
-
-  getPotentialForkBlocks(numberStart:number, medianTimeStart:number, maxNumber:number): Promise<DBBlock[]>
 
   lastBlockOfIssuer(issuer:string): Promise<DBBlock|null>
 
@@ -30,12 +23,6 @@ export interface BlockchainDAO extends GenericDAO<DBBlock> {
   saveBunch(blocks:DBBlock[]): Promise<void>
 
   dropNonForkBlocksAbove(number: number): Promise<void>
-
-  setSideBlock(number:number, previousBlock:DBBlock|null): Promise<void>
-
-  removeForkBlock(number:number): Promise<void>
-
-  removeForkBlockAboveOrEqual(number:number): Promise<void>
 
   trimBlocks(number:number): Promise<void>
 

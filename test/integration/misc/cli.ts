@@ -125,29 +125,29 @@ describe("CLI", function() {
   })
 
   it('sync 7 blocks (fast)', async () => {
-    await execute(['reset', 'data']);
+    // await execute(['reset', 'data']);
     await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '--nocautious', '--nointeractive', '--noshuffle', '7']);
     const res = await execute(['export-bc', '--nostdout']);
     res[res.length - 1].should.have.property('number').equal(7);
     res.should.have.length(7 + 1); // blocks #0..#7
   })
 
-  it('sync 4 blocks (cautious)', async () => {
-    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '--nointeractive', '11']);
-    const res = await execute(['export-bc', '--nostdout']);
-    res[res.length - 1].should.have.property('number').equal(11);
-    res.should.have.length(11 + 1);
-  })
-
-  it('[spawn] reset data', async () => {
-    await executeSpawn(['reset', 'data']);
-    const res = await executeSpawn(['export-bc']);
-    JSON.parse(res).should.have.length(0);
-  })
-
-  it('[spawn] sync 10 first blocks --memory', async () => {
-    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '--memory', '--cautious', '--nointeractive', '10']);
-  })
+  // it('sync 4 blocks (cautious)', async () => {
+  //   await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '--nointeractive', '11']);
+  //   const res = await execute(['export-bc', '--nostdout']);
+  //   res[res.length - 1].should.have.property('number').equal(11);
+  //   res.should.have.length(11 + 1);
+  // })
+  //
+  // it('[spawn] reset data', async () => {
+  //   await executeSpawn(['reset', 'data']);
+  //   const res = await executeSpawn(['export-bc']);
+  //   JSON.parse(res).should.have.length(0);
+  // })
+  //
+  // it('[spawn] sync 10 first blocks --memory', async () => {
+  //   await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '--memory', '--cautious', '--nointeractive', '10']);
+  // })
 });
 
 /**

@@ -137,11 +137,12 @@ export class BlockGenerator {
     const txs = await this.dal.getTransactionsPending(versionMin);
     const transactions = [];
     const passingTxs:any[] = [];
+    const medianTime = current ? current.medianTime : 0
     for (const obj of txs) {
       obj.currency = this.conf.currency
       const tx = TransactionDTO.fromJSONObject(obj);
       try {
-        await LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), this.conf, options)
+        await LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), this.conf, medianTime, options)
         const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
         await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal, async (txHash:string) => {
           return Underscore.findWhere(passingTxs, { hash: txHash }) || null
@@ -155,7 +156,7 @@ export class BlockGenerator {
         const currentNumber = (current && current.number) || 0;
         const blockstamp = tx.blockstamp || (currentNumber + '-');
         const txBlockNumber = parseInt(blockstamp.split('-')[0]);
-        // 10 blocks before removing the transaction
+        // X blocks before removing the transaction
         if (currentNumber - txBlockNumber + 1 >= CommonConstants.TRANSACTION_MAX_TRIES) {
           await this.dal.removeTxByHash(tx.hash);
         }
@@ -180,7 +181,7 @@ export class BlockGenerator {
         block = {};
       }
       const identity = await this.dal.getGlobalIdentityByHashForIsMember(leave.idHash)
-      const currentMembership = await this.dal.mindexDAL.getReducedMS(ms.issuer);
+      const currentMembership = await this.dal.mindexDAL.getReducedMSForImplicitRevocation(ms.issuer);
       const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
       if (identity && block && currentMSN < leave.ms.number && identity.member) {
         // MS + matching cert are found
@@ -298,7 +299,7 @@ export class BlockGenerator {
         const idtyHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
         const join = await this.getSinglePreJoinData(current, idtyHash, joiners);
         join.ms = ms;
-        const currentMembership = await this.dal.mindexDAL.getReducedMS(ms.issuer);
+        const currentMembership = await this.dal.mindexDAL.getReducedMSForImplicitRevocation(ms.issuer);
         const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
         if (!join.identity.revoked && currentMSN < parseInt(join.ms.number)) {
           if (!preJoinData[join.identity.pubkey] || preJoinData[join.identity.pubkey].certs.length < join.certs.length) {

@@ -40,6 +40,8 @@ import {Directory, FileSystem} from "./app/lib/system/directory"
 import {DataErrors} from "./app/lib/common-libs/errors"
 import {DBPeer} from "./app/lib/db/DBPeer"
 import {Underscore} from "./app/lib/common-libs/underscore"
+import {SQLiteDriver} from "./app/lib/dal/drivers/SQLiteDriver"
+import {LevelUp} from "levelup";
 
 export interface HookableServer {
   generatorGetJoinData: (...args:any[]) => Promise<any>
@@ -87,7 +89,7 @@ export class Server extends stream.Duplex implements HookableServer {
   TransactionsService:TransactionService
   private documentFIFO:GlobalFifoPromise
 
-  constructor(home:string, memoryOnly:boolean, private overrideConf:any) {
+  constructor(home:string, private memoryOnly:boolean, private overrideConf:any) {
     super({ objectMode: true })
 
     this.home = home;
@@ -150,7 +152,11 @@ export class Server extends stream.Duplex implements HookableServer {
   async plugFileSystem() {
     logger.debug('Plugging file system...');
     const params = await this.paramsP
-    this.dal = new FileDAL(params)
+    this.dal = new FileDAL(params, async (dbName: string): Promise<SQLiteDriver> => {
+      return Directory.getHomeDB(this.memoryOnly, dbName, params.home)
+    }, async (dbName: string): Promise<LevelUp> => {
+      return Directory.getHomeLevelDB(this.memoryOnly, dbName, params.home)
+    }, )
     await this.onPluggedFSHook()
   }
 
@@ -343,8 +349,6 @@ export class Server extends stream.Duplex implements HookableServer {
         await this.revertHead();
       }
     }
-    // Database trimming
-    await this.dal.loki.flushAndTrimData()
     // Eventual block resolution
     await this.BlockchainService.blockResolution()
     // Eventual fork resolution
@@ -383,15 +387,19 @@ export class Server extends stream.Duplex implements HookableServer {
   async resetAll(done:any = null) {
     await this.resetDataHook()
     await this.resetConfigHook()
-    const files = ['stats', 'cores', 'current', Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log', Directory.WOTB_FILE, 'export.zip', 'import.zip', 'conf'];
-    const dirs  = ['archives', 'loki', 'blocks', 'blockchain', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+    const files = ['stats', 'cores', 'current', Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log', Directory.WOTB_FILE, 'export.zip', 'import.zip', 'conf']
+      .concat(Directory.DATA_FILES)
+    const dirs  = ['archives', 'loki', 'blocks', 'blockchain', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb']
+      .concat(Directory.DATA_DIRS)
     return this.resetFiles(files, dirs, done);
   }
 
   async resetData(done:any = null) {
     await this.resetDataHook()
-    const files = ['stats', 'cores', 'current', Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log', Directory.WOTB_FILE];
-    const dirs  = ['archives', 'loki', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+    const files = ['stats', 'cores', 'current', Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log', Directory.WOTB_FILE]
+      .concat(Directory.DATA_FILES)
+    const dirs  = ['archives', 'loki', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb']
+      .concat(Directory.DATA_DIRS)
     await this.resetFiles(files, dirs, done);
   }
 

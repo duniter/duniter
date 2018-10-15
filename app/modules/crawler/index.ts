@@ -92,6 +92,9 @@ export const CrawlerDependency = {
       name: 'sync [source] [to] [currency]',
       desc: 'Synchronize blockchain from a remote Duniter node',
       preventIfRunning: true,
+      onConfiguredExecute: async (server:Server) => {
+        await server.resetData();
+      },
       onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any): Promise<any> => {
         const source = params[0]
         const to     = params[1]
@@ -119,7 +122,7 @@ export const CrawlerDependency = {
           const dbHome = program.home;
           const home = Directory.getHome(dbName, dbHome);
           const params = await Directory.getHomeParams(false, home)
-          otherDAL = new FileDAL(params)
+          otherDAL = new FileDAL(params, async() => null as any, async() => null as any)
         }
 
         let strategy: AbstractSynchronizer

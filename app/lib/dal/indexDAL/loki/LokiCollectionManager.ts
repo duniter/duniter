@@ -3,10 +3,11 @@ import {LokiProxyCollection} from "./LokiCollection"
 import {NewLogger} from "../../../logger"
 import {LokiDAO} from "./LokiDAO"
 import {cliprogram} from "../../../common-libs/programOptions"
+import {Initiable} from "../../sqliteDAL/Initiable"
 
 const logger = NewLogger()
 
-export abstract class LokiCollectionManager<T> implements LokiDAO {
+export abstract class LokiCollectionManager<T> implements LokiDAO, Initiable {
 
   protected collection:LokiCollection<T>
   protected collectionIsInitialized: Promise<void>
@@ -43,5 +44,11 @@ export abstract class LokiCollectionManager<T> implements LokiDAO {
   async init(): Promise<void> {
     await this.collectionIsInitialized
     logger.info('Collection %s ready', this.collectionName)
+  }
+
+  async close(): Promise<void> {
+  }
+
+  cleanCache(): void {
   }
 }

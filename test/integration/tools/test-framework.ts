@@ -44,7 +44,7 @@ export async function createCurrencyWith2Blocks(s: TestingServer, cat: TestUser,
   await s.commit()
 }
 
-export function assertEqual(value: number, expected: number) {
+export function assertEqual(value: number|string, expected: number|string) {
   assert.equal(value, expected)
 }
 
@@ -54,6 +54,10 @@ export function assertTrue(expected: boolean) {
 
 export function assertNotNull(value: any) {
   assert.notEqual(value, null)
+}
+
+export function assertNull(value: any) {
+  assert.equal(value, null)
 }
 
 export function assertFalse(expected: boolean) {

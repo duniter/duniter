@@ -1,8 +1,7 @@
 import {Initiable} from "../../sqliteDAL/Initiable"
 import {DBWallet} from "../../../db/DBWallet"
-import {LokiDAO} from "../loki/LokiDAO"
 
-export interface WalletDAO extends Initiable, LokiDAO {
+export interface WalletDAO extends Initiable {
 
   /**
    * Trigger the initialization of the DAO. Called when the underlying DB is ready.
@@ -21,11 +20,17 @@ export interface WalletDAO extends Initiable, LokiDAO {
    * @param {string} conditions
    * @returns {Promise<DBWallet>}
    */
-  getWallet(conditions:string): Promise<DBWallet>
+  getWallet(conditions:string): Promise<DBWallet|null>
 
   /**
    * Make a batch insert.
    * @param records The records to insert as a batch.
    */
   insertBatch(records:DBWallet[]): Promise<void>
+
+  /**
+   * Lists all the wallets.
+   * @returns {Promise<DBWallet[]>}
+   */
+  listAll(): Promise<DBWallet[]>
 }

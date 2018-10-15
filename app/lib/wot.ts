@@ -31,6 +31,12 @@ export interface WoTBInstance {
   memCopy(): WoTBInstance
 
   /**
+   * Makes a file copy of the WoT instance, and returns this new instance.
+   * @returns {WoTBInstance} The new file instance.
+   */
+  fileCopy(path: string): WoTBInstance
+
+  /**
    * Remove the WoT from the computer's memory.
    */
   clear(): void

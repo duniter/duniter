@@ -1,8 +1,7 @@
-import {Initiable} from "../../sqliteDAL/Initiable"
 import {DBPeer} from "../../../db/DBPeer"
-import {LokiDAO} from "../loki/LokiDAO"
+import {Initiable} from "../../sqliteDAL/Initiable"
 
-export interface PeerDAO extends Initiable, LokiDAO {
+export interface PeerDAO extends Initiable {
 
   /**
    * Trigger the initialization of the DAO. Called when the underlying DB is ready.
@@ -64,5 +63,5 @@ export interface PeerDAO extends Initiable, LokiDAO {
    * @param {number} threshold
    * @returns {Promise<void>}
    */
-  deletePeersWhoseLastContactIsAbove(threshold: number): Promise<void>
+  deleteNonWotPeersWhoseLastContactIsAbove(threshold: number): Promise<void>
 }

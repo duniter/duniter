@@ -23,7 +23,7 @@ let dal:FileDAL
 describe("Triming", function(){
 
   before(async () => {
-    dal = new FileDAL(await Directory.getHomeParams(true, 'db0'));
+    dal = new FileDAL(await Directory.getHomeParams(true, 'db0'), async (name: string) => Directory.getHomeDB(true, name), async (name: string) => Directory.getHomeLevelDB(true, name));
     await dal.init({} as any)
   })
 
@@ -99,38 +99,38 @@ describe("Triming", function(){
 
   it('should be able to feed the cindex', async () => {
     await dal.cindexDAL.insertBatch([
-      { op: 'CREATE', issuer: 'HgTT', receiver: 'DNan', created_on: '121-H', written_on: '126-H', writtenOn: 126, expires_on: 1000, expired_on: null },
-      { op: 'UPDATE', issuer: 'HgTT', receiver: 'DNan', created_on: '121-H', written_on: '126-H', writtenOn: 126, expires_on: null, expired_on: 3000 },
-      { op: 'CREATE', issuer: 'DNan', receiver: 'HgTT', created_on: '125-H', written_on: '126-H', writtenOn: 126, expires_on: null, expired_on: null }
+      { op: 'CREATE', issuer: 'HgTT', receiver: 'DNan', created_on: '121', written_on: '126-H', writtenOn: 126, expires_on: 1000, expired_on: null },
+      { op: 'UPDATE', issuer: 'HgTT', receiver: 'DNan', created_on: '121', written_on: '126-H', writtenOn: 126, expires_on: null, expired_on: 3000 },
+      { op: 'CREATE', issuer: 'DNan', receiver: 'HgTT', created_on: '125', written_on: '126-H', writtenOn: 126, expires_on: null, expired_on: null }
     ] as any);
-    (await dal.cindexDAL.findRaw({ issuer: 'HgTT' })).should.have.length(2);
-    (await dal.cindexDAL.findRaw({ issuer: 'DNan' })).should.have.length(1);
+    (await dal.cindexDAL.findByIssuer('HgTT')).should.have.length(2);
+    (await dal.cindexDAL.findByIssuer('DNan')).should.have.length(1);
   })
 
   it('should be able to trim the cindex', async () => {
     // Triming
     await dal.trimIndexes(127);
-    (await dal.cindexDAL.findRaw({ issuer: 'HgTT' })).should.have.length(0);
+    (await dal.cindexDAL.findByIssuer('HgTT')).should.have.length(0);
     // { op: 'UPDATE', issuer: 'DNan', receiver: 'HgTT', created_on: '125-H', written_on: '126-H', writtenOn: 126, expires_on: 3600, expired_on: null },/**/
-    (await dal.cindexDAL.findRaw({ issuer: 'DNan' })).should.have.length(1);
+    (await dal.cindexDAL.findByIssuer('DNan')).should.have.length(1);
   })
 
   it('should be able to feed the sindex', async () => {
     await dal.sindexDAL.insertBatch([
-      { op: 'CREATE', identifier: 'SOURCE_1', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false },
-      { op: 'UPDATE', identifier: 'SOURCE_1', pos: 4, written_on: '139-H', writtenOn: 139, written_time: 4500, consumed: true },
-      { op: 'CREATE', identifier: 'SOURCE_2', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false },
-      { op: 'CREATE', identifier: 'SOURCE_3', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false }
+      { op: 'CREATE', identifier: 'SOURCE_1', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'COND(SOURCE_1)'},
+      { op: 'UPDATE', identifier: 'SOURCE_1', pos: 4, written_on: '139-H', writtenOn: 139, written_time: 4500, consumed: true, conditions: 'COND(SOURCE_1)'},
+      { op: 'CREATE', identifier: 'SOURCE_2', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'COND(SOURCE_2)'},
+      { op: 'CREATE', identifier: 'SOURCE_3', pos: 4, written_on: '126-H', writtenOn: 126, written_time: 2000, consumed: false, conditions: 'COND(SOURCE_3)'}
     ] as any);
-    (await dal.sindexDAL.findRaw({ identifier: 'SOURCE_1' })).should.have.length(2);
-    (await dal.sindexDAL.findRaw({ pos: 4 })).should.have.length(4);
+    (await dal.sindexDAL.findByIdentifier('SOURCE_1')).should.have.length(2);
+    (await dal.sindexDAL.findByPos(4)).should.have.length(4);
   })
 
   it('should be able to trim the sindex', async () => {
     // Triming
     await dal.trimIndexes(140);
-    (await dal.sindexDAL.findRaw({ identifier: 'SOURCE_1' })).should.have.length(0);
-    (await dal.sindexDAL.findRaw({ pos: 4 })).should.have.length(2);
+    (await dal.sindexDAL.findByIdentifier('SOURCE_1')).should.have.length(0);
+    (await dal.sindexDAL.findByPos(4)).should.have.length(2);
   })
 
   it('should be able to trim the bindex', async () => {

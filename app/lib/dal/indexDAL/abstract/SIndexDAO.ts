@@ -21,4 +21,8 @@ export interface SIndexDAO extends ReduceableDAO<SindexEntry> {
   trimConsumedSource(belowNumber:number): Promise<void>
 
   getWrittenOnTxs(blockstamp: string): Promise<SimpleTxEntryForWallet[]>
+
+  findByIdentifier(identifier: string): Promise<SindexEntry[]>
+
+  findByPos(pos: number): Promise<SindexEntry[]>
 }

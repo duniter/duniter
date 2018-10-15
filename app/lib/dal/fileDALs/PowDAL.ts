@@ -26,6 +26,9 @@ export class PowDAL extends AbstractCFS {
     return this.coreFS.remove(PowDAL.POW_FILE, false).catch(() => {})
   }
 
+  async close() {
+  }
+
   async getCurrent() {
     return await this.coreFS.read(PowDAL.POW_FILE);
   }

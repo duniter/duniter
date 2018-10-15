@@ -89,6 +89,7 @@ export class PeeringService {
   submitP(peering:DBPeer, eraseIfAlreadyRecorded = false, cautious = true, acceptNonWoT = false): Promise<PeerDTO> {
     // Force usage of local currency name, do not accept other currencies documents
     peering.currency = this.conf.currency || peering.currency;
+    this.logger.info('[' + this.server.conf.pair.pub.substr(0,8) + '] ⬇ PEER %s', peering.pubkey.substr(0, 8), peering.block.substr(0, 8))
     let thePeerDTO = PeerDTO.fromJSONObject(peering)
     let thePeer = thePeerDTO.toDBPeer()
     let sp = thePeer.block.split('-');
@@ -201,7 +202,7 @@ export class PeeringService {
         peerEntity.nonWoT = isNonWoT
         peerEntity.lastContact = Math.floor(Date.now() / 1000)
         await this.dal.savePeer(peerEntity);
-        this.logger.info('✔ PEER %s', peering.pubkey.substr(0, 8))
+        this.logger.info('[' + this.server.conf.pair.pub.substr(0,8) + '] ✔ PEER %s', peering.pubkey.substr(0, 8), peerEntity.block.substr(0, 8))
         let savedPeer = PeerDTO.fromJSONObject(peerEntity).toDBPeer()
         if (peerEntity.pubkey == this.selfPubkey) {
           const localEndpoints = await this.server.getEndpoints()

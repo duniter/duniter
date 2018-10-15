@@ -2,6 +2,8 @@ import {FullIindexEntry, IindexEntry, Indexer} from "../../../indexer"
 import {IIndexDAO} from "../abstract/IIndexDAO"
 import {LokiPubkeySharingIndex} from "./LokiPubkeySharingIndex"
 import {OldIindexEntry} from "../../../db/OldIindexEntry"
+import {MonitorExecutionTime} from "../../../debug/MonitorExecutionTime"
+import {OldTransformers} from "../common/OldTransformer"
 
 export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements IIndexDAO {
 
@@ -13,17 +15,12 @@ export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements I
     ])
   }
 
-  reducable(pub: string): Promise<IindexEntry[]> {
+  @MonitorExecutionTime()
+  async reducable(pub: string): Promise<IindexEntry[]> {
     return this.findByPub(pub)
   }
 
-  async findAllByWrittenOn(): Promise<IindexEntry[]> {
-    return this.collection.chain()
-      .find({})
-      .simplesort('writtenOn')
-      .data()
-  }
-
+  @MonitorExecutionTime()
   async findByPub(pub: string): Promise<IindexEntry[]> {
     return this.collection.chain()
       .find({ pub })
@@ -31,6 +28,7 @@ export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements I
       .data()
   }
 
+  @MonitorExecutionTime()
   async findByUid(uid: string): Promise<IindexEntry[]> {
     return this.collection.chain()
       .find({ uid })
@@ -38,6 +36,7 @@ export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements I
       .data()
   }
 
+  @MonitorExecutionTime()
   async getMembers(): Promise<{ pubkey: string; uid: string|null }[]> {
     return this.collection
       // Those who are still marked member somewhere
@@ -55,15 +54,17 @@ export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements I
       // We keep only the real members (because we could have excluded)
       .filter(r => r.member)
       // We map
-      .map(this.toCorrectEntity)
+      .map(OldTransformers.toOldIindexEntry)
   }
 
+  @MonitorExecutionTime()
   async getFromPubkey(pub: string): Promise<FullIindexEntry | null> {
     return this.retrieveIdentityOnPubOrNull(
       { pub }
     ) as Promise<FullIindexEntry|null>
   }
 
+  @MonitorExecutionTime()
   async getFromUID(uid: string): Promise<FullIindexEntry | null> {
     return this.retrieveIdentityOnPubOrNull(
       this.collection
@@ -73,6 +74,7 @@ export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements I
     ) as Promise<FullIindexEntry|null>
   }
 
+  @MonitorExecutionTime()
   async getFromPubkeyOrUid(search: string): Promise<FullIindexEntry | null> {
     const idty = await this.getFromPubkey(search)
     if (idty) {
@@ -81,6 +83,7 @@ export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements I
     return this.getFromUID(search) as Promise<FullIindexEntry|null>
   }
 
+  @MonitorExecutionTime()
   async searchThoseMatching(search: string): Promise<OldIindexEntry[]> {
     const reducables = Indexer.DUP_HELPERS.reduceBy(this.collection
       .chain()
@@ -94,18 +97,21 @@ export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements I
     , ['pub'])
     // We get the full representation for each member
     return await Promise.all(reducables.map(async (entry) => {
-      return this.toCorrectEntity(Indexer.DUP_HELPERS.reduce(await this.reducable(entry.pub)))
+      return OldTransformers.toOldIindexEntry(Indexer.DUP_HELPERS.reduce(await this.reducable(entry.pub)))
     }))
   }
 
+  @MonitorExecutionTime()
   async getFullFromUID(uid: string): Promise<FullIindexEntry> {
     return (await this.getFromUID(uid)) as FullIindexEntry
   }
 
+  @MonitorExecutionTime()
   async getFullFromPubkey(pub: string): Promise<FullIindexEntry> {
     return (await this.getFromPubkey(pub)) as FullIindexEntry
   }
 
+  @MonitorExecutionTime()
   async getFullFromHash(hash: string): Promise<FullIindexEntry> {
     return this.retrieveIdentityOnPubOrNull(
       this.collection
@@ -115,11 +121,12 @@ export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements I
     ) as Promise<FullIindexEntry>
   }
 
+  @MonitorExecutionTime()
   async retrieveIdentityOnPubOrNull(entry:{ pub:string }|null) {
     if (!entry) {
       return null
     }
-    return this.entityOrNull(
+    return OldTransformers.iindexEntityOrNull(
       this.collection
         .chain()
         .find({ pub: entry.pub })
@@ -128,6 +135,7 @@ export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements I
     ) as Promise<FullIindexEntry|null>
   }
 
+  @MonitorExecutionTime()
   async getToBeKickedPubkeys(): Promise<string[]> {
     return this.collection
     // Those who are still marked member somewhere
@@ -146,35 +154,5 @@ export class LokiIIndex extends LokiPubkeySharingIndex<IindexEntry> implements I
       .filter(r => r.kick)
       // We map
       .map(r => r.pub)
-  }
-
-  private async entityOrNull(reducable:IindexEntry[]) {
-    if (reducable.length) {
-      return this.toCorrectEntity(Indexer.DUP_HELPERS.reduce(reducable))
-    }
-    return null
-  }
-
-  private toCorrectEntity(row:IindexEntry): OldIindexEntry {
-    // Old field
-    return {
-      pubkey: row.pub,
-      pub: row.pub,
-      buid: row.created_on,
-      revocation_sig: null,
-      uid: row.uid,
-      hash: row.hash,
-      sig: row.sig,
-      created_on: row.created_on,
-      member: row.member,
-      wasMember: row.wasMember,
-      kick: row.kick,
-      wotb_id: row.wotb_id,
-      age: row.age,
-      index: row.index,
-      op: row.op,
-      writtenOn: row.writtenOn,
-      written_on: row.written_on
-    }
   }
 }

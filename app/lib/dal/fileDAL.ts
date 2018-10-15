@@ -46,26 +46,16 @@ import {BasicRevocableIdentity, IdentityDTO} from "../dto/IdentityDTO"
 import {FileSystem} from "../system/directory"
 import {WoTBInstance} from "../wot"
 import {IIndexDAO} from "./indexDAL/abstract/IIndexDAO"
-import {LokiIIndex} from "./indexDAL/loki/LokiIIndex"
 import {BIndexDAO} from "./indexDAL/abstract/BIndexDAO"
 import {MIndexDAO} from "./indexDAL/abstract/MIndexDAO"
 import {SIndexDAO} from "./indexDAL/abstract/SIndexDAO"
 import {CIndexDAO} from "./indexDAL/abstract/CIndexDAO"
 import {IdentityForRequirements} from "../../service/BlockchainService"
-import {LokiSIndex} from "./indexDAL/loki/LokiSIndex"
-import {LokiCIndex} from "./indexDAL/loki/LokiCIndex"
-import {LokiMIndex} from "./indexDAL/loki/LokiMIndex";
-import {LokiBIndex} from "./indexDAL/loki/LokiBIndex"
 import {NewLogger} from "../logger"
-import {LokiBlockchain} from "./indexDAL/loki/LokiBlockchain"
 import {BlockchainDAO} from "./indexDAL/abstract/BlockchainDAO"
-import {LokiTransactions} from "./indexDAL/loki/LokiTransactions"
 import {TxsDAO} from "./indexDAL/abstract/TxsDAO"
-import {LokiJsDriver} from "./drivers/LokiJsDriver"
 import {WalletDAO} from "./indexDAL/abstract/WalletDAO"
-import {LokiWallet} from "./indexDAL/loki/LokiWallet"
 import {PeerDAO} from "./indexDAL/abstract/PeerDAO"
-import {LokiPeer} from "./indexDAL/loki/LokiPeer"
 import {DBTx} from "../db/DBTx"
 import {DBWallet} from "../db/DBWallet"
 import {Tristamp} from "../common/Tristamp"
@@ -77,10 +67,22 @@ import {DBPeer} from "../db/DBPeer"
 import {MonitorFlushedIndex} from "../debug/MonitorFlushedIndex"
 import {cliprogram} from "../common-libs/programOptions"
 import {DividendDAO, UDSource} from "./indexDAL/abstract/DividendDAO"
-import {LokiDividend} from "./indexDAL/loki/LokiDividend"
 import {HttpSource, HttpUD} from "../../modules/bma/lib/dtos"
 import {GenericDAO} from "./indexDAL/abstract/GenericDAO"
 import {LokiDAO} from "./indexDAL/loki/LokiDAO"
+import {MonitorExecutionTime} from "../debug/MonitorExecutionTime"
+import {SqliteMIndex} from "./indexDAL/sqlite/SqliteMIndex"
+import {SqliteIIndex} from "./indexDAL/sqlite/SqliteIIndex"
+import {SqliteCIndex} from "./indexDAL/sqlite/SqliteCIndex"
+import {LevelDBDividend} from "./indexDAL/leveldb/LevelDBDividend"
+import {LevelDBBindex} from "./indexDAL/leveldb/LevelDBBindex"
+
+import {LevelUp} from 'levelup';
+import {LevelDBBlockchain} from "./indexDAL/leveldb/LevelDBBlockchain"
+import {LevelDBSindex} from "./indexDAL/leveldb/LevelDBSindex"
+import {SqliteTransactions} from "./indexDAL/sqlite/SqliteTransactions"
+import {SqlitePeers} from "./indexDAL/sqlite/SqlitePeers"
+import {LevelDBWallet} from "./indexDAL/leveldb/LevelDBWallet"
 
 const readline = require('readline')
 const indexer = require('../indexer').Indexer
@@ -91,8 +93,7 @@ export interface FileDALParams {
   home:string
   fs:FileSystem
   dbf:() => SQLiteDriver
-  dbf2: () => LokiJsDriver
-  wotb:WoTBInstance
+  wotbf:() => WoTBInstance
 }
 
 export interface IndexBatch {
@@ -106,7 +107,6 @@ export class FileDAL {
 
   rootPath:string
   fs: FileSystem
-  loki:LokiJsDriver
   sqliteDriver:SQLiteDriver
   wotb:WoTBInstance
   profile:string
@@ -136,16 +136,17 @@ export class FileDAL {
   dividendDAL:DividendDAO
   newDals:{ [k:string]: Initiable }
   private dals:(BlockchainArchiveDAO<any>|PeerDAO|WalletDAO|GenericDAO<any>)[]
-  private daos:LokiDAO[]
+  private lokiDaos:LokiDAO[] = []
 
   loadConfHook: (conf:ConfDTO) => Promise<void>
   saveConfHook: (conf:ConfDTO) => Promise<ConfDTO>
 
-  constructor(params:FileDALParams) {
+  constructor(private params:FileDALParams,
+              public getSqliteDB: (dbName: string)=> Promise<SQLiteDriver>,
+              public getLevelDB: (dbName: string)=> Promise<LevelUp>,
+              ) {
     this.rootPath = params.home
     this.sqliteDriver = params.dbf()
-    this.loki = params.dbf2()
-    this.wotb = params.wotb
     this.profile = 'DAL'
     this.fs = params.fs
 
@@ -154,20 +155,21 @@ export class FileDAL {
     this.confDAL = new ConfDAL(this.rootPath, params.fs)
     this.metaDAL = new (require('./sqliteDAL/MetaDAL').MetaDAL)(this.sqliteDriver);
     this.blockchainArchiveDAL = new CFSBlockchainArchive(new CFSCore(path.join(this.rootPath, '/archives'), params.fs), CommonConstants.ARCHIVES_BLOCKS_CHUNK)
-    this.blockDAL = new LokiBlockchain(this.loki.getLokiInstance())
-    this.txsDAL = new LokiTransactions(this.loki.getLokiInstance())
     this.statDAL = new StatDAL(this.rootPath, params.fs)
     this.idtyDAL = new (require('./sqliteDAL/IdentityDAL').IdentityDAL)(this.sqliteDriver);
     this.certDAL = new (require('./sqliteDAL/CertDAL').CertDAL)(this.sqliteDriver);
     this.msDAL = new (require('./sqliteDAL/MembershipDAL').MembershipDAL)(this.sqliteDriver);
-    this.peerDAL = new LokiPeer(this.loki.getLokiInstance())
-    this.walletDAL = new LokiWallet(this.loki.getLokiInstance())
-    this.bindexDAL = new LokiBIndex(this.loki.getLokiInstance())
-    this.mindexDAL = new LokiMIndex(this.loki.getLokiInstance())
-    this.iindexDAL = new LokiIIndex(this.loki.getLokiInstance())
-    this.sindexDAL = new LokiSIndex(this.loki.getLokiInstance())
-    this.cindexDAL = new LokiCIndex(this.loki.getLokiInstance())
-    this.dividendDAL = new LokiDividend(this.loki.getLokiInstance())
+
+    this.blockDAL = new LevelDBBlockchain(getLevelDB)
+    this.txsDAL = new SqliteTransactions(getSqliteDB)
+    this.peerDAL = new SqlitePeers(getSqliteDB)
+    this.walletDAL = new LevelDBWallet(getLevelDB)
+    this.bindexDAL = new LevelDBBindex(getLevelDB)
+    this.mindexDAL = new SqliteMIndex(getSqliteDB)
+    this.iindexDAL = new SqliteIIndex(getSqliteDB)
+    this.sindexDAL = new LevelDBSindex(getLevelDB)
+    this.cindexDAL = new SqliteCIndex(getSqliteDB)
+    this.dividendDAL = new LevelDBDividend(getLevelDB)
 
     this.newDals = {
       'powDAL': this.powDAL,
@@ -192,28 +194,15 @@ export class FileDAL {
   }
 
   public enableChangesAPI() {
-    this.daos.map(d => d.enableChangesAPI())
+    this.lokiDaos.map(d => d.enableChangesAPI())
   }
 
   public disableChangesAPI() {
-    this.daos.map(d => d.disableChangesAPI())
+    this.lokiDaos.map(d => d.disableChangesAPI())
   }
 
   async init(conf:ConfDTO) {
-    // Init LokiJS
-    await this.loki.loadDatabase()
-    this.daos = [
-      this.blockDAL,
-      this.txsDAL,
-      this.peerDAL,
-      this.walletDAL,
-      this.bindexDAL,
-      this.mindexDAL,
-      this.iindexDAL,
-      this.sindexDAL,
-      this.cindexDAL,
-      this.dividendDAL
-    ]
+    this.wotb = this.params.wotbf()
     this.dals = [
       this.blockDAL,
       this.txsDAL,
@@ -252,6 +241,7 @@ export class FileDAL {
    * Transfer a chunk of blocks from memory DB to archives if the memory DB overflows.
    * @returns {Promise<void>}
    */
+  @MonitorExecutionTime()
   async archiveBlocks() {
     const lastArchived = await this.blockchainArchiveDAL.getLastSavedBlock()
     const current = await this.blockDAL.getCurrent()
@@ -341,7 +331,7 @@ export class FileDAL {
   }
 
   async existsAbsoluteBlockInForkWindow(number:number, hash:string): Promise<boolean> {
-    return !!(await this.getAbsoluteBlockByNumberAndHash(number, hash))
+    return !!(await this.getAbsoluteBlockByNumberAndHash(number, hash, true))
   }
 
   async getAbsoluteBlockInForkWindow(number:number, hash:string): Promise<DBBlock|null> {
@@ -356,8 +346,8 @@ export class FileDAL {
     return null
   }
 
-  async getAbsoluteBlockByNumberAndHash(number:number, hash:string): Promise<DBBlock|null> {
-    if (number > 0) {
+  async getAbsoluteBlockByNumberAndHash(number:number, hash:string, forceNumberAndHashFinding = false): Promise<DBBlock|null> {
+    if (number > 0 || forceNumberAndHashFinding) {
       return (await this.blockDAL.getAbsoluteBlock(number, hash)) || (await this.blockchainArchiveDAL.getBlock(number, hash))
     } else {
       // Block#0 is special
@@ -404,6 +394,8 @@ export class FileDAL {
     return this.blockDAL.getPotentialRoots()
   }
 
+  // TODO: unused even by an external API? => we should expose explicitely the external API
+  // to be able to remove such code
   lastBlockOfIssuer(issuer:string) {
     return this.blockDAL.lastBlockOfIssuer(issuer);
   }
@@ -538,7 +530,7 @@ export class FileDAL {
       if (!idty) {
         return null
       }
-      const membership = await this.mindexDAL.getReducedMS(idty.pub) as FullMindexEntry
+      const membership = await this.mindexDAL.getReducedMSForImplicitRevocation(idty.pub) as FullMindexEntry
       return {
         pubkey: idty.pub,
         uid: idty.uid,
@@ -577,7 +569,7 @@ export class FileDAL {
       if (!idty) {
         return null
       }
-      const membership = await this.mindexDAL.getReducedMS(idty.pub) as FullMindexEntry
+      const membership = await this.mindexDAL.getReducedMSForImplicitRevocation(idty.pub) as FullMindexEntry
       return {
         pub: idty.pub,
         uid: idty.uid,
@@ -639,12 +631,12 @@ export class FileDAL {
     return await this.iindexDAL.getFromPubkeyOrUid(search)
   }
 
-  async getWrittenIdtyByPubkeyForRevocationCheck(pubkey:string): Promise<{ pub:string, uid:string, created_on:string, sig:string, revoked_on:number|null }|null> {
+  async getWrittenIdtyByPubkeyForRevocationCheck(pubkey:string): Promise<{ pub:string, uid:string, created_on:string, sig:string, revoked_on:string|null }|null> {
     const idty = await this.iindexDAL.getFromPubkey(pubkey)
     if (!idty) {
       return null
     }
-    const membership = await this.mindexDAL.getReducedMS(pubkey) as FullMindexEntry
+    const membership = await this.mindexDAL.getReducedMSForImplicitRevocation(pubkey) as FullMindexEntry
     return {
       pub: idty.pub,
       uid: idty.uid,
@@ -770,9 +762,13 @@ export class FileDAL {
       return i
     }));
     return await Promise.all<DBIdentity>(found.map(async (f:any) => {
-      const ms = await this.mindexDAL.getReducedMS(f.pub);
+      const ms = await this.mindexDAL.getReducedMSForImplicitRevocation(f.pub);
       if (ms) {
-        f.revoked_on = ms.revoked_on ? ms.revoked_on : null;
+        f.revoked_on = null;
+        if (ms.revoked_on) {
+          const blockOfRevocation = (await this.getAbsoluteBlockByBlockstamp(ms.revoked_on)) as DBBlock
+          f.revoked_on = blockOfRevocation.medianTime
+        }
         f.revoked = !!f.revoked_on;
         f.revocation_sig = ms.revocation || null;
       }
@@ -849,7 +845,7 @@ export class FileDAL {
 
   async getMostRecentMembershipNumberForIssuer(issuer:string) {
     const mss = await this.msDAL.getMembershipsOfIssuer(issuer);
-    const reduced = await this.mindexDAL.getReducedMS(issuer);
+    const reduced = await this.mindexDAL.getReducedMSForImplicitRevocation(issuer);
     let max = reduced ? parseInt(reduced.created_on) : -1;
     for (const ms of mss) {
       max = Math.max(ms.number, max);
@@ -865,7 +861,7 @@ export class FileDAL {
   async findNewcomers(blockMedianTime = 0): Promise<DBMembership[]> {
     const pending = await this.msDAL.getPendingIN()
     const mss: DBMembership[] = await Promise.all<DBMembership>(pending.map(async (p:any) => {
-      const reduced = await this.mindexDAL.getReducedMS(p.issuer)
+      const reduced = await this.mindexDAL.getReducedMSForImplicitRevocation(p.issuer)
       if (!reduced || !reduced.chainable_on || blockMedianTime >= reduced.chainable_on || blockMedianTime < constants.TIME_TO_TURN_ON_BRG_107) {
         return p
       }
@@ -879,7 +875,7 @@ export class FileDAL {
   async findLeavers(blockMedianTime = 0): Promise<DBMembership[]> {
     const pending = await this.msDAL.getPendingOUT();
     const mss = await Promise.all<DBMembership|null>(pending.map(async p => {
-      const reduced = await this.mindexDAL.getReducedMS(p.issuer)
+      const reduced = await this.mindexDAL.getReducedMSForImplicitRevocation(p.issuer)
       if (!reduced || !reduced.chainable_on || blockMedianTime >= reduced.chainable_on || blockMedianTime < constants.TIME_TO_TURN_ON_BRG_107) {
         return p
       }
@@ -927,7 +923,7 @@ export class FileDAL {
   }
 
   async isLeaving(pubkey:string) {
-    const ms = await this.mindexDAL.getReducedMS(pubkey);
+    const ms = await this.mindexDAL.getReducedMSForImplicitRevocation(pubkey);
     return (ms && ms.leaving) || false;
   }
 
@@ -1073,21 +1069,23 @@ export class FileDAL {
     return { HEAD, mindex, iindex, sindex, cindex, dividends };
   }
 
-  async updateWotbLinks(cindex:CindexEntry[]) {
+  async updateWotbLinks(cindex:CindexEntry[], instance?: WoTBInstance) {
+    const wotb = instance || this.wotb
     for (const entry of cindex) {
       const from = await this.getWrittenIdtyByPubkeyForWotbID(entry.issuer);
       const to = await this.getWrittenIdtyByPubkeyForWotbID(entry.receiver);
       if (entry.op == CommonConstants.IDX_CREATE) {
         // NewLogger().trace('addLink %s -> %s', from.wotb_id, to.wotb_id)
-        this.wotb.addLink(from.wotb_id, to.wotb_id);
+        wotb.addLink(from.wotb_id, to.wotb_id);
       } else {
         // Update = removal
         NewLogger().trace('removeLink %s -> %s', from.wotb_id, to.wotb_id)
-        this.wotb.removeLink(from.wotb_id, to.wotb_id);
+        wotb.removeLink(from.wotb_id, to.wotb_id);
       }
     }
   }
 
+  @MonitorExecutionTime()
   async trimIndexes(maxNumber:number) {
     if (!cliprogram.notrim) {
       await this.bindexDAL.trimBlocks(maxNumber)
@@ -1310,14 +1308,15 @@ export class FileDAL {
   }
 
   async close() {
-    await Underscore.values(this.newDals).map((dal:Initiable) => dal.cleanCache && dal.cleanCache())
-    return this.sqliteDriver.closeConnection();
+    await Promise.all(Underscore.values(this.newDals).map(async (dal:Initiable) => {
+      dal.cleanCache() && dal.cleanCache()
+      await dal.close()
+    }))
+    await this.sqliteDriver.closeConnection();
   }
 
   async resetPeers() {
     await this.peerDAL.removeAll();
-    await this.loki.commitData();
-    await this.loki.flushAndTrimData();
     return await this.close()
   }
 
@@ -1368,11 +1367,23 @@ export class FileDAL {
 
   @MonitorFlushedIndex()
   async flushIndexes(indexes: IndexBatch) {
-    await this.mindexDAL.insertBatch(indexes.mindex)
-    await this.iindexDAL.insertBatch(indexes.iindex)
-    await this.sindexDAL.insertBatch(indexes.sindex.filter(s => s.srcType === 'T')) // We don't store dividends in SINDEX
-    await this.cindexDAL.insertBatch(indexes.cindex)
-    await this.dividendDAL.consume(indexes.sindex.filter(s => s.srcType === 'D'))
+    if (indexes.mindex.length) {
+      await this.mindexDAL.insertBatch(indexes.mindex)
+    }
+    if (indexes.iindex.length) {
+      await this.iindexDAL.insertBatch(indexes.iindex)
+    }
+    const sindex_txs = indexes.sindex.filter(s => s.srcType === 'T')
+    if (sindex_txs.length) {
+      await this.sindexDAL.insertBatch(sindex_txs) // We don't store dividends in SINDEX
+    }
+    const sindex_uds = indexes.sindex.filter(s => s.srcType === 'D')
+    if (sindex_uds.length) {
+      await this.dividendDAL.consume(sindex_uds)
+    }
+    if (indexes.cindex.length) {
+      await this.cindexDAL.insertBatch(indexes.cindex)
+    }
   }
 
   async updateDividend(blockNumber: number, dividend: number|null, unitbase: number, local_iindex: IindexEntry[]): Promise<SimpleUdEntryForWallet[]> {

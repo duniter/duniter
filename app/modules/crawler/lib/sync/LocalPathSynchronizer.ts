@@ -40,8 +40,8 @@ export class LocalPathSynchronizer extends AbstractSynchronizer {
     const fs = RealFS()
     this.ls = fs.fsList(path)
     // We read from the real file system here, directly.
-    this.theFsDownloader = new FsSyncDownloader(fs, this.path, this.getChunkName.bind(this))
-    this.theP2pDownloader = new FsSyncDownloader(fs, this.path, this.getChunkName.bind(this))
+    this.theFsDownloader = new FsSyncDownloader(fs, this.path, this.getChunkName.bind(this), chunkSize)
+    this.theP2pDownloader = new FsSyncDownloader(fs, this.path, this.getChunkName.bind(this), chunkSize)
   }
 
   get dal(): FileDAL {

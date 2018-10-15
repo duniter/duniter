@@ -14,4 +14,8 @@ export interface MIndexDAO extends ReduceableDAO<MindexEntry>  {
   findExpiresOnLteAndRevokesOnGt(medianTime:number): Promise<MindexEntry[]>
 
   getReducedMS(pub:string): Promise<FullMindexEntry|null>
+
+  findPubkeysThatShouldExpire(medianTime:number): Promise<{ pub: string, created_on: string }[]>
+
+  getReducedMSForImplicitRevocation(pub:string): Promise<FullMindexEntry|null>
 }

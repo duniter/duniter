@@ -83,6 +83,11 @@ export const duniterDocument2str = (type:DuniterDocument) => {
   }
 }
 
+export const ErrorConstants = {
+
+  EXIT_CODE_MINDEX_WRITING_ERROR: 500
+}
+
 export const CommonConstants = {
 
   FORMATS: {
@@ -309,7 +314,6 @@ export const CommonConstants = {
   MAX_AGE_OF_PEER_IN_BLOCKS: 200, // blocks
   INITIAL_DOWNLOAD_SLOTS: 1, // 1 peer
 
-  BLOCKS_COLLECT_THRESHOLD: 30, // Number of blocks to wait before trimming the loki data
   DEFAULT_NON_WOT_PEERS_LIMIT: 100, // Number of non-wot peers accepted in our peer document pool
 
   REJECT_WAIT_FOR_AVAILABLE_NODES_IN_SYNC_AFTER: 20000, // Reject after 20 seconds without any change

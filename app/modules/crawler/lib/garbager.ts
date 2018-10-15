@@ -16,5 +16,5 @@ import {Server} from "../../../../server"
 
 export const cleanLongDownPeers = async (server:Server, now:number) => {
   const first_down_limit = Math.floor((now - CrawlerConstants.PEER_LONG_DOWN * 1000) / 1000)
-  await server.dal.peerDAL.deletePeersWhoseLastContactIsAbove(first_down_limit)
+  await server.dal.peerDAL.deleteNonWotPeersWhoseLastContactIsAbove(first_down_limit)
 }

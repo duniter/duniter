@@ -83,8 +83,8 @@ export class MultimeterWatcher implements Watcher {
     this.multi.write('Progress:\n\n');
 
     let line = 3
+    this.savedBar    = this.createBar('Milestones',  line++)
     this.downloadBar = this.createBar('Download', line++)
-    this.savedBar    = this.createBar('Storage',  line++)
     this.appliedBar  = this.createBar('Apply',    line++)
     if (!cliprogram.nosbx) {
       this.sbxBar    = this.createBar('Sandbox',  line++)
@@ -179,7 +179,7 @@ export class LoggerWatcher implements Watcher {
   }
 
   showProgress() {
-    return this.logger.info('Downloaded %s%, Blockchained %s%, Applied %s%', this.downPct, this.savedPct, this.appliedPct)
+    return this.logger.info('Milestones %s%, Downloaded %s%, Applied %s%', this.savedPct, this.downPct, this.appliedPct)
   }
 
   writeStatus(str:string) {

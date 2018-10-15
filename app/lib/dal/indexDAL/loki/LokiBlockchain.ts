@@ -2,6 +2,7 @@ import {BlockchainDAO} from "../abstract/BlockchainDAO"
 import {DBBlock} from "../../../db/DBBlock"
 import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
 import {LokiProtocolIndex} from "./LokiProtocolIndex"
+import {MonitorExecutionTime} from "../../../debug/MonitorExecutionTime"
 
 export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements BlockchainDAO {
 
@@ -16,6 +17,7 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
     this.current = null
   }
 
+  @MonitorExecutionTime()
   async getCurrent() {
     if (this.current) {
       // Cached
@@ -32,6 +34,7 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
     }
   }
 
+  @MonitorExecutionTime()
   @MonitorLokiExecutionTime(true)
   async getBlock(number:string | number) {
     return this.collection
@@ -43,6 +46,7 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
       .data()[0]
   }
 
+  @MonitorExecutionTime()
   async getPotentialRoots() {
     return this.collection
       .chain()
@@ -50,10 +54,12 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
       .data()
   }
 
+  @MonitorExecutionTime()
   async saveBunch(blocks:DBBlock[]) {
     return this.insertBatch(blocks)
   }
 
+  @MonitorExecutionTime()
   async insertBatch(records: DBBlock[]): Promise<void> {
     const lastInBatch = records[records.length - 1]
     if (!this.current || this.current.number < lastInBatch.number) {
@@ -62,10 +68,12 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
     return super.insertBatch(records)
   }
 
+  @MonitorExecutionTime()
   async removeBlock(blockstamp: string): Promise<void> {
     // Never remove blocks
   }
 
+  @MonitorExecutionTime()
   async removeForkBlock(number:number): Promise<void> {
     await this.collection
       .chain()
@@ -76,6 +84,7 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
       .remove()
   }
 
+  @MonitorExecutionTime()
   async removeForkBlockAboveOrEqual(number:number): Promise<void> {
     await this.collection
       .chain()
@@ -86,6 +95,7 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
       .remove()
   }
 
+  @MonitorExecutionTime()
   async trimBlocks(number:number): Promise<void> {
     await this.collection
       .chain()
@@ -95,6 +105,7 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
       .remove()
   }
 
+  @MonitorExecutionTime()
   async getAbsoluteBlock(number: number, hash: string): Promise<DBBlock | null> {
     return this.collection
       .chain()
@@ -105,6 +116,7 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
       .data()[0]
   }
 
+  @MonitorExecutionTime()
   async getBlocks(start: number, end: number): Promise<DBBlock[]> {
     return this.collection
       .chain()
@@ -116,6 +128,7 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
       .data()
   }
 
+  @MonitorExecutionTime()
   async getCountOfBlocksIssuedBy(issuer: string): Promise<number> {
     return this.collection
       .chain()
@@ -127,6 +140,7 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
       .length
   }
 
+  @MonitorExecutionTime()
   async getNextForkBlocks(number: number, hash: string): Promise<DBBlock[]> {
     return this.collection
       .chain()
@@ -139,6 +153,7 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
       .data()
   }
 
+  @MonitorExecutionTime()
   async getPotentialForkBlocks(numberStart: number, medianTimeStart: number, maxNumber: number): Promise<DBBlock[]> {
     return this.collection
       .chain()
@@ -151,6 +166,7 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
       .data()
   }
 
+  @MonitorExecutionTime()
   async lastBlockOfIssuer(issuer: string): Promise<DBBlock | null> {
     return this.collection
       .chain()
@@ -162,6 +178,7 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
       .data()[0]
   }
 
+  @MonitorExecutionTime()
   async lastBlockWithDividend(): Promise<DBBlock | null> {
     return this.collection
       .chain()
@@ -173,6 +190,7 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
       .data()[0]
   }
 
+  @MonitorExecutionTime()
   async saveBlock(block: DBBlock): Promise<DBBlock> {
     if (!this.current || this.current.number < block.number) {
       this.current = block;
@@ -180,10 +198,12 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
     return this.insertOrUpdate(block, false)
   }
 
+  @MonitorExecutionTime()
   async saveSideBlock(block: DBBlock): Promise<DBBlock> {
     return this.insertOrUpdate(block, true)
   }
 
+  @MonitorExecutionTime()
   async insertOrUpdate(block: DBBlock, isFork:boolean): Promise<DBBlock> {
     block.fork = isFork
     const conditions = { number: block.number, hash: block.hash }
@@ -205,6 +225,7 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
     return block
   }
 
+  @MonitorExecutionTime()
   async dropNonForkBlocksAbove(number: number): Promise<void> {
     this.collection
       .chain()
@@ -215,6 +236,7 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
       .remove()
   }
 
+  @MonitorExecutionTime()
   async setSideBlock(number: number, previousBlock: DBBlock | null): Promise<void> {
     this.collection
       .chain()
@@ -234,6 +256,7 @@ export class LokiBlockchain extends LokiProtocolIndex<DBBlock> implements Blockc
     }
   }
 
+  @MonitorExecutionTime()
   async getNonForkChunk(start: number, end: number): Promise<DBBlock[]> {
     return this.collection
       .chain()

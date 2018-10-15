@@ -131,7 +131,6 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
           api = new BMARemoteContacter(contacter)
           endpoint = 'BASIC_MERKLED_API ' + host + ' ' + port + ((path && ' ' + path) || '')
         } catch (e) {
-          logger.warn(`Node does not support BMA at address ${host} :${port}, trying WS2P...`)
         }
       }
 
@@ -158,7 +157,6 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
           api = new WS2PRemoteContacter(requester)
           endpoint = 'WS2P 99999999 ' + host + ' ' + port + ((path && ' ' + path) || '')
         } catch (e) {
-          logger.warn(`Node does not support WS2P at address ${host} :${port} either.`)
         }
       }
       // If we have a working API: stop!
@@ -235,7 +233,7 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
 
   fsDownloader(): ISyncDownloader {
     if (!this.theFsDownloader) {
-      this.theFsDownloader = new FsSyncDownloader(this.readDAL.fs, path.join(this.readDAL.rootPath, this.getChunksPath()), this.getChunkName.bind(this))
+      this.theFsDownloader = new FsSyncDownloader(this.readDAL.fs, path.join(this.readDAL.rootPath, this.getChunksPath()), this.getChunkName.bind(this), this.chunkSize)
     }
     return this.theFsDownloader
   }

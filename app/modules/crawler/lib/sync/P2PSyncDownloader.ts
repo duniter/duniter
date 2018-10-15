@@ -16,10 +16,11 @@ import {getNanosecondsTime} from "../../../../ProcessCpuProfiler"
 import {CommonConstants} from "../../../../lib/common-libs/constants"
 import {DataErrors} from "../../../../lib/common-libs/errors"
 import {newRejectTimeoutPromise} from "../../../../lib/common-libs/timeout-promise"
+import {ASyncDownloader} from "./ASyncDownloader"
 
 const makeQuerablePromise = require('querablep');
 
-export class P2PSyncDownloader implements ISyncDownloader {
+export class P2PSyncDownloader extends ASyncDownloader implements ISyncDownloader {
 
   private PARALLEL_PER_CHUNK = 1;
   private MAX_DELAY_PER_DOWNLOAD = cliprogram.slow ? 15000 : 5000;
@@ -43,9 +44,9 @@ export class P2PSyncDownloader implements ISyncDownloader {
     private peers:JSONDBPeer[],
     private watcher:Watcher,
     private logger:any,
-    private chunkSize: number,
+    public chunkSize: number,
     ) {
-
+    super(chunkSize)
     this.TOO_LONG_TIME_DOWNLOAD = "No answer after " + this.MAX_DELAY_PER_DOWNLOAD + "ms, will retry download later.";
     this.nbBlocksToDownload = Math.max(0, to - localNumber);
     this.numberOfChunksToDownload = Math.ceil(this.nbBlocksToDownload / this.chunkSize);
@@ -94,7 +95,6 @@ export class P2PSyncDownloader implements ISyncDownloader {
           }
           return node
         } catch (e) {
-          this.logger.warn(e)
           return newManualPromise() // Which never resolves, so this node won't be used
         }
       })()))

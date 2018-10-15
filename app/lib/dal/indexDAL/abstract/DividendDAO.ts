@@ -51,4 +51,6 @@ export interface DividendDAO extends GenericDAO<DividendEntry> {
   findForDump(criterion: any): Promise<SindexEntry[]>
 
   trimConsumedUDs(belowNumber:number): Promise<void>
+
+  listAll(): Promise<DividendEntry[]>
 }

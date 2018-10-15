@@ -17,8 +17,10 @@ import {SQLiteDriver} from "../dal/drivers/SQLiteDriver"
 import {CFSCore} from "../dal/fileDALs/CFSCore"
 import {WoTBInstance, WoTBObject} from "../wot"
 import {FileDALParams} from "../dal/fileDAL"
-import {LokiJsDriver} from "../dal/drivers/LokiJsDriver"
 import {cliprogram} from "../common-libs/programOptions"
+import {LevelDBDriver} from "../dal/drivers/LevelDBDriver"
+import {LevelUp} from 'levelup'
+import {AbstractLevelDOWN} from 'abstract-leveldown'
 
 const opts = cliprogram
 const qfs  = require('q-io/fs');
@@ -115,6 +117,9 @@ export const MemFS = (initialTree:{ [folder:string]: { [file:string]: string }} 
 
 export const Directory = {
 
+  DATA_FILES: ['mindex.db', 'c_mindex.db', 'iindex.db', 'cindex.db', 'sindex.db', 'wallet.db', 'dividend.db', 'txs.db', 'peers.db'],
+  DATA_DIRS: ['level_dividend', 'level_bindex', 'level_blockchain', 'level_sindex', 'level_wallet'],
+
   INSTANCE_NAME: getDomain(opts.mdb),
   INSTANCE_HOME: getHomePath(opts.mdb, opts.home),
   INSTANCE_HOMELOG_FILE: getLogsPath(opts.mdb, opts.home),
@@ -123,6 +128,26 @@ export const Directory = {
   WOTB_FILE: 'wotb.bin',
 
   getHome: (profile:string|null = null, directory:string|null = null) => getHomePath(profile, directory),
+
+  getHomeDB: async (isMemory:boolean, dbName: string, home = '') => {
+    // Memory
+    if (isMemory) {
+      return new SQLiteDriver(':memory:')
+    }
+    // Or file
+    const sqlitePath = path.join(home || Directory.INSTANCE_HOME, dbName)
+    return new SQLiteDriver(sqlitePath)
+  },
+
+  getHomeLevelDB: async (isMemory:boolean, dbName: string, home = '') => {
+    // Memory
+    if (isMemory) {
+      return LevelDBDriver.newMemoryInstance()
+    }
+    // Or file
+    const levelDBPath = path.join(home || Directory.INSTANCE_HOME, dbName)
+    return LevelDBDriver.newFileInstance(levelDBPath)
+  },
 
   getHomeFS: async (isMemory:boolean, theHome:string, makeTree = true) => {
     const home = theHome || Directory.getHome()
@@ -140,14 +165,12 @@ export const Directory = {
     const params = await Directory.getHomeFS(isMemory, theHome)
     const home = params.home;
     let dbf: () => SQLiteDriver
-    let dbf2: () => LokiJsDriver
-    let wotb: WoTBInstance
+    let wotbf: () => WoTBInstance
     if (isMemory) {
 
       // Memory DB
       dbf = () => new SQLiteDriver(':memory:');
-      dbf2 = () => new LokiJsDriver()
-      wotb = WoTBObject.memoryInstance();
+      wotbf = () => WoTBObject.memoryInstance()
 
     } else {
 
@@ -159,15 +182,13 @@ export const Directory = {
       if (!existsFile) {
         fs.closeSync(fs.openSync(wotbFilePath, 'w'));
       }
-      dbf2 = () => new LokiJsDriver(path.join(home, Directory.LOKI_DB_DIR))
-      wotb = WoTBObject.fileInstance(wotbFilePath);
+      wotbf = () => WoTBObject.fileInstance(wotbFilePath)
     }
     return {
       home: params.home,
       fs: params.fs,
       dbf,
-      dbf2,
-      wotb
+      wotbf
     }
   },
 

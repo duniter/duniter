@@ -108,7 +108,7 @@ describe("DAL", function(){
 
   before(async () => {
     let params = await Directory.getHomeParams(true, 'db0');
-    fileDAL = new FileDAL(params);
+    fileDAL = new FileDAL(params, async (name: string) => Directory.getHomeDB(true, name), async (name: string) => Directory.getHomeLevelDB(true, name));
     await fileDAL.init({} as any);
     return fileDAL.saveConf({ currency: "meta_brouzouf" } as any);
   })

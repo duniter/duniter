@@ -17,7 +17,6 @@ import {GlobalFifoPromise} from "./GlobalFifoPromise"
 import {BlockchainContext} from "../lib/computation/BlockchainContext"
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {FileDAL} from "../lib/dal/fileDAL"
-import {QuickSynchronizer} from "../lib/computation/QuickSync"
 import {BlockDTO} from "../lib/dto/BlockDTO"
 import {DBBlock} from "../lib/db/DBBlock"
 import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules"
@@ -61,7 +60,6 @@ export class BlockchainService extends FIFOService {
   dal:FileDAL
   logger:any
   selfPubkey:string
-  quickSynchronizer:QuickSynchronizer
   switcherDao:SwitcherDao<BlockDTO>
   invalidForks:string[] = []
 
@@ -137,8 +135,7 @@ export class BlockchainService extends FIFOService {
     this.dal = newDAL;
     this.conf = newConf;
     this.logger = require('../lib/logger').NewLogger(this.dal.profile)
-    this.quickSynchronizer = new QuickSynchronizer(this.conf, this.dal, this.logger)
-    this.mainContext.setConfDAL(this.conf, this.dal, this.quickSynchronizer)
+    this.mainContext.setConfDAL(this.conf, this.dal)
     this.selfPubkey = newKeyPair.publicKey;
   }
 
@@ -347,7 +344,7 @@ export class BlockchainService extends FIFOService {
         outdistanced = await GLOBAL_RULES_HELPERS.isOver3Hops(pubkey, newLinks, someNewcomers, current, this.conf, this.dal);
       }
       // Expiration of current membershship
-      const currentMembership = await this.dal.mindexDAL.getReducedMS(pubkey);
+      const currentMembership = await this.dal.mindexDAL.getReducedMSForImplicitRevocation(pubkey);
       const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
       if (currentMSN >= 0) {
         if (join.identity.member) {
@@ -438,7 +435,8 @@ export class BlockchainService extends FIFOService {
   isMember() {
     return this.dal.isMember(this.selfPubkey)
   }
-  
+
+  // TODO: look in archives too
   getCountOfSelfMadePoW() {
     return this.dal.getCountOfPoW(this.selfPubkey)
   }
@@ -464,17 +462,4 @@ export class BlockchainService extends FIFOService {
     return this.dal.getBlocksBetween(from, from + count - 1);
   }
 
-  /**
-   * Allows to quickly insert a bunch of blocks. To reach such speed, this method skips global rules and buffers changes.
-   *
-   * **This method should be used ONLY when a node is really far away from current blockchain HEAD (i.e several hundreds of blocks late).
-   *
-   * This method is called by duniter-crawler 1.3.x.
-   *
-   * @param blocks An array of blocks to insert.
-   * @param to The final block number of the fast insertion.
-   */
-  fastBlockInsertions(blocks:BlockDTO[], to:number) {
-    return this.mainContext.quickApplyBlocks(blocks, to)
-  }
 }

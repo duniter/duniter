@@ -15,6 +15,7 @@ import {TransactionDTO} from "./TransactionDTO"
 import {CurrencyConfDTO} from "./ConfDTO"
 import {hashf} from "../common"
 import {Cloneable} from "./Cloneable"
+import {MonitorExecutionTime} from "../debug/MonitorExecutionTime"
 
 const DEFAULT_DOCUMENT_VERSION = 10
 
@@ -212,6 +213,7 @@ export class BlockDTO implements Cloneable {
     return [this.number, this.getHash()].join('-')
   }
 
+  @MonitorExecutionTime()
   static fromJSONObject(obj:any) {
     const dto = new BlockDTO()
     dto.version = parseInt(obj.version) || DEFAULT_DOCUMENT_VERSION

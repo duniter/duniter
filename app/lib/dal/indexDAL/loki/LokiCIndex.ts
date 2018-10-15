@@ -3,6 +3,7 @@ import {CindexEntry, FullCindexEntry, Indexer} from "../../../indexer"
 import {CommonConstants} from "../../../common-libs/constants"
 import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
 import {LokiProtocolIndex} from "./LokiProtocolIndex"
+import {MonitorExecutionTime} from "../../../debug/MonitorExecutionTime"
 
 export class LokiCIndex extends LokiProtocolIndex<CindexEntry> implements CIndexDAO {
 
@@ -10,6 +11,7 @@ export class LokiCIndex extends LokiProtocolIndex<CindexEntry> implements CIndex
     super(loki, 'cindex', ['issuer', 'receiver'])
   }
 
+  @MonitorExecutionTime()
   async existsNonReplayableLink(issuer: string, receiver: string): Promise<boolean> {
     return Indexer.DUP_HELPERS.reduce<CindexEntry>(
       this.collection
@@ -25,6 +27,7 @@ export class LokiCIndex extends LokiProtocolIndex<CindexEntry> implements CIndex
     ).op === CommonConstants.IDX_CREATE
   }
 
+  @MonitorExecutionTime()
   async findByIssuerAndChainableOnGt(issuer: string, medianTime: number): Promise<CindexEntry[]> {
     return this.collection
       .chain()
@@ -38,6 +41,7 @@ export class LokiCIndex extends LokiProtocolIndex<CindexEntry> implements CIndex
       .data()
   }
 
+  @MonitorExecutionTime()
   async findByIssuerAndReceiver(issuer: string, receiver: string): Promise<CindexEntry[]> {
     return this.collection
       .chain()
@@ -51,6 +55,7 @@ export class LokiCIndex extends LokiProtocolIndex<CindexEntry> implements CIndex
       .data()
   }
 
+  @MonitorExecutionTime()
   async findByReceiverAndExpiredOn(pub: string, expired_on: number): Promise<CindexEntry[]> {
     return this.collection
       .chain()
@@ -64,6 +69,7 @@ export class LokiCIndex extends LokiProtocolIndex<CindexEntry> implements CIndex
       .data()
   }
 
+  @MonitorExecutionTime()
   async findExpired(medianTime: number): Promise<CindexEntry[]> {
     return this.collection
       .chain()
@@ -82,6 +88,7 @@ export class LokiCIndex extends LokiProtocolIndex<CindexEntry> implements CIndex
       })
   }
 
+  @MonitorExecutionTime()
   async reducablesFrom(from: string): Promise<FullCindexEntry[]> {
     const reducables = this.collection
       .chain()
@@ -91,6 +98,7 @@ export class LokiCIndex extends LokiProtocolIndex<CindexEntry> implements CIndex
     return Indexer.DUP_HELPERS.reduceBy(reducables, ['issuer', 'receiver', 'created_on'])
   }
 
+  @MonitorExecutionTime()
   async getReceiversAbove(minsig: number): Promise<string[]> {
     const reduction = this.collection
       .find({})
@@ -107,12 +115,14 @@ export class LokiCIndex extends LokiProtocolIndex<CindexEntry> implements CIndex
       .map(o => o.receiver)
   }
 
+  @MonitorExecutionTime()
   async getValidLinksFrom(issuer: string): Promise<CindexEntry[]> {
     return this.collection
       .find({ issuer })
       .filter(r => this.collection.find({ issuer: r.issuer, receiver: r.receiver, created_on: r.created_on, expired_on: { $gt: 0 } }).length === 0)
   }
 
+  @MonitorExecutionTime()
   async getValidLinksTo(receiver: string): Promise<CindexEntry[]> {
     return this.collection
       .find({ receiver })
@@ -120,6 +130,7 @@ export class LokiCIndex extends LokiProtocolIndex<CindexEntry> implements CIndex
   }
 
   @MonitorLokiExecutionTime(true)
+  @MonitorExecutionTime()
   async trimExpiredCerts(belowNumber: number): Promise<void> {
     const expired = this.collection.find({
       $and: [
@@ -144,6 +155,7 @@ export class LokiCIndex extends LokiProtocolIndex<CindexEntry> implements CIndex
    * @param {number} belowNumber Number below which an expired certification must be removed.
    * @returns {Promise<void>}
    */
+  @MonitorExecutionTime()
   async trimRecords(belowNumber: number): Promise<void> {
     return this.trimExpiredCerts(belowNumber)
   }
@@ -157,5 +169,10 @@ export class LokiCIndex extends LokiProtocolIndex<CindexEntry> implements CIndex
       .find({ issuer, receiver, created_on })
       .simplesort('writtenOn')
       .data()
+  }
+
+  @MonitorExecutionTime()
+  async findByIssuer(issuer: string): Promise<CindexEntry[]> {
+    return this.findRaw({ issuer })
   }
 }

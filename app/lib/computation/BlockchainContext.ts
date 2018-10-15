@@ -13,7 +13,6 @@
 
 import {BlockDTO} from "../dto/BlockDTO"
 import {DuniterBlockchain} from "../blockchain/DuniterBlockchain"
-import {QuickSynchronizer} from "./QuickSync"
 import {DBHead} from "../db/DBHead"
 import {FileDAL} from "../dal/fileDAL"
 import {DBBlock} from "../db/DBBlock"
@@ -28,7 +27,6 @@ export class BlockchainContext {
   private conf:any
   private dal:FileDAL
   private logger:any
-  private quickSynchronizer:QuickSynchronizer
 
   /**
    * The virtual next HEAD. Computed each time a new block is added, because a lot of HEAD variables are deterministic
@@ -107,10 +105,9 @@ export class BlockchainContext {
     return local_vHEAD.issuerDiff;
   }
 
-  setConfDAL(newConf: any, newDAL: any, theQuickSynchronizer: QuickSynchronizer): void {
+  setConfDAL(newConf: any, newDAL: any): void {
     this.dal = newDAL;
     this.conf = newConf;
-    this.quickSynchronizer = theQuickSynchronizer
     this.logger = require('../logger').NewLogger(this.dal.profile);
   }
 
@@ -180,9 +177,5 @@ export class BlockchainContext {
     if (count < this.conf.sigQty) {
       throw 'Key ' + target + ' does not have enough links (' + count + '/' + this.conf.sigQty + ')';
     }
-  }
-
-  quickApplyBlocks(blocks:BlockDTO[], to: number): Promise<any> {
-    return this.quickSynchronizer.quickApplyBlocks(blocks, to)
   }
 }

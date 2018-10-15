@@ -23,4 +23,5 @@ export interface CIndexDAO extends ReduceableDAO<CindexEntry> {
 
   trimExpiredCerts(belowNumber:number): Promise<void>
 
+  findByIssuer(issuer: string): Promise<CindexEntry[]>
 }

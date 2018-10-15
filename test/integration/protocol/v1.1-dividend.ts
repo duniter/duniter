@@ -82,7 +82,7 @@ describe("Protocol 1.1 Dividend", function() {
     res.sources[1].should.have.property('base').equal(0);
   }))
 
-  it('should be able to send 300 units', async () => {
+  it('should be able to send 105 units', async () => {
     await cat.sendMoney(105, tac);
     await s1.commit();
     await s1.expect('/tx/sources/2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', (res:HttpSources) => {

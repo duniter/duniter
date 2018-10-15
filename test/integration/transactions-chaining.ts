@@ -22,7 +22,7 @@ const toolbox   = require('./tools/toolbox');
 
 describe("Transaction chaining", () => {
 
-  const now = 1456644632;
+  const now = 1519862401; // At this time TX chaining is **allowed**
 
   let s1:TestingServer, tic:TestUser, toc:TestUser
 
@@ -83,12 +83,9 @@ describe("Transaction chaining", () => {
       CommonConstants.TRANSACTION_MAX_TRIES = 2;
       await shouldNotFail(toc.sendTX(tx1));
       await shouldNotFail(toc.sendTX(tx2));
-      (await s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1); // 1200
-      (await s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(1); // 1200
-      await s1.commit({ time: now + 7210 }); // TX1 commited only
-      (await s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1); // 1200 - 1040 = 160 remaining
-      (await s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(2); // The UD + 1040 units sent by toc
-      await s1.commit({ time: now + 7210 }); // TX2 commited now (cause it couldn't be chained before)
+      (await s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(1);
+      (await s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(1);
+      await s1.commit({ time: now + 7210 }); // TX1 + TX2 commited
       (await s1.get('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo')).should.have.property('sources').length(0);
       (await s1.get('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')).should.have.property('sources').length(3); // The UD + 1040 + 160 units sent by toc
       CommonConstants.TRANSACTION_MAX_TRIES = tmp;
@@ -117,6 +114,7 @@ describe("Transaction chaining", () => {
       await shouldNotFail(toc.sendTX(tx5));
       await shouldNotFail(toc.sendTX(tx6));
       await shouldNotFail(toc.sendTX(tx7));
+      // Here we allow any chaining in the block's generation, but we control it during the block's submission
       await s1.commitWaitError({ dontCareAboutChaining: true }, 'The maximum transaction chaining length per block is 5')
       CommonConstants.TRANSACTION_MAX_TRIES = tmp;
     })

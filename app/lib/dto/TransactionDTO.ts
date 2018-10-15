@@ -95,12 +95,12 @@ export class TransactionDTO implements Cloneable {
     return this.signatures[0]
   }
 
-  get output_base() {
-    return this.outputs.reduce((sum, output) => sum + parseInt(output.split(':')[0]), 0)
+  get output_amount() {
+    return this.outputs.reduce((maxBase, output) => Math.max(maxBase, parseInt(output.split(':')[0])), 0)
   }
 
-  get output_amount() {
-    return this.outputs.reduce((maxBase, output) => Math.max(maxBase, parseInt(output.split(':')[1])), 0)
+  get output_base() {
+    return this.outputs.reduce((sum, output) => sum + parseInt(output.split(':')[1]), 0)
   }
 
   get blockNumber() {

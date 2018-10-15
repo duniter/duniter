@@ -16,14 +16,16 @@ import {BlockProver} from "../../../app/modules/prover/lib/blockProver"
 const should = require('should')
 const winston = require('winston')
 
-// Mute logger
-winston.remove(winston.transports.Console)
 
 describe('PoW block prover', () => {
 
   let prover:BlockProver
 
   before(() => {
+
+    // Mute logger
+    winston.remove(winston.transports.Console)
+
     prover = new BlockProver({
       conf: {
         nbCores: 1,

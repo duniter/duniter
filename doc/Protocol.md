@@ -1,4 +1,4 @@
-DifferentIssuersCount# DUP - Duniter Protocol
+# DUP - Duniter Protocol
 
 > This document reflects Duniter in-production protocol. It is updated only for clarifications (2017).
 
@@ -464,6 +464,8 @@ It follows a machine-readable BNF grammar composed of
 * ` ` space
 
 **An empty condition or a condition fully composed of spaces is considered an invalid output condition**.
+
+Also, the maximum length of a condition is 1000 characters. // TODO:  OK?
 
 ##### Output condition examples
 
@@ -1356,7 +1358,7 @@ Each revocation produces 1 new entry:
         type = 'REV'
         expires_on = null
         revokes_on = null
-        revoked_on = BLOCKSTAMP
+        revoked_on = MedianTime
         revocation = REVOCATION_SIG
         leaving = false
     )
@@ -1443,7 +1445,7 @@ Each transaction output produces 1 new entry:
 
 ###### Revocation implies exclusion
 
-* Each local MINDEX ̀`op = 'UPDATE', revoked_on = BLOCKSTAMP` operations must match a single local IINDEX `op = 'UPDATE', pub = PUBLIC_KEY, member = false` operation.
+* Each local MINDEX ̀`op = 'UPDATE', revoked_on != null` operations must match a single local IINDEX `op = 'UPDATE', pub = PUBLIC_KEY, member = false` operation.
 
 > Functionally: a revoked member must be immediately excluded.
 
@@ -1842,7 +1844,7 @@ If `HEAD.number == 0`:
     
 Else If `HEAD.udReevalTime != HEAD~1.udReevalTime`:
 
-    HEAD.dividend = HEAD_1.dividend + c² * CEIL(HEAD~1.massReeval / POW(10, HEAD~1.unitbase)) / HEAD.membersCount)
+    HEAD.dividend = CEIL(HEAD_1.dividend + c² * CEIL(HEAD~1.massReeval / POW(10, HEAD~1.unitbase)) / HEAD.membersCount)
 
 Else:
 
@@ -2331,6 +2333,8 @@ For each `LOCAL_SINDEX[op='UPDATE'] as ENTRY`:
 
 ##### Rules
 
+Each rule returns true by default, unless **at least one test returns `false`**.
+
 ###### BR_G49 - Version
 
 Rule:
@@ -2736,7 +2740,7 @@ If `reduce(GLOBAL_CINDEX[issuer=CERT.issuer,receiver=CERT.receiver,created_on=CE
 
 For each `REDUCE_BY(GLOBAL_MINDEX[expires_on<=HEAD.medianTime AND revokes_on>HEAD.medianTime], 'pub') as POTENTIAL` then consider `REDUCE(GLOBAL_MINDEX[pub=POTENTIAL.pub]) AS MS`.
 
-If `MS.expired_on == null OR MS.expired_on == 0`, add a new LOCAL_MINDEX entry:
+If `(MS.expired_on == null OR MS.expired_on == 0) AND MS.expires_on > HEAD.medianTime`, add a new LOCAL_MINDEX entry:
 
     MINDEX (
         op = 'UPDATE'

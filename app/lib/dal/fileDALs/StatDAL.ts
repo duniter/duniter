@@ -21,8 +21,10 @@ export class StatDAL extends AbstractCFS {
     super(rootPath, qioFS)
   }
 
-  init() {
-    return Promise.resolve()
+  async init() {
+  }
+
+  async close() {
   }
 
   async loadStats() {

@@ -112,6 +112,12 @@ describe("SelfFork", function() {
     await s2.commit({ time: now + 37180 });
     await s2.commit({ time: now + 37180 });
 
+    // We now have:
+    //
+    // S1: B0 -> B1 -> B2 -> B3
+    // S2:               `-> C3 -> C4 -> C5 -> C6 -> C7 -> C8 -> C9
+    //
+
     await s1.writePeer(s2p);
     // Forking S1 from S2
     await Promise.all([
@@ -211,7 +217,7 @@ describe("SelfFork", function() {
       });
     });
 
-    it('should have 2 branch', async () => {
+    it('should have 1 branch', async () => {
       const branches = await s1.BlockchainService.branches()
       branches.should.have.length(1)
     })

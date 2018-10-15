@@ -99,12 +99,12 @@ describe("Continous proof-of-work", function() {
     await s1.permaProver.blockchainChanged();
     await new Promise((resolve) => setTimeout(resolve, 100));
     // * 1 loop for waiting for b#4 but being interrupted
-    s1.permaProver.should.have.property('loops').greaterThanOrEqual(4);
+    s1.permaProver.should.have.property('loops').greaterThanOrEqual(3);
     await s1.stopBlockComputation();
 
     // If we wait a bit, the loop should be ended
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    s1.permaProver.should.have.property('loops').greaterThanOrEqual(5);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    s1.permaProver.should.have.property('loops').greaterThanOrEqual(4);
   })
 
   it('testing proof-of-work during a block pulling', async () => {

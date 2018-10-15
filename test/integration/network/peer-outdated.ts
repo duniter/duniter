@@ -110,10 +110,10 @@ describe("Peer document expiry", function() {
   }));
 
   it('routing V1 peer document should inject newer peer', async () => {
-    await [
+    await Promise.all([
       s2.writePeer(peer1V1),
       until(s2, 'peer', 2)
-    ];
+    ])
   })
 
   it('mirror should now have 2 known peers', () => s2.expect('/network/peers', (res:HttpPeers) => {

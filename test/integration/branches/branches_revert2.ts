@@ -109,7 +109,7 @@ describe("Revert two blocks", function() {
       });
     });
 
-    it('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo should have only UD', function() {
+    it('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo should have both UD and TX from cat', function() {
       return expectAnswer(rp('http://127.0.0.1:7712/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo'), (body:string) => {
         let res = JSON.parse(body);
         res.sources.should.have.length(2);
@@ -124,7 +124,7 @@ describe("Revert two blocks", function() {
       });
     });
 
-    it('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV should have only UD', function() {
+    it('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV should have nothing', function() {
       return expectAnswer(rp('http://127.0.0.1:7712/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV'), (body:string) => {
         let res = JSON.parse(body);
         res.sources.should.have.length(0);
@@ -155,7 +155,7 @@ describe("Revert two blocks", function() {
       return expectHttpCode(404, rp('http://127.0.0.1:7712/blockchain/block/3', { json: true }));
     });
 
-    it('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd should have only UD', function() {
+    it('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd should have only its UD', function() {
       return expectAnswer(rp('http://127.0.0.1:7712/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd'), (body:string) => {
         let res = JSON.parse(body);
         res.sources.should.have.length(1);
@@ -166,7 +166,7 @@ describe("Revert two blocks", function() {
       });
     });
 
-    it('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo should have only UD', function() {
+    it('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo should have only its UD', function() {
       return expectAnswer(rp('http://127.0.0.1:7712/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo'), (body:string) => {
         let res = JSON.parse(body);
         res.sources.should.have.length(1);
@@ -177,7 +177,7 @@ describe("Revert two blocks", function() {
       });
     });
 
-    it('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV should have only UD', function() {
+    it('/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV should have nothing', function() {
       return expectAnswer(rp('http://127.0.0.1:7712/tx/sources/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV'), (body:string) => {
         let res = JSON.parse(body);
         res.sources.should.have.length(0);
@@ -229,7 +229,7 @@ describe("Revert two blocks", function() {
       await s1.dal.txsDAL.removeAll()
       await s1.resolveExistingBlock(1) // UD block
       await cat.sendMoney(19, toc);
-      await s1.dal.blockDAL.removeBlock('DELETE FROM block WHERE fork AND number = 3')
+      await s1.dal.blockDAL.removeForkBlock(3)
       await s1.commit({ time: now + 1 });
     })
 
@@ -253,7 +253,7 @@ describe("Revert two blocks", function() {
       });
     });
 
-    it('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd should have only UD', function() {
+    it('/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd should have the rest of its sent TX', function() {
       return expectAnswer(rp('http://127.0.0.1:7712/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd'), (body:string) => {
         let res = JSON.parse(body);
         res.sources.should.have.length(1);
@@ -264,7 +264,7 @@ describe("Revert two blocks", function() {
       });
     });
 
-    it('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo should have only UD', function() {
+    it('/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo should have both UD and TX from cat', function() {
       return expectAnswer(rp('http://127.0.0.1:7712/tx/sources/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo'), (body:string) => {
         let res = JSON.parse(body);
         res.sources.should.have.length(2);

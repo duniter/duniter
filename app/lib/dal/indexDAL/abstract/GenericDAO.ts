@@ -1,7 +1,6 @@
 import {Initiable} from "../../sqliteDAL/Initiable"
-import {LokiDAO} from "../loki/LokiDAO"
 
-export interface GenericDAO<T> extends Initiable, LokiDAO {
+export interface GenericDAO<T> extends Initiable {
 
   /**
    * Trigger the initialization of the DAO. Called when the underlying DB is ready.
@@ -9,19 +8,14 @@ export interface GenericDAO<T> extends Initiable, LokiDAO {
   triggerInit(): void
 
   /**
-   * Make a generic find.
-   * @param criterion Criterion object, LokiJS's find object format.
-   * @returns {Promise<any>} A set of records.
-   */
-  findRaw(criterion: any): Promise<any>
-
-  /**
    * Make a generic find with some ordering.
    * @param criterion Criterion object, LokiJS's find object format.
    * @param sort A LokiJS's compunded sort object.
    * @returns {Promise<any>} A set of records.
    */
-  findRawWithOrder(criterion: any, sort:((string|((string|boolean)[]))[])): Promise<T[]>
+  findRawWithOrder(criterion: {
+    pub?: string
+  }, sort:((string|((string|boolean)[]))[])): Promise<T[]>
 
   /**
    * Make a single insert.

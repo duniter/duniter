@@ -14,22 +14,19 @@
 import * as stream from "stream"
 import * as moment from "moment"
 import {Server} from "../../../../server"
-import {PeerDTO} from "../../../lib/dto/PeerDTO"
-import {FileDAL} from "../../../lib/dal/fileDAL"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
-import {tx_cleaner} from "./tx_cleaner"
-import {AbstractDAO} from "./pulling"
 import {DBBlock} from "../../../lib/db/DBBlock"
-import {BlockchainService} from "../../../service/BlockchainService"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {PeeringService} from "../../../service/PeeringService"
-import {Underscore} from "../../../lib/common-libs/underscore"
-import {cliprogram} from "../../../lib/common-libs/programOptions"
-import {EventWatcher, LoggerWatcher, MultimeterWatcher, Watcher} from "./sync/Watcher"
-import {ChunkGetter} from "./sync/ChunkGetter"
+import {EventWatcher, LoggerWatcher, MultimeterWatcher} from "./sync/Watcher"
 import {AbstractSynchronizer} from "./sync/AbstractSynchronizer"
-
-const EVAL_REMAINING_INTERVAL = 1000;
+import {DownloadStream} from "./sync/v2/DownloadStream"
+import {LocalIndexStream} from "./sync/v2/LocalIndexStream"
+import {GlobalIndexStream} from "./sync/v2/GlobalIndexStream"
+import {BlockchainService} from "../../../service/BlockchainService"
+import {FileDAL} from "../../../lib/dal/fileDAL"
+import {cliprogram} from "../../../lib/common-libs/programOptions"
+import {ValidatorStream} from "./sync/v2/ValidatorStream"
 
 export class Synchroniser extends stream.Duplex {
 
@@ -71,11 +68,11 @@ export class Synchroniser extends stream.Duplex {
     return this.server.PeeringService
   }
 
-  get BlockchainService() {
+  get BlockchainService(): BlockchainService {
     return this.server.BlockchainService
   }
 
-  get dal() {
+  get dal(): FileDAL {
     return this.server.dal
   }
 
@@ -140,127 +137,38 @@ export class Synchroniser extends stream.Duplex {
 
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = (askedCautious === true || localNumber >= 0);
-      const downloader = new ChunkGetter(
+
+      const milestonesStream = new ValidatorStream(
         localNumber,
         to,
         rCurrent.hash,
         this.syncStrategy,
-        this.dal,
+        this.watcher)
+      const download = new DownloadStream(
+        localNumber,
+        to,
+        rCurrent.hash,
+        this.syncStrategy,
+        this.server.dal,
         !cautious,
         this.watcher)
 
-      const startp = downloader.start()
+      const localIndexer = new LocalIndexStream()
+      const globalIndexer = new GlobalIndexStream(this.server.conf, this.server.dal, to, localNumber, this.syncStrategy, this.watcher)
 
-      let lastPullBlock:BlockDTO|null = null;
-      let syncStrategy = this.syncStrategy
-      let node = this.syncStrategy.getPeer()
-
-      let dao = new (class extends AbstractDAO {
-
-        constructor(
-          private server:Server,
-          private watcher:Watcher,
-          private dal:FileDAL,
-          private BlockchainService:BlockchainService) {
-            super()
-        }
-
-        async applyBranch(blocks:BlockDTO[]) {
-          blocks = Underscore.filter(blocks, (b:BlockDTO) => b.number <= to);
-          if (cautious) {
-            for (const block of blocks) {
-              if (block.number == 0) {
-                await this.BlockchainService.saveParametersForRootBlock(block);
-              }
-              await dao.applyMainBranch(block);
-            }
-          } else {
-            await this.BlockchainService.fastBlockInsertions(blocks, to)
-          }
-          lastPullBlock = blocks[blocks.length - 1];
-          this.watcher.appliedPercent(Math.floor(blocks[blocks.length - 1].number / to * 100));
-          return true;
-        }
-
-        // Get the local blockchain current block
-        async localCurrent(): Promise<DBBlock | null> {
-          if (cautious) {
-            return await this.dal.getCurrentBlockOrNull();
-          } else {
-            if (lCurrent && !lastPullBlock) {
-              lastPullBlock = lCurrent.toBlockDTO()
-            } else if (!lastPullBlock) {
-              return null
-            }
-            return DBBlock.fromBlockDTO(lastPullBlock)
-          }
-        }
-        // Get the remote blockchain (bc) current block
-        async remoteCurrent(source?: any): Promise<BlockDTO | null> {
-          return Promise.resolve(rCurrent)
-        }
-        // Get the remote peers to be pulled
-        async remotePeers(source?: any): Promise<PeerDTO[]> {
-          return [node]
-        }
-        async getLocalBlock(number: number): Promise<DBBlock> {
-          return this.dal.getBlockWeHaveItForSure(number)
-        }
-        async getRemoteBlock(thePeer: PeerDTO, number: number): Promise<BlockDTO> {
-          let block = null;
-          try {
-            block = await syncStrategy.getBlock(number)
-            if (!block) {
-              throw 'Could not get remote block'
-            }
-            tx_cleaner(block.transactions);
-          } catch (e) {
-            if (e.httpCode != 404) {
-              throw e;
-            }
-          }
-          return block as BlockDTO
-        }
-        async applyMainBranch(block: BlockDTO): Promise<boolean> {
-          const addedBlock = await this.BlockchainService.submitBlock(block, true)
-          await this.BlockchainService.blockResolution()
-          this.server.streamPush(addedBlock);
-          this.watcher.appliedPercent(Math.floor(block.number / to * 100));
-          return true
-        }
-        // Eventually remove forks later on
-        async removeForks(): Promise<boolean> {
-          return true
-        }
-        // Tells wether given peer is a member peer
-        async isMemberPeer(thePeer: PeerDTO): Promise<boolean> {
-          let idty = await this.dal.getWrittenIdtyByPubkeyForIsMember(thePeer.pubkey);
-          return (idty && idty.member) || false;
-        }
-        async downloadBlocks(thePeer: PeerDTO, fromNumber: number, count?: number | undefined): Promise<BlockDTO[]> {
-          // Note: we don't care about the particular peer asked by the method. We use the network instead.
-          const numberOffseted = fromNumber - (localNumber + 1);
-          const targetChunk = Math.floor(numberOffseted / syncStrategy.chunkSize);
-          // Return the download promise! Simple.
-          return (await downloader.getChunk(targetChunk))()
-        }
-
-      })(this.server, this.watcher, this.dal, this.BlockchainService)
-
-      const logInterval = setInterval(() => this.logRemaining(to), EVAL_REMAINING_INTERVAL);
-      await Promise.all([
-        dao.pull(this.conf, this.logger),
-        await startp // In case of errors, will stop the process
-      ])
+      await new Promise((res, rej) => {
+        milestonesStream
+          .pipe(download)
+          .pipe(localIndexer)
+          .pipe(globalIndexer)
+          .on('finish', res)
+          .on('error', rej);
+      })
 
       // Finished blocks
       this.watcher.downloadPercent(100.0);
       this.watcher.storagePercent(100.0);
       this.watcher.appliedPercent(100.0);
-
-      if (logInterval) {
-        clearInterval(logInterval);
-      }
 
       this.server.dal.blockDAL.cleanCache();
 
@@ -277,9 +185,6 @@ export class Synchroniser extends stream.Duplex {
         //=======
         await this.syncStrategy.syncPeers(fullSync, to)
       }
-
-      // Trim the loki data
-      await this.server.dal.loki.flushAndTrimData()
 
       this.watcher.end();
       this.push({ sync: true });

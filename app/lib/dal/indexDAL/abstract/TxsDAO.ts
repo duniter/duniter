@@ -23,7 +23,7 @@ export interface TxsDAO extends GenericDAO<DBTx> {
 
   getPendingWithRecipient(pubkey:string): Promise<DBTx[]>
 
-  removeTX(hash:string): Promise<DBTx|null>
+  removeTX(hash:string): Promise<void>
 
   removeAll(): Promise<void>
 

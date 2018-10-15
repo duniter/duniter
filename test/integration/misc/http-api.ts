@@ -15,7 +15,6 @@ import {ProverConstants} from "../../../app/modules/prover/lib/constants"
 import {NewTestingServer, TestingServer} from "../tools/toolbox"
 import {TestUser} from "../tools/TestUser"
 import {BmaDependency} from "../../../app/modules/bma/index"
-import {PeerDTO} from "../../../app/lib/dto/PeerDTO"
 import {ProverDependency} from "../../../app/modules/prover/index"
 import {HttpBlock, HttpDifficulties} from "../../../app/modules/bma/lib/dtos"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
@@ -23,6 +22,7 @@ import {BlockDTO} from "../../../app/lib/dto/BlockDTO"
 import {shutDownEngine} from "../tools/shutdown-engine"
 import {expectAnswer, expectError} from "../tools/http-expect"
 import {WebSocket} from "../../../app/lib/common-libs/websocket"
+import {PeerDTO} from "../../../app/lib/dto/PeerDTO"
 
 const should    = require('should');
 const assert    = require('assert');

@@ -182,6 +182,10 @@ export abstract class AbstractSQLite<T> extends Initiable {
   cleanCache() {
   }
 
+  async close(): Promise<void> {
+    // Does nothing: the SqliteDriver is shared among all instances, we close it in a single time in fileDAL.close()
+  }
+
   private toConditionsArray(obj:any): string[] {
     return Underscore.keys(obj).map((k:string) => {
       if (obj[k].$lte !== undefined) {

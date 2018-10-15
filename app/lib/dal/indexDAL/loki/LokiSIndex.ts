@@ -3,17 +3,15 @@ import {SIndexDAO} from "../abstract/SIndexDAO"
 import {Underscore} from "../../../common-libs/underscore"
 import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
 import {LokiProtocolIndex} from "./LokiProtocolIndex"
-import {LokiDividend} from "./LokiDividend"
+import {MonitorExecutionTime} from "../../../debug/MonitorExecutionTime"
 
 export class LokiSIndex extends LokiProtocolIndex<SindexEntry> implements SIndexDAO {
 
-  private lokiDividend: LokiDividend
-
   constructor(loki:any) {
     super(loki, 'sindex', ['identifier', 'conditions', 'writtenOn'])
-    this.lokiDividend = new LokiDividend(loki)
   }
 
+  @MonitorExecutionTime()
   async findTxSourceByIdentifierPosAmountBase(identifier: string, pos: number, amount: number, base: number): Promise<SindexEntry[]> {
     return this.collection
       .chain()
@@ -26,6 +24,7 @@ export class LokiSIndex extends LokiProtocolIndex<SindexEntry> implements SIndex
       })
   }
 
+  @MonitorExecutionTime()
   async getAvailableForConditions(conditionsStr: string): Promise<SindexEntry[]> {
     const sources = this.collection
       .chain()
@@ -40,6 +39,7 @@ export class LokiSIndex extends LokiProtocolIndex<SindexEntry> implements SIndex
     return Underscore.sortBy(sources, (row:SindexEntry) => row.type == 'D' ? 0 : 1)
   }
 
+  @MonitorExecutionTime()
   async getAvailableForPubkey(pubkey: string): Promise<{ amount: number; base: number, conditions: string, identifier: string, pos: number }[]> {
     return this.collection
       .chain()
@@ -53,6 +53,7 @@ export class LokiSIndex extends LokiProtocolIndex<SindexEntry> implements SIndex
       })
   }
 
+  @MonitorExecutionTime()
   async getTxSource(identifier: string, pos: number): Promise<FullSindexEntry | null> {
     const reducables = this.collection
       .chain()
@@ -69,6 +70,7 @@ export class LokiSIndex extends LokiProtocolIndex<SindexEntry> implements SIndex
     return Indexer.DUP_HELPERS.reduce(reducables)
   }
 
+  @MonitorExecutionTime()
   @MonitorLokiExecutionTime(true)
   async trimConsumedSource(belowNumber: number): Promise<void> {
     const consumed = this.collection
@@ -90,10 +92,12 @@ export class LokiSIndex extends LokiProtocolIndex<SindexEntry> implements SIndex
    * @param {number} belowNumber Number below which a consumed source must be removed.
    * @returns {Promise<void>}
    */
+  @MonitorExecutionTime()
   async trimRecords(belowNumber: number): Promise<void> {
     return this.trimConsumedSource(belowNumber)
   }
 
+  @MonitorExecutionTime()
   async getWrittenOnTxs(blockstamp: string): Promise<SimpleTxEntryForWallet[]> {
     const entries = (await this.getWrittenOn(blockstamp))
     const res: SimpleTxEntryForWallet[] = []
@@ -110,4 +114,16 @@ export class LokiSIndex extends LokiProtocolIndex<SindexEntry> implements SIndex
     })
     return res
   }
+
+  @MonitorExecutionTime()
+  async findByIdentifier(identifier: string): Promise<SindexEntry[]> {
+    return this.findRaw({ identifier })
+  }
+
+  @MonitorExecutionTime()
+  async findByPos(pos: number): Promise<SindexEntry[]> {
+    return this.findRaw({ pos })
+  }
+
+
 }

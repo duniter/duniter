@@ -388,7 +388,11 @@ class Stack {
 
       // First possible class of commands: post-config
       if (command.onConfiguredExecute) {
-        return await command.onConfiguredExecute(server, conf, program, params, this.wizardTasks, this);
+        const res = await command.onConfiguredExecute(server, conf, program, params, this.wizardTasks, this);
+        // If we don't have an execution callback, let's stop the command
+        if (!command.onDatabaseExecute) {
+          return res
+        }
       }
       // Second possible class of commands: post-service
       await server.initDAL(conf);
@@ -430,7 +434,7 @@ class Stack {
       // All ouputs read from global PROCESS stream
       for (const module of this.streams.output) this.PROCESS.pipe(module);
 
-      return await command.onDatabaseExecute(server, conf, program, params,
+      const finalResult = await command.onDatabaseExecute(server, conf, program, params,
 
         // Start services and streaming between them
         async () => {
@@ -446,6 +450,11 @@ class Stack {
         },
 
         this);
+
+      // Close resources
+      await server.disconnect()
+
+      return finalResult
 
     } catch (e) {
       server.disconnect();

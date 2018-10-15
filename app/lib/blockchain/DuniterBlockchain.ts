@@ -18,7 +18,7 @@ import {
   IndexEntry,
   Indexer,
   MindexEntry,
-  SimpleTxEntryForWallet,
+  SimpleSindexEntryForWallet,
   SimpleUdEntryForWallet
 } from "../indexer"
 import {ConfDTO} from "../dto/ConfDTO"
@@ -37,6 +37,8 @@ import {NewLogger} from "../logger"
 import {DBTx} from "../db/DBTx"
 import {Underscore} from "../common-libs/underscore"
 import {OtherConstants} from "../other_constants"
+import {MonitorExecutionTime} from "../debug/MonitorExecutionTime"
+import {WoTBInstance} from "../wot"
 
 export class DuniterBlockchain {
 
@@ -204,12 +206,6 @@ export class DuniterBlockchain {
 
       logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (Date.now() - start));
 
-      // Periodically, we trim the blockchain
-      if (block.number % CommonConstants.BLOCKS_COLLECT_THRESHOLD === 0) {
-        // Database trimming
-        await dal.loki.flushAndTrimData()
-      }
-
       return BlockDTO.fromJSONObject(added)
     }
     catch(err) {
@@ -279,8 +275,6 @@ export class DuniterBlockchain {
     // Saves the block (DAL)
     await dal.saveBlock(dbb);
 
-    await dal.loki.commitData()
-
     return dbb
   }
 
@@ -314,12 +308,14 @@ export class DuniterBlockchain {
     }
   }
 
-  static async createNewcomers(iindex:IindexEntry[], dal:FileDAL, logger:any) {
+  @MonitorExecutionTime()
+  static async createNewcomers(iindex:IindexEntry[], dal:FileDAL, logger:any, instance?: WoTBInstance) {
+    const wotb = instance || dal.wotb
     for (const i of iindex) {
       if (i.op == CommonConstants.IDX_CREATE) {
         const entry = i as FullIindexEntry
         // Reserves a wotb ID
-        entry.wotb_id = dal.wotb.addNode();
+        entry.wotb_id = wotb.addNode();
         logger.trace('%s was affected wotb_id %s', entry.uid, entry.wotb_id);
         // Remove from the sandbox any other identity with the same pubkey/uid, since it has now been reserved.
         await dal.removeUnWrittenWithPubkey(entry.pub)
@@ -328,12 +324,13 @@ export class DuniterBlockchain {
     }
   }
 
-  static async updateMembers(block:BlockDTO, dal:FileDAL) {
+  static async updateMembers(block:BlockDTO, dal:FileDAL, instance?: WoTBInstance) {
+    const wotb = instance || dal.wotb
     // Joiners (come back)
     for (const inlineMS of block.joiners) {
       let ms = MembershipDTO.fromInline(inlineMS)
       const idty = await dal.getWrittenIdtyByPubkeyForWotbID(ms.issuer);
-      dal.wotb.setEnabled(true, idty.wotb_id);
+      wotb.setEnabled(true, idty.wotb_id);
       await dal.dividendDAL.setMember(true, ms.issuer)
     }
     // Revoked
@@ -344,12 +341,12 @@ export class DuniterBlockchain {
     // Excluded
     for (const excluded of block.excluded) {
       const idty = await dal.getWrittenIdtyByPubkeyForWotbID(excluded);
-      dal.wotb.setEnabled(false, idty.wotb_id);
+      wotb.setEnabled(false, idty.wotb_id);
       await dal.dividendDAL.setMember(false, excluded)
     }
   }
 
-  static async updateWallets(sindex:SimpleTxEntryForWallet[], dividends:SimpleUdEntryForWallet[], aDal:any, reverse = false) {
+  static async updateWallets(sindex:SimpleSindexEntryForWallet[], dividends:SimpleUdEntryForWallet[], aDal:any, reverse = false, at?: number) {
     const differentConditions = Underscore.uniq(sindex.map((entry) => entry.conditions).concat(dividends.map(d => d.conditions)))
     for (const conditions of differentConditions) {
       const udsOfKey: BasedAmount[] = dividends.filter(d => d.conditions === conditions).map(d => ({ amount: d.amount, base: d.base }))
@@ -364,9 +361,14 @@ export class DuniterBlockchain {
         variation *= -1
       }
       if (OtherConstants.TRACE_BALANCES) {
-        NewLogger().trace('Balance of %s: %s (%s %s %s)', wallet.conditions, wallet.balance + variation, wallet.balance, variation < 0 ? '-' : '+', Math.abs(variation))
+        if (!OtherConstants.TRACE_PARTICULAR_BALANCE || wallet.conditions.match(new RegExp(OtherConstants.TRACE_PARTICULAR_BALANCE))) {
+          NewLogger().trace('Balance of %s: %s (%s %s %s) at #%s', wallet.conditions, wallet.balance + variation, wallet.balance, variation < 0 ? '-' : '+', Math.abs(variation), at)
+        }
       }
       wallet.balance += variation
+      if (OtherConstants.TRACE_PARTICULAR_BALANCE && wallet.conditions.match(new RegExp(OtherConstants.TRACE_PARTICULAR_BALANCE))) {
+        NewLogger().trace('>>>>>>>>> WALLET = ', (wallet.balance > 0 ? '+' : '') + wallet.balance)
+      }
       await aDal.saveWallet(wallet)
     }
   }

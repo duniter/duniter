@@ -3,6 +3,7 @@ import {BIndexDAO} from "../abstract/BIndexDAO"
 import {NewLogger} from "../../../logger"
 import {MonitorLokiExecutionTime} from "../../../debug/MonitorLokiExecutionTime"
 import {LokiProtocolIndex} from "./LokiProtocolIndex"
+import {MonitorExecutionTime} from "../../../debug/MonitorExecutionTime"
 
 const logger = NewLogger()
 
@@ -14,16 +15,19 @@ export class LokiBIndex extends LokiProtocolIndex<DBHead> implements BIndexDAO {
     super(loki, 'bindex', ['number', 'hash'])
   }
 
+  @MonitorExecutionTime()
   async insert(record: DBHead): Promise<void> {
     this.HEAD = record
     return super.insert(record);
   }
 
+  @MonitorExecutionTime()
   async removeBlock(blockstamp: string): Promise<void> {
     this.HEAD = await this.head(2)
     return super.removeBlock(blockstamp);
   }
 
+  @MonitorExecutionTime()
   async head(n: number): Promise<DBHead> {
     if (!n) {
       throw "Cannot read HEAD~0, which is the incoming block"
@@ -45,6 +49,7 @@ export class LokiBIndex extends LokiProtocolIndex<DBHead> implements BIndexDAO {
     }
   }
 
+  @MonitorExecutionTime()
   async range(n: number, m: number): Promise<DBHead[]> {
     if (!n) {
       throw "Cannot read HEAD~0, which is the incoming block"
@@ -65,6 +70,7 @@ export class LokiBIndex extends LokiProtocolIndex<DBHead> implements BIndexDAO {
       .data().slice(n - 1, m)
   }
 
+  @MonitorExecutionTime()
   async tail(): Promise<DBHead> {
     const HEAD = await this.head(1)
     if (!HEAD) {
@@ -75,6 +81,7 @@ export class LokiBIndex extends LokiProtocolIndex<DBHead> implements BIndexDAO {
       .find({ number: HEAD.number - nbHEADs + 1 })[0]
   }
 
+  @MonitorExecutionTime()
   @MonitorLokiExecutionTime(true)
   async trimBlocks(maxnumber: number): Promise<void> {
     this.collection
@@ -83,6 +90,7 @@ export class LokiBIndex extends LokiProtocolIndex<DBHead> implements BIndexDAO {
       .remove()
   }
 
+  @MonitorExecutionTime()
   @MonitorLokiExecutionTime(true)
   async getWrittenOn(blockstamp: string): Promise<DBHead[]> {
     const criterion:any = { number: parseInt(blockstamp) }

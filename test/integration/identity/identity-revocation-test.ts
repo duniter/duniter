@@ -162,7 +162,7 @@ describe("Revocation", function() {
       res.results[0].should.have.property('uids').length(1);
       res.results[0].uids[0].should.have.property('uid').equal('cat');
       res.results[0].uids[0].should.have.property('revoked').equal(true);
-      res.results[0].uids[0].should.have.property('revoked_on').equal(2);
+      res.results[0].uids[0].should.have.property('revoked_on').equal(1400003570);
       res.results[0].uids[0].should.have.property('revocation_sig').not.equal(null);
       res.results[0].uids[0].should.have.property('revocation_sig').not.equal('');
     });

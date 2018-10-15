@@ -441,8 +441,8 @@ function checkSingleMembershipSignature(ms:any) {
   return verify(ms.getRaw(), ms.signature, ms.issuer);
 }
 
-function checkBunchOfTransactions(transactions:TransactionDTO[], conf:ConfDTO, options?:{ dontCareAboutChaining?:boolean }){
-  const block:any = { transactions, identities: [], joiners: [], actives: [], leavers: [], revoked: [], excluded: [], certifications: [] };
+function checkBunchOfTransactions(transactions:TransactionDTO[], conf:ConfDTO, medianTime: number, options?:{ dontCareAboutChaining?:boolean }){
+  const block:any = { transactions, identities: [], joiners: [], actives: [], leavers: [], revoked: [], excluded: [], certifications: [], medianTime };
   const index = Indexer.localIndex(block, conf)
   return (async () => {
     let local_rule = LOCAL_RULES_FUNCTIONS;
@@ -470,7 +470,7 @@ export const LOCAL_RULES_HELPERS = {
 
   getMaxTransactionDepth,
 
-  checkSingleTransactionLocally: (tx:any, conf:ConfDTO) => checkBunchOfTransactions([tx], conf),
+  checkSingleTransactionLocally: (tx:any, conf:ConfDTO) => checkBunchOfTransactions([tx], conf, 0),
 
   checkTxAmountsValidity: (tx:TransactionDTO) => {
     const inputs = tx.inputsAsObjects()

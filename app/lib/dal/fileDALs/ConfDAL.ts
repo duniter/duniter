@@ -26,8 +26,10 @@ export class ConfDAL extends AbstractCFS {
     this.logger = require('../../logger').NewLogger()
   }
 
-  init() {
-    return Promise.resolve()
+  async init() {
+  }
+
+  async close() {
   }
 
   async getParameters() {

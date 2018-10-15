@@ -24,5 +24,7 @@ export const OtherConstants = {
 
   ENABLE_LOKI_MONITORING: false,
   ENABLE_SQL_MONITORING: false,
-  TRACE_BALANCES: false
+  ENABLE_MONITORING: false,
+  TRACE_BALANCES: false,
+  TRACE_PARTICULAR_BALANCE: '',
 }

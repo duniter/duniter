@@ -11,6 +11,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
+import * as os from 'os'
+import * as path from 'path'
 import {Server} from "../../../server"
 import {PermanentProver} from "../../../app/modules/prover/lib/permanentProver"
 import {Prover} from "../../../app/modules/prover/lib/prover"
@@ -248,7 +250,7 @@ export const NewTestingServer = (conf:any) => {
     conf.ws2p = { upnp: false }
   }
   const server = new Server(
-    '~/.config/duniter/' + (conf.homename || 'dev_unit_tests'),
+    path.resolve(path.join(os.homedir(), '/.config/duniter/' + (conf.homename || 'dev_unit_tests'))),
     conf.memory !== undefined ? conf.memory : MEMORY_MODE,
     Underscore.extend(conf, commonConf));
 
@@ -499,6 +501,7 @@ export class TestingServer {
     if (!blocksResolved) {
       throw Error(DataErrors[DataErrors.BLOCK_WASNT_COMMITTED])
     }
+    console.log(BlockDTO.fromJSONObject(blocksResolved).getRawSigned())
     return blocksResolved
   }
 

@@ -81,8 +81,8 @@ describe("Implicit revocation", function() {
   }));
 
   it('should exist implicit revocation traces', async () => {
-    const ms = (await s1.dal.mindexDAL.getReducedMS('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')) as FullMindexEntry
-    ms.should.have.property('revoked_on').equal(1480000020)
+    const ms = (await s1.dal.mindexDAL.getReducedMSForImplicitRevocation('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV')) as FullMindexEntry
+    ms.should.have.property('revoked_on').startWith('9-')
   })
 
   it('should answer that tic is revoked on API', () => s1.expectThat('/wot/lookup/tic', (res:HttpLookup) => {

@@ -8,7 +8,7 @@ export interface IIndexDAO extends ReduceableDAO<IindexEntry> {
 
   findByPub(pub:string): Promise<IindexEntry[]>
 
-  findByUid(pub:string): Promise<IindexEntry[]>
+  findByUid(uid:string): Promise<IindexEntry[]>
 
   getMembers(): Promise<{ pubkey:string, uid:string|null }[]>
 
@@ -27,6 +27,4 @@ export interface IIndexDAO extends ReduceableDAO<IindexEntry> {
   getFullFromHash(hash:string): Promise<FullIindexEntry>
 
   getToBeKickedPubkeys(): Promise<string[]>
-
-  findAllByWrittenOn(): Promise<IindexEntry[]>
 }

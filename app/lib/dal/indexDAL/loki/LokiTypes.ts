@@ -29,7 +29,7 @@ export interface LokiCollection<T> extends RealLokiCollection<T> {
 
 export interface LokiChainableFind<T> {
 
-  find(criterion:{ [t in keyof T|'$or'|'$and']?: any }): LokiChainableFind<T>
+  find(criterion:{ [t in keyof T|'$or'|'$and'|'pub']?: any }): LokiChainableFind<T>
 
   simplesort(prop:keyof T, desc?:boolean): LokiChainableFind<T>
 

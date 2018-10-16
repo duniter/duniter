@@ -43,6 +43,7 @@ push_to_github:
       - node_modules/
   
 build:
+  <<: *nvm_env
   stage: build
   script:
     - yarn

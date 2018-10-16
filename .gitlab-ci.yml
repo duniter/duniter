@@ -43,7 +43,6 @@ push_to_github:
       - node_modules/
   
 build:
-  <<: *cached_nvm
   stage: build
   script:
     - yarn

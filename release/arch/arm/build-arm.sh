@@ -91,6 +91,11 @@ mkdir -p duniter-${ARCH}/opt/duniter/
 chmod 755 duniter-${ARCH}/DEBIAN/post*
 chmod 755 duniter-${ARCH}/DEBIAN/pre*
 sed -i "s/Version:.*/Version:$DUNITER_DEB_VER/g" duniter-${ARCH}/DEBIAN/control
+
+#Systemd service
+mkdir -p duniter-${ARCH}/lib/systemd/system
+mv duniter_release/release/extra/systemd/duniter.service duniter-${ARCH}/lib/systemd/system/
+
 cd duniter_release
 pwd
 rm -Rf .git

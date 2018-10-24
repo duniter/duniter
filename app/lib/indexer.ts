@@ -1759,7 +1759,7 @@ export class Indexer {
   // BR_G92
   static async ruleIndexGenCertificationExpiry(HEAD: DBHead, dal:FileDAL) {
     const expiries = [];
-    const certs = await dal.cindexDAL.findExpired(HEAD.medianTime);
+    const certs = await dal.cindexDAL.findExpiresOnLteNotExpiredYet(HEAD.medianTime);
     for (const CERT of certs) {
       expiries.push({
         op: 'UPDATE',

@@ -73,7 +73,6 @@ import {LokiDAO} from "./indexDAL/loki/LokiDAO"
 import {MonitorExecutionTime} from "../debug/MonitorExecutionTime"
 import {SqliteMIndex} from "./indexDAL/sqlite/SqliteMIndex"
 import {SqliteIIndex} from "./indexDAL/sqlite/SqliteIIndex"
-import {SqliteCIndex} from "./indexDAL/sqlite/SqliteCIndex"
 import {LevelDBDividend} from "./indexDAL/leveldb/LevelDBDividend"
 import {LevelDBBindex} from "./indexDAL/leveldb/LevelDBBindex"
 
@@ -83,6 +82,7 @@ import {LevelDBSindex} from "./indexDAL/leveldb/LevelDBSindex"
 import {SqliteTransactions} from "./indexDAL/sqlite/SqliteTransactions"
 import {SqlitePeers} from "./indexDAL/sqlite/SqlitePeers"
 import {LevelDBWallet} from "./indexDAL/leveldb/LevelDBWallet"
+import {LevelDBCindex} from "./indexDAL/leveldb/LevelDBCindex"
 
 const readline = require('readline')
 const indexer = require('../indexer').Indexer
@@ -168,7 +168,7 @@ export class FileDAL {
     this.mindexDAL = new SqliteMIndex(getSqliteDB)
     this.iindexDAL = new SqliteIIndex(getSqliteDB)
     this.sindexDAL = new LevelDBSindex(getLevelDB)
-    this.cindexDAL = new SqliteCIndex(getSqliteDB)
+    this.cindexDAL = new LevelDBCindex(getLevelDB)
     this.dividendDAL = new LevelDBDividend(getLevelDB)
 
     this.newDals = {

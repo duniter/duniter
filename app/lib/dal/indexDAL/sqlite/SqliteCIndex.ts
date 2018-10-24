@@ -149,7 +149,7 @@ export class SqliteCIndex extends SqliteTable<CindexEntry> implements CIndexDAO 
       'AND expired_on = ?', [pub, expired_on])
   }
 
-  findExpired(medianTime: number): Promise<CindexEntry[]> {
+  findExpiresOnLteNotExpiredYet(medianTime: number): Promise<CindexEntry[]> {
     return this.find('SELECT * FROM cindex c1 ' +
       'WHERE c1.expires_on <= ? ' +
       'AND NOT EXISTS (' +

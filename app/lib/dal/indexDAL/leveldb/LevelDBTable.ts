@@ -123,6 +123,18 @@ export class LevelDBTable<T> {
     await Promise.all(ops)
   }
 
+  public async deleteWhere(options?: AbstractIteratorOptions) {
+    const deletedKv: {
+      key: string,
+      value: T
+    }[] = []
+    await this.applyAllKeyValue(async kv => {
+      deletedKv.push(kv)
+      await this.del(kv.key)
+    }, options)
+    return deletedKv
+  }
+
   public async findAllValues(options?: AbstractIteratorOptions): Promise<T[]> {
     const data: T[] = []
     await this.readAllKeyValue(kv => {
@@ -132,19 +144,32 @@ export class LevelDBTable<T> {
   }
 
   public async findWhere(filter: (t: T) => boolean): Promise<T[]> {
-    const data: T[] = []
+    return this.findWhereTransform<T>(filter, t => t.value)
+  }
+
+  public async findWhereTransform<R>(filter: (t: T) => boolean, transform: (t: {
+    key: string,
+    value: T
+  }) => R): Promise<R[]> {
+    const data: R[] = []
     await this.readAllKeyValue(kv => {
-      if (filter(kv.value)) {
-        data.push(kv.value)
+      if (!filter || filter(kv.value)) {
+        data.push(transform(kv))
       }
     }, {})
     return data
   }
 
-  async dump(dumpValue: (value: T) => any = (v) => v): Promise<number> {
+  async dump(dumpValue: (t: {
+    key: string,
+    value: T
+  }) => any = (v) => v): Promise<number> {
     let count = 0
     await this.readAllKeyValue(entry => {
-      console.log(entry.key, dumpValue(entry.value))
+      console.log(entry.key, dumpValue({
+        key: entry.key,
+        value: entry.value
+      }))
       count++
     })
     return count

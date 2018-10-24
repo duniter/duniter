@@ -70,7 +70,7 @@ export class LokiCIndex extends LokiProtocolIndex<CindexEntry> implements CIndex
   }
 
   @MonitorExecutionTime()
-  async findExpired(medianTime: number): Promise<CindexEntry[]> {
+  async findExpiresOnLteNotExpiredYet(medianTime: number): Promise<CindexEntry[]> {
     return this.collection
       .chain()
       .find({ expires_on: { $lte: medianTime } })

@@ -7,7 +7,7 @@ export interface CIndexDAO extends ReduceableDAO<CindexEntry> {
 
   getValidLinksFrom(issuer:string): Promise<CindexEntry[]>
 
-  findExpired(medianTime:number): Promise<CindexEntry[]>
+  findExpiresOnLteNotExpiredYet(medianTime:number): Promise<CindexEntry[]>
 
   findByIssuerAndReceiver(issuer: string, receiver: string): Promise<CindexEntry[]>
 

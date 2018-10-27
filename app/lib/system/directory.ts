@@ -118,7 +118,7 @@ export const MemFS = (initialTree:{ [folder:string]: { [file:string]: string }} 
 export const Directory = {
 
   DATA_FILES: ['mindex.db', 'c_mindex.db', 'iindex.db', 'cindex.db', 'sindex.db', 'wallet.db', 'dividend.db', 'txs.db', 'peers.db'],
-  DATA_DIRS: ['level_dividend', 'level_bindex', 'level_blockchain', 'level_sindex', 'level_cindex', 'level_wallet'],
+  DATA_DIRS: ['level_dividend', 'level_bindex', 'level_blockchain', 'level_sindex', 'level_cindex', 'level_iindex', 'level_wallet'],
 
   INSTANCE_NAME: getDomain(opts.mdb),
   INSTANCE_HOME: getHomePath(opts.mdb, opts.home),

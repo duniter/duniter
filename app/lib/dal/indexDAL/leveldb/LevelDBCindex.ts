@@ -5,7 +5,7 @@ import {LevelDBTable} from "./LevelDBTable"
 import {Underscore} from "../../../common-libs/underscore"
 import {pint} from "../../../common-libs/pint"
 import {CIndexDAO} from "../abstract/CIndexDAO"
-import {reduceConcat} from "../../../common-libs/reduceConcat"
+import {reduceConcat} from "../../../common-libs/reduce"
 
 export interface LevelDBCindexEntry {
   received: string[]

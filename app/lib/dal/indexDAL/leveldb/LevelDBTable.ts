@@ -135,6 +135,14 @@ export class LevelDBTable<T> {
     return deletedKv
   }
 
+  public async findAllKeys(options?: AbstractIteratorOptions): Promise<string[]> {
+    const data: string[] = []
+    await this.readAllKeyValue(kv => {
+      data.push(kv.key)
+    }, options)
+    return data
+  }
+
   public async findAllValues(options?: AbstractIteratorOptions): Promise<T[]> {
     const data: T[] = []
     await this.readAllKeyValue(kv => {

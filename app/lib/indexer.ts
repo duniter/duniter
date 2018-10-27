@@ -1963,14 +1963,24 @@ function blockstamp(aNumber: number, aHash: string) {
   return [aNumber, aHash].join('-');
 }
 
-function reduceOrNull<T>(records: T[]): T|null {
+export function reduceOrNull<T>(records: T[]): T|null {
   if (records.length === 0) {
     return null
   }
   return reduce(records)
 }
 
-function reduce<T>(records: T[]): T {
+export function reduceForDBTrimming<T extends { writtenOn: number }>(records: T[], belowNumber: number): T[] {
+  if (records.length === 0) {
+    throw Error(DataErrors[DataErrors.INVALID_TRIMMABLE_DATA])
+  }
+  const reducableRecords = records.filter(r => r.writtenOn < belowNumber)
+  const nonReducableRecords = records.filter(r => r.writtenOn >= belowNumber)
+  const reduced = reduce(reducableRecords) as T
+  return [reduced].concat(nonReducableRecords)
+}
+
+export function reduce<T>(records: T[]): T {
   return records.reduce((obj:T, record) => {
     const keys = Object.keys(record) as (keyof T)[]
     for (const k of keys) {

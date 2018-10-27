@@ -40,7 +40,7 @@ const commonConf = {
 
 let s1:TestingServer, s2:TestingServer, cat:TestUser, tic:TestUser, toc:TestUser, tacOnS1:TestUser, tacOnS2:TestUser
 
-describe("Revocation", function() {
+describe("Revocation behavior", function() {
 
   before(async () => {
 

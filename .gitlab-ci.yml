@@ -73,9 +73,10 @@ pages:
     - dev
 
 test:
-  <<: *cached_nvm
+  <<: *nvm_env
   stage: test
   script:
+    - yarn
     - yarn test
     # Push coverage to GitLab pages
     - tar cvzf coverage.tar.gz coverage/

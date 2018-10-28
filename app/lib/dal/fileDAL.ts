@@ -193,14 +193,6 @@ export class FileDAL {
     }
   }
 
-  public enableChangesAPI() {
-    this.lokiDaos.map(d => d.enableChangesAPI())
-  }
-
-  public disableChangesAPI() {
-    this.lokiDaos.map(d => d.disableChangesAPI())
-  }
-
   async init(conf:ConfDTO) {
     this.wotb = this.params.wotbf()
     this.dals = [

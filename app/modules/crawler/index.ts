@@ -52,11 +52,7 @@ export const CrawlerDependency = {
       synchronize: (server:Server, onHost:string, onPort:number, upTo:number, chunkLength:number) => {
         const strategy = new RemoteSynchronizer(onHost, onPort, server, chunkLength)
         const remote = new Synchroniser(server, strategy)
-        const syncPromise = (async () => {
-          await server.dal.disableChangesAPI()
-          await remote.sync(upTo, chunkLength)
-          await server.dal.enableChangesAPI()
-        })()
+        const syncPromise = remote.sync(upTo, chunkLength)
         return {
           flow: remote,
           syncPromise

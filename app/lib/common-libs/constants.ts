@@ -309,7 +309,7 @@ export const CommonConstants = {
   ARCHIVES_BLOCKS_CHUNK: 250,
   SYNC_BLOCKS_CHUNK: 250,
   CHUNK_PREFIX: 'chunk_',
-  BLOCKS_IN_MEMORY_MAX: 288 * 60, // 60 days of blocks
+  BLOCKS_IN_MEMORY_MAX: 288 * 60, // 288 = 1 day
 
   MAX_AGE_OF_PEER_IN_BLOCKS: 200, // blocks
   INITIAL_DOWNLOAD_SLOTS: 1, // 1 peer

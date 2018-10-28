@@ -73,7 +73,7 @@ export class GlobalIndexStream extends Duplex {
 
   private wotbMem: WoTBInstance = WoTBObject.memoryInstance()
 
-  private mindexLokiInjection: Promise<void>
+  private memSyncInjection: Promise<void>
 
   private currentChunkNumber = 0
   private numberOfChunksToDownload:number
@@ -99,7 +99,7 @@ export class GlobalIndexStream extends Duplex {
       getAvailableForConditions: (conditions:string) => this.dal.sindexDAL.getAvailableForConditions(conditions)
     }
 
-    this.mindexLokiInjection = (async () => {
+    this.memSyncInjection = (async () => {
       await this.injectLoki(this.dal, 'dividendDAL', new LokiDividend(new loki())) // TODO
     })()
   }
@@ -121,14 +121,14 @@ export class GlobalIndexStream extends Duplex {
 
     (async () => {
 
-      await this.mindexLokiInjection
+      await this.memSyncInjection
 
       if (!dataArray) {
         return callback(null)
       }
 
       await this.transform(dataArray)
-      this.watcher.appliedPercent(Math.round(dataArray[0].block.number / 250 / this.numberOfChunksToDownload * 100))
+      this.watcher.appliedPercent(Math.round(dataArray[0].block.number / this.syncStrategy.chunkSize / this.numberOfChunksToDownload * 100))
       callback(null)
 
     })()
@@ -333,7 +333,7 @@ export class GlobalIndexStream extends Duplex {
       return block
     }))
 
-    // We only keep approx 2 months of blocks in memory, so memory consumption keeps approximately constant during the sync
+    // We only keep a bunch of days of blocks in memory, so memory consumption keeps approximately constant during the sync
     await this.dal.blockDAL.trimBlocks(blocks[blocks.length - 1].number - CommonConstants.BLOCKS_IN_MEMORY_MAX)
   }
 

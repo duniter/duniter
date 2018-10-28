@@ -2,6 +2,7 @@ stages:
   - github-sync
   - build
   - test
+  - integration
   - package
   - prerelease
   - release
@@ -89,14 +90,14 @@ test:
 
 sync_g1:
   <<: *nvm_env
-  stage: test
+  stage: integration
   script:
     - yarn
     - bash .gitlab/test/check_g1_sync.sh
 
 sync_gtest:
   <<: *nvm_env
-  stage: test
+  stage: integration
   script:
     - yarn
     - bash .gitlab/test/check_gt_sync.sh

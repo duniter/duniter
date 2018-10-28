@@ -73,7 +73,6 @@
     "cors": "2.8.2",
     "daemonize2": "0.4.2",
     "ddos": "0.1.16",
-    "duniter-ui": "^1.7.0",
     "errorhandler": "1.5.0",
     "event-stream": "3.3.4",
     "express": "4.15.2",

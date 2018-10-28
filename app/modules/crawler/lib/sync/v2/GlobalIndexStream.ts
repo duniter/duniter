@@ -23,7 +23,6 @@ import {AbstractSynchronizer} from "../AbstractSynchronizer"
 import {cliprogram} from "../../../../../lib/common-libs/programOptions"
 import {DBHead} from "../../../../../lib/db/DBHead"
 import {Watcher} from "../Watcher"
-import {LokiMIndex} from "../../../../../lib/dal/indexDAL/loki/LokiMIndex"
 import {LokiDividend} from "../../../../../lib/dal/indexDAL/loki/LokiDividend"
 import {DataErrors} from "../../../../../lib/common-libs/errors"
 import {ProtocolIndexesStream} from "./ProtocolIndexesStream"
@@ -101,8 +100,7 @@ export class GlobalIndexStream extends Duplex {
     }
 
     this.mindexLokiInjection = (async () => {
-      await this.injectLoki(this.dal, 'mindexDAL', new LokiMIndex(new loki()))
-      await this.injectLoki(this.dal, 'dividendDAL', new LokiDividend(new loki()))
+      await this.injectLoki(this.dal, 'dividendDAL', new LokiDividend(new loki())) // TODO
     })()
   }
 
@@ -434,9 +432,6 @@ export class GlobalIndexStream extends Duplex {
           throw Error(DataErrors[DataErrors.SYNC_FAST_MEM_ERROR_DURING_INJECTION])
         }
       }
-
-      await inject(this.dal, 'mindexDAL',
-        () => this.dal.mindexDAL.findRawWithOrder({}, [['writtenOn',false]]))
 
       await inject(this.dal, 'dividendDAL',
         () => this.dal.dividendDAL.listAll())

@@ -9,9 +9,9 @@ export interface MIndexDAO extends ReduceableDAO<MindexEntry>  {
 
   findByPubAndChainableOnGt(pub:string, medianTime:number): Promise<MindexEntry[]>
 
-  findRevokesOnLteAndRevokedOnIsNull(medianTime:number): Promise<MindexEntry[]>
+  findRevokesOnLteAndRevokedOnIsNull(medianTime:number): Promise<string[]>
 
-  findExpiresOnLteAndRevokesOnGt(medianTime:number): Promise<MindexEntry[]>
+  findExpiresOnLteAndRevokesOnGt(medianTime:number): Promise<string[]>
 
   getReducedMS(pub:string): Promise<FullMindexEntry|null>
 

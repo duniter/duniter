@@ -205,8 +205,9 @@ export class SqliteMIndex extends SqliteTable<MindexEntry> implements MIndexDAO 
   }
 
   @MonitorExecutionTime()
-  async findRevokesOnLteAndRevokedOnIsNull(medianTime: number): Promise<MindexEntry[]> {
-    return this.find('SELECT * FROM mindex WHERE revokes_on <= ? AND revoked_on IS NULL', [medianTime])
+  async findRevokesOnLteAndRevokedOnIsNull(medianTime: number): Promise<string[]> {
+    return (await this.find('SELECT * FROM mindex WHERE revokes_on <= ? AND revoked_on IS NULL', [medianTime]))
+      .map(e => e.pub)
   }
 
   @MonitorExecutionTime()
@@ -271,7 +272,7 @@ export class SqliteMIndex extends SqliteTable<MindexEntry> implements MIndexDAO 
     return this.findEntities('SELECT * FROM mindex WHERE pub = ? order by writtenOn ASC', [pub])
   }
 
-  async findExpiresOnLteAndRevokesOnGt(medianTime: number): Promise<MindexEntry[]> {
+  async findExpiresOnLteAndRevokesOnGt(medianTime: number): Promise<string[]> {
     return []
   }
 

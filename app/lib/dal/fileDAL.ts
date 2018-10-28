@@ -71,7 +71,6 @@ import {HttpSource, HttpUD} from "../../modules/bma/lib/dtos"
 import {GenericDAO} from "./indexDAL/abstract/GenericDAO"
 import {LokiDAO} from "./indexDAL/loki/LokiDAO"
 import {MonitorExecutionTime} from "../debug/MonitorExecutionTime"
-import {SqliteMIndex} from "./indexDAL/sqlite/SqliteMIndex"
 import {LevelDBDividend} from "./indexDAL/leveldb/LevelDBDividend"
 import {LevelDBBindex} from "./indexDAL/leveldb/LevelDBBindex"
 
@@ -83,6 +82,7 @@ import {SqlitePeers} from "./indexDAL/sqlite/SqlitePeers"
 import {LevelDBWallet} from "./indexDAL/leveldb/LevelDBWallet"
 import {LevelDBCindex} from "./indexDAL/leveldb/LevelDBCindex"
 import {LevelDBIindex} from "./indexDAL/leveldb/LevelDBIindex"
+import {LevelDBMindex} from "./indexDAL/leveldb/LevelDBMindex"
 
 const readline = require('readline')
 const indexer = require('../indexer').Indexer
@@ -165,7 +165,7 @@ export class FileDAL {
     this.peerDAL = new SqlitePeers(getSqliteDB)
     this.walletDAL = new LevelDBWallet(getLevelDB)
     this.bindexDAL = new LevelDBBindex(getLevelDB)
-    this.mindexDAL = new SqliteMIndex(getSqliteDB)
+    this.mindexDAL = new LevelDBMindex(getLevelDB)
     this.iindexDAL = new LevelDBIindex(getLevelDB)
     this.sindexDAL = new LevelDBSindex(getLevelDB)
     this.cindexDAL = new LevelDBCindex(getLevelDB)
@@ -761,8 +761,8 @@ export class FileDAL {
       i.pubkey = i.pub
       return i
     }));
-    return await Promise.all<DBIdentity>(found.map(async (f:any) => {
-      const ms = await this.mindexDAL.getReducedMSForImplicitRevocation(f.pub);
+    return await Promise.all<DBIdentity>(found.map(async (f) => {
+      const ms = await this.mindexDAL.getReducedMSForImplicitRevocation(f.pubkey);
       if (ms) {
         f.revoked_on = null;
         if (ms.revoked_on) {
@@ -770,7 +770,7 @@ export class FileDAL {
           f.revoked_on = blockOfRevocation.medianTime
         }
         f.revoked = !!f.revoked_on;
-        f.revocation_sig = ms.revocation || null;
+        f.revocation_sig = f.revocation_sig || ms.revocation || null;
       }
       return f;
     }))

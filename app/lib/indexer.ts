@@ -807,9 +807,9 @@ export class Indexer {
     if (HEAD.number > 0) {
       await Promise.all(mindex.map(async (ENTRY: MindexEntry) => {
         if (ENTRY.revocation === null) {
-          const rows = await dal.mindexDAL.findByPubAndChainableOnGt(ENTRY.pub, HEAD_1.medianTime)
           // This rule will be enabled on
           if (HEAD.medianTime >= 1498860000) {
+            const rows = await dal.mindexDAL.findByPubAndChainableOnGt(ENTRY.pub, HEAD_1.medianTime)
             ENTRY.unchainables = count(rows);
           }
         }
@@ -1837,12 +1837,12 @@ export class Indexer {
   static async ruleIndexGenImplicitRevocation(HEAD: DBHead, dal:FileDAL) {
     const revocations = [];
     const pending = await dal.mindexDAL.findRevokesOnLteAndRevokedOnIsNull(HEAD.medianTime)
-    for (const MS of pending) {
-      const REDUCED = (await dal.mindexDAL.getReducedMSForImplicitRevocation(MS.pub)) as FullMindexEntry
+    for (const pub of pending) {
+      const REDUCED = (await dal.mindexDAL.getReducedMSForImplicitRevocation(pub)) as FullMindexEntry
       if (REDUCED.revokes_on <= HEAD.medianTime && !REDUCED.revoked_on) {
         revocations.push({
           op: 'UPDATE',
-          pub: MS.pub,
+          pub: pub,
           created_on: REDUCED.created_on,
           written_on: [HEAD.number, HEAD.hash].join('-'),
           writtenOn: HEAD.number,

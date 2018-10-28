@@ -1,4 +1,4 @@
-import {FullMindexEntry, Indexer, MindexEntry, reduceBy} from "../../../indexer"
+import {FullMindexEntry, Indexer, MindexEntry} from "../../../indexer"
 import {MIndexDAO} from "../abstract/MIndexDAO"
 import {LokiPubkeySharingIndex} from "./LokiPubkeySharingIndex"
 import {MonitorExecutionTime} from "../../../debug/MonitorExecutionTime"
@@ -21,7 +21,7 @@ export class LokiMIndex extends LokiPubkeySharingIndex<MindexEntry> implements M
   }
 
   @MonitorExecutionTime()
-  async findExpiresOnLteAndRevokesOnGt(medianTime: number): Promise<MindexEntry[]> {
+  async findExpiresOnLteAndRevokesOnGt(medianTime: number): Promise<string[]> {
     return this.collection
       .find({
         $and: [
@@ -29,10 +29,11 @@ export class LokiMIndex extends LokiPubkeySharingIndex<MindexEntry> implements M
           { revokes_on: { $gt: medianTime } },
         ]
       })
+      .map(e => e.pub)
   }
 
   @MonitorExecutionTime()
-  async findRevokesOnLteAndRevokedOnIsNull(medianTime: number): Promise<MindexEntry[]> {
+  async findRevokesOnLteAndRevokedOnIsNull(medianTime: number): Promise<string[]> {
     return this.collection
       .find({
         $and: [
@@ -40,6 +41,7 @@ export class LokiMIndex extends LokiPubkeySharingIndex<MindexEntry> implements M
           { revoked_on: null },
         ]
       })
+      .map(e => e.pub)
   }
   @MonitorExecutionTime()
   async getReducedMS(pub: string): Promise<FullMindexEntry | null> {
@@ -70,9 +72,9 @@ export class LokiMIndex extends LokiPubkeySharingIndex<MindexEntry> implements M
 
   async findPubkeysThatShouldExpire(medianTime: number): Promise<{ pub: string; created_on: string }[]> {
     const results: { pub: string; created_on: string }[] = []
-    const memberships: MindexEntry[] = reduceBy(await this.findExpiresOnLteAndRevokesOnGt(medianTime), ['pub'])
-    for (const POTENTIAL of memberships) {
-      const MS = await this.getReducedMS(POTENTIAL.pub) as FullMindexEntry // We are sure because `memberships` already comes from the MINDEX
+    const pubkeys = await this.findExpiresOnLteAndRevokesOnGt(medianTime)
+    for (const pub of pubkeys) {
+      const MS = await this.getReducedMS(pub) as FullMindexEntry // We are sure because `memberships` already comes from the MINDEX
       const hasRenewedSince = MS.expires_on > medianTime;
       if (!MS.expired_on && !hasRenewedSince) {
         results.push({

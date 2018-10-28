@@ -33,7 +33,6 @@ export class LevelDBTable<T> {
   }
 
   public async getOrNull(k: string): Promise<T|null> {
-
     try {
       const data = await this.db.get(k)
       return JSON.parse(String(data)) as any

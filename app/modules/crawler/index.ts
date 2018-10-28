@@ -76,6 +76,7 @@ export const CrawlerDependency = {
       { value: '--nocautious',    desc: 'Do not check blocks validity during sync.'},
       { value: '--cautious',      desc: 'Check blocks validity during sync (overrides --nocautious option).'},
       { value: '--nopeers',       desc: 'Do not retrieve peers during sync.'},
+      { value: '--p2psync',       desc: 'Force P2P downloading of blocs during sync.'},
       { value: '--nosources',     desc: 'Do not parse sources (UD, TX) during sync (debug purposes).'},
       { value: '--nosbx',         desc: 'Do not retrieve sandboxes during sync.'},
       { value: '--onlypeers',     desc: 'Will only try to sync peers.'},

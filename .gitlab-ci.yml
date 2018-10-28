@@ -47,29 +47,29 @@ build:
   script:
     - yarn
 
-pages:
-  <<: *nvm_env
-  stage: pages
-  cache: {}
-  script:
-    - yarn
-    - yarn doc
-    - mkdir -p public
-    - cp .gitlab/pages/pages-index.html public/index.html
-    - sed -i "s/{BRANCH}/$CI_COMMIT_REF_NAME/g" public/index.html
-    - mv typedoc public/
-    - echo "$CI_JOB_ID"
-    - curl "https://git.duniter.org/nodes/typescript/duniter/-/jobs/$CI_JOB_ID/artifacts/raw/coverage.tar.gz"
-    - tar xzf coverage.tar.gz
-    - mv coverage "public/coverage"
-    - ls public
-  artifacts:
-    untracked: true
-    paths:
-      - public
-  only:
-    - loki
-    - dev
+#pages:
+#  <<: *nvm_env
+#  stage: pages
+#  cache: {}
+#  script:
+#    - yarn
+#    - yarn doc
+#    - mkdir -p public
+#    - cp .gitlab/pages/pages-index.html public/index.html
+#    - sed -i "s/{BRANCH}/$CI_COMMIT_REF_NAME/g" public/index.html
+#    - mv typedoc public/
+#    - echo "$CI_JOB_ID"
+#    - curl "https://git.duniter.org/nodes/typescript/duniter/-/jobs/$CI_JOB_ID/artifacts/raw/coverage.tar.gz"
+#    - tar xzf coverage.tar.gz
+#    - mv coverage "public/coverage"
+#    - ls public
+#  artifacts:
+#    untracked: true
+#    paths:
+#      - public
+#  only:
+#    - loki
+#    - dev
 
 test:
   <<: *nvm_env

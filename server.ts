@@ -453,7 +453,8 @@ export class Server extends stream.Duplex implements HookableServer {
     await this.dal.cleanCaches();
     this.dal.wotb.resetWoT();
     const files = ['stats', 'cores', 'current', Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log'];
-    const dirs  = ['loki', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb'];
+    const dirs  = ['loki', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb']
+      .concat(Directory.DATA_DIRS)
     return this.resetFiles(files, dirs);
   }
 

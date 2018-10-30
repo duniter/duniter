@@ -21,8 +21,14 @@ fi
 # 1. Module name.
 nw_copy() {
 	[[ -z ${1} ]] && exit 1
-	cp lib/binding/Release/node-webkit-v${NW_VERSION}-linux-x64/${1}.node \
-		lib/binding/Release/node-v${ADDON_VERSION}-linux-x64/${1}.node || exit 1
+	from_folder=lib/binding/Release/node-webkit-v${NW_VERSION}-linux-x64
+	if [[ ! -z ${2} ]]; then
+	  from_folder=${2}
+	fi
+	local dest=lib/binding/Release/node-v${ADDON_VERSION}-linux-x64
+	mkdir -p ${dest}
+	cp ${from_folder}/${1}.node \
+		${dest}/${1}.node || exit 1
 }
 
 # Copy nw.js compiled module library to node libraries, prefixing with node_.
@@ -31,8 +37,10 @@ nw_copy() {
 # 1. Module name.
 nw_copy_node() {
 	[[ -z ${1} ]] && exit 1
+	local dest=lib/binding/node-v${ADDON_VERSION}-linux-x64/
+	mkdir -p ${dest}
 	cp lib/binding/node-webkit-v${NW_VERSION}-linux-x64/node_${1}.node \
-		lib/binding/node-v${ADDON_VERSION}-linux-x64/node_${1}.node || exit 1
+		${dest}/node_${1}.node || exit 1
 }
 
 # Compile the module with nw.js.
@@ -45,7 +53,7 @@ nw_compile() {
 	cd ${1} || exit 1
 	node-pre-gyp --runtime=node-webkit --target=${NW_VERSION} configure || exit 1
 	node-pre-gyp --runtime=node-webkit --target=${NW_VERSION} build || exit 1
-	[[ -z ${2} ]] || ${2} ${1}
+	[[ -z ${2} ]] || ${2} ${1} ${3}
 	cd ..
 }
 
@@ -170,6 +178,9 @@ rm -Rf .gitignore .git || exit 1 # Remove git files
 echo ">> VM: building modules..."
 yarn || exit 1
 
+# Patch leveldown
+cp $"${ROOT}/release/resources/leveldown-fix.json" "${RELEASES}/duniter/node_modules/leveldown/package.json" || exit 1
+
 # Duniter UI
 yarn add "duniter-ui@${DUNITER_UI_VER}" || exit 1
 yarn --production || exit 1
@@ -193,7 +204,7 @@ node-pre-gyp --runtime=node-webkit --target=$NW_VERSION configure \
 cd "${RELEASES}/desktop_/node_modules/"
 nw_compile wotb nw_copy
 nw_compile naclb nw_copy
-nw_compile leveldown nw_copy
+nw_compile leveldown nw_copy "build/Release/"
 nw_compile scryptb nw_copy
 nw_compile sqlite3 nw_copy_node
 

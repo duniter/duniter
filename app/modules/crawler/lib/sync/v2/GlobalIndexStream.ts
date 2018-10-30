@@ -23,7 +23,6 @@ import {AbstractSynchronizer} from "../AbstractSynchronizer"
 import {cliprogram} from "../../../../../lib/common-libs/programOptions"
 import {DBHead} from "../../../../../lib/db/DBHead"
 import {Watcher} from "../Watcher"
-import {LokiDividend} from "../../../../../lib/dal/indexDAL/loki/LokiDividend"
 import {DataErrors} from "../../../../../lib/common-libs/errors"
 import {ProtocolIndexesStream} from "./ProtocolIndexesStream"
 
@@ -100,7 +99,7 @@ export class GlobalIndexStream extends Duplex {
     }
 
     this.memSyncInjection = (async () => {
-      await this.injectLoki(this.dal, 'dividendDAL', new LokiDividend(new loki())) // TODO
+      // Disabled function
     })()
   }
 
@@ -420,6 +419,8 @@ export class GlobalIndexStream extends Duplex {
       // Persist the memory wotb
       this.wotbMem.fileCopy(this.dal.wotb.filePath)
       const that = this
+
+      // Disabled for now
       async function inject<T, K extends keyof T, R, S extends T[K]>(fileDal: T, field: K, getRows: () => Promise<R[]>) {
         const dao = that.mapInjection[field]
         if (dao) {
@@ -432,9 +433,6 @@ export class GlobalIndexStream extends Duplex {
           throw Error(DataErrors[DataErrors.SYNC_FAST_MEM_ERROR_DURING_INJECTION])
         }
       }
-
-      await inject(this.dal, 'dividendDAL',
-        () => this.dal.dividendDAL.listAll())
 
       this.memToCopyDone = true
     }

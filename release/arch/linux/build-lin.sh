@@ -179,7 +179,7 @@ echo ">> VM: building modules..."
 yarn || exit 1
 
 # Patch leveldown
-cp $"${ROOT}/release/resources/leveldown-fix.json" "${RELEASES}/duniter/node_modules/leveldown/package.json" || exit 1
+cp "${ROOT}/release/resources/leveldown-fix.json" "${RELEASES}/duniter/node_modules/leveldown/package.json" || exit 1
 
 # Duniter UI
 yarn add "duniter-ui@${DUNITER_UI_VER}" || exit 1

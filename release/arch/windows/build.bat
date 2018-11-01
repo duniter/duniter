@@ -64,9 +64,6 @@ git checkout %DUNITER_TAG%
 
 call npm cache clean
 call npm install
-echo "Patch de leveldown..."
-move %cd%\node_modules\leveldown\package.json %cd%\node_modules\leveldown\package.json.back /s /e /Y
-move %cd%\release\resources\leveldown-fix.json %cd%\node_modules\leveldown\package.json /s /e /Y
 REM call npm test
 echo "Ajout du module 1/1 (duniter-ui)..."
 call npm install duniter-ui@1.7.x --save --production
@@ -96,6 +93,9 @@ call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=201
 copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\naclb.node %cd%\lib\binding\Release\node-v%ADDON_VERSION%-win32-x64\naclb.node /Y
 cd ../leveldown
 call npm install --build-from-source
+echo "Patch de leveldown..."
+move package.json package.json.back
+move %cd%\..\..\release\resources\leveldown-fix.json package.json
 call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
 call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
 mkdir %cd%\lib

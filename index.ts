@@ -26,6 +26,8 @@ import {RouterDependency} from "./app/modules/router"
 import {OtherConstants} from "./app/lib/other_constants"
 import {Directory} from "./app/lib/system/directory"
 import {Underscore} from "./app/lib/common-libs/underscore"
+import {CliCommand, DuniterDependency, DuniterModule} from "./app/modules/DuniterModule"
+import {ProgramOptions} from "./app/lib/common-libs/programOptions"
 
 const path = require('path');
 const constants = require('./app/lib/constants');
@@ -179,7 +181,7 @@ export interface DuniterService {
 export interface ReadableDuniterService extends DuniterService, stream.Readable {}
 export interface TransformableDuniterService extends DuniterService, stream.Transform {}
 
-class Stack {
+export class Stack {
 
   private injectedServices = false
 
@@ -192,7 +194,7 @@ class Stack {
   private PROCESS:any
   private loaded:any
   private wizardTasks:any
-  private definitions:any[] = []
+  private definitions:DuniterDependency[] = []
   private streams: {
     input: ReadableDuniterService[]
     process: TransformableDuniterService[]
@@ -205,7 +207,7 @@ class Stack {
     neutral: []
   }
 
-  constructor(private dependencies:any[]) {
+  constructor(private dependencies:DuniterModule[]) {
     this.cli = ExecuteCommand()
     this.configLoadingCallbacks = []
     this.configBeforeSaveCallbacks = []
@@ -227,7 +229,7 @@ class Stack {
     return this.loaded[name]
   }
 
-  registerDependency(requiredObject:any, name:string) {
+  registerDependency(requiredObject:{ duniter: DuniterDependency }, name:string) {
     if (name && this.loaded[name]) {
       // Do not try to load it twice
       return;
@@ -286,8 +288,8 @@ class Stack {
   };
 
   async processCommand (...args:any[]) {
-    const command = args[0];
-    const program = args[1];
+    const command: CliCommand = args[0];
+    const program: ProgramOptions = args[1];
     const params  = args.slice(2);
     params.pop(); // Don't need the command argument
 
@@ -393,6 +395,8 @@ class Stack {
         if (!command.onDatabaseExecute) {
           return res
         }
+      } else if (!command.onDatabaseExecute) {
+        throw `Command ${command.name} does not implement onConfiguredExecute nor onDatabaseExecute.`
       }
       // Second possible class of commands: post-service
       await server.initDAL(conf);
@@ -602,3 +606,11 @@ class ProcessStream extends stream.Transform {
     done && done();
   };
 }
+
+export const Duniter = {
+
+  run(modules: DuniterModule[] = [], args?: string[]) {
+    return Stacks.autoStack(modules).executeStack(args || process.argv)
+  }
+}
+

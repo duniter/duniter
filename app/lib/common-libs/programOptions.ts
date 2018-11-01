@@ -24,6 +24,9 @@ export interface ProgramOptions {
   isSync: boolean
   noSources: boolean
   slow?: boolean
+  loglevel?: string
+  sqlTraces?: boolean
+  memory?: boolean
 }
 
 export const cliprogram: ProgramOptions = {

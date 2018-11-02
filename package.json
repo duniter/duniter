@@ -23,6 +23,7 @@
   },
   "scripts": {
     "prepublish": "tsc",
+    "prepack": "find -name \"*.ts\" | grep -v \".d.ts\" | xargs rm",
     "tsc": "tsc",
     "tscw": "tsc -w",
     "doc": "typedoc --out typedoc/ index.ts app/ --mode file --readme README.md --includeDeclarations --sourcefile-url-prefix \"https://git.duniter.org/nodes/typescript/duniter/blob/loki/\"",

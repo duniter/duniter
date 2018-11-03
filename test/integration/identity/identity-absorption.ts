@@ -11,7 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {TestingServer} from "../tools/toolbox"
+import {NewTestingServer, TestingServer} from "../tools/toolbox"
 import {TestUser} from "../tools/TestUser"
 import {BmaDependency} from "../../../app/modules/bma/index"
 import {shouldFail} from "../../unit-tools"
@@ -19,7 +19,6 @@ import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {shutDownEngine} from "../tools/shutdown-engine"
 import {expectAnswer} from "../tools/http-expect"
 
-const duniter     = require('../../../index');
 const rp        = require('request-promise');
 
 const MEMORY_MODE = true;
@@ -39,10 +38,10 @@ describe("Identity absorption", () => {
 
   before(async () => {
 
-    s1 = duniter(
-      '/bb12',
-      MEMORY_MODE,
+    s1 = NewTestingServer(
       Underscore.extend({
+        name: 'bb12',
+        memory: MEMORY_MODE,
         port: '4450',
         pair: {
           pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
@@ -50,10 +49,10 @@ describe("Identity absorption", () => {
         }
       }, commonConf));
 
-    s2 = duniter(
-      '/bb12',
-      MEMORY_MODE,
+    s2 = NewTestingServer(
       Underscore.extend({
+        name: 'bb12',
+        memory: MEMORY_MODE,
         port: '4451',
         pair: {
           pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',

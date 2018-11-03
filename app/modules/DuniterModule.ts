@@ -19,17 +19,17 @@ export interface DuniterDependency {
     beforeSave: (conf: ConfDTO, program: ProgramOptions, logger:any, confDAL: ConfDAL) => void
   }
   onReset?: {
-    data: (conf: ConfDTO, program: ProgramOptions, logger:any, confDAL: ConfDAL) => void
-    config: (conf: ConfDTO, program: ProgramOptions, logger:any, confDAL: ConfDAL) => void
+    data?: (conf: ConfDTO, program: ProgramOptions, logger:any, confDAL: ConfDAL) => void
+    config?: (conf: ConfDTO, program: ProgramOptions, logger:any, confDAL: ConfDAL) => void
   }
   wizard?: {
-    [k: string]: (conf: ConfDTO, program: ProgramOptions) => Promise<void>
+    [k: string]: (conf: ConfDTO, program: ProgramOptions, logger:any) => Promise<void>
   }
   service?: {
-    input: (server: Server, conf: ConfDTO, logger:any) => ReadableDuniterService
-    process: (server: Server, conf: ConfDTO, logger:any) => TransformableDuniterService
-    output: (server: Server, conf: ConfDTO, logger:any) => TransformableDuniterService
-    neutral: (server: Server, conf: ConfDTO, logger:any) => TransformableDuniterService
+    input?: (server: Server, conf: ConfDTO, logger:any) => ReadableDuniterService
+    process?: (server: Server, conf: ConfDTO, logger:any) => TransformableDuniterService
+    output?: (server: Server, conf: ConfDTO, logger:any) => TransformableDuniterService
+    neutral?: (server: Server, conf: ConfDTO, logger:any) => TransformableDuniterService
   }
 }
 
@@ -44,10 +44,10 @@ export interface CliCommand {
   desc: string
   logs?: boolean
   preventIfRunning?: boolean
-  onConfiguredExecute?: (server: Server, conf?: ConfDTO, program?: ProgramOptions, params?: string[], wizardTasks?: any, stack?: Stack) => Promise<void>
-  onDatabaseExecute?: (server: Server, conf?: ConfDTO, program?: ProgramOptions, params?: string[],
-                       startServices?: () => Promise<void>,
-                       stopServices?: () => Promise<void>,
-                       stack?: Stack
+  onConfiguredExecute?: (server: Server, conf: ConfDTO, program: ProgramOptions, params: string[], wizardTasks: any, stack: Stack) => Promise<any>
+  onDatabaseExecute?: (server: Server, conf: ConfDTO, program: ProgramOptions, params: string[],
+                       startServices: () => Promise<void>,
+                       stopServices: () => Promise<void>,
+                       stack: Stack
   ) => Promise<void>
 }

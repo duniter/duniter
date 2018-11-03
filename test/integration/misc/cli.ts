@@ -14,11 +14,11 @@
 import {hashf} from "../../../app/lib/common"
 import {fakeSyncServer} from "../tools/toolbox"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
+import {Statics} from "../../../index"
 
 const spawn     = require('child_process').spawn;
 const path      = require('path');
 const should    = require('should');
-const duniter   = require('../../../index');
 
 const DB_NAME = "unit_tests";
 
@@ -157,7 +157,7 @@ describe("CLI", function() {
  */
 async function execute(args:(string)[]) {
   const finalArgs = [process.argv[0], __filename].concat(args).concat(['--mdb', DB_NAME]);
-  const stack = duniter.statics.autoStack();
+  const stack = Statics.autoStack();
   // Executes the command
   return stack.executeStack(finalArgs);
 }

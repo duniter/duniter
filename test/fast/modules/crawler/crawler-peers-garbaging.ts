@@ -13,9 +13,9 @@
 
 import {cleanLongDownPeers} from "../../../../app/modules/crawler/lib/garbager"
 import {Server} from "../../../../server"
+import {Statics} from "../../../../index"
 
 const should = require('should');
-const duniter = require('../../../../index')
 
 let stack:any
 
@@ -23,7 +23,7 @@ describe('Peers garbaging', () => {
 
   before(() => {
 
-    stack = duniter.statics.autoStack([{
+    stack = Statics.autoStack([{
       name: 'garbager',
       required: {
         duniter: {

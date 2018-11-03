@@ -15,8 +15,7 @@ process.on('uncaughtException', (err) => {
 (async () => {
 
   try {
-    const duniter = require('../index');
-    const stack = duniter.statics.autoStack();
+    const stack = require('../index').Statics.autoStack();
     await stack.executeStack(process.argv);
     // Everything went well, close Duniter quietly.
     process.exit();

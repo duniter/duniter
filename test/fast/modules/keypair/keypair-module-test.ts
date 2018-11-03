@@ -12,16 +12,16 @@
 // GNU Affero General Public License for more details.
 
 import {KeypairDependency} from "../../../../app/modules/keypair/index"
+import {Statics} from "../../../../index"
 
 const should = require('should');
-const duniter = require('../../../../index')
 
 describe('Module usage', () => {
 
   it('wrong options should throw', async () => {
     let errMessage;
     try {
-      const stack = duniter.statics.minimalStack();
+      const stack = Statics.minimalStack();
       stack.registerDependency(KeypairDependency, 'duniter-keypair');
       await stack.executeStack(['node', 'index.js', 'config', '--memory', '--keyN', '2048']);
     } catch (e) {
@@ -32,7 +32,7 @@ describe('Module usage', () => {
   })
 
   it('no options on brand new node should generate random key', async () => {
-    const stack = duniter.statics.minimalStack();
+    const stack = Statics.minimalStack();
     stack.registerDependency(KeypairDependency, 'duniter-keypair');
     const res = await stack.executeStack(['node', 'index.js', 'config', '--memory']);
     // This is extremely very unlikely to happen

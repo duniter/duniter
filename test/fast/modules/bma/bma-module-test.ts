@@ -14,13 +14,13 @@
 import {BmaDependency} from "../../../../app/modules/bma/index"
 import {KeypairDependency} from "../../../../app/modules/keypair/index"
 import {Network} from "../../../../app/modules/bma/lib/network"
+import {Statics} from "../../../../index"
 
 const assert = require('assert');
 const should = require('should');
-const duniter = require('../../../../index')
 const rp = require('request-promise');
 
-const stack = duniter.statics.minimalStack();
+const stack = Statics.minimalStack();
 stack.registerDependency(KeypairDependency, 'duniter-keypair');
 stack.registerDependency(BmaDependency,     'duniter-bma');
 

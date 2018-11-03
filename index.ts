@@ -53,7 +53,7 @@ process.on('unhandledRejection', (reason) => {
   logger.error(reason);
 });
 
-class Stacks {
+export class Stacks {
 
   static todoOnRunDone:() => any = () => process.exit()
 
@@ -84,7 +84,7 @@ class Stacks {
     return Stacks.todoOnRunDone()
   }
 
-  static autoStack(priorityModules:any) {
+  static autoStack(priorityModules?:DuniterModule[]) {
 
     const duniterModules = [];
     let duniterDeps:any = []
@@ -140,11 +140,11 @@ const DEFAULT_DEPENDENCIES = MINIMAL_DEPENDENCIES.concat([
 const PRODUCTION_DEPENDENCIES = DEFAULT_DEPENDENCIES.concat([
 ]);
 
-module.exports = function (home:string, memory:boolean, overConf:any) {
+export function NewDuniterServer(home:string, memory:boolean, overConf:any) {
   return new Server(home, memory, overConf);
 }
 
-module.exports.statics = {
+export const Statics = {
 
   logger: logger,
 

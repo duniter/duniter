@@ -17,27 +17,27 @@ import {Server} from "../../../server"
 import {ConfDTO} from "../../../app/lib/dto/ConfDTO"
 import {KeypairDependency} from "../../../app/modules/keypair/index"
 import {BmaDependency} from "../../../app/modules/bma/index"
+import {Statics} from "../../../index"
 
 const should  = require('should');
 const util    = require('util');
 const path    = require('path');
-const duniter = require('../../../index');
 const querablep = require('querablep');
 
 describe("v1.0 Module API", () => {
 
   it('should be able to execute `hello` command with quickRun', async () => {
-    duniter.statics.setOnRunDone(() => { /* Do not exit the process */ })
+    Statics.setOnRunDone(() => { /* Do not exit the process */ })
     const absolutePath = path.join(__dirname, '../scenarios/hello-plugin.js')
     process.argv = ['', absolutePath, 'hello-world', '--memory']
-    const res = await duniter.statics.quickRun(absolutePath)
+    const res = await Statics.quickRun(absolutePath)
     res.should.equal('Hello world! from within Duniter.')
   })
 
   it('should be able to execute `hello` command', async () => {
 
-    const sStack = duniter.statics.simpleStack();
-    const aStack = duniter.statics.autoStack();
+    const sStack = Statics.simpleStack();
+    const aStack = Statics.autoStack();
 
     const helloDependency = {
       duniter: {
@@ -77,7 +77,7 @@ describe("v1.0 Module API", () => {
 
     before(async () => {
 
-      stack = duniter.statics.simpleStack();
+      stack = Statics.simpleStack();
       const configurationDependency = {
         duniter: {
           cliOptions: [
@@ -174,7 +174,7 @@ describe("v1.0 Module API", () => {
 
     before(async () => {
 
-      stack = duniter.statics.simpleStack();
+      stack = Statics.simpleStack();
       fakeI = new FakeStream((that:any, data:any) => {
         // Note: we never pass here
         if (typeof data == "string") {

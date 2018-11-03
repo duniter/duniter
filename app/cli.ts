@@ -13,8 +13,7 @@
 
 const Command = require('commander').Command;
 const pjson = require('../package.json');
-const duniter = require('../index');
- 
+
 export const ExecuteCommand = () => {
 
   const options:any = [];

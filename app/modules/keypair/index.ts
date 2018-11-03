@@ -52,14 +52,14 @@ export const KeypairDependency = {
       name: 'pub',
       desc: 'Shows the node public key',
       logs: false,
-      onConfiguredExecute: (server:Server, conf:ConfDTO) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO) => {
         console.log(conf.pair.pub)
       }
     }, {
       name: 'sec',
       desc: 'Shows the node secret key',
       logs: false,
-      onConfiguredExecute: (server:Server, conf:ConfDTO) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO) => {
         console.log(conf.pair.sec)
       }
     }],

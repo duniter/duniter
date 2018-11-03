@@ -55,7 +55,7 @@ export class LevelDBMindex extends LevelDBTable<MindexEntry[]> implements MIndex
     // Database insertion
     let prevRecords: MindexEntry[] = []
     const recordsByPub = reduceGroupBy(records, 'pub')
-    await Promise.all(Underscore.keys(recordsByPub).map(async pub => {
+    await Promise.all(Underscore.keys(recordsByPub).map(String).map(async pub => {
       const existing = (await this.getOrNull(pub)) || []
       prevRecords = prevRecords.concat(existing)
       await this.put(pub, existing.concat(recordsByPub[pub]))

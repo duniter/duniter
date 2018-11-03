@@ -1301,7 +1301,7 @@ export class FileDAL {
 
   async close() {
     await Promise.all(Underscore.values(this.newDals).map(async (dal:Initiable) => {
-      dal.cleanCache() && dal.cleanCache()
+      dal.cleanCache()
       await dal.close()
     }))
     await this.sqliteDriver.closeConnection();

@@ -2019,7 +2019,7 @@ async function checkPeopleAreNotOudistanced (pubkeys: string[], newLinks: { [k:s
   }, <{ [k:string]: number }>{});
   // Add temporarily the links to the WoT
   let tempLinks = [];
-  let toKeys = Underscore.keys(newLinks)
+  let toKeys = Underscore.keys(newLinks).map(String)
   for (const toKey of toKeys) {
     let toNode = await getNodeIDfromPubkey(nodesCache, toKey, dal);
     for (const fromKey of newLinks[toKey]) {

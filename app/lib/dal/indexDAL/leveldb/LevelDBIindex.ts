@@ -62,7 +62,7 @@ export class LevelDBIindex extends LevelDBTable<IindexEntry[]> implements IIndex
   async insertBatch(records: IindexEntry[]): Promise<void> {
     // Database insertion
     const recordsByPub = reduceGroupBy(records, 'pub')
-    await Promise.all(Underscore.keys(recordsByPub).map(async pub => {
+    await Promise.all(Underscore.keys(recordsByPub).map(String).map(async pub => {
       const existing = (await this.getOrNull(pub)) || []
       await this.put(pub, existing.concat(recordsByPub[pub]))
     }))

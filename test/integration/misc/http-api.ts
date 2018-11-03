@@ -333,7 +333,7 @@ async function expectJSON<T>(promise:Promise<T>, json:any) {
   try {
     const resJson = await promise;
     Underscore.keys(json).forEach(function(key){
-      resJson.should.have.property(key).equal(json[key]);
+      resJson.should.have.property(String(key)).equal(json[key]);
     });
   } catch (err) {
     if (err.response) {

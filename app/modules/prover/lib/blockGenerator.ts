@@ -198,7 +198,7 @@ export class BlockGenerator {
     const members = await this.dal.getMembers();
     const wotMembers = Underscore.pluck(members, 'pubkey');
     // Checking step
-    let newcomers = Underscore.keys(joinData)
+    let newcomers = Underscore.keys(joinData).map(String)
     newcomers = Underscore.shuffle(newcomers)
     const nextBlockNumber = current ? current.number + 1 : 0;
     try {

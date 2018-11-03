@@ -104,9 +104,9 @@ export class GlobalIndexStream extends Duplex {
   }
 
   private async injectLoki<T, K extends keyof T>(dal: T, f: K, obj: T[K]) {
-    this.mapInjection[f] = dal[f]
-    dal[f] = obj
-    await (obj as any).triggerInit()
+    // this.mapInjection[f] = dal[f]
+    // dal[f] = obj
+    // await (obj as any).triggerInit()
   }
 
   readChunk(i: number) {
@@ -422,16 +422,16 @@ export class GlobalIndexStream extends Duplex {
 
       // Disabled for now
       async function inject<T, K extends keyof T, R, S extends T[K]>(fileDal: T, field: K, getRows: () => Promise<R[]>) {
-        const dao = that.mapInjection[field]
-        if (dao) {
-          NewLogger().info(`Mem2File [${field}]...`)
-          const rows = await getRows()
-          await (dao as any).insertBatch(rows) // TODO : "any" complicated to remove
-          fileDal[field] = dao
-        }
-        else {
-          throw Error(DataErrors[DataErrors.SYNC_FAST_MEM_ERROR_DURING_INJECTION])
-        }
+        // const dao = that.mapInjection[field]
+        // if (dao) {
+        //   NewLogger().info(`Mem2File [${field}]...`)
+        //   const rows = await getRows()
+        //   await (dao as any).insertBatch(rows) // TODO : "any" complicated to remove
+        //   fileDal[field] = dao
+        // }
+        // else {
+        //   throw Error(DataErrors[DataErrors.SYNC_FAST_MEM_ERROR_DURING_INJECTION])
+        // }
       }
 
       this.memToCopyDone = true

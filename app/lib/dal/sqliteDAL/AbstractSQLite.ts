@@ -65,7 +65,7 @@ export abstract class AbstractSQLite<T> extends Initiable {
   sqlFind(obj:any, sortObj:any = {}): Promise<T[]> {
     const conditions = this.toConditionsArray(obj).join(' and ');
     const values = this.toParams(obj);
-    const sortKeys: string[] = Underscore.keys(sortObj)
+    const sortKeys: string[] = Underscore.keys(sortObj).map(String)
     const sort = sortKeys.length ? ' ORDER BY ' + sortKeys.map((k) => "`" + k + "` " + (sortObj[k] ? 'DESC' : 'ASC')).join(',') : '';
     return this.query('SELECT * FROM ' + this.table + ' WHERE ' + conditions + sort, values);
   }
@@ -76,12 +76,12 @@ export abstract class AbstractSQLite<T> extends Initiable {
   }
 
   sqlFindLikeAny(obj:any): Promise<T[]> {
-    const keys:string[] = Underscore.keys(obj)
+    const keys:string[] = Underscore.keys(obj).map(String)
     return this.query('SELECT * FROM ' + this.table + ' WHERE ' + keys.map((k) => 'UPPER(`' + k + '`) like ?').join(' or '), keys.map((k) => obj[k].toUpperCase()))
   }
 
   async sqlRemoveWhere(obj:any): Promise<void> {
-    const keys:string[] = Underscore.keys(obj)
+    const keys:string[] = Underscore.keys(obj).map(String)
     await this.query('DELETE FROM ' + this.table + ' WHERE ' + keys.map((k) => '`' + k + '` = ?').join(' and '), keys.map((k) => obj[k]))
   }
 

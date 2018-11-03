@@ -151,7 +151,7 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry> implements SIndexDA
     }
 
     // We update indexes
-    for (const id of Underscore.keys(mapIds)) {
+    for (const id of Underscore.keys(mapIds).map(String)) {
       const map = mapIds[id]
       await this.trimConditions(map.conditions, id)
       await this.trimConsumed(map.writtenOn, id)
@@ -314,7 +314,7 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry> implements SIndexDA
       await this.indexForTrimming.put(LevelDBSindex.trimWrittenOnKey(k), byWrittenOn[k].map(r => LevelDBSindex.trimPartialKey(r.identifier, r.pos)))
     }
     // Index conditions => (identifier + pos)[]
-    for (const k of Underscore.keys(byConditions)) {
+    for (const k of Underscore.keys(byConditions).map(String)) {
       const existing = (await this.indexForConditions.getOrNull(k)) || []
       const newSources = byConditions[k].map(r => LevelDBSindex.trimPartialKey(r.identifier, r.pos))
       await this.indexForConditions.put(k, Underscore.uniq(existing.concat(newSources)))

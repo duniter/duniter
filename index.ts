@@ -199,7 +199,7 @@ export class Stack {
     input: ReadableDuniterService[]
     process: TransformableDuniterService[]
     output: TransformableDuniterService[]
-    neutral: TransformableDuniterService[]
+    neutral: DuniterService[]
   } = {
     input: [],
     process: [],
@@ -442,13 +442,13 @@ export class Stack {
 
         // Start services and streaming between them
         async () => {
-          const modules = this.streams.input.concat(this.streams.process).concat(this.streams.output).concat(this.streams.neutral);
+          const modules: DuniterService[] = this.streams.neutral.concat(this.streams.input).concat(this.streams.process).concat(this.streams.output);
           await Promise.all(modules.map((module:DuniterService) => module.startService()))
         },
 
         // Stop services and streaming between them
         async () => {
-          const modules = this.streams.input.concat(this.streams.process).concat(this.streams.output).concat(this.streams.neutral);
+          const modules: DuniterService[] = this.streams.neutral.concat(this.streams.input).concat(this.streams.process).concat(this.streams.output);
           // Any streaming module must implement a `stopService` method
           await Promise.all(modules.map((module:DuniterService) => module.stopService()))
         },

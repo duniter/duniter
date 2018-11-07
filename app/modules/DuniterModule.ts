@@ -2,7 +2,7 @@ import {Server} from "../../server"
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {ProgramOptions} from "../lib/common-libs/programOptions"
 import {ConfDAL} from "../lib/dal/fileDALs/ConfDAL"
-import {ReadableDuniterService, Stack, TransformableDuniterService} from "../../index"
+import {DuniterService, ReadableDuniterService, Stack, TransformableDuniterService} from "../../index"
 
 export interface DuniterModule {
   name: string
@@ -29,7 +29,7 @@ export interface DuniterDependency {
     input?: (server: Server, conf: ConfDTO, logger:any) => ReadableDuniterService
     process?: (server: Server, conf: ConfDTO, logger:any) => TransformableDuniterService
     output?: (server: Server, conf: ConfDTO, logger:any) => TransformableDuniterService
-    neutral?: (server: Server, conf: ConfDTO, logger:any) => TransformableDuniterService
+    neutral?: (server: Server, conf: ConfDTO, logger:any) => DuniterService
   }
 }
 

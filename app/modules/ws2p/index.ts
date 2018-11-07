@@ -16,9 +16,9 @@ import {ConfDTO, WS2PConfDTO} from "../../lib/dto/ConfDTO"
 import {Server} from "../../../server"
 import * as stream from 'stream';
 import {WS2PCluster} from "./lib/WS2PCluster"
-import {WS2PUpnp} from "./lib/ws2p-upnp"
 import {CommonConstants} from "../../lib/common-libs/constants"
 import {NewLogger} from "../../lib/logger"
+import {UpnpProvider} from "../upnp-provider"
 
 const constants = require("../../lib/constants");
 const logger = NewLogger()
@@ -196,7 +196,7 @@ export class WS2PAPI extends stream.Transform {
 
   // Public http interface
   private cluster:WS2PCluster
-  private upnpAPI:WS2PUpnp|null
+  private upnpAPI:UpnpProvider|null
 
   constructor(
     private server:Server,
@@ -235,7 +235,15 @@ export class WS2PAPI extends stream.Transform {
           this.upnpAPI.stopRegular();
         }
         try {
-          this.upnpAPI = new WS2PUpnp(logger, this.conf)
+          const uuid = (this.conf.ws2p && this.conf.ws2p.uuid) || "no-uuid-yet"
+          const suffix = this.conf.pair.pub.substr(0, 6) + ":" + uuid
+          this.upnpAPI = new UpnpProvider(
+            WS2PConstants.WS2P_PORTS_START,
+            WS2PConstants.WS2P_PORTS_END,
+            ':ws2p:' + suffix,
+            WS2PConstants.WS2P_UPNP_INTERVAL,
+            WS2PConstants.WS2P_UPNP_TTL,
+            logger)
           const { host, port, available } = await this.upnpAPI.startRegular()
           if (available) {
             // Defaults UPnP to true if not defined and available

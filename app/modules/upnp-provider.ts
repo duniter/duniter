@@ -11,9 +11,6 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {WS2PConstants} from "./constants"
-import {ConfDTO} from "../../../lib/dto/ConfDTO"
-
 const upnp = require('nat-upnp');
 
 export interface UPnPBinding {
@@ -22,13 +19,20 @@ export interface UPnPBinding {
   port:number
 }
 
-export class WS2PUpnp {
+export class UpnpProvider {
 
   private currentConfig:UPnPBinding|null
   private interval:NodeJS.Timer|null
   private client = upnp.createClient()
 
-  constructor(private logger:any, private conf:ConfDTO) {}
+  constructor(
+    private portStart: number,
+    private portEnd: number,
+    private identifier: string,
+    private upnpInterval = 300,
+    private ttl = 600,
+    private logger?:any,
+  ) {}
 
   async checkUPnPisAvailable() {
     try {
@@ -52,9 +56,7 @@ export class WS2PUpnp {
   }
 
   getUpnpDescription() {
-    const uuid = (this.conf.ws2p && this.conf.ws2p.uuid) || "no-uuid-yet"
-    const suffix = this.conf.pair.pub.substr(0, 6) + ":" + uuid
-    return 'duniter:ws2p:' + suffix
+    return 'duniter:' + this.identifier
   }
 
   /**
@@ -66,17 +68,17 @@ export class WS2PUpnp {
       if (!this.currentConfig) {
         this.currentConfig = await this.getAvailablePort(this.client)
       }
-      this.logger.trace('WS2P: mapping external port %s to local %s using UPnP...', this.currentConfig.port, [this.currentConfig.host, this.currentConfig.port].join(':'))
+      this.logger && this.logger.trace('WS2P: mapping external port %s to local %s using UPnP...', this.currentConfig.port, [this.currentConfig.host, this.currentConfig.port].join(':'))
       const client = upnp.createClient()
       client.portMapping({
         'public': this.currentConfig.port,
         'private': this.currentConfig.port,
-        'ttl': WS2PConstants.WS2P_UPNP_TTL,
+        'ttl': this.ttl,
         'description': this.getUpnpDescription()
       }, (err:any) => {
         client.close()
         if (err) {
-          this.logger.warn(err)
+          this.logger && this.logger.warn(err)
           return reject(err)
         }
         resolve(this.currentConfig)
@@ -89,7 +91,7 @@ export class WS2PUpnp {
     const available = await this.checkUPnPisAvailable()
     if (available) {
       // Update UPnP IGD every INTERVAL seconds
-      this.interval = setInterval(() => this.openPort(), 1000 * WS2PConstants.WS2P_UPNP_INTERVAL)
+      this.interval = setInterval(() => this.openPort(), 1000 * this.upnpInterval)
       const { host, port } = await this.openPort()
       return { host, port, available }
     }
@@ -121,8 +123,8 @@ export class WS2PUpnp {
   }
 
   private async getAvailablePort(client:any) {
-    const localIP = await WS2PUpnp.getLocalIP(client)
-    const remoteIP = await WS2PUpnp.getRemoteIP(client)
+    const localIP = await UpnpProvider.getLocalIP(client)
+    const remoteIP = await UpnpProvider.getRemoteIP(client)
     const mappings:{
       private: {
         host:string
@@ -131,15 +133,15 @@ export class WS2PUpnp {
         port:number
       }
       description:string
-    }[] = await WS2PUpnp.getUPnPMappings(client)
+    }[] = await UpnpProvider.getUPnPMappings(client)
     const thisDesc = this.getUpnpDescription()
     const externalPortsUsed = mappings.filter((m) => m.description !== thisDesc).map((m) => m.public.port)
-    let availablePort = WS2PConstants.WS2P_PORTS_START
+    let availablePort = this.portStart
     while (externalPortsUsed.indexOf(availablePort) !== -1
-      && availablePort <= WS2PConstants.WS2P_PORTS_END) {
+      && availablePort <= this.portEnd) {
       availablePort++
     }
-    if (availablePort > WS2PConstants.WS2P_PORTS_END) {
+    if (availablePort > this.portEnd) {
       throw "No port available for UPnP"
     }
     return {

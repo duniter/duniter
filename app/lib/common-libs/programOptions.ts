@@ -27,6 +27,7 @@ export interface ProgramOptions {
   loglevel?: string
   sqlTraces?: boolean
   memory?: boolean
+  storeTxs?: boolean
 }
 
 export const cliprogram: ProgramOptions = {

@@ -22,6 +22,12 @@ export interface Keypair {
   sec: string
 }
 
+export interface StorageDTO {
+  storage?: {
+    transactions?:boolean
+  }
+}
+
 export interface PowDTO {
   powNoSecurity:boolean
 }
@@ -103,7 +109,7 @@ export interface WS2PConfDTO {
   }
 }
 
-export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO, BranchingDTO, WS2PConfDTO, PowDTO {
+export class ConfDTO implements StorageDTO, CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO, BranchingDTO, WS2PConfDTO, PowDTO {
 
   constructor(
     public loglevel: string,
@@ -182,7 +188,10 @@ export class ConfDTO implements CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO,
       maxPrivate?:number
       syncLimit?:number
     },
-    public powNoSecurity = false
+    public powNoSecurity = false,
+    public storage = {
+      transactions: false
+    },
 ) {}
 
   static mock() {

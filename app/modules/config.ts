@@ -17,20 +17,42 @@ import {Server} from "../../server"
 import {CommonConstants} from "../lib/common-libs/constants"
 import {Directory} from "../lib/system/directory"
 import {Underscore} from "../lib/common-libs/underscore"
+import {ProgramOptions} from "../lib/common-libs/programOptions"
 
 module.exports = {
   duniter: {
 
+    cliOptions: [
+      { value: '--store-txs', desc: 'Enable full transaction history storage.' },
+    ],
+
     config: {
-      onLoading: async (conf:ConfDTO) => {
+      onLoading: async (conf:ConfDTO, program: ProgramOptions) => {
         conf.msPeriod = conf.msWindow
         conf.switchOnHeadAdvance = CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS
+
+        // Transactions storage
+        if (program.storeTxs) {
+          if (!conf.storage) {
+            conf.storage = { transactions: true }
+          }
+          else {
+            conf.storage.transactions = true
+          }
+        }
       },
       beforeSave: async (conf:ConfDTO) => {
         conf.msPeriod = conf.msWindow
         conf.switchOnHeadAdvance = CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS
+        if (!conf.storage) {
+          conf.storage = {
+            transactions: false
+          }
+        }
       }
     },
+
+
 
     cli: [{
       name: 'config',

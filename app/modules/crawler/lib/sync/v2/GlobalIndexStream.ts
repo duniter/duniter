@@ -9,7 +9,7 @@ import {
   SimpleUdEntryForWallet,
   SindexEntry
 } from "../../../../../lib/indexer"
-import {CurrencyConfDTO} from "../../../../../lib/dto/ConfDTO"
+import {ConfDTO, CurrencyConfDTO} from "../../../../../lib/dto/ConfDTO"
 import {FileDAL} from "../../../../../lib/dal/fileDAL"
 import {DuniterBlockchain} from "../../../../../lib/blockchain/DuniterBlockchain"
 import {BlockDTO} from "../../../../../lib/dto/BlockDTO"
@@ -80,7 +80,7 @@ export class GlobalIndexStream extends Duplex {
 
   private mapInjection: { [k: string]: any } = {}
 
-  constructor(private conf: any,
+  constructor(private conf: ConfDTO,
               private dal:FileDAL,
               private to: number,
               private localNumber:number,
@@ -331,6 +331,10 @@ export class GlobalIndexStream extends Duplex {
       block.fork = false
       return block
     }))
+
+    if (this.conf.storage && this.conf.storage.transactions) {
+      await Promise.all(blocks.map(block => this.dal.saveTxsInFiles(block.transactions, block.number, block.medianTime)))
+    }
 
     // We only keep a bunch of days of blocks in memory, so memory consumption keeps approximately constant during the sync
     await this.dal.blockDAL.trimBlocks(blocks[blocks.length - 1].number - CommonConstants.BLOCKS_IN_MEMORY_MAX)

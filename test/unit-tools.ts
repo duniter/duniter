@@ -12,6 +12,7 @@
 // GNU Affero General Public License for more details.
 
 import * as assert from 'assert'
+const should = require('should')
 
 export async function shouldThrow(promise:Promise<any>) {
   let error = false
@@ -20,8 +21,8 @@ export async function shouldThrow(promise:Promise<any>) {
   } catch (e) {
     error = true
   }
-  promise.should.be.rejected()
-  error.should.equal(true)
+  (promise as any).should.be.rejected()
+  (error as any).should.equal(true)
 }
 
 export async function shouldNotFail<T>(promise:Promise<T>) {

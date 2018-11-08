@@ -614,3 +614,5 @@ export const Duniter = {
   }
 }
 
+export * from './test/unit-tools'
+export * from './test/integration/tools/toolbox'

@@ -84,6 +84,7 @@ export class GlobalIndexStream extends Duplex {
               private dal:FileDAL,
               private to: number,
               private localNumber:number,
+              private cautious: boolean,
               private syncStrategy: AbstractSynchronizer,
               private watcher:Watcher,
     ) {
@@ -172,7 +173,7 @@ export class GlobalIndexStream extends Duplex {
         await DuniterBlockchain.saveParametersForRoot(block, this.conf, this.dal)
       }
 
-      if (block.number <= this.to - this.conf.forksize || cliprogram.noSources) { // If we require nosources option, this blockchain can't be valid so we don't make checks
+      if ((block.number <= this.to - this.conf.forksize || cliprogram.noSources) && !this.cautious) { // If we require nosources option, this blockchain can't be valid so we don't make checks
 
         const HEAD = await Indexer.quickCompleteGlobalScope(block, this.sync_currConf, sync_bindex, data.iindex, data.mindex, data.cindex, this.dal)
         sync_bindex.push(HEAD)

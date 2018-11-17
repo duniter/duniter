@@ -365,14 +365,16 @@ export class GlobalIndexStream extends Duplex {
   }
 
   @MonitorExecutionTime()
-  private async blockFillTxSourcesConditions(local_sindex: any[] | SindexEntry[]) {
+  private async blockFillTxSourcesConditions(local_sindex: SindexEntry[]) {
     // Fills in correctly the SINDEX
     await Promise.all(Underscore.where(local_sindex, {op: 'UPDATE'}).map(async entry => {
       if (!entry.conditions) {
         if (entry.srcType === 'D') {
           entry.conditions = 'SIG(' + entry.identifier + ')'
         } else {
-          const src = (await this.dal.getSource(entry.identifier, entry.pos, false)) as FullSindexEntry
+          // First: have a look locally, but only chained transactions would have `localSrc` matching (giving conditions)
+          const localSrc = local_sindex.filter(s => s.identifier === entry.identifier && s.pos === entry.pos && s.conditions)[0]
+          const src = localSrc || (await this.dal.getSource(entry.identifier, entry.pos, false)) as FullSindexEntry
           entry.conditions = src.conditions
         }
       }

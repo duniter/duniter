@@ -76,7 +76,7 @@ export const CrawlerDependency = {
       { value: '--nocautious',    desc: 'Do not check blocks validity during sync.'},
       { value: '--cautious',      desc: 'Check blocks validity during sync (overrides --nocautious option).'},
       { value: '--nopeers',       desc: 'Do not retrieve peers during sync.'},
-      { value: '--p2psync',       desc: 'Force P2P downloading of blocs during sync.'},
+      { value: '--nop2p',         desc: 'Disables P2P downloading of blocs during sync.'},
       { value: '--nosources',     desc: 'Do not parse sources (UD, TX) during sync (debug purposes).'},
       { value: '--nosbx',         desc: 'Do not retrieve sandboxes during sync.'},
       { value: '--onlypeers',     desc: 'Will only try to sync peers.'},
@@ -86,8 +86,8 @@ export const CrawlerDependency = {
     ],
 
     cli: [{
-      name: 'sync [source] [to] [currency]',
-      desc: 'Synchronize blockchain from a remote Duniter node',
+      name: 'sync [source] [to]',
+      desc: 'Synchronize blockchain from a remote Duniter node. [source] is [host][:port]. [to] defaults to remote current block number.',
       preventIfRunning: true,
       onConfiguredExecute: async (server:Server) => {
         await server.resetData();

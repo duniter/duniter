@@ -141,186 +141,186 @@ export class GlobalIndexStream extends Duplex {
   @MonitorExecutionTime()
   private async transform(dataArray:ProtocolIndexesStream[]): Promise<GindexData[]> {
 
-    await this.beforeBlocks(dataArray.map(d => d.block))
+    // await this.beforeBlocks(dataArray.map(d => d.block))
 
     const gindex: GindexData[] = []
 
-    for (const data of dataArray) {
-
-      const block = data.block
-
-      const gData: GindexData = {
-        lindex: {
-          mindex: data.mindex.slice(),
-          iindex: data.iindex.slice(),
-          sindex: data.sindex.slice(),
-          cindex: data.cindex.slice(),
-        },
-        gindex: {
-          mindex: [],
-          iindex: [],
-          sindex: [],
-          cindex: [],
-        },
-        block,
-        head: null as any,
-      }
-
-      // VERY FIRST: parameters, otherwise we compute wrong variables such as UDTime
-      if (block.number == 0) {
-        this.sync_currConf = BlockDTO.getConf(block)
-        await DuniterBlockchain.saveParametersForRoot(block, this.conf, this.dal)
-      }
-
-      if (block.number <= this.to - this.conf.forksize || cliprogram.noSources) { // If we require nosources option, this blockchain can't be valid so we don't make checks
-
-        const HEAD = await Indexer.quickCompleteGlobalScope(block, this.sync_currConf, sync_bindex, data.iindex, data.mindex, data.cindex, this.dal)
-        sync_bindex.push(HEAD)
-
-        // GINDEX
-        gData.head = HEAD
-
-        // Remember expiration dates
-        for (const entry of data.cindex) {
-          if (entry.expires_on) {
-            sync_expires.push(entry.expires_on)
-          }
-        }
-        for (const entry of data.mindex) {
-          if (entry.expires_on) {
-            sync_expires.push(entry.expires_on)
-          }
-        }
-        for (const entry of data.mindex) {
-          if (entry.revokes_on) {
-            sync_expires.push(entry.revokes_on)
-          }
-        }
-
-        if (data.iindex.length) {
-          await DuniterBlockchain.createNewcomers(data.iindex, this.dal, NewLogger(), this.wotbMem)
-        }
-
-        if ((block.dividend && !cliprogram.noSources)
-          || block.joiners.length
-          || block.actives.length
-          || block.revoked.length
-          || block.excluded.length
-          || block.certifications.length
-          || (block.transactions.length && !cliprogram.noSources)
-          || block.medianTime >= sync_nextExpiring) {
-
-          const nextExpiringChanged = block.medianTime >= sync_nextExpiring
-
-          for (let i = 0; i < sync_expires.length; i++) {
-            let expire = sync_expires[i];
-            if (block.medianTime >= expire) {
-              sync_expires.splice(i, 1);
-              i--;
-            }
-          }
-          sync_nextExpiring = sync_expires.reduce((max, value) => max ? Math.min(max, value) : value, 9007199254740991); // Far far away date
-
-          if (!cliprogram.noSources) {
-
-            if (data.sindex.length) {
-              await this.blockFillTxSourcesConditions(data.sindex)
-            }
-
-            // Dividends and account garbaging
-            let dividends: SimpleUdEntryForWallet[] = []
-            if (HEAD.new_dividend) {
-              dividends = await Indexer.ruleIndexGenDividend(HEAD, data.iindex, this.dal)
-            } else {
-              for (const newcomer of data.iindex) {
-                await this.dal.dividendDAL.createMember(newcomer.pub)
-              }
-            }
-
-            if (block.transactions.length) {
-              data.sindex = data.sindex.concat(await Indexer.ruleIndexGarbageSmallAccounts(HEAD, data.sindex, dividends, sync_memoryDAL));
-            }
-
-            if (data.sindex.length) {
-              gData.gindex.sindex = data.sindex
-              await this.flushSindex(data.sindex)
-            }
-            if (data.sindex.length || dividends.length) {
-              await DuniterBlockchain.updateWallets(data.sindex, dividends, sync_memoryDAL, false, block.number)
-            }
-          }
-
-          if (data.mindex.length || data.iindex.length || data.cindex.length) {
-            await this.flushMicIndexes(data.mindex, data.iindex, data.cindex)
-          }
-
-          if (nextExpiringChanged) {
-            sync_cindex = sync_cindex.concat(await Indexer.ruleIndexGenCertificationExpiry(HEAD, this.dal));
-            sync_mindex = sync_mindex.concat(await Indexer.ruleIndexGenMembershipExpiry(HEAD, this.dal));
-            sync_iindex = sync_iindex.concat(await Indexer.ruleIndexGenExclusionByMembership(HEAD, sync_mindex, this.dal));
-            sync_iindex = sync_iindex.concat(await Indexer.ruleIndexGenExclusionByCertificatons(HEAD, sync_cindex, data.iindex, this.conf, this.dal));
-            sync_mindex = sync_mindex.concat(await Indexer.ruleIndexGenImplicitRevocation(HEAD, this.dal));
-          }
-
-          if (sync_mindex.length || sync_iindex.length || sync_cindex.length) {
-            // Flush the INDEX again (needs to be done *before* the update of wotb links because of block#0)
-            await this.dal.flushIndexes({
-              mindex: sync_mindex,
-              iindex: sync_iindex,
-              sindex: [],
-              cindex: sync_cindex,
-            })
-          }
-
-          if (data.cindex.length) {
-            await this.updateWotbLinks(data.cindex)
-          }
-          gData.gindex.iindex = sync_iindex
-          gData.gindex.mindex = sync_mindex
-          gData.gindex.cindex = sync_cindex
-          sync_iindex = [];
-          sync_mindex = [];
-          sync_cindex = [];
-
-          // TODO GINDEX
-          if (block.joiners.length || block.revoked.length || block.excluded.length) {
-            await this.updateMembers(block)
-          }
-
-        } else {
-          // Concat the results to the pending data
-          sync_iindex = sync_iindex.concat(data.iindex);
-          sync_cindex = sync_cindex.concat(data.cindex);
-          sync_mindex = sync_mindex.concat(data.mindex);
-          gData.gindex.iindex = data.iindex
-          gData.gindex.cindex = data.cindex
-          gData.gindex.mindex = data.mindex
-        }
-
-        // Trim the bindex
-        sync_bindexSize = this.conf.forksize + [
-          block.issuersCount,
-          block.issuersFrame,
-          this.conf.medianTimeBlocks,
-          this.conf.dtDiffEval,
-          dataArray.length
-        ].reduce((max, value) => {
-          return Math.max(max, value);
-        }, 0);
-
-        if (sync_bindexSize && sync_bindex.length >= 2 * sync_bindexSize) {
-          // We trim it, not necessary to store it all (we already store the full blocks)
-          sync_bindex.splice(0, sync_bindexSize);
-          // TODO GINDEX
-          await this.doTrimming()
-        }
-      } else if (block.number <= this.to) {
-        const dto = BlockDTO.fromJSONObject(block)
-        await this.finalizeSync(block, dto)
-      }
-
-      gindex.push(gData)
-    }
+    // for (const data of dataArray) {
+    //
+    //   const block = data.block
+    //
+    //   const gData: GindexData = {
+    //     lindex: {
+    //       mindex: data.mindex.slice(),
+    //       iindex: data.iindex.slice(),
+    //       sindex: data.sindex.slice(),
+    //       cindex: data.cindex.slice(),
+    //     },
+    //     gindex: {
+    //       mindex: [],
+    //       iindex: [],
+    //       sindex: [],
+    //       cindex: [],
+    //     },
+    //     block,
+    //     head: null as any,
+    //   }
+    //
+    //   // VERY FIRST: parameters, otherwise we compute wrong variables such as UDTime
+    //   if (block.number == 0) {
+    //     this.sync_currConf = BlockDTO.getConf(block)
+    //     await DuniterBlockchain.saveParametersForRoot(block, this.conf, this.dal)
+    //   }
+    //
+    //   if (block.number <= this.to - this.conf.forksize || cliprogram.noSources) { // If we require nosources option, this blockchain can't be valid so we don't make checks
+    //
+    //     const HEAD = await Indexer.quickCompleteGlobalScope(block, this.sync_currConf, sync_bindex, data.iindex, data.mindex, data.cindex, this.dal)
+    //     sync_bindex.push(HEAD)
+    //
+    //     // GINDEX
+    //     gData.head = HEAD
+    //
+    //     // Remember expiration dates
+    //     for (const entry of data.cindex) {
+    //       if (entry.expires_on) {
+    //         sync_expires.push(entry.expires_on)
+    //       }
+    //     }
+    //     for (const entry of data.mindex) {
+    //       if (entry.expires_on) {
+    //         sync_expires.push(entry.expires_on)
+    //       }
+    //     }
+    //     for (const entry of data.mindex) {
+    //       if (entry.revokes_on) {
+    //         sync_expires.push(entry.revokes_on)
+    //       }
+    //     }
+    //
+    //     if (data.iindex.length) {
+    //       await DuniterBlockchain.createNewcomers(data.iindex, this.dal, NewLogger(), this.wotbMem)
+    //     }
+    //
+    //     if ((block.dividend && !cliprogram.noSources)
+    //       || block.joiners.length
+    //       || block.actives.length
+    //       || block.revoked.length
+    //       || block.excluded.length
+    //       || block.certifications.length
+    //       || (block.transactions.length && !cliprogram.noSources)
+    //       || block.medianTime >= sync_nextExpiring) {
+    //
+    //       const nextExpiringChanged = block.medianTime >= sync_nextExpiring
+    //
+    //       for (let i = 0; i < sync_expires.length; i++) {
+    //         let expire = sync_expires[i];
+    //         if (block.medianTime >= expire) {
+    //           sync_expires.splice(i, 1);
+    //           i--;
+    //         }
+    //       }
+    //       sync_nextExpiring = sync_expires.reduce((max, value) => max ? Math.min(max, value) : value, 9007199254740991); // Far far away date
+    //
+    //       if (!cliprogram.noSources) {
+    //
+    //         if (data.sindex.length) {
+    //           await this.blockFillTxSourcesConditions(data.sindex)
+    //         }
+    //
+    //         // Dividends and account garbaging
+    //         let dividends: SimpleUdEntryForWallet[] = []
+    //         if (HEAD.new_dividend) {
+    //           dividends = await Indexer.ruleIndexGenDividend(HEAD, data.iindex, this.dal)
+    //         } else {
+    //           for (const newcomer of data.iindex) {
+    //             await this.dal.dividendDAL.createMember(newcomer.pub)
+    //           }
+    //         }
+    //
+    //         if (block.transactions.length) {
+    //           data.sindex = data.sindex.concat(await Indexer.ruleIndexGarbageSmallAccounts(HEAD, data.sindex, dividends, sync_memoryDAL));
+    //         }
+    //
+    //         if (data.sindex.length) {
+    //           gData.gindex.sindex = data.sindex
+    //           await this.flushSindex(data.sindex)
+    //         }
+    //         if (data.sindex.length || dividends.length) {
+    //           await DuniterBlockchain.updateWallets(data.sindex, dividends, sync_memoryDAL, false, block.number)
+    //         }
+    //       }
+    //
+    //       if (data.mindex.length || data.iindex.length || data.cindex.length) {
+    //         await this.flushMicIndexes(data.mindex, data.iindex, data.cindex)
+    //       }
+    //
+    //       if (nextExpiringChanged) {
+    //         sync_cindex = sync_cindex.concat(await Indexer.ruleIndexGenCertificationExpiry(HEAD, this.dal));
+    //         sync_mindex = sync_mindex.concat(await Indexer.ruleIndexGenMembershipExpiry(HEAD, this.dal));
+    //         sync_iindex = sync_iindex.concat(await Indexer.ruleIndexGenExclusionByMembership(HEAD, sync_mindex, this.dal));
+    //         sync_iindex = sync_iindex.concat(await Indexer.ruleIndexGenExclusionByCertificatons(HEAD, sync_cindex, data.iindex, this.conf, this.dal));
+    //         sync_mindex = sync_mindex.concat(await Indexer.ruleIndexGenImplicitRevocation(HEAD, this.dal));
+    //       }
+    //
+    //       if (sync_mindex.length || sync_iindex.length || sync_cindex.length) {
+    //         // Flush the INDEX again (needs to be done *before* the update of wotb links because of block#0)
+    //         await this.dal.flushIndexes({
+    //           mindex: sync_mindex,
+    //           iindex: sync_iindex,
+    //           sindex: [],
+    //           cindex: sync_cindex,
+    //         })
+    //       }
+    //
+    //       if (data.cindex.length) {
+    //         await this.updateWotbLinks(data.cindex)
+    //       }
+    //       gData.gindex.iindex = sync_iindex
+    //       gData.gindex.mindex = sync_mindex
+    //       gData.gindex.cindex = sync_cindex
+    //       sync_iindex = [];
+    //       sync_mindex = [];
+    //       sync_cindex = [];
+    //
+    //       // TODO GINDEX
+    //       if (block.joiners.length || block.revoked.length || block.excluded.length) {
+    //         await this.updateMembers(block)
+    //       }
+    //
+    //     } else {
+    //       // Concat the results to the pending data
+    //       sync_iindex = sync_iindex.concat(data.iindex);
+    //       sync_cindex = sync_cindex.concat(data.cindex);
+    //       sync_mindex = sync_mindex.concat(data.mindex);
+    //       gData.gindex.iindex = data.iindex
+    //       gData.gindex.cindex = data.cindex
+    //       gData.gindex.mindex = data.mindex
+    //     }
+    //
+    //     // Trim the bindex
+    //     sync_bindexSize = this.conf.forksize + [
+    //       block.issuersCount,
+    //       block.issuersFrame,
+    //       this.conf.medianTimeBlocks,
+    //       this.conf.dtDiffEval,
+    //       dataArray.length
+    //     ].reduce((max, value) => {
+    //       return Math.max(max, value);
+    //     }, 0);
+    //
+    //     if (sync_bindexSize && sync_bindex.length >= 2 * sync_bindexSize) {
+    //       // We trim it, not necessary to store it all (we already store the full blocks)
+    //       sync_bindex.splice(0, sync_bindexSize);
+    //       // TODO GINDEX
+    //       await this.doTrimming()
+    //     }
+    //   } else if (block.number <= this.to) {
+    //     const dto = BlockDTO.fromJSONObject(block)
+    //     await this.finalizeSync(block, dto)
+    //   }
+    //
+    //   gindex.push(gData)
+    // }
     return gindex
   }
 

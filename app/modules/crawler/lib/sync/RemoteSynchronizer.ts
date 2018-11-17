@@ -185,7 +185,8 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
     // Peers (just for P2P download)
     //=======
     let peers:(JSONDBPeer|null)[] = [];
-    if (cliprogram.p2psync) {
+    const p2psync = !cliprogram.nop2p
+    if (p2psync) {
       this.watcher.writeStatus('Peers...');
       peers = await this.node.getPeers()
     }

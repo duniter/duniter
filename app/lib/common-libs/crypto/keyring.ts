@@ -72,8 +72,8 @@ export function randomKey() {
   }
   const keypair = nacl.sign.keyPair.fromSeed(byteseed)
   return new Key(
-    Base58encode(keypair.publicKey),
-    Base58encode(keypair.secretKey)
+    Base58encode(new Buffer(keypair.publicKey)),
+    Base58encode(new Buffer(keypair.secretKey))
   )
 }
 

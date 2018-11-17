@@ -15,5 +15,4 @@ export abstract class ASyncDownloader implements ISyncDownloader {
 
   abstract maxSlots: number
   abstract getChunk(i: number): Promise<BlockDTO[]>
-  abstract getTimesToAnswer(): Promise<{ ttas: number[] }[]>
 }

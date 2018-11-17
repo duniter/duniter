@@ -5,5 +5,4 @@ export interface ISyncDownloader {
   getBlock(number: number): Promise<BlockDTO|null>
   maxSlots: number
   chunkSize: number
-  getTimesToAnswer(): Promise<{ ttas: number[] }[]>
 }

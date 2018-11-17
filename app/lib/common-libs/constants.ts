@@ -316,8 +316,7 @@ export const CommonConstants = {
 
   DEFAULT_NON_WOT_PEERS_LIMIT: 100, // Number of non-wot peers accepted in our peer document pool
 
-  REJECT_WAIT_FOR_AVAILABLE_NODES_IN_SYNC_AFTER: 20000, // Reject after 20 seconds without any change
-  REJECT_WAIT_FOR_AVAILABLE_NODES_IN_SYNC_MAX_FAILS: 5, // Maximum number of rejections of waiting for an available node
+  WAIT_P2P_CANDIDATE_HEARTBEAT: 5000, // Wait X seconds for a node to answer about its state
 
   MAX_READING_SLOTS_FOR_FILE_SYNC: 20, // Number of file reading in parallel
 }

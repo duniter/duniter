@@ -43,8 +43,4 @@ export class FsSyncDownloader extends ASyncDownloader implements ISyncDownloader
   get maxSlots(): number {
     return CommonConstants.MAX_READING_SLOTS_FOR_FILE_SYNC
   }
-
-  async getTimesToAnswer(): Promise<{ ttas: number[] }[]> {
-    return [{ ttas: this.ttas }]
-  }
 }

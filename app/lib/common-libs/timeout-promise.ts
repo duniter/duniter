@@ -16,3 +16,9 @@ export function newRejectTimeoutPromise(timeout: number) {
     setTimeout(rej, timeout)
   })
 }
+
+export function newResolveTimeoutPromise<T>(timeout: number, value: T): Promise<T> {
+  return new Promise(res => {
+    setTimeout(() => res(value), timeout)
+  })
+}

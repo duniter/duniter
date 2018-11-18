@@ -13,8 +13,8 @@
 
 import {WS2PConstants} from "../../../app/modules/ws2p/lib/constants"
 import {assertEqual, assertNotNull, createCurrencyWith2Blocks, writeBasicTestWith2Users} from "../tools/test-framework"
-import {NewTestingServer, TestWS2PAPI} from "../tools/toolbox";
-import {CrawlerDependency} from "../../../app/modules/crawler/index";
+import {NewTestingServer, TestWS2PAPI} from "../tools/toolbox"
+import {CrawlerDependency} from "../../../app/modules/crawler/index"
 
 describe('WS2P sync', () => writeBasicTestWith2Users((test) => {
 
@@ -54,7 +54,7 @@ describe('WS2P sync', () => writeBasicTestWith2Users((test) => {
     const s2 = NewTestingServer({ pair: cat.keypair })
     await s2.initWithDAL()
     // We sync on s1
-    await CrawlerDependency.duniter.methods.synchronize(s2._server, ws2p.host, ws2p.port, 2, 2).syncPromise
+    await CrawlerDependency.duniter.methods.synchronize(s2._server, ws2p.host, ws2p.port, 2, 2, true).syncPromise
     assertNotNull(await s2.dal.getCurrentBlockOrNull())
   })
 }))

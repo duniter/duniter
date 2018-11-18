@@ -19,7 +19,8 @@ export class P2pCandidate {
   constructor(
     private p: PeerDTO,
     private keypair: Keypair,
-    private logger: any
+    private logger: any,
+    private allowLocalSync: boolean,
   ) {
     this.apiPromise = this.initAPI()
     this.dlPromise = querablep(Promise.resolve(null))
@@ -114,7 +115,7 @@ export class P2pCandidate {
       try {
         const apis = this.getRemoteAPIs()
         const syncApi = await RemoteSynchronizer.getSyncAPI(apis, this.keypair)
-        if ((syncApi && syncApi.api.hostName || '').match(/^(localhost|192|127)/)) {
+        if (!this.allowLocalSync && ((syncApi && syncApi.api.hostName || '').match(/^(localhost|192|127)/))) {
           return null
         }
         this.api = syncApi.api

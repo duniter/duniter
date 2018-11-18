@@ -28,17 +28,16 @@ import {FsSyncDownloader} from "./FsSyncDownloader"
 import {AbstractSynchronizer} from "./AbstractSynchronizer"
 import {pullSandboxToLocalServer} from "../sandbox"
 import * as path from 'path'
-import {IRemoteContacter} from "./IRemoteContacter";
-import {BMARemoteContacter} from "./BMARemoteContacter";
-import {WS2PConnection, WS2PPubkeyRemoteAuth, WS2PPubkeySyncLocalAuth} from "../../../ws2p/lib/WS2PConnection";
-import {WS2PRequester} from "../../../ws2p/lib/WS2PRequester";
-import {WS2PMessageHandler} from "../../../ws2p/lib/impl/WS2PMessageHandler";
-import {WS2PResponse} from "../../../ws2p/lib/impl/WS2PResponse";
-import {DataErrors} from "../../../../lib/common-libs/errors";
-import {KeyGen} from "../../../../lib/common-libs/crypto/keyring";
-import {WS2PRemoteContacter} from "./WS2PRemoteContacter";
-import {Keypair} from "../../../../lib/dto/ConfDTO";
-import {cat} from "shelljs";
+import {IRemoteContacter} from "./IRemoteContacter"
+import {BMARemoteContacter} from "./BMARemoteContacter"
+import {WS2PConnection, WS2PPubkeyRemoteAuth, WS2PPubkeySyncLocalAuth} from "../../../ws2p/lib/WS2PConnection"
+import {WS2PRequester} from "../../../ws2p/lib/WS2PRequester"
+import {WS2PMessageHandler} from "../../../ws2p/lib/impl/WS2PMessageHandler"
+import {WS2PResponse} from "../../../ws2p/lib/impl/WS2PResponse"
+import {DataErrors} from "../../../../lib/common-libs/errors"
+import {KeyGen} from "../../../../lib/common-libs/crypto/keyring"
+import {WS2PRemoteContacter} from "./WS2PRemoteContacter"
+import {Keypair} from "../../../../lib/dto/ConfDTO"
 
 const logger = NewLogger()
 
@@ -62,6 +61,7 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
     chunkSize: number,
     private noShufflePeers = false,
     private otherDAL?:FileDAL,
+    private allowLocalSync = false,
   ) {
     super(chunkSize)
   }
@@ -227,7 +227,7 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
 
   p2pDownloader(): ISyncDownloader {
     if (!this.theP2pDownloader) {
-      this.theP2pDownloader = new P2PSyncDownloader(this.currency, this.server.conf.pair, this.localNumber, this.to, this.shuffledPeers, this.watcher, logger, this.chunkSize)
+      this.theP2pDownloader = new P2PSyncDownloader(this.currency, this.server.conf.pair, this.localNumber, this.to, this.shuffledPeers, this.watcher, logger, this.chunkSize, this.allowLocalSync)
     }
     return this.theP2pDownloader
   }

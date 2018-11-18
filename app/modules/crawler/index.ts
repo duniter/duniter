@@ -26,7 +26,7 @@ import {FileDAL} from "../../lib/dal/fileDAL"
 import {RemoteSynchronizer} from "./lib/sync/RemoteSynchronizer"
 import {AbstractSynchronizer} from "./lib/sync/AbstractSynchronizer"
 import {LocalPathSynchronizer} from "./lib/sync/LocalPathSynchronizer"
-import {CommonConstants} from "../../lib/common-libs/constants";
+import {CommonConstants} from "../../lib/common-libs/constants"
 
 export const CrawlerDependency = {
   duniter: {
@@ -49,8 +49,8 @@ export const CrawlerDependency = {
         return crawler.sandboxPull(server)
       },
 
-      synchronize: (server:Server, onHost:string, onPort:number, upTo:number, chunkLength:number) => {
-        const strategy = new RemoteSynchronizer(onHost, onPort, server, chunkLength)
+      synchronize: (server:Server, onHost:string, onPort:number, upTo:number, chunkLength:number, allowLocalSync = false) => {
+        const strategy = new RemoteSynchronizer(onHost, onPort, server, chunkLength, undefined, undefined, allowLocalSync)
         const remote = new Synchroniser(server, strategy)
         const syncPromise = remote.sync(upTo, chunkLength)
         return {
@@ -77,6 +77,7 @@ export const CrawlerDependency = {
       { value: '--cautious',      desc: 'Check blocks validity during sync (overrides --nocautious option).'},
       { value: '--nopeers',       desc: 'Do not retrieve peers during sync.'},
       { value: '--nop2p',         desc: 'Disables P2P downloading of blocs during sync.'},
+      { value: '--localsync',     desc: 'Allow to synchronize on nodes with local network IP address for `sync` command' },
       { value: '--nosources',     desc: 'Do not parse sources (UD, TX) during sync (debug purposes).'},
       { value: '--nosbx',         desc: 'Do not retrieve sandboxes during sync.'},
       { value: '--onlypeers',     desc: 'Will only try to sync peers.'},
@@ -127,7 +128,7 @@ export const CrawlerDependency = {
           const sp = source.split(':')
           const onHost = sp[0]
           const onPort = parseInt(sp[1] ? sp[1] : '443') // Defaults to 443
-          strategy = new RemoteSynchronizer(onHost, onPort, server, CommonConstants.SYNC_BLOCKS_CHUNK, noShufflePeers === true, otherDAL)
+          strategy = new RemoteSynchronizer(onHost, onPort, server, CommonConstants.SYNC_BLOCKS_CHUNK, noShufflePeers === true, otherDAL, program.localsync !== undefined)
         } else {
           strategy = new LocalPathSynchronizer(source, server, CommonConstants.SYNC_BLOCKS_CHUNK)
         }

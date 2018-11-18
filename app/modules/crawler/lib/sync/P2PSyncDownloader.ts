@@ -7,7 +7,7 @@ import {ISyncDownloader} from "./ISyncDownloader"
 import {cliprogram} from "../../../../lib/common-libs/programOptions"
 import {Keypair} from "../../../../lib/dto/ConfDTO"
 import {IRemoteContacter} from "./IRemoteContacter"
-import {ManualPromise, newManualPromise} from "../../../../lib/common-libs/manual-promise"
+import {ManualPromise} from "../../../../lib/common-libs/manual-promise"
 import {GlobalFifoPromise} from "../../../../service/GlobalFifoPromise"
 import {getNanosecondsTime} from "../../../../ProcessCpuProfiler"
 import {CommonConstants} from "../../../../lib/common-libs/constants"
@@ -40,6 +40,7 @@ export class P2PSyncDownloader extends ASyncDownloader implements ISyncDownloade
     private watcher:Watcher,
     private logger:any,
     public chunkSize: number,
+    public allowLocalSync: boolean,
     ) {
     super(chunkSize)
     this.TOO_LONG_TIME_DOWNLOAD = "No answer after " + this.MAX_DELAY_PER_DOWNLOAD + "ms, will retry download later.";
@@ -48,7 +49,7 @@ export class P2PSyncDownloader extends ASyncDownloader implements ISyncDownloade
     this.processing      = Array.from({ length: this.numberOfChunksToDownload }).map(() => false);
     this.handler         = Array.from({ length: this.numberOfChunksToDownload }).map(() => null);
 
-    this.p2pCandidates = peers.map(p => new P2pCandidate(PeerDTO.fromJSONObject(p), this.keypair, this.logger))
+    this.p2pCandidates = peers.map(p => new P2pCandidate(PeerDTO.fromJSONObject(p), this.keypair, this.logger, allowLocalSync))
   }
 
   get maxSlots(): number {

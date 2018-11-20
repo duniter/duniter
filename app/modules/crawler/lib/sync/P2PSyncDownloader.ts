@@ -18,7 +18,7 @@ import {P2pCandidate} from "./p2p/p2p-candidate"
 export class P2PSyncDownloader extends ASyncDownloader implements ISyncDownloader {
 
   private PARALLEL_PER_CHUNK = 1;
-  private MAX_DELAY_PER_DOWNLOAD = cliprogram.slow ? 2 * 60000 : 5000;
+  private MAX_DELAY_PER_DOWNLOAD = cliprogram.slow ? 2 * 60000 : 15000;
   private TOO_LONG_TIME_DOWNLOAD:string
   private nbBlocksToDownload:number
   private numberOfChunksToDownload:number

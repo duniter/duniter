@@ -17,6 +17,7 @@ import {BmaDependency} from "../../../app/modules/bma/index"
 import {WoTBInstance} from "../../../app/lib/wot"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {shutDownEngine} from "../tools/shutdown-engine"
+import {CommonConstants} from "../../../app/lib/common-libs/constants"
 
 const should    = require('should');
 
@@ -57,6 +58,9 @@ describe("WOTB module", () => {
     let wotb:WoTBInstance
 
     before(async () => {
+
+      CommonConstants.BLOCK_NEW_GENERATED_VERSION = 11
+
       s1 = NewTestingServer(
         Underscore.extend({
           name: 'bb11',
@@ -446,5 +450,9 @@ describe("WOTB module", () => {
       wotb.existsLink(1, 2).should.equal(false);
       wotb.existsLink(2, 1).should.equal(false);
     });
+
+    after(() => {
+      CommonConstants.BLOCK_NEW_GENERATED_VERSION = 10
+    })
   });
 });

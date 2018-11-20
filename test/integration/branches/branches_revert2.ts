@@ -18,6 +18,7 @@ import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {ProverConstants} from "../../../app/modules/prover/lib/constants"
 import {shutDownEngine} from "../tools/shutdown-engine"
 import {expectAnswer, expectHttpCode, expectJSON} from "../tools/http-expect"
+import {CommonConstants} from "../../../app/lib/common-libs/constants"
 
 const rp        = require('request-promise');
 
@@ -41,6 +42,8 @@ let s1:TestingServer, cat:TestUser, toc:TestUser
 describe("Revert two blocks", function() {
 
   before(async () => {
+
+    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 11
 
     s1 = NewTestingServer(
       Underscore.extend({
@@ -285,5 +288,9 @@ describe("Revert two blocks", function() {
         res.sources.should.have.length(0);
       });
     });
+  })
+
+  after(() => {
+    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 10
   })
 });

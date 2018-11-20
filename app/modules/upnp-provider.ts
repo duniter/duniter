@@ -11,6 +11,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
+import * as os from "os"
+import {Underscore} from "../lib/common-libs/underscore"
+
 const upnp = require('nat-upnp');
 
 export interface UPnPBinding {
@@ -33,7 +36,11 @@ export class UpnpProvider {
     private ttl = 600,
     private logger?:any,
     private host = ''
-  ) {}
+  ) {
+    if (!host) {
+      this.host = this.getBestHostForUPnP()
+    }
+  }
 
   async checkUPnPisAvailable() {
     try {
@@ -166,5 +173,48 @@ export class UpnpProvider {
         }
       })
     })
+  }
+
+  /**
+   * Apparently on computers with both Wi-Fi and Ethernet, UPnP fails to open the port.
+   * Giving the priority to Ethernet seems to fix the problem.
+   * @param family
+   */
+  private getBestHostForUPnP(family = '') {
+    let netInterfaces = os.networkInterfaces()
+    let keys = Underscore.keys(netInterfaces)
+    let res = [];
+    for (const name of keys) {
+      let addresses = netInterfaces[name]
+      for (const addr of addresses) {
+        if (!family || addr.family == family) {
+          res.push({
+            name: name,
+            value: addr.address
+          })
+        }
+      }
+    }
+    const interfacePriorityRegCatcher = [
+      /^tun\d+/,
+      /^enp\d+s\d+/,
+      /^enp\d+s\d+f\d+/,
+      /^eth\d+/,
+      /^Ethernet/,
+      /^wlp\d+s\d+/,
+      /^wlan\d+/,
+      /^Wi-Fi/,
+      /^lo/,
+      /^Loopback/,
+      /^None/
+    ]
+    const best = Underscore.sortBy(res, function(entry:any) {
+      for (let i = 0; i < interfacePriorityRegCatcher.length; i++) {
+        // `i` is the priority (0 is the better, 1 is the second, ...)
+        if (entry.name.match(interfacePriorityRegCatcher[i])) return i
+      }
+      return interfacePriorityRegCatcher.length
+    })[0]
+    return (best && best.value) || ""
   }
 }

@@ -103,7 +103,8 @@ describe("v1.0 Local Index", function(){
       // We don't care about these in this test
       msPeriod: 0,
       sigPeriod: 0,
-      sigStock: 0
+      sigStock: 0,
+      sigReplay: 0,
     });
   });
 

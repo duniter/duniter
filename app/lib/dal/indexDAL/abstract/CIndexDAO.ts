@@ -15,7 +15,7 @@ export interface CIndexDAO extends ReduceableDAO<CindexEntry> {
 
   findByReceiverAndExpiredOn(pub: string, expired_on: number): Promise<CindexEntry[]>
 
-  existsNonReplayableLink(issuer:string, receiver:string): Promise<boolean>
+  existsNonReplayableLink(issuer:string, receiver:string, medianTime: number, version: number): Promise<boolean>
 
   getReceiversAbove(minsig: number): Promise<string[]>
 

@@ -396,6 +396,11 @@ export class FileDAL {
     return this.blockDAL.getCountOfBlocksIssuedBy(issuer)
   }
 
+  /**
+   * Find all the blocks in the blockchain whose number is between [start ; end]
+   * @param start Lower number bound (included).
+   * @param end Higher number bound (included).
+   */
   async getBlocksBetween (start:number, end:number) {
     start = Math.max(0, start)
     end= Math.max(0, end)
@@ -878,8 +883,8 @@ export class FileDAL {
       .value();
   }
 
-  existsNonReplayableLink(from:string, to:string) {
-    return  this.cindexDAL.existsNonReplayableLink(from, to)
+  existsNonReplayableLink(from:string, to:string, medianTime: number, version: number) {
+    return  this.cindexDAL.existsNonReplayableLink(from, to, medianTime, version)
   }
 
   async getSource(identifier:string, pos:number, isDividend: boolean): Promise<SimpleTxInput | null> {
@@ -919,10 +924,13 @@ export class FileDAL {
     return (ms && ms.leaving) || false;
   }
 
-  async existsCert(cert:any) {
+  async existsCert(cert: DBCert, current: DBBlock|null) {
     const existing = await this.certDAL.existsGivenCert(cert);
     if (existing) return existing;
-    const existsLink = await this.cindexDAL.existsNonReplayableLink(cert.from, cert.to);
+    if (!current) {
+      return false
+    }
+    const existsLink = await this.cindexDAL.existsNonReplayableLink(cert.from, cert.to, current.medianTime, current.version)
     return !!existsLink;
   }
 

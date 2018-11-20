@@ -88,7 +88,7 @@ export class LevelDBCindex extends LevelDBTable<LevelDBCindexEntry> implements C
     issuers = Underscore.uniq(issuers)
     await Promise.all(issuers.map(async issuer => {
       const entry = await this.get(issuer)
-      const fullEntries = reduceBy(entry.issued, ['issuer', 'receiver', 'created_on'])
+      const fullEntries = reduceBy(entry.issued, ['issuer', 'receiver'])
       const toRemove: string[] = []
       // We remember the maximum value of expired_on, for efficient trimming  search
       fullEntries
@@ -190,10 +190,10 @@ export class LevelDBCindex extends LevelDBTable<LevelDBCindexEntry> implements C
     }
   }
 
-  async existsNonReplayableLink(issuer: string, receiver: string): Promise<boolean> {
+  async existsNonReplayableLink(issuer: string, receiver: string, medianTime: number, version: number): Promise<boolean> {
     const entries = await this.findByIssuer(issuer)
-    const reduced = Indexer.DUP_HELPERS.reduceBy(entries, ['issuer', 'receiver', 'created_on'])
-    return reduced.filter(e => e.receiver === receiver && !e.expired_on).length > 0
+    const reduced = Indexer.DUP_HELPERS.reduceBy(entries, ['issuer', 'receiver'])
+    return reduced.filter(e => e.receiver === receiver && (version <= 10 || e.replayable_on >= medianTime)).length > 0
   }
 
   async findByIssuer(issuer: string): Promise<CindexEntry[]> {
@@ -219,7 +219,7 @@ export class LevelDBCindex extends LevelDBTable<LevelDBCindexEntry> implements C
   async findExpiresOnLteNotExpiredYet(medianTime: number): Promise<CindexEntry[]> {
     const issuers: string[] = Underscore.uniq((await this.indexForExpiresOn.findAllValues({ lte: LevelDBCindex.trimExpiredOnKey(medianTime) })).reduce(reduceConcat, []))
     return (await Promise.all(issuers.map(async issuer => {
-      const fullEntries = Indexer.DUP_HELPERS.reduceBy((await this.get(issuer)).issued, ['issuer', 'receiver', 'created_on'])
+      const fullEntries = Indexer.DUP_HELPERS.reduceBy((await this.get(issuer)).issued, ['issuer', 'receiver'])
       return fullEntries.filter(e => e.expires_on <= medianTime && !e.expired_on)
     }))).reduce(reduceConcat, [])
   }
@@ -229,21 +229,21 @@ export class LevelDBCindex extends LevelDBTable<LevelDBCindexEntry> implements C
   }
 
   async getValidLinksFrom(issuer: string): Promise<CindexEntry[]> {
-    const fullEntries = Indexer.DUP_HELPERS.reduceBy(((await this.getOrNull(issuer)) || { issued: [] }).issued, ['issuer', 'receiver', 'created_on'])
+    const fullEntries = Indexer.DUP_HELPERS.reduceBy(((await this.getOrNull(issuer)) || { issued: [] }).issued, ['issuer', 'receiver'])
     return fullEntries.filter(e => !e.expired_on)
   }
 
   async getValidLinksTo(receiver: string): Promise<CindexEntry[]> {
     const issuers: string[] = ((await this.getOrNull(receiver)) || { issued: [], received: [] }).received
     return (await Promise.all(issuers.map(async issuer => {
-      const fullEntries = Indexer.DUP_HELPERS.reduceBy((await this.get(issuer)).issued, ['issuer', 'receiver', 'created_on'])
+      const fullEntries = Indexer.DUP_HELPERS.reduceBy((await this.get(issuer)).issued, ['issuer', 'receiver'])
       return fullEntries.filter(e => e.receiver === receiver && !e.expired_on)
     }))).reduce(reduceConcat, [])
   }
 
   async reducablesFrom(from: string): Promise<FullCindexEntry[]> {
     const entries = ((await this.getOrNull(from)) || { issued: [], received: [] }).issued
-    return Indexer.DUP_HELPERS.reduceBy(entries, ['issuer', 'receiver', 'created_on'])
+    return Indexer.DUP_HELPERS.reduceBy(entries, ['issuer', 'receiver'])
   }
 
   trimExpiredCerts(belowNumber: number): Promise<void> {

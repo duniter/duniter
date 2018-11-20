@@ -29,6 +29,7 @@ module.exports = {
     config: {
       onLoading: async (conf:ConfDTO, program: ProgramOptions) => {
         conf.msPeriod = conf.msWindow
+        conf.sigReplay = conf.msPeriod
         conf.switchOnHeadAdvance = CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS
 
         // Transactions storage
@@ -43,6 +44,7 @@ module.exports = {
       },
       beforeSave: async (conf:ConfDTO) => {
         conf.msPeriod = conf.msWindow
+        conf.sigReplay = conf.msPeriod
         conf.switchOnHeadAdvance = CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS
         if (!conf.storage) {
           conf.storage = {

@@ -104,6 +104,7 @@ export class BlockGenerator {
       vHEAD_1.medianTime = simulationValues.medianTime
     }
     const current = await this.dal.getCurrentBlockOrNull();
+    const blockVersion = (manualValues && manualValues.version) || (await LOCAL_RULES_HELPERS.getMaxPossibleVersionNumber(current, this.dal))
     const revocations = await this.dal.getRevocatingMembers();
     const exclusions = await this.dal.getToBeKickedPubkeys();
     const wereExcludeds = await this.dal.getRevokedPubkeys();
@@ -126,7 +127,7 @@ export class BlockGenerator {
       });
     });
     // Create the block
-    return this.createBlock(current, newcomers, leavers, newCertsFromWoT, revocations, exclusions, wereExcludeds, transactions, manualValues);
+    return this.createBlock(blockVersion, current, newcomers, leavers, newCertsFromWoT, revocations, exclusions, wereExcludeds, transactions, manualValues);
   }
 
   private async findTransactions(current:DBBlock|null, options:{ dontCareAboutChaining?:boolean }) {
@@ -450,6 +451,7 @@ export class BlockGenerator {
   }
 
   private async createBlock(
+    blockVersion: number,
     current:DBBlock|null,
     joinData:{ [pub:string]: PreJoin },
     leaveData:{ [pub:string]: LeaveData },
@@ -501,7 +503,7 @@ export class BlockGenerator {
       block.medianTime = vHEAD.medianTime;
     }
     // Choose the version
-    block.version = (manualValues && manualValues.version) || (await LOCAL_RULES_HELPERS.getMaxPossibleVersionNumber(current));
+    block.version = blockVersion
     block.currency = current ? current.currency : this.conf.currency;
     block.nonce = 0;
     if (!this.conf.dtReeval) {

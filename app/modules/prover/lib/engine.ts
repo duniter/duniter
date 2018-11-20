@@ -13,7 +13,8 @@
 
 import {Master as PowCluster} from "./powCluster"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
-import {FileDAL} from "../../../lib/dal/fileDAL";
+import {FileDAL} from "../../../lib/dal/fileDAL"
+import {ProofAsk} from "./blockProver"
 
 const os         = require('os')
 
@@ -46,7 +47,7 @@ export class PowEngine {
     return this.cluster.initCluster()
   }
 
-  async prove(stuff:any) {
+  async prove(stuff: ProofAsk) {
     await this.cluster.cancelWork()
     return await this.cluster.proveByWorkers(stuff)
   }

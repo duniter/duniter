@@ -93,7 +93,7 @@ export class WorkerFarm {
    * Starts a new computation of PoW
    * @param stuff The necessary data for computing the PoW
    */
-  async askNewProof(stuff:any) {
+  async askNewProof(stuff: ProofAsk) {
     // Starts the PoW
     this.powPromise = querablep(this.theEngine.prove(stuff))
     const res = await this.powPromise
@@ -163,6 +163,7 @@ export class BlockProver {
     const remainder = difficulty % 16;
     const nbZeros = (difficulty - remainder) / 16;
     const highMark = CommonConstants.PROOF_OF_WORK.UPPER_BOUND[remainder];
+    const notifyVersionJumpReady = block.version === 10 && CommonConstants.BLOCK_NEW_GENERATED_VERSION === 11
 
     return (async () => {
 
@@ -189,7 +190,7 @@ export class BlockProver {
           conf: {
             powNoSecurity: this.conf.powNoSecurity,
             cpu: this.conf.cpu,
-            prefix: this.conf.prefix,
+            prefix: this.conf.prefix ? String(this.conf.prefix) : '',
             avgGenTime: this.conf.avgGenTime,
             medianTimeBlocks: this.conf.medianTimeBlocks
           },
@@ -198,7 +199,8 @@ export class BlockProver {
           highMark: highMark,
           forcedTime: forcedTime,
           pair: this.pair
-        }
+        },
+        specialNonce: notifyVersionJumpReady ? 999 * (ProverConstants.NONCE_RANGE / 1000) : 0,
       });
       if (!result) {
         this.logger.info('GIVEN proof-of-work for block#%s with %s leading zeros followed by [0-' + highMark + ']! stop PoW for %s', block.number, nbZeros, this.pair && this.pair.pub.slice(0,6));
@@ -229,5 +231,27 @@ export class BlockProver {
 
   private powEvent(found:boolean, hash:string) {
     this.server && this.server.push({ pow: { found, hash } });
+  }
+}
+
+export interface ProofAsk {
+  initialTestsPerRound?: number
+  maxDuration?: number
+  specialNonce?: number
+  newPoW: {
+    conf: {
+      powNoSecurity?: boolean
+      cpu?: number
+      prefix?: string
+      nbCores?: number
+      avgGenTime: number
+      medianTimeBlocks: number
+    },
+    block: any,
+    zeros: number
+    highMark: string
+    forcedTime?: number
+    pair: Keypair|null
+    turnDuration?: number
   }
 }

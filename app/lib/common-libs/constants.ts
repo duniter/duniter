@@ -20,7 +20,7 @@ const SIGNATURE    = "[A-Za-z0-9+\\/=]{87,88}"
 const USER_ID      = "[A-Za-z0-9_-]{2,100}"
 const INTEGER      = "(0|[1-9]\\d{0,18})"
 const FINGERPRINT  = "[A-F0-9]{64}"
-const BLOCK_VERSION = "(10)"
+const BLOCK_VERSION = "(10|11)"
 const TX_VERSION   = "(10)"
 const DIVIDEND     = "[1-9][0-9]{0,5}"
 const ZERO_OR_POSITIVE_INT = "0|[1-9][0-9]{0,18}"
@@ -106,6 +106,7 @@ export const CommonConstants = {
   },
 
   BLOCK_GENERATED_VERSION: 10,
+  BLOCK_NEW_GENERATED_VERSION: 11,
   LAST_VERSION_FOR_TX: 10,
   TRANSACTION_VERSION: 10,
   DOCUMENTS_VERSION: 10,

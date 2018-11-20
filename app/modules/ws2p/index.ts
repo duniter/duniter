@@ -243,7 +243,8 @@ export class WS2PAPI extends stream.Transform {
             ':ws2p:' + suffix,
             WS2PConstants.WS2P_UPNP_INTERVAL,
             WS2PConstants.WS2P_UPNP_TTL,
-            logger)
+            logger,
+            this.conf.ws2p.host)
           const { host, port, available } = await this.upnpAPI.startRegular()
           if (available) {
             // Defaults UPnP to true if not defined and available

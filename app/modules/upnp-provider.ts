@@ -32,6 +32,7 @@ export class UpnpProvider {
     private upnpInterval = 300,
     private ttl = 600,
     private logger?:any,
+    private host = ''
   ) {}
 
   async checkUPnPisAvailable() {
@@ -72,7 +73,10 @@ export class UpnpProvider {
       const client = upnp.createClient()
       client.portMapping({
         'public': this.currentConfig.port,
-        'private': this.currentConfig.port,
+        'private': {
+          host: this.currentConfig.host,
+          port: this.currentConfig.port,
+        },
         'ttl': this.ttl,
         'description': this.getUpnpDescription()
       }, (err:any) => {
@@ -123,7 +127,7 @@ export class UpnpProvider {
   }
 
   private async getAvailablePort(client:any) {
-    const localIP = await UpnpProvider.getLocalIP(client)
+    const localIP = this.host || await UpnpProvider.getLocalIP(client)
     const remoteIP = await UpnpProvider.getRemoteIP(client)
     const mappings:{
       private: {

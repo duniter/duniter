@@ -36,6 +36,8 @@ let sync_mindex: any[] = []
 let sync_cindex: any[] = []
 let sync_nextExpiring = 0
 let sync_bindexSize = 0
+let txCount = 0
+let logger = NewLogger()
 
 const sync_memoryWallets: any = {}
 const sync_memoryDAL:AccountsGarbagingDAL = {
@@ -328,6 +330,7 @@ export class GlobalIndexStream extends Duplex {
   @MonitorExecutionTime()
   private async beforeBlocks(blocks:BlockDTO[]) {
     await this.dal.blockDAL.insertBatch(blocks.map(b => {
+      txCount += b.transactions.length
       const block = DBBlock.fromBlockDTO(b)
       block.fork = false
       return block
@@ -339,6 +342,8 @@ export class GlobalIndexStream extends Duplex {
 
     // We only keep a bunch of days of blocks in memory, so memory consumption keeps approximately constant during the sync
     await this.dal.blockDAL.trimBlocks(blocks[blocks.length - 1].number - CommonConstants.BLOCKS_IN_MEMORY_MAX)
+
+    logger.debug('Total tx count: %s', txCount)
   }
 
   @MonitorExecutionTime()

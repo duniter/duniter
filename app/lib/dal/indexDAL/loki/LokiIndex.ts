@@ -32,4 +32,8 @@ export abstract class LokiIndex<T> extends LokiCollectionManager<T> implements G
 
   abstract getWrittenOn(blockstamp: string): Promise<T[]>
   abstract removeBlock(blockstamp: string): Promise<void>
+
+  async count() {
+    return this.collection.data.length
+  }
 }

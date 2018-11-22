@@ -20,4 +20,8 @@ export abstract class LokiProtocolIndex<T extends IndexData> extends LokiIndex<T
     const data = await this.getWrittenOn(blockstamp)
     data.map(d => this.collection.remove(d))
   }
+
+  async count() {
+    return this.collection.data.length
+  }
 }

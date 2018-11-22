@@ -38,6 +38,10 @@ module.exports = {
             await dumpCurrent(server)
             break
 
+          case 'volumes':
+            await dumpVolumes(server)
+            break
+
           case 'table':
             await dumpTable(server, name, cond)
             break
@@ -65,6 +69,19 @@ async function dumpCurrent(server: Server) {
   else {
     console.log(BlockDTO.fromJSONObject(current).getRawSigned())
   }
+}
+
+async function dumpVolumes(server: Server) {
+  const nbUdo = await server.dal.dividendDAL.count()
+  const nbTxo = await server.dal.sindexDAL.count()
+  const iindex = await server.dal.iindexDAL.count()
+  const mindex = await server.dal.mindexDAL.count()
+  const cindex = await server.dal.cindexDAL.count()
+
+  console.log('Sindex : %s (%s UD, %s TX)', nbTxo + nbUdo, nbUdo, nbTxo)
+  console.log('Iindex : %s', iindex)
+  console.log('Mindex : %s', mindex)
+  console.log('Cindex : %s', cindex)
 }
 
 async function dumpTable(server: Server, name: string, condition?: string) {

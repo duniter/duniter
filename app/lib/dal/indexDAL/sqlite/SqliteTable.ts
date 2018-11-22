@@ -160,6 +160,10 @@ export class SqliteTable<T> {
     ts.forEach(t => console.log(t))
   }
 
+  async count() {
+    return ((await this.driver.sqlRead(`SELECT COUNT(*) as max FROM ${this.name}`, []))[0] as any).max
+  }
+
   /**
    * Debugging function: allows to make a hot copy of an SQLite database to a new file, even if the source is in-memory.
    * @param {string} path The path where to write the copy.

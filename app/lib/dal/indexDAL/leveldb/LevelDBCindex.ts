@@ -6,6 +6,7 @@ import {Underscore} from "../../../common-libs/underscore"
 import {pint} from "../../../common-libs/pint"
 import {CIndexDAO} from "../abstract/CIndexDAO"
 import {reduceConcat} from "../../../common-libs/reduce"
+import {AbstractIteratorOptions} from "abstract-leveldown"
 
 export interface LevelDBCindexEntry {
   received: string[]
@@ -248,5 +249,13 @@ export class LevelDBCindex extends LevelDBTable<LevelDBCindexEntry> implements C
 
   trimExpiredCerts(belowNumber: number): Promise<void> {
     return this.trimRecords(belowNumber)
+  }
+
+  async count(options?: AbstractIteratorOptions): Promise<number> {
+    let count = 0
+    await this.readAllKeyValue(entry => {
+      count += entry.value.issued.length
+    })
+    return count
   }
 }

@@ -42,4 +42,6 @@ export interface GenericDAO<T> extends Initiable {
    * @returns {Promise<void>}
    */
   removeBlock(blockstamp:string): Promise<void>
+
+  count(): Promise<number>
 }

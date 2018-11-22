@@ -6,6 +6,7 @@ import {DataErrors} from "../../../common-libs/errors"
 import {LevelUp} from 'levelup'
 import {LevelDBTable} from "./LevelDBTable"
 import {Underscore} from "../../../common-libs/underscore"
+import {AbstractIteratorOptions} from "abstract-leveldown"
 
 interface Consumption {
   writtenOn: number
@@ -228,5 +229,13 @@ export class LevelDBDividend extends LevelDBTable<DividendEntry> implements Divi
 
   private static trimKey(writtenOn: number) {
     return String(writtenOn).padStart(10, '0')
+  }
+
+  async count(options?: AbstractIteratorOptions): Promise<number> {
+    let count = 0
+    await this.readAllKeyValue(entry => {
+      count += entry.value.availables.length
+    })
+    return count
   }
 }

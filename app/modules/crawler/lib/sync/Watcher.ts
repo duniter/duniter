@@ -59,6 +59,16 @@ export class EventWatcher extends events.EventEmitter implements Watcher {
   onEvent(e: EventName, cb: (pct: number) => void) {
     this.on(e, cb)
   }
+
+  getStats() {
+    return {
+      download: this.downloadPercent(),
+      saved: this.storagePercent(),
+      applied: this.appliedPercent(),
+      sandbox: this.sbxPercent(),
+      peersSync: this.peersPercent(),
+    }
+  }
 }
 
 export class MultimeterWatcher implements Watcher {
@@ -173,6 +183,8 @@ export class LoggerWatcher implements Watcher {
   private downPct = 0
   private savedPct = 0
   private appliedPct = 0
+  private sbxPct = 0
+  private peersPct = 0
   private lastMsg = ""
 
   constructor(private logger:any) {
@@ -202,11 +214,17 @@ export class LoggerWatcher implements Watcher {
   }
 
   sbxPercent(pct:number) {
-    return 0
+    if (pct > this.sbxPct) {
+      this.sbxPct = pct
+    }
+    return this.sbxPct
   }
 
   peersPercent(pct:number) {
-    return 0
+    if (pct > this.peersPct) {
+      this.peersPct = pct
+    }
+    return this.peersPct
   }
 
   change(prop: 'downPct'|'savedPct'|'appliedPct', pct:number) {

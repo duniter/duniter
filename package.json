@@ -111,9 +111,8 @@
     "unzip2": "0.2.5",
     "winston": "2.3.1",
     "wotb": "^0.6.5",
-    "ws": "1.1.5"
-  },
-  "devDependencies": {
+    "ws": "1.1.5",
+
     "@types/lokijs": "^1.5.2",
     "@types/mocha": "^2.2.41",
     "@types/node": "^8.0.9",
@@ -124,7 +123,6 @@
     "mocha": "^3.4.2",
     "mocha-eslint": "0.1.7",
     "nyc": "^11.0.3",
-    "sha1": "",
     "should": "*",
     "source-map-support": "^0.4.15",
     "supertest": "",
@@ -132,6 +130,8 @@
     "ts-node": "^3.3.0",
     "typedoc-plugin-sourcefile-url": "^1.0.3",
     "typescript": "^3.1.6"
+  },
+  "devDependencies": {
   },
   "peerDependencies": {},
   "bin": {

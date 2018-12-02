@@ -83,6 +83,8 @@ test:
     # Code coverage display in GitLab
     - sed -n 23p coverage/index.html | grep -Po "\d+.\d+" | sed -e "s/\(.*\)/<coverage>\1%<\/coverage>/"
   coverage: '/<coverage>(\d+.\d+\%)<\/coverage>/'
+  except:
+    - tags
   artifacts:
     paths:
       - coverage.tar.gz
@@ -94,6 +96,8 @@ sync_g1:
   script:
     - yarn
     - bash .gitlab/test/check_g1_sync.sh
+  except:
+    - tags
 
 sync_gtest:
   <<: *nvm_env
@@ -101,6 +105,8 @@ sync_gtest:
   script:
     - yarn
     - bash .gitlab/test/check_gt_sync.sh
+  except:
+    - tags
 
 .build_releases: &build_releases
   stage: package

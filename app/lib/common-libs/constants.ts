@@ -106,7 +106,7 @@ export const CommonConstants = {
   },
 
   BLOCK_GENERATED_VERSION: 10,
-  BLOCK_NEW_GENERATED_VERSION: 10, // Put it to 11 when ready
+  BLOCK_NEW_GENERATED_VERSION: 11, // Put it to 11 when ready
   LAST_VERSION_FOR_TX: 10,
   TRANSACTION_VERSION: 10,
   DOCUMENTS_VERSION: 10,

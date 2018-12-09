@@ -613,6 +613,3 @@ export const Duniter = {
     return Stacks.autoStack(modules).executeStack(args || process.argv)
   }
 }
-
-export * from './test/unit-tools'
-export * from './test/integration/tools/toolbox'

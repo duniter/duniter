@@ -111,8 +111,9 @@
     "unzip2": "0.2.5",
     "winston": "2.3.1",
     "wotb": "^0.6.5",
-    "ws": "1.1.5",
-
+    "ws": "1.1.5"
+  },
+  "devDependencies": {
     "@types/lokijs": "^1.5.2",
     "@types/mocha": "^2.2.41",
     "@types/node": "^8.0.9",
@@ -130,8 +131,6 @@
     "ts-node": "^3.3.0",
     "typedoc-plugin-sourcefile-url": "^1.0.3",
     "typescript": "^3.1.6"
-  },
-  "devDependencies": {
   },
   "peerDependencies": {},
   "bin": {

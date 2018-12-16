@@ -30,8 +30,10 @@
       * [with/](#blockchainwith)
           * [newcomers](#blockchainwithnewcomers)
           * [certs](#blockchainwithcerts)
+          * [joiners](#blockchainwithjoiners)
           * [actives](#blockchainwithactives)
           * [leavers](#blockchainwithleavers)
+          * [revoked](#blockchainwithrevoked)
           * [excluded](#blockchainwithexcluded)
           * [ud](#blockchainwithud)
           * [tx](#blockchainwithtx)
@@ -80,9 +82,11 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |       |-- joiners
     |       |-- actives
     |       |-- leavers
+            |-- revoked
     |       |-- excluded
     |       |-- ud
-    |       `-- tx
+    |       |-- tx
+             -- branches
     |   |-- hardship
     |   |   `-- [PUBKEY]
     |   |-- block

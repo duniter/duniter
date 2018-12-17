@@ -533,7 +533,7 @@ export const LOCAL_RULES_HELPERS = {
 
         // 2. If we can, we go to the next version
         const blocksInFrame = (await dal.getBlocksBetween(current.number - current.issuersFrame + 1, current.number))
-          .sort((b1, b2) => b1.number - b2.number)
+          .sort((b1, b2) => b2.number - b1.number)
         const uniqIssuersInFrame = Underscore.uniq(blocksInFrame.map(b => b.issuer))
         const lastNonceOfEachIssuer = uniqIssuersInFrame.map(issuer => String(blocksInFrame.filter(b => b.issuer === issuer)[0].nonce))
         const nbNoncesWithNextVersionCode = lastNonceOfEachIssuer.filter(nonce => nonce.substr(-11, 3) === '999').length

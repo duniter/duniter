@@ -6,4 +6,8 @@ Priority: optional
 Architecture: all
 Installed-Size: 200000
 Maintainer: Cedric Moreau <cem.moreau@gmail.com>
-Description: Crypto-currency software to powering Ğ1 libre currency
+Description: Crypto-currency software to powering &#x011E;1 libre currency
+ Duniter allow to start a local node for &#x011E;1 currency.
+ Please visit https://www.duniter.org for more information on &#x011E;1 and libre currencies.
+Depends: libgconf-2-4 (>= 3.2.0)
+Homepage: https://www.duniter.org

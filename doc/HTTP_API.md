@@ -17,6 +17,7 @@
       * [requirements/[PUBKEY]](#wotrequirementspubkey)
       * [certifiers-of/[search]](#wotcertifiers-ofsearch)
       * [certified-by/[search]](#wotcertified-bysearch)
+      * [identity-of/[search]](#wotidentity-ofsearch)
   * [blockchain/](#blockchain)
       * [parameters](#blockchainparameters)
       * [membership](#blockchainmembership)
@@ -71,6 +72,7 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |-- requirements/[pubkey]
     |   |-- certifiers-of/[uid|pubkey]
     |   |-- certified-by/[uid|pubkey]
+    |   |-- identity-of/[uid|pubkey]
     |   |-- members
     |   `-- lookup
     |-- blockchain/
@@ -82,11 +84,11 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |       |-- joiners
     |       |-- actives
     |       |-- leavers
-            |-- revoked
+    |       |-- revoked
     |       |-- excluded
     |       |-- ud
     |       |-- tx
-             -- branches
+    |       |-- branches
     |   |-- hardship
     |   |   `-- [PUBKEY]
     |   |-- block

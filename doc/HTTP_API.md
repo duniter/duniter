@@ -14,6 +14,7 @@
       * [certify](#wotcertify)
       * [revoke](#wotrevoke)
       * [lookup/[search]](#wotlookupsearch)
+      * [members](#wotmembers)
       * [requirements/[PUBKEY]](#wotrequirementspubkey)
       * [certifiers-of/[search]](#wotcertifiers-ofsearch)
       * [certified-by/[search]](#wotcertified-bysearch)
@@ -69,12 +70,12 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |-- add
     |   |-- certify
     |   |-- revoke
+    |   |-- lookup[uid|pubkey]
+    |   |-- members
     |   |-- requirements/[pubkey]
     |   |-- certifiers-of/[uid|pubkey]
     |   |-- certified-by/[uid|pubkey]
-    |   |-- identity-of/[uid|pubkey]
-    |   |-- members
-    |   `-- lookup
+    |   `-- identity-of/[uid|pubkey]
     |-- blockchain/
     |   |-- parameters
     |   |-- membership

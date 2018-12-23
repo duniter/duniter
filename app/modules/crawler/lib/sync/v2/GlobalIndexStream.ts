@@ -336,6 +336,8 @@ export class GlobalIndexStream extends Duplex {
       return block
     }))
 
+    await DuniterBlockchain.pushStatsForBlocks(blocks, this.dal)
+
     if (this.conf.storage && this.conf.storage.transactions) {
       await Promise.all(blocks.map(block => this.dal.saveTxsInFiles(block.transactions, block.number, block.medianTime)))
     }

@@ -2,7 +2,7 @@
 --require source-map-support/register
 --full-trace
 --growl
---timeout 30000
+--timeout 60000
 --recursive
 -R spec
 test/

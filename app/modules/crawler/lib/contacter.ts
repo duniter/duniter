@@ -57,6 +57,14 @@ export class Contacter {
   getCurrent() {
     return this.get('/blockchain/current', dtos.Block)
   }
+
+  getMilestonesPage() {
+    return this.get('/blockchain/milestones', dtos.MilestonesPage)
+  }
+
+  getMilestones(page: number) {
+    return this.get('/blockchain/milestones/' + page, dtos.Milestones)
+  }
   
   getPeer() {
     return this.get('/network/peering', dtos.Peer)

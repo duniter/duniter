@@ -14,6 +14,7 @@
 import {BlockDTO} from "../../../../lib/dto/BlockDTO"
 import {DBBlock} from "../../../../lib/db/DBBlock"
 import {PeerDTO} from "../../../../lib/dto/PeerDTO"
+import {HttpMilestonePage} from "../../../bma/lib/dtos"
 
 export interface WS2PReqMapper {
 
@@ -23,4 +24,6 @@ export interface WS2PReqMapper {
   getRequirementsOfPending(minCert:number): Promise<any>
   getPeer(): Promise<PeerDTO>
   getKnownPeers(): Promise<PeerDTO[]>
+  getMilestones(page: number): Promise<HttpMilestonePage>
+  getMilestonesPage(): Promise<HttpMilestonePage>
 }

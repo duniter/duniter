@@ -105,6 +105,10 @@ export class LocalPathSynchronizer extends AbstractSynchronizer {
     return chunk[position]
   }
 
+  getMilestone(number: number) {
+    return this.getBlock(number)
+  }
+
   async syncPeers(fullSync: boolean, to?: number): Promise<void> {
     // Does nothing on LocalPathSynchronizer
   }

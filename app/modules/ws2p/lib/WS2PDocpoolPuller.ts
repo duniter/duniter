@@ -35,6 +35,8 @@ export class WS2PDocpoolPuller {
       getCurrent: async () => null,
       getBlock: async () => null,
       getBlocks: async () => [],
+      getMilestonesPage: async () => ({ chunkSize: 0, totalPages: 0, milestonesPerPage: 0 }),
+      getMilestones: async () => ({ chunkSize: 0, totalPages: 0, currentPage: 0, milestonesPerPage: 0, blocks: [] }),
       hostName: ''
     }, this.server, this.server.logger)
   }

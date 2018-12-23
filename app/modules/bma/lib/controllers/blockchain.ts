@@ -24,15 +24,16 @@ import {
   HttpHardship,
   HttpMembership,
   HttpMemberships,
+  HttpMilestonePage,
   HttpParameters,
   HttpStat
 } from "../dtos"
 import {TransactionDTO} from "../../../../lib/dto/TransactionDTO"
 import {DataErrors} from "../../../../lib/common-libs/errors"
 import {Underscore} from "../../../../lib/common-libs/underscore"
+import * as toJson from "../tojson"
 
 const http2raw         = require('../http2raw');
-const toJson = require('../tojson');
 
 export class BlockchainBinding extends AbstractController {
 
@@ -166,6 +167,11 @@ export class BlockchainBinding extends AbstractController {
       signature: b.signature,
       raw: b.raw,
     }))
+  }
+
+  async milestones(req: any): Promise<HttpMilestonePage> {
+    const page = ParametersService.getPage(req)
+    return this.server.milestones(page)
   }
 
   async current(): Promise<HttpBlock> {

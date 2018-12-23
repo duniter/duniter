@@ -73,6 +73,17 @@ export class ParametersService {
     return parseInt(req.params.minsig)
   }
 
+  static getPage(req:any): number|undefined {
+    if(!req.params.page){
+      return undefined
+    }
+    const matches = req.params.page.match(/\d+/)
+    if(!matches){
+      throw Error("`page` format is incorrect, must be an integer")
+    }
+    return parseInt(req.params.page)
+  }
+
   static getPubkey = function (req:any, callback:any){
     if(!req.params.pubkey){
       callback('Parameter `pubkey` is required');

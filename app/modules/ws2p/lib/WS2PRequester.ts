@@ -13,7 +13,8 @@
 
 import {WS2PConnection} from "./WS2PConnection"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
-import {PeerDTO} from "../../../lib/dto/PeerDTO";
+import {PeerDTO} from "../../../lib/dto/PeerDTO"
+import {HttpMilestonePage} from "../../bma/lib/dtos"
 
 export enum WS2P_REQ {
   KNOWN_PEERS,
@@ -21,7 +22,9 @@ export enum WS2P_REQ {
   WOT_REQUIREMENTS_OF_PENDING,
   BLOCKS_CHUNK,
   BLOCK_BY_NUMBER,
-  CURRENT
+  CURRENT,
+  MILESTONES_PAGE,
+  MILESTONES
 }
 
 export class WS2PRequester {
@@ -43,6 +46,14 @@ export class WS2PRequester {
 
   getCurrent(): Promise<BlockDTO> {
     return this.query(WS2P_REQ.CURRENT)
+  }
+
+  getMilestonesPage(): Promise<HttpMilestonePage> {
+    return this.query(WS2P_REQ.MILESTONES_PAGE)
+  }
+
+  getMilestones(page: number): Promise<HttpMilestonePage> {
+    return this.query(WS2P_REQ.MILESTONES, { page })
   }
 
   getBlock(number:number): Promise<BlockDTO> {

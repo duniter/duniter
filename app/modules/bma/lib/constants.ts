@@ -52,7 +52,8 @@ export const BMAConstants = {
     NO_CURRENT_BLOCK:                     { httpCode: 404, uerr: { ucode: 2010, message: "No current block" }},
     PEER_NOT_FOUND:                       { httpCode: 404, uerr: { ucode: 2012, message: "Peer not found" }},
     NO_IDTY_MATCHING_PUB_OR_UID:          { httpCode: 404, uerr: { ucode: 2021, message: "No identity matching this pubkey or uid" }},
-    TX_NOT_FOUND:                         { httpCode: 400, uerr: { ucode: 2034, message: 'Transaction not found' }}
+    TX_NOT_FOUND:                         { httpCode: 400, uerr: { ucode: 2034, message: 'Transaction not found' }},
+    INCORRECT_PAGE_NUMBER:                { httpCode: 400, uerr: { ucode: 2035, message: 'Incorrect page number' }}
 
     // New errors: range 3000-4000
   }

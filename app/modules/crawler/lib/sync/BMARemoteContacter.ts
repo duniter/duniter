@@ -37,6 +37,14 @@ export class BMARemoteContacter implements IRemoteContacter {
     return this.contacter.getBlocks(count, from)
   }
 
+  getMilestones(page: number): Promise<{ chunkSize: number; totalPages: number; currentPage: number; milestonesPerPage: number; blocks: BlockDTO[] }> {
+    return this.contacter.getMilestones(page)
+  }
+
+  getMilestonesPage(): Promise<{ chunkSize: number; totalPages: number; milestonesPerPage: number }> {
+    return this.contacter.getMilestonesPage()
+  }
+
   async getPeers(): Promise<(JSONDBPeer|null)[]> {
     return (await this.contacter.getPeersArray()).peers
   }

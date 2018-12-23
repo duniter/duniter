@@ -15,6 +15,7 @@ export class P2pCandidate {
   private nbSuccess = 0
   private isExcluded: boolean
   private failures = 0
+  private reserved = false
 
   constructor(
     private p: PeerDTO,
@@ -35,7 +36,7 @@ export class P2pCandidate {
   }
 
   isReady() {
-    return this.apiPromise.isResolved() && this.dlPromise.isResolved() && this.api && !this.isExcluded
+    return !this.reserved && this.apiPromise.isResolved() && this.dlPromise.isResolved() && this.api && !this.isExcluded
   }
 
   async waitAvailability(maxWait: number): Promise<boolean> {
@@ -64,6 +65,7 @@ export class P2pCandidate {
   async downloadBlocks(count: number, from: number) {
     const start = Date.now()
     let error: Error|undefined
+    this.reserved = false
     this.dlPromise = querablep((async () => {
       // We try to download the blocks
       let blocks: BlockDTO[]|null
@@ -124,6 +126,10 @@ export class P2pCandidate {
         return null
       }
     })())
+  }
+
+  reserve() {
+    this.reserved = true
   }
 }
 

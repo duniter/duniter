@@ -969,3 +969,25 @@ export interface HttpSandboxes {
 export const LogLink = {
   link: String
 };
+
+export interface HttpMilestonePage {
+  totalPages: number
+  chunkSize: number
+  milestonesPerPage: number
+  currentPage?: number
+  blocks?: HttpBlock[]
+}
+
+export const Milestones = {
+  totalPages: Number,
+  chunkSize: Number,
+  milestonesPerPage: Number,
+  currentPage: Number,
+  "blocks": [Block]
+}
+
+export const MilestonesPage = {
+  totalPages: Number,
+  chunkSize: Number,
+  milestonesPerPage: Number,
+}

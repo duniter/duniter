@@ -309,6 +309,7 @@ export const CommonConstants = {
 
   ARCHIVES_BLOCKS_CHUNK: 250,
   SYNC_BLOCKS_CHUNK: 250,
+  MILESTONES_PER_PAGE: 50,
   CHUNK_PREFIX: 'chunk_',
   BLOCKS_IN_MEMORY_MAX: 288 * 60, // 288 = 1 day
 

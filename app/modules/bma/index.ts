@@ -149,19 +149,6 @@ export const BmaDependency = {
         if (program.upnp === true) {
           conf.upnp = true;
         }
-
-        // Configuration errors
-        if (!conf.nobma) {
-          if(!conf.ipv4 && !conf.ipv6){
-            throw new Error("No interface to listen to.");
-          }
-          if(!conf.remoteipv4 && !conf.remoteipv6 && !conf.remotehost){
-            throw new Error('No interface for remote contact.');
-          }
-          if (!conf.remoteport) {
-            throw new Error('No port for remote contact.');
-          }
-        }
       },
 
       beforeSave: async (conf:NetworkConfDTO, program:any) => {
@@ -175,6 +162,18 @@ export const BmaDependency = {
 
     service: {
       input: (server:Server, conf:NetworkConfDTO, logger:any) => {
+        // Configuration errors
+        if (!conf.nobma) {
+          if(!conf.ipv4 && !conf.ipv6){
+            throw new Error("BMA: no interface to listen to.");
+          }
+          if(!conf.remoteipv4 && !conf.remoteipv6 && !conf.remotehost){
+            throw new Error('BMA: no interface for remote contact.');
+          }
+          if (!conf.remoteport) {
+            throw new Error('BMA: no port for remote contact.');
+          }
+        }
         if (!conf.nobma) {
           server.addEndpointsDefinitions(() => Promise.resolve(getEndpoint(conf)))
           server.addWrongEndpointFilter((endpoints:string[]) => getWrongEndpoints(endpoints, server.conf.pair.pub))

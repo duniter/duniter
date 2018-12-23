@@ -17,6 +17,7 @@ import {WS2PReqMapper} from "../interface/WS2PReqMapper"
 import {BlockDTO} from "../../../../lib/dto/BlockDTO"
 import {DBBlock} from "../../../../lib/db/DBBlock"
 import {PeerDTO} from "../../../../lib/dto/PeerDTO"
+import {HttpMilestonePage} from "../../../bma/lib/dtos"
 
 export class WS2PReqMapperByServer implements WS2PReqMapper {
 
@@ -43,6 +44,14 @@ export class WS2PReqMapperByServer implements WS2PReqMapper {
       return []
     }
     return (await this.server.dal.getBlocksBetween(from, from + count - 1)).map((b:DBBlock) => BlockDTO.fromJSONObject(b))
+  }
+
+  getMilestones(page: number): Promise<HttpMilestonePage> {
+    return this.server.milestones(page)
+  }
+
+  getMilestonesPage(): Promise<HttpMilestonePage> {
+    return this.server.milestones()
   }
 
   async getRequirementsOfPending(minsig: number): Promise<any> {

@@ -50,7 +50,7 @@ export class ValidatorStream extends Readable {
           try {
             const bNumber = Math.min(this.to, (i + 1) * this.syncStrategy.chunkSize - 1)
             if (bNumber > maximumCacheNumber) {
-              block = await this.syncStrategy.getBlock(bNumber)
+              block = await this.syncStrategy.getMilestone(bNumber)
             } else {
               block = await this.getBlockFromCache(bNumber)
             }

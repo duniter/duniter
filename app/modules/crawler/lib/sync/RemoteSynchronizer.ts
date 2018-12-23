@@ -53,6 +53,10 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
   private localNumber: number
   private watcher: Watcher
   private endpoint: string = ""
+  private hasMilestonesPages: boolean|undefined
+  private milestones: { [k: number]: BlockDTO } = {}
+  private milestonesPerPage = 1
+  private maxPage = 0
 
   constructor(
     private host: string,
@@ -245,6 +249,46 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
 
   getBlock(number: number): Promise<BlockDTO|null> {
     return this.node.getBlock(number)
+  }
+
+  async getMilestone(number: number): Promise<BlockDTO|null> {
+    if (this.hasMilestonesPages === undefined) {
+      try {
+        const mlPage = await this.node.getMilestonesPage()
+        this.hasMilestonesPages = mlPage.chunkSize === this.chunkSize
+        this.milestonesPerPage = mlPage.milestonesPerPage
+        this.maxPage = mlPage.totalPages
+      } catch (e) {
+        this.hasMilestonesPages = false
+      }
+    }
+    if (!this.hasMilestonesPages) {
+      return this.getBlock(number)
+    }
+    if (this.milestones[number]) {
+      return this.milestones[number]
+    }
+
+    if ((number + 1) % this.chunkSize !== 0) {
+      // Something went wrong: we cannot rely on milestones method
+      this.hasMilestonesPages = false
+      return this.getBlock(number)
+    }
+    const chunkNumber = (number + 1) / this.chunkSize
+    const pageNumber = (chunkNumber - (chunkNumber % this.milestonesPerPage)) / this.milestonesPerPage + 1
+    if (pageNumber > this.maxPage) {
+      // The page is not available: we cannot rely on milestones method at this point
+      this.hasMilestonesPages = false
+      return this.getBlock(number)
+    }
+    const mlPage = await this.node.getMilestones(pageNumber)
+    mlPage.blocks.forEach(b => this.milestones[b.number] = b)
+    if (this.milestones[number]) {
+      return this.milestones[number]
+    }
+    // Even after the download, it seems we don't have our milestone. We will download normally.
+    this.hasMilestonesPages = false
+    return this.getBlock(number)
   }
 
   static async test(host: string, port: number, keypair: Keypair): Promise<BlockDTO> {

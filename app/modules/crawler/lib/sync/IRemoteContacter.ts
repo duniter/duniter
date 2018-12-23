@@ -25,6 +25,10 @@ export interface IRemoteContacter {
 
   getBlock(number: number): Promise<BlockDTO|null>
 
+  getMilestonesPage(): Promise<{ chunkSize: number, totalPages: number, milestonesPerPage: number }>
+
+  getMilestones(page: number): Promise<{ chunkSize: number, totalPages: number, currentPage: number, milestonesPerPage: number, blocks: BlockDTO[] }>
+
   getBlocks(count: number, from: number): Promise<BlockDTO[]>
 
   getRequirementsPending(number: number): Promise<HttpRequirements>

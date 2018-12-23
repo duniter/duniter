@@ -34,6 +34,14 @@ export class WS2PRemoteContacter implements IRemoteContacter {
     return this.requester.getBlock(number)
   }
 
+  getMilestones(page: number): Promise<{ chunkSize: number; totalPages: number; currentPage: number; milestonesPerPage: number; blocks: BlockDTO[] }> {
+    return this.requester.getMilestones(page) as any
+  }
+
+  getMilestonesPage(): Promise<{ chunkSize: number; totalPages: number; milestonesPerPage: number }> {
+    return this.requester.getMilestonesPage()
+  }
+
   getCurrent(): Promise<BlockDTO | null> {
     return this.requester.getCurrent()
   }

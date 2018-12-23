@@ -28,6 +28,7 @@ export abstract class AbstractSynchronizer {
   abstract initWithKnownLocalAndToAndCurrency(to: number, localNumber: number, currency: string): Promise<void>
   abstract getCurrent(): Promise<BlockDTO|null>
   abstract getBlock(number: number): Promise<BlockDTO|null>
+  abstract getMilestone(number: number): Promise<BlockDTO|null>
   abstract p2pDownloader(): ISyncDownloader
   abstract fsDownloader(): ISyncDownloader
   abstract syncPeers(fullSync:boolean, to?:number): Promise<void>

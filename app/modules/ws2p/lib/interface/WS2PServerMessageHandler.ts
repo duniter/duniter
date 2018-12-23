@@ -210,6 +210,18 @@ export class WS2PServerMessageHandler implements WS2PMessageHandler {
           body = await this.mapper.getKnownPeers()
           break;
 
+        case WS2P_REQ[WS2P_REQ.MILESTONES_PAGE]:
+          body = await this.mapper.getMilestonesPage()
+          break;
+
+        case WS2P_REQ[WS2P_REQ.MILESTONES]:
+          if (isNaN(data.params.page)) {
+            throw "Wrong param `page`"
+          }
+          const page:number = data.params.page
+          body = await this.mapper.getMilestones(page)
+          break;
+
         default:
           throw Error(WS2P_REQERROR[WS2P_REQERROR.UNKNOWN_REQUEST])
       }

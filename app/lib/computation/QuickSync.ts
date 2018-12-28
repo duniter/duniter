@@ -169,8 +169,14 @@ export class QuickSynchronizer {
           // Fills in correctly the SINDEX
           await Promise.all(_.where(sync_sindex.concat(local_sindex), { op: 'UPDATE' }).map(async (entry: any) => {
             if (!entry.conditions) {
-              const src = await this.dal.sindexDAL.getSource(entry.identifier, entry.pos);
-              entry.conditions = src.conditions;
+              if (entry.srcType === 'D') {
+                entry.conditions = 'SIG(' + entry.identifier + ')'
+              } else {
+                // First: have a look locally, but only chained transactions would have `localSrc` matching (giving conditions)
+                const localSrc = local_sindex.filter(s => s.identifier === entry.identifier && s.pos === entry.pos && s.conditions)[0]
+                const src = localSrc || (await this.dal.getSource(entry.identifier, entry.pos, false))
+                entry.conditions = src.conditions
+              }
             }
           }))
 

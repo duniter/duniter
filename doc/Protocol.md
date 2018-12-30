@@ -2265,7 +2265,7 @@ If `HEAD.number > 0`:
     
 ####### BR_G44 - ENTRY.isReplay
 
-    reducable = GLOBAL_CINDEX[issuer=ENTRY.issuer,receiver=ENTRY.receiver,expired_on=0]
+    reducable = GLOBAL_CINDEX[issuer=ENTRY.issuer,receiver=ENTRY.receiver]
     
 If `count(reducable) == 0`:
 
@@ -2274,12 +2274,16 @@ If `count(reducable) == 0`:
 Else:
 
     ENTRY.isReplay = reduce(reducable).expired_on == 0
+    
+> Means:
+>  * if no entry exists, this cannot be a replay
+>  * if entries exist, then it is a replay only if the reduction is not expired yet
 
 ####### BR_G44.2 - ENTRY.isReplayable
 
 If `HEAD.number > 0 && HEAD~1.version > 10` :
 
-    reducable = GLOBAL_CINDEX[issuer=ENTRY.issuer,receiver=ENTRY.receiver,expired_on=0]
+    reducable = GLOBAL_CINDEX[issuer=ENTRY.issuer,receiver=ENTRY.receiver]
 
     If `count(reducable) == 0`:
     
@@ -2293,6 +2297,10 @@ Else:
     ENTRY.isReplayable = false
 
 EndIf
+    
+> Means:
+>  * if non-root block in v11: the certification is replayable if no entries exist or if their reduction is passed
+>  * if root or <= v10: replayability concept did not exist
     
 ####### BR_G45 - ENTRY.sigOK
 

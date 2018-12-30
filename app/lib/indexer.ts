@@ -85,6 +85,7 @@ export interface CindexEntry extends IndexEntry {
   created_on: number,
   sig: string,
   chainable_on: number,
+  replayable_on: number,
   expires_on: number,
   expired_on: number,
   from_wid: null, // <-These 2 fields are useless
@@ -97,7 +98,20 @@ export interface CindexEntry extends IndexEntry {
   toNewcomer?: boolean,
   toLeaver?: boolean,
   isReplay?: boolean,
+  isReplayable?: boolean,
   sigOK?: boolean,
+  created_on_ref?: { medianTime: number },
+}
+
+export interface FullCindexEntry {
+  issuer: string
+  receiver: string
+  created_on: number
+  sig: string
+  chainable_on: number
+  expires_on: number
+  expired_on: number
+  replayable_on: number
 }
 
 export interface SindexEntry extends IndexEntry {
@@ -138,7 +152,14 @@ function pushCindex(index: any[], entry: CindexEntry): void {
 
 export class Indexer {
 
-  static localIndex(block:BlockDTO, conf:CurrencyConfDTO): IndexEntry[] {
+  static localIndex(block:BlockDTO, conf:{
+    sigValidity:number,
+    msValidity:number,
+    msPeriod:number,
+    sigPeriod:number,
+    sigReplay:number,
+    sigStock:number
+  }): IndexEntry[] {
 
     /********************
      * GENERAL BEHAVIOR
@@ -352,6 +373,7 @@ export class Indexer {
         unchainables: 0,
         sig: cert.sig,
         chainable_on: block.medianTime  + conf.sigPeriod,
+        replayable_on: block.medianTime  + conf.sigReplay,
         expires_on: conf.sigValidity,
         expired_on: 0,
         from_wid: null,
@@ -847,10 +869,17 @@ export class Indexer {
       ENTRY.toLeaver = reduce(await dal.mindexDAL.reducable(ENTRY.receiver)).leaving
     }))
 
-    // BR_G44
+    // BR_G44 + 44.2
     await Promise.all(cindex.map(async (ENTRY: CindexEntry) => {
       const reducable = await dal.cindexDAL.sqlFind({ issuer: ENTRY.issuer, receiver: ENTRY.receiver })
       ENTRY.isReplay = count(reducable) > 0 && reduce(reducable).expired_on === 0
+      if (HEAD.number > 0 && HEAD_1.version > 10) {
+        ENTRY.isReplayable = count(reducable) === 0 || reduce(reducable).replayable_on < HEAD_1.medianTime
+      }
+      else {
+        // v10 blocks do not allow certification replay
+        ENTRY.isReplayable = false
+      }
     }))
 
     // BR_G45
@@ -1340,7 +1369,7 @@ export class Indexer {
   // BR_G71
   static ruleCertificationReplay(cindex: CindexEntry[]) {
     for (const ENTRY of cindex) {
-      if (ENTRY.isReplay) return false;
+      if (ENTRY.isReplay && !ENTRY.isReplayable) return false
     }
     return true
   }
@@ -1834,7 +1863,7 @@ function blockstamp(aNumber: number, aHash: string) {
   return [aNumber, aHash].join('-');
 }
 
-function reduce(records: any[]) {
+export function reduce(records: any[]) {
   return records.reduce((obj:any, record) => {
     const keys = Object.keys(record);
     for (const k of keys) {

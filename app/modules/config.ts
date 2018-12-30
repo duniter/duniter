@@ -22,10 +22,12 @@ module.exports = {
     config: {
       onLoading: async (conf:ConfDTO) => {
         conf.msPeriod = conf.msWindow
+        conf.sigReplay = conf.msPeriod
         conf.switchOnHeadAdvance = CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS
       },
       beforeSave: async (conf:ConfDTO) => {
         conf.msPeriod = conf.msWindow
+        conf.sigReplay = conf.msPeriod
         conf.switchOnHeadAdvance = CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS
       }
     },

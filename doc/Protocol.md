@@ -1135,6 +1135,7 @@ udTime0     | Time of first UD.
 udReevalTime0 | Time of first reevaluation of the UD.
 sigPeriod   | Minimum delay between 2 certifications of a same issuer, in seconds. Must be positive or zero.
 msPeriod    | Minimum delay between 2 memberships of a same issuer, in seconds. Must be positive or zero.
+sigReplay   | Minimum delay between 2 certifications of a same issuer to a same receiver, in seconds. Equals to `msPeriod`.
 sigStock    | Maximum quantity of active certifications made by member.
 sigWindow   | Maximum delay a certification can wait before being expired for non-writing.
 sigValidity | Maximum age of an active signature (in seconds)
@@ -1389,6 +1390,7 @@ Each certification produces 1 new entry:
         sig = SIGNATURE
         expires_on = MedianTime + sigValidity
         chainable_on = MedianTime + sigPeriod
+        replayable_on = MedianTime + sigReplay
         expired_on = 0
     )
 
@@ -2272,6 +2274,25 @@ If `count(reducable) == 0`:
 Else:
 
     ENTRY.isReplay = reduce(reducable).expired_on == 0
+
+####### BR_G44.2 - ENTRY.isReplayable
+
+If `HEAD.number > 0 && HEAD~1.version > 10` :
+
+    reducable = GLOBAL_CINDEX[issuer=ENTRY.issuer,receiver=ENTRY.receiver,expired_on=0]
+
+    If `count(reducable) == 0`:
+    
+        ENTRY.isReplayable = true
+    
+    Else:
+    
+        ENTRY.isReplayable = reduce(reducable).replayable_on < HEAD~1.medianTime
+Else:
+
+    ENTRY.isReplayable = false
+
+EndIf
     
 ####### BR_G45 - ENTRY.sigOK
 
@@ -2515,7 +2536,7 @@ Rule:
 
 Rule:
 
-    ENTRY.isReplay == false
+    ENTRY.isReplay == false || ENTRY.isReplayable == true
 
 ###### BR_G72 - Certification signature
 

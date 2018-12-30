@@ -29,6 +29,7 @@ import {DBMembership} from "./sqliteDAL/MembershipDAL"
 import {MerkleDTO} from "../dto/MerkleDTO"
 import {CommonConstants} from "../common-libs/constants"
 import {PowDAL} from "./fileDALs/PowDAL";
+import {CIndexDAL} from "./sqliteDAL/index/CIndexDAL"
 
 const fs      = require('fs')
 const path    = require('path')
@@ -68,7 +69,7 @@ export class FileDAL {
   mindexDAL:any
   iindexDAL:any
   sindexDAL:any
-  cindexDAL:any
+  cindexDAL:CIndexDAL
   newDals:any
 
   loadConfHook: (conf:ConfDTO) => Promise<void>
@@ -533,8 +534,8 @@ export class FileDAL {
       .value();
   }
 
-  existsNonReplayableLink(from:string, to:string) {
-    return  this.cindexDAL.existsNonReplayableLink(from, to)
+  existsNonReplayableLink(from:string, to:string, medianTime: number, version: number) {
+    return  this.cindexDAL.existsNonReplayableLink(from, to, medianTime, version)
   }
 
   getSource(identifier:string, pos:number) {
@@ -570,10 +571,13 @@ export class FileDAL {
     return (ms && ms.leaving) || false;
   }
 
-  async existsCert(cert:any) {
+  async existsCert(cert: DBCert, current: DBBlock|null) {
     const existing = await this.certDAL.existsGivenCert(cert);
     if (existing) return existing;
-    const existsLink = await this.cindexDAL.existsNonReplayableLink(cert.from, cert.to);
+    if (!current) {
+      return false
+    }
+    const existsLink = await this.cindexDAL.existsNonReplayableLink(cert.from, cert.to, current.medianTime, current.version)
     return !!existsLink;
   }
 

@@ -98,7 +98,15 @@ describe("v1.0 Local Index", function(){
 
   before(() => {
     block = parsers.parseBlock.syncWrite(raw);
-    index = indexer.localIndex(BlockDTO.fromJSONObject(block), { sigValidity: 100, msValidity: 40 });
+    index = indexer.localIndex(BlockDTO.fromJSONObject(block), {
+      sigValidity: 100,
+      msValidity: 40,
+      // We don't care about these in this test
+      msPeriod: 0,
+      sigPeriod: 0,
+      sigStock: 0,
+      sigReplay: 0,
+    });
   });
 
   it('should have 30 index entries', () => {

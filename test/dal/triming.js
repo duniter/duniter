@@ -108,10 +108,10 @@ describe("Triming", function(){
     (yield dal.cindexDAL.sqlFind({ issuer: 'DNan' })).should.have.length(1);
   }));
 
-  it('should be able to trim the cindex', () => co(function *() {
+  it('should be able to trim the cindex -> no more true', () => co(function *() {
     // Triming
     yield dal.trimIndexes(127);
-    (yield dal.cindexDAL.sqlFind({ issuer: 'HgTT' })).should.have.length(0);
+    (yield dal.cindexDAL.sqlFind({ issuer: 'HgTT' })).should.have.length(2);
     // { op: 'UPDATE', issuer: 'DNan', receiver: 'HgTT', created_on: '125-H', written_on: '126-H', writtenOn: 126, expires_on: 3600, expired_on: null },/**/
     (yield dal.cindexDAL.sqlFind({ issuer: 'DNan' })).should.have.length(1);
   }));

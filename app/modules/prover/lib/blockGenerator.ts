@@ -423,7 +423,7 @@ export class BlockGenerator {
               }
             }
             // Already exists a link not replayable yet?
-            let exists = await this.dal.existsNonReplayableLink(cert.from, cert.to);
+            let exists = await this.dal.existsNonReplayableLink(cert.from, cert.to, current.medianTime, current.version)
             if (exists) {
               throw 'It already exists a similar certification written, which is not replayable yet';
             }
@@ -757,7 +757,7 @@ class NextBlockGenerator implements BlockGeneratorInterface {
             let exists = false;
             if (current) {
               // Already exists a link not replayable yet?
-              exists = await this.dal.existsNonReplayableLink(cert.from, cert.to);
+              exists = await this.dal.existsNonReplayableLink(cert.from, cert.to, current.medianTime, current.version)
             }
             if (!exists) {
               // Already exists a link not chainable yet?

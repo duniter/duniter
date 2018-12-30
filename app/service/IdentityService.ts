@@ -194,7 +194,7 @@ export class IdentityService extends FIFOService {
             written_hash: null,
             block: cert.block_number
           }
-          let existingCert = await this.dal.existsCert(mCert);
+          let existingCert = await this.dal.existsCert(mCert, current)
           if (!existingCert) {
             if (!(await this.dal.certDAL.getSandboxForKey(cert.from).acceptNewSandBoxEntry(mCert, this.conf.pair && this.conf.pair.pub))) {
               throw constants.ERRORS.SANDBOX_FOR_CERT_IS_FULL;

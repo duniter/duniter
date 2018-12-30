@@ -108,7 +108,7 @@ module.exports = {
 
   PEER: CommonConstants.PEER,
 
-  CURRENT_DB_VERSION: 26,
+  CURRENT_DB_VERSION: 28,
 
   NETWORK: {
     MAX_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS: 10,
@@ -146,6 +146,7 @@ module.exports = {
       STEPMAX: 3,
       SIGDELAY: 3600 * 24 * 365 * 5,
       SIGPERIOD: 0, // Instant
+      SIGREPLAY: 0, // Instant
       MSPERIOD: 0, // Instant
       SIGSTOCK: 40,
       SIGWINDOW: 3600 * 24 * 7, // a week

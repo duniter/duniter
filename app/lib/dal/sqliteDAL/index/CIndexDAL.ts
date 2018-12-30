@@ -16,7 +16,6 @@ import {SQLiteDriver} from "../../drivers/SQLiteDriver"
 import {CindexEntry} from "../../../indexer"
 import {CommonConstants} from "../../../common-libs/constants"
 
-const constants = require('./../../../constants');
 const indexer         = require('../../../indexer').Indexer
 
 export class CIndexDAL extends AbstractIndex<CindexEntry> {
@@ -39,6 +38,7 @@ export class CIndexDAL extends AbstractIndex<CindexEntry> {
         'expires_on',
         'expired_on',
         'chainable_on',
+        'replayable_on',
         'from_wid',
         'to_wid'
       ],
@@ -77,17 +77,13 @@ export class CIndexDAL extends AbstractIndex<CindexEntry> {
 
   async reducablesFrom(from:string) {
     const reducables = await this.query('SELECT * FROM ' + this.table + ' WHERE issuer = ? ORDER BY CAST(written_on as integer) ASC', [from]);
-    return indexer.DUP_HELPERS.reduceBy(reducables, ['issuer', 'receiver', 'created_on']);
+    return indexer.DUP_HELPERS.reduceBy(reducables, ['issuer', 'receiver']);
   }
 
   async trimExpiredCerts(belowNumber:number) {
-    const toDelete = await this.query('SELECT * FROM ' + this.table + ' WHERE expired_on > ? AND CAST(written_on as int) < ?', [0, belowNumber])
-    for (const row of toDelete) {
-      await this.exec("DELETE FROM " + this.table + " " +
-        "WHERE issuer like '" + row.issuer + "' " +
-        "AND receiver = '" + row.receiver + "' " +
-        "AND created_on like '" + row.created_on + "'");
-    }
+    // Don't trim.
+    // Duniter 1.6 is not going to be optimized, 1.7 does it already.
+    // So CIndex will just accumulate certificatios.
   }
 
   getWrittenOn(blockstamp:string) {
@@ -100,49 +96,43 @@ export class CIndexDAL extends AbstractIndex<CindexEntry> {
       ' SELECT * FROM c_index c2' +
       ' WHERE c1.issuer = c2.issuer' +
       ' AND c1.receiver = c2.receiver' +
-      ' AND c1.created_on = c2.created_on' +
       ' AND c2.op = ?' +
+      ' AND c1.expired_on IS NOT NULL' +
       ')', [medianTime, CommonConstants.IDX_UPDATE])
   }
 
-  getValidLinksTo(receiver:string) {
-    return this.query('SELECT * FROM ' + this.table + ' c1 ' +
-      'WHERE c1.receiver = ? ' +
-      'AND c1.expired_on = 0 ' +
-      'AND NOT EXISTS (' +
-      ' SELECT * FROM c_index c2' +
-      ' WHERE c1.issuer = c2.issuer' +
-      ' AND c1.receiver = c2.receiver' +
-      ' AND c1.created_on = c2.created_on' +
-      ' AND c2.op = ?' +
-      ')', [receiver, CommonConstants.IDX_UPDATE])
+  async findByIssuer(issuer:string) {
+    return this.query('SELECT * FROM ' + this.table + ' c1 WHERE c1.issuer = ? ORDER BY CAST(written_on as integer) ASC', [issuer])
   }
 
-  getValidLinksFrom(issuer:string) {
-    return this.query('SELECT * FROM ' + this.table + ' c1 ' +
-      'WHERE c1.issuer = ? ' +
-      'AND c1.expired_on = 0 ' +
-      'AND NOT EXISTS (' +
-      ' SELECT * FROM c_index c2' +
-      ' WHERE c1.issuer = c2.issuer' +
-      ' AND c1.receiver = c2.receiver' +
-      ' AND c1.created_on = c2.created_on' +
-      ' AND c2.op = ?' +
-      ')', [issuer, CommonConstants.IDX_UPDATE])
+  async getValidLinksTo(receiver:string) {
+    const reducables = await this.query('SELECT * FROM ' + this.table + ' c1 WHERE c1.receiver = ? ORDER BY CAST(written_on as integer) ASC', [receiver])
+    return indexer.DUP_HELPERS.reduceBy(reducables, ['issuer', 'receiver'])
+      .filter((c:CindexEntry) => !c.expired_on)
   }
 
-  async existsNonReplayableLink(issuer:string, receiver:string) {
-    const results = await this.query('SELECT * FROM ' + this.table + ' c1 ' +
+  async getValidLinksFrom(issuer:string) {
+    const reducables = await this.query('SELECT * FROM ' + this.table + ' c1 WHERE c1.issuer = ? ORDER BY CAST(written_on as integer) ASC', [issuer])
+    return indexer.DUP_HELPERS.reduceBy(reducables, ['issuer', 'receiver'])
+      .filter((c:CindexEntry) => !c.expired_on)
+  }
+
+  async existsNonReplayableLink(issuer:string, receiver:string, medianTime: number, version: number) {
+    const reducables = await this.query('SELECT * FROM ' + this.table + ' c1 ' +
       'WHERE c1.issuer = ? ' +
-      'AND c1.receiver = ? ' +
-      'AND NOT EXISTS (' +
-      ' SELECT * FROM c_index c2' +
-      ' WHERE c1.issuer = c2.issuer' +
-      ' AND c1.receiver = c2.receiver' +
-      ' AND c1.created_on = c2.created_on' +
-      ' AND c2.op = ?' +
-      ')', [issuer, receiver, CommonConstants.IDX_UPDATE]);
-    return results.length > 0;
+      'AND c1.receiver = ?' +
+      'ORDER BY CAST(written_on as integer) ASC', [issuer, receiver])
+    if (reducables.length === 0) {
+      return false
+    }
+    const link = indexer.DUP_HELPERS.reduce(reducables)
+    let replayable: boolean
+    if (version <= 10) {
+      replayable = !!link.expired_on
+    } else {
+      replayable = !!link.expired_on || link.replayable_on < medianTime
+    }
+    return !replayable
   }
 
   removeBlock(blockstamp:string) {

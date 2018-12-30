@@ -27,6 +27,7 @@ import {IdentityDTO} from "../../dto/IdentityDTO"
 import {rawer} from "../../common-libs/index"
 import {CommonConstants} from "../../common-libs/constants"
 import {TxsDAL} from "./TxsDAL"
+import {CIndexDAL} from "./index/CIndexDAL"
 
 const _ = require('underscore')
 const logger = require('../../logger').NewLogger('metaDAL');
@@ -407,6 +408,16 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
           'inputs = \'' + JSON.stringify(dto.inputs) + '\' ' +
           'WHERE hash = \'' + tx.hash + '\'')
       }
+    },
+
+    26: 'BEGIN;' +
+      // Add a `massReeval` column
+      'ALTER TABLE c_index ADD COLUMN replayable_on INTEGER NULL;' +
+      'COMMIT;',
+
+    27: async (conf:ConfDTO) => {
+      const cindexDAL = new CIndexDAL(this.driverCopy)
+      await cindexDAL.query('UPDATE c_index SET replayable_on = (chainable_on - ? + ?) WHERE chainable_on IS NOT NULL', [conf.sigPeriod, conf.sigReplay])
     },
   };
 

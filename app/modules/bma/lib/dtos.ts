@@ -40,9 +40,11 @@ export const Parameters = {
   sigStock: Number,
   sigWindow: Number,
   sigValidity: Number,
+  sigReplay: Number,
   sigQty: Number,
   idtyWindow: Number,
   msWindow: Number,
+  msPeriod: Number,
   xpercent: Number,
   msValidity: Number,
   stepMax: Number,
@@ -64,9 +66,11 @@ export interface HttpParameters {
   sigStock: number
   sigWindow: number
   sigValidity: number
+  sigReplay: number
   sigQty: number
   idtyWindow: number
   msWindow: number
+  msPeriod: number
   xpercent: number
   msValidity: number
   stepMax: number

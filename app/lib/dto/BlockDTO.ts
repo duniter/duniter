@@ -279,7 +279,7 @@ export class BlockDTO implements Cloneable {
       udTime0: parseInt(sp[17]),
       udReevalTime0: parseInt(sp[18]),
       dtReeval: parseInt(sp[19]),
-      // New parameter, defaults to msWindow
+      // New parameters, defaults to msWindow
       msPeriod: parseInt(sp[9]),
       sigReplay: parseInt(sp[9]),
     }

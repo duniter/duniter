@@ -21,6 +21,7 @@ const bma       = require('../../app/modules/bma').BmaDependency.duniter.methods
 const TestUser  = require('./tools/TestUser').TestUser
 const commit    = require('./tools/commit');
 const shutDownEngine  = require('./tools/shutDownEngine');
+const CommonConstants = require('./../../app/lib/common-libs/constants').CommonConstants
 
 const MEMORY_MODE = true;
 const commonConf = {
@@ -50,6 +51,8 @@ describe("WOTB module", function() {
     before(function() {
 
       return co(function *() {
+
+        CommonConstants.BLOCK_NEW_GENERATED_VERSION = 11
 
         s1 = duniter(
           '/bb11',
@@ -475,5 +478,9 @@ describe("WOTB module", function() {
         wotb.existsLink(2, 1).should.equal(false);
       });
     });
+
+    after(() => {
+      CommonConstants.BLOCK_NEW_GENERATED_VERSION = 10
+    })
   });
 });

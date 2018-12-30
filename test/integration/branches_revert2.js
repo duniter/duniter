@@ -22,6 +22,7 @@ const rp        = require('request-promise');
 const httpTest  = require('./tools/http');
 const commit    = require('./tools/commit');
 const shutDownEngine  = require('./tools/shutDownEngine');
+const CommonConstants = require('./../../app/lib/common-libs/constants').CommonConstants
 
 require('../../app/modules/prover/lib/constants').ProverConstants.CORES_MAXIMUM_USE_IN_PARALLEL = 1
 require('../../app/modules/bma').BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
@@ -47,6 +48,8 @@ let s1, cat, toc
 describe("Revert two blocks", function() {
 
   before(function() {
+
+    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 11
 
     s1 = duniter(
       '/bb11',
@@ -254,5 +257,9 @@ describe("Revert two blocks", function() {
         res.sources.should.have.length(0);
       });
     });
+  })
+
+  after(() => {
+    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 10
   })
 });

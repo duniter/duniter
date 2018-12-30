@@ -30,6 +30,8 @@ describe("Fork blocks", function() {
 
   before(() => co(function*() {
 
+    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 11
+
     s1 = toolbox.server({
 
       // The common conf
@@ -231,4 +233,8 @@ describe("Fork blocks", function() {
       assert.equal(res.blocks[2].hash, 'C41F10519A24950C051F3ABBBF71775D9EF836374EF538897DFFF08E7A3F5E50')
     })
   }))
+
+  after(() => {
+    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 11
+  })
 });

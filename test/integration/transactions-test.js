@@ -24,6 +24,7 @@ const node   = require('./tools/node');
 const TestUser = require('./tools/TestUser').TestUser
 const unit   = require('./tools/unit');
 const http   = require('./tools/http');
+const CommonConstants = require('../../app/lib/common-libs/constants').CommonConstants
 
 
 describe("Testing transactions", function() {
@@ -33,6 +34,8 @@ describe("Testing transactions", function() {
   let s1, tic, toc
 
   before(() => co(function*() {
+
+    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 10
 
     s1 = toolbox.server({
       pair: {
@@ -79,6 +82,8 @@ describe("Testing transactions", function() {
   }));
 
   after(() => {
+
+    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 10
     return Promise.all([
       s1.closeCluster()
     ])

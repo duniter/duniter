@@ -14,12 +14,17 @@
 import {assertEqual, writeBasicTestWithConfAnd2Users} from "../tools/test-framework"
 import {assertThrows} from "../../unit-tools"
 import {reduce} from "../../../app/lib/indexer"
+import {CommonConstants} from "../../../app/lib/common-libs/constants"
 
 describe('Certification replay', () => writeBasicTestWithConfAnd2Users({
   sigReplay: 3,
   sigPeriod: 0,
   sigValidity: 10,
 }, (test) => {
+
+  before(() => {
+    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 11
+  })
 
   const now = 1500000000
 
@@ -65,5 +70,9 @@ describe('Certification replay', () => writeBasicTestWithConfAnd2Users({
     assertEqual(reduce(reducableFromCat).chainable_on, now + 4)
     assertEqual(reduce(reducableFromCat).replayable_on, now + 4 + 3) // Replayable date should have changed!
     assertEqual(reduce(reducableFromCat).expires_on, now + 4 + 10) // The expiration date should have changed! (this is the interest of a replay)
+  })
+
+  after(() => {
+    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 10
   })
 }))

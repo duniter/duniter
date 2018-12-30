@@ -44,7 +44,7 @@ export class TransactionService extends FIFOService {
     const hash = tx.getHash()
     return this.pushFIFO<TransactionDTO>(hash, async () => {
       try {
-        this.logger.info('⬇ TX %s:%s from %s', tx.output_amount, tx.output_base, tx.issuers);
+        this.logger.info('⬇ TX %s:%s (hash %s) from %s', tx.output_amount, tx.output_base, tx.issuers, tx.hash.substr(0, 8));
         const existing = await this.dal.getTxByHash(tx.hash);
         const current = await this.dal.getCurrentBlockOrNull();
         if (existing) {
@@ -65,7 +65,7 @@ export class TransactionService extends FIFOService {
           throw constants.ERRORS.SANDBOX_FOR_TRANSACTION_IS_FULL;
         }
         await this.dal.saveTransaction(DBTx.fromTransactionDTO(tx));
-        this.logger.info('✔ TX %s:%s from %s', tx.output_amount, tx.output_base, tx.issuers);
+        this.logger.info('✔ TX %s:%s (hash %s) from %s', tx.output_amount, tx.output_base, tx.issuers, tx.hash.substr(0, 8));
         return tx;
       } catch (e) {
         this.logger.info('✘ TX %s:%s from %s', tx.output_amount, tx.output_base, tx.issuers);

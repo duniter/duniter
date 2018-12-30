@@ -12,6 +12,7 @@
 // GNU Affero General Public License for more details.
 
 import {BlockDTO} from "../dto/BlockDTO"
+import {Underscore} from "../common-libs/underscore"
 export interface SwitchBlock {
 
   number:number
@@ -89,7 +90,7 @@ export class Switcher<T extends SwitchBlock> {
    */
   private async findPotentialSuites(numberStart:number, timeStart:number) {
     const suites:T[][] = []
-    const potentials:T[] = await this.dao.getPotentials(numberStart, timeStart, numberStart + this.forkWindowSize)
+    const potentials:T[] = Underscore.sortBy(await this.dao.getPotentials(numberStart, timeStart, numberStart + this.forkWindowSize), element => `${String(element.number).padStart(10, '0')}-${element.hash}`)
     const knownForkBlocks:{ [k:string]: boolean } = {}
     for (const candidate of potentials) {
       knownForkBlocks[BlockDTO.fromJSONObject(candidate).blockstamp] = true

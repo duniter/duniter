@@ -45,10 +45,18 @@ describe("Membership chainability", function() {
       CommonConstants.BLOCK_NEW_GENERATED_VERSION = nowVersion
     })
 
+    before(() => {
+      CommonConstants.BLOCK_NEW_GENERATED_VERSION = 11
+    })
+
     it('current should be the 2nd', () => s1.expect('/blockchain/current', (res:any) => {
       res.should.have.property('number').equal(2)
       res.should.have.property('actives').length(1)
     }))
+
+    after(() => {
+      CommonConstants.BLOCK_NEW_GENERATED_VERSION = 10
+    })
 
     after(async () => {
       await s1.closeCluster()

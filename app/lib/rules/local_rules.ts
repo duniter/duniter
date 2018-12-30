@@ -22,8 +22,10 @@ import {hashf} from "../common"
 import {CommonConstants} from "../common-libs/constants"
 import {IdentityDTO} from "../dto/IdentityDTO"
 import {MembershipDTO} from "../dto/MembershipDTO"
+import {FileDAL} from "../dal/fileDAL"
 
 const _          = require('underscore');
+
 
 const constants       = CommonConstants
 const maxAcceleration = require('./helpers').maxAcceleration
@@ -524,13 +526,28 @@ export const LOCAL_RULES_HELPERS = {
     }
   },
 
-  getMaxPossibleVersionNumber: async (current:DBBlock) => {
+  getMaxPossibleVersionNumber: async (current:DBBlock|null, dal: FileDAL) => {
     // Looking at current blockchain, find what is the next maximum version we can produce
 
-    // 1. We follow previous block's version
-    let version = current ? current.version : constants.BLOCK_GENERATED_VERSION;
+    return !current
 
-    // 2. If we can, we go to the next version
-    return version;
+      // 1. We use legacy version
+      ? constants.BLOCK_GENERATED_VERSION : (async () => {
+
+        // 2. If we can, we go to the next version
+        const blocksInFrame = (await dal.getBlocksBetween(current.number - current.issuersFrame + 1, current.number))
+          .sort((b1:any, b2:any) => b1.number - b2.number)
+        const uniqIssuersInFrame = _.uniq(blocksInFrame.map((b:any) => b.issuer))
+        const lastNonceOfEachIssuer = uniqIssuersInFrame.map((issuer:any) => String(blocksInFrame.filter((b:any) => b.issuer === issuer)[0].nonce))
+        const nbNoncesWithNextVersionCode = lastNonceOfEachIssuer.filter((nonce:string) => nonce.substr(-11, 3) === '999').length
+
+        // More than 70% of the computing network converted? Let's go to next version.
+        if (Math.floor(nbNoncesWithNextVersionCode / uniqIssuersInFrame.length) > 0.7) {
+          return constants.BLOCK_NEW_GENERATED_VERSION
+        }
+
+        // Otherwise, we stay on same version
+        return current.version
+      })()
   }
 }

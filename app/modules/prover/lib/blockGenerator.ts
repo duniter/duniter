@@ -29,12 +29,38 @@ import {IdentityDTO} from "../../../lib/dto/IdentityDTO"
 import {CertificationDTO} from "../../../lib/dto/CertificationDTO"
 import {MembershipDTO} from "../../../lib/dto/MembershipDTO"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
+import {DBCert} from "../../../lib/dal/sqliteDAL/CertDAL"
 
 const _               = require('underscore');
 const moment          = require('moment');
 const inquirer        = require('inquirer');
 
 const constants     = CommonConstants
+
+export interface PreJoin {
+  identity: {
+    pubkey: string
+    uid: string
+    buid: string
+    sig: string
+    member: boolean
+    wasMember: boolean
+    revoked: boolean
+  }
+  key: null
+  idHash: string
+  certs: DBCert[]
+  ms: any
+}
+
+interface LeaveData {
+  identity: {
+    member: boolean
+  } | null
+  ms: any
+  key: any
+  idHash: string
+}
 
 export class BlockGenerator {
 
@@ -73,6 +99,7 @@ export class BlockGenerator {
       vHEAD_1.medianTime = simulationValues.medianTime
     }
     const current = await this.dal.getCurrentBlockOrNull();
+    const blockVersion = (manualValues && manualValues.version) || (await LOCAL_RULES_HELPERS.getMaxPossibleVersionNumber(current, this.dal))
     const revocations = await this.dal.getRevocatingMembers();
     const exclusions = await this.dal.getToBeKickedPubkeys();
     const wereExcludeds = await this.dal.getRevokedPubkeys();
@@ -102,7 +129,7 @@ export class BlockGenerator {
     });
     // Revocations
     // Create the block
-    return this.createBlock(current, joinData, leaveData, newCertsFromWoT, revocations, exclusions, wereExcludeds, transactions, manualValues);
+    return this.createBlock(blockVersion, current, joinData, leaveData, newCertsFromWoT, revocations, exclusions, wereExcludeds, transactions, manualValues);
   }
 
   private async findNewcomersAndLeavers(current:DBBlock, filteringFunc: (joinData: { [pub:string]: any }) => Promise<{ [pub:string]: any }>) {
@@ -432,7 +459,17 @@ export class BlockGenerator {
     };
   }
 
-  private async createBlock(current:DBBlock, joinData:any, leaveData:any, updates:any, revocations:any, exclusions:any, wereExcluded:any, transactions:any, manualValues:any) {
+  private async createBlock(
+    blockVersion: number,
+    current:DBBlock|null,
+    joinData:{ [pub:string]: PreJoin },
+    leaveData:{ [pub:string]: LeaveData },
+    updates:any,
+    revocations:any,
+    exclusions:any,
+    wereExcluded:any,
+    transactions:any,
+    manualValues:any) {
 
     if (manualValues && manualValues.excluded) {
       exclusions = manualValues.excluded;
@@ -475,7 +512,7 @@ export class BlockGenerator {
       block.medianTime = vHEAD.medianTime;
     }
     // Choose the version
-    block.version = (manualValues && manualValues.version) || (await LOCAL_RULES_HELPERS.getMaxPossibleVersionNumber(current));
+    block.version = blockVersion
     block.currency = current ? current.currency : this.conf.currency;
     block.nonce = 0;
     if (!this.conf.dtReeval) {
@@ -542,7 +579,7 @@ export class BlockGenerator {
     leavers.forEach((leaver:any) => {
       const data = leaveData[leaver];
       // Join only for non-members
-      if (data.identity.member) {
+      if (data.identity && data.identity.member) {
         if (blockLen < maxLenOfBlock) {
           block.leavers.push(MembershipDTO.fromJSONObject(data.ms).inline());
           blockLen++;
@@ -643,7 +680,7 @@ export class BlockGenerator {
       block.dividend = vHEAD.dividend;
       block.unitbase = vHEAD.unitBase;
     } else {
-      block.unitbase = block.number == 0 ? 0 : current.unitbase;
+      block.unitbase = block.number == 0 ? 0 : (current as DBBlock).unitbase;
     }
     // Rotation
     block.issuersCount = vHEAD.issuersCount;

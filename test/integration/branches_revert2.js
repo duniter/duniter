@@ -125,7 +125,7 @@ describe("Revert two blocks", function() {
         res.sources[0].should.have.property('type').equal('D');
         res.sources[0].should.have.property('noffset').equal(2);
         res.sources[0].should.have.property('amount').equal(120);
-        res.sources[1].should.have.property('identifier').equal('46D1D89CA40FBDD95A9412EF6547292CB9741DDE7D2B8A9C1D53648EFA794D44');
+        res.sources[1].should.have.property('identifier').equal('5F91D05DD1B1C9CAFDBCF5538C63DAF770A20790D08C9A88E0625A8D5599825D');
         res.sources[1].should.have.property('type').equal('T');
         res.sources[1].should.have.property('noffset').equal(0);
         res.sources[1].should.have.property('amount').equal(51);
@@ -226,7 +226,7 @@ describe("Revert two blocks", function() {
       return expectAnswer(rp('http://127.0.0.1:7712/tx/sources/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd'), (body) => {
         let res = JSON.parse(body);
         res.sources.should.have.length(1);
-        res.sources[0].should.have.property('identifier').equal('7F951D4B73FB65995A1F343366A8CD3B0C76028120FD590170B251EB109926FB');
+        res.sources[0].should.have.property('identifier').equal('EE74E456FC16888FF24C3A9749B9E3A8D5005A9CCE988B2CFF4619AFEA50F890');
         res.sources[0].should.have.property('type').equal('T');
         res.sources[0].should.have.property('noffset').equal(1);
         res.sources[0].should.have.property('amount').equal(101);
@@ -241,7 +241,7 @@ describe("Revert two blocks", function() {
         res.sources[0].should.have.property('type').equal('D');
         res.sources[0].should.have.property('noffset').equal(2);
         res.sources[0].should.have.property('amount').equal(120);
-        res.sources[1].should.have.property('identifier').equal('7F951D4B73FB65995A1F343366A8CD3B0C76028120FD590170B251EB109926FB');
+        res.sources[1].should.have.property('identifier').equal('EE74E456FC16888FF24C3A9749B9E3A8D5005A9CCE988B2CFF4619AFEA50F890');
         res.sources[1].should.have.property('type').equal('T');
         res.sources[1].should.have.property('noffset').equal(0);
         res.sources[1].should.have.property('amount').equal(19);

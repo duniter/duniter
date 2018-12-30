@@ -15,7 +15,8 @@ import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {ProverConstants} from "./constants"
 import {createPowWorker} from "./proof"
 import {PowWorker} from "./PowWorker"
-import {FileDAL} from "../../../lib/dal/fileDAL";
+import {FileDAL} from "../../../lib/dal/fileDAL"
+import {ProofAsk} from "./blockProver"
 
 const _ = require('underscore')
 const nuuid = require('node-uuid');
@@ -170,7 +171,7 @@ export class Master {
     this.slaves = []
   }
 
-  async proveByWorkers(stuff:any) {
+  async proveByWorkers(stuff: ProofAsk) {
 
     // Eventually spawn the workers
     if (this.slaves.length === 0) {
@@ -193,6 +194,7 @@ export class Master {
 
       // Start the salves' job
       const asks = this.slaves.map(async (s, index) => {
+        const nonceBeginning = stuff.specialNonce || s.nonceBeginning
         const proof = await s.worker.askProof({
           uuid,
           command: 'newPoW',
@@ -201,7 +203,7 @@ export class Master {
             initialTestsPerRound: stuff.initialTestsPerRound,
             maxDuration: stuff.maxDuration,
             block: stuff.newPoW.block,
-            nonceBeginning: s.nonceBeginning,
+            nonceBeginning,
             zeros: stuff.newPoW.zeros,
             highMark: stuff.newPoW.highMark,
             pair: _.clone(stuff.newPoW.pair),

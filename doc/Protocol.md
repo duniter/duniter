@@ -1175,7 +1175,7 @@ Local validation verifies the coherence of a well-formatted block, without any o
 
 Rule:
 
-    HEAD.version == 10
+    HEAD.version == 10 || HEAD.version == 11
 
 ##### InnerHash
 

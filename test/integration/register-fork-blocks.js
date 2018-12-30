@@ -135,11 +135,11 @@ describe("Fork blocks", function() {
   it('should exist a different third block on each node', () => co(function*() {
     yield s1.expectJSON('/blockchain/current', {
       number: 3,
-      hash: "74AB356F0E6CD9AA6F752E58FFCD65D5F8C95CDAA93576A40457CC3598C4E3D1"
+      hash: "2C0451EA29CA759AE8296D0751989067AEEC35050BC8CD5623B05C0665C24471"
     })
     yield s2.expectJSON('/blockchain/current', {
       number: 3,
-      hash: "2C3555F4009461C81F7209EAAD7DA831D8451708D06BB1173CCB40746CD0641B"
+      hash: "33038E3E9C1BFB8328234CDD42D1F47B8D362A78161B03E43732CA7432D10A76"
     })
   }))
 
@@ -147,16 +147,16 @@ describe("Fork blocks", function() {
     yield s1.expect('/blockchain/branches', (res) => {
       assert.equal(res.blocks.length, 2)
       assert.equal(res.blocks[0].number, 3)
-      assert.equal(res.blocks[0].hash, '2C3555F4009461C81F7209EAAD7DA831D8451708D06BB1173CCB40746CD0641B')
+      assert.equal(res.blocks[0].hash, '33038E3E9C1BFB8328234CDD42D1F47B8D362A78161B03E43732CA7432D10A76')
       assert.equal(res.blocks[1].number, 3)
-      assert.equal(res.blocks[1].hash, '74AB356F0E6CD9AA6F752E58FFCD65D5F8C95CDAA93576A40457CC3598C4E3D1')
+      assert.equal(res.blocks[1].hash, '2C0451EA29CA759AE8296D0751989067AEEC35050BC8CD5623B05C0665C24471')
     })
     yield s2.expect('/blockchain/branches', (res) => {
       assert.equal(res.blocks.length, 2)
       assert.equal(res.blocks[0].number, 3)
-      assert.equal(res.blocks[0].hash, '74AB356F0E6CD9AA6F752E58FFCD65D5F8C95CDAA93576A40457CC3598C4E3D1')
+      assert.equal(res.blocks[0].hash, '2C0451EA29CA759AE8296D0751989067AEEC35050BC8CD5623B05C0665C24471')
       assert.equal(res.blocks[1].number, 3)
-      assert.equal(res.blocks[1].hash, '2C3555F4009461C81F7209EAAD7DA831D8451708D06BB1173CCB40746CD0641B')
+      assert.equal(res.blocks[1].hash, '33038E3E9C1BFB8328234CDD42D1F47B8D362A78161B03E43732CA7432D10A76')
     })
   }))
 
@@ -203,11 +203,11 @@ describe("Fork blocks", function() {
   it('should exist a same current block on each node', () => co(function*() {
     yield s1.expectJSON('/blockchain/current', {
       number: 8,
-      hash: "B8D2AA2A5556F7A2837FB4B881FCF50595F855D0BF8F71C0B432E27216BBA40B"
+      hash: "C41F10519A24950C051F3ABBBF71775D9EF836374EF538897DFFF08E7A3F5E50"
     })
     yield s2.expectJSON('/blockchain/current', {
       number: 8,
-      hash: "B8D2AA2A5556F7A2837FB4B881FCF50595F855D0BF8F71C0B432E27216BBA40B"
+      hash: "C41F10519A24950C051F3ABBBF71775D9EF836374EF538897DFFF08E7A3F5E50"
     })
   }))
 
@@ -215,20 +215,20 @@ describe("Fork blocks", function() {
     yield s1.expect('/blockchain/branches', (res) => {
       assert.equal(res.blocks.length, 3)
       assert.equal(res.blocks[0].number, 3)
-      assert.equal(res.blocks[0].hash, '9A0FA1F0899124444ADC5B2C0AB66AC5B4303A0D851BED2E7382BB57E10AA2C5')
+      assert.equal(res.blocks[0].hash, '33038E3E9C1BFB8328234CDD42D1F47B8D362A78161B03E43732CA7432D10A76') // This is s2 fork!
       assert.equal(res.blocks[1].number, 3)
-      assert.equal(res.blocks[1].hash, '2C3555F4009461C81F7209EAAD7DA831D8451708D06BB1173CCB40746CD0641B') // This is s2 fork!
+      assert.equal(res.blocks[1].hash, '7A1982E7746DE1993F8900C2D453A1E7C010B2BDF304DB83BCBF84932CE8A630')
       assert.equal(res.blocks[2].number, 8)
-      assert.equal(res.blocks[2].hash, 'B8D2AA2A5556F7A2837FB4B881FCF50595F855D0BF8F71C0B432E27216BBA40B')
+      assert.equal(res.blocks[2].hash, 'C41F10519A24950C051F3ABBBF71775D9EF836374EF538897DFFF08E7A3F5E50')
     })
     yield s2.expect('/blockchain/branches', (res) => {
       assert.equal(res.blocks.length, 3)
       assert.equal(res.blocks[0].number, 3)
-      assert.equal(res.blocks[0].hash, '9A0FA1F0899124444ADC5B2C0AB66AC5B4303A0D851BED2E7382BB57E10AA2C5')
+      assert.equal(res.blocks[0].hash, '33038E3E9C1BFB8328234CDD42D1F47B8D362A78161B03E43732CA7432D10A76') // This is s2 fork!
       assert.equal(res.blocks[1].number, 3)
-      assert.equal(res.blocks[1].hash, '2C3555F4009461C81F7209EAAD7DA831D8451708D06BB1173CCB40746CD0641B') // This is s2 fork!
+      assert.equal(res.blocks[1].hash, '7A1982E7746DE1993F8900C2D453A1E7C010B2BDF304DB83BCBF84932CE8A630')
       assert.equal(res.blocks[2].number, 8)
-      assert.equal(res.blocks[2].hash, 'B8D2AA2A5556F7A2837FB4B881FCF50595F855D0BF8F71C0B432E27216BBA40B')
+      assert.equal(res.blocks[2].hash, 'C41F10519A24950C051F3ABBBF71775D9EF836374EF538897DFFF08E7A3F5E50')
     })
   }))
 });

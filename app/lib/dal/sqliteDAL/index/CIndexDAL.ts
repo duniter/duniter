@@ -91,14 +91,21 @@ export class CIndexDAL extends AbstractIndex<CindexEntry> {
   }
 
   findExpired(medianTime:number) {
-    return this.query('SELECT * FROM ' + this.table + ' c1 WHERE expires_on <= ? ' +
+    return this.query('SELECT * FROM ' + this.table + ' c1 WHERE c1.expires_on <= ? ' +
       'AND NOT EXISTS (' +
       ' SELECT * FROM c_index c2' +
       ' WHERE c1.issuer = c2.issuer' +
       ' AND c1.receiver = c2.receiver' +
-      ' AND c2.op = ?' +
-      ' AND c1.expired_on IS NOT NULL' +
-      ')', [medianTime, CommonConstants.IDX_UPDATE])
+      ' AND c2.writtenOn > c1.writtenOn' +
+      ' AND c2.expired_on IS NOT NULL' +
+      ') ' +
+      'AND NOT EXISTS (' +
+      ' SELECT * FROM c_index c3' +
+      ' WHERE c1.issuer = c3.issuer' +
+      ' AND c1.receiver = c3.receiver' +
+      ' AND c3.writtenOn > c1.writtenOn' +
+      ' AND c3.replayable_on IS NOT NULL' +
+      ')', [medianTime])
   }
 
   async findByIssuer(issuer:string) {

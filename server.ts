@@ -24,7 +24,7 @@ import * as stream from "stream"
 import {KeyGen, randomKey} from "./app/lib/common-libs/crypto/keyring"
 import {parsers} from "./app/lib/common-libs/parsers/index"
 import {Cloneable} from "./app/lib/dto/Cloneable"
-import {DuniterDocument, duniterDocument2str} from "./app/lib/common-libs/constants"
+import {CommonConstants, DuniterDocument, duniterDocument2str} from "./app/lib/common-libs/constants"
 import {GlobalFifoPromise} from "./app/service/GlobalFifoPromise"
 import {BlockchainContext} from "./app/lib/computation/BlockchainContext"
 import {BlockDTO} from "./app/lib/dto/BlockDTO"
@@ -38,6 +38,9 @@ import {OtherConstants} from "./app/lib/other_constants"
 import {WS2PCluster} from "./app/modules/ws2p/lib/WS2PCluster"
 import {DBBlock} from "./app/lib/db/DBBlock"
 import { ProxiesConf } from './app/lib/proxy';
+import {BMAConstants} from "./app/modules/bma/lib/constants"
+import * as toJson from "./app/modules/bma/lib/tojson"
+import {HttpMilestonePage} from "./app/modules/bma/lib/dtos"
 
 export interface HookableServer {
   generatorGetJoinData: (...args:any[]) => Promise<any>
@@ -85,6 +88,7 @@ export class Server extends stream.Duplex implements HookableServer {
   BlockchainService:BlockchainService
   TransactionsService:TransactionService
   private documentFIFO:GlobalFifoPromise
+  milestoneArray: DBBlock[] = []
 
   constructor(home:string, memoryOnly:boolean, private overrideConf:any) {
     super({ objectMode: true })
@@ -668,5 +672,53 @@ export class Server extends stream.Duplex implements HookableServer {
    */
   resetConfigHook(): Promise<any> {
     return Promise.resolve({})
+  }
+
+  async milestones(page?: number): Promise<HttpMilestonePage> {
+    const chunkSize = CommonConstants.SYNC_BLOCKS_CHUNK
+    const milestonesPerPage = CommonConstants.MILESTONES_PER_PAGE
+    const current = await this.dal.getCurrentBlockOrNull();
+    if (!current) {
+      return {
+        totalPages: 0,
+        chunkSize,
+        milestonesPerPage
+      }
+    }
+    const topNumber = current.number - this.conf.forksize
+    const nbMilestones = (topNumber - (topNumber % chunkSize)) / chunkSize
+    const totalPages = (nbMilestones - (nbMilestones % milestonesPerPage)) / milestonesPerPage
+    if (page === undefined) {
+      return {
+        totalPages,
+        chunkSize,
+        milestonesPerPage
+      }
+    }
+    if (page > totalPages || page <= 0) throw BMAConstants.ERRORS.INCORRECT_PAGE_NUMBER
+    while (this.milestoneArray.length < page * milestonesPerPage) {
+      const lastMilestoneNumber = this.milestoneArray.length
+      // Feed the milestones
+      const newMilestones: DBBlock[] = []
+      for (let i = 1; i <= milestonesPerPage && this.milestoneArray.length < page * milestonesPerPage; i++) {
+        const b = await this.dal.getBlock((lastMilestoneNumber + i) * chunkSize - 1)
+        if (!b) {
+          throw Error('MILESTONE_BLOCK_NOT_FOUND')
+        }
+        newMilestones.push(b)
+      }
+      // As the process is async, another call to "milestones()" maybe have already filled in the milestones
+      if (this.milestoneArray.length < page * milestonesPerPage) {
+        this.milestoneArray = this.milestoneArray.concat(newMilestones)
+      }
+    }
+    const blocks = this.milestoneArray.slice((page - 1) * milestonesPerPage, page * milestonesPerPage)
+    return {
+      totalPages,
+      chunkSize,
+      milestonesPerPage,
+      currentPage: page,
+      blocks: blocks.map(b => toJson.block(b))
+    }
   }
 }

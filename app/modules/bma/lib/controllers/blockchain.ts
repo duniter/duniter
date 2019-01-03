@@ -24,14 +24,14 @@ import {
   HttpDifficulties,
   HttpHardship,
   HttpMembership,
-  HttpMemberships,
+  HttpMemberships, HttpMilestonePage,
   HttpParameters,
   HttpStat
 } from "../dtos"
 
 const _                = require('underscore');
 const http2raw         = require('../http2raw');
-const toJson = require('../tojson');
+import * as toJson from "../tojson"
 
 export class BlockchainBinding extends AbstractController {
 
@@ -123,6 +123,11 @@ export class BlockchainBinding extends AbstractController {
     let blocks = await this.BlockchainService.blocksBetween(from, count);
     blocks = blocks.map((b:any) => toJson.block(b));
     return blocks;
+  }
+
+  async milestones(req: any): Promise<HttpMilestonePage> {
+    const page = ParametersService.getPage(req)
+    return this.server.milestones(page)
   }
 
   async current(): Promise<HttpBlock> {

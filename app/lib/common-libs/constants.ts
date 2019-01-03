@@ -300,7 +300,9 @@ export const CommonConstants = {
     SPECIAL_BLOCK
   },
 
-  BLOCK_MAX_TX_CHAINING_DEPTH: 5
+  BLOCK_MAX_TX_CHAINING_DEPTH: 5,
+  SYNC_BLOCKS_CHUNK: 250,
+  MILESTONES_PER_PAGE: 50,
 }
 
 function exact (regexpContent:string) {

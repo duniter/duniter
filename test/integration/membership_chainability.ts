@@ -22,7 +22,7 @@ describe("Membership chainability", function() {
     let s1:any, cat:any
 
     const conf = {
-      msPeriod: 20,
+      msWindow: 20, // Determies msPeriod
       nbCores: 1,
       msValidity: 10000,
       udTime0: now,
@@ -40,7 +40,7 @@ describe("Membership chainability", function() {
       await s1.commit({ time: now })
       await s1.commit({ time: now })
       await s1.commit({ time: now, actives: [
-        'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:rppB5NEwmdMUCxw3N/QPMk+V1h2Jpn0yxTzdO2xxcNN3MACv6x8vNTChWwM6DOq+kXiQHTczFzoux+82WkMfDQ==:1-12D7B9BEBE941F6929A4A61CDC06DEEEFCB00FD1DA72E42FFF7B19A338D421E1:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat'
+        'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:oHIjaiAVcmyac13oBirFulXbYqScAAwZIhvLjocqS5oMfF0eLQcvi8S0AIfkaBqhn2CVqxRZgcFBQaYVwLgwCg==:1-07A550E7DC27710610A290E55AA778CE6FA9F776AB777ABF4DB660D7BF0C4117:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat'
       ]})
       CommonConstants.BLOCK_NEW_GENERATED_VERSION = nowVersion
     })
@@ -69,7 +69,7 @@ describe("Membership chainability", function() {
     let s1:any, cat:any
 
     const conf = {
-      msPeriod: 20,
+      msWindow: 20,
       nbCores: 1,
       msValidity: 10000,
       udTime0: now,
@@ -89,7 +89,7 @@ describe("Membership chainability", function() {
     it('should refuse a block with a too early membership in it', async () => {
       await s1.commitWaitError({
         time: now + 20,
-        actives: ['HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:SiCD1MSyDiZKWLp/SP/2Vj5T3JMgjNnIIKMI//yvKRdWMzKjEn6/ZT+TCjyjnl85qRfmEuWv1jLmQSoe8GXSDg==:1-0DEE2A8EA05322FCC4355D5F0E7A2830F4A22ACEBDC4B62399484E091A5CCF27:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat']
+        actives: ['HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:d+2p9+qks9XvYZmLMmmwDkyheUuecXaaRtUk2gFi+RDqRG2MOOFzjwBEC8IZzK7gdrzOwPZAMormHZnijPyiCA==:1-B9A509E0CF1B475012846D180EDD98DDC4D10C3B90EA14B1F28ACBA8FEF1FC88:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat']
       }, 'ruleMembershipPeriod')
     })
 

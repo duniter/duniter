@@ -278,6 +278,8 @@ export class DuniterBlockchain extends MiscIndexedBlockchain {
       conf.msWindow = bconf.msWindow;
       conf.xpercent = bconf.xpercent;
       conf.msValidity = bconf.msValidity;
+      conf.msPeriod = bconf.msPeriod; // As defined in the protocol for this new parameter
+      conf.sigReplay = bconf.msPeriod; // As defined in the protocol for this new parameter
       conf.stepMax = bconf.stepMax;
       conf.medianTimeBlocks = bconf.medianTimeBlocks;
       conf.avgGenTime = bconf.avgGenTime;

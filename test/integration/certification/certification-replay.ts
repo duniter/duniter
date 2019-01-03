@@ -17,7 +17,7 @@ import {reduce} from "../../../app/lib/indexer"
 import {CommonConstants} from "../../../app/lib/common-libs/constants"
 
 describe('Certification replay', () => writeBasicTestWithConfAnd2Users({
-  sigReplay: 3,
+  msWindow: 3, // Implies sigReplay = 3
   sigPeriod: 0,
   sigValidity: 5,
 }, (test) => {

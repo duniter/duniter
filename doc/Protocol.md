@@ -1134,7 +1134,7 @@ ud0         | UD(0), i.e. initial Universal Dividend
 udTime0     | Time of first UD.
 udReevalTime0 | Time of first reevaluation of the UD.
 sigPeriod   | Minimum delay between 2 certifications of a same issuer, in seconds. Must be positive or zero.
-msPeriod    | Minimum delay between 2 memberships of a same issuer, in seconds. Must be positive or zero.
+msPeriod    | Minimum delay between 2 memberships of a same issuer, in seconds. Must be positive or zero. Equals to `msWindow`.
 sigReplay   | Minimum delay between 2 certifications of a same issuer to a same receiver, in seconds. Equals to `msPeriod`.
 sigStock    | Maximum quantity of active certifications made by member.
 sigWindow   | Maximum delay a certification can wait before being expired for non-writing.

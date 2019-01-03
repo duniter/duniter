@@ -107,6 +107,11 @@ export class QuickSynchronizer {
     let blocksToSave: BlockDTO[] = [];
 
     for (const block of blocks) {
+
+      if (block.number === 0) {
+        await this.blockchain.saveParametersForRoot(block, this.conf, this.dal)
+      }
+
       sync_allBlocks.push(block);
 
       // The new kind of object stored
@@ -263,10 +268,6 @@ export class QuickSynchronizer {
         await this.dal.walletDAL.insertBatch(walletsToRecord)
         for (const cond of conditions) {
           delete sync_memoryWallets[cond]
-        }
-
-        if (block.number === 0) {
-          await this.blockchain.saveParametersForRoot(block, this.conf, this.dal)
         }
 
         // Last block: cautious mode to trigger all the INDEX expiry mechanisms

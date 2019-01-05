@@ -27,6 +27,7 @@ export class WS2PDocpoolPuller {
     const requester = WS2PRequester.fromConnection(this.connection)
     // node.pubkey = p.pubkey;
     return pullSandboxToLocalServer(this.server.conf.currency, {
+      type: 'WS2P',
       getRequirementsPending: (minCert = 1) => {
         return requester.getRequirementsPending(minCert)
       },

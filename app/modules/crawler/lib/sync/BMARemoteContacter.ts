@@ -22,6 +22,8 @@ const logger = NewLogger()
 
 export class BMARemoteContacter implements IRemoteContacter {
 
+  public type: 'BMA'| 'WS2P' = 'BMA'
+
   constructor(protected contacter: Contacter) {
   }
 

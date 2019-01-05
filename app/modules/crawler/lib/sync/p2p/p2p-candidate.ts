@@ -18,7 +18,7 @@ export class P2pCandidate {
   private reserved = false
 
   constructor(
-    private p: PeerDTO,
+    public p: PeerDTO,
     private keypair: Keypair,
     private logger: any,
     private allowLocalSync: boolean,
@@ -130,6 +130,10 @@ export class P2pCandidate {
 
   reserve() {
     this.reserved = true
+  }
+
+  get apiName() {
+    return this.api && this.api.type
   }
 }
 

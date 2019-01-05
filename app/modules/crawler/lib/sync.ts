@@ -48,6 +48,15 @@ export class Synchroniser extends stream.Duplex {
     this.watcher.onEvent('appliedChange',  () => this.push(this.watcher.getStats()))
     this.watcher.onEvent('sbxChange',      () => this.push(this.watcher.getStats()))
     this.watcher.onEvent('peersChange',    () => this.push(this.watcher.getStats()))
+    this.watcher.onEvent('addWrongChunkFailure',  (data) => this.push({ p2pData: { name: 'addWrongChunkFailure', data }}))
+    this.watcher.onEvent('failToGetChunk',        (data) => this.push({ p2pData: { name: 'failToGetChunk', data }}))
+    this.watcher.onEvent('gettingChunk',          (data) => this.push({ p2pData: { name: 'gettingChunk', data }}))
+    this.watcher.onEvent('gotChunk',              (data) => this.push({ p2pData: { name: 'gotChunk', data }}))
+    this.watcher.onEvent('reserveNodes',          (data) => this.push({ p2pData: { name: 'reserveNodes', data }}))
+    this.watcher.onEvent('unableToDownloadChunk', (data) => this.push({ p2pData: { name: 'unableToDownloadChunk', data }}))
+    this.watcher.onEvent('wantToDownload',        (data) => this.push({ p2pData: { name: 'wantToDownload', data }}))
+    this.watcher.onEvent('wantToLoad',            (data) => this.push({ p2pData: { name: 'wantToLoad', data }}))
+    this.watcher.onEvent('beforeReadyNodes',      (data) => this.push({ p2pData: { name: 'beforeReadyNodes', data }}))
 
     this.syncStrategy.setWatcher(this.watcher)
 

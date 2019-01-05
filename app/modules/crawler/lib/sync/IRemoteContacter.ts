@@ -34,4 +34,6 @@ export interface IRemoteContacter {
   getRequirementsPending(number: number): Promise<HttpRequirements>
 
   hostName: string
+
+  type: 'BMA' | 'WS2P'
 }

@@ -57,6 +57,7 @@ export class P2PSyncDownloader extends ASyncDownloader implements ISyncDownloade
   }
 
   private async waitForAvailableNodesAndReserve(needed = 1): Promise<P2pCandidate[]> {
+    this.watcher.beforeReadyNodes(this.p2pCandidates)
     let nodesToWaitFor = this.p2pCandidates.slice()
     let nodesAvailable: P2pCandidate[] = []
     let i = 0
@@ -88,6 +89,7 @@ export class P2PSyncDownloader extends ASyncDownloader implements ISyncDownloade
       byAvgAnswerTime = byAvgAnswerTime.slice(0, parallelMax)
       if (byAvgAnswerTime.length === 0) {
         this.logger.warn('No node found to download chunk #%s.', chunkIndex)
+        this.watcher.unableToDownloadChunk(chunkIndex)
         throw Error(DataErrors[DataErrors.NO_NODE_FOUND_TO_DOWNLOAD_CHUNK])
       }
       return byAvgAnswerTime
@@ -104,17 +106,21 @@ export class P2PSyncDownloader extends ASyncDownloader implements ISyncDownloade
     // if this chunk has already been downloaded before, we exclude its supplier node from the download list as it won't give correct answer now
     const lastSupplier = this.downloads[chunkIndex]
     if (lastSupplier) {
+      this.watcher.addWrongChunkFailure(chunkIndex, lastSupplier)
       lastSupplier.addFailure()
     }
+    this.watcher.wantToDownload(chunkIndex)
     // Only 1 candidate for now
     const candidates = await this.getP2Pcandidates(chunkIndex)
     // Book the nodes
+    this.watcher.gettingChunk(chunkIndex, candidates)
     return await this.raceOrCancelIfTimeout(this.MAX_DELAY_PER_DOWNLOAD, candidates.map(async (node) => {
       try {
         this.handler[chunkIndex] = node;
         this.nbDownloading++;
         this.watcher.writeStatus('Getting chunck #' + chunkIndex + '/' + (this.numberOfChunksToDownload - 1) + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + node.hostName);
         let blocks = await node.downloadBlocks(count, from);
+        this.watcher.gotChunk(chunkIndex, node)
         this.watcher.writeStatus('GOT chunck #' + chunkIndex + '/' + (this.numberOfChunksToDownload - 1) + ' from ' + from + ' to ' + (from + count - 1) + ' on peer ' + node.hostName);
         if (this.PARALLEL_PER_CHUNK === 1) {
           // Only works if we have 1 concurrent peer per chunk
@@ -124,6 +130,7 @@ export class P2PSyncDownloader extends ASyncDownloader implements ISyncDownloade
         this.nbDownloadsTried++;
         return blocks;
       } catch (e) {
+        this.watcher.failToGetChunk(chunkIndex, node)
         this.nbDownloading--;
         this.nbDownloadsTried++;
         throw e;

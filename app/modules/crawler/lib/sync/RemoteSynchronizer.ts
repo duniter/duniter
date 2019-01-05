@@ -101,6 +101,7 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
   async init(): Promise<void> {
     const syncApi = await RemoteSynchronizer.getSyncAPI([{ host: this.host, port: this.port }], this.server.conf.pair)
     if (!syncApi.api) {
+      this.watcher.syncFailCannotConnectToRemote()
       throw Error(DataErrors[DataErrors.CANNOT_CONNECT_TO_REMOTE_FOR_SYNC])
     }
     this.currency = syncApi.currency

@@ -58,6 +58,7 @@ export class Synchroniser extends stream.Duplex {
     this.watcher.onEvent('wantToLoad',            (data) => this.push({ p2pData: { name: 'wantToLoad', data }}))
     this.watcher.onEvent('beforeReadyNodes',      (data) => this.push({ p2pData: { name: 'beforeReadyNodes', data }}))
     this.watcher.onEvent('syncFailNoNodeFound',   (data) => this.push({ p2pData: { name: 'syncFailNoNodeFound', data }}))
+    this.watcher.onEvent('syncFailCannotConnectToRemote', (data) => this.push({ p2pData: { name: 'syncFailCannotConnectToRemote', data }}))
 
     this.syncStrategy.setWatcher(this.watcher)
 

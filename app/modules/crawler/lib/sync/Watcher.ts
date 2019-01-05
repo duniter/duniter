@@ -32,6 +32,8 @@ export interface Watcher {
   beforeReadyNodes(p2pCandidates: P2pCandidate[]): void
 
   syncFailNoNodeFound(): void
+
+  syncFailCannotConnectToRemote(): void
 }
 
 export type EventName = 'downloadChange'|'storageChange'|'appliedChange'|'sbxChange'|'peersChange'
@@ -45,6 +47,7 @@ export type EventName = 'downloadChange'|'storageChange'|'appliedChange'|'sbxCha
   | 'wantToLoad'
   | 'beforeReadyNodes'
   | 'syncFailNoNodeFound'
+  | 'syncFailCannotConnectToRemote'
 
 export class EventWatcher extends events.EventEmitter implements Watcher {
 
@@ -141,6 +144,10 @@ export class EventWatcher extends events.EventEmitter implements Watcher {
 
   syncFailNoNodeFound(): void {
     this.emit('syncFailNoNodeFound', {})
+  }
+
+  syncFailCannotConnectToRemote(): void {
+    this.emit('syncFailCannotConnectToRemote', {})
   }
 }
 
@@ -282,6 +289,9 @@ export class MultimeterWatcher implements Watcher {
   syncFailNoNodeFound(): void {
   }
 
+  syncFailCannotConnectToRemote(): void {
+  }
+
 }
 
 export class LoggerWatcher implements Watcher {
@@ -375,6 +385,9 @@ export class LoggerWatcher implements Watcher {
   }
 
   syncFailNoNodeFound(): void {
+  }
+
+  syncFailCannotConnectToRemote(): void {
   }
 
 }

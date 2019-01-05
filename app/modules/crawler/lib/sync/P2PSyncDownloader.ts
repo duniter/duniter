@@ -14,6 +14,7 @@ import {CommonConstants} from "../../../../lib/common-libs/constants"
 import {DataErrors} from "../../../../lib/common-libs/errors"
 import {ASyncDownloader} from "./ASyncDownloader"
 import {P2pCandidate} from "./p2p/p2p-candidate"
+import {CrawlerConstants} from "../constants"
 
 export class P2PSyncDownloader extends ASyncDownloader implements ISyncDownloader {
 
@@ -29,7 +30,7 @@ export class P2PSyncDownloader extends ASyncDownloader implements ISyncDownloade
   private nbDownloading = 0
   private downloads: { [chunk: number]: P2pCandidate } = {}
   private fifoPromise = new GlobalFifoPromise()
-  private nbWaitFailed = 0
+  private noNodeFoundCumulation = 0
 
   constructor(
     private currency: string,
@@ -152,9 +153,18 @@ export class P2PSyncDownloader extends ASyncDownloader implements ISyncDownloade
       count = this.nbBlocksToDownload % this.chunkSize || this.chunkSize;
     }
     try {
-      return await this.p2pDownload(from, count, index) as BlockDTO[]
+      const res = await this.p2pDownload(from, count, index) as BlockDTO[]
+      this.noNodeFoundCumulation = 0
+      return res
     } catch (e) {
       this.logger.error(e);
+      if (e.message === DataErrors[DataErrors.NO_NODE_FOUND_TO_DOWNLOAD_CHUNK]) {
+        this.noNodeFoundCumulation++
+        if (this.noNodeFoundCumulation >= CrawlerConstants.SYNC_MAX_FAIL_NO_NODE_FOUND) {
+          this.watcher.syncFailNoNodeFound()
+          throw Error(DataErrors[DataErrors.NO_NODE_FOUND_TO_DOWNLOAD_CHUNK])
+        }
+      }
       await new Promise(res => setTimeout(res, 1000)) // Wait 1s before retrying
       return this.downloadChunk(index);
     }

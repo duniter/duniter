@@ -114,9 +114,6 @@ export class DownloadStream extends Duplex {
           this.chunks[i] = chunk
           delete this.dowloading[i]
         })
-        .catch(err => {
-          throw err
-        })
       return this.dowloading[i] || this.chunks[i]
     }
     return this.dowloading[i] || this.chunks[i]

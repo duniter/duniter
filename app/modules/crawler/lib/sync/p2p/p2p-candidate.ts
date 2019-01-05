@@ -43,6 +43,7 @@ export class P2pCandidate {
     return Promise.race([
       // Wait for availablity
       (async () => !this.isExcluded
+        && !this.reserved
         && (this.apiPromise.isRejected() ? await newResolveTimeoutPromise(maxWait, false) : !!(await this.apiPromise))
         && (this.dlPromise.isRejected() ? await newResolveTimeoutPromise(maxWait, false) : !!(await this.dlPromise)))(),
       // Maximum wait trigger
@@ -55,6 +56,9 @@ export class P2pCandidate {
   }
 
   avgResponseTime() {
+    if (!this.responseTimes.length) {
+      return 0
+    }
     return this.responseTimes.reduce((sum, rt) => sum + rt, 0) / this.responseTimes.length
   }
 

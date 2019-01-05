@@ -68,10 +68,7 @@ export class P2PSyncDownloader extends ASyncDownloader implements ISyncDownloade
       nodesAvailable = nodesAvailable.concat(readyNodes)
       i++
     }
-    return nodesAvailable.slice(0, needed).map(n => {
-      n.reserve()
-      return n
-    })
+    return nodesAvailable
   }
 
   /**
@@ -81,12 +78,17 @@ export class P2PSyncDownloader extends ASyncDownloader implements ISyncDownloade
    */
   private async getP2Pcandidates(chunkIndex: number): Promise<P2pCandidate[]> {
     return this.fifoPromise.pushFIFOPromise('getP2Pcandidates_' + getNanosecondsTime(), async () => {
+      const needed = 1
       // We wait a bit to have some available nodes
       const readyNodes = await this.waitForAvailableNodesAndReserve()
       // We remove the nodes impossible to reach (timeout)
       let byAvgAnswerTime = Underscore.sortBy(readyNodes, p => p.avgResponseTime())
       const parallelMax = Math.min(this.PARALLEL_PER_CHUNK, byAvgAnswerTime.length)
       byAvgAnswerTime = byAvgAnswerTime.slice(0, parallelMax)
+      this.watcher.reserveNodes(byAvgAnswerTime)
+      byAvgAnswerTime.slice(0, needed).forEach(n => {
+        n.reserve()
+      })
       if (byAvgAnswerTime.length === 0) {
         this.logger.warn('No node found to download chunk #%s.', chunkIndex)
         this.watcher.unableToDownloadChunk(chunkIndex)

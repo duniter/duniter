@@ -32,6 +32,7 @@ export const CrawlerConstants = {
   SANDBOX_CHECK_INTERVAL: 48, // Every 4 hours (288 blocks a day / 24 * 4)
   TEST_PEERS_INTERVAL: 10, // In seconds
   SYNC_PEERS_INTERVAL: 3, // Every 3 block average generation time
+  SYNC_CHUNKS_IN_ADVANCE: 10, // We want to have that much chunks in advance when syncing
 
   DURATIONS: {
     TEN_SECONDS: 10,

@@ -62,6 +62,7 @@ export class DownloadStream extends Duplex {
         let chunk: BlockDTO[]
         // We don't have the file locally: we loop on P2P download until we have it (or until P2P throws a general error)
         do {
+          this.watcher.wantToLoad(i)
           chunk = await downloader.getChunk(i)
           if (chunk.length) {
             // NewLogger().info("Chunk #%s is COMPLETE", i)

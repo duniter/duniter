@@ -23,6 +23,8 @@ const logger = NewLogger()
 
 export class WS2PRemoteContacter implements IRemoteContacter {
 
+  public type: 'BMA'| 'WS2P' = 'WS2P'
+
   getRequirementsPending(min: number): Promise<HttpRequirements> {
     return this.requester.getRequirementsPending(min)
   }

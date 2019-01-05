@@ -1,5 +1,6 @@
 import * as events from "events"
 import {cliprogram} from "../../../../lib/common-libs/programOptions"
+import {P2pCandidate} from "./p2p/p2p-candidate"
 
 const multimeter   = require('multimeter')
 
@@ -11,9 +12,36 @@ export interface Watcher {
   sbxPercent(pct?: number): number
   peersPercent(pct?: number): number
   end(): void
+
+  reserveNodes(nodesAvailable: P2pCandidate[]): void
+
+  unableToDownloadChunk(chunkIndex: number): void
+
+  gettingChunk(chunkIndex: number, candidates: P2pCandidate[]): void
+
+  gotChunk(chunkIndex: number, node: P2pCandidate): void
+
+  failToGetChunk(chunkIndex: number, node: P2pCandidate): void
+
+  wantToDownload(chunkIndex: number): void
+
+  addWrongChunkFailure(chunkIndex: number, lastSupplier: P2pCandidate): void
+
+  wantToLoad(chunkIndex: number): void
+
+  beforeReadyNodes(p2pCandidates: P2pCandidate[]): void
 }
 
 export type EventName = 'downloadChange'|'storageChange'|'appliedChange'|'sbxChange'|'peersChange'
+  | 'addWrongChunkFailure'
+  | 'failToGetChunk'
+  | 'gettingChunk'
+  | 'gotChunk'
+  | 'reserveNodes'
+  | 'unableToDownloadChunk'
+  | 'wantToDownload'
+  | 'wantToLoad'
+  | 'beforeReadyNodes'
 
 export class EventWatcher extends events.EventEmitter implements Watcher {
 
@@ -68,6 +96,44 @@ export class EventWatcher extends events.EventEmitter implements Watcher {
       sandbox: this.sbxPercent(),
       peersSync: this.peersPercent(),
     }
+  }
+
+  /************* P2P DOWNLOAD EVENTS ****************/
+
+  addWrongChunkFailure(chunkIndex: number, lastSupplier: P2pCandidate): void {
+    this.emit('addWrongChunkFailure', { chunkIndex, node: lastSupplier })
+  }
+
+  failToGetChunk(chunkIndex: number, node: P2pCandidate): void {
+    this.emit('failToGetChunk', { chunkIndex, node })
+  }
+
+  gettingChunk(chunkIndex: number, candidates: P2pCandidate[]): void {
+    this.emit('gettingChunk', { chunkIndex, nodes: candidates })
+  }
+
+  gotChunk(chunkIndex: number, node: P2pCandidate): void {
+    this.emit('gotChunk', { chunkIndex, node })
+  }
+
+  reserveNodes(nodesAvailable: P2pCandidate[]): void {
+    this.emit('reserveNodes', { nodes: nodesAvailable })
+  }
+
+  unableToDownloadChunk(chunkIndex: number): void {
+    this.emit('unableToDownloadChunk', { chunkIndex })
+  }
+
+  wantToDownload(chunkIndex: number): void {
+    this.emit('wantToDownload', { chunkIndex })
+  }
+
+  wantToLoad(chunkIndex: number): void {
+    this.emit('wantToLoad', { chunkIndex })
+  }
+
+  beforeReadyNodes(p2pCandidates: P2pCandidate[]): void {
+    this.emit('beforeReadyNodes', { nodes: p2pCandidates })
   }
 }
 
@@ -176,6 +242,36 @@ export class MultimeterWatcher implements Watcher {
       empty : { text : ' ' }
     })
   }
+
+  /************* NOT IMPLEMENTED ****************/
+
+  addWrongChunkFailure(chunkIndex: number, lastSupplier: P2pCandidate): void {
+  }
+
+  failToGetChunk(chunkIndex: number, node: P2pCandidate): void {
+  }
+
+  gettingChunk(chunkIndex: number, candidates: P2pCandidate[]): void {
+  }
+
+  gotChunk(chunkIndex: number, node: P2pCandidate): void {
+  }
+
+  reserveNodes(nodesAvailable: P2pCandidate[]): void {
+  }
+
+  unableToDownloadChunk(chunkIndex: number): void {
+  }
+
+  wantToDownload(chunkIndex: number): void {
+  }
+
+  wantToLoad(chunkIndex: number): void {
+  }
+
+  beforeReadyNodes(p2pCandidates: P2pCandidate[]): void {
+  }
+
 }
 
 export class LoggerWatcher implements Watcher {
@@ -237,6 +333,35 @@ export class LoggerWatcher implements Watcher {
   }
 
   end() {
+  }
+
+  /************* NOT IMPLEMENTED ****************/
+
+  addWrongChunkFailure(chunkIndex: number, lastSupplier: P2pCandidate): void {
+  }
+
+  failToGetChunk(chunkIndex: number, node: P2pCandidate): void {
+  }
+
+  gettingChunk(chunkIndex: number, candidates: P2pCandidate[]): void {
+  }
+
+  gotChunk(chunkIndex: number, node: P2pCandidate): void {
+  }
+
+  reserveNodes(nodesAvailable: P2pCandidate[]): void {
+  }
+
+  unableToDownloadChunk(chunkIndex: number): void {
+  }
+
+  wantToDownload(chunkIndex: number): void {
+  }
+
+  wantToLoad(chunkIndex: number): void {
+  }
+
+  beforeReadyNodes(p2pCandidates: P2pCandidate[]): void {
   }
 
 }

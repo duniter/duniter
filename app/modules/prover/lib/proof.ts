@@ -23,6 +23,7 @@ import {rawer} from "../../../lib/common-libs/index"
 import {ProcessCpuProfiler} from "../../../ProcessCpuProfiler"
 import {PowDAL} from "../../../lib/dal/fileDALs/PowDAL";
 import {Directory} from "../../../lib/system/directory"
+import {ExitCodes} from "../../../lib/common-libs/exit-codes"
 
 const querablep = require('querablep');
 
@@ -47,7 +48,7 @@ export function createPowWorker() {
   });
 
   process.on('unhandledRejection', () => {
-    process.exit()
+    process.exit(ExitCodes.OK)
   })
 
   process.on('message', async (message) => {

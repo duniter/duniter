@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 "use strict";
 
+const ExitCodes = require("../app/lib/common-libs/exit-codes").ExitCodes;
 const logger = require("../app/lib/logger").NewLogger();
 
 // Specific errors handling
@@ -8,7 +9,7 @@ process.on('uncaughtException', (err) => {
   // Dunno why this specific exception is not caught
   if (err.code && err.code !== "EADDRNOTAVAIL" && err.code !== "EINVAL" && err.code !== "ENOENT") {
     logger.error(err.stack || err.message || err);
-    process.exit(2);
+    process.exit(ExitCodes.UNCAUGHT_EXCEPTION);
   }
 });
 
@@ -18,13 +19,13 @@ process.on('uncaughtException', (err) => {
     const stack = require('../index').Statics.autoStack();
     await stack.executeStack(process.argv);
     // Everything went well, close Duniter quietly.
-    process.exit();
+    process.exit(ExitCodes.OK);
   } catch (e) {
     // If an unhandled error occured
     logger.error(e.stack || e.message || e);
-    process.exit(1);
+    process.exit(ExitCodes.UNHANDLED_ERROR);
   } finally {
     // If we did not succeed to close before, force close with error.
-    process.exit(100);
+    process.exit(ExitCodes.FORCE_CLOSE_AFTER_ERROR);
   }
 })()

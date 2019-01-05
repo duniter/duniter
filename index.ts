@@ -28,6 +28,7 @@ import {Directory} from "./app/lib/system/directory"
 import {Underscore} from "./app/lib/common-libs/underscore"
 import {CliCommand, DuniterDependency, DuniterModule} from "./app/modules/DuniterModule"
 import {ProgramOptions} from "./app/lib/common-libs/programOptions"
+import {ExitCodes} from "./app/lib/common-libs/exit-codes"
 
 const path = require('path');
 const constants = require('./app/lib/constants');
@@ -319,10 +320,10 @@ export class Stack {
           // Save DB
           try {
             await server.disconnect();
-            process.exit();
+            process.exit(ExitCodes.OK);
           } catch (e) {
             logger.error(e);
-            process.exit(3);
+            process.exit(ExitCodes.SIGINT);
           }
         }
       })

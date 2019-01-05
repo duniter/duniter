@@ -1,7 +1,7 @@
 import {SQLiteDriver} from "../../drivers/SQLiteDriver"
 import {MonitorExecutionTime} from "../../../debug/MonitorExecutionTime"
-import {ErrorConstants} from "../../../common-libs/constants"
 import {NewLogger} from "../../../logger"
+import {ExitCodes} from "../../../common-libs/exit-codes"
 
 export class SqliteNodeIOManager<T> {
 
@@ -24,7 +24,7 @@ export class SqliteNodeIOManager<T> {
       .then(() => this.driver.executeAll(sql, params))
       .catch(e => {
         NewLogger().error(e)
-        process.exit(ErrorConstants.EXIT_CODE_MINDEX_WRITING_ERROR)
+        process.exit(ExitCodes.MINDEX_WRITING_ERROR)
       })
   }
 

@@ -18,6 +18,7 @@ import {PowWorker} from "./PowWorker"
 import {FileDAL} from "../../../lib/dal/fileDAL"
 import {Underscore} from "../../../lib/common-libs/underscore"
 import {ProofAsk} from "./blockProver"
+import {ExitCodes} from "../../../lib/common-libs/exit-codes"
 
 const nuuid = require('node-uuid');
 const cluster = require('cluster')
@@ -263,7 +264,7 @@ if (cluster.isMaster) {
 } else {
 
   process.on("SIGTERM", function() {
-    process.exit(0)
+    process.exit(ExitCodes.OK)
   });
 
   createPowWorker()

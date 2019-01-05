@@ -14,6 +14,7 @@
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {Server} from "../../server"
 import {Directory, RealFS} from "../lib/system/directory"
+import {ExitCodes} from "../lib/common-libs/exit-codes"
 
 const constants = require('../lib/constants');
 const Tail      = require("tail").Tail
@@ -80,10 +81,10 @@ module.exports = {
         const pid = server.getDaemon().status()
         if (pid) {
           console.log('Duniter is running using PID %s.', pid)
-          process.exit(0)
+          process.exit(ExitCodes.OK)
         } else {
           console.log('Duniter is not running.')
-          process.exit(2)
+          process.exit(ExitCodes.DUNITER_NOT_RUNNING)
         }
       }
     }, {

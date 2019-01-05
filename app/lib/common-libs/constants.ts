@@ -83,11 +83,6 @@ export const duniterDocument2str = (type:DuniterDocument) => {
   }
 }
 
-export const ErrorConstants = {
-
-  EXIT_CODE_MINDEX_WRITING_ERROR: 500
-}
-
 export const CommonConstants = {
 
   FORMATS: {

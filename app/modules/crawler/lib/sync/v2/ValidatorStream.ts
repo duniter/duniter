@@ -6,6 +6,7 @@ import {DataErrors} from "../../../../../lib/common-libs/errors"
 import {NewLogger} from "../../../../../lib/logger"
 import {ISyncDownloader} from "../ISyncDownloader"
 import {Watcher} from "../Watcher"
+import {ExitCodes} from "../../../../../lib/common-libs/exit-codes"
 
 
 export class ValidatorStream extends Readable {
@@ -67,7 +68,7 @@ export class ValidatorStream extends Readable {
             await new Promise((res) => setTimeout(res, 3000))
             if (failures >= 15) {
               NewLogger().error('Could not get a validation from remote blockchain after %s trials. Stopping sync.', failures)
-              process.exit(1)
+              process.exit(ExitCodes.SYNC_FAIL)
             }
             block = null
           }

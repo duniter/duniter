@@ -132,13 +132,10 @@ export class DownloadStream extends Duplex {
         delete this.chunks[this.currentChunkNumber]
         // Let's start the download of next chunk
         this.currentChunkNumber++
-        this.downloadChunk(this.currentChunkNumber)
-          .then(() => this.downloadChunk(this.currentChunkNumber + 1))
-          .then(() => this.downloadChunk(this.currentChunkNumber + 2))
-          .then(() => this.downloadChunk(this.currentChunkNumber + 3))
-          .then(() => this.downloadChunk(this.currentChunkNumber + 4))
-          .then(() => this.downloadChunk(this.currentChunkNumber + 5))
-          .then(() => this.downloadChunk(this.currentChunkNumber + 6))
+        let p = this.downloadChunk(this.currentChunkNumber)
+        for (let i = 1; i <= CrawlerConstants.SYNC_CHUNKS_IN_ADVANCE; i++) {
+          p = p.then(() => this.downloadChunk(this.currentChunkNumber + i))
+        }
       }
       else {
         // We don't have it yet

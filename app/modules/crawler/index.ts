@@ -27,6 +27,9 @@ import {RemoteSynchronizer} from "./lib/sync/RemoteSynchronizer"
 import {AbstractSynchronizer} from "./lib/sync/AbstractSynchronizer"
 import {LocalPathSynchronizer} from "./lib/sync/LocalPathSynchronizer"
 import {CommonConstants} from "../../lib/common-libs/constants"
+import {DataErrors} from "../../lib/common-libs/errors"
+import {NewLogger} from "../../lib/logger"
+import {CrawlerConstants} from "./lib/constants"
 
 export const CrawlerDependency = {
   duniter: {
@@ -136,6 +139,15 @@ export const CrawlerDependency = {
           return strategy.syncPeers(true)
         } else {
           const remote = new Synchroniser(server, strategy, interactive === true)
+
+          // If the sync fail, stop the program
+          process.on('unhandledRejection', (reason) => {
+            if (reason.message === DataErrors[DataErrors.NO_NODE_FOUND_TO_DOWNLOAD_CHUNK]) {
+              NewLogger().error('Synchronization interrupted: no node was found to continue downloading after %s tries.', CrawlerConstants.SYNC_MAX_FAIL_NO_NODE_FOUND)
+              process.exit(1)
+            }
+          })
+
           return remote.sync(upTo, chunkLength, askedCautious)
         }
       }

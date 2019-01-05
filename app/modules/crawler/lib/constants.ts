@@ -33,6 +33,7 @@ export const CrawlerConstants = {
   TEST_PEERS_INTERVAL: 10, // In seconds
   SYNC_PEERS_INTERVAL: 3, // Every 3 block average generation time
   SYNC_CHUNKS_IN_ADVANCE: 10, // We want to have that much chunks in advance when syncing
+  SYNC_MAX_FAIL_NO_NODE_FOUND: 20,
 
   DURATIONS: {
     TEN_SECONDS: 10,

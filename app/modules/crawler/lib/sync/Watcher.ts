@@ -30,6 +30,8 @@ export interface Watcher {
   wantToLoad(chunkIndex: number): void
 
   beforeReadyNodes(p2pCandidates: P2pCandidate[]): void
+
+  syncFailNoNodeFound(): void
 }
 
 export type EventName = 'downloadChange'|'storageChange'|'appliedChange'|'sbxChange'|'peersChange'
@@ -42,6 +44,7 @@ export type EventName = 'downloadChange'|'storageChange'|'appliedChange'|'sbxCha
   | 'wantToDownload'
   | 'wantToLoad'
   | 'beforeReadyNodes'
+  | 'syncFailNoNodeFound'
 
 export class EventWatcher extends events.EventEmitter implements Watcher {
 
@@ -134,6 +137,10 @@ export class EventWatcher extends events.EventEmitter implements Watcher {
 
   beforeReadyNodes(p2pCandidates: P2pCandidate[]): void {
     this.emit('beforeReadyNodes', { nodes: p2pCandidates })
+  }
+
+  syncFailNoNodeFound(): void {
+    this.emit('syncFailNoNodeFound', {})
   }
 }
 
@@ -272,6 +279,9 @@ export class MultimeterWatcher implements Watcher {
   beforeReadyNodes(p2pCandidates: P2pCandidate[]): void {
   }
 
+  syncFailNoNodeFound(): void {
+  }
+
 }
 
 export class LoggerWatcher implements Watcher {
@@ -362,6 +372,9 @@ export class LoggerWatcher implements Watcher {
   }
 
   beforeReadyNodes(p2pCandidates: P2pCandidate[]): void {
+  }
+
+  syncFailNoNodeFound(): void {
   }
 
 }

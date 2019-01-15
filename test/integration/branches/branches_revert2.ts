@@ -230,7 +230,7 @@ describe("Revert two blocks", function() {
 
     before(async () => {
       await s1.dal.txsDAL.removeAll()
-      await s1.resolveExistingBlock(1) // UD block
+      await s1.resolveExistingBlock(b => b.number === 2) // UD block
       await cat.sendMoney(19, toc);
       await s1.dal.blockDAL.removeForkBlock(3)
       await s1.commit({ time: now + 1 });

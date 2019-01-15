@@ -375,6 +375,20 @@ export class TestingServer {
     return this.server.revert()
   }
 
+  async resolve(filterFunc?: (b: DBBlock) => boolean): Promise<BlockDTO> {
+    const blocksResolved = await this.server.BlockchainService.blockResolution(filterFunc)
+    if (!blocksResolved) {
+      await new Promise(res => setTimeout(res, 200))
+      throw Error(DataErrors[DataErrors.BLOCK_WASNT_COMMITTED])
+    }
+    console.log(BlockDTO.fromJSONObject(blocksResolved).getRawSigned())
+    return blocksResolved
+  }
+
+  async resolveFork(): Promise<BlockDTO|null> {
+    return this.server.BlockchainService.forkResolution()
+  }
+
   resetHome() {
     return this.server.resetHome()
   }
@@ -490,7 +504,7 @@ export class TestingServer {
 
   async justCommit(options:any = null) {
     const proven = await this.generateNext(options)
-    await this.server.writeBlock(proven, true, false)
+    await this.server.writeBlock(proven, false, true)
     return proven
   }
 
@@ -505,8 +519,8 @@ export class TestingServer {
     return blocksResolved
   }
 
-  async resolveExistingBlock(max = 0) {
-    const blocksResolved = await this.server.BlockchainService.blockResolution(max)
+  async resolveExistingBlock(filterFunc: (b: DBBlock) => boolean) {
+    const blocksResolved = await this.server.BlockchainService.blockResolution(filterFunc)
     if (!blocksResolved) {
       throw Error(DataErrors[DataErrors.BLOCK_WASNT_COMMITTED])
     }

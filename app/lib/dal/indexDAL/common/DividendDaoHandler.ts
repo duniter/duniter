@@ -121,26 +121,31 @@ export class DividendDaoHandler {
   }
 
   static unconsumeDividends(m: DividendEntry, number: number, consumedUDsRecoveredByRevert: SimpleUdEntryForWallet[]) {
-    const index = m.consumed.indexOf(number)
+    let index;
+    do {
+      index = m.consumed.indexOf(number)
 
-    const src = m.consumedUDs[index].dividend
-    consumedUDsRecoveredByRevert.push({
-      conditions: 'SIG(' + m.pub + ')',
-      pos: m.consumedUDs[index].dividendNumber,
-      identifier: m.pub,
-      amount: src.amount,
-      base: src.base,
-      srcType: 'D',
-      op: 'CREATE'
-    })
+      if (index !== -1) {
+        const src = m.consumedUDs[index].dividend
+        consumedUDsRecoveredByRevert.push({
+          conditions: 'SIG(' + m.pub + ')',
+          pos: m.consumedUDs[index].dividendNumber,
+          identifier: m.pub,
+          amount: src.amount,
+          base: src.base,
+          srcType: 'D',
+          op: 'CREATE'
+        })
 
-    // We put it back as available
-    m.availables.push(m.consumedUDs[index].dividendNumber)
-    m.dividends.push(m.consumedUDs[index].dividend)
+        // We put it back as available
+        m.availables.push(m.consumedUDs[index].dividendNumber)
+        m.dividends.push(m.consumedUDs[index].dividend)
 
-    // We remove it from consumed
-    m.consumed.splice(index, 1)
-    m.consumedUDs.splice(index, 1)
+        // We remove it from consumed
+        m.consumed.splice(index, 1)
+        m.consumedUDs.splice(index, 1)
+      }
+    } while (index !== -1);
   }
 
   static trimConsumed(m: DividendEntry, belowNumber: number) {

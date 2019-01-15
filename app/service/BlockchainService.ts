@@ -219,7 +219,7 @@ export class BlockchainService extends FIFOService {
     })
   }
 
-  async blockResolution(max = 0): Promise<BlockDTO|null> {
+  async blockResolution(filterFunc: (b: DBBlock) => boolean = () => true): Promise<BlockDTO|null> {
     let lastAdded:BlockDTO|null = null
     let added:BlockDTO|null
     let nbAdded = 0
@@ -227,15 +227,15 @@ export class BlockchainService extends FIFOService {
       const current = await this.current()
       let potentials = []
       if (current) {
-        potentials = await this.dal.getForkBlocksFollowing(current)
+        potentials = (await this.dal.getForkBlocksFollowing(current)).filter(filterFunc)
         this.logger.info('Block resolution: %s potential blocks after current#%s...', potentials.length, current.number)
       } else {
-        potentials = await this.dal.getPotentialRootBlocks()
+        potentials = (await this.dal.getPotentialRootBlocks()).filter(filterFunc)
         this.logger.info('Block resolution: %s potential blocks for root block...', potentials.length)
       }
       added = null
       let i = 0
-      while (!added && i < potentials.length && (!max || nbAdded < max)) {
+      while (!added && i < potentials.length) {
         const dto = BlockDTO.fromJSONObject(potentials[i])
         try {
           if (dto.issuer === this.conf.pair.pub) {
@@ -274,6 +274,7 @@ export class BlockchainService extends FIFOService {
         block: newCurrent
       })
     }
+    return newCurrent
   }
 
   revertCurrentBlock() {

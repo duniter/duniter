@@ -60,6 +60,7 @@ describe("Transaction: CSV+CLTV+1of2SIG", function() {
     await cat.sendTX(tx)
     const block = await s1.justCommit({ time: now })
     block.should.have.property('transactions').length(1)
+    s1.resolve()
     await s1.waitToHaveBlock(2)
   })
 

@@ -653,7 +653,7 @@ export class BlockGenerator {
       transactions.forEach((tx:any) => {
         const txDTO = TransactionDTO.fromJSONObject(tx)
         const txLen = txDTO.getLen()
-        if (txLen <= CommonConstants.MAXIMUM_LEN_OF_COMPACT_TX && blockLen + txLen <= maxLenOfBlock && tx.version == CommonConstants.TRANSACTION_VERSION) {
+        if (txLen <= CommonConstants.MAXIMUM_LEN_OF_COMPACT_TX && blockLen + txLen < maxLenOfBlock && tx.version == CommonConstants.TRANSACTION_VERSION) {
           block.transactions.push(txDTO);
         }
         blockLen += txLen;

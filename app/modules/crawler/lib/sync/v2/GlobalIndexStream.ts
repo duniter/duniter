@@ -11,7 +11,7 @@ import {
 } from "../../../../../lib/indexer"
 import {ConfDTO, CurrencyConfDTO} from "../../../../../lib/dto/ConfDTO"
 import {FileDAL} from "../../../../../lib/dal/fileDAL"
-import {DuniterBlockchain} from "../../../../../lib/blockchain/DuniterBlockchain"
+import {DuniterBlockchain, requiredBindexSizeForTail} from "../../../../../lib/blockchain/DuniterBlockchain"
 import {BlockDTO} from "../../../../../lib/dto/BlockDTO"
 import {Underscore} from "../../../../../lib/common-libs/underscore"
 import {MonitorExecutionTime} from "../../../../../lib/debug/MonitorExecutionTime"
@@ -175,7 +175,8 @@ export class GlobalIndexStream extends Duplex {
         await DuniterBlockchain.saveParametersForRoot(block, this.conf, this.dal)
       }
 
-      if ((block.number <= this.to - this.conf.forksize || cliprogram.noSources) && !this.cautious) { // If we require nosources option, this blockchain can't be valid so we don't make checks
+      const bindexSize = requiredBindexSizeForTail(block, this.conf)
+      if ((block.number <= this.to - bindexSize - 1 || cliprogram.noSources) && !this.cautious) { // If we require nosources option, this blockchain can't be valid so we don't make checks
 
         const HEAD = await Indexer.quickCompleteGlobalScope(block, this.sync_currConf, sync_bindex, data.iindex, data.mindex, data.cindex, this.dal)
         sync_bindex.push(HEAD)

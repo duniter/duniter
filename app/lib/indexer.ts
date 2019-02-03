@@ -585,15 +585,6 @@ export class Indexer {
 
     const HEAD_1 = await head(1);
 
-    if (HEAD.number == 0) {
-      HEAD.dividend = conf.ud0;
-    }
-    else if (!HEAD.dividend) {
-      HEAD.dividend = HEAD_1.dividend;
-    } else {
-      HEAD.new_dividend = HEAD.dividend;
-    }
-
     // BR_G04
     await Indexer.prepareIssuersCount(HEAD, range, HEAD_1);
 
@@ -611,6 +602,12 @@ export class Indexer {
 
     // BR_G11
     Indexer.prepareUDTime(HEAD, HEAD_1, conf)
+
+    // BR_G13
+    Indexer.prepareDividend(HEAD, HEAD_1, conf)
+
+    // BR_G14
+    Indexer.prepareUnitBase(HEAD);
 
     // BR_G15
     Indexer.prepareMass(HEAD, HEAD_1);
@@ -1148,7 +1145,7 @@ export class Indexer {
   }
 
   // BR_G13
-  static prepareDividend(HEAD: DBHead, HEAD_1: DBHead, conf: ConfDTO) {
+  static prepareDividend(HEAD: DBHead, HEAD_1: DBHead, conf: CurrencyConfDTO) {
     // UD re-evaluation
     if (HEAD.number == 0) {
       HEAD.dividend = conf.ud0;

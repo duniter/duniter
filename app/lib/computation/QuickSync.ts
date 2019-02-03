@@ -12,7 +12,7 @@
 // GNU Affero General Public License for more details.
 
 "use strict"
-import {DuniterBlockchain} from "../blockchain/DuniterBlockchain";
+import {DuniterBlockchain, requiredBindexSizeForTail} from "../blockchain/DuniterBlockchain"
 import {BlockDTO} from "../dto/BlockDTO";
 import {DBTransaction} from "../db/DBTransaction";
 import {Indexer} from "../indexer";
@@ -121,7 +121,8 @@ export class QuickSynchronizer {
         sync_currConf = BlockDTO.getConf(block);
       }
 
-      if (block.number <= to - this.conf.forksize) {
+      const bindexSize = requiredBindexSizeForTail(block, this.conf)
+      if (block.number <= to - bindexSize - 1) {
         blocksToSave.push(dto);
         const index:any = Indexer.localIndex(dto, sync_currConf);
         const local_iindex = Indexer.iindex(index);

@@ -1,6 +1,6 @@
 {
   "name": "duniter",
-  "version": "1.7.11",
+  "version": "1.7.12",
   "engines": {
     "node": ">=8.2.1 <10",
     "npm": ">=3.10"
@@ -12,7 +12,7 @@
   "node-main": "./bin/duniter",
   "window": {
     "icon": "duniter.png",
-    "title": "v1.7.11",
+    "title": "v1.7.12",
     "width": 800,
     "height": 800,
     "min_width": 750,
@@ -68,6 +68,7 @@
     "bindings": "1.2.1",
     "body-parser": "1.17.1",
     "bs58": "^4.0.1",
+    "child-process-promise": "^2.2.1",
     "cli-table": "^0.3.1",
     "colors": "1.1.2",
     "commander": "2.9.0",
@@ -82,7 +83,7 @@
     "jison": "0.4.17",
     "js-yaml": "3.8.2",
     "leveldown": "^4.0.1",
-    "levelup": "^3.1.1",
+    "levelup": "^4.0.0",
     "lokijs": "^1.5.3",
     "memdown": "^3.0.0",
     "merkle": "0.5.1",

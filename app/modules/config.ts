@@ -24,6 +24,7 @@ module.exports = {
 
     cliOptions: [
       { value: '--store-txs', desc: 'Enable full transaction history storage.' },
+      { value: '--store-ww',  desc: 'Enable WotWizard regular export.' },
     ],
 
     config: {
@@ -39,6 +40,14 @@ module.exports = {
           }
           else {
             conf.storage.transactions = true
+          }
+        }
+        if (program.storeWw) {
+          if (!conf.storage) {
+            conf.storage = { transactions: false, wotwizard: true }
+          }
+          else {
+            conf.storage.wotwizard = true
           }
         }
       },

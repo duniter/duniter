@@ -35,7 +35,7 @@ module.exports = {
         // Transactions storage
         if (program.storeTxs) {
           if (!conf.storage) {
-            conf.storage = { transactions: true }
+            conf.storage = { transactions: true, wotwizard: false }
           }
           else {
             conf.storage.transactions = true
@@ -48,7 +48,8 @@ module.exports = {
         conf.switchOnHeadAdvance = CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS
         if (!conf.storage) {
           conf.storage = {
-            transactions: false
+            transactions: false,
+            wotwizard: false
           }
         }
       }

@@ -22,6 +22,32 @@ const Table = require('cli-table')
 
 module.exports = {
   duniter: {
+
+    service: {
+      neutral: (server:Server, conf:ConfDTO) => {
+        return {
+          startService: () => {
+            if (conf.storage && conf.storage.wotwizard) {
+              let fifo: Querable<any> = querablep(Promise.resolve())
+              server
+                .on('bcEvent', (e) => {
+                  if ((e.bcEvent === OtherConstants.BC_EVENT.HEAD_CHANGED || e.bcEvent === OtherConstants.BC_EVENT.SWITCHED) && fifo.isFulfilled()) {
+                    fifo = querablep(fifo.then(async () => {
+                      try {
+                        await dumpWotWizard(server)
+                      } catch (e) {}
+                    }))
+                  }
+                })
+            }
+          },
+          stopService: () => {
+            // Never stops, just wait for blocks
+          }
+        }
+      }
+    },
+
     cli: [{
       name: 'dump [what] [name] [cond]',
       desc: 'Dumps data of the blockchain.',
@@ -32,27 +58,37 @@ module.exports = {
         const what: string = params[0] || ''
         const name: string = params[1] || ''
         const cond: string = params[2] || ''
-        switch (what) {
 
-          case 'current':
-            await dumpCurrent(server)
-            break
+        try {
 
-          case 'volumes':
-            await dumpVolumes(server)
-            break
+          switch (what) {
 
-          case 'table':
-            await dumpTable(server, name, cond)
-            break
+            case 'current':
+              await dumpCurrent(server)
+              break
 
-          case 'history':
-            await dumpHistory(server, name)
-            break
+            case 'volumes':
+              await dumpVolumes(server)
+              break
 
-          default:
-            console.error(`Unknown dump ${what}`)
-            break
+            case 'table':
+              await dumpTable(server, name, cond)
+              break
+
+            case 'history':
+              await dumpHistory(server, name)
+              break
+
+            case 'wotwizard':
+              await dumpWotWizard(server)
+              break
+
+            default:
+              console.error(`Unknown dump ${what}`)
+              break
+          }
+        } catch (e) {
+          console.error(e)
         }
         // Save DB
         await server.disconnect();

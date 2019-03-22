@@ -393,6 +393,7 @@ export class Server extends stream.Duplex implements HookableServer {
     await this.resetConfigHook()
     const files = ['stats', 'cores', 'current', Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log', Directory.WOTB_FILE, 'export.zip', 'import.zip', 'conf']
       .concat(Directory.DATA_FILES)
+      .concat(Directory.WW_FILES)
     const dirs  = ['archives', 'loki', 'blocks', 'blockchain', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb']
       .concat(Directory.DATA_DIRS)
     return this.resetFiles(files, dirs, done);
@@ -402,6 +403,7 @@ export class Server extends stream.Duplex implements HookableServer {
     await this.resetDataHook()
     const files = ['stats', 'cores', 'current', Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log', Directory.WOTB_FILE]
       .concat(Directory.DATA_FILES)
+      .concat(Directory.WW_FILES)
     const dirs  = ['archives', 'loki', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb']
       .concat(Directory.DATA_DIRS)
     await this.resetFiles(files, dirs, done);
@@ -451,15 +453,6 @@ export class Server extends stream.Duplex implements HookableServer {
       output.on('error', reject);
       output.on('close', resolve);
     })
-  }
-
-  async cleanDBData() {
-    await this.dal.cleanCaches();
-    this.dal.wotb.resetWoT();
-    const files = ['stats', 'cores', 'current', Directory.DUNITER_DB_NAME, Directory.DUNITER_DB_NAME + '.db', Directory.DUNITER_DB_NAME + '.log'];
-    const dirs  = ['loki', 'blocks', 'ud_history', 'branches', 'certs', 'txs', 'cores', 'sources', 'links', 'ms', 'identities', 'peers', 'indicators', 'leveldb']
-      .concat(Directory.DATA_DIRS)
-    return this.resetFiles(files, dirs);
   }
 
   private async resetFiles(files:string[], dirs:string[], done:any = null) {

@@ -118,6 +118,7 @@ export const MemFS = (initialTree:{ [folder:string]: { [file:string]: string }} 
 export const Directory = {
 
   DATA_FILES: ['mindex.db', 'c_mindex.db', 'iindex.db', 'cindex.db', 'sindex.db', 'wallet.db', 'dividend.db', 'txs.db', 'peers.db'],
+  WW_FILES: ['wotwizard-export.db'],
   DATA_DIRS: ['data'],
 
   INSTANCE_NAME: getDomain(opts.mdb),

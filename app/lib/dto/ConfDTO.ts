@@ -25,6 +25,7 @@ export interface Keypair {
 export interface StorageDTO {
   storage?: {
     transactions?:boolean
+    wotwizard?:boolean
   }
 }
 
@@ -192,7 +193,8 @@ export class ConfDTO implements StorageDTO, CurrencyConfDTO, KeypairConfDTO, Net
     },
     public powNoSecurity = false,
     public storage = {
-      transactions: false
+      transactions: false,
+      wotwizard: false,
     },
 ) {}
 

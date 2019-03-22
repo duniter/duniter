@@ -28,6 +28,7 @@ export interface ProgramOptions {
   sqlTraces?: boolean
   memory?: boolean
   storeTxs?: boolean
+  storeWw?: boolean
 }
 
 export const cliprogram: ProgramOptions = {

@@ -2,8 +2,9 @@ import {WotWizardDAL} from "./wotwizard.init.structure"
 import {Server} from "../../../../server"
 import {CommonConstants} from "../../../lib/common-libs/constants"
 import {NewLogger} from "../../../lib/logger"
+import {WWBlockAccumulator} from "./hooks/wotwizard.block.insert"
 
-export async function addNewBlocks(server: Server, wwDAL: WotWizardDAL) {
+export async function addNewBlocks(server: Server, wwDAL: WotWizardDAL, acc: WWBlockAccumulator) {
 
   const logger = NewLogger()
 
@@ -25,6 +26,7 @@ export async function addNewBlocks(server: Server, wwDAL: WotWizardDAL) {
     const all =  blocks.concat(forks).map(f => { (f as any).legacy = false; return f })
     logger.debug('Saving %s pending blocks...', all.length)
     blocksSaved.push(wwDAL.blockDao.insertBatch(all))
+    acc.accumulate(all)
   }
 
   await Promise.all(blocksSaved)

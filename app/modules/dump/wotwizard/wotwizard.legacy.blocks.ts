@@ -3,8 +3,9 @@ import {Server} from "../../../../server"
 import {CommonConstants} from "../../../lib/common-libs/constants"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {NewLogger} from "../../../lib/logger"
+import {WWBlockAccumulator} from "./hooks/wotwizard.block.insert"
 
-export async function addLegacyBlocks(server: Server, wwDAL: WotWizardDAL) {
+export async function addLegacyBlocks(server: Server, wwDAL: WotWizardDAL, acc: WWBlockAccumulator) {
 
   const logger = NewLogger()
 
@@ -35,6 +36,7 @@ export async function addLegacyBlocks(server: Server, wwDAL: WotWizardDAL) {
 
   logger.debug('Saving blocks...')
   await wwDAL.blockDao.insertBatch(blocksSaved)
+  acc.accumulate(blocksSaved)
 
   await Promise.all(blocksSaved)
 

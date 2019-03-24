@@ -210,7 +210,7 @@ export class BlockDTO implements Cloneable {
   }
 
   get blockstamp() {
-    return [this.number, this.getHash()].join('-')
+    return BlockDTO.blockstamp({ number: this.number, hash: this.getHash() })
   }
 
   @MonitorExecutionTime()
@@ -291,5 +291,9 @@ export class BlockDTO implements Cloneable {
 
   static getHash(block:any) {
     return BlockDTO.fromJSONObject(block).getHash()
+  }
+
+  static blockstamp(b: { number: number, hash: string }) {
+    return [b.number, b.hash].join('-')
   }
 }

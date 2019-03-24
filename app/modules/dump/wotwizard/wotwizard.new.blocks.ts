@@ -30,7 +30,7 @@ export async function addNewBlocks(server: Server, wwDAL: WotWizardDAL) {
   await Promise.all(blocksSaved)
 
   const iindexRows = (await server.dal.iindexDAL.findRawWithOrder({}, [['writtenOn', false], ['wotb_id', false]]))
-    .filter(r => r.writtenOn >= start)
+    .filter(r => r.writtenOn >= start && r.uid)
 
   logger.debug('Saving %s iindex rows...', iindexRows.length)
   const legacies = iindexRows.map(f => { (f as any).legacy = false; return f })

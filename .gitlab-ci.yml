@@ -127,7 +127,7 @@ releases:test:
     - bash "release/arch/linux/build-lin.sh" "$(date +%Y%m%d).$(date +%H%M).$(date +%S)"
   artifacts:
     paths: *releases_artifacts
-    expire_in: 4h
+    expire_in: 72h
   except:
     - tags
 

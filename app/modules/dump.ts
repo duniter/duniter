@@ -97,6 +97,12 @@ module.exports = {
         // Save DB
         await server.disconnect();
       }
+    }, {
+      name: 'dump-ww',
+      desc: 'Dumps WotWizard export.',
+      logs: true,
+      preventIfRunning: true,
+      onDatabaseExecute: async (server:Server) => dumpWotWizard(server)
     }]
   }
 }

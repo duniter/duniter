@@ -42,8 +42,8 @@ export function requiredBlocksAccumulator(server: Server, wwDAL: WotWizardDAL): 
       const numbers = Object.keys(blockNumbers).map(n => parseInt(n))
       const blocksForCertifications: (DBBlock|null)[] = []
       for (let i = 0; i < numbers.length; i += chunkLen) {
-        const chunk = numbers.slice(0, chunkLen + 1)
-        logger.debug('Chunk %s-%s', i, i + chunkLen)
+        const chunk = numbers.slice(i, i + chunkLen)
+        logger.debug('Chunk %s-%s', chunk[0], chunk[chunk.length - 1])
         ;(await Promise.all(chunk.map(n => server.dal.getBlock(n))))
           .forEach(b => blocksForCertifications.push(b))
       }

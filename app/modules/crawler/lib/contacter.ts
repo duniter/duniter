@@ -22,7 +22,7 @@ export class Contacter {
   options:{ timeout:number }
   fullyQualifiedHost:string
 
-  constructor(private host:string, private port:number, opts:any = {}) {
+  constructor(public host:string, public port:number, opts:any = {}) {
     this.options = {
       timeout: (opts && opts.timeout) || CrawlerConstants.DEFAULT_TIMEOUT
     }

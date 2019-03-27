@@ -31,6 +31,12 @@ import {DataErrors} from "../../lib/common-libs/errors"
 import {NewLogger} from "../../lib/logger"
 import {CrawlerConstants} from "./lib/constants"
 import {ExitCodes} from "../../lib/common-libs/exit-codes"
+import {connect} from "./lib/connect"
+import {BMARemoteContacter} from "./lib/sync/BMARemoteContacter"
+import {applyMempoolRequirements, pullSandboxToLocalServer} from "./lib/sandbox"
+
+const HOST_PATTERN = /^[^:/]+(:[0-9]{1,5})?$/
+const FILE_PATTERN = /^(\/.+)$/
 
 export const CrawlerDependency = {
   duniter: {
@@ -100,8 +106,6 @@ export const CrawlerDependency = {
       onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any): Promise<any> => {
         const source = params[0]
         const to     = params[1]
-        const HOST_PATTERN = /^[^:/]+(:[0-9]{1,5})?$/
-        const FILE_PATTERN = /^(\/.+)$/
         if (!source || !(source.match(HOST_PATTERN) || source.match(FILE_PATTERN))) {
           throw 'Source of sync is required. (either a host:port or a file path)'
         }
@@ -209,6 +213,67 @@ export const CrawlerDependency = {
               logger.error(e);
             }
           }
+          await server.disconnect();
+        } catch(e) {
+          logger.error(e);
+          throw Error("Exiting");
+        }
+      }
+    }, {
+      name: 'sync-mempool <from>',
+      desc: 'Import all pending data from matching <search>',
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
+        const source: string = params[0]
+        if (!source || !(source.match(HOST_PATTERN) || source.match(FILE_PATTERN))) {
+          throw 'Source of sync is required. (host[:port])'
+        }
+        const logger = NewLogger()
+        const from: string = params[0]
+        const { host, port } = extractHostPort(from)
+        try {
+          const peer = PeerDTO.fromJSONObject({ endpoints: [['BASIC_MERKLED_API', host, port].join(' ')] })
+          const fromHost = peer.getHostPreferDNS();
+          const fromPort = peer.getPort();
+          logger.info('Looking at %s:%s...', fromHost, fromPort);
+          try {
+            const fromHost = await connect(peer, 60*1000)
+            const api = new BMARemoteContacter(fromHost)
+            await pullSandboxToLocalServer(server.conf.currency, api, server, logger)
+          } catch (e) {
+            logger.error(e);
+          }
+
+          await server.disconnect();
+        } catch(e) {
+          logger.error(e);
+          throw Error("Exiting");
+        }
+      }
+    }, {
+      name: 'sync-mempool-search <from> <search>',
+      desc: 'Import all pending data from matching <search>',
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
+        const source: string = params[0]
+        const search: string = params[1]
+        if (!source || !(source.match(HOST_PATTERN) || source.match(FILE_PATTERN))) {
+          throw 'Source of sync is required. (host[:port])'
+        }
+        const logger = NewLogger()
+        const from: string = params[0]
+        const { host, port } = extractHostPort(from)
+        try {
+          const peer = PeerDTO.fromJSONObject({ endpoints: [['BASIC_MERKLED_API', host, port].join(' ')] })
+          const fromHost = peer.getHostPreferDNS();
+          const fromPort = peer.getPort();
+          logger.info('Looking at %s:%s...', fromHost, fromPort);
+          try {
+            const fromHost = await connect(peer)
+            const res = await fromHost.getRequirements(search)
+            await applyMempoolRequirements(server.conf.currency, res, server, logger)
+          } catch (e) {
+            logger.error(e);
+          }
+
           await server.disconnect();
         } catch(e) {
           logger.error(e);
@@ -403,5 +468,15 @@ export const CrawlerDependency = {
         }
       }
     }]
+  }
+}
+
+function extractHostPort(source: string) {
+  const sp = source.split(':')
+  const onHost = sp[0]
+  const onPort = parseInt(sp[1] ? sp[1] : '443') // Defaults to 443
+  return {
+    host: onHost,
+    port: onPort,
   }
 }

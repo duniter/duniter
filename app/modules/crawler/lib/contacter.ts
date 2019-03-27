@@ -101,6 +101,10 @@ export class Contacter {
   postRenew(ms:string) {
     return this.post('/blockchain/membership', dtos.Membership, { membership: ms })
   }
+
+  postRevocation(rev:string) {
+    return this.post('/wot/revoke', dtos.Identity, { revocation: rev })
+  }
   
   wotPending() {
     return this.get('/wot/pending', dtos.MembershipList)

@@ -14,8 +14,9 @@
 import {Contacter} from "./contacter"
 import {verify} from "../../../lib/common-libs/crypto/keyring"
 import {rawer} from "../../../lib/common-libs/index"
+import {HttpRequirements} from "../../bma/lib/dtos"
 
-export const req2fwd = async (requirements:any, toHost:string, toPort:number, logger:any) => {
+export const req2fwd = async (requirements: HttpRequirements, toHost:string, toPort:number, logger:any) => {
   const mss:any = {};
   const identities:any = {};
   const certs:any = {};
@@ -39,6 +40,19 @@ export const req2fwd = async (requirements:any, toHost:string, toPort:number, lo
           logger.info('Success idty %s', idty.uid);
         } catch (e) {
           logger.warn('Rejected idty %s...', idty.uid, e);
+        }
+
+        if (idty.revocation_sig) {
+          logger.info('New revocation %s', idty.uid);
+          const revocation = rawer.getOfficialRevocation({
+            currency: 'g1', // TODO: generalize
+            uid:      idty.uid,
+            issuer:   idty.pubkey,
+            buid:     idty.meta.timestamp,
+            sig:      idty.sig,
+            revocation: idty.revocation_sig
+          })
+          await targetPeer.postRevocation(revocation);
         }
       }
       for (const received of idty.pendingCerts) {

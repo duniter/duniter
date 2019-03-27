@@ -3,9 +3,8 @@ import {Server} from "../../../../server"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {Underscore} from "../../../lib/common-libs/underscore"
 import {NewLogger} from "../../../lib/logger"
-import {WWBlockAccumulator} from "./hooks/wotwizard.block.insert"
 
-export async function copyMemPool(server: Server, wwDAL: WotWizardDAL, acc: WWBlockAccumulator) {
+export async function copyMemPool(server: Server, wwDAL: WotWizardDAL) {
 
   const logger = NewLogger()
 
@@ -17,7 +16,6 @@ export async function copyMemPool(server: Server, wwDAL: WotWizardDAL, acc: WWBl
   const toPersist: DBBlock[] = Underscore.uniq(blocks.filter(b => b) as DBBlock[], false, b => [b.number, b.hash].join('-'))
 
   logger.debug('Persisting %s blocks for identities...', toPersist.length)
-  acc.accumulate(toPersist)
   await wwDAL.blockDao.insertBatch(toPersist.map(b => { (b as any).legacy = true; return b }))
   await wwDAL.idtyDao.insertBatch(identities)
   await wwDAL.certDao.insertBatch(await server.dal.certDAL.sqlListAll())

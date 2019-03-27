@@ -150,7 +150,15 @@ async function dumpTable(server: Server, name: string, condition?: string) {
   switch (name) {
     case 'b_index':
       rows = await server.dal.bindexDAL.findRawWithOrder(criterion, [['number', false]])
-      dump(rows, ['version','bsize','hash','issuer','time','number','membersCount','issuersCount','issuersFrame','issuersFrameVar','issuerDiff','avgBlockSize','medianTime','dividend','mass','unitBase','powMin','udTime','udReevalTime','diffNumber','speed','massReeval'])
+      break
+
+    /**
+     * Dumps issuers visible in current bindex
+     */
+    case 'issuers':
+      rows = await server.dal.bindexDAL.findRawWithOrder(criterion, [['number', false]])
+      const identites = await Promise.all(Underscore.uniq(rows.map(b => b.issuer)).map(i => server.dal.iindexDAL.getFullFromPubkey(i)))
+      console.log(identites.map(i => i.uid))
       break
 
     case 'i_index':

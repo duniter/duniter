@@ -159,6 +159,7 @@ async function dumpTable(server: Server, name: string, condition?: string) {
   switch (name) {
     case 'b_index':
       rows = await server.dal.bindexDAL.findRawWithOrder(criterion, [['number', false]])
+      dump(rows, ['version','bsize','hash','issuer','time','number','membersCount','issuersCount','issuersFrame','issuersFrameVar','issuerDiff','avgBlockSize','medianTime','dividend','mass','unitBase','powMin','udTime','udReevalTime','diffNumber','speed','massReeval'])
       break
 
     /**

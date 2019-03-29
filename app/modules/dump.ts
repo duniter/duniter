@@ -21,6 +21,7 @@ import {Underscore} from "../lib/common-libs/underscore"
 import {dumpWotWizard} from "./dump/wotwizard/wotwizard.dump"
 import {OtherConstants} from "../lib/other_constants"
 import {Querable, querablep} from "../lib/common-libs/querable"
+import {dumpBlocks, dumpForks} from "./dump/blocks/dump.blocks"
 
 const Table = require('cli-table')
 
@@ -69,6 +70,14 @@ module.exports = {
 
             case 'current':
               await dumpCurrent(server)
+              break
+
+            case 'blocks':
+              await dumpBlocks(server, name)
+              break
+
+            case 'forks':
+              await dumpForks(server, name)
               break
 
             case 'volumes':

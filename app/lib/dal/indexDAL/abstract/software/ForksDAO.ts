@@ -23,6 +23,13 @@ export interface ForksDAO {
 
   getNextForkBlocks(number:number, hash:string): Promise<DBBlock[]>
 
+  /**
+   * Find any fork block whose number is between `numberStart` and `maxNumber`, both included, and whose medianTime is
+   * >= `medianTimeStart`.
+   * @param numberStart
+   * @param medianTimeStart
+   * @param maxNumber
+   */
   getPotentialForkBlocks(numberStart:number, medianTimeStart:number, maxNumber:number): Promise<DBBlock[]>
 
   removeForkBlock(number:number): Promise<void>

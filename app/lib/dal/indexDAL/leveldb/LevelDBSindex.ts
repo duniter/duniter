@@ -177,11 +177,13 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry> implements SIndexDA
   }
 
   async getWrittenOn(blockstamp: string): Promise<SindexEntry[]> {
-    const ids = (await this.indexForTrimming.getOrNull(LevelDBSindex.trimWrittenOnKey(pint(blockstamp)))) || []
+    const ids = Underscore.uniq((await this.indexForTrimming.getOrNull(LevelDBSindex.trimWrittenOnKey(pint(blockstamp)))) || [])
     const found: SindexEntry[] = []
     for (const id of ids) {
       const entries = await this.findByIdentifierAndPos(id.split('-')[0], pint(id.split('-')[1]))
-      entries.forEach(e => found.push(e))
+      entries
+        .filter(e => e.written_on === blockstamp)
+        .forEach(e => found.push(e))
     }
     return found
   }
@@ -198,42 +200,65 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry> implements SIndexDA
 
   async removeBlock(blockstamp: string): Promise<void> {
     const writtenOn = pint(blockstamp)
+    // We look at records written on this blockstamp: `indexForTrimming` allows to get them
     const ids = (await this.indexForTrimming.getOrNull(LevelDBSindex.trimWrittenOnKey(writtenOn))) || []
+    // `ids` contains both CREATE and UPDATE sources
     for (const id of ids) {
       // Remove sources
       const identifier = id.split('-')[0]
+      const pos = parseInt(id.split('-')[1])
       const conditions: string[] = []
-      await this.applyAllKeyValue(async kv => {
-        conditions.push(kv.value.conditions)
-        await this.del(kv.key)
-      }, {
-        gte: identifier,
-        lt: LevelDBSindex.upperIdentifier(identifier)
-      })
-      // Remove indexations
-      // 1. WrittenOn
-      await this.indexForTrimming.del(LevelDBSindex.trimWrittenOnKey(writtenOn))
-      // 2. Conditions
+      const createKey = LevelDBSindex.trimKey(identifier, pos, false)
+      const updateKey = LevelDBSindex.trimKey(identifier, pos, true)
+      const createRecord = await this.getOrNull(createKey)
+      const updateRecord = await this.getOrNull(updateKey)
+      // Undo consumption
+      if (updateRecord && updateRecord.writtenOn === writtenOn) {
+        conditions.push(updateRecord.conditions)
+        await this.del(updateKey)
+      }
+      // Undo creation?
+      if (createRecord && createRecord.writtenOn === writtenOn) {
+        conditions.push(createRecord.conditions)
+        await this.del(createKey)
+      }
+      // Update balance
+      // 1. Conditions
       const uniqConditions = Underscore.uniq(conditions)
       for (const condition of uniqConditions) {
+        // Remove this source from the balance
         await this.trimConditions(condition, id)
       }
+    }
+    if (ids.length) {
+      // 2. WrittenOn
+      await this.indexForTrimming.del(LevelDBSindex.trimWrittenOnKey(writtenOn))
+      await this.indexForConsumed.del(LevelDBSindex.trimWrittenOnKey(writtenOn))
     }
   }
 
   private async trimConditions(condition: string, id: string) {
+    // Get all the account's TX sources
     const existing = (await this.indexForConditions.getOrNull(condition)) || []
+    // Prune the source from the account
     const trimmed = arrayPruneAllCopy(existing, id)
     if (trimmed.length) {
+      // If some sources are left for this "account", persist what remains
       await this.indexForConditions.put(condition, trimmed)
     } else {
+      // Otherwise just delete the "account"
       await this.indexForConditions.del(condition)
     }
   }
 
+  /**
+   * Duplicate with trimConditions?!
+   * @param writtenOn
+   * @param id
+   */
   private async trimWrittenOn(writtenOn: number, id: string) {
     const k = LevelDBSindex.trimWrittenOnKey(writtenOn)
-    const existing = (await this.indexForTrimming.getOrNull(k)) || []
+    const existing = await this.getWrittenOnSourceIds(writtenOn)
     const trimmed = arrayPruneAllCopy(existing, id)
     if (trimmed.length) {
       await this.indexForConditions.put(k, trimmed)
@@ -251,6 +276,11 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry> implements SIndexDA
     } else {
       await this.indexForConsumed.del(k)
     }
+  }
+
+  private async getWrittenOnSourceIds(writtenOn: number) {
+    const indexForTrimmingId = LevelDBSindex.trimWrittenOnKey(writtenOn)
+    return (await this.indexForTrimming.getOrNull(indexForTrimmingId)) || []
   }
 
   private static trimKey(identifier: string, pos: number, consumed: boolean) {

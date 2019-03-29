@@ -23,6 +23,10 @@ describe('Grammar', () => {
   let Ha = "CA978112CA1BBDCAFAC231B39A23DC4DA786EFF8147C4E72B9807785AFEE48BB"
   let Hz = "594E519AE499312B29433B7DD8A97FF068DEFCBA9755B6D5D00E84C524D67B06"
 
+  it('EMPTY string should work (but not unlock)', () => {
+    assert.equal(unlock('', [], { sigs: [] }), null)
+  })
+
   it('SIG should work', () => {
     assert.equal(unlock('SIG(' + k1 + ')', ['SIG(0)'], { sigs: [{ k:k1, ok:true }] }), true)
     assert.equal(unlock('SIG(' + k1 + ')', ['SIG(0)'], { sigs: [{ k:k1, ok:false }] }), null)

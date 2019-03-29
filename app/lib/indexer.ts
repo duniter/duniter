@@ -30,6 +30,7 @@ import {Tristamp} from "./common/Tristamp"
 import {Underscore} from "./common-libs/underscore"
 import {DataErrors} from "./common-libs/errors"
 import {MonitorExecutionTime} from "./debug/MonitorExecutionTime"
+import {NewLogger} from "./logger"
 
 const constants       = CommonConstants
 
@@ -1033,6 +1034,9 @@ export class Indexer {
           ENTRY.base,
           ENTRY.srcType === 'D'
         );
+        if (!reducable.length) {
+          NewLogger().debug('Source %s:%s NOT FOUND', ENTRY.identifier, ENTRY.pos)
+        }
         source = reduce(reducable)
       }
       return source
@@ -2157,6 +2161,9 @@ function txSourceUnlock(ENTRY:SindexEntry, source:{ conditions: string, written_
   const unlockParams:string[] = TransactionDTO.unlock2params(ENTRY.unlock || '')
   const unlocksMetadata:UnlockMetadata = {}
   const sigResult = TransactionDTO.fromJSONObject(tx).getTransactionSigResult()
+  if (!source.conditions) {
+    return false // Unlock fail
+  }
   if (source.conditions.match(/CLTV/)) {
     unlocksMetadata.currentTime = HEAD.medianTime;
   }

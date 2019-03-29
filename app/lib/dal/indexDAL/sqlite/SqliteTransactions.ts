@@ -87,6 +87,7 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
     const theDBTx = DBTx.fromTransactionDTO(tx)
     theDBTx.written = true
     theDBTx.block_number = block_number
+    theDBTx.time = time
     if (!dbTx) {
       await this.insert(theDBTx)
     }

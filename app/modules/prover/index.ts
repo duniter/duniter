@@ -104,6 +104,10 @@ export const ProverDependency = {
         return generateAndSend(program, difficulty, server, () => () => generator.nextBlock())
       }
     }, {
+      name: 'bc-resolve',
+      desc: 'Tries to resolve next blocks or forks.',
+      onDatabaseExecute: async () => {}
+    }, {
       name: 'gen-root [difficulty]',
       desc: 'Tries to generate the next block of the blockchain.',
       preventIfRunning: true,

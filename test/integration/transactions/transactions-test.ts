@@ -22,6 +22,9 @@ const assert = require('assert');
 describe("Testing transactions", function() {
 
   const now = 1490000000;
+  const yesterday = now - 86400;
+  const tomorrow = now + 86400;
+  const intwodays = now + (86400 * 2);
 
   let s1:TestingServer, tic:TestUser, toc:TestUser
 
@@ -75,6 +78,27 @@ describe("Testing transactions", function() {
     return Promise.all([
       s1.closeCluster()
     ])
+  })
+
+  describe("History by time", function(){
+    it('should have a time not null', () => s1.expect('/tx/history/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', (res:any) => {
+      res.should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
+      res.should.have.property('history').property('received').length(1);
+      res.history.received[0].should.have.property('time').not.be.Null;
+      res.history.received[0].should.have.property('time').be.a.Number;
+    }));
+
+    it('should return a received transaction between yesterday and tomorrow', () => s1.expect('/tx/history/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo/times/' + yesterday + '/' + tomorrow, (res:any) => {
+      res.should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
+      res.should.have.property('history').property('received').length(1);
+      res.history.received[0].should.have.property('time').not.be.Null;
+      res.history.received[0].should.have.property('time').be.a.Number;
+    }));
+
+    it('should not return a received transaction the day after tomorrow', () => s1.expect('/tx/history/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo/times/' + tomorrow + '/' + intwodays, (res:any) => {
+      res.should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
+      res.should.have.property('history').property('received').length(0);
+    }));
   })
 
   describe("Sources", function(){

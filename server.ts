@@ -367,10 +367,6 @@ export class Server extends stream.Duplex implements HookableServer {
     return this.BlockchainService.getCountOfSelfMadePoW()
   }
   
-  isServerMember() {
-    return this.BlockchainService.isMember()
-  }
-
   checkConfig(): Promise<any> {
     if (!this.conf.pair) {
       throw new Error('No keypair was given.');

@@ -335,7 +335,7 @@ export class BlockGenerator {
     for (const newcomer of theNewcomers) {
       // New array of certifiers
       newCerts[newcomer] = newCerts[newcomer] || [];
-      // Check wether each certification of the block is from valid newcomer/member
+      // Check whether each certification of the block is from valid newcomer/member
       for (const cert of certsByKey[newcomer]) {
         const isAlreadyCertifying = certifiers.indexOf(cert.from) !== -1;
         if (!(isAlreadyCertifying && forBlock > 0)) {
@@ -390,7 +390,7 @@ export class BlockGenerator {
         // Look for certifications from initial joiners
         const certs = await this.dal.certsNotLinkedToTarget(idHash);
         foundCerts = Underscore.filter(certs, (cert:any) => {
-          // Add 'joiners && ': special case when block#0 not written ANd not joiner yet (avoid undefined error)
+          // Add 'joiners && ': special case when block#0 not written and not joiner yet (avoid undefined error)
           return !!(joiners && ~joiners.indexOf(cert.from))
         });
       } else {

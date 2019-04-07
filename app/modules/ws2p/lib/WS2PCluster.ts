@@ -822,9 +822,6 @@ export class WS2PCluster {
       return false
     }
 
-    // Is member key ?
-    const isMemberPeer = await this.server.dal.isMember(pub)
-
     // Do we have room?
     if (getConcurrentConnexionsCount() < maxConcurrentConnexionsSize) {
       // Yes: just connect to it

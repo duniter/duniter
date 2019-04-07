@@ -433,10 +433,6 @@ export class BlockchainService extends FIFOService {
     })
   }
 
-  isMember() {
-    return this.dal.isMember(this.selfPubkey)
-  }
-
   // TODO: look in archives too
   getCountOfSelfMadePoW() {
     return this.dal.getCountOfPoW(this.selfPubkey)

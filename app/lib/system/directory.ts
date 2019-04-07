@@ -123,6 +123,7 @@ export const Directory = {
 
   INSTANCE_NAME: getDomain(opts.mdb),
   INSTANCE_HOME: getHomePath(opts.mdb, opts.home),
+  GET_FILE_PATH: (fileSubPath: string, home = '') => path.join(home || Directory.INSTANCE_HOME, fileSubPath),
   INSTANCE_HOMELOG_FILE: getLogsPath(opts.mdb, opts.home),
   DUNITER_DB_NAME: 'duniter',
   LOKI_DB_DIR: 'loki',
@@ -136,7 +137,7 @@ export const Directory = {
       return new SQLiteDriver(':memory:')
     }
     // Or file
-    const sqlitePath = path.join(home || Directory.INSTANCE_HOME, dbName)
+    const sqlitePath = Directory.GET_FILE_PATH(dbName, home)
     return new SQLiteDriver(sqlitePath)
   },
 

@@ -143,7 +143,7 @@ releases:x64:
     - tags
 
 .release_jobs: &release_jobs
-  image: tensorflow/tensorflow:1.12.0-py3
+  image: rdadev/jinja2:py3.6
   tags:
     - redshift-duniter-builder
   script:

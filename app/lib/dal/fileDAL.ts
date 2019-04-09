@@ -69,7 +69,6 @@ import {cliprogram} from "../common-libs/programOptions"
 import {DividendDAO, UDSource} from "./indexDAL/abstract/DividendDAO"
 import {HttpSource, HttpUD} from "../../modules/bma/lib/dtos"
 import {GenericDAO} from "./indexDAL/abstract/GenericDAO"
-import {LokiDAO} from "./indexDAL/loki/LokiDAO"
 import {MonitorExecutionTime} from "../debug/MonitorExecutionTime"
 import {LevelDBDividend} from "./indexDAL/leveldb/LevelDBDividend"
 import {LevelDBBindex} from "./indexDAL/leveldb/LevelDBBindex"
@@ -136,7 +135,6 @@ export class FileDAL {
   dividendDAL:DividendDAO
   newDals:{ [k:string]: Initiable }
   private dals:(BlockchainArchiveDAO<any>|PeerDAO|WalletDAO|GenericDAO<any>)[]
-  private lokiDaos:LokiDAO[] = []
 
   loadConfHook: (conf:ConfDTO) => Promise<void>
   saveConfHook: (conf:ConfDTO) => Promise<ConfDTO>

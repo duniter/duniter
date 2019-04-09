@@ -165,7 +165,7 @@ export const BmaDependency = {
         // Configuration errors
         if (!conf.nobma) {
           if(!conf.ipv4 && !conf.ipv6){
-            throw new Error("BMA: no interface to listen to.");
+            throw new Error("BMA: no interface to listen to. Provide ipv4/ipv6 interface or deactivate BMA");
           }
           if(!conf.remoteipv4 && !conf.remoteipv6 && !conf.remotehost){
             throw new Error('BMA: no interface for remote contact.');

@@ -28,6 +28,18 @@ push_to_github:
     - master
     - dev
 
+.changes: &changes
+  only:
+    changes:
+      - app/**/*
+      - bin/duniter
+      - .gitlab-ci.yml
+      - index.ts
+      - package.json
+      - releases/**/*
+      - server.ts
+      - test/**/*
+
 .nvm_env: &nvm_env
   tags:
     - redshift
@@ -43,6 +55,7 @@ push_to_github:
       - node_modules/
   
 build:
+  <<: *changes
   <<: *nvm_env
   stage: build
   script:
@@ -73,6 +86,7 @@ build:
 #    - dev
 
 test:
+  <<: *changes
   <<: *nvm_env
   stage: test
   script:
@@ -91,6 +105,7 @@ test:
     expire_in: 4h
 
 sync_g1:
+  <<: *changes
   <<: *nvm_env
   stage: integration
   script:
@@ -100,6 +115,7 @@ sync_g1:
     - tags
 
 sync_gtest:
+  <<: *changes
   <<: *nvm_env
   stage: integration
   script:

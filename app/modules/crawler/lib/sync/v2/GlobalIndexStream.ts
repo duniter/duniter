@@ -27,7 +27,6 @@ import {DataErrors} from "../../../../../lib/common-libs/errors"
 import {ProtocolIndexesStream} from "./ProtocolIndexesStream"
 
 const constants = require('../../constants')
-const loki = require('lokijs')
 
 let sync_expires: number[] = []
 let sync_bindex: any [] = []

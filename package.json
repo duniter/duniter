@@ -84,7 +84,6 @@
     "js-yaml": "3.8.2",
     "leveldown": "^4.0.1",
     "levelup": "^4.0.0",
-    "lokijs": "^1.5.3",
     "memdown": "^3.0.0",
     "merkle": "0.5.1",
     "moment": "2.19.3",
@@ -115,7 +114,6 @@
     "ws": "1.1.5"
   },
   "devDependencies": {
-    "@types/lokijs": "^1.5.2",
     "@types/mocha": "^2.2.41",
     "@types/node": "^8.0.9",
     "@types/should": "^8.3.0",

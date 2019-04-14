@@ -51,10 +51,6 @@
   version "4.14.104"
   resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.104.tgz#53ee2357fa2e6e68379341d92eb2ecea4b11bb80"
 
-"@types/lokijs@^1.5.2":
-  version "1.5.2"
-  resolved "https://registry.yarnpkg.com/@types/lokijs/-/lokijs-1.5.2.tgz#ed228f080033ce1fb16eff4acde65cb9ae0f1bf2"
-
 "@types/marked@0.3.0":
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/@types/marked/-/marked-0.3.0.tgz#583c223dd33385a1dda01aaf77b0cd0411c4b524"
@@ -2619,10 +2615,6 @@ lodash@^4.17.5:
 log-driver@1.2.4:
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/log-driver/-/log-driver-1.2.4.tgz#2d62d7faef45d8a71341961a04b0761eca99cfa3"
-
-lokijs@^1.5.3:
-  version "1.5.3"
-  resolved "https://registry.yarnpkg.com/lokijs/-/lokijs-1.5.3.tgz#6952722ffa3049a55a5e1c10ee4a0947a3e5e19b"
 
 longest@^1.0.1:
   version "1.0.1"

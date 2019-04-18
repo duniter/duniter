@@ -12,6 +12,7 @@
 // GNU Affero General Public License for more details.
 
 import {CrawlerConstants} from "./constants"
+import {HttpMembershipList} from "../../bma/lib/dtos"
 
 const rp = require('request-promise');
 const sanitize = require('../../../modules/bma/lib/sanitize')
@@ -19,6 +20,7 @@ const dtos = require('../../../modules/bma').BmaDependency.duniter.methods.dtos;
 
 export class Contacter {
 
+  path: string = ''
   options:{ timeout:number }
   fullyQualifiedHost:string
 
@@ -28,6 +30,12 @@ export class Contacter {
     }
     // We suppose that IPv6 is already wrapped by [], for example 'http://[::1]:80/index.html'
     this.fullyQualifiedHost = [host, port].join(':');
+  }
+
+  public static fromHostPortPath(host:string, port:number, path:string, opts: { timeout?: number }) {
+    const contacter = new Contacter(host, port, opts)
+    contacter.path = path
+    return contacter
   }
 
   getSummary() {
@@ -106,7 +114,7 @@ export class Contacter {
     return this.post('/wot/revoke', dtos.Identity, { revocation: rev })
   }
   
-  wotPending() {
+  wotPending(): Promise<HttpMembershipList> {
     return this.get('/wot/pending', dtos.MembershipList)
   }
   
@@ -128,8 +136,9 @@ export class Contacter {
       param = '?' + Object.keys(param).map((k) => [k, param[k]].join('=')).join('&');
     }
     try {
+      const path = this.path || ''
       const json = await rp.get({
-        url: Contacter.protocol(this.port) + this.fullyQualifiedHost + url + (param !== undefined ? param : ''),
+        url: Contacter.protocol(this.port) + this.fullyQualifiedHost + path + url + (param !== undefined ? param : ''),
         json: true,
         timeout: this.options.timeout
       });
@@ -142,8 +151,9 @@ export class Contacter {
 
   private async post(url:string, dtoContract:any, data:any) {
     try {
+      const path = this.path || ''
       const json = await rp.post({
-        url: Contacter.protocol(this.port) + this.fullyQualifiedHost + url,
+        url: Contacter.protocol(this.port) + this.fullyQualifiedHost + path + url,
         body: data,
         json: true,
         timeout: this.options.timeout

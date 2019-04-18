@@ -18,6 +18,8 @@ import {parsers} from "../../../lib/common-libs/parsers/index"
 import {IRemoteContacter} from "./sync/IRemoteContacter"
 import {HttpRequirements} from "../../bma/lib/dtos"
 import {Watcher} from "./sync/Watcher"
+import {PeerDTO} from "../../../lib/dto/PeerDTO"
+import {connect} from "./connect"
 
 export const pullSandboxToLocalServer = async (currency:string, fromHost:IRemoteContacter, toServer:Server, logger:any, watcher:any = null, nbCertsMin = 1, notify = true) => {
   let res
@@ -65,6 +67,74 @@ export async function applyMempoolRequirements(currency: string, res: HttpRequir
     watcher && watcher.writeStatus('Membership ' + (i+1) + '/' + docs.memberships.length)
     watcher && watcher.sbxPercent((t++) / T * 100)
     await submitMembershipToServer(ms, toServer, notify, logger)
+  }
+
+  watcher && watcher.sbxPercent(100)
+}
+
+export async function forwardToServer(currency: string, res: HttpRequirements, toHost: string, toPort: string, logger?: any, watcher?: Watcher) {
+
+  const docs = getDocumentsTree(currency, res)
+  const [port, path] = toPort.split('/')
+  let ep = [port == '443' ? 'BMAS' : 'BASIC_MERKLED_API', toHost, port].join(' ')
+  if (path) {
+    ep += ' /' + path
+  }
+
+  toPort = ':' + toPort
+  const peer = PeerDTO.fromJSONObject({endpoints: [ep]})
+  logger.info('Forwarded to %s...', toHost + toPort)
+  const target = await connect(peer)
+
+  let t = 0
+  let T = docs.identities.length + docs.certifications.length + docs.revocations.length + docs.memberships.length
+
+  for (let i = 0; i < docs.identities.length; i++) {
+    const idty = docs.identities[i];
+    watcher && watcher.writeStatus('Identity ' + (i+1) + '/' + docs.identities.length)
+    watcher && watcher.sbxPercent((t++) / T * 100)
+    try {
+      await target.postIdentity(idty)
+      logger.info('Forwarded identity to %s...', toHost + toPort)
+    } catch (e) {
+      logger.warn(e)
+    }
+  }
+
+  for (let i = 0; i < docs.revocations.length; i++) {
+    const revo = docs.revocations[i];
+    watcher && watcher.writeStatus('Revocation ' + (i+1) + '/' + docs.revocations.length)
+    watcher && watcher.sbxPercent((t++) / T * 100)
+    try {
+      await target.postRevocation(revo)
+      logger.info('Forwarded revocation to %s...', toHost + toPort)
+    } catch (e) {
+      logger.warn(e)
+    }
+  }
+
+  for (let i = 0; i < docs.certifications.length; i++) {
+    const cert = docs.certifications[i];
+    watcher && watcher.writeStatus('Certification ' + (i+1) + '/' + docs.certifications.length)
+    watcher && watcher.sbxPercent((t++) / T * 100)
+    try {
+      await target.postCert(cert)
+      logger.info('Forwarded cert to %s...', toHost + toPort)
+    } catch (e) {
+      logger.warn(e)
+    }
+  }
+
+  for (let i = 0; i < docs.memberships.length; i++) {
+    const ms = docs.memberships[i];
+    watcher && watcher.writeStatus('Membership ' + (i+1) + '/' + docs.memberships.length)
+    watcher && watcher.sbxPercent((t++) / T * 100)
+    try {
+      await target.postRenew(ms)
+      logger.info('Forwarded membership to %s...', toHost + toPort)
+    } catch (e) {
+      logger.warn(e)
+    }
   }
 
   watcher && watcher.sbxPercent(100)

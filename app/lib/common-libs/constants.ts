@@ -44,6 +44,7 @@ const UNLOCK       = "(SIG\\(" + INTEGER + "\\)|XHX\\(" + XUNLOCK + "\\))"
 const CONDITIONS   = "(&&|\\|\\|| |[()]|(SIG\\(" + PUBKEY + "\\)|(XHX\\([A-F0-9]{64}\\)|CLTV\\(" + CLTV_INTEGER + "\\)|CSV\\(" + CSV_INTEGER + "\\))))*"
 
 const BMA_REGEXP  = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/
+const BMAS_REGEXP  = /^BMAS( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))( (\/.+))?$/
 const BMATOR_REGEXP = /^BMATOR( ([a-z0-9]{16})\.onion)( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/
 const WS2P_REGEXP = /^WS2P (?:[1-9][0-9]* )?([a-f0-9]{8}) ([a-z_][a-z0-9-_.]*|[0-9.]+|[0-9a-f:]+) ([0-9]+)(?: (.+))?$/
 const WS2P_V2_REGEXP = /^WS2P ([1-9][0-9]*) ([a-f0-9]{8}) ([a-z_][a-z0-9-_.]*|[0-9.]+|[0-9a-f:]+) ([0-9]+)(?: (.+))?$/
@@ -110,6 +111,7 @@ export const CommonConstants = {
   SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS: 3,
 
   BMA_REGEXP,
+  BMAS_REGEXP,
   BMATOR_REGEXP,
   WS2P_REGEXP,
   WS2P_V2_REGEXP,

@@ -33,9 +33,9 @@ import {CrawlerConstants} from "./lib/constants"
 import {ExitCodes} from "../../lib/common-libs/exit-codes"
 import {connect} from "./lib/connect"
 import {BMARemoteContacter} from "./lib/sync/BMARemoteContacter"
-import {applyMempoolRequirements, pullSandboxToLocalServer} from "./lib/sandbox"
+import {applyMempoolRequirements, forwardToServer, pullSandboxToLocalServer} from "./lib/sandbox"
 
-const HOST_PATTERN = /^[^:/]+(:[0-9]{1,5})?$/
+const HOST_PATTERN = /^[^:/]+(:[0-9]{1,5})?(\/.*)?$/
 const FILE_PATTERN = /^(\/.+)$/
 
 export const CrawlerDependency = {
@@ -281,6 +281,39 @@ export const CrawlerDependency = {
         }
       }
     }, {
+      name: 'sync-mempool-fwd <from> <to> <search>',
+      desc: 'Import all pending data from matching <search>',
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
+        const source: string = params[0]
+        const target: string = params[1]
+        const search: string = params[2]
+        if (!source || !(source.match(HOST_PATTERN) || source.match(FILE_PATTERN))) {
+          throw 'Source of sync is required. (host[:port])'
+        }
+        if (!target || !(target.match(HOST_PATTERN) || target.match(FILE_PATTERN))) {
+          throw 'Target of sync is required. (host[:port])'
+        }
+        const logger = NewLogger()
+        const { host, port } = extractHostPort(source)
+        const { host: toHost, port: toPort } = extractHostPort(target)
+        try {
+          const peer = PeerDTO.fromJSONObject({ endpoints: [['BASIC_MERKLED_API', host, port].join(' ')] })
+          logger.info('Looking at %s...', source)
+          try {
+            const fromHost = await connect(peer)
+            const res = await fromHost.getRequirements(search)
+            await forwardToServer(server.conf.currency, res, toHost, toPort, logger)
+          } catch (e) {
+            logger.error(e);
+          }
+
+          await server.disconnect();
+        } catch(e) {
+          logger.error(e);
+          throw Error("Exiting");
+        }
+      }
+    }, {
       name: 'forward <number> <fromHost> <fromPort> <toHost> <toPort>',
       desc: 'Forward existing block <number> from a host to another',
       onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
@@ -474,7 +507,7 @@ export const CrawlerDependency = {
 function extractHostPort(source: string) {
   const sp = source.split(':')
   const onHost = sp[0]
-  const onPort = parseInt(sp[1] ? sp[1] : '443') // Defaults to 443
+  const onPort = sp[1] ? sp[1] : '443' // Defaults to 443
   return {
     host: onHost,
     port: onPort,

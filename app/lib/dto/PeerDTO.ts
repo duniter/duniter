@@ -94,17 +94,28 @@ export class PeerDTO implements Cloneable {
   }
 
   getBMA() {
-    let bma: { dns?: string, ipv4?: string, ipv6?: string, port?: number } = {}
+    let bma: { dns?: string, ipv4?: string, ipv6?: string, port?: number, path?: string } = {}
     let notFound = true
     this.endpoints.forEach((ep) => {
-      const matches = notFound && ep.match(CommonConstants.BMA_REGEXP);
-      if (matches) {
+      const matchesBMA = notFound && ep.match(CommonConstants.BMA_REGEXP);
+      const matchesBMAS = notFound && ep.match(CommonConstants.BMAS_REGEXP);
+      if (matchesBMA) {
         notFound = false
         bma = {
-          "dns": matches[2] || '',
-          "ipv4": matches[4] || '',
-          "ipv6": matches[6] || '',
-          "port": parseInt(matches[8]) || 9101
+          "dns": matchesBMA[2] || '',
+          "ipv4": matchesBMA[4] || '',
+          "ipv6": matchesBMA[6] || '',
+          "port": parseInt(matchesBMA[8]) || 9101
+        };
+      }
+      else if (matchesBMAS) {
+        notFound = false
+        bma = {
+          "dns": matchesBMAS[2] || '',
+          "ipv4": matchesBMAS[4] || '',
+          "ipv6": matchesBMAS[6] || '',
+          "port": parseInt(matchesBMAS[8]) || 9101,
+          "path": matchesBMAS[10] || ''
         };
       }
     });
@@ -205,6 +216,11 @@ export class PeerDTO implements Cloneable {
   getPort() {
     const bma = this.getBMA();
     return bma.port ? bma.port : null;
+  }
+
+  getPath() {
+    const bma = this.getBMA();
+    return bma.path ? bma.path : null;
   }
 
   getHostPreferDNS() {

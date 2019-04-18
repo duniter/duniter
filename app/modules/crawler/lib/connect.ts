@@ -18,7 +18,11 @@ import {PeerDTO} from "../../../lib/dto/PeerDTO";
 const DEFAULT_HOST = 'localhost';
 
 export const connect = (peer:PeerDTO, timeout:number|null = null) => {
-  return Promise.resolve(new Contacter(peer.getDns() || peer.getIPv4() || peer.getIPv6() || DEFAULT_HOST, peer.getPort() as number, {
+  return Promise.resolve(Contacter.fromHostPortPath(
+    peer.getDns() || peer.getIPv4() || peer.getIPv6() || DEFAULT_HOST,
+    peer.getPort() as number,
+    peer.getPath() as string,
+    {
     timeout: timeout || CrawlerConstants.DEFAULT_TIMEOUT
   }))
 }

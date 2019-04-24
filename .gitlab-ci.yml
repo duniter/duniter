@@ -154,7 +154,7 @@ releases:x64:
     - bash "release/arch/linux/build-lin.sh" "${CI_COMMIT_TAG#v}"
   artifacts:
     paths: *releases_artifacts
-    expire_in: 2 weeks
+    expire_in: 6 mos
   only:
     - tags
 

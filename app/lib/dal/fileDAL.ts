@@ -1089,7 +1089,9 @@ export class FileDAL {
       await this.bindexDAL.trimBlocks(maxNumber)
       await this.iindexDAL.trimRecords(maxNumber)
       await this.mindexDAL.trimRecords(maxNumber)
-      await this.cindexDAL.trimExpiredCerts(maxNumber)
+      if (!cliprogram.notrimc) {
+        await this.cindexDAL.trimExpiredCerts(maxNumber)
+      }
     }
     await this.sindexDAL.trimConsumedSource(maxNumber)
     await this.dividendDAL.trimConsumedUDs(maxNumber)

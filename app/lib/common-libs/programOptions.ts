@@ -17,6 +17,7 @@ export interface ProgramOptions {
   mdb?: string
   home?: string
   notrim?: boolean
+  notrimc?: boolean // Specificaly disable for c_index
   nosbx?: boolean
   nopeers?: boolean
   nop2p?: boolean

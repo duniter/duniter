@@ -74,6 +74,7 @@ export const ExecuteCommand = () => {
         .option('--isolate', 'Avoid the node to send peering or status informations to the network')
         .option('--forksize <size>', 'Maximum size of fork window', parseInt)
         .option('--notrim', 'Disable the INDEX trimming.')
+        .option('--notrimc', 'Disable the C_INDEX trimming specifically.')
         .option('--memory', 'Memory mode')
       ;
 

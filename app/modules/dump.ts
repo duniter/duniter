@@ -22,6 +22,7 @@ import {dumpWotWizard} from "./dump/wotwizard/wotwizard.dump"
 import {OtherConstants} from "../lib/other_constants"
 import {Querable, querablep} from "../lib/common-libs/querable"
 import {dumpBlocks, dumpForks} from "./dump/blocks/dump.blocks"
+import {newResolveTimeoutPromise} from "../lib/common-libs/timeout-promise"
 
 const Table = require('cli-table')
 
@@ -86,6 +87,10 @@ module.exports = {
 
             case 'table':
               await dumpTable(server, name, cond)
+              break
+
+            case 'wot':
+              await dumpWot(server)
               break
 
             case 'history':
@@ -254,6 +259,12 @@ async function dumpHistory(server: Server, pub: string) {
       console.log('Non displayable MINDEX entry')
     }
   }
+}
+
+async function dumpWot(server: Server) {
+  const data = server.dal.wotb.dumpWoT()
+  console.log(data)
+  await newResolveTimeoutPromise(1000, null)
 }
 
 async function getDateFor(server: Server, blockstamp: string) {

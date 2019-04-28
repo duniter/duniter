@@ -275,8 +275,8 @@ export class GlobalIndexStream extends Duplex {
             })
           }
 
-          if (data.cindex.length) {
-            await this.updateWotbLinks(data.cindex)
+          if (sync_cindex.length) {
+            await this.updateWotbLinks(sync_cindex)
           }
           gData.gindex.iindex = sync_iindex
           gData.gindex.mindex = sync_mindex

@@ -22,6 +22,7 @@ import {dumpWotWizard} from "./dump/wotwizard/wotwizard.dump"
 import {OtherConstants} from "../lib/other_constants"
 import {Querable, querablep} from "../lib/common-libs/querable"
 import {dumpBlocks, dumpForks} from "./dump/blocks/dump.blocks"
+import {newResolveTimeoutPromise} from "../lib/common-libs/timeout-promise"
 
 const Table = require('cli-table')
 
@@ -86,6 +87,10 @@ module.exports = {
 
             case 'table':
               await dumpTable(server, name, cond)
+              break
+
+            case 'wot':
+              await dumpWot(server)
               break
 
             case 'history':
@@ -181,7 +186,7 @@ async function dumpTable(server: Server, name: string, condition?: string) {
       break
     case 'c_index':
       rows = await server.dal.cindexDAL.findRawWithOrder(criterion, [['writtenOn', false], ['issuer', false], ['receiver', false]])
-      dump(rows, ['op','issuer','receiver','created_on','written_on','sig','expires_on','expired_on','chainable_on','from_wid','to_wid'])
+      dump(rows, ['op','issuer','receiver','created_on','written_on','sig','expires_on','expired_on','chainable_on','from_wid','to_wid','replayable_on'])
       break
     case 's_index':
       const rowsTX = await server.dal.sindexDAL.findRawWithOrder(criterion, [['writtenOn', false], ['identifier', false], ['pos', false]])
@@ -254,6 +259,12 @@ async function dumpHistory(server: Server, pub: string) {
       console.log('Non displayable MINDEX entry')
     }
   }
+}
+
+async function dumpWot(server: Server) {
+  const data = server.dal.wotb.dumpWoT()
+  console.log(data)
+  await newResolveTimeoutPromise(1000, null)
 }
 
 async function getDateFor(server: Server, blockstamp: string) {

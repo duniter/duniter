@@ -72,6 +72,59 @@ describe('Certification replay', () => writeBasicTestWithConfAnd2Users({
     assertEqual(reduce(reducableFromCat).expires_on, now + 4 + 10) // The expiration date should have changed! (this is the interest of a replay)
   })
 
+  test('should correctly update wotb: current state', async (s1) => {
+    assertEqual(s1._server.dal.wotb.dumpWoT(), `[M] [E] [R] [I] -> Links[maxCert = 40]
+[0] [1] [1] [1] -> 1 | 
+[1] [1] [1] [1] -> 0 | 
+`)
+  })
+
+  test('should correctly update wotb: toc joins (t + 6)', async (s1, cat, tac, toc) => {
+    await s1.commit({ time: now + 6 })
+    await s1.commit({ time: now + 6 })
+    await toc.createIdentity()
+    await cat.cert(toc)
+    await tac.cert(toc)
+    await toc.join()
+    await s1.commit({ time: now + 6 })
+    assertEqual(s1._server.dal.wotb.dumpWoT(), `[M] [E] [R] [I] -> Links[maxCert = 40]
+[0] [1] [1] [2] -> 1 | 
+[1] [1] [1] [2] -> 0 | 
+[2] [1] [2] [0] -> 0 | 1 | 
+`)
+  })
+
+  test('should correctly update wotb: toc => cat', async (s1, cat, tac, toc) => {
+    await s1.commit({ time: now + 6 })
+    await toc.cert(cat)
+    await s1.commit({ time: now + 12 })
+    assertEqual(s1._server.dal.wotb.dumpWoT(), `[M] [E] [R] [I] -> Links[maxCert = 40]
+[0] [1] [2] [2] -> 1 | 2 | 
+[1] [1] [1] [2] -> 0 | 
+[2] [1] [2] [1] -> 0 | 1 | 
+`)
+  })
+
+  test('should correctly update wotb: cat loses 1 cert', async (s1) => {
+    await s1.commit({ time: now + 12 })
+    assertEqual(s1._server.dal.wotb.dumpWoT(), `[M] [E] [R] [I] -> Links[maxCert = 40]
+[0] [1] [1] [2] -> 2 | 
+[1] [1] [1] [1] -> 0 | 
+[2] [1] [2] [1] -> 0 | 1 | 
+`)
+  })
+
+  test('should correctly update wotb: tac loses 1 cert and gets kicked', async (s1) => {
+    await s1.commit({ time: now + 14 }) // Change `Time`
+    await s1.commit({ time: now + 14 }) // Change `MedianTime`
+    await s1.commit({ time: now + 14 }) // Kick
+    assertEqual(s1._server.dal.wotb.dumpWoT(), `[M] [E] [R] [I] -> Links[maxCert = 40]
+[0] [1] [1] [1] -> 2 | 
+[1] [0] [0] [1] -> 
+[2] [1] [2] [1] -> 0 | 1 | 
+`)
+  })
+
   after(() => {
     CommonConstants.BLOCK_NEW_GENERATED_VERSION = 10
   })

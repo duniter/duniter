@@ -1,11 +1,14 @@
-## v1.7.17: To be released (## #### 2019)
+## v1.7.18: To be released (## #### 2019)
+## v1.7.17 (28th April 2019)
 #### CI/CD
 - Fix artifactory process: move to a minimalist jinja2 Docker image
 - Trigger integration stages pipeline only when code changes
 - Set releases:x64 artifacts to expire after six months
 
 #### Code
+- [Duniter v1.7.17 : règle de distance non respectée](https://forum.duniter.org/t/duniter-v1-7-17-regle-de-distance-non-respectee/6057)
 - Add `sync-mempool-fwd` command
+- Add `dump wot` command
 - #1358: Remove Loki related code
 - #1356: Remove non-used code getting membership status
 - !1269: Add more feedback on BMA interface configuration

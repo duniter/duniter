@@ -12,12 +12,17 @@
 // GNU Affero General Public License for more details.
 
 import {assertEqual, writeBasicTestWithConfAnd2Users} from "../tools/test-framework"
+import {CommonConstants} from "../../../app/lib/common-libs/constants"
 
 describe('Certification expiry + trimming', () => writeBasicTestWithConfAnd2Users({
   sigReplay: 3,
   sigPeriod: 0,
   sigValidity: 10,
 }, (test) => {
+
+  before(() => {
+    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 11
+  })
 
   const now = 1500000000
 
@@ -101,5 +106,9 @@ describe('Certification expiry + trimming', () => writeBasicTestWithConfAnd2User
 [1] [1] [1] [0] -> 2 | 
 [2] [0] [0] [2] -> 
 `)
+  })
+
+  after(() => {
+    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 10
   })
 }))

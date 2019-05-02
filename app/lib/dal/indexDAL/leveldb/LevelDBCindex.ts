@@ -96,7 +96,10 @@ export class LevelDBCindex extends LevelDBTable<LevelDBCindexEntry> implements C
         .filter(f => f.expired_on && f.writtenOn < belowNumber)
         .forEach(f => {
           maxExpired = Math.max(maxExpired, f.expired_on)
-          toRemove.push(LevelDBCindex.trimFullKey(f.issuer, f.receiver, f.created_on))
+          // We must remove **all** the remaining entries for this issuer + receiver
+          entry.issued
+            .filter(e => e.issuer === f.issuer && e.receiver === f.receiver)
+            .forEach(e => toRemove.push(LevelDBCindex.trimFullKey(e.issuer, e.receiver, e.created_on)))
         })
       if (toRemove.length) {
         // Trim the expired certs that won't be rolled back ever

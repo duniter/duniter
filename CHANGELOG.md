@@ -1,4 +1,11 @@
-## v1.7.18: To be released (## #### 2019)
+## v1.7.19: To be released (## #### 2019)
+## v1.7.18: (2nd May 2019)
+
+#### Code
+- [La Ğ1-test est bloquée au bloc n°362834.](https://forum.duniter.org/t/g1-test-dans-les-choux/4192/318)
+
+Thanks @Moul, @c-geek, @jytou
+
 ## v1.7.17 (28th April 2019)
 #### CI/CD
 - Fix artifactory process: move to a minimalist jinja2 Docker image

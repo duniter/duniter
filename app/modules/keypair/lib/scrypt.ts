@@ -11,12 +11,11 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-"use strict";
 import {Base58encode} from "../../../lib/common-libs/crypto/base58"
 import {decodeBase64} from "../../../lib/common-libs/crypto/nacl-util"
+import * as crypto from 'crypto'
 
 const nacl     = require('tweetnacl');
-const scrypt   = require('scryptb');
 
 const SEED_LENGTH = 32; // Length of the key
 
@@ -40,7 +39,7 @@ export const Scrypt = async (salt:string, key:string, N = 4096, r = 16, p = 1) =
 
 const getScryptKey = async (key:string, salt:string, N:number, r:number, p:number) => {
   const res:any = await new Promise((resolve, reject) => {
-    scrypt.hash(key, { N, r, p }, SEED_LENGTH, salt, (err:any, res:Buffer) => {
+    crypto.scrypt(key, salt, SEED_LENGTH, { N, r, p }, (err:any, res:Buffer) => {
       if (err) return reject(err)
       resolve(res)
     })

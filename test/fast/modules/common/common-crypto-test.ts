@@ -25,8 +25,8 @@ describe('ed25519 tests:', function(){
     const keyPair = KeyGen('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP');
     pub = Base58decode(keyPair.publicKey);
     sec = Base58decode(keyPair.secretKey);
-    rawPub = Base58encode(pub);
-    rawSec = Base58encode(sec);
+    rawPub = Base58encode(new Buffer(pub));
+    rawSec = Base58encode(new Buffer(sec));
   })
 
   //it('good signature from existing secret key should be verified', function(done){

@@ -31,6 +31,7 @@ push_to_github:
 .changes: &changes
   only:
     changes:
+      - .gitlab/**/*
       - app/**/*
       - bin/duniter
       - .gitlab-ci.yml

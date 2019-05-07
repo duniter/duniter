@@ -129,7 +129,7 @@ sync_gtest:
 .build_releases: &build_releases
   stage: package
   allow_failure: false
-  image: duniter/release-builder:v1.2.0
+  image: duniter/release-builder:v1.4.0
   cache: {}
   when: manual
   tags:

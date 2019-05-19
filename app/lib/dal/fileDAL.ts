@@ -59,9 +59,7 @@ import {PeerDAO} from "./indexDAL/abstract/PeerDAO"
 import {DBTx} from "../db/DBTx"
 import {DBWallet} from "../db/DBWallet"
 import {Tristamp} from "../common/Tristamp"
-import {CFSBlockchainArchive} from "./indexDAL/CFSBlockchainArchive"
 import {CFSCore} from "./fileDALs/CFSCore"
-import {BlockchainArchiveDAO} from "./indexDAL/abstract/BlockchainArchiveDAO"
 import {Underscore} from "../common-libs/underscore"
 import {DBPeer} from "../db/DBPeer"
 import {MonitorFlushedIndex} from "../debug/MonitorFlushedIndex"
@@ -116,7 +114,6 @@ export class FileDAL {
   coreFS:CFSCore
   confDAL:ConfDAO
   statDAL:StatDAL
-  blockchainArchiveDAL:BlockchainArchiveDAO<DBBlock>
 
   // SQLite DALs
   metaDAL:MetaDAL
@@ -136,7 +133,7 @@ export class FileDAL {
   cindexDAL:CIndexDAO
   dividendDAL:DividendDAO
   newDals:{ [k:string]: Initiable }
-  private dals:(BlockchainArchiveDAO<any>|PeerDAO|WalletDAO|GenericDAO<any>)[]
+  private dals:(PeerDAO|WalletDAO|GenericDAO<any>)[]
 
   loadConfHook: (conf:ConfDTO) => Promise<void>
   saveConfHook: (conf:ConfDTO) => Promise<ConfDTO>
@@ -155,7 +152,6 @@ export class FileDAL {
     this.powDAL = new PowDAL(this.rootPath, params.fs)
     this.confDAL = new ConfDAL(this.rootPath, params.fs)
     this.metaDAL = new (require('./sqliteDAL/MetaDAL').MetaDAL)(this.sqliteDriver);
-    this.blockchainArchiveDAL = new CFSBlockchainArchive(new CFSCore(path.join(this.rootPath, '/archives'), params.fs), CommonConstants.ARCHIVES_BLOCKS_CHUNK)
     this.statDAL = new StatDAL(this.rootPath, params.fs)
     this.idtyDAL = new (require('./sqliteDAL/IdentityDAL').IdentityDAL)(this.sqliteDriver);
     this.certDAL = new (require('./sqliteDAL/CertDAL').CertDAL)(this.sqliteDriver);
@@ -190,7 +186,6 @@ export class FileDAL {
       'sindexDAL': this.sindexDAL,
       'cindexDAL': this.cindexDAL,
       'dividendDAL': this.dividendDAL,
-      'blockchainArchiveDAL': this.blockchainArchiveDAL,
     }
   }
 
@@ -207,7 +202,6 @@ export class FileDAL {
       this.sindexDAL,
       this.cindexDAL,
       this.dividendDAL,
-      this.blockchainArchiveDAL,
     ]
     for (const indexDAL of this.dals) {
       indexDAL.triggerInit()
@@ -228,34 +222,6 @@ export class FileDAL {
 
   getDBVersion() {
     return this.metaDAL.getVersion()
-  }
-
-  /**
-   * Transfer a chunk of blocks from memory DB to archives if the memory DB overflows.
-   * @returns {Promise<void>}
-   */
-  @MonitorExecutionTime()
-  async archiveBlocks() {
-    const lastArchived = await this.blockchainArchiveDAL.getLastSavedBlock()
-    const current = await this.blockDAL.getCurrent()
-    const lastNumber = lastArchived ? lastArchived.number : -1
-    const currentNumber = current ? current.number : -1
-    const difference = currentNumber - lastNumber
-    if (difference > CommonConstants.BLOCKS_IN_MEMORY_MAX) {
-      const CHUNK_SIZE = this.blockchainArchiveDAL.chunkSize
-      const nbBlocksOverflow = difference - CommonConstants.BLOCKS_IN_MEMORY_MAX
-      const chunks = (nbBlocksOverflow - (nbBlocksOverflow % CHUNK_SIZE)) / CHUNK_SIZE
-      for (let i = 0; i < chunks; i++) {
-        const start = lastNumber + (i*CHUNK_SIZE) + 1
-        const end = lastNumber + (i*CHUNK_SIZE) + CHUNK_SIZE
-        const memBlocks = await this.blockDAL.getNonForkChunk(start, end)
-        if (memBlocks.length !== CHUNK_SIZE) {
-          throw Error(DataErrors[DataErrors.CANNOT_ARCHIVE_CHUNK_WRONG_SIZE])
-        }
-        await this.blockchainArchiveDAL.archive(memBlocks)
-        await this.blockDAL.trimBlocks(end)
-      }
-    }
   }
 
   writeFileOfBlock(block:DBBlock) {
@@ -299,7 +265,7 @@ export class FileDAL {
   }
 
   async getBlockWeHaveItForSure(number:number): Promise<DBBlock> {
-    return (await this.blockDAL.getBlock(number)) as DBBlock || (await this.blockchainArchiveDAL.getBlockByNumber(number))
+    return (await this.blockDAL.getBlock(number)) as DBBlock
   }
 
   // Duniter-UI dependency
@@ -308,7 +274,7 @@ export class FileDAL {
   }
 
   async getFullBlockOf(number: number): Promise<DBBlock|null> {
-    return (await this.blockDAL.getBlock(number)) || (await this.blockchainArchiveDAL.getBlockByNumber(number))
+    return this.blockDAL.getBlock(number)
   }
 
   async getBlockstampOf(number: number): Promise<string|null> {
@@ -320,7 +286,7 @@ export class FileDAL {
   }
 
   async getTristampOf(number: number): Promise<Tristamp|null> {
-    return (await this.blockDAL.getBlock(number)) || (await this.blockchainArchiveDAL.getBlockByNumber(number))
+    return this.blockDAL.getBlock(number)
   }
 
   async existsAbsoluteBlockInForkWindow(number:number, hash:string): Promise<boolean> {
@@ -341,10 +307,10 @@ export class FileDAL {
 
   async getAbsoluteBlockByNumberAndHash(number:number, hash:string, forceNumberAndHashFinding = false): Promise<DBBlock|null> {
     if (number > 0 || forceNumberAndHashFinding) {
-      return (await this.blockDAL.getAbsoluteBlock(number, hash)) || (await this.blockchainArchiveDAL.getBlock(number, hash))
+      return await this.blockDAL.getAbsoluteBlock(number, hash)
     } else {
       // Block#0 is special
-      return (await this.blockDAL.getBlock(number)) || (await this.blockchainArchiveDAL.getBlockByNumber(number))
+      return await this.blockDAL.getBlock(number)
     }
   }
 
@@ -387,8 +353,6 @@ export class FileDAL {
     return this.blockDAL.getPotentialRoots()
   }
 
-  // TODO: unused even by an external API? => we should expose explicitely the external API
-  // to be able to remove such code
   lastBlockOfIssuer(issuer:string) {
     return this.blockDAL.lastBlockOfIssuer(issuer);
   }
@@ -402,25 +366,10 @@ export class FileDAL {
    * @param start Lower number bound (included).
    * @param end Higher number bound (included).
    */
-  async getBlocksBetween (start:number, end:number) {
+  async getBlocksBetween (start:number, end:number): Promise<DBBlock[]> {
     start = Math.max(0, start)
     end= Math.max(0, end)
-    const blocks = await this.blockDAL.getBlocks(Math.max(0, start), end)
-    if (blocks[0] && blocks[0].number === start) {
-      // OK: we have all the blocks from memory
-      return blocks
-    }
-    // Else: we have to pick them from archives
-    const last = blocks[0] ? blocks[0].number - 1 : end
-    const archiveBlocks = await this.blockchainArchiveDAL.getBlocks(start, last)
-    const lastInArchives = archiveBlocks[archiveBlocks.length - 1] ? archiveBlocks[archiveBlocks.length - 1].number - 1 : end
-    if (lastInArchives === end) {
-      // OK: we have all the blocks from archives
-      return archiveBlocks
-    }
-    // Otherwise: what is not taken in the archives are in memory
-    const memBlocks = await this.blockDAL.getBlocks(archiveBlocks[archiveBlocks.length - 1].number + 1, end)
-    return archiveBlocks.concat(memBlocks)
+    return this.blockDAL.getBlocks(Math.max(0, start), end)
   }
 
   getForkBlocksFollowing(current:DBBlock) {

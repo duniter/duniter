@@ -102,11 +102,6 @@ export class DownloadStream extends Duplex {
           this.bestDownloaded = i
           this.watcher.downloadPercent(Math.round((i + 1) / this.numberOfChunksToDownload * 100))
         }
-        await this.writeDAL.blockchainArchiveDAL.archive(chunk.map(b => {
-          const block = DBBlock.fromBlockDTO(b)
-          block.fork = false
-          return block
-        }))
         return chunk
       })())
       this.dowloading[i]

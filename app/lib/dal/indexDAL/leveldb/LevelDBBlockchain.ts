@@ -101,9 +101,6 @@ export class LevelDBBlockchain extends LevelDBTable<DBBlock> implements Blockcha
     return potentialForks.filter(f => f.previousHash === hash)
   }
 
-  getNonForkChunk(start: number, end: number): Promise<DBBlock[]> {
-    return this.findBetween(this, start, end)
-  }
 
   async getPotentialForkBlocks(numberStart: number, medianTimeStart: number, maxNumber: number): Promise<DBBlock[]> {
     const potentialForks = await this.findBetween(this.forks, numberStart, maxNumber)
@@ -192,12 +189,6 @@ export class LevelDBBlockchain extends LevelDBTable<DBBlock> implements Blockcha
     block.fork = true
     await this.del(k)
     await this.forks.put(LevelDBBlockchain.trimForkKey(block.number, block.hash), block)
-  }
-
-  async trimBlocks(number: number): Promise<void> {
-    await this.applyAllKeyValue(async kv => this.del(kv.key), {
-      lt: LevelDBBlockchain.trimKey(number + 1)
-    })
   }
 
   async findBetween(db: LevelDBTable<DBBlock>, start: number, end: number): Promise<DBBlock[]> {

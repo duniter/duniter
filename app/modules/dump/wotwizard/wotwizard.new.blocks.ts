@@ -16,10 +16,10 @@ export async function addNewBlocks(server: Server, wwDAL: WotWizardDAL) {
 
   const blocksSaved: Promise<any>[] = []
 
-  // We loop taking care of archives structure
-  for (let i = start; i <= end; i += CommonConstants.ARCHIVES_BLOCKS_CHUNK) {
+  // We loop to work in flow mode (avoid big memory consumption)
+  for (let i = start; i <= end; i += CommonConstants.BLOCKS_IN_MEMORY_MAX) {
     const beginAt = i
-    const endAt = Math.min(end, i + CommonConstants.ARCHIVES_BLOCKS_CHUNK) - 1
+    const endAt = Math.min(end, i + CommonConstants.BLOCKS_IN_MEMORY_MAX) - 1
     const blocks = await server.dal.getBlocksBetween(beginAt, endAt)
     const forks = await server.dal.getPotentialForkBlocks(beginAt, 0, endAt)
     const all =  blocks.concat(forks).map(f => { (f as any).legacy = false; return f })

@@ -23,8 +23,4 @@ export interface BlockchainDAO extends GenericDAO<DBBlock>, ForksDAO {
   saveBunch(blocks:DBBlock[]): Promise<void>
 
   dropNonForkBlocksAbove(number: number): Promise<void>
-
-  trimBlocks(number:number): Promise<void>
-
-  getNonForkChunk(start:number, end:number): Promise<DBBlock[]>
 }

@@ -81,6 +81,7 @@ import {LevelDBCindex} from "./indexDAL/leveldb/LevelDBCindex"
 import {LevelDBIindex} from "./indexDAL/leveldb/LevelDBIindex"
 import {LevelDBMindex} from "./indexDAL/leveldb/LevelDBMindex"
 import {ConfDAO} from "./indexDAL/abstract/ConfDAO"
+import {ServerDAO} from "./server-dao"
 
 const readline = require('readline')
 const indexer = require('../indexer').Indexer
@@ -101,7 +102,7 @@ export interface IndexBatch {
   cindex: CindexEntry[]
 }
 
-export class FileDAL {
+export class FileDAL implements ServerDAO {
 
   rootPath:string
   fs: FileSystem

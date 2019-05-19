@@ -82,6 +82,7 @@ import {LevelDBWallet} from "./indexDAL/leveldb/LevelDBWallet"
 import {LevelDBCindex} from "./indexDAL/leveldb/LevelDBCindex"
 import {LevelDBIindex} from "./indexDAL/leveldb/LevelDBIindex"
 import {LevelDBMindex} from "./indexDAL/leveldb/LevelDBMindex"
+import {ConfDAO} from "./indexDAL/abstract/ConfDAO"
 
 const readline = require('readline')
 const indexer = require('../indexer').Indexer
@@ -112,7 +113,8 @@ export class FileDAL {
 
   // Simple file accessors
   powDAL:PowDAL
-  confDAL:ConfDAL
+  coreFS:CFSCore
+  confDAL:ConfDAO
   statDAL:StatDAL
   blockchainArchiveDAL:BlockchainArchiveDAO<DBBlock>
 
@@ -149,6 +151,7 @@ export class FileDAL {
     this.fs = params.fs
 
     // DALs
+    this.coreFS = new CFSCore(this.rootPath, params.fs)
     this.powDAL = new PowDAL(this.rootPath, params.fs)
     this.confDAL = new ConfDAL(this.rootPath, params.fs)
     this.metaDAL = new (require('./sqliteDAL/MetaDAL').MetaDAL)(this.sqliteDriver);
@@ -1251,10 +1254,8 @@ export class FileDAL {
     let conf = ConfDTO.complete(overrideConf || {});
     if (!defaultConf) {
       const savedConf = await this.confDAL.loadConf()
-      const savedProxyConf = Underscore.extend(savedConf.proxyConf, {})
       conf = Underscore.extend(savedConf, overrideConf || {})
       if (overrideConf.proxiesConf !== undefined) {} else {
-        conf.proxyConf = Underscore.extend(savedProxyConf, {})
       }
     }
     if (this.loadConfHook) {

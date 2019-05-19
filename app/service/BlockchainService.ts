@@ -162,7 +162,7 @@ export class BlockchainService extends FIFOService {
   async branches() {
     const current = await this.current()
     if (!current) {
-      throw Error(DataErrors[DataErrors.CANNOT_REVERT_NO_CURRENT_BLOCK])
+      return []
     }
     const switcher = new Switcher(this.switcherDao, this.invalidForks, this.conf.avgGenTime, this.conf.forksize, this.conf.switchOnHeadAdvance, this.logger)
     const heads = await switcher.findPotentialSuitesHeads(current)

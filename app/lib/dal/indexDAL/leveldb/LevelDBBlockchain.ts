@@ -3,10 +3,32 @@ import {LevelUp} from 'levelup'
 import {LevelDBTable} from "./LevelDBTable"
 import {DBBlock} from "../../../db/DBBlock"
 import {BlockchainDAO} from "../abstract/BlockchainDAO"
+import {LevelIndexBlockIdentities} from "./indexers/block/LevelIndexBlockIdentities"
+import {uniqFilter} from "../../../common-libs/array-filter"
+import {LevelIndexBlockCertifications} from "./indexers/block/LevelIndexBlockCertifications"
+import {LDBIndex_ALL, LevelIndexBlock} from "./indexers/block/LevelIndexBlock"
+import {NewLogger} from "../../../logger"
+import {LevelIndexBlockTX} from "./indexers/block/LevelIndexBlockTX"
+import {LevelIndexBlockUD} from "./indexers/block/LevelIndexBlockUD"
+import {LevelIndexBlockRevoked} from "./indexers/block/LevelIndexBlockRevoked"
+import {LevelIndexBlockExcluded} from "./indexers/block/LevelIndexBlockExcluded"
+import {LevelIndexBlockJoiners} from "./indexers/block/LevelIndexBlockJoiners"
+import {LevelIndexBlockActives} from "./indexers/block/LevelIndexBlockActives"
+import {LevelIndexBlockLeavers} from "./indexers/block/LevelIndexBlockLeavers"
 
 export class LevelDBBlockchain extends LevelDBTable<DBBlock> implements BlockchainDAO {
 
   private forks: LevelDBTable<DBBlock>
+  private indexOfIdentities: LevelIndexBlock
+  private indexOfCertifications: LevelIndexBlock
+  private indexOfJoiners: LevelIndexBlock
+  private indexOfActives: LevelIndexBlock
+  private indexOfLeavers: LevelIndexBlock
+  private indexOfExcluded: LevelIndexBlock
+  private indexOfRevoked: LevelIndexBlock
+  private indexOfDividends: LevelIndexBlock
+  private indexOfTransactions: LevelIndexBlock
+  private indexers: LevelIndexBlock[] = []
 
   constructor(protected getLevelDB: (dbName: string)=> Promise<LevelUp>) {
     super('level_blockchain', getLevelDB)
@@ -14,13 +36,27 @@ export class LevelDBBlockchain extends LevelDBTable<DBBlock> implements Blockcha
 
   async init(): Promise<void> {
     await super.init()
-    this.forks = new LevelDBTable<DBBlock>('level_blockchain/forks', this.getLevelDB)
+    if (this.indexers.length === 0) {
+      this.forks = new LevelDBTable<DBBlock>('level_blockchain/forks', this.getLevelDB)
+      this.indexers.push(this.indexOfIdentities = new LevelIndexBlockIdentities('level_blockchain/idty', this.getLevelDB))
+      this.indexers.push(this.indexOfCertifications = new LevelIndexBlockCertifications('level_blockchain/certs', this.getLevelDB))
+      this.indexers.push(this.indexOfJoiners = new LevelIndexBlockJoiners('level_blockchain/joiners', this.getLevelDB))
+      this.indexers.push(this.indexOfActives = new LevelIndexBlockActives('level_blockchain/actives', this.getLevelDB))
+      this.indexers.push(this.indexOfLeavers = new LevelIndexBlockLeavers('level_blockchain/leavers', this.getLevelDB))
+      this.indexers.push(this.indexOfExcluded = new LevelIndexBlockExcluded('level_blockchain/excluded', this.getLevelDB))
+      this.indexers.push(this.indexOfRevoked = new LevelIndexBlockRevoked('level_blockchain/revoked', this.getLevelDB))
+      this.indexers.push(this.indexOfDividends = new LevelIndexBlockUD('level_blockchain/dividends', this.getLevelDB))
+      this.indexers.push(this.indexOfTransactions = new LevelIndexBlockTX('level_blockchain/transactions', this.getLevelDB))
+    }
     await this.forks.init()
+    NewLogger().debug(`Now open indexers...`)
+    await Promise.all(this.indexers.map(i => i.init()))
   }
 
   async close(): Promise<void> {
     await super.close()
     await this.forks.close()
+    await Promise.all(this.indexers.map(i => i.close()))
   }
 
   /**
@@ -34,6 +70,8 @@ export class LevelDBBlockchain extends LevelDBTable<DBBlock> implements Blockcha
 
   @MonitorExecutionTime()
   async insertBatch(records: DBBlock[]): Promise<void> {
+    // Indexation
+    await Promise.all(this.indexers.map(i => i.onInsert(records)))
     // Update the max headNumber
     await this.batchInsertWithKeyComputing(records, r => {
       return LevelDBBlockchain.trimKey(r.number)
@@ -171,11 +209,6 @@ export class LevelDBBlockchain extends LevelDBTable<DBBlock> implements Blockcha
     return this.get(LevelDBBlockchain.trimKey(block.number))
   }
 
-  async saveBunch(blocks: DBBlock[]): Promise<void> {
-    blocks.forEach(b => b.fork = false)
-    await this.insertBatch(blocks)
-  }
-
   async saveSideBlock(block: DBBlock): Promise<DBBlock> {
     const k = LevelDBBlockchain.trimForkKey(block.number, block.hash)
     block.fork = true
@@ -187,6 +220,8 @@ export class LevelDBBlockchain extends LevelDBTable<DBBlock> implements Blockcha
     const k = LevelDBBlockchain.trimKey(number)
     const block = await this.get(k)
     block.fork = true
+    // Indexation
+    await Promise.all(this.indexers.map(i => i.onRemove([block])))
     await this.del(k)
     await this.forks.put(LevelDBBlockchain.trimForkKey(block.number, block.hash), block)
   }
@@ -196,6 +231,56 @@ export class LevelDBBlockchain extends LevelDBTable<DBBlock> implements Blockcha
       gte: LevelDBBlockchain.trimKey(start),
       lt: LevelDBBlockchain.trimKey(end + 1)
     })
+  }
+
+  async findWithIdentities(): Promise<number[]> {
+    return this.findIndexed(this.indexOfIdentities)
+  }
+
+  async findWithCertifications(): Promise<number[]> {
+    return this.findIndexed(this.indexOfCertifications)
+  }
+
+  async findWithJoiners(): Promise<number[]> {
+    return this.findIndexed(this.indexOfJoiners)
+  }
+
+  async findWithActives(): Promise<number[]> {
+    return this.findIndexed(this.indexOfActives)
+  }
+
+  async findWithLeavers(): Promise<number[]> {
+    return this.findIndexed(this.indexOfLeavers)
+  }
+
+  async findWithExcluded(): Promise<number[]> {
+    return this.findIndexed(this.indexOfExcluded)
+  }
+
+  async findWithRevoked(): Promise<number[]> {
+    return this.findIndexed(this.indexOfRevoked)
+  }
+
+  async findWithUD(): Promise<number[]> {
+    return this.findIndexed(this.indexOfDividends)
+  }
+
+  async findWithTXs(): Promise<number[]> {
+    return this.findIndexed(this.indexOfTransactions)
+  }
+
+  private async findIndexed(indexer: LevelIndexBlock): Promise<number[]> {
+    const found = await indexer.getOrNull(LDBIndex_ALL)
+    if (!found) {
+      // When the entry does not exist (may occur for 'ALL' key)
+      return []
+    }
+    // Otherwise: return the records
+    return Promise.all(found
+      .reduce((all, some) => all.concat(some), [] as number[])
+      .filter(uniqFilter)
+      .sort((b, a) => b - a)
+    )
   }
 
   private static trimKey(number: number) {

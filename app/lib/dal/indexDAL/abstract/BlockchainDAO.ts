@@ -20,7 +20,15 @@ export interface BlockchainDAO extends GenericDAO<DBBlock>, ForksDAO {
 
   getCountOfBlocksIssuedBy(issuer:string): Promise<number>
 
-  saveBunch(blocks:DBBlock[]): Promise<void>
-
   dropNonForkBlocksAbove(number: number): Promise<void>
+
+  findWithIdentities(): Promise<number[]>
+  findWithCertifications(): Promise<number[]>
+  findWithJoiners(): Promise<number[]>
+  findWithActives(): Promise<number[]>
+  findWithLeavers(): Promise<number[]>
+  findWithExcluded(): Promise<number[]>
+  findWithRevoked(): Promise<number[]>
+  findWithUD(): Promise<number[]>
+  findWithTXs(): Promise<number[]>
 }

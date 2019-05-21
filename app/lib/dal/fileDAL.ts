@@ -15,7 +15,6 @@ import * as fs from 'fs'
 import * as path from 'path'
 import {SQLiteDriver} from "./drivers/SQLiteDriver"
 import {ConfDAL} from "./fileDALs/ConfDAL"
-import {StatDAL} from "./fileDALs/StatDAL"
 import {ConfDTO} from "../dto/ConfDTO"
 import {BlockDTO} from "../dto/BlockDTO"
 import {DBHead} from "../db/DBHead"
@@ -114,7 +113,6 @@ export class FileDAL implements ServerDAO {
   powDAL:PowDAL
   coreFS:CFSCore
   confDAL:ConfDAO
-  statDAL:StatDAL
 
   // SQLite DALs
   metaDAL:MetaDAL
@@ -153,7 +151,6 @@ export class FileDAL implements ServerDAO {
     this.powDAL = new PowDAL(this.rootPath, params.fs)
     this.confDAL = new ConfDAL(this.rootPath, params.fs)
     this.metaDAL = new (require('./sqliteDAL/MetaDAL').MetaDAL)(this.sqliteDriver);
-    this.statDAL = new StatDAL(this.rootPath, params.fs)
     this.idtyDAL = new (require('./sqliteDAL/IdentityDAL').IdentityDAL)(this.sqliteDriver);
     this.certDAL = new (require('./sqliteDAL/CertDAL').CertDAL)(this.sqliteDriver);
     this.msDAL = new (require('./sqliteDAL/MembershipDAL').MembershipDAL)(this.sqliteDriver);
@@ -179,7 +176,6 @@ export class FileDAL implements ServerDAO {
       'txsDAL': this.txsDAL,
       'peerDAL': this.peerDAL,
       'confDAL': this.confDAL,
-      'statDAL': this.statDAL,
       'walletDAL': this.walletDAL,
       'bindexDAL': this.bindexDAL,
       'mindexDAL': this.mindexDAL,
@@ -1243,15 +1239,29 @@ export class FileDAL implements ServerDAO {
    *     STATISTICS
    **********************/
 
-  loadStats() {
-    return this.statDAL.loadStats()
-  }
-
-  getStat(name:string) {
-    return this.statDAL.getStat(name)
-  }
-  pushStats(stats:any) {
-    return this.statDAL.pushStats(stats)
+  getStat(name: StatName) {
+    switch (name) {
+      case "newcomers":
+        return this.blockDAL.findWithIdentities()
+      case "certs":
+        return this.blockDAL.findWithCertifications()
+      case "joiners":
+        return this.blockDAL.findWithJoiners()
+      case "actives":
+        return this.blockDAL.findWithActives()
+      case "leavers":
+        return this.blockDAL.findWithLeavers()
+      case "excluded":
+        return this.blockDAL.findWithExcluded()
+      case "revoked":
+        return this.blockDAL.findWithRevoked()
+      case "ud":
+        return this.blockDAL.findWithUD()
+      case "tx":
+        return this.blockDAL.findWithTXs()
+      default:
+        throw DataErrors[DataErrors.WRONG_STAT_NAME]
+    }
   }
 
   async cleanCaches() {
@@ -1344,3 +1354,5 @@ export class FileDAL implements ServerDAO {
     return []
   }
 }
+
+export type StatName = 'newcomers'|'certs'|'joiners'|'actives'|'leavers'|'revoked'|'excluded'|'ud'|'tx'

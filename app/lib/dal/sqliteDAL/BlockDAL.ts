@@ -134,19 +134,6 @@ export class BlockDAL extends AbstractSQLite<DBBlock> {
     return this.query('SELECT * FROM block WHERE fork AND number = ?', [0])
   }
 
-  async saveBunch(blocks:DBBlock[]) {
-    let queries = "INSERT INTO block (" + this.fields.join(',') + ") VALUES ";
-    for (let i = 0, len = blocks.length; i < len; i++) {
-      let block = blocks[i];
-      queries += this.toInsertValues(block);
-      if (i + 1 < len) {
-        queries += ",\n";
-      }
-    }
-    await this.exec(queries);
-    this.cleanCache();
-  }
-
   async saveBlock(block:DBBlock) {
     let saved = await this.saveBlockAs(block, IS_NOT_FORK);
     if (!this.current || this.current.number < block.number) {

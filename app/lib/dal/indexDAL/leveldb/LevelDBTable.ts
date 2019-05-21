@@ -19,7 +19,6 @@ export class LevelDBTable<T> {
   }
 
   async close() {
-    NewLogger().debug(`Closing LevelDB ${this.name}...`)
     await this.db.close()
   }
 

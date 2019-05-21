@@ -14,8 +14,8 @@
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
 import {Underscore} from "../../../lib/common-libs/underscore"
 
-export const stat = (stat:any) => {
-  return { "blocks": stat.blocks }
+export const stat = (stat: number[]) => {
+  return { "blocks": stat }
 }
 
 export const block = (block:any) => {

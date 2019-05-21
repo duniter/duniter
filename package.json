@@ -128,7 +128,7 @@
     "tmp": "0.0.29",
     "ts-node": "^3.3.0",
     "typedoc-plugin-sourcefile-url": "^1.0.3",
-    "typescript": "^3.1.6"
+    "typescript": "^3.4.3"
   },
   "peerDependencies": {},
   "bin": {

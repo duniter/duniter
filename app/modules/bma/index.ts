@@ -287,7 +287,7 @@ function getEndpoint(theConf:NetworkConfDTO) {
   return endpoint;
 }
 
-function networkReconfiguration(conf:NetworkConfDTO, autoconf:boolean, logger:any, noupnp:boolean, done:any) {
+export function networkReconfiguration(conf:NetworkConfDTO, autoconf:boolean, logger:any, noupnp:boolean, done:any) {
   async.waterfall([
     upnpResolve.bind(null, noupnp, logger),
     function(upnpSuccess:boolean, upnpConf:NetworkConfDTO, next:any) {

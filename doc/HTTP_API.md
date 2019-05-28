@@ -45,6 +45,7 @@
       * [peering](#networkpeering)
       * [peering/peers (GET)](#networkpeeringpeers-get)
       * [peering/peers (POST)](#networkpeeringpeers-post)
+      * [ws2p/heads (GET)](#networkws2pheads-get)
   * [tx/](#tx)
       * [process](#txprocess)
       * [sources/[pubkey]](#txsourcespubkey)

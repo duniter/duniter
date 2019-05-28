@@ -119,48 +119,53 @@ export class IdentityService extends FIFOService {
     const hash = idtyObj.getHash()
     return this.pushFIFO<DBIdentity>(hash, async () => {
       this.logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
-      // Check signature's validity
-      let verified = verify(createIdentity, idty.sig, idty.pubkey);
-      if (!verified) {
-        throw constants.ERRORS.SIGNATURE_DOES_NOT_MATCH;
-      }
-      let existing = await this.dal.getGlobalIdentityByHashForExistence(toSave.hash);
-      if (existing) {
-        throw constants.ERRORS.ALREADY_UP_TO_DATE;
-      }
-      else {
-        // Create if not already written uid/pubkey
-        let used = await GLOBAL_RULES_HELPERS.checkExistsPubkey(idty.pubkey, this.dal)
-        if (used) {
-          throw constants.ERRORS.PUBKEY_ALREADY_USED;
+      try {
+        // Check signature's validity
+        let verified = verify(createIdentity, idty.sig, idty.pubkey);
+        if (!verified) {
+          throw constants.ERRORS.SIGNATURE_DOES_NOT_MATCH;
         }
-        used = await GLOBAL_RULES_HELPERS.checkExistsUserID(idty.uid, this.dal)
-        if (used) {
-          throw constants.ERRORS.UID_ALREADY_USED;
+        let existing = await this.dal.getGlobalIdentityByHashForExistence(toSave.hash);
+        if (existing) {
+          throw constants.ERRORS.ALREADY_UP_TO_DATE;
         }
-        const current = await this.dal.getCurrentBlockOrNull();
-        if (idty.buid == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855' && current) {
-          throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
-        } else if (current) {
-          let basedBlock = await this.dal.getAbsoluteValidBlockInForkWindowByBlockstamp(idty.buid);
-          if (!basedBlock) {
-            throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
+        else {
+          // Create if not already written uid/pubkey
+          let used = await GLOBAL_RULES_HELPERS.checkExistsPubkey(idty.pubkey, this.dal)
+          if (used) {
+            throw constants.ERRORS.PUBKEY_ALREADY_USED;
           }
-          toSave.expires_on = basedBlock.medianTime + this.conf.idtyWindow;
-        }
-        await GLOBAL_RULES_FUNCTIONS.checkIdentitiesAreWritable({ identities: [idtyObj.inline()], version: (current && current.version) || constants.BLOCK_GENERATED_VERSION }, this.conf, this.dal);
-        if (byAbsorption !== BY_ABSORPTION) {
-          if (!(await this.dal.idtyDAL.sandbox.acceptNewSandBoxEntry({
+          used = await GLOBAL_RULES_HELPERS.checkExistsUserID(idty.uid, this.dal)
+          if (used) {
+            throw constants.ERRORS.UID_ALREADY_USED;
+          }
+          const current = await this.dal.getCurrentBlockOrNull();
+          if (idty.buid == '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855' && current) {
+            throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
+          } else if (current) {
+            let basedBlock = await this.dal.getAbsoluteValidBlockInForkWindowByBlockstamp(idty.buid);
+            if (!basedBlock) {
+              throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
+            }
+            toSave.expires_on = basedBlock.medianTime + this.conf.idtyWindow;
+          }
+          await GLOBAL_RULES_FUNCTIONS.checkIdentitiesAreWritable({ identities: [idtyObj.inline()], version: (current && current.version) || constants.BLOCK_GENERATED_VERSION }, this.conf, this.dal);
+          if (byAbsorption !== BY_ABSORPTION) {
+            if (!(await this.dal.idtyDAL.sandbox.acceptNewSandBoxEntry({
               certsCount: 0,
               issuers: [idty.pubkey],
               ref_block: parseInt(idty.buid.split('-')[0])
             }, this.conf.pair && this.conf.pair.pub))) {
-            throw constants.ERRORS.SANDBOX_FOR_IDENTITY_IS_FULL;
+              throw constants.ERRORS.SANDBOX_FOR_IDENTITY_IS_FULL;
+            }
           }
+          await this.dal.savePendingIdentity(toSave)
+          this.logger.info('✔ IDTY %s %s', idty.pubkey, idty.uid);
+          return toSave
         }
-        await this.dal.savePendingIdentity(toSave)
-        this.logger.info('✔ IDTY %s %s', idty.pubkey, idty.uid);
-        return toSave
+      } catch (e) {
+        this.logger.info('✘ IDTY %s %s', idty.pubkey, idty.uid);
+        throw e
       }
     })
   }

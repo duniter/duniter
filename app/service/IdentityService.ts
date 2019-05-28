@@ -227,13 +227,16 @@ export class IdentityService extends FIFOService {
             written_hash: null,
             block: cert.block_number
           }
+          if (current && mCert.expires_on < current.medianTime) {
+            throw DataErrors[DataErrors.CERT_WINDOW_IS_PASSED]
+          }
           let existingCert = await this.dal.existsCert(mCert, current)
           if (!existingCert) {
             if (!(await this.dal.certDAL.getSandboxForKey(cert.from).acceptNewSandBoxEntry(mCert, this.conf.pair && this.conf.pair.pub))) {
               throw constants.ERRORS.SANDBOX_FOR_CERT_IS_FULL;
             }
             await this.dal.registerNewCertification(mCert)
-            this.logger.info('✔ CERT %s', mCert.from);
+            this.logger.info('✔ CERT %s block#%s -> %s', cert.from, cert.block_number, idty.uid)
           } else {
             throw constants.ERRORS.ALREADY_UP_TO_DATE;
           }

@@ -20,6 +20,7 @@ import {GLOBAL_RULES_HELPERS} from "../lib/rules/global_rules";
 import {MembershipDTO} from "../lib/dto/MembershipDTO";
 import {FIFOService} from "./FIFOService";
 import {DBBlock} from "../lib/db/DBBlock"
+import {DataErrors} from "../lib/common-libs/errors"
 
 const constants       = require('../lib/constants');
 
@@ -75,6 +76,10 @@ export class MembershipService extends FIFOService {
         }, this.conf.pair && this.conf.pair.pub))) {
         throw constants.ERRORS.SANDBOX_FOR_MEMERSHIP_IS_FULL;
       }
+      const expires_on = basedBlock ? basedBlock.medianTime + this.conf.msWindow : 0
+      if (current && expires_on < current.medianTime) {
+        throw DataErrors[DataErrors.MEMBERSHIP_WINDOW_IS_PASSED]
+      }
       // Saves entry
       await this.dal.savePendingMembership({
         issuers: [entry.pubkey],
@@ -90,7 +95,7 @@ export class MembershipService extends FIFOService {
         idtyHash: entry.getIdtyHash(),
         written: false,
         written_number: null,
-        expires_on: basedBlock ? basedBlock.medianTime + this.conf.msWindow : 0,
+        expires_on,
         signature: entry.signature,
         expired: false,
         block_number: entry.number

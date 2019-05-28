@@ -24,6 +24,7 @@ import {hashf} from "../common"
 import {Indexer, SimpleTxInput} from "../indexer"
 import {DBTx} from "../db/DBTx"
 import {Tristamp} from "../common/Tristamp"
+import {DataErrors} from "../common-libs/errors"
 
 const constants      = CommonConstants
 
@@ -231,7 +232,7 @@ export const GLOBAL_RULES_HELPERS = {
     tx.blockstampTime = basedBlock.medianTime;
     const current = await dal.getCurrentBlockOrNull();
     if (current && current.medianTime > basedBlock.medianTime + constants.TX_WINDOW) {
-      throw "Transaction has expired";
+      throw DataErrors[DataErrors.TRANSACTION_WINDOW_IS_PASSED];
     }
   }
 }

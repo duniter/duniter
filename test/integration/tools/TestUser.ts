@@ -69,6 +69,11 @@ export class TestUser {
   }
 
   public async createIdentity(useRoot?:boolean|null, fromServer?:any) {
+    const idty = await this.makeIdentity(useRoot)
+    await this.submitIdentity(idty, fromServer);
+  }
+
+  public async makeIdentity(useRoot?:boolean|null) {
     if (!this.pub) {
       this.init(() => {})
     }
@@ -80,11 +85,10 @@ export class TestUser {
       issuer: this.pub,
       currency: this.node.server.conf.currency
     }).getRawUnSigned()
-    this.createdIdentity += KeyGen(this.pub, this.sec).signSync(this.createdIdentity) + '\n'
-    await this.submitIdentity(this.createdIdentity, fromServer);
+    return this.createdIdentity += KeyGen(this.pub, this.sec).signSync(this.createdIdentity) + '\n'
   }
 
-  public submitIdentity(raw:string, fromServer:any) {
+  public submitIdentity(raw:string, fromServer?: TestingServer) {
     return this.doPost('/wot/add', {
       "identity": raw
     }, fromServer)
@@ -118,17 +122,21 @@ export class TestUser {
 
   public async cert(user:TestUser, fromServer?:TestingServer, toServer?:TestingServer) {
     const cert = await this.makeCert(user, fromServer)
-    await this.doPost('/wot/certify', {
+    await this.sendCert(cert, toServer)
+  }
+
+  public async sendCert(cert: CertificationDTO, toServer?: TestingServer) {
+    return this.doPost('/wot/certify', {
       "cert": cert.getRawSigned()
-    }, toServer);
+    }, toServer)
   }
 
   public async join() {
-    return await this.sendMembership("IN")
+    return await this.publishMembership("IN")
   }
 
   public async leave() {
-    return await this.sendMembership("OUT")
+    return await this.publishMembership("OUT")
   }
 
   public async makeRevocation(givenLookupIdty?:HttpLookup, overrideProps?:any) {
@@ -181,11 +189,15 @@ export class TestUser {
     return MembershipDTO.fromJSONObject(join)
   }
 
-  public async sendMembership(type:string) {
+  public async publishMembership(type:string) {
     const ms = await this.makeMembership(type);
-    await this.post('/blockchain/membership', {
+    await this.sendMembership(ms)
+  }
+
+  public async sendMembership(ms: MembershipDTO, toServer?: TestingServer) {
+    return this.doPost('/blockchain/membership', {
       "membership": ms.getRawSigned()
-    })
+    }, toServer)
   }
 
   public async sendMoney(amount:number, recipient:TestUser, comment?:string) {
@@ -194,8 +206,7 @@ export class TestUser {
   }
 
   public async sendTX(rawTX:string) {
-    let http = await this.getContacter()
-    return http.processTransaction(rawTX)
+    return this.doPost('/tx/process', { transaction: rawTX })
   }
 
   public async prepareUTX(previousTX:string, unlocks:string[], outputs:TestOutput[], opts:any) {

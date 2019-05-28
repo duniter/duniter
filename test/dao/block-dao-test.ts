@@ -12,49 +12,141 @@
 // GNU Affero General Public License for more details.
 
 import {BlockchainDAO} from "../../app/lib/dal/indexDAL/abstract/BlockchainDAO"
-import {LevelDBBlockchain} from "../../app/lib/dal/indexDAL/leveldb/LevelDBBlockchain"
-import {LevelDBDriver} from "../../app/lib/dal/drivers/LevelDBDriver"
-import {assertEqual, assertNotNull, assertNull} from "../integration/tools/test-framework"
-import {DBBlock} from "../../app/lib/db/DBBlock"
+import {assertEqual, writeBasicTestWithConfAnd2Users} from "../integration/tools/test-framework"
+import {CommonConstants} from "../../app/lib/common-libs/constants"
 
-describe('BlockchainDAO', () => {
+describe('BlockchainDAO', () => writeBasicTestWithConfAnd2Users({
+  sigReplay: 3,
+  sigPeriod: 0,
+  sigValidity: 10,
+  udTime0: 1500000000,
+}, (test) => {
 
-  BlockchainDAOSuite('LevelDBBlockchain', new LevelDBBlockchain(async () => LevelDBDriver.newMemoryInstance()))
-})
-
-function BlockchainDAOSuite(name: string, dao: BlockchainDAO) {
-
-  before(async () => {
-    await dao.init()
+  before(() => {
+    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 11
   })
 
-  describe(name, () => {
+  const now = 1500000000
 
-    it('should save fork blocks', async () => {
-      await dao.saveSideBlock({ number: 0, hash: 'AA0' } as any)
-      await dao.saveSideBlock({ number: 0, hash: 'BB0' } as any)
-      assertEqual((await dao.getPotentialRoots()).length, 2)
-    })
-
-    it('should find potential next blocks', async () => {
-      await dao.saveSideBlock({ number: 1, hash: 'AA1-1', previousHash: 'AA0' } as any)
-      await dao.saveSideBlock({ number: 1, hash: 'AA1-2', previousHash: 'AA0' } as any)
-      await dao.saveSideBlock({ number: 1, hash: 'AA1-3', previousHash: 'AA0' } as any)
-      await dao.saveSideBlock({ number: 1, hash: 'BB1-3', previousHash: 'BB0' } as any)
-      // await (dao as any).forks.dump()
-      assertEqual((await dao.getNextForkBlocks(0, 'AA0')).length, 3)
-    })
-
-    it('should find an absolute block (non-fork)', async () => {
-      await dao.saveBlock({ number: 4984, hash: 'HHH' } as any)
-      const b1 = await dao.getAbsoluteBlock(4983, 'HHH')
-      const b2 = await dao.getAbsoluteBlock(4984, 'HHG')
-      const b3 = await dao.getAbsoluteBlock(4984, 'HHH')
-      assertNull(b1)
-      assertNull(b2)
-      assertNotNull(b3)
-      assertEqual((b3 as DBBlock).number, 4984)
-      assertEqual((b3 as DBBlock).hash, 'HHH')
-    })
+  test('should be able to init with 2 blocks', async (s1, cat, tac) => {
+    await cat.createIdentity()
+    await tac.createIdentity()
+    await cat.cert(tac)
+    await tac.cert(cat)
+    await cat.join()
+    await tac.join()
+    await s1.commit({ time: now, version: 10 })
+    await s1.commit({ time: now })
   })
-}
+
+  test('tic & toc join', async (s1, cat, tac, toc, tic) => {
+    await toc.createIdentity()
+    await tic.createIdentity()
+    await tac.cert(toc)
+    await cat.cert(tic)
+    await toc.join()
+    await tic.join()
+    await s1.commit({ time: now })
+    const idtyBlocks = await s1.dal.blockDAL.findWithIdentities()
+    assertEqual(idtyBlocks.length, 2)
+    assertEqual(idtyBlocks[0], 0)
+    assertEqual(idtyBlocks[1], 2)
+    const certBlocks = await s1.dal.blockDAL.findWithCertifications()
+    assertEqual(certBlocks.length, 2)
+    assertEqual(certBlocks[0], 0)
+    assertEqual(certBlocks[1], 2)
+    const mssBlocks = await s1.dal.blockDAL.findWithJoiners()
+    assertEqual(mssBlocks.length, 2)
+    assertEqual(mssBlocks[0], 0)
+    assertEqual(mssBlocks[1], 2)
+    const udBlocks = await s1.dal.blockDAL.findWithUD()
+    assertEqual(udBlocks.length, 1)
+    assertEqual(udBlocks[0], 1)
+  })
+
+  test('some cert join', async (s1, cat, tac, toc, tic) => {
+    await tic.cert(toc)
+    await s1.commit({ time: now })
+    const idtyBlocks = await s1.dal.blockDAL.findWithIdentities()
+    assertEqual(idtyBlocks.length, 2)
+    assertEqual(idtyBlocks[0], 0)
+    assertEqual(idtyBlocks[1], 2)
+    const certBlocks = await s1.dal.blockDAL.findWithCertifications()
+    assertEqual(certBlocks.length, 3)
+    assertEqual(certBlocks[0], 0)
+    assertEqual(certBlocks[1], 2)
+    assertEqual(certBlocks[2], 3)
+    const mssBlocks = await s1.dal.blockDAL.findWithJoiners()
+    assertEqual(mssBlocks.length, 2)
+    assertEqual(mssBlocks[0], 0)
+    assertEqual(mssBlocks[1], 2)
+  })
+
+  test('send money', async (s1, cat, tac, toc, tic) => {
+    await cat.sendMoney(100, toc)
+    await tac.sendMoney(100, toc)
+    await s1.commit({ time: now }) // b#4
+    await toc.sendMoney(100, cat)
+    await s1.commit({ time: now }) // b#5
+    const idtyBlocks = await s1.dal.blockDAL.findWithIdentities()
+    assertEqual(idtyBlocks.length, 2)
+    assertEqual(idtyBlocks[0], 0)
+    assertEqual(idtyBlocks[1], 2)
+    const certBlocks = await s1.dal.blockDAL.findWithCertifications()
+    assertEqual(certBlocks.length, 3)
+    assertEqual(certBlocks[0], 0)
+    assertEqual(certBlocks[1], 2)
+    assertEqual(certBlocks[2], 3)
+    const mssBlocks = await s1.dal.blockDAL.findWithJoiners()
+    assertEqual(mssBlocks.length, 2)
+    assertEqual(mssBlocks[0], 0)
+    assertEqual(mssBlocks[1], 2)
+    const txBlocks = await s1.dal.blockDAL.findWithTXs()
+    assertEqual(txBlocks.length, 2)
+    assertEqual(txBlocks[0], 4)
+    assertEqual(txBlocks[1], 5)
+  })
+
+  test('revert block containing a cert', async (s1) => {
+    await s1.revert()
+    await s1.revert()
+    await s1.revert()
+    const idtyBlocks = await s1.dal.blockDAL.findWithIdentities()
+    assertEqual(idtyBlocks.length, 2)
+    assertEqual(idtyBlocks[0], 0)
+    assertEqual(idtyBlocks[1], 2)
+    const certBlocks = await s1.dal.blockDAL.findWithCertifications()
+    assertEqual(certBlocks.length, 2)
+    assertEqual(certBlocks[0], 0)
+    assertEqual(certBlocks[1], 2)
+    const mssBlocks = await s1.dal.blockDAL.findWithJoiners()
+    assertEqual(mssBlocks.length, 2)
+    assertEqual(mssBlocks[0], 0)
+    assertEqual(mssBlocks[1], 2)
+  })
+
+  test('revert block containing toc and tic', async (s1) => {
+    await s1.revert()
+    const idtyBlocks = await s1.dal.blockDAL.findWithIdentities()
+    assertEqual(idtyBlocks.length, 1)
+    assertEqual(idtyBlocks[0], 0)
+    const certBlocks = await s1.dal.blockDAL.findWithCertifications()
+    assertEqual(certBlocks.length, 1)
+    assertEqual(certBlocks[0], 0)
+    const mssBlocks = await s1.dal.blockDAL.findWithJoiners()
+    assertEqual(mssBlocks.length, 1)
+    assertEqual(mssBlocks[0], 0)
+  })
+
+  test('revert all', async (s1) => {
+    await s1.revert()
+    await s1.revert()
+    assertEqual((await s1.dal.blockDAL.findWithIdentities()).length, 0)
+    assertEqual((await s1.dal.blockDAL.findWithCertifications()).length, 0)
+    assertEqual((await s1.dal.blockDAL.findWithJoiners()).length, 0)
+  })
+
+  after(() => {
+    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 10
+  })
+}))

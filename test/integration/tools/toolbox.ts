@@ -845,3 +845,12 @@ export function tocUser(server: TestingServer) {
       server
     })
 }
+
+export function ticUser(server: TestingServer) {
+  return new TestUser('tic', {
+    pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
+    sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'},
+    {
+      server
+    })
+}

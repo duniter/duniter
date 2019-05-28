@@ -34,6 +34,7 @@ import {ExitCodes} from "../../lib/common-libs/exit-codes"
 import {connect} from "./lib/connect"
 import {BMARemoteContacter} from "./lib/sync/BMARemoteContacter"
 import {applyMempoolRequirements, forwardToServer, pullSandboxToLocalServer} from "./lib/sandbox"
+import {DBBlock} from "../../lib/db/DBBlock"
 
 const HOST_PATTERN = /^[^:/]+(:[0-9]{1,5})?(\/.*)?$/
 const FILE_PATTERN = /^(\/.+)$/
@@ -146,7 +147,7 @@ export const CrawlerDependency = {
           const remote = new Synchroniser(server, strategy, interactive === true)
 
           // If the sync fail, stop the program
-          process.on('unhandledRejection', (reason) => {
+          process.on('unhandledRejection', (reason: any) => {
             if (reason.message === DataErrors[DataErrors.NO_NODE_FOUND_TO_DOWNLOAD_CHUNK]) {
               NewLogger().error('Synchronization interrupted: no node was found to continue downloading after %s tries.', CrawlerConstants.SYNC_MAX_FAIL_NO_NODE_FOUND)
               process.exit(ExitCodes.SYNC_FAIL)
@@ -308,6 +309,36 @@ export const CrawlerDependency = {
           }
 
           await server.disconnect();
+        } catch(e) {
+          logger.error(e);
+          throw Error("Exiting");
+        }
+      }
+    }, {
+      name: 'pull <from> [<number>]',
+      desc: 'Pull blocks from <from> source up to block <number>',
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
+        const source: string = params[0]
+        const to = parseInt(params[1])
+        if (!source || !(source.match(HOST_PATTERN) || source.match(FILE_PATTERN))) {
+          throw 'Source of sync is required. (host[:port])'
+        }
+        const logger = NewLogger()
+        const { host, port } = extractHostPort(source)
+        try {
+          const peer = PeerDTO.fromJSONObject({ endpoints: [['BASIC_MERKLED_API', host, port].join(' ')] })
+          logger.info('Looking at %s...', source)
+          try {
+            const fromHost = await connect(peer)
+            let current: DBBlock|null = await server.dal.getCurrentBlockOrNull()
+            // Loop until an error occurs
+            while (current && (isNaN(to) || current.number < to)) {
+              current = await fromHost.getBlock(current.number + 1)
+              await server.writeBlock(current, false)
+            }
+          } catch (e) {
+            logger.error(e);
+          }
         } catch(e) {
           logger.error(e);
           throw Error("Exiting");

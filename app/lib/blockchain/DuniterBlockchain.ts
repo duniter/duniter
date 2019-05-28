@@ -198,12 +198,6 @@ export class DuniterBlockchain {
       block.fork = false;
       const added = await this.saveBlockData(currentBlock, block, conf, dal, logger, index, HEAD, trim);
 
-      try {
-        await DuniterBlockchain.pushStatsForBlocks([block], dal);
-      } catch (e) {
-        logger.warn("An error occurred after the add of the block", e.stack || e);
-      }
-
       logger.info('Block #' + block.number + ' added to the blockchain in %s ms', (Date.now() - start));
 
       return BlockDTO.fromJSONObject(added)
@@ -243,7 +237,6 @@ export class DuniterBlockchain {
       const MAX_BINDEX_SIZE = requiredBindexSizeForTail(TAIL, conf)
       const currentSize = indexes.HEAD.number - TAIL.number + 1
       if (currentSize > MAX_BINDEX_SIZE) {
-        await dal.archiveBlocks()
         await dal.trimIndexes(indexes.HEAD.number - MAX_BINDEX_SIZE);
       }
     }
@@ -526,37 +519,6 @@ export class DuniterBlockchain {
     else if (!block.dividend) {
       block.dividend = null;
     }
-  }
-
-  static pushStatsForBlocks(blocks:BlockDTO[], dal:FileDAL) {
-    const stats: { [k:string]: { blocks: number[], lastParsedBlock:number }} = {};
-    // Stats
-    for (const block of blocks) {
-      const values = [
-        { name: 'newcomers', value: block.identities },
-        { name: 'certs',     value: block.certifications },
-        { name: 'joiners',   value: block.joiners },
-        { name: 'actives',   value: block.actives },
-        { name: 'leavers',   value: block.leavers },
-        { name: 'revoked',   value: block.revoked },
-        { name: 'excluded',  value: block.excluded },
-        { name: 'ud',        value: block.dividend },
-        { name: 'tx',        value: block.transactions }
-      ]
-      for (const element of values) {
-        if (!stats[element.name]) {
-          stats[element.name] = { blocks: [], lastParsedBlock: -1 };
-        }
-        const stat = stats[element.name]
-        const isPositiveValue = element.value && typeof element.value != 'object';
-        const isNonEmptyArray = element.value && typeof element.value == 'object' && element.value.length > 0;
-        if (isPositiveValue || isNonEmptyArray) {
-          stat.blocks.push(block.number);
-        }
-        stat.lastParsedBlock = block.number;
-      }
-    }
-    return dal.pushStats(stats);
   }
 
   static async pushSideBlock(obj:BlockDTO, dal:FileDAL, logger:any) {

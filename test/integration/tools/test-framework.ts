@@ -1,4 +1,4 @@
-import {catUser, NewTestingServer, tacUser, TestingServer, tocUser} from "./toolbox"
+import {catUser, NewTestingServer, tacUser, TestingServer, ticUser, tocUser} from "./toolbox"
 import {TestUser} from "./TestUser"
 import * as assert from 'assert'
 import {Underscore} from "../../../app/lib/common-libs/underscore"
@@ -18,11 +18,11 @@ export function writeBasicTestWithConfAnd2Users(conf: {
 }, writeTests: (
   test: (
     testTitle: string,
-    fn: (server: TestingServer, cat: TestUser, tac: TestUser, toc: TestUser) => Promise<void>
+    fn: (server: TestingServer, cat: TestUser, tac: TestUser, toc: TestUser, tic: TestUser) => Promise<void>
   ) => void
 ) => void) {
 
-  let s1:TestingServer, cat:TestUser, tac:TestUser, toc:TestUser
+  let s1:TestingServer, cat:TestUser, tac:TestUser, toc:TestUser, tic: TestUser
 
   const configuration = Underscore.extend({
     medianTimeBlocks: 1,
@@ -37,12 +37,13 @@ export function writeBasicTestWithConfAnd2Users(conf: {
     cat = catUser(s1)
     tac = tacUser(s1)
     toc = tocUser(s1)
+    tic = ticUser(s1)
     await s1.prepareForNetwork()
   })
 
-  writeTests((title, cb: (server: TestingServer, cat: TestUser, tac: TestUser, toc: TestUser) => Promise<void>) => {
+  writeTests((title, cb: (server: TestingServer, cat: TestUser, tac: TestUser, toc: TestUser, tic: TestUser) => Promise<void>) => {
     it(title, async () => {
-      await cb(s1, cat, tac, toc)
+      await cb(s1, cat, tac, toc, tic)
     })
   })
 }

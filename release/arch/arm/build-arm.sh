@@ -6,7 +6,7 @@ export NVM_DIR="$HOME/.nvm"
 
 
 # Prepare
-NODE_VERSION=9.4.0
+NODE_VERSION=10.11.0
 ARCH="`uname -m | sed -e \"s/86_//\"`"
 NVER="v$NODE_VERSION"
 DUNITER_TAG=$1
@@ -78,7 +78,6 @@ rm -Rf node_modules/duniter-ui/node_modules
 # Because we are building in a VM, Node.js could not detect that the target is ARM. So we move the modules' binaries accordingly.
 #mv node_modules/naclb/lib/binding/Release/node-v48-linux-x64 node_modules/naclb/lib/binding/Release/node-v48-linux-arm
 #mv node_modules/wotb/lib/binding/Release/node-v48-linux-x64 node_modules/wotb/lib/binding/Release/node-v48-linux-arm
-#mv node_modules/scryptb/lib/binding/Release/node-v48-linux-x64 node_modules/scryptb/lib/binding/Release/node-v48-linux-arm
 #mv node_modules/sqlite3/lib/binding/Release/node-v48-linux-x64 node_modules/sqlite3/lib/binding/Release/node-v48-linux-arm
 
 cd ..

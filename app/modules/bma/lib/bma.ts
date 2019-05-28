@@ -125,10 +125,14 @@ export const bma = function(server:Server, interfaces:NetworkInterface[]|null, h
       path: '/ws/heads'
     });
 
-    wssBlock.on('error', function (error:any) {
+    const errorHandler = function (error:any) {
       logger && logger.error('Error on WS Server');
       logger && logger.error(error);
-    });
+    }
+
+    wssBlock.on('error', errorHandler);
+    wssPeer.on('error', errorHandler);
+    wssHeads.on('error', errorHandler);
 
     wssBlock.on('connection', async function connection(ws:any) {
       try {

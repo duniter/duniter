@@ -16,9 +16,9 @@ export async function addLegacyBlocks(server: Server, wwDAL: WotWizardDAL) {
   let blocksSaved: DBBlock[] = []
   logger.debug('Reading blocks...')
 
-  // We loop taking care of archives structure
-  for (let i = start; i <= end; i += CommonConstants.ARCHIVES_BLOCKS_CHUNK) {
-    const blocks = await server.dal.getBlocksBetween(i, Math.min(end, i + CommonConstants.ARCHIVES_BLOCKS_CHUNK) - 1)
+  // We loop to work in flow mode (avoid big memory consumption)
+  for (let i = start; i <= end; i += CommonConstants.BLOCKS_IN_MEMORY_MAX) {
+    const blocks = await server.dal.getBlocksBetween(i, Math.min(end, i + CommonConstants.BLOCKS_IN_MEMORY_MAX) - 1)
     const legacies = blocks.map(f => { (f as any).legacy = true; return f })
     legacies.forEach(l => blocksSaved.push(l))
     if (i % 25000 === 0) {

@@ -32,6 +32,7 @@ import {TransactionDTO} from "../../../../lib/dto/TransactionDTO"
 import {DataErrors} from "../../../../lib/common-libs/errors"
 import {Underscore} from "../../../../lib/common-libs/underscore"
 import * as toJson from "../tojson"
+import {StatName} from "../../../../lib/dal/fileDAL"
 
 const http2raw         = require('../http2raw');
 
@@ -105,7 +106,7 @@ export class BlockchainBinding extends AbstractController {
     }
   }
 
-  private getStat(statName:string): () => Promise<HttpStat> {
+  private getStat(statName: StatName): () => Promise<HttpStat> {
     return async () => {
       let stat = await this.server.dal.getStat(statName);
       return { result: toJson.stat(stat) };

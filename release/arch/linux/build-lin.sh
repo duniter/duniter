@@ -122,12 +122,12 @@ build_deb_pack() {
 # Prepare
 # -----------
 
-NODE_VERSION=9.4.0
+NODE_VERSION=10.11.0
 NVER="v${NODE_VERSION}"
 DUNITER_TAG="v${1}"
 DUNITER_DEB_VER=" ${1}"
-ADDON_VERSION=59
-NW_VERSION=0.28.0
+ADDON_VERSION=64
+NW_VERSION=0.33.1
 NW_RELEASE="v${NW_VERSION}"
 NW="nwjs-${NW_RELEASE}-linux-x64"
 NW_GZ="${NW}.tar.gz"
@@ -205,7 +205,6 @@ cd "${RELEASES}/desktop_/node_modules/"
 nw_compile wotb nw_copy
 nw_compile naclb nw_copy
 nw_compile leveldown nw_copy "build/Release/"
-nw_compile scryptb nw_copy
 nw_compile sqlite3 nw_copy_node
 
 # Unused binaries

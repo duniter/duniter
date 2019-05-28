@@ -47,6 +47,8 @@ push_to_github:
   before_script:
     - export NVM_DIR="$HOME/.nvm"
     - . "$NVM_DIR/nvm.sh"
+    - nvm install 10
+    - nvm use 10
 
 .cached_nvm: &cached_nvm
   <<: *nvm_env
@@ -128,7 +130,7 @@ sync_gtest:
 .build_releases: &build_releases
   stage: package
   allow_failure: false
-  image: duniter/release-builder:v1.2.0
+  image: duniter/release-builder:v1.4.0
   cache: {}
   when: manual
   tags:

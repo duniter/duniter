@@ -16,8 +16,9 @@ import {ConfDTO} from "../../dto/ConfDTO"
 import {CommonConstants} from "../../common-libs/constants";
 import {FileSystem} from "../../system/directory"
 import {Underscore} from "../../common-libs/underscore"
+import {ConfDAO} from "../indexDAL/abstract/ConfDAO"
 
-export class ConfDAL extends AbstractCFS {
+export class ConfDAL extends AbstractCFS implements ConfDAO {
 
   private logger:any
 
@@ -60,6 +61,10 @@ export class ConfDAL extends AbstractCFS {
       "dtReeval": parseInt(conf.dtReeval),
       "switchOnHeadAdvance": CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS
     }
+  }
+
+  async readRawConfFile() {
+    return this.coreFS.read('conf.json')
   }
 
   async loadConf() {

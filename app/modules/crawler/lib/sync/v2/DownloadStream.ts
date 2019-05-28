@@ -89,24 +89,19 @@ export class DownloadStream extends Duplex {
         // NewLogger().info("Chunk #%s chains well.", i)
         const fileName = this.syncStrategy.getChunkRelativePath(i)
         let doWrite = downloader !== this.fsDownloader
-          || !(await this.writeDAL.confDAL.coreFS.exists(fileName))
+          || !(await this.writeDAL.coreFS.exists(fileName))
         if (doWrite) {
           // Store the file to avoid re-downloading
           if (this.localNumber <= 0 && chunk.length === this.syncStrategy.chunkSize) {
-            await this.writeDAL.confDAL.coreFS.makeTree(this.syncStrategy.getCurrency())
+            await this.writeDAL.coreFS.makeTree(this.syncStrategy.getCurrency())
             const content = { blocks: chunk.map((b:any) => DBBlock.fromBlockDTO(b)) }
-            await this.writeDAL.confDAL.coreFS.writeJSON(fileName, content)
+            await this.writeDAL.coreFS.writeJSON(fileName, content)
           }
         }
         if (i > this.bestDownloaded) {
           this.bestDownloaded = i
           this.watcher.downloadPercent(Math.round((i + 1) / this.numberOfChunksToDownload * 100))
         }
-        await this.writeDAL.blockchainArchiveDAL.archive(chunk.map(b => {
-          const block = DBBlock.fromBlockDTO(b)
-          block.fork = false
-          return block
-        }))
         return chunk
       })())
       this.dowloading[i]

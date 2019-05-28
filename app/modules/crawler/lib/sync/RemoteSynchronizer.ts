@@ -146,7 +146,7 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
           `ws://${host}:${port}${path && ' ' + path || ''}`,
           new (class SyncMessageHandler implements WS2PMessageHandler {
             async answerToRequest(json: any, c: WS2PConnection): Promise<WS2PResponse> {
-              throw Error(DataErrors[DataErrors.CANNOT_ARCHIVE_CHUNK_WRONG_SIZE])
+              throw Error(DataErrors[DataErrors.WS2P_SYNC_PERIMETER_IS_LIMITED])
             }
             async handlePushMessage(json: any, c: WS2PConnection): Promise<void> {
               logger.warn('Receiving push messages, which are not allowed during a SYNC.', json)

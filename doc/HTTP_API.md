@@ -70,12 +70,12 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |-- add
     |   |-- certify
     |   |-- revoke
-    |   |-- lookup[uid|pubkey]
+    |   |-- lookup[UID|PUBKEY]
     |   |-- members
-    |   |-- requirements/[pubkey]
-    |   |-- certifiers-of/[uid|pubkey]
-    |   |-- certified-by/[uid|pubkey]
-    |   `-- identity-of/[uid|pubkey]
+    |   |-- requirements/[PUBKEY]
+    |   |-- certifiers-of/[UID|PUBKEY]
+    |   |-- certified-by/[UID|PUBKEY]
+    |   `-- identity-of/[UID|PUBKEY]
     |-- blockchain/
     |   |-- parameters
     |   |-- membership
@@ -89,17 +89,17 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |       |-- excluded
     |       |-- ud
     |       |-- tx
-    |       |-- branches
-    |   |-- hardship
-    |   |   `-- [PUBKEY]
-    |   |-- block
-    |   |   `-- [NUMBER]
+    |   |-- hardship/[PUBKEY]
+    |   |-- block/[NUMBER]
     |   |-- difficulties
-    |   `-- current
+    |   |-- current
+    |   `-- branches
     |-- network/
     |   |-- peers
-    |   `-- peering
-    |       `-- peers
+    |   |-- peering/
+    |   |   `-- peers
+    |   `-- ws2p/
+    |       `-- heads
     |-- tx/
     |   |-- process
     |   |-- sources
@@ -1280,6 +1280,38 @@ The posted entry.
     "OTHER_PROTOCOL 88.77.66.55 9001",
   ],
   "signature": "42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r"
+}
+```
+
+#### `network/ws2p/heads (GET)`
+**Goal**
+
+Get the ws2p heads known by the node in the currency network.
+
+**Parameters**
+
+*None*.
+
+**Returns**
+
+The list of the head documents (see WS2P Network Protocol RFC for a description of the head documents format).
+```json
+{
+  "heads": [
+    {
+      "message": "WS2POCAIC:HEAD:1:CmFKubyqbmJWbhyH2eEPVSSs4H4NeXGDfrETzEnRFtPd:223482-0000002C6AC0FBE21401444C9BE8D027C86E35E8471B3D2BE1A3AF65CECBCE1E:c188e511:duniter:1.7.18:1",
+      "sig": "FYylLELBzS1jht0YODVDOvflupPcDTZZDAyYToHB9RE+KMN/XdjPo6JcaXsj6GD3rQ3oQVdICkpl8nfuNESwDQ==",
+      "messageV2": "WS2POCAIC:HEAD:2:CmFKubyqbmJWbhyH2eEPVSSs4H4NeXGDfrETzEnRFtPd:223482-0000002C6AC0FBE21401444C9BE8D027C86E35E8471B3D2BE1A3AF65CECBCE1E:c188e511:duniter:1.7.18:1:0:0",
+      "sigV2": "fRAsFMHuSyjnC5GhJMMLYivThtrs7lP4iuwHXXOmkPzws6aqQMRuQQAipcqTBzDyDax7y9VCxM1hMD3jDJJHBQ==",
+      "step": 3
+    },
+    {
+      "message": "WS2POCA:HEAD:1:2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ:223548-0000057A98C3099CDCF08B4F4F01C6EEB7D6C735C3943D62E8030138974D2C28:403a5b32:duniter:1.7.18:1",
+      "sig": "PsaSv/ZjgjoNQCMTY9dXmV0IX/TyZEgvtUZSZSEvc1mlO9v9T9jKrfrVXH8N7XdhuMyEHu+Q3fVbQRHEdXvXDg==",
+      "messageV2": "WS2POCA:HEAD:2:2ny7YAdmzReQxAayyJZsyVYwYhVyax2thKcGknmQy5nQ:223548-0000057A98C3099CDCF08B4F4F01C6EEB7D6C735C3943D62E8030138974D2C28:403a5b32:duniter:1.7.18:1:10:10",
+      "sigV2": "aw6wzt81S5DjHCYYlB8jinHDlM+GiMscV7/MRFXxcPJP+A62ILg3cW5DCfBlawPomDtoi6v9XL4TYAAIPZjkAA==",
+      "step": 2
+    }
 }
 ```
 

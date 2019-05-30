@@ -121,7 +121,7 @@ module.exports = {
       MAX: 20
     },
     STATUS_INTERVAL: {
-      UPDATE: 2, // Every X blocks
+      UPDATE: 6 * 12, // Every X blocks
       MAX: 20 // MAX Y blocks
     },
     ONION_ENDPOINT_REGEX: new RegExp('(?:https?:\/\/)?(?:www)?(\S*?\.onion)(\/[-\w]*)*')

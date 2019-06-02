@@ -1,6 +1,10 @@
-## v1.7.19: To be released (## #### 2019)
-## v1.7.18: (2nd May 2019)
+## v1.7.19: (28th May 2019)
+- #1379: prevent expired membership documents to reach the mempool
+- #1380: prevent expired certifications to reach the mempool
 
+@c-geek
+
+## v1.7.18: (2nd May 2019)
 #### Code
 - [La Ğ1-test est bloquée au bloc n°362834.](https://forum.duniter.org/t/g1-test-dans-les-choux/4192/318)
 

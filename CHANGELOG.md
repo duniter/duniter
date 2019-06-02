@@ -1,3 +1,27 @@
+## v1.8.0 (XX XXXX 2019)
+
+### Highlights
+- Migration to Nodejs v10
+
+### Code
+- #1373: Support for Nodejs v10
+- #1372: `scryptb` removal
+- [enh] Upgrade TypeScript to 3.4.3
+- [enh] Abstracting conf DAL to ConfDAO
+- [enh] Remove ArchiveDAO, which is a LokiJS artifact
+- [enh] Add to an interface ServerDAO methods that could be used by external modules
+- [enh] StatsDAL => replaced by LevelDB indexes
+
+### BMA
+- [enh] Document `network/ws2p/heads`
+- [fix] In case of wrong network configuration, Duniter could crash on startup
+- [fix] `/branches` should not throw if current block does not exist
+
+### CI
+- Add g1 and gt control hash has changed to add `replayable_on`
+
+Thanks @c-geek, @Moul, @vtexier
+
 ## v1.7.19: (28th May 2019)
 - #1379: prevent expired membership documents to reach the mempool
 - #1380: prevent expired certifications to reach the mempool

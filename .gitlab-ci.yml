@@ -37,6 +37,7 @@ push_to_github:
       - .gitlab-ci.yml
       - index.ts
       - package.json
+      - yarn.lock
       - releases/**/*
       - server.ts
       - test/**/*

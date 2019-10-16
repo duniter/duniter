@@ -1,0 +1,34 @@
+*.sublime*
+node_modules/
+*.html
+npm-debug.log
+bin/jpgp*.jar
+.idea/
+naclb/build
+naclb/node_modules
+gui/nw
+
+# Vim swap files
+*~
+*.swp
+*.swo
+
+# Vagrant
+.vagrant/
+vagrant/*.log
+vagrant/duniter
+
+# Releases
+*.deb
+*.tar.gz
+*.log
+*.exe
+
+# vscode
+.vscode
+
+# istanbul
+.nyc_output
+coverage/
+
+# TS => JS: OK!

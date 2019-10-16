@@ -13,5 +13,36 @@ gui/nw
 *.swp
 *.swo
 
-# Yarn
-yarn.lock
+# Vagrant
+.vagrant/
+vagrant/*.log
+vagrant/duniter
+
+# Python compiled
+*.pyc
+
+# Releases
+/work
+*.deb
+*.tar.gz
+*.log
+*.exe
+
+# vscode
+.vscode
+
+# istanbul
+.nyc_output
+coverage/
+
+# typecode
+typedoc/
+
+/index.js*
+/index.d.ts
+/server.js*
+/server.d.ts
+app/**/*.js*
+app/**/*.d.ts
+test/**/*.d.ts
+test/**/*.js*

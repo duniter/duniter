@@ -1,6 +1,6 @@
 # DUP - Duniter Protocol
 
-> This document is still regularly updated (as of August 2016)
+> This document reflects Duniter in-production protocol. It is updated only for clarifications (2017).
 
 ## Contents
 
@@ -93,7 +93,7 @@ Any integer field has a maximum length of 19 digits.
 
 #### Format
 
-Signatures follow the [Ed55219 pattern](http://en.wikipedia.org/wiki/EdDSA), and are written under [Base64](http://en.wikipedia.org/wiki/Base64) encoding.
+Signatures follow the [Ed25519 pattern](http://en.wikipedia.org/wiki/EdDSA), and are written under [Base64](http://en.wikipedia.org/wiki/Base64) encoding.
 
 Here is an example of an expected signature:
 
@@ -111,7 +111,7 @@ This section deals with the various data formats used by UCP.
 
 #### Definition
 
-A public key is to be understood as an [Ed55219](http://en.wikipedia.org/wiki/EdDSA) public key.
+A public key is to be understood as an [Ed25519](http://en.wikipedia.org/wiki/EdDSA) public key.
 
 Its format is a [Base58](http://en.wikipedia.org/wiki/Base58) string of 43 or 44 characters, such as the following:
 
@@ -136,24 +136,28 @@ In this document *identifier*, `UserID`, `USER_ID` and `uid` will be indifferent
 
 An identity is a *signed* document containing the identifier:
 
-    Version: 10
-    Type: Identity
-    Currency: CURRENCY_NAME
-    Issuer: PUBLIC_KEY
-    UniqueID: USER_ID
-    Timestamp: BLOCK_UID
+```yml
+Version: 10
+Type: Identity
+Currency: CURRENCY_NAME
+Issuer: PUBLIC_KEY
+UniqueID: USER_ID
+Timestamp: BLOCK_UID
+```
 
 Here, `USER_ID` has to be replaced with a valid identifier, `PUBLIC_KEY` with a valid public key and `BLOCK_UID` with a valid block unique ID. This document **is what signature is based upon**.
 
 The whole identity document is then:
 
-    Version: 10
-    Type: Identity
-    Currency: CURRENCY_NAME
-    Issuer: PUBLIC_KEY
-    UniqueID: USER_ID
-    Timestamp: BLOCK_UID
-    SIGNATURE
+```yml
+Version: 10
+Type: Identity
+Currency: CURRENCY_NAME
+Issuer: PUBLIC_KEY
+UniqueID: USER_ID
+Timestamp: BLOCK_UID
+SIGNATURE
+```
 
 Where:
 
@@ -171,13 +175,15 @@ So the identity issuance is the act of saying:
 
 A valid identity:
 
-    Version: 10
-    Type: Identity
-    Currency: beta_brousouf
-    Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
-    UniqueID: lolcat
-    Timestamp: 32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
-    J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
+```yml
+Version: 10
+Type: Identity
+Currency: beta_brousouf
+Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
+UniqueID: lolcat
+Timestamp: 32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
+J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
+```
 
 ### Revocation
 
@@ -196,14 +202,16 @@ Its goal is only to inform that a created identity was either made by mistake, o
 
 A revocation is a *signed* document gathering the identity informations to revoke:
 
-    Version: 10
-    Type: Revocation
-    Currency: CURRENCY_NAME
-    Issuer: PUBLIC_KEY
-    IdtyUniqueID: USER_ID
-    IdtyTimestamp: BLOCK_UID
-    IdtySignature: IDTY_SIGNATURE
-    REVOCATION_SIGNATURE
+```yml
+Version: 10
+Type: Revocation
+Currency: CURRENCY_NAME
+Issuer: PUBLIC_KEY
+IdtyUniqueID: USER_ID
+IdtyTimestamp: BLOCK_UID
+IdtySignature: IDTY_SIGNATURE
+REVOCATION_SIGNATURE
+```
 
 Where:
 
@@ -213,24 +221,28 @@ Where:
 
 If we have the following identity:
 
-    Version: 10
-    Type: Identity
-    Currency: beta_brousouf
-    Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
-    UniqueID: lolcat
-    Timestamp: 32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
-    J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
+```yml
+Version: 10
+Type: Identity
+Currency: beta_brousouf
+Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
+UniqueID: lolcat
+Timestamp: 32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
+J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
+```
 
 A valid revocation could be:
 
-    Version: 10
-    Type: Revocation
-    Currency: beta_brousouf
-    Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
-    IdtyUniqueID: lolcat
-    IdtyTimestamp: 32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
-    IdtySignature: J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
-    SoKwoa8PFfCDJWZ6dNCv7XstezHcc2BbKiJgVDXv82R5zYR83nis9dShLgWJ5w48noVUHimdngzYQneNYSMV3rk
+```yml
+Version: 10
+Type: Revocation
+Currency: beta_brousouf
+Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
+IdtyUniqueID: lolcat
+IdtyTimestamp: 32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
+IdtySignature: J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
+SoKwoa8PFfCDJWZ6dNCv7XstezHcc2BbKiJgVDXv82R5zYR83nis9dShLgWJ5w48noVUHimdngzYQneNYSMV3rk
+```
 
 > The revocation actually *contains* the identity, so a program receiving a Revocation can extract the Identity and check the validity of its signature before processing the Revocation document.
 
@@ -244,16 +256,18 @@ A *certification* in UCP refers to the document *certifying* that someone else's
 
 A certification has the following format:
 
-    Version: 10
-    Type: Certification
-    Currency: CURRENCY_NAME
-    Issuer: PUBLIC_KEY
-    IdtyIssuer: IDTY_ISSUER
-    IdtyUniqueID: USER_ID
-    IdtyTimestamp: BLOCK_UID
-    IdtySignature: IDTY_SIGNATURE
-    CertTimestamp: BLOCK_UID
-    CERTIFIER_SIGNATURE
+```yml
+Version: 10
+Type: Certification
+Currency: CURRENCY_NAME
+Issuer: PUBLIC_KEY
+IdtyIssuer: IDTY_ISSUER
+IdtyUniqueID: USER_ID
+IdtyTimestamp: BLOCK_UID
+IdtySignature: IDTY_SIGNATURE
+CertTimestamp: BLOCK_UID
+CERTIFIER_SIGNATURE
+```
 
 Where:
 
@@ -279,26 +293,30 @@ Where:
 
 If we have the following complete self-certification:
 
-    Version: 10
-    Type: Identity
-    Currency: beta_brousouf
-    Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
-    UniqueID: lolcat
-    Timestamp: 32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
-    J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
+```yml
+Version: 10
+Type: Identity
+Currency: beta_brousouf
+Issuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
+UniqueID: lolcat
+Timestamp: 32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
+J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
+```
 
 A valid certification could be:
 
-    Version: 10
-    Type: Certification
-    Currency: beta_brousouf
-    Issuer: DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV
-    IdtyIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
-    IdtyUniqueID: lolcat
-    IdtyTimestamp: 32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
-    IdtySignature: J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
-    CertTimestamp: 36-1076F10A7397715D2BEE82579861999EA1F274AC
-    SoKwoa8PFfCDJWZ6dNCv7XstezHcc2BbKiJgVDXv82R5zYR83nis9dShLgWJ5w48noVUHimdngzYQneNYSMV3rk
+```yml
+Version: 10
+Type: Certification
+Currency: beta_brousouf
+Issuer: DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV
+IdtyIssuer: HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
+IdtyUniqueID: lolcat
+IdtyTimestamp: 32-DB30D958EE5CB75186972286ED3F4686B8A1C2CD
+IdtySignature: J3G9oM5AKYZNLAB5Wx499w61NuUoS57JVccTShUbGpCMjCqj9yXXqNq7dyZpDWA6BxipsiaMZhujMeBfCznzyci
+CertTimestamp: 36-1076F10A7397715D2BEE82579861999EA1F274AC
+SoKwoa8PFfCDJWZ6dNCv7XstezHcc2BbKiJgVDXv82R5zYR83nis9dShLgWJ5w48noVUHimdngzYQneNYSMV3rk
+```
 
 ### Membership
 
@@ -306,14 +324,16 @@ In UCP, a member is represented by a public key they are supposed to own. To be 
 
 This step is done by issuing the following document:
 
-    Version: VERSION
-    Type: Membership
-    Currency: CURRENCY_NAME
-    Issuer: ISSUER
-    Block: M_BLOCK_UID
-    Membership: MEMBERSHIP_TYPE
-    UserID: USER_ID
-    CertTS: BLOCK_UID
+```yml
+Version: VERSION
+Type: Membership
+Currency: CURRENCY_NAME
+Issuer: ISSUER
+Block: M_BLOCK_UID
+Membership: MEMBERSHIP_TYPE
+UserID: USER_ID
+CertTS: BLOCK_UID
+```
 
 followed by a signature of the `Issuer`.
 
@@ -361,26 +381,28 @@ Obviously, coins a sender does not own CANNOT be sent by them. That is why a tra
 
 A transaction is defined by the following format:
 
-    Version: VERSION
-    Type: Transaction
-    Currency: CURRENCY_NAME
-    Blockstamp: BLOCK_UID
-    Locktime: INTEGER
-    Issuers:
-    PUBLIC_KEY
-    ...
-    Inputs:
-    INPUT
-    ...
-    Unlocks:
-    UNLOCK
-    ...
-    Outputs:
-    AMOUNT:BASE:CONDITIONS
-    ...
-    Comment: COMMENT
-    SIGNATURES
-    ...
+```yml
+Version: VERSION
+Type: Transaction
+Currency: CURRENCY_NAME
+Blockstamp: BLOCK_UID
+Locktime: INTEGER
+Issuers:
+PUBLIC_KEY
+...
+Inputs:
+INPUT
+...
+Unlocks:
+UNLOCK
+...
+Outputs:
+AMOUNT:BASE:CONDITIONS
+...
+Comment: COMMENT
+SIGNATURES
+...
+```
 
 Here is a description of each field:
 
@@ -443,6 +465,8 @@ It follows a machine-readable BNF grammar composed of
 
 **An empty condition or a condition fully composed of spaces is considered an invalid output condition**.
 
+Also, the maximum length of a condition is 1000 characters. // TODO:  OK?
+
 ##### Output condition examples
 
 * `SIG(HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd)`
@@ -453,26 +477,44 @@ It follows a machine-readable BNF grammar composed of
 
 #### Condition matching
 
-Each `Unlock` of TX2 refers to an input of TX2 through `IN_INDEX`, input itself refering to an `Output` of TX1 through `T_HASH` reference and `T_INDEX`.
+Considering a transaction `TX` consuming some money: each unlock line `UNLOCK` of TX tries to unlock the input `INPUT = TX.Inputs[IN_INDEX]` refering to an ouput `Output` whose value is:
 
-* An output contains `F` functions in its conditions (read from left to right)
-* An unlock contains `P` parameters (or less, min. is zero), each separated by a space (read from left to right)
+If `INPUT.TYPE = 'T'`:
 
-A function of TX1 at position `f` returns TRUE if parameter at position `p` resolves the function. Otherwise it returns FALSE.
+    Output = TRANSACTIONS_IN_BLOCKCHAIN_OR_IN_LOCAL_BLOCK[T_HASH].OUPUTS[T_INDEX]
 
-The condition of an `Output` is unlocked if, evaluated globally with `(`, `)`, `&&`, and `||`, the condition returns TRUE.
+If `INPUT.TYPE = 'D'`:
+
+    Output = BLOCKCHAIN[BLOCK_ID].Dividend[PUBLIC_KEY]
+
+Let's name:
+
+* `CONDITIONS` the conditions of a given output `Output`
+* `NB_FUNCTIONS` the number of functions present in `CONDITIONS` (read from left to right)
+* `NB_PARAMETERS` the number of parameters present in `UNLOCK`, each separated by a space (read from left to right)
+
+Then, an `UNLOCK` line is considered *successful* if:
+
+* `Output` exists
+* `NB_PARAMETERS <= NB_FUNCTIONS`
+* Each `UNLOCK` parameter returns TRUE
+* `CONDITIONS` evaluated globally with `(`, `)`, `&&`, `||` and its locking functions returns TRUE
 
 ##### Example 1
 
 TX1:
 
-    Outputs:
-    50:2:XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)
+```yml
+Outputs:
+50:2:XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)
+```
 
 Is resolved by TX2:
 
-    Unlocks:
-    0:XHX(1872767826647264)
+```yml
+Unlocks:
+0:XHX(1872767826647264)
+```
 
 Because `XHX(1872767826647264) = 8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB` (this will be explained in the next section).
 
@@ -480,32 +522,53 @@ Because `XHX(1872767826647264) = 8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F
 
 TX1:
 
-    Outputs:
-    50:2:SIG(DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo)
+```yml
+Outputs:
+50:2:SIG(DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo)
+```
 
 Is resolved by TX2:
 
-    Issuers:
-    HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
-    DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo
-    [...]
-    Unlocks:
-    0:SIG(1)
+```yml
+Issuers:
+HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd
+DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo
+[...]
+Unlocks:
+0:SIG(1)
+```
 
 Because `SIG(1)` refers to the signature `DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo`, considering that signature `DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo` is good over TX2.
 
-#### Unlocking functions
+#### Locking and unlocking functions
 
-These functions may be present under both `Unlocks` and `Outputs` fields.
+The *locking* functions are present under `Outputs` field.
 
-* When present under `Outputs`, these functions define the *necessary conditions* to spend each output.
-* When present under `Unlocks`, these functions define the *sufficient proofs* that each input can be spent.
+The *unlocking* functions are present under `Unlocks` field.
 
 ##### SIG function
 
+###### Definition
+
+Lock:
+
+    SIG(PUBKEY_A)
+
+Unlock:
+
+    SIG(INDEX)
+
+###### Condition
+
+Lock `SIG(PUBKEY_A)` returns TRUE if it exists a parameter `SIG(INDEX)` returning TRUE where `Issuers[INDEX] == PUBKEY_A`.
+
+Unlock `SIG(INDEX)` returns TRUE if `Signatures[INDEX]` is a valid valid signature of TX against `Issuers[INDEX]` public key.
+
+###### Description
+
 This function is a control over the signature.
 
-* in an `Output` of TX1, `SIG(PUBKEY_A)` requires from a future transaction TX2 unlocking the output to give as parameter a valid signature of TX2 by `PUBKEY_A`
+* in an `Output` of a transaction TX1, `SIG(PUBKEY_A)` requires from a future transaction TX2 unlocking the output to give as parameter a valid signature of TX2 by `PUBKEY_A`
   * if TX2 does not give `SIG(INDEX)` parameter as [matching parameter](#condition-matching), the condition fails
   * if TX2's `Issuers[INDEX]` does not equal `PUBKEY_A`, the condition fails
   * if TX2's `SIG(INDEX)` does not return TRUE, the condition fails
@@ -513,23 +576,27 @@ This function is a control over the signature.
 
 So if we have, in TX1:
 
-    Version: 10
-    Type: Transaction
-    [...]
-	Outputs
-    25:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+```yml
+Version: 10
+Type: Transaction
+[...]
+Outputs
+25:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+```
 
 Then the `25` units can be spent *exclusively* in a future transaction TX2 which looks like:
 
-    Version: 10
-    Type: Transaction
-    [...]
-    Issuers:
-    BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g
-    Inputs:
-    25:2:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
-    Unlocks:
-    0:SIG(0)
+```yml
+Version: 10
+Type: Transaction
+[...]
+Issuers:
+BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g
+Inputs:
+25:2:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
+Unlocks:
+0:SIG(0)
+```
 
 Where:
 
@@ -544,55 +611,79 @@ The necessary condition `SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)` is m
 
 ##### XHX function
 
+###### Definition
+
+Lock:
+
+    XHX(HASH)
+
+Unlock:
+
+    XHX(PASSWORD)
+
+###### Condition
+
+`XHX(HASH)` returns true if it exists a parameter `XHX(PASSWORD)` where `SHA256(PASSWORD) = HASH`.
+
+`XHX(PASSWORD)` returns true if it exists a locking function `XHX(HASH)` where `SHA256(PASSWORD) = HASH` in the conditions.
+
+###### Description
+
 This function is a password control.
 
 So if we have, in TX1:
 
-    Version: 10
-    Type: Transaction
-    [...]
-	Outputs
-    25:2:XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)
+```yml
+Version: 10
+Type: Transaction
+[...]
+Outputs
+25:2:XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)
+```
 
 Then the `25` units can be spent *exclusively* in a future transaction TX2 which looks like:
 
-    Version: 10
-    Type: Transaction
-    [...]
-    Issuers:
-    BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g
-    Inputs:
-    55:1:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
-    Unlocks:
-    0:XHX(1872767826647264)
+```yml
+Version: 10
+Type: Transaction
+[...]
+Issuers:
+BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g
+Inputs:
+55:1:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
+Unlocks:
+0:XHX(1872767826647264)
+```
 
 Where:
 
 * `6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3` is the hash of TX1.
 
-The necessary condition `XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)` is matched here if `XHX(1872767826647264) = 8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB`.
+Then `XHX(PASSWORD)` returns TRUE if it exists `XHX(HASH)` in the output's conditions of TX1, with the relation `SHA256(PASSWORD) = HASH`.
 
-`XHX(1872767826647264)` is to be evaluated as `SHA256(1872767826647264)`.
+Here `XHX(1872767826647264)` returns TRUE if it exists `XHX(8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB)` in the output's conditions of TX1, as it matches the link `SHA256(1872767826647264) = 8AFC8DF633FC158F9DB4864ABED696C1AA0FE5D617A7B5F7AB8DE7CA2EFCD4CB`.
 
 #### Example 1
 
-Key `HsLShA` sending 30 coins to key `BYfWYF` using 1 source transaction written in block #3.
+Key `HsLShA` sending 25 coins to key `BYfWYF` using 1 source transaction written in block #3.
 
-    Version: 10
-    Type: Transaction
-    Currency: beta_brousouf
-    Blockstamp: 204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
-    Locktime: 0
-    Issuers:
-    HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
-    Inputs:
-    30:0:T:8361C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:3
-    Unlocks:
-    0:SIG(0)
-    Outputs:
-    25:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
-    5:2:SIG(HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY)
-    Comment: First transaction
+```yml
+Version: 10
+Type: Transaction
+Currency: beta_brousouf
+Blockstamp: 204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
+Locktime: 0
+Issuers:
+HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
+Inputs:
+30:0:T:8361C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:3
+Unlocks:
+0:SIG(0)
+Outputs:
+25:0:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+5:0:SIG(HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY)
+Comment: First transaction
+```
 
 Signatures (fake here):
 
@@ -602,24 +693,26 @@ Signatures (fake here):
 
 Key `HsLShA` sending 30 coins (base 2) to key `BYfWYF` using 2 sources transaction written in blocks #65 and #77 + 1 UD from block #88.
 
-    Version: 10
-    Type: Transaction
-    Currency: beta_brousouf
-    Blockstamp: 204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
-    Locktime: 0
-    Issuers:
-    HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
-    Inputs:
-    6:2:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
-    20:2:T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:10
-    40:1:D:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:88
-    Unlocks:
-    0:SIG(0)
-    1:SIG(0)
-    2:SIG(0)
-    Outputs:
-    30:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
-    Comment:
+```yml
+Version: 10
+Type: Transaction
+Currency: beta_brousouf
+Blockstamp: 204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
+Locktime: 0
+Issuers:
+HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
+Inputs:
+6:2:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
+20:2:T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:10
+40:1:D:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:88
+Unlocks:
+0:SIG(0)
+1:SIG(0)
+2:SIG(0)
+Outputs:
+30:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+Comment:
+```
 
 Signatures (fake here):
 
@@ -629,34 +722,36 @@ Signatures (fake here):
 
 Key `HsLShA`,  `CYYjHs` and `9WYHTa` sending 235 coins to key `BYfWYF` using 4 sources transaction + 2 UD from same block #46.
 
-    Version: 10
-    Type: Transaction
-    Currency: beta_brousouf
-    Blockstamp: 204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
-    Locktime: 0
-    Issuers:
-    HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
-    CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp
-    9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
-    Inputs:
-    40:2:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:2
-    70:2:T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:8
-    20:2:D:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:46
-    70:2:T:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:3
-    20:2:T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:5
-    15:2:D:9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:46
-    Unlocks:
-    0:SIG(0)
-    1:XHX(7665798292)
-    2:SIG(0)
-    3:SIG(0) SIG(2)
-    4:SIG(0) SIG(1) SIG(2)
-    5:SIG(2)
-    Outputs:
-    120:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
-    146:2:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)
-    49:2:(SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i) || XHX(3EB4702F2AC2FD3FA4FDC46A4FC05AE8CDEE1A85))
-    Comment: -----@@@----- (why not this comment?)
+```yml
+Version: 10
+Type: Transaction
+Currency: beta_brousouf
+Blockstamp: 204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
+Locktime: 0
+Issuers:
+HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
+CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp
+9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
+Inputs:
+40:2:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:2
+70:2:T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:8
+20:2:D:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:46
+70:2:T:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:3
+20:2:T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:5
+15:2:D:9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:46
+Unlocks:
+0:SIG(0)
+1:XHX(7665798292)
+2:SIG(0)
+3:SIG(0) SIG(2)
+4:SIG(0) SIG(1) SIG(2)
+5:SIG(2)
+Outputs:
+120:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+146:2:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)
+49:2:(SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i) || XHX(3EB4702F2AC2FD3FA4FDC46A4FC05AE8CDEE1A85))
+Comment: -----@@@----- (why not this comment?)
+```
 
 Signatures (fakes here):
 
@@ -666,35 +761,67 @@ Signatures (fakes here):
 
 ##### CLTV function
 
+###### Definition
+
+Lock:
+
+    CLVT(TIMESTAMP)
+
+Unlock: no unlocking function.
+
+###### Condition
+
+`CLVT(TIMESTAMP)` returns true if and only if the transaction including block's `MedianTime >= TIMESTAMP`.
+
+###### Description
+
 This function locks an output in the future, which will be unlocked at a given date.
 
 So if we have, in TX1:
 
-    Version: 10
-    Type: Transaction
-    [...]
-	Outputs
-    25:2:CLTV(1489677041)
+```yml
+Version: 10
+Type: Transaction
+[...]
+Outputs
+25:2:CLTV(1489677041)
+```
 
-Then the `25` units can be spent *exclusively* in a block whose `MedianTime >= 1489677041`
+So here, the `25` units can be spent *exclusively* in a block whose `MedianTime >= 1489677041`
 
 `CLTV`'s parameter must be an integer with a length between `1` and `10` chars.
 
 ##### CSV function
 
+###### Definition
+
+Lock:
+
+    CSV(DELAY)
+
+Unlock: no unlocking function.
+
+We define `TxTime` as the `MedianTime` of the block referenced by the transaction's `Blockstamp` field.
+
+###### Condition
+
+`CSV(DELAY)` returns true if and only if the transaction including block's `MedianTime - TxTime >= DELAY`.
+
+###### Description
+
 This function locks an output in the future, which will be unlocked after the given amount of time has elapsed.
 
 So if we have, in TX1:
 
-    Version: 10
-    Type: Transaction
-    Currency: beta_brousouf
-    Blockstamp: 204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
-    [...]
-	Outputs
-    25:2:CSV(3600)
-
-We define `TxTime` as the `MedianTime` of block `204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B`.
+```yml
+Version: 10
+Type: Transaction
+Currency: beta_brousouf
+Blockstamp: 204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
+[...]
+Outputs
+25:2:CSV(3600)
+```
 
 Then the `25` units can be spent *exclusively* in a block whose `MedianTime - TxTime >= 3600`.
 
@@ -704,60 +831,66 @@ Then the `25` units can be spent *exclusively* in a block whose `MedianTime - Tx
 
 A transaction may be described with a more compact format, to be used in a [Block](#block) document. The general format is:
 
-    TX:VERSION:NB_ISSUERS:NB_INPUTS:NB_UNLOCKS:NB_OUTPUTS:HAS_COMMENT:LOCKTIME
-    BLOCKSTAMP
-    PUBLIC_KEY
-    ...
-    INPUT
-    ...
-    UNLOCK
-    ...
-    OUTPUT
-    ...
-    COMMENT
-    SIGNATURE
-    ...
+```yml
+TX:VERSION:NB_ISSUERS:NB_INPUTS:NB_UNLOCKS:NB_OUTPUTS:HAS_COMMENT:LOCKTIME
+BLOCKSTAMP
+PUBLIC_KEY
+...
+INPUT
+...
+UNLOCK
+...
+OUTPUT
+...
+COMMENT
+SIGNATURE
+...
+```
 
 Here is an example compacting [example 2](#example-2) from above:
 
-    TX:10:1:3:1:0:0
-    204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
-    HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
-    6:2:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
-    20:2:T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:10
-    40:1:D:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:88
-    0:SIG(0)
-    1:SIG(0)
-    2:SIG(0)
-    30:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
-    42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
+```yml
+TX:10:1:3:1:0:0
+204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
+HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
+6:2:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:0
+20:2:T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:10
+40:1:D:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:88
+0:SIG(0)
+1:SIG(0)
+2:SIG(0)
+30:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
+```
 
 Here is an example compacting [example 3](#example-3) from above:
 
-    TX:10:3:6:3:1:0
-    204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
-    HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
-    CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp
-    9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
-    40:2:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:2
-    70:2:T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:8
-    20:2D:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:46
-    70:2:T:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:3
-    20:2:T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:5
-    15:2:D:9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:46
-    0:SIG(0)
-    1:XHX(7665798292)
-    2:SIG(0)
-    3:SIG(0) SIG(2)
-    4:SIG(0) SIG(1) SIG(2)
-    5:SIG(2)
-    120:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
-    146:2:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)
-    49:2:(SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i) || XHX(3EB4702F2AC2FD3FA4FDC46A4FC05AE8CDEE1A85))
-    -----@@@----- (why not this comment?)
-    42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
-    2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX
-    2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk
+```yml
+TX:10:3:6:3:1:0
+204-00003E2B8A35370BA5A7064598F628A62D4E9EC1936BE8651CE9A85F2E06981B
+HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
+CYYjHsNyg3HMRMpTHqCJAN9McjH5BwFLmDKGV3PmCuKp
+9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB
+40:2:T:6991C993631BED4733972ED7538E41CCC33660F554E3C51963E2A0AC4D6453D3:2
+70:2:T:3A09A20E9014110FD224889F13357BAB4EC78A72F95CA03394D8CCA2936A7435:8
+20:2D:HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY:46
+70:2:T:A0D9B4CDC113ECE1145C5525873821398890AE842F4B318BD076095A23E70956:3
+20:2:T:67F2045B5318777CC52CD38B424F3E40DDA823FA0364625F124BABE0030E7B5B:5
+15:2:D:9WYHTavL1pmhunFCzUwiiq4pXwvgGG5ysjZnjz9H8yB:46
+0:SIG(0)
+1:XHX(7665798292)
+2:SIG(0)
+3:SIG(0) SIG(2)
+4:SIG(0) SIG(1) SIG(2)
+5:SIG(2)
+120:2:SIG(BYfWYFrsyjpvpFysgu19rGK3VHBkz4MqmQbNyEuVU64g)
+146:2:SIG(DSz4rgncXCytsUMW2JU2yhLquZECD2XpEkpP9gG5HyAx)
+49:2:(SIG(6DyGr5LFtFmbaJYRvcs9WmBsr4cbJbJ1EV9zBbqG7A6i) || XHX(3EB4702F2AC2FD3FA4FDC46A4FC05AE8CDEE1A85))
+-----@@@----- (why not this comment?)
+42yQm4hGTJYWkPg39hQAUgP6S6EQ4vTfXdJuxKEHL1ih6YHiDL2hcwrFgBHjXLRgxRhj2VNVqqc6b4JayKqTE14r
+2D96KZwNUvVtcapQPq2mm7J9isFcDCfykwJpVEZwBc7tCgL4qPyu17BT5ePozAE9HS6Yvj51f62Mp4n9d9dkzJoX
+2XiBDpuUdu6zCPWGzHXXy8c4ATSscfFQG9DjmqMZUxDZVt1Dp4m2N5oHYVUfoPdrU9SLk4qxi65RNrfCVnvQtQJk
+```
 
 ### Block
 
@@ -773,50 +906,52 @@ but also other informations like:
 
 #### Structure
 
-    Version: VERSION
-    Type: Block
-    Currency: CURRENCY
-    Number: BLOCK_ID
-    PoWMin: NUMBER_OF_ZEROS
-    Time: GENERATED_ON
-    MedianTime: MEDIAN_DATE
-    UniversalDividend: DIVIDEND_AMOUNT
-    UnitBase: UNIT_BASE
-    Issuer: ISSUER_KEY
-    IssuersFrame: ISSUERS_FRAME
-    IssuersFrameVar: ISSUERS_FRAME_VAR
-    DifferentIssuersCount: ISSUER_KEY
-    PreviousHash: PREVIOUS_HASH
-    PreviousIssuer: PREVIOUS_ISSUER_KEY
-    Parameters: PARAMETERS
-    MembersCount: WOT_MEM_COUNT
-    Identities:
-    PUBLIC_KEY:SIGNATURE:I_BLOCK_UID:USER_ID
-    ...
-    Joiners:
-    PUBLIC_KEY:SIGNATURE:M_BLOCK_UID:I_BLOCK_UID:USER_ID
-    ...
-    Actives:
-    PUBLIC_KEY:SIGNATURE:M_BLOCK_UID:I_BLOCK_UID:USER_ID
-    ...
-    Leavers:
-    PUBLIC_KEY:SIGNATURE:M_BLOCK_UID:I_BLOCK_UID:USER_ID
-    ...
-    Revoked:
-    PUBLIC_KEY:SIGNATURE
-    ...
-    Excluded:
-    PUBLIC_KEY
-    ...
-    Certifications:
-    PUBKEY_FROM:PUBKEY_TO:BLOCK_ID:SIGNATURE
-    ...
-    Transactions:
-    COMPACT_TRANSACTION
-    ...
-    InnerHash: BLOCK_HASH
-    Nonce: NONCE
-    BOTTOM_SIGNATURE
+```yml
+Version: VERSION
+Type: Block
+Currency: CURRENCY
+Number: BLOCK_ID
+PoWMin: NUMBER_OF_ZEROS
+Time: GENERATED_ON
+MedianTime: MEDIAN_DATE
+UniversalDividend: DIVIDEND_AMOUNT
+UnitBase: UNIT_BASE
+Issuer: ISSUER_KEY
+IssuersFrame: ISSUERS_FRAME
+IssuersFrameVar: ISSUERS_FRAME_VAR
+DifferentIssuersCount: ISSUER_KEY
+PreviousHash: PREVIOUS_HASH
+PreviousIssuer: PREVIOUS_ISSUER_KEY
+Parameters: PARAMETERS
+MembersCount: WOT_MEM_COUNT
+Identities:
+PUBLIC_KEY:SIGNATURE:I_BLOCK_UID:USER_ID
+...
+Joiners:
+PUBLIC_KEY:SIGNATURE:M_BLOCK_UID:I_BLOCK_UID:USER_ID
+...
+Actives:
+PUBLIC_KEY:SIGNATURE:M_BLOCK_UID:I_BLOCK_UID:USER_ID
+...
+Leavers:
+PUBLIC_KEY:SIGNATURE:M_BLOCK_UID:I_BLOCK_UID:USER_ID
+...
+Revoked:
+PUBLIC_KEY:SIGNATURE
+...
+Excluded:
+PUBLIC_KEY
+...
+Certifications:
+PUBKEY_FROM:PUBKEY_TO:BLOCK_ID:SIGNATURE
+...
+Transactions:
+COMPACT_TRANSACTION
+...
+InnerHash: BLOCK_HASH
+Nonce: NONCE
+BOTTOM_SIGNATURE
+```
 
 Field                 | Data                                              | Mandatory?
 --------------------- | ------------------------------------------------- | ------------
@@ -914,16 +1049,18 @@ This link is made through a document called *Peer* whose format is described bel
 
 #### Structure
 
-    Version: VERSION
-    Type: Peer
-    Currency: CURRENCY_NAME
-    Issuer: NODE_PUBLICKEY
-    Block: BLOCK
-    Endpoints:
-    END_POINT_1
-    END_POINT_2
-    END_POINT_3
-    [...]
+```yml
+Version: VERSION
+Type: Peer
+Currency: CURRENCY_NAME
+Issuer: NODE_PUBLICKEY
+Block: BLOCK
+Endpoints:
+END_POINT_1
+END_POINT_2
+END_POINT_3
+[...]
+```
 
 With the signature attached, this document certifies that this public key is owned by this server at given network endpoints.
 
@@ -974,15 +1111,17 @@ The document must be ended with a `BOTTOM_SIGNATURE` [Signature](#signature).
 
 #### Example
 
-    Version: 10
-    Type: Peer
-    Currency: beta_brousouf
-    PublicKey: HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
-    Block: 8-1922C324ABC4AF7EF7656734A31F5197888DDD52
-    Endpoints:
-    BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001
-    BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002
-    OTHER_PROTOCOL 88.77.66.55 9001
+```yml
+Version: 10
+Type: Peer
+Currency: beta_brousouf
+PublicKey: HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY
+Block: 8-1922C324ABC4AF7EF7656734A31F5197888DDD52
+Endpoints:
+BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9001
+BASIC_MERKLED_API some.dns.name 88.77.66.55 2001:0db8:0000:85a3:0000:0000:ac1f 9002
+OTHER_PROTOCOL 88.77.66.55 9001
+```
 
 ## Variables
 
@@ -997,6 +1136,8 @@ ud0         | UD(0), i.e. initial Universal Dividend
 udTime0     | Time of first UD.
 udReevalTime0 | Time of first reevaluation of the UD.
 sigPeriod   | Minimum delay between 2 certifications of a same issuer, in seconds. Must be positive or zero.
+msPeriod    | Minimum delay between 2 memberships of a same issuer, in seconds. Must be positive or zero.
+sigReplay   | Minimum delay between 2 certifications of a same issuer to a same receiver, in seconds. Equals to `msPeriod`.
 sigStock    | Maximum quantity of active certifications made by member.
 sigWindow   | Maximum delay a certification can wait before being expired for non-writing.
 sigValidity | Maximum age of an active signature (in seconds)
@@ -1037,7 +1178,7 @@ Local validation verifies the coherence of a well-formatted block, without any o
 
 Rule:
 
-    HEAD.version == 10
+    HEAD.version == 10 || HEAD.version == 11
 
 ##### InnerHash
 
@@ -1138,6 +1279,7 @@ Each identity produces 2 new entries:
         expired_on = 0
         expires_on = MedianTime + msValidity
         revokes_on = MedianTime + msValidity*2
+        chainable_on = MedianTime + msPeriod
         type = 'JOIN'
         revoked_on = null
         leaving = false
@@ -1166,6 +1308,7 @@ Each join whose `PUBLIC_KEY` **does not match** a local MINDEX `CREATE, PUBLIC_K
         expired_on = 0
         expires_on = MedianTime + msValidity
         revokes_on = MedianTime + msValidity*2
+        chainable_on = MedianTime + msPeriod
         type = 'JOIN'
         revoked_on = null
         leaving = null
@@ -1182,6 +1325,7 @@ Each active produces 1 new entry:
         written_on = BLOCKSTAMP
         expires_on = MedianTime + msValidity
         revokes_on = MedianTime + msValidity*2
+        chainable_on = MedianTime + msPeriod
         type = 'RENEW'
         revoked_on = null
         leaving = null
@@ -1215,7 +1359,7 @@ Each revocation produces 1 new entry:
         type = 'REV'
         expires_on = null
         revokes_on = null
-        revoked_on = BLOCKSTAMP
+        revoked_on = MedianTime
         revocation = REVOCATION_SIG
         leaving = false
     )
@@ -1248,6 +1392,7 @@ Each certification produces 1 new entry:
         sig = SIGNATURE
         expires_on = MedianTime + sigValidity
         chainable_on = MedianTime + sigPeriod
+        replayable_on = MedianTime + sigReplay
         expired_on = 0
     )
 
@@ -1302,7 +1447,7 @@ Each transaction output produces 1 new entry:
 
 ###### Revocation implies exclusion
 
-* Each local MINDEX ̀`op = 'UPDATE', revoked_on = BLOCKSTAMP` operations must match a single local IINDEX `op = 'UPDATE', pub = PUBLIC_KEY, member = false` operation.
+* Each local MINDEX ̀`op = 'UPDATE', revoked_on != null` operations must match a single local IINDEX `op = 'UPDATE', pub = PUBLIC_KEY, member = false` operation.
 
 > Functionally: a revoked member must be immediately excluded.
 
@@ -1408,6 +1553,40 @@ TRUE
 > Functionally: we cannot create nor lose money through transactions. We can only transfer coins we own.
 > Functionally: also, we cannot convert a superiod unit base into a lower one.
 
+##### Transactions chaining max depth
+
+    FUNCTION `getTransactionDepth(txHash, LOCAL_DEPTH)`:
+
+        INPUTS = LOCAL_SINDEX[op='UPDATE',tx=txHash]
+        DEPTH = LOCAL_DEPTH
+
+        FOR EACH `INPUT` OF `INPUTS`
+            CONSUMED = LOCAL_SINDEX[op='CREATE',identifier=INPUT.identifier,pos=INPUT.pos]
+            IF (CONSUMED != NULL)
+                IF (LOCAL_DEPTH < 5)
+                    DEPTH = MAX(DEPTH, getTransactionDepth(CONSUMED.tx, LOCAL_DEPTH +1)
+                ELSE
+                    DEPTH++
+                END_IF
+            END_IF
+        END_FOR
+
+        RETURN DEPTH
+
+    END_FUNCTION
+
+Then:
+
+    maxTxChainingDepth = 0
+
+For each `TX_HASH` of `UNIQ(PICK(LOCAL_SINDEX, 'tx))`:
+
+    maxTxChainingDepth = MAX(maxTxChainingDepth, getTransactionDepth(TX_HASH, 0))
+
+Rule:
+
+    maxTxChainingDepth <= 5
+
 #### Global
 
 Global validation verifies the coherence of a locally-validated block, in the context of the whole blockchain, including the block.
@@ -1439,6 +1618,7 @@ Function references:
 > If values count is even, the median is computed over the 2 centered values by an arithmetical median on them, *NOT* rounded.
 
 * *UNIQ* returns a list of the unique values in a list of values
+* *PICK* returns a list of the values by picking a particular property on each record
 * *INTEGER_PART* return the integer part of a number
 * *FIRST* return the first element in a list of values matching the given condition
 * *REDUCE* merges a set of elements into a single one, by extending the non-null properties from each record into the resulting record.
@@ -1666,7 +1846,7 @@ If `HEAD.number == 0`:
     
 Else If `HEAD.udReevalTime != HEAD~1.udReevalTime`:
 
-    HEAD.dividend = HEAD_1.dividend + c² * CEIL(HEAD~1.massReeval / POW(10, HEAD~1.unitbase)) / HEAD.membersCount)
+    HEAD.dividend = CEIL(HEAD_1.dividend + c² * CEIL(HEAD~1.massReeval / POW(10, HEAD~1.unitbase)) / HEAD.membersCount)
 
 Else:
 
@@ -1957,6 +2137,8 @@ For each ENTRY in local MINDEX where `op = 'UPDATE', expired_on = 0`:
 
     ENTRY.joinsTwice = REDUCE(GLOBAL_IINDEX[pub=ENTRY.pub]).member == true
 
+> This rule ensures that someone who is in the `Joiners` field isn't already a member.
+
 ####### BR_G27 - ENTRY.enoughCerts
 
 For each ENTRY in local MINDEX where `type == 'JOIN' OR type == 'ACTIVE'`:
@@ -2028,6 +2210,12 @@ For each ENTRY in local MINDEX where `revoked_on == null`:
 For each ENTRY in local MINDEX where `revoked_on != null`:
 
     ENTRY.isBeingRevoked = true
+   
+####### BR_G107 - ENTRY.unchainables
+
+If `HEAD.number > 0 AND ENTRY.revocation == null`:
+
+    ENTRY.unchainables = COUNT(GLOBAL_MINDEX[issuer=ENTRY.issuer, chainable_on > HEAD~1.medianTime]))
     
 ###### Local CINDEX augmentation
 
@@ -2088,6 +2276,25 @@ If `count(reducable) == 0`:
 Else:
 
     ENTRY.isReplay = reduce(reducable).expired_on == 0
+
+####### BR_G44.2 - ENTRY.isReplayable
+
+If `HEAD.number > 0 && HEAD~1.version > 10` :
+
+    reducable = GLOBAL_CINDEX[issuer=ENTRY.issuer,receiver=ENTRY.receiver,expired_on=0]
+
+    If `count(reducable) == 0`:
+    
+        ENTRY.isReplayable = true
+    
+    Else:
+    
+        ENTRY.isReplayable = reduce(reducable).replayable_on < HEAD~1.medianTime
+Else:
+
+    ENTRY.isReplayable = false
+
+EndIf
     
 ####### BR_G45 - ENTRY.sigOK
 
@@ -2097,7 +2304,7 @@ Else:
 
 ####### BR_G102 - ENTRY.age
 
-For each ENTRY in local IINDEX where `op = 'UPDATE'`:
+For each ENTRY in local SINDEX where `op = 'UPDATE'`:
 
     REF_BLOCK = HEAD~<HEAD~1.number + 1 - NUMBER(ENTRY.hash)>[hash=HASH(ENTRY.created_on)]
     
@@ -2119,19 +2326,35 @@ EndIf
 
 For each `LOCAL_SINDEX[op='UPDATE'] as ENTRY`:
 
-    INPUT = REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base])
+    INPUT_ENTRIES = LOCAL_SINDEX[op='CREATE',identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    If COUNT(INPUT_ENTRIES) == 0 Then
+        INPUT_ENTRIES = GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    EndIf
+    INPUT = REDUCE(INPUT_ENTRIES)
     ENTRY.conditions = INPUT.conditions
     ENTRY.available = INPUT.consumed == false
 
 ####### BR_G47 - ENTRY.isLocked
 
-    ENTRY.isLocked = TX_SOURCE_UNLOCK(REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]).conditions, ENTRY)
+    INPUT_ENTRIES = LOCAL_SINDEX[op='CREATE',identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    If COUNT(INPUT_ENTRIES) == 0 Then
+        INPUT_ENTRIES = GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    EndIf
+    INPUT = REDUCE(INPUT_ENTRIES)
+    ENTRY.isLocked = TX_SOURCE_UNLOCK(INPUT.conditions, ENTRY)
     
 ####### BR_G48 - ENTRY.isTimeLocked
 
-    ENTRY.isTimeLocked = ENTRY.written_time - REDUCE(GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]).written_time < ENTRY.locktime
+    INPUT_ENTRIES = LOCAL_SINDEX[op='CREATE',identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    If COUNT(INPUT_ENTRIES) == 0 Then
+        INPUT_ENTRIES = GLOBAL_SINDEX[identifier=ENTRY.identifier,pos=ENTRY.pos,amount=ENTRY.amount,base=ENTRY.base]
+    EndIf
+    INPUT = REDUCE(INPUT_ENTRIES)
+    ENTRY.isTimeLocked = ENTRY.written_time - INPUT.written_time < ENTRY.locktime
 
 ##### Rules
+
+Each rule returns true by default, unless **at least one test returns `false`**.
 
 ###### BR_G49 - Version
 
@@ -2267,6 +2490,12 @@ Rule:
 
     ENTRY.age <= [msWindow]
 
+###### BR_G108 - Membership period
+
+Rule:
+
+    ENTRY.unchainables == 0
+
 ###### BR_G65 - Certification writability
 
 Rule:
@@ -2311,7 +2540,7 @@ Rule:
 
 Rule:
 
-    ENTRY.isReplay == false
+    ENTRY.isReplay == false || ENTRY.isReplayable == true
 
 ###### BR_G72 - Certification signature
 
@@ -2474,6 +2703,21 @@ For each `REDUCE_BY(GLOBAL_IINDEX[member=true], 'pub') as IDTY` then if `IDTY.me
         consumed = false
     )
 
+For each `LOCAL_IINDEX[member=true] as IDTY` add a new LOCAL_SINDEX entry:
+
+    SINDEX (
+        op = 'CREATE'
+        identifier = IDTY.pub
+        pos = HEAD.number
+        written_on = BLOCKSTAMP
+        written_time = MedianTime
+        amount = HEAD.dividend
+        base = HEAD.unitBase
+        locktime = null
+        conditions = REQUIRE_SIG(MEMBER.pub)
+        consumed = false
+    )
+
 ###### BR_G106 - Low accounts
 
 Set:
@@ -2515,9 +2759,9 @@ If `reduce(GLOBAL_CINDEX[issuer=CERT.issuer,receiver=CERT.receiver,created_on=CE
 
 ###### BR_G93 - Membership expiry
 
-For each `REDUCE_BY(GLOBAL_MINDEX[expires_on<=HEAD.medianTime], 'pub') as POTENTIAL` then consider `REDUCE(GLOBAL_MINDEX[pub=POTENTIAL.pub]) AS MS`.
+For each `REDUCE_BY(GLOBAL_MINDEX[expires_on<=HEAD.medianTime AND revokes_on>HEAD.medianTime], 'pub') as POTENTIAL` then consider `REDUCE(GLOBAL_MINDEX[pub=POTENTIAL.pub]) AS MS`.
 
-If `MS.expired_on == null OR MS.expired_on == 0`, add a new LOCAL_MINDEX entry:
+If `(MS.expired_on == null OR MS.expired_on == 0) AND MS.expires_on > HEAD.medianTime`, add a new LOCAL_MINDEX entry:
 
     MINDEX (
         op = 'UPDATE'
@@ -2629,6 +2873,6 @@ At this stage, only the [Duniter HTTP API](/HTTP_API.md) (named BASIC_MERKLED_AP
 
 ## References
 
-* [Relative Money Theory](http://fr.wikipedia.org/wiki/Th%C3%A9orie_relative_de_la_monnaie), the theoretical reference behind Universal Dividend
-* [OpenUDC](www.openudc.org), the inspiration project of Duniter
+* [Relative Theory of the Money](http://en.trm.creationmonetaire.info), the theoretical reference behind Universal Dividend
+* [OpenUDC](http://www.openudc.org/), the inspiration project of Duniter
 * [Bitcoin](https://github.com/bitcoin/bitcoin), the well known crypto-currency system

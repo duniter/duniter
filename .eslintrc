@@ -1,11 +1,14 @@
 {
+  "parserOptions": {
+    "ecmaVersion": 8
+  },
   "plugins": [
     "mocha"
   ],
-//  "ecmaFeatures": {
-//    "arrowFunctions": true,
-//    "generators": true
-//  },
+  "ecmaFeatures": {
+    "arrowFunctions": true,
+    "generators": true
+  },
   "rules": {
 
     "curly": 0,
@@ -23,19 +26,19 @@
     "no-unused-expressions": 0,
     "comma-spacing": 0,
     "semi": 0,
+    "no-process-exit": 0,
 
     "quotes": [0, "double"],
     "linebreak-style": [1,"unix"],
     "mocha/no-exclusive-tests": 2,
     "no-undef": [2],
 
-    "no-process-exit": [1],
     "indent": [1,2],
     "no-eval": [1],
     "comma-dangle": [1],
     "eol-last": [1],
     "no-shadow": [1],
-    "no-unused-vars": [1],
+    "no-unused-vars": [1, { "varsIgnorePattern": "should"}],
     "space-infix-ops": [1],
     "handle-callback-err": [1],
     "no-extra-semi": [1]

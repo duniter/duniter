@@ -2,7 +2,7 @@
 language: node_js
 
 node_js:
-  - 6.9.2
+  - 8.9.2
 env:
   - CXX=g++-4.8
 addons:
@@ -15,6 +15,7 @@ code_climate:
     repo_token: 67f8f00d5cf9e5c46b7644aebee5ac9df9d6ee267014a6f61a7a7b1048357a1c
 
 sudo: false
+dist: precise
 
 # Unit Tests (+code coverage)
 script: npm run-script test-travis
@@ -24,22 +25,7 @@ after_success:
   - cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
   - rm -Rf ./coverage
 
-before_deploy:
-  # Download & embed Nodejs binary
-  - ci/travis/before_deploy.sh
 deploy:
-  - provider: releases
-#    prerelease: true
-    skip_cleanup: true
-    api-key:
-      secure: h+GgYhh8/I/l5EWdI1+bDQYtN57jvDf0xhiwcxlfm/AvaJWOZa+q81HsXdHqtwgmsCoRklKtOqTM/nqgSOcWPXsAditRjEXOui2FjZiJCosDjDPMnN6HKzw6XVLtSOx7CeCX/xFmoNTIdsAuC+HUfDWCUFgrsMj9F0V9J3U1nDs=
-    file:
-    - /home/travis/build/duniter-desktop-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
-    - /home/travis/build/duniter-desktop-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.tar.gz
-    - /home/travis/build/duniter-server-${TRAVIS_TAG}-${TRAVIS_OS_NAME}-x64.deb
-    on:
-      repo: duniter/duniter
-      tags: true
   - provider: npm
     email: cem.moreau@gmail.com
     skip_cleanup: true

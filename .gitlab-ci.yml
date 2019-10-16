@@ -1,0 +1,184 @@
+stages:
+  - github-sync
+  - build
+  - test
+  - integration
+  - package
+  - prerelease
+  - release
+
+push_to_github:
+  stage: github-sync
+  variables:
+    GIT_STRATEGY: none
+  tags:
+    - github
+  script:
+    - rm -rf ./*
+    - rm -rf .git
+    - git clone --mirror $CI_REPOSITORY_URL .
+    - git remote add github $GITHUB_URL_AND_KEY
+    - git config --global user.email "contact@duniter.org"
+    - git config --global user.name "Duniter"
+    # Job would fail if we don't remove refs about pull requests
+    - bash -c "cat packed-refs | grep -v 'refs/pull' > packed-refs-new; echo 'Removed pull refs.'"
+    - mv packed-refs-new packed-refs
+    - bash -c "git push --force --mirror github 2>&1 | grep -v duniter-gitlab; echo $?"
+  only:
+    - master
+    - dev
+
+.changes: &changes
+  only:
+    changes:
+      - app/**/*
+      - bin/duniter
+      - .gitlab-ci.yml
+      - index.ts
+      - package.json
+      - releases/**/*
+      - server.ts
+      - test/**/*
+
+.nvm_env: &nvm_env
+  tags:
+    - redshift
+  before_script:
+    - export NVM_DIR="$HOME/.nvm"
+    - . "$NVM_DIR/nvm.sh"
+
+.cached_nvm: &cached_nvm
+  <<: *nvm_env
+  cache:
+    untracked: true
+    paths:
+      - node_modules/
+  
+build:
+  <<: *changes
+  <<: *nvm_env
+  stage: build
+  script:
+    - yarn
+
+#pages:
+#  <<: *nvm_env
+#  stage: pages
+#  cache: {}
+#  script:
+#    - yarn
+#    - yarn doc
+#    - mkdir -p public
+#    - cp .gitlab/pages/pages-index.html public/index.html
+#    - sed -i "s/{BRANCH}/$CI_COMMIT_REF_NAME/g" public/index.html
+#    - mv typedoc public/
+#    - echo "$CI_JOB_ID"
+#    - curl "https://git.duniter.org/nodes/typescript/duniter/-/jobs/$CI_JOB_ID/artifacts/raw/coverage.tar.gz"
+#    - tar xzf coverage.tar.gz
+#    - mv coverage "public/coverage"
+#    - ls public
+#  artifacts:
+#    untracked: true
+#    paths:
+#      - public
+#  only:
+#    - loki
+#    - dev
+
+test:
+  <<: *changes
+  <<: *nvm_env
+  stage: test
+  script:
+    - yarn
+    - yarn test
+    # Push coverage to GitLab pages
+    - tar cvzf coverage.tar.gz coverage/
+    # Code coverage display in GitLab
+    - sed -n 23p coverage/index.html | grep -Po "\d+.\d+" | sed -e "s/\(.*\)/<coverage>\1%<\/coverage>/"
+  coverage: '/<coverage>(\d+.\d+\%)<\/coverage>/'
+  except:
+    - tags
+  artifacts:
+    paths:
+      - coverage.tar.gz
+    expire_in: 4h
+
+sync_g1:
+  <<: *changes
+  <<: *nvm_env
+  stage: integration
+  script:
+    - yarn
+    - bash .gitlab/test/check_g1_sync.sh
+  except:
+    - tags
+
+sync_gtest:
+  <<: *changes
+  <<: *nvm_env
+  stage: integration
+  script:
+    - yarn
+    - bash .gitlab/test/check_gt_sync.sh
+  except:
+    - tags
+
+.build_releases: &build_releases
+  stage: package
+  allow_failure: false
+  image: duniter/release-builder:v1.2.0
+  cache: {}
+  when: manual
+  tags:
+    - redshift-duniter-builder
+  artifacts:
+    paths: &releases_artifacts
+      - work/bin/
+
+releases:test:
+  <<: *build_releases
+  script:
+    - rm -rf node_modules/
+    - bash "release/arch/linux/build-lin.sh" "$(date +%Y%m%d).$(date +%H%M).$(date +%S)"
+  artifacts:
+    paths: *releases_artifacts
+    expire_in: 72h
+  except:
+    - tags
+
+releases:x64:
+  <<: *build_releases
+  script:
+    - rm -rf node_modules/
+    - bash "release/arch/linux/build-lin.sh" "${CI_COMMIT_TAG#v}"
+  artifacts:
+    paths: *releases_artifacts
+    expire_in: 6 mos
+  only:
+    - tags
+
+.release_jobs: &release_jobs
+  image: rdadev/jinja2:py3.6
+  tags:
+    - redshift-duniter-builder
+  script:
+    - python3 .gitlab/releaser
+  only:
+    - tags
+
+prerelease:
+  <<: *release_jobs
+  stage: prerelease
+  variables:
+    RELEASE_BIN_DIR: work/bin/
+    SOURCE_EXT: '["tar.gz", "zip"]'
+
+publish:
+  <<: *release_jobs
+  stage: release
+  variables:
+    RELEASE_BIN_DIR: work/bin/
+    WIKI_RELEASE: Releases
+  allow_failure: false
+  when: manual

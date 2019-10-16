@@ -9,7 +9,7 @@
 DEB_PACKAGING=
 
 if [[ $DEB_PACKAGING ]]; then
-  DUNITER_DIR=/opt/duniter/sources/
+  DUNITER_DIR=/opt/duniter/
 fi
 
 duniter() {
@@ -35,11 +35,12 @@ duniter() {
 
 	VERSION=`$NODE -v`
 
-	if [[ $VERSION != v6* ]]; then
-	  echo "$NODE v6 is required";
+	if [[ $VERSION != v8* ]] && [[ $VERSION != v9* ]]; then
+	  echo "$NODE v8 or v9 is required";
 	else
 
 	  # Calls duniter JS command
+	  cd $DUNITER_DIR
 	  $NODE "$DUNITER_DIR/bin/duniter" "$@"
 
 	fi;

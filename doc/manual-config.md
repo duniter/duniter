@@ -1,6 +1,6 @@
 # Manual configuration
 
-To add mnually configuration parameters to Duniter, use `config` command:
+To add manually configuration parameters to Duniter, use `config` command:
 
 ```bash
 $ duniter config

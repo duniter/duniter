@@ -1,31 +1,31 @@
 #!/usr/bin/env node
 "use strict";
 
-const co = require('co');
-const duniter = require('../index');
-const stack = duniter.statics.autoStack();
+const ExitCodes = require("../app/lib/common-libs/exit-codes").ExitCodes;
+const logger = require("../app/lib/logger").NewLogger();
 
-return co(function*() {
-
-  // Specific errors handling
-  process.on('uncaughtException', (err) => {
-    // Dunno why this specific exception is not caught
-    if (err.code !== "EADDRNOTAVAIL" && err.code !== "EINVAL" && err.code !== "ENOENT") {
-      duniter.statics.logger.error(err);
-      process.exit(2);
-    }
-  });
-
-  try {
-    yield stack.executeStack(process.argv);
-    // Everything went well, close Duniter quietly.
-    process.exit();
-  } catch (e) {
-    // If an unhandled error occured
-    duniter.statics.logger.error(e);
-    process.exit(1);
-  } finally {
-    // If we did not succeed to close before, force close with error.
-    process.exit(100);
+// Specific errors handling
+process.on('uncaughtException', (err) => {
+  // Dunno why this specific exception is not caught
+  if (err.code && err.code !== "EADDRNOTAVAIL" && err.code !== "EINVAL" && err.code !== "ENOENT") {
+    logger.error(err.stack || err.message || err);
+    process.exit(ExitCodes.UNCAUGHT_EXCEPTION);
   }
 });
+
+(async () => {
+
+  try {
+    const stack = require('../index').Statics.autoStack();
+    await stack.executeStack(process.argv);
+    // Everything went well, close Duniter quietly.
+    process.exit(ExitCodes.OK);
+  } catch (e) {
+    // If an unhandled error occured
+    logger.error(e.stack || e.message || e);
+    process.exit(ExitCodes.UNHANDLED_ERROR);
+  } finally {
+    // If we did not succeed to close before, force close with error.
+    process.exit(ExitCodes.FORCE_CLOSE_AFTER_ERROR);
+  }
+})()

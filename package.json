@@ -1,26 +1,50 @@
 {
   "name": "duniter",
-  "version": "1.2.2",
+  "version": "1.7.19",
   "engines": {
-    "node": ">=4.2.0",
-    "npm": ">=2.11"
+    "node": ">=8.2.1 <10",
+    "npm": ">=3.10"
   },
   "engineStrict": true,
   "private": false,
   "description": "Crypto-currency software allowing to build P2P free currencies",
   "main": "index.js",
+  "node-main": "./bin/duniter",
+  "window": {
+    "icon": "duniter.png",
+    "title": "v1.7.19",
+    "width": 800,
+    "height": 800,
+    "min_width": 750,
+    "min_height": 400
+  },
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "mocha --growl --timeout 20000 test test/fast test/fast/block test/integration test/",
+    "prepublish": "tsc",
+    "prepack": "find -name \"*.ts\" | grep -v \".d.ts\" | xargs rm",
+    "tsc": "tsc",
+    "tscw": "tsc -w",
+    "doc": "typedoc --out typedoc/ index.ts app/ --mode file --readme README.md --includeDeclarations --sourcefile-url-prefix \"https://git.duniter.org/nodes/typescript/duniter/blob/loki/\"",
+    "test": "nyc --reporter html mocha",
     "start": "node bin/duniter start",
-    "build": "cd \"node_modules/duniter-ui\" && npm install && npm run build",
-    "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --timeout 20000 test test/fast test/fast/block test/integration test/"
+    "build": "tsc && cd \"node_modules/duniter-ui\" && npm install && npm run build",
+    "test-travis": "nyc --reporter lcovonly mocha test/"
+  },
+  "nyc": {
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "html"
+    ],
+    "sourceMap": true,
+    "instrument": true
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:duniter/duniter.git"
+    "url": "https://git.duniter.org/nodes/typescript/duniter.git"
   },
   "keywords": [
     "duniter",
@@ -32,59 +56,82 @@
   "license": "AGPL-3.0",
   "readmeFilename": "README.md",
   "bugs": {
-    "url": "https://github.com/duniter/duniter/issues"
+    "url": "https://git.duniter.org/nodes/typescript/duniter/issues"
   },
   "dependencies": {
+    "@types/leveldown": "^4.0.0",
+    "@types/levelup": "^3.1.0",
+    "@types/memdown": "^3.0.0",
+    "@types/ws": "^5.1.2",
     "archiver": "1.3.0",
     "async": "2.2.0",
     "bindings": "1.2.1",
-    "co": "4.6.0",
+    "body-parser": "1.17.1",
+    "bs58": "^4.0.1",
+    "child-process-promise": "^2.2.1",
+    "cli-table": "^0.3.1",
     "colors": "1.1.2",
     "commander": "2.9.0",
+    "cors": "2.8.2",
     "daemonize2": "0.4.2",
-    "duniter-common": "^1.0.0",
+    "ddos": "0.1.16",
+    "errorhandler": "1.5.0",
     "event-stream": "3.3.4",
+    "express": "4.15.2",
+    "express-fileupload": "0.0.5",
     "inquirer": "3.0.6",
     "jison": "0.4.17",
+    "js-yaml": "3.8.2",
+    "leveldown": "^4.0.1",
+    "levelup": "^4.0.0",
+    "memdown": "^3.0.0",
     "merkle": "0.5.1",
-    "moment": "2.18.1",
+    "moment": "2.19.3",
+    "morgan": "1.9.1",
+    "multimeter": "0.1.1",
+    "naclb": "1.3.10",
+    "nat-upnp": "^1.1.1",
     "node-pre-gyp": "0.6.34",
+    "node-uuid": "1.4.8",
     "optimist": "0.6.1",
-    "parallelshell": "2.0.0",
-    "q": "1.5.0",
-    "q-io": "1.13.2",
+    "q-io": "^1.13.5",
     "querablep": "^0.1.0",
     "request": "2.81.0",
     "request-promise": "4.2.0",
+    "scryptb": "6.0.5",
+    "seedrandom": "3.0.1",
     "sha1": "1.1.1",
-    "spawn-sync": "^1.0.15",
-    "sqlite3": "3.1.4",
-    "superagent": "3.5.2",
-    "tail": "^1.2.1",
+    "socks-proxy-agent": "4.0.2",
+    "sqlite3": "3.1.13",
+    "tail": "^2.0.2",
+    "tweetnacl": "0.14.3",
+    "typedoc": "^0.11.1",
     "underscore": "1.8.3",
     "unzip": "0.1.11",
     "unzip2": "0.2.5",
     "winston": "2.3.1",
-    "wotb": "0.5.3"
+    "wotb": "^0.6.5",
+    "ws": "1.1.5"
   },
   "devDependencies": {
+    "@types/mocha": "^2.2.41",
+    "@types/node": "^8.0.9",
+    "@types/should": "^8.3.0",
     "coveralls": "2.11.4",
-    "duniter-bma": "^1.1.0",
-    "duniter-crawler": "^1.1.0",
-    "duniter-keypair": "^1.1.0",
-    "duniter-prover": "^1.1.0",
     "eslint": "3.13.1",
     "eslint-plugin-mocha": "4.8.0",
-    "istanbul": "0.4.0",
-    "mocha": "2.2.5",
+    "mocha": "^3.4.2",
     "mocha-eslint": "0.1.7",
-    "mocha-lcov-reporter": "1.0.0",
-    "sha1": "",
-    "should": "",
+    "nyc": "^11.0.3",
+    "should": "*",
+    "source-map-support": "^0.4.15",
     "supertest": "",
     "tmp": "0.0.29",
-    "ws": "1.1.1"
+    "ts-node": "^3.3.0",
+    "typedoc-plugin-sourcefile-url": "^1.0.3",
+    "typescript": "^3.1.6"
   },
+  "peerDependencies": {},
   "bin": {
     "duniter": "./bin/duniter"
   }

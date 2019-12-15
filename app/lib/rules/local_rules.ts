@@ -529,7 +529,7 @@ export const LOCAL_RULES_HELPERS = {
     return !current
 
       // 1. We use legacy version
-      ? constants.BLOCK_GENERATED_VERSION : (async () => {
+      ? constants.BLOCK_GENESIS_VERSION : (async () => {
 
         // 2. If we can, we go to the next version
         const blocksInFrame = (await dal.getBlocksBetween(current.number - current.issuersFrame + 1, current.number))

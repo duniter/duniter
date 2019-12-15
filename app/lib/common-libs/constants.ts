@@ -101,7 +101,8 @@ export const CommonConstants = {
     SIGNATURE
   },
 
-  BLOCK_GENERATED_VERSION: 10,
+  // Version of genesis block
+  BLOCK_GENESIS_VERSION: 10,
   BLOCK_NEW_GENERATED_VERSION: 11, // Put it to 11 when ready
   LAST_VERSION_FOR_TX: 10,
   TRANSACTION_VERSION: 10,

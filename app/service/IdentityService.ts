@@ -149,7 +149,7 @@ export class IdentityService extends FIFOService {
             }
             toSave.expires_on = basedBlock.medianTime + this.conf.idtyWindow;
           }
-          await GLOBAL_RULES_FUNCTIONS.checkIdentitiesAreWritable({ identities: [idtyObj.inline()], version: (current && current.version) || constants.BLOCK_GENERATED_VERSION }, this.conf, this.dal);
+          await GLOBAL_RULES_FUNCTIONS.checkIdentitiesAreWritable({ identities: [idtyObj.inline()], version: (current && current.version) || constants.BLOCK_GENESIS_VERSION }, this.conf, this.dal);
           if (byAbsorption !== BY_ABSORPTION) {
             if (!(await this.dal.idtyDAL.sandbox.acceptNewSandBoxEntry({
               certsCount: 0,

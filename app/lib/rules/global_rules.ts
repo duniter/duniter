@@ -94,7 +94,7 @@ export const GLOBAL_RULES_FUNCTIONS = {
     return true;
   },
 
-  checkSourcesAvailability: async (block:{ transactions:TransactionDTO[], medianTime: number }, conf:ConfDTO, dal:FileDAL, findSourceTx:(txHash:string) => Promise<DBTx|null>) => {
+  checkSourcesAvailability: async (block:{ version: number, transactions:TransactionDTO[], medianTime: number }, conf:ConfDTO, dal:FileDAL, findSourceTx:(txHash:string) => Promise<DBTx|null>) => {
     const txs = block.transactions
     const current = await dal.getCurrentBlockOrNull();
     for (const tx of txs) {
@@ -150,7 +150,7 @@ export const GLOBAL_RULES_FUNCTIONS = {
             unlocksMetadata.elapsedTime = block.medianTime - dbSrc.written_time;
           }
 
-          const sigs = tx.getTransactionSigResult()
+          const sigs = tx.getTransactionSigResult(block.version)
 
           try {
             if (!txunlock(dbSrc.conditions, unlocksForCondition, sigs, unlocksMetadata)) {
@@ -213,13 +213,18 @@ export const GLOBAL_RULES_HELPERS = {
 
   checkSingleTransaction: (
     tx:TransactionDTO,
-    block:{ medianTime: number },
+    dubp_version: number,
+    medianTime: number,
     conf:ConfDTO,
     dal:FileDAL,
-    findSourceTx:(txHash:string) => Promise<DBTx|null>) => GLOBAL_RULES_FUNCTIONS.checkSourcesAvailability({
-    transactions: [tx],
-    medianTime: block.medianTime
-  }, conf, dal, findSourceTx),
+    findSourceTx:(txHash:string) => Promise<DBTx|null>) => GLOBAL_RULES_FUNCTIONS.checkSourcesAvailability(
+      {
+        version: dubp_version,
+        transactions: [tx],
+        medianTime: medianTime
+      },
+      conf, dal, findSourceTx
+    ),
 
   checkTxBlockStamp: async (tx:TransactionDTO, dal:FileDAL) => {
     const number = parseInt(tx.blockstamp.split('-')[0])

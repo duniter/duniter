@@ -144,8 +144,8 @@ export class BlockGenerator {
       const tx = TransactionDTO.fromJSONObject(obj);
       try {
         await LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), this.conf, medianTime, options)
-        const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
-        await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal, async (txHash:string) => {
+        const fakeTimeVariation = current.medianTime + 1;
+        await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, current.version, fakeTimeVariation, this.conf, this.dal, async (txHash:string) => {
           return Underscore.findWhere(passingTxs, { hash: txHash }) || null
         });
         await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal);

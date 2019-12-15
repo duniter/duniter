@@ -2160,7 +2160,7 @@ function txSourceUnlock(ENTRY:SindexEntry, source:{ conditions: string, written_
   const tx = ENTRY.txObj;
   const unlockParams:string[] = TransactionDTO.unlock2params(ENTRY.unlock || '')
   const unlocksMetadata:UnlockMetadata = {}
-  const sigResult = TransactionDTO.fromJSONObject(tx).getTransactionSigResult()
+  const sigResult = TransactionDTO.fromJSONObject(tx).getTransactionSigResult(HEAD.version)
   if (!source.conditions) {
     return false // Unlock fail
   }

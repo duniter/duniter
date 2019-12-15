@@ -390,7 +390,7 @@ export const LOCAL_RULES_FUNCTIONS = {
     const txs = block.transactions
     // Check rule against each transaction
     for (const tx of txs) {
-      if (!tx.checkSignatures()) {
+      if (!tx.checkSignatures(block.version)) {
         throw Error('Signature from a transaction must match')
       }
     }

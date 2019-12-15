@@ -36,7 +36,7 @@ export function createPowWorker() {
 // By default, we do not prefix the PoW by any number
   let prefix = 0;
 
-  let signatureFunc:any, lastSecret:any, currentCPU = 1;
+  let signatureFunc:any, lastSecret:any, lastVersion: number, currentCPU = 1;
 
   process.on('uncaughtException', (err:any) => {
     console.error(err.stack || Error(err))
@@ -116,14 +116,17 @@ export function createPowWorker() {
       }
       const highMark = stuff.highMark;
       let sigFunc = null;
-      if (signatureFunc && lastSecret === pair.sec) {
+      if (signatureFunc && lastSecret === pair.sec && lastVersion === block.version) {
         sigFunc = signatureFunc;
-      }
-      else {
+      } else {
         lastSecret = pair.sec;
-        sigFunc = (msg:string) => KeyGen(pair.pub, pair.sec).signSyncBuggy(msg)
+        lastVersion = block.version;
+        if (block.version >= 12) {
+          sigFunc = (msg:string) => KeyGen(pair.pub, pair.sec).signSync(msg)
+        } else {
+          sigFunc = (msg:string) => KeyGen(pair.pub, pair.sec).signSyncBuggy(msg)
+        }
       }
-      signatureFunc = sigFunc;
       let pow = "", sig = "", raw = "";
 
       /*****************

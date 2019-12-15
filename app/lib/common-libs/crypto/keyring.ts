@@ -50,11 +50,11 @@ export class Key {
     }
   }
 
-  sign(msg:string) {
-    return Promise.resolve(this.signSync(msg))
+  signBuggy(msg:string) {
+    return Promise.resolve(this.signSyncBuggy(msg))
   }
 
-  signSync(msg:string) {
+  signSyncBuggy(msg:string) {
     const m = decodeUTF8(msg);
     const signedMsg = naclBinding.sign(m, this.rawSec());
     const sig = new Uint8Array(crypto_sign_BYTES);
@@ -85,7 +85,7 @@ export function KeyGen(pub:string, sec:string) {
  * Verify a signature against data & public key.
  * Return true of false as callback argument.
  */
-export function verify(rawMsg:string, rawSig:string, rawPub:string) {
+export function verifyBuggy(rawMsg:string, rawSig:string, rawPub:string) {
   const msg = decodeUTF8(rawMsg);
   const sig = decodeBase64(rawSig);
   const pub = Base58decode(rawPub);

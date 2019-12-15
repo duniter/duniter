@@ -13,7 +13,7 @@
 
 import {hashf} from "../common"
 import {Cloneable} from "./Cloneable"
-import {verify} from "../common-libs/crypto/keyring"
+import {verifyBuggy} from "../common-libs/crypto/keyring"
 
 export interface BaseDTO {
   base: number
@@ -245,7 +245,7 @@ export class TransactionDTO implements Cloneable {
     while (matching && i < this.signatures.length) {
       const sig = this.signatures[i]
       const pub = this.issuers[i]
-      sigResult.sigs[i].ok = matching = verify(raw, sig, pub)
+      sigResult.sigs[i].ok = matching = verifyBuggy(raw, sig, pub)
       i++
     }
     return sigResult

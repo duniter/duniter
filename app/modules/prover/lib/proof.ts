@@ -121,7 +121,7 @@ export function createPowWorker() {
       }
       else {
         lastSecret = pair.sec;
-        sigFunc = (msg:string) => KeyGen(pair.pub, pair.sec).signSync(msg)
+        sigFunc = (msg:string) => KeyGen(pair.pub, pair.sec).signSyncBuggy(msg)
       }
       signatureFunc = sigFunc;
       let pow = "", sig = "", raw = "";

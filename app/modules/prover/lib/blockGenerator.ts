@@ -19,7 +19,7 @@ import {GLOBAL_RULES_HELPERS} from "../../../lib/rules/global_rules"
 import {LOCAL_RULES_HELPERS} from "../../../lib/rules/local_rules"
 import {Indexer} from "../../../lib/indexer"
 import {DBBlock} from "../../../lib/db/DBBlock"
-import {verify} from "../../../lib/common-libs/crypto/keyring"
+import {verifyBuggy} from "../../../lib/common-libs/crypto/keyring"
 import {rawer} from "../../../lib/common-libs/index"
 import {hashf} from "../../../lib/common"
 import {CommonConstants} from "../../../lib/common-libs/constants"
@@ -380,7 +380,7 @@ export class BlockGenerator {
     const idty = IdentityDTO.fromJSONObject(identity);
     idty.currency = this.conf.currency;
     const createIdentity = idty.rawWithoutSig();
-    const verified = verify(createIdentity, idty.sig, idty.pubkey);
+    const verified = verifyBuggy(createIdentity, idty.sig, idty.pubkey);
     if (!verified) {
       throw constants.ERRORS.IDENTITY_WRONGLY_SIGNED;
     }
@@ -761,7 +761,7 @@ class NextBlockGenerator implements BlockGeneratorInterface {
             idty_sig: targetIdty.sig,
             buid: current ? [cert.block_number, targetBlock.hash].join('-') : CommonConstants.SPECIAL_BLOCK,
           }).getRawUnSigned();
-          if (verify(rawCert, certSig, cert.from)) {
+          if (verifyBuggy(rawCert, certSig, cert.from)) {
             cert.sig = certSig;
             let exists = false;
             if (current) {

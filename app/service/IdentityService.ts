@@ -21,7 +21,7 @@ import {RevocationDTO} from "../lib/dto/RevocationDTO"
 import {BasicIdentity, IdentityDTO} from "../lib/dto/IdentityDTO"
 import {CertificationDTO} from "../lib/dto/CertificationDTO"
 import {DBCert} from "../lib/dal/sqliteDAL/CertDAL"
-import {verify} from "../lib/common-libs/crypto/keyring"
+import {verifyBuggy} from "../lib/common-libs/crypto/keyring"
 import {FIFOService} from "./FIFOService"
 import {MindexEntry} from "../lib/indexer"
 import {DataErrors} from "../lib/common-libs/errors"
@@ -121,7 +121,7 @@ export class IdentityService extends FIFOService {
       this.logger.info('⬇ IDTY %s %s', idty.pubkey, idty.uid);
       try {
         // Check signature's validity
-        let verified = verify(createIdentity, idty.sig, idty.pubkey);
+        let verified = verifyBuggy(createIdentity, idty.sig, idty.pubkey);
         if (!verified) {
           throw constants.ERRORS.SIGNATURE_DOES_NOT_MATCH;
         }
@@ -271,7 +271,7 @@ export class IdentityService extends FIFOService {
     return this.pushFIFO<RevocationDTO>(hash, async () => {
       try {
         this.logger.info('⬇ REVOCATION %s %s', revoc.pubkey, revoc.idty_uid);
-        let verified = verify(raw, revoc.revocation, revoc.pubkey);
+        let verified = verifyBuggy(raw, revoc.revocation, revoc.pubkey);
         if (!verified) {
           throw 'Wrong signature for revocation';
         }

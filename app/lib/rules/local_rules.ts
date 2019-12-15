@@ -16,7 +16,7 @@ import {ConfDTO} from "../dto/ConfDTO"
 import {CindexEntry, IndexEntry, Indexer, MindexEntry, SindexEntry} from "../indexer"
 import {BaseDTO, TransactionDTO} from "../dto/TransactionDTO"
 import {DBBlock} from "../db/DBBlock"
-import {verify} from "../common-libs/crypto/keyring"
+import {verifyBuggy} from "../common-libs/crypto/keyring"
 import {hashf} from "../common"
 import {CommonConstants} from "../common-libs/constants"
 import {IdentityDTO} from "../dto/IdentityDTO"
@@ -87,7 +87,7 @@ export const LOCAL_RULES_FUNCTIONS = {
   },
 
   checkBlockSignature: async (block:BlockDTO) => {
-    if (!verify(block.getSignedPart(), block.signature, block.issuer))
+    if (!verifyBuggy(block.getSignedPart(), block.signature, block.issuer))
       throw Error('Block\'s signature must match');
     return true;
   },
@@ -108,7 +108,7 @@ export const LOCAL_RULES_FUNCTIONS = {
     while (!wrongSig && i < block.identities.length) {
       const idty = IdentityDTO.fromInline(block.identities[i]);
       idty.currency = block.currency;
-      wrongSig = !verify(idty.rawWithoutSig(), idty.sig, idty.pubkey);
+      wrongSig = !verifyBuggy(idty.rawWithoutSig(), idty.sig, idty.pubkey);
       if (wrongSig) {
         throw Error('Identity\'s signature must match');
       }
@@ -439,7 +439,7 @@ function getTransactionDepth(txHash:string, sindex:SindexShortEntry[], localDept
 }
 
 function checkSingleMembershipSignature(ms:any) {
-  return verify(ms.getRaw(), ms.signature, ms.issuer);
+  return verifyBuggy(ms.getRaw(), ms.signature, ms.issuer);
 }
 
 function checkBunchOfTransactions(transactions:TransactionDTO[], conf:ConfDTO, medianTime: number, options?:{ dontCareAboutChaining?:boolean }){

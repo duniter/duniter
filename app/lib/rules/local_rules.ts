@@ -16,7 +16,7 @@ import {ConfDTO} from "../dto/ConfDTO"
 import {CindexEntry, IndexEntry, Indexer, MindexEntry, SindexEntry} from "../indexer"
 import {BaseDTO, TransactionDTO} from "../dto/TransactionDTO"
 import {DBBlock} from "../db/DBBlock"
-import {verifyBuggy} from "../common-libs/crypto/keyring"
+import {verify, verifyBuggy} from "../common-libs/crypto/keyring"
 import {hashf} from "../common"
 import {CommonConstants} from "../common-libs/constants"
 import {IdentityDTO} from "../dto/IdentityDTO"
@@ -87,8 +87,13 @@ export const LOCAL_RULES_FUNCTIONS = {
   },
 
   checkBlockSignature: async (block:BlockDTO) => {
-    if (!verifyBuggy(block.getSignedPart(), block.signature, block.issuer))
+    // Historically, Duniter used a buggy version of TweetNaCl (see #1390)
+    // Starting with the v12 blocks, Duniter uses a fixed version of TweetNaCl. 
+    if (block.version >= 12 && !verify(block.getSignedPart(), block.signature, block.issuer)) {
       throw Error('Block\'s signature must match');
+    } else if (!verifyBuggy(block.getSignedPart(), block.signature, block.issuer)) {
+      throw Error('Block\'s signature must match');
+    }
     return true;
   },
 

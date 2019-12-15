@@ -103,7 +103,8 @@ export const CommonConstants = {
 
   // Version of genesis block
   BLOCK_GENESIS_VERSION: 10,
-  BLOCK_NEW_GENERATED_VERSION: 11, // Put it to 11 when ready
+  // Highest supported version of DUBP protocol (= next version of the protocol)
+  DUBP_NEXT_VERSION: 11,
   LAST_VERSION_FOR_TX: 10,
   TRANSACTION_VERSION: 10,
   DOCUMENTS_VERSION: 10,

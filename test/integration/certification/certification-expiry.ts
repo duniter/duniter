@@ -21,7 +21,7 @@ describe('Certification expiry + trimming', () => writeBasicTestWithConfAnd2User
 }, (test) => {
 
   before(() => {
-    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 11
+    CommonConstants.DUBP_NEXT_VERSION = 11
   })
 
   const now = 1500000000
@@ -109,6 +109,6 @@ describe('Certification expiry + trimming', () => writeBasicTestWithConfAnd2User
   })
 
   after(() => {
-    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 10
+    CommonConstants.DUBP_NEXT_VERSION = 10
   })
 }))

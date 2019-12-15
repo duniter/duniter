@@ -63,6 +63,20 @@ export class Key {
     }
     return encodeBase64(sig)
   };
+
+  sign(msg:string) {
+    return Promise.resolve(this.signSync(msg))
+  }
+
+  signSync(msg:string) {
+    const m = decodeUTF8(msg);
+    const signedMsg = nacl.sign(m, this.rawSec());
+    const sig = new Uint8Array(crypto_sign_BYTES);
+    for (let i = 0; i < sig.length; i++) {
+      sig[i] = signedMsg[i];
+    }
+    return encodeBase64(sig)
+  };
 }
 
 export function randomKey() {
@@ -97,4 +111,17 @@ export function verifyBuggy(rawMsg:string, rawSig:string, rawPub:string) {
 
   // Call to verification lib...
   return naclBinding.verify(m, sm, pub);
+}
+
+/**
+ * Verify a signature against data & public key.
+ * Return true of false as callback argument.
+ */
+export function verify(rawMsg:string, rawSig:string, rawPub:string) {
+  const msg = decodeUTF8(rawMsg);
+  const sig = decodeBase64(rawSig);
+  const pub = Base58decode(rawPub);
+
+  // Call to verification lib...
+  return nacl.sign.detached.verify(msg, sig, pub);
 }

@@ -39,6 +39,7 @@ push_to_github:
       - releases/**/*
       - server.ts
       - test/**/*
+      - .gitlab/test/*
 
 .nvm_env: &nvm_env
   image: registry.duniter.org/docker/duniter-ci:v0.0.4

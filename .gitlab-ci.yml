@@ -41,6 +41,7 @@ push_to_github:
       - test/**/*
 
 .nvm_env: &nvm_env
+  image: registry.duniter.org/docker/duniter-ci:v0.0.4
   tags:
     - redshift
   before_script:

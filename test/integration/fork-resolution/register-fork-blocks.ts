@@ -235,6 +235,6 @@ describe("Fork blocks", function() {
   })
 
   after(() => {
-    CommonConstants.DUBP_NEXT_VERSION = 11
+    CommonConstants.DUBP_NEXT_VERSION = 10
   })
 })

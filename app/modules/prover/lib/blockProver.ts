@@ -163,7 +163,7 @@ export class BlockProver {
     const remainder = difficulty % 16;
     const nbZeros = (difficulty - remainder) / 16;
     const highMark = CommonConstants.PROOF_OF_WORK.UPPER_BOUND[remainder];
-    const notifyVersionJumpReady = block.version === 10 && CommonConstants.DUBP_NEXT_VERSION === 11
+    const notifyVersionJumpReady: boolean = (block.version + 1) === CommonConstants.DUBP_NEXT_VERSION;
 
     return (async () => {
 

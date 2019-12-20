@@ -544,7 +544,8 @@ export const LOCAL_RULES_HELPERS = {
         const nbNoncesWithNextVersionCode = lastNonceOfEachIssuer.filter(nonce => nonce.substr(-11, 3) === '999').length
 
         // More than 70% of the computing network converted? Let's go to next version.
-        if (Math.floor(nbNoncesWithNextVersionCode / uniqIssuersInFrame.length) > 0.6) {
+        let propIssuersReadyToJump = nbNoncesWithNextVersionCode / uniqIssuersInFrame.length;
+        if (propIssuersReadyToJump > 0.7) {
           return constants.DUBP_NEXT_VERSION
         }
 

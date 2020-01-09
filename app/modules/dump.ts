@@ -11,11 +11,12 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
+import {exec} from "child_process"
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {Server} from "../../server"
 import {moment} from "../lib/common-libs/moment"
 import {DBBlock} from "../lib/db/DBBlock"
-import {SindexEntry} from "../lib/indexer"
+import {FullIindexEntry, SindexEntry} from "../lib/indexer"
 import {BlockDTO} from "../lib/dto/BlockDTO"
 import {Underscore} from "../lib/common-libs/underscore"
 import {dumpWotWizard} from "./dump/wotwizard/wotwizard.dump"
@@ -23,6 +24,11 @@ import {OtherConstants} from "../lib/other_constants"
 import {Querable, querablep} from "../lib/common-libs/querable"
 import {dumpBlocks, dumpForks} from "./dump/blocks/dump.blocks"
 import {newResolveTimeoutPromise} from "../lib/common-libs/timeout-promise"
+import {readFileSync} from "fs"
+import {IdentityDTO} from "../lib/dto/IdentityDTO"
+import {CertificationDTO, ShortCertificationDTO} from "../lib/dto/CertificationDTO"
+import {MembershipDTO} from "../lib/dto/MembershipDTO"
+import {RevocationDTO, ShortRevocation} from "../lib/dto/RevocationDTO"
 
 const Table = require('cli-table')
 
@@ -112,6 +118,57 @@ module.exports = {
         await server.disconnect();
       }
     }, {
+      name: 'search [pattern]',
+      desc: 'Dumps data of the blockchain matching given pattern.',
+      logs: false,
+      preventIfRunning: true,
+
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
+        const pattern: string = params[0] || ''
+
+        try {
+
+          const files: string[] = await new Promise((res, rej) => exec(`grep -r ${pattern} ${server.home}/${server.conf.currency} -l`, (err, stdout) => {
+            if (err) return rej(err)
+            console.log(stdout)
+            res(stdout.split('\n').filter(l => l))
+          }))
+
+          const blocks = Underscore.sortBy(await findBlocksMatching(pattern, files), b => b.number)
+
+          const events: { b: BlockDTO, event: (IdentityDTO|ShortCertificationDTO|MembershipDTO|ShortRevocation) }[] = []
+          for (const b of blocks) {
+            b.identities.filter(i => i.includes(pattern)).forEach(i => {
+              events.push({ b, event: IdentityDTO.fromInline(i) })
+            })
+            b.certifications.filter(c => c.includes(pattern)).forEach(c => {
+              events.push({ b, event: CertificationDTO.fromInline(c) })
+            })
+            b.joiners.concat(b.actives).concat(b.leavers).filter(m => m.includes(pattern)).forEach(m => {
+              events.push({ b, event: MembershipDTO.fromInline(m) })
+            })
+            b.revoked.filter(m => m.includes(pattern)).forEach(r => {
+              events.push({ b, event: RevocationDTO.fromInline(r) })
+            })
+          }
+
+          for (const e of events) {
+            if ((e.event as IdentityDTO).uid) {
+              const date = await getDateForBlock(e.b)
+              const idty = e.event as IdentityDTO
+              console.log('%s: new identity %s (created on %s)', date, idty.uid, await getDateFor(server, idty.buid as string))
+            }
+          }
+
+          console.log(events.map(e => e.event))
+
+        } catch (e) {
+          console.error(e)
+        }
+        // Save DB
+        await server.disconnect();
+      }
+    }, {
       name: 'dump-ww',
       desc: 'Dumps WotWizard export.',
       logs: true,
@@ -119,6 +176,21 @@ module.exports = {
       onDatabaseExecute: async (server:Server) => dumpWotWizard(server)
     }]
   }
+}
+
+async function findBlocksMatching(pattern: string, files: string[]) {
+  const matchingBlocks: BlockDTO[] = []
+  for (const f of files) {
+    const blocks: any[] = JSON.parse(await readFileSync(f, 'utf8')).blocks
+    for (const jsonBlock of blocks) {
+      const b = BlockDTO.fromJSONObject(jsonBlock)
+      const raw = b.getRawSigned()
+      if (raw.includes(pattern)) {
+        matchingBlocks.push(b)
+      }
+    }
+  }
+  return matchingBlocks
 }
 
 async function dumpCurrent(server: Server) {
@@ -229,8 +301,9 @@ function dump(rows: any[], columns: string[]) {
 }
 
 async function dumpHistory(server: Server, pub: string) {
-  const irows = await server.dal.iindexDAL.findRawWithOrder({ pub }, [['writtenOn', false]])
-  const mrows = await server.dal.mindexDAL.findRawWithOrder({ pub }, [['writtenOn', false]])
+  const irows = (await server.dal.iindexDAL.findRawWithOrder({ pub }, [['writtenOn', false]])).filter(r => pub ? r.pub === pub : true)
+  const mrows = (await server.dal.mindexDAL.findRawWithOrder({ pub }, [['writtenOn', false]])).filter(r => pub ? r.pub === pub : true)
+  const crows = (await server.dal.cindexDAL.findRawWithOrder({ pub }, [['writtenOn', false]])).filter(r => pub ? r.issuer === pub || r.receiver === pub: true)
   console.log('----- IDENTITY -----')
   for (const e of irows) {
     const date = await getDateFor(server, e.written_on)
@@ -259,6 +332,28 @@ async function dumpHistory(server: Server, pub: string) {
       console.log('Non displayable MINDEX entry')
     }
   }
+  console.log('----- CERTIFICATION -----')
+  crows.forEach(crow => {
+    console.log(JSON.stringify(crow))
+  })
+  for (const e of crows) {
+    const dateW = await getDateFor(server, e.written_on)
+    const dateC = await getDateForBlockNumber(server, e.created_on)
+    if (e.receiver === pub) {
+      const issuer = await server.dal.getWrittenIdtyByPubkey(e.issuer) as FullIindexEntry
+      if (e.op === 'UPDATE') {
+        console.log('%s : %s: from %s (update)', dateC, dateW, issuer.uid)
+      }
+      else {
+        console.log('%s : %s: from %s', dateC, dateW, issuer.uid)
+      }
+    // } else if (e.issuer === pub) {
+    //   const receiver = await server.dal.getWrittenIdtyByPubkey(e.receiver) as FullIindexEntry
+    //   console.log('%s: to ', date, receiver.uid)
+    } else {
+      // console.log('Non displayable CINDEX entry')
+    }
+  }
 }
 
 async function dumpWot(server: Server) {
@@ -269,6 +364,19 @@ async function dumpWot(server: Server) {
 
 async function getDateFor(server: Server, blockstamp: string) {
   const b = (await server.dal.getAbsoluteBlockByBlockstamp(blockstamp)) as DBBlock
+  const s = "         " + b.number
+  const bnumberPadded = s.substr(s.length - 6)
+  return formatTimestamp(b.medianTime) + ' (#' + bnumberPadded + ')'
+}
+
+async function getDateForBlockNumber(server: Server, number: number) {
+  const b = (await server.dal.getBlock(number)) as DBBlock
+  const s = "         " + b.number
+  const bnumberPadded = s.substr(s.length - 6)
+  return formatTimestamp(b.medianTime) + ' (#' + bnumberPadded + ')'
+}
+
+async function getDateForBlock(b: BlockDTO) {
   const s = "         " + b.number
   const bnumberPadded = s.substr(s.length - 6)
   return formatTimestamp(b.medianTime) + ' (#' + bnumberPadded + ')'

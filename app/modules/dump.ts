@@ -156,7 +156,7 @@ module.exports = {
 
         try {
 
-          const files: string[] = await new Promise((res, rej) => exec(`grep -r ${pattern} ${server.home}/${server.conf.currency} -l`, (err, stdout) => {
+          const files: string[] = await new Promise<string[]>((res, rej) => exec(`grep -r ${pattern} ${server.home}/${server.conf.currency} -l | grep .json`, (err, stdout) => {
             if (err) return rej(err)
             console.log(stdout)
             res(stdout.split('\n').filter(l => l))

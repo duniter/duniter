@@ -96,10 +96,12 @@ module.exports = {
       logs: false,
       preventIfRunning: true,
 
-      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const what: string = params[0] || ''
         const name: string = params[1] || ''
         const cond: string = params[2] || ''
+
+        await server.dal.init(server.conf)
 
         try {
 

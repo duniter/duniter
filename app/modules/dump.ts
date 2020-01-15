@@ -61,6 +61,22 @@ module.exports = {
     },
 
     cli: [{
+      name: 'current',
+      desc: 'Shows current block\'s blockstamp',
+      logs: false,
+      preventIfRunning: true,
+
+      onDatabaseExecute: async (server:Server) => {
+        const current = await server.dal.getCurrentBlockOrNull()
+        if (!current) {
+          return console.log('None')
+        }
+        const blockstamp = `${current.number}-${current.hash}`
+        console.log(blockstamp)
+        // Save DB
+        await server.disconnect();
+      }
+    }, {
       name: 'dump [what] [name] [cond]',
       desc: 'Dumps data of the blockchain.',
       logs: false,

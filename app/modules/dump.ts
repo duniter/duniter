@@ -16,7 +16,7 @@ import {ConfDTO} from "../lib/dto/ConfDTO"
 import {Server} from "../../server"
 import {moment} from "../lib/common-libs/moment"
 import {DBBlock} from "../lib/db/DBBlock"
-import {FullIindexEntry, SindexEntry} from "../lib/indexer"
+import {FullIindexEntry, IindexEntry, SindexEntry} from "../lib/indexer"
 import {BlockDTO} from "../lib/dto/BlockDTO"
 import {Underscore} from "../lib/common-libs/underscore"
 import {dumpWotWizard} from "./dump/wotwizard/wotwizard.dump"
@@ -24,6 +24,8 @@ import {OtherConstants} from "../lib/other_constants"
 import {Querable, querablep} from "../lib/common-libs/querable"
 import {dumpBlocks, dumpForks} from "./dump/blocks/dump.blocks"
 import {newResolveTimeoutPromise} from "../lib/common-libs/timeout-promise"
+import {LevelDBIindex} from "../lib/dal/indexDAL/leveldb/LevelDBIindex"
+import {dumpBindex, dumpCindex, dumpCindexPretty, dumpIindex, dumpMindex, dumpSindex} from "../lib/debug/dump"
 import {readFileSync} from "fs"
 import {IdentityDTO} from "../lib/dto/IdentityDTO"
 import {CertificationDTO, ShortCertificationDTO} from "../lib/dto/CertificationDTO"
@@ -271,8 +273,7 @@ async function dumpTable(server: Server, name: string, condition?: string) {
   switch (name) {
     case 'b_index':
       rows = await server.dal.bindexDAL.findRawWithOrder(criterion, [['number', false]])
-      dump(rows, ['version','bsize','hash','issuer','time','number','membersCount','issuersCount','issuersFrame','issuersFrameVar','issuerDiff','avgBlockSize','medianTime','dividend','mass','unitBase','powMin','udTime','udReevalTime','diffNumber','speed','massReeval'])
-      break
+      return dumpBindex(rows)
 
     /**
      * Dumps issuers visible in current bindex
@@ -285,53 +286,32 @@ async function dumpTable(server: Server, name: string, condition?: string) {
 
     case 'i_index':
       rows = await server.dal.iindexDAL.findRawWithOrder(criterion, [['writtenOn', false], ['wotb_id', false]])
-      dump(rows, ['op','uid','pub','hash','sig','created_on','written_on','member','wasMember','kick','wotb_id'])
-      break
+      return dumpIindex(rows)
     case 'm_index':
       rows = await server.dal.mindexDAL.findRawWithOrder(criterion, [['writtenOn', false], ['pub', false]])
-      dump(rows, ['op','pub','created_on','written_on','expires_on','expired_on','revokes_on','revoked_on','leaving','revocation','chainable_on'])
-      break
+      return dumpMindex(rows)
     case 'c_index':
       rows = await server.dal.cindexDAL.findRawWithOrder(criterion, [['writtenOn', false], ['issuer', false], ['receiver', false]])
-      dump(rows, ['op','issuer','receiver','created_on','written_on','sig','expires_on','expired_on','chainable_on','from_wid','to_wid','replayable_on'])
+      return dumpCindex(rows)
       break
     case 's_index':
       const rowsTX = await server.dal.sindexDAL.findRawWithOrder(criterion, [['writtenOn', false], ['identifier', false], ['pos', false]])
       const rowsUD = await server.dal.dividendDAL.findForDump(criterion)
       rows = rowsTX.concat(rowsUD)
       sortSindex(rows)
-      dump(rows, ['op','tx','identifier','pos','created_on','amount','base','locktime','consumed','conditions', 'writtenOn'])
-      break
+      return dumpSindex(rows)
+
+    case 'c_index_pretty':
+      rows = await server.dal.cindexDAL.findRawWithOrder(criterion, [['writtenOn', false], ['issuer', false], ['receiver', false]])
+      rows = rows.filter((row: any) => Object.entries(criterion).reduce((ok, crit: any) => ok && row[crit[0]] === crit[1], true))
+      await dumpCindexPretty(rows, async (pub) => {
+        const iindexEntry = await server.dal.getWrittenIdtyByPubkey(pub)
+        return (iindexEntry as IindexEntry).uid as string
+      })
+
     default:
       console.error(`Unknown dump table ${name}`)
       break
-  }
-}
-
-function dump(rows: any[], columns: string[]) {
-  // Table columns
-  const t = new Table({
-    head: columns
-  });
-  for (const row of rows) {
-    t.push(columns.map((c) => {
-      if (row[c] === null) {
-        return "NULL"
-      }
-      else if (row[c] === undefined) {
-        return 'NULL'
-      }
-      else if (typeof row[c] === 'boolean') {
-        return row[c] ? 1 : 0
-      }
-      return row[c]
-    }));
-  }
-  try {
-    const dumped = t.toString()
-    console.log(dumped)
-  } catch (e) {
-    console.error(e)
   }
 }
 

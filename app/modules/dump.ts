@@ -164,7 +164,7 @@ module.exports = {
 
           const blocks = Underscore.sortBy(await findBlocksMatching(pattern, files), b => b.number)
 
-          const events: { b: BlockDTO, event: (IdentityDTO|ShortCertificationDTO|MembershipDTO|ShortRevocation) }[] = []
+          const events: { b: BlockDTO, event: (IdentityDTO|ShortCertificationDTO|MembershipDTO|ShortRevocation|{ type: 'exclusion', pub: string }) }[] = []
           for (const b of blocks) {
             b.identities.filter(i => i.includes(pattern)).forEach(i => {
               events.push({ b, event: IdentityDTO.fromInline(i) })
@@ -178,6 +178,9 @@ module.exports = {
             b.revoked.filter(m => m.includes(pattern)).forEach(r => {
               events.push({ b, event: RevocationDTO.fromInline(r) })
             })
+            b.excluded.filter(m => m.includes(pattern)).forEach(r => {
+              events.push({ b, event: { type: 'exclusion', pub: r } })
+            })
           }
 
           for (const e of events) {
@@ -185,6 +188,10 @@ module.exports = {
               const date = await getDateForBlock(e.b)
               const idty = e.event as IdentityDTO
               console.log('%s: new identity %s (created on %s)', date, idty.uid, await getDateFor(server, idty.buid as string))
+            }
+            if ((e.event as { type: 'exclusion', pub: string }).type === 'exclusion') {
+              const date = await getDateForBlock(e.b)
+              console.log('%s: excluded', date)
             }
           }
 

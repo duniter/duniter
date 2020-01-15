@@ -77,6 +77,18 @@ module.exports = {
         await server.disconnect();
       }
     }, {
+      name: 'trim-indexes',
+      desc: 'Force trimming of indexes',
+      logs: true,
+      preventIfRunning: true,
+
+      onConfiguredExecute: async (server:Server) => {
+        await server.dal.init(server.conf)
+        await server.BlockchainService.trimIndexes()
+        // Save DB
+        await server.disconnect();
+      }
+    }, {
       name: 'dump [what] [name] [cond]',
       desc: 'Dumps data of the blockchain.',
       logs: false,

@@ -459,4 +459,10 @@ export class BlockchainService extends FIFOService {
     return this.dal.getBlocksBetween(from, from + count - 1);
   }
 
+  async trimIndexes() {
+    const HEAD = await this.dal.getCurrentBlockOrNull()
+    if (HEAD) {
+      return DuniterBlockchain.trimIndexes(this.dal, HEAD, this.conf)
+    }
+  }
 }

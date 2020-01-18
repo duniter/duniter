@@ -12,6 +12,7 @@
 // GNU Affero General Public License for more details.
 
 import * as assert from 'assert'
+
 const should = require('should')
 
 export async function shouldThrow(promise:Promise<any>) {
@@ -58,7 +59,7 @@ export const assertThrows = async (promise:Promise<any>, message:string|null = n
     if (e === "Should have thrown") {
       throw e
     }
-    assert.equal(e, message)
+    assert.equal(e.message || e, message)
   }
 }
 

@@ -460,7 +460,7 @@ export class BlockGenerator {
     exclusions:any,
     wereExcluded:any,
     transactions:any,
-    manualValues:any) {
+    manualValues:ForcedBlockValues) {
 
     if (manualValues && manualValues.excluded) {
       exclusions = manualValues.excluded;
@@ -630,6 +630,16 @@ export class BlockGenerator {
       }
     }
 
+    // Forced joiners (by tests)
+    if (manualValues && manualValues.joiners) {
+      block.joiners = block.joiners.concat(manualValues.joiners.map(j => j.inline()))
+    }
+
+    // Forced certifications (by tests)
+    if (manualValues && manualValues.certifications) {
+      block.certifications = block.certifications.concat(manualValues.certifications.map(c => c.inline()))
+    }
+
     // Final number of members
     block.membersCount = previousCount + block.joiners.length - block.excluded.length;
 
@@ -679,7 +689,7 @@ export class BlockGenerator {
     block.issuersFrameVar = vHEAD.issuersFrameVar;
     // Manual values before hashing
     if (manualValues) {
-      Underscore.extend(block, Underscore.omit(manualValues, 'time'));
+      Underscore.extend(block, Underscore.omit(manualValues, 'time', 'certifications', 'joiners'));
     }
     // InnerHash
     block.time = block.medianTime;
@@ -846,4 +856,14 @@ class ManualRootGenerator implements BlockGeneratorInterface {
       throw 'No newcomer found';
     }
   }
+}
+
+export interface ForcedBlockValues {
+  time?: number
+  version?: number
+  medianTime?: number
+  excluded?: string[]
+  revoked?: string[]
+  certifications?: CertificationDTO[]
+  joiners?: MembershipDTO[]
 }

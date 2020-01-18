@@ -146,13 +146,13 @@ export class LevelDBCindex extends LevelDBTable<LevelDBCindexEntry> implements C
       }
     }
     // Remove the "received" arrays
-    await Promise.all(toRemove.map(async e => {
+    for (const e of toRemove) {
       const entry = await this.get(e.receiver)
       // Remove the certification
       entry.received = entry.received.filter(issuer => issuer !== e.issuer)
       // Persist
       await this.put(e.receiver, entry)
-    }))
+    }
     // Remove the expires_on index entries
     const expires = Underscore.uniq(toRemove.filter(e => e.expires_on).map(e => e.expires_on))
     await Promise.all(expires.map(async e => this.indexForExpiresOn.del(LevelDBCindex.trimExpiredOnKey(e))))

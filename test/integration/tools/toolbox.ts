@@ -60,6 +60,7 @@ import {WebSocketServer} from "../../../app/lib/common-libs/websocket"
 import {CommonConstants} from "../../../app/lib/common-libs/constants"
 import {WS2PRequester} from "../../../app/modules/ws2p/lib/WS2PRequester"
 import {WS2PDependency} from "../../../app/modules/ws2p/index"
+import {ForcedBlockValues} from "../../../app/modules/prover/lib/blockGenerator"
 
 const assert      = require('assert');
 const rp          = require('request-promise');
@@ -239,7 +240,7 @@ export const NewTestingServer = (conf:any) => {
     remoteipv4: host,
     currency: conf.currency || CURRENCY_NAME,
     httpLogs: true,
-    forksize: conf.forksize || 3,
+    forksize: conf.forksize !== undefined ? conf.forksize : 3,
     nonWoTPeersLimit: CommonConstants.DEFAULT_NON_WOT_PEERS_LIMIT,
   };
   if (conf.sigQty === undefined) {
@@ -508,7 +509,7 @@ export class TestingServer {
     return proven
   }
 
-  async commit(options:any = null) {
+  async commit(options:ForcedBlockValues|null = null) {
     const proven = await this.generateNext(options)
     await this.server.writeBlock(proven, true, true) // The resolution is done manually
     const blocksResolved = await this.server.BlockchainService.blockResolution()

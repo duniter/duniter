@@ -12,7 +12,6 @@
 // GNU Affero General Public License for more details.
 
 import {assertEqual, writeBasicTestWithConfAnd2Users} from "../tools/test-framework"
-import {assertThrows} from "../../unit-tools"
 import {CommonConstants} from "../../../app/lib/common-libs/constants"
 
 const currentVersion = CommonConstants.BLOCK_GENERATED_VERSION
@@ -105,10 +104,10 @@ describe('Block revert with a comebacker in it', () => writeBasicTestWithConfAnd
   })
 
   test('(t = 12 #3) resolution should work', async (s1) => {
-    await assertThrows(s1.resolve(), 'BLOCK_WASNT_COMMITTED')
+    await s1.resolve()
     const b = await s1.dal.getBlockCurrent()
-    assertEqual(b.membersCount, 2)
-    assertEqual(b.number, 21)
+    assertEqual(b.membersCount, 3)
+    assertEqual(b.number, 22)
   })
 
   after(() => {

@@ -239,13 +239,7 @@ export class DuniterBlockchain {
     await this.updateWallets(indexes.sindex, indexes.dividends, dal)
 
     if (trim) {
-      const TAIL = await dal.bindexDAL.tail();
-      const MAX_BINDEX_SIZE = requiredBindexSizeForTail(TAIL, conf)
-      const currentSize = indexes.HEAD.number - TAIL.number + 1
-      if (currentSize > MAX_BINDEX_SIZE) {
-        await dal.archiveBlocks()
-        await dal.trimIndexes(indexes.HEAD.number - MAX_BINDEX_SIZE);
-      }
+      await DuniterBlockchain.trimIndexes(dal, indexes.HEAD, conf)
     }
 
     const dbb = DBBlock.fromBlockDTO(block)
@@ -571,6 +565,15 @@ export class DuniterBlockchain {
       return block;
     } catch (err) {
       throw err;
+    }
+  }
+
+  public static async trimIndexes(dal: FileDAL, HEAD: { number: number }, conf: ConfDTO) {
+    const TAIL = await dal.bindexDAL.tail();
+    const MAX_BINDEX_SIZE = requiredBindexSizeForTail(TAIL, conf)
+    const currentSize = HEAD.number - TAIL.number + 1
+    if (currentSize > MAX_BINDEX_SIZE) {
+      await dal.trimIndexes(HEAD.number - MAX_BINDEX_SIZE);
     }
   }
 }

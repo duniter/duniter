@@ -14,7 +14,7 @@
 import {assertEqual, writeBasicTestWithConfAnd2Users} from "../tools/test-framework"
 import {CommonConstants} from "../../../app/lib/common-libs/constants"
 
-const currentVersion = CommonConstants.BLOCK_GENERATED_VERSION
+const currentVersion = CommonConstants.BLOCK_GENESIS_VERSION
 
 describe('Block revert with a comebacker in it', () => writeBasicTestWithConfAnd2Users({
   sigQty: 2,
@@ -28,7 +28,7 @@ describe('Block revert with a comebacker in it', () => writeBasicTestWithConfAnd
   const now = 1500000000
 
   test('(t = 0) should init with a 4 members WoT with bidirectionnal certs', async (s1, cat, tac, toc) => {
-    CommonConstants.BLOCK_GENERATED_VERSION = 11
+    CommonConstants.BLOCK_GENESIS_VERSION = 11
     await cat.createIdentity()
     await tac.createIdentity()
     await toc.createIdentity()
@@ -111,7 +111,7 @@ describe('Block revert with a comebacker in it', () => writeBasicTestWithConfAnd
   })
 
   after(() => {
-    CommonConstants.BLOCK_GENERATED_VERSION = currentVersion
+    CommonConstants.BLOCK_GENESIS_VERSION = currentVersion
   })
 }))
 

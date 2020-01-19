@@ -1,4 +1,5 @@
 import {CindexEntry} from "../indexer"
+
 const Table = require('cli-table')
 
 export function dumpBindex(rows: CindexEntry[]) {
@@ -11,7 +12,7 @@ export function dumpCindex(rows: CindexEntry[]) {
   return dump(rows, ['op','issuer','receiver','created_on','written_on','sig','expires_on','expired_on','chainable_on','from_wid','to_wid','replayable_on'])
 }
 export function dumpCindexPretty(rows: CindexEntry[], getUid: (pub: string) => Promise<string>) {
-  return dump(rows, ['row','op','issuer','created_on','written_on','expires_on','expired_on','chainable_on','replayable_on'], async (f, v) => {
+  return dumpPretty(rows, ['row','op','issuer','created_on','written_on','expires_on','expired_on','chainable_on','replayable_on'], async (f, v) => {
     if (f === 'issuer') {
       return await getUid(v)
     }
@@ -28,11 +29,13 @@ export function dumpSindex(rows: CindexEntry[]) {
   return dump(rows, ['op','tx','identifier','pos','created_on','amount','base','locktime','consumed','conditions', 'writtenOn'])
 }
 
-async function dump(rows: any[], columns: string[], transform: (field: string, value: any) => Promise<string> = (f, v) => Promise.resolve(v)) {
+async function dumpPretty(rows: any[], columns: string[], transform: (field: string, value: any) => Promise<string> = (f, v) => Promise.resolve(v)) {
+  return dump(rows, columns, transform, {'mid': '', 'left-mid': '', 'mid-mid': '', 'right-mid': ''})
+}
+
+async function dump(rows: any[], columns: string[], transform: (field: string, value: any) => Promise<string> = (f, v) => Promise.resolve(v), chars?: any) {
   // Table columns
-  const t = new Table({
-    head: columns, chars: {'mid': '', 'left-mid': '', 'mid-mid': '', 'right-mid': ''}
-  });
+  const t = chars ? new Table({ head: columns, chars }) : new Table({ head: columns });
   let i = 0;
   for (const row of rows) {
     t.push(await Promise.all(columns.map(async (c) => {

@@ -16,7 +16,7 @@ import {FileDAL} from "../lib/dal/fileDAL"
 import {DBBlock} from "../lib/db/DBBlock"
 import {Multicaster} from "../lib/streams/multicaster"
 import {PeerDTO} from "../lib/dto/PeerDTO"
-import {verify} from "../lib/common-libs/crypto/keyring"
+import {verifyBuggy} from "../lib/common-libs/crypto/keyring"
 import {dos2unix} from "../lib/common-libs/dos2unix"
 import {rawer} from "../lib/common-libs/index"
 import {Server} from "../../server"
@@ -82,7 +82,7 @@ export class PeeringService {
     const raw = rawer.getPeerWithoutSignature(p);
     const sig = p.signature;
     const pub = p.pubkey;
-    const signaturesMatching = verify(raw, sig, pub);
+    const signaturesMatching = verifyBuggy(raw, sig, pub);
     return !!signaturesMatching;
   };
 

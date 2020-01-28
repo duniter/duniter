@@ -53,7 +53,7 @@ export class BlockchainContext {
       // But if no HEAD_1 exist, we must initialize a block with default values
       if (!this.vHEAD_1) {
         block = {
-          version: constants.BLOCK_GENERATED_VERSION,
+          version: constants.BLOCK_GENESIS_VERSION,
           time: Math.round(Date.now() / 1000),
           powMin: this.conf.powMin || 0,
           powZeros: 0,

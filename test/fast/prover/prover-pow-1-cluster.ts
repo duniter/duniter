@@ -62,7 +62,7 @@ describe('PoW Cluster', () => {
     master.nbWorkers.should.above(0)
   })
 
-  it('should answer within 50ms for a basic PoW (warm)', async () => {
+  it('should answer within 100ms for a basic PoW (warm)', async () => {
     const start = Date.now()
     await master.proveByWorkers({
       newPoW: {
@@ -85,7 +85,7 @@ describe('PoW Cluster', () => {
       }
     })
     const delay = Date.now() - start
-    delay.should.be.below(50)
+    delay.should.be.below(100)
   })
 
   it('should be able to stop all the cores on cancel', async () => {

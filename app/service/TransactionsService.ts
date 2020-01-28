@@ -54,11 +54,11 @@ export class TransactionService extends FIFOService {
           throw constants.ERRORS.TX_ALREADY_PROCESSED;
         }
         // Start checks...
-        const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
+        const fakeTimeVariation = current.medianTime + 1;
         const dto = TransactionDTO.fromJSONObject(tx)
         await LOCAL_RULES_HELPERS.checkSingleTransactionLocally(dto, this.conf)
         await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal);
-        await GLOBAL_RULES_HELPERS.checkSingleTransaction(dto, nextBlockWithFakeTimeVariation, this.conf, this.dal, this.dal.getTxByHash.bind(this.dal));
+        await GLOBAL_RULES_HELPERS.checkSingleTransaction(dto, current.version, fakeTimeVariation, this.conf, this.dal, this.dal.getTxByHash.bind(this.dal));
         const server_pubkey = this.conf.pair && this.conf.pair.pub;
         if (!(await this.dal.txsDAL.sandbox.acceptNewSandBoxEntry({
             issuers: tx.issuers,

@@ -17,13 +17,15 @@ import {BlockDTO} from "../../../app/lib/dto/BlockDTO"
 const should    = require('should');
 const constants = require('../../../app/lib/constants');
 
+const now = 1578540000;
+
 const conf = {
+  udTime0: now,
   dt: 30,
   avgGenTime: 5000,
   medianTimeBlocks: 1 // The medianTime always equals previous block's medianTime
 };
 
-const now = 1578540000;
 
 let s1:TestingServer
 

@@ -16,7 +16,7 @@ import {ConfDTO} from "../dto/ConfDTO"
 import {CindexEntry, IndexEntry, Indexer, MindexEntry, SindexEntry} from "../indexer"
 import {BaseDTO, TransactionDTO} from "../dto/TransactionDTO"
 import {DBBlock} from "../db/DBBlock"
-import {verify} from "../common-libs/crypto/keyring"
+import {verify, verifyBuggy} from "../common-libs/crypto/keyring"
 import {hashf} from "../common"
 import {CommonConstants} from "../common-libs/constants"
 import {IdentityDTO} from "../dto/IdentityDTO"
@@ -87,8 +87,13 @@ export const LOCAL_RULES_FUNCTIONS = {
   },
 
   checkBlockSignature: async (block:BlockDTO) => {
-    if (!verify(block.getSignedPart(), block.signature, block.issuer))
+    // Historically, Duniter used a buggy version of TweetNaCl (see #1390)
+    // Starting with the v12 blocks, Duniter uses a fixed version of TweetNaCl. 
+    if (block.version >= 12 && !verify(block.getSignedPart(), block.signature, block.issuer)) {
       throw Error('Block\'s signature must match');
+    } else if (!verifyBuggy(block.getSignedPart(), block.signature, block.issuer)) {
+      throw Error('Block\'s signature must match');
+    }
     return true;
   },
 
@@ -108,7 +113,7 @@ export const LOCAL_RULES_FUNCTIONS = {
     while (!wrongSig && i < block.identities.length) {
       const idty = IdentityDTO.fromInline(block.identities[i]);
       idty.currency = block.currency;
-      wrongSig = !verify(idty.rawWithoutSig(), idty.sig, idty.pubkey);
+      wrongSig = !verifyBuggy(idty.rawWithoutSig(), idty.sig, idty.pubkey);
       if (wrongSig) {
         throw Error('Identity\'s signature must match');
       }
@@ -385,7 +390,7 @@ export const LOCAL_RULES_FUNCTIONS = {
     const txs = block.transactions
     // Check rule against each transaction
     for (const tx of txs) {
-      if (!tx.checkSignatures()) {
+      if (!tx.checkSignatures(block.version)) {
         throw Error('Signature from a transaction must match')
       }
     }
@@ -439,7 +444,7 @@ function getTransactionDepth(txHash:string, sindex:SindexShortEntry[], localDept
 }
 
 function checkSingleMembershipSignature(ms:any) {
-  return verify(ms.getRaw(), ms.signature, ms.issuer);
+  return verifyBuggy(ms.getRaw(), ms.signature, ms.issuer);
 }
 
 function checkBunchOfTransactions(transactions:TransactionDTO[], conf:ConfDTO, medianTime: number, options?:{ dontCareAboutChaining?:boolean }){
@@ -529,7 +534,7 @@ export const LOCAL_RULES_HELPERS = {
     return !current
 
       // 1. We use legacy version
-      ? constants.BLOCK_GENERATED_VERSION : (async () => {
+      ? constants.BLOCK_GENESIS_VERSION : (async () => {
 
         // 2. If we can, we go to the next version
         const blocksInFrame = (await dal.getBlocksBetween(current.number - current.issuersFrame + 1, current.number))
@@ -539,8 +544,9 @@ export const LOCAL_RULES_HELPERS = {
         const nbNoncesWithNextVersionCode = lastNonceOfEachIssuer.filter(nonce => nonce.substr(-11, 3) === '999').length
 
         // More than 70% of the computing network converted? Let's go to next version.
-        if (Math.floor(nbNoncesWithNextVersionCode / uniqIssuersInFrame.length) > 0.6) {
-          return constants.BLOCK_NEW_GENERATED_VERSION
+        let propIssuersReadyToJump = nbNoncesWithNextVersionCode / uniqIssuersInFrame.length;
+        if (propIssuersReadyToJump > 0.7) {
+          return constants.DUBP_NEXT_VERSION
         }
 
         // Otherwise, we stay on same version

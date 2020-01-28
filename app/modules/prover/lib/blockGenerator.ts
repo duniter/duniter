@@ -19,7 +19,7 @@ import {GLOBAL_RULES_HELPERS} from "../../../lib/rules/global_rules"
 import {LOCAL_RULES_HELPERS} from "../../../lib/rules/local_rules"
 import {Indexer} from "../../../lib/indexer"
 import {DBBlock} from "../../../lib/db/DBBlock"
-import {verify} from "../../../lib/common-libs/crypto/keyring"
+import {verifyBuggy} from "../../../lib/common-libs/crypto/keyring"
 import {rawer} from "../../../lib/common-libs/index"
 import {hashf} from "../../../lib/common"
 import {CommonConstants} from "../../../lib/common-libs/constants"
@@ -144,8 +144,8 @@ export class BlockGenerator {
       const tx = TransactionDTO.fromJSONObject(obj);
       try {
         await LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), this.conf, medianTime, options)
-        const nextBlockWithFakeTimeVariation = { medianTime: current.medianTime + 1 };
-        await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, nextBlockWithFakeTimeVariation, this.conf, this.dal, async (txHash:string) => {
+        const fakeTimeVariation = current.medianTime + 1;
+        await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, current.version, fakeTimeVariation, this.conf, this.dal, async (txHash:string) => {
           return Underscore.findWhere(passingTxs, { hash: txHash }) || null
         });
         await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal);
@@ -380,7 +380,7 @@ export class BlockGenerator {
     const idty = IdentityDTO.fromJSONObject(identity);
     idty.currency = this.conf.currency;
     const createIdentity = idty.rawWithoutSig();
-    const verified = verify(createIdentity, idty.sig, idty.pubkey);
+    const verified = verifyBuggy(createIdentity, idty.sig, idty.pubkey);
     if (!verified) {
       throw constants.ERRORS.IDENTITY_WRONGLY_SIGNED;
     }
@@ -460,7 +460,7 @@ export class BlockGenerator {
     exclusions:any,
     wereExcluded:any,
     transactions:any,
-    manualValues:any) {
+    manualValues:ForcedBlockValues) {
 
     if (manualValues && manualValues.excluded) {
       exclusions = manualValues.excluded;
@@ -630,6 +630,16 @@ export class BlockGenerator {
       }
     }
 
+    // Forced joiners (by tests)
+    if (manualValues && manualValues.joiners) {
+      block.joiners = block.joiners.concat(manualValues.joiners.map(j => j.inline()))
+    }
+
+    // Forced certifications (by tests)
+    if (manualValues && manualValues.certifications) {
+      block.certifications = block.certifications.concat(manualValues.certifications.map(c => c.inline()))
+    }
+
     // Final number of members
     block.membersCount = previousCount + block.joiners.length - block.excluded.length;
 
@@ -679,7 +689,7 @@ export class BlockGenerator {
     block.issuersFrameVar = vHEAD.issuersFrameVar;
     // Manual values before hashing
     if (manualValues) {
-      Underscore.extend(block, Underscore.omit(manualValues, 'time'));
+      Underscore.extend(block, Underscore.omit(manualValues, 'time', 'certifications', 'joiners'));
     }
     // InnerHash
     block.time = block.medianTime;
@@ -751,7 +761,7 @@ class NextBlockGenerator implements BlockGeneratorInterface {
             idty_sig: targetIdty.sig,
             buid: current ? [cert.block_number, targetBlock.hash].join('-') : CommonConstants.SPECIAL_BLOCK,
           }).getRawUnSigned();
-          if (verify(rawCert, certSig, cert.from)) {
+          if (verifyBuggy(rawCert, certSig, cert.from)) {
             cert.sig = certSig;
             let exists = false;
             if (current) {
@@ -846,4 +856,14 @@ class ManualRootGenerator implements BlockGeneratorInterface {
       throw 'No newcomer found';
     }
   }
+}
+
+export interface ForcedBlockValues {
+  time?: number
+  version?: number
+  medianTime?: number
+  excluded?: string[]
+  revoked?: string[]
+  certifications?: CertificationDTO[]
+  joiners?: MembershipDTO[]
 }

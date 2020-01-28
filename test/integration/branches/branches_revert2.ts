@@ -43,7 +43,7 @@ describe("Revert two blocks", function() {
 
   before(async () => {
 
-    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 11
+    CommonConstants.DUBP_NEXT_VERSION = 11
 
     s1 = NewTestingServer(
       Underscore.extend({
@@ -291,6 +291,6 @@ describe("Revert two blocks", function() {
   })
 
   after(() => {
-    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 10
+    CommonConstants.DUBP_NEXT_VERSION = 10
   })
 });

@@ -11,7 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {Key, KeyGen, randomKey, verify} from "../../../app/lib/common-libs/crypto/keyring"
+import {Key, KeyGen, randomKey, verifyBuggy} from "../../../app/lib/common-libs/crypto/keyring"
 
 const should = require('should');
 
@@ -26,16 +26,16 @@ describe('Random keypair', function(){
 
   it('good signature from generated key should be verified', function(done){
     const msg = "Some message to be signed";
-    const sig = KeyGen(key.publicKey, key.secretKey).signSync(msg);
-    const verified = verify(msg, sig, key.publicKey);
+    const sig = KeyGen(key.publicKey, key.secretKey).signSyncBuggy(msg);
+    const verified = verifyBuggy(msg, sig, key.publicKey);
     verified.should.equal(true);
     done();
   });
 
   it('wrong signature from generated key should NOT be verified', function(done){
     const msg = "Some message to be signed";
-    const sig = KeyGen(key.publicKey, key.secretKey).signSync(msg);
-    const verified = verify(msg + 'delta', sig, key.publicKey);
+    const sig = KeyGen(key.publicKey, key.secretKey).signSyncBuggy(msg);
+    const verified = verifyBuggy(msg + 'delta', sig, key.publicKey);
     verified.should.equal(false);
     done();
   });

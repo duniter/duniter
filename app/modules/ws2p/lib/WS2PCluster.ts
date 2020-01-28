@@ -24,7 +24,7 @@ import {WS2PConstants} from "./constants"
 import {PeerDTO, WS2PEndpoint} from '../../../lib/dto/PeerDTO';
 import {GlobalFifoPromise} from "../../../service/GlobalFifoPromise"
 import {OtherConstants} from "../../../lib/other_constants"
-import {Key, verify} from "../../../lib/common-libs/crypto/keyring"
+import {Key, verifyBuggy} from "../../../lib/common-libs/crypto/keyring"
 import {WS2PServerMessageHandler} from "./interface/WS2PServerMessageHandler"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 import {CommonConstants} from '../../../lib/common-libs/constants';
@@ -208,8 +208,8 @@ export class WS2PCluster {
       ) {
         const head:WS2PHead = { message: h.message, sig: h.sig, messageV2: h.messageV2, sigV2: h.sigV2, step: h.step }
 
-        const sigOK = verify(head.message, head.sig, pub)
-        const sigV2OK = (head.messageV2 !== undefined && head.sigV2 !== undefined) ? verify(head.messageV2, head.sigV2, pub):false
+        const sigOK = verifyBuggy(head.message, head.sig, pub)
+        const sigV2OK = (head.messageV2 !== undefined && head.sigV2 !== undefined) ? verifyBuggy(head.messageV2, head.sigV2, pub):false
         if ((sigV2OK && sigOK) || sigOK) {
           // Already known or more recent or closer ?
           const step = (this.headsCache[fullId]) ? this.headsCache[fullId].step || 0:0
@@ -605,9 +605,9 @@ export class WS2PCluster {
     const prefix = this.server.conf.prefix || ProverConstants.DEFAULT_PEER_ID
     const { freeMemberRoom , freeMirorRoom }  = await this.countFreeRooms()
     const message = `${api}:HEAD:1:${key.publicKey}:${number}-${hash}:${ws2pId}:${software}:${softVersion}:${prefix}`
-    const sig = key.signSync(message)
+    const sig = key.signSyncBuggy(message)
     const messageV2 = `${api}:HEAD:2:${key.publicKey}:${number}-${hash}:${ws2pId}:${software}:${softVersion}:${prefix}:${freeMemberRoom}:${freeMirorRoom}`
-    const sigV2 = key.signSync(messageV2)
+    const sigV2 = key.signSyncBuggy(messageV2)
     
     const myHead:WS2PHead = {
       message,

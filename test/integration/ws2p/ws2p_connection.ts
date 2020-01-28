@@ -18,7 +18,7 @@ import {
   WS2PPubkeyRemoteAuth,
   WS2PRemoteAuth
 } from "../../../app/modules/ws2p/lib/WS2PConnection"
-import {Key, verify} from "../../../app/lib/common-libs/crypto/keyring"
+import {Key, verifyBuggy} from "../../../app/lib/common-libs/crypto/keyring"
 import {getNewTestingPort} from "../tools/toolbox"
 import {WS2PMessageHandler} from "../../../app/modules/ws2p/lib/impl/WS2PMessageHandler"
 import {WS2PResponse} from "../../../app/modules/ws2p/lib/impl/WS2PResponse"
@@ -83,7 +83,7 @@ describe('WS2P', () => {
             if (obj.auth) {
               if (nbAsk == 1 || nbAsk == 3) {
                 const challengeMessage = `WS2P:ACK:gtest:${serverKeypair.pub}:${obj.challenge}`
-                const sig = serverKeypair.signSync(challengeMessage)
+                const sig = serverKeypair.signSyncBuggy(challengeMessage)
                 if (nbAsk == 1) {
                   ws.send(JSON.stringify({ auth: 'ACK', pub: serverKeypair.pub, sig: 'hiohoihio' }))
                 }
@@ -95,7 +95,7 @@ describe('WS2P', () => {
                 // We do like if the key was wrong
                 const clientPub = 'GgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd'
                 const challengeMessage = `WS2P:CONNECT:${clientPub}:${obj.challenge}`
-                if (!verify(challengeMessage, obj.sig, clientPub)) {
+                if (!verifyBuggy(challengeMessage, obj.sig, clientPub)) {
                   clientAskError = 'Wrong signature from client CONNECT'
                 }
               }
@@ -332,7 +332,7 @@ describe('WS2P', () => {
         class WS2PPubkeyAnsweringWithWrongSigForACK extends WS2PPubkeyRemoteAuth {
           async sendACK(ws: any): Promise<void> {
             const challengeMessage = `WS2P:WRONG:${this.pair.pub}:${this.challenge}`
-            const sig = this.pair.signSync(challengeMessage)
+            const sig = this.pair.signSyncBuggy(challengeMessage)
             await ws.send(JSON.stringify({
               auth: 'ACK',
               pub: this.pair.pub,
@@ -354,7 +354,7 @@ describe('WS2P', () => {
 
           async registerACK(sig: string, pub: string): Promise<boolean> {
             const challengeMessage = `WS2P:BLABLA:${pub}:${this.challenge}`
-            this.authenticated = verify(challengeMessage, sig, pub)
+            this.authenticated = verifyBuggy(challengeMessage, sig, pub)
             if (!this.authenticated) {
               this.serverAuthReject("Wrong signature from server ACK")
             } else {

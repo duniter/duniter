@@ -16,7 +16,7 @@ push_to_github:
   script:
     - rm -rf ./*
     - rm -rf .git
-    - git clone --mirror $CI_REPOSITORY_URL .
+    - git clone --mirror $CI_REPOSITORY_URL
     - git remote add github $GITHUB_URL_AND_KEY
     - git config --global user.email "contact@duniter.org"
     - git config --global user.name "Duniter"

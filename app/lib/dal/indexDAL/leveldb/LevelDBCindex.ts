@@ -223,7 +223,8 @@ export class LevelDBCindex extends LevelDBTable<LevelDBCindexEntry> implements C
     const receiver = (await this.getOrNull(pub)) || { issued: [], received: [] }
     const issuers = receiver.received
     return (await Promise.all(issuers.map(async issuer => {
-      return (await this.get(issuer)).issued.filter(e => e.receiver === pub && e.expired_on === 0)
+      const fullEntries = Indexer.DUP_HELPERS.reduceBy((await this.get(issuer)).issued, ['issuer', 'receiver'])
+      return fullEntries.filter(e => e.receiver === pub && e.expired_on === 0)
     }))).reduce(reduceConcat, [])
   }
 

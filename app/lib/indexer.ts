@@ -883,9 +883,10 @@ export class Indexer {
     // BR_G27
     await Promise.all(mindex.map(async (ENTRY: MindexEntry) => {
       if (ENTRY.type == 'JOIN' || ENTRY.type == 'ACTIVE') {
-        const existing = count(await dal.cindexDAL.findByReceiverAndExpiredOn(ENTRY.pub, 0))
-        const pending = count(Underscore.filter(cindex, (c:CindexEntry) => c.receiver == ENTRY.pub && c.expired_on == 0))
-        ENTRY.enoughCerts = (existing + pending) >= conf.sigQty;
+        const existing = (await dal.cindexDAL.findByReceiverAndExpiredOn(ENTRY.pub, 0)).map(value => value.issuer)
+        const pending = Underscore.filter(cindex, (c:CindexEntry) => c.receiver == ENTRY.pub && c.expired_on == 0).map(value => value.issuer)
+        const uniqIssuers = Underscore.uniq(existing.concat(pending))
+        ENTRY.enoughCerts = count(uniqIssuers) >= conf.sigQty;
       } else {
         ENTRY.enoughCerts = true;
       }

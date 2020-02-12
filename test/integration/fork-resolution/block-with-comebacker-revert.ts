@@ -16,7 +16,7 @@ import {CommonConstants} from "../../../app/lib/common-libs/constants"
 
 const currentVersion = CommonConstants.BLOCK_GENESIS_VERSION
 
-describe('Block revert with a comebacker in it', () => writeBasicTestWithConfAnd2Users({
+describe.skip('Block revert with a comebacker in it', () => writeBasicTestWithConfAnd2Users({
   sigQty: 2,
   sigReplay: 0,
   sigPeriod: 0,

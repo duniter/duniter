@@ -13,6 +13,7 @@
 
 import {assertEqual, writeBasicTestWithConfAnd2Users} from "../tools/test-framework"
 import {CommonConstants} from "../../../app/lib/common-libs/constants"
+import {assertThrows} from "../../unit-tools"
 
 const currentVersion = CommonConstants.BLOCK_GENESIS_VERSION
 
@@ -76,17 +77,25 @@ describe('A member coming back with less than `sigQty` valid certs total', () =>
     assertEqual(b.excluded[0], toc.pub)
   })
 
-  test('(t = 13 #1) toc is coming back with 1 cert only! a renewal counted twice', async (s1, cat, tac, toc) => {
+  test('(t = 13) toc is NOT coming back with 1 cert only!', async (s1, cat, tac, toc) => {
     await s1.commit({ time: now + 13 })
     await s1.commit({ time: now + 13 })
     const c1 = await cat.makeCert(toc) // <-- a renewal ==> this is what we want to observe
     const join = await toc.makeMembership('IN')
-    const b = await s1.commit({
+    // toc is **NOT** coming back! not enough certs
+    await assertThrows(s1.commit({
       time: now + 13,
       joiners: [join],
       certifications: [c1]
+    }), 'BLOCK_WASNT_COMMITTED')
+    // BUT is coming back with 1 more cert
+    const c2 = await tac.makeCert(toc)
+    const b = await s1.commit({
+      time: now + 13,
+      joiners: [join],
+      certifications: [c1, c2]
     })
-    assertEqual(b.membersCount, 3)
+    assertEqual(b.membersCount, 3) // <--- toc is welcome back :)
     assertEqual(b.number, 12)
   })
 

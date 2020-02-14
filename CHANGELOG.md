@@ -22,6 +22,18 @@
 
 Thanks @c-geek, @Moul, @vtexier
 
+## v1.7.21: (12th Fev 2020)
+- #1394: Former member back in the WoT with only 4 certifiers
+
+@c-geek
+
+## v1.7.20: (28th Jan 2020)
+- #1396: CINDEX revert removes certifications
+- #1390: Duniter uses a buggy version of TweetNaCl
+
+@c-geek
+@librelois
+
 ## v1.7.19: (28th May 2019)
 - #1379: prevent expired membership documents to reach the mempool
 - #1380: prevent expired certifications to reach the mempool

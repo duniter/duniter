@@ -13,10 +13,11 @@
 
 import {assertEqual, writeBasicTestWithConfAnd2Users} from "../tools/test-framework"
 import {CommonConstants} from "../../../app/lib/common-libs/constants"
+import {assertThrows} from "../../unit-tools"
 
 const currentVersion = CommonConstants.BLOCK_GENESIS_VERSION
 
-describe.skip('Block revert with a comebacker in it', () => writeBasicTestWithConfAnd2Users({
+describe('A member coming back with less than `sigQty` valid certs total', () => writeBasicTestWithConfAnd2Users({
   sigQty: 2,
   sigReplay: 0,
   sigPeriod: 0,
@@ -27,7 +28,7 @@ describe.skip('Block revert with a comebacker in it', () => writeBasicTestWithCo
 
   const now = 1500000000
 
-  test('(t = 0) should init with a 4 members WoT with bidirectionnal certs', async (s1, cat, tac, toc) => {
+  test('(t = 0) should init with a 3 members WoT with bidirectionnal certs', async (s1, cat, tac, toc) => {
     CommonConstants.BLOCK_GENESIS_VERSION = 11
     await cat.createIdentity()
     await tac.createIdentity()
@@ -76,38 +77,26 @@ describe.skip('Block revert with a comebacker in it', () => writeBasicTestWithCo
     assertEqual(b.excluded[0], toc.pub)
   })
 
-  test('(t = 12) we want some blocs to trim CINDEX', async (s1) => {
-    for (let i = 0; i < 10; i++) {
-      await s1.commit({ time: now + 12 })
-    }
-  })
-
-  test('(t = 13 #1) toc is coming back with 2 certs, whose 1 is a renewal', async (s1, cat, tac, toc) => {
+  test('(t = 13) toc is NOT coming back with 1 cert only!', async (s1, cat, tac, toc) => {
     await s1.commit({ time: now + 13 })
     await s1.commit({ time: now + 13 })
     const c1 = await cat.makeCert(toc) // <-- a renewal ==> this is what we want to observe
     const join = await toc.makeMembership('IN')
-    const b = await s1.commit({
+    // toc is **NOT** coming back! not enough certs
+    await assertThrows(s1.commit({
       time: now + 13,
       joiners: [join],
       certifications: [c1]
+    }), 'BLOCK_WASNT_COMMITTED')
+    // BUT is coming back with 1 more cert
+    const c2 = await tac.makeCert(toc)
+    const b = await s1.commit({
+      time: now + 13,
+      joiners: [join],
+      certifications: [c1, c2]
     })
-    assertEqual(b.membersCount, 3)
-    assertEqual(b.number, 22)
-  })
-
-  test('(t = 12 #2) revert successfuly', async (s1) => {
-    await s1.revert()
-    const b = await s1.dal.getBlockCurrent()
-    assertEqual(b.membersCount, 2)
-    assertEqual(b.number, 21)
-  })
-
-  test('(t = 12 #3) resolution should work', async (s1) => {
-    await s1.resolve()
-    const b = await s1.dal.getBlockCurrent()
-    assertEqual(b.membersCount, 3)
-    assertEqual(b.number, 22)
+    assertEqual(b.membersCount, 3) // <--- toc is welcome back :)
+    assertEqual(b.number, 12)
   })
 
   after(() => {

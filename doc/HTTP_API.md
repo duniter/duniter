@@ -1909,7 +1909,7 @@ The transaction history for the given `pubkey` and between the given `from` and 
 
 **Goal**
 
-Get the wallet universal dividend history
+Get the wallet universal dividend history (only not consumed ones)
 
 **parameters**
 
@@ -1919,7 +1919,7 @@ Name              | Value							| Method
 
 **Returns**
 
-The universal dividend history for the given `pubkey`. 
+The universal dividend history not consumed for the given `pubkey`. 
 ```json
 {
   "currency": "meta_brouzouf",
@@ -1928,7 +1928,7 @@ The universal dividend history for the given `pubkey`.
     "history": [
       {
         "block_number": 125,
-        "consumed": true,
+        "consumed": false,
         "time": 1421927007,
         "amount": 100
       },
@@ -1940,7 +1940,7 @@ The universal dividend history for the given `pubkey`.
       },
       {
         "block_number": 585,
-        "consumed": true,
+        "consumed": false,
         "time": 1422098800,
         "amount": 100
       }

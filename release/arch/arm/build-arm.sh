@@ -66,9 +66,9 @@ cd ${RELEASES}/duniter
 echo "Copying Nodejs"
 cp -R "$DOWNLOADS/node-${NVER}-linux-${ARCH}" node
 
-npm install
+yarn
 
-npm install duniter-ui@1.7.x --save --production
+yarn add duniter-ui@1.7.x --production
 SRC=`pwd`
 echo $SRC
 

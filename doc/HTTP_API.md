@@ -509,16 +509,27 @@ A list of identities matching this pubkey and the requirements of each identitie
 
 ```json
 {
-  "pubkey": "HsLShAtzXTVxeUtQd7yi5Z5Zh4zNvbu8sTEZ53nfKcqY",
-  "identities": [{
-      "uid": "tobi",
+  "identities": [
+    {
+      "pubkey": "2Jfw9Me5KYbQ3rH8ncSqXUUfaai93e5vq9jW6REsAGZz",
+      "uid": "GAS2000",
+      "sig": "SDGIso6X/Zyo8UdHUTA3SDiyTDsVY07hVZiDezm5Ks1+zAd3eu8AuZarKyoa1jDcKmPZW9C1oxIybnH9vOBcAg==",
       "meta": {
-        "timestamp": "12-20504546F37853625C1E695B757D93CFCC6E494069D53F73748E428947933E45"
+        "timestamp": "143555-0000D033B04596D3DBD68F961FE98CC7574D5AA843C72316A8B08BA04622A9C7"
       },
-      "outdistanced": true,
-      "certifications": 2,
-      "membershipMissing": true
-    }
+      "revocation_sig": "",
+      "revoked": false,
+      "revoked_on": 0,
+      "expired": false,
+      "outdistanced": false,
+      "isSentry": false,
+      "wasMember": true,
+      "certifications": [],
+      "pendingCerts": [],
+      "pendingMemberships": [],
+      "membershipPendingExpiresIn": 0,
+      "membershipExpiresIn": 0
+    },
     ...
   ]
 }

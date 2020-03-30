@@ -16,6 +16,7 @@
       * [lookup/[search]](#wotlookupsearch)
       * [members](#wotmembers)
       * [requirements/[PUBKEY]](#wotrequirementspubkey)
+      * [requirements-of-pending/[minsig]](#wotrequirementsofpendingminsig)
       * [certifiers-of/[search]](#wotcertifiers-ofsearch)
       * [certified-by/[search]](#wotcertified-bysearch)
       * [identity-of/[search]](#wotidentity-ofsearch)
@@ -73,10 +74,11 @@ Data is made accessible through an HTTP API mainly inspired from [OpenUDC_exchan
     |   |-- revoke
     |   |-- lookup[UID|PUBKEY]
     |   |-- members
-    |   |-- requirements/[PUBKEY]
-    |   |-- certifiers-of/[UID|PUBKEY]
-    |   |-- certified-by/[UID|PUBKEY]
-    |   `-- identity-of/[UID|PUBKEY]
+    |   |-- requirements/[pubkey]
+    |   |-- requirements-of-pending/[minsig]
+    |   |-- certifiers-of/[uid|pubkey]
+    |   |-- certified-by/[uid|pubkey]
+    |   `-- identity-of/[uid|pubkey]
     |-- blockchain/
     |   |-- parameters
     |   |-- membership
@@ -517,6 +519,50 @@ A list of identities matching this pubkey and the requirements of each identitie
       "certifications": 2,
       "membershipMissing": true
     }
+    ...
+  ]
+}
+```
+
+#### `wot/requirements-of-pending/[minsig]`
+
+**Goal**
+
+GET requirements pending on the server for identities with a minimum of minsig certifications.
+
+**Parameters**
+
+Name  | Value | Method
+----  | ----- | ------
+`minsig` | Return only pending identities with a minimum of minsig certifications | URL
+
+**Returns**
+
+A list of pending identities matching the minimum number of certification given.
+
+```json
+{
+  "identities": [
+    {
+      "pubkey": "2Jfw9Me5KYbQ3rH8ncSqXUUfaai93e5vq9jW6REsAGZz",
+      "uid": "GAS2000",
+      "sig": "SDGIso6X/Zyo8UdHUTA3SDiyTDsVY07hVZiDezm5Ks1+zAd3eu8AuZarKyoa1jDcKmPZW9C1oxIybnH9vOBcAg==",
+      "meta": {
+        "timestamp": "143555-0000D033B04596D3DBD68F961FE98CC7574D5AA843C72316A8B08BA04622A9C7"
+      },
+      "revocation_sig": "",
+      "revoked": false,
+      "revoked_on": 0,
+      "expired": false,
+      "outdistanced": false,
+      "isSentry": false,
+      "wasMember": true,
+      "certifications": [],
+      "pendingCerts": [],
+      "pendingMemberships": [],
+      "membershipPendingExpiresIn": 0,
+      "membershipExpiresIn": 0
+    },
     ...
   ]
 }

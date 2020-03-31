@@ -14,7 +14,7 @@
 import {TestUser} from "../tools/TestUser"
 import {NewTestingServer, TestingServer} from "../tools/toolbox"
 import {BmaDependency} from "../../../app/modules/bma/index"
-import {WoTBInstance} from "../../../app/lib/wot"
+import {Wot, wotMemCopy} from "dubp-wot-rs"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {shutDownEngine} from "../tools/shutdown-engine"
 import {CommonConstants} from "../../../app/lib/common-libs/constants"
@@ -55,7 +55,7 @@ describe("WOTB module", () => {
 
   describe("Server 1", () => {
 
-    let wotb:WoTBInstance
+    let wotb:Wot
 
     before(async () => {
 
@@ -149,9 +149,17 @@ describe("WOTB module", () => {
       wotb.existsLink(0, 1).should.equal(true);
       wotb.existsLink(1, 0).should.equal(true);
       wotb.existsLink(1, 1).should.equal(false);
-      wotb.existsLink(1, 2).should.equal(false);
+      try {
+        wotb.existsLink(1, 2)
+      } catch (e) {
+        should.equal("unknown target", e.message)
+      }
       wotb.existsLink(0, 0).should.equal(false);
-      wotb.existsLink(0, 2).should.equal(false);
+      try {
+        wotb.existsLink(0, 2)
+      } catch (e) {
+        should.equal("unknown target", e.message)
+      }
       wotb.isOutdistanced(0, FROM_1_LINK_SENTRIES, MAX_DISTANCE_1, _100_PERCENT).should.equal(__OK__);
     });
 
@@ -179,7 +187,7 @@ describe("WOTB module", () => {
 
   describe("Server 2", () => {
 
-    let wotb:WoTBInstance
+    let wotb:Wot
 
     before(async () => {
       /**
@@ -264,7 +272,7 @@ describe("WOTB module", () => {
 
   describe("Server 3", () => {
 
-    let wotb:WoTBInstance
+    let wotb:Wot
 
     before(async () => {
       await s3.initWithDAL().then(BmaDependency.duniter.methods.bma).then((bmapi) => bmapi.openConnections());
@@ -298,8 +306,16 @@ describe("WOTB module", () => {
       wotb.existsLink(0, 1).should.equal(true);
       wotb.existsLink(1, 0).should.equal(true);
       // tic3 <==> toc3
-      wotb.existsLink(1, 2).should.equal(false);
-      wotb.existsLink(2, 1).should.equal(false);
+      try {
+        wotb.existsLink(1, 2)
+      } catch (e) {
+        should.equal("unknown target", e.message)
+      }
+      try {
+        wotb.existsLink(2, 1)
+      } catch (e) {
+        should.equal("unknown source", e.message)
+      }
     });
 
     it('third & fourth commits: toc should have joined', async () => {
@@ -433,22 +449,22 @@ describe("WOTB module", () => {
       wotb.existsLink(0, 1).should.equal(true);
       wotb.existsLink(1, 0).should.equal(true);
       // tic3 <==> toc3
-      wotb.existsLink(1, 2).should.equal(false);
-      wotb.existsLink(2, 1).should.equal(false);
+      try {
+        wotb.existsLink(1, 2)
+      } catch (e) {
+        should.equal("unknown target", e.message)
+      }
+      try {
+        wotb.existsLink(2, 1)
+      } catch (e) {
+        should.equal("unknown source", e.message)
+      }
     });
 
     it('revert first & second commits', async () => {
       await s3.revert();
       await s3.revert();
-      wotb.isEnabled(0).should.equal(false);
-      wotb.isEnabled(1).should.equal(false);
-      wotb.isEnabled(2).should.equal(false);
-      // cat3 <==> tic3
-      wotb.existsLink(0, 1).should.equal(false);
-      wotb.existsLink(1, 0).should.equal(false);
-      // tic3 <==> toc3
-      wotb.existsLink(1, 2).should.equal(false);
-      wotb.existsLink(2, 1).should.equal(false);
+      should.equal(wotb.getWoTSize(), 0)
     });
 
     after(() => {

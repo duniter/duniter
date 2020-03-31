@@ -11,7 +11,6 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {IdentityForRequirements} from './BlockchainService';
 import {Server} from "../../server"
 import {GlobalFifoPromise} from "./GlobalFifoPromise"
 import {BlockchainContext} from "../lib/computation/BlockchainContext"

@@ -197,14 +197,7 @@ cp -r "${RELEASES}/duniter" "${RELEASES}/server_" || exit 1
 
 echo "${NW_RELEASE}"
 
-# FIX: bug of nw.js, we need to patch first.
-# TODO: remove this patch once a correct version of Nw.js is out (NodeJS 8 or 9 if the above modules are compliant)
-cd "${RELEASES}/desktop_/node_modules/wotb"
-node-pre-gyp --runtime=node-webkit --target=$NW_VERSION configure \
-  || echo "This failure is expected"
-
 cd "${RELEASES}/desktop_/node_modules/"
-nw_compile wotb nw_copy
 nw_compile naclb nw_copy
 nw_compile leveldown nw_copy "build/Release/"
 nw_compile sqlite3 nw_copy_node

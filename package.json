@@ -71,6 +71,7 @@
     "cors": "2.8.2",
     "daemonize2": "0.4.2",
     "ddos": "0.1.16",
+    "dubp-wot-rs": "0.6.0",
     "errorhandler": "1.5.0",
     "event-stream": "3.3.4",
     "express": "4.15.2",
@@ -105,7 +106,6 @@
     "unzip": "0.1.11",
     "unzip2": "0.2.5",
     "winston": "2.3.1",
-    "wotb": "0.6.6",
     "ws": "1.1.5"
   },
   "devDependencies": {

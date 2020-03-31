@@ -165,7 +165,16 @@ export class Synchroniser extends stream.Duplex {
         this.watcher)
 
       const localIndexer = new LocalIndexStream()
-      const globalIndexer = new GlobalIndexStream(this.server.conf, this.server.dal, to, localNumber, cautious, this.syncStrategy, this.watcher)
+      const globalIndexer = new GlobalIndexStream(
+        this.server.conf,
+        this.server.dal,
+        to,
+        localNumber,
+        cautious,
+        this.syncStrategy,
+        this.watcher,
+        
+      )
 
       await new Promise((res, rej) => {
         milestonesStream

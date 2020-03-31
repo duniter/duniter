@@ -1,7 +1,7 @@
 stages:
+  - package
   - test
   - integration
-  - package
   - prerelease
   - release
 
@@ -136,6 +136,60 @@ releases:x64:
     expire_in: 6 mos
   only:
     - tags
+
+.docker-build-app-image:
+  stage: package
+  image: docker:18.06
+  tags:
+    - redshift-docker-runner
+  services:
+    - docker:18.06-dind
+  before_script:
+    - docker info
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:$IMAGE_TAG || true
+    - docker build --cache-from $CI_REGISTRY_IMAGE:$IMAGE_TAG --pull -t "$CI_REGISTRY_IMAGE:$IMAGE_TAG" -f release/docker/Dockerfile .
+    - docker login -u "gitlab-ci-token" -p "$CI_BUILD_TOKEN" $CI_REGISTRY
+    - docker push "$CI_REGISTRY_IMAGE:$IMAGE_TAG"
+
+package:test:docker-test-image:
+  extends: .docker-build-app-image
+  except:
+    refs:
+      - dev
+      - tags
+  #when: manual
+  variables:
+    IMAGE_TAG: "test-image"
+
+package:dev:docker:
+  extends: .docker-build-app-image
+  only:
+    refs:
+      - dev
+  except:
+    refs:
+      - tags
+  variables:
+    IMAGE_TAG: "dev"
+
+package:prod:docker:
+  stage: package
+  only:
+    - tags
+  image: docker:18.06
+  tags:
+    - redshift-docker-runner
+  services:
+    - docker:18.06-dind
+  script:
+    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG" -f release/docker/Dockerfile .
+    - docker login -u "gitlab-ci-token" -p "$CI_BUILD_TOKEN" $CI_REGISTRY
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
+    - docker tag "$CI_REGISTRY_IMAGE:$CI_BUILD_TAG" duniter/duniter
+    - docker login -u "duniterteam" -p "$DUNITERTEAM_PASSWD"
+    - docker push duniter/duniter
+
 
 .release_jobs: &release_jobs
   image: rdadev/jinja2:py3.6

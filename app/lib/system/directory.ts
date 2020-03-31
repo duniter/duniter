@@ -37,6 +37,7 @@ const getUserHome = (directory:string|null = null) => (directory || DEFAULT_HOME
 const getDomain = (profile:string|null = null) => (profile || DEFAULT_DOMAIN);
 
 export interface FileSystem {
+  isMemoryOnly(): boolean
   fsExists(file:string): Promise<boolean>
   fsReadFile(file:string): Promise<string>
   fsUnlink(file:string): Promise<boolean>
@@ -50,6 +51,10 @@ export interface FileSystem {
 class QioFileSystem implements FileSystem {
 
   constructor(private qio:any, private isMemory:boolean = false) {}
+
+  isMemoryOnly() {
+    return this.isMemory
+  }
 
   async fsExists(file:string) {
     return this.qio.exists(file)
@@ -191,8 +196,9 @@ export const Directory = {
   getHomeParams: async (isMemory:boolean, theHome:string): Promise<FileDALParams> => {
     const params = await Directory.getHomeFS(isMemory, theHome)
     const home = params.home;
-    let dbf: () => SQLiteDriver
-    let wotbf: () => Wot
+    let dbf: () => SQLiteDriver;
+    let wotbf: () => Wot;
+
     if (isMemory) {
 
       // Memory DB

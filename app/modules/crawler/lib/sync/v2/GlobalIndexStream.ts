@@ -72,6 +72,8 @@ export class GlobalIndexStream extends Duplex {
 
   private sync_currConf: CurrencyConfDTO;
 
+  private memoryOnly: boolean;
+
   private wotbMem: Wot = new Wot(100);
 
   private wotbFilePath: string;
@@ -93,8 +95,13 @@ export class GlobalIndexStream extends Duplex {
               private watcher:Watcher,
     ) {
     super({ objectMode: true })
+    this.memoryOnly = dal.fs.isMemoryOnly()
     this.wotbMem = dal.wotb
-    this.wotbFilePath = Directory.getWotbFilePathSync(dal.rootPath);
+
+    if (!this.memoryOnly) {
+      this.wotbFilePath = Directory.getWotbFilePathSync(dal.rootPath);
+    }
+
     const nbBlocksToDownload = Math.max(0, to - localNumber)
     this.numberOfChunksToDownload = Math.ceil(nbBlocksToDownload / syncStrategy.chunkSize)
 
@@ -430,10 +437,12 @@ export class GlobalIndexStream extends Duplex {
 
       NewLogger().info('Mem2File [wotb]...')
       // Persist the memory wotb
-      this.wotbMem.writeInFile(this.wotbFilePath)
-      const that = this
-
+      if (!this.memoryOnly) {
+        this.wotbMem.writeInFile(this.wotbFilePath)
+      }
+      
       // Disabled for now
+      //const that = this
       async function inject<T, K extends keyof T, R, S extends T[K]>(fileDal: T, field: K, getRows: () => Promise<R[]>) {
         // const dao = that.mapInjection[field]
         // if (dao) {

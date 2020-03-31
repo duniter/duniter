@@ -6,7 +6,7 @@ export NVM_DIR="$HOME/.nvm"
 
 
 # Prepare
-NODE_VERSION=10.11.0
+NODE_VERSION=10.19.0
 ARCH="`uname -m | sed -e \"s/86_//\"`"
 NVER="v$NODE_VERSION"
 DUNITER_TAG=$1
@@ -19,6 +19,8 @@ RELEASES="$ROOT/releases"
 
 nvm install ${NODE_VERSION}
 nvm use ${NODE_VERSION}
+curl https://sh.rustup.rs -sSf | sh -s -- -y
+export PATH="$HOME/.cargo/bin:$PATH"
 
 echo "Version de NodeJS : `node -v`"
 

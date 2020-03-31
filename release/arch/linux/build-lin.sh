@@ -118,11 +118,11 @@ build_deb_pack() {
 	create_desc "${BIN}/duniter-${1}-${DUNITER_TAG}-linux-x64.deb" "${1}" "Linux (Ubuntu/Debian)"
 }
 
-# -----------
-# Prepare
-# -----------
+# ------------------------------
+# Install tools needed to build
+# -----------------------------
 
-NODE_VERSION=10.11.0
+NODE_VERSION=10.19.0
 NVER="v${NODE_VERSION}"
 DUNITER_TAG="v${1}"
 DUNITER_DEB_VER=" ${1}"
@@ -137,6 +137,8 @@ nvm install ${NVER} || exit 1
 nvm use ${NVER} || exit 1
 npm install -g node-pre-gyp || exit 1
 npm install -g nw-gyp || exit 1
+curl https://sh.rustup.rs -sSf | sh -s -- -y
+export PATH="$HOME/.cargo/bin:$PATH"
 
 # -----------
 # Folders

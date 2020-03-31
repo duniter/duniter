@@ -1,5 +1,4 @@
 stages:
-  - build
   - test
   - integration
   - package
@@ -39,13 +38,7 @@ stages:
     untracked: true
     paths:
       - node_modules/
-  
-build:
-  <<: *changes
-  <<: *nvm_env
-  stage: build
-  script:
-    - yarn
+
 
 #pages:
 #  <<: *nvm_env

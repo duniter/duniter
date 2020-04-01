@@ -43,7 +43,7 @@ import {MetaDAL} from "./sqliteDAL/MetaDAL"
 import {DataErrors} from "../common-libs/errors"
 import {BasicRevocableIdentity, IdentityDTO} from "../dto/IdentityDTO"
 import {FileSystem} from "../system/directory"
-import {WoTBInstance} from "../wot"
+import {Wot} from "dubp-wot-rs"
 import {IIndexDAO} from "./indexDAL/abstract/IIndexDAO"
 import {BIndexDAO} from "./indexDAL/abstract/BIndexDAO"
 import {MIndexDAO} from "./indexDAL/abstract/MIndexDAO"
@@ -91,7 +91,7 @@ export interface FileDALParams {
   home:string
   fs:FileSystem
   dbf:() => SQLiteDriver
-  wotbf:() => WoTBInstance
+  wotbf:() => Wot
 }
 
 export interface IndexBatch {
@@ -106,7 +106,7 @@ export class FileDAL implements ServerDAO {
   rootPath:string
   fs: FileSystem
   sqliteDriver:SQLiteDriver
-  wotb:WoTBInstance
+  wotb:Wot
   profile:string
 
   // Simple file accessors
@@ -1016,7 +1016,7 @@ export class FileDAL implements ServerDAO {
     return { HEAD, mindex, iindex, sindex, cindex, dividends };
   }
 
-  async updateWotbLinks(cindex:CindexEntry[], instance?: WoTBInstance) {
+  async updateWotbLinks(cindex:CindexEntry[], instance?: Wot) {
     const wotb = instance || this.wotb
     for (const entry of cindex) {
       const from = await this.getWrittenIdtyByPubkeyForWotbID(entry.issuer);

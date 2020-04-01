@@ -38,7 +38,8 @@ import {DBTx} from "../db/DBTx"
 import {Underscore} from "../common-libs/underscore"
 import {OtherConstants} from "../other_constants"
 import {MonitorExecutionTime} from "../debug/MonitorExecutionTime"
-import {WoTBInstance} from "../wot"
+import {Wot} from "dubp-wot-rs"
+import { Directory } from "../system/directory"
 
 export class DuniterBlockchain {
 
@@ -252,8 +253,15 @@ export class DuniterBlockchain {
     await this.deleteTransactions(block, dal);
 
     await dal.trimSandboxes(block);
+
     // Saves the block (DAL)
     await dal.saveBlock(dbb);
+    
+    // Save wot file
+    if (!dal.fs.isMemoryOnly()) {
+      let wotbFilepath = await Directory.getWotbFilePath(dal.rootPath);
+      dal.wotb.writeInFile(wotbFilepath);
+    } 
 
     return dbb
   }
@@ -289,7 +297,7 @@ export class DuniterBlockchain {
   }
 
   @MonitorExecutionTime()
-  static async createNewcomers(iindex:IindexEntry[], dal:FileDAL, logger:any, instance?: WoTBInstance) {
+  static async createNewcomers(iindex:IindexEntry[], dal:FileDAL, logger:any, instance?: Wot) {
     const wotb = instance || dal.wotb
     for (const i of iindex) {
       if (i.op == CommonConstants.IDX_CREATE) {
@@ -304,7 +312,7 @@ export class DuniterBlockchain {
     }
   }
 
-  static async updateMembers(block:BlockDTO, dal:FileDAL, instance?: WoTBInstance) {
+  static async updateMembers(block:BlockDTO, dal:FileDAL, instance?: Wot) {
     const wotb = instance || dal.wotb
     // Joiners (come back)
     for (const inlineMS of block.joiners) {
@@ -420,7 +428,9 @@ export class DuniterBlockchain {
       if (entry.op === CommonConstants.IDX_CREATE) {
         // Does not matter which one it really was, we pop the last X identities
         NewLogger().trace('removeNode')
-        dal.wotb.removeNode();
+        if (dal.wotb.getWoTSize() > 0) {
+          dal.wotb.removeNode();
+        }
         await dal.dividendDAL.deleteMember(entry.pub)
       }
     }

@@ -40,10 +40,11 @@ describe('Certification expiry + trimming', () => writeBasicTestWithConfAnd2User
     await s1.commit({ time: now, version: 10 })
     await s1.commit({ time: now })
     // Circular WoT
-    assertEqual(s1._server.dal.wotb.dumpWoT(), `[M] [E] [R] [I] -> Links[maxCert = 40]
-[0] [1] [1] [1] -> 2 | 
-[1] [1] [1] [1] -> 0 | 
-[2] [1] [1] [1] -> 1 | 
+    assertEqual(s1._server.dal.wotb.dump(), `max_links=40
+nodes_count=3
+000: [2]
+001: [0]
+002: [1]
 `)
   })
 
@@ -56,10 +57,11 @@ describe('Certification expiry + trimming', () => writeBasicTestWithConfAnd2User
     await tac.cert(cat)
     await s1.commit({ time: now + 8 })
     // Wot adds a certificat for tac to cat
-    assertEqual(s1._server.dal.wotb.dumpWoT(), `[M] [E] [R] [I] -> Links[maxCert = 40]
-[0] [1] [2] [1] -> 2 | 1 | 
-[1] [1] [1] [2] -> 0 | 
-[2] [1] [1] [1] -> 1 | 
+    assertEqual(s1._server.dal.wotb.dump(), `max_links=40
+nodes_count=3
+000: [1, 2]
+001: [0]
+002: [1]
 `)
   })
 
@@ -70,30 +72,33 @@ describe('Certification expiry + trimming', () => writeBasicTestWithConfAnd2User
     await s1.commit({ time: now + 9 }) // <-- it is now t+9
     await toc.cert(tac)
     await s1.commit({ time: now + 9 })
-    assertEqual(s1._server.dal.wotb.dumpWoT(), `[M] [E] [R] [I] -> Links[maxCert = 40]
-[0] [1] [2] [1] -> 2 | 1 | 
-[1] [1] [2] [2] -> 0 | 2 | 
-[2] [1] [1] [2] -> 1 | 
+    assertEqual(s1._server.dal.wotb.dump(), `max_links=40
+nodes_count=3
+000: [1, 2]
+001: [0, 2]
+002: [1]
 `)
   })
 
   test('at t+10, only cat -> tac cert should be removed (it has not been replayed)', async (s1) => {
     await s1.commit({ time: now + 10 }) // Change `Time`
     await s1.commit({ time: now + 10 }) // <-- it is now t+10
-    assertEqual(s1._server.dal.wotb.dumpWoT(), `[M] [E] [R] [I] -> Links[maxCert = 40]
-[0] [1] [2] [0] -> 2 | 1 | 
-[1] [1] [1] [2] -> 2 | 
-[2] [1] [1] [2] -> 1 | 
+    assertEqual(s1._server.dal.wotb.dump(), `max_links=40
+nodes_count=3
+000: [1, 2]
+001: [2]
+002: [1]
 `)
   })
 
   test('at t+14, tac -> toc cert should be removed', async (s1) => {
     await s1.commit({ time: now + 14 }) // Change `Time`
     await s1.commit({ time: now + 14 }) // Change `MedianTime`
-    assertEqual(s1._server.dal.wotb.dumpWoT(), `[M] [E] [R] [I] -> Links[maxCert = 40]
-[0] [1] [2] [0] -> 2 | 1 | 
-[1] [1] [1] [1] -> 2 | 
-[2] [1] [0] [2] -> 
+    assertEqual(s1._server.dal.wotb.dump(), `max_links=40
+nodes_count=3
+000: [1, 2]
+001: [2]
+002: []
 `)
   })
 
@@ -101,10 +106,11 @@ describe('Certification expiry + trimming', () => writeBasicTestWithConfAnd2User
     await s1._server.dal.cindexDAL.trimExpiredCerts(16) // <-- **THIS** is what was triggering the core dump
     await s1.commit({ time: now + 16 }) // Change `Time`
     await s1.commit({ time: now + 16 }) // Change `MedianTime`
-    assertEqual(s1._server.dal.wotb.dumpWoT(), `[M] [E] [R] [I] -> Links[maxCert = 40]
-[0] [1] [1] [0] -> 2 | 
-[1] [1] [1] [0] -> 2 | 
-[2] [0] [0] [2] -> 
+    assertEqual(s1._server.dal.wotb.dump(), `max_links=40
+nodes_count=3
+000: [2]
+001: [2]
+002: disabled []
 `)
   })
 

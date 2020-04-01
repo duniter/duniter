@@ -28,8 +28,10 @@ stages:
   before_script:
     - export NVM_DIR="$HOME/.nvm"
     - . "$NVM_DIR/nvm.sh"
-    - nvm install 10
-    - nvm use 10
+    - nvm install 10.19.0
+    - nvm use 10.19.0
+    - curl https://sh.rustup.rs -sSf | sh -s -- -y
+    - export PATH="$HOME/.cargo/bin:$PATH"
 
 .cached_nvm: &cached_nvm
   <<: *nvm_env

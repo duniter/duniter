@@ -15,7 +15,7 @@ import {DuniterBlockchain, requiredBindexSizeForTail} from "../../../../../lib/b
 import {BlockDTO} from "../../../../../lib/dto/BlockDTO"
 import {Underscore} from "../../../../../lib/common-libs/underscore"
 import {MonitorExecutionTime} from "../../../../../lib/debug/MonitorExecutionTime"
-import {WoTBInstance, WoTBObject} from "../../../../../lib/wot"
+import {Wot} from "dubp-wot-rs"
 import {NewLogger} from "../../../../../lib/logger"
 import {CommonConstants} from "../../../../../lib/common-libs/constants"
 import {DBBlock} from "../../../../../lib/db/DBBlock"
@@ -25,6 +25,7 @@ import {DBHead} from "../../../../../lib/db/DBHead"
 import {Watcher} from "../Watcher"
 import {DataErrors} from "../../../../../lib/common-libs/errors"
 import {ProtocolIndexesStream} from "./ProtocolIndexesStream"
+import { Directory } from '../../../../../lib/system/directory'
 
 const constants = require('../../constants')
 
@@ -71,7 +72,11 @@ export class GlobalIndexStream extends Duplex {
 
   private sync_currConf: CurrencyConfDTO;
 
-  private wotbMem: WoTBInstance = WoTBObject.memoryInstance()
+  private memoryOnly: boolean;
+
+  private wotbMem: Wot = new Wot(100);
+
+  private wotbFilePath: string;
 
   private memSyncInjection: Promise<void>
 
@@ -90,7 +95,13 @@ export class GlobalIndexStream extends Duplex {
               private watcher:Watcher,
     ) {
     super({ objectMode: true })
+    this.memoryOnly = dal.fs.isMemoryOnly()
     this.wotbMem = dal.wotb
+
+    if (!this.memoryOnly) {
+      this.wotbFilePath = Directory.getWotbFilePathSync(dal.rootPath);
+    }
+
     const nbBlocksToDownload = Math.max(0, to - localNumber)
     this.numberOfChunksToDownload = Math.ceil(nbBlocksToDownload / syncStrategy.chunkSize)
 
@@ -426,10 +437,12 @@ export class GlobalIndexStream extends Duplex {
 
       NewLogger().info('Mem2File [wotb]...')
       // Persist the memory wotb
-      this.wotbMem.fileCopy(this.dal.wotb.filePath)
-      const that = this
-
+      if (!this.memoryOnly) {
+        this.wotbMem.writeInFile(this.wotbFilePath)
+      }
+      
       // Disabled for now
+      //const that = this
       async function inject<T, K extends keyof T, R, S extends T[K]>(fileDal: T, field: K, getRows: () => Promise<R[]>) {
         // const dao = that.mapInjection[field]
         // if (dao) {

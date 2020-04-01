@@ -73,9 +73,10 @@ describe('Certification replay', () => writeBasicTestWithConfAnd2Users({
   })
 
   test('should correctly update wotb: current state', async (s1) => {
-    assertEqual(s1._server.dal.wotb.dumpWoT(), `[M] [E] [R] [I] -> Links[maxCert = 40]
-[0] [1] [1] [1] -> 1 | 
-[1] [1] [1] [1] -> 0 | 
+    assertEqual(s1._server.dal.wotb.dump(), `max_links=40
+nodes_count=2
+000: [1]
+001: [0]
 `)
   })
 
@@ -87,10 +88,11 @@ describe('Certification replay', () => writeBasicTestWithConfAnd2Users({
     await tac.cert(toc)
     await toc.join()
     await s1.commit({ time: now + 6 })
-    assertEqual(s1._server.dal.wotb.dumpWoT(), `[M] [E] [R] [I] -> Links[maxCert = 40]
-[0] [1] [1] [2] -> 1 | 
-[1] [1] [1] [2] -> 0 | 
-[2] [1] [2] [0] -> 0 | 1 | 
+    assertEqual(s1._server.dal.wotb.dump(), `max_links=40
+nodes_count=3
+000: [1]
+001: [0]
+002: [0, 1]
 `)
   })
 
@@ -98,19 +100,21 @@ describe('Certification replay', () => writeBasicTestWithConfAnd2Users({
     await s1.commit({ time: now + 6 })
     await toc.cert(cat)
     await s1.commit({ time: now + 12 })
-    assertEqual(s1._server.dal.wotb.dumpWoT(), `[M] [E] [R] [I] -> Links[maxCert = 40]
-[0] [1] [2] [2] -> 1 | 2 | 
-[1] [1] [1] [2] -> 0 | 
-[2] [1] [2] [1] -> 0 | 1 | 
+    assertEqual(s1._server.dal.wotb.dump(), `max_links=40
+nodes_count=3
+000: [1, 2]
+001: [0]
+002: [0, 1]
 `)
   })
 
   test('should correctly update wotb: cat loses 1 cert', async (s1) => {
     await s1.commit({ time: now + 12 })
-    assertEqual(s1._server.dal.wotb.dumpWoT(), `[M] [E] [R] [I] -> Links[maxCert = 40]
-[0] [1] [1] [2] -> 2 | 
-[1] [1] [1] [1] -> 0 | 
-[2] [1] [2] [1] -> 0 | 1 | 
+    assertEqual(s1._server.dal.wotb.dump(), `max_links=40
+nodes_count=3
+000: [2]
+001: [0]
+002: [0, 1]
 `)
   })
 
@@ -118,10 +122,11 @@ describe('Certification replay', () => writeBasicTestWithConfAnd2Users({
     await s1.commit({ time: now + 14 }) // Change `Time`
     await s1.commit({ time: now + 14 }) // Change `MedianTime`
     await s1.commit({ time: now + 14 }) // Kick
-    assertEqual(s1._server.dal.wotb.dumpWoT(), `[M] [E] [R] [I] -> Links[maxCert = 40]
-[0] [1] [1] [1] -> 2 | 
-[1] [0] [0] [1] -> 
-[2] [1] [2] [1] -> 0 | 1 | 
+    assertEqual(s1._server.dal.wotb.dump(), `max_links=40
+nodes_count=3
+000: [2]
+001: disabled []
+002: [0, 1]
 `)
   })
 

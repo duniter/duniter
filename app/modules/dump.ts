@@ -374,7 +374,7 @@ async function dumpHistory(server: Server, pub: string) {
 }
 
 async function dumpWot(server: Server) {
-  const data = server.dal.wotb.dumpWoT()
+  const data = server.dal.wotb.dump()
   console.log(data)
   await newResolveTimeoutPromise(1000, null)
 }

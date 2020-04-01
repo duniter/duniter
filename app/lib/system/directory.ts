@@ -15,7 +15,7 @@ import * as path from "path"
 import * as fs from 'fs'
 import {SQLiteDriver} from "../dal/drivers/SQLiteDriver"
 import {CFSCore} from "../dal/fileDALs/CFSCore"
-import {WoTBInstance, WoTBObject} from "../wot"
+import {Wot} from "dubp-wot-rs"
 import {FileDALParams} from "../dal/fileDAL"
 import {cliprogram} from "../common-libs/programOptions"
 import {LevelDBDriver} from "../dal/drivers/LevelDBDriver"
@@ -37,6 +37,7 @@ const getUserHome = (directory:string|null = null) => (directory || DEFAULT_HOME
 const getDomain = (profile:string|null = null) => (profile || DEFAULT_DOMAIN);
 
 export interface FileSystem {
+  isMemoryOnly(): boolean
   fsExists(file:string): Promise<boolean>
   fsReadFile(file:string): Promise<string>
   fsUnlink(file:string): Promise<boolean>
@@ -50,6 +51,10 @@ export interface FileSystem {
 class QioFileSystem implements FileSystem {
 
   constructor(private qio:any, private isMemory:boolean = false) {}
+
+  isMemoryOnly() {
+    return this.isMemory
+  }
 
   async fsExists(file:string) {
     return this.qio.exists(file)
@@ -127,7 +132,10 @@ export const Directory = {
   INSTANCE_HOMELOG_FILE: getLogsPath(opts.mdb, opts.home),
   DUNITER_DB_NAME: 'duniter',
   LOKI_DB_DIR: 'loki',
-  WOTB_FILE: 'wotb.bin',
+  DATA_DIR: 'data',
+  OLD_WOTB_FILE: 'wotb.bin',
+  NEW_WOTB_FILE: 'wotb.bin.gz',
+
 
   getHome: (profile:string|null = null, directory:string|null = null) => getHomePath(profile, directory),
 
@@ -165,28 +173,45 @@ export const Directory = {
     return params;
   },
 
+  getWotbFilePathSync: (home: string): string => {
+    let datas_dir = path.join(home, Directory.DATA_DIR);
+    let wotbFilePath = path.join(datas_dir, Directory.NEW_WOTB_FILE);
+    let existsFile = fs.existsSync(wotbFilePath)
+    if (!existsFile) {
+      wotbFilePath = path.join(home, Directory.OLD_WOTB_FILE);
+    }
+    return wotbFilePath;
+  },
+
+  getWotbFilePath: async (home: string): Promise<string> => {
+    let datas_dir = path.join(home, Directory.DATA_DIR);
+    let wotbFilePath = path.join(datas_dir, Directory.NEW_WOTB_FILE);
+    let existsFile = qfs.exists(wotbFilePath)
+    if (!existsFile) {
+      wotbFilePath = path.join(home, Directory.OLD_WOTB_FILE);
+    }
+    return wotbFilePath;
+  },
+
   getHomeParams: async (isMemory:boolean, theHome:string): Promise<FileDALParams> => {
     const params = await Directory.getHomeFS(isMemory, theHome)
     const home = params.home;
-    let dbf: () => SQLiteDriver
-    let wotbf: () => WoTBInstance
+    let dbf: () => SQLiteDriver;
+    let wotbf: () => Wot;
+
     if (isMemory) {
 
       // Memory DB
       dbf = () => new SQLiteDriver(':memory:');
-      wotbf = () => WoTBObject.memoryInstance()
+      wotbf = () => new Wot(100)
 
     } else {
 
       // File DB
       const sqlitePath = path.join(home, Directory.DUNITER_DB_NAME + '.db');
       dbf = () => new SQLiteDriver(sqlitePath);
-      const wotbFilePath = path.join(home, Directory.WOTB_FILE);
-      let existsFile = await qfs.exists(wotbFilePath)
-      if (!existsFile) {
-        fs.closeSync(fs.openSync(wotbFilePath, 'w'));
-      }
-      wotbf = () => WoTBObject.fileInstance(wotbFilePath)
+      let wotbFilePath = await Directory.getWotbFilePath(home);
+      wotbf = () => new Wot(wotbFilePath)
     }
     return {
       home: params.home,

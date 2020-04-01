@@ -174,21 +174,21 @@ export const Directory = {
   },
 
   getWotbFilePathSync: (home: string): string => {
-    let wotbFilePath = path.join(home, Directory.OLD_WOTB_FILE);
+    let datas_dir = path.join(home, Directory.DATA_DIR);
+    let wotbFilePath = path.join(datas_dir, Directory.NEW_WOTB_FILE);
     let existsFile = fs.existsSync(wotbFilePath)
     if (!existsFile) {
-      let datas_dir = path.join(home, Directory.DATA_DIR);
-      wotbFilePath = path.join(datas_dir, Directory.NEW_WOTB_FILE);
+      wotbFilePath = path.join(home, Directory.OLD_WOTB_FILE);
     }
     return wotbFilePath;
   },
 
   getWotbFilePath: async (home: string): Promise<string> => {
-    let wotbFilePath = path.join(home, Directory.OLD_WOTB_FILE);
-    let existsFile = await qfs.exists(wotbFilePath)
+    let datas_dir = path.join(home, Directory.DATA_DIR);
+    let wotbFilePath = path.join(datas_dir, Directory.NEW_WOTB_FILE);
+    let existsFile = qfs.exists(wotbFilePath)
     if (!existsFile) {
-      let datas_dir = path.join(home, Directory.DATA_DIR);
-      wotbFilePath = path.join(datas_dir, Directory.NEW_WOTB_FILE);
+      wotbFilePath = path.join(home, Directory.OLD_WOTB_FILE);
     }
     return wotbFilePath;
   },

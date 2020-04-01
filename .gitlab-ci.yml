@@ -1,7 +1,7 @@
 stages:
-  - package
   - test
   - integration
+  - package
   - prerelease
   - release
 
@@ -158,7 +158,7 @@ package:test:docker-test-image:
     refs:
       - dev
       - tags
-  #when: manual
+  when: manual
   variables:
     IMAGE_TAG: "test-image"
 

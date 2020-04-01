@@ -47,6 +47,8 @@ See [Install a node documentation](https://duniter.org/en/wiki/duniter/install/)
 
 Visit [Duniter website](https://duniter.org): it gathers theoretical informations, FAQ and several useful links. If you want to learn, this is the first place to visit.
 
+For technical documentation, refer to the `doc` folder of this git repository.
+
 ### Talk about/get involved in Duniter project
 
 If you wish to participate/debate on Duniter, you can:

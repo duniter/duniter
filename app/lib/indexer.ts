@@ -31,7 +31,7 @@ import {Underscore} from "./common-libs/underscore"
 import {DataErrors} from "./common-libs/errors"
 import {MonitorExecutionTime} from "./debug/MonitorExecutionTime"
 import {NewLogger} from "./logger"
-import { wotMemCopy } from "dubp-wot-rs"
+import { WotBuilder } from "duniteroxyde"
 
 const constants       = CommonConstants
 
@@ -2021,7 +2021,7 @@ export function reduceBy<T extends IndexEntry>(reducables: T[], properties: (key
 }
 
 async function checkPeopleAreNotOudistanced (pubkeys: string[], newLinks: { [k:string]: string[] }, newcomers: string[], conf: ConfDTO, dal:FileDAL) {
-  let wotb = wotMemCopy(dal.wotb);
+  let wotb = WotBuilder.fromWot(dal.wotb);
   let current = await dal.getCurrentBlockOrNull();
   let membersCount = current ? current.membersCount : 0;
   // We add temporarily the newcomers to the WoT, to integrate their new links

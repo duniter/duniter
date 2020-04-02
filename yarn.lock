@@ -1495,10 +1495,10 @@ doctrine@^2.1.0:
   dependencies:
     esutils "^2.0.2"
 
-duniteroxyde@0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/duniteroxyde/-/duniteroxyde-0.1.0.tgz#acc06fb7ac6e269a5d8b25f09c5d48088a087917"
-  integrity sha512-EDfxKlVhJrUyuWd9gBNHC1wrQ6Zc6z5JYR1LQf4yhW6N/LNPzM3S0uI95gWeSyNqwSlIiLiIOMoRxJenozqH4g==
+duniteroxyde@0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/duniteroxyde/-/duniteroxyde-0.2.0.tgz#5f84de3f92e91c5c65406c710a36dd47d2bde4b0"
+  integrity sha512-jMOD74/ajxn8sOHaCUzQ1wgoKcLBTpHeCdMGolqJxRoA+22fQdoQFJvUbRBo/T50sjcHvF51TPofig1S0Gg+6w==
   dependencies:
     neon-cli "^0.4.0"
 

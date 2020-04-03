@@ -1,9 +1,15 @@
+# CHANGELOG
+
 ## v1.8.0 (XX XXXX 2019)
 
 ### Highlights
+
 - Migration to Nodejs v10
 
 ### Code
+
+- [enh] migrate `naclb` to rust implementation `dup-crypto-rs`
+- [enh] migrate `wotb` to rust implementation `dubp-wot`
 - #1373: Support for Nodejs v10
 - #1372: `scryptb` removal
 - [enh] Upgrade TypeScript to 3.4.3
@@ -13,14 +19,17 @@
 - [enh] StatsDAL => replaced by LevelDB indexes
 
 ### BMA
+
 - [enh] Document `network/ws2p/heads`
 - [fix] In case of wrong network configuration, Duniter could crash on startup
 - [fix] `/branches` should not throw if current block does not exist
 
 ### CI
+
+- Add dockerisation in Duniter CI
 - Add g1 and gt control hash has changed to add `replayable_on`
 
-Thanks @c-geek, @Moul, @vtexier
+Thanks @c-geek, @librelois, @Moul, @vtexier
 
 ## v1.7.21: (12th Fev 2020)
 - #1394: Former member back in the WoT with only 4 certifiers

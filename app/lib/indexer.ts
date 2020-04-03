@@ -18,7 +18,7 @@ import {RevocationDTO} from "./dto/RevocationDTO"
 import {CertificationDTO} from "./dto/CertificationDTO"
 import {TransactionDTO} from "./dto/TransactionDTO"
 import {DBHead} from "./db/DBHead"
-import {verifyBuggy} from "./common-libs/crypto/keyring"
+import {verify} from "duniteroxyde"
 import {rawer, txunlock} from "./common-libs/index"
 import {CommonConstants} from "./common-libs/constants"
 import {MembershipDTO} from "./dto/MembershipDTO"
@@ -2086,7 +2086,7 @@ async function sigCheckRevoke(entry: MindexEntry, dal: FileDAL, currency: string
       sig: idty.sig,
       revocation: ''
     });
-    let sigOK = verifyBuggy(rawRevocation, sig, pubkey);
+    let sigOK = verify(rawRevocation, sig, pubkey);
     if (!sigOK) {
       throw Error("Revocation signature must match");
     }
@@ -2141,7 +2141,7 @@ async function checkCertificationIsValid (block: BlockDTO, cert: CindexEntry, fi
           buid: buid,
           sig: ''
         })
-        const verified = verifyBuggy(raw, cert.sig, cert.issuer);
+        const verified = verify(raw, cert.sig, cert.issuer);
         if (!verified) {
           throw constants.ERRORS.WRONG_SIGNATURE_FOR_CERT
         }

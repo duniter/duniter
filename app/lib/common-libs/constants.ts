@@ -13,6 +13,8 @@
 
 "use strict";
 
+const G1           = "g1"
+const GT           = "g1-test"
 const CURRENCY     = "[a-zA-Z0-9-_ ]{2,50}"
 const BASE58       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+"
 const PUBKEY       = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}"
@@ -85,6 +87,9 @@ export const duniterDocument2str = (type:DuniterDocument) => {
 }
 
 export const CommonConstants = {
+
+  G1,
+  GT,
 
   FORMATS: {
     CURRENCY,

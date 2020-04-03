@@ -62,7 +62,7 @@ If you wish to participate/debate on Duniter, you can:
 
 Duniter is using modules on different git repositories:
 
-- [WotB](https://git.duniter.org/libs/dubp-wot): compute Web of Trust.
+- [Duniteroxyde](https://git.duniter.org/nodes/typescript/duniteroxyde): Neon binding for rust DUBP libs.
 - [Debug](https://github.com/duniter/duniter-debug): debug tool.
 - [Web admin](https://git.duniter.org/nodes/typescript/modules/duniter-ui): web administration interface (optional).
 - [GVA](https://git.duniter.org/nodes/typescript/modules/gva-api): Future client API aimed to replace BMA. GVA stands for GraphQL Validation API.

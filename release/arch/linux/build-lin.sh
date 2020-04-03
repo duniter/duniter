@@ -204,7 +204,6 @@ cp -r "${RELEASES}/duniter" "${RELEASES}/server_" || exit 1
 echo "${NW_RELEASE}"
 
 cd "${RELEASES}/desktop_/node_modules/"
-nw_compile naclb nw_copy
 nw_compile leveldown nw_copy "build/Release/"
 nw_compile sqlite3 nw_copy_node
 

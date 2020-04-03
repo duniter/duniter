@@ -14,7 +14,8 @@
 "use strict";
 import {Base58decode, Base58encode} from "../../../app/lib/common-libs/crypto/base58"
 import {decodeBase64, encodeBase64} from "../../../app/lib/common-libs/crypto/nacl-util"
-import {KeyGen, verify, verifyBuggy} from "../../../app/lib/common-libs/crypto/keyring"
+import {Key} from "../../../app/lib/common-libs/crypto/keyring"
+import {verify} from "duniteroxyde"
 
 const should = require('should');
 
@@ -27,7 +28,7 @@ describe('ed25519 tests:', function(){
 
   before(async () => {
     // Generate the keypair
-    const keyPair = KeyGen('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP');
+    const keyPair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP');
     pub = Base58decode(keyPair.publicKey);
     sec = Base58decode(keyPair.secretKey);
     rawPub = Base58encode(new Buffer(pub));
@@ -46,16 +47,16 @@ describe('ed25519 tests:', function(){
 
   it('good signature from generated key should be verified', function(done){
     const msg = "Some message to be signed";
-    const sig = KeyGen(rawPub, rawSec).signSyncBuggy(msg);
-    const verified = verifyBuggy(msg, sig, rawPub);
+    const sig = new Key(rawPub, rawSec).signSync(msg);
+    const verified = verify(msg, sig, rawPub);
     verified.should.equal(true);
     done();
   });
 
   it('wrong signature from generated key should NOT be verified', function(done){
     const msg = "Some message to be signed";
-    const sig = KeyGen(rawPub, rawSec).signSyncBuggy(msg);
-    const verified = verifyBuggy(msg + 'delta', sig, rawPub);
+    const sig = new Key(rawPub, rawSec).signSync(msg);
+    const verified = verify(msg + 'delta', sig, rawPub);
     verified.should.equal(false);
     done();
   });
@@ -68,7 +69,7 @@ describe('ed25519 tests:', function(){
       "Block: 33291-0000088375C232A4DDAE171BB3D3C51347CB6DC8B7AA8BE4CD4DAEEADF26FEB8\n" +
       "Endpoints:\n" +
       "BASIC_MERKLED_API g1.duniter.org 10901\n"
-    const verified = verifyBuggy(msg, "u8t1IoWrB/C7T+2rS0rKYJfjPG4FN/HkKGFiUO5tILIzjFDvxxQiVC+0o/Vaz805SMmqJvXqornI71U7//+wCg==", "3AF7bhGQRt6ymcBZgZTBMoDsEtSwruSarjNG8kDnaueX");
+    const verified = verify(msg, "u8t1IoWrB/C7T+2rS0rKYJfjPG4FN/HkKGFiUO5tILIzjFDvxxQiVC+0o/Vaz805SMmqJvXqornI71U7//+wCg==", "3AF7bhGQRt6ymcBZgZTBMoDsEtSwruSarjNG8kDnaueX");
     verified.should.equal(true);
     done();
   });
@@ -82,15 +83,7 @@ describe('ed25519 tests:', function(){
       "Endpoints:\n" +
       "BASIC_MERKLED_API g1.duniter.tednet.fr 37.187.0.204 8999\n" +
       "BMAS g1.duniter.tednet.fr 9000\n"
-    const verified = verifyBuggy(msg, "ImvQDdpGv2M6CxSnBuseM/azJhBUGzWVgQhIvb5L2oGLm2GyLk/Sbi5wkb4IjbjbQfdRPdlcx5zxaHhvZCiWAA==", "Com8rJukCozHZyFao6AheSsfDQdPApxQRnz7QYFf64mm");
-    verified.should.equal(true);
-    done();
-  });
-
-  it('wrong block signature due to oldest tweetnacl should be verified with verifyBuggy', function(done){
-    const msg = "InnerHash: 8B194B5C38CF0A38D16256405AC3E5FA5C2ABD26BE4DCC0C7ED5CC9824E6155B\nNonce: 30400000119992\n";
-    const rawSig = "fJusVDRJA8akPse/sv4uK8ekUuvTGj1OoKYVdMQQAACs7OawDfpsV6cEMPcXxrQTCTRMrTN/rRrl20hN5zC9DQ==";
-    const verified = verifyBuggy(msg, rawSig, "D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx");
+    const verified = verify(msg, "ImvQDdpGv2M6CxSnBuseM/azJhBUGzWVgQhIvb5L2oGLm2GyLk/Sbi5wkb4IjbjbQfdRPdlcx5zxaHhvZCiWAA==", "Com8rJukCozHZyFao6AheSsfDQdPApxQRnz7QYFf64mm");
     verified.should.equal(true);
     done();
   });
@@ -99,14 +92,6 @@ describe('ed25519 tests:', function(){
     const msg = "InnerHash: 8B194B5C38CF0A38D16256405AC3E5FA5C2ABD26BE4DCC0C7ED5CC9824E6155B\nNonce: 30400000119992\n";
     const rawSig = "fJusVDRJA8akPse/sv4uK8ekUuvTGj1OoKYVdMQQAACs7OawDfpsV6cEMPcXxrQTCTRMrTN/rRrl20hN5zC9DQ==";
     const verified = verify(msg, rawSig, "D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx");
-    verified.should.equal(false);
-    done();
-  });
-
-  it('rectified block signature should be NOT verified with verifyBuggy', function(done){
-    const msg = "InnerHash: 8B194B5C38CF0A38D16256405AC3E5FA5C2ABD26BE4DCC0C7ED5CC9824E6155B\nNonce: 30400000119992\n";
-    const rawSig = "aZusVDRJA8akPse/sv4uK8ekUuvTGj1OoKYVdMQQ/3+VMaDJ02I795GBBaLgjypZFEKYlPMssJMn/X+F/pxgAw==";
-    const verified = verifyBuggy(msg, rawSig, "D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx");
     verified.should.equal(false);
     done();
   });

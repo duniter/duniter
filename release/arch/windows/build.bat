@@ -77,21 +77,7 @@ REM call ./node_modules/.bin/install-self-peers --npm -- --production
 
 set SRC=%cd%
 echo %SRC%
-cd node_modules/wotb
-call npm install --build-from-source
-
-REM PREPARE common.gypi
-call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
-
-call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
-call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
-copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\wotb.node %cd%\lib\binding\Release\node-v%ADDON_VERSION%-win32-x64\wotb.node /Y
-cd ../naclb
-call npm install --build-from-source
-call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 configure
-call node-pre-gyp --runtime=node-webkit --target=%NW_VERSION% --msvs_version=2015 build
-copy %cd%\lib\binding\Release\node-webkit-%NW_RELEASE%-win32-x64\naclb.node %cd%\lib\binding\Release\node-v%ADDON_VERSION%-win32-x64\naclb.node /Y
-cd ../leveldown
+cd node_modules/leveldown
 call npm install --build-from-source
 echo "Patch de leveldown..."
 move package.json package.json.back

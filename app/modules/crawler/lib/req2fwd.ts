@@ -12,7 +12,7 @@
 // GNU Affero General Public License for more details.
 
 import {Contacter} from "./contacter"
-import {verifyBuggy} from "../../../lib/common-libs/crypto/keyring"
+import {verify} from "duniteroxyde"
 import {rawer} from "../../../lib/common-libs/index"
 import {HttpRequirements} from "../../bma/lib/dtos"
 
@@ -80,7 +80,7 @@ export const req2fwd = async (requirements: HttpRequirements, toHost:string, toP
             buid: received.blockstamp
           });
           try {
-            const chkSig = verifyBuggy(rawCertNoSig, received.sig, received.from)
+            const chkSig = verify(rawCertNoSig, received.sig, received.from)
             if (!chkSig) {
               throw "Wrong signature for certification?!"
             }

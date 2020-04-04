@@ -26,7 +26,10 @@ RUN export PATH="$HOME/.cargo/bin:$PATH" && \
    export RUSTFLAGS="-C target-feature=-crt-static" && \
    yarn install --production && \
    yarn add duniter-ui@${DUNITER_UI_VER} && \
-	rm -rf test
+   mv release/docker/duniter.sh docker.sh && \
+   rm -rf coverage release test && \
+   rm -rf node_modules/duniteroxyde/target && \
+   rm -rf node_modules/duniteroxyde/native/target
 
 # ------------------------------------------------------------------------------
 # Final Stage
@@ -43,7 +46,7 @@ RUN mkdir -p /var/lib/duniter /etc/duniter && chown duniter:duniter /var/lib/dun
 COPY --from=build --chown=duniter:duniter . /duniter/duniter
 
 # copy bootstrap script
-RUN cp /duniter/duniter/release/docker/duniter.sh /usr/bin/duniter && \
+RUN cp /duniter/duniter/docker.sh /usr/bin/duniter && \
    chmod +x /usr/bin/duniter && \
    chown duniter:duniter /usr/bin/duniter
 

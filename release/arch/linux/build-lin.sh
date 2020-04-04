@@ -187,7 +187,13 @@ yarn --production || exit 1
 # Patch leveldown
 cp "${ROOT}/release/resources/leveldown-fix.json" "${RELEASES}/duniter/node_modules/leveldown/package.json" || exit 1
 
-rm -rf release coverage # Non production folders
+# Remove non production folders
+rm -rf coverage release test
+
+# Remove unused duniteroxyde intermediate binaries
+rm -rf node_modules/duniteroxyde/target
+rm -rf node_modules/duniteroxyde/native/target
+
 cp -r "${RELEASES}/duniter" "${RELEASES}/desktop_" || exit 1
 cp -r "${RELEASES}/duniter" "${RELEASES}/server_" || exit 1
 

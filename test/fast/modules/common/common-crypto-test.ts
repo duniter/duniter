@@ -13,7 +13,6 @@
 
 import {Key} from "../../../../app/lib/common-libs/crypto/keyring"
 import {verify} from "duniteroxyde"
-import {Base58decode, Base58encode} from "../../../../app/lib/common-libs/crypto/base58"
 
 const should = require('should');
 
@@ -24,10 +23,8 @@ describe('ed25519 tests:', function(){
   before(async () => {
     // Generate the keypair
     const keyPair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP');
-    pub = Base58decode(keyPair.publicKey);
-    sec = Base58decode(keyPair.secretKey);
-    rawPub = Base58encode(new Buffer(pub));
-    rawSec = Base58encode(new Buffer(sec));
+    rawPub = keyPair.publicKey;
+    rawSec = keyPair.secretKey;
   })
 
   //it('good signature from existing secret key should be verified', function(done){

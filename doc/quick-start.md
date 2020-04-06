@@ -7,7 +7,19 @@
 - [yarn](https://classic.yarnpkg.com/en/docs/install/)
 - [python 2.7](https://www.python.org/downloads/) (Linux? -> you allready have it)
 - [gcc](https://github.com/nodejs/node-gyp#installation)
+
+```bash
+# install node gyp fo compile C/C++ dependencies (sqlite and leveldb)
+npm i -g node-gyp
+```
+
 - [rust](https://www.rust-lang.org/learn/get-started)
+
+```bash
+# install cargo for rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
 - [Gitlab](https://git.duniter.org/) account (optional, needed to contribute)
 
 ## Install
@@ -15,8 +27,9 @@
 ```bash
 git clone https://git.duniter.org/nodes/typescript/duniter.git
 cd duniter
-yarn
+rustup update
 yarn add duniter-ui
+yarn
 bin/duniter webstart
 ```
 

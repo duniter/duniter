@@ -189,7 +189,8 @@ async function promptKey(conf: KeypairConfDTO, program: any) {
     {
       type: "confirm",
       name: "change",
-      message: "Modify your keypair?",
+      message: `This node's current public key is: ${conf.pair.pub} 
+ Modify your keypair?`,
       default: changeKeypair,
     },
   ]);

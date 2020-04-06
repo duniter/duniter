@@ -187,7 +187,8 @@ export class PeeringService {
         let found = await this.dal.getPeerOrNull(thePeer.pubkey);
         let peerEntityOld = PeerDTO.fromJSONObject(found || thePeer);
         if (!found && thePeerDTO.endpoints.length === 0) {
-          throw "Peer with zero endpoints that is not already known";
+          let logMessage = "Peer with zero endpoints that is not already known";
+          this.server.logger.info(logMessage);
         } else if (found) {
           // Already existing peer
           const sp2 = found.block.split("-");

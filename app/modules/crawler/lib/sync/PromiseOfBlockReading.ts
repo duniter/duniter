@@ -1,5 +1,5 @@
-import {BlockDTO} from "../../../../lib/dto/BlockDTO"
+import { BlockDTO } from "../../../../lib/dto/BlockDTO";
 
 export interface PromiseOfBlocksReading {
-  (): Promise<BlockDTO[]>
+  (): Promise<BlockDTO[]>;
 }

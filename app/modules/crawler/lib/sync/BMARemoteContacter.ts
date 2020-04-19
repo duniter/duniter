@@ -11,55 +11,65 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {NewLogger} from "../../../../lib/logger"
-import {IRemoteContacter} from "./IRemoteContacter";
-import {Contacter} from "../contacter";
-import {HttpRequirements} from "../../../bma/lib/dtos";
-import {JSONDBPeer} from "../../../../lib/db/DBPeer";
-import {BlockDTO} from "../../../../lib/dto/BlockDTO";
+import { NewLogger } from "../../../../lib/logger";
+import { IRemoteContacter } from "./IRemoteContacter";
+import { Contacter } from "../contacter";
+import { HttpRequirements } from "../../../bma/lib/dtos";
+import { JSONDBPeer } from "../../../../lib/db/DBPeer";
+import { BlockDTO } from "../../../../lib/dto/BlockDTO";
 
-const logger = NewLogger()
+const logger = NewLogger();
 
 export class BMARemoteContacter implements IRemoteContacter {
+  public type: "BMA" | "WS2P" = "BMA";
 
-  public type: 'BMA'| 'WS2P' = 'BMA'
-
-  constructor(protected contacter: Contacter) {
-  }
+  constructor(protected contacter: Contacter) {}
 
   getBlock(number: number): Promise<BlockDTO | null> {
-    return this.contacter.getBlock(number)
+    return this.contacter.getBlock(number);
   }
 
   getCurrent(): Promise<BlockDTO | null> {
-    return this.contacter.getCurrent()
+    return this.contacter.getCurrent();
   }
 
   getBlocks(count: number, from: number): Promise<BlockDTO[]> {
-    return this.contacter.getBlocks(count, from)
+    return this.contacter.getBlocks(count, from);
   }
 
-  getMilestones(page: number): Promise<{ chunkSize: number; totalPages: number; currentPage: number; milestonesPerPage: number; blocks: BlockDTO[] }> {
-    return this.contacter.getMilestones(page)
+  getMilestones(
+    page: number
+  ): Promise<{
+    chunkSize: number;
+    totalPages: number;
+    currentPage: number;
+    milestonesPerPage: number;
+    blocks: BlockDTO[];
+  }> {
+    return this.contacter.getMilestones(page);
   }
 
-  getMilestonesPage(): Promise<{ chunkSize: number; totalPages: number; milestonesPerPage: number }> {
-    return this.contacter.getMilestonesPage()
+  getMilestonesPage(): Promise<{
+    chunkSize: number;
+    totalPages: number;
+    milestonesPerPage: number;
+  }> {
+    return this.contacter.getMilestonesPage();
   }
 
-  async getPeers(): Promise<(JSONDBPeer|null)[]> {
-    return (await this.contacter.getPeersArray()).peers
+  async getPeers(): Promise<(JSONDBPeer | null)[]> {
+    return (await this.contacter.getPeersArray()).peers;
   }
 
   getRequirementsPending(minsig: number): Promise<HttpRequirements> {
-    return this.contacter.getRequirementsPending(minsig)
+    return this.contacter.getRequirementsPending(minsig);
   }
 
   getName(): string {
-    return "BMA remote '" + this.contacter.fullyQualifiedHost + "'"
+    return "BMA remote '" + this.contacter.fullyQualifiedHost + "'";
   }
 
   get hostName() {
-    return this.contacter.host
+    return this.contacter.host;
   }
 }

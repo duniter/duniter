@@ -11,32 +11,30 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import * as levelup from 'levelup'
-import {LevelUp} from 'levelup'
-import {AbstractLevelDOWN, ErrorCallback} from 'abstract-leveldown'
-import * as leveldown from 'leveldown'
-import * as memdown from 'memdown'
+import * as levelup from "levelup";
+import { LevelUp } from "levelup";
+import { AbstractLevelDOWN, ErrorCallback } from "abstract-leveldown";
+import * as leveldown from "leveldown";
+import * as memdown from "memdown";
 
 export const LevelDBDriver = {
-
   newMemoryInstance: (): Promise<LevelUp> => {
-    const impl: any = memdown.default()
+    const impl: any = memdown.default();
     return new Promise((res, rej) => {
       const db: LevelUp = levelup.default(impl, undefined, (err: Error) => {
-        if (err) return rej(err)
-        res(db)
-      })
-    })
+        if (err) return rej(err);
+        res(db);
+      });
+    });
   },
 
   newFileInstance: (path: string): Promise<LevelUp> => {
-    const impl: any = leveldown.default(path)
+    const impl: any = leveldown.default(path);
     return new Promise((res, rej) => {
       const db: LevelUp = levelup.default(impl, undefined, (err: Error) => {
-        if (err) return rej(err)
-        res(db)
-      })
-    })
-  }
-
-}
+        if (err) return rej(err);
+        res(db);
+      });
+    });
+  },
+};

@@ -13,16 +13,15 @@
 
 "use strict";
 
-const merkle = require('merkle');
+const merkle = require("merkle");
 
 export class MerkleDTO {
+  private levels: any[];
+  nodes: any[];
+  depth: number;
 
-  private levels:any[]
-  nodes:any[]
-  depth:number
-
-  initialize(leaves:string[]) {
-    const tree = merkle('sha256').sync(leaves);
+  initialize(leaves: string[]) {
+    const tree = merkle("sha256").sync(leaves);
     this.depth = tree.depth();
     this.nodes = tree.nodes();
     this.levels = [];
@@ -32,12 +31,12 @@ export class MerkleDTO {
     return this;
   }
 
-  remove(leaf:string) {
+  remove(leaf: string) {
     // If leaf IS present
-    if(~this.levels[this.depth].indexOf(leaf)){
+    if (~this.levels[this.depth].indexOf(leaf)) {
       const leaves = this.leaves();
       const index = leaves.indexOf(leaf);
-      if(~index){
+      if (~index) {
         // Replacement: remove previous hash
         leaves.splice(index, 1);
       }
@@ -46,13 +45,13 @@ export class MerkleDTO {
     }
   }
 
-  removeMany(leaves:string[]) {
-    leaves.forEach((leaf:string) => {
+  removeMany(leaves: string[]) {
+    leaves.forEach((leaf: string) => {
       // If leaf IS present
-      if(~this.levels[this.depth].indexOf(leaf)){
+      if (~this.levels[this.depth].indexOf(leaf)) {
         const theLeaves = this.leaves();
         const index = theLeaves.indexOf(leaf);
-        if(~index){
+        if (~index) {
           // Replacement: remove previous hash
           theLeaves.splice(index, 1);
         }
@@ -60,16 +59,16 @@ export class MerkleDTO {
     });
     leaves.sort();
     this.initialize(leaves);
-  };
+  }
 
-  push(leaf:string, previous:string) {
+  push(leaf: string, previous: string) {
     // If leaf is not present
-    if(this.levels[this.depth].indexOf(leaf) == -1){
+    if (this.levels[this.depth].indexOf(leaf) == -1) {
       const leaves = this.leaves();
       // Update or replacement ?
-      if(previous && leaf != previous){
+      if (previous && leaf != previous) {
         const index = leaves.indexOf(previous);
-        if(~index){
+        if (~index) {
           // Replacement: remove previous hash
           leaves.splice(index, 1);
         }
@@ -80,10 +79,10 @@ export class MerkleDTO {
     }
   }
 
-  pushMany(leaves:string[]) {
+  pushMany(leaves: string[]) {
     leaves.forEach((leaf) => {
       // If leaf is not present
-      if(this.levels[this.depth].indexOf(leaf) == -1){
+      if (this.levels[this.depth].indexOf(leaf) == -1) {
         this.leaves().push(leaf);
       }
     });
@@ -92,14 +91,14 @@ export class MerkleDTO {
   }
 
   root() {
-    return this.levels.length > 0 ? this.levels[0][0] : ''
+    return this.levels.length > 0 ? this.levels[0][0] : "";
   }
 
   leaves() {
-    return this.levels[this.depth]
+    return this.levels[this.depth];
   }
 
   count() {
-    return this.leaves().length
+    return this.leaves().length;
   }
 }

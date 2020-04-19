@@ -11,29 +11,27 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {AbstractCFS} from "./AbstractCFS"
-import {FileSystem} from "../../system/directory"
+import { AbstractCFS } from "./AbstractCFS";
+import { FileSystem } from "../../system/directory";
 
 export class PowDAL extends AbstractCFS {
+  private static POW_FILE = "pow.txt";
 
-  private static POW_FILE = "pow.txt"
-
-  constructor(rootPath:string, qioFS:FileSystem) {
-    super(rootPath, qioFS)
+  constructor(rootPath: string, qioFS: FileSystem) {
+    super(rootPath, qioFS);
   }
 
   init() {
-    return this.coreFS.remove(PowDAL.POW_FILE, false).catch(() => {})
+    return this.coreFS.remove(PowDAL.POW_FILE, false).catch(() => {});
   }
 
-  async close() {
-  }
+  async close() {}
 
   async getCurrent() {
     return await this.coreFS.read(PowDAL.POW_FILE);
   }
 
-  async writeCurrent(current:string) {
+  async writeCurrent(current: string) {
     await this.coreFS.write(PowDAL.POW_FILE, current, false);
   }
 }

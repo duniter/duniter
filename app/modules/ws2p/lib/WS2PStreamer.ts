@@ -11,54 +11,48 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import * as stream from "stream"
-import {NewLogger} from "../../../lib/logger";
-import {WS2PConnection} from "./WS2PConnection";
+import * as stream from "stream";
+import { NewLogger } from "../../../lib/logger";
+import { WS2PConnection } from "./WS2PConnection";
 
-const logger = NewLogger()
+const logger = NewLogger();
 
 export class WS2PStreamer extends stream.Transform {
+  private enabled = true;
 
-  private enabled = true
-
-  constructor(private ws2pc:WS2PConnection) {
-    super({ objectMode: true })
+  constructor(private ws2pc: WS2PConnection) {
+    super({ objectMode: true });
   }
 
   enable() {
-    this.enabled = true
+    this.enabled = true;
   }
 
   disable() {
-    this.enabled = false
+    this.enabled = false;
   }
 
-  async _write(obj:any, enc:any, done:any) {
+  async _write(obj: any, enc: any, done: any) {
     if (!this.enabled) {
-      return done && done()
+      return done && done();
     }
     try {
       if (obj.joiners) {
-        await this.ws2pc.pushBlock(obj)
-      }
-      else if (obj.pubkey && obj.uid) {
-        await this.ws2pc.pushIdentity(obj)
-      }
-      else if (obj.idty_uid) {
-        await this.ws2pc.pushCertification(obj)
-      }
-      else if (obj.userid) {
-        await this.ws2pc.pushMembership(obj)
-      }
-      else if (obj.issuers) {
-        await this.ws2pc.pushTransaction(obj)
-      }
-      else if (obj.endpoints) {
-        await this.ws2pc.pushPeer(obj)
+        await this.ws2pc.pushBlock(obj);
+      } else if (obj.pubkey && obj.uid) {
+        await this.ws2pc.pushIdentity(obj);
+      } else if (obj.idty_uid) {
+        await this.ws2pc.pushCertification(obj);
+      } else if (obj.userid) {
+        await this.ws2pc.pushMembership(obj);
+      } else if (obj.issuers) {
+        await this.ws2pc.pushTransaction(obj);
+      } else if (obj.endpoints) {
+        await this.ws2pc.pushPeer(obj);
       }
     } catch (e) {
-      logger.warn('WS2P >> Streamer >>', e)
-      this.ws2pc.close()
+      logger.warn("WS2P >> Streamer >>", e);
+      this.ws2pc.close();
     }
     done && done();
   }

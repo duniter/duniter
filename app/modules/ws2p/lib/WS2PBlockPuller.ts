@@ -11,80 +11,72 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {BlockDTO} from "../../../lib/dto/BlockDTO"
-import {AbstractDAO} from "../../crawler/lib/pulling"
-import {Server} from "../../../../server"
-import {DBBlock} from "../../../lib/db/DBBlock"
-import {PeerDTO} from "../../../lib/dto/PeerDTO"
-import {CrawlerConstants} from "../../crawler/lib/constants"
-import {tx_cleaner} from "../../crawler/lib/tx_cleaner"
-import {WS2PConnection} from "./WS2PConnection"
-import {WS2PRequester} from "./WS2PRequester"
+import { BlockDTO } from "../../../lib/dto/BlockDTO";
+import { AbstractDAO } from "../../crawler/lib/pulling";
+import { Server } from "../../../../server";
+import { DBBlock } from "../../../lib/db/DBBlock";
+import { PeerDTO } from "../../../lib/dto/PeerDTO";
+import { CrawlerConstants } from "../../crawler/lib/constants";
+import { tx_cleaner } from "../../crawler/lib/tx_cleaner";
+import { WS2PConnection } from "./WS2PConnection";
+import { WS2PRequester } from "./WS2PRequester";
 
 export class WS2PBlockPuller {
-
-  constructor(
-    private server:Server,
-    private connection:WS2PConnection
-  ) {}
+  constructor(private server: Server, private connection: WS2PConnection) {}
 
   async pull() {
-    const requester = WS2PRequester.fromConnection(this.connection)
+    const requester = WS2PRequester.fromConnection(this.connection);
     // node.pubkey = p.pubkey;
-    let dao = new WS2PDao(this.server, requester)
-    await dao.pull(this.server.conf, this.server.logger)
+    let dao = new WS2PDao(this.server, requester);
+    await dao.pull(this.server.conf, this.server.logger);
   }
 }
 
 interface RemoteNode {
-  getCurrent: () => Promise<BlockDTO>
-  getBlock: (number:number) => Promise<BlockDTO>
-  getBlocks: (count:number, fromNumber:number) => Promise<BlockDTO[]>
-  pubkey:string
+  getCurrent: () => Promise<BlockDTO>;
+  getBlock: (number: number) => Promise<BlockDTO>;
+  getBlocks: (count: number, fromNumber: number) => Promise<BlockDTO[]>;
+  pubkey: string;
 }
 
 class WS2PDao extends AbstractDAO {
+  private node: RemoteNode;
+  private lastDownloaded: BlockDTO | null;
+  private nodeCurrent: BlockDTO | null = null;
+  public newCurrent: BlockDTO | null = null;
 
-  private node:RemoteNode
-  private lastDownloaded:BlockDTO|null
-  private nodeCurrent:BlockDTO|null = null
-  public newCurrent:BlockDTO|null = null
-
-  constructor(
-    private server:Server,
-    private requester:WS2PRequester
-  ) {
-    super()
+  constructor(private server: Server, private requester: WS2PRequester) {
+    super();
     this.node = {
       getCurrent: async () => {
-        return this.requester.getCurrent()
+        return this.requester.getCurrent();
       },
-      getBlock: async (number:number) => {
-        return this.requester.getBlock(number)
+      getBlock: async (number: number) => {
+        return this.requester.getBlock(number);
       },
-      getBlocks: async (count:number, fromNumber:number) => {
-        return this.requester.getBlocks(count, fromNumber)
+      getBlocks: async (count: number, fromNumber: number) => {
+        return this.requester.getBlocks(count, fromNumber);
       },
-      pubkey: this.requester.getPubkey()
-    }
+      pubkey: this.requester.getPubkey(),
+    };
   }
 
   async localCurrent(): Promise<DBBlock | null> {
-    return this.server.dal.getCurrentBlockOrNull()
+    return this.server.dal.getCurrentBlockOrNull();
   }
 
   async remoteCurrent(source: RemoteNode): Promise<BlockDTO | null> {
-    this.nodeCurrent = await source.getCurrent()
-    return this.nodeCurrent
+    this.nodeCurrent = await source.getCurrent();
+    return this.nodeCurrent;
   }
 
   async remotePeers(source?: any): Promise<PeerDTO[]> {
-    const peer:any = this.node
-    return Promise.resolve([peer])
+    const peer: any = this.node;
+    return Promise.resolve([peer]);
   }
 
   async getLocalBlock(number: number): Promise<DBBlock> {
-    return this.server.dal.getBlockWeHaveItForSure(number)
+    return this.server.dal.getBlockWeHaveItForSure(number);
   }
 
   async getRemoteBlock(thePeer: any, number: number): Promise<BlockDTO> {
@@ -101,35 +93,49 @@ class WS2PDao extends AbstractDAO {
   }
 
   async applyMainBranch(block: BlockDTO): Promise<boolean> {
-    const existing = await this.server.dal.getAbsoluteBlockByNumberAndHash(block.number, block.hash)
+    const existing = await this.server.dal.getAbsoluteBlockByNumberAndHash(
+      block.number,
+      block.hash
+    );
     if (!existing) {
-      let addedBlock = await this.server.writeBlock(block, false, true)
+      let addedBlock = await this.server.writeBlock(block, false, true);
       if (!this.lastDownloaded) {
-        this.lastDownloaded = await this.remoteCurrent(this.node)
+        this.lastDownloaded = await this.remoteCurrent(this.node);
       }
-      this.server.pullingEvent('applying', {number: block.number, last: this.lastDownloaded && this.lastDownloaded.number})
+      this.server.pullingEvent("applying", {
+        number: block.number,
+        last: this.lastDownloaded && this.lastDownloaded.number,
+      });
       if (addedBlock) {
-        this.newCurrent = addedBlock
+        this.newCurrent = addedBlock;
         // Emit block events (for sharing with the network) only in forkWindowSize
-        if (this.nodeCurrent && this.nodeCurrent.number - addedBlock.number < this.server.conf.forksize) {
+        if (
+          this.nodeCurrent &&
+          this.nodeCurrent.number - addedBlock.number <
+            this.server.conf.forksize
+        ) {
           this.server.streamPush(addedBlock);
         }
       }
     }
-    return true
+    return true;
   }
 
   async removeForks(): Promise<boolean> {
-    return true
+    return true;
   }
 
   async isMemberPeer(thePeer: PeerDTO): Promise<boolean> {
-    return true
+    return true;
   }
 
-  async downloadBlocks(thePeer: any, fromNumber: number, count?: number | undefined): Promise<BlockDTO[]> {
+  async downloadBlocks(
+    thePeer: any,
+    fromNumber: number,
+    count?: number | undefined
+  ): Promise<BlockDTO[]> {
     if (!count) {
-    count = CrawlerConstants.CRAWL_BLOCK_CHUNK
+      count = CrawlerConstants.CRAWL_BLOCK_CHUNK;
     }
 
     let blocks = await thePeer.getBlocks(count, fromNumber);

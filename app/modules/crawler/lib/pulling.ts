@@ -12,32 +12,35 @@
 // GNU Affero General Public License for more details.
 
 "use strict";
-import {BlockDTO} from "../../../lib/dto/BlockDTO"
-import {DBBlock} from "../../../lib/db/DBBlock"
-import {PeerDTO} from "../../../lib/dto/PeerDTO"
-import {BranchingDTO} from "../../../lib/dto/ConfDTO"
-import {Underscore} from "../../../lib/common-libs/underscore"
+import { BlockDTO } from "../../../lib/dto/BlockDTO";
+import { DBBlock } from "../../../lib/db/DBBlock";
+import { PeerDTO } from "../../../lib/dto/PeerDTO";
+import { BranchingDTO } from "../../../lib/dto/ConfDTO";
+import { Underscore } from "../../../lib/common-libs/underscore";
 
 export abstract class PullingDao {
-  abstract applyBranch(blocks:BlockDTO[]): Promise<boolean>
-  abstract localCurrent(): Promise<DBBlock|null>
-  abstract remoteCurrent(source?:any): Promise<BlockDTO|null>
-  abstract remotePeers(source?:any): Promise<PeerDTO[]>
-  abstract getLocalBlock(number:number): Promise<DBBlock>
-  abstract getRemoteBlock(thePeer:PeerDTO, number:number): Promise<BlockDTO>
-  abstract applyMainBranch(block:BlockDTO): Promise<boolean>
-  abstract removeForks(): Promise<boolean>
-  abstract isMemberPeer(thePeer:PeerDTO): Promise<boolean>
-  abstract downloadBlocks(thePeer:PeerDTO, fromNumber:number, count?:number): Promise<BlockDTO[]>
+  abstract applyBranch(blocks: BlockDTO[]): Promise<boolean>;
+  abstract localCurrent(): Promise<DBBlock | null>;
+  abstract remoteCurrent(source?: any): Promise<BlockDTO | null>;
+  abstract remotePeers(source?: any): Promise<PeerDTO[]>;
+  abstract getLocalBlock(number: number): Promise<DBBlock>;
+  abstract getRemoteBlock(thePeer: PeerDTO, number: number): Promise<BlockDTO>;
+  abstract applyMainBranch(block: BlockDTO): Promise<boolean>;
+  abstract removeForks(): Promise<boolean>;
+  abstract isMemberPeer(thePeer: PeerDTO): Promise<boolean>;
+  abstract downloadBlocks(
+    thePeer: PeerDTO,
+    fromNumber: number,
+    count?: number
+  ): Promise<BlockDTO[]>;
 }
 
 export abstract class AbstractDAO extends PullingDao {
-
   /**
    * Sugar function. Apply a bunch of blocks instead of one.
    * @param blocks
    */
-  async applyBranch (blocks:BlockDTO[]) {
+  async applyBranch(blocks: BlockDTO[]) {
     for (const block of blocks) {
       await this.applyMainBranch(block);
     }
@@ -50,46 +53,46 @@ export abstract class AbstractDAO extends PullingDao {
    * @param forksize The maximum length we can look at to find common root block.
    * @returns {*|Promise}
    */
-  async findCommonRoot(fork:any, forksize:number) {
+  async findCommonRoot(fork: any, forksize: number) {
     let commonRoot = null;
     let localCurrent = await this.localCurrent();
 
     if (!localCurrent) {
-      throw Error('Local blockchain is empty, cannot find a common root')
+      throw Error("Local blockchain is empty, cannot find a common root");
     }
 
     // We look between the top block that is known as fork ...
     let topBlock = fork.block;
     // ... and the bottom which is bounded by `forksize`
-    let bottomBlock = await this.getRemoteBlock(fork.peer, Math.max(0, localCurrent.number - forksize));
+    let bottomBlock = await this.getRemoteBlock(
+      fork.peer,
+      Math.max(0, localCurrent.number - forksize)
+    );
     let lookBlock = bottomBlock;
     let localEquivalent = await this.getLocalBlock(bottomBlock.number);
     let isCommonBlock = lookBlock.hash == localEquivalent.hash;
     if (isCommonBlock) {
-
       // Then common root can be found between top and bottom. We process.
-      let position = -1, wrongRemotechain = false;
+      let position = -1,
+        wrongRemotechain = false;
       do {
-
         isCommonBlock = lookBlock.hash == localEquivalent.hash;
         if (!isCommonBlock) {
-
           // Too high, look downward
           topBlock = lookBlock;
           position = middle(topBlock.number, bottomBlock.number);
-        }
-        else {
-          let upperBlock = await this.getRemoteBlock(fork.peer, lookBlock.number + 1);
+        } else {
+          let upperBlock = await this.getRemoteBlock(
+            fork.peer,
+            lookBlock.number + 1
+          );
           let localUpper = await this.getLocalBlock(upperBlock.number);
           let isCommonUpper = upperBlock.hash == localUpper.hash;
           if (isCommonUpper) {
-
             // Too low, look upward
             bottomBlock = lookBlock;
             position = middle(topBlock.number, bottomBlock.number);
-          }
-          else {
-
+          } else {
             // Spotted!
             commonRoot = lookBlock;
           }
@@ -113,9 +116,9 @@ export abstract class AbstractDAO extends PullingDao {
   }
 
   static defaultLocalBlock() {
-    const localCurrent = new DBBlock()
-    localCurrent.number = -1
-    return localCurrent
+    const localCurrent = new DBBlock();
+    localCurrent.number = -1;
+    return localCurrent;
   }
 
   /**
@@ -125,47 +128,52 @@ export abstract class AbstractDAO extends PullingDao {
    * @param dao An abstract layer to retrieve peers data (blocks).
    * @param logger Logger of the main application.
    */
-  async pull(conf:BranchingDTO, logger:any) {
-    let localCurrent:DBBlock = await this.localCurrent() || AbstractDAO.defaultLocalBlock()
-    const forks:any = [];
+  async pull(conf: BranchingDTO, logger: any) {
+    let localCurrent: DBBlock =
+      (await this.localCurrent()) || AbstractDAO.defaultLocalBlock();
+    const forks: any = [];
 
     if (!localCurrent) {
-      localCurrent = new DBBlock()
-      localCurrent.number = -1
+      localCurrent = new DBBlock();
+      localCurrent.number = -1;
     }
 
-    const applyCoroutine = async (peer:PeerDTO, blocks:BlockDTO[]) => {
+    const applyCoroutine = async (peer: PeerDTO, blocks: BlockDTO[]) => {
       if (blocks.length > 0) {
-        let isFork = localCurrent
-          && localCurrent.number !== -1
-          && !(blocks[0].previousHash == localCurrent.hash
-          && blocks[0].number == localCurrent.number + 1);
+        let isFork =
+          localCurrent &&
+          localCurrent.number !== -1 &&
+          !(
+            blocks[0].previousHash == localCurrent.hash &&
+            blocks[0].number == localCurrent.number + 1
+          );
         if (!isFork) {
           await this.applyBranch(blocks);
-          const newLocalCurrent = await this.localCurrent()
-          localCurrent = newLocalCurrent || AbstractDAO.defaultLocalBlock()
-          const appliedSuccessfully = localCurrent.number == blocks[blocks.length - 1].number
-            && localCurrent.hash == blocks[blocks.length - 1].hash;
+          const newLocalCurrent = await this.localCurrent();
+          localCurrent = newLocalCurrent || AbstractDAO.defaultLocalBlock();
+          const appliedSuccessfully =
+            localCurrent.number == blocks[blocks.length - 1].number &&
+            localCurrent.hash == blocks[blocks.length - 1].hash;
           return appliedSuccessfully;
         } else {
           let remoteCurrent = await this.remoteCurrent(peer);
           forks.push({
             peer: peer,
             block: blocks[0],
-            current: remoteCurrent
+            current: remoteCurrent,
           });
           return false;
         }
       }
       return true;
-    }
+    };
 
-    const downloadCoroutine = async (peer:any, number:number) => {
+    const downloadCoroutine = async (peer: any, number: number) => {
       return await this.downloadBlocks(peer, number);
-    }
+    };
 
-    const downloadChuncks = async (peer:PeerDTO) => {
-      let blocksToApply:BlockDTO[] = [];
+    const downloadChuncks = async (peer: PeerDTO) => {
+      let blocksToApply: BlockDTO[] = [];
       const currentBlock = await this.localCurrent();
       let currentChunckStart;
       if (currentBlock) {
@@ -173,21 +181,21 @@ export abstract class AbstractDAO extends PullingDao {
       } else {
         currentChunckStart = 0;
       }
-      let res:any = { applied: {}, downloaded: [] }
+      let res: any = { applied: {}, downloaded: [] };
       do {
-        let [ applied, downloaded ] = await Promise.all([
+        let [applied, downloaded] = await Promise.all([
           applyCoroutine(peer, blocksToApply),
-          downloadCoroutine(peer, currentChunckStart)
-        ])
-        res.applied = applied
-        res.downloaded = downloaded
+          downloadCoroutine(peer, currentChunckStart),
+        ]);
+        res.applied = applied;
+        res.downloaded = downloaded;
         blocksToApply = downloaded;
         currentChunckStart += downloaded.length;
         if (!applied) {
-          logger && logger.info("Blocks were not applied.")
+          logger && logger.info("Blocks were not applied.");
         }
       } while (res.downloaded.length > 0 && res.applied);
-    }
+    };
 
     let peers = await this.remotePeers();
     // Try to get new legit blocks for local blockchain
@@ -195,7 +203,7 @@ export abstract class AbstractDAO extends PullingDao {
     for (const peer of peers) {
       downloadChuncksTasks.push(downloadChuncks(peer));
     }
-    await Promise.all(downloadChuncksTasks)
+    await Promise.all(downloadChuncksTasks);
     // Filter forks: do not include mirror peers (non-member peers)
     let memberForks = [];
     for (const fork of forks) {
@@ -211,26 +219,45 @@ export abstract class AbstractDAO extends PullingDao {
       }
       return result;
     });
-    memberForks = Underscore.filter(memberForks, (fork:any) => {
-      let blockDistanceInBlocks = (fork.current.number - localCurrent.number)
-      let timeDistanceInBlocks = (fork.current.medianTime - localCurrent.medianTime) / conf.avgGenTime
-      const requiredTimeAdvance = conf.switchOnHeadAdvance
-      logger && logger.debug('Fork of %s has blockDistance %s ; timeDistance %s ; required is >= %s for both values to try to follow the fork', fork.peer.pubkey.substr(0, 6), blockDistanceInBlocks.toFixed(2), timeDistanceInBlocks.toFixed(2), requiredTimeAdvance);
-      return blockDistanceInBlocks >= requiredTimeAdvance
-        && timeDistanceInBlocks >= requiredTimeAdvance
+    memberForks = Underscore.filter(memberForks, (fork: any) => {
+      let blockDistanceInBlocks = fork.current.number - localCurrent.number;
+      let timeDistanceInBlocks =
+        (fork.current.medianTime - localCurrent.medianTime) / conf.avgGenTime;
+      const requiredTimeAdvance = conf.switchOnHeadAdvance;
+      logger &&
+        logger.debug(
+          "Fork of %s has blockDistance %s ; timeDistance %s ; required is >= %s for both values to try to follow the fork",
+          fork.peer.pubkey.substr(0, 6),
+          blockDistanceInBlocks.toFixed(2),
+          timeDistanceInBlocks.toFixed(2),
+          requiredTimeAdvance
+        );
+      return (
+        blockDistanceInBlocks >= requiredTimeAdvance &&
+        timeDistanceInBlocks >= requiredTimeAdvance
+      );
     });
     // Remove any previous fork block
     await this.removeForks();
     // Find the common root block
-    let j = 0, successFork = false;
+    let j = 0,
+      successFork = false;
     while (!successFork && j < memberForks.length) {
       let fork = memberForks[j];
       let commonRootBlock = await this.findCommonRoot(fork, conf.forksize);
       if (commonRootBlock) {
-        let blocksToApply = await this.downloadBlocks(fork.peer, commonRootBlock.number + 1, conf.forksize);
+        let blocksToApply = await this.downloadBlocks(
+          fork.peer,
+          commonRootBlock.number + 1,
+          conf.forksize
+        );
         successFork = await this.applyBranch(blocksToApply);
       } else {
-        logger && logger.debug('No common root block with peer %s', fork.peer.pubkey.substr(0, 6));
+        logger &&
+          logger.debug(
+            "No common root block with peer %s",
+            fork.peer.pubkey.substr(0, 6)
+          );
       }
       j++;
     }
@@ -238,7 +265,7 @@ export abstract class AbstractDAO extends PullingDao {
   }
 }
 
-function compare(f1:any, f2:any, field:string) {
+function compare(f1: any, f2: any, field: string) {
   if (f1[field] > f2[field]) {
     return 1;
   }
@@ -248,11 +275,11 @@ function compare(f1:any, f2:any, field:string) {
   return 0;
 }
 
-function middle(top:number, bottom:number) {
+function middle(top: number, bottom: number) {
   let difference = top - bottom;
   if (difference % 2 == 1) {
     // We look one step below to not forget any block
     difference++;
   }
-  return bottom + (difference / 2);
+  return bottom + difference / 2;
 }

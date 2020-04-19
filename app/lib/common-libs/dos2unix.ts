@@ -11,6 +11,6 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-export function dos2unix(str:string) {
-  return str.replace(/\r\n/g, '\n')
+export function dos2unix(str: string) {
+  return str.replace(/\r\n/g, "\n");
 }

@@ -11,43 +11,41 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {Underscore} from "../../../../lib/common-libs/underscore"
+import { Underscore } from "../../../../lib/common-libs/underscore";
 
 export class Source {
+  [k: string]: any;
 
-  [k:string]: any
-
-  constructor(json:any) {
-    Underscore.keys(json || {}).forEach((key:string) => {
+  constructor(json: any) {
+    Underscore.keys(json || {}).forEach((key: string) => {
       let value = json[key];
       if (key == "number") {
         value = parseInt(value);
-      }
-      else if (key == "consumed") {
+      } else if (key == "consumed") {
         value = !!value;
       }
       this[key] = value;
-    })
+    });
   }
 
   json() {
     return {
-      "type": this.type,
-      "noffset": this.pos,
-      "identifier": this.identifier,
-      "amount": this.amount,
-      "conditions": this.conditions,
-      "base": this.base
+      type: this.type,
+      noffset: this.pos,
+      identifier: this.identifier,
+      amount: this.amount,
+      conditions: this.conditions,
+      base: this.base,
     };
-  };
+  }
 
   UDjson() {
     return {
-      "block_number": this.number,
-      "consumed": this.consumed,
-      "time": this.time,
-      "amount": this.amount,
-      "base": this.base
+      block_number: this.number,
+      consumed: this.consumed,
+      time: this.time,
+      amount: this.amount,
+      base: this.base,
     };
-  };
+  }
 }

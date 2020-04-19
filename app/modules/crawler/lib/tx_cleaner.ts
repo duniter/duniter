@@ -11,12 +11,11 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-export const tx_cleaner = (txs:any) =>
-
+export const tx_cleaner = (txs: any) =>
   // Remove unused signatories - see https://github.com/duniter/duniter/issues/494
-  txs.forEach((tx:any) => {
+  txs.forEach((tx: any) => {
     if (tx.signatories) {
-      delete tx.signatories
+      delete tx.signatories;
     }
-    return tx
-  })
+    return tx;
+  });

@@ -1,25 +1,37 @@
-import {WotWizardDAL} from "./wotwizard.init.structure"
-import {Server} from "../../../../server"
-import {DBBlock} from "../../../lib/db/DBBlock"
-import {Underscore} from "../../../lib/common-libs/underscore"
-import {NewLogger} from "../../../lib/logger"
+import { WotWizardDAL } from "./wotwizard.init.structure";
+import { Server } from "../../../../server";
+import { DBBlock } from "../../../lib/db/DBBlock";
+import { Underscore } from "../../../lib/common-libs/underscore";
+import { NewLogger } from "../../../lib/logger";
 
 export async function copyMemPool(server: Server, wwDAL: WotWizardDAL) {
+  const logger = NewLogger();
 
-  const logger = NewLogger()
-
-  const identities = await server.dal.idtyDAL.sqlListAll()
+  const identities = await server.dal.idtyDAL.sqlListAll();
 
   // Blocks on which are based identities
-  const blocks = await Promise.all(identities.map(async idty => returnBlockIfPresentInServerButNotInWW(idty.buid, server, wwDAL)))
+  const blocks = await Promise.all(
+    identities.map(async (idty) =>
+      returnBlockIfPresentInServerButNotInWW(idty.buid, server, wwDAL)
+    )
+  );
 
-  const toPersist: DBBlock[] = Underscore.uniq(blocks.filter(b => b) as DBBlock[], false, b => [b.number, b.hash].join('-'))
+  const toPersist: DBBlock[] = Underscore.uniq(
+    blocks.filter((b) => b) as DBBlock[],
+    false,
+    (b) => [b.number, b.hash].join("-")
+  );
 
-  logger.debug('Persisting %s blocks for identities...', toPersist.length)
-  await wwDAL.blockDao.insertBatch(toPersist.map(b => { (b as any).legacy = true; return b }))
-  await wwDAL.idtyDao.insertBatch(identities)
-  await wwDAL.certDao.insertBatch(await server.dal.certDAL.sqlListAll())
-  await wwDAL.msDao.insertBatch(await server.dal.msDAL.sqlListAll())
+  logger.debug("Persisting %s blocks for identities...", toPersist.length);
+  await wwDAL.blockDao.insertBatch(
+    toPersist.map((b) => {
+      (b as any).legacy = true;
+      return b;
+    })
+  );
+  await wwDAL.idtyDao.insertBatch(identities);
+  await wwDAL.certDao.insertBatch(await server.dal.certDAL.sqlListAll());
+  await wwDAL.msDao.insertBatch(await server.dal.msDAL.sqlListAll());
 }
 
 /**
@@ -28,14 +40,18 @@ export async function copyMemPool(server: Server, wwDAL: WotWizardDAL) {
  * @param server
  * @param wwDAL
  */
-async function returnBlockIfPresentInServerButNotInWW(blockstamp: string, server: Server, wwDAL: WotWizardDAL) {
-  let b = await server.dal.getAbsoluteBlockByBlockstamp(blockstamp)
+async function returnBlockIfPresentInServerButNotInWW(
+  blockstamp: string,
+  server: Server,
+  wwDAL: WotWizardDAL
+) {
+  let b = await server.dal.getAbsoluteBlockByBlockstamp(blockstamp);
   if (b) {
     if (!(await wwHasBlock(wwDAL, b))) {
-      return b
+      return b;
     }
   }
-  return null
+  return null;
 }
 
 /**
@@ -43,7 +59,10 @@ async function returnBlockIfPresentInServerButNotInWW(blockstamp: string, server
  * @param wwDAL
  * @param b
  */
-export async function wwHasBlock(wwDAL: WotWizardDAL, b: { number: number, hash: string}) {
-  const wwBlock = await wwDAL.blockDao.getAbsoluteBlock(b.number, b.hash)
-  return !!wwBlock
+export async function wwHasBlock(
+  wwDAL: WotWizardDAL,
+  b: { number: number; hash: string }
+) {
+  const wwBlock = await wwDAL.blockDao.getAbsoluteBlock(b.number, b.hash);
+  return !!wwBlock;
 }

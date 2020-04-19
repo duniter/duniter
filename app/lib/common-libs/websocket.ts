@@ -11,28 +11,28 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import * as WS from 'ws'
+import * as WS from "ws";
 
 export class WebSocket extends WS {
   constructor(url: string, options?: { agent: any }) {
     super(url, {
       agent: options && options.agent,
-    })
+    });
   }
 }
 
 export class WebSocketServer extends WS.Server {
   constructor(options: {
-    server?: any,
-    host?: string,
-    port?: number,
-    path?: string
+    server?: any;
+    host?: string;
+    port?: number;
+    path?: string;
   }) {
     super({
       server: options.server,
       path: options.path,
       host: options.host,
       port: options.port,
-    })
+    });
   }
 }

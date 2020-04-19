@@ -11,12 +11,14 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {ConfDTO} from "../dto/ConfDTO"
-import {CommonConstants} from "../common-libs/constants"
+import { ConfDTO } from "../dto/ConfDTO";
+import { CommonConstants } from "../common-libs/constants";
 
-const constants = CommonConstants
+const constants = CommonConstants;
 
-export function maxAcceleration (conf:ConfDTO) {
-  let maxGenTime = Math.ceil(conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO);
+export function maxAcceleration(conf: ConfDTO) {
+  let maxGenTime = Math.ceil(
+    conf.avgGenTime * constants.POW_DIFFICULTY_RANGE_RATIO
+  );
   return Math.ceil(maxGenTime * conf.medianTimeBlocks);
 }

@@ -11,19 +11,18 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {BlockDTO} from "../../../../lib/dto/BlockDTO"
-import {DBBlock} from "../../../../lib/db/DBBlock"
-import {PeerDTO} from "../../../../lib/dto/PeerDTO"
-import {HttpMilestonePage} from "../../../bma/lib/dtos"
+import { BlockDTO } from "../../../../lib/dto/BlockDTO";
+import { DBBlock } from "../../../../lib/db/DBBlock";
+import { PeerDTO } from "../../../../lib/dto/PeerDTO";
+import { HttpMilestonePage } from "../../../bma/lib/dtos";
 
 export interface WS2PReqMapper {
-
-  getCurrent(): Promise<DBBlock|null>
-  getBlock(number:number): Promise<BlockDTO>
-  getBlocks(count:number, fromNumber:number): Promise<BlockDTO[]>
-  getRequirementsOfPending(minCert:number): Promise<any>
-  getPeer(): Promise<PeerDTO>
-  getKnownPeers(): Promise<PeerDTO[]>
-  getMilestones(page: number): Promise<HttpMilestonePage>
-  getMilestonesPage(): Promise<HttpMilestonePage>
+  getCurrent(): Promise<DBBlock | null>;
+  getBlock(number: number): Promise<BlockDTO>;
+  getBlocks(count: number, fromNumber: number): Promise<BlockDTO[]>;
+  getRequirementsOfPending(minCert: number): Promise<any>;
+  getPeer(): Promise<PeerDTO>;
+  getKnownPeers(): Promise<PeerDTO[]>;
+  getMilestones(page: number): Promise<HttpMilestonePage>;
+  getMilestonesPage(): Promise<HttpMilestonePage>;
 }

@@ -11,17 +11,16 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {DBBlock} from "../../../../db/DBBlock"
+import { DBBlock } from "../../../../db/DBBlock";
 
 export interface ForksDAO {
+  saveSideBlock(block: DBBlock): Promise<DBBlock>;
 
-  saveSideBlock(block:DBBlock): Promise<DBBlock>
+  setSideBlock(number: number, previousBlock: DBBlock | null): Promise<void>;
 
-  setSideBlock(number:number, previousBlock:DBBlock|null): Promise<void>
+  getPotentialRoots(): Promise<DBBlock[]>;
 
-  getPotentialRoots(): Promise<DBBlock[]>
-
-  getNextForkBlocks(number:number, hash:string): Promise<DBBlock[]>
+  getNextForkBlocks(number: number, hash: string): Promise<DBBlock[]>;
 
   /**
    * Find any fork block whose number is between `numberStart` and `maxNumber`, both included, and whose medianTime is
@@ -30,9 +29,13 @@ export interface ForksDAO {
    * @param medianTimeStart
    * @param maxNumber
    */
-  getPotentialForkBlocks(numberStart:number, medianTimeStart:number, maxNumber:number): Promise<DBBlock[]>
+  getPotentialForkBlocks(
+    numberStart: number,
+    medianTimeStart: number,
+    maxNumber: number
+  ): Promise<DBBlock[]>;
 
-  removeForkBlock(number:number): Promise<void>
+  removeForkBlock(number: number): Promise<void>;
 
-  removeForkBlockAboveOrEqual(number:number): Promise<void>
+  removeForkBlockAboveOrEqual(number: number): Promise<void>;
 }

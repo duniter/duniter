@@ -11,36 +11,78 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {AbstractSQLite} from "./AbstractSQLite"
-import {SQLiteDriver} from "../drivers/SQLiteDriver"
-import {DBBlock} from "../../db/DBBlock"
+import { AbstractSQLite } from "./AbstractSQLite";
+import { SQLiteDriver } from "../drivers/SQLiteDriver";
+import { DBBlock } from "../../db/DBBlock";
 
-const constants = require('../../constants');
+const constants = require("../../constants");
 
 const IS_FORK = true;
 const IS_NOT_FORK = false;
 
 export class BlockDAL extends AbstractSQLite<DBBlock> {
+  private current: DBBlock | null;
 
-  private current: DBBlock|null
-
-  constructor(driver:SQLiteDriver) {
+  constructor(driver: SQLiteDriver) {
     super(
       driver,
-      'block',
+      "block",
       // PK fields
-      ['number','hash'],
+      ["number", "hash"],
       // Fields
-      ['fork', 'hash', 'inner_hash', 'signature', 'currency', 'issuer', 'issuersCount', 'issuersFrame', 'issuersFrameVar', 'parameters', 'previousHash', 'previousIssuer', 'version', 'membersCount', 'monetaryMass', 'UDTime', 'medianTime', 'dividend', 'unitbase', 'time', 'powMin', 'number', 'nonce', 'transactions', 'certifications', 'identities', 'joiners', 'actives', 'leavers', 'revoked', 'excluded', 'len', 'legacy'],
+      [
+        "fork",
+        "hash",
+        "inner_hash",
+        "signature",
+        "currency",
+        "issuer",
+        "issuersCount",
+        "issuersFrame",
+        "issuersFrameVar",
+        "parameters",
+        "previousHash",
+        "previousIssuer",
+        "version",
+        "membersCount",
+        "monetaryMass",
+        "UDTime",
+        "medianTime",
+        "dividend",
+        "unitbase",
+        "time",
+        "powMin",
+        "number",
+        "nonce",
+        "transactions",
+        "certifications",
+        "identities",
+        "joiners",
+        "actives",
+        "leavers",
+        "revoked",
+        "excluded",
+        "len",
+        "legacy",
+      ],
       // Arrays
-      ['identities','certifications','actives','revoked','excluded','leavers','joiners','transactions'],
+      [
+        "identities",
+        "certifications",
+        "actives",
+        "revoked",
+        "excluded",
+        "leavers",
+        "joiners",
+        "transactions",
+      ],
       // Booleans
-      ['wrong', 'legacy'],
+      ["wrong", "legacy"],
       // BigIntegers
-      ['monetaryMass'],
+      ["monetaryMass"],
       // Transient
       []
-    )
+    );
 
     /**
      * Periodically cleans the current block cache.
@@ -50,91 +92,129 @@ export class BlockDAL extends AbstractSQLite<DBBlock> {
   }
 
   async init() {
-    await this.exec('BEGIN;' +
-      'CREATE TABLE IF NOT EXISTS ' + this.table + ' (' +
-      'fork BOOLEAN NOT NULL,' +
-      'legacy BOOLEAN NOT NULL,' +
-      'hash VARCHAR(64) NOT NULL,' +
-      'inner_hash VARCHAR(64) NOT NULL,' +
-      'signature VARCHAR(100) NOT NULL,' +
-      'currency VARCHAR(50) NOT NULL,' +
-      'issuer VARCHAR(50) NOT NULL,' +
-      'issuersFrame INTEGER NULL,' +
-      'issuersFrameVar INTEGER NULL,' +
-      'issuersCount INTEGER NULL,' +
-      'len INTEGER NULL,' +
-      'parameters VARCHAR(255),' +
-      'previousHash VARCHAR(64),' +
-      'previousIssuer VARCHAR(50),' +
-      'version INTEGER NOT NULL,' +
-      'membersCount INTEGER NOT NULL,' +
-      'monetaryMass VARCHAR(100) DEFAULT \'0\',' +
-      'UDTime DATETIME,' +
-      'medianTime DATETIME NOT NULL,' +
-      'dividend INTEGER DEFAULT \'0\',' +
-      'unitbase INTEGER NULL,' +
-      'time DATETIME NOT NULL,' +
-      'powMin INTEGER NOT NULL,' +
-      'number INTEGER NOT NULL,' +
-      'nonce INTEGER NOT NULL,' +
-      'transactions TEXT,' +
-      'certifications TEXT,' +
-      'identities TEXT,' +
-      'joiners TEXT,' +
-      'actives TEXT,' +
-      'leavers TEXT,' +
-      'revoked TEXT,' +
-      'excluded TEXT,' +
-      'created DATETIME DEFAULT NULL,' +
-      'updated DATETIME DEFAULT NULL,' +
-      'PRIMARY KEY (number,hash)' +
-      ');' +
-      'CREATE INDEX IF NOT EXISTS idx_block_hash ON block (hash);' +
-      'CREATE INDEX IF NOT EXISTS idx_block_fork ON block (fork);' +
-      'COMMIT;')
+    await this.exec(
+      "BEGIN;" +
+        "CREATE TABLE IF NOT EXISTS " +
+        this.table +
+        " (" +
+        "fork BOOLEAN NOT NULL," +
+        "legacy BOOLEAN NOT NULL," +
+        "hash VARCHAR(64) NOT NULL," +
+        "inner_hash VARCHAR(64) NOT NULL," +
+        "signature VARCHAR(100) NOT NULL," +
+        "currency VARCHAR(50) NOT NULL," +
+        "issuer VARCHAR(50) NOT NULL," +
+        "issuersFrame INTEGER NULL," +
+        "issuersFrameVar INTEGER NULL," +
+        "issuersCount INTEGER NULL," +
+        "len INTEGER NULL," +
+        "parameters VARCHAR(255)," +
+        "previousHash VARCHAR(64)," +
+        "previousIssuer VARCHAR(50)," +
+        "version INTEGER NOT NULL," +
+        "membersCount INTEGER NOT NULL," +
+        "monetaryMass VARCHAR(100) DEFAULT '0'," +
+        "UDTime DATETIME," +
+        "medianTime DATETIME NOT NULL," +
+        "dividend INTEGER DEFAULT '0'," +
+        "unitbase INTEGER NULL," +
+        "time DATETIME NOT NULL," +
+        "powMin INTEGER NOT NULL," +
+        "number INTEGER NOT NULL," +
+        "nonce INTEGER NOT NULL," +
+        "transactions TEXT," +
+        "certifications TEXT," +
+        "identities TEXT," +
+        "joiners TEXT," +
+        "actives TEXT," +
+        "leavers TEXT," +
+        "revoked TEXT," +
+        "excluded TEXT," +
+        "created DATETIME DEFAULT NULL," +
+        "updated DATETIME DEFAULT NULL," +
+        "PRIMARY KEY (number,hash)" +
+        ");" +
+        "CREATE INDEX IF NOT EXISTS idx_block_hash ON block (hash);" +
+        "CREATE INDEX IF NOT EXISTS idx_block_fork ON block (fork);" +
+        "COMMIT;"
+    );
   }
 
   cleanCache() {
-    this.current = null
+    this.current = null;
   }
 
   async getCurrent() {
     if (!this.current) {
-      this.current = (await this.query('SELECT * FROM block WHERE NOT fork ORDER BY number DESC LIMIT 1'))[0];
+      this.current = (
+        await this.query(
+          "SELECT * FROM block WHERE NOT fork ORDER BY number DESC LIMIT 1"
+        )
+      )[0];
     }
-    return this.current
+    return this.current;
   }
 
-  async getBlock(number:string | number): Promise<DBBlock|null> {
-    return (await this.query('SELECT * FROM block WHERE number = ? and NOT fork', [parseInt(String(number))]))[0];
+  async getBlock(number: string | number): Promise<DBBlock | null> {
+    return (
+      await this.query("SELECT * FROM block WHERE number = ? and NOT fork", [
+        parseInt(String(number)),
+      ])
+    )[0];
   }
 
-  async getAbsoluteBlock(number:number, hash:string): Promise<DBBlock|null> {
-    return (await this.query('SELECT * FROM block WHERE number = ? and hash = ?', [number, hash]))[0];
+  async getAbsoluteBlock(
+    number: number,
+    hash: string
+  ): Promise<DBBlock | null> {
+    return (
+      await this.query("SELECT * FROM block WHERE number = ? and hash = ?", [
+        number,
+        hash,
+      ])
+    )[0];
   }
 
-  getBlocks(start:number, end:number) {
-    return this.query('SELECT * FROM block WHERE number BETWEEN ? and ? and NOT fork ORDER BY number ASC', [start, end]);
+  getBlocks(start: number, end: number) {
+    return this.query(
+      "SELECT * FROM block WHERE number BETWEEN ? and ? and NOT fork ORDER BY number ASC",
+      [start, end]
+    );
   }
 
-  async lastBlockOfIssuer(issuer:string) {
-    return (await this.query('SELECT * FROM block WHERE issuer = ? and NOT fork ORDER BY number DESC LIMIT 1', [issuer]))[0]
+  async lastBlockOfIssuer(issuer: string) {
+    return (
+      await this.query(
+        "SELECT * FROM block WHERE issuer = ? and NOT fork ORDER BY number DESC LIMIT 1",
+        [issuer]
+      )
+    )[0];
   }
 
-  async getCountOfBlocksIssuedBy(issuer:string) {
-    let res: any = await this.query('SELECT COUNT(*) as quantity FROM block WHERE issuer = ? and NOT fork', [issuer]);
+  async getCountOfBlocksIssuedBy(issuer: string) {
+    let res: any = await this.query(
+      "SELECT COUNT(*) as quantity FROM block WHERE issuer = ? and NOT fork",
+      [issuer]
+    );
     return res[0].quantity;
   }
 
-  getPotentialForkBlocks(numberStart:number, medianTimeStart:number, maxNumber:number) {
-    return this.query('SELECT * FROM block WHERE fork AND number >= ? AND number <= ? AND medianTime >= ? ORDER BY number DESC', [numberStart, maxNumber, medianTimeStart]);
+  getPotentialForkBlocks(
+    numberStart: number,
+    medianTimeStart: number,
+    maxNumber: number
+  ) {
+    return this.query(
+      "SELECT * FROM block WHERE fork AND number >= ? AND number <= ? AND medianTime >= ? ORDER BY number DESC",
+      [numberStart, maxNumber, medianTimeStart]
+    );
   }
 
   getPotentialRoots() {
-    return this.query('SELECT * FROM block WHERE fork AND number = ?', [0])
+    return this.query("SELECT * FROM block WHERE fork AND number = ?", [0]);
   }
 
-  async saveBlock(block:DBBlock) {
+  async saveBlock(block: DBBlock) {
     let saved = await this.saveBlockAs(block, IS_NOT_FORK);
     if (!this.current || this.current.number < block.number) {
       this.current = block;
@@ -142,21 +222,27 @@ export class BlockDAL extends AbstractSQLite<DBBlock> {
     return saved;
   }
 
-  saveSideBlock(block:DBBlock) {
-    return this.saveBlockAs(block, IS_FORK)
+  saveSideBlock(block: DBBlock) {
+    return this.saveBlockAs(block, IS_FORK);
   }
 
-  private async saveBlockAs(block:DBBlock, fork:boolean) {
+  private async saveBlockAs(block: DBBlock, fork: boolean) {
     block.fork = fork;
     return await this.saveEntity(block);
   }
 
-  async setSideBlock(number:number, previousBlock:DBBlock|null) {
-    await this.query('UPDATE block SET fork = ? WHERE number = ?', [true, number]);
+  async setSideBlock(number: number, previousBlock: DBBlock | null) {
+    await this.query("UPDATE block SET fork = ? WHERE number = ?", [
+      true,
+      number,
+    ]);
     this.current = previousBlock;
   }
 
-  getNextForkBlocks(number:number, hash:string) {
-    return this.query('SELECT * FROM block WHERE fork AND number = ? AND previousHash like ? ORDER BY number', [number + 1, hash]);
+  getNextForkBlocks(number: number, hash: string) {
+    return this.query(
+      "SELECT * FROM block WHERE fork AND number = ? AND previousHash like ? ORDER BY number",
+      [number + 1, hash]
+    );
   }
 }

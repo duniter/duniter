@@ -11,29 +11,40 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {JSONDBPeer} from "../../../../lib/db/DBPeer";
-import {BlockDTO} from "../../../../lib/dto/BlockDTO";
-import {HttpRequirements} from "../../../bma/lib/dtos";
+import { JSONDBPeer } from "../../../../lib/db/DBPeer";
+import { BlockDTO } from "../../../../lib/dto/BlockDTO";
+import { HttpRequirements } from "../../../bma/lib/dtos";
 
 export interface IRemoteContacter {
+  getName(): string;
 
-  getName(): string
+  getPeers(): Promise<(JSONDBPeer | null)[]>;
 
-  getPeers(): Promise<(JSONDBPeer|null)[]>
+  getCurrent(): Promise<BlockDTO | null>;
 
-  getCurrent(): Promise<BlockDTO|null>
+  getBlock(number: number): Promise<BlockDTO | null>;
 
-  getBlock(number: number): Promise<BlockDTO|null>
+  getMilestonesPage(): Promise<{
+    chunkSize: number;
+    totalPages: number;
+    milestonesPerPage: number;
+  }>;
 
-  getMilestonesPage(): Promise<{ chunkSize: number, totalPages: number, milestonesPerPage: number }>
+  getMilestones(
+    page: number
+  ): Promise<{
+    chunkSize: number;
+    totalPages: number;
+    currentPage: number;
+    milestonesPerPage: number;
+    blocks: BlockDTO[];
+  }>;
 
-  getMilestones(page: number): Promise<{ chunkSize: number, totalPages: number, currentPage: number, milestonesPerPage: number, blocks: BlockDTO[] }>
+  getBlocks(count: number, from: number): Promise<BlockDTO[]>;
 
-  getBlocks(count: number, from: number): Promise<BlockDTO[]>
+  getRequirementsPending(number: number): Promise<HttpRequirements>;
 
-  getRequirementsPending(number: number): Promise<HttpRequirements>
+  hostName: string;
 
-  hostName: string
-
-  type: 'BMA' | 'WS2P'
+  type: "BMA" | "WS2P";
 }

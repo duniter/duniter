@@ -1,14 +1,14 @@
 export function arrayPruneAll<T>(array: T[], value: T) {
   if (!array || array.length === 0) {
-    return
+    return;
   }
-  let index
+  let index;
   do {
-    index = array.indexOf(value)
+    index = array.indexOf(value);
     if (index !== -1) {
-      array.splice(index, 1)
+      array.splice(index, 1);
     }
-  } while (index !== -1)
+  } while (index !== -1);
 }
 
 /**
@@ -17,13 +17,13 @@ export function arrayPruneAll<T>(array: T[], value: T) {
  * @param value The value we don't want to see in our copy array.
  */
 export function arrayPruneAllCopy<T>(original: T[], value: T) {
-  const array = original.slice()
-  let index
+  const array = original.slice();
+  let index;
   do {
-    index = array.indexOf(value)
+    index = array.indexOf(value);
     if (index !== -1) {
-      array.splice(index, 1)
+      array.splice(index, 1);
     }
-  } while (index !== -1)
-  return array
+  } while (index !== -1);
+  return array;
 }

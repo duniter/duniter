@@ -11,25 +11,25 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-const opts = require('optimist').argv
+const opts = require("optimist").argv;
 
 export interface ProgramOptions {
-  mdb?: string
-  home?: string
-  notrim?: boolean
-  notrimc?: boolean // Specificaly disable for c_index
-  nosbx?: boolean
-  nopeers?: boolean
-  nop2p?: boolean
-  syncTrace?: string
-  isSync: boolean
-  noSources: boolean
-  slow?: boolean
-  loglevel?: string
-  sqlTraces?: boolean
-  memory?: boolean
-  storeTxs?: boolean
-  storeWw?: boolean
+  mdb?: string;
+  home?: string;
+  notrim?: boolean;
+  notrimc?: boolean; // Specificaly disable for c_index
+  nosbx?: boolean;
+  nopeers?: boolean;
+  nop2p?: boolean;
+  syncTrace?: string;
+  isSync: boolean;
+  noSources: boolean;
+  slow?: boolean;
+  loglevel?: string;
+  sqlTraces?: boolean;
+  memory?: boolean;
+  storeTxs?: boolean;
+  storeWw?: boolean;
 }
 
 export const cliprogram: ProgramOptions = {
@@ -40,7 +40,7 @@ export const cliprogram: ProgramOptions = {
   nopeers: opts.nopeers,
   nop2p: opts.nop2p,
   noSources: !!opts.nosources,
-  syncTrace: opts['sync-trace'],
-  isSync: opts._[0] === 'sync',
+  syncTrace: opts["sync-trace"],
+  isSync: opts._[0] === "sync",
   slow: opts.slow,
-}
+};

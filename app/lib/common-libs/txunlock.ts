@@ -11,122 +11,134 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {hashf} from "../common"
-import {evalParams} from "../rules/global_rules"
-import {TxSignatureResult} from "../dto/TransactionDTO"
+import { hashf } from "../common";
+import { evalParams } from "../rules/global_rules";
+import { TxSignatureResult } from "../dto/TransactionDTO";
 
-let Parser = require("jison").Parser
+let Parser = require("jison").Parser;
 
 let grammar = {
-  "lex": {
-    "rules": [
-      ["\\s+",                    "/* skip whitespace */"],
-      ["\\&\\&",                  "return 'AND';"],
-      ["\\|\\|",                  "return 'OR';"],
-      ["\\(",                     "return '(';"],
-      ["\\)",                     "return ')';"],
-      ["[0-9A-Za-z]{40,64}",      "return 'PARAMETER';"],
-      ["[0-9]{1,10}",             "return 'PARAMETER';"],
-      ["SIG",                     "return 'SIG';"],
-      ["XHX",                     "return 'XHX';"],
-      ["CLTV",                    "return 'CLTV';"],
-      ["CSV",                     "return 'CSV';"],
-      ["$",                       "return 'EOF';"]
-    ]
+  lex: {
+    rules: [
+      ["\\s+", "/* skip whitespace */"],
+      ["\\&\\&", "return 'AND';"],
+      ["\\|\\|", "return 'OR';"],
+      ["\\(", "return '(';"],
+      ["\\)", "return ')';"],
+      ["[0-9A-Za-z]{40,64}", "return 'PARAMETER';"],
+      ["[0-9]{1,10}", "return 'PARAMETER';"],
+      ["SIG", "return 'SIG';"],
+      ["XHX", "return 'XHX';"],
+      ["CLTV", "return 'CLTV';"],
+      ["CSV", "return 'CSV';"],
+      ["$", "return 'EOF';"],
+    ],
   },
 
-  "operators": [
-    ["left", "AND", "OR"]
-  ],
+  operators: [["left", "AND", "OR"]],
 
-  "bnf": {
-    "expressions" :[
-      [ "e EOF",   "return $1;"  ]
+  bnf: {
+    expressions: [["e EOF", "return $1;"]],
+
+    e: [
+      ["e AND e", "$$ = $1 && $3;"],
+      ["e OR e", "$$ = $1 || $3;"],
+      ["SIG ( e )", "$$ = yy.sig($3);"],
+      ["XHX ( e )", "$$ = yy.xHx($3);"],
+      ["CLTV ( e )", "$$ = yy.cltv($3);"],
+      ["CSV ( e )", "$$ = yy.csv($3);"],
+      ["PARAMETER", "$$ = $1;"],
+      ["( e )", "$$ = $2;"],
     ],
-
-    "e" :[
-      [ "e AND e", "$$ = $1 && $3;" ],
-      [ "e OR e",  "$$ = $1 || $3;" ],
-      [ "SIG ( e )","$$ = yy.sig($3);"],
-      [ "XHX ( e )","$$ = yy.xHx($3);"],
-      [ "CLTV ( e )","$$ = yy.cltv($3);"],
-      [ "CSV ( e )","$$ = yy.csv($3);"],
-      [ "PARAMETER", "$$ = $1;" ],
-      [ "( e )",   "$$ = $2;" ]
-    ]
-  }
-}
+  },
+};
 
 export interface UnlockMetadata {
-  currentTime?:number
-  elapsedTime?:number
+  currentTime?: number;
+  elapsedTime?: number;
 }
 
-export function unlock(conditionsStr:string, unlockParams:string[], sigResult:TxSignatureResult, metadata?:UnlockMetadata): boolean|null {
-
-  const params = evalParams(unlockParams, conditionsStr, sigResult)
-  let parser = new Parser(grammar)
-  let nbFunctions = 0
+export function unlock(
+  conditionsStr: string,
+  unlockParams: string[],
+  sigResult: TxSignatureResult,
+  metadata?: UnlockMetadata
+): boolean | null {
+  const params = evalParams(unlockParams, conditionsStr, sigResult);
+  let parser = new Parser(grammar);
+  let nbFunctions = 0;
 
   parser.yy = {
     i: 0,
-    sig: function (pubkey:string) {
+    sig: function (pubkey: string) {
       // Counting functions
-      nbFunctions++
+      nbFunctions++;
       // Make the test
-      let success = false
-      let i = 0
+      let success = false;
+      let i = 0;
       while (!success && i < params.length) {
-        const p = params[i]
-        success = p.successful && p.funcName === 'SIG' && p.parameter === pubkey
-        i++
+        const p = params[i];
+        success =
+          p.successful && p.funcName === "SIG" && p.parameter === pubkey;
+        i++;
       }
-      return success
+      return success;
     },
-    xHx: function(hash:string) {
+    xHx: function (hash: string) {
       // Counting functions
-      nbFunctions++
+      nbFunctions++;
       // Make the test
-      let success = false
-      let i = 0
+      let success = false;
+      let i = 0;
       while (!success && i < params.length) {
-        const p = params[i]
-        success = p.successful && p.funcName === 'XHX' && hashf(p.parameter) === hash
-        i++
+        const p = params[i];
+        success =
+          p.successful && p.funcName === "XHX" && hashf(p.parameter) === hash;
+        i++;
       }
-      return success
+      return success;
     },
-    cltv: function(deadline:string) {
+    cltv: function (deadline: string) {
       // Counting functions
-      nbFunctions++
+      nbFunctions++;
       // Make the test
-      return metadata && metadata.currentTime && metadata.currentTime >= parseInt(deadline)
+      return (
+        metadata &&
+        metadata.currentTime &&
+        metadata.currentTime >= parseInt(deadline)
+      );
     },
-    csv: function(amountToWait:string) {
+    csv: function (amountToWait: string) {
       // Counting functions
-      nbFunctions++
+      nbFunctions++;
       // Make the test
-      return metadata && metadata.elapsedTime && metadata.elapsedTime >= parseInt(amountToWait)
-    }
-  }
+      return (
+        metadata &&
+        metadata.elapsedTime &&
+        metadata.elapsedTime >= parseInt(amountToWait)
+      );
+    },
+  };
 
   try {
-    const areAllValidParameters = params.reduce((success, p) => success && !!(p.successful), true)
+    const areAllValidParameters = params.reduce(
+      (success, p) => success && !!p.successful,
+      true
+    );
     if (!areAllValidParameters) {
-      throw "All parameters must be successful"
+      throw "All parameters must be successful";
     }
-    const unlocked = parser.parse(conditionsStr)
+    const unlocked = parser.parse(conditionsStr);
     if (unlockParams.length > nbFunctions) {
-      throw "There must be at most as much params as function calls"
+      throw "There must be at most as much params as function calls";
     }
-    return unlocked
-  } catch(e) {
-    return null
+    return unlocked;
+  } catch (e) {
+    return null;
   }
 }
 
-export function checkGrammar(conditionsStr:string): boolean|null {
-
+export function checkGrammar(conditionsStr: string): boolean | null {
   let parser = new Parser(grammar);
 
   parser.yy = {
@@ -134,12 +146,12 @@ export function checkGrammar(conditionsStr:string): boolean|null {
     sig: () => true,
     xHx: () => true,
     cltv: () => true,
-    csv: () => true
-  }
+    csv: () => true,
+  };
 
   try {
-    return parser.parse(conditionsStr)
-  } catch(e) {
-    return null
+    return parser.parse(conditionsStr);
+  } catch (e) {
+    return null;
   }
 }

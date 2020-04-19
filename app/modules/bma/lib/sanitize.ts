@@ -11,13 +11,11 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {Underscore} from "../../../lib/common-libs/underscore"
+import { Underscore } from "../../../lib/common-libs/underscore";
 
-module.exports = function sanitize (json:any, contract:any) {
-
+module.exports = function sanitize(json: any, contract: any) {
   // Tries to sanitize only if contract is given
   if (contract) {
-
     if (Object.prototype.toString.call(contract) === "[object Array]") {
       // Contract is an array
 
@@ -42,9 +40,9 @@ module.exports = function sanitize (json:any, contract:any) {
         }
       }
 
-      let contractFields = Underscore.keys(contract)
-      let objectFields = Underscore.keys(json)
-      let toDeleteFromObj = Underscore.difference(objectFields, contractFields)
+      let contractFields = Underscore.keys(contract);
+      let objectFields = Underscore.keys(json);
+      let toDeleteFromObj = Underscore.difference(objectFields, contractFields);
 
       // Remove unwanted fields
       for (let i = 0, len = toDeleteFromObj.length; i < len; i++) {
@@ -60,57 +58,49 @@ module.exports = function sanitize (json:any, contract:any) {
         if (propType.name) {
           t = propType.name;
         } else if (propType.length != undefined) {
-          t = 'Array';
+          t = "Array";
         } else {
-          t = 'Object';
+          t = "Object";
         }
         // Test json member type
-        let tjson:any = typeof json[prop];
-        if (~['Array', 'Object'].indexOf(t)) {
-          if (tjson == 'object' && json[prop] !== null) {
-            tjson = json[prop].length == undefined ? 'Object' : 'Array';
+        let tjson: any = typeof json[prop];
+        if (~["Array", "Object"].indexOf(t)) {
+          if (tjson == "object" && json[prop] !== null) {
+            tjson = json[prop].length == undefined ? "Object" : "Array";
           }
         }
         // Check coherence & alter member if needed
         if (json[prop] !== null && t.toLowerCase() != tjson.toLowerCase()) {
           try {
             if (t == "String") {
-              let s = json[prop] == undefined ? '' : json[prop];
+              let s = json[prop] == undefined ? "" : json[prop];
               json[prop] = String(s).valueOf();
-            }
-            else if (t == "Number") {
-              let s = json[prop] == undefined ? '' : json[prop];
+            } else if (t == "Number") {
+              let s = json[prop] == undefined ? "" : json[prop];
               json[prop] = Number(s).valueOf();
-            }
-            else if (t == "Array") {
+            } else if (t == "Array") {
               json[prop] = [];
-            }
-            else if (t == "Object") {
+            } else if (t == "Object") {
               json[prop] = {};
-            }
-            else {
+            } else {
               json[prop] = Boolean();
             }
           } catch (ex) {
             if (t == "String") {
               json[prop] = String();
-            }
-            else if (t == "Number") {
+            } else if (t == "Number") {
               json[prop] = Number();
-            }
-            else if (t == "Array") {
+            } else if (t == "Array") {
               json[prop] = [];
-            }
-            else if (t == "Object") {
+            } else if (t == "Object") {
               json[prop] = {};
-            }
-            else {
+            } else {
               json[prop] = Boolean();
             }
           }
         }
         // Arrays
-        if (t == 'Array') {
+        if (t == "Array") {
           let subt = propType[0];
           for (let j = 0, len2 = json[prop].length; j < len2; j++) {
             if (!(subt == "String" || subt == "Number")) {
@@ -119,7 +109,7 @@ module.exports = function sanitize (json:any, contract:any) {
           }
         }
         // Recursivity
-        if (t == 'Object' && json[prop] !== null) {
+        if (t == "Object" && json[prop] !== null) {
           json[prop] = sanitize(json[prop], contract[prop]);
         }
       }

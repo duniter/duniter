@@ -11,50 +11,49 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {KeyPairBuilder, generateRandomSeed, seedToSecretKey} from "duniteroxyde"
+import {
+  KeyPairBuilder,
+  generateRandomSeed,
+  seedToSecretKey,
+} from "duniteroxyde";
 
 export class Key {
-
-  constructor(readonly pub:string, readonly sec:string) {
-  }
+  constructor(readonly pub: string, readonly sec: string) {}
 
   /*****************************
-  *
-  *      GENERAL CRYPTO
-  *
-  *****************************/
+   *
+   *      GENERAL CRYPTO
+   *
+   *****************************/
 
   get publicKey() {
-    return this.pub
+    return this.pub;
   }
 
   get secretKey() {
-    return this.sec
+    return this.sec;
   }
 
   json() {
     return {
       pub: this.publicKey,
-      sec: this.secretKey
-    }
+      sec: this.secretKey,
+    };
   }
 
-  sign(msg:string) {
-    return Promise.resolve(this.signSync(msg))
+  sign(msg: string) {
+    return Promise.resolve(this.signSync(msg));
   }
 
-  signSync(msg:string) {
+  signSync(msg: string) {
     const signator = KeyPairBuilder.fromSecretKey(this.secretKey);
     return signator.sign(msg);
-  };
+  }
 }
 
 export function randomKey() {
   const seed = generateRandomSeed();
   const secretKey = seedToSecretKey(seed);
   const keypair = KeyPairBuilder.fromSecretKey(secretKey);
-  return new Key(
-    keypair.getPublicKey(),
-    secretKey,
-  )
+  return new Key(keypair.getPublicKey(), secretKey);
 }

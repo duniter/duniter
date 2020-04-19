@@ -11,65 +11,76 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {BMAConstants} from "./constants"
-import {ConfDTO} from "../../../lib/dto/ConfDTO"
+import { BMAConstants } from "./constants";
+import { ConfDTO } from "../../../lib/dto/ConfDTO";
 
-const upnp = require('nat-upnp');
-const Q = require('q');
+const upnp = require("nat-upnp");
+const Q = require("q");
 
-export const Upnp = async function (localPort:number, remotePort:number, logger:any, conf:ConfDTO) {
+export const Upnp = async function (
+  localPort: number,
+  remotePort: number,
+  logger: any,
+  conf: ConfDTO
+) {
   "use strict";
 
-  logger.info('UPnP: configuring...');
-  const api = new UpnpApi(localPort, remotePort, logger, conf)
+  logger.info("UPnP: configuring...");
+  const api = new UpnpApi(localPort, remotePort, logger, conf);
   try {
-    await api.openPort()
+    await api.openPort();
   } catch (e) {
     const client = upnp.createClient();
     try {
       await Q.nbind(client.externalIp, client)();
     } catch (err) {
-      if (err && err.message == 'timeout') {
-        throw 'No UPnP gateway found: your node won\'t be reachable from the Internet. Use --noupnp option to avoid this message.'
+      if (err && err.message == "timeout") {
+        throw 'No UPnP gateway found: your node won\'t be reachable from the Internet. Use --noupnp option to avoid this message.';
       }
       throw err;
     } finally {
       client.close();
     }
   }
-  return api
+  return api;
 };
 
 export class UpnpApi {
-
-  private interval:NodeJS.Timer|null
+  private interval: NodeJS.Timer | null;
 
   constructor(
-    private localPort:number,
-    private remotePort:number,
-    private logger:any,
-    private conf:ConfDTO
-  ) {}
+    private localPort: number,
+    private remotePort: number,
+    private logger: any,
+    private conf: ConfDTO
+  ) {}
 
   openPort() {
     "use strict";
-    return Q.Promise((resolve:any, reject:any) => {
-      const suffix = this.conf.pair.pub.substr(0, 6)
-      this.logger.trace('UPnP: mapping external port %s to local %s...', this.remotePort, this.localPort);
+    return Q.Promise((resolve: any, reject: any) => {
+      const suffix = this.conf.pair.pub.substr(0, 6);
+      this.logger.trace(
+        "UPnP: mapping external port %s to local %s...",
+        this.remotePort,
+        this.localPort
+      );
       const client = upnp.createClient();
-      client.portMapping({
-        'public': this.remotePort,
-        'private': this.localPort,
-        'ttl': BMAConstants.UPNP_TTL,
-        'description': 'duniter:bma:' + suffix
-      }, (err:any) => {
-        client.close();
-        if (err) {
-          this.logger.warn(err);
-          return reject(err);
+      client.portMapping(
+        {
+          public: this.remotePort,
+          private: this.localPort,
+          ttl: BMAConstants.UPNP_TTL,
+          description: "duniter:bma:" + suffix,
+        },
+        (err: any) => {
+          client.close();
+          if (err) {
+            this.logger.warn(err);
+            return reject(err);
+          }
+          resolve();
         }
-        resolve();
-      });
+      );
     });
   }
 
@@ -93,12 +104,15 @@ export class UpnpApi {
   startRegular() {
     this.stopRegular();
     // Update UPnP IGD every INTERVAL seconds
-    this.interval = setInterval(() => this.openPort(), 1000 * BMAConstants.UPNP_INTERVAL)
+    this.interval = setInterval(
+      () => this.openPort(),
+      1000 * BMAConstants.UPNP_INTERVAL
+    );
   }
 
   stopRegular() {
     if (this.interval) {
-      clearInterval(this.interval)
+      clearInterval(this.interval);
     }
   }
 }

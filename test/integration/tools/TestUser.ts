@@ -11,7 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {Key, KeyGen} from "../../../app/lib/common-libs/crypto/keyring"
+import {Key} from "../../../app/lib/common-libs/crypto/keyring"
 import {IdentityDTO} from "../../../app/lib/dto/IdentityDTO";
 import {TestingServer} from "./toolbox"
 import {CommonConstants} from "../../../app/lib/common-libs/constants"
@@ -85,7 +85,7 @@ export class TestUser {
       issuer: this.pub,
       currency: this.node.server.conf.currency
     }).getRawUnSigned()
-    return this.createdIdentity += KeyGen(this.pub, this.sec).signSyncBuggy(this.createdIdentity) + '\n'
+    return this.createdIdentity += new Key(this.pub, this.sec).signSync(this.createdIdentity) + '\n'
   }
 
   public submitIdentity(raw:string, fromServer?: TestingServer) {
@@ -116,7 +116,7 @@ export class TestUser {
     }
     Underscore.extend(cert, overrideProps || {});
     const rawCert = CertificationDTO.fromJSONObject(cert).getRawUnSigned()
-    cert.sig = KeyGen(this.pub, this.sec).signSyncBuggy(rawCert)
+    cert.sig = new Key(this.pub, this.sec).signSync(rawCert)
     return CertificationDTO.fromJSONObject(cert)
   }
 
@@ -157,7 +157,7 @@ export class TestUser {
     };
     Underscore.extend(revocation, overrideProps || {});
     const rawRevocation = RevocationDTO.fromJSONObject(revocation).getRawUnsigned()
-    revocation.revocation = KeyGen(this.pub, this.sec).signSyncBuggy(rawRevocation);
+    revocation.revocation = new Key(this.pub, this.sec).signSync(rawRevocation);
     return RevocationDTO.fromJSONObject(revocation)
   }
 
@@ -185,7 +185,7 @@ export class TestUser {
     };
     Underscore.extend(join, overrideProps || {});
     const rawJoin = MembershipDTO.fromJSONObject(join).getRaw()
-    join.signature = KeyGen(this.pub, this.sec).signSyncBuggy(rawJoin)
+    join.signature = new Key(this.pub, this.sec).signSync(rawJoin)
     return MembershipDTO.fromJSONObject(join)
   }
 
@@ -306,9 +306,9 @@ export class TestUser {
   }
 
   private signed(raw:string, user2?:TestUser) {
-    let signatures = [KeyGen(this.pub, this.sec).signSyncBuggy(raw)];
+    let signatures = [new Key(this.pub, this.sec).signSync(raw)];
     if (user2) {
-      signatures.push(KeyGen(user2.pub, user2.sec).signSyncBuggy(raw));
+      signatures.push(new Key(user2.pub, user2.sec).signSync(raw));
     }
     return raw + signatures.join('\n') + '\n';
   }
@@ -356,7 +356,7 @@ export class TestUser {
     });
     Underscore.extend(peer, overrideProps || {});
     const rawPeer = PeerDTO.fromJSONObject(peer).getRawUnsigned()
-    peer.signature = KeyGen(this.pub, this.sec).signSyncBuggy(rawPeer)
+    peer.signature = new Key(this.pub, this.sec).signSync(rawPeer)
     return PeerDTO.fromJSONObject(peer)
   }
 

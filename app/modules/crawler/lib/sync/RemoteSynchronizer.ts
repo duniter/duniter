@@ -35,7 +35,7 @@ import {WS2PRequester} from "../../../ws2p/lib/WS2PRequester"
 import {WS2PMessageHandler} from "../../../ws2p/lib/impl/WS2PMessageHandler"
 import {WS2PResponse} from "../../../ws2p/lib/impl/WS2PResponse"
 import {DataErrors} from "../../../../lib/common-libs/errors"
-import {KeyGen} from "../../../../lib/common-libs/crypto/keyring"
+import {Key} from "../../../../lib/common-libs/crypto/keyring"
 import {WS2PRemoteContacter} from "./WS2PRemoteContacter"
 import {Keypair} from "../../../../lib/dto/ConfDTO"
 
@@ -141,7 +141,7 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
 
       // If BMA is unreachable and the connection is not marked as strict BMA, let's try WS2P
       if (!api && access.isBMA !== true) {
-        const pair = KeyGen(keypair.pub, keypair.sec)
+        const pair = new Key(keypair.pub, keypair.sec)
         const connection = WS2PConnection.newConnectionToAddress(1,
           `ws://${host}:${port}${path && ' ' + path || ''}`,
           new (class SyncMessageHandler implements WS2PMessageHandler {

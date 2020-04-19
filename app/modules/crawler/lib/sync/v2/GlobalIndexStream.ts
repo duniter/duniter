@@ -15,7 +15,7 @@ import {DuniterBlockchain, requiredBindexSizeForTail} from "../../../../../lib/b
 import {BlockDTO} from "../../../../../lib/dto/BlockDTO"
 import {Underscore} from "../../../../../lib/common-libs/underscore"
 import {MonitorExecutionTime} from "../../../../../lib/debug/MonitorExecutionTime"
-import {Wot} from "dubp-wot-rs"
+import {Wot} from "duniteroxyde"
 import {NewLogger} from "../../../../../lib/logger"
 import {CommonConstants} from "../../../../../lib/common-libs/constants"
 import {DBBlock} from "../../../../../lib/db/DBBlock"

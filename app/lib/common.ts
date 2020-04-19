@@ -11,12 +11,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import * as crypto from 'crypto'
+import {sha256} from 'duniteroxyde'
 
-export const hashf = function hashf(str:string) {
-  return crypto
-    .createHash("sha256")
-    .update(str)
-    .digest("hex")
-    .toUpperCase()
+export const hashf = function hashf(str:string) { 
+  return sha256(str)
 }

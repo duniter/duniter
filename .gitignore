@@ -4,8 +4,6 @@ node_modules/
 npm-debug.log
 bin/jpgp*.jar
 .idea/
-naclb/build
-naclb/node_modules
 gui/nw
 
 # Vim swap files

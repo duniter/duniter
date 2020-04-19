@@ -11,7 +11,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {Key, verifyBuggy} from "../../../lib/common-libs/crypto/keyring"
+import {Key} from "../../../lib/common-libs/crypto/keyring"
+import {verify} from "duniteroxyde"
 import {WS2PMessageHandler} from "./impl/WS2PMessageHandler"
 import {BlockDTO} from "../../../lib/dto/BlockDTO"
 import {IdentityDTO} from "../../../lib/dto/IdentityDTO"
@@ -129,7 +130,7 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
   async sendACK(ws: any): Promise<void> {
     const challengeMessage = `WS2P:ACK:${this.currency}:${this.pair.pub}:${this.challenge}`
     Logger.log('sendACK >>> ' + challengeMessage)
-    const sig = this.pair.signSyncBuggy(challengeMessage)
+    const sig = this.pair.signSync(challengeMessage)
     await ws.send(JSON.stringify({
       auth: 'ACK',
       pub: this.pair.pub,
@@ -153,7 +154,7 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
     this.givenCurrency.resolve(this.currency)
     const challengeMessage = (ws2pVersion > 1) ? `WS2P:${type}:${this.currency}:${pub}:${ws2pId}:${challenge}`:`WS2P:${type}:${this.currency}:${pub}:${challenge}`
     Logger.log('registerCONNECT >>> ' + challengeMessage)
-    const verified = verifyBuggy(challengeMessage, sig, pub)
+    const verified = verify(challengeMessage, sig, pub)
     if (verified) {
       this.remoteVersion = ws2pVersion
       this.challenge = challenge
@@ -166,7 +167,7 @@ export class WS2PPubkeyRemoteAuth implements WS2PRemoteAuth {
   async registerOK(sig: string): Promise<boolean> {
     const challengeMessage = `WS2P:OK:${this.currency}:${this.remotePub}:${this.challenge}`
     Logger.log('registerOK >>> ' + challengeMessage)
-    this.authenticatedByRemote = verifyBuggy(challengeMessage, sig, this.remotePub)
+    this.authenticatedByRemote = verify(challengeMessage, sig, this.remotePub)
     if (!this.authenticatedByRemote) {
       this.serverAuthReject("Wrong signature from remote OK")
     } else {
@@ -215,7 +216,7 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
     if (ws2pVersion > 1) {
       const challengeMessage = `WS2P:${ws2pVersion}:${connectWord}:${this.currency}:${this.pair.pub}:${this.ws2pId}:${this.challenge}`
       Logger.log('sendCONNECT >>> ' + challengeMessage)
-      const sig = this.pair.signSyncBuggy(challengeMessage)
+      const sig = this.pair.signSync(challengeMessage)
       await ws.send(JSON.stringify({
         auth: `${connectWord}`,
         version: ws2pVersion,
@@ -229,7 +230,7 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
     } else if (ws2pVersion == 1) {
       const challengeMessage = `WS2P:${connectWord}:${this.currency}:${this.pair.pub}:${this.challenge}`
       Logger.log('sendCONNECT >>> ' + challengeMessage)
-      const sig = this.pair.signSyncBuggy(challengeMessage)
+      const sig = this.pair.signSync(challengeMessage)
       await ws.send(JSON.stringify({
         auth: `${connectWord}`,
         pub: this.pair.pub,
@@ -248,7 +249,7 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
     }
     const challengeMessage = `WS2P:ACK:${this.currency}:${pub}:${this.challenge}`
     Logger.log('registerACK >>> ' + challengeMessage)
-    this.authenticated = verifyBuggy(challengeMessage, sig, pub)
+    this.authenticated = verify(challengeMessage, sig, pub)
     if (!this.authenticated) {
       this.serverAuthReject("Wrong signature from server ACK")
     } else {
@@ -260,7 +261,7 @@ export class WS2PPubkeyLocalAuth implements WS2PLocalAuth {
   async sendOK(ws:any): Promise<void> {
     const challengeMessage = `WS2P:OK:${this.currency}:${this.pair.pub}:${this.challenge}`
     Logger.log('sendOK >>> ' + challengeMessage)
-    const sig = this.pair.signSyncBuggy(challengeMessage)
+    const sig = this.pair.signSync(challengeMessage)
     await ws.send(JSON.stringify({
       auth: 'OK',
       sig

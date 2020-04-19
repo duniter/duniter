@@ -77,10 +77,12 @@ echo $SRC
 # Clean unused UI modules
 rm -Rf node_modules/duniter-ui/node_modules
 
-# Because we are building in a VM, Node.js could not detect that the target is ARM. So we move the modules' binaries accordingly.
-#mv node_modules/naclb/lib/binding/Release/node-v48-linux-x64 node_modules/naclb/lib/binding/Release/node-v48-linux-arm
-#mv node_modules/wotb/lib/binding/Release/node-v48-linux-x64 node_modules/wotb/lib/binding/Release/node-v48-linux-arm
-#mv node_modules/sqlite3/lib/binding/Release/node-v48-linux-x64 node_modules/sqlite3/lib/binding/Release/node-v48-linux-arm
+# Remove non production folders
+rm -rf coverage test
+
+# Remove unused duniteroxyde intermediate binaries
+rm -rf node_modules/duniteroxyde/target
+rm -rf node_modules/duniteroxyde/native/target
 
 cd ..
 mkdir -p duniter_release

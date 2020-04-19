@@ -16,7 +16,7 @@ import {ConfDTO} from "../dto/ConfDTO"
 import {CindexEntry, IndexEntry, Indexer, MindexEntry, SindexEntry} from "../indexer"
 import {BaseDTO, TransactionDTO} from "../dto/TransactionDTO"
 import {DBBlock} from "../db/DBBlock"
-import {verify, verifyBuggy} from "../common-libs/crypto/keyring"
+import {verify} from "duniteroxyde"
 import {hashf} from "../common"
 import {CommonConstants} from "../common-libs/constants"
 import {IdentityDTO} from "../dto/IdentityDTO"
@@ -26,6 +26,10 @@ import {FileDAL} from "../dal/fileDAL"
 
 const constants       = CommonConstants
 const maxAcceleration = require('./helpers').maxAcceleration
+
+const INVALID_G1_BLOCKS = new Set([15144, 31202, 85448, 87566, 90830, 109327, 189835, 199172, 221274, 253582]);
+const INVALID_GT_BLOCKS = new Set([24316, 62067, 62551, 93288, 173118, 183706, 196196, 246027, 247211, 263207,
+  307038, 328741, 335914, 377316, 395714, 396024, 407913, 422366, 496751]);
 
 export const LOCAL_RULES_FUNCTIONS = {
 
@@ -88,12 +92,28 @@ export const LOCAL_RULES_FUNCTIONS = {
 
   checkBlockSignature: async (block:BlockDTO) => {
     // Historically, Duniter used a buggy version of TweetNaCl (see #1390)
-    // Starting with the v12 blocks, Duniter uses a fixed version of TweetNaCl. 
-    if (block.version >= 12 && !verify(block.getSignedPart(), block.signature, block.issuer)) {
-      throw Error('Block\'s signature must match');
-    } else if (!verifyBuggy(block.getSignedPart(), block.signature, block.issuer)) {
-      throw Error('Block\'s signature must match');
+    // Starting with the v12 blocks, Duniter uses a fixed version of TweetNaCl.
+    if (!verify(block.getSignedPart(), block.signature, block.issuer)) {
+      if (block.version >= 12) {
+        throw Error('Block\'s signature must match');
+      }
+      // If DUBP < v12, block may have invalid signature
+      else if (block.currency === constants.G1) {
+        if (!INVALID_G1_BLOCKS.has(block.number)) {
+          throw Error('Block\'s signature must match');
+        }
+      }
+      else if (block.currency === constants.GT) {
+        if (!INVALID_GT_BLOCKS.has(block.number)) {
+          throw Error('Block\'s signature must match');
+        }
+      }
+      // Unknown currencies must have valid signature
+      else {
+        throw Error('Block\'s signature must match');
+      }
     }
+
     return true;
   },
 
@@ -113,7 +133,7 @@ export const LOCAL_RULES_FUNCTIONS = {
     while (!wrongSig && i < block.identities.length) {
       const idty = IdentityDTO.fromInline(block.identities[i]);
       idty.currency = block.currency;
-      wrongSig = !verifyBuggy(idty.rawWithoutSig(), idty.sig, idty.pubkey);
+      wrongSig = !verify(idty.rawWithoutSig(), idty.sig, idty.pubkey);
       if (wrongSig) {
         throw Error('Identity\'s signature must match');
       }
@@ -444,7 +464,7 @@ function getTransactionDepth(txHash:string, sindex:SindexShortEntry[], localDept
 }
 
 function checkSingleMembershipSignature(ms:any) {
-  return verifyBuggy(ms.getRaw(), ms.signature, ms.issuer);
+  return verify(ms.getRaw(), ms.signature, ms.issuer);
 }
 
 function checkBunchOfTransactions(transactions:TransactionDTO[], conf:ConfDTO, medianTime: number, options?:{ dontCareAboutChaining?:boolean }){

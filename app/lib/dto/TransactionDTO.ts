@@ -13,7 +13,7 @@
 
 import {hashf} from "../common"
 import {Cloneable} from "./Cloneable"
-import {verify, verifyBuggy} from "../common-libs/crypto/keyring"
+import {verify} from "duniteroxyde"
 
 export interface BaseDTO {
   base: number
@@ -248,7 +248,8 @@ export class TransactionDTO implements Cloneable {
       if (dubp_version >= 12) {
         sigResult.sigs[i].ok = verify(raw, sig, pub)
       } else {
-        sigResult.sigs[i].ok = verifyBuggy(raw, sig, pub)
+        // TODO ESZ list all invalid transactions
+        sigResult.sigs[i].ok = verify(raw, sig, pub)
       }
       matching = sigResult.sigs[i].ok 
       i++

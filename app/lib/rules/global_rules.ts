@@ -16,7 +16,7 @@ import {FileDAL} from "../dal/fileDAL"
 import {DBBlock} from "../db/DBBlock"
 import {TransactionDTO, TxSignatureResult} from "../dto/TransactionDTO"
 import {BlockDTO} from "../dto/BlockDTO"
-import {verifyBuggy} from "../common-libs/crypto/keyring"
+import {verify} from "duniteroxyde"
 import {rawer, txunlock} from "../common-libs/index"
 import {CommonConstants} from "../common-libs/constants"
 import {IdentityDTO} from "../dto/IdentityDTO"
@@ -322,7 +322,7 @@ async function checkCertificationShouldBeValid (block:{ number:number, currency:
         buid: buid,
         sig: ''
       })
-      const verified = verifyBuggy(raw, cert.sig, cert.from);
+      const verified = verify(raw, cert.sig, cert.from);
       if (!verified) {
         throw constants.ERRORS.WRONG_SIGNATURE_FOR_CERT
       }

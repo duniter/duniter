@@ -17,7 +17,7 @@ import {hashf} from "../../../lib/common"
 import {DBBlock} from "../../../lib/db/DBBlock"
 import {ConfDTO} from "../../../lib/dto/ConfDTO"
 import {ProverConstants} from "./constants"
-import {KeyGen, verify, verifyBuggy} from "../../../lib/common-libs/crypto/keyring"
+import {Ed25519Signator, KeyPairBuilder} from "duniteroxyde"
 import {dos2unix} from "../../../lib/common-libs/dos2unix"
 import {rawer} from "../../../lib/common-libs/index"
 import {ProcessCpuProfiler} from "../../../ProcessCpuProfiler"
@@ -37,7 +37,6 @@ export function createPowWorker() {
   let prefix = 0;
 
   let sigFuncSaved: (msg:string) => string; 
-  let verifyFuncSaved: (msg:string, sig:string) => boolean;
   let lastSecret:any, lastVersion: number, currentCPU:number = 1;
 
   process.on('uncaughtException', (err:any) => {
@@ -119,27 +118,13 @@ export function createPowWorker() {
       const highMark = stuff.highMark;
 
       // Define sigFunc
-      // Use Buggy version for performance reasons
+      const signator = KeyPairBuilder.fromSecretKey(pair.sec);
       let sigFunc = null;
       if (sigFuncSaved && lastSecret === pair.sec) {
         sigFunc = sigFuncSaved;
       } else {
         lastSecret = pair.sec;
-        sigFunc = (msg:string) => KeyGen(pair.pub, pair.sec).signSyncBuggy(msg)
-      }
-
-      // Define verifyFunc
-      let verifyFunc = null;
-      if (verifyFuncSaved && lastSecret === pair.sec && lastVersion === block.version) {
-        verifyFunc = verifyFuncSaved;
-      } else {
-        lastSecret = pair.sec;
-        lastVersion = block.version;
-        if (block.version >= 12) {
-          verifyFunc = (msg:string, sig:string) => verify(msg, sig, pair.pub)
-        } else {
-          verifyFunc = (msg:string, sig:string) => verifyBuggy(msg, sig, pair.pub)
-        }
+        sigFunc = (msg:string) => signator.sign(msg)
       }
       
       /*****************
@@ -212,12 +197,6 @@ export function createPowWorker() {
               }
               if (charOK) {
                 found = !!(pow[nbZeros].match(new RegExp('[0-' + highMark + ']')))
-                if (found) {
-                  let sigOk = verifyFunc(raw, sig);
-                  if (!sigOk) {
-                    found = false;
-                  }
-                }
               }
               if (!found && nbZeros > 0 && j - 1 >= ProverConstants.POW_MINIMAL_TO_SHOW) {
                 pSend({ pow: { pow: pow, block: block, nbZeros: nbZeros }});

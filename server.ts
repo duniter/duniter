@@ -19,7 +19,7 @@ import {TransactionService} from "./app/service/TransactionsService"
 import {ConfDTO} from "./app/lib/dto/ConfDTO"
 import {FileDAL, FileDALParams} from "./app/lib/dal/fileDAL"
 import * as stream from "stream"
-import {KeyGen, randomKey} from "./app/lib/common-libs/crypto/keyring"
+import {Key, randomKey} from "./app/lib/common-libs/crypto/keyring"
 import {parsers} from "./app/lib/common-libs/parsers/index"
 import {Cloneable} from "./app/lib/dto/Cloneable"
 import {CommonConstants, DuniterDocument, duniterDocument2str} from "./app/lib/common-libs/constants"
@@ -214,7 +214,7 @@ export class Server extends stream.Duplex implements HookableServer {
       this.conf.pair = randomKey().json()
     }
     // Extract key pair
-    this.keyPair = KeyGen(this.conf.pair.pub, this.conf.pair.sec);
+    this.keyPair = new Key(this.conf.pair.pub, this.conf.pair.sec);
     this.sign = (msg:string) => this.keyPair.sign(msg)
     // Update services
     this.IdentityService.setConfDAL(this.conf, this.dal)

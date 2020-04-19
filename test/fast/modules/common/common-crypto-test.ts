@@ -11,8 +11,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {KeyGen, verifyBuggy} from "../../../../app/lib/common-libs/crypto/keyring"
-import {Base58decode, Base58encode} from "../../../../app/lib/common-libs/crypto/base58"
+import {Key} from "../../../../app/lib/common-libs/crypto/keyring"
+import {verify} from "duniteroxyde"
 
 const should = require('should');
 
@@ -22,11 +22,9 @@ describe('ed25519 tests:', function(){
 
   before(async () => {
     // Generate the keypair
-    const keyPair = KeyGen('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP');
-    pub = Base58decode(keyPair.publicKey);
-    sec = Base58decode(keyPair.secretKey);
-    rawPub = Base58encode(new Buffer(pub));
-    rawSec = Base58encode(new Buffer(sec));
+    const keyPair = new Key('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd', '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP');
+    rawPub = keyPair.publicKey;
+    rawSec = keyPair.secretKey;
   })
 
   //it('good signature from existing secret key should be verified', function(done){
@@ -41,16 +39,16 @@ describe('ed25519 tests:', function(){
 
   it('good signature from generated key should be verified', function(done){
     const msg = "Some message to be signed";
-    const sig = KeyGen(rawPub, rawSec).signSyncBuggy(msg);
-    const verified = verifyBuggy(msg, sig, rawPub);
+    const sig = new Key(rawPub, rawSec).signSync(msg);
+    const verified = verify(msg, sig, rawPub);
     verified.should.equal(true);
     done();
   });
 
   it('wrong signature from generated key should NOT be verified', function(done){
     const msg = "Some message to be signed";
-    const sig = KeyGen(rawPub, rawSec).signSyncBuggy(msg);
-    const verified = verifyBuggy(msg + 'delta', sig, rawPub);
+    const sig = new Key(rawPub, rawSec).signSync(msg);
+    const verified = verify(msg + 'delta', sig, rawPub);
     verified.should.equal(false);
     done();
   });

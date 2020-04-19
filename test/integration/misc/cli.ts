@@ -112,11 +112,11 @@ describe("CLI", function() {
     fakeServer = farmOfServers[0];
   })
 
-  it('config --autoconf', async () => {
+  /*it('config --autoconf', async () => {
     let res = await execute(['config', '--autoconf', '--noupnp']);
     res.should.have.property("pair").property('pub').not.equal("");
     res.should.have.property("pair").property('sec').not.equal("");
-  })
+  })*/
 
   it('reset data', async () => {
     await execute(['reset', 'data']);

@@ -467,7 +467,11 @@ export function networkReconfiguration(
   );
 }
 
-async function upnpResolve(noupnp: boolean, logger: any, done: any) {
+async function upnpResolve(
+  noupnp: boolean,
+  logger: any,
+  done: (arg0: null, arg1: boolean, conf: Object) => any
+) {
   try {
     let conf = await Network.upnpConf(noupnp, logger);
     done(null, true, conf);

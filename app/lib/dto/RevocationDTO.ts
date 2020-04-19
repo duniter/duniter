@@ -11,20 +11,19 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {Cloneable} from "./Cloneable";
-import {hashf} from "../common";
+import { Cloneable } from "./Cloneable";
+import { hashf } from "../common";
 
-const DEFAULT_DOCUMENT_VERSION = 10
+const DEFAULT_DOCUMENT_VERSION = 10;
 
 export interface ShortRevocation {
-  pubkey: string
-  revocation: string
+  pubkey: string;
+  revocation: string;
 }
 
 export class RevocationDTO implements ShortRevocation, Cloneable {
-
   clone(): any {
-    return RevocationDTO.fromJSONObject(this)
+    return RevocationDTO.fromJSONObject(this);
   }
 
   constructor(
@@ -38,38 +37,38 @@ export class RevocationDTO implements ShortRevocation, Cloneable {
   ) {}
 
   rawWithoutSig() {
-    let raw = ""
-    raw += "Version: " + this.version + "\n"
-    raw += "Type: Revocation\n"
-    raw += "Currency: " + this.currency + "\n"
-    raw += "Issuer: " + this.pubkey + "\n"
-    raw += "IdtyUniqueID: " + this.idty_uid+ '\n'
-    raw += "IdtyTimestamp: " + this.idty_buid + '\n'
-    raw += "IdtySignature: " + this.idty_sig + '\n'
-    return raw
+    let raw = "";
+    raw += "Version: " + this.version + "\n";
+    raw += "Type: Revocation\n";
+    raw += "Currency: " + this.currency + "\n";
+    raw += "Issuer: " + this.pubkey + "\n";
+    raw += "IdtyUniqueID: " + this.idty_uid + "\n";
+    raw += "IdtyTimestamp: " + this.idty_buid + "\n";
+    raw += "IdtySignature: " + this.idty_sig + "\n";
+    return raw;
   }
 
   getRaw() {
-    return this.rawWithoutSig() + this.revocation + "\n"
+    return this.rawWithoutSig() + this.revocation + "\n";
   }
 
   getRawUnsigned() {
-    return this.rawWithoutSig()
+    return this.rawWithoutSig();
   }
 
   // TODO: to remove when BMA has been merged in duniter/duniter repo
   json() {
     return {
-      result: true
-    }
+      result: true,
+    };
   }
 
-  static fromInline(inline:string): ShortRevocation {
-    const [pubkey, revocation] = inline.split(':')
-    return { pubkey, revocation }
+  static fromInline(inline: string): ShortRevocation {
+    const [pubkey, revocation] = inline.split(":");
+    return { pubkey, revocation };
   }
 
-  static fromJSONObject(json:any) {
+  static fromJSONObject(json: any) {
     return new RevocationDTO(
       json.version || DEFAULT_DOCUMENT_VERSION,
       json.currency,
@@ -78,10 +77,10 @@ export class RevocationDTO implements ShortRevocation, Cloneable {
       json.idty_buid || json.buid,
       json.idty_sig || json.sig,
       json.revocation || json.revocation
-    )
+    );
   }
 
   getHash() {
-    return hashf(this.getRaw())
+    return hashf(this.getRaw());
   }
 }

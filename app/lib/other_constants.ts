@@ -12,19 +12,18 @@
 // GNU Affero General Public License for more details.
 
 export const OtherConstants = {
-
   MUTE_LOGS_DURING_UNIT_TESTS: false,
   SQL_TRACES: false,
 
   BC_EVENT: {
-    SWITCHED: 'switched',
-    HEAD_CHANGED: 'newHEAD',
-    RESOLUTION_DONE: 'resolution_done'
+    SWITCHED: "switched",
+    HEAD_CHANGED: "newHEAD",
+    RESOLUTION_DONE: "resolution_done",
   },
 
   ENABLE_LOKI_MONITORING: false,
   ENABLE_SQL_MONITORING: false,
   ENABLE_MONITORING: false,
   TRACE_BALANCES: false,
-  TRACE_PARTICULAR_BALANCE: '',
-}
+  TRACE_PARTICULAR_BALANCE: "",
+};

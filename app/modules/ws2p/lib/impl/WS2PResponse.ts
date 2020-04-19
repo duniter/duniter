@@ -11,6 +11,4 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-
-export interface WS2PResponse {
-}
+export interface WS2PResponse {}

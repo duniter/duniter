@@ -12,7 +12,7 @@
 // GNU Affero General Public License for more details.
 
 export interface Tristamp {
-  number: number
-  hash: string
-  medianTime: number
+  number: number;
+  hash: string;
+  medianTime: number;
 }

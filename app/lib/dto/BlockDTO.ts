@@ -11,54 +11,52 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {TransactionDTO} from "./TransactionDTO"
-import {CurrencyConfDTO} from "./ConfDTO"
-import {hashf} from "../common"
-import {Cloneable} from "./Cloneable"
-import {MonitorExecutionTime} from "../debug/MonitorExecutionTime"
+import { TransactionDTO } from "./TransactionDTO";
+import { CurrencyConfDTO } from "./ConfDTO";
+import { hashf } from "../common";
+import { Cloneable } from "./Cloneable";
+import { MonitorExecutionTime } from "../debug/MonitorExecutionTime";
 
-const DEFAULT_DOCUMENT_VERSION = 10
+const DEFAULT_DOCUMENT_VERSION = 10;
 
 export class BlockDTO implements Cloneable {
-
   clone(): any {
-    return BlockDTO.fromJSONObject(this)
+    return BlockDTO.fromJSONObject(this);
   }
 
-  version: number
-  number: number
-  currency: string
-  hash: string
-  inner_hash: string
-  previousHash: string
-  issuer: string
-  previousIssuer: string
-  dividend: number|null
-  time: number
-  powMin: number
-  unitbase: number
-  membersCount: number
-  issuersCount: number
-  issuersFrame: number
-  issuersFrameVar: number
-  identities: string[] = []
-  joiners: string[] = []
-  actives: string[] = []
-  leavers: string[] = []
-  revoked: string[] = []
-  excluded: string[] = []
-  certifications: string[] = []
-  transactions: TransactionDTO[] = []
-  medianTime: number
-  nonce: number
-  fork: boolean
-  parameters: string
-  signature: string
-  monetaryMass: number
-  UDTime: number
+  version: number;
+  number: number;
+  currency: string;
+  hash: string;
+  inner_hash: string;
+  previousHash: string;
+  issuer: string;
+  previousIssuer: string;
+  dividend: number | null;
+  time: number;
+  powMin: number;
+  unitbase: number;
+  membersCount: number;
+  issuersCount: number;
+  issuersFrame: number;
+  issuersFrameVar: number;
+  identities: string[] = [];
+  joiners: string[] = [];
+  actives: string[] = [];
+  leavers: string[] = [];
+  revoked: string[] = [];
+  excluded: string[] = [];
+  certifications: string[] = [];
+  transactions: TransactionDTO[] = [];
+  medianTime: number;
+  nonce: number;
+  fork: boolean;
+  parameters: string;
+  signature: string;
+  monetaryMass: number;
+  UDTime: number;
 
-  constructor() {
-  }
+  constructor() {}
 
   json() {
     return {
@@ -103,27 +101,29 @@ export class BlockDTO implements Cloneable {
           outputs: tx.outputs,
           unlocks: tx.unlocks,
           signatures: tx.signatures,
-          comment: tx.comment
-        }
-      })
-    }
+          comment: tx.comment,
+        };
+      }),
+    };
   }
 
   get len() {
-    return this.identities.length +
+    return (
+      this.identities.length +
       this.joiners.length +
       this.actives.length +
       this.leavers.length +
       this.revoked.length +
       this.certifications.length +
       this.transactions.reduce((sum, tx) => sum + tx.getLen(), 0)
+    );
   }
 
-  getInlineIdentity(pubkey:string): string | null {
+  getInlineIdentity(pubkey: string): string | null {
     let i = 0;
     let found = null;
     while (!found && i < this.identities.length) {
-      if (this.identities[i].match(new RegExp('^' + pubkey)))
+      if (this.identities[i].match(new RegExp("^" + pubkey)))
         found = this.identities[i];
       i++;
     }
@@ -131,20 +131,21 @@ export class BlockDTO implements Cloneable {
   }
 
   getRawUnSigned() {
-    return this.getRawInnerPart() + this.getSignedPart()
+    return this.getRawInnerPart() + this.getSignedPart();
   }
 
   getRawSigned() {
-    return this.getRawUnSigned() + this.signature + "\n"
+    return this.getRawUnSigned() + this.signature + "\n";
   }
 
   getSignedPart() {
-    return "InnerHash: " + this.inner_hash + "\n" +
-      "Nonce: " + this.nonce + "\n"
+    return (
+      "InnerHash: " + this.inner_hash + "\n" + "Nonce: " + this.nonce + "\n"
+    );
   }
 
   getSignedPartSigned() {
-    return this.getSignedPart() + this.signature + "\n"
+    return this.getSignedPart() + this.signature + "\n";
   }
 
   getRawInnerPart() {
@@ -156,107 +157,106 @@ export class BlockDTO implements Cloneable {
     raw += "PoWMin: " + this.powMin + "\n";
     raw += "Time: " + this.time + "\n";
     raw += "MedianTime: " + this.medianTime + "\n";
-    if (this.dividend)
-      raw += "UniversalDividend: " + this.dividend + "\n";
+    if (this.dividend) raw += "UniversalDividend: " + this.dividend + "\n";
     raw += "UnitBase: " + this.unitbase + "\n";
     raw += "Issuer: " + this.issuer + "\n";
     raw += "IssuersFrame: " + this.issuersFrame + "\n";
     raw += "IssuersFrameVar: " + this.issuersFrameVar + "\n";
     raw += "DifferentIssuersCount: " + this.issuersCount + "\n";
-    if(this.previousHash)
-      raw += "PreviousHash: " + this.previousHash + "\n";
-    if(this.previousIssuer)
+    if (this.previousHash) raw += "PreviousHash: " + this.previousHash + "\n";
+    if (this.previousIssuer)
       raw += "PreviousIssuer: " + this.previousIssuer + "\n";
-    if(this.parameters)
-      raw += "Parameters: " + this.parameters + "\n";
+    if (this.parameters) raw += "Parameters: " + this.parameters + "\n";
     raw += "MembersCount: " + this.membersCount + "\n";
     raw += "Identities:\n";
-    for (const idty of (this.identities || [])){
+    for (const idty of this.identities || []) {
       raw += idty + "\n";
     }
     raw += "Joiners:\n";
-    for (const joiner of (this.joiners || [])){
+    for (const joiner of this.joiners || []) {
       raw += joiner + "\n";
     }
     raw += "Actives:\n";
-    for (const active of (this.actives || [])){
+    for (const active of this.actives || []) {
       raw += active + "\n";
     }
     raw += "Leavers:\n";
-    for (const leaver of (this.leavers || [])){
+    for (const leaver of this.leavers || []) {
       raw += leaver + "\n";
     }
     raw += "Revoked:\n";
-    for (const revoked of (this.revoked || [])){
+    for (const revoked of this.revoked || []) {
       raw += revoked + "\n";
     }
     raw += "Excluded:\n";
-    for (const excluded of (this.excluded || [])){
+    for (const excluded of this.excluded || []) {
       raw += excluded + "\n";
     }
     raw += "Certifications:\n";
-    for (const cert of (this.certifications || [])){
+    for (const cert of this.certifications || []) {
       raw += cert + "\n";
     }
     raw += "Transactions:\n";
-    for (const tx of (this.transactions || [])){
+    for (const tx of this.transactions || []) {
       raw += tx.getCompactVersion();
     }
-    return raw
+    return raw;
   }
 
   getHash() {
-    return hashf(this.getSignedPartSigned())
+    return hashf(this.getSignedPartSigned());
   }
 
   get blockstamp() {
-    return BlockDTO.blockstamp({ number: this.number, hash: this.getHash() })
+    return BlockDTO.blockstamp({ number: this.number, hash: this.getHash() });
   }
 
   @MonitorExecutionTime()
-  static fromJSONObject(obj:any) {
-    const dto = new BlockDTO()
-    dto.version = parseInt(obj.version) || DEFAULT_DOCUMENT_VERSION
-    dto.number = parseInt(obj.number)
-    dto.currency = obj.currency || ""
-    dto.hash = obj.hash || ""
-    dto.inner_hash = obj.inner_hash
-    dto.previousHash = obj.previousHash
-    dto.issuer = obj.issuer || ""
-    dto.previousIssuer = obj.previousIssuer
-    dto.dividend = obj.dividend || null
-    dto.time = parseInt(obj.time)
-    dto.powMin = parseInt(obj.powMin)
-    dto.monetaryMass = parseInt(obj.monetaryMass)
+  static fromJSONObject(obj: any) {
+    const dto = new BlockDTO();
+    dto.version = parseInt(obj.version) || DEFAULT_DOCUMENT_VERSION;
+    dto.number = parseInt(obj.number);
+    dto.currency = obj.currency || "";
+    dto.hash = obj.hash || "";
+    dto.inner_hash = obj.inner_hash;
+    dto.previousHash = obj.previousHash;
+    dto.issuer = obj.issuer || "";
+    dto.previousIssuer = obj.previousIssuer;
+    dto.dividend = obj.dividend || null;
+    dto.time = parseInt(obj.time);
+    dto.powMin = parseInt(obj.powMin);
+    dto.monetaryMass = parseInt(obj.monetaryMass);
     if (isNaN(dto.monetaryMass) && obj.mass !== undefined) {
-      dto.monetaryMass = parseInt(obj.mass)
+      dto.monetaryMass = parseInt(obj.mass);
     }
     if (isNaN(dto.monetaryMass)) {
-      dto.monetaryMass = 0
+      dto.monetaryMass = 0;
     }
-    dto.unitbase = parseInt(obj.unitbase)
-    dto.membersCount = parseInt(obj.membersCount)
-    dto.issuersCount = parseInt(obj.issuersCount)
-    dto.issuersFrame = parseInt(obj.issuersFrame)
-    dto.issuersFrameVar = parseInt(obj.issuersFrameVar)
-    dto.identities = obj.identities || []
-    dto.joiners = obj.joiners || []
-    dto.actives = obj.actives || []
-    dto.leavers = obj.leavers || []
-    dto.revoked = obj.revoked || []
-    dto.excluded = obj.excluded || []
-    dto.certifications = obj.certifications || []
-    dto.transactions = (obj.transactions || []).map((tx:any) => TransactionDTO.fromJSONObject(tx))
-    dto.medianTime = parseInt(obj.medianTime)
-    dto.fork = !!obj.fork
-    dto.parameters = obj.parameters || ""
-    dto.signature = obj.signature || ""
-    dto.nonce = parseInt(obj.nonce)
-    return dto
+    dto.unitbase = parseInt(obj.unitbase);
+    dto.membersCount = parseInt(obj.membersCount);
+    dto.issuersCount = parseInt(obj.issuersCount);
+    dto.issuersFrame = parseInt(obj.issuersFrame);
+    dto.issuersFrameVar = parseInt(obj.issuersFrameVar);
+    dto.identities = obj.identities || [];
+    dto.joiners = obj.joiners || [];
+    dto.actives = obj.actives || [];
+    dto.leavers = obj.leavers || [];
+    dto.revoked = obj.revoked || [];
+    dto.excluded = obj.excluded || [];
+    dto.certifications = obj.certifications || [];
+    dto.transactions = (obj.transactions || []).map((tx: any) =>
+      TransactionDTO.fromJSONObject(tx)
+    );
+    dto.medianTime = parseInt(obj.medianTime);
+    dto.fork = !!obj.fork;
+    dto.parameters = obj.parameters || "";
+    dto.signature = obj.signature || "";
+    dto.nonce = parseInt(obj.nonce);
+    return dto;
   }
 
-  static getConf(block:BlockDTO): CurrencyConfDTO {
-    const sp = block.parameters.split(':');
+  static getConf(block: BlockDTO): CurrencyConfDTO {
+    const sp = block.parameters.split(":");
     return {
       currency: block.currency,
       c: parseFloat(sp[0]),
@@ -282,18 +282,18 @@ export class BlockDTO implements Cloneable {
       // New parameters, defaults to msWindow
       msPeriod: parseInt(sp[9]),
       sigReplay: parseInt(sp[9]),
-    }
+    };
   }
 
-  static getLen(block:any) {
-    return BlockDTO.fromJSONObject(block).len
+  static getLen(block: any) {
+    return BlockDTO.fromJSONObject(block).len;
   }
 
-  static getHash(block:any) {
-    return BlockDTO.fromJSONObject(block).getHash()
+  static getHash(block: any) {
+    return BlockDTO.fromJSONObject(block).getHash();
   }
 
-  static blockstamp(b: { number: number, hash: string }) {
-    return [b.number, b.hash].join('-')
+  static blockstamp(b: { number: number; hash: string }) {
+    return [b.number, b.hash].join("-");
   }
 }

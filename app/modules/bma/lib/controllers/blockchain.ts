@@ -11,11 +11,11 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {Server} from "../../../../../server"
-import {AbstractController} from "./AbstractController"
-import {ParametersService} from "../parameters"
-import {BMAConstants} from "../constants"
-import {MembershipDTO} from "../../../../lib/dto/MembershipDTO"
+import { Server } from "../../../../../server";
+import { AbstractController } from "./AbstractController";
+import { ParametersService } from "../parameters";
+import { BMAConstants } from "../constants";
+import { MembershipDTO } from "../../../../lib/dto/MembershipDTO";
 import {
   block2HttpBlock,
   HttpBlock,
@@ -26,38 +26,38 @@ import {
   HttpMemberships,
   HttpMilestonePage,
   HttpParameters,
-  HttpStat
-} from "../dtos"
-import {TransactionDTO} from "../../../../lib/dto/TransactionDTO"
-import {DataErrors} from "../../../../lib/common-libs/errors"
-import {Underscore} from "../../../../lib/common-libs/underscore"
-import * as toJson from "../tojson"
-import {StatName} from "../../../../lib/dal/fileDAL"
+  HttpStat,
+} from "../dtos";
+import { TransactionDTO } from "../../../../lib/dto/TransactionDTO";
+import { DataErrors } from "../../../../lib/common-libs/errors";
+import { Underscore } from "../../../../lib/common-libs/underscore";
+import * as toJson from "../tojson";
+import { StatName } from "../../../../lib/dal/fileDAL";
 
-const http2raw         = require('../http2raw');
+const http2raw = require("../http2raw");
 
 export class BlockchainBinding extends AbstractController {
+  with: any;
 
-  with:any
-
-  constructor(server:Server) {
-    super(server)
+  constructor(server: Server) {
+    super(server);
     this.with = {
-
-      newcomers: this.getStat('newcomers'),
-      certs:     this.getStat('certs'),
-      joiners:   this.getStat('joiners'),
-      actives:   this.getStat('actives'),
-      leavers:   this.getStat('leavers'),
-      revoked:   this.getStat('revoked'),
-      excluded:  this.getStat('excluded'),
-      ud:        this.getStat('ud'),
-      tx:        this.getStat('tx')
-    }
+      newcomers: this.getStat("newcomers"),
+      certs: this.getStat("certs"),
+      joiners: this.getStat("joiners"),
+      actives: this.getStat("actives"),
+      leavers: this.getStat("leavers"),
+      revoked: this.getStat("revoked"),
+      excluded: this.getStat("excluded"),
+      ud: this.getStat("ud"),
+      tx: this.getStat("tx"),
+    };
   }
 
-  async parseMembership(req:any): Promise<HttpMembership> {
-    const res = await this.pushEntity(req, http2raw.membership, (raw:string) => this.server.writeRawMembership(raw))
+  async parseMembership(req: any): Promise<HttpMembership> {
+    const res = await this.pushEntity(req, http2raw.membership, (raw: string) =>
+      this.server.writeRawMembership(raw)
+    );
     return {
       signature: res.signature,
       membership: {
@@ -67,65 +67,67 @@ export class BlockchainBinding extends AbstractController {
         membership: res.membership,
         date: res.date || 0,
         sigDate: res.sigDate || 0,
-        raw: res.getRaw()
-      }
-    }
+        raw: res.getRaw(),
+      },
+    };
   }
 
-  async parseBlock(req:any): Promise<HttpBlock> {
-    const res = await this.pushEntity(req, http2raw.block, (raw:string) => this.server.writeRawBlock(raw))
-    return block2HttpBlock(res)
+  async parseBlock(req: any): Promise<HttpBlock> {
+    const res = await this.pushEntity(req, http2raw.block, (raw: string) =>
+      this.server.writeRawBlock(raw)
+    );
+    return block2HttpBlock(res);
   }
 
   parameters = async (): Promise<HttpParameters> => {
-    const params = await this.server.dal.getParameters()
+    const params = await this.server.dal.getParameters();
     return {
-      "currency": params.currency,
-      "c": params.c,
-      "dt": params.dt,
-      "ud0": params.ud0,
-      "sigPeriod": params.sigPeriod,
-      "sigStock": params.sigStock,
-      "sigWindow": params.sigWindow,
-      "sigValidity": params.sigValidity,
-      "sigQty": params.sigQty,
-      "sigReplay": params.sigReplay,
-      "idtyWindow": params.idtyWindow,
-      "msWindow": params.msWindow,
-      "msPeriod": params.msPeriod,
-      "xpercent": params.xpercent,
-      "msValidity": params.msValidity,
-      "stepMax": params.stepMax,
-      "medianTimeBlocks": params.medianTimeBlocks,
-      "avgGenTime": params.avgGenTime,
-      "dtDiffEval": params.dtDiffEval,
-      "percentRot": params.percentRot,
-      "udTime0": params.udTime0,
-      "udReevalTime0": params.udReevalTime0,
-      "dtReeval": params.dtReeval
-    }
-  }
+      currency: params.currency,
+      c: params.c,
+      dt: params.dt,
+      ud0: params.ud0,
+      sigPeriod: params.sigPeriod,
+      sigStock: params.sigStock,
+      sigWindow: params.sigWindow,
+      sigValidity: params.sigValidity,
+      sigQty: params.sigQty,
+      sigReplay: params.sigReplay,
+      idtyWindow: params.idtyWindow,
+      msWindow: params.msWindow,
+      msPeriod: params.msPeriod,
+      xpercent: params.xpercent,
+      msValidity: params.msValidity,
+      stepMax: params.stepMax,
+      medianTimeBlocks: params.medianTimeBlocks,
+      avgGenTime: params.avgGenTime,
+      dtDiffEval: params.dtDiffEval,
+      percentRot: params.percentRot,
+      udTime0: params.udTime0,
+      udReevalTime0: params.udReevalTime0,
+      dtReeval: params.dtReeval,
+    };
+  };
 
   private getStat(statName: StatName): () => Promise<HttpStat> {
     return async () => {
       let stat = await this.server.dal.getStat(statName);
       return { result: toJson.stat(stat) };
-    }
+    };
   }
 
-  async promoted(req:any): Promise<HttpBlock> {
+  async promoted(req: any): Promise<HttpBlock> {
     const number = await ParametersService.getNumberP(req);
     const promoted = await this.BlockchainService.promoted(number);
     return toJson.block(promoted);
   }
 
-  async blocks(req:any): Promise<HttpBlock[]> {
+  async blocks(req: any): Promise<HttpBlock[]> {
     const params = ParametersService.getCountAndFrom(req);
     const count = parseInt(params.count);
     const from = parseInt(params.from);
     let blocks: any[] = await this.BlockchainService.blocksBetween(from, count);
-    blocks = blocks.map((b:any) => toJson.block(b));
-    return blocks.map(b => ({
+    blocks = blocks.map((b: any) => toJson.block(b));
+    return blocks.map((b) => ({
       version: b.version,
       currency: b.currency,
       number: b.number,
@@ -151,7 +153,7 @@ export class BlockchainBinding extends AbstractController {
       leavers: b.leavers,
       revoked: b.revoked,
       excluded: b.excluded,
-      transactions: b.transactions.map((t:TransactionDTO) => ({
+      transactions: b.transactions.map((t: TransactionDTO) => ({
         version: t.version,
         currency: t.currency,
         comment: t.comment,
@@ -169,12 +171,12 @@ export class BlockchainBinding extends AbstractController {
       inner_hash: b.inner_hash,
       signature: b.signature,
       raw: b.raw,
-    }))
+    }));
   }
 
   async milestones(req: any): Promise<HttpMilestonePage> {
-    const page = ParametersService.getPage(req)
-    return this.server.milestones(page)
+    const page = ParametersService.getPage(req);
+    return this.server.milestones(page);
   }
 
   async current(): Promise<HttpBlock> {
@@ -183,10 +185,12 @@ export class BlockchainBinding extends AbstractController {
     return toJson.block(current);
   }
 
-  async hardship(req:any): Promise<HttpHardship> {
+  async hardship(req: any): Promise<HttpHardship> {
     let nextBlockNumber = 0;
     const search = await ParametersService.getSearchP(req);
-    const idty = await this.server.dal.getWrittenIdtyByPubkeyOrUidForIsMemberAndPubkey(search);
+    const idty = await this.server.dal.getWrittenIdtyByPubkeyOrUidForIsMemberAndPubkey(
+      search
+    );
     if (!idty) {
       throw BMAConstants.ERRORS.NO_MATCHING_IDENTITY;
     }
@@ -197,43 +201,52 @@ export class BlockchainBinding extends AbstractController {
     if (current) {
       nextBlockNumber = current ? current.number + 1 : 0;
     }
-    const difficulty = await this.server.getBcContext().getIssuerPersonalizedDifficulty(idty.pub);
+    const difficulty = await this.server
+      .getBcContext()
+      .getIssuerPersonalizedDifficulty(idty.pub);
     return {
-      "block": nextBlockNumber,
-      "level": difficulty
+      block: nextBlockNumber,
+      level: difficulty,
     };
   }
 
   async difficulties(): Promise<HttpDifficulties> {
-    const current = await this.server.dal.getCurrentBlockOrNull()
+    const current = await this.server.dal.getCurrentBlockOrNull();
     if (!current) {
-      throw Error(DataErrors[DataErrors.BLOCKCHAIN_NOT_INITIALIZED_YET])
+      throw Error(DataErrors[DataErrors.BLOCKCHAIN_NOT_INITIALIZED_YET]);
     }
     const number = (current && current.number) || 0;
-    const issuers = await this.server.dal.getUniqueIssuersBetween(number - 1 - current.issuersFrame, number - 1);
+    const issuers = await this.server.dal.getUniqueIssuersBetween(
+      number - 1 - current.issuersFrame,
+      number - 1
+    );
     const difficulties = [];
     for (const issuer of issuers) {
-      const member = await this.server.dal.getWrittenIdtyByPubkeyForUidAndPubkey(issuer);
-      const difficulty = await this.server.getBcContext().getIssuerPersonalizedDifficulty(member.pub);
+      const member = await this.server.dal.getWrittenIdtyByPubkeyForUidAndPubkey(
+        issuer
+      );
+      const difficulty = await this.server
+        .getBcContext()
+        .getIssuerPersonalizedDifficulty(member.pub);
       difficulties.push({
         uid: member.uid,
-        level: difficulty
+        level: difficulty,
       });
     }
     return {
-      "block": number + 1,
-      "levels": Underscore.sortBy(difficulties, (diff:any) => diff.level)
+      block: number + 1,
+      levels: Underscore.sortBy(difficulties, (diff: any) => diff.level),
     };
   }
 
-  async memberships(req:any): Promise<HttpMemberships> {
+  async memberships(req: any): Promise<HttpMemberships> {
     const search = await ParametersService.getSearchP(req);
     const { idty, memberships } = await this.IdentityService.findMember(search);
     const json = {
       pubkey: idty.pubkey,
       uid: idty.uid,
       sigDate: idty.buid,
-      memberships: memberships.map((msObj:any) => {
+      memberships: memberships.map((msObj: any) => {
         const ms = MembershipDTO.fromJSONObject(msObj);
         return {
           version: ms.version,
@@ -241,11 +254,14 @@ export class BlockchainBinding extends AbstractController {
           membership: ms.membership,
           blockNumber: ms.block_number,
           blockHash: ms.block_hash,
-          written: (!msObj.written_number && msObj.written_number !== 0) ? null : msObj.written_number
+          written:
+            !msObj.written_number && msObj.written_number !== 0
+              ? null
+              : msObj.written_number,
         };
-      })
-    }
-    json.memberships = Underscore.sortBy(json.memberships, 'blockNumber')
+      }),
+    };
+    json.memberships = Underscore.sortBy(json.memberships, "blockNumber");
     json.memberships.reverse();
     return json;
   }
@@ -254,7 +270,7 @@ export class BlockchainBinding extends AbstractController {
     const branches = await this.BlockchainService.branches();
     const blocks = branches.map((b) => toJson.block(b));
     return {
-      blocks: blocks
+      blocks: blocks,
     };
   }
 }

@@ -1,4 +1,4 @@
 export interface DBWallet {
-  conditions: string
-  balance: number
+  conditions: string;
+  balance: number;
 }

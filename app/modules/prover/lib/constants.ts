@@ -12,7 +12,6 @@
 // GNU Affero General Public License for more details.
 
 export const ProverConstants = {
-
   CORES_MAXIMUM_USE_IN_PARALLEL: 8,
 
   MINIMAL_ZEROS_TO_SHOW_IN_LOGS: 3,
@@ -29,5 +28,5 @@ export const ProverConstants = {
   POW_NB_PAUSES_PER_ROUND: 10,
 
   // When to trigger the PoW process again if no PoW is triggered for a while. In milliseconds.
-  POW_SECURITY_RETRY_DELAY: 10 * 60 * 1000
-}
+  POW_SECURITY_RETRY_DELAY: 10 * 60 * 1000,
+};

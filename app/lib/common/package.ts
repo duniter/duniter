@@ -11,25 +11,23 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-
 export class Package {
-
-  private json:{ version:string }
+  private json: { version: string };
 
   private constructor() {
-    this.json = require('../../../package.json')
+    this.json = require("../../../package.json");
   }
 
   get version() {
-    return this.json.version
+    return this.json.version;
   }
 
-  private static instance:Package
+  private static instance: Package;
 
   static getInstance() {
     if (!Package.instance) {
-      Package.instance = new Package()
+      Package.instance = new Package();
     }
-    return Package.instance
+    return Package.instance;
   }
 }

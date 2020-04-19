@@ -11,16 +11,21 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {AbstractController} from "./AbstractController"
-import {BMAConstants} from "../constants"
-import {HttpMerkleOfPeers, HttpPeer, HttpPeers, HttpWS2PHeads, HttpWS2PInfo} from "../dtos"
-import {WS2PHead} from "../../../ws2p/lib/WS2PCluster"
-import {DBPeer} from "../../../../lib/db/DBPeer"
+import { AbstractController } from "./AbstractController";
+import { BMAConstants } from "../constants";
+import {
+  HttpMerkleOfPeers,
+  HttpPeer,
+  HttpPeers,
+  HttpWS2PHeads,
+  HttpWS2PInfo,
+} from "../dtos";
+import { WS2PHead } from "../../../ws2p/lib/WS2PCluster";
+import { DBPeer } from "../../../../lib/db/DBPeer";
 
-const http2raw         = require('../http2raw');
+const http2raw = require("../http2raw");
 
 export class NetworkBinding extends AbstractController {
-
   async peer(): Promise<HttpPeer> {
     const p = await this.PeeringService.peer();
     if (!p) {
@@ -29,13 +34,13 @@ export class NetworkBinding extends AbstractController {
     return p.json();
   }
 
-  async peersGet(req:any): Promise<HttpMerkleOfPeers> {
+  async peersGet(req: any): Promise<HttpMerkleOfPeers> {
     let merkle = await this.server.dal.merkleForPeers();
-    return await this.MerkleService(req, merkle, async (hashes:string[]) => {
+    return await this.MerkleService(req, merkle, async (hashes: string[]) => {
       try {
         let peers = await this.server.dal.findPeersWhoseHashIsIn(hashes);
-        const map:any = {};
-        peers.forEach((peer:any) => {
+        const map: any = {};
+        peers.forEach((peer: any) => {
           map[peer.hash] = peer;
         });
         if (peers.length == 0) {
@@ -45,11 +50,13 @@ export class NetworkBinding extends AbstractController {
       } catch (e) {
         throw e;
       }
-    })
+    });
   }
 
-  async peersPost(req:any): Promise<HttpPeer> {
-    const peerDTO = await this.pushEntity(req, http2raw.peer, (raw:string) => this.server.writeRawPeer(raw))
+  async peersPost(req: any): Promise<HttpPeer> {
+    const peerDTO = await this.pushEntity(req, http2raw.peer, (raw: string) =>
+      this.server.writeRawPeer(raw)
+    );
     return {
       version: peerDTO.version,
       currency: peerDTO.currency,
@@ -57,39 +64,39 @@ export class NetworkBinding extends AbstractController {
       block: peerDTO.blockstamp,
       endpoints: peerDTO.endpoints,
       signature: peerDTO.signature,
-      raw: peerDTO.getRaw()
-    }
+      raw: peerDTO.getRaw(),
+    };
   }
 
   async peers(): Promise<HttpPeers> {
     let peers = await this.server.dal.listAllPeers();
     return {
-      peers: peers.map(p => DBPeer.json(p))
-    }
+      peers: peers.map((p) => DBPeer.json(p)),
+    };
   }
 
   async ws2pInfo(): Promise<HttpWS2PInfo> {
-    const cluster = this.server.ws2pCluster
-    let level1 = 0
-    let level2 = 0
+    const cluster = this.server.ws2pCluster;
+    let level1 = 0;
+    let level2 = 0;
     if (cluster) {
-      level1 = await cluster.clientsCount()
-      level2 = await cluster.servedCount()
+      level1 = await cluster.clientsCount();
+      level2 = await cluster.servedCount();
     }
     return {
       peers: {
         level1,
-        level2
-      }
+        level2,
+      },
     };
   }
 
   async ws2pHeads(): Promise<HttpWS2PHeads> {
-    const cluster = this.server.ws2pCluster
-    let heads: WS2PHead[] = []
+    const cluster = this.server.ws2pCluster;
+    let heads: WS2PHead[] = [];
     if (cluster) {
-      heads = await cluster.getKnownHeads()
+      heads = await cluster.getKnownHeads();
     }
-    return { heads }
+    return { heads };
   }
 }

@@ -11,8 +11,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import * as crypto from 'crypto'
-import { KeyPairBuilder, seedToSecretKey } from 'duniteroxyde'
+import * as crypto from "crypto";
+import { KeyPairBuilder, seedToSecretKey } from "duniteroxyde";
 
 const SEED_LENGTH = 32; // Length of the key
 
@@ -25,17 +25,31 @@ const SEED_LENGTH = 32; // Length of the key
  * @param p Scrypt parameter p. Defaults to 1.
  * @return keyPair An object containing the public and private keys, base58 encoded.
  */
-export const Scrypt = async (salt:string, key:string, N = 4096, r = 16, p = 1) => {
-  const res: { pub: string, sec: string } = await new Promise((resolve, reject) => {
-    crypto.scrypt(key, salt, SEED_LENGTH, { N, r, p }, (err:any, seed:Buffer) => {
-      if (err) return reject(err)
-      const pair = KeyPairBuilder.fromSeed(seed);
-      resolve({
-        pub: pair.getPublicKey(),
-        sec: seedToSecretKey(seed)
-      })
-    })
-  })
+export const Scrypt = async (
+  salt: string,
+  key: string,
+  N = 4096,
+  r = 16,
+  p = 1
+) => {
+  const res: { pub: string; sec: string } = await new Promise(
+    (resolve, reject) => {
+      crypto.scrypt(
+        key,
+        salt,
+        SEED_LENGTH,
+        { N, r, p },
+        (err: any, seed: Buffer) => {
+          if (err) return reject(err);
+          const pair = KeyPairBuilder.fromSeed(seed);
+          resolve({
+            pub: pair.getPublicKey(),
+            sec: seedToSecretKey(seed),
+          });
+        }
+      );
+    }
+  );
 
   return res;
-}
+};

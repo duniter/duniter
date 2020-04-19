@@ -1,9 +1,8 @@
-import {IindexEntry, Indexer} from "../../../indexer"
-import {OldIindexEntry} from "../../../db/OldIindexEntry"
+import { IindexEntry, Indexer } from "../../../indexer";
+import { OldIindexEntry } from "../../../db/OldIindexEntry";
 
 export const OldTransformers = {
-
-  toOldIindexEntry(row:IindexEntry): OldIindexEntry {
+  toOldIindexEntry(row: IindexEntry): OldIindexEntry {
     // Old field
     return {
       pubkey: row.pub,
@@ -22,14 +21,18 @@ export const OldTransformers = {
       index: row.index,
       op: row.op,
       writtenOn: row.writtenOn,
-      written_on: row.written_on
-    }
+      written_on: row.written_on,
+    };
   },
 
-  iindexEntityOrNull: async (reducable:IindexEntry[]): Promise<OldIindexEntry|null> => {
+  iindexEntityOrNull: async (
+    reducable: IindexEntry[]
+  ): Promise<OldIindexEntry | null> => {
     if (reducable.length) {
-      return OldTransformers.toOldIindexEntry(Indexer.DUP_HELPERS.reduce(reducable))
+      return OldTransformers.toOldIindexEntry(
+        Indexer.DUP_HELPERS.reduce(reducable)
+      );
     }
-    return null
-  }
-}
+    return null;
+  },
+};

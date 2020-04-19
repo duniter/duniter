@@ -11,31 +11,46 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {NewLogger} from "../logger"
-import {getMicrosecondsTime} from "../../ProcessCpuProfiler"
-import {OtherConstants} from "../other_constants"
+import { NewLogger } from "../logger";
+import { getMicrosecondsTime } from "../../ProcessCpuProfiler";
+import { OtherConstants } from "../other_constants";
 
-const theLogger = NewLogger()
+const theLogger = NewLogger();
 
 export const MonitorLokiExecutionTime = function (dumpFirstParam = false) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ) {
     if (OtherConstants.ENABLE_LOKI_MONITORING) {
-      const original = descriptor.value
+      const original = descriptor.value;
       if (original.__proto__.constructor.name === "AsyncFunction") {
-        descriptor.value = async function (...args:any[]) {
-          const that :any = this
-          const now = getMicrosecondsTime()
-          const result = await original.apply(this, args)
+        descriptor.value = async function (...args: any[]) {
+          const that: any = this;
+          const now = getMicrosecondsTime();
+          const result = await original.apply(this, args);
           if (dumpFirstParam) {
-            theLogger.trace('[loki][%s][%s] => %sµs', that.collectionName, propertyKey, (getMicrosecondsTime() - now), args && args[0])
+            theLogger.trace(
+              "[loki][%s][%s] => %sµs",
+              that.collectionName,
+              propertyKey,
+              getMicrosecondsTime() - now,
+              args && args[0]
+            );
           } else {
-            theLogger.trace('[loki][%s][%s] => %sµs', that.collectionName, propertyKey, (getMicrosecondsTime() - now))
+            theLogger.trace(
+              "[loki][%s][%s] => %sµs",
+              that.collectionName,
+              propertyKey,
+              getMicrosecondsTime() - now
+            );
           }
-          return result
-        }
+          return result;
+        };
       } else {
-        throw Error("Monitoring a Loki synchronous function is not allowed.")
+        throw Error("Monitoring a Loki synchronous function is not allowed.");
       }
     }
-  }
-}
+  };
+};

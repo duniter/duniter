@@ -11,37 +11,36 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {RevocationDTO} from "./RevocationDTO"
-import {hashf} from "../common"
-import {DBIdentity, NewDBIdentity} from "../dal/sqliteDAL/IdentityDAL"
+import { RevocationDTO } from "./RevocationDTO";
+import { hashf } from "../common";
+import { DBIdentity, NewDBIdentity } from "../dal/sqliteDAL/IdentityDAL";
 
-const DEFAULT_DOCUMENT_VERSION = 10
+const DEFAULT_DOCUMENT_VERSION = 10;
 
 export interface HashableIdentity {
-  created_on: string
-  uid: string
-  pub: string
+  created_on: string;
+  uid: string;
+  pub: string;
 }
 
 export interface BasicIdentity {
-  buid: string
-  uid: string
-  pubkey: string
-  sig: string
+  buid: string;
+  uid: string;
+  pubkey: string;
+  sig: string;
 }
 
 export interface BasicRevocableIdentity {
-  buid: string
-  uid: string
-  pubkey: string
-  sig: string
-  member: boolean
-  wasMember: boolean
-  expires_on: number
+  buid: string;
+  uid: string;
+  pubkey: string;
+  sig: string;
+  member: boolean;
+  wasMember: boolean;
+  expires_on: number;
 }
 
 export class IdentityDTO {
-
   constructor(
     public version: number,
     public currency: string,
@@ -52,38 +51,38 @@ export class IdentityDTO {
   ) {}
 
   get hash() {
-    return this.getTargetHash()
+    return this.getTargetHash();
   }
 
   private getTargetHash() {
-    return hashf(this.uid + this.buid + this.pubkey)
+    return hashf(this.uid + this.buid + this.pubkey);
   }
 
   inline() {
-    return [this.pubkey, this.sig, this.buid, this.uid].join(':')
+    return [this.pubkey, this.sig, this.buid, this.uid].join(":");
   }
 
   rawWithoutSig() {
-    let raw = ""
-    raw += "Version: " + this.version + "\n"
-    raw += "Type: Identity\n"
-    raw += "Currency: " + this.currency + "\n"
-    raw += "Issuer: " + this.pubkey + "\n"
-    raw += "UniqueID: " + this.uid + '\n'
-    raw += "Timestamp: " + this.buid + '\n'
-    return raw
+    let raw = "";
+    raw += "Version: " + this.version + "\n";
+    raw += "Type: Identity\n";
+    raw += "Currency: " + this.currency + "\n";
+    raw += "Issuer: " + this.pubkey + "\n";
+    raw += "UniqueID: " + this.uid + "\n";
+    raw += "Timestamp: " + this.buid + "\n";
+    return raw;
   }
 
   getRawUnSigned() {
-    return this.rawWithoutSig()
+    return this.rawWithoutSig();
   }
 
   getRawSigned() {
-    return this.rawWithoutSig() + this.sig + "\n"
+    return this.rawWithoutSig() + this.sig + "\n";
   }
 
-  static fromInline(inline:string, currency:string = ""): IdentityDTO {
-    const [pubkey, sig, buid, uid] = inline.split(':')
+  static fromInline(inline: string, currency: string = ""): IdentityDTO {
+    const [pubkey, sig, buid, uid] = inline.split(":");
     return new IdentityDTO(
       DEFAULT_DOCUMENT_VERSION,
       currency,
@@ -91,14 +90,14 @@ export class IdentityDTO {
       sig,
       buid,
       uid
-    )
+    );
   }
 
-  static getTargetHash(idty:HashableIdentity) {
-    return hashf(idty.uid + idty.created_on + idty.pub)
+  static getTargetHash(idty: HashableIdentity) {
+    return hashf(idty.uid + idty.created_on + idty.pub);
   }
 
-  static fromJSONObject(obj:any) {
+  static fromJSONObject(obj: any) {
     return new IdentityDTO(
       obj.version || DEFAULT_DOCUMENT_VERSION,
       obj.currency,
@@ -106,10 +105,10 @@ export class IdentityDTO {
       obj.signature || obj.sig,
       obj.buid || obj.blockstamp,
       obj.uid
-    )
+    );
   }
 
-  static fromBasicIdentity(basic:BasicIdentity): DBIdentity {
+  static fromBasicIdentity(basic: BasicIdentity): DBIdentity {
     return new NewDBIdentity(
       basic.pubkey,
       basic.sig,
@@ -118,12 +117,12 @@ export class IdentityDTO {
       IdentityDTO.getTargetHash({
         pub: basic.pubkey,
         created_on: basic.buid,
-        uid: basic.uid
+        uid: basic.uid,
       })
-    )
+    );
   }
 
-  static fromRevocation(revoc:RevocationDTO): DBIdentity {
+  static fromRevocation(revoc: RevocationDTO): DBIdentity {
     return new NewDBIdentity(
       revoc.pubkey,
       revoc.idty_sig,
@@ -132,12 +131,12 @@ export class IdentityDTO {
       IdentityDTO.getTargetHash({
         pub: revoc.pubkey,
         created_on: revoc.idty_buid,
-        uid: revoc.idty_uid
+        uid: revoc.idty_uid,
       })
-    )
+    );
   }
 
   getHash() {
-    return hashf(this.getRawSigned())
+    return hashf(this.getRawSigned());
   }
 }

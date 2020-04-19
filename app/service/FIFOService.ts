@@ -11,16 +11,15 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {GlobalFifoPromise} from "./GlobalFifoPromise";
-import * as stream from 'stream';
+import { GlobalFifoPromise } from "./GlobalFifoPromise";
+import * as stream from "stream";
 
 export abstract class FIFOService extends stream.Readable {
-
-  constructor(private fifoPromiseHandler:GlobalFifoPromise) {
-    super({ objectMode: true })
+  constructor(private fifoPromiseHandler: GlobalFifoPromise) {
+    super({ objectMode: true });
   }
 
   async pushFIFO<T>(operationId: string, p: () => Promise<T>): Promise<T> {
-    return this.fifoPromiseHandler.pushFIFOPromise(operationId, p)
+    return this.fifoPromiseHandler.pushFIFOPromise(operationId, p);
   }
 }

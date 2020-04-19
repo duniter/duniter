@@ -11,42 +11,46 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {cliprogram} from "../common-libs/programOptions"
-import {IndexBatch} from "../dal/fileDAL"
+import { cliprogram } from "../common-libs/programOptions";
+import { IndexBatch } from "../dal/fileDAL";
 
 export const MonitorFlushedIndex = function () {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-    const original = descriptor.value
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ) {
+    const original = descriptor.value;
     if (original.__proto__.constructor.name === "AsyncFunction") {
-      descriptor.value = async function (...args:any[]) {
-        const pub = cliprogram.syncTrace
+      descriptor.value = async function (...args: any[]) {
+        const pub = cliprogram.syncTrace;
         if (pub) {
-          const batch: IndexBatch = args[0]
-          batch.iindex.forEach(e => {
+          const batch: IndexBatch = args[0];
+          batch.iindex.forEach((e) => {
             if (e.pub === pub) {
-              console.log(JSON.stringify(e))
+              console.log(JSON.stringify(e));
             }
-          })
-          batch.mindex.forEach(e => {
+          });
+          batch.mindex.forEach((e) => {
             if (e.pub === pub) {
-              console.log(JSON.stringify(e))
+              console.log(JSON.stringify(e));
             }
-          })
-          batch.cindex.forEach(e => {
+          });
+          batch.cindex.forEach((e) => {
             if (e.issuer === pub || e.receiver === pub) {
-              console.log(JSON.stringify(e))
+              console.log(JSON.stringify(e));
             }
-          })
-          batch.sindex.forEach(e => {
-            if (e.conditions.indexOf(pub || '') !== -1) {
-              console.log(JSON.stringify(e))
+          });
+          batch.sindex.forEach((e) => {
+            if (e.conditions.indexOf(pub || "") !== -1) {
+              console.log(JSON.stringify(e));
             }
-          })
+          });
         }
-        return await original.apply(this, args)
-      }
+        return await original.apply(this, args);
+      };
     } else {
-      throw Error("Monitoring a synchronous function is not allowed.")
+      throw Error("Monitoring a synchronous function is not allowed.");
     }
-  }
-}
+  };
+};

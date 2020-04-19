@@ -11,10 +11,10 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {WS2PConnection} from "./WS2PConnection"
-import {BlockDTO} from "../../../lib/dto/BlockDTO"
-import {PeerDTO} from "../../../lib/dto/PeerDTO"
-import {HttpMilestonePage} from "../../bma/lib/dtos"
+import { WS2PConnection } from "./WS2PConnection";
+import { BlockDTO } from "../../../lib/dto/BlockDTO";
+import { PeerDTO } from "../../../lib/dto/PeerDTO";
+import { HttpMilestonePage } from "../../bma/lib/dtos";
 
 export enum WS2P_REQ {
   KNOWN_PEERS,
@@ -24,62 +24,60 @@ export enum WS2P_REQ {
   BLOCK_BY_NUMBER,
   CURRENT,
   MILESTONES_PAGE,
-  MILESTONES
+  MILESTONES,
 }
 
 export class WS2PRequester {
+  private constructor(protected ws2pc: WS2PConnection) {}
 
-  private constructor(
-    protected ws2pc:WS2PConnection) {}
-
-  static fromConnection(ws2pc:WS2PConnection) {
-    return new WS2PRequester(ws2pc)
+  static fromConnection(ws2pc: WS2PConnection) {
+    return new WS2PRequester(ws2pc);
   }
 
   getPeer(): Promise<PeerDTO> {
-    return this.query(WS2P_REQ.PEER_DOCUMENT)
+    return this.query(WS2P_REQ.PEER_DOCUMENT);
   }
 
   getPeers(): Promise<PeerDTO[]> {
-    return this.query(WS2P_REQ.KNOWN_PEERS)
+    return this.query(WS2P_REQ.KNOWN_PEERS);
   }
 
   getCurrent(): Promise<BlockDTO> {
-    return this.query(WS2P_REQ.CURRENT)
+    return this.query(WS2P_REQ.CURRENT);
   }
 
   getMilestonesPage(): Promise<HttpMilestonePage> {
-    return this.query(WS2P_REQ.MILESTONES_PAGE)
+    return this.query(WS2P_REQ.MILESTONES_PAGE);
   }
 
   getMilestones(page: number): Promise<HttpMilestonePage> {
-    return this.query(WS2P_REQ.MILESTONES, { page })
+    return this.query(WS2P_REQ.MILESTONES, { page });
   }
 
-  getBlock(number:number): Promise<BlockDTO> {
-    return this.query(WS2P_REQ.BLOCK_BY_NUMBER, { number })
+  getBlock(number: number): Promise<BlockDTO> {
+    return this.query(WS2P_REQ.BLOCK_BY_NUMBER, { number });
   }
 
-  getBlocks(count:number, fromNumber:number): Promise<BlockDTO[]> {
-    return this.query(WS2P_REQ.BLOCKS_CHUNK, { count, fromNumber })
+  getBlocks(count: number, fromNumber: number): Promise<BlockDTO[]> {
+    return this.query(WS2P_REQ.BLOCKS_CHUNK, { count, fromNumber });
   }
 
   getPubkey() {
-    return this.ws2pc.pubkey || "########"
+    return this.ws2pc.pubkey || "########";
   }
 
   async getRequirementsPending(minCert = 1): Promise<any> {
-    return this.query(WS2P_REQ.WOT_REQUIREMENTS_OF_PENDING, { minCert })
+    return this.query(WS2P_REQ.WOT_REQUIREMENTS_OF_PENDING, { minCert });
   }
 
-  private query(req:WS2P_REQ, params:any = {}): Promise<any> {
+  private query(req: WS2P_REQ, params: any = {}): Promise<any> {
     return this.ws2pc.request({
       name: WS2P_REQ[req],
-      params: params
-    })
+      params: params,
+    });
   }
 
   get hostName() {
-    return this.ws2pc.hostName
+    return this.ws2pc.hostName;
   }
 }

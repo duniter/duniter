@@ -11,86 +11,89 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import * as moment from "moment"
-import {Server} from "../../../../server"
-import {BlockchainContext} from "../../../lib/computation/BlockchainContext"
-import {TransactionDTO} from "../../../lib/dto/TransactionDTO"
-import {GLOBAL_RULES_HELPERS} from "../../../lib/rules/global_rules"
-import {LOCAL_RULES_HELPERS} from "../../../lib/rules/local_rules"
-import {Indexer} from "../../../lib/indexer"
-import {DBBlock} from "../../../lib/db/DBBlock"
-import {verify} from "duniteroxyde"
-import {rawer} from "../../../lib/common-libs/index"
-import {hashf} from "../../../lib/common"
-import {CommonConstants} from "../../../lib/common-libs/constants"
-import {IdentityDTO} from "../../../lib/dto/IdentityDTO"
-import {CertificationDTO} from "../../../lib/dto/CertificationDTO"
-import {MembershipDTO} from "../../../lib/dto/MembershipDTO"
-import {BlockDTO} from "../../../lib/dto/BlockDTO"
-import {ConfDTO} from "../../../lib/dto/ConfDTO"
-import {FileDAL} from "../../../lib/dal/fileDAL"
-import {DataErrors} from "../../../lib/common-libs/errors"
-import {Underscore} from "../../../lib/common-libs/underscore"
-import {DBCert} from "../../../lib/dal/sqliteDAL/CertDAL"
-import {Map} from "../../../lib/common-libs/crypto/map"
+import * as moment from "moment";
+import { Server } from "../../../../server";
+import { BlockchainContext } from "../../../lib/computation/BlockchainContext";
+import { TransactionDTO } from "../../../lib/dto/TransactionDTO";
+import { GLOBAL_RULES_HELPERS } from "../../../lib/rules/global_rules";
+import { LOCAL_RULES_HELPERS } from "../../../lib/rules/local_rules";
+import { Indexer } from "../../../lib/indexer";
+import { DBBlock } from "../../../lib/db/DBBlock";
+import { verify } from "duniteroxyde";
+import { rawer } from "../../../lib/common-libs/index";
+import { hashf } from "../../../lib/common";
+import { CommonConstants } from "../../../lib/common-libs/constants";
+import { IdentityDTO } from "../../../lib/dto/IdentityDTO";
+import { CertificationDTO } from "../../../lib/dto/CertificationDTO";
+import { MembershipDTO } from "../../../lib/dto/MembershipDTO";
+import { BlockDTO } from "../../../lib/dto/BlockDTO";
+import { ConfDTO } from "../../../lib/dto/ConfDTO";
+import { FileDAL } from "../../../lib/dal/fileDAL";
+import { DataErrors } from "../../../lib/common-libs/errors";
+import { Underscore } from "../../../lib/common-libs/underscore";
+import { DBCert } from "../../../lib/dal/sqliteDAL/CertDAL";
+import { Map } from "../../../lib/common-libs/crypto/map";
 
-const inquirer        = require('inquirer');
+const inquirer = require("inquirer");
 
-const constants     = CommonConstants
+const constants = CommonConstants;
 
 export interface PreJoin {
   identity: {
-    pubkey: string
-    uid: string
-    buid: string
-    sig: string
-    member: boolean
-    wasMember: boolean
-    revoked: boolean
-  }
-  key: null
-  idHash: string
-  certs: DBCert[]
-  ms: any
+    pubkey: string;
+    uid: string;
+    buid: string;
+    sig: string;
+    member: boolean;
+    wasMember: boolean;
+    revoked: boolean;
+  };
+  key: null;
+  idHash: string;
+  certs: DBCert[];
+  ms: any;
 }
 
 interface LeaveData {
   identity: {
-    member: boolean
-  } | null
-  ms: any
-  key: any
-  idHash: string
+    member: boolean;
+  } | null;
+  ms: any;
+  key: any;
+  idHash: string;
 }
 
 export class BlockGenerator {
+  mainContext: BlockchainContext;
+  selfPubkey: string;
+  logger: any;
 
-  mainContext:BlockchainContext
-  selfPubkey:string
-  logger:any
-
-  constructor(private server:Server) {
+  constructor(private server: Server) {
     this.mainContext = server.BlockchainService.getContext();
-    this.selfPubkey = (this.conf.pair && this.conf.pair.pub) || ''
+    this.selfPubkey = (this.conf.pair && this.conf.pair.pub) || "";
     this.logger = server.logger;
   }
 
   get conf(): ConfDTO {
-    return this.server.conf
+    return this.server.conf;
   }
 
   get dal(): FileDAL {
-    return this.server.dal
+    return this.server.dal;
   }
 
-  nextBlock(manualValues:any = {}, simulationValues:any = {}) {
-    return this.generateNextBlock(new NextBlockGenerator(this.mainContext, this.server, this.logger), manualValues, simulationValues)
+  nextBlock(manualValues: any = {}, simulationValues: any = {}) {
+    return this.generateNextBlock(
+      new NextBlockGenerator(this.mainContext, this.server, this.logger),
+      manualValues,
+      simulationValues
+    );
   }
 
   async manualRoot() {
-    let current = await this.dal.getCurrentBlockOrNull()
+    let current = await this.dal.getCurrentBlockOrNull();
     if (current) {
-      throw 'Cannot generate root block: it already exists.';
+      throw "Cannot generate root block: it already exists.";
     }
     return this.generateNextBlock(new ManualRootGenerator());
   }
@@ -98,67 +101,115 @@ export class BlockGenerator {
   /**
    * Generate next block, gathering both updates & newcomers
    */
-  private async generateNextBlock(generator:BlockGeneratorInterface, manualValues:any = null, simulationValues:any = null) {
-    const vHEAD_1 = await this.mainContext.getvHEAD_1()
+  private async generateNextBlock(
+    generator: BlockGeneratorInterface,
+    manualValues: any = null,
+    simulationValues: any = null
+  ) {
+    const vHEAD_1 = await this.mainContext.getvHEAD_1();
     if (simulationValues && simulationValues.medianTime) {
-      vHEAD_1.medianTime = simulationValues.medianTime
+      vHEAD_1.medianTime = simulationValues.medianTime;
     }
     const current = await this.dal.getCurrentBlockOrNull();
-    const blockVersion = (manualValues && manualValues.version) || (await LOCAL_RULES_HELPERS.getMaxPossibleVersionNumber(current, this.dal))
+    const blockVersion =
+      (manualValues && manualValues.version) ||
+      (await LOCAL_RULES_HELPERS.getMaxPossibleVersionNumber(
+        current,
+        this.dal
+      ));
     const revocations = await this.dal.getRevocatingMembers();
     const exclusions = await this.dal.getToBeKickedPubkeys();
     const wereExcludeds = await this.dal.getRevokedPubkeys();
     const newCertsFromWoT = await generator.findNewCertsFromWoT(current);
-    const newcomers = await this.findNewcomers(current, joinersData => generator.filterJoiners(joinersData))
-    const leavers = await this.findLeavers(current)
+    const newcomers = await this.findNewcomers(current, (joinersData) =>
+      generator.filterJoiners(joinersData)
+    );
+    const leavers = await this.findLeavers(current);
     const transactions = await this.findTransactions(current, manualValues);
-    const certifiersOfNewcomers = Underscore.uniq(Underscore.keys(newcomers).reduce((theCertifiers, newcomer:string) => {
-      return theCertifiers.concat(Underscore.pluck(newcomers[newcomer].certs, 'from'));
-    }, <string[]>[]))
+    const certifiersOfNewcomers = Underscore.uniq(
+      Underscore.keys(newcomers).reduce((theCertifiers, newcomer: string) => {
+        return theCertifiers.concat(
+          Underscore.pluck(newcomers[newcomer].certs, "from")
+        );
+      }, <string[]>[])
+    );
     // Merges updates
-    Underscore.keys(newCertsFromWoT).forEach(function(certified:string){
-      newCertsFromWoT[certified] = newCertsFromWoT[certified].filter((cert:any) => {
-        // Must not certify a newcomer, since it would mean multiple certifications at same time from one member
-        const isCertifier = certifiersOfNewcomers.indexOf(cert.from) != -1;
-        if (!isCertifier) {
-          certifiersOfNewcomers.push(cert.from);
+    Underscore.keys(newCertsFromWoT).forEach(function (certified: string) {
+      newCertsFromWoT[certified] = newCertsFromWoT[certified].filter(
+        (cert: any) => {
+          // Must not certify a newcomer, since it would mean multiple certifications at same time from one member
+          const isCertifier = certifiersOfNewcomers.indexOf(cert.from) != -1;
+          if (!isCertifier) {
+            certifiersOfNewcomers.push(cert.from);
+          }
+          return !isCertifier;
         }
-        return !isCertifier;
-      });
+      );
     });
     // Create the block
-    return this.createBlock(blockVersion, current, newcomers, leavers, newCertsFromWoT, revocations, exclusions, wereExcludeds, transactions, manualValues);
+    return this.createBlock(
+      blockVersion,
+      current,
+      newcomers,
+      leavers,
+      newCertsFromWoT,
+      revocations,
+      exclusions,
+      wereExcludeds,
+      transactions,
+      manualValues
+    );
   }
 
-  private async findTransactions(current:DBBlock|null, options:{ dontCareAboutChaining?:boolean }) {
+  private async findTransactions(
+    current: DBBlock | null,
+    options: { dontCareAboutChaining?: boolean }
+  ) {
     if (!current) {
-      return []
+      return [];
     }
-    const versionMin = current ? Math.min(CommonConstants.LAST_VERSION_FOR_TX, current.version) : CommonConstants.DOCUMENTS_VERSION;
+    const versionMin = current
+      ? Math.min(CommonConstants.LAST_VERSION_FOR_TX, current.version)
+      : CommonConstants.DOCUMENTS_VERSION;
     const txs = await this.dal.getTransactionsPending(versionMin);
     const transactions = [];
-    const passingTxs:any[] = [];
-    const medianTime = current ? current.medianTime : 0
+    const passingTxs: any[] = [];
+    const medianTime = current ? current.medianTime : 0;
     for (const obj of txs) {
-      obj.currency = this.conf.currency
+      obj.currency = this.conf.currency;
       const tx = TransactionDTO.fromJSONObject(obj);
       try {
-        await LOCAL_RULES_HELPERS.checkBunchOfTransactions(passingTxs.concat(tx), this.conf, medianTime, options)
+        await LOCAL_RULES_HELPERS.checkBunchOfTransactions(
+          passingTxs.concat(tx),
+          this.conf,
+          medianTime,
+          options
+        );
         const fakeTimeVariation = current.medianTime + 1;
-        await GLOBAL_RULES_HELPERS.checkSingleTransaction(tx, current.version, fakeTimeVariation, this.conf, this.dal, async (txHash:string) => {
-          return Underscore.findWhere(passingTxs, { hash: txHash }) || null
-        });
+        await GLOBAL_RULES_HELPERS.checkSingleTransaction(
+          tx,
+          current.version,
+          fakeTimeVariation,
+          this.conf,
+          this.dal,
+          async (txHash: string) => {
+            return Underscore.findWhere(passingTxs, { hash: txHash }) || null;
+          }
+        );
         await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal);
         transactions.push(tx);
         passingTxs.push(tx);
-        this.logger.info('Transaction %s added to block', tx.hash);
+        this.logger.info("Transaction %s added to block", tx.hash);
       } catch (err) {
         this.logger.error(err);
         const currentNumber = (current && current.number) || 0;
-        const blockstamp = tx.blockstamp || (currentNumber + '-');
-        const txBlockNumber = parseInt(blockstamp.split('-')[0]);
+        const blockstamp = tx.blockstamp || currentNumber + "-";
+        const txBlockNumber = parseInt(blockstamp.split("-")[0]);
         // X blocks before removing the transaction
-        if (currentNumber - txBlockNumber + 1 >= CommonConstants.TRANSACTION_MAX_TRIES) {
+        if (
+          currentNumber - txBlockNumber + 1 >=
+          CommonConstants.TRANSACTION_MAX_TRIES
+        ) {
           await this.dal.removeTxByHash(tx.hash);
         }
       }
@@ -166,25 +217,53 @@ export class BlockGenerator {
     return transactions;
   }
 
-  private async findLeavers(current:DBBlock|null) {
-    const leaveData: { [pub:string]: { identity: { member:boolean }|null, ms: any, key: any, idHash: string } } = {};
-    const memberships = await this.dal.findLeavers((current && current.medianTime) || 0)
-    const leavers:string[] = [];
-    memberships.forEach((ms:any) => leavers.push(ms.issuer));
+  private async findLeavers(current: DBBlock | null) {
+    const leaveData: {
+      [pub: string]: {
+        identity: { member: boolean } | null;
+        ms: any;
+        key: any;
+        idHash: string;
+      };
+    } = {};
+    const memberships = await this.dal.findLeavers(
+      (current && current.medianTime) || 0
+    );
+    const leavers: string[] = [];
+    memberships.forEach((ms: any) => leavers.push(ms.issuer));
     for (const ms of memberships) {
-      const leave: { identity: { member:boolean }|null, ms: any, key: any, idHash: string } = { identity: null, ms: ms, key: null, idHash: '' };
-      leave.idHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
+      const leave: {
+        identity: { member: boolean } | null;
+        ms: any;
+        key: any;
+        idHash: string;
+      } = { identity: null, ms: ms, key: null, idHash: "" };
+      leave.idHash = (
+        hashf(ms.userid + ms.certts + ms.issuer) + ""
+      ).toUpperCase();
       let block;
       if (current) {
-        block = await this.dal.getAbsoluteValidBlockInForkWindowByBlockstamp(ms.block)
-      }
-      else {
+        block = await this.dal.getAbsoluteValidBlockInForkWindowByBlockstamp(
+          ms.block
+        );
+      } else {
         block = {};
       }
-      const identity = await this.dal.getGlobalIdentityByHashForIsMember(leave.idHash)
-      const currentMembership = await this.dal.mindexDAL.getReducedMSForImplicitRevocation(ms.issuer);
-      const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
-      if (identity && block && currentMSN < leave.ms.number && identity.member) {
+      const identity = await this.dal.getGlobalIdentityByHashForIsMember(
+        leave.idHash
+      );
+      const currentMembership = await this.dal.mindexDAL.getReducedMSForImplicitRevocation(
+        ms.issuer
+      );
+      const currentMSN = currentMembership
+        ? parseInt(currentMembership.created_on)
+        : -1;
+      if (
+        identity &&
+        block &&
+        currentMSN < leave.ms.number &&
+        identity.member
+      ) {
         // MS + matching cert are found
         leave.identity = identity;
         leaveData[identity.pub] = leave;
@@ -193,34 +272,51 @@ export class BlockGenerator {
     return leaveData;
   }
 
-  private async findNewcomers(current:DBBlock|null, filteringFunc: (joinData: Map<PreJoin>) => Promise<Map<PreJoin>>) {
+  private async findNewcomers(
+    current: DBBlock | null,
+    filteringFunc: (joinData: Map<PreJoin>) => Promise<Map<PreJoin>>
+  ) {
     const preJoinData = await this.getPreJoinData(current);
     const joinData = await filteringFunc(preJoinData);
     const members = await this.dal.getMembers();
-    const wotMembers = Underscore.pluck(members, 'pubkey');
+    const wotMembers = Underscore.pluck(members, "pubkey");
     // Checking step
-    let newcomers = Underscore.keys(joinData).map(String)
-    newcomers = Underscore.shuffle(newcomers)
+    let newcomers = Underscore.keys(joinData).map(String);
+    newcomers = Underscore.shuffle(newcomers);
     const nextBlockNumber = current ? current.number + 1 : 0;
     try {
-      const realNewcomers = await this.iteratedChecking(newcomers, async (someNewcomers:string[]) => {
-        const nextBlock = {
-          number: nextBlockNumber,
-          joiners: someNewcomers,
-          identities: Underscore.where(newcomers.map((pub:string) => joinData[pub].identity), { wasMember: false }).map((idty:any) => idty.pubkey)
-        };
-        const theNewLinks = await this.computeNewLinks(nextBlockNumber, someNewcomers, joinData)
-        await this.checkWoTConstraints(nextBlock, theNewLinks, current);
-      })
-      const newLinks = await this.computeNewLinks(nextBlockNumber, realNewcomers, joinData)
+      const realNewcomers = await this.iteratedChecking(
+        newcomers,
+        async (someNewcomers: string[]) => {
+          const nextBlock = {
+            number: nextBlockNumber,
+            joiners: someNewcomers,
+            identities: Underscore.where(
+              newcomers.map((pub: string) => joinData[pub].identity),
+              { wasMember: false }
+            ).map((idty: any) => idty.pubkey),
+          };
+          const theNewLinks = await this.computeNewLinks(
+            nextBlockNumber,
+            someNewcomers,
+            joinData
+          );
+          await this.checkWoTConstraints(nextBlock, theNewLinks, current);
+        }
+      );
+      const newLinks = await this.computeNewLinks(
+        nextBlockNumber,
+        realNewcomers,
+        joinData
+      );
       const newWoT = wotMembers.concat(realNewcomers);
-      const finalJoinData: { [pub:string]: PreJoin } = {};
-      realNewcomers.forEach((newcomer:string) => {
+      const finalJoinData: { [pub: string]: PreJoin } = {};
+      realNewcomers.forEach((newcomer: string) => {
         // Only keep membership of selected newcomers
         finalJoinData[newcomer] = joinData[newcomer];
         // Only keep certifications from final members
-        const keptCerts:any[] = [];
-        joinData[newcomer].certs.forEach((cert:any) => {
+        const keptCerts: any[] = [];
+        joinData[newcomer].certs.forEach((cert: any) => {
           const issuer = cert.from;
           if (~newWoT.indexOf(issuer) && ~newLinks[cert.to].indexOf(issuer)) {
             keptCerts.push(cert);
@@ -228,18 +324,24 @@ export class BlockGenerator {
         });
         joinData[newcomer].certs = keptCerts;
       });
-      return finalJoinData
-    } catch(err) {
+      return finalJoinData;
+    } catch (err) {
       this.logger.error(err);
       throw err;
     }
   }
 
-  private async checkWoTConstraints(block:{ number:number, joiners:string[], identities:string[] }, newLinks:any, current:DBBlock|null) {
+  private async checkWoTConstraints(
+    block: { number: number; joiners: string[]; identities: string[] },
+    newLinks: any,
+    current: DBBlock | null
+  ) {
     if (block.number < 0) {
-      throw 'Cannot compute WoT constraint for negative block number';
+      throw "Cannot compute WoT constraint for negative block number";
     }
-    const newcomers = block.joiners.map((inlineMS:string) => inlineMS.split(':')[0]);
+    const newcomers = block.joiners.map(
+      (inlineMS: string) => inlineMS.split(":")[0]
+    );
     const realNewcomers = block.identities;
     for (const newcomer of newcomers) {
       if (block.number > 0) {
@@ -247,9 +349,18 @@ export class BlockGenerator {
           // Will throw an error if not enough links
           await this.mainContext.checkHaveEnoughLinks(newcomer, newLinks);
           // This one does not throw but returns a boolean
-          const isOut = await GLOBAL_RULES_HELPERS.isOver3Hops(newcomer, newLinks, realNewcomers, current, this.conf, this.dal);
+          const isOut = await GLOBAL_RULES_HELPERS.isOver3Hops(
+            newcomer,
+            newLinks,
+            realNewcomers,
+            current,
+            this.conf,
+            this.dal
+          );
           if (isOut) {
-            throw 'Key ' + newcomer + ' is not recognized by the WoT for this block';
+            throw (
+              "Key " + newcomer + " is not recognized by the WoT for this block"
+            );
           }
         } catch (e) {
           this.logger.debug(e);
@@ -259,8 +370,11 @@ export class BlockGenerator {
     }
   }
 
-  private async iteratedChecking(newcomers:string[], checkWoTForNewcomers: (someNewcomers:string[]) => Promise<void>): Promise<string[]> {
-    const passingNewcomers:string[] = []
+  private async iteratedChecking(
+    newcomers: string[],
+    checkWoTForNewcomers: (someNewcomers: string[]) => Promise<void>
+  ): Promise<string[]> {
+    const passingNewcomers: string[] = [];
     let hadError = false;
     for (const newcomer of newcomers) {
       try {
@@ -271,39 +385,62 @@ export class BlockGenerator {
       }
     }
     if (hadError) {
-      return await this.iteratedChecking(passingNewcomers, checkWoTForNewcomers);
+      return await this.iteratedChecking(
+        passingNewcomers,
+        checkWoTForNewcomers
+      );
     } else {
       return passingNewcomers;
     }
   }
 
-  private async getPreJoinData(current:DBBlock|null) {
-    const preJoinData:{ [k:string]: PreJoin } = {}
-    const memberships = await this.dal.findNewcomers((current && current.medianTime) || 0)
-    const joiners:string[] = [];
-    memberships.forEach((ms:any) => joiners.push(ms.issuer));
+  private async getPreJoinData(current: DBBlock | null) {
+    const preJoinData: { [k: string]: PreJoin } = {};
+    const memberships = await this.dal.findNewcomers(
+      (current && current.medianTime) || 0
+    );
+    const joiners: string[] = [];
+    memberships.forEach((ms: any) => joiners.push(ms.issuer));
     for (const ms of memberships) {
       try {
         if (ms.block !== CommonConstants.SPECIAL_BLOCK) {
-          let msBasedBlock = await this.dal.getAbsoluteValidBlockInForkWindow(ms.blockNumber, ms.blockHash)
+          let msBasedBlock = await this.dal.getAbsoluteValidBlockInForkWindow(
+            ms.blockNumber,
+            ms.blockHash
+          );
           if (!msBasedBlock) {
             throw constants.ERRORS.BLOCKSTAMP_DOES_NOT_MATCH_A_BLOCK;
           }
           if (!current) {
-            throw Error(DataErrors[DataErrors.CANNOT_DETERMINATE_MEMBERSHIP_AGE])
+            throw Error(
+              DataErrors[DataErrors.CANNOT_DETERMINATE_MEMBERSHIP_AGE]
+            );
           }
           let age = current.medianTime - msBasedBlock.medianTime;
           if (age > this.conf.msWindow) {
             throw constants.ERRORS.TOO_OLD_MEMBERSHIP;
           }
         }
-        const idtyHash = (hashf(ms.userid + ms.certts + ms.issuer) + "").toUpperCase();
-        const join = await this.getSinglePreJoinData(current, idtyHash, joiners);
+        const idtyHash = (
+          hashf(ms.userid + ms.certts + ms.issuer) + ""
+        ).toUpperCase();
+        const join = await this.getSinglePreJoinData(
+          current,
+          idtyHash,
+          joiners
+        );
         join.ms = ms;
-        const currentMembership = await this.dal.mindexDAL.getReducedMSForImplicitRevocation(ms.issuer);
-        const currentMSN = currentMembership ? parseInt(currentMembership.created_on) : -1;
+        const currentMembership = await this.dal.mindexDAL.getReducedMSForImplicitRevocation(
+          ms.issuer
+        );
+        const currentMSN = currentMembership
+          ? parseInt(currentMembership.created_on)
+          : -1;
         if (!join.identity.revoked && currentMSN < parseInt(join.ms.number)) {
-          if (!preJoinData[join.identity.pubkey] || preJoinData[join.identity.pubkey].certs.length < join.certs.length) {
+          if (
+            !preJoinData[join.identity.pubkey] ||
+            preJoinData[join.identity.pubkey].certs.length < join.certs.length
+          ) {
             preJoinData[join.identity.pubkey] = join;
           }
         }
@@ -316,22 +453,31 @@ export class BlockGenerator {
     return preJoinData;
   }
 
-  private async computeNewLinks(forBlock:number, theNewcomers:any, joinData:Map<PreJoin>) {
+  private async computeNewLinks(
+    forBlock: number,
+    theNewcomers: any,
+    joinData: Map<PreJoin>
+  ) {
     let newCerts = await this.computeNewCerts(forBlock, theNewcomers, joinData);
     return this.newCertsToLinks(newCerts);
   }
 
-  newCertsToLinks(newCerts:Map<DBCert[]>) {
-    let newLinks: Map<string[]> = {}
+  newCertsToLinks(newCerts: Map<DBCert[]>) {
+    let newLinks: Map<string[]> = {};
     for (const pubkey of Underscore.keys(newCerts)) {
-      newLinks[pubkey] = Underscore.pluck(newCerts[pubkey], 'from')
+      newLinks[pubkey] = Underscore.pluck(newCerts[pubkey], "from");
     }
-    return newLinks
+    return newLinks;
   }
 
-  async computeNewCerts(forBlock:number, theNewcomers:any, joinData:Map<PreJoin>) {
-    const newCerts:Map<DBCert[]> = {}, certifiers:string[] = []
-    const certsByKey = Underscore.mapObjectByProp(joinData, 'certs')
+  async computeNewCerts(
+    forBlock: number,
+    theNewcomers: any,
+    joinData: Map<PreJoin>
+  ) {
+    const newCerts: Map<DBCert[]> = {},
+      certifiers: string[] = [];
+    const certsByKey = Underscore.mapObjectByProp(joinData, "certs");
     for (const newcomer of theNewcomers) {
       // New array of certifiers
       newCerts[newcomer] = newCerts[newcomer] || [];
@@ -344,7 +490,7 @@ export class BlockGenerator {
             newCerts[newcomer].push(cert);
             certifiers.push(cert.from);
           } else {
-            let isMember = await this.dal.isMember(cert.from)
+            let isMember = await this.dal.isMember(cert.from);
             // Member to newcomer => valid link
             if (isMember) {
               newCerts[newcomer].push(cert);
@@ -354,23 +500,35 @@ export class BlockGenerator {
         }
       }
     }
-    return newCerts
+    return newCerts;
   }
 
-  async getSinglePreJoinData(current:DBBlock|null, idHash:string, joiners:string[]): Promise<PreJoin> {
-    const identity = await this.dal.getGlobalIdentityByHashForJoining(idHash)
+  async getSinglePreJoinData(
+    current: DBBlock | null,
+    idHash: string,
+    joiners: string[]
+  ): Promise<PreJoin> {
+    const identity = await this.dal.getGlobalIdentityByHashForJoining(idHash);
     let foundCerts = [];
     const vHEAD_1 = await this.mainContext.getvHEAD_1();
     if (!identity) {
-      throw 'Identity with hash \'' + idHash + '\' not found';
+      throw "Identity with hash '" + idHash + "' not found";
     }
-    if (current && identity.buid == CommonConstants.SPECIAL_BLOCK && !identity.wasMember) {
+    if (
+      current &&
+      identity.buid == CommonConstants.SPECIAL_BLOCK &&
+      !identity.wasMember
+    ) {
       throw constants.ERRORS.TOO_OLD_IDENTITY;
-    }
-    else if (!identity.wasMember && identity.buid != CommonConstants.SPECIAL_BLOCK) {
-      const idtyBasedBlock = await this.dal.getTristampOf(parseInt(identity.buid.split('-')[0]))
+    } else if (
+      !identity.wasMember &&
+      identity.buid != CommonConstants.SPECIAL_BLOCK
+    ) {
+      const idtyBasedBlock = await this.dal.getTristampOf(
+        parseInt(identity.buid.split("-")[0])
+      );
       if (!current || !idtyBasedBlock) {
-        throw Error(DataErrors[DataErrors.CANNOT_DETERMINATE_IDENTITY_AGE])
+        throw Error(DataErrors[DataErrors.CANNOT_DETERMINATE_IDENTITY_AGE]);
       }
       const age = current.medianTime - idtyBasedBlock.medianTime;
       if (age > this.conf.idtyWindow) {
@@ -389,9 +547,9 @@ export class BlockGenerator {
       if (!current) {
         // Look for certifications from initial joiners
         const certs = await this.dal.certsNotLinkedToTarget(idHash);
-        foundCerts = Underscore.filter(certs, (cert:any) => {
+        foundCerts = Underscore.filter(certs, (cert: any) => {
           // Add 'joiners && ': special case when block#0 not written and not joiner yet (avoid undefined error)
-          return !!(joiners && ~joiners.indexOf(cert.from))
+          return !!(joiners && ~joiners.indexOf(cert.from));
         });
       } else {
         // Look for certifications from WoT members
@@ -399,35 +557,50 @@ export class BlockGenerator {
         const certifiers = [];
         for (const cert of certs) {
           try {
-            const basedBlock = await this.dal.getTristampOf(cert.block_number)
+            const basedBlock = await this.dal.getTristampOf(cert.block_number);
             if (!basedBlock) {
-              throw 'Unknown timestamp block for identity';
+              throw "Unknown timestamp block for identity";
             }
             if (current) {
               const age = current.medianTime - basedBlock.medianTime;
               if (age > this.conf.sigWindow || age > this.conf.sigValidity) {
-                throw 'Too old certification';
+                throw "Too old certification";
               }
             }
             // Already exists a link not replayable yet?
-            let exists = await this.dal.existsNonReplayableLink(cert.from, cert.to, current.medianTime, current.version)
+            let exists = await this.dal.existsNonReplayableLink(
+              cert.from,
+              cert.to,
+              current.medianTime,
+              current.version
+            );
             if (exists) {
-              throw 'It already exists a similar certification written, which is not replayable yet';
+              throw "It already exists a similar certification written, which is not replayable yet";
             }
             // Already exists a link not chainable yet?
-            exists = await this.dal.existsNonChainableLink(cert.from, vHEAD_1, this.conf.sigStock);
+            exists = await this.dal.existsNonChainableLink(
+              cert.from,
+              vHEAD_1,
+              this.conf.sigStock
+            );
             if (exists) {
-              throw 'It already exists a written certification from ' + cert.from + ' which is not chainable yet';
+              throw (
+                "It already exists a written certification from " +
+                cert.from +
+                " which is not chainable yet"
+              );
             }
             const isMember = await this.dal.isMember(cert.from);
-            const doubleSignature = !!(~certifiers.indexOf(cert.from))
+            const doubleSignature = !!~certifiers.indexOf(cert.from);
             if (isMember && !doubleSignature) {
               const isValid = await GLOBAL_RULES_HELPERS.checkCertificationIsValidForBlock(
                 cert,
                 { number: current.number + 1, currency: current.currency },
-                async () => this.dal.getGlobalIdentityByHashForHashingAndSig(idHash),
+                async () =>
+                  this.dal.getGlobalIdentityByHashForHashingAndSig(idHash),
                 this.conf,
-                this.dal)
+                this.dal
+              );
               if (isValid) {
                 certifiers.push(cert.from);
                 foundCerts.push(cert);
@@ -440,28 +613,28 @@ export class BlockGenerator {
         }
       }
     }
-    const ms:any = null // TODO: refactor
+    const ms: any = null; // TODO: refactor
     return {
       identity: identity,
       key: null,
       idHash: idHash,
       certs: foundCerts,
-      ms
+      ms,
     };
   }
 
   private async createBlock(
     blockVersion: number,
-    current:DBBlock|null,
-    joinData:{ [pub:string]: PreJoin },
-    leaveData:{ [pub:string]: LeaveData },
-    updates:any,
-    revocations:any,
-    exclusions:any,
-    wereExcluded:any,
-    transactions:any,
-    manualValues:ForcedBlockValues) {
-
+    current: DBBlock | null,
+    joinData: { [pub: string]: PreJoin },
+    leaveData: { [pub: string]: LeaveData },
+    updates: any,
+    revocations: any,
+    exclusions: any,
+    wereExcluded: any,
+    transactions: any,
+    manualValues: ForcedBlockValues
+  ) {
     if (manualValues && manualValues.excluded) {
       exclusions = manualValues.excluded;
     }
@@ -474,22 +647,22 @@ export class BlockGenerator {
     const maxLenOfBlock = Indexer.DUP_HELPERS.getMaxBlockSize(vHEAD);
     let blockLen = 0;
     // Revocations have an impact on exclusions
-    revocations.forEach((idty:any) => exclusions.push(idty.pubkey));
+    revocations.forEach((idty: any) => exclusions.push(idty.pubkey));
     // Prevent writing joins/updates for members who will be excluded
     exclusions = Underscore.uniq(exclusions);
-    exclusions.forEach((excluded:any) => {
+    exclusions.forEach((excluded: any) => {
       delete updates[excluded];
       delete joinData[excluded];
       delete leaveData[excluded];
     });
     // Prevent writing joins/updates for excluded members
     wereExcluded = Underscore.uniq(wereExcluded);
-    wereExcluded.forEach((excluded:any) => {
+    wereExcluded.forEach((excluded: any) => {
       delete updates[excluded];
       delete joinData[excluded];
       delete leaveData[excluded];
     });
-    Underscore.keys(leaveData).forEach((leaver:any) => {
+    Underscore.keys(leaveData).forEach((leaver: any) => {
       delete updates[leaver];
       delete joinData[leaver];
     });
@@ -498,12 +671,11 @@ export class BlockGenerator {
     // Compute the new MedianTime
     if (block.number == 0) {
       block.medianTime = moment.utc().unix() - this.conf.rootoffset;
-    }
-    else {
+    } else {
       block.medianTime = vHEAD.medianTime;
     }
     // Choose the version
-    block.version = blockVersion
+    block.version = blockVersion;
     block.currency = current ? current.currency : this.conf.currency;
     block.nonce = 0;
     if (!this.conf.dtReeval) {
@@ -515,24 +687,39 @@ export class BlockGenerator {
     if (!this.conf.udReevalTime0) {
       this.conf.udReevalTime0 = block.medianTime + this.conf.dtReeval;
     }
-    block.parameters = block.number > 0 ? '' : [
-      this.conf.c, this.conf.dt, this.conf.ud0,
-      this.conf.sigPeriod, this.conf.sigStock, this.conf.sigWindow, this.conf.sigValidity,
-      this.conf.sigQty, this.conf.idtyWindow, this.conf.msWindow, this.conf.xpercent, this.conf.msValidity,
-      this.conf.stepMax, this.conf.medianTimeBlocks, this.conf.avgGenTime, this.conf.dtDiffEval,
-      (this.conf.percentRot == 1 ? "1.0" : this.conf.percentRot),
-      this.conf.udTime0,
-      this.conf.udReevalTime0,
-      this.conf.dtReeval
-    ].join(':');
+    block.parameters =
+      block.number > 0
+        ? ""
+        : [
+            this.conf.c,
+            this.conf.dt,
+            this.conf.ud0,
+            this.conf.sigPeriod,
+            this.conf.sigStock,
+            this.conf.sigWindow,
+            this.conf.sigValidity,
+            this.conf.sigQty,
+            this.conf.idtyWindow,
+            this.conf.msWindow,
+            this.conf.xpercent,
+            this.conf.msValidity,
+            this.conf.stepMax,
+            this.conf.medianTimeBlocks,
+            this.conf.avgGenTime,
+            this.conf.dtDiffEval,
+            this.conf.percentRot == 1 ? "1.0" : this.conf.percentRot,
+            this.conf.udTime0,
+            this.conf.udReevalTime0,
+            this.conf.dtReeval,
+          ].join(":");
     block.previousHash = current ? current.hash : "";
     block.previousIssuer = current ? current.issuer : "";
     if (this.selfPubkey) {
-      block.issuer = this.selfPubkey
+      block.issuer = this.selfPubkey;
     }
     // Members merkle
-    const joiners = Underscore.keys(joinData)
-    joiners.sort()
+    const joiners = Underscore.keys(joinData);
+    joiners.sort();
     const previousCount = current ? current.membersCount : 0;
     if (joiners.length == 0 && !current) {
       throw constants.ERRORS.CANNOT_ROOT_BLOCK_NO_MEMBERS;
@@ -545,17 +732,19 @@ export class BlockGenerator {
      * Priority 1: keep the WoT sane
      */
     // Certifications from the WoT, to the WoT
-    Underscore.keys(updates).forEach((certifiedMember:any) => {
+    Underscore.keys(updates).forEach((certifiedMember: any) => {
       const certs = updates[certifiedMember] || [];
-      certs.forEach((cert:any) => {
+      certs.forEach((cert: any) => {
         if (blockLen < maxLenOfBlock) {
-          block.certifications.push(CertificationDTO.fromJSONObject(cert).inline());
+          block.certifications.push(
+            CertificationDTO.fromJSONObject(cert).inline()
+          );
           blockLen++;
         }
       });
     });
     // Renewed
-    joiners.forEach((joiner:any) => {
+    joiners.forEach((joiner: any) => {
       const data = joinData[joiner];
       // Join only for non-members
       if (data.identity.member) {
@@ -566,8 +755,8 @@ export class BlockGenerator {
       }
     });
     // Leavers
-    const leavers = Underscore.keys(leaveData)
-    leavers.forEach((leaver:any) => {
+    const leavers = Underscore.keys(leaveData);
+    leavers.forEach((leaver: any) => {
       const data = leaveData[leaver];
       // Join only for non-members
       if (data.identity && data.identity.member) {
@@ -581,9 +770,9 @@ export class BlockGenerator {
     /*****
      * Priority 2: revoked identities
      */
-    revocations.forEach((idty:any) => {
+    revocations.forEach((idty: any) => {
       if (blockLen < maxLenOfBlock) {
-        block.revoked.push([idty.pubkey, idty.revocation_sig].join(':'));
+        block.revoked.push([idty.pubkey, idty.revocation_sig].join(":"));
         blockLen++;
       }
     });
@@ -594,28 +783,32 @@ export class BlockGenerator {
     let countOfCertsToNewcomers = 0;
     // Newcomers
     // Newcomers + back people
-    joiners.forEach((joiner:any) => {
+    joiners.forEach((joiner: any) => {
       const data = joinData[joiner];
       // Identities only for never-have-been members
       if (!data.identity.member && !data.identity.wasMember) {
-        block.identities.push(IdentityDTO.fromJSONObject(data.identity).inline());
+        block.identities.push(
+          IdentityDTO.fromJSONObject(data.identity).inline()
+        );
       }
       // Join only for non-members
       if (!data.identity.member) {
         block.joiners.push(MembershipDTO.fromJSONObject(data.ms).inline());
       }
     });
-    block.identities = Underscore.sortBy(block.identities, (line:string) => {
-      const sp = line.split(':');
+    block.identities = Underscore.sortBy(block.identities, (line: string) => {
+      const sp = line.split(":");
       return sp[2] + sp[3];
     });
 
     // Certifications from the WoT, to newcomers
-    joiners.forEach((joiner:any) => {
+    joiners.forEach((joiner: any) => {
       const data = joinData[joiner] || [];
-      data.certs.forEach((cert:any) => {
+      data.certs.forEach((cert: any) => {
         countOfCertsToNewcomers++;
-        block.certifications.push(CertificationDTO.fromJSONObject(cert).inline());
+        block.certifications.push(
+          CertificationDTO.fromJSONObject(cert).inline()
+        );
       });
     });
 
@@ -632,16 +825,21 @@ export class BlockGenerator {
 
     // Forced joiners (by tests)
     if (manualValues && manualValues.joiners) {
-      block.joiners = block.joiners.concat(manualValues.joiners.map(j => j.inline()))
+      block.joiners = block.joiners.concat(
+        manualValues.joiners.map((j) => j.inline())
+      );
     }
 
     // Forced certifications (by tests)
     if (manualValues && manualValues.certifications) {
-      block.certifications = block.certifications.concat(manualValues.certifications.map(c => c.inline()))
+      block.certifications = block.certifications.concat(
+        manualValues.certifications.map((c) => c.inline())
+      );
     }
 
     // Final number of members
-    block.membersCount = previousCount + block.joiners.length - block.excluded.length;
+    block.membersCount =
+      previousCount + block.joiners.length - block.excluded.length;
 
     vHEAD.membersCount = block.membersCount;
 
@@ -651,10 +849,14 @@ export class BlockGenerator {
     block.transactions = [];
     blockLen = BlockDTO.getLen(block);
     if (blockLen < maxLenOfBlock) {
-      transactions.forEach((tx:any) => {
-        const txDTO = TransactionDTO.fromJSONObject(tx)
-        const txLen = txDTO.getLen()
-        if (txLen <= CommonConstants.MAXIMUM_LEN_OF_COMPACT_TX && blockLen + txLen < maxLenOfBlock && tx.version == CommonConstants.TRANSACTION_VERSION) {
+      transactions.forEach((tx: any) => {
+        const txDTO = TransactionDTO.fromJSONObject(tx);
+        const txLen = txDTO.getLen();
+        if (
+          txLen <= CommonConstants.MAXIMUM_LEN_OF_COMPACT_TX &&
+          blockLen + txLen < maxLenOfBlock &&
+          tx.version == CommonConstants.TRANSACTION_VERSION
+        ) {
           block.transactions.push(txDTO);
         }
         blockLen += txLen;
@@ -668,12 +870,11 @@ export class BlockGenerator {
 
     // Universal Dividend
     if (vHEAD.new_dividend) {
-
       // BR_G13
       // Recompute according to block.membersCount
-      Indexer.prepareDividend(vHEAD, vHEAD_1, this.conf)
+      Indexer.prepareDividend(vHEAD, vHEAD_1, this.conf);
       // BR_G14
-      Indexer.prepareUnitBase(vHEAD)
+      Indexer.prepareUnitBase(vHEAD);
 
       // Fix BR_G14 double call
       vHEAD.unitBase = Math.min(vHEAD_1.unitBase + 1, vHEAD.unitBase);
@@ -689,7 +890,10 @@ export class BlockGenerator {
     block.issuersFrameVar = vHEAD.issuersFrameVar;
     // Manual values before hashing
     if (manualValues) {
-      Underscore.extend(block, Underscore.omit(manualValues, 'time', 'certifications', 'joiners'));
+      Underscore.extend(
+        block,
+        Underscore.omit(manualValues, "time", "certifications", "joiners")
+      );
     }
     // InnerHash
     block.time = block.medianTime;
@@ -699,21 +903,30 @@ export class BlockGenerator {
 }
 
 export class BlockGeneratorWhichProves extends BlockGenerator {
-
-  constructor(server:Server, private prover:any) {
-    super(server)
+  constructor(server: Server, private prover: any) {
+    super(server);
   }
 
-  async makeNextBlock(block:DBBlock|null, trial?:number|null, manualValues:any = null) {
-    const unsignedBlock = block || (await this.nextBlock(manualValues))
-    const trialLevel = trial || (await this.mainContext.getIssuerPersonalizedDifficulty(this.selfPubkey))
-    return this.prover.prove(unsignedBlock, trialLevel, (manualValues && manualValues.time) || null);
+  async makeNextBlock(
+    block: DBBlock | null,
+    trial?: number | null,
+    manualValues: any = null
+  ) {
+    const unsignedBlock = block || (await this.nextBlock(manualValues));
+    const trialLevel =
+      trial ||
+      (await this.mainContext.getIssuerPersonalizedDifficulty(this.selfPubkey));
+    return this.prover.prove(
+      unsignedBlock,
+      trialLevel,
+      (manualValues && manualValues.time) || null
+    );
   }
 }
 
 interface BlockGeneratorInterface {
-  findNewCertsFromWoT(current:DBBlock|null): Promise<any>
-  filterJoiners(preJoinData:any): Promise<any>
+  findNewCertsFromWoT(current: DBBlock | null): Promise<any>;
+  filterJoiners(preJoinData: any): Promise<any>;
 }
 
 /**
@@ -721,62 +934,79 @@ interface BlockGeneratorInterface {
  * @constructor
  */
 class NextBlockGenerator implements BlockGeneratorInterface {
-
   constructor(
-    private mainContext:BlockchainContext,
-    private server:Server,
-    private logger:any) {
-  }
+    private mainContext: BlockchainContext,
+    private server: Server,
+    private logger: any
+  ) {}
 
   get conf() {
-    return this.server.conf
+    return this.server.conf;
   }
 
   get dal() {
-    return this.server.dal
+    return this.server.dal;
   }
 
-  async findNewCertsFromWoT(current:DBBlock|null) {
-    const updates:any = {};
-    const updatesToFrom:any = {};
+  async findNewCertsFromWoT(current: DBBlock | null) {
+    const updates: any = {};
+    const updatesToFrom: any = {};
     const certs = await this.dal.certsFindNew();
     const vHEAD_1 = await this.mainContext.getvHEAD_1();
     for (const cert of certs) {
-      const targetIdty = await this.dal.getGlobalIdentityByHashForHashingAndSig(cert.target)
+      const targetIdty = await this.dal.getGlobalIdentityByHashForHashingAndSig(
+        cert.target
+      );
       // The identity must be known
       if (targetIdty) {
         const certSig = cert.sig;
         // Do not rely on certification block UID, prefer using the known hash of the block by its given number
-        const targetBlock = await this.dal.getTristampOf(cert.block_number)
+        const targetBlock = await this.dal.getTristampOf(cert.block_number);
         // Check if writable
-        let duration = current && targetBlock ? current.medianTime - targetBlock.medianTime : 0;
+        let duration =
+          current && targetBlock
+            ? current.medianTime - targetBlock.medianTime
+            : 0;
         if (targetBlock && duration <= this.conf.sigWindow) {
           const rawCert = CertificationDTO.fromJSONObject({
-            sig: '',
+            sig: "",
             currency: this.conf.currency,
             issuer: cert.from,
             idty_issuer: targetIdty.pubkey,
             idty_uid: targetIdty.uid,
             idty_buid: targetIdty.buid,
             idty_sig: targetIdty.sig,
-            buid: current ? [cert.block_number, targetBlock.hash].join('-') : CommonConstants.SPECIAL_BLOCK,
+            buid: current
+              ? [cert.block_number, targetBlock.hash].join("-")
+              : CommonConstants.SPECIAL_BLOCK,
           }).getRawUnSigned();
           if (verify(rawCert, certSig, cert.from)) {
             cert.sig = certSig;
             let exists = false;
             if (current) {
               // Already exists a link not replayable yet?
-              exists = await this.dal.existsNonReplayableLink(cert.from, cert.to, current.medianTime, current.version)
+              exists = await this.dal.existsNonReplayableLink(
+                cert.from,
+                cert.to,
+                current.medianTime,
+                current.version
+              );
             }
             if (!exists) {
               // Already exists a link not chainable yet?
               // No chainability block means absolutely nobody can issue certifications yet
-              exists = await this.dal.existsNonChainableLink(cert.from, vHEAD_1, this.conf.sigStock);
+              exists = await this.dal.existsNonChainableLink(
+                cert.from,
+                vHEAD_1,
+                this.conf.sigStock
+              );
               if (!exists) {
                 // It does NOT already exists a similar certification written, which is not replayable yet
                 // Signatory must be a member
                 const isSignatoryAMember = await this.dal.isMember(cert.from);
-                const isCertifiedANonLeavingMember = isSignatoryAMember && (await this.dal.isMemberAndNonLeaver(cert.to));
+                const isCertifiedANonLeavingMember =
+                  isSignatoryAMember &&
+                  (await this.dal.isMemberAndNonLeaver(cert.to));
                 // Certified must be a member and non-leaver
                 if (isSignatoryAMember && isCertifiedANonLeavingMember) {
                   updatesToFrom[cert.to] = updatesToFrom[cert.to] || [];
@@ -795,28 +1025,32 @@ class NextBlockGenerator implements BlockGeneratorInterface {
     return updates;
   }
 
-  async filterJoiners(preJoinData:any) {
-    const filtered:any = {};
-    const filterings:any = [];
-    const filter = async (pubkey:string) => {
+  async filterJoiners(preJoinData: any) {
+    const filtered: any = {};
+    const filterings: any = [];
+    const filter = async (pubkey: string) => {
       try {
         // No manual filtering, takes all BUT already used UID or pubkey
-        let exists = await GLOBAL_RULES_HELPERS.checkExistsUserID(preJoinData[pubkey].identity.uid, this.dal);
+        let exists = await GLOBAL_RULES_HELPERS.checkExistsUserID(
+          preJoinData[pubkey].identity.uid,
+          this.dal
+        );
         if (exists && !preJoinData[pubkey].identity.wasMember) {
-          throw 'UID already taken';
+          throw "UID already taken";
         }
         exists = await GLOBAL_RULES_HELPERS.checkExistsPubkey(pubkey, this.dal);
         if (exists && !preJoinData[pubkey].identity.wasMember) {
-          throw 'Pubkey already taken';
+          throw "Pubkey already taken";
         }
         filtered[pubkey] = preJoinData[pubkey];
-      }
-      catch (err) {
+      } catch (err) {
         this.logger.warn(err);
       }
-    }
-    Underscore.keys(preJoinData).forEach( (joinPubkey:any) => filterings.push(filter(joinPubkey)));
-    await Promise.all(filterings)
+    };
+    Underscore.keys(preJoinData).forEach((joinPubkey: any) =>
+      filterings.push(filter(joinPubkey))
+    );
+    await Promise.all(filterings);
     return filtered;
   }
 }
@@ -826,44 +1060,46 @@ class NextBlockGenerator implements BlockGeneratorInterface {
  * @constructor
  */
 class ManualRootGenerator implements BlockGeneratorInterface {
-
   findNewCertsFromWoT() {
-    return Promise.resolve({})
+    return Promise.resolve({});
   }
 
-  async filterJoiners(preJoinData:any) {
-    const filtered:any = {};
-    const newcomers = Underscore.keys(preJoinData)
-    const uids:string[] = [];
-    newcomers.forEach((newcomer:string) => uids.push(preJoinData[newcomer].ms.userid));
+  async filterJoiners(preJoinData: any) {
+    const filtered: any = {};
+    const newcomers = Underscore.keys(preJoinData);
+    const uids: string[] = [];
+    newcomers.forEach((newcomer: string) =>
+      uids.push(preJoinData[newcomer].ms.userid)
+    );
 
     if (newcomers.length > 0) {
-      const answers = await inquirer.prompt([{
-        type: "checkbox",
-        name: "uids",
-        message: "Newcomers to add",
-        choices: uids,
-        default: uids[0]
-      }]);
-      newcomers.forEach((newcomer:string) => {
+      const answers = await inquirer.prompt([
+        {
+          type: "checkbox",
+          name: "uids",
+          message: "Newcomers to add",
+          choices: uids,
+          default: uids[0],
+        },
+      ]);
+      newcomers.forEach((newcomer: string) => {
         if (~answers.uids.indexOf(preJoinData[newcomer].ms.userid))
           filtered[newcomer] = preJoinData[newcomer];
       });
-      if (answers.uids.length == 0)
-        throw 'No newcomer selected';
-      return filtered
+      if (answers.uids.length == 0) throw "No newcomer selected";
+      return filtered;
     } else {
-      throw 'No newcomer found';
+      throw "No newcomer found";
     }
   }
 }
 
 export interface ForcedBlockValues {
-  time?: number
-  version?: number
-  medianTime?: number
-  excluded?: string[]
-  revoked?: string[]
-  certifications?: CertificationDTO[]
-  joiners?: MembershipDTO[]
+  time?: number;
+  version?: number;
+  medianTime?: number;
+  excluded?: string[];
+  revoked?: string[];
+  certifications?: CertificationDTO[];
+  joiners?: MembershipDTO[];
 }

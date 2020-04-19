@@ -11,29 +11,35 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import * as moment from "moment"
-import {Directory} from "./system/directory"
+import * as moment from "moment";
+import { Directory } from "./system/directory";
 
-const path = require('path');
-const winston = require('winston');
+const path = require("path");
+const winston = require("winston");
 
 /***************
  * CALLBACK LOGGER
  ***************/
 
-const util = require('util');
+const util = require("util");
 
-const CallbackLogger:any = winston.transports.CallbackLogger = function (options:any) {
-
-  this.name = 'customLogger';
-  this.level = options.level || 'info';
+const CallbackLogger: any = (winston.transports.CallbackLogger = function (
+  options: any
+) {
+  this.name = "customLogger";
+  this.level = options.level || "info";
   this.callback = options.callback;
   this.timestamp = options.timestamp;
-};
+});
 
 util.inherits(CallbackLogger, winston.Transport);
 
-CallbackLogger.prototype.log = function (level:string, msg:string, meta:any, callback:any) {
+CallbackLogger.prototype.log = function (
+  level: string,
+  msg: string,
+  meta: any,
+  callback: any
+) {
   this.callback(level, msg, this.timestamp());
   callback(null, true);
 };
@@ -49,66 +55,66 @@ const customLevels = {
     info: 2,
     debug: 3,
     trace: 4,
-    query: 5
+    query: 5,
   },
   colors: {
-    error: 'red',
-    warn: 'yellow',
-    info: 'green',
-    debug: 'cyan',
-    trace: 'cyan',
-    query: 'grey'
-  }
+    error: "red",
+    warn: "yellow",
+    info: "green",
+    debug: "cyan",
+    trace: "cyan",
+    query: "grey",
+  },
 };
 
 // create the logger
-const logger = new (winston.Logger)({
-  level: 'trace',
+const logger = new winston.Logger({
+  level: "trace",
   levels: customLevels.levels,
   handleExceptions: false,
   colors: customLevels.colors,
   transports: [
     // setup console logging
-    new (winston.transports.Console)({
-      level: 'trace',
+    new winston.transports.Console({
+      level: "trace",
       levels: customLevels.levels,
       handleExceptions: false,
       colorize: true,
-      timestamp: function() {
+      timestamp: function () {
         return moment().format();
-      }
-    })
-  ]
+      },
+    }),
+  ],
 });
 
 // Singletons
 let loggerAttached = false;
-logger.addCallbackLogs = (callbackForLog:any) => {
+logger.addCallbackLogs = (callbackForLog: any) => {
   if (!loggerAttached) {
     loggerAttached = true;
     logger.add(CallbackLogger, {
       callback: callbackForLog,
-      level: 'trace',
+      level: "trace",
       levels: customLevels.levels,
       handleExceptions: false,
       colorize: true,
-      timestamp: function() {
+      timestamp: function () {
         return moment().format();
-      }
+      },
     });
   }
 };
 
 // Singletons
 let loggerHomeAttached = false;
-logger.addHomeLogs = (home:string, level:string) => {
+logger.addHomeLogs = (home: string, level: string) => {
   if (!muted) {
     if (loggerHomeAttached) {
       logger.remove(winston.transports.File);
     }
     loggerHomeAttached = true;
     logger.add(winston.transports.File, {
-      level: level || 'info',
+      level: level || "info",
       levels: customLevels.levels,
       handleExceptions: false,
       colorize: true,
@@ -117,11 +123,11 @@ logger.addHomeLogs = (home:string, level:string) => {
       maxFiles: 3,
       //zippedArchive: true,
       json: false,
-      filename: path.join(home, 'duniter.log'),
+      filename: path.join(home, "duniter.log"),
       timestamp: function () {
         return moment().format();
-      }
-    })
+      },
+    });
   }
 };
 
@@ -135,27 +141,27 @@ logger.mute = () => {
 
 logger.unmute = () => {
   if (muted) {
-    muted = false
+    muted = false;
     logger.add(winston.transports.Console, {
-      level: 'trace',
+      level: "trace",
       levels: customLevels.levels,
       handleExceptions: false,
       colorize: true,
-      timestamp: function() {
+      timestamp: function () {
         return moment().format();
-      }
-    })
+      },
+    });
   }
-}
+};
 
 /**
  * Default logging path
  */
-logger.addHomeLogs(Directory.INSTANCE_HOME)
+logger.addHomeLogs(Directory.INSTANCE_HOME);
 
 /**
-* Convenience function to get logger directly
-*/
-export function NewLogger(name?:string) {
-  return logger
+ * Convenience function to get logger directly
+ */
+export function NewLogger(name?: string) {
+  return logger;
 }

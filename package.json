@@ -30,6 +30,11 @@
     "test": "nyc --reporter html mocha",
     "start": "node bin/duniter start",
     "build": "tsc && cd \"node_modules/duniter-ui\" && npm install && npm run build",
+    "lint": "lint-staged",
+    "prettier": "prettier --write app/**/*/*.ts",
+    "reformat": "eslint --cache --fix app/**/*/*.ts",
+    "format:check": "prettier --list-different \"app/**/*.{ts,json}\"",
+    "format:all": "prettier --write \"app/**/*.{ts,json}\"",
     "test-travis": "nyc --reporter lcovonly mocha test/"
   },
   "nyc": {
@@ -89,6 +94,7 @@
     "node-pre-gyp": "0.6.34",
     "node-uuid": "1.4.8",
     "optimist": "0.6.1",
+    "prettier": "^2.0.4",
     "q-io": "^1.13.5",
     "querablep": "^0.1.0",
     "request": "2.81.0",
@@ -115,6 +121,8 @@
     "coveralls": "2.11.4",
     "eslint": "4.18.2",
     "eslint-plugin-mocha": "4.8.0",
+    "husky": ">=4",
+    "lint-staged": ">=10",
     "mocha": "^3.4.2",
     "mocha-eslint": "0.1.7",
     "nyc": "^11.0.3",
@@ -129,5 +137,15 @@
   "peerDependencies": {},
   "bin": {
     "duniter": "./bin/duniter"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "app/**/*.{js,jsx,ts,tsx,md,html,css,scss}": [
+      "prettier --write"
+    ]
   }
 }

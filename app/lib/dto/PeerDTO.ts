@@ -11,73 +11,74 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {hashf} from "../common"
-import {CommonConstants} from "../common-libs/constants"
-import {Cloneable} from "./Cloneable"
-import {DBPeer} from "../db/DBPeer"
+import { hashf } from "../common";
+import { CommonConstants } from "../common-libs/constants";
+import { Cloneable } from "./Cloneable";
+import { DBPeer } from "../db/DBPeer";
 
 export interface WS2PEndpoint {
-  version:number
-  uuid:string
-  host:string
-  port:number
-  path:string
+  version: number;
+  uuid: string;
+  host: string;
+  port: number;
+  path: string;
 }
 
 export class PeerDTO implements Cloneable {
-
   clone(): any {
-    return PeerDTO.fromJSONObject(this)
+    return PeerDTO.fromJSONObject(this);
   }
 
-  member = false
+  member = false;
 
   constructor(
-    public version:number,
-    public currency:string,
-    public pubkey:string,
-    public blockstamp:string,
-    public endpoints:string[],
-    public signature:string,
-    public status:string,
-    public statusTS:number,
+    public version: number,
+    public currency: string,
+    public pubkey: string,
+    public blockstamp: string,
+    public endpoints: string[],
+    public signature: string,
+    public status: string,
+    public statusTS: number,
     member = false
   ) {
-    this.member = member
+    this.member = member;
   }
 
   get block() {
-    return this.blockstamp
+    return this.blockstamp;
   }
 
   blockNumber() {
-    return parseInt(this.blockstamp)
+    return parseInt(this.blockstamp);
   }
 
   keyID() {
-    return this.pubkey && this.pubkey.length > 10 ? this.pubkey.substring(0, 10) : "Unknown"
+    return this.pubkey && this.pubkey.length > 10
+      ? this.pubkey.substring(0, 10)
+      : "Unknown";
   }
 
   getRawUnsigned() {
-    return this.getRaw()
+    return this.getRaw();
   }
 
   getRaw() {
-    let raw = ""
-    raw += "Version: " + this.version + "\n"
-    raw += "Type: Peer\n"
-    raw += "Currency: " + this.currency + "\n"
-    raw += "PublicKey: " + this.pubkey + "\n"
-    raw += "Block: " + this.blockstamp + "\n"
-    raw += "Endpoints:" + "\n"
-    for(const ep of this.endpoints) {
-      raw += ep + "\n"
+    let raw = "";
+    raw += "Version: " + this.version + "\n";
+    raw += "Type: Peer\n";
+    raw += "Currency: " + this.currency + "\n";
+    raw += "PublicKey: " + this.pubkey + "\n";
+    raw += "Block: " + this.blockstamp + "\n";
+    raw += "Endpoints:" + "\n";
+    for (const ep of this.endpoints) {
+      raw += ep + "\n";
     }
-    return raw
+    return raw;
   }
 
   getRawSigned() {
-    return this.getRaw() + this.signature + "\n"
+    return this.getRaw() + this.signature + "\n";
   }
 
   json() {
@@ -89,113 +90,152 @@ export class PeerDTO implements Cloneable {
       block: this.block,
       signature: this.signature,
       raw: this.getRawSigned(),
-      pubkey: this.pubkey
-    }
+      pubkey: this.pubkey,
+    };
   }
 
   getBMA() {
-    let bma: { dns?: string, ipv4?: string, ipv6?: string, port?: number, path?: string } = {}
-    let notFound = true
+    let bma: {
+      dns?: string;
+      ipv4?: string;
+      ipv6?: string;
+      port?: number;
+      path?: string;
+    } = {};
+    let notFound = true;
     this.endpoints.forEach((ep) => {
       const matchesBMA = notFound && ep.match(CommonConstants.BMA_REGEXP);
       const matchesBMAS = notFound && ep.match(CommonConstants.BMAS_REGEXP);
       if (matchesBMA) {
-        notFound = false
+        notFound = false;
         bma = {
-          "dns": matchesBMA[2] || '',
-          "ipv4": matchesBMA[4] || '',
-          "ipv6": matchesBMA[6] || '',
-          "port": parseInt(matchesBMA[8]) || 9101
+          dns: matchesBMA[2] || "",
+          ipv4: matchesBMA[4] || "",
+          ipv6: matchesBMA[6] || "",
+          port: parseInt(matchesBMA[8]) || 9101,
         };
-      }
-      else if (matchesBMAS) {
-        notFound = false
+      } else if (matchesBMAS) {
+        notFound = false;
         bma = {
-          "dns": matchesBMAS[2] || '',
-          "ipv4": matchesBMAS[4] || '',
-          "ipv6": matchesBMAS[6] || '',
-          "port": parseInt(matchesBMAS[8]) || 9101,
-          "path": matchesBMAS[10] || ''
+          dns: matchesBMAS[2] || "",
+          ipv4: matchesBMAS[4] || "",
+          ipv6: matchesBMAS[6] || "",
+          port: parseInt(matchesBMAS[8]) || 9101,
+          path: matchesBMAS[10] || "",
         };
       }
     });
-    return bma
+    return bma;
   }
 
-  getOnceWS2PEndpoint(canReachTorEp:boolean, canReachClearEp:boolean, uuidExcluded:string[] = []) {
-    let api:WS2PEndpoint|null = null
-    let bestWS2PVersionAvailable:number = 0
-    let bestWS2PTORVersionAvailable:number = 0
+  getOnceWS2PEndpoint(
+    canReachTorEp: boolean,
+    canReachClearEp: boolean,
+    uuidExcluded: string[] = []
+  ) {
+    let api: WS2PEndpoint | null = null;
+    let bestWS2PVersionAvailable: number = 0;
+    let bestWS2PTORVersionAvailable: number = 0;
     for (const ep of this.endpoints) {
       if (canReachTorEp) {
-        let matches:RegExpMatchArray | null = ep.match(CommonConstants.WS2PTOR_V2_REGEXP)
-        if (matches && parseInt(matches[1]) > bestWS2PTORVersionAvailable && (uuidExcluded.indexOf(matches[2]) === -1)) {
-          bestWS2PTORVersionAvailable = parseInt(matches[1])
+        let matches: RegExpMatchArray | null = ep.match(
+          CommonConstants.WS2PTOR_V2_REGEXP
+        );
+        if (
+          matches &&
+          parseInt(matches[1]) > bestWS2PTORVersionAvailable &&
+          uuidExcluded.indexOf(matches[2]) === -1
+        ) {
+          bestWS2PTORVersionAvailable = parseInt(matches[1]);
           api = {
             version: parseInt(matches[1]),
             uuid: matches[2],
-            host: matches[3] || '',
+            host: matches[3] || "",
             port: parseInt(matches[4]) || 0,
-            path: matches[5]
-          }
+            path: matches[5],
+          };
         } else {
-          matches = ep.match(CommonConstants.WS2PTOR_REGEXP)
-          if (matches && bestWS2PTORVersionAvailable == 0 && (uuidExcluded.indexOf(matches[1]) === -1)) {
-            bestWS2PTORVersionAvailable = 1
+          matches = ep.match(CommonConstants.WS2PTOR_REGEXP);
+          if (
+            matches &&
+            bestWS2PTORVersionAvailable == 0 &&
+            uuidExcluded.indexOf(matches[1]) === -1
+          ) {
+            bestWS2PTORVersionAvailable = 1;
             api = {
               version: 1,
               uuid: matches[1],
-              host: matches[2] || '',
+              host: matches[2] || "",
               port: parseInt(matches[3]) || 0,
-              path: matches[4]
-            }
+              path: matches[4],
+            };
           }
         }
       }
       // If can reach clear endpoint and not found tor endpoint
       if (canReachClearEp && bestWS2PTORVersionAvailable == 0) {
-        let matches:any = ep.match(CommonConstants.WS2P_V2_REGEXP)
-        if (matches && parseInt(matches[1]) > bestWS2PVersionAvailable && (uuidExcluded.indexOf(matches[2]) === -1)) {
-          bestWS2PVersionAvailable = parseInt(matches[1])
+        let matches: any = ep.match(CommonConstants.WS2P_V2_REGEXP);
+        if (
+          matches &&
+          parseInt(matches[1]) > bestWS2PVersionAvailable &&
+          uuidExcluded.indexOf(matches[2]) === -1
+        ) {
+          bestWS2PVersionAvailable = parseInt(matches[1]);
           api = {
             version: parseInt(matches[1]),
             uuid: matches[2],
-            host: matches[3] || '',
+            host: matches[3] || "",
             port: parseInt(matches[4]) || 0,
-            path: matches[5]
-          }
+            path: matches[5],
+          };
         } else {
-          matches = ep.match(CommonConstants.WS2P_REGEXP)
-          if (matches && bestWS2PVersionAvailable == 0 && (uuidExcluded.indexOf(matches[1]) === -1)) {
-            bestWS2PVersionAvailable = 1
+          matches = ep.match(CommonConstants.WS2P_REGEXP);
+          if (
+            matches &&
+            bestWS2PVersionAvailable == 0 &&
+            uuidExcluded.indexOf(matches[1]) === -1
+          ) {
+            bestWS2PVersionAvailable = 1;
             api = {
               version: 1,
               uuid: matches[1],
-              host: matches[2] || '',
+              host: matches[2] || "",
               port: parseInt(matches[3]) || 0,
-              path: matches[4]
-            }
+              path: matches[4],
+            };
           }
         }
       }
     }
-    return api || null
+    return api || null;
   }
 
-  getAllWS2PEndpoints(canReachTorEp:boolean, canReachClearEp:boolean, myUUID:string) {
-    let apis:WS2PEndpoint[] = []
-    let uuidExcluded:string[] = [myUUID]
-    let api = this.getOnceWS2PEndpoint(canReachTorEp, canReachClearEp, uuidExcluded)
+  getAllWS2PEndpoints(
+    canReachTorEp: boolean,
+    canReachClearEp: boolean,
+    myUUID: string
+  ) {
+    let apis: WS2PEndpoint[] = [];
+    let uuidExcluded: string[] = [myUUID];
+    let api = this.getOnceWS2PEndpoint(
+      canReachTorEp,
+      canReachClearEp,
+      uuidExcluded
+    );
     while (api !== null) {
-      uuidExcluded.push(api.uuid)
-      apis.push(api)
-      api = this.getOnceWS2PEndpoint(canReachTorEp, canReachClearEp, uuidExcluded)
+      uuidExcluded.push(api.uuid);
+      apis.push(api);
+      api = this.getOnceWS2PEndpoint(
+        canReachTorEp,
+        canReachClearEp,
+        uuidExcluded
+      );
     }
-    return apis
+    return apis;
   }
 
   getFirstNonTorWS2P() {
-    return this.getOnceWS2PEndpoint(false, true)
+    return this.getOnceWS2PEndpoint(false, true);
   }
 
   getDns() {
@@ -225,102 +265,116 @@ export class PeerDTO implements Cloneable {
 
   getHostPreferDNS() {
     const bma = this.getBMA();
-    return (bma.dns ? bma.dns :
-      (bma.ipv4 ? bma.ipv4 :
-        (bma.ipv6 ? bma.ipv6 : '')))
+    return bma.dns ? bma.dns : bma.ipv4 ? bma.ipv4 : bma.ipv6 ? bma.ipv6 : "";
   }
 
   getURL() {
     const bma = this.getBMA();
     let base = this.getHostPreferDNS();
-    if(bma.port)
-      base += ':' + bma.port;
+    if (bma.port) base += ":" + bma.port;
     return base;
   }
 
-  hasValid4(bma:any) {
-    return !!(bma.ipv4 && !bma.ipv4.match(/^127.0/) && !bma.ipv4.match(/^192.168/))
+  hasValid4(bma: any) {
+    return !!(
+      bma.ipv4 &&
+      !bma.ipv4.match(/^127.0/) &&
+      !bma.ipv4.match(/^192.168/)
+    );
   }
 
   getNamedURL() {
-    return this.getURL()
+    return this.getURL();
   }
 
   isReachable() {
-    return !!(this.getURL())
+    return !!this.getURL();
   }
 
-  containsEndpoint(ep:string) {
-    return this.endpoints.reduce((found:boolean, endpoint:string) => found || endpoint == ep, false)
+  containsEndpoint(ep: string) {
+    return this.endpoints.reduce(
+      (found: boolean, endpoint: string) => found || endpoint == ep,
+      false
+    );
   }
 
-  containsAllEndpoints(endpoints:string[]) {
+  containsAllEndpoints(endpoints: string[]) {
     for (const ep of endpoints) {
       if (!this.containsEndpoint(ep)) {
-        return false
+        return false;
       }
     }
-    return true
+    return true;
   }
 
   endpointSum() {
-    return this.endpoints.join('_')
+    return this.endpoints.join("_");
   }
 
   getHash() {
-    return hashf(this.getRawSigned())
+    return hashf(this.getRawSigned());
   }
 
   toDBPeer(): DBPeer {
-    const p = new DBPeer()
-    p.version  = this.version
-    p.currency  = this.currency
-    p.status  = this.status || "DOWN"
-    p.statusTS  = this.statusTS || 0
-    p.hash  = this.getHash()
-    p.first_down  = 0
-    p.last_try  = 0
-    p.pubkey  = this.pubkey
-    p.block  = this.block
-    p.signature  = this.signature
-    p.endpoints  = this.endpoints
-    p.raw  = this.getRawSigned()
-    return p
+    const p = new DBPeer();
+    p.version = this.version;
+    p.currency = this.currency;
+    p.status = this.status || "DOWN";
+    p.statusTS = this.statusTS || 0;
+    p.hash = this.getHash();
+    p.first_down = 0;
+    p.last_try = 0;
+    p.pubkey = this.pubkey;
+    p.block = this.block;
+    p.signature = this.signature;
+    p.endpoints = this.endpoints;
+    p.raw = this.getRawSigned();
+    return p;
   }
 
-  static blockNumber(blockstamp:string) {
-    return parseInt(blockstamp)
+  static blockNumber(blockstamp: string) {
+    return parseInt(blockstamp);
   }
 
-  static fromDBPeer(p:DBPeer) {
-    return new PeerDTO(p.version, p.currency, p.pubkey, p.block, p.endpoints, p.signature, p.status, p.statusTS, false)
+  static fromDBPeer(p: DBPeer) {
+    return new PeerDTO(
+      p.version,
+      p.currency,
+      p.pubkey,
+      p.block,
+      p.endpoints,
+      p.signature,
+      p.status,
+      p.statusTS,
+      false
+    );
   }
 
-  static fromJSONObject(obj:any) {
+  static fromJSONObject(obj: any) {
     return new PeerDTO(
       parseInt(obj.version),
       obj.currency || "",
       obj.pubkey || obj.pub || obj.issuer || "",
       obj.blockstamp || obj.block,
-      obj.endpoints || [],
+      obj.endpoints || [],
       obj.signature || obj.sig,
       obj.status || "DOWN",
       obj.statusTS || 0,
       obj.member
-    )
+    );
   }
 
-  static endpoint2host(endpoint:string) {
-    return PeerDTO.fromJSONObject({ endpoints: [endpoint] }).getURL()
+  static endpoint2host(endpoint: string) {
+    return PeerDTO.fromJSONObject({ endpoints: [endpoint] }).getURL();
   }
 
-  static indexOfFirst(endpoints:string[], intoEndpoints:string[]) {
+  static indexOfFirst(endpoints: string[], intoEndpoints: string[]) {
     for (let i = 0; i < intoEndpoints.length; i++) {
-      const index = endpoints.indexOf(intoEndpoints[i])
+      const index = endpoints.indexOf(intoEndpoints[i]);
       if (index !== -1) {
-        return index
+        return index;
       }
     }
-    return 0
+    return 0;
   }
 }

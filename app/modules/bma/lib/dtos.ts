@@ -11,24 +11,24 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {BlockDTO} from "../../../lib/dto/BlockDTO"
-import {WS2PHead} from "../../ws2p/lib/WS2PCluster"
-import {JSONDBPeer} from "../../../lib/db/DBPeer"
+import { BlockDTO } from "../../../lib/dto/BlockDTO";
+import { WS2PHead } from "../../ws2p/lib/WS2PCluster";
+import { JSONDBPeer } from "../../../lib/db/DBPeer";
 
 export const Summary = {
   duniter: {
-    "software": String,
-    "version": String,
-    "forkWindowSize": Number
-  }
+    software: String,
+    version: String,
+    forkWindowSize: Number,
+  },
 };
 
 export interface HttpSummary {
   duniter: {
-    software: string
-    version: string
-    forkWindowSize: number
-  }
+    software: string;
+    version: string;
+    forkWindowSize: number;
+  };
 }
 
 export const Parameters = {
@@ -54,217 +54,217 @@ export const Parameters = {
   percentRot: Number,
   udTime0: Number,
   udReevalTime0: Number,
-  dtReeval: Number
+  dtReeval: Number,
 };
 
 export interface HttpParameters {
-  currency: string
-  c: number
-  dt: number
-  ud0: number
-  sigPeriod: number
-  sigStock: number
-  sigWindow: number
-  sigValidity: number
-  sigReplay: number
-  sigQty: number
-  idtyWindow: number
-  msWindow: number
-  msPeriod: number
-  xpercent: number
-  msValidity: number
-  stepMax: number
-  medianTimeBlocks: number
-  avgGenTime: number
-  dtDiffEval: number
-  percentRot: number
-  udTime0: number
-  udReevalTime0: number
-  dtReeval: number
+  currency: string;
+  c: number;
+  dt: number;
+  ud0: number;
+  sigPeriod: number;
+  sigStock: number;
+  sigWindow: number;
+  sigValidity: number;
+  sigReplay: number;
+  sigQty: number;
+  idtyWindow: number;
+  msWindow: number;
+  msPeriod: number;
+  xpercent: number;
+  msValidity: number;
+  stepMax: number;
+  medianTimeBlocks: number;
+  avgGenTime: number;
+  dtDiffEval: number;
+  percentRot: number;
+  udTime0: number;
+  udReevalTime0: number;
+  dtReeval: number;
 }
 
 export const Membership = {
-  "signature": String,
-  "membership": {
-    "version": Number,
-    "currency": String,
-    "issuer": String,
-    "membership": String,
-    "date": Number,
-    "sigDate": Number,
-    "raw": String
-  }
+  signature: String,
+  membership: {
+    version: Number,
+    currency: String,
+    issuer: String,
+    membership: String,
+    date: Number,
+    sigDate: Number,
+    raw: String,
+  },
 };
 
 export interface HttpMembership {
-  signature: string
+  signature: string;
   membership: {
-    version: number
-    currency: string
-    issuer: string
-    membership: string
-    date: number
-    sigDate: number
-    raw: string
-  }
+    version: number;
+    currency: string;
+    issuer: string;
+    membership: string;
+    date: number;
+    sigDate: number;
+    raw: string;
+  };
 }
 
 export const Memberships = {
-  "pubkey": String,
-  "uid": String,
-  "sigDate": String,
-  "memberships": [
+  pubkey: String,
+  uid: String,
+  sigDate: String,
+  memberships: [
     {
-      "version": Number,
-      "currency": String,
-      "membership": String,
-      "blockNumber": Number,
-      "blockHash": String,
-      "written": Number
-    }
-  ]
+      version: Number,
+      currency: String,
+      membership: String,
+      blockNumber: Number,
+      blockHash: String,
+      written: Number,
+    },
+  ],
 };
 
 export interface HttpMemberships {
-  pubkey: string
-  uid: string
-  sigDate: string
+  pubkey: string;
+  uid: string;
+  sigDate: string;
   memberships: {
-    version: number
-    currency: string
-    membership: string
-    blockNumber: number
-    blockHash: string
-    written: number
-  }[]
+    version: number;
+    currency: string;
+    membership: string;
+    blockNumber: number;
+    blockHash: string;
+    written: number;
+  }[];
 }
 
 export const MembershipList = {
-  "memberships": [
+  memberships: [
     {
-      "pubkey": String,
-      "uid": String,
-      "version": Number,
-      "currency": String,
-      "membership": String,
-      "blockNumber": Number,
-      "blockHash": String,
-      "written": Number
-    }
-  ]
+      pubkey: String,
+      uid: String,
+      version: Number,
+      currency: String,
+      membership: String,
+      blockNumber: Number,
+      blockHash: String,
+      written: Number,
+    },
+  ],
 };
 
 export interface HttpMembershipList {
   memberships: {
-    pubkey: string
-    uid: string
-    version: number
-    currency: string
-    membership: string
-    blockNumber: number
-    blockHash: string
-    written: number|null
-  }[]
+    pubkey: string;
+    uid: string;
+    version: number;
+    currency: string;
+    membership: string;
+    blockNumber: number;
+    blockHash: string;
+    written: number | null;
+  }[];
 }
 
 export const TransactionOfBlock = {
-  "version": Number,
-  "currency": String,
-  "comment": String,
-  "locktime": Number,
-  "signatures": [String],
-  "outputs": [String],
-  "inputs": [String],
-  "unlocks": [String],
-  "block_number": Number,
-  "blockstamp": String,
-  "blockstampTime": Number,
-  "time": Number,
-  "issuers": [String]
+  version: Number,
+  currency: String,
+  comment: String,
+  locktime: Number,
+  signatures: [String],
+  outputs: [String],
+  inputs: [String],
+  unlocks: [String],
+  block_number: Number,
+  blockstamp: String,
+  blockstampTime: Number,
+  time: Number,
+  issuers: [String],
 };
 
 export interface HttpTransactionOfBlock {
-  version: number
-  currency: string
-  locktime: number
-  hash: string
-  blockstamp: string
-  blockstampTime: number
-  issuers: string[]
-  inputs: string[]
-  outputs: string[]
-  unlocks: string[]
-  signatures: string[]
-  comment: string
+  version: number;
+  currency: string;
+  locktime: number;
+  hash: string;
+  blockstamp: string;
+  blockstampTime: number;
+  issuers: string[];
+  inputs: string[];
+  outputs: string[];
+  unlocks: string[];
+  signatures: string[];
+  comment: string;
 }
 
 export const Block = {
-  "version": Number,
-  "currency": String,
-  "number": Number,
-  "issuer": String,
-  "issuersFrame": Number,
-  "issuersFrameVar": Number,
-  "issuersCount": Number,
-  "parameters": String,
-  "membersCount": Number,
-  "monetaryMass": Number,
-  "powMin": Number,
-  "time": Number,
-  "medianTime": Number,
-  "dividend": Number,
-  "unitbase": Number,
-  "hash": String,
-  "previousHash": String,
-  "previousIssuer": String,
-  "identities": [String],
-  "certifications": [String],
-  "joiners": [String],
-  "actives": [String],
-  "leavers": [String],
-  "revoked": [String],
-  "excluded": [String],
-  "transactions": [TransactionOfBlock],
-  "nonce": Number,
-  "inner_hash": String,
-  "signature": String,
-  "raw": String
+  version: Number,
+  currency: String,
+  number: Number,
+  issuer: String,
+  issuersFrame: Number,
+  issuersFrameVar: Number,
+  issuersCount: Number,
+  parameters: String,
+  membersCount: Number,
+  monetaryMass: Number,
+  powMin: Number,
+  time: Number,
+  medianTime: Number,
+  dividend: Number,
+  unitbase: Number,
+  hash: String,
+  previousHash: String,
+  previousIssuer: String,
+  identities: [String],
+  certifications: [String],
+  joiners: [String],
+  actives: [String],
+  leavers: [String],
+  revoked: [String],
+  excluded: [String],
+  transactions: [TransactionOfBlock],
+  nonce: Number,
+  inner_hash: String,
+  signature: String,
+  raw: String,
 };
 
 export interface HttpBlock {
-  version: number
-  currency: string
-  number: number
-  issuer: string
-  issuersFrame: number
-  issuersFrameVar: number
-  issuersCount: number
-  parameters: string
-  membersCount: number
-  monetaryMass: number
-  powMin: number
-  time: number
-  medianTime: number
-  dividend: number|null
-  unitbase: number
-  hash: string
-  previousHash: string
-  previousIssuer: string
-  identities: string[]
-  certifications: string[]
-  joiners: string[]
-  actives: string[]
-  leavers: string[]
-  revoked: string[]
-  excluded: string[]
-  transactions: HttpTransactionOfBlock[]
-  nonce: number
-  inner_hash: string
-  signature: string
-  raw: string
+  version: number;
+  currency: string;
+  number: number;
+  issuer: string;
+  issuersFrame: number;
+  issuersFrameVar: number;
+  issuersCount: number;
+  parameters: string;
+  membersCount: number;
+  monetaryMass: number;
+  powMin: number;
+  time: number;
+  medianTime: number;
+  dividend: number | null;
+  unitbase: number;
+  hash: string;
+  previousHash: string;
+  previousIssuer: string;
+  identities: string[];
+  certifications: string[];
+  joiners: string[];
+  actives: string[];
+  leavers: string[];
+  revoked: string[];
+  excluded: string[];
+  transactions: HttpTransactionOfBlock[];
+  nonce: number;
+  inner_hash: string;
+  signature: string;
+  raw: string;
 }
 
-export function block2HttpBlock(blockDTO:BlockDTO): HttpBlock {
+export function block2HttpBlock(blockDTO: BlockDTO): HttpBlock {
   return {
     version: blockDTO.version,
     currency: blockDTO.currency,
@@ -291,667 +291,673 @@ export function block2HttpBlock(blockDTO:BlockDTO): HttpBlock {
     leavers: blockDTO.leavers,
     revoked: blockDTO.revoked,
     excluded: blockDTO.excluded,
-    transactions: blockDTO.transactions.map((tx):HttpTransactionOfBlock => {
-      return {
-        version: tx.version,
-        currency: tx.currency,
-        comment: tx.comment,
-        locktime: tx.locktime,
-        issuers: tx.issuers,
-        signatures: tx.signatures,
-        outputs: tx.outputs,
-        inputs: tx.inputs,
-        unlocks: tx.unlocks,
-        hash: tx.hash,
-        blockstamp: tx.blockstamp,
-        blockstampTime: tx.blockstampTime,
+    transactions: blockDTO.transactions.map(
+      (tx): HttpTransactionOfBlock => {
+        return {
+          version: tx.version,
+          currency: tx.currency,
+          comment: tx.comment,
+          locktime: tx.locktime,
+          issuers: tx.issuers,
+          signatures: tx.signatures,
+          outputs: tx.outputs,
+          inputs: tx.inputs,
+          unlocks: tx.unlocks,
+          hash: tx.hash,
+          blockstamp: tx.blockstamp,
+          blockstampTime: tx.blockstampTime,
+        };
       }
-    }),
+    ),
     nonce: blockDTO.nonce,
     inner_hash: blockDTO.inner_hash,
     signature: blockDTO.signature,
-    raw: blockDTO.getRawSigned()
-  }
+    raw: blockDTO.getRawSigned(),
+  };
 }
 
 export const Hardship = {
-  "block": Number,
-  "level": Number
+  block: Number,
+  level: Number,
 };
 
 export interface HttpHardship {
-  block: number
-  level: number
+  block: number;
+  level: number;
 }
 
 export const Difficulty = {
-  "uid": String,
-  "level": Number
+  uid: String,
+  level: Number,
 };
 
 export interface HttpDifficulty {
-  uid: string
-  level: number
+  uid: string;
+  level: number;
 }
 
 export const Difficulties = {
-  "block": Number,
-  "levels": [Difficulty]
+  block: Number,
+  levels: [Difficulty],
 };
 
 export interface HttpDifficulties {
-  block: number
-  levels: HttpDifficulty[]
+  block: number;
+  levels: HttpDifficulty[];
 }
 
 export const Blocks = [Block];
 
 export const Stat = {
-  "result": {
-    "blocks": [Number]
-  }
+  result: {
+    blocks: [Number],
+  },
 };
 
 export interface HttpStat {
   result: {
-    blocks: number[]
-  }
+    blocks: number[];
+  };
 }
 
 export const Branches = {
-  "blocks": [Block]
+  blocks: [Block],
 };
 
 export interface HttpBranches {
-  blocks: HttpBlock[]
+  blocks: HttpBlock[];
 }
 
 export const Peer = {
-  "version": Number,
-  "currency": String,
-  "pubkey": String,
-  "block": String,
-  "endpoints": [String],
-  "signature": String,
-  "raw": String
+  version: Number,
+  currency: String,
+  pubkey: String,
+  block: String,
+  endpoints: [String],
+  signature: String,
+  raw: String,
 };
 
 export interface HttpPeer {
-  version: number
-  currency: string
-  pubkey: string
-  block: string
-  endpoints: string[]
-  signature: string
-  raw: string
+  version: number;
+  currency: string;
+  pubkey: string;
+  block: string;
+  endpoints: string[];
+  signature: string;
+  raw: string;
 }
 
 export const DBPeer = {
-  "version": Number,
-  "currency": String,
-  "pubkey": String,
-  "block": String,
-  "status": String,
-  "first_down": Number,
-  "last_try": Number,
-  "endpoints": [String],
-  "signature": String,
-  "raw": String
+  version: Number,
+  currency: String,
+  pubkey: String,
+  block: String,
+  status: String,
+  first_down: Number,
+  last_try: Number,
+  endpoints: [String],
+  signature: String,
+  raw: String,
 };
 
 export const Peers = {
-  "peers": [DBPeer]
+  peers: [DBPeer],
 };
 
 export interface HttpPeers {
-  peers: JSONDBPeer[]
+  peers: JSONDBPeer[];
 }
 
 export interface HttpWS2PInfo {
   peers: {
-    level1: number,
-    level2: number
-  }
+    level1: number;
+    level2: number;
+  };
 }
 
 export interface HttpWS2PHeads {
-  heads: WS2PHead[]
+  heads: WS2PHead[];
 }
 
 export const MerkleOfPeers = {
-  "depth": Number,
-  "nodesCount": Number,
-  "leavesCount": Number,
-  "root": String,
-  "leaves": [String],
-  "leaf": {
-    "hash": String,
-    "value": DBPeer
-  }
+  depth: Number,
+  nodesCount: Number,
+  leavesCount: Number,
+  root: String,
+  leaves: [String],
+  leaf: {
+    hash: String,
+    value: DBPeer,
+  },
 };
 
 export interface HttpMerkleOfPeers {
-  depth: number
-  nodesCount: number
-  leavesCount: number
-  root: string
-  leaves: string[]
+  depth: number;
+  nodesCount: number;
+  leavesCount: number;
+  root: string;
+  leaves: string[];
   leaf: {
-    hash: string
-    value: JSONDBPeer
-  }
+    hash: string;
+    value: JSONDBPeer;
+  };
 }
 
 export const Other = {
-  "pubkey": String,
-  "meta": {
-    "block_number": Number,
-    "block_hash": String
+  pubkey: String,
+  meta: {
+    block_number: Number,
+    block_hash: String,
   },
-  "uids": [String],
-  "isMember": Boolean,
-  "wasMember": Boolean,
-  "signature": String
+  uids: [String],
+  isMember: Boolean,
+  wasMember: Boolean,
+  signature: String,
 };
 
 export interface HttpOther {
-  pubkey: string,
+  pubkey: string;
   meta: {
-    block_number: number,
-    block_hash: string
-  },
-  uids: string[],
-  isMember: boolean,
-  wasMember: boolean,
-  signature: string
+    block_number: number;
+    block_hash: string;
+  };
+  uids: string[];
+  isMember: boolean;
+  wasMember: boolean;
+  signature: string;
 }
 
 export const UID = {
-  "uid": String,
-  "meta": {
-    "timestamp": String
+  uid: String,
+  meta: {
+    timestamp: String,
   },
-  "self": String,
-  "revocation_sig": String,
-  "revoked": Boolean,
-  "revoked_on": Number,
-  "others": [Other]
+  self: String,
+  revocation_sig: String,
+  revoked: Boolean,
+  revoked_on: Number,
+  others: [Other],
 };
 
 export interface HttpUID {
-  uid: string,
+  uid: string;
   meta: {
-    timestamp: string
-  },
-  self: string,
-  revocation_sig: string|null,
-  revoked: boolean,
-  revoked_on: number|null,
-  others: HttpOther[]
+    timestamp: string;
+  };
+  self: string;
+  revocation_sig: string | null;
+  revoked: boolean;
+  revoked_on: number | null;
+  others: HttpOther[];
 }
 
 export const Signed = {
-  "uid": String,
-  "pubkey": String,
-  "meta": {
-    "timestamp": String
+  uid: String,
+  pubkey: String,
+  meta: {
+    timestamp: String,
   },
-  "cert_time": {
-    "block": Number,
-    "block_hash": String
+  cert_time: {
+    block: Number,
+    block_hash: String,
   },
-  "isMember": Boolean,
-  "wasMember": Boolean,
-  "signature": String
+  isMember: Boolean,
+  wasMember: Boolean,
+  signature: String,
 };
 
 export interface HttpSigned {
-  uid: string,
-  pubkey: string,
+  uid: string;
+  pubkey: string;
   meta: {
-    timestamp: string
-  },
+    timestamp: string;
+  };
   cert_time: {
-    block: number,
-    block_hash: string
-  },
-  isMember: boolean,
-  wasMember: boolean,
-  signature: string
+    block: number;
+    block_hash: string;
+  };
+  isMember: boolean;
+  wasMember: boolean;
+  signature: string;
 }
 
 export const CertIdentity = {
-  "issuer": String,
-  "uid": String,
-  "timestamp": String,
-  "sig": String
+  issuer: String,
+  uid: String,
+  timestamp: String,
+  sig: String,
 };
 
 export interface HttpCertIdentity {
-  issuer: string
-  uid: string
-  timestamp: string
-  sig: string
+  issuer: string;
+  uid: string;
+  timestamp: string;
+  sig: string;
 }
 
 export const Cert = {
-  "issuer": String,
-  "timestamp": String,
-  "sig": String,
-  "target": CertIdentity
+  issuer: String,
+  timestamp: String,
+  sig: String,
+  target: CertIdentity,
 };
 
 export interface HttpCert {
-  issuer: string
-  timestamp: string
-  sig: string
-  target: HttpCertIdentity
+  issuer: string;
+  timestamp: string;
+  sig: string;
+  target: HttpCertIdentity;
 }
 
 export const Identity = {
-  "pubkey": String,
-  "uids": [UID],
-  "signed": [Signed]
+  pubkey: String,
+  uids: [UID],
+  signed: [Signed],
 };
 
 export interface HttpIdentity {
-  pubkey: string,
-  uids: HttpUID[],
-  signed: HttpSigned[]
+  pubkey: string;
+  uids: HttpUID[];
+  signed: HttpSigned[];
 }
 
 export const Result = {
-  "result": Boolean
+  result: Boolean,
 };
 
 export interface HttpResult {
-  result: boolean
+  result: boolean;
 }
 
 export const Lookup = {
-  "partial": Boolean,
-  "results": [Identity]
+  partial: Boolean,
+  results: [Identity],
 };
 
 export interface HttpLookup {
-  partial: boolean
-  results: HttpIdentity[]
+  partial: boolean;
+  results: HttpIdentity[];
 }
 
 export const Members = {
-  "results": [{
-    pubkey: String,
-    uid: String
-  }]
+  results: [
+    {
+      pubkey: String,
+      uid: String,
+    },
+  ],
 };
 
 export interface HttpMembers {
   results: {
-    pubkey: string,
-    uid: string
-  }[]
+    pubkey: string;
+    uid: string;
+  }[];
 }
 
 export const RequirementsCert = {
   from: String,
   to: String,
   expiresIn: Number,
-  sig: String
+  sig: String,
 };
 
 export interface HttpRequirementsCert {
-  from: string
-  to: string
-  expiresIn: number
-  sig: string
+  from: string;
+  to: string;
+  expiresIn: number;
+  sig: string;
 }
 
 export const RequirementsPendingCert = {
   from: String,
   to: String,
   blockstamp: String,
-  sig: String
+  sig: String,
 };
 
 export interface HttpRequirementsPendingCert {
-  from: string
-  to: string
-  blockstamp: string
-  sig: string
+  from: string;
+  to: string;
+  blockstamp: string;
+  sig: string;
 }
 
 export const RequirementsPendingMembership = {
   type: String,
   blockstamp: String,
-  sig: String
+  sig: String,
 };
 
 export interface HttpRequirementsPendingMembership {
-  type: string,
-  blockstamp: string,
-  sig: string
+  type: string;
+  blockstamp: string;
+  sig: string;
 }
 
 export const Requirements = {
-  "identities": [{
-    pubkey: String,
-    uid: String,
-    meta: {
-      timestamp: String
+  identities: [
+    {
+      pubkey: String,
+      uid: String,
+      meta: {
+        timestamp: String,
+      },
+      sig: String,
+      revocation_sig: String,
+      revoked: Boolean,
+      revoked_on: Number,
+      expired: Boolean,
+      outdistanced: Boolean,
+      isSentry: Boolean,
+      wasMember: Boolean,
+      certifications: [RequirementsCert],
+      pendingCerts: [RequirementsPendingCert],
+      pendingMemberships: [RequirementsPendingMembership],
+      membershipPendingExpiresIn: Number,
+      membershipExpiresIn: Number,
     },
-    sig: String,
-    revocation_sig: String,
-    revoked: Boolean,
-    revoked_on: Number,
-    expired: Boolean,
-    outdistanced: Boolean,
-    isSentry: Boolean,
-    wasMember: Boolean,
-    certifications: [RequirementsCert],
-    pendingCerts: [RequirementsPendingCert],
-    pendingMemberships: [RequirementsPendingMembership],
-    membershipPendingExpiresIn: Number,
-    membershipExpiresIn: Number
-  }]
+  ],
 };
 
 export interface HttpRequirements {
-  identities: HttpIdentityRequirement[]
+  identities: HttpIdentityRequirement[];
 }
 
 export interface HttpIdentityRequirement {
-  pubkey: string
-  uid: string
+  pubkey: string;
+  uid: string;
   meta: {
-    timestamp: string
-  }
-  sig: string
-  revocation_sig: string | null
-  revoked: boolean
-  revoked_on: number | null
-  expired: boolean
-  outdistanced: boolean
-  isSentry: boolean
-  wasMember: boolean
-  certifications: HttpRequirementsCert[]
-  pendingCerts: HttpRequirementsPendingCert[]
-  pendingMemberships: HttpRequirementsPendingMembership[]
-  membershipPendingExpiresIn: number
-  membershipExpiresIn: number
+    timestamp: string;
+  };
+  sig: string;
+  revocation_sig: string | null;
+  revoked: boolean;
+  revoked_on: number | null;
+  expired: boolean;
+  outdistanced: boolean;
+  isSentry: boolean;
+  wasMember: boolean;
+  certifications: HttpRequirementsCert[];
+  pendingCerts: HttpRequirementsPendingCert[];
+  pendingMemberships: HttpRequirementsPendingMembership[];
+  membershipPendingExpiresIn: number;
+  membershipExpiresIn: number;
 }
 
 export const Certification = {
-  "pubkey": String,
-  "uid": String,
-  "isMember": Boolean,
-  "wasMember": Boolean,
-  "cert_time": {
-    "block": Number,
-    "medianTime": Number
+  pubkey: String,
+  uid: String,
+  isMember: Boolean,
+  wasMember: Boolean,
+  cert_time: {
+    block: Number,
+    medianTime: Number,
   },
-  "sigDate": String,
-  "written": {
-    "number": Number,
-    "hash": String
+  sigDate: String,
+  written: {
+    number: Number,
+    hash: String,
   },
-  "signature": String
+  signature: String,
 };
 
 export interface HttpCertification {
-  pubkey: string
-  uid: string
-  isMember: boolean
-  wasMember: boolean
+  pubkey: string;
+  uid: string;
+  isMember: boolean;
+  wasMember: boolean;
   cert_time: {
-    block: number
-    medianTime: number
-  }
-  sigDate: string
+    block: number;
+    medianTime: number;
+  };
+  sigDate: string;
   written: {
-    number: number
-    hash: string
-  } | null
-  signature: string
+    number: number;
+    hash: string;
+  } | null;
+  signature: string;
 }
 
 export const Certifications = {
-  "pubkey": String,
-  "uid": String,
-  "sigDate": String,
-  "isMember": Boolean,
-  "certifications": [Certification]
+  pubkey: String,
+  uid: String,
+  sigDate: String,
+  isMember: Boolean,
+  certifications: [Certification],
 };
 
 export interface HttpCertifications {
-  pubkey: string
-  uid: string
-  sigDate: string
-  isMember: boolean
-  certifications: HttpCertification[]
+  pubkey: string;
+  uid: string;
+  sigDate: string;
+  isMember: boolean;
+  certifications: HttpCertification[];
 }
 
 export const SimpleIdentity = {
-  "pubkey": String,
-  "uid": String,
-  "sigDate": String
+  pubkey: String,
+  uid: String,
+  sigDate: String,
 };
 
 export interface HttpSimpleIdentity {
-  pubkey: string
-  uid: string
-  sigDate: string
+  pubkey: string;
+  uid: string;
+  sigDate: string;
 }
 
 export const Transaction = {
-  "version": Number,
-  "currency": String,
-  "issuers": [String],
-  "inputs": [String],
-  "unlocks": [String],
-  "outputs": [String],
-  "comment": String,
-  "locktime": Number,
-  "signatures": [String],
-  "raw": String,
-  "written_block": Number,
-  "hash": String
+  version: Number,
+  currency: String,
+  issuers: [String],
+  inputs: [String],
+  unlocks: [String],
+  outputs: [String],
+  comment: String,
+  locktime: Number,
+  signatures: [String],
+  raw: String,
+  written_block: Number,
+  hash: String,
 };
 
 export interface HttpTransaction {
-  version: number
-  currency: string
-  issuers: string[]
-  inputs: string[]
-  unlocks: string[]
-  outputs: string[]
-  comment: string
-  locktime: number
-  signatures: string[]
-  raw: string
-  written_block: number|null
-  hash: string
+  version: number;
+  currency: string;
+  issuers: string[];
+  inputs: string[];
+  unlocks: string[];
+  outputs: string[];
+  comment: string;
+  locktime: number;
+  signatures: string[];
+  raw: string;
+  written_block: number | null;
+  hash: string;
 }
 
 export interface HttpTransactionPending {
-  version: number
-  issuers: string[]
-  inputs: string[]
-  unlocks: string[]
-  outputs: string[]
-  comment: string
-  locktime: number
-  signatures: string[]
-  hash: string
+  version: number;
+  issuers: string[];
+  inputs: string[];
+  unlocks: string[];
+  outputs: string[];
+  comment: string;
+  locktime: number;
+  signatures: string[];
+  hash: string;
 }
 
 export const Source = {
-  "type": String,
-  "noffset": Number,
-  "identifier": String,
-  "amount": Number,
-  "base": Number,
-  "conditions": String
+  type: String,
+  noffset: Number,
+  identifier: String,
+  amount: Number,
+  base: Number,
+  conditions: String,
 };
 
 export interface HttpSource {
-  type: string
-  noffset: number
-  identifier: string
-  amount: number
-  base: number
-  conditions: string
+  type: string;
+  noffset: number;
+  identifier: string;
+  amount: number;
+  base: number;
+  conditions: string;
 }
 
 export const Sources = {
-  "currency": String,
-  "pubkey": String,
-  "sources": [Source]
+  currency: String,
+  pubkey: String,
+  sources: [Source],
 };
 
 export interface HttpSources {
-  currency: string
-  pubkey: string
-  sources: HttpSource[]
+  currency: string;
+  pubkey: string;
+  sources: HttpSource[];
 }
 
 export const TxOfHistory = {
-  "version": Number,
-  "issuers": [String],
-  "inputs": [String],
-  "unlocks": [String],
-  "outputs": [String],
-  "comment": String,
-  "locktime": Number,
-  "received": Number,
-  "signatures": [String],
-  "hash": String,
-  "block_number": Number,
-  "time": Number,
-  "blockstamp": String,
-  "blockstampTime": Number
+  version: Number,
+  issuers: [String],
+  inputs: [String],
+  unlocks: [String],
+  outputs: [String],
+  comment: String,
+  locktime: Number,
+  received: Number,
+  signatures: [String],
+  hash: String,
+  block_number: Number,
+  time: Number,
+  blockstamp: String,
+  blockstampTime: Number,
 };
 
 export interface HttpTxOfHistory {
-  version: number
-  issuers: string[]
-  inputs: string[]
-  unlocks: string[]
-  outputs: string[]
-  comment: string
-  locktime: number
-  received: number
-  signatures: string[]
-  hash: string
-  block_number: number|null
-  time: number|null
-  blockstamp: string
-  blockstampTime: number|null
+  version: number;
+  issuers: string[];
+  inputs: string[];
+  unlocks: string[];
+  outputs: string[];
+  comment: string;
+  locktime: number;
+  received: number;
+  signatures: string[];
+  hash: string;
+  block_number: number | null;
+  time: number | null;
+  blockstamp: string;
+  blockstampTime: number | null;
 }
 
 export const TxHistory = {
-  "currency": String,
-  "pubkey": String,
-  "history": {
-    "sent": [TxOfHistory],
-    "received": [TxOfHistory],
-    "sending": [TxOfHistory],
-    "receiving": [TxOfHistory],
-    "pending": [TxOfHistory]
-  }
+  currency: String,
+  pubkey: String,
+  history: {
+    sent: [TxOfHistory],
+    received: [TxOfHistory],
+    sending: [TxOfHistory],
+    receiving: [TxOfHistory],
+    pending: [TxOfHistory],
+  },
 };
 
 export interface HttpTxHistory {
-  currency: string
-  pubkey: string
+  currency: string;
+  pubkey: string;
   history: {
-    sent: HttpTxOfHistory[]
-    received: HttpTxOfHistory[]
-    sending: HttpTxOfHistory[]
-    receiving: HttpTxOfHistory[]
-    pending: HttpTxOfHistory[]
-  }
+    sent: HttpTxOfHistory[];
+    received: HttpTxOfHistory[];
+    sending: HttpTxOfHistory[];
+    receiving: HttpTxOfHistory[];
+    pending: HttpTxOfHistory[];
+  };
 }
 
 export const TxPending = {
-  "currency": String,
-  "pending": [Transaction]
+  currency: String,
+  pending: [Transaction],
 };
 
 export interface HttpTxPending {
-  currency: string
-  pending: HttpTransactionPending[]
+  currency: string;
+  pending: HttpTransactionPending[];
 }
 
 export const UD = {
-  "block_number": Number,
-  "consumed": Boolean,
-  "time": Number,
-  "amount": Number,
-  "base": Number
+  block_number: Number,
+  consumed: Boolean,
+  time: Number,
+  amount: Number,
+  base: Number,
 };
 
 export interface HttpUD {
-  block_number: number
-  consumed: boolean
-  time: number
-  amount: number
-  base: number
+  block_number: number;
+  consumed: boolean;
+  time: number;
+  amount: number;
+  base: number;
 }
 
 export const UDHistory = {
-  "currency": String,
-  "pubkey": String,
-  "history": {
-    "history": [UD]
-  }
+  currency: String,
+  pubkey: String,
+  history: {
+    history: [UD],
+  },
 };
 
 export interface HttpUDHistory {
-  currency: string
-  pubkey: string
+  currency: string;
+  pubkey: string;
   history: {
-    history: HttpUD[]
-  }
+    history: HttpUD[];
+  };
 }
 
 export const BooleanDTO = {
-  "success": Boolean
+  success: Boolean,
 };
 
 export const SummaryConf = {
-  "cpu": Number
+  cpu: Number,
 };
 
 export const AdminSummary = {
-  "version": String,
-  "host": String,
-  "current": Block,
-  "rootBlock": Block,
-  "pubkey": String,
-  "seckey": String,
-  "conf": SummaryConf,
-  "parameters": Parameters,
-  "lastUDBlock": Block
+  version: String,
+  host: String,
+  current: Block,
+  rootBlock: Block,
+  pubkey: String,
+  seckey: String,
+  conf: SummaryConf,
+  parameters: Parameters,
+  lastUDBlock: Block,
 };
 
 export const PoWSummary = {
-  "total": Number,
-  "mirror": Boolean,
-  "waiting": Boolean
+  total: Number,
+  mirror: Boolean,
+  waiting: Boolean,
 };
 
 export const PreviewPubkey = {
-  "pubkey": String
+  pubkey: String,
 };
 
 export const Sandbox = {
   size: Number,
-  free: Number
+  free: Number,
 };
 
 export interface HttpSandbox {
-  size: number
-  free: number
+  size: number;
+  free: number;
 }
 
 export const IdentitySandbox = Sandbox;
@@ -961,25 +967,25 @@ export const TransactionSandbox = Sandbox;
 export const Sandboxes = {
   identities: IdentitySandbox,
   memberships: MembershipSandbox,
-  transactions: TransactionSandbox
+  transactions: TransactionSandbox,
 };
 
 export interface HttpSandboxes {
-  identities: HttpSandbox
-  memberships: HttpSandbox
-  transactions: HttpSandbox
+  identities: HttpSandbox;
+  memberships: HttpSandbox;
+  transactions: HttpSandbox;
 }
 
 export const LogLink = {
-  link: String
+  link: String,
 };
 
 export interface HttpMilestonePage {
-  totalPages: number
-  chunkSize: number
-  milestonesPerPage: number
-  currentPage?: number
-  blocks?: HttpBlock[]
+  totalPages: number;
+  chunkSize: number;
+  milestonesPerPage: number;
+  currentPage?: number;
+  blocks?: HttpBlock[];
 }
 
 export const Milestones = {
@@ -987,11 +993,11 @@ export const Milestones = {
   chunkSize: Number,
   milestonesPerPage: Number,
   currentPage: Number,
-  "blocks": [Block]
-}
+  blocks: [Block],
+};
 
 export const MilestonesPage = {
   totalPages: Number,
   chunkSize: Number,
   milestonesPerPage: Number,
-}
+};

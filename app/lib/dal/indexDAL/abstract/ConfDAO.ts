@@ -1,17 +1,16 @@
-import {ConfDTO, CurrencyConfDTO} from "../../../dto/ConfDTO"
-import {Initiable} from "../../sqliteDAL/Initiable"
+import { ConfDTO, CurrencyConfDTO } from "../../../dto/ConfDTO";
+import { Initiable } from "../../sqliteDAL/Initiable";
 
 export interface ConfDAO extends Initiable {
+  init(): Promise<void>;
 
-  init(): Promise<void>
+  close(): Promise<void>;
 
-  close(): Promise<void>
+  getParameters(): Promise<CurrencyConfDTO>;
 
-  getParameters(): Promise<CurrencyConfDTO>
+  readRawConfFile(): Promise<string | null>;
 
-  readRawConfFile(): Promise<string|null>
+  loadConf(): Promise<ConfDTO | {}>;
 
-  loadConf(): Promise<ConfDTO|{}>
-
-  saveConf(confToSave:ConfDTO): Promise<void>
+  saveConf(confToSave: ConfDTO): Promise<void>;
 }

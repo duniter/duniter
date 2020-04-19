@@ -11,21 +11,19 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {CFSCore} from "./CFSCore";
-import {Initiable} from "../sqliteDAL/Initiable"
-import {FileSystem} from "../../system/directory"
-import {FileDAL} from "../fileDAL"
+import { CFSCore } from "./CFSCore";
+import { Initiable } from "../sqliteDAL/Initiable";
+import { FileSystem } from "../../system/directory";
+import { FileDAL } from "../fileDAL";
 
 export abstract class AbstractCFS extends Initiable {
+  public coreFS: CFSCore;
+  protected dal: FileDAL;
 
-  public coreFS:CFSCore
-  protected dal:FileDAL
-
-  constructor(rootPath:string, qioFS:FileSystem) {
-    super()
-    this.coreFS = new CFSCore(rootPath, qioFS)
+  constructor(rootPath: string, qioFS: FileSystem) {
+    super();
+    this.coreFS = new CFSCore(rootPath, qioFS);
   }
 
-  cleanCache() {
-  }
+  cleanCache() {}
 }

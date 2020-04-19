@@ -13,12 +13,15 @@
 
 export function newRejectTimeoutPromise(timeout: number) {
   return new Promise((res, rej) => {
-    setTimeout(rej, timeout)
-  })
+    setTimeout(rej, timeout);
+  });
 }
 
-export function newResolveTimeoutPromise<T>(timeout: number, value: T): Promise<T> {
-  return new Promise(res => {
-    setTimeout(() => res(value), timeout)
-  })
+export function newResolveTimeoutPromise<T>(
+  timeout: number,
+  value: T
+): Promise<T> {
+  return new Promise((res) => {
+    setTimeout(() => res(value), timeout);
+  });
 }

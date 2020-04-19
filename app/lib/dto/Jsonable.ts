@@ -12,5 +12,5 @@
 // GNU Affero General Public License for more details.
 
 export interface Jsonable {
-  json(): any
+  json(): any;
 }

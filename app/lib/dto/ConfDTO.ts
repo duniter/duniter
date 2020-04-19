@@ -11,108 +11,115 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {CommonConstants} from "../common-libs/constants"
-import {ProxiesConf} from '../proxy';
-import {Underscore} from "../common-libs/underscore"
+import { CommonConstants } from "../common-libs/constants";
+import { ProxiesConf } from "../proxy";
+import { Underscore } from "../common-libs/underscore";
 
-const constants = require('../constants');
+const constants = require("../constants");
 
 export interface Keypair {
-  pub: string
-  sec: string
+  pub: string;
+  sec: string;
 }
 
 export interface StorageDTO {
   storage?: {
-    transactions?:boolean
-    wotwizard?:boolean
-  }
+    transactions?: boolean;
+    wotwizard?: boolean;
+  };
 }
 
 export interface PowDTO {
-  powNoSecurity:boolean
+  powNoSecurity: boolean;
 }
 
 export interface BranchingDTO {
-  switchOnHeadAdvance:number
-  avgGenTime:number
-  forksize:number
+  switchOnHeadAdvance: number;
+  avgGenTime: number;
+  forksize: number;
 }
 
 export interface CurrencyConfDTO {
-  currency: string
-  c: number
-  dt: number
-  ud0: number
-  sigPeriod: number
-  sigReplay: number
-  sigStock: number
-  sigWindow: number
-  sigValidity: number
-  sigQty: number
-  idtyWindow: number
-  msWindow: number
-  msPeriod: number
-  xpercent: number
-  msValidity: number
-  stepMax: number
-  medianTimeBlocks: number
-  avgGenTime: number
-  dtDiffEval: number
-  percentRot: number
-  udTime0: number
-  udReevalTime0: number
-  dtReeval: number
+  currency: string;
+  c: number;
+  dt: number;
+  ud0: number;
+  sigPeriod: number;
+  sigReplay: number;
+  sigStock: number;
+  sigWindow: number;
+  sigValidity: number;
+  sigQty: number;
+  idtyWindow: number;
+  msWindow: number;
+  msPeriod: number;
+  xpercent: number;
+  msValidity: number;
+  stepMax: number;
+  medianTimeBlocks: number;
+  avgGenTime: number;
+  dtDiffEval: number;
+  percentRot: number;
+  udTime0: number;
+  udReevalTime0: number;
+  dtReeval: number;
 }
 
 export interface KeypairConfDTO {
-  pair: Keypair
-  oldPair: Keypair|null
-  salt: string
-  passwd: string
+  pair: Keypair;
+  oldPair: Keypair | null;
+  salt: string;
+  passwd: string;
 }
 
 export interface NetworkConfDTO {
-  proxiesConf: ProxiesConf|undefined
-  nobma: boolean
-  bmaWithCrawler: boolean
-  remoteport: number
-  remotehost: string|null
-  remoteipv4: string|null
-  remoteipv6: string|null
-  port: number
-  ipv4: string
-  ipv6: string
-  dos:any
-  upnp:boolean
-  httplogs:boolean
-  nonWoTPeersLimit: number
+  proxiesConf: ProxiesConf | undefined;
+  nobma: boolean;
+  bmaWithCrawler: boolean;
+  remoteport: number;
+  remotehost: string | null;
+  remoteipv4: string | null;
+  remoteipv6: string | null;
+  port: number;
+  ipv4: string;
+  ipv6: string;
+  dos: any;
+  upnp: boolean;
+  httplogs: boolean;
+  nonWoTPeersLimit: number;
 }
 
 export interface WS2PConfDTO {
   ws2p?: {
-    privateAccess?: boolean
-    publicAccess?: boolean
-    sync?: boolean
-    uuid?: string
-    upnp?: boolean
-    remotehost?: string|null
-    remoteport?: number|null
-    remotepath?: string
-    port?: number
-    host?: string
-    maxPublic?:number
-    maxPrivate?:number
-    preferedNodes?: string[]
-    preferedOnly: boolean
-    privilegedNodes?: string[]
-    privilegedOnly: boolean
-    syncLimit?: number
-  }
+    privateAccess?: boolean;
+    publicAccess?: boolean;
+    sync?: boolean;
+    uuid?: string;
+    upnp?: boolean;
+    remotehost?: string | null;
+    remoteport?: number | null;
+    remotepath?: string;
+    port?: number;
+    host?: string;
+    maxPublic?: number;
+    maxPrivate?: number;
+    preferedNodes?: string[];
+    preferedOnly: boolean;
+    privilegedNodes?: string[];
+    privilegedOnly: boolean;
+    syncLimit?: number;
+  };
 }
 
-export class ConfDTO implements StorageDTO, CurrencyConfDTO, KeypairConfDTO, NetworkConfDTO, BranchingDTO, WS2PConfDTO, PowDTO {
-
+export class ConfDTO
+  implements
+    StorageDTO,
+    CurrencyConfDTO,
+    KeypairConfDTO,
+    NetworkConfDTO,
+    BranchingDTO,
+    WS2PConfDTO,
+    PowDTO {
   constructor(
     public loglevel: string,
     public currency: string,
@@ -154,13 +161,13 @@ export class ConfDTO implements StorageDTO, CurrencyConfDTO, KeypairConfDTO, Net
     public sigWindow: number,
     public switchOnHeadAdvance: number,
     public pair: Keypair,
-    public oldPair: Keypair|null,
+    public oldPair: Keypair | null,
     public salt: string,
     public passwd: string,
     public remoteport: number,
-    public remotehost: string|null,
-    public remoteipv4: string|null,
-    public remoteipv6: string|null,
+    public remotehost: string | null,
+    public remoteipv4: string | null,
+    public remoteipv6: string | null,
     public host: string,
     public port: number,
     public ipv4: string,
@@ -172,70 +179,131 @@ export class ConfDTO implements StorageDTO, CurrencyConfDTO, KeypairConfDTO, Net
     public nobma: boolean,
     public bmaWithCrawler: boolean,
     public nonWoTPeersLimit: number,
-    public proxiesConf: ProxiesConf|undefined,
+    public proxiesConf: ProxiesConf | undefined,
     public ws2p?: {
-      privateAccess?: boolean
-      publicAccess?: boolean
-      uuid?: string
-      upnp?: boolean
-      remotehost?: string|null
-      remoteport?: number|null
-      remotepath?: string
-      port?: number
-      host?: string
-      preferedNodes?: string[]
-      preferedOnly: boolean
-      privilegedNodes?: string[]
-      privilegedOnly: boolean
-      maxPublic?:number
-      maxPrivate?:number
-      syncLimit?:number
+      privateAccess?: boolean;
+      publicAccess?: boolean;
+      uuid?: string;
+      upnp?: boolean;
+      remotehost?: string | null;
+      remoteport?: number | null;
+      remotepath?: string;
+      port?: number;
+      host?: string;
+      preferedNodes?: string[];
+      preferedOnly: boolean;
+      privilegedNodes?: string[];
+      privilegedOnly: boolean;
+      maxPublic?: number;
+      maxPrivate?: number;
+      syncLimit?: number;
     },
     public powNoSecurity = false,
     public storage = {
       transactions: false,
       wotwizard: false,
-    },
-) {}
+    }
+  ) {}
 
   static mock() {
-    return new ConfDTO("", "", [], [], 0, 3600 * 1000, constants.PROOF_OF_WORK.DEFAULT.CPU, 1, constants.PROOF_OF_WORK.DEFAULT.PREFIX, 0, 0, constants.CONTRACT.DEFAULT.C, constants.CONTRACT.DEFAULT.DT, constants.CONTRACT.DEFAULT.DT_REEVAL, 0, constants.CONTRACT.DEFAULT.UD0, 0, 0, constants.CONTRACT.DEFAULT.STEPMAX, constants.CONTRACT.DEFAULT.SIGPERIOD, constants.CONTRACT.DEFAULT.SIGREPLAY, 0, constants.CONTRACT.DEFAULT.SIGVALIDITY, constants.CONTRACT.DEFAULT.MSVALIDITY, constants.CONTRACT.DEFAULT.SIGQTY, constants.CONTRACT.DEFAULT.SIGSTOCK, constants.CONTRACT.DEFAULT.X_PERCENT, constants.CONTRACT.DEFAULT.PERCENTROT, constants.CONTRACT.DEFAULT.POWDELAY, constants.CONTRACT.DEFAULT.AVGGENTIME, constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS, false, 3000, false, constants.BRANCHES.DEFAULT_WINDOW_SIZE, constants.CONTRACT.DEFAULT.IDTYWINDOW, constants.CONTRACT.DEFAULT.MSWINDOW, constants.CONTRACT.DEFAULT.SIGWINDOW, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", "", 0, "", "", null, false, "", true, true, false, 100, new ProxiesConf(), undefined)
+    return new ConfDTO(
+      "",
+      "",
+      [],
+      [],
+      0,
+      3600 * 1000,
+      constants.PROOF_OF_WORK.DEFAULT.CPU,
+      1,
+      constants.PROOF_OF_WORK.DEFAULT.PREFIX,
+      0,
+      0,
+      constants.CONTRACT.DEFAULT.C,
+      constants.CONTRACT.DEFAULT.DT,
+      constants.CONTRACT.DEFAULT.DT_REEVAL,
+      0,
+      constants.CONTRACT.DEFAULT.UD0,
+      0,
+      0,
+      constants.CONTRACT.DEFAULT.STEPMAX,
+      constants.CONTRACT.DEFAULT.SIGPERIOD,
+      constants.CONTRACT.DEFAULT.SIGREPLAY,
+      0,
+      constants.CONTRACT.DEFAULT.SIGVALIDITY,
+      constants.CONTRACT.DEFAULT.MSVALIDITY,
+      constants.CONTRACT.DEFAULT.SIGQTY,
+      constants.CONTRACT.DEFAULT.SIGSTOCK,
+      constants.CONTRACT.DEFAULT.X_PERCENT,
+      constants.CONTRACT.DEFAULT.PERCENTROT,
+      constants.CONTRACT.DEFAULT.POWDELAY,
+      constants.CONTRACT.DEFAULT.AVGGENTIME,
+      constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS,
+      false,
+      3000,
+      false,
+      constants.BRANCHES.DEFAULT_WINDOW_SIZE,
+      constants.CONTRACT.DEFAULT.IDTYWINDOW,
+      constants.CONTRACT.DEFAULT.MSWINDOW,
+      constants.CONTRACT.DEFAULT.SIGWINDOW,
+      0,
+      { pub: "", sec: "" },
+      null,
+      "",
+      "",
+      0,
+      "",
+      "",
+      "",
+      "",
+      0,
+      "",
+      "",
+      null,
+      false,
+      "",
+      true,
+      true,
+      false,
+      100,
+      new ProxiesConf(),
+      undefined
+    );
   }
 
   static defaultConf() {
     /*return new ConfDTO("", "", [], [], 0, 3600 * 1000, constants.PROOF_OF_WORK.DEFAULT.CPU, 1, constants.PROOF_OF_WORK.DEFAULT.PREFIX, 0, 0, constants.CONTRACT.DEFAULT.C, constants.CONTRACT.DEFAULT.DT, constants.CONTRACT.DEFAULT.DT_REEVAL, 0, constants.CONTRACT.DEFAULT.UD0, 0, 0, constants.CONTRACT.DEFAULT.STEPMAX, constants.CONTRACT.DEFAULT.SIGPERIOD, 0, constants.CONTRACT.DEFAULT.SIGVALIDITY, constants.CONTRACT.DEFAULT.MSVALIDITY, constants.CONTRACT.DEFAULT.SIGQTY, constants.CONTRACT.DEFAULT.SIGSTOCK, constants.CONTRACT.DEFAULT.X_PERCENT, constants.CONTRACT.DEFAULT.PERCENTROT, constants.CONTRACT.DEFAULT.POWDELAY, constants.CONTRACT.DEFAULT.AVGGENTIME, constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS, false, 3000, false, constants.BRANCHES.DEFAULT_WINDOW_SIZE, constants.CONTRACT.DEFAULT.IDTYWINDOW, constants.CONTRACT.DEFAULT.MSWINDOW, constants.CONTRACT.DEFAULT.SIGWINDOW, 0, { pub:'', sec:'' }, null, "", "", 0, "", "", "", "", 0, "", "", null, false, "", true, true)*/
     return {
-      "currency": null,
-      "endpoints": [],
-      "rmEndpoints": [],
-      "upInterval": 3600 * 1000,
-      "c": constants.CONTRACT.DEFAULT.C,
-      "dt": constants.CONTRACT.DEFAULT.DT,
-      "dtReeval": constants.CONTRACT.DEFAULT.DT_REEVAL,
-      "ud0": constants.CONTRACT.DEFAULT.UD0,
-      "stepMax": constants.CONTRACT.DEFAULT.STEPMAX,
-      "sigPeriod": constants.CONTRACT.DEFAULT.SIGPERIOD,
-      "sigReplay": constants.CONTRACT.DEFAULT.SIGREPLAY,
-      "sigValidity": constants.CONTRACT.DEFAULT.SIGVALIDITY,
-      "msValidity": constants.CONTRACT.DEFAULT.MSVALIDITY,
-      "sigQty": constants.CONTRACT.DEFAULT.SIGQTY,
-      "xpercent": constants.CONTRACT.DEFAULT.X_PERCENT,
-      "percentRot": constants.CONTRACT.DEFAULT.PERCENTROT,
-      "powDelay": constants.CONTRACT.DEFAULT.POWDELAY,
-      "avgGenTime": constants.CONTRACT.DEFAULT.AVGGENTIME,
-      "dtDiffEval": constants.CONTRACT.DEFAULT.DTDIFFEVAL,
-      "medianTimeBlocks": constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS,
-      "httplogs": false,
-      "udid2": false,
-      "timeout": 3000,
-      "isolate": false,
-      "forksize": constants.BRANCHES.DEFAULT_WINDOW_SIZE,
-      "switchOnHeadAdvance": CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS,
-      "nonWoTPeersLimit": CommonConstants.DEFAULT_NON_WOT_PEERS_LIMIT,
+      currency: null,
+      endpoints: [],
+      rmEndpoints: [],
+      upInterval: 3600 * 1000,
+      c: constants.CONTRACT.DEFAULT.C,
+      dt: constants.CONTRACT.DEFAULT.DT,
+      dtReeval: constants.CONTRACT.DEFAULT.DT_REEVAL,
+      ud0: constants.CONTRACT.DEFAULT.UD0,
+      stepMax: constants.CONTRACT.DEFAULT.STEPMAX,
+      sigPeriod: constants.CONTRACT.DEFAULT.SIGPERIOD,
+      sigReplay: constants.CONTRACT.DEFAULT.SIGREPLAY,
+      sigValidity: constants.CONTRACT.DEFAULT.SIGVALIDITY,
+      msValidity: constants.CONTRACT.DEFAULT.MSVALIDITY,
+      sigQty: constants.CONTRACT.DEFAULT.SIGQTY,
+      xpercent: constants.CONTRACT.DEFAULT.X_PERCENT,
+      percentRot: constants.CONTRACT.DEFAULT.PERCENTROT,
+      powDelay: constants.CONTRACT.DEFAULT.POWDELAY,
+      avgGenTime: constants.CONTRACT.DEFAULT.AVGGENTIME,
+      dtDiffEval: constants.CONTRACT.DEFAULT.DTDIFFEVAL,
+      medianTimeBlocks: constants.CONTRACT.DEFAULT.MEDIANTIMEBLOCKS,
+      httplogs: false,
+      udid2: false,
+      timeout: 3000,
+      isolate: false,
+      forksize: constants.BRANCHES.DEFAULT_WINDOW_SIZE,
+      switchOnHeadAdvance: CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS,
+      nonWoTPeersLimit: CommonConstants.DEFAULT_NON_WOT_PEERS_LIMIT,
     };
   }
 
-  static complete(conf:any) {
-    return Underscore.extend(ConfDTO.defaultConf(), conf)
+  static complete(conf: any) {
+    return Underscore.extend(ConfDTO.defaultConf(), conf);
   }
 }

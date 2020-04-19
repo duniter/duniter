@@ -11,11 +11,10 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {WS2PResponse} from "./WS2PResponse"
-import {WS2PConnection} from "../WS2PConnection"
+import { WS2PResponse } from "./WS2PResponse";
+import { WS2PConnection } from "../WS2PConnection";
 
 export interface WS2PMessageHandler {
-
-  handlePushMessage(json:any, c:WS2PConnection): Promise<void>
-  answerToRequest(json:any, c:WS2PConnection): Promise<WS2PResponse>
+  handlePushMessage(json: any, c: WS2PConnection): Promise<void>;
+  answerToRequest(json: any, c: WS2PConnection): Promise<WS2PResponse>;
 }

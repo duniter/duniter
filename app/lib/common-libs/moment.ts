@@ -11,6 +11,6 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-const _moment_ = require("moment")
+const _moment_ = require("moment");
 
-export const moment = _moment_
+export const moment = _moment_;

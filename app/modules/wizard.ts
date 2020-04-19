@@ -11,41 +11,51 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {ConfDTO} from "../lib/dto/ConfDTO"
-import {Server} from "../../server"
-import {Wizard} from "../lib/wizard"
-import {Underscore} from "../lib/common-libs/underscore"
+import { ConfDTO } from "../lib/dto/ConfDTO";
+import { Server } from "../../server";
+import { Wizard } from "../lib/wizard";
+import { Underscore } from "../lib/common-libs/underscore";
 
-const logger = require('../lib/logger').NewLogger('wizard');
+const logger = require("../lib/logger").NewLogger("wizard");
 
 module.exports = {
   duniter: {
-
     wizard: {
       // The wizard itself also defines its personal tasks
-      'currency': (conf:ConfDTO) => Wizard.configCurrency(conf),
-      'pow': (conf:ConfDTO) => Wizard.configPoW(conf),
-      'parameters': (conf:ConfDTO) => Wizard.configUCP(conf)
+      currency: (conf: ConfDTO) => Wizard.configCurrency(conf),
+      pow: (conf: ConfDTO) => Wizard.configPoW(conf),
+      parameters: (conf: ConfDTO) => Wizard.configUCP(conf),
     },
 
-    cli: [{
-      name: 'wizard [key|network|network-reconfigure|currency|pow|parameters]',
-      desc: 'Launch the configuration wizard.',
+    cli: [
+      {
+        name:
+          "wizard [key|network|network-reconfigure|currency|pow|parameters]",
+        desc: "Launch the configuration wizard.",
 
-      onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any, wizardTasks:any) => {
-        const step = params[0];
-        const tasks = step ? [wizardTasks[step]] : Underscore.values(wizardTasks);
-        for (const task of tasks) {
-          if (!task) {
-            throw 'Unknown task';
+        onConfiguredExecute: async (
+          server: Server,
+          conf: ConfDTO,
+          program: any,
+          params: any,
+          wizardTasks: any
+        ) => {
+          const step = params[0];
+          const tasks = step
+            ? [wizardTasks[step]]
+            : Underscore.values(wizardTasks);
+          for (const task of tasks) {
+            if (!task) {
+              throw "Unknown task";
+            }
+            await task(conf, program);
           }
-          await task(conf, program)
-        }
-        // Check config
-        await server.checkConfig();
-        await server.dal.saveConf(conf);
-        logger.debug("Configuration saved.");
-      }
-    }]
-  }
+          // Check config
+          await server.checkConfig();
+          await server.dal.saveConf(conf);
+          logger.debug("Configuration saved.");
+        },
+      },
+    ],
+  },
 };

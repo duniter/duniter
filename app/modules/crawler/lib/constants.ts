@@ -11,10 +11,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import {CommonConstants} from "../../../lib/common-libs/constants"
+import { CommonConstants } from "../../../lib/common-libs/constants";
 
 export const CrawlerConstants = {
-
   PEER_LONG_DOWN: 3600 * 24 * 2, // 48h
   SYNC_LONG_TIMEOUT: 30 * 1000, // 30 seconds
   DEFAULT_TIMEOUT: 10 * 1000, // 10 seconds
@@ -42,16 +41,19 @@ export const CrawlerConstants = {
     AN_HOUR: 3600,
     A_DAY: 3600 * 24,
     A_WEEK: 3600 * 24 * 7,
-    A_MONTH: (3600 * 24 * 365.25) / 12
+    A_MONTH: (3600 * 24 * 365.25) / 12,
   },
 
   ERRORS: {
-    NEWER_PEER_DOCUMENT_AVAILABLE:        { httpCode: 409, uerr: { ucode: 2022, message: "A newer peer document is available" }},
+    NEWER_PEER_DOCUMENT_AVAILABLE: {
+      httpCode: 409,
+      uerr: { ucode: 2022, message: "A newer peer document is available" },
+    },
   },
 
   ERROR: {
     PEER: {
-      UNKNOWN_REFERENCE_BLOCK: 'Unknown reference block of peer'
-    }
-  }
-}
+      UNKNOWN_REFERENCE_BLOCK: "Unknown reference block of peer",
+    },
+  },
+};

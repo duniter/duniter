@@ -18,7 +18,7 @@ import {RevocationDTO} from "./dto/RevocationDTO"
 import {CertificationDTO} from "./dto/CertificationDTO"
 import {TransactionDTO} from "./dto/TransactionDTO"
 import {DBHead} from "./db/DBHead"
-import {verify} from "./common-libs/crypto/keyring"
+import {verifyBuggy} from "./common-libs/crypto/keyring"
 import {rawer, txunlock} from "./common-libs/index"
 import {CommonConstants} from "./common-libs/constants"
 import {MembershipDTO} from "./dto/MembershipDTO"
@@ -883,9 +883,10 @@ export class Indexer {
     // BR_G27
     await Promise.all(mindex.map(async (ENTRY: MindexEntry) => {
       if (ENTRY.type == 'JOIN' || ENTRY.type == 'ACTIVE') {
-        const existing = count(await dal.cindexDAL.findByReceiverAndExpiredOn(ENTRY.pub, 0))
-        const pending = count(Underscore.filter(cindex, (c:CindexEntry) => c.receiver == ENTRY.pub && c.expired_on == 0))
-        ENTRY.enoughCerts = (existing + pending) >= conf.sigQty;
+        const existing = (await dal.cindexDAL.findByReceiverAndExpiredOn(ENTRY.pub, 0)).map(value => value.issuer)
+        const pending = Underscore.filter(cindex, (c:CindexEntry) => c.receiver == ENTRY.pub && c.expired_on == 0).map(value => value.issuer)
+        const uniqIssuers = Underscore.uniq(existing.concat(pending))
+        ENTRY.enoughCerts = count(uniqIssuers) >= conf.sigQty;
       } else {
         ENTRY.enoughCerts = true;
       }
@@ -2089,7 +2090,7 @@ async function sigCheckRevoke(entry: MindexEntry, dal: FileDAL, currency: string
       sig: idty.sig,
       revocation: ''
     });
-    let sigOK = verify(rawRevocation, sig, pubkey);
+    let sigOK = verifyBuggy(rawRevocation, sig, pubkey);
     if (!sigOK) {
       throw Error("Revocation signature must match");
     }
@@ -2144,7 +2145,7 @@ async function checkCertificationIsValid (block: BlockDTO, cert: CindexEntry, fi
           buid: buid,
           sig: ''
         })
-        const verified = verify(raw, cert.sig, cert.issuer);
+        const verified = verifyBuggy(raw, cert.sig, cert.issuer);
         if (!verified) {
           throw constants.ERRORS.WRONG_SIGNATURE_FOR_CERT
         }
@@ -2160,7 +2161,7 @@ function txSourceUnlock(ENTRY:SindexEntry, source:{ conditions: string, written_
   const tx = ENTRY.txObj;
   const unlockParams:string[] = TransactionDTO.unlock2params(ENTRY.unlock || '')
   const unlocksMetadata:UnlockMetadata = {}
-  const sigResult = TransactionDTO.fromJSONObject(tx).getTransactionSigResult()
+  const sigResult = TransactionDTO.fromJSONObject(tx).getTransactionSigResult(HEAD.version)
   if (!source.conditions) {
     return false // Unlock fail
   }

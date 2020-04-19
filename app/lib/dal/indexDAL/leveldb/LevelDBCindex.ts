@@ -1,5 +1,5 @@
 import {MonitorExecutionTime} from "../../../debug/MonitorExecutionTime"
-import {CindexEntry, FullCindexEntry, Indexer, reduceBy} from "../../../indexer"
+import {CindexEntry, FullCindexEntry, Indexer, reduce, reduceBy} from "../../../indexer"
 import {LevelUp} from 'levelup'
 import {LevelDBTable} from "./LevelDBTable"
 import {Underscore} from "../../../common-libs/underscore"
@@ -146,13 +146,20 @@ export class LevelDBCindex extends LevelDBTable<LevelDBCindexEntry> implements C
       }
     }
     // Remove the "received" arrays
-    await Promise.all(toRemove.map(async e => {
-      const entry = await this.get(e.receiver)
-      // Remove the certification
-      entry.received = entry.received.filter(issuer => issuer !== e.issuer)
-      // Persist
-      await this.put(e.receiver, entry)
-    }))
+    for (const e of toRemove) {
+      const receiver = await this.get(e.receiver)
+      const issuer = await this.get(e.issuer)
+      const certification = reduce(issuer.issued.filter(i => i.receiver === e.receiver))
+      // We remove ONLY IF no valid link still exist, i.e. we remove if the link **has expired** (we may be here because
+      // of a certification replay before term that is being reverted ==> in such case, even after the revert, the link
+      // between issuer and receiver is still valid. So don't remove it.
+      if (certification.expired_on) {
+        // Remove the certification
+        receiver.received = receiver.received.filter(issuer => issuer !== e.issuer)
+        // Persist
+        await this.put(e.receiver, receiver)
+      }
+    }
     // Remove the expires_on index entries
     const expires = Underscore.uniq(toRemove.filter(e => e.expires_on).map(e => e.expires_on))
     await Promise.all(expires.map(async e => this.indexForExpiresOn.del(LevelDBCindex.trimExpiredOnKey(e))))
@@ -216,7 +223,8 @@ export class LevelDBCindex extends LevelDBTable<LevelDBCindexEntry> implements C
     const receiver = (await this.getOrNull(pub)) || { issued: [], received: [] }
     const issuers = receiver.received
     return (await Promise.all(issuers.map(async issuer => {
-      return (await this.get(issuer)).issued.filter(e => e.receiver === pub && e.expired_on === 0)
+      const fullEntries = Indexer.DUP_HELPERS.reduceBy((await this.get(issuer)).issued, ['issuer', 'receiver'])
+      return fullEntries.filter(e => e.receiver === pub && e.expired_on === 0)
     }))).reduce(reduceConcat, [])
   }
 

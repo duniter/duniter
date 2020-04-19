@@ -16,7 +16,7 @@ import {FileDAL} from "../dal/fileDAL"
 import {DBBlock} from "../db/DBBlock"
 import {TransactionDTO, TxSignatureResult} from "../dto/TransactionDTO"
 import {BlockDTO} from "../dto/BlockDTO"
-import {verify} from "../common-libs/crypto/keyring"
+import {verifyBuggy} from "../common-libs/crypto/keyring"
 import {rawer, txunlock} from "../common-libs/index"
 import {CommonConstants} from "../common-libs/constants"
 import {IdentityDTO} from "../dto/IdentityDTO"
@@ -94,7 +94,7 @@ export const GLOBAL_RULES_FUNCTIONS = {
     return true;
   },
 
-  checkSourcesAvailability: async (block:{ transactions:TransactionDTO[], medianTime: number }, conf:ConfDTO, dal:FileDAL, findSourceTx:(txHash:string) => Promise<DBTx|null>) => {
+  checkSourcesAvailability: async (block:{ version: number, transactions:TransactionDTO[], medianTime: number }, conf:ConfDTO, dal:FileDAL, findSourceTx:(txHash:string) => Promise<DBTx|null>) => {
     const txs = block.transactions
     const current = await dal.getCurrentBlockOrNull();
     for (const tx of txs) {
@@ -150,7 +150,7 @@ export const GLOBAL_RULES_FUNCTIONS = {
             unlocksMetadata.elapsedTime = block.medianTime - dbSrc.written_time;
           }
 
-          const sigs = tx.getTransactionSigResult()
+          const sigs = tx.getTransactionSigResult(block.version)
 
           try {
             if (!txunlock(dbSrc.conditions, unlocksForCondition, sigs, unlocksMetadata)) {
@@ -213,13 +213,18 @@ export const GLOBAL_RULES_HELPERS = {
 
   checkSingleTransaction: (
     tx:TransactionDTO,
-    block:{ medianTime: number },
+    dubp_version: number,
+    medianTime: number,
     conf:ConfDTO,
     dal:FileDAL,
-    findSourceTx:(txHash:string) => Promise<DBTx|null>) => GLOBAL_RULES_FUNCTIONS.checkSourcesAvailability({
-    transactions: [tx],
-    medianTime: block.medianTime
-  }, conf, dal, findSourceTx),
+    findSourceTx:(txHash:string) => Promise<DBTx|null>) => GLOBAL_RULES_FUNCTIONS.checkSourcesAvailability(
+      {
+        version: dubp_version,
+        transactions: [tx],
+        medianTime: medianTime
+      },
+      conf, dal, findSourceTx
+    ),
 
   checkTxBlockStamp: async (tx:TransactionDTO, dal:FileDAL) => {
     const number = parseInt(tx.blockstamp.split('-')[0])
@@ -317,7 +322,7 @@ async function checkCertificationShouldBeValid (block:{ number:number, currency:
         buid: buid,
         sig: ''
       })
-      const verified = verify(raw, cert.sig, cert.from);
+      const verified = verifyBuggy(raw, cert.sig, cert.from);
       if (!verified) {
         throw constants.ERRORS.WRONG_SIGNATURE_FOR_CERT
       }

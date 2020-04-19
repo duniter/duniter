@@ -13,7 +13,7 @@
 
 import {hashf} from "../common"
 import {Cloneable} from "./Cloneable"
-import {verify} from "../common-libs/crypto/keyring"
+import {verify, verifyBuggy} from "../common-libs/crypto/keyring"
 
 export interface BaseDTO {
   base: number
@@ -237,7 +237,7 @@ export class TransactionDTO implements Cloneable {
     }
   }
 
-  getTransactionSigResult() {
+  getTransactionSigResult(dubp_version: number) {
     const sigResult = new TxSignatureResultImpl(this.issuers.slice())
     let i = 0
     const raw = this.getRawTxNoSig()
@@ -245,14 +245,19 @@ export class TransactionDTO implements Cloneable {
     while (matching && i < this.signatures.length) {
       const sig = this.signatures[i]
       const pub = this.issuers[i]
-      sigResult.sigs[i].ok = matching = verify(raw, sig, pub)
+      if (dubp_version >= 12) {
+        sigResult.sigs[i].ok = verify(raw, sig, pub)
+      } else {
+        sigResult.sigs[i].ok = verifyBuggy(raw, sig, pub)
+      }
+      matching = sigResult.sigs[i].ok 
       i++
     }
     return sigResult
   }
 
-  checkSignatures() {
-    return this.getTransactionSigResult().allMatching
+  checkSignatures(dubp_version: number) {
+    return this.getTransactionSigResult(dubp_version).allMatching
   }
 
   static fromJSONObject(obj:any, currency:string = "") {

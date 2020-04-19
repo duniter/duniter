@@ -28,7 +28,7 @@ describe("Fork blocks", function() {
 
   before(async () => {
 
-    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 11
+    CommonConstants.DUBP_NEXT_VERSION = 11
 
     s1 = NewTestingServer({
 
@@ -235,6 +235,6 @@ describe("Fork blocks", function() {
   })
 
   after(() => {
-    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 11
+    CommonConstants.DUBP_NEXT_VERSION = 10
   })
 })

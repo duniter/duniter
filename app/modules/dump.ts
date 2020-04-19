@@ -11,11 +11,12 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
+import {exec} from "child_process"
 import {ConfDTO} from "../lib/dto/ConfDTO"
 import {Server} from "../../server"
 import {moment} from "../lib/common-libs/moment"
 import {DBBlock} from "../lib/db/DBBlock"
-import {SindexEntry} from "../lib/indexer"
+import {FullIindexEntry, IindexEntry, SindexEntry} from "../lib/indexer"
 import {BlockDTO} from "../lib/dto/BlockDTO"
 import {Underscore} from "../lib/common-libs/underscore"
 import {dumpWotWizard} from "./dump/wotwizard/wotwizard.dump"
@@ -23,6 +24,13 @@ import {OtherConstants} from "../lib/other_constants"
 import {Querable, querablep} from "../lib/common-libs/querable"
 import {dumpBlocks, dumpForks} from "./dump/blocks/dump.blocks"
 import {newResolveTimeoutPromise} from "../lib/common-libs/timeout-promise"
+import {LevelDBIindex} from "../lib/dal/indexDAL/leveldb/LevelDBIindex"
+import {dumpBindex, dumpCindex, dumpCindexPretty, dumpIindex, dumpMindex, dumpSindex} from "../lib/debug/dump"
+import {readFileSync} from "fs"
+import {IdentityDTO} from "../lib/dto/IdentityDTO"
+import {CertificationDTO, ShortCertificationDTO} from "../lib/dto/CertificationDTO"
+import {MembershipDTO} from "../lib/dto/MembershipDTO"
+import {RevocationDTO, ShortRevocation} from "../lib/dto/RevocationDTO"
 
 const Table = require('cli-table')
 
@@ -55,15 +63,45 @@ module.exports = {
     },
 
     cli: [{
+      name: 'current',
+      desc: 'Shows current block\'s blockstamp',
+      logs: false,
+      preventIfRunning: true,
+
+      onDatabaseExecute: async (server:Server) => {
+        const current = await server.dal.getCurrentBlockOrNull()
+        if (!current) {
+          return console.log('None')
+        }
+        const blockstamp = `${current.number}-${current.hash}`
+        console.log(blockstamp)
+        // Save DB
+        await server.disconnect();
+      }
+    }, {
+      name: 'trim-indexes',
+      desc: 'Force trimming of indexes',
+      logs: true,
+      preventIfRunning: true,
+
+      onConfiguredExecute: async (server:Server) => {
+        await server.dal.init(server.conf)
+        await server.BlockchainService.trimIndexes()
+        // Save DB
+        await server.disconnect();
+      }
+    }, {
       name: 'dump [what] [name] [cond]',
       desc: 'Dumps data of the blockchain.',
       logs: false,
       preventIfRunning: true,
 
-      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
+      onConfiguredExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
         const what: string = params[0] || ''
         const name: string = params[1] || ''
         const cond: string = params[2] || ''
+
+        await server.dal.init(server.conf)
 
         try {
 
@@ -112,6 +150,64 @@ module.exports = {
         await server.disconnect();
       }
     }, {
+      name: 'search [pattern]',
+      desc: 'Dumps data of the blockchain matching given pattern.',
+      logs: false,
+      preventIfRunning: true,
+
+      onDatabaseExecute: async (server:Server, conf:ConfDTO, program:any, params:any) => {
+        const pattern: string = params[0] || ''
+
+        try {
+
+          const files: string[] = await new Promise<string[]>((res, rej) => exec(`grep -r ${pattern} ${server.home}/${server.conf.currency} -l | grep .json`, (err, stdout) => {
+            if (err) return rej(err)
+            console.log(stdout)
+            res(stdout.split('\n').filter(l => l))
+          }))
+
+          const blocks = Underscore.sortBy(await findBlocksMatching(pattern, files), b => b.number)
+
+          const events: { b: BlockDTO, event: (IdentityDTO|ShortCertificationDTO|MembershipDTO|ShortRevocation|{ type: 'exclusion', pub: string }) }[] = []
+          for (const b of blocks) {
+            b.identities.filter(i => i.includes(pattern)).forEach(i => {
+              events.push({ b, event: IdentityDTO.fromInline(i) })
+            })
+            b.certifications.filter(c => c.includes(pattern)).forEach(c => {
+              events.push({ b, event: CertificationDTO.fromInline(c) })
+            })
+            b.joiners.concat(b.actives).concat(b.leavers).filter(m => m.includes(pattern)).forEach(m => {
+              events.push({ b, event: MembershipDTO.fromInline(m) })
+            })
+            b.revoked.filter(m => m.includes(pattern)).forEach(r => {
+              events.push({ b, event: RevocationDTO.fromInline(r) })
+            })
+            b.excluded.filter(m => m.includes(pattern)).forEach(r => {
+              events.push({ b, event: { type: 'exclusion', pub: r } })
+            })
+          }
+
+          for (const e of events) {
+            if ((e.event as IdentityDTO).uid) {
+              const date = await getDateForBlock(e.b)
+              const idty = e.event as IdentityDTO
+              console.log('%s: new identity %s (created on %s)', date, idty.uid, await getDateFor(server, idty.buid as string))
+            }
+            if ((e.event as { type: 'exclusion', pub: string }).type === 'exclusion') {
+              const date = await getDateForBlock(e.b)
+              console.log('%s: excluded', date)
+            }
+          }
+
+          console.log(events.map(e => e.event))
+
+        } catch (e) {
+          console.error(e)
+        }
+        // Save DB
+        await server.disconnect();
+      }
+    }, {
       name: 'dump-ww',
       desc: 'Dumps WotWizard export.',
       logs: true,
@@ -119,6 +215,21 @@ module.exports = {
       onDatabaseExecute: async (server:Server) => dumpWotWizard(server)
     }]
   }
+}
+
+async function findBlocksMatching(pattern: string, files: string[]) {
+  const matchingBlocks: BlockDTO[] = []
+  for (const f of files) {
+    const blocks: any[] = JSON.parse(await readFileSync(f, 'utf8')).blocks
+    for (const jsonBlock of blocks) {
+      const b = BlockDTO.fromJSONObject(jsonBlock)
+      const raw = b.getRawSigned()
+      if (raw.includes(pattern)) {
+        matchingBlocks.push(b)
+      }
+    }
+  }
+  return matchingBlocks
 }
 
 async function dumpCurrent(server: Server) {
@@ -164,8 +275,7 @@ async function dumpTable(server: Server, name: string, condition?: string) {
   switch (name) {
     case 'b_index':
       rows = await server.dal.bindexDAL.findRawWithOrder(criterion, [['number', false]])
-      dump(rows, ['version','bsize','hash','issuer','time','number','membersCount','issuersCount','issuersFrame','issuersFrameVar','issuerDiff','avgBlockSize','medianTime','dividend','mass','unitBase','powMin','udTime','udReevalTime','diffNumber','speed','massReeval'])
-      break
+      return dumpBindex(rows)
 
     /**
      * Dumps issuers visible in current bindex
@@ -178,59 +288,39 @@ async function dumpTable(server: Server, name: string, condition?: string) {
 
     case 'i_index':
       rows = await server.dal.iindexDAL.findRawWithOrder(criterion, [['writtenOn', false], ['wotb_id', false]])
-      dump(rows, ['op','uid','pub','hash','sig','created_on','written_on','member','wasMember','kick','wotb_id'])
-      break
+      return dumpIindex(rows)
     case 'm_index':
       rows = await server.dal.mindexDAL.findRawWithOrder(criterion, [['writtenOn', false], ['pub', false]])
-      dump(rows, ['op','pub','created_on','written_on','expires_on','expired_on','revokes_on','revoked_on','leaving','revocation','chainable_on'])
-      break
+      return dumpMindex(rows)
     case 'c_index':
       rows = await server.dal.cindexDAL.findRawWithOrder(criterion, [['writtenOn', false], ['issuer', false], ['receiver', false]])
-      dump(rows, ['op','issuer','receiver','created_on','written_on','sig','expires_on','expired_on','chainable_on','from_wid','to_wid','replayable_on'])
+      return dumpCindex(rows)
       break
     case 's_index':
       const rowsTX = await server.dal.sindexDAL.findRawWithOrder(criterion, [['writtenOn', false], ['identifier', false], ['pos', false]])
       const rowsUD = await server.dal.dividendDAL.findForDump(criterion)
       rows = rowsTX.concat(rowsUD)
       sortSindex(rows)
-      dump(rows, ['op','tx','identifier','pos','created_on','amount','base','locktime','consumed','conditions', 'writtenOn'])
-      break
+      return dumpSindex(rows)
+
+    case 'c_index_pretty':
+      rows = await server.dal.cindexDAL.findRawWithOrder(criterion, [['writtenOn', false], ['issuer', false], ['receiver', false]])
+      rows = rows.filter((row: any) => Object.entries(criterion).reduce((ok, crit: any) => ok && row[crit[0]] === crit[1], true))
+      await dumpCindexPretty(rows, async (pub) => {
+        const iindexEntry = await server.dal.getWrittenIdtyByPubkey(pub)
+        return (iindexEntry as IindexEntry).uid as string
+      })
+
     default:
       console.error(`Unknown dump table ${name}`)
       break
   }
 }
 
-function dump(rows: any[], columns: string[]) {
-  // Table columns
-  const t = new Table({
-    head: columns
-  });
-  for (const row of rows) {
-    t.push(columns.map((c) => {
-      if (row[c] === null) {
-        return "NULL"
-      }
-      else if (row[c] === undefined) {
-        return 'NULL'
-      }
-      else if (typeof row[c] === 'boolean') {
-        return row[c] ? 1 : 0
-      }
-      return row[c]
-    }));
-  }
-  try {
-    const dumped = t.toString()
-    console.log(dumped)
-  } catch (e) {
-    console.error(e)
-  }
-}
-
 async function dumpHistory(server: Server, pub: string) {
-  const irows = await server.dal.iindexDAL.findRawWithOrder({ pub }, [['writtenOn', false]])
-  const mrows = await server.dal.mindexDAL.findRawWithOrder({ pub }, [['writtenOn', false]])
+  const irows = (await server.dal.iindexDAL.findRawWithOrder({ pub }, [['writtenOn', false]])).filter(r => pub ? r.pub === pub : true)
+  const mrows = (await server.dal.mindexDAL.findRawWithOrder({ pub }, [['writtenOn', false]])).filter(r => pub ? r.pub === pub : true)
+  const crows = (await server.dal.cindexDAL.findRawWithOrder({ pub }, [['writtenOn', false]])).filter(r => pub ? r.issuer === pub || r.receiver === pub: true)
   console.log('----- IDENTITY -----')
   for (const e of irows) {
     const date = await getDateFor(server, e.written_on)
@@ -259,6 +349,28 @@ async function dumpHistory(server: Server, pub: string) {
       console.log('Non displayable MINDEX entry')
     }
   }
+  console.log('----- CERTIFICATION -----')
+  crows.forEach(crow => {
+    console.log(JSON.stringify(crow))
+  })
+  for (const e of crows) {
+    const dateW = await getDateFor(server, e.written_on)
+    const dateC = await getDateForBlockNumber(server, e.created_on)
+    if (e.receiver === pub) {
+      const issuer = await server.dal.getWrittenIdtyByPubkey(e.issuer) as FullIindexEntry
+      if (e.op === 'UPDATE') {
+        console.log('%s : %s: from %s (update)', dateC, dateW, issuer.uid)
+      }
+      else {
+        console.log('%s : %s: from %s', dateC, dateW, issuer.uid)
+      }
+    // } else if (e.issuer === pub) {
+    //   const receiver = await server.dal.getWrittenIdtyByPubkey(e.receiver) as FullIindexEntry
+    //   console.log('%s: to ', date, receiver.uid)
+    } else {
+      // console.log('Non displayable CINDEX entry')
+    }
+  }
 }
 
 async function dumpWot(server: Server) {
@@ -269,6 +381,19 @@ async function dumpWot(server: Server) {
 
 async function getDateFor(server: Server, blockstamp: string) {
   const b = (await server.dal.getAbsoluteBlockByBlockstamp(blockstamp)) as DBBlock
+  const s = "         " + b.number
+  const bnumberPadded = s.substr(s.length - 6)
+  return formatTimestamp(b.medianTime) + ' (#' + bnumberPadded + ')'
+}
+
+async function getDateForBlockNumber(server: Server, number: number) {
+  const b = (await server.dal.getBlock(number)) as DBBlock
+  const s = "         " + b.number
+  const bnumberPadded = s.substr(s.length - 6)
+  return formatTimestamp(b.medianTime) + ' (#' + bnumberPadded + ')'
+}
+
+async function getDateForBlock(b: BlockDTO) {
   const s = "         " + b.number
   const bnumberPadded = s.substr(s.length - 6)
   return formatTimestamp(b.medianTime) + ' (#' + bnumberPadded + ')'

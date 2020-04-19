@@ -22,7 +22,7 @@ describe('Expired transactions', () => writeBasicTestWithConfAnd2Users({
   let oldTxWindowValue: number
 
   before(() => {
-    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 11
+    CommonConstants.DUBP_NEXT_VERSION = 11
     oldTxWindowValue = CommonConstants.TX_WINDOW
     CommonConstants.TX_WINDOW = 2 // We need a low value to pass time bounds rules
   })
@@ -48,7 +48,7 @@ describe('Expired transactions', () => writeBasicTestWithConfAnd2Users({
   })
 
   after(() => {
-    CommonConstants.BLOCK_NEW_GENERATED_VERSION = 10
+    CommonConstants.DUBP_NEXT_VERSION = 10
     CommonConstants.TX_WINDOW = oldTxWindowValue
   })
 }))

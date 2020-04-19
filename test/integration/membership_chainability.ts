@@ -35,18 +35,18 @@ describe("Membership chainability", function() {
       const res1 = await simpleNodeWith2Users(conf)
       s1 = res1.s1
       cat = res1.cat
-      const nowVersion = CommonConstants.BLOCK_NEW_GENERATED_VERSION
-      CommonConstants.BLOCK_NEW_GENERATED_VERSION = 10
+      const nowVersion = CommonConstants.DUBP_NEXT_VERSION
+      CommonConstants.DUBP_NEXT_VERSION = 10
       await s1.commit({ time: now })
       await s1.commit({ time: now })
       await s1.commit({ time: now, actives: [
         'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd:rppB5NEwmdMUCxw3N/QPMk+V1h2Jpn0yxTzdO2xxcNN3MACv6x8vNTChWwM6DOq+kXiQHTczFzoux+82WkMfDQ==:1-12D7B9BEBE941F6929A4A61CDC06DEEEFCB00FD1DA72E42FFF7B19A338D421E1:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:cat'
       ]})
-      CommonConstants.BLOCK_NEW_GENERATED_VERSION = nowVersion
+      CommonConstants.DUBP_NEXT_VERSION = nowVersion
     })
 
     before(() => {
-      CommonConstants.BLOCK_NEW_GENERATED_VERSION = 11
+      CommonConstants.DUBP_NEXT_VERSION = 11
     })
 
     it('current should be the 2nd', () => s1.expect('/blockchain/current', (res:any) => {
@@ -55,7 +55,7 @@ describe("Membership chainability", function() {
     }))
 
     before(() => {
-      CommonConstants.BLOCK_NEW_GENERATED_VERSION = 10
+      CommonConstants.DUBP_NEXT_VERSION = 10
     })
 
     after(async () => {

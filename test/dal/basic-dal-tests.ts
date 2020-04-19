@@ -34,7 +34,7 @@ var mocks = {
   block0: {
     "hash" : "00063EB6E83F8717CEF1D25B3E2EE308374A14B1",
     "signature" : "+78w7251vvRdhoIJ6IWHEiEOLxNrmfQf45Y5sYvPdnAdXkVpO1unMV5YA/G5Vhphyz1dICrbeKCPM5qbFsoWAQ==",
-    "version" : constants.BLOCK_GENERATED_VERSION,
+    "version" : constants.BLOCK_GENESIS_VERSION,
     "currency" : "meta_brouzouf",
     "issuer" : "HnFcSms8jzwngtVomTTnzudZx7SHUQY8sVE1y8yBmULk",
     "parameters" : "0.1:86400:100:604800:2629800:3:3:2629800:3:11:600:20:144:0.67",

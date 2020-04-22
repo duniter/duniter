@@ -3,7 +3,7 @@
 : ${DUNITER_GROUP:=duniter}
 : ${DUNITER_USER:=duniter}
 
-: ${DUNITER_HOME:=/var/lib/duniter}
+: ${DUNITER_HOME:=/var/lib/duniter/.config/duniter}
 : ${DUNITER_DATA:=duniter_default}
 
 command="/usr/bin/duniter"
@@ -21,8 +21,8 @@ fi
 if [[ ! -z ${DUNITER_KEYS} ]] && [[ -r ${DUNITER_KEYS} ]]; then
 	command_args="${command_args} --keyfile \"${DUNITER_KEYS}\""
 fi
-command_args="${command_args} --home \"${DUNITER_HOME}\" --mdb \"${DUNITER_DATA}\" ${DUNITER_SSD_OPTIONS}"
-start_stop_daemon_args="--user \"${DUNITER_USER}\":\"${DUNITER_GROUP}\""
+command_args="${command_args} --home \"${DUNITER_HOME}\" --mdb \"${DUNITER_DATA}\""
+start_stop_daemon_args="--user \"${DUNITER_USER}\":\"${DUNITER_GROUP}\" ${DUNITER_SSD_OPTIONS}"
 description="Duniter node"
 
 depend() {

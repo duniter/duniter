@@ -34,17 +34,19 @@ export const KeypairDependency = {
       },
       {
         value: "--keyN <N>",
-        desc: "Scrypt `N` parameter. Defaults to 4096.",
+        desc:
+          "Scrypt `N` CPU/memory cost parameter. Must be a power of 2. Defaults to 4096.",
         parser: parseInt,
       },
       {
         value: "--keyr <r>",
-        desc: "Scrypt `N` parameter. Defaults to 16.",
+        desc:
+          "Scrypt `r` The blocksize parameter, which fine-tunes sequential memory read size and performance. Defaults to 16.",
         parser: parseInt,
       },
       {
         value: "--keyp <p>",
-        desc: "Scrypt `N` parameter. Defaults to 1.",
+        desc: "Scrypt `p` Parallelization parameter. Defaults to 1.",
         parser: parseInt,
       },
       {

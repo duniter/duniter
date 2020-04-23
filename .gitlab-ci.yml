@@ -1,13 +1,15 @@
 stages:
   - test
-  - integration
   - package
+  - integration
   - prerelease
   - release
 
-.changes: &changes
-  only:
-    changes:
+workflow:
+  rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^wip/
+      when: never
+    - changes:
       - .gitlab/**/*
       - app/**/*
       - bin/duniter
@@ -65,8 +67,13 @@ stages:
 #    - dev
 
 test:
-  <<: *changes
   <<: *nvm_env
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_MERGE_REQUEST_ID
+      when: manual
+    - when: on_success
   stage: test
   script:
     - yarn
@@ -76,39 +83,38 @@ test:
     # Code coverage display in GitLab
     - sed -n 23p coverage/index.html | grep -Po "\d+.\d+" | sed -e "s/\(.*\)/<coverage>\1%<\/coverage>/"
   coverage: '/<coverage>(\d+.\d+\%)<\/coverage>/'
-  except:
-    - tags
   artifacts:
     paths:
       - coverage.tar.gz
     expire_in: 4h
 
+.integration_rules: &integration_rules
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_MERGE_REQUEST_ID
+    - when: manual
+
 sync_g1:
-  <<: *changes
   <<: *nvm_env
+  <<: *integration_rules
   stage: integration
   script:
     - yarn
     - bash .gitlab/test/check_g1_sync.sh
-  except:
-    - tags
 
 sync_gtest:
-  <<: *changes
   <<: *nvm_env
+  <<: *integration_rules
   stage: integration
   script:
     - yarn
     - bash .gitlab/test/check_gt_sync.sh
-  except:
-    - tags
 
 .build_releases: &build_releases
   stage: package
-  allow_failure: false
   image: duniter/release-builder:v1.4.0
   cache: {}
-  when: manual
   tags:
     - redshift-duniter-builder
   artifacts:
@@ -117,25 +123,28 @@ sync_gtest:
 
 releases:test:
   <<: *build_releases
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - when: manual
   script:
     - rm -rf node_modules/
     - bash "release/arch/linux/build-lin.sh" "$(date +%Y%m%d).$(date +%H%M).$(date +%S)"
   artifacts:
     paths: *releases_artifacts
     expire_in: 72h
-  except:
-    - tags
 
 releases:x64:
   <<: *build_releases
+  rules:
+    - if: $CI_COMMIT_TAG
   script:
     - rm -rf node_modules/
     - bash "release/arch/linux/build-lin.sh" "${CI_COMMIT_TAG#v}"
   artifacts:
     paths: *releases_artifacts
     expire_in: 6 mos
-  only:
-    - tags
 
 .docker-build-app-image:
   stage: package
@@ -154,29 +163,29 @@ releases:x64:
 
 package:test:docker-test-image:
   extends: .docker-build-app-image
-  except:
-    refs:
-      - dev
-      - tags
-  when: manual
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+      when: never
+    - when: manual
   variables:
     IMAGE_TAG: "test-image"
 
 package:dev:docker:
   extends: .docker-build-app-image
-  only:
-    refs:
-      - dev
-  except:
-    refs:
-      - tags
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH == "dev"
   variables:
     IMAGE_TAG: "dev"
 
 package:prod:docker:
   stage: package
-  only:
-    - tags
+  rules:
+    - if: $CI_COMMIT_TAG
   image: docker:18.06
   tags:
     - redshift-docker-runner
@@ -197,11 +206,11 @@ package:prod:docker:
     - redshift-duniter-builder
   script:
     - python3 .gitlab/releaser
-  only:
-    - tags
 
 prerelease:
   <<: *release_jobs
+  rules:
+    - if: $CI_COMMIT_TAG
   stage: prerelease
   variables:
     RELEASE_BIN_DIR: work/bin/
@@ -209,9 +218,11 @@ prerelease:
 
 publish:
   <<: *release_jobs
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: manual
   stage: release
   variables:
     RELEASE_BIN_DIR: work/bin/
     WIKI_RELEASE: Releases
   allow_failure: false
-  when: manual

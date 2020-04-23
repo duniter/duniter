@@ -41,19 +41,18 @@ module.exports = {
           wizardTasks: any
         ) => {
           const step = params[0];
-          const tasks = step
+          const tasks: any[] = step
             ? [wizardTasks[step]]
             : Underscore.values(wizardTasks);
           for (const task of tasks) {
             if (!task) {
               throw "Unknown task";
             }
-            await task(conf, program);
+            // Check config
+            await server.checkConfig();
+            await server.dal.saveConf(conf);
+            logger.debug("Configuration saved.");
           }
-          // Check config
-          await server.checkConfig();
-          await server.dal.saveConf(conf);
-          logger.debug("Configuration saved.");
         },
       },
     ],

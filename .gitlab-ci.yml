@@ -1,14 +1,12 @@
 stages:
   - test
-  - integration
   - package
+  - integration
   - prerelease
   - release
 
 workflow:
   rules:
-    - if: $CI_MERGE_REQUEST_ID
-      when: never
     - if: $CI_COMMIT_REF_NAME =~ /^wip/
       when: never
     - changes:
@@ -73,6 +71,8 @@ test:
   rules:
     - if: $CI_COMMIT_TAG
       when: never
+    - if: $CI_MERGE_REQUEST_ID
+      when: manual
     - when: on_success
   stage: test
   script:
@@ -88,12 +88,16 @@ test:
       - coverage.tar.gz
     expire_in: 4h
 
-sync_g1:
-  <<: *nvm_env
+.integration_rules: &integration_rules
   rules:
     - if: $CI_COMMIT_TAG
       when: never
-    - when: on_success
+    - if: $CI_MERGE_REQUEST_ID
+    - when: manual
+
+sync_g1:
+  <<: *nvm_env
+  <<: *integration_rules
   stage: integration
   script:
     - yarn
@@ -101,10 +105,7 @@ sync_g1:
 
 sync_gtest:
   <<: *nvm_env
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-    - when: on_success
+  <<: *integration_rules
   stage: integration
   script:
     - yarn
@@ -112,7 +113,6 @@ sync_gtest:
 
 .build_releases: &build_releases
   stage: package
-  allow_failure: false
   image: duniter/release-builder:v1.4.0
   cache: {}
   tags:
@@ -123,6 +123,7 @@ sync_gtest:
 
 releases:test:
   <<: *build_releases
+  allow_failure: true
   rules:
     - if: $CI_COMMIT_TAG
       when: never
@@ -162,6 +163,7 @@ releases:x64:
 
 package:test:docker-test-image:
   extends: .docker-build-app-image
+  allow_failure: true
   rules:
     - if: $CI_COMMIT_TAG
       when: never

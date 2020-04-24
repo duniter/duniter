@@ -1239,10 +1239,10 @@ export class FileDAL implements ServerDAO {
       await indexer.ruleIndexGenCertificationExpiry(HEAD, this)
     );
     mindex = mindex.concat(
-      await indexer.ruleIndexGenMembershipExpiry(HEAD, this)
+      await indexer.ruleIndexGenMembershipExpiry(HEAD, this) // set mindex.expired_on to HEAD.medianTime
     );
     iindex = iindex.concat(
-      await indexer.ruleIndexGenExclusionByMembership(HEAD, mindex, this)
+      await indexer.ruleIndexGenExclusionByMembership(HEAD, mindex, this) // set iindex.kick to true
     );
     iindex = iindex.concat(
       await indexer.ruleIndexGenExclusionByCertificatons(

@@ -149,7 +149,14 @@ export class GlobalIndexStream extends Duplex {
         return callback(null);
       }
 
+      // Index blocks chunk
       await this.transform(dataArray);
+
+      // Save wot file
+      if (!this.memoryOnly) {
+        this.wotbMem.writeInFile(this.wotbFilePath);
+      }
+
       this.watcher.appliedPercent(
         Math.round(
           (dataArray[0].block.number /

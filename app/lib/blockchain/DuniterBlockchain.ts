@@ -38,7 +38,7 @@ import { DBTx } from "../db/DBTx";
 import { Underscore } from "../common-libs/underscore";
 import { OtherConstants } from "../other_constants";
 import { MonitorExecutionTime } from "../debug/MonitorExecutionTime";
-import { Wot } from "duniteroxyde";
+import { Wot } from "../../../neon/lib";
 import { Directory } from "../system/directory";
 
 export class DuniterBlockchain {

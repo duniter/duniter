@@ -19,7 +19,7 @@ import {
   WS2PRemoteAuth
 } from "../../../app/modules/ws2p/lib/WS2PConnection"
 import {Key} from "../../../app/lib/common-libs/crypto/keyring"
-import {verify} from "duniteroxyde"
+import {verify} from "../../../neon/lib"
 import {getNewTestingPort} from "../tools/toolbox"
 import {WS2PMessageHandler} from "../../../app/modules/ws2p/lib/impl/WS2PMessageHandler"
 import {WS2PResponse} from "../../../app/modules/ws2p/lib/impl/WS2PResponse"

@@ -25,7 +25,7 @@ import { PeerDTO, WS2PEndpoint } from "../../../lib/dto/PeerDTO";
 import { GlobalFifoPromise } from "../../../service/GlobalFifoPromise";
 import { OtherConstants } from "../../../lib/other_constants";
 import { Key } from "../../../lib/common-libs/crypto/keyring";
-import { verify } from "duniteroxyde";
+import { verify } from "../../../../neon/lib";
 import { WS2PServerMessageHandler } from "./interface/WS2PServerMessageHandler";
 import { WS2PMessageHandler } from "./impl/WS2PMessageHandler";
 import { CommonConstants } from "../../../lib/common-libs/constants";

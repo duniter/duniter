@@ -13,7 +13,7 @@
 
 import { hashf } from "../common";
 import { Cloneable } from "./Cloneable";
-import { verify } from "duniteroxyde";
+import { verify } from "../../../neon/lib";
 
 export interface BaseDTO {
   base: number;

@@ -12,7 +12,7 @@
 // GNU Affero General Public License for more details.
 
 import { Contacter } from "./contacter";
-import { verify } from "duniteroxyde";
+import { verify } from "../../../../neon/lib";
 import { rawer } from "../../../lib/common-libs/index";
 import { HttpRequirements } from "../../bma/lib/dtos";
 

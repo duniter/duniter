@@ -80,9 +80,9 @@ rm -Rf node_modules/duniter-ui/node_modules
 # Remove non production folders
 rm -rf coverage test
 
-# Remove unused duniteroxyde intermediate binaries
-rm -rf node_modules/duniteroxyde/target
-rm -rf node_modules/duniteroxyde/native/target
+# Remove unused rust intermediate binaries
+rm -rf target
+rm -rf neon/native/target
 
 cd ..
 mkdir -p duniter_release

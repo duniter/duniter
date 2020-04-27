@@ -19,7 +19,7 @@ import { GLOBAL_RULES_HELPERS } from "../../../lib/rules/global_rules";
 import { LOCAL_RULES_HELPERS } from "../../../lib/rules/local_rules";
 import { Indexer } from "../../../lib/indexer";
 import { DBBlock } from "../../../lib/db/DBBlock";
-import { verify } from "duniteroxyde";
+import { verify } from "../../../../neon/lib";
 import { rawer } from "../../../lib/common-libs/index";
 import { hashf } from "../../../lib/common";
 import { CommonConstants } from "../../../lib/common-libs/constants";

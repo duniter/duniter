@@ -12,7 +12,7 @@
 // GNU Affero General Public License for more details.
 
 import { Key } from "../../../lib/common-libs/crypto/keyring";
-import { verify } from "duniteroxyde";
+import { verify } from "../../../../neon/lib";
 import { WS2PMessageHandler } from "./impl/WS2PMessageHandler";
 import { BlockDTO } from "../../../lib/dto/BlockDTO";
 import { IdentityDTO } from "../../../lib/dto/IdentityDTO";

@@ -1367,13 +1367,6 @@ doctrine@^3.0.0:
   dependencies:
     esutils "^2.0.2"
 
-duniteroxyde@0.2.9:
-  version "0.2.9"
-  resolved "https://registry.yarnpkg.com/duniteroxyde/-/duniteroxyde-0.2.9.tgz#ba6923977854357bb98dac9f4308f2243031eec8"
-  integrity sha512-0nZkqIPdYdMg8+JvvwhBgO/XU48SX7mgH/pzp84qfmF7qTMoLg3i9Y6L60N0vDRwyLLSHGMdlVxcKOB3FiL43A==
-  dependencies:
-    neon-cli "^0.4.0"
-
 duplexer@^0.1.1, duplexer@~0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/duplexer/-/duplexer-0.1.1.tgz#ace6ff808c1ce66b57d1ebf97977acb02334cfc1"

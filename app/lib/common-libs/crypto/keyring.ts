@@ -15,7 +15,7 @@ import {
   KeyPairBuilder,
   generateRandomSeed,
   seedToSecretKey,
-} from "duniteroxyde";
+} from "../../../../neon/lib";
 
 export class Key {
   constructor(readonly pub: string, readonly sec: string) {}

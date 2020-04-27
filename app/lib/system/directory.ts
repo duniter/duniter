@@ -15,7 +15,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { SQLiteDriver } from "../dal/drivers/SQLiteDriver";
 import { CFSCore } from "../dal/fileDALs/CFSCore";
-import { Wot, WotBuilder } from "duniteroxyde";
+import { Wot, WotBuilder } from "../../../neon/lib";
 import { FileDALParams } from "../dal/fileDAL";
 import { cliprogram } from "../common-libs/programOptions";
 import { LevelDBDriver } from "../dal/drivers/LevelDBDriver";

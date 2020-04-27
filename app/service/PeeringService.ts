@@ -16,7 +16,7 @@ import { FileDAL } from "../lib/dal/fileDAL";
 import { DBBlock } from "../lib/db/DBBlock";
 import { Multicaster } from "../lib/streams/multicaster";
 import { PeerDTO } from "../lib/dto/PeerDTO";
-import { verify } from "duniteroxyde";
+import { verify } from "../../neon/lib";
 import { dos2unix } from "../lib/common-libs/dos2unix";
 import { rawer } from "../lib/common-libs/index";
 import { Server } from "../../server";

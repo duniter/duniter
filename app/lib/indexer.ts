@@ -18,7 +18,7 @@ import { RevocationDTO } from "./dto/RevocationDTO";
 import { CertificationDTO } from "./dto/CertificationDTO";
 import { TransactionDTO } from "./dto/TransactionDTO";
 import { DBHead } from "./db/DBHead";
-import { verify } from "duniteroxyde";
+import { verify } from "../../neon/lib";
 import { rawer, txunlock } from "./common-libs/index";
 import { CommonConstants } from "./common-libs/constants";
 import { MembershipDTO } from "./dto/MembershipDTO";
@@ -31,7 +31,7 @@ import { Underscore } from "./common-libs/underscore";
 import { DataErrors } from "./common-libs/errors";
 import { MonitorExecutionTime } from "./debug/MonitorExecutionTime";
 import { NewLogger } from "./logger";
-import { WotBuilder } from "duniteroxyde";
+import { WotBuilder } from "../../neon/lib";
 
 const constants = CommonConstants;
 

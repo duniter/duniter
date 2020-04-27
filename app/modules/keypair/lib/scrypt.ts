@@ -12,7 +12,7 @@
 // GNU Affero General Public License for more details.
 
 import * as crypto from "crypto";
-import { KeyPairBuilder, seedToSecretKey } from "duniteroxyde";
+import { KeyPairBuilder, seedToSecretKey } from "../../../../neon/lib";
 
 const SEED_LENGTH = 32; // Length of the key
 

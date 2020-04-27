@@ -43,7 +43,7 @@ import { MetaDAL } from "./sqliteDAL/MetaDAL";
 import { DataErrors } from "../common-libs/errors";
 import { BasicRevocableIdentity, IdentityDTO } from "../dto/IdentityDTO";
 import { FileSystem } from "../system/directory";
-import { Wot } from "duniteroxyde";
+import { Wot } from "../../../neon/lib";
 import { IIndexDAO } from "./indexDAL/abstract/IIndexDAO";
 import { BIndexDAO } from "./indexDAL/abstract/BIndexDAO";
 import { MIndexDAO } from "./indexDAL/abstract/MIndexDAO";

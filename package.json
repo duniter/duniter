@@ -74,7 +74,7 @@
     "commander": "2.9.0",
     "cors": "2.8.5",
     "daemonize2": "0.4.2",
-    "duniteroxyde": "0.2.3",
+    "duniteroxyde": "0.2.9",
     "ddos": "0.2.1",
     "errorhandler": "1.5.1",
     "event-stream": "4.0.1",

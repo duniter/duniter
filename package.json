@@ -142,7 +142,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged"
+      "pre-commit": "cargo fmt -- --check && lint-staged"
     }
   },
   "lint-staged": {

@@ -24,7 +24,7 @@ import { RevocationDTO } from "../lib/dto/RevocationDTO";
 import { BasicIdentity, IdentityDTO } from "../lib/dto/IdentityDTO";
 import { CertificationDTO } from "../lib/dto/CertificationDTO";
 import { DBCert } from "../lib/dal/sqliteDAL/CertDAL";
-import { verify } from "duniteroxyde";
+import { verify } from "../../neon/lib";
 import { FIFOService } from "./FIFOService";
 import { MindexEntry } from "../lib/indexer";
 import { DataErrors } from "../lib/common-libs/errors";

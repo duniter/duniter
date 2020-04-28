@@ -28,8 +28,8 @@ RUN export PATH="$HOME/.cargo/bin:$PATH" && \
    yarn add duniter-ui@${DUNITER_UI_VER} && \
    mv release/docker/duniter.sh docker.sh && \
    rm -rf coverage release test && \
-   rm -rf node_modules/duniteroxyde/target && \
-   rm -rf node_modules/duniteroxyde/native/target
+   rm -rf target && \
+   rm -rf neon/native/target
 
 # ------------------------------------------------------------------------------
 # Final Stage

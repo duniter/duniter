@@ -1,5 +1,6 @@
 stages:
-  - test
+  - tests
+  - quality
   - package
   - integration
   - prerelease
@@ -41,6 +42,14 @@ workflow:
     paths:
       - node_modules/
 
+.rust_env:
+  image: registry.duniter.org/docker/rust/rust-x64-stable-ci:latest
+  tags:
+    - redshift
+  before_script:
+    - export PATH="$HOME/.cargo/bin:$PATH"
+    - rustup show
+    - rustc --version && cargo --version
 
 #pages:
 #  <<: *nvm_env
@@ -66,7 +75,26 @@ workflow:
 #    - loki
 #    - dev
 
-test:
+tests:rs:
+  extends: .nvm_env
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_MERGE_REQUEST_ID
+      when: manual
+    - when: on_success
+  stage: tests
+  script: 
+    - cargo fmt -- --version
+    - cargo fmt -- --check
+    - RUSTFLAGS="-D warnings" cargo build
+    - cargo test --all
+    # Coverage (doesn't make sense yet)
+    #- cargo test --doc
+    #- cargo tarpaulin --ignore-tests -iv --out Xml
+    #- bash <(curl -s https://codecov.io/bash)
+
+tests:ts:
   <<: *nvm_env
   rules:
     - if: $CI_COMMIT_TAG
@@ -74,7 +102,7 @@ test:
     - if: $CI_MERGE_REQUEST_ID
       when: manual
     - when: on_success
-  stage: test
+  stage: tests
   script:
     - yarn
     - yarn test
@@ -87,6 +115,26 @@ test:
     paths:
       - coverage.tar.gz
     expire_in: 4h
+
+clippy:
+  extends: .nvm_env
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_MERGE_REQUEST_ID
+    - when: manual
+  stage: quality
+  script:
+    - cargo clippy -- -V
+    - cargo clippy --all --tests -- -D warnings --verbose
+    
+audit_dependencies:
+  extends: .rust_env
+  before_script:
+    - cargo deny -V
+  stage: quality
+  script:
+    - cargo deny check
 
 .integration_rules: &integration_rules
   rules:
@@ -116,7 +164,7 @@ sync_gtest:
   image: duniter/release-builder:v1.4.0
   cache: {}
   tags:
-    - redshift-duniter-builder
+    - redshift
   artifacts:
     paths: &releases_artifacts
       - work/bin/
@@ -150,7 +198,7 @@ releases:x64:
   stage: package
   image: docker:18.06
   tags:
-    - redshift-docker-runner
+    - redshift
   services:
     - docker:18.06-dind
   before_script:
@@ -188,7 +236,7 @@ package:prod:docker:
     - if: $CI_COMMIT_TAG
   image: docker:18.06
   tags:
-    - redshift-docker-runner
+    - redshift
   services:
     - docker:18.06-dind
   script:
@@ -203,7 +251,7 @@ package:prod:docker:
 .release_jobs: &release_jobs
   image: rdadev/jinja2:py3.6
   tags:
-    - redshift-duniter-builder
+    - redshift
   script:
     - python3 .gitlab/releaser
 

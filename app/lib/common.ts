@@ -11,7 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Affero General Public License for more details.
 
-import { sha256 } from "duniteroxyde";
+import { sha256 } from "../../neon/lib";
 
 export const hashf = function hashf(str: string) {
   return sha256(str);

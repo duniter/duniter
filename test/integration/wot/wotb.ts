@@ -14,7 +14,7 @@
 import {TestUser} from "../tools/TestUser"
 import {NewTestingServer, TestingServer} from "../tools/toolbox"
 import {BmaDependency} from "../../../app/modules/bma/index"
-import {Wot} from "duniteroxyde"
+import {Wot} from "../../../neon/lib"
 import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {shutDownEngine} from "../tools/shutdown-engine"
 import {CommonConstants} from "../../../app/lib/common-libs/constants"

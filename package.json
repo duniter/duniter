@@ -29,7 +29,8 @@
     "doc": "typedoc --out typedoc/ index.ts app/ --mode file --readme README.md --includeDeclarations --sourcefile-url-prefix \"https://git.duniter.org/nodes/typescript/duniter/blob/loki/\"",
     "test": "nyc --reporter html mocha",
     "start": "node bin/duniter start",
-    "build": "tsc && cd \"node_modules/duniter-ui\" && npm install && npm run build",
+    "build": "cd neon && neon build --release && cd.. && tsc && cd \"../node_modules/duniter-ui\" && npm install && npm run build",
+    "install": "cd neon && neon build --release",
     "lint": "lint-staged",
     "prettier": "prettier --write app/**/*/*.ts",
     "reformat": "eslint --cache --fix app/**/*/*.ts",
@@ -74,7 +75,6 @@
     "commander": "2.9.0",
     "cors": "2.8.5",
     "daemonize2": "0.4.2",
-    "duniteroxyde": "0.2.9",
     "ddos": "0.2.1",
     "errorhandler": "1.5.1",
     "event-stream": "4.0.1",
@@ -91,10 +91,11 @@
     "morgan": "1.10.0",
     "multimeter": "0.1.1",
     "nat-upnp": "^1.1.1",
-    "prettier": "^2.0.4",
+    "neon-cli": "^0.4.0",
     "node-pre-gyp": "0.14.0",
     "node-uuid": "1.4.8",
     "optimist": "0.6.1",
+    "prettier": "^2.0.4",
     "q-io": "1.13.6",
     "querablep": "0.1.0",
     "request": "2.88.2",
@@ -141,7 +142,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged"
+      "pre-commit": "cargo fmt -- --check && lint-staged"
     }
   },
   "lint-staged": {

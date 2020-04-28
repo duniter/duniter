@@ -22,7 +22,7 @@ import {
 } from "../indexer";
 import { BaseDTO, TransactionDTO } from "../dto/TransactionDTO";
 import { DBBlock } from "../db/DBBlock";
-import { verify } from "duniteroxyde";
+import { verify } from "../../../neon/lib";
 import { hashf } from "../common";
 import { CommonConstants } from "../common-libs/constants";
 import { IdentityDTO } from "../dto/IdentityDTO";

@@ -190,9 +190,9 @@ cp "${ROOT}/release/resources/leveldown-fix.json" "${RELEASES}/duniter/node_modu
 # Remove non production folders
 rm -rf coverage release test
 
-# Remove unused duniteroxyde intermediate binaries
-rm -rf node_modules/duniteroxyde/target
-rm -rf node_modules/duniteroxyde/native/target
+# Remove unused rust intermediate binaries
+rm -rf target
+rm -rf neon/native/target
 
 cp -r "${RELEASES}/duniter" "${RELEASES}/desktop_" || exit 1
 cp -r "${RELEASES}/duniter" "${RELEASES}/server_" || exit 1

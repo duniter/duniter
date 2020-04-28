@@ -16,7 +16,7 @@ import { FileDAL } from "../dal/fileDAL";
 import { DBBlock } from "../db/DBBlock";
 import { TransactionDTO, TxSignatureResult } from "../dto/TransactionDTO";
 import { BlockDTO } from "../dto/BlockDTO";
-import { verify } from "duniteroxyde";
+import { verify } from "../../../neon/lib";
 import { rawer, txunlock } from "../common-libs/index";
 import { CommonConstants } from "../common-libs/constants";
 import { IdentityDTO } from "../dto/IdentityDTO";

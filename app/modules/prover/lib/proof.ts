@@ -17,7 +17,7 @@ import { hashf } from "../../../lib/common";
 import { DBBlock } from "../../../lib/db/DBBlock";
 import { ConfDTO } from "../../../lib/dto/ConfDTO";
 import { ProverConstants } from "./constants";
-import { Ed25519Signator, KeyPairBuilder } from "duniteroxyde";
+import { Ed25519Signator, KeyPairBuilder } from "../../../../neon/lib";
 import { dos2unix } from "../../../lib/common-libs/dos2unix";
 import { rawer } from "../../../lib/common-libs/index";
 import { ProcessCpuProfiler } from "../../../ProcessCpuProfiler";

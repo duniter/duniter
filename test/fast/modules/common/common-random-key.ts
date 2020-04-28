@@ -12,7 +12,7 @@
 // GNU Affero General Public License for more details.
 
 import {Key, randomKey} from "../../../../app/lib/common-libs/crypto/keyring"
-import {verify} from "duniteroxyde"
+import {verify} from "../../../../neon/lib"
 
 const should = require('should');
 

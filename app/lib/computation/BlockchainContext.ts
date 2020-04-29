@@ -18,6 +18,7 @@ import { FileDAL } from "../dal/fileDAL";
 import { DBBlock } from "../db/DBBlock";
 import { Underscore } from "../common-libs/underscore";
 import { DataErrors } from "../common-libs/errors";
+import { Map } from "../common-libs/crypto/map";
 
 const indexer = require("../indexer").Indexer;
 const constants = require("../constants");
@@ -213,12 +214,21 @@ export class BlockchainContext {
     return this.dal.getCurrentBlockOrNull();
   }
 
-  async checkHaveEnoughLinks(target: string, newLinks: any): Promise<any> {
-    const links = await this.dal.getValidLinksTo(target);
-    let count = links.length;
+  async checkHaveEnoughLinks(
+    target: string,
+    newLinks: Map<string[]>
+  ): Promise<void> {
+    const existingLinks = await this.dal.getValidLinksTo(target);
+    const existingIssuers = existingLinks.map((value) => value.issuer);
+    let count = existingIssuers.length;
+
     if (newLinks[target] && newLinks[target].length) {
-      count += newLinks[target].length;
+      const uniqIssuers = Underscore.uniq(
+        existingIssuers.concat(newLinks[target])
+      );
+      count = uniqIssuers.length;
     }
+
     if (count < this.conf.sigQty) {
       throw (
         "Key " +

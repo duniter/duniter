@@ -81,8 +81,17 @@ describe('A member coming back with less than `sigQty` valid certs total', () =>
     await s1.commit({ time: now + 13 })
     await s1.commit({ time: now + 13 })
     const c1 = await cat.makeCert(toc) // <-- a renewal ==> this is what we want to observe
-    const join = await toc.makeMembership('IN')
-    // toc is **NOT** coming back! not enough certs
+    const join = await toc.makeMembership('IN');
+    
+    // Inject c1 & join in mempool
+    await cat.sendCert(c1)
+    await toc.sendMembership(join)
+
+    // Generate potential next bloc, must NOT include toc join (#1402)
+    const b_gen = s1.generateNext({ time: now + 13 })
+    assertEqual((await b_gen).joiners.length, 0);
+
+    // Try to force toc coming back, must be fail because toc not have enough certs (#1394)
     await assertThrows(s1.commit({
       time: now + 13,
       joiners: [join],
@@ -90,13 +99,13 @@ describe('A member coming back with less than `sigQty` valid certs total', () =>
     }), 'BLOCK_WASNT_COMMITTED')
     // BUT is coming back with 1 more cert
     const c2 = await tac.makeCert(toc)
-    const b = await s1.commit({
+    const b2 = await s1.commit({
       time: now + 13,
       joiners: [join],
       certifications: [c1, c2]
     })
-    assertEqual(b.membersCount, 3) // <--- toc is welcome back :)
-    assertEqual(b.number, 12)
+    assertEqual(b2.membersCount, 3) // <--- toc is welcome back :)
+    assertEqual(b2.number, 12)
   })
 
   after(() => {

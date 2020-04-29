@@ -98,7 +98,7 @@ export class TestUser {
     return this.createdIdentity
   }
 
-  public async makeCert(user:TestUser, fromServer?:TestingServer, overrideProps?:any): Promise<CertificationDTO> {
+  public async makeCert(user:TestUser, fromServer?:TestingServer, overrideProps?:any) {
     const lookup = await this.lookup(user.pub, fromServer)
     const current = await this.node.server.BlockchainService.current()
     const idty = Underscore.filter(lookup.results[0].uids, uidEntry => uidEntry.uid === user.uid)[0]

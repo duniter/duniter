@@ -57,9 +57,9 @@ export interface HookableServer {
 
 const path        = require('path');
 const archiver    = require('archiver');
-const unzip       = require('unzip2');
 const fs          = require('fs');
 const es          = require('event-stream');
+const extract = require('extract-zip')
 const daemonize   = require("daemonize2")
 const constants   = require('./app/lib/constants');
 const jsonpckg    = require('./package.json');
@@ -443,12 +443,8 @@ export class Server extends stream.Duplex implements HookableServer {
   async importAllDataFromZIP(zipFile:string) {
     const params = await this.paramsP
     await this.resetData()
-    const output = unzip.Extract({ path: params.home });
-    fs.createReadStream(zipFile).pipe(output);
-    return new Promise((resolve, reject) => {
-      output.on('error', reject);
-      output.on('close', resolve);
-    })
+
+    extract(zipFile, { dir: params.home })
   }
 
   private async resetFiles(files:string[], dirs:string[], done:any = null) {

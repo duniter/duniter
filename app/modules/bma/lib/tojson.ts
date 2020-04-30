@@ -13,12 +13,13 @@
 
 import { BlockDTO } from "../../../lib/dto/BlockDTO";
 import { Underscore } from "../../../lib/common-libs/underscore";
+import { HttpBlock } from "./dtos";
 
 export const stat = (stat: number[]) => {
   return { blocks: stat };
 };
 
-export const block = (block: any) => {
+export const block = (block: any): HttpBlock => {
   const json: any = {};
   json.version = parseInt(block.version);
   json.nonce = parseInt(block.nonce);

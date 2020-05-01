@@ -37,7 +37,10 @@ module.exports = {
           CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS;
 
         // Transactions storage
-        if (program.storeTxs) {
+        if (
+          program.storeTxs ||
+          (program.storeTxs === undefined && !conf.nobma)
+        ) {
           if (!conf.storage) {
             conf.storage = { transactions: true, wotwizard: false };
           } else {

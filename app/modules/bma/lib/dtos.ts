@@ -14,6 +14,7 @@
 import { BlockDTO } from "../../../lib/dto/BlockDTO";
 import { WS2PHead } from "../../ws2p/lib/WS2PCluster";
 import { JSONDBPeer } from "../../../lib/db/DBPeer";
+import { TransactionDTO } from "../../../lib/dto/TransactionDTO";
 
 export const Summary = {
   duniter: {
@@ -292,7 +293,7 @@ export function block2HttpBlock(blockDTO: BlockDTO): HttpBlock {
     revoked: blockDTO.revoked,
     excluded: blockDTO.excluded,
     transactions: blockDTO.transactions.map(
-      (tx): HttpTransactionOfBlock => {
+      (tx: TransactionDTO): HttpTransactionOfBlock => {
         return {
           version: tx.version,
           currency: tx.currency,

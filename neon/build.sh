@@ -2,7 +2,7 @@
 
 cd neon
 
-if  [ "${NODE_ENV}" = "production" ]
+if [ "${NEON_BUILD_RELEASE}" = "true" ] || [ "${NODE_ENV}" = "production" ]
 then
 	neon build --release
 else

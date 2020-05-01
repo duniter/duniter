@@ -24,8 +24,9 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 # build duniter
 RUN export PATH="$HOME/.cargo/bin:$PATH" && \
    export RUSTFLAGS="-C target-feature=-crt-static" && \
-   yarn install --production && \
+   export NEON_BUILD_RELEASE="true" && \
    yarn add duniter-ui@${DUNITER_UI_VER} && \
+   yarn --production && \
    mv release/docker/duniter.sh docker.sh && \
    rm -rf coverage release test && \
    rm -rf target && \

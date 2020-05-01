@@ -8,7 +8,7 @@ stages:
 
 workflow:
   rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^wip/
+    - if: $CI_COMMIT_REF_NAME =~ /^wip*/i
       when: never
     - changes:
       - .gitlab/**/*

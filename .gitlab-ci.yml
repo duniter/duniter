@@ -14,14 +14,15 @@ workflow:
       - .gitlab/**/*
       - app/**/*
       - bin/duniter
+      - neon/**/*
+      - releases/**/*
+      - rust-libs/**/*
+      - test/**/*
       - .gitlab-ci.yml
       - index.ts
       - package.json
-      - yarn.lock
-      - releases/**/*
       - server.ts
-      - test/**/*
-      - .gitlab/test/*
+      - yarn.lock
 
 .nvm_env: &nvm_env
   image: registry.duniter.org/docker/duniter-ci:v0.0.4

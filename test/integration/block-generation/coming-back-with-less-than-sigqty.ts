@@ -13,11 +13,10 @@
 
 import {assertEqual, writeBasicTestWithConfAnd2Users} from "../tools/test-framework"
 import {CommonConstants} from "../../../app/lib/common-libs/constants"
-import {assertThrows} from "../../unit-tools"
 
 const currentVersion = CommonConstants.BLOCK_GENESIS_VERSION
 
-describe('A member coming back with less than `sigQty` valid certs total', () => writeBasicTestWithConfAnd2Users({
+describe('A block generated with member coming back with less than `sigQty` valid certs', () => writeBasicTestWithConfAnd2Users({
   sigQty: 2,
   sigReplay: 0,
   sigPeriod: 0,
@@ -50,7 +49,7 @@ describe('A member coming back with less than `sigQty` valid certs total', () =>
 
   test('(t = 5) cat & tac certify each other', async (s1, cat, tac, toc) => {
     await s1.commit({ time: now + 5 })
-    await s1.commit({ time: now + 5 })
+    const b3 = await s1.commit({ time: now + 5 })
     await new Promise(resolve => setTimeout(resolve, 500))
     // cat and tac certify each other to stay in the WoT
     await tac.cert(cat)
@@ -81,22 +80,15 @@ describe('A member coming back with less than `sigQty` valid certs total', () =>
     await s1.commit({ time: now + 13 })
     await s1.commit({ time: now + 13 })
     const c1 = await cat.makeCert(toc) // <-- a renewal ==> this is what we want to observe
-    const join = await toc.makeMembership('IN')
-    // toc is **NOT** coming back! not enough certs
-    await assertThrows(s1.commit({
-      time: now + 13,
-      joiners: [join],
-      certifications: [c1]
-    }), 'BLOCK_WASNT_COMMITTED')
-    // BUT is coming back with 1 more cert
-    const c2 = await tac.makeCert(toc)
-    const b = await s1.commit({
-      time: now + 13,
-      joiners: [join],
-      certifications: [c1, c2]
-    })
-    assertEqual(b.membersCount, 3) // <--- toc is welcome back :)
-    assertEqual(b.number, 12)
+    const join = await toc.makeMembership('IN');
+    
+    // Inject c1 & join in mempool
+    await cat.sendCert(c1)
+    await toc.sendMembership(join)
+
+    // Generate potential next bloc, must NOT include toc join (#1402)
+    const b_gen = s1.generateNext({ time: now + 13 })
+    assertEqual((await b_gen).joiners.length, 0);
   })
 
   after(() => {

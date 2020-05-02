@@ -68,9 +68,12 @@ cd ${RELEASES}/duniter
 echo "Copying Nodejs"
 cp -R "$DOWNLOADS/node-${NVER}-linux-${ARCH}" node
 
-yarn
+# Build Duniter with GUI
+echo "Build Duniter with GUI..."
+export NEON_BUILD_RELEASE="true"
+yarn add "duniter-ui@${DUNITER_UI_VER}" || exit 1
+yarn --production || exit 1
 
-yarn add duniter-ui@1.7.x --production
 SRC=`pwd`
 echo $SRC
 

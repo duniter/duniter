@@ -176,11 +176,9 @@ cp -r $(find "${ROOT}" -mindepth 1 -maxdepth 1 ! -name "${WORK_NAME}") "${RELEAS
 cd "${RELEASES}/duniter"
 rm -Rf .gitignore .git || exit 1 # Remove git files
 
-# Build
+# Build Duniter with GUI
 echo ">> VM: building modules..."
-yarn || exit 1
-
-# Duniter UI
+export NEON_BUILD_RELEASE="true"
 yarn add "duniter-ui@${DUNITER_UI_VER}" || exit 1
 yarn --production || exit 1
 

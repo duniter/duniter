@@ -528,7 +528,7 @@ export class TestingServer {
     return blocksResolved
   }
 
-  private generateNext(options:any) {
+  generateNext(options:any) {
     const server = this.server as any
     // Brings a priver to the server
     if (!server._utProver) {

@@ -24,7 +24,7 @@ workflow:
       - server.ts
       - yarn.lock
 
-.nvm_env: &nvm_env
+.env: &env
   image: registry.duniter.org/docker/duniter-ci:v0.0.4
   tags:
     - redshift
@@ -35,9 +35,12 @@ workflow:
     - nvm use 10.19.0
     - curl https://sh.rustup.rs -sSf | sh -s -- -y
     - export PATH="$HOME/.cargo/bin:$PATH"
+    - export RUSTFLAGS="-D warnings"
+    - rustup show && rustc --version && cargo --version
+
 
 .cached_nvm: &cached_nvm
-  <<: *nvm_env
+  <<: *env
   cache:
     untracked: true
     paths:
@@ -49,11 +52,11 @@ workflow:
     - redshift
   before_script:
     - export PATH="$HOME/.cargo/bin:$PATH"
-    - rustup show
-    - rustc --version && cargo --version
+    - rustup show && rustc --version && cargo --version
+
 
 #pages:
-#  <<: *nvm_env
+#  <<: *env
 #  stage: pages
 #  cache: {}
 #  script:
@@ -76,27 +79,8 @@ workflow:
 #    - loki
 #    - dev
 
-tests:rs:
-  extends: .nvm_env
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-    - if: $CI_MERGE_REQUEST_ID
-      when: manual
-    - when: on_success
-  stage: tests
-  script: 
-    - cargo fmt -- --version
-    - cargo fmt -- --check
-    - RUSTFLAGS="-D warnings" cargo build
-    - cargo test --all
-    # Coverage (doesn't make sense yet)
-    #- cargo test --doc
-    #- cargo tarpaulin --ignore-tests -iv --out Xml
-    #- bash <(curl -s https://codecov.io/bash)
-
-tests:ts:
-  <<: *nvm_env
+tests:
+  <<: *env
   rules:
     - if: $CI_COMMIT_TAG
       when: never
@@ -117,15 +101,17 @@ tests:ts:
       - coverage.tar.gz
     expire_in: 4h
 
-clippy:
-  extends: .nvm_env
+fmt_and_clippy:
+  extends: .env
   rules:
     - if: $CI_COMMIT_TAG
       when: never
     - if: $CI_MERGE_REQUEST_ID
-    - when: manual
+    - when: on_success
   stage: quality
   script:
+    - cargo fmt -- --version
+    - cargo fmt -- --check
     - cargo clippy -- -V
     - cargo clippy --all --tests -- -D warnings --verbose
     
@@ -145,7 +131,7 @@ audit_dependencies:
     - when: manual
 
 sync_g1:
-  <<: *nvm_env
+  <<: *env
   <<: *integration_rules
   stage: integration
   script:
@@ -153,7 +139,7 @@ sync_g1:
     - bash .gitlab/test/check_g1_sync.sh
 
 sync_gtest:
-  <<: *nvm_env
+  <<: *env
   <<: *integration_rules
   stage: integration
   script:

@@ -9,7 +9,6 @@ if [[ $1 =~ ^[0-9]+.[0-9]+.[0-9]+((a|b)[0-9]+)?$ ]]; then
   # Change the version in package.json and test file
   sed -i "s/version\": .*/version\": \"$1\",/g" package.json
   sed -i "s/Version: .*/Version: $1/g" release/extra/debian/package/DEBIAN/control
-  sed -i "s/ release: .*/ release: v$1/g" appveyor.yml
 
   # Duniter.iss (Windows installer)
   sed -i "s/define MyAppVerStr.*/define MyAppVerStr \"v$1\"/g" release/arch/windows/duniter.iss

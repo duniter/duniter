@@ -35,8 +35,7 @@
     "prettier": "prettier --write app/**/*/*.ts",
     "reformat": "eslint --cache --fix app/**/*/*.ts",
     "format:check": "prettier --list-different \"app/**/*.{ts,json}\"",
-    "format:all": "prettier --write \"app/**/*.{ts,json}\"",
-    "test-travis": "nyc --reporter lcovonly mocha test/"
+    "format:all": "prettier --write \"app/**/*.{ts,json}\""
   },
   "nyc": {
     "require": [

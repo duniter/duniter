@@ -94,13 +94,16 @@ cp -R ${SRC}/* duniter_release/
 # Creating DEB packaging
 mv duniter_release/release/extra/debian/package duniter-${ARCH}
 mkdir -p duniter-${ARCH}/opt/duniter/
+mkdir -p duniter-${ARCH}/etc/bash_completion.d/
 chmod 755 duniter-${ARCH}/DEBIAN/post*
 chmod 755 duniter-${ARCH}/DEBIAN/pre*
 sed -i "s/Version:.*/Version:$DUNITER_DEB_VER/g" duniter-${ARCH}/DEBIAN/control
+echo "Extra..."
+mv duniter_release/release/extra/completion/duniter_completion.bash duniter-${ARCH}/etc/bash_completion.d/duniter_completion.bash
+echo "Zipping..."
 cd duniter_release
 pwd
 rm -Rf .git
-echo "Zipping..."
 zip -qr ../duniter.zip *
 cd ../
 mv duniter.zip duniter-${ARCH}/opt/duniter/

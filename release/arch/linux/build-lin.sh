@@ -90,6 +90,8 @@ build_extra_desktop() {
 build_extra_server() {
 	mkdir -p "${1}/lib/systemd/system" || exit 1
 	cp "${ROOT}/release/extra/systemd/duniter.service" "${1}/lib/systemd/system" || exit 1
+	mkdir -p "${1}/etc/bash_completion.d/" || exit 1
+	cp "${ROOT}/release/extra/completion/duniter_completion.bash" "${1}/etc/bash_completion.d/duniter_completion.bash" || exit 1
 }
 
 # Debian package building.

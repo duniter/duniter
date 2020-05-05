@@ -4,13 +4,12 @@
 
 The summary gives an overview of the rules described below. Reading it will help you to dive into the details.
 
-- branch created from an issue must have your pseudo as prefix
-- manually created branches must be named according to the template `type/description`
+- Branches must be named according to the template `type/description`
 - draft work must be prefixed by "WIP" (work in progress)
 - the naming of final commits must comply with the template `[type] scope: action subject`
 - one should communicate with developers through dedicated spaces
 - integrating a contribution can only be done via a merge with `-no-ff` option and since the following critera are fullfilled
-  - branch up to date with `dev` branch
+  - branch up to date with `dev` branch (except hotfixes, see the hotfix section)
   - idiomatic code formatting, automated tests passed successfully
   - clean commit history, understandable and concise
   - contribution approved by a reviewer
@@ -21,7 +20,7 @@ The summary gives an overview of the rules described below. Reading it will help
 
 Most of the time, you'll use the "create a merge request" button and
 Gitlab will name your branch. In that case, please prefix the name of
-your branch with your Gitlab username and a slash, for example:
+your branch with the branch type, for example:
 
     fix/issue-test
 
@@ -42,9 +41,10 @@ Example:
 
 ## Branch type
 
-- feature : add a feature, refactoring existing code, or fix a bug in `dev` branch.
-- release : create a release
-- hotfix : fix in a release branch
+- feature : add a feature
+- ref : refactoring existing code
+- fix : fix a bug in `dev` branch
+- hotfix : fix à bug in a stable release
 
 ## Naming commits
 
@@ -98,6 +98,10 @@ Every time the `dev` branch is updated, you must rebase each of your working bra
    c. Do 3. again for each commit that will be in conflict.
 
 4. When you don't have any conflict anymore after `git rebase --continue`, then the rebase succeeded. Then rebase a remaning branch.
+
+To prevent accidental merge commits, we recommend that force the `--ff-only` option on the merge command:
+
+    git config --global merge.ff only
 
 ## When to push
 
@@ -156,3 +160,29 @@ After an interactive rebase, your local git history is different that yours in G
 Now is time to go to Gitlab and re-check your commits.
 
 Wait for the Continuous Integration pipeline to finish (it lasts ±20min), and at last when it is done you can remove the "WIP" mention of your Merge Request and mention (with "@name") the lead developers to ask for a code review.
+
+## Workflow
+
+Il y a 3 types de branches permanentes :
+
+- La branche `dev`, c'est la branche par défaut (le tronc), toutes les contributions doivetn être mergées sur cette branche (à l'exception des hotfix).
+- La branche `stable`, elle pointe toujours sur le tag le plus récent de la dernière version stable. Elle sert de repère pour la documentation nottament.
+- Les branches de hotfix, au format `hotfix/x.y`. Une branche de hotfix pour une version `x.y` n'est créée qu'a partir du moment où il y a un correctif à livrer en production sur cette version `x.y` et que correctif ne peut pas attendre version suivante.
+
+There are 3 types of permanent branches:
+
+- The `dev` branch is the default branch (the trunk), all contributions must be merged to this branch (except hotfixes).
+- The `stable` branch, it always points to the most recent tag of the latest stable release. It is used as a reference for documentation, in particular.
+- The hotfix branches, in `hotfix/x.y` format. A hotfix branch for an `x.y` release is only created when there is a patch to be released to production on that `x.y` release that cannot wait for the next release.
+
+## Hotfix
+
+Si un bug bloquant se produit en production et nécessite un hotfix, ce dernier doit faire l'objet de 2 tickets et 2 branches :
+
+1. Le ticket original du bug, doit être traité sur une branche `hotfix/issue-number-or-bug-description` puis mergé sur la branche `hotfix/x.y`, où `x.y` désigne la version en production a ce moment là.
+2. Un ticket de report doit être créé, il doit citer le ticket original et permet de tracer la correction du bug sur la branche `dev`. Si pour X raison le hotfix n'a pas lieu d'être reporté sur la branche dev, le ticket de repport doit expliquer pourquoi puis être cloturé.
+
+If a blocking bug occurs in production and requires a hotfix, the latter must be the subject of 2 issues and 2 branches :
+
+1. The original issue, must be processed on a `hotfix/issue-number-or-bug-description` branch, then merged to the `hotfix/x.y` branch, where `x.y` is the version in production at that time.
+2. A carryover issue must be created, quoting the original issue and tracing the bug fix to the `dev` branch. If for any reason the hotfix does not need to be carried over to the `dev` branch, the carryover issue should explain why and then be closed.

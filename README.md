@@ -1,6 +1,6 @@
 ![Duniter logo](https://git.duniter.org/nodes/typescript/duniter/raw/dev/images/250%C3%97250.png)
 
-# Duniter [![Build Status](https://api.travis-ci.org/duniter/duniter.png)](https://travis-ci.org/duniter/duniter) [![Coverage Status](https://coveralls.io/repos/github/duniter/duniter/badge.svg?branch=master)](https://coveralls.io/github/duniter/duniter?branch=master) [![Dependencies](https://david-dm.org/duniter/duniter.svg)](https://david-dm.org/duniter/duniter)
+# Duniter [![build status](https://git.duniter.org/nodes/typescript/duniter/badges/dev/pipeline.svg)](https://git.duniter.org/nodes/typescript/duniter/commits/dev) [![Coverage Status](https://coveralls.io/repos/github/duniter/duniter/badge.svg?branch=master)](https://coveralls.io/github/duniter/duniter?branch=master) [![Dependencies](https://david-dm.org/duniter/duniter.svg)](https://david-dm.org/duniter/duniter)
 
 Duniter (previously uCoin) is a libre software allowing to create a new kind of P2P crypto-currencies based on individuals and Universal Dividend.
 
@@ -39,9 +39,8 @@ See [Install a node documentation](https://duniter.org/en/wiki/duniter/install/)
 
 ### Contribute
 
-- [Quick-start-guide : start a duniter node with web-ui from source](https://git.duniter.org/nodes/typescript/duniter/blob/dev/doc/quick-start.md)
-- [Guide (fr)](https://git.duniter.org/nodes/typescript/duniter/blob/dev/doc/contribute-french.md)
-- [Developer guide](https://git.duniter.org/nodes/typescript/duniter/blob/dev/doc/developer-guide.md)
+- See [CONTRIBUTING](./CONTRIBUTING.md).
+- [Guide (fr)](./doc/dev/contribute-french.md)
 
 ### Documentation
 
@@ -60,18 +59,23 @@ If you wish to participate/debate on Duniter, you can:
 
 ### Developement
 
-Duniter is using modules on different git repositories:
+Duniter is currently migrating from [Typescript] to [Rust].
+This migration is being done gradually via a [NodeJs]<->[Rust] binding provided by [Neon].
+The fact of migrating from code to [Rust] is commonly called "oxidation", so we speak of "Duniter's oxidation".
 
-- [Duniteroxyde](https://git.duniter.org/nodes/typescript/duniteroxyde): Neon binding for rust DUBP libs.
-- [Debug](https://github.com/duniter/duniter-debug): debug tool.
+The long-term goal is to oxidize Duniter entirely, but it is a long process that will take several years.
+
+Duniter is divided into several  git repositories:
+
+- [Duniter](https://git.duniter.org/nodes/typescript/duniter): this repository.
+- [Dubp-rs-libs](https://git.duniter.org/libs/dubp-rs-libs): Set of Rust libraries common to Duniter and a possible future Rust client/wallet.
 - [Web admin](https://git.duniter.org/nodes/typescript/modules/duniter-ui): web administration interface (optional).
 - [GVA](https://git.duniter.org/nodes/typescript/modules/gva-api): Future client API aimed to replace BMA. GVA stands for GraphQL Validation API.
 
-Optional modules:
+Optional repositories:
 
 - [Currency monit](https://git.duniter.org/nodes/typescript/modules/duniter-currency-monit): charts to monitor currency and web of trust state.
 - [Remuniter](https://github.com/duniter/remuniter): service to remunerate blocks issuers.
-- [Wot explorer](https://github.com/c-geek/wotex): Web of Trust explorer.
 
 # References
 
@@ -88,3 +92,8 @@ Optional modules:
 # License
 
 This software is distributed under [GNU AGPLv3](https://git.duniter.org/nodes/typescript/duniter/blob/dev/LICENSE).
+
+[Neon]: https://neon-bindings.com/
+[NodeJs]: https://nodejs.org/en/
+[Rust]: https://www.rust-lang.org/
+[Typescript]: https://www.typescriptlang.org/

@@ -90,6 +90,8 @@ build_extra_desktop() {
 build_extra_server() {
 	mkdir -p "${1}/lib/systemd/system" || exit 1
 	cp "${ROOT}/release/extra/systemd/duniter.service" "${1}/lib/systemd/system" || exit 1
+	mkdir -p "${1}/etc/bash_completion.d/" || exit 1
+	cp "${ROOT}/release/extra/completion/duniter_completion.bash" "${1}/etc/bash_completion.d/duniter_completion.bash" || exit 1
 }
 
 # Debian package building.
@@ -122,7 +124,7 @@ build_deb_pack() {
 # Install tools needed to build
 # -----------------------------
 
-NODE_VERSION=10.19.0
+NODE_VERSION=10.20.1
 NVER="v${NODE_VERSION}"
 DUNITER_TAG="v${1}"
 DUNITER_DEB_VER=" ${1}"

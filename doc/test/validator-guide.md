@@ -73,7 +73,7 @@ Duniter should be able to resolve forks, i.e. switch on a branch that does not c
 
 > A technique to test this:
 >
-> ```
+> ```bash
 > duniter reset data
 > duniter sync g1.duniter.org 443
 > duniter gen-next --local-submit

@@ -11,7 +11,8 @@
             "program": "${workspaceFolder}/bin/duniter",
             "args": [
                 "direct_start"
-            ]
+            ],
+            "runtimeExecutable": "${env:HOME}/.nvm/versions/node/v10.19.0/bin/node"
         },
         {
             "type": "node",
@@ -19,9 +20,10 @@
             "name": "Mocha CURRENT FILE",
             "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
             "args": [
-                "--opts", "\"\"",
+                "--opts", "\"\"", "--timeout", "600000",
                 "${fileDirname}/${fileBasenameNoExtension}.js"
-            ]
+            ],
+            "runtimeExecutable": "${env:HOME}/.nvm/versions/node/v10.19.0/bin/node"
         },
         {
             "type": "node",
@@ -30,7 +32,8 @@
             "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
             "args": [
                 "${workspaceFolder}/test"
-            ]
+            ],
+            "runtimeExecutable": "${env:HOME}/.nvm/versions/node/v10.19.0/bin/node"
         }
     ]
 }

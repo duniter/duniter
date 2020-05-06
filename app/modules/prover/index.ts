@@ -123,6 +123,10 @@ export const ProverDependency = {
           "With gen-* commands: the generated block is submitted to this node only.",
       },
       {
+        value: "--nocheck-issuer",
+        desc: "With gen-* commands: ignore issuer rule.",
+      },
+      {
         value: "--submit-host <host>",
         desc:
           "With gen-* commands: the generated block is submitted to `submit-host` node.",
@@ -276,7 +280,11 @@ function generateAndSend(
                 const parsed = parsers.parseBlock.syncWrite(
                   block.getRawSigned()
                 );
-                await server.BlockchainService.checkBlock(parsed, false);
+                await server.BlockchainService.checkBlock(
+                  parsed,
+                  false,
+                  program.nocheckIssuer
+                );
                 logger.info("Acceptable block");
                 next();
               } catch (e) {

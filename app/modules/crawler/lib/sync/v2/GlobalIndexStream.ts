@@ -591,6 +591,7 @@ export class GlobalIndexStream extends Duplex {
     const { index, HEAD } = await DuniterBlockchain.checkBlock(
       dto,
       constants.WITH_SIGNATURES_AND_POW,
+      false,
       this.conf,
       this.dal
     );

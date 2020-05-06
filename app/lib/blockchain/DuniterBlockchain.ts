@@ -45,6 +45,7 @@ export class DuniterBlockchain {
   static async checkBlock(
     block: BlockDTO,
     withPoWAndSignature: boolean,
+    ignoreIssuer: boolean,
     conf: ConfDTO,
     dal: FileDAL
   ) {
@@ -78,7 +79,7 @@ export class DuniterBlockchain {
     if (Indexer.rulePreviousIssuer(block, HEAD) === false)
       throw Error("rulePreviousIssuer");
     // BR_G101
-    if (Indexer.ruleIssuerIsMember(HEAD) === false)
+    if (!ignoreIssuer && Indexer.ruleIssuerIsMember(HEAD) === false)
       throw Error("ruleIssuerIsMember");
     // BR_G54
     if (Indexer.ruleIssuersCount(block, HEAD) === false)
@@ -215,7 +216,7 @@ export class DuniterBlockchain {
     };
 
     const isMember = await dal.isMember(block.issuer);
-    if (!isMember) {
+    if (!ignoreIssuer && !isMember) {
       if (block.number == 0) {
         if (!matchesList(new RegExp("^" + block.issuer + ":"), block.joiners)) {
           throw Error("Block not signed by the root members");

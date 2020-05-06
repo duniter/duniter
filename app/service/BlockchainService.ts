@@ -165,9 +165,9 @@ export class BlockchainService extends FIFOService {
     return bb;
   }
 
-  checkBlock(block: any, withPoWAndSignature = true) {
+  checkBlock(block: any, withPoWAndSignature = true, ignoreIssuer = false) {
     const dto = BlockDTO.fromJSONObject(block);
-    return this.mainContext.checkBlock(dto, withPoWAndSignature);
+    return this.mainContext.checkBlock(dto, withPoWAndSignature, ignoreIssuer);
   }
 
   /**

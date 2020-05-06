@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Get the directory name of this script, following symlinks
+pushd . >/dev/null
+DUNITER_DIRECTORY="${BASH_SOURCE[0]}";
+while [[ -h "${DUNITER_DIRECTORY}" ]]; do
+    cd "$(dirname "${DUNITER_DIRECTORY}")" >/dev/null
+    DUNITER_DIRECTORY="$(readlink "$(basename "${DUNITER_DIRECTORY}")")"
+done
+cd "$(dirname "${DUNITER_DIRECTORY}")" >/dev/null
+DUNITER_DIRECTORY="${PWD}";
+popd >/dev/null
+
+# Execute NW
+"${DUNITER_DIRECTORY}"/node_modules/.bin/nw "${DUNITER_DIRECTORY}"

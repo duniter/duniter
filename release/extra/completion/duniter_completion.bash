@@ -57,6 +57,7 @@ direct_webstart \
 -c \
 --nostdout \
 --noshuffle \
+--nocheck-issuer \
 --socks-proxy \
 --tor-proxy \
 --reaching-clear-ep \

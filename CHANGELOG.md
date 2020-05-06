@@ -23,6 +23,7 @@
 - Remove ArchiveDAO, which is a LokiJS artifact @c-geek
 - Add to an interface ServerDAO methods that could be used by external modules @c-geek
 - StatsDAL => replaced by LevelDB indexes @c-geek
+- add `--nocheck-issuer` option to `gen-*` commands @c-geek
 
 ### Fixes
 

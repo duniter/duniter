@@ -11,10 +11,8 @@ if [[ -f $DUN_ROOT/duniter.zip ]]; then
 fi
 
 # Duniter-Desktop
-if [[ -f $DUN_SOURCES/nw ]]; then
-  chmod +x $DUN_SOURCES/nw $DUN_SOURCES/lib $DUN_SOURCES/locales
-  chmod +rw $DUN_SOURCES/nw $DUN_SOURCES/lib $DUN_SOURCES/locales
-  ln -s $DUN_SOURCES/nw /usr/bin/duniter-desktop
+if [[ -f $DUN_SOURCES/duniter-desktop ]]; then
+  ln -s $DUN_SOURCES/duniter-desktop /usr/bin/duniter-desktop
   sed -i "s/DEB_PACKAGING=.*/DEB_PACKAGING=true/g" $DUN_SOURCES/duniter.sh
   # Links for Node + NPM
   cd $DUN_SOURCES

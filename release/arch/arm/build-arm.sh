@@ -10,7 +10,6 @@ NODE_VERSION=10.20.1
 ARCH="`uname -m | sed -e \"s/86_//\"`"
 NVER="v$NODE_VERSION"
 DUNITER_TAG=$1
-DUNITER_UI_VER="1.7.x"
 
 # Folders
 INITIAL_DIRECTORY=`pwd`
@@ -63,54 +62,28 @@ fi
 rm -rf "$RELEASES"
 mkdir -p "$RELEASES"
 
-cp -r "$DOWNLOADS/duniter" "$RELEASES/duniter"
+cd "$DOWNLOADS/duniter"
+echo "Build Duniter server with GUI..."
+make -C release server-gui clean
+mv "$DOWNLOADS/duniter/work" "$RELEASES/duniter"
 cd ${RELEASES}/duniter
-
 echo "Copying Nodejs"
 cp -R "$DOWNLOADS/node-${NVER}-linux-${ARCH}" node
-
-# Build Duniter with GUI
-echo "Build Duniter with GUI..."
-export NEON_BUILD_RELEASE="true"
-npm add "duniter-ui@${DUNITER_UI_VER}" || exit 1
-npm i || exit 1
-npm prune --production || exit 1
-
-SRC=`pwd`
-echo $SRC
-
-# Clean unused UI modules
-rm -Rf node_modules/duniter-ui/node_modules
-
-# Remove non production folders
-rm -rf coverage test
-
-# Remove unused rust intermediate binaries
-rm -rf target
-rm -rf neon/native/target
-
-# Remove typescript files
-find ./ \( -name "*.js.map" -o -name "*.d.ts" -o -name "*.ts" \) -delete
-
 cd ..
-mkdir -p duniter_release
-cp -R ${SRC}/* duniter_release/
 
 # Creating DEB packaging
-mv duniter_release/release/extra/debian/package duniter-${ARCH}
+cp -r "$DOWNLOADS"/duniter/release/extra/debian/package duniter-${ARCH}
 mkdir -p duniter-${ARCH}/opt/duniter/
 mkdir -p duniter-${ARCH}/etc/bash_completion.d/
 chmod 755 duniter-${ARCH}/DEBIAN/post*
 chmod 755 duniter-${ARCH}/DEBIAN/pre*
 sed -i "s/Version:.*/Version:$DUNITER_DEB_VER/g" duniter-${ARCH}/DEBIAN/control
 echo "Extra..."
-mv duniter_release/release/extra/completion/duniter_completion.bash duniter-${ARCH}/etc/bash_completion.d/duniter_completion.bash
+cp "$DOWNLOADS"/duniter/release/extra/completion/duniter_completion.bash duniter-${ARCH}/etc/bash_completion.d/duniter_completion.bash
 echo "Zipping..."
-cd duniter_release
-pwd
-rm -Rf .git
+cd duniter
 zip -qr ../duniter.zip *
-cd ../
+cd ..
 mv duniter.zip duniter-${ARCH}/opt/duniter/
 echo "Making package package"
 fakeroot dpkg-deb --build duniter-${ARCH}

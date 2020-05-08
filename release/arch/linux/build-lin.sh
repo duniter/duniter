@@ -11,52 +11,6 @@ else
 	exit 1
 fi
 
-# ---------
-# Functions
-# ---------
-
-# Copy nw.js compiled module released library to node libraries.
-# -
-# Parameters:
-# 1. Module name.
-nw_copy() {
-	[[ -z ${1} ]] && exit 1
-	from_folder=lib/binding/Release/node-webkit-v${NW_VERSION}-linux-x64
-	if [[ ! -z ${2} ]]; then
-	  from_folder=${2}
-	fi
-	local dest=lib/binding/Release/node-v${ADDON_VERSION}-linux-x64
-	mkdir -p ${dest}
-	cp ${from_folder}/${1}.node \
-		${dest}/${1}.node || exit 1
-}
-
-# Copy nw.js compiled module library to node libraries, prefixing with node_.
-# -
-# Parameters:
-# 1. Module name.
-nw_copy_node() {
-	[[ -z ${1} ]] && exit 1
-	local dest=lib/binding/node-v${ADDON_VERSION}-linux-x64/
-	mkdir -p ${dest}
-	cp lib/binding/node-webkit-v${NW_VERSION}-linux-x64/node_${1}.node \
-		${dest}/node_${1}.node || exit 1
-}
-
-# Compile the module with nw.js.
-# -
-# Parameters:
-# 1. Module name.
-# 2. Action to be done to module after compilation, if needed.
-nw_compile() {
-	[[ -z ${1} ]] && exit 1
-	cd ${1} || exit 1
-	node-pre-gyp --runtime=node-webkit --target=${NW_VERSION} configure || exit 1
-	node-pre-gyp --runtime=node-webkit --target=${NW_VERSION} build || exit 1
-	[[ -z ${2} ]] || ${2} ${1} ${3}
-	cd ..
-}
-
 # Create description.
 # -
 # Parameters:
@@ -110,7 +64,7 @@ build_deb_pack() {
 	sed -i "s/Version:.*/Version:${DUNITER_DEB_VER}/g" "${RELEASES}/duniter-x64/DEBIAN/control" || exit 1
 
 	cd "${RELEASES}/${1}_/"
-	zip -qr "${RELEASES}/duniter-x64/opt/duniter/duniter.zip" * || exit 1
+	zip -yqr "${RELEASES}/duniter-x64/opt/duniter/duniter.zip" * || exit 1
 
 	sed -i "s/Package: .*/Package: ${2}/g" "${RELEASES}/duniter-x64/DEBIAN/control" || exit 1
 
@@ -128,17 +82,9 @@ NODE_VERSION=10.20.1
 NVER="v${NODE_VERSION}"
 DUNITER_TAG="v${1}"
 DUNITER_DEB_VER=" ${1}"
-ADDON_VERSION=64
-NW_VERSION=0.33.1
-NW_RELEASE="v${NW_VERSION}"
-NW="nwjs-${NW_RELEASE}-linux-x64"
-NW_GZ="${NW}.tar.gz"
-DUNITER_UI_VER="1.7.x"
 
 nvm install ${NVER} || exit 1
 nvm use ${NVER} || exit 1
-npm install -g node-pre-gyp || exit 1
-npm install -g nw-gyp || exit 1
 curl https://sh.rustup.rs -sSf | sh -s -- -y
 export PATH="$HOME/.cargo/bin:$PATH"
 
@@ -150,7 +96,8 @@ ROOT="${PWD}"
 WORK_NAME=work
 WORK="${ROOT}/${WORK_NAME}"
 DOWNLOADS="${WORK}/downloads"
-RELEASES="${WORK}/releases"
+RELEASES_SUBDIR="releases"
+RELEASES="${WORK}/${RELEASES_SUBDIR}"
 BIN="${WORK}/bin"
 
 mkdir -p "${DOWNLOADS}" "${RELEASES}" "${BIN}" || exit 1
@@ -161,9 +108,6 @@ rm -rf "${BIN}/"*.{deb,tar.gz}{,.desc} # Clean up
 # -----------
 
 cd "${DOWNLOADS}"
-curl -O https://dl.nwjs.io/${NW_RELEASE}/${NW_GZ} || exit 1
-tar xzf ${NW_GZ} || exit 1
-rm ${NW_GZ}
 curl -O http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz || exit 1
 tar xzf node-${NVER}-linux-x64.tar.gz || exit 1
 rm node-${NVER}-linux-x64.tar.gz
@@ -172,73 +116,31 @@ rm node-${NVER}-linux-x64.tar.gz
 # Releases
 # -----------
 
-# Prepare sources
-mkdir -p "${RELEASES}/duniter" || exit 1
-cp -r $(find "${ROOT}" -mindepth 1 -maxdepth 1 ! -name "${WORK_NAME}") "${RELEASES}/duniter" || exit 1
-cd "${RELEASES}/duniter"
-rm -Rf .gitignore .git || exit 1 # Remove git files
-
-# Build Duniter with GUI
-echo ">> VM: building modules..."
-export NEON_BUILD_RELEASE="true"
-npm add "duniter-ui@${DUNITER_UI_VER}" || exit 1
-npm i || exit 1
-npm prune --production || exit 1
-
-# Patch leveldown
-cp "${ROOT}/release/resources/leveldown-fix.json" "${RELEASES}/duniter/node_modules/leveldown/package.json" || exit 1
-
-# Remove non production folders
-rm -rf coverage release test
-
-# Remove unused rust intermediate binaries
-rm -rf target
-rm -rf neon/native/target
-
-# Remove typescript files
-find ./ \( -name "*.js.map" -o -name "*.d.ts" -o -name "*.ts" \) -delete
-
-cp -r "${RELEASES}/duniter" "${RELEASES}/desktop_" || exit 1
-cp -r "${RELEASES}/duniter" "${RELEASES}/server_" || exit 1
-
-# -------------------------------------
-# Build Desktop version against nw.js
-# -------------------------------------
-
-echo "${NW_RELEASE}"
-
-cd "${RELEASES}/desktop_/node_modules/"
-nw_compile leveldown nw_copy "build/Release/"
-nw_compile sqlite3 nw_copy_node
-
-# Unused binaries
-cd "${RELEASES}/desktop_/"
-rm -rf node_modules/sqlite3/build
+pushd "${ROOT}"
+make -C release DEST="${RELEASES_SUBDIR}/duniter" base-gui || exit 1
+cp -pr "${RELEASES}/duniter" "${RELEASES}/desktop_" || exit 1
+make -C release DEST="${RELEASES_SUBDIR}/desktop_" desktop clean || exit 1
+cp -pr "${RELEASES}/duniter" "${RELEASES}/server_" || exit 1
+make -C release DEST="${RELEASES_SUBDIR}/server_" server-gui clean || exit 1
+popd
 
 # --------------------------------
 # Embed nw.js in desktop version
 # --------------------------------
 
-# Install Nw.js
+# Embed Node.js to make Duniter modules installable
 mkdir -p "${RELEASES}/desktop_release" || exit 1
-cp -r "${DOWNLOADS}/${NW}/"* "${RELEASES}/desktop_release/" || exit 1
-# Embed Node.js with Nw.js to make Duniter modules installable
 cp -r "${DOWNLOADS}/node-${NVER}-linux-x64/lib" "${RELEASES}/desktop_release/" || exit 1
 cp -r "${DOWNLOADS}/node-${NVER}-linux-x64/include" "${RELEASES}/desktop_release/" || exit 1
 cp -r "${DOWNLOADS}/node-${NVER}-linux-x64/bin" "${RELEASES}/desktop_release/" || exit 1
-# Add some specific files for GUI
-cp "${RELEASES}/desktop_/gui/"* "${RELEASES}/desktop_release/" || exit 1
 # Add Duniter sources
 cp -R "${RELEASES}/desktop_/"* "${RELEASES}/desktop_release/" || exit 1
-# Insert Nw specific fields while they do not exist (1.3.3)
-sed -i "s/\"main\": \"index.js\",/\"main\": \"index.html\",/" "${RELEASES}/desktop_release/package.json" || exit 1
 # Add links for Node.js + NPM
 cd "${RELEASES}/desktop_release/bin"
 ln -s "../lib/node_modules/npm/bin/npm-cli.js" "./npm" -f || exit 1
 cd ..
 ln -s "./bin/node" "node" -f || exit 1
 ln -s "./bin/npm" "npm" -f || exit 1
-#sed -i "s/\"node-main\": \"\.\.\/sources\/bin\/duniter\",/\"node-main\": \".\/bin\/duniter\",/" "$RELEASES/desktop_release/package.json"
 rm -rf "${RELEASES}/desktop_"
 mv "${RELEASES}/desktop_release" "${RELEASES}/desktop_"
 

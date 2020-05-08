@@ -29,4 +29,7 @@ vagrant/duniter
 .nyc_output
 coverage/
 
-# TS => JS: OK!
+# rust binaries
+neon/native/index.node
+neon/native/target/
+target/

@@ -2,8 +2,9 @@
   "name": "duniter",
   "version": "1.7.21",
   "engines": {
-    "node": ">= 10.*",
-    "npm": ">=3.10"
+    "node": ">= 10.19",
+    "npm": ">= 6.13",
+    "yarn": "YARN NO LONGER USED - use npm instead."
   },
   "engineStrict": true,
   "private": false,
@@ -22,7 +23,7 @@
     "test": "test"
   },
   "scripts": {
-    "prepublish": "tsc",
+    "prepare": "tsc",
     "prepack": "find -name \"*.ts\" | grep -v \".d.ts\" | xargs rm",
     "tsc": "tsc",
     "tscw": "tsc -w",
@@ -127,7 +128,7 @@
     "lint-staged": ">=10",
     "mocha": "3.4.2",
     "mocha-eslint": "0.1.7",
-    "nyc": "^11.0.3",
+    "nyc": "13.3.0",
     "should": "*",
     "source-map-support": "^0.4.15",
     "supertest": "*",

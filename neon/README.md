@@ -10,9 +10,8 @@
 
 ### Requirements
 
-You'll need nvm, yarn, and rust:
+You'll need nvm and rust:
 
-- [yarn install instructions](https://classic.yarnpkg.com/en/docs/install)
 - [nvm install instructions](https://github.com/nvm-sh/nvm#installing-and-updating)
 - [rust install instructions](https://www.rust-lang.org/learn/get-started)
 
@@ -30,10 +29,10 @@ WARNING: It takes a long time and consumes high cpu !
 
 Run the following command at the root of the repository:
 
-    yarn
+    npm install
 
 ### Test
 
 Run the following command at the root of the repository:
 
-    yarn test
+    npm test

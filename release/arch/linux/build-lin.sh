@@ -181,8 +181,9 @@ rm -Rf .gitignore .git || exit 1 # Remove git files
 # Build Duniter with GUI
 echo ">> VM: building modules..."
 export NEON_BUILD_RELEASE="true"
-yarn add "duniter-ui@${DUNITER_UI_VER}" || exit 1
-yarn --production || exit 1
+npm add "duniter-ui@${DUNITER_UI_VER}" || exit 1
+npm i || exit 1
+npm prune --production || exit 1
 
 # Patch leveldown
 cp "${ROOT}/release/resources/leveldown-fix.json" "${RELEASES}/duniter/node_modules/leveldown/package.json" || exit 1

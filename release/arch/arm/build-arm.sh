@@ -71,8 +71,9 @@ cp -R "$DOWNLOADS/node-${NVER}-linux-${ARCH}" node
 # Build Duniter with GUI
 echo "Build Duniter with GUI..."
 export NEON_BUILD_RELEASE="true"
-yarn add "duniter-ui@${DUNITER_UI_VER}" || exit 1
-yarn --production || exit 1
+npm add "duniter-ui@${DUNITER_UI_VER}" || exit 1
+npm i || exit 1
+npm prune --production || exit 1
 
 SRC=`pwd`
 echo $SRC

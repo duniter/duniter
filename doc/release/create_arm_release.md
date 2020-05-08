@@ -14,16 +14,6 @@ To produce an arm release file, there is currently the following requirement:
 - zip (don't laugh, it is not included by default in raspbian) : sudo apt-get install zip
 - do not run anything else on that pi during the build, as it almost takes the 1 Gb and you may just run out of memory if you have other things running.
 
-## Installing yarn
-
-Install yarn:
-
-    ```
-    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-    echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
-    sudo apt-get update && sudo apt-get install yarn
-    ```
-
 ## Installing Node
 
 You need to install node with the exact version that is currently used. You can find the exact version for all archs by running:

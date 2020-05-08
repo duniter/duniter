@@ -33,8 +33,6 @@ Rust:
 
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -- -y
 
-Yarn: [installation instructions][yarn]
-
 ## Build the project
 
 ### Clone de repository
@@ -55,13 +53,13 @@ If, for example, version 10 is expected, install and select it with the followin
 
 Command to compile :
 
-    yarn
+    npm install
 
 **WARNING**: playing automated tests takes a lot of resources on your machine and those for several minutes, don't do anything else at the same time!
 
 Command to play automated tests:
 
-    yarn test
+    npm test
 
 If all the tests are successful, the command ends like this:
 
@@ -98,4 +96,3 @@ You can then adapt it according to your preferences for use :)
 
 [Rust]: https://www.rust-lang.org/
 [Typescript]: https://www.typescriptlang.org/
-[yarn]: https://classic.yarnpkg.com/en/docs/install/

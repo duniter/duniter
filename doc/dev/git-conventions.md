@@ -139,9 +139,9 @@ The general discussion is used to comment on the merge request as a whole, for e
 
 When you finished developing, you must compile, run linter and run all tests:
 
-    yarn
-    yarn format:check
-    yarn test
+    npm install
+    npm format:check
+    npm test
 
 Then commit everything.
 

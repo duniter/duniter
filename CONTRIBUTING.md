@@ -31,7 +31,7 @@ Please note we have a specific workflow, please follow it in all your interactio
 
 2. Ensure that you respect the [commit naming conventions].
 
-3. Ensure that all automated tests pass with the `yarn test` command.
+3. Ensure that all automated tests pass with the `npm test` command.
 
 4. Update the documentation with details of changes to the interface, this includes new environment
     variables, exposed ports, useful file locations and container parameters.

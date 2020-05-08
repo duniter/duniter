@@ -71,10 +71,6 @@ Rust:
 
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -- -y
 
-#### Yarn
-
-Yarn: [installation instructions][yarn]
-
 ## Build the project
 
 Go to the root of the folder where you extracted the source code (or possibly cloned from git).
@@ -93,7 +89,7 @@ If, for example, version 10 is expected, install and select it with the followin
 
 Command to compile :
 
-    NEON_BUILD_RELEASE=true yarn add duniter-ui
+    NEON_BUILD_RELEASE=true npm add duniter-ui
 
 ### Set autocompletion
 

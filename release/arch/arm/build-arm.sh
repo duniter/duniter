@@ -88,6 +88,9 @@ rm -rf coverage test
 rm -rf target
 rm -rf neon/native/target
 
+# Remove typescript files
+find ./ \( -name "*.js.map" -o -name "*.d.ts" -o -name "*.ts" \) -delete
+
 cd ..
 mkdir -p duniter_release
 cp -R ${SRC}/* duniter_release/

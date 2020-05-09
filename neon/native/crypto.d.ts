@@ -1,15 +1,8 @@
 /* tslint:disable */
 
-export class KeyPairBuilder {
-
-    static fromSeed(seed: Buffer): Ed25519Signator;
-
-    static fromSecretKey(secretKey: string): Ed25519Signator;
-
-    static random(): Ed25519Signator;
-}
-
 export class Ed25519Signator {
+
+    constructor(seedOrSecretKey: Buffer | string);
 
     getPublicKey(): string;
 

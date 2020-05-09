@@ -9,14 +9,8 @@ export class DetailedDistance {
     isOutdistanced: number;
 }
 
-export class WotBuilder {
-    static fromWot(wot: Wot): Wot;
-
-    static fromFile(filePath: string): Wot;
-}
-
 export class Wot {
-    constructor(maxCert: number);
+    constructor(maxCertOrFilePathOrBytes: number | string | Buffer);
 
     clear(): void;
 
@@ -65,6 +59,8 @@ export class Wot {
     getPaths(source: number, target: number, step_max: number): number[][];
 
     writeInFile(file_path: string): boolean;
+
+    toBytes(): Buffer;
 
     dump(): string;
 }

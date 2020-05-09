@@ -83,13 +83,20 @@ If, for example, version 10 is expected, install and select it with the followin
 
     nvm install 10 && nvm use 10
 
+### Optionaly add GUI
+
+The graphical user interface (GUI) is optional because it is possible to do everything from the command line.  
+If you wish to have the GUI, you must add it (before compiling) with the following command:
+
+    npm add duniter-ui
+
 ### Compile
 
 **WARNING**: the compilation of the project requires a lot of resources on your machine, and several long minutes, don't do anything else at the same time!
 
 Command to compile :
 
-    NEON_BUILD_RELEASE=true npm add duniter-ui
+    NEON_BUILD_RELEASE=true npm install && npm prune --production
 
 ### Set autocompletion
 

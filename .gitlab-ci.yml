@@ -230,8 +230,10 @@ package:prod:docker:
     - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG" -f release/docker/Dockerfile .
     - docker login -u "gitlab-ci-token" -p "$CI_BUILD_TOKEN" $CI_REGISTRY
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
-    - docker tag "$CI_REGISTRY_IMAGE:$CI_BUILD_TAG" duniter/duniter
     - docker login -u "duniterteam" -p "$DUNITERTEAM_PASSWD"
+    - docker tag "$CI_REGISTRY_IMAGE:$CI_BUILD_TAG" "duniter/duniter:$CI_BUILD_TAG"
+    - docker push "duniter/duniter:$CI_COMMIT_TAG"
+    - docker tag "$CI_REGISTRY_IMAGE:$CI_BUILD_TAG" duniter/duniter
     - docker push duniter/duniter
 
 

@@ -15,8 +15,6 @@ export interface BlockchainDAO extends GenericDAO<DBBlock>, ForksDAO {
 
   lastBlockOfIssuer(issuer: string): Promise<DBBlock | null>;
 
-  lastBlockWithDividend(): Promise<DBBlock | null>;
-
   getCountOfBlocksIssuedBy(issuer: string): Promise<number>;
 
   dropNonForkBlocksAbove(number: number): Promise<void>;

@@ -245,17 +245,6 @@ export class LevelDBBlockchain extends LevelDBTable<DBBlock>
     return theLast;
   }
 
-  // TODO: Unused? potentially costly because of full scan
-  async lastBlockWithDividend(): Promise<DBBlock | null> {
-    let theLast: DBBlock | null = null;
-    await this.readAllKeyValue((kv) => {
-      if (!theLast && kv.value.dividend) {
-        theLast = kv.value;
-      }
-    });
-    return theLast;
-  }
-
   async removeBlock(blockstamp: string): Promise<void> {
     await this.del(LevelDBBlockchain.trimKey(parseInt(blockstamp)));
   }

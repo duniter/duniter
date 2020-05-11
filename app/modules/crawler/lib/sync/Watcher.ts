@@ -11,7 +11,7 @@ export interface Watcher {
   appliedPercent(pct?: number): number;
   sbxPercent(pct?: number): number;
   peersPercent(pct?: number): number;
-  end(): void;
+  end(duration?: number): void;
 
   reserveNodes(nodesAvailable: P2pCandidate[]): void;
 
@@ -114,8 +114,8 @@ export class EventWatcher extends events.EventEmitter implements Watcher {
     return method(pct);
   }
 
-  end(): void {
-    this.innerWatcher.end();
+  end(syncDuration?: number): void {
+    this.innerWatcher.end(syncDuration);
   }
 
   onEvent(e: EventName, cb: (pct: number) => void) {
@@ -261,8 +261,14 @@ export class MultimeterWatcher implements Watcher {
     return 0;
   }
 
-  end() {
-    this.multi.write("\nAll done.\n");
+  end(duration?: number) {
+    if (duration) {
+      const durationSecs = Math.floor(duration / 1000);
+      const durationMillisRemain = duration % 1000;
+      this.multi.write("\nAll done in " + durationSecs + "." + durationMillisRemain + " seconds.\n");
+    } else {
+      this.multi.write("\nAll done.\n");
+    }
     this.multi.destroy();
   }
 

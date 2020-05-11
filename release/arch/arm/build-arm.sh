@@ -10,6 +10,7 @@ NODE_VERSION=10.20.1
 ARCH="`uname -m | sed -e \"s/86_//\"`"
 NVER="v$NODE_VERSION"
 DUNITER_TAG=$1
+DUNITER_UI_VER="1.7.x"
 
 # Folders
 INITIAL_DIRECTORY=`pwd`

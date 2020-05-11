@@ -13,7 +13,9 @@ ARG DUNITER_UI_VER="1.7.x"
 RUN apk update && \
 	apk add ca-certificates curl && \
 	update-ca-certificates && \
-   apk add --update python make g++
+	apk add --update python make g++
+
+WORKDIR /duniter
 
 # copy source tree
 COPY ./ ./
@@ -22,15 +24,10 @@ COPY ./ ./
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 
 # build duniter
-RUN export PATH="$HOME/.cargo/bin:$PATH" && \
-   export RUSTFLAGS="-C target-feature=-crt-static" && \
-   export NEON_BUILD_RELEASE="true" && \
-   npm add duniter-ui@${DUNITER_UI_VER} && \
-   npm i && npm prune --production && \
-   mv release/docker/duniter.sh docker.sh && \
-   rm -rf coverage release test && \
-   rm -rf target && \
-   rm -rf neon/native/target
+RUN PATH=${HOME}/.cargo/bin:${PATH} \
+	RUSTFLAGS="-C target-feature=-crt-static" \
+	make -C release ADD_DEBUG=N server-gui clean \
+	&& mv release/docker/duniter.sh work/docker.sh
 
 # ------------------------------------------------------------------------------
 # Final Stage
@@ -44,7 +41,7 @@ RUN addgroup -S -g 1111 duniter && \
 RUN mkdir -p /var/lib/duniter /etc/duniter && chown duniter:duniter /var/lib/duniter /etc/duniter
 
 # copy the build artifact from the build stage
-COPY --from=build --chown=duniter:duniter . /duniter/duniter
+COPY --from=build --chown=duniter:duniter /duniter/work /duniter/duniter
 
 # copy bootstrap script
 RUN cp /duniter/duniter/docker.sh /usr/bin/duniter && \

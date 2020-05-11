@@ -99,7 +99,7 @@ tests:
   artifacts:
     paths:
       - coverage.tar.gz
-    expire_in: 4h
+    expire_in: 72h
 
 fmt_and_clippy:
   extends: .env

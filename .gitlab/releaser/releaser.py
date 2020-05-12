@@ -6,6 +6,7 @@ import os
 from binartifact import BinArtifact
 from job import Job
 from placeholder import PlaceHolder
+from releaselinks import ReleaseLinks
 from releasenote import ReleaseNote
 from releasewikipage import ReleaseWikiPage
 from sourceartifact import SourceArtifact
@@ -48,9 +49,11 @@ class Releaser:
         releaseNote = ReleaseNote()
         current_message = releaseNote.get_message()
         artifacts_list = []
+        binArtifacts = self._get_bin_artifacts()
+        releaseLinks = ReleaseLinks()
 
         # Get releases
-        artifacts_list += self._get_bin_artifacts()
+        artifacts_list += binArtifacts
         artifacts_list.sort()
         artifacts_list += list(map(lambda e: SourceArtifact(e), self.source_ext))
 
@@ -64,6 +67,10 @@ class Releaser:
             'pipeline': os.environ['CI_PIPELINE_ID']
         })
         releaseNote.send_note(title_line + note)
+
+        # Publish binaries as links
+        for binArtifact in binArtifacts:
+            releaseLinks.create_artifact(binArtifact.to_dict())
 
         print('Pre-release published')
 

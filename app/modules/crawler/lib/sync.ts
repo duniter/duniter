@@ -140,6 +140,7 @@ export class Synchroniser extends stream.Duplex {
       this.logger.info("Sync started.");
 
       const fullSync = !to;
+      const syncStartTime = Date.now();
 
       //============
       // Blockchain headers
@@ -240,9 +241,10 @@ export class Synchroniser extends stream.Duplex {
         await this.syncStrategy.syncPeers(fullSync, to);
       }
 
-      this.watcher.end();
+      const syncDuration = Date.now() - syncStartTime;
+      this.watcher.end(syncDuration);
       this.push({ sync: true });
-      this.logger.info("Sync finished.");
+      this.logger.info("Sync finished (duration %s ms).", syncDuration);
     } catch (err) {
       this.push({ sync: false, msg: err });
       err &&

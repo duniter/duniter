@@ -20,8 +20,8 @@ workflow:
       - test/**/*
       - .gitlab-ci.yml
       - index.ts
-      - npm-shrinkwrap.json
       - package.json
+      - package-lock.json
       - server.ts
 
 .env: &env

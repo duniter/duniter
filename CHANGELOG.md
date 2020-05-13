@@ -1,29 +1,29 @@
 # CHANGELOG
 
-## v1.8.0 (XX XXXX 2019)
+## v1.8.0 (XX XXXX 2020)
 
 ### Highlights
 
-- Migration to Nodejs v10
-- Beginning of Duniter's oxidation (=Migration to Rust)
-  - Migration des modules C/C++ `wotb` et `naclb`
-  - Migration of the cluster that computing the proof of work
+- Migrate to Nodejs v10
+- Oxidation (=Migration to Rust) beginning via Neon binding:
+  - Migrate C/C++ modules: `wotb` and `naclb`
+  - Migrate Proof-of-Work cluster to Rust
 
-### Security
+### Security
 
-- Updating or removing dependencies with security vulnerabilities @elois
+- Update or remove security vulnerable dependencies @librelois
 
 ### Features
 
-- Migrate pow cluster on Rust @elois
-- migrate `naclb` to rust implementation `dup-crypto-rs` @elois
-- migrate `wotb` to rust implementation `dubp-wot` @elois
+- Migrate PoW cluster to Rust @librelois
+- Migrate `naclb` to rust implementation `dup-crypto-rs` @librelois
+- Migrate `wotb` to rust implementation `dubp-wot` @librelois
 - #1373: Support for Nodejs v10 @c-geek @Moul
 - Abstracting conf DAL to ConfDAO @c-geek
 - Remove ArchiveDAO, which is a LokiJS artifact @c-geek
 - Add to an interface ServerDAO methods that could be used by external modules @c-geek
 - StatsDAL => replaced by LevelDB indexes @c-geek
-- add `--nocheck-issuer` option to `gen-*` commands @c-geek
+- Add `--nocheck-issuer` option to `gen-*` commands @c-geek
 
 ### Fixes
 
@@ -32,24 +32,25 @@
 
 ### Refactoring
 
-- Almost complete rewriting of the prover module @elois
-- #1372: `scryptb` removal @c-geek
+- Almost complete rewriting of the prover module @librelois
+- #1372: `scryptb` dependency removal @c-geek
 
 ### CI
 
-- Add dockerisation in Duniter CI @elois
-- g1 and gt control hash has changed to add `replayable_on` @c-geek
+- Generate Duniter container from the CI/CD @librelois
+- g1 and gt control hashes have changed to add `replayable_on` @c-geek
 
 ### Documentation
 
-- Import of [website documentation](https://duniter.org/en/wiki/duniter/) @elois
-- Restructuring the `doc/` directory @elois
-- Removal of obsolete documentation @elois
-- Document `network/ws2p/heads` @vtexier
+- Import of [website documentation](https://duniter.org/en/wiki/duniter/) @librelois
+- `doc/` directory restructuration @librelois
+- Obsolete documentation removal @librelois
+- Document `network/ws2p/heads` BMA path @vtexier
+- Document `wot/requirements-of-pending/<minsig>` BMA path @vtexier
 
 Thanks @librelois, @c-geek, @vtexier, @Moul
 
-## v1.7.21: (12th Fev 2020)
+## v1.7.21: (12th Feb 2020)
 
 - #1394: Former member back in the WoT with only 4 certifiers
 

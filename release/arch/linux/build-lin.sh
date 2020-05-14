@@ -34,7 +34,7 @@ create_desc() {
 # Parameters:
 # 1. Building directory.
 build_extra_desktop() {
-	cp -r "${ROOT}/release/extra/desktop/"* "${1}" || exit 1
+	mv "${RELEASES}/desktop_/extra/desktop/"* "${1}" || exit 1
 }
 
 # Server specific building phase.
@@ -43,9 +43,9 @@ build_extra_desktop() {
 # 1. Building directory.
 build_extra_server() {
 	mkdir -p "${1}/lib/systemd/system" || exit 1
-	cp "${ROOT}/release/extra/systemd/duniter.service" "${1}/lib/systemd/system" || exit 1
+	mv "${RELEASES}/server_/extra/systemd/duniter.service" "${1}/lib/systemd/system" || exit 1
 	mkdir -p "${1}/etc/bash_completion.d/" || exit 1
-	cp "${ROOT}/release/extra/completion/duniter_completion.bash" "${1}/etc/bash_completion.d/duniter_completion.bash" || exit 1
+	mv "${RELEASES}/server_/extra/completion/duniter_completion.bash" "${1}/etc/bash_completion.d/duniter_completion.bash" || exit 1
 }
 
 # Debian package building.
@@ -56,7 +56,7 @@ build_extra_server() {
 build_deb_pack() {
 	rm -rf "${RELEASES}/duniter-x64"
 	mkdir "${RELEASES}/duniter-x64" || exit 1
-	cp -r "${ROOT}/release/extra/debian/package/"* "${RELEASES}/duniter-x64" || exit 1
+	mv "${RELEASES}/${1}_/extra/debian/package/"* "${RELEASES}/duniter-x64" || exit 1
 	build_extra_${1} "${RELEASES}/duniter-x64"
 	mkdir -p "${RELEASES}/duniter-x64/opt/duniter/" || exit 1
 	chmod 755 "${RELEASES}/duniter-x64/DEBIAN/"post* || exit 1
@@ -64,6 +64,7 @@ build_deb_pack() {
 	sed -i "s/Version:.*/Version:${DUNITER_DEB_VER}/g" "${RELEASES}/duniter-x64/DEBIAN/control" || exit 1
 
 	cd "${RELEASES}/${1}_/"
+	rm -rf extra
 	zip -yqr "${RELEASES}/duniter-x64/opt/duniter/duniter.zip" * || exit 1
 
 	sed -i "s/Package: .*/Package: ${2}/g" "${RELEASES}/duniter-x64/DEBIAN/control" || exit 1

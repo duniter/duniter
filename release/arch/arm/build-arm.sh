@@ -72,14 +72,15 @@ cp -R "$DOWNLOADS/node-${NVER}-linux-${ARCH}" node
 cd ..
 
 # Creating DEB packaging
-cp -r "$DOWNLOADS"/duniter/release/extra/debian/package duniter-${ARCH}
+mv duniter/extra/debian/package duniter-${ARCH}
 mkdir -p duniter-${ARCH}/opt/duniter/
 mkdir -p duniter-${ARCH}/etc/bash_completion.d/
 chmod 755 duniter-${ARCH}/DEBIAN/post*
 chmod 755 duniter-${ARCH}/DEBIAN/pre*
 sed -i "s/Version:.*/Version:$DUNITER_DEB_VER/g" duniter-${ARCH}/DEBIAN/control
 echo "Extra..."
-cp "$DOWNLOADS"/duniter/release/extra/completion/duniter_completion.bash duniter-${ARCH}/etc/bash_completion.d/duniter_completion.bash
+mv duniter/extra/completion/duniter_completion.bash duniter-${ARCH}/etc/bash_completion.d/duniter_completion.bash
+rm -rf duniter/extra
 echo "Zipping..."
 cd duniter
 zip -qr ../duniter.zip *

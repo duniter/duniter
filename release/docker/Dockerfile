@@ -27,7 +27,8 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 RUN PATH=${HOME}/.cargo/bin:${PATH} \
 	RUSTFLAGS="-C target-feature=-crt-static" \
 	make -C release ADD_DEBUG=N server-gui clean \
-	&& mv release/docker/duniter.sh work/docker.sh
+	&& cp release/docker/duniter.sh work/docker.sh \
+	&& rm -rf work/extra
 
 # ------------------------------------------------------------------------------
 # Final Stage

@@ -119,6 +119,7 @@ ifneq ($(ADD_DEBUG),Y)
 	@find -name "*.d.ts" -delete -o -name "*.js.map" -delete
 endif
 	@rm -rf $(DEV_FILES)
+	@mv release/extra .
 	@rm -rf coverage coverage.* release test
 	@rm -rf target
 	@rm -rf neon/native/target

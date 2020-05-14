@@ -85,8 +85,8 @@ tests:
     - if: $CI_COMMIT_TAG
       when: never
     - if: $CI_MERGE_REQUEST_ID
-      when: manual
-    - when: on_success
+      when: on_success
+    - when: manual
   stage: tests
   script:
     - npm i

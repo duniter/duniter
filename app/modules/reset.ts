@@ -23,7 +23,7 @@ module.exports = {
   duniter: {
     cli: [
       {
-        name: "reset [config|data|peers|tx|stats|all]",
+        name: "reset [config|data|peers|stats|all]",
         desc:
           "Reset configuration, data, peers, transactions or everything in the database",
         preventIfRunning: true,

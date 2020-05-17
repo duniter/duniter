@@ -140,13 +140,13 @@ direct_webstart \
 
 DUNITER_WIZARD_ARGS="key network network-reconfigure currency pow parameters"
 
-DUNITER_RESET_ARGS="config data peers tx stats all"
+DUNITER_RESET_ARGS="config data peers stats all"
 
 DUNITER_WS2P_ARGS="list-prefered list-privileged list-nodes show-conf"
 
 DUNITER_REACHING_CLEAR_EP_ARGS="clear tor none"
 
-_duniter_completion() 
+_duniter_completion()
 {
     local cur prev base
     COMPREPLY=()
@@ -191,7 +191,7 @@ _duniter_completion()
      return
    fi
 
-   COMPREPLY=($(compgen -W "${DUNITER_ARGUMENTS}" -- ${cur}))  
+   COMPREPLY=($(compgen -W "${DUNITER_ARGUMENTS}" -- ${cur}))
    return 0
 }
 

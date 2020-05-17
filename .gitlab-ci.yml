@@ -8,8 +8,6 @@ stages:
 
 workflow:
   rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^wip*/i
-      when: never
     - changes:
       - .gitlab/**/*
       - app/**/*
@@ -82,6 +80,8 @@ workflow:
 tests:
   <<: *env
   rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
+      when: manual
     - if: $CI_COMMIT_TAG
       when: never
     - if: $CI_MERGE_REQUEST_ID

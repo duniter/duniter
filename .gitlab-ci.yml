@@ -31,10 +31,7 @@ workflow:
     - . "$NVM_DIR/nvm.sh"
     - nvm install 10
     - nvm use 10
-    - curl https://sh.rustup.rs -sSf | sh -s -- -y
-    - export PATH="$HOME/.cargo/bin:$PATH"
     - export RUSTFLAGS="-D warnings"
-    - rustup show && rustc --version && cargo --version
 
 
 .cached_nvm: &cached_nvm
@@ -109,6 +106,8 @@ fmt_and_clippy:
     - when: on_success
   stage: quality
   script:
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - export PATH="$HOME/.cargo/bin:$PATH"
     - cargo fmt -- --version
     - cargo fmt -- --check
     - cargo clippy -- -V

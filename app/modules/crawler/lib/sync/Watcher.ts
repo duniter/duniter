@@ -265,7 +265,13 @@ export class MultimeterWatcher implements Watcher {
     if (duration) {
       const durationSecs = Math.floor(duration / 1000);
       const durationMillisRemain = duration % 1000;
-      this.multi.write("\nAll done in " + durationSecs + "." + durationMillisRemain + " seconds.\n");
+      this.multi.write(
+        "\nAll done in " +
+          durationSecs +
+          "." +
+          durationMillisRemain +
+          " seconds.\n"
+      );
     } else {
       this.multi.write("\nAll done.\n");
     }

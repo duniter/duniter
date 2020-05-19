@@ -86,6 +86,7 @@ tests:
   stage: tests
   script:
     - npm i
+    - npm run format:check
     - npm test
     # Push coverage to GitLab pages
     - tar cvzf coverage.tar.gz coverage/

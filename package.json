@@ -36,8 +36,8 @@
     "install": "./neon/build.sh",
     "lint": "lint-staged",
     "prettier": "prettier --write app/**/*/*.ts",
-    "format:check": "prettier --list-different \"app/**/*.{ts,json}\"",
-    "format:all": "prettier --write \"app/**/*.{ts,json}\""
+    "format:check": "./format.sh check",
+    "format:all": "./format.sh all"
   },
   "nyc": {
     "require": [

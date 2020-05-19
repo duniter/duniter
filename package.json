@@ -28,16 +28,16 @@
     "tsc": "tsc",
     "tscw": "tsc -w",
     "doc": "typedoc --out typedoc/ index.ts app/ --mode file --readme README.md --includeDeclarations --sourcefile-url-prefix \"https://git.duniter.org/nodes/typescript/duniter/blob/loki/\"",
-    "test": "cargo test --all && nyc --reporter html mocha",
-    "test:rs": "cargo test --all",
-    "test:ts": "nyc --reporter html mocha",
+    "test": "./test/run.sh",
+    "test:rs": "./test/run.sh rs",
+    "test:ts": "./test/run.sh ts",
     "start": "node bin/duniter start",
     "build": "./neon/build.sh && cd.. && tsc && cd \"../node_modules/duniter-ui\" && npm install && npm run build",
     "install": "./neon/build.sh",
     "lint": "lint-staged",
     "prettier": "prettier --write app/**/*/*.ts",
-    "format:check": "prettier --list-different \"app/**/*.{ts,json}\"",
-    "format:all": "prettier --write \"app/**/*.{ts,json}\""
+    "format:check": "./format.sh check",
+    "format:all": "./format.sh all"
   },
   "nyc": {
     "require": [

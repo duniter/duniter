@@ -98,7 +98,7 @@ export class Server extends stream.Duplex implements HookableServer {
 
     this.home = home;
     this.conf = ConfDTO.mock()
-    this.version = jsonpckg.version;
+    this.version = jsonpckg.version.split("-")[0];
     this.logger = logger;
 
     this.paramsP = Directory.getHomeParams(memoryOnly, home)

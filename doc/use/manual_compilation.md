@@ -13,9 +13,9 @@ To compile Duniter manually, there is currently the following requirement:
 
 - A computer with GNU/Linux or Mac as operating system
 - Build essential tools
+- curl
 - tar or unzip or git (to download and extract source code)
 - Nvm
-- Rust
 - Yarn
 
 ### Get source code
@@ -61,15 +61,11 @@ Depend on your distribution:
 
 TODO: If you know how to install build essential tools for other gnu/linux distributions or for mac, you can complete this documentation and submit a merge request.
 
-#### Nvm and Rust
+#### Nvm
 
 Nvm:
 
     wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
-
-Rust:
-
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -- -y
 
 ## Build the project
 

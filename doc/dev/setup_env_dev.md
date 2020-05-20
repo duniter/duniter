@@ -13,25 +13,18 @@ To develop on Duniter, there is currently the following requirement:
 
 - A computer with GNU/Linux or Mac as operating system
 - Build essential tools
+- curl
 - git (apt-get install git)
 - Nvm
-- Rust
 - Yarn
 
 And preferably an IDE that supports [Typescript] and [Rust] well.
-
-[Rust]: https://www.rust-lang.org/
-[Typescript]: https://www.typescriptlang.org/
 
 ### Install Prerequisites
 
 Nvm:
 
     wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
-
-Rust:
-
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -- -y
 
 ## Build the project
 

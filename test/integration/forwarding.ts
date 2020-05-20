@@ -84,7 +84,7 @@ describe("Forwarding", function() {
         should.exists(summary.duniter.software);
         should.exists(summary.duniter.version);
         assert.equal(summary.duniter.software, "duniter");
-        assert.equal(summary.duniter.version, jspckg.version);
+        assert.equal(summary.duniter.version, jspckg.version.split("-")[0]);
       }))
 
       it('Node2 should be up and running', () => node2.expectThat('/node/summary', (summary:any) => {
@@ -93,7 +93,7 @@ describe("Forwarding", function() {
         should.exists(summary.duniter.software);
         should.exists(summary.duniter.version);
         assert.equal(summary.duniter.software, "duniter");
-        assert.equal(summary.duniter.version, jspckg.version);
+        assert.equal(summary.duniter.version, jspckg.version.split("-")[0]);
       }))
     });
 

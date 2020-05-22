@@ -7,7 +7,6 @@
 - Migrate to Nodejs v10
 - Oxidation (=Migration to Rust) beginning via Neon binding:
   - Migrate C/C++ modules: `wotb` and `naclb`
-  - Migrate Proof-of-Work cluster to Rust
 
 ### Security
 
@@ -15,7 +14,6 @@
 
 ### Features
 
-- Migrate PoW cluster to Rust @librelois
 - Migrate `naclb` to rust implementation `dup-crypto-rs` @librelois
 - Migrate `wotb` to rust implementation `dubp-wot` @librelois
 - #1373: Support for Nodejs v10 @c-geek @Moul
@@ -37,6 +35,7 @@
 
 ### CI
 
+- #1405: Add a Makefile to bare build Duniter  @sveyret.
 - Generate Duniter container from the CI/CD @librelois
 - g1 and gt control hashes have changed to add `replayable_on` @c-geek
 
@@ -48,7 +47,7 @@
 - Document `network/ws2p/heads` BMA path @vtexier
 - Document `wot/requirements-of-pending/<minsig>` BMA path @vtexier
 
-Thanks @librelois, @c-geek, @vtexier, @Moul
+Thanks @librelois, @c-geek, @sveyret, @Moul, @vtexier
 
 ## v1.7.21: (12th Feb 2020)
 

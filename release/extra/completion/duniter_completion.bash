@@ -45,9 +45,12 @@ webstart \
 webrestart \
 direct_webstart \
 -h \
+--help \
 -V \
+--version \
 --home \
 -d \
+--mdb \
 --autoconf \
 --addep \
 --remep \
@@ -55,6 +58,7 @@ direct_webstart \
 --nb-cores \
 --prefix \
 -c \
+--currency \
 --nostdout \
 --noshuffle \
 --nocheck-issuer \
@@ -107,6 +111,7 @@ direct_webstart \
 --bma-with-crawler \
 --bma-without-crawler \
 -p \
+--port \
 --ipv4 \
 --ipv6 \
 --remoteh \

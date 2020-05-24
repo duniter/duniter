@@ -48,6 +48,7 @@ module.exports = {
             if (!task) {
               throw "Unknown task";
             }
+            await task(conf, program);
             // Check config
             await server.checkConfig();
             await server.dal.saveConf(conf);

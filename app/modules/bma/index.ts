@@ -355,7 +355,11 @@ export function networkReconfiguration(
 ) {
   async.waterfall(
     [
-      upnpResolve.bind(null, noupnp, logger),
+      function (
+        next: (arg0: null, arg1: boolean, conf: NetworkConfDTO) => any
+      ) {
+        return upnpResolve(!conf.upnp, logger, next);
+      },
       function (upnpSuccess: boolean, upnpConf: NetworkConfDTO, next: any) {
         // Default values
         conf.port = conf.port || BMAConstants.DEFAULT_PORT;
@@ -470,20 +474,24 @@ export function networkReconfiguration(
 async function upnpResolve(
   noupnp: boolean,
   logger: any,
-  done: (arg0: null, arg1: boolean, conf: Object) => any
+  next: (arg0: null, arg1: boolean, conf: Object) => any
 ) {
   try {
     let conf = await Network.upnpConf(noupnp, logger);
-    done(null, true, conf);
+    next(null, true, conf);
   } catch (err) {
-    done(null, false, {});
+    next(null, false, {});
   }
 }
 
 function networkConfiguration(conf: NetworkConfDTO, logger: any, done: any) {
   async.waterfall(
     [
-      upnpResolve.bind(null, !conf.upnp, logger),
+      function (
+        next: (arg0: null, arg1: boolean, conf: NetworkConfDTO) => any
+      ) {
+        return upnpResolve(!conf.upnp, logger, next);
+      },
       function (upnpSuccess: boolean, upnpConf: NetworkConfDTO, next: any) {
         let operations = getLocalNetworkOperations(conf).concat(
           getRemoteNetworkOperations(conf, upnpConf.remoteipv4)
@@ -664,26 +672,18 @@ function getRemoteNetworkOperations(
           }
         });
     },
-    async function (answers: any, next: any) {
+    function (answers: any, next: any) {
       conf.remoteipv4 = answers.remoteipv4;
       try {
         if (conf.remoteipv4 || conf.remotehost) {
-          await new Promise((resolve, reject) => {
-            const getPort = async.apply(
-              simpleInteger,
-              "Remote port",
-              "remoteport",
-              conf
-            );
-            getPort((err: any) => {
-              if (err) return reject(err);
-              resolve();
-            });
+          simpleInteger("Remote port", "remoteport", conf, (err: any) => {
+            if (err) throw err;
+            next();
           });
         } else if (conf.remoteipv6) {
           conf.remoteport = conf.port;
+          next();
         }
-        next();
       } catch (e) {
         next(e);
       }

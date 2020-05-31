@@ -30,7 +30,7 @@ NW_VERSION = 0.33.1
 ADDON_VERSION = 64
 DUNITER_UI_VERSION = 1.7.x
 DEV_FILES = $(wildcard .eslint* .git* .npm* .prettierignore Cargo.* deny.toml gui license-header.txt npm* \
-	tsconfig* tslint* yarn*)
+	tsconfig* tslint*)
 
 # This may be overriden by caller
 ARCH = $(shell uname -m | sed -e "s/86_//")

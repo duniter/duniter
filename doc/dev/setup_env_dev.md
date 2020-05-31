@@ -16,7 +16,6 @@ To develop on Duniter, there is currently the following requirement:
 - curl
 - git (apt-get install git)
 - Nvm
-- Yarn
 
 And preferably an IDE that supports [Typescript] and [Rust] well.
 

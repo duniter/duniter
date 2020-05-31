@@ -16,7 +16,6 @@ To compile Duniter manually, there is currently the following requirement:
 - curl
 - tar or unzip or git (to download and extract source code)
 - Nvm
-- Yarn
 
 ### Get source code
 
@@ -79,7 +78,7 @@ If, for example, version 10 is expected, install and select it with the followin
 
     nvm install 10 && nvm use 10
 
-### Optionaly add GUI
+### Optionally add GUI
 
 The graphical user interface (GUI) is optional because it is possible to do everything from the command line.  
 If you wish to have the GUI, you must add it (before compiling) with the following command:

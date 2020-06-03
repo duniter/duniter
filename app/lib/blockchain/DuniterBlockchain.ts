@@ -329,7 +329,7 @@ export class DuniterBlockchain {
 
     // Save wot file
     if (!dal.fs.isMemoryOnly()) {
-      let wotbFilepath = await Directory.getWotbFilePath(dal.rootPath);
+      const wotbFilepath = Directory.getWotbFilePath(dal.rootPath);
       dal.wotb.writeInFile(wotbFilepath);
     }
 

@@ -500,19 +500,4 @@ const __OK__ = false;
                 assert.equal(wot.getSentries(FROM_3_LINKS_SENTRIES).length, 48);
             });
         }));
-
-        describe('tests cpp wot', newInstance((wot) => {
-
-          before(() => {
-              wot = WotBuilder.fromFile(CPP_FILE);
-          });
-
-          it('should have 100 max links', function() {
-            assert.equal(wot.getMaxCert(), 100)
-          });
-
-          it('should have 3394 nodes', function() {
-            assert.equal(wot.getWoTSize(), 3394)
-          });
-        }));
     });

@@ -105,7 +105,7 @@ export class GlobalIndexStream extends Duplex {
     this.wotbMem = dal.wotb;
 
     if (!this.memoryOnly) {
-      this.wotbFilePath = Directory.getWotbFilePathSync(dal.rootPath);
+      this.wotbFilePath = Directory.getWotbFilePath(dal.rootPath);
     }
 
     const nbBlocksToDownload = Math.max(0, to - localNumber);

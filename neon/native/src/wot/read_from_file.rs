@@ -13,12 +13,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use dubp_wot::data::{rusty::RustyWebOfTrust, WebOfTrust, WotId};
+use dubp_wot::data::rusty::RustyWebOfTrust;
 use flate2::read::ZlibDecoder;
 use std::convert::TryFrom;
 use std::fs::File;
 use std::io::prelude::*;
-use std::io::BufReader;
 use std::path::{Path, PathBuf};
 
 pub(crate) fn wot_from_file(file_path_str: String) -> Result<RustyWebOfTrust, String> {
@@ -32,21 +31,8 @@ pub(crate) fn wot_from_file(file_path_str: String) -> Result<RustyWebOfTrust, St
             Ok(bincode::deserialize::<RustyWebOfTrust>(&bytes).map_err(|e| format!("{}", e))?)
         }
     } else {
-        let bytes = read_bytes_from_file(file_path.as_path()).map_err(|e| format!("{}", e))?;
-        from_cpp_wot(&bytes)
+        Err("invalid wot file format.".to_owned())
     }
-}
-
-/// Read bytes from file
-fn read_bytes_from_file(file_path: &Path) -> Result<Vec<u8>, std::io::Error> {
-    let file = File::open(file_path)?;
-
-    let mut buf_reader = BufReader::new(file);
-
-    let mut decompressed_bytes = Vec::new();
-    buf_reader.read_to_end(&mut decompressed_bytes)?;
-
-    Ok(decompressed_bytes)
 }
 
 /// Read and decompress bytes from file
@@ -66,74 +52,5 @@ fn read_and_decompress_bytes_from_file(file_path: &Path) -> Result<Vec<u8>, std:
         Ok(decompressed_bytes)
     } else {
         Ok(vec![])
-    }
-}
-
-fn from_cpp_wot(bytes: &[u8]) -> Result<RustyWebOfTrust, String> {
-    if bytes.len() < 8 {
-        return Err("wot file is corrupted".to_owned());
-    }
-
-    let mut buffer = [0u8; 4];
-    let mut cursor = 0;
-
-    // Read max_links and create empty wot
-    buffer.copy_from_slice(&bytes[cursor..cursor + 4]);
-    cursor += 4;
-    let max_links = u32::from_le_bytes(buffer);
-    let mut wot = RustyWebOfTrust::new(max_links as usize);
-
-    // Read nodes count
-    buffer.copy_from_slice(&bytes[cursor..cursor + 4]);
-    cursor += 4;
-    let nodes_count = u32::from_le_bytes(buffer);
-
-    for _ in 0..nodes_count {
-        let wot_id = wot.add_node();
-
-        // Read enabled
-        let enabled = bytes[cursor];
-        cursor += 1;
-        if enabled == 0 {
-            wot.set_enabled(wot_id, false);
-        }
-
-        // Read certs_count
-        buffer.copy_from_slice(&bytes[cursor..cursor + 4]);
-        cursor += 4;
-        let certs_count = u32::from_le_bytes(buffer);
-
-        // Read certs
-        for _ in 0..certs_count {
-            buffer.copy_from_slice(&bytes[cursor..cursor + 4]);
-            cursor += 4;
-            let cert_source = WotId(u32::from_le_bytes(buffer) as usize);
-            wot.add_link(cert_source, wot_id);
-        }
-    }
-
-    Ok(wot)
-}
-
-#[cfg(test)]
-mod tests {
-
-    use super::*;
-    use dubp_wot::data::HasLinkResult;
-
-    #[test]
-    fn test_from_cpp_wot() -> Result<(), std::io::Error> {
-        let bytes = read_bytes_from_file(PathBuf::from("tests/wotb.bin").as_path())?;
-
-        let wot = from_cpp_wot(&bytes).expect("fail to read cpp wot");
-
-        assert_eq!(wot.get_max_link(), 100);
-        assert_eq!(wot.size(), 3394);
-        assert_eq!(
-            wot.has_link(WotId(33), WotId(35)),
-            HasLinkResult::Link(true),
-        );
-
-        Ok(())
     }
 }

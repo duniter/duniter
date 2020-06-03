@@ -19,8 +19,6 @@ import { Wot, WotBuilder } from "../../../neon/lib";
 import { FileDALParams } from "../dal/fileDAL";
 import { cliprogram } from "../common-libs/programOptions";
 import { LevelDBDriver } from "../dal/drivers/LevelDBDriver";
-import { LevelUp } from "levelup";
-import { AbstractLevelDOWN } from "abstract-leveldown";
 
 const opts = cliprogram;
 const qfs = require("q-io/fs");
@@ -196,22 +194,15 @@ export const Directory = {
     return params;
   },
 
-  getWotbFilePathSync: (home: string): string => {
+  getWotbFilePath: (home: string): string => {
     let datas_dir = path.join(home, Directory.DATA_DIR);
-    let wotbFilePath = path.join(datas_dir, Directory.NEW_WOTB_FILE);
-    let existsFile = fs.existsSync(wotbFilePath);
+    const wotbFilePath = path.join(datas_dir, Directory.NEW_WOTB_FILE);
+    const existsFile = fs.existsSync(wotbFilePath);
     if (!existsFile) {
-      wotbFilePath = path.join(home, Directory.OLD_WOTB_FILE);
-    }
-    return wotbFilePath;
-  },
-
-  getWotbFilePath: async (home: string): Promise<string> => {
-    let datas_dir = path.join(home, Directory.DATA_DIR);
-    let wotbFilePath = path.join(datas_dir, Directory.NEW_WOTB_FILE);
-    let existsFile = qfs.exists(wotbFilePath);
-    if (!existsFile) {
-      wotbFilePath = path.join(home, Directory.OLD_WOTB_FILE);
+      const oldWotbFilePath = path.join(home, Directory.OLD_WOTB_FILE);
+      if (fs.existsSync(oldWotbFilePath)) {
+        throw "This upgrade requires resetting the data and resynchronization (duniter reset data && duniter sync).";
+      }
     }
     return wotbFilePath;
   },
@@ -233,8 +224,13 @@ export const Directory = {
       // File DB
       const sqlitePath = path.join(home, Directory.DUNITER_DB_NAME + ".db");
       dbf = () => new SQLiteDriver(sqlitePath);
-      let wotbFilePath = await Directory.getWotbFilePath(home);
-      wotbf = () => WotBuilder.fromFile(wotbFilePath);
+      try {
+        const wotbFilePath = Directory.getWotbFilePath(home);
+        wotbf = () => WotBuilder.fromFile(wotbFilePath);
+      } catch (e) {
+        console.log(e);
+        throw e;
+      }
     }
     return {
       home: params.home,

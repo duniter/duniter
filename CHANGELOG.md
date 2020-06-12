@@ -1,6 +1,8 @@
 # CHANGELOG
 
-## v1.8.0 (XX XXXX 2020)
+## v1.9.0 (XX XXXX 2020)
+
+## v1.8.0: (12th March 2020)
 
 ### Highlights
 

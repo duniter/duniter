@@ -1,9 +1,9 @@
 #!/bin/sh
 
 if [ -z "${DUNITER_FAST_BUILD}" ]; then
-    if [ -e "${HOME}/.cargo/bin/rustup" ]; then
+    if [ "$(command -v rustup)" ]; then
         rustup update stable
-    else
+    elif [ ! "$(command -v cargo)" ]; then
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
         export PATH="$HOME/.cargo/bin:$PATH"
     fi

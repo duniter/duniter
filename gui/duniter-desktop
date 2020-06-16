@@ -11,5 +11,35 @@ cd "$(dirname "${DUNITER_DIRECTORY}")" >/dev/null
 DUNITER_DIRECTORY="${PWD}";
 popd >/dev/null
 
-# Execute NW
-"${DUNITER_DIRECTORY}"/node_modules/.bin/nw "${DUNITER_DIRECTORY}"
+duniter_desktop() {
+
+	local NODE
+
+	if [ -z "$DEV_MODE" ]; then
+
+		### Production mode
+		if [[ -e $DUNITER_DIRECTORY/bin/node ]]; then
+			NODE=$DUNITER_DIRECTORY/bin/node
+	    else
+	        echo "Node.js is not embedded in this version of Duniter"
+	        return
+		fi;
+	else
+
+		### Cheating with DEV mode
+		DUNITER_DIR=`pwd`
+		NODE=node
+	fi
+
+	VERSION=`$NODE -v`
+
+	if [[ $VERSION != v10* ]]; then
+	    echo "$NODE v10 is required";
+	else
+
+	    # Execute NW
+        $NODE "${DUNITER_DIRECTORY}"/node_modules/.bin/nw "${DUNITER_DIRECTORY}"
+	fi;
+}
+
+duniter_desktop

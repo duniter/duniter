@@ -7,7 +7,20 @@ Date: 2020-05-04
 Slug: setup_env_dev
 Authors: elois
 
-## Prerequisites
+## In a post-it
+
+```bash
+nvm use 10
+git clone git@git.duniter.org:nodes/typescript/duniter.git
+cd duniter
+npm install
+bin/duniter start
+```
+
+
+## Step by step
+
+### Prerequisites
 
 To develop on Duniter, there is currently the following requirement:
 
@@ -19,19 +32,19 @@ To develop on Duniter, there is currently the following requirement:
 
 And preferably an IDE that supports [Typescript] and [Rust] well.
 
-### Install Prerequisites
+#### Install Prerequisites
 
 Nvm:
 
     wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
 
-## Build the project
+### Build the project
 
-### Clone de repository
+#### Clone de repository
 
     git clone https://git.duniter.org/nodes/typescript/duniter
 
-### Install and use the correct version of nodejs
+#### Install and use the correct version of nodejs
 
 Check the required node version in the `package.json` file on line 5.
 
@@ -39,7 +52,7 @@ If, for example, version 10 is expected, install and select it with the followin
 
     nvm install 10 && nvm use 10
 
-### Build the project and play automated tests
+#### Build the project and play automated tests
 
 **WARNING**: the 1st compilation of the project requires a lot of resources on your machine, and several long minutes, don't do anything else at the same time!
 
@@ -62,11 +75,11 @@ If all the tests are successful, the command ends like this:
     Done in 43.80s.
     ```
 
-## Configure your IDE
+### Configure your IDE
 
 Personally, I use VsCodium/VsCode, so I give the configuration for this IDE.
 
-### Configure VsCodium/VsCode
+#### Configure VsCodium/VsCode
 
 VsCodium/VsCode natively contains everything you need for Typescript.  
 For the Rust part, I strongly recommend the following plugins:
@@ -77,7 +90,7 @@ For the Rust part, I strongly recommend the following plugins:
 
 The recommended ide configuration can be found in `doc/dev/vscode/settings.json`.
 
-#### Debugger configuration
+##### Debugger configuration
 
 The recommended debugger configuration can be found in `doc/dev/.vscode/launch.json`.  
 For import it:

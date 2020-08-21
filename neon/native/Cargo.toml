@@ -19,5 +19,5 @@ bincode = "1.2.1"
 bs58 = "0.3.0"
 dup-crypto = { version = "0.17", default-features = false, features = ["rand", "scrypt"] }
 dubp-wot = "0.11.0"
-flate2 = "1.0.14"
+flate2 = "1.0.16"
 neon = "0.4.0"

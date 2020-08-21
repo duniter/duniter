@@ -14,16 +14,16 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::into_neon_res;
-use dup_crypto::bases::b58::ToBase58;
-use dup_crypto::hashs::Hash;
-use dup_crypto::keys::{
+use dubp_common::crypto::bases::b58::ToBase58;
+use dubp_common::crypto::hashs::Hash;
+use dubp_common::crypto::keys::{
     ed25519::{
         Ed25519KeyPair, KeyPairFromSeed32Generator, PublicKey as Ed25519PublicKey,
         Signator as Ed25519Signator, Signature as Ed25519Signature,
     },
     KeyPair, PublicKey, Signator, Signature,
 };
-use dup_crypto::seeds::Seed32;
+use dubp_common::crypto::seeds::Seed32;
 use neon::declare_types;
 use neon::prelude::*;
 use std::ops::Deref;

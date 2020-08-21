@@ -1,2 +1,5 @@
 [workspace]
 members = ["neon/native"]
+
+[patch.crates-io]
+#dubp-common = { path = "../dubp-rs-libs/common" }

@@ -131,9 +131,9 @@ checksum = "697c714f50560202b1f4e2e09cd50a421881c83e9025db75d15f276616f04f40"
 
 [[package]]
 name = "dubp-common"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aef0856c14d0ebd70bd577f3a85ab0bb08be080ee646a4c43d3e9c332bef9cac"
+checksum = "8168403fac19c00a9556b84f5b22462fdc7ebf982f6d51a5844b5b5656e67343"
 dependencies = [
  "dup-crypto",
  "serde",
@@ -143,9 +143,9 @@ dependencies = [
 [[package]]
 name = "dubp-wot"
 version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0f76dd4b734d34be5613c470402ccdb21cb21b84ecd75acdc81cf80c618201a"
 dependencies = [
+ "bincode",
+ "dubp-common",
  "log",
  "rayon",
  "serde",

@@ -19,6 +19,6 @@ serde = { version = "1.0.105", features = ["derive"] }
 
 [dev-dependencies]
 bincode = "1.2.0"
-dubp-common = { version = "0.1.2", features = ["rand", "scrypt"] }
+dubp-common = { version = "0.2.0", features = ["rand", "scrypt"] }
 
 [features]

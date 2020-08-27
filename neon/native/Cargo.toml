@@ -17,7 +17,7 @@ neon-build = "0.4.0"
 [dependencies]
 bincode = "1.2.1"
 bs58 = "0.3.0"
-dubp-common = { version = "0.1.2", features = ["rand", "scrypt"] }
+dubp-common = { version = "0.2.0", features = ["rand", "scrypt"] }
 dubp-wot = { path = "../../rust-libs/dubp-wot" }
 flate2 = "1.0.16"
 neon = "0.4.0"

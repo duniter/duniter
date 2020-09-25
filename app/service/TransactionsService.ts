@@ -38,8 +38,8 @@ export class TransactionService extends FIFOService {
     this.logger = require("../lib/logger").NewLogger(this.dal.profile);
   }
 
-  processTx(txObj: any) {
-    const tx = TransactionDTO.fromJSONObject(txObj, this.conf.currency);
+  // Called only when receiving a doc tx via BMA or WS2P
+  processVerifiedTx(tx: TransactionDTO) {
     const hash = tx.getHash();
     return this.pushFIFO<TransactionDTO>(hash, async () => {
       try {
@@ -62,7 +62,6 @@ export class TransactionService extends FIFOService {
         // Start checks...
         const fakeTimeVariation = current.medianTime + 1;
         const dto = TransactionDTO.fromJSONObject(tx);
-        await LOCAL_RULES_HELPERS.checkSingleTransactionLocally(dto, this.conf);
         await GLOBAL_RULES_HELPERS.checkTxBlockStamp(tx, this.dal);
         await GLOBAL_RULES_HELPERS.checkSingleTransaction(
           dto,

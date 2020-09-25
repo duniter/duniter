@@ -14,6 +14,7 @@
 import { hashf } from "../common";
 import { Cloneable } from "./Cloneable";
 import { verify } from "../../../neon/lib";
+import { TransactionDTOV10 } from "../../../neon/native";
 
 export interface BaseDTO {
   base: number;
@@ -252,7 +253,7 @@ export class TransactionDTO implements Cloneable {
     };
   }
 
-  getTransactionSigResult(dubp_version: number) {
+  getTransactionSigResult() {
     const sigResult = new TxSignatureResultImpl(this.issuers.slice());
     let i = 0;
     const raw = this.getRawTxNoSig();
@@ -260,20 +261,15 @@ export class TransactionDTO implements Cloneable {
     while (matching && i < this.signatures.length) {
       const sig = this.signatures[i];
       const pub = this.issuers[i];
-      if (dubp_version >= 12) {
-        sigResult.sigs[i].ok = verify(raw, sig, pub);
-      } else {
-        // TODO ESZ list all invalid transactions
-        sigResult.sigs[i].ok = verify(raw, sig, pub);
-      }
+      sigResult.sigs[i].ok = verify(raw, sig, pub);
       matching = sigResult.sigs[i].ok;
       i++;
     }
     return sigResult;
   }
 
-  checkSignatures(dubp_version: number) {
-    return this.getTransactionSigResult(dubp_version).allMatching;
+  checkSignatures() {
+    return this.getTransactionSigResult().allMatching;
   }
 
   static fromJSONObject(obj: any, currency: string = "") {
@@ -290,6 +286,23 @@ export class TransactionDTO implements Cloneable {
       obj.unlocks || [],
       obj.signatures || [],
       obj.comment || ""
+    );
+  }
+
+  static fromTransactionDTOV10(txV10: TransactionDTOV10) {
+    return new TransactionDTO(
+      10,
+      txV10.currency || "",
+      txV10.locktime || 0,
+      txV10.hash || "",
+      txV10.blockstamp || "",
+      txV10.blockstampTime || 0,
+      txV10.issuers || [],
+      txV10.inputs || [],
+      txV10.outputs || [],
+      txV10.unlocks || [],
+      txV10.signatures || [],
+      txV10.comment || ""
     );
   }
 

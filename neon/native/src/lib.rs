@@ -13,7 +13,20 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#![deny(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    missing_debug_implementations,
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unstable_features,
+    unused_import_braces
+)]
+
 mod crypto;
+mod transaction;
 mod wot;
 
 use neon::{prelude::*, register_module};
@@ -37,6 +50,19 @@ register_module!(mut cx, {
     cx.export_function("sha256", crate::crypto::sha256)?;
     cx.export_function("verify", crate::crypto::verify)?;
     cx.export_class::<crate::crypto::JsKeyPair>("Ed25519Signator")?;
+    cx.export_function(
+        "rawTxParseAndVerify",
+        crate::transaction::raw_tx_parse_and_verify,
+    )?;
+    cx.export_function(
+        "sourceIsUnlockable",
+        crate::transaction::source_is_unlockable,
+    )?;
+    cx.export_function(
+        "txsInputsAreUnlockable",
+        crate::transaction::txs_inputs_are_unlockable,
+    )?;
+    cx.export_function("txVerify", crate::transaction::tx_verify)?;
     cx.export_class::<crate::wot::JsWoT>("Wot")?;
     Ok(())
 });

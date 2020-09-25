@@ -45,6 +45,7 @@ import {LevelUp} from "levelup";
 import {BMAConstants} from "./app/modules/bma/lib/constants"
 import {HttpMilestonePage} from "./app/modules/bma/lib/dtos"
 import * as toJson from "./app/modules/bma/lib/tojson"
+import { rawTxParseAndVerify, txVerify } from "./neon/lib"
 
 export interface HookableServer {
   generatorGetJoinData: (...args:any[]) => Promise<any>
@@ -309,12 +310,22 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async writeRawTransaction(raw:string): Promise<TransactionDTO> {
-    const obj = parsers.parseTransaction.syncWrite(raw)
-    return await this.writeTransaction(obj)
+    let tx = rawTxParseAndVerify(raw, this.conf.currency)
+    return await this.writeVerifiedTransaction(TransactionDTO.fromTransactionDTOV10(tx))
   }
 
-  async writeTransaction(obj:any, notify = true) {
-    const res = await this.TransactionsService.processTx(obj)
+  async writeTransaction(txObj:any, notify = true) {
+    const tx = TransactionDTO.fromJSONObject(txObj, this.conf.currency);
+    try {
+      txVerify(tx);
+      return await this.writeVerifiedTransaction(tx)
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  async writeVerifiedTransaction(verifiedTx: TransactionDTO, notify = true) {
+    const res = await this.TransactionsService.processVerifiedTx(verifiedTx);
     if (notify) {
       this.emitDocument(res, DuniterDocument.ENTITY_TRANSACTION)
     }

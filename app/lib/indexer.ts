@@ -18,7 +18,7 @@ import { RevocationDTO } from "./dto/RevocationDTO";
 import { CertificationDTO } from "./dto/CertificationDTO";
 import { TransactionDTO } from "./dto/TransactionDTO";
 import { DBHead } from "./db/DBHead";
-import { verify } from "../../neon/lib";
+import { sourceIsUnlockable, verify } from "../../neon/lib";
 import { rawer, txunlock } from "./common-libs/index";
 import { CommonConstants } from "./common-libs/constants";
 import { MembershipDTO } from "./dto/MembershipDTO";
@@ -2634,22 +2634,38 @@ function txSourceUnlock(
   source: { conditions: string; written_time: number },
   HEAD: DBHead
 ) {
-  const tx = ENTRY.txObj;
-  const unlockParams: string[] = TransactionDTO.unlock2params(
-    ENTRY.unlock || ""
-  );
-  const unlocksMetadata: UnlockMetadata = {};
-  const sigResult = TransactionDTO.fromJSONObject(tx).getTransactionSigResult(
-    HEAD.version
-  );
   if (!source.conditions) {
     return false; // Unlock fail
   }
-  if (source.conditions.match(/CLTV/)) {
-    unlocksMetadata.currentTime = HEAD.medianTime;
+  const tx = ENTRY.txObj;
+  if (HEAD.version >= 13) {
+    // Vérifier si les proofs d'une source (en input d'une tx) sont valides ou non
+    return sourceIsUnlockable(
+      HEAD.medianTime,
+      tx.issuers,
+      ENTRY.unlock || "",
+      source.written_time,
+      source.conditions
+    );
+  } else {
+    const unlockParams: string[] = TransactionDTO.unlock2params(
+      ENTRY.unlock || ""
+    );
+    const unlocksMetadata: UnlockMetadata = {};
+    const sigResult = TransactionDTO.fromJSONObject(
+      tx
+    ).getTransactionSigResult();
+    if (source.conditions.match(/CLTV/)) {
+      unlocksMetadata.currentTime = HEAD.medianTime;
+    }
+    if (source.conditions.match(/CSV/)) {
+      unlocksMetadata.elapsedTime = HEAD.medianTime - source.written_time;
+    }
+    return txunlock(
+      source.conditions,
+      unlockParams,
+      sigResult,
+      unlocksMetadata
+    );
   }
-  if (source.conditions.match(/CSV/)) {
-    unlocksMetadata.elapsedTime = HEAD.medianTime - source.written_time;
-  }
-  return txunlock(source.conditions, unlockParams, sigResult, unlocksMetadata);
 }

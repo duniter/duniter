@@ -104,14 +104,12 @@ BIN="${WORK}/bin"
 mkdir -p "${DOWNLOADS}" "${RELEASES}" "${BIN}" || exit 1
 rm -rf "${BIN}/"*.{deb,tar.gz}{,.desc} # Clean up
 
-# -----------
-# Downloads
-# -----------
+# ------------
+# Get Node.js
+# ------------
 
 cd "${DOWNLOADS}"
-curl -O http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz || exit 1
-tar xzf node-${NVER}-linux-x64.tar.gz || exit 1
-rm node-${NVER}-linux-x64.tar.gz
+cp -r ~/.nvm/versions/node/${NVER}/ node-${NVER}-linux-x64
 
 # -----------
 # Releases

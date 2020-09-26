@@ -79,7 +79,7 @@ build_deb_pack() {
 # Install tools needed to build
 # -----------------------------
 
-NODE_VERSION=10.20.1
+NODE_VERSION=10.22.1
 NVER="v${NODE_VERSION}"
 DUNITER_TAG="v${1}"
 DUNITER_DEB_VER=" ${1}"

@@ -36,8 +36,8 @@
     "install": "./neon/build.sh",
     "lint": "lint-staged",
     "prettier": "prettier --write app/**/*/*.ts",
-    "format:check": "./format.sh check",
-    "format:all": "./format.sh all"
+    "format:check": "prettier --list-different 'app/**/*.{ts,json}'",
+    "format:all": "prettier --write 'app/**/*.{ts,json}'"
   },
   "nyc": {
     "require": [
@@ -124,7 +124,6 @@
     "coveralls": "3.0.11",
     "eslint": "6.8.0",
     "eslint-plugin-mocha": "6.3.0",
-    "husky": ">=4",
     "lint-staged": ">=10",
     "mocha": "3.4.2",
     "mocha-eslint": "0.1.7",
@@ -140,11 +139,6 @@
   "peerDependencies": {},
   "bin": {
     "duniter": "./bin/duniter"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "cargo fmt -- --check && lint-staged"
-    }
   },
   "lint-staged": {
     "app/**/*.{js,jsx,ts,tsx,md,html,css,scss}": [

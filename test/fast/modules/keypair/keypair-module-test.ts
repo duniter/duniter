@@ -18,19 +18,6 @@ const should = require('should');
 
 describe('Module usage', () => {
 
-  it('wrong options should throw', async () => {
-    let errMessage;
-    try {
-      const stack = Statics.minimalStack();
-      stack.registerDependency(KeypairDependency, 'duniter-keypair');
-      await stack.executeStack(['node', 'index.js', 'config', '--memory', '--keyN', '2048']);
-    } catch (e) {
-      errMessage = e.message;
-    }
-    should.exist(errMessage);
-    should.equal(errMessage, 'Missing --salt and --passwd options along with --keyN|keyr|keyp option');
-  })
-
   it('no options on brand new node should generate random key', async () => {
     const stack = Statics.minimalStack();
     stack.registerDependency(KeypairDependency, 'duniter-keypair');

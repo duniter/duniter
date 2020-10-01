@@ -13,7 +13,6 @@ fi
 # Duniter-Desktop
 if [[ -f $DUN_SOURCES/duniter-desktop ]]; then
   ln -s $DUN_SOURCES/duniter-desktop /usr/bin/duniter-desktop
-  sed -i "s/DEB_PACKAGING=.*/DEB_PACKAGING=true/g" $DUN_SOURCES/duniter.sh
   # Links for Node + NPM
   cd $DUN_SOURCES
   cd bin
@@ -26,9 +25,10 @@ fi
 # Duniter CLI executes with embedded node
 if [[ -d $DUN_SOURCES/node ]]; then
   chmod 755 $DUN_SOURCES/bin/duniter
-  sed -i "s/usr\/bin\/env node/opt\/duniter\/node\/bin\/node/g" $DUN_SOURCES/bin/duniter
-  sed -i "s/DEB_PACKAGING=.*/DEB_PACKAGING=true/g" $DUN_SOURCES/duniter.sh
-  ln -s $DUN_SOURCES/duniter.sh /usr/bin/duniter -f
+  chmod 755 $DUN_SOURCES/bin/duniter_js
+  sed -i "s/usr\/bin\/env node/opt\/duniter\/node\/bin\/node/g" $DUN_SOURCES/bin/duniter_js
+  ln -s $DUN_SOURCES/bin/duniter /usr/bin/duniter -f
+  ln -s $DUN_SOURCES/bin/duniter_js /usr/bin/duniter_js -f
   cd $DUN_SOURCES
   cd node/bin/
   ln -s ../lib/node_modules/npm/bin/npm-cli.js ./npm -f

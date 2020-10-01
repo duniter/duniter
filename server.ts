@@ -585,7 +585,7 @@ export class Server extends stream.Duplex implements HookableServer {
    * the script arguments.
    *
    *   Ex:
-   *     * process.argv: ['/usr/bin/node', '/opt/duniter/sources/bin/duniter', 'restart', '--mdb', 'g1']
+   *     * process.argv: ['/usr/bin/node', '/opt/duniter/sources/bin/duniter_js', 'restart', '--mdb', 'g1']
    *
    *     Then `getCommand('direct_start', 'restart') will return:
    *
@@ -593,7 +593,7 @@ export class Server extends stream.Duplex implements HookableServer {
    *
    *     This new array is what will be given to a *fork* of current script, resulting in a new process with:
    *
-   *     * process.argv: ['/usr/bin/node', '/opt/duniter/sources/bin/duniter', 'direct_start', '--mdb', 'g1']
+   *     * process.argv: ['/usr/bin/node', '/opt/duniter/sources/bin/duniter_js', 'direct_start', '--mdb', 'g1']
    *
    * @param cmd
    * @param insteadOfCmd

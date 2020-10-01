@@ -11,7 +11,7 @@ workflow:
     - changes:
       - .gitlab/**/*
       - app/**/*
-      - bin/duniter
+      - bin/duniter_js
       - neon/**/*
       - releases/**/*
       - rust-libs/**/*
@@ -27,11 +27,13 @@ workflow:
   tags:
     - redshift
   before_script:
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - export PATH="$HOME/.cargo/bin:$PATH"
+    - export RUSTFLAGS="-D warnings"
     - export NVM_DIR="$HOME/.nvm"
     - . "$NVM_DIR/nvm.sh"
     - nvm install 10
     - nvm use 10
-    - export RUSTFLAGS="-D warnings"
 
 
 .cached_nvm: &cached_nvm

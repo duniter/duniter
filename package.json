@@ -10,7 +10,7 @@
   "private": false,
   "description": "Crypto-currency software allowing to build P2P free currencies",
   "main": "index.js",
-  "node-main": "./bin/duniter",
+  "node-main": "./bin/duniter_js",
   "window": {
     "icon": "duniter.png",
     "title": "v1.8.1",
@@ -28,10 +28,8 @@
     "tsc": "tsc",
     "tscw": "tsc -w",
     "doc": "typedoc --out typedoc/ index.ts app/ --mode file --readme README.md --includeDeclarations --sourcefile-url-prefix \"https://git.duniter.org/nodes/typescript/duniter/blob/loki/\"",
-    "test": "./test/run.sh",
-    "test:rs": "./test/run.sh rs",
-    "test:ts": "./test/run.sh ts",
-    "start": "node bin/duniter start",
+    "test": "nyc --reporter html mocha",
+    "start": "cargo run -- start",
     "build": "./neon/build.sh && cd.. && tsc && cd \"../node_modules/duniter-ui\" && npm install && npm run build",
     "install": "./neon/build.sh",
     "lint": "lint-staged",
@@ -138,7 +136,7 @@
   },
   "peerDependencies": {},
   "bin": {
-    "duniter": "./bin/duniter"
+    "duniter": "./bin/duniter_js"
   },
   "lint-staged": {
     "app/**/*.{js,jsx,ts,tsx,md,html,css,scss}": [

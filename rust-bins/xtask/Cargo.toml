@@ -1,0 +1,17 @@
+[package]
+authors = ["elois <elois@duniter.org>"]
+description = "Duniter xtask."
+edition = "2018"
+license = "AGPL-3.0"
+name = "xtask"
+repository = "https://git.duniter.org/nodes/typescript/duniter"
+version = "0.1.0"
+
+[[bin]]
+bench = false
+path = "src/main.rs"
+name = "xtask"
+
+[dependencies]
+structopt = "0.3.18"
+version_check = "0.9.2"

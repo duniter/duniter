@@ -13,9 +13,9 @@ Environment="DUNITER_OPTS="
 Group=duniter
 User=duniter
 Type=forking
-ExecStart=/usr/bin/duniter ${DUNITER_WEB}start --home ${DUNITER_HOME} --mdb ${DUNITER_DATA} $DUNITER_OPTS
-ExecReload=/usr/bin/duniter ${DUNITER_WEB}restart --home ${DUNITER_HOME} --mdb ${DUNITER_DATA} $DUNITER_OPTS
-ExecStop=/usr/bin/duniter stop --home ${DUNITER_HOME} --mdb ${DUNITER_DATA}
+ExecStart=/usr/bin/duniter --home ${DUNITER_HOME} --mdb ${DUNITER_DATA} ${DUNITER_WEB}start $DUNITER_OPTS
+ExecReload=/usr/bin/duniter --home ${DUNITER_HOME} --mdb ${DUNITER_DATA} ${DUNITER_WEB}restart $DUNITER_OPTS
+ExecStop=/usr/bin/duniter --home ${DUNITER_HOME} --mdb ${DUNITER_DATA} stop
 Restart=on-failure
 
 [Install]

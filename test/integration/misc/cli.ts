@@ -131,23 +131,6 @@ describe("CLI", function() {
     res[res.length - 1].should.have.property('number').equal(7);
     res.should.have.length(7 + 1); // blocks #0..#7
   })
-
-  // it('sync 4 blocks (cautious)', async () => {
-  //   await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '--nointeractive', '11']);
-  //   const res = await execute(['export-bc', '--nostdout']);
-  //   res[res.length - 1].should.have.property('number').equal(11);
-  //   res.should.have.length(11 + 1);
-  // })
-  //
-  // it('[spawn] reset data', async () => {
-  //   await executeSpawn(['reset', 'data']);
-  //   const res = await executeSpawn(['export-bc']);
-  //   JSON.parse(res).should.have.length(0);
-  // })
-  //
-  // it('[spawn] sync 10 first blocks --memory', async () => {
-  //   await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '--memory', '--cautious', '--nointeractive', '10']);
-  // })
 });
 
 /**
@@ -160,24 +143,4 @@ async function execute(args:(string)[]) {
   const stack = Statics.autoStack();
   // Executes the command
   return stack.executeStack(finalArgs);
-}
-
-/**
- * Executes a duniter command, as a command line utility.
- * @param command Array of arguments.
- * @returns {*|Promise} Returns the command output.
- */
-async function executeSpawn(command:string[]): Promise<string> {
-  const finalArgs = [path.join(__dirname, '../../../bin/duniter')].concat(command).concat(['--mdb', DB_NAME]);
-  const duniterCmd = spawn(process.argv[0], finalArgs);
-  return new Promise<string>((resolve, reject) => {
-    let res = "";
-    duniterCmd.stdout.on('data', (data:any) => {
-      res += data.toString('utf8').replace(/\n/, '');
-    });
-    duniterCmd.stderr.on('data', (err:any) => {
-      console.log(err.toString('utf8').replace(/\n/, ''));
-    });
-    duniterCmd.on('close', (code:any) => code ? reject(code) : resolve(res) );
-  });
 }

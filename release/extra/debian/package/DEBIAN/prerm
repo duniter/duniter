@@ -1,5 +1,6 @@
 #!/bin/bash
 
 [[ -f /usr/bin/duniter ]] && rm /usr/bin/duniter
+[[ -f /usr/bin/duniter_js ]] && rm /usr/bin/duniter_js
 [[ -f /usr/bin/duniter-desktop ]] && rm -f /usr/bin/duniter-desktop
 [[ -d /opt/duniter ]] && rm -Rf /opt/duniter

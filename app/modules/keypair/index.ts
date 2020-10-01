@@ -202,6 +202,12 @@ async function promptKey(conf: KeypairConfDTO, program: any) {
       obfuscatedPasswd.length > 0 && obfuscatedPasswd == answersPasswd.passwd;
     const salt = keepOldSalt ? program.salt : answersSalt.salt;
     const passwd = keepOldPasswd ? program.passwd : answersPasswd.passwd;
-    conf.pair = await Scrypt(salt, passwd);
+    conf.pair = await Scrypt(
+      salt,
+      passwd,
+      program.keyN || 4096,
+      program.keyr || 16,
+      program.keyp || 1
+    );
   }
 }

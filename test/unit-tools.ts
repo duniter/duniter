@@ -31,9 +31,9 @@ export async function shouldNotFail<T>(promise:Promise<T>) {
     await promise
   } catch(e) {
     let err = e;
-    if (typeof e === 'string') {
+    /*if (typeof e === 'string') {
       err = JSON.parse((e as any).message)
-    }
+    }*/
     should.not.exist(err);
   }
 }

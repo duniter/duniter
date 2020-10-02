@@ -522,7 +522,7 @@ export const LOCAL_RULES_FUNCTIONS = {
     const txs = block.transactions;
     // Check rule against each transaction
     for (const tx of txs) {
-      if (!tx.checkSignatures(block.version)) {
+      if (!tx.checkSignatures()) {
         throw Error("Signature from a transaction must match");
       }
     }
@@ -625,6 +625,7 @@ function checkBunchOfTransactions(
     medianTime,
   };
   const index = Indexer.localIndex(block, conf);
+
   return (async () => {
     let local_rule = LOCAL_RULES_FUNCTIONS;
     await local_rule.checkTxLen(block);
@@ -649,9 +650,6 @@ export const LOCAL_RULES_HELPERS = {
   getTransactionDepth,
 
   getMaxTransactionDepth,
-
-  checkSingleTransactionLocally: (tx: any, conf: ConfDTO) =>
-    checkBunchOfTransactions([tx], conf, 0),
 
   checkTxAmountsValidity: (tx: TransactionDTO) => {
     const inputs = tx.inputsAsObjects();

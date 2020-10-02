@@ -16,7 +16,7 @@ import { FileDAL } from "../dal/fileDAL";
 import { DBBlock } from "../db/DBBlock";
 import { TransactionDTO, TxSignatureResult } from "../dto/TransactionDTO";
 import { BlockDTO } from "../dto/BlockDTO";
-import { verify } from "../../../neon/lib";
+import { txsInputsAreUnlockable, verify } from "../../../neon/lib";
 import { rawer, txunlock } from "../common-libs/index";
 import { CommonConstants } from "../common-libs/constants";
 import { IdentityDTO } from "../dto/IdentityDTO";
@@ -129,29 +129,31 @@ export const GLOBAL_RULES_FUNCTIONS = {
         let index = parseInt(sp[0]);
         unlocks[index] = sp[1];
       }
-      for (let k = 0, len2 = inputs.length; k < len2; k++) {
-        let src = inputs[k];
-        let dbSrc: SimpleTxInput | null = await dal.getSource(
-          src.identifier,
-          src.pos,
-          src.type === "D"
+      let k = 0; // need  for DUBP version <= 12
+      let sources_conditions = []; // need  for DUBP version >= 13
+      let sources_written_on = []; // need  for DUBP version >= 13
+      for (const input of inputs) {
+        let source: SimpleTxInput | null = await dal.getSource(
+          input.identifier,
+          input.pos,
+          input.type === "D"
         );
         logger.debug(
           "Source %s:%s:%s:%s = %s",
-          src.amount,
-          src.base,
-          src.identifier,
-          src.pos,
-          dbSrc && dbSrc.consumed
+          input.amount,
+          input.base,
+          input.identifier,
+          input.pos,
+          source && source.consumed
         );
-        if (!dbSrc) {
+        if (!source) {
           // For chained transactions which are checked on sandbox submission, we accept them if there is already
           // a previous transaction of the chain already recorded in the pool
-          dbSrc = await (async () => {
+          source = await (async () => {
             let hypotheticSrc: any = null;
-            let targetTX = await findSourceTx(src.identifier);
+            let targetTX = await findSourceTx(input.identifier);
             if (targetTX) {
-              let outputStr = targetTX.outputs[src.pos];
+              let outputStr = targetTX.outputs[input.pos];
               if (outputStr) {
                 hypotheticSrc = TransactionDTO.outputStr2Obj(outputStr);
                 hypotheticSrc.consumed = false;
@@ -161,55 +163,77 @@ export const GLOBAL_RULES_FUNCTIONS = {
             return hypotheticSrc;
           })();
         }
-        if (!dbSrc || dbSrc.consumed) {
+        if (!source || source.consumed) {
           logger.warn(
             "Source " +
-              [src.type, src.identifier, src.pos].join(":") +
+              [input.type, input.identifier, input.pos].join(":") +
               " is not available"
           );
           throw constants.ERRORS.SOURCE_ALREADY_CONSUMED;
         }
-        sumOfInputs += dbSrc.amount * Math.pow(10, dbSrc.base);
-        if (block.medianTime - dbSrc.written_time < tx.locktime) {
+        sumOfInputs += source.amount * Math.pow(10, source.base);
+        if (block.medianTime - source.written_time < tx.locktime) {
           throw constants.ERRORS.LOCKTIME_PREVENT;
         }
-        let unlockValues = unlocks[k];
-        let unlocksForCondition: string[] = (unlockValues || "").split(" ");
-        let unlocksMetadata: any = {};
-        if (dbSrc.conditions) {
-          if (dbSrc.conditions.match(/CLTV/)) {
-            unlocksMetadata.currentTime = block.medianTime;
-          }
-
-          if (dbSrc.conditions.match(/CSV/)) {
-            unlocksMetadata.elapsedTime = block.medianTime - dbSrc.written_time;
-          }
-
-          const sigs = tx.getTransactionSigResult(block.version);
-
-          try {
-            if (
-              !txunlock(
-                dbSrc.conditions,
-                unlocksForCondition,
-                sigs,
-                unlocksMetadata
-              )
-            ) {
-              throw Error("Locked");
+        if (block.version <= 12) {
+          const sigs = tx.getTransactionSigResult();
+          let unlockValues = unlocks[k];
+          k++;
+          let unlocksForCondition: string[] = (unlockValues || "").split(" ");
+          let unlocksMetadata: any = {};
+          if (source.conditions) {
+            if (source.conditions.match(/CLTV/)) {
+              unlocksMetadata.currentTime = block.medianTime;
             }
-          } catch (e) {
-            logger.warn(
-              "Source " +
-                [src.amount, src.base, src.type, src.identifier, src.pos].join(
-                  ":"
-                ) +
-                " unlock fail"
-            );
-            throw constants.ERRORS.WRONG_UNLOCKER;
+
+            if (source.conditions.match(/CSV/)) {
+              unlocksMetadata.elapsedTime =
+                block.medianTime - source.written_time;
+            }
+
+            try {
+              if (
+                !txunlock(
+                  source.conditions,
+                  unlocksForCondition,
+                  sigs,
+                  unlocksMetadata
+                )
+              ) {
+                throw Error("Locked");
+              }
+            } catch (e) {
+              logger.warn(
+                "Source " +
+                  [
+                    input.amount,
+                    input.base,
+                    input.type,
+                    input.identifier,
+                    input.pos,
+                  ].join(":") +
+                  " unlock fail"
+              );
+              throw constants.ERRORS.WRONG_UNLOCKER;
+            }
+          } else {
+            throw Error("Source with no conditions");
           }
-        } else {
-          throw Error("Source with no conditions");
+        }
+        sources_conditions.push(source.conditions);
+        sources_written_on.push(source.written_time);
+      }
+      if (block.version >= 13) {
+        // No need to check the validity of the signatures, this is already done by local verification.
+        if (
+          !txsInputsAreUnlockable(
+            block.medianTime,
+            sources_conditions,
+            sources_written_on,
+            tx
+          )
+        ) {
+          throw constants.ERRORS.WRONG_UNLOCKER;
         }
       }
       let sumOfOutputs = outputs.reduce(function (p, output) {

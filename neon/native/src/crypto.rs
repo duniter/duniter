@@ -194,13 +194,15 @@ fn sign_bytes<'c>(
 mod tests {
 
     use super::*;
+    use unwrap::unwrap;
 
     #[test]
     fn test_keypair_from_expanded_base58_secret_key() {
         let expanded_base58_secret_key = "51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP";
 
-        let signator = keypair_from_expanded_base58_secret_key(expanded_base58_secret_key)
-            .expect("fail to generate keypair");
+        let signator = unwrap!(keypair_from_expanded_base58_secret_key(
+            expanded_base58_secret_key
+        ));
 
         assert_eq!(
             "HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd",

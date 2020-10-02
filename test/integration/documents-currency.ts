@@ -14,6 +14,7 @@
 
 import {NewTestingServer} from './tools/toolbox';
 import {TestUser} from "./tools/TestUser"
+import { assertEqual } from './tools/test-framework';
 
 const should    = require('should');
 
@@ -177,7 +178,7 @@ describe("Document pool currency", function() {
     } catch (e) {
       should.exist(e.error);
       e.should.be.an.Object();
-      e.error.message.should.match(/Signature from a transaction must match/);
+      e.error.message.should.match(/Wrong currency/);
     }
   })
 
@@ -202,7 +203,12 @@ describe("Document pool currency", function() {
     } catch (e) {
       should.exist(e.error);
       e.should.be.an.Object();
-      e.error.message.should.match(/Wrong output format/);
+      assertEqual(`TextDocumentParseError: Grammar error:   --> 13:77
+   |
+13 | 1500:1:XHX(6B86B273FF34FCE19D6B804EFF5A3F5747ADA4EAA22F1D49C01E52DDB7875B4B))␊
+   |                                                                             ^---
+   |
+   = expected output_cond_op_and or output_cond_op_or`, e.error.message);
     }
   })
 

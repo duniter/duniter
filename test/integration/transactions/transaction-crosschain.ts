@@ -17,6 +17,7 @@ import {Underscore} from "../../../app/lib/common-libs/underscore"
 import {HttpSources} from "../../../app/modules/bma/lib/dtos"
 import {shouldFail, shouldNotFail} from "../../unit-tools"
 import {expectAnswer} from "../tools/http-expect"
+import { log } from "console"
 
 const assert = require('assert');
 const should = require('should');

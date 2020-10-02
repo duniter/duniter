@@ -6,3 +6,6 @@ members = [
 
 [patch.crates-io]
 #dubp-common = { path = "../dubp-rs-libs/common" }
+#dubp-documents  = { path = "../dubp-rs-libs/documents" }
+#dubp-documents-parser = { path = "../dubp-rs-libs/documents-parser" }
+#dubp-wallet  = { path = "../dubp-rs-libs/wallet" }

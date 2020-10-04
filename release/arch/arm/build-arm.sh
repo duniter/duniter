@@ -79,7 +79,7 @@ chmod 755 duniter-${ARCH}/DEBIAN/post*
 chmod 755 duniter-${ARCH}/DEBIAN/pre*
 sed -i "s/Version:.*/Version:$DUNITER_DEB_VER/g" duniter-${ARCH}/DEBIAN/control
 echo "Extra..."
-mv duniter/extra/completion/duniter_completion.bash duniter-${ARCH}/etc/bash_completion.d/duniter_completion.bash
+mv duniter/extra/completion/duniter_js_completion.bash duniter-${ARCH}/etc/bash_completion.d/duniter_js_completion.bash
 rm -rf duniter/extra
 echo "Zipping..."
 cd duniter

@@ -30,6 +30,9 @@ if [[ -d $DUN_SOURCES/node ]]; then
   ln -s $DUN_SOURCES/bin/duniter /usr/bin/duniter -f
   ln -s $DUN_SOURCES/bin/duniter_js /usr/bin/duniter_js -f
   cd $DUN_SOURCES
+  # Generate bash completion script
+  mkdir -p "/etc/bash_completion.d/"
+  bin/duniter completions bash > /etc/bash_completion.d/duniter_completion.bash
   cd node/bin/
   ln -s ../lib/node_modules/npm/bin/npm-cli.js ./npm -f
   # Add duniter user for service

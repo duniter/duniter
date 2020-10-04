@@ -149,7 +149,7 @@ DUNITER_WS2P_ARGS="list-prefered list-privileged list-nodes show-conf"
 
 DUNITER_REACHING_CLEAR_EP_ARGS="clear tor none"
 
-_duniter_completion()
+_duniter_js_completion()
 {
     local cur prev base
     COMPREPLY=()
@@ -198,4 +198,4 @@ _duniter_completion()
    return 0
 }
 
-complete -F _duniter_completion duniter
+complete -F _duniter_js_completion duniter_js

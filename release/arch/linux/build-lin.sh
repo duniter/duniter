@@ -45,7 +45,7 @@ build_extra_server() {
 	mkdir -p "${1}/lib/systemd/system" || exit 1
 	mv "${RELEASES}/server_/extra/systemd/duniter.service" "${1}/lib/systemd/system" || exit 1
 	mkdir -p "${1}/etc/bash_completion.d/" || exit 1
-	mv "${RELEASES}/server_/extra/completion/duniter_completion.bash" "${1}/etc/bash_completion.d/duniter_completion.bash" || exit 1
+	mv "${RELEASES}/server_/extra/completion/duniter_js_completion.bash" "${1}/etc/bash_completion.d/duniter_js_completion.bash" || exit 1
 }
 
 # Debian package building.

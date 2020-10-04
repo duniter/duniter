@@ -145,7 +145,7 @@ enum DuniterCommand {
     /// Generate tab-completion script for your shell
     #[structopt(display_order(13))]
     Completions {
-        #[structopt(case_insensitive(true), possible_values = &["BASH, FISH, ZSH"])]
+        #[structopt(case_insensitive(true))]
         shell: Shell,
     },
 }

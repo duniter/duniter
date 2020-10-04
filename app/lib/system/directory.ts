@@ -50,6 +50,7 @@ export interface FileSystem {
   fsUnlink(file: string): Promise<boolean>;
   fsList(dir: string): Promise<string[]>;
   fsWrite(file: string, content: string): Promise<void>;
+  fsWriteSecure(file: string, content: string): Promise<void>;
   fsMakeDirectory(dir: string): Promise<void>;
   fsRemoveTree(dir: string): Promise<void>;
   fsStreamTo(file: string, iterator: IterableIterator<string>): Promise<void>;
@@ -69,7 +70,6 @@ class QioFileSystem implements FileSystem {
   async fsReadFile(file: string) {
     return this.qio.read(file);
   }
-
   async fsUnlink(file: string) {
     return this.qio.remove(file);
   }
@@ -83,6 +83,10 @@ class QioFileSystem implements FileSystem {
 
   fsWrite(file: string, content: string): Promise<void> {
     return this.qio.write(file, content);
+  }
+
+  fsWriteSecure(file: string, content: string): Promise<void> {
+    return this.qio.write(file, content, undefined, undefined, { mode: 0o640 });
   }
 
   async fsStreamTo(

@@ -112,8 +112,20 @@ export class CFSCore {
    * @param content String content to write.
    * @param deep Wether to make a deep write or not.
    */
-  async write(filePath: string, content: string, deep: boolean): Promise<void> {
-    return this.qfs.fsWrite(path.join(this.rootPath, filePath), content);
+  async write(
+    filePath: string,
+    content: string,
+    deep: boolean,
+    secureMode: boolean = false
+  ): Promise<void> {
+    if (secureMode) {
+      return this.qfs.fsWriteSecure(
+        path.join(this.rootPath, filePath),
+        content
+      );
+    } else {
+      return this.qfs.fsWrite(path.join(this.rootPath, filePath), content);
+    }
   }
 
   /**

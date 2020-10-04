@@ -18,7 +18,7 @@ checksum_test() {
   local correct_hash=$2
   local db=$3
   echo "Checking $table's checksum..."
-  bin/duniter --mdb ${db} dump table "$table" > "$DUMP_DIR/$table"
+  bin/duniter_js --mdb ${db} dump table "$table" > "$DUMP_DIR/$table"
   result_hash=`sha1sum "$DUMP_DIR/$table" | grep -Po ".* " | grep -Po "[a-f0-9]+"`
 #  rm -f "$DUMP_DIR/$table"
   if [ "$result_hash" == "$correct_hash" ]; then
@@ -33,8 +33,8 @@ sync_data() {
   local db=$1
   local target=$2
   local target_block=$3
-  local reset_data="bin/duniter --mdb ${db} reset all"
-  local sync="bin/duniter --mdb ${db} sync ${target} --nointeractive ${target_block}"
+  local reset_data="bin/duniter_js --mdb ${db} reset all"
+  local sync="bin/duniter_js --mdb ${db} sync ${target} --nointeractive ${target_block}"
   echo "$reset_data"
   ${reset_data}
   echo "$sync"

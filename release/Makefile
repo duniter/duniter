@@ -85,6 +85,8 @@ base-gui: $(call nodedep,duniter-ui) base
 # Build the base
 .PHONY: base
 base: | node_modules
+	@cargo build --release -p duniter-launcher
+	@mv target/release/duniter bin/duniter
 
 index.html: $(call nodedep,duniter-ui) $(addprefix node_modules/,$(leveldown.COMPILED) $(sqlite3.COMPILED))
 	@sed -i "s/\"main\": \"index.js\",/\"main\": \"index.html\",/" package.json
@@ -121,10 +123,12 @@ endif
 	@rm -rf $(DEV_FILES)
 	@mv release/extra .
 	@rm -rf coverage coverage.* release test
-	@rm -rf target
 	@rm -rf neon/native/target
 	@rm -rf node_modules/sqlite3/build
 	@rm -rf node_modules/duniter-ui/node_modules
+	@rm -rf rust-bins
+	@rm -rf rust-libs
+	@rm -rf target
 
 ######
 # We are on main project

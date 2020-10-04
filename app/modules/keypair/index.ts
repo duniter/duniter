@@ -27,11 +27,6 @@ export const KeypairDependency = {
     },
 
     cliOptions: [
-      { value: "--salt <salt>", desc: "Salt to generate the keypair" },
-      {
-        value: "--passwd <password>",
-        desc: "Password to generate the keypair",
-      },
       {
         value: "--keyN <N>",
         desc:
@@ -98,22 +93,6 @@ export const KeypairDependency = {
         logger: any,
         confDAL: any
       ) => {
-        if (
-          (program.keyN || program.keyr || program.keyp) &&
-          !(program.salt && program.passwd)
-        ) {
-          throw Error(
-            "Missing --salt and --passwd options along with --keyN|keyr|keyp option"
-          );
-        }
-
-        // If we have salt and password, convert it to keypair
-        if (program.salt || program.passwd) {
-          const salt = program.salt || "";
-          const key = program.passwd || "";
-          conf.pair = await Scrypt(salt, key);
-        }
-
         // If no keypair has been loaded, try the default .yml file
         if (!conf.pair || !conf.pair.pub || !conf.pair.sec) {
           const ymlContent = await confDAL.coreFS.read("keyring.yml");
@@ -223,6 +202,12 @@ async function promptKey(conf: KeypairConfDTO, program: any) {
       obfuscatedPasswd.length > 0 && obfuscatedPasswd == answersPasswd.passwd;
     const salt = keepOldSalt ? program.salt : answersSalt.salt;
     const passwd = keepOldPasswd ? program.passwd : answersPasswd.passwd;
-    conf.pair = await Scrypt(salt, passwd);
+    conf.pair = await Scrypt(
+      salt,
+      passwd,
+      program.keyN || 4096,
+      program.keyr || 16,
+      program.keyp || 1
+    );
   }
 }

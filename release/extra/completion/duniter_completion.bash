@@ -85,8 +85,6 @@ direct_webstart \
 --submit-host \
 --submit-port \
 --at \
---salt \
---passwd \
 --keyN \
 --keyr \
 --keyp \

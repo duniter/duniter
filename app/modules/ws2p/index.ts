@@ -64,8 +64,8 @@ export const WS2PDependency = {
       },
       { value: "--ws2p-prefered-rm  <pubkey>", desc: "Remove prefered node." },
       {
-        value: "--ws2p-prefered-only  <pubkey>",
-        desc: "Only connect to prefered node.",
+        value: "--ws2p-prefered-only",
+        desc: "Only connect to prefered nodes.",
       },
       {
         value: "--ws2p-privileged-add <pubkey>",
@@ -73,7 +73,7 @@ export const WS2PDependency = {
       },
       { value: "--ws2p-privileged-rm <pubkey>", desc: "Remove a privileged." },
       {
-        value: "--ws2p-privileged-only <pubkey>",
+        value: "--ws2p-privileged-only",
         desc: "Accept only connections from a privileged node.",
       },
     ],

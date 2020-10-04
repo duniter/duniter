@@ -116,11 +116,11 @@ cp -r ~/.nvm/versions/node/${NVER}/ node-${NVER}-linux-x64
 # -----------
 
 pushd "${ROOT}"
-make -C release DEST="${RELEASES_SUBDIR}/duniter" base-gui || exit 1
+make -C release ADD_DEBUG=N DEST="${RELEASES_SUBDIR}/duniter" base-gui || exit 1
 cp -pr "${RELEASES}/duniter" "${RELEASES}/desktop_" || exit 1
-make -C release DEST="${RELEASES_SUBDIR}/desktop_" desktop clean || exit 1
+make -C release ADD_DEBUG=N DEST="${RELEASES_SUBDIR}/desktop_" desktop clean || exit 1
 cp -pr "${RELEASES}/duniter" "${RELEASES}/server_" || exit 1
-make -C release DEST="${RELEASES_SUBDIR}/server_" server-gui clean || exit 1
+make -C release ADD_DEBUG=N DEST="${RELEASES_SUBDIR}/server_" server-gui clean || exit 1
 popd
 
 # --------------------------------

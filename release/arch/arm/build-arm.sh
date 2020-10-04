@@ -64,7 +64,7 @@ mkdir -p "$RELEASES"
 
 cd "$DOWNLOADS/duniter"
 echo "Build Duniter server with GUI..."
-make -C release server-gui clean
+make -C release ADD_DEBUG=N server-gui clean
 mv "$DOWNLOADS/duniter/work" "$RELEASES/duniter"
 cd ${RELEASES}/duniter
 echo "Copying Nodejs"

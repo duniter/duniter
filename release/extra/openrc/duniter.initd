@@ -21,7 +21,7 @@ fi
 if [[ ! -z ${DUNITER_KEYS} ]] && [[ -r ${DUNITER_KEYS} ]]; then
 	command_args="${command_args} --keyfile \"${DUNITER_KEYS}\""
 fi
-command_args="${command_args} --home \"${DUNITER_HOME}\" --mdb \"${DUNITER_DATA}\""
+command_args="--home \"${DUNITER_HOME}\" --mdb \"${DUNITER_DATA}\" ${command_args}"
 start_stop_daemon_args="--user \"${DUNITER_USER}\":\"${DUNITER_GROUP}\" ${DUNITER_SSD_OPTIONS}"
 description="Duniter node"
 
@@ -30,7 +30,7 @@ depend() {
 }
 
 status() {
-	if ${command} status --home "${DUNITER_HOME}" --mdb "${DUNITER_DATA}" | grep -q "is running"; then
+	if ${command} --home "${DUNITER_HOME}" --mdb "${DUNITER_DATA}" status | grep -q "is running"; then
 		einfo "status: started"
 		return 0
 	else
@@ -46,5 +46,5 @@ status() {
 }
 
 stop() {
-	${command} stop --home "${DUNITER_HOME}" --mdb "${DUNITER_DATA}"
+	${command} --home "${DUNITER_HOME}" --mdb "${DUNITER_DATA}" stop
 }

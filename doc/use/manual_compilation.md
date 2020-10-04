@@ -15,7 +15,7 @@ To compile Duniter manually, there is currently the following requirement:
 - Build essential tools
 - curl
 - tar or unzip or git (to download and extract source code)
-- Nvm
+- Rust
 
 ### Get source code
 
@@ -60,44 +60,25 @@ Depend on your distribution:
 
 TODO: If you know how to install build essential tools for other gnu/linux distributions or for mac, you can complete this documentation and submit a merge request.
 
-#### Nvm
+#### Rust
 
-Nvm:
-
-    wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 ## Build the project
 
 Go to the root of the folder where you extracted the source code (or possibly cloned from git).
 
-### Install and use the correct version of nodejs
-
-Check the required node version in the `package.json` file on line 5.
-
-If, for example, version 10 is expected, install and select it with the following command:
-
-    nvm install 10 && nvm use 10
-
-### Optionally add GUI
-
-The graphical user interface (GUI) is optional because it is possible to do everything from the command line.  
-If you wish to have the GUI, you must add it (before compiling) with the following command:
-
-    npm add duniter-ui
-
-### Compile
-
 **WARNING**: the compilation of the project requires a lot of resources on your machine, and several long minutes, don't do anything else at the same time!
 
 Command to compile :
 
-    NEON_BUILD_RELEASE=true npm install && npm prune --production
+    cargo xtask build --production
 
 ### Set autocompletion
 
 To install or update Duniter's command auto-completion:
 
-    cp release/extra/completion/duniter_completion.bash /etc/bash_completion.d/
+    bin/duniter completions bash > /etc/bash_completion.d/duniter_completion.bash
 
 ### Run on command line
 

@@ -1,0 +1,5 @@
+[hooks]
+pre-commit = "cargo fmt -- --check && npm run format:check"
+
+[logging]
+verbose = true

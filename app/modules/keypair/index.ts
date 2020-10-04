@@ -152,7 +152,7 @@ export const KeypairDependency = {
         // We save the key in a separate file
         const keyring =
           'pub: "' + conf.pair.pub + '"\n' + 'sec: "' + conf.pair.sec + '"';
-        await confDAL.coreFS.write("keyring.yml", keyring);
+        await confDAL.coreFS.write("keyring.yml", keyring, false, true);
 
         // We never want to store salt, password or keypair in the conf.json file
         delete conf.salt;

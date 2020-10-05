@@ -26,7 +26,7 @@ import {expectHttpCode, expectJSON} from "../tools/http-expect"
 const rp        = require('request-promise');
 
 if (OtherConstants.MUTE_LOGS_DURING_UNIT_TESTS) {
-  NewLogger().mute();
+  NewLogger().changeLevel("OFF")
 }
 
 // Trace these errors

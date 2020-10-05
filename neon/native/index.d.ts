@@ -1,6 +1,7 @@
 /* tslint:disable */
 
 import * as _crypto from './crypto';
+import * as _logger from './logger';
 import * as _transactions from './transaction';
 import * as _wot from './wot';
 
@@ -9,6 +10,8 @@ export import generateRandomSeed = _crypto.generateRandomSeed;
 export import seedToSecretKey = _crypto.seedToSecretKey;
 export import sha256 = _crypto.sha256;
 export import verify = _crypto.verify;
+
+export import RustLogger = _logger.RustLogger;
 
 export import TransactionDTOV10 = _transactions.TransactionDTOV10;
 export import rawTxParseAndVerify = _transactions.rawTxParseAndVerify;

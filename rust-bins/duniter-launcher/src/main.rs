@@ -39,12 +39,7 @@ use nix::{
     Error,
 };
 use std::{
-    fs::{File, OpenOptions},
-    io::prelude::*,
-    path::Path,
-    path::PathBuf,
-    process::Command,
-    process::Output,
+    fs::File, io::prelude::*, path::Path, path::PathBuf, process::Command, process::Output,
     process::Stdio,
 };
 use structopt::{clap::Shell, StructOpt};
@@ -69,8 +64,8 @@ struct DuniterArgs {
     #[structopt(short, long, parse(from_os_str))]
     home: Option<PathBuf>,
     /// Logs level (If not specified, use the logs level defined in the configuration or INFO by default).
-    #[structopt(short, long, alias("loglevel"), case_insensitive(true), possible_values = &["ERROR", "WARN", "INFO", "DEBUG", "TRACE"])]
-    log: Option<log::Level>,
+    #[structopt(short, long, alias("loglevel"), case_insensitive(true), possible_values = &["OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"])]
+    log: Option<log::LevelFilter>,
     /// Profile name (defauld "duniter_default")
     #[structopt(short, long, alias("mdb"))]
     profile: Option<String>,

@@ -94,7 +94,7 @@ export class Synchroniser extends stream.Duplex {
     this.syncStrategy.setWatcher(this.watcher);
 
     if (interactive) {
-      this.logger.mute();
+      this.logger.changeLevel("OFF");
     }
   }
 

@@ -417,6 +417,7 @@ export const CrawlerDependency = {
                 server.conf.currency,
                 res,
                 server,
+                false,
                 logger
               );
             } catch (e) {

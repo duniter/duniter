@@ -23,6 +23,8 @@ dubp-documents-parser = { version = "0.25.0" }
 dubp-wallet = { version = "0.25.0" }
 dubp-wot = { path = "../../rust-libs/dubp-wot" }
 flate2 = "1.0.16"
+flexi_logger = { version = "=0.16.0", default-features = false, features = ["compress"] }
+log = "0.4.11"
 neon = "0.4.0"
 neon-serde = "0.4.0"
 

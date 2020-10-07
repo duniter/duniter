@@ -16,17 +16,13 @@
 use crate::*;
 
 pub fn start(prod: bool, profile_path: &Path, duniter_js_args: &[String]) -> Result<()> {
-    let stdout = OpenOptions::new()
-        .append(true)
-        .create(true)
-        .open(profile_path.join(LOG_FILE))?;
     let mut duniter_js_command = Command::new(get_node_path()?);
     if prod {
         duniter_js_command.current_dir(DUNITER_JS_CURRENT_DIR);
     }
     let mut child = duniter_js_command
         .args(duniter_js_args)
-        .stdout(stdout)
+        .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()?;
 

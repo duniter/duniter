@@ -25,7 +25,7 @@ const constants = require('../../app/lib/constants');
 BmaDependency.duniter.methods.noLimit(); // Disables the HTTP limiter
 
 if (constants.MUTE_LOGS_DURING_UNIT_TESTS) {
-  NewLogger().mute()
+  NewLogger().changeLevel("OFF")
 }
 
 describe("Forwarding", function() {

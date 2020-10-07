@@ -26,6 +26,7 @@
 )]
 
 mod crypto;
+mod logger;
 mod transaction;
 mod wot;
 
@@ -50,6 +51,7 @@ register_module!(mut cx, {
     cx.export_function("sha256", crate::crypto::sha256)?;
     cx.export_function("verify", crate::crypto::verify)?;
     cx.export_class::<crate::crypto::JsKeyPair>("Ed25519Signator")?;
+    cx.export_class::<crate::logger::JsLogger>("RustLogger")?;
     cx.export_function(
         "rawTxParseAndVerify",
         crate::transaction::raw_tx_parse_and_verify,

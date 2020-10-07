@@ -29,6 +29,7 @@ import {Underscore} from "./app/lib/common-libs/underscore"
 import {CliCommand, DuniterDependency, DuniterModule} from "./app/modules/DuniterModule"
 import {ProgramOptions} from "./app/lib/common-libs/programOptions"
 import {ExitCodes} from "./app/lib/common-libs/exit-codes"
+import { NewLogger } from "./app/lib/logger"
 
 const path = require('path');
 const constants = require('./app/lib/constants');
@@ -299,13 +300,9 @@ export class Stack {
     const dbHome = program.home;
     const home = Directory.getHome(dbName, dbHome);
 
-    if (command.logs === false) {
-      logger.mute();
-    }
-
     // Add log files for this instance (non-memory instances only)
-    if (!program.memory) {
-      logger.addHomeLogs(home, program.loglevel);
+    if (!program.memory && command.logs !== false) {
+      NewLogger().initLogger(home, program.loglevel);
     }
 
     const server = new Server(home, program.memory === true, commandLineConf(program));
@@ -370,7 +367,7 @@ export class Stack {
       // Eventually change the log level
       // Add log files for this instance (non-memory instances only)
       if (!program.memory) {
-        logger.addHomeLogs(home, conf.loglevel);
+        logger.changeLevel(conf.loglevel);
       }
 
       // Auto-configuration default

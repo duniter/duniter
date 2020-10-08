@@ -365,11 +365,11 @@ dependencies = [
 
 [[package]]
 name = "dubp-common"
-version = "0.25.0"
+version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41fbf84c220b013b9ebd30315fb89ce1ce74ad415ca24401fbc2bd264aaa5097"
+checksum = "f0c2f18f395e86aa9edc22ba4d71af5405721660f02a6e19b4d83e4af45574c3"
 dependencies = [
- "dup-crypto 0.25.0",
+ "dup-crypto 0.25.1",
  "serde",
  "serde_json",
  "thiserror",
@@ -377,9 +377,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-documents"
-version = "0.25.0"
+version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db28e6dd002d47cb916bc72c0ef02e2daedeb019e2710716fa5c30851fabbbca"
+checksum = "c847786ca90006f0419adb136594d7d52805c559059840c98fdf681d21efcf24"
 dependencies = [
  "beef",
  "dubp-wallet",
@@ -391,9 +391,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-documents-parser"
-version = "0.25.0"
+version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf34add60e4c075265ef74bebebd3fd665f73eaec36133e8bb2fe8aef968a9fc"
+checksum = "69bc3ff621716c9993788fd222ecffa38cb869de633c1f79fbd19b99ff81d74d"
 dependencies = [
  "dubp-documents",
  "json-pest-parser",
@@ -405,11 +405,11 @@ dependencies = [
 
 [[package]]
 name = "dubp-wallet"
-version = "0.25.0"
+version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe42d477e61d1f94ce759f1936b9542a7e96acd4de68002289a5fc97c9dc5f36"
+checksum = "7650b2fd2b2e0998c4cc7ea084ddd8292dbe1a1800b416656be44e1e2e247e2f"
 dependencies = [
- "dubp-common 0.25.0",
+ "dubp-common 0.25.1",
  "serde",
  "smallvec",
  "thiserror",
@@ -447,7 +447,7 @@ version = "0.3.0"
 dependencies = [
  "bincode",
  "bs58",
- "dubp-common 0.25.0",
+ "dubp-common 0.25.1",
  "dubp-documents",
  "dubp-documents-parser",
  "dubp-wallet",
@@ -479,9 +479,9 @@ dependencies = [
 
 [[package]]
 name = "dup-crypto"
-version = "0.25.0"
+version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "287b23c4281016278b47b80baf67186ce756dde738070cc7a41297da5e81dec1"
+checksum = "77430d1ee19233514f14bc1a0188c3a828f60ee35ce466e342e3926be8d82685"
 dependencies = [
  "base64 0.11.0",
  "bs58",

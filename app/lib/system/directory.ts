@@ -31,7 +31,7 @@ const DEFAULT_HOME =
 const getLogsPath = (
   profile: string | undefined,
   directory: string | null = null
-) => path.join(getHomePath(profile, directory), "duniter.log");
+) => path.join(getHomePath(profile, directory), "node_duniter_rCURRENT.log");
 
 const getHomePath = (
   profile: string | null | undefined,

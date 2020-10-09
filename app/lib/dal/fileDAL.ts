@@ -1553,7 +1553,7 @@ export class FileDAL implements ServerDAO {
       try {
         let lines: string[] = [],
           i = 0;
-        const logPath = path.join(this.rootPath, "duniter.log");
+        const logPath = path.join(this.rootPath, "exe_duniter_rCURRENT.log");
         const readStream = fs.createReadStream(logPath);
         readStream.on("error", (err: any) => reject(err));
         const lineReader = readline.createInterface({

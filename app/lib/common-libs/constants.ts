@@ -18,7 +18,7 @@ const GT = "g1-test";
 const CURRENCY = "[a-zA-Z0-9-_ ]{2,50}";
 const BASE58 = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+";
 const PUBKEY =
-  "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}";
+  "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{40,44}";
 const SIGNATURE = "[A-Za-z0-9+\\/=]{87,88}";
 const USER_ID = "[A-Za-z0-9_-]{2,100}";
 const INTEGER = "(0|[1-9]\\d{0,18})";

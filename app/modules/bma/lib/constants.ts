@@ -23,7 +23,7 @@ export const BMAConstants = {
   PORT_START: 15000,
   UPNP_INTERVAL: 300,
   UPNP_TTL: 600,
-  PUBLIC_KEY: /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{43,44}$/,
+  PUBLIC_KEY: /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{40,44}$/,
   SHA256_HASH: /^[A-F0-9]{64}$/,
 
   ERRORS: {

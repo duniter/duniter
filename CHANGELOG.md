@@ -1,8 +1,10 @@
 # CHANGELOG
 
-## v1.9.0 (XX XXXX 2020)
+<!-- next-header -->
 
-## v1.8.0: (12th March 2020)
+## [Unreleased] - ReleaseDate
+
+## [1.8.0] - 2020-03-12
 
 ### Highlights
 
@@ -127,3 +129,7 @@ Thanks @bpresles, @c-geek
 ## v1.7.14 (29th March 2019)
 
 - … To be completed
+
+<!-- next-url -->
+[Unreleased]: https://git.duniter.org/nodes/typescript/duniter/compare/v1.8.0...HEAD
+[1.8.0]: https://git.duniter.org/nodes/typescript/duniter/compare/v1.7.21...v1.8.0

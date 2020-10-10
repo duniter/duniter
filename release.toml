@@ -1,0 +1,25 @@
+disable-publish = true
+disable-push = true
+no-dev-version = true
+pre-release-commit-message = "v{{version}}"
+pre-release-replacements = [
+    # package.json
+    {file="package.json", search="version\": \"[0-9]+.[0-9]+.[0-9]+(-(alpha|beta|rc).[0-9]+)?\",", replace="version\": \"{{version}}\",", exactly=1, prerelease=true},
+    {file="package-lock.json", search="duniter\",\n  \"version\": \"[0-9]+.[0-9]+.[0-9]+(-(alpha|beta|rc).[0-9]+)?\",", replace="duniter\",\n  \"version\": \"{{version}}\",", exactly=1, prerelease=true},
+    # duniteroxyde
+    {file="neon/native/Cargo.toml", search="version = \"[0-9]+.[0-9]+.[0-9]+(-(alpha|beta|rc).[0-9]+)?\"\n", replace="version = \"{{version}}\"\n", exactly=1, prerelease=true},
+    {file="Cargo.lock", search="duniteroxyde\"\nversion = \"[0-9]+.[0-9]+.[0-9]+(-(alpha|beta|rc).[0-9]+)?\"\n", replace="duniteroxyde\"\nversion = \"{{version}}\"\n", exactly=1, prerelease=true},
+    # debian packages
+    {file="release/extra/debian/package/DEBIAN/control", search="Version: [0-9]+.[0-9]+.[0-9]+(-(alpha|beta|rc).[0-9]+)?", replace="Version: {{version}}", exactly=1, prerelease=true},
+    # GUI containers version
+    {file="package.json", search="title\": \"v[0-9]+.[0-9]+.[0-9]+(-(alpha|beta|rc).[0-9]+)?\",", replace="title\": \"v{{version}}\",", exactly=1, prerelease=true},
+    {file="gui/index.html", search="<title>Duniter [0-9]+.[0-9]+.[0-9]+(-(alpha|beta|rc).[0-9]+)?</title>", replace="<title>Duniter {{version}}</title>", exactly=1, prerelease=true},
+    # Duniter.iss (Windows installer)
+    {file="release/arch/windows/duniter.iss", search="define MyAppVerStr \"v[0-9]+.[0-9]+.[0-9]+(-(alpha|beta|rc).[0-9]+)?\"", replace="define MyAppVerStr \"v{{version}}\"", exactly=1, prerelease=true},
+    # CHANGELOG
+    #{file="CHANGELOG.md", search="Unreleased", replace="{{version}}"},
+    #{file="CHANGELOG.md", search="\\.\\.\\.HEAD", replace="...{{tag_name}}", exactly=1},
+    #{file="CHANGELOG.md", search="ReleaseDate", replace="{{date}}"},
+    #{file="CHANGELOG.md", search="<!-- next-header -->", replace="<!-- next-header -->\n\n## [Unreleased] - ReleaseDate"},
+    #{file="CHANGELOG.md", search="<!-- next-url -->", replace="<!-- next-url -->\n[Unreleased]: https://git.duniter.org/libs/dubp-rs-libs/compare/{{tag_name}}...HEAD", exactly=1},
+]

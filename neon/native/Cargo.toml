@@ -1,6 +1,6 @@
 [package]
 name = "duniteroxyde"
-version = "0.3.0"
+version = "1.8.1"
 authors = ["librelois <elois@ifee.fr>"]
 license = "AGPL-3.0"
 build = "build.rs"

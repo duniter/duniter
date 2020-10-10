@@ -6,7 +6,7 @@ keywords = ["duniter", "launcher"]
 license = "AGPL-3.0"
 name = "duniter-launcher"
 repository = "https://git.duniter.org/nodes/typescript/duniter"
-version = "1.9.0-alpha1"
+version = "1.8.1"
 
 [[bin]]
 bench = false

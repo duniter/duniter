@@ -14,6 +14,7 @@ workflow:
       - bin/duniter_js
       - neon/**/*
       - releases/**/*
+      - rust-bins/**/*
       - rust-libs/**/*
       - test/**/*
       - .gitlab-ci.yml

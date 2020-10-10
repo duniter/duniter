@@ -32,12 +32,7 @@ mod sync;
 use anyhow::{anyhow, Result};
 use daemonize_me::Daemon;
 use logwatcher::{LogWatcher, LogWatcherAction};
-use nix::{
-    errno::Errno,
-    sys::{signal::Signal, wait::WaitPidFlag, wait::WaitStatus},
-    unistd::Pid,
-    Error,
-};
+use nix::{errno::Errno, sys::signal::Signal, unistd::Pid, Error};
 use std::{
     fs::File, io::prelude::*, path::Path, path::PathBuf, process::Command, process::Output,
     process::Stdio,

@@ -58,12 +58,12 @@ pub fn status(profile_path: &Path) -> Result<()> {
         .parse::<i32>()
         .expect("invalid pid");
 
-    match nix::sys::wait::waitpid(Some(Pid::from_raw(pid)), Some(WaitPidFlag::WNOHANG)) {
-        Ok(WaitStatus::StillAlive) => {
+    match nix::sys::signal::kill(Pid::from_raw(pid), Some(Signal::SIGUSR1)) {
+        Ok(()) => {
             println!("Duniter is running using PID {}.", pid);
             Ok(())
         }
-        Ok(_) | Err(Error::Sys(Errno::ESRCH)) => {
+        Err(Error::Sys(Errno::ESRCH)) => {
             println!("Duniter is not running.");
             std::process::exit(EXIT_CODE_DUNITER_NOT_RUNNING);
         }
@@ -96,12 +96,18 @@ pub fn stop(profile_path: &Path) -> Result<Vec<String>> {
         Err(e) => Err(e.into()),
         Ok(()) => {
             println!("Stopping Duniter daemon …");
-            match nix::sys::wait::waitpid(Some(Pid::from_raw(pid)), Some(WaitPidFlag::WSTOPPED)) {
-                Ok(_) | Err(Error::Sys(Errno::ECHILD)) => {
-                    println!("Duniter daemon stopped.");
-                    Ok(duniter_args)
+            loop {
+                match nix::sys::signal::kill(Pid::from_raw(pid), Some(Signal::SIGUSR1)) {
+                    Ok(()) => {
+                        std::thread::sleep(std::time::Duration::from_secs(1));
+                        continue;
+                    }
+                    Err(Error::Sys(Errno::ESRCH)) => {
+                        println!("Duniter daemon stopped.");
+                        return Ok(duniter_args);
+                    }
+                    Err(e) => return Err(e.into()),
                 }
-                Err(e) => Err(e.into()),
             }
         }
     }

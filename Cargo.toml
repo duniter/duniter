@@ -30,7 +30,10 @@ rusty-hook = "0.11.2"
 members = [
     "neon/native",
     "rust-bins/xtask",
-    "rust-libs/dubp-wot"
+    "rust-libs/dubp-wot",
+    "rust-libs/duniter-dbs",
+    "rust-libs/tools/kv_typed",
+    "rust-libs/tools/kv_typed_code_gen"
 ]
 
 [patch.crates-io]
@@ -38,3 +41,4 @@ members = [
 #dubp-documents  = { path = "../dubp-rs-libs/documents" }
 #dubp-documents-parser = { path = "../dubp-rs-libs/documents-parser" }
 #dubp-wallet  = { path = "../dubp-rs-libs/wallet" }
+#leveldb_minimal = { path = "../../../../rust/leveldb_minimal" }

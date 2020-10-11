@@ -24,7 +24,7 @@ workflow:
       - server.ts
 
 .env: &env
-  image: registry.duniter.org/docker/duniter-ci:v0.0.4
+  image: registry.duniter.org/docker/duniter-ci:v0.2.0
   tags:
     - redshift
   before_script:

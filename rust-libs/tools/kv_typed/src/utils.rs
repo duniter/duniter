@@ -13,19 +13,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-//! Provide function to compute average density.
+//! KV Typed utils
 
-use crate::data::WebOfTrust;
-
-/// Compute average density
-pub fn calculate_average_density<T: WebOfTrust>(wot: &T) -> usize {
-    let enabled_members = wot.get_enabled();
-    let enabled_members_count = enabled_members.len();
-    let mut count_actives_links: usize = 0;
-    for member in &enabled_members {
-        count_actives_links += wot
-            .issued_count(*member)
-            .unwrap_or_else(|| panic!("Fail to get issued_count of wot_id {}", (*member).0));
-    }
-    ((count_actives_links as f32 / enabled_members_count as f32) * 1_000.0) as usize
+pub mod arc;
+#[cfg(not(feature = "sled_backend"))]
+pub mod ivec;
+#[cfg(feature = "sled_backend")]
+pub mod ivec {
+    pub use sled::IVec;
 }

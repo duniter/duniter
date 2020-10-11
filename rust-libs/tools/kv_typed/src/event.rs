@@ -13,19 +13,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-//! Provide function to compute average density.
+//! KV Typed event
 
-use crate::data::WebOfTrust;
+use crate::*;
 
-/// Compute average density
-pub fn calculate_average_density<T: WebOfTrust>(wot: &T) -> usize {
-    let enabled_members = wot.get_enabled();
-    let enabled_members_count = enabled_members.len();
-    let mut count_actives_links: usize = 0;
-    for member in &enabled_members {
-        count_actives_links += wot
-            .issued_count(*member)
-            .unwrap_or_else(|| panic!("Fail to get issued_count of wot_id {}", (*member).0));
-    }
-    ((count_actives_links as f32 / enabled_members_count as f32) * 1_000.0) as usize
+/// Database events
+pub type Events<E> = SmallVec<[E; 4]>;
+
+/// Event trait
+pub trait EventTrait: 'static + Debug + PartialEq + Send + Sync {
+    type K: Key;
+    type V: Value;
+
+    fn upsert(k: Self::K, v: Self::V) -> Self;
+    fn remove(k: Self::K) -> Self;
 }

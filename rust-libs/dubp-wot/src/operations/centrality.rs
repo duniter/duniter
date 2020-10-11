@@ -1,4 +1,4 @@
-//  Copyright (C) 2017-2019  The AXIOM TEAM Association.
+//  Copyright (C) 2020 Éloïs SANCHEZ.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as

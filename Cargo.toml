@@ -29,6 +29,7 @@ rusty-hook = "0.11.2"
 [workspace]
 members = [
     "neon/native",
+    "rust-bins/duniter-dbex",
     "rust-bins/xtask",
     "rust-libs/dubp-wot",
     "rust-libs/duniter-dbs",

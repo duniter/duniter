@@ -13,9 +13,10 @@ To compile Duniter manually, there is currently the following requirement:
 
 - A computer with GNU/Linux or Mac as operating system
 - Build essential tools
-- curl
-- tar or unzip or git (to download and extract source code)
+- cmake
 - Rust
+- tar or unzip or git (to download and extract source code)
+- wget
 
 ### Get source code
 
@@ -52,7 +53,7 @@ Depend on your distribution:
 
 ##### Debian/Ubuntu
 
-    apt-get install build-essential
+    apt-get install build-essential cmake
 
 ##### Fedora
 

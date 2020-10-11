@@ -353,23 +353,11 @@ checksum = "fea41bba32d969b513997752735605054bc0dfa92b4c56bf1189f2e174be7a10"
 
 [[package]]
 name = "dubp-common"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b41d722bf752e5f87d07685aba6df25f69881f9aafa7060fae459e2948d8080"
-dependencies = [
- "dup-crypto 0.18.0",
- "serde",
- "serde_json",
- "thiserror",
-]
-
-[[package]]
-name = "dubp-common"
 version = "0.25.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "00588975a1ce2511ba0072563dc69e79534c28846ad68701699ae112d01975ff"
 dependencies = [
- "dup-crypto 0.25.2",
+ "dup-crypto",
  "serde",
  "serde_json",
  "thiserror",
@@ -409,7 +397,7 @@ version = "0.25.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "45d87c99e3e231625ba35c0f0ad4f8c6186f91ae5f0504fa752b47e46762dbc0"
 dependencies = [
- "dubp-common 0.25.2",
+ "dubp-common",
  "serde",
  "smallvec",
  "thiserror",
@@ -420,7 +408,7 @@ name = "dubp-wot"
 version = "0.11.0"
 dependencies = [
  "bincode",
- "dubp-common 0.2.0",
+ "dubp-common",
  "log",
  "rayon",
  "serde",
@@ -447,7 +435,7 @@ version = "1.8.1"
 dependencies = [
  "bincode",
  "bs58",
- "dubp-common 0.25.2",
+ "dubp-common",
  "dubp-documents",
  "dubp-documents-parser",
  "dubp-wallet",
@@ -459,22 +447,6 @@ dependencies = [
  "neon-build",
  "neon-serde",
  "unwrap",
-]
-
-[[package]]
-name = "dup-crypto"
-version = "0.18.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f7315898eda74bf7c9e825f9afae1c9f16debb401fdb7d658fb851fb00a6260c"
-dependencies = [
- "base64 0.11.0",
- "bs58",
- "byteorder",
- "ring",
- "serde",
- "thiserror",
- "unwrap",
- "zeroize",
 ]
 
 [[package]]

@@ -19,7 +19,7 @@ use std::{
 };
 use structopt::StructOpt;
 
-const MIN_RUST_VERTION: &str = "1.46.0";
+const MIN_RUST_VERTION: &str = "1.47.0";
 const NODE_VERSION: &str = "10.22.1";
 const NVM_VERSION: &str = "0.35.3";
 

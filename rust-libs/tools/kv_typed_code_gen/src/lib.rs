@@ -118,11 +118,13 @@ pub fn db_schema(input: TokenStream) -> TokenStream {
             pub enum #col_event_type {
                 Upsert { key: #col_key_type, value: #col_value_type },
                 Remove { key: #col_key_type },
+                RemoveAll,
             }
             impl EventTrait for #col_event_type {
                 type K = #col_key_type;
                 type V = #col_value_type;
 
+                fn clear() -> Self { Self::RemoveAll }
                 fn upsert(k: Self::K, v: Self::V) -> Self { Self::Upsert { key: k, value: v, } }
                 fn remove(k: Self::K) -> Self { Self::Remove { key: k } }
             }

@@ -51,7 +51,7 @@ pub trait Backend: 'static + Clone + Sized {
     fn open_col(&mut self, conf: &Self::Conf, col_name: &str) -> KvResult<Self::Col>;
 }
 
-pub trait BackendCol: 'static + Clone {
+pub trait BackendCol: 'static + Clone + Send + Sync {
     type Batch: BackendBatch;
     type KeyBytes: AsRef<[u8]>;
     type ValueBytes: AsRef<[u8]>;
@@ -59,6 +59,7 @@ pub trait BackendCol: 'static + Clone {
         + ReversableIterator;
 
     fn get<K: Key, V: Value>(&self, k: &K) -> KvResult<Option<V>>;
+    fn clear(&self) -> KvResult<()>;
     fn count(&self) -> KvResult<usize>;
     fn iter<K: Key, V: Value>(&self, range: RangeBytes) -> Self::Iter;
     fn put<K: Key, V: Value>(&self, k: &K, value: &V) -> KvResult<()>;

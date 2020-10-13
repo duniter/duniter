@@ -77,6 +77,17 @@ impl BackendCol for LevelDbCol {
     fn new_batch() -> Self::Batch {
         WriteBatch::default()
     }
+    fn clear(&self) -> KvResult<()> {
+        let keys = self
+            .0
+            .iter(ReadOptions::new())
+            .map(|(k, _v)| k)
+            .collect::<Vec<Vec<u8>>>();
+        for key in keys {
+            self.0.delete(WriteOptions::new(), key.as_ref())?;
+        }
+        Ok(())
+    }
     #[inline(always)]
     fn count(&self) -> KvResult<usize> {
         Ok(self

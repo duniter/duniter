@@ -25,6 +25,7 @@ pub trait EventTrait: 'static + Debug + PartialEq + Send + Sync {
     type K: Key;
     type V: Value;
 
+    fn clear() -> Self;
     fn upsert(k: Self::K, v: Self::V) -> Self;
     fn remove(k: Self::K) -> Self;
 }

@@ -44,6 +44,7 @@ mockall::mock! {
         type Iter = MockBackendIter;
 
         fn get<K: Key, V: Value>(&self, k: &K) -> KvResult<Option<V>>;
+        fn clear(&self) -> KvResult<()>;
         fn count(&self) -> KvResult<usize>;
         fn iter<K: Key, V: Value>(&self, range: RangeBytes) -> MockBackendIter;
         fn put<K: Key, V: Value>(&self, k: &K, value: &V) -> KvResult<()>;

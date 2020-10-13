@@ -7,6 +7,7 @@ pub trait DbCollectionRw {
     type V: Value;
     type Event: EventTrait<K = Self::K, V = Self::V>;
 
+    fn clear(&self) -> KvResult<()>;
     fn remove(&self, k: Self::K) -> KvResult<()>;
     fn upsert(&self, k: Self::K, v: Self::V) -> KvResult<()>;
 }
@@ -41,6 +42,15 @@ impl<BC: BackendCol, E: EventTrait> DbCollectionRw for ColRw<BC, E> {
     type V = E::V;
     type Event = E;
 
+    fn clear(&self) -> KvResult<()> {
+        self.inner.inner.clear()?;
+        #[cfg(feature = "subscription")]
+        {
+            let events = smallvec::smallvec![E::clear()];
+            self.notify_subscribers(events);
+        }
+        Ok(())
+    }
     fn remove(&self, k: Self::K) -> KvResult<()> {
         self.inner.inner.delete(&k)?;
         #[cfg(feature = "subscription")]

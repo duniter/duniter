@@ -77,6 +77,12 @@ impl BackendCol for MemCol {
         MemBatch::default()
     }
     #[inline(always)]
+    fn clear(&self) -> KvResult<()> {
+        let mut writer = self.0.write();
+        writer.clear();
+        Ok(())
+    }
+    #[inline(always)]
     fn count(&self) -> KvResult<usize> {
         let reader = self.0.read();
         Ok(reader.len())

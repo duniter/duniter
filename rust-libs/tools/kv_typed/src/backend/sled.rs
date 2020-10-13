@@ -69,6 +69,11 @@ impl BackendCol for SledCol {
         sled::Batch::default()
     }
     #[inline(always)]
+    fn clear(&self) -> KvResult<()> {
+        self.0.clear()?;
+        Ok(())
+    }
+    #[inline(always)]
     fn count(&self) -> KvResult<usize> {
         Ok(self.0.len())
     }

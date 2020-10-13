@@ -136,6 +136,10 @@ impl BackendCol for MemCol {
         let reader = map_shared_ref.read();
         self.iter_inner(range, reader)
     }
+    #[inline(always)]
+    fn save(&self) -> KvResult<()> {
+        Ok(())
+    }
 }
 
 impl MemCol {

@@ -9,6 +9,7 @@ pub trait DbCollectionRw {
 
     fn clear(&self) -> KvResult<()>;
     fn remove(&self, k: Self::K) -> KvResult<()>;
+    fn save(&self) -> KvResult<()>;
     fn upsert(&self, k: Self::K, v: Self::V) -> KvResult<()>;
 }
 
@@ -58,6 +59,10 @@ impl<BC: BackendCol, E: EventTrait> DbCollectionRw for ColRw<BC, E> {
             let events = smallvec::smallvec![E::remove(k)];
             self.notify_subscribers(events);
         }
+        Ok(())
+    }
+    fn save(&self) -> KvResult<()> {
+        self.inner.inner.save()?;
         Ok(())
     }
     fn upsert(&self, k: Self::K, v: Self::V) -> KvResult<()> {

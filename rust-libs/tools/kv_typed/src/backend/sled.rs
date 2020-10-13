@@ -112,6 +112,11 @@ impl BackendCol for SledCol {
             reversed: false,
         }
     }
+    #[inline(always)]
+    fn save(&self) -> KvResult<()> {
+        self.0.flush()?;
+        Ok(())
+    }
 }
 
 pub struct SledIter {

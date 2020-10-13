@@ -44,6 +44,7 @@ pub(crate) fn impl_db_writable(
                 backend_conf: <<Self as #db_writable>::Backend as kv_typed::backend::Backend>::Conf,
             ) -> KvResult <Self>;
             fn new_batch(&self) -> Self::Batch;
+            fn save(&self) -> KvResult<()>;
             fn write_batch(&self, batch: Self::Batch) -> KvResult<()>;
             #(fn #col_method_rw(&self) -> &Self::#col_name_class;)*
         }
@@ -78,6 +79,10 @@ pub(crate) fn impl_db_writable(
                         ),)*
                     },
                 })
+            }
+            fn save(&self) -> KvResult<()> {
+                #(self.collections.#col_field.save()?;)*
+                Ok(())
             }
             #(fn #col_method_rw(&self) -> &ColRw<B::Col, #col_event_type> { &self.collections.#col_field })*
         }

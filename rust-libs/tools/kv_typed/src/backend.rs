@@ -66,6 +66,7 @@ pub trait BackendCol: 'static + Clone + Send + Sync {
     fn delete<K: Key>(&self, k: &K) -> KvResult<()>;
     fn new_batch() -> Self::Batch;
     fn write_batch(&self, inner_batch: Self::Batch) -> KvResult<()>;
+    fn save(&self) -> KvResult<()>;
 }
 
 #[cfg_attr(feature = "mock", mockall::automock)]

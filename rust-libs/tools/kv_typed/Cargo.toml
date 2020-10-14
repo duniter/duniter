@@ -24,6 +24,7 @@ serde_json = { version = "1.0.53", optional = true }
 sled = { version = "0.34.4", optional = true }
 smallvec = { version = "1.4.0", features = ["serde"] }
 thiserror = "1.0.20"
+zerocopy = "0.3.0"
 
 [[bench]]
 name = "compare_backends"
@@ -40,7 +41,7 @@ unwrap = "1.2.1"
 criterion = { version = "0.3.1" }
 
 [features]
-#default = ["memory_backend"]
+default = ["memory_backend"]
 
 async = ["async-channel"]
 explorer = ["rayon", "regex", "serde_json"]
@@ -52,6 +53,6 @@ sync = ["crossbeam-channel"]
 
 mock = ["mockall"]
 
-default = ["memory_backend", "subscription", "sync"]
+#default = ["memory_backend", "subscription", "sync"]
 #default = ["memory_backend", "subscription", "sync", "explorer"]
 #default = ["memory_backend", "subscription", "sync", "mock"]

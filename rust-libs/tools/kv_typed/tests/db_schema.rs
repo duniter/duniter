@@ -1,14 +1,34 @@
 #[cfg(feature = "memory_backend")]
 mod tests {
     use kv_typed::prelude::*;
+    use smallvec::SmallVec;
     use std::fmt::Debug;
+
+    #[derive(Debug, PartialEq)]
+    pub struct VecU128(Vec<u128>);
+    kv_typed::impl_value_for_vec_zc!(VecU128, u128);
+
+    #[derive(Debug, PartialEq)]
+    pub struct SVecU128(SmallVec<[u128; 4]>);
+    kv_typed::impl_value_for_smallvec_zc!(SVecU128, u128, 4);
+
+    use std::collections::BTreeSet;
+    #[derive(Debug, PartialEq)]
+    pub struct BTSetU128(BTreeSet<u128>);
+    kv_typed::impl_value_for_btreeset_zc!(BTSetU128, u128);
+
+    use std::collections::HashSet;
+    #[derive(Debug, PartialEq)]
+    pub struct HashSetU128(HashSet<u128>);
+    kv_typed::impl_value_for_hashset_zc!(HashSetU128, u128);
 
     db_schema!(
         TestV1,
         [
-            ["c1", col_1, i32, String],
-            ["c2", col_2, usize, i128],
-            ["c2", col_3, u64, u128],
+            ["c1", col_1, i32, String,],
+            ["c2", col_2, usize, i128,],
+            ["c3", col_3, u64, VecU128],
+            ["c4", col_4, u64, BTSetU128],
         ]
     );
 
@@ -41,6 +61,13 @@ mod tests {
         }
 
         assert_eq!(db.col_1().get(&3)?, Some("toto".to_owned()),);
+        let d = db.col_1().get_ref_slice(&3, |bytes| {
+            let str_ = unsafe { core::str::from_utf8_unchecked(bytes) };
+            assert_eq!("toto", str_);
+            assert_eq!(db.col_2().get(&3)?, None,);
+            Ok(str_.to_owned())
+        })?;
+        assert_eq!(d, Some("toto".to_owned()));
 
         assert_eq!(db.col_2().get(&3)?, None,);
 
@@ -67,6 +94,22 @@ mod tests {
         assert_eq!(iter.next_res()?, Some("titi".to_owned()));
         assert_eq!(iter.next_res()?, Some("toto".to_owned()));
         assert_eq!(iter.next_res()?, None);
+
+        db.col_3_write().upsert(4, VecU128(vec![1, 2, 3]))?;
+        db.col_3().get_ref_slice(&4, |numbers| {
+            assert_eq!(numbers, &[1, 2, 3]);
+            Ok(())
+        })?;
+
+        use std::iter::FromIterator as _;
+        db.col_4_write().upsert(
+            4,
+            BTSetU128(BTreeSet::from_iter((&[3, 2, 4, 1]).iter().copied())),
+        )?;
+        db.col_4().get_ref_slice(&4, |numbers| {
+            assert_eq!(numbers, &[1, 2, 3, 4]);
+            Ok(())
+        })?;
 
         Ok(())
     }

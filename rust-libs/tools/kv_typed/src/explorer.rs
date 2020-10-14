@@ -75,7 +75,7 @@ macro_rules! impl_explorable_value_for_numbers {
 }
 
 impl_explorable_value_for_numbers!(
-    usize, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64
+    usize, u8, u16, u32, u64, u128, isize, i8, i16, i32, i64, i128, f32, f64
 );
 
 #[derive(Debug)]

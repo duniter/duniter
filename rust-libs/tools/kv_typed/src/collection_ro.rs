@@ -83,3 +83,37 @@ impl<BC: BackendCol, E: EventTrait> DbCollectionRo for ColRo<BC, E> {
             .map_err(|_| KvError::FailToSubscribe)
     }
 }
+
+pub trait DbCollectionRoGetRef<V: ValueZc>: DbCollectionRo<V = V> {
+    fn get_ref<D, F: Fn(&V::Ref) -> KvResult<D>>(
+        &self,
+        k: &<Self as DbCollectionRo>::K,
+        f: F,
+    ) -> KvResult<Option<D>>;
+}
+
+impl<V: ValueZc, BC: BackendCol, E: EventTrait<V = V>> DbCollectionRoGetRef<V> for ColRo<BC, E> {
+    fn get_ref<D, F: Fn(&V::Ref) -> KvResult<D>>(&self, k: &E::K, f: F) -> KvResult<Option<D>> {
+        self.inner.get_ref::<E::K, V, D, F>(k, f)
+    }
+}
+
+pub trait DbCollectionRoGetRefSlice<V: ValueSliceZc>: DbCollectionRo<V = V> {
+    fn get_ref_slice<D, F: Fn(&[V::Elem]) -> KvResult<D>>(
+        &self,
+        k: &<Self as DbCollectionRo>::K,
+        f: F,
+    ) -> KvResult<Option<D>>;
+}
+
+impl<V: ValueSliceZc, BC: BackendCol, E: EventTrait<V = V>> DbCollectionRoGetRefSlice<V>
+    for ColRo<BC, E>
+{
+    fn get_ref_slice<D, F: Fn(&[V::Elem]) -> KvResult<D>>(
+        &self,
+        k: &E::K,
+        f: F,
+    ) -> KvResult<Option<D>> {
+        self.inner.get_ref_slice::<E::K, V, D, F>(k, f)
+    }
+}

@@ -59,6 +59,16 @@ pub trait BackendCol: 'static + Clone + Send + Sync {
         + ReversableIterator;
 
     fn get<K: Key, V: Value>(&self, k: &K) -> KvResult<Option<V>>;
+    fn get_ref<K: Key, V: ValueZc, D, F: Fn(&V::Ref) -> KvResult<D>>(
+        &self,
+        k: &K,
+        f: F,
+    ) -> KvResult<Option<D>>;
+    fn get_ref_slice<K: Key, V: ValueSliceZc, D, F: Fn(&[V::Elem]) -> KvResult<D>>(
+        &self,
+        k: &K,
+        f: F,
+    ) -> KvResult<Option<D>>;
     fn clear(&self) -> KvResult<()>;
     fn count(&self) -> KvResult<usize>;
     fn iter<K: Key, V: Value>(&self, range: RangeBytes) -> Self::Iter;

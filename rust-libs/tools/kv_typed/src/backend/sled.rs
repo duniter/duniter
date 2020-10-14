@@ -89,6 +89,54 @@ impl BackendCol for SledCol {
         })
     }
     #[inline(always)]
+    fn get_ref<K: Key, V: ValueZc, D, F: Fn(&V::Ref) -> KvResult<D>>(
+        &self,
+        k: &K,
+        f: F,
+    ) -> KvResult<Option<D>> {
+        k.as_bytes(|k_bytes| {
+            self.0
+                .get(k_bytes)?
+                .map(|bytes| {
+                    if let Some(layout_verified) =
+                        zerocopy::LayoutVerified::<_, V::Ref>::new(bytes.as_ref())
+                    {
+                        f(&layout_verified)
+                    } else {
+                        Err(KvError::DeserError(
+                            "Bytes are invalid length or alignment.".to_owned(),
+                        ))
+                    }
+                })
+                .transpose()
+        })
+    }
+    #[inline(always)]
+    fn get_ref_slice<K: Key, V: ValueSliceZc, D, F: Fn(&[V::Elem]) -> KvResult<D>>(
+        &self,
+        k: &K,
+        f: F,
+    ) -> KvResult<Option<D>> {
+        k.as_bytes(|k_bytes| {
+            self.0
+                .get(k_bytes)?
+                .map(|bytes| {
+                    if let Some(layout_verified) =
+                        zerocopy::LayoutVerified::<_, [V::Elem]>::new_slice(
+                            &bytes[V::prefix_len()..],
+                        )
+                    {
+                        f(&layout_verified)
+                    } else {
+                        Err(KvError::DeserError(
+                            "Bytes are invalid length or alignment.".to_owned(),
+                        ))
+                    }
+                })
+                .transpose()
+        })
+    }
+    #[inline(always)]
     fn delete<K: Key>(&self, k: &K) -> KvResult<()> {
         k.as_bytes(|k_bytes| self.0.remove(k_bytes))?;
         Ok(())

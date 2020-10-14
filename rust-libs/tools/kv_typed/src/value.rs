@@ -50,10 +50,34 @@ impl<T> Value for T where
 {
 }
 
-impl FromBytes for String {
-    type Err = std::str::Utf8Error;
+pub trait ValueZc: Value {
+    type Ref: Sized + zerocopy::AsBytes + zerocopy::FromBytes;
+}
 
-    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
-        Ok(std::str::from_utf8(bytes)?.to_owned())
+macro_rules! impl_value_zc_for_numbers {
+    ($($T:ty),*) => {$(
+        impl ValueZc for $T {
+            type Ref = Self;
+        }
+    )*};
+}
+
+impl_value_zc_for_numbers!(
+    usize, u8, u16, u32, u64, u128, isize, i8, i16, i32, i64, i128, f32, f64
+);
+
+pub trait ValueSliceZc: Value {
+    type Elem: Sized + zerocopy::AsBytes + zerocopy::FromBytes;
+
+    fn prefix_len() -> usize {
+        8
+    }
+}
+
+impl ValueSliceZc for String {
+    type Elem = u8;
+
+    fn prefix_len() -> usize {
+        0
     }
 }

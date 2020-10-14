@@ -19,4 +19,76 @@ macro_rules! impl_from_bytes_for_numbers {
     )*};
 }
 
-impl_from_bytes_for_numbers!(usize, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64);
+impl_from_bytes_for_numbers!(
+    usize, u8, u16, u32, u64, u128, isize, i8, i16, i32, i64, i128, f32, f64
+);
+
+impl FromBytes for String {
+    type Err = std::str::Utf8Error;
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
+        Ok(std::str::from_utf8(bytes)?.to_owned())
+    }
+}
+
+macro_rules! impl_from_bytes_for_smallvec {
+    ($($N:literal),*) => {$(
+        impl<T> FromBytes for SmallVec<[T; $N]>
+        where
+            T: Copy + zerocopy::FromBytes,
+        {
+            type Err = StringErr;
+
+            fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
+                let layout_verified = zerocopy::LayoutVerified::<_, [T]>::new_slice(bytes)
+                    .ok_or_else(|| StringErr("".to_owned()))?;
+                Ok(SmallVec::from_slice(layout_verified.into_slice()))
+            }
+        }
+    )*};
+}
+impl_from_bytes_for_smallvec!(1, 2, 4, 8, 16, 32, 64);
+
+impl<T> FromBytes for Vec<T>
+where
+    T: Copy + zerocopy::FromBytes,
+{
+    type Err = StringErr;
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
+        let layout_verified = zerocopy::LayoutVerified::<_, [T]>::new_slice(bytes)
+            .ok_or_else(|| StringErr("".to_owned()))?;
+        let slice = layout_verified.into_slice();
+        let mut vec = Vec::with_capacity(slice.len());
+        vec.copy_from_slice(slice);
+        Ok(vec)
+    }
+}
+
+impl<T> FromBytes for BTreeSet<T>
+where
+    T: Copy + zerocopy::FromBytes + Ord,
+{
+    type Err = StringErr;
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
+        let layout_verified = zerocopy::LayoutVerified::<_, [T]>::new_slice(bytes)
+            .ok_or_else(|| StringErr("".to_owned()))?;
+        let slice = layout_verified.into_slice();
+        Ok(BTreeSet::from_iter(slice.iter().copied()))
+    }
+}
+
+impl<T> FromBytes for HashSet<T>
+where
+    T: Copy + Eq + zerocopy::FromBytes + std::hash::Hash,
+{
+    type Err = StringErr;
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
+        let layout_verified = zerocopy::LayoutVerified::<_, [T]>::new_slice(bytes)
+            .ok_or_else(|| StringErr("".to_owned()))?;
+        let slice = layout_verified.into_slice();
+        Ok(HashSet::from_iter(slice.iter().copied()))
+    }
+}

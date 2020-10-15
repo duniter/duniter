@@ -669,21 +669,22 @@ checksum = "4bb454f0228b18c7f4c3b0ebbee346ed9c52e7443b0999cd543ff3571205701d"
 
 [[package]]
 name = "dubp-common"
-version = "0.27.0"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9065aee59079a32827030c709376f806090b7e10f4795a0ba3278da2398d5de3"
+checksum = "3b9a83f96333ab97bbc938c000b5493410612e6e6620ff3d4b9c0696be1288dc"
 dependencies = [
  "dup-crypto",
  "serde",
  "serde_json",
  "thiserror",
+ "zerocopy",
 ]
 
 [[package]]
 name = "dubp-documents"
-version = "0.27.0"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c6fa269770466c41e7bfe6163e0cb7254e6a506fcbcf93113e342d93b18efa5"
+checksum = "25a0c0386b4053937eff3dc119d3b416bc666ea7790f38ab9c43bb371eff9e36"
 dependencies = [
  "beef",
  "dubp-wallet",
@@ -695,9 +696,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-documents-parser"
-version = "0.27.0"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aafe947ec9cb8d75aa69b09fb75c1d1c7820aec88ce93c6e09090c90e8508c67"
+checksum = "8cc62963b74a3a3066090a283b330bf40daed30e5d219ace883f5a36bb8597d2"
 dependencies = [
  "dubp-documents",
  "json-pest-parser",
@@ -709,14 +710,16 @@ dependencies = [
 
 [[package]]
 name = "dubp-wallet"
-version = "0.27.0"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3305acf768150d39028fde25d74396cccedb8a104ee4c942d0ae3d51e276511"
+checksum = "c5c2cd22cc74dbf36b2a0a1405c9215905e2cffcff03d17034966d365b44736f"
 dependencies = [
+ "byteorder",
  "dubp-common",
  "serde",
  "smallvec",
  "thiserror",
+ "zerocopy",
 ]
 
 [[package]]
@@ -803,9 +806,9 @@ dependencies = [
 
 [[package]]
 name = "dup-crypto"
-version = "0.27.0"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e95a3edbaa4a70dc28d157ab575dfccef82406345589e8567d09c1b153214603"
+checksum = "c0ec2c6733952ea0d29baea05cdec306c4966884b2e2f0b92ce603d94b3c12bb"
 dependencies = [
  "base64 0.11.0",
  "bs58",
@@ -815,6 +818,7 @@ dependencies = [
  "ring",
  "serde",
  "thiserror",
+ "zerocopy",
  "zeroize",
 ]
 

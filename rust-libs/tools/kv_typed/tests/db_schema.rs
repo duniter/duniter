@@ -32,8 +32,9 @@ mod tests {
         ]
     );
 
-    #[maybe_async::test(not(feature = "async"), async(feature = "async", async_std::test))]
-    async fn test_db_schema() -> KvResult<()> {
+    //#[maybe_async::test(not(feature = "async"), async(feature = "async", async_std::test))]
+    #[test]
+    fn test_db_schema() -> KvResult<()> {
         let db = TestV1Db::<Mem>::open(MemConf::default())?;
 
         #[cfg(feature = "subscription")]
@@ -53,7 +54,7 @@ mod tests {
                 value: "toto".to_owned(),
             }];
             #[allow(unused_parens)]
-            if let Ok(msg) = recv.recv().await {
+            if let Ok(msg) = recv.recv() {
                 assert_eq!(msg.as_ref(), &expected_events,)
             } else {
                 panic!("must be receive event")

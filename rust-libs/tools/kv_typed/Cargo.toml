@@ -12,8 +12,7 @@ edition = "2018"
 path = "src/lib.rs"
 
 [dependencies]
-async-channel = { version = "1.4.2", optional = true }
-crossbeam-channel = { version = "0.4.4", optional = true }
+flume = "0.9.1"
 kv_typed_code_gen = { path = "../kv_typed_code_gen" }
 leveldb_minimal = { version = "0.1.0", optional = true }
 mockall = { version = "0.8.0", optional = true }
@@ -43,13 +42,13 @@ criterion = { version = "0.3.1" }
 [features]
 default = ["memory_backend"]
 
-async = ["async-channel"]
+async = []
 explorer = ["rayon", "regex", "serde_json"]
 leveldb_backend = ["leveldb_minimal"]
 memory_backend = ["parking_lot"]
 sled_backend = ["sled"]
 subscription = ["parking_lot"]
-sync = ["crossbeam-channel"]
+sync = []
 
 mock = ["mockall"]
 

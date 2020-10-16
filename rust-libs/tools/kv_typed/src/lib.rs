@@ -44,10 +44,7 @@ mod utils;
 mod value;
 
 // Re-export dependencies
-#[cfg(feature = "async")]
-pub use async_channel as channel;
-#[cfg(all(not(feature = "async"), feature = "sync"))]
-pub use crossbeam_channel as channel;
+pub use flume as channel;
 #[cfg(feature = "explorer")]
 pub use regex;
 pub use zerocopy;
@@ -98,11 +95,7 @@ pub(crate) use crate::prelude::*;
 pub(crate) use crate::subscription::ColSubscribers;
 pub(crate) use crate::utils::arc::Arc;
 pub(crate) use crate::utils::ivec::IVec;
-#[cfg(feature = "async")]
-use async_channel::{unbounded, Receiver, Sender, TrySendError};
-#[cfg(all(not(feature = "async"), feature = "sync"))]
-#[allow(unused_imports)]
-use crossbeam_channel::{unbounded, Receiver, Sender, TrySendError};
+use flume::{unbounded, Receiver, Sender, TrySendError};
 pub(crate) use smallvec::SmallVec;
 pub(crate) use std::{
     collections::{BTreeSet, HashSet},

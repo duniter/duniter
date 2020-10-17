@@ -3,7 +3,7 @@
 export class TransactionDTOV10 {
     currency: string;
     locktime: number;
-    hash: string;
+    hash?: string;
     blockstamp: string;
     blockstampTime: number;
     issuers: string[];
@@ -12,6 +12,7 @@ export class TransactionDTOV10 {
     unlocks: string[];
     signatures: string[];
     comment: string;
+    writtenBlock?: number;
 }
 
 export function rawTxParseAndVerify(raw: string, currency?: string): TransactionDTOV10;

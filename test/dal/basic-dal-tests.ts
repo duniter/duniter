@@ -16,6 +16,7 @@ import {PeerDTO} from "../../app/lib/dto/PeerDTO"
 import {Directory} from "../../app/lib/system/directory"
 import {DBBlock} from "../../app/lib/db/DBBlock"
 import {Underscore} from "../../app/lib/common-libs/underscore"
+import { ConfDTO } from "../../app/lib/dto/ConfDTO"
 
 var should = require('should');
 var assert = require('assert');
@@ -32,7 +33,7 @@ var mocks = {
     ]
   },
   block0: {
-    "hash" : "00063EB6E83F8717CEF1D25B3E2EE308374A14B1",
+    "hash" : "00063EB6E83F8717CEF1D25B3E2EE30800063EB6E83F8717CEF1D25B3E2EE308",
     "signature" : "+78w7251vvRdhoIJ6IWHEiEOLxNrmfQf45Y5sYvPdnAdXkVpO1unMV5YA/G5Vhphyz1dICrbeKCPM5qbFsoWAQ==",
     "version" : constants.BLOCK_GENESIS_VERSION,
     "currency" : "meta_brouzouf",
@@ -151,7 +152,7 @@ describe("DAL", function(){
   });
 
   it('should be able to save a Block', async () => {
-    await fileDAL.saveBlock(Underscore.extend({ fork: false } as any, mocks.block0));
+    await fileDAL.saveBlock(Underscore.extend({ fork: false } as any, mocks.block0), ConfDTO.mock());
     let block = (await fileDAL.getFullBlockOf(0)) as DBBlock
     block.should.have.property('hash').equal(mocks.block0.hash);
     block.should.have.property('signature').equal(mocks.block0.signature);

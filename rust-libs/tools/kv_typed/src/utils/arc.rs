@@ -109,6 +109,7 @@ impl<T> Arc<T> {
         ptr
     }
 
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn from_raw(ptr: *const T) -> Arc<T> {
         let align = std::cmp::max(mem::align_of::<T>(), mem::align_of::<AtomicUsize>());
 

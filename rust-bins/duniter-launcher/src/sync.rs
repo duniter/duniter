@@ -20,6 +20,9 @@ pub(crate) struct DuniterSyncArgs {
     /// Check all DUPB rules (very long).
     #[structopt(hidden(true), long)]
     cautious: bool,
+    /// Populate GVA DB (Necessary for the GVA api to work)
+    #[structopt(long)]
+    gva: bool,
     /// Allow to synchronize on nodes with local network IP address.
     #[structopt(hidden(true), long)]
     localsync: bool,
@@ -60,6 +63,9 @@ pub(crate) fn gen_args(args: &DuniterSyncArgs, duniter_ts_args: &mut Vec<String>
     if args.cautious {
         duniter_ts_args.push("--cautious".into());
     }
+    if args.gva {
+        duniter_ts_args.push("--gva".into());
+    }
     if args.localsync {
         duniter_ts_args.push("--localsync".into());
     }
@@ -81,5 +87,4 @@ pub(crate) fn gen_args(args: &DuniterSyncArgs, duniter_ts_args: &mut Vec<String>
     if args.slow {
         duniter_ts_args.push("--slow".into());
     }
-    todo!()
 }

@@ -325,7 +325,10 @@ export class DuniterBlockchain {
     await dal.trimSandboxes(block);
 
     // Saves the block (DAL)
-    await dal.saveBlock(dbb);
+    await dal.saveBlock(dbb, conf);
+
+    // Send block to rust server
+    dal.rustServer.applyBlock(block);
 
     // Save wot file
     if (!dal.fs.isMemoryOnly()) {
@@ -487,11 +490,16 @@ export class DuniterBlockchain {
   }
 
   static async revertBlock(
+    conf: ConfDTO,
     number: number,
     hash: string,
     dal: FileDAL,
     block?: DBBlock
   ) {
+    if (block && conf.gva) {
+      dal.rustServer.revertBlock(block.toBlockDTO());
+    }
+
     const blockstamp = [number, hash].join("-");
 
     // Revert links
@@ -587,7 +595,7 @@ export class DuniterBlockchain {
     for (const obj of block.transactions) {
       obj.currency = block.currency;
       let tx = TransactionDTO.fromJSONObject(obj);
-      await dal.saveTransaction(DBTx.fromTransactionDTO(tx));
+      await dal.saveTransaction(tx);
     }
   }
 
@@ -641,7 +649,7 @@ export class DuniterBlockchain {
       obj.currency = block.currency;
       const tx = TransactionDTO.fromJSONObject(obj);
       const txHash = tx.getHash();
-      await dal.removeTxByHash(txHash);
+      await dal.removePendingTxByHash(txHash);
     }
   }
 

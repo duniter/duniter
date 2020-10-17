@@ -13,10 +13,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use dubp_common::crypto::bases::b58::ToBase58 as _;
-use dubp_common::crypto::hashs::Hash;
-use dubp_common::crypto::keys::PublicKey;
-use dubp_common::prelude::*;
+use dubp::common::crypto::bases::b58::ToBase58 as _;
+use dubp::common::crypto::hashs::Hash;
+use dubp::common::crypto::keys::PublicKey;
+use dubp::common::prelude::*;
 use duniter_dbs::kv_typed::prelude::*;
 use duniter_dbs::*;
 use duniter_dbs::{

@@ -31,6 +31,7 @@ describe("Testing transactions", function() {
   before(async () => {
 
     s1 = NewTestingServer({
+      gva: {},
       pair: {
         pub: 'DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV',
         sec: '468Q1XtTq7h84NorZdWBZFJrGkB18CbmbHr9tkp9snt5GiERP7ySs3wM8myLccbAAGejgMRC9rqnXuW3iAfZACm7'
@@ -67,7 +68,6 @@ describe("Testing transactions", function() {
     await s1.expect('/tx/history/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', (res:any) => {
       res.should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
       res.should.have.property('history').property('pending').length(1);
-      res.history.pending[0].should.have.property('received').be.a.Number;
     });
     await s1.commit({
       time: now + 7220

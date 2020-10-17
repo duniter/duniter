@@ -62,7 +62,7 @@ export class TransactionBinding extends AbstractController {
 
   async getByHash(req: any): Promise<HttpTransaction> {
     const hash = ParametersService.getHash(req);
-    const tx: DBTx = await this.server.dal.getTxByHash(hash);
+    const tx = await this.server.dal.getTxByHash(hash);
     if (!tx) {
       throw BMAConstants.ERRORS.TX_NOT_FOUND;
     }
@@ -171,7 +171,6 @@ export class TransactionBinding extends AbstractController {
       history: {
         sending: history.sending.map(dbtx2HttpTxOfHistory),
         received: history.received.map(dbtx2HttpTxOfHistory),
-        receiving: history.receiving.map(dbtx2HttpTxOfHistory),
         sent: history.sent.map(dbtx2HttpTxOfHistory),
         pending: history.pending.map(dbtx2HttpTxOfHistory),
       },

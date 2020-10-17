@@ -34,6 +34,7 @@ import { ProverConstants } from "../../prover/lib/constants";
 import { ProxiesConf } from "../../../lib/proxy";
 import { Underscore } from "../../../lib/common-libs/underscore";
 import { NewLogger } from "../../../lib/logger";
+import { TransactionDTO } from "../../../lib/dto/TransactionDTO";
 
 const es = require("event-stream");
 const nuuid = require("node-uuid");
@@ -1353,6 +1354,21 @@ export class WS2PCluster {
         await puller.pull();
       })
     );
+  }
+
+  async pushPendingTransactions(txs: TransactionDTO[]) {
+    const connections = this.getAllConnections();
+    const chosen = randomPick(connections, CrawlerConstants.CRAWL_PEERS_COUNT);
+    try {
+      await Promise.all(
+        chosen.map(async (conn) => {
+          conn.pushTransactions(txs);
+        })
+      );
+      logger.info("Pending transactions pushed on WS2P connections.");
+    } catch (e) {
+      logger.warn("Fail to push pending transactions: " + e);
+    }
   }
 
   getConnectedPubkeys() {

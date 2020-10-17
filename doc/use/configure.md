@@ -53,10 +53,11 @@ The prefix must be an integer between `1` and `899`.
 
 ### The APIs
 
-  In version `1.9.x` there are two APIs (Application Programming Interface) allowing your node to communicate with other programs.
+  In version `1.9.x` there are three APIs (Application Programming Interface) allowing your node to communicate with other programs.
 
 1. WS2P (WebSocketToPeer): this API is dedicated to inter-node communication, i.e. between your duniter node and other nodes of the same currency. **WS2P is enabled by default** on your duniter node.
 2. BMA (Basic Merkled Api) : this old API is dedicated to the communication with client software (Cesium, Sakia, Silkaj), it can also be used by any external program wishing to request the network (a website that would like to check the presence of a blockchain transaction for example). BMA is looking forward to developing a new client API to replace it. **BMA is disabled by default** on your duniter node.
+3. GVA (Graphql Verification Api): New client API intended to replace BMA. This API is still incomplete (this is why BMA still exists).
 
 ### Configuring WS2P
 
@@ -180,6 +181,20 @@ If you install duniter on a VPS or a dedicated server you will have to do withou
 Nodes with public WS2P are necessary for the duniter network to work, and the more nodes with public WS2P, the more decentralized the network is.  
 This mode is optional if only because technically it is sometimes difficult or even impossible to be accessible from the outside (node behind a 4G router for example).
 
+### Configuring GVA
+
+GVA is still disabled by default. To enable it you have to add the option `--gva` during synchronization and at each start of your duniter node (`duniter start --gva`).
+
+GVA is not yet configurable from the command line, but it is possible to use environment variables :
+
+| parameter | env var | default value |
+|:-:|:-:|:-:|
+| remote_path | `DUNITER_GVA_REMOTE_PATH` | `/gva`
+
+GVA server listen to `localhost:10901/remote_path`
+
+GVA subscriptions websocket server listen to `localhost:10901/gva-sub`
+
 ## Synchronize your node
 
 To join the network of a currency you must synchronize with a node already on this network:
@@ -189,6 +204,8 @@ duniter sync DUNITER_NODE_HOST:DUNITER_NODE_PORT
 ```
 
 For Ğ1, if you don't know any node you can choose the official node `g1.duniter.org:443`.
+
+NB: If you want to enable GVA you have to synchronize with the `--gva` option.
 
 ## Launch
 

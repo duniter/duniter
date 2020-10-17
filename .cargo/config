@@ -1,5 +1,6 @@
 [alias]
 bdex = "build --release --package duniter-dbex"
+ca = "clippy --all"
 cn = "check --manifest-path neon/native/Cargo.toml"
 dex = "run --release --package duniter-dbex --"
 ta = "test --all"

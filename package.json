@@ -28,7 +28,7 @@
     "tsc": "tsc",
     "tscw": "tsc -w",
     "doc": "typedoc --out typedoc/ index.ts app/ --mode file --readme README.md --includeDeclarations --sourcefile-url-prefix \"https://git.duniter.org/nodes/typescript/duniter/blob/loki/\"",
-    "test": "DUNITER_LOG_STDOUT=no nyc --reporter html mocha",
+    "test": "DUNITER_MEMORY_ONLY=yes DUNITER_LOG_STDOUT=no nyc --reporter html mocha",
     "start": "cargo run -- start",
     "build": "./neon/build.sh && cd.. && tsc && cd \"../node_modules/duniter-ui\" && npm install && npm run build",
     "install": "./neon/build.sh",

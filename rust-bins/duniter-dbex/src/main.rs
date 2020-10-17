@@ -29,13 +29,14 @@ mod stringify_json_value;
 use self::cli::{Database, Opt, OutputFormat, SubCommand};
 use self::stringify_json_value::stringify_json_value;
 use comfy_table::Table;
+use duniter_dbs::kv_typed::backend::sled;
 use duniter_dbs::kv_typed::prelude::*;
 use duniter_dbs::prelude::*;
 use duniter_dbs::regex::Regex;
 use duniter_dbs::serde_json::{Map, Value};
 use duniter_dbs::smallvec::{smallvec, SmallVec};
-use duniter_dbs::BcV1Db;
-use duniter_dbs::BcV1DbWritable;
+use duniter_dbs::{BcV1Db, GvaV1Db, TxsMpV2Db};
+use duniter_dbs::{BcV1DbWritable, GvaV1DbWritable, TxsMpV2DbWritable};
 use rayon::prelude::*;
 use std::{
     collections::{HashMap, HashSet},
@@ -87,6 +88,22 @@ fn main() -> Result<(), String> {
                 db_path: data_path.as_path().join("leveldb"),
                 ..Default::default()
             })
+            .map_err(|e| format!("{}", e))?,
+            opt.cmd,
+            open_db_start_time,
+        ),
+        Database::GvaV1 => apply_subcommand(
+            GvaV1Db::<Sled>::open(
+                sled::Config::default().path(data_path.as_path().join("gva_v1_sled")),
+            )
+            .map_err(|e| format!("{}", e))?,
+            opt.cmd,
+            open_db_start_time,
+        ),
+        Database::TxsMpV2 => apply_subcommand(
+            TxsMpV2Db::<Sled>::open(
+                sled::Config::default().path(data_path.as_path().join("txs_mp_v2_sled")),
+            )
             .map_err(|e| format!("{}", e))?,
             opt.cmd,
             open_db_start_time,

@@ -229,7 +229,7 @@ describe("Revert two blocks", function() {
   describe("commit again (but send less, to check that the account is not cleaned this time)", () => {
 
     before(async () => {
-      await s1.dal.txsDAL.removeAll()
+      await s1.dal.rustServer.removeAllPendingTxs()
       await s1.resolveExistingBlock(b => b.number === 2) // UD block
       await cat.sendMoney(19, toc);
       await s1.dal.blockDAL.removeForkBlock(3)

@@ -15,9 +15,9 @@
 
 #[cfg(feature = "explorer")]
 mod explorer {
-    use dubp_common::crypto::keys::ed25519::PublicKey;
-    use dubp_common::crypto::keys::PublicKey as _;
-    //use dubp_common::prelude::*;
+    use dubp::common::crypto::keys::ed25519::PublicKey;
+    use dubp::common::crypto::keys::PublicKey as _;
+    //use dubp::common::prelude::*;
     use duniter_dbs::kv_typed::prelude::*;
     use duniter_dbs::kv_typed::regex;
     use duniter_dbs::prelude::*;

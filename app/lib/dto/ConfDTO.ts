@@ -180,6 +180,13 @@ export class ConfDTO
     public bmaWithCrawler: boolean,
     public nonWoTPeersLimit: number,
     public proxiesConf: ProxiesConf | undefined,
+    public gva?: {
+      host?: string;
+      port?: number;
+      remotehost?: string | null;
+      remoteport?: number | null;
+      remotepath?: string;
+    },
     public ws2p?: {
       privateAccess?: boolean;
       publicAccess?: boolean;
@@ -202,7 +209,8 @@ export class ConfDTO
     public storage = {
       transactions: false,
       wotwizard: false,
-    }
+    },
+    public txsMempoolSize?: number
   ) {}
 
   static mock() {
@@ -266,6 +274,7 @@ export class ConfDTO
       false,
       100,
       new ProxiesConf(),
+      undefined,
       undefined
     );
   }
@@ -300,6 +309,7 @@ export class ConfDTO
       forksize: constants.BRANCHES.DEFAULT_WINDOW_SIZE,
       switchOnHeadAdvance: CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS,
       nonWoTPeersLimit: CommonConstants.DEFAULT_NON_WOT_PEERS_LIMIT,
+      txsMempoolSize: constants.SANDBOX_SIZE_TRANSACTIONS,
     };
   }
 

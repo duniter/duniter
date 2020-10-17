@@ -23,10 +23,9 @@ module.exports = {
   duniter: {
     cliOptions: [
       {
-        value: "--store-txs",
-        desc: "Enable full transaction history storage.",
+        value: "--gva",
+        desc: "Enable gva API and database.",
       },
-      { value: "--store-ww", desc: "Enable WotWizard regular export." },
     ],
 
     config: {
@@ -36,23 +35,18 @@ module.exports = {
         conf.switchOnHeadAdvance =
           CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS;
 
-        // Transactions storage
+        // Gva
         if (
-          program.storeTxs ||
-          (program.storeTxs === undefined && !conf.nobma)
+          program.gva &&
+          program.gva === true &&
+          (!program.nogva || program.nogva === undefined)
         ) {
-          if (!conf.storage) {
-            conf.storage = { transactions: true, wotwizard: false };
-          } else {
-            conf.storage.transactions = true;
-          }
-        }
-        if (program.storeWw) {
-          if (!conf.storage) {
-            conf.storage = { transactions: false, wotwizard: true };
-          } else {
-            conf.storage.wotwizard = true;
-          }
+          conf.gva = {
+            host: "localhost",
+            port: 30901,
+          };
+        } else if (program.nogva) {
+          conf.gva = undefined;
         }
       },
       beforeSave: async (conf: ConfDTO) => {

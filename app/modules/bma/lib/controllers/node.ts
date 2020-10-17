@@ -14,6 +14,7 @@
 "use strict";
 import { AbstractController } from "./AbstractController";
 import { HttpSandbox, HttpSandboxes, HttpSummary } from "../dtos";
+import { constants } from "buffer";
 
 export class NodeBinding extends AbstractController {
   summary = (): HttpSummary => {
@@ -30,7 +31,10 @@ export class NodeBinding extends AbstractController {
     return {
       identities: await sandboxIt(this.server.dal.idtyDAL.sandbox),
       memberships: await sandboxIt(this.server.dal.msDAL.sandbox),
-      transactions: await sandboxIt(this.server.dal.txsDAL.sandbox),
+      transactions: {
+        size: this.server.conf.txsMempoolSize || 200,
+        free: this.server.dal.rustServer.getMempoolTxsFreeRooms(),
+      },
     };
   }
 }

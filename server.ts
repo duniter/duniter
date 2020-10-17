@@ -45,7 +45,8 @@ import {LevelUp} from "levelup";
 import {BMAConstants} from "./app/modules/bma/lib/constants"
 import {HttpMilestonePage} from "./app/modules/bma/lib/dtos"
 import * as toJson from "./app/modules/bma/lib/tojson"
-import { rawTxParseAndVerify, txVerify } from "./neon/lib"
+import { rawTxParseAndVerify, RustEventEmitter, txVerify } from "./neon/lib"
+import { TransactionDTOV10 } from "./neon/native"
 
 export interface HookableServer {
   generatorGetJoinData: (...args:any[]) => Promise<any>
@@ -84,6 +85,7 @@ export class Server extends stream.Duplex implements HookableServer {
   keyPair:any
   sign:any
   blockchain:any
+  rustEventEmitter: RustEventEmitter | null = null;
 
   MerkleService:(req:any, merkle:any, valueCoroutine:any) => any
   IdentityService:IdentityService
@@ -364,6 +366,27 @@ export class Server extends stream.Duplex implements HookableServer {
         await this.revertHead();
       }
     }
+
+    // Listen rust events
+    //console.log("TMP: Create RustEventEmitter()");
+    this.rustEventEmitter = new RustEventEmitter();
+    this.rustEventEmitter.on('txs', ({ txs }) => {
+      //console.log("TMP: receive txs from rust !");
+      txs.map((tx: TransactionDTOV10) => this.emitDocument(
+        TransactionDTO.fromTransactionDTOV10(tx), 
+        DuniterDocument.ENTITY_TRANSACTION)
+      );
+    });
+
+    setInterval(() => {
+      if (this.ws2pCluster) {
+        let txs = this.dal.getNewPendingTxs();
+        if (txs.length > 0) {
+          this.ws2pCluster.pushPendingTransactions(txs.map((tx) => TransactionDTO.fromTransactionDTOV10(tx)));
+        }
+      }
+    }, CommonConstants.PUSH_NEW_PENDING_TXS_EVERY_MS);
+
     // Eventual block resolution
     await this.BlockchainService.blockResolution()
     // Eventual fork resolution

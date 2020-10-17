@@ -50,3 +50,57 @@ impl ExplorableKey for HashKeyV1 {
         self.as_bytes(|bytes| Ok(unsafe { std::str::from_utf8_unchecked(bytes) }.to_owned()))
     }
 }
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
+#[repr(transparent)]
+pub struct HashKeyV2(pub Hash);
+
+impl HashKeyV2 {
+    pub fn from_ref(hash: &Hash) -> &Self {
+        #[allow(trivial_casts)]
+        unsafe {
+            &*(hash as *const Hash as *const HashKeyV2)
+        }
+    }
+}
+
+impl KeyAsBytes for HashKeyV2 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        f(self.0.as_ref())
+    }
+}
+
+impl kv_typed::prelude::FromBytes for HashKeyV2 {
+    type Err = StringErr;
+
+    fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
+        if bytes.len() != 32 {
+            Err(StringErr(format!(
+                "Invalid length: expected 32 found {}",
+                bytes.len()
+            )))
+        } else {
+            let mut buffer = [0u8; 32];
+            buffer.copy_from_slice(bytes);
+            Ok(HashKeyV2(Hash(buffer)))
+        }
+    }
+}
+
+impl ToDumpString for HashKeyV2 {
+    fn to_dump_string(&self) -> String {
+        todo!()
+    }
+}
+
+#[cfg(feature = "explorer")]
+impl ExplorableKey for HashKeyV2 {
+    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
+        Ok(Self(
+            Hash::from_hex(source).map_err(|e| StringErr(format!("{}", e)))?,
+        ))
+    }
+    fn to_explorer_string(&self) -> KvResult<String> {
+        Ok(self.0.to_hex())
+    }
+}

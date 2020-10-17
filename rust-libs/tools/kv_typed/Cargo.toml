@@ -21,7 +21,7 @@ rayon = { version = "1.3.1", optional = true }
 regex = { version = "1.3.9", optional = true }
 serde_json = { version = "1.0.53", optional = true }
 sled = { version = "0.34.4", optional = true }
-smallvec = { version = "1.4.0", features = ["serde"] }
+smallvec = { version = "1.4.0", features = ["serde", "write"] }
 thiserror = "1.0.20"
 zerocopy = "0.3.0"
 
@@ -33,7 +33,7 @@ required-features = ["leveldb_backend", "memory_backend", "sled_backend"]
 [dev-dependencies]
 async-std = { version = "1.6.3", features = ["attributes"] }
 maybe-async = "0.2.0"
-smallvec = { version = "1.4.0", features = ["serde"] }
+smallvec = { version = "1.4.0", features = ["serde", "write"] }
 unwrap = "1.2.1"
 
 # Benches dependencies

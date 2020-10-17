@@ -1,0 +1,19 @@
+[package]
+name = "duniter-server"
+version = "1.8.1"
+authors = ["librelois <elois@duniter.org>"]
+license = "AGPL-3.0"
+edition = "2018"
+
+[dependencies]
+dubp = { version = "0.29.0" }
+duniter-dbs = { path = "../duniter-dbs" }
+duniter-dbs-read-ops = { path = "../duniter-dbs-read-ops" }
+duniter-dbs-writer = { path = "../duniter-dbs-writer" }
+duniter-gva = { path = "../duniter-gva" }
+flume = "0.9.1"
+log = "0.4.11"
+resiter = "0.4.0"
+
+[dev-dependencies]
+unwrap = "1.2.1"

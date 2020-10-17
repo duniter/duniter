@@ -16,6 +16,9 @@
 use crate::*;
 
 fn gen_start_args(args: &DuniterStartArgs, duniter_ts_args: &mut Vec<String>) {
+    if args.gva {
+        duniter_ts_args.push("--gva".to_owned());
+    }
     if let Some(ref keyfile) = args.keyfile {
         duniter_ts_args.push("--keyfile".to_owned());
         duniter_ts_args.push(
@@ -91,7 +94,6 @@ pub(crate) fn gen_duniter_ts_args(args: &DuniterArgs, duniter_js_exe: String) ->
         }
         DuniterCommand::Stop => duniter_ts_args.push("stop".to_owned()),
         DuniterCommand::Sync(ref sync_args) => {
-            duniter_ts_args.push("--store-txs".to_owned());
             duniter_ts_args.push("sync".to_owned());
             sync::gen_args(sync_args, &mut duniter_ts_args);
         }

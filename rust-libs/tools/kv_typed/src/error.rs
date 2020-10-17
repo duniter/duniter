@@ -32,6 +32,12 @@ pub enum KvError {
     /// Backend error
     #[error("Backend error: {0}")]
     BackendError(DynErr),
+    /// Custom
+    #[error("{0}")]
+    Custom(String),
+    // DB corrupted
+    #[error("DB corrupted:{0}")]
+    DbCorrupted(String),
     // Error at serialisation or deserialisation
     #[error("DeserError: {0}")]
     DeserError(String),

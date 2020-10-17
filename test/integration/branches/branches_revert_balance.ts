@@ -71,7 +71,7 @@ describe("Revert balance", () => {
   })
 
   it('cat should be able to RE-send 60 units to tac', async () =>  {
-    const txsPending = await s1.dal.txsDAL.getAllPending(1)
+    const txsPending = await s1.dal.rustServer.getTransactionsPending(1, 0)
     await s1.dal.blockDAL.removeForkBlock(3)
     txsPending.should.have.length(1)
     await s1.commit({ time: now + 1 })

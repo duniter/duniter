@@ -284,7 +284,7 @@ export class BlockchainService extends FIFOService {
         try {
           if (dto.issuer === this.conf.pair.pub) {
             for (const tx of dto.transactions) {
-              await this.dal.removeTxByHash(tx.hash);
+              await this.dal.removePendingTxByHash(tx.hash);
             }
           }
           lastAdded = added = await this.mainContext.checkAndAddBlock(dto);

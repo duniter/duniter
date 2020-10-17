@@ -358,11 +358,7 @@ export const GLOBAL_RULES_HELPERS = {
 
   checkTxBlockStamp: async (tx: TransactionDTO, dal: FileDAL) => {
     const number = parseInt(tx.blockstamp.split("-")[0]);
-    const hash = tx.blockstamp.split("-")[1];
-    const basedBlock = await dal.getAbsoluteValidBlockInForkWindow(
-      number,
-      hash
-    );
+    const basedBlock = await dal.getBlock(number);
     if (!basedBlock) {
       throw "Wrong blockstamp for transaction";
     }

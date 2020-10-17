@@ -186,6 +186,9 @@ enum WS2PCommand {
 
 #[derive(StructOpt)]
 struct DuniterStartArgs {
+    /// Enable GVA API
+    #[structopt(long)]
+    gva: bool,
     /// Force to use the keypair of the given YAML file. File must contain `pub:` and `sec:` fields.
     #[structopt(long, parse(from_os_str), env("DUNITER_KEYFILE"))]
     keyfile: Option<PathBuf>,
@@ -238,6 +241,7 @@ fn main() -> Result<()> {
                 if prod {
                     duniter_js_command.current_dir(DUNITER_JS_CURRENT_DIR);
                 }
+                //println!("TMP duniter_ts_args={:?}", duniter_ts_args);
                 let exit_code_opt = duniter_js_command.args(duniter_ts_args).status()?.code();
                 if let Some(exit_code) = exit_code_opt {
                     std::process::exit(exit_code);

@@ -69,22 +69,13 @@ export class TransactionService extends FIFOService {
           fakeTimeVariation,
           this.conf,
           this.dal,
-          this.dal.getTxByHash.bind(this.dal)
+          await this.dal.getTxByHash.bind(this.dal)
         );
         const server_pubkey = this.conf.pair && this.conf.pair.pub;
-        if (
-          !(await this.dal.txsDAL.sandbox.acceptNewSandBoxEntry(
-            {
-              issuers: tx.issuers,
-              output_base: tx.output_base,
-              output_amount: tx.output_amount,
-            },
-            server_pubkey
-          ))
-        ) {
+        if (!(await this.dal.rustServer.acceptNewTx(tx, server_pubkey))) {
           throw constants.ERRORS.SANDBOX_FOR_TRANSACTION_IS_FULL;
         }
-        await this.dal.saveTransaction(DBTx.fromTransactionDTO(tx));
+        await this.dal.saveTransaction(tx);
         this.logger.info(
           "✔ TX %s:%s from %s",
           tx.output_amount,

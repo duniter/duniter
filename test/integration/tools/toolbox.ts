@@ -820,6 +820,19 @@ export function simpleTestingConf(now = 1500000000, pair:{ pub:string, sec:strin
   }
 }
 
+export function simpleTestingConfWithGva(now = 1500000000, pair:{ pub:string, sec:string }): any {
+  return {
+    gva: {},
+    bmaWithCrawler: true,
+    pair,
+    nbCores: 1,
+    udTime0: now,
+    udReevalTime0: now,
+    sigQty: 1,
+    medianTimeBlocks: 1 // The medianTime always equals previous block's medianTime
+  }
+}
+
 export function catUser(server: TestingServer) {
   return new TestUser('cat', {
     pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',

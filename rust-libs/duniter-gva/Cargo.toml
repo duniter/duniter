@@ -1,0 +1,25 @@
+[package]
+name = "duniter-gva"
+version = "0.1.0"
+authors = ["librelois <elois@duniter.org>"]
+license = "AGPL-3.0"
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0.33"
+async-graphql = "2.0.0"
+dubp = { version = "0.29.0" }
+duniter-dbs = { path = "../duniter-dbs" }
+duniter-dbs-read-ops = { path = "../duniter-dbs-read-ops" }
+duniter-dbs-writer = { path = "../duniter-dbs-writer" }
+flume = "0.9.1"
+futures = "0.3.6"
+http = "0.2.1"
+log = "0.4.11"
+resiter = "0.4.0"
+serde_urlencoded = "0.7.0"
+tokio = { version = "0.2.22", features = ["io-util", "rt-threaded", "stream"] }
+warp = "0.2"
+
+[dev-dependencies]
+unwrap = "1.2.1"

@@ -14,7 +14,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #![deny(
-    clippy::expect_used,
     clippy::unwrap_used,
     missing_debug_implementations,
     missing_copy_implementations,
@@ -26,19 +25,21 @@
 )]
 
 mod crypto;
+mod event_emitter;
 mod logger;
+mod server;
 mod transaction;
 mod wot;
 
 use neon::{prelude::*, register_module};
 
-fn into_neon_res<'c, C: Context<'c>, T, S: AsRef<str>>(
+fn into_neon_res<'c, C: Context<'c>, T, E: std::fmt::Display>(
     context: &mut C,
-    rust_result: Result<T, S>,
+    rust_result: Result<T, E>,
 ) -> NeonResult<T> {
     match rust_result {
         Ok(value) => Ok(value),
-        Err(e) => context.throw_error(e),
+        Err(e) => context.throw_error(format!("{}", e)),
     }
 }
 
@@ -51,7 +52,9 @@ register_module!(mut cx, {
     cx.export_function("sha256", crate::crypto::sha256)?;
     cx.export_function("verify", crate::crypto::verify)?;
     cx.export_class::<crate::crypto::JsKeyPair>("Ed25519Signator")?;
+    cx.export_class::<crate::event_emitter::JsEventEmitter>("RustEventEmitter")?;
     cx.export_class::<crate::logger::JsLogger>("RustLogger")?;
+    cx.export_class::<crate::server::JsServer>("RustServer")?;
     cx.export_function(
         "rawTxParseAndVerify",
         crate::transaction::raw_tx_parse_and_verify,

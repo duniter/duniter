@@ -13,9 +13,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use dubp_common::crypto::keys::ed25519::PublicKey;
-use dubp_common::crypto::keys::PublicKey as _;
-use dubp_common::prelude::*;
+use dubp::common::crypto::keys::ed25519::PublicKey;
+use dubp::common::crypto::keys::PublicKey as _;
+use dubp::common::prelude::*;
 use duniter_dbs::kv_typed::prelude::*;
 use duniter_dbs::{
     BcV1Db, BcV1DbReadable, BcV1DbWritable, BlockDbV1, BlockNumberKeyV1, MainBlockEvent,

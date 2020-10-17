@@ -12,7 +12,7 @@
 // GNU Affero General Public License for more details.
 
 import {TestUser} from '../tools/TestUser';
-import {simpleTestingConf, simpleTestingServer, simpleUser, simpleWS2PNetwork, TestingServer} from "../tools/toolbox"
+import {simpleTestingConf, simpleTestingConfWithGva, simpleTestingServer, simpleUser, simpleWS2PNetwork, TestingServer} from "../tools/toolbox"
 import {WS2PConstants} from "../../../app/modules/ws2p/lib/constants"
 
 const assert = require('assert')
@@ -31,7 +31,7 @@ describe("WS2P doc sharing", function() {
 
   before(async () => {
     const conf1 = simpleTestingConf(now, catKeyring)
-    const conf2 = simpleTestingConf(now, tacKeyring)
+    const conf2 = simpleTestingConfWithGva(now, tacKeyring)
     s1 = simpleTestingServer(conf1)
     s2 = simpleTestingServer(conf2)
     cat = simpleUser('cat', catKeyring, s1)

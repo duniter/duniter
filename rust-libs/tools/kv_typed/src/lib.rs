@@ -81,6 +81,7 @@ pub mod prelude {
     pub use crate::key::Key;
     #[cfg(feature = "subscription")]
     pub use crate::subscription::{NewSubscribers, Subscriber, Subscribers};
+    pub use crate::utils::arc::Arc;
     pub use crate::value::{Value, ValueSliceZc, ValueZc};
     pub use kv_typed_code_gen::db_schema;
 }

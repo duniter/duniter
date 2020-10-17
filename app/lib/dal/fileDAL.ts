@@ -43,7 +43,7 @@ import { MetaDAL } from "./sqliteDAL/MetaDAL";
 import { DataErrors } from "../common-libs/errors";
 import { BasicRevocableIdentity, IdentityDTO } from "../dto/IdentityDTO";
 import { FileSystem } from "../system/directory";
-import { Wot } from "../../../neon/lib";
+import { RustDbTx, RustServer, RustServerConf, Wot } from "../../../neon/lib";
 import { IIndexDAO } from "./indexDAL/abstract/IIndexDAO";
 import { BIndexDAO } from "./indexDAL/abstract/BIndexDAO";
 import { MIndexDAO } from "./indexDAL/abstract/MIndexDAO";
@@ -52,7 +52,6 @@ import { CIndexDAO } from "./indexDAL/abstract/CIndexDAO";
 import { IdentityForRequirements } from "../../service/BlockchainService";
 import { NewLogger } from "../logger";
 import { BlockchainDAO } from "./indexDAL/abstract/BlockchainDAO";
-import { TxsDAO } from "./indexDAL/abstract/TxsDAO";
 import { WalletDAO } from "./indexDAL/abstract/WalletDAO";
 import { PeerDAO } from "./indexDAL/abstract/PeerDAO";
 import { DBTx } from "../db/DBTx";
@@ -73,7 +72,6 @@ import { LevelDBBindex } from "./indexDAL/leveldb/LevelDBBindex";
 import { LevelUp } from "levelup";
 import { LevelDBBlockchain } from "./indexDAL/leveldb/LevelDBBlockchain";
 import { LevelDBSindex } from "./indexDAL/leveldb/LevelDBSindex";
-import { SqliteTransactions } from "./indexDAL/sqlite/SqliteTransactions";
 import { SqlitePeers } from "./indexDAL/sqlite/SqlitePeers";
 import { LevelDBWallet } from "./indexDAL/leveldb/LevelDBWallet";
 import { LevelDBCindex } from "./indexDAL/leveldb/LevelDBCindex";
@@ -113,6 +111,9 @@ export class FileDAL implements ServerDAO {
   coreFS: CFSCore;
   confDAL: ConfDAO;
 
+  // Rust server
+  rustServer: RustServer;
+
   // SQLite DALs
   metaDAL: MetaDAL;
   idtyDAL: IdentityDAL;
@@ -121,7 +122,6 @@ export class FileDAL implements ServerDAO {
 
   // New DAO entities
   blockDAL: BlockchainDAO;
-  txsDAL: TxsDAO;
   peerDAL: PeerDAO;
   walletDAL: WalletDAO;
   bindexDAL: BIndexDAO;
@@ -164,7 +164,6 @@ export class FileDAL implements ServerDAO {
     );
 
     this.blockDAL = new LevelDBBlockchain(getLevelDB);
-    this.txsDAL = new SqliteTransactions(getSqliteDB);
     this.peerDAL = new SqlitePeers(getSqliteDB);
     this.walletDAL = new LevelDBWallet(getLevelDB);
     this.bindexDAL = new LevelDBBindex(getLevelDB);
@@ -181,7 +180,6 @@ export class FileDAL implements ServerDAO {
       certDAL: this.certDAL,
       msDAL: this.msDAL,
       idtyDAL: this.idtyDAL,
-      txsDAL: this.txsDAL,
       peerDAL: this.peerDAL,
       confDAL: this.confDAL,
       walletDAL: this.walletDAL,
@@ -195,10 +193,15 @@ export class FileDAL implements ServerDAO {
   }
 
   async init(conf: ConfDTO) {
+    // Rust server
+    this.initRustServer(conf);
+
+    // wotb
     this.wotb = this.params.wotbf();
+
+    // DALs
     this.dals = [
       this.blockDAL,
-      this.txsDAL,
       this.peerDAL,
       this.walletDAL,
       this.bindexDAL,
@@ -226,6 +229,21 @@ export class FileDAL implements ServerDAO {
       currencyParams.sigStock !== null
     ) {
       this.wotb.setMaxCert(currencyParams.sigStock);
+    }
+  }
+
+  initRustServer(conf: ConfDTO) {
+    let serverPubkey = conf.pair ? conf.pair.pub : null;
+    let rustServerConf = {
+      gva: conf.gva,
+      serverPubkey,
+      txsMempoolSize:
+        conf.txsMempoolSize || constants.SANDBOX_SIZE_TRANSACTIONS,
+    };
+    if (conf.memory) {
+      this.rustServer = new RustServer(rustServerConf, null);
+    } else {
+      this.rustServer = new RustServer(rustServerConf, this.rootPath);
     }
   }
 
@@ -812,16 +830,30 @@ export class FileDAL implements ServerDAO {
       .value();
   }
 
-  getTxByHash(hash: string) {
-    return this.txsDAL.getTX(hash);
+  async getTxByHash(hash: string): Promise<DBTx | null> {
+    let tx = this.rustServer.getTxByHash(hash);
+    if (tx === null) {
+      return null;
+    } else {
+      let writtenBlock = tx.writtenBlock ? tx.writtenBlock : null;
+      let dbTx = DBTx.fromTransactionDTO(
+        await this.computeTxBlockstampTime(TransactionDTO.fromJSONObject(tx))
+      );
+      dbTx.block_number = writtenBlock;
+      return dbTx;
+    }
   }
 
-  removeTxByHash(hash: string) {
-    return this.txsDAL.removeTX(hash);
+  removePendingTxByHash(hash: string) {
+    return this.rustServer.removePendingTxByHash(hash);
   }
 
-  getTransactionsPending(versionMin = 0) {
-    return this.txsDAL.getAllPending(versionMin);
+  getTransactionsPending(versionMin = 0, medianTime = 0) {
+    return this.rustServer.getTransactionsPending(versionMin, medianTime);
+  }
+
+  getNewPendingTxs() {
+    return this.rustServer.getNewPendingTxs();
   }
 
   async getNonWritten(pubkey: string) {
@@ -1205,12 +1237,12 @@ export class FileDAL implements ServerDAO {
     }
   }
 
-  async saveBlock(dbb: DBBlock) {
-    dbb.wrong = false;
-    await Promise.all([
-      this.saveBlockInFile(dbb),
-      this.saveTxsInFiles(dbb.transactions, dbb.number, dbb.medianTime),
-    ]);
+  async saveBlock(block: DBBlock, conf: ConfDTO) {
+    block.wrong = false;
+    if (conf.gva) {
+      this.rustServer.applyBlock(block.toBlockDTO());
+    }
+    await this.saveBlockInFile(block);
   }
 
   async generateIndexes(
@@ -1295,7 +1327,7 @@ export class FileDAL implements ServerDAO {
     await this.certDAL.trimExpiredCerts(block.medianTime);
     await this.msDAL.trimExpiredMemberships(block.medianTime);
     await this.idtyDAL.trimExpiredIdentities(block.medianTime);
-    await this.txsDAL.trimExpiredNonWrittenTxs(
+    await this.rustServer.trimExpiredNonWrittenTxs(
       block.medianTime - CommonConstants.TX_WINDOW
     );
     return true;
@@ -1311,30 +1343,6 @@ export class FileDAL implements ServerDAO {
 
   saveSideBlockInFile(block: DBBlock) {
     return this.writeSideFileOfBlock(block);
-  }
-
-  async saveTxsInFiles(
-    txs: TransactionDTO[],
-    block_number: number,
-    medianTime: number
-  ) {
-    return Promise.all(
-      txs.map(async (tx) => {
-        const sp = tx.blockstamp.split("-");
-        const basedBlock = (await this.getAbsoluteBlockByNumberAndHash(
-          parseInt(sp[0]),
-          sp[1]
-        )) as DBBlock;
-        tx.blockstampTime = basedBlock.medianTime;
-        const txEntity = TransactionDTO.fromJSONObject(tx);
-        txEntity.computeAllHashes();
-        return this.txsDAL.addLinked(
-          TransactionDTO.fromJSONObject(txEntity),
-          block_number,
-          medianTime
-        );
-      })
-    );
   }
 
   async merkleForPeers() {
@@ -1365,8 +1373,27 @@ export class FileDAL implements ServerDAO {
     return this.certDAL.saveNewCertification(cert);
   }
 
-  saveTransaction(tx: DBTx) {
-    return this.txsDAL.addPending(tx);
+  saveTransaction(tx: TransactionDTO) {
+    return this.rustServer.addPendingTx(tx);
+  }
+
+  async computeTxBlockstampTime(tx: TransactionDTO): Promise<TransactionDTO> {
+    let blockNumber = parseInt(tx.blockstamp.split("-")[0]);
+    let basedBlock = await this.getBlock(blockNumber);
+    tx.blockstampTime = basedBlock ? basedBlock.medianTime : 0;
+    return tx;
+  }
+
+  async RustDbTxToDbTx(tx: RustDbTx): Promise<DBTx> {
+    let writtenBlockNumber = tx.writtenBlockNumber;
+    let writtenTime = tx.writtenTime;
+    let tx_dto = await this.computeTxBlockstampTime(
+      TransactionDTO.fromJSONObject(tx)
+    );
+    let db_tx = DBTx.fromTransactionDTO(tx_dto);
+    db_tx.block_number = writtenBlockNumber;
+    db_tx.time = writtenTime;
+    return db_tx;
   }
 
   async getTransactionsHistory(pubkey: string) {
@@ -1374,25 +1401,36 @@ export class FileDAL implements ServerDAO {
       sent: DBTx[];
       received: DBTx[];
       sending: DBTx[];
-      receiving: DBTx[];
       pending: DBTx[];
     } = {
       sent: [],
       received: [],
       sending: [],
-      receiving: [],
       pending: [],
     };
-    const res = await Promise.all([
-      this.txsDAL.getLinkedWithIssuer(pubkey),
-      this.txsDAL.getLinkedWithRecipient(pubkey),
-      this.txsDAL.getPendingWithIssuer(pubkey),
-      this.txsDAL.getPendingWithRecipient(pubkey),
-    ]);
-    history.sent = res[0] || [];
-    history.received = res[1] || [];
-    history.sending = res[2] || [];
-    history.pending = res[3] || [];
+    const res = this.rustServer.getTransactionsHistory(pubkey);
+    history.sent = await Promise.all(
+      res.sent.map(async (tx) => this.RustDbTxToDbTx(tx))
+    );
+    history.received = await Promise.all(
+      res.received.map(async (tx) => this.RustDbTxToDbTx(tx))
+    );
+    history.sending = await Promise.all(
+      res.sending.map(async (tx) => {
+        let tx_dto = await this.computeTxBlockstampTime(
+          TransactionDTO.fromJSONObject(tx)
+        );
+        return DBTx.fromTransactionDTO(tx_dto);
+      })
+    );
+    history.pending = await Promise.all(
+      res.pending.map(async (tx) => {
+        let tx_dto = await this.computeTxBlockstampTime(
+          TransactionDTO.fromJSONObject(tx)
+        );
+        return DBTx.fromTransactionDTO(tx_dto);
+      })
+    );
     return history;
   }
 
@@ -1624,12 +1662,14 @@ export class FileDAL implements ServerDAO {
     local_iindex: IindexEntry[]
   ): Promise<SimpleUdEntryForWallet[]> {
     if (dividend) {
-      return this.dividendDAL.produceDividend(
+      let udSources = this.dividendDAL.produceDividend(
         blockNumber,
         dividend,
         unitbase,
         local_iindex
       );
+      // TODO ESZ: call rust server: write_ud_sources(udSources: SimpleUdEntryForWallet[])
+      return udSources;
     }
     return [];
   }

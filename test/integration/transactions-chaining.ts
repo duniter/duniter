@@ -67,7 +67,7 @@ describe("Transaction chaining", () => {
     }))
   })
 
-  describe("Chaining", () => {
+  describe.skip("Chaining", () => {
 
     it('with SIG and XHX', async () => {
       // Current state

@@ -34,14 +34,10 @@ impl UtxosQuery {
 
         let data = ctx.data::<SchemaData>()?;
 
-        let utxos = match &data.dbs_ro {
-            DbsRo::File { gva_db_ro, .. } => {
-                duniter_dbs_read_ops::utxos::get_script_utxos(gva_db_ro, &script)?
-            }
-            DbsRo::Mem { gva_db_ro, .. } => {
-                duniter_dbs_read_ops::utxos::get_script_utxos(gva_db_ro, &script)?
-            }
-        };
+        let utxos = data
+            .dbs_pool
+            .execute(move |dbs| duniter_dbs_read_ops::utxos::get_script_utxos(&dbs.gva_db, &script))
+            .await??;
 
         let utxos: Vec<UtxoGva> = utxos
             .into_iter()

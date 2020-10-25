@@ -29,24 +29,16 @@ impl TxsHistoryQuery {
 
         let data = ctx.data::<SchemaData>()?;
 
-        let txs_history = match &data.dbs_ro {
-            DbsRo::File {
-                gva_db_ro,
-                txs_mp_db_ro,
-            } => duniter_dbs_read_ops::txs_history::get_transactions_history(
-                gva_db_ro,
-                txs_mp_db_ro,
-                pubkey,
-            )?,
-            DbsRo::Mem {
-                gva_db_ro,
-                txs_mp_db_ro,
-            } => duniter_dbs_read_ops::txs_history::get_transactions_history(
-                gva_db_ro,
-                txs_mp_db_ro,
-                pubkey,
-            )?,
-        };
+        let txs_history = data
+            .dbs_pool
+            .execute(move |dbs| {
+                duniter_dbs_read_ops::txs_history::get_transactions_history(
+                    &dbs.gva_db,
+                    &dbs.txs_mp_db,
+                    pubkey,
+                )
+            })
+            .await??;
 
         Ok(TxsHistoryGva {
             sent: txs_history

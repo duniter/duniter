@@ -17,6 +17,7 @@ import {Directory} from "../../app/lib/system/directory"
 import {DBBlock} from "../../app/lib/db/DBBlock"
 import {Underscore} from "../../app/lib/common-libs/underscore"
 import { ConfDTO } from "../../app/lib/dto/ConfDTO"
+import { BlockDTO } from "../../app/lib/dto/BlockDTO"
 
 var should = require('should');
 var assert = require('assert');
@@ -33,6 +34,10 @@ var mocks = {
     ]
   },
   block0: {
+    "issuersCount": 0,
+    "issuersFrame": 0,
+    "issuersFrameVar": 0,
+    "fork": false,
     "hash" : "00063EB6E83F8717CEF1D25B3E2EE30800063EB6E83F8717CEF1D25B3E2EE308",
     "signature" : "+78w7251vvRdhoIJ6IWHEiEOLxNrmfQf45Y5sYvPdnAdXkVpO1unMV5YA/G5Vhphyz1dICrbeKCPM5qbFsoWAQ==",
     "version" : constants.BLOCK_GENESIS_VERSION,
@@ -152,7 +157,7 @@ describe("DAL", function(){
   });
 
   it('should be able to save a Block', async () => {
-    await fileDAL.saveBlock(Underscore.extend({ fork: false } as any, mocks.block0), ConfDTO.mock());
+    await fileDAL.saveBlock(DBBlock.fromBlockDTO(BlockDTO.fromJSONObject(mocks.block0)), ConfDTO.mock());
     let block = (await fileDAL.getFullBlockOf(0)) as DBBlock
     block.should.have.property('hash').equal(mocks.block0.hash);
     block.should.have.property('signature').equal(mocks.block0.signature);
@@ -164,7 +169,6 @@ describe("DAL", function(){
     block.should.have.property('previousIssuer').equal(mocks.block0.previousIssuer);
     block.should.have.property('membersCount').equal(mocks.block0.membersCount);
     block.should.have.property('monetaryMass').equal(mocks.block0.monetaryMass);
-    block.should.have.property('UDTime').equal(mocks.block0.UDTime);
     block.should.have.property('medianTime').equal(mocks.block0.medianTime);
     block.should.have.property('dividend').equal(mocks.block0.dividend);
     block.should.have.property('unitbase').equal(mocks.block0.unitbase);

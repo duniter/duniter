@@ -25,7 +25,6 @@
 )]
 
 mod crypto;
-mod event_emitter;
 mod logger;
 mod server;
 mod transaction;
@@ -52,7 +51,6 @@ register_module!(mut cx, {
     cx.export_function("sha256", crate::crypto::sha256)?;
     cx.export_function("verify", crate::crypto::verify)?;
     cx.export_class::<crate::crypto::JsKeyPair>("Ed25519Signator")?;
-    cx.export_class::<crate::event_emitter::JsEventEmitter>("RustEventEmitter")?;
     cx.export_class::<crate::logger::JsLogger>("RustLogger")?;
     cx.export_class::<crate::server::JsServer>("RustServer")?;
     cx.export_function(

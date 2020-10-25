@@ -17,9 +17,11 @@ use crate::*;
 
 pub(crate) type GraphQlSchema = async_graphql::Schema<Query, Mutation, Subscription>;
 pub(crate) struct SchemaData {
-    pub(crate) dbs_ro: DbsRo,
+    pub(crate) dbs: DuniterDbs,
+    pub(crate) dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs>,
+    pub(crate) server_pubkey: PublicKey,
     pub(crate) software_version: &'static str,
-    pub(crate) writer: GvaWriter,
+    pub(crate) txs_mempool: TxsMempool,
 }
 
 #[derive(async_graphql::MergedObject, Default)]
@@ -42,19 +44,16 @@ impl Subscription {
 
         let (s, r) = flume::unbounded();
 
-        match &data.dbs_ro {
-            DbsRo::File { txs_mp_db_ro, .. } => {
-                txs_mp_db_ro.txs().subscribe(s).expect("fail to access db")
-            }
-            DbsRo::Mem { txs_mp_db_ro, .. } => {
-                txs_mp_db_ro.txs().subscribe(s).expect("fail to access db")
-            }
-        }
+        data.dbs
+            .txs_mp_db
+            .txs()
+            .subscribe(s)
+            .expect("fail to access db");
 
         r.into_stream().filter_map(|events| {
             let mut txs = Vec::new();
             for event in events.deref() {
-                if let duniter_dbs::TxEvent::Upsert {
+                if let duniter_dbs::txs_mp_v2::TxEvent::Upsert {
                     value: ref pending_tx,
                     ..
                 } = event
@@ -77,48 +76,40 @@ pub struct Mutation;
 #[async_graphql::Object]
 impl Mutation {
     /// Process a transaction
-    /// Return false if the mempool is full
+    /// Return the transaction if it successfully inserted
     async fn tx(
         &self,
         ctx: &async_graphql::Context<'_>,
         raw_tx: String,
-    ) -> async_graphql::Result<bool> {
+    ) -> async_graphql::Result<TxGva> {
         let tx = TransactionDocumentV10::parse_from_raw_text(&raw_tx)?;
 
         tx.verify(None)?;
 
         let data = ctx.data::<SchemaData>()?;
 
-        let tx_already_exist = match &data.dbs_ro {
-            DbsRo::File { gva_db_ro, .. } => {
-                duniter_dbs_read_ops::txs_history::tx_exist(gva_db_ro, tx.get_hash())?
-            }
-            DbsRo::Mem { gva_db_ro, .. } => {
-                duniter_dbs_read_ops::txs_history::tx_exist(gva_db_ro, tx.get_hash())?
-            }
-        };
+        let server_pubkey = data.server_pubkey;
+        let txs_mempool = data.txs_mempool;
 
-        if tx_already_exist {
-            Err(async_graphql::Error::new(
-                "Transaction already written in blockchain",
-            ))
-        } else {
-            Ok(data
-                .writer
-                .add_pending_tx(tx)
-                .recv_async()
-                .await
-                .expect("dbs-writer disconnected")?)
-        }
+        let tx = data
+            .dbs_pool
+            .execute(move |dbs| {
+                txs_mempool
+                    .add_pending_tx(&dbs.gva_db, server_pubkey, &dbs.txs_mp_db, &tx)
+                    .map(|()| tx)
+            })
+            .await??;
+
+        Ok(TxGva::from(&tx))
     }
 
     /// Process several transactions
-    /// Return the numbers of transactions successfully inserted on mempool
+    /// Return an array of successfully inserted transactions
     async fn txs(
         &self,
         ctx: &async_graphql::Context<'_>,
         raw_txs: Vec<String>,
-    ) -> async_graphql::Result<u32> {
+    ) -> async_graphql::Result<Vec<TxGva>> {
         let txs = raw_txs
             .iter()
             .map(|raw_tx| TransactionDocumentV10::parse_from_raw_text(&raw_tx))
@@ -126,36 +117,23 @@ impl Mutation {
 
         let data = ctx.data::<SchemaData>()?;
 
-        for tx in &txs {
+        let server_pubkey = data.server_pubkey;
+        let txs_mempool = data.txs_mempool;
+
+        let mut processed_txs = Vec::with_capacity(txs.len());
+        for tx in txs {
             tx.verify(None)?;
-            if match &data.dbs_ro {
-                DbsRo::File { gva_db_ro, .. } => {
-                    duniter_dbs_read_ops::txs_history::tx_exist(gva_db_ro, tx.get_hash())?
-                }
-                DbsRo::Mem { gva_db_ro, .. } => {
-                    duniter_dbs_read_ops::txs_history::tx_exist(gva_db_ro, tx.get_hash())?
-                }
-            } {
-                return Err(async_graphql::Error::new(
-                    "Transaction already written in blockchain",
-                ));
-            }
+            let tx = data
+                .dbs_pool
+                .execute(move |dbs| {
+                    txs_mempool
+                        .add_pending_tx(&dbs.gva_db, server_pubkey, &dbs.txs_mp_db, &tx)
+                        .map(|()| tx)
+                })
+                .await??;
+            processed_txs.push(TxGva::from(&tx));
         }
 
-        let mut count = 0;
-        for tx in txs {
-            if data
-                .writer
-                .add_pending_tx(tx)
-                .recv_async()
-                .await
-                .expect("dbs-writer disconnected")?
-            {
-                count += 1;
-            } else {
-                return Ok(count);
-            }
-        }
-        Ok(count)
+        Ok(processed_txs)
     }
 }

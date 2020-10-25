@@ -17,7 +17,7 @@
 
 use crate::*;
 use std::collections::BTreeMap;
-use uninit::extension_traits::VecCapacity as _;
+//use uninit::extension_traits::VecCapacity as _;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Mem;
@@ -39,15 +39,15 @@ impl Backend for Mem {
     fn open(_conf: &Self::Conf) -> KvResult<Self> {
         Ok(Mem)
     }
-    fn open_col(&mut self, conf: &Self::Conf, col_name: &str) -> KvResult<Self::Col> {
-        if let Some(ref folder_path) = conf.folder_path {
+    fn open_col(&mut self, _conf: &Self::Conf, _col_name: &str) -> KvResult<Self::Col> {
+        /*if let Some(ref folder_path) = conf.folder_path {
             MemCol::from_file(folder_path.join(col_name))
-        } else {
-            Ok(MemCol {
-                path: None,
-                tree: BTreeMap::new(),
-            })
-        }
+        } else {*/
+        Ok(MemCol {
+            path: None,
+            tree: BTreeMap::new(),
+        })
+        //}
     }
 }
 
@@ -73,7 +73,7 @@ pub struct MemCol {
     tree: Tree,
 }
 
-impl MemCol {
+/*impl MemCol {
     fn from_file(file_path: std::path::PathBuf) -> KvResult<Self> {
         let mut file = std::fs::File::open(file_path.as_path())?;
         let bytes = Vec::<u8>::new();
@@ -219,7 +219,7 @@ impl MemCol {
 
         bytes
     }
-}
+}*/
 
 impl BackendCol for MemCol {
     type Batch = MemBatch;
@@ -334,7 +334,7 @@ impl BackendCol for MemCol {
     }
     #[inline(always)]
     fn save(&self) -> KvResult<()> {
-        if let Some(ref file_path) = self.path {
+        /*if let Some(ref file_path) = self.path {
             let bytes = Self::tree_to_bytes(&self.tree);
 
             let mut file =
@@ -342,7 +342,7 @@ impl BackendCol for MemCol {
             use std::io::Write as _;
             file.write_all(&bytes[..])
                 .map_err(|e| KvError::BackendError(e.into()))?;
-        }
+        }*/
 
         Ok(())
     }
@@ -395,7 +395,7 @@ impl BackendIter<IVec, IVec> for MemIter {}
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    /*use super::*;
 
     #[test]
     fn test_save() -> KvResult<()> {
@@ -426,5 +426,5 @@ mod tests {
         assert_eq!(tree2.get(&k4), Some(&v4));
 
         Ok(())
-    }
+    }*/
 }

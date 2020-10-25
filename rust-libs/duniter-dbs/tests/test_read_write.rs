@@ -104,8 +104,14 @@ fn write_read_delete_b0_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
         main_blocks_reader.get(&BlockNumberKeyV1(BlockNumber(1)))?,
         None
     );
-    assert_eq!(main_blocks_reader.iter(..).keys().next_res()?, None);
-    assert_eq!(main_blocks_reader.iter(..).values().next_res()?, None);
+    assert_eq!(
+        main_blocks_reader.iter(.., |iter| iter.keys().next_res())?,
+        None
+    );
+    assert_eq!(
+        main_blocks_reader.iter(.., |iter| iter.values().next_res())?,
+        None
+    );
     if let Err(TryRecvError::Empty) = events_recv.try_recv() {
     } else {
         panic!("should not receive event");
@@ -125,15 +131,22 @@ fn write_read_delete_b0_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
         main_blocks_reader.get(&BlockNumberKeyV1(BlockNumber(1)))?,
         None
     );
-    let mut keys_iter = main_blocks_reader.iter(..).keys();
-    assert_eq!(
-        keys_iter.next_res()?,
-        Some(BlockNumberKeyV1(BlockNumber(0)))
-    );
-    assert_eq!(keys_iter.next_res()?, None);
-    let mut values_iter = main_blocks_reader.iter(..).values();
-    assert_eq!(values_iter.next_res()?, Some(b0.clone()));
-    assert_eq!(values_iter.next_res()?, None);
+    main_blocks_reader.iter(.., |iter| {
+        let mut keys_iter = iter.keys();
+        assert_eq!(
+            keys_iter.next_res()?,
+            Some(BlockNumberKeyV1(BlockNumber(0)))
+        );
+        assert_eq!(keys_iter.next_res()?, None);
+        Ok::<(), KvError>(())
+    })?;
+    main_blocks_reader.iter(.., |iter| {
+        let mut values_iter = iter.values();
+        assert_eq!(values_iter.next_res()?, Some(b0.clone()));
+        assert_eq!(values_iter.next_res()?, None);
+
+        Ok::<(), KvError>(())
+    })?;
     if let Ok(events) = events_recv.try_recv() {
         assert_eq!(events.len(), 1);
         let event = &events[0];
@@ -158,8 +171,14 @@ fn write_read_delete_b0_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
         main_blocks_reader.get(&BlockNumberKeyV1(BlockNumber(1)))?,
         None
     );
-    assert_eq!(main_blocks_reader.iter(..).keys().next_res()?, None);
-    assert_eq!(main_blocks_reader.iter(..).values().next_res()?, None);
+    assert_eq!(
+        main_blocks_reader.iter(.., |it| it.keys().next_res())?,
+        None
+    );
+    assert_eq!(
+        main_blocks_reader.iter(.., |it| it.values().next_res())?,
+        None
+    );
     if let Ok(events) = events_recv.try_recv() {
         assert_eq!(events.len(), 1);
         let event = &events[0];
@@ -196,48 +215,75 @@ fn write_some_entries_and_iter<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
 
     let uids_reader = db.uids();
     {
-        let mut values_iter_step_2 = uids_reader.iter(..).values().step_by(2);
-        assert_eq!(Some(p1), values_iter_step_2.next_res()?);
-        assert_eq!(Some(p3), values_iter_step_2.next_res()?);
-        assert_eq!(None, values_iter_step_2.next_res()?);
+        uids_reader.iter(.., |it| {
+            let mut values_iter_step_2 = it.values().step_by(2);
 
-        let mut entries_iter_step_2 = uids_reader.iter(..).step_by(2);
-        assert_eq!(Some((k1, p1)), entries_iter_step_2.next_res()?);
-        assert_eq!(Some((k3, p3)), entries_iter_step_2.next_res()?);
-        assert_eq!(None, entries_iter_step_2.next_res()?);
+            assert_eq!(Some(p1), values_iter_step_2.next_res()?);
+            assert_eq!(Some(p3), values_iter_step_2.next_res()?);
+            assert_eq!(None, values_iter_step_2.next_res()?);
+            Ok::<(), KvError>(())
+        })?;
 
-        let mut entries_iter = uids_reader.iter(k2..);
-        assert_eq!(Some((k2, p2)), entries_iter.next_res()?);
-        assert_eq!(Some((k3, p3)), entries_iter.next_res()?);
-        assert_eq!(None, entries_iter.next_res()?);
+        uids_reader.iter(.., |it| {
+            let mut entries_iter_step_2 = it.step_by(2);
 
-        let mut entries_iter = uids_reader.iter(..=k2);
-        assert_eq!(Some((k1, p1)), entries_iter.next_res()?);
-        assert_eq!(Some((k2, p2)), entries_iter.next_res()?);
-        assert_eq!(None, entries_iter.next_res()?);
+            assert_eq!(Some((k1, p1)), entries_iter_step_2.next_res()?);
+            assert_eq!(Some((k3, p3)), entries_iter_step_2.next_res()?);
+            assert_eq!(None, entries_iter_step_2.next_res()?);
+            Ok::<(), KvError>(())
+        })?;
 
-        let mut entries_iter_rev = uids_reader.iter(k2..).reverse();
-        assert_eq!(Some((k3, p3)), entries_iter_rev.next_res()?);
-        assert_eq!(Some((k2, p2)), entries_iter_rev.next_res()?);
-        assert_eq!(None, entries_iter_rev.next_res()?);
+        uids_reader.iter(k2.., |mut entries_iter| {
+            assert_eq!(Some((k2, p2)), entries_iter.next_res()?);
+            assert_eq!(Some((k3, p3)), entries_iter.next_res()?);
+            assert_eq!(None, entries_iter.next_res()?);
+            Ok::<(), KvError>(())
+        })?;
 
-        let mut entries_iter_rev = uids_reader.iter(..=k2).reverse();
-        assert_eq!(Some((k2, p2)), entries_iter_rev.next_res()?);
-        assert_eq!(Some((k1, p1)), entries_iter_rev.next_res()?);
-        assert_eq!(None, entries_iter.next_res()?);
+        uids_reader.iter(..=k2, |mut entries_iter| {
+            assert_eq!(Some((k1, p1)), entries_iter.next_res()?);
+            assert_eq!(Some((k2, p2)), entries_iter.next_res()?);
+            assert_eq!(None, entries_iter.next_res()?);
+            Ok::<(), KvError>(())
+        })?;
 
-        let mut keys_iter_rev = uids_reader.iter(..=k2).keys().reverse();
-        assert_eq!(Some(k2), keys_iter_rev.next_res()?);
-        assert_eq!(Some(k1), keys_iter_rev.next_res()?);
-        assert_eq!(None, keys_iter_rev.next_res()?);
+        uids_reader.iter(k2.., |entries_iter| {
+            let mut entries_iter_rev = entries_iter.reverse();
+
+            assert_eq!(Some((k3, p3)), entries_iter_rev.next_res()?);
+            assert_eq!(Some((k2, p2)), entries_iter_rev.next_res()?);
+            assert_eq!(None, entries_iter_rev.next_res()?);
+            Ok::<(), KvError>(())
+        })?;
+
+        uids_reader.iter(..=k2, |entries_iter| {
+            let mut entries_iter_rev = entries_iter.reverse();
+
+            assert_eq!(Some((k2, p2)), entries_iter_rev.next_res()?);
+            assert_eq!(Some((k1, p1)), entries_iter_rev.next_res()?);
+            Ok::<(), KvError>(())
+        })?;
+
+        uids_reader.iter(..=k2, |it| {
+            let mut keys_iter_rev = it.keys().reverse();
+
+            assert_eq!(Some(k2), keys_iter_rev.next_res()?);
+            assert_eq!(Some(k1), keys_iter_rev.next_res()?);
+            assert_eq!(None, keys_iter_rev.next_res()?);
+            Ok::<(), KvError>(())
+        })?;
     }
 
     uids_writer.remove(k3)?;
 
-    let mut keys_iter_rev = uids_reader.iter(..).keys();
-    assert_eq!(Some(k1), keys_iter_rev.next_res()?);
-    assert_eq!(Some(k2), keys_iter_rev.next_res()?);
-    assert_eq!(None, keys_iter_rev.next_res()?);
+    uids_reader.iter(.., |it| {
+        let mut keys_iter = it.keys();
+
+        assert_eq!(Some(k1), keys_iter.next_res()?);
+        assert_eq!(Some(k2), keys_iter.next_res()?);
+        assert_eq!(None, keys_iter.next_res()?);
+        Ok::<(), KvError>(())
+    })?;
 
     Ok(())
 }
@@ -260,8 +306,14 @@ fn batch_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
         main_blocks_reader.get(&BlockNumberKeyV1(BlockNumber(1)))?,
         None
     );
-    assert_eq!(main_blocks_reader.iter(..).keys().next_res()?, None);
-    assert_eq!(main_blocks_reader.iter(..).values().next_res()?, None);
+    assert_eq!(
+        main_blocks_reader.iter(.., |it| it.keys().next_res())?,
+        None
+    );
+    assert_eq!(
+        main_blocks_reader.iter(.., |it| it.values().next_res())?,
+        None
+    );
     if let Err(TryRecvError::Empty) = events_recv.try_recv() {
     } else {
         panic!("should not receive event");
@@ -276,7 +328,7 @@ fn batch_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
     // bo should written in batch
     assert_eq!(
         batch.main_blocks().get(&BlockNumberKeyV1(BlockNumber(0))),
-        Some(&b0)
+        BatchGet::Updated(&b0)
     );
 
     // bo should not written in db
@@ -309,20 +361,28 @@ fn batch_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
             .as_ref(),
         Some(&b0)
     );
-    let mut keys_iter = db.main_blocks().iter(..).keys();
-    assert_eq!(
-        keys_iter.next_res()?,
-        Some(BlockNumberKeyV1(BlockNumber(0)))
-    );
-    assert_eq!(
-        keys_iter.next_res()?,
-        Some(BlockNumberKeyV1(BlockNumber(1)))
-    );
-    assert_eq!(keys_iter.next_res()?, None);
-    let mut values_iter = db.main_blocks().iter(..).values();
-    assert_eq!(values_iter.next_res()?.as_ref(), Some(&b0));
-    assert_eq!(values_iter.next_res()?.as_ref(), Some(&b1));
-    assert_eq!(values_iter.next_res()?, None);
+    db.main_blocks().iter(.., |it| {
+        let mut keys_iter = it.keys();
+
+        assert_eq!(
+            keys_iter.next_res()?,
+            Some(BlockNumberKeyV1(BlockNumber(0)))
+        );
+        assert_eq!(
+            keys_iter.next_res()?,
+            Some(BlockNumberKeyV1(BlockNumber(1)))
+        );
+        assert_eq!(keys_iter.next_res()?, None);
+        Ok::<(), KvError>(())
+    })?;
+    db.main_blocks().iter(.., |it| {
+        let mut values_iter = it.values();
+
+        assert_eq!(values_iter.next_res()?.as_ref(), Some(&b0));
+        assert_eq!(values_iter.next_res()?.as_ref(), Some(&b1));
+        assert_eq!(values_iter.next_res()?, None);
+        Ok::<(), KvError>(())
+    })?;
     if let Ok(events) = events_recv.try_recv() {
         assert_eq!(events.len(), 2);
         assert!(assert_eq_pairs(

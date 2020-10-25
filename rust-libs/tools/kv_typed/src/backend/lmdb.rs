@@ -27,14 +27,26 @@ use std::path::PathBuf;
 /// 2. If you are in an asynchronous context, an async task should never yield when it to an instantiated iterator.
 pub struct Lmdb;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct LmdbConf {
     folder_path: PathBuf,
+    temporary: bool,
 }
-
+impl Default for LmdbConf {
+    fn default() -> Self {
+        LmdbConf {
+            folder_path: PathBuf::default(),
+            temporary: false,
+        }
+    }
+}
 impl LmdbConf {
     pub fn folder_path(mut self, folder_path: PathBuf) -> Self {
         self.folder_path = folder_path;
+        self
+    }
+    pub fn temporary(mut self, temporary: bool) -> Self {
+        self.temporary = temporary;
         self
     }
 }
@@ -54,6 +66,11 @@ impl Backend for Lmdb {
         if !exist {
             std::fs::create_dir(path.as_path())?;
         }
+        let path_to_remove = if conf.temporary {
+            Some(path.clone())
+        } else {
+            None
+        };
         let path = path
             .into_os_string()
             .into_string()
@@ -70,12 +87,26 @@ impl Backend for Lmdb {
         let env =
             std::sync::Arc::new(unsafe { lmdb::EnvBuilder::new()?.open(&path, env_flags, 0o600)? });
         let tree = std::sync::Arc::new(lmdb::Database::open(env.clone(), None, &col_options)?);
-        Ok(LmdbCol(LmdbColInner { env, tree }))
+        Ok(LmdbCol {
+            inner: LmdbColInner { env, tree },
+            path_to_remove,
+        })
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct LmdbCol(LmdbColInner);
+pub struct LmdbCol {
+    inner: LmdbColInner,
+    path_to_remove: Option<PathBuf>,
+}
+
+impl Drop for LmdbCol {
+    fn drop(&mut self) {
+        if let Some(ref path) = self.path_to_remove {
+            let _ = std::fs::remove_dir(path);
+        }
+    }
+}
 
 #[derive(Clone, Debug)]
 struct LmdbColInner {
@@ -233,11 +264,11 @@ impl BackendCol for LmdbCol {
     type Iter = LmdbIter;
 
     fn get<K: Key, V: Value>(&self, k: &K) -> KvResult<Option<V>> {
-        let tx = lmdb::ReadTransaction::new(self.0.tree.env())?;
+        let tx = lmdb::ReadTransaction::new(self.inner.tree.env())?;
         let access = tx.access();
         k.as_bytes(|k_bytes| {
             access
-                .get(&self.0.tree, k_bytes)
+                .get(&self.inner.tree, k_bytes)
                 .to_opt()?
                 .map(|bytes| {
                     V::from_bytes(&bytes).map_err(|e| KvError::DeserError(format!("{}", e)))
@@ -252,10 +283,10 @@ impl BackendCol for LmdbCol {
         f: F,
     ) -> KvResult<Option<D>> {
         k.as_bytes(|k_bytes| {
-            let tx = lmdb::ReadTransaction::new(self.0.tree.env())?;
+            let tx = lmdb::ReadTransaction::new(self.inner.tree.env())?;
             let access = tx.access();
             access
-                .get::<_, [u8]>(&self.0.tree, k_bytes)
+                .get::<_, [u8]>(&self.inner.tree, k_bytes)
                 .to_opt()?
                 .map(|bytes| {
                     if let Some(layout_verified) = zerocopy::LayoutVerified::<_, V::Ref>::new(bytes)
@@ -277,10 +308,10 @@ impl BackendCol for LmdbCol {
         f: F,
     ) -> KvResult<Option<D>> {
         k.as_bytes(|k_bytes| {
-            let tx = lmdb::ReadTransaction::new(self.0.tree.env())?;
+            let tx = lmdb::ReadTransaction::new(self.inner.tree.env())?;
             let access = tx.access();
             access
-                .get::<_, [u8]>(&self.0.tree, k_bytes)
+                .get::<_, [u8]>(&self.inner.tree, k_bytes)
                 .to_opt()?
                 .map(|bytes| {
                     if let Some(layout_verified) =
@@ -300,30 +331,35 @@ impl BackendCol for LmdbCol {
     }
 
     fn clear(&mut self) -> KvResult<()> {
-        let tx = lmdb::WriteTransaction::new(self.0.tree.env())?;
+        let tx = lmdb::WriteTransaction::new(self.inner.tree.env())?;
         {
             let mut access = tx.access();
-            access.clear_db(&self.0.tree)?;
+            access.clear_db(&self.inner.tree)?;
         }
         tx.commit()?;
         Ok(())
     }
 
     fn count(&self) -> KvResult<usize> {
-        let tx = lmdb::ReadTransaction::new(self.0.tree.env())?;
-        Ok(tx.db_stat(&self.0.tree)?.entries)
+        let tx = lmdb::ReadTransaction::new(self.inner.tree.env())?;
+        Ok(tx.db_stat(&self.inner.tree)?.entries)
     }
 
     fn iter<K: Key, V: Value>(&self, _range: RangeBytes) -> Self::Iter {
-        LmdbIter::new(self.0.env.clone(), self.0.tree.clone())
+        LmdbIter::new(self.inner.env.clone(), self.inner.tree.clone())
     }
 
     fn put<K: Key, V: Value>(&mut self, k: &K, value: &V) -> KvResult<()> {
         value.as_bytes(|v_bytes| {
-            let tx = lmdb::WriteTransaction::new(self.0.tree.env())?;
+            let tx = lmdb::WriteTransaction::new(self.inner.tree.env())?;
             k.as_bytes(|k_bytes| {
                 let mut access = tx.access();
-                access.put(&self.0.tree, k_bytes, v_bytes, lmdb::put::Flags::empty())
+                access.put(
+                    &self.inner.tree,
+                    k_bytes,
+                    v_bytes,
+                    lmdb::put::Flags::empty(),
+                )
             })?;
             tx.commit()?;
             Ok(())
@@ -331,10 +367,10 @@ impl BackendCol for LmdbCol {
     }
 
     fn delete<K: Key>(&mut self, k: &K) -> KvResult<()> {
-        let tx = lmdb::WriteTransaction::new(self.0.tree.env())?;
+        let tx = lmdb::WriteTransaction::new(self.inner.tree.env())?;
         k.as_bytes(|k_bytes| {
             let mut access = tx.access();
-            access.del_key(&self.0.tree, k_bytes).to_opt()
+            access.del_key(&self.inner.tree, k_bytes).to_opt()
         })?;
         tx.commit()?;
         Ok(())
@@ -345,19 +381,19 @@ impl BackendCol for LmdbCol {
     }
 
     fn write_batch(&mut self, inner_batch: Self::Batch) -> KvResult<()> {
-        let tx = lmdb::WriteTransaction::new(self.0.tree.env())?;
+        let tx = lmdb::WriteTransaction::new(self.inner.tree.env())?;
         {
             let mut access = tx.access();
             for (k, v) in inner_batch.upsert_ops {
                 access.put(
-                    &self.0.tree,
+                    &self.inner.tree,
                     k.as_ref(),
                     v.as_ref(),
                     lmdb::put::Flags::empty(),
                 )?;
             }
             for k in inner_batch.remove_ops {
-                access.del_key(&self.0.tree, k.as_ref()).to_opt()?;
+                access.del_key(&self.inner.tree, k.as_ref()).to_opt()?;
             }
         }
         tx.commit()?;
@@ -365,6 +401,6 @@ impl BackendCol for LmdbCol {
     }
 
     fn save(&self) -> KvResult<()> {
-        Ok(self.0.tree.env().sync(true)?)
+        Ok(self.inner.tree.env().sync(true)?)
     }
 }

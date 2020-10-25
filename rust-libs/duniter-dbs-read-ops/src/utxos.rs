@@ -18,8 +18,8 @@ use duniter_dbs::WalletConditionsV2;
 
 use crate::*;
 
-pub fn get_script_utxos<B: Backend>(
-    gva_db_ro: &GvaV1DbRo<B>,
+pub fn get_script_utxos<GvaDb: GvaV1DbReadable>(
+    gva_db_ro: &GvaDb,
     script: &WalletScriptV10,
 ) -> KvResult<Vec<(i64, UtxoIdV10, SourceAmount)>> {
     if let Some(utxos_of_script) = gva_db_ro

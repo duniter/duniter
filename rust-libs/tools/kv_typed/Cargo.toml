@@ -12,7 +12,6 @@ edition = "2018"
 path = "src/lib.rs"
 
 [dependencies]
-blake3 = { version = "0.3.7", optional = true }
 cfg-if = "0.1.10"
 flume = "0.9.1"
 kv_typed_code_gen = { path = "../kv_typed_code_gen" }
@@ -35,7 +34,7 @@ lmdb-zero = "0.4.4"
 [[bench]]
 name = "compare_backends"
 harness = false
-required-features = ["leveldb_backend", "memory_backend", "sled_backend"]
+required-features = ["leveldb_backend", "sled_backend"]
 
 [dev-dependencies]
 async-std = { version = "1.6.3", features = ["attributes"] }
@@ -48,16 +47,14 @@ unwrap = "1.2.1"
 criterion = { version = "0.3.1" }
 
 [features]
-#default = ["memory_backend"]
+default = ["sled_backend"]
 
 async = []
 explorer = ["rayon", "regex", "serde_json"]
 leveldb_backend = ["leveldb_minimal"]
-memory_backend = ["blake3"]
 sled_backend = ["sled"]
 
 #mock = ["mockall"]
 
-default = ["memory_backend", "sled_backend"]
-#default = ["memory_backend", "explorer"]
-#default = ["memory_backend",  "mock"]
+#default = ["explorer"]
+#default = ["mock"]

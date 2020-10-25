@@ -123,14 +123,6 @@ describe("CLI", function() {
     // const res = await execute(['export-bc', '--nostdout']);
     // res.slice(0, 1).should.have.length(0);
   })
-
-  it('sync 7 blocks (fast)', async () => {
-    // await execute(['reset', 'data']);
-    await execute(['sync', fakeServer.host + ':' + String(fakeServer.port), '--nocautious', '--nointeractive', '--noshuffle', '--localsync', '7']);
-    const res = await execute(['export-bc', '--nostdout']);
-    res[res.length - 1].should.have.property('number').equal(7);
-    res.should.have.length(7 + 1); // blocks #0..#7
-  })
 });
 
 /**

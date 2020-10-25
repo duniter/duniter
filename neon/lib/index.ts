@@ -15,5 +15,4 @@ export {
     Wot
 } from "../native";
 export { KeyPairBuilder } from "./crypto";
-export { RustEventEmitter } from "./event_emitter";
 export { WotBuilder } from "./wot";

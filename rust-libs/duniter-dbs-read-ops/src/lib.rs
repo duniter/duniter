@@ -33,7 +33,6 @@ use duniter_dbs::{
     //BlockNumberArrayV2, BlockNumberKeyV2, SourceAmountValV2, UtxosOfScriptV1
     //GvaV1Db,
     GvaV1DbReadable,
-    GvaV1DbRo,
     //GvaV1DbWritable,
     HashKeyV2,
     //PendingTxDbV2,
@@ -41,7 +40,6 @@ use duniter_dbs::{
     TxDbV2,
     //TxsMpV2Db,
     TxsMpV2DbReadable,
-    TxsMpV2DbRo,
     //TxsMpV2DbWritable,
     //WalletConditionsV2,
 };

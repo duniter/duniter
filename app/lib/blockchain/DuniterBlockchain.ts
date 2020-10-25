@@ -496,7 +496,7 @@ export class DuniterBlockchain {
     dal: FileDAL,
     block?: DBBlock
   ) {
-    if (block && conf.gva) {
+    if (block && block.toBlockDTO) {
       dal.rustServer.revertBlock(block.toBlockDTO());
     }
 

@@ -15,7 +15,7 @@
 
 use crate::*;
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct MIndexDbV1(pub SmallVec<[MIndexLineDbV1; 1]>);
 
 impl ValueAsBytes for MIndexDbV1 {

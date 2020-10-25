@@ -15,7 +15,7 @@
 
 use crate::*;
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct BlockNumberArrayV1(pub SmallVec<[BlockNumber; 1]>);
 
 impl ValueAsBytes for BlockNumberArrayV1 {

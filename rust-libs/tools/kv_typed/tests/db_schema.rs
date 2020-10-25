@@ -44,7 +44,9 @@ mod tests {
 
     #[test]
     fn test_db_schema_mem() -> KvResult<()> {
-        let db = TestV1Db::<Mem>::open(MemConf::default())?;
+        let db = TestV1Db::<kv_typed::backend::memory::Mem>::open(
+            kv_typed::backend::memory::MemConf::default(),
+        )?;
 
         test_db_schema(&db)
     }

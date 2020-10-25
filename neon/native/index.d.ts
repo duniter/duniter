@@ -1,7 +1,6 @@
 /* tslint:disable */
 
 import * as _crypto from './crypto';
-import * as _event_emitter from './event_emitter';
 import * as _logger from './logger';
 import * as _server from './server';
 import * as _transactions from './transaction';
@@ -12,8 +11,6 @@ export import generateRandomSeed = _crypto.generateRandomSeed;
 export import seedToSecretKey = _crypto.seedToSecretKey;
 export import sha256 = _crypto.sha256;
 export import verify = _crypto.verify;
-
-export import RustEventEmitter = _event_emitter.RustEventEmitter;
 
 export import RustLogger = _logger.RustLogger;
 

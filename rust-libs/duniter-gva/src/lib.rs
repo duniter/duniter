@@ -34,8 +34,9 @@ use dubp::common::crypto::keys::{ed25519::PublicKey, PublicKey as _};
 use dubp::documents::prelude::*;
 use dubp::documents::transaction::{TransactionDocumentTrait, TransactionDocumentV10};
 use dubp::documents_parser::prelude::*;
-use duniter_dbs::{kv_typed::prelude::*, DbsRo, TxDbV2, TxsMpV2DbReadable};
-use duniter_dbs_writer::GvaWriter;
+use duniter_dbs::prelude::*;
+use duniter_dbs::{kv_typed::prelude::*, TxDbV2, TxsMpV2DbReadable};
+use duniter_mempools::TxsMempool;
 use futures::{StreamExt, TryStreamExt};
 use schema::GraphQlSchema;
 use std::convert::Infallible;
@@ -84,9 +85,11 @@ pub struct GvaServer;
 impl GvaServer {
     pub fn start(
         conf: GvaConf,
-        dbs_ro: DbsRo,
+        dbs: DuniterDbs,
+        dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs>,
+        server_pubkey: PublicKey,
         software_version: &'static str,
-        writer: GvaWriter,
+        txs_mempool: TxsMempool,
     ) -> Result<(), tokio::io::Error> {
         println!("TMP GvaServer::start: conf={:?}", conf);
         let mut runtime = tokio::runtime::Builder::new()
@@ -101,9 +104,11 @@ impl GvaServer {
                     schema::Subscription::default(),
                 )
                 .data(schema::SchemaData {
-                    dbs_ro,
+                    dbs,
+                    dbs_pool,
+                    server_pubkey,
                     software_version,
-                    writer,
+                    txs_mempool,
                 })
                 .extension(async_graphql::extensions::Logger)
                 .finish();
@@ -167,22 +172,26 @@ mod tests {
     use super::*;
     use duniter_dbs::kv_typed::backend::memory::{Mem, MemConf};
     use duniter_dbs::{GvaV1Db, GvaV1DbWritable, TxsMpV2Db, TxsMpV2DbWritable};
+    use fast_threadpool::ThreadPoolConfig;
     use unwrap::unwrap;
 
     #[test]
     #[ignore]
     fn launch_mem_gva() {
-        let gva_db_ro = unwrap!(GvaV1Db::<Mem>::open(MemConf::default())).get_ro_handler();
-        let txs_mp_db_ro = unwrap!(TxsMpV2Db::<Mem>::open(MemConf::default())).get_ro_handler();
+        let dbs = DuniterDbs {
+            gva_db: unwrap!(GvaV1Db::<Mem>::open(MemConf::default())),
+            txs_mp_db: unwrap!(TxsMpV2Db::<Mem>::open(MemConf::default())),
+        };
+        let threadpool =
+            fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), dbs.clone());
 
         unwrap!(GvaServer::start(
             GvaConf::default(),
-            DbsRo::Mem {
-                gva_db_ro,
-                txs_mp_db_ro,
-            },
+            dbs,
+            threadpool.into_async_handler(),
+            PublicKey::default(),
             "test",
-            GvaWriter::mock()
+            TxsMempool::new(10)
         ));
 
         std::thread::sleep(std::time::Duration::from_secs(120));

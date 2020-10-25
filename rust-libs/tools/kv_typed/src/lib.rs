@@ -59,7 +59,6 @@ pub mod prelude {
     pub use crate::backend::leveldb::{LevelDb, LevelDbConf};
     #[cfg(target_arch = "x86_64")]
     pub use crate::backend::lmdb::{Lmdb, LmdbConf};
-    #[cfg(feature = "memory_backend")]
     pub use crate::backend::memory::{Mem, MemConf};
     #[cfg(feature = "mock")]
     pub use crate::backend::mock::{MockBackend, MockBackendCol, MockBackendIter};

@@ -283,7 +283,9 @@ export class FileDAL implements ServerDAO {
     return this.getAbsoluteBlockInForkWindow(number, hash);
   }
 
-  getAbsoluteValidBlockInForkWindowByBlockstamp(blockstamp: string) {
+  async getAbsoluteValidBlockInForkWindowByBlockstamp(
+    blockstamp: string
+  ): Promise<DBBlock | null> {
     if (!blockstamp) throw "Blockstamp is required to find the block";
     const sp = blockstamp.split("-");
     const number = parseInt(sp[0]);
@@ -1239,9 +1241,7 @@ export class FileDAL implements ServerDAO {
 
   async saveBlock(block: DBBlock, conf: ConfDTO) {
     block.wrong = false;
-    if (conf.gva) {
-      this.rustServer.applyBlock(block.toBlockDTO());
-    }
+    this.rustServer.applyBlock(block.toBlockDTO());
     await this.saveBlockInFile(block);
   }
 

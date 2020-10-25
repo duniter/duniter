@@ -24,9 +24,9 @@
 
 mod bc_v1;
 mod errors;
-mod gva_v1;
+pub mod gva_v1;
 mod keys;
-mod txs_mp_v2;
+pub mod txs_mp_v2;
 mod values;
 
 // Re-export dependencies
@@ -43,6 +43,7 @@ pub use kv_typed;
 // Prelude
 pub mod prelude {
     pub use crate::errors::ErrorDb;
+    pub use crate::{DbsBackend, DuniterDbs};
     #[cfg(feature = "explorer")]
     pub use kv_typed::explorer::{
         DbExplorable, EntryFound, ExplorerAction, ExplorerActionResponse, ValueCaptures,
@@ -65,7 +66,7 @@ pub use keys::source_key::SourceKeyV1;
 pub use keys::timestamp::TimestampKeyV1;
 pub use keys::uid::UidKeyV1;
 pub use keys::wallet_conditions::{WalletConditionsV1, WalletConditionsV2};
-pub use txs_mp_v2::{TxEvent, TxsMpV2Db, TxsMpV2DbReadable, TxsMpV2DbRo, TxsMpV2DbWritable};
+pub use txs_mp_v2::{TxsMpV2Db, TxsMpV2DbReadable, TxsMpV2DbRo, TxsMpV2DbWritable};
 pub use values::block_db::{BlockDbEnum, BlockDbV1, TransactionInBlockDbV1};
 pub use values::block_head_db::BlockHeadDbV1;
 pub use values::block_number_array_db::{BlockNumberArrayV1, BlockNumberArrayV2};
@@ -110,16 +111,15 @@ pub trait ToDumpString {
     fn to_dump_string(&self) -> String;
 }
 
+#[cfg(feature = "mem")]
+pub type DbsBackend = kv_typed::backend::memory::Mem;
+#[cfg(all(not(feature = "mem"), target_arch = "x86_64"))]
+pub type DbsBackend = Lmdb;
+#[cfg(all(not(feature = "mem"), not(target_arch = "x86_64")))]
+pub type DbsBackend = Sled;
+
 #[derive(Clone, Debug)]
-pub enum DbsRo {
-    #[cfg(feature = "sled_backend")]
-    File {
-        gva_db_ro: GvaV1DbRo<Sled>,
-        txs_mp_db_ro: TxsMpV2DbRo<Sled>,
-    },
-    #[cfg(feature = "memory_backend")]
-    Mem {
-        gva_db_ro: GvaV1DbRo<Mem>,
-        txs_mp_db_ro: TxsMpV2DbRo<Mem>,
-    },
+pub struct DuniterDbs {
+    pub gva_db: GvaV1Db<DbsBackend>,
+    pub txs_mp_db: TxsMpV2Db<DbsBackend>,
 }

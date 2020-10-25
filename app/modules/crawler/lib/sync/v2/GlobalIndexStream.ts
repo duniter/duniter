@@ -438,9 +438,7 @@ export class GlobalIndexStream extends Duplex {
       })
     );
 
-    if (this.conf.gva) {
-      this.dal.rustServer.applyChunkOfBlocks(blocks);
-    }
+    this.dal.rustServer.applyChunkOfBlocks(blocks);
 
     logger.debug("Total tx count: %s", txCount);
   }

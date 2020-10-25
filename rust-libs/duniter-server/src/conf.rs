@@ -22,13 +22,16 @@ pub struct DuniterServerConf {
     pub txs_mempool_size: usize,
 }
 
-pub fn open_dbs<B: BackendConf>(home_path_opt: Option<&Path>) -> (GvaV1Db<B>, TxsMpV2Db<B>) {
-    (
-        GvaV1Db::<B>::open(B::gen_backend_conf("gva_v1", home_path_opt))
+pub fn open_dbs(home_path_opt: Option<&Path>) -> DuniterDbs {
+    DuniterDbs {
+        gva_db: GvaV1Db::<DbsBackend>::open(DbsBackend::gen_backend_conf("gva_v1", home_path_opt))
             .expect("fail to open GVA DB"),
-        TxsMpV2Db::<B>::open(B::gen_backend_conf("txs_mp_v2", home_path_opt))
-            .expect("fail to open TxsMp DB"),
-    )
+        txs_mp_db: TxsMpV2Db::<DbsBackend>::open(DbsBackend::gen_backend_conf(
+            "txs_mp_v2",
+            home_path_opt,
+        ))
+        .expect("fail to open TxsMp DB"),
+    }
 }
 
 pub trait BackendConf: Backend {
@@ -45,10 +48,27 @@ impl BackendConf for Mem {
     }
 }
 
+impl BackendConf for Lmdb {
+    #[inline(always)]
+    fn gen_backend_conf(db_name: &'static str, home_path_opt: Option<&Path>) -> LmdbConf {
+        let conf = LmdbConf::default();
+        if let Some(data_path) = home_path_opt {
+            conf.folder_path(data_path.join(format!("data/{}_lmdb", db_name)))
+        } else {
+            let random = rand::random::<u128>();
+            conf.folder_path(PathBuf::from(format!(
+                "/dev/shm/duniter/_{}/{}_lmdb",
+                random, db_name
+            )))
+            .temporary(true)
+        }
+    }
+}
+
 impl BackendConf for Sled {
     #[inline(always)]
-    fn gen_backend_conf(db_name: &'static str, home_path_opt: Option<&Path>) -> Config {
-        let conf = Config::default().flush_every_ms(Some(10_000));
+    fn gen_backend_conf(db_name: &'static str, home_path_opt: Option<&Path>) -> SledConf {
+        let conf = SledConf::default().flush_every_ms(Some(10_000));
         if let Some(data_path) = home_path_opt {
             conf.path(data_path.join(format!("data/{}_sled", db_name)))
         } else {

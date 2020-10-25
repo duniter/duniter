@@ -79,12 +79,10 @@ declare_types! {
                 None
             };
             if let Some(home_path) = home_path_opt {
-                let (server, txs_mps_subscriber) = DuniterServer::start(conf, Some(home_path.as_path()), std::env!("CARGO_PKG_VERSION"));
-                crate::event_emitter::init_event_emitter(Some(txs_mps_subscriber));
+                let server = DuniterServer::start(conf, Some(home_path.as_path()), std::env!("CARGO_PKG_VERSION"));
                 Ok(RustServer { server })
             } else {
-                let (server, _) = DuniterServer::start(conf, None, std::env!("CARGO_PKG_VERSION"));
-                crate::event_emitter::init_event_emitter(None);
+                let server = DuniterServer::start(conf, None, std::env!("CARGO_PKG_VERSION"));
                 Ok(RustServer { server })
             }
         }
@@ -234,8 +232,7 @@ declare_types! {
             let res = {
                 let guard = cx.lock();
                 let server = this.borrow(&guard);
-                let recv = server.server.add_pending_tx(tx, true);
-                recv.recv().expect("rust server disconnected")
+                server.server.add_pending_tx_force(tx)
             }.map(|_| cx.undefined().upcast());
             into_neon_res(&mut cx, res)
         }
@@ -274,12 +271,12 @@ declare_types! {
         }
         method getMempoolTxsFreeRooms(mut cx) {
             let this = cx.this();
-            let free_rooms = {
+            let res = {
                 let guard = cx.lock();
                 let server = this.borrow(&guard);
                 server.server.get_mempool_txs_free_rooms()
-            };
-            Ok(cx.number(free_rooms as f64).upcast())
+            }.map(|free_rooms| cx.number(free_rooms as f64).upcast());
+            into_neon_res(&mut cx, res)
         }
         method removeAllPendingTxs(mut cx) {
             let this = cx.this();

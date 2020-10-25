@@ -15,7 +15,7 @@
 
 use crate::*;
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct IIndexDbV1(pub SmallVec<[IIndexLineDbV1; 1]>);
 
 impl ValueAsBytes for IIndexDbV1 {

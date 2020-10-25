@@ -9,11 +9,14 @@ edition = "2018"
 dubp = { version = "0.29.0" }
 duniter-dbs = { path = "../duniter-dbs" }
 duniter-dbs-read-ops = { path = "../duniter-dbs-read-ops" }
-duniter-dbs-writer = { path = "../duniter-dbs-writer" }
+duniter-dbs-write-ops = { path = "../duniter-dbs-write-ops" }
 duniter-gva = { path = "../duniter-gva" }
+duniter-mempools = { path = "../duniter-mempools" }
+fast-threadpool = "0.1.1"
 flume = "0.9.1"
 log = "0.4.11"
 resiter = "0.4.0"
+rand = "0.7.3"
 
 [dev-dependencies]
 unwrap = "1.2.1"

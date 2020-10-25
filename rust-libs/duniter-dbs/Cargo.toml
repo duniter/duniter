@@ -32,12 +32,10 @@ tempdir = "0.3.7"
 unwrap = "1.2.1"
 
 [features]
-default = ["memory_backend", "sled_backend", "subscription", "sync"]
+default = ["sled_backend"]
 
 explorer = ["chrono", "kv_typed/explorer"]
 leveldb_backend = ["kv_typed/leveldb_backend"]
-memory_backend = ["kv_typed/memory_backend"]
-mock = ["kv_typed/mock", "mockall"]
+mem = []
+#mock = ["kv_typed/mock", "mockall"]
 sled_backend = ["kv_typed/sled_backend"]
-subscription = ["kv_typed/subscription"]
-sync = ["kv_typed/sync"]

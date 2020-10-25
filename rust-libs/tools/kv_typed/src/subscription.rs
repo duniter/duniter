@@ -73,12 +73,6 @@ impl<E: EventTrait> ColSubscribers<E> {
                     .unwrap_or_else(|| Arc::clone(&events)),
             ) {
                 match e {
-                    #[cfg(feature = "async")]
-                    TrySendError::Closed(events_) => {
-                        unsend_events_opt = Some(events_);
-                        died_subscribers.push(*id);
-                    }
-                    #[cfg(not(feature = "async"))]
                     TrySendError::Disconnected(events_) => {
                         unsend_events_opt = Some(events_);
                         died_subscribers.push(*id);

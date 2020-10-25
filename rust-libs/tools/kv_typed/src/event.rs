@@ -29,3 +29,18 @@ pub trait EventTrait: 'static + Debug + PartialEq + Send + Sync {
     fn upsert(k: Self::K, v: Self::V) -> Self;
     fn remove(k: Self::K) -> Self;
 }
+
+impl EventTrait for () {
+    type K = ();
+    type V = ();
+
+    fn clear() -> Self {
+        unimplemented!()
+    }
+    fn upsert(_: Self::K, _: Self::V) -> Self {
+        unimplemented!()
+    }
+    fn remove(_: Self::K) -> Self {
+        unimplemented!()
+    }
+}

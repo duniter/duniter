@@ -8,11 +8,25 @@ pub trait DbCollectionRo: Sized {
 
     fn count(&self) -> KvResult<usize>;
     fn get(&self, k: &Self::K) -> KvResult<Option<Self::V>>;
-    fn iter<R: 'static + RangeBounds<Self::K>>(
+    /// Don't worry about complex iter type. Use it like an `impl Iterator<Item=KvResult<(K, V)>>`.
+    fn iter<
+        D: Send + Sync,
+        R: 'static + RangeBounds<Self::K>,
+        F: FnOnce(
+            KvIter<
+                Self::BackendCol,
+                <Self::BackendCol as BackendCol>::KeyBytes,
+                <Self::BackendCol as BackendCol>::ValueBytes,
+                <Self::BackendCol as BackendCol>::Iter,
+                Self::K,
+                Self::V,
+            >,
+        ) -> D,
+    >(
         &self,
         range: R,
-    ) -> KvIter<Self::BackendCol, Self::K, Self::V>;
-    #[cfg(feature = "subscription")]
+        f: F,
+    ) -> D;
     fn subscribe(&self, subscriber_sender: Subscriber<Self::Event>) -> KvResult<()>;
 }
 
@@ -28,27 +42,21 @@ mockall::mock! {
         fn count(&self) -> KvResult<usize>;
         fn get(&self, k: &E::K) -> KvResult<Option<E::V>>;
         fn iter<R: 'static + RangeBounds<E::K>>(&self, range: R)
-        -> KvIter<MockBackendCol, E::K, E::V>;
-        #[cfg(feature = "subscription")]
+        -> KvIter<MockBackendCol, MockBackendIter, E::K, E::V>;
         fn subscribe(&self, subscriber_sender: Subscriber<E>) -> KvResult<()>;
     }
 }
 
 #[derive(Debug)]
 pub struct ColRo<BC: BackendCol, E: EventTrait> {
-    pub(crate) inner: BC,
-    #[cfg(not(feature = "subscription"))]
-    pub(crate) phantom: PhantomData<E>,
-    #[cfg(feature = "subscription")]
-    pub(crate) subscription_sender: crate::subscription::SubscriptionsSender<E>,
+    pub(crate) inner: Arc<parking_lot::RwLock<ColInner<BC, E>>>,
+    pub(crate) subscription_sender: SubscriptionsSender<E>,
 }
+
 impl<BC: BackendCol, E: EventTrait> Clone for ColRo<BC, E> {
     fn clone(&self) -> Self {
         Self {
-            inner: self.inner.clone(),
-            #[cfg(not(feature = "subscription"))]
-            phantom: PhantomData,
-            #[cfg(feature = "subscription")]
+            inner: Arc::clone(&self.inner),
             subscription_sender: self.subscription_sender.clone(),
         }
     }
@@ -61,21 +69,38 @@ impl<BC: BackendCol, E: EventTrait> DbCollectionRo for ColRo<BC, E> {
 
     #[inline(always)]
     fn count(&self) -> KvResult<usize> {
-        self.inner.count()
+        let r = self.inner.read();
+        r.backend_col.count()
     }
     #[inline(always)]
     fn get(&self, k: &Self::K) -> KvResult<Option<Self::V>> {
-        self.inner.get(k)
+        let r = self.inner.read();
+        r.backend_col.get(k)
     }
     #[inline(always)]
-    fn iter<R: 'static + RangeBounds<Self::K>>(
+    fn iter<
+        D: Send + Sync,
+        R: 'static + RangeBounds<Self::K>,
+        F: FnOnce(
+            KvIter<
+                Self::BackendCol,
+                <Self::BackendCol as BackendCol>::KeyBytes,
+                <Self::BackendCol as BackendCol>::ValueBytes,
+                <Self::BackendCol as BackendCol>::Iter,
+                Self::K,
+                Self::V,
+            >,
+        ) -> D,
+    >(
         &self,
         range: R,
-    ) -> KvIter<Self::BackendCol, Self::K, Self::V> {
-        let range: RangeBytes = KvIter::<BC, Self::K, Self::V>::convert_range::<R>(range);
-        KvIter::new(self.inner.iter::<Self::K, Self::V>(range.clone()), range)
+        f: F,
+    ) -> D {
+        let range: RangeBytes = crate::iter::convert_range::<Self::K, R>(range);
+        let r = self.inner.read();
+        let iter = r.backend_col.iter::<Self::K, Self::V>(range.clone());
+        f(KvIter::new(iter, range))
     }
-    #[cfg(feature = "subscription")]
     #[inline(always)]
     fn subscribe(&self, subscriber_sender: Subscriber<Self::Event>) -> KvResult<()> {
         self.subscription_sender
@@ -94,7 +119,8 @@ pub trait DbCollectionRoGetRef<V: ValueZc>: DbCollectionRo<V = V> {
 
 impl<V: ValueZc, BC: BackendCol, E: EventTrait<V = V>> DbCollectionRoGetRef<V> for ColRo<BC, E> {
     fn get_ref<D, F: Fn(&V::Ref) -> KvResult<D>>(&self, k: &E::K, f: F) -> KvResult<Option<D>> {
-        self.inner.get_ref::<E::K, V, D, F>(k, f)
+        let r = self.inner.read();
+        r.backend_col.get_ref::<E::K, V, D, F>(k, f)
     }
 }
 
@@ -114,6 +140,7 @@ impl<V: ValueSliceZc, BC: BackendCol, E: EventTrait<V = V>> DbCollectionRoGetRef
         k: &E::K,
         f: F,
     ) -> KvResult<Option<D>> {
-        self.inner.get_ref_slice::<E::K, V, D, F>(k, f)
+        let r = self.inner.read();
+        r.backend_col.get_ref_slice::<E::K, V, D, F>(k, f)
     }
 }

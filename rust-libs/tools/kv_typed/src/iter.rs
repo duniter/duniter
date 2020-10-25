@@ -41,13 +41,22 @@ impl<I, T, E> ResultIter<T, E> for I where I: Iterator<Item = Result<T, E>> + Si
 pub type RangeBytes = (Bound<IVec>, Bound<IVec>);
 
 #[derive(Debug)]
-pub struct KvIter<C: BackendCol, K: Key, V: Value> {
-    range_iter: range::RangeIter<C>,
+pub struct KvIter<
+    C: BackendCol,
+    KB: KeyBytes,
+    VB: ValueBytes,
+    BI: BackendIter<KB, VB>,
+    K: Key,
+    V: Value,
+> {
+    range_iter: range::RangeIter<C, KB, VB, BI>,
     phantom_key: PhantomData<K>,
     phantom_value: PhantomData<V>,
 }
 
-impl<C: BackendCol, K: Key, V: Value> Iterator for KvIter<C, K, V> {
+impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>, K: Key, V: Value>
+    Iterator for KvIter<C, KB, VB, BI, K, V>
+{
     type Item = KvResult<(K, V)>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -65,7 +74,9 @@ impl<C: BackendCol, K: Key, V: Value> Iterator for KvIter<C, K, V> {
     }
 }
 
-impl<C: BackendCol, K: Key, V: Value> ReversableIterator for KvIter<C, K, V> {
+impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>, K: Key, V: Value>
+    ReversableIterator for KvIter<C, KB, VB, BI, K, V>
+{
     #[inline(always)]
     fn reverse(self) -> Self {
         Self {
@@ -76,20 +87,11 @@ impl<C: BackendCol, K: Key, V: Value> ReversableIterator for KvIter<C, K, V> {
     }
 }
 
-impl<C: BackendCol, K: Key, V: Value> KvIter<C, K, V> {
-    pub fn keys(self) -> KvIterKeys<C, K> {
-        KvIterKeys::new(self.range_iter)
-    }
-    pub fn values(self) -> KvIterValues<C, K, V> {
-        KvIterValues::new(self.range_iter)
-    }
-    pub(crate) fn convert_range<RK: RangeBounds<K>>(range: RK) -> RangeBytes {
-        let range_start = convert_bound(range.start_bound());
-        let range_end = convert_bound(range.end_bound());
-        (range_start, range_end)
-    }
+impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>, K: Key, V: Value>
+    KvIter<C, KB, VB, BI, K, V>
+{
     #[cfg(feature = "mock")]
-    pub fn new(backend_iter: C::Iter, range: RangeBytes) -> Self {
+    pub fn new(backend_iter: BI, range: RangeBytes) -> Self {
         Self {
             range_iter: range::RangeIter::new(backend_iter, range.0, range.1),
             phantom_key: PhantomData,
@@ -97,13 +99,45 @@ impl<C: BackendCol, K: Key, V: Value> KvIter<C, K, V> {
         }
     }
     #[cfg(not(feature = "mock"))]
-    pub(crate) fn new(backend_iter: C::Iter, range: RangeBytes) -> Self {
+    pub(crate) fn new(backend_iter: BI, range: RangeBytes) -> Self {
         Self {
             range_iter: range::RangeIter::new(backend_iter, range.0, range.1),
             phantom_key: PhantomData,
             phantom_value: PhantomData,
         }
     }
+}
+
+pub trait EntryIter {
+    type K: Key;
+    type V: Value;
+    type KeysIter: Iterator<Item = KvResult<Self::K>>;
+    type ValuesIter: Iterator<Item = KvResult<Self::V>>;
+
+    fn keys(self) -> Self::KeysIter;
+    fn values(self) -> Self::ValuesIter;
+}
+
+impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>, K: Key, V: Value>
+    EntryIter for KvIter<C, KB, VB, BI, K, V>
+{
+    type K = K;
+    type V = V;
+    type KeysIter = KvIterKeys<C, KB, VB, BI, K>;
+    type ValuesIter = KvIterValues<C, KB, VB, BI, K, V>;
+
+    fn keys(self) -> KvIterKeys<C, KB, VB, BI, K> {
+        KvIterKeys::new(self.range_iter)
+    }
+    fn values(self) -> KvIterValues<C, KB, VB, BI, K, V> {
+        KvIterValues::new(self.range_iter)
+    }
+}
+
+pub(crate) fn convert_range<K: Key, RK: RangeBounds<K>>(range: RK) -> RangeBytes {
+    let range_start = convert_bound(range.start_bound());
+    let range_end = convert_bound(range.end_bound());
+    (range_start, range_end)
 }
 
 #[inline(always)]

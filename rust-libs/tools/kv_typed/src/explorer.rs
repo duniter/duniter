@@ -1,5 +1,4 @@
 use crate::*;
-#[cfg(not(feature = "async"))]
 use rayon::{iter::ParallelBridge, prelude::*};
 use std::num::NonZeroUsize;
 
@@ -16,6 +15,16 @@ pub trait DbExplorable {
 pub trait ExplorableKey: Sized {
     fn from_explorer_str(source: &str) -> Result<Self, StringErr>;
     fn to_explorer_string(&self) -> KvResult<String>;
+}
+
+impl ExplorableKey for () {
+    fn from_explorer_str(_: &str) -> Result<Self, StringErr> {
+        Ok(())
+    }
+
+    fn to_explorer_string(&self) -> KvResult<String> {
+        Ok(String::with_capacity(0))
+    }
 }
 
 impl ExplorableKey for String {
@@ -47,6 +56,16 @@ impl_explorable_key_for_numbers!(usize, u8, u16, u32, u64, u128, i8, i16, i32, i
 pub trait ExplorableValue: Sized {
     fn from_explorer_str(source: &str) -> Result<Self, StringErr>;
     fn to_explorer_json(&self) -> KvResult<serde_json::Value>;
+}
+
+impl ExplorableValue for () {
+    fn from_explorer_str(_: &str) -> Result<Self, StringErr> {
+        Ok(())
+    }
+
+    fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
+        Ok(serde_json::Value::String(String::with_capacity(0)))
+    }
 }
 
 impl ExplorableValue for String {
@@ -231,37 +250,21 @@ impl<'a> ExplorerAction<'a> {
         };
 
         if let Some(limit) = limit {
-            let iter = col.iter(range);
-
-            if reverse {
-                iter.reverse()
-                    .step_by(step.get())
-                    .filter_map(filter_map_closure)
-                    .take(limit)
-                    .collect()
-            } else {
-                iter.step_by(step.get())
-                    .filter_map(filter_map_closure)
-                    .take(limit)
-                    .collect()
-            }
-        } else {
-            #[cfg(feature = "async")]
-            {
+            col.iter(range, |iter| {
                 if reverse {
-                    col.iter(range)
-                        .reverse()
+                    iter.reverse()
                         .step_by(step.get())
                         .filter_map(filter_map_closure)
+                        .take(limit)
                         .collect()
                 } else {
-                    col.iter(range)
-                        .step_by(step.get())
+                    iter.step_by(step.get())
                         .filter_map(filter_map_closure)
+                        .take(limit)
                         .collect()
                 }
-            }
-            #[cfg(not(feature = "async"))]
+            })
+        } else {
             {
                 let (send, recv) = unbounded();
 
@@ -271,22 +274,24 @@ impl<'a> ExplorerAction<'a> {
                     iter.filter_map(filter_map_closure).collect()
                 });
 
-                if reverse {
-                    for entry_res in col.iter(range).reverse() {
-                        if send.try_send(entry_res).is_err() {
-                            return handler.join().expect("child thread panic");
+                col.iter(range, |iter| {
+                    if reverse {
+                        for entry_res in iter.reverse() {
+                            if send.try_send(entry_res).is_err() {
+                                return handler.join().expect("child thread panic");
+                            }
+                        }
+                    } else {
+                        for entry_res in iter {
+                            if send.try_send(entry_res).is_err() {
+                                return handler.join().expect("child thread panic");
+                            }
                         }
                     }
-                } else {
-                    for entry_res in col.iter(range) {
-                        if send.try_send(entry_res).is_err() {
-                            return handler.join().expect("child thread panic");
-                        }
-                    }
-                }
-                drop(send);
+                    drop(send);
 
-                handler.join().expect("child thread panic")
+                    handler.join().expect("child thread panic")
+                })
             }
         }
     }

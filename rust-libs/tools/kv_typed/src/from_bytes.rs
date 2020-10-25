@@ -7,13 +7,21 @@ pub trait FromBytes: Sized {
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err>;
 }
 
+impl FromBytes for () {
+    type Err = std::convert::Infallible;
+
+    fn from_bytes(_: &[u8]) -> Result<Self, Self::Err> {
+        Ok(())
+    }
+}
+
 macro_rules! impl_from_bytes_for_numbers {
     ($($T:ty),*) => {$(
         impl FromBytes for $T {
             type Err = std::array::TryFromSliceError;
 
             fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
-                Ok(<$T>::from_be_bytes(bytes.try_into()?))
+                Ok(<$T>::from_le_bytes(bytes.try_into()?))
             }
         }
     )*};
@@ -51,15 +59,21 @@ impl_from_bytes_for_smallvec!(1, 2, 4, 8, 16, 32, 64);
 
 impl<T> FromBytes for Vec<T>
 where
-    T: Copy + zerocopy::FromBytes,
+    T: Copy + Default + zerocopy::FromBytes,
 {
     type Err = StringErr;
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
-        let layout_verified = zerocopy::LayoutVerified::<_, [T]>::new_slice(bytes)
-            .ok_or_else(|| StringErr("".to_owned()))?;
+        let layout_verified =
+            zerocopy::LayoutVerified::<_, [T]>::new_slice(bytes).ok_or_else(|| {
+                StringErr(
+                    "Corrupted DB: Vec<T> bytes are wrong aligned or have invalid length"
+                        .to_owned(),
+                )
+            })?;
         let slice = layout_verified.into_slice();
         let mut vec = Vec::with_capacity(slice.len());
+        vec.resize_with(slice.len(), Default::default);
         vec.copy_from_slice(slice);
         Ok(vec)
     }
@@ -90,5 +104,13 @@ where
             .ok_or_else(|| StringErr("".to_owned()))?;
         let slice = layout_verified.into_slice();
         Ok(HashSet::from_iter(slice.iter().copied()))
+    }
+}
+
+impl FromBytes for IVec {
+    type Err = std::convert::Infallible;
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
+        Ok(Self::from(bytes))
     }
 }

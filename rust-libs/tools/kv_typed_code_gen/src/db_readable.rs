@@ -20,30 +20,24 @@ pub(crate) fn impl_db_readable(
     db: &Ident,
     db_ro: &Ident,
     db_readable: &Ident,
-    col_name_class: &[Ident],
     col_field: &[Ident],
     col_event_type: &[Ident],
-    col_key_type: &[Ident],
-    col_value_type: &[Ident],
 ) -> proc_macro2::TokenStream {
     quote! {
         pub trait #db_readable: Sized {
             type Backend: Backend;
-            #(type #col_name_class: DbCollectionRo<Event=#col_event_type, K=#col_key_type, V=#col_value_type>;)*
 
-            #(fn #col_field(&self) -> Self::#col_name_class;)*
+            #(fn #col_field(&self) -> &ColRo<<Self::Backend as Backend>::Col, #col_event_type>;)*
         }
         impl<B: Backend> #db_readable for #db<B> {
             type Backend = B;
-            #(type #col_name_class = ColRo<B::Col, #col_event_type>;)*
 
-            #(fn #col_field(&self) -> Self::#col_name_class { self.collections.#col_field.to_ro().clone() })*
+            #(fn #col_field(&self) -> &ColRo<B::Col, #col_event_type> { &self.collections.#col_field.to_ro() })*
         }
         impl<B: Backend> #db_readable for #db_ro<B>{
             type Backend = B;
-            #(type #col_name_class = ColRo<B::Col, #col_event_type>;)*
 
-            #(fn #col_field(&self) -> Self::#col_name_class { self.collections.#col_field.clone() })*
+            #(fn #col_field(&self) -> &ColRo<B::Col, #col_event_type> { &self.collections.#col_field })*
         }
     }
 }

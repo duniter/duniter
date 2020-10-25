@@ -88,16 +88,7 @@ pub fn db_schema(input: TokenStream) -> TokenStream {
     /*let define_each_db_collection: Vec<proc_macro2::TokenStream> =
     collections.iter().map(define_db_collection).collect();*/
     let db_readable = format_ident!("{}Readable", db);
-    let impl_db_readable = impl_db_readable(
-        &db,
-        &db_ro,
-        &db_readable,
-        &col_name_class,
-        &col_field,
-        &col_event_type,
-        &col_key_type,
-        &col_value_type,
-    );
+    let impl_db_readable = impl_db_readable(&db, &db_ro, &db_readable, &col_field, &col_event_type);
     let db_writable = format_ident!("{}Writable", db);
     let impl_db_writable = impl_db_writable(
         &db,
@@ -138,7 +129,7 @@ pub fn db_schema(input: TokenStream) -> TokenStream {
                 type Backend = kv_typed::backend::mock::MockBackend;
                 #(type #col_name_class = kv_typed::prelude::MockColRo<#col_event_type>;)*
 
-                #(fn #col_field(&self) -> kv_typed::prelude::MockColRo<#col_event_type>;)*
+                #(fn #col_field(&self) -> &kv_typed::prelude::MockColRo<#col_event_type>;)*
             }
         }
         // Inner module used to hide internals types that must not be exposed on public api

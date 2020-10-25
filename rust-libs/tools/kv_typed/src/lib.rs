@@ -29,6 +29,8 @@
 mod as_bytes;
 pub mod backend;
 mod batch;
+mod bytes;
+mod collection_inner;
 mod collection_ro;
 mod collection_rw;
 mod error;
@@ -38,8 +40,9 @@ pub mod explorer;
 mod from_bytes;
 mod iter;
 mod key;
-#[cfg(feature = "subscription")]
 mod subscription;
+mod transactional_read;
+mod transactional_write;
 mod utils;
 mod value;
 
@@ -54,46 +57,50 @@ pub mod prelude {
     pub use crate::as_bytes::{KeyAsBytes, ValueAsBytes};
     #[cfg(feature = "leveldb_backend")]
     pub use crate::backend::leveldb::{LevelDb, LevelDbConf};
+    #[cfg(target_arch = "x86_64")]
+    pub use crate::backend::lmdb::{Lmdb, LmdbConf};
     #[cfg(feature = "memory_backend")]
     pub use crate::backend::memory::{Mem, MemConf};
     #[cfg(feature = "mock")]
     pub use crate::backend::mock::{MockBackend, MockBackendCol, MockBackendIter};
     #[cfg(feature = "sled_backend")]
     pub use crate::backend::sled::{Config as SledConf, Sled};
-    pub use crate::backend::{Backend, BackendCol, TransactionalBackend};
-    pub use crate::batch::Batch;
+    pub use crate::backend::{Backend, BackendCol};
+    pub use crate::batch::{Batch, BatchGet};
     #[cfg(feature = "mock")]
     pub use crate::collection_ro::MockColRo;
     pub use crate::collection_ro::{
         ColRo, DbCollectionRo, DbCollectionRoGetRef, DbCollectionRoGetRefSlice,
     };
     pub use crate::collection_rw::{ColRw, DbCollectionRw};
-    pub use crate::error::{
-        DynErr, KvError, KvResult, StringErr, TransactionError, TransactionResult,
-    };
+    pub use crate::error::{DynErr, KvError, KvResult, StringErr};
     pub use crate::event::{EventTrait, Events};
     #[cfg(feature = "explorer")]
     pub use crate::explorer::{ExplorableKey, ExplorableValue};
     pub use crate::from_bytes::FromBytes;
     pub use crate::iter::{
-        keys::KvIterKeys, values::KvIterValues, KvIter, ResultIter, ReversableIterator,
+        keys::KvIterKeys, values::KvIterValues, EntryIter, KvIter, ResultIter, ReversableIterator,
     };
     pub use crate::key::Key;
-    #[cfg(feature = "subscription")]
     pub use crate::subscription::{NewSubscribers, Subscriber, Subscribers};
+    pub use crate::transactional_read::TransactionalRead;
+    pub use crate::transactional_write::{DbTxCollectionRw, TransactionalWrite, TxColRw};
     pub use crate::utils::arc::Arc;
     pub use crate::value::{Value, ValueSliceZc, ValueZc};
     pub use kv_typed_code_gen::db_schema;
 }
 
 // Internal crate imports
-pub(crate) use crate::backend::BackendBatch;
+pub(crate) use crate::backend::{BackendBatch, BackendIter};
+pub(crate) use crate::bytes::{CowKB, CowVB, KeyBytes, ValueBytes};
+pub(crate) use crate::collection_inner::ColInner;
+pub(crate) use crate::error::BackendResult;
 #[cfg(feature = "explorer")]
 pub(crate) use crate::explorer::{ExplorableKey, ExplorableValue};
 pub(crate) use crate::iter::RangeBytes;
 pub(crate) use crate::prelude::*;
-#[cfg(feature = "subscription")]
-pub(crate) use crate::subscription::ColSubscribers;
+pub(crate) use crate::subscription::{ColSubscribers, SubscriptionsSender};
+pub(crate) use crate::transactional_write::tx_iter::BackendTxIter;
 pub(crate) use crate::utils::arc::Arc;
 pub(crate) use crate::utils::ivec::IVec;
 use flume::{unbounded, Receiver, Sender, TrySendError};

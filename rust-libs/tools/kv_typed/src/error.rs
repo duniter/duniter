@@ -26,6 +26,10 @@ pub type DynErr = Box<dyn Error + Send + Sync + 'static>;
 /// KV Typed error
 pub type KvResult<T> = Result<T, KvError>;
 
+#[allow(type_alias_bounds)]
+pub(crate) type BackendResult<BC: BackendCol> =
+    Result<(<BC as BackendCol>::KeyBytes, <BC as BackendCol>::ValueBytes), DynErr>;
+
 /// KV Typed error
 #[derive(Debug, Error)]
 pub enum KvError {
@@ -34,7 +38,7 @@ pub enum KvError {
     BackendError(DynErr),
     /// Custom
     #[error("{0}")]
-    Custom(String),
+    Custom(DynErr),
     // DB corrupted
     #[error("DB corrupted:{0}")]
     DbCorrupted(String),
@@ -49,10 +53,22 @@ pub enum KvError {
     FailToSubscribe,
 }
 
+impl From<std::io::Error> for KvError {
+    fn from(e: std::io::Error) -> Self {
+        KvError::BackendError(e.into())
+    }
+}
+
 #[cfg(feature = "leveldb_backend")]
 impl From<crate::backend::leveldb::LevelDbError> for KvError {
     fn from(e: crate::backend::leveldb::LevelDbError) -> Self {
         KvError::BackendError(Box::new(e).into())
+    }
+}
+#[cfg(target_arch = "x86_64")]
+impl From<lmdb_zero::Error> for KvError {
+    fn from(e: lmdb_zero::Error) -> Self {
+        KvError::BackendError(e.into())
     }
 }
 #[cfg(feature = "sled_backend")]
@@ -60,12 +76,4 @@ impl From<sled::Error> for KvError {
     fn from(e: sled::Error) -> Self {
         KvError::BackendError(Box::new(e).into())
     }
-}
-
-pub type TransactionResult<D, A, BE> = Result<D, TransactionError<A, BE>>;
-#[derive(Debug)]
-pub enum TransactionError<A: Debug, BE: Error + Send + Sync + 'static> {
-    Abort(A),
-    BackendErr(BE),
-    KvError(KvError),
 }

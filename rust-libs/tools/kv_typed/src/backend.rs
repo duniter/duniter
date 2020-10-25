@@ -17,6 +17,8 @@
 
 #[cfg(feature = "leveldb_backend")]
 pub mod leveldb;
+#[cfg(target_arch = "x86_64")]
+pub mod lmdb;
 #[cfg(feature = "memory_backend")]
 pub mod memory;
 #[cfg(feature = "mock")]
@@ -25,22 +27,6 @@ pub mod mock;
 pub mod sled;
 
 use crate::*;
-
-pub trait TransactionalBackend<DbReader: From<Vec<Self::TxCol>>, DbWriter: From<Vec<Self::TxCol>>>:
-    Backend
-{
-    type Err: Error + Send + Sync + 'static;
-    type TxCol: BackendCol;
-
-    fn read<A: Debug, D, F: Fn(&DbReader) -> TransactionResult<D, A, Self::Err>>(
-        &self,
-        f: F,
-    ) -> TransactionResult<D, A, Self::Err>;
-    fn write<A: Debug, F: Fn(&DbWriter) -> TransactionResult<(), A, Self::Err>>(
-        &self,
-        f: F,
-    ) -> TransactionResult<(), A, Self::Err>;
-}
 
 pub trait Backend: 'static + Clone + Sized {
     const NAME: &'static str;
@@ -51,12 +37,11 @@ pub trait Backend: 'static + Clone + Sized {
     fn open_col(&mut self, conf: &Self::Conf, col_name: &str) -> KvResult<Self::Col>;
 }
 
-pub trait BackendCol: 'static + Clone + Send + Sync {
+pub trait BackendCol: 'static + Clone + Debug + Send + Sync {
     type Batch: BackendBatch;
-    type KeyBytes: AsRef<[u8]>;
-    type ValueBytes: AsRef<[u8]>;
-    type Iter: Iterator<Item = Result<(Self::KeyBytes, Self::ValueBytes), DynErr>>
-        + ReversableIterator;
+    type KeyBytes: KeyBytes;
+    type ValueBytes: ValueBytes;
+    type Iter: BackendIter<Self::KeyBytes, Self::ValueBytes>;
 
     fn get<K: Key, V: Value>(&self, k: &K) -> KvResult<Option<V>>;
     fn get_ref<K: Key, V: ValueZc, D, F: Fn(&V::Ref) -> KvResult<D>>(
@@ -69,18 +54,30 @@ pub trait BackendCol: 'static + Clone + Send + Sync {
         k: &K,
         f: F,
     ) -> KvResult<Option<D>>;
-    fn clear(&self) -> KvResult<()>;
+    fn clear(&mut self) -> KvResult<()>;
     fn count(&self) -> KvResult<usize>;
     fn iter<K: Key, V: Value>(&self, range: RangeBytes) -> Self::Iter;
-    fn put<K: Key, V: Value>(&self, k: &K, value: &V) -> KvResult<()>;
-    fn delete<K: Key>(&self, k: &K) -> KvResult<()>;
+    fn put<K: Key, V: Value>(&mut self, k: &K, value: &V) -> KvResult<()>;
+    fn delete<K: Key>(&mut self, k: &K) -> KvResult<()>;
     fn new_batch() -> Self::Batch;
-    fn write_batch(&self, inner_batch: Self::Batch) -> KvResult<()>;
+    fn write_batch(&mut self, inner_batch: Self::Batch) -> KvResult<()>;
     fn save(&self) -> KvResult<()>;
 }
 
+pub trait BackendIter<K: KeyBytes, V: ValueBytes>:
+    Iterator<Item = Result<(K, V), DynErr>> + ReversableIterator
+{
+}
+
 #[cfg_attr(feature = "mock", mockall::automock)]
-pub trait BackendBatch: Default {
+pub trait BackendBatch: Debug + Default {
     fn upsert(&mut self, k: &[u8], v: &[u8]);
     fn remove(&mut self, k: &[u8]);
+}
+
+#[cfg(feature = "mock")]
+impl Debug for MockBackendBatch {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        unimplemented!()
+    }
 }

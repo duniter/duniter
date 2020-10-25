@@ -17,15 +17,19 @@
 
 use crate::*;
 
-// V2
-pub(super) struct RangeIter<C: BackendCol> {
-    backend_iter: C::Iter,
+pub(super) struct RangeIter<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>> {
+    backend_iter: BI,
+    phantom: PhantomData<C>,
+    phantom_kb: PhantomData<KB>,
+    phantom_vb: PhantomData<VB>,
     reversed: bool,
     range_start: Bound<IVec>,
     range_end: Bound<IVec>,
 }
 
-impl<C: BackendCol> Debug for RangeIter<C> {
+impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>> Debug
+    for RangeIter<C, KB, VB, BI>
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LevelDbCol")
             .field("backend_iter", &"BackendIter")
@@ -36,15 +40,16 @@ impl<C: BackendCol> Debug for RangeIter<C> {
     }
 }
 
-impl<C: BackendCol> RangeIter<C> {
+impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>>
+    RangeIter<C, KB, VB, BI>
+{
     #[inline(always)]
-    pub(crate) fn new(
-        backend_iter: C::Iter,
-        range_start: Bound<IVec>,
-        range_end: Bound<IVec>,
-    ) -> Self {
+    pub(crate) fn new(backend_iter: BI, range_start: Bound<IVec>, range_end: Bound<IVec>) -> Self {
         RangeIter {
             backend_iter,
+            phantom: PhantomData,
+            phantom_kb: PhantomData,
+            phantom_vb: PhantomData,
             reversed: false,
             range_start,
             range_end,
@@ -52,8 +57,10 @@ impl<C: BackendCol> RangeIter<C> {
     }
 }
 
-impl<C: BackendCol> Iterator for RangeIter<C> {
-    type Item = <C::Iter as Iterator>::Item;
+impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>> Iterator
+    for RangeIter<C, KB, VB, BI>
+{
+    type Item = Result<(KB, VB), DynErr>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -97,11 +104,16 @@ impl<C: BackendCol> Iterator for RangeIter<C> {
         }
     }
 }
-impl<C: BackendCol> ReversableIterator for RangeIter<C> {
+impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>> ReversableIterator
+    for RangeIter<C, KB, VB, BI>
+{
     #[inline(always)]
     fn reverse(self) -> Self {
         RangeIter {
             backend_iter: self.backend_iter.reverse(),
+            phantom: PhantomData,
+            phantom_kb: PhantomData,
+            phantom_vb: PhantomData,
             reversed: !self.reversed,
             range_start: self.range_start,
             range_end: self.range_end,

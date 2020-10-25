@@ -15,8 +15,6 @@
 
 //! Sled backend for KV Typed,
 
-mod transactional;
-
 pub use sled::Config;
 
 use crate::*;
@@ -69,7 +67,7 @@ impl BackendCol for SledCol {
         sled::Batch::default()
     }
     #[inline(always)]
-    fn clear(&self) -> KvResult<()> {
+    fn clear(&mut self) -> KvResult<()> {
         self.0.clear()?;
         Ok(())
     }
@@ -137,19 +135,19 @@ impl BackendCol for SledCol {
         })
     }
     #[inline(always)]
-    fn delete<K: Key>(&self, k: &K) -> KvResult<()> {
+    fn delete<K: Key>(&mut self, k: &K) -> KvResult<()> {
         k.as_bytes(|k_bytes| self.0.remove(k_bytes))?;
         Ok(())
     }
     #[inline(always)]
-    fn put<K: Key, V: Value>(&self, k: &K, value: &V) -> KvResult<()> {
+    fn put<K: Key, V: Value>(&mut self, k: &K, value: &V) -> KvResult<()> {
         value.as_bytes(|value_bytes| {
             k.as_bytes(|k_bytes| self.0.insert(k_bytes, value_bytes))?;
             Ok(())
         })
     }
     #[inline(always)]
-    fn write_batch(&self, inner_batch: Self::Batch) -> KvResult<()> {
+    fn write_batch(&mut self, inner_batch: Self::Batch) -> KvResult<()> {
         self.0.apply_batch(inner_batch)?;
         Ok(())
     }
@@ -201,3 +199,5 @@ impl ReversableIterator for SledIter {
         }
     }
 }
+
+impl BackendIter<IVec, IVec> for SledIter {}

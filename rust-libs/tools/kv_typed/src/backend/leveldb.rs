@@ -57,27 +57,53 @@ impl Debug for LevelDbCol {
     }
 }
 
-impl BackendBatch for WriteBatch {
+#[derive(Default)]
+pub struct LevelDbBatch(WriteBatch);
+
+impl Debug for LevelDbBatch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("LevelDbBatch")
+            .field("0", &"WriteBatch")
+            .finish()
+    }
+}
+
+impl BackendBatch for LevelDbBatch {
     fn upsert(&mut self, k: &[u8], v: &[u8]) {
-        self.put(k, v)
+        self.0.put(k, v)
     }
 
     fn remove(&mut self, k: &[u8]) {
-        self.delete(k)
+        self.0.delete(k)
+    }
+}
+
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct LevelDbBytes(Vec<u8>);
+impl AsRef<[u8]> for LevelDbBytes {
+    fn as_ref(&self) -> &[u8] {
+        self.0.as_ref()
+    }
+}
+impl FromBytes for LevelDbBytes {
+    type Err = std::convert::Infallible;
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
+        Ok(Self(bytes.into()))
     }
 }
 
 impl BackendCol for LevelDbCol {
-    type Batch = WriteBatch;
-    type KeyBytes = Vec<u8>;
-    type ValueBytes = Vec<u8>;
+    type Batch = LevelDbBatch;
+    type KeyBytes = LevelDbBytes;
+    type ValueBytes = LevelDbBytes;
     type Iter = LevelDbIter;
 
     #[inline(always)]
     fn new_batch() -> Self::Batch {
-        WriteBatch::default()
+        LevelDbBatch(WriteBatch::default())
     }
-    fn clear(&self) -> KvResult<()> {
+    fn clear(&mut self) -> KvResult<()> {
         let keys = self
             .0
             .iter(ReadOptions::new())
@@ -159,20 +185,20 @@ impl BackendCol for LevelDbCol {
         })
     }
     #[inline(always)]
-    fn delete<K: Key>(&self, k: &K) -> KvResult<()> {
+    fn delete<K: Key>(&mut self, k: &K) -> KvResult<()> {
         k.as_bytes(|k_bytes| self.0.delete(WriteOptions::new(), k_bytes))?;
         Ok(())
     }
     #[inline(always)]
-    fn put<K: Key, V: Value>(&self, k: &K, value: &V) -> KvResult<()> {
+    fn put<K: Key, V: Value>(&mut self, k: &K, value: &V) -> KvResult<()> {
         value.as_bytes(|value_bytes| {
             k.as_bytes(|k_bytes| self.0.put(WriteOptions::new(), k_bytes, value_bytes))?;
             Ok(())
         })
     }
     #[inline(always)]
-    fn write_batch(&self, inner_batch: Self::Batch) -> KvResult<()> {
-        self.0.write(WriteOptions::new(), &inner_batch)?;
+    fn write_batch(&mut self, inner_batch: Self::Batch) -> KvResult<()> {
+        self.0.write(WriteOptions::new(), &inner_batch.0)?;
         Ok(())
     }
     #[inline(always)]
@@ -195,11 +221,13 @@ impl Debug for LevelDbIter {
 }
 
 impl Iterator for LevelDbIter {
-    type Item = Result<(Vec<u8>, Vec<u8>), DynErr>;
+    type Item = Result<(LevelDbBytes, LevelDbBytes), DynErr>;
 
     #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(Ok)
+        self.0
+            .next()
+            .map(|(k, v)| Ok((LevelDbBytes(k), LevelDbBytes(v))))
     }
 }
 impl ReversableIterator for LevelDbIter {
@@ -208,6 +236,7 @@ impl ReversableIterator for LevelDbIter {
         Self(self.0.reverse())
     }
 }
+impl BackendIter<LevelDbBytes, LevelDbBytes> for LevelDbIter {}
 
 #[derive(Clone, Debug)]
 /// leveldb configuration

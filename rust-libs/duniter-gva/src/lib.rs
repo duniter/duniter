@@ -170,6 +170,7 @@ impl GvaServer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use duniter_dbs::bc_v2::{BcV2Db, BcV2DbWritable};
     use duniter_dbs::kv_typed::backend::memory::{Mem, MemConf};
     use duniter_dbs::{GvaV1Db, GvaV1DbWritable, TxsMpV2Db, TxsMpV2DbWritable};
     use fast_threadpool::ThreadPoolConfig;
@@ -179,6 +180,7 @@ mod tests {
     #[ignore]
     fn launch_mem_gva() {
         let dbs = DuniterDbs {
+            bc_db: unwrap!(BcV2Db::<Mem>::open(MemConf::default())),
             gva_db: unwrap!(GvaV1Db::<Mem>::open(MemConf::default())),
             txs_mp_db: unwrap!(TxsMpV2Db::<Mem>::open(MemConf::default())),
         };

@@ -397,7 +397,7 @@ export class Stack {
         throw `Command ${command.name} does not implement onConfiguredExecute nor onDatabaseExecute.`
       }
       // Second possible class of commands: post-service
-      await server.initDAL(conf);
+      await server.initDAL(conf, command.name);
 
       /**
        * Service injection

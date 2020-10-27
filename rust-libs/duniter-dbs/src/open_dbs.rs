@@ -13,19 +13,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use crate::bc_v2::BcV2DbWritable as _;
 use crate::*;
-
-#[derive(Clone, Debug)]
-pub struct DuniterServerConf {
-    pub gva: Option<GvaConf>,
-    pub server_pubkey: PublicKey,
-    pub txs_mempool_size: usize,
-}
 
 pub fn open_dbs(home_path_opt: Option<&Path>) -> DuniterDbs {
     DuniterDbs {
+        bc_db: crate::bc_v2::BcV2Db::<DbsBackend>::open(DbsBackend::gen_backend_conf(
+            "bc_v2",
+            home_path_opt,
+        ))
+        .expect("fail to open BcV2 DB"),
         gva_db: GvaV1Db::<DbsBackend>::open(DbsBackend::gen_backend_conf("gva_v1", home_path_opt))
-            .expect("fail to open GVA DB"),
+            .expect("fail to open Gva DB"),
         txs_mp_db: TxsMpV2Db::<DbsBackend>::open(DbsBackend::gen_backend_conf(
             "txs_mp_v2",
             home_path_opt,
@@ -68,7 +67,30 @@ impl BackendConf for Lmdb {
 impl BackendConf for Sled {
     #[inline(always)]
     fn gen_backend_conf(db_name: &'static str, home_path_opt: Option<&Path>) -> SledConf {
-        let conf = SledConf::default().flush_every_ms(Some(10_000));
+        let mut conf = SledConf::default().flush_every_ms(Some(10_000));
+        conf = match db_name {
+            "bc_v2" => {
+                if let Ok(compression_level) = std::env::var("DUNITER_BC_DB_COMPRESSION") {
+                    conf.use_compression(true)
+                        .compression_factor(i32::from_str(&compression_level).expect(
+                        "Env var DUNITER_BC_DB_COMPRESSION must be a number beetween 1 and 22 !",
+                    ))
+                } else {
+                    conf.use_compression(false)
+                }
+            }
+            "gva_v1" => {
+                if let Ok(compression_level) = std::env::var("DUNITER_GVA_DB_COMPRESSION") {
+                    conf.use_compression(true)
+                        .compression_factor(i32::from_str(&compression_level).expect(
+                        "Env var DUNITER_GVA_DB_COMPRESSION must be a number beetween 1 and 22 !",
+                    ))
+                } else {
+                    conf.use_compression(false)
+                }
+            }
+            _ => conf.use_compression(false),
+        };
         if let Some(data_path) = home_path_opt {
             conf.path(data_path.join(format!("data/{}_sled", db_name)))
         } else {

@@ -520,6 +520,10 @@ export class TestingServer {
     return blocksResolved
   }
 
+  async revertCurrentBlock() {
+    await this.server.BlockchainService.revertCurrentBlock()
+  }
+
   async resolveExistingBlock(filterFunc: (b: DBBlock) => boolean) {
     const blocksResolved = await this.server.BlockchainService.blockResolution(filterFunc)
     if (!blocksResolved) {

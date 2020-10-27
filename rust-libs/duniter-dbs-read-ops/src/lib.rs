@@ -28,8 +28,11 @@ pub mod utxos;
 use dubp::common::crypto::hashs::Hash;
 use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::documents::transaction::TransactionDocumentV10;
+use duniter_dbs::bc_v2::BcV2DbReadable;
 use duniter_dbs::{
     kv_typed::prelude::*,
+    BlockMetaV2, //TxsMpV2DbWritable,
+    //WalletConditionsV2
     //BlockNumberArrayV2, BlockNumberKeyV2, SourceAmountValV2, UtxosOfScriptV1
     //GvaV1Db,
     GvaV1DbReadable,
@@ -40,6 +43,10 @@ use duniter_dbs::{
     TxDbV2,
     //TxsMpV2Db,
     TxsMpV2DbReadable,
-    //TxsMpV2DbWritable,
-    //WalletConditionsV2,
 };
+
+pub fn get_current_block_meta<BcDb: BcV2DbReadable>(bc_db: &BcDb) -> KvResult<Option<BlockMetaV2>> {
+    bc_db
+        .blocks_meta()
+        .iter(.., |it| it.reverse().values().next_res())
+}

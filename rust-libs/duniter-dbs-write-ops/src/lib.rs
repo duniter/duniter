@@ -22,266 +22,46 @@
     unused_import_braces
 )]
 
-mod identities;
-mod tx;
-mod utxos;
+pub mod apply_block;
+pub mod bc;
+pub mod gva;
+pub mod txs_mp;
 
 use std::borrow::Cow;
 
-use crate::utxos::UtxoV10;
-use dubp::block::DubpBlockV10Stringified;
+use dubp::block::prelude::*;
 use dubp::common::crypto::hashs::Hash;
 use dubp::common::prelude::*;
 use dubp::documents::{
     prelude::*, smallvec::SmallVec, transaction::TransactionDocumentTrait,
     transaction::TransactionDocumentV10,
 };
-use dubp::documents_parser::prelude::*;
 use dubp::wallet::prelude::*;
 use duniter_dbs::gva_v1::{TxEvent, TxsByIssuerEvent, TxsByRecipientEvent};
 use duniter_dbs::{
-    kv_typed::prelude::*, GvaV1Db, GvaV1DbReadable, GvaV1DbWritable, HashKeyV2, PendingTxDbV2,
-    PubKeyKeyV2, TxDbV2, TxsMpV2Db, TxsMpV2DbReadable, TxsMpV2DbWritable, WalletConditionsV2,
+    kv_typed::prelude::*, BlockMetaV2, BlockNumberKeyV2, DuniterDbs, GvaV1Db, GvaV1DbReadable,
+    GvaV1DbWritable, HashKeyV2, PendingTxDbV2, PubKeyKeyV2, PubKeyValV2, SourceAmountValV2, TxDbV2,
+    TxsMpV2Db, TxsMpV2DbReadable, TxsMpV2DbWritable, WalletConditionsV2,
 };
+use resiter::filter_map::FilterMap;
 use resiter::flatten::Flatten;
 use resiter::map::Map;
+use std::ops::Deref;
 
-pub fn add_pending_tx<
-    B: Backend,
-    F: FnOnce(
-        &TransactionDocumentV10,
-        &TxColRw<B::Col, duniter_dbs::txs_mp_v2::TxEvent>,
-    ) -> KvResult<()>,
->(
-    control: F,
-    txs_mp_db: &TxsMpV2Db<B>,
-    tx: Cow<TransactionDocumentV10>,
-) -> KvResult<()> {
-    let tx_hash = tx.get_hash();
-    let received_time = chrono::offset::Utc::now().timestamp();
-    (
-        txs_mp_db.txs_by_recv_time_write(),
-        txs_mp_db.txs_by_issuer_write(),
-        txs_mp_db.txs_by_recipient_write(),
-        txs_mp_db.txs_write(),
-    )
-        .write(
-            |(mut txs_by_recv_time, mut txs_by_issuer, mut txs_by_recipient, mut txs)| {
-                control(&tx, &txs)?;
-                // Insert on col `txs_by_recv_time`
-                let mut hashs = txs_by_recv_time.get(&received_time)?.unwrap_or_default();
-                hashs.0.insert(tx_hash);
-                txs_by_recv_time.upsert(received_time, hashs);
-                // Insert on col `txs_by_issuer`
-                for pubkey in tx.issuers() {
-                    let mut hashs = txs_by_issuer.get(&PubKeyKeyV2(pubkey))?.unwrap_or_default();
-                    hashs.0.insert(tx.get_hash());
-                    txs_by_issuer.upsert(PubKeyKeyV2(pubkey), hashs);
-                }
-                // Insert on col `txs_by_recipient`
-                for pubkey in tx.recipients_keys() {
-                    let mut hashs = txs_by_recipient
-                        .get(&PubKeyKeyV2(pubkey))?
-                        .unwrap_or_default();
-                    hashs.0.insert(tx.get_hash());
-                    txs_by_recipient.upsert(PubKeyKeyV2(pubkey), hashs);
-                }
-                // Insert tx itself
-                txs.upsert(HashKeyV2(tx_hash), PendingTxDbV2(tx.into_owned()));
-                Ok(())
-            },
-        )
-}
-
-pub fn remove_all_pending_txs<B: Backend>(txs_mp_db: &TxsMpV2Db<B>) -> KvResult<()> {
-    txs_mp_db.txs_by_recv_time_write().clear()?;
-    txs_mp_db.txs_by_issuer_write().clear()?;
-    txs_mp_db.txs_by_recipient_write().clear()?;
-    txs_mp_db.txs_write().clear()?;
-
-    Ok(())
-}
-
-pub fn remove_pending_tx_by_hash<B: Backend>(txs_mp_db: &TxsMpV2Db<B>, hash: Hash) -> KvResult<()> {
-    remove_one_pending_tx(&txs_mp_db, hash)?;
-    Ok(())
-}
-
-pub fn revert_block<B: Backend>(
-    gva_db: &GvaV1Db<B>,
-    txs_mp_db: &TxsMpV2Db<B>,
-    block: DubpBlockV10Stringified,
-    gva: bool,
-) -> KvResult<()> {
-    for tx in &block.transactions {
-        let tx_hash = if let Some(ref tx_hash) = tx.hash {
-            Hash::from_hex(&tx_hash)
-                .map_err(|e| KvError::DeserError(format!("Transaction with invalid hash: {}", e)))?
-        } else {
-            return Err(KvError::DeserError(
-                "Try to revert a block that contains a transaction without hash !".to_owned(),
-            ));
-        };
-        if gva {
-            let tx = tx::revert_tx(gva_db, &tx_hash)?.ok_or_else(|| {
-                KvError::DbCorrupted(format!("GVA: tx '{}' dont exist on txs history.", tx_hash,))
-            })?;
-            add_pending_tx(|_, _| Ok(()), txs_mp_db, Cow::Owned(tx))?;
-        } else {
-            add_pending_tx(
-                |_, _| Ok(()),
-                txs_mp_db,
-                Cow::Owned(
-                    TransactionDocumentV10::from_string_object(&tx).map_err(|e| {
-                        KvError::DeserError(format!("Block with invalid tx: {}", e))
-                    })?,
-                ),
-            )?;
-        }
-    }
-
-    identities::revert_identities(gva_db, &block)?;
-
-    Ok(())
-}
-
-pub fn apply_block<B: Backend>(
-    gva_db: &GvaV1Db<B>,
-    txs_mp_db: &TxsMpV2Db<B>,
-    block: DubpBlockV10Stringified,
-    gva: bool,
-) -> KvResult<()> {
-    let block_hash = if let Some(ref block_hash_str) = block.hash {
-        Hash::from_hex(&block_hash_str)
-            .map_err(|_| KvError::DeserError(format!("Hash '{}' is invalid", block_hash_str)))?
-    } else {
-        return Err(KvError::DeserError(format!(
-            "Block #{} is without hash",
-            block.number
-        )));
-    };
-    let blockstamp = Blockstamp {
-        number: BlockNumber(block.number as u32),
-        hash: BlockHash(block_hash),
-    };
-    let txs = block
-        .transactions
-        .iter()
-        .map(|tx_str| TransactionDocumentV10::from_string_object(tx_str))
-        .collect::<Result<Vec<TransactionDocumentV10>, TextParseError>>()
-        .map_err(|e| KvError::DeserError(format!("Invalid transaction in block: {}", e)))?;
-    write_block_txs(
-        &txs_mp_db,
-        &gva_db,
-        blockstamp,
-        block.median_time as i64,
-        gva,
-        txs,
-    )?;
-
-    if gva {
-        identities::update_identities(&gva_db, &block)?;
-    }
-
-    Ok(())
-}
-
-#[inline(always)]
-pub fn apply_chunk_of_blocks<B: Backend>(
-    gva_db: &GvaV1Db<B>,
-    txs_mp_db: &TxsMpV2Db<B>,
-    blocks: Vec<DubpBlockV10Stringified>,
-    gva: bool,
-) -> KvResult<()> {
-    for block in blocks {
-        if block.number > 300_000 {
-            log::info!("apply_block(#{})", block.number);
-        }
-        apply_block(gva_db, txs_mp_db, block, gva)?;
-    }
-    Ok(())
-}
-
-fn write_block_txs<B: Backend>(
-    txs_mp_db: &TxsMpV2Db<B>,
-    gva_db: &GvaV1Db<B>,
-    current_blockstamp: Blockstamp,
-    current_time: i64,
-    gva: bool,
-    txs: Vec<TransactionDocumentV10>,
-) -> KvResult<()> {
-    for tx in txs {
-        let tx_hash = tx.get_hash();
-        // Remove tx from mempool
-        remove_one_pending_tx(&txs_mp_db, tx_hash)?;
-        // Write tx and update sources
-        if gva {
-            tx::write_gva_tx(current_blockstamp, current_time, &gva_db, tx_hash, tx)?;
-        }
-    }
-    Ok(())
-}
-
-pub fn trim_expired_non_written_txs<B: Backend>(
-    txs_mp_db: &TxsMpV2Db<B>,
-    limit_time: i64,
-) -> KvResult<()> {
-    // Get hashs of tx to remove and "times" to remove
-    let mut times = Vec::new();
-    let hashs = txs_mp_db.txs_by_recv_time().iter(..limit_time, |it| {
-        it.map_ok(|(k, v)| {
-            times.push(k);
-            v.0
-        })
-        .flatten_ok()
-        .collect::<KvResult<SmallVec<[Hash; 4]>>>()
-    })?;
-    // For each tx to remove
-    for (hash, time) in hashs.into_iter().zip(times.into_iter()) {
-        remove_one_pending_tx(&txs_mp_db, hash)?;
-        // Remove txs hashs in col `txs_by_recv_time`
-        txs_mp_db.txs_by_recv_time_write().remove(time)?;
-    }
-
-    Ok(())
-}
-
-fn remove_one_pending_tx<B: Backend>(txs_mp_db: &TxsMpV2Db<B>, tx_hash: Hash) -> KvResult<bool> {
-    if let Some(tx) = txs_mp_db.txs().get(&HashKeyV2(tx_hash))? {
-        // Remove tx hash in col `txs_by_issuer`
-        for pubkey in tx.0.issuers() {
-            let mut hashs_ = txs_mp_db
-                .txs_by_issuer()
-                .get(&PubKeyKeyV2(pubkey))?
-                .unwrap_or_default();
-            hashs_.0.remove(&tx_hash);
-            txs_mp_db
-                .txs_by_issuer_write()
-                .upsert(PubKeyKeyV2(pubkey), hashs_)?
-        }
-        // Remove tx hash in col `txs_by_recipient`
-        for pubkey in tx.0.recipients_keys() {
-            let mut hashs_ = txs_mp_db
-                .txs_by_recipient()
-                .get(&PubKeyKeyV2(pubkey))?
-                .unwrap_or_default();
-            hashs_.0.remove(&tx_hash);
-            txs_mp_db
-                .txs_by_recipient_write()
-                .upsert(PubKeyKeyV2(pubkey), hashs_)?
-        }
-        // Remove tx itself
-        txs_mp_db.txs_write().remove(HashKeyV2(tx_hash))?;
-        Ok(true)
-    } else {
-        Ok(false)
-    }
+pub struct UtxoV10 {
+    pub id: UtxoIdV10,
+    pub amount: SourceAmount,
+    pub script: WalletScriptV10,
+    pub written_time: i64,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dubp::documents::transaction::TransactionDocumentV10Stringified;
+    use dubp::{
+        documents::transaction::TransactionDocumentV10Stringified,
+        documents_parser::prelude::FromStringObject,
+    };
 
     #[test]
     #[ignore]
@@ -291,11 +71,11 @@ mod tests {
                 .path("/home/elois/.config/duniter/s2/data/gva_v1_sled")
                 .flush_every_ms(None),
         )?;
-        let txs_mp_db = TxsMpV2Db::<Sled>::open(
+        /*let txs_mp_db = TxsMpV2Db::<Sled>::open(
             SledConf::default()
                 .path("/home/elois/.config/duniter/s2/data/txs_mp_v2_sled")
                 .flush_every_ms(None),
-        )?;
+        )?;*/
 
         let txs: Vec<TransactionDocumentV10Stringified> = serde_json::from_str(r#"[
             {
@@ -403,8 +183,9 @@ mod tests {
             transactions: txs,
             ..Default::default()
         };
+        let block = DubpBlockV10::from_string_object(&block).expect("fail to parse block");
 
-        apply_block(&gva_db, &txs_mp_db, block, true)?;
+        gva::apply_block(&block, &gva_db)?;
 
         Ok(())
     }

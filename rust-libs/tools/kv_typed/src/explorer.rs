@@ -68,6 +68,16 @@ impl ExplorableValue for () {
     }
 }
 
+impl ExplorableValue for EmptyValue {
+    fn from_explorer_str(_: &str) -> Result<Self, StringErr> {
+        Ok(EmptyValue)
+    }
+
+    fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
+        Ok(serde_json::Value::String(String::with_capacity(0)))
+    }
+}
+
 impl ExplorableValue for String {
     fn from_explorer_str(source: &str) -> Result<Self, StringErr> {
         Ok(source.to_owned())

@@ -22,37 +22,42 @@
     unused_import_braces
 )]
 
-mod conf;
-
 pub use duniter_dbs::smallvec;
 use duniter_mempools::{TxMpError, TxsMempool};
 use fast_threadpool::ThreadPoolConfig;
 
-pub use crate::conf::{BackendConf, DuniterServerConf};
 pub use duniter_gva::GvaConf;
 
-use dubp::block::DubpBlockV10Stringified;
-use dubp::common::crypto::hashs::Hash;
 use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::common::prelude::*;
 use dubp::documents::{prelude::*, transaction::TransactionDocumentV10};
-use duniter_dbs::prelude::*;
-use duniter_dbs::{
-    kv_typed::backend::memory::{Mem, MemConf},
-    kv_typed::backend::sled::Sled,
-    kv_typed::prelude::*,
-    GvaV1Db, GvaV1DbReadable, GvaV1DbWritable, HashKeyV2, PendingTxDbV2, TxsMpV2Db,
-    TxsMpV2DbReadable, TxsMpV2DbWritable,
+use dubp::{
+    block::prelude::*, common::crypto::hashs::Hash, documents_parser::prelude::FromStringObject,
 };
+use duniter_dbs::{
+    kv_typed::prelude::*, GvaV1DbReadable, HashKeyV2, PendingTxDbV2, TxsMpV2DbReadable,
+};
+use duniter_dbs::{prelude::*, BlockMetaV2};
 use duniter_dbs_read_ops::txs_history::TxsHistory;
 use resiter::filter::Filter;
-use std::{
-    collections::BTreeMap,
-    path::{Path, PathBuf},
-};
+use std::{collections::BTreeMap, path::Path};
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum DuniterCommand {
+    Sync,
+    Start,
+}
+
+#[derive(Clone, Debug)]
+pub struct DuniterServerConf {
+    pub gva: Option<GvaConf>,
+    pub server_pubkey: PublicKey,
+    pub txs_mempool_size: usize,
+}
 
 pub struct DuniterServer {
     conf: DuniterServerConf,
+    current: Option<BlockMetaV2>,
     dbs_pool: fast_threadpool::ThreadPoolSyncHandler<DuniterDbs>,
     pending_txs_subscriber: flume::Receiver<Arc<Events<duniter_dbs::txs_mp_v2::TxEvent>>>,
     txs_mempool: TxsMempool,
@@ -60,13 +65,23 @@ pub struct DuniterServer {
 
 impl DuniterServer {
     pub fn start(
+        command_name: Option<String>,
         conf: DuniterServerConf,
         home_path_opt: Option<&Path>,
         software_version: &'static str,
     ) -> Self {
+        let command = match command_name.unwrap_or_default().as_str() {
+            "sync" => DuniterCommand::Sync,
+            _ => DuniterCommand::Start,
+        };
+
         let txs_mempool = TxsMempool::new(conf.txs_mempool_size);
 
-        let dbs = conf::open_dbs(home_path_opt);
+        log::info!("open duniter databases...");
+        let dbs = duniter_dbs::open_dbs(home_path_opt);
+        log::info!("Databases successfully opened.");
+        let current =
+            duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db).expect("Fail to get current");
 
         let (s, pending_txs_subscriber) = flume::unbounded();
         dbs.txs_mp_db
@@ -75,26 +90,29 @@ impl DuniterServer {
             .expect("Fail to subscribe to txs col");
 
         let threadpool = if home_path_opt.is_some() {
+            log::info!("start dbs threadpool...");
             let threadpool =
                 fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), dbs.clone());
 
-            if let Some(mut gva_conf) = conf.gva.clone() {
-                if let Some(remote_path) = std::env::var_os("DUNITER_GVA_REMOTE_PATH") {
-                    gva_conf.remote_path(
-                        remote_path
-                            .into_string()
-                            .expect("Invalid utf8 for Env var DUNITER_GVA_REMOTE_PATH"),
-                    );
+            if command != DuniterCommand::Sync {
+                if let Some(mut gva_conf) = conf.gva.clone() {
+                    if let Some(remote_path) = std::env::var_os("DUNITER_GVA_REMOTE_PATH") {
+                        gva_conf.remote_path(
+                            remote_path
+                                .into_string()
+                                .expect("Invalid utf8 for Env var DUNITER_GVA_REMOTE_PATH"),
+                        );
+                    }
+                    duniter_gva::GvaServer::start(
+                        gva_conf,
+                        dbs,
+                        threadpool.async_handler(),
+                        conf.server_pubkey,
+                        software_version,
+                        txs_mempool,
+                    )
+                    .expect("Fail to start GVA server");
                 }
-                duniter_gva::GvaServer::start(
-                    gva_conf,
-                    dbs,
-                    threadpool.async_handler(),
-                    conf.server_pubkey,
-                    software_version,
-                    txs_mempool,
-                )
-                .expect("Fail to start GVA server");
             }
             threadpool
         } else {
@@ -103,6 +121,7 @@ impl DuniterServer {
 
         DuniterServer {
             conf,
+            current,
             dbs_pool: threadpool.into_sync_handler(),
             pending_txs_subscriber,
             txs_mempool,
@@ -211,49 +230,70 @@ impl DuniterServer {
 
     pub fn remove_all_pending_txs(&self) -> KvResult<()> {
         self.dbs_pool
-            .execute(move |dbs| duniter_dbs_write_ops::remove_all_pending_txs(&dbs.txs_mp_db))
+            .execute(move |dbs| {
+                duniter_dbs_write_ops::txs_mp::remove_all_pending_txs(&dbs.txs_mp_db)
+            })
             .expect("dbs pool disconnected")
     }
     pub fn remove_pending_tx_by_hash(&self, hash: Hash) -> KvResult<()> {
         self.dbs_pool
             .execute(move |dbs| {
-                duniter_dbs_write_ops::remove_pending_tx_by_hash(&dbs.txs_mp_db, hash)
+                duniter_dbs_write_ops::txs_mp::remove_pending_tx_by_hash(&dbs.txs_mp_db, hash)
             })
             .expect("dbs pool disconnected")
     }
-    pub fn revert_block(&self, block: DubpBlockV10Stringified) -> KvResult<()> {
+    pub fn revert_block(&mut self, block: DubpBlockV10Stringified) -> KvResult<()> {
         let gva = self.conf.gva.is_some();
-        self.dbs_pool
+        let block = DubpBlockV10::from_string_object(&block)
+            .map_err(|e| KvError::DeserError(format!("{}", e)))?;
+        self.current = self
+            .dbs_pool
             .execute(move |dbs| {
-                duniter_dbs_write_ops::revert_block(&dbs.gva_db, &dbs.txs_mp_db, block, gva)
+                duniter_dbs_write_ops::txs_mp::revert_block(block.transactions(), &dbs.txs_mp_db)?;
+                if gva {
+                    duniter_dbs_write_ops::gva::revert_block(&block, &dbs.gva_db)?;
+                }
+                duniter_dbs_write_ops::bc::revert_block(&dbs.bc_db, block)
             })
-            .expect("dbs pool disconnected")
+            .expect("dbs pool disconnected")?;
+        Ok(())
     }
-    pub fn apply_block(&self, block: DubpBlockV10Stringified) -> KvResult<()> {
+    pub fn apply_block(&mut self, block: DubpBlockV10Stringified) -> KvResult<()> {
         let gva = self.conf.gva.is_some();
-        self.dbs_pool
-            .execute(move |dbs| {
-                duniter_dbs_write_ops::apply_block(&dbs.gva_db, &dbs.txs_mp_db, block, gva)
-            })
-            .expect("dbs pool disconnected")
+        let block = DubpBlockV10::from_string_object(&block)
+            .map_err(|e| KvError::DeserError(format!("{}", e)))?;
+        self.current = Some(duniter_dbs_write_ops::apply_block::apply_block(
+            block,
+            self.current,
+            &self.dbs_pool,
+            gva,
+            false,
+        )?);
+        Ok(())
     }
-    pub fn apply_chunk_of_blocks(&self, blocks: Vec<DubpBlockV10Stringified>) -> KvResult<()> {
+    pub fn apply_chunk_of_blocks(&mut self, blocks: Vec<DubpBlockV10Stringified>) -> KvResult<()> {
+        log::debug!("apply_chunk(#{})", blocks[0].number);
         let gva = self.conf.gva.is_some();
-        self.dbs_pool
-            .execute(move |dbs| {
-                duniter_dbs_write_ops::apply_chunk_of_blocks(
-                    &dbs.gva_db,
-                    &dbs.txs_mp_db,
-                    blocks,
-                    gva,
-                )
-            })
-            .expect("dbs pool disconnected")
+        let blocks = blocks
+            .into_iter()
+            .map(|block| DubpBlockV10::from_string_object(&block))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| KvError::DeserError(format!("{}", e)))?;
+        self.current = Some(duniter_dbs_write_ops::apply_block::apply_chunk(
+            self.current,
+            &self.dbs_pool,
+            blocks,
+            gva,
+        )?);
+        Ok(())
     }
     pub fn trim_expired_non_written_txs(&self, limit_time: i64) -> KvResult<()> {
         self.dbs_pool
             .execute(move |dbs| {
-                duniter_dbs_write_ops::trim_expired_non_written_txs(&dbs.txs_mp_db, limit_time)
+                duniter_dbs_write_ops::txs_mp::trim_expired_non_written_txs(
+                    &dbs.txs_mp_db,
+                    limit_time,
+                )
             })
             .expect("dbs pool disconnected")
     }
@@ -268,6 +308,7 @@ mod tests {
     #[test]
     fn test_txs_history() -> KvResult<()> {
         let server = DuniterServer::start(
+            None,
             DuniterServerConf {
                 gva: None,
                 server_pubkey: PublicKey::default(),

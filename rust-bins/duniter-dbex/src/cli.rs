@@ -28,7 +28,7 @@ pub struct Opt {
     pub home: Option<PathBuf>,
 
     /// database
-    #[structopt(default_value = "bc_v1", possible_values = &["bc_v1", "gva_v1", "txs_mp_v2"])]
+    #[structopt(default_value = "bc_v1", possible_values = &["bc_v1", "bc_v2", "gva_v1", "txs_mp_v2"])]
     pub database: Database,
 
     #[structopt(subcommand)]
@@ -38,6 +38,7 @@ pub struct Opt {
 #[derive(Debug)]
 pub enum Database {
     BcV1,
+    BcV2,
     GvaV1,
     TxsMpV2,
 }
@@ -48,6 +49,7 @@ impl FromStr for Database {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "bc_v1" => Ok(Self::BcV1),
+            "bc_v2" => Ok(Self::BcV2),
             "gva_v1" => Ok(Self::GvaV1),
             "txs_mp_v2" => Ok(Self::TxsMpV2),
             _ => unreachable!(),
@@ -103,6 +105,8 @@ pub enum SubCommand {
     },
     /// Show database schema
     Schema,
+    /// Fill rust dbs from js db content
+    Migrate,
 }
 
 #[derive(Clone, Copy, Debug)]

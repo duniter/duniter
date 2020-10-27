@@ -15,6 +15,14 @@ impl FromBytes for () {
     }
 }
 
+impl FromBytes for EmptyValue {
+    type Err = std::convert::Infallible;
+
+    fn from_bytes(_: &[u8]) -> Result<Self, Self::Err> {
+        Ok(EmptyValue)
+    }
+}
+
 macro_rules! impl_from_bytes_for_numbers {
     ($($T:ty),*) => {$(
         impl FromBytes for $T {

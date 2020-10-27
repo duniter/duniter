@@ -20,7 +20,7 @@ pub(crate) fn write_gva_tx<B: Backend>(
     current_time: i64,
     gva_db: &GvaV1Db<B>,
     tx_hash: Hash,
-    tx: TransactionDocumentV10,
+    tx: &TransactionDocumentV10,
 ) -> KvResult<()> {
     (
         gva_db.scripts_by_pubkey_write(),
@@ -69,7 +69,7 @@ pub(crate) fn write_gva_tx<B: Backend>(
                             .conditions
                             .script
                             .clone();
-                        utxos::remove_utxo_v10::<B>(
+                        super::utxos::remove_utxo_v10::<B>(
                             &mut scripts_by_pubkey,
                             &mut utxos_by_script,
                             &utxo_script,
@@ -80,7 +80,7 @@ pub(crate) fn write_gva_tx<B: Backend>(
 
                 // Insert created UTXOs
                 for (output_index, output) in tx.get_outputs().iter().enumerate() {
-                    utxos::write_utxo_v10::<B>(
+                    super::utxos::write_utxo_v10::<B>(
                         &mut scripts_by_pubkey,
                         &mut utxos_by_script,
                         UtxoV10 {
@@ -99,7 +99,7 @@ pub(crate) fn write_gva_tx<B: Backend>(
                 txs.upsert(
                     HashKeyV2(tx_hash),
                     TxDbV2 {
-                        tx,
+                        tx: tx.clone(),
                         written_block: current_blockstamp,
                         written_time: current_time,
                     },
@@ -138,7 +138,7 @@ pub(crate) fn revert_tx<B: Backend>(
                     use dubp::documents::transaction::TransactionDocumentTrait as _;
                     for output in tx_db.tx.get_outputs() {
                         let script = &output.conditions.script;
-                        utxos::remove_utxo_v10::<B>(
+                        super::utxos::remove_utxo_v10::<B>(
                             &mut scripts_by_pubkey,
                             &mut utxos_by_script,
                             script,
@@ -162,7 +162,7 @@ pub(crate) fn revert_tx<B: Backend>(
                                 .conditions
                                 .script
                                 .clone();
-                            utxos::write_utxo_v10::<B>(
+                            super::utxos::write_utxo_v10::<B>(
                                 &mut scripts_by_pubkey,
                                 &mut utxos_by_script,
                                 UtxoV10 {

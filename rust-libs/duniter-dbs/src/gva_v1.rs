@@ -18,6 +18,7 @@ use crate::*;
 db_schema!(
     GvaV1,
     [
+        ["uids_index", uids_index, String, PubKeyValV2,],
         ["txs", txs, HashKeyV2, TxDbV2,],
         ["txs_by_issuer", txs_by_issuer, PubKeyKeyV2, HashBTSetV2,],
         [
@@ -38,8 +39,5 @@ db_schema!(
             WalletConditionsV2,
             UtxosOfScriptV1,
         ],
-        ["identities", identities, PubKeyKeyV2, IdtyDbV2,],
-        ["uds", uds_by_block, BlockNumberKeyV2, SourceAmountValV2,],
-        ["uds", uds_by_issuer, PubKeyKeyV2, BlockNumberArrayV2,],
     ]
 );

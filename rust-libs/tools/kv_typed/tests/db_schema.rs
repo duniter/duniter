@@ -26,7 +26,7 @@ mod tests {
         TestV1,
         [
             ["c1", col_1, i32, String,],
-            ["c2", col_2, usize, i128,],
+            ["c2", col_2, usize, EmptyValue,],
             ["c3", col_3, u64, VecU128],
             ["c4", col_4, u64, BTSetU128],
         ]
@@ -88,6 +88,8 @@ mod tests {
         assert_eq!(d, Some("toto".to_owned()));
 
         assert_eq!(db.col_2().get(&3)?, None,);
+        db.col_2_write().upsert(3, EmptyValue)?;
+        assert_eq!(db.col_2().get(&3)?, Some(EmptyValue),);
 
         db.col_1_write().upsert(5, "tutu".to_owned())?;
 

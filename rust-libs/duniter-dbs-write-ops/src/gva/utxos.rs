@@ -15,13 +15,6 @@
 
 use crate::*;
 
-pub struct UtxoV10 {
-    pub id: UtxoIdV10,
-    pub amount: SourceAmount,
-    pub script: WalletScriptV10,
-    pub written_time: i64,
-}
-
 pub(crate) fn write_utxo_v10<B: Backend>(
     scripts_by_pubkey: &mut TxColRw<B::Col, duniter_dbs::gva_v1::ScriptsByPubkeyEvent>,
     utxos_by_script: &mut TxColRw<B::Col, duniter_dbs::gva_v1::UtxosByScriptEvent>,

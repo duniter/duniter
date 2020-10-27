@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, AxisScale, Criterion, PlotConfiguration};
+use criterion::{criterion_group, criterion_main, Criterion, /*, AxisScale, PlotConfiguration*/};
 use kv_typed::prelude::*;
 use std::{fmt::Debug, path::PathBuf};
 

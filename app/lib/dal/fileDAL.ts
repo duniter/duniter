@@ -192,9 +192,9 @@ export class FileDAL implements ServerDAO {
     };
   }
 
-  async init(conf: ConfDTO) {
+  async init(conf: ConfDTO, commandName: string | null = null) {
     // Rust server
-    this.initRustServer(conf);
+    this.initRustServer(conf, commandName);
 
     // wotb
     this.wotb = this.params.wotbf();
@@ -232,9 +232,10 @@ export class FileDAL implements ServerDAO {
     }
   }
 
-  initRustServer(conf: ConfDTO) {
+  initRustServer(conf: ConfDTO, commandName: string | null = null) {
     let serverPubkey = conf.pair ? conf.pair.pub : null;
     let rustServerConf = {
+      command: commandName,
       gva: conf.gva,
       serverPubkey,
       txsMempoolSize:
@@ -1241,8 +1242,12 @@ export class FileDAL implements ServerDAO {
 
   async saveBlock(block: DBBlock, conf: ConfDTO) {
     block.wrong = false;
-    this.rustServer.applyBlock(block.toBlockDTO());
-    await this.saveBlockInFile(block);
+    try {
+      this.rustServer.applyBlock(block.toBlockDTO());
+      await this.saveBlockInFile(block);
+    } catch (err) {
+      throw err;
+    }
   }
 
   async generateIndexes(

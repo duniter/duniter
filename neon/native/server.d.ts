@@ -3,6 +3,7 @@
 import { TransactionDTOV10 } from './transaction';
 
 export class RustServerConf {
+    command: string | null
     gva: GvaConf | undefined
     serverPubkey: string | null
     txsMempoolSize: number

@@ -17,8 +17,8 @@ use crate::*;
 
 #[derive(Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct IdtyDbV2 {
-    member: bool,
-    username: String,
+    pub member: bool,
+    pub username: String,
 }
 
 impl ValueAsBytes for IdtyDbV2 {

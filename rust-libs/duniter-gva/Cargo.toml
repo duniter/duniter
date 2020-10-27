@@ -12,7 +12,7 @@ dubp = { version = "0.29.0" }
 duniter-dbs = { path = "../duniter-dbs" }
 duniter-dbs-read-ops = { path = "../duniter-dbs-read-ops" }
 duniter-mempools = { path = "../duniter-mempools" }
-fast-threadpool = "0.1.1"
+fast-threadpool = "0.2.1"
 flume = "0.9.1"
 futures = "0.3.6"
 http = "0.2.1"

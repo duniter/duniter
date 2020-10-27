@@ -15,6 +15,7 @@
 
 pub mod block_db;
 pub mod block_head_db;
+pub mod block_meta;
 pub mod block_number_array_db;
 pub mod cindex_db;
 pub mod hash_array_db;

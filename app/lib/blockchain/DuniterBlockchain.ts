@@ -327,9 +327,6 @@ export class DuniterBlockchain {
     // Saves the block (DAL)
     await dal.saveBlock(dbb, conf);
 
-    // Send block to rust server
-    dal.rustServer.applyBlock(block);
-
     // Save wot file
     if (!dal.fs.isMemoryOnly()) {
       const wotbFilepath = Directory.getWotbFilePath(dal.rootPath);
@@ -496,8 +493,8 @@ export class DuniterBlockchain {
     dal: FileDAL,
     block?: DBBlock
   ) {
-    if (block && block.toBlockDTO) {
-      dal.rustServer.revertBlock(block.toBlockDTO());
+    if (block) {
+      dal.rustServer.revertBlock(BlockDTO.fromJSONObject(block));
     }
 
     const blockstamp = [number, hash].join("-");

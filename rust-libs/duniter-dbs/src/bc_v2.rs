@@ -15,23 +15,12 @@
 
 use crate::*;
 
-pub(crate) fn update_identities<B: Backend>(
-    _gva_db: &GvaV1Db<B>,
-    block: &DubpBlockV10Stringified,
-) -> KvResult<()> {
-    for joiner in &block.joiners {
-        let joiner_fields: SmallVec<[&str; 5]> = joiner.split(':').collect();
-        let _pubkey = joiner_fields[0];
-        let _username = joiner_fields[4];
-    }
-    // TODO
-    Ok(())
-}
-
-pub(crate) fn revert_identities<B: Backend>(
-    _gva_db: &GvaV1Db<B>,
-    _block: &DubpBlockV10Stringified,
-) -> KvResult<()> {
-    // TODO
-    Ok(())
-}
+db_schema!(
+    BcV2,
+    [
+        ["blocks_meta", blocks_meta, BlockNumberKeyV2, BlockMetaV2,],
+        ["uds_reval", uds_reval, BlockNumberKeyV2, SourceAmountValV2,],
+        ["identities", identities, PubKeyKeyV2, IdtyDbV2,],
+        ["uds", uds, UdIdV2, EmptyValue,],
+    ]
+);

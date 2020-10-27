@@ -51,6 +51,7 @@ declare_types! {
             } else {
                 None
             };
+            let command_name = rust_server_conf_stringified.command_name;
             let server_pubkey = if let Some(server_pubkey_str) = rust_server_conf_stringified.server_pubkey {
                 into_neon_res(&mut cx, PublicKey::from_base58(&server_pubkey_str))?
             } else {
@@ -79,10 +80,10 @@ declare_types! {
                 None
             };
             if let Some(home_path) = home_path_opt {
-                let server = DuniterServer::start(conf, Some(home_path.as_path()), std::env!("CARGO_PKG_VERSION"));
+                let server = DuniterServer::start(command_name, conf, Some(home_path.as_path()), std::env!("CARGO_PKG_VERSION"));
                 Ok(RustServer { server })
             } else {
-                let server = DuniterServer::start(conf, None, std::env!("CARGO_PKG_VERSION"));
+                let server = DuniterServer::start(command_name, conf, None, std::env!("CARGO_PKG_VERSION"));
                 Ok(RustServer { server })
             }
         }
@@ -144,10 +145,10 @@ declare_types! {
 
             let block_stringified: dubp::block::DubpBlockV10Stringified = neon_serde::from_value(&mut cx, block_js)?;
 
-            let this = cx.this();
+            let mut this = cx.this();
             let res = {
                 let guard = cx.lock();
-                let server = this.borrow(&guard);
+                let mut server = this.borrow_mut(&guard);
                 server.server.revert_block(block_stringified)
             }.map(|()| cx.undefined().upcast());
             into_neon_res(&mut cx, res)
@@ -201,10 +202,10 @@ declare_types! {
 
             let block_stringified: dubp::block::DubpBlockV10Stringified = neon_serde::from_value(&mut cx, block_js)?;
 
-            let this = cx.this();
+            let mut this = cx.this();
             let res = {
                 let guard = cx.lock();
-                let server = this.borrow(&guard);
+                let mut server = this.borrow_mut(&guard);
                 server.server.apply_block(block_stringified)
             }.map(|()| cx.undefined().upcast());
             into_neon_res(&mut cx, res)
@@ -214,10 +215,10 @@ declare_types! {
 
             let blocks_stringified: Vec<dubp::block::DubpBlockV10Stringified> = neon_serde::from_value(&mut cx, blocks_js)?;
 
-            let this = cx.this();
+            let mut this = cx.this();
             let res = {
                 let guard = cx.lock();
-                let server = this.borrow(&guard);
+                let mut server = this.borrow_mut(&guard);
                 server.server.apply_chunk_of_blocks(blocks_stringified)
             }.map(|()| cx.undefined().upcast());
             into_neon_res(&mut cx, res)
@@ -293,6 +294,7 @@ declare_types! {
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RustServerConfStringified {
+    command_name: Option<String>,
     gva: Option<GvaConfStringified>,
     server_pubkey: Option<String>,
     txs_mempool_size: u32,

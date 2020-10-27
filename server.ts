@@ -351,8 +351,8 @@ export class Server extends stream.Duplex implements HookableServer {
     this.streamPush(res.clone())
   }
 
-  async initDAL(conf:ConfDTO|null = null) {
-    await this.dal.init(this.conf)
+  async initDAL(conf:ConfDTO|null = null, commandName: string|null = null) {
+    await this.dal.init(this.conf, commandName)
     // Maintenance
     let head_1 = await this.dal.bindexDAL.head(1);
     if (head_1) {

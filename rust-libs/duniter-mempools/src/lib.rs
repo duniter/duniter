@@ -84,10 +84,14 @@ impl TxsMempool {
         if duniter_dbs_read_ops::txs_history::tx_exist(gva_db_ro, tx.get_hash())? {
             Err(TxMpError::TxAlreadyWritten)
         } else if tx.issuers().contains(&server_pubkey) {
-            duniter_dbs_write_ops::add_pending_tx(|_, _| Ok(()), txs_mp_db, Cow::Borrowed(tx))?;
+            duniter_dbs_write_ops::txs_mp::add_pending_tx(
+                |_, _| Ok(()),
+                txs_mp_db,
+                Cow::Borrowed(tx),
+            )?;
             Ok(())
         } else {
-            duniter_dbs_write_ops::add_pending_tx(
+            duniter_dbs_write_ops::txs_mp::add_pending_tx(
                 |_tx, txs| {
                     if txs.count()? < self.max_size {
                         Err(KvError::Custom(TxMpError::Full.into()))
@@ -108,7 +112,7 @@ impl TxsMempool {
         txs_mp_db: &TxsMpV2Db<B>,
         tx: &TransactionDocumentV10,
     ) -> KvResult<()> {
-        duniter_dbs_write_ops::add_pending_tx(|_, _| Ok(()), txs_mp_db, Cow::Borrowed(tx))?;
+        duniter_dbs_write_ops::txs_mp::add_pending_tx(|_, _| Ok(()), txs_mp_db, Cow::Borrowed(tx))?;
         Ok(())
     }
 

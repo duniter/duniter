@@ -71,6 +71,7 @@ impl<BC: BackendCol, C: DbCollectionRw> Batch<BC, C> {
         let _ = k.as_bytes(|k_bytes| {
             self.tree.insert(IVec::from(k_bytes), None);
         });
+        self.upsert_ops.remove(&k);
         self.delete_ops.insert(k);
     }
     #[doc(hidden)]

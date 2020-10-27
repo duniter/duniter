@@ -81,3 +81,6 @@ impl ValueSliceZc for String {
         0
     }
 }
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct EmptyValue;

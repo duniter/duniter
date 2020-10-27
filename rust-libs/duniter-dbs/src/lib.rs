@@ -23,9 +23,11 @@
 )]
 
 mod bc_v1;
+pub mod bc_v2;
 mod errors;
 pub mod gva_v1;
 mod keys;
+mod open_dbs;
 pub mod txs_mp_v2;
 mod values;
 
@@ -50,8 +52,9 @@ pub mod prelude {
     };
 }
 
-// Export technical types
+// Export technical types and functions
 pub use crate::errors::Result;
+pub use crate::open_dbs::open_dbs;
 
 // Export profession types
 pub use bc_v1::{BcV1Db, BcV1DbReadable, BcV1DbRo, BcV1DbWritable, MainBlockEvent, UidEvent};
@@ -64,11 +67,13 @@ pub use keys::pubkey::{PubKeyKeyV1, PubKeyKeyV2};
 pub use keys::pubkey_and_sig::PubKeyAndSigV1;
 pub use keys::source_key::SourceKeyV1;
 pub use keys::timestamp::TimestampKeyV1;
+pub use keys::ud_id::UdIdV2;
 pub use keys::uid::UidKeyV1;
 pub use keys::wallet_conditions::{WalletConditionsV1, WalletConditionsV2};
 pub use txs_mp_v2::{TxsMpV2Db, TxsMpV2DbReadable, TxsMpV2DbRo, TxsMpV2DbWritable};
 pub use values::block_db::{BlockDbEnum, BlockDbV1, TransactionInBlockDbV1};
 pub use values::block_head_db::BlockHeadDbV1;
+pub use values::block_meta::BlockMetaV2;
 pub use values::block_number_array_db::{BlockNumberArrayV1, BlockNumberArrayV2};
 pub use values::cindex_db::CIndexDbV1;
 pub use values::hash_array_db::HashBTSetV2;
@@ -76,7 +81,7 @@ pub use values::idty_db::IdtyDbV2;
 pub use values::iindex_db::IIndexDbV1;
 pub use values::kick_db::KickDbV1;
 pub use values::mindex_db::MIndexDbV1;
-pub use values::pubkey_db::{PublicKeyArrayDbV1, PublicKeySingletonDbV1};
+pub use values::pubkey_db::{PubKeyValV2, PublicKeyArrayDbV1, PublicKeySingletonDbV1};
 pub use values::sindex_db::{SIndexDBV1, SourceKeyArrayDbV1};
 pub use values::source_amount::SourceAmountValV2;
 pub use values::tx_db::{PendingTxDbV2, TxDbV2};
@@ -104,6 +109,7 @@ pub(crate) use std::{
     convert::TryFrom,
     fmt::Debug,
     iter::Iterator,
+    path::{Path, PathBuf},
     str::FromStr,
 };
 
@@ -114,12 +120,13 @@ pub trait ToDumpString {
 #[cfg(feature = "mem")]
 pub type DbsBackend = kv_typed::backend::memory::Mem;
 #[cfg(all(not(feature = "mem"), target_arch = "x86_64"))]
-pub type DbsBackend = Lmdb;
+pub type DbsBackend = Sled; // TODO ESZ
 #[cfg(all(not(feature = "mem"), not(target_arch = "x86_64")))]
 pub type DbsBackend = Sled;
 
 #[derive(Clone, Debug)]
 pub struct DuniterDbs {
+    pub bc_db: bc_v2::BcV2Db<DbsBackend>,
     pub gva_db: GvaV1Db<DbsBackend>,
     pub txs_mp_db: TxsMpV2Db<DbsBackend>,
 }

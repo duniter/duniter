@@ -85,7 +85,7 @@ pub mod prelude {
     pub use crate::transactional_read::TransactionalRead;
     pub use crate::transactional_write::{DbTxCollectionRw, TransactionalWrite, TxColRw};
     pub use crate::utils::arc::Arc;
-    pub use crate::value::{Value, ValueSliceZc, ValueZc};
+    pub use crate::value::{EmptyValue, Value, ValueSliceZc, ValueZc};
     pub use kv_typed_code_gen::db_schema;
 }
 

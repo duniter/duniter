@@ -67,6 +67,7 @@ impl DuniterServer {
     pub fn start(
         command_name: Option<String>,
         conf: DuniterServerConf,
+        currency: String,
         home_path_opt: Option<&Path>,
         software_version: &'static str,
     ) -> Self {
@@ -82,6 +83,11 @@ impl DuniterServer {
         log::info!("Databases successfully opened.");
         let current =
             duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db).expect("Fail to get current");
+        if let Some(current) = current {
+            log::info!("Current block: #{}-{}", current.number, current.hash);
+        } else {
+            log::info!("Current block: no blockchain");
+        }
 
         let (s, pending_txs_subscriber) = flume::unbounded();
         dbs.txs_mp_db
@@ -105,6 +111,7 @@ impl DuniterServer {
                     }
                     duniter_gva::GvaServer::start(
                         gva_conf,
+                        currency,
                         dbs,
                         threadpool.async_handler(),
                         conf.server_pubkey,
@@ -314,6 +321,7 @@ mod tests {
                 server_pubkey: PublicKey::default(),
                 txs_mempool_size: 200,
             },
+            "currency_test".to_owned(),
             None,
             "test",
         );

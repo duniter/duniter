@@ -19,6 +19,7 @@ http = "0.2.1"
 log = "0.4.11"
 resiter = "0.4.0"
 serde_urlencoded = "0.7.0"
+smallvec = { version = "1.4.0", features = ["serde", "write"] }
 tokio = { version = "0.2.22", features = ["io-util", "rt-threaded", "stream"] }
 warp = "0.2"
 

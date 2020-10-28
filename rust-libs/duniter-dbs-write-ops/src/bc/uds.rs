@@ -31,7 +31,7 @@ pub(crate) fn create_uds<B: Backend>(
 ) -> KvResult<()> {
     let previous_ud_amount = uds_reval
         .iter(.., |it| it.reverse().values().next_res())?
-        .unwrap_or_else(|| SourceAmountValV2(SourceAmount::new(0, 0)));
+        .unwrap_or_else(|| SourceAmountValV2(SourceAmount::ZERO));
     if dividend > previous_ud_amount.0 {
         uds_reval.upsert(BlockNumberKeyV2(block_number), SourceAmountValV2(dividend));
     }

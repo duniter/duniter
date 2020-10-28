@@ -13,29 +13,32 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod tx_gva;
-pub mod ud_gva;
-
-use crate::*;
-
 #[derive(Clone, async_graphql::SimpleObject)]
-pub(crate) struct UtxoGva {
-    /// Source amount
+pub(crate) struct CurrentUdGva {
+    /// Ud amount
     pub(crate) amount: i64,
-    /// Source base
+    /// Ud base
     pub(crate) base: i64,
-    /// Hash of origin transaction
-    pub(crate) tx_hash: String,
-    /// Index of output in origin transaction
-    pub(crate) output_index: u32,
-    /// Written time
-    pub(crate) written_time: i64,
 }
 
-#[derive(async_graphql::SimpleObject)]
-pub(crate) struct TxsHistoryGva {
-    /// Transactions sent
-    pub(crate) sent: Vec<TxGva>,
-    /// Transactions received
-    pub(crate) received: Vec<TxGva>,
+#[derive(Clone, async_graphql::SimpleObject)]
+pub(crate) struct RevalUdGva {
+    /// Ud amount
+    pub(crate) amount: i64,
+    /// Ud base
+    pub(crate) base: i64,
+    /// Number of the block that revaluate ud amount
+    pub(crate) block_number: u32,
+}
+
+#[derive(Clone, async_graphql::SimpleObject)]
+pub(crate) struct UdGva {
+    /// Ud amount
+    pub(crate) amount: i64,
+    /// Ud base
+    pub(crate) base: i64,
+    /// Issuer of this universal dividend
+    pub(crate) issuer: String,
+    /// Number of the block that created this UD
+    pub(crate) block_number: u32,
 }

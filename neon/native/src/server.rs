@@ -52,6 +52,7 @@ declare_types! {
                 None
             };
             let command_name = rust_server_conf_stringified.command_name;
+            let currency = rust_server_conf_stringified.currency;
             let server_pubkey = if let Some(server_pubkey_str) = rust_server_conf_stringified.server_pubkey {
                 into_neon_res(&mut cx, PublicKey::from_base58(&server_pubkey_str))?
             } else {
@@ -80,10 +81,10 @@ declare_types! {
                 None
             };
             if let Some(home_path) = home_path_opt {
-                let server = DuniterServer::start(command_name, conf, Some(home_path.as_path()), std::env!("CARGO_PKG_VERSION"));
+                let server = DuniterServer::start(command_name, conf, currency, Some(home_path.as_path()), std::env!("CARGO_PKG_VERSION"));
                 Ok(RustServer { server })
             } else {
-                let server = DuniterServer::start(command_name, conf, None, std::env!("CARGO_PKG_VERSION"));
+                let server = DuniterServer::start(command_name, conf, currency, None, std::env!("CARGO_PKG_VERSION"));
                 Ok(RustServer { server })
             }
         }
@@ -295,6 +296,7 @@ declare_types! {
 #[serde(rename_all = "camelCase")]
 struct RustServerConfStringified {
     command_name: Option<String>,
+    currency: String,
     gva: Option<GvaConfStringified>,
     server_pubkey: Option<String>,
     txs_mempool_size: u32,

@@ -82,7 +82,7 @@ pub mod prelude {
     };
     pub use crate::key::Key;
     pub use crate::subscription::{NewSubscribers, Subscriber, Subscribers};
-    pub use crate::transactional_read::TransactionalRead;
+    pub use crate::transactional_read::{TransactionalRead, TxColRo};
     pub use crate::transactional_write::{DbTxCollectionRw, TransactionalWrite, TxColRw};
     pub use crate::utils::arc::Arc;
     pub use crate::value::{EmptyValue, Value, ValueSliceZc, ValueZc};

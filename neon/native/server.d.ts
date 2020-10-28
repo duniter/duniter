@@ -4,6 +4,7 @@ import { TransactionDTOV10 } from './transaction';
 
 export class RustServerConf {
     command: string | null
+    currency: string
     gva: GvaConf | undefined
     serverPubkey: string | null
     txsMempoolSize: number

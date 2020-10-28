@@ -23,22 +23,34 @@
 )]
 
 mod entities;
-mod resolvers;
+mod mutations;
+mod queries;
 mod schema;
+mod subscriptions;
 mod warp_;
 
-use crate::entities::{TxGva, TxsHistoryGva, UtxoGva};
-use crate::schema::SchemaData;
+use crate::entities::{
+    tx_gva::TxGva,
+    ud_gva::{CurrentUdGva, RevalUdGva, UdGva},
+    TxsHistoryGva, UtxoGva,
+};
+use crate::schema::{GraphQlSchema, SchemaData};
 use async_graphql::http::GraphQLPlaygroundConfig;
 use dubp::common::crypto::keys::{ed25519::PublicKey, PublicKey as _};
+use dubp::common::prelude::*;
 use dubp::documents::prelude::*;
-use dubp::documents::transaction::{TransactionDocumentTrait, TransactionDocumentV10};
+use dubp::documents::transaction::{
+    TransactionDocumentTrait, TransactionDocumentV10, TransactionDocumentV10Builder,
+    TransactionInputUnlocksV10, TransactionInputV10, TransactionOutputV10, UTXOConditions,
+};
 use dubp::documents_parser::prelude::*;
+use dubp::wallet::prelude::*;
 use duniter_dbs::prelude::*;
 use duniter_dbs::{kv_typed::prelude::*, TxDbV2, TxsMpV2DbReadable};
 use duniter_mempools::TxsMempool;
 use futures::{StreamExt, TryStreamExt};
-use schema::GraphQlSchema;
+use resiter::map::Map;
+use smallvec::smallvec as svec;
 use std::convert::Infallible;
 use std::ops::Deref;
 use warp::{http::Response as HttpResponse, Filter as _, Rejection, Stream};
@@ -85,6 +97,7 @@ pub struct GvaServer;
 impl GvaServer {
     pub fn start(
         conf: GvaConf,
+        currency: String,
         dbs: DuniterDbs,
         dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs>,
         server_pubkey: PublicKey,
@@ -99,11 +112,12 @@ impl GvaServer {
         std::thread::spawn(move || {
             runtime.block_on(async {
                 let schema = async_graphql::Schema::build(
-                    schema::Query::default(),
-                    schema::Mutation::default(),
-                    schema::Subscription::default(),
+                    queries::QueryRoot::default(),
+                    mutations::MutationRoot::default(),
+                    subscriptions::SubscriptionRoot::default(),
                 )
                 .data(schema::SchemaData {
+                    currency,
                     dbs,
                     dbs_pool,
                     server_pubkey,
@@ -189,6 +203,7 @@ mod tests {
 
         unwrap!(GvaServer::start(
             GvaConf::default(),
+            "test".to_owned(),
             dbs,
             threadpool.into_async_handler(),
             PublicKey::default(),

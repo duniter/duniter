@@ -998,7 +998,7 @@ dependencies = [
 [[package]]
 name = "dubp-documents"
 version = "0.29.0"
-source = "git+https://git.duniter.org/libs/dubp-rs-libs#b3b2322240cfcc8af17dc223677dd19c8b20c746"
+source = "git+https://git.duniter.org/libs/dubp-rs-libs"
 dependencies = [
  "beef",
  "dubp-wallet",
@@ -1024,7 +1024,7 @@ dependencies = [
 [[package]]
 name = "dubp-wallet"
 version = "0.29.0"
-source = "git+https://git.duniter.org/libs/dubp-rs-libs#b3b2322240cfcc8af17dc223677dd19c8b20c746"
+source = "git+https://git.duniter.org/libs/dubp-rs-libs"
 dependencies = [
  "byteorder",
  "dubp-common",
@@ -1094,6 +1094,7 @@ version = "0.1.0"
 dependencies = [
  "dubp",
  "duniter-dbs",
+ "resiter",
 ]
 
 [[package]]
@@ -1126,6 +1127,7 @@ dependencies = [
  "log",
  "resiter",
  "serde_urlencoded 0.7.0",
+ "smallvec",
  "tokio",
  "unwrap",
  "warp",

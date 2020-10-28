@@ -14,3 +14,4 @@ path = "src/lib.rs"
 [dependencies]
 duniter-dbs = { path = "../duniter-dbs" }
 dubp = { version = "0.29.0" }
+resiter = "0.4.0"

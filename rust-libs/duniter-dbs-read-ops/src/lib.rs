@@ -23,18 +23,21 @@
 )]
 
 pub mod txs_history;
+pub mod uds_of_pubkey;
 pub mod utxos;
 
 use dubp::common::crypto::hashs::Hash;
 use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::documents::transaction::TransactionDocumentV10;
+use dubp::{common::prelude::BlockNumber, wallet::prelude::SourceAmount};
 use duniter_dbs::bc_v2::BcV2DbReadable;
 use duniter_dbs::{
     kv_typed::prelude::*,
     BlockMetaV2, //TxsMpV2DbWritable,
     //WalletConditionsV2
-    //BlockNumberArrayV2, BlockNumberKeyV2, SourceAmountValV2, UtxosOfScriptV1
+    //BlockNumberArrayV2, SourceAmountValV2, UtxosOfScriptV1
     //GvaV1Db,
+    BlockNumberKeyV2,
     GvaV1DbReadable,
     //GvaV1DbWritable,
     HashKeyV2,
@@ -44,9 +47,17 @@ use duniter_dbs::{
     //TxsMpV2Db,
     TxsMpV2DbReadable,
 };
+use resiter::map::Map;
+use std::ops::{Bound, RangeBounds};
 
 pub fn get_current_block_meta<BcDb: BcV2DbReadable>(bc_db: &BcDb) -> KvResult<Option<BlockMetaV2>> {
     bc_db
         .blocks_meta()
         .iter(.., |it| it.reverse().values().next_res())
+}
+
+pub fn get_current_ud<BcDb: BcV2DbReadable>(bc_db: &BcDb) -> KvResult<Option<SourceAmount>> {
+    bc_db
+        .uds_reval()
+        .iter(.., |it| it.reverse().values().map_ok(|v| v.0).next_res())
 }

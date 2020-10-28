@@ -236,6 +236,7 @@ export class FileDAL implements ServerDAO {
     let serverPubkey = conf.pair ? conf.pair.pub : null;
     let rustServerConf = {
       command: commandName,
+      currency: conf.currency || "",
       gva: conf.gva,
       serverPubkey,
       txsMempoolSize:

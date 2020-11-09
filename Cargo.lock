@@ -958,8 +958,9 @@ checksum = "134951f4028bdadb9b84baf4232681efbf277da25144b9b0ad65df75946c422b"
 
 [[package]]
 name = "dubp"
-version = "0.29.0"
-source = "git+https://git.duniter.org/libs/dubp-rs-libs#b3b2322240cfcc8af17dc223677dd19c8b20c746"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c208630d06c6b84032960b60d66e0e8515e12e31b2eb4f0eb18a69944b638180"
 dependencies = [
  "dubp-block",
  "dubp-common",
@@ -971,8 +972,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-block"
-version = "0.29.0"
-source = "git+https://git.duniter.org/libs/dubp-rs-libs#b3b2322240cfcc8af17dc223677dd19c8b20c746"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f56ed9e84975f16c8c4c4992d49be6b21df5cffc5342c14756772d57b3af79b8"
 dependencies = [
  "dubp-documents",
  "dubp-documents-parser",
@@ -985,8 +987,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-common"
-version = "0.29.0"
-source = "git+https://git.duniter.org/libs/dubp-rs-libs#b3b2322240cfcc8af17dc223677dd19c8b20c746"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b4017c7fe7a3567db375578345130956bbccd9b037cb6e656a6f9f0ac6e129e"
 dependencies = [
  "dup-crypto",
  "serde",
@@ -997,8 +1000,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-documents"
-version = "0.29.0"
-source = "git+https://git.duniter.org/libs/dubp-rs-libs"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca57806c56bde1de59b3282ee1bf77eb9d0bb6b6ac4a62e35fa0b1eb2f4e440e"
 dependencies = [
  "beef",
  "dubp-wallet",
@@ -1010,8 +1014,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-documents-parser"
-version = "0.29.0"
-source = "git+https://git.duniter.org/libs/dubp-rs-libs#b3b2322240cfcc8af17dc223677dd19c8b20c746"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2343db394c8ca7cf46f4e077ada8e7e8cdec3579473d01350ba599200fded08e"
 dependencies = [
  "dubp-documents",
  "json-pest-parser",
@@ -1023,8 +1028,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-wallet"
-version = "0.29.0"
-source = "git+https://git.duniter.org/libs/dubp-rs-libs"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d36b1f052def05173cdea62f63c30e3b8e2df04d399de49dd9415f28b509ae8a"
 dependencies = [
  "byteorder",
  "dubp-common",
@@ -1200,8 +1206,9 @@ dependencies = [
 
 [[package]]
 name = "dup-crypto"
-version = "0.29.0"
-source = "git+https://git.duniter.org/libs/dubp-rs-libs#b3b2322240cfcc8af17dc223677dd19c8b20c746"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a5924cc93633749c2554e64bb2b48c88ab3b93959584ba511270e8bf3a84e1d"
 dependencies = [
  "base64",
  "bs58",

@@ -47,7 +47,7 @@ impl BackendConf for Mem {
     }
 }
 
-impl BackendConf for Lmdb {
+/*impl BackendConf for Lmdb {
     #[inline(always)]
     fn gen_backend_conf(db_name: &'static str, home_path_opt: Option<&Path>) -> LmdbConf {
         let conf = LmdbConf::default();
@@ -62,7 +62,7 @@ impl BackendConf for Lmdb {
             .temporary(true)
         }
     }
-}
+}*/
 
 impl BackendConf for Sled {
     #[inline(always)]

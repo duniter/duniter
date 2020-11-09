@@ -2,7 +2,6 @@ mod tests {
     use kv_typed::prelude::*;
     use smallvec::SmallVec;
     use std::fmt::Debug;
-    use unwrap::unwrap;
 
     #[derive(Clone, Debug, PartialEq)]
     pub struct VecU128(Vec<u128>);
@@ -32,9 +31,10 @@ mod tests {
         ]
     );
 
+    #[cfg(feature = "lmdb_backend")]
     #[test]
     fn test_db_schema_lmdb() -> KvResult<()> {
-        let tmp_dir = unwrap!(tempdir::TempDir::new("kv_typed_lmdb"));
+        let tmp_dir = unwrap::unwrap!(tempdir::TempDir::new("kv_typed_lmdb"));
         let db = TestV1Db::<kv_typed::backend::lmdb::Lmdb>::open(
             kv_typed::backend::lmdb::LmdbConf::default().folder_path(tmp_dir.path().to_owned()),
         )?;

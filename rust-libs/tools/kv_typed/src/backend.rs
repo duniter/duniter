@@ -17,7 +17,7 @@
 
 #[cfg(feature = "leveldb_backend")]
 pub mod leveldb;
-#[cfg(target_arch = "x86_64")]
+#[cfg(feature = "lmdb_backend")]
 pub mod lmdb;
 pub mod memory;
 #[cfg(feature = "mock")]

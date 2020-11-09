@@ -65,7 +65,7 @@ impl From<crate::backend::leveldb::LevelDbError> for KvError {
         KvError::BackendError(Box::new(e).into())
     }
 }
-#[cfg(target_arch = "x86_64")]
+#[cfg(feature = "lmdb_backend")]
 impl From<lmdb_zero::Error> for KvError {
     fn from(e: lmdb_zero::Error) -> Self {
         KvError::BackendError(e.into())

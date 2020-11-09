@@ -57,7 +57,7 @@ pub mod prelude {
     pub use crate::as_bytes::{KeyAsBytes, ValueAsBytes};
     #[cfg(feature = "leveldb_backend")]
     pub use crate::backend::leveldb::{LevelDb, LevelDbConf};
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(feature = "lmdb_backend")]
     pub use crate::backend::lmdb::{Lmdb, LmdbConf};
     pub use crate::backend::memory::{Mem, MemConf};
     #[cfg(feature = "mock")]

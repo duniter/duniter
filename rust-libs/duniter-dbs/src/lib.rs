@@ -109,7 +109,7 @@ pub(crate) use std::{
     convert::TryFrom,
     fmt::Debug,
     iter::Iterator,
-    path::{Path, PathBuf},
+    path::Path,
     str::FromStr,
 };
 

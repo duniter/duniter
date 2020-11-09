@@ -51,18 +51,18 @@ pub fn benchmark(c: &mut Criterion) {
         ..Default::default()
     })
     .expect("fail to open db");
-    let lmdb_db =
-        TestDb::<Lmdb>::open(LmdbConf::default().folder_path(PathBuf::from(LMDB_DIR_PATH)))
-            .expect("fail to open db");
+    /*let lmdb_db =
+    TestDb::<Lmdb>::open(LmdbConf::default().folder_path(PathBuf::from(LMDB_DIR_PATH)))
+        .expect("fail to open db");*/
     //let mem_db = TestDb::<Mem>::open(MemConf::default()).expect("fail to open db");
     let sled_db =
         TestDb::<Sled>::open(SledConf::default().path(SLED_DIR_PATH)).expect("fail to open db");
 
     // Test write small values
     let mut group = c.benchmark_group("write small values");
-    group.bench_function("lmdb", |b| {
+    /*group.bench_function("lmdb", |b| {
         b.iter(|| remove_and_write_n_entries(&lmdb_db, 100, String::from(SMALL_VAL)))
-    });
+    });*/
     group.bench_function("leveldb", |b| {
         b.iter(|| remove_and_write_n_entries(&leveldb_db, 100, String::from(SMALL_VAL)))
     });
@@ -75,7 +75,7 @@ pub fn benchmark(c: &mut Criterion) {
     group.finish();
 
     // Prepare read test
-    write_n_entries(&lmdb_db, 100, String::from(SMALL_VAL));
+    //write_n_entries(&lmdb_db, 100, String::from(SMALL_VAL));
     write_n_entries(&leveldb_db, 100, String::from(SMALL_VAL));
     //write_n_entries(&mem_db, 100, String::from(SMALL_VAL));
     write_n_entries(&sled_db, 100, String::from(SMALL_VAL));
@@ -83,9 +83,9 @@ pub fn benchmark(c: &mut Criterion) {
     // Test read small values
     let mut group = c.benchmark_group("read small values");
     //group.plot_config(read_chart_config.clone());
-    group.bench_function("lmdb", |b| {
+    /*group.bench_function("lmdb", |b| {
         b.iter(|| read_n_entries(&lmdb_db, 100, String::from(SMALL_VAL)))
-    });
+    });*/
     group.bench_function("leveldb", |b| {
         b.iter(|| read_n_entries(&leveldb_db, 100, String::from(SMALL_VAL)))
     });
@@ -99,9 +99,9 @@ pub fn benchmark(c: &mut Criterion) {
 
     // Test write large values
     let mut group = c.benchmark_group("write large values");
-    group.bench_function("lmdb", |b| {
+    /*group.bench_function("lmdb", |b| {
         b.iter(|| remove_and_write_n_entries(&lmdb_db, 100, String::from(LARGE_VAL)))
-    });
+    });*/
     group.bench_function("leveldb", |b| {
         b.iter(|| remove_and_write_n_entries(&leveldb_db, 100, String::from(LARGE_VAL)))
     });
@@ -114,7 +114,7 @@ pub fn benchmark(c: &mut Criterion) {
     group.finish();
 
     // Prepare read test
-    write_n_entries(&lmdb_db, 100, String::from(LARGE_VAL));
+    //write_n_entries(&lmdb_db, 100, String::from(LARGE_VAL));
     write_n_entries(&leveldb_db, 100, String::from(LARGE_VAL));
     //write_n_entries(&mem_db, 100, String::from(LARGE_VAL));
     write_n_entries(&sled_db, 100, String::from(LARGE_VAL));
@@ -122,9 +122,9 @@ pub fn benchmark(c: &mut Criterion) {
     // Test read large values
     let mut group = c.benchmark_group("read large values");
     //group.plot_config(read_chart_config);
-    group.bench_function("lmdb", |b| {
+    /*group.bench_function("lmdb", |b| {
         b.iter(|| read_n_entries(&lmdb_db, 100, String::from(LARGE_VAL)))
-    });
+    });*/
     group.bench_function("leveldb", |b| {
         b.iter(|| read_n_entries(&leveldb_db, 100, String::from(LARGE_VAL)))
     });

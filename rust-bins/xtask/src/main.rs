@@ -13,10 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::{
-    io::Result,
-    process::{Command, Output},
-};
+use anyhow::Result;
+use std::process::{Command, Output};
 use structopt::StructOpt;
 
 const MIN_RUST_VERTION: &str = "1.47.0";
@@ -84,7 +82,13 @@ fn install_and_use_node_version() -> Result<()> {
                 NVM_VERSION
             ),
         ]))?;
-        exec_should_success(Command::new("bash").arg(nvm_install_script))?;
+        run_script::spawn(
+            &nvm_install_script,
+            &vec![],
+            &run_script::ScriptOptions::new(),
+        )?
+        .wait_with_output()?;
+        //exec_should_success(Command::new("bash").arg(nvm_install_script))?;
     }
     exec_should_success(Command::new("nvm").args(&["install", NODE_VERSION]))?;
     exec_should_success(Command::new("nvm").args(&["use", NODE_VERSION]))

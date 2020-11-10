@@ -36,6 +36,10 @@ pub(crate) struct UtxoGva {
 pub(crate) struct TxsHistoryGva {
     /// Transactions sent
     pub(crate) sent: Vec<TxGva>,
+    /// Transactions sending
+    pub(crate) sending: Vec<TxGva>,
     /// Transactions received
     pub(crate) received: Vec<TxGva>,
+    /// Transactions receiving
+    pub(crate) receiving: Vec<TxGva>,
 }

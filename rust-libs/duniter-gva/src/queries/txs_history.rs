@@ -46,10 +46,20 @@ impl TxsHistoryQuery {
                 .into_iter()
                 .map(|db_tx| db_tx.into())
                 .collect(),
+            sending: txs_history
+                .sending
+                .into_iter()
+                .map(|db_tx| TxGva::from(&db_tx))
+                .collect(),
             received: txs_history
                 .received
                 .into_iter()
                 .map(|db_tx| db_tx.into())
+                .collect(),
+            receiving: txs_history
+                .pending
+                .into_iter()
+                .map(|db_tx| TxGva::from(&db_tx))
                 .collect(),
         })
     }

@@ -40,7 +40,7 @@ impl GenTxsQuery {
         let recipient = PublicKey::from_base58(&recipient)?;
 
         let data = ctx.data::<SchemaData>()?;
-        let currency = data.currency.clone();
+        let currency = data.server_meta_data.currency.clone();
 
         let (current_block, inputs, inputs_sum) = data
             .dbs_pool

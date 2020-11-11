@@ -19,6 +19,7 @@ pub mod uds;
 pub mod utxos;
 
 use crate::*;
+use duniter_dbs::cm_v1::CmV1DbReadable as _;
 
 #[derive(async_graphql::MergedObject, Default)]
 pub struct QueryRoot(
@@ -29,26 +30,39 @@ pub struct QueryRoot(
     queries::utxos::UtxosQuery,
 );
 
-#[derive(async_graphql::SimpleObject)]
-struct Node {
-    /// Software
-    software: &'static str,
-
-    /// Software version
-    version: &'static str,
+#[derive(Default, async_graphql::SimpleObject)]
+struct NodeQuery {
+    node: Node,
 }
 
 #[derive(Default)]
-pub(crate) struct NodeQuery;
+struct Node;
 
 #[async_graphql::Object]
-impl NodeQuery {
-    /// Node informations
-    async fn node(&self, ctx: &async_graphql::Context<'_>) -> async_graphql::Result<Node> {
+impl Node {
+    /// Peer card
+    async fn peer(
+        &self,
+        ctx: &async_graphql::Context<'_>,
+    ) -> async_graphql::Result<Option<PeerCardStringified>> {
         let data = ctx.data::<SchemaData>()?;
-        Ok(Node {
-            software: "duniter",
-            version: data.software_version,
-        })
+
+        Ok(data
+            .dbs_pool
+            .execute(move |dbs| dbs.cm_db.self_peer_card().get(&EmptyKey))
+            .await??
+            .map(Into::into))
+    }
+    /// Software
+    async fn software(&self) -> &'static str {
+        "duniter"
+    }
+    /// Software version
+    async fn version(
+        &self,
+        ctx: &async_graphql::Context<'_>,
+    ) -> async_graphql::Result<&'static str> {
+        let data = ctx.data::<SchemaData>()?;
+        Ok(data.server_meta_data.software_version)
     }
 }

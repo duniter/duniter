@@ -18,6 +18,18 @@ pub mod ud_gva;
 
 use crate::*;
 
+#[derive(async_graphql::SimpleObject)]
+pub(crate) struct TxsHistoryGva {
+    /// Transactions sent
+    pub(crate) sent: Vec<TxGva>,
+    /// Transactions sending
+    pub(crate) sending: Vec<TxGva>,
+    /// Transactions received
+    pub(crate) received: Vec<TxGva>,
+    /// Transactions receiving
+    pub(crate) receiving: Vec<TxGva>,
+}
+
 #[derive(Clone, async_graphql::SimpleObject)]
 pub(crate) struct UtxoGva {
     /// Source amount
@@ -30,16 +42,4 @@ pub(crate) struct UtxoGva {
     pub(crate) output_index: u32,
     /// Written time
     pub(crate) written_time: i64,
-}
-
-#[derive(async_graphql::SimpleObject)]
-pub(crate) struct TxsHistoryGva {
-    /// Transactions sent
-    pub(crate) sent: Vec<TxGva>,
-    /// Transactions sending
-    pub(crate) sending: Vec<TxGva>,
-    /// Transactions received
-    pub(crate) received: Vec<TxGva>,
-    /// Transactions receiving
-    pub(crate) receiving: Vec<TxGva>,
 }

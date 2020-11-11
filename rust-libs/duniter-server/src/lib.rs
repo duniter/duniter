@@ -23,10 +23,11 @@
 )]
 
 pub use duniter_dbs::smallvec;
+use duniter_gva::ServerMetaData;
 use duniter_mempools::{TxMpError, TxsMempool};
 use fast_threadpool::ThreadPoolConfig;
 
-pub use duniter_gva::GvaConf;
+pub use duniter_gva::{GvaConf, PeerCardStringified};
 
 use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::common::prelude::*;
@@ -34,6 +35,7 @@ use dubp::documents::{prelude::*, transaction::TransactionDocumentV10};
 use dubp::{
     block::prelude::*, common::crypto::hashs::Hash, documents_parser::prelude::FromStringObject,
 };
+use duniter_dbs::cm_v1::CmV1DbWritable;
 use duniter_dbs::{
     kv_typed::prelude::*, GvaV1DbReadable, HashKeyV2, PendingTxDbV2, TxsMpV2DbReadable,
 };
@@ -51,7 +53,7 @@ pub enum DuniterCommand {
 #[derive(Clone, Debug)]
 pub struct DuniterServerConf {
     pub gva: Option<GvaConf>,
-    pub server_pubkey: PublicKey,
+    pub self_pubkey: PublicKey,
     pub txs_mempool_size: usize,
 }
 
@@ -101,21 +103,16 @@ impl DuniterServer {
                 fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), dbs.clone());
 
             if command != DuniterCommand::Sync {
-                if let Some(mut gva_conf) = conf.gva.clone() {
-                    if let Some(remote_path) = std::env::var_os("DUNITER_GVA_REMOTE_PATH") {
-                        gva_conf.remote_path(
-                            remote_path
-                                .into_string()
-                                .expect("Invalid utf8 for Env var DUNITER_GVA_REMOTE_PATH"),
-                        );
-                    }
+                if let Some(gva_conf) = conf.gva.clone() {
                     duniter_gva::GvaServer::start(
                         gva_conf,
-                        currency,
                         dbs,
                         threadpool.async_handler(),
-                        conf.server_pubkey,
-                        software_version,
+                        ServerMetaData {
+                            currency,
+                            self_pubkey: conf.self_pubkey,
+                            software_version,
+                        },
                         txs_mempool,
                     )
                     .expect("Fail to start GVA server");
@@ -304,6 +301,27 @@ impl DuniterServer {
             })
             .expect("dbs pool disconnected")
     }
+    pub fn update_self_peer(&self, new_peer_card: PeerCardStringified) {
+        self.dbs_pool
+            .execute(move |dbs| {
+                dbs.cm_db
+                    .self_peer_card_write()
+                    .upsert(
+                        EmptyKey,
+                        duniter_dbs::PeerCardDbV1 {
+                            version: new_peer_card.version,
+                            currency: new_peer_card.currency,
+                            pubkey: new_peer_card.pubkey,
+                            blockstamp: new_peer_card.blockstamp,
+                            endpoints: new_peer_card.endpoints,
+                            status: new_peer_card.status,
+                            signature: new_peer_card.signature,
+                        },
+                    )
+                    .expect("fail to write on memory db")
+            })
+            .expect("dbs pool disconnected")
+    }
 }
 
 #[cfg(test)]
@@ -318,7 +336,7 @@ mod tests {
             None,
             DuniterServerConf {
                 gva: None,
-                server_pubkey: PublicKey::default(),
+                self_pubkey: PublicKey::default(),
                 txs_mempool_size: 200,
             },
             "currency_test".to_owned(),

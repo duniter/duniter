@@ -47,6 +47,7 @@ import {HttpMilestonePage} from "./app/modules/bma/lib/dtos"
 import * as toJson from "./app/modules/bma/lib/tojson"
 import { rawTxParseAndVerify, txVerify } from "./neon/lib"
 import { TransactionDTOV10 } from "./neon/native"
+import { format } from "util";
 
 export interface HookableServer {
   generatorGetJoinData: (...args:any[]) => Promise<any>
@@ -352,7 +353,8 @@ export class Server extends stream.Duplex implements HookableServer {
   }
 
   async initDAL(conf:ConfDTO|null = null, commandName: string|null = null) {
-    await this.dal.init(this.conf, commandName)
+    this.genGvaEndpoints(this.conf);
+    await this.dal.init(this.conf, commandName);
     // Maintenance
     let head_1 = await this.dal.bindexDAL.head(1);
     if (head_1) {
@@ -379,6 +381,36 @@ export class Server extends stream.Duplex implements HookableServer {
     await this.BlockchainService.blockResolution()
     // Eventual fork resolution
     await this.BlockchainService.forkResolution()
+  }
+
+  genGvaEndpoint(conf: ConfDTO): string {
+    return ""
+  }
+  
+  genGvaSubscriptionsEndpoint(conf: ConfDTO): string {
+    return ""
+  }
+
+  genGvaEndpoints(conf:ConfDTO) {
+    if (conf.gva) {
+      let gva = conf.gva;
+      this.addEndpointsDefinitions(async () => format(
+        "GVA %s%s %i %s",
+        (gva.remotePort === 443 || gva.remoteTls === true) ? 'S ':'',
+        gva.remoteHost || gva.host || "localhost",
+        gva.remotePort || gva.port || 80,
+        gva.remotePath || gva.path || ""
+      ));
+      if (gva.remoteSubscriptionsPath || gva.subscriptionsPath) {
+        this.addEndpointsDefinitions(async () => format(
+          "GVASUB %s%s %i %s",
+          (gva.remotePort === 443 || gva.remoteTls === true) ? 'S ':'',
+          gva.remoteHost || gva.host || "localhost",
+          gva.remotePort || gva.port || 80,
+          gva.remoteSubscriptionsPath || gva.subscriptionsPath || ""
+        ));
+      }
+    }
   }
 
   recomputeSelfPeer(): Promise<DBPeer | null> {

@@ -6,13 +6,25 @@ export class RustServerConf {
     command: string | null
     currency: string
     gva: GvaConf | undefined
-    serverPubkey: string | null
+    selfPubkey: string | null
     txsMempoolSize: number
 }
 
 export class GvaConf {
     host?: string
     port?: number
+    path?: string;
+    subscriptionsPath?: string;
+}
+
+export class PeerCard {
+    version: number
+    currency: string
+    pubkey: string
+    blockstamp: string
+    endpoints: string[]
+    signature: string
+    status: string
 }
 
 export class RustDbTx {
@@ -87,4 +99,5 @@ export class RustServer {
     applyBlock(block: BlockDTOV10): void;
     applyChunkOfBlocks(blocks: BlockDTOV10[]): void;
     trimExpiredNonWrittenTxs(limitTime: number): void;
+    updateSelfPeer(peer: PeerCard): void;
 }

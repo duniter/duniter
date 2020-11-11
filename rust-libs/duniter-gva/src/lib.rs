@@ -59,7 +59,7 @@ use warp::{http::Response as HttpResponse, Filter as _, Rejection, Stream};
 pub struct GvaConf {
     host: String,
     port: u16,
-    remote_path: String,
+    path: String,
     subscriptions_path: String,
 }
 
@@ -68,7 +68,7 @@ impl Default for GvaConf {
         GvaConf {
             host: "localhost".to_owned(),
             port: 30901,
-            remote_path: "gva".to_owned(),
+            path: "gva".to_owned(),
             subscriptions_path: "gva-sub".to_owned(),
         }
     }
@@ -81,12 +81,20 @@ impl GvaConf {
     pub fn port(&mut self, port: u16) {
         self.port = port;
     }
-    pub fn remote_path(&mut self, mut remote_path: String) {
-        if remote_path.starts_with('/') {
-            remote_path.remove(0);
-            self.remote_path = remote_path;
+    pub fn path(&mut self, mut path: String) {
+        if path.starts_with('/') {
+            path.remove(0);
+            self.path = path;
         } else {
-            self.remote_path = remote_path;
+            self.path = path;
+        }
+    }
+    pub fn subscriptions_path(&mut self, mut subscriptions_path: String) {
+        if subscriptions_path.starts_with('/') {
+            subscriptions_path.remove(0);
+            self.subscriptions_path = subscriptions_path;
+        } else {
+            self.subscriptions_path = subscriptions_path;
         }
     }
 }
@@ -94,14 +102,19 @@ impl GvaConf {
 #[derive(Clone, Copy, Debug)]
 pub struct GvaServer;
 
+#[derive(Debug, Default)]
+pub struct ServerMetaData {
+    pub currency: String,
+    pub self_pubkey: PublicKey,
+    pub software_version: &'static str,
+}
+
 impl GvaServer {
     pub fn start(
         conf: GvaConf,
-        currency: String,
         dbs: DuniterDbs,
         dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs>,
-        server_pubkey: PublicKey,
-        software_version: &'static str,
+        server_meta_data: ServerMetaData,
         txs_mempool: TxsMempool,
     ) -> Result<(), tokio::io::Error> {
         println!("TMP GvaServer::start: conf={:?}", conf);
@@ -117,11 +130,9 @@ impl GvaServer {
                     subscriptions::SubscriptionRoot::default(),
                 )
                 .data(schema::SchemaData {
-                    currency,
                     dbs,
                     dbs_pool,
-                    server_pubkey,
-                    software_version,
+                    server_meta_data,
                     txs_mempool,
                 })
                 .extension(async_graphql::extensions::Logger)
@@ -134,22 +145,20 @@ impl GvaServer {
                 );
 
                 let conf_clone = conf.clone();
-                let graphql_playground = warp::path::path(conf.remote_path.clone())
-                    .and(warp::get())
-                    .map(move || {
-                        HttpResponse::builder()
-                            .header("content-type", "text/html")
-                            .body(async_graphql::http::playground_source(
-                                GraphQLPlaygroundConfig::new(&format!(
-                                    "/{}",
-                                    &conf_clone.remote_path
+                let graphql_playground =
+                    warp::path::path(conf.path.clone())
+                        .and(warp::get())
+                        .map(move || {
+                            HttpResponse::builder()
+                                .header("content-type", "text/html")
+                                .body(async_graphql::http::playground_source(
+                                    GraphQLPlaygroundConfig::new(&format!("/{}", &conf_clone.path))
+                                        .subscription_endpoint(&format!(
+                                            "/{}",
+                                            &conf_clone.subscriptions_path,
+                                        )),
                                 ))
-                                .subscription_endpoint(&format!(
-                                    "/{}",
-                                    &conf_clone.subscriptions_path,
-                                )),
-                            ))
-                    });
+                        });
 
                 let routes = graphql_playground
                     .or(graphql_post)
@@ -171,7 +180,7 @@ impl GvaServer {
                 log::info!(
                     "Start GVA server at http://localhost:{}/{}",
                     conf.port,
-                    &conf.remote_path
+                    &conf.path
                 );
                 warp::serve(routes).run(([0, 0, 0, 0], conf.port)).await;
             });
@@ -181,10 +190,39 @@ impl GvaServer {
     }
 }
 
+#[derive(
+    async_graphql::SimpleObject, Clone, Debug, Default, serde::Deserialize, serde::Serialize,
+)]
+#[serde(rename_all = "camelCase")]
+#[graphql(name = "PeerCard")]
+pub struct PeerCardStringified {
+    pub version: u32,
+    pub currency: String,
+    pub pubkey: String,
+    pub blockstamp: String,
+    pub endpoints: Vec<String>,
+    pub status: String,
+    pub signature: String,
+}
+impl From<duniter_dbs::PeerCardDbV1> for PeerCardStringified {
+    fn from(peer: duniter_dbs::PeerCardDbV1) -> Self {
+        Self {
+            version: peer.version,
+            currency: peer.currency,
+            pubkey: peer.pubkey,
+            blockstamp: peer.blockstamp,
+            endpoints: peer.endpoints,
+            status: peer.status,
+            signature: peer.signature,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use duniter_dbs::bc_v2::{BcV2Db, BcV2DbWritable};
+    use duniter_dbs::cm_v1::{CmV1Db, CmV1DbWritable};
     use duniter_dbs::kv_typed::backend::memory::{Mem, MemConf};
     use duniter_dbs::{GvaV1Db, GvaV1DbWritable, TxsMpV2Db, TxsMpV2DbWritable};
     use fast_threadpool::ThreadPoolConfig;
@@ -195,6 +233,7 @@ mod tests {
     fn launch_mem_gva() {
         let dbs = DuniterDbs {
             bc_db: unwrap!(BcV2Db::<Mem>::open(MemConf::default())),
+            cm_db: unwrap!(CmV1Db::<MemSingleton>::open(MemSingletonConf::default())),
             gva_db: unwrap!(GvaV1Db::<Mem>::open(MemConf::default())),
             txs_mp_db: unwrap!(TxsMpV2Db::<Mem>::open(MemConf::default())),
         };
@@ -203,11 +242,9 @@ mod tests {
 
         unwrap!(GvaServer::start(
             GvaConf::default(),
-            "test".to_owned(),
             dbs,
             threadpool.into_async_handler(),
-            PublicKey::default(),
-            "test",
+            ServerMetaData::default(),
             TxsMempool::new(10)
         ));
 

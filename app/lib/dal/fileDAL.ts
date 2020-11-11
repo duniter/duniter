@@ -79,6 +79,7 @@ import { LevelDBIindex } from "./indexDAL/leveldb/LevelDBIindex";
 import { LevelDBMindex } from "./indexDAL/leveldb/LevelDBMindex";
 import { ConfDAO } from "./indexDAL/abstract/ConfDAO";
 import { ServerDAO } from "./server-dao";
+import { PeerDTO } from "../dto/PeerDTO";
 
 const readline = require("readline");
 const indexer = require("../indexer").Indexer;
@@ -233,12 +234,12 @@ export class FileDAL implements ServerDAO {
   }
 
   initRustServer(conf: ConfDTO, commandName: string | null = null) {
-    let serverPubkey = conf.pair ? conf.pair.pub : null;
+    let selfPubkey = conf.pair ? conf.pair.pub : null;
     let rustServerConf = {
       command: commandName,
       currency: conf.currency || "",
       gva: conf.gva,
-      serverPubkey,
+      selfPubkey,
       txsMempoolSize:
         conf.txsMempoolSize || constants.SANDBOX_SIZE_TRANSACTIONS,
     };
@@ -1674,7 +1675,6 @@ export class FileDAL implements ServerDAO {
         unitbase,
         local_iindex
       );
-      // TODO ESZ: call rust server: write_ud_sources(udSources: SimpleUdEntryForWallet[])
       return udSources;
     }
     return [];

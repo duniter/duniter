@@ -14,6 +14,7 @@
 "use strict";
 import { ConfDTO } from "../lib/dto/ConfDTO";
 import { Server } from "../../server";
+import { PeerDTO } from "../lib/dto/PeerDTO";
 
 const async = require("async");
 const constants = require("../lib/constants");
@@ -56,10 +57,15 @@ class PeerSignalEmitter {
     this.INTERVAL = setInterval(() => {
       this.peerFifo.push(async (done: any) => {
         try {
-          await this.server.PeeringService.generateSelfPeer(
+          let selfPeer = await this.server.PeeringService.generateSelfPeer(
             this.conf,
             SIGNAL_INTERVAL
           );
+          if (selfPeer) {
+            this.server.dal.rustServer.updateSelfPeer(
+              PeerDTO.fromDBPeer(selfPeer)
+            );
+          }
           done();
         } catch (e) {
           done(e);
@@ -68,14 +74,15 @@ class PeerSignalEmitter {
     }, SIGNAL_INTERVAL);
 
     // Launches it a first time few seconds after startup
-    setTimeout(
-      () =>
-        this.server.PeeringService.generateSelfPeer(
-          this.conf,
-          SIGNAL_INTERVAL - SIGNAL_INITIAL_DELAY
-        ),
-      0
-    );
+    setTimeout(async () => {
+      let selfPeer = await this.server.PeeringService.generateSelfPeer(
+        this.conf,
+        SIGNAL_INTERVAL - SIGNAL_INITIAL_DELAY
+      );
+      if (selfPeer) {
+        this.server.dal.rustServer.updateSelfPeer(PeerDTO.fromDBPeer(selfPeer));
+      }
+    }, 0);
   }
 
   stopService() {

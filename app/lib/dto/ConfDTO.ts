@@ -183,9 +183,13 @@ export class ConfDTO
     public gva?: {
       host?: string;
       port?: number;
-      remotehost?: string | null;
-      remoteport?: number | null;
-      remotepath?: string;
+      path?: string;
+      subscriptionsPath?: string;
+      remoteHost?: string;
+      remotePort?: number;
+      remotePath?: string;
+      remoteSubscriptionsPath?: string;
+      remoteTls?: boolean;
     },
     public ws2p?: {
       privateAccess?: boolean;

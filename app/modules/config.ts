@@ -26,6 +26,10 @@ module.exports = {
         value: "--gva",
         desc: "Enable gva API and database.",
       },
+      {
+        value: "--no-gva",
+        desc: "Disable gva API and database.",
+      },
     ],
 
     config: {
@@ -39,13 +43,24 @@ module.exports = {
         if (
           program.gva &&
           program.gva === true &&
-          (!program.nogva || program.nogva === undefined)
+          (!program.noGva || program.noGva === undefined)
         ) {
-          conf.gva = {
-            host: "localhost",
-            port: 30901,
-          };
-        } else if (program.nogva) {
+          // Fill with default conf if needed
+          if (conf.gva) {
+            conf.gva.host = conf.gva.host || "localhost";
+            conf.gva.port = conf.gva.port || 30901;
+            conf.gva.path = conf.gva.path || "gva";
+            conf.gva.subscriptionsPath =
+              conf.gva.subscriptionsPath || "gva-sub";
+          } else {
+            conf.gva = {
+              host: "localhost",
+              port: 30901,
+              path: "gva",
+              subscriptionsPath: "gva-sub",
+            };
+          }
+        } else if (program.noGva) {
           conf.gva = undefined;
         }
       },

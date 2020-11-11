@@ -29,7 +29,7 @@ export interface ProgramOptions {
   sqlTraces?: boolean;
   memory?: boolean;
   gva?: boolean;
-  nogva?: boolean;
+  noGva?: boolean;
 }
 
 export const cliprogram: ProgramOptions = {

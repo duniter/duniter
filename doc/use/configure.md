@@ -185,15 +185,21 @@ This mode is optional if only because technically it is sometimes difficult or e
 
 GVA is still disabled by default. To enable it you have to add the option `--gva` during synchronization and at each start of your duniter node (`duniter start --gva`).
 
-GVA is not yet configurable from the command line, but it is possible to use environment variables :
+GVA is not yet configurable from the command line, but it is possible to manually edit `conf.json` file :
 
-| parameter | env var | default value |
+| parameter | type | default value |
 |:-:|:-:|:-:|
-| remote_path | `DUNITER_GVA_REMOTE_PATH` | `/gva`
+| host | string | `"localhost"` |
+| port | number |  `30901` |
+| path | string |  `"gva"` |
+| remotePath | string | `"gva"` |
+| subscriptionsPath | string |  `"gva-sub"` |
+| remoteSubscriptionsPath | string | `"gva-sub"` |
+| remoteTls | boolean |  `false` |
 
-GVA server listen to `localhost:10901/remote_path`
+GVA server listen to `http://<host>:<port>/<remotePath>`
 
-GVA subscriptions websocket server listen to `localhost:10901/gva-sub`
+GVA subscriptions websocket server listen to `ws://<host>:<port>/<remoteSubscriptionsPath>`
 
 ## Synchronize your node
 

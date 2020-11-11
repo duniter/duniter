@@ -1132,6 +1132,7 @@ dependencies = [
  "http",
  "log",
  "resiter",
+ "serde",
  "serde_urlencoded 0.7.0",
  "smallvec",
  "tokio",

@@ -21,7 +21,7 @@ use dubp::documents::{
     transaction::{TransactionDocumentV10, TransactionDocumentV10Stringified},
 };
 use dubp::documents_parser::prelude::*;
-use duniter_server::{DuniterServer, DuniterServerConf, GvaConf};
+use duniter_server::{DuniterServer, DuniterServerConf, GvaConf, PeerCardStringified};
 use neon::declare_types;
 use neon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -47,19 +47,29 @@ declare_types! {
                 if let Some(port) = gva_conf_stringified.port {
                     gva_conf.port(port);
                 }
+                if let Some(path) = gva_conf_stringified.path {
+                    gva_conf.path(path);
+                }
+                if let Some(subscriptions_path) = gva_conf_stringified.subscriptions_path {
+                    gva_conf.subscriptions_path(subscriptions_path);
+                }
                 Some(gva_conf)
             } else {
                 None
             };
             let command_name = rust_server_conf_stringified.command_name;
             let currency = rust_server_conf_stringified.currency;
-            let server_pubkey = if let Some(server_pubkey_str) = rust_server_conf_stringified.server_pubkey {
-                into_neon_res(&mut cx, PublicKey::from_base58(&server_pubkey_str))?
+            let server_pubkey = if let Some(self_pubkey_str) = rust_server_conf_stringified.self_pubkey {
+                into_neon_res(&mut cx, PublicKey::from_base58(&self_pubkey_str))?
             } else {
                 PublicKey::default()
             };
             let txs_mempool_size = rust_server_conf_stringified.txs_mempool_size as usize;
-            let conf = DuniterServerConf { gva: gva_conf, server_pubkey, txs_mempool_size };
+            let conf = DuniterServerConf {
+                gva: gva_conf,
+                self_pubkey: server_pubkey,
+                txs_mempool_size
+            };
 
             let home_path_opt = if let Some(arg1) = arg1_opt {
                 if arg1.is_a::<JsString>() {
@@ -289,6 +299,19 @@ declare_types! {
             }.map(|()| cx.undefined().upcast());
             into_neon_res(&mut cx, res)
         }
+        method updateSelfPeer(mut cx) {
+            let peer_js = cx.argument::<JsValue>(0)?;
+
+            let peer_stringified: PeerCardStringified = neon_serde::from_value(&mut cx, peer_js)?;
+
+            let this = cx.this();
+            {
+                let guard = cx.lock();
+                let server = this.borrow(&guard);
+                server.server.update_self_peer(peer_stringified)
+            };
+            Ok(cx.undefined().upcast())
+        }
     }
 }
 
@@ -298,7 +321,7 @@ struct RustServerConfStringified {
     command_name: Option<String>,
     currency: String,
     gva: Option<GvaConfStringified>,
-    server_pubkey: Option<String>,
+    self_pubkey: Option<String>,
     txs_mempool_size: u32,
 }
 
@@ -307,6 +330,8 @@ struct RustServerConfStringified {
 struct GvaConfStringified {
     host: Option<String>,
     port: Option<u16>,
+    path: Option<String>,
+    subscriptions_path: Option<String>,
 }
 
 #[derive(Deserialize, Serialize)]

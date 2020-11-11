@@ -33,7 +33,7 @@ impl MutationRoot {
 
         let data = ctx.data::<SchemaData>()?;
 
-        let server_pubkey = data.server_pubkey;
+        let server_pubkey = data.server_meta_data.self_pubkey;
         let txs_mempool = data.txs_mempool;
 
         let tx = data
@@ -62,7 +62,7 @@ impl MutationRoot {
 
         let data = ctx.data::<SchemaData>()?;
 
-        let server_pubkey = data.server_pubkey;
+        let server_pubkey = data.server_meta_data.self_pubkey;
         let txs_mempool = data.txs_mempool;
 
         let mut processed_txs = Vec::with_capacity(txs.len());

@@ -54,7 +54,6 @@ pub(crate) fn write_gva_tx<B: Backend>(
 
                 // Remove consumed UTXOs
                 for input in tx.get_inputs() {
-                    // TODO ESZ remove UD sources
                     if let SourceIdV10::Utxo(utxo_id) = input.id {
                         let db_tx_origin = gva_db
                             .txs()
@@ -147,7 +146,6 @@ pub(crate) fn revert_tx<B: Backend>(
                     }
                     // Recreate UTXOs consumed by this tx
                     for input in tx_db.tx.get_inputs() {
-                        // TODO ESZ recreate UD sources
                         if let SourceIdV10::Utxo(utxo_id) = input.id {
                             let db_tx_origin = gva_db
                                 .txs()

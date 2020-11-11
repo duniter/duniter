@@ -24,6 +24,7 @@
 
 mod bc_v1;
 pub mod bc_v2;
+pub mod cm_v1;
 mod errors;
 pub mod gva_v1;
 mod keys;
@@ -81,6 +82,7 @@ pub use values::idty_db::IdtyDbV2;
 pub use values::iindex_db::IIndexDbV1;
 pub use values::kick_db::KickDbV1;
 pub use values::mindex_db::MIndexDbV1;
+pub use values::peer_card::PeerCardDbV1;
 pub use values::pubkey_db::{PubKeyValV2, PublicKeyArrayDbV1, PublicKeySingletonDbV1};
 pub use values::sindex_db::{SIndexDBV1, SourceKeyArrayDbV1};
 pub use values::source_amount::SourceAmountValV2;
@@ -119,14 +121,13 @@ pub trait ToDumpString {
 
 #[cfg(feature = "mem")]
 pub type DbsBackend = kv_typed::backend::memory::Mem;
-#[cfg(all(not(feature = "mem"), target_arch = "x86_64"))]
-pub type DbsBackend = Sled; // TODO ESZ
-#[cfg(all(not(feature = "mem"), not(target_arch = "x86_64")))]
+#[cfg(not(feature = "mem"))]
 pub type DbsBackend = Sled;
 
 #[derive(Clone, Debug)]
 pub struct DuniterDbs {
     pub bc_db: bc_v2::BcV2Db<DbsBackend>,
+    pub cm_db: cm_v1::CmV1Db<MemSingleton>,
     pub gva_db: GvaV1Db<DbsBackend>,
     pub txs_mp_db: TxsMpV2Db<DbsBackend>,
 }

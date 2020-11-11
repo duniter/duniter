@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::bc_v2::BcV2DbWritable as _;
+use crate::cm_v1::CmV1DbWritable as _;
 use crate::*;
 
 pub fn open_dbs(home_path_opt: Option<&Path>) -> DuniterDbs {
@@ -23,6 +24,8 @@ pub fn open_dbs(home_path_opt: Option<&Path>) -> DuniterDbs {
             home_path_opt,
         ))
         .expect("fail to open BcV2 DB"),
+        cm_db: crate::cm_v1::CmV1Db::<MemSingleton>::open(MemSingletonConf::default())
+            .expect("fail to open CmV1 DB"),
         gva_db: GvaV1Db::<DbsBackend>::open(DbsBackend::gen_backend_conf("gva_v1", home_path_opt))
             .expect("fail to open Gva DB"),
         txs_mp_db: TxsMpV2Db::<DbsBackend>::open(DbsBackend::gen_backend_conf(

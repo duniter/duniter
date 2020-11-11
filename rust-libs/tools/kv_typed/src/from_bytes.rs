@@ -14,7 +14,13 @@ impl FromBytes for () {
         Ok(())
     }
 }
+impl FromBytes for EmptyKey {
+    type Err = std::convert::Infallible;
 
+    fn from_bytes(_: &[u8]) -> Result<Self, Self::Err> {
+        Ok(EmptyKey)
+    }
+}
 impl FromBytes for EmptyValue {
     type Err = std::convert::Infallible;
 

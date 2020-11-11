@@ -60,6 +60,7 @@ pub mod prelude {
     #[cfg(feature = "lmdb_backend")]
     pub use crate::backend::lmdb::{Lmdb, LmdbConf};
     pub use crate::backend::memory::{Mem, MemConf};
+    pub use crate::backend::memory_singleton::{MemSingleton, MemSingletonConf};
     #[cfg(feature = "mock")]
     pub use crate::backend::mock::{MockBackend, MockBackendCol, MockBackendIter};
     #[cfg(feature = "sled_backend")]
@@ -80,7 +81,7 @@ pub mod prelude {
     pub use crate::iter::{
         keys::KvIterKeys, values::KvIterValues, EntryIter, KvIter, ResultIter, ReversableIterator,
     };
-    pub use crate::key::Key;
+    pub use crate::key::{EmptyKey, Key};
     pub use crate::subscription::{NewSubscribers, Subscriber, Subscribers};
     pub use crate::transactional_read::{TransactionalRead, TxColRo};
     pub use crate::transactional_write::{DbTxCollectionRw, TransactionalWrite, TxColRw};

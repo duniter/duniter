@@ -27,6 +27,16 @@ impl ExplorableKey for () {
     }
 }
 
+impl ExplorableKey for EmptyKey {
+    fn from_explorer_str(_: &str) -> Result<Self, StringErr> {
+        Ok(EmptyKey)
+    }
+
+    fn to_explorer_string(&self) -> KvResult<String> {
+        Ok(String::with_capacity(0))
+    }
+}
+
 impl ExplorableKey for String {
     fn from_explorer_str(source: &str) -> Result<Self, StringErr> {
         Ok(source.to_owned())

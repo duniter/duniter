@@ -60,3 +60,6 @@ impl<T> Key for T where
         + Sized
 {
 }
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct EmptyKey;

@@ -20,6 +20,7 @@ pub mod leveldb;
 #[cfg(feature = "lmdb_backend")]
 pub mod lmdb;
 pub mod memory;
+pub mod memory_singleton;
 #[cfg(feature = "mock")]
 pub mod mock;
 #[cfg(feature = "sled_backend")]

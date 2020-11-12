@@ -45,7 +45,7 @@ pub(crate) fn gen_duniter_ts_args(args: &DuniterArgs, duniter_js_exe: String) ->
     let mut duniter_ts_args = Vec::new();
     duniter_ts_args.push(duniter_js_exe);
     if let Some(ref home) = args.home {
-        duniter_ts_args.push("--mdb".to_owned());
+        duniter_ts_args.push("--home".to_owned());
         duniter_ts_args.push(home.to_str().expect("invalid home path").to_owned());
     }
     if let Some(ref log_level) = args.log {

@@ -18,7 +18,7 @@ use crate::*;
 db_schema!(
     CmV1,
     [
-        //["self_pubkey", self_pubkey, EmptyKey, PubKeyValV2,],
-        ["self_peer_card", self_peer_card, EmptyKey, PeerCardDbV1,],
+        //["self_pubkey", self_pubkey, (), PubKeyValV2,],
+        ["self_peer_card", SelfPeerCard, (), PeerCardDbV1],
     ]
 );

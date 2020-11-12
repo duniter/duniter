@@ -41,7 +41,7 @@ pub fn add_pending_tx<
     B: Backend,
     F: FnOnce(
         &TransactionDocumentV10,
-        &TxColRw<B::Col, duniter_dbs::txs_mp_v2::TxEvent>,
+        &TxColRw<B::Col, duniter_dbs::txs_mp_v2::TxsEvent>,
     ) -> KvResult<()>,
 >(
     control: F,
@@ -61,12 +61,12 @@ pub fn add_pending_tx<
                 control(&tx, &txs)?;
                 // Insert on col `txs_by_recv_time`
                 let mut hashs = txs_by_recv_time.get(&received_time)?.unwrap_or_default();
-                hashs.0.insert(tx_hash);
+                hashs.insert(tx_hash);
                 txs_by_recv_time.upsert(received_time, hashs);
                 // Insert on col `txs_by_issuer`
                 for pubkey in tx.issuers() {
                     let mut hashs = txs_by_issuer.get(&PubKeyKeyV2(pubkey))?.unwrap_or_default();
-                    hashs.0.insert(tx.get_hash());
+                    hashs.insert(tx.get_hash());
                     txs_by_issuer.upsert(PubKeyKeyV2(pubkey), hashs);
                 }
                 // Insert on col `txs_by_recipient`
@@ -74,7 +74,7 @@ pub fn add_pending_tx<
                     let mut hashs = txs_by_recipient
                         .get(&PubKeyKeyV2(pubkey))?
                         .unwrap_or_default();
-                    hashs.0.insert(tx.get_hash());
+                    hashs.insert(tx.get_hash());
                     txs_by_recipient.upsert(PubKeyKeyV2(pubkey), hashs);
                 }
                 // Insert tx itself
@@ -107,7 +107,7 @@ pub fn trim_expired_non_written_txs<B: Backend>(
     let hashs = txs_mp_db.txs_by_recv_time().iter(..limit_time, |it| {
         it.map_ok(|(k, v)| {
             times.push(k);
-            v.0
+            v
         })
         .flatten_ok()
         .collect::<KvResult<SmallVec<[Hash; 4]>>>()
@@ -133,7 +133,7 @@ fn remove_one_pending_tx<B: Backend>(txs_mp_db: &TxsMpV2Db<B>, tx_hash: Hash) ->
                 // Remove tx hash in col `txs_by_issuer`
                 for pubkey in tx.0.issuers() {
                     let mut hashs_ = txs_by_issuer.get(&PubKeyKeyV2(pubkey))?.unwrap_or_default();
-                    hashs_.0.remove(&tx_hash);
+                    hashs_.remove(&tx_hash);
                     txs_by_issuer.upsert(PubKeyKeyV2(pubkey), hashs_)
                 }
                 // Remove tx hash in col `txs_by_recipient`
@@ -141,7 +141,7 @@ fn remove_one_pending_tx<B: Backend>(txs_mp_db: &TxsMpV2Db<B>, tx_hash: Hash) ->
                     let mut hashs_ = txs_by_recipient
                         .get(&PubKeyKeyV2(pubkey))?
                         .unwrap_or_default();
-                    hashs_.0.remove(&tx_hash);
+                    hashs_.remove(&tx_hash);
                     txs_by_recipient.upsert(PubKeyKeyV2(pubkey), hashs_)
                 }
                 // Remove tx itself

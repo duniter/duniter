@@ -52,14 +52,3 @@ impl ExplorableValue for BlockNumberArrayV1 {
         serde_json::to_value(self).map_err(|e| KvError::DeserError(format!("{}", e)))
     }
 }
-
-#[derive(Debug, PartialEq)]
-#[repr(transparent)]
-pub struct BlockNumberArrayV2(pub SmallVec<[BlockNumber; 16]>);
-kv_typed::impl_value_for_smallvec_zc!(BlockNumberArrayV2, BlockNumber, 16);
-
-impl ToDumpString for BlockNumberArrayV2 {
-    fn to_dump_string(&self) -> String {
-        todo!()
-    }
-}

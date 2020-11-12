@@ -28,16 +28,7 @@ impl KeyAsBytes for () {
     }
     fn fill_bytes(&self, _: &mut [u8]) {}
 }
-impl KeyAsBytes for EmptyKey {
-    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
-        f(&[])
-    }
-    fn fill_bytes_size(&self) -> Option<usize> {
-        Some(0)
-    }
-    fn fill_bytes(&self, _: &mut [u8]) {}
-}
-impl ValueAsBytes for EmptyValue {
+impl ValueAsBytes for () {
     fn as_bytes<T, F: FnMut(&[u8]) -> Result<T, KvError>>(&self, mut f: F) -> Result<T, KvError> {
         f(&[])
     }

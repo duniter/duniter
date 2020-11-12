@@ -38,8 +38,7 @@ members = [
     "rust-libs/duniter-gva",
     "rust-libs/duniter-mempools",
     "rust-libs/duniter-server",
-    "rust-libs/tools/kv_typed",
-    "rust-libs/tools/kv_typed_code_gen"
+    "rust-libs/tools/kv_typed"
 ]
 
 [patch.crates-io]

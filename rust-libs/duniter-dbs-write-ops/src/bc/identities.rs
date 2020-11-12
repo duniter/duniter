@@ -14,12 +14,12 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use duniter_dbs::bc_v2::IdentityEvent;
+use duniter_dbs::bc_v2::IdentitiesEvent;
 use duniter_dbs::IdtyDbV2;
 
 pub(crate) fn update_identities<B: Backend>(
     block: &DubpBlockV10,
-    identities: &mut TxColRw<B::Col, IdentityEvent>,
+    identities: &mut TxColRw<B::Col, IdentitiesEvent>,
 ) -> KvResult<()> {
     for idty in block.identities() {
         let pubkey = idty.issuers()[0];
@@ -61,7 +61,7 @@ pub(crate) fn update_identities<B: Backend>(
 
 pub(crate) fn revert_identities<B: Backend>(
     block: &DubpBlockV10,
-    identities: &mut TxColRw<B::Col, IdentityEvent>,
+    identities: &mut TxColRw<B::Col, IdentitiesEvent>,
 ) -> KvResult<()> {
     for mb in block.joiners() {
         let pubkey = mb.issuers()[0];

@@ -15,18 +15,18 @@
 
 use crate::*;
 use duniter_dbs::{
-    bc_v2::{IdentityEvent, UdEvent, UdsRevalEvent},
+    bc_v2::{IdentitiesEvent, UdsEvent, UdsRevalEvent},
     UdIdV2,
 };
 
 // ["uds_reval", uds_reval, BlockNumberKeyV2, SourceAmountValV2,],
-// ["uds", uds, UdIdV2, EmptyValue,],
+// ["uds", uds, UdIdV2, (),],
 
 pub(crate) fn create_uds<B: Backend>(
     block_number: BlockNumber,
     dividend: SourceAmount,
-    identities: &mut TxColRw<B::Col, IdentityEvent>,
-    uds: &mut TxColRw<B::Col, UdEvent>,
+    identities: &mut TxColRw<B::Col, IdentitiesEvent>,
+    uds: &mut TxColRw<B::Col, UdsEvent>,
     uds_reval: &mut TxColRw<B::Col, UdsRevalEvent>,
 ) -> KvResult<()> {
     let previous_ud_amount = uds_reval
@@ -41,15 +41,15 @@ pub(crate) fn create_uds<B: Backend>(
             .collect::<KvResult<Vec<_>>>()
     })?;
     for member in members {
-        uds.upsert(UdIdV2(member, block_number), EmptyValue);
+        uds.upsert(UdIdV2(member, block_number), ());
     }
     Ok(())
 }
 
 pub(crate) fn revert_uds<B: Backend>(
     block_number: BlockNumber,
-    identities: &mut TxColRw<B::Col, IdentityEvent>,
-    uds: &mut TxColRw<B::Col, UdEvent>,
+    identities: &mut TxColRw<B::Col, IdentitiesEvent>,
+    uds: &mut TxColRw<B::Col, UdsEvent>,
     uds_reval: &mut TxColRw<B::Col, UdsRevalEvent>,
 ) -> KvResult<()> {
     let previous_reval_block_number = uds_reval

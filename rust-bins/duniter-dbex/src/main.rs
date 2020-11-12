@@ -269,7 +269,7 @@ fn apply_subcommand<DB: DbExplorable>(
             }
         }
         SubCommand::Schema => {
-            show_db_schema(db.list_collections());
+            show_db_schema(DB::list_collections());
         }
         SubCommand::Migrate => unreachable!(),
     };

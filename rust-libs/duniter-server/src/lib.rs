@@ -61,7 +61,7 @@ pub struct DuniterServer {
     conf: DuniterServerConf,
     current: Option<BlockMetaV2>,
     dbs_pool: fast_threadpool::ThreadPoolSyncHandler<DuniterDbs>,
-    pending_txs_subscriber: flume::Receiver<Arc<Events<duniter_dbs::txs_mp_v2::TxEvent>>>,
+    pending_txs_subscriber: flume::Receiver<Arc<Events<duniter_dbs::txs_mp_v2::TxsEvent>>>,
     txs_mempool: TxsMempool,
 }
 
@@ -165,10 +165,10 @@ impl DuniterServer {
             use std::ops::Deref as _;
             for event in events.deref() {
                 match event {
-                    duniter_dbs::txs_mp_v2::TxEvent::Upsert { key, value } => {
+                    duniter_dbs::txs_mp_v2::TxsEvent::Upsert { key, value } => {
                         new_pending_txs.insert(key.0, value.0.clone());
                     }
-                    duniter_dbs::txs_mp_v2::TxEvent::Remove { key } => {
+                    duniter_dbs::txs_mp_v2::TxsEvent::Remove { key } => {
                         new_pending_txs.remove(&key.0);
                     }
                     _ => (),
@@ -307,7 +307,7 @@ impl DuniterServer {
                 dbs.cm_db
                     .self_peer_card_write()
                     .upsert(
-                        EmptyKey,
+                        (),
                         duniter_dbs::PeerCardDbV1 {
                             version: new_peer_card.version,
                             currency: new_peer_card.currency,

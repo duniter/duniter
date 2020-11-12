@@ -18,139 +18,139 @@ use crate::*;
 db_schema!(
     BcV1,
     [
-        ["level_blockchain", main_blocks, BlockNumberKeyV1, BlockDbV1,],
+        ["level_blockchain", MainBlocks, BlockNumberKeyV1, BlockDbV1],
         [
             "level_blockchain/idty",
-            mb_idty,
+            MbIdty,
             PubKeyKeyV1,
-            BlockNumberArrayV1,
+            BlockNumberArrayV1
         ],
         [
             "level_blockchain/certs",
-            mb_certs,
+            MbCerts,
             PubKeyKeyV1,
             BlockNumberArrayV1
         ],
         [
             "level_blockchain/joiners",
-            mb_joiners,
+            MbJoiners,
             PubKeyKeyV1,
             BlockNumberArrayV1
         ],
         [
             "level_blockchain/actives",
-            mb_actives,
+            MbActives,
             PubKeyKeyV1,
             BlockNumberArrayV1
         ],
         [
             "level_blockchain/leavers",
-            mb_leavers,
+            MbLeavers,
             PubKeyKeyV1,
             BlockNumberArrayV1
         ],
         [
             "level_blockchain/excluded",
-            mb_excluded,
+            MbExcluded,
             PubKeyKeyV1,
             BlockNumberArrayV1
         ],
         [
             "level_blockchain/revoked",
-            mb_revoked,
+            MbRevoked,
             PubKeyAndSigV1,
             BlockNumberArrayV1
         ],
         [
             "level_blockchain/dividends",
-            mb_dividends,
+            MbDividends,
             AllKeyV1,
             BlockNumberArrayV1
         ],
         [
             "level_blockchain/transactions",
-            mb_transactions,
+            MbTransactions,
             AllKeyV1,
             BlockNumberArrayV1
         ],
         [
             "level_blockchain/forks",
-            fork_blocks,
+            ForkBlocks,
             BlockstampKeyV1,
             BlockDbV1
         ],
-        ["level_bindex", bindex, BlockNumberKeyV1, BlockHeadDbV1],
-        ["level_iindex", iindex, PubKeyKeyV1, IIndexDbV1],
+        ["level_bindex", Bindex, BlockNumberKeyV1, BlockHeadDbV1],
+        ["level_iindex", Iindex, PubKeyKeyV1, IIndexDbV1],
         [
             "level_iindex/hash",
-            iindex_hash,
+            IindexHash,
             HashKeyV1,
             PublicKeySingletonDbV1
         ],
-        ["level_iindex/kick", iindex_kick, PubKeyKeyV1, KickDbV1],
+        ["level_iindex/kick", IindexKick, PubKeyKeyV1, KickDbV1],
         [
             "level_iindex/writtenOn",
-            iindex_written_on,
+            IindexWrittenOn,
             BlockNumberKeyV1,
             PublicKeyArrayDbV1
         ],
-        ["level_iindex/uid", uids, UidKeyV1, PublicKeySingletonDbV1],
-        ["level_mindex", mindex, PubKeyKeyV1, MIndexDbV1],
+        ["level_iindex/uid", Uids, UidKeyV1, PublicKeySingletonDbV1],
+        ["level_mindex", Mindex, PubKeyKeyV1, MIndexDbV1],
         [
             "level_mindex/expiresOn",
-            mindex_expires_on,
+            MindexExpiresOn,
             TimestampKeyV1,
             PublicKeyArrayDbV1
         ],
         [
             "level_mindex/revokesOn",
-            mindex_revokes_on,
+            MindexRevokesOn,
             TimestampKeyV1,
             PublicKeyArrayDbV1
         ],
         [
             "level_mindex/writtenOn",
-            mindex_written_on,
+            MindexWrittenOn,
             BlockNumberKeyV1,
             PublicKeyArrayDbV1
         ],
-        ["level_cindex", cindex, PubKeyKeyV1, CIndexDbV1],
+        ["level_cindex", Cindex, PubKeyKeyV1, CIndexDbV1],
         [
             "level_cindex/expiresOn",
-            cindex_expires_on,
+            CindexExpiresOn,
             BlockNumberKeyV1,
             PublicKeyArrayDbV1
         ],
         [
             "level_cindex/writtenOn",
-            cindex_written_on,
+            CindexWrittenOn,
             BlockNumberKeyV1,
             PublicKeyArrayDbV1
         ],
         ["level_wallet", Wallet, WalletConditionsV1, WalletDbV1],
-        ["level_dividend", uds, PubKeyKeyV1, UdEntryDbV1],
+        ["level_dividend", Uds, PubKeyKeyV1, UdEntryDbV1],
         [
             "level_dividend/level_dividend_trim_index",
-            uds_trim,
+            UdsTrim,
             BlockNumberKeyV1,
             PublicKeyArrayDbV1
         ],
-        ["level_sindex", sindex, SourceKeyV1, SIndexDBV1],
+        ["level_sindex", Sindex, SourceKeyV1, SIndexDBV1],
         [
             "level_sindex/written_on",
-            sindex_written_on,
+            SindexWrittenOn,
             BlockNumberKeyV1,
             SourceKeyArrayDbV1
         ],
         [
             "level_sindex/consumed_on",
-            sindex_consumed_on,
+            SindexConsumedOn,
             BlockNumberKeyV1,
             SourceKeyArrayDbV1
         ],
         [
             "level_sindex/conditions",
-            sindex_conditions,
+            SindexConditions,
             WalletConditionsV1,
             SourceKeyArrayDbV1
         ],

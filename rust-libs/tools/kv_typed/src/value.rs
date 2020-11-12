@@ -82,5 +82,77 @@ impl ValueSliceZc for String {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct EmptyValue;
+impl<T, E> ValueSliceZc for Vec<T>
+where
+    T: 'static
+        + Copy
+        + Debug
+        + Default
+        + Display
+        + FromStr<Err = E>
+        + PartialEq
+        + Send
+        + Sized
+        + Sync
+        + zerocopy::AsBytes
+        + zerocopy::FromBytes,
+    E: Display,
+{
+    type Elem = T;
+
+    fn prefix_len() -> usize {
+        0
+    }
+}
+
+macro_rules! impl_value_slice_zc_for_smallvec {
+    ($($N:literal),*) => {$(
+        impl<T, E> ValueSliceZc for SmallVec<[T; $N]>
+        where
+            T: 'static
+                + Copy
+                + Debug
+                + Default
+                + Display
+                + FromStr<Err = E>
+                + PartialEq
+                + Send
+                + Sized
+                + Sync
+                + zerocopy::AsBytes
+                + zerocopy::FromBytes,
+            E: Display,
+        {
+            type Elem = T;
+
+            fn prefix_len() -> usize {
+                0
+            }
+        }
+    )*};
+}
+impl_value_slice_zc_for_smallvec!(2, 4, 8, 16, 32, 64);
+
+impl<T, E> ValueSliceZc for BTreeSet<T>
+where
+    T: 'static
+        + Copy
+        + Debug
+        + Default
+        + Display
+        + FromStr<Err = E>
+        + Ord
+        + PartialEq
+        + Send
+        + Sized
+        + Sync
+        + zerocopy::AsBytes
+        + zerocopy::FromBytes,
+    E: Display,
+{
+    type Elem = T;
+
+    fn prefix_len() -> usize {
+        0
+    }
+}

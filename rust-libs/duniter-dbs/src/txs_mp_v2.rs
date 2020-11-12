@@ -18,14 +18,9 @@ use crate::*;
 db_schema!(
     TxsMpV2,
     [
-        ["txs", txs, HashKeyV2, PendingTxDbV2,],
-        ["txs_by_issuer", txs_by_issuer, PubKeyKeyV2, HashBTSetV2,],
-        [
-            "txs_by_recipient",
-            txs_by_recipient,
-            PubKeyKeyV2,
-            HashBTSetV2,
-        ],
-        ["txs_by_received_time", txs_by_recv_time, i64, HashBTSetV2,],
+        ["txs", Txs, HashKeyV2, PendingTxDbV2],
+        ["txs_by_issuer", TxsByIssuer, PubKeyKeyV2, BTreeSet<Hash>],
+        ["txs_by_recipient", TxsByRecipient, PubKeyKeyV2, BTreeSet<Hash>],
+        ["txs_by_received_time", TxsByRecvTime, i64, BTreeSet<Hash>],
     ]
 );

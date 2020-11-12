@@ -37,7 +37,7 @@ impl SubscriptionRoot {
         r.into_stream().filter_map(|events| {
             let mut txs = Vec::new();
             for event in events.deref() {
-                if let duniter_dbs::txs_mp_v2::TxEvent::Upsert {
+                if let duniter_dbs::txs_mp_v2::TxsEvent::Upsert {
                     value: ref pending_tx,
                     ..
                 } = event

@@ -14,7 +14,6 @@ path = "src/lib.rs"
 [dependencies]
 cfg-if = "0.1.10"
 flume = "0.9.1"
-kv_typed_code_gen = { path = "../kv_typed_code_gen" }
 leveldb_minimal = { version = "0.1.0", optional = true }
 lmdb-zero = { version = "0.4.4", optional = true }
 mockall = { version = "0.8.0", optional = true }
@@ -45,7 +44,7 @@ unwrap = "1.2.1"
 criterion = { version = "0.3.1" }
 
 [features]
-default = ["sled_backend"]
+#default = ["sled_backend"]
 
 async = []
 explorer = ["rayon", "regex", "serde_json"]
@@ -55,5 +54,5 @@ sled_backend = ["sled"]
 
 #mock = ["mockall"]
 
-#default = ["explorer"]
+default = ["sled_backend", "explorer"]
 #default = ["mock"]

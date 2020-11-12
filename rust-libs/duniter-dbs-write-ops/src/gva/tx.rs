@@ -40,7 +40,7 @@ pub(crate) fn write_gva_tx<B: Backend>(
                 // Insert on col `txs_by_issuer`
                 for pubkey in tx.issuers() {
                     let mut hashs = txs_by_issuer.get(&PubKeyKeyV2(pubkey))?.unwrap_or_default();
-                    hashs.0.insert(tx_hash);
+                    hashs.insert(tx_hash);
                     txs_by_issuer.upsert(PubKeyKeyV2(pubkey), hashs);
                 }
                 // Insert on col `txs_by_recipient`
@@ -48,7 +48,7 @@ pub(crate) fn write_gva_tx<B: Backend>(
                     let mut hashs = txs_by_recipient
                         .get(&PubKeyKeyV2(pubkey))?
                         .unwrap_or_default();
-                    hashs.0.insert(tx_hash);
+                    hashs.insert(tx_hash);
                     txs_by_recipient.upsert(PubKeyKeyV2(pubkey), hashs);
                 }
 
@@ -193,14 +193,14 @@ pub(crate) fn revert_tx<B: Backend>(
 fn remove_tx<B: Backend>(
     txs_by_issuer: &mut TxColRw<B::Col, TxsByIssuerEvent>,
     txs_by_recipient: &mut TxColRw<B::Col, TxsByRecipientEvent>,
-    txs: &mut TxColRw<B::Col, TxEvent>,
+    txs: &mut TxColRw<B::Col, TxsEvent>,
     tx_hash: &Hash,
     tx_db: &TxDbV2,
 ) -> KvResult<()> {
     // Remove tx hash in col `txs_by_issuer`
     for pubkey in tx_db.tx.issuers() {
         let mut hashs_ = txs_by_issuer.get(&PubKeyKeyV2(pubkey))?.unwrap_or_default();
-        hashs_.0.remove(&tx_hash);
+        hashs_.remove(&tx_hash);
         txs_by_issuer.upsert(PubKeyKeyV2(pubkey), hashs_)
     }
     // Remove tx hash in col `txs_by_recipient`
@@ -208,7 +208,7 @@ fn remove_tx<B: Backend>(
         let mut hashs_ = txs_by_recipient
             .get(&PubKeyKeyV2(pubkey))?
             .unwrap_or_default();
-        hashs_.0.remove(&tx_hash);
+        hashs_.remove(&tx_hash);
         txs_by_recipient.upsert(PubKeyKeyV2(pubkey), hashs_)
     }
     // Remove tx itself

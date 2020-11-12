@@ -14,11 +14,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use duniter_dbs::{bc_v2::UdEvent, UdIdV2};
+use duniter_dbs::{bc_v2::UdsEvent, UdIdV2};
 
 pub(crate) fn apply_txs<B: Backend>(
     block_txs: &[TransactionDocumentV10],
-    uds: &mut TxColRw<B::Col, UdEvent>,
+    uds: &mut TxColRw<B::Col, UdsEvent>,
 ) -> KvResult<()> {
     for tx in block_txs {
         for input in tx.get_inputs() {
@@ -36,7 +36,7 @@ pub(crate) fn apply_txs<B: Backend>(
 
 pub(crate) fn revert_txs<B: Backend>(
     block_txs: &[TransactionDocumentV10],
-    uds: &mut TxColRw<B::Col, UdEvent>,
+    uds: &mut TxColRw<B::Col, UdsEvent>,
 ) -> KvResult<()> {
     for tx in block_txs {
         for input in tx.get_inputs() {
@@ -45,7 +45,7 @@ pub(crate) fn revert_txs<B: Backend>(
                 block_number,
             }) = input.id
             {
-                uds.upsert(UdIdV2(issuer, block_number), EmptyValue);
+                uds.upsert(UdIdV2(issuer, block_number), ());
             }
         }
     }

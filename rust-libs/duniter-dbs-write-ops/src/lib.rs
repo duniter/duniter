@@ -37,7 +37,7 @@ use dubp::documents::{
     transaction::TransactionDocumentV10,
 };
 use dubp::wallet::prelude::*;
-use duniter_dbs::gva_v1::{TxEvent, TxsByIssuerEvent, TxsByRecipientEvent};
+use duniter_dbs::gva_v1::{TxsByIssuerEvent, TxsByRecipientEvent, TxsEvent};
 use duniter_dbs::{
     kv_typed::prelude::*, BlockMetaV2, BlockNumberKeyV2, DuniterDbs, GvaV1Db, GvaV1DbReadable,
     GvaV1DbWritable, HashKeyV2, PendingTxDbV2, PubKeyKeyV2, PubKeyValV2, SourceAmountValV2, TxDbV2,

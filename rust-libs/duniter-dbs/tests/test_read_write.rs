@@ -18,7 +18,7 @@ use dubp::common::crypto::keys::PublicKey as _;
 use dubp::common::prelude::*;
 use duniter_dbs::kv_typed::prelude::*;
 use duniter_dbs::{
-    BcV1Db, BcV1DbReadable, BcV1DbWritable, BlockDbV1, BlockNumberKeyV1, MainBlockEvent,
+    BcV1Db, BcV1DbReadable, BcV1DbWritable, BlockDbV1, BlockNumberKeyV1, MainBlocksEvent,
     PublicKeySingletonDbV1, Result, UidKeyV1,
 };
 use kv_typed::channel::TryRecvError;
@@ -152,7 +152,7 @@ fn write_read_delete_b0_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
         let event = &events[0];
         assert_eq!(
             event,
-            &MainBlockEvent::Upsert {
+            &MainBlocksEvent::Upsert {
                 key: BlockNumberKeyV1(BlockNumber(0)),
                 value: b0,
             },
@@ -184,7 +184,7 @@ fn write_read_delete_b0_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
         let event = &events[0];
         assert_eq!(
             event,
-            &MainBlockEvent::Remove {
+            &MainBlocksEvent::Remove {
                 key: BlockNumberKeyV1(BlockNumber(0)),
             },
         );
@@ -388,11 +388,11 @@ fn batch_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
         assert!(assert_eq_pairs(
             [&events[0], &events[1]],
             [
-                &MainBlockEvent::Upsert {
+                &MainBlocksEvent::Upsert {
                     key: BlockNumberKeyV1(BlockNumber(0)),
                     value: b0,
                 },
-                &MainBlockEvent::Upsert {
+                &MainBlocksEvent::Upsert {
                     key: BlockNumberKeyV1(BlockNumber(1)),
                     value: b1,
                 }

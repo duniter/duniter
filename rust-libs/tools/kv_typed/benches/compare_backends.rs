@@ -2,7 +2,7 @@ use criterion::{criterion_group, criterion_main, Criterion, /*, AxisScale, PlotC
 use kv_typed::prelude::*;
 use std::{fmt::Debug, path::PathBuf};
 
-db_schema!(Test, [["c1", col_1, u32, String],]);
+kv_typed::db_schema!(Test, [["c1", Col1, u32, String],]);
 //const LEVELDB_DIR_PATH: &str = "/dev/shm/kv_typed/benches/compare_backends/leveldb";
 //const LMDB_DIR_PATH: &str = "/dev/shm/kv_typed/benches/compare_backends/lmdb";
 const LEVELDB_DIR_PATH: &str = "/home/elois/tmp/kv_typed/benches/compare_backends/leveldb";
@@ -13,28 +13,28 @@ static LARGE_VAL: &str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZab
 
 fn read_n_entries<B: Backend>(db: &TestDb<B>, n: u32, val: String) {
     for i in 0..n {
-        assert_eq!(db.col_1().get(&i).expect("db err"), Some(val.clone()));
+        assert_eq!(db.col1().get(&i).expect("db err"), Some(val.clone()));
     }
-    /*db.col_1().iter(.., |iter| {
+    /*db.col1().iter(.., |iter| {
         let mut iter = iter.values();
         for _ in 0..n {
             assert_eq!(iter.next_res().expect(""), Some(val.clone()));
-            //assert_eq!(db.col_1().get(&i).expect(""), Some(val.clone()));
+            //assert_eq!(db.col1().get(&i).expect(""), Some(val.clone()));
         }
         assert_eq!(iter.next_res().expect(""), None);
     });*/
 }
 fn remove_and_write_n_entries<B: Backend>(db: &TestDb<B>, n: u32, val: String) {
     for i in 0..n {
-        db.col_1_write().remove(i).expect("fail to write");
-        db.col_1_write()
+        db.col1_write().remove(i).expect("fail to write");
+        db.col1_write()
             .upsert(i, val.clone())
             .expect("fail to write");
     }
 }
 fn write_n_entries<B: Backend>(db: &TestDb<B>, n: u32, val: String) {
     for i in 0..n {
-        db.col_1_write()
+        db.col1_write()
             .upsert(i, val.clone())
             .expect("fail to write");
     }

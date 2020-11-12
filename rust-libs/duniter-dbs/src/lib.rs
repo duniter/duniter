@@ -58,7 +58,7 @@ pub use crate::errors::Result;
 pub use crate::open_dbs::open_dbs;
 
 // Export profession types
-pub use bc_v1::{BcV1Db, BcV1DbReadable, BcV1DbRo, BcV1DbWritable, MainBlockEvent, UidEvent};
+pub use bc_v1::{BcV1Db, BcV1DbReadable, BcV1DbRo, BcV1DbWritable, MainBlocksEvent, UidsEvent};
 pub use gva_v1::{GvaV1Db, GvaV1DbReadable, GvaV1DbRo, GvaV1DbWritable};
 pub use keys::all::AllKeyV1;
 pub use keys::block_number::{BlockNumberKeyV1, BlockNumberKeyV2};
@@ -75,9 +75,8 @@ pub use txs_mp_v2::{TxsMpV2Db, TxsMpV2DbReadable, TxsMpV2DbRo, TxsMpV2DbWritable
 pub use values::block_db::{BlockDbEnum, BlockDbV1, TransactionInBlockDbV1};
 pub use values::block_head_db::BlockHeadDbV1;
 pub use values::block_meta::BlockMetaV2;
-pub use values::block_number_array_db::{BlockNumberArrayV1, BlockNumberArrayV2};
+pub use values::block_number_array_db::BlockNumberArrayV1;
 pub use values::cindex_db::CIndexDbV1;
-pub use values::hash_array_db::HashBTSetV2;
 pub use values::idty_db::IdtyDbV2;
 pub use values::iindex_db::IIndexDbV1;
 pub use values::kick_db::KickDbV1;
@@ -103,6 +102,7 @@ pub(crate) use dubp::common::crypto::keys::ed25519::{PublicKey, Signature};
 pub(crate) use dubp::common::crypto::keys::{PublicKey as _, Signature as _};
 pub(crate) use dubp::common::prelude::*;
 pub(crate) use dubp::documents::dubp_wallet::prelude::*;
+pub(crate) use kv_typed::db_schema;
 pub(crate) use kv_typed::prelude::*;
 pub(crate) use serde::{Deserialize, Serialize};
 pub(crate) use smallvec::SmallVec;

@@ -9,7 +9,7 @@ pub trait DbExplorable {
         action: ExplorerAction<'a>,
         stringify_json_value: fn(serde_json::Value) -> serde_json::Value,
     ) -> KvResult<Result<ExplorerActionResponse, StringErr>>;
-    fn list_collections(&self) -> Vec<(&'static str, &'static str, &'static str)>;
+    fn list_collections() -> Vec<(&'static str, &'static str, &'static str)>;
 }
 
 pub trait ExplorableKey: Sized {
@@ -20,16 +20,6 @@ pub trait ExplorableKey: Sized {
 impl ExplorableKey for () {
     fn from_explorer_str(_: &str) -> Result<Self, StringErr> {
         Ok(())
-    }
-
-    fn to_explorer_string(&self) -> KvResult<String> {
-        Ok(String::with_capacity(0))
-    }
-}
-
-impl ExplorableKey for EmptyKey {
-    fn from_explorer_str(_: &str) -> Result<Self, StringErr> {
-        Ok(EmptyKey)
     }
 
     fn to_explorer_string(&self) -> KvResult<String> {
@@ -78,16 +68,6 @@ impl ExplorableValue for () {
     }
 }
 
-impl ExplorableValue for EmptyValue {
-    fn from_explorer_str(_: &str) -> Result<Self, StringErr> {
-        Ok(EmptyValue)
-    }
-
-    fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
-        Ok(serde_json::Value::String(String::with_capacity(0)))
-    }
-}
-
 impl ExplorableValue for String {
     fn from_explorer_str(source: &str) -> Result<Self, StringErr> {
         Ok(source.to_owned())
@@ -116,6 +96,107 @@ macro_rules! impl_explorable_value_for_numbers {
 impl_explorable_value_for_numbers!(
     usize, u8, u16, u32, u64, u128, isize, i8, i16, i32, i64, i128, f32, f64
 );
+
+impl<T, E> ExplorableValue for Vec<T>
+where
+    T: Display + FromStr<Err = E>,
+    E: Display,
+{
+    fn from_explorer_str(source: &str) -> Result<Vec<T>, StringErr> {
+        if let serde_json::Value::Array(json_array) =
+            serde_json::Value::from_str(source).map_err(|e| StringErr(format!("{}", e)))?
+        {
+            let mut vec = Vec::with_capacity(json_array.len());
+            for value in json_array {
+                if let serde_json::Value::String(string) = value {
+                    vec.push(<T>::from_str(&string).map_err(|e| StringErr(format!("{}", e)))?);
+                } else {
+                    return Err(StringErr(format!("Expected array of {}.", stringify!(T))));
+                }
+            }
+            Ok(vec)
+        } else {
+            Err(StringErr(format!("Expected array of {}.", stringify!(T))))
+        }
+    }
+
+    fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
+        Ok(serde_json::Value::Array(
+            self.iter()
+                .map(|elem| serde_json::Value::String(format!("{}", elem)))
+                .collect(),
+        ))
+    }
+}
+
+macro_rules! impl_explorable_value_for_smallvec {
+    ($($N:literal),*) => {$(
+        impl<T, E> ExplorableValue for SmallVec<[T; $N]>
+        where
+            T: Display + FromStr<Err = E>,
+            E: Display,
+        {
+            fn from_explorer_str(source: &str) -> Result<SmallVec<[T; $N]>, StringErr> {
+                if let serde_json::Value::Array(json_array) =
+                    serde_json::Value::from_str(source).map_err(|e| StringErr(format!("{}", e)))?
+                {
+                    let mut svec = SmallVec::with_capacity(json_array.len());
+                    for value in json_array {
+                        if let serde_json::Value::String(string) = value {
+                            svec.push(<T>::from_str(&string).map_err(|e| StringErr(format!("{}", e)))?);
+                        } else {
+                            return Err(StringErr(format!("Expected array of {}.", stringify!(T))));
+                        }
+                    }
+                    Ok(svec)
+                } else {
+                    Err(StringErr(format!("Expected array of {}.", stringify!(T))))
+                }
+            }
+
+            fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
+                Ok(serde_json::Value::Array(
+                    self.iter()
+                        .map(|elem| serde_json::Value::String(format!("{}", elem)))
+                        .collect(),
+                ))
+            }
+        }
+    )*};
+}
+impl_explorable_value_for_smallvec!(2, 4, 8, 16, 32, 64);
+
+impl<T, E> ExplorableValue for BTreeSet<T>
+where
+    T: Display + FromStr<Err = E> + Ord,
+    E: Display,
+{
+    fn from_explorer_str(source: &str) -> Result<BTreeSet<T>, StringErr> {
+        if let serde_json::Value::Array(json_array) =
+            serde_json::Value::from_str(source).map_err(|e| StringErr(format!("{}", e)))?
+        {
+            let mut bt_set = BTreeSet::new();
+            for value in json_array {
+                if let serde_json::Value::String(string) = value {
+                    bt_set.insert(<T>::from_str(&string).map_err(|e| StringErr(format!("{}", e)))?);
+                } else {
+                    return Err(StringErr(format!("Expected array of {}.", stringify!(T))));
+                }
+            }
+            Ok(bt_set)
+        } else {
+            Err(StringErr(format!("Expected array of {}.", stringify!(T))))
+        }
+    }
+
+    fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
+        Ok(serde_json::Value::Array(
+            self.iter()
+                .map(|elem| serde_json::Value::String(format!("{}", elem)))
+                .collect(),
+        ))
+    }
+}
 
 #[derive(Debug)]
 pub enum ExplorerAction<'a> {

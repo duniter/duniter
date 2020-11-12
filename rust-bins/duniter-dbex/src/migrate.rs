@@ -99,6 +99,7 @@ pub(crate) fn migrate(profile_path: PathBuf) -> anyhow::Result<()> {
         reader_handle.join().expect("reader thread panic")?;
         parser_handle.join().expect("parser thread panic")?;
 
+        println!("Flush DBs caches on disk...");
         dbs_pool.execute(|dbs| {
             dbs.bc_db.save()?;
             dbs.gva_db.save()?;

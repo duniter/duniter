@@ -93,7 +93,7 @@ impl TxsMempool {
         } else {
             duniter_dbs_write_ops::txs_mp::add_pending_tx(
                 |_tx, txs| {
-                    if txs.count()? < self.max_size {
+                    if txs.count()? >= self.max_size {
                         Err(KvError::Custom(TxMpError::Full.into()))
                     } else {
                         Ok(())

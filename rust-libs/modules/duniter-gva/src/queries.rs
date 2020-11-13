@@ -49,7 +49,7 @@ impl Node {
 
         Ok(data
             .dbs_pool
-            .execute(move |dbs| dbs.cm_db.self_peer_card().get(&()))
+            .execute(move |dbs| dbs.cm_db.self_peer_old().get(&()))
             .await??
             .map(Into::into))
     }

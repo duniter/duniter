@@ -131,3 +131,17 @@ pub struct DuniterDbs {
     pub gva_db: GvaV1Db<DbsBackend>,
     pub txs_mp_db: TxsMpV2Db<DbsBackend>,
 }
+
+#[cfg(feature = "mem")]
+impl DuniterDbs {
+    pub fn mem() -> KvResult<Self> {
+        use bc_v2::BcV2DbWritable as _;
+        use cm_v1::CmV1DbWritable as _;
+        Ok(DuniterDbs {
+            bc_db: bc_v2::BcV2Db::<Mem>::open(MemConf::default())?,
+            cm_db: cm_v1::CmV1Db::<MemSingleton>::open(MemSingletonConf::default())?,
+            gva_db: GvaV1Db::<Mem>::open(MemConf::default())?,
+            txs_mp_db: TxsMpV2Db::<Mem>::open(MemConf::default())?,
+        })
+    }
+}

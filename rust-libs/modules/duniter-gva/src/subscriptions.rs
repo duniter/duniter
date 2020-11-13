@@ -28,11 +28,10 @@ impl SubscriptionRoot {
 
         let (s, r) = flume::unbounded();
 
-        data.dbs
-            .txs_mp_db
-            .txs()
-            .subscribe(s)
-            .expect("fail to access db");
+        data.dbs_pool
+            .execute(|dbs| dbs.txs_mp_db.txs().subscribe(s).expect("fail to access db"))
+            .await
+            .expect("dbs pool disconnected");
 
         r.into_stream().filter_map(|events| {
             let mut txs = Vec::new();

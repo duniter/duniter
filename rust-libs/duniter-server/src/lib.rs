@@ -22,25 +22,26 @@
     unused_import_braces
 )]
 
+pub use duniter_conf::DuniterConf;
 pub use duniter_dbs::smallvec;
-use duniter_gva::ServerMetaData;
-use duniter_mempools::{TxMpError, TxsMempool};
-use fast_threadpool::ThreadPoolConfig;
+pub use duniter_gva::{GvaConf, GvaModule, PeerCardStringified};
 
-pub use duniter_gva::{GvaConf, PeerCardStringified};
-
+use anyhow::Context;
 use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::common::prelude::*;
 use dubp::documents::{prelude::*, transaction::TransactionDocumentV10};
 use dubp::{
     block::prelude::*, common::crypto::hashs::Hash, documents_parser::prelude::FromStringObject,
 };
-use duniter_dbs::cm_v1::CmV1DbWritable;
+use duniter_dbs::cm_v1::{CmV1DbReadable, CmV1DbWritable};
 use duniter_dbs::{
     kv_typed::prelude::*, GvaV1DbReadable, HashKeyV2, PendingTxDbV2, TxsMpV2DbReadable,
 };
 use duniter_dbs::{prelude::*, BlockMetaV2};
 use duniter_dbs_read_ops::txs_history::TxsHistory;
+use duniter_mempools::{Mempools, TxMpError, TxsMempool};
+use duniter_module::{plug_duniter_modules, DuniterModule as _, Endpoint};
+use fast_threadpool::ThreadPoolConfig;
 use resiter::filter::Filter;
 use std::{collections::BTreeMap, path::Path};
 
@@ -50,29 +51,24 @@ pub enum DuniterCommand {
     Start,
 }
 
-#[derive(Clone, Debug)]
-pub struct DuniterServerConf {
-    pub gva: Option<GvaConf>,
-    pub self_pubkey: PublicKey,
-    pub txs_mempool_size: usize,
-}
-
 pub struct DuniterServer {
-    conf: DuniterServerConf,
+    conf: DuniterConf,
     current: Option<BlockMetaV2>,
     dbs_pool: fast_threadpool::ThreadPoolSyncHandler<DuniterDbs>,
     pending_txs_subscriber: flume::Receiver<Arc<Events<duniter_dbs::txs_mp_v2::TxsEvent>>>,
     txs_mempool: TxsMempool,
 }
 
+plug_duniter_modules!([GvaModule]);
+
 impl DuniterServer {
     pub fn start(
         command_name: Option<String>,
-        conf: DuniterServerConf,
+        conf: DuniterConf,
         currency: String,
         home_path_opt: Option<&Path>,
         software_version: &'static str,
-    ) -> Self {
+    ) -> anyhow::Result<Self> {
         let command = match command_name.unwrap_or_default().as_str() {
             "sync" => DuniterCommand::Sync,
             _ => DuniterCommand::Start,
@@ -83,8 +79,8 @@ impl DuniterServer {
         log::info!("open duniter databases...");
         let dbs = duniter_dbs::open_dbs(home_path_opt);
         log::info!("Databases successfully opened.");
-        let current =
-            duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db).expect("Fail to get current");
+        let current = duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)
+            .context("Fail to get current")?;
         if let Some(current) = current {
             log::info!("Current block: #{}-{}", current.number, current.hash);
         } else {
@@ -95,46 +91,60 @@ impl DuniterServer {
         dbs.txs_mp_db
             .txs()
             .subscribe(s)
-            .expect("Fail to subscribe to txs col");
+            .context("Fail to subscribe to txs col")?;
 
         let threadpool = if home_path_opt.is_some() {
             log::info!("start dbs threadpool...");
-            let threadpool =
-                fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), dbs.clone());
+            let threadpool = fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), dbs);
 
-            if command != DuniterCommand::Sync {
-                if let Some(gva_conf) = conf.gva.clone() {
-                    duniter_gva::GvaServer::start(
-                        gva_conf,
-                        dbs,
-                        threadpool.async_handler(),
-                        ServerMetaData {
+            if command != DuniterCommand::Sync && conf.gva.is_some() {
+                let mut runtime = tokio::runtime::Builder::new()
+                    .threaded_scheduler()
+                    .enable_all()
+                    .build()?;
+                let conf_clone = conf.clone();
+                let threadpool_async_handler = threadpool.async_handler();
+                std::thread::spawn(move || {
+                    runtime
+                        .block_on(start_duniter_modules(
+                            &conf_clone,
                             currency,
-                            self_pubkey: conf.self_pubkey,
+                            threadpool_async_handler,
+                            Mempools { txs: txs_mempool },
+                            None,
                             software_version,
-                        },
-                        txs_mempool,
-                    )
-                    .expect("Fail to start GVA server");
-                }
+                        ))
+                        .context("Fail to start duniter modules")
+                });
             }
             threadpool
         } else {
             fast_threadpool::ThreadPool::start(ThreadPoolConfig::low(), dbs)
         };
 
-        DuniterServer {
+        Ok(DuniterServer {
             conf,
             current,
             dbs_pool: threadpool.into_sync_handler(),
             pending_txs_subscriber,
             txs_mempool,
-        }
+        })
     }
 
     /*
      * READ FUNCTIONS FOR DUNITER JS ONLY
      */
+    pub fn get_self_endpoints(&self) -> anyhow::Result<Vec<Endpoint>> {
+        if let Some(self_peer) = self
+            .dbs_pool
+            .execute(|dbs| dbs.cm_db.self_peer_old().get(&()))?
+            .context("fail to get self endpoints")?
+        {
+            Ok(self_peer.endpoints)
+        } else {
+            Ok(vec![])
+        }
+    }
     pub fn accept_new_tx(
         &self,
         tx: TransactionDocumentV10,
@@ -305,7 +315,7 @@ impl DuniterServer {
         self.dbs_pool
             .execute(move |dbs| {
                 dbs.cm_db
-                    .self_peer_card_write()
+                    .self_peer_old_write()
                     .upsert(
                         (),
                         duniter_dbs::PeerCardDbV1 {
@@ -327,22 +337,23 @@ impl DuniterServer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dubp::documents::smallvec::smallvec;
     use dubp::documents::transaction::TransactionDocumentV10Builder;
+    use dubp::{crypto::keys::ed25519::Ed25519KeyPair, documents::smallvec::smallvec};
 
     #[test]
-    fn test_txs_history() -> KvResult<()> {
+    fn test_txs_history() -> anyhow::Result<()> {
         let server = DuniterServer::start(
             None,
-            DuniterServerConf {
+            DuniterConf {
                 gva: None,
-                self_pubkey: PublicKey::default(),
+                self_key_pair: Ed25519KeyPair::generate_random()
+                    .expect("fail to gen random keypair"),
                 txs_mempool_size: 200,
             },
             "currency_test".to_owned(),
             None,
             "test",
-        );
+        )?;
 
         let tx = TransactionDocumentV10Builder {
             currency: "duniter_unit_test_currency",

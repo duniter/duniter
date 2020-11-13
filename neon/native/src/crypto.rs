@@ -92,7 +92,7 @@ declare_types! {
                         .downcast::<JsString>()
                         .or_throw(&mut cx)?
                         .value();
-                        into_neon_res(&mut cx, keypair_from_expanded_base58_secret_key(&expanded_base58_secret_key))
+                        into_neon_res(&mut cx, keypair_from_expanded_base58_secret_key(&expanded_base58_secret_key).map(|kp| kp.generate_signator()))
                 } else if arg0.is_a::<JsBuffer>() {
                     let seed_js_buffer = arg0
                         .downcast::<JsBuffer>()
@@ -135,9 +135,9 @@ declare_types! {
     }
 }
 
-fn keypair_from_expanded_base58_secret_key(
+pub(crate) fn keypair_from_expanded_base58_secret_key(
     expanded_base58_secret_key: &str,
-) -> Result<Ed25519Signator, &'static str> {
+) -> Result<Ed25519KeyPair, &'static str> {
     let bytes = bs58::decode(expanded_base58_secret_key)
         .into_vec()
         .map_err(|_| "fail to decode b58")?;
@@ -152,7 +152,7 @@ fn keypair_from_expanded_base58_secret_key(
     //let expected_pubkey = Ed25519PublicKey::try_from(pubkey_bytes.as_ref());
 
     if keypair.public_key().as_ref()[..32] == pubkey_bytes {
-        Ok(keypair.generate_signator())
+        Ok(keypair)
     } else {
         Err("corrupted keypair")
     }

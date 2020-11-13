@@ -32,12 +32,14 @@ members = [
     "rust-bins/duniter-dbex",
     "rust-bins/xtask",
     "rust-libs/dubp-wot",
+    "rust-libs/duniter-conf",
     "rust-libs/duniter-dbs",
     "rust-libs/duniter-dbs-read-ops",
     "rust-libs/duniter-dbs-write-ops",
-    "rust-libs/duniter-gva",
     "rust-libs/duniter-mempools",
+    "rust-libs/duniter-module",
     "rust-libs/duniter-server",
+    "rust-libs/modules/duniter-gva",
     "rust-libs/tools/kv_typed"
 ]
 

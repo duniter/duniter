@@ -13,16 +13,34 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::*;
+#![deny(
+    clippy::unwrap_used,
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unstable_features,
+    unused_import_braces
+)]
 
-pub(crate) type GraphQlSchema = async_graphql::Schema<
-    crate::queries::QueryRoot,
-    crate::mutations::MutationRoot,
-    crate::subscriptions::SubscriptionRoot,
->;
-pub(crate) struct SchemaData {
-    pub(crate) dbs: DuniterDbs,
-    pub(crate) dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs>,
-    pub(crate) server_meta_data: ServerMetaData,
-    pub(crate) txs_mempool: TxsMempool,
+pub mod gva_conf;
+
+use crate::gva_conf::GvaConf;
+use dubp::crypto::keys::ed25519::Ed25519KeyPair;
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug)]
+pub struct DuniterConf {
+    pub gva: Option<GvaConf>,
+    pub self_key_pair: Ed25519KeyPair,
+    pub txs_mempool_size: usize,
+}
+
+impl Default for DuniterConf {
+    fn default() -> Self {
+        DuniterConf {
+            gva: None,
+            self_key_pair: Ed25519KeyPair::generate_random().expect("fail to gen random keypair"),
+            txs_mempool_size: 0,
+        }
+    }
 }

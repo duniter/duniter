@@ -1,0 +1,10 @@
+[package]
+name = "duniter-conf"
+version = "0.1.0"
+authors = ["librelois <elois@duniter.org>"]
+license = "AGPL-3.0"
+edition = "2018"
+
+[dependencies]
+dubp = { version = "0.30.0" }
+serde = { version = "1.0.105", features = ["derive"] }

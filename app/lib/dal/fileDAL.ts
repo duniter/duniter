@@ -234,12 +234,12 @@ export class FileDAL implements ServerDAO {
   }
 
   initRustServer(conf: ConfDTO, commandName: string | null = null) {
-    let selfPubkey = conf.pair ? conf.pair.pub : null;
+    let selfKeypair = conf.pair ? conf.pair.sec : null;
     let rustServerConf = {
       command: commandName,
       currency: conf.currency || "",
       gva: conf.gva,
-      selfPubkey,
+      selfKeypair,
       txsMempoolSize:
         conf.txsMempoolSize || constants.SANDBOX_SIZE_TRANSACTIONS,
     };
@@ -248,6 +248,10 @@ export class FileDAL implements ServerDAO {
     } else {
       this.rustServer = new RustServer(rustServerConf, this.rootPath);
     }
+  }
+
+  getRustEndpoints(): string[] {
+    return this.rustServer.getSelfEndpoints();
   }
 
   getDBVersion() {

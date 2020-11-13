@@ -55,7 +55,7 @@ pub(crate) fn graphql(
     opts: async_graphql::http::MultipartOptions,
 ) -> impl warp::Filter<Extract = (impl warp::Reply,), Error = Rejection> + Clone {
     let opts = Arc::new(opts);
-    warp::path::path(conf.path.clone())
+    warp::path::path(conf.get_path())
         .and(warp::method())
         .and(warp::query::raw().or(warp::any().map(String::new)).unify())
         .and(warp::header::optional::<String>("content-type"))
@@ -100,7 +100,7 @@ pub(crate) fn graphql_ws(
     conf: &GvaConf,
     schema: GraphQlSchema,
 ) -> impl warp::Filter<Extract = (impl warp::Reply,), Error = Rejection> + Clone {
-    warp::path::path(conf.subscriptions_path.clone())
+    warp::path::path(conf.get_subscriptions_path())
         .and(warp::ws())
         .and(warp::any().map(move || schema.clone()))
         .map(|ws: warp::ws::Ws, schema: GraphQlSchema| {

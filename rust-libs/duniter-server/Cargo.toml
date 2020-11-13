@@ -6,16 +6,21 @@ license = "AGPL-3.0"
 edition = "2018"
 
 [dependencies]
+anyhow = "1.0.34"
 dubp = { version = "0.30.0" }
+duniter-conf = { path = "../duniter-conf" }
 duniter-dbs = { path = "../duniter-dbs" }
 duniter-dbs-read-ops = { path = "../duniter-dbs-read-ops" }
 duniter-dbs-write-ops = { path = "../duniter-dbs-write-ops" }
-duniter-gva = { path = "../duniter-gva" }
+duniter-gva = { path = "../modules/duniter-gva" }
 duniter-mempools = { path = "../duniter-mempools" }
+duniter-module = { path = "../duniter-module" }
 fast-threadpool = "0.2.1"
 flume = "0.9.1"
 log = "0.4.11"
+paste = "1.0.2"
 resiter = "0.4.0"
+tokio = { version = "0.2.22", features = ["io-util", "rt-threaded"] }
 
 [dev-dependencies]
 unwrap = "1.2.1"

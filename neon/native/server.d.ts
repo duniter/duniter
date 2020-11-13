@@ -6,7 +6,7 @@ export class RustServerConf {
     command: string | null
     currency: string
     gva: GvaConf | undefined
-    selfPubkey: string | null
+    selfKeypair: string | null
     txsMempoolSize: number
 }
 
@@ -15,6 +15,11 @@ export class GvaConf {
     port?: number
     path?: string;
     subscriptionsPath?: string;
+    remoteHost?: string
+    remotePort?: number
+    remotePath?: string;
+    remoteSubscriptionsPath?: string;
+    remoteTls?: boolean;
 }
 
 export class PeerCard {
@@ -90,6 +95,7 @@ export class RustServer {
     addPendingTx(tx: TransactionDTOV10): void;
     getMempoolTxsFreeRooms(): number;
     getNewPendingTxs(): TransactionDTOV10[];
+    getSelfEndpoints(): string[];
     getTransactionsHistory(pubkey: string): TxsHistory;
     getTransactionsPending(versionMin: number, medianTime: number): TransactionDTOV10[];
     getTxByHash(hash: string): TransactionDTOV10 | null;

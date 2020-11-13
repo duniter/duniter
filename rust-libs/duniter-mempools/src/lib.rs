@@ -31,6 +31,11 @@ use duniter_dbs::kv_typed::prelude::*;
 use duniter_dbs::{GvaV1DbReadable, TxsMpV2Db, TxsMpV2DbReadable};
 use thiserror::Error;
 
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Mempools {
+    pub txs: TxsMempool,
+}
+
 #[derive(Debug, Error)]
 pub enum TxMpError {
     #[error("{0}")]
@@ -47,7 +52,7 @@ impl From<KvError> for TxMpError {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct TxsMempool {
     max_size: usize,
 }

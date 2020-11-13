@@ -14,14 +14,14 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::into_neon_res;
-use dubp::common::crypto::hashs::Hash;
 use dubp::common::crypto::keys::{ed25519::PublicKey, PublicKey as _};
 use dubp::documents::{
     prelude::*,
     transaction::{TransactionDocumentV10, TransactionDocumentV10Stringified},
 };
 use dubp::documents_parser::prelude::*;
-use duniter_server::{DuniterServer, DuniterServerConf, GvaConf, PeerCardStringified};
+use dubp::{common::crypto::hashs::Hash, crypto::keys::ed25519::Ed25519KeyPair};
+use duniter_server::{DuniterConf, DuniterServer, GvaConf, PeerCardStringified};
 use neon::declare_types;
 use neon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -39,35 +39,18 @@ declare_types! {
 
             let rust_server_conf_stringified: RustServerConfStringified = neon_serde::from_value(&mut cx, rust_server_conf_js)?;
 
-            let gva_conf = if let Some(gva_conf_stringified) = rust_server_conf_stringified.gva {
-                let mut gva_conf = GvaConf::default();
-                if let Some(host) = gva_conf_stringified.host {
-                    gva_conf.host(host);
-                }
-                if let Some(port) = gva_conf_stringified.port {
-                    gva_conf.port(port);
-                }
-                if let Some(path) = gva_conf_stringified.path {
-                    gva_conf.path(path);
-                }
-                if let Some(subscriptions_path) = gva_conf_stringified.subscriptions_path {
-                    gva_conf.subscriptions_path(subscriptions_path);
-                }
-                Some(gva_conf)
-            } else {
-                None
-            };
+            let gva_conf = rust_server_conf_stringified.gva;
             let command_name = rust_server_conf_stringified.command_name;
             let currency = rust_server_conf_stringified.currency;
-            let server_pubkey = if let Some(self_pubkey_str) = rust_server_conf_stringified.self_pubkey {
-                into_neon_res(&mut cx, PublicKey::from_base58(&self_pubkey_str))?
+            let server_pubkey = if let Some(self_keypair_str) = rust_server_conf_stringified.self_keypair {
+                into_neon_res(&mut cx, crate::crypto::keypair_from_expanded_base58_secret_key(&self_keypair_str))?
             } else {
-                PublicKey::default()
+                Ed25519KeyPair::generate_random().expect("fail to gen random keyypair")
             };
             let txs_mempool_size = rust_server_conf_stringified.txs_mempool_size as usize;
-            let conf = DuniterServerConf {
+            let conf = DuniterConf {
                 gva: gva_conf,
-                self_pubkey: server_pubkey,
+                self_key_pair: server_pubkey,
                 txs_mempool_size
             };
 
@@ -90,13 +73,14 @@ declare_types! {
             } else {
                 None
             };
-            if let Some(home_path) = home_path_opt {
-                let server = DuniterServer::start(command_name, conf, currency, Some(home_path.as_path()), std::env!("CARGO_PKG_VERSION"));
-                Ok(RustServer { server })
-            } else {
-                let server = DuniterServer::start(command_name, conf, currency, None, std::env!("CARGO_PKG_VERSION"));
-                Ok(RustServer { server })
-            }
+            into_neon_res(
+                &mut cx,
+                if let Some(home_path) = home_path_opt {
+                    DuniterServer::start(command_name, conf, currency, Some(home_path.as_path()), std::env!("CARGO_PKG_VERSION"))
+                } else {
+                    DuniterServer::start(command_name, conf, currency, None, std::env!("CARGO_PKG_VERSION"))
+                }.map(|server| RustServer { server })
+            )
         }
         method acceptNewTx(mut cx) {
             let tx_js = cx.argument::<JsValue>(0)?;
@@ -112,6 +96,22 @@ declare_types! {
                 let server = this.borrow(&guard);
                 server.server.accept_new_tx(tx, server_pubkey)
             }.map(|accepted| cx.boolean(accepted).upcast());
+            into_neon_res(&mut cx, res)
+        }
+        method getSelfEndpoints(mut cx) {
+            let this = cx.this();
+            let res = {
+                let guard = cx.lock();
+                let server = this.borrow(&guard);
+                server.server.get_self_endpoints()
+            }.map(|endpoints| {
+                let js_array = JsArray::new(&mut cx, endpoints.len() as u32);
+                for (i, ep) in endpoints.iter().enumerate() {
+                    let js_string = cx.string(ep);
+                    js_array.set(&mut cx, i as u32, js_string).expect("fail to convert Vec<String> to JsArray");
+                }
+                js_array.upcast()
+            });
             into_neon_res(&mut cx, res)
         }
         method getTxByHash(mut cx) {
@@ -320,18 +320,9 @@ declare_types! {
 struct RustServerConfStringified {
     command_name: Option<String>,
     currency: String,
-    gva: Option<GvaConfStringified>,
-    self_pubkey: Option<String>,
+    gva: Option<GvaConf>,
+    self_keypair: Option<String>,
     txs_mempool_size: u32,
-}
-
-#[derive(Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct GvaConfStringified {
-    host: Option<String>,
-    port: Option<u16>,
-    path: Option<String>,
-    subscriptions_path: Option<String>,
 }
 
 #[derive(Deserialize, Serialize)]

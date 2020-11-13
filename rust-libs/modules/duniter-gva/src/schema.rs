@@ -15,10 +15,13 @@
 
 use crate::*;
 
-db_schema!(
-    CmV1,
-    [
-        //["self_pubkey", self_pubkey, (), PubKeyValV2,],
-        ["self_peer_old", SelfPeerOld, (), PeerCardDbV1],
-    ]
-);
+pub(crate) type GraphQlSchema = async_graphql::Schema<
+    crate::queries::QueryRoot,
+    crate::mutations::MutationRoot,
+    crate::subscriptions::SubscriptionRoot,
+>;
+pub(crate) struct SchemaData {
+    pub(crate) dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs>,
+    pub(crate) server_meta_data: ServerMetaData,
+    pub(crate) txs_mempool: TxsMempool,
+}

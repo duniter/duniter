@@ -81,6 +81,10 @@ impl BackendCol for MemCol {
         }
     }
     #[inline(always)]
+    fn contains_key<K: Key>(&self, _k: &K) -> KvResult<bool> {
+        Ok(self.0.is_some())
+    }
+    #[inline(always)]
     fn get<K: Key, V: Value>(&self, _k: &K) -> KvResult<Option<V>> {
         self.0
             .as_ref()

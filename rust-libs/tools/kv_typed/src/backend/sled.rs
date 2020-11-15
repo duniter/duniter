@@ -76,6 +76,10 @@ impl BackendCol for SledCol {
         Ok(self.0.len())
     }
     #[inline(always)]
+    fn contains_key<K: Key>(&self, k: &K) -> KvResult<bool> {
+        k.as_bytes(|k_bytes| Ok(self.0.contains_key(k_bytes)?))
+    }
+    #[inline(always)]
     fn get<K: Key, V: Value>(&self, k: &K) -> KvResult<Option<V>> {
         k.as_bytes(|k_bytes| {
             self.0

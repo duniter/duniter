@@ -126,6 +126,10 @@ impl BackendCol for LevelDbCol {
             .count())
     }
     #[inline(always)]
+    fn contains_key<K: Key>(&self, k: &K) -> KvResult<bool> {
+        k.as_bytes(|k_bytes| Ok(self.0.get(ReadOptions::new(), k_bytes)?.is_some()))
+    }
+    #[inline(always)]
     fn get<K: Key, V: Value>(&self, k: &K) -> KvResult<Option<V>> {
         k.as_bytes(|k_bytes| {
             self.0

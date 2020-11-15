@@ -6,6 +6,7 @@ pub trait DbCollectionRo: Sized {
     type V: Value;
     type Event: EventTrait<K = Self::K, V = Self::V>;
 
+    fn contains_key(&self, k: &Self::K) -> KvResult<bool>;
     fn count(&self) -> KvResult<usize>;
     fn get(&self, k: &Self::K) -> KvResult<Option<Self::V>>;
     /// Don't worry about complex iter type. Use it like an `impl Iterator<Item=KvResult<(K, V)>>`.
@@ -67,6 +68,11 @@ impl<BC: BackendCol, E: EventTrait> DbCollectionRo for ColRo<BC, E> {
     type V = E::V;
     type Event = E;
 
+    #[inline(always)]
+    fn contains_key(&self, k: &Self::K) -> KvResult<bool> {
+        let r = self.inner.read();
+        r.backend_col.contains_key(k)
+    }
     #[inline(always)]
     fn count(&self) -> KvResult<usize> {
         let r = self.inner.read();

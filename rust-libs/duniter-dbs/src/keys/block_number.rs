@@ -61,51 +61,6 @@ impl ExplorableKey for BlockNumberKeyV1 {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
-#[repr(transparent)]
-pub struct BlockNumberKeyV2(pub BlockNumber);
-
-impl KeyAsBytes for BlockNumberKeyV2 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
-        f(&(self.0).0.to_be_bytes()[..])
-    }
-}
-
-impl FromBytes for BlockNumberKeyV2 {
-    type Err = StringErr;
-
-    fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(Self(BlockNumber(
-            zerocopy::LayoutVerified::<_, zerocopy::U32<byteorder::BigEndian>>::new(bytes)
-                .ok_or_else(|| {
-                    StringErr(
-                        "Corrupted DB: BlockNumber bytes are invalid length or unaligned"
-                            .to_owned(),
-                    )
-                })?
-                .get(),
-        )))
-    }
-}
-
-impl ToDumpString for BlockNumberKeyV2 {
-    fn to_dump_string(&self) -> String {
-        todo!()
-    }
-}
-
-#[cfg(feature = "explorer")]
-impl ExplorableKey for BlockNumberKeyV2 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-        Ok(Self(
-            BlockNumber::from_str(source).map_err(|e| StringErr(format!("{}", e)))?,
-        ))
-    }
-    fn to_explorer_string(&self) -> KvResult<String> {
-        Ok(format!("{}", (self.0).0))
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
@@ -115,13 +70,5 @@ mod tests {
     fn test_block_number_str_10_ser() {
         BlockNumberKeyV1(BlockNumber(35))
             .as_bytes(|bytes| assert_eq!(bytes, &[48, 48, 48, 48, 48, 48, 48, 48, 51, 53]))
-    }
-
-    #[test]
-    fn block_number_key_v2() {
-        let k = BlockNumberKeyV2(BlockNumber(3));
-        k.as_bytes(|bytes| {
-            assert_eq!(bytes, &[0, 0, 0, 3]);
-        });
     }
 }

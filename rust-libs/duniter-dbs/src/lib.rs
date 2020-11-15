@@ -58,6 +58,7 @@ pub use crate::errors::Result;
 pub use crate::open_dbs::open_dbs;
 
 // Export profession types
+pub use crate::keys::utxo_id::UtxoIdDbV2;
 pub use bc_v1::{BcV1Db, BcV1DbReadable, BcV1DbRo, BcV1DbWritable, MainBlocksEvent, UidsEvent};
 pub use gva_v1::{GvaV1Db, GvaV1DbReadable, GvaV1DbRo, GvaV1DbWritable};
 pub use keys::all::AllKeyV1;

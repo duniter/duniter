@@ -1110,6 +1110,7 @@ dependencies = [
  "dubp",
  "duniter-dbs",
  "resiter",
+ "smallvec",
 ]
 
 [[package]]

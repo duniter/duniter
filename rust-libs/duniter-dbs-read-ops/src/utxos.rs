@@ -23,6 +23,32 @@ pub type UtxoV10 = (i64, UtxoIdV10, SourceAmount);
 pub fn get_script_utxos<GvaDb: GvaV1DbReadable>(
     gva_db_ro: &GvaDb,
     script: &WalletScriptV10,
+) -> KvResult<(Vec<UtxoV10>, SourceAmount)> {
+    find_script_utxos_inner::<_, duniter_dbs::txs_mp_v2::TxsMpV2DbRo<Mem>>(
+        gva_db_ro, None, script, None, None,
+    )
+}
+
+pub fn find_script_utxos<GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2DbReadable>(
+    gva_db_ro: &GvaDb,
+    txs_mp_db_ro: &TxsMpDb,
+    amount: SourceAmount,
+    limit: usize,
+    script: &WalletScriptV10,
+) -> KvResult<(Vec<UtxoV10>, SourceAmount)> {
+    find_script_utxos_inner(
+        gva_db_ro,
+        Some(txs_mp_db_ro),
+        script,
+        Some(limit),
+        Some(amount),
+    )
+}
+
+fn find_script_utxos_inner<GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2DbReadable>(
+    gva_db_ro: &GvaDb,
+    txs_mp_db_ro: Option<&TxsMpDb>,
+    script: &WalletScriptV10,
     limit_opt: Option<usize>,
     total_opt: Option<SourceAmount>,
 ) -> KvResult<(Vec<UtxoV10>, SourceAmount)> {
@@ -36,17 +62,27 @@ pub fn get_script_utxos<GvaDb: GvaV1DbReadable>(
             Vec::with_capacity(utxos_of_script.0.len() * 2);
         for (written_time, utxos_) in utxos_of_script.0 {
             for (utxo_id, source_amount) in utxos_ {
-                utxos.push((written_time, utxo_id, source_amount));
-                if let Some(limit) = limit_opt {
-                    count += 1;
-                    if count == limit {
-                        return Ok((utxos, total));
+                if txs_mp_db_ro.is_none()
+                    || !txs_mp_db_ro
+                        .expect("unreachable")
+                        .utxos_ids()
+                        .contains_key(&duniter_dbs::UtxoIdDbV2(
+                            utxo_id.tx_hash,
+                            utxo_id.output_index as u32,
+                        ))?
+                {
+                    utxos.push((written_time, utxo_id, source_amount));
+                    total = total + source_amount;
+                    if let Some(limit) = limit_opt {
+                        count += 1;
+                        if count == limit {
+                            return Ok((utxos, total));
+                        }
                     }
-                }
-                total = total + source_amount;
-                if let Some(total_target) = total_opt {
-                    if total >= total_target {
-                        return Ok((utxos, total));
+                    if let Some(total_target) = total_opt {
+                        if total >= total_target {
+                            return Ok((utxos, total));
+                        }
                     }
                 }
             }

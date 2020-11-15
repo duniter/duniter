@@ -22,6 +22,7 @@
     unused_import_braces
 )]
 
+pub mod find_inputs;
 pub mod txs_history;
 pub mod uds_of_pubkey;
 pub mod utxos;
@@ -36,7 +37,10 @@ use duniter_dbs::{
     TxsMpV2DbReadable,
 };
 use resiter::map::Map;
-use std::ops::{Bound, RangeBounds};
+use std::{
+    collections::BTreeSet,
+    ops::{Bound, RangeBounds},
+};
 
 pub fn get_current_block_meta<BcDb: BcV2DbReadable>(bc_db: &BcDb) -> KvResult<Option<BlockMetaV2>> {
     bc_db

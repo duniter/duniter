@@ -17,10 +17,11 @@ use crate::*;
 use duniter_dbs::bc_v2::UdsRevalEvent;
 use duniter_dbs::UdIdV2;
 
-pub fn uds_of_pubkey<DB: BcV2DbReadable, R: 'static + RangeBounds<BlockNumber>>(
-    bc_db: &DB,
+pub fn uds_of_pubkey<BcDb: BcV2DbReadable, R: 'static + RangeBounds<BlockNumber>>(
+    bc_db: &BcDb,
     pubkey: PublicKey,
     range: R,
+    bn_to_exclude_opt: Option<&BTreeSet<BlockNumber>>,
     limit_opt: Option<usize>,
     total_opt: Option<SourceAmount>,
 ) -> KvResult<(Vec<(BlockNumber, SourceAmount)>, SourceAmount)> {
@@ -48,23 +49,38 @@ pub fn uds_of_pubkey<DB: BcV2DbReadable, R: 'static + RangeBounds<BlockNumber>>(
                     it.reverse().keys().next_res()
                 })?
                 .expect("corrupted db");
-            let blocks_numbers = blocks_numbers.into_iter();
+            let blocks_numbers_len = blocks_numbers.len();
+            let blocks_numbers = blocks_numbers.into_iter().filter(|bn| {
+                if let Some(bn_to_exclude) = bn_to_exclude_opt {
+                    !bn_to_exclude.contains(bn)
+                } else {
+                    true
+                }
+            });
             if let Some(limit) = limit_opt {
                 collect_uds(
                     blocks_numbers.take(limit),
+                    blocks_numbers_len,
                     first_reval,
                     uds_reval,
                     total_opt,
                 )
             } else {
-                collect_uds(blocks_numbers, first_reval, uds_reval, total_opt)
+                collect_uds(
+                    blocks_numbers,
+                    blocks_numbers_len,
+                    first_reval,
+                    uds_reval,
+                    total_opt,
+                )
             }
         }
     })
 }
 
-fn collect_uds<BC: BackendCol, I: ExactSizeIterator<Item = BlockNumber>>(
+fn collect_uds<BC: BackendCol, I: Iterator<Item = BlockNumber>>(
     mut blocks_numbers: I,
+    blocks_numbers_len: usize,
     first_reval: U32BE,
     uds_reval: TxColRo<BC, UdsRevalEvent>,
     amount_opt: Option<SourceAmount>,
@@ -75,7 +91,7 @@ fn collect_uds<BC: BackendCol, I: ExactSizeIterator<Item = BlockNumber>>(
         Ok((vec![], SourceAmount::ZERO))
     } else {
         let mut current_ud = (uds_revals[0].1).0;
-        let mut uds = Vec::with_capacity(blocks_numbers.len());
+        let mut uds = Vec::with_capacity(blocks_numbers_len);
         let mut sum = SourceAmount::ZERO;
 
         // Uds before last reval

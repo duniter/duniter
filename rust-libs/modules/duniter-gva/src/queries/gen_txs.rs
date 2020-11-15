@@ -15,9 +15,6 @@
 
 use crate::*;
 
-const MAX_UDS_INPUTS: usize = 20;
-const MAX_UTXOS_INPUTS: usize = 20;
-
 #[derive(Default)]
 pub(crate) struct GenTxsQuery;
 #[async_graphql::Object]
@@ -45,62 +42,14 @@ impl GenTxsQuery {
         let (current_block, inputs, inputs_sum) = data
             .dbs_pool
             .execute(move |dbs| {
-                if let Some(current_block) =
-                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)?
-                {
-                    let (uds, uds_sum) = duniter_dbs_read_ops::uds_of_pubkey::uds_of_pubkey(
-                        &dbs.bc_db,
-                        issuer,
-                        ..,
-                        Some(MAX_UDS_INPUTS),
-                        Some(amount),
-                    )?;
-                    let mut inputs = uds
-                        .into_iter()
-                        .map(
-                            |(block_number, source_amount)| TransactionInputV10 {
-                                amount: source_amount,
-                                id: SourceIdV10::Ud(UdSourceIdV10 {
-                                    issuer,
-                                    block_number,
-                                }),
-                            },
-                        )
-                        .collect::<Vec<_>>();
-                    if uds_sum < amount {
-                        let (utxos, utxos_sum) = duniter_dbs_read_ops::utxos::get_script_utxos(
-                            &dbs.gva_db,
-                            &WalletScriptV10::single(WalletConditionV10::Sig(issuer)),
-                            Some(MAX_UTXOS_INPUTS),
-                            Some(amount - uds_sum),
-                        )?;
-                        inputs.extend(utxos.into_iter()
-                        .map(
-                            |(_written_time, utxo_id, source_amount)| TransactionInputV10 {
-                                amount: source_amount,
-                                id: SourceIdV10::Utxo(utxo_id),
-                            },
-                        ));
-                        let inputs_sum = uds_sum + utxos_sum;
-                        if inputs_sum < amount {
-                            Err(KvError::Custom("Amount need too many sources or issuer's account has an insufficient balance.".into()))
-                        } else {
-                            Ok::<_, KvError>((
-                                current_block,
-                                inputs,
-                                inputs_sum
-                            ))
-                        }
-                    } else {
-                        Ok::<_, KvError>((
-                            current_block,
-                            inputs,
-                            uds_sum
-                        ))
-                    }
-                } else {
-                    Err(KvError::Custom("no blockchain".into()))
-                }
+                duniter_dbs_read_ops::find_inputs::find_inputs(
+                    &dbs.bc_db,
+                    &dbs.gva_db,
+                    &dbs.txs_mp_db,
+                    amount,
+                    &WalletScriptV10::single(WalletConditionV10::Sig(issuer)),
+                    40,
+                )
             })
             .await??;
 

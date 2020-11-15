@@ -55,9 +55,18 @@ pub fn add_pending_tx<
         txs_mp_db.txs_by_issuer_write(),
         txs_mp_db.txs_by_recipient_write(),
         txs_mp_db.txs_write(),
+        txs_mp_db.uds_ids_write(),
+        txs_mp_db.utxos_ids_write(),
     )
         .write(
-            |(mut txs_by_recv_time, mut txs_by_issuer, mut txs_by_recipient, mut txs)| {
+            |(
+                mut txs_by_recv_time,
+                mut txs_by_issuer,
+                mut txs_by_recipient,
+                mut txs,
+                mut uds_ids,
+                mut utxos_ids,
+            )| {
                 control(&tx, &txs)?;
                 // Insert on col `txs_by_recv_time`
                 let mut hashs = txs_by_recv_time.get(&received_time)?.unwrap_or_default();
@@ -77,6 +86,20 @@ pub fn add_pending_tx<
                     hashs.insert(tx.get_hash());
                     txs_by_recipient.upsert(PubKeyKeyV2(pubkey), hashs);
                 }
+                // Insert tx inputs in cols `uds_ids` and `utxos_ids`
+                for input in tx.get_inputs() {
+                    match input.id {
+                        SourceIdV10::Ud(UdSourceIdV10 {
+                            issuer,
+                            block_number,
+                        }) => uds_ids.upsert(duniter_dbs::UdIdV2(issuer, block_number), ()),
+                        SourceIdV10::Utxo(UtxoIdV10 {
+                            tx_hash,
+                            output_index,
+                        }) => utxos_ids
+                            .upsert(duniter_dbs::UtxoIdDbV2(tx_hash, output_index as u32), ()),
+                    }
+                }
                 // Insert tx itself
                 txs.upsert(HashKeyV2(tx_hash), PendingTxDbV2(tx.into_owned()));
                 Ok(())
@@ -89,6 +112,8 @@ pub fn remove_all_pending_txs<B: Backend>(txs_mp_db: &TxsMpV2Db<B>) -> KvResult<
     txs_mp_db.txs_by_issuer_write().clear()?;
     txs_mp_db.txs_by_recipient_write().clear()?;
     txs_mp_db.txs_write().clear()?;
+    txs_mp_db.uds_ids_write().clear()?;
+    txs_mp_db.utxos_ids_write().clear()?;
 
     Ok(())
 }
@@ -128,26 +153,45 @@ fn remove_one_pending_tx<B: Backend>(txs_mp_db: &TxsMpV2Db<B>, tx_hash: Hash) ->
             txs_mp_db.txs_by_issuer_write(),
             txs_mp_db.txs_by_recipient_write(),
             txs_mp_db.txs_write(),
+            txs_mp_db.uds_ids_write(),
+            txs_mp_db.utxos_ids_write(),
         )
-            .write(|(mut txs_by_issuer, mut txs_by_recipient, mut txs)| {
-                // Remove tx hash in col `txs_by_issuer`
-                for pubkey in tx.0.issuers() {
-                    let mut hashs_ = txs_by_issuer.get(&PubKeyKeyV2(pubkey))?.unwrap_or_default();
-                    hashs_.remove(&tx_hash);
-                    txs_by_issuer.upsert(PubKeyKeyV2(pubkey), hashs_)
-                }
-                // Remove tx hash in col `txs_by_recipient`
-                for pubkey in tx.0.recipients_keys() {
-                    let mut hashs_ = txs_by_recipient
-                        .get(&PubKeyKeyV2(pubkey))?
-                        .unwrap_or_default();
-                    hashs_.remove(&tx_hash);
-                    txs_by_recipient.upsert(PubKeyKeyV2(pubkey), hashs_)
-                }
-                // Remove tx itself
-                txs.remove(HashKeyV2(tx_hash));
-                Ok(true)
-            })
+            .write(
+                |(mut txs_by_issuer, mut txs_by_recipient, mut txs, mut uds_ids, mut utxos_ids)| {
+                    // Remove tx inputs in cols `uds_ids` and `utxos_ids`
+                    for input in tx.0.get_inputs() {
+                        match input.id {
+                            SourceIdV10::Ud(UdSourceIdV10 {
+                                issuer,
+                                block_number,
+                            }) => uds_ids.remove(duniter_dbs::UdIdV2(issuer, block_number)),
+                            SourceIdV10::Utxo(UtxoIdV10 {
+                                tx_hash,
+                                output_index,
+                            }) => utxos_ids
+                                .remove(duniter_dbs::UtxoIdDbV2(tx_hash, output_index as u32)),
+                        }
+                    }
+                    // Remove tx hash in col `txs_by_issuer`
+                    for pubkey in tx.0.issuers() {
+                        let mut hashs_ =
+                            txs_by_issuer.get(&PubKeyKeyV2(pubkey))?.unwrap_or_default();
+                        hashs_.remove(&tx_hash);
+                        txs_by_issuer.upsert(PubKeyKeyV2(pubkey), hashs_)
+                    }
+                    // Remove tx hash in col `txs_by_recipient`
+                    for pubkey in tx.0.recipients_keys() {
+                        let mut hashs_ = txs_by_recipient
+                            .get(&PubKeyKeyV2(pubkey))?
+                            .unwrap_or_default();
+                        hashs_.remove(&tx_hash);
+                        txs_by_recipient.upsert(PubKeyKeyV2(pubkey), hashs_)
+                    }
+                    // Remove tx itself
+                    txs.remove(HashKeyV2(tx_hash));
+                    Ok(true)
+                },
+            )
     } else {
         Ok(false)
     }

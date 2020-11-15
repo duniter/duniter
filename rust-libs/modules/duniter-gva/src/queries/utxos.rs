@@ -36,9 +36,7 @@ impl UtxosQuery {
 
         let (utxos, _balance) = data
             .dbs_pool
-            .execute(move |dbs| {
-                duniter_dbs_read_ops::utxos::get_script_utxos(&dbs.gva_db, &script, None, None)
-            })
+            .execute(move |dbs| duniter_dbs_read_ops::utxos::get_script_utxos(&dbs.gva_db, &script))
             .await??;
 
         let utxos: Vec<UtxoGva> = utxos

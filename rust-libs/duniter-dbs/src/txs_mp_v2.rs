@@ -22,5 +22,7 @@ db_schema!(
         ["txs_by_issuer", TxsByIssuer, PubKeyKeyV2, BTreeSet<Hash>],
         ["txs_by_recipient", TxsByRecipient, PubKeyKeyV2, BTreeSet<Hash>],
         ["txs_by_received_time", TxsByRecvTime, i64, BTreeSet<Hash>],
+        ["uds_ids", UdsIds, UdIdV2, ()],
+        ["utxos_ids", UtxosIds, UtxoIdDbV2, ()],
     ]
 );

@@ -20,9 +20,6 @@ mod uds;
 use crate::*;
 use duniter_dbs::bc_v2::BcV2DbWritable;
 
-// ["blocks_meta", blocks_meta, BlockNumberKeyV2, BlockMetaV2,],
-// ["identities", identities, PubKeyKeyV2, IdtyDbV2,],
-
 pub fn revert_block<B: Backend>(
     bc_db: &duniter_dbs::bc_v2::BcV2Db<B>,
     block: DubpBlockV10,
@@ -45,11 +42,11 @@ pub fn revert_block<B: Backend>(
                     )?;
                 }
                 identities::revert_identities::<B>(&block, &mut identities)?;
-                blocks_meta.remove(BlockNumberKeyV2(block.number()));
+                blocks_meta.remove(U32BE(block.number().0));
                 Ok(if block.number() == BlockNumber(0) {
                     None
                 } else {
-                    blocks_meta.get(&BlockNumberKeyV2(BlockNumber(block.number().0 - 1)))?
+                    blocks_meta.get(&U32BE(block.number().0 - 1))?
                 })
             },
         )
@@ -84,7 +81,7 @@ pub fn apply_block<B: Backend>(
     )
         .write(
             |(mut blocks_meta, mut identities, mut uds, mut uds_reval)| {
-                blocks_meta.upsert(BlockNumberKeyV2(block.number()), block_meta);
+                blocks_meta.upsert(U32BE(block.number().0), block_meta);
                 identities::update_identities::<B>(&block, &mut identities)?;
                 if let Some(dividend) = block.dividend() {
                     uds::create_uds::<B>(

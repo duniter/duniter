@@ -50,8 +50,22 @@ macro_rules! impl_explorable_key_for_numbers {
         }
     )*};
 }
-
 impl_explorable_key_for_numbers!(usize, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64);
+
+macro_rules! impl_explorable_key_for_be_numbers {
+    ($($T:ty),*) => {$(
+        impl ExplorableKey for $T {
+            fn from_explorer_str(source: &str) -> Result<Self, StringErr> {
+                Ok(Self(source.parse().map_err(|e| StringErr(format!("{}", e)))?))
+            }
+
+            fn to_explorer_string(&self) -> KvResult<String> {
+                Ok(format!("{}", self.0))
+            }
+        }
+    )*};
+}
+impl_explorable_key_for_be_numbers!(U32BE);
 
 pub trait ExplorableValue: Sized {
     fn from_explorer_str(source: &str) -> Result<Self, StringErr>;

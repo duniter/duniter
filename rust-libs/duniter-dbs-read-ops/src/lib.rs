@@ -32,8 +32,8 @@ use dubp::documents::transaction::TransactionDocumentV10;
 use dubp::{common::prelude::BlockNumber, wallet::prelude::SourceAmount};
 use duniter_dbs::bc_v2::BcV2DbReadable;
 use duniter_dbs::{
-    kv_typed::prelude::*, BlockMetaV2, BlockNumberKeyV2, GvaV1DbReadable, HashKeyV2, PubKeyKeyV2,
-    TxDbV2, TxsMpV2DbReadable,
+    kv_typed::prelude::*, BlockMetaV2, GvaV1DbReadable, HashKeyV2, PubKeyKeyV2, TxDbV2,
+    TxsMpV2DbReadable,
 };
 use resiter::map::Map;
 use std::ops::{Bound, RangeBounds};

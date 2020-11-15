@@ -19,9 +19,6 @@ use duniter_dbs::{
     UdIdV2,
 };
 
-// ["uds_reval", uds_reval, BlockNumberKeyV2, SourceAmountValV2,],
-// ["uds", uds, UdIdV2, (),],
-
 pub(crate) fn create_uds<B: Backend>(
     block_number: BlockNumber,
     dividend: SourceAmount,
@@ -33,7 +30,7 @@ pub(crate) fn create_uds<B: Backend>(
         .iter(.., |it| it.reverse().values().next_res())?
         .unwrap_or_else(|| SourceAmountValV2(SourceAmount::ZERO));
     if dividend > previous_ud_amount.0 {
-        uds_reval.upsert(BlockNumberKeyV2(block_number), SourceAmountValV2(dividend));
+        uds_reval.upsert(U32BE(block_number.0), SourceAmountValV2(dividend));
     }
 
     let members = identities.iter(.., |it| {
@@ -56,8 +53,8 @@ pub(crate) fn revert_uds<B: Backend>(
         .iter(.., |it| it.reverse().keys().next_res())?
         .expect("corrupted db")
         .0;
-    if block_number == previous_reval_block_number {
-        uds_reval.remove(BlockNumberKeyV2(block_number));
+    if block_number.0 == previous_reval_block_number {
+        uds_reval.remove(U32BE(block_number.0));
     }
 
     let members = identities.iter(.., |it| {

@@ -44,7 +44,7 @@ pub fn uds_of_pubkey<DB: BcV2DbReadable, R: 'static + RangeBounds<BlockNumber>>(
             Ok((vec![], SourceAmount::ZERO))
         } else {
             let first_reval = uds_reval
-                .iter(..=BlockNumberKeyV2(blocks_numbers[0]), |it| {
+                .iter(..=U32BE(blocks_numbers[0].0), |it| {
                     it.reverse().keys().next_res()
                 })?
                 .expect("corrupted db");
@@ -65,7 +65,7 @@ pub fn uds_of_pubkey<DB: BcV2DbReadable, R: 'static + RangeBounds<BlockNumber>>(
 
 fn collect_uds<BC: BackendCol, I: ExactSizeIterator<Item = BlockNumber>>(
     mut blocks_numbers: I,
-    first_reval: BlockNumberKeyV2,
+    first_reval: U32BE,
     uds_reval: TxColRo<BC, UdsRevalEvent>,
     amount_opt: Option<SourceAmount>,
 ) -> KvResult<(Vec<(BlockNumber, SourceAmount)>, SourceAmount)> {
@@ -81,7 +81,7 @@ fn collect_uds<BC: BackendCol, I: ExactSizeIterator<Item = BlockNumber>>(
         // Uds before last reval
         for (block_reval, amount_reval) in &uds_revals[1..] {
             'blocks_numbers: while let Some(block_number) = blocks_numbers.next() {
-                if block_number >= block_reval.0 {
+                if block_number.0 >= block_reval.0 {
                     current_ud = amount_reval.0;
                     uds.push((block_number, current_ud));
                     sum = sum + current_ud;

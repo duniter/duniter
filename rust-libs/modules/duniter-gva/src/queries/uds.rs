@@ -83,7 +83,7 @@ impl UdsQuery {
                     it.map_ok(|(block_number, sa)| RevalUdGva {
                         amount: sa.0.amount(),
                         base: sa.0.base(),
-                        block_number: (block_number.0).0,
+                        block_number: block_number.0,
                     })
                     .collect::<KvResult<Vec<_>>>()
                 })

@@ -82,7 +82,7 @@ pub mod prelude {
     pub use crate::iter::{
         keys::KvIterKeys, values::KvIterValues, EntryIter, KvIter, ResultIter, ReversableIterator,
     };
-    pub use crate::key::Key;
+    pub use crate::key::{Key, U32BE};
     pub use crate::subscription::{NewSubscribers, Subscriber, Subscribers};
     pub use crate::transactional_read::{TransactionalRead, TxColRo};
     pub use crate::transactional_write::{DbTxCollectionRw, TransactionalWrite, TxColRw};

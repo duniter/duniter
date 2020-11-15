@@ -61,7 +61,7 @@ pub use crate::open_dbs::open_dbs;
 pub use bc_v1::{BcV1Db, BcV1DbReadable, BcV1DbRo, BcV1DbWritable, MainBlocksEvent, UidsEvent};
 pub use gva_v1::{GvaV1Db, GvaV1DbReadable, GvaV1DbRo, GvaV1DbWritable};
 pub use keys::all::AllKeyV1;
-pub use keys::block_number::{BlockNumberKeyV1, BlockNumberKeyV2};
+pub use keys::block_number::BlockNumberKeyV1;
 pub use keys::blockstamp::BlockstampKeyV1;
 pub use keys::hash::{HashKeyV1, HashKeyV2};
 pub use keys::pubkey::{PubKeyKeyV1, PubKeyKeyV2};

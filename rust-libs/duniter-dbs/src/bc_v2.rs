@@ -18,8 +18,8 @@ use crate::*;
 db_schema!(
     BcV2,
     [
-        ["blocks_meta", BlocksMeta, BlockNumberKeyV2, BlockMetaV2],
-        ["uds_reval", UdsReval, BlockNumberKeyV2, SourceAmountValV2],
+        ["blocks_meta", BlocksMeta, U32BE, BlockMetaV2],
+        ["uds_reval", UdsReval, U32BE, SourceAmountValV2],
         ["identities", Identities, PubKeyKeyV2, IdtyDbV2],
         ["uds", Uds, UdIdV2, ()],
     ]

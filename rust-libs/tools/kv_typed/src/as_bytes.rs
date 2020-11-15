@@ -118,7 +118,7 @@ where
     }
 }
 
-macro_rules! impl_as_bytes_for_numbers {
+macro_rules! impl_as_bytes_for_le_numbers {
     ($($T:ty),*) => {$(
         impl KeyAsBytes for $T {
             fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
@@ -132,7 +132,22 @@ macro_rules! impl_as_bytes_for_numbers {
         }
     )*};
 }
-
-impl_as_bytes_for_numbers!(
+impl_as_bytes_for_le_numbers!(
     usize, u8, u16, u32, u64, u128, isize, i8, i16, i32, i64, i128, f32, f64
 );
+
+macro_rules! impl_as_bytes_for_be_numbers {
+    ($($T:ty),*) => {$(
+        impl KeyAsBytes for $T {
+            fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+                f(&self.0.to_be_bytes()[..])
+            }
+        }
+        impl ValueAsBytes for $T {
+            fn as_bytes<T, F: FnMut(&[u8]) -> Result<T, KvError>>(&self, mut f: F) -> Result<T, KvError> {
+                f(&self.0.to_be_bytes()[..])
+            }
+        }
+    )*};
+}
+impl_as_bytes_for_be_numbers!(U32BE);

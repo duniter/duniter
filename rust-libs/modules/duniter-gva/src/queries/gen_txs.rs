@@ -15,6 +15,8 @@
 
 use crate::*;
 
+const MAX_INPUTS_PER_TX: usize = 40;
+
 #[derive(Default)]
 pub(crate) struct GenTxsQuery;
 #[async_graphql::Object]
@@ -48,75 +50,27 @@ impl GenTxsQuery {
                     &dbs.txs_mp_db,
                     amount,
                     &WalletScriptV10::single(WalletConditionV10::Sig(issuer)),
-                    40,
                 )
             })
             .await??;
+
+        if inputs_sum < amount {
+            return Err(async_graphql::Error::new("insufficient balance"));
+        }
 
         let current_blockstamp = Blockstamp {
             number: BlockNumber(current_block.number),
             hash: BlockHash(current_block.hash),
         };
 
-        Ok(vec![gen_tx_with_inputs(
-            amount,
+        Ok(TransactionDocumentV10::generate_simple_txs(
             current_blockstamp,
-            comment,
             currency,
             (inputs, inputs_sum),
+            MAX_INPUTS_PER_TX,
             issuer,
             recipient,
-        )])
+            (amount, comment),
+        ))
     }
-}
-
-fn gen_tx_with_inputs(
-    amount: SourceAmount,
-    blockstamp: Blockstamp,
-    comment: String,
-    currency: String,
-    inputs_with_sum: (Vec<TransactionInputV10>, SourceAmount),
-    issuer: PublicKey,
-    recipient: PublicKey,
-) -> String {
-    let (inputs, inputs_sum) = inputs_with_sum;
-    let inputs_len = inputs.len();
-    let unlocks = (0..inputs_len)
-        .into_iter()
-        .map(TransactionInputUnlocksV10::single_index)
-        .collect::<Vec<_>>();
-
-    let rest = inputs_sum - amount;
-    let main_output = TransactionOutputV10 {
-        amount,
-        conditions: UTXOConditions::from(WalletScriptV10::single(WalletConditionV10::Sig(
-            recipient,
-        ))),
-    };
-    let outputs = if rest.amount() > 0 {
-        svec![
-            main_output,
-            TransactionOutputV10 {
-                amount: rest,
-                conditions: UTXOConditions::from(WalletScriptV10::single(WalletConditionV10::Sig(
-                    issuer,
-                ))),
-            },
-        ]
-    } else {
-        svec![main_output]
-    };
-
-    TransactionDocumentV10Builder {
-        currency: &currency,
-        blockstamp,
-        locktime: 0,
-        issuers: svec![issuer],
-        inputs: &inputs,
-        unlocks: &unlocks,
-        outputs,
-        comment: &comment,
-        hash: None,
-    }
-    .generate_text()
 }

@@ -22,7 +22,6 @@ pub fn uds_of_pubkey<BcDb: BcV2DbReadable, R: 'static + RangeBounds<BlockNumber>
     pubkey: PublicKey,
     range: R,
     bn_to_exclude_opt: Option<&BTreeSet<BlockNumber>>,
-    limit_opt: Option<usize>,
     total_opt: Option<SourceAmount>,
 ) -> KvResult<(Vec<(BlockNumber, SourceAmount)>, SourceAmount)> {
     let start = match range.start_bound() {
@@ -42,7 +41,7 @@ pub fn uds_of_pubkey<BcDb: BcV2DbReadable, R: 'static + RangeBounds<BlockNumber>
                 .collect::<KvResult<Vec<_>>>()
         })?;
         if blocks_numbers.is_empty() {
-            Ok((vec![], SourceAmount::ZERO))
+            Ok((Vec::default(), SourceAmount::ZERO))
         } else {
             let first_reval = uds_reval
                 .iter(..=U32BE(blocks_numbers[0].0), |it| {
@@ -57,25 +56,27 @@ pub fn uds_of_pubkey<BcDb: BcV2DbReadable, R: 'static + RangeBounds<BlockNumber>
                     true
                 }
             });
-            if let Some(limit) = limit_opt {
-                collect_uds(
-                    blocks_numbers.take(limit),
-                    blocks_numbers_len,
-                    first_reval,
-                    uds_reval,
-                    total_opt,
-                )
-            } else {
-                collect_uds(
-                    blocks_numbers,
-                    blocks_numbers_len,
-                    first_reval,
-                    uds_reval,
-                    total_opt,
-                )
-            }
+            collect_uds(
+                blocks_numbers,
+                blocks_numbers_len,
+                first_reval,
+                uds_reval,
+                total_opt,
+            )
         }
     })
+}
+
+macro_rules! collect_one_ud {
+    ($block_number:ident, $current_ud:ident, $uds:ident, $sum:ident, $amount_target_opt:ident) => {
+        $uds.push(($block_number, $current_ud));
+        $sum = $sum + $current_ud;
+        if let Some(amount_target) = $amount_target_opt {
+            if $sum >= amount_target {
+                return Ok(($uds, $sum));
+            }
+        }
+    };
 }
 
 fn collect_uds<BC: BackendCol, I: Iterator<Item = BlockNumber>>(
@@ -88,7 +89,7 @@ fn collect_uds<BC: BackendCol, I: Iterator<Item = BlockNumber>>(
     let uds_revals = uds_reval.iter(first_reval.., |it| it.collect::<KvResult<Vec<_>>>())?;
 
     if uds_revals.is_empty() {
-        Ok((vec![], SourceAmount::ZERO))
+        Ok((Vec::default(), SourceAmount::ZERO))
     } else {
         let mut current_ud = (uds_revals[0].1).0;
         let mut uds = Vec::with_capacity(blocks_numbers_len);
@@ -99,37 +100,63 @@ fn collect_uds<BC: BackendCol, I: Iterator<Item = BlockNumber>>(
             'blocks_numbers: while let Some(block_number) = blocks_numbers.next() {
                 if block_number.0 >= block_reval.0 {
                     current_ud = amount_reval.0;
-                    uds.push((block_number, current_ud));
-                    sum = sum + current_ud;
-                    if let Some(amount_target) = amount_opt {
-                        if sum >= amount_target {
-                            return Ok((uds, sum));
-                        }
-                    }
+                    collect_one_ud!(block_number, current_ud, uds, sum, amount_opt);
                     break 'blocks_numbers;
                 } else {
-                    uds.push((block_number, current_ud));
-                    sum = sum + current_ud;
-                    if let Some(amount_target) = amount_opt {
-                        if sum >= amount_target {
-                            return Ok((uds, sum));
-                        }
-                    }
+                    collect_one_ud!(block_number, current_ud, uds, sum, amount_opt);
                 }
             }
         }
 
         // Uds after last reval
         for block_number in blocks_numbers {
-            uds.push((block_number, current_ud));
-            sum = sum + current_ud;
-            if let Some(amount_target) = amount_opt {
-                if sum >= amount_target {
-                    return Ok((uds, sum));
-                }
-            }
+            collect_one_ud!(block_number, current_ud, uds, sum, amount_opt);
         }
 
         Ok((uds, sum))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use duniter_dbs::{bc_v2::BcV2DbWritable, SourceAmountValV2, UdIdV2};
+
+    #[test]
+    fn test_uds_of_pubkey() -> KvResult<()> {
+        let bc_db = duniter_dbs::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?;
+
+        let pk = PublicKey::default();
+
+        bc_db
+            .uds_reval_write()
+            .upsert(U32BE(0), SourceAmountValV2(SourceAmount::with_base0(10)))?;
+        bc_db
+            .uds_reval_write()
+            .upsert(U32BE(40), SourceAmountValV2(SourceAmount::with_base0(12)))?;
+
+        bc_db.uds_write().upsert(UdIdV2(pk, BlockNumber(0)), ())?;
+        bc_db.uds_write().upsert(UdIdV2(pk, BlockNumber(10)), ())?;
+        bc_db.uds_write().upsert(UdIdV2(pk, BlockNumber(20)), ())?;
+        bc_db.uds_write().upsert(UdIdV2(pk, BlockNumber(30)), ())?;
+        bc_db.uds_write().upsert(UdIdV2(pk, BlockNumber(40)), ())?;
+        bc_db.uds_write().upsert(UdIdV2(pk, BlockNumber(50)), ())?;
+        bc_db.uds_write().upsert(UdIdV2(pk, BlockNumber(60)), ())?;
+
+        // Get all uds
+        let (uds, uds_sum) = uds_of_pubkey(&bc_db, pk, .., None, None)?;
+        assert_eq!(uds.len(), 7);
+        assert_eq!(
+            uds.first(),
+            Some(&(BlockNumber(0), SourceAmount::with_base0(10)))
+        );
+        assert_eq!(
+            uds.last(),
+            Some(&(BlockNumber(60), SourceAmount::with_base0(12)))
+        );
+        assert_eq!(uds_sum, SourceAmount::with_base0(76));
+
+        Ok(())
     }
 }

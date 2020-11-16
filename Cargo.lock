@@ -1131,6 +1131,7 @@ name = "duniter-gva"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "arrayvec",
  "async-graphql",
  "async-trait",
  "dubp",
@@ -1147,7 +1148,6 @@ dependencies = [
  "resiter",
  "serde",
  "serde_urlencoded 0.7.0",
- "smallvec",
  "tokio",
  "unwrap",
  "warp",

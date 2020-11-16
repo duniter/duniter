@@ -22,7 +22,6 @@ pub fn find_inputs<BcDb: BcV2DbReadable, GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV
     txs_mp_db: &TxsMpDb,
     amount: SourceAmount,
     script: &WalletScriptV10,
-    max_inputs_count: usize,
 ) -> KvResult<(BlockMetaV2, Vec<TransactionInputV10>, SourceAmount)> {
     if let Some(current_block) = crate::get_current_block_meta(bc_db)? {
         let (mut inputs, uds_sum) = if script.nodes.is_empty() {
@@ -38,7 +37,6 @@ pub fn find_inputs<BcDb: BcV2DbReadable, GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV
                     issuer,
                     ..,
                     Some(&pending_uds_bn),
-                    Some(max_inputs_count),
                     Some(amount),
                 )?;
                 let inputs = uds
@@ -59,13 +57,8 @@ pub fn find_inputs<BcDb: BcV2DbReadable, GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV
             (vec![], SourceAmount::ZERO)
         };
         if uds_sum < amount {
-            let (utxos, utxos_sum) = crate::utxos::find_script_utxos(
-                gva_db,
-                txs_mp_db,
-                amount - uds_sum,
-                max_inputs_count - inputs.len(),
-                &script,
-            )?;
+            let (utxos, utxos_sum) =
+                crate::utxos::find_script_utxos(gva_db, txs_mp_db, amount - uds_sum, &script)?;
             inputs.extend(
                 utxos
                     .into_iter()
@@ -76,17 +69,9 @@ pub fn find_inputs<BcDb: BcV2DbReadable, GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV
                         },
                     ),
             );
-            let inputs_sum = uds_sum + utxos_sum;
-            if inputs_sum < amount {
-                Err(KvError::Custom(
-                    "Amount need too many sources or issuer's account has an insufficient balance."
-                        .into(),
-                ))
-            } else {
-                Ok::<_, KvError>((current_block, inputs, inputs_sum))
-            }
+            Ok((current_block, inputs, uds_sum + utxos_sum))
         } else {
-            Ok::<_, KvError>((current_block, inputs, uds_sum))
+            Ok((current_block, inputs, uds_sum))
         }
     } else {
         Err(KvError::Custom("no blockchain".into()))
@@ -156,7 +141,6 @@ mod tests {
             &txs_mp_db,
             SourceAmount::with_base0(55),
             &script,
-            2,
         )?;
         assert_eq!(cb, b0);
         assert_eq!(inputs.len(), 2);
@@ -177,7 +161,6 @@ mod tests {
             &txs_mp_db,
             SourceAmount::with_base0(55),
             &script,
-            2,
         )?;
         assert_eq!(cb, b0);
         assert_eq!(inputs.len(), 1);

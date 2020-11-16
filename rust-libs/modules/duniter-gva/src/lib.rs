@@ -41,10 +41,7 @@ use async_graphql::http::GraphQLPlaygroundConfig;
 use dubp::common::crypto::keys::{ed25519::PublicKey, KeyPair as _, PublicKey as _};
 use dubp::common::prelude::*;
 use dubp::documents::prelude::*;
-use dubp::documents::transaction::{
-    TransactionDocumentTrait, TransactionDocumentV10, TransactionDocumentV10Builder,
-    TransactionInputUnlocksV10, TransactionInputV10, TransactionOutputV10, UTXOConditions,
-};
+use dubp::documents::transaction::{TransactionDocumentTrait, TransactionDocumentV10};
 use dubp::documents_parser::prelude::*;
 use dubp::wallet::prelude::*;
 use duniter_dbs::prelude::*;
@@ -52,7 +49,6 @@ use duniter_dbs::{kv_typed::prelude::*, TxDbV2, TxsMpV2DbReadable};
 use duniter_mempools::{Mempools, TxsMempool};
 use futures::{StreamExt, TryStreamExt};
 use resiter::map::Map;
-use smallvec::smallvec as svec;
 use std::convert::Infallible;
 use std::ops::Deref;
 use warp::{http::Response as HttpResponse, Filter as _, Rejection, Stream};

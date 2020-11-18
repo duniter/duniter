@@ -19,7 +19,7 @@ use dubp::common::prelude::*;
 use duniter_dbs::kv_typed::prelude::*;
 use duniter_dbs::{
     BcV1Db, BcV1DbReadable, BcV1DbWritable, BlockDbV1, BlockNumberKeyV1, MainBlocksEvent,
-    PublicKeySingletonDbV1, Result, UidKeyV1,
+    PublicKeySingletonDbV1, UidKeyV1,
 };
 use kv_typed::channel::TryRecvError;
 use std::str::FromStr;
@@ -27,7 +27,7 @@ use tempdir::TempDir;
 use unwrap::unwrap;
 
 #[test]
-fn write_read_delete_b0_leveldb() -> Result<()> {
+fn write_read_delete_b0_leveldb() -> KvResult<()> {
     let tmp_dir = unwrap!(TempDir::new("write_read_delete_b0_leveldb"));
 
     let db = BcV1Db::<LevelDb>::open(LevelDbConf::path(tmp_dir.path().to_owned()))?;
@@ -36,14 +36,14 @@ fn write_read_delete_b0_leveldb() -> Result<()> {
 }
 
 #[test]
-fn write_read_delete_b0_sled() -> Result<()> {
+fn write_read_delete_b0_sled() -> KvResult<()> {
     let db = BcV1Db::<Sled>::open(SledConf::new().temporary(true))?;
 
     write_read_delete_b0_test(&db)
 }
 
 #[test]
-fn iter_test_leveldb() -> Result<()> {
+fn iter_test_leveldb() -> KvResult<()> {
     let tmp_dir = unwrap!(TempDir::new("batch_test_leveldb"));
 
     let db = BcV1Db::<LevelDb>::open(LevelDbConf::path(tmp_dir.path().to_owned()))?;
@@ -52,21 +52,21 @@ fn iter_test_leveldb() -> Result<()> {
 }
 
 #[test]
-fn iter_test_mem() -> Result<()> {
+fn iter_test_mem() -> KvResult<()> {
     let db = BcV1Db::<Mem>::open(MemConf::default())?;
 
     write_some_entries_and_iter(&db)
 }
 
 #[test]
-fn iter_test_sled() -> Result<()> {
+fn iter_test_sled() -> KvResult<()> {
     let db = BcV1Db::<Sled>::open(SledConf::new().temporary(true))?;
 
     write_some_entries_and_iter(&db)
 }
 
 #[test]
-fn batch_test_leveldb() -> Result<()> {
+fn batch_test_leveldb() -> KvResult<()> {
     let tmp_dir = unwrap!(TempDir::new("batch_test_leveldb"));
 
     let db = BcV1Db::<LevelDb>::open(LevelDbConf::path(tmp_dir.path().to_owned()))?;
@@ -75,20 +75,20 @@ fn batch_test_leveldb() -> Result<()> {
 }
 
 #[test]
-fn batch_test_mem() -> Result<()> {
+fn batch_test_mem() -> KvResult<()> {
     let db = BcV1Db::<Mem>::open(MemConf::default())?;
 
     batch_test(&db)
 }
 
 #[test]
-fn batch_test_sled() -> Result<()> {
+fn batch_test_sled() -> KvResult<()> {
     let db = BcV1Db::<Sled>::open(SledConf::new().temporary(true))?;
 
     batch_test(&db)
 }
 
-fn write_read_delete_b0_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
+fn write_read_delete_b0_test<B: Backend>(db: &BcV1Db<B>) -> KvResult<()> {
     let main_blocks_reader = db.main_blocks();
 
     let (subscriber, events_recv) = kv_typed::channel::unbounded();
@@ -195,7 +195,7 @@ fn write_read_delete_b0_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
     Ok(())
 }
 
-fn write_some_entries_and_iter<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
+fn write_some_entries_and_iter<B: Backend>(db: &BcV1Db<B>) -> KvResult<()> {
     let k1 = unwrap!(UidKeyV1::from_str("titi"));
     let p1 = PublicKeySingletonDbV1(unwrap!(PublicKey::from_base58(
         "42jMJtb8chXrpHMAMcreVdyPJK7LtWjEeRqkPw4eSEVp"
@@ -288,7 +288,7 @@ fn write_some_entries_and_iter<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
     Ok(())
 }
 
-fn batch_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
+fn batch_test<B: Backend>(db: &BcV1Db<B>) -> KvResult<()> {
     let main_blocks_reader = db.main_blocks();
 
     let mut batch = db.new_batch();

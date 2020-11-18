@@ -25,7 +25,6 @@
 mod bc_v1;
 pub mod bc_v2;
 pub mod cm_v1;
-mod errors;
 pub mod gva_v1;
 mod keys;
 mod open_dbs;
@@ -45,7 +44,6 @@ pub use kv_typed;
 
 // Prelude
 pub mod prelude {
-    pub use crate::errors::ErrorDb;
     pub use crate::{DbsBackend, DuniterDbs};
     #[cfg(feature = "explorer")]
     pub use kv_typed::explorer::{
@@ -54,7 +52,6 @@ pub mod prelude {
 }
 
 // Export technical types and functions
-pub use crate::errors::Result;
 pub use crate::open_dbs::open_dbs;
 
 // Export profession types

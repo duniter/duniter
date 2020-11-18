@@ -22,7 +22,7 @@ mod explorer {
     use duniter_dbs::kv_typed::regex;
     use duniter_dbs::prelude::*;
     use duniter_dbs::smallvec::smallvec;
-    use duniter_dbs::{BcV1Db, BcV1DbWritable, PublicKeySingletonDbV1, Result, UidKeyV1};
+    use duniter_dbs::{BcV1Db, BcV1DbWritable, PublicKeySingletonDbV1, UidKeyV1};
     use std::{num::NonZeroUsize, str::FromStr};
     use tempdir::TempDir;
     use unwrap::unwrap;
@@ -34,7 +34,7 @@ mod explorer {
     }
 
     #[test]
-    fn explorer_test_leveldb() -> Result<()> {
+    fn explorer_test_leveldb() -> KvResult<()> {
         let tmp_dir = unwrap!(TempDir::new("explorer_test_leveldb"));
 
         let db = BcV1Db::<LevelDb>::open(LevelDbConf::path(tmp_dir.path().to_owned()))?;
@@ -43,13 +43,13 @@ mod explorer {
     }
 
     #[test]
-    fn explorer_test_sled() -> Result<()> {
+    fn explorer_test_sled() -> KvResult<()> {
         let db = BcV1Db::<Sled>::open(SledConf::new().temporary(true))?;
 
         explorer_test(&db)
     }
 
-    fn explorer_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
+    fn explorer_test<B: Backend>(db: &BcV1Db<B>) -> KvResult<()> {
         // Defines test data
         let k1 = unwrap!(UidKeyV1::from_str("toto"));
         let k2 = unwrap!(UidKeyV1::from_str("titi"));

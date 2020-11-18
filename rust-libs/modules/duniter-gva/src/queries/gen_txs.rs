@@ -15,7 +15,7 @@
 
 use crate::*;
 
-const MAX_INPUTS_PER_TX: usize = 40;
+const MAX_INPUTS_PER_SIMPLE_TX: usize = 46;
 
 #[derive(Default)]
 pub(crate) struct GenTxsQuery;
@@ -29,6 +29,7 @@ impl GenTxsQuery {
         #[graphql(desc = "Transaction comment")] comment: Option<String>,
         #[graphql(desc = "Ed25519 public key on base 58 representation")] issuer: String,
         #[graphql(desc = "Ed25519 public key on base 58 representation")] recipient: String,
+        #[graphql(desc = "Use mempool sources", default = false)] use_mempool_sources: bool,
     ) -> async_graphql::Result<Vec<String>> {
         let amount = SourceAmount::with_base0(amount as i64);
         let comment = comment.unwrap_or_default();
@@ -50,6 +51,7 @@ impl GenTxsQuery {
                     &dbs.txs_mp_db,
                     amount,
                     &WalletScriptV10::single(WalletConditionV10::Sig(issuer)),
+                    use_mempool_sources,
                 )
             })
             .await??;
@@ -67,7 +69,7 @@ impl GenTxsQuery {
             current_blockstamp,
             currency,
             (inputs, inputs_sum),
-            MAX_INPUTS_PER_TX,
+            MAX_INPUTS_PER_SIMPLE_TX,
             issuer,
             recipient,
             (amount, comment),

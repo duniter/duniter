@@ -34,7 +34,7 @@ use dubp::{common::prelude::BlockNumber, wallet::prelude::SourceAmount};
 use duniter_dbs::bc_v2::BcV2DbReadable;
 use duniter_dbs::{
     kv_typed::prelude::*, BlockMetaV2, GvaV1DbReadable, HashKeyV2, PubKeyKeyV2, TxDbV2,
-    TxsMpV2DbReadable,
+    TxsMpV2DbReadable, UtxoIdDbV2,
 };
 use resiter::map::Map;
 use std::{

@@ -28,6 +28,7 @@ pub mod sindex_db;
 pub mod source_amount;
 pub mod tx_db;
 pub mod ud_entry_db;
+pub mod utxo;
 pub mod utxos_of_script;
 pub mod wallet_db;
 pub mod wallet_script_array;

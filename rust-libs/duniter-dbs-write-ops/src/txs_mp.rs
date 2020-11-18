@@ -57,6 +57,7 @@ pub fn add_pending_tx<
         txs_mp_db.txs_write(),
         txs_mp_db.uds_ids_write(),
         txs_mp_db.utxos_ids_write(),
+        txs_mp_db.outputs_by_script_write(),
     )
         .write(
             |(
@@ -66,6 +67,7 @@ pub fn add_pending_tx<
                 mut txs,
                 mut uds_ids,
                 mut utxos_ids,
+                mut outputs_by_script,
             )| {
                 control(&tx, &txs)?;
                 // Insert on col `txs_by_recv_time`
@@ -99,6 +101,14 @@ pub fn add_pending_tx<
                         }) => utxos_ids
                             .upsert(duniter_dbs::UtxoIdDbV2(tx_hash, output_index as u32), ()),
                     }
+                }
+                // Insert tx outputs in col `outputs`
+                for (output_index, output) in tx.get_outputs().iter().enumerate() {
+                    let script = WalletConditionsV2(output.conditions.script.to_owned());
+                    let utxo = UtxoValV2::new(output.amount, tx_hash, output_index as u32);
+                    let mut script_outputs = outputs_by_script.get(&script)?.unwrap_or_default();
+                    script_outputs.insert(utxo);
+                    outputs_by_script.upsert(script, script_outputs);
                 }
                 // Insert tx itself
                 txs.upsert(HashKeyV2(tx_hash), PendingTxDbV2(tx.into_owned()));
@@ -155,9 +165,17 @@ fn remove_one_pending_tx<B: Backend>(txs_mp_db: &TxsMpV2Db<B>, tx_hash: Hash) ->
             txs_mp_db.txs_write(),
             txs_mp_db.uds_ids_write(),
             txs_mp_db.utxos_ids_write(),
+            txs_mp_db.outputs_by_script_write(),
         )
             .write(
-                |(mut txs_by_issuer, mut txs_by_recipient, mut txs, mut uds_ids, mut utxos_ids)| {
+                |(
+                    mut txs_by_issuer,
+                    mut txs_by_recipient,
+                    mut txs,
+                    mut uds_ids,
+                    mut utxos_ids,
+                    mut outputs_by_script,
+                )| {
                     // Remove tx inputs in cols `uds_ids` and `utxos_ids`
                     for input in tx.0.get_inputs() {
                         match input.id {
@@ -186,6 +204,15 @@ fn remove_one_pending_tx<B: Backend>(txs_mp_db: &TxsMpV2Db<B>, tx_hash: Hash) ->
                             .unwrap_or_default();
                         hashs_.remove(&tx_hash);
                         txs_by_recipient.upsert(PubKeyKeyV2(pubkey), hashs_)
+                    }
+                    // Remove tx outputs in col `outputs`
+                    for (output_index, output) in tx.0.get_outputs().iter().enumerate() {
+                        let script = WalletConditionsV2(output.conditions.script.to_owned());
+                        let utxo = UtxoValV2::new(output.amount, tx_hash, output_index as u32);
+                        let mut script_outputs =
+                            outputs_by_script.get(&script)?.unwrap_or_default();
+                        script_outputs.remove(&utxo);
+                        outputs_by_script.upsert(script, script_outputs);
                     }
                     // Remove tx itself
                     txs.remove(HashKeyV2(tx_hash));

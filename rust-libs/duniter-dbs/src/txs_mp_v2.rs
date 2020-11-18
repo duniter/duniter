@@ -24,5 +24,6 @@ db_schema!(
         ["txs_by_received_time", TxsByRecvTime, i64, BTreeSet<Hash>],
         ["uds_ids", UdsIds, UdIdV2, ()],
         ["utxos_ids", UtxosIds, UtxoIdDbV2, ()],
+        ["outputs_by_script", OutputsByScript, WalletConditionsV2, BTreeSet<UtxoValV2>],
     ]
 );

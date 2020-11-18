@@ -41,7 +41,7 @@ use duniter_dbs::gva_v1::{TxsByIssuerEvent, TxsByRecipientEvent, TxsEvent};
 use duniter_dbs::{
     kv_typed::prelude::*, BlockMetaV2, DuniterDbs, GvaV1Db, GvaV1DbReadable, GvaV1DbWritable,
     HashKeyV2, PendingTxDbV2, PubKeyKeyV2, PubKeyValV2, SourceAmountValV2, TxDbV2, TxsMpV2Db,
-    TxsMpV2DbReadable, TxsMpV2DbWritable, WalletConditionsV2,
+    TxsMpV2DbReadable, TxsMpV2DbWritable, UtxoValV2, WalletConditionsV2,
 };
 use resiter::filter_map::FilterMap;
 use resiter::flatten::Flatten;

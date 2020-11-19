@@ -52,7 +52,7 @@ pub fn find_inputs<BcDb: BcV2DbReadable, GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV
                             }
                         })
                         .collect();
-                    let sum = utxos.iter().map(|utxo| *utxo.amount()).sum();
+
                     Ok((inputs, sum))
                 })?
                 .unwrap_or((Vec::with_capacity(50), SourceAmount::ZERO))

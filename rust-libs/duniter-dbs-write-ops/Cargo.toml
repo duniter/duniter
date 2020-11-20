@@ -13,7 +13,7 @@ path = "src/lib.rs"
 
 [dependencies]
 chrono = "0.4.19"
-dubp = { version = "0.31.0" }
+dubp = { version = "0.32.0" }
 duniter-dbs = { path = "../duniter-dbs" }
 fast-threadpool = "0.2.1"
 log = "0.4.11"

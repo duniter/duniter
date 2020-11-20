@@ -15,8 +15,6 @@
 
 use crate::*;
 
-const MAX_INPUTS_PER_SIMPLE_TX: usize = 46;
-
 #[derive(Default)]
 pub(crate) struct GenTxsQuery;
 #[async_graphql::Object]
@@ -69,7 +67,6 @@ impl GenTxsQuery {
             current_blockstamp,
             currency,
             (inputs, inputs_sum),
-            MAX_INPUTS_PER_SIMPLE_TX,
             issuer,
             recipient,
             (amount, comment),

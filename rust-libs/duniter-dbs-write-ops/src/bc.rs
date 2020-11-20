@@ -70,6 +70,7 @@ pub fn apply_block<B: Backend>(
         issuers_count: block.issuers_count() as u32,
         median_time: block.common_time(),
         dividend: block.dividend(),
+        unit_base: block.unit_base() as u32,
         ..Default::default()
     };
 

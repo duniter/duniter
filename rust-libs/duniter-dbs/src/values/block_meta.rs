@@ -15,7 +15,7 @@
 
 use crate::*;
 
-const BLOCK_META_SERIALIZED_SIZE: usize = 319;
+const BLOCK_META_SERIALIZED_SIZE: usize = 323;
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct BlockMetaV2 {
@@ -36,7 +36,8 @@ pub struct BlockMetaV2 {
     pub median_time: u64,               // 8
     pub nonce: u64,                     // 8
     pub monetary_mass: u64,             // 8
-    pub dividend: Option<SourceAmount>, // 17 -> TOTAL SIZE == 331 bytes
+    pub unit_base: u32,                 // 4
+    pub dividend: Option<SourceAmount>, // 17 -> TOTAL SIZE == 335 bytes
 }
 
 impl ValueAsBytes for BlockMetaV2 {

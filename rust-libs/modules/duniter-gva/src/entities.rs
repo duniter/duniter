@@ -18,6 +18,30 @@ pub mod ud_gva;
 
 use crate::*;
 
+pub(crate) enum RawTxOrChanges {
+    FinalTx(String),
+    Changes(Vec<String>),
+}
+#[async_graphql::Object]
+impl RawTxOrChanges {
+    /// Intermediate transactions documents for compacting sources (`null` if not needed)
+    async fn changes(&self) -> Option<&Vec<String>> {
+        if let Self::Changes(changes) = self {
+            Some(changes)
+        } else {
+            None
+        }
+    }
+    /// Transaction document that carries out the requested transfer (`null` if the amount to be sent requires too many sources)
+    async fn tx(&self) -> Option<&str> {
+        if let Self::FinalTx(raw_tx) = self {
+            Some(raw_tx.as_str())
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(async_graphql::SimpleObject)]
 pub(crate) struct TxsHistoryGva {
     /// Transactions sent

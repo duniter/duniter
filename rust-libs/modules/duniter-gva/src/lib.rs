@@ -25,6 +25,8 @@
 pub use duniter_conf::gva_conf::GvaConf;
 
 mod entities;
+mod inputs;
+mod inputs_validators;
 mod mutations;
 mod queries;
 mod schema;
@@ -34,10 +36,13 @@ mod warp_;
 use crate::entities::{
     tx_gva::TxGva,
     ud_gva::{CurrentUdGva, RevalUdGva, UdGva},
-    TxsHistoryGva, UtxoGva,
+    RawTxOrChanges, TxsHistoryGva, UtxoGva,
 };
+use crate::inputs::{TxIssuer, TxRecipient};
+use crate::inputs_validators::TxCommentValidator;
 use crate::schema::{GraphQlSchema, SchemaData};
 use async_graphql::http::GraphQLPlaygroundConfig;
+use async_graphql::validators::{IntGreaterThan, ListMinLength, StringMaxLength, StringMinLength};
 use dubp::common::crypto::keys::{ed25519::PublicKey, KeyPair as _, PublicKey as _};
 use dubp::common::prelude::*;
 use dubp::documents::prelude::*;
@@ -49,8 +54,10 @@ use duniter_dbs::{kv_typed::prelude::*, TxDbV2, TxsMpV2DbReadable};
 use duniter_mempools::{Mempools, TxsMempool};
 use futures::{StreamExt, TryStreamExt};
 use resiter::map::Map;
-use std::convert::Infallible;
-use std::ops::Deref;
+use std::{
+    convert::{Infallible, TryFrom},
+    ops::Deref,
+};
 use warp::{http::Response as HttpResponse, Filter as _, Rejection, Stream};
 
 #[derive(Debug)]

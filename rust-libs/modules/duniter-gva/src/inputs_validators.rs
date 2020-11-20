@@ -15,17 +15,14 @@
 
 use crate::*;
 
-/*struct MustBeZero {}
+pub(crate) struct TxCommentValidator;
 
-impl InputValueValidator for MustBeZero {
-    fn is_valid(&self, value: &Value) -> Result<(), String> {
-        if let Value::Int(n) = value {
-            if n.as_i64().unwrap() != 0 {
+impl async_graphql::validators::InputValueValidator for TxCommentValidator {
+    fn is_valid(&self, value: &async_graphql::Value) -> Result<(), String> {
+        if let async_graphql::Value::String(comment) = value {
+            if !TransactionDocumentV10::verify_comment(&comment) {
                 // Validation failed
-                Err(format!(
-                    "the value is {}, but must be zero",
-                    n.as_i64().unwrap(),
-                ))
+                Err("invalid comment".to_owned())
             } else {
                 // Validation succeeded
                 Ok(())
@@ -36,4 +33,4 @@ impl InputValueValidator for MustBeZero {
             Ok(())
         }
     }
-}*/
+}

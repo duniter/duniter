@@ -18,7 +18,6 @@ use crate::*;
 db_schema!(
     GvaV1,
     [
-        ["uids_index", UidsIndex, String, PubKeyValV2],
         ["txs", Txs, HashKeyV2, TxDbV2],
         ["txs_by_issuer", TxsByIssuer, PubKeyKeyV2, BTreeSet<Hash>],
         ["txs_by_recipient", TxsByRecipient, PubKeyKeyV2, BTreeSet<Hash>],
@@ -34,5 +33,7 @@ db_schema!(
             WalletConditionsV2,
             UtxosOfScriptV1
         ],
+        ["balances", Balances, WalletConditionsV2, SourceAmountValV2],
+        ["gva_identities", GvaIdentities, PubKeyKeyV2, GvaIdtyDbV1],
     ]
 );

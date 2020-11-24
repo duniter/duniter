@@ -22,5 +22,6 @@ db_schema!(
         ["uds_reval", UdsReval, U32BE, SourceAmountValV2],
         ["identities", Identities, PubKeyKeyV2, IdtyDbV2],
         ["uds", Uds, UdIdV2, ()],
+        ["uids_index", UidsIndex, String, PubKeyValV2],
     ]
 );

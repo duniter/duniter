@@ -18,6 +18,7 @@ pub mod block_head_db;
 pub mod block_meta;
 pub mod block_number_array_db;
 pub mod cindex_db;
+pub mod gva_idty_db;
 pub mod idty_db;
 pub mod iindex_db;
 pub mod kick_db;

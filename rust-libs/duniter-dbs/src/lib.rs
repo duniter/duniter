@@ -75,6 +75,7 @@ pub use values::block_head_db::BlockHeadDbV1;
 pub use values::block_meta::BlockMetaV2;
 pub use values::block_number_array_db::BlockNumberArrayV1;
 pub use values::cindex_db::CIndexDbV1;
+pub use values::gva_idty_db::GvaIdtyDbV1;
 pub use values::idty_db::IdtyDbV2;
 pub use values::iindex_db::IIndexDbV1;
 pub use values::kick_db::KickDbV1;

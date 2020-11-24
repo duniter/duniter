@@ -34,7 +34,7 @@ pub(crate) fn create_uds<B: Backend>(
     }
 
     let members = identities.iter(.., |it| {
-        it.filter_map_ok(|(pk, idty)| if idty.member { Some(pk.0) } else { None })
+        it.filter_map_ok(|(pk, idty)| if idty.is_member { Some(pk.0) } else { None })
             .collect::<KvResult<Vec<_>>>()
     })?;
     for member in members {
@@ -58,7 +58,7 @@ pub(crate) fn revert_uds<B: Backend>(
     }
 
     let members = identities.iter(.., |it| {
-        it.filter_map_ok(|(pk, idty)| if idty.member { Some(pk.0) } else { None })
+        it.filter_map_ok(|(pk, idty)| if idty.is_member { Some(pk.0) } else { None })
             .collect::<KvResult<Vec<_>>>()
     })?;
     for member in members {

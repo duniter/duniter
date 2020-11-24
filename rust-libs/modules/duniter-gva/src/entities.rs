@@ -18,6 +18,12 @@ pub mod ud_gva;
 
 use crate::*;
 
+#[derive(Default, async_graphql::SimpleObject)]
+pub(crate) struct AmountWithBase {
+    pub(crate) amount: i32,
+    pub(crate) base: i32,
+}
+
 pub(crate) enum RawTxOrChanges {
     FinalTx(String),
     Changes(Vec<String>),

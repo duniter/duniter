@@ -15,19 +15,20 @@
 
 use crate::*;
 
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub struct IdtyDbV2 {
+#[derive(Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct GvaIdtyDbV1 {
     pub is_member: bool,
-    pub username: String,
+    pub joins: SmallVec<[BlockNumber; 2]>,
+    pub leaves: SmallVec<[BlockNumber; 2]>,
 }
 
-impl ValueAsBytes for IdtyDbV2 {
+impl ValueAsBytes for GvaIdtyDbV1 {
     fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
         f(&bincode::serialize(&self).map_err(|e| KvError::DeserError(format!("{}", e)))?)
     }
 }
 
-impl kv_typed::prelude::FromBytes for IdtyDbV2 {
+impl kv_typed::prelude::FromBytes for GvaIdtyDbV1 {
     type Err = StringErr;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
@@ -35,14 +36,14 @@ impl kv_typed::prelude::FromBytes for IdtyDbV2 {
     }
 }
 
-impl ToDumpString for IdtyDbV2 {
+impl ToDumpString for GvaIdtyDbV1 {
     fn to_dump_string(&self) -> String {
         todo!()
     }
 }
 
 #[cfg(feature = "explorer")]
-impl ExplorableValue for IdtyDbV2 {
+impl ExplorableValue for GvaIdtyDbV1 {
     fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
         serde_json::from_str(source).map_err(|e| StringErr(format!("{}", e)))
     }

@@ -39,6 +39,14 @@ pub struct BlockMetaV2 {
     pub unit_base: u32,                 // 4
     pub dividend: Option<SourceAmount>, // 17 -> TOTAL SIZE == 335 bytes
 }
+impl BlockMetaV2 {
+    pub fn blockstamp(&self) -> Blockstamp {
+        Blockstamp {
+            number: BlockNumber(self.number),
+            hash: BlockHash(self.hash),
+        }
+    }
+}
 
 impl ValueAsBytes for BlockMetaV2 {
     fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {

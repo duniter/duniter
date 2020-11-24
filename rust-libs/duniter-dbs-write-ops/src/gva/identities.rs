@@ -14,45 +14,32 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use duniter_dbs::bc_v2::IdentitiesEvent;
-use duniter_dbs::IdtyDbV2;
+use duniter_dbs::gva_v1::GvaIdentitiesEvent;
 
 pub(crate) fn update_identities<B: Backend>(
     block: &DubpBlockV10,
-    identities: &mut TxColRw<B::Col, IdentitiesEvent>,
+    identities: &mut TxColRw<B::Col, GvaIdentitiesEvent>,
 ) -> KvResult<()> {
-    for idty in block.identities() {
-        let pubkey = idty.issuers()[0];
-        let username = idty.username().to_owned();
-        identities.upsert(
-            PubKeyKeyV2(pubkey),
-            IdtyDbV2 {
-                is_member: true,
-                username,
-            },
-        )
-    }
     for mb in block.joiners() {
         let pubkey = mb.issuers()[0];
-        let username = mb.identity_username().to_owned();
-        identities.upsert(
-            PubKeyKeyV2(pubkey),
-            IdtyDbV2 {
-                is_member: true,
-                username,
-            },
-        )
+
+        let mut idty = identities.get(&PubKeyKeyV2(pubkey))?.unwrap_or_default();
+        idty.is_member = true;
+        idty.joins.push(block.number());
+        identities.upsert(PubKeyKeyV2(pubkey), idty);
     }
     for revo in block.revoked() {
         let pubkey = revo.issuer;
         if let Some(mut idty) = identities.get(&PubKeyKeyV2(pubkey))? {
             idty.is_member = false;
+            idty.leaves.push(block.number());
             identities.upsert(PubKeyKeyV2(pubkey), idty)
         }
     }
     for pubkey in block.excluded().iter().copied() {
         if let Some(mut idty) = identities.get(&PubKeyKeyV2(pubkey))? {
             idty.is_member = false;
+            idty.leaves.push(block.number());
             identities.upsert(PubKeyKeyV2(pubkey), idty)
         }
     }
@@ -61,18 +48,15 @@ pub(crate) fn update_identities<B: Backend>(
 
 pub(crate) fn revert_identities<B: Backend>(
     block: &DubpBlockV10,
-    identities: &mut TxColRw<B::Col, IdentitiesEvent>,
+    identities: &mut TxColRw<B::Col, GvaIdentitiesEvent>,
 ) -> KvResult<()> {
     for mb in block.joiners() {
         let pubkey = mb.issuers()[0];
-        let username = mb.identity_username().to_owned();
-        identities.upsert(
-            PubKeyKeyV2(pubkey),
-            IdtyDbV2 {
-                is_member: false,
-                username,
-            },
-        )
+
+        let mut idty = identities.get(&PubKeyKeyV2(pubkey))?.unwrap_or_default();
+        idty.is_member = false;
+        idty.joins.pop();
+        identities.upsert(PubKeyKeyV2(pubkey), idty);
     }
     for idty in block.identities() {
         let pubkey = idty.issuers()[0];
@@ -82,12 +66,14 @@ pub(crate) fn revert_identities<B: Backend>(
         let pubkey = revo.issuer;
         if let Some(mut idty) = identities.get(&PubKeyKeyV2(pubkey))? {
             idty.is_member = true;
+            idty.leaves.pop();
             identities.upsert(PubKeyKeyV2(pubkey), idty)
         }
     }
     for pubkey in block.excluded().iter().copied() {
         if let Some(mut idty) = identities.get(&PubKeyKeyV2(pubkey))? {
             idty.is_member = true;
+            idty.leaves.pop();
             identities.upsert(PubKeyKeyV2(pubkey), idty)
         }
     }

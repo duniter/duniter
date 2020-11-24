@@ -36,7 +36,7 @@ mod warp_;
 use crate::entities::{
     tx_gva::TxGva,
     ud_gva::{CurrentUdGva, RevalUdGva, UdGva},
-    RawTxOrChanges, TxsHistoryGva, UtxoGva,
+    AmountWithBase, RawTxOrChanges, TxsHistoryGva, UtxoGva,
 };
 use crate::inputs::{TxIssuer, TxRecipient};
 use crate::inputs_validators::TxCommentValidator;

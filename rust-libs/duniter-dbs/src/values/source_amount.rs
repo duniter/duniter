@@ -15,7 +15,7 @@
 
 use crate::*;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct SourceAmountValV2(pub SourceAmount);
 
 impl ValueAsBytes for SourceAmountValV2 {

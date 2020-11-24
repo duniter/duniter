@@ -959,8 +959,6 @@ checksum = "134951f4028bdadb9b84baf4232681efbf277da25144b9b0ad65df75946c422b"
 [[package]]
 name = "dubp"
 version = "0.32.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13ce0de3364a15147357ac011099ac41b93abe2c3453d193dd72345e4a79296f"
 dependencies = [
  "dubp-block",
  "dubp-common",
@@ -973,8 +971,6 @@ dependencies = [
 [[package]]
 name = "dubp-block"
 version = "0.32.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d781df10a1c6862862554e17a4757ab77eb30bff0c57de92038fa75a2bcb5281"
 dependencies = [
  "dubp-documents",
  "dubp-documents-parser",
@@ -988,8 +984,6 @@ dependencies = [
 [[package]]
 name = "dubp-common"
 version = "0.32.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04598f7e1c073754aea57f591d9d277f729e89752b01026875a4411c78d24f5f"
 dependencies = [
  "dup-crypto",
  "serde",
@@ -1001,8 +995,6 @@ dependencies = [
 [[package]]
 name = "dubp-documents"
 version = "0.32.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3504c2eef567fd8e1616c4715f16cdb577dcfb5721b82e79fd49485f0f0874e5"
 dependencies = [
  "beef",
  "dubp-wallet",
@@ -1015,8 +1007,6 @@ dependencies = [
 [[package]]
 name = "dubp-documents-parser"
 version = "0.32.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc8b0a782c49c52ae6c34777c00d2c339ea39ed4385f1f28ccf0abfe2fc048ef"
 dependencies = [
  "dubp-documents",
  "json-pest-parser",
@@ -1029,8 +1019,6 @@ dependencies = [
 [[package]]
 name = "dubp-wallet"
 version = "0.32.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19fa8fa529693707b3a2090b5fce6a874df881223a24a169e51c80767bd7876b"
 dependencies = [
  "byteorder",
  "dubp-common",
@@ -1241,8 +1229,6 @@ dependencies = [
 [[package]]
 name = "dup-crypto"
 version = "0.32.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4dacb8e51a98817bcfaf91b83dc3ec084e15c60b98db9949edc9e7a8de24b66b"
 dependencies = [
  "base64",
  "bs58",

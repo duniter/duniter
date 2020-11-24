@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+pub mod account_balance;
 pub mod gen_tx;
 pub mod txs_history;
 pub mod uds;
@@ -24,6 +25,7 @@ use duniter_dbs::cm_v1::CmV1DbReadable as _;
 #[derive(async_graphql::MergedObject, Default)]
 pub struct QueryRoot(
     queries::NodeQuery,
+    queries::account_balance::AccountBalanceQuery,
     queries::gen_tx::GenTxsQuery,
     queries::txs_history::TxsHistoryQuery,
     queries::uds::UdsQuery,

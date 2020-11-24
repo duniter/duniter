@@ -20,38 +20,6 @@ mod uds;
 use crate::*;
 use duniter_dbs::bc_v2::BcV2DbWritable;
 
-pub fn revert_block<B: Backend>(
-    bc_db: &duniter_dbs::bc_v2::BcV2Db<B>,
-    block: DubpBlockV10,
-) -> KvResult<Option<BlockMetaV2>> {
-    (
-        bc_db.blocks_meta_write(),
-        bc_db.identities_write(),
-        bc_db.uds_write(),
-        bc_db.uds_reval_write(),
-    )
-        .write(
-            |(mut blocks_meta, mut identities, mut uds, mut uds_reval)| {
-                txs::revert_txs::<B>(block.transactions(), &mut uds)?;
-                if block.dividend().is_some() {
-                    uds::revert_uds::<B>(
-                        block.number(),
-                        &mut identities,
-                        &mut uds,
-                        &mut uds_reval,
-                    )?;
-                }
-                identities::revert_identities::<B>(&block, &mut identities)?;
-                blocks_meta.remove(U32BE(block.number().0));
-                Ok(if block.number() == BlockNumber(0) {
-                    None
-                } else {
-                    blocks_meta.get(&U32BE(block.number().0 - 1))?
-                })
-            },
-        )
-}
-
 pub fn apply_block<B: Backend>(
     bc_db: &duniter_dbs::bc_v2::BcV2Db<B>,
     block: &DubpBlockV10,
@@ -79,11 +47,17 @@ pub fn apply_block<B: Backend>(
         bc_db.identities_write(),
         bc_db.uds_write(),
         bc_db.uds_reval_write(),
+        bc_db.uids_index_write(),
     )
         .write(
-            |(mut blocks_meta, mut identities, mut uds, mut uds_reval)| {
+            |(mut blocks_meta, mut identities, mut uds, mut uds_reval, mut uids_index)| {
                 blocks_meta.upsert(U32BE(block.number().0), block_meta);
                 identities::update_identities::<B>(&block, &mut identities)?;
+                for idty in block.identities() {
+                    let pubkey = idty.issuers()[0];
+                    let username = idty.username().to_owned();
+                    uids_index.upsert(username, PubKeyValV2(pubkey));
+                }
                 if let Some(dividend) = block.dividend() {
                     uds::create_uds::<B>(
                         block.number(),
@@ -99,4 +73,41 @@ pub fn apply_block<B: Backend>(
         )?;
 
     Ok(block_meta)
+}
+
+pub fn revert_block<B: Backend>(
+    bc_db: &duniter_dbs::bc_v2::BcV2Db<B>,
+    block: DubpBlockV10,
+) -> KvResult<Option<BlockMetaV2>> {
+    (
+        bc_db.blocks_meta_write(),
+        bc_db.identities_write(),
+        bc_db.uds_write(),
+        bc_db.uds_reval_write(),
+        bc_db.uids_index_write(),
+    )
+        .write(
+            |(mut blocks_meta, mut identities, mut uds, mut uds_reval, mut uids_index)| {
+                txs::revert_txs::<B>(block.transactions(), &mut uds)?;
+                if block.dividend().is_some() {
+                    uds::revert_uds::<B>(
+                        block.number(),
+                        &mut identities,
+                        &mut uds,
+                        &mut uds_reval,
+                    )?;
+                }
+                identities::revert_identities::<B>(&block, &mut identities)?;
+                for idty in block.identities() {
+                    let username = idty.username().to_owned();
+                    uids_index.remove(username);
+                }
+                blocks_meta.remove(U32BE(block.number().0));
+                Ok(if block.number() == BlockNumber(0) {
+                    None
+                } else {
+                    blocks_meta.get(&U32BE(block.number().0 - 1))?
+                })
+            },
+        )
 }

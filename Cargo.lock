@@ -958,7 +958,9 @@ checksum = "134951f4028bdadb9b84baf4232681efbf277da25144b9b0ad65df75946c422b"
 
 [[package]]
 name = "dubp"
-version = "0.32.0"
+version = "0.32.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2ffa2a4971db3040959a4dcd81af0baadea4d7bc30b9f02932a0bf645044730"
 dependencies = [
  "dubp-block",
  "dubp-common",
@@ -970,7 +972,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-block"
-version = "0.32.0"
+version = "0.32.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f0015f5ed03c6bb201e4370c1540f0055bb2343f572fdb22fcd2a98d746cdfb"
 dependencies = [
  "dubp-documents",
  "dubp-documents-parser",
@@ -983,7 +987,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-common"
-version = "0.32.0"
+version = "0.32.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "05e83a1ed268327565b168fdfd671c3f5cd0ac84b1aadbc397894aa41e0dc98f"
 dependencies = [
  "dup-crypto",
  "serde",
@@ -994,7 +1000,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-documents"
-version = "0.32.0"
+version = "0.32.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "058487050c004e54cfcb4d76202cad8efcd7c98ff94148a9729bb71acbe6cf5f"
 dependencies = [
  "beef",
  "dubp-wallet",
@@ -1006,7 +1014,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-documents-parser"
-version = "0.32.0"
+version = "0.32.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5afed3db859cef76755cfa30e59ca16c6279f62db04f22feba6e4df745f04370"
 dependencies = [
  "dubp-documents",
  "json-pest-parser",
@@ -1018,7 +1028,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-wallet"
-version = "0.32.0"
+version = "0.32.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9176466827653b57595d9b8067e626c106678af61fb436b1910c5114e23c0821"
 dependencies = [
  "byteorder",
  "dubp-common",
@@ -1228,7 +1240,9 @@ dependencies = [
 
 [[package]]
 name = "dup-crypto"
-version = "0.32.0"
+version = "0.32.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1928b9802afd8498bcd88da6b010ff2c5f415c75851809a501b8ef78cf868c73"
 dependencies = [
  "base64",
  "bs58",

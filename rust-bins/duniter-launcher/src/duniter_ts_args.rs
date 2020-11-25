@@ -16,9 +16,6 @@
 use crate::*;
 
 fn gen_start_args(args: &DuniterStartArgs, duniter_ts_args: &mut Vec<String>) {
-    if args.gva {
-        duniter_ts_args.push("--gva".to_owned());
-    }
     if let Some(ref keyfile) = args.keyfile {
         duniter_ts_args.push("--keyfile".to_owned());
         duniter_ts_args.push(
@@ -130,6 +127,7 @@ pub(crate) fn gen_duniter_ts_args(args: &DuniterArgs, duniter_js_exe: String) ->
                         duniter_ts_args.push(p.to_string());
                     }
                 }
+                WizardCommand::Gva { .. } => unreachable!(),
             }
         }
         DuniterCommand::WS2P(ref ws2p_command) => {

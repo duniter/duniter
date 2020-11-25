@@ -181,6 +181,7 @@ export class ConfDTO
     public nonWoTPeersLimit: number,
     public proxiesConf: ProxiesConf | undefined,
     public gva?: {
+      enabled: boolean;
       host?: string;
       port?: number;
       path?: string;

@@ -21,6 +21,8 @@ dirs = "3.0.1"
 log = "0.4.11"
 logwatcher = "0.1.1"
 nix = "0.17.0"
+read_input = "0.8.4"
+serde_json = "1.0.53"
 structopt = "0.3.18"
 
 [dev-dependencies]

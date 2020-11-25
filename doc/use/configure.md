@@ -183,9 +183,11 @@ This mode is optional if only because technically it is sometimes difficult or e
 
 ### Configuring GVA
 
-GVA is still disabled by default. To enable it you have to add the option `--gva` during synchronization and at each start of your duniter node (`duniter start --gva`).
+GVA is still disabled by default, to enable it you need to use wizard command:
 
-GVA is not yet configurable from the command line, but it is possible to manually edit `conf.json` file :
+`duniter wizard gva`
+
+It is also possible to manually edit `conf.json` file :
 
 | parameter | type | default value |
 |:-:|:-:|:-:|
@@ -210,8 +212,6 @@ duniter sync DUNITER_NODE_HOST:DUNITER_NODE_PORT
 ```
 
 For Ğ1, if you don't know any node you can choose the official node `g1.duniter.org:443`.
-
-NB: If you want to enable GVA you have to synchronize with the `--gva` option.
 
 ## Launch
 

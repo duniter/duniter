@@ -21,16 +21,7 @@ import { ProgramOptions } from "../lib/common-libs/programOptions";
 
 module.exports = {
   duniter: {
-    cliOptions: [
-      {
-        value: "--gva",
-        desc: "Enable gva API and database.",
-      },
-      {
-        value: "--no-gva",
-        desc: "Disable gva API and database.",
-      },
-    ],
+    cliOptions: [],
 
     config: {
       onLoading: async (conf: ConfDTO, program: ProgramOptions) => {
@@ -38,31 +29,6 @@ module.exports = {
         conf.sigReplay = conf.msPeriod;
         conf.switchOnHeadAdvance =
           CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS;
-
-        // Gva
-        if (
-          program.gva &&
-          program.gva === true &&
-          (!program.noGva || program.noGva === undefined)
-        ) {
-          // Fill with default conf if needed
-          if (conf.gva) {
-            conf.gva.host = conf.gva.host || "localhost";
-            conf.gva.port = conf.gva.port || 30901;
-            conf.gva.path = conf.gva.path || "gva";
-            conf.gva.subscriptionsPath =
-              conf.gva.subscriptionsPath || "gva-sub";
-          } else {
-            conf.gva = {
-              host: "localhost",
-              port: 30901,
-              path: "gva",
-              subscriptionsPath: "gva-sub",
-            };
-          }
-        } else if (program.noGva) {
-          conf.gva = undefined;
-        }
       },
       beforeSave: async (conf: ConfDTO) => {
         conf.msPeriod = conf.msWindow;

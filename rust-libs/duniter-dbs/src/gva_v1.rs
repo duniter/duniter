@@ -19,8 +19,8 @@ db_schema!(
     GvaV1,
     [
         ["txs", Txs, HashKeyV2, TxDbV2],
-        ["txs_by_issuer", TxsByIssuer, PubKeyKeyV2, BTreeSet<Hash>],
-        ["txs_by_recipient", TxsByRecipient, PubKeyKeyV2, BTreeSet<Hash>],
+        ["txs_by_issuer", TxsByIssuer, PubKeyKeyV2, Vec<Hash>],
+        ["txs_by_recipient", TxsByRecipient, PubKeyKeyV2, Vec<Hash>],
         [
             "scripts_by_pubkey",
             ScriptsByPubkey,

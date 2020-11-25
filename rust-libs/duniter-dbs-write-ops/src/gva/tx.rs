@@ -43,7 +43,7 @@ pub(crate) fn apply_tx<B: Backend>(
                 // Insert on col `txs_by_issuer`
                 for pubkey in tx.issuers() {
                     let mut hashs = txs_by_issuer.get(&PubKeyKeyV2(pubkey))?.unwrap_or_default();
-                    hashs.insert(tx_hash);
+                    hashs.push(tx_hash);
                     txs_by_issuer.upsert(PubKeyKeyV2(pubkey), hashs);
                 }
                 // Insert on col `txs_by_recipient`
@@ -51,7 +51,7 @@ pub(crate) fn apply_tx<B: Backend>(
                     let mut hashs = txs_by_recipient
                         .get(&PubKeyKeyV2(pubkey))?
                         .unwrap_or_default();
-                    hashs.insert(tx_hash);
+                    hashs.push(tx_hash);
                     txs_by_recipient.upsert(PubKeyKeyV2(pubkey), hashs);
                 }
 
@@ -243,7 +243,7 @@ fn remove_tx<B: Backend>(
     // Remove tx hash in col `txs_by_issuer`
     for pubkey in tx_db.tx.issuers() {
         let mut hashs_ = txs_by_issuer.get(&PubKeyKeyV2(pubkey))?.unwrap_or_default();
-        hashs_.remove(&tx_hash);
+        hashs_.pop();
         txs_by_issuer.upsert(PubKeyKeyV2(pubkey), hashs_)
     }
     // Remove tx hash in col `txs_by_recipient`
@@ -251,7 +251,7 @@ fn remove_tx<B: Backend>(
         let mut hashs_ = txs_by_recipient
             .get(&PubKeyKeyV2(pubkey))?
             .unwrap_or_default();
-        hashs_.remove(&tx_hash);
+        hashs_.pop();
         txs_by_recipient.upsert(PubKeyKeyV2(pubkey), hashs_)
     }
     // Remove tx itself

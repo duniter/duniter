@@ -194,9 +194,6 @@ export class FileDAL implements ServerDAO {
   }
 
   async init(conf: ConfDTO, commandName: string | null = null) {
-    // Rust server
-    this.initRustServer(conf, commandName);
-
     // wotb
     this.wotb = this.params.wotbf();
 
@@ -220,6 +217,14 @@ export class FileDAL implements ServerDAO {
       const dal = this.newDals[dalName];
       await dal.init();
     }
+    // Rust server
+    let current = await this.getCurrentBlockOrNull();
+    if (current) {
+      this.initRustServer(conf, current.currency, commandName);
+    } else {
+      this.initRustServer(conf, conf.currency, commandName);
+    }
+    // Upgrade database.
     logger.debug("Upgrade database...");
     await this.metaDAL.upgradeDatabase(conf);
     // Update the maximum certifications count a member can issue into the C++ addon
@@ -233,11 +238,15 @@ export class FileDAL implements ServerDAO {
     }
   }
 
-  initRustServer(conf: ConfDTO, commandName: string | null = null) {
+  initRustServer(
+    conf: ConfDTO,
+    currency: string,
+    commandName: string | null = null
+  ) {
     let selfKeypair = conf.pair ? conf.pair.sec : null;
     let rustServerConf = {
       command: commandName,
-      currency: conf.currency || "",
+      currency: currency || "",
       gva: conf.gva,
       selfKeypair,
       txsMempoolSize:

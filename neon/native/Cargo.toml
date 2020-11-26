@@ -17,7 +17,7 @@ neon-build = "0.4.0"
 [dependencies]
 bincode = "1.2.1"
 bs58 = "0.3.0"
-dubp = { version = "0.32.1" }
+dubp = { version = "0.32.2" }
 dubp-wot = { path = "../../rust-libs/dubp-wot" }
 duniter-server = { path = "../../rust-libs/duniter-server" }
 flate2 = "1.0.16"

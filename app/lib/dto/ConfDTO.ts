@@ -182,7 +182,8 @@ export class ConfDTO
     public proxiesConf: ProxiesConf | undefined,
     public gva?: {
       enabled: boolean;
-      host?: string;
+      ip4?: string;
+      ip6?: string;
       port?: number;
       path?: string;
       subscriptionsPath?: string;

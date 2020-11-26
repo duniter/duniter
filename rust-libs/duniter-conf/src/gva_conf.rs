@@ -13,12 +13,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::net::{Ipv4Addr, Ipv6Addr};
+
 use crate::*;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GvaConf {
-    host: Option<String>,
+    ip4: Option<Ipv4Addr>,
+    ip6: Option<Ipv6Addr>,
     port: Option<u16>,
     path: Option<String>,
     subscriptions_path: Option<String>,
@@ -30,10 +33,11 @@ pub struct GvaConf {
 }
 
 impl GvaConf {
-    pub fn get_host(&self) -> String {
-        self.host
-            .to_owned()
-            .unwrap_or_else(|| "localhost".to_owned())
+    pub fn get_ip4(&self) -> Ipv4Addr {
+        self.ip4.unwrap_or(Ipv4Addr::LOCALHOST)
+    }
+    pub fn get_ip6(&self) -> Option<Ipv6Addr> {
+        self.ip6
     }
     pub fn get_port(&self) -> u16 {
         self.port.unwrap_or(30901)
@@ -65,8 +69,10 @@ impl GvaConf {
     pub fn get_remote_host(&self) -> String {
         if let Some(ref remote_host) = self.remote_host {
             remote_host.to_owned()
+        } else if let Some(ip6) = self.ip6 {
+            format!("{} [{}]", self.get_ip4(), ip6)
         } else {
-            self.get_host()
+            self.get_ip4().to_string()
         }
     }
     pub fn get_remote_port(&self) -> u16 {

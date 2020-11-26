@@ -11,7 +11,8 @@ export class RustServerConf {
 }
 
 export class GvaConf {
-    host?: string
+    ip4?: string
+    ip6?: string
     port?: number
     path?: string;
     subscriptionsPath?: string;

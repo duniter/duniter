@@ -212,13 +212,27 @@ impl GvaModule {
 
         log::info!(
             "GVA server listen on http://{}:{}/{}",
-            &conf.get_host(),
+            conf.get_ip4(),
             conf.get_port(),
             &conf.get_path()
         );
-        warp::serve(routes)
-            .run(([0, 0, 0, 0], conf.get_port()))
+        if let Some(ip6) = conf.get_ip6() {
+            log::info!(
+                "GVA server listen on http://{}:{}/{}",
+                ip6,
+                conf.get_port(),
+                &conf.get_path()
+            );
+            futures::future::join(
+                warp::serve(routes.clone()).run((conf.get_ip4(), conf.get_port())),
+                warp::serve(routes).run((ip6, conf.get_port())),
+            )
             .await;
+        } else {
+            warp::serve(routes)
+                .run((conf.get_ip4(), conf.get_port()))
+                .await;
+        }
         log::warn!("GVA server stopped");
     }
 }

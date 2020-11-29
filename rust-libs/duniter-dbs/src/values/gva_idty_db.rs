@@ -15,11 +15,12 @@
 
 use crate::*;
 
-#[derive(Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct GvaIdtyDbV1 {
     pub is_member: bool,
     pub joins: SmallVec<[BlockNumber; 2]>,
-    pub leaves: SmallVec<[BlockNumber; 2]>,
+    pub leaves: BTreeSet<BlockNumber>,
+    pub first_ud: Option<BlockNumber>,
 }
 
 impl ValueAsBytes for GvaIdtyDbV1 {

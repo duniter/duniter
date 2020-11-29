@@ -32,14 +32,14 @@ pub(crate) fn update_identities<B: Backend>(
         let pubkey = revo.issuer;
         if let Some(mut idty) = identities.get(&PubKeyKeyV2(pubkey))? {
             idty.is_member = false;
-            idty.leaves.push(block.number());
+            idty.leaves.insert(block.number());
             identities.upsert(PubKeyKeyV2(pubkey), idty)
         }
     }
     for pubkey in block.excluded().iter().copied() {
         if let Some(mut idty) = identities.get(&PubKeyKeyV2(pubkey))? {
             idty.is_member = false;
-            idty.leaves.push(block.number());
+            idty.leaves.insert(block.number());
             identities.upsert(PubKeyKeyV2(pubkey), idty)
         }
     }
@@ -66,14 +66,14 @@ pub(crate) fn revert_identities<B: Backend>(
         let pubkey = revo.issuer;
         if let Some(mut idty) = identities.get(&PubKeyKeyV2(pubkey))? {
             idty.is_member = true;
-            idty.leaves.pop();
+            idty.leaves.remove(&block.number());
             identities.upsert(PubKeyKeyV2(pubkey), idty)
         }
     }
     for pubkey in block.excluded().iter().copied() {
         if let Some(mut idty) = identities.get(&PubKeyKeyV2(pubkey))? {
             idty.is_member = true;
-            idty.leaves.pop();
+            idty.leaves.remove(&block.number());
             identities.upsert(PubKeyKeyV2(pubkey), idty)
         }
     }

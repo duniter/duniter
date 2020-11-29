@@ -43,6 +43,7 @@ use duniter_dbs::{
     HashKeyV2, PendingTxDbV2, PubKeyKeyV2, PubKeyValV2, SourceAmountValV2, TxDbV2, TxsMpV2Db,
     TxsMpV2DbReadable, TxsMpV2DbWritable, UtxoValV2, WalletConditionsV2,
 };
+use resiter::filter::Filter;
 use resiter::filter_map::FilterMap;
 use resiter::flatten::Flatten;
 use resiter::map::Map;

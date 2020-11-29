@@ -38,3 +38,14 @@ pub(crate) struct TxRecipient {
     /// Account script
     pub(crate) script: String,
 }
+
+#[derive(Clone, Copy, async_graphql::Enum, Eq, PartialEq)]
+pub(crate) enum UdsFilter {
+    All,
+    Unspent,
+}
+impl Default for UdsFilter {
+    fn default() -> Self {
+        UdsFilter::All
+    }
+}

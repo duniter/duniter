@@ -25,15 +25,28 @@ pub fn apply_block<B: Backend>(block: &DubpBlockV10, gva_db: &GvaV1Db<B>) -> KvR
         number: block.number(),
         hash: block.hash(),
     };
-    (gva_db.balances_write(), gva_db.gva_identities_write()).write(
-        |(mut balances, mut gva_identities)| {
-            identities::update_identities::<B>(&block, &mut gva_identities)?;
-            if let Some(divident_amount) = block.dividend() {
-                apply_ud::<B>(divident_amount, &mut balances, &mut gva_identities)?;
-            }
-            Ok(())
-        },
-    )?;
+    (
+        gva_db.balances_write(),
+        gva_db.blockchain_time_write(),
+        gva_db.blocks_with_ud_write(),
+        gva_db.gva_identities_write(),
+    )
+        .write(
+            |(mut balances, mut blockchain_time, mut blocks_with_ud, mut gva_identities)| {
+                blockchain_time.upsert(U32BE(block.number().0), block.common_time());
+                identities::update_identities::<B>(&block, &mut gva_identities)?;
+                if let Some(divident_amount) = block.dividend() {
+                    blocks_with_ud.upsert(U32BE(blockstamp.number.0), ());
+                    apply_ud::<B>(
+                        blockstamp.number,
+                        divident_amount,
+                        &mut balances,
+                        &mut gva_identities,
+                    )?;
+                }
+                Ok(())
+            },
+        )?;
     apply_block_txs(
         &gva_db,
         blockstamp,
@@ -45,15 +58,28 @@ pub fn apply_block<B: Backend>(block: &DubpBlockV10, gva_db: &GvaV1Db<B>) -> KvR
 }
 
 pub fn revert_block<B: Backend>(block: &DubpBlockV10, gva_db: &GvaV1Db<B>) -> KvResult<()> {
-    (gva_db.balances_write(), gva_db.gva_identities_write()).write(
-        |(mut balances, mut gva_identities)| {
-            identities::revert_identities::<B>(&block, &mut gva_identities)?;
-            if let Some(divident_amount) = block.dividend() {
-                revert_ud::<B>(divident_amount, &mut balances, &mut gva_identities)?;
-            }
-            Ok(())
-        },
-    )?;
+    (
+        gva_db.balances_write(),
+        gva_db.blockchain_time_write(),
+        gva_db.blocks_with_ud_write(),
+        gva_db.gva_identities_write(),
+    )
+        .write(
+            |(mut balances, mut blockchain_time, mut blocks_with_ud, mut gva_identities)| {
+                blockchain_time.remove(U32BE(block.number().0));
+                identities::revert_identities::<B>(&block, &mut gva_identities)?;
+                if let Some(divident_amount) = block.dividend() {
+                    blocks_with_ud.remove(U32BE(block.number().0));
+                    revert_ud::<B>(
+                        block.number(),
+                        divident_amount,
+                        &mut balances,
+                        &mut gva_identities,
+                    )?;
+                }
+                Ok(())
+            },
+        )?;
     for tx in block.transactions() {
         let tx_hash = tx.get_hash();
         tx::revert_tx(gva_db, &tx_hash)?.ok_or_else(|| {
@@ -65,17 +91,23 @@ pub fn revert_block<B: Backend>(block: &DubpBlockV10, gva_db: &GvaV1Db<B>) -> Kv
 }
 
 fn apply_ud<B: Backend>(
+    block_number: BlockNumber,
     divident_amount: SourceAmount,
     balances: &mut TxColRw<B::Col, BalancesEvent>,
     identities: &mut TxColRw<B::Col, GvaIdentitiesEvent>,
 ) -> KvResult<()> {
     let members = identities.iter(.., |it| {
-        it.filter_map_ok(|(pk, idty)| if idty.is_member { Some(pk.0) } else { None })
+        it.filter_ok(|(_pk, idty)| idty.is_member)
             .collect::<KvResult<Vec<_>>>()
     })?;
-    for member in members {
+    for (pk, mut idty) in members {
+        if idty.first_ud.is_none() {
+            idty.first_ud = Some(block_number);
+            identities.upsert(pk, idty);
+        }
+
         // Increase account balance
-        let account_script = WalletScriptV10::single_sig(member);
+        let account_script = WalletScriptV10::single_sig(pk.0);
         let balance = balances
             .get(WalletConditionsV2::from_ref(&account_script))?
             .unwrap_or_default();
@@ -88,17 +120,25 @@ fn apply_ud<B: Backend>(
 }
 
 fn revert_ud<B: Backend>(
+    block_number: BlockNumber,
     divident_amount: SourceAmount,
     balances: &mut TxColRw<B::Col, BalancesEvent>,
     identities: &mut TxColRw<B::Col, GvaIdentitiesEvent>,
 ) -> KvResult<()> {
     let members = identities.iter(.., |it| {
-        it.filter_map_ok(|(pk, idty)| if idty.is_member { Some(pk.0) } else { None })
+        it.filter_ok(|(_pk, idty)| idty.is_member)
             .collect::<KvResult<Vec<_>>>()
     })?;
-    for member in members {
+    for (pk, mut idty) in members {
+        if let Some(first_ud) = idty.first_ud {
+            if first_ud == block_number {
+                idty.first_ud = None;
+                identities.upsert(pk, idty);
+            }
+        }
+
         // Increase account balance
-        let account_script = WalletScriptV10::single_sig(member);
+        let account_script = WalletScriptV10::single_sig(pk.0);
         if let Some(SourceAmountValV2(balance)) =
             balances.get(WalletConditionsV2::from_ref(&account_script))?
         {

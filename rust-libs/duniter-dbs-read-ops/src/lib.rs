@@ -23,10 +23,14 @@
 )]
 
 pub mod find_inputs;
+pub mod pagination;
 pub mod txs_history;
 pub mod uds_of_pubkey;
 pub mod utxos;
 
+pub use crate::pagination::{PageInfo, PagedData};
+
+use crate::pagination::{has_next_page, has_previous_page};
 use dubp::common::crypto::hashs::Hash;
 use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::documents::transaction::TransactionDocumentV10;
@@ -36,11 +40,10 @@ use duniter_dbs::{
     kv_typed::prelude::*, BlockMetaV2, GvaV1DbReadable, HashKeyV2, PubKeyKeyV2, TxDbV2,
     TxsMpV2DbReadable, UtxoIdDbV2,
 };
+use resiter::filter::Filter;
+use resiter::filter_map::FilterMap;
 use resiter::map::Map;
-use std::{
-    collections::BTreeSet,
-    ops::{Bound, RangeBounds},
-};
+use std::collections::BTreeSet;
 
 pub fn get_current_block_meta<BcDb: BcV2DbReadable>(bc_db: &BcDb) -> KvResult<Option<BlockMetaV2>> {
     bc_db

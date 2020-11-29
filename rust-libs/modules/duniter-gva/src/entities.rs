@@ -60,6 +60,11 @@ pub(crate) struct TxsHistoryGva {
     pub(crate) receiving: Vec<TxGva>,
 }
 
+#[derive(Default, async_graphql::SimpleObject)]
+pub(crate) struct UdsSum {
+    pub(crate) sum: AmountWithBase,
+}
+
 #[derive(Clone, async_graphql::SimpleObject)]
 pub(crate) struct UtxoGva {
     /// Source amount

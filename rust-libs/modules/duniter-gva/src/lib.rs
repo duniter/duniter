@@ -28,6 +28,7 @@ mod entities;
 mod inputs;
 mod inputs_validators;
 mod mutations;
+mod pagination;
 mod queries;
 mod schema;
 mod subscriptions;
@@ -36,10 +37,11 @@ mod warp_;
 use crate::entities::{
     tx_gva::TxGva,
     ud_gva::{CurrentUdGva, RevalUdGva, UdGva},
-    AmountWithBase, RawTxOrChanges, TxsHistoryGva, UtxoGva,
+    AmountWithBase, RawTxOrChanges, TxsHistoryGva, UdsSum, UtxoGva,
 };
-use crate::inputs::{TxIssuer, TxRecipient};
+use crate::inputs::{TxIssuer, TxRecipient, UdsFilter};
 use crate::inputs_validators::TxCommentValidator;
+use crate::pagination::PaginationWithIntCursor;
 use crate::schema::{GraphQlSchema, SchemaData};
 use async_graphql::http::GraphQLPlaygroundConfig;
 use async_graphql::validators::{IntGreaterThan, ListMinLength, StringMaxLength, StringMinLength};

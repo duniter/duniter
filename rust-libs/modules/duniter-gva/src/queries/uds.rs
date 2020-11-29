@@ -14,7 +14,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use duniter_dbs::bc_v2::BcV2DbReadable;
+use async_graphql::connection::*;
+use duniter_dbs::{bc_v2::BcV2DbReadable, GvaV1DbReadable};
+use duniter_dbs_read_ops::{uds_of_pubkey::UdsWithSum, PagedData};
 
 #[derive(Default)]
 pub(crate) struct UdsQuery;
@@ -37,37 +39,87 @@ impl UdsQuery {
             }))
     }
     /// Universal dividends issued by a public key
+    #[allow(clippy::clippy::too_many_arguments)]
     async fn uds_of_pubkey(
         &self,
         ctx: &async_graphql::Context<'_>,
         #[graphql(desc = "Ed25519 public key on base 58 representation")] pubkey: String,
-    ) -> async_graphql::Result<Vec<UdGva>> {
+        #[graphql(default)] filter: UdsFilter,
+        #[graphql(desc = "pagination", default)] pagination: PaginationWithIntCursor,
+    ) -> async_graphql::Result<Connection<usize, UdGva, UdsSum, EmptyFields>> {
+        let pagination = PaginationWithIntCursor::convert_to_page_info(pagination);
+
         let pubkey = PublicKey::from_base58(&pubkey)?;
 
         let data = ctx.data::<SchemaData>()?;
 
-        let (uds, _sum) = data
+        let (
+            PagedData {
+                data: UdsWithSum { uds, sum },
+                has_previous_page,
+                has_next_page,
+            },
+            times,
+        ) = data
             .dbs_pool
             .execute(move |dbs| {
-                duniter_dbs_read_ops::uds_of_pubkey::uds_of_pubkey(
-                    &dbs.bc_db,
-                    pubkey,
-                    ..,
-                    None,
-                    None,
-                )
+                let paged_data = match filter {
+                    UdsFilter::All => duniter_dbs_read_ops::uds_of_pubkey::all_uds_of_pubkey(
+                        &dbs.bc_db,
+                        &dbs.gva_db,
+                        pubkey,
+                        pagination,
+                    ),
+                    UdsFilter::Unspent => {
+                        duniter_dbs_read_ops::uds_of_pubkey::unspent_uds_of_pubkey(
+                            &dbs.bc_db, pubkey, pagination, None, None,
+                        )
+                    }
+                }?;
+                let mut times = Vec::with_capacity(paged_data.data.uds.len());
+                for (bn, _sa) in &paged_data.data.uds {
+                    times.push(
+                        dbs.gva_db
+                            .blockchain_time()
+                            .get(&U32BE(bn.0))?
+                            .unwrap_or_else(|| unreachable!()),
+                    );
+                }
+                Ok::<_, KvError>((paged_data, times))
             })
             .await??;
 
-        Ok(uds
-            .into_iter()
-            .map(|(bn, sa)| UdGva {
-                amount: sa.amount(),
-                base: sa.base(),
-                issuer: pubkey.to_string(),
-                block_number: bn.0,
-            })
-            .collect())
+        let mut conn = Connection::with_additional_fields(
+            has_previous_page,
+            has_next_page,
+            UdsSum {
+                sum: AmountWithBase {
+                    amount: sum.amount() as i32,
+                    base: sum.base() as i32,
+                },
+            },
+        );
+        let uds_timed =
+            uds.into_iter()
+                .zip(times.into_iter())
+                .map(|((bn, sa), blockchain_time)| {
+                    Edge::new(
+                        bn.0 as usize,
+                        UdGva {
+                            amount: sa.amount(),
+                            base: sa.base(),
+                            issuer: pubkey.to_string(),
+                            block_number: bn.0,
+                            blockchain_time,
+                        },
+                    )
+                });
+        if pagination.order() {
+            conn.append(uds_timed);
+        } else {
+            conn.append(uds_timed.rev());
+        }
+        Ok(conn)
     }
     /// Universal dividends revaluations
     async fn uds_reval(

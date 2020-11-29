@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::*;
+use crate::{uds_of_pubkey::UdsWithSum, *};
 use dubp::{documents::transaction::TransactionInputV10, wallet::prelude::*};
 
 pub fn find_inputs<BcDb: BcV2DbReadable, GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2DbReadable>(
@@ -67,10 +67,13 @@ pub fn find_inputs<BcDb: BcV2DbReadable, GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV
                     .collect::<KvResult<_>>()
             })?;
 
-            let (uds, uds_sum) = crate::uds_of_pubkey::uds_of_pubkey(
+            let PagedData {
+                data: UdsWithSum { uds, sum: uds_sum },
+                ..
+            } = crate::uds_of_pubkey::unspent_uds_of_pubkey(
                 bc_db,
                 issuer,
-                ..,
+                PageInfo::default(),
                 Some(&pending_uds_bn),
                 Some(amount - inputs_sum),
             )?;

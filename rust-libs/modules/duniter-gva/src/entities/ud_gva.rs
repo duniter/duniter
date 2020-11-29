@@ -41,4 +41,6 @@ pub(crate) struct UdGva {
     pub(crate) issuer: String,
     /// Number of the block that created this UD
     pub(crate) block_number: u32,
+    /// Blockchain time of the block that created this UD
+    pub(crate) blockchain_time: u64,
 }

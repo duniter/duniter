@@ -1117,6 +1117,7 @@ dependencies = [
 name = "duniter-dbs-write-ops"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "chrono",
  "dubp",
  "duniter-dbs",

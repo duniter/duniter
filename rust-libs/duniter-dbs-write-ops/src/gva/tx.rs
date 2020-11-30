@@ -16,10 +16,23 @@
 use crate::*;
 use duniter_dbs::gva_v1::BalancesEvent;
 
+pub(crate) type ScriptsHash = HashMap<WalletScriptV10, Hash>;
+
+fn get_script_hash(script: &WalletScriptV10, scripts_hash: &mut ScriptsHash) -> Hash {
+    if let Some(script_hash) = scripts_hash.get(script) {
+        *script_hash
+    } else {
+        let script_hash = Hash::compute(script.to_string().as_bytes());
+        scripts_hash.insert(script.clone(), script_hash);
+        script_hash
+    }
+}
+
 pub(crate) fn apply_tx<B: Backend>(
     current_blockstamp: Blockstamp,
     current_time: i64,
     gva_db: &GvaV1Db<B>,
+    scripts_hash: &mut ScriptsHash,
     tx_hash: Hash,
     tx: &TransactionDocumentV10,
 ) -> KvResult<()> {
@@ -28,7 +41,7 @@ pub(crate) fn apply_tx<B: Backend>(
         gva_db.txs_by_issuer_write(),
         gva_db.txs_by_recipient_write(),
         gva_db.txs_write(),
-        gva_db.utxos_by_script_write(),
+        gva_db.gva_utxos_write(),
         gva_db.balances_write(),
     )
         .write(
@@ -37,7 +50,7 @@ pub(crate) fn apply_tx<B: Backend>(
                 mut txs_by_issuer,
                 mut txs_by_recipient,
                 mut txs,
-                mut utxos_by_script,
+                mut gva_utxos,
                 mut balances,
             )| {
                 // Insert on col `txs_by_issuer`
@@ -74,9 +87,11 @@ pub(crate) fn apply_tx<B: Backend>(
                                 .clone();
                             super::utxos::remove_utxo_v10::<B>(
                                 &mut scripts_by_pubkey,
-                                &mut utxos_by_script,
+                                &mut gva_utxos,
+                                utxo_id,
                                 &utxo_script,
-                                db_tx_origin.written_time,
+                                get_script_hash(&utxo_script, scripts_hash),
+                                db_tx_origin.written_block.number.0,
                             )?;
                             utxo_script
                         }
@@ -92,17 +107,19 @@ pub(crate) fn apply_tx<B: Backend>(
                 for (output_index, output) in tx.get_outputs().iter().enumerate() {
                     super::utxos::write_utxo_v10::<B>(
                         &mut scripts_by_pubkey,
-                        &mut utxos_by_script,
+                        &mut gva_utxos,
                         UtxoV10 {
                             id: UtxoIdV10 {
                                 tx_hash,
                                 output_index,
                             },
                             amount: output.amount,
-                            script: output.conditions.script.clone(),
-                            written_time: current_time,
+                            script: &output.conditions.script,
+                            written_block: current_blockstamp.number,
                         },
+                        get_script_hash(&output.conditions.script, scripts_hash),
                     )?;
+
                     // Increase account balance
                     let balance = balances
                         .get(WalletConditionsV2::from_ref(&output.conditions.script))?
@@ -131,18 +148,18 @@ pub(crate) fn apply_tx<B: Backend>(
 }
 
 pub(crate) fn revert_tx<B: Backend>(
+    block_number: BlockNumber,
     gva_db: &GvaV1Db<B>,
+    scripts_hash: &mut ScriptsHash,
     tx_hash: &Hash,
 ) -> KvResult<Option<TransactionDocumentV10>> {
     if let Some(tx_db) = gva_db.txs().get(&HashKeyV2::from_ref(tx_hash))? {
-        let written_time = tx_db.written_time;
-
         (
             gva_db.scripts_by_pubkey_write(),
             gva_db.txs_by_issuer_write(),
             gva_db.txs_by_recipient_write(),
             gva_db.txs_write(),
-            gva_db.utxos_by_script_write(),
+            gva_db.gva_utxos_write(),
             gva_db.balances_write(),
         )
             .write(
@@ -151,18 +168,23 @@ pub(crate) fn revert_tx<B: Backend>(
                     mut txs_by_issuer,
                     mut txs_by_recipient,
                     mut txs,
-                    mut utxos_by_script,
+                    mut gva_utxos,
                     mut balances,
                 )| {
                     // Remove UTXOs created by this tx
                     use dubp::documents::transaction::TransactionDocumentTrait as _;
-                    for output in tx_db.tx.get_outputs() {
+                    for (output_index, output) in tx_db.tx.get_outputs().iter().enumerate() {
                         let script = &output.conditions.script;
                         super::utxos::remove_utxo_v10::<B>(
                             &mut scripts_by_pubkey,
-                            &mut utxos_by_script,
+                            &mut gva_utxos,
+                            UtxoIdV10 {
+                                tx_hash: *tx_hash,
+                                output_index,
+                            },
                             script,
-                            written_time,
+                            get_script_hash(&script, scripts_hash),
+                            block_number.0,
                         )?;
                         // Decrease account balance
                         decrease_account_balance::<B>(
@@ -191,13 +213,14 @@ pub(crate) fn revert_tx<B: Backend>(
                                     .clone();
                                 super::utxos::write_utxo_v10::<B>(
                                     &mut scripts_by_pubkey,
-                                    &mut utxos_by_script,
+                                    &mut gva_utxos,
                                     UtxoV10 {
                                         id: utxo_id,
                                         amount: input.amount,
-                                        script: utxo_script.clone(),
-                                        written_time: db_tx_origin.written_time,
+                                        script: &utxo_script,
+                                        written_block: db_tx_origin.written_block.number,
                                     },
+                                    get_script_hash(&utxo_script, scripts_hash),
                                 )?;
                                 utxo_script
                             }
@@ -347,10 +370,12 @@ mod tests {
         .build_and_sign(vec![kp.generate_signator()]);
         let tx1_hash = tx1.get_hash();
 
+        let mut scripts_hash = HashMap::new();
         apply_tx(
             current_blockstamp,
             b0.median_time as i64,
             &gva_db,
+            &mut scripts_hash,
             tx1_hash,
             &tx1,
         )?;
@@ -395,6 +420,7 @@ mod tests {
             current_blockstamp,
             b0.median_time as i64,
             &gva_db,
+            &mut scripts_hash,
             tx2_hash,
             &tx2,
         )?;
@@ -412,7 +438,12 @@ mod tests {
             Some(SourceAmountValV2(ud0_amount))
         );
 
-        revert_tx(&gva_db, &tx2_hash)?;
+        revert_tx(
+            current_blockstamp.number,
+            &gva_db,
+            &mut scripts_hash,
+            &tx2_hash,
+        )?;
 
         assert_eq!(
             gva_db
@@ -427,7 +458,12 @@ mod tests {
             Some(SourceAmountValV2(o2_amount))
         );
 
-        revert_tx(&gva_db, &tx1_hash)?;
+        revert_tx(
+            current_blockstamp.number,
+            &gva_db,
+            &mut scripts_hash,
+            &tx1_hash,
+        )?;
 
         assert_eq!(
             gva_db

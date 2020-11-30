@@ -14,59 +14,74 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
+use duniter_dbs::GvaUtxoIdDbV1;
 
-pub(crate) fn write_utxo_v10<B: Backend>(
+pub(crate) fn write_utxo_v10<'s, B: Backend>(
     scripts_by_pubkey: &mut TxColRw<B::Col, duniter_dbs::gva_v1::ScriptsByPubkeyEvent>,
-    utxos_by_script: &mut TxColRw<B::Col, duniter_dbs::gva_v1::UtxosByScriptEvent>,
-    utxo: UtxoV10,
+    gva_utxos: &mut TxColRw<B::Col, duniter_dbs::gva_v1::GvaUtxosEvent>,
+    utxo: UtxoV10<'s>,
+    utxo_script_hash: Hash,
 ) -> KvResult<()> {
     for pubkey in utxo.script.pubkeys() {
         let mut pubkey_scripts = scripts_by_pubkey
             .get(&PubKeyKeyV2(pubkey))?
             .unwrap_or_default();
-        pubkey_scripts.0.insert(utxo.script.clone());
-        scripts_by_pubkey.upsert(PubKeyKeyV2(pubkey), pubkey_scripts);
+        if !pubkey_scripts.0.contains(&utxo.script) {
+            pubkey_scripts.0.insert(utxo.script.clone());
+            scripts_by_pubkey.upsert(PubKeyKeyV2(pubkey), pubkey_scripts);
+        }
     }
-    let mut utxo_of_script = utxos_by_script
-        .get(WalletConditionsV2::from_ref(&utxo.script))?
-        .unwrap_or_default();
-    utxo_of_script
-        .0
-        .entry(utxo.written_time)
-        .or_default()
-        .push((utxo.id, utxo.amount));
-    utxos_by_script.upsert(WalletConditionsV2(utxo.script), utxo_of_script);
+
+    let block_number = utxo.written_block.0;
+    let utxo_amount = utxo.amount;
+    let utxo_id = utxo.id;
+    gva_utxos.upsert(
+        GvaUtxoIdDbV1::new_(
+            utxo_script_hash,
+            block_number,
+            utxo_id.tx_hash,
+            utxo_id.output_index as u8,
+        ),
+        SourceAmountValV2(utxo_amount),
+    );
 
     Ok(())
 }
 
 pub(crate) fn remove_utxo_v10<B: Backend>(
     scripts_by_pubkey: &mut TxColRw<B::Col, duniter_dbs::gva_v1::ScriptsByPubkeyEvent>,
-    utxos_by_script: &mut TxColRw<B::Col, duniter_dbs::gva_v1::UtxosByScriptEvent>,
+    gva_utxos: &mut TxColRw<B::Col, duniter_dbs::gva_v1::GvaUtxosEvent>,
+    utxo_id: UtxoIdV10,
     utxo_script: &WalletScriptV10,
-    written_time: i64,
+    utxo_script_hash: Hash,
+    written_block_number: u32,
 ) -> KvResult<()> {
-    if let Some(mut utxos_of_script) =
-        utxos_by_script.get(&WalletConditionsV2::from_ref(utxo_script))?
+    gva_utxos.remove(GvaUtxoIdDbV1::new_(
+        utxo_script_hash,
+        written_block_number,
+        utxo_id.tx_hash,
+        utxo_id.output_index as u8,
+    ));
+
+    let (k_min, k_max) = GvaUtxoIdDbV1::script_interval(utxo_script_hash);
+    if gva_utxos
+        .iter(k_min..k_max, |it| it.keys().next_res())?
+        .is_none()
     {
-        utxos_of_script.0.remove(&written_time);
-        if utxos_of_script.0.is_empty() {
-            let pubkeys = utxo_script.pubkeys();
-            for pubkey in pubkeys {
-                let mut pubkey_scripts =
-                    scripts_by_pubkey
-                        .get(&PubKeyKeyV2(pubkey))?
-                        .ok_or_else(|| {
-                            KvError::DbCorrupted(format!(
-                                "GVA: key {} dont exist on col `scripts_by_pubkey`.",
-                                pubkey,
-                            ))
-                        })?;
-                pubkey_scripts.0.remove(utxo_script);
-                scripts_by_pubkey.upsert(PubKeyKeyV2(pubkey), pubkey_scripts);
-            }
+        let pubkeys = utxo_script.pubkeys();
+        for pubkey in pubkeys {
+            let mut pubkey_scripts =
+                scripts_by_pubkey
+                    .get(&PubKeyKeyV2(pubkey))?
+                    .ok_or_else(|| {
+                        KvError::DbCorrupted(format!(
+                            "GVA: key {} dont exist on col `scripts_by_pubkey`.",
+                            pubkey,
+                        ))
+                    })?;
+            pubkey_scripts.0.remove(utxo_script);
+            scripts_by_pubkey.upsert(PubKeyKeyV2(pubkey), pubkey_scripts);
         }
-        utxos_by_script.upsert(WalletConditionsV2(utxo_script.clone()), utxos_of_script);
     }
     Ok(())
 }

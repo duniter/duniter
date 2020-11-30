@@ -30,10 +30,10 @@ db_schema!(
             WalletScriptArrayV2
         ],
         [
-            "utxos_by_script",
-            UtxosByScript,
-            WalletConditionsV2,
-            UtxosOfScriptV1
+            "gva_utxos",
+            GvaUtxos,
+            GvaUtxoIdDbV1,
+            SourceAmountValV2
         ],
         ["balances", Balances, WalletConditionsV2, SourceAmountValV2],
         ["gva_identities", GvaIdentities, PubKeyKeyV2, GvaIdtyDbV1],

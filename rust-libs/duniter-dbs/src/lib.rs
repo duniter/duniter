@@ -68,6 +68,7 @@ pub use keys::source_key::SourceKeyV1;
 pub use keys::timestamp::TimestampKeyV1;
 pub use keys::ud_id::UdIdV2;
 pub use keys::uid::UidKeyV1;
+pub use keys::utxo_id::GvaUtxoIdDbV1;
 pub use keys::wallet_conditions::{WalletConditionsV1, WalletConditionsV2};
 pub use txs_mp_v2::{TxsMpV2Db, TxsMpV2DbReadable, TxsMpV2DbRo, TxsMpV2DbWritable};
 pub use values::block_db::{BlockDbEnum, BlockDbV1, TransactionInBlockDbV1};
@@ -87,7 +88,6 @@ pub use values::source_amount::SourceAmountValV2;
 pub use values::tx_db::{PendingTxDbV2, TxDbV2};
 pub use values::ud_entry_db::{ConsumedUdDbV1, UdAmountDbV1, UdEntryDbV1};
 pub use values::utxo::UtxoValV2;
-pub use values::utxos_of_script::UtxosOfScriptV1;
 pub use values::wallet_db::WalletDbV1;
 pub use values::wallet_script_array::WalletScriptArrayV2;
 
@@ -107,12 +107,7 @@ pub(crate) use kv_typed::prelude::*;
 pub(crate) use serde::{Deserialize, Serialize};
 pub(crate) use smallvec::SmallVec;
 pub(crate) use std::{
-    collections::{BTreeMap, BTreeSet},
-    convert::TryFrom,
-    fmt::Debug,
-    iter::Iterator,
-    path::Path,
-    str::FromStr,
+    collections::BTreeSet, convert::TryFrom, fmt::Debug, iter::Iterator, path::Path, str::FromStr,
 };
 
 pub trait ToDumpString {

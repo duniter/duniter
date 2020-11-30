@@ -92,7 +92,7 @@ pub fn find_inputs<BcDb: BcV2DbReadable, GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV
     if inputs_sum < amount {
         // Written UTXOs
         let (written_utxos, written_utxos_sum) =
-            crate::utxos::find_script_utxos(gva_db, txs_mp_db, amount - inputs_sum, &script)?;
+            crate::utxos::find_script_utxos(gva_db, txs_mp_db, Some(amount - inputs_sum), &script)?;
         inputs.extend(
             written_utxos
                 .into_iter()
@@ -115,12 +115,10 @@ pub fn find_inputs<BcDb: BcV2DbReadable, GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
-
     use super::*;
     use duniter_dbs::{
         bc_v2::BcV2DbWritable, gva_v1::GvaV1DbWritable, txs_mp_v2::TxsMpV2DbWritable,
-        SourceAmountValV2, UdIdV2, UtxoIdDbV2, UtxoValV2, UtxosOfScriptV1, WalletConditionsV2,
+        GvaUtxoIdDbV1, SourceAmountValV2, UdIdV2, UtxoIdDbV2, UtxoValV2, WalletConditionsV2,
     };
 
     const UD0: i64 = 10;
@@ -143,26 +141,6 @@ mod tests {
             Hash::default(),
             10,
         ));
-        let mut written_utxos = BTreeMap::new();
-        written_utxos.insert(
-            0,
-            smallvec::smallvec![
-                (
-                    UtxoIdV10 {
-                        tx_hash: Hash::default(),
-                        output_index: 0
-                    },
-                    SourceAmount::with_base0(50)
-                ),
-                (
-                    UtxoIdV10 {
-                        tx_hash: Hash::default(),
-                        output_index: 1
-                    },
-                    SourceAmount::with_base0(80)
-                )
-            ],
-        );
 
         bc_db.blocks_meta_write().upsert(U32BE(0), b0)?;
         bc_db
@@ -171,9 +149,16 @@ mod tests {
         bc_db
             .uds_write()
             .upsert(UdIdV2(PublicKey::default(), BlockNumber(0)), ())?;
-        gva_db.utxos_by_script_write().upsert(
-            WalletConditionsV2(script.clone()),
-            UtxosOfScriptV1(written_utxos),
+        gva_db
+            .blockchain_time_write()
+            .upsert(U32BE(0), b0.median_time)?;
+        gva_db.gva_utxos_write().upsert(
+            GvaUtxoIdDbV1::new(script.clone(), 0, Hash::default(), 0),
+            SourceAmountValV2(SourceAmount::with_base0(50)),
+        )?;
+        gva_db.gva_utxos_write().upsert(
+            GvaUtxoIdDbV1::new(script.clone(), 0, Hash::default(), 1),
+            SourceAmountValV2(SourceAmount::with_base0(80)),
         )?;
         txs_mp_db
             .outputs_by_script_write()

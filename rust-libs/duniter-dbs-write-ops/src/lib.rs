@@ -47,13 +47,13 @@ use resiter::filter::Filter;
 use resiter::filter_map::FilterMap;
 use resiter::flatten::Flatten;
 use resiter::map::Map;
-use std::ops::Deref;
+use std::{collections::HashMap, ops::Deref};
 
-pub struct UtxoV10 {
+pub struct UtxoV10<'s> {
     pub id: UtxoIdV10,
     pub amount: SourceAmount,
-    pub script: WalletScriptV10,
-    pub written_time: i64,
+    pub script: &'s WalletScriptV10,
+    pub written_block: BlockNumber,
 }
 
 #[cfg(test)]

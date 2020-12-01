@@ -31,6 +31,7 @@ impl UtxosQuery {
         ctx: &async_graphql::Context<'_>,
         #[graphql(desc = "DUBP wallet script")] script: String,
         #[graphql(desc = "pagination", default)] pagination: PaginationWithStrCursor,
+        #[graphql(desc = "Amount needed")] amount: Option<i64>,
     ) -> async_graphql::Result<Connection<String, UtxoGva, Sum, EmptyFields>> {
         let pagination = PaginationWithStrCursor::convert_to_page_info(pagination);
 
@@ -48,23 +49,31 @@ impl UtxosQuery {
         ) = data
             .dbs_pool
             .execute(move |dbs| {
-                let paged_data = duniter_dbs_read_ops::utxos::find_script_utxos(
-                    &dbs.gva_db,
-                    &dbs.txs_mp_db,
-                    None,
-                    pagination,
-                    &script,
-                )?;
-                let mut times = Vec::with_capacity(paged_data.data.utxos.len());
-                for (UtxoIdWithBlockNumber(_utxo_id, bn), _sa) in &paged_data.data.utxos {
-                    times.push(
-                        dbs.gva_db
-                            .blockchain_time()
-                            .get(&U32BE(bn.0))?
-                            .unwrap_or_else(|| unreachable!()),
-                    );
+                if let Some(current_block) =
+                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)?
+                {
+                    let paged_data = duniter_dbs_read_ops::utxos::find_script_utxos(
+                        &dbs.gva_db,
+                        &dbs.txs_mp_db,
+                        amount.map(|amount| {
+                            SourceAmount::new(amount, current_block.unit_base as i64)
+                        }),
+                        pagination,
+                        &script,
+                    )?;
+                    let mut times = Vec::with_capacity(paged_data.data.utxos.len());
+                    for (UtxoIdWithBlockNumber(_utxo_id, bn), _sa) in &paged_data.data.utxos {
+                        times.push(
+                            dbs.gva_db
+                                .blockchain_time()
+                                .get(&U32BE(bn.0))?
+                                .unwrap_or_else(|| unreachable!()),
+                        );
+                    }
+                    Ok::<_, anyhow::Error>((paged_data, times))
+                } else {
+                    Err(anyhow::Error::msg("no blockchain"))
                 }
-                Ok::<_, anyhow::Error>((paged_data, times))
             })
             .await??;
 
@@ -87,6 +96,7 @@ impl UtxosQuery {
                         base: source_amount.base(),
                         tx_hash: utxo_id_with_bn.0.tx_hash.to_hex(),
                         output_index: utxo_id_with_bn.0.output_index as u32,
+                        written_block: (utxo_id_with_bn.1).0,
                         written_time: blockchain_time,
                     },
                 )

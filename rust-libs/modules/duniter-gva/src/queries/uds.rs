@@ -46,6 +46,7 @@ impl UdsQuery {
         #[graphql(desc = "Ed25519 public key on base 58 representation")] pubkey: String,
         #[graphql(default)] filter: UdsFilter,
         #[graphql(desc = "pagination", default)] pagination: PaginationWithIntCursor,
+        #[graphql(desc = "Amount needed")] amount: Option<i64>,
     ) -> async_graphql::Result<Connection<usize, UdGva, Sum, EmptyFields>> {
         let pagination = PaginationWithIntCursor::convert_to_page_info(pagination);
 
@@ -63,29 +64,41 @@ impl UdsQuery {
         ) = data
             .dbs_pool
             .execute(move |dbs| {
-                let paged_data = match filter {
-                    UdsFilter::All => duniter_dbs_read_ops::uds_of_pubkey::all_uds_of_pubkey(
-                        &dbs.bc_db,
-                        &dbs.gva_db,
-                        pubkey,
-                        pagination,
-                    ),
-                    UdsFilter::Unspent => {
-                        duniter_dbs_read_ops::uds_of_pubkey::unspent_uds_of_pubkey(
-                            &dbs.bc_db, pubkey, pagination, None, None,
-                        )
+                if let Some(current_block) =
+                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)?
+                {
+                    let paged_data = match filter {
+                        UdsFilter::All => duniter_dbs_read_ops::uds_of_pubkey::all_uds_of_pubkey(
+                            &dbs.bc_db,
+                            &dbs.gva_db,
+                            pubkey,
+                            pagination,
+                        ),
+                        UdsFilter::Unspent => {
+                            duniter_dbs_read_ops::uds_of_pubkey::unspent_uds_of_pubkey(
+                                &dbs.bc_db,
+                                pubkey,
+                                pagination,
+                                None,
+                                amount.map(|amount| {
+                                    SourceAmount::new(amount, current_block.unit_base as i64)
+                                }),
+                            )
+                        }
+                    }?;
+                    let mut times = Vec::with_capacity(paged_data.data.uds.len());
+                    for (bn, _sa) in &paged_data.data.uds {
+                        times.push(
+                            dbs.gva_db
+                                .blockchain_time()
+                                .get(&U32BE(bn.0))?
+                                .unwrap_or_else(|| unreachable!()),
+                        );
                     }
-                }?;
-                let mut times = Vec::with_capacity(paged_data.data.uds.len());
-                for (bn, _sa) in &paged_data.data.uds {
-                    times.push(
-                        dbs.gva_db
-                            .blockchain_time()
-                            .get(&U32BE(bn.0))?
-                            .unwrap_or_else(|| unreachable!()),
-                    );
+                    Ok::<_, anyhow::Error>((paged_data, times))
+                } else {
+                    Err(anyhow::Error::msg("no blockchain"))
                 }
-                Ok::<_, KvError>((paged_data, times))
             })
             .await??;
 

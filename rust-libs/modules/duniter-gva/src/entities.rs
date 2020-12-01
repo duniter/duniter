@@ -75,6 +75,8 @@ pub(crate) struct UtxoGva {
     pub(crate) tx_hash: String,
     /// Index of output in origin transaction
     pub(crate) output_index: u32,
+    /// Written block
+    pub(crate) written_block: u32,
     /// Written time
     pub(crate) written_time: u64,
 }

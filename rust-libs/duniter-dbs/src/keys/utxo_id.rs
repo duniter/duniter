@@ -183,10 +183,14 @@ impl GvaUtxoIdDbV1 {
 
         (min, max)
     }
-    pub fn script_block_interval(script_hash: Hash, block_number: u32) -> (Self, Self) {
+    pub fn script_block_interval(
+        script_hash: Hash,
+        block_number_start: u32,
+        block_number_end: u32,
+    ) -> (Self, Self) {
         (
-            Self::new_(script_hash, block_number, Hash::default(), 0),
-            Self::new_(script_hash, block_number, Hash::max(), u8::MAX),
+            Self::new_(script_hash, block_number_start, Hash::default(), 0),
+            Self::new_(script_hash, block_number_end, Hash::max(), u8::MAX),
         )
     }
 }

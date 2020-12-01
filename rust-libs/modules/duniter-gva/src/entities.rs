@@ -48,6 +48,11 @@ impl RawTxOrChanges {
     }
 }
 
+#[derive(Default, async_graphql::SimpleObject)]
+pub(crate) struct Sum {
+    pub(crate) sum: AmountWithBase,
+}
+
 #[derive(async_graphql::SimpleObject)]
 pub(crate) struct TxsHistoryGva {
     /// Transactions sent
@@ -58,11 +63,6 @@ pub(crate) struct TxsHistoryGva {
     pub(crate) received: Vec<TxGva>,
     /// Transactions receiving
     pub(crate) receiving: Vec<TxGva>,
-}
-
-#[derive(Default, async_graphql::SimpleObject)]
-pub(crate) struct UdsSum {
-    pub(crate) sum: AmountWithBase,
 }
 
 #[derive(Clone, async_graphql::SimpleObject)]
@@ -76,5 +76,5 @@ pub(crate) struct UtxoGva {
     /// Index of output in origin transaction
     pub(crate) output_index: u32,
     /// Written time
-    pub(crate) written_time: i64,
+    pub(crate) written_time: u64,
 }

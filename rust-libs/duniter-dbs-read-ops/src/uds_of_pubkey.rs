@@ -168,7 +168,7 @@ where
             uds_with_sum.uds.iter().map(|(bn, _sa)| bn.0),
             first_ud.map(|bn| bn.0),
             page_info,
-            false,
+            true,
         ),
         has_next_page: not_reach_end,
         data: uds_with_sum,
@@ -255,9 +255,8 @@ pub fn unspent_uds_of_pubkey<BcDb: BcV2DbReadable>(
     bn_to_exclude_opt: Option<&BTreeSet<BlockNumber>>,
     amount_target_opt: Option<SourceAmount>,
 ) -> KvResult<PagedData<UdsWithSum>> {
-    let not_all = page_info.limit_opt.is_some() || page_info.pos.is_some();
     (bc_db.uds(), bc_db.uds_reval()).read(|(uds, uds_reval)| {
-        let (first_ud_opt, last_ud_opt) = if not_all {
+        let (first_ud_opt, last_ud_opt) = if page_info.not_all() {
             get_first_and_last_unspent_ud(&uds, pubkey, bn_to_exclude_opt)?
         } else {
             (None, None)
@@ -358,13 +357,13 @@ pub fn unspent_uds_of_pubkey<BcDb: BcV2DbReadable>(
                     uds_with_sum.uds.iter().map(|(bn, _sa)| bn.0),
                     first_ud_opt.map(|bn| bn.0),
                     page_info,
-                    false,
+                    true,
                 ),
                 has_next_page: has_next_page(
                     uds_with_sum.uds.iter().map(|(bn, _sa)| bn.0),
                     last_ud_opt.map(|bn| bn.0),
                     page_info,
-                    false,
+                    true,
                 ),
                 data: uds_with_sum,
             })

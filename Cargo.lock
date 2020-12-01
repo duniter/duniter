@@ -1107,6 +1107,7 @@ dependencies = [
 name = "duniter-dbs-read-ops"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "dubp",
  "duniter-dbs",
  "resiter",

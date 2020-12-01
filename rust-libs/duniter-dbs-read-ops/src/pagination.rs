@@ -44,6 +44,9 @@ impl<T> PageInfo<T> {
             limit_opt,
         }
     }
+    pub fn not_all(&self) -> bool {
+        self.limit_opt.is_some() || self.pos.is_some()
+    }
     pub fn order(&self) -> bool {
         self.order
     }
@@ -76,17 +79,19 @@ pub(crate) fn has_next_page<
     I: DoubleEndedIterator<Item = C>,
 >(
     mut page_cursors: I,
-    first_cursor_opt: Option<C>,
+    last_cursor_opt: Option<C>,
     page_info: PageInfo<C>,
-    page_is_reversed: bool,
+    page_not_reversed: bool,
 ) -> bool {
-    if page_info.limit_opt.is_some() || page_info.pos.is_some() {
-        if let Some(last_cursor) = first_cursor_opt {
-            if let Some(page_end_cursor) = if !page_is_reversed {
+    if page_info.not_all() {
+        if let Some(last_cursor) = last_cursor_opt {
+            //println!("TMP last_cursor={:?}", last_cursor);
+            if let Some(page_end_cursor) = if page_not_reversed {
                 page_cursors.next_back()
             } else {
                 page_cursors.next()
             } {
+                //println!("TMP page_end_cursor={:?}", page_end_cursor);
                 page_end_cursor != last_cursor
             } else {
                 page_info.pos.unwrap_or_default() < last_cursor
@@ -106,11 +111,12 @@ pub(crate) fn has_previous_page<
     mut page_cursors: I,
     first_cursor_opt: Option<C>,
     page_info: PageInfo<C>,
-    page_is_reversed: bool,
+    page_not_reversed: bool,
 ) -> bool {
-    if page_info.limit_opt.is_some() || page_info.pos.is_some() {
+    if page_info.not_all() {
         if let Some(first_cursor) = first_cursor_opt {
-            if let Some(page_start_cursor) = if !page_is_reversed {
+            //println!("TMP first_cursor={:?}", first_cursor);
+            if let Some(page_start_cursor) = if page_not_reversed {
                 page_cursors.next()
             } else {
                 page_cursors.next_back()

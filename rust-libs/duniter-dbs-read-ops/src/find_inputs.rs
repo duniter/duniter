@@ -13,7 +13,11 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{uds_of_pubkey::UdsWithSum, *};
+use crate::{
+    uds_of_pubkey::UdsWithSum,
+    utxos::{UtxoIdWithBlockNumber, UtxosWithSum},
+    *,
+};
 use dubp::{documents::transaction::TransactionInputV10, wallet::prelude::*};
 
 pub fn find_inputs<BcDb: BcV2DbReadable, GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2DbReadable>(
@@ -23,7 +27,7 @@ pub fn find_inputs<BcDb: BcV2DbReadable, GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV
     amount: SourceAmount,
     script: &WalletScriptV10,
     use_mempool_sources: bool,
-) -> KvResult<(Vec<TransactionInputV10>, SourceAmount)> {
+) -> anyhow::Result<(Vec<TransactionInputV10>, SourceAmount)> {
     // Pending UTXOs
     let (mut inputs, mut inputs_sum) = if use_mempool_sources {
         txs_mp_db
@@ -91,21 +95,29 @@ pub fn find_inputs<BcDb: BcV2DbReadable, GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV
     }
     if inputs_sum < amount {
         // Written UTXOs
-        let (written_utxos, written_utxos_sum) =
-            crate::utxos::find_script_utxos(gva_db, txs_mp_db, Some(amount - inputs_sum), &script)?;
-        inputs.extend(
-            written_utxos
-                .into_iter()
-                .map(
-                    |(_written_time, utxo_id, source_amount)| TransactionInputV10 {
-                        amount: source_amount,
-                        id: SourceIdV10::Utxo(UtxoIdV10 {
-                            tx_hash: utxo_id.tx_hash,
-                            output_index: utxo_id.output_index,
-                        }),
-                    },
-                ),
-        );
+        let PagedData {
+            data:
+                UtxosWithSum {
+                    utxos: written_utxos,
+                    sum: written_utxos_sum,
+                },
+            ..
+        } = crate::utxos::find_script_utxos(
+            gva_db,
+            txs_mp_db,
+            Some(amount - inputs_sum),
+            PageInfo::default(),
+            &script,
+        )?;
+        inputs.extend(written_utxos.into_iter().map(
+            |(UtxoIdWithBlockNumber(utxo_id, _), source_amount)| TransactionInputV10 {
+                amount: source_amount,
+                id: SourceIdV10::Utxo(UtxoIdV10 {
+                    tx_hash: utxo_id.tx_hash,
+                    output_index: utxo_id.output_index,
+                }),
+            },
+        ));
 
         Ok((inputs, inputs_sum + written_utxos_sum))
     } else {
@@ -124,7 +136,7 @@ mod tests {
     const UD0: i64 = 10;
 
     #[test]
-    fn test_find_inputs() -> KvResult<()> {
+    fn test_find_inputs() -> anyhow::Result<()> {
         let bc_db = duniter_dbs::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?;
         let gva_db = duniter_dbs::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?;
         let txs_mp_db = duniter_dbs::txs_mp_v2::TxsMpV2Db::<Mem>::open(MemConf::default())?;

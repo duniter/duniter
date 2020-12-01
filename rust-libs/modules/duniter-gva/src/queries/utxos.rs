@@ -15,6 +15,11 @@
 
 use crate::*;
 use async_graphql::connection::*;
+use duniter_dbs::GvaV1DbReadable;
+use duniter_dbs_read_ops::{
+    utxos::{UtxoIdWithBlockNumber, UtxosWithSum},
+    PagedData,
+};
 
 #[derive(Default)]
 pub(crate) struct UtxosQuery;
@@ -25,91 +30,68 @@ impl UtxosQuery {
         &self,
         ctx: &async_graphql::Context<'_>,
         #[graphql(desc = "DUBP wallet script")] script: String,
-        after: Option<String>,
-        before: Option<String>,
-        first: Option<i32>,
-        last: Option<i32>,
-    ) -> async_graphql::Result<Connection<usize, UtxoGva, EmptyFields, EmptyFields>> {
+        #[graphql(desc = "pagination", default)] pagination: PaginationWithStrCursor,
+    ) -> async_graphql::Result<Connection<String, UtxoGva, Sum, EmptyFields>> {
+        let pagination = PaginationWithStrCursor::convert_to_page_info(pagination);
+
         let script = dubp::documents_parser::wallet_script_from_str(&script)?;
 
         let data = ctx.data::<SchemaData>()?;
 
-        let (utxos, _balance) = data
+        let (
+            PagedData {
+                data: UtxosWithSum { utxos, sum },
+                has_previous_page,
+                has_next_page,
+            },
+            times,
+        ) = data
             .dbs_pool
             .execute(move |dbs| {
-                duniter_dbs_read_ops::utxos::find_script_utxos(
+                let paged_data = duniter_dbs_read_ops::utxos::find_script_utxos(
                     &dbs.gva_db,
                     &dbs.txs_mp_db,
                     None,
+                    pagination,
                     &script,
-                )
+                )?;
+                let mut times = Vec::with_capacity(paged_data.data.utxos.len());
+                for (UtxoIdWithBlockNumber(_utxo_id, bn), _sa) in &paged_data.data.utxos {
+                    times.push(
+                        dbs.gva_db
+                            .blockchain_time()
+                            .get(&U32BE(bn.0))?
+                            .unwrap_or_else(|| unreachable!()),
+                    );
+                }
+                Ok::<_, anyhow::Error>((paged_data, times))
             })
             .await??;
 
-        let utxos: Vec<UtxoGva> = utxos
-            .into_iter()
-            .map(|(written_time, utxo_id, source_amount)| UtxoGva {
-                amount: source_amount.amount(),
-                base: source_amount.base(),
-                tx_hash: utxo_id.tx_hash.to_hex(),
-                output_index: utxo_id.output_index as u32,
-                written_time,
-            })
-            .collect();
-
-        query_utxos(after, before, first, last, &utxos).await
+        let mut conn = Connection::with_additional_fields(
+            has_previous_page,
+            has_next_page,
+            Sum {
+                sum: AmountWithBase {
+                    amount: sum.amount() as i32,
+                    base: sum.base() as i32,
+                },
+            },
+        );
+        conn.append(utxos.into_iter().zip(times.into_iter()).map(
+            |((utxo_id_with_bn, source_amount), blockchain_time)| {
+                Edge::new(
+                    utxo_id_with_bn.to_string(),
+                    UtxoGva {
+                        amount: source_amount.amount(),
+                        base: source_amount.base(),
+                        tx_hash: utxo_id_with_bn.0.tx_hash.to_hex(),
+                        output_index: utxo_id_with_bn.0.output_index as u32,
+                        written_time: blockchain_time,
+                    },
+                )
+            },
+        ));
+        Ok(conn)
     }
-}
-
-async fn query_utxos(
-    after: Option<String>,
-    before: Option<String>,
-    first: Option<i32>,
-    last: Option<i32>,
-    utxos: &[UtxoGva],
-) -> async_graphql::Result<Connection<usize, UtxoGva, EmptyFields, EmptyFields>> {
-    query(
-        after,
-        before,
-        first,
-        last,
-        |after, before, first, last| async move {
-            let mut start = 0usize;
-            let mut end = utxos.len();
-
-            if let Some(after) = after {
-                if after >= utxos.len() {
-                    return Ok(Connection::new(false, false));
-                }
-                start = after + 1;
-            }
-
-            if let Some(before) = before {
-                if before == 0 {
-                    return Ok(Connection::new(false, false));
-                }
-                end = before;
-            }
-
-            let mut slice = &utxos[start..end];
-
-            if let Some(first) = first {
-                slice = &slice[..first.min(slice.len())];
-                end -= first.min(slice.len());
-            } else if let Some(last) = last {
-                slice = &slice[slice.len() - last.min(slice.len())..];
-                start = end - last.min(slice.len());
-            }
-
-            let mut connection = Connection::new(start > 0, end < utxos.len());
-            connection.append(
-                slice
-                    .iter()
-                    .enumerate()
-                    .map(|(idx, item)| Edge::new(start + idx, item.clone())),
-            );
-            Ok(connection)
-        },
-    )
-    .await
 }

@@ -33,6 +33,15 @@ pub(crate) struct PaginationWithStrCursor {
     ord: Order,
     page_size: Option<u32>,
 }
+impl PaginationWithStrCursor {
+    pub(crate) fn convert_to_page_info(self) -> duniter_dbs_read_ops::PageInfo<String> {
+        duniter_dbs_read_ops::PageInfo::new(
+            self.cursor,
+            self.ord == Order::Asc,
+            self.page_size.map(|n| n as usize),
+        )
+    }
+}
 
 #[derive(Clone, Copy, Default, async_graphql::InputObject)]
 pub(crate) struct PaginationWithIntCursor {

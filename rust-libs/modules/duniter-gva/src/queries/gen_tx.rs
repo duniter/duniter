@@ -132,7 +132,7 @@ impl GenTxsQuery {
                         )?,
                     ))
                 } else {
-                    Err(KvError::Custom("no blockchain".into()))
+                    Err(anyhow::Error::msg("no blockchain"))
                 }
             })
             .await??;
@@ -214,7 +214,7 @@ impl GenTxsQuery {
                     }
                     Ok((current_block, issuers_inputs_with_sum))
                 } else {
-                    Err(KvError::Custom("no blockchain".into()))
+                    Err(anyhow::Error::msg("no blockchain"))
                 }
             })
             .await??;

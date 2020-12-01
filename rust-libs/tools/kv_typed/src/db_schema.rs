@@ -141,6 +141,7 @@ macro_rules! db_schema {
                     $(type [<$col_name ColRw>]: DbCollectionRw;)*
                     type DbRo: Sized;
 
+                    fn clear(&self) -> KvResult<()>;
                     fn get_ro_handler(&self) -> Self::DbRo;
                     fn open(
                         backend_conf: <<Self as [<$db_name DbWritable>]>::Backend as kv_typed::backend::Backend>::Conf,
@@ -156,6 +157,11 @@ macro_rules! db_schema {
                     $(type [<$col_name ColRw>] = ColRw<B::Col, [<$col_name Event>]>;)*
                     type DbRo = [<$db_name DbRo>]<B>;
 
+                    #[inline(always)]
+                    fn clear(&self) -> KvResult<()> {
+                        $(self.collections.[<$col_name:snake>].clear()?;)*
+                        Ok(())
+                    }
                     #[inline(always)]
                     fn get_ro_handler(&self) -> Self::DbRo {
                         [<$db_name DbRo>] {
@@ -182,11 +188,15 @@ macro_rules! db_schema {
                             },
                         })
                     }
+                    #[inline(always)]
                     fn save(&self) -> KvResult<()> {
                         $(self.collections.[<$col_name:snake>].save()?;)*
                         Ok(())
                     }
-                    $(fn [<$col_name:snake _write>](&self) -> &ColRw<B::Col, [<$col_name Event>]> { &self.collections.[<$col_name:snake>] })*
+                    $(
+                        #[inline(always)]
+                        fn [<$col_name:snake _write>](&self) -> &ColRw<B::Col, [<$col_name Event>]> { &self.collections.[<$col_name:snake>] }
+                    )*
                 }
             }
         }

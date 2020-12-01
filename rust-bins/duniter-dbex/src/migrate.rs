@@ -28,6 +28,10 @@ pub(crate) fn migrate(profile_path: PathBuf) -> anyhow::Result<()> {
     let start_time = Instant::now();
     let dbs = duniter_dbs::open_dbs(Some(profile_path.as_path()));
 
+    // Clear bc_db and gva_db
+    dbs.bc_db.clear()?;
+    dbs.gva_db.clear()?;
+
     let data_path = profile_path.join(crate::DATA_DIR);
     let duniter_js_db = BcV1Db::<LevelDb>::open(LevelDbConf {
         db_path: data_path.as_path().join("leveldb"),

@@ -9,6 +9,7 @@ edition = "2018"
 anyhow = "1.0.33"
 arrayvec = "0.5.1"
 async-graphql = "2.0.0"
+async-mutex = "1.4.0"
 async-trait = "0.1.41"
 dubp = { version = "0.32.2" }
 duniter-conf = { path = "../../duniter-conf" }
@@ -31,5 +32,5 @@ warp = "0.2"
 duniter-dbs = { path = "../../duniter-dbs", features = ["mem"] }
 mockall = "0.8.0"
 serde_json = "1.0.53"
-tokio = { version = "0.2.22", features = ["macros", "rt-threaded"] }
+tokio = { version = "0.2.22", features = ["macros", "rt-threaded", "time"] }
 unwrap = "1.2.1"

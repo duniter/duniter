@@ -357,7 +357,7 @@ export class Server extends stream.Duplex implements HookableServer {
     await this.dal.init(this.conf, commandName);
     // Get rust endpoints
     for (let endpoint of this.dal.getRustEndpoints()) {
-      logger.info("TMP: rustEndpoint: %s", endpoint);
+      //logger.info("TMP: rustEndpoint: %s", endpoint);
       this.addEndpointsDefinitions(async () => endpoint);
     }
     // Maintenance

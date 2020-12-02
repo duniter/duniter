@@ -24,6 +24,7 @@
 
 pub use duniter_conf::gva_conf::GvaConf;
 
+mod anti_spam;
 mod entities;
 mod inputs;
 mod inputs_validators;

@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use crate::*;
 
@@ -30,6 +30,7 @@ pub struct GvaConf {
     remote_path: Option<String>,
     remote_subscriptions_path: Option<String>,
     remote_tls: Option<bool>,
+    whitelist: Option<Vec<IpAddr>>,
 }
 
 impl GvaConf {
@@ -98,5 +99,15 @@ impl GvaConf {
     }
     pub fn get_remote_tls(&self) -> bool {
         self.remote_tls.unwrap_or(false)
+    }
+    pub fn get_whitelist(&self) -> &[IpAddr] {
+        if let Some(ref whitelist) = self.whitelist {
+            whitelist
+        } else {
+            &[
+                IpAddr::V4(Ipv4Addr::LOCALHOST),
+                IpAddr::V6(Ipv6Addr::LOCALHOST),
+            ]
+        }
     }
 }

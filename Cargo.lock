@@ -1135,6 +1135,7 @@ dependencies = [
  "anyhow",
  "arrayvec",
  "async-graphql",
+ "async-mutex",
  "async-trait",
  "dubp",
  "duniter-conf",

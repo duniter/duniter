@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use crate::anti_spam::AntiSpam;
 use crate::*;
 
 pub struct BadRequest(pub anyhow::Error);
@@ -54,38 +55,49 @@ pub(crate) fn graphql(
     schema: GraphQlSchema,
     opts: async_graphql::http::MultipartOptions,
 ) -> impl warp::Filter<Extract = (impl warp::Reply,), Error = Rejection> + Clone {
+    let anti_spam = AntiSpam::from(conf);
     let opts = Arc::new(opts);
     warp::path::path(conf.get_path())
+        .and(warp::addr::remote())
         .and(warp::method())
         .and(warp::query::raw().or(warp::any().map(String::new)).unify())
         .and(warp::header::optional::<String>("content-type"))
         .and(warp::body::stream())
         .and(warp::any().map(move || opts.clone()))
         .and(warp::any().map(move || schema.clone()))
+        .and(warp::any().map(move || anti_spam.clone()))
         .and_then(
-            |method,
+            |remote_addr,
+             method,
              query: String,
              content_type,
              body,
              opts: Arc<async_graphql::http::MultipartOptions>,
-             schema| async move {
-                if method == http::Method::GET {
-                    let request: async_graphql::Request = serde_urlencoded::from_str(&query)
+             schema,
+             anti_spam: AntiSpam| async move {
+                if anti_spam.verify(remote_addr).await {
+                    if method == http::Method::GET {
+                        let request: async_graphql::Request = serde_urlencoded::from_str(&query)
+                            .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
+                        Ok::<_, Rejection>((schema, request))
+                    } else {
+                        let request = async_graphql::http::receive_body(
+                            content_type,
+                            futures::TryStreamExt::map_err(body, |err| {
+                                std::io::Error::new(std::io::ErrorKind::Other, err)
+                            })
+                            .map_ok(|mut buf| warp::Buf::to_bytes(&mut buf))
+                            .into_async_read(),
+                            async_graphql::http::MultipartOptions::clone(&opts),
+                        )
+                        .await
                         .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                    Ok::<_, Rejection>((schema, request))
+                        Ok::<_, Rejection>((schema, request))
+                    }
                 } else {
-                    let request = async_graphql::http::receive_body(
-                        content_type,
-                        futures::TryStreamExt::map_err(body, |err| {
-                            std::io::Error::new(std::io::ErrorKind::Other, err)
-                        })
-                        .map_ok(|mut buf| warp::Buf::to_bytes(&mut buf))
-                        .into_async_read(),
-                        async_graphql::http::MultipartOptions::clone(&opts),
-                    )
-                    .await
-                    .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                    Ok::<_, Rejection>((schema, request))
+                    Err(warp::reject::custom(BadRequest(anyhow::Error::msg(
+                        "too many requests",
+                    ))))
                 }
             },
         )
@@ -100,11 +112,25 @@ pub(crate) fn graphql_ws(
     conf: &GvaConf,
     schema: GraphQlSchema,
 ) -> impl warp::Filter<Extract = (impl warp::Reply,), Error = Rejection> + Clone {
+    let anti_spam = AntiSpam::from(conf);
     warp::path::path(conf.get_subscriptions_path())
+        .and(warp::addr::remote())
         .and(warp::ws())
         .and(warp::any().map(move || schema.clone()))
-        .map(|ws: warp::ws::Ws, schema: GraphQlSchema| {
-            ws.on_upgrade(move |websocket| {
+        .and(warp::any().map(move || anti_spam.clone()))
+        .and_then(
+            |remote_addr, ws: warp::ws::Ws, schema: GraphQlSchema, anti_spam: AntiSpam| async move {
+                if anti_spam.verify(remote_addr).await {
+                    Ok((ws, schema))
+                } else {
+                    Err(warp::reject::custom(BadRequest(anyhow::Error::msg(
+                        "too many requests",
+                    ))))
+                }
+            },
+        )
+        .and_then(|(ws, schema): (warp::ws::Ws, GraphQlSchema)| {
+            let reply = ws.on_upgrade(move |websocket| {
                 let (ws_sender, ws_receiver) = websocket.split();
 
                 async move {
@@ -120,7 +146,12 @@ pub(crate) fn graphql_ws(
                     .forward(ws_sender)
                     .await;
                 }
-            })
+            });
+
+            futures::future::ready(Ok::<_, Rejection>(warp::reply::with_header(
+                reply,
+                "Sec-WebSocket-Protocol",
+                "graphql-ws",
+            )))
         })
-        .map(|reply| warp::reply::with_header(reply, "Sec-WebSocket-Protocol", "graphql-ws"))
 }

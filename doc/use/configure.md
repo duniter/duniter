@@ -191,17 +191,19 @@ It is also possible to manually edit `conf.json` file :
 
 | parameter | type | default value |
 |:-:|:-:|:-:|
-| host | string | `"localhost"` |
+| ip4 | IPv4 | `"127.0.0.1"` |
+| ip6 | IPv6 | `"::1"` |
 | port | number |  `30901` |
 | path | string |  `"gva"` |
 | remotePath | string | `"gva"` |
 | subscriptionsPath | string |  `"gva-sub"` |
 | remoteSubscriptionsPath | string | `"gva-sub"` |
 | remoteTls | boolean |  `false` |
+| whitelist | IP[] |  `["127.0.0.1", "::1"]` |
 
-GVA server listen to `http://<host>:<port>/<remotePath>`
+GVA server listen to `http://<ip4|ip6>:<port>/<remotePath>`
 
-GVA subscriptions websocket server listen to `ws://<host>:<port>/<remoteSubscriptionsPath>`
+GVA subscriptions websocket server listen to `ws://<ip4|ip6>:<port>/<remoteSubscriptionsPath>`
 
 ## Synchronize your node
 

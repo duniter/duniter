@@ -14,7 +14,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use duniter_dbs::{GvaV1DbReadable, WalletConditionsV2};
 
 #[derive(Default)]
 pub(crate) struct AccountBalanceQuery;
@@ -33,14 +32,11 @@ impl AccountBalanceQuery {
         };
 
         let data = ctx.data::<SchemaData>()?;
+        let dbs_reader = data.dbs_reader();
 
         let balance = data
             .dbs_pool
-            .execute(move |dbs| {
-                dbs.gva_db
-                    .balances()
-                    .get(&WalletConditionsV2(account_script))
-            })
+            .execute(move |dbs| dbs_reader.get_account_balance(&dbs.gva_db, &account_script))
             .await??
             .unwrap_or_default()
             .0;
@@ -49,5 +45,44 @@ impl AccountBalanceQuery {
             amount: balance.amount() as i32,
             base: balance.base() as i32,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tests::*;
+    use duniter_dbs::SourceAmountValV2;
+
+    #[tokio::test]
+    async fn query_balance() -> anyhow::Result<()> {
+        let mut dbs_reader = MockDbsReader::new();
+        use duniter_dbs::gva_v1::GvaV1Db;
+        dbs_reader
+            .expect_get_account_balance::<GvaV1Db<FileBackend>>()
+            .withf(|_, s| {
+                s == &WalletScriptV10::single_sig(
+                    PublicKey::from_base58("DnjL6hYA1k7FavGHbbir79PKQbmzw63d6bsamBBdUULP")
+                        .expect("wrong pubkey"),
+                )
+            })
+            .times(1)
+            .returning(|_, _| Ok(Some(SourceAmountValV2(SourceAmount::with_base0(38)))));
+        let schema = create_schema(dbs_reader)?;
+        assert_eq!(
+            exec_graphql_request(
+                &schema,
+                r#"{ balance(script: "DnjL6hYA1k7FavGHbbir79PKQbmzw63d6bsamBBdUULP") {amount} }"#
+            )
+            .await?,
+            serde_json::json!({
+                "data": {
+                    "balance": {
+                      "amount": 38
+                    }
+                }
+            })
+        );
+        Ok(())
     }
 }

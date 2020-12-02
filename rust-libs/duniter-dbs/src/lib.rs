@@ -44,7 +44,7 @@ pub use kv_typed;
 
 // Prelude
 pub mod prelude {
-    pub use crate::{DbsBackend, DuniterDbs};
+    pub use crate::DuniterDbs;
     #[cfg(feature = "explorer")]
     pub use kv_typed::explorer::{
         DbExplorable, EntryFound, ExplorerAction, ExplorerActionResponse, ValueCaptures,
@@ -114,21 +114,20 @@ pub trait ToDumpString {
     fn to_dump_string(&self) -> String;
 }
 
-#[cfg(feature = "mem")]
-pub type DbsBackend = kv_typed::backend::memory::Mem;
-#[cfg(not(feature = "mem"))]
-pub type DbsBackend = Sled;
+#[cfg(all(not(feature = "mem"), not(test)))]
+pub type FileBackend = kv_typed::backend::sled::Sled;
+#[cfg(any(feature = "mem", test))]
+pub type FileBackend = kv_typed::backend::memory::Mem;
 
 #[derive(Clone, Debug)]
-pub struct DuniterDbs {
-    pub bc_db: bc_v2::BcV2Db<DbsBackend>,
+pub struct DuniterDbs<B: Backend> {
+    pub bc_db: bc_v2::BcV2Db<B>,
     pub cm_db: cm_v1::CmV1Db<MemSingleton>,
-    pub gva_db: GvaV1Db<DbsBackend>,
-    pub txs_mp_db: TxsMpV2Db<DbsBackend>,
+    pub gva_db: GvaV1Db<B>,
+    pub txs_mp_db: TxsMpV2Db<B>,
 }
 
-#[cfg(feature = "mem")]
-impl DuniterDbs {
+impl DuniterDbs<Mem> {
     pub fn mem() -> KvResult<Self> {
         use bc_v2::BcV2DbWritable as _;
         use cm_v1::CmV1DbWritable as _;

@@ -18,7 +18,7 @@ use crate::*;
 pub fn apply_block(
     block: DubpBlockV10,
     current_opt: Option<BlockMetaV2>,
-    dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs>,
+    dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
     gva: bool,
     throw_chainability: bool,
 ) -> KvResult<BlockMetaV2> {
@@ -49,7 +49,7 @@ pub fn apply_block(
 #[inline(always)]
 pub fn apply_chunk(
     current_opt: Option<BlockMetaV2>,
-    dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs>,
+    dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
     blocks: Vec<DubpBlockV10>,
     gva: bool,
 ) -> KvResult<BlockMetaV2> {
@@ -102,7 +102,7 @@ fn verify_chunk_chainability(
 }
 
 fn apply_block_inner(
-    dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs>,
+    dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
     block: Arc<DubpBlockV10>,
     gva: bool,
 ) -> KvResult<BlockMetaV2> {
@@ -134,7 +134,7 @@ fn apply_block_inner(
 }
 
 fn apply_chunk_inner(
-    dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs>,
+    dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
     blocks: Arc<Vec<DubpBlockV10>>,
     gva: bool,
 ) -> KvResult<BlockMetaV2> {

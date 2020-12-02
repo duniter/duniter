@@ -43,6 +43,10 @@ use crate::inputs::{TxIssuer, TxRecipient, UdsFilter};
 use crate::inputs_validators::TxCommentValidator;
 use crate::pagination::{PaginationWithIntCursor, PaginationWithStrCursor};
 use crate::schema::{GraphQlSchema, SchemaData};
+#[cfg(test)]
+use crate::tests::create_dbs_reader;
+#[cfg(test)]
+use crate::tests::DbsReader;
 use async_graphql::http::GraphQLPlaygroundConfig;
 use async_graphql::validators::{IntGreaterThan, ListMinLength, StringMaxLength, StringMinLength};
 use dubp::common::crypto::keys::{ed25519::PublicKey, KeyPair as _, PublicKey as _};
@@ -52,7 +56,11 @@ use dubp::documents::transaction::{TransactionDocumentTrait, TransactionDocument
 use dubp::documents_parser::prelude::*;
 use dubp::wallet::prelude::*;
 use duniter_dbs::prelude::*;
-use duniter_dbs::{kv_typed::prelude::*, TxDbV2, TxsMpV2DbReadable};
+use duniter_dbs::{kv_typed::prelude::*, FileBackend, TxDbV2, TxsMpV2DbReadable};
+#[cfg(not(test))]
+use duniter_dbs_read_ops::create_dbs_reader;
+#[cfg(not(test))]
+use duniter_dbs_read_ops::DbsReader;
 use duniter_mempools::{Mempools, TxsMempool};
 use futures::{StreamExt, TryStreamExt};
 use resiter::map::Map;
@@ -66,7 +74,7 @@ use warp::{http::Response as HttpResponse, Filter as _, Rejection, Stream};
 pub struct GvaModule {
     conf: Option<GvaConf>,
     currency: String,
-    dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs>,
+    dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs<FileBackend>>,
     mempools: Mempools,
     self_pubkey: PublicKey,
     software_version: &'static str,
@@ -77,7 +85,7 @@ impl duniter_module::DuniterModule for GvaModule {
     fn init(
         conf: &duniter_conf::DuniterConf,
         currency: &str,
-        dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs>,
+        dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs<FileBackend>>,
         mempools: Mempools,
         _profile_path_opt: Option<&std::path::Path>,
         software_version: &'static str,
@@ -150,7 +158,7 @@ impl GvaModule {
     async fn start_inner(
         conf: GvaConf,
         currency: String,
-        dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs>,
+        dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs<FileBackend>>,
         mempools: Mempools,
         self_pubkey: PublicKey,
         software_version: &'static str,
@@ -163,6 +171,7 @@ impl GvaModule {
         )
         .data(schema::SchemaData {
             dbs_pool,
+            dbs_reader: create_dbs_reader(),
             server_meta_data: ServerMetaData {
                 currency,
                 self_pubkey,
@@ -278,10 +287,64 @@ impl From<duniter_dbs::PeerCardDbV1> for PeerCardStringified {
 mod tests {
     use super::*;
     use duniter_conf::DuniterConf;
+    use duniter_dbs::bc_v2::BcV2DbReadable;
+    use duniter_dbs::gva_v1::GvaV1DbReadable;
+    use duniter_dbs::{BlockMetaV2, SourceAmountValV2};
     use duniter_mempools::Mempools;
     use duniter_module::DuniterModule;
     use fast_threadpool::ThreadPoolConfig;
     use unwrap::unwrap;
+
+    mockall::mock! {
+        pub DbsReader {
+            fn get_account_balance<GvaDb: 'static + GvaV1DbReadable>(
+                &self,
+                gva_db: &GvaDb,
+                account_script: &WalletScriptV10,
+            ) -> KvResult<Option<SourceAmountValV2>>;
+            fn get_current_block_meta<BcDb: 'static + BcV2DbReadable>(
+                &self,
+                bc_db: &BcDb,
+            ) -> KvResult<Option<BlockMetaV2>>;
+            fn get_current_ud<BcDb: 'static + BcV2DbReadable>(
+                &self,
+                bc_db: &BcDb,
+            ) -> KvResult<Option<SourceAmount>>;
+        }
+    }
+    pub type DbsReader = duniter_dbs::kv_typed::prelude::Arc<MockDbsReader>;
+    pub fn create_dbs_reader() -> DbsReader {
+        Arc::new(MockDbsReader::new())
+    }
+
+    pub(crate) fn create_schema(dbs_ops: MockDbsReader) -> KvResult<GraphQlSchema> {
+        let dbs = DuniterDbs::mem()?;
+        let threadpool = fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), dbs);
+        Ok(async_graphql::Schema::build(
+            queries::QueryRoot::default(),
+            mutations::MutationRoot::default(),
+            subscriptions::SubscriptionRoot::default(),
+        )
+        .data(schema::SchemaData {
+            dbs_pool: threadpool.into_async_handler(),
+            dbs_reader: Arc::new(dbs_ops),
+            server_meta_data: ServerMetaData {
+                currency: "test_currency".to_owned(),
+                self_pubkey: PublicKey::default(),
+                software_version: "test",
+            },
+            txs_mempool: TxsMempool::new(10),
+        })
+        .extension(async_graphql::extensions::Logger)
+        .finish())
+    }
+
+    pub(crate) async fn exec_graphql_request(
+        schema: &GraphQlSchema,
+        request: &str,
+    ) -> anyhow::Result<serde_json::Value> {
+        Ok(serde_json::to_value(schema.execute(request).await)?)
+    }
 
     #[tokio::test]
     #[ignore]

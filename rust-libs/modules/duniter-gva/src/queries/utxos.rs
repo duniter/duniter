@@ -38,6 +38,7 @@ impl UtxosQuery {
         let script = dubp::documents_parser::wallet_script_from_str(&script)?;
 
         let data = ctx.data::<SchemaData>()?;
+        let dbs_reader = data.dbs_reader();
 
         let (
             PagedData {
@@ -49,9 +50,7 @@ impl UtxosQuery {
         ) = data
             .dbs_pool
             .execute(move |dbs| {
-                if let Some(current_block) =
-                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)?
-                {
+                if let Some(current_block) = dbs_reader.get_current_block_meta(&dbs.bc_db)? {
                     let paged_data = duniter_dbs_read_ops::utxos::find_script_utxos(
                         &dbs.gva_db,
                         &dbs.txs_mp_db,

@@ -37,7 +37,7 @@ use duniter_dbs::cm_v1::{CmV1DbReadable, CmV1DbWritable};
 use duniter_dbs::{
     kv_typed::prelude::*, GvaV1DbReadable, HashKeyV2, PendingTxDbV2, TxsMpV2DbReadable,
 };
-use duniter_dbs::{prelude::*, BlockMetaV2};
+use duniter_dbs::{prelude::*, BlockMetaV2, FileBackend};
 use duniter_dbs_read_ops::txs_history::TxsHistory;
 use duniter_mempools::{Mempools, TxMpError, TxsMempool};
 use duniter_module::{plug_duniter_modules, DuniterModule as _, Endpoint};
@@ -54,7 +54,7 @@ pub enum DuniterCommand {
 pub struct DuniterServer {
     conf: DuniterConf,
     current: Option<BlockMetaV2>,
-    dbs_pool: fast_threadpool::ThreadPoolSyncHandler<DuniterDbs>,
+    dbs_pool: fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
     pending_txs_subscriber: flume::Receiver<Arc<Events<duniter_dbs::txs_mp_v2::TxsEvent>>>,
     txs_mempool: TxsMempool,
 }
@@ -74,12 +74,14 @@ impl DuniterServer {
             _ => DuniterCommand::Start,
         };
 
+        let dbs_reader = duniter_dbs_read_ops::create_dbs_reader();
         let txs_mempool = TxsMempool::new(conf.txs_mempool_size);
 
         log::info!("open duniter databases...");
         let dbs = duniter_dbs::open_dbs(home_path_opt);
         log::info!("Databases successfully opened.");
-        let current = duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)
+        let current = dbs_reader
+            .get_current_block_meta(&dbs.bc_db)
             .context("Fail to get current")?;
         if let Some(current) = current {
             log::info!("Current block: #{}-{}", current.number, current.hash);
@@ -331,53 +333,5 @@ impl DuniterServer {
                     .expect("fail to write on memory db")
             })
             .expect("dbs pool disconnected")
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use dubp::documents::transaction::TransactionDocumentV10Builder;
-    use dubp::{crypto::keys::ed25519::Ed25519KeyPair, documents::smallvec::smallvec};
-
-    #[test]
-    fn test_txs_history() -> anyhow::Result<()> {
-        let server = DuniterServer::start(
-            None,
-            DuniterConf {
-                gva: None,
-                self_key_pair: Ed25519KeyPair::generate_random()
-                    .expect("fail to gen random keypair"),
-                txs_mempool_size: 200,
-            },
-            "currency_test".to_owned(),
-            None,
-            "test",
-        )?;
-
-        let tx = TransactionDocumentV10Builder {
-            currency: "duniter_unit_test_currency",
-            blockstamp: Blockstamp::default(),
-            locktime: 0,
-            issuers: smallvec![PublicKey::default()],
-            inputs: &[],
-            unlocks: &[],
-            outputs: smallvec![],
-            comment: "test",
-            hash: None,
-        }
-        .build_with_signature(smallvec![]);
-        server.add_pending_tx_force(tx.clone())?;
-
-        let txs_history = server.get_transactions_history(PublicKey::default())?;
-
-        tx.get_hash();
-        assert_eq!(txs_history.sending, vec![tx]);
-
-        server.remove_all_pending_txs()?;
-
-        assert_eq!(server.get_pending_txs(0, 0)?.len(), 0);
-
-        Ok(())
     }
 }

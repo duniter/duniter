@@ -34,25 +34,50 @@ use crate::pagination::{has_next_page, has_previous_page};
 use dubp::common::crypto::hashs::Hash;
 use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::documents::transaction::TransactionDocumentV10;
-use dubp::{common::prelude::BlockNumber, wallet::prelude::SourceAmount};
+use dubp::{common::prelude::BlockNumber, wallet::prelude::*};
 use duniter_dbs::bc_v2::BcV2DbReadable;
 use duniter_dbs::{
-    kv_typed::prelude::*, BlockMetaV2, GvaV1DbReadable, HashKeyV2, PubKeyKeyV2, TxDbV2,
-    TxsMpV2DbReadable, UtxoIdDbV2,
+    kv_typed::prelude::*, BlockMetaV2, GvaV1DbReadable, HashKeyV2, PubKeyKeyV2, SourceAmountValV2,
+    TxDbV2, TxsMpV2DbReadable, UtxoIdDbV2,
 };
 use resiter::filter::Filter;
 use resiter::filter_map::FilterMap;
 use resiter::map::Map;
 use std::collections::BTreeSet;
 
-pub fn get_current_block_meta<BcDb: BcV2DbReadable>(bc_db: &BcDb) -> KvResult<Option<BlockMetaV2>> {
-    bc_db
-        .blocks_meta()
-        .iter(.., |it| it.reverse().values().next_res())
+#[derive(Clone, Copy, Debug)]
+pub struct DbsReader;
+
+pub fn create_dbs_reader() -> DbsReader {
+    DbsReader
 }
 
-pub fn get_current_ud<BcDb: BcV2DbReadable>(bc_db: &BcDb) -> KvResult<Option<SourceAmount>> {
-    bc_db
-        .uds_reval()
-        .iter(.., |it| it.reverse().values().map_ok(|v| v.0).next_res())
+impl DbsReader {
+    pub fn get_account_balance<GvaDb: GvaV1DbReadable>(
+        &self,
+        gva_db: &GvaDb,
+        account_script: &WalletScriptV10,
+    ) -> KvResult<Option<SourceAmountValV2>> {
+        gva_db
+            .balances()
+            .get(duniter_dbs::WalletConditionsV2::from_ref(account_script))
+    }
+
+    pub fn get_current_block_meta<BcDb: BcV2DbReadable>(
+        &self,
+        bc_db: &BcDb,
+    ) -> KvResult<Option<BlockMetaV2>> {
+        bc_db
+            .blocks_meta()
+            .iter(.., |it| it.reverse().values().next_res())
+    }
+
+    pub fn get_current_ud<BcDb: BcV2DbReadable>(
+        &self,
+        bc_db: &BcDb,
+    ) -> KvResult<Option<SourceAmount>> {
+        bc_db
+            .uds_reval()
+            .iter(.., |it| it.reverse().values().map_ok(|v| v.0).next_res())
+    }
 }

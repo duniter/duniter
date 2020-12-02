@@ -28,10 +28,11 @@ impl UdsQuery {
         ctx: &async_graphql::Context<'_>,
     ) -> async_graphql::Result<Option<CurrentUdGva>> {
         let data = ctx.data::<SchemaData>()?;
+        let dbs_reader = data.dbs_reader();
 
         Ok(data
             .dbs_pool
-            .execute(move |dbs| duniter_dbs_read_ops::get_current_ud(&dbs.bc_db))
+            .execute(move |dbs| dbs_reader.get_current_ud(&dbs.bc_db))
             .await??
             .map(|sa| CurrentUdGva {
                 amount: sa.amount(),
@@ -53,6 +54,7 @@ impl UdsQuery {
         let pubkey = PublicKey::from_base58(&pubkey)?;
 
         let data = ctx.data::<SchemaData>()?;
+        let dbs_reader = data.dbs_reader();
 
         let (
             PagedData {
@@ -64,9 +66,7 @@ impl UdsQuery {
         ) = data
             .dbs_pool
             .execute(move |dbs| {
-                if let Some(current_block) =
-                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)?
-                {
+                if let Some(current_block) = dbs_reader.get_current_block_meta(&dbs.bc_db)? {
                     let paged_data = match filter {
                         UdsFilter::All => duniter_dbs_read_ops::uds_of_pubkey::all_uds_of_pubkey(
                             &dbs.bc_db,
@@ -154,5 +154,33 @@ impl UdsQuery {
                 })
             })
             .await??)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tests::*;
+
+    #[tokio::test]
+    async fn query_current_ud() -> anyhow::Result<()> {
+        let mut dbs_reader = MockDbsReader::new();
+        use duniter_dbs::bc_v2::BcV2Db;
+        dbs_reader
+            .expect_get_current_ud::<BcV2Db<FileBackend>>()
+            .times(1)
+            .returning(|_| Ok(Some(SourceAmount::with_base0(100))));
+        let schema = create_schema(dbs_reader)?;
+        assert_eq!(
+            exec_graphql_request(&schema, r#"{ currentUd {amount} }"#).await?,
+            serde_json::json!({
+                "data": {
+                    "currentUd": {
+                      "amount": 100
+                    }
+                }
+            })
+        );
+        Ok(())
     }
 }

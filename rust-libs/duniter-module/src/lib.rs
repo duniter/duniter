@@ -23,7 +23,7 @@
 )]
 
 use duniter_conf::DuniterConf;
-use duniter_dbs::DuniterDbs;
+use duniter_dbs::{DuniterDbs, FileBackend};
 use duniter_mempools::Mempools;
 use std::path::Path;
 
@@ -34,7 +34,7 @@ pub trait DuniterModule: 'static + Sized {
     fn init(
         conf: &DuniterConf,
         currency: &str,
-        dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs>,
+        dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs<FileBackend>>,
         mempools: Mempools,
         profile_path_opt: Option<&Path>,
         software_version: &'static str,
@@ -51,7 +51,7 @@ macro_rules! plug_duniter_modules {
             async fn start_duniter_modules(
                 conf: &DuniterConf,
                 currency: String,
-                dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs>,
+                dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs<FileBackend>>,
                 mempools: duniter_mempools::Mempools,
                 profile_path_opt: Option<std::path::PathBuf>,
                 software_version: &'static str,
@@ -105,7 +105,7 @@ mod tests {
         fn init(
             _conf: &DuniterConf,
             _currency: &str,
-            _dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs>,
+            _dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs<FileBackend>>,
             _mempools: Mempools,
             profile_path_opt: Option<&Path>,
             _software_version: &'static str,
@@ -128,7 +128,7 @@ mod tests {
         fn init(
             _conf: &DuniterConf,
             _currency: &str,
-            _dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs>,
+            _dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs<FileBackend>>,
             _mempools: Mempools,
             _profile_path_opt: Option<&Path>,
             _software_version: &'static str,

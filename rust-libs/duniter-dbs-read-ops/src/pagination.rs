@@ -75,8 +75,9 @@ where
 impl<T> Copy for PageInfo<T> where T: Copy {}
 
 pub(crate) fn has_next_page<
-    C: std::fmt::Debug + Default + Ord,
-    I: DoubleEndedIterator<Item = C>,
+    'i,
+    C: 'static + std::fmt::Debug + Default + Ord,
+    I: DoubleEndedIterator<Item = &'i C>,
 >(
     mut page_cursors: I,
     last_cursor_opt: Option<C>,
@@ -92,7 +93,7 @@ pub(crate) fn has_next_page<
                 page_cursors.next()
             } {
                 //println!("TMP page_end_cursor={:?}", page_end_cursor);
-                page_end_cursor != last_cursor
+                page_end_cursor != &last_cursor
             } else {
                 page_info.pos.unwrap_or_default() < last_cursor
             }
@@ -105,8 +106,9 @@ pub(crate) fn has_next_page<
 }
 
 pub(crate) fn has_previous_page<
-    C: std::fmt::Debug + Default + Ord,
-    I: DoubleEndedIterator<Item = C>,
+    'i,
+    C: 'static + std::fmt::Debug + Default + Ord,
+    I: DoubleEndedIterator<Item = &'i C>,
 >(
     mut page_cursors: I,
     first_cursor_opt: Option<C>,
@@ -121,7 +123,7 @@ pub(crate) fn has_previous_page<
             } else {
                 page_cursors.next_back()
             } {
-                page_start_cursor != first_cursor
+                page_start_cursor != &first_cursor
             } else {
                 page_info.pos.unwrap_or_default() > first_cursor
             }

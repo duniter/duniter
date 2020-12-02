@@ -17,7 +17,7 @@ use crate::*;
 use async_graphql::connection::*;
 use duniter_dbs::GvaV1DbReadable;
 use duniter_dbs_read_ops::{
-    utxos::{UtxoIdWithBlockNumber, UtxosWithSum},
+    utxos::{UtxoCursor, UtxosWithSum},
     PagedData,
 };
 
@@ -30,10 +30,10 @@ impl UtxosQuery {
         &self,
         ctx: &async_graphql::Context<'_>,
         #[graphql(desc = "DUBP wallet script")] script: String,
-        #[graphql(desc = "pagination", default)] pagination: PaginationWithStrCursor,
+        #[graphql(desc = "pagination", default)] pagination: Pagination,
         #[graphql(desc = "Amount needed")] amount: Option<i64>,
     ) -> async_graphql::Result<Connection<String, UtxoGva, Sum, EmptyFields>> {
-        let pagination = PaginationWithStrCursor::convert_to_page_info(pagination);
+        let pagination = Pagination::convert_to_page_info(pagination)?;
 
         let script = dubp::documents_parser::wallet_script_from_str(&script)?;
 
@@ -61,11 +61,11 @@ impl UtxosQuery {
                         &script,
                     )?;
                     let mut times = Vec::with_capacity(paged_data.data.utxos.len());
-                    for (UtxoIdWithBlockNumber(_utxo_id, bn), _sa) in &paged_data.data.utxos {
+                    for (UtxoCursor { block_number, .. }, _sa) in &paged_data.data.utxos {
                         times.push(
                             dbs.gva_db
                                 .blockchain_time()
-                                .get(&U32BE(bn.0))?
+                                .get(&U32BE(block_number.0))?
                                 .unwrap_or_else(|| unreachable!()),
                         );
                     }
@@ -87,15 +87,15 @@ impl UtxosQuery {
             },
         );
         conn.append(utxos.into_iter().zip(times.into_iter()).map(
-            |((utxo_id_with_bn, source_amount), blockchain_time)| {
+            |((utxo_cursor, source_amount), blockchain_time)| {
                 Edge::new(
-                    utxo_id_with_bn.to_string(),
+                    utxo_cursor.to_string(),
                     UtxoGva {
                         amount: source_amount.amount(),
                         base: source_amount.base(),
-                        tx_hash: utxo_id_with_bn.0.tx_hash.to_hex(),
-                        output_index: utxo_id_with_bn.0.output_index as u32,
-                        written_block: (utxo_id_with_bn.1).0,
+                        tx_hash: utxo_cursor.tx_hash.to_hex(),
+                        output_index: utxo_cursor.output_index as u32,
+                        written_block: utxo_cursor.block_number.0,
                         written_time: blockchain_time,
                     },
                 )

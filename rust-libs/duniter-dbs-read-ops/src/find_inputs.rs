@@ -15,7 +15,7 @@
 
 use crate::{
     uds_of_pubkey::UdsWithSum,
-    utxos::{UtxoIdWithBlockNumber, UtxosWithSum},
+    utxos::{UtxoCursor, UtxosWithSum},
     *,
 };
 use dubp::{documents::transaction::TransactionInputV10, wallet::prelude::*};
@@ -110,11 +110,18 @@ pub fn find_inputs<BcDb: BcV2DbReadable, GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV
             &script,
         )?;
         inputs.extend(written_utxos.into_iter().map(
-            |(UtxoIdWithBlockNumber(utxo_id, _), source_amount)| TransactionInputV10 {
+            |(
+                UtxoCursor {
+                    tx_hash,
+                    output_index,
+                    ..
+                },
+                source_amount,
+            )| TransactionInputV10 {
                 amount: source_amount,
                 id: SourceIdV10::Utxo(UtxoIdV10 {
-                    tx_hash: utxo_id.tx_hash,
-                    output_index: utxo_id.output_index,
+                    tx_hash,
+                    output_index: output_index as usize,
                 }),
             },
         ));

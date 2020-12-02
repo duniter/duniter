@@ -18,17 +18,50 @@ use duniter_dbs::{GvaUtxoIdDbV1, SourceAmountValV2};
 
 use crate::*;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct UtxoIdWithBlockNumber(pub UtxoIdV10, pub BlockNumber);
-impl std::fmt::Display for UtxoIdWithBlockNumber {
+#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
+pub struct UtxoCursor {
+    pub block_number: BlockNumber,
+    pub tx_hash: Hash,
+    pub output_index: u8,
+}
+impl std::fmt::Display for UtxoCursor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}:{}", self.1, self.0.tx_hash, self.0.output_index,)
+        write!(
+            f,
+            "{}:{}:{}",
+            self.block_number, self.tx_hash, self.output_index,
+        )
+    }
+}
+
+impl FromStr for UtxoCursor {
+    type Err = StringErr;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut s = s.split(':');
+        let block_number = s
+            .next()
+            .ok_or_else(wrong_cursor)?
+            .parse()
+            .map_err(|_| wrong_cursor())?;
+        let tx_hash =
+            Hash::from_hex(s.next().ok_or_else(wrong_cursor)?).map_err(|_| wrong_cursor())?;
+        let output_index = s
+            .next()
+            .ok_or_else(wrong_cursor)?
+            .parse()
+            .map_err(|_| wrong_cursor())?;
+        Ok(Self {
+            block_number,
+            tx_hash,
+            output_index,
+        })
     }
 }
 
 #[derive(Debug, Default)]
 pub struct UtxosWithSum {
-    pub utxos: Vec<(UtxoIdWithBlockNumber, SourceAmount)>,
+    pub utxos: Vec<(UtxoCursor, SourceAmount)>,
     pub sum: SourceAmount,
 }
 
@@ -36,7 +69,7 @@ pub fn find_script_utxos<GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2DbReadable>(
     gva_db_ro: &GvaDb,
     txs_mp_db_ro: &TxsMpDb,
     amount_target_opt: Option<SourceAmount>,
-    page_info: PageInfo<String>,
+    page_info: PageInfo<UtxoCursor>,
     script: &WalletScriptV10,
 ) -> anyhow::Result<PagedData<UtxosWithSum>> {
     let mempool_filter = |k_res: KvResult<GvaUtxoIdDbV1>| match k_res {
@@ -61,13 +94,10 @@ pub fn find_script_utxos<GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2DbReadable>(
             .iter(k_min..k_max, |it| {
                 it.keys().filter_map(mempool_filter).next_res()
             })?
-            .map(|gva_utxo_id| {
-                format!(
-                    "{}:{}:{}",
-                    gva_utxo_id.get_block_number(),
-                    gva_utxo_id.get_tx_hash(),
-                    gva_utxo_id.get_output_index()
-                )
+            .map(|gva_utxo_id| UtxoCursor {
+                block_number: BlockNumber(gva_utxo_id.get_block_number()),
+                tx_hash: gva_utxo_id.get_tx_hash(),
+                output_index: gva_utxo_id.get_output_index(),
             })
     } else {
         None
@@ -78,35 +108,29 @@ pub fn find_script_utxos<GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2DbReadable>(
             .iter(k_min..k_max, |it| {
                 it.keys().reverse().filter_map(mempool_filter).next_res()
             })?
-            .map(|gva_utxo_id| {
-                format!(
-                    "{}:{}:{}",
-                    gva_utxo_id.get_block_number(),
-                    gva_utxo_id.get_tx_hash(),
-                    gva_utxo_id.get_output_index()
-                )
+            .map(|gva_utxo_id| UtxoCursor {
+                block_number: BlockNumber(gva_utxo_id.get_block_number()),
+                tx_hash: gva_utxo_id.get_tx_hash(),
+                output_index: gva_utxo_id.get_output_index(),
             })
     } else {
         None
     };
     if let Some(ref pos) = page_info.pos {
-        let mut pos = pos.split(':');
-        let block_number = pos
-            .next()
-            .ok_or_else(|| anyhow::Error::msg("invalid cursor"))?
-            .parse()?;
-        let tx_hash = Hash::from_hex(
-            pos.next()
-                .ok_or_else(|| anyhow::Error::msg("invalid cursor"))?,
-        )?;
-        let output_index = pos
-            .next()
-            .ok_or_else(|| anyhow::Error::msg("invalid cursor"))?
-            .parse()?;
         if page_info.order {
-            k_min = GvaUtxoIdDbV1::new_(script_hash, block_number, tx_hash, output_index);
+            k_min = GvaUtxoIdDbV1::new_(
+                script_hash,
+                pos.block_number.0,
+                pos.tx_hash,
+                pos.output_index,
+            );
         } else {
-            k_max = GvaUtxoIdDbV1::new_(script_hash, block_number, tx_hash, output_index);
+            k_max = GvaUtxoIdDbV1::new_(
+                script_hash,
+                pos.block_number.0,
+                pos.tx_hash,
+                pos.output_index,
+            );
         }
     }
     let mut sum = SourceAmount::ZERO;
@@ -118,19 +142,17 @@ pub fn find_script_utxos<GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2DbReadable>(
         let it = it.filter_map(|entry_res| match entry_res {
             Ok((gva_utxo_id, SourceAmountValV2(utxo_amount))) => {
                 let tx_hash = gva_utxo_id.get_tx_hash();
-                let output_index = gva_utxo_id.get_output_index() as u32;
+                let output_index = gva_utxo_id.get_output_index();
                 match txs_mp_db_ro
                     .utxos_ids()
-                    .contains_key(&UtxoIdDbV2(tx_hash, output_index))
+                    .contains_key(&UtxoIdDbV2(tx_hash, output_index as u32))
                 {
                     Ok(false) => Some(Ok((
-                        UtxoIdWithBlockNumber(
-                            UtxoIdV10 {
-                                tx_hash,
-                                output_index: output_index as usize,
-                            },
-                            BlockNumber(gva_utxo_id.get_block_number()),
-                        ),
+                        UtxoCursor {
+                            tx_hash,
+                            output_index,
+                            block_number: BlockNumber(gva_utxo_id.get_block_number()),
+                        },
                         utxo_amount,
                     ))),
                     Ok(true) => None,
@@ -218,17 +240,13 @@ pub fn find_script_utxos<GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2DbReadable>(
 
     Ok(PagedData {
         has_next_page: has_next_page(
-            utxos
-                .iter()
-                .map(|(utxo_id_with_bn, _sa)| utxo_id_with_bn.to_string()),
+            utxos.iter().map(|(utxo_id_with_bn, _sa)| utxo_id_with_bn),
             last_cursor_opt,
-            page_info.clone(),
+            page_info,
             order,
         ),
         has_previous_page: has_previous_page(
-            utxos
-                .iter()
-                .map(|(utxo_id_with_bn, _sa)| utxo_id_with_bn.to_string()),
+            utxos.iter().map(|(utxo_id_with_bn, _sa)| utxo_id_with_bn),
             first_cursor_opt,
             page_info,
             order,
@@ -281,7 +299,7 @@ mod tests {
             utxos,
             vec![
                 (
-                    UtxoIdWithBlockNumber(
+                    UtxoCursor(
                         UtxoIdV10 {
                             tx_hash: Hash::default(),
                             output_index: 0
@@ -291,7 +309,7 @@ mod tests {
                     SourceAmount::with_base0(50)
                 ),
                 (
-                    UtxoIdWithBlockNumber(
+                    UtxoCursor(
                         UtxoIdV10 {
                             tx_hash: Hash::default(),
                             output_index: 1
@@ -324,7 +342,7 @@ mod tests {
         assert_eq!(
             utxos,
             vec![(
-                UtxoIdWithBlockNumber(
+                UtxoCursor(
                     UtxoIdV10 {
                         tx_hash: Hash::default(),
                         output_index: 2
@@ -359,23 +377,19 @@ mod tests {
             utxos,
             vec![
                 (
-                    UtxoIdWithBlockNumber(
-                        UtxoIdV10 {
-                            tx_hash: Hash::default(),
-                            output_index: 2
-                        },
-                        BlockNumber(0),
-                    ),
+                    UtxoCursor {
+                        block_number: BlockNumber(0),
+                        tx_hash: Hash::default(),
+                        output_index: 2,
+                    },
                     SourceAmount::with_base0(120)
                 ),
                 (
-                    UtxoIdWithBlockNumber(
-                        UtxoIdV10 {
-                            tx_hash: Hash::default(),
-                            output_index: 1
-                        },
-                        BlockNumber(0),
-                    ),
+                    UtxoCursor {
+                        block_number: BlockNumber(0),
+                        tx_hash: Hash::default(),
+                        output_index: 1,
+                    },
                     SourceAmount::with_base0(80)
                 )
             ]

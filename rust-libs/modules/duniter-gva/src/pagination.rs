@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 //  Copyright (C) 2020 Éloïs SANCHEZ.
 //
 // This program is free software: you can redistribute it and/or modify
@@ -27,34 +29,23 @@ impl Default for Order {
 }
 
 #[derive(Default, async_graphql::InputObject)]
-pub(crate) struct PaginationWithStrCursor {
+pub(crate) struct Pagination {
     /// Identifier of the 1st desired element (of the last one in descending order)
     cursor: Option<String>,
     ord: Order,
     page_size: Option<u32>,
 }
-impl PaginationWithStrCursor {
-    pub(crate) fn convert_to_page_info(self) -> duniter_dbs_read_ops::PageInfo<String> {
-        duniter_dbs_read_ops::PageInfo::new(
-            self.cursor,
+impl Pagination {
+    pub(crate) fn convert_to_page_info<
+        E: 'static + std::error::Error + Send + Sync,
+        T: FromStr<Err = E>,
+    >(
+        self,
+    ) -> anyhow::Result<duniter_dbs_read_ops::PageInfo<T>> {
+        Ok(duniter_dbs_read_ops::PageInfo::new(
+            self.cursor.map(|c| T::from_str(&c)).transpose()?,
             self.ord == Order::Asc,
             self.page_size.map(|n| n as usize),
-        )
-    }
-}
-
-#[derive(Clone, Copy, Default, async_graphql::InputObject)]
-pub(crate) struct PaginationWithIntCursor {
-    cursor: Option<u32>,
-    ord: Order,
-    page_size: Option<u32>,
-}
-impl PaginationWithIntCursor {
-    pub(crate) fn convert_to_page_info(self) -> duniter_dbs_read_ops::PageInfo<u32> {
-        duniter_dbs_read_ops::PageInfo::new(
-            self.cursor,
-            self.ord == Order::Asc,
-            self.page_size.map(|n| n as usize),
-        )
+        ))
     }
 }

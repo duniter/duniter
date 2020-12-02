@@ -43,7 +43,11 @@ use duniter_dbs::{
 use resiter::filter::Filter;
 use resiter::filter_map::FilterMap;
 use resiter::map::Map;
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet, str::FromStr};
+
+pub(crate) fn wrong_cursor() -> StringErr {
+    StringErr("wrong cursor".to_owned())
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct DbsReader;

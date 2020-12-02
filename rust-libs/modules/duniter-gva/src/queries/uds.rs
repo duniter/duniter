@@ -46,10 +46,10 @@ impl UdsQuery {
         ctx: &async_graphql::Context<'_>,
         #[graphql(desc = "Ed25519 public key on base 58 representation")] pubkey: String,
         #[graphql(default)] filter: UdsFilter,
-        #[graphql(desc = "pagination", default)] pagination: PaginationWithIntCursor,
+        #[graphql(desc = "pagination", default)] pagination: Pagination,
         #[graphql(desc = "Amount needed")] amount: Option<i64>,
     ) -> async_graphql::Result<Connection<usize, UdGva, Sum, EmptyFields>> {
-        let pagination = PaginationWithIntCursor::convert_to_page_info(pagination);
+        let pagination = Pagination::convert_to_page_info(pagination)?;
 
         let pubkey = PublicKey::from_base58(&pubkey)?;
 

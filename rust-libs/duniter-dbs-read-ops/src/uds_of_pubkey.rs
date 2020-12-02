@@ -30,7 +30,7 @@ pub fn all_uds_of_pubkey<B: Backend>(
     bc_db: &BcV2Db<B>,
     gva_db: &GvaV1Db<B>,
     pubkey: PublicKey,
-    page_info: PageInfo<u32>,
+    page_info: PageInfo<BlockNumber>,
 ) -> KvResult<PagedData<UdsWithSum>> {
     (
         bc_db.uds_reval(),
@@ -67,7 +67,7 @@ pub fn all_uds_of_pubkey<B: Backend>(
                     }
                     Some(pos) => {
                         if page_info.order {
-                            blocks_with_ud.iter(U32BE(pos).., move |it| {
+                            blocks_with_ud.iter(U32BE(pos.0).., move |it| {
                                 all_uds_of_pubkey_inner::<B, _>(
                                     gva_idty,
                                     page_info,
@@ -79,7 +79,7 @@ pub fn all_uds_of_pubkey<B: Backend>(
                         } else {
                             let last_ud_opt =
                                 blocks_with_ud.iter(.., |it| it.keys().reverse().next_res())?;
-                            blocks_with_ud.iter(..=U32BE(pos), move |it| {
+                            blocks_with_ud.iter(..=U32BE(pos.0), move |it| {
                                 all_uds_of_pubkey_inner::<B, _>(
                                     gva_idty,
                                     page_info,
@@ -99,7 +99,7 @@ pub fn all_uds_of_pubkey<B: Backend>(
 
 fn all_uds_of_pubkey_inner<B, I>(
     gva_idty: GvaIdtyDbV1,
-    page_info: PageInfo<u32>,
+    page_info: PageInfo<BlockNumber>,
     blocks_with_ud: I,
     uds_reval: TxColRo<B::Col, UdsRevalEvent>,
     last_ud_opt: Option<BlockNumber>,
@@ -165,8 +165,8 @@ where
 
     Ok(PagedData {
         has_previous_page: has_previous_page(
-            uds_with_sum.uds.iter().map(|(bn, _sa)| bn.0),
-            first_ud.map(|bn| bn.0),
+            uds_with_sum.uds.iter().map(|(bn, _sa)| bn),
+            first_ud,
             page_info,
             true,
         ),
@@ -177,7 +177,7 @@ where
 
 fn filter_blocks_numbers<I: Iterator<Item = KvResult<BlockNumber>>>(
     gva_idty: GvaIdtyDbV1,
-    page_info: PageInfo<u32>,
+    page_info: PageInfo<BlockNumber>,
     blocks_with_ud: I,
 ) -> KvResult<Vec<BlockNumber>> {
     let mut is_member_changes = SmallVec::<[BlockNumber; 4]>::new();
@@ -251,7 +251,7 @@ fn filter_blocks_numbers<I: Iterator<Item = KvResult<BlockNumber>>>(
 pub fn unspent_uds_of_pubkey<BcDb: BcV2DbReadable>(
     bc_db: &BcDb,
     pubkey: PublicKey,
-    page_info: PageInfo<u32>,
+    page_info: PageInfo<BlockNumber>,
     bn_to_exclude_opt: Option<&BTreeSet<BlockNumber>>,
     amount_target_opt: Option<SourceAmount>,
 ) -> KvResult<PagedData<UdsWithSum>> {
@@ -264,7 +264,7 @@ pub fn unspent_uds_of_pubkey<BcDb: BcV2DbReadable>(
         let mut blocks_numbers = if let Some(pos) = page_info.pos {
             if page_info.order {
                 uds.iter(
-                    UdIdV2(pubkey, BlockNumber(pos))..UdIdV2(pubkey, BlockNumber(u32::MAX)),
+                    UdIdV2(pubkey, pos)..UdIdV2(pubkey, BlockNumber(u32::MAX)),
                     |it| {
                         let it = it.keys().map_ok(|UdIdV2(_p, bn)| bn);
                         if let Some(bn_to_exclude) = bn_to_exclude_opt {
@@ -276,18 +276,15 @@ pub fn unspent_uds_of_pubkey<BcDb: BcV2DbReadable>(
                     },
                 )?
             } else {
-                uds.iter(
-                    UdIdV2(pubkey, BlockNumber(0))..=UdIdV2(pubkey, BlockNumber(pos)),
-                    |it| {
-                        let it = it.keys().reverse().map_ok(|UdIdV2(_p, bn)| bn);
-                        if let Some(bn_to_exclude) = bn_to_exclude_opt {
-                            it.filter_ok(|bn| !bn_to_exclude.contains(&bn))
-                                .collect::<KvResult<Vec<_>>>()
-                        } else {
-                            it.collect::<KvResult<Vec<_>>>()
-                        }
-                    },
-                )?
+                uds.iter(UdIdV2(pubkey, BlockNumber(0))..=UdIdV2(pubkey, pos), |it| {
+                    let it = it.keys().reverse().map_ok(|UdIdV2(_p, bn)| bn);
+                    if let Some(bn_to_exclude) = bn_to_exclude_opt {
+                        it.filter_ok(|bn| !bn_to_exclude.contains(&bn))
+                            .collect::<KvResult<Vec<_>>>()
+                    } else {
+                        it.collect::<KvResult<Vec<_>>>()
+                    }
+                })?
             }
         } else if page_info.order {
             uds.iter(
@@ -354,14 +351,14 @@ pub fn unspent_uds_of_pubkey<BcDb: BcV2DbReadable>(
             };
             Ok(PagedData {
                 has_previous_page: has_previous_page(
-                    uds_with_sum.uds.iter().map(|(bn, _sa)| bn.0),
-                    first_ud_opt.map(|bn| bn.0),
+                    uds_with_sum.uds.iter().map(|(bn, _sa)| bn),
+                    first_ud_opt,
                     page_info,
                     true,
                 ),
                 has_next_page: has_next_page(
-                    uds_with_sum.uds.iter().map(|(bn, _sa)| bn.0),
-                    last_ud_opt.map(|bn| bn.0),
+                    uds_with_sum.uds.iter().map(|(bn, _sa)| bn),
+                    last_ud_opt,
                     page_info,
                     true,
                 ),
@@ -606,7 +603,7 @@ mod tests {
             &gva_db,
             pk,
             PageInfo {
-                pos: Some(50),
+                pos: Some(BlockNumber(50)),
                 ..Default::default()
             },
         )?;
@@ -683,7 +680,7 @@ mod tests {
             &gva_db,
             pk,
             PageInfo {
-                pos: Some(55),
+                pos: Some(BlockNumber(55)),
                 order: false,
                 ..Default::default()
             },
@@ -750,7 +747,7 @@ mod tests {
             &bc_db,
             pk,
             PageInfo {
-                pos: Some(30),
+                pos: Some(BlockNumber(30)),
                 ..Default::default()
             },
             None,
@@ -806,7 +803,7 @@ mod tests {
             &bc_db,
             pk,
             PageInfo {
-                pos: Some(40),
+                pos: Some(BlockNumber(40)),
                 order: false,
                 ..Default::default()
             },

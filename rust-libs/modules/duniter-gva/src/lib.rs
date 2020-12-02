@@ -41,7 +41,7 @@ use crate::entities::{
 };
 use crate::inputs::{TxIssuer, TxRecipient, UdsFilter};
 use crate::inputs_validators::TxCommentValidator;
-use crate::pagination::{PaginationWithIntCursor, PaginationWithStrCursor};
+use crate::pagination::Pagination;
 use crate::schema::{GraphQlSchema, SchemaData};
 #[cfg(test)]
 use crate::tests::create_dbs_reader;

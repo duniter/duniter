@@ -30,7 +30,7 @@ mod duniter_ts_args;
 mod sync;
 mod wizard_gva;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use daemonize_me::Daemon;
 use logwatcher::{LogWatcher, LogWatcherAction};
 use nix::{errno::Errno, sys::signal::Signal, unistd::Pid, Error};

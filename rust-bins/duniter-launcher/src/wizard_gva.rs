@@ -16,6 +16,8 @@
 use crate::*;
 use read_input::prelude::*;
 use std::{
+    collections::HashSet,
+    net::IpAddr,
     net::{Ipv4Addr, Ipv6Addr},
     str::FromStr,
 };
@@ -60,6 +62,32 @@ pub(crate) fn wizard_gva(profile_name_opt: Option<&str>, profile_path: PathBuf) 
     let conf_json_obj = conf_json
         .as_object_mut()
         .ok_or_else(|| anyhow::Error::msg("json conf must be an object"))?;
+
+    // Get existing whitelist
+    let mut whitelist = HashSet::new();
+    if let Some(gva_conf) = conf_json_obj.get("gva") {
+        let gva_conf_obj = gva_conf
+            .as_object()
+            .ok_or_else(|| anyhow::Error::msg("gva conf must be an object"))?;
+        if let Some(whitelist_json) = gva_conf_obj.get("whitelist") {
+            let whitelist_array = whitelist_json
+                .as_array()
+                .ok_or_else(|| anyhow::Error::msg("gva.whitelist must be an array"))?;
+            for ip_json in whitelist_array {
+                if let serde_json::Value::String(ip_str) = ip_json {
+                    whitelist.insert(
+                        IpAddr::from_str(ip_str).context("gva.whitelist contains invalid IP")?,
+                    );
+                }
+            }
+        } else {
+            whitelist.insert(IpAddr::V4(Ipv4Addr::LOCALHOST));
+            whitelist.insert(IpAddr::V6(Ipv6Addr::LOCALHOST));
+        }
+    } else {
+        whitelist.insert(IpAddr::V4(Ipv4Addr::LOCALHOST));
+        whitelist.insert(IpAddr::V6(Ipv6Addr::LOCALHOST));
+    };
 
     let mut gva_conf = serde_json::Map::new();
 
@@ -156,6 +184,41 @@ pub(crate) fn wizard_gva(profile_name_opt: Option<&str>, profile_path: PathBuf) 
                 serde_json::Value::String(remote_path),
             );
         }
+        // whitelist
+        let res = input().msg("Update whitelist? [y/N]").default('N').get();
+        if res == 'y' || res == 'Y' {
+            loop {
+                println!("1. See whitelist content.");
+                println!("2. Add an IP to the whitelist.");
+                println!("3. Removing an IP from the whitelist.");
+                println!("4. Quit.");
+                match input().msg("Choose an action: ").default(1).get() {
+                    2usize => {
+                        whitelist.insert(input().msg("Enter a new IP address: ").get());
+                    }
+                    3 => {
+                        whitelist
+                            .remove(&input().msg("Indicate the IP address to be deleted: ").get());
+                    }
+                    4 => break,
+                    _ => {
+                        println!("--------------------------------");
+                        println!("Whitelist content ({} IPs):", whitelist.len());
+                        whitelist.iter().for_each(|ip| println!("{}", ip));
+                        println!("--------------------------------");
+                    }
+                }
+            }
+        }
+        gva_conf.insert(
+            "whitelist".to_owned(),
+            serde_json::Value::Array(
+                whitelist
+                    .into_iter()
+                    .map(|ip| serde_json::Value::String(ip.to_string()))
+                    .collect(),
+            ),
+        );
     }
 
     // Insert GVA json conf in global json conf

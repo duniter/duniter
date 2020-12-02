@@ -21,6 +21,7 @@ export class GvaConf {
     remotePath?: string;
     remoteSubscriptionsPath?: string;
     remoteTls?: boolean;
+    whitelist?: string[];
 }
 
 export class PeerCard {

@@ -192,6 +192,7 @@ export class ConfDTO
       remotePath?: string;
       remoteSubscriptionsPath?: string;
       remoteTls?: boolean;
+      whitelist?: string[];
     },
     public ws2p?: {
       privateAccess?: boolean;

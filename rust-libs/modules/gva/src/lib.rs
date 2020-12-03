@@ -59,9 +59,9 @@ use dubp::wallet::prelude::*;
 use duniter_dbs::prelude::*;
 use duniter_dbs::{kv_typed::prelude::*, FileBackend, TxDbV2, TxsMpV2DbReadable};
 #[cfg(not(test))]
-use duniter_dbs_read_ops::create_dbs_reader;
+use duniter_gva_dbs_reader::create_dbs_reader;
 #[cfg(not(test))]
-use duniter_dbs_read_ops::DbsReader;
+use duniter_gva_dbs_reader::DbsReader;
 use duniter_mempools::{Mempools, TxsMempool};
 use futures::{StreamExt, TryStreamExt};
 use resiter::map::Map;
@@ -290,7 +290,7 @@ mod tests {
     use duniter_conf::DuniterConf;
     use duniter_dbs::bc_v2::BcV2DbReadable;
     use duniter_dbs::gva_v1::GvaV1DbReadable;
-    use duniter_dbs::{BlockMetaV2, SourceAmountValV2};
+    use duniter_dbs::SourceAmountValV2;
     use duniter_mempools::Mempools;
     use duniter_module::DuniterModule;
     use fast_threadpool::ThreadPoolConfig;
@@ -303,10 +303,6 @@ mod tests {
                 gva_db: &GvaDb,
                 account_script: &WalletScriptV10,
             ) -> KvResult<Option<SourceAmountValV2>>;
-            fn get_current_block_meta<BcDb: 'static + BcV2DbReadable>(
-                &self,
-                bc_db: &BcDb,
-            ) -> KvResult<Option<BlockMetaV2>>;
             fn get_current_ud<BcDb: 'static + BcV2DbReadable>(
                 &self,
                 bc_db: &BcDb,

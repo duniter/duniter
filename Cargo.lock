@@ -1141,6 +1141,7 @@ dependencies = [
  "duniter-conf",
  "duniter-dbs",
  "duniter-dbs-read-ops",
+ "duniter-gva-dbs-reader",
  "duniter-mempools",
  "duniter-module",
  "fast-threadpool",
@@ -1156,6 +1157,17 @@ dependencies = [
  "tokio",
  "unwrap",
  "warp",
+]
+
+[[package]]
+name = "duniter-gva-dbs-reader"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dubp",
+ "duniter-dbs",
+ "resiter",
+ "smallvec",
 ]
 
 [[package]]
@@ -1235,6 +1247,7 @@ dependencies = [
  "duniter-dbs-read-ops",
  "duniter-dbs-write-ops",
  "duniter-gva",
+ "duniter-gva-dbs-reader",
  "duniter-mempools",
  "duniter-module",
  "fast-threadpool",

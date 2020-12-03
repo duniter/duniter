@@ -28,7 +28,7 @@ use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::documents::prelude::*;
 use dubp::documents::transaction::TransactionDocumentV10;
 use duniter_dbs::kv_typed::prelude::*;
-use duniter_dbs::{GvaV1DbReadable, TxsMpV2Db, TxsMpV2DbReadable};
+use duniter_dbs::{bc_v2::BcV2DbReadable, TxsMpV2Db, TxsMpV2DbReadable};
 use thiserror::Error;
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -61,14 +61,14 @@ impl TxsMempool {
     pub fn new(max_size: usize) -> Self {
         TxsMempool { max_size }
     }
-    pub fn accept_new_tx<GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2DbReadable>(
+    pub fn accept_new_tx<BcDb: BcV2DbReadable, TxsMpDb: TxsMpV2DbReadable>(
         &self,
-        gva_db_ro: &GvaDb,
+        bc_db_ro: &BcDb,
         server_pubkey: PublicKey,
         tx: TransactionDocumentV10,
         txs_mp_db_ro: &TxsMpDb,
     ) -> Result<(), TxMpError> {
-        if duniter_dbs_read_ops::txs_history::tx_exist(gva_db_ro, tx.get_hash())? {
+        if duniter_dbs_read_ops::tx_exist(bc_db_ro, tx.get_hash())? {
             Err(TxMpError::TxAlreadyWritten)
         } else if tx.issuers().contains(&server_pubkey)
             || txs_mp_db_ro.txs().count()? < self.max_size
@@ -79,14 +79,14 @@ impl TxsMempool {
         }
     }
 
-    pub fn add_pending_tx<B: Backend, GvaDb: GvaV1DbReadable>(
+    pub fn add_pending_tx<B: Backend, BcDb: BcV2DbReadable>(
         &self,
-        gva_db_ro: &GvaDb,
+        bc_db_ro: &BcDb,
         server_pubkey: PublicKey,
         txs_mp_db: &TxsMpV2Db<B>,
         tx: &TransactionDocumentV10,
     ) -> Result<(), TxMpError> {
-        if duniter_dbs_read_ops::txs_history::tx_exist(gva_db_ro, tx.get_hash())? {
+        if duniter_dbs_read_ops::tx_exist(bc_db_ro, tx.get_hash())? {
             Err(TxMpError::TxAlreadyWritten)
         } else if tx.issuers().contains(&server_pubkey) {
             duniter_dbs_write_ops::txs_mp::add_pending_tx(

@@ -38,7 +38,7 @@ use duniter_dbs::{
     kv_typed::prelude::*, GvaV1DbReadable, HashKeyV2, PendingTxDbV2, TxsMpV2DbReadable,
 };
 use duniter_dbs::{prelude::*, BlockMetaV2, FileBackend};
-use duniter_dbs_read_ops::txs_history::TxsHistory;
+use duniter_gva_dbs_reader::txs_history::TxsHistory;
 use duniter_mempools::{Mempools, TxMpError, TxsMempool};
 use duniter_module::{plug_duniter_modules, DuniterModule as _, Endpoint};
 use fast_threadpool::ThreadPoolConfig;
@@ -74,14 +74,12 @@ impl DuniterServer {
             _ => DuniterCommand::Start,
         };
 
-        let dbs_reader = duniter_dbs_read_ops::create_dbs_reader();
         let txs_mempool = TxsMempool::new(conf.txs_mempool_size);
 
         log::info!("open duniter databases...");
         let dbs = duniter_dbs::open_dbs(home_path_opt);
         log::info!("Databases successfully opened.");
-        let current = dbs_reader
-            .get_current_block_meta(&dbs.bc_db)
+        let current = duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)
             .context("Fail to get current")?;
         if let Some(current) = current {
             log::info!("Current block: #{}-{}", current.number, current.hash);
@@ -156,7 +154,7 @@ impl DuniterServer {
         match self
             .dbs_pool
             .execute(move |dbs| {
-                txs_mempool.accept_new_tx(&dbs.gva_db, server_pubkey, tx, &dbs.txs_mp_db)
+                txs_mempool.accept_new_tx(&dbs.bc_db, server_pubkey, tx, &dbs.txs_mp_db)
             })
             .expect("dbs pool discorrected")
         {
@@ -208,7 +206,7 @@ impl DuniterServer {
     pub fn get_transactions_history(&self, pubkey: PublicKey) -> KvResult<TxsHistory> {
         self.dbs_pool
             .execute(move |dbs| {
-                duniter_dbs_read_ops::txs_history::get_transactions_history(
+                duniter_gva_dbs_reader::txs_history::get_transactions_history(
                     &dbs.gva_db,
                     &dbs.txs_mp_db,
                     pubkey,

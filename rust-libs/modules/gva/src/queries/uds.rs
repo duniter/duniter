@@ -16,7 +16,7 @@
 use crate::*;
 use async_graphql::connection::*;
 use duniter_dbs::{bc_v2::BcV2DbReadable, GvaV1DbReadable};
-use duniter_dbs_read_ops::{uds_of_pubkey::UdsWithSum, PagedData};
+use duniter_gva_dbs_reader::{uds_of_pubkey::UdsWithSum, PagedData};
 
 #[derive(Default)]
 pub(crate) struct UdsQuery;
@@ -54,7 +54,7 @@ impl UdsQuery {
         let pubkey = PublicKey::from_base58(&pubkey)?;
 
         let data = ctx.data::<SchemaData>()?;
-        let dbs_reader = data.dbs_reader();
+        //let dbs_reader = data.dbs_reader();
 
         let (
             PagedData {
@@ -66,16 +66,18 @@ impl UdsQuery {
         ) = data
             .dbs_pool
             .execute(move |dbs| {
-                if let Some(current_block) = dbs_reader.get_current_block_meta(&dbs.bc_db)? {
+                if let Some(current_block) =
+                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)?
+                {
                     let paged_data = match filter {
-                        UdsFilter::All => duniter_dbs_read_ops::uds_of_pubkey::all_uds_of_pubkey(
+                        UdsFilter::All => duniter_gva_dbs_reader::uds_of_pubkey::all_uds_of_pubkey(
                             &dbs.bc_db,
                             &dbs.gva_db,
                             pubkey,
                             pagination,
                         ),
                         UdsFilter::Unspent => {
-                            duniter_dbs_read_ops::uds_of_pubkey::unspent_uds_of_pubkey(
+                            duniter_gva_dbs_reader::uds_of_pubkey::unspent_uds_of_pubkey(
                                 &dbs.bc_db,
                                 pubkey,
                                 pagination,

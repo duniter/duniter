@@ -19,9 +19,10 @@ db_schema!(
     BcV2,
     [
         ["blocks_meta", BlocksMeta, U32BE, BlockMetaV2],
-        ["uds_reval", UdsReval, U32BE, SourceAmountValV2],
         ["identities", Identities, PubKeyKeyV2, IdtyDbV2],
+        ["txs_hashs", TxsHashs, HashKeyV2, ()],
         ["uds", Uds, UdIdV2, ()],
+        ["uds_reval", UdsReval, U32BE, SourceAmountValV2],
         ["uids_index", UidsIndex, String, PubKeyValV2],
     ]
 );

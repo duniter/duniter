@@ -32,7 +32,7 @@ impl TxsHistoryQuery {
         let txs_history = data
             .dbs_pool
             .execute(move |dbs| {
-                duniter_dbs_read_ops::txs_history::get_transactions_history(
+                duniter_gva_dbs_reader::txs_history::get_transactions_history(
                     &dbs.gva_db,
                     &dbs.txs_mp_db,
                     pubkey,

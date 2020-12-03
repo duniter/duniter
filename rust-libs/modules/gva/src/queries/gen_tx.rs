@@ -112,16 +112,18 @@ impl GenTxsQuery {
         let recipient = PublicKey::from_base58(&recipient)?;
 
         let data = ctx.data::<SchemaData>()?;
-        let dbs_reader = data.dbs_reader();
+        //let dbs_reader = data.dbs_reader();
         let currency = data.server_meta_data.currency.clone();
 
         let (current_block, (inputs, inputs_sum)) = data
             .dbs_pool
             .execute(move |dbs| {
-                if let Some(current_block) = dbs_reader.get_current_block_meta(&dbs.bc_db)? {
+                if let Some(current_block) =
+                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)?
+                {
                     Ok((
                         current_block,
-                        duniter_dbs_read_ops::find_inputs::find_inputs(
+                        duniter_gva_dbs_reader::find_inputs::find_inputs(
                             &dbs.bc_db,
                             &dbs.gva_db,
                             &dbs.txs_mp_db,
@@ -186,17 +188,19 @@ impl GenTxsQuery {
         }
 
         let data = ctx.data::<SchemaData>()?;
-        let dbs_reader = data.dbs_reader();
+        //let dbs_reader = data.dbs_reader();
         let currency = data.server_meta_data.currency.clone();
 
         let (current_block, issuers_inputs_with_sum) = data
             .dbs_pool
             .execute(move |dbs| {
-                if let Some(current_block) = dbs_reader.get_current_block_meta(&dbs.bc_db)? {
+                if let Some(current_block) =
+                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)?
+                {
                     let mut issuers_inputs_with_sum = Vec::new();
                     for issuer in issuers {
                         issuers_inputs_with_sum.push((
-                            duniter_dbs_read_ops::find_inputs::find_inputs(
+                            duniter_gva_dbs_reader::find_inputs::find_inputs(
                                 &dbs.bc_db,
                                 &dbs.gva_db,
                                 &dbs.txs_mp_db,

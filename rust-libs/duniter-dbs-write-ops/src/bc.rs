@@ -45,12 +45,20 @@ pub fn apply_block<B: Backend>(
     (
         bc_db.blocks_meta_write(),
         bc_db.identities_write(),
+        bc_db.txs_hashs_write(),
         bc_db.uds_write(),
         bc_db.uds_reval_write(),
         bc_db.uids_index_write(),
     )
         .write(
-            |(mut blocks_meta, mut identities, mut uds, mut uds_reval, mut uids_index)| {
+            |(
+                mut blocks_meta,
+                mut identities,
+                mut txs_hashs,
+                mut uds,
+                mut uds_reval,
+                mut uids_index,
+            )| {
                 blocks_meta.upsert(U32BE(block.number().0), block_meta);
                 identities::update_identities::<B>(&block, &mut identities)?;
                 for idty in block.identities() {
@@ -67,7 +75,7 @@ pub fn apply_block<B: Backend>(
                         &mut uds_reval,
                     )?;
                 }
-                txs::apply_txs::<B>(block.transactions(), &mut uds)?;
+                txs::apply_txs::<B>(block.transactions(), &mut txs_hashs, &mut uds)?;
                 Ok(())
             },
         )?;
@@ -82,13 +90,21 @@ pub fn revert_block<B: Backend>(
     (
         bc_db.blocks_meta_write(),
         bc_db.identities_write(),
+        bc_db.txs_hashs_write(),
         bc_db.uds_write(),
         bc_db.uds_reval_write(),
         bc_db.uids_index_write(),
     )
         .write(
-            |(mut blocks_meta, mut identities, mut uds, mut uds_reval, mut uids_index)| {
-                txs::revert_txs::<B>(block.transactions(), &mut uds)?;
+            |(
+                mut blocks_meta,
+                mut identities,
+                mut txs_hashs,
+                mut uds,
+                mut uds_reval,
+                mut uids_index,
+            )| {
+                txs::revert_txs::<B>(block.transactions(), &mut txs_hashs, &mut uds)?;
                 if block.dividend().is_some() {
                     uds::revert_uds::<B>(
                         block.number(),

@@ -22,10 +22,6 @@ pub struct TxsHistory {
     pub pending: Vec<TransactionDocumentV10>,
 }
 
-pub fn tx_exist<GvaDb: GvaV1DbReadable>(gva_db_ro: &GvaDb, hash: Hash) -> KvResult<bool> {
-    Ok(gva_db_ro.txs().get(&HashKeyV2(hash))?.is_some())
-}
-
 pub fn get_transactions_history<GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2DbReadable>(
     gva_db_ro: &GvaDb,
     txs_mp_db_ro: &TxsMpDb,

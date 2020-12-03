@@ -41,8 +41,8 @@ impl Pagination {
         T: FromStr<Err = E>,
     >(
         self,
-    ) -> anyhow::Result<duniter_dbs_read_ops::PageInfo<T>> {
-        Ok(duniter_dbs_read_ops::PageInfo::new(
+    ) -> anyhow::Result<duniter_gva_dbs_reader::PageInfo<T>> {
+        Ok(duniter_gva_dbs_reader::PageInfo::new(
             self.cursor.map(|c| T::from_str(&c)).transpose()?,
             self.ord == Order::Asc,
             self.page_size.map(|n| n as usize),

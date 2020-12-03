@@ -12,7 +12,7 @@ duniter-conf = { path = "../../duniter-conf" }
 duniter-dbs = { path = "../../duniter-dbs" }
 duniter-dbs-read-ops = { path = "../../duniter-dbs-read-ops" }
 duniter-dbs-write-ops = { path = "../../duniter-dbs-write-ops" }
-duniter-gva = { path = "../../modules/duniter-gva" }
+duniter-gva = { path = "../../modules/gva" }
 duniter-mempools = { path = "../../duniter-mempools" }
 duniter-module = { path = "../../duniter-module" }
 duniter-server = { path = "../../duniter-server" }

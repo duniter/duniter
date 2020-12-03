@@ -136,7 +136,7 @@ pub fn find_inputs<BcDb: BcV2DbReadable, GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV
 mod tests {
     use super::*;
     use duniter_dbs::{
-        bc_v2::BcV2DbWritable, gva_v1::GvaV1DbWritable, txs_mp_v2::TxsMpV2DbWritable,
+        bc_v2::BcV2DbWritable, gva_v1::GvaV1DbWritable, txs_mp_v2::TxsMpV2DbWritable, BlockMetaV2,
         GvaUtxoIdDbV1, SourceAmountValV2, UdIdV2, UtxoIdDbV2, UtxoValV2, WalletConditionsV2,
     };
 

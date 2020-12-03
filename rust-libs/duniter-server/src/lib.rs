@@ -257,49 +257,51 @@ impl DuniterServer {
             .expect("dbs pool disconnected")
     }
     pub fn revert_block(&mut self, block: DubpBlockV10Stringified) -> KvResult<()> {
-        let gva = self.conf.gva.is_some();
-        let block = DubpBlockV10::from_string_object(&block)
-            .map_err(|e| KvError::DeserError(format!("{}", e)))?;
+        let block = Arc::new(
+            DubpBlockV10::from_string_object(&block)
+                .map_err(|e| KvError::DeserError(format!("{}", e)))?,
+        );
+        let block_arc_clone = Arc::clone(&block);
         self.current = self
             .dbs_pool
             .execute(move |dbs| {
-                duniter_dbs_write_ops::txs_mp::revert_block(block.transactions(), &dbs.txs_mp_db)?;
-                if gva {
-                    duniter_dbs_write_ops::gva::revert_block(&block, &dbs.gva_db)?;
-                }
-                duniter_dbs_write_ops::bc::revert_block(&dbs.bc_db, block)
+                duniter_dbs_write_ops::txs_mp::revert_block(
+                    block_arc_clone.transactions(),
+                    &dbs.txs_mp_db,
+                )?;
+                duniter_dbs_write_ops::bc::revert_block(&dbs.bc_db, &block_arc_clone)
             })
             .expect("dbs pool disconnected")?;
-        Ok(())
+        revert_block_modules(block, &self.conf, &self.dbs_pool, None)
     }
     pub fn apply_block(&mut self, block: DubpBlockV10Stringified) -> KvResult<()> {
-        let gva = self.conf.gva.is_some();
-        let block = DubpBlockV10::from_string_object(&block)
-            .map_err(|e| KvError::DeserError(format!("{}", e)))?;
+        let block = Arc::new(
+            DubpBlockV10::from_string_object(&block)
+                .map_err(|e| KvError::DeserError(format!("{}", e)))?,
+        );
         self.current = Some(duniter_dbs_write_ops::apply_block::apply_block(
-            block,
+            block.clone(),
             self.current,
             &self.dbs_pool,
-            gva,
             false,
         )?);
-        Ok(())
+        apply_block_modules(block, &self.conf, &self.dbs_pool, None)
     }
     pub fn apply_chunk_of_blocks(&mut self, blocks: Vec<DubpBlockV10Stringified>) -> KvResult<()> {
         log::debug!("apply_chunk(#{})", blocks[0].number);
-        let gva = self.conf.gva.is_some();
-        let blocks = blocks
-            .into_iter()
-            .map(|block| DubpBlockV10::from_string_object(&block))
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| KvError::DeserError(format!("{}", e)))?;
+        let blocks = Arc::from(
+            blocks
+                .into_iter()
+                .map(|block| DubpBlockV10::from_string_object(&block))
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|e| KvError::DeserError(format!("{}", e)))?,
+        );
         self.current = Some(duniter_dbs_write_ops::apply_block::apply_chunk(
             self.current,
             &self.dbs_pool,
-            blocks,
-            gva,
+            blocks.clone(),
         )?);
-        Ok(())
+        apply_chunk_of_blocks_modules(blocks, &self.conf, &self.dbs_pool, None)
     }
     pub fn trim_expired_non_written_txs(&self, limit_time: i64) -> KvResult<()> {
         self.dbs_pool

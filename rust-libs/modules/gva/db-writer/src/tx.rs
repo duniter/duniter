@@ -312,6 +312,7 @@ mod tests {
         documents::smallvec::smallvec as svec, documents::transaction::v10::*,
         documents::transaction::UTXOConditions,
     };
+    use duniter_dbs::BlockMetaV2;
 
     #[test]
     fn test_apply_tx() -> KvResult<()> {

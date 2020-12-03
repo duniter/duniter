@@ -16,15 +16,14 @@
 use crate::*;
 
 pub fn apply_block(
-    block: DubpBlockV10,
+    block: Arc<DubpBlockV10>,
     current_opt: Option<BlockMetaV2>,
     dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
-    gva: bool,
     throw_chainability: bool,
 ) -> KvResult<BlockMetaV2> {
     if let Some(current) = current_opt {
         if block.number().0 == current.number + 1 {
-            apply_block_inner(dbs_pool, Arc::new(block), gva)
+            apply_block_inner(dbs_pool, block)
         } else if throw_chainability {
             Err(KvError::Custom(
                 format!(
@@ -38,7 +37,7 @@ pub fn apply_block(
             Ok(current)
         }
     } else if block.number() == BlockNumber(0) {
-        apply_block_inner(dbs_pool, Arc::new(block), gva)
+        apply_block_inner(dbs_pool, block)
     } else {
         Err(KvError::Custom(
             "Try to apply non genesis block on empty blockchain".into(),
@@ -50,11 +49,10 @@ pub fn apply_block(
 pub fn apply_chunk(
     current_opt: Option<BlockMetaV2>,
     dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
-    blocks: Vec<DubpBlockV10>,
-    gva: bool,
+    blocks: Arc<[DubpBlockV10]>,
 ) -> KvResult<BlockMetaV2> {
     verify_chunk_chainability(current_opt, &blocks)?;
-    apply_chunk_inner(dbs_pool, Arc::new(blocks), gva)
+    apply_chunk_inner(dbs_pool, blocks)
 }
 
 fn verify_chunk_chainability(
@@ -104,7 +102,6 @@ fn verify_chunk_chainability(
 fn apply_block_inner(
     dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
     block: Arc<DubpBlockV10>,
-    gva: bool,
 ) -> KvResult<BlockMetaV2> {
     // Bc
     let block_arc = Arc::clone(&block);
@@ -119,24 +116,14 @@ fn apply_block_inner(
             Ok::<_, KvError>(())
         })
         .expect("dbs pool disconnected");
-    // Gva
-    if gva {
-        let block_arc = Arc::clone(&block);
-        dbs_pool
-            .execute(move |dbs| {
-                crate::gva::apply_block(&block_arc, &dbs.gva_db)?;
-                Ok::<_, KvError>(())
-            })
-            .expect("dbs pool disconnected")?;
-    }
+
     txs_mp_recv.join().expect("dbs pool disconnected")?;
     bc_recv.join().expect("dbs pool disconnected")
 }
 
 fn apply_chunk_inner(
     dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
-    blocks: Arc<Vec<DubpBlockV10>>,
-    gva: bool,
+    blocks: Arc<[DubpBlockV10]>,
 ) -> KvResult<BlockMetaV2> {
     // Bc
     let blocks_len = blocks.len();
@@ -161,20 +148,6 @@ fn apply_chunk_inner(
             Ok::<_, KvError>(())
         })
         .expect("apply_chunk_inner:txs_mp: dbs pool disconnected");
-    // Gva
-    if gva {
-        let blocks_arc = Arc::clone(&blocks);
-        //log::info!("apply_chunk: launch gva job...");
-        dbs_pool
-            .execute(move |dbs| {
-                for block in blocks_arc.deref() {
-                    crate::gva::apply_block(&block, &dbs.gva_db)?;
-                }
-                Ok::<_, KvError>(())
-            })
-            .expect("apply_chunk_inner:gva: dbs pool disconnected")?;
-        //log::info!("apply_chunk: gva job finish.");
-    }
     txs_mp_handle
         .join()
         .expect("txs_mp_recv: dbs pool disconnected")?;

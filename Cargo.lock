@@ -1070,6 +1070,7 @@ dependencies = [
  "dubp",
  "duniter-dbs",
  "duniter-dbs-write-ops",
+ "duniter-gva-db-writer",
  "fast-threadpool",
  "rayon",
  "serde",
@@ -1141,6 +1142,7 @@ dependencies = [
  "duniter-conf",
  "duniter-dbs",
  "duniter-dbs-read-ops",
+ "duniter-gva-db-writer",
  "duniter-gva-dbs-reader",
  "duniter-mempools",
  "duniter-module",
@@ -1157,6 +1159,17 @@ dependencies = [
  "tokio",
  "unwrap",
  "warp",
+]
+
+[[package]]
+name = "duniter-gva-db-writer"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dubp",
+ "duniter-dbs",
+ "resiter",
+ "smallvec",
 ]
 
 [[package]]
@@ -1346,9 +1359,9 @@ checksum = "e88a8acf291dafb59c2d96e8f59828f3838bb1a70398823ade51a84de6a6deed"
 
 [[package]]
 name = "fast-threadpool"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf9f76ead92b1c1e372f552dcd2e331fb321d6b16886df58ed7586208e211e14"
+checksum = "f7b7af2f4b094190e85f8ba81ac02159ca91edc5aacd490eebfcc3f53b444e11"
 dependencies = [
  "async-oneshot",
  "flume",

@@ -16,7 +16,7 @@ duniter-gva = { path = "../../modules/gva" }
 duniter-mempools = { path = "../../duniter-mempools" }
 duniter-module = { path = "../../duniter-module" }
 duniter-server = { path = "../../duniter-server" }
-fast-threadpool = "0.2.1"
+fast-threadpool = "0.2.2"
 flume = "0.9.1"
 log = "0.4.11"
 paste = "1.0.2"

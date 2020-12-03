@@ -13,12 +13,40 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#![deny(
+    clippy::unwrap_used,
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unstable_features,
+    unused_import_braces
+)]
+
 mod identities;
 mod tx;
 mod utxos;
 
-use crate::*;
-use duniter_dbs::gva_v1::{BalancesEvent, GvaIdentitiesEvent};
+use dubp::block::prelude::*;
+use dubp::common::crypto::hashs::Hash;
+use dubp::common::prelude::*;
+use dubp::documents::{
+    prelude::*, transaction::TransactionDocumentTrait, transaction::TransactionDocumentV10,
+};
+use dubp::wallet::prelude::*;
+use duniter_dbs::gva_v1::*;
+use duniter_dbs::{
+    kv_typed::prelude::*, GvaV1Db, GvaV1DbReadable, GvaV1DbWritable, HashKeyV2, PubKeyKeyV2,
+    SourceAmountValV2, TxDbV2, WalletConditionsV2,
+};
+use resiter::filter::Filter;
+use std::collections::HashMap;
+
+pub struct UtxoV10<'s> {
+    pub id: UtxoIdV10,
+    pub amount: SourceAmount,
+    pub script: &'s WalletScriptV10,
+    pub written_block: BlockNumber,
+}
 
 pub fn apply_block<B: Backend>(block: &DubpBlockV10, gva_db: &GvaV1Db<B>) -> KvResult<()> {
     let blockstamp = Blockstamp {

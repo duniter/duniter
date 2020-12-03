@@ -22,15 +22,44 @@
     unused_import_braces
 )]
 
+use dubp::block::DubpBlockV10;
 use duniter_conf::DuniterConf;
-use duniter_dbs::{DuniterDbs, FileBackend};
+use duniter_dbs::{kv_typed::prelude::*, DuniterDbs, FileBackend};
 use duniter_mempools::Mempools;
+use fast_threadpool::{JoinHandle, ThreadPoolDisconnected};
 use std::path::Path;
 
 pub type Endpoint = String;
 
 #[async_trait::async_trait]
 pub trait DuniterModule: 'static + Sized {
+    fn apply_block(
+        _block: Arc<DubpBlockV10>,
+        _conf: &duniter_conf::DuniterConf,
+        _dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+        _profile_path_opt: Option<&Path>,
+    ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
+        Ok(None)
+    }
+
+    fn apply_chunk_of_blocks(
+        _blocks: Arc<[DubpBlockV10]>,
+        _conf: &duniter_conf::DuniterConf,
+        _dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+        _profile_path_opt: Option<&Path>,
+    ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
+        Ok(None)
+    }
+
+    fn revert_block(
+        _block: Arc<DubpBlockV10>,
+        _conf: &duniter_conf::DuniterConf,
+        _dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+        _profile_path_opt: Option<&Path>,
+    ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
+        Ok(None)
+    }
+
     fn init(
         conf: &DuniterConf,
         currency: &str,
@@ -48,6 +77,57 @@ macro_rules! plug_duniter_modules {
     ([$($M:ty),*]) => {
         paste::paste! {
             use anyhow::Context as _;
+            #[allow(dead_code)]
+            fn apply_block_modules(
+                block: Arc<DubpBlockV10>,
+                conf: &duniter_conf::DuniterConf,
+                dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+                profile_path_opt: Option<&Path>,
+            ) -> KvResult<()> {
+                $(
+                    let [<$M:snake>] = <$M>::apply_block(block.clone(), conf, dbs_pool, profile_path_opt).expect("thread pool disconnected");
+                )*
+                $(
+                    if let Some(join_handle) = [<$M:snake>] {
+                        join_handle.join().expect("thread pool disconnected")?;
+                    }
+                )*
+                Ok(())
+            }
+            #[allow(dead_code)]
+            fn apply_chunk_of_blocks_modules(
+                blocks: Arc<[DubpBlockV10]>,
+                conf: &duniter_conf::DuniterConf,
+                dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+                profile_path_opt: Option<&Path>,
+            ) -> KvResult<()> {
+                $(
+                    let [<$M:snake>] = <$M>::apply_chunk_of_blocks(blocks.clone(), conf, dbs_pool, profile_path_opt).expect("thread pool disconnected");
+                )*
+                $(
+                    if let Some(join_handle) = [<$M:snake>] {
+                        join_handle.join().expect("thread pool disconnected")?;
+                    }
+                )*
+                Ok(())
+            }
+            #[allow(dead_code)]
+            fn revert_block_modules(
+                block: Arc<DubpBlockV10>,
+                conf: &duniter_conf::DuniterConf,
+                dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+                profile_path_opt: Option<&Path>,
+            ) -> KvResult<()> {
+                $(
+                    let [<$M:snake>] = <$M>::revert_block(block.clone(), conf, dbs_pool, profile_path_opt).expect("thread pool disconnected");
+                )*
+                $(
+                    if let Some(join_handle) = [<$M:snake>] {
+                        join_handle.join().expect("thread pool disconnected")?;
+                    }
+                )*
+                Ok(())
+            }
             async fn start_duniter_modules(
                 conf: &DuniterConf,
                 currency: String,

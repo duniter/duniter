@@ -18,9 +18,9 @@ use dubp::{
     block::parser::parse_json_block_from_serde_value, block::parser::ParseJsonBlockError,
     block::prelude::DubpBlockTrait, block::DubpBlock, common::prelude::BlockNumber,
 };
-use duniter_dbs::BcV1DbReadable;
+use duniter_dbs::{BcV1DbReadable, FileBackend};
 use fast_threadpool::{ThreadPool, ThreadPoolConfig};
-use std::path::PathBuf;
+use std::{ops::Deref, path::PathBuf};
 
 const CHUNK_SIZE: usize = 250;
 
@@ -32,6 +32,22 @@ pub(crate) fn migrate(profile_path: PathBuf) -> anyhow::Result<()> {
     dbs.bc_db.clear()?;
     dbs.gva_db.clear()?;
 
+    if let Err(e) = migrate_inner(dbs.clone(), profile_path, start_time) {
+        // Clear bc_db and gva_db
+        dbs.bc_db.clear()?;
+        dbs.gva_db.clear()?;
+
+        Err(e)
+    } else {
+        Ok(())
+    }
+}
+
+fn migrate_inner(
+    dbs: DuniterDbs<FileBackend>,
+    profile_path: PathBuf,
+    start_time: Instant,
+) -> anyhow::Result<()> {
     let data_path = profile_path.join(crate::DATA_DIR);
     let duniter_js_db = BcV1Db::<LevelDb>::open(LevelDbConf {
         db_path: data_path.as_path().join("leveldb"),
@@ -94,9 +110,22 @@ pub(crate) fn migrate(profile_path: PathBuf) -> anyhow::Result<()> {
                     chunk[0].number(),
                     chunk[chunk.len() - 1].number()
                 );
+                let chunk = Arc::from(chunk);
+                let chunk_arc_clone = Arc::clone(&chunk);
+                let gva_handle = dbs_pool
+                    .launch(move |dbs| {
+                        for block in chunk_arc_clone.deref() {
+                            duniter_gva_db_writer::apply_block(block, &dbs.gva_db)?;
+                        }
+                        Ok::<_, KvError>(())
+                    })
+                    .expect("gva:apply_chunk: dbs pool disconnected");
                 current = Some(duniter_dbs_write_ops::apply_block::apply_chunk(
-                    current, &dbs_pool, chunk, true,
+                    current, &dbs_pool, chunk,
                 )?);
+                gva_handle
+                    .join()
+                    .expect("gva:apply_chunk: dbs pool disconnected")?;
             }
         }
 

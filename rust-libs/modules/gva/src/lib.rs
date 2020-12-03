@@ -50,6 +50,7 @@ use crate::tests::create_dbs_reader;
 use crate::tests::DbsReader;
 use async_graphql::http::GraphQLPlaygroundConfig;
 use async_graphql::validators::{IntGreaterThan, ListMinLength, StringMaxLength, StringMinLength};
+use dubp::block::DubpBlockV10;
 use dubp::common::crypto::keys::{ed25519::PublicKey, KeyPair as _, PublicKey as _};
 use dubp::common::prelude::*;
 use dubp::documents::prelude::*;
@@ -63,11 +64,13 @@ use duniter_gva_dbs_reader::create_dbs_reader;
 #[cfg(not(test))]
 use duniter_gva_dbs_reader::DbsReader;
 use duniter_mempools::{Mempools, TxsMempool};
+use fast_threadpool::{JoinHandle, ThreadPoolDisconnected};
 use futures::{StreamExt, TryStreamExt};
 use resiter::map::Map;
 use std::{
     convert::{Infallible, TryFrom},
     ops::Deref,
+    path::Path,
 };
 use warp::{http::Response as HttpResponse, Filter as _, Rejection, Stream};
 
@@ -83,6 +86,51 @@ pub struct GvaModule {
 
 #[async_trait::async_trait]
 impl duniter_module::DuniterModule for GvaModule {
+    fn apply_block(
+        block: Arc<DubpBlockV10>,
+        conf: &duniter_conf::DuniterConf,
+        dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+        _profile_path_opt: Option<&Path>,
+    ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
+        if conf.gva.is_some() {
+            Ok(Some(dbs_pool.launch(move |dbs| {
+                duniter_gva_db_writer::apply_block(&block, &dbs.gva_db)
+            })?))
+        } else {
+            Ok(None)
+        }
+    }
+    fn apply_chunk_of_blocks(
+        blocks: Arc<[DubpBlockV10]>,
+        conf: &duniter_conf::DuniterConf,
+        dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+        _profile_path_opt: Option<&Path>,
+    ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
+        if conf.gva.is_some() {
+            Ok(Some(dbs_pool.launch(move |dbs| {
+                for block in blocks.deref() {
+                    duniter_gva_db_writer::apply_block(&block, &dbs.gva_db)?;
+                }
+                Ok::<_, KvError>(())
+            })?))
+        } else {
+            Ok(None)
+        }
+    }
+    fn revert_block(
+        block: Arc<DubpBlockV10>,
+        conf: &duniter_conf::DuniterConf,
+        dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+        _profile_path_opt: Option<&Path>,
+    ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
+        if conf.gva.is_some() {
+            Ok(Some(dbs_pool.launch(move |dbs| {
+                duniter_gva_db_writer::revert_block(&block, &dbs.gva_db)
+            })?))
+        } else {
+            Ok(None)
+        }
+    }
     fn init(
         conf: &duniter_conf::DuniterConf,
         currency: &str,

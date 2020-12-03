@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use std::net::{IpAddr, SocketAddr};
+
 use crate::anti_spam::AntiSpam;
 use crate::*;
 
@@ -58,24 +60,29 @@ pub(crate) fn graphql(
     let anti_spam = AntiSpam::from(conf);
     let opts = Arc::new(opts);
     warp::path::path(conf.get_path())
-        .and(warp::addr::remote())
         .and(warp::method())
         .and(warp::query::raw().or(warp::any().map(String::new)).unify())
+        .and(warp::addr::remote())
+        .and(warp::header::optional::<IpAddr>("X-Real-IP"))
         .and(warp::header::optional::<String>("content-type"))
         .and(warp::body::stream())
         .and(warp::any().map(move || opts.clone()))
         .and(warp::any().map(move || schema.clone()))
         .and(warp::any().map(move || anti_spam.clone()))
         .and_then(
-            |remote_addr,
-             method,
+            |method,
              query: String,
+             remote_addr: Option<SocketAddr>,
+             x_real_ip: Option<IpAddr>,
              content_type,
              body,
              opts: Arc<async_graphql::http::MultipartOptions>,
              schema,
              anti_spam: AntiSpam| async move {
-                if anti_spam.verify(remote_addr).await {
+                if anti_spam
+                    .verify(x_real_ip.or_else(|| remote_addr.map(|ra| ra.ip())))
+                    .await
+                {
                     if method == http::Method::GET {
                         let request: async_graphql::Request = serde_urlencoded::from_str(&query)
                             .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
@@ -96,7 +103,7 @@ pub(crate) fn graphql(
                     }
                 } else {
                     Err(warp::reject::custom(BadRequest(anyhow::Error::msg(
-                        "too many requests",
+                        r#"{ "error": "too many requests" }"#,
                     ))))
                 }
             },
@@ -115,16 +122,24 @@ pub(crate) fn graphql_ws(
     let anti_spam = AntiSpam::from(conf);
     warp::path::path(conf.get_subscriptions_path())
         .and(warp::addr::remote())
+        .and(warp::header::optional::<IpAddr>("X-Real-IP"))
         .and(warp::ws())
         .and(warp::any().map(move || schema.clone()))
         .and(warp::any().map(move || anti_spam.clone()))
         .and_then(
-            |remote_addr, ws: warp::ws::Ws, schema: GraphQlSchema, anti_spam: AntiSpam| async move {
-                if anti_spam.verify(remote_addr).await {
+            |remote_addr: Option<SocketAddr>,
+             x_real_ip: Option<IpAddr>,
+             ws: warp::ws::Ws,
+             schema: GraphQlSchema,
+             anti_spam: AntiSpam| async move {
+                if anti_spam
+                    .verify(x_real_ip.or_else(|| remote_addr.map(|ra| ra.ip())))
+                    .await
+                {
                     Ok((ws, schema))
                 } else {
                     Err(warp::reject::custom(BadRequest(anyhow::Error::msg(
-                        "too many requests",
+                        r#"{ "error": "too many requests" }"#,
                     ))))
                 }
             },

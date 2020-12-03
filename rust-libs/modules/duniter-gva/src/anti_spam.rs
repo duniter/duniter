@@ -82,9 +82,9 @@ impl AntiSpam {
             true
         }
     }
-    pub(crate) async fn verify(&self, remote_addr_opt: Option<std::net::SocketAddr>) -> bool {
-        if let Some(remote_addr) = remote_addr_opt {
-            let ip = remote_addr.ip();
+    pub(crate) async fn verify(&self, remote_addr_opt: Option<std::net::IpAddr>) -> bool {
+        if let Some(ip) = remote_addr_opt {
+            log::trace!("GVA: receive request from {}", ip);
             if self.whitelist.contains(&ip) {
                 true
             } else {
@@ -123,7 +123,7 @@ impl AntiSpam {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr};
+    use std::net::{Ipv4Addr, Ipv6Addr};
     use tokio::time::delay_for;
 
     const LOCAL_IP4: IpAddr = IpAddr::V4(Ipv4Addr::LOCALHOST);
@@ -135,33 +135,33 @@ mod tests {
         assert!(!anti_spam.verify(None).await);
 
         for _ in 0..(COUNT_INTERVAL * 2) {
-            assert!(anti_spam.verify(Some(SocketAddr::new(LOCAL_IP4, 0))).await);
-            assert!(anti_spam.verify(Some(SocketAddr::new(LOCAL_IP6, 0))).await);
+            assert!(anti_spam.verify(Some(LOCAL_IP4)).await);
+            assert!(anti_spam.verify(Some(LOCAL_IP6)).await);
         }
 
         let extern_ip = IpAddr::V4(Ipv4Addr::UNSPECIFIED);
 
         // Consume max queries
         for _ in 0..COUNT_INTERVAL {
-            assert!(anti_spam.verify(Some(SocketAddr::new(extern_ip, 0))).await);
+            assert!(anti_spam.verify(Some(extern_ip)).await);
         }
         // Should be banned
-        assert!(!anti_spam.verify(Some(SocketAddr::new(extern_ip, 0))).await);
+        assert!(!anti_spam.verify(Some(extern_ip)).await);
 
         // Should be un-banned after one second
         delay_for(Duration::from_millis(1_100)).await;
         // Re-consume max queries
         for _ in 0..COUNT_INTERVAL {
-            assert!(anti_spam.verify(Some(SocketAddr::new(extern_ip, 0))).await);
+            assert!(anti_spam.verify(Some(extern_ip)).await);
         }
         // Should be banned for 2 seconds this time
         delay_for(Duration::from_millis(1_100)).await;
         // Attempting a request when I'm banned must be twice my banning time
-        assert!(!anti_spam.verify(Some(SocketAddr::new(extern_ip, 0))).await);
+        assert!(!anti_spam.verify(Some(extern_ip)).await);
         delay_for(Duration::from_millis(4_100)).await;
         // Re-consume max queries
         for _ in 0..COUNT_INTERVAL {
-            assert!(anti_spam.verify(Some(SocketAddr::new(extern_ip, 0))).await);
+            assert!(anti_spam.verify(Some(extern_ip)).await);
         }
     }
 }

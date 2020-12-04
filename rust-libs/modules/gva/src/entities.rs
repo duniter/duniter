@@ -19,6 +19,11 @@ pub mod ud_gva;
 use crate::*;
 
 #[derive(Default, async_graphql::SimpleObject)]
+pub(crate) struct AggregateSum {
+    pub(crate) aggregate: Sum,
+}
+
+#[derive(Default, async_graphql::SimpleObject)]
 pub(crate) struct AmountWithBase {
     pub(crate) amount: i32,
     pub(crate) base: i32,

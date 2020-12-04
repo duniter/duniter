@@ -32,7 +32,7 @@ impl UtxosQuery {
         #[graphql(desc = "DUBP wallet script")] script: String,
         #[graphql(desc = "pagination", default)] pagination: Pagination,
         #[graphql(desc = "Amount needed")] amount: Option<i64>,
-    ) -> async_graphql::Result<Connection<String, UtxoGva, Sum, EmptyFields>> {
+    ) -> async_graphql::Result<Connection<String, UtxoGva, AggregateSum, EmptyFields>> {
         let pagination = Pagination::convert_to_page_info(pagination)?;
 
         let script = dubp::documents_parser::wallet_script_from_str(&script)?;
@@ -81,10 +81,12 @@ impl UtxosQuery {
         let mut conn = Connection::with_additional_fields(
             has_previous_page,
             has_next_page,
-            Sum {
-                sum: AmountWithBase {
-                    amount: sum.amount() as i32,
-                    base: sum.base() as i32,
+            AggregateSum {
+                aggregate: Sum {
+                    sum: AmountWithBase {
+                        amount: sum.amount() as i32,
+                        base: sum.base() as i32,
+                    },
                 },
             },
         );

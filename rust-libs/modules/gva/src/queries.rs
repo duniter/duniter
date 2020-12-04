@@ -17,7 +17,7 @@ pub mod account_balance;
 pub mod gen_tx;
 pub mod txs_history;
 pub mod uds;
-pub mod utxos;
+pub mod utxos_of_script;
 
 use crate::*;
 use duniter_dbs::cm_v1::CmV1DbReadable as _;
@@ -29,7 +29,7 @@ pub struct QueryRoot(
     queries::gen_tx::GenTxsQuery,
     queries::txs_history::TxsHistoryQuery,
     queries::uds::UdsQuery,
-    queries::utxos::UtxosQuery,
+    queries::utxos_of_script::UtxosQuery,
 );
 
 #[derive(Default, async_graphql::SimpleObject)]

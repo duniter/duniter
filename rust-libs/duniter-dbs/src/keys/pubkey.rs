@@ -55,6 +55,53 @@ impl ToDumpString for PubKeyKeyV1 {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
+pub struct PubKeyKeyV2(pub PublicKey);
+
+impl KeyAsBytes for PubKeyKeyV2 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        f(self.0.as_ref())
+    }
+}
+
+impl kv_typed::prelude::FromBytes for PubKeyKeyV2 {
+    type Err = StringErr;
+
+    fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
+        Ok(PubKeyKeyV2(
+            PublicKey::try_from(bytes).map_err(|e| StringErr(format!("{}: {:?}", e, bytes)))?,
+        ))
+    }
+}
+
+impl ToDumpString for PubKeyKeyV2 {
+    fn to_dump_string(&self) -> String {
+        todo!()
+    }
+}
+
+#[cfg(feature = "explorer")]
+impl ExplorableKey for PubKeyKeyV1 {
+    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
+        Self::from_bytes(source.as_bytes())
+    }
+    fn to_explorer_string(&self) -> KvResult<String> {
+        self.as_bytes(|bytes| Ok(unsafe { std::str::from_utf8_unchecked(bytes) }.to_owned()))
+    }
+}
+
+#[cfg(feature = "explorer")]
+impl ExplorableKey for PubKeyKeyV2 {
+    fn from_explorer_str(pubkey_str: &str) -> std::result::Result<Self, StringErr> {
+        Ok(PubKeyKeyV2(PublicKey::from_base58(&pubkey_str).map_err(
+            |e| StringErr(format!("{}: {}", e, pubkey_str)),
+        )?))
+    }
+    fn to_explorer_string(&self) -> KvResult<String> {
+        Ok(self.0.to_base58())
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -66,15 +113,5 @@ mod tests {
             all.as_bytes(|bytes| bytes.to_vec()),
             PubKeyKeyV1::ALL.as_bytes()
         )
-    }
-}
-
-#[cfg(feature = "explorer")]
-impl ExplorableKey for PubKeyKeyV1 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-        Self::from_bytes(source.as_bytes())
-    }
-    fn to_explorer_string(&self) -> KvResult<String> {
-        self.as_bytes(|bytes| Ok(unsafe { std::str::from_utf8_unchecked(bytes) }.to_owned()))
     }
 }

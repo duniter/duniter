@@ -46,6 +46,8 @@ import {BMAConstants} from "./app/modules/bma/lib/constants"
 import {HttpMilestonePage} from "./app/modules/bma/lib/dtos"
 import * as toJson from "./app/modules/bma/lib/tojson"
 import { rawTxParseAndVerify, txVerify } from "./neon/lib"
+import { TransactionDTOV10 } from "./neon/native"
+import { format } from "util";
 
 export interface HookableServer {
   generatorGetJoinData: (...args:any[]) => Promise<any>
@@ -350,8 +352,14 @@ export class Server extends stream.Duplex implements HookableServer {
     this.streamPush(res.clone())
   }
 
-  async initDAL(conf:ConfDTO|null = null) {
-    await this.dal.init(this.conf)
+  async initDAL(conf:ConfDTO|null = null, commandName: string|null = null) {
+    // Init DAL
+    await this.dal.init(this.conf, commandName);
+    // Get rust endpoints
+    for (let endpoint of this.dal.getRustEndpoints()) {
+      //logger.info("TMP: rustEndpoint: %s", endpoint);
+      this.addEndpointsDefinitions(async () => endpoint);
+    }
     // Maintenance
     let head_1 = await this.dal.bindexDAL.head(1);
     if (head_1) {
@@ -364,6 +372,16 @@ export class Server extends stream.Duplex implements HookableServer {
         await this.revertHead();
       }
     }
+
+    setInterval(() => {
+      if (this.ws2pCluster) {
+        let txs = this.dal.getNewPendingTxs();
+        if (txs.length > 0) {
+          this.ws2pCluster.pushPendingTransactions(txs.map((tx) => TransactionDTO.fromTransactionDTOV10(tx)));
+        }
+      }
+    }, CommonConstants.PUSH_NEW_PENDING_TXS_EVERY_MS);
+
     // Eventual block resolution
     await this.BlockchainService.blockResolution()
     // Eventual fork resolution

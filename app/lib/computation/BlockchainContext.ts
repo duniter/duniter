@@ -174,6 +174,7 @@ export class BlockchainContext {
       throw DataErrors[DataErrors.BLOCK_TO_REVERT_NOT_FOUND];
     }
     await DuniterBlockchain.revertBlock(
+      this.conf,
       head_1.number,
       head_1.hash,
       this.dal,
@@ -187,7 +188,12 @@ export class BlockchainContext {
   async revertCurrentHead() {
     const head_1 = await this.dal.bindexDAL.head(1);
     this.logger.debug("Reverting HEAD~1... (b#%s)", head_1.number);
-    await DuniterBlockchain.revertBlock(head_1.number, head_1.hash, this.dal);
+    await DuniterBlockchain.revertBlock(
+      this.conf,
+      head_1.number,
+      head_1.hash,
+      this.dal
+    );
     // Invalidates the head, since it has changed.
     await this.refreshHead();
   }

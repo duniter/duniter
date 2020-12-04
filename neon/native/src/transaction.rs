@@ -14,14 +14,14 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::into_neon_res;
-use dubp_common::crypto::{bases::BaseConversionError, keys::ed25519, keys::PublicKey};
-use dubp_documents::transaction::{
+use dubp::common::crypto::{bases::BaseConversionError, keys::ed25519, keys::PublicKey};
+use dubp::documents::transaction::{
     TransactionDocumentTrait, TransactionDocumentV10, TransactionDocumentV10Stringified,
     TransactionInputUnlocksV10,
 };
-use dubp_documents::{prelude::*, smallvec::SmallVec};
-use dubp_documents_parser::prelude::*;
-use dubp_wallet::prelude::*;
+use dubp::documents::{prelude::*, smallvec::SmallVec};
+use dubp::documents_parser::prelude::*;
+use dubp::wallet::prelude::*;
 use neon::prelude::*;
 
 pub fn raw_tx_parse_and_verify(mut cx: FunctionContext) -> JsResult<JsValue> {
@@ -118,7 +118,7 @@ pub fn source_is_unlockable(mut cx: FunctionContext) -> JsResult<JsBoolean> {
         .collect::<Result<SmallVec<[ed25519::PublicKey; 1]>, BaseConversionError>>();
     let tx_issuers = into_neon_res(&mut cx, tx_issuers_res.map_err(|e| format!("{}", e)))?;
 
-    if let Ok(proofs) = dubp_documents_parser::tx_unlock_v10_from_str(&proofs) {
+    if let Ok(proofs) = dubp::documents_parser::tx_unlock_v10_from_str(&proofs) {
         Ok(cx.boolean(source_is_unlockable_inner(
             current_bc_time,
             &proofs,
@@ -139,7 +139,7 @@ fn source_is_unlockable_inner(
     tx_issuers: &[ed25519::PublicKey],
     utxo_script: &str,
 ) -> bool {
-    if let Ok(utxo_script) = dubp_documents_parser::wallet_script_from_str(&utxo_script) {
+    if let Ok(utxo_script) = dubp::documents_parser::wallet_script_from_str(&utxo_script) {
         if let Ok(unlockable_on) = SourceV10::unlockable_on(
             &tx_issuers,
             &proofs.unlocks,

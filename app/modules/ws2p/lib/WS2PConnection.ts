@@ -809,6 +809,12 @@ export class WS2PConnection {
     return this.pushData(WS2P_PUSH.TRANSACTION, "transaction", tx);
   }
 
+  async pushTransactions(txs: TransactionDTO[]) {
+    for (const tx of txs) {
+      await this.pushData(WS2P_PUSH.TRANSACTION, "transaction", tx);
+    }
+  }
+
   async pushPeer(peer: PeerDTO) {
     return this.pushData(WS2P_PUSH.PEER, "peer", peer);
   }

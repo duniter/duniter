@@ -520,6 +520,10 @@ export class TestingServer {
     return blocksResolved
   }
 
+  async revertCurrentBlock() {
+    await this.server.BlockchainService.revertCurrentBlock()
+  }
+
   async resolveExistingBlock(filterFunc: (b: DBBlock) => boolean) {
     const blocksResolved = await this.server.BlockchainService.blockResolution(filterFunc)
     if (!blocksResolved) {
@@ -810,6 +814,19 @@ export const simpleWS2PNetwork: (s1: TestingServer, s2: TestingServer) => Promis
 
 export function simpleTestingConf(now = 1500000000, pair:{ pub:string, sec:string }): any {
   return {
+    bmaWithCrawler: true,
+    pair,
+    nbCores: 1,
+    udTime0: now,
+    udReevalTime0: now,
+    sigQty: 1,
+    medianTimeBlocks: 1 // The medianTime always equals previous block's medianTime
+  }
+}
+
+export function simpleTestingConfWithGva(now = 1500000000, pair:{ pub:string, sec:string }): any {
+  return {
+    gva: {},
     bmaWithCrawler: true,
     pair,
     nbCores: 1,

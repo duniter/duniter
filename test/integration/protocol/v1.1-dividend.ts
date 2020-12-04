@@ -27,6 +27,7 @@ describe("Protocol 1.1 Dividend", function() {
   before(async () => {
 
     s1 = NewTestingServer({
+      gva: {},
       c: 0.1,
       dt: 10,
       dtReeval: 10,
@@ -105,6 +106,5 @@ describe("Protocol 1.1 Dividend", function() {
 
   it('should have a correct history', () => s1.expect('/tx/history/2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc', (res:HttpTxHistory) => {
     res.history.received[0].should.have.property('blockstamp').not.equal(null).not.equal('');
-    res.history.received[0].should.have.property('blockstampTime').not.equal(null).greaterThan(0);
   }))
 })

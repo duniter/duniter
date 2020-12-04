@@ -23,19 +23,23 @@
 )]
 
 mod cli;
+mod migrate;
 mod print_found_data;
 mod stringify_json_value;
 
 use self::cli::{Database, Opt, OutputFormat, SubCommand};
 use self::stringify_json_value::stringify_json_value;
+use anyhow::anyhow;
 use comfy_table::Table;
+use duniter_dbs::bc_v2::{BcV2Db, BcV2DbWritable};
+use duniter_dbs::kv_typed::backend::sled;
 use duniter_dbs::kv_typed::prelude::*;
 use duniter_dbs::prelude::*;
 use duniter_dbs::regex::Regex;
 use duniter_dbs::serde_json::{Map, Value};
 use duniter_dbs::smallvec::{smallvec, SmallVec};
-use duniter_dbs::BcV1Db;
-use duniter_dbs::BcV1DbWritable;
+use duniter_dbs::{BcV1Db, GvaV1Db, TxsMpV2Db};
+use duniter_dbs::{BcV1DbWritable, GvaV1DbWritable, TxsMpV2DbWritable};
 use rayon::prelude::*;
 use std::{
     collections::{HashMap, HashSet},
@@ -49,7 +53,7 @@ use structopt::StructOpt;
 const DATA_DIR: &str = "data";
 const TOO_MANY_ENTRIES_ALERT: usize = 5_000;
 
-fn main() -> Result<(), String> {
+fn main() -> anyhow::Result<()> {
     let opt = Opt::from_args();
 
     let home = if let Some(home) = opt.home {
@@ -57,8 +61,7 @@ fn main() -> Result<(), String> {
     } else {
         dirs::config_dir()
             .ok_or_else(|| {
-                "Fail to auto find duniter's home directory, please specify it explicitly."
-                    .to_owned()
+                anyhow!("Fail to auto find duniter's home directory, please specify it explicitly.")
             })?
             .as_path()
             .join("duniter")
@@ -74,23 +77,47 @@ fn main() -> Result<(), String> {
     let data_path = profile_path.as_path().join(DATA_DIR);
 
     if !data_path.exists() {
-        return Err(format!(
+        return Err(anyhow!(
             "Path '{}' don't exist !",
             data_path.to_str().expect("non-UTF-8 strings not supported")
         ));
     }
 
-    let open_db_start_time = Instant::now();
-    match opt.database {
-        Database::BcV1 => apply_subcommand(
-            BcV1Db::<LevelDb>::open(LevelDbConf {
-                db_path: data_path.as_path().join("leveldb"),
-                ..Default::default()
-            })
-            .map_err(|e| format!("{}", e))?,
-            opt.cmd,
-            open_db_start_time,
-        ),
+    if let SubCommand::Migrate = opt.cmd {
+        migrate::migrate(profile_path)
+    } else {
+        let open_db_start_time = Instant::now();
+        match opt.database {
+            Database::BcV1 => apply_subcommand(
+                BcV1Db::<LevelDb>::open(LevelDbConf {
+                    db_path: data_path.as_path().join("leveldb"),
+                    ..Default::default()
+                })?,
+                opt.cmd,
+                open_db_start_time,
+            ),
+            Database::BcV2 => apply_subcommand(
+                BcV2Db::<Sled>::open(
+                    sled::Config::default().path(data_path.as_path().join("bc_v2_sled")),
+                )?,
+                opt.cmd,
+                open_db_start_time,
+            ),
+            Database::GvaV1 => apply_subcommand(
+                GvaV1Db::<Sled>::open(
+                    sled::Config::default().path(data_path.as_path().join("gva_v1_sled")),
+                )?,
+                opt.cmd,
+                open_db_start_time,
+            ),
+            Database::TxsMpV2 => apply_subcommand(
+                TxsMpV2Db::<Sled>::open(
+                    sled::Config::default().path(data_path.as_path().join("txs_mp_v2_sled")),
+                )?,
+                opt.cmd,
+                open_db_start_time,
+            ),
+        }
     }
 }
 
@@ -98,7 +125,7 @@ fn apply_subcommand<DB: DbExplorable>(
     db: DB,
     cmd: SubCommand,
     open_db_start_time: Instant,
-) -> Result<(), String> {
+) -> anyhow::Result<()> {
     let duration = open_db_start_time.elapsed();
     println!(
         "Database opened in {}.{:06} seconds.",
@@ -109,10 +136,8 @@ fn apply_subcommand<DB: DbExplorable>(
 
     match cmd {
         SubCommand::Count { collection } => {
-            if let ExplorerActionResponse::Count(count) = db
-                .explore(&collection, ExplorerAction::Count, stringify_json_value)
-                .map_err(|e| format!("{}", e))?
-                .map_err(|e| e.0)?
+            if let ExplorerActionResponse::Count(count) =
+                db.explore(&collection, ExplorerAction::Count, stringify_json_value)??
             {
                 let duration = start_time.elapsed();
                 println!(
@@ -124,15 +149,11 @@ fn apply_subcommand<DB: DbExplorable>(
             }
         }
         SubCommand::Get { collection, key } => {
-            if let ExplorerActionResponse::Get(value_opt) = db
-                .explore(
-                    &collection,
-                    ExplorerAction::Get { key: &key },
-                    stringify_json_value,
-                )
-                .map_err(|e| format!("{}", e))?
-                .map_err(|e| e.0)?
-            {
+            if let ExplorerActionResponse::Get(value_opt) = db.explore(
+                &collection,
+                ExplorerAction::Get { key: &key },
+                stringify_json_value,
+            )?? {
                 if let Some(value) = value_opt {
                     println!("\n{}", value)
                 } else {
@@ -172,23 +193,19 @@ fn apply_subcommand<DB: DbExplorable>(
             } else {
                 vec![]
             };
-            if let ExplorerActionResponse::Find(entries) = db
-                .explore(
-                    &collection,
-                    ExplorerAction::Find {
-                        key_min: start,
-                        key_max: end,
-                        key_regex: opt_string_to_res_opt_regex(key_regex)?,
-                        value_regex: value_regex_opt,
-                        limit,
-                        reverse,
-                        step,
-                    },
-                    stringify_json_value,
-                )
-                .map_err(|e| format!("{}", e))?
-                .map_err(|e| e.0)?
-            {
+            if let ExplorerActionResponse::Find(entries) = db.explore(
+                &collection,
+                ExplorerAction::Find {
+                    key_min: start,
+                    key_max: end,
+                    key_regex: opt_string_to_res_opt_regex(key_regex)?,
+                    value_regex: value_regex_opt,
+                    limit,
+                    reverse,
+                    step,
+                },
+                stringify_json_value,
+            )?? {
                 let duration = start_time.elapsed();
                 println!(
                     "Search performed in {}.{:06} seconds.\n\n{} entries found.",
@@ -197,16 +214,13 @@ fn apply_subcommand<DB: DbExplorable>(
                     entries.len()
                 );
 
-                if !too_many_entries(entries.len(), output_file.is_none())
-                    .map_err(|e| format!("{}", e))?
-                {
+                if !too_many_entries(entries.len(), output_file.is_none())? {
                     return Ok(());
                 }
 
                 let start_print = Instant::now();
                 if let Some(output_file) = output_file {
-                    let mut file =
-                        File::create(output_file.as_path()).map_err(|e| format!("{}", e))?;
+                    let mut file = File::create(output_file.as_path())?;
 
                     //let mut file_buffer = BufWriter::new(file);
                     print_found_data::print_found_data(
@@ -220,8 +234,7 @@ fn apply_subcommand<DB: DbExplorable>(
                             only_properties: properties,
                         },
                         captures_headers,
-                    )
-                    .map_err(|e| format!("{}", e))?;
+                    )?;
                     //file_buffer.flush().map_err(|e| format!("{}", e))?;
 
                     let export_duration = start_print.elapsed();
@@ -245,8 +258,7 @@ fn apply_subcommand<DB: DbExplorable>(
                             only_properties: properties,
                         },
                         captures_headers,
-                    )
-                    .map_err(|e| format!("{}", e))?;
+                    )?;
                     let print_duration = start_print.elapsed();
                     println!(
                         "Search results were displayed in {}.{:06} seconds.",
@@ -257,8 +269,9 @@ fn apply_subcommand<DB: DbExplorable>(
             }
         }
         SubCommand::Schema => {
-            show_db_schema(db.list_collections());
+            show_db_schema(DB::list_collections());
         }
+        SubCommand::Migrate => unreachable!(),
     };
 
     Ok(())
@@ -296,9 +309,9 @@ fn show_db_schema(collections_names: Vec<(&'static str, &'static str, &'static s
 }
 
 #[inline]
-fn opt_string_to_res_opt_regex(str_regex_opt: Option<String>) -> Result<Option<Regex>, String> {
+fn opt_string_to_res_opt_regex(str_regex_opt: Option<String>) -> anyhow::Result<Option<Regex>> {
     if let Some(str_regex) = str_regex_opt {
-        Ok(Some(Regex::new(&str_regex).map_err(|e| format!("{}", e))?))
+        Ok(Some(Regex::new(&str_regex)?))
     } else {
         Ok(None)
     }

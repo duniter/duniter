@@ -13,13 +13,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use dubp_common::crypto::keys::ed25519::PublicKey;
-use dubp_common::crypto::keys::PublicKey as _;
-use dubp_common::prelude::*;
+use dubp::common::crypto::keys::ed25519::PublicKey;
+use dubp::common::crypto::keys::PublicKey as _;
+use dubp::common::prelude::*;
 use duniter_dbs::kv_typed::prelude::*;
 use duniter_dbs::{
-    BcV1Db, BcV1DbReadable, BcV1DbWritable, BlockDbV1, BlockNumberKeyV1, MainBlockEvent,
-    PublicKeySingletonDbV1, Result, UidKeyV1,
+    BcV1Db, BcV1DbReadable, BcV1DbWritable, BlockDbV1, BlockNumberKeyV1, MainBlocksEvent,
+    PublicKeySingletonDbV1, UidKeyV1,
 };
 use kv_typed::channel::TryRecvError;
 use std::str::FromStr;
@@ -27,7 +27,7 @@ use tempdir::TempDir;
 use unwrap::unwrap;
 
 #[test]
-fn write_read_delete_b0_leveldb() -> Result<()> {
+fn write_read_delete_b0_leveldb() -> KvResult<()> {
     let tmp_dir = unwrap!(TempDir::new("write_read_delete_b0_leveldb"));
 
     let db = BcV1Db::<LevelDb>::open(LevelDbConf::path(tmp_dir.path().to_owned()))?;
@@ -36,14 +36,14 @@ fn write_read_delete_b0_leveldb() -> Result<()> {
 }
 
 #[test]
-fn write_read_delete_b0_sled() -> Result<()> {
+fn write_read_delete_b0_sled() -> KvResult<()> {
     let db = BcV1Db::<Sled>::open(SledConf::new().temporary(true))?;
 
     write_read_delete_b0_test(&db)
 }
 
 #[test]
-fn iter_test_leveldb() -> Result<()> {
+fn iter_test_leveldb() -> KvResult<()> {
     let tmp_dir = unwrap!(TempDir::new("batch_test_leveldb"));
 
     let db = BcV1Db::<LevelDb>::open(LevelDbConf::path(tmp_dir.path().to_owned()))?;
@@ -52,21 +52,21 @@ fn iter_test_leveldb() -> Result<()> {
 }
 
 #[test]
-fn iter_test_mem() -> Result<()> {
+fn iter_test_mem() -> KvResult<()> {
     let db = BcV1Db::<Mem>::open(MemConf::default())?;
 
     write_some_entries_and_iter(&db)
 }
 
 #[test]
-fn iter_test_sled() -> Result<()> {
+fn iter_test_sled() -> KvResult<()> {
     let db = BcV1Db::<Sled>::open(SledConf::new().temporary(true))?;
 
     write_some_entries_and_iter(&db)
 }
 
 #[test]
-fn batch_test_leveldb() -> Result<()> {
+fn batch_test_leveldb() -> KvResult<()> {
     let tmp_dir = unwrap!(TempDir::new("batch_test_leveldb"));
 
     let db = BcV1Db::<LevelDb>::open(LevelDbConf::path(tmp_dir.path().to_owned()))?;
@@ -75,20 +75,20 @@ fn batch_test_leveldb() -> Result<()> {
 }
 
 #[test]
-fn batch_test_mem() -> Result<()> {
+fn batch_test_mem() -> KvResult<()> {
     let db = BcV1Db::<Mem>::open(MemConf::default())?;
 
     batch_test(&db)
 }
 
 #[test]
-fn batch_test_sled() -> Result<()> {
+fn batch_test_sled() -> KvResult<()> {
     let db = BcV1Db::<Sled>::open(SledConf::new().temporary(true))?;
 
     batch_test(&db)
 }
 
-fn write_read_delete_b0_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
+fn write_read_delete_b0_test<B: Backend>(db: &BcV1Db<B>) -> KvResult<()> {
     let main_blocks_reader = db.main_blocks();
 
     let (subscriber, events_recv) = kv_typed::channel::unbounded();
@@ -104,8 +104,14 @@ fn write_read_delete_b0_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
         main_blocks_reader.get(&BlockNumberKeyV1(BlockNumber(1)))?,
         None
     );
-    assert_eq!(main_blocks_reader.iter(..).keys().next_res()?, None);
-    assert_eq!(main_blocks_reader.iter(..).values().next_res()?, None);
+    assert_eq!(
+        main_blocks_reader.iter(.., |iter| iter.keys().next_res())?,
+        None
+    );
+    assert_eq!(
+        main_blocks_reader.iter(.., |iter| iter.values().next_res())?,
+        None
+    );
     if let Err(TryRecvError::Empty) = events_recv.try_recv() {
     } else {
         panic!("should not receive event");
@@ -125,21 +131,28 @@ fn write_read_delete_b0_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
         main_blocks_reader.get(&BlockNumberKeyV1(BlockNumber(1)))?,
         None
     );
-    let mut keys_iter = main_blocks_reader.iter(..).keys();
-    assert_eq!(
-        keys_iter.next_res()?,
-        Some(BlockNumberKeyV1(BlockNumber(0)))
-    );
-    assert_eq!(keys_iter.next_res()?, None);
-    let mut values_iter = main_blocks_reader.iter(..).values();
-    assert_eq!(values_iter.next_res()?, Some(b0.clone()));
-    assert_eq!(values_iter.next_res()?, None);
+    main_blocks_reader.iter(.., |iter| {
+        let mut keys_iter = iter.keys();
+        assert_eq!(
+            keys_iter.next_res()?,
+            Some(BlockNumberKeyV1(BlockNumber(0)))
+        );
+        assert_eq!(keys_iter.next_res()?, None);
+        Ok::<(), KvError>(())
+    })?;
+    main_blocks_reader.iter(.., |iter| {
+        let mut values_iter = iter.values();
+        assert_eq!(values_iter.next_res()?, Some(b0.clone()));
+        assert_eq!(values_iter.next_res()?, None);
+
+        Ok::<(), KvError>(())
+    })?;
     if let Ok(events) = events_recv.try_recv() {
         assert_eq!(events.len(), 1);
         let event = &events[0];
         assert_eq!(
             event,
-            &MainBlockEvent::Upsert {
+            &MainBlocksEvent::Upsert {
                 key: BlockNumberKeyV1(BlockNumber(0)),
                 value: b0,
             },
@@ -158,14 +171,20 @@ fn write_read_delete_b0_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
         main_blocks_reader.get(&BlockNumberKeyV1(BlockNumber(1)))?,
         None
     );
-    assert_eq!(main_blocks_reader.iter(..).keys().next_res()?, None);
-    assert_eq!(main_blocks_reader.iter(..).values().next_res()?, None);
+    assert_eq!(
+        main_blocks_reader.iter(.., |it| it.keys().next_res())?,
+        None
+    );
+    assert_eq!(
+        main_blocks_reader.iter(.., |it| it.values().next_res())?,
+        None
+    );
     if let Ok(events) = events_recv.try_recv() {
         assert_eq!(events.len(), 1);
         let event = &events[0];
         assert_eq!(
             event,
-            &MainBlockEvent::Remove {
+            &MainBlocksEvent::Remove {
                 key: BlockNumberKeyV1(BlockNumber(0)),
             },
         );
@@ -176,7 +195,7 @@ fn write_read_delete_b0_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
     Ok(())
 }
 
-fn write_some_entries_and_iter<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
+fn write_some_entries_and_iter<B: Backend>(db: &BcV1Db<B>) -> KvResult<()> {
     let k1 = unwrap!(UidKeyV1::from_str("titi"));
     let p1 = PublicKeySingletonDbV1(unwrap!(PublicKey::from_base58(
         "42jMJtb8chXrpHMAMcreVdyPJK7LtWjEeRqkPw4eSEVp"
@@ -196,53 +215,80 @@ fn write_some_entries_and_iter<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
 
     let uids_reader = db.uids();
     {
-        let mut values_iter_step_2 = uids_reader.iter(..).values().step_by(2);
-        assert_eq!(Some(p1), values_iter_step_2.next_res()?);
-        assert_eq!(Some(p3), values_iter_step_2.next_res()?);
-        assert_eq!(None, values_iter_step_2.next_res()?);
+        uids_reader.iter(.., |it| {
+            let mut values_iter_step_2 = it.values().step_by(2);
 
-        let mut entries_iter_step_2 = uids_reader.iter(..).step_by(2);
-        assert_eq!(Some((k1, p1)), entries_iter_step_2.next_res()?);
-        assert_eq!(Some((k3, p3)), entries_iter_step_2.next_res()?);
-        assert_eq!(None, entries_iter_step_2.next_res()?);
+            assert_eq!(Some(p1), values_iter_step_2.next_res()?);
+            assert_eq!(Some(p3), values_iter_step_2.next_res()?);
+            assert_eq!(None, values_iter_step_2.next_res()?);
+            Ok::<(), KvError>(())
+        })?;
 
-        let mut entries_iter = uids_reader.iter(k2..);
-        assert_eq!(Some((k2, p2)), entries_iter.next_res()?);
-        assert_eq!(Some((k3, p3)), entries_iter.next_res()?);
-        assert_eq!(None, entries_iter.next_res()?);
+        uids_reader.iter(.., |it| {
+            let mut entries_iter_step_2 = it.step_by(2);
 
-        let mut entries_iter = uids_reader.iter(..=k2);
-        assert_eq!(Some((k1, p1)), entries_iter.next_res()?);
-        assert_eq!(Some((k2, p2)), entries_iter.next_res()?);
-        assert_eq!(None, entries_iter.next_res()?);
+            assert_eq!(Some((k1, p1)), entries_iter_step_2.next_res()?);
+            assert_eq!(Some((k3, p3)), entries_iter_step_2.next_res()?);
+            assert_eq!(None, entries_iter_step_2.next_res()?);
+            Ok::<(), KvError>(())
+        })?;
 
-        let mut entries_iter_rev = uids_reader.iter(k2..).reverse();
-        assert_eq!(Some((k3, p3)), entries_iter_rev.next_res()?);
-        assert_eq!(Some((k2, p2)), entries_iter_rev.next_res()?);
-        assert_eq!(None, entries_iter_rev.next_res()?);
+        uids_reader.iter(k2.., |mut entries_iter| {
+            assert_eq!(Some((k2, p2)), entries_iter.next_res()?);
+            assert_eq!(Some((k3, p3)), entries_iter.next_res()?);
+            assert_eq!(None, entries_iter.next_res()?);
+            Ok::<(), KvError>(())
+        })?;
 
-        let mut entries_iter_rev = uids_reader.iter(..=k2).reverse();
-        assert_eq!(Some((k2, p2)), entries_iter_rev.next_res()?);
-        assert_eq!(Some((k1, p1)), entries_iter_rev.next_res()?);
-        assert_eq!(None, entries_iter.next_res()?);
+        uids_reader.iter(..=k2, |mut entries_iter| {
+            assert_eq!(Some((k1, p1)), entries_iter.next_res()?);
+            assert_eq!(Some((k2, p2)), entries_iter.next_res()?);
+            assert_eq!(None, entries_iter.next_res()?);
+            Ok::<(), KvError>(())
+        })?;
 
-        let mut keys_iter_rev = uids_reader.iter(..=k2).keys().reverse();
-        assert_eq!(Some(k2), keys_iter_rev.next_res()?);
-        assert_eq!(Some(k1), keys_iter_rev.next_res()?);
-        assert_eq!(None, keys_iter_rev.next_res()?);
+        uids_reader.iter(k2.., |entries_iter| {
+            let mut entries_iter_rev = entries_iter.reverse();
+
+            assert_eq!(Some((k3, p3)), entries_iter_rev.next_res()?);
+            assert_eq!(Some((k2, p2)), entries_iter_rev.next_res()?);
+            assert_eq!(None, entries_iter_rev.next_res()?);
+            Ok::<(), KvError>(())
+        })?;
+
+        uids_reader.iter(..=k2, |entries_iter| {
+            let mut entries_iter_rev = entries_iter.reverse();
+
+            assert_eq!(Some((k2, p2)), entries_iter_rev.next_res()?);
+            assert_eq!(Some((k1, p1)), entries_iter_rev.next_res()?);
+            Ok::<(), KvError>(())
+        })?;
+
+        uids_reader.iter(..=k2, |it| {
+            let mut keys_iter_rev = it.keys().reverse();
+
+            assert_eq!(Some(k2), keys_iter_rev.next_res()?);
+            assert_eq!(Some(k1), keys_iter_rev.next_res()?);
+            assert_eq!(None, keys_iter_rev.next_res()?);
+            Ok::<(), KvError>(())
+        })?;
     }
 
     uids_writer.remove(k3)?;
 
-    let mut keys_iter_rev = uids_reader.iter(..).keys();
-    assert_eq!(Some(k1), keys_iter_rev.next_res()?);
-    assert_eq!(Some(k2), keys_iter_rev.next_res()?);
-    assert_eq!(None, keys_iter_rev.next_res()?);
+    uids_reader.iter(.., |it| {
+        let mut keys_iter = it.keys();
+
+        assert_eq!(Some(k1), keys_iter.next_res()?);
+        assert_eq!(Some(k2), keys_iter.next_res()?);
+        assert_eq!(None, keys_iter.next_res()?);
+        Ok::<(), KvError>(())
+    })?;
 
     Ok(())
 }
 
-fn batch_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
+fn batch_test<B: Backend>(db: &BcV1Db<B>) -> KvResult<()> {
     let main_blocks_reader = db.main_blocks();
 
     let mut batch = db.new_batch();
@@ -260,8 +306,14 @@ fn batch_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
         main_blocks_reader.get(&BlockNumberKeyV1(BlockNumber(1)))?,
         None
     );
-    assert_eq!(main_blocks_reader.iter(..).keys().next_res()?, None);
-    assert_eq!(main_blocks_reader.iter(..).values().next_res()?, None);
+    assert_eq!(
+        main_blocks_reader.iter(.., |it| it.keys().next_res())?,
+        None
+    );
+    assert_eq!(
+        main_blocks_reader.iter(.., |it| it.values().next_res())?,
+        None
+    );
     if let Err(TryRecvError::Empty) = events_recv.try_recv() {
     } else {
         panic!("should not receive event");
@@ -276,7 +328,7 @@ fn batch_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
     // bo should written in batch
     assert_eq!(
         batch.main_blocks().get(&BlockNumberKeyV1(BlockNumber(0))),
-        Some(&b0)
+        BatchGet::Updated(&b0)
     );
 
     // bo should not written in db
@@ -309,30 +361,38 @@ fn batch_test<B: Backend>(db: &BcV1Db<B>) -> Result<()> {
             .as_ref(),
         Some(&b0)
     );
-    let mut keys_iter = db.main_blocks().iter(..).keys();
-    assert_eq!(
-        keys_iter.next_res()?,
-        Some(BlockNumberKeyV1(BlockNumber(0)))
-    );
-    assert_eq!(
-        keys_iter.next_res()?,
-        Some(BlockNumberKeyV1(BlockNumber(1)))
-    );
-    assert_eq!(keys_iter.next_res()?, None);
-    let mut values_iter = db.main_blocks().iter(..).values();
-    assert_eq!(values_iter.next_res()?.as_ref(), Some(&b0));
-    assert_eq!(values_iter.next_res()?.as_ref(), Some(&b1));
-    assert_eq!(values_iter.next_res()?, None);
+    db.main_blocks().iter(.., |it| {
+        let mut keys_iter = it.keys();
+
+        assert_eq!(
+            keys_iter.next_res()?,
+            Some(BlockNumberKeyV1(BlockNumber(0)))
+        );
+        assert_eq!(
+            keys_iter.next_res()?,
+            Some(BlockNumberKeyV1(BlockNumber(1)))
+        );
+        assert_eq!(keys_iter.next_res()?, None);
+        Ok::<(), KvError>(())
+    })?;
+    db.main_blocks().iter(.., |it| {
+        let mut values_iter = it.values();
+
+        assert_eq!(values_iter.next_res()?.as_ref(), Some(&b0));
+        assert_eq!(values_iter.next_res()?.as_ref(), Some(&b1));
+        assert_eq!(values_iter.next_res()?, None);
+        Ok::<(), KvError>(())
+    })?;
     if let Ok(events) = events_recv.try_recv() {
         assert_eq!(events.len(), 2);
         assert!(assert_eq_pairs(
             [&events[0], &events[1]],
             [
-                &MainBlockEvent::Upsert {
+                &MainBlocksEvent::Upsert {
                     key: BlockNumberKeyV1(BlockNumber(0)),
                     value: b0,
                 },
-                &MainBlockEvent::Upsert {
+                &MainBlocksEvent::Upsert {
                     key: BlockNumberKeyV1(BlockNumber(1)),
                     value: b1,
                 }

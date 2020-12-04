@@ -15,7 +15,7 @@
 
 use crate::*;
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct WalletDbV1 {
     pub conditions: String,
     pub balance: u64,

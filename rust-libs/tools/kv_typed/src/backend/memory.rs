@@ -16,23 +16,20 @@
 //! Memory backend for KV Typed,
 
 use crate::*;
-use parking_lot::{RwLock, RwLockReadGuard};
 use std::collections::BTreeMap;
+//use uninit::extension_traits::VecCapacity as _;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Mem;
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct MemConf {
-    // Allows to prevent `MemConf` from being instantiated without using the `Default` trait.
-    // Thus the eventual addition of a field in the future will not be a breaking change.
-    phantom: PhantomData<()>,
+    folder_path: Option<std::path::PathBuf>,
 }
 
 type KeyBytes = IVec;
 type ValueBytes = IVec;
-type Map = BTreeMap<KeyBytes, ValueBytes>;
-type ArcSharedMap = Arc<RwLock<Map>>;
+type Tree = BTreeMap<KeyBytes, ValueBytes>;
 
 impl Backend for Mem {
     const NAME: &'static str = "mem";
@@ -43,14 +40,21 @@ impl Backend for Mem {
         Ok(Mem)
     }
     fn open_col(&mut self, _conf: &Self::Conf, _col_name: &str) -> KvResult<Self::Col> {
-        Ok(MemCol(Arc::new(RwLock::new(BTreeMap::new()))))
+        /*if let Some(ref folder_path) = conf.folder_path {
+            MemCol::from_file(folder_path.join(col_name))
+        } else {*/
+        Ok(MemCol {
+            path: None,
+            tree: BTreeMap::new(),
+        })
+        //}
     }
 }
 
 #[derive(Debug, Default)]
 pub struct MemBatch {
-    upsert_ops: Vec<(KeyBytes, ValueBytes)>,
-    remove_ops: Vec<KeyBytes>,
+    upsert_ops: Vec<(IVec, IVec)>,
+    remove_ops: Vec<IVec>,
 }
 
 impl BackendBatch for MemBatch {
@@ -64,7 +68,158 @@ impl BackendBatch for MemBatch {
 }
 
 #[derive(Clone, Debug)]
-pub struct MemCol(ArcSharedMap);
+pub struct MemCol {
+    path: Option<std::path::PathBuf>,
+    tree: Tree,
+}
+
+/*impl MemCol {
+    fn from_file(file_path: std::path::PathBuf) -> KvResult<Self> {
+        let mut file = std::fs::File::open(file_path.as_path())?;
+        let bytes = Vec::<u8>::new();
+        if file.metadata()?.len() > 0 {
+            let mut bytes = Vec::new();
+            use std::io::Read as _;
+            file.read_to_end(&mut bytes)?;
+        }
+
+        Ok(MemCol {
+            path: Some(file_path),
+            tree: Self::tree_from_bytes(&bytes)?,
+        })
+    }
+    fn tree_from_bytes(bytes: &[u8]) -> KvResult<BTreeMap<IVec, IVec>> {
+        let mut tree = BTreeMap::new();
+
+        if bytes.len() < 32 {
+            return Err(KvError::BackendError(
+                StringErr("Corrupted tree".to_owned()).into(),
+            ));
+        } else {
+            let hash = blake3::hash(&bytes[32..]);
+            if hash.as_bytes() != &bytes[..32] {
+                return Err(KvError::BackendError(
+                    StringErr("Corrupted tree: wrong hash".to_owned()).into(),
+                ));
+            }
+        };
+
+        let mut len = 32;
+        while len < bytes.len() {
+            let len_add_4 = len + 4;
+            if bytes.len() >= len_add_4 {
+                let mut k_len = [0u8; 4];
+                k_len.copy_from_slice(&bytes[len..len_add_4]);
+                let k_len = u32::from_le_bytes(k_len);
+                len = len_add_4 + k_len as usize;
+
+                if bytes.len() >= len {
+                    let k = IVec::from(&bytes[len_add_4..len]);
+
+                    if bytes.len() >= len_add_4 {
+                        let len_add_4 = len + 4;
+                        let mut v_len = [0u8; 4];
+                        v_len.copy_from_slice(&bytes[len..len_add_4]);
+                        let v_len = u32::from_le_bytes(v_len);
+                        len = len_add_4 + v_len as usize;
+
+                        if bytes.len() >= len {
+                            let v = IVec::from(&bytes[len_add_4..len]);
+
+                            tree.insert(k, v);
+                        } else {
+                            return Err(KvError::BackendError(
+                                StringErr("Corrupted tree".to_owned()).into(),
+                            ));
+                        }
+                    } else {
+                        return Err(KvError::BackendError(
+                            StringErr("Corrupted tree".to_owned()).into(),
+                        ));
+                    }
+                } else {
+                    return Err(KvError::BackendError(
+                        StringErr("Corrupted tree".to_owned()).into(),
+                    ));
+                }
+            } else {
+                return Err(KvError::BackendError(
+                    StringErr("Corrupted tree".to_owned()).into(),
+                ));
+            }
+        }
+
+        Ok(tree)
+    }
+    fn tree_to_bytes(tree: &BTreeMap<IVec, IVec>) -> Vec<u8> {
+        let mut bytes = Vec::with_capacity(tree.len() * 20);
+        let mut len = 32;
+        for (k, v) in tree.iter() {
+            // Write key len
+            let k_len = (k.len() as u32).to_le_bytes();
+            let len_add_4 = len + 4;
+            bytes.reserve_uninit(4).r().copy_from_slice(&k_len[..]);
+            unsafe {
+                // # Safety
+                //
+                //   - `.copy_from_slice()` contract guarantees initialization
+                //     of 4 additional bytes, which, in turn, from `reserve_uninit`'s contract,
+                //     leads to the `vec` extra capacity having been initialized.
+                bytes.set_len(len_add_4)
+            }
+
+            // Write key content
+            bytes
+                .reserve_uninit(k.len())
+                .r()
+                .copy_from_slice(k.as_ref());
+            let new_len = len_add_4 + k.len();
+            unsafe {
+                // # Safety
+                //
+                //   - `.copy_from_slice()` contract guarantees initialization
+                //     of `k.len()` additional bytes, which, in turn, from `reserve_uninit`'s contract,
+                //     leads to the `vec` extra capacity having been initialized.
+                bytes.set_len(new_len)
+            }
+            len = new_len;
+
+            // Write value len
+            let v_len = (v.len() as u32).to_le_bytes();
+            let len_add_4 = len + 4;
+            bytes.reserve_uninit(4).r().copy_from_slice(&v_len[..]);
+            unsafe {
+                // # Safety
+                //
+                //   - `.copy_from_slice()` contract guarantees initialization
+                //     of 4 additional bytes, which, in turn, from `reserve_uninit`'s contract,
+                //     leads to the `vec` extra capacity having been initialized.
+                bytes.set_len(len_add_4)
+            }
+
+            // Write value content
+            bytes
+                .reserve_uninit(v.len())
+                .r()
+                .copy_from_slice(v.as_ref());
+            let new_len = len_add_4 + v.len();
+            unsafe {
+                // # Safety
+                //
+                //   - `.copy_from_slice()` contract guarantees initialization
+                //     of `v.len()` additional bytes, which, in turn, from `reserve_uninit`'s contract,
+                //     leads to the `vec` extra capacity having been initialized.
+                bytes.set_len(new_len)
+            }
+            len = new_len;
+        }
+
+        let hash = blake3::hash(&bytes[32..]);
+        (&mut bytes[..32]).copy_from_slice(hash.as_bytes());
+
+        bytes
+    }
+}*/
 
 impl BackendCol for MemCol {
     type Batch = MemBatch;
@@ -77,21 +232,22 @@ impl BackendCol for MemCol {
         MemBatch::default()
     }
     #[inline(always)]
-    fn clear(&self) -> KvResult<()> {
-        let mut writer = self.0.write();
-        writer.clear();
+    fn clear(&mut self) -> KvResult<()> {
+        self.tree.clear();
         Ok(())
     }
     #[inline(always)]
     fn count(&self) -> KvResult<usize> {
-        let reader = self.0.read();
-        Ok(reader.len())
+        Ok(self.tree.len())
+    }
+    #[inline(always)]
+    fn contains_key<K: Key>(&self, k: &K) -> KvResult<bool> {
+        k.as_bytes(|k_bytes| Ok(self.tree.contains_key(k_bytes)))
     }
     #[inline(always)]
     fn get<K: Key, V: Value>(&self, k: &K) -> KvResult<Option<V>> {
         k.as_bytes(|k_bytes| {
-            let reader = self.0.read();
-            reader
+            self.tree
                 .get(k_bytes)
                 .map(|bytes| {
                     V::from_bytes(&bytes).map_err(|e| KvError::DeserError(format!("{}", e)))
@@ -106,8 +262,7 @@ impl BackendCol for MemCol {
         f: F,
     ) -> KvResult<Option<D>> {
         k.as_bytes(|k_bytes| {
-            let reader = self.0.read();
-            reader
+            self.tree
                 .get(k_bytes)
                 .map(|bytes| {
                     if let Some(layout_verified) =
@@ -130,8 +285,7 @@ impl BackendCol for MemCol {
         f: F,
     ) -> KvResult<Option<D>> {
         k.as_bytes(|k_bytes| {
-            let reader = self.0.read();
-            reader
+            self.tree
                 .get(k_bytes)
                 .map(|bytes| {
                     if let Some(layout_verified) =
@@ -150,86 +304,68 @@ impl BackendCol for MemCol {
         })
     }
     #[inline(always)]
-    fn delete<K: Key>(&self, k: &K) -> KvResult<()> {
-        k.as_bytes(|k_bytes| {
-            let mut writer = self.0.write();
-            writer.remove(k_bytes)
-        });
+    fn delete<K: Key>(&mut self, k: &K) -> KvResult<()> {
+        k.as_bytes(|k_bytes| self.tree.remove(k_bytes));
         Ok(())
     }
     #[inline(always)]
-    fn put<K: Key, V: Value>(&self, k: &K, value: &V) -> KvResult<()> {
+    fn put<K: Key, V: Value>(&mut self, k: &K, value: &V) -> KvResult<()> {
         value.as_bytes(|value_bytes| {
             k.as_bytes(|k_bytes| {
-                let mut writer = self.0.write();
-                writer.insert(k_bytes.into(), value_bytes.into());
+                self.tree.insert(k_bytes.into(), value_bytes.into());
             });
             Ok(())
         })
     }
     #[inline(always)]
-    fn write_batch(&self, inner_batch: Self::Batch) -> KvResult<()> {
-        let mut writer = self.0.write();
+    fn write_batch(&mut self, inner_batch: Self::Batch) -> KvResult<()> {
         for (k, v) in inner_batch.upsert_ops {
-            writer.insert(k, v);
+            self.tree.insert(k, v);
         }
         for k in inner_batch.remove_ops {
-            writer.remove(&k);
+            self.tree.remove(&k);
         }
         Ok(())
     }
     #[inline(always)]
     fn iter<K: Key, V: Value>(&self, range: RangeBytes) -> Self::Iter {
-        let map_shared_arc = self.0.clone();
-        let map_shared_ref = map_shared_arc.as_ref();
-
-        let reader = map_shared_ref.read();
-        self.iter_inner(range, reader)
+        MemIter::new(unsafe {
+            // # Safety
+            // On front API, the iterator is given to a closure executed inside of a `ColRo` method,
+            // so that ensure borrowed tree keep alive
+            std::mem::transmute(self.tree.range(range))
+        })
     }
     #[inline(always)]
     fn save(&self) -> KvResult<()> {
+        /*if let Some(ref file_path) = self.path {
+            let bytes = Self::tree_to_bytes(&self.tree);
+
+            let mut file =
+                std::fs::File::create(file_path).map_err(|e| KvError::BackendError(e.into()))?;
+            use std::io::Write as _;
+            file.write_all(&bytes[..])
+                .map_err(|e| KvError::BackendError(e.into()))?;
+        }*/
+
         Ok(())
     }
 }
 
-impl MemCol {
-    fn iter_inner(
-        &self,
-        range: RangeBytes,
-        reader: RwLockReadGuard<BTreeMap<KeyBytes, ValueBytes>>,
-    ) -> MemIter {
-        let reader = unsafe {
-            std::mem::transmute::<
-                RwLockReadGuard<BTreeMap<KeyBytes, ValueBytes>>,
-                RwLockReadGuard<'static, BTreeMap<KeyBytes, ValueBytes>>,
-            >(reader)
-        };
-        let reader_ref = unsafe {
-            std::mem::transmute::<
-                &RwLockReadGuard<BTreeMap<KeyBytes, ValueBytes>>,
-                &'static RwLockReadGuard<'static, BTreeMap<KeyBytes, ValueBytes>>,
-            >(&reader)
-        };
-        let iter = reader_ref.range(range);
+pub struct MemIter {
+    iter: std::collections::btree_map::Range<'static, KeyBytes, ValueBytes>,
+    reversed: bool,
+}
 
+impl MemIter {
+    fn new(
+        tree_iter: std::collections::btree_map::Range<'static, KeyBytes, ValueBytes>,
+    ) -> MemIter {
         MemIter {
-            col: self.clone(),
-            reader: Some(reader),
-            iter,
+            iter: tree_iter,
             reversed: false,
         }
     }
-}
-
-pub struct MemIter {
-    #[allow(dead_code)]
-    // Needed for safety
-    col: MemCol,
-    #[allow(dead_code)]
-    // Needed for safety
-    reader: Option<RwLockReadGuard<'static, BTreeMap<KeyBytes, ValueBytes>>>,
-    iter: std::collections::btree_map::Range<'static, KeyBytes, ValueBytes>,
-    reversed: bool,
 }
 
 impl Debug for MemIter {
@@ -257,4 +393,42 @@ impl ReversableIterator for MemIter {
         self.reversed = !self.reversed;
         self
     }
+}
+
+impl BackendIter<IVec, IVec> for MemIter {}
+
+#[cfg(test)]
+mod tests {
+    /*use super::*;
+
+    #[test]
+    fn test_save() -> KvResult<()> {
+        let mut tree = BTreeMap::new();
+
+        let k1 = IVec::from(&[1, 2, 3]);
+        let v1 = IVec::from(&[1, 2, 3, 4, 5]);
+        let k2 = IVec::from(&[1, 2]);
+        let v2 = IVec::from(&[]);
+        let k3 = IVec::from(&[1, 2, 3, 4, 5, 6, 7]);
+        let v3 = IVec::from(&[1, 2, 3, 4, 5, 6]);
+        let k4 = IVec::from(&[]);
+        let v4 = IVec::from(&[1, 2, 3, 4, 5, 6, 7]);
+
+        tree.insert(k1.clone(), v1.clone());
+        tree.insert(k2.clone(), v2.clone());
+        tree.insert(k3.clone(), v3.clone());
+        tree.insert(k4.clone(), v4.clone());
+
+        let bytes = MemCol::tree_to_bytes(&tree);
+
+        let tree2 = MemCol::tree_from_bytes(&bytes)?;
+
+        assert_eq!(tree2.len(), 4);
+        assert_eq!(tree2.get(&k1), Some(&v1));
+        assert_eq!(tree2.get(&k2), Some(&v2));
+        assert_eq!(tree2.get(&k3), Some(&v3));
+        assert_eq!(tree2.get(&k4), Some(&v4));
+
+        Ok(())
+    }*/
 }

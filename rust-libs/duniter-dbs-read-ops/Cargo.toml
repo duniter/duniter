@@ -1,0 +1,21 @@
+[package]
+name = "duniter-dbs-read-ops"
+version = "0.1.0"
+authors = ["elois <elois@duniter.org>"]
+description = "Duniter DBs read operations"
+repository = "https://git.duniter.org/nodes/typescript/duniter"
+keywords = ["dubp", "duniter", "blockchain", "database"]
+license = "AGPL-3.0"
+edition = "2018"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+anyhow = "1.0.34"
+duniter-dbs = { path = "../duniter-dbs" }
+dubp = { version = "0.32.3" }
+resiter = "0.4.0"
+
+[dev-dependencies]
+smallvec = { version = "1.4.0", features = ["serde", "write"] }

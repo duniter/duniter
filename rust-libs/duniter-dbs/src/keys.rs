@@ -21,5 +21,7 @@ pub mod pubkey;
 pub mod pubkey_and_sig;
 pub mod source_key;
 pub mod timestamp;
+pub mod ud_id;
 pub mod uid;
+pub mod utxo_id;
 pub mod wallet_conditions;

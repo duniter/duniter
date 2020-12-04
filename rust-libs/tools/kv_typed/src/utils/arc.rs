@@ -109,6 +109,7 @@ impl<T> Arc<T> {
         ptr
     }
 
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn from_raw(ptr: *const T) -> Arc<T> {
         let align = std::cmp::max(mem::align_of::<T>(), mem::align_of::<AtomicUsize>());
 
@@ -158,7 +159,6 @@ impl<T: ?Sized> Clone for Arc<T> {
         let last_count = unsafe { (*self.ptr).rc.fetch_add(1, Ordering::Relaxed) };
 
         if last_count == usize::max_value() {
-            #[cold]
             std::process::abort();
         }
 

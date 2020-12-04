@@ -23,13 +23,16 @@
 )]
 
 mod bc_v1;
-mod errors;
+pub mod bc_v2;
+pub mod cm_v1;
+pub mod gva_v1;
 mod keys;
+mod open_dbs;
+pub mod txs_mp_v2;
 mod values;
 
 // Re-export dependencies
 pub use arrayvec;
-pub use dubp_common;
 #[cfg(feature = "explorer")]
 pub use kv_typed::regex;
 pub use serde;
@@ -41,55 +44,98 @@ pub use kv_typed;
 
 // Prelude
 pub mod prelude {
-    pub use crate::errors::ErrorDb;
+    pub use crate::DuniterDbs;
     #[cfg(feature = "explorer")]
     pub use kv_typed::explorer::{
         DbExplorable, EntryFound, ExplorerAction, ExplorerActionResponse, ValueCaptures,
     };
 }
 
-// Export technical types
-pub use crate::errors::Result;
+// Export technical types and functions
+pub use crate::open_dbs::open_dbs;
 
 // Export profession types
-pub use bc_v1::{BcV1Db, BcV1DbReadable, BcV1DbRo, BcV1DbWritable, MainBlockEvent, UidEvent};
+pub use crate::keys::utxo_id::UtxoIdDbV2;
+pub use bc_v1::{BcV1Db, BcV1DbReadable, BcV1DbRo, BcV1DbWritable, MainBlocksEvent, UidsEvent};
+pub use gva_v1::{GvaV1Db, GvaV1DbReadable, GvaV1DbRo, GvaV1DbWritable};
 pub use keys::all::AllKeyV1;
 pub use keys::block_number::BlockNumberKeyV1;
 pub use keys::blockstamp::BlockstampKeyV1;
-pub use keys::hash::HashKeyV1;
-pub use keys::pubkey::PubKeyKeyV1;
+pub use keys::hash::{HashKeyV1, HashKeyV2};
+pub use keys::pubkey::{PubKeyKeyV1, PubKeyKeyV2};
 pub use keys::pubkey_and_sig::PubKeyAndSigV1;
 pub use keys::source_key::SourceKeyV1;
 pub use keys::timestamp::TimestampKeyV1;
+pub use keys::ud_id::UdIdV2;
 pub use keys::uid::UidKeyV1;
-pub use keys::wallet_conditions::WalletConditionsV1;
+pub use keys::utxo_id::GvaUtxoIdDbV1;
+pub use keys::wallet_conditions::{WalletConditionsV1, WalletConditionsV2};
+pub use txs_mp_v2::{TxsMpV2Db, TxsMpV2DbReadable, TxsMpV2DbRo, TxsMpV2DbWritable};
 pub use values::block_db::{BlockDbEnum, BlockDbV1, TransactionInBlockDbV1};
 pub use values::block_head_db::BlockHeadDbV1;
+pub use values::block_meta::BlockMetaV2;
 pub use values::block_number_array_db::BlockNumberArrayV1;
 pub use values::cindex_db::CIndexDbV1;
+pub use values::gva_idty_db::GvaIdtyDbV1;
+pub use values::idty_db::IdtyDbV2;
 pub use values::iindex_db::IIndexDbV1;
 pub use values::kick_db::KickDbV1;
 pub use values::mindex_db::MIndexDbV1;
-pub use values::pubkey_db::{PublicKeyArrayDbV1, PublicKeySingletonDbV1};
+pub use values::peer_card::PeerCardDbV1;
+pub use values::pubkey_db::{PubKeyValV2, PublicKeyArrayDbV1, PublicKeySingletonDbV1};
 pub use values::sindex_db::{SIndexDBV1, SourceKeyArrayDbV1};
+pub use values::source_amount::SourceAmountValV2;
+pub use values::tx_db::{PendingTxDbV2, TxDbV2};
 pub use values::ud_entry_db::{ConsumedUdDbV1, UdAmountDbV1, UdEntryDbV1};
+pub use values::utxo::UtxoValV2;
 pub use values::wallet_db::WalletDbV1;
+pub use values::wallet_script_array::WalletScriptArrayV2;
 
 // Crate imports
 pub(crate) use arrayvec::{ArrayString, ArrayVec};
 #[cfg(feature = "explorer")]
 use chrono::NaiveDateTime;
-pub(crate) use dubp_common::crypto::bases::b58::ToBase58 as _;
-pub(crate) use dubp_common::crypto::bases::BaseConversionError;
-pub(crate) use dubp_common::crypto::hashs::Hash;
-pub(crate) use dubp_common::crypto::keys::ed25519::{PublicKey, Signature};
-pub(crate) use dubp_common::crypto::keys::{PublicKey as _, Signature as _};
-pub(crate) use dubp_common::prelude::*;
+pub(crate) use dubp::common::crypto::bases::b58::ToBase58 as _;
+pub(crate) use dubp::common::crypto::bases::BaseConversionError;
+pub(crate) use dubp::common::crypto::hashs::Hash;
+pub(crate) use dubp::common::crypto::keys::ed25519::{PublicKey, Signature};
+pub(crate) use dubp::common::crypto::keys::{PublicKey as _, Signature as _};
+pub(crate) use dubp::common::prelude::*;
+pub(crate) use dubp::documents::dubp_wallet::prelude::*;
+pub(crate) use kv_typed::db_schema;
 pub(crate) use kv_typed::prelude::*;
 pub(crate) use serde::{Deserialize, Serialize};
 pub(crate) use smallvec::SmallVec;
-pub(crate) use std::{fmt::Debug, iter::Iterator, str::FromStr};
+pub(crate) use std::{
+    collections::BTreeSet, convert::TryFrom, fmt::Debug, iter::Iterator, path::Path, str::FromStr,
+};
 
 pub trait ToDumpString {
     fn to_dump_string(&self) -> String;
+}
+
+#[cfg(all(not(feature = "mem"), not(test)))]
+pub type FileBackend = kv_typed::backend::sled::Sled;
+#[cfg(any(feature = "mem", test))]
+pub type FileBackend = kv_typed::backend::memory::Mem;
+
+#[derive(Clone, Debug)]
+pub struct DuniterDbs<B: Backend> {
+    pub bc_db: bc_v2::BcV2Db<B>,
+    pub cm_db: cm_v1::CmV1Db<MemSingleton>,
+    pub gva_db: GvaV1Db<B>,
+    pub txs_mp_db: TxsMpV2Db<B>,
+}
+
+impl DuniterDbs<Mem> {
+    pub fn mem() -> KvResult<Self> {
+        use bc_v2::BcV2DbWritable as _;
+        use cm_v1::CmV1DbWritable as _;
+        Ok(DuniterDbs {
+            bc_db: bc_v2::BcV2Db::<Mem>::open(MemConf::default())?,
+            cm_db: cm_v1::CmV1Db::<MemSingleton>::open(MemSingletonConf::default())?,
+            gva_db: GvaV1Db::<Mem>::open(MemConf::default())?,
+            txs_mp_db: TxsMpV2Db::<Mem>::open(MemConf::default())?,
+        })
+    }
 }

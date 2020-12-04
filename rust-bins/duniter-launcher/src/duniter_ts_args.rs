@@ -42,7 +42,7 @@ pub(crate) fn gen_duniter_ts_args(args: &DuniterArgs, duniter_js_exe: String) ->
     let mut duniter_ts_args = Vec::new();
     duniter_ts_args.push(duniter_js_exe);
     if let Some(ref home) = args.home {
-        duniter_ts_args.push("--mdb".to_owned());
+        duniter_ts_args.push("--home".to_owned());
         duniter_ts_args.push(home.to_str().expect("invalid home path").to_owned());
     }
     if let Some(ref log_level) = args.log {
@@ -91,7 +91,6 @@ pub(crate) fn gen_duniter_ts_args(args: &DuniterArgs, duniter_js_exe: String) ->
         }
         DuniterCommand::Stop => duniter_ts_args.push("stop".to_owned()),
         DuniterCommand::Sync(ref sync_args) => {
-            duniter_ts_args.push("--store-txs".to_owned());
             duniter_ts_args.push("sync".to_owned());
             sync::gen_args(sync_args, &mut duniter_ts_args);
         }
@@ -128,6 +127,7 @@ pub(crate) fn gen_duniter_ts_args(args: &DuniterArgs, duniter_js_exe: String) ->
                         duniter_ts_args.push(p.to_string());
                     }
                 }
+                WizardCommand::Gva { .. } => unreachable!(),
             }
         }
         DuniterCommand::WS2P(ref ws2p_command) => {

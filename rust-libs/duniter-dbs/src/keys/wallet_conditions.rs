@@ -63,3 +63,52 @@ impl ExplorableKey for WalletConditionsV1 {
         self.as_bytes(|bytes| Ok(unsafe { std::str::from_utf8_unchecked(bytes) }.to_owned()))
     }
 }
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct WalletConditionsV2(pub WalletScriptV10);
+
+impl WalletConditionsV2 {
+    pub fn from_ref(script: &WalletScriptV10) -> &Self {
+        #[allow(trivial_casts)]
+        unsafe {
+            &*(script as *const WalletScriptV10 as *const WalletConditionsV2)
+        }
+    }
+}
+
+impl KeyAsBytes for WalletConditionsV2 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        let mut buffer = SmallVec::<[u8; 256]>::new();
+        bincode::serialize_into(&mut buffer, &self.0).unwrap_or_else(|_| unreachable!());
+        f(buffer.as_ref())
+    }
+}
+
+impl kv_typed::prelude::FromBytes for WalletConditionsV2 {
+    type Err = StringErr;
+
+    fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
+        Ok(Self(
+            bincode::deserialize(bytes).map_err(|e| StringErr(format!("{}", e)))?,
+        ))
+    }
+}
+
+impl ToDumpString for WalletConditionsV2 {
+    fn to_dump_string(&self) -> String {
+        todo!()
+    }
+}
+
+#[cfg(feature = "explorer")]
+impl ExplorableKey for WalletConditionsV2 {
+    fn from_explorer_str(s: &str) -> std::result::Result<Self, StringErr> {
+        Ok(Self(
+            dubp::documents_parser::wallet_script_from_str(s)
+                .map_err(|e| StringErr(format!("{}", e)))?,
+        ))
+    }
+    fn to_explorer_string(&self) -> KvResult<String> {
+        Ok(self.0.to_string())
+    }
+}

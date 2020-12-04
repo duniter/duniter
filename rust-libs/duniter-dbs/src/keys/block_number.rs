@@ -61,21 +61,6 @@ impl ExplorableKey for BlockNumberKeyV1 {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
-pub struct BlockNumberKeyV2(pub BlockNumber);
-
-impl KeyAsBytes for BlockNumberKeyV2 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
-        if cfg!(target_endian = "big") {
-            println!("TMP: big");
-            f(unsafe { std::mem::transmute::<u32, [u8; 4]>((self.0).0) }.as_ref())
-        } else {
-            println!("TMP: little");
-            f(unsafe { std::mem::transmute::<u32, [u8; 4]>((self.0).0.to_be()) }.as_ref())
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
@@ -85,13 +70,5 @@ mod tests {
     fn test_block_number_str_10_ser() {
         BlockNumberKeyV1(BlockNumber(35))
             .as_bytes(|bytes| assert_eq!(bytes, &[48, 48, 48, 48, 48, 48, 48, 48, 51, 53]))
-    }
-
-    #[test]
-    fn block_number_key_v2() {
-        let k = BlockNumberKeyV2(BlockNumber(3));
-        k.as_bytes(|bytes| {
-            assert_eq!(bytes, &[0, 0, 0, 3]);
-        });
     }
 }

@@ -168,13 +168,13 @@ export class BlockGenerator {
     if (!current) {
       return [];
     }
+    const medianTime = current ? current.medianTime : 0;
     const versionMin = current
       ? Math.min(CommonConstants.LAST_VERSION_FOR_TX, current.version)
       : CommonConstants.DOCUMENTS_VERSION;
-    const txs = await this.dal.getTransactionsPending(versionMin);
+    const txs = await this.dal.getTransactionsPending(versionMin, medianTime);
     const transactions = [];
     const passingTxs: any[] = [];
-    const medianTime = current ? current.medianTime : 0;
     for (const obj of txs) {
       obj.currency = this.conf.currency;
       const tx = TransactionDTO.fromJSONObject(obj);
@@ -210,7 +210,7 @@ export class BlockGenerator {
           currentNumber - txBlockNumber + 1 >=
           CommonConstants.TRANSACTION_MAX_TRIES
         ) {
-          await this.dal.removeTxByHash(tx.hash);
+          await this.dal.removePendingTxByHash(tx.hash);
         }
       }
     }

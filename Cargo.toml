@@ -21,6 +21,8 @@ dirs = "3.0.1"
 log = "0.4.11"
 logwatcher = "0.1.1"
 nix = "0.17.0"
+read_input = "0.8.4"
+serde_json = "1.0.53"
 structopt = "0.3.18"
 
 [dev-dependencies]
@@ -32,14 +34,25 @@ members = [
     "rust-bins/duniter-dbex",
     "rust-bins/xtask",
     "rust-libs/dubp-wot",
+    "rust-libs/duniter-conf",
     "rust-libs/duniter-dbs",
-    "rust-libs/tools/kv_typed",
-    "rust-libs/tools/kv_typed_code_gen"
+    "rust-libs/duniter-dbs-read-ops",
+    "rust-libs/duniter-dbs-write-ops",
+    "rust-libs/duniter-mempools",
+    "rust-libs/duniter-module",
+    "rust-libs/duniter-server",
+    "rust-libs/modules/gva",
+    "rust-libs/modules/gva/dbs-reader",
+    "rust-libs/modules/gva/db-writer",
+    "rust-libs/tests/duniter-integration-tests",
+    "rust-libs/tools/kv_typed"
 ]
 
 [patch.crates-io]
+#dubp = { git = "https://git.duniter.org/libs/dubp-rs-libs" }
+#dubp-common = { git = "https://git.duniter.org/libs/dubp-rs-libs" }
+
+#dubp = { path = "../dubp-rs-libs" }
 #dubp-common = { path = "../dubp-rs-libs/common" }
-#dubp-documents  = { path = "../dubp-rs-libs/documents" }
-#dubp-documents-parser = { path = "../dubp-rs-libs/documents-parser" }
-#dubp-wallet  = { path = "../dubp-rs-libs/wallet" }
+
 #leveldb_minimal = { path = "../../../../rust/leveldb_minimal" }

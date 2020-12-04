@@ -1,8 +1,8 @@
 use arrayvec::ArrayVec;
-use dubp_common::crypto::bases::b58::ToBase58 as _;
-use dubp_common::crypto::hashs::Hash;
-use dubp_common::crypto::keys::ed25519::{PublicKey, Signature};
-use dubp_common::crypto::keys::Signature as _;
+use dubp::common::crypto::bases::b58::ToBase58 as _;
+use dubp::common::crypto::hashs::Hash;
+use dubp::common::crypto::keys::ed25519::{PublicKey, Signature};
+use dubp::common::crypto::keys::Signature as _;
 use std::convert::TryFrom;
 
 pub fn stringify_json_value(mut json_value: serde_json::Value) -> serde_json::Value {
@@ -97,7 +97,7 @@ fn json_array_to_64_bytes(json_array: &[serde_json::Value]) -> [u8; 64] {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dubp_common::crypto::keys::PublicKey as _;
+    use dubp::common::crypto::keys::PublicKey as _;
     use serde_json::Number;
     use serde_json::Value;
     use unwrap::unwrap;

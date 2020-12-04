@@ -32,11 +32,13 @@ describe("Sandboxes", function() {
       msWindow: 10,
       dt: 10,
       udTime0: now + 1,
+      txsMempoolSize: 2,
       pair: {
         pub: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
         sec: '51w4fEShBk1jCMauWu4mLpmDVfHksKmWcygpxriqCEZizbtERA6de4STKRkQBpxmMUwsKXRjSzuQ8ECwmqN1u2DP'
       }
     });
+    await s1.initWithDAL();
 
     s2 = NewTestingServer({
       pair: {
@@ -75,7 +77,6 @@ describe("Sandboxes", function() {
     await s3.initDalBmaConnections();
     s1.dal.idtyDAL.setSandboxSize(3);
     s1.dal.msDAL.setSandboxSize(2);
-    s1.dal.txsDAL.setSandboxSize(2);
     s2.dal.idtyDAL.setSandboxSize(10);
     s3.dal.idtyDAL.setSandboxSize(3);
   })
@@ -274,10 +275,10 @@ describe("Sandboxes", function() {
       CommonConstants.TRANSACTION_MAX_TRIES = 2;
     })
 
-    it('should accept 2 transactions of 20, 30 units', async () => {
-      await i4.sendMoney(20, i1);
-      await i4.sendMoney(30, i1);
-      (await s1.dal.txsDAL.getSandboxRoom()).should.equal(0);
+    it('should accept 200 transactions of 20, 30 units', async () => {
+        await i4.sendMoney(20, i1);
+        await i4.sendMoney(30, i1);
+      (await s1.dal.rustServer.getMempoolTxsFreeRooms()).should.equal(0);
     })
 
     it('should reject amount of 10', () => shouldThrow((async () => {
@@ -291,7 +292,7 @@ describe("Sandboxes", function() {
     it('should make room as transactions get commited', async () => {
       await s1.commit();
       await s1.commit();
-      (await s1.dal.txsDAL.getSandboxRoom()).should.equal(2);
+      (await s1.dal.rustServer.getMempoolTxsFreeRooms()).should.equal(2);
       CommonConstants.TRANSACTION_MAX_TRIES = tmp;
     })
   })

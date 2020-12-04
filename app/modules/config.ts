@@ -21,13 +21,7 @@ import { ProgramOptions } from "../lib/common-libs/programOptions";
 
 module.exports = {
   duniter: {
-    cliOptions: [
-      {
-        value: "--store-txs",
-        desc: "Enable full transaction history storage.",
-      },
-      { value: "--store-ww", desc: "Enable WotWizard regular export." },
-    ],
+    cliOptions: [],
 
     config: {
       onLoading: async (conf: ConfDTO, program: ProgramOptions) => {
@@ -35,25 +29,6 @@ module.exports = {
         conf.sigReplay = conf.msPeriod;
         conf.switchOnHeadAdvance =
           CommonConstants.SWITCH_ON_BRANCH_AHEAD_BY_X_BLOCKS;
-
-        // Transactions storage
-        if (
-          program.storeTxs ||
-          (program.storeTxs === undefined && !conf.nobma)
-        ) {
-          if (!conf.storage) {
-            conf.storage = { transactions: true, wotwizard: false };
-          } else {
-            conf.storage.transactions = true;
-          }
-        }
-        if (program.storeWw) {
-          if (!conf.storage) {
-            conf.storage = { transactions: false, wotwizard: true };
-          } else {
-            conf.storage.wotwizard = true;
-          }
-        }
       },
       beforeSave: async (conf: ConfDTO) => {
         conf.msPeriod = conf.msWindow;

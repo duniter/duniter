@@ -1,0 +1,20 @@
+[package]
+name = "duniter-module"
+version = "0.1.0"
+authors = ["librelois <elois@duniter.org>"]
+license = "AGPL-3.0"
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0.34"
+async-trait = "0.1.41"
+dubp = { version = "0.32.3" }
+duniter-conf = { path = "../duniter-conf" }
+duniter-dbs = { path = "../duniter-dbs" }
+duniter-mempools = { path = "../duniter-mempools" }
+fast-threadpool = "0.2.2"
+
+[dev-dependencies]
+duniter-dbs = { path = "../duniter-dbs", features = ["mem"] }
+paste = "1.0.2"
+tokio = { version = "0.2.22", features = ["macros", "rt-core"] }

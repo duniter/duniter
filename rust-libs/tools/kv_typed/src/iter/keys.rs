@@ -18,12 +18,15 @@
 use crate::*;
 
 #[derive(Debug)]
-pub struct KvIterKeys<C: BackendCol, K: Key> {
-    range_iter: super::range::RangeIter<C>,
+pub struct KvIterKeys<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>, K: Key>
+{
+    range_iter: super::range::RangeIter<C, KB, VB, BI>,
     phantom_key: PhantomData<K>,
 }
 
-impl<C: BackendCol, K: Key> Iterator for KvIterKeys<C, K> {
+impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>, K: Key> Iterator
+    for KvIterKeys<C, KB, VB, BI, K>
+{
     type Item = KvResult<K>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -38,7 +41,9 @@ impl<C: BackendCol, K: Key> Iterator for KvIterKeys<C, K> {
     }
 }
 
-impl<C: BackendCol, K: Key> ReversableIterator for KvIterKeys<C, K> {
+impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>, K: Key>
+    ReversableIterator for KvIterKeys<C, KB, VB, BI, K>
+{
     #[inline(always)]
     fn reverse(self) -> Self {
         Self {
@@ -48,8 +53,10 @@ impl<C: BackendCol, K: Key> ReversableIterator for KvIterKeys<C, K> {
     }
 }
 
-impl<C: BackendCol, K: Key> KvIterKeys<C, K> {
-    pub(super) fn new(range_iter: super::range::RangeIter<C>) -> Self {
+impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>, K: Key>
+    KvIterKeys<C, KB, VB, BI, K>
+{
+    pub(super) fn new(range_iter: super::range::RangeIter<C, KB, VB, BI>) -> Self {
         Self {
             range_iter,
             phantom_key: PhantomData,

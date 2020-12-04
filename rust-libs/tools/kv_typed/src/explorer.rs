@@ -1,5 +1,4 @@
 use crate::*;
-#[cfg(not(feature = "async"))]
 use rayon::{iter::ParallelBridge, prelude::*};
 use std::num::NonZeroUsize;
 
@@ -10,12 +9,22 @@ pub trait DbExplorable {
         action: ExplorerAction<'a>,
         stringify_json_value: fn(serde_json::Value) -> serde_json::Value,
     ) -> KvResult<Result<ExplorerActionResponse, StringErr>>;
-    fn list_collections(&self) -> Vec<(&'static str, &'static str, &'static str)>;
+    fn list_collections() -> Vec<(&'static str, &'static str, &'static str)>;
 }
 
 pub trait ExplorableKey: Sized {
     fn from_explorer_str(source: &str) -> Result<Self, StringErr>;
     fn to_explorer_string(&self) -> KvResult<String>;
+}
+
+impl ExplorableKey for () {
+    fn from_explorer_str(_: &str) -> Result<Self, StringErr> {
+        Ok(())
+    }
+
+    fn to_explorer_string(&self) -> KvResult<String> {
+        Ok(String::with_capacity(0))
+    }
 }
 
 impl ExplorableKey for String {
@@ -41,12 +50,36 @@ macro_rules! impl_explorable_key_for_numbers {
         }
     )*};
 }
-
 impl_explorable_key_for_numbers!(usize, u8, u16, u32, u64, u128, i8, i16, i32, i64, i128, f32, f64);
+
+macro_rules! impl_explorable_key_for_be_numbers {
+    ($($T:ty),*) => {$(
+        impl ExplorableKey for $T {
+            fn from_explorer_str(source: &str) -> Result<Self, StringErr> {
+                Ok(Self(source.parse().map_err(|e| StringErr(format!("{}", e)))?))
+            }
+
+            fn to_explorer_string(&self) -> KvResult<String> {
+                Ok(format!("{}", self.0))
+            }
+        }
+    )*};
+}
+impl_explorable_key_for_be_numbers!(U32BE);
 
 pub trait ExplorableValue: Sized {
     fn from_explorer_str(source: &str) -> Result<Self, StringErr>;
     fn to_explorer_json(&self) -> KvResult<serde_json::Value>;
+}
+
+impl ExplorableValue for () {
+    fn from_explorer_str(_: &str) -> Result<Self, StringErr> {
+        Ok(())
+    }
+
+    fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
+        Ok(serde_json::Value::String(String::with_capacity(0)))
+    }
 }
 
 impl ExplorableValue for String {
@@ -77,6 +110,107 @@ macro_rules! impl_explorable_value_for_numbers {
 impl_explorable_value_for_numbers!(
     usize, u8, u16, u32, u64, u128, isize, i8, i16, i32, i64, i128, f32, f64
 );
+
+impl<T, E> ExplorableValue for Vec<T>
+where
+    T: Display + FromStr<Err = E>,
+    E: Display,
+{
+    fn from_explorer_str(source: &str) -> Result<Vec<T>, StringErr> {
+        if let serde_json::Value::Array(json_array) =
+            serde_json::Value::from_str(source).map_err(|e| StringErr(format!("{}", e)))?
+        {
+            let mut vec = Vec::with_capacity(json_array.len());
+            for value in json_array {
+                if let serde_json::Value::String(string) = value {
+                    vec.push(<T>::from_str(&string).map_err(|e| StringErr(format!("{}", e)))?);
+                } else {
+                    return Err(StringErr(format!("Expected array of {}.", stringify!(T))));
+                }
+            }
+            Ok(vec)
+        } else {
+            Err(StringErr(format!("Expected array of {}.", stringify!(T))))
+        }
+    }
+
+    fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
+        Ok(serde_json::Value::Array(
+            self.iter()
+                .map(|elem| serde_json::Value::String(format!("{}", elem)))
+                .collect(),
+        ))
+    }
+}
+
+macro_rules! impl_explorable_value_for_smallvec {
+    ($($N:literal),*) => {$(
+        impl<T, E> ExplorableValue for SmallVec<[T; $N]>
+        where
+            T: Display + FromStr<Err = E>,
+            E: Display,
+        {
+            fn from_explorer_str(source: &str) -> Result<SmallVec<[T; $N]>, StringErr> {
+                if let serde_json::Value::Array(json_array) =
+                    serde_json::Value::from_str(source).map_err(|e| StringErr(format!("{}", e)))?
+                {
+                    let mut svec = SmallVec::with_capacity(json_array.len());
+                    for value in json_array {
+                        if let serde_json::Value::String(string) = value {
+                            svec.push(<T>::from_str(&string).map_err(|e| StringErr(format!("{}", e)))?);
+                        } else {
+                            return Err(StringErr(format!("Expected array of {}.", stringify!(T))));
+                        }
+                    }
+                    Ok(svec)
+                } else {
+                    Err(StringErr(format!("Expected array of {}.", stringify!(T))))
+                }
+            }
+
+            fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
+                Ok(serde_json::Value::Array(
+                    self.iter()
+                        .map(|elem| serde_json::Value::String(format!("{}", elem)))
+                        .collect(),
+                ))
+            }
+        }
+    )*};
+}
+impl_explorable_value_for_smallvec!(2, 4, 8, 16, 32, 64);
+
+impl<T, E> ExplorableValue for BTreeSet<T>
+where
+    T: Display + FromStr<Err = E> + Ord,
+    E: Display,
+{
+    fn from_explorer_str(source: &str) -> Result<BTreeSet<T>, StringErr> {
+        if let serde_json::Value::Array(json_array) =
+            serde_json::Value::from_str(source).map_err(|e| StringErr(format!("{}", e)))?
+        {
+            let mut bt_set = BTreeSet::new();
+            for value in json_array {
+                if let serde_json::Value::String(string) = value {
+                    bt_set.insert(<T>::from_str(&string).map_err(|e| StringErr(format!("{}", e)))?);
+                } else {
+                    return Err(StringErr(format!("Expected array of {}.", stringify!(T))));
+                }
+            }
+            Ok(bt_set)
+        } else {
+            Err(StringErr(format!("Expected array of {}.", stringify!(T))))
+        }
+    }
+
+    fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
+        Ok(serde_json::Value::Array(
+            self.iter()
+                .map(|elem| serde_json::Value::String(format!("{}", elem)))
+                .collect(),
+        ))
+    }
+}
 
 #[derive(Debug)]
 pub enum ExplorerAction<'a> {
@@ -231,37 +365,21 @@ impl<'a> ExplorerAction<'a> {
         };
 
         if let Some(limit) = limit {
-            let iter = col.iter(range);
-
-            if reverse {
-                iter.reverse()
-                    .step_by(step.get())
-                    .filter_map(filter_map_closure)
-                    .take(limit)
-                    .collect()
-            } else {
-                iter.step_by(step.get())
-                    .filter_map(filter_map_closure)
-                    .take(limit)
-                    .collect()
-            }
-        } else {
-            #[cfg(feature = "async")]
-            {
+            col.iter(range, |iter| {
                 if reverse {
-                    col.iter(range)
-                        .reverse()
+                    iter.reverse()
                         .step_by(step.get())
                         .filter_map(filter_map_closure)
+                        .take(limit)
                         .collect()
                 } else {
-                    col.iter(range)
-                        .step_by(step.get())
+                    iter.step_by(step.get())
                         .filter_map(filter_map_closure)
+                        .take(limit)
                         .collect()
                 }
-            }
-            #[cfg(not(feature = "async"))]
+            })
+        } else {
             {
                 let (send, recv) = unbounded();
 
@@ -271,22 +389,24 @@ impl<'a> ExplorerAction<'a> {
                     iter.filter_map(filter_map_closure).collect()
                 });
 
-                if reverse {
-                    for entry_res in col.iter(range).reverse() {
-                        if send.try_send(entry_res).is_err() {
-                            return handler.join().expect("child thread panic");
+                col.iter(range, |iter| {
+                    if reverse {
+                        for entry_res in iter.reverse() {
+                            if send.try_send(entry_res).is_err() {
+                                return handler.join().expect("child thread panic");
+                            }
+                        }
+                    } else {
+                        for entry_res in iter {
+                            if send.try_send(entry_res).is_err() {
+                                return handler.join().expect("child thread panic");
+                            }
                         }
                     }
-                } else {
-                    for entry_res in col.iter(range) {
-                        if send.try_send(entry_res).is_err() {
-                            return handler.join().expect("child thread panic");
-                        }
-                    }
-                }
-                drop(send);
+                    drop(send);
 
-                handler.join().expect("child thread panic")
+                    handler.join().expect("child thread panic")
+                })
             }
         }
     }

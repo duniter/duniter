@@ -25,6 +25,7 @@ describe("Transactions pruning", function() {
   before(async () => {
 
     s1 = NewTestingServer({
+      gva: {},
       currency: 'currency_one',
       dt: 600,
       pair: {

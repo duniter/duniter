@@ -15,6 +15,8 @@
 
 use crate::*;
 
+// V1
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct PublicKeySingletonDbV1(pub PublicKey);
 
@@ -105,5 +107,44 @@ impl ExplorableValue for PublicKeyArrayDbV1 {
                 .map(|pubkey| serde_json::Value::String(pubkey.to_base58()))
                 .collect(),
         ))
+    }
+}
+
+// V2
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct PubKeyValV2(pub PublicKey);
+
+impl ValueAsBytes for PubKeyValV2 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
+        f(self.0.as_ref())
+    }
+}
+
+impl kv_typed::prelude::FromBytes for PubKeyValV2 {
+    type Err = StringErr;
+
+    fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
+        Ok(PubKeyValV2(
+            PublicKey::try_from(bytes).map_err(|e| StringErr(format!("{}: {:?}", e, bytes)))?,
+        ))
+    }
+}
+
+impl ToDumpString for PubKeyValV2 {
+    fn to_dump_string(&self) -> String {
+        todo!()
+    }
+}
+
+#[cfg(feature = "explorer")]
+impl ExplorableValue for PubKeyValV2 {
+    fn from_explorer_str(pubkey_str: &str) -> std::result::Result<Self, StringErr> {
+        Ok(PubKeyValV2(PublicKey::from_base58(&pubkey_str).map_err(
+            |e| StringErr(format!("{}: {}", e, pubkey_str)),
+        )?))
+    }
+    fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
+        Ok(serde_json::Value::String(self.0.to_base58()))
     }
 }

@@ -81,5 +81,4 @@ pub(crate) fn gen_args(args: &DuniterSyncArgs, duniter_ts_args: &mut Vec<String>
     if args.slow {
         duniter_ts_args.push("--slow".into());
     }
-    todo!()
 }

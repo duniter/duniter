@@ -29,8 +29,11 @@
 mod as_bytes;
 pub mod backend;
 mod batch;
+mod bytes;
+mod collection_inner;
 mod collection_ro;
 mod collection_rw;
+mod db_schema;
 mod error;
 mod event;
 #[cfg(feature = "explorer")]
@@ -38,8 +41,9 @@ pub mod explorer;
 mod from_bytes;
 mod iter;
 mod key;
-#[cfg(feature = "subscription")]
 mod subscription;
+mod transactional_read;
+mod transactional_write;
 mod utils;
 mod value;
 
@@ -54,45 +58,49 @@ pub mod prelude {
     pub use crate::as_bytes::{KeyAsBytes, ValueAsBytes};
     #[cfg(feature = "leveldb_backend")]
     pub use crate::backend::leveldb::{LevelDb, LevelDbConf};
-    #[cfg(feature = "memory_backend")]
+    #[cfg(feature = "lmdb_backend")]
+    pub use crate::backend::lmdb::{Lmdb, LmdbConf};
     pub use crate::backend::memory::{Mem, MemConf};
+    pub use crate::backend::memory_singleton::{MemSingleton, MemSingletonConf};
     #[cfg(feature = "mock")]
     pub use crate::backend::mock::{MockBackend, MockBackendCol, MockBackendIter};
     #[cfg(feature = "sled_backend")]
     pub use crate::backend::sled::{Config as SledConf, Sled};
-    pub use crate::backend::{Backend, BackendCol, TransactionalBackend};
-    pub use crate::batch::Batch;
+    pub use crate::backend::{Backend, BackendCol};
+    pub use crate::batch::{Batch, BatchGet};
     #[cfg(feature = "mock")]
     pub use crate::collection_ro::MockColRo;
     pub use crate::collection_ro::{
         ColRo, DbCollectionRo, DbCollectionRoGetRef, DbCollectionRoGetRefSlice,
     };
     pub use crate::collection_rw::{ColRw, DbCollectionRw};
-    pub use crate::error::{
-        DynErr, KvError, KvResult, StringErr, TransactionError, TransactionResult,
-    };
+    pub use crate::error::{DynErr, KvError, KvResult, StringErr};
     pub use crate::event::{EventTrait, Events};
     #[cfg(feature = "explorer")]
     pub use crate::explorer::{ExplorableKey, ExplorableValue};
     pub use crate::from_bytes::FromBytes;
     pub use crate::iter::{
-        keys::KvIterKeys, values::KvIterValues, KvIter, ResultIter, ReversableIterator,
+        keys::KvIterKeys, values::KvIterValues, EntryIter, KvIter, ResultIter, ReversableIterator,
     };
-    pub use crate::key::Key;
-    #[cfg(feature = "subscription")]
+    pub use crate::key::{Key, U32BE};
     pub use crate::subscription::{NewSubscribers, Subscriber, Subscribers};
+    pub use crate::transactional_read::{TransactionalRead, TxColRo};
+    pub use crate::transactional_write::{DbTxCollectionRw, TransactionalWrite, TxColRw};
+    pub use crate::utils::arc::Arc;
     pub use crate::value::{Value, ValueSliceZc, ValueZc};
-    pub use kv_typed_code_gen::db_schema;
 }
 
 // Internal crate imports
-pub(crate) use crate::backend::BackendBatch;
+pub(crate) use crate::backend::{BackendBatch, BackendIter};
+pub(crate) use crate::bytes::{CowKB, CowVB, KeyBytes, ValueBytes};
+pub(crate) use crate::collection_inner::ColInner;
+pub(crate) use crate::error::BackendResult;
 #[cfg(feature = "explorer")]
 pub(crate) use crate::explorer::{ExplorableKey, ExplorableValue};
 pub(crate) use crate::iter::RangeBytes;
 pub(crate) use crate::prelude::*;
-#[cfg(feature = "subscription")]
-pub(crate) use crate::subscription::ColSubscribers;
+pub(crate) use crate::subscription::{ColSubscribers, SubscriptionsSender};
+pub(crate) use crate::transactional_write::tx_iter::BackendTxIter;
 pub(crate) use crate::utils::arc::Arc;
 pub(crate) use crate::utils::ivec::IVec;
 use flume::{unbounded, Receiver, Sender, TrySendError};
@@ -101,273 +109,10 @@ pub(crate) use std::{
     collections::{BTreeSet, HashSet},
     convert::TryInto,
     error::Error,
-    fmt::Debug,
+    fmt::{Debug, Display},
     iter::FromIterator,
     marker::PhantomData,
     ops::{Bound, RangeBounds},
+    str::FromStr,
 };
 pub(crate) use thiserror::Error;
-
-#[macro_export]
-/// $Elem must implement Display + FromStr + zerocopy::AsBytes + zerocopy::FromBytes
-macro_rules! impl_value_for_vec_zc {
-    ($T:ty, $Elem:ty) => {
-        impl ValueAsBytes for $T {
-            fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, f: F) -> KvResult<T> {
-                self.0.as_bytes(f)
-            }
-        }
-        impl FromBytes for $T {
-            type Err = StringErr;
-
-            fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-                Ok(Self(Vec::<$Elem>::from_bytes(bytes)?))
-            }
-        }
-        impl ValueSliceZc for $T {
-            type Elem = $Elem;
-
-            fn prefix_len() -> usize {
-                0
-            }
-        }
-        #[cfg(feature = "explorer")]
-        use std::str::FromStr as _;
-        #[cfg(feature = "explorer")]
-        impl ExplorableValue for $T {
-            fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-                if let serde_json::Value::Array(json_array) =
-                    serde_json::Value::from_str(source).map_err(|e| StringErr(format!("{}", e)))?
-                {
-                    let mut vec = Vec::with_capacity(json_array.len());
-                    for value in json_array {
-                        if let serde_json::Value::String(string) = value {
-                            vec.push(
-                                <$Elem>::from_str(&string)
-                                    .map_err(|e| StringErr(format!("{}", e)))?,
-                            );
-                        } else {
-                            return Err(StringErr(format!(
-                                "Expected array of {}.",
-                                stringify!($Elem)
-                            )));
-                        }
-                    }
-                    Ok(Self(vec))
-                } else {
-                    Err(StringErr(format!(
-                        "Expected array of {}.",
-                        stringify!($Elem)
-                    )))
-                }
-            }
-
-            fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
-                Ok(serde_json::Value::Array(
-                    self.0
-                        .iter()
-                        .map(|elem| serde_json::Value::String(format!("{}", elem)))
-                        .collect(),
-                ))
-            }
-        }
-    };
-}
-
-#[macro_export]
-/// $Elem must implement Display + FromStr + zerocopy::AsBytes + zerocopy::FromBytes
-macro_rules! impl_value_for_smallvec_zc {
-    ($T:ty, $Elem:ty, $N:literal) => {
-        impl ValueAsBytes for $T {
-            fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, f: F) -> KvResult<T> {
-                self.0.as_bytes(f)
-            }
-        }
-        impl FromBytes for $T {
-            type Err = StringErr;
-
-            fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-                Ok(Self(SmallVec::<[$Elem; $N]>::from_bytes(bytes)?))
-            }
-        }
-        impl ValueSliceZc for $T {
-            type Elem = $Elem;
-
-            fn prefix_len() -> usize {
-                0
-            }
-        }
-        #[cfg(feature = "explorer")]
-        use std::str::FromStr as _;
-        #[cfg(feature = "explorer")]
-        impl ExplorableValue for $T {
-            fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-                if let serde_json::Value::Array(json_array) =
-                    serde_json::Value::from_str(source).map_err(|e| StringErr(format!("{}", e)))?
-                {
-                    let mut svec = SmallVec::with_capacity(json_array.len());
-                    for value in json_array {
-                        if let serde_json::Value::String(string) = value {
-                            svec.push(
-                                <$Elem>::from_str(&string)
-                                    .map_err(|e| StringErr(format!("{}", e)))?,
-                            );
-                        } else {
-                            return Err(StringErr(format!(
-                                "Expected array of {}.",
-                                stringify!($Elem)
-                            )));
-                        }
-                    }
-                    Ok(Self(svec))
-                } else {
-                    Err(StringErr(format!(
-                        "Expected array of {}.",
-                        stringify!($Elem)
-                    )))
-                }
-            }
-
-            fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
-                Ok(serde_json::Value::Array(
-                    self.0
-                        .iter()
-                        .map(|elem| serde_json::Value::String(format!("{}", elem)))
-                        .collect(),
-                ))
-            }
-        }
-    };
-}
-
-#[macro_export]
-/// $Elem must implement Display + FromStr + Ord + zerocopy::AsBytes + zerocopy::FromBytes
-macro_rules! impl_value_for_btreeset_zc {
-    ($T:ty, $Elem:ty) => {
-        impl ValueAsBytes for $T {
-            fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, f: F) -> KvResult<T> {
-                self.0.as_bytes(f)
-            }
-        }
-        impl FromBytes for $T {
-            type Err = StringErr;
-
-            fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-                Ok(Self(BTreeSet::<$Elem>::from_bytes(bytes)?))
-            }
-        }
-        impl ValueSliceZc for $T {
-            type Elem = $Elem;
-
-            fn prefix_len() -> usize {
-                0
-            }
-        }
-        #[cfg(feature = "explorer")]
-        use std::str::FromStr as _;
-        #[cfg(feature = "explorer")]
-        impl ExplorableValue for $T {
-            fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-                if let serde_json::Value::Array(json_array) =
-                    serde_json::Value::from_str(source).map_err(|e| StringErr(format!("{}", e)))?
-                {
-                    let mut col = BTreeSet::new();
-                    for value in json_array {
-                        if let serde_json::Value::String(string) = value {
-                            col.insert(
-                                <$Elem>::from_str(&string)
-                                    .map_err(|e| StringErr(format!("{}", e)))?,
-                            );
-                        } else {
-                            return Err(StringErr(format!(
-                                "Expected array of {}.",
-                                stringify!($Elem)
-                            )));
-                        }
-                    }
-                    Ok(Self(col))
-                } else {
-                    Err(StringErr(format!(
-                        "Expected array of {}.",
-                        stringify!($Elem)
-                    )))
-                }
-            }
-
-            fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
-                Ok(serde_json::Value::Array(
-                    self.0
-                        .iter()
-                        .map(|elem| serde_json::Value::String(format!("{}", elem)))
-                        .collect(),
-                ))
-            }
-        }
-    };
-}
-
-#[macro_export]
-/// $Elem must implement Display + Eq + FromStr + std::hash::Hash + zerocopy::AsBytes + zerocopy::FromBytes
-macro_rules! impl_value_for_hashset_zc {
-    ($T:ty, $Elem:ty) => {
-        impl ValueAsBytes for $T {
-            fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, f: F) -> KvResult<T> {
-                self.0.as_bytes(f)
-            }
-        }
-        impl FromBytes for $T {
-            type Err = StringErr;
-
-            fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-                Ok(Self(HashSet::<$Elem>::from_bytes(bytes)?))
-            }
-        }
-        impl ValueSliceZc for $T {
-            type Elem = $Elem;
-
-            fn prefix_len() -> usize {
-                0
-            }
-        }
-        #[cfg(feature = "explorer")]
-        use std::str::FromStr as _;
-        #[cfg(feature = "explorer")]
-        impl ExplorableValue for $T {
-            fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-                if let serde_json::Value::Array(json_array) =
-                    serde_json::Value::from_str(source).map_err(|e| StringErr(format!("{}", e)))?
-                {
-                    let mut col = HashSet::new();
-                    for value in json_array {
-                        if let serde_json::Value::String(string) = value {
-                            col.insert(
-                                <$Elem>::from_str(&string)
-                                    .map_err(|e| StringErr(format!("{}", e)))?,
-                            );
-                        } else {
-                            return Err(StringErr(format!(
-                                "Expected array of {}.",
-                                stringify!($Elem)
-                            )));
-                        }
-                    }
-                    Ok(Self(col))
-                } else {
-                    Err(StringErr(format!(
-                        "Expected array of {}.",
-                        stringify!($Elem)
-                    )))
-                }
-            }
-
-            fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
-                Ok(serde_json::Value::Array(
-                    self.0
-                        .iter()
-                        .map(|elem| serde_json::Value::String(format!("{}", elem)))
-                        .collect(),
-                ))
-            }
-        }
-    };
-}

@@ -28,8 +28,9 @@ mod config;
 mod daemon;
 mod duniter_ts_args;
 mod sync;
+mod wizard_gva;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use daemonize_me::Daemon;
 use logwatcher::{LogWatcher, LogWatcherAction};
 use nix::{errno::Errno, sys::signal::Signal, unistd::Pid, Error};
@@ -61,7 +62,7 @@ struct DuniterArgs {
     /// Logs level (If not specified, use the logs level defined in the configuration or INFO by default).
     #[structopt(short, long, alias("loglevel"), case_insensitive(true), possible_values = &["OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"])]
     log: Option<log::LevelFilter>,
-    /// Profile name (defauld "duniter_default")
+    /// Profile name (default "duniter_default")
     #[structopt(short, long, alias("mdb"))]
     profile: Option<String>,
     #[structopt(subcommand)]
@@ -168,7 +169,9 @@ enum WizardCommand {
         #[structopt(short)]
         p: Option<usize>,
     },
-    #[structopt(display_order(1), alias = "network")]
+    #[structopt(display_order(1))]
+    Gva,
+    #[structopt(display_order(2), alias = "network")]
     Bma,
 }
 
@@ -210,39 +213,44 @@ fn main() -> Result<()> {
     } else {
         let profile_path = get_profile_path(args.profile.as_deref())?;
 
-        let current_exe = std::env::current_exe()?;
-        let prod = current_exe == PathBuf::from(DUNITER_EXE_LINK_PATH)
-            || current_exe == PathBuf::from(DUNITER_EXE_PATH);
+        if let DuniterCommand::Wizard(WizardCommand::Gva) = args.command {
+            wizard_gva::wizard_gva(args.profile.as_deref(), profile_path)
+        } else {
+            let current_exe = std::env::current_exe()?;
+            let prod = current_exe == PathBuf::from(DUNITER_EXE_LINK_PATH)
+                || current_exe == PathBuf::from(DUNITER_EXE_PATH);
 
-        let duniter_ts_args = duniter_ts_args::gen_duniter_ts_args(&args, duniter_js_exe()?);
+            let duniter_ts_args = duniter_ts_args::gen_duniter_ts_args(&args, duniter_js_exe()?);
 
-        match args.command {
-            DuniterCommand::Restart => {
-                daemon::start(prod, &profile_path, &daemon::stop(&profile_path)?)
-            }
-            DuniterCommand::Start(_) | DuniterCommand::Webstart { .. } => {
-                daemon::start(prod, &profile_path, &duniter_ts_args)
-            }
-            DuniterCommand::Status => daemon::status(&profile_path),
-            DuniterCommand::Stop => {
-                daemon::stop(&profile_path)?;
-                Ok(())
-            }
-            DuniterCommand::Logs => watch_logs(profile_path),
-            _ => {
-                ctrlc::set_handler(move || {
-                    // This empty handler is necessary otherwise the Rust process is stopped immediately
-                    // without waiting for the child process (duniter_js) to finish stopping.
-                })?;
-                let mut duniter_js_command = Command::new(get_node_path()?);
-                if prod {
-                    duniter_js_command.current_dir(DUNITER_JS_CURRENT_DIR);
+            match args.command {
+                DuniterCommand::Restart => {
+                    daemon::start(prod, &profile_path, &daemon::stop(&profile_path)?)
                 }
-                let exit_code_opt = duniter_js_command.args(duniter_ts_args).status()?.code();
-                if let Some(exit_code) = exit_code_opt {
-                    std::process::exit(exit_code);
-                } else {
+                DuniterCommand::Start(_) | DuniterCommand::Webstart { .. } => {
+                    daemon::start(prod, &profile_path, &duniter_ts_args)
+                }
+                DuniterCommand::Status => daemon::status(&profile_path),
+                DuniterCommand::Stop => {
+                    daemon::stop(&profile_path)?;
                     Ok(())
+                }
+                DuniterCommand::Logs => watch_logs(profile_path),
+                _ => {
+                    ctrlc::set_handler(move || {
+                        // This empty handler is necessary otherwise the Rust process is stopped immediately
+                        // without waiting for the child process (duniter_js) to finish stopping.
+                    })?;
+                    let mut duniter_js_command = Command::new(get_node_path()?);
+                    if prod {
+                        duniter_js_command.current_dir(DUNITER_JS_CURRENT_DIR);
+                    }
+                    //println!("TMP duniter_ts_args={:?}", duniter_ts_args);
+                    let exit_code_opt = duniter_js_command.args(duniter_ts_args).status()?.code();
+                    if let Some(exit_code) = exit_code_opt {
+                        std::process::exit(exit_code);
+                    } else {
+                        Ok(())
+                    }
                 }
             }
         }

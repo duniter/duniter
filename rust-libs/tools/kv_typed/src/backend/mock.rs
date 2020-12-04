@@ -18,11 +18,10 @@
 use super::MockBackendBatch;
 use crate::*;
 
-#[cfg(feature = "mock")]
 mockall::mock! {
     pub BackendIter {}
     trait Iterator {
-        type Item = Result<(Vec<u8>, Vec<u8>), DynErr>;
+        type Item = Result<(IVec, IVec), DynErr>;
 
         fn next(&mut self) -> Option<<Self as Iterator>::Item>;
     }
@@ -30,8 +29,8 @@ mockall::mock! {
         fn reverse(self) -> Self;
     }
 }
+impl BackendIter<IVec, IVec> for MockBackendIter {}
 
-#[cfg(feature = "mock")]
 mockall::mock! {
     pub BackendCol {}
     trait Clone {
@@ -39,11 +38,21 @@ mockall::mock! {
     }
     trait BackendCol {
         type Batch = MockBackendBatch;
-        type KeyBytes = Vec<u8>;
-        type ValueBytes = Vec<u8>;
+        type KeyBytes = IVec;
+        type ValueBytes = IVec;
         type Iter = MockBackendIter;
 
         fn get<K: Key, V: Value>(&self, k: &K) -> KvResult<Option<V>>;
+        fn get_ref<K: Key, V: ValueZc, D, F: Fn(&V::Ref) -> KvResult<D>>(
+            &self,
+            k: &K,
+            f: F,
+        ) -> KvResult<Option<D>>;
+        fn get_ref_slice<K: Key, V: ValueSliceZc, D, F: Fn(&[V::Elem]) -> KvResult<D>>(
+            &self,
+            k: &K,
+            f: F,
+        ) -> KvResult<Option<D>>;
         fn clear(&self) -> KvResult<()>;
         fn count(&self) -> KvResult<usize>;
         fn iter<K: Key, V: Value>(&self, range: RangeBytes) -> MockBackendIter;
@@ -51,10 +60,15 @@ mockall::mock! {
         fn delete<K: Key>(&self, k: &K) -> KvResult<()>;
         fn new_batch() -> MockBackendBatch;
         fn write_batch(&self, inner_batch: MockBackendBatch) -> KvResult<()>;
+        fn save(&self) -> KvResult<()>;
+    }
+}
+impl Debug for MockBackendCol {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        unimplemented!()
     }
 }
 
-#[cfg(feature = "mock")]
 mockall::mock! {
     pub Backend {}
     trait Clone {

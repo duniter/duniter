@@ -53,10 +53,11 @@ The prefix must be an integer between `1` and `899`.
 
 ### The APIs
 
-  In version `1.9.x` there are two APIs (Application Programming Interface) allowing your node to communicate with other programs.
+  In version `1.9.x` there are three APIs (Application Programming Interface) allowing your node to communicate with other programs.
 
 1. WS2P (WebSocketToPeer): this API is dedicated to inter-node communication, i.e. between your duniter node and other nodes of the same currency. **WS2P is enabled by default** on your duniter node.
 2. BMA (Basic Merkled Api) : this old API is dedicated to the communication with client software (Cesium, Sakia, Silkaj), it can also be used by any external program wishing to request the network (a website that would like to check the presence of a blockchain transaction for example). BMA is looking forward to developing a new client API to replace it. **BMA is disabled by default** on your duniter node.
+3. GVA (Graphql Verification Api): New client API intended to replace BMA. This API is still incomplete (this is why BMA still exists).
 
 ### Configuring WS2P
 
@@ -179,6 +180,30 @@ If you install duniter on a VPS or a dedicated server you will have to do withou
 
 Nodes with public WS2P are necessary for the duniter network to work, and the more nodes with public WS2P, the more decentralized the network is.  
 This mode is optional if only because technically it is sometimes difficult or even impossible to be accessible from the outside (node behind a 4G router for example).
+
+### Configuring GVA
+
+GVA is still disabled by default, to enable it you need to use wizard command:
+
+`duniter wizard gva`
+
+It is also possible to manually edit `conf.json` file :
+
+| parameter | type | default value |
+|:-:|:-:|:-:|
+| ip4 | IPv4 | `"127.0.0.1"` |
+| ip6 | IPv6 | `"::1"` |
+| port | number |  `30901` |
+| path | string |  `"gva"` |
+| remotePath | string | `"gva"` |
+| subscriptionsPath | string |  `"gva-sub"` |
+| remoteSubscriptionsPath | string | `"gva-sub"` |
+| remoteTls | boolean |  `false` |
+| whitelist | IP[] |  `["127.0.0.1", "::1"]` |
+
+GVA server listen to `http://<ip4|ip6>:<port>/<remotePath>`
+
+GVA subscriptions websocket server listen to `ws://<ip4|ip6>:<port>/<remoteSubscriptionsPath>`
 
 ## Synchronize your node
 

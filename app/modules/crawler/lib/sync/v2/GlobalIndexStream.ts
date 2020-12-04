@@ -438,17 +438,7 @@ export class GlobalIndexStream extends Duplex {
       })
     );
 
-    if (this.conf.storage && this.conf.storage.transactions) {
-      await Promise.all(
-        blocks.map((block) =>
-          this.dal.saveTxsInFiles(
-            block.transactions,
-            block.number,
-            block.medianTime
-          )
-        )
-      );
-    }
+    this.dal.rustServer.applyChunkOfBlocks(blocks);
 
     logger.debug("Total tx count: %s", txCount);
   }

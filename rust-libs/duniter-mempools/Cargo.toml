@@ -1,0 +1,22 @@
+[package]
+name = "duniter-mempools"
+version = "0.1.0"
+authors = ["elois <elois@duniter.org>"]
+description = "Duniter mempools"
+repository = "https://git.duniter.org/nodes/typescript/duniter"
+keywords = ["dubp", "duniter", "blockchain", "mempool"]
+license = "AGPL-3.0"
+edition = "2018"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+dubp = { version = "0.32.3" }
+duniter-dbs = { path = "../duniter-dbs" }
+duniter-dbs-read-ops = { path = "../duniter-dbs-read-ops" }
+duniter-dbs-write-ops = { path = "../duniter-dbs-write-ops" }
+log = "0.4.11"
+thiserror = "1.0.20"
+
+[dev-dependencies]

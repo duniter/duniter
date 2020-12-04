@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use dubp_common::crypto::bases::b58::ToBase58 as _;
+/*use dubp_common::crypto::bases::b58::ToBase58 as _;
 use dubp_common::crypto::hashs::Hash;
 use dubp_common::crypto::keys::PublicKey;
 use dubp_common::prelude::*;
@@ -34,6 +34,7 @@ static MUTEX: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
 const DB_PATH: &str = "/home/elois/Documents/ml/leveldb-archives/g1-317499/leveldb";
 
 #[test]
+#[ignore]
 fn db_v1_main_blocks__() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -66,6 +67,7 @@ fn db_v1_main_blocks__() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_main_blocks_idty() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -90,6 +92,7 @@ fn db_v1_main_blocks_idty() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_main_blocks_certs() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -111,6 +114,7 @@ fn db_v1_main_blocks_certs() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_main_blocks_joiners() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -130,6 +134,7 @@ fn db_v1_main_blocks_joiners() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_main_blocks_actives() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -149,6 +154,7 @@ fn db_v1_main_blocks_actives() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_main_blocks_leavers() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -171,6 +177,7 @@ fn db_v1_main_blocks_leavers() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_main_blocks_excluded() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -193,6 +200,7 @@ fn db_v1_main_blocks_excluded() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_main_blocks_revoked() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -212,6 +220,7 @@ fn db_v1_main_blocks_revoked() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_main_blocks_dividend() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -233,6 +242,7 @@ fn db_v1_main_blocks_dividend() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_main_blocks_transactions() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -254,6 +264,7 @@ fn db_v1_main_blocks_transactions() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_fork_blocks() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -278,6 +289,7 @@ fn db_v1_fork_blocks() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_bindex() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -296,6 +308,7 @@ fn db_v1_bindex() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_iindex__() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -343,6 +356,7 @@ fn db_v1_iindex__() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_iindex_hash() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -370,6 +384,7 @@ fn db_v1_iindex_hash() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_iindex_kick() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -394,6 +409,7 @@ fn db_v1_iindex_kick() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_iindex_written_on() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -411,6 +427,7 @@ fn db_v1_iindex_written_on() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_uid_col() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -457,6 +474,7 @@ fn db_v1_uid_col() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_mindex__() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -488,6 +506,7 @@ fn db_v1_mindex__() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_mindex_expires_on() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -509,6 +528,7 @@ fn db_v1_mindex_expires_on() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_mindex_revokes_on() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -525,6 +545,7 @@ fn db_v1_mindex_revokes_on() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_mindex_written_on() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -546,6 +567,7 @@ fn db_v1_mindex_written_on() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_cindex__() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -570,6 +592,7 @@ fn db_v1_cindex__() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_cindex_expires_on() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -586,6 +609,7 @@ fn db_v1_cindex_expires_on() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_cindex_written_on() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -602,6 +626,7 @@ fn db_v1_cindex_written_on() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_wallet() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -626,6 +651,7 @@ fn db_v1_wallet() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_dividend() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -644,6 +670,7 @@ fn db_v1_dividend() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_dividend_written_on() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -660,6 +687,7 @@ fn db_v1_dividend_written_on() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_sindex() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -678,6 +706,7 @@ fn db_v1_sindex() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_sindex_written_on() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -699,6 +728,7 @@ fn db_v1_sindex_written_on() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_sindex_consumed_on() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -717,6 +747,7 @@ fn db_v1_sindex_consumed_on() -> Result<()> {
 }
 
 #[test]
+#[ignore]
 fn db_v1_sindex_conditions_on() -> Result<()> {
     let _lock = MUTEX.lock().expect("MUTEX poisoned");
 
@@ -733,4 +764,4 @@ fn db_v1_sindex_conditions_on() -> Result<()> {
     }*/
 
     Ok(())
-}
+}*/

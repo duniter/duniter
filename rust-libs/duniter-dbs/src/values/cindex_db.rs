@@ -15,7 +15,7 @@
 
 use crate::*;
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct CIndexDbV1 {
     pub received: SmallVec<[String; 10]>,
     pub issued: Vec<CIndexLineDbV1>,

@@ -23,7 +23,10 @@ use dubp_wot::{
     operations::distance::{
         DistanceCalculator, RustyDistanceCalculator, WotDistance, WotDistanceParameters,
     },
-    operations::path::{PathFinder, RustyPathFinder},
+    operations::{
+        distance::DistanceError,
+        path::{PathFinder, RustyPathFinder},
+    },
 };
 use neon::declare_types;
 use neon::prelude::*;
@@ -278,17 +281,18 @@ declare_types! {
             let distance_params = get_distance_params_from_js(&mut cx)?;
 
             let this = cx.this();
-            let distance_response_opt = {
+            let distance_res = {
                 let guard = cx.lock();
                 let wot_box = this.borrow(&guard);
                 let wot: &RustyWebOfTrust = wot_box.deref();
                 RustyDistanceCalculator {}.compute_distance(wot, distance_params)
             };
 
-            if let Some(distance_response) = distance_response_opt {
-                Ok(cx.boolean(distance_response.outdistanced).upcast())
-            } else {
-                cx.throw_error(format!("node '{}' not exist.", distance_params.node.0))
+            match distance_res {
+                Ok(distance_data) => Ok(cx.boolean(distance_data.outdistanced).upcast()),
+                Err(e) => match e {
+                    DistanceError::NodeDontExist(wot_id) => cx.throw_error(format!("node '{}' not exist.", wot_id.0)),
+                }
             }
         }
 
@@ -296,17 +300,18 @@ declare_types! {
             let distance_params = get_distance_params_from_js(&mut cx)?;
 
             let this = cx.this();
-            let distance_response_opt = {
+            let distance_res = {
                 let guard = cx.lock();
                 let wot_box = this.borrow(&guard);
                 let wot: &RustyWebOfTrust = wot_box.deref();
                 RustyDistanceCalculator {}.compute_distance(wot, distance_params)
             };
 
-            if let Some(distance_response) = distance_response_opt {
-                distance_response_to_js_object(cx, distance_response)
-            } else {
-                cx.throw_error(format!("node '{}' not exist.", distance_params.node.0))
+            match distance_res {
+                Ok(distance_data) => distance_response_to_js_object(cx, distance_data),
+                Err(e) => match e {
+                    DistanceError::NodeDontExist(wot_id) => cx.throw_error(format!("node '{}' not exist.", wot_id.0)),
+                }
             }
         }
 

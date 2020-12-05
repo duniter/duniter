@@ -50,11 +50,22 @@ pub struct WotDistance {
     pub outdistanced: bool,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+/// Error occured when computing distance
+pub enum DistanceError {
+    /// Node don't exist
+    NodeDontExist(WotId),
+}
+
 /// Compute distance between nodes of a `WebOfTrust`.
 pub trait DistanceCalculator<T: WebOfTrust> {
     /// Compute distance between a node and the network.
     /// Returns `None` if this node doesn't exist.
-    fn compute_distance(&self, wot: &T, params: WotDistanceParameters) -> Option<WotDistance>;
+    fn compute_distance(
+        &self,
+        wot: &T,
+        params: WotDistanceParameters,
+    ) -> Result<WotDistance, DistanceError>;
 
     /// Compute distances of all members
     fn compute_distances(
@@ -63,11 +74,15 @@ pub trait DistanceCalculator<T: WebOfTrust> {
         sentry_requirement: u32,
         step_max: u32,
         x_percent: f64,
-    ) -> (usize, Vec<usize>, usize, Vec<usize>);
+    ) -> Result<(usize, Vec<usize>, usize, Vec<usize>), DistanceError>;
 
     /// Test if a node is outdistanced in the network.
     /// Returns `Node` if this node doesn't exist.
-    fn is_outdistanced(&self, wot: &T, params: WotDistanceParameters) -> Option<bool>;
+    fn is_outdistanced(
+        &self,
+        wot: &T,
+        params: WotDistanceParameters,
+    ) -> Result<bool, DistanceError>;
 }
 
 /// Calculate distances between 2 members in a `WebOfTrust`.
@@ -75,7 +90,11 @@ pub trait DistanceCalculator<T: WebOfTrust> {
 pub struct RustyDistanceCalculator;
 
 impl<T: WebOfTrust + Sync> DistanceCalculator<T> for RustyDistanceCalculator {
-    fn compute_distance(&self, wot: &T, params: WotDistanceParameters) -> Option<WotDistance> {
+    fn compute_distance(
+        &self,
+        wot: &T,
+        params: WotDistanceParameters,
+    ) -> Result<WotDistance, DistanceError> {
         let WotDistanceParameters {
             node,
             sentry_requirement,
@@ -84,7 +103,7 @@ impl<T: WebOfTrust + Sync> DistanceCalculator<T> for RustyDistanceCalculator {
         } = params;
 
         if node.0 >= wot.size() {
-            return None;
+            return Err(DistanceError::NodeDontExist(node));
         }
 
         let mut area = HashSet::new();
@@ -96,19 +115,22 @@ impl<T: WebOfTrust + Sync> DistanceCalculator<T> for RustyDistanceCalculator {
             border = border
                 .par_iter()
                 .map(|&id| {
-                    wot.get_links_source(id)
-                        .expect("get_links_source must return a value")
-                        .iter()
-                        .filter(|source| !area.contains(source))
-                        .cloned()
-                        .collect::<HashSet<_>>()
+                    if let Some(links_source) = wot.get_links_source(id) {
+                        Ok(links_source
+                            .iter()
+                            .filter(|source| !area.contains(source))
+                            .cloned()
+                            .collect::<HashSet<_>>())
+                    } else {
+                        Err(DistanceError::NodeDontExist(id))
+                    }
                 })
-                .reduce(HashSet::new, |mut acc, sources| {
+                .try_reduce(HashSet::new, |mut acc, sources| {
                     for source in sources {
                         acc.insert(source);
                     }
-                    acc
-                });
+                    Ok(acc)
+                })?;
             area.extend(border.iter());
         }
 
@@ -118,13 +140,13 @@ impl<T: WebOfTrust + Sync> DistanceCalculator<T> for RustyDistanceCalculator {
         let mut sentries = sentries.len() as u32;
         if wot
             .is_sentry(node, sentry_requirement as usize)
-            .expect("is_sentry must return a value")
+            .ok_or(DistanceError::NodeDontExist(node))?
         {
             sentries -= 1;
             success -= 1;
         }
 
-        Some(WotDistance {
+        Ok(WotDistance {
             sentries,
             reached: area.len() as u32 - 1,
             reached_at_border: border.len() as u32,
@@ -134,7 +156,11 @@ impl<T: WebOfTrust + Sync> DistanceCalculator<T> for RustyDistanceCalculator {
         })
     }
 
-    fn is_outdistanced(&self, wot: &T, params: WotDistanceParameters) -> Option<bool> {
+    fn is_outdistanced(
+        &self,
+        wot: &T,
+        params: WotDistanceParameters,
+    ) -> Result<bool, DistanceError> {
         Self::compute_distance(&self, wot, params).map(|result| result.outdistanced)
     }
 
@@ -144,7 +170,7 @@ impl<T: WebOfTrust + Sync> DistanceCalculator<T> for RustyDistanceCalculator {
         sentry_requirement: u32,
         step_max: u32,
         x_percent: f64,
-    ) -> (usize, Vec<usize>, usize, Vec<usize>) {
+    ) -> Result<(usize, Vec<usize>, usize, Vec<usize>), DistanceError> {
         let members_count = wot.get_enabled().len();
         let mut distances = Vec::new();
         let mut average_distance: usize = 0;
@@ -160,8 +186,7 @@ impl<T: WebOfTrust + Sync> DistanceCalculator<T> for RustyDistanceCalculator {
                     step_max,
                     x_percent,
                 },
-            )
-            .expect("Fatal Error: compute_distance return None !");
+            )?;
             let distance = ((f64::from(distance_datas.success)
                 / (x_percent * f64::from(distance_datas.sentries)))
                 * 100.0) as usize;
@@ -176,11 +201,11 @@ impl<T: WebOfTrust + Sync> DistanceCalculator<T> for RustyDistanceCalculator {
         }
         average_distance /= members_count;
         average_connectivity /= members_count;
-        (
+        Ok((
             average_distance,
             distances,
             average_connectivity,
             connectivities,
-        )
+        ))
     }
 }

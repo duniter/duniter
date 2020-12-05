@@ -233,7 +233,7 @@ mod tests {
                     x_percent: 1.0,
                 },
             ),
-            Some(false)
+            Ok(false)
         );
         // => no because 2,4,5 have certified him
         assert_eq!(
@@ -246,7 +246,7 @@ mod tests {
                     x_percent: 1.0,
                 },
             ),
-            Some(false)
+            Ok(false)
         );
         // => no because only member 2 has 2 certs, and has certified him
         assert_eq!(
@@ -259,7 +259,7 @@ mod tests {
                     x_percent: 1.0,
                 },
             ),
-            Some(false)
+            Ok(false)
         );
         // => no because no member has issued 3 certifications
 
@@ -298,7 +298,7 @@ mod tests {
                     x_percent: 1.0,
                 },
             ),
-            Some(false)
+            Ok(false)
         ); // OK : 2 -> 0
         assert_eq!(
             distance_calculator.is_outdistanced(
@@ -310,7 +310,7 @@ mod tests {
                     x_percent: 1.0,
                 },
             ),
-            Some(false)
+            Ok(false)
         ); // OK : 2 -> 0
         assert_eq!(
             distance_calculator.is_outdistanced(
@@ -322,7 +322,7 @@ mod tests {
                     x_percent: 1.0,
                 },
             ),
-            Some(false)
+            Ok(false)
         ); // OK : no stry \w 3 lnk
         assert_eq!(
             distance_calculator.is_outdistanced(
@@ -334,7 +334,7 @@ mod tests {
                     x_percent: 1.0,
                 },
             ),
-            Some(false)
+            Ok(false)
         ); // OK : 2 -> 0
 
         wot.add_link(WotId(1), WotId(3));
@@ -368,7 +368,7 @@ mod tests {
                     x_percent: 1.0,
                 },
             ),
-            Some(true)
+            Ok(true)
         ); // KO : No path 3 -> 0
            /*assert_eq!(
                distance_calculator.is_outdistanced(
@@ -392,7 +392,7 @@ mod tests {
                     x_percent: 1.0,
                 },
             ),
-            Some(false)
+            Ok(false)
         ); // OK : no stry \w 3 lnk
         assert_eq!(
             distance_calculator.is_outdistanced(
@@ -404,7 +404,7 @@ mod tests {
                     x_percent: 1.0,
                 },
             ),
-            Some(false)
+            Ok(false)
         ); // OK : 3 -> 2 -> 0
 
         // should have 12 nodes
@@ -430,7 +430,7 @@ mod tests {
                     x_percent: 1.0,
                 },
             ),
-            Some(false)
+            Ok(false)
         ); // OK : Disabled
 
         // Write wot in file
@@ -441,7 +441,6 @@ mod tests {
         .expect("fail to write wot file");
 
         let wot2_bin = read_bin_file(Path::new("test.wot")).expect("fail to read wot file");
-            .expect("fail to read wot file");
         let wot2: W = bincode::deserialize(&wot2_bin).expect("fail to deserialize wot");
 
         // Read wot from file
@@ -464,7 +463,7 @@ mod tests {
                         x_percent: 1.0,
                     },
                 ),
-                Some(false)
+                Ok(false)
             );
         }
 
@@ -510,7 +509,7 @@ nodes_count=11
                     x_percent: 0.8,
                 },
             ),
-            Some(WotDistance {
+            Ok(WotDistance {
                 sentries: 48,
                 success: 48,
                 success_at_border: 3,

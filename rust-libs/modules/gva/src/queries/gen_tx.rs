@@ -119,12 +119,12 @@ impl GenTxsQuery {
             .dbs_pool
             .execute(move |dbs| {
                 if let Some(current_block) =
-                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)?
+                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db_ro)?
                 {
                     Ok((
                         current_block,
                         duniter_gva_dbs_reader::find_inputs::find_inputs(
-                            &dbs.bc_db,
+                            &dbs.bc_db_ro,
                             &dbs.gva_db,
                             &dbs.txs_mp_db,
                             SourceAmount::new(amount as i64, current_block.unit_base as i64),
@@ -195,13 +195,13 @@ impl GenTxsQuery {
             .dbs_pool
             .execute(move |dbs| {
                 if let Some(current_block) =
-                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)?
+                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db_ro)?
                 {
                     let mut issuers_inputs_with_sum = Vec::new();
                     for issuer in issuers {
                         issuers_inputs_with_sum.push((
                             duniter_gva_dbs_reader::find_inputs::find_inputs(
-                                &dbs.bc_db,
+                                &dbs.bc_db_ro,
                                 &dbs.gva_db,
                                 &dbs.txs_mp_db,
                                 SourceAmount::new(

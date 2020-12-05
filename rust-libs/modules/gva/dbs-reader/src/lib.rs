@@ -35,7 +35,7 @@ use dubp::common::crypto::hashs::Hash;
 use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::documents::transaction::TransactionDocumentV10;
 use dubp::{common::prelude::BlockNumber, wallet::prelude::*};
-use duniter_dbs::bc_v2::BcV2DbReadable;
+use duniter_dbs::bc_v2::{BcV2DbReadable, BcV2DbRo};
 use duniter_dbs::{
     kv_typed::prelude::*, GvaV1DbReadable, HashKeyV2, PubKeyKeyV2, SourceAmountValV2, TxDbV2,
     TxsMpV2DbReadable, UtxoIdDbV2,

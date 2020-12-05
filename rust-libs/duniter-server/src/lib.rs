@@ -33,6 +33,7 @@ use dubp::documents::{prelude::*, transaction::TransactionDocumentV10};
 use dubp::{
     block::prelude::*, common::crypto::hashs::Hash, documents_parser::prelude::FromStringObject,
 };
+use duniter_dbs::bc_v2::BcV2Db;
 use duniter_dbs::cm_v1::{CmV1DbReadable, CmV1DbWritable};
 use duniter_dbs::{
     kv_typed::prelude::*, GvaV1DbReadable, HashKeyV2, PendingTxDbV2, TxsMpV2DbReadable,
@@ -52,6 +53,7 @@ pub enum DuniterCommand {
 }
 
 pub struct DuniterServer {
+    bc_db: BcV2Db<FileBackend>,
     conf: DuniterConf,
     current: Option<BlockMetaV2>,
     dbs_pool: fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
@@ -77,9 +79,9 @@ impl DuniterServer {
         let txs_mempool = TxsMempool::new(conf.txs_mempool_size);
 
         log::info!("open duniter databases...");
-        let dbs = duniter_dbs::open_dbs(home_path_opt);
+        let (bc_db, dbs) = duniter_dbs::open_dbs(home_path_opt);
         log::info!("Databases successfully opened.");
-        let current = duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)
+        let current = duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db_ro)
             .context("Fail to get current")?;
         if let Some(current) = current {
             log::info!("Current block: #{}-{}", current.number, current.hash);
@@ -123,6 +125,7 @@ impl DuniterServer {
         };
 
         Ok(DuniterServer {
+            bc_db,
             conf,
             current,
             dbs_pool: threadpool.into_sync_handler(),
@@ -154,7 +157,7 @@ impl DuniterServer {
         match self
             .dbs_pool
             .execute(move |dbs| {
-                txs_mempool.accept_new_tx(&dbs.bc_db, server_pubkey, tx, &dbs.txs_mp_db)
+                txs_mempool.accept_new_tx(&dbs.bc_db_ro, server_pubkey, tx, &dbs.txs_mp_db)
             })
             .expect("dbs pool discorrected")
         {
@@ -262,16 +265,17 @@ impl DuniterServer {
                 .map_err(|e| KvError::DeserError(format!("{}", e)))?,
         );
         let block_arc_clone = Arc::clone(&block);
-        self.current = self
+        let txs_mp_job_handle = self
             .dbs_pool
-            .execute(move |dbs| {
+            .launch(move |dbs| {
                 duniter_dbs_write_ops::txs_mp::revert_block(
                     block_arc_clone.transactions(),
                     &dbs.txs_mp_db,
-                )?;
-                duniter_dbs_write_ops::bc::revert_block(&dbs.bc_db, &block_arc_clone)
+                )
             })
-            .expect("dbs pool disconnected")?;
+            .expect("dbs pool disconnected");
+        self.current = duniter_dbs_write_ops::bc::revert_block(&self.bc_db, &block)?;
+        txs_mp_job_handle.join().expect("dbs pool disconnected")?;
         revert_block_modules(block, &self.conf, &self.dbs_pool, None)
     }
     pub fn apply_block(&mut self, block: DubpBlockV10Stringified) -> KvResult<()> {
@@ -280,6 +284,7 @@ impl DuniterServer {
                 .map_err(|e| KvError::DeserError(format!("{}", e)))?,
         );
         self.current = Some(duniter_dbs_write_ops::apply_block::apply_block(
+            &self.bc_db,
             block.clone(),
             self.current,
             &self.dbs_pool,
@@ -297,6 +302,7 @@ impl DuniterServer {
                 .map_err(|e| KvError::DeserError(format!("{}", e)))?,
         );
         self.current = Some(duniter_dbs_write_ops::apply_block::apply_chunk(
+            &self.bc_db,
             self.current,
             &self.dbs_pool,
             blocks.clone(),

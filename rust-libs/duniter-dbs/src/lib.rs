@@ -121,7 +121,7 @@ pub type FileBackend = kv_typed::backend::memory::Mem;
 
 #[derive(Clone, Debug)]
 pub struct DuniterDbs<B: Backend> {
-    pub bc_db: bc_v2::BcV2Db<B>,
+    pub bc_db_ro: bc_v2::BcV2DbRo<B>,
     pub cm_db: cm_v1::CmV1Db<MemSingleton>,
     pub gva_db: GvaV1Db<B>,
     pub txs_mp_db: TxsMpV2Db<B>,
@@ -132,7 +132,7 @@ impl DuniterDbs<Mem> {
         use bc_v2::BcV2DbWritable as _;
         use cm_v1::CmV1DbWritable as _;
         Ok(DuniterDbs {
-            bc_db: bc_v2::BcV2Db::<Mem>::open(MemConf::default())?,
+            bc_db_ro: bc_v2::BcV2Db::<Mem>::open(MemConf::default())?.get_ro_handler(),
             cm_db: cm_v1::CmV1Db::<MemSingleton>::open(MemSingletonConf::default())?,
             gva_db: GvaV1Db::<Mem>::open(MemConf::default())?,
             txs_mp_db: TxsMpV2Db::<Mem>::open(MemConf::default())?,

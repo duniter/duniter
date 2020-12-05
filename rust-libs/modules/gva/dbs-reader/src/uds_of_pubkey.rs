@@ -16,7 +16,7 @@
 use crate::*;
 use duniter_dbs::smallvec::SmallVec;
 use duniter_dbs::{
-    bc_v2::{BcV2Db, UdsEvent, UdsRevalEvent},
+    bc_v2::{UdsEvent, UdsRevalEvent},
     GvaIdtyDbV1, GvaV1Db, UdIdV2,
 };
 
@@ -27,7 +27,7 @@ pub struct UdsWithSum {
 }
 
 pub fn all_uds_of_pubkey<B: Backend>(
-    bc_db: &BcV2Db<B>,
+    bc_db: &BcV2DbRo<B>,
     gva_db: &GvaV1Db<B>,
     pubkey: PublicKey,
     page_info: PageInfo<BlockNumber>,
@@ -531,6 +531,7 @@ mod tests {
         };
 
         let bc_db = duniter_dbs::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?;
+        let bc_db_ro = bc_db.get_ro_handler();
         let gva_db = duniter_dbs::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?;
 
         bc_db
@@ -555,7 +556,7 @@ mod tests {
             data: UdsWithSum { uds, sum },
             has_previous_page,
             has_next_page,
-        } = all_uds_of_pubkey(&bc_db, &gva_db, pk, PageInfo::default())?;
+        } = all_uds_of_pubkey(&bc_db_ro, &gva_db, pk, PageInfo::default())?;
         assert_eq!(
             uds,
             vec![
@@ -574,7 +575,7 @@ mod tests {
             has_previous_page,
             has_next_page,
         } = all_uds_of_pubkey(
-            &bc_db,
+            &bc_db_ro,
             &gva_db,
             pk,
             PageInfo {
@@ -599,7 +600,7 @@ mod tests {
             has_previous_page,
             has_next_page,
         } = all_uds_of_pubkey(
-            &bc_db,
+            &bc_db_ro,
             &gva_db,
             pk,
             PageInfo {
@@ -624,7 +625,7 @@ mod tests {
             has_previous_page,
             has_next_page,
         } = all_uds_of_pubkey(
-            &bc_db,
+            &bc_db_ro,
             &gva_db,
             pk,
             PageInfo {
@@ -650,7 +651,7 @@ mod tests {
             has_previous_page,
             has_next_page,
         } = all_uds_of_pubkey(
-            &bc_db,
+            &bc_db_ro,
             &gva_db,
             pk,
             PageInfo {
@@ -676,7 +677,7 @@ mod tests {
             has_previous_page,
             has_next_page,
         } = all_uds_of_pubkey(
-            &bc_db,
+            &bc_db_ro,
             &gva_db,
             pk,
             PageInfo {

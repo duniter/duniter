@@ -40,7 +40,7 @@ impl MutationRoot {
             .dbs_pool
             .execute(move |dbs| {
                 txs_mempool
-                    .add_pending_tx(&dbs.bc_db, server_pubkey, &dbs.txs_mp_db, &tx)
+                    .add_pending_tx(&dbs.bc_db_ro, server_pubkey, &dbs.txs_mp_db, &tx)
                     .map(|()| tx)
             })
             .await??;
@@ -72,7 +72,7 @@ impl MutationRoot {
                 .dbs_pool
                 .execute(move |dbs| {
                     txs_mempool
-                        .add_pending_tx(&dbs.bc_db, server_pubkey, &dbs.txs_mp_db, &tx)
+                        .add_pending_tx(&dbs.bc_db_ro, server_pubkey, &dbs.txs_mp_db, &tx)
                         .map(|()| tx)
                 })
                 .await??;

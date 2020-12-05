@@ -51,7 +51,7 @@ impl UtxosQuery {
             .dbs_pool
             .execute(move |dbs| {
                 if let Some(current_block) =
-                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)?
+                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db_ro)?
                 {
                     let paged_data = duniter_gva_dbs_reader::utxos::find_script_utxos(
                         &dbs.gva_db,

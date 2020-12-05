@@ -32,7 +32,7 @@ impl UdsQuery {
 
         Ok(data
             .dbs_pool
-            .execute(move |dbs| dbs_reader.get_current_ud(&dbs.bc_db))
+            .execute(move |dbs| dbs_reader.get_current_ud(&dbs.bc_db_ro))
             .await??
             .map(|sa| CurrentUdGva {
                 amount: sa.amount(),
@@ -67,18 +67,18 @@ impl UdsQuery {
             .dbs_pool
             .execute(move |dbs| {
                 if let Some(current_block) =
-                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)?
+                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db_ro)?
                 {
                     let paged_data = match filter {
                         UdsFilter::All => duniter_gva_dbs_reader::uds_of_pubkey::all_uds_of_pubkey(
-                            &dbs.bc_db,
+                            &dbs.bc_db_ro,
                             &dbs.gva_db,
                             pubkey,
                             pagination,
                         ),
                         UdsFilter::Unspent => {
                             duniter_gva_dbs_reader::uds_of_pubkey::unspent_uds_of_pubkey(
-                                &dbs.bc_db,
+                                &dbs.bc_db_ro,
                                 pubkey,
                                 pagination,
                                 None,
@@ -144,7 +144,7 @@ impl UdsQuery {
         Ok(data
             .dbs_pool
             .execute(move |dbs| {
-                dbs.bc_db.uds_reval().iter(.., |it| {
+                dbs.bc_db_ro.uds_reval().iter(.., |it| {
                     it.map_ok(|(block_number, sa)| RevalUdGva {
                         amount: sa.0.amount(),
                         base: sa.0.base(),
@@ -165,9 +165,9 @@ mod tests {
     #[tokio::test]
     async fn query_current_ud() -> anyhow::Result<()> {
         let mut dbs_reader = MockDbsReader::new();
-        use duniter_dbs::bc_v2::BcV2Db;
+        use duniter_dbs::bc_v2::BcV2DbRo;
         dbs_reader
-            .expect_get_current_ud::<BcV2Db<FileBackend>>()
+            .expect_get_current_ud::<BcV2DbRo<FileBackend>>()
             .times(1)
             .returning(|_| Ok(Some(SourceAmount::with_base0(100))));
         let schema = create_schema(dbs_reader)?;

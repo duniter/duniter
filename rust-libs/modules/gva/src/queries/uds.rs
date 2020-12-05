@@ -70,23 +70,18 @@ impl UdsQuery {
                     duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db_ro)?
                 {
                     let paged_data = match filter {
-                        UdsFilter::All => duniter_gva_dbs_reader::uds_of_pubkey::all_uds_of_pubkey(
+                        UdsFilter::All => {
+                            dbs_reader.all_uds_of_pubkey(&dbs.bc_db_ro, pubkey, pagination)
+                        }
+                        UdsFilter::Unspent => dbs_reader.unspent_uds_of_pubkey(
                             &dbs.bc_db_ro,
-                            &dbs.gva_db,
                             pubkey,
                             pagination,
+                            None,
+                            amount.map(|amount| {
+                                SourceAmount::new(amount, current_block.unit_base as i64)
+                            }),
                         ),
-                        UdsFilter::Unspent => {
-                            duniter_gva_dbs_reader::uds_of_pubkey::unspent_uds_of_pubkey(
-                                &dbs.bc_db_ro,
-                                pubkey,
-                                pagination,
-                                None,
-                                amount.map(|amount| {
-                                    SourceAmount::new(amount, current_block.unit_base as i64)
-                                }),
-                            )
-                        }
                     }?;
 
                     let mut times = Vec::with_capacity(paged_data.data.uds.len());

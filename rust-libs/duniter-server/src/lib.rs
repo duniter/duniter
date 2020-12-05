@@ -209,7 +209,7 @@ impl DuniterServer {
     pub fn get_transactions_history(&self, pubkey: PublicKey) -> KvResult<TxsHistory> {
         self.dbs_pool
             .execute(move |dbs| {
-                duniter_gva_dbs_reader::txs_history::get_transactions_history(
+                duniter_gva_dbs_reader::txs_history::get_transactions_history_for_bma(
                     &dbs.gva_db,
                     &dbs.txs_mp_db,
                     pubkey,

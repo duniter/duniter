@@ -17,7 +17,7 @@ use crate::*;
 use duniter_dbs::smallvec::SmallVec;
 use duniter_dbs::{
     bc_v2::{UdsEvent, UdsRevalEvent},
-    GvaIdtyDbV1, GvaV1Db, UdIdV2,
+    GvaIdtyDbV1, UdIdV2,
 };
 
 #[derive(Debug, Default)]
@@ -26,75 +26,198 @@ pub struct UdsWithSum {
     pub sum: SourceAmount,
 }
 
-pub fn all_uds_of_pubkey<B: Backend>(
-    bc_db: &BcV2DbRo<B>,
-    gva_db: &GvaV1Db<B>,
-    pubkey: PublicKey,
-    page_info: PageInfo<BlockNumber>,
-) -> KvResult<PagedData<UdsWithSum>> {
-    (
-        bc_db.uds_reval(),
-        gva_db.blocks_with_ud(),
-        gva_db.gva_identities(),
-    )
-        .read(|(uds_reval, blocks_with_ud, gva_identities)| {
-            if let Some(gva_idty) = gva_identities.get(&PubKeyKeyV2(pubkey))? {
-                match page_info.pos {
-                    None => {
-                        if page_info.order {
-                            blocks_with_ud.iter(.., move |it| {
-                                all_uds_of_pubkey_inner::<B, _>(
-                                    gva_idty,
-                                    page_info,
-                                    it.keys().map_ok(|bn| BlockNumber(bn.0)),
-                                    uds_reval,
-                                    None,
-                                )
-                            })
-                        } else {
-                            let last_ud_opt =
-                                blocks_with_ud.iter(.., |it| it.keys().reverse().next_res())?;
-                            blocks_with_ud.iter(.., move |it| {
-                                all_uds_of_pubkey_inner::<B, _>(
-                                    gva_idty,
-                                    page_info,
-                                    it.keys().reverse().map_ok(|bn| BlockNumber(bn.0)),
-                                    uds_reval,
-                                    last_ud_opt.map(|bn| BlockNumber(bn.0)),
-                                )
-                            })
+impl DbsReader {
+    pub fn all_uds_of_pubkey(
+        &self,
+        bc_db: &BcV2DbRo<FileBackend>,
+        pubkey: PublicKey,
+        page_info: PageInfo<BlockNumber>,
+    ) -> KvResult<PagedData<UdsWithSum>> {
+        (
+            bc_db.uds_reval(),
+            self.0.blocks_with_ud(),
+            self.0.gva_identities(),
+        )
+            .read(|(uds_reval, blocks_with_ud, gva_identities)| {
+                if let Some(gva_idty) = gva_identities.get(&PubKeyKeyV2(pubkey))? {
+                    match page_info.pos {
+                        None => {
+                            if page_info.order {
+                                blocks_with_ud.iter(.., move |it| {
+                                    all_uds_of_pubkey_inner::<FileBackend, _>(
+                                        gva_idty,
+                                        page_info,
+                                        it.keys().map_ok(|bn| BlockNumber(bn.0)),
+                                        uds_reval,
+                                        None,
+                                    )
+                                })
+                            } else {
+                                let last_ud_opt =
+                                    blocks_with_ud.iter(.., |it| it.keys().reverse().next_res())?;
+                                blocks_with_ud.iter(.., move |it| {
+                                    all_uds_of_pubkey_inner::<FileBackend, _>(
+                                        gva_idty,
+                                        page_info,
+                                        it.keys().reverse().map_ok(|bn| BlockNumber(bn.0)),
+                                        uds_reval,
+                                        last_ud_opt.map(|bn| BlockNumber(bn.0)),
+                                    )
+                                })
+                            }
+                        }
+                        Some(pos) => {
+                            if page_info.order {
+                                blocks_with_ud.iter(U32BE(pos.0).., move |it| {
+                                    all_uds_of_pubkey_inner::<FileBackend, _>(
+                                        gva_idty,
+                                        page_info,
+                                        it.keys().map_ok(|bn| BlockNumber(bn.0)),
+                                        uds_reval,
+                                        None,
+                                    )
+                                })
+                            } else {
+                                let last_ud_opt =
+                                    blocks_with_ud.iter(.., |it| it.keys().reverse().next_res())?;
+                                blocks_with_ud.iter(..=U32BE(pos.0), move |it| {
+                                    all_uds_of_pubkey_inner::<FileBackend, _>(
+                                        gva_idty,
+                                        page_info,
+                                        it.keys().reverse().map_ok(|bn| BlockNumber(bn.0)),
+                                        uds_reval,
+                                        last_ud_opt.map(|bn| BlockNumber(bn.0)),
+                                    )
+                                })
+                            }
                         }
                     }
-                    Some(pos) => {
-                        if page_info.order {
-                            blocks_with_ud.iter(U32BE(pos.0).., move |it| {
-                                all_uds_of_pubkey_inner::<B, _>(
-                                    gva_idty,
-                                    page_info,
-                                    it.keys().map_ok(|bn| BlockNumber(bn.0)),
-                                    uds_reval,
-                                    None,
-                                )
-                            })
-                        } else {
-                            let last_ud_opt =
-                                blocks_with_ud.iter(.., |it| it.keys().reverse().next_res())?;
-                            blocks_with_ud.iter(..=U32BE(pos.0), move |it| {
-                                all_uds_of_pubkey_inner::<B, _>(
-                                    gva_idty,
-                                    page_info,
-                                    it.keys().reverse().map_ok(|bn| BlockNumber(bn.0)),
-                                    uds_reval,
-                                    last_ud_opt.map(|bn| BlockNumber(bn.0)),
-                                )
-                            })
-                        }
-                    }
+                } else {
+                    Ok(PagedData::empty())
                 }
+            })
+    }
+
+    pub fn unspent_uds_of_pubkey<BcDb: BcV2DbReadable>(
+        &self,
+        bc_db: &BcDb,
+        pubkey: PublicKey,
+        page_info: PageInfo<BlockNumber>,
+        bn_to_exclude_opt: Option<&BTreeSet<BlockNumber>>,
+        amount_target_opt: Option<SourceAmount>,
+    ) -> KvResult<PagedData<UdsWithSum>> {
+        (bc_db.uds(), bc_db.uds_reval()).read(|(uds, uds_reval)| {
+            let (first_ud_opt, last_ud_opt) = if page_info.not_all() {
+                get_first_and_last_unspent_ud(&uds, pubkey, bn_to_exclude_opt)?
             } else {
+                (None, None)
+            };
+            let mut blocks_numbers = if let Some(pos) = page_info.pos {
+                if page_info.order {
+                    uds.iter(
+                        UdIdV2(pubkey, pos)..UdIdV2(pubkey, BlockNumber(u32::MAX)),
+                        |it| {
+                            let it = it.keys().map_ok(|UdIdV2(_p, bn)| bn);
+                            if let Some(bn_to_exclude) = bn_to_exclude_opt {
+                                it.filter_ok(|bn| !bn_to_exclude.contains(&bn))
+                                    .collect::<KvResult<Vec<_>>>()
+                            } else {
+                                it.collect::<KvResult<Vec<_>>>()
+                            }
+                        },
+                    )?
+                } else {
+                    uds.iter(UdIdV2(pubkey, BlockNumber(0))..=UdIdV2(pubkey, pos), |it| {
+                        let it = it.keys().reverse().map_ok(|UdIdV2(_p, bn)| bn);
+                        if let Some(bn_to_exclude) = bn_to_exclude_opt {
+                            it.filter_ok(|bn| !bn_to_exclude.contains(&bn))
+                                .collect::<KvResult<Vec<_>>>()
+                        } else {
+                            it.collect::<KvResult<Vec<_>>>()
+                        }
+                    })?
+                }
+            } else if page_info.order {
+                uds.iter(
+                    UdIdV2(pubkey, BlockNumber(0))..UdIdV2(pubkey, BlockNumber(u32::MAX)),
+                    |it| {
+                        let it = it.keys().map_ok(|UdIdV2(_p, bn)| bn);
+                        if let Some(bn_to_exclude) = bn_to_exclude_opt {
+                            it.filter_ok(|bn| !bn_to_exclude.contains(&bn))
+                                .collect::<KvResult<Vec<_>>>()
+                        } else {
+                            it.collect::<KvResult<Vec<_>>>()
+                        }
+                    },
+                )?
+            } else {
+                uds.iter(
+                    UdIdV2(pubkey, BlockNumber(0))..UdIdV2(pubkey, BlockNumber(u32::MAX)),
+                    |it| {
+                        let it = it.keys().reverse().map_ok(|UdIdV2(_p, bn)| bn);
+                        if let Some(bn_to_exclude) = bn_to_exclude_opt {
+                            it.filter_ok(|bn| !bn_to_exclude.contains(&bn))
+                                .collect::<KvResult<Vec<_>>>()
+                        } else {
+                            it.collect::<KvResult<Vec<_>>>()
+                        }
+                    },
+                )?
+            };
+
+            if blocks_numbers.is_empty() {
                 Ok(PagedData::empty())
+            } else {
+                if let Some(limit) = page_info.limit_opt {
+                    blocks_numbers.truncate(limit);
+                }
+                let first_block_number = if page_info.order {
+                    blocks_numbers[0]
+                } else {
+                    blocks_numbers[blocks_numbers.len() - 1]
+                };
+                let first_reval = uds_reval
+                    .iter(..=U32BE(first_block_number.0), |it| {
+                        it.reverse().keys().next_res()
+                    })?
+                    .expect("corrupted db");
+                let blocks_numbers_len = blocks_numbers.len();
+                let blocks_numbers = blocks_numbers.into_iter();
+                let uds_with_sum = if page_info.order {
+                    collect_uds(
+                        blocks_numbers,
+                        blocks_numbers_len,
+                        first_reval,
+                        uds_reval,
+                        amount_target_opt,
+                    )?
+                } else {
+                    collect_uds(
+                        blocks_numbers.rev(),
+                        blocks_numbers_len,
+                        first_reval,
+                        uds_reval,
+                        amount_target_opt,
+                    )?
+                };
+                Ok(PagedData {
+                    has_previous_page: has_previous_page(
+                        uds_with_sum.uds.iter().map(|(bn, _sa)| bn),
+                        first_ud_opt,
+                        page_info,
+                        true,
+                    ),
+                    has_next_page: has_next_page(
+                        uds_with_sum.uds.iter().map(|(bn, _sa)| bn),
+                        last_ud_opt,
+                        page_info,
+                        true,
+                    ),
+                    data: uds_with_sum,
+                })
             }
         })
+    }
 }
 
 fn all_uds_of_pubkey_inner<B, I>(
@@ -246,126 +369,6 @@ fn filter_blocks_numbers<I: Iterator<Item = KvResult<BlockNumber>>>(
                 .collect::<KvResult<Vec<_>>>()
         }
     }
-}
-
-pub fn unspent_uds_of_pubkey<BcDb: BcV2DbReadable>(
-    bc_db: &BcDb,
-    pubkey: PublicKey,
-    page_info: PageInfo<BlockNumber>,
-    bn_to_exclude_opt: Option<&BTreeSet<BlockNumber>>,
-    amount_target_opt: Option<SourceAmount>,
-) -> KvResult<PagedData<UdsWithSum>> {
-    (bc_db.uds(), bc_db.uds_reval()).read(|(uds, uds_reval)| {
-        let (first_ud_opt, last_ud_opt) = if page_info.not_all() {
-            get_first_and_last_unspent_ud(&uds, pubkey, bn_to_exclude_opt)?
-        } else {
-            (None, None)
-        };
-        let mut blocks_numbers = if let Some(pos) = page_info.pos {
-            if page_info.order {
-                uds.iter(
-                    UdIdV2(pubkey, pos)..UdIdV2(pubkey, BlockNumber(u32::MAX)),
-                    |it| {
-                        let it = it.keys().map_ok(|UdIdV2(_p, bn)| bn);
-                        if let Some(bn_to_exclude) = bn_to_exclude_opt {
-                            it.filter_ok(|bn| !bn_to_exclude.contains(&bn))
-                                .collect::<KvResult<Vec<_>>>()
-                        } else {
-                            it.collect::<KvResult<Vec<_>>>()
-                        }
-                    },
-                )?
-            } else {
-                uds.iter(UdIdV2(pubkey, BlockNumber(0))..=UdIdV2(pubkey, pos), |it| {
-                    let it = it.keys().reverse().map_ok(|UdIdV2(_p, bn)| bn);
-                    if let Some(bn_to_exclude) = bn_to_exclude_opt {
-                        it.filter_ok(|bn| !bn_to_exclude.contains(&bn))
-                            .collect::<KvResult<Vec<_>>>()
-                    } else {
-                        it.collect::<KvResult<Vec<_>>>()
-                    }
-                })?
-            }
-        } else if page_info.order {
-            uds.iter(
-                UdIdV2(pubkey, BlockNumber(0))..UdIdV2(pubkey, BlockNumber(u32::MAX)),
-                |it| {
-                    let it = it.keys().map_ok(|UdIdV2(_p, bn)| bn);
-                    if let Some(bn_to_exclude) = bn_to_exclude_opt {
-                        it.filter_ok(|bn| !bn_to_exclude.contains(&bn))
-                            .collect::<KvResult<Vec<_>>>()
-                    } else {
-                        it.collect::<KvResult<Vec<_>>>()
-                    }
-                },
-            )?
-        } else {
-            uds.iter(
-                UdIdV2(pubkey, BlockNumber(0))..UdIdV2(pubkey, BlockNumber(u32::MAX)),
-                |it| {
-                    let it = it.keys().reverse().map_ok(|UdIdV2(_p, bn)| bn);
-                    if let Some(bn_to_exclude) = bn_to_exclude_opt {
-                        it.filter_ok(|bn| !bn_to_exclude.contains(&bn))
-                            .collect::<KvResult<Vec<_>>>()
-                    } else {
-                        it.collect::<KvResult<Vec<_>>>()
-                    }
-                },
-            )?
-        };
-
-        if blocks_numbers.is_empty() {
-            Ok(PagedData::empty())
-        } else {
-            if let Some(limit) = page_info.limit_opt {
-                blocks_numbers.truncate(limit);
-            }
-            let first_block_number = if page_info.order {
-                blocks_numbers[0]
-            } else {
-                blocks_numbers[blocks_numbers.len() - 1]
-            };
-            let first_reval = uds_reval
-                .iter(..=U32BE(first_block_number.0), |it| {
-                    it.reverse().keys().next_res()
-                })?
-                .expect("corrupted db");
-            let blocks_numbers_len = blocks_numbers.len();
-            let blocks_numbers = blocks_numbers.into_iter();
-            let uds_with_sum = if page_info.order {
-                collect_uds(
-                    blocks_numbers,
-                    blocks_numbers_len,
-                    first_reval,
-                    uds_reval,
-                    amount_target_opt,
-                )?
-            } else {
-                collect_uds(
-                    blocks_numbers.rev(),
-                    blocks_numbers_len,
-                    first_reval,
-                    uds_reval,
-                    amount_target_opt,
-                )?
-            };
-            Ok(PagedData {
-                has_previous_page: has_previous_page(
-                    uds_with_sum.uds.iter().map(|(bn, _sa)| bn),
-                    first_ud_opt,
-                    page_info,
-                    true,
-                ),
-                has_next_page: has_next_page(
-                    uds_with_sum.uds.iter().map(|(bn, _sa)| bn),
-                    last_ud_opt,
-                    page_info,
-                    true,
-                ),
-                data: uds_with_sum,
-            })
-        }
-    })
 }
 
 fn get_first_and_last_unspent_ud<BC: BackendCol>(
@@ -533,7 +536,7 @@ mod tests {
         let bc_db = duniter_dbs::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?;
         let bc_db_ro = bc_db.get_ro_handler();
         let gva_db = duniter_dbs::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?;
-
+        let db_reader = create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) });
         bc_db
             .uds_reval_write()
             .upsert(U32BE(0), SourceAmountValV2(SourceAmount::with_base0(10)))?;
@@ -556,7 +559,7 @@ mod tests {
             data: UdsWithSum { uds, sum },
             has_previous_page,
             has_next_page,
-        } = all_uds_of_pubkey(&bc_db_ro, &gva_db, pk, PageInfo::default())?;
+        } = db_reader.all_uds_of_pubkey(&bc_db_ro, pk, PageInfo::default())?;
         assert_eq!(
             uds,
             vec![
@@ -574,9 +577,8 @@ mod tests {
             data: UdsWithSum { uds, sum },
             has_previous_page,
             has_next_page,
-        } = all_uds_of_pubkey(
+        } = db_reader.all_uds_of_pubkey(
             &bc_db_ro,
-            &gva_db,
             pk,
             PageInfo {
                 limit_opt: Some(2),
@@ -599,9 +601,8 @@ mod tests {
             data: UdsWithSum { uds, sum },
             has_previous_page,
             has_next_page,
-        } = all_uds_of_pubkey(
+        } = db_reader.all_uds_of_pubkey(
             &bc_db_ro,
-            &gva_db,
             pk,
             PageInfo {
                 pos: Some(BlockNumber(50)),
@@ -624,9 +625,8 @@ mod tests {
             data: UdsWithSum { uds, sum },
             has_previous_page,
             has_next_page,
-        } = all_uds_of_pubkey(
+        } = db_reader.all_uds_of_pubkey(
             &bc_db_ro,
-            &gva_db,
             pk,
             PageInfo {
                 order: false,
@@ -650,9 +650,8 @@ mod tests {
             data: UdsWithSum { uds, sum },
             has_previous_page,
             has_next_page,
-        } = all_uds_of_pubkey(
+        } = db_reader.all_uds_of_pubkey(
             &bc_db_ro,
-            &gva_db,
             pk,
             PageInfo {
                 order: false,
@@ -676,9 +675,8 @@ mod tests {
             data: UdsWithSum { uds, sum },
             has_previous_page,
             has_next_page,
-        } = all_uds_of_pubkey(
+        } = db_reader.all_uds_of_pubkey(
             &bc_db_ro,
-            &gva_db,
             pk,
             PageInfo {
                 pos: Some(BlockNumber(55)),
@@ -704,6 +702,7 @@ mod tests {
     fn test_unspent_uds_of_pubkey() -> KvResult<()> {
         let pk = PublicKey::default();
         let bc_db = duniter_dbs::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?;
+        let dbs_reader = DbsReader::mem();
 
         bc_db
             .uds_reval_write()
@@ -725,7 +724,7 @@ mod tests {
             data: UdsWithSum { uds, sum },
             has_previous_page,
             has_next_page,
-        } = unspent_uds_of_pubkey(&bc_db, pk, PageInfo::default(), None, None)?;
+        } = dbs_reader.unspent_uds_of_pubkey(&bc_db, pk, PageInfo::default(), None, None)?;
         assert_eq!(uds.len(), 7);
         assert_eq!(
             uds.first(),
@@ -744,7 +743,7 @@ mod tests {
             data: UdsWithSum { uds, sum },
             has_previous_page,
             has_next_page,
-        } = unspent_uds_of_pubkey(
+        } = dbs_reader.unspent_uds_of_pubkey(
             &bc_db,
             pk,
             PageInfo {
@@ -772,7 +771,7 @@ mod tests {
             data: UdsWithSum { uds, sum },
             has_previous_page,
             has_next_page,
-        } = unspent_uds_of_pubkey(
+        } = dbs_reader.unspent_uds_of_pubkey(
             &bc_db,
             pk,
             PageInfo {
@@ -800,7 +799,7 @@ mod tests {
             data: UdsWithSum { uds, sum },
             has_previous_page,
             has_next_page,
-        } = unspent_uds_of_pubkey(
+        } = dbs_reader.unspent_uds_of_pubkey(
             &bc_db,
             pk,
             PageInfo {

@@ -84,3 +84,13 @@ impl DbsReader {
             .unwrap_or_else(|| unreachable!()))
     }
 }
+
+#[cfg(test)]
+impl DbsReader {
+    pub(crate) fn mem() -> Self {
+        use duniter_dbs::gva_v1::GvaV1DbWritable;
+        let gva_db = duniter_dbs::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())
+            .expect("fail to create memory gva db");
+        create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) })
+    }
+}

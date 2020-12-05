@@ -20,115 +20,116 @@ use crate::{
 };
 use dubp::{documents::transaction::TransactionInputV10, wallet::prelude::*};
 
-pub fn find_inputs<BcDb: BcV2DbReadable, GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2DbReadable>(
-    bc_db: &BcDb,
-    gva_db: &GvaDb,
-    txs_mp_db: &TxsMpDb,
-    amount: SourceAmount,
-    script: &WalletScriptV10,
-    use_mempool_sources: bool,
-) -> anyhow::Result<(Vec<TransactionInputV10>, SourceAmount)> {
-    // Pending UTXOs
-    let (mut inputs, mut inputs_sum) = if use_mempool_sources {
-        txs_mp_db
-            .outputs_by_script()
-            .get_ref_slice(duniter_dbs::WalletConditionsV2::from_ref(script), |utxos| {
-                let mut sum = SourceAmount::ZERO;
-                let inputs = utxos
-                    .iter()
-                    .filter(|utxo| {
-                        !txs_mp_db
-                            .utxos_ids()
-                            .contains_key(&UtxoIdDbV2(*utxo.tx_hash(), utxo.output_index()))
-                            .unwrap_or(true)
-                    })
-                    .copied()
-                    .map(|utxo| {
-                        let amount = *utxo.amount();
-                        sum = sum + amount;
-                        TransactionInputV10 {
-                            amount,
-                            id: SourceIdV10::Utxo(UtxoIdV10 {
-                                tx_hash: *utxo.tx_hash(),
-                                output_index: utxo.output_index() as usize,
-                            }),
-                        }
-                    })
-                    .collect();
+impl DbsReader {
+    pub fn find_inputs<BcDb: BcV2DbReadable, TxsMpDb: TxsMpV2DbReadable>(
+        &self,
+        bc_db: &BcDb,
+        txs_mp_db: &TxsMpDb,
+        amount: SourceAmount,
+        script: &WalletScriptV10,
+        use_mempool_sources: bool,
+    ) -> anyhow::Result<(Vec<TransactionInputV10>, SourceAmount)> {
+        // Pending UTXOs
+        let (mut inputs, mut inputs_sum) = if use_mempool_sources {
+            txs_mp_db
+                .outputs_by_script()
+                .get_ref_slice(duniter_dbs::WalletConditionsV2::from_ref(script), |utxos| {
+                    let mut sum = SourceAmount::ZERO;
+                    let inputs = utxos
+                        .iter()
+                        .filter(|utxo| {
+                            !txs_mp_db
+                                .utxos_ids()
+                                .contains_key(&UtxoIdDbV2(*utxo.tx_hash(), utxo.output_index()))
+                                .unwrap_or(true)
+                        })
+                        .copied()
+                        .map(|utxo| {
+                            let amount = *utxo.amount();
+                            sum = sum + amount;
+                            TransactionInputV10 {
+                                amount,
+                                id: SourceIdV10::Utxo(UtxoIdV10 {
+                                    tx_hash: *utxo.tx_hash(),
+                                    output_index: utxo.output_index() as usize,
+                                }),
+                            }
+                        })
+                        .collect();
 
-                Ok((inputs, sum))
-            })?
-            .unwrap_or((Vec::with_capacity(50), SourceAmount::ZERO))
-    } else {
-        (Vec::with_capacity(50), SourceAmount::ZERO)
-    };
-    // UDs
-    if script.nodes.is_empty() {
-        if let WalletSubScriptV10::Single(WalletConditionV10::Sig(issuer)) = script.root {
-            let pending_uds_bn = txs_mp_db.uds_ids().iter(.., |it| {
-                it.keys()
-                    .map_ok(|duniter_dbs::UdIdV2(_pk, bn)| bn)
-                    .collect::<KvResult<_>>()
-            })?;
+                    Ok((inputs, sum))
+                })?
+                .unwrap_or((Vec::with_capacity(50), SourceAmount::ZERO))
+        } else {
+            (Vec::with_capacity(50), SourceAmount::ZERO)
+        };
+        // UDs
+        if script.nodes.is_empty() {
+            if let WalletSubScriptV10::Single(WalletConditionV10::Sig(issuer)) = script.root {
+                let pending_uds_bn = txs_mp_db.uds_ids().iter(.., |it| {
+                    it.keys()
+                        .map_ok(|duniter_dbs::UdIdV2(_pk, bn)| bn)
+                        .collect::<KvResult<_>>()
+                })?;
 
-            let PagedData {
-                data: UdsWithSum { uds, sum: uds_sum },
-                ..
-            } = crate::uds_of_pubkey::unspent_uds_of_pubkey(
-                bc_db,
-                issuer,
-                PageInfo::default(),
-                Some(&pending_uds_bn),
-                Some(amount - inputs_sum),
-            )?;
-            inputs.extend(uds.into_iter().map(|(block_number, source_amount)| {
-                TransactionInputV10 {
-                    amount: source_amount,
-                    id: SourceIdV10::Ud(UdSourceIdV10 {
-                        issuer,
-                        block_number,
-                    }),
-                }
-            }));
-            inputs_sum = inputs_sum + uds_sum;
-        }
-    }
-    if inputs_sum < amount {
-        // Written UTXOs
-        let PagedData {
-            data:
-                UtxosWithSum {
-                    utxos: written_utxos,
-                    sum: written_utxos_sum,
-                },
-            ..
-        } = crate::utxos::find_script_utxos(
-            gva_db,
-            txs_mp_db,
-            Some(amount - inputs_sum),
-            PageInfo::default(),
-            &script,
-        )?;
-        inputs.extend(written_utxos.into_iter().map(
-            |(
-                UtxoCursor {
-                    tx_hash,
-                    output_index,
+                let PagedData {
+                    data: UdsWithSum { uds, sum: uds_sum },
                     ..
+                } = self.unspent_uds_of_pubkey(
+                    bc_db,
+                    issuer,
+                    PageInfo::default(),
+                    Some(&pending_uds_bn),
+                    Some(amount - inputs_sum),
+                )?;
+                inputs.extend(uds.into_iter().map(|(block_number, source_amount)| {
+                    TransactionInputV10 {
+                        amount: source_amount,
+                        id: SourceIdV10::Ud(UdSourceIdV10 {
+                            issuer,
+                            block_number,
+                        }),
+                    }
+                }));
+                inputs_sum = inputs_sum + uds_sum;
+            }
+        }
+        if inputs_sum < amount {
+            // Written UTXOs
+            let PagedData {
+                data:
+                    UtxosWithSum {
+                        utxos: written_utxos,
+                        sum: written_utxos_sum,
+                    },
+                ..
+            } = self.find_script_utxos(
+                txs_mp_db,
+                Some(amount - inputs_sum),
+                PageInfo::default(),
+                &script,
+            )?;
+            inputs.extend(written_utxos.into_iter().map(
+                |(
+                    UtxoCursor {
+                        tx_hash,
+                        output_index,
+                        ..
+                    },
+                    source_amount,
+                )| TransactionInputV10 {
+                    amount: source_amount,
+                    id: SourceIdV10::Utxo(UtxoIdV10 {
+                        tx_hash,
+                        output_index: output_index as usize,
+                    }),
                 },
-                source_amount,
-            )| TransactionInputV10 {
-                amount: source_amount,
-                id: SourceIdV10::Utxo(UtxoIdV10 {
-                    tx_hash,
-                    output_index: output_index as usize,
-                }),
-            },
-        ));
+            ));
 
-        Ok((inputs, inputs_sum + written_utxos_sum))
-    } else {
-        Ok((inputs, inputs_sum))
+            Ok((inputs, inputs_sum + written_utxos_sum))
+        } else {
+            Ok((inputs, inputs_sum))
+        }
     }
 }
 
@@ -146,6 +147,7 @@ mod tests {
     fn test_find_inputs() -> anyhow::Result<()> {
         let bc_db = duniter_dbs::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?;
         let gva_db = duniter_dbs::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?;
+        let db_reader = create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) });
         let txs_mp_db = duniter_dbs::txs_mp_v2::TxsMpV2Db::<Mem>::open(MemConf::default())?;
 
         let b0 = BlockMetaV2 {
@@ -184,9 +186,8 @@ mod tests {
             .upsert(WalletConditionsV2(script.clone()), pending_utxos)?;
 
         // Gen tx1
-        let (inputs, inputs_sum) = find_inputs(
+        let (inputs, inputs_sum) = db_reader.find_inputs(
             &bc_db,
-            &gva_db,
             &txs_mp_db,
             SourceAmount::with_base0(55),
             &script,
@@ -204,9 +205,8 @@ mod tests {
             .upsert(UtxoIdDbV2(Hash::default(), 0), ())?;
 
         // Gen tx2
-        let (inputs, inputs_sum) = find_inputs(
+        let (inputs, inputs_sum) = db_reader.find_inputs(
             &bc_db,
-            &gva_db,
             &txs_mp_db,
             SourceAmount::with_base0(55),
             &script,
@@ -221,9 +221,8 @@ mod tests {
             .upsert(UtxoIdDbV2(Hash::default(), 1), ())?;
 
         // Gen tx3 (use pending utxo)
-        let (inputs, inputs_sum) = find_inputs(
+        let (inputs, inputs_sum) = db_reader.find_inputs(
             &bc_db,
-            &gva_db,
             &txs_mp_db,
             SourceAmount::with_base0(75),
             &script,

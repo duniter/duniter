@@ -354,9 +354,11 @@ impl From<duniter_dbs::PeerCardDbV1> for PeerCardStringified {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use dubp::documents::transaction::TransactionInputV10;
     use duniter_conf::DuniterConf;
-    use duniter_dbs::bc_v2::BcV2DbReadable;
+    use duniter_dbs::bc_v2::*;
     use duniter_dbs::SourceAmountValV2;
+    use duniter_gva_dbs_reader::pagination::*;
     use duniter_mempools::Mempools;
     use duniter_module::DuniterModule;
     use fast_threadpool::ThreadPoolConfig;
@@ -364,18 +366,52 @@ mod tests {
 
     mockall::mock! {
         pub DbsReader {
+            fn all_uds_of_pubkey(
+                &self,
+                bc_db: &BcV2DbRo<FileBackend>,
+                pubkey: PublicKey,
+                page_info: PageInfo<BlockNumber>,
+            ) -> KvResult<PagedData<duniter_gva_dbs_reader::uds_of_pubkey::UdsWithSum>>;
+            fn find_inputs<BcDb: 'static + BcV2DbReadable, TxsMpDb: 'static + TxsMpV2DbReadable>(
+                &self,
+                bc_db: &BcDb,
+                txs_mp_db: &TxsMpDb,
+                amount: SourceAmount,
+                script: &WalletScriptV10,
+                use_mempool_sources: bool,
+            ) -> anyhow::Result<(Vec<TransactionInputV10>, SourceAmount)>;
+            fn find_script_utxos<TxsMpDb: 'static + TxsMpV2DbReadable>(
+                &self,
+                txs_mp_db_ro: &TxsMpDb,
+                amount_target_opt: Option<SourceAmount>,
+                page_info: PageInfo<duniter_gva_dbs_reader::utxos::UtxoCursor>,
+                script: &WalletScriptV10,
+            ) -> anyhow::Result<PagedData<duniter_gva_dbs_reader::utxos::UtxosWithSum>>;
             fn get_account_balance(
                 &self,
                 account_script: &WalletScriptV10,
             ) -> KvResult<Option<SourceAmountValV2>>;
-            fn get_current_ud<BcDb: 'static + BcV2DbReadable>(
-                &self,
-                bc_db: &BcDb,
-            ) -> KvResult<Option<SourceAmount>>;
             fn get_blockchain_time(
                 &self,
                 block_number: BlockNumber,
             ) -> anyhow::Result<u64>;
+            fn get_current_ud<BcDb: 'static + BcV2DbReadable>(
+                &self,
+                bc_db: &BcDb,
+            ) -> KvResult<Option<SourceAmount>>;
+            fn get_transactions_history<TxsMpDb: 'static + TxsMpV2DbReadable>(
+                &self,
+                txs_mp_db_ro: &TxsMpDb,
+                pubkey: PublicKey,
+            ) -> KvResult<duniter_gva_dbs_reader::txs_history::TxsHistory>;
+            fn unspent_uds_of_pubkey<BcDb: 'static + BcV2DbReadable>(
+                &self,
+                bc_db: &BcDb,
+                pubkey: PublicKey,
+                page_info: PageInfo<BlockNumber>,
+                bn_to_exclude_opt: Option<&'static std::collections::BTreeSet<BlockNumber>>,
+                amount_target_opt: Option<SourceAmount>,
+            ) -> KvResult<PagedData<duniter_gva_dbs_reader::uds_of_pubkey::UdsWithSum>>;
         }
     }
     pub type DbsReader = duniter_dbs::kv_typed::prelude::Arc<MockDbsReader>;

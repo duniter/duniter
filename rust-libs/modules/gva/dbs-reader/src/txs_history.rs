@@ -22,7 +22,26 @@ pub struct TxsHistory {
     pub pending: Vec<TransactionDocumentV10>,
 }
 
-pub fn get_transactions_history<GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2DbReadable>(
+// Needed for BMA only
+pub fn get_transactions_history_for_bma<GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2DbReadable>(
+    gva_db_ro: &GvaDb,
+    txs_mp_db_ro: &TxsMpDb,
+    pubkey: PublicKey,
+) -> KvResult<TxsHistory> {
+    get_transactions_history_inner(gva_db_ro, txs_mp_db_ro, pubkey)
+}
+
+impl DbsReader {
+    pub fn get_transactions_history<TxsMpDb: TxsMpV2DbReadable>(
+        &self,
+        txs_mp_db_ro: &TxsMpDb,
+        pubkey: PublicKey,
+    ) -> KvResult<TxsHistory> {
+        get_transactions_history_inner(self.0, txs_mp_db_ro, pubkey)
+    }
+}
+
+fn get_transactions_history_inner<GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2DbReadable>(
     gva_db_ro: &GvaDb,
     txs_mp_db_ro: &TxsMpDb,
     pubkey: PublicKey,

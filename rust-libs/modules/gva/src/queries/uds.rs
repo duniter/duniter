@@ -48,7 +48,7 @@ impl UdsQuery {
         #[graphql(default)] filter: UdsFilter,
         #[graphql(desc = "pagination", default)] pagination: Pagination,
         #[graphql(desc = "Amount needed")] amount: Option<i64>,
-    ) -> async_graphql::Result<Connection<usize, UdGva, AggregateSum, EmptyFields>> {
+    ) -> async_graphql::Result<Connection<String, UdGva, AggregateSum, EmptyFields>> {
         let pagination = Pagination::convert_to_page_info(pagination)?;
 
         let pubkey = PublicKey::from_base58(&pubkey)?;
@@ -121,7 +121,7 @@ impl UdsQuery {
                 .zip(times.into_iter())
                 .map(|((bn, sa), blockchain_time)| {
                     Edge::new(
-                        bn.0 as usize,
+                        bn.0.to_string(),
                         UdGva {
                             amount: sa.amount(),
                             base: sa.base(),

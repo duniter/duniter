@@ -75,4 +75,15 @@ impl DbsReader {
             .uds_reval()
             .iter(.., |it| it.reverse().values().map_ok(|v| v.0).next_res())
     }
+
+    pub fn get_blockchain_time<GvaDb: GvaV1DbReadable>(
+        &self,
+        gva_db: &GvaDb,
+        block_number: BlockNumber,
+    ) -> anyhow::Result<u64> {
+        Ok(gva_db
+            .blockchain_time()
+            .get(&U32BE(block_number.0))?
+            .unwrap_or_else(|| unreachable!()))
+    }
 }

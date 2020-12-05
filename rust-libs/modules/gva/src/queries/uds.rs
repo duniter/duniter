@@ -15,7 +15,7 @@
 
 use crate::*;
 use async_graphql::connection::*;
-use duniter_dbs::{bc_v2::BcV2DbReadable, GvaV1DbReadable};
+use duniter_dbs::bc_v2::BcV2DbReadable;
 use duniter_gva_dbs_reader::{uds_of_pubkey::UdsWithSum, PagedData};
 
 #[derive(Default)]
@@ -54,7 +54,7 @@ impl UdsQuery {
         let pubkey = PublicKey::from_base58(&pubkey)?;
 
         let data = ctx.data::<SchemaData>()?;
-        //let dbs_reader = data.dbs_reader();
+        let dbs_reader = data.dbs_reader();
 
         let (
             PagedData {
@@ -88,14 +88,10 @@ impl UdsQuery {
                             )
                         }
                     }?;
+
                     let mut times = Vec::with_capacity(paged_data.data.uds.len());
                     for (bn, _sa) in &paged_data.data.uds {
-                        times.push(
-                            dbs.gva_db
-                                .blockchain_time()
-                                .get(&U32BE(bn.0))?
-                                .unwrap_or_else(|| unreachable!()),
-                        );
+                        times.push(dbs_reader.get_blockchain_time(&dbs.gva_db, *bn)?);
                     }
                     Ok::<_, anyhow::Error>((paged_data, times))
                 } else {

@@ -355,6 +355,13 @@ mod tests {
                 &self,
                 bc_db: &BcDb,
             ) -> KvResult<Option<SourceAmount>>;
+            fn get_blockchain_time<
+                GvaDb: 'static + GvaV1DbReadable,
+            >(
+                &self,
+                gva_db: &GvaDb,
+                block_number: BlockNumber,
+            ) -> anyhow::Result<u64>;
         }
     }
     pub type DbsReader = duniter_dbs::kv_typed::prelude::Arc<MockDbsReader>;

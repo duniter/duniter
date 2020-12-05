@@ -1045,7 +1045,6 @@ name = "dubp-wot"
 version = "0.11.0"
 dependencies = [
  "bincode",
- "dubp-common",
  "log",
  "rayon",
  "serde",

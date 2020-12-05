@@ -19,6 +19,5 @@ serde = { version = "1.0.105", features = ["derive"] }
 
 [dev-dependencies]
 bincode = "1.2.0"
-dubp-common = { version = "0.32.3", features = ["crypto_scrypt"] }
 
 [features]

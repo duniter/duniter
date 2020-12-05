@@ -51,7 +51,26 @@ mod tests {
     use crate::operations::centrality::*;
     use crate::operations::distance::*;
     use crate::operations::path::*;
-    use std::path::Path;
+    use std::{io::Read, io::Write, path::Path};
+
+    fn read_bin_file(file_path: &Path) -> Result<Vec<u8>, std::io::Error> {
+        let mut file = std::fs::File::open(file_path)?;
+        if file.metadata()?.len() == 0 {
+            Ok(vec![])
+        } else {
+            let mut bin_datas = Vec::new();
+            file.read_to_end(&mut bin_datas)?;
+
+            Ok(bin_datas)
+        }
+    }
+
+    fn write_bin_file(file_path: &Path, datas: &[u8]) -> Result<(), std::io::Error> {
+        let mut file = std::fs::File::create(file_path)?;
+        file.write_all(&datas[..])?;
+
+        Ok(())
+    }
 
     /// Test translated from https://github.com/duniter/wot/blob/master/tests/test.js
     ///
@@ -415,13 +434,13 @@ mod tests {
         ); // OK : Disabled
 
         // Write wot in file
-        dubp_common::bin_file::write_bin_file(
+        write_bin_file(
             Path::new("test.wot"),
             &bincode::serialize(&wot).expect("fail to serialize wot"),
         )
         .expect("fail to write wot file");
 
-        let wot2_bin = dubp_common::bin_file::read_bin_file(Path::new("test.wot"))
+        let wot2_bin = read_bin_file(Path::new("test.wot")).expect("fail to read wot file");
             .expect("fail to read wot file");
         let wot2: W = bincode::deserialize(&wot2_bin).expect("fail to deserialize wot");
 
@@ -472,7 +491,7 @@ nodes_count=11
         );
 
         // Read g1_genesis wot
-        let wot3_bin = dubp_common::bin_file::read_bin_file(Path::new("tests/g1_genesis.bin"))
+        let wot3_bin = read_bin_file(Path::new("tests/g1_genesis.bin"))
             .expect("fail to read g1_genesis wot file");
         let wot3: W = bincode::deserialize(&wot3_bin).expect("fail to deserialize g1_genesis wot");
 

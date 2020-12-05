@@ -29,9 +29,10 @@ impl MutationRoot {
     ) -> async_graphql::Result<TxGva> {
         let tx = TransactionDocumentV10::parse_from_raw_text(&raw_tx)?;
 
-        tx.verify(None)?;
-
         let data = ctx.data::<SchemaData>()?;
+        let expected_currency = data.server_meta_data.currency.clone();
+
+        tx.verify(Some(expected_currency))?;
 
         let server_pubkey = data.server_meta_data.self_pubkey;
         let txs_mempool = data.txs_mempool;
@@ -61,13 +62,14 @@ impl MutationRoot {
             .collect::<Result<Vec<TransactionDocumentV10>, _>>()?;
 
         let data = ctx.data::<SchemaData>()?;
+        let expected_currency = data.server_meta_data.currency.clone();
 
         let server_pubkey = data.server_meta_data.self_pubkey;
         let txs_mempool = data.txs_mempool;
 
         let mut processed_txs = Vec::with_capacity(txs.len());
         for tx in txs {
-            tx.verify(None)?;
+            tx.verify(Some(expected_currency.clone()))?;
             let tx = data
                 .dbs_pool
                 .execute(move |dbs| {

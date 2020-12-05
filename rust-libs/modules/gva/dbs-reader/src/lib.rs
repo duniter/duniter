@@ -36,6 +36,7 @@ use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::documents::transaction::TransactionDocumentV10;
 use dubp::{common::prelude::BlockNumber, wallet::prelude::*};
 use duniter_dbs::bc_v2::{BcV2DbReadable, BcV2DbRo};
+use duniter_dbs::{gva_v1::GvaV1DbRo, FileBackend};
 use duniter_dbs::{
     kv_typed::prelude::*, GvaV1DbReadable, HashKeyV2, PubKeyKeyV2, SourceAmountValV2, TxDbV2,
     TxsMpV2DbReadable, UtxoIdDbV2,
@@ -50,19 +51,18 @@ pub(crate) fn wrong_cursor() -> StringErr {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct DbsReader;
+pub struct DbsReader(&'static GvaV1DbRo<FileBackend>);
 
-pub fn create_dbs_reader() -> DbsReader {
-    DbsReader
+pub fn create_dbs_reader(gva_db_ro: &'static GvaV1DbRo<FileBackend>) -> DbsReader {
+    DbsReader(gva_db_ro)
 }
 
 impl DbsReader {
-    pub fn get_account_balance<GvaDb: GvaV1DbReadable>(
+    pub fn get_account_balance(
         &self,
-        gva_db: &GvaDb,
         account_script: &WalletScriptV10,
     ) -> KvResult<Option<SourceAmountValV2>> {
-        gva_db
+        self.0
             .balances()
             .get(duniter_dbs::WalletConditionsV2::from_ref(account_script))
     }
@@ -76,12 +76,9 @@ impl DbsReader {
             .iter(.., |it| it.reverse().values().map_ok(|v| v.0).next_res())
     }
 
-    pub fn get_blockchain_time<GvaDb: GvaV1DbReadable>(
-        &self,
-        gva_db: &GvaDb,
-        block_number: BlockNumber,
-    ) -> anyhow::Result<u64> {
-        Ok(gva_db
+    pub fn get_blockchain_time(&self, block_number: BlockNumber) -> anyhow::Result<u64> {
+        Ok(self
+            .0
             .blockchain_time()
             .get(&U32BE(block_number.0))?
             .unwrap_or_else(|| unreachable!()))

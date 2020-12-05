@@ -57,6 +57,7 @@ use dubp::documents::prelude::*;
 use dubp::documents::transaction::{TransactionDocumentTrait, TransactionDocumentV10};
 use dubp::documents_parser::prelude::*;
 use dubp::wallet::prelude::*;
+use duniter_dbs::gva_v1::GvaV1DbRo;
 use duniter_dbs::prelude::*;
 use duniter_dbs::{kv_typed::prelude::*, FileBackend, TxDbV2, TxsMpV2DbReadable};
 #[cfg(not(test))]
@@ -73,6 +74,15 @@ use std::{
     path::Path,
 };
 use warp::{http::Response as HttpResponse, Filter as _, Rejection, Stream};
+
+static GVA_DB_RO: once_cell::sync::OnceCell<GvaV1DbRo<FileBackend>> =
+    once_cell::sync::OnceCell::new();
+/*static GVA_DB_RW: once_cell::sync::OnceCell<GvaV1Db<FileBackend>> =
+    once_cell::sync::OnceCell::new();
+
+fn get_gva_db() -> &GvaV1Db<FileBackend> {
+    todo!() //ESZ
+}*/
 
 #[derive(Debug)]
 pub struct GvaModule {
@@ -204,6 +214,15 @@ impl duniter_module::DuniterModule for GvaModule {
 }
 
 impl GvaModule {
+    async fn get_gva_db_ro(
+        dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs<FileBackend>>,
+    ) -> &'static GvaV1DbRo<FileBackend> {
+        use duniter_dbs::gva_v1::GvaV1DbWritable as _;
+        dbs_pool
+            .execute(|dbs| GVA_DB_RO.get_or_init(|| dbs.gva_db.get_ro_handler()))
+            .await
+            .expect("dbs pool disconnected")
+    }
     async fn start_inner(
         conf: GvaConf,
         currency: String,
@@ -219,8 +238,8 @@ impl GvaModule {
             subscriptions::SubscriptionRoot::default(),
         )
         .data(schema::SchemaData {
+            dbs_reader: create_dbs_reader(Self::get_gva_db_ro(&dbs_pool).await),
             dbs_pool,
-            dbs_reader: create_dbs_reader(),
             server_meta_data: ServerMetaData {
                 currency,
                 self_pubkey,
@@ -337,7 +356,6 @@ mod tests {
     use super::*;
     use duniter_conf::DuniterConf;
     use duniter_dbs::bc_v2::BcV2DbReadable;
-    use duniter_dbs::gva_v1::GvaV1DbReadable;
     use duniter_dbs::SourceAmountValV2;
     use duniter_mempools::Mempools;
     use duniter_module::DuniterModule;
@@ -346,27 +364,25 @@ mod tests {
 
     mockall::mock! {
         pub DbsReader {
-            fn get_account_balance<GvaDb: 'static + GvaV1DbReadable>(
+            fn get_account_balance(
                 &self,
-                gva_db: &GvaDb,
                 account_script: &WalletScriptV10,
             ) -> KvResult<Option<SourceAmountValV2>>;
             fn get_current_ud<BcDb: 'static + BcV2DbReadable>(
                 &self,
                 bc_db: &BcDb,
             ) -> KvResult<Option<SourceAmount>>;
-            fn get_blockchain_time<
-                GvaDb: 'static + GvaV1DbReadable,
-            >(
+            fn get_blockchain_time(
                 &self,
-                gva_db: &GvaDb,
                 block_number: BlockNumber,
             ) -> anyhow::Result<u64>;
         }
     }
     pub type DbsReader = duniter_dbs::kv_typed::prelude::Arc<MockDbsReader>;
-    pub fn create_dbs_reader() -> DbsReader {
-        Arc::new(MockDbsReader::new())
+
+    // This function is never call but needed to compile
+    pub fn create_dbs_reader(_: &'static GvaV1DbRo<FileBackend>) -> DbsReader {
+        unreachable!()
     }
 
     pub(crate) fn create_schema(dbs_ops: MockDbsReader) -> KvResult<GraphQlSchema> {

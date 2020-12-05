@@ -91,7 +91,7 @@ impl UdsQuery {
 
                     let mut times = Vec::with_capacity(paged_data.data.uds.len());
                     for (bn, _sa) in &paged_data.data.uds {
-                        times.push(dbs_reader.get_blockchain_time(&dbs.gva_db, *bn)?);
+                        times.push(dbs_reader.get_blockchain_time(*bn)?);
                     }
                     Ok::<_, anyhow::Error>((paged_data, times))
                 } else {

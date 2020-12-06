@@ -28,6 +28,25 @@ pub trait DbCollectionRo: Sized {
         range: R,
         f: F,
     ) -> D;
+    /// Don't worry about complex iter type. Use it like an `impl Iterator<Item=KvResult<(K, V)>>`.
+    fn iter_rev<
+        D: Send + Sync,
+        R: 'static + RangeBounds<Self::K>,
+        F: FnOnce(
+            KvIter<
+                Self::BackendCol,
+                <Self::BackendCol as BackendCol>::KeyBytes,
+                <Self::BackendCol as BackendCol>::ValueBytes,
+                <Self::BackendCol as BackendCol>::Iter,
+                Self::K,
+                Self::V,
+            >,
+        ) -> D,
+    >(
+        &self,
+        range: R,
+        f: F,
+    ) -> D;
     fn subscribe(&self, subscriber_sender: Subscriber<Self::Event>) -> KvResult<()>;
 }
 
@@ -106,6 +125,30 @@ impl<BC: BackendCol, E: EventTrait> DbCollectionRo for ColRo<BC, E> {
         let r = self.inner.read();
         let iter = r.backend_col.iter::<Self::K, Self::V>(range.clone());
         f(KvIter::new(iter, range))
+    }
+    #[inline(always)]
+    fn iter_rev<
+        D: Send + Sync,
+        R: 'static + RangeBounds<Self::K>,
+        F: FnOnce(
+            KvIter<
+                Self::BackendCol,
+                <Self::BackendCol as BackendCol>::KeyBytes,
+                <Self::BackendCol as BackendCol>::ValueBytes,
+                <Self::BackendCol as BackendCol>::Iter,
+                Self::K,
+                Self::V,
+            >,
+        ) -> D,
+    >(
+        &self,
+        range: R,
+        f: F,
+    ) -> D {
+        let range: RangeBytes = crate::iter::convert_range::<Self::K, R>(range);
+        let r = self.inner.read();
+        let iter = r.backend_col.iter::<Self::K, Self::V>(range.clone());
+        f(KvIter::new(iter, range).reverse())
     }
     #[inline(always)]
     fn subscribe(&self, subscriber_sender: Subscriber<Self::Event>) -> KvResult<()> {

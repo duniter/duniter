@@ -54,12 +54,12 @@ impl DbsReader {
                                 })
                             } else {
                                 let last_ud_opt =
-                                    blocks_with_ud.iter(.., |it| it.keys().reverse().next_res())?;
-                                blocks_with_ud.iter(.., move |it| {
+                                    blocks_with_ud.iter_rev(.., |it| it.keys().next_res())?;
+                                blocks_with_ud.iter_rev(.., move |it| {
                                     all_uds_of_pubkey_inner::<FileBackend, _>(
                                         gva_idty,
                                         page_info,
-                                        it.keys().reverse().map_ok(|bn| BlockNumber(bn.0)),
+                                        it.keys().map_ok(|bn| BlockNumber(bn.0)),
                                         uds_reval,
                                         last_ud_opt.map(|bn| BlockNumber(bn.0)),
                                     )
@@ -79,12 +79,12 @@ impl DbsReader {
                                 })
                             } else {
                                 let last_ud_opt =
-                                    blocks_with_ud.iter(.., |it| it.keys().reverse().next_res())?;
-                                blocks_with_ud.iter(..=U32BE(pos.0), move |it| {
+                                    blocks_with_ud.iter_rev(.., |it| it.keys().next_res())?;
+                                blocks_with_ud.iter_rev(..=U32BE(pos.0), move |it| {
                                     all_uds_of_pubkey_inner::<FileBackend, _>(
                                         gva_idty,
                                         page_info,
-                                        it.keys().reverse().map_ok(|bn| BlockNumber(bn.0)),
+                                        it.keys().map_ok(|bn| BlockNumber(bn.0)),
                                         uds_reval,
                                         last_ud_opt.map(|bn| BlockNumber(bn.0)),
                                     )
@@ -127,8 +127,8 @@ impl DbsReader {
                         },
                     )?
                 } else {
-                    uds.iter(UdIdV2(pubkey, BlockNumber(0))..=UdIdV2(pubkey, pos), |it| {
-                        let it = it.keys().reverse().map_ok(|UdIdV2(_p, bn)| bn);
+                    uds.iter_rev(UdIdV2(pubkey, BlockNumber(0))..=UdIdV2(pubkey, pos), |it| {
+                        let it = it.keys().map_ok(|UdIdV2(_p, bn)| bn);
                         if let Some(bn_to_exclude) = bn_to_exclude_opt {
                             it.filter_ok(|bn| !bn_to_exclude.contains(&bn))
                                 .collect::<KvResult<Vec<_>>>()
@@ -151,10 +151,10 @@ impl DbsReader {
                     },
                 )?
             } else {
-                uds.iter(
+                uds.iter_rev(
                     UdIdV2(pubkey, BlockNumber(0))..UdIdV2(pubkey, BlockNumber(u32::MAX)),
                     |it| {
-                        let it = it.keys().reverse().map_ok(|UdIdV2(_p, bn)| bn);
+                        let it = it.keys().map_ok(|UdIdV2(_p, bn)| bn);
                         if let Some(bn_to_exclude) = bn_to_exclude_opt {
                             it.filter_ok(|bn| !bn_to_exclude.contains(&bn))
                                 .collect::<KvResult<Vec<_>>>()
@@ -177,9 +177,7 @@ impl DbsReader {
                     blocks_numbers[blocks_numbers.len() - 1]
                 };
                 let first_reval = uds_reval
-                    .iter(..=U32BE(first_block_number.0), |it| {
-                        it.reverse().keys().next_res()
-                    })?
+                    .iter_rev(..=U32BE(first_block_number.0), |it| it.keys().next_res())?
                     .expect("corrupted db");
                 let blocks_numbers_len = blocks_numbers.len();
                 let blocks_numbers = blocks_numbers.into_iter();
@@ -263,9 +261,7 @@ where
     };
 
     let first_reval = uds_reval
-        .iter(..=U32BE(first_block_number.0), |it| {
-            it.reverse().keys().next_res()
-        })?
+        .iter_rev(..=U32BE(first_block_number.0), |it| it.keys().next_res())?
         .expect("corrupted db");
 
     let uds_with_sum = if page_info.order {
@@ -377,21 +373,11 @@ fn get_first_and_last_unspent_ud<BC: BackendCol>(
     bn_to_exclude_opt: Option<&BTreeSet<BlockNumber>>,
 ) -> KvResult<(Option<BlockNumber>, Option<BlockNumber>)> {
     if let Some(bn_to_exclude) = bn_to_exclude_opt {
-        uds.iter(
-            UdIdV2(pubkey, BlockNumber(0))..UdIdV2(pubkey, BlockNumber(u32::MAX)),
-            |it| {
-                let mut it = it.keys();
-                Ok((
-                    loop {
-                        if let Some(UdIdV2(_p, bn)) = it.next_res()? {
-                            if !bn_to_exclude.contains(&bn) {
-                                break Some(bn);
-                            }
-                        } else {
-                            break None;
-                        }
-                    },
-                    it.reverse()
+        Ok((
+            uds.iter(
+                UdIdV2(pubkey, BlockNumber(0))..UdIdV2(pubkey, BlockNumber(u32::MAX)),
+                |it| {
+                    it.keys()
                         .filter_map_ok(|UdIdV2(_p, bn)| {
                             if !bn_to_exclude.contains(&bn) {
                                 Some(bn)
@@ -399,21 +385,35 @@ fn get_first_and_last_unspent_ud<BC: BackendCol>(
                                 None
                             }
                         })
-                        .next_res()?,
-                ))
-            },
-        )
+                        .next_res()
+                },
+            )?,
+            uds.iter_rev(
+                UdIdV2(pubkey, BlockNumber(0))..UdIdV2(pubkey, BlockNumber(u32::MAX)),
+                |it| {
+                    it.keys()
+                        .filter_map_ok(|UdIdV2(_p, bn)| {
+                            if !bn_to_exclude.contains(&bn) {
+                                Some(bn)
+                            } else {
+                                None
+                            }
+                        })
+                        .next_res()
+                },
+            )?,
+        ))
     } else {
-        uds.iter(
-            UdIdV2(pubkey, BlockNumber(0))..UdIdV2(pubkey, BlockNumber(u32::MAX)),
-            |it| {
-                let mut it = it.keys();
-                Ok((
-                    it.next_res()?.map(|UdIdV2(_p, bn)| bn),
-                    it.reverse().next_res()?.map(|UdIdV2(_p, bn)| bn),
-                ))
-            },
-        )
+        Ok((
+            uds.iter(
+                UdIdV2(pubkey, BlockNumber(0))..UdIdV2(pubkey, BlockNumber(u32::MAX)),
+                |it| it.keys().map_ok(|UdIdV2(_p, bn)| bn).next_res(),
+            )?,
+            uds.iter_rev(
+                UdIdV2(pubkey, BlockNumber(0))..UdIdV2(pubkey, BlockNumber(u32::MAX)),
+                |it| it.keys().map_ok(|UdIdV2(_p, bn)| bn).next_res(),
+            )?,
+        ))
     }
 }
 

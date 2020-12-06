@@ -160,11 +160,8 @@ fn migrate_inner(
 }
 
 fn get_target_block_number(duniter_js_db: &BcV1Db<LevelDb>) -> KvResult<Option<BlockNumber>> {
-    duniter_js_db.main_blocks().iter(.., |it| {
-        it.reverse()
-            .keys()
-            .map(|k_res| k_res.map(|bn| bn.0))
-            .next_res()
+    duniter_js_db.main_blocks().iter_rev(.., |it| {
+        it.keys().map(|k_res| k_res.map(|bn| bn.0)).next_res()
     })
 }
 

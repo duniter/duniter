@@ -73,7 +73,7 @@ impl DbsReader {
     ) -> KvResult<Option<SourceAmount>> {
         bc_db
             .uds_reval()
-            .iter(.., |it| it.reverse().values().map_ok(|v| v.0).next_res())
+            .iter_rev(.., |it| it.values().map_ok(|v| v.0).next_res())
     }
 
     pub fn get_blockchain_time(&self, block_number: BlockNumber) -> anyhow::Result<u64> {

@@ -365,20 +365,21 @@ impl<'a> ExplorerAction<'a> {
         };
 
         if let Some(limit) = limit {
-            col.iter(range, |iter| {
-                if reverse {
-                    iter.reverse()
-                        .step_by(step.get())
-                        .filter_map(filter_map_closure)
-                        .take(limit)
-                        .collect()
-                } else {
+            if reverse {
+                col.iter_rev(range, |iter| {
                     iter.step_by(step.get())
                         .filter_map(filter_map_closure)
                         .take(limit)
                         .collect()
-                }
-            })
+                })
+            } else {
+                col.iter(range, |iter| {
+                    iter.step_by(step.get())
+                        .filter_map(filter_map_closure)
+                        .take(limit)
+                        .collect()
+                })
+            }
         } else {
             {
                 let (send, recv) = unbounded();
@@ -389,24 +390,29 @@ impl<'a> ExplorerAction<'a> {
                     iter.filter_map(filter_map_closure).collect()
                 });
 
-                col.iter(range, |iter| {
-                    if reverse {
-                        for entry_res in iter.reverse() {
-                            if send.try_send(entry_res).is_err() {
-                                return handler.join().expect("child thread panic");
-                            }
-                        }
-                    } else {
+                if reverse {
+                    col.iter_rev(range, |iter| {
                         for entry_res in iter {
                             if send.try_send(entry_res).is_err() {
                                 return handler.join().expect("child thread panic");
                             }
                         }
-                    }
-                    drop(send);
+                        drop(send);
 
-                    handler.join().expect("child thread panic")
-                })
+                        handler.join().expect("child thread panic")
+                    })
+                } else {
+                    col.iter(range, |iter| {
+                        for entry_res in iter {
+                            if send.try_send(entry_res).is_err() {
+                                return handler.join().expect("child thread panic");
+                            }
+                        }
+                        drop(send);
+
+                        handler.join().expect("child thread panic")
+                    })
+                }
             }
         }
     }

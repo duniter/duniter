@@ -98,6 +98,35 @@ impl<'db, BC: BackendCol, E: EventTrait> TxColRw<'db, BC, E> {
             range_bytes,
         ))
     }
+    #[allow(clippy::type_complexity)]
+    #[inline(always)]
+    /// Don't worry about complex iter type. Use it like an `impl Iterator<Item=KvResult<(K, V)>>`.
+    pub fn iter_rev<'tx, D, R, F>(&'tx self, range: R, f: F) -> D
+    where
+        D: Send + Sync,
+        R: 'static + RangeBounds<E::K>,
+        F: FnOnce(
+            KvIter<
+                BC,
+                CowKB<'tx, BC::KeyBytes>,
+                CowVB<'tx, BC::ValueBytes>,
+                BackendTxIter<BC>,
+                E::K,
+                E::V,
+            >,
+        ) -> D,
+    {
+        let range_bytes = crate::iter::convert_range::<E::K, R>(range);
+        let backend_iter = self
+            .col_reader
+            .backend_col
+            .iter::<E::K, E::V>(range_bytes.clone());
+        f(KvIter::new(
+            BackendTxIter::new(backend_iter, &self.batch.tree),
+            range_bytes,
+        )
+        .reverse())
+    }
 }
 
 pub trait DbTxCollectionRw {

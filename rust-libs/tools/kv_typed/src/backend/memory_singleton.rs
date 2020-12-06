@@ -155,6 +155,10 @@ impl BackendCol for MemCol {
         MemIter(self.0.clone())
     }
     #[inline(always)]
+    fn iter_rev<K: Key, V: Value>(&self, _: RangeBytes) -> Self::Iter {
+        MemIter(self.0.clone())
+    }
+    #[inline(always)]
     fn save(&self) -> KvResult<()> {
         Ok(())
     }

@@ -90,8 +90,8 @@ fn test_db<B: Backend>(db: &TestV1Db<B>) -> KvResult<()> {
         Ok::<(), KvError>(())
     })?;
 
-    db.col1().iter(.., |it| {
-        let mut iter = it.values().reverse();
+    db.col1().iter_rev(.., |it| {
+        let mut iter = it.values();
 
         assert_eq!(iter.next_res()?, Some("tutu".to_owned()));
         assert_eq!(iter.next_res()?, Some("toto".to_owned()));
@@ -101,8 +101,8 @@ fn test_db<B: Backend>(db: &TestV1Db<B>) -> KvResult<()> {
 
     db.col1_write().upsert(7, "titi".to_owned())?;
 
-    db.col1().iter(.., |it| {
-        let mut iter = it.values().reverse().step_by(2);
+    db.col1().iter_rev(.., |it| {
+        let mut iter = it.values().step_by(2);
 
         assert_eq!(iter.next_res()?, Some("titi".to_owned()));
         assert_eq!(iter.next_res()?, Some("toto".to_owned()));
@@ -169,7 +169,7 @@ fn test_db<B: Backend>(db: &TestV1Db<B>) -> KvResult<()> {
                 vec![4, 42]
             );
             assert_eq!(
-                c3.iter(.., |it| it.reverse().keys().collect::<KvResult<Vec<_>>>())?,
+                c3.iter_rev(.., |it| it.keys().collect::<KvResult<Vec<_>>>())?,
                 vec![42, 4]
             );
             c3.upsert(8, vec![11, 12, 13]);
@@ -178,8 +178,8 @@ fn test_db<B: Backend>(db: &TestV1Db<B>) -> KvResult<()> {
                 c3.iter(.., |it| it.keys().collect::<KvResult<Vec<_>>>())?,
                 vec![8, 42]
             );
-            c3.iter(.., |it| {
-                let iter = it.reverse().keys();
+            c3.iter_rev(.., |it| {
+                let iter = it.keys();
                 r2.recv().expect("disconnected");
                 assert_eq!(iter.collect::<KvResult<Vec<_>>>()?, vec![42, 8]);
 

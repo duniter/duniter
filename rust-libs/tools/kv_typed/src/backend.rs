@@ -58,6 +58,7 @@ pub trait BackendCol: 'static + Clone + Debug + Send + Sync {
     fn contains_key<K: Key>(&self, k: &K) -> KvResult<bool>;
     fn count(&self) -> KvResult<usize>;
     fn iter<K: Key, V: Value>(&self, range: RangeBytes) -> Self::Iter;
+    fn iter_rev<K: Key, V: Value>(&self, range: RangeBytes) -> Self::Iter;
     fn put<K: Key, V: Value>(&mut self, k: &K, value: &V) -> KvResult<()>;
     fn delete<K: Key>(&mut self, k: &K) -> KvResult<()>;
     fn new_batch() -> Self::Batch;

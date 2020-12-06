@@ -210,6 +210,10 @@ impl BackendCol for LevelDbCol {
         LevelDbIter(self.0.iter(ReadOptions::new()))
     }
     #[inline(always)]
+    fn iter_rev<K: Key, V: Value>(&self, _range: RangeBytes) -> Self::Iter {
+        LevelDbIter(self.0.iter(ReadOptions::new()).reverse())
+    }
+    #[inline(always)]
     fn save(&self) -> KvResult<()> {
         Ok(())
     }

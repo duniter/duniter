@@ -13,9 +13,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod bc_v1;
-pub mod bc_v2;
-pub mod cm_v1;
-pub mod dunp_v1;
-pub mod gva_v1;
-pub mod txs_mp_v2;
+use crate::*;
+
+db_schema!(
+    DunpV1,
+    [["peers_old", PeersOld, PubKeyKeyV2, PeerCardDbV1],]
+);

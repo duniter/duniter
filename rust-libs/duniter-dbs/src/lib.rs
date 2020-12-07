@@ -55,6 +55,7 @@ pub use crate::keys::utxo_id::UtxoIdDbV2;
 pub use keys::all::AllKeyV1;
 pub use keys::block_number::BlockNumberKeyV1;
 pub use keys::blockstamp::BlockstampKeyV1;
+pub use keys::dunp_node_id::DunpNodeIdV1Db;
 pub use keys::hash::{HashKeyV1, HashKeyV2};
 pub use keys::pubkey::{PubKeyKeyV1, PubKeyKeyV2};
 pub use keys::pubkey_and_sig::PubKeyAndSigV1;
@@ -69,6 +70,7 @@ pub use values::block_head_db::BlockHeadDbV1;
 pub use values::block_meta::BlockMetaV2;
 pub use values::block_number_array_db::BlockNumberArrayV1;
 pub use values::cindex_db::CIndexDbV1;
+pub use values::dunp_head::DunpHeadDbV1;
 pub use values::gva_idty_db::GvaIdtyDbV1;
 pub use values::idty_db::IdtyDbV2;
 pub use values::iindex_db::IIndexDbV1;
@@ -115,7 +117,8 @@ pub type FileBackend = kv_typed::backend::memory::Mem;
 #[derive(Clone, Debug)]
 pub struct DuniterDbs<B: Backend> {
     pub bc_db_ro: databases::bc_v2::BcV2DbRo<B>,
-    pub cm_db: databases::cm_v1::CmV1Db<MemSingleton>,
+    pub cm_db: databases::cm_v1::CmV1Db<Mem>,
+    pub dunp_db: databases::dunp_v1::DunpV1Db<B>,
     pub gva_db: databases::gva_v1::GvaV1Db<B>,
     pub txs_mp_db: databases::txs_mp_v2::TxsMpV2Db<B>,
 }
@@ -124,11 +127,13 @@ impl DuniterDbs<Mem> {
     pub fn mem() -> KvResult<Self> {
         use databases::bc_v2::BcV2DbWritable as _;
         use databases::cm_v1::CmV1DbWritable as _;
+        use databases::dunp_v1::DunpV1DbWritable as _;
         use databases::gva_v1::GvaV1DbWritable as _;
         use databases::txs_mp_v2::TxsMpV2DbWritable as _;
         Ok(DuniterDbs {
             bc_db_ro: databases::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?.get_ro_handler(),
-            cm_db: databases::cm_v1::CmV1Db::<MemSingleton>::open(MemSingletonConf::default())?,
+            cm_db: databases::cm_v1::CmV1Db::<Mem>::open(MemConf::default())?,
+            dunp_db: databases::dunp_v1::DunpV1Db::<Mem>::open(MemConf::default())?,
             gva_db: databases::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?,
             txs_mp_db: databases::txs_mp_v2::TxsMpV2Db::<Mem>::open(MemConf::default())?,
         })

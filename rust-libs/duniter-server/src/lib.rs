@@ -23,7 +23,7 @@
 )]
 
 pub use duniter_conf::DuniterConf;
-pub use duniter_dbs::smallvec;
+pub use duniter_dbs::{kv_typed::prelude::KvResult, smallvec, DunpHeadDbV1, DunpNodeIdV1Db};
 pub use duniter_gva::{GvaConf, GvaModule, PeerCardStringified};
 
 use anyhow::Context;
@@ -41,7 +41,7 @@ use duniter_dbs::{
         txs_mp_v2::TxsMpV2DbReadable,
     },
     kv_typed::prelude::*,
-    HashKeyV2, PendingTxDbV2,
+    HashKeyV2, PendingTxDbV2, PubKeyKeyV2,
 };
 use duniter_dbs::{prelude::*, BlockMetaV2, FileBackend};
 use duniter_gva_dbs_reader::txs_history::TxsHistory;
@@ -250,7 +250,52 @@ impl DuniterServer {
             .execute(move |dbs| txs_mempool.add_pending_tx_force(&dbs.txs_mp_db, &tx))
             .expect("dbs pool disconnected")
     }
-
+    pub fn apply_block(&mut self, block: DubpBlockV10Stringified) -> KvResult<()> {
+        let block = Arc::new(
+            DubpBlockV10::from_string_object(&block)
+                .map_err(|e| KvError::DeserError(format!("{}", e)))?,
+        );
+        self.current = Some(duniter_dbs_write_ops::apply_block::apply_block(
+            &self.bc_db,
+            block.clone(),
+            self.current,
+            &self.dbs_pool,
+            false,
+        )?);
+        apply_block_modules(block, &self.conf, &self.dbs_pool, None)
+    }
+    pub fn apply_chunk_of_blocks(&mut self, blocks: Vec<DubpBlockV10Stringified>) -> KvResult<()> {
+        log::debug!("apply_chunk(#{})", blocks[0].number);
+        let blocks = Arc::from(
+            blocks
+                .into_iter()
+                .map(|block| DubpBlockV10::from_string_object(&block))
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|e| KvError::DeserError(format!("{}", e)))?,
+        );
+        self.current = Some(duniter_dbs_write_ops::apply_block::apply_chunk(
+            &self.bc_db,
+            self.current,
+            &self.dbs_pool,
+            blocks.clone(),
+        )?);
+        apply_chunk_of_blocks_modules(blocks, &self.conf, &self.dbs_pool, None)
+    }
+    pub fn receive_new_heads(
+        &self,
+        heads: Vec<(duniter_dbs::DunpNodeIdV1Db, duniter_dbs::DunpHeadDbV1)>,
+    ) -> KvResult<()> {
+        self.dbs_pool
+            .execute(move |dbs| {
+                for (dunp_node_id, dunp_head) in heads {
+                    dbs.cm_db
+                        .dunp_heads_old_write()
+                        .upsert(dunp_node_id, dunp_head)?
+                }
+                Ok::<(), KvError>(())
+            })
+            .expect("dbs pool disconnected")
+    }
     pub fn remove_all_pending_txs(&self) -> KvResult<()> {
         self.dbs_pool
             .execute(move |dbs| {
@@ -284,36 +329,39 @@ impl DuniterServer {
         txs_mp_job_handle.join().expect("dbs pool disconnected")?;
         revert_block_modules(block, &self.conf, &self.dbs_pool, None)
     }
-    pub fn apply_block(&mut self, block: DubpBlockV10Stringified) -> KvResult<()> {
-        let block = Arc::new(
-            DubpBlockV10::from_string_object(&block)
-                .map_err(|e| KvError::DeserError(format!("{}", e)))?,
-        );
-        self.current = Some(duniter_dbs_write_ops::apply_block::apply_block(
-            &self.bc_db,
-            block.clone(),
-            self.current,
-            &self.dbs_pool,
-            false,
-        )?);
-        apply_block_modules(block, &self.conf, &self.dbs_pool, None)
+    pub fn remove_all_peers(&self) -> KvResult<()> {
+        use duniter_dbs::databases::dunp_v1::DunpV1DbWritable as _;
+        self.dbs_pool
+            .execute(move |dbs| dbs.dunp_db.peers_old_write().clear())
+            .expect("dbs pool disconnected")
     }
-    pub fn apply_chunk_of_blocks(&mut self, blocks: Vec<DubpBlockV10Stringified>) -> KvResult<()> {
-        log::debug!("apply_chunk(#{})", blocks[0].number);
-        let blocks = Arc::from(
-            blocks
-                .into_iter()
-                .map(|block| DubpBlockV10::from_string_object(&block))
-                .collect::<Result<Vec<_>, _>>()
-                .map_err(|e| KvError::DeserError(format!("{}", e)))?,
-        );
-        self.current = Some(duniter_dbs_write_ops::apply_block::apply_chunk(
-            &self.bc_db,
-            self.current,
-            &self.dbs_pool,
-            blocks.clone(),
-        )?);
-        apply_chunk_of_blocks_modules(blocks, &self.conf, &self.dbs_pool, None)
+    pub fn remove_peer_by_pubkey(&self, pubkey: PublicKey) -> KvResult<()> {
+        use duniter_dbs::databases::dunp_v1::DunpV1DbWritable as _;
+        self.dbs_pool
+            .execute(move |dbs| dbs.dunp_db.peers_old_write().remove(PubKeyKeyV2(pubkey)))
+            .expect("dbs pool disconnected")
+    }
+    pub fn save_peer(&self, new_peer_card: PeerCardStringified) -> anyhow::Result<()> {
+        use dubp::crypto::keys::PublicKey as _;
+        let pubkey = PublicKey::from_base58(&new_peer_card.pubkey)?;
+        use duniter_dbs::databases::dunp_v1::DunpV1DbWritable as _;
+        self.dbs_pool
+            .execute(move |dbs| {
+                dbs.dunp_db.peers_old_write().upsert(
+                    PubKeyKeyV2(pubkey),
+                    duniter_dbs::PeerCardDbV1 {
+                        version: new_peer_card.version,
+                        currency: new_peer_card.currency,
+                        pubkey: new_peer_card.pubkey,
+                        blockstamp: new_peer_card.blockstamp,
+                        endpoints: new_peer_card.endpoints,
+                        status: new_peer_card.status,
+                        signature: new_peer_card.signature,
+                    },
+                )
+            })
+            .expect("dbs pool disconnected")
+            .map_err(|e| e.into())
     }
     pub fn trim_expired_non_written_txs(&self, limit_time: i64) -> KvResult<()> {
         self.dbs_pool

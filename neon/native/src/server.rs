@@ -82,22 +82,50 @@ declare_types! {
                 }.map(|server| RustServer { server })
             )
         }
-        method acceptNewTx(mut cx) {
-            let tx_js = cx.argument::<JsValue>(0)?;
-            let server_pubkey_str = cx.argument::<JsString>(1)?.value();
 
-            let tx_str: TransactionDocumentV10Stringified = neon_serde::from_value(&mut cx, tx_js)?;
-            let tx = into_neon_res(&mut cx, TransactionDocumentV10::from_string_object(&tx_str))?;
-            let server_pubkey = into_neon_res(&mut cx, PublicKey::from_base58(&server_pubkey_str))?;
+        // Indexing blockchain
+        method revertBlock(mut cx) {
+            let block_js = cx.argument::<JsValue>(0)?;
 
-            let this = cx.this();
+            let block_stringified: dubp::block::DubpBlockV10Stringified = neon_serde::from_value(&mut cx, block_js)?;
+
+            let mut this = cx.this();
             let res = {
                 let guard = cx.lock();
-                let server = this.borrow(&guard);
-                server.server.accept_new_tx(tx, server_pubkey)
-            }.map(|accepted| cx.boolean(accepted).upcast());
+                let mut server = this.borrow_mut(&guard);
+                server.server.revert_block(block_stringified)
+            }.map(|()| cx.undefined().upcast());
             into_neon_res(&mut cx, res)
         }
+        method applyBlock(mut cx) {
+            let block_js = cx.argument::<JsValue>(0)?;
+
+            let block_stringified: dubp::block::DubpBlockV10Stringified = neon_serde::from_value(&mut cx, block_js)?;
+
+            let mut this = cx.this();
+            let res = {
+                let guard = cx.lock();
+                let mut server = this.borrow_mut(&guard);
+                server.server.apply_block(block_stringified)
+            }.map(|()| cx.undefined().upcast());
+            into_neon_res(&mut cx, res)
+        }
+        method applyChunkOfBlocks(mut cx) {
+            let blocks_js = cx.argument::<JsValue>(0)?;
+
+            let blocks_stringified: Vec<dubp::block::DubpBlockV10Stringified> = neon_serde::from_value(&mut cx, blocks_js)?;
+
+            let mut this = cx.this();
+            let res = {
+                let guard = cx.lock();
+                let mut server = this.borrow_mut(&guard);
+                server.server.apply_chunk_of_blocks(blocks_stringified)
+            }.map(|()| cx.undefined().upcast());
+            into_neon_res(&mut cx, res)
+        }
+
+
+        // Rust Endpoints (GVA, etc)
         method getSelfEndpoints(mut cx) {
             let this = cx.this();
             let res = {
@@ -114,54 +142,46 @@ declare_types! {
             });
             into_neon_res(&mut cx, res)
         }
-        method getTxByHash(mut cx) {
-            let hash_str = cx.argument::<JsString>(0)?.value();
-            let hash = into_neon_res(&mut cx, Hash::from_hex(&hash_str))?;
+
+
+        // Txs mempool
+        method acceptNewTx(mut cx) {
+            let tx_js = cx.argument::<JsValue>(0)?;
+            let server_pubkey_str = cx.argument::<JsString>(1)?.value();
+
+            let tx_str: TransactionDocumentV10Stringified = neon_serde::from_value(&mut cx, tx_js)?;
+            let tx = into_neon_res(&mut cx, TransactionDocumentV10::from_string_object(&tx_str))?;
+            let server_pubkey = into_neon_res(&mut cx, PublicKey::from_base58(&server_pubkey_str))?;
 
             let this = cx.this();
             let res = {
                 let guard = cx.lock();
                 let server = this.borrow(&guard);
-                server.server.get_tx_by_hash(hash)
-            };
-            match res {
-                Ok(tx_opt) => if let Some((tx, written_block_opt)) = tx_opt {
-                    let tx_js = neon_serde::to_value(&mut cx, &tx.to_string_object())?;
-                    if let Some(written_block) = written_block_opt {
-                        let written_block =  cx.number(written_block.0);
-                        let tx_js = tx_js.downcast_or_throw::<JsObject, _>(&mut cx)?;
-                        tx_js.set(&mut cx, "writtenBlock", written_block)?;
-                    }
-                    Ok(tx_js.upcast())
-                } else {
-                    Ok(cx.null().upcast())
-                },
-                Err(e) => cx.throw_error(format!("{}", e)),
-            }
-        }
-        method removePendingTxByHash(mut cx) {
-            let hash_str = cx.argument::<JsString>(0)?.value();
-            let hash = into_neon_res(&mut cx, Hash::from_hex(&hash_str))?;
-
-            let this = cx.this();
-            let res = {
-                let guard = cx.lock();
-                let server = this.borrow(&guard);
-                server.server.remove_pending_tx_by_hash(hash)
-            }.map(|()| cx.undefined().upcast());
+                server.server.accept_new_tx(tx, server_pubkey)
+            }.map(|accepted| cx.boolean(accepted).upcast());
             into_neon_res(&mut cx, res)
         }
-        method revertBlock(mut cx) {
-            let block_js = cx.argument::<JsValue>(0)?;
+        method addPendingTx(mut cx) {
+            let tx_js = cx.argument::<JsValue>(0)?;
 
-            let block_stringified: dubp::block::DubpBlockV10Stringified = neon_serde::from_value(&mut cx, block_js)?;
+            let tx_str: TransactionDocumentV10Stringified = neon_serde::from_value(&mut cx, tx_js)?;
+            let tx = into_neon_res(&mut cx, TransactionDocumentV10::from_string_object(&tx_str))?;
 
-            let mut this = cx.this();
+            let this = cx.this();
             let res = {
                 let guard = cx.lock();
-                let mut server = this.borrow_mut(&guard);
-                server.server.revert_block(block_stringified)
-            }.map(|()| cx.undefined().upcast());
+                let server = this.borrow(&guard);
+                server.server.add_pending_tx_force(tx)
+            }.map(|_| cx.undefined().upcast());
+            into_neon_res(&mut cx, res)
+        }
+        method getMempoolTxsFreeRooms(mut cx) {
+            let this = cx.this();
+            let res = {
+                let guard = cx.lock();
+                let server = this.borrow(&guard);
+                server.server.get_mempool_txs_free_rooms()
+            }.map(|free_rooms| cx.number(free_rooms as f64).upcast());
             into_neon_res(&mut cx, res)
         }
         method getNewPendingTxs(mut cx) {
@@ -197,6 +217,27 @@ declare_types! {
                 Err(e) => cx.throw_error(format!("{}", e)),
             }
         }
+        method removeAllPendingTxs(mut cx) {
+            let this = cx.this();
+            let res = {
+                let guard = cx.lock();
+                let server = this.borrow(&guard);
+                server.server.remove_all_pending_txs()
+            }.map(|()| cx.undefined().upcast());
+            into_neon_res(&mut cx, res)
+        }
+        method removePendingTxByHash(mut cx) {
+            let hash_str = cx.argument::<JsString>(0)?.value();
+            let hash = into_neon_res(&mut cx, Hash::from_hex(&hash_str))?;
+
+            let this = cx.this();
+            let res = {
+                let guard = cx.lock();
+                let server = this.borrow(&guard);
+                server.server.remove_pending_tx_by_hash(hash)
+            }.map(|()| cx.undefined().upcast());
+            into_neon_res(&mut cx, res)
+        }
         method trimExpiredNonWrittenTxs(mut cx) {
             let limit_time = cx.argument::<JsNumber>(0)?.value() as i64;
 
@@ -208,46 +249,8 @@ declare_types! {
             }.map(|()| cx.undefined().upcast());
             into_neon_res(&mut cx, res)
         }
-        method applyBlock(mut cx) {
-            let block_js = cx.argument::<JsValue>(0)?;
 
-            let block_stringified: dubp::block::DubpBlockV10Stringified = neon_serde::from_value(&mut cx, block_js)?;
-
-            let mut this = cx.this();
-            let res = {
-                let guard = cx.lock();
-                let mut server = this.borrow_mut(&guard);
-                server.server.apply_block(block_stringified)
-            }.map(|()| cx.undefined().upcast());
-            into_neon_res(&mut cx, res)
-        }
-        method applyChunkOfBlocks(mut cx) {
-            let blocks_js = cx.argument::<JsValue>(0)?;
-
-            let blocks_stringified: Vec<dubp::block::DubpBlockV10Stringified> = neon_serde::from_value(&mut cx, blocks_js)?;
-
-            let mut this = cx.this();
-            let res = {
-                let guard = cx.lock();
-                let mut server = this.borrow_mut(&guard);
-                server.server.apply_chunk_of_blocks(blocks_stringified)
-            }.map(|()| cx.undefined().upcast());
-            into_neon_res(&mut cx, res)
-        }
-        method addPendingTx(mut cx) {
-            let tx_js = cx.argument::<JsValue>(0)?;
-
-            let tx_str: TransactionDocumentV10Stringified = neon_serde::from_value(&mut cx, tx_js)?;
-            let tx = into_neon_res(&mut cx, TransactionDocumentV10::from_string_object(&tx_str))?;
-
-            let this = cx.this();
-            let res = {
-                let guard = cx.lock();
-                let server = this.borrow(&guard);
-                server.server.add_pending_tx_force(tx)
-            }.map(|_| cx.undefined().upcast());
-            into_neon_res(&mut cx, res)
-        }
+        // Transactions history (for BMA only)
         method getTransactionsHistory(mut cx) {
             let pubkey_str = cx.argument::<JsString>(0)?.value();
             let pubkey = into_neon_res(&mut cx, PublicKey::from_base58(&pubkey_str))?;
@@ -281,21 +284,82 @@ declare_types! {
                 Err(e) => cx.throw_error(format!("{}", e)),
             }
         }
-        method getMempoolTxsFreeRooms(mut cx) {
+        method getTxByHash(mut cx) {
+            let hash_str = cx.argument::<JsString>(0)?.value();
+            let hash = into_neon_res(&mut cx, Hash::from_hex(&hash_str))?;
+
             let this = cx.this();
             let res = {
                 let guard = cx.lock();
                 let server = this.borrow(&guard);
-                server.server.get_mempool_txs_free_rooms()
-            }.map(|free_rooms| cx.number(free_rooms as f64).upcast());
+                server.server.get_tx_by_hash(hash)
+            };
+            match res {
+                Ok(tx_opt) => if let Some((tx, written_block_opt)) = tx_opt {
+                    let tx_js = neon_serde::to_value(&mut cx, &tx.to_string_object())?;
+                    if let Some(written_block) = written_block_opt {
+                        let written_block =  cx.number(written_block.0);
+                        let tx_js = tx_js.downcast_or_throw::<JsObject, _>(&mut cx)?;
+                        tx_js.set(&mut cx, "writtenBlock", written_block)?;
+                    }
+                    Ok(tx_js.upcast())
+                } else {
+                    Ok(cx.null().upcast())
+                },
+                Err(e) => cx.throw_error(format!("{}", e)),
+            }
+        }
+
+        // WS2Pv1: HEADs and peers
+        method receiveNewHeads(mut cx) {
+            let heads_js = cx.argument::<JsValue>(0)?;
+
+            let heads_stringified: Vec<HeadWS2Pv1ConfStringified> = neon_serde::from_value(&mut cx, heads_js)?;
+
+            use duniter_server::{DunpNodeIdV1Db, DunpHeadDbV1, KvResult};
+            let heads = into_neon_res(&mut cx, heads_stringified.into_iter().map(|HeadWS2Pv1ConfStringified { message_v2, sig_v2, .. }| {
+                DunpHeadDbV1::from_stringified(&message_v2.unwrap_or_default(), &sig_v2.unwrap_or_default())
+            }).collect::<KvResult<Vec<(DunpNodeIdV1Db, DunpHeadDbV1)>>>())?;
+
+            let this = cx.this();
+            let res = {
+                let guard = cx.lock();
+                let server = this.borrow(&guard);
+                server.server.receive_new_heads(heads)
+            }.map(|()| cx.undefined().upcast());
             into_neon_res(&mut cx, res)
         }
-        method removeAllPendingTxs(mut cx) {
+        method removeAllPeers(mut cx) {
             let this = cx.this();
             let res = {
                 let guard = cx.lock();
                 let server = this.borrow(&guard);
-                server.server.remove_all_pending_txs()
+                server.server.remove_all_peers()
+            }.map(|()| cx.undefined().upcast());
+            into_neon_res(&mut cx, res)
+        }
+        method removePeerByPubkey(mut cx) {
+            let pubkey_str = cx.argument::<JsString>(0)?.value();
+            let pubkey = into_neon_res(&mut cx, PublicKey::from_base58(&pubkey_str))?;
+
+            let this = cx.this();
+            let res = {
+                let guard = cx.lock();
+                let server = this.borrow(&guard);
+                server.server.remove_peer_by_pubkey(pubkey)
+            }.map(|()| cx.undefined().upcast());
+            into_neon_res(&mut cx, res)
+        }
+        method savePeer(mut cx) {
+            let peer_js = cx.argument::<JsValue>(0)?;
+
+            let peer_stringified: PeerCardStringified = neon_serde::from_value(&mut cx, peer_js)?;
+
+            let this = cx.this();
+            let res = {
+                let guard = cx.lock();
+                let server = this.borrow(&guard);
+                server.server.save_peer(peer_stringified)
             }.map(|()| cx.undefined().upcast());
             into_neon_res(&mut cx, res)
         }
@@ -313,24 +377,6 @@ declare_types! {
             Ok(cx.undefined().upcast())
         }
     }
-}
-
-#[derive(Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RustServerConfStringified {
-    command_name: Option<String>,
-    currency: String,
-    gva: Option<GvaConf>,
-    self_keypair: Option<String>,
-    txs_mempool_size: u32,
-}
-
-#[derive(Deserialize, Serialize)]
-struct TxsHistoryStringified {
-    sent: Vec<DbTx>,
-    received: Vec<DbTx>,
-    sending: Vec<TransactionDocumentV10Stringified>,
-    pending: Vec<TransactionDocumentV10Stringified>,
 }
 
 #[derive(Clone, Debug, Deserialize, Hash, Serialize, PartialEq, Eq)]
@@ -374,4 +420,30 @@ impl DbTx {
             written_time,
         }
     }
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct HeadWS2Pv1ConfStringified {
+    message_v2: Option<String>,
+    sig_v2: Option<String>,
+    step: Option<usize>,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RustServerConfStringified {
+    command_name: Option<String>,
+    currency: String,
+    gva: Option<GvaConf>,
+    self_keypair: Option<String>,
+    txs_mempool_size: u32,
+}
+
+#[derive(Deserialize, Serialize)]
+struct TxsHistoryStringified {
+    sent: Vec<DbTx>,
+    received: Vec<DbTx>,
+    sending: Vec<TransactionDocumentV10Stringified>,
+    pending: Vec<TransactionDocumentV10Stringified>,
 }

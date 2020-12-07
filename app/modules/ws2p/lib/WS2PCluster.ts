@@ -25,7 +25,7 @@ import { PeerDTO, WS2PEndpoint } from "../../../lib/dto/PeerDTO";
 import { GlobalFifoPromise } from "../../../service/GlobalFifoPromise";
 import { OtherConstants } from "../../../lib/other_constants";
 import { Key } from "../../../lib/common-libs/crypto/keyring";
-import { verify } from "../../../../neon/lib";
+import { RustServer, verify } from "../../../../neon/lib";
 import { WS2PServerMessageHandler } from "./interface/WS2PServerMessageHandler";
 import { WS2PMessageHandler } from "./impl/WS2PMessageHandler";
 import { CommonConstants } from "../../../lib/common-libs/constants";
@@ -237,6 +237,9 @@ export class WS2PCluster {
         await this.spreadNewHeads(heads);
       }
     }, WS2PConstants.HEADS_SPREAD_TIMEOUT);
+
+    // Send HEADs to rust server
+    this.server.dal.rustServer.receiveNewHeads(this.newHeads);
 
     this.server.push({
       ws2p: "heads",

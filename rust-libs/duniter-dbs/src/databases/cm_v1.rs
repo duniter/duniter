@@ -18,7 +18,7 @@ use crate::*;
 db_schema!(
     CmV1,
     [
-        //["self_pubkey", self_pubkey, (), PubKeyValV2,],
         ["self_peer_old", SelfPeerOld, (), PeerCardDbV1],
+        ["dunp_heads_old", DunpHeadsOld, DunpNodeIdV1Db, DunpHeadDbV1],
     ]
 );

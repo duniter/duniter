@@ -13,25 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#![deny(
-    clippy::unwrap_used,
-    missing_copy_implementations,
-    trivial_casts,
-    trivial_numeric_casts,
-    unstable_features,
-    unused_import_braces
-)]
-
-use dubp::crypto::hashs::Hash;
-use duniter_dbs::{databases::bc_v2::BcV2DbReadable, HashKeyV2};
-use duniter_dbs::{kv_typed::prelude::*, BlockMetaV2};
-
-pub fn get_current_block_meta<BcDb: BcV2DbReadable>(bc_db: &BcDb) -> KvResult<Option<BlockMetaV2>> {
-    bc_db
-        .blocks_meta()
-        .iter_rev(.., |it| it.values().next_res())
-}
-
-pub fn tx_exist<BcDb: BcV2DbReadable>(bc_db_ro: &BcDb, hash: Hash) -> KvResult<bool> {
-    Ok(bc_db_ro.txs_hashs().contains_key(&HashKeyV2(hash))?)
-}
+pub mod bc_v1;
+pub mod bc_v2;
+pub mod cm_v1;
+pub mod gva_v1;
+pub mod txs_mp_v2;

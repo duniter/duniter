@@ -28,7 +28,10 @@ use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::documents::prelude::*;
 use dubp::documents::transaction::TransactionDocumentV10;
 use duniter_dbs::kv_typed::prelude::*;
-use duniter_dbs::{bc_v2::BcV2DbReadable, TxsMpV2Db, TxsMpV2DbReadable};
+use duniter_dbs::{
+    databases::bc_v2::BcV2DbReadable,
+    databases::txs_mp_v2::{TxsMpV2Db, TxsMpV2DbReadable},
+};
 use thiserror::Error;
 
 #[derive(Clone, Copy, Debug, Default)]

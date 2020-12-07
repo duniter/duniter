@@ -22,13 +22,9 @@
     unused_import_braces
 )]
 
-mod bc_v1;
-pub mod bc_v2;
-pub mod cm_v1;
-pub mod gva_v1;
+pub mod databases;
 mod keys;
 mod open_dbs;
-pub mod txs_mp_v2;
 mod values;
 
 // Re-export dependencies
@@ -56,8 +52,6 @@ pub use crate::open_dbs::open_dbs;
 
 // Export profession types
 pub use crate::keys::utxo_id::UtxoIdDbV2;
-pub use bc_v1::{BcV1Db, BcV1DbReadable, BcV1DbRo, BcV1DbWritable, MainBlocksEvent, UidsEvent};
-pub use gva_v1::{GvaV1Db, GvaV1DbReadable, GvaV1DbRo, GvaV1DbWritable};
 pub use keys::all::AllKeyV1;
 pub use keys::block_number::BlockNumberKeyV1;
 pub use keys::blockstamp::BlockstampKeyV1;
@@ -70,7 +64,6 @@ pub use keys::ud_id::UdIdV2;
 pub use keys::uid::UidKeyV1;
 pub use keys::utxo_id::GvaUtxoIdDbV1;
 pub use keys::wallet_conditions::{WalletConditionsV1, WalletConditionsV2};
-pub use txs_mp_v2::{TxsMpV2Db, TxsMpV2DbReadable, TxsMpV2DbRo, TxsMpV2DbWritable};
 pub use values::block_db::{BlockDbEnum, BlockDbV1, TransactionInBlockDbV1};
 pub use values::block_head_db::BlockHeadDbV1;
 pub use values::block_meta::BlockMetaV2;
@@ -121,21 +114,23 @@ pub type FileBackend = kv_typed::backend::memory::Mem;
 
 #[derive(Clone, Debug)]
 pub struct DuniterDbs<B: Backend> {
-    pub bc_db_ro: bc_v2::BcV2DbRo<B>,
-    pub cm_db: cm_v1::CmV1Db<MemSingleton>,
-    pub gva_db: GvaV1Db<B>,
-    pub txs_mp_db: TxsMpV2Db<B>,
+    pub bc_db_ro: databases::bc_v2::BcV2DbRo<B>,
+    pub cm_db: databases::cm_v1::CmV1Db<MemSingleton>,
+    pub gva_db: databases::gva_v1::GvaV1Db<B>,
+    pub txs_mp_db: databases::txs_mp_v2::TxsMpV2Db<B>,
 }
 
 impl DuniterDbs<Mem> {
     pub fn mem() -> KvResult<Self> {
-        use bc_v2::BcV2DbWritable as _;
-        use cm_v1::CmV1DbWritable as _;
+        use databases::bc_v2::BcV2DbWritable as _;
+        use databases::cm_v1::CmV1DbWritable as _;
+        use databases::gva_v1::GvaV1DbWritable as _;
+        use databases::txs_mp_v2::TxsMpV2DbWritable as _;
         Ok(DuniterDbs {
-            bc_db_ro: bc_v2::BcV2Db::<Mem>::open(MemConf::default())?.get_ro_handler(),
-            cm_db: cm_v1::CmV1Db::<MemSingleton>::open(MemSingletonConf::default())?,
-            gva_db: GvaV1Db::<Mem>::open(MemConf::default())?,
-            txs_mp_db: TxsMpV2Db::<Mem>::open(MemConf::default())?,
+            bc_db_ro: databases::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?.get_ro_handler(),
+            cm_db: databases::cm_v1::CmV1Db::<MemSingleton>::open(MemSingletonConf::default())?,
+            gva_db: databases::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?,
+            txs_mp_db: databases::txs_mp_v2::TxsMpV2Db::<Mem>::open(MemConf::default())?,
         })
     }
 }

@@ -15,7 +15,7 @@
 
 use crate::*;
 use async_graphql::connection::*;
-use duniter_dbs::GvaV1DbReadable;
+use duniter_dbs::databases::gva_v1::GvaV1DbReadable;
 use duniter_gva_dbs_reader::{
     utxos::{UtxoCursor, UtxosWithSum},
     PagedData,

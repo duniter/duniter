@@ -15,7 +15,7 @@
 
 use crate::*;
 use async_graphql::connection::*;
-use duniter_dbs::bc_v2::BcV2DbReadable;
+use duniter_dbs::databases::bc_v2::BcV2DbReadable;
 use duniter_gva_dbs_reader::{uds_of_pubkey::UdsWithSum, PagedData};
 
 #[derive(Default)]
@@ -160,7 +160,7 @@ mod tests {
     #[tokio::test]
     async fn query_current_ud() -> anyhow::Result<()> {
         let mut dbs_reader = MockDbsReader::new();
-        use duniter_dbs::bc_v2::BcV2DbRo;
+        use duniter_dbs::databases::bc_v2::BcV2DbRo;
         dbs_reader
             .expect_get_current_ud::<BcV2DbRo<FileBackend>>()
             .times(1)

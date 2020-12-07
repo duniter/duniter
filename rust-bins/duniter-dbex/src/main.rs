@@ -31,15 +31,18 @@ use self::cli::{Database, Opt, OutputFormat, SubCommand};
 use self::stringify_json_value::stringify_json_value;
 use anyhow::anyhow;
 use comfy_table::Table;
-use duniter_dbs::bc_v2::{BcV2Db, BcV2DbWritable};
+use duniter_dbs::databases::bc_v2::{BcV2Db, BcV2DbWritable};
+use duniter_dbs::databases::{
+    bc_v1::{BcV1Db, BcV1DbWritable},
+    gva_v1::{GvaV1Db, GvaV1DbWritable},
+    txs_mp_v2::{TxsMpV2Db, TxsMpV2DbWritable},
+};
 use duniter_dbs::kv_typed::backend::sled;
 use duniter_dbs::kv_typed::prelude::*;
 use duniter_dbs::prelude::*;
 use duniter_dbs::regex::Regex;
 use duniter_dbs::serde_json::{Map, Value};
 use duniter_dbs::smallvec::{smallvec, SmallVec};
-use duniter_dbs::{BcV1Db, GvaV1Db, TxsMpV2Db};
-use duniter_dbs::{BcV1DbWritable, GvaV1DbWritable, TxsMpV2DbWritable};
 use rayon::prelude::*;
 use std::{
     collections::{HashMap, HashSet},

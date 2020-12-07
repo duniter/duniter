@@ -41,7 +41,7 @@ pub fn add_pending_tx<
     B: Backend,
     F: FnOnce(
         &TransactionDocumentV10,
-        &TxColRw<B::Col, duniter_dbs::txs_mp_v2::TxsEvent>,
+        &TxColRw<B::Col, duniter_dbs::databases::txs_mp_v2::TxsEvent>,
     ) -> KvResult<()>,
 >(
     control: F,

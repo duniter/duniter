@@ -33,10 +33,15 @@ use dubp::documents::{prelude::*, transaction::TransactionDocumentV10};
 use dubp::{
     block::prelude::*, common::crypto::hashs::Hash, documents_parser::prelude::FromStringObject,
 };
-use duniter_dbs::bc_v2::BcV2Db;
-use duniter_dbs::cm_v1::{CmV1DbReadable, CmV1DbWritable};
 use duniter_dbs::{
-    kv_typed::prelude::*, GvaV1DbReadable, HashKeyV2, PendingTxDbV2, TxsMpV2DbReadable,
+    databases::{
+        bc_v2::BcV2Db,
+        cm_v1::{CmV1DbReadable, CmV1DbWritable},
+        gva_v1::GvaV1DbReadable,
+        txs_mp_v2::TxsMpV2DbReadable,
+    },
+    kv_typed::prelude::*,
+    HashKeyV2, PendingTxDbV2,
 };
 use duniter_dbs::{prelude::*, BlockMetaV2, FileBackend};
 use duniter_gva_dbs_reader::txs_history::TxsHistory;
@@ -57,7 +62,8 @@ pub struct DuniterServer {
     conf: DuniterConf,
     current: Option<BlockMetaV2>,
     dbs_pool: fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
-    pending_txs_subscriber: flume::Receiver<Arc<Events<duniter_dbs::txs_mp_v2::TxsEvent>>>,
+    pending_txs_subscriber:
+        flume::Receiver<Arc<Events<duniter_dbs::databases::txs_mp_v2::TxsEvent>>>,
     txs_mempool: TxsMempool,
 }
 
@@ -178,10 +184,10 @@ impl DuniterServer {
             use std::ops::Deref as _;
             for event in events.deref() {
                 match event {
-                    duniter_dbs::txs_mp_v2::TxsEvent::Upsert { key, value } => {
+                    duniter_dbs::databases::txs_mp_v2::TxsEvent::Upsert { key, value } => {
                         new_pending_txs.insert(key.0, value.0.clone());
                     }
-                    duniter_dbs::txs_mp_v2::TxsEvent::Remove { key } => {
+                    duniter_dbs::databases::txs_mp_v2::TxsEvent::Remove { key } => {
                         new_pending_txs.remove(&key.0);
                     }
                     _ => (),

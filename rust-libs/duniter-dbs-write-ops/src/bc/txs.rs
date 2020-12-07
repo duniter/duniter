@@ -15,7 +15,7 @@
 
 use crate::*;
 use duniter_dbs::{
-    bc_v2::{TxsHashsEvent, UdsEvent},
+    databases::bc_v2::{TxsHashsEvent, UdsEvent},
     UdIdV2,
 };
 

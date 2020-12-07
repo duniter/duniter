@@ -33,10 +33,11 @@ use dubp::documents::{
     prelude::*, transaction::TransactionDocumentTrait, transaction::TransactionDocumentV10,
 };
 use dubp::wallet::prelude::*;
-use duniter_dbs::gva_v1::*;
+use duniter_dbs::databases::gva_v1::*;
 use duniter_dbs::{
-    kv_typed::prelude::*, GvaV1Db, GvaV1DbReadable, GvaV1DbWritable, HashKeyV2, PubKeyKeyV2,
-    SourceAmountValV2, TxDbV2, WalletConditionsV2,
+    databases::gva_v1::{GvaV1Db, GvaV1DbReadable, GvaV1DbWritable},
+    kv_typed::prelude::*,
+    HashKeyV2, PubKeyKeyV2, SourceAmountValV2, TxDbV2, WalletConditionsV2,
 };
 use resiter::filter::Filter;
 use std::collections::HashMap;
@@ -214,7 +215,7 @@ mod tests {
 
     #[test]
     fn test_gva_apply_block() -> anyhow::Result<()> {
-        let gva_db = duniter_dbs::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?;
+        let gva_db = duniter_dbs::databases::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?;
 
         let s1 = WalletScriptV10::single_sig(PublicKey::from_base58(
             "D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx",

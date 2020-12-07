@@ -18,8 +18,8 @@ use dubp::common::crypto::keys::PublicKey as _;
 use dubp::common::prelude::*;
 use duniter_dbs::kv_typed::prelude::*;
 use duniter_dbs::{
-    BcV1Db, BcV1DbReadable, BcV1DbWritable, BlockDbV1, BlockNumberKeyV1, MainBlocksEvent,
-    PublicKeySingletonDbV1, UidKeyV1,
+    databases::bc_v1::{BcV1Db, BcV1DbReadable, BcV1DbWritable, MainBlocksEvent},
+    BlockDbV1, BlockNumberKeyV1, PublicKeySingletonDbV1, UidKeyV1,
 };
 use kv_typed::channel::TryRecvError;
 use std::str::FromStr;

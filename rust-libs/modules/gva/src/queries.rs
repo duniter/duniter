@@ -20,7 +20,7 @@ pub mod uds;
 pub mod utxos_of_script;
 
 use crate::*;
-use duniter_dbs::cm_v1::CmV1DbReadable as _;
+use duniter_dbs::databases::cm_v1::CmV1DbReadable as _;
 
 #[derive(async_graphql::MergedObject, Default)]
 pub struct QueryRoot(

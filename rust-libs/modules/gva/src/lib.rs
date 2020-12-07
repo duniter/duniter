@@ -57,9 +57,9 @@ use dubp::documents::prelude::*;
 use dubp::documents::transaction::{TransactionDocumentTrait, TransactionDocumentV10};
 use dubp::documents_parser::prelude::*;
 use dubp::wallet::prelude::*;
-use duniter_dbs::gva_v1::GvaV1DbRo;
+use duniter_dbs::databases::{gva_v1::GvaV1DbRo, txs_mp_v2::TxsMpV2DbReadable};
 use duniter_dbs::prelude::*;
-use duniter_dbs::{kv_typed::prelude::*, FileBackend, TxDbV2, TxsMpV2DbReadable};
+use duniter_dbs::{kv_typed::prelude::*, FileBackend, TxDbV2};
 #[cfg(not(test))]
 use duniter_gva_dbs_reader::create_dbs_reader;
 #[cfg(not(test))]
@@ -217,7 +217,7 @@ impl GvaModule {
     async fn get_gva_db_ro(
         dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs<FileBackend>>,
     ) -> &'static GvaV1DbRo<FileBackend> {
-        use duniter_dbs::gva_v1::GvaV1DbWritable as _;
+        use duniter_dbs::databases::gva_v1::GvaV1DbWritable as _;
         dbs_pool
             .execute(|dbs| GVA_DB_RO.get_or_init(|| dbs.gva_db.get_ro_handler()))
             .await
@@ -356,7 +356,7 @@ mod tests {
     use super::*;
     use dubp::documents::transaction::TransactionInputV10;
     use duniter_conf::DuniterConf;
-    use duniter_dbs::bc_v2::*;
+    use duniter_dbs::databases::bc_v2::*;
     use duniter_dbs::SourceAmountValV2;
     use duniter_gva_dbs_reader::pagination::*;
     use duniter_mempools::Mempools;

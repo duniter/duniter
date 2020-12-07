@@ -18,7 +18,7 @@ use dubp::{
     block::parser::parse_json_block_from_serde_value, block::parser::ParseJsonBlockError,
     block::prelude::DubpBlockTrait, block::DubpBlock, common::prelude::BlockNumber,
 };
-use duniter_dbs::{BcV1DbReadable, FileBackend};
+use duniter_dbs::{databases::bc_v1::BcV1DbReadable, FileBackend};
 use fast_threadpool::{ThreadPool, ThreadPoolConfig};
 use std::{ops::Deref, path::PathBuf};
 

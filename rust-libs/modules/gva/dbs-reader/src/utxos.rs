@@ -65,194 +65,241 @@ pub struct UtxosWithSum {
     pub sum: SourceAmount,
 }
 
-pub fn find_script_utxos<GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2DbReadable>(
-    gva_db_ro: &GvaDb,
-    txs_mp_db_ro: &TxsMpDb,
-    amount_target_opt: Option<SourceAmount>,
-    page_info: PageInfo<UtxoCursor>,
-    script: &WalletScriptV10,
-) -> anyhow::Result<PagedData<UtxosWithSum>> {
-    let mempool_filter = |k_res: KvResult<GvaUtxoIdDbV1>| match k_res {
-        Ok(gva_utxo_id) => {
-            match txs_mp_db_ro.utxos_ids().contains_key(&UtxoIdDbV2(
-                gva_utxo_id.get_tx_hash(),
-                gva_utxo_id.get_output_index() as u32,
-            )) {
-                Ok(false) => Some(Ok(gva_utxo_id)),
-                Ok(true) => None,
-                Err(e) => Some(Err(e)),
-            }
-        }
-        Err(e) => Some(Err(e)),
-    };
-
-    let script_hash = Hash::compute(script.to_string().as_bytes());
-    let (mut k_min, mut k_max) = GvaUtxoIdDbV1::script_interval(script_hash);
-    let first_cursor_opt = if page_info.not_all() {
-        gva_db_ro
-            .gva_utxos()
-            .iter(k_min..k_max, |it| {
-                it.keys().filter_map(mempool_filter).next_res()
-            })?
-            .map(|gva_utxo_id| UtxoCursor {
-                block_number: BlockNumber(gva_utxo_id.get_block_number()),
-                tx_hash: gva_utxo_id.get_tx_hash(),
-                output_index: gva_utxo_id.get_output_index(),
-            })
-    } else {
-        None
-    };
-    let last_cursor_opt = if page_info.not_all() {
-        gva_db_ro
-            .gva_utxos()
-            .iter(k_min..k_max, |it| {
-                it.keys().reverse().filter_map(mempool_filter).next_res()
-            })?
-            .map(|gva_utxo_id| UtxoCursor {
-                block_number: BlockNumber(gva_utxo_id.get_block_number()),
-                tx_hash: gva_utxo_id.get_tx_hash(),
-                output_index: gva_utxo_id.get_output_index(),
-            })
-    } else {
-        None
-    };
-    if let Some(ref pos) = page_info.pos {
-        if page_info.order {
-            k_min = GvaUtxoIdDbV1::new_(
-                script_hash,
-                pos.block_number.0,
-                pos.tx_hash,
-                pos.output_index,
-            );
-        } else {
-            k_max = GvaUtxoIdDbV1::new_(
-                script_hash,
-                pos.block_number.0,
-                pos.tx_hash,
-                pos.output_index,
-            );
-        }
-    }
-    let mut sum = SourceAmount::ZERO;
-
-    let utxos = gva_db_ro.gva_utxos().iter(k_min..k_max, |mut it| {
-        if !page_info.order {
-            it = it.reverse();
-        }
-        let it = it.filter_map(|entry_res| match entry_res {
-            Ok((gva_utxo_id, SourceAmountValV2(utxo_amount))) => {
-                let tx_hash = gva_utxo_id.get_tx_hash();
-                let output_index = gva_utxo_id.get_output_index();
-                match txs_mp_db_ro
-                    .utxos_ids()
-                    .contains_key(&UtxoIdDbV2(tx_hash, output_index as u32))
-                {
-                    Ok(false) => Some(Ok((
-                        UtxoCursor {
-                            tx_hash,
-                            output_index,
-                            block_number: BlockNumber(gva_utxo_id.get_block_number()),
-                        },
-                        utxo_amount,
-                    ))),
+impl DbsReader {
+    pub fn find_script_utxos<TxsMpDb: TxsMpV2DbReadable>(
+        &self,
+        txs_mp_db_ro: &TxsMpDb,
+        amount_target_opt: Option<SourceAmount>,
+        page_info: PageInfo<UtxoCursor>,
+        script: &WalletScriptV10,
+    ) -> anyhow::Result<PagedData<UtxosWithSum>> {
+        let mempool_filter = |k_res: KvResult<GvaUtxoIdDbV1>| match k_res {
+            Ok(gva_utxo_id) => {
+                match txs_mp_db_ro.utxos_ids().contains_key(&UtxoIdDbV2(
+                    gva_utxo_id.get_tx_hash(),
+                    gva_utxo_id.get_output_index() as u32,
+                )) {
+                    Ok(false) => Some(Ok(gva_utxo_id)),
                     Ok(true) => None,
                     Err(e) => Some(Err(e)),
                 }
             }
             Err(e) => Some(Err(e)),
-        });
-        if let Some(limit) = page_info.limit_opt {
-            if let Some(total_target) = amount_target_opt {
-                it.take(limit)
-                    .take_while(|res| match res {
-                        Ok((_, utxo_amount)) => {
-                            if sum < total_target {
-                                sum = sum + *utxo_amount;
-                                true
-                            } else {
-                                false
-                            }
-                        }
-                        Err(_) => true,
-                    })
-                    .collect::<KvResult<Vec<_>>>()
+        };
+
+        let script_hash = Hash::compute(script.to_string().as_bytes());
+        let (mut k_min, mut k_max) = GvaUtxoIdDbV1::script_interval(script_hash);
+        let first_cursor_opt = if page_info.not_all() {
+            self.0
+                .gva_utxos()
+                .iter(k_min..k_max, |it| {
+                    it.keys().filter_map(mempool_filter).next_res()
+                })?
+                .map(|gva_utxo_id| UtxoCursor {
+                    block_number: BlockNumber(gva_utxo_id.get_block_number()),
+                    tx_hash: gva_utxo_id.get_tx_hash(),
+                    output_index: gva_utxo_id.get_output_index(),
+                })
+        } else {
+            None
+        };
+        let last_cursor_opt = if page_info.not_all() {
+            self.0
+                .gva_utxos()
+                .iter_rev(k_min..k_max, |it| {
+                    it.keys().filter_map(mempool_filter).next_res()
+                })?
+                .map(|gva_utxo_id| UtxoCursor {
+                    block_number: BlockNumber(gva_utxo_id.get_block_number()),
+                    tx_hash: gva_utxo_id.get_tx_hash(),
+                    output_index: gva_utxo_id.get_output_index(),
+                })
+        } else {
+            None
+        };
+        if let Some(ref pos) = page_info.pos {
+            if page_info.order {
+                k_min = GvaUtxoIdDbV1::new_(
+                    script_hash,
+                    pos.block_number.0,
+                    pos.tx_hash,
+                    pos.output_index,
+                );
             } else {
-                it.take(limit).collect::<KvResult<Vec<_>>>()
+                k_max = GvaUtxoIdDbV1::new_(
+                    script_hash,
+                    pos.block_number.0,
+                    pos.tx_hash,
+                    pos.output_index,
+                );
             }
-        } else if let Some(total_target) = amount_target_opt {
-            it.take_while(|res| match res {
-                Ok((_, utxo_amount)) => {
-                    if sum < total_target {
-                        sum = sum + *utxo_amount;
-                        true
-                    } else {
-                        false
+        }
+        let UtxosWithSum { utxos, mut sum } = if page_info.order {
+            self.0.gva_utxos().iter(k_min..k_max, |it| {
+                find_script_utxos_inner(txs_mp_db_ro, amount_target_opt, page_info, it)
+            })?
+        } else {
+            self.0.gva_utxos().iter_rev(k_min..k_max, |it| {
+                find_script_utxos_inner(txs_mp_db_ro, amount_target_opt, page_info, it)
+            })?
+        };
+
+        /* let utxos = self.0.gva_utxos().iter(k_min..k_max, |mut it| {
+            if !page_info.order {
+                it = it.reverse();
+            }
+            let it = it.filter_map(|entry_res| match entry_res {
+                Ok((gva_utxo_id, SourceAmountValV2(utxo_amount))) => {
+                    let tx_hash = gva_utxo_id.get_tx_hash();
+                    let output_index = gva_utxo_id.get_output_index();
+                    match txs_mp_db_ro
+                        .utxos_ids()
+                        .contains_key(&UtxoIdDbV2(tx_hash, output_index as u32))
+                    {
+                        Ok(false) => Some(Ok((
+                            UtxoCursor {
+                                tx_hash,
+                                output_index,
+                                block_number: BlockNumber(gva_utxo_id.get_block_number()),
+                            },
+                            utxo_amount,
+                        ))),
+                        Ok(true) => None,
+                        Err(e) => Some(Err(e)),
                     }
                 }
-                Err(_) => true,
-            })
-            .collect::<KvResult<Vec<_>>>()
-        } else {
-            it.collect::<KvResult<Vec<_>>>()
+                Err(e) => Some(Err(e)),
+            });
+            if let Some(limit) = page_info.limit_opt {
+                if let Some(total_target) = amount_target_opt {
+                    it.take(limit)
+                        .take_while(|res| match res {
+                            Ok((_, utxo_amount)) => {
+                                if sum < total_target {
+                                    sum = sum + *utxo_amount;
+                                    true
+                                } else {
+                                    false
+                                }
+                            }
+                            Err(_) => true,
+                        })
+                        .collect::<KvResult<Vec<_>>>()
+                } else {
+                    it.take(limit).collect::<KvResult<Vec<_>>>()
+                }
+            } else if let Some(total_target) = amount_target_opt {
+                it.take_while(|res| match res {
+                    Ok((_, utxo_amount)) => {
+                        if sum < total_target {
+                            sum = sum + *utxo_amount;
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                    Err(_) => true,
+                })
+                .collect::<KvResult<Vec<_>>>()
+            } else {
+                it.collect::<KvResult<Vec<_>>>()
+            }
+        })?;*/
+
+        if amount_target_opt.is_none() {
+            sum = utxos.iter().map(|(_utxo_id_with_bn, sa)| *sa).sum();
         }
-        /*let mut utxos = Vec::new();
-        for entry_res in it {
-            let (gva_utxo_id, SourceAmountValV2(utxo_amount)) = entry_res?;
+
+        let order = page_info.order;
+
+        Ok(PagedData {
+            has_next_page: has_next_page(
+                utxos.iter().map(|(utxo_id_with_bn, _sa)| utxo_id_with_bn),
+                last_cursor_opt,
+                page_info,
+                order,
+            ),
+            has_previous_page: has_previous_page(
+                utxos.iter().map(|(utxo_id_with_bn, _sa)| utxo_id_with_bn),
+                first_cursor_opt,
+                page_info,
+                order,
+            ),
+            data: UtxosWithSum { utxos, sum },
+        })
+    }
+}
+
+fn find_script_utxos_inner<TxsMpDb, I>(
+    txs_mp_db_ro: &TxsMpDb,
+    amount_target_opt: Option<SourceAmount>,
+    page_info: PageInfo<UtxoCursor>,
+    utxos_iter: I,
+) -> KvResult<UtxosWithSum>
+where
+    TxsMpDb: TxsMpV2DbReadable,
+    I: Iterator<Item = KvResult<(GvaUtxoIdDbV1, SourceAmountValV2)>>,
+{
+    let mut sum = SourceAmount::ZERO;
+
+    let it = utxos_iter.filter_map(|entry_res| match entry_res {
+        Ok((gva_utxo_id, SourceAmountValV2(utxo_amount))) => {
             let tx_hash = gva_utxo_id.get_tx_hash();
-            let output_index = gva_utxo_id.get_output_index() as u32;
-            if !txs_mp_db_ro
+            let output_index = gva_utxo_id.get_output_index();
+            match txs_mp_db_ro
                 .utxos_ids()
-                .contains_key(&UtxoIdDbV2(tx_hash, output_index))?
+                .contains_key(&UtxoIdDbV2(tx_hash, output_index as u32))
             {
-                utxos.push((
-                    gva_db_ro
-                        .blockchain_time()
-                        .get(&U32BE(gva_utxo_id.get_block_number()))?
-                        .ok_or_else(|| {
-                            KvError::DbCorrupted(format!(
-                                "No gva time for block {}",
-                                gva_utxo_id.get_block_number()
-                            ))
-                        })? as i64,
-                    UtxoIdV10 {
+                Ok(false) => Some(Ok((
+                    UtxoCursor {
                         tx_hash,
-                        output_index: output_index as usize,
+                        output_index,
+                        block_number: BlockNumber(gva_utxo_id.get_block_number()),
                     },
                     utxo_amount,
-                ));
-
-                total = total + utxo_amount;
-                if let Some(total_target) = amount_target_opt {
-                    if total >= total_target {
-                        return Ok((utxos, total));
-                    }
-                }
+                ))),
+                Ok(true) => None,
+                Err(e) => Some(Err(e)),
             }
         }
-        Ok::<_, KvError>((utxos, total))*/
-    })?;
+        Err(e) => Some(Err(e)),
+    });
+    let utxos = if let Some(limit) = page_info.limit_opt {
+        if let Some(total_target) = amount_target_opt {
+            it.take(limit)
+                .take_while(|res| match res {
+                    Ok((_, utxo_amount)) => {
+                        if sum < total_target {
+                            sum = sum + *utxo_amount;
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                    Err(_) => true,
+                })
+                .collect::<KvResult<Vec<_>>>()?
+        } else {
+            it.take(limit).collect::<KvResult<Vec<_>>>()?
+        }
+    } else if let Some(total_target) = amount_target_opt {
+        it.take_while(|res| match res {
+            Ok((_, utxo_amount)) => {
+                if sum < total_target {
+                    sum = sum + *utxo_amount;
+                    true
+                } else {
+                    false
+                }
+            }
+            Err(_) => true,
+        })
+        .collect::<KvResult<Vec<_>>>()?
+    } else {
+        it.collect::<KvResult<Vec<_>>>()?
+    };
 
-    if amount_target_opt.is_none() {
-        sum = utxos.iter().map(|(_utxo_id_with_bn, sa)| *sa).sum();
-    }
-
-    let order = page_info.order;
-
-    Ok(PagedData {
-        has_next_page: has_next_page(
-            utxos.iter().map(|(utxo_id_with_bn, _sa)| utxo_id_with_bn),
-            last_cursor_opt,
-            page_info,
-            order,
-        ),
-        has_previous_page: has_previous_page(
-            utxos.iter().map(|(utxo_id_with_bn, _sa)| utxo_id_with_bn),
-            first_cursor_opt,
-            page_info,
-            order,
-        ),
-        data: UtxosWithSum { utxos, sum },
-    })
+    Ok(UtxosWithSum { utxos, sum })
 }
 
 #[cfg(test)]
@@ -267,6 +314,7 @@ mod tests {
         let script = WalletScriptV10::single_sig(PublicKey::default());
 
         let gva_db = duniter_dbs::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?;
+        let db_reader = create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) });
         let txs_mp_db = duniter_dbs::txs_mp_v2::TxsMpV2Db::<Mem>::open(MemConf::default())?;
 
         gva_db.gva_utxos_write().upsert(
@@ -282,13 +330,12 @@ mod tests {
             SourceAmountValV2(SourceAmount::with_base0(120)),
         )?;
 
-        /*// Find utxos with amount target
+        // Find utxos with amount target
         let PagedData {
             data: UtxosWithSum { utxos, sum },
             has_next_page,
             has_previous_page,
-        } = find_script_utxos(
-            &gva_db,
+        } = db_reader.find_script_utxos(
             &txs_mp_db,
             Some(SourceAmount::with_base0(55)),
             PageInfo::default(),
@@ -299,23 +346,19 @@ mod tests {
             utxos,
             vec![
                 (
-                    UtxoCursor(
-                        UtxoIdV10 {
-                            tx_hash: Hash::default(),
-                            output_index: 0
-                        },
-                        BlockNumber(0),
-                    ),
+                    UtxoCursor {
+                        block_number: BlockNumber(0),
+                        tx_hash: Hash::default(),
+                        output_index: 0,
+                    },
                     SourceAmount::with_base0(50)
                 ),
                 (
-                    UtxoCursor(
-                        UtxoIdV10 {
-                            tx_hash: Hash::default(),
-                            output_index: 1
-                        },
-                        BlockNumber(0),
-                    ),
+                    UtxoCursor {
+                        block_number: BlockNumber(0),
+                        tx_hash: Hash::default(),
+                        output_index: 1,
+                    },
                     SourceAmount::with_base0(80)
                 ),
             ]
@@ -328,8 +371,7 @@ mod tests {
         let PagedData {
             data: UtxosWithSum { utxos, sum },
             ..
-        } = find_script_utxos(
-            &gva_db,
+        } = db_reader.find_script_utxos(
             &txs_mp_db,
             Some(SourceAmount::with_base0(55)),
             PageInfo {
@@ -342,27 +384,24 @@ mod tests {
         assert_eq!(
             utxos,
             vec![(
-                UtxoCursor(
-                    UtxoIdV10 {
-                        tx_hash: Hash::default(),
-                        output_index: 2
-                    },
-                    BlockNumber(0),
-                ),
+                UtxoCursor {
+                    block_number: BlockNumber(0),
+                    tx_hash: Hash::default(),
+                    output_index: 2,
+                },
                 SourceAmount::with_base0(120)
             ),]
         );
         assert_eq!(sum, SourceAmount::with_base0(120));
         assert!(!has_next_page);
-        assert!(!has_previous_page);*/
+        assert!(!has_previous_page);
 
         // Find utxos with limit in DESC order
         let PagedData {
             data: UtxosWithSum { utxos, sum },
             has_previous_page,
             has_next_page,
-        } = find_script_utxos(
-            &gva_db,
+        } = db_reader.find_script_utxos(
             &txs_mp_db,
             None,
             PageInfo {

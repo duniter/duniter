@@ -28,16 +28,11 @@ impl TxsHistoryQuery {
         let pubkey = PublicKey::from_base58(&pubkey)?;
 
         let data = ctx.data::<SchemaData>()?;
+        let db_reader = data.dbs_reader();
 
         let txs_history = data
             .dbs_pool
-            .execute(move |dbs| {
-                duniter_gva_dbs_reader::txs_history::get_transactions_history(
-                    &dbs.gva_db,
-                    &dbs.txs_mp_db,
-                    pubkey,
-                )
-            })
+            .execute(move |dbs| db_reader.get_transactions_history(&dbs.txs_mp_db, pubkey))
             .await??;
 
         Ok(TxsHistoryGva {

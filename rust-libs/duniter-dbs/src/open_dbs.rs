@@ -17,17 +17,21 @@ use crate::bc_v2::BcV2DbWritable as _;
 use crate::cm_v1::CmV1DbWritable as _;
 use crate::*;
 
-pub fn open_dbs<B: BackendConf>(home_path_opt: Option<&Path>) -> DuniterDbs<B> {
-    DuniterDbs {
-        bc_db: crate::bc_v2::BcV2Db::<B>::open(B::gen_backend_conf("bc_v2", home_path_opt))
-            .expect("fail to open BcV2 DB"),
+pub fn open_dbs<B: BackendConf>(
+    home_path_opt: Option<&Path>,
+) -> (crate::bc_v2::BcV2Db<B>, DuniterDbs<B>) {
+    let bc_db = crate::bc_v2::BcV2Db::<B>::open(B::gen_backend_conf("bc_v2", home_path_opt))
+        .expect("fail to open BcV2 DB");
+    let dbs = DuniterDbs {
+        bc_db_ro: bc_db.get_ro_handler(),
         cm_db: crate::cm_v1::CmV1Db::<MemSingleton>::open(MemSingletonConf::default())
             .expect("fail to open CmV1 DB"),
         gva_db: GvaV1Db::<B>::open(B::gen_backend_conf("gva_v1", home_path_opt))
             .expect("fail to open Gva DB"),
         txs_mp_db: TxsMpV2Db::<B>::open(B::gen_backend_conf("txs_mp_v2", home_path_opt))
             .expect("fail to open TxsMp DB"),
-    }
+    };
+    (bc_db, dbs)
 }
 
 pub trait BackendConf: Backend {

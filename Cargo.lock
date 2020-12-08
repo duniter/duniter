@@ -1090,7 +1090,6 @@ dependencies = [
  "kv_typed",
  "log",
  "mockall",
- "once_cell",
  "paste",
  "rand 0.7.3",
  "serde",
@@ -1151,6 +1150,7 @@ dependencies = [
  "http",
  "log",
  "mockall",
+ "once_cell",
  "resiter",
  "serde",
  "serde_json",
@@ -1286,7 +1286,6 @@ dependencies = [
  "neon",
  "neon-build",
  "neon-serde",
- "once_cell",
  "serde",
  "unwrap",
 ]

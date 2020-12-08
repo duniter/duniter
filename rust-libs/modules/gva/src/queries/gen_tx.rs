@@ -112,20 +112,19 @@ impl GenTxsQuery {
         let recipient = PublicKey::from_base58(&recipient)?;
 
         let data = ctx.data::<SchemaData>()?;
-        //let dbs_reader = data.dbs_reader();
+        let db_reader = data.dbs_reader();
         let currency = data.server_meta_data.currency.clone();
 
         let (current_block, (inputs, inputs_sum)) = data
             .dbs_pool
             .execute(move |dbs| {
                 if let Some(current_block) =
-                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)?
+                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db_ro)?
                 {
                     Ok((
                         current_block,
-                        duniter_gva_dbs_reader::find_inputs::find_inputs(
-                            &dbs.bc_db,
-                            &dbs.gva_db,
+                        db_reader.find_inputs(
+                            &dbs.bc_db_ro,
                             &dbs.txs_mp_db,
                             SourceAmount::new(amount as i64, current_block.unit_base as i64),
                             &WalletScriptV10::single(WalletConditionV10::Sig(issuer)),
@@ -188,21 +187,20 @@ impl GenTxsQuery {
         }
 
         let data = ctx.data::<SchemaData>()?;
-        //let dbs_reader = data.dbs_reader();
+        let db_reader = data.dbs_reader();
         let currency = data.server_meta_data.currency.clone();
 
         let (current_block, issuers_inputs_with_sum) = data
             .dbs_pool
             .execute(move |dbs| {
                 if let Some(current_block) =
-                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)?
+                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db_ro)?
                 {
                     let mut issuers_inputs_with_sum = Vec::new();
                     for issuer in issuers {
                         issuers_inputs_with_sum.push((
-                            duniter_gva_dbs_reader::find_inputs::find_inputs(
-                                &dbs.bc_db,
-                                &dbs.gva_db,
+                            db_reader.find_inputs(
+                                &dbs.bc_db_ro,
                                 &dbs.txs_mp_db,
                                 SourceAmount::new(
                                     issuer.amount as i64,

@@ -15,7 +15,7 @@
 
 use crate::*;
 use async_graphql::connection::*;
-use duniter_dbs::{bc_v2::BcV2DbReadable, GvaV1DbReadable};
+use duniter_dbs::bc_v2::BcV2DbReadable;
 use duniter_gva_dbs_reader::{uds_of_pubkey::UdsWithSum, PagedData};
 
 #[derive(Default)]
@@ -32,7 +32,7 @@ impl UdsQuery {
 
         Ok(data
             .dbs_pool
-            .execute(move |dbs| dbs_reader.get_current_ud(&dbs.bc_db))
+            .execute(move |dbs| dbs_reader.get_current_ud(&dbs.bc_db_ro))
             .await??
             .map(|sa| CurrentUdGva {
                 amount: sa.amount(),
@@ -48,13 +48,13 @@ impl UdsQuery {
         #[graphql(default)] filter: UdsFilter,
         #[graphql(desc = "pagination", default)] pagination: Pagination,
         #[graphql(desc = "Amount needed")] amount: Option<i64>,
-    ) -> async_graphql::Result<Connection<usize, UdGva, AggregateSum, EmptyFields>> {
+    ) -> async_graphql::Result<Connection<String, UdGva, AggregateSum, EmptyFields>> {
         let pagination = Pagination::convert_to_page_info(pagination)?;
 
         let pubkey = PublicKey::from_base58(&pubkey)?;
 
         let data = ctx.data::<SchemaData>()?;
-        //let dbs_reader = data.dbs_reader();
+        let dbs_reader = data.dbs_reader();
 
         let (
             PagedData {
@@ -67,35 +67,26 @@ impl UdsQuery {
             .dbs_pool
             .execute(move |dbs| {
                 if let Some(current_block) =
-                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db)?
+                    duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db_ro)?
                 {
                     let paged_data = match filter {
-                        UdsFilter::All => duniter_gva_dbs_reader::uds_of_pubkey::all_uds_of_pubkey(
-                            &dbs.bc_db,
-                            &dbs.gva_db,
+                        UdsFilter::All => {
+                            dbs_reader.all_uds_of_pubkey(&dbs.bc_db_ro, pubkey, pagination)
+                        }
+                        UdsFilter::Unspent => dbs_reader.unspent_uds_of_pubkey(
+                            &dbs.bc_db_ro,
                             pubkey,
                             pagination,
+                            None,
+                            amount.map(|amount| {
+                                SourceAmount::new(amount, current_block.unit_base as i64)
+                            }),
                         ),
-                        UdsFilter::Unspent => {
-                            duniter_gva_dbs_reader::uds_of_pubkey::unspent_uds_of_pubkey(
-                                &dbs.bc_db,
-                                pubkey,
-                                pagination,
-                                None,
-                                amount.map(|amount| {
-                                    SourceAmount::new(amount, current_block.unit_base as i64)
-                                }),
-                            )
-                        }
                     }?;
+
                     let mut times = Vec::with_capacity(paged_data.data.uds.len());
                     for (bn, _sa) in &paged_data.data.uds {
-                        times.push(
-                            dbs.gva_db
-                                .blockchain_time()
-                                .get(&U32BE(bn.0))?
-                                .unwrap_or_else(|| unreachable!()),
-                        );
+                        times.push(dbs_reader.get_blockchain_time(*bn)?);
                     }
                     Ok::<_, anyhow::Error>((paged_data, times))
                 } else {
@@ -121,7 +112,7 @@ impl UdsQuery {
                 .zip(times.into_iter())
                 .map(|((bn, sa), blockchain_time)| {
                     Edge::new(
-                        bn.0 as usize,
+                        bn.0.to_string(),
                         UdGva {
                             amount: sa.amount(),
                             base: sa.base(),
@@ -148,7 +139,7 @@ impl UdsQuery {
         Ok(data
             .dbs_pool
             .execute(move |dbs| {
-                dbs.bc_db.uds_reval().iter(.., |it| {
+                dbs.bc_db_ro.uds_reval().iter(.., |it| {
                     it.map_ok(|(block_number, sa)| RevalUdGva {
                         amount: sa.0.amount(),
                         base: sa.0.base(),
@@ -169,9 +160,9 @@ mod tests {
     #[tokio::test]
     async fn query_current_ud() -> anyhow::Result<()> {
         let mut dbs_reader = MockDbsReader::new();
-        use duniter_dbs::bc_v2::BcV2Db;
+        use duniter_dbs::bc_v2::BcV2DbRo;
         dbs_reader
-            .expect_get_current_ud::<BcV2Db<FileBackend>>()
+            .expect_get_current_ud::<BcV2DbRo<FileBackend>>()
             .times(1)
             .returning(|_| Ok(Some(SourceAmount::with_base0(100))));
         let schema = create_schema(dbs_reader)?;

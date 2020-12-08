@@ -26,15 +26,15 @@ const CHUNK_SIZE: usize = 250;
 
 pub(crate) fn migrate(profile_path: PathBuf) -> anyhow::Result<()> {
     let start_time = Instant::now();
-    let dbs = duniter_dbs::open_dbs(Some(profile_path.as_path()));
+    let (bc_db, dbs) = duniter_dbs::open_dbs(Some(profile_path.as_path()));
 
     // Clear bc_db and gva_db
-    dbs.bc_db.clear()?;
+    bc_db.clear()?;
     dbs.gva_db.clear()?;
 
-    if let Err(e) = migrate_inner(dbs.clone(), profile_path, start_time) {
+    if let Err(e) = migrate_inner(&bc_db, dbs.clone(), profile_path, start_time) {
         // Clear bc_db and gva_db
-        dbs.bc_db.clear()?;
+        bc_db.clear()?;
         dbs.gva_db.clear()?;
 
         Err(e)
@@ -44,6 +44,7 @@ pub(crate) fn migrate(profile_path: PathBuf) -> anyhow::Result<()> {
 }
 
 fn migrate_inner(
+    bc_db: &BcV2Db<FileBackend>,
     dbs: DuniterDbs<FileBackend>,
     profile_path: PathBuf,
     start_time: Instant,
@@ -121,7 +122,7 @@ fn migrate_inner(
                     })
                     .expect("gva:apply_chunk: dbs pool disconnected");
                 current = Some(duniter_dbs_write_ops::apply_block::apply_chunk(
-                    current, &dbs_pool, chunk,
+                    bc_db, current, &dbs_pool, chunk,
                 )?);
                 gva_handle
                     .join()
@@ -133,8 +134,8 @@ fn migrate_inner(
         parser_handle.join().expect("parser thread panic")?;
 
         println!("Flush DBs caches on disk...");
+        bc_db.save()?;
         dbs_pool.execute(|dbs| {
-            dbs.bc_db.save()?;
             dbs.gva_db.save()?;
             Ok::<(), KvError>(())
         })??;
@@ -159,11 +160,8 @@ fn migrate_inner(
 }
 
 fn get_target_block_number(duniter_js_db: &BcV1Db<LevelDb>) -> KvResult<Option<BlockNumber>> {
-    duniter_js_db.main_blocks().iter(.., |it| {
-        it.reverse()
-            .keys()
-            .map(|k_res| k_res.map(|bn| bn.0))
-            .next_res()
+    duniter_js_db.main_blocks().iter_rev(.., |it| {
+        it.keys().map(|k_res| k_res.map(|bn| bn.0)).next_res()
     })
 }
 

@@ -247,26 +247,21 @@ fn write_some_entries_and_iter<B: Backend>(db: &BcV1Db<B>) -> KvResult<()> {
             Ok::<(), KvError>(())
         })?;
 
-        uids_reader.iter(k2.., |entries_iter| {
-            let mut entries_iter_rev = entries_iter.reverse();
-
+        uids_reader.iter_rev(k2.., |mut entries_iter_rev| {
             assert_eq!(Some((k3, p3)), entries_iter_rev.next_res()?);
             assert_eq!(Some((k2, p2)), entries_iter_rev.next_res()?);
             assert_eq!(None, entries_iter_rev.next_res()?);
             Ok::<(), KvError>(())
         })?;
 
-        uids_reader.iter(..=k2, |entries_iter| {
-            let mut entries_iter_rev = entries_iter.reverse();
-
+        uids_reader.iter_rev(..=k2, |mut entries_iter_rev| {
             assert_eq!(Some((k2, p2)), entries_iter_rev.next_res()?);
             assert_eq!(Some((k1, p1)), entries_iter_rev.next_res()?);
             Ok::<(), KvError>(())
         })?;
 
-        uids_reader.iter(..=k2, |it| {
-            let mut keys_iter_rev = it.keys().reverse();
-
+        uids_reader.iter_rev(..=k2, |iter_rev| {
+            let mut keys_iter_rev = iter_rev.keys();
             assert_eq!(Some(k2), keys_iter_rev.next_res()?);
             assert_eq!(Some(k1), keys_iter_rev.next_res()?);
             assert_eq!(None, keys_iter_rev.next_res()?);

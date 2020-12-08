@@ -163,6 +163,10 @@ impl BackendCol for SledCol {
         }
     }
     #[inline(always)]
+    fn iter_rev<K: Key, V: Value>(&self, range: RangeBytes) -> Self::Iter {
+        self.iter::<K, V>(range).reverse()
+    }
+    #[inline(always)]
     fn save(&self) -> KvResult<()> {
         self.0.flush()?;
         Ok(())

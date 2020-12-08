@@ -27,7 +27,7 @@ pub(crate) fn create_uds<B: Backend>(
     uds_reval: &mut TxColRw<B::Col, UdsRevalEvent>,
 ) -> KvResult<()> {
     let previous_ud_amount = uds_reval
-        .iter(.., |it| it.reverse().values().next_res())?
+        .iter_rev(.., |it| it.values().next_res())?
         .unwrap_or(SourceAmountValV2(SourceAmount::ZERO));
     if dividend > previous_ud_amount.0 {
         uds_reval.upsert(U32BE(block_number.0), SourceAmountValV2(dividend));
@@ -50,7 +50,7 @@ pub(crate) fn revert_uds<B: Backend>(
     uds_reval: &mut TxColRw<B::Col, UdsRevalEvent>,
 ) -> KvResult<()> {
     let previous_reval_block_number = uds_reval
-        .iter(.., |it| it.reverse().keys().next_res())?
+        .iter_rev(.., |it| it.keys().next_res())?
         .expect("corrupted db")
         .0;
     if block_number.0 == previous_reval_block_number {

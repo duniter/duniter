@@ -36,7 +36,7 @@ impl AccountBalanceQuery {
 
         let balance = data
             .dbs_pool
-            .execute(move |dbs| dbs_reader.get_account_balance(&dbs.gva_db, &account_script))
+            .execute(move |_| dbs_reader.get_account_balance(&account_script))
             .await??
             .unwrap_or_default()
             .0;
@@ -57,17 +57,16 @@ mod tests {
     #[tokio::test]
     async fn query_balance() -> anyhow::Result<()> {
         let mut dbs_reader = MockDbsReader::new();
-        use duniter_dbs::gva_v1::GvaV1Db;
         dbs_reader
-            .expect_get_account_balance::<GvaV1Db<FileBackend>>()
-            .withf(|_, s| {
+            .expect_get_account_balance()
+            .withf(|s| {
                 s == &WalletScriptV10::single_sig(
                     PublicKey::from_base58("DnjL6hYA1k7FavGHbbir79PKQbmzw63d6bsamBBdUULP")
                         .expect("wrong pubkey"),
                 )
             })
             .times(1)
-            .returning(|_, _| Ok(Some(SourceAmountValV2(SourceAmount::with_base0(38)))));
+            .returning(|_| Ok(Some(SourceAmountValV2(SourceAmount::with_base0(38)))));
         let schema = create_schema(dbs_reader)?;
         assert_eq!(
             exec_graphql_request(

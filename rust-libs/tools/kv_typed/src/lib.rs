@@ -79,9 +79,7 @@ pub mod prelude {
     #[cfg(feature = "explorer")]
     pub use crate::explorer::{ExplorableKey, ExplorableValue};
     pub use crate::from_bytes::FromBytes;
-    pub use crate::iter::{
-        keys::KvIterKeys, values::KvIterValues, EntryIter, KvIter, ResultIter, ReversableIterator,
-    };
+    pub use crate::iter::{keys::KvIterKeys, values::KvIterValues, EntryIter, KvIter, ResultIter};
     pub use crate::key::{Key, U32BE};
     pub use crate::subscription::{NewSubscribers, Subscriber, Subscribers};
     pub use crate::transactional_read::{TransactionalRead, TxColRo};
@@ -97,7 +95,7 @@ pub(crate) use crate::collection_inner::ColInner;
 pub(crate) use crate::error::BackendResult;
 #[cfg(feature = "explorer")]
 pub(crate) use crate::explorer::{ExplorableKey, ExplorableValue};
-pub(crate) use crate::iter::RangeBytes;
+pub(crate) use crate::iter::{RangeBytes, ReversableIterator};
 pub(crate) use crate::prelude::*;
 pub(crate) use crate::subscription::{ColSubscribers, SubscriptionsSender};
 pub(crate) use crate::transactional_write::tx_iter::BackendTxIter;

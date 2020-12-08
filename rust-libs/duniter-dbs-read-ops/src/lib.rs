@@ -29,7 +29,7 @@ use duniter_dbs::{kv_typed::prelude::*, BlockMetaV2};
 pub fn get_current_block_meta<BcDb: BcV2DbReadable>(bc_db: &BcDb) -> KvResult<Option<BlockMetaV2>> {
     bc_db
         .blocks_meta()
-        .iter(.., |it| it.reverse().values().next_res())
+        .iter_rev(.., |it| it.values().next_res())
 }
 
 pub fn tx_exist<BcDb: BcV2DbReadable>(bc_db_ro: &BcDb, hash: Hash) -> KvResult<bool> {

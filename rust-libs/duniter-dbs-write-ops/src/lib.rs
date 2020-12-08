@@ -37,9 +37,9 @@ use dubp::documents::{
 };
 use dubp::wallet::prelude::*;
 use duniter_dbs::{
-    kv_typed::prelude::*, BlockMetaV2, DuniterDbs, FileBackend, HashKeyV2, PendingTxDbV2,
-    PubKeyKeyV2, PubKeyValV2, SourceAmountValV2, TxsMpV2Db, TxsMpV2DbReadable, TxsMpV2DbWritable,
-    UtxoValV2, WalletConditionsV2,
+    bc_v2::BcV2Db, kv_typed::prelude::*, BlockMetaV2, DuniterDbs, FileBackend, HashKeyV2,
+    PendingTxDbV2, PubKeyKeyV2, PubKeyValV2, SourceAmountValV2, TxsMpV2Db, TxsMpV2DbReadable,
+    TxsMpV2DbWritable, UtxoValV2, WalletConditionsV2,
 };
 use resiter::filter_map::FilterMap;
 use resiter::flatten::Flatten;

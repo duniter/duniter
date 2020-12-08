@@ -16,6 +16,7 @@
 use crate::*;
 
 pub fn apply_block(
+    bc_db: &BcV2Db<FileBackend>,
     block: Arc<DubpBlockV10>,
     current_opt: Option<BlockMetaV2>,
     dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
@@ -23,7 +24,7 @@ pub fn apply_block(
 ) -> KvResult<BlockMetaV2> {
     if let Some(current) = current_opt {
         if block.number().0 == current.number + 1 {
-            apply_block_inner(dbs_pool, block)
+            apply_block_inner(bc_db, dbs_pool, block)
         } else if throw_chainability {
             Err(KvError::Custom(
                 format!(
@@ -37,7 +38,7 @@ pub fn apply_block(
             Ok(current)
         }
     } else if block.number() == BlockNumber(0) {
-        apply_block_inner(dbs_pool, block)
+        apply_block_inner(bc_db, dbs_pool, block)
     } else {
         Err(KvError::Custom(
             "Try to apply non genesis block on empty blockchain".into(),
@@ -47,12 +48,13 @@ pub fn apply_block(
 
 #[inline(always)]
 pub fn apply_chunk(
+    bc_db: &BcV2Db<FileBackend>,
     current_opt: Option<BlockMetaV2>,
     dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
     blocks: Arc<[DubpBlockV10]>,
 ) -> KvResult<BlockMetaV2> {
     verify_chunk_chainability(current_opt, &blocks)?;
-    apply_chunk_inner(dbs_pool, blocks)
+    apply_chunk_inner(bc_db, dbs_pool, blocks)
 }
 
 fn verify_chunk_chainability(
@@ -100,57 +102,58 @@ fn verify_chunk_chainability(
 }
 
 fn apply_block_inner(
+    bc_db: &BcV2Db<FileBackend>,
     dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
     block: Arc<DubpBlockV10>,
 ) -> KvResult<BlockMetaV2> {
-    // Bc
-    let block_arc = Arc::clone(&block);
-    let bc_recv = dbs_pool
-        .launch(move |dbs| crate::bc::apply_block(&dbs.bc_db, &block_arc))
-        .expect("dbs pool disconnected");
+    let block_arc_clone = Arc::clone(&block);
+
     //TxsMp
-    let block_arc = Arc::clone(&block);
     let txs_mp_recv = dbs_pool
         .launch(move |dbs| {
-            crate::txs_mp::apply_block(block_arc.transactions(), &dbs.txs_mp_db)?;
+            crate::txs_mp::apply_block(block_arc_clone.transactions(), &dbs.txs_mp_db)?;
             Ok::<_, KvError>(())
         })
         .expect("dbs pool disconnected");
 
+    // Bc
+    let new_current = crate::bc::apply_block(bc_db, &block)?;
+
     txs_mp_recv.join().expect("dbs pool disconnected")?;
-    bc_recv.join().expect("dbs pool disconnected")
+
+    Ok(new_current)
 }
 
 fn apply_chunk_inner(
+    bc_db: &BcV2Db<FileBackend>,
     dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
     blocks: Arc<[DubpBlockV10]>,
 ) -> KvResult<BlockMetaV2> {
-    // Bc
     let blocks_len = blocks.len();
-    let blocks_arc = Arc::clone(&blocks);
-    //log::info!("apply_chunk: launch bc job...");
-    let bc_handle = dbs_pool
-        .launch(move |dbs| {
-            for block in &blocks_arc[..(blocks_len - 1)] {
-                crate::bc::apply_block(&dbs.bc_db, block)?;
-            }
-            crate::bc::apply_block(&dbs.bc_db, &blocks_arc[blocks_len - 1])
-        })
-        .expect("apply_chunk_inner:bc: dbs pool disconnected");
+    let blocks_arc_clone = Arc::clone(&blocks);
+
     //TxsMp
-    let blocks_arc = Arc::clone(&blocks);
     //log::info!("apply_chunk: launch txs_mp job...");
     let txs_mp_handle = dbs_pool
         .launch(move |dbs| {
-            for block in blocks_arc.deref() {
+            for block in blocks_arc_clone.deref() {
                 crate::txs_mp::apply_block(block.transactions(), &dbs.txs_mp_db)?;
             }
             Ok::<_, KvError>(())
         })
         .expect("apply_chunk_inner:txs_mp: dbs pool disconnected");
+
+    // Bc
+    //log::info!("apply_chunk: launch bc job...");
+    for block in &blocks[..(blocks_len - 1)] {
+        crate::bc::apply_block(bc_db, block)?;
+    }
+    let current_block = crate::bc::apply_block(bc_db, &blocks[blocks_len - 1])?;
+
     txs_mp_handle
         .join()
         .expect("txs_mp_recv: dbs pool disconnected")?;
     //log::info!("apply_chunk: txs_mp job finish.");
-    bc_handle.join().expect("bc_recv: dbs pool disconnected")
+
+    Ok(current_block)
 }

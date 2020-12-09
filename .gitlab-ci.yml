@@ -88,6 +88,7 @@ tests:
     - when: manual
   stage: tests
   script:
+    - cargo test --all
     - npm i
     - npm run format:check
     - npm test

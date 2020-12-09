@@ -40,6 +40,7 @@ pub use kv_typed;
 
 // Prelude
 pub mod prelude {
+    pub use crate::open_dbs::BackendConf;
     pub use crate::DuniterDbs;
     #[cfg(feature = "explorer")]
     pub use kv_typed::explorer::{

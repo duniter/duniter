@@ -23,25 +23,27 @@ use crate::*;
 pub fn open_dbs<B: BackendConf>(
     home_path_opt: Option<&Path>,
 ) -> (crate::databases::bc_v2::BcV2Db<B>, DuniterDbs<B>) {
-    let bc_db =
-        crate::databases::bc_v2::BcV2Db::<B>::open(B::gen_backend_conf("bc_v2", home_path_opt))
-            .expect("fail to open BcV2 DB");
+    let bc_db = crate::databases::bc_v2::BcV2Db::<B>::open(B::gen_backend_conf(
+        crate::databases::bc_v2::BcV2Db::<B>::NAME,
+        home_path_opt,
+    ))
+    .expect("fail to open BcV2 DB");
     let dbs = DuniterDbs {
         bc_db_ro: bc_db.get_ro_handler(),
         cm_db: crate::databases::cm_v1::CmV1Db::<Mem>::open(MemConf::default())
             .expect("fail to open CmV1 DB"),
         dunp_db: crate::databases::dunp_v1::DunpV1Db::<B>::open(B::gen_backend_conf(
-            "dunp_v1",
+            crate::databases::dunp_v1::DunpV1Db::<B>::NAME,
             home_path_opt,
         ))
         .expect("fail to open Dunp DB"),
         gva_db: crate::databases::gva_v1::GvaV1Db::<B>::open(B::gen_backend_conf(
-            "gva_v1",
+            crate::databases::gva_v1::GvaV1Db::<B>::NAME,
             home_path_opt,
         ))
         .expect("fail to open Gva DB"),
         txs_mp_db: crate::databases::txs_mp_v2::TxsMpV2Db::<B>::open(B::gen_backend_conf(
-            "txs_mp_v2",
+            crate::databases::txs_mp_v2::TxsMpV2Db::<B>::NAME,
             home_path_opt,
         ))
         .expect("fail to open TxsMp DB"),

@@ -34,8 +34,10 @@ tempdir = "0.3.7"
 unwrap = "1.2.1"
 
 [features]
-#default = ["sled_backend"]
-default = ["sled_backend", "explorer", "leveldb_backend"]
+default = ["sled_backend"]
+
+# CAUTION: feature "leveldb_backend" MUST BE DISABLED by default. Uncomment this lire for dev/test only ! 
+#default = ["sled_backend", "explorer", "leveldb_backend"]
 
 explorer = ["chrono", "kv_typed/explorer"]
 leveldb_backend = ["kv_typed/leveldb_backend"]

@@ -14,7 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use duniter_dbs::bc_v2::IdentitiesEvent;
+use duniter_dbs::databases::bc_v2::IdentitiesEvent;
 use duniter_dbs::IdtyDbV2;
 
 pub(crate) fn update_identities<B: Backend>(

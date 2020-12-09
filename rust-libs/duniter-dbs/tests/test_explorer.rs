@@ -22,7 +22,10 @@ mod explorer {
     use duniter_dbs::kv_typed::regex;
     use duniter_dbs::prelude::*;
     use duniter_dbs::smallvec::smallvec;
-    use duniter_dbs::{BcV1Db, BcV1DbWritable, PublicKeySingletonDbV1, UidKeyV1};
+    use duniter_dbs::{
+        databases::bc_v1::{BcV1Db, BcV1DbWritable},
+        PublicKeySingletonDbV1, UidKeyV1,
+    };
     use std::{num::NonZeroUsize, str::FromStr};
     use tempdir::TempDir;
     use unwrap::unwrap;

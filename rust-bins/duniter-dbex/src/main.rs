@@ -31,15 +31,18 @@ use self::cli::{Database, Opt, OutputFormat, SubCommand};
 use self::stringify_json_value::stringify_json_value;
 use anyhow::anyhow;
 use comfy_table::Table;
-use duniter_dbs::bc_v2::{BcV2Db, BcV2DbWritable};
-use duniter_dbs::kv_typed::backend::sled;
+use duniter_dbs::databases::{
+    bc_v1::{BcV1Db, BcV1DbWritable},
+    bc_v2::{BcV2Db, BcV2DbWritable},
+    dunp_v1::{DunpV1Db, DunpV1DbWritable},
+    gva_v1::{GvaV1Db, GvaV1DbWritable},
+    txs_mp_v2::{TxsMpV2Db, TxsMpV2DbWritable},
+};
 use duniter_dbs::kv_typed::prelude::*;
 use duniter_dbs::prelude::*;
 use duniter_dbs::regex::Regex;
 use duniter_dbs::serde_json::{Map, Value};
 use duniter_dbs::smallvec::{smallvec, SmallVec};
-use duniter_dbs::{BcV1Db, GvaV1Db, TxsMpV2Db};
-use duniter_dbs::{BcV1DbWritable, GvaV1DbWritable, TxsMpV2DbWritable};
 use rayon::prelude::*;
 use std::{
     collections::{HashMap, HashSet},
@@ -97,23 +100,34 @@ fn main() -> anyhow::Result<()> {
                 open_db_start_time,
             ),
             Database::BcV2 => apply_subcommand(
-                BcV2Db::<Sled>::open(
-                    sled::Config::default().path(data_path.as_path().join("bc_v2_sled")),
-                )?,
+                BcV2Db::<Sled>::open(Sled::gen_backend_conf(
+                    BcV2Db::<Sled>::NAME,
+                    Some(profile_path.as_path()),
+                ))?,
+                opt.cmd,
+                open_db_start_time,
+            ),
+            Database::DunpV1 => apply_subcommand(
+                DunpV1Db::<Sled>::open(Sled::gen_backend_conf(
+                    DunpV1Db::<Sled>::NAME,
+                    Some(profile_path.as_path()),
+                ))?,
                 opt.cmd,
                 open_db_start_time,
             ),
             Database::GvaV1 => apply_subcommand(
-                GvaV1Db::<Sled>::open(
-                    sled::Config::default().path(data_path.as_path().join("gva_v1_sled")),
-                )?,
+                GvaV1Db::<Sled>::open(Sled::gen_backend_conf(
+                    GvaV1Db::<Sled>::NAME,
+                    Some(profile_path.as_path()),
+                ))?,
                 opt.cmd,
                 open_db_start_time,
             ),
             Database::TxsMpV2 => apply_subcommand(
-                TxsMpV2Db::<Sled>::open(
-                    sled::Config::default().path(data_path.as_path().join("txs_mp_v2_sled")),
-                )?,
+                TxsMpV2Db::<Sled>::open(Sled::gen_backend_conf(
+                    TxsMpV2Db::<Sled>::NAME,
+                    Some(profile_path.as_path()),
+                ))?,
                 opt.cmd,
                 open_db_start_time,
             ),

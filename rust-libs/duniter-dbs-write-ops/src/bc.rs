@@ -18,10 +18,10 @@ mod txs;
 mod uds;
 
 use crate::*;
-use duniter_dbs::bc_v2::BcV2DbWritable;
+use duniter_dbs::databases::bc_v2::BcV2DbWritable;
 
 pub fn apply_block<B: Backend>(
-    bc_db: &duniter_dbs::bc_v2::BcV2Db<B>,
+    bc_db: &duniter_dbs::databases::bc_v2::BcV2Db<B>,
     block: &DubpBlockV10,
 ) -> KvResult<BlockMetaV2> {
     //log::info!("apply_block #{}", block.number().0);
@@ -84,7 +84,7 @@ pub fn apply_block<B: Backend>(
 }
 
 pub fn revert_block<B: Backend>(
-    bc_db: &duniter_dbs::bc_v2::BcV2Db<B>,
+    bc_db: &duniter_dbs::databases::bc_v2::BcV2Db<B>,
     block: &DubpBlockV10,
 ) -> KvResult<Option<BlockMetaV2>> {
     (

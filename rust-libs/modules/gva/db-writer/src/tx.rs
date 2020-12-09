@@ -14,7 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use duniter_dbs::gva_v1::BalancesEvent;
+use duniter_dbs::databases::gva_v1::BalancesEvent;
 
 pub(crate) type ScriptsHash = HashMap<WalletScriptV10, Hash>;
 
@@ -323,7 +323,7 @@ mod tests {
         let o1_amount = ud0_amount - SourceAmount::with_base0(600);
         let o2_amount = ud0_amount - SourceAmount::with_base0(400);
 
-        let gva_db = duniter_dbs::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?;
+        let gva_db = duniter_dbs::databases::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?;
 
         let b0 = BlockMetaV2 {
             dividend: Some(ud0_amount),

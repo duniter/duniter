@@ -26,12 +26,14 @@ var constants = require('../../app/lib/constants');
 var mocks = {
   peer1: {
     pubkey: 'HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd',
-      block: '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855',
-      currency: 'bb',
-      version: constants.DOCUMENTS_VERSION,
-      endpoints: [
+    blockstamp: '0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855',
+    currency: 'bb',
+    version: constants.DOCUMENTS_VERSION,
+    endpoints: [
       'BASIC_MERKLED_API localhost 7777'
-    ]
+    ],
+    status: "UP",
+    signature: "T84YUhY5PeOH1cmlxn+UCG0YjYQSnpKRlyHTlsDTLB19QneCAIxDrxx+Yz/VfzXyq3B5ScjpQG5MQ45wI+tZAw==",
   },
   block0: {
     "issuersCount": 0,

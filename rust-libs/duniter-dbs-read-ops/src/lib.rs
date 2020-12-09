@@ -23,7 +23,7 @@
 )]
 
 use dubp::crypto::hashs::Hash;
-use duniter_dbs::{bc_v2::BcV2DbReadable, HashKeyV2};
+use duniter_dbs::{databases::bc_v2::BcV2DbReadable, HashKeyV2};
 use duniter_dbs::{kv_typed::prelude::*, BlockMetaV2};
 
 pub fn get_current_block_meta<BcDb: BcV2DbReadable>(bc_db: &BcDb) -> KvResult<Option<BlockMetaV2>> {

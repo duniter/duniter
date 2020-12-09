@@ -16,6 +16,7 @@
 pub mod all;
 pub mod block_number;
 pub mod blockstamp;
+pub mod dunp_node_id;
 pub mod hash;
 pub mod pubkey;
 pub mod pubkey_and_sig;

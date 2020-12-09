@@ -35,11 +35,14 @@ use dubp::common::crypto::hashs::Hash;
 use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::documents::transaction::TransactionDocumentV10;
 use dubp::{common::prelude::BlockNumber, wallet::prelude::*};
-use duniter_dbs::bc_v2::{BcV2DbReadable, BcV2DbRo};
-use duniter_dbs::{gva_v1::GvaV1DbRo, FileBackend};
+use duniter_dbs::databases::{
+    bc_v2::{BcV2DbReadable, BcV2DbRo},
+    gva_v1::{GvaV1DbReadable, GvaV1DbRo},
+    txs_mp_v2::TxsMpV2DbReadable,
+};
+use duniter_dbs::FileBackend;
 use duniter_dbs::{
-    kv_typed::prelude::*, GvaV1DbReadable, HashKeyV2, PubKeyKeyV2, SourceAmountValV2, TxDbV2,
-    TxsMpV2DbReadable, UtxoIdDbV2,
+    kv_typed::prelude::*, HashKeyV2, PubKeyKeyV2, SourceAmountValV2, TxDbV2, UtxoIdDbV2,
 };
 use resiter::filter::Filter;
 use resiter::filter_map::FilterMap;
@@ -88,8 +91,8 @@ impl DbsReader {
 #[cfg(test)]
 impl DbsReader {
     pub(crate) fn mem() -> Self {
-        use duniter_dbs::gva_v1::GvaV1DbWritable;
-        let gva_db = duniter_dbs::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())
+        use duniter_dbs::databases::gva_v1::GvaV1DbWritable;
+        let gva_db = duniter_dbs::databases::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())
             .expect("fail to create memory gva db");
         create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) })
     }

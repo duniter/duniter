@@ -13,23 +13,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-pub mod block_db;
-pub mod block_head_db;
-pub mod block_meta;
-pub mod block_number_array_db;
-pub mod cindex_db;
-pub mod dunp_head;
-pub mod gva_idty_db;
-pub mod idty_db;
-pub mod iindex_db;
-pub mod kick_db;
-pub mod mindex_db;
-pub mod peer_card;
-pub mod pubkey_db;
-pub mod sindex_db;
-pub mod source_amount;
-pub mod tx_db;
-pub mod ud_entry_db;
-pub mod utxo;
-pub mod wallet_db;
-pub mod wallet_script_array;
+use crate::*;
+
+db_schema!(
+    CmV1,
+    [
+        ["self_peer_old", SelfPeerOld, (), PeerCardDbV1],
+        ["dunp_heads_old", DunpHeadsOld, DunpNodeIdV1Db, DunpHeadDbV1],
+    ]
+);

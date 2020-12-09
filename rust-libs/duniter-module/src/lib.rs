@@ -29,6 +29,8 @@ use duniter_mempools::Mempools;
 use fast_threadpool::{JoinHandle, ThreadPoolDisconnected};
 use std::path::Path;
 
+pub const SOFTWARE_NAME: &str = "duniter";
+
 pub type Endpoint = String;
 
 #[async_trait::async_trait]
@@ -150,7 +152,7 @@ macro_rules! plug_duniter_modules {
                     ..Default::default()
                 };
 
-                use duniter_dbs::cm_v1::CmV1DbWritable as _;
+                use duniter_dbs::databases::cm_v1::CmV1DbWritable as _;
                 use duniter_dbs::kv_typed::prelude::DbCollectionRw as _;
                 dbs_pool.execute(|dbs| dbs.cm_db.self_peer_old_write().upsert((), self_peer)).await?.context("fail to save self peer card")?;
 

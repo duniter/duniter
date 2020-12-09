@@ -13,12 +13,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use crate::*;
-
-db_schema!(
-    CmV1,
-    [
-        //["self_pubkey", self_pubkey, (), PubKeyValV2,],
-        ["self_peer_old", SelfPeerOld, (), PeerCardDbV1],
-    ]
-);
+pub mod bc_v1;
+pub mod bc_v2;
+pub mod cm_v1;
+pub mod dunp_v1;
+pub mod gva_v1;
+pub mod txs_mp_v2;

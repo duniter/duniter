@@ -1183,6 +1183,7 @@ export class FileDAL implements ServerDAO {
   }
 
   async removePeerByPubkey(pubkey: string) {
+    this.rustServer.removePeerByPubkey(pubkey);
     return this.peerDAL.removePeerByPubkey(pubkey);
   }
 
@@ -1473,6 +1474,7 @@ export class FileDAL implements ServerDAO {
   }
 
   savePeer(peer: DBPeer) {
+    this.rustServer.savePeer(PeerDTO.fromDBPeer(peer));
     return this.peerDAL.savePeer(peer);
   }
 
@@ -1602,6 +1604,7 @@ export class FileDAL implements ServerDAO {
   }
 
   async resetPeers() {
+    this.rustServer.removeAllPeers();
     await this.peerDAL.removeAll();
     return await this.close();
   }

@@ -137,18 +137,20 @@ impl DbsReader {
 mod tests {
     use super::*;
     use duniter_dbs::{
-        bc_v2::BcV2DbWritable, gva_v1::GvaV1DbWritable, txs_mp_v2::TxsMpV2DbWritable, BlockMetaV2,
-        GvaUtxoIdDbV1, SourceAmountValV2, UdIdV2, UtxoIdDbV2, UtxoValV2, WalletConditionsV2,
+        databases::{bc_v2::BcV2DbWritable, gva_v1::GvaV1DbWritable, txs_mp_v2::TxsMpV2DbWritable},
+        BlockMetaV2, GvaUtxoIdDbV1, SourceAmountValV2, UdIdV2, UtxoIdDbV2, UtxoValV2,
+        WalletConditionsV2,
     };
 
     const UD0: i64 = 10;
 
     #[test]
     fn test_find_inputs() -> anyhow::Result<()> {
-        let bc_db = duniter_dbs::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?;
-        let gva_db = duniter_dbs::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?;
+        let bc_db = duniter_dbs::databases::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?;
+        let gva_db = duniter_dbs::databases::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?;
         let db_reader = create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) });
-        let txs_mp_db = duniter_dbs::txs_mp_v2::TxsMpV2Db::<Mem>::open(MemConf::default())?;
+        let txs_mp_db =
+            duniter_dbs::databases::txs_mp_v2::TxsMpV2Db::<Mem>::open(MemConf::default())?;
 
         let b0 = BlockMetaV2 {
             dividend: Some(SourceAmount::with_base0(UD0)),

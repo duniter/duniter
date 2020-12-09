@@ -29,6 +29,8 @@ use duniter_mempools::Mempools;
 use fast_threadpool::{JoinHandle, ThreadPoolDisconnected};
 use std::path::Path;
 
+pub const SOFTWARE_NAME: &str = "duniter";
+
 pub type Endpoint = String;
 
 #[async_trait::async_trait]

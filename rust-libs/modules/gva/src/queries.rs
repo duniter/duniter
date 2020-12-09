@@ -57,7 +57,7 @@ impl Node {
     }
     /// Software
     async fn software(&self) -> &'static str {
-        "duniter"
+        duniter_module::SOFTWARE_NAME
     }
     /// Software version
     async fn version(

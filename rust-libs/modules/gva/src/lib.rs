@@ -324,7 +324,14 @@ pub struct ServerMetaData {
 }
 
 #[derive(
-    async_graphql::SimpleObject, Clone, Debug, Default, serde::Deserialize, serde::Serialize,
+    async_graphql::SimpleObject,
+    Clone,
+    Debug,
+    Default,
+    Eq,
+    PartialEq,
+    serde::Deserialize,
+    serde::Serialize,
 )]
 #[serde(rename_all = "camelCase")]
 #[graphql(name = "PeerCard")]

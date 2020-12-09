@@ -7,6 +7,7 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0.34"
+cfg-if = "1.0.0"
 dubp = { version = "0.32.3" }
 duniter-conf = { path = "../duniter-conf" }
 duniter-dbs = { path = "../duniter-dbs" }
@@ -22,3 +23,6 @@ log = "0.4.11"
 paste = "1.0.2"
 resiter = "0.4.0"
 tokio = { version = "0.2.22", features = ["io-util", "rt-threaded"] }
+
+[dev-dependencies]
+duniter-dbs = { path = "../duniter-dbs", features = ["mem"] }

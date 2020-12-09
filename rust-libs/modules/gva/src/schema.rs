@@ -21,7 +21,7 @@ pub(crate) type GraphQlSchema = async_graphql::Schema<
     crate::subscriptions::SubscriptionRoot,
 >;
 pub(crate) struct SchemaData {
-    pub(crate) dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs<FileBackend>>,
+    pub(crate) dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
     pub(crate) dbs_reader: DbsReader,
     pub(crate) server_meta_data: ServerMetaData,
     pub(crate) txs_mempool: TxsMempool,

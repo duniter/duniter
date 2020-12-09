@@ -12,10 +12,9 @@ duniter-conf = { path = "../../duniter-conf" }
 duniter-dbs = { path = "../../duniter-dbs" }
 duniter-dbs-read-ops = { path = "../../duniter-dbs-read-ops" }
 duniter-dbs-write-ops = { path = "../../duniter-dbs-write-ops" }
-duniter-gva = { path = "../../modules/gva" }
 duniter-mempools = { path = "../../duniter-mempools" }
 duniter-module = { path = "../../duniter-module" }
-duniter-server = { path = "../../duniter-server" }
+duniter-server = { path = "../../duniter-server", features = ["gva"] }
 fast-threadpool = "0.2.2"
 flume = "0.9.1"
 log = "0.4.11"

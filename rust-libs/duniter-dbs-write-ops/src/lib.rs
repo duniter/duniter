@@ -42,7 +42,7 @@ use duniter_dbs::{
         txs_mp_v2::{TxsMpV2Db, TxsMpV2DbReadable, TxsMpV2DbWritable},
     },
     kv_typed::prelude::*,
-    BlockMetaV2, DuniterDbs, FileBackend, HashKeyV2, PendingTxDbV2, PubKeyKeyV2, PubKeyValV2,
+    BlockMetaV2, FileBackend, HashKeyV2, PendingTxDbV2, PubKeyKeyV2, PubKeyValV2, SharedDbs,
     SourceAmountValV2, UtxoValV2, WalletConditionsV2,
 };
 use resiter::filter_map::FilterMap;

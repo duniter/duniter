@@ -22,9 +22,14 @@
     unused_import_braces
 )]
 
-use dubp::block::DubpBlockV10;
+use dubp::{
+    block::DubpBlockV10,
+    common::prelude::{BlockNumber, Blockstamp},
+    crypto::{hashs::Hash, keys::ed25519::PublicKey},
+    documents::transaction::TransactionDocumentV10,
+};
 use duniter_conf::DuniterConf;
-use duniter_dbs::{kv_typed::prelude::*, DuniterDbs, FileBackend};
+use duniter_dbs::{kv_typed::prelude::*, FileBackend, SharedDbs};
 use duniter_mempools::Mempools;
 use fast_threadpool::{JoinHandle, ThreadPoolDisconnected};
 use std::path::Path;
@@ -38,7 +43,7 @@ pub trait DuniterModule: 'static + Sized {
     fn apply_block(
         _block: Arc<DubpBlockV10>,
         _conf: &duniter_conf::DuniterConf,
-        _dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+        _dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
         _profile_path_opt: Option<&Path>,
     ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
         Ok(None)
@@ -47,7 +52,7 @@ pub trait DuniterModule: 'static + Sized {
     fn apply_chunk_of_blocks(
         _blocks: Arc<[DubpBlockV10]>,
         _conf: &duniter_conf::DuniterConf,
-        _dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+        _dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
         _profile_path_opt: Option<&Path>,
     ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
         Ok(None)
@@ -56,7 +61,7 @@ pub trait DuniterModule: 'static + Sized {
     fn revert_block(
         _block: Arc<DubpBlockV10>,
         _conf: &duniter_conf::DuniterConf,
-        _dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+        _dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
         _profile_path_opt: Option<&Path>,
     ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
         Ok(None)
@@ -65,25 +70,54 @@ pub trait DuniterModule: 'static + Sized {
     fn init(
         conf: &DuniterConf,
         currency: &str,
-        dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs<FileBackend>>,
+        dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
         mempools: Mempools,
         profile_path_opt: Option<&Path>,
         software_version: &'static str,
     ) -> anyhow::Result<(Self, Vec<Endpoint>)>;
 
     async fn start(self) -> anyhow::Result<()>;
+
+    // Needed for BMA only, will be removed when the migration is complete.
+    #[doc(hidden)]
+    fn get_transactions_history_for_bma(
+        _dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
+        _profile_path_opt: Option<&Path>,
+        _pubkey: PublicKey,
+    ) -> KvResult<Option<TxsHistoryForBma>> {
+        Ok(None)
+    }
+    // Needed for BMA only, will be removed when the migration is complete.
+    #[doc(hidden)]
+    fn get_tx_by_hash(
+        _dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
+        _hash: Hash,
+        _profile_path_opt: Option<&Path>,
+    ) -> KvResult<Option<(TransactionDocumentV10, Option<BlockNumber>)>> {
+        Ok(None)
+    }
+}
+
+// Needed for BMA only, will be removed when the migration is complete.
+#[doc(hidden)]
+#[derive(Default)]
+pub struct TxsHistoryForBma {
+    pub sent: Vec<(TransactionDocumentV10, Blockstamp, i64)>,
+    pub received: Vec<(TransactionDocumentV10, Blockstamp, i64)>,
+    pub sending: Vec<TransactionDocumentV10>,
+    pub pending: Vec<TransactionDocumentV10>,
 }
 
 #[macro_export]
 macro_rules! plug_duniter_modules {
-    ([$($M:ty),*]) => {
+    ([$($M:ty),*], $TxsHistoryForBma:ident) => {
         paste::paste! {
             use anyhow::Context as _;
             #[allow(dead_code)]
             fn apply_block_modules(
                 block: Arc<DubpBlockV10>,
                 conf: &duniter_conf::DuniterConf,
-                dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+                dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
                 profile_path_opt: Option<&Path>,
             ) -> KvResult<()> {
                 $(
@@ -100,7 +134,7 @@ macro_rules! plug_duniter_modules {
             fn apply_chunk_of_blocks_modules(
                 blocks: Arc<[DubpBlockV10]>,
                 conf: &duniter_conf::DuniterConf,
-                dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+                dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
                 profile_path_opt: Option<&Path>,
             ) -> KvResult<()> {
                 $(
@@ -117,7 +151,7 @@ macro_rules! plug_duniter_modules {
             fn revert_block_modules(
                 block: Arc<DubpBlockV10>,
                 conf: &duniter_conf::DuniterConf,
-                dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+                dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
                 profile_path_opt: Option<&Path>,
             ) -> KvResult<()> {
                 $(
@@ -133,7 +167,7 @@ macro_rules! plug_duniter_modules {
             async fn start_duniter_modules(
                 conf: &DuniterConf,
                 currency: String,
-                dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs<FileBackend>>,
+                dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
                 mempools: duniter_mempools::Mempools,
                 profile_path_opt: Option<std::path::PathBuf>,
                 software_version: &'static str,
@@ -171,6 +205,37 @@ macro_rules! plug_duniter_modules {
 
                 Ok(())
             }
+
+            // Needed for BMA only, will be removed when the migration is complete.
+            #[allow(dead_code)]
+            #[doc(hidden)]
+            fn get_transactions_history_for_bma(
+                dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
+                profile_path_opt: Option<&Path>,
+                pubkey: PublicKey,
+            ) -> KvResult<TxsHistoryForBma> {
+                $(
+                    if let Some(txs_history) = <$M>::get_transactions_history_for_bma(dbs_pool, profile_path_opt, pubkey)? {
+                        return Ok(txs_history);
+                    }
+                )*
+                Ok(TxsHistoryForBma::default())
+            }
+            // Needed for BMA only, will be removed when the migration is complete.
+            #[allow(dead_code)]
+            #[doc(hidden)]
+            fn get_tx_by_hash(
+                dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
+                hash: Hash,
+                profile_path_opt: Option<&Path>,
+            ) -> KvResult<Option<(TransactionDocumentV10, Option<BlockNumber>)>> {
+                $(
+                    if let Some(tx_with_wb) = <$M>::get_tx_by_hash(dbs_pool, hash, profile_path_opt)? {
+                        return Ok(Some(tx_with_wb));
+                    }
+                )*
+                Ok(None)
+            }
         }
     };
 }
@@ -187,7 +252,7 @@ mod tests {
         fn init(
             _conf: &DuniterConf,
             _currency: &str,
-            _dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs<FileBackend>>,
+            _dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
             _mempools: Mempools,
             profile_path_opt: Option<&Path>,
             _software_version: &'static str,
@@ -210,7 +275,7 @@ mod tests {
         fn init(
             _conf: &DuniterConf,
             _currency: &str,
-            _dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<DuniterDbs<FileBackend>>,
+            _dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
             _mempools: Mempools,
             _profile_path_opt: Option<&Path>,
             _software_version: &'static str,
@@ -225,9 +290,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_macro_plug_duniter_modules() -> anyhow::Result<()> {
-        plug_duniter_modules!([TestMod1, TestMod2]);
+        plug_duniter_modules!([TestMod1, TestMod2], TxsHistoryForBma);
 
-        let dbs = DuniterDbs::mem()?;
+        let dbs = SharedDbs::mem()?;
         let threadpool =
             fast_threadpool::ThreadPool::start(fast_threadpool::ThreadPoolConfig::default(), dbs);
 

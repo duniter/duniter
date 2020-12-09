@@ -46,7 +46,7 @@ impl Node {
     async fn peer(
         &self,
         ctx: &async_graphql::Context<'_>,
-    ) -> async_graphql::Result<Option<PeerCardStringified>> {
+    ) -> async_graphql::Result<Option<PeerCardGva>> {
         let data = ctx.data::<SchemaData>()?;
 
         Ok(data

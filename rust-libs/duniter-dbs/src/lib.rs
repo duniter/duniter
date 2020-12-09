@@ -41,7 +41,7 @@ pub use kv_typed;
 // Prelude
 pub mod prelude {
     pub use crate::open_dbs::BackendConf;
-    pub use crate::DuniterDbs;
+    pub use crate::SharedDbs;
     #[cfg(feature = "explorer")]
     pub use kv_typed::explorer::{
         DbExplorable, EntryFound, ExplorerAction, ExplorerActionResponse, ValueCaptures,
@@ -116,26 +116,23 @@ pub type FileBackend = kv_typed::backend::sled::Sled;
 pub type FileBackend = kv_typed::backend::memory::Mem;
 
 #[derive(Clone, Debug)]
-pub struct DuniterDbs<B: Backend> {
+pub struct SharedDbs<B: Backend> {
     pub bc_db_ro: databases::bc_v2::BcV2DbRo<B>,
     pub cm_db: databases::cm_v1::CmV1Db<Mem>,
     pub dunp_db: databases::dunp_v1::DunpV1Db<B>,
-    pub gva_db: databases::gva_v1::GvaV1Db<B>,
     pub txs_mp_db: databases::txs_mp_v2::TxsMpV2Db<B>,
 }
 
-impl DuniterDbs<Mem> {
+impl SharedDbs<Mem> {
     pub fn mem() -> KvResult<Self> {
         use databases::bc_v2::BcV2DbWritable as _;
         use databases::cm_v1::CmV1DbWritable as _;
         use databases::dunp_v1::DunpV1DbWritable as _;
-        use databases::gva_v1::GvaV1DbWritable as _;
         use databases::txs_mp_v2::TxsMpV2DbWritable as _;
-        Ok(DuniterDbs {
+        Ok(SharedDbs {
             bc_db_ro: databases::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?.get_ro_handler(),
             cm_db: databases::cm_v1::CmV1Db::<Mem>::open(MemConf::default())?,
             dunp_db: databases::dunp_v1::DunpV1Db::<Mem>::open(MemConf::default())?,
-            gva_db: databases::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?,
             txs_mp_db: databases::txs_mp_v2::TxsMpV2Db::<Mem>::open(MemConf::default())?,
         })
     }

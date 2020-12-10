@@ -34,7 +34,7 @@ pub fn raw_tx_parse_and_verify(mut cx: FunctionContext) -> JsResult<JsValue> {
 
     match TransactionDocumentV10::parse_from_raw_text(&raw_tx) {
         Ok(tx) => {
-            if let Err(e) = tx.verify(currency_opt) {
+            if let Err(e) = tx.verify(currency_opt.as_deref()) {
                 cx.throw_error(format!("{}", e))
             } else {
                 let tx_stringified = tx.to_string_object();
@@ -57,7 +57,7 @@ pub fn tx_verify(mut cx: FunctionContext) -> JsResult<JsUndefined> {
         neon_serde::from_value(&mut cx, tx_obj)?;
     match TransactionDocumentV10::from_string_object(&tx_stringified) {
         Ok(tx) => {
-            if let Err(e) = tx.verify(currency_opt) {
+            if let Err(e) = tx.verify(currency_opt.as_deref()) {
                 cx.throw_error(format!("{}", e))
             } else {
                 Ok(cx.undefined())

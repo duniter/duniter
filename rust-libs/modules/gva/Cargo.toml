@@ -11,7 +11,7 @@ arrayvec = "0.5.1"
 async-graphql = "2.0.0"
 async-mutex = "1.4.0"
 async-trait = "0.1.41"
-dubp = { version = "0.32.3" }
+dubp = { version = "0.33.0" }
 duniter-conf = { path = "../../duniter-conf" }
 duniter-dbs = { path = "../../duniter-dbs" }
 duniter-dbs-read-ops = { path = "../../duniter-dbs-read-ops" }

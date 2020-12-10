@@ -32,7 +32,7 @@ impl MutationRoot {
         let data = ctx.data::<SchemaData>()?;
         let expected_currency = data.server_meta_data.currency.clone();
 
-        tx.verify(Some(expected_currency))?;
+        tx.verify(Some(&expected_currency))?;
 
         let server_pubkey = data.server_meta_data.self_pubkey;
         let txs_mempool = data.txs_mempool;
@@ -69,7 +69,7 @@ impl MutationRoot {
 
         let mut processed_txs = Vec::with_capacity(txs.len());
         for tx in txs {
-            tx.verify(Some(expected_currency.clone()))?;
+            tx.verify(Some(&expected_currency))?;
             let tx = data
                 .dbs_pool
                 .execute(move |dbs| {

@@ -50,9 +50,7 @@ members = [
 
 [patch.crates-io]
 #dubp = { git = "https://git.duniter.org/libs/dubp-rs-libs" }
-#dubp-common = { git = "https://git.duniter.org/libs/dubp-rs-libs" }
 
 #dubp = { path = "../dubp-rs-libs" }
-#dubp-common = { path = "../dubp-rs-libs/common" }
 
 #leveldb_minimal = { path = "../../../../rust/leveldb_minimal" }

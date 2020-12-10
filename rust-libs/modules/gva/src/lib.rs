@@ -36,6 +36,7 @@ mod subscriptions;
 mod warp_;
 
 use crate::entities::{
+    block_gva::Block,
     tx_gva::TxGva,
     ud_gva::{CurrentUdGva, RevalUdGva, UdGva},
     AggregateSum, AmountWithBase, PeerCardGva, RawTxOrChanges, Sum, TxsHistoryGva, UtxoGva,
@@ -422,6 +423,10 @@ mod tests {
                 pubkey: PublicKey,
                 page_info: PageInfo<BlockNumber>,
             ) -> KvResult<PagedData<duniter_gva_dbs_reader::uds_of_pubkey::UdsWithSum>>;
+            fn get_current_frame<BcDb: 'static + BcV2DbReadable>(
+                &self,
+                bc_db: &BcDb,
+            ) -> anyhow::Result<Vec<duniter_dbs::BlockMetaV2>>;
             fn find_inputs<BcDb: 'static + BcV2DbReadable, TxsMpDb: 'static + TxsMpV2DbReadable>(
                 &self,
                 bc_db: &BcDb,

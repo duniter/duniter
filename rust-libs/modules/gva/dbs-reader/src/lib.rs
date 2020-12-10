@@ -22,6 +22,7 @@
     unused_import_braces
 )]
 
+pub mod current_frame;
 pub mod find_inputs;
 pub mod pagination;
 pub mod txs_history;
@@ -35,12 +36,15 @@ use dubp::common::crypto::hashs::Hash;
 use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::documents::transaction::TransactionDocumentV10;
 use dubp::{common::prelude::BlockNumber, wallet::prelude::*};
-use duniter_dbs::databases::{
-    bc_v2::{BcV2DbReadable, BcV2DbRo},
-    gva_v1::{GvaV1DbReadable, GvaV1DbRo},
-    txs_mp_v2::TxsMpV2DbReadable,
-};
 use duniter_dbs::FileBackend;
+use duniter_dbs::{
+    databases::{
+        bc_v2::{BcV2DbReadable, BcV2DbRo},
+        gva_v1::{GvaV1DbReadable, GvaV1DbRo},
+        txs_mp_v2::TxsMpV2DbReadable,
+    },
+    BlockMetaV2,
+};
 use duniter_dbs::{
     kv_typed::prelude::*, HashKeyV2, PubKeyKeyV2, SourceAmountValV2, TxDbV2, UtxoIdDbV2,
 };
@@ -68,6 +72,15 @@ impl DbsReader {
         self.0
             .balances()
             .get(duniter_dbs::WalletConditionsV2::from_ref(account_script))
+    }
+
+    pub fn get_current_block<BcDb: BcV2DbReadable>(
+        &self,
+        bc_db: &BcDb,
+    ) -> KvResult<Option<BlockMetaV2>> {
+        bc_db
+            .blocks_meta()
+            .iter_rev(.., |it| it.values().next_res())
     }
 
     pub fn get_current_ud<BcDb: BcV2DbReadable>(

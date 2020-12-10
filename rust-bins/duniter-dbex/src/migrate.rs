@@ -26,16 +26,17 @@ const CHUNK_SIZE: usize = 250;
 
 pub(crate) fn migrate(profile_path: PathBuf) -> anyhow::Result<()> {
     let start_time = Instant::now();
-    let (bc_db, dbs) = duniter_dbs::open_dbs(Some(profile_path.as_path()));
+    let (bc_db, shared_dbs) = duniter_dbs::open_dbs(Some(profile_path.as_path()));
+    let gva_db = duniter_gva::GvaModule::get_gva_db_rw(Some(profile_path.as_path()));
 
     // Clear bc_db and gva_db
     bc_db.clear()?;
-    dbs.gva_db.clear()?;
+    gva_db.clear()?;
 
-    if let Err(e) = migrate_inner(&bc_db, dbs.clone(), profile_path, start_time) {
+    if let Err(e) = migrate_inner(&bc_db, gva_db, profile_path, shared_dbs, start_time) {
         // Clear bc_db and gva_db
         bc_db.clear()?;
-        dbs.gva_db.clear()?;
+        gva_db.clear()?;
 
         Err(e)
     } else {
@@ -45,8 +46,9 @@ pub(crate) fn migrate(profile_path: PathBuf) -> anyhow::Result<()> {
 
 fn migrate_inner(
     bc_db: &BcV2Db<FileBackend>,
-    dbs: DuniterDbs<FileBackend>,
+    gva_db: &'static GvaV1Db<FileBackend>,
     profile_path: PathBuf,
+    shared_dbs: SharedDbs<FileBackend>,
     start_time: Instant,
 ) -> anyhow::Result<()> {
     let data_path = profile_path.join(crate::DATA_DIR);
@@ -55,15 +57,10 @@ fn migrate_inner(
         ..Default::default()
     })?;
 
-    let dbs_pool = ThreadPool::start(ThreadPoolConfig::default(), dbs).into_sync_handler();
+    let dbs_pool = ThreadPool::start(ThreadPoolConfig::default(), shared_dbs).into_sync_handler();
 
     if let Some(target) = get_target_block_number(&duniter_js_db)? {
         println!("target block: #{}", target.0);
-        /*let chunk_count = if (target.0 as usize + 1) % CHUNK_SIZE == 0 {
-            (target.0 as usize + 1) / CHUNK_SIZE
-        } else {
-            (target.0 as usize / CHUNK_SIZE) + 1
-        };*/
 
         let (s, r) = std::sync::mpsc::channel();
         let reader_handle = std::thread::spawn(move || {
@@ -114,9 +111,9 @@ fn migrate_inner(
                 let chunk = Arc::from(chunk);
                 let chunk_arc_clone = Arc::clone(&chunk);
                 let gva_handle = dbs_pool
-                    .launch(move |dbs| {
+                    .launch(move |_| {
                         for block in chunk_arc_clone.deref() {
-                            duniter_gva_db_writer::apply_block(block, &dbs.gva_db)?;
+                            duniter_gva_db_writer::apply_block(block, gva_db)?;
                         }
                         Ok::<_, KvError>(())
                     })
@@ -135,10 +132,7 @@ fn migrate_inner(
 
         println!("Flush DBs caches on disk...");
         bc_db.save()?;
-        dbs_pool.execute(|dbs| {
-            dbs.gva_db.save()?;
-            Ok::<(), KvError>(())
-        })??;
+        gva_db.save()?;
 
         if let Some(current) = current {
             if current.number != target.0 {

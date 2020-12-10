@@ -43,7 +43,7 @@ impl DuniterServer {
             .execute(move |dbs| dbs.dunp_db.peers_old_write().remove(PubKeyKeyV2(pubkey)))
             .expect("dbs pool disconnected")
     }
-    pub fn save_peer(&self, new_peer_card: PeerCardStringified) -> anyhow::Result<()> {
+    pub fn save_peer(&self, new_peer_card: PeerCardDbV1) -> anyhow::Result<()> {
         use dubp::crypto::keys::PublicKey as _;
         let pubkey = PublicKey::from_base58(&new_peer_card.pubkey)?;
         use duniter_dbs::databases::dunp_v1::DunpV1DbWritable as _;
@@ -65,23 +65,12 @@ impl DuniterServer {
             .expect("dbs pool disconnected")
             .map_err(|e| e.into())
     }
-    pub fn update_self_peer(&self, new_peer_card: PeerCardStringified) {
+    pub fn update_self_peer(&self, new_peer_card: PeerCardDbV1) {
         self.dbs_pool
             .execute(move |dbs| {
                 dbs.cm_db
                     .self_peer_old_write()
-                    .upsert(
-                        (),
-                        duniter_dbs::PeerCardDbV1 {
-                            version: new_peer_card.version,
-                            currency: new_peer_card.currency,
-                            pubkey: new_peer_card.pubkey,
-                            blockstamp: new_peer_card.blockstamp,
-                            endpoints: new_peer_card.endpoints,
-                            status: new_peer_card.status,
-                            signature: new_peer_card.signature,
-                        },
-                    )
+                    .upsert((), new_peer_card)
                     .expect("fail to write on memory db")
             })
             .expect("dbs pool disconnected")
@@ -131,7 +120,7 @@ mod tests {
         use duniter_dbs::databases::dunp_v1::DunpV1DbReadable as _;
         let (server, dbs) = DuniterServer::test(DuniterConf::default())?;
 
-        let peer = PeerCardStringified {
+        let peer = PeerCardDbV1 {
             version: 0,
             currency: "test".to_owned(),
             pubkey: "82NdD9eEbXSjRJXeJdqf56xkpu6taTfTeEqtAtmtbyXY".to_owned(),
@@ -148,18 +137,7 @@ mod tests {
         assert_eq!(dbs.dunp_db.peers_old().count()?, 1);
         let peer_db = dbs.dunp_db.peers_old().get(&PubKeyKeyV2(pubkey))?;
 
-        assert_eq!(
-            peer_db,
-            Some(PeerCardDbV1 {
-                version: peer.version,
-                currency: peer.currency,
-                pubkey: peer.pubkey,
-                blockstamp: peer.blockstamp,
-                endpoints: peer.endpoints,
-                status: peer.status,
-                signature: peer.signature,
-            })
-        );
+        assert_eq!(peer_db, Some(peer));
 
         Ok(())
     }

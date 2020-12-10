@@ -19,7 +19,7 @@ pub fn apply_block(
     bc_db: &BcV2Db<FileBackend>,
     block: Arc<DubpBlockV10>,
     current_opt: Option<BlockMetaV2>,
-    dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+    dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
     throw_chainability: bool,
 ) -> KvResult<BlockMetaV2> {
     if let Some(current) = current_opt {
@@ -50,7 +50,7 @@ pub fn apply_block(
 pub fn apply_chunk(
     bc_db: &BcV2Db<FileBackend>,
     current_opt: Option<BlockMetaV2>,
-    dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+    dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
     blocks: Arc<[DubpBlockV10]>,
 ) -> KvResult<BlockMetaV2> {
     verify_chunk_chainability(current_opt, &blocks)?;
@@ -103,7 +103,7 @@ fn verify_chunk_chainability(
 
 fn apply_block_inner(
     bc_db: &BcV2Db<FileBackend>,
-    dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+    dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
     block: Arc<DubpBlockV10>,
 ) -> KvResult<BlockMetaV2> {
     let block_arc_clone = Arc::clone(&block);
@@ -126,7 +126,7 @@ fn apply_block_inner(
 
 fn apply_chunk_inner(
     bc_db: &BcV2Db<FileBackend>,
-    dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<DuniterDbs<FileBackend>>,
+    dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
     blocks: Arc<[DubpBlockV10]>,
 ) -> KvResult<BlockMetaV2> {
     let blocks_len = blocks.len();

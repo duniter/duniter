@@ -15,7 +15,6 @@
 
 use crate::*;
 use async_graphql::connection::*;
-use duniter_dbs::databases::gva_v1::GvaV1DbReadable;
 use duniter_gva_dbs_reader::{
     utxos::{UtxoCursor, UtxosWithSum},
     PagedData,
@@ -63,12 +62,7 @@ impl UtxosQuery {
                     )?;
                     let mut times = Vec::with_capacity(paged_data.data.utxos.len());
                     for (UtxoCursor { block_number, .. }, _sa) in &paged_data.data.utxos {
-                        times.push(
-                            dbs.gva_db
-                                .blockchain_time()
-                                .get(&U32BE(block_number.0))?
-                                .unwrap_or_else(|| unreachable!()),
-                        );
+                        times.push(db_reader.get_blockchain_time(*block_number)?);
                     }
                     Ok::<_, anyhow::Error>((paged_data, times))
                 } else {

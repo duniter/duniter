@@ -29,6 +29,31 @@ pub(crate) struct AmountWithBase {
     pub(crate) base: i32,
 }
 
+#[derive(Default, async_graphql::SimpleObject)]
+#[graphql(name = "Peer")]
+pub struct PeerCardGva {
+    pub version: u32,
+    pub currency: String,
+    pub pubkey: String,
+    pub blockstamp: String,
+    pub endpoints: Vec<String>,
+    pub status: String,
+    pub signature: String,
+}
+impl From<duniter_dbs::PeerCardDbV1> for PeerCardGva {
+    fn from(peer: duniter_dbs::PeerCardDbV1) -> Self {
+        Self {
+            version: peer.version,
+            currency: peer.currency,
+            pubkey: peer.pubkey,
+            blockstamp: peer.blockstamp,
+            endpoints: peer.endpoints,
+            status: peer.status,
+            signature: peer.signature,
+        }
+    }
+}
+
 pub(crate) enum RawTxOrChanges {
     FinalTx(String),
     Changes(Vec<String>),

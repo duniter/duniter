@@ -21,7 +21,7 @@ use dubp::documents::{
 };
 use dubp::documents_parser::prelude::*;
 use dubp::{common::crypto::hashs::Hash, crypto::keys::ed25519::Ed25519KeyPair};
-use duniter_server::{DuniterConf, DuniterServer, GvaConf, PeerCardStringified};
+use duniter_server::{DuniterConf, DuniterServer, GvaConf};
 use neon::declare_types;
 use neon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -60,7 +60,7 @@ declare_types! {
                         .downcast::<JsString>()
                         .or_throw(&mut cx)?
                         .value();
-                    if std::env::var_os("DUNITER_MEMORY_ONLY") == Some("yes".into()) {
+                    if std::env::var_os("DUNITER_JS_TESTS") == Some("yes".into()) {
                         None
                     } else {
                         Some(PathBuf::from(home_path_str))
@@ -265,11 +265,11 @@ declare_types! {
                 Ok(txs_history) => {
                     let sent: Vec<_> = txs_history.sent
                         .into_iter()
-                        .map(|db_tx| DbTx::v10(db_tx.tx.to_string_object(), db_tx.tx.get_hash(), db_tx.written_block.number.0, db_tx.written_time))
+                        .map(|(tx, wb, wt)| DbTx::v10(tx.to_string_object(), tx.get_hash(), wb.number.0, wt))
                         .collect();
                     let received: Vec<_> = txs_history.received
                         .into_iter()
-                        .map(|db_tx| DbTx::v10(db_tx.tx.to_string_object(), db_tx.tx.get_hash(), db_tx.written_block.number.0, db_tx.written_time))
+                        .map(|(tx, wb, wt)| DbTx::v10(tx.to_string_object(), tx.get_hash(), wb.number.0, wt))
                         .collect();
                     let sending: Vec<_> = txs_history.sending.into_iter().map(|tx| tx.to_string_object()).collect();
                     let pending: Vec<_> = txs_history.pending.into_iter().map(|tx| tx.to_string_object()).collect();
@@ -354,12 +354,21 @@ declare_types! {
             let peer_js = cx.argument::<JsValue>(0)?;
 
             let peer_stringified: PeerCardStringified = neon_serde::from_value(&mut cx, peer_js)?;
+            let peer = duniter_server::PeerCardDbV1 {
+                version: peer_stringified.version,
+                currency: peer_stringified.currency,
+                pubkey: peer_stringified.pubkey,
+                blockstamp: peer_stringified.blockstamp,
+                endpoints: peer_stringified.endpoints,
+                status: peer_stringified.status,
+                signature: peer_stringified.signature,
+            };
 
             let this = cx.this();
             let res = {
                 let guard = cx.lock();
                 let server = this.borrow(&guard);
-                server.server.save_peer(peer_stringified)
+                server.server.save_peer(peer)
             }.map(|()| cx.undefined().upcast());
             into_neon_res(&mut cx, res)
         }
@@ -367,12 +376,21 @@ declare_types! {
             let peer_js = cx.argument::<JsValue>(0)?;
 
             let peer_stringified: PeerCardStringified = neon_serde::from_value(&mut cx, peer_js)?;
+            let peer = duniter_server::PeerCardDbV1 {
+                version: peer_stringified.version,
+                currency: peer_stringified.currency,
+                pubkey: peer_stringified.pubkey,
+                blockstamp: peer_stringified.blockstamp,
+                endpoints: peer_stringified.endpoints,
+                status: peer_stringified.status,
+                signature: peer_stringified.signature,
+            };
 
             let this = cx.this();
             {
                 let guard = cx.lock();
                 let server = this.borrow(&guard);
-                server.server.update_self_peer(peer_stringified)
+                server.server.update_self_peer(peer)
             };
             Ok(cx.undefined().upcast())
         }
@@ -428,6 +446,18 @@ struct HeadWS2Pv1ConfStringified {
     message_v2: Option<String>,
     sig_v2: Option<String>,
     step: Option<usize>,
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PeerCardStringified {
+    pub version: u32,
+    pub currency: String,
+    pub pubkey: String,
+    pub blockstamp: String,
+    pub endpoints: Vec<String>,
+    pub status: String,
+    pub signature: String,
 }
 
 #[derive(Deserialize, Serialize)]

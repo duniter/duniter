@@ -59,6 +59,7 @@ mod tests {
             hash: None,
         }
         .build_with_signature(smallvec![]);
+
         server.add_pending_tx_force(tx.clone())?;
 
         let txs_history = server.get_transactions_history(PublicKey::default())?;

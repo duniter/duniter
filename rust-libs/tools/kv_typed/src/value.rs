@@ -54,6 +54,10 @@ pub trait ValueZc: Value {
     type Ref: Sized + zerocopy::AsBytes + zerocopy::FromBytes;
 }
 
+impl ValueZc for () {
+    type Ref = ();
+}
+
 macro_rules! impl_value_zc_for_numbers {
     ($($T:ty),*) => {$(
         impl ValueZc for $T {
@@ -61,7 +65,6 @@ macro_rules! impl_value_zc_for_numbers {
         }
     )*};
 }
-
 impl_value_zc_for_numbers!(
     usize, u8, u16, u32, u64, u128, isize, i8, i16, i32, i64, i128, f32, f64
 );
@@ -71,6 +74,14 @@ pub trait ValueSliceZc: Value {
 
     fn prefix_len() -> usize {
         8
+    }
+}
+
+impl ValueSliceZc for () {
+    type Elem = ();
+
+    fn prefix_len() -> usize {
+        0
     }
 }
 

@@ -206,12 +206,8 @@ impl BackendCol for LevelDbCol {
         Ok(())
     }
     #[inline(always)]
-    fn iter<K: Key, V: Value>(&self, _range: RangeBytes) -> Self::Iter {
-        LevelDbIter(self.0.iter(ReadOptions::new()))
-    }
-    #[inline(always)]
-    fn iter_rev<K: Key, V: Value>(&self, _range: RangeBytes) -> Self::Iter {
-        LevelDbIter(self.0.iter(ReadOptions::new()).reverse())
+    fn iter<K: Key, V: Value>(&self, range: RangeBytes) -> Self::Iter {
+        LevelDbIter::new(self.0.iter(ReadOptions::new()), range)
     }
     #[inline(always)]
     fn save(&self) -> KvResult<()> {
@@ -219,11 +215,28 @@ impl BackendCol for LevelDbCol {
     }
 }
 
-pub struct LevelDbIter(LevelDbIterator);
+pub struct LevelDbIter {
+    inner: LevelDbIterator,
+    range_start: Bound<IVec>,
+    range_end: Bound<IVec>,
+    reversed: bool,
+}
+impl LevelDbIter {
+    fn new(inner: LevelDbIterator, range: RangeBytes) -> Self {
+        LevelDbIter {
+            inner,
+            range_start: range.0,
+            range_end: range.1,
+            reversed: false,
+        }
+    }
+}
 impl Debug for LevelDbIter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LevelDbIter")
-            .field("0", &"LevelDbIterator<'db>")
+            .field("inner", &"LevelDbIterator<'db>")
+            .field("range_start", &self.range_start)
+            .field("range_end", &self.range_end)
             .finish()
     }
 }
@@ -233,15 +246,60 @@ impl Iterator for LevelDbIter {
 
     #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
-        self.0
-            .next()
-            .map(|(k, v)| Ok((LevelDbBytes(k), LevelDbBytes(v))))
+        loop {
+            match self
+                .inner
+                .next()
+                .map(|(k, v)| Ok((LevelDbBytes(k), LevelDbBytes(v))))
+            {
+                Some(Ok((key_bytes, value_bytes))) => {
+                    let start_bound_ok = match &self.range_start {
+                        Bound::Included(start_bytes) => key_bytes.as_ref() >= start_bytes.as_ref(),
+                        Bound::Excluded(start_bytes) => key_bytes.as_ref() > start_bytes.as_ref(),
+                        Bound::Unbounded => true,
+                    };
+                    let end_bound_ok = match &self.range_end {
+                        Bound::Included(end_bytes) => key_bytes.as_ref() <= end_bytes.as_ref(),
+                        Bound::Excluded(end_bytes) => key_bytes.as_ref() < end_bytes.as_ref(),
+                        Bound::Unbounded => true,
+                    };
+                    if start_bound_ok {
+                        if end_bound_ok {
+                            break Some(Ok((key_bytes, value_bytes)));
+                        } else if self.reversed {
+                            // The interval has not yet begun.
+                            continue;
+                        } else {
+                            // The range has been fully traversed, the iterator is finished.
+                            break None;
+                        }
+                    } else if end_bound_ok {
+                        if self.reversed {
+                            // The range has been fully traversed, the iterator is finished.
+                            break None;
+                        } else {
+                            // The interval has not yet begun.
+                            continue;
+                        }
+                    } else {
+                        // Empty range, the iterator is finished.
+                        break None;
+                    }
+                }
+                other => break other,
+            }
+        }
     }
 }
 impl ReversableIterator for LevelDbIter {
     #[inline(always)]
     fn reverse(self) -> Self {
-        Self(self.0.reverse())
+        LevelDbIter {
+            range_start: self.range_start,
+            range_end: self.range_end,
+            reversed: !self.reversed,
+            inner: self.inner.reverse(),
+        }
     }
 }
 impl BackendIter<LevelDbBytes, LevelDbBytes> for LevelDbIter {}

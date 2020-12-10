@@ -20,8 +20,8 @@ use crate::*;
 #[derive(Debug)]
 pub struct KvIterKeys<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>, K: Key>
 {
-    range_iter: super::range::RangeIter<C, KB, VB, BI>,
-    phantom_key: PhantomData<K>,
+    backend_iter: BI,
+    phantom: PhantomData<(C, KB, VB, K)>,
 }
 
 impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>, K: Key> Iterator
@@ -30,7 +30,7 @@ impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>, K: Ke
     type Item = KvResult<K>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.range_iter.next() {
+        match self.backend_iter.next() {
             Some(Ok((key_bytes, _value_bytes))) => match K::from_bytes(key_bytes.as_ref()) {
                 Ok(key) => Some(Ok(key)),
                 Err(e) => Some(Err(KvError::DeserError(format!("{}", e)))),
@@ -42,24 +42,12 @@ impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>, K: Ke
 }
 
 impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>, K: Key>
-    ReversableIterator for KvIterKeys<C, KB, VB, BI, K>
-{
-    #[inline(always)]
-    fn reverse(self) -> Self {
-        Self {
-            range_iter: self.range_iter.reverse(),
-            phantom_key: PhantomData,
-        }
-    }
-}
-
-impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>, K: Key>
     KvIterKeys<C, KB, VB, BI, K>
 {
-    pub(super) fn new(range_iter: super::range::RangeIter<C, KB, VB, BI>) -> Self {
+    pub(super) fn new(backend_iter: BI) -> Self {
         Self {
-            range_iter,
-            phantom_key: PhantomData,
+            backend_iter,
+            phantom: PhantomData,
         }
     }
 }

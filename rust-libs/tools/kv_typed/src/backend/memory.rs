@@ -337,10 +337,6 @@ impl BackendCol for MemCol {
         })
     }
     #[inline(always)]
-    fn iter_rev<K: Key, V: Value>(&self, range: RangeBytes) -> Self::Iter {
-        self.iter::<K, V>(range).reverse()
-    }
-    #[inline(always)]
     fn save(&self) -> KvResult<()> {
         /*if let Some(ref file_path) = self.path {
             let bytes = Self::tree_to_bytes(&self.tree);

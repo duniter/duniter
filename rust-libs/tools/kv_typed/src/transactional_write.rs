@@ -20,11 +20,11 @@ pub(crate) mod tx_iter;
 use crate::*;
 use parking_lot::RwLockUpgradableReadGuard as UpgradableReadGuard;
 
-pub struct TxColRw<'db, BC: BackendCol, E: EventTrait> {
+pub struct TxColRw<'tx, BC: BackendCol, E: EventTrait> {
     batch: &'static mut Batch<BC, ColRw<BC, E>>,
-    col_reader: &'db UpgradableReadGuard<'db, ColInner<BC, E>>,
+    col_reader: &'tx UpgradableReadGuard<'tx, ColInner<BC, E>>,
 }
-impl<'db, BC: BackendCol, E: EventTrait> Debug for TxColRw<'db, BC, E> {
+impl<'tx, BC: BackendCol, E: EventTrait> Debug for TxColRw<'tx, BC, E> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LevelDbCol")
             .field("batch", &format!("{:?}", self.batch))
@@ -33,12 +33,12 @@ impl<'db, BC: BackendCol, E: EventTrait> Debug for TxColRw<'db, BC, E> {
     }
 }
 
-impl<'db, V: ValueZc, BC: BackendCol, E: EventTrait<V = V>> TxColRw<'db, BC, E> {
+impl<'tx, V: ValueZc, BC: BackendCol, E: EventTrait<V = V>> TxColRw<'tx, BC, E> {
     pub fn get_ref<D, F: Fn(&V::Ref) -> KvResult<D>>(&self, k: &E::K, f: F) -> KvResult<Option<D>> {
         self.col_reader.backend_col.get_ref::<E::K, V, D, F>(k, f)
     }
 }
-impl<'db, V: ValueSliceZc, BC: BackendCol, E: EventTrait<V = V>> TxColRw<'db, BC, E> {
+impl<'tx, V: ValueSliceZc, BC: BackendCol, E: EventTrait<V = V>> TxColRw<'tx, BC, E> {
     pub fn get_ref_slice<D, F: Fn(&[V::Elem]) -> KvResult<D>>(
         &self,
         k: &E::K,
@@ -50,12 +50,7 @@ impl<'db, V: ValueSliceZc, BC: BackendCol, E: EventTrait<V = V>> TxColRw<'db, BC
     }
 }
 
-impl<'db, BC: BackendCol, E: EventTrait> TxColRw<'db, BC, E> {
-    /*type BackendCol = BC;
-    type K = E::K;
-    type V = E::V;
-    type Event = E;*/
-
+impl<'tx, BC: BackendCol, E: EventTrait> TxColRw<'tx, BC, E> {
     #[inline(always)]
     pub fn count(&self) -> KvResult<usize> {
         self.col_reader.backend_col.count()
@@ -73,7 +68,7 @@ impl<'db, BC: BackendCol, E: EventTrait> TxColRw<'db, BC, E> {
     #[allow(clippy::type_complexity)]
     #[inline(always)]
     /// Don't worry about complex iter type. Use it like an `impl Iterator<Item=KvResult<(K, V)>>`.
-    pub fn iter<'tx, D, R, F>(&'tx self, range: R, f: F) -> D
+    pub fn iter<D, R, F>(&'tx self, range: R, f: F) -> D
     where
         D: Send + Sync,
         R: 'static + RangeBounds<E::K>,
@@ -89,19 +84,16 @@ impl<'db, BC: BackendCol, E: EventTrait> TxColRw<'db, BC, E> {
         ) -> D,
     {
         let range_bytes = crate::iter::convert_range::<E::K, R>(range);
-        let backend_iter = self
-            .col_reader
-            .backend_col
-            .iter::<E::K, E::V>(range_bytes.clone());
-        f(KvIter::new(
-            BackendTxIter::new(backend_iter, &self.batch.tree),
-            range_bytes,
-        ))
+        let backend_iter = self.col_reader.backend_col.iter::<E::K, E::V>(range_bytes);
+        f(KvIter::new(BackendTxIter::new(
+            backend_iter,
+            &self.batch.tree,
+        )))
     }
     #[allow(clippy::type_complexity)]
     #[inline(always)]
     /// Don't worry about complex iter type. Use it like an `impl Iterator<Item=KvResult<(K, V)>>`.
-    pub fn iter_rev<'tx, D, R, F>(&'tx self, range: R, f: F) -> D
+    pub fn iter_rev<D, R, F>(&'tx self, range: R, f: F) -> D
     where
         D: Send + Sync,
         R: 'static + RangeBounds<E::K>,
@@ -117,15 +109,10 @@ impl<'db, BC: BackendCol, E: EventTrait> TxColRw<'db, BC, E> {
         ) -> D,
     {
         let range_bytes = crate::iter::convert_range::<E::K, R>(range);
-        let backend_iter = self
-            .col_reader
-            .backend_col
-            .iter::<E::K, E::V>(range_bytes.clone());
+        let backend_iter = self.col_reader.backend_col.iter::<E::K, E::V>(range_bytes);
         f(KvIter::new(
-            BackendTxIter::new(backend_iter, &self.batch.tree),
-            range_bytes,
-        )
-        .reverse())
+            BackendTxIter::new(backend_iter, &self.batch.tree).reverse(),
+        ))
     }
 }
 
@@ -138,7 +125,7 @@ pub trait DbTxCollectionRw {
     fn upsert(&mut self, k: Self::K, v: Self::V);
 }
 
-impl<'db, BC: BackendCol, E: EventTrait> DbTxCollectionRw for TxColRw<'db, BC, E> {
+impl<'tx, BC: BackendCol, E: EventTrait> DbTxCollectionRw for TxColRw<'tx, BC, E> {
     type K = E::K;
     type V = E::V;
     type Event = E;
@@ -153,16 +140,16 @@ impl<'db, BC: BackendCol, E: EventTrait> DbTxCollectionRw for TxColRw<'db, BC, E
     }
 }
 
-pub trait TransactionalWrite<'db, BC: BackendCol> {
+pub trait TransactionalWrite<'tx, BC: BackendCol> {
     type TxCols;
 
-    fn write<D, F: FnOnce(Self::TxCols) -> KvResult<D>>(&'db self, f: F) -> KvResult<D>;
+    fn write<D, F: FnOnce(Self::TxCols) -> KvResult<D>>(&'tx self, f: F) -> KvResult<D>;
 }
 
-impl<'db, BC: BackendCol, E: EventTrait> TransactionalWrite<'db, BC> for &'db ColRw<BC, E> {
-    type TxCols = TxColRw<'db, BC, E>;
+impl<'tx, BC: BackendCol, E: EventTrait> TransactionalWrite<'tx, BC> for &'tx ColRw<BC, E> {
+    type TxCols = TxColRw<'tx, BC, E>;
 
-    fn write<D, F: FnOnce(Self::TxCols) -> KvResult<D>>(&'db self, f: F) -> KvResult<D> {
+    fn write<D, F: FnOnce(Self::TxCols) -> KvResult<D>>(&'tx self, f: F) -> KvResult<D> {
         let upgradable_guard = self.inner.inner.upgradable_read();
 
         let mut batch = Batch::<BC, ColRw<BC, E>>::default();
@@ -189,13 +176,13 @@ impl<'db, BC: BackendCol, E: EventTrait> TransactionalWrite<'db, BC> for &'db Co
 macro_rules! impl_transactional_write {
     ($($i:literal),*) => {
         paste::paste! {
-            impl<'db, BC: BackendCol $( ,[<E $i>]: EventTrait)*> TransactionalWrite<'db, BC>
-                for ($(&'db ColRw<BC, [<E $i>]>, )*)
+            impl<'tx, BC: BackendCol $( ,[<E $i>]: EventTrait)*> TransactionalWrite<'tx, BC>
+                for ($(&'tx ColRw<BC, [<E $i>]>, )*)
             {
-                type TxCols = ($(TxColRw<'db, BC,  [<E $i>]>, )*);
+                type TxCols = ($(TxColRw<'tx, BC,  [<E $i>]>, )*);
 
                 fn write<D, F: FnOnce(Self::TxCols) -> KvResult<D>>(
-                    &'db self,
+                    &'tx self,
                     f: F,
                 ) -> KvResult<D> {
                     $(let [<upgradable_guard_ $i>] = self.$i.inner.inner.upgradable_read();)*

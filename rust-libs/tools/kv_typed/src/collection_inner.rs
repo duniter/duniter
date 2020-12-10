@@ -16,7 +16,7 @@
 use crate::*;
 
 #[derive(Debug)]
-pub(crate) struct ColInner<BC: BackendCol, E: EventTrait> {
+pub struct ColInner<BC: BackendCol, E: EventTrait> {
     pub(crate) backend_col: BC,
     subscribers: ColSubscribers<E>,
 }

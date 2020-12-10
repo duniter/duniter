@@ -18,6 +18,7 @@ mod txs;
 mod uds;
 
 use crate::*;
+use dubp::crypto::keys::ed25519::PublicKey;
 use duniter_dbs::databases::bc_v2::BcV2DbWritable;
 
 pub fn apply_block<B: Backend>(
@@ -29,17 +30,22 @@ pub fn apply_block<B: Backend>(
         version: 10,
         number: block.number().0,
         hash: block.hash().0,
-        issuer: block.issuer(),
         signature: block.signature(),
         inner_hash: block.inner_hash(),
         previous_hash: block.previous_hash(),
+        issuer: block.issuer(),
+        previous_issuer: PublicKey::default(),
+        time: block.local_time(),
         pow_min: block.pow_min() as u32,
         members_count: block.members_count() as u64,
         issuers_count: block.issuers_count() as u32,
+        issuers_frame: block.issuers_frame() as u64,
+        issuers_frame_var: 0,
         median_time: block.common_time(),
+        nonce: block.nonce(),
+        monetary_mass: block.monetary_mass(),
         dividend: block.dividend(),
         unit_base: block.unit_base() as u32,
-        ..Default::default()
     };
 
     (

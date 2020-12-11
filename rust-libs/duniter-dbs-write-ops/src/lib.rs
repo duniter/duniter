@@ -49,3 +49,5 @@ use resiter::filter_map::FilterMap;
 use resiter::flatten::Flatten;
 use resiter::map::Map;
 use std::ops::Deref;
+
+const ROLL_BACK_MAX: u32 = 100;

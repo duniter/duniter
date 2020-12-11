@@ -1124,6 +1124,7 @@ dependencies = [
  "duniter-dbs",
  "fast-threadpool",
  "log",
+ "maplit",
  "resiter",
  "serde_json",
 ]

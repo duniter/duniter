@@ -14,7 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use std::ops::Deref;
+use std::{collections::HashMap, ops::Deref};
 
 #[derive(
     Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, zerocopy::AsBytes, zerocopy::FromBytes,
@@ -105,6 +105,39 @@ impl ExplorableValue for UtxoValV2 {
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
         Ok(serde_json::Value::String(self.to_string()))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+pub struct BlockUtxosV2Db(pub HashMap<UtxoIdV10, WalletScriptWithSourceAmountV1Db>);
+
+impl ValueAsBytes for BlockUtxosV2Db {
+    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
+        f(&bincode::serialize(&self).map_err(|e| KvError::DeserError(format!("{}", e)))?)
+    }
+}
+
+impl kv_typed::prelude::FromBytes for BlockUtxosV2Db {
+    type Err = StringErr;
+
+    fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
+        Ok(bincode::deserialize(bytes).map_err(|e| StringErr(format!("{}", e)))?)
+    }
+}
+
+impl ToDumpString for BlockUtxosV2Db {
+    fn to_dump_string(&self) -> String {
+        todo!()
+    }
+}
+
+#[cfg(feature = "explorer")]
+impl ExplorableValue for BlockUtxosV2Db {
+    fn from_explorer_str(_: &str) -> std::result::Result<Self, StringErr> {
+        unimplemented!()
+    }
+    fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
+        Ok(serde_json::to_value(self).map_err(|e| KvError::DeserError(e.to_string()))?)
     }
 }
 

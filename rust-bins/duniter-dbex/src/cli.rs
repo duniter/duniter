@@ -63,6 +63,18 @@ impl FromStr for Database {
 pub enum SubCommand {
     /// Count collection entries
     Count { collection: String },
+    /// Export blockchain
+    ExportBc {
+        /// Chunk size (in number of blocks)
+        #[structopt(short, long, default_value = "1000")]
+        chunk_size: usize,
+        /// Output directory
+        #[structopt(parse(from_os_str))]
+        output_dir: PathBuf,
+        /// Write pretty json
+        #[structopt(short, long)]
+        pretty: bool,
+    },
     /// Get one value
     Get { collection: String, key: String },
     /// Search values by criteria

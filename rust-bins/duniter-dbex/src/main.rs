@@ -23,6 +23,7 @@
 )]
 
 mod cli;
+mod export_bc;
 mod migrate;
 mod print_found_data;
 mod stringify_json_value;
@@ -86,51 +87,65 @@ fn main() -> anyhow::Result<()> {
         ));
     }
 
-    if let SubCommand::Migrate = opt.cmd {
-        migrate::migrate(profile_path)
-    } else {
-        let open_db_start_time = Instant::now();
-        match opt.database {
-            Database::BcV1 => apply_subcommand(
-                BcV1Db::<LevelDb>::open(LevelDbConf {
-                    db_path: data_path.as_path().join("leveldb"),
-                    ..Default::default()
-                })?,
-                opt.cmd,
-                open_db_start_time,
-            ),
-            Database::BcV2 => apply_subcommand(
-                BcV2Db::<Sled>::open(Sled::gen_backend_conf(
-                    BcV2Db::<Sled>::NAME,
-                    Some(profile_path.as_path()),
-                ))?,
-                opt.cmd,
-                open_db_start_time,
-            ),
-            Database::DunpV1 => apply_subcommand(
-                DunpV1Db::<Sled>::open(Sled::gen_backend_conf(
-                    DunpV1Db::<Sled>::NAME,
-                    Some(profile_path.as_path()),
-                ))?,
-                opt.cmd,
-                open_db_start_time,
-            ),
-            Database::GvaV1 => apply_subcommand(
-                GvaV1Db::<Sled>::open(Sled::gen_backend_conf(
-                    GvaV1Db::<Sled>::NAME,
-                    Some(profile_path.as_path()),
-                ))?,
-                opt.cmd,
-                open_db_start_time,
-            ),
-            Database::TxsMpV2 => apply_subcommand(
-                TxsMpV2Db::<Sled>::open(Sled::gen_backend_conf(
-                    TxsMpV2Db::<Sled>::NAME,
-                    Some(profile_path.as_path()),
-                ))?,
-                opt.cmd,
-                open_db_start_time,
-            ),
+    match opt.cmd {
+        SubCommand::Migrate => migrate::migrate(profile_path),
+        SubCommand::ExportBc {
+            chunk_size,
+            output_dir,
+            pretty,
+        } => export_bc::export_bc(
+            BcV1Db::<LevelDb>::open(LevelDbConf {
+                db_path: data_path.as_path().join("leveldb"),
+                ..Default::default()
+            })?,
+            chunk_size,
+            output_dir,
+            pretty,
+        ),
+        _ => {
+            let open_db_start_time = Instant::now();
+            match opt.database {
+                Database::BcV1 => apply_subcommand(
+                    BcV1Db::<LevelDb>::open(LevelDbConf {
+                        db_path: data_path.as_path().join("leveldb"),
+                        ..Default::default()
+                    })?,
+                    opt.cmd,
+                    open_db_start_time,
+                ),
+                Database::BcV2 => apply_subcommand(
+                    BcV2Db::<Sled>::open(Sled::gen_backend_conf(
+                        BcV2Db::<Sled>::NAME,
+                        Some(profile_path.as_path()),
+                    ))?,
+                    opt.cmd,
+                    open_db_start_time,
+                ),
+                Database::DunpV1 => apply_subcommand(
+                    DunpV1Db::<Sled>::open(Sled::gen_backend_conf(
+                        DunpV1Db::<Sled>::NAME,
+                        Some(profile_path.as_path()),
+                    ))?,
+                    opt.cmd,
+                    open_db_start_time,
+                ),
+                Database::GvaV1 => apply_subcommand(
+                    GvaV1Db::<Sled>::open(Sled::gen_backend_conf(
+                        GvaV1Db::<Sled>::NAME,
+                        Some(profile_path.as_path()),
+                    ))?,
+                    opt.cmd,
+                    open_db_start_time,
+                ),
+                Database::TxsMpV2 => apply_subcommand(
+                    TxsMpV2Db::<Sled>::open(Sled::gen_backend_conf(
+                        TxsMpV2Db::<Sled>::NAME,
+                        Some(profile_path.as_path()),
+                    ))?,
+                    opt.cmd,
+                    open_db_start_time,
+                ),
+            }
         }
     }
 }
@@ -285,7 +300,7 @@ fn apply_subcommand<DB: DbExplorable>(
         SubCommand::Schema => {
             show_db_schema(DB::list_collections());
         }
-        SubCommand::Migrate => unreachable!(),
+        _ => unreachable!(),
     };
 
     Ok(())

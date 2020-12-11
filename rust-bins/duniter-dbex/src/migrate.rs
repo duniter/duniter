@@ -62,7 +62,7 @@ fn migrate_inner(
     if let Some(target) = get_target_block_number(&duniter_js_db)? {
         println!("target block: #{}", target.0);
 
-        let (s, r) = std::sync::mpsc::channel();
+        let (s, r) = flume::unbounded();
         let reader_handle = std::thread::spawn(move || {
             duniter_js_db.main_blocks().iter(.., |it| {
                 it.values()
@@ -70,7 +70,7 @@ fn migrate_inner(
                     .collect::<anyhow::Result<()>>()
             })
         });
-        let (s2, r2) = std::sync::mpsc::channel();
+        let (s2, r2) = flume::unbounded();
         let parser_handle = std::thread::spawn(move || {
             let target_u64 = target.0 as u64;
             let mut db_blocks = Vec::with_capacity(CHUNK_SIZE);

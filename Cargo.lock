@@ -1072,10 +1072,13 @@ dependencies = [
  "duniter-gva",
  "duniter-gva-db-writer",
  "fast-threadpool",
+ "flume",
+ "once_cell",
  "rayon",
  "serde",
  "serde_json",
  "structopt",
+ "termprogress",
  "unwrap",
 ]
 
@@ -3472,6 +3475,26 @@ dependencies = [
  "redox_syscall",
  "remove_dir_all",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "terminal_size"
+version = "0.1.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4bd2d183bd3fac5f5fe38ddbeb4dc9aec4a39a9d7d59e7491d900302da01cbe1"
+dependencies = [
+ "libc",
+ "winapi 0.3.9",
+]
+
+[[package]]
+name = "termprogress"
+version = "0.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6611ecf7fedefdb0f74d6194da1918f15c00ef97ae4bbd1f60a9c7ca2ae0eb14"
+dependencies = [
+ "rustc_version",
+ "terminal_size",
 ]
 
 [[package]]

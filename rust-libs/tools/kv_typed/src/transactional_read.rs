@@ -18,19 +18,21 @@
 use crate::*;
 use parking_lot::RwLockReadGuard as ReadGuard;
 
-pub struct TxColRo<'db, BC: BackendCol, E: EventTrait> {
-    col_reader: ReadGuard<'db, ColInner<BC, E>>,
+type TxColRoReader<'r, BC, E> = parking_lot::RwLockReadGuard<'r, ColInner<BC, E>>;
+
+pub struct TxColRo<'tx, BC: BackendCol, E: EventTrait> {
+    col_reader: ReadGuard<'tx, ColInner<BC, E>>,
 }
-impl<'db, BC: BackendCol, E: EventTrait> Debug for TxColRo<'db, BC, E> {
+impl<'tx, BC: BackendCol, E: EventTrait> Debug for TxColRo<'tx, BC, E> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LevelDbCol")
             .field("col_reader", &format!("{:?}", self.col_reader))
             .finish()
     }
 }
-impl<'db, BC: BackendCol, E: EventTrait> TxColRo<'db, BC, E> {
+impl<'tx, BC: BackendCol, E: EventTrait> TxColRo<'tx, BC, E> {
     #[inline(always)]
-    fn new(col_reader: ReadGuard<'db, ColInner<BC, E>>) -> Self {
+    fn new(col_reader: ReadGuard<'tx, ColInner<BC, E>>) -> Self {
         TxColRo { col_reader }
     }
     #[inline(always)]
@@ -51,11 +53,8 @@ impl<'db, BC: BackendCol, E: EventTrait> TxColRo<'db, BC, E> {
         F: FnOnce(KvIter<BC, BC::KeyBytes, BC::ValueBytes, BC::Iter, E::K, E::V>) -> D,
     {
         let range_bytes = crate::iter::convert_range::<E::K, R>(range);
-        let backend_iter = self
-            .col_reader
-            .backend_col
-            .iter::<E::K, E::V>(range_bytes.clone());
-        f(KvIter::new(backend_iter, range_bytes))
+        let backend_iter = self.col_reader.backend_col.iter::<E::K, E::V>(range_bytes);
+        f(KvIter::new(backend_iter))
     }
     #[allow(clippy::type_complexity)]
     #[inline(always)]
@@ -70,16 +69,67 @@ impl<'db, BC: BackendCol, E: EventTrait> TxColRo<'db, BC, E> {
         let backend_iter = self
             .col_reader
             .backend_col
-            .iter::<E::K, E::V>(range_bytes.clone());
-        f(KvIter::new(backend_iter, range_bytes).reverse())
+            .iter::<E::K, E::V>(range_bytes)
+            .reverse();
+        f(KvIter::new(backend_iter))
     }
 }
-impl<'db, V: ValueZc, BC: BackendCol, E: EventTrait<V = V>> TxColRo<'db, BC, E> {
+impl<'tx, V: ValueZc, BC: BackendCol, E: EventTrait<V = V>> TxColRo<'tx, BC, E> {
     pub fn get_ref<D, F: Fn(&V::Ref) -> KvResult<D>>(&self, k: &E::K, f: F) -> KvResult<Option<D>> {
         self.col_reader.backend_col.get_ref::<E::K, V, D, F>(k, f)
     }
 }
-impl<'db, V: ValueSliceZc, BC: BackendCol, E: EventTrait<V = V>> TxColRo<'db, BC, E> {
+impl<'tx, K: KeyZc, V: ValueSliceZc, BC: BackendCol, E: EventTrait<K = K, V = V>>
+    TxColRo<'tx, BC, E>
+{
+    pub fn iter_ref_slice<D, R, F>(
+        &self,
+        range: R,
+        f: F,
+    ) -> KvIterRefSlice<BC, D, K, V, F, TxColRoReader<BC, E>>
+    where
+        K: KeyZc,
+        V: ValueSliceZc,
+        R: 'static + RangeBounds<K>,
+        F: FnMut(&K::Ref, &[V::Elem]) -> KvResult<D>,
+    {
+        let range: RangeBytes = crate::iter::convert_range::<K, R>(range);
+        let inner_iter = self
+            .col_reader
+            .backend_col
+            .iter_ref_slice::<D, K, V, F>(range, f);
+
+        KvIterRefSlice {
+            inner: inner_iter,
+            reader: OwnedOrRef::Borrow(&self.col_reader),
+        }
+    }
+    pub fn iter_ref_slice_rev<D, R, F>(
+        &self,
+        range: R,
+        f: F,
+    ) -> KvIterRefSlice<BC, D, K, V, F, TxColRoReader<BC, E>>
+    where
+        K: KeyZc,
+        V: ValueSliceZc,
+        R: 'static + RangeBounds<K>,
+        F: FnMut(&K::Ref, &[V::Elem]) -> KvResult<D>,
+    {
+        let range: RangeBytes = crate::iter::convert_range::<K, R>(range);
+        let inner_iter = self
+            .col_reader
+            .backend_col
+            .iter_ref_slice::<D, K, V, F>(range, f)
+            .reverse();
+
+        KvIterRefSlice {
+            inner: inner_iter,
+            reader: OwnedOrRef::Borrow(&self.col_reader),
+        }
+    }
+}
+
+impl<'tx, V: ValueSliceZc, BC: BackendCol, E: EventTrait<V = V>> TxColRo<'tx, BC, E> {
     pub fn get_ref_slice<D, F: Fn(&[V::Elem]) -> KvResult<D>>(
         &self,
         k: &E::K,
@@ -91,24 +141,24 @@ impl<'db, V: ValueSliceZc, BC: BackendCol, E: EventTrait<V = V>> TxColRo<'db, BC
     }
 }
 
-pub trait TransactionalRead<'db, BC: BackendCol> {
+pub trait TransactionalRead<'tx, BC: BackendCol> {
     type TxCols;
 
-    fn read<D, F: Fn(Self::TxCols) -> KvResult<D>>(&'db self, f: F) -> KvResult<D>;
+    fn read<D, F: Fn(Self::TxCols) -> KvResult<D>>(&'tx self, f: F) -> KvResult<D>;
 
-    fn try_read<D, F: Fn(Self::TxCols) -> KvResult<D>>(&'db self, f: F) -> Result<KvResult<D>, F>;
+    fn try_read<D, F: Fn(Self::TxCols) -> KvResult<D>>(&'tx self, f: F) -> Result<KvResult<D>, F>;
 }
 
-impl<'db, BC: BackendCol, E: EventTrait> TransactionalRead<'db, BC> for &'db ColRo<BC, E> {
-    type TxCols = TxColRo<'db, BC, E>;
+impl<'tx, BC: BackendCol, E: EventTrait> TransactionalRead<'tx, BC> for &'tx ColRo<BC, E> {
+    type TxCols = TxColRo<'tx, BC, E>;
 
-    fn read<D, F: Fn(Self::TxCols) -> KvResult<D>>(&'db self, f: F) -> KvResult<D> {
+    fn read<D, F: Fn(Self::TxCols) -> KvResult<D>>(&'tx self, f: F) -> KvResult<D> {
         let read_guard_0 = self.inner.read();
 
         f(TxColRo::new(read_guard_0))
     }
 
-    fn try_read<D, F: Fn(Self::TxCols) -> KvResult<D>>(&'db self, f: F) -> Result<KvResult<D>, F> {
+    fn try_read<D, F: Fn(Self::TxCols) -> KvResult<D>>(&'tx self, f: F) -> Result<KvResult<D>, F> {
         if let Some(read_guard_0) = self.inner.try_read() {
             Ok(f(TxColRo::new(read_guard_0)))
         } else {
@@ -120,13 +170,13 @@ impl<'db, BC: BackendCol, E: EventTrait> TransactionalRead<'db, BC> for &'db Col
 macro_rules! impl_transactional_read {
     ($($i:literal),*) => {
         paste::paste! {
-            impl<'db, BC: BackendCol $( ,[<E $i>]: EventTrait)*> TransactionalRead<'db, BC>
-                for ($(&'db ColRo<BC, [<E $i>]>, )*)
+            impl<'tx, BC: BackendCol $( ,[<E $i>]: EventTrait)*> TransactionalRead<'tx, BC>
+                for ($(&'tx ColRo<BC, [<E $i>]>, )*)
             {
-                type TxCols = ($(TxColRo<'db, BC,  [<E $i>]>, )*);
+                type TxCols = ($(TxColRo<'tx, BC,  [<E $i>]>, )*);
 
                 fn read<D, F: Fn(Self::TxCols) -> KvResult<D>>(
-                    &'db self,
+                    &'tx self,
                     f: F,
                 ) -> KvResult<D> {
                     $(let [<read_guard_ $i>] = self.$i.inner.read();)*
@@ -135,7 +185,7 @@ macro_rules! impl_transactional_read {
                 }
 
                 fn try_read<D, F: Fn(Self::TxCols) -> KvResult<D>>(
-                    &'db self,
+                    &'tx self,
                     f: F,
                 ) -> Result<KvResult<D>, F> {
                     $(let [<read_guard_opt_ $i>] = self.$i.inner.try_read();)*

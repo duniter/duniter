@@ -61,5 +61,26 @@ impl<T> Key for T where
 {
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(
+    Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, zerocopy::AsBytes, zerocopy::FromBytes,
+)]
+#[repr(transparent)]
 pub struct U32BE(pub u32);
+
+impl From<&zerocopy::U32<byteorder::BigEndian>> for U32BE {
+    fn from(u32_zc: &zerocopy::U32<byteorder::BigEndian>) -> Self {
+        U32BE(u32_zc.get())
+    }
+}
+
+pub trait KeyZc: Key {
+    type Ref: Sized + zerocopy::AsBytes + zerocopy::FromBytes;
+}
+
+impl KeyZc for () {
+    type Ref = ();
+}
+
+impl KeyZc for U32BE {
+    type Ref = zerocopy::U32<byteorder::BigEndian>;
+}

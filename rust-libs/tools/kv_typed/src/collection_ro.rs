@@ -67,6 +67,8 @@ mockall::mock! {
     }
 }
 
+type ColRoReader<'r, BC, E> = parking_lot::RwLockReadGuard<'r, ColInner<BC, E>>;
+
 #[derive(Debug)]
 pub struct ColRo<BC: BackendCol, E: EventTrait> {
     pub(crate) inner: Arc<parking_lot::RwLock<ColInner<BC, E>>>,
@@ -123,8 +125,8 @@ impl<BC: BackendCol, E: EventTrait> DbCollectionRo for ColRo<BC, E> {
     ) -> D {
         let range: RangeBytes = crate::iter::convert_range::<Self::K, R>(range);
         let r = self.inner.read();
-        let iter = r.backend_col.iter::<Self::K, Self::V>(range.clone());
-        f(KvIter::new(iter, range))
+        let iter = r.backend_col.iter::<Self::K, Self::V>(range);
+        f(KvIter::new(iter))
     }
     #[inline(always)]
     fn iter_rev<
@@ -147,8 +149,8 @@ impl<BC: BackendCol, E: EventTrait> DbCollectionRo for ColRo<BC, E> {
     ) -> D {
         let range: RangeBytes = crate::iter::convert_range::<Self::K, R>(range);
         let r = self.inner.read();
-        let iter = r.backend_col.iter::<Self::K, Self::V>(range.clone());
-        f(KvIter::new(iter, range).reverse())
+        let iter = r.backend_col.iter::<Self::K, Self::V>(range).reverse();
+        f(KvIter::new(iter))
     }
     #[inline(always)]
     fn subscribe(&self, subscriber_sender: Subscriber<Self::Event>) -> KvResult<()> {
@@ -191,5 +193,75 @@ impl<V: ValueSliceZc, BC: BackendCol, E: EventTrait<V = V>> DbCollectionRoGetRef
     ) -> KvResult<Option<D>> {
         let r = self.inner.read();
         r.backend_col.get_ref_slice::<E::K, V, D, F>(k, f)
+    }
+}
+
+pub trait DbCollectionRoIterRefSlice<'r, BC: BackendCol, K: KeyZc, V: ValueSliceZc, READER>:
+    DbCollectionRo<K = K, V = V>
+{
+    fn iter_ref_slice<D, R, F>(&'r self, range: R, f: F) -> KvIterRefSlice<BC, D, K, V, F, READER>
+    where
+        K: KeyZc,
+        V: ValueSliceZc,
+        R: 'static + RangeBounds<K>,
+        F: FnMut(&K::Ref, &[V::Elem]) -> KvResult<D>;
+    fn iter_ref_slice_rev<D, R, F>(
+        &'r self,
+        range: R,
+        f: F,
+    ) -> KvIterRefSlice<BC, D, K, V, F, READER>
+    where
+        K: KeyZc,
+        V: ValueSliceZc,
+        R: 'static + RangeBounds<K>,
+        F: FnMut(&K::Ref, &[V::Elem]) -> KvResult<D>;
+}
+
+impl<'r, K: KeyZc, V: ValueSliceZc, BC: BackendCol, E: EventTrait<K = K, V = V>>
+    DbCollectionRoIterRefSlice<'r, BC, K, V, ColRoReader<'r, BC, E>> for ColRo<BC, E>
+{
+    fn iter_ref_slice<D, R, F>(
+        &'r self,
+        range: R,
+        f: F,
+    ) -> KvIterRefSlice<BC, D, K, V, F, ColRoReader<'r, BC, E>>
+    where
+        K: KeyZc,
+        V: ValueSliceZc,
+        R: 'static + RangeBounds<K>,
+        F: FnMut(&K::Ref, &[V::Elem]) -> KvResult<D>,
+    {
+        let range: RangeBytes = crate::iter::convert_range::<Self::K, R>(range);
+        let reader = self.inner.read();
+        let inner_iter = reader.backend_col.iter_ref_slice::<D, K, V, F>(range, f);
+
+        KvIterRefSlice {
+            inner: inner_iter,
+            reader: OwnedOrRef::Owned(reader),
+        }
+    }
+
+    fn iter_ref_slice_rev<D, R, F>(
+        &'r self,
+        range: R,
+        f: F,
+    ) -> KvIterRefSlice<BC, D, K, V, F, ColRoReader<'r, BC, E>>
+    where
+        K: KeyZc,
+        V: ValueSliceZc,
+        R: 'static + RangeBounds<K>,
+        F: FnMut(&K::Ref, &[V::Elem]) -> KvResult<D>,
+    {
+        let range: RangeBytes = crate::iter::convert_range::<Self::K, R>(range);
+        let reader = self.inner.read();
+        let inner_iter = reader
+            .backend_col
+            .iter_ref_slice::<D, K, V, F>(range, f)
+            .reverse();
+
+        KvIterRefSlice {
+            inner: inner_iter,
+            reader: OwnedOrRef::Owned(reader),
+        }
     }
 }

@@ -8,7 +8,7 @@ db_schema!(
     [
         ["c1", Col1, i32, String],
         ["c2", Col2, usize, ()],
-        ["c3", Col3, u64, Vec<u128>],
+        ["c3", Col3, U32BE, Vec<u128>],
         ["c4", Col4, u64, BTreeSet<u128>],
     ]
 );
@@ -25,7 +25,7 @@ fn test_macro_db() {
             vec![
                 ("col1", "i32", "String"),
                 ("col2", "usize", "()"),
-                ("col3", "u64", "Vec<u128>"),
+                ("col3", "U32BE", "Vec<u128>"),
                 ("col4", "u64", "BTreeSet<u128>")
             ]
         );
@@ -111,8 +111,8 @@ fn test_db<B: Backend>(db: &TestV1Db<B>) -> KvResult<()> {
         Ok::<(), KvError>(())
     })?;
 
-    db.col3_write().upsert(4, vec![1, 2, 3])?;
-    db.col3().get_ref_slice(&4, |numbers| {
+    db.col3_write().upsert(U32BE(4), vec![1, 2, 3])?;
+    db.col3().get_ref_slice(&U32BE(4), |numbers| {
         assert_eq!(numbers, &[1, 2, 3]);
         Ok(())
     })?;
@@ -126,6 +126,13 @@ fn test_db<B: Backend>(db: &TestV1Db<B>) -> KvResult<()> {
         Ok(())
     })?;
 
+    // Test iter_ref_slice
+    let vec: Vec<(U32BE, Vec<u128>)> = db
+        .col3()
+        .iter_ref_slice(.., |k, v_slice| Ok((k.into(), Vec::from(v_slice))))
+        .collect::<KvResult<_>>()?;
+    assert_eq!(vec, vec![(U32BE(4), vec![1, 2, 3])]);
+
     // Test transactional
     // A read tx should be opened when write tx not commited
     let (s1, r1) = flume::bounded::<()>(0);
@@ -134,14 +141,14 @@ fn test_db<B: Backend>(db: &TestV1Db<B>) -> KvResult<()> {
     let read_task = std::thread::spawn(move || {
         r1.recv().expect("disconnected");
         (db_ro.col3(), db_ro.col4(), db_ro.col2()).read(|(c3, c4, _c2)| {
-            c3.get_ref_slice(&4, |numbers| {
+            c3.get_ref_slice(&U32BE(4), |numbers| {
                 assert_eq!(numbers, &[1, 2, 3]);
                 Ok(())
             })?;
             c3.iter(.., |it| {
                 let iter = it.keys();
                 s2.send(()).expect("disconnected");
-                assert_eq!(iter.collect::<KvResult<Vec<_>>>()?, vec![4]);
+                assert_eq!(iter.collect::<KvResult<Vec<_>>>()?, vec![U32BE(4)]);
                 Ok::<(), KvError>(())
             })?;
             c4.get_ref_slice(&4, |numbers| {
@@ -157,31 +164,34 @@ fn test_db<B: Backend>(db: &TestV1Db<B>) -> KvResult<()> {
             s1.send(()).expect("disconnected");
             assert_eq!(
                 c3.iter(.., |it| it.keys().collect::<KvResult<Vec<_>>>())?,
-                vec![4]
+                vec![U32BE(4)]
             );
             assert_eq!(
                 c3.iter(.., |it| it.values().collect::<KvResult<Vec<_>>>())?,
                 vec![vec![1, 2, 3]]
             );
-            c3.upsert(42, vec![5, 4, 6]);
+            c3.upsert(U32BE(42), vec![5, 4, 6]);
             assert_eq!(
                 c3.iter(.., |it| it.keys().collect::<KvResult<Vec<_>>>())?,
-                vec![4, 42]
+                vec![U32BE(4), U32BE(42)]
             );
             assert_eq!(
                 c3.iter_rev(.., |it| it.keys().collect::<KvResult<Vec<_>>>())?,
-                vec![42, 4]
+                vec![U32BE(42), U32BE(4)]
             );
-            c3.upsert(8, vec![11, 12, 13]);
-            c3.remove(4);
+            c3.upsert(U32BE(8), vec![11, 12, 13]);
+            c3.remove(U32BE(4));
             assert_eq!(
                 c3.iter(.., |it| it.keys().collect::<KvResult<Vec<_>>>())?,
-                vec![8, 42]
+                vec![U32BE(8), U32BE(42)]
             );
             c3.iter_rev(.., |it| {
                 let iter = it.keys();
                 r2.recv().expect("disconnected");
-                assert_eq!(iter.collect::<KvResult<Vec<_>>>()?, vec![42, 8]);
+                assert_eq!(
+                    iter.collect::<KvResult<Vec<_>>>()?,
+                    vec![U32BE(42), U32BE(8)]
+                );
 
                 Ok::<(), KvError>(())
             })?;

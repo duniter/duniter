@@ -1952,6 +1952,7 @@ name = "kv_typed"
 version = "0.1.0"
 dependencies = [
  "async-std",
+ "byteorder",
  "cfg-if 0.1.10",
  "criterion",
  "flume",

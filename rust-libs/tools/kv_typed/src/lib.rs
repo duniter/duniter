@@ -72,6 +72,7 @@ pub mod prelude {
     pub use crate::collection_ro::MockColRo;
     pub use crate::collection_ro::{
         ColRo, DbCollectionRo, DbCollectionRoGetRef, DbCollectionRoGetRefSlice,
+        DbCollectionRoIterRefSlice,
     };
     pub use crate::collection_rw::{ColRw, DbCollectionRw};
     pub use crate::error::{DynErr, KvError, KvResult, StringErr};
@@ -79,8 +80,10 @@ pub mod prelude {
     #[cfg(feature = "explorer")]
     pub use crate::explorer::{ExplorableKey, ExplorableValue};
     pub use crate::from_bytes::FromBytes;
-    pub use crate::iter::{keys::KvIterKeys, values::KvIterValues, EntryIter, KvIter, ResultIter};
-    pub use crate::key::{Key, U32BE};
+    pub use crate::iter::{
+        keys::KvIterKeys, values::KvIterValues, EntryIter, KvIter, KvIterRefSlice, ResultIter,
+    };
+    pub use crate::key::{Key, KeyZc, U32BE};
     pub use crate::subscription::{NewSubscribers, Subscriber, Subscribers};
     pub use crate::transactional_read::{TransactionalRead, TxColRo};
     pub use crate::transactional_write::{DbTxCollectionRw, TransactionalWrite, TxColRw};
@@ -95,7 +98,7 @@ pub(crate) use crate::collection_inner::ColInner;
 pub(crate) use crate::error::BackendResult;
 #[cfg(feature = "explorer")]
 pub(crate) use crate::explorer::{ExplorableKey, ExplorableValue};
-pub(crate) use crate::iter::{RangeBytes, ReversableIterator};
+pub(crate) use crate::iter::{KvInnerIterRefSlice, RangeBytes, ReversableIterator};
 pub(crate) use crate::prelude::*;
 pub(crate) use crate::subscription::{ColSubscribers, SubscriptionsSender};
 pub(crate) use crate::transactional_write::tx_iter::BackendTxIter;
@@ -114,3 +117,16 @@ pub(crate) use std::{
     str::FromStr,
 };
 pub(crate) use thiserror::Error;
+
+pub enum OwnedOrRef<'a, T> {
+    Owned(T),
+    Borrow(&'a T),
+}
+impl<'a, T: Debug> Debug for OwnedOrRef<'a, T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Owned(t) => write!(f, "OwnedOrRef::Owned({:?})", t),
+            Self::Borrow(t) => write!(f, "OwnedOrRef::Borrow({:?})", t),
+        }
+    }
+}

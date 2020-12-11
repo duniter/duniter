@@ -12,7 +12,7 @@ edition = "2018"
 path = "src/lib.rs"
 
 [dependencies]
-dubp = { version = "0.33.0" }
+dubp = { version = "0.34.0" }
 duniter-dbs = { path = "../duniter-dbs" }
 duniter-dbs-read-ops = { path = "../duniter-dbs-read-ops" }
 duniter-dbs-write-ops = { path = "../duniter-dbs-write-ops" }

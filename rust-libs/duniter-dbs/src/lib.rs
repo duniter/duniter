@@ -83,9 +83,10 @@ pub use values::sindex_db::{SIndexDBV1, SourceKeyArrayDbV1};
 pub use values::source_amount::SourceAmountValV2;
 pub use values::tx_db::{PendingTxDbV2, TxDbV2};
 pub use values::ud_entry_db::{ConsumedUdDbV1, UdAmountDbV1, UdEntryDbV1};
-pub use values::utxo::UtxoValV2;
+pub use values::utxo::{BlockUtxosV2Db, UtxoValV2};
 pub use values::wallet_db::WalletDbV1;
 pub use values::wallet_script_array::WalletScriptArrayV2;
+pub use values::wallet_script_with_sa::WalletScriptWithSourceAmountV1Db;
 
 // Crate imports
 pub(crate) use arrayvec::{ArrayString, ArrayVec};

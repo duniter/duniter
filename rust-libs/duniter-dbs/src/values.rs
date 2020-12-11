@@ -33,3 +33,4 @@ pub mod ud_entry_db;
 pub mod utxo;
 pub mod wallet_db;
 pub mod wallet_script_array;
+pub mod wallet_script_with_sa;

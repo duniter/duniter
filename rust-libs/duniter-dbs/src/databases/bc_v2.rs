@@ -24,5 +24,7 @@ db_schema!(
         ["uds", Uds, UdIdV2, ()],
         ["uds_reval", UdsReval, U32BE, SourceAmountValV2],
         ["uids_index", UidsIndex, String, PubKeyValV2],
+        ["utxos", Utxos, UtxoIdDbV2, WalletScriptWithSourceAmountV1Db],
+        ["consumed_utxos", ConsumedUtxos, U32BE, BlockUtxosV2Db],
     ]
 );

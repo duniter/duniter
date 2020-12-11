@@ -55,6 +55,8 @@ pub fn apply_block<B: Backend>(
         bc_db.uds_write(),
         bc_db.uds_reval_write(),
         bc_db.uids_index_write(),
+        bc_db.utxos_write(),
+        bc_db.consumed_utxos_write(),
     )
         .write(
             |(
@@ -64,6 +66,8 @@ pub fn apply_block<B: Backend>(
                 mut uds,
                 mut uds_reval,
                 mut uids_index,
+                mut utxos,
+                mut consumed_utxos,
             )| {
                 blocks_meta.upsert(U32BE(block.number().0), block_meta);
                 identities::update_identities::<B>(&block, &mut identities)?;
@@ -81,12 +85,33 @@ pub fn apply_block<B: Backend>(
                         &mut uds_reval,
                     )?;
                 }
-                txs::apply_txs::<B>(block.transactions(), &mut txs_hashs, &mut uds)?;
+                txs::apply_txs::<B>(
+                    block.number(),
+                    block.transactions(),
+                    &mut txs_hashs,
+                    &mut uds,
+                    &mut utxos,
+                    &mut consumed_utxos,
+                )?;
                 Ok(())
             },
         )?;
 
+    if block_meta.number > ROLL_BACK_MAX {
+        prune_bc_db(bc_db, BlockNumber(block_meta.number))?;
+    }
+
     Ok(block_meta)
+}
+
+fn prune_bc_db<B: Backend>(
+    bc_db: &duniter_dbs::databases::bc_v2::BcV2Db<B>,
+    current_block_number: BlockNumber,
+) -> KvResult<()> {
+    bc_db
+        .consumed_utxos_write()
+        .remove(U32BE(current_block_number.0 - ROLL_BACK_MAX))?;
+    Ok(())
 }
 
 pub fn revert_block<B: Backend>(
@@ -100,6 +125,8 @@ pub fn revert_block<B: Backend>(
         bc_db.uds_write(),
         bc_db.uds_reval_write(),
         bc_db.uids_index_write(),
+        bc_db.utxos_write(),
+        bc_db.consumed_utxos_write(),
     )
         .write(
             |(
@@ -109,8 +136,17 @@ pub fn revert_block<B: Backend>(
                 mut uds,
                 mut uds_reval,
                 mut uids_index,
+                mut utxos,
+                mut consumed_utxos,
             )| {
-                txs::revert_txs::<B>(block.transactions(), &mut txs_hashs, &mut uds)?;
+                txs::revert_txs::<B>(
+                    block.number(),
+                    block.transactions(),
+                    &mut txs_hashs,
+                    &mut uds,
+                    &mut utxos,
+                    &mut consumed_utxos,
+                )?;
                 if block.dividend().is_some() {
                     uds::revert_uds::<B>(
                         block.number(),
@@ -132,4 +168,178 @@ pub fn revert_block<B: Backend>(
                 })
             },
         )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use dubp::{
+        crypto::keys::PublicKey as _, documents::transaction::TransactionDocumentV10Stringified,
+        documents_parser::prelude::FromStringObject,
+    };
+    use duniter_dbs::{
+        databases::bc_v2::*, BlockUtxosV2Db, UtxoIdDbV2, WalletScriptWithSourceAmountV1Db,
+    };
+    use maplit::hashmap;
+
+    #[test]
+    fn test_bc_apply_block() -> anyhow::Result<()> {
+        let bc_db = BcV2Db::<Mem>::open(MemConf::default())?;
+
+        let s1 = WalletScriptV10::single_sig(PublicKey::from_base58(
+            "D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx",
+        )?);
+        let s2 = WalletScriptV10::single_sig(PublicKey::from_base58(
+            "4fHMTFBMo5sTQEc5p1CNWz28S4mnnqdUBmECq1zt4n2m",
+        )?);
+
+        let b0 = DubpBlockV10::from_string_object(&DubpBlockV10Stringified {
+            version: 10,
+            median_time: 5_243,
+            dividend: Some(1000),
+            joiners: vec!["D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx:FFeyrvYio9uYwY5aMcDGswZPNjGLrl8THn9l3EPKSNySD3SDSHjCljSfFEwb87sroyzJQoVzPwER0sW/cbZMDg==:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:0-E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855:elois".to_owned()],
+            inner_hash: Some("0000000A65A12DB95B3153BCD05DB4D5C30CC7F0B1292D9FFBC3DE67F72F6040".to_owned()),
+            signature: "7B0hvcfajE2G8nBLp0vLVaQcQdQIyli21Gu8F2l+nimKHRe+fUNi+MWd1e/u29BYZa+RZ1yxhbHIbFzytg7fAA==".to_owned(),
+            hash: Some("0000000000000000000000000000000000000000000000000000000000000000".to_owned()),
+            ..Default::default()
+        })?;
+
+        apply_block(&bc_db, &b0)?;
+
+        assert_eq!(bc_db.blocks_meta().count()?, 1);
+        assert_eq!(bc_db.uds().count()?, 1);
+        assert_eq!(bc_db.utxos().count()?, 0);
+        assert_eq!(bc_db.consumed_utxos().count()?, 0);
+
+        let b1 = DubpBlockV10::from_string_object(&DubpBlockV10Stringified {
+            number: 1,
+            version: 10,
+            median_time: 5_245,
+            transactions: vec![TransactionDocumentV10Stringified {
+                currency: "test".to_owned(),
+                blockstamp: "0-0000000000000000000000000000000000000000000000000000000000000000".to_owned(),
+                locktime: 0,
+                issuers: vec!["D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx".to_owned()],
+                inputs: vec!["1000:0:D:D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx:0".to_owned()],
+                unlocks: vec![],
+                outputs: vec![
+                    "600:0:SIG(4fHMTFBMo5sTQEc5p1CNWz28S4mnnqdUBmECq1zt4n2m)".to_owned(),
+                    "400:0:SIG(D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx)".to_owned(),
+                ],
+                comment: "".to_owned(),
+                signatures: vec![],
+                hash: Some("0000000000000000000000000000000000000000000000000000000000000000".to_owned()),
+            }],
+            inner_hash: Some("0000000A65A12DB95B3153BCD05DB4D5C30CC7F0B1292D9FFBC3DE67F72F6040".to_owned()),
+            signature: "7B0hvcfajE2G8nBLp0vLVaQcQdQIyli21Gu8F2l+nimKHRe+fUNi+MWd1e/u29BYZa+RZ1yxhbHIbFzytg7fAA==".to_owned(),
+            hash: Some("0000000000000000000000000000000000000000000000000000000000000000".to_owned()),
+            ..Default::default()
+        })?;
+
+        apply_block(&bc_db, &b1)?;
+
+        assert_eq!(bc_db.blocks_meta().count()?, 2);
+        assert_eq!(bc_db.uds().count()?, 0);
+        assert_eq!(bc_db.utxos().count()?, 2);
+        assert_eq!(
+            bc_db
+                .utxos()
+                .iter(.., |it| it.collect::<KvResult<Vec<_>>>())?,
+            vec![
+                (
+                    UtxoIdDbV2(Hash::default(), 0),
+                    WalletScriptWithSourceAmountV1Db {
+                        wallet_script: s2.clone(),
+                        source_amount: SourceAmount::with_base0(600)
+                    }
+                ),
+                (
+                    UtxoIdDbV2(Hash::default(), 1),
+                    WalletScriptWithSourceAmountV1Db {
+                        wallet_script: s1.clone(),
+                        source_amount: SourceAmount::with_base0(400)
+                    }
+                )
+            ]
+        );
+        assert_eq!(bc_db.consumed_utxos().count()?, 0);
+
+        let b2 = DubpBlockV10::from_string_object(&DubpBlockV10Stringified {
+            number: 2,
+            version: 10,
+            median_time: 5_247,
+            transactions: vec![TransactionDocumentV10Stringified {
+                currency: "test".to_owned(),
+                blockstamp: "0-0000000000000000000000000000000000000000000000000000000000000000".to_owned(),
+                locktime: 0,
+                issuers: vec!["D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx".to_owned()],
+                inputs: vec!["400:0:T:0000000000000000000000000000000000000000000000000000000000000000:1".to_owned()],
+                unlocks: vec![],
+                outputs: vec![
+                    "300:0:SIG(D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx)".to_owned(),
+                    "100:0:SIG(4fHMTFBMo5sTQEc5p1CNWz28S4mnnqdUBmECq1zt4n2m)".to_owned(),
+                ],
+                comment: "".to_owned(),
+                signatures: vec![],
+                hash: Some("0101010101010101010101010101010101010101010101010101010101010101".to_owned()),
+            }],
+            inner_hash: Some("0000000A65A12DB95B3153BCD05DB4D5C30CC7F0B1292D9FFBC3DE67F72F6040".to_owned()),
+            signature: "7B0hvcfajE2G8nBLp0vLVaQcQdQIyli21Gu8F2l+nimKHRe+fUNi+MWd1e/u29BYZa+RZ1yxhbHIbFzytg7fAA==".to_owned(),
+            hash: Some("0000000000000000000000000000000000000000000000000000000000000000".to_owned()),
+            ..Default::default()
+        })?;
+
+        apply_block(&bc_db, &b2)?;
+
+        assert_eq!(bc_db.blocks_meta().count()?, 3);
+        assert_eq!(bc_db.uds().count()?, 0);
+        assert_eq!(bc_db.utxos().count()?, 3);
+        assert_eq!(bc_db.consumed_utxos().count()?, 1);
+
+        assert_eq!(
+            bc_db
+                .consumed_utxos()
+                .iter(.., |it| it.collect::<KvResult<Vec<_>>>())?,
+            vec![(
+                U32BE(2),
+                BlockUtxosV2Db(
+                    hashmap![UtxoIdV10 { tx_hash: Hash::default(), output_index: 1 } => WalletScriptWithSourceAmountV1Db {
+                        wallet_script: s1.clone(),
+                        source_amount: SourceAmount::with_base0(400)
+                    }]
+                )
+            )]
+        );
+
+        assert_eq!(
+            bc_db
+                .utxos()
+                .iter(.., |it| it.collect::<KvResult<Vec<_>>>())?,
+            vec![
+                (
+                    UtxoIdDbV2(Hash::default(), 0),
+                    WalletScriptWithSourceAmountV1Db {
+                        wallet_script: s2.clone(),
+                        source_amount: SourceAmount::with_base0(600)
+                    }
+                ),
+                (
+                    UtxoIdDbV2(Hash([1; 32]), 0),
+                    WalletScriptWithSourceAmountV1Db {
+                        wallet_script: s1,
+                        source_amount: SourceAmount::with_base0(300)
+                    }
+                ),
+                (
+                    UtxoIdDbV2(Hash([1; 32]), 1),
+                    WalletScriptWithSourceAmountV1Db {
+                        wallet_script: s2,
+                        source_amount: SourceAmount::with_base0(100)
+                    }
+                )
+            ]
+        );
+
+        Ok(())
+    }
 }

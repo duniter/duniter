@@ -40,7 +40,7 @@ use duniter_dbs::{
     HashKeyV2, PubKeyKeyV2, SourceAmountValV2, TxDbV2, WalletConditionsV2,
 };
 use resiter::filter::Filter;
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 
 pub struct UtxoV10<'s> {
     pub id: UtxoIdV10,
@@ -188,6 +188,8 @@ fn apply_block_txs<B: Backend>(
     txs: &[TransactionDocumentV10],
 ) -> KvResult<()> {
     let mut scripts_index = HashMap::new();
+    let mut txs_by_issuer_mem = HashMap::new();
+    let mut txs_by_recipient_mem = HashMap::new();
     for tx in txs {
         let tx_hash = tx.get_hash();
         // Write tx and update sources
@@ -198,8 +200,23 @@ fn apply_block_txs<B: Backend>(
             &mut scripts_index,
             tx_hash,
             tx,
+            &mut txs_by_issuer_mem,
+            &mut txs_by_recipient_mem,
         )?;
     }
+    (
+        gva_db.txs_by_issuer_write(),
+        gva_db.txs_by_recipient_write(),
+    )
+        .write(|(mut txs_by_issuer, mut txs_by_recipient)| {
+            for (k, v) in txs_by_issuer_mem {
+                txs_by_issuer.upsert(k, v);
+            }
+            for (k, v) in txs_by_recipient_mem {
+                txs_by_recipient.upsert(k, v);
+            }
+            Ok(())
+        })?;
     Ok(())
 }
 

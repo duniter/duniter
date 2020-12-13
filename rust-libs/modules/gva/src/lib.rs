@@ -39,7 +39,8 @@ use crate::entities::{
     block_gva::Block,
     tx_gva::TxGva,
     ud_gva::{CurrentUdGva, RevalUdGva, UdGva},
-    AggregateSum, AmountWithBase, PeerCardGva, RawTxOrChanges, Sum, TxsHistoryGva, UtxoGva,
+    AggregateSum, AmountWithBase, PeerCardGva, RawTxOrChanges, Sum, TxsHistoryBlockchain,
+    TxsHistoryMempool, UtxoGva,
 };
 use crate::inputs::{TxIssuer, TxRecipient, UdsFilter};
 use crate::inputs_validators::TxCommentValidator;
@@ -454,11 +455,19 @@ mod tests {
                 &self,
                 bc_db: &BcDb,
             ) -> KvResult<Option<SourceAmount>>;
-            fn get_transactions_history<TxsMpDb: 'static + TxsMpV2DbReadable>(
+            fn get_txs_history_bc_received(
+                &self,
+                script_hash: Hash,
+            ) -> KvResult<Vec<TxDbV2>>;
+            fn get_txs_history_bc_sent(
+                &self,
+                script_hash: Hash,
+            ) -> KvResult<Vec<TxDbV2>>;
+            fn get_txs_history_mempool<TxsMpDb: 'static + TxsMpV2DbReadable>(
                 &self,
                 txs_mp_db_ro: &TxsMpDb,
                 pubkey: PublicKey,
-            ) -> KvResult<duniter_gva_dbs_reader::txs_history::TxsHistory>;
+            ) -> KvResult<(Vec<TransactionDocumentV10>, Vec<TransactionDocumentV10>)>;
             fn unspent_uds_of_pubkey<BcDb: 'static + BcV2DbReadable>(
                 &self,
                 bc_db: &BcDb,

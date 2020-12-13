@@ -26,3 +26,4 @@ pub mod ud_id;
 pub mod uid;
 pub mod utxo_id;
 pub mod wallet_conditions;
+pub mod wallet_hash_with_bn;

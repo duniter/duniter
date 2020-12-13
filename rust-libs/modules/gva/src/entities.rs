@@ -85,15 +85,19 @@ pub(crate) struct Sum {
 }
 
 #[derive(async_graphql::SimpleObject)]
-pub(crate) struct TxsHistoryGva {
-    /// Transactions sent
-    pub(crate) sent: Vec<TxGva>,
+pub(crate) struct TxsHistoryMempool {
     /// Transactions sending
     pub(crate) sending: Vec<TxGva>,
-    /// Transactions received
-    pub(crate) received: Vec<TxGva>,
     /// Transactions receiving
     pub(crate) receiving: Vec<TxGva>,
+}
+
+#[derive(async_graphql::SimpleObject)]
+pub(crate) struct TxsHistoryBlockchain {
+    /// Transactions sent
+    pub(crate) sent: Vec<TxGva>,
+    /// Transactions received
+    pub(crate) received: Vec<TxGva>,
 }
 
 #[derive(Clone, async_graphql::SimpleObject)]

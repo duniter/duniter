@@ -50,6 +50,7 @@ use duniter_dbs::{
 };
 use resiter::filter::Filter;
 use resiter::filter_map::FilterMap;
+use resiter::flatten::Flatten;
 use resiter::map::Map;
 use std::{collections::BTreeSet, str::FromStr};
 

@@ -244,22 +244,26 @@ where
 
     let it = utxos_iter.filter_map(|entry_res| match entry_res {
         Ok((gva_utxo_id, SourceAmountValV2(utxo_amount))) => {
-            let tx_hash = gva_utxo_id.get_tx_hash();
-            let output_index = gva_utxo_id.get_output_index();
-            match txs_mp_db_ro
-                .utxos_ids()
-                .contains_key(&UtxoIdDbV2(tx_hash, output_index as u32))
-            {
-                Ok(false) => Some(Ok((
-                    UtxoCursor {
-                        tx_hash,
-                        output_index,
-                        block_number: BlockNumber(gva_utxo_id.get_block_number()),
-                    },
-                    utxo_amount,
-                ))),
-                Ok(true) => None,
-                Err(e) => Some(Err(e)),
+            if utxo_amount.amount() < super::find_inputs::MIN_AMOUNT {
+                None
+            } else {
+                let tx_hash = gva_utxo_id.get_tx_hash();
+                let output_index = gva_utxo_id.get_output_index();
+                match txs_mp_db_ro
+                    .utxos_ids()
+                    .contains_key(&UtxoIdDbV2(tx_hash, output_index as u32))
+                {
+                    Ok(false) => Some(Ok((
+                        UtxoCursor {
+                            tx_hash,
+                            output_index,
+                            block_number: BlockNumber(gva_utxo_id.get_block_number()),
+                        },
+                        utxo_amount,
+                    ))),
+                    Ok(true) => None,
+                    Err(e) => Some(Err(e)),
+                }
             }
         }
         Err(e) => Some(Err(e)),
@@ -320,15 +324,15 @@ mod tests {
 
         gva_db.gva_utxos_write().upsert(
             GvaUtxoIdDbV1::new(script.clone(), 0, Hash::default(), 0),
-            SourceAmountValV2(SourceAmount::with_base0(50)),
+            SourceAmountValV2(SourceAmount::with_base0(500)),
         )?;
         gva_db.gva_utxos_write().upsert(
             GvaUtxoIdDbV1::new(script.clone(), 0, Hash::default(), 1),
-            SourceAmountValV2(SourceAmount::with_base0(80)),
+            SourceAmountValV2(SourceAmount::with_base0(800)),
         )?;
         gva_db.gva_utxos_write().upsert(
             GvaUtxoIdDbV1::new(script.clone(), 0, Hash::default(), 2),
-            SourceAmountValV2(SourceAmount::with_base0(120)),
+            SourceAmountValV2(SourceAmount::with_base0(1200)),
         )?;
 
         // Find utxos with amount target
@@ -338,7 +342,7 @@ mod tests {
             has_previous_page,
         } = db_reader.find_script_utxos(
             &txs_mp_db,
-            Some(SourceAmount::with_base0(55)),
+            Some(SourceAmount::with_base0(550)),
             PageInfo::default(),
             &script,
         )?;
@@ -352,7 +356,7 @@ mod tests {
                         tx_hash: Hash::default(),
                         output_index: 0,
                     },
-                    SourceAmount::with_base0(50)
+                    SourceAmount::with_base0(500)
                 ),
                 (
                     UtxoCursor {
@@ -360,11 +364,11 @@ mod tests {
                         tx_hash: Hash::default(),
                         output_index: 1,
                     },
-                    SourceAmount::with_base0(80)
+                    SourceAmount::with_base0(800)
                 ),
             ]
         );
-        assert_eq!(sum, SourceAmount::with_base0(130));
+        assert_eq!(sum, SourceAmount::with_base0(1300));
         assert!(!has_next_page);
         assert!(!has_previous_page);
 
@@ -374,7 +378,7 @@ mod tests {
             ..
         } = db_reader.find_script_utxos(
             &txs_mp_db,
-            Some(SourceAmount::with_base0(55)),
+            Some(SourceAmount::with_base0(550)),
             PageInfo {
                 order: false,
                 ..Default::default()
@@ -390,10 +394,10 @@ mod tests {
                     tx_hash: Hash::default(),
                     output_index: 2,
                 },
-                SourceAmount::with_base0(120)
+                SourceAmount::with_base0(1200)
             ),]
         );
-        assert_eq!(sum, SourceAmount::with_base0(120));
+        assert_eq!(sum, SourceAmount::with_base0(1200));
         assert!(!has_next_page);
         assert!(!has_previous_page);
 
@@ -422,7 +426,7 @@ mod tests {
                         tx_hash: Hash::default(),
                         output_index: 2,
                     },
-                    SourceAmount::with_base0(120)
+                    SourceAmount::with_base0(1200)
                 ),
                 (
                     UtxoCursor {
@@ -430,11 +434,11 @@ mod tests {
                         tx_hash: Hash::default(),
                         output_index: 1,
                     },
-                    SourceAmount::with_base0(80)
+                    SourceAmount::with_base0(800)
                 )
             ]
         );
-        assert_eq!(sum, SourceAmount::with_base0(200));
+        assert_eq!(sum, SourceAmount::with_base0(2000));
         assert!(!has_next_page);
         assert!(has_previous_page);
 

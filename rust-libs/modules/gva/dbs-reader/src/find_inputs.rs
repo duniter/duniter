@@ -20,6 +20,8 @@ use crate::{
 };
 use dubp::{documents::transaction::TransactionInputV10, wallet::prelude::*};
 
+pub(super) const MIN_AMOUNT: i64 = 100;
+
 impl DbsReader {
     pub fn find_inputs<BcDb: BcV2DbReadable, TxsMpDb: TxsMpV2DbReadable>(
         &self,
@@ -59,9 +61,9 @@ impl DbsReader {
 
                     Ok((inputs, sum))
                 })?
-                .unwrap_or((Vec::with_capacity(50), SourceAmount::ZERO))
+                .unwrap_or((Vec::with_capacity(500), SourceAmount::ZERO))
         } else {
-            (Vec::with_capacity(50), SourceAmount::ZERO)
+            (Vec::with_capacity(500), SourceAmount::ZERO)
         };
         // UDs
         if script.nodes.is_empty() {
@@ -142,7 +144,7 @@ mod tests {
         WalletConditionsV2,
     };
 
-    const UD0: i64 = 10;
+    const UD0: i64 = 100;
 
     #[test]
     fn test_find_inputs() -> anyhow::Result<()> {
@@ -160,7 +162,7 @@ mod tests {
         let script = WalletScriptV10::single(WalletConditionV10::Sig(pk));
         let mut pending_utxos = BTreeSet::new();
         pending_utxos.insert(UtxoValV2::new(
-            SourceAmount::with_base0(90),
+            SourceAmount::with_base0(900),
             Hash::default(),
             10,
         ));
@@ -177,11 +179,11 @@ mod tests {
             .upsert(U32BE(0), b0.median_time)?;
         gva_db.gva_utxos_write().upsert(
             GvaUtxoIdDbV1::new(script.clone(), 0, Hash::default(), 0),
-            SourceAmountValV2(SourceAmount::with_base0(50)),
+            SourceAmountValV2(SourceAmount::with_base0(500)),
         )?;
         gva_db.gva_utxos_write().upsert(
             GvaUtxoIdDbV1::new(script.clone(), 0, Hash::default(), 1),
-            SourceAmountValV2(SourceAmount::with_base0(80)),
+            SourceAmountValV2(SourceAmount::with_base0(800)),
         )?;
         txs_mp_db
             .outputs_by_script_write()
@@ -191,12 +193,12 @@ mod tests {
         let (inputs, inputs_sum) = db_reader.find_inputs(
             &bc_db,
             &txs_mp_db,
-            SourceAmount::with_base0(55),
+            SourceAmount::with_base0(550),
             &script,
             false,
         )?;
         assert_eq!(inputs.len(), 2);
-        assert_eq!(inputs_sum, SourceAmount::with_base0(60));
+        assert_eq!(inputs_sum, SourceAmount::with_base0(600));
 
         // Insert tx1 inputs in mempool
         txs_mp_db
@@ -210,12 +212,12 @@ mod tests {
         let (inputs, inputs_sum) = db_reader.find_inputs(
             &bc_db,
             &txs_mp_db,
-            SourceAmount::with_base0(55),
+            SourceAmount::with_base0(550),
             &script,
             false,
         )?;
         assert_eq!(inputs.len(), 1);
-        assert_eq!(inputs_sum, SourceAmount::with_base0(80));
+        assert_eq!(inputs_sum, SourceAmount::with_base0(800));
 
         // Insert tx2 inputs in mempool
         txs_mp_db
@@ -226,12 +228,12 @@ mod tests {
         let (inputs, inputs_sum) = db_reader.find_inputs(
             &bc_db,
             &txs_mp_db,
-            SourceAmount::with_base0(75),
+            SourceAmount::with_base0(750),
             &script,
             true,
         )?;
         assert_eq!(inputs.len(), 1);
-        assert_eq!(inputs_sum, SourceAmount::with_base0(90));
+        assert_eq!(inputs_sum, SourceAmount::with_base0(900));
 
         Ok(())
     }

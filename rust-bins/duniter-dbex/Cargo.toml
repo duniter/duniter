@@ -25,7 +25,6 @@ dirs = "3.0.1"
 dubp = { version = "0.34.0" }
 duniter-dbs = { path = "../../rust-libs/duniter-dbs", default-features = false, features = ["explorer", "leveldb_backend", "sled_backend"] }
 duniter-dbs-write-ops = { path = "../../rust-libs/duniter-dbs-write-ops", default-features = false, features = ["explorer", "leveldb_backend", "sled_backend"] }
-duniter-gva = { path = "../../rust-libs/modules/gva" }
 duniter-gva-db-writer = { path = "../../rust-libs/modules/gva/db-writer" }
 fast-threadpool = "0.2.2"
 flume = "0.9.1"

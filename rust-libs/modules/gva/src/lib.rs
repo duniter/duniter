@@ -39,7 +39,7 @@ use crate::entities::{
     block_gva::Block,
     tx_gva::TxGva,
     ud_gva::{CurrentUdGva, RevalUdGva, UdGva},
-    AggregateSum, AmountWithBase, PeerCardGva, RawTxOrChanges, Sum, TxsHistoryBlockchain,
+    AggregateSum, AmountWithBase, EdgeTx, PeerCardGva, RawTxOrChanges, Sum, TxDirection,
     TxsHistoryMempool, UtxoGva,
 };
 use crate::inputs::{TxIssuer, TxRecipient, UdsFilter};
@@ -50,6 +50,7 @@ use crate::schema::{GraphQlSchema, SchemaData};
 use crate::tests::create_dbs_reader;
 #[cfg(test)]
 use crate::tests::DbsReader;
+use async_graphql::connection::{Connection, Edge, EmptyFields};
 use async_graphql::http::GraphQLPlaygroundConfig;
 use async_graphql::validators::{IntGreaterThan, ListMinLength, StringMaxLength, StringMinLength};
 use dubp::common::crypto::keys::{ed25519::PublicKey, KeyPair as _, PublicKey as _};
@@ -68,6 +69,7 @@ use duniter_dbs::{kv_typed::prelude::*, FileBackend, TxDbV2};
 use duniter_gva_db_writer::{get_gva_db_ro, get_gva_db_rw};
 #[cfg(not(test))]
 use duniter_gva_dbs_reader::create_dbs_reader;
+use duniter_gva_dbs_reader::pagination::PageInfo;
 #[cfg(not(test))]
 use duniter_gva_dbs_reader::DbsReader;
 use duniter_mempools::{Mempools, TxsMempool};
@@ -398,6 +400,7 @@ mod tests {
     use duniter_mempools::Mempools;
     use duniter_module::DuniterModule;
     use fast_threadpool::ThreadPoolConfig;
+    use std::collections::VecDeque;
     use unwrap::unwrap;
 
     mockall::mock! {
@@ -441,12 +444,14 @@ mod tests {
             ) -> KvResult<Option<SourceAmount>>;
             fn get_txs_history_bc_received(
                 &self,
+                page_info: PageInfo<duniter_gva_dbs_reader::txs_history::TxBcCursor>,
                 script_hash: Hash,
-            ) -> KvResult<Vec<TxDbV2>>;
+            ) -> KvResult<PagedData<VecDeque<TxDbV2>>>;
             fn get_txs_history_bc_sent(
                 &self,
+                page_info: PageInfo<duniter_gva_dbs_reader::txs_history::TxBcCursor>,
                 script_hash: Hash,
-            ) -> KvResult<Vec<TxDbV2>>;
+            ) -> KvResult<PagedData<VecDeque<TxDbV2>>>;
             fn get_txs_history_mempool<TxsMpDb: 'static + TxsMpV2DbReadable>(
                 &self,
                 txs_mp_db_ro: &TxsMpDb,

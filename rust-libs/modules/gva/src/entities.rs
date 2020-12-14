@@ -30,6 +30,11 @@ pub(crate) struct AmountWithBase {
     pub(crate) base: i32,
 }
 
+#[derive(async_graphql::SimpleObject)]
+pub(crate) struct EdgeTx {
+    pub(crate) direction: TxDirection,
+}
+
 #[derive(Default, async_graphql::SimpleObject)]
 #[graphql(name = "Peer")]
 pub struct PeerCardGva {
@@ -84,20 +89,20 @@ pub(crate) struct Sum {
     pub(crate) sum: AmountWithBase,
 }
 
+#[derive(Clone, Copy, Eq, PartialEq, async_graphql::Enum)]
+pub(crate) enum TxDirection {
+    /// Received
+    Received,
+    /// Sent
+    Sent,
+}
+
 #[derive(async_graphql::SimpleObject)]
 pub(crate) struct TxsHistoryMempool {
     /// Transactions sending
     pub(crate) sending: Vec<TxGva>,
     /// Transactions receiving
     pub(crate) receiving: Vec<TxGva>,
-}
-
-#[derive(async_graphql::SimpleObject)]
-pub(crate) struct TxsHistoryBlockchain {
-    /// Transactions sent
-    pub(crate) sent: Vec<TxGva>,
-    /// Transactions received
-    pub(crate) received: Vec<TxGva>,
 }
 
 #[derive(Clone, async_graphql::SimpleObject)]

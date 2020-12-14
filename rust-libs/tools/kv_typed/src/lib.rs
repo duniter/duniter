@@ -89,6 +89,7 @@ pub mod prelude {
     pub use crate::transactional_write::{DbTxCollectionRw, TransactionalWrite, TxColRw};
     pub use crate::utils::arc::Arc;
     pub use crate::value::{Value, ValueSliceZc, ValueZc};
+    pub use crate::OwnedOrRef;
 }
 
 // Internal crate imports
@@ -122,11 +123,29 @@ pub enum OwnedOrRef<'a, T> {
     Owned(T),
     Borrow(&'a T),
 }
+impl<'a, T> AsRef<T> for OwnedOrRef<'a, T> {
+    fn as_ref(&self) -> &T {
+        match self {
+            Self::Owned(t) => t,
+            Self::Borrow(t) => *t,
+        }
+    }
+}
 impl<'a, T: Debug> Debug for OwnedOrRef<'a, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Owned(t) => write!(f, "OwnedOrRef::Owned({:?})", t),
             Self::Borrow(t) => write!(f, "OwnedOrRef::Borrow({:?})", t),
         }
+    }
+}
+impl<'a, T> From<&'a T> for OwnedOrRef<'a, T> {
+    fn from(borrow: &'a T) -> Self {
+        Self::Borrow(borrow)
+    }
+}
+impl<T> From<T> for OwnedOrRef<'_, T> {
+    fn from(owned: T) -> Self {
+        Self::Owned(owned)
     }
 }

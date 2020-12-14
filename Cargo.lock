@@ -1186,6 +1186,7 @@ dependencies = [
  "maplit",
  "resiter",
  "smallvec",
+ "unwrap",
 ]
 
 [[package]]

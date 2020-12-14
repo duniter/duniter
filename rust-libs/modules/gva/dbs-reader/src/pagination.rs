@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use crate::*;
+
 #[derive(Debug)]
 pub struct PagedData<D: std::fmt::Debug> {
     pub data: D,
@@ -44,11 +46,17 @@ impl<T> PageInfo<T> {
             limit_opt,
         }
     }
+    pub fn limit_opt(&self) -> Option<usize> {
+        self.limit_opt
+    }
     pub fn not_all(&self) -> bool {
         self.limit_opt.is_some() || self.pos.is_some()
     }
     pub fn order(&self) -> bool {
         self.order
+    }
+    pub fn pos(&self) -> Option<&T> {
+        self.pos.as_ref()
     }
 }
 impl<T> Default for PageInfo<T> {
@@ -77,7 +85,7 @@ impl<T> Copy for PageInfo<T> where T: Copy {}
 pub(crate) fn has_next_page<
     'i,
     C: 'static + std::fmt::Debug + Default + Ord,
-    I: DoubleEndedIterator<Item = &'i C>,
+    I: DoubleEndedIterator<Item = OwnedOrRef<'i, C>>,
 >(
     mut page_cursors: I,
     last_cursor_opt: Option<C>,
@@ -93,7 +101,7 @@ pub(crate) fn has_next_page<
                 page_cursors.next()
             } {
                 //println!("TMP page_end_cursor={:?}", page_end_cursor);
-                page_end_cursor != &last_cursor
+                page_end_cursor.as_ref() != &last_cursor
             } else {
                 page_info.pos.unwrap_or_default() < last_cursor
             }
@@ -108,7 +116,7 @@ pub(crate) fn has_next_page<
 pub(crate) fn has_previous_page<
     'i,
     C: 'static + std::fmt::Debug + Default + Ord,
-    I: DoubleEndedIterator<Item = &'i C>,
+    I: DoubleEndedIterator<Item = OwnedOrRef<'i, C>>,
 >(
     mut page_cursors: I,
     first_cursor_opt: Option<C>,
@@ -123,7 +131,9 @@ pub(crate) fn has_previous_page<
             } else {
                 page_cursors.next_back()
             } {
-                page_start_cursor != &first_cursor
+                println!("TMP page_start_cursor={:?}", page_start_cursor);
+                println!("TMP first_cursor={:?}", first_cursor);
+                page_start_cursor.as_ref() != &first_cursor
             } else {
                 page_info.pos.unwrap_or_default() > first_cursor
             }

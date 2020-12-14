@@ -52,7 +52,10 @@ use resiter::filter::Filter;
 use resiter::filter_map::FilterMap;
 use resiter::flatten::Flatten;
 use resiter::map::Map;
-use std::{collections::BTreeSet, str::FromStr};
+use std::{
+    collections::{BTreeSet, VecDeque},
+    str::FromStr,
+};
 
 pub(crate) fn wrong_cursor() -> StringErr {
     StringErr("wrong cursor".to_owned())

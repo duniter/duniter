@@ -15,6 +15,7 @@
 
 use crate::*;
 use dubp::documents_parser::wallet_script_from_str;
+use duniter_gva_dbs_reader::txs_history::TxBcCursor;
 use futures::future::join;
 
 #[derive(Default)]
@@ -25,62 +26,164 @@ impl TxsHistoryBlockchainQuery {
     /// Transactions history (written in blockchain)
     async fn txs_history_bc(
         &self,
-        ctx: &async_graphql::Context<'_>,
+        #[graphql(desc = "pagination", default)] pagination: Pagination,
         #[graphql(desc = "Ed25519 public key on base 58 representation or DUBP script")]
         pubkey_or_script: String,
-    ) -> async_graphql::Result<TxsHistoryBlockchain> {
-        let start_time = std::time::Instant::now();
+    ) -> async_graphql::Result<TxsHistoryBlockchainQueryInner> {
+        let pagination = Pagination::convert_to_page_info(pagination)?;
         let script = if let Ok(pubkey) = PublicKey::from_base58(&pubkey_or_script) {
             WalletScriptV10::single_sig(pubkey)
         } else {
             wallet_script_from_str(&pubkey_or_script)?
         };
         let script_hash = Hash::compute(script.to_string().as_bytes());
+        Ok(TxsHistoryBlockchainQueryInner {
+            pagination,
+            script_hash,
+        })
+    }
+}
+
+pub(crate) struct TxsHistoryBlockchainQueryInner {
+    pub(crate) pagination: PageInfo<TxBcCursor>,
+    pub(crate) script_hash: Hash,
+}
+
+#[async_graphql::Object]
+impl TxsHistoryBlockchainQueryInner {
+    /// Transactions history (written in blockchain)
+    async fn both(
+        &self,
+        ctx: &async_graphql::Context<'_>,
+    ) -> async_graphql::Result<Connection<String, TxGva, EmptyFields, EdgeTx>> {
+        let start_time = std::time::Instant::now();
 
         let data = ctx.data::<SchemaData>()?;
 
-        let (sent, received) = if ctx.look_ahead().field("sent").exists() {
-            let db_reader = data.dbs_reader();
-            let sent_fut = data
-                .dbs_pool
-                .execute(move |_| db_reader.get_txs_history_bc_sent(script_hash));
-            if ctx.look_ahead().field("received").exists() {
-                let db_reader = data.dbs_reader();
-                let received_fut = data
-                    .dbs_pool
-                    .execute(move |_| db_reader.get_txs_history_bc_received(script_hash));
-                let (sent_res, received_res) = join(sent_fut, received_fut).await;
-                (sent_res??, received_res??)
-            } else {
-                let db_reader = data.dbs_reader();
-                (
-                    data.dbs_pool
-                        .execute(move |_| db_reader.get_txs_history_bc_sent(script_hash))
-                        .await??,
-                    vec![],
-                )
-            }
-        } else if ctx.look_ahead().field("received").exists() {
-            let db_reader = data.dbs_reader();
-            (
-                vec![],
-                data.dbs_pool
-                    .execute(move |_| db_reader.get_txs_history_bc_received(script_hash))
-                    .await??,
+        let db_reader = data.dbs_reader();
+        let pagination = self.pagination;
+        let script_hash = self.script_hash;
+        let sent_fut = data
+            .dbs_pool
+            .execute(move |_| db_reader.get_txs_history_bc_sent(pagination, script_hash));
+        let db_reader = data.dbs_reader();
+        let script_hash = self.script_hash;
+        let received_fut = data
+            .dbs_pool
+            .execute(move |_| db_reader.get_txs_history_bc_received(pagination, script_hash));
+        let (sent_res, received_res) = join(sent_fut, received_fut).await;
+        let (sent, received) = (sent_res??, received_res??);
+
+        let mut both_txs = sent
+            .data
+            .into_iter()
+            .map(|db_tx| (TxDirection::Sent, db_tx))
+            .chain(
+                received
+                    .data
+                    .into_iter()
+                    .map(|db_tx| (TxDirection::Received, db_tx)),
             )
+            .collect::<Vec<(TxDirection, TxDbV2)>>();
+        /*if let Some(TxBcCursor { tx_hash, .. }) = pagination.pos() {
+            while both.txs
+        }*/
+        if self.pagination.order() {
+            both_txs.sort_unstable_by(|(_, db_tx1), (_, db_tx2)| {
+                db_tx1
+                    .written_block
+                    .number
+                    .cmp(&db_tx2.written_block.number)
+            });
         } else {
-            (vec![], vec![])
-        };
+            both_txs.sort_unstable_by(|(_, db_tx1), (_, db_tx2)| {
+                db_tx2
+                    .written_block
+                    .number
+                    .cmp(&db_tx1.written_block.number)
+            });
+        }
+        if let Some(limit) = self.pagination.limit_opt() {
+            both_txs.truncate(limit);
+        }
+        let mut conn = Connection::new(
+            sent.has_previous_page || received.has_previous_page,
+            sent.has_next_page || received.has_next_page,
+        );
+        conn.append(both_txs.into_iter().map(|(tx_direction, db_tx)| {
+            Edge::with_additional_fields(
+                TxBcCursor {
+                    block_number: db_tx.written_block.number,
+                    tx_hash: db_tx.tx.get_hash(),
+                }
+                .to_string(),
+                db_tx.into(),
+                EdgeTx {
+                    direction: tx_direction,
+                },
+            )
+        }));
 
         println!(
-            "txs_history_bc duration: {}ms",
+            "txs_history_bc::both duration: {}ms",
             start_time.elapsed().as_millis()
         );
 
-        Ok(TxsHistoryBlockchain {
-            sent: sent.into_iter().map(|db_tx| db_tx.into()).collect(),
-            received: received.into_iter().map(|db_tx| db_tx.into()).collect(),
-        })
+        Ok(conn)
+    }
+    /// Received transactions history (written in blockchain)
+    async fn received(
+        &self,
+        ctx: &async_graphql::Context<'_>,
+    ) -> async_graphql::Result<Connection<String, TxGva, EmptyFields, EmptyFields>> {
+        let data = ctx.data::<SchemaData>()?;
+        let db_reader = data.dbs_reader();
+        let pagination = self.pagination;
+        let script_hash = self.script_hash;
+        let received = data
+            .dbs_pool
+            .execute(move |_| db_reader.get_txs_history_bc_received(pagination, script_hash))
+            .await??;
+        let mut conn = Connection::new(received.has_previous_page, received.has_next_page);
+        conn.append(received.data.into_iter().map(|db_tx| {
+            Edge::new(
+                TxBcCursor {
+                    block_number: db_tx.written_block.number,
+                    tx_hash: db_tx.tx.get_hash(),
+                }
+                .to_string(),
+                db_tx.into(),
+            )
+        }));
+
+        Ok(conn)
+    }
+    /// Sent transactions history (written in blockchain)
+    async fn sent(
+        &self,
+        ctx: &async_graphql::Context<'_>,
+    ) -> async_graphql::Result<Connection<String, TxGva, EmptyFields, EmptyFields>> {
+        let data = ctx.data::<SchemaData>()?;
+        let db_reader = data.dbs_reader();
+        let pagination = self.pagination;
+        let script_hash = self.script_hash;
+        let sent = data
+            .dbs_pool
+            .execute(move |_| db_reader.get_txs_history_bc_sent(pagination, script_hash))
+            .await??;
+        let mut conn = Connection::new(sent.has_previous_page, sent.has_next_page);
+        conn.append(sent.data.into_iter().map(|db_tx| {
+            Edge::new(
+                TxBcCursor {
+                    block_number: db_tx.written_block.number,
+                    tx_hash: db_tx.tx.get_hash(),
+                }
+                .to_string(),
+                db_tx.into(),
+            )
+        }));
+
+        Ok(conn)
     }
 }
 
@@ -120,12 +223,14 @@ impl TxsHistoryMempoolQuery {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::VecDeque;
+
+    use crate::tests::*;
     use dubp::documents::transaction::TransactionDocumentV10;
     use dubp::documents::transaction::TransactionDocumentV10Stringified;
     use dubp::documents_parser::prelude::FromStringObject;
     use duniter_dbs::TxDbV2;
-
-    use crate::tests::*;
+    use duniter_gva_dbs_reader::pagination::PagedData;
 
     #[tokio::test]
     async fn test_txs_history_blockchain() -> anyhow::Result<()> {
@@ -133,11 +238,11 @@ mod tests {
         dbs_reader
             .expect_get_txs_history_bc_received()
             .times(1)
-            .returning(|_| Ok(vec![]));
+            .returning(|_, _| Ok(PagedData::empty()));
         dbs_reader
             .expect_get_txs_history_bc_sent()
             .times(1)
-            .returning(|_| {
+            .returning(|_, _| {
                 let tx = TransactionDocumentV10::from_string_object(
                     &TransactionDocumentV10Stringified {
                         currency: "test".to_owned(),
@@ -158,10 +263,16 @@ mod tests {
                     },
                 )
                 .expect("wrong tx");
-                Ok(vec![TxDbV2 {
+                let mut expected_data = VecDeque::new();
+                expected_data.push_back(TxDbV2 {
                     tx,
                     ..Default::default()
-                }])
+                });
+                Ok(PagedData {
+                    data: expected_data,
+                    has_previous_page: false,
+                    has_next_page: false,
+                })
             });
         let schema = create_schema(dbs_reader)?;
         assert_eq!(
@@ -170,10 +281,18 @@ mod tests {
                 r#"{
                 txsHistoryBc(pubkeyOrScript: "D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx") {
                     sent {
-                        blockstamp
+                        edges {
+                            node {
+                                blockstamp
+                            }
+                        }
                     }
                     received {
-                        blockstamp
+                        edges {
+                            node {
+                                blockstamp
+                            }
+                        }
                     }
                 }
               }"#
@@ -182,10 +301,16 @@ mod tests {
             serde_json::json!({
                 "data": {
                     "txsHistoryBc": {
-                        "received": [],
-                        "sent": [{
-                            "blockstamp": "0-0000000000000000000000000000000000000000000000000000000000000000",
-                        }]
+                        "received": {
+                            "edges": []
+                        },
+                        "sent": {
+                            "edges": [{
+                                "node": {
+                                    "blockstamp": "0-0000000000000000000000000000000000000000000000000000000000000000",
+                                }
+                            }]
+                        }
                     }
                   }
             })

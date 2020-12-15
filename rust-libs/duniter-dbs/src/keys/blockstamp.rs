@@ -59,3 +59,42 @@ impl ExplorableKey for BlockstampKeyV1 {
         Ok(format!("{}", self.0))
     }
 }
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
+pub struct BlockstampKeyV2(Blockstamp);
+
+impl KeyAsBytes for BlockstampKeyV2 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        let bytes: [u8; 36] = self.0.into();
+        f(&bytes[..])
+    }
+}
+
+impl kv_typed::prelude::FromBytes for BlockstampKeyV2 {
+    type Err = StringErr;
+
+    fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
+        use dubp::common::bytes_traits::FromBytes as _;
+        Ok(Self(
+            Blockstamp::from_bytes(bytes).map_err(|e| StringErr(e.to_string()))?,
+        ))
+    }
+}
+
+impl ToDumpString for BlockstampKeyV2 {
+    fn to_dump_string(&self) -> String {
+        todo!()
+    }
+}
+
+#[cfg(feature = "explorer")]
+impl ExplorableKey for BlockstampKeyV2 {
+    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
+        Ok(Self(
+            Blockstamp::from_str(source).map_err(|e| StringErr(e.to_string()))?,
+        ))
+    }
+    fn to_explorer_string(&self) -> KvResult<String> {
+        Ok(format!("{}", self.0))
+    }
+}

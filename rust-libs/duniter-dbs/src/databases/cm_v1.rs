@@ -15,4 +15,11 @@
 
 use crate::*;
 
-db_schema!(CmV1, [["self_peer_old", SelfPeerOld, (), PeerCardDbV1],]);
+db_schema!(
+    CmV1,
+    [
+        ["self_peer_old", SelfPeerOld, (), PeerCardDbV1],
+        ["current_block_meta", CurrentBlockMeta, (), BlockMetaV2],
+        ["current_block", CurrentBlock, (), BlockDbV2],
+    ]
+);

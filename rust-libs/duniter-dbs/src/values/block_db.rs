@@ -115,3 +115,39 @@ pub struct TransactionInBlockDbV1 {
     signatures: SmallVec<[String; 1]>,
     comment: String,
 }
+
+// V2
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct BlockDbV2(pub dubp::block::DubpBlockV10);
+
+impl ValueAsBytes for BlockDbV2 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
+        let bytes = bincode::serialize(self).map_err(|e| KvError::DeserError(format!("{}", e)))?;
+        f(bytes.as_ref())
+    }
+}
+
+impl kv_typed::prelude::FromBytes for BlockDbV2 {
+    type Err = StringErr;
+
+    fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
+        Ok(bincode::deserialize(&bytes).map_err(|e| StringErr(format!("{}: '{:?}'", e, bytes)))?)
+    }
+}
+
+impl ToDumpString for BlockDbV2 {
+    fn to_dump_string(&self) -> String {
+        todo!()
+    }
+}
+
+#[cfg(feature = "explorer")]
+impl ExplorableValue for BlockDbV2 {
+    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
+        Ok(serde_json::from_str(source).map_err(|e| StringErr(e.to_string()))?)
+    }
+    fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
+        serde_json::to_value(self).map_err(|e| KvError::DeserError(format!("{}", e)))
+    }
+}

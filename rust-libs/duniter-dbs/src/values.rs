@@ -29,6 +29,7 @@ pub mod pubkey_db;
 pub mod sindex_db;
 pub mod source_amount;
 pub mod tx_db;
+pub mod txs;
 pub mod ud_entry_db;
 pub mod utxo;
 pub mod wallet_db;

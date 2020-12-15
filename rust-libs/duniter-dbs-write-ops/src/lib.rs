@@ -24,6 +24,7 @@
 
 pub mod apply_block;
 pub mod bc;
+pub mod cm;
 pub mod txs_mp;
 
 use std::borrow::Cow;
@@ -39,6 +40,7 @@ use dubp::wallet::prelude::*;
 use duniter_dbs::{
     databases::{
         bc_v2::BcV2Db,
+        cm_v1::{CmV1Db, CmV1DbWritable},
         txs_mp_v2::{TxsMpV2Db, TxsMpV2DbReadable, TxsMpV2DbWritable},
     },
     kv_typed::prelude::*,

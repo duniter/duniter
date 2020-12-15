@@ -23,13 +23,14 @@
 )]
 
 use dubp::crypto::hashs::Hash;
-use duniter_dbs::{databases::bc_v2::BcV2DbReadable, HashKeyV2};
-use duniter_dbs::{kv_typed::prelude::*, BlockMetaV2};
+use duniter_dbs::{
+    databases::{bc_v2::BcV2DbReadable, cm_v1::CmV1DbReadable},
+    kv_typed::prelude::*,
+    BlockMetaV2, HashKeyV2,
+};
 
-pub fn get_current_block_meta<BcDb: BcV2DbReadable>(bc_db: &BcDb) -> KvResult<Option<BlockMetaV2>> {
-    bc_db
-        .blocks_meta()
-        .iter_rev(.., |it| it.values().next_res())
+pub fn get_current_block_meta<CmDb: CmV1DbReadable>(cm_db: &CmDb) -> KvResult<Option<BlockMetaV2>> {
+    cm_db.current_block_meta().get(&())
 }
 
 pub fn tx_exist<BcDb: BcV2DbReadable>(bc_db_ro: &BcDb, hash: Hash) -> KvResult<bool> {

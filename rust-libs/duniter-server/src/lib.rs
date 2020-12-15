@@ -25,6 +25,7 @@
 mod legacy;
 
 pub use duniter_conf::{gva_conf::GvaConf, DuniterConf};
+use duniter_dbs::databases::dunp_v1::DunpV1DbWritable;
 pub use duniter_dbs::{
     kv_typed::prelude::KvResult, smallvec, DunpHeadDbV1, DunpNodeIdV1Db, PeerCardDbV1,
 };
@@ -115,6 +116,7 @@ impl DuniterServer {
 
         log::info!("open duniter databases...");
         let (bc_db, dbs) = duniter_dbs::open_dbs(profile_path_opt);
+        dbs.dunp_db.heads_old_write().clear()?; // Clear WS2Pv1 HEADs
         log::info!("Databases successfully opened.");
         let current = duniter_dbs_read_ops::get_current_block_meta(&dbs.bc_db_ro)
             .context("Fail to get current")?;

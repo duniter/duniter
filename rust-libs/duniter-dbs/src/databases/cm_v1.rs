@@ -15,10 +15,4 @@
 
 use crate::*;
 
-db_schema!(
-    CmV1,
-    [
-        ["self_peer_old", SelfPeerOld, (), PeerCardDbV1],
-        ["dunp_heads_old", DunpHeadsOld, DunpNodeIdV1Db, DunpHeadDbV1],
-    ]
-);
+db_schema!(CmV1, [["self_peer_old", SelfPeerOld, (), PeerCardDbV1],]);

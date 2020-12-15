@@ -23,8 +23,8 @@ impl DuniterServer {
         self.dbs_pool
             .execute(move |dbs| {
                 for (dunp_node_id, dunp_head) in heads {
-                    dbs.cm_db
-                        .dunp_heads_old_write()
+                    dbs.dunp_db
+                        .heads_old_write()
                         .upsert(dunp_node_id, dunp_head)?
                 }
                 Ok::<(), KvError>(())
@@ -83,13 +83,13 @@ mod tests {
         ed25519::{PublicKey, Signature},
         PublicKey as _,
     };
+    use duniter_dbs::databases::dunp_v1::DunpV1DbReadable;
     use duniter_dbs::PeerCardDbV1;
 
     use super::*;
 
     #[test]
     fn test_receive_new_heads() -> anyhow::Result<()> {
-        use duniter_dbs::databases::cm_v1::CmV1DbReadable as _;
         let (server, dbs) = DuniterServer::test(DuniterConf::default())?;
 
         let head = (
@@ -107,10 +107,10 @@ mod tests {
             },
         );
 
-        assert_eq!(dbs.cm_db.dunp_heads_old().count()?, 0);
+        assert_eq!(dbs.dunp_db.heads_old().count()?, 0);
         server.receive_new_heads(vec![head.clone()])?;
-        assert_eq!(dbs.cm_db.dunp_heads_old().count()?, 1);
-        assert_eq!(dbs.cm_db.dunp_heads_old().get(&head.0)?, Some(head.1));
+        assert_eq!(dbs.dunp_db.heads_old().count()?, 1);
+        assert_eq!(dbs.dunp_db.heads_old().get(&head.0)?, Some(head.1));
 
         Ok(())
     }

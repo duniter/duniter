@@ -21,12 +21,11 @@ use crate::*;
 
 pub fn open_dbs<B: BackendConf>(
     profile_path_opt: Option<&Path>,
-) -> (crate::databases::bc_v2::BcV2Db<B>, SharedDbs<B>) {
+) -> KvResult<(crate::databases::bc_v2::BcV2Db<B>, SharedDbs<B>)> {
     let bc_db = crate::databases::bc_v2::BcV2Db::<B>::open(B::gen_backend_conf(
         crate::databases::bc_v2::BcV2Db::<B>::NAME,
         profile_path_opt,
-    ))
-    .expect("fail to open BcV2 DB");
+    ))?;
     let dbs = SharedDbs {
         bc_db_ro: bc_db.get_ro_handler(),
         cm_db: crate::databases::cm_v1::CmV1Db::<Mem>::open(MemConf::default())
@@ -34,15 +33,13 @@ pub fn open_dbs<B: BackendConf>(
         dunp_db: crate::databases::dunp_v1::DunpV1Db::<B>::open(B::gen_backend_conf(
             "dunp_v1",
             profile_path_opt,
-        ))
-        .expect("fail to open Dunp DB"),
+        ))?,
         txs_mp_db: crate::databases::txs_mp_v2::TxsMpV2Db::<B>::open(B::gen_backend_conf(
             crate::databases::txs_mp_v2::TxsMpV2Db::<B>::NAME,
             profile_path_opt,
-        ))
-        .expect("fail to open TxsMp DB"),
+        ))?,
     };
-    (bc_db, dbs)
+    Ok((bc_db, dbs))
 }
 
 pub trait BackendConf: Backend {

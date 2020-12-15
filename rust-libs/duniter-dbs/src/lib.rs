@@ -120,7 +120,7 @@ pub type FileBackend = kv_typed::backend::memory::Mem;
 #[derive(Clone, Debug)]
 pub struct SharedDbs<B: Backend> {
     pub bc_db_ro: databases::bc_v2::BcV2DbRo<B>,
-    pub cm_db: databases::cm_v1::CmV1Db<Mem>,
+    pub cm_db: databases::cm_v1::CmV1Db<MemSingleton>,
     pub dunp_db: databases::dunp_v1::DunpV1Db<B>,
     pub txs_mp_db: databases::txs_mp_v2::TxsMpV2Db<B>,
 }
@@ -133,7 +133,7 @@ impl SharedDbs<Mem> {
         use databases::txs_mp_v2::TxsMpV2DbWritable as _;
         Ok(SharedDbs {
             bc_db_ro: databases::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?.get_ro_handler(),
-            cm_db: databases::cm_v1::CmV1Db::<Mem>::open(MemConf::default())?,
+            cm_db: databases::cm_v1::CmV1Db::<MemSingleton>::open(MemSingletonConf::default())?,
             dunp_db: databases::dunp_v1::DunpV1Db::<Mem>::open(MemConf::default())?,
             txs_mp_db: databases::txs_mp_v2::TxsMpV2Db::<Mem>::open(MemConf::default())?,
         })

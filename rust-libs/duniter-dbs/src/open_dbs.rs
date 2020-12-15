@@ -28,7 +28,7 @@ pub fn open_dbs<B: BackendConf>(
     ))?;
     let dbs = SharedDbs {
         bc_db_ro: bc_db.get_ro_handler(),
-        cm_db: crate::databases::cm_v1::CmV1Db::<Mem>::open(MemConf::default())
+        cm_db: crate::databases::cm_v1::CmV1Db::<MemSingleton>::open(MemSingletonConf::default())
             .expect("fail to open CmV1 DB"),
         dunp_db: crate::databases::dunp_v1::DunpV1Db::<B>::open(B::gen_backend_conf(
             "dunp_v1",

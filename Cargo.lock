@@ -1069,7 +1069,6 @@ dependencies = [
  "dubp",
  "duniter-dbs",
  "duniter-dbs-write-ops",
- "duniter-gva",
  "duniter-gva-db-writer",
  "fast-threadpool",
  "flume",
@@ -1155,7 +1154,6 @@ dependencies = [
  "http",
  "log",
  "mockall",
- "once_cell",
  "resiter",
  "serde",
  "serde_json",
@@ -1172,6 +1170,8 @@ dependencies = [
  "anyhow",
  "dubp",
  "duniter-dbs",
+ "maplit",
+ "once_cell",
  "resiter",
  "smallvec",
 ]
@@ -1183,8 +1183,10 @@ dependencies = [
  "anyhow",
  "dubp",
  "duniter-dbs",
+ "maplit",
  "resiter",
  "smallvec",
+ "unwrap",
 ]
 
 [[package]]

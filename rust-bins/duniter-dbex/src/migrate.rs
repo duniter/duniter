@@ -27,7 +27,7 @@ const CHUNK_SIZE: usize = 250;
 pub(crate) fn migrate(profile_path: PathBuf) -> anyhow::Result<()> {
     let start_time = Instant::now();
     let (bc_db, shared_dbs) = duniter_dbs::open_dbs(Some(profile_path.as_path()));
-    let gva_db = duniter_gva::GvaModule::get_gva_db_rw(Some(profile_path.as_path()));
+    let gva_db = duniter_gva_db_writer::get_gva_db_rw(Some(profile_path.as_path()));
 
     // Clear bc_db and gva_db
     bc_db.clear()?;

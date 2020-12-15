@@ -39,7 +39,8 @@ use crate::entities::{
     block_gva::Block,
     tx_gva::TxGva,
     ud_gva::{CurrentUdGva, RevalUdGva, UdGva},
-    AggregateSum, AmountWithBase, PeerCardGva, RawTxOrChanges, Sum, TxsHistoryGva, UtxoGva,
+    AggregateSum, AmountWithBase, EdgeTx, PeerCardGva, RawTxOrChanges, Sum, TxDirection,
+    TxsHistoryMempool, UtxoGva,
 };
 use crate::inputs::{TxIssuer, TxRecipient, UdsFilter};
 use crate::inputs_validators::TxCommentValidator;
@@ -49,6 +50,7 @@ use crate::schema::{GraphQlSchema, SchemaData};
 use crate::tests::create_dbs_reader;
 #[cfg(test)]
 use crate::tests::DbsReader;
+use async_graphql::connection::{Connection, Edge, EmptyFields};
 use async_graphql::http::GraphQLPlaygroundConfig;
 use async_graphql::validators::{IntGreaterThan, ListMinLength, StringMaxLength, StringMinLength};
 use dubp::common::crypto::keys::{ed25519::PublicKey, KeyPair as _, PublicKey as _};
@@ -59,13 +61,15 @@ use dubp::documents_parser::prelude::*;
 use dubp::wallet::prelude::*;
 use dubp::{block::DubpBlockV10, crypto::hashs::Hash};
 use duniter_dbs::databases::{
-    gva_v1::{GvaV1Db, GvaV1DbReadable, GvaV1DbRo, GvaV1DbWritable},
+    gva_v1::{GvaV1DbReadable, GvaV1DbRo},
     txs_mp_v2::TxsMpV2DbReadable,
 };
 use duniter_dbs::prelude::*;
 use duniter_dbs::{kv_typed::prelude::*, FileBackend, TxDbV2};
+use duniter_gva_db_writer::{get_gva_db_ro, get_gva_db_rw};
 #[cfg(not(test))]
 use duniter_gva_dbs_reader::create_dbs_reader;
+use duniter_gva_dbs_reader::pagination::PageInfo;
 #[cfg(not(test))]
 use duniter_gva_dbs_reader::DbsReader;
 use duniter_mempools::{Mempools, TxsMempool};
@@ -78,11 +82,6 @@ use std::{
     path::Path,
 };
 use warp::{http::Response as HttpResponse, Filter as _, Rejection, Stream};
-
-static GVA_DB_RO: once_cell::sync::OnceCell<GvaV1DbRo<FileBackend>> =
-    once_cell::sync::OnceCell::new();
-static GVA_DB_RW: once_cell::sync::OnceCell<GvaV1Db<FileBackend>> =
-    once_cell::sync::OnceCell::new();
 
 #[derive(Debug)]
 pub struct GvaModule {
@@ -103,7 +102,7 @@ impl duniter_module::DuniterModule for GvaModule {
         dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
         profile_path_opt: Option<&Path>,
     ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
-        let gva_db = GvaModule::get_gva_db_rw(profile_path_opt);
+        let gva_db = get_gva_db_rw(profile_path_opt);
         if conf.gva.is_some() {
             Ok(Some(dbs_pool.launch(move |_| {
                 duniter_gva_db_writer::apply_block(&block, gva_db)
@@ -118,7 +117,7 @@ impl duniter_module::DuniterModule for GvaModule {
         dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
         profile_path_opt: Option<&Path>,
     ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
-        let gva_db = GvaModule::get_gva_db_rw(profile_path_opt);
+        let gva_db = get_gva_db_rw(profile_path_opt);
         if conf.gva.is_some() {
             Ok(Some(dbs_pool.launch(move |_| {
                 for block in blocks.deref() {
@@ -136,7 +135,7 @@ impl duniter_module::DuniterModule for GvaModule {
         dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
         profile_path_opt: Option<&Path>,
     ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
-        let gva_db = GvaModule::get_gva_db_rw(profile_path_opt);
+        let gva_db = get_gva_db_rw(profile_path_opt);
         if conf.gva.is_some() {
             Ok(Some(dbs_pool.launch(move |_| {
                 duniter_gva_db_writer::revert_block(&block, gva_db)
@@ -184,7 +183,7 @@ impl duniter_module::DuniterModule for GvaModule {
                 conf: conf.gva.to_owned(),
                 currency: currency.to_owned(),
                 dbs_pool: dbs_pool.to_owned(),
-                gva_db_ro: GvaModule::get_gva_db_ro(profile_path_opt),
+                gva_db_ro: get_gva_db_ro(profile_path_opt),
                 mempools,
                 self_pubkey: conf.self_key_pair.public_key(),
                 software_version,
@@ -227,7 +226,7 @@ impl duniter_module::DuniterModule for GvaModule {
         profile_path_opt: Option<&Path>,
         pubkey: PublicKey,
     ) -> KvResult<Option<duniter_module::TxsHistoryForBma>> {
-        let gva_db = GvaModule::get_gva_db_ro(profile_path_opt);
+        let gva_db = get_gva_db_ro(profile_path_opt);
         let duniter_gva_dbs_reader::txs_history::TxsHistory {
             sent,
             received,
@@ -273,7 +272,7 @@ impl duniter_module::DuniterModule for GvaModule {
         hash: Hash,
         profile_path_opt: Option<&Path>,
     ) -> KvResult<Option<(TransactionDocumentV10, Option<BlockNumber>)>> {
-        let gva_db = GvaModule::get_gva_db_ro(profile_path_opt);
+        let gva_db = get_gva_db_ro(profile_path_opt);
         dbs_pool
             .execute(move |dbs| {
                 if let Some(tx) = dbs.txs_mp_db.txs().get(&duniter_dbs::HashKeyV2(hash))? {
@@ -289,18 +288,6 @@ impl duniter_module::DuniterModule for GvaModule {
 }
 
 impl GvaModule {
-    fn get_gva_db_ro(profile_path_opt: Option<&Path>) -> &'static GvaV1DbRo<FileBackend> {
-        use duniter_dbs::databases::gva_v1::GvaV1DbWritable as _;
-        GVA_DB_RO.get_or_init(|| GvaModule::get_gva_db_rw(profile_path_opt).get_ro_handler())
-    }
-    pub fn get_gva_db_rw(profile_path_opt: Option<&Path>) -> &'static GvaV1Db<FileBackend> {
-        GVA_DB_RW.get_or_init(|| {
-            duniter_dbs::databases::gva_v1::GvaV1Db::<FileBackend>::open(
-                FileBackend::gen_backend_conf("gva_v1", profile_path_opt),
-            )
-            .expect("Fail to open GVA DB")
-        })
-    }
     async fn start_inner(
         conf: GvaConf,
         currency: String,
@@ -413,6 +400,7 @@ mod tests {
     use duniter_mempools::Mempools;
     use duniter_module::DuniterModule;
     use fast_threadpool::ThreadPoolConfig;
+    use std::collections::VecDeque;
     use unwrap::unwrap;
 
     mockall::mock! {
@@ -454,11 +442,21 @@ mod tests {
                 &self,
                 bc_db: &BcDb,
             ) -> KvResult<Option<SourceAmount>>;
-            fn get_transactions_history<TxsMpDb: 'static + TxsMpV2DbReadable>(
+            fn get_txs_history_bc_received(
+                &self,
+                page_info: PageInfo<duniter_gva_dbs_reader::txs_history::TxBcCursor>,
+                script_hash: Hash,
+            ) -> KvResult<PagedData<VecDeque<TxDbV2>>>;
+            fn get_txs_history_bc_sent(
+                &self,
+                page_info: PageInfo<duniter_gva_dbs_reader::txs_history::TxBcCursor>,
+                script_hash: Hash,
+            ) -> KvResult<PagedData<VecDeque<TxDbV2>>>;
+            fn get_txs_history_mempool<TxsMpDb: 'static + TxsMpV2DbReadable>(
                 &self,
                 txs_mp_db_ro: &TxsMpDb,
                 pubkey: PublicKey,
-            ) -> KvResult<duniter_gva_dbs_reader::txs_history::TxsHistory>;
+            ) -> KvResult<(Vec<TransactionDocumentV10>, Vec<TransactionDocumentV10>)>;
             fn unspent_uds_of_pubkey<BcDb: 'static + BcV2DbReadable>(
                 &self,
                 bc_db: &BcDb,

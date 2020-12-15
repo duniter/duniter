@@ -200,13 +200,13 @@ impl DbsReader {
                 };
                 Ok(PagedData {
                     has_previous_page: has_previous_page(
-                        uds_with_sum.uds.iter().map(|(bn, _sa)| bn),
+                        uds_with_sum.uds.iter().map(|(bn, _sa)| bn.into()),
                         first_ud_opt,
                         page_info,
                         true,
                     ),
                     has_next_page: has_next_page(
-                        uds_with_sum.uds.iter().map(|(bn, _sa)| bn),
+                        uds_with_sum.uds.iter().map(|(bn, _sa)| bn.into()),
                         last_ud_opt,
                         page_info,
                         true,
@@ -284,7 +284,7 @@ where
 
     Ok(PagedData {
         has_previous_page: has_previous_page(
-            uds_with_sum.uds.iter().map(|(bn, _sa)| bn),
+            uds_with_sum.uds.iter().map(|(bn, _sa)| bn.into()),
             first_ud,
             page_info,
             true,

@@ -21,8 +21,8 @@ db_schema!(
         ["blocks_with_ud", BlocksWithUd, U32BE, ()],
         ["blockchain_time", BlockchainTime, U32BE, u64],
         ["txs", Txs, HashKeyV2, TxDbV2],
-        ["txs_by_issuer", TxsByIssuer, PubKeyKeyV2, Vec<Hash>],
-        ["txs_by_recipient", TxsByRecipient, PubKeyKeyV2, Vec<Hash>],
+        ["txs_by_issuer", TxsByIssuer, WalletHashWithBnV1Db, BTreeSet<Hash>],
+        ["txs_by_recipient", TxsByRecipient, WalletHashWithBnV1Db, BTreeSet<Hash>],
         [
             "scripts_by_pubkey",
             ScriptsByPubkey,

@@ -14,7 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use duniter_dbs::databases::gva_v1::BalancesEvent;
+use duniter_dbs::{databases::gva_v1::BalancesEvent, WalletHashWithBnV1Db};
 
 pub(crate) type ScriptsHash = HashMap<WalletScriptV10, Hash>;
 
@@ -28,6 +28,7 @@ fn get_script_hash(script: &WalletScriptV10, scripts_hash: &mut ScriptsHash) -> 
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn apply_tx<B: Backend>(
     current_blockstamp: Blockstamp,
     current_time: i64,
@@ -35,43 +36,22 @@ pub(crate) fn apply_tx<B: Backend>(
     scripts_hash: &mut ScriptsHash,
     tx_hash: Hash,
     tx: &TransactionDocumentV10,
+    txs_by_issuer_mem: &mut HashMap<WalletHashWithBnV1Db, BTreeSet<Hash>>,
+    txs_by_recipient_mem: &mut HashMap<WalletHashWithBnV1Db, BTreeSet<Hash>>,
 ) -> KvResult<()> {
     (
         gva_db.scripts_by_pubkey_write(),
-        gva_db.txs_by_issuer_write(),
-        gva_db.txs_by_recipient_write(),
         gva_db.txs_write(),
         gva_db.gva_utxos_write(),
         gva_db.balances_write(),
     )
         .write(
-            |(
-                mut scripts_by_pubkey,
-                mut txs_by_issuer,
-                mut txs_by_recipient,
-                mut txs,
-                mut gva_utxos,
-                mut balances,
-            )| {
-                // Insert on col `txs_by_issuer`
-                for pubkey in tx.issuers() {
-                    let mut hashs = txs_by_issuer.get(&PubKeyKeyV2(pubkey))?.unwrap_or_default();
-                    hashs.push(tx_hash);
-                    txs_by_issuer.upsert(PubKeyKeyV2(pubkey), hashs);
-                }
-                // Insert on col `txs_by_recipient`
-                for pubkey in tx.recipients_keys() {
-                    let mut hashs = txs_by_recipient
-                        .get(&PubKeyKeyV2(pubkey))?
-                        .unwrap_or_default();
-                    hashs.push(tx_hash);
-                    txs_by_recipient.upsert(PubKeyKeyV2(pubkey), hashs);
-                }
-
-                // Remove consumed UTXOs
+            |(mut scripts_by_pubkey, mut txs, mut gva_utxos, mut balances)| {
+                let mut issuers_scripts_hashs = BTreeSet::new();
                 for input in tx.get_inputs() {
-                    let account_script = match input.id {
+                    let (account_script_hash, account_script) = match input.id {
                         SourceIdV10::Utxo(utxo_id) => {
+                            // Get issuer script & written block
                             let db_tx_origin = gva_db
                                 .txs()
                                 .get(&HashKeyV2::from_ref(&utxo_id.tx_hash))?
@@ -85,26 +65,42 @@ pub(crate) fn apply_tx<B: Backend>(
                                 .conditions
                                 .script
                                 .clone();
+                            let utxo_script_hash = get_script_hash(&utxo_script, scripts_hash);
+
+                            // Remove consumed UTXOs
                             super::utxos::remove_utxo_v10::<B>(
                                 &mut scripts_by_pubkey,
                                 &mut gva_utxos,
                                 utxo_id,
                                 &utxo_script,
-                                get_script_hash(&utxo_script, scripts_hash),
+                                utxo_script_hash,
                                 db_tx_origin.written_block.number.0,
                             )?;
-                            utxo_script
+
+                            // Return utxo_script with hash
+                            (utxo_script_hash, utxo_script)
                         }
                         SourceIdV10::Ud(UdSourceIdV10 { issuer, .. }) => {
-                            WalletScriptV10::single_sig(issuer)
+                            let script = WalletScriptV10::single_sig(issuer);
+                            (Hash::compute(script.to_string().as_bytes()), script)
                         }
                     };
+                    issuers_scripts_hashs.insert(account_script_hash);
+                    // Insert on col `txs_by_issuer`
+                    txs_by_issuer_mem
+                        .entry(WalletHashWithBnV1Db::new(
+                            account_script_hash,
+                            current_blockstamp.number,
+                        ))
+                        .or_default()
+                        .insert(tx_hash);
                     // Decrease account balance
                     decrease_account_balance::<B>(account_script, &mut balances, input.amount)?;
                 }
 
-                // Insert created UTXOs
                 for (output_index, output) in tx.get_outputs().iter().enumerate() {
+                    let utxo_script_hash = get_script_hash(&output.conditions.script, scripts_hash);
+                    // Insert created UTXOs
                     super::utxos::write_utxo_v10::<B>(
                         &mut scripts_by_pubkey,
                         &mut gva_utxos,
@@ -117,8 +113,19 @@ pub(crate) fn apply_tx<B: Backend>(
                             script: &output.conditions.script,
                             written_block: current_blockstamp.number,
                         },
-                        get_script_hash(&output.conditions.script, scripts_hash),
+                        utxo_script_hash,
                     )?;
+
+                    // Insert on col `txs_by_recipient`
+                    if !issuers_scripts_hashs.contains(&utxo_script_hash) {
+                        txs_by_recipient_mem
+                            .entry(WalletHashWithBnV1Db::new(
+                                utxo_script_hash,
+                                current_blockstamp.number,
+                            ))
+                            .or_default()
+                            .insert(tx_hash);
+                    }
 
                     // Increase account balance
                     let balance = balances
@@ -171,10 +178,12 @@ pub(crate) fn revert_tx<B: Backend>(
                     mut gva_utxos,
                     mut balances,
                 )| {
-                    // Remove UTXOs created by this tx
                     use dubp::documents::transaction::TransactionDocumentTrait as _;
                     for (output_index, output) in tx_db.tx.get_outputs().iter().enumerate() {
                         let script = &output.conditions.script;
+                        let utxo_script_hash = get_script_hash(&script, scripts_hash);
+
+                        // Remove UTXOs created by this tx
                         super::utxos::remove_utxo_v10::<B>(
                             &mut scripts_by_pubkey,
                             &mut gva_utxos,
@@ -183,9 +192,14 @@ pub(crate) fn revert_tx<B: Backend>(
                                 output_index,
                             },
                             script,
-                            get_script_hash(&script, scripts_hash),
+                            utxo_script_hash,
                             block_number.0,
                         )?;
+
+                        // Remove on col `txs_by_recipient`
+                        txs_by_recipient
+                            .remove(WalletHashWithBnV1Db::new(utxo_script_hash, block_number));
+
                         // Decrease account balance
                         decrease_account_balance::<B>(
                             script.clone(),
@@ -195,7 +209,7 @@ pub(crate) fn revert_tx<B: Backend>(
                     }
                     // Recreate UTXOs consumed by this tx (and update balance)
                     for input in tx_db.tx.get_inputs() {
-                        let account_script = match input.id {
+                        let (account_script_hash, account_script) = match input.id {
                             SourceIdV10::Utxo(utxo_id) => {
                                 let db_tx_origin = gva_db
                                     .txs()
@@ -211,6 +225,7 @@ pub(crate) fn revert_tx<B: Backend>(
                                     .conditions
                                     .script
                                     .clone();
+                                let utxo_script_hash = get_script_hash(&utxo_script, scripts_hash);
                                 super::utxos::write_utxo_v10::<B>(
                                     &mut scripts_by_pubkey,
                                     &mut gva_utxos,
@@ -220,14 +235,20 @@ pub(crate) fn revert_tx<B: Backend>(
                                         script: &utxo_script,
                                         written_block: db_tx_origin.written_block.number,
                                     },
-                                    get_script_hash(&utxo_script, scripts_hash),
+                                    utxo_script_hash,
                                 )?;
-                                utxo_script
+
+                                // Return utxo_script
+                                (utxo_script_hash, utxo_script)
                             }
                             SourceIdV10::Ud(UdSourceIdV10 { issuer, .. }) => {
-                                WalletScriptV10::single_sig(issuer)
+                                let script = WalletScriptV10::single_sig(issuer);
+                                (Hash::compute(script.to_string().as_bytes()), script)
                             }
                         };
+                        // Remove on col `txs_by_issuer`
+                        txs_by_issuer
+                            .remove(WalletHashWithBnV1Db::new(account_script_hash, block_number));
                         // Increase account balance
                         let balance = balances
                             .get(WalletConditionsV2::from_ref(&account_script))?
@@ -238,14 +259,10 @@ pub(crate) fn revert_tx<B: Backend>(
                             SourceAmountValV2(balance.0 + input.amount),
                         );
                     }
-                    // Remove tx
-                    remove_tx::<B>(
-                        &mut txs_by_issuer,
-                        &mut txs_by_recipient,
-                        &mut txs,
-                        tx_hash,
-                        &tx_db,
-                    )?;
+
+                    // Remove tx itself
+                    txs.remove(HashKeyV2(*tx_hash));
+
                     Ok(())
                 },
             )?;
@@ -254,32 +271,6 @@ pub(crate) fn revert_tx<B: Backend>(
     } else {
         Ok(None)
     }
-}
-
-fn remove_tx<B: Backend>(
-    txs_by_issuer: &mut TxColRw<B::Col, TxsByIssuerEvent>,
-    txs_by_recipient: &mut TxColRw<B::Col, TxsByRecipientEvent>,
-    txs: &mut TxColRw<B::Col, TxsEvent>,
-    tx_hash: &Hash,
-    tx_db: &TxDbV2,
-) -> KvResult<()> {
-    // Remove tx hash in col `txs_by_issuer`
-    for pubkey in tx_db.tx.issuers() {
-        let mut hashs_ = txs_by_issuer.get(&PubKeyKeyV2(pubkey))?.unwrap_or_default();
-        hashs_.pop();
-        txs_by_issuer.upsert(PubKeyKeyV2(pubkey), hashs_)
-    }
-    // Remove tx hash in col `txs_by_recipient`
-    for pubkey in tx_db.tx.recipients_keys() {
-        let mut hashs_ = txs_by_recipient
-            .get(&PubKeyKeyV2(pubkey))?
-            .unwrap_or_default();
-        hashs_.pop();
-        txs_by_recipient.upsert(PubKeyKeyV2(pubkey), hashs_)
-    }
-    // Remove tx itself
-    txs.remove(HashKeyV2(*tx_hash));
-    Ok(())
 }
 
 fn decrease_account_balance<B: Backend>(
@@ -313,6 +304,7 @@ mod tests {
         documents::transaction::UTXOConditions,
     };
     use duniter_dbs::BlockMetaV2;
+    use maplit::btreeset;
 
     #[test]
     fn test_apply_tx() -> KvResult<()> {
@@ -336,6 +328,8 @@ mod tests {
         //println!("TMP pk2={}", pk2);
         let script = WalletScriptV10::single_sig(pk);
         let script2 = WalletScriptV10::single_sig(pk2);
+        let script_hash = Hash::compute(script.to_string().as_bytes());
+        let script2_hash = Hash::compute(script2.to_string().as_bytes());
 
         gva_db.balances_write().upsert(
             WalletConditionsV2(script.clone()),
@@ -372,6 +366,9 @@ mod tests {
         let tx1_hash = tx1.get_hash();
 
         let mut scripts_hash = HashMap::new();
+
+        let mut txs_by_issuer_mem = HashMap::new();
+        let mut txs_by_recipient_mem = HashMap::new();
         apply_tx(
             current_blockstamp,
             b0.median_time as i64,
@@ -379,7 +376,20 @@ mod tests {
             &mut scripts_hash,
             tx1_hash,
             &tx1,
+            &mut txs_by_issuer_mem,
+            &mut txs_by_recipient_mem,
         )?;
+
+        assert_eq!(txs_by_issuer_mem.len(), 1);
+        assert_eq!(
+            txs_by_issuer_mem.get(&WalletHashWithBnV1Db::new(script_hash, BlockNumber(0))),
+            Some(&btreeset![tx1_hash])
+        );
+        assert_eq!(txs_by_recipient_mem.len(), 1);
+        assert_eq!(
+            txs_by_recipient_mem.get(&WalletHashWithBnV1Db::new(script2_hash, BlockNumber(0))),
+            Some(&btreeset![tx1_hash])
+        );
 
         assert_eq!(
             gva_db
@@ -417,6 +427,8 @@ mod tests {
         .build_and_sign(vec![kp.generate_signator()]);
         let tx2_hash = tx2.get_hash();
 
+        let mut txs_by_issuer_mem = HashMap::new();
+        let mut txs_by_recipient_mem = HashMap::new();
         apply_tx(
             current_blockstamp,
             b0.median_time as i64,
@@ -424,7 +436,20 @@ mod tests {
             &mut scripts_hash,
             tx2_hash,
             &tx2,
+            &mut txs_by_issuer_mem,
+            &mut txs_by_recipient_mem,
         )?;
+
+        assert_eq!(txs_by_issuer_mem.len(), 1);
+        assert_eq!(
+            txs_by_issuer_mem.get(&WalletHashWithBnV1Db::new(script2_hash, BlockNumber(0))),
+            Some(&btreeset![tx2_hash])
+        );
+        assert_eq!(txs_by_recipient_mem.len(), 1);
+        assert_eq!(
+            txs_by_recipient_mem.get(&WalletHashWithBnV1Db::new(script_hash, BlockNumber(0))),
+            Some(&btreeset![tx2_hash])
+        );
 
         assert_eq!(
             gva_db

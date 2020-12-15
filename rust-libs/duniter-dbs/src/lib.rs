@@ -66,6 +66,7 @@ pub use keys::ud_id::UdIdV2;
 pub use keys::uid::UidKeyV1;
 pub use keys::utxo_id::GvaUtxoIdDbV1;
 pub use keys::wallet_conditions::{WalletConditionsV1, WalletConditionsV2};
+pub use keys::wallet_hash_with_bn::WalletHashWithBnV1Db;
 pub use values::block_db::{BlockDbEnum, BlockDbV1, TransactionInBlockDbV1};
 pub use values::block_head_db::BlockHeadDbV1;
 pub use values::block_meta::BlockMetaV2;

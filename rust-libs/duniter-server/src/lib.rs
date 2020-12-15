@@ -144,6 +144,7 @@ impl DuniterServer {
                 .enable_all()
                 .build()?;
             let conf_clone = conf.clone();
+            let profile_path_opt_clone = profile_path_opt.map(ToOwned::to_owned);
             let threadpool_async_handler = threadpool.async_handler();
             std::thread::spawn(move || {
                 runtime
@@ -152,7 +153,7 @@ impl DuniterServer {
                         currency,
                         threadpool_async_handler,
                         Mempools { txs: txs_mempool },
-                        None,
+                        profile_path_opt_clone,
                         software_version,
                     ))
                     .context("Fail to start duniter modules")

@@ -99,7 +99,7 @@ where
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
         let layout_verified = zerocopy::LayoutVerified::<_, [T]>::new_slice(bytes)
-            .ok_or_else(|| StringErr("".to_owned()))?;
+            .ok_or_else(|| StringErr("Bytes are invalid length or alignment.".to_owned()))?;
         let slice = layout_verified.into_slice();
         Ok(BTreeSet::from_iter(slice.iter().copied()))
     }

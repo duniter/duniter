@@ -29,6 +29,7 @@ pub(crate) struct SchemaData {
 
 #[cfg(not(test))]
 impl SchemaData {
+    #[inline(always)]
     pub fn dbs_reader(&self) -> DbsReader {
         self.dbs_reader
     }

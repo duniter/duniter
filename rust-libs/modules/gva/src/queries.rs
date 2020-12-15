@@ -29,7 +29,8 @@ pub struct QueryRoot(
     queries::account_balance::AccountBalanceQuery,
     queries::current_frame::CurrentFrameQuery,
     queries::gen_tx::GenTxsQuery,
-    queries::txs_history::TxsHistoryQuery,
+    queries::txs_history::TxsHistoryBlockchainQuery,
+    queries::txs_history::TxsHistoryMempoolQuery,
     queries::uds::UdsQuery,
     queries::utxos_of_script::UtxosQuery,
 );

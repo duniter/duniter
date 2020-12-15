@@ -37,10 +37,32 @@ use duniter_dbs::databases::gva_v1::*;
 use duniter_dbs::{
     databases::gva_v1::{GvaV1Db, GvaV1DbReadable, GvaV1DbWritable},
     kv_typed::prelude::*,
-    HashKeyV2, PubKeyKeyV2, SourceAmountValV2, TxDbV2, WalletConditionsV2,
+    prelude::*,
+    FileBackend, HashKeyV2, PubKeyKeyV2, SourceAmountValV2, TxDbV2, WalletConditionsV2,
 };
 use resiter::filter::Filter;
-use std::collections::HashMap;
+use std::{
+    collections::{BTreeSet, HashMap},
+    path::Path,
+};
+
+static GVA_DB_RO: once_cell::sync::OnceCell<GvaV1DbRo<FileBackend>> =
+    once_cell::sync::OnceCell::new();
+static GVA_DB_RW: once_cell::sync::OnceCell<GvaV1Db<FileBackend>> =
+    once_cell::sync::OnceCell::new();
+
+pub fn get_gva_db_ro(profile_path_opt: Option<&Path>) -> &'static GvaV1DbRo<FileBackend> {
+    GVA_DB_RO.get_or_init(|| get_gva_db_rw(profile_path_opt).get_ro_handler())
+}
+pub fn get_gva_db_rw(profile_path_opt: Option<&Path>) -> &'static GvaV1Db<FileBackend> {
+    GVA_DB_RW.get_or_init(|| {
+        duniter_dbs::databases::gva_v1::GvaV1Db::<FileBackend>::open(FileBackend::gen_backend_conf(
+            "gva_v1",
+            profile_path_opt,
+        ))
+        .expect("Fail to open GVA DB")
+    })
+}
 
 pub struct UtxoV10<'s> {
     pub id: UtxoIdV10,
@@ -188,6 +210,8 @@ fn apply_block_txs<B: Backend>(
     txs: &[TransactionDocumentV10],
 ) -> KvResult<()> {
     let mut scripts_index = HashMap::new();
+    let mut txs_by_issuer_mem = HashMap::new();
+    let mut txs_by_recipient_mem = HashMap::new();
     for tx in txs {
         let tx_hash = tx.get_hash();
         // Write tx and update sources
@@ -198,8 +222,23 @@ fn apply_block_txs<B: Backend>(
             &mut scripts_index,
             tx_hash,
             tx,
+            &mut txs_by_issuer_mem,
+            &mut txs_by_recipient_mem,
         )?;
     }
+    (
+        gva_db.txs_by_issuer_write(),
+        gva_db.txs_by_recipient_write(),
+    )
+        .write(|(mut txs_by_issuer, mut txs_by_recipient)| {
+            for (k, v) in txs_by_issuer_mem {
+                txs_by_issuer.upsert(k, v);
+            }
+            for (k, v) in txs_by_recipient_mem {
+                txs_by_recipient.upsert(k, v);
+            }
+            Ok(())
+        })?;
     Ok(())
 }
 

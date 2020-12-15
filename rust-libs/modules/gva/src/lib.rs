@@ -23,6 +23,7 @@
 )]
 
 pub use duniter_conf::gva_conf::GvaConf;
+pub use schema::{build_schema, GraphQlSchema};
 
 mod anti_spam;
 mod entities;
@@ -45,7 +46,7 @@ use crate::entities::{
 use crate::inputs::{TxIssuer, TxRecipient, UdsFilter};
 use crate::inputs_validators::TxCommentValidator;
 use crate::pagination::Pagination;
-use crate::schema::{GraphQlSchema, SchemaData};
+use crate::schema::SchemaData;
 #[cfg(test)]
 use crate::tests::create_dbs_reader;
 #[cfg(test)]
@@ -298,23 +299,19 @@ impl GvaModule {
         software_version: &'static str,
     ) {
         log::info!("GvaServer::start: conf={:?}", conf);
-        let schema = async_graphql::Schema::build(
-            queries::QueryRoot::default(),
-            mutations::MutationRoot::default(),
-            subscriptions::SubscriptionRoot::default(),
-        )
-        .data(schema::SchemaData {
-            dbs_reader: create_dbs_reader(gva_db_ro),
-            dbs_pool,
-            server_meta_data: ServerMetaData {
-                currency,
-                self_pubkey,
-                software_version,
+        let schema = schema::build_schema_with_data(
+            schema::SchemaData {
+                dbs_reader: create_dbs_reader(gva_db_ro),
+                dbs_pool,
+                server_meta_data: ServerMetaData {
+                    currency,
+                    self_pubkey,
+                    software_version,
+                },
+                txs_mempool: mempools.txs,
             },
-            txs_mempool: mempools.txs,
-        })
-        .extension(async_graphql::extensions::Logger)
-        .finish();
+            true,
+        );
 
         let graphql_post = warp_::graphql(
             &conf,
@@ -477,23 +474,19 @@ mod tests {
     pub(crate) fn create_schema(dbs_ops: MockDbsReader) -> KvResult<GraphQlSchema> {
         let dbs = SharedDbs::mem()?;
         let threadpool = fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), dbs);
-        Ok(async_graphql::Schema::build(
-            queries::QueryRoot::default(),
-            mutations::MutationRoot::default(),
-            subscriptions::SubscriptionRoot::default(),
-        )
-        .data(schema::SchemaData {
-            dbs_pool: threadpool.into_async_handler(),
-            dbs_reader: Arc::new(dbs_ops),
-            server_meta_data: ServerMetaData {
-                currency: "test_currency".to_owned(),
-                self_pubkey: PublicKey::default(),
-                software_version: "test",
+        Ok(schema::build_schema_with_data(
+            schema::SchemaData {
+                dbs_pool: threadpool.into_async_handler(),
+                dbs_reader: Arc::new(dbs_ops),
+                server_meta_data: ServerMetaData {
+                    currency: "test_currency".to_owned(),
+                    self_pubkey: PublicKey::default(),
+                    software_version: "test",
+                },
+                txs_mempool: TxsMempool::new(10),
             },
-            txs_mempool: TxsMempool::new(10),
-        })
-        .extension(async_graphql::extensions::Logger)
-        .finish())
+            true,
+        ))
     }
 
     pub(crate) async fn exec_graphql_request(

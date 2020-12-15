@@ -15,11 +15,37 @@
 
 use crate::*;
 
-pub(crate) type GraphQlSchema = async_graphql::Schema<
+pub type GraphQlSchema = async_graphql::Schema<
     crate::queries::QueryRoot,
     crate::mutations::MutationRoot,
     crate::subscriptions::SubscriptionRoot,
 >;
+
+pub fn build_schema(logger: bool) -> GraphQlSchema {
+    let mut builder = async_graphql::Schema::build(
+        queries::QueryRoot::default(),
+        mutations::MutationRoot::default(),
+        subscriptions::SubscriptionRoot::default(),
+    );
+    if logger {
+        builder = builder.extension(async_graphql::extensions::Logger);
+    }
+    builder.finish()
+}
+
+pub(crate) fn build_schema_with_data(data: SchemaData, logger: bool) -> GraphQlSchema {
+    let mut builder = async_graphql::Schema::build(
+        queries::QueryRoot::default(),
+        mutations::MutationRoot::default(),
+        subscriptions::SubscriptionRoot::default(),
+    )
+    .data(data);
+    if logger {
+        builder = builder.extension(async_graphql::extensions::Logger);
+    }
+    builder.finish()
+}
+
 pub(crate) struct SchemaData {
     pub(crate) dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
     pub(crate) dbs_reader: DbsReader,

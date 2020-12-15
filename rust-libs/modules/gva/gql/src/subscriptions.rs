@@ -24,7 +24,7 @@ impl SubscriptionRoot {
         &self,
         ctx: &async_graphql::Context<'_>,
     ) -> impl Stream<Item = Vec<TxGva>> {
-        let data = ctx.data::<SchemaData>().expect("fail to access db");
+        let data = ctx.data::<GvaSchemaData>().expect("fail to access db");
 
         let (s, r) = flume::unbounded();
 

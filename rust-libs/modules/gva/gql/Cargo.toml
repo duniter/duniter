@@ -1,0 +1,32 @@
+[package]
+name = "duniter-gva-gql"
+version = "0.1.0"
+authors = ["librelois <elois@duniter.org>"]
+license = "AGPL-3.0"
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0.33"
+arrayvec = "0.5.1"
+async-graphql = "2.2.0"
+async-trait = "0.1.41"
+dubp = { version = "0.34.0" }
+duniter-conf = { path = "../../../duniter-conf" }
+duniter-dbs = { path = "../../../duniter-dbs" }
+duniter-dbs-read-ops = { path = "../../../duniter-dbs-read-ops" }
+duniter-gva-dbs-reader = { path = "../dbs-reader" }
+duniter-mempools = { path = "../../../duniter-mempools" }
+duniter-module = { path = "../../../duniter-module" }
+fast-threadpool = "0.2.2"
+flume = "0.9.1"
+futures = "0.3.6"
+log = "0.4.11"
+resiter = "0.4.0"
+serde = { version = "1.0.105", features = ["derive"] }
+
+[dev-dependencies]
+duniter-dbs = { path = "../../../duniter-dbs", features = ["mem"] }
+mockall = "0.8.0"
+serde_json = "1.0.53"
+tokio = { version = "0.2.22", features = ["macros", "rt-threaded", "time"] }
+unwrap = "1.2.1"

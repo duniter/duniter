@@ -36,7 +36,7 @@ impl UtxosQuery {
 
         let script = dubp::documents_parser::wallet_script_from_str(&script)?;
 
-        let data = ctx.data::<SchemaData>()?;
+        let data = ctx.data::<GvaSchemaData>()?;
         let db_reader = data.dbs_reader();
 
         let (

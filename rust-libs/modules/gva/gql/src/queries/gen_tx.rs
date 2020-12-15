@@ -111,7 +111,7 @@ impl GenTxsQuery {
         let issuer = PublicKey::from_base58(&issuer)?;
         let recipient = PublicKey::from_base58(&recipient)?;
 
-        let data = ctx.data::<SchemaData>()?;
+        let data = ctx.data::<GvaSchemaData>()?;
         let db_reader = data.dbs_reader();
         let currency = data.server_meta_data.currency.clone();
 
@@ -186,7 +186,7 @@ impl GenTxsQuery {
         ));
         }
 
-        let data = ctx.data::<SchemaData>()?;
+        let data = ctx.data::<GvaSchemaData>()?;
         let db_reader = data.dbs_reader();
         let currency = data.server_meta_data.currency.clone();
 

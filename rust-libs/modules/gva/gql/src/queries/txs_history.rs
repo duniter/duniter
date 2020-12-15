@@ -58,7 +58,7 @@ impl TxsHistoryBlockchainQueryInner {
     ) -> async_graphql::Result<Connection<String, TxGva, EmptyFields, EdgeTx>> {
         let start_time = std::time::Instant::now();
 
-        let data = ctx.data::<SchemaData>()?;
+        let data = ctx.data::<GvaSchemaData>()?;
 
         let db_reader = data.dbs_reader();
         let pagination = self.pagination;
@@ -136,7 +136,7 @@ impl TxsHistoryBlockchainQueryInner {
         &self,
         ctx: &async_graphql::Context<'_>,
     ) -> async_graphql::Result<Connection<String, TxGva, EmptyFields, EmptyFields>> {
-        let data = ctx.data::<SchemaData>()?;
+        let data = ctx.data::<GvaSchemaData>()?;
         let db_reader = data.dbs_reader();
         let pagination = self.pagination;
         let script_hash = self.script_hash;
@@ -163,7 +163,7 @@ impl TxsHistoryBlockchainQueryInner {
         &self,
         ctx: &async_graphql::Context<'_>,
     ) -> async_graphql::Result<Connection<String, TxGva, EmptyFields, EmptyFields>> {
-        let data = ctx.data::<SchemaData>()?;
+        let data = ctx.data::<GvaSchemaData>()?;
         let db_reader = data.dbs_reader();
         let pagination = self.pagination;
         let script_hash = self.script_hash;
@@ -200,7 +200,7 @@ impl TxsHistoryMempoolQuery {
     ) -> async_graphql::Result<TxsHistoryMempool> {
         let pubkey = PublicKey::from_base58(&pubkey)?;
 
-        let data = ctx.data::<SchemaData>()?;
+        let data = ctx.data::<GvaSchemaData>()?;
         let db_reader = data.dbs_reader();
 
         let (sending, pending) = data

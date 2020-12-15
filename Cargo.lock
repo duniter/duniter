@@ -1146,6 +1146,7 @@ dependencies = [
  "duniter-dbs-read-ops",
  "duniter-gva-db-writer",
  "duniter-gva-dbs-reader",
+ "duniter-gva-gql",
  "duniter-mempools",
  "duniter-module",
  "fast-threadpool",
@@ -1186,6 +1187,33 @@ dependencies = [
  "maplit",
  "resiter",
  "smallvec",
+ "unwrap",
+]
+
+[[package]]
+name = "duniter-gva-gql"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "arrayvec",
+ "async-graphql",
+ "async-trait",
+ "dubp",
+ "duniter-conf",
+ "duniter-dbs",
+ "duniter-dbs-read-ops",
+ "duniter-gva-dbs-reader",
+ "duniter-mempools",
+ "duniter-module",
+ "fast-threadpool",
+ "flume",
+ "futures",
+ "log",
+ "mockall",
+ "resiter",
+ "serde",
+ "serde_json",
+ "tokio",
  "unwrap",
 ]
 

@@ -15,13 +15,13 @@
 
 use crate::*;
 
-pub type GraphQlSchema = async_graphql::Schema<
+pub type GvaSchema = async_graphql::Schema<
     crate::queries::QueryRoot,
     crate::mutations::MutationRoot,
     crate::subscriptions::SubscriptionRoot,
 >;
 
-pub fn build_schema(logger: bool) -> GraphQlSchema {
+pub fn build_schema(logger: bool) -> GvaSchema {
     let mut builder = async_graphql::Schema::build(
         queries::QueryRoot::default(),
         mutations::MutationRoot::default(),
@@ -33,7 +33,7 @@ pub fn build_schema(logger: bool) -> GraphQlSchema {
     builder.finish()
 }
 
-pub(crate) fn build_schema_with_data(data: SchemaData, logger: bool) -> GraphQlSchema {
+pub fn build_schema_with_data(data: GvaSchemaData, logger: bool) -> GvaSchema {
     let mut builder = async_graphql::Schema::build(
         queries::QueryRoot::default(),
         mutations::MutationRoot::default(),
@@ -46,22 +46,22 @@ pub(crate) fn build_schema_with_data(data: SchemaData, logger: bool) -> GraphQlS
     builder.finish()
 }
 
-pub(crate) struct SchemaData {
-    pub(crate) dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
-    pub(crate) dbs_reader: DbsReader,
-    pub(crate) server_meta_data: ServerMetaData,
-    pub(crate) txs_mempool: TxsMempool,
+pub struct GvaSchemaData {
+    pub dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
+    pub dbs_reader: DbsReader,
+    pub server_meta_data: ServerMetaData,
+    pub txs_mempool: TxsMempool,
 }
 
 #[cfg(not(test))]
-impl SchemaData {
+impl GvaSchemaData {
     #[inline(always)]
     pub fn dbs_reader(&self) -> DbsReader {
         self.dbs_reader
     }
 }
 #[cfg(test)]
-impl SchemaData {
+impl GvaSchemaData {
     pub fn dbs_reader(&self) -> DbsReader {
         self.dbs_reader.clone()
     }

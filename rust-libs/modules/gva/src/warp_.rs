@@ -54,7 +54,7 @@ fn add_cache_control(http_resp: &mut warp::reply::Response, resp: &async_graphql
 
 pub(crate) fn graphql(
     conf: &GvaConf,
-    schema: GraphQlSchema,
+    schema: GvaSchema,
     opts: async_graphql::http::MultipartOptions,
 ) -> impl warp::Filter<Extract = (impl warp::Reply,), Error = Rejection> + Clone {
     let anti_spam = AntiSpam::from(conf);
@@ -109,7 +109,7 @@ pub(crate) fn graphql(
             },
         )
         .and_then(
-            |(schema, request): (GraphQlSchema, async_graphql::Request)| async move {
+            |(schema, request): (GvaSchema, async_graphql::Request)| async move {
                 Ok::<_, Infallible>(GraphQlResponse(schema.execute(request).await))
             },
         )
@@ -117,7 +117,7 @@ pub(crate) fn graphql(
 
 pub(crate) fn graphql_ws(
     conf: &GvaConf,
-    schema: GraphQlSchema,
+    schema: GvaSchema,
 ) -> impl warp::Filter<Extract = (impl warp::Reply,), Error = Rejection> + Clone {
     let anti_spam = AntiSpam::from(conf);
     warp::path::path(conf.get_subscriptions_path())
@@ -130,7 +130,7 @@ pub(crate) fn graphql_ws(
             |remote_addr: Option<SocketAddr>,
              x_real_ip: Option<IpAddr>,
              ws: warp::ws::Ws,
-             schema: GraphQlSchema,
+             schema: GvaSchema,
              anti_spam: AntiSpam| async move {
                 if anti_spam
                     .verify(x_real_ip.or_else(|| remote_addr.map(|ra| ra.ip())))
@@ -144,7 +144,7 @@ pub(crate) fn graphql_ws(
                 }
             },
         )
-        .and_then(|(ws, schema): (warp::ws::Ws, GraphQlSchema)| {
+        .and_then(|(ws, schema): (warp::ws::Ws, GvaSchema)| {
             let reply = ws.on_upgrade(move |websocket| {
                 let (ws_sender, ws_receiver) = websocket.split();
 

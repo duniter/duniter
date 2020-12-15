@@ -23,43 +23,14 @@
 )]
 
 pub use duniter_conf::gva_conf::GvaConf;
-pub use schema::{build_schema, GraphQlSchema};
 
 mod anti_spam;
-mod entities;
-mod inputs;
-mod inputs_validators;
-mod mutations;
-mod pagination;
-mod queries;
-mod schema;
-mod subscriptions;
 mod warp_;
 
-use crate::entities::{
-    block_gva::Block,
-    tx_gva::TxGva,
-    ud_gva::{CurrentUdGva, RevalUdGva, UdGva},
-    AggregateSum, AmountWithBase, EdgeTx, PeerCardGva, RawTxOrChanges, Sum, TxDirection,
-    TxsHistoryMempool, UtxoGva,
-};
-use crate::inputs::{TxIssuer, TxRecipient, UdsFilter};
-use crate::inputs_validators::TxCommentValidator;
-use crate::pagination::Pagination;
-use crate::schema::SchemaData;
-#[cfg(test)]
-use crate::tests::create_dbs_reader;
-#[cfg(test)]
-use crate::tests::DbsReader;
-use async_graphql::connection::{Connection, Edge, EmptyFields};
 use async_graphql::http::GraphQLPlaygroundConfig;
-use async_graphql::validators::{IntGreaterThan, ListMinLength, StringMaxLength, StringMinLength};
-use dubp::common::crypto::keys::{ed25519::PublicKey, KeyPair as _, PublicKey as _};
+use dubp::common::crypto::keys::{ed25519::PublicKey, KeyPair as _};
 use dubp::common::prelude::*;
-use dubp::documents::prelude::*;
-use dubp::documents::transaction::{TransactionDocumentTrait, TransactionDocumentV10};
-use dubp::documents_parser::prelude::*;
-use dubp::wallet::prelude::*;
+use dubp::documents::transaction::TransactionDocumentV10;
 use dubp::{block::DubpBlockV10, crypto::hashs::Hash};
 use duniter_dbs::databases::{
     gva_v1::{GvaV1DbReadable, GvaV1DbRo},
@@ -68,21 +39,12 @@ use duniter_dbs::databases::{
 use duniter_dbs::prelude::*;
 use duniter_dbs::{kv_typed::prelude::*, FileBackend, TxDbV2};
 use duniter_gva_db_writer::{get_gva_db_ro, get_gva_db_rw};
-#[cfg(not(test))]
-use duniter_gva_dbs_reader::create_dbs_reader;
-use duniter_gva_dbs_reader::pagination::PageInfo;
-#[cfg(not(test))]
-use duniter_gva_dbs_reader::DbsReader;
-use duniter_mempools::{Mempools, TxsMempool};
+use duniter_gva_gql::GvaSchema;
+use duniter_mempools::Mempools;
 use fast_threadpool::{JoinHandle, ThreadPoolDisconnected};
 use futures::{StreamExt, TryStreamExt};
-use resiter::map::Map;
-use std::{
-    convert::{Infallible, TryFrom},
-    ops::Deref,
-    path::Path,
-};
-use warp::{http::Response as HttpResponse, Filter as _, Rejection, Stream};
+use std::{convert::Infallible, ops::Deref, path::Path};
+use warp::{http::Response as HttpResponse, Filter as _, Rejection};
 
 #[derive(Debug)]
 pub struct GvaModule {
@@ -299,11 +261,11 @@ impl GvaModule {
         software_version: &'static str,
     ) {
         log::info!("GvaServer::start: conf={:?}", conf);
-        let schema = schema::build_schema_with_data(
-            schema::SchemaData {
-                dbs_reader: create_dbs_reader(gva_db_ro),
+        let schema = duniter_gva_gql::build_schema_with_data(
+            duniter_gva_gql::GvaSchemaData {
+                dbs_reader: duniter_gva_dbs_reader::create_dbs_reader(gva_db_ro),
                 dbs_pool,
-                server_meta_data: ServerMetaData {
+                server_meta_data: duniter_gva_gql::ServerMetaData {
                     currency,
                     self_pubkey,
                     software_version,
@@ -379,128 +341,20 @@ impl GvaModule {
     }
 }
 
-#[derive(Debug, Default)]
-pub struct ServerMetaData {
-    pub currency: String,
-    pub self_pubkey: PublicKey,
-    pub software_version: &'static str,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dubp::documents::transaction::TransactionInputV10;
     use duniter_conf::DuniterConf;
-    use duniter_dbs::databases::bc_v2::*;
-    use duniter_dbs::SourceAmountValV2;
-    use duniter_gva_dbs_reader::pagination::*;
     use duniter_mempools::Mempools;
     use duniter_module::DuniterModule;
-    use fast_threadpool::ThreadPoolConfig;
-    use std::collections::VecDeque;
+    use fast_threadpool::{ThreadPool, ThreadPoolConfig};
     use unwrap::unwrap;
-
-    mockall::mock! {
-        pub DbsReader {
-            fn all_uds_of_pubkey(
-                &self,
-                bc_db: &BcV2DbRo<FileBackend>,
-                pubkey: PublicKey,
-                page_info: PageInfo<BlockNumber>,
-            ) -> KvResult<PagedData<duniter_gva_dbs_reader::uds_of_pubkey::UdsWithSum>>;
-            fn get_current_frame<BcDb: 'static + BcV2DbReadable>(
-                &self,
-                bc_db: &BcDb,
-            ) -> anyhow::Result<Vec<duniter_dbs::BlockMetaV2>>;
-            fn find_inputs<BcDb: 'static + BcV2DbReadable, TxsMpDb: 'static + TxsMpV2DbReadable>(
-                &self,
-                bc_db: &BcDb,
-                txs_mp_db: &TxsMpDb,
-                amount: SourceAmount,
-                script: &WalletScriptV10,
-                use_mempool_sources: bool,
-            ) -> anyhow::Result<(Vec<TransactionInputV10>, SourceAmount)>;
-            fn find_script_utxos<TxsMpDb: 'static + TxsMpV2DbReadable>(
-                &self,
-                txs_mp_db_ro: &TxsMpDb,
-                amount_target_opt: Option<SourceAmount>,
-                page_info: PageInfo<duniter_gva_dbs_reader::utxos::UtxoCursor>,
-                script: &WalletScriptV10,
-            ) -> anyhow::Result<PagedData<duniter_gva_dbs_reader::utxos::UtxosWithSum>>;
-            fn get_account_balance(
-                &self,
-                account_script: &WalletScriptV10,
-            ) -> KvResult<Option<SourceAmountValV2>>;
-            fn get_blockchain_time(
-                &self,
-                block_number: BlockNumber,
-            ) -> anyhow::Result<u64>;
-            fn get_current_ud<BcDb: 'static + BcV2DbReadable>(
-                &self,
-                bc_db: &BcDb,
-            ) -> KvResult<Option<SourceAmount>>;
-            fn get_txs_history_bc_received(
-                &self,
-                page_info: PageInfo<duniter_gva_dbs_reader::txs_history::TxBcCursor>,
-                script_hash: Hash,
-            ) -> KvResult<PagedData<VecDeque<TxDbV2>>>;
-            fn get_txs_history_bc_sent(
-                &self,
-                page_info: PageInfo<duniter_gva_dbs_reader::txs_history::TxBcCursor>,
-                script_hash: Hash,
-            ) -> KvResult<PagedData<VecDeque<TxDbV2>>>;
-            fn get_txs_history_mempool<TxsMpDb: 'static + TxsMpV2DbReadable>(
-                &self,
-                txs_mp_db_ro: &TxsMpDb,
-                pubkey: PublicKey,
-            ) -> KvResult<(Vec<TransactionDocumentV10>, Vec<TransactionDocumentV10>)>;
-            fn unspent_uds_of_pubkey<BcDb: 'static + BcV2DbReadable>(
-                &self,
-                bc_db: &BcDb,
-                pubkey: PublicKey,
-                page_info: PageInfo<BlockNumber>,
-                bn_to_exclude_opt: Option<&'static std::collections::BTreeSet<BlockNumber>>,
-                amount_target_opt: Option<SourceAmount>,
-            ) -> KvResult<PagedData<duniter_gva_dbs_reader::uds_of_pubkey::UdsWithSum>>;
-        }
-    }
-    pub type DbsReader = duniter_dbs::kv_typed::prelude::Arc<MockDbsReader>;
-
-    // This function is never call but needed to compile
-    pub fn create_dbs_reader(_: &'static GvaV1DbRo<FileBackend>) -> DbsReader {
-        unreachable!()
-    }
-
-    pub(crate) fn create_schema(dbs_ops: MockDbsReader) -> KvResult<GraphQlSchema> {
-        let dbs = SharedDbs::mem()?;
-        let threadpool = fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), dbs);
-        Ok(schema::build_schema_with_data(
-            schema::SchemaData {
-                dbs_pool: threadpool.into_async_handler(),
-                dbs_reader: Arc::new(dbs_ops),
-                server_meta_data: ServerMetaData {
-                    currency: "test_currency".to_owned(),
-                    self_pubkey: PublicKey::default(),
-                    software_version: "test",
-                },
-                txs_mempool: TxsMempool::new(10),
-            },
-            true,
-        ))
-    }
-
-    pub(crate) async fn exec_graphql_request(
-        schema: &GraphQlSchema,
-        request: &str,
-    ) -> anyhow::Result<serde_json::Value> {
-        Ok(serde_json::to_value(schema.execute(request).await)?)
-    }
 
     #[tokio::test]
     #[ignore]
     async fn launch_mem_gva() -> anyhow::Result<()> {
         let dbs = unwrap!(SharedDbs::mem());
-        let threadpool = fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), dbs);
+        let threadpool = ThreadPool::start(ThreadPoolConfig::default(), dbs);
 
         GvaModule::init(
             &DuniterConf::default(),

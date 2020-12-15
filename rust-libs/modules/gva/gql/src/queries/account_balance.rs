@@ -31,7 +31,7 @@ impl AccountBalanceQuery {
             dubp::documents_parser::wallet_script_from_str(&script)?
         };
 
-        let data = ctx.data::<SchemaData>()?;
+        let data = ctx.data::<GvaSchemaData>()?;
         let dbs_reader = data.dbs_reader();
 
         let balance = data

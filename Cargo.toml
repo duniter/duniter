@@ -44,6 +44,7 @@ members = [
     "rust-libs/modules/gva",
     "rust-libs/modules/gva/dbs-reader",
     "rust-libs/modules/gva/db-writer",
+    "rust-libs/modules/gva/gql",
     "rust-libs/tests/duniter-integration-tests",
     "rust-libs/tools/kv_typed"
 ]

@@ -50,7 +50,7 @@ impl Node {
         &self,
         ctx: &async_graphql::Context<'_>,
     ) -> async_graphql::Result<Option<PeerCardGva>> {
-        let data = ctx.data::<SchemaData>()?;
+        let data = ctx.data::<GvaSchemaData>()?;
 
         Ok(data
             .dbs_pool
@@ -67,7 +67,7 @@ impl Node {
         &self,
         ctx: &async_graphql::Context<'_>,
     ) -> async_graphql::Result<&'static str> {
-        let data = ctx.data::<SchemaData>()?;
+        let data = ctx.data::<GvaSchemaData>()?;
         Ok(data.server_meta_data.software_version)
     }
 }

@@ -24,7 +24,7 @@ impl CurrentFrameQuery {
         &self,
         ctx: &async_graphql::Context<'_>,
     ) -> async_graphql::Result<Vec<Block>> {
-        let data = ctx.data::<SchemaData>()?;
+        let data = ctx.data::<GvaSchemaData>()?;
         let dbs_reader = data.dbs_reader();
 
         Ok(data

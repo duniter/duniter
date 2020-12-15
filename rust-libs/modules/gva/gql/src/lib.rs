@@ -172,4 +172,28 @@ mod tests {
     ) -> anyhow::Result<serde_json::Value> {
         Ok(serde_json::to_value(schema.execute(request).await)?)
     }
+
+    pub(crate) fn create_schema_sub(dbs: SharedDbs<FileBackend>) -> KvResult<GvaSchema> {
+        let threadpool = fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), dbs);
+        Ok(schema::build_schema_with_data(
+            schema::GvaSchemaData {
+                dbs_pool: threadpool.into_async_handler(),
+                dbs_reader: Arc::new(MockDbsReader::new()),
+                server_meta_data: ServerMetaData {
+                    currency: "test_currency".to_owned(),
+                    self_pubkey: PublicKey::default(),
+                    software_version: "test",
+                },
+                txs_mempool: TxsMempool::new(10),
+            },
+            true,
+        ))
+    }
+
+    pub(crate) fn exec_graphql_subscription(
+        schema: &GvaSchema,
+        request: String,
+    ) -> impl Stream<Item = serde_json::Result<serde_json::Value>> + Send {
+        schema.execute_stream(request).map(serde_json::to_value)
+    }
 }

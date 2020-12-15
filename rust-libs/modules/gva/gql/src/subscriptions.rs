@@ -13,42 +13,46 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+mod receive_pending_txs;
+
 use crate::*;
+use futures::future::Either;
 
-#[derive(Clone, Copy, Default)]
-pub struct SubscriptionRoot;
+#[derive(Clone, Copy, Default, async_graphql::MergedSubscription)]
+pub struct SubscriptionRoot(receive_pending_txs::PendingTxsSubscription);
 
-#[async_graphql::Subscription]
-impl SubscriptionRoot {
-    async fn receive_pending_txs(
-        &self,
-        ctx: &async_graphql::Context<'_>,
-    ) -> impl Stream<Item = Vec<TxGva>> {
-        let data = ctx.data::<GvaSchemaData>().expect("fail to access db");
-
-        let (s, r) = flume::unbounded();
-
-        data.dbs_pool
-            .execute(|dbs| dbs.txs_mp_db.txs().subscribe(s).expect("fail to access db"))
-            .await
-            .expect("dbs pool disconnected");
-
-        r.into_stream().filter_map(|events| {
-            let mut txs = Vec::new();
-            for event in events.deref() {
-                if let duniter_dbs::databases::txs_mp_v2::TxsEvent::Upsert {
-                    value: ref pending_tx,
-                    ..
-                } = event
-                {
-                    txs.push(TxGva::from(&pending_tx.0));
-                }
-            }
-            if txs.is_empty() {
-                futures::future::ready(None)
-            } else {
-                futures::future::ready(Some(txs))
-            }
-        })
+pub(crate) async fn create_subscription<C, D, E, F, FC, FUT>(
+    ctx: &async_graphql::Context<'_>,
+    select_col: FC,
+    f: F,
+) -> impl Stream<Item = async_graphql::Result<D>>
+where
+    C: DbCollectionRo<Event = E, K = E::K, V = E::V>,
+    E: EventTrait,
+    F: FnMut(Arc<Events<E>>) -> FUT,
+    FUT: std::future::Future<Output = Option<async_graphql::Result<D>>>,
+    FC: 'static + Send + FnOnce(&SharedDbs<FileBackend>) -> &C,
+{
+    match subscribe_to_col(ctx, select_col).await {
+        Ok(r) => Either::Left(r.into_stream().filter_map(f)),
+        Err(e) => {
+            use futures::FutureExt;
+            Either::Right(futures::future::ready(Err(e)).into_stream())
+        }
     }
+}
+
+async fn subscribe_to_col<C, E, F>(
+    ctx: &async_graphql::Context<'_>,
+    f: F,
+) -> async_graphql::Result<flume::Receiver<Arc<Events<E>>>>
+where
+    C: DbCollectionRo<Event = E, K = E::K, V = E::V>,
+    E: EventTrait,
+    F: 'static + Send + FnOnce(&SharedDbs<FileBackend>) -> &C,
+{
+    let data = ctx.data::<GvaSchemaData>()?;
+    let (s, r) = flume::unbounded();
+    data.dbs_pool.execute(|dbs| f(dbs).subscribe(s)).await??;
+    Ok(r)
 }

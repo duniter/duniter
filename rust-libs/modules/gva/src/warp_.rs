@@ -155,6 +155,7 @@ pub(crate) fn graphql_ws(
                             .take_while(|msg| futures::future::ready(msg.is_ok()))
                             .map(Result::unwrap)
                             .map(warp::ws::Message::into_bytes),
+                        async_graphql::http::WebSocketProtocols::GraphQLWS,
                     )
                     .map(warp::ws::Message::text)
                     .map(Ok)

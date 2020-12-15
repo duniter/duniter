@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0.33"
 arrayvec = "0.5.1"
-async-graphql = "2.0.0"
+async-graphql = "2.2.0"
 async-mutex = "1.4.0"
 async-trait = "0.1.41"
 dubp = { version = "0.34.0" }

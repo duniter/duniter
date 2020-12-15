@@ -123,9 +123,9 @@ dependencies = [
 
 [[package]]
 name = "async-graphql"
-version = "2.0.8"
+version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6aacd1f33609c3f37792005ddfd9dd40891c6c4553a1d22cc290b3dc664c3ade"
+checksum = "2c961bdf28cec79b4254c642cf8e55071ec6b7101b3a189ce17a61b909d70951"
 dependencies = [
  "async-graphql-derive",
  "async-graphql-parser",
@@ -135,7 +135,6 @@ dependencies = [
  "async-trait",
  "blocking",
  "bson",
- "bytes",
  "chrono",
  "chrono-tz",
  "fnv",
@@ -146,11 +145,12 @@ dependencies = [
  "multer",
  "num-traits",
  "once_cell",
- "pin-project-lite",
+ "pin-project-lite 0.2.0",
  "regex",
  "serde",
  "serde_json",
- "spin 0.6.0",
+ "sha2",
+ "spin 0.7.0",
  "static_assertions",
  "tempfile",
  "thiserror",
@@ -161,9 +161,9 @@ dependencies = [
 
 [[package]]
 name = "async-graphql-derive"
-version = "2.0.8"
+version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4865ce6f7993b9e06f8cab15ee16e083b7802fb681771510b6d18cc9eb70412c"
+checksum = "87e8975da7722a0f338b3df87214299e5655bba607ce15eeb15d82daf2820333"
 dependencies = [
  "Inflector",
  "async-graphql-parser",
@@ -177,9 +177,9 @@ dependencies = [
 
 [[package]]
 name = "async-graphql-parser"
-version = "2.0.8"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca660e5dea2757fefec931f34c7babb01ff7eb01756494f66929cbb8411cf98a"
+checksum = "ee04e49c932b12a7a18163a59ee5596a83422e4b91cb64ca63e3545bd4c4560e"
 dependencies = [
  "async-graphql-value",
  "pest",
@@ -258,7 +258,7 @@ dependencies = [
  "memchr",
  "num_cpus",
  "once_cell",
- "pin-project-lite",
+ "pin-project-lite 0.1.11",
  "pin-utils",
  "slab",
  "wasm-bindgen-futures",
@@ -1508,9 +1508,9 @@ dependencies = [
 
 [[package]]
 name = "futures-channel"
-version = "0.3.7"
+version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0448174b01148032eed37ac4aed28963aaaa8cfa93569a08e5b479bbc6c2c151"
+checksum = "4b7109687aa4e177ef6fe84553af6280ef2778bdb7783ba44c9dc3399110fe64"
 dependencies = [
  "futures-core",
  "futures-sink",
@@ -1518,9 +1518,9 @@ dependencies = [
 
 [[package]]
 name = "futures-core"
-version = "0.3.7"
+version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18eaa56102984bed2c88ea39026cff3ce3b4c7f508ca970cedf2450ea10d4e46"
+checksum = "847ce131b72ffb13b6109a221da9ad97a64cbe48feb1028356b836b47b8f1748"
 
 [[package]]
 name = "futures-executor"
@@ -1535,9 +1535,9 @@ dependencies = [
 
 [[package]]
 name = "futures-io"
-version = "0.3.7"
+version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e1798854a4727ff944a7b12aa999f58ce7aa81db80d2dfaaf2ba06f065ddd2b"
+checksum = "611834ce18aaa1bd13c4b374f5d653e1027cf99b6b502584ff8c9a64413b30bb"
 
 [[package]]
 name = "futures-lite"
@@ -1550,15 +1550,15 @@ dependencies = [
  "futures-io",
  "memchr",
  "parking",
- "pin-project-lite",
+ "pin-project-lite 0.1.11",
  "waker-fn",
 ]
 
 [[package]]
 name = "futures-macro"
-version = "0.3.7"
+version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e36fccf3fc58563b4a14d265027c627c3b665d7fed489427e88e7cc929559efe"
+checksum = "77408a692f1f97bcc61dc001d752e00643408fbc922e4d634c655df50d595556"
 dependencies = [
  "proc-macro-hack",
  "proc-macro2",
@@ -1574,24 +1574,24 @@ checksum = "61e9325be55c5581082cd110294fa988c1f920bc573ec370ef201e33c469a95a"
 
 [[package]]
 name = "futures-sink"
-version = "0.3.7"
+version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e3ca3f17d6e8804ae5d3df7a7d35b2b3a6fe89dac84b31872720fc3060a0b11"
+checksum = "f878195a49cee50e006b02b93cf7e0a95a38ac7b776b4c4d9cc1207cd20fcb3d"
 
 [[package]]
 name = "futures-task"
-version = "0.3.7"
+version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96d502af37186c4fef99453df03e374683f8a1eec9dcc1e66b3b82dc8278ce3c"
+checksum = "7c554eb5bf48b2426c4771ab68c6b14468b6e76cc90996f528c3338d761a4d0d"
 dependencies = [
  "once_cell",
 ]
 
 [[package]]
 name = "futures-util"
-version = "0.3.7"
+version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "abcb44342f62e6f3e8ac427b8aa815f724fd705dfad060b18ac7866c15bb8e34"
+checksum = "d304cff4a7b99cfb7986f7d43fbe93d175e72e704a8860787cc95e9ffd85cbd2"
 dependencies = [
  "futures-channel",
  "futures-core",
@@ -2664,6 +2664,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c917123afa01924fc84bb20c4c03f004d9c38e5127e3c039bbf7f4b9c76a2f6b"
 
 [[package]]
+name = "pin-project-lite"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6b063f57ec186e6140e2b8b6921e5f1bd89c7356dda5b33acc5401203ca6131c"
+
+[[package]]
 name = "pin-utils"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2764,9 +2770,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro-hack"
-version = "0.5.18"
+version = "0.5.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99c605b9a0adc77b7211c6b1f722dcb613d68d66859a44f3d485a6da332b0598"
+checksum = "dbf0c48bc1d91375ae5c3cd81e3722dff1abcf81a30960240640d223f59fe0e5"
 
 [[package]]
 name = "proc-macro-nested"
@@ -3260,6 +3266,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "sha2"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e7aab86fe2149bad8c507606bdb3f4ef5e7b2380eb92350f56122cca72a42a8"
+dependencies = [
+ "block-buffer 0.9.0",
+ "cfg-if 1.0.0",
+ "cpuid-bool",
+ "digest 0.9.0",
+ "opaque-debug 0.3.0",
+]
+
+[[package]]
 name = "signal-hook"
 version = "0.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3353,9 +3372,9 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "spin"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef7b840d5ef62f81f50649ade37112748461256c64a70bccefeabb4d02c515c5"
+checksum = "652ac3743312871a5fb703f0337e68ffa3cdc28c863efad0b8dc858fa10c991b"
 
 [[package]]
 name = "spinning_top"
@@ -3578,7 +3597,7 @@ dependencies = [
  "memchr",
  "mio 0.6.22",
  "num_cpus",
- "pin-project-lite",
+ "pin-project-lite 0.1.11",
  "slab",
  "tokio-macros",
 ]
@@ -3617,7 +3636,7 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "log",
- "pin-project-lite",
+ "pin-project-lite 0.1.11",
  "tokio",
 ]
 
@@ -3644,7 +3663,7 @@ checksum = "b0987850db3733619253fe60e17cb59b82d37c7e6c0236bb81e4d6b87c879f27"
 dependencies = [
  "cfg-if 0.1.10",
  "log",
- "pin-project-lite",
+ "pin-project-lite 0.1.11",
  "tracing-attributes",
  "tracing-core",
 ]

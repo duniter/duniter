@@ -29,7 +29,7 @@ impl CurrentFrameQuery {
 
         Ok(data
             .dbs_pool
-            .execute(move |dbs| dbs_reader.get_current_frame(&dbs.bc_db_ro))
+            .execute(move |dbs| dbs_reader.get_current_frame(&dbs.bc_db_ro, &dbs.cm_db))
             .await??
             .into_iter()
             .map(Into::into)
@@ -42,15 +42,16 @@ mod tests {
     use super::*;
     use crate::tests::*;
     use duniter_dbs::databases::bc_v2::BcV2DbRo;
+    use duniter_dbs::databases::cm_v1::CmV1Db;
     use duniter_dbs::BlockMetaV2;
 
     #[tokio::test]
     async fn query_current_frame() -> anyhow::Result<()> {
         let mut dbs_reader = MockDbsReader::new();
         dbs_reader
-            .expect_get_current_frame::<BcV2DbRo<FileBackend>>()
+            .expect_get_current_frame::<BcV2DbRo<FileBackend>, CmV1Db<MemSingleton>>()
             .times(1)
-            .returning(|_| {
+            .returning(|_, _| {
                 Ok(vec![BlockMetaV2 {
                     ..Default::default()
                 }])

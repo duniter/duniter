@@ -40,6 +40,7 @@ use duniter_dbs::FileBackend;
 use duniter_dbs::{
     databases::{
         bc_v2::{BcV2DbReadable, BcV2DbRo},
+        cm_v1::CmV1DbReadable,
         gva_v1::{GvaV1DbReadable, GvaV1DbRo},
         txs_mp_v2::TxsMpV2DbReadable,
     },
@@ -78,13 +79,11 @@ impl DbsReader {
             .get(duniter_dbs::WalletConditionsV2::from_ref(account_script))
     }
 
-    pub fn get_current_block<BcDb: BcV2DbReadable>(
+    pub fn get_current_block<CmDb: CmV1DbReadable>(
         &self,
-        bc_db: &BcDb,
+        cm_db: &CmDb,
     ) -> KvResult<Option<BlockMetaV2>> {
-        bc_db
-            .blocks_meta()
-            .iter_rev(.., |it| it.values().next_res())
+        cm_db.current_block_meta().get(&())
     }
 
     pub fn get_current_ud<BcDb: BcV2DbReadable>(

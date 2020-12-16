@@ -31,7 +31,7 @@ mod queries;
 mod schema;
 mod subscriptions;
 
-pub use schema::{build_schema, build_schema_with_data, GvaSchema, GvaSchemaData};
+pub use schema::{build_schema_with_data, get_schema_definition, GvaSchema, GvaSchemaData};
 
 use crate::entities::{
     block_gva::Block,

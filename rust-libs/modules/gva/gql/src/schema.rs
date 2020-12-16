@@ -21,16 +21,14 @@ pub type GvaSchema = async_graphql::Schema<
     crate::subscriptions::SubscriptionRoot,
 >;
 
-pub fn build_schema(logger: bool) -> GvaSchema {
-    let mut builder = async_graphql::Schema::build(
+pub fn get_schema_definition() -> String {
+    async_graphql::Schema::build(
         queries::QueryRoot::default(),
         mutations::MutationRoot::default(),
         subscriptions::SubscriptionRoot::default(),
-    );
-    if logger {
-        builder = builder.extension(async_graphql::extensions::Logger);
-    }
-    builder.finish()
+    )
+    .finish()
+    .sdl()
 }
 
 pub fn build_schema_with_data(data: GvaSchemaData, logger: bool) -> GvaSchema {

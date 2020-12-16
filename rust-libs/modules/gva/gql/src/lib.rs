@@ -173,7 +173,7 @@ mod tests {
         Ok(serde_json::to_value(schema.execute(request).await)?)
     }
 
-    pub(crate) fn create_schema_sub(dbs: SharedDbs<FileBackend>) -> KvResult<GvaSchema> {
+    /*pub(crate) fn create_schema_sub(dbs: SharedDbs<FileBackend>) -> KvResult<GvaSchema> {
         let threadpool = fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), dbs);
         Ok(schema::build_schema_with_data(
             schema::GvaSchemaData {
@@ -195,5 +195,5 @@ mod tests {
         request: String,
     ) -> impl Stream<Item = serde_json::Result<serde_json::Value>> + Send {
         schema.execute_stream(request).map(serde_json::to_value)
-    }
+    }*/
 }

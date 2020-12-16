@@ -23,7 +23,7 @@ impl CurrentFrameQuery {
     async fn current_frame(
         &self,
         ctx: &async_graphql::Context<'_>,
-    ) -> async_graphql::Result<Vec<Block>> {
+    ) -> async_graphql::Result<Vec<BlockMeta>> {
         let data = ctx.data::<GvaSchemaData>()?;
         let dbs_reader = data.dbs_reader();
 

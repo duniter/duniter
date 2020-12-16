@@ -34,7 +34,7 @@ mod subscriptions;
 pub use schema::{build_schema_with_data, get_schema_definition, GvaSchema, GvaSchemaData};
 
 use crate::entities::{
-    block_gva::Block,
+    block_gva::{Block, BlockMeta},
     tx_gva::TxGva,
     ud_gva::{CurrentUdGva, RevalUdGva, UdGva},
     AggregateSum, AmountWithBase, EdgeTx, PeerCardGva, RawTxOrChanges, Sum, TxDirection,

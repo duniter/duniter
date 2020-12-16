@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use dubp::block::DubpBlockV10;
+
 use crate::*;
 
 const BLOCK_META_SERIALIZED_SIZE: usize = 323;
@@ -102,5 +104,32 @@ mod tests {
         assert_eq!(bm2_res?, bloc_meta);
 
         Ok(())
+    }
+}
+
+impl From<&DubpBlockV10> for BlockMetaV2 {
+    fn from(block: &DubpBlockV10) -> Self {
+        use dubp::block::prelude::DubpBlockTrait;
+        BlockMetaV2 {
+            version: 10,
+            number: block.number().0,
+            hash: block.hash().0,
+            signature: block.signature(),
+            inner_hash: block.inner_hash(),
+            previous_hash: block.previous_hash(),
+            issuer: block.issuer(),
+            previous_issuer: PublicKey::default(),
+            time: block.local_time(),
+            pow_min: block.pow_min() as u32,
+            members_count: block.members_count() as u64,
+            issuers_count: block.issuers_count() as u32,
+            issuers_frame: block.issuers_frame() as u64,
+            issuers_frame_var: 0,
+            median_time: block.common_time(),
+            nonce: block.nonce(),
+            monetary_mass: block.monetary_mass(),
+            dividend: block.dividend(),
+            unit_base: block.unit_base() as u32,
+        }
     }
 }

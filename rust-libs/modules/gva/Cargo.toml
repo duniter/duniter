@@ -20,8 +20,8 @@ duniter-gva-db-writer = { path = "./db-writer" }
 duniter-gva-gql = { path = "./gql" }
 duniter-mempools = { path = "../../duniter-mempools" }
 duniter-module = { path = "../../duniter-module" }
-fast-threadpool = "0.2.2"
-flume = "0.9.1"
+fast-threadpool = "0.2.3"
+flume = "0.10.0"
 futures = "0.3.6"
 http = "0.2.1"
 log = "0.4.11"

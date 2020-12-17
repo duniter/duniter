@@ -12,7 +12,7 @@ dubp = { version = "0.34.0" }
 duniter-conf = { path = "../duniter-conf" }
 duniter-dbs = { path = "../duniter-dbs" }
 duniter-mempools = { path = "../duniter-mempools" }
-fast-threadpool = "0.2.2"
+fast-threadpool = "0.2.3"
 
 [dev-dependencies]
 duniter-dbs = { path = "../duniter-dbs", features = ["mem"] }

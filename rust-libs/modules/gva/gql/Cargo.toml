@@ -17,8 +17,8 @@ duniter-dbs-read-ops = { path = "../../../duniter-dbs-read-ops" }
 duniter-gva-dbs-reader = { path = "../dbs-reader" }
 duniter-mempools = { path = "../../../duniter-mempools" }
 duniter-module = { path = "../../../duniter-module" }
-fast-threadpool = "0.2.2"
-flume = "0.9.1"
+fast-threadpool = "0.2.3"
+flume = "0.10.0"
 futures = "0.3.6"
 log = "0.4.11"
 resiter = "0.4.0"

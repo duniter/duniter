@@ -89,6 +89,20 @@ pub(crate) struct Block {
     pub unit_base: u32,
     pub dividend: Option<u32>,
     // Payload
+    /// Identities
+    pub identities: Vec<String>,
+    /// joiners
+    pub joiners: Vec<String>,
+    /// Actives (=renewals)
+    pub actives: Vec<String>,
+    /// Leavers
+    pub leavers: Vec<String>,
+    /// Revokeds
+    pub revoked: Vec<String>,
+    /// Excludeds
+    pub excluded: Vec<String>,
+    /// Certifications
+    pub certifications: Vec<String>,
     pub transactions: Vec<TxGva>,
 }
 
@@ -96,6 +110,7 @@ impl From<&DubpBlockV10> for Block {
     fn from(block: &DubpBlockV10) -> Self {
         let block = block.to_string_object();
         Block {
+            // Meta
             version: block.version,
             number: block.number as u32,
             hash: block.hash.unwrap_or_default(),
@@ -113,6 +128,14 @@ impl From<&DubpBlockV10> for Block {
             monetary_mass: block.monetary_mass,
             unit_base: block.unit_base as u32,
             dividend: block.dividend.map(|amount| amount as u32),
+            // Payload
+            identities: block.identities,
+            joiners: block.joiners,
+            actives: block.actives,
+            leavers: block.leavers,
+            revoked: block.revoked,
+            excluded: block.excluded,
+            certifications: block.certifications,
             transactions: block.transactions.into_iter().map(Into::into).collect(),
         }
     }

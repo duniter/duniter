@@ -13,10 +13,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use super::tx_gva::TxGva;
+use crate::*;
+use dubp::block::DubpBlockV10;
 use duniter_dbs::BlockMetaV2;
 
 #[derive(async_graphql::SimpleObject)]
-pub(crate) struct Block {
+pub(crate) struct BlockMeta {
     pub version: u64,
     pub number: u32,
     pub hash: String,
@@ -36,9 +39,14 @@ pub(crate) struct Block {
     pub dividend: Option<u32>,
 }
 
-impl From<BlockMetaV2> for Block {
+impl From<BlockMetaV2> for BlockMeta {
     fn from(block_db: BlockMetaV2) -> Self {
-        Block {
+        Self::from(&block_db)
+    }
+}
+impl From<&BlockMetaV2> for BlockMeta {
+    fn from(block_db: &BlockMetaV2) -> Self {
+        BlockMeta {
             version: block_db.version,
             number: block_db.number,
             hash: block_db.hash.to_string(),
@@ -56,6 +64,56 @@ impl From<BlockMetaV2> for Block {
             monetary_mass: block_db.monetary_mass,
             unit_base: block_db.unit_base,
             dividend: block_db.dividend.map(|sa| sa.amount() as u32),
+        }
+    }
+}
+
+#[derive(async_graphql::SimpleObject)]
+pub(crate) struct Block {
+    // Meta
+    pub version: u64,
+    pub number: u32,
+    pub hash: String,
+    pub signature: String,
+    pub inner_hash: String,
+    pub previous_hash: Option<String>,
+    pub issuer: String,
+    pub time: u64,
+    pub pow_min: u32,
+    pub members_count: u64,
+    pub issuers_count: u32,
+    pub issuers_frame: u64,
+    pub median_time: u64,
+    pub nonce: u64,
+    pub monetary_mass: u64,
+    pub unit_base: u32,
+    pub dividend: Option<u32>,
+    // Payload
+    pub transactions: Vec<TxGva>,
+}
+
+impl From<&DubpBlockV10> for Block {
+    fn from(block: &DubpBlockV10) -> Self {
+        let block = block.to_string_object();
+        Block {
+            version: block.version,
+            number: block.number as u32,
+            hash: block.hash.unwrap_or_default(),
+            signature: block.signature,
+            inner_hash: block.inner_hash.unwrap_or_default(),
+            previous_hash: block.previous_hash,
+            issuer: block.issuer,
+            time: block.time,
+            pow_min: block.pow_min as u32,
+            members_count: block.members_count,
+            issuers_count: block.issuers_count as u32,
+            issuers_frame: block.issuers_frame,
+            median_time: block.median_time,
+            nonce: block.nonce,
+            monetary_mass: block.monetary_mass,
+            unit_base: block.unit_base as u32,
+            dividend: block.dividend.map(|amount| amount as u32),
+            transactions: block.transactions.into_iter().map(Into::into).collect(),
         }
     }
 }

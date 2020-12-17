@@ -18,7 +18,6 @@ mod txs;
 mod uds;
 
 use crate::*;
-use dubp::crypto::keys::ed25519::PublicKey;
 use duniter_dbs::databases::bc_v2::BcV2DbWritable;
 
 pub fn apply_block<B: Backend>(
@@ -26,27 +25,7 @@ pub fn apply_block<B: Backend>(
     block: &DubpBlockV10,
 ) -> KvResult<BlockMetaV2> {
     //log::info!("apply_block #{}", block.number().0);
-    let block_meta = BlockMetaV2 {
-        version: 10,
-        number: block.number().0,
-        hash: block.hash().0,
-        signature: block.signature(),
-        inner_hash: block.inner_hash(),
-        previous_hash: block.previous_hash(),
-        issuer: block.issuer(),
-        previous_issuer: PublicKey::default(),
-        time: block.local_time(),
-        pow_min: block.pow_min() as u32,
-        members_count: block.members_count() as u64,
-        issuers_count: block.issuers_count() as u32,
-        issuers_frame: block.issuers_frame() as u64,
-        issuers_frame_var: 0,
-        median_time: block.common_time(),
-        nonce: block.nonce(),
-        monetary_mass: block.monetary_mass(),
-        dividend: block.dividend(),
-        unit_base: block.unit_base() as u32,
-    };
+    let block_meta = BlockMetaV2::from(block);
 
     (
         bc_db.blocks_meta_write(),
@@ -174,7 +153,8 @@ pub fn revert_block<B: Backend>(
 mod tests {
     use super::*;
     use dubp::{
-        crypto::keys::PublicKey as _, documents::transaction::TransactionDocumentV10Stringified,
+        crypto::keys::{ed25519::PublicKey, PublicKey as _},
+        documents::transaction::TransactionDocumentV10Stringified,
         documents_parser::prelude::FromStringObject,
     };
     use duniter_dbs::{

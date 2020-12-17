@@ -13,13 +13,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+mod new_blocks;
 mod receive_pending_txs;
 
 use crate::*;
 use futures::future::Either;
 
 #[derive(Clone, Copy, Default, async_graphql::MergedSubscription)]
-pub struct SubscriptionRoot(receive_pending_txs::PendingTxsSubscription);
+pub struct SubscriptionRoot(
+    new_blocks::NewBlocksSubscription,
+    receive_pending_txs::PendingTxsSubscription,
+);
 
 pub(crate) async fn create_subscription<C, D, E, F, FC, FUT>(
     ctx: &async_graphql::Context<'_>,

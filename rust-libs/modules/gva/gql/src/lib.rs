@@ -34,7 +34,7 @@ mod subscriptions;
 pub use schema::{build_schema_with_data, get_schema_definition, GvaSchema, GvaSchemaData};
 
 use crate::entities::{
-    block_gva::Block,
+    block_gva::{Block, BlockMeta},
     tx_gva::TxGva,
     ud_gva::{CurrentUdGva, RevalUdGva, UdGva},
     AggregateSum, AmountWithBase, EdgeTx, PeerCardGva, RawTxOrChanges, Sum, TxDirection,
@@ -76,8 +76,10 @@ pub struct ServerMetaData {
 mod tests {
     use super::*;
     use dubp::documents::transaction::TransactionInputV10;
-    use duniter_dbs::databases::bc_v2::*;
-    use duniter_dbs::SourceAmountValV2;
+    use duniter_dbs::{
+        databases::{bc_v2::*, cm_v1::CmV1DbReadable},
+        BlockMetaV2, SourceAmountValV2,
+    };
     use duniter_gva_dbs_reader::pagination::*;
     use fast_threadpool::ThreadPoolConfig;
     use std::collections::VecDeque;
@@ -90,10 +92,6 @@ mod tests {
                 pubkey: PublicKey,
                 page_info: PageInfo<BlockNumber>,
             ) -> KvResult<PagedData<duniter_gva_dbs_reader::uds_of_pubkey::UdsWithSum>>;
-            fn get_current_frame<BcDb: 'static + BcV2DbReadable>(
-                &self,
-                bc_db: &BcDb,
-            ) -> anyhow::Result<Vec<duniter_dbs::BlockMetaV2>>;
             fn find_inputs<BcDb: 'static + BcV2DbReadable, TxsMpDb: 'static + TxsMpV2DbReadable>(
                 &self,
                 bc_db: &BcDb,
@@ -117,6 +115,15 @@ mod tests {
                 &self,
                 block_number: BlockNumber,
             ) -> anyhow::Result<u64>;
+            fn get_current_block<CmDb: 'static + CmV1DbReadable>(
+                &self,
+                cm_db: &CmDb,
+            ) -> KvResult<Option<BlockMetaV2>>;
+            fn get_current_frame<BcDb: 'static + BcV2DbReadable, CmDb: 'static + CmV1DbReadable>(
+                &self,
+                bc_db: &BcDb,
+                cm_db: &CmDb,
+            ) -> anyhow::Result<Vec<duniter_dbs::BlockMetaV2>>;
             fn get_current_ud<BcDb: 'static + BcV2DbReadable>(
                 &self,
                 bc_db: &BcDb,

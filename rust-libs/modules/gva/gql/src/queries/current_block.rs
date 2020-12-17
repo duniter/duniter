@@ -16,24 +16,27 @@
 use crate::*;
 
 #[derive(Default)]
-pub(crate) struct CurrentFrameQuery;
+pub(crate) struct CurrentBlockQuery;
 #[async_graphql::Object]
-impl CurrentFrameQuery {
-    /// Get blocks in current frame
-    async fn current_frame(
+impl CurrentBlockQuery {
+    /// Get current block
+    async fn current_block(
         &self,
         ctx: &async_graphql::Context<'_>,
-    ) -> async_graphql::Result<Vec<BlockMeta>> {
+    ) -> async_graphql::Result<BlockMeta> {
         let data = ctx.data::<GvaSchemaData>()?;
         let dbs_reader = data.dbs_reader();
 
-        Ok(data
+        if let Some(current_block_meta) = data
             .dbs_pool
-            .execute(move |dbs| dbs_reader.get_current_frame(&dbs.bc_db_ro, &dbs.cm_db))
+            .execute(move |dbs| dbs_reader.get_current_block(&dbs.cm_db))
             .await??
-            .into_iter()
             .map(Into::into)
-            .collect())
+        {
+            Ok(current_block_meta)
+        } else {
+            Err(async_graphql::Error::new("no blockchain"))
+        }
     }
 }
 
@@ -41,7 +44,6 @@ impl CurrentFrameQuery {
 mod tests {
     use super::*;
     use crate::tests::*;
-    use duniter_dbs::databases::bc_v2::BcV2DbRo;
     use duniter_dbs::databases::cm_v1::CmV1Db;
     use duniter_dbs::BlockMetaV2;
 
@@ -49,21 +51,21 @@ mod tests {
     async fn query_current_frame() -> anyhow::Result<()> {
         let mut dbs_reader = MockDbsReader::new();
         dbs_reader
-            .expect_get_current_frame::<BcV2DbRo<FileBackend>, CmV1Db<MemSingleton>>()
+            .expect_get_current_block::<CmV1Db<MemSingleton>>()
             .times(1)
-            .returning(|_, _| {
-                Ok(vec![BlockMetaV2 {
+            .returning(|_| {
+                Ok(Some(BlockMetaV2 {
                     ..Default::default()
-                }])
+                }))
             });
         let schema = create_schema(dbs_reader)?;
         assert_eq!(
-            exec_graphql_request(&schema, r#"{ currentFrame {nonce} }"#).await?,
+            exec_graphql_request(&schema, r#"{ currentBlock {nonce} }"#).await?,
             serde_json::json!({
                 "data": {
-                    "currentFrame": [{
+                    "currentBlock": {
                       "nonce": 0
-                    }]
+                    }
                 }
             })
         );

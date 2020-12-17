@@ -18,11 +18,12 @@ use duniter_dbs::BlockMetaV2;
 use crate::*;
 
 impl DbsReader {
-    pub fn get_current_frame<BcDb: BcV2DbReadable>(
+    pub fn get_current_frame<BcDb: BcV2DbReadable, CmDb: CmV1DbReadable>(
         &self,
         bc_db: &BcDb,
+        cm_db: &CmDb,
     ) -> anyhow::Result<Vec<BlockMetaV2>> {
-        if let Some(current_block) = self.get_current_block(bc_db)? {
+        if let Some(current_block) = self.get_current_block(cm_db)? {
             let issuers_frame = current_block.issuers_frame;
             let start = U32BE(current_block.number + 1 - issuers_frame as u32);
             bc_db

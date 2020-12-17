@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 pub mod account_balance;
+pub mod current_block;
 pub mod current_frame;
 pub mod gen_tx;
 pub mod txs_history;
@@ -27,6 +28,7 @@ use duniter_dbs::databases::cm_v1::CmV1DbReadable as _;
 pub struct QueryRoot(
     queries::NodeQuery,
     queries::account_balance::AccountBalanceQuery,
+    queries::current_block::CurrentBlockQuery,
     queries::current_frame::CurrentFrameQuery,
     queries::gen_tx::GenTxsQuery,
     queries::txs_history::TxsHistoryBlockchainQuery,

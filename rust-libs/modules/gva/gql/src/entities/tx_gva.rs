@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use dubp::documents::transaction::TransactionDocumentV10Stringified;
+
 use crate::*;
 
 #[derive(async_graphql::SimpleObject)]
@@ -56,8 +58,13 @@ impl From<TxDbV2> for TxGva {
 
 impl From<&TransactionDocumentV10> for TxGva {
     fn from(tx: &TransactionDocumentV10) -> Self {
-        let tx_hash = tx.get_hash();
         let tx_stringified = tx.to_string_object();
+        Self::from(tx_stringified)
+    }
+}
+
+impl From<TransactionDocumentV10Stringified> for TxGva {
+    fn from(tx_stringified: TransactionDocumentV10Stringified) -> Self {
         Self {
             version: 10,
             currency: tx_stringified.currency,
@@ -69,7 +76,7 @@ impl From<&TransactionDocumentV10> for TxGva {
             outputs: tx_stringified.outputs,
             comment: tx_stringified.comment,
             signatures: tx_stringified.signatures,
-            hash: tx_hash.to_hex(),
+            hash: tx_stringified.hash.unwrap_or_default(),
             written_block: None,
             written_time: None,
         }

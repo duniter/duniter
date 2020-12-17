@@ -140,3 +140,37 @@ impl From<&DubpBlockV10> for Block {
         }
     }
 }
+
+impl From<&BlockMetaV2> for Block {
+    fn from(block: &BlockMetaV2) -> Self {
+        Block {
+            // Meta
+            version: block.version,
+            number: block.number,
+            hash: block.hash.to_string(),
+            signature: block.signature.to_string(),
+            inner_hash: block.inner_hash.to_string(),
+            previous_hash: Some(block.previous_hash.to_string()),
+            issuer: block.issuer.to_string(),
+            time: block.time,
+            pow_min: block.pow_min,
+            members_count: block.members_count,
+            issuers_count: block.issuers_count,
+            issuers_frame: block.issuers_frame,
+            median_time: block.median_time,
+            nonce: block.nonce,
+            monetary_mass: block.monetary_mass,
+            unit_base: block.unit_base,
+            dividend: block.dividend.map(|sa| sa.amount() as u32),
+            // Payload
+            identities: vec![],
+            joiners: vec![],
+            actives: vec![],
+            leavers: vec![],
+            revoked: vec![],
+            excluded: vec![],
+            certifications: vec![],
+            transactions: vec![],
+        }
+    }
+}

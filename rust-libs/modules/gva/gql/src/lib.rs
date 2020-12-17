@@ -75,7 +75,7 @@ pub struct ServerMetaData {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dubp::documents::transaction::TransactionInputV10;
+    use dubp::{block::DubpBlockV10, documents::transaction::TransactionInputV10};
     use duniter_dbs::{
         databases::{bc_v2::*, cm_v1::CmV1DbReadable},
         BlockMetaV2, SourceAmountValV2,
@@ -116,6 +116,10 @@ mod tests {
                 block_number: BlockNumber,
             ) -> anyhow::Result<u64>;
             fn get_current_block<CmDb: 'static + CmV1DbReadable>(
+                &self,
+                cm_db: &CmDb,
+            ) -> KvResult<Option<DubpBlockV10>>;
+            fn get_current_block_meta<CmDb: 'static + CmV1DbReadable>(
                 &self,
                 cm_db: &CmDb,
             ) -> KvResult<Option<BlockMetaV2>>;

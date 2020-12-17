@@ -32,9 +32,9 @@ pub mod utxos;
 pub use crate::pagination::{PageInfo, PagedData};
 
 use crate::pagination::{has_next_page, has_previous_page};
-use dubp::common::crypto::hashs::Hash;
 use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::documents::transaction::TransactionDocumentV10;
+use dubp::{block::DubpBlockV10, common::crypto::hashs::Hash};
 use dubp::{common::prelude::BlockNumber, wallet::prelude::*};
 use duniter_dbs::FileBackend;
 use duniter_dbs::{
@@ -80,6 +80,13 @@ impl DbsReader {
     }
 
     pub fn get_current_block<CmDb: CmV1DbReadable>(
+        &self,
+        cm_db: &CmDb,
+    ) -> KvResult<Option<DubpBlockV10>> {
+        Ok(cm_db.current_block().get(&())?.map(|db_block| db_block.0))
+    }
+
+    pub fn get_current_block_meta<CmDb: CmV1DbReadable>(
         &self,
         cm_db: &CmDb,
     ) -> KvResult<Option<BlockMetaV2>> {

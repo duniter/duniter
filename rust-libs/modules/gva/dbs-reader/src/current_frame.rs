@@ -23,9 +23,9 @@ impl DbsReader {
         bc_db: &BcDb,
         cm_db: &CmDb,
     ) -> anyhow::Result<Vec<BlockMetaV2>> {
-        if let Some(current_block) = self.get_current_block(cm_db)? {
-            let issuers_frame = current_block.issuers_frame;
-            let start = U32BE(current_block.number + 1 - issuers_frame as u32);
+        if let Some(current_block_meta) = self.get_current_block_meta(cm_db)? {
+            let issuers_frame = current_block_meta.issuers_frame;
+            let start = U32BE(current_block_meta.number + 1 - issuers_frame as u32);
             bc_db
                 .blocks_meta()
                 .iter_rev(start.., |it| it.values().collect::<KvResult<_>>())

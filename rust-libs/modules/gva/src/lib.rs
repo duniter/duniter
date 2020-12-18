@@ -63,7 +63,6 @@ impl duniter_module::DuniterModule for GvaModule {
     fn apply_block(
         block: &DubpBlockV10,
         _conf: &duniter_conf::DuniterConf,
-        _shared_dbs: &SharedDbs<FileBackend>,
         profile_path_opt: Option<&Path>,
     ) -> KvResult<()> {
         let gva_db = get_gva_db_rw(profile_path_opt);
@@ -72,7 +71,6 @@ impl duniter_module::DuniterModule for GvaModule {
     fn revert_block(
         block: &DubpBlockV10,
         _conf: &duniter_conf::DuniterConf,
-        _shared_dbs: &SharedDbs<FileBackend>,
         profile_path_opt: Option<&Path>,
     ) -> KvResult<()> {
         let gva_db = get_gva_db_rw(profile_path_opt);

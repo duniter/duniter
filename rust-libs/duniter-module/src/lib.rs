@@ -41,22 +41,24 @@ pub type Endpoint = String;
 pub trait DuniterModule: 'static + Sized {
     const INDEX_BLOCKS: bool = false;
 
+    /// This function is called only if Self::INDEX_BLOCKS is true,
+    /// in this case it must be reimplemented because the default implementation panics.
     fn apply_block(
         _block: &DubpBlockV10,
         _conf: &duniter_conf::DuniterConf,
-        _shared_dbs: &SharedDbs<FileBackend>,
         _profile_path_opt: Option<&Path>,
     ) -> KvResult<()> {
-        Ok(())
+        unreachable!()
     }
 
+    /// This function is called only if Self::INDEX_BLOCKS is true,
+    /// in this case it must be reimplemented because the default implementation panics.
     fn revert_block(
         _block: &DubpBlockV10,
         _conf: &duniter_conf::DuniterConf,
-        _shared_dbs: &SharedDbs<FileBackend>,
         _profile_path_opt: Option<&Path>,
     ) -> KvResult<()> {
-        Ok(())
+        unreachable!()
     }
 
     fn init(
@@ -118,10 +120,9 @@ macro_rules! plug_duniter_modules {
                         let conf_arc_clone = Arc::clone(&conf);
                         let profile_path_opt_clone = profile_path_opt.clone();
                         Some(dbs_pool
-                        .launch(move |shared_dbs| <$M>::apply_block(
+                        .launch(move |_| <$M>::apply_block(
                             &block_arc_clone,
                             &conf_arc_clone,
-                            &shared_dbs,
                             profile_path_opt_clone.as_deref()
                         ))
                         .expect("thread pool disconnected"))
@@ -149,10 +150,10 @@ macro_rules! plug_duniter_modules {
                         let conf_arc_clone = Arc::clone(&conf);
                         let profile_path_opt_clone = profile_path_opt.clone();
                         Some(dbs_pool
-                            .launch(move |shared_dbs| {
+                            .launch(move |_| {
                                 use std::ops::Deref as _;
                                 for block in blocks_arc_clone.deref() {
-                                    <$M>::apply_block(&block, &conf_arc_clone, &shared_dbs, profile_path_opt_clone.as_deref())?;
+                                    <$M>::apply_block(&block, &conf_arc_clone, profile_path_opt_clone.as_deref())?;
                                 }
                                 Ok::<_, KvError>(())
                             })
@@ -181,10 +182,9 @@ macro_rules! plug_duniter_modules {
                         let conf_arc_clone = Arc::clone(&conf);
                         let profile_path_opt_clone = profile_path_opt.clone();
                         Some(dbs_pool
-                        .launch(move |shared_dbs| <$M>::revert_block(
+                        .launch(move |_| <$M>::revert_block(
                             &block_arc_clone,
                             &conf_arc_clone,
-                            &shared_dbs,
                             profile_path_opt_clone.as_deref()
                         ))
                         .expect("thread pool disconnected"))

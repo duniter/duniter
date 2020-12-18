@@ -64,9 +64,9 @@ pub struct BlockDbV1 {
     pub wrong: bool,
 }
 
-impl ValueAsBytes for BlockDbV1 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        let json = serde_json::to_string(self).map_err(|e| KvError::DeserError(e.into()))?;
+impl AsBytes for BlockDbV1 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        let json = serde_json::to_string(self).expect("unreachable");
         f(json.as_bytes())
     }
 }
@@ -120,9 +120,9 @@ pub struct TransactionInBlockDbV1 {
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct BlockDbV2(pub dubp::block::DubpBlockV10);
 
-impl ValueAsBytes for BlockDbV2 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        let bytes = bincode::serialize(self).map_err(|e| KvError::DeserError(e.into()))?;
+impl AsBytes for BlockDbV2 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        let bytes = bincode::serialize(self).unwrap_or_else(|_| unreachable!());
         f(bytes.as_ref())
     }
 }

@@ -55,7 +55,7 @@ pub use zerocopy;
 
 /// Kv Typed prelude
 pub mod prelude {
-    pub use crate::as_bytes::{KeyAsBytes, ValueAsBytes};
+    pub use crate::as_bytes::AsBytes;
     #[cfg(feature = "leveldb_backend")]
     pub use crate::backend::leveldb::{LevelDb, LevelDbConf};
     #[cfg(feature = "lmdb_backend")]

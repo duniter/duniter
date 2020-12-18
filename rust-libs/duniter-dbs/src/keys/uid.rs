@@ -20,7 +20,7 @@ const USERNAME_MAX_LEN: usize = 100;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub struct UidKeyV1(pub ArrayString<[u8; USERNAME_MAX_LEN]>);
 
-impl KeyAsBytes for UidKeyV1 {
+impl AsBytes for UidKeyV1 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         f(self.0.as_str().as_bytes())
     }

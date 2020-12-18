@@ -76,8 +76,8 @@ impl FromStr for UtxoValV2 {
     }
 }
 
-impl ValueAsBytes for UtxoValV2 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
+impl AsBytes for UtxoValV2 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         f(self.0.as_ref())
     }
 }
@@ -111,9 +111,9 @@ impl ExplorableValue for UtxoValV2 {
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub struct BlockUtxosV2Db(pub HashMap<UtxoIdV10, WalletScriptWithSourceAmountV1Db>);
 
-impl ValueAsBytes for BlockUtxosV2Db {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        f(&bincode::serialize(&self).map_err(|e| KvError::DeserError(e.into()))?)
+impl AsBytes for BlockUtxosV2Db {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        f(&bincode::serialize(&self).unwrap_or_else(|_| unreachable!()))
     }
 }
 

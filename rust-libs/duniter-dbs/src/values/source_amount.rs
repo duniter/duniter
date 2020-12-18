@@ -18,8 +18,8 @@ use crate::*;
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct SourceAmountValV2(pub SourceAmount);
 
-impl ValueAsBytes for SourceAmountValV2 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
+impl AsBytes for SourceAmountValV2 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         use zerocopy::AsBytes as _;
         f(self.0.as_bytes())
     }

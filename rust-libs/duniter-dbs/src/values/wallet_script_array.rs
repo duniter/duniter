@@ -18,9 +18,9 @@ use crate::*;
 #[derive(Debug, Default, PartialEq)]
 pub struct WalletScriptArrayV2(pub std::collections::HashSet<WalletScriptV10>);
 
-impl ValueAsBytes for WalletScriptArrayV2 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        f(&bincode::serialize(&self.0).map_err(|e| KvError::DeserError(e.into()))?)
+impl AsBytes for WalletScriptArrayV2 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        f(&bincode::serialize(&self.0).unwrap_or_else(|_| unreachable!()))
     }
 }
 

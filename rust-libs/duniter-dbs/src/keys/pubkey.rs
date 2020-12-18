@@ -27,7 +27,7 @@ impl PubKeyKeyV1 {
     }
 }
 
-impl KeyAsBytes for PubKeyKeyV1 {
+impl AsBytes for PubKeyKeyV1 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         let b58_string = self.0.to_base58();
         if b58_string == Self::ALL_WITH_LEADING_1 {
@@ -58,7 +58,7 @@ impl ToDumpString for PubKeyKeyV1 {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub struct PubKeyKeyV2(pub PublicKey);
 
-impl KeyAsBytes for PubKeyKeyV2 {
+impl AsBytes for PubKeyKeyV2 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         f(self.0.as_ref())
     }

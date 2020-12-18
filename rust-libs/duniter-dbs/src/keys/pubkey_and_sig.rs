@@ -24,7 +24,7 @@ impl PubKeyAndSigV1 {
     }
 }
 
-impl KeyAsBytes for PubKeyAndSigV1 {
+impl AsBytes for PubKeyAndSigV1 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         if self == &Self::all() {
             f(b"ALL")

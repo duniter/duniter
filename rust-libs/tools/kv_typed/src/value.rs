@@ -19,34 +19,20 @@ use crate::*;
 
 /// Trait to be implemented by the collection value
 #[cfg(not(feature = "explorer"))]
-pub trait Value:
-    'static + ValueAsBytes + Debug + FromBytes + PartialEq + Send + Sync + Sized
-{
-}
+pub trait Value: 'static + AsBytes + Debug + FromBytes + PartialEq + Send + Sync + Sized {}
 
 #[cfg(feature = "explorer")]
 pub trait Value:
-    'static + ValueAsBytes + Debug + ExplorableValue + FromBytes + PartialEq + Send + Sync + Sized
+    'static + AsBytes + Debug + ExplorableValue + FromBytes + PartialEq + Send + Sync + Sized
 {
 }
 
 #[cfg(not(feature = "explorer"))]
-impl<T> Value for T where
-    T: 'static + ValueAsBytes + Debug + FromBytes + PartialEq + Send + Sync + Sized
-{
-}
+impl<T> Value for T where T: 'static + AsBytes + Debug + FromBytes + PartialEq + Send + Sync + Sized {}
 
 #[cfg(feature = "explorer")]
 impl<T> Value for T where
-    T: 'static
-        + ValueAsBytes
-        + Debug
-        + ExplorableValue
-        + FromBytes
-        + PartialEq
-        + Send
-        + Sync
-        + Sized
+    T: 'static + AsBytes + Debug + ExplorableValue + FromBytes + PartialEq + Send + Sync + Sized
 {
 }
 

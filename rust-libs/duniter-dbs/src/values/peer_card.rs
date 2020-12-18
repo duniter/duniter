@@ -26,9 +26,9 @@ pub struct PeerCardDbV1 {
     pub signature: String,
 }
 
-impl ValueAsBytes for PeerCardDbV1 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        let bytes = bincode::serialize(self).map_err(|e| KvError::DeserError(e.into()))?;
+impl AsBytes for PeerCardDbV1 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        let bytes = bincode::serialize(self).unwrap_or_else(|_| unreachable!());
         f(bytes.as_ref())
     }
 }

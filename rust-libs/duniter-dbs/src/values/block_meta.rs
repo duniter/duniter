@@ -50,8 +50,8 @@ impl BlockMetaV2 {
     }
 }
 
-impl ValueAsBytes for BlockMetaV2 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
+impl AsBytes for BlockMetaV2 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         let mut buffer = [0u8; BLOCK_META_SERIALIZED_SIZE];
         bincode::serialize_into(&mut buffer[..], self).unwrap_or_else(|_| unreachable!());
         f(buffer.as_ref())
@@ -99,9 +99,9 @@ mod tests {
         );
         let bloc_meta = BlockMetaV2::default();
 
-        let bm2_res = bloc_meta.as_bytes(|bytes| Ok(unwrap!(BlockMetaV2::from_bytes(bytes))));
+        let bm2_res = bloc_meta.as_bytes(|bytes| unwrap!(BlockMetaV2::from_bytes(bytes)));
 
-        assert_eq!(bm2_res?, bloc_meta);
+        assert_eq!(bm2_res, bloc_meta);
 
         Ok(())
     }

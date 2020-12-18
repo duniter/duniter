@@ -19,9 +19,9 @@ use dubp::documents::transaction::TransactionDocumentV10;
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct PendingTxDbV2(pub TransactionDocumentV10);
 
-impl ValueAsBytes for PendingTxDbV2 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        let bytes = bincode::serialize(self).map_err(|e| KvError::DeserError(e.into()))?;
+impl AsBytes for PendingTxDbV2 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        let bytes = bincode::serialize(self).unwrap_or_else(|_| unreachable!());
         f(bytes.as_ref())
     }
 }
@@ -58,9 +58,9 @@ pub struct TxDbV2 {
     pub written_time: i64,
 }
 
-impl ValueAsBytes for TxDbV2 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        let bytes = bincode::serialize(self).map_err(|e| KvError::DeserError(e.into()))?;
+impl AsBytes for TxDbV2 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        let bytes = bincode::serialize(self).unwrap_or_else(|_| unreachable!());
         f(bytes.as_ref())
     }
 }

@@ -92,9 +92,9 @@ mod tests {
     }
 }
 
-impl ValueAsBytes for DunpHeadDbV1 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        let bytes = bincode::serialize(self).map_err(|e| KvError::DeserError(e.into()))?;
+impl AsBytes for DunpHeadDbV1 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        let bytes = bincode::serialize(self).unwrap_or_else(|_| unreachable!());
         f(bytes.as_ref())
     }
 }

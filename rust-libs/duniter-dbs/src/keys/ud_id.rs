@@ -36,7 +36,7 @@ impl Ord for UdIdV2 {
     }
 }
 
-impl KeyAsBytes for UdIdV2 {
+impl AsBytes for UdIdV2 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         let mut buffer = uninit_array![u8; 37];
         let (pubkey_buffer, block_number_buffer) = buffer.as_out().split_at_out(33);

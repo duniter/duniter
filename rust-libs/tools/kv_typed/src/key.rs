@@ -21,35 +21,26 @@ use crate::*;
 
 #[cfg(not(feature = "explorer"))]
 pub trait Key:
-    'static + KeyAsBytes + Debug + Eq + FromBytes + std::hash::Hash + Send + Sync + Sized
+    'static + AsBytes + Debug + Eq + FromBytes + std::hash::Hash + Send + Sync + Sized
 {
 }
 
 #[cfg(feature = "explorer")]
 pub trait Key:
-    'static
-    + KeyAsBytes
-    + Debug
-    + Eq
-    + ExplorableKey
-    + FromBytes
-    + std::hash::Hash
-    + Send
-    + Sync
-    + Sized
+    'static + AsBytes + Debug + Eq + ExplorableKey + FromBytes + std::hash::Hash + Send + Sync + Sized
 {
 }
 
 #[cfg(not(feature = "explorer"))]
 impl<T> Key for T where
-    T: 'static + KeyAsBytes + Debug + Eq + FromBytes + std::hash::Hash + Send + Sync + Sized
+    T: 'static + AsBytes + Debug + Eq + FromBytes + std::hash::Hash + Send + Sync + Sized
 {
 }
 
 #[cfg(feature = "explorer")]
 impl<T> Key for T where
     T: 'static
-        + KeyAsBytes
+        + AsBytes
         + Debug
         + Eq
         + ExplorableKey

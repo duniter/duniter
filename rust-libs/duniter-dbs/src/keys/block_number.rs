@@ -18,7 +18,7 @@ use crate::*;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub struct BlockNumberKeyV1(pub BlockNumber);
 
-impl KeyAsBytes for BlockNumberKeyV1 {
+impl AsBytes for BlockNumberKeyV1 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         if self.0 == BlockNumber(u32::MAX) {
             f(b"0000000NaN")

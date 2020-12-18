@@ -18,7 +18,7 @@ use crate::*;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub struct HashKeyV1(pub Hash);
 
-impl KeyAsBytes for HashKeyV1 {
+impl AsBytes for HashKeyV1 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         f(self.0.to_hex().as_bytes())
     }
@@ -64,7 +64,7 @@ impl HashKeyV2 {
     }
 }
 
-impl KeyAsBytes for HashKeyV2 {
+impl AsBytes for HashKeyV2 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         f(self.0.as_ref())
     }

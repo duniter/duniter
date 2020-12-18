@@ -18,7 +18,7 @@ use crate::*;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub struct AllKeyV1;
 
-impl KeyAsBytes for AllKeyV1 {
+impl AsBytes for AllKeyV1 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         f(b"ALL")
     }

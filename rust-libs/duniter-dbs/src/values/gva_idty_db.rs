@@ -23,9 +23,9 @@ pub struct GvaIdtyDbV1 {
     pub first_ud: Option<BlockNumber>,
 }
 
-impl ValueAsBytes for GvaIdtyDbV1 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        f(&bincode::serialize(&self).map_err(|e| KvError::DeserError(e.into()))?)
+impl AsBytes for GvaIdtyDbV1 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        f(&bincode::serialize(&self).unwrap_or_else(|_| unreachable!()))
     }
 }
 

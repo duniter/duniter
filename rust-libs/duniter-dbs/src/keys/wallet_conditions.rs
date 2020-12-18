@@ -20,7 +20,7 @@ const CONDITIONS_MAX_LEN: usize = 256;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub struct WalletConditionsV1(pub ArrayString<[u8; CONDITIONS_MAX_LEN]>);
 
-impl KeyAsBytes for WalletConditionsV1 {
+impl AsBytes for WalletConditionsV1 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         f(self.0.as_str().as_bytes())
     }
@@ -76,7 +76,7 @@ impl WalletConditionsV2 {
     }
 }
 
-impl KeyAsBytes for WalletConditionsV2 {
+impl AsBytes for WalletConditionsV2 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         let mut buffer = SmallVec::<[u8; 256]>::new();
         bincode::serialize_into(&mut buffer, &self.0).unwrap_or_else(|_| unreachable!());

@@ -62,7 +62,7 @@ impl Display for DunpNodeIdV1Db {
     }
 }
 
-impl KeyAsBytes for DunpNodeIdV1Db {
+impl AsBytes for DunpNodeIdV1Db {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         f(self.0.as_ref())
     }

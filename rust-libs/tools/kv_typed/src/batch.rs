@@ -62,7 +62,6 @@ impl<BC: BackendCol, C: DbCollectionRw> Batch<BC, C> {
             v.as_bytes(|v_bytes| {
                 self.tree
                     .insert(IVec::from(k_bytes), Some(IVec::from(v_bytes)));
-                Ok(())
             })
         });
         self.upsert_ops.insert(k, v);

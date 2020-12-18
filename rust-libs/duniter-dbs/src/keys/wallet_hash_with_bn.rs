@@ -63,7 +63,7 @@ impl Display for WalletHashWithBnV1Db {
     }
 }
 
-impl KeyAsBytes for WalletHashWithBnV1Db {
+impl AsBytes for WalletHashWithBnV1Db {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         f(self.0.as_ref())
     }

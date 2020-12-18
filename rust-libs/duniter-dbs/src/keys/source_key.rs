@@ -37,7 +37,7 @@ impl ToString for SourceKeyV1 {
     }
 }
 
-impl KeyAsBytes for SourceKeyV1 {
+impl AsBytes for SourceKeyV1 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         f(self.to_string().as_bytes())
     }

@@ -38,7 +38,7 @@ impl Ord for UtxoIdDbV2 {
     }
 }
 
-impl KeyAsBytes for UtxoIdDbV2 {
+impl AsBytes for UtxoIdDbV2 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         let mut buffer = uninit_array![u8; 36];
         let (hash_buffer, index_buffer) = buffer.as_out().split_at_out(32);
@@ -195,7 +195,7 @@ impl GvaUtxoIdDbV1 {
     }
 }
 
-impl KeyAsBytes for GvaUtxoIdDbV1 {
+impl AsBytes for GvaUtxoIdDbV1 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         f(&self.0[..])
     }

@@ -18,9 +18,9 @@ use crate::*;
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct BlockNumberArrayV1(pub SmallVec<[BlockNumber; 1]>);
 
-impl ValueAsBytes for BlockNumberArrayV1 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        let json_string = serde_json::to_string(self).map_err(|e| KvError::DeserError(e.into()))?;
+impl AsBytes for BlockNumberArrayV1 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        let json_string = serde_json::to_string(self).unwrap_or_else(|_| unreachable!());
         f(format!("[{}]", json_string).as_bytes())
     }
 }

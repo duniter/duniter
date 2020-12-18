@@ -42,9 +42,9 @@ pub struct SIndexDBV1 {
     pub is_time_locked: Option<bool>,
 }
 
-impl ValueAsBytes for SIndexDBV1 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        let json = serde_json::to_string(self).map_err(|e| KvError::DeserError(e.into()))?;
+impl AsBytes for SIndexDBV1 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        let json = serde_json::to_string(self).unwrap_or_else(|_| unreachable!());
         f(json.as_bytes())
     }
 }
@@ -78,15 +78,14 @@ impl ExplorableValue for SIndexDBV1 {
 #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct SourceKeyArrayDbV1(pub SmallVec<[SourceKeyV1; 8]>);
 
-impl ValueAsBytes for SourceKeyArrayDbV1 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
+impl AsBytes for SourceKeyArrayDbV1 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         let vec_pub_str = self
             .0
             .iter()
             .map(|source_key| source_key.to_string())
             .collect::<SmallVec<[String; 8]>>();
-        let json =
-            serde_json::to_string(&vec_pub_str).map_err(|e| KvError::DeserError(e.into()))?;
+        let json = serde_json::to_string(&vec_pub_str).unwrap_or_else(|_| unreachable!());
         f(json.as_bytes())
     }
 }

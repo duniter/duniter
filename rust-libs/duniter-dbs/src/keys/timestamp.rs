@@ -18,7 +18,7 @@ use crate::*;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub struct TimestampKeyV1(pub u64);
 
-impl KeyAsBytes for TimestampKeyV1 {
+impl AsBytes for TimestampKeyV1 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         f(format!("{}", self.0).as_bytes())
     }

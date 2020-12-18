@@ -18,7 +18,7 @@ use crate::*;
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub struct BlockstampKeyV1(Blockstamp);
 
-impl KeyAsBytes for BlockstampKeyV1 {
+impl AsBytes for BlockstampKeyV1 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         f(format!("{:010}-{}", self.0.number.0, self.0.hash).as_bytes())
     }
@@ -63,7 +63,7 @@ impl ExplorableKey for BlockstampKeyV1 {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub struct BlockstampKeyV2(Blockstamp);
 
-impl KeyAsBytes for BlockstampKeyV2 {
+impl AsBytes for BlockstampKeyV2 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         let bytes: [u8; 36] = self.0.into();
         f(&bytes[..])

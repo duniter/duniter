@@ -51,9 +51,9 @@ pub struct BlockHeadDbV1 {
     pub issuer_is_member: bool,
 }
 
-impl ValueAsBytes for BlockHeadDbV1 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        let json = serde_json::to_string(self).map_err(|e| KvError::DeserError(e.into()))?;
+impl AsBytes for BlockHeadDbV1 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        let json = serde_json::to_string(self).unwrap_or_else(|_| unreachable!());
         f(json.as_bytes())
     }
 }

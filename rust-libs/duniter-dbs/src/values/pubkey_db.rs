@@ -20,8 +20,8 @@ use crate::*;
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct PublicKeySingletonDbV1(pub PublicKey);
 
-impl ValueAsBytes for PublicKeySingletonDbV1 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
+impl AsBytes for PublicKeySingletonDbV1 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         f(format!("[\"{}\"]", self.0).as_bytes())
     }
 }
@@ -58,15 +58,14 @@ impl ExplorableValue for PublicKeySingletonDbV1 {
 #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct PublicKeyArrayDbV1(pub SmallVec<[PublicKey; 8]>);
 
-impl ValueAsBytes for PublicKeyArrayDbV1 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
+impl AsBytes for PublicKeyArrayDbV1 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         let vec_pub_str = self
             .0
             .iter()
             .map(|pubkey| pubkey.to_base58())
             .collect::<SmallVec<[String; 8]>>();
-        let json =
-            serde_json::to_string(&vec_pub_str).map_err(|e| KvError::DeserError(e.into()))?;
+        let json = serde_json::to_string(&vec_pub_str).unwrap_or_else(|_| unreachable!());
         f(json.as_bytes())
     }
 }
@@ -115,8 +114,8 @@ impl ExplorableValue for PublicKeyArrayDbV1 {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct PubKeyValV2(pub PublicKey);
 
-impl ValueAsBytes for PubKeyValV2 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
+impl AsBytes for PubKeyValV2 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
         f(self.0.as_ref())
     }
 }

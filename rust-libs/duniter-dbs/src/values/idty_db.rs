@@ -21,9 +21,9 @@ pub struct IdtyDbV2 {
     pub username: String,
 }
 
-impl ValueAsBytes for IdtyDbV2 {
-    fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        f(&bincode::serialize(&self).map_err(|e| KvError::DeserError(e.into()))?)
+impl AsBytes for IdtyDbV2 {
+    fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
+        f(&bincode::serialize(&self).unwrap_or_else(|_| unreachable!()))
     }
 }
 

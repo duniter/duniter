@@ -90,7 +90,8 @@ mod tests {
 
     #[test]
     fn test_receive_new_heads() -> anyhow::Result<()> {
-        let (server, dbs) = DuniterServer::test(DuniterConf::default())?;
+        let server = DuniterServer::test(DuniterConf::default())?;
+        let dbs = server.get_shared_dbs();
 
         let head = (
             duniter_dbs::DunpNodeIdV1Db::new(53, PublicKey::default()),
@@ -118,7 +119,8 @@ mod tests {
     #[test]
     fn test_save_peer() -> anyhow::Result<()> {
         use duniter_dbs::databases::dunp_v1::DunpV1DbReadable as _;
-        let (server, dbs) = DuniterServer::test(DuniterConf::default())?;
+        let server = DuniterServer::test(DuniterConf::default())?;
+        let dbs = server.get_shared_dbs();
 
         let peer = PeerCardDbV1 {
             version: 0,

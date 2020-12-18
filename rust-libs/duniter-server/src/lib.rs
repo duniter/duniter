@@ -81,24 +81,13 @@ pub struct DuniterServer {
     pending_txs_subscriber:
         flume::Receiver<Arc<Events<duniter_dbs::databases::txs_mp_v2::TxsEvent>>>,
     profile_path_opt: Option<PathBuf>,
+    shared_dbs: SharedDbs<FileBackend>,
     txs_mempool: TxsMempool,
 }
 
-#[cfg(not(test))]
-type DuniterServerInstance = DuniterServer;
-#[cfg(test)]
-type DuniterServerInstance = (DuniterServer, SharedDbs<FileBackend>);
-
 impl DuniterServer {
-    #[cfg(test)]
-    pub(crate) fn test(conf: DuniterConf) -> anyhow::Result<DuniterServerInstance> {
-        DuniterServer::start(
-            None,
-            conf,
-            "test".to_owned(),
-            None,
-            duniter_module::SOFTWARE_NAME,
-        )
+    pub fn get_shared_dbs(&self) -> SharedDbs<FileBackend> {
+        self.shared_dbs.clone()
     }
     pub fn start(
         command_name: Option<String>,
@@ -106,7 +95,7 @@ impl DuniterServer {
         currency: String,
         profile_path_opt: Option<&Path>,
         software_version: &'static str,
-    ) -> anyhow::Result<DuniterServerInstance> {
+    ) -> anyhow::Result<DuniterServer> {
         let command = match command_name.unwrap_or_default().as_str() {
             "sync" => DuniterCommand::Sync,
             _ => DuniterCommand::Start,
@@ -115,11 +104,11 @@ impl DuniterServer {
         let txs_mempool = TxsMempool::new(conf.txs_mempool_size);
 
         log::info!("open duniter databases...");
-        let (bc_db, dbs) = duniter_dbs::open_dbs(profile_path_opt)?;
-        dbs.dunp_db.heads_old_write().clear()?; // Clear WS2Pv1 HEADs
-        duniter_dbs_write_ops::cm::init(&bc_db, &dbs.cm_db)?;
+        let (bc_db, shared_dbs) = duniter_dbs::open_dbs(profile_path_opt)?;
+        shared_dbs.dunp_db.heads_old_write().clear()?; // Clear WS2Pv1 HEADs
+        duniter_dbs_write_ops::cm::init(&bc_db, &shared_dbs.cm_db)?;
         log::info!("Databases successfully opened.");
-        let current = duniter_dbs_read_ops::get_current_block_meta(&dbs.cm_db)
+        let current = duniter_dbs_read_ops::get_current_block_meta(&shared_dbs.cm_db)
             .context("Fail to get current")?;
         if let Some(current) = current {
             log::info!("Current block: #{}-{}", current.number, current.hash);
@@ -128,18 +117,16 @@ impl DuniterServer {
         }
 
         let (s, pending_txs_subscriber) = flume::unbounded();
-        dbs.txs_mp_db
+        shared_dbs
+            .txs_mp_db
             .txs()
             .subscribe(s)
             .context("Fail to subscribe to txs col")?;
 
         log::info!("start dbs threadpool...");
 
-        #[cfg(test)]
         let threadpool =
-            fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), dbs.clone());
-        #[cfg(not(test))]
-        let threadpool = fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), dbs);
+            fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), shared_dbs.clone());
 
         if command != DuniterCommand::Sync && conf.gva.is_some() {
             let mut runtime = tokio::runtime::Builder::new()
@@ -163,21 +150,25 @@ impl DuniterServer {
             });
         }
 
-        let duniter_server = DuniterServer {
+        Ok(DuniterServer {
             bc_db,
             conf,
             current,
             dbs_pool: threadpool.into_sync_handler(),
             pending_txs_subscriber,
             profile_path_opt: profile_path_opt.map(ToOwned::to_owned),
+            shared_dbs,
             txs_mempool,
-        };
-        cfg_if::cfg_if! {
-            if #[cfg(test)] {
-                Ok((duniter_server, dbs))
-            } else {
-                Ok(duniter_server)
-            }
-        }
+        })
+    }
+    #[cfg(test)]
+    pub(crate) fn test(conf: DuniterConf) -> anyhow::Result<DuniterServer> {
+        DuniterServer::start(
+            None,
+            conf,
+            "test".to_owned(),
+            None,
+            duniter_module::SOFTWARE_NAME,
+        )
     }
 }

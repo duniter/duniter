@@ -41,9 +41,8 @@ use duniter_dbs::{kv_typed::prelude::*, FileBackend, TxDbV2};
 use duniter_gva_db_writer::{get_gva_db_ro, get_gva_db_rw};
 use duniter_gva_gql::GvaSchema;
 use duniter_mempools::Mempools;
-use fast_threadpool::{JoinHandle, ThreadPoolDisconnected};
 use futures::{StreamExt, TryStreamExt};
-use std::{convert::Infallible, ops::Deref, path::Path};
+use std::{convert::Infallible, path::Path};
 use warp::{http::Response as HttpResponse, Filter as _, Rejection};
 
 #[derive(Debug)]
@@ -59,53 +58,25 @@ pub struct GvaModule {
 
 #[async_trait::async_trait]
 impl duniter_module::DuniterModule for GvaModule {
+    const INDEX_BLOCKS: bool = true;
+
     fn apply_block(
-        block: Arc<DubpBlockV10>,
-        conf: &duniter_conf::DuniterConf,
-        dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
+        block: &DubpBlockV10,
+        _conf: &duniter_conf::DuniterConf,
+        _shared_dbs: &SharedDbs<FileBackend>,
         profile_path_opt: Option<&Path>,
-    ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
+    ) -> KvResult<()> {
         let gva_db = get_gva_db_rw(profile_path_opt);
-        if conf.gva.is_some() {
-            Ok(Some(dbs_pool.launch(move |_| {
-                duniter_gva_db_writer::apply_block(&block, gva_db)
-            })?))
-        } else {
-            Ok(None)
-        }
-    }
-    fn apply_chunk_of_blocks(
-        blocks: Arc<[DubpBlockV10]>,
-        conf: &duniter_conf::DuniterConf,
-        dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
-        profile_path_opt: Option<&Path>,
-    ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
-        let gva_db = get_gva_db_rw(profile_path_opt);
-        if conf.gva.is_some() {
-            Ok(Some(dbs_pool.launch(move |_| {
-                for block in blocks.deref() {
-                    duniter_gva_db_writer::apply_block(&block, gva_db)?;
-                }
-                Ok::<_, KvError>(())
-            })?))
-        } else {
-            Ok(None)
-        }
+        duniter_gva_db_writer::apply_block(&block, gva_db)
     }
     fn revert_block(
-        block: Arc<DubpBlockV10>,
-        conf: &duniter_conf::DuniterConf,
-        dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
+        block: &DubpBlockV10,
+        _conf: &duniter_conf::DuniterConf,
+        _shared_dbs: &SharedDbs<FileBackend>,
         profile_path_opt: Option<&Path>,
-    ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
+    ) -> KvResult<()> {
         let gva_db = get_gva_db_rw(profile_path_opt);
-        if conf.gva.is_some() {
-            Ok(Some(dbs_pool.launch(move |_| {
-                duniter_gva_db_writer::revert_block(&block, gva_db)
-            })?))
-        } else {
-            Ok(None)
-        }
+        duniter_gva_db_writer::revert_block(&block, gva_db)
     }
     fn init(
         conf: &duniter_conf::DuniterConf,

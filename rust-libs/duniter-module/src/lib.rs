@@ -31,7 +31,6 @@ use dubp::{
 use duniter_conf::DuniterConf;
 use duniter_dbs::{kv_typed::prelude::*, FileBackend, SharedDbs};
 use duniter_mempools::Mempools;
-use fast_threadpool::{JoinHandle, ThreadPoolDisconnected};
 use std::path::Path;
 
 pub const SOFTWARE_NAME: &str = "duniter";
@@ -40,31 +39,24 @@ pub type Endpoint = String;
 
 #[async_trait::async_trait]
 pub trait DuniterModule: 'static + Sized {
-    fn apply_block(
-        _block: Arc<DubpBlockV10>,
-        _conf: &duniter_conf::DuniterConf,
-        _dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
-        _profile_path_opt: Option<&Path>,
-    ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
-        Ok(None)
-    }
+    const INDEX_BLOCKS: bool = false;
 
-    fn apply_chunk_of_blocks(
-        _blocks: Arc<[DubpBlockV10]>,
+    fn apply_block(
+        _block: &DubpBlockV10,
         _conf: &duniter_conf::DuniterConf,
-        _dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
+        _shared_dbs: &SharedDbs<FileBackend>,
         _profile_path_opt: Option<&Path>,
-    ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
-        Ok(None)
+    ) -> KvResult<()> {
+        Ok(())
     }
 
     fn revert_block(
-        _block: Arc<DubpBlockV10>,
+        _block: &DubpBlockV10,
         _conf: &duniter_conf::DuniterConf,
-        _dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
+        _shared_dbs: &SharedDbs<FileBackend>,
         _profile_path_opt: Option<&Path>,
-    ) -> Result<Option<JoinHandle<KvResult<()>>>, ThreadPoolDisconnected> {
-        Ok(None)
+    ) -> KvResult<()> {
+        Ok(())
     }
 
     fn init(
@@ -116,12 +108,26 @@ macro_rules! plug_duniter_modules {
             #[allow(dead_code)]
             fn apply_block_modules(
                 block: Arc<DubpBlockV10>,
-                conf: &duniter_conf::DuniterConf,
+                conf: Arc<duniter_conf::DuniterConf>,
                 dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
-                profile_path_opt: Option<&Path>,
+                profile_path_opt: Option<std::path::PathBuf>,
             ) -> KvResult<()> {
                 $(
-                    let [<$M:snake>] = <$M>::apply_block(block.clone(), conf, dbs_pool, profile_path_opt).expect("thread pool disconnected");
+                    let [<$M:snake>] = if <$M>::INDEX_BLOCKS {
+                        let block_arc_clone = Arc::clone(&block);
+                        let conf_arc_clone = Arc::clone(&conf);
+                        let profile_path_opt_clone = profile_path_opt.clone();
+                        Some(dbs_pool
+                        .launch(move |shared_dbs| <$M>::apply_block(
+                            &block_arc_clone,
+                            &conf_arc_clone,
+                            &shared_dbs,
+                            profile_path_opt_clone.as_deref()
+                        ))
+                        .expect("thread pool disconnected"))
+                    } else {
+                        None
+                    };
                 )*
                 $(
                     if let Some(join_handle) = [<$M:snake>] {
@@ -133,12 +139,27 @@ macro_rules! plug_duniter_modules {
             #[allow(dead_code)]
             fn apply_chunk_of_blocks_modules(
                 blocks: Arc<[DubpBlockV10]>,
-                conf: &duniter_conf::DuniterConf,
+                conf: Arc<duniter_conf::DuniterConf>,
                 dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
-                profile_path_opt: Option<&Path>,
+                profile_path_opt: Option<std::path::PathBuf>,
             ) -> KvResult<()> {
                 $(
-                    let [<$M:snake>] = <$M>::apply_chunk_of_blocks(blocks.clone(), conf, dbs_pool, profile_path_opt).expect("thread pool disconnected");
+                    let [<$M:snake>] = if <$M>::INDEX_BLOCKS {
+                        let blocks_arc_clone = Arc::clone(&blocks);
+                        let conf_arc_clone = Arc::clone(&conf);
+                        let profile_path_opt_clone = profile_path_opt.clone();
+                        Some(dbs_pool
+                            .launch(move |shared_dbs| {
+                                use std::ops::Deref as _;
+                                for block in blocks_arc_clone.deref() {
+                                    <$M>::apply_block(&block, &conf_arc_clone, &shared_dbs, profile_path_opt_clone.as_deref())?;
+                                }
+                                Ok::<_, KvError>(())
+                            })
+                            .expect("thread pool disconnected"))
+                    } else {
+                        None
+                    };
                 )*
                 $(
                     if let Some(join_handle) = [<$M:snake>] {
@@ -150,12 +171,26 @@ macro_rules! plug_duniter_modules {
             #[allow(dead_code)]
             fn revert_block_modules(
                 block: Arc<DubpBlockV10>,
-                conf: &duniter_conf::DuniterConf,
+                conf: Arc<duniter_conf::DuniterConf>,
                 dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
-                profile_path_opt: Option<&Path>,
+                profile_path_opt: Option<std::path::PathBuf>,
             ) -> KvResult<()> {
                 $(
-                    let [<$M:snake>] = <$M>::revert_block(block.clone(), conf, dbs_pool, profile_path_opt).expect("thread pool disconnected");
+                    let [<$M:snake>] = if <$M>::INDEX_BLOCKS {
+                        let block_arc_clone = Arc::clone(&block);
+                        let conf_arc_clone = Arc::clone(&conf);
+                        let profile_path_opt_clone = profile_path_opt.clone();
+                        Some(dbs_pool
+                        .launch(move |shared_dbs| <$M>::revert_block(
+                            &block_arc_clone,
+                            &conf_arc_clone,
+                            &shared_dbs,
+                            profile_path_opt_clone.as_deref()
+                        ))
+                        .expect("thread pool disconnected"))
+                    } else {
+                        None
+                    };
                 )*
                 $(
                     if let Some(join_handle) = [<$M:snake>] {

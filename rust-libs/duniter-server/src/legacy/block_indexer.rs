@@ -27,7 +27,7 @@ impl DuniterServer {
             &self.dbs_pool,
             false,
         )?);
-        apply_block_modules(block, &self.conf, &self.dbs_pool, None)
+        apply_block_modules(block, Arc::new(self.conf.clone()), &self.dbs_pool, None)
     }
     pub fn apply_chunk_of_blocks(&mut self, blocks: Vec<DubpBlockV10Stringified>) -> KvResult<()> {
         log::debug!("apply_chunk(#{})", blocks[0].number);
@@ -44,7 +44,7 @@ impl DuniterServer {
             &self.dbs_pool,
             blocks.clone(),
         )?);
-        apply_chunk_of_blocks_modules(blocks, &self.conf, &self.dbs_pool, None)
+        apply_chunk_of_blocks_modules(blocks, Arc::new(self.conf.clone()), &self.dbs_pool, None)
     }
     pub fn revert_block(&mut self, block: DubpBlockV10Stringified) -> KvResult<()> {
         let block = Arc::new(
@@ -62,6 +62,6 @@ impl DuniterServer {
             .expect("dbs pool disconnected");
         self.current = duniter_dbs_write_ops::bc::revert_block(&self.bc_db, &block)?;
         txs_mp_job_handle.join().expect("dbs pool disconnected")?;
-        revert_block_modules(block, &self.conf, &self.dbs_pool, None)
+        revert_block_modules(block, Arc::new(self.conf.clone()), &self.dbs_pool, None)
     }
 }

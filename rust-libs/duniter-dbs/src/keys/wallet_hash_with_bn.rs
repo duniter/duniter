@@ -70,11 +70,11 @@ impl KeyAsBytes for WalletHashWithBnV1Db {
 }
 
 impl kv_typed::prelude::FromBytes for WalletHashWithBnV1Db {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
         let layout = zerocopy::LayoutVerified::<_, WalletHashWithBnV1Db>::new(bytes)
-            .ok_or_else(|| StringErr("corrupted db".to_owned()))?;
+            .ok_or_else(|| CorruptedBytes("corrupted db".to_owned()))?;
         Ok(*layout)
     }
 }
@@ -91,19 +91,19 @@ impl ToDumpString for WalletHashWithBnV1Db {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for WalletHashWithBnV1Db {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
         let mut source = source.split(':');
         let hash_str = source
             .next()
-            .ok_or_else(|| StringErr("missing hash".to_owned()))?;
+            .ok_or_else(|| FromExplorerKeyErr("missing hash".into()))?;
         let bn_str = source
             .next()
-            .ok_or_else(|| StringErr("missing block number".to_owned()))?;
+            .ok_or_else(|| FromExplorerKeyErr("missing block number".into()))?;
 
-        let hash = Hash::from_hex(hash_str).map_err(|e| StringErr(e.to_string()))?;
+        let hash = Hash::from_hex(hash_str).map_err(|e| FromExplorerKeyErr(e.into()))?;
         let block_number = bn_str
             .parse()
-            .map_err(|e: std::num::ParseIntError| StringErr(e.to_string()))?;
+            .map_err(|e: std::num::ParseIntError| FromExplorerKeyErr(e.into()))?;
 
         Ok(WalletHashWithBnV1Db::new(hash, block_number))
     }

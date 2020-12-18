@@ -1,7 +1,11 @@
 use crate::*;
 
+#[derive(Clone, Copy, Debug, Error)]
+#[error("Corrupted DB: {0} bytes are wrong aligned or have invalid length")]
+pub struct LayoutVerifiedErr(pub &'static str);
+
 pub trait FromBytes: Sized {
-    type Err: Error;
+    type Err: Error + Send + Sync + 'static;
 
     /// Create Self from bytes.
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err>;
@@ -57,11 +61,11 @@ macro_rules! impl_from_bytes_for_smallvec {
         where
             T: Copy + zerocopy::FromBytes,
         {
-            type Err = StringErr;
+            type Err = LayoutVerifiedErr;
 
             fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
                 let layout_verified = zerocopy::LayoutVerified::<_, [T]>::new_slice(bytes)
-                    .ok_or_else(|| StringErr("".to_owned()))?;
+                    .ok_or_else(|| LayoutVerifiedErr(stringify!(T)).into())?;
                 Ok(SmallVec::from_slice(layout_verified.into_slice()))
             }
         }
@@ -73,16 +77,11 @@ impl<T> FromBytes for Vec<T>
 where
     T: Copy + Default + zerocopy::FromBytes,
 {
-    type Err = StringErr;
+    type Err = LayoutVerifiedErr;
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
-        let layout_verified =
-            zerocopy::LayoutVerified::<_, [T]>::new_slice(bytes).ok_or_else(|| {
-                StringErr(
-                    "Corrupted DB: Vec<T> bytes are wrong aligned or have invalid length"
-                        .to_owned(),
-                )
-            })?;
+        let layout_verified = zerocopy::LayoutVerified::<_, [T]>::new_slice(bytes)
+            .ok_or(LayoutVerifiedErr(stringify!(Vec<T>)))?;
         let slice = layout_verified.into_slice();
         let mut vec = Vec::with_capacity(slice.len());
         vec.resize_with(slice.len(), Default::default);
@@ -95,11 +94,11 @@ impl<T> FromBytes for BTreeSet<T>
 where
     T: Copy + zerocopy::FromBytes + Ord,
 {
-    type Err = StringErr;
+    type Err = LayoutVerifiedErr;
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
         let layout_verified = zerocopy::LayoutVerified::<_, [T]>::new_slice(bytes)
-            .ok_or_else(|| StringErr("Bytes are invalid length or alignment.".to_owned()))?;
+            .ok_or(LayoutVerifiedErr(stringify!(BTreeSet<T>)))?;
         let slice = layout_verified.into_slice();
         Ok(BTreeSet::from_iter(slice.iter().copied()))
     }
@@ -109,11 +108,11 @@ impl<T> FromBytes for HashSet<T>
 where
     T: Copy + Eq + zerocopy::FromBytes + std::hash::Hash,
 {
-    type Err = StringErr;
+    type Err = LayoutVerifiedErr;
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Self::Err> {
         let layout_verified = zerocopy::LayoutVerified::<_, [T]>::new_slice(bytes)
-            .ok_or_else(|| StringErr("".to_owned()))?;
+            .ok_or(LayoutVerifiedErr(stringify!(HashSet<T>)))?;
         let slice = layout_verified.into_slice();
         Ok(HashSet::from_iter(slice.iter().copied()))
     }

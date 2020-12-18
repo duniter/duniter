@@ -1097,6 +1097,7 @@ dependencies = [
 name = "duniter-dbs"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "arrayvec",
  "bincode",
  "byteorder",

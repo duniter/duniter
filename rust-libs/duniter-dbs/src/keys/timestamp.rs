@@ -25,15 +25,13 @@ impl KeyAsBytes for TimestampKeyV1 {
 }
 
 impl kv_typed::prelude::FromBytes for TimestampKeyV1 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        let key_str = std::str::from_utf8(bytes).map_err(|e| StringErr(format!("{}", e)))?;
-        Ok(TimestampKeyV1(
-            key_str
-                .parse()
-                .map_err(|e| StringErr(format!("{}: {}", e, key_str)))?,
-        ))
+        let key_str = std::str::from_utf8(bytes).map_err(|e| CorruptedBytes(e.to_string()))?;
+        Ok(TimestampKeyV1(key_str.parse().map_err(|e| {
+            CorruptedBytes(format!("{}: {}", e, key_str))
+        })?))
     }
 }
 
@@ -45,10 +43,10 @@ impl ToDumpString for TimestampKeyV1 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for TimestampKeyV1 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
         NaiveDateTime::parse_from_str(source, "%Y-%m-%d %H:%M:%S")
             .map(|dt| TimestampKeyV1(dt.timestamp() as u64))
-            .map_err(|e| StringErr(format!("{}: {}", e, source)))
+            .map_err(|e| FromExplorerKeyErr(format!("{}: {}", e, source).into()))
     }
     fn to_explorer_string(&self) -> KvResult<String> {
         Ok(NaiveDateTime::from_timestamp(self.0 as i64, 0)

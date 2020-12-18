@@ -44,15 +44,17 @@ impl KeyAsBytes for SourceKeyV1 {
 }
 
 impl kv_typed::prelude::FromBytes for SourceKeyV1 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
         let strs: ArrayVec<[&str; 3]> = std::str::from_utf8(bytes)
-            .map_err(|e| StringErr(format!("{}", e)))?
+            .map_err(|e| CorruptedBytes(e.to_string()))?
             .split('-')
             .collect();
-        let tx_hash = Hash::from_hex(strs[0]).map_err(|e| StringErr(format!("{}", e)))?;
-        let pos = strs[1].parse().map_err(|e| StringErr(format!("{}", e)))?;
+        let tx_hash = Hash::from_hex(strs[0]).map_err(|e| CorruptedBytes(e.to_string()))?;
+        let pos = strs[1]
+            .parse()
+            .map_err(|e: ParseIntError| CorruptedBytes(e.to_string()))?;
         let consumed = if strs.len() <= 2 {
             None
         } else {
@@ -60,7 +62,7 @@ impl kv_typed::prelude::FromBytes for SourceKeyV1 {
                 "1" => Some(true),
                 "0" => Some(false),
                 _ => {
-                    return Err(StringErr(
+                    return Err(CorruptedBytes(
                         "invalid format: field consumed must be encoded with '0' or '1'".to_owned(),
                     ))
                 }
@@ -82,8 +84,8 @@ impl ToDumpString for SourceKeyV1 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for SourceKeyV1 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-        Self::from_bytes(source.as_bytes())
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
+        Self::from_bytes(source.as_bytes()).map_err(|e| FromExplorerKeyErr(e.0.into()))
     }
     fn to_explorer_string(&self) -> KvResult<String> {
         self.as_bytes(|bytes| Ok(unsafe { std::str::from_utf8_unchecked(bytes) }.to_owned()))

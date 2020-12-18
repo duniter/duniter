@@ -8,17 +8,25 @@ pub trait DbExplorable {
         collection_name: &str,
         action: ExplorerAction<'a>,
         stringify_json_value: fn(serde_json::Value) -> serde_json::Value,
-    ) -> KvResult<Result<ExplorerActionResponse, StringErr>>;
+    ) -> KvResult<Result<ExplorerActionResponse, ExplorerActionErr>>;
     fn list_collections() -> Vec<(&'static str, &'static str, &'static str)>;
 }
 
+#[derive(Debug, Error)]
+#[error("Fail to parse key: {0}")]
+pub struct FromExplorerKeyErr(pub DynErr);
+
+#[derive(Debug, Error)]
+#[error("Fail to parse value: {0}")]
+pub struct FromExplorerValueErr(pub DynErr);
+
 pub trait ExplorableKey: Sized {
-    fn from_explorer_str(source: &str) -> Result<Self, StringErr>;
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr>;
     fn to_explorer_string(&self) -> KvResult<String>;
 }
 
 impl ExplorableKey for () {
-    fn from_explorer_str(_: &str) -> Result<Self, StringErr> {
+    fn from_explorer_str(_: &str) -> Result<Self, FromExplorerKeyErr> {
         Ok(())
     }
 
@@ -28,7 +36,7 @@ impl ExplorableKey for () {
 }
 
 impl ExplorableKey for String {
-    fn from_explorer_str(source: &str) -> Result<Self, StringErr> {
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
         Ok(source.to_owned())
     }
 
@@ -40,8 +48,8 @@ impl ExplorableKey for String {
 macro_rules! impl_explorable_key_for_numbers {
     ($($T:ty),*) => {$(
         impl ExplorableKey for $T {
-            fn from_explorer_str(source: &str) -> Result<Self, StringErr> {
-                source.parse().map_err(|e| StringErr(format!("{}", e)))
+            fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
+                source.parse().map_err(|e| FromExplorerKeyErr(Box::new(e)))
             }
 
             fn to_explorer_string(&self) -> KvResult<String> {
@@ -55,8 +63,8 @@ impl_explorable_key_for_numbers!(usize, u8, u16, u32, u64, u128, i8, i16, i32, i
 macro_rules! impl_explorable_key_for_be_numbers {
     ($($T:ty),*) => {$(
         impl ExplorableKey for $T {
-            fn from_explorer_str(source: &str) -> Result<Self, StringErr> {
-                Ok(Self(source.parse().map_err(|e| StringErr(format!("{}", e)))?))
+            fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
+                Ok(Self(source.parse().map_err(|e| FromExplorerKeyErr(Box::new(e)))?))
             }
 
             fn to_explorer_string(&self) -> KvResult<String> {
@@ -68,12 +76,12 @@ macro_rules! impl_explorable_key_for_be_numbers {
 impl_explorable_key_for_be_numbers!(U32BE);
 
 pub trait ExplorableValue: Sized {
-    fn from_explorer_str(source: &str) -> Result<Self, StringErr>;
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerValueErr>;
     fn to_explorer_json(&self) -> KvResult<serde_json::Value>;
 }
 
 impl ExplorableValue for () {
-    fn from_explorer_str(_: &str) -> Result<Self, StringErr> {
+    fn from_explorer_str(_: &str) -> Result<Self, FromExplorerValueErr> {
         Ok(())
     }
 
@@ -83,7 +91,7 @@ impl ExplorableValue for () {
 }
 
 impl ExplorableValue for String {
-    fn from_explorer_str(source: &str) -> Result<Self, StringErr> {
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerValueErr> {
         Ok(source.to_owned())
     }
 
@@ -95,8 +103,8 @@ impl ExplorableValue for String {
 macro_rules! impl_explorable_value_for_numbers {
     ($($T:ty),*) => {$(
         impl ExplorableValue for $T {
-            fn from_explorer_str(source: &str) -> Result<Self, StringErr> {
-                source.parse().map_err(|e| StringErr(format!("{}", e)))
+            fn from_explorer_str(source: &str) -> Result<Self, FromExplorerValueErr> {
+                source.parse().map_err(|e| FromExplorerValueErr(Box::new(e)))
             }
 
             #[allow(trivial_numeric_casts)]
@@ -114,23 +122,27 @@ impl_explorable_value_for_numbers!(
 impl<T, E> ExplorableValue for Vec<T>
 where
     T: Display + FromStr<Err = E>,
-    E: Display,
+    E: Error + Send + Sync + 'static,
 {
-    fn from_explorer_str(source: &str) -> Result<Vec<T>, StringErr> {
+    fn from_explorer_str(source: &str) -> Result<Vec<T>, FromExplorerValueErr> {
         if let serde_json::Value::Array(json_array) =
-            serde_json::Value::from_str(source).map_err(|e| StringErr(format!("{}", e)))?
+            serde_json::Value::from_str(source).map_err(|e| FromExplorerValueErr(e.into()))?
         {
             let mut vec = Vec::with_capacity(json_array.len());
             for value in json_array {
                 if let serde_json::Value::String(string) = value {
-                    vec.push(<T>::from_str(&string).map_err(|e| StringErr(format!("{}", e)))?);
+                    vec.push(<T>::from_str(&string).map_err(|e| FromExplorerValueErr(e.into()))?);
                 } else {
-                    return Err(StringErr(format!("Expected array of {}.", stringify!(T))));
+                    return Err(FromExplorerValueErr(
+                        format!("Expected array of {}.", stringify!(T)).into(),
+                    ));
                 }
             }
             Ok(vec)
         } else {
-            Err(StringErr(format!("Expected array of {}.", stringify!(T))))
+            Err(FromExplorerValueErr(
+                format!("Expected array of {}.", stringify!(T)).into(),
+            ))
         }
     }
 
@@ -148,23 +160,23 @@ macro_rules! impl_explorable_value_for_smallvec {
         impl<T, E> ExplorableValue for SmallVec<[T; $N]>
         where
             T: Display + FromStr<Err = E>,
-            E: Display,
+            E: Error + Send + Sync + 'static,
         {
-            fn from_explorer_str(source: &str) -> Result<SmallVec<[T; $N]>, StringErr> {
+            fn from_explorer_str(source: &str) -> Result<SmallVec<[T; $N]>, FromExplorerValueErr> {
                 if let serde_json::Value::Array(json_array) =
-                    serde_json::Value::from_str(source).map_err(|e| StringErr(format!("{}", e)))?
+                    serde_json::Value::from_str(source).map_err(|e| FromExplorerValueErr(e.into()))?
                 {
                     let mut svec = SmallVec::with_capacity(json_array.len());
                     for value in json_array {
                         if let serde_json::Value::String(string) = value {
-                            svec.push(<T>::from_str(&string).map_err(|e| StringErr(format!("{}", e)))?);
+                            svec.push(<T>::from_str(&string).map_err(|e| FromExplorerValueErr(e.into()))?);
                         } else {
-                            return Err(StringErr(format!("Expected array of {}.", stringify!(T))));
+                            return Err(FromExplorerValueErr(format!("Expected array of {}.", stringify!(T)).into()));
                         }
                     }
                     Ok(svec)
                 } else {
-                    Err(StringErr(format!("Expected array of {}.", stringify!(T))))
+                    Err(FromExplorerValueErr(format!("Expected array of {}.", stringify!(T)).into()))
                 }
             }
 
@@ -183,23 +195,29 @@ impl_explorable_value_for_smallvec!(2, 4, 8, 16, 32, 64);
 impl<T, E> ExplorableValue for BTreeSet<T>
 where
     T: Display + FromStr<Err = E> + Ord,
-    E: Display,
+    E: Error + Send + Sync + 'static,
 {
-    fn from_explorer_str(source: &str) -> Result<BTreeSet<T>, StringErr> {
+    fn from_explorer_str(source: &str) -> Result<BTreeSet<T>, FromExplorerValueErr> {
         if let serde_json::Value::Array(json_array) =
-            serde_json::Value::from_str(source).map_err(|e| StringErr(format!("{}", e)))?
+            serde_json::Value::from_str(source).map_err(|e| FromExplorerValueErr(e.into()))?
         {
             let mut bt_set = BTreeSet::new();
             for value in json_array {
                 if let serde_json::Value::String(string) = value {
-                    bt_set.insert(<T>::from_str(&string).map_err(|e| StringErr(format!("{}", e)))?);
+                    bt_set.insert(
+                        <T>::from_str(&string).map_err(|e| FromExplorerValueErr(e.into()))?,
+                    );
                 } else {
-                    return Err(StringErr(format!("Expected array of {}.", stringify!(T))));
+                    return Err(FromExplorerValueErr(
+                        format!("Expected array of {}.", stringify!(T)).into(),
+                    ));
                 }
             }
             Ok(bt_set)
         } else {
-            Err(StringErr(format!("Expected array of {}.", stringify!(T))))
+            Err(FromExplorerValueErr(
+                format!("Expected array of {}.", stringify!(T)).into(),
+            ))
         }
     }
 
@@ -255,12 +273,26 @@ pub enum ExplorerActionResponse {
     DeleteOk,
 }
 
+#[derive(Debug, Error)]
+#[error("Fail to exec explorer action: {0}")]
+pub struct ExplorerActionErr(pub DynErr);
+impl From<FromExplorerKeyErr> for ExplorerActionErr {
+    fn from(e: FromExplorerKeyErr) -> Self {
+        ExplorerActionErr(e.0)
+    }
+}
+impl From<FromExplorerValueErr> for ExplorerActionErr {
+    fn from(e: FromExplorerValueErr) -> Self {
+        ExplorerActionErr(e.0)
+    }
+}
+
 impl<'a> ExplorerAction<'a> {
     pub fn exec<BC: BackendCol, E: EventTrait>(
         self,
         col: &ColRw<BC, E>,
         stringify_json_value: fn(serde_json::Value) -> serde_json::Value,
-    ) -> KvResult<Result<ExplorerActionResponse, StringErr>> {
+    ) -> KvResult<Result<ExplorerActionResponse, ExplorerActionErr>> {
         Ok(match self {
             Self::Count => Ok(ExplorerActionResponse::Count(col.to_ro().count()?)),
             Self::Get { key } => match E::K::from_explorer_str(key) {
@@ -270,7 +302,7 @@ impl<'a> ExplorerAction<'a> {
                         .map(|v| v.to_explorer_json())
                         .transpose()?,
                 )),
-                Err(e) => Err(e),
+                Err(e) => Err(e.into()),
             },
             Self::Find {
                 key_min,
@@ -323,7 +355,7 @@ impl<'a> ExplorerAction<'a> {
                         stringify_json_value,
                     )?,
                 })),
-                Err(e) => Err(e),
+                Err(e) => Err(ExplorerActionErr(e)),
             },
             Self::Put { key, value } => match E::K::from_explorer_str(key) {
                 Ok(k) => match E::V::from_explorer_str(value) {
@@ -331,16 +363,16 @@ impl<'a> ExplorerAction<'a> {
                         col.upsert(k, v)?;
                         Ok(ExplorerActionResponse::PutOk)
                     }
-                    Err(e) => Err(e),
+                    Err(e) => Err(e.into()),
                 },
-                Err(e) => Err(e),
+                Err(e) => Err(e.into()),
             },
             Self::Delete { key } => match E::K::from_explorer_str(key) {
                 Ok(k) => {
                     col.remove(k)?;
                     Ok(ExplorerActionResponse::DeleteOk)
                 }
-                Err(e) => Err(e),
+                Err(e) => Err(e.into()),
             },
         })
     }
@@ -428,7 +460,7 @@ enum Range<K> {
 fn define_range<K: Key>(
     key_min_opt: Option<String>,
     key_max_opt: Option<String>,
-) -> Result<Range<K>, StringErr> {
+) -> Result<Range<K>, DynErr> {
     if let Some(key_min) = key_min_opt {
         let k_min = K::from_explorer_str(&key_min)?;
         if let Some(key_max) = key_max_opt {

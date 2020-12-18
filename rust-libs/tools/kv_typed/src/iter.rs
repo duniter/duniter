@@ -62,9 +62,9 @@ impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>, K: Ke
             Some(Ok((key_bytes, value_bytes))) => match K::from_bytes(key_bytes.as_ref()) {
                 Ok(key) => match V::from_bytes(value_bytes.as_ref()) {
                     Ok(value) => Some(Ok((key, value))),
-                    Err(e) => Some(Err(KvError::DeserError(format!("{}", e)))),
+                    Err(e) => Some(Err(KvError::DeserError(e.into()))),
                 },
-                Err(e) => Some(Err(KvError::DeserError(format!("{}", e)))),
+                Err(e) => Some(Err(KvError::DeserError(e.into()))),
             },
             Some(Err(e)) => Some(Err(KvError::BackendError(e))),
             None => None,

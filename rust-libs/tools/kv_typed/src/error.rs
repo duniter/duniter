@@ -17,10 +17,6 @@
 
 use crate::*;
 
-#[derive(Clone, Debug, Error, PartialEq)]
-#[error("{0}")]
-pub struct StringErr(pub String);
-
 pub type DynErr = Box<dyn Error + Send + Sync + 'static>;
 
 /// KV Typed error
@@ -44,7 +40,7 @@ pub enum KvError {
     DbCorrupted(String),
     // Error at serialisation or deserialisation
     #[error("DeserError: {0}")]
-    DeserError(String),
+    DeserError(DynErr),
     /// FailToCreateDbFolder
     #[error("FailToCreateDbFolder: {0}")]
     FailToCreateDbFolder(std::io::Error),

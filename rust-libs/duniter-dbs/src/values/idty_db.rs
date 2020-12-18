@@ -23,15 +23,15 @@ pub struct IdtyDbV2 {
 
 impl ValueAsBytes for IdtyDbV2 {
     fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        f(&bincode::serialize(&self).map_err(|e| KvError::DeserError(format!("{}", e)))?)
+        f(&bincode::serialize(&self).map_err(|e| KvError::DeserError(e.into()))?)
     }
 }
 
 impl kv_typed::prelude::FromBytes for IdtyDbV2 {
-    type Err = StringErr;
+    type Err = bincode::Error;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(bincode::deserialize(bytes).map_err(|e| StringErr(format!("{}", e)))?)
+        Ok(bincode::deserialize(bytes)?)
     }
 }
 
@@ -43,10 +43,10 @@ impl ToDumpString for IdtyDbV2 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableValue for IdtyDbV2 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-        serde_json::from_str(source).map_err(|e| StringErr(format!("{}", e)))
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerValueErr> {
+        serde_json::from_str(source).map_err(|e| FromExplorerValueErr(e.into()))
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
-        serde_json::to_value(&self).map_err(|e| KvError::DeserError(format!("{}", e)))
+        serde_json::to_value(&self).map_err(|e| KvError::DeserError(e.into()))
     }
 }

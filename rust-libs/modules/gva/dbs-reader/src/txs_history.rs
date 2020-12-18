@@ -28,17 +28,16 @@ impl std::fmt::Display for TxBcCursor {
 }
 
 impl FromStr for TxBcCursor {
-    type Err = StringErr;
+    type Err = WrongCursor;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut s = s.split(':');
         let block_number = s
             .next()
-            .ok_or_else(wrong_cursor)?
+            .ok_or(WrongCursor)?
             .parse()
-            .map_err(|_| wrong_cursor())?;
-        let tx_hash =
-            Hash::from_hex(s.next().ok_or_else(wrong_cursor)?).map_err(|_| wrong_cursor())?;
+            .map_err(|_| WrongCursor)?;
+        let tx_hash = Hash::from_hex(s.next().ok_or(WrongCursor)?).map_err(|_| WrongCursor)?;
         Ok(Self {
             block_number,
             tx_hash,

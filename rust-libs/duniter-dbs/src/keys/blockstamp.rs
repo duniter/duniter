@@ -25,18 +25,18 @@ impl KeyAsBytes for BlockstampKeyV1 {
 }
 
 impl kv_typed::prelude::FromBytes for BlockstampKeyV1 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
         let blockstamp_strs: ArrayVec<[&str; 2]> = std::str::from_utf8(bytes)
-            .map_err(|e| StringErr(format!("{}", e)))?
+            .map_err(|e| CorruptedBytes(e.to_string()))?
             .split('-')
             .collect();
         let block_number = blockstamp_strs[0]
             .parse()
-            .map_err(|e| StringErr(format!("{}", e)))?;
+            .map_err(|e: ParseIntError| CorruptedBytes(e.to_string()))?;
         let block_hash =
-            Hash::from_hex(blockstamp_strs[1]).map_err(|e| StringErr(format!("{}", e)))?;
+            Hash::from_hex(blockstamp_strs[1]).map_err(|e| CorruptedBytes(e.to_string()))?;
         Ok(BlockstampKeyV1(Blockstamp {
             number: BlockNumber(block_number),
             hash: BlockHash(block_hash),
@@ -52,8 +52,8 @@ impl ToDumpString for BlockstampKeyV1 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for BlockstampKeyV1 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-        Self::from_bytes(source.as_bytes())
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
+        Self::from_bytes(source.as_bytes()).map_err(|e| FromExplorerKeyErr(e.0.into()))
     }
     fn to_explorer_string(&self) -> KvResult<String> {
         Ok(format!("{}", self.0))
@@ -71,12 +71,12 @@ impl KeyAsBytes for BlockstampKeyV2 {
 }
 
 impl kv_typed::prelude::FromBytes for BlockstampKeyV2 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
         use dubp::common::bytes_traits::FromBytes as _;
         Ok(Self(
-            Blockstamp::from_bytes(bytes).map_err(|e| StringErr(e.to_string()))?,
+            Blockstamp::from_bytes(bytes).map_err(|e| CorruptedBytes(e.to_string()))?,
         ))
     }
 }
@@ -89,9 +89,9 @@ impl ToDumpString for BlockstampKeyV2 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for BlockstampKeyV2 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
         Ok(Self(
-            Blockstamp::from_str(source).map_err(|e| StringErr(e.to_string()))?,
+            Blockstamp::from_str(source).map_err(|e| FromExplorerKeyErr(e.into()))?,
         ))
     }
     fn to_explorer_string(&self) -> KvResult<String> {

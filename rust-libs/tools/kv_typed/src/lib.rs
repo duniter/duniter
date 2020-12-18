@@ -75,11 +75,13 @@ pub mod prelude {
         DbCollectionRoIterRefSlice,
     };
     pub use crate::collection_rw::{ColRw, DbCollectionRw};
-    pub use crate::error::{DynErr, KvError, KvResult, StringErr};
+    pub use crate::error::{DynErr, KvError, KvResult};
     pub use crate::event::{EventTrait, Events};
     #[cfg(feature = "explorer")]
-    pub use crate::explorer::{ExplorableKey, ExplorableValue};
-    pub use crate::from_bytes::FromBytes;
+    pub use crate::explorer::{
+        ExplorableKey, ExplorableValue, ExplorerActionErr, FromExplorerKeyErr, FromExplorerValueErr,
+    };
+    pub use crate::from_bytes::{FromBytes, LayoutVerifiedErr};
     pub use crate::iter::{
         keys::KvIterKeys, values::KvIterValues, EntryIter, KvIter, KvIterRefSlice, ResultIter,
     };

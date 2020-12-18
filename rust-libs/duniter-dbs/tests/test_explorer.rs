@@ -37,7 +37,7 @@ mod explorer {
     }
 
     #[test]
-    fn explorer_test_leveldb() -> KvResult<()> {
+    fn explorer_test_leveldb() -> anyhow::Result<()> {
         let tmp_dir = unwrap!(TempDir::new("explorer_test_leveldb"));
 
         let db = BcV1Db::<LevelDb>::open(LevelDbConf::path(tmp_dir.path().to_owned()))?;
@@ -46,13 +46,13 @@ mod explorer {
     }
 
     #[test]
-    fn explorer_test_sled() -> KvResult<()> {
+    fn explorer_test_sled() -> anyhow::Result<()> {
         let db = BcV1Db::<Sled>::open(SledConf::new().temporary(true))?;
 
         explorer_test(&db)
     }
 
-    fn explorer_test<B: Backend>(db: &BcV1Db<B>) -> KvResult<()> {
+    fn explorer_test<B: Backend>(db: &BcV1Db<B>) -> anyhow::Result<()> {
         // Defines test data
         let k1 = unwrap!(UidKeyV1::from_str("toto"));
         let k2 = unwrap!(UidKeyV1::from_str("titi"));
@@ -72,26 +72,24 @@ mod explorer {
             COLLECTION_NAME,
             ExplorerAction::Count,
             stringify_json_value_test,
-        )?;
-        assert_eq!(Ok(ExplorerActionResponse::Count(2)), res);
+        )??;
+        assert_eq!(ExplorerActionResponse::Count(2), res);
 
         // Test action get
         let res = db.explore(
             COLLECTION_NAME,
             ExplorerAction::Get { key: "unexist" },
             stringify_json_value_test,
-        )?;
-        assert_eq!(Ok(ExplorerActionResponse::Get(None)), res);
+        )??;
+        assert_eq!(ExplorerActionResponse::Get(None), res);
         let res = db.explore(
             COLLECTION_NAME,
             ExplorerAction::Get { key: "toto" },
             stringify_json_value_test,
-        )?;
+        )??;
         assert_eq!(
-            Ok(ExplorerActionResponse::Get(Some(
-                serde_json::Value::String(
-                    "ByE9TU6qhktHYYVAqeTcWcaULBx151siQLyL3TrKvY85".to_owned()
-                )
+            ExplorerActionResponse::Get(Some(serde_json::Value::String(
+                "ByE9TU6qhktHYYVAqeTcWcaULBx151siQLyL3TrKvY85".to_owned()
             ))),
             res
         );
@@ -104,18 +102,16 @@ mod explorer {
                 value: "Bi6ECSc352gdfEvVzGiQuuDQyaTptHkcxooMGTJk14Tr",
             },
             stringify_json_value_test,
-        )?;
-        assert_eq!(Ok(ExplorerActionResponse::PutOk), res);
+        )??;
+        assert_eq!(ExplorerActionResponse::PutOk, res);
         let res = db.explore(
             COLLECTION_NAME,
             ExplorerAction::Get { key: "titu" },
             stringify_json_value_test,
-        )?;
+        )??;
         assert_eq!(
-            Ok(ExplorerActionResponse::Get(Some(
-                serde_json::Value::String(
-                    "Bi6ECSc352gdfEvVzGiQuuDQyaTptHkcxooMGTJk14Tr".to_owned()
-                )
+            ExplorerActionResponse::Get(Some(serde_json::Value::String(
+                "Bi6ECSc352gdfEvVzGiQuuDQyaTptHkcxooMGTJk14Tr".to_owned()
             ))),
             res
         );
@@ -123,8 +119,8 @@ mod explorer {
             COLLECTION_NAME,
             ExplorerAction::Count,
             stringify_json_value_test,
-        )?;
-        assert_eq!(Ok(ExplorerActionResponse::Count(3)), res);
+        )??;
+        assert_eq!(ExplorerActionResponse::Count(3), res);
 
         // Test action find
         let range_res = db.explore(
@@ -139,9 +135,9 @@ mod explorer {
                 step: unsafe { NonZeroUsize::new_unchecked(1) },
             },
             stringify_json_value_test,
-        )?;
+        )??;
         assert_eq!(
-            Ok(ExplorerActionResponse::Find(vec![
+            ExplorerActionResponse::Find(vec![
                 EntryFound {
                     key: "titi".to_owned(),
                     value: serde_json::Value::String(
@@ -156,7 +152,7 @@ mod explorer {
                     ),
                     captures: None,
                 },
-            ])),
+            ]),
             range_res
         );
 
@@ -173,15 +169,15 @@ mod explorer {
                 step: unsafe { NonZeroUsize::new_unchecked(1) },
             },
             stringify_json_value_test,
-        )?;
+        )??;
         assert_eq!(
-            Ok(ExplorerActionResponse::Find(vec![EntryFound {
+            ExplorerActionResponse::Find(vec![EntryFound {
                 key: "titi".to_owned(),
                 value: serde_json::Value::String(
                     "8B5XCAHknsckCkMWeGF9FoGibSNZXF9HtAvzxzg3bSyp".to_owned()
                 ),
                 captures: None,
-            }])),
+            }]),
             range_res
         );
 
@@ -198,15 +194,15 @@ mod explorer {
                 step: unsafe { NonZeroUsize::new_unchecked(1) },
             },
             stringify_json_value_test,
-        )?;
+        )??;
         assert_eq!(
-            Ok(ExplorerActionResponse::Find(vec![EntryFound {
+            ExplorerActionResponse::Find(vec![EntryFound {
                 key: "titu".to_owned(),
                 value: serde_json::Value::String(
                     "Bi6ECSc352gdfEvVzGiQuuDQyaTptHkcxooMGTJk14Tr".to_owned()
                 ),
                 captures: None,
-            }])),
+            }]),
             range_res
         );
 
@@ -223,9 +219,9 @@ mod explorer {
                 step: unsafe { NonZeroUsize::new_unchecked(1) },
             },
             stringify_json_value_test,
-        )?;
+        )??;
         assert_eq!(
-            Ok(ExplorerActionResponse::Find(vec![EntryFound {
+            ExplorerActionResponse::Find(vec![EntryFound {
                 key: "titu".to_owned(),
                 value: serde_json::Value::String(
                     "Bi6ECSc352gdfEvVzGiQuuDQyaTptHkcxooMGTJk14Tr".to_owned()
@@ -234,7 +230,7 @@ mod explorer {
                     smallvec![Some("EC".to_owned())],
                     smallvec![Some("Ev".to_owned())]
                 ])),
-            }])),
+            }]),
             range_res
         );
 
@@ -243,14 +239,14 @@ mod explorer {
             COLLECTION_NAME,
             ExplorerAction::Delete { key: "toto" },
             stringify_json_value_test,
-        )?;
-        assert_eq!(Ok(ExplorerActionResponse::DeleteOk), res);
+        )??;
+        assert_eq!(ExplorerActionResponse::DeleteOk, res);
         let res = db.explore(
             COLLECTION_NAME,
             ExplorerAction::Get { key: "toto" },
             stringify_json_value_test,
-        )?;
-        assert_eq!(Ok(ExplorerActionResponse::Get(None)), res);
+        )??;
+        assert_eq!(ExplorerActionResponse::Get(None), res);
 
         Ok(())
     }

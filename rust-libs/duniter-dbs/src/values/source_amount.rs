@@ -26,11 +26,11 @@ impl ValueAsBytes for SourceAmountValV2 {
 }
 
 impl kv_typed::prelude::FromBytes for SourceAmountValV2 {
-    type Err = StringErr;
+    type Err = LayoutVerifiedErr;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
         let layout = zerocopy::LayoutVerified::<_, SourceAmount>::new(bytes)
-            .ok_or_else(|| StringErr("".to_owned()))?;
+            .ok_or(LayoutVerifiedErr(stringify!(SourceAmount)))?;
         Ok(Self(*layout))
     }
 }
@@ -43,18 +43,18 @@ impl ToDumpString for SourceAmountValV2 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableValue for SourceAmountValV2 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerValueErr> {
         let mut source = source.split(':');
         let amount_str = source
             .next()
-            .ok_or_else(|| StringErr("Missing amount".to_owned()))?;
+            .ok_or_else(|| FromExplorerValueErr("Missing amount".into()))?;
         let base_str = source
             .next()
-            .ok_or_else(|| StringErr("Missing base".to_owned()))?;
-        let amount =
-            i64::from_str(amount_str).map_err(|e| StringErr(format!("Invalid amount: {}", e)))?;
-        let base =
-            i64::from_str(base_str).map_err(|e| StringErr(format!("Invalid base: {}", e)))?;
+            .ok_or_else(|| FromExplorerValueErr("Missing base".into()))?;
+        let amount = i64::from_str(amount_str)
+            .map_err(|e| FromExplorerValueErr(format!("Invalid amount: {}", e).into()))?;
+        let base = i64::from_str(base_str)
+            .map_err(|e| FromExplorerValueErr(format!("Invalid base: {}", e).into()))?;
         Ok(Self(SourceAmount::new(amount, base)))
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {

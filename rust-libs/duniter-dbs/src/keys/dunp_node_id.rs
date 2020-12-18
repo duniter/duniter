@@ -69,11 +69,11 @@ impl KeyAsBytes for DunpNodeIdV1Db {
 }
 
 impl kv_typed::prelude::FromBytes for DunpNodeIdV1Db {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
         let layout = zerocopy::LayoutVerified::<_, DunpNodeIdV1Db>::new(bytes)
-            .ok_or_else(|| StringErr("corrupted db".to_owned()))?;
+            .ok_or_else(|| CorruptedBytes("corrupted db".to_owned()))?;
         Ok(*layout)
     }
 }
@@ -86,7 +86,7 @@ impl ToDumpString for DunpNodeIdV1Db {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for DunpNodeIdV1Db {
-    fn from_explorer_str(_: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(_: &str) -> std::result::Result<Self, FromExplorerKeyErr> {
         unimplemented!()
     }
     fn to_explorer_string(&self) -> KvResult<String> {

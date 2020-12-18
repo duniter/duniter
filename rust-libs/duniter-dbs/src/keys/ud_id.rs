@@ -47,15 +47,15 @@ impl KeyAsBytes for UdIdV2 {
 }
 
 impl FromBytes for UdIdV2 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
         let pubkey = PublicKey::try_from(&bytes[..33])
-            .map_err(|e| StringErr(format!("{}: {:?}", e, bytes)))?;
+            .map_err(|e| CorruptedBytes(format!("{}: {:?}", e, bytes)))?;
         let block_number = BlockNumber(
             zerocopy::LayoutVerified::<_, zerocopy::U32<byteorder::BigEndian>>::new(&bytes[33..])
                 .ok_or_else(|| {
-                    StringErr(
+                    CorruptedBytes(
                         "Corrupted DB: BlockNumber bytes are invalid length or unaligned"
                             .to_owned(),
                     )
@@ -74,22 +74,22 @@ impl ToDumpString for UdIdV2 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for UdIdV2 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
         let mut source = source.split(':');
         if let Some(pubkey_str) = source.next() {
             let pubkey = PublicKey::from_base58(&pubkey_str)
-                .map_err(|e| StringErr(format!("{}: {}", e, pubkey_str)))?;
+                .map_err(|e| FromExplorerKeyErr(format!("{}: {}", e, pubkey_str).into()))?;
             if let Some(block_number_str) = source.next() {
                 Ok(UdIdV2(
                     pubkey,
                     BlockNumber::from_str(block_number_str)
-                        .map_err(|e| StringErr(format!("{}", e)))?,
+                        .map_err(|e| FromExplorerKeyErr(e.into()))?,
                 ))
             } else {
-                Err(StringErr("UdIdV2: Invalid format".to_owned()))
+                Err(FromExplorerKeyErr("UdIdV2: Invalid format".into()))
             }
         } else {
-            Err(StringErr("UdIdV2: Invalid format".to_owned()))
+            Err(FromExplorerKeyErr("UdIdV2: Invalid format".into()))
         }
     }
     fn to_explorer_string(&self) -> KvResult<String> {
@@ -102,7 +102,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn ud_id_v2_as_bytes() -> std::result::Result<(), StringErr> {
+    fn ud_id_v2_as_bytes() -> anyhow::Result<()> {
         let ud_id = UdIdV2(PublicKey::default(), BlockNumber(3));
 
         let ud_id_2_res = ud_id.as_bytes(|bytes| {

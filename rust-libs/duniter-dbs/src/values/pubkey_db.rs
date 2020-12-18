@@ -45,9 +45,9 @@ impl ToDumpString for PublicKeySingletonDbV1 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableValue for PublicKeySingletonDbV1 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerValueErr> {
         Ok(Self(
-            PublicKey::from_base58(source).map_err(|e| StringErr(format!("{}", e)))?,
+            PublicKey::from_base58(source).map_err(|e| FromExplorerValueErr(e.into()))?,
         ))
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
@@ -65,24 +65,24 @@ impl ValueAsBytes for PublicKeyArrayDbV1 {
             .iter()
             .map(|pubkey| pubkey.to_base58())
             .collect::<SmallVec<[String; 8]>>();
-        let json = serde_json::to_string(&vec_pub_str)
-            .map_err(|e| KvError::DeserError(format!("{}", e)))?;
+        let json =
+            serde_json::to_string(&vec_pub_str).map_err(|e| KvError::DeserError(e.into()))?;
         f(json.as_bytes())
     }
 }
 
 impl kv_typed::prelude::FromBytes for PublicKeyArrayDbV1 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
         let json_str = std::str::from_utf8(bytes).expect("corrupted db : invalid utf8 bytes");
         let vec_pub_str: SmallVec<[String; 8]> = serde_json::from_str(&json_str)
-            .map_err(|e| StringErr(format!("{}: '{}'", e, json_str)))?;
+            .map_err(|e| CorruptedBytes(format!("{}: '{}'", e, json_str)))?;
         Ok(Self(
             vec_pub_str
                 .into_iter()
                 .map(|pub_str| {
-                    PublicKey::from_base58(&pub_str).map_err(|e| StringErr(format!("{}", e)))
+                    PublicKey::from_base58(&pub_str).map_err(|e| CorruptedBytes(e.to_string()))
                 })
                 .collect::<std::result::Result<SmallVec<[PublicKey; 8]>, Self::Err>>()?,
         ))
@@ -97,8 +97,8 @@ impl ToDumpString for PublicKeyArrayDbV1 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableValue for PublicKeyArrayDbV1 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-        Self::from_bytes(source.as_bytes())
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerValueErr> {
+        Self::from_bytes(source.as_bytes()).map_err(|e| FromExplorerValueErr(e.0.into()))
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
         Ok(serde_json::Value::Array(
@@ -122,12 +122,12 @@ impl ValueAsBytes for PubKeyValV2 {
 }
 
 impl kv_typed::prelude::FromBytes for PubKeyValV2 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(PubKeyValV2(
-            PublicKey::try_from(bytes).map_err(|e| StringErr(format!("{}: {:?}", e, bytes)))?,
-        ))
+        Ok(PubKeyValV2(PublicKey::try_from(bytes).map_err(|e| {
+            CorruptedBytes(format!("{}: {:?}", e, bytes))
+        })?))
     }
 }
 
@@ -139,9 +139,9 @@ impl ToDumpString for PubKeyValV2 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableValue for PubKeyValV2 {
-    fn from_explorer_str(pubkey_str: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(pubkey_str: &str) -> std::result::Result<Self, FromExplorerValueErr> {
         Ok(PubKeyValV2(PublicKey::from_base58(&pubkey_str).map_err(
-            |e| StringErr(format!("{}: {}", e, pubkey_str)),
+            |e| FromExplorerValueErr(format!("{}: {}", e, pubkey_str).into()),
         )?))
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {

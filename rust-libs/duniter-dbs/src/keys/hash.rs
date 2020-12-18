@@ -25,12 +25,12 @@ impl KeyAsBytes for HashKeyV1 {
 }
 
 impl kv_typed::prelude::FromBytes for HashKeyV1 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        let hash_str = std::str::from_utf8(bytes).map_err(|e| StringErr(format!("{}", e)))?;
+        let hash_str = std::str::from_utf8(bytes).map_err(|e| CorruptedBytes(e.to_string()))?;
         Ok(HashKeyV1(
-            Hash::from_hex(&hash_str).map_err(|e| StringErr(format!("{}", e)))?,
+            Hash::from_hex(&hash_str).map_err(|e| CorruptedBytes(e.to_string()))?,
         ))
     }
 }
@@ -43,8 +43,8 @@ impl ToDumpString for HashKeyV1 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for HashKeyV1 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-        Self::from_bytes(source.as_bytes())
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
+        Self::from_bytes(source.as_bytes()).map_err(|e| FromExplorerKeyErr(e.0.into()))
     }
     fn to_explorer_string(&self) -> KvResult<String> {
         self.as_bytes(|bytes| Ok(unsafe { std::str::from_utf8_unchecked(bytes) }.to_owned()))
@@ -71,11 +71,11 @@ impl KeyAsBytes for HashKeyV2 {
 }
 
 impl kv_typed::prelude::FromBytes for HashKeyV2 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
         if bytes.len() != 32 {
-            Err(StringErr(format!(
+            Err(CorruptedBytes(format!(
                 "Invalid length: expected 32 found {}",
                 bytes.len()
             )))
@@ -95,9 +95,9 @@ impl ToDumpString for HashKeyV2 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for HashKeyV2 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
         Ok(Self(
-            Hash::from_hex(source).map_err(|e| StringErr(format!("{}", e)))?,
+            Hash::from_hex(source).map_err(|e| FromExplorerKeyErr(e.into()))?,
         ))
     }
     fn to_explorer_string(&self) -> KvResult<String> {

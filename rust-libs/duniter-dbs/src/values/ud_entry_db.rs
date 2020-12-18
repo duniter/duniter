@@ -30,19 +30,18 @@ pub struct UdEntryDbV1 {
 
 impl ValueAsBytes for UdEntryDbV1 {
     fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        let json =
-            serde_json::to_string(self).map_err(|e| KvError::DeserError(format!("{}", e)))?;
+        let json = serde_json::to_string(self).map_err(|e| KvError::DeserError(e.into()))?;
         f(json.as_bytes())
     }
 }
 
 impl kv_typed::prelude::FromBytes for UdEntryDbV1 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
         let json_str = std::str::from_utf8(bytes).expect("corrupted db : invalid utf8 bytes");
         Ok(serde_json::from_str(&json_str)
-            .map_err(|e| StringErr(format!("{}: '{}'", e, json_str)))?)
+            .map_err(|e| CorruptedBytes(format!("{}: '{}'", e, json_str)))?)
     }
 }
 
@@ -54,11 +53,11 @@ impl ToDumpString for UdEntryDbV1 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableValue for UdEntryDbV1 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-        Self::from_bytes(source.as_bytes())
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerValueErr> {
+        Self::from_bytes(source.as_bytes()).map_err(|e| FromExplorerValueErr(e.0.into()))
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
-        serde_json::to_value(self).map_err(|e| KvError::DeserError(format!("{}", e)))
+        serde_json::to_value(self).map_err(|e| KvError::DeserError(e.into()))
     }
 }
 

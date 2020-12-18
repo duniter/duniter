@@ -28,16 +28,17 @@ pub struct PeerCardDbV1 {
 
 impl ValueAsBytes for PeerCardDbV1 {
     fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        let bytes = bincode::serialize(self).map_err(|e| KvError::DeserError(format!("{}", e)))?;
+        let bytes = bincode::serialize(self).map_err(|e| KvError::DeserError(e.into()))?;
         f(bytes.as_ref())
     }
 }
 
 impl kv_typed::prelude::FromBytes for PeerCardDbV1 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(bincode::deserialize(&bytes).map_err(|e| StringErr(format!("{}: '{:?}'", e, bytes)))?)
+        Ok(bincode::deserialize(&bytes)
+            .map_err(|e| CorruptedBytes(format!("{}: '{:?}'", e, bytes)))?)
     }
 }
 
@@ -49,10 +50,10 @@ impl ToDumpString for PeerCardDbV1 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableValue for PeerCardDbV1 {
-    fn from_explorer_str(_source: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(_source: &str) -> std::result::Result<Self, FromExplorerValueErr> {
         unimplemented!()
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
-        serde_json::to_value(self).map_err(|e| KvError::DeserError(format!("{}", e)))
+        serde_json::to_value(self).map_err(|e| KvError::DeserError(e.into()))
     }
 }

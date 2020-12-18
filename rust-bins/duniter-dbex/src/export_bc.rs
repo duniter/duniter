@@ -66,8 +66,9 @@ pub(crate) fn export_bc<B: Backend>(
             r.iter()
                 .map(|block_res| {
                     let json_block_res = match block_res {
-                        Ok(block) => serde_json::to_value(&block)
-                            .map_err(|e| KvError::DeserError(e.to_string())),
+                        Ok(block) => {
+                            serde_json::to_value(&block).map_err(|e| KvError::DeserError(e.into()))
+                        }
                         Err(e) => Err(e),
                     };
                     s2.send(json_block_res).map_err(|_| anyhow!("fail to send"))

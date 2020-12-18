@@ -27,13 +27,13 @@ impl KeyAsBytes for WalletConditionsV1 {
 }
 
 impl kv_typed::prelude::FromBytes for WalletConditionsV1 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        let uid_str = std::str::from_utf8(bytes).map_err(|e| StringErr(format!("{}", e)))?;
+        let uid_str = std::str::from_utf8(bytes).map_err(|e| CorruptedBytes(e.to_string()))?;
         Ok(Self(
             ArrayString::<[u8; CONDITIONS_MAX_LEN]>::from_str(uid_str)
-                .map_err(|e| StringErr(format!("{}", e)))?,
+                .map_err(|e| CorruptedBytes(e.to_string()))?,
         ))
     }
 }
@@ -56,8 +56,8 @@ impl ToDumpString for WalletConditionsV1 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for WalletConditionsV1 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-        Self::from_bytes(source.as_bytes())
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
+        Self::from_bytes(source.as_bytes()).map_err(|e| FromExplorerKeyErr(e.0.into()))
     }
     fn to_explorer_string(&self) -> KvResult<String> {
         self.as_bytes(|bytes| Ok(unsafe { std::str::from_utf8_unchecked(bytes) }.to_owned()))
@@ -85,12 +85,10 @@ impl KeyAsBytes for WalletConditionsV2 {
 }
 
 impl kv_typed::prelude::FromBytes for WalletConditionsV2 {
-    type Err = StringErr;
+    type Err = bincode::Error;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(Self(
-            bincode::deserialize(bytes).map_err(|e| StringErr(format!("{}", e)))?,
-        ))
+        Ok(Self(bincode::deserialize(bytes)?))
     }
 }
 
@@ -102,10 +100,10 @@ impl ToDumpString for WalletConditionsV2 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for WalletConditionsV2 {
-    fn from_explorer_str(s: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(s: &str) -> std::result::Result<Self, FromExplorerKeyErr> {
         Ok(Self(
             dubp::documents_parser::wallet_script_from_str(s)
-                .map_err(|e| StringErr(format!("{}", e)))?,
+                .map_err(|e| FromExplorerKeyErr(e.into()))?,
         ))
     }
     fn to_explorer_string(&self) -> KvResult<String> {

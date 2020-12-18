@@ -73,154 +73,6 @@ pub struct MemCol {
     tree: Tree,
 }
 
-/*impl MemCol {
-    fn from_file(file_path: std::path::PathBuf) -> KvResult<Self> {
-        let mut file = std::fs::File::open(file_path.as_path())?;
-        let bytes = Vec::<u8>::new();
-        if file.metadata()?.len() > 0 {
-            let mut bytes = Vec::new();
-            use std::io::Read as _;
-            file.read_to_end(&mut bytes)?;
-        }
-
-        Ok(MemCol {
-            path: Some(file_path),
-            tree: Self::tree_from_bytes(&bytes)?,
-        })
-    }
-    fn tree_from_bytes(bytes: &[u8]) -> KvResult<BTreeMap<IVec, IVec>> {
-        let mut tree = BTreeMap::new();
-
-        if bytes.len() < 32 {
-            return Err(KvError::BackendError(
-                StringErr("Corrupted tree".to_owned()).into(),
-            ));
-        } else {
-            let hash = blake3::hash(&bytes[32..]);
-            if hash.as_bytes() != &bytes[..32] {
-                return Err(KvError::BackendError(
-                    StringErr("Corrupted tree: wrong hash".to_owned()).into(),
-                ));
-            }
-        };
-
-        let mut len = 32;
-        while len < bytes.len() {
-            let len_add_4 = len + 4;
-            if bytes.len() >= len_add_4 {
-                let mut k_len = [0u8; 4];
-                k_len.copy_from_slice(&bytes[len..len_add_4]);
-                let k_len = u32::from_le_bytes(k_len);
-                len = len_add_4 + k_len as usize;
-
-                if bytes.len() >= len {
-                    let k = IVec::from(&bytes[len_add_4..len]);
-
-                    if bytes.len() >= len_add_4 {
-                        let len_add_4 = len + 4;
-                        let mut v_len = [0u8; 4];
-                        v_len.copy_from_slice(&bytes[len..len_add_4]);
-                        let v_len = u32::from_le_bytes(v_len);
-                        len = len_add_4 + v_len as usize;
-
-                        if bytes.len() >= len {
-                            let v = IVec::from(&bytes[len_add_4..len]);
-
-                            tree.insert(k, v);
-                        } else {
-                            return Err(KvError::BackendError(
-                                StringErr("Corrupted tree".to_owned()).into(),
-                            ));
-                        }
-                    } else {
-                        return Err(KvError::BackendError(
-                            StringErr("Corrupted tree".to_owned()).into(),
-                        ));
-                    }
-                } else {
-                    return Err(KvError::BackendError(
-                        StringErr("Corrupted tree".to_owned()).into(),
-                    ));
-                }
-            } else {
-                return Err(KvError::BackendError(
-                    StringErr("Corrupted tree".to_owned()).into(),
-                ));
-            }
-        }
-
-        Ok(tree)
-    }
-    fn tree_to_bytes(tree: &BTreeMap<IVec, IVec>) -> Vec<u8> {
-        let mut bytes = Vec::with_capacity(tree.len() * 20);
-        let mut len = 32;
-        for (k, v) in tree.iter() {
-            // Write key len
-            let k_len = (k.len() as u32).to_le_bytes();
-            let len_add_4 = len + 4;
-            bytes.reserve_uninit(4).r().copy_from_slice(&k_len[..]);
-            unsafe {
-                // # Safety
-                //
-                //   - `.copy_from_slice()` contract guarantees initialization
-                //     of 4 additional bytes, which, in turn, from `reserve_uninit`'s contract,
-                //     leads to the `vec` extra capacity having been initialized.
-                bytes.set_len(len_add_4)
-            }
-
-            // Write key content
-            bytes
-                .reserve_uninit(k.len())
-                .r()
-                .copy_from_slice(k.as_ref());
-            let new_len = len_add_4 + k.len();
-            unsafe {
-                // # Safety
-                //
-                //   - `.copy_from_slice()` contract guarantees initialization
-                //     of `k.len()` additional bytes, which, in turn, from `reserve_uninit`'s contract,
-                //     leads to the `vec` extra capacity having been initialized.
-                bytes.set_len(new_len)
-            }
-            len = new_len;
-
-            // Write value len
-            let v_len = (v.len() as u32).to_le_bytes();
-            let len_add_4 = len + 4;
-            bytes.reserve_uninit(4).r().copy_from_slice(&v_len[..]);
-            unsafe {
-                // # Safety
-                //
-                //   - `.copy_from_slice()` contract guarantees initialization
-                //     of 4 additional bytes, which, in turn, from `reserve_uninit`'s contract,
-                //     leads to the `vec` extra capacity having been initialized.
-                bytes.set_len(len_add_4)
-            }
-
-            // Write value content
-            bytes
-                .reserve_uninit(v.len())
-                .r()
-                .copy_from_slice(v.as_ref());
-            let new_len = len_add_4 + v.len();
-            unsafe {
-                // # Safety
-                //
-                //   - `.copy_from_slice()` contract guarantees initialization
-                //     of `v.len()` additional bytes, which, in turn, from `reserve_uninit`'s contract,
-                //     leads to the `vec` extra capacity having been initialized.
-                bytes.set_len(new_len)
-            }
-            len = new_len;
-        }
-
-        let hash = blake3::hash(&bytes[32..]);
-        (&mut bytes[..32]).copy_from_slice(hash.as_bytes());
-
-        bytes
-    }
-}*/
-
 impl BackendCol for MemCol {
     type Batch = MemBatch;
     type KeyBytes = KeyBytes;
@@ -249,9 +101,7 @@ impl BackendCol for MemCol {
         k.as_bytes(|k_bytes| {
             self.tree
                 .get(k_bytes)
-                .map(|bytes| {
-                    V::from_bytes(&bytes).map_err(|e| KvError::DeserError(format!("{}", e)))
-                })
+                .map(|bytes| V::from_bytes(&bytes).map_err(|e| KvError::DeserError(e.into())))
                 .transpose()
         })
     }
@@ -271,7 +121,7 @@ impl BackendCol for MemCol {
                         f(&layout_verified)
                     } else {
                         Err(KvError::DeserError(
-                            "Bytes are invalid length or alignment.".to_owned(),
+                            "Bytes are invalid length or alignment.".into(),
                         ))
                     }
                 })
@@ -296,7 +146,7 @@ impl BackendCol for MemCol {
                         f(&layout_verified)
                     } else {
                         Err(KvError::DeserError(
-                            "Bytes are invalid length or alignment.".to_owned(),
+                            "Bytes are invalid length or alignment.".into(),
                         ))
                     }
                 })

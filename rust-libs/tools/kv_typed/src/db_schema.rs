@@ -77,11 +77,11 @@ macro_rules! db_schema {
                         collection_name: &str,
                         action: kv_typed::explorer::ExplorerAction<'a>,
                         stringify_json_value: fn(serde_json::Value) -> serde_json::Value,
-                    ) -> KvResult<std::result::Result<kv_typed::explorer::ExplorerActionResponse, StringErr>> {
+                    ) -> KvResult<std::result::Result<kv_typed::explorer::ExplorerActionResponse, ExplorerActionErr>> {
                         $( if stringify!([<$col_name:snake>]) == collection_name {
                             return action.exec(&self.collections.[<$col_name:snake>], stringify_json_value);
                         } )*
-                        Ok(Err(StringErr(format!("collection '{}' not exist in database '{}'.", collection_name, stringify!([<$db_name Db>])))))
+                        Ok(Err(ExplorerActionErr(format!("collection '{}' not exist in database '{}'.", collection_name, stringify!([<$db_name Db>])).into())))
                     }
                     fn list_collections() -> Vec<(&'static str, &'static str, &'static str)> {
                         vec![

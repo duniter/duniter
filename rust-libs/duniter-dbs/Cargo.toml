@@ -30,6 +30,7 @@ uninit = "0.4.0"
 zerocopy = "0.3.0"
 
 [dev-dependencies]
+anyhow = "1.0.34"
 tempdir = "0.3.7"
 unwrap = "1.2.1"
 

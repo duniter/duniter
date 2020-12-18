@@ -106,8 +106,13 @@ pub(crate) use kv_typed::prelude::*;
 pub(crate) use serde::{Deserialize, Serialize};
 pub(crate) use smallvec::SmallVec;
 pub(crate) use std::{
-    collections::BTreeSet, convert::TryFrom, fmt::Debug, iter::Iterator, path::Path, str::FromStr,
+    collections::BTreeSet, convert::TryFrom, fmt::Debug, iter::Iterator, num::ParseIntError,
+    path::Path, str::FromStr,
 };
+
+#[derive(Debug, Error)]
+#[error("{0}")]
+pub struct CorruptedBytes(pub String);
 
 pub trait ToDumpString {
     fn to_dump_string(&self) -> String;

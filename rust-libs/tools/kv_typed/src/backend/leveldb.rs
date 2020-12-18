@@ -134,9 +134,7 @@ impl BackendCol for LevelDbCol {
         k.as_bytes(|k_bytes| {
             self.0
                 .get(ReadOptions::new(), k_bytes)?
-                .map(|bytes| {
-                    V::from_bytes(&bytes).map_err(|e| KvError::DeserError(format!("{}", e)))
-                })
+                .map(|bytes| V::from_bytes(&bytes).map_err(|e| KvError::DeserError(e.into())))
                 .transpose()
         })
     }
@@ -156,7 +154,7 @@ impl BackendCol for LevelDbCol {
                         f(&layout_verified)
                     } else {
                         Err(KvError::DeserError(
-                            "Bytes are invalid length or alignment.".to_owned(),
+                            "Bytes are invalid length or alignment.".into(),
                         ))
                     }
                 })
@@ -181,7 +179,7 @@ impl BackendCol for LevelDbCol {
                         f(&layout_verified)
                     } else {
                         Err(KvError::DeserError(
-                            "Bytes are invalid length or alignment.".to_owned(),
+                            "Bytes are invalid length or alignment.".into(),
                         ))
                     }
                 })

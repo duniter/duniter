@@ -61,7 +61,7 @@ impl<'tx, BC: BackendCol, E: EventTrait> TxColRw<'tx, BC, E> {
             batch::BatchGet::None => self.col_reader.backend_col.get(k),
             batch::BatchGet::Deleted => Ok(None),
             batch::BatchGet::Updated(v) => Ok(Some(v.as_bytes(|v_bytes| {
-                E::V::from_bytes(v_bytes).map_err(|e| KvError::DeserError(format!("{}", e)))
+                E::V::from_bytes(v_bytes).map_err(|e| KvError::DeserError(e.into()))
             })?)),
         }
     }

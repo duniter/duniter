@@ -107,7 +107,7 @@ where
         + Sync
         + zerocopy::AsBytes
         + zerocopy::FromBytes,
-    E: Display,
+    E: Error + Send + Sync + 'static,
 {
     type Elem = T;
 
@@ -132,7 +132,7 @@ macro_rules! impl_value_slice_zc_for_smallvec {
                 + Sync
                 + zerocopy::AsBytes
                 + zerocopy::FromBytes,
-            E: Display,
+            E: Error + Send + Sync + 'static,
         {
             type Elem = T;
 
@@ -159,7 +159,7 @@ where
         + Sync
         + zerocopy::AsBytes
         + zerocopy::FromBytes,
-    E: Display,
+    E: Error + Send + Sync + 'static,
 {
     type Elem = T;
 

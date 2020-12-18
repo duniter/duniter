@@ -35,18 +35,18 @@ impl KeyAsBytes for PubKeyAndSigV1 {
 }
 
 impl kv_typed::prelude::FromBytes for PubKeyAndSigV1 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        let raw_str = std::str::from_utf8(bytes).map_err(|e| StringErr(format!("{}", e)))?;
+        let raw_str = std::str::from_utf8(bytes).map_err(|e| CorruptedBytes(e.to_string()))?;
         if raw_str == "ALL" {
             Ok(PubKeyAndSigV1::all())
         } else {
             let array_str: ArrayVec<[&str; 2]> = raw_str.split(':').collect();
             let pubkey =
-                PublicKey::from_base58(array_str[0]).map_err(|e| StringErr(format!("{}", e)))?;
+                PublicKey::from_base58(array_str[0]).map_err(|e| CorruptedBytes(e.to_string()))?;
             let sig =
-                Signature::from_base64(array_str[1]).map_err(|e| StringErr(format!("{}", e)))?;
+                Signature::from_base64(array_str[1]).map_err(|e| CorruptedBytes(e.to_string()))?;
             Ok(PubKeyAndSigV1(pubkey, sig))
         }
     }
@@ -60,8 +60,8 @@ impl ToDumpString for PubKeyAndSigV1 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for PubKeyAndSigV1 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-        Self::from_bytes(source.as_bytes())
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
+        Self::from_bytes(source.as_bytes()).map_err(|e| FromExplorerKeyErr(e.0.into()))
     }
     fn to_explorer_string(&self) -> KvResult<String> {
         self.as_bytes(|bytes| Ok(unsafe { std::str::from_utf8_unchecked(bytes) }.to_owned()))

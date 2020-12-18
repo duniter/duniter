@@ -20,17 +20,15 @@ pub struct WalletScriptArrayV2(pub std::collections::HashSet<WalletScriptV10>);
 
 impl ValueAsBytes for WalletScriptArrayV2 {
     fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        f(&bincode::serialize(&self.0).map_err(|e| KvError::DeserError(format!("{}", e)))?)
+        f(&bincode::serialize(&self.0).map_err(|e| KvError::DeserError(e.into()))?)
     }
 }
 
 impl kv_typed::prelude::FromBytes for WalletScriptArrayV2 {
-    type Err = StringErr;
+    type Err = bincode::Error;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(Self(
-            bincode::deserialize(bytes).map_err(|e| StringErr(format!("{}", e)))?,
-        ))
+        Ok(Self(bincode::deserialize(bytes)?))
     }
 }
 
@@ -42,7 +40,7 @@ impl ToDumpString for WalletScriptArrayV2 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableValue for WalletScriptArrayV2 {
-    fn from_explorer_str(_: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(_: &str) -> std::result::Result<Self, FromExplorerValueErr> {
         unimplemented!()
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {

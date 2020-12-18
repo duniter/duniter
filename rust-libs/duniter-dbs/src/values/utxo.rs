@@ -69,7 +69,7 @@ impl std::fmt::Display for UtxoValV2 {
 }
 
 impl FromStr for UtxoValV2 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_str(_s: &str) -> std::result::Result<Self, Self::Err> {
         unimplemented!()
@@ -83,11 +83,11 @@ impl ValueAsBytes for UtxoValV2 {
 }
 
 impl kv_typed::prelude::FromBytes for UtxoValV2 {
-    type Err = StringErr;
+    type Err = LayoutVerifiedErr;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
         let layout = zerocopy::LayoutVerified::<_, UtxoValV2>::new(bytes)
-            .ok_or_else(|| StringErr("corrupted db".to_owned()))?;
+            .ok_or(LayoutVerifiedErr(stringify!(UtxoValV2)))?;
         Ok(*layout)
     }
 }
@@ -100,7 +100,7 @@ impl ToDumpString for UtxoValV2 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableValue for UtxoValV2 {
-    fn from_explorer_str(_: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(_: &str) -> std::result::Result<Self, FromExplorerValueErr> {
         unimplemented!()
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
@@ -113,15 +113,15 @@ pub struct BlockUtxosV2Db(pub HashMap<UtxoIdV10, WalletScriptWithSourceAmountV1D
 
 impl ValueAsBytes for BlockUtxosV2Db {
     fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        f(&bincode::serialize(&self).map_err(|e| KvError::DeserError(format!("{}", e)))?)
+        f(&bincode::serialize(&self).map_err(|e| KvError::DeserError(e.into()))?)
     }
 }
 
 impl kv_typed::prelude::FromBytes for BlockUtxosV2Db {
-    type Err = StringErr;
+    type Err = bincode::Error;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(bincode::deserialize(bytes).map_err(|e| StringErr(format!("{}", e)))?)
+        Ok(bincode::deserialize(bytes)?)
     }
 }
 
@@ -133,11 +133,11 @@ impl ToDumpString for BlockUtxosV2Db {
 
 #[cfg(feature = "explorer")]
 impl ExplorableValue for BlockUtxosV2Db {
-    fn from_explorer_str(_: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(_: &str) -> std::result::Result<Self, FromExplorerValueErr> {
         unimplemented!()
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
-        Ok(serde_json::to_value(self).map_err(|e| KvError::DeserError(e.to_string()))?)
+        Ok(serde_json::to_value(self).map_err(|e| KvError::DeserError(e.into()))?)
     }
 }
 

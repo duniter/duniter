@@ -31,21 +31,19 @@ pub struct DunpHeadDbV1 {
 impl DunpHeadDbV1 {
     pub fn from_stringified(message_v2: &str, signature: &str) -> KvResult<(DunpNodeIdV1Db, Self)> {
         let signature =
-            Signature::from_base64(signature).map_err(|e| KvError::DeserError(e.to_string()))?;
+            Signature::from_base64(signature).map_err(|e| KvError::DeserError(e.into()))?;
 
         let strs: SmallVec<[&str; 11]> = message_v2.split(':').collect();
         if strs.len() < 11 {
             return Err(KvError::DeserError(
-                "DunpHeadDbV1::from_stringified(): invalid message_v2".to_owned(),
+                "DunpHeadDbV1::from_stringified(): invalid message_v2".into(),
             ));
         }
 
-        let uuid =
-            u32::from_str_radix(strs[5], 16).map_err(|e| KvError::DeserError(e.to_string()))?;
-        let pubkey =
-            PublicKey::from_base58(strs[3]).map_err(|e| KvError::DeserError(e.to_string()))?;
+        let uuid = u32::from_str_radix(strs[5], 16).map_err(|e| KvError::DeserError(e.into()))?;
+        let pubkey = PublicKey::from_base58(strs[3]).map_err(|e| KvError::DeserError(e.into()))?;
         let blockstamp =
-            Blockstamp::from_str(strs[4]).map_err(|e| KvError::DeserError(e.to_string()))?;
+            Blockstamp::from_str(strs[4]).map_err(|e| KvError::DeserError(e.into()))?;
 
         Ok((
             DunpNodeIdV1Db::new(uuid, pubkey),
@@ -55,12 +53,11 @@ impl DunpHeadDbV1 {
                 blockstamp,
                 software: strs[6].to_owned(),
                 software_version: strs[7].to_owned(),
-                pow_prefix: u32::from_str(strs[8])
-                    .map_err(|e| KvError::DeserError(e.to_string()))?,
+                pow_prefix: u32::from_str(strs[8]).map_err(|e| KvError::DeserError(e.into()))?,
                 free_member_room: u32::from_str(strs[9])
-                    .map_err(|e| KvError::DeserError(e.to_string()))?,
+                    .map_err(|e| KvError::DeserError(e.into()))?,
                 free_mirror_room: u32::from_str(strs[10])
-                    .map_err(|e| KvError::DeserError(e.to_string()))?,
+                    .map_err(|e| KvError::DeserError(e.into()))?,
                 signature,
             },
         ))
@@ -97,16 +94,17 @@ mod tests {
 
 impl ValueAsBytes for DunpHeadDbV1 {
     fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        let bytes = bincode::serialize(self).map_err(|e| KvError::DeserError(format!("{}", e)))?;
+        let bytes = bincode::serialize(self).map_err(|e| KvError::DeserError(e.into()))?;
         f(bytes.as_ref())
     }
 }
 
 impl kv_typed::prelude::FromBytes for DunpHeadDbV1 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(bincode::deserialize(&bytes).map_err(|e| StringErr(format!("{}: '{:?}'", e, bytes)))?)
+        Ok(bincode::deserialize(&bytes)
+            .map_err(|e| CorruptedBytes(format!("{}: '{:?}'", e, bytes)))?)
     }
 }
 
@@ -118,10 +116,10 @@ impl ToDumpString for DunpHeadDbV1 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableValue for DunpHeadDbV1 {
-    fn from_explorer_str(_source: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(_source: &str) -> std::result::Result<Self, FromExplorerValueErr> {
         unimplemented!()
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
-        serde_json::to_value(self).map_err(|e| KvError::DeserError(format!("{}", e)))
+        serde_json::to_value(self).map_err(|e| KvError::DeserError(e.into()))
     }
 }

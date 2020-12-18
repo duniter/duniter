@@ -18,8 +18,7 @@ use crate::*;
 impl DuniterServer {
     pub fn apply_block(&mut self, block: DubpBlockV10Stringified) -> KvResult<()> {
         let block = Arc::new(
-            DubpBlockV10::from_string_object(&block)
-                .map_err(|e| KvError::DeserError(format!("{}", e)))?,
+            DubpBlockV10::from_string_object(&block).map_err(|e| KvError::DeserError(e.into()))?,
         );
         self.current = Some(duniter_dbs_write_ops::apply_block::apply_block(
             &self.bc_db,
@@ -37,7 +36,7 @@ impl DuniterServer {
                 .into_iter()
                 .map(|block| DubpBlockV10::from_string_object(&block))
                 .collect::<Result<Vec<_>, _>>()
-                .map_err(|e| KvError::DeserError(format!("{}", e)))?,
+                .map_err(|e| KvError::DeserError(e.into()))?,
         );
         self.current = Some(duniter_dbs_write_ops::apply_block::apply_chunk(
             &self.bc_db,
@@ -49,8 +48,7 @@ impl DuniterServer {
     }
     pub fn revert_block(&mut self, block: DubpBlockV10Stringified) -> KvResult<()> {
         let block = Arc::new(
-            DubpBlockV10::from_string_object(&block)
-                .map_err(|e| KvError::DeserError(format!("{}", e)))?,
+            DubpBlockV10::from_string_object(&block).map_err(|e| KvError::DeserError(e.into()))?,
         );
         let block_arc_clone = Arc::clone(&block);
         let txs_mp_job_handle = self

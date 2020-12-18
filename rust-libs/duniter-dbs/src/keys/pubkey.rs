@@ -39,12 +39,12 @@ impl KeyAsBytes for PubKeyKeyV1 {
 }
 
 impl kv_typed::prelude::FromBytes for PubKeyKeyV1 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        let pubkey_str = std::str::from_utf8(bytes).map_err(|e| StringErr(format!("{}", e)))?;
+        let pubkey_str = std::str::from_utf8(bytes).map_err(|e| CorruptedBytes(e.to_string()))?;
         Ok(PubKeyKeyV1(PublicKey::from_base58(&pubkey_str).map_err(
-            |e| StringErr(format!("{}: {}", e, pubkey_str)),
+            |e| CorruptedBytes(format!("{}: {}", e, pubkey_str)),
         )?))
     }
 }
@@ -65,12 +65,12 @@ impl KeyAsBytes for PubKeyKeyV2 {
 }
 
 impl kv_typed::prelude::FromBytes for PubKeyKeyV2 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(PubKeyKeyV2(
-            PublicKey::try_from(bytes).map_err(|e| StringErr(format!("{}: {:?}", e, bytes)))?,
-        ))
+        Ok(PubKeyKeyV2(PublicKey::try_from(bytes).map_err(|e| {
+            CorruptedBytes(format!("{}: {:?}", e, bytes))
+        })?))
     }
 }
 
@@ -82,8 +82,8 @@ impl ToDumpString for PubKeyKeyV2 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for PubKeyKeyV1 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-        Self::from_bytes(source.as_bytes())
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
+        Self::from_bytes(source.as_bytes()).map_err(|e| FromExplorerKeyErr(e.0.into()))
     }
     fn to_explorer_string(&self) -> KvResult<String> {
         self.as_bytes(|bytes| Ok(unsafe { std::str::from_utf8_unchecked(bytes) }.to_owned()))
@@ -92,9 +92,9 @@ impl ExplorableKey for PubKeyKeyV1 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for PubKeyKeyV2 {
-    fn from_explorer_str(pubkey_str: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(pubkey_str: &str) -> std::result::Result<Self, FromExplorerKeyErr> {
         Ok(PubKeyKeyV2(PublicKey::from_base58(&pubkey_str).map_err(
-            |e| StringErr(format!("{}: {}", e, pubkey_str)),
+            |e| FromExplorerKeyErr(format!("{}: {}", e, pubkey_str).into()),
         )?))
     }
     fn to_explorer_string(&self) -> KvResult<String> {

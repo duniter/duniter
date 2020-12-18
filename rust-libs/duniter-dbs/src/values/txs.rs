@@ -21,16 +21,17 @@ pub struct BlockTxsDbV2(pub SmallVec<[TransactionDocumentV10; 8]>);
 
 impl ValueAsBytes for BlockTxsDbV2 {
     fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        let bytes = bincode::serialize(self).map_err(|e| KvError::DeserError(format!("{}", e)))?;
+        let bytes = bincode::serialize(self).map_err(|e| KvError::DeserError(e.into()))?;
         f(bytes.as_ref())
     }
 }
 
 impl kv_typed::prelude::FromBytes for BlockTxsDbV2 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(bincode::deserialize(&bytes).map_err(|e| StringErr(format!("{}: '{:?}'", e, bytes)))?)
+        Ok(bincode::deserialize(&bytes)
+            .map_err(|e| CorruptedBytes(format!("{}: '{:?}'", e, bytes)))?)
     }
 }
 
@@ -42,10 +43,10 @@ impl ToDumpString for BlockTxsDbV2 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableValue for BlockTxsDbV2 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-        Ok(serde_json::from_str(source).map_err(|e| StringErr(e.to_string()))?)
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerValueErr> {
+        Ok(serde_json::from_str(source).map_err(|e| FromExplorerValueErr(e.into()))?)
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
-        serde_json::to_value(self).map_err(|e| KvError::DeserError(format!("{}", e)))
+        serde_json::to_value(self).map_err(|e| KvError::DeserError(e.into()))
     }
 }

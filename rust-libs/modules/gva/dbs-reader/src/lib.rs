@@ -58,9 +58,14 @@ use std::{
     str::FromStr,
 };
 
-pub(crate) fn wrong_cursor() -> StringErr {
-    StringErr("wrong cursor".to_owned())
+#[derive(Clone, Copy, Debug)]
+pub struct WrongCursor;
+impl std::fmt::Display for WrongCursor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "wrong cursor")
+    }
 }
+impl std::error::Error for WrongCursor {}
 
 #[derive(Clone, Copy, Debug)]
 pub struct DbsReader(&'static GvaV1DbRo<FileBackend>);

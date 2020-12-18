@@ -29,18 +29,16 @@ impl KeyAsBytes for BlockNumberKeyV1 {
 }
 
 impl FromBytes for BlockNumberKeyV1 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        let key_str = std::str::from_utf8(bytes).map_err(|e| StringErr(format!("{}", e)))?;
+        let key_str = std::str::from_utf8(bytes).map_err(|e| CorruptedBytes(e.to_string()))?;
         if key_str == "0000000NaN" {
             Ok(BlockNumberKeyV1(BlockNumber(u32::MAX)))
         } else {
-            Ok(BlockNumberKeyV1(BlockNumber(
-                key_str
-                    .parse()
-                    .map_err(|e| StringErr(format!("{}: {}", e, key_str)))?,
-            )))
+            Ok(BlockNumberKeyV1(BlockNumber(key_str.parse().map_err(
+                |e| CorruptedBytes(format!("{}: {}", e, key_str)),
+            )?)))
         }
     }
 }
@@ -53,8 +51,8 @@ impl ToDumpString for BlockNumberKeyV1 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for BlockNumberKeyV1 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
-        Self::from_bytes(source.as_bytes())
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
+        Self::from_bytes(source.as_bytes()).map_err(|e| FromExplorerKeyErr(e.0.into()))
     }
     fn to_explorer_string(&self) -> KvResult<String> {
         Ok(format!("{}", (self.0).0))

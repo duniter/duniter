@@ -49,16 +49,16 @@ impl KeyAsBytes for UtxoIdDbV2 {
 }
 
 impl FromBytes for UtxoIdDbV2 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
         let hash = zerocopy::LayoutVerified::<_, Hash>::new(&bytes[..32]).ok_or_else(|| {
-            StringErr("Corrupted DB: Hash bytes are invalid length or unaligned".to_owned())
+            CorruptedBytes("Corrupted DB: Hash bytes are invalid length or unaligned".to_owned())
         })?;
         let output_index =
             zerocopy::LayoutVerified::<_, zerocopy::U32<byteorder::BigEndian>>::new(&bytes[32..])
                 .ok_or_else(|| {
-                    StringErr(
+                    CorruptedBytes(
                         "Corrupted DB: OutputIndex bytes are invalid length or unaligned"
                             .to_owned(),
                     )
@@ -76,21 +76,21 @@ impl ToDumpString for UtxoIdDbV2 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for UtxoIdDbV2 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
         let mut source = source.split(':');
         if let Some(hash_str) = source.next() {
-            let hash =
-                Hash::from_hex(&hash_str).map_err(|e| StringErr(format!("{}: {}", e, hash_str)))?;
+            let hash = Hash::from_hex(&hash_str)
+                .map_err(|e| FromExplorerKeyErr(format!("{}: {}", e, hash_str).into()))?;
             if let Some(output_index_str) = source.next() {
                 Ok(UtxoIdDbV2(
                     hash,
-                    u32::from_str(output_index_str).map_err(|e| StringErr(format!("{}", e)))?,
+                    u32::from_str(output_index_str).map_err(|e| FromExplorerKeyErr(e.into()))?,
                 ))
             } else {
-                Err(StringErr("UtxoIdDbV2: Invalid format".to_owned()))
+                Err(FromExplorerKeyErr("UtxoIdDbV2: Invalid format".into()))
             }
         } else {
-            Err(StringErr("UtxoIdDbV2: Invalid format".to_owned()))
+            Err(FromExplorerKeyErr("UtxoIdDbV2: Invalid format".into()))
         }
     }
     fn to_explorer_string(&self) -> KvResult<String> {
@@ -202,7 +202,7 @@ impl KeyAsBytes for GvaUtxoIdDbV1 {
 }
 
 impl FromBytes for GvaUtxoIdDbV1 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
         if bytes.len() == 69 {
@@ -214,14 +214,14 @@ impl FromBytes for GvaUtxoIdDbV1 {
             buffer.copy_from_slice(bytes);
             Ok(Self(buffer))
         } else {
-            Err(StringErr("db corrupted".to_owned()))
+            Err(CorruptedBytes("db corrupted".to_owned()))
         }
     }
 }
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for GvaUtxoIdDbV1 {
-    fn from_explorer_str(_: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(_: &str) -> std::result::Result<Self, FromExplorerKeyErr> {
         unimplemented!()
     }
     fn to_explorer_string(&self) -> KvResult<String> {
@@ -234,7 +234,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn utxo_id_v2_as_bytes() -> std::result::Result<(), StringErr> {
+    fn utxo_id_v2_as_bytes() -> anyhow::Result<()> {
         let utxo_id = UtxoIdDbV2(Hash::default(), 3);
 
         let utxo_id_2_res = utxo_id.as_bytes(|bytes| {

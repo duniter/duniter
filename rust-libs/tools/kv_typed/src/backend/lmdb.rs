@@ -270,9 +270,7 @@ impl BackendCol for LmdbCol {
             access
                 .get(&self.inner.tree, k_bytes)
                 .to_opt()?
-                .map(|bytes| {
-                    V::from_bytes(&bytes).map_err(|e| KvError::DeserError(format!("{}", e)))
-                })
+                .map(|bytes| V::from_bytes(&bytes).map_err(|e| KvError::DeserError(e.into())))
                 .transpose()
         })
     }

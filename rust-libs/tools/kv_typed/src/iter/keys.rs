@@ -33,7 +33,7 @@ impl<C: BackendCol, KB: KeyBytes, VB: ValueBytes, BI: BackendIter<KB, VB>, K: Ke
         match self.backend_iter.next() {
             Some(Ok((key_bytes, _value_bytes))) => match K::from_bytes(key_bytes.as_ref()) {
                 Ok(key) => Some(Ok(key)),
-                Err(e) => Some(Err(KvError::DeserError(format!("{}", e)))),
+                Err(e) => Some(Err(KvError::DeserError(e.into()))),
             },
             Some(Err(e)) => Some(Err(KvError::BackendError(e))),
             None => None,

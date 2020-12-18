@@ -88,7 +88,7 @@ impl BackendCol for MemCol {
     fn get<K: Key, V: Value>(&self, _k: &K) -> KvResult<Option<V>> {
         self.0
             .as_ref()
-            .map(|bytes| V::from_bytes(bytes).map_err(|e| KvError::DeserError(format!("{}", e))))
+            .map(|bytes| V::from_bytes(bytes).map_err(|e| KvError::DeserError(e.into())))
             .transpose()
     }
     #[inline(always)]
@@ -106,7 +106,7 @@ impl BackendCol for MemCol {
                     f(&layout_verified)
                 } else {
                     Err(KvError::DeserError(
-                        "Bytes are invalid length or alignment.".to_owned(),
+                        "Bytes are invalid length or alignment.".into(),
                     ))
                 }
             })
@@ -127,7 +127,7 @@ impl BackendCol for MemCol {
                     f(&layout_verified)
                 } else {
                     Err(KvError::DeserError(
-                        "Bytes are invalid length or alignment.".to_owned(),
+                        "Bytes are invalid length or alignment.".into(),
                     ))
                 }
             })

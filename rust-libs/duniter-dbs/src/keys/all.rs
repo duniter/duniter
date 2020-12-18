@@ -25,13 +25,13 @@ impl KeyAsBytes for AllKeyV1 {
 }
 
 impl kv_typed::prelude::FromBytes for AllKeyV1 {
-    type Err = StringErr;
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
         if bytes == b"ALL" {
             Ok(Self)
         } else {
-            Err(StringErr(format!(
+            Err(CorruptedBytes(format!(
                 "Invalid key: expected '{:?}', found '{:?}'",
                 b"ALL", bytes
             )))
@@ -47,8 +47,9 @@ impl ToDumpString for AllKeyV1 {
 
 #[cfg(feature = "explorer")]
 impl ExplorableKey for AllKeyV1 {
-    fn from_explorer_str(source: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerKeyErr> {
         <Self as kv_typed::prelude::FromBytes>::from_bytes(source.as_bytes())
+            .map_err(|e| FromExplorerKeyErr(e.0.into()))
     }
     fn to_explorer_string(&self) -> KvResult<String> {
         self.as_bytes(|bytes| Ok(unsafe { std::str::from_utf8_unchecked(bytes) }.to_owned()))

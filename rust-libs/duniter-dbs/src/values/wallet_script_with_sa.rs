@@ -23,15 +23,15 @@ pub struct WalletScriptWithSourceAmountV1Db {
 
 impl ValueAsBytes for WalletScriptWithSourceAmountV1Db {
     fn as_bytes<T, F: FnMut(&[u8]) -> KvResult<T>>(&self, mut f: F) -> KvResult<T> {
-        f(&bincode::serialize(&self).map_err(|e| KvError::DeserError(format!("{}", e)))?)
+        f(&bincode::serialize(&self).map_err(|e| KvError::DeserError(e.into()))?)
     }
 }
 
 impl kv_typed::prelude::FromBytes for WalletScriptWithSourceAmountV1Db {
-    type Err = StringErr;
+    type Err = bincode::Error;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(bincode::deserialize(bytes).map_err(|e| StringErr(format!("{}", e)))?)
+        bincode::deserialize(bytes)
     }
 }
 
@@ -43,10 +43,10 @@ impl ToDumpString for WalletScriptWithSourceAmountV1Db {
 
 #[cfg(feature = "explorer")]
 impl ExplorableValue for WalletScriptWithSourceAmountV1Db {
-    fn from_explorer_str(_: &str) -> std::result::Result<Self, StringErr> {
+    fn from_explorer_str(_: &str) -> std::result::Result<Self, FromExplorerValueErr> {
         unimplemented!()
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
-        Ok(serde_json::to_value(self).map_err(|e| KvError::DeserError(e.to_string()))?)
+        Ok(serde_json::to_value(self).map_err(|e| KvError::DeserError(e.into()))?)
     }
 }

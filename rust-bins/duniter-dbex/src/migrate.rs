@@ -27,7 +27,7 @@ const CHUNK_SIZE: usize = 250;
 pub(crate) fn migrate(profile_path: PathBuf) -> anyhow::Result<()> {
     let start_time = Instant::now();
     let (bc_db, shared_dbs) = duniter_dbs::open_dbs(Some(profile_path.as_path()))?;
-    let gva_db = duniter_gva_db_writer::get_gva_db_rw(Some(profile_path.as_path()));
+    let gva_db = duniter_gva_indexer::get_gva_db_rw(Some(profile_path.as_path()));
 
     // Clear bc_db and gva_db
     bc_db.clear()?;
@@ -113,7 +113,7 @@ fn migrate_inner(
                 let gva_handle = dbs_pool
                     .launch(move |_| {
                         for block in chunk_arc_clone.deref() {
-                            duniter_gva_db_writer::apply_block(block, gva_db)?;
+                            duniter_gva_indexer::apply_block(block, gva_db)?;
                         }
                         Ok::<_, KvError>(())
                     })

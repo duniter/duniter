@@ -1,5 +1,5 @@
 [package]
-name = "duniter-gva-db-writer"
+name = "duniter-gva-indexer"
 version = "0.1.0"
 authors = ["elois <elois@duniter.org>"]
 description = "Duniter GVA DB writer"

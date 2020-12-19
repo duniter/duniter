@@ -38,8 +38,8 @@ use duniter_dbs::databases::{
 };
 use duniter_dbs::prelude::*;
 use duniter_dbs::{kv_typed::prelude::*, FileBackend, TxDbV2};
-use duniter_gva_db_writer::{get_gva_db_ro, get_gva_db_rw};
 use duniter_gva_gql::GvaSchema;
+use duniter_gva_indexer::{get_gva_db_ro, get_gva_db_rw};
 use duniter_mempools::Mempools;
 use futures::{StreamExt, TryStreamExt};
 use std::{convert::Infallible, path::Path};
@@ -66,7 +66,7 @@ impl duniter_module::DuniterModule for GvaModule {
         profile_path_opt: Option<&Path>,
     ) -> KvResult<()> {
         let gva_db = get_gva_db_rw(profile_path_opt);
-        duniter_gva_db_writer::apply_block(&block, gva_db)
+        duniter_gva_indexer::apply_block(&block, gva_db)
     }
     fn revert_block(
         block: &DubpBlockV10,
@@ -74,7 +74,7 @@ impl duniter_module::DuniterModule for GvaModule {
         profile_path_opt: Option<&Path>,
     ) -> KvResult<()> {
         let gva_db = get_gva_db_rw(profile_path_opt);
-        duniter_gva_db_writer::revert_block(&block, gva_db)
+        duniter_gva_indexer::revert_block(&block, gva_db)
     }
     fn init(
         conf: &duniter_conf::DuniterConf,

@@ -1081,7 +1081,7 @@ dependencies = [
  "dubp",
  "duniter-dbs",
  "duniter-dbs-write-ops",
- "duniter-gva-db-writer",
+ "duniter-gva-indexer",
  "fast-threadpool",
  "flume",
  "once_cell",
@@ -1157,9 +1157,9 @@ dependencies = [
  "duniter-conf",
  "duniter-dbs",
  "duniter-dbs-read-ops",
- "duniter-gva-db-writer",
  "duniter-gva-dbs-reader",
  "duniter-gva-gql",
+ "duniter-gva-indexer",
  "duniter-mempools",
  "duniter-module",
  "fast-threadpool",
@@ -1175,19 +1175,6 @@ dependencies = [
  "tokio",
  "unwrap",
  "warp",
-]
-
-[[package]]
-name = "duniter-gva-db-writer"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "dubp",
- "duniter-dbs",
- "maplit",
- "once_cell",
- "resiter",
- "smallvec",
 ]
 
 [[package]]
@@ -1228,6 +1215,19 @@ dependencies = [
  "serde_json",
  "tokio",
  "unwrap",
+]
+
+[[package]]
+name = "duniter-gva-indexer"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dubp",
+ "duniter-dbs",
+ "maplit",
+ "once_cell",
+ "resiter",
+ "smallvec",
 ]
 
 [[package]]

@@ -101,7 +101,9 @@ pub(crate) fn export_bc<B: Backend>(
                 Ok(())
             })?;
         // Write last chunk
-        write_chunk(chunk_index, json_blocks, output_dir, pretty)?;
+        if !json_blocks.is_empty() {
+            write_chunk(chunk_index, json_blocks, output_dir, pretty)?;
+        }
         progress_bar.set_progress(1.0);
 
         reader_handle

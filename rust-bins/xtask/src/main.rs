@@ -74,21 +74,8 @@ fn main() -> Result<()> {
 
 fn install_and_use_node_version() -> Result<()> {
     if exec_should_success(Command::new("nvm").arg("--version")).is_err() {
-        println!("Install nvm v{} …", NVM_VERSION);
-        let nvm_install_script = exec_and_get_stdout(Command::new("wget").args(&[
-            "-qO-",
-            &format!(
-                "https://raw.githubusercontent.com/nvm-sh/nvm/v{}/install.sh",
-                NVM_VERSION
-            ),
-        ]))?;
-        run_script::spawn(
-            &nvm_install_script,
-            &vec![],
-            &run_script::ScriptOptions::new(),
-        )?
-        .wait_with_output()?;
-        //exec_should_success(Command::new("bash").arg(nvm_install_script))?;
+        println!("Duniter need nvm to build, please install it: https://raw.githubusercontent.com/nvm-sh/nvm/v{}/install.sh", NVM_VERSION);
+        std::process::abort();
     }
     exec_should_success(Command::new("nvm").args(&["install", NODE_VERSION]))?;
     exec_should_success(Command::new("nvm").args(&["use", NODE_VERSION]))

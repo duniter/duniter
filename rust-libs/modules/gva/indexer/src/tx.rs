@@ -14,7 +14,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use duniter_dbs::{databases::gva_v1::BalancesEvent, WalletHashWithBnV1Db};
 
 pub(crate) type ScriptsHash = HashMap<WalletScriptV10, Hash>;
 
@@ -140,7 +139,7 @@ pub(crate) fn apply_tx<B: Backend>(
                 // Insert tx itself
                 txs.upsert(
                     HashKeyV2(tx_hash),
-                    TxDbV2 {
+                    GvaTxDbV1 {
                         tx: tx.clone(),
                         written_block: current_blockstamp,
                         written_time: current_time,
@@ -315,7 +314,7 @@ mod tests {
         let o1_amount = ud0_amount - SourceAmount::with_base0(600);
         let o2_amount = ud0_amount - SourceAmount::with_base0(400);
 
-        let gva_db = duniter_dbs::databases::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?;
+        let gva_db = GvaV1Db::<Mem>::open(MemConf::default())?;
 
         let b0 = BlockMetaV2 {
             dividend: Some(ud0_amount),

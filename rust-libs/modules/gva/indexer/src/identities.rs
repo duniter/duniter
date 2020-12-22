@@ -14,7 +14,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use duniter_dbs::databases::gva_v1::GvaIdentitiesEvent;
 
 pub(crate) fn update_identities<B: Backend>(
     block: &DubpBlockV10,

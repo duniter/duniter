@@ -33,13 +33,11 @@ use dubp::documents::{
     prelude::*, transaction::TransactionDocumentTrait, transaction::TransactionDocumentV10,
 };
 use dubp::wallet::prelude::*;
-use duniter_dbs::databases::gva_v1::*;
 use duniter_dbs::{
-    databases::gva_v1::{GvaV1Db, GvaV1DbReadable, GvaV1DbWritable},
-    kv_typed::prelude::*,
-    prelude::*,
-    FileBackend, HashKeyV2, PubKeyKeyV2, SourceAmountValV2, TxDbV2, WalletConditionsV2,
+    kv_typed::prelude::*, prelude::*, FileBackend, HashKeyV2, PubKeyKeyV2, SourceAmountValV2,
+    WalletConditionsV2,
 };
+use duniter_gva_db::*;
 use resiter::filter::Filter;
 use std::{
     collections::{BTreeSet, HashMap},
@@ -56,7 +54,7 @@ pub fn get_gva_db_ro(profile_path_opt: Option<&Path>) -> &'static GvaV1DbRo<File
 }
 pub fn get_gva_db_rw(profile_path_opt: Option<&Path>) -> &'static GvaV1Db<FileBackend> {
     GVA_DB_RW.get_or_init(|| {
-        duniter_dbs::databases::gva_v1::GvaV1Db::<FileBackend>::open(FileBackend::gen_backend_conf(
+        duniter_gva_db::GvaV1Db::<FileBackend>::open(FileBackend::gen_backend_conf(
             "gva_v1",
             profile_path_opt,
         ))
@@ -250,11 +248,9 @@ mod tests {
         documents::transaction::TransactionDocumentV10Stringified,
         documents_parser::prelude::FromStringObject,
     };
-    use duniter_dbs::GvaUtxoIdDbV1;
-
     #[test]
     fn test_gva_apply_block() -> anyhow::Result<()> {
-        let gva_db = duniter_dbs::databases::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?;
+        let gva_db = GvaV1Db::<Mem>::open(MemConf::default())?;
 
         let s1 = WalletScriptV10::single_sig(PublicKey::from_base58(
             "D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx",

@@ -14,11 +14,10 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use duniter_dbs::GvaUtxoIdDbV1;
 
 pub(crate) fn write_utxo_v10<'s, B: Backend>(
-    scripts_by_pubkey: &mut TxColRw<B::Col, duniter_dbs::databases::gva_v1::ScriptsByPubkeyEvent>,
-    gva_utxos: &mut TxColRw<B::Col, duniter_dbs::databases::gva_v1::GvaUtxosEvent>,
+    scripts_by_pubkey: &mut TxColRw<B::Col, ScriptsByPubkeyEvent>,
+    gva_utxos: &mut TxColRw<B::Col, GvaUtxosEvent>,
     utxo: UtxoV10<'s>,
     utxo_script_hash: Hash,
 ) -> KvResult<()> {
@@ -49,8 +48,8 @@ pub(crate) fn write_utxo_v10<'s, B: Backend>(
 }
 
 pub(crate) fn remove_utxo_v10<B: Backend>(
-    scripts_by_pubkey: &mut TxColRw<B::Col, duniter_dbs::databases::gva_v1::ScriptsByPubkeyEvent>,
-    gva_utxos: &mut TxColRw<B::Col, duniter_dbs::databases::gva_v1::GvaUtxosEvent>,
+    scripts_by_pubkey: &mut TxColRw<B::Col, ScriptsByPubkeyEvent>,
+    gva_utxos: &mut TxColRw<B::Col, GvaUtxosEvent>,
     utxo_id: UtxoIdV10,
     utxo_script: &WalletScriptV10,
     utxo_script_hash: Hash,

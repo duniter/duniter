@@ -14,7 +14,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use duniter_dbs::{smallvec::SmallVec, WalletHashWithBnV1Db};
+use duniter_dbs::smallvec::SmallVec;
+use duniter_gva_db::WalletHashWithBnV1Db;
 
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct TxBcCursor {
@@ -50,7 +51,7 @@ impl DbsReader {
         &self,
         page_info: PageInfo<TxBcCursor>,
         script_hash: Hash,
-    ) -> KvResult<PagedData<VecDeque<TxDbV2>>> {
+    ) -> KvResult<PagedData<VecDeque<GvaTxDbV1>>> {
         let mut start_k = WalletHashWithBnV1Db::new(script_hash, BlockNumber(0));
         let mut end_k = WalletHashWithBnV1Db::new(script_hash, BlockNumber(u32::MAX));
         let first_cursor_opt = if page_info.not_all() {
@@ -124,7 +125,7 @@ impl DbsReader {
                 .0
                 .txs_by_recipient()
                 .iter_ref_slice(start_k..=end_k, |_k, hashs| {
-                    let mut sent = SmallVec::<[TxDbV2; 8]>::new();
+                    let mut sent = SmallVec::<[GvaTxDbV1; 8]>::new();
                     for hash in hashs {
                         if let Some(tx_db) = self.0.txs().get(HashKeyV2::from_ref(hash))? {
                             sent.push(tx_db);
@@ -146,7 +147,7 @@ impl DbsReader {
                 .0
                 .txs_by_recipient()
                 .iter_ref_slice_rev(start_k..=end_k, |_k, hashs| {
-                    let mut sent = SmallVec::<[TxDbV2; 8]>::new();
+                    let mut sent = SmallVec::<[GvaTxDbV1; 8]>::new();
                     for hash in hashs {
                         if let Some(tx_db) = self.0.txs().get(HashKeyV2::from_ref(hash))? {
                             sent.push(tx_db);
@@ -169,7 +170,7 @@ impl DbsReader {
         &self,
         page_info: PageInfo<TxBcCursor>,
         script_hash: Hash,
-    ) -> KvResult<PagedData<VecDeque<TxDbV2>>> {
+    ) -> KvResult<PagedData<VecDeque<GvaTxDbV1>>> {
         let mut start_k = WalletHashWithBnV1Db::new(script_hash, BlockNumber(0));
         let mut end_k = WalletHashWithBnV1Db::new(script_hash, BlockNumber(u32::MAX));
         let first_cursor_opt = if page_info.not_all() {
@@ -247,7 +248,7 @@ impl DbsReader {
                 .0
                 .txs_by_issuer()
                 .iter_ref_slice(start_k..=end_k, |_k, hashs| {
-                    let mut sent = SmallVec::<[TxDbV2; 8]>::new();
+                    let mut sent = SmallVec::<[GvaTxDbV1; 8]>::new();
                     for hash in hashs {
                         if let Some(tx_db) = self.0.txs().get(HashKeyV2::from_ref(hash))? {
                             sent.push(tx_db);
@@ -269,7 +270,7 @@ impl DbsReader {
                 .0
                 .txs_by_issuer()
                 .iter_ref_slice_rev(start_k..=end_k, |_k, hashs| {
-                    let mut sent = SmallVec::<[TxDbV2; 8]>::new();
+                    let mut sent = SmallVec::<[GvaTxDbV1; 8]>::new();
                     for hash in hashs.iter().rev() {
                         if let Some(tx_db) = self.0.txs().get(HashKeyV2::from_ref(hash))? {
                             sent.push(tx_db);
@@ -321,14 +322,14 @@ impl DbsReader {
     }
 }
 
-fn txs_history_bc_collect<I: Iterator<Item = KvResult<TxDbV2>>>(
+fn txs_history_bc_collect<I: Iterator<Item = KvResult<GvaTxDbV1>>>(
     dbs_reader: DbsReader,
     first_cursor_opt: Option<TxBcCursor>,
     first_hashs_opt: Option<SmallVec<[Hash; 8]>>,
     last_cursor_opt: Option<TxBcCursor>,
     page_info: PageInfo<TxBcCursor>,
     txs_iter: I,
-) -> KvResult<PagedData<VecDeque<TxDbV2>>> {
+) -> KvResult<PagedData<VecDeque<GvaTxDbV1>>> {
     let mut txs = if let Some(limit) = page_info.limit_opt {
         txs_iter.take(limit).collect::<KvResult<VecDeque<_>>>()?
     } else {
@@ -384,8 +385,8 @@ fn txs_history_bc_collect<I: Iterator<Item = KvResult<TxDbV2>>>(
 
 // Needed for BMA only
 pub struct TxsHistory {
-    pub sent: Vec<TxDbV2>,
-    pub received: Vec<TxDbV2>,
+    pub sent: Vec<GvaTxDbV1>,
+    pub received: Vec<GvaTxDbV1>,
     pub sending: Vec<TransactionDocumentV10>,
     pub pending: Vec<TransactionDocumentV10>,
 }
@@ -403,7 +404,7 @@ pub fn get_transactions_history_for_bma<GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2
     let sent = gva_db_ro
         .txs_by_issuer()
         .iter_ref_slice(start_k..end_k, |_k, hashs| {
-            let mut sent = SmallVec::<[TxDbV2; 2]>::new();
+            let mut sent = SmallVec::<[GvaTxDbV1; 2]>::new();
             for hash in hashs {
                 if let Some(tx_db) = gva_db_ro.txs().get(HashKeyV2::from_ref(hash))? {
                     sent.push(tx_db);
@@ -417,7 +418,7 @@ pub fn get_transactions_history_for_bma<GvaDb: GvaV1DbReadable, TxsMpDb: TxsMpV2
     let received = gva_db_ro
         .txs_by_recipient()
         .iter_ref_slice(start_k..end_k, |_k, hashs| {
-            let mut sent = SmallVec::<[TxDbV2; 2]>::new();
+            let mut sent = SmallVec::<[GvaTxDbV1; 2]>::new();
             for hash in hashs {
                 if let Some(tx_db) = gva_db_ro.txs().get(HashKeyV2::from_ref(hash))? {
                     sent.push(tx_db);
@@ -468,12 +469,12 @@ mod tests {
         documents::transaction::{TransactionDocumentV10, TransactionDocumentV10Stringified},
         documents_parser::prelude::FromStringObject,
     };
-    use duniter_dbs::databases::gva_v1::GvaV1DbWritable;
+    use duniter_gva_db::GvaV1DbWritable;
     use maplit::btreeset;
     use unwrap::unwrap;
 
-    fn gen_tx(hash: Hash, written_block_number: BlockNumber) -> TxDbV2 {
-        TxDbV2 {
+    fn gen_tx(hash: Hash, written_block_number: BlockNumber) -> GvaTxDbV1 {
+        GvaTxDbV1 {
             tx: unwrap!(TransactionDocumentV10::from_string_object(
                 &TransactionDocumentV10Stringified {
                     currency: "test".to_owned(),
@@ -500,7 +501,7 @@ mod tests {
 
     #[test]
     fn test_get_txs_history_bc_sent() -> KvResult<()> {
-        let gva_db = duniter_dbs::databases::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?;
+        let gva_db = duniter_gva_db::GvaV1Db::<Mem>::open(MemConf::default())?;
         let db_reader = create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) });
 
         let s1 = WalletScriptV10::single_sig(PublicKey::default());

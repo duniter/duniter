@@ -13,9 +13,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use dubp::documents::transaction::TransactionDocumentV10Stringified;
-
 use crate::*;
+use dubp::documents::transaction::TransactionDocumentV10Stringified;
+use duniter_gva_db::GvaTxDbV1;
 
 #[derive(async_graphql::SimpleObject)]
 pub(crate) struct TxGva {
@@ -47,8 +47,8 @@ pub(crate) struct TxGva {
     pub written_time: Option<i64>,
 }
 
-impl From<TxDbV2> for TxGva {
-    fn from(db_tx: TxDbV2) -> Self {
+impl From<GvaTxDbV1> for TxGva {
+    fn from(db_tx: GvaTxDbV1) -> Self {
         let mut self_: TxGva = (&db_tx.tx).into();
         self_.written_block = Some(db_tx.written_block.to_string());
         self_.written_time = Some(db_tx.written_time);

@@ -14,6 +14,7 @@ dubp = { version = "0.34.0" }
 duniter-conf = { path = "../../../duniter-conf" }
 duniter-dbs = { path = "../../../duniter-dbs" }
 duniter-bc-reader = { path = "../../../duniter-bc-reader" }
+duniter-gva-db = { path = "../db" }
 duniter-gva-dbs-reader = { path = "../dbs-reader" }
 duniter-mempools = { path = "../../../duniter-mempools" }
 duniter-module = { path = "../../../duniter-module" }

@@ -32,12 +32,10 @@ use dubp::common::crypto::keys::{ed25519::PublicKey, KeyPair as _};
 use dubp::common::prelude::*;
 use dubp::documents::transaction::TransactionDocumentV10;
 use dubp::{block::DubpBlockV10, crypto::hashs::Hash};
-use duniter_dbs::databases::{
-    gva_v1::{GvaV1DbReadable, GvaV1DbRo},
-    txs_mp_v2::TxsMpV2DbReadable,
-};
+use duniter_dbs::databases::txs_mp_v2::TxsMpV2DbReadable;
 use duniter_dbs::prelude::*;
-use duniter_dbs::{kv_typed::prelude::*, FileBackend, TxDbV2};
+use duniter_dbs::{kv_typed::prelude::*, FileBackend};
+use duniter_gva_db::*;
 use duniter_gva_gql::GvaSchema;
 use duniter_gva_indexer::{get_gva_db_ro, get_gva_db_rw};
 use duniter_mempools::Mempools;
@@ -177,7 +175,7 @@ impl duniter_module::DuniterModule for GvaModule {
             sent: sent
                 .into_iter()
                 .map(
-                    |TxDbV2 {
+                    |GvaTxDbV1 {
                          tx,
                          written_block,
                          written_time,
@@ -187,7 +185,7 @@ impl duniter_module::DuniterModule for GvaModule {
             received: received
                 .into_iter()
                 .map(
-                    |TxDbV2 {
+                    |GvaTxDbV1 {
                          tx,
                          written_block,
                          written_time,

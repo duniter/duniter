@@ -56,7 +56,7 @@ use dubp::documents_parser::prelude::*;
 use dubp::wallet::prelude::*;
 use duniter_dbs::databases::txs_mp_v2::TxsMpV2DbReadable;
 use duniter_dbs::prelude::*;
-use duniter_dbs::{kv_typed::prelude::*, FileBackend, TxDbV2};
+use duniter_dbs::{kv_typed::prelude::*, FileBackend};
 use duniter_gva_dbs_reader::pagination::PageInfo;
 #[cfg(not(test))]
 use duniter_gva_dbs_reader::DbsReader;
@@ -136,12 +136,12 @@ mod tests {
                 &self,
                 page_info: PageInfo<duniter_gva_dbs_reader::txs_history::TxBcCursor>,
                 script_hash: Hash,
-            ) -> KvResult<PagedData<VecDeque<TxDbV2>>>;
+            ) -> KvResult<PagedData<VecDeque<duniter_gva_db::GvaTxDbV1>>>;
             fn get_txs_history_bc_sent(
                 &self,
                 page_info: PageInfo<duniter_gva_dbs_reader::txs_history::TxBcCursor>,
                 script_hash: Hash,
-            ) -> KvResult<PagedData<VecDeque<TxDbV2>>>;
+            ) -> KvResult<PagedData<VecDeque<duniter_gva_db::GvaTxDbV1>>>;
             fn get_txs_history_mempool<TxsMpDb: 'static + TxsMpV2DbReadable>(
                 &self,
                 txs_mp_db_ro: &TxsMpDb,

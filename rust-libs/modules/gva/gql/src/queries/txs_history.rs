@@ -15,6 +15,7 @@
 
 use crate::*;
 use dubp::documents_parser::wallet_script_from_str;
+use duniter_gva_db::GvaTxDbV1;
 use duniter_gva_dbs_reader::txs_history::TxBcCursor;
 use futures::future::join;
 
@@ -84,7 +85,7 @@ impl TxsHistoryBlockchainQueryInner {
                     .into_iter()
                     .map(|db_tx| (TxDirection::Received, db_tx)),
             )
-            .collect::<Vec<(TxDirection, TxDbV2)>>();
+            .collect::<Vec<(TxDirection, GvaTxDbV1)>>();
         /*if let Some(TxBcCursor { tx_hash, .. }) = pagination.pos() {
             while both.txs
         }*/
@@ -229,7 +230,7 @@ mod tests {
     use dubp::documents::transaction::TransactionDocumentV10;
     use dubp::documents::transaction::TransactionDocumentV10Stringified;
     use dubp::documents_parser::prelude::FromStringObject;
-    use duniter_dbs::TxDbV2;
+    use duniter_gva_db::GvaTxDbV1;
     use duniter_gva_dbs_reader::pagination::PagedData;
 
     #[tokio::test]
@@ -264,7 +265,7 @@ mod tests {
                 )
                 .expect("wrong tx");
                 let mut expected_data = VecDeque::new();
-                expected_data.push_back(TxDbV2 {
+                expected_data.push_back(GvaTxDbV1 {
                     tx,
                     ..Default::default()
                 });

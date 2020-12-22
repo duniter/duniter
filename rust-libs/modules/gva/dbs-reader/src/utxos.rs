@@ -14,7 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use dubp::documents::dubp_wallet::prelude::*;
-use duniter_dbs::{GvaUtxoIdDbV1, SourceAmountValV2};
+use duniter_dbs::SourceAmountValV2;
 
 use crate::*;
 
@@ -251,14 +251,14 @@ where
 mod tests {
 
     use super::*;
-    use duniter_dbs::databases::gva_v1::GvaV1DbWritable;
     use duniter_dbs::databases::txs_mp_v2::TxsMpV2DbWritable;
+    use duniter_gva_db::GvaV1DbWritable;
 
     #[test]
     fn test_find_script_utxos() -> anyhow::Result<()> {
         let script = WalletScriptV10::single_sig(PublicKey::default());
 
-        let gva_db = duniter_dbs::databases::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?;
+        let gva_db = duniter_gva_db::GvaV1Db::<Mem>::open(MemConf::default())?;
         let db_reader = create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) });
         let txs_mp_db =
             duniter_dbs::databases::txs_mp_v2::TxsMpV2Db::<Mem>::open(MemConf::default())?;

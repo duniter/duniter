@@ -1,0 +1,31 @@
+[package]
+name = "duniter-gva-db"
+version = "0.1.0"
+authors = ["elois <elois@duniter.org>"]
+description = "Duniter GVA DB"
+repository = "https://git.duniter.org/nodes/typescript/duniter"
+license = "AGPL-3.0"
+edition = "2018"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+bincode = "1.2.1"
+chrono = { version = "0.4.15", optional = true }
+duniter-dbs = { path = "../../../duniter-dbs" }
+dubp = { version = "0.34.0" }
+kv_typed = { path = "../../../tools/kv_typed", default-features = false, features = ["sled_backend"] }
+paste = "1.0.2"
+serde = { version = "1.0.105", features = ["derive"] }
+serde_json = "1.0.53"
+uninit = "0.4.0"
+zerocopy = "0.3.0"
+
+[dev-dependencies]
+
+[features]
+#default = ["explorer"]
+
+explorer = ["chrono", "duniter-dbs/explorer", "kv_typed/explorer"]
+leveldb_backend = ["kv_typed/leveldb_backend"]

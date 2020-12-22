@@ -17,7 +17,7 @@ use crate::*;
 use duniter_dbs::smallvec::SmallVec;
 use duniter_dbs::{
     databases::bc_v2::{UdsEvent, UdsRevalEvent},
-    GvaIdtyDbV1, UdIdV2,
+    UdIdV2,
 };
 
 #[derive(Debug, Default)]
@@ -472,10 +472,8 @@ mod tests {
 
     use super::*;
     use duniter_dbs::smallvec::smallvec as svec;
-    use duniter_dbs::{
-        databases::{bc_v2::BcV2DbWritable, gva_v1::GvaV1DbWritable},
-        SourceAmountValV2, UdIdV2,
-    };
+    use duniter_dbs::{databases::bc_v2::BcV2DbWritable, SourceAmountValV2, UdIdV2};
+    use duniter_gva_db::GvaV1DbWritable;
     use std::iter::FromIterator;
 
     #[test]
@@ -538,7 +536,7 @@ mod tests {
 
         let bc_db = duniter_dbs::databases::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?;
         let bc_db_ro = bc_db.get_ro_handler();
-        let gva_db = duniter_dbs::databases::gva_v1::GvaV1Db::<Mem>::open(MemConf::default())?;
+        let gva_db = duniter_gva_db::GvaV1Db::<Mem>::open(MemConf::default())?;
         let db_reader = create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) });
         bc_db
             .uds_reval_write()

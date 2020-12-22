@@ -15,40 +15,43 @@
 
 use crate::*;
 
-#[derive(Debug, Default, PartialEq)]
-pub struct WalletScriptArrayV2(pub std::collections::HashSet<WalletScriptV10>);
+use dubp::documents::transaction::TransactionDocumentV10;
 
-impl AsBytes for WalletScriptArrayV2 {
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+pub struct GvaTxDbV1 {
+    pub tx: TransactionDocumentV10,
+    pub written_block: Blockstamp,
+    pub written_time: i64,
+}
+
+impl AsBytes for GvaTxDbV1 {
     fn as_bytes<T, F: FnMut(&[u8]) -> T>(&self, mut f: F) -> T {
-        f(&bincode::serialize(&self.0).unwrap_or_else(|_| unreachable!()))
+        let bytes = bincode::serialize(self).unwrap_or_else(|_| unreachable!());
+        f(bytes.as_ref())
     }
 }
 
-impl kv_typed::prelude::FromBytes for WalletScriptArrayV2 {
-    type Err = bincode::Error;
+impl kv_typed::prelude::FromBytes for GvaTxDbV1 {
+    type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(Self(bincode::deserialize(bytes)?))
+        Ok(bincode::deserialize(&bytes)
+            .map_err(|e| CorruptedBytes(format!("{}: '{:?}'", e, bytes)))?)
     }
 }
 
-impl ToDumpString for WalletScriptArrayV2 {
+impl ToDumpString for GvaTxDbV1 {
     fn to_dump_string(&self) -> String {
         todo!()
     }
 }
 
 #[cfg(feature = "explorer")]
-impl ExplorableValue for WalletScriptArrayV2 {
-    fn from_explorer_str(_: &str) -> std::result::Result<Self, FromExplorerValueErr> {
-        unimplemented!()
+impl ExplorableValue for GvaTxDbV1 {
+    fn from_explorer_str(source: &str) -> Result<Self, FromExplorerValueErr> {
+        Self::from_bytes(source.as_bytes()).map_err(|e| FromExplorerValueErr(e.0.into()))
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
-        Ok(serde_json::Value::Array(
-            self.0
-                .iter()
-                .map(|script| serde_json::Value::String(script.to_string()))
-                .collect(),
-        ))
+        serde_json::to_value(self).map_err(|e| KvError::DeserError(e.into()))
     }
 }

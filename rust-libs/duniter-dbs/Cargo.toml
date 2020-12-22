@@ -37,7 +37,7 @@ unwrap = "1.2.1"
 [features]
 default = ["sled_backend"]
 
-# CAUTION: feature "leveldb_backend" MUST BE DISABLED by default. Uncomment this lire for dev/test only ! 
+# CAUTION: feature "leveldb_backend" MUST BE DISABLED by default. Uncomment this line for dev/test only ! 
 #default = ["sled_backend", "explorer", "leveldb_backend"]
 
 explorer = ["chrono", "kv_typed/explorer"]

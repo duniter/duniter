@@ -1092,6 +1092,7 @@ dependencies = [
  "dubp",
  "duniter-dbs",
  "duniter-dbs-write-ops",
+ "duniter-gva-db",
  "duniter-gva-indexer",
  "fast-threadpool",
  "flume",
@@ -1156,6 +1157,7 @@ dependencies = [
  "dubp",
  "duniter-conf",
  "duniter-dbs",
+ "duniter-gva-db",
  "duniter-gva-dbs-reader",
  "duniter-gva-gql",
  "duniter-gva-indexer",
@@ -1177,12 +1179,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "duniter-gva-db"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "chrono",
+ "dubp",
+ "duniter-dbs",
+ "kv_typed",
+ "paste",
+ "serde",
+ "serde_json",
+ "uninit",
+ "zerocopy",
+]
+
+[[package]]
 name = "duniter-gva-dbs-reader"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "dubp",
  "duniter-dbs",
+ "duniter-gva-db",
  "maplit",
  "resiter",
  "smallvec",
@@ -1201,6 +1220,7 @@ dependencies = [
  "duniter-bc-reader",
  "duniter-conf",
  "duniter-dbs",
+ "duniter-gva-db",
  "duniter-gva-dbs-reader",
  "duniter-mempools",
  "duniter-module",
@@ -1223,6 +1243,7 @@ dependencies = [
  "anyhow",
  "dubp",
  "duniter-dbs",
+ "duniter-gva-db",
  "maplit",
  "once_cell",
  "resiter",

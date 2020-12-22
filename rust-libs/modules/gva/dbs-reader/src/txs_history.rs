@@ -148,7 +148,7 @@ impl DbsReader {
                 .txs_by_recipient()
                 .iter_ref_slice_rev(start_k..=end_k, |_k, hashs| {
                     let mut sent = SmallVec::<[GvaTxDbV1; 8]>::new();
-                    for hash in hashs {
+                    for hash in hashs.iter().rev() {
                         if let Some(tx_db) = self.0.txs().get(HashKeyV2::from_ref(hash))? {
                             sent.push(tx_db);
                         }
@@ -238,10 +238,6 @@ impl DbsReader {
         } else {
             None
         };
-
-        println!("first_hashs_opt={:?}", first_hashs_opt);
-        println!("start_k={}", start_k);
-        println!("end_k={}", end_k);
 
         if page_info.order {
             let txs_iter = self
@@ -497,6 +493,120 @@ mod tests {
             },
             written_time: 1,
         }
+    }
+
+    #[test]
+    fn test_get_txs_history_bc_received() -> KvResult<()> {
+        let gva_db = duniter_gva_db::GvaV1Db::<Mem>::open(MemConf::default())?;
+        let db_reader = create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) });
+
+        let s1 = WalletScriptV10::single_sig(PublicKey::default());
+        let s1_hash = Hash::compute_str(&s1.to_string());
+
+        gva_db.txs_write().upsert(
+            HashKeyV2(Hash::default()),
+            gen_tx(Hash::default(), BlockNumber(1)),
+        )?;
+        gva_db.txs_write().upsert(
+            HashKeyV2(Hash([1; 32])),
+            gen_tx(Hash([1; 32]), BlockNumber(1)),
+        )?;
+        gva_db.txs_write().upsert(
+            HashKeyV2(Hash([2; 32])),
+            gen_tx(Hash([2; 32]), BlockNumber(1)),
+        )?;
+        gva_db.txs_write().upsert(
+            HashKeyV2(Hash([3; 32])),
+            gen_tx(Hash([3; 32]), BlockNumber(1)),
+        )?;
+        gva_db.txs_by_recipient_write().upsert(
+            WalletHashWithBnV1Db::new(s1_hash, BlockNumber(1)),
+            btreeset![Hash::default(), Hash([1; 32]), Hash([2; 32]), Hash([3; 32])],
+        )?;
+        gva_db.txs_write().upsert(
+            HashKeyV2(Hash([4; 32])),
+            gen_tx(Hash([4; 32]), BlockNumber(2)),
+        )?;
+        gva_db.txs_write().upsert(
+            HashKeyV2(Hash([5; 32])),
+            gen_tx(Hash([5; 32]), BlockNumber(2)),
+        )?;
+        gva_db.txs_by_recipient_write().upsert(
+            WalletHashWithBnV1Db::new(s1_hash, BlockNumber(2)),
+            btreeset![Hash([4; 32]), Hash([5; 32])],
+        )?;
+
+        /*let received = db_reader.get_txs_history_bc_received(
+            PageInfo {
+                order: true,
+                limit_opt: None,
+                pos: Some(TxBcCursor {
+                    tx_hash: Hash([1; 32]),
+                    block_number: BlockNumber(1),
+                }),
+            },
+            s1_hash,
+        )?;
+        assert_eq!(
+            received.data
+                .into_iter()
+                .map(|tx_db| tx_db.tx.get_hash())
+                .collect::<Vec<_>>(),
+            vec![Hash([2; 32]), Hash([3; 32]), Hash([4; 32]), Hash([5; 32])],
+        );
+        assert!(!received.has_next_page);
+        assert!(!received.has_previous_page);
+
+        let received = db_reader.get_txs_history_bc_received(
+            PageInfo {
+                order: false,
+                limit_opt: None,
+                pos: Some(TxBcCursor {
+                    tx_hash: Hash([1; 32]),
+                    block_number: BlockNumber(1),
+                }),
+            },
+            s1_hash,
+        )?;
+        assert_eq!(
+            received.data
+                .into_iter()
+                .map(|tx_db| tx_db.tx.get_hash())
+                .collect::<Vec<_>>(),
+            vec![Hash([0; 32])],
+        );
+        assert!(!received.has_next_page);
+        assert!(!received.has_previous_page);*/
+
+        let received = db_reader.get_txs_history_bc_received(
+            PageInfo {
+                order: false,
+                limit_opt: None,
+                pos: Some(TxBcCursor {
+                    tx_hash: Hash([5; 32]),
+                    block_number: BlockNumber(2),
+                }),
+            },
+            s1_hash,
+        )?;
+        assert_eq!(
+            received
+                .data
+                .into_iter()
+                .map(|tx_db| tx_db.tx.get_hash())
+                .collect::<Vec<_>>(),
+            vec![
+                Hash([4; 32]),
+                Hash([3; 32]),
+                Hash([2; 32]),
+                Hash([1; 32]),
+                Hash([0; 32]),
+            ],
+        );
+        assert!(!received.has_next_page);
+        assert!(!received.has_previous_page);
+
+        Ok(())
     }
 
     #[test]

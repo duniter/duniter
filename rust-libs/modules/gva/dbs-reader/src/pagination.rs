@@ -131,8 +131,6 @@ pub(crate) fn has_previous_page<
             } else {
                 page_cursors.next_back()
             } {
-                println!("TMP page_start_cursor={:?}", page_start_cursor);
-                println!("TMP first_cursor={:?}", first_cursor);
                 page_start_cursor.as_ref() != &first_cursor
             } else {
                 page_info.pos.unwrap_or_default() > first_cursor

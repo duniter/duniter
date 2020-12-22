@@ -539,7 +539,7 @@ mod tests {
             btreeset![Hash([4; 32]), Hash([5; 32])],
         )?;
 
-        /*let sent = db_reader.get_txs_history_bc_sent(
+        let sent = db_reader.get_txs_history_bc_sent(
             PageInfo {
                 order: true,
                 limit_opt: None,
@@ -579,7 +579,7 @@ mod tests {
             vec![Hash([0; 32])],
         );
         assert!(!sent.has_next_page);
-        assert!(!sent.has_previous_page);*/
+        assert!(!sent.has_previous_page);
 
         let sent = db_reader.get_txs_history_bc_sent(
             PageInfo {

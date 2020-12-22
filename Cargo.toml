@@ -36,7 +36,7 @@ members = [
     "rust-libs/dubp-wot",
     "rust-libs/duniter-conf",
     "rust-libs/duniter-dbs",
-    "rust-libs/duniter-dbs-read-ops",
+    "rust-libs/duniter-bc-reader",
     "rust-libs/duniter-dbs-write-ops",
     "rust-libs/duniter-mempools",
     "rust-libs/duniter-module",

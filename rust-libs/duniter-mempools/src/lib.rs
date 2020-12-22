@@ -71,7 +71,7 @@ impl TxsMempool {
         tx: TransactionDocumentV10,
         txs_mp_db_ro: &TxsMpDb,
     ) -> Result<(), TxMpError> {
-        if duniter_dbs_read_ops::tx_exist(bc_db_ro, tx.get_hash())? {
+        if duniter_bc_reader::tx_exist(bc_db_ro, tx.get_hash())? {
             Err(TxMpError::TxAlreadyWritten)
         } else if tx.issuers().contains(&server_pubkey)
             || txs_mp_db_ro.txs().count()? < self.max_size
@@ -89,7 +89,7 @@ impl TxsMempool {
         txs_mp_db: &TxsMpV2Db<B>,
         tx: &TransactionDocumentV10,
     ) -> Result<(), TxMpError> {
-        if duniter_dbs_read_ops::tx_exist(bc_db_ro, tx.get_hash())? {
+        if duniter_bc_reader::tx_exist(bc_db_ro, tx.get_hash())? {
             Err(TxMpError::TxAlreadyWritten)
         } else if tx.issuers().contains(&server_pubkey) {
             duniter_dbs_write_ops::txs_mp::add_pending_tx(

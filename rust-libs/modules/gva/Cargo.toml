@@ -14,7 +14,6 @@ async-trait = "0.1.41"
 dubp = { version = "0.34.0" }
 duniter-conf = { path = "../../duniter-conf" }
 duniter-dbs = { path = "../../duniter-dbs" }
-duniter-dbs-read-ops = { path = "../../duniter-dbs-read-ops" }
 duniter-gva-dbs-reader = { path = "./dbs-reader" }
 duniter-gva-indexer = { path = "./indexer" }
 duniter-gva-gql = { path = "./gql" }

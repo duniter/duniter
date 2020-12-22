@@ -11,7 +11,7 @@ cfg-if = "1.0.0"
 dubp = { version = "0.34.0" }
 duniter-conf = { path = "../duniter-conf" }
 duniter-dbs = { path = "../duniter-dbs" }
-duniter-dbs-read-ops = { path = "../duniter-dbs-read-ops" }
+duniter-bc-reader = { path = "../duniter-bc-reader" }
 duniter-dbs-write-ops = { path = "../duniter-dbs-write-ops" }
 duniter-gva = { path = "../modules/gva", optional = true }
 duniter-mempools = { path = "../duniter-mempools" }

@@ -108,7 +108,7 @@ impl DuniterServer {
         shared_dbs.dunp_db.heads_old_write().clear()?; // Clear WS2Pv1 HEADs
         duniter_dbs_write_ops::cm::init(&bc_db, &shared_dbs.cm_db)?;
         log::info!("Databases successfully opened.");
-        let current = duniter_dbs_read_ops::get_current_block_meta(&shared_dbs.cm_db)
+        let current = duniter_bc_reader::get_current_block_meta(&shared_dbs.cm_db)
             .context("Fail to get current")?;
         if let Some(current) = current {
             log::info!("Current block: #{}-{}", current.number, current.hash);

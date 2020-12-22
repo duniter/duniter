@@ -49,8 +49,7 @@ impl UtxosQuery {
         ) = data
             .dbs_pool
             .execute(move |dbs| {
-                if let Some(current_block) =
-                    duniter_dbs_read_ops::get_current_block_meta(&dbs.cm_db)?
+                if let Some(current_block) = duniter_bc_reader::get_current_block_meta(&dbs.cm_db)?
                 {
                     let paged_data = db_reader.find_script_utxos(
                         &dbs.txs_mp_db,

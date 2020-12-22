@@ -1,5 +1,5 @@
 [package]
-name = "duniter-dbs-read-ops"
+name = "duniter-bc-reader"
 version = "0.1.0"
 authors = ["elois <elois@duniter.org>"]
 description = "Duniter DBs read operations"

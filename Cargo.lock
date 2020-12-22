@@ -1063,6 +1063,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "duniter-bc-reader"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dubp",
+ "duniter-dbs",
+ "resiter",
+ "smallvec",
+]
+
+[[package]]
 name = "duniter-conf"
 version = "0.1.0"
 dependencies = [
@@ -1119,17 +1130,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "duniter-dbs-read-ops"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "dubp",
- "duniter-dbs",
- "resiter",
- "smallvec",
-]
-
-[[package]]
 name = "duniter-dbs-write-ops"
 version = "0.1.0"
 dependencies = [
@@ -1156,7 +1156,6 @@ dependencies = [
  "dubp",
  "duniter-conf",
  "duniter-dbs",
- "duniter-dbs-read-ops",
  "duniter-gva-dbs-reader",
  "duniter-gva-gql",
  "duniter-gva-indexer",
@@ -1199,9 +1198,9 @@ dependencies = [
  "async-graphql",
  "async-trait",
  "dubp",
+ "duniter-bc-reader",
  "duniter-conf",
  "duniter-dbs",
- "duniter-dbs-read-ops",
  "duniter-gva-dbs-reader",
  "duniter-mempools",
  "duniter-module",
@@ -1236,9 +1235,9 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "dubp",
+ "duniter-bc-reader",
  "duniter-conf",
  "duniter-dbs",
- "duniter-dbs-read-ops",
  "duniter-dbs-write-ops",
  "duniter-mempools",
  "duniter-module",
@@ -1273,8 +1272,8 @@ name = "duniter-mempools"
 version = "0.1.0"
 dependencies = [
  "dubp",
+ "duniter-bc-reader",
  "duniter-dbs",
- "duniter-dbs-read-ops",
  "duniter-dbs-write-ops",
  "log",
  "thiserror",
@@ -1302,9 +1301,9 @@ dependencies = [
  "anyhow",
  "cfg-if 1.0.0",
  "dubp",
+ "duniter-bc-reader",
  "duniter-conf",
  "duniter-dbs",
- "duniter-dbs-read-ops",
  "duniter-dbs-write-ops",
  "duniter-gva",
  "duniter-mempools",

@@ -18,7 +18,6 @@ use async_mutex::Mutex;
 use duniter_dbs::kv_typed::prelude::Arc;
 use std::{
     collections::{HashMap, HashSet},
-    iter::FromIterator,
     net::IpAddr,
     time::Duration,
     time::Instant,
@@ -49,7 +48,7 @@ impl From<&GvaConf> for AntiSpam {
                 ban: HashMap::with_capacity(10),
                 ips_time: HashMap::with_capacity(10),
             })),
-            whitelist: HashSet::from_iter(conf.get_whitelist().iter().copied()),
+            whitelist: conf.get_whitelist().iter().copied().collect(),
         }
     }
 }

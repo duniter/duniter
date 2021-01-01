@@ -100,7 +100,7 @@ where
         let layout_verified = zerocopy::LayoutVerified::<_, [T]>::new_slice(bytes)
             .ok_or(LayoutVerifiedErr(stringify!(BTreeSet<T>)))?;
         let slice = layout_verified.into_slice();
-        Ok(BTreeSet::from_iter(slice.iter().copied()))
+        Ok(slice.iter().copied().collect())
     }
 }
 
@@ -114,7 +114,7 @@ where
         let layout_verified = zerocopy::LayoutVerified::<_, [T]>::new_slice(bytes)
             .ok_or(LayoutVerifiedErr(stringify!(HashSet<T>)))?;
         let slice = layout_verified.into_slice();
-        Ok(HashSet::from_iter(slice.iter().copied()))
+        Ok(slice.iter().copied().collect())
     }
 }
 

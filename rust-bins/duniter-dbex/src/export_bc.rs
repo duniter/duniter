@@ -55,25 +55,23 @@ pub(crate) fn export_bc<B: Backend>(
         let (s, r) = flume::unbounded();
         let reader_handle = std::thread::spawn(move || {
             bc_v1.main_blocks().iter(.., |it| {
-                it.values()
-                    .map(|block_res| s.send(block_res).map_err(|_| anyhow!("fail to send")))
-                    .collect::<anyhow::Result<()>>()
+                it.values().try_for_each(|block_res| {
+                    s.send(block_res).map_err(|_| anyhow!("fail to send"))
+                })
             })
         });
 
         let (s2, r2) = flume::unbounded();
         let jsonifier_handle = std::thread::spawn(move || {
-            r.iter()
-                .map(|block_res| {
-                    let json_block_res = match block_res {
-                        Ok(block) => {
-                            serde_json::to_value(&block).map_err(|e| KvError::DeserError(e.into()))
-                        }
-                        Err(e) => Err(e),
-                    };
-                    s2.send(json_block_res).map_err(|_| anyhow!("fail to send"))
-                })
-                .collect::<anyhow::Result<()>>()
+            r.iter().try_for_each(|block_res| {
+                let json_block_res = match block_res {
+                    Ok(block) => {
+                        serde_json::to_value(&block).map_err(|e| KvError::DeserError(e.into()))
+                    }
+                    Err(e) => Err(e),
+                };
+                s2.send(json_block_res).map_err(|_| anyhow!("fail to send"))
+            })
         });
 
         let threadpool = ThreadPool::start(ThreadPoolConfig::default(), ()).into_sync_handler();

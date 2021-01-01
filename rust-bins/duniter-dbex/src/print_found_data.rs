@@ -42,7 +42,7 @@ pub fn print_found_data<W: Write>(
     }
 
     let only_properties_set = if !only_properties.is_empty() {
-        HashSet::from_iter(only_properties.into_iter())
+        only_properties.into_iter().collect()
     } else {
         HashSet::with_capacity(0)
     };

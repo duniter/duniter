@@ -474,14 +474,13 @@ mod tests {
     use duniter_dbs::smallvec::smallvec as svec;
     use duniter_dbs::{databases::bc_v2::BcV2DbWritable, SourceAmountValV2, UdIdV2};
     use duniter_gva_db::GvaV1DbWritable;
-    use std::iter::FromIterator;
 
     #[test]
     fn test_filter_blocks_numbers() -> KvResult<()> {
         let idty = GvaIdtyDbV1 {
             is_member: true,
             joins: svec![BlockNumber(26), BlockNumber(51)],
-            leaves: BTreeSet::from_iter([BlockNumber(32)].iter().copied()),
+            leaves: [BlockNumber(32)].iter().copied().collect(),
             first_ud: Some(BlockNumber(29)),
         };
         let blocks_with_ud = vec![
@@ -530,7 +529,7 @@ mod tests {
         let idty = GvaIdtyDbV1 {
             is_member: true,
             joins: svec![BlockNumber(26), BlockNumber(51)],
-            leaves: BTreeSet::from_iter([BlockNumber(32)].iter().copied()),
+            leaves: [BlockNumber(32)].iter().copied().collect(),
             first_ud: Some(BlockNumber(29)),
         };
 

@@ -14,6 +14,7 @@ db_schema!(
 );
 
 #[test]
+#[allow(clippy::eq_op)]
 fn test_macro_db() {
     assert_eq!(Col1Event::RemoveAll, Col1Event::RemoveAll);
 
@@ -118,9 +119,8 @@ fn test_db<B: Backend>(db: &TestV1Db<B>) -> KvResult<()> {
     })?;
 
     // Test get_ref_slice
-    use std::iter::FromIterator as _;
     db.col4_write()
-        .upsert(4, BTreeSet::from_iter((&[3, 2, 4, 1]).iter().copied()))?;
+        .upsert(4, (&[3, 2, 4, 1]).iter().copied().collect())?;
     db.col4().get_ref_slice(&4, |numbers| {
         assert_eq!(numbers, &[1, 2, 3, 4]);
         Ok(())
@@ -195,7 +195,7 @@ fn test_db<B: Backend>(db: &TestV1Db<B>) -> KvResult<()> {
 
                 Ok::<(), KvError>(())
             })?;
-            c4.upsert(4, BTreeSet::from_iter((&[7, 8, 6, 5]).iter().copied()));
+            c4.upsert(4, (&[7, 8, 6, 5]).iter().copied().collect());
             Ok(())
         });
     tres?;

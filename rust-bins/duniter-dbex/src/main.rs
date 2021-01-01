@@ -49,7 +49,6 @@ use std::{
     collections::{HashMap, HashSet},
     fs::File,
     io::{stdin, Write},
-    iter::FromIterator,
     time::Instant,
 };
 use structopt::StructOpt;

@@ -114,7 +114,6 @@ pub(crate) use std::{
     convert::TryInto,
     error::Error,
     fmt::{Debug, Display},
-    iter::FromIterator,
     marker::PhantomData,
     ops::{Bound, RangeBounds},
     str::FromStr,

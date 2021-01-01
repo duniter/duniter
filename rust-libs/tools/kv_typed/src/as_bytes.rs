@@ -47,7 +47,7 @@ where
 {
     fn as_bytes<D, F: FnMut(&[u8]) -> D>(&self, mut f: F) -> D {
         use zerocopy::AsBytes as _;
-        f((&SmallVec::<[T; 32]>::from_iter(self.iter().copied())[..]).as_bytes())
+        f((&self.iter().copied().collect::<SmallVec<[T; 32]>>()[..]).as_bytes())
     }
 }
 
@@ -57,7 +57,7 @@ where
 {
     fn as_bytes<D, F: FnMut(&[u8]) -> D>(&self, mut f: F) -> D {
         use zerocopy::AsBytes as _;
-        f((&SmallVec::<[T; 32]>::from_iter(self.iter().copied())[..]).as_bytes())
+        f((&self.iter().copied().collect::<SmallVec<[T; 32]>>()[..]).as_bytes())
     }
 }
 

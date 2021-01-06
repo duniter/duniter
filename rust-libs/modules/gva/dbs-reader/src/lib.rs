@@ -24,6 +24,7 @@
 
 pub mod current_frame;
 pub mod find_inputs;
+pub mod idty;
 pub mod pagination;
 pub mod txs_history;
 pub mod uds_of_pubkey;

@@ -35,6 +35,7 @@ pub use schema::{build_schema_with_data, get_schema_definition, GvaSchema, GvaSc
 
 use crate::entities::{
     block_gva::{Block, BlockMeta},
+    idty_gva::Identity,
     tx_gva::TxGva,
     ud_gva::{CurrentUdGva, RevalUdGva, UdGva},
     AggregateSum, AmountWithBase, EdgeTx, PeerCardGva, RawTxOrChanges, Sum, TxDirection,
@@ -147,6 +148,7 @@ mod tests {
                 txs_mp_db_ro: &TxsMpDb,
                 pubkey: PublicKey,
             ) -> KvResult<(Vec<TransactionDocumentV10>, Vec<TransactionDocumentV10>)>;
+            fn pubkey_is_member(&self, pubkey: PublicKey) -> KvResult<Option<bool>>;
             fn unspent_uds_of_pubkey<BcDb: 'static + BcV2DbReadable>(
                 &self,
                 bc_db: &BcDb,

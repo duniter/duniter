@@ -17,6 +17,7 @@ pub mod account_balance;
 pub mod current_block;
 pub mod current_frame;
 pub mod gen_tx;
+pub mod idty;
 pub mod txs_history;
 pub mod uds;
 pub mod utxos_of_script;
@@ -31,6 +32,7 @@ pub struct QueryRoot(
     queries::current_block::CurrentBlockQuery,
     queries::current_frame::CurrentFrameQuery,
     queries::gen_tx::GenTxsQuery,
+    queries::idty::IdtyQuery,
     queries::txs_history::TxsHistoryBlockchainQuery,
     queries::txs_history::TxsHistoryMempoolQuery,
     queries::uds::UdsQuery,

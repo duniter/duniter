@@ -89,7 +89,7 @@ mod tests {
     use unwrap::unwrap;
 
     #[test]
-    fn block_meta_v2_as_bytes() -> KvResult<()> {
+    fn block_meta_v2_as_bytes() {
         assert_eq!(
             unwrap!(bincode::serialized_size(&BlockMetaV2 {
                 dividend: Some(SourceAmount::new(42, 0)),
@@ -102,8 +102,6 @@ mod tests {
         let bm2_res = bloc_meta.as_bytes(|bytes| unwrap!(BlockMetaV2::from_bytes(bytes)));
 
         assert_eq!(bm2_res, bloc_meta);
-
-        Ok(())
     }
 }
 

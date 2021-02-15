@@ -129,7 +129,7 @@ declare_types! {
         method sign(mut cx) {
             let message = cx.argument::<JsValue>(0)?;
             apply_to_js_message(&mut cx, message, |cx, bytes| {
-                sign_bytes(cx, bytes)
+                Ok(sign_bytes(cx, bytes))
             })
         }
     }
@@ -175,10 +175,7 @@ fn apply_to_js_message<'c, C: Context<'c>, T, F: FnOnce(&mut C, &[u8]) -> NeonRe
     }
 }
 
-fn sign_bytes<'c>(
-    cx: &mut MethodContext<'c, JsKeyPair>,
-    bytes: &[u8],
-) -> NeonResult<Handle<'c, JsValue>> {
+fn sign_bytes<'c>(cx: &mut MethodContext<'c, JsKeyPair>, bytes: &[u8]) -> Handle<'c, JsValue> {
     let this = cx.this();
     let sig = {
         let guard = cx.lock();
@@ -187,7 +184,7 @@ fn sign_bytes<'c>(
         keypair.sign(bytes)
     };
 
-    Ok(cx.string(sig.to_base64()).upcast())
+    cx.string(sig.to_base64()).upcast()
 }
 
 #[cfg(test)]

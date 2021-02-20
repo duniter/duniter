@@ -30,13 +30,15 @@ impl IdtyQuery {
         let data = ctx.data::<GvaSchemaData>()?;
         let dbs_reader = data.dbs_reader();
 
-        let pubkey_is_member = data
+        let idty = data
             .dbs_pool
-            .execute(move |_| dbs_reader.pubkey_is_member(pubkey))
-            .await??;
+            .execute(move |dbs| dbs_reader.idty(&dbs.bc_db_ro, pubkey))
+            .await??
+            .unwrap_or_default();
 
         Ok(Identity {
-            is_member: pubkey_is_member.unwrap_or_default(),
+            is_member: idty.is_member,
+            username: idty.username,
         })
     }
 }
@@ -50,24 +52,30 @@ mod tests {
     async fn test_idty() -> anyhow::Result<()> {
         let mut dbs_reader = MockDbsReader::new();
         dbs_reader
-            .expect_pubkey_is_member()
-            .withf(|s| {
+            .expect_idty()
+            .withf(|_, s| {
                 s == &PublicKey::from_base58("DnjL6hYA1k7FavGHbbir79PKQbmzw63d6bsamBBdUULP")
                     .expect("wrong pubkey")
             })
             .times(1)
-            .returning(|_| Ok(Some(true)));
+            .returning(|_, _| {
+                Ok(Some(duniter_dbs::IdtyDbV2 {
+                    is_member: true,
+                    username: String::from("JohnDoe"),
+                }))
+            });
         let schema = create_schema(dbs_reader)?;
         assert_eq!(
             exec_graphql_request(
                 &schema,
-                r#"{ idty(pubkey: "DnjL6hYA1k7FavGHbbir79PKQbmzw63d6bsamBBdUULP") {isMember} }"#
+                r#"{ idty(pubkey: "DnjL6hYA1k7FavGHbbir79PKQbmzw63d6bsamBBdUULP") {isMember, username} }"#
             )
             .await?,
             serde_json::json!({
                 "data": {
                     "idty": {
-                        "isMember": true
+                        "isMember": true,
+                        "username": "JohnDoe"
                     }
                 }
             })

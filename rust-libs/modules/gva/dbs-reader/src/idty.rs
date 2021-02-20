@@ -16,45 +16,57 @@
 use crate::*;
 
 impl DbsReader {
-    pub fn pubkey_is_member(&self, pubkey: PublicKey) -> KvResult<Option<bool>> {
-        Ok(self
-            .0
-            .gva_identities()
-            .get(&PubKeyKeyV2(pubkey))?
-            .map(|identity| identity.is_member))
+    pub fn idty(
+        &self,
+        bc_db: &BcV2DbRo<FileBackend>,
+        pubkey: PublicKey,
+    ) -> KvResult<Option<duniter_dbs::IdtyDbV2>> {
+        bc_db.identities().get(
+            &duniter_dbs::PubKeyKeyV2::from_bytes(pubkey.as_ref())
+                .map_err(|e| KvError::DeserError(Box::new(e)))?,
+        )
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use duniter_dbs::databases::bc_v2::BcV2DbWritable;
     use duniter_gva_db::GvaV1DbWritable;
 
     #[test]
-    fn test_pubkey_is_member() -> KvResult<()> {
+    fn test_idty() -> KvResult<()> {
+        let bc_db = duniter_dbs::databases::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?;
         let gva_db = duniter_gva_db::GvaV1Db::<Mem>::open(MemConf::default())?;
+        let bc_db_ro = bc_db.get_ro_handler();
         let db_reader = create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) });
 
         let pk = PublicKey::default();
 
-        // Write test data
-        gva_db
-            .gva_identities_write()
-            .upsert(PubKeyKeyV2(pk), GvaIdtyDbV1::default())?;
+        bc_db
+            .identities_write()
+            .upsert(PubKeyKeyV2(pk), duniter_dbs::IdtyDbV2::default())?;
 
-        // Test
+        assert_eq!(
+            db_reader.idty(&bc_db_ro, pk)?,
+            Some(duniter_dbs::IdtyDbV2::default())
+        );
 
-        assert_eq!(db_reader.pubkey_is_member(pk)?, Some(false));
-
-        gva_db.gva_identities_write().upsert(
+        bc_db.identities_write().upsert(
             PubKeyKeyV2(pk),
-            GvaIdtyDbV1 {
+            duniter_dbs::IdtyDbV2 {
                 is_member: true,
-                ..Default::default()
+                username: String::from("JohnDoe"),
             },
         )?;
 
-        assert_eq!(db_reader.pubkey_is_member(pk)?, Some(true));
+        assert_eq!(
+            db_reader.idty(&bc_db_ro, pk)?,
+            Some(duniter_dbs::IdtyDbV2 {
+                is_member: true,
+                username: String::from("JohnDoe"),
+            })
+        );
 
         Ok(())
     }

@@ -16,4 +16,5 @@
 #[derive(async_graphql::SimpleObject)]
 pub(crate) struct Identity {
     pub is_member: bool,
+    pub username: String,
 }

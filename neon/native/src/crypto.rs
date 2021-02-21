@@ -64,7 +64,7 @@ pub fn seed_to_expanded_base58_secret_key(mut cx: FunctionContext) -> JsResult<J
 
 pub fn sha256(mut cx: FunctionContext) -> JsResult<JsString> {
     let str_datas = cx.argument::<JsString>(0)?.value();
-    Ok(cx.string(Hash::compute_str(&str_datas).to_hex().to_uppercase()))
+    Ok(cx.string(Hash::compute(&str_datas.as_bytes()).to_hex().to_uppercase()))
 }
 
 pub fn verify(mut cx: FunctionContext) -> JsResult<JsBoolean> {

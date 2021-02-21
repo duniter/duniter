@@ -15,7 +15,7 @@ path = "src/lib.rs"
 anyhow = "1.0.34"
 duniter-dbs = { path = "../../../duniter-dbs" }
 duniter-gva-db = { path = "../db" }
-dubp = { version = "0.34.0" }
+dubp = { version = "0.43.2" }
 once_cell = "1.5.2"
 resiter = "0.4.0"
 

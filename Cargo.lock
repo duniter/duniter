@@ -359,9 +359,9 @@ checksum = "3441f0f7b02788e948e47f457ca01f1d7e6d92c693bc132c22b087d3141c03ff"
 
 [[package]]
 name = "beef"
-version = "0.4.4"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "474a626a67200bd107d44179bb3d4fc61891172d11696609264589be6a0e6a43"
+checksum = "6736e2428df2ca2848d846c43e88745121a6654696e349ce0054a420815a7409"
 
 [[package]]
 name = "bincode"
@@ -394,6 +394,21 @@ dependencies = [
  "arrayref",
  "arrayvec",
  "constant_time_eq",
+]
+
+[[package]]
+name = "blake3"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9ff35b701f3914bdb8fad3368d822c766ef2858b2583198e41639b936f09d3f"
+dependencies = [
+ "arrayref",
+ "arrayvec",
+ "cc",
+ "cfg-if 0.1.10",
+ "constant_time_eq",
+ "crypto-mac",
+ "digest 0.9.0",
 ]
 
 [[package]]
@@ -800,10 +815,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "cryptoxide"
-version = "0.2.1"
+name = "crypto-mac"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da24927b5b899890bcb29205436c957b7892ec3a3fbffce81d710b9611e77778"
+checksum = "b584a330336237c1eecd3e94266efb216c56ed91225d634cb2991c5f3fd1aeab"
+dependencies = [
+ "generic-array 0.14.4",
+ "subtle",
+]
 
 [[package]]
 name = "cslice"
@@ -970,9 +989,9 @@ checksum = "134951f4028bdadb9b84baf4232681efbf277da25144b9b0ad65df75946c422b"
 
 [[package]]
 name = "dubp"
-version = "0.34.0"
+version = "0.43.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "362f2f4944b4c83949cfe91a3c2cf357d45e484ad93719a72a823e4a8e9f57c4"
+checksum = "aa2becbe55565ce095ceaa3aeb94851caa905fdc28f4d91b6132a15d1f3bff40"
 dependencies = [
  "dubp-block",
  "dubp-common",
@@ -984,9 +1003,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-block"
-version = "0.34.0"
+version = "0.43.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02bf4bd694cb294032e23b8a4dd7f33e69c16cf0cc43d0cea930ea6ec05c17b0"
+checksum = "21345491d91a9241675ec25875e245ece5402a00de0b1d1074e706f339b809e0"
 dependencies = [
  "dubp-documents",
  "dubp-documents-parser",
@@ -999,9 +1018,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-common"
-version = "0.34.0"
+version = "0.43.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa7ad811ff15659e90561b028ff7cdf57b8e05cf647a421f7014202722567a82"
+checksum = "8eebb2bdd97c45d16293961af71976c5a5a9a98568143bb2846dfec7e6850cd7"
 dependencies = [
  "dup-crypto",
  "serde",
@@ -1012,9 +1031,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-documents"
-version = "0.34.0"
+version = "0.43.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42a01990f2234f853e8768e5403ec89e02afea47760e3644fe59153558d328d9"
+checksum = "8bae3b6a974f106bed51661c8d553e4fe8b3dfec034eb4fdf818f4f8c42cde37"
 dependencies = [
  "beef",
  "dubp-wallet",
@@ -1026,9 +1045,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-documents-parser"
-version = "0.34.0"
+version = "0.43.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7221d36592e369527a832f1f4b5fa3ff11e7d68467a2384d1d5fc6d7728159d"
+checksum = "d12e8404dee50db078697367339cbdf13ab5fc8684d73172477ed27cf2c10cc2"
 dependencies = [
  "dubp-documents",
  "json-pest-parser",
@@ -1040,9 +1059,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-wallet"
-version = "0.34.0"
+version = "0.43.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e9ef70cc701226d3610452284637f0c86412f5d1a5831f6147964a23366e409"
+checksum = "d908f53181ca3ad348aa196f6805da118b2239e77f78069074ae95ea3c5ffe20"
 dependencies = [
  "byteorder",
  "dubp-common",
@@ -1359,14 +1378,14 @@ dependencies = [
 
 [[package]]
 name = "dup-crypto"
-version = "0.34.0"
+version = "0.43.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e1f1a33a3c3c66c0f2e1e050e2dbd8291975308eac2f7a1a58732f58a21c2e5"
+checksum = "5612539417a1204863d10dda1cb313fe7a34da8596d30fa93da8af125c928abb"
 dependencies = [
  "base64",
+ "blake3",
  "bs58",
  "byteorder",
- "cryptoxide",
  "getrandom 0.1.15",
  "ring",
  "serde",
@@ -1720,7 +1739,6 @@ dependencies = [
  "cfg-if 0.1.10",
  "libc",
  "wasi 0.9.0+wasi-snapshot-preview1",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -3413,9 +3431,9 @@ dependencies = [
 
 [[package]]
 name = "smallvec"
-version = "1.4.2"
+version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbee7696b84bbf3d89a1c2eccff0850e3047ed46bfcd2e92c29a2d074d57e252"
+checksum = "fe0f37c9e8f3c5a4a66ad655a93c74daac4ad00c441533bf5c6e7990bb42604e"
 dependencies = [
  "serde",
 ]
@@ -3582,6 +3600,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "subtle"
+version = "2.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e81da0851ada1f3e9d4312c704aa4f8806f0f9d69faaf8df2f3464b4a9437c2"
 
 [[package]]
 name = "supercow"

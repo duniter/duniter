@@ -501,7 +501,7 @@ mod tests {
         let db_reader = create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) });
 
         let s1 = WalletScriptV10::single_sig(PublicKey::default());
-        let s1_hash = Hash::compute_str(&s1.to_string());
+        let s1_hash = Hash::compute(&s1.to_string().as_bytes());
 
         gva_db.txs_write().upsert(
             HashKeyV2(Hash::default()),
@@ -615,7 +615,7 @@ mod tests {
         let db_reader = create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) });
 
         let s1 = WalletScriptV10::single_sig(PublicKey::default());
-        let s1_hash = Hash::compute_str(&s1.to_string());
+        let s1_hash = Hash::compute(&s1.to_string().as_bytes());
 
         gva_db.txs_write().upsert(
             HashKeyV2(Hash::default()),

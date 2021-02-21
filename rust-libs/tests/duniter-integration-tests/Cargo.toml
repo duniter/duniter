@@ -7,7 +7,7 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0.34"
-dubp = { version = "0.34.0" }
+dubp = { version = "0.43.2" }
 duniter-conf = { path = "../../duniter-conf" }
 duniter-dbs = { path = "../../duniter-dbs" }
 duniter-bc-reader = { path = "../../duniter-bc-reader" }

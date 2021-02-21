@@ -29,7 +29,7 @@ resiter = "0.4.0"
 serde = { version = "1.0.105", features = ["derive"] }
 serde_urlencoded = "0.7.0"
 tokio = { version = "0.2.22", features = ["io-util", "rt-threaded"] }
-warp = "0.2"
+warp = "0.3"
 
 [dev-dependencies]
 duniter-dbs = { path = "../../duniter-dbs", features = ["mem"] }

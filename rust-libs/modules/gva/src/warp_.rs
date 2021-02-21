@@ -93,7 +93,10 @@ pub(crate) fn graphql(
                             futures::TryStreamExt::map_err(body, |err| {
                                 std::io::Error::new(std::io::ErrorKind::Other, err)
                             })
-                            .map_ok(|mut buf| warp::Buf::to_bytes(&mut buf))
+                            .map_ok(|mut buf| {
+                                let remaining = warp::Buf::remaining(&buf);
+                                warp::Buf::copy_to_bytes(&mut buf, remaining)
+                            })
                             .into_async_read(),
                             async_graphql::http::MultipartOptions::clone(&opts),
                         )

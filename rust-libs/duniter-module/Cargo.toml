@@ -17,4 +17,4 @@ fast-threadpool = "0.2.3"
 [dev-dependencies]
 duniter-dbs = { path = "../duniter-dbs", features = ["mem"] }
 paste = "1.0.2"
-tokio = { version = "0.2.22", features = ["macros", "rt-core"] }
+tokio = { version = "1.2", features = ["macros", "rt"] }

@@ -123,7 +123,6 @@ impl AntiSpam {
 mod tests {
     use super::*;
     use std::net::{Ipv4Addr, Ipv6Addr};
-    use tokio::time::delay_for;
 
     const LOCAL_IP4: IpAddr = IpAddr::V4(Ipv4Addr::LOCALHOST);
     const LOCAL_IP6: IpAddr = IpAddr::V6(Ipv6Addr::LOCALHOST);
@@ -148,16 +147,16 @@ mod tests {
         assert!(!anti_spam.verify(Some(extern_ip)).await);
 
         // Should be un-banned after one second
-        delay_for(Duration::from_millis(1_100)).await;
+        tokio::time::sleep(Duration::from_millis(1_100)).await;
         // Re-consume max queries
         for _ in 0..COUNT_INTERVAL {
             assert!(anti_spam.verify(Some(extern_ip)).await);
         }
         // Should be banned for 2 seconds this time
-        delay_for(Duration::from_millis(1_100)).await;
+        tokio::time::sleep(Duration::from_millis(1_100)).await;
         // Attempting a request when I'm banned must be twice my banning time
         assert!(!anti_spam.verify(Some(extern_ip)).await);
-        delay_for(Duration::from_millis(4_100)).await;
+        tokio::time::sleep(Duration::from_millis(4_100)).await;
         // Re-consume max queries
         for _ in 0..COUNT_INTERVAL {
             assert!(anti_spam.verify(Some(extern_ip)).await);

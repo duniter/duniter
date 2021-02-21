@@ -129,8 +129,7 @@ impl DuniterServer {
             fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), shared_dbs.clone());
 
         if command != DuniterCommand::Sync && conf.gva.is_some() {
-            let mut runtime = tokio::runtime::Builder::new()
-                .threaded_scheduler()
+            let runtime = tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build()?;
             let conf_clone = conf.clone();

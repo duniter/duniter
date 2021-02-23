@@ -22,6 +22,7 @@
     unused_import_braces
 )]
 
+pub mod block;
 pub mod current_frame;
 pub mod find_inputs;
 pub mod idty;

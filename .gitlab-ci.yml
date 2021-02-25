@@ -151,7 +151,7 @@ sync_gtest:
 
 .build_releases: &build_releases
   stage: package
-  image: duniter/release-builder:v1.4.0
+  image: duniter/release-builder:v2.0.0
   cache: {}
   tags:
     - redshift

@@ -93,6 +93,7 @@ mod tests {
                 pubkey: PublicKey,
                 page_info: PageInfo<BlockNumber>,
             ) -> KvResult<PagedData<duniter_gva_dbs_reader::uds_of_pubkey::UdsWithSum>>;
+            fn block(&self, bc_db: &BcV2DbRo<FileBackend>, number: U32BE) -> KvResult<Option<BlockMetaV2>>;
             fn find_inputs<BcDb: 'static + BcV2DbReadable, TxsMpDb: 'static + TxsMpV2DbReadable>(
                 &self,
                 bc_db: &BcDb,

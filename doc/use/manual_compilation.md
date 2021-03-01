@@ -7,6 +7,11 @@ Date: 2020-05-05
 Slug: manual_compilation
 Authors: elois
 
+**WARNING: This documentation corresponds to the version under development.
+To compile the latest stable version, please refer to the documentation on the `stable` branch:**
+
+[https://git.duniter.org/nodes/typescript/duniter/blob/stable/doc/use/manual_compilation.md](https://git.duniter.org/nodes/typescript/duniter/blob/stable/doc/use/manual_compilation.md)
+
 ## Prerequisites
 
 To compile Duniter manually, there is currently the following requirement:

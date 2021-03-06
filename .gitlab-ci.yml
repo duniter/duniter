@@ -124,7 +124,7 @@ audit_dependencies:
     - cargo deny -V
   stage: quality
   script:
-    - cargo deny check
+    - cargo deny --workspace check
 
 .integration_rules: &integration_rules
   allow_failure: true

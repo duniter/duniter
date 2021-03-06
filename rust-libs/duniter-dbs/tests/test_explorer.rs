@@ -27,7 +27,7 @@ mod explorer {
         PublicKeySingletonDbV1, UidKeyV1,
     };
     use std::{num::NonZeroUsize, str::FromStr};
-    use tempdir::TempDir;
+    use tempfile::TempDir;
     use unwrap::unwrap;
 
     const COLLECTION_NAME: &str = "uids";
@@ -38,7 +38,7 @@ mod explorer {
 
     #[test]
     fn explorer_test_leveldb() -> anyhow::Result<()> {
-        let tmp_dir = unwrap!(TempDir::new("explorer_test_leveldb"));
+        let tmp_dir = unwrap!(TempDir::new());
 
         let db = BcV1Db::<LevelDb>::open(LevelDbConf::path(tmp_dir.path().to_owned()))?;
 

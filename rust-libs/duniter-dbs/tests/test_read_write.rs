@@ -23,12 +23,12 @@ use duniter_dbs::{
 };
 use kv_typed::channel::TryRecvError;
 use std::str::FromStr;
-use tempdir::TempDir;
+use tempfile::TempDir;
 use unwrap::unwrap;
 
 #[test]
 fn write_read_delete_b0_leveldb() -> KvResult<()> {
-    let tmp_dir = unwrap!(TempDir::new("write_read_delete_b0_leveldb"));
+    let tmp_dir = unwrap!(TempDir::new());
 
     let db = BcV1Db::<LevelDb>::open(LevelDbConf::path(tmp_dir.path().to_owned()))?;
 
@@ -44,7 +44,7 @@ fn write_read_delete_b0_sled() -> KvResult<()> {
 
 #[test]
 fn iter_test_leveldb() -> KvResult<()> {
-    let tmp_dir = unwrap!(TempDir::new("batch_test_leveldb"));
+    let tmp_dir = unwrap!(TempDir::new());
 
     let db = BcV1Db::<LevelDb>::open(LevelDbConf::path(tmp_dir.path().to_owned()))?;
 
@@ -67,7 +67,7 @@ fn iter_test_sled() -> KvResult<()> {
 
 #[test]
 fn batch_test_leveldb() -> KvResult<()> {
-    let tmp_dir = unwrap!(TempDir::new("batch_test_leveldb"));
+    let tmp_dir = unwrap!(TempDir::new());
 
     let db = BcV1Db::<LevelDb>::open(LevelDbConf::path(tmp_dir.path().to_owned()))?;
 

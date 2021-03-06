@@ -38,7 +38,7 @@ required-features = ["leveldb_backend", "sled_backend"]
 async-std = { version = "1.6.3", features = ["attributes"] }
 maybe-async = "0.2.0"
 smallvec = { version = "1.4.0", features = ["serde", "write"] }
-tempdir = "0.3.7"
+tempfile = "3.2.0"
 unwrap = "1.2.1"
 
 # Benches dependencies

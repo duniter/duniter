@@ -1,3 +1,10 @@
+[advisories]
+ignore = [
+    # generic-array v0.12.3 allowed unsoundly extending lifetimes
+    # but used only on build-dependencies by pest_meta
+    "RUSTSEC-2020-0146",
+]
+
 [bans]
 multiple-versions = "warn"
 deny = [

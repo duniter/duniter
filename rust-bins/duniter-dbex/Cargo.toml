@@ -20,7 +20,7 @@ structopt = "0.3.16"
 [dependencies]
 anyhow = "1.0.33"
 arrayvec = "0.5.1"
-comfy-table = "1.0.0"
+comfy-table = "2.1.0"
 dirs = "3.0.1"
 dubp = { version = "0.43.2" }
 duniter-dbs = { path = "../../rust-libs/duniter-dbs", default-features = false, features = ["explorer", "leveldb_backend", "sled_backend"] }

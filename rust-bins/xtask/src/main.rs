@@ -54,6 +54,11 @@ fn main() -> Result<()> {
     Command::new("cargo").arg("--version").status()?;
 
     if !args.skip_npm {
+        println!("Check nvm …");
+        if exec_should_success(Command::new("nvm").arg("--version")).is_err() {
+            println!("Duniter requires nvm, but nvm is not found, please install it or add it to your PATH. Nvm installation link: https://raw.githubusercontent.com/nvm-sh/nvm/v{}/install.sh", NVM_VERSION);
+            std::process::abort();
+        }
         println!("Check node version …");
         if exec_and_get_stdout(Command::new("node").arg("-v"))
             .unwrap_or_default()
@@ -73,10 +78,6 @@ fn main() -> Result<()> {
 }
 
 fn install_and_use_node_version() -> Result<()> {
-    if exec_should_success(Command::new("nvm").arg("--version")).is_err() {
-        println!("Duniter need nvm to build, please install it: https://raw.githubusercontent.com/nvm-sh/nvm/v{}/install.sh", NVM_VERSION);
-        std::process::abort();
-    }
     exec_should_success(Command::new("nvm").args(&["install", NODE_VERSION]))?;
     exec_should_success(Command::new("nvm").args(&["use", NODE_VERSION]))
 }

@@ -281,14 +281,10 @@ fn decrease_account_balance<B: Backend>(
         balances.get(WalletConditionsV2::from_ref(&account_script))?
     {
         let new_balance = balance - decrease_amount;
-        if new_balance > SourceAmount::ZERO {
-            balances.upsert(
-                WalletConditionsV2(account_script),
-                SourceAmountValV2(new_balance),
-            );
-        } else {
-            balances.remove(WalletConditionsV2(account_script));
-        }
+        balances.upsert(
+            WalletConditionsV2(account_script),
+            SourceAmountValV2(new_balance),
+        );
     }
     Ok(())
 }
@@ -454,7 +450,7 @@ mod tests {
             gva_db
                 .balances()
                 .get(WalletConditionsV2::from_ref(&script2))?,
-            None
+            Some(SourceAmountValV2(SourceAmount::ZERO))
         );
         assert_eq!(
             gva_db
@@ -494,7 +490,7 @@ mod tests {
             gva_db
                 .balances()
                 .get(WalletConditionsV2::from_ref(&script2))?,
-            None
+            Some(SourceAmountValV2(SourceAmount::ZERO))
         );
         assert_eq!(
             gva_db

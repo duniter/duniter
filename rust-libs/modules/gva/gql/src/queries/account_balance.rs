@@ -24,7 +24,7 @@ impl AccountBalanceQuery {
         &self,
         ctx: &async_graphql::Context<'_>,
         #[graphql(desc = "Account script or public key")] script: String,
-    ) -> async_graphql::Result<AmountWithBase> {
+    ) -> async_graphql::Result<Option<AmountWithBase>> {
         let account_script = if let Ok(pubkey) = PublicKey::from_base58(&script) {
             WalletScriptV10::single_sig(pubkey)
         } else {
@@ -34,17 +34,14 @@ impl AccountBalanceQuery {
         let data = ctx.data::<GvaSchemaData>()?;
         let dbs_reader = data.dbs_reader();
 
-        let balance = data
+        Ok(data
             .dbs_pool
             .execute(move |_| dbs_reader.get_account_balance(&account_script))
             .await??
-            .unwrap_or_default()
-            .0;
-
-        Ok(AmountWithBase {
-            amount: balance.amount() as i32,
-            base: balance.base() as i32,
-        })
+            .map(|balance| AmountWithBase {
+                amount: balance.0.amount() as i32,
+                base: balance.0.base() as i32,
+            }))
     }
 }
 

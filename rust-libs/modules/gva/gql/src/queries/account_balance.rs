@@ -25,20 +25,14 @@ impl AccountBalanceQuery {
     async fn balance(
         &self,
         ctx: &async_graphql::Context<'_>,
-        #[graphql(desc = "Account script or public key")] script: String,
+        #[graphql(desc = "Account script or public key")] script: PkOrScriptGva,
     ) -> async_graphql::Result<Option<AmountWithBase>> {
-        let account_script = if let Ok(pubkey) = PublicKey::from_base58(&script) {
-            WalletScriptV10::single_sig(pubkey)
-        } else {
-            dubp::documents_parser::wallet_script_from_str(&script)?
-        };
-
         let data = ctx.data::<GvaSchemaData>()?;
         let dbs_reader = data.dbs_reader();
 
         Ok(data
             .dbs_pool
-            .execute(move |_| dbs_reader.get_account_balance(&account_script))
+            .execute(move |_| dbs_reader.get_account_balance(&script.0))
             .await??
             .map(|balance| AmountWithBase {
                 amount: balance.0.amount() as i32,
@@ -53,30 +47,19 @@ impl AccountBalanceQuery {
     async fn balances(
         &self,
         ctx: &async_graphql::Context<'_>,
-        #[graphql(desc = "Accounts scripts or publics keys")] scripts: Vec<String>,
+        #[graphql(desc = "Accounts scripts or publics keys")] scripts: Vec<PkOrScriptGva>,
     ) -> async_graphql::Result<Vec<Option<AmountWithBase>>> {
-        let accounts_scripts = scripts
-            .into_iter()
-            .map(|script| {
-                if let Ok(pubkey) = PublicKey::from_base58(&script) {
-                    Ok(WalletScriptV10::single_sig(pubkey))
-                } else {
-                    dubp::documents_parser::wallet_script_from_str(&script)
-                }
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-
         let data = ctx.data::<GvaSchemaData>()?;
         let dbs_reader = data.dbs_reader();
 
         Ok(data
             .dbs_pool
             .execute(move |_| {
-                accounts_scripts
+                scripts
                     .iter()
                     .map(|account_script| {
                         dbs_reader
-                            .get_account_balance(account_script)
+                            .get_account_balance(&account_script.0)
                             .map(|balance_opt| {
                                 balance_opt.map(|balance| AmountWithBase {
                                     amount: balance.0.amount() as i32,

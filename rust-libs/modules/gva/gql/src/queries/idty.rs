@@ -23,16 +23,14 @@ impl IdtyQuery {
     async fn idty(
         &self,
         ctx: &async_graphql::Context<'_>,
-        #[graphql(desc = "public key")] pubkey: String,
+        #[graphql(desc = "public key")] pubkey: PubKeyGva,
     ) -> async_graphql::Result<Option<Identity>> {
-        let pubkey = PublicKey::from_base58(&pubkey)?;
-
         let data = ctx.data::<GvaSchemaData>()?;
         let dbs_reader = data.dbs_reader();
 
         Ok(data
             .dbs_pool
-            .execute(move |dbs| dbs_reader.idty(&dbs.bc_db_ro, pubkey))
+            .execute(move |dbs| dbs_reader.idty(&dbs.bc_db_ro, pubkey.0))
             .await??
             .map(|idty| Identity {
                 is_member: idty.is_member,

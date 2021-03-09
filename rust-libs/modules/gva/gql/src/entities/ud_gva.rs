@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use crate::*;
+
 #[derive(Clone, async_graphql::SimpleObject)]
 pub(crate) struct CurrentUdGva {
     /// Ud amount
@@ -38,7 +40,7 @@ pub(crate) struct UdGva {
     /// Ud base
     pub(crate) base: i64,
     /// Issuer of this universal dividend
-    pub(crate) issuer: String,
+    pub(crate) issuer: PubKeyGva,
     /// Number of the block that created this UD
     pub(crate) block_number: u32,
     /// Blockchain time of the block that created this UD

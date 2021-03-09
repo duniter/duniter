@@ -28,13 +28,11 @@ impl UtxosQuery {
     async fn utxos_of_script(
         &self,
         ctx: &async_graphql::Context<'_>,
-        #[graphql(desc = "DUBP wallet script")] script: String,
+        #[graphql(desc = "DUBP wallet script")] script: PkOrScriptGva,
         #[graphql(desc = "pagination", default)] pagination: Pagination,
         #[graphql(desc = "Amount needed")] amount: Option<i64>,
     ) -> async_graphql::Result<Connection<String, UtxoGva, AggregateSum, EmptyFields>> {
         let pagination = Pagination::convert_to_page_info(pagination)?;
-
-        let script = dubp::documents_parser::wallet_script_from_str(&script)?;
 
         let data = ctx.data::<GvaSchemaData>()?;
         let db_reader = data.dbs_reader();
@@ -57,7 +55,7 @@ impl UtxosQuery {
                             SourceAmount::new(amount, current_block.unit_base as i64)
                         }),
                         pagination,
-                        &script,
+                        &script.0,
                     )?;
                     let mut times = Vec::with_capacity(paged_data.data.utxos.len());
                     for (UtxoCursor { block_number, .. }, _sa) in &paged_data.data.utxos {

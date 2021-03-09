@@ -14,7 +14,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use dubp::documents_parser::wallet_script_from_str;
 use duniter_gva_db::GvaTxDbV1;
 use duniter_gva_dbs_reader::txs_history::TxBcCursor;
 use futures::future::join;
@@ -28,16 +27,10 @@ impl TxsHistoryBlockchainQuery {
     async fn txs_history_bc(
         &self,
         #[graphql(desc = "pagination", default)] pagination: Pagination,
-        #[graphql(desc = "Ed25519 public key on base 58 representation or DUBP script")]
-        pubkey_or_script: String,
+        script: PkOrScriptGva,
     ) -> async_graphql::Result<TxsHistoryBlockchainQueryInner> {
         let pagination = Pagination::convert_to_page_info(pagination)?;
-        let script = if let Ok(pubkey) = PublicKey::from_base58(&pubkey_or_script) {
-            WalletScriptV10::single_sig(pubkey)
-        } else {
-            wallet_script_from_str(&pubkey_or_script)?
-        };
-        let script_hash = Hash::compute(script.to_string().as_bytes());
+        let script_hash = Hash::compute(script.0.to_string().as_bytes());
         Ok(TxsHistoryBlockchainQueryInner {
             pagination,
             script_hash,
@@ -197,16 +190,14 @@ impl TxsHistoryMempoolQuery {
     async fn txs_history_mp(
         &self,
         ctx: &async_graphql::Context<'_>,
-        #[graphql(desc = "Ed25519 public key on base 58 representation")] pubkey: String,
+        #[graphql(desc = "Ed25519 public key on base 58 representation")] pubkey: PubKeyGva,
     ) -> async_graphql::Result<TxsHistoryMempool> {
-        let pubkey = PublicKey::from_base58(&pubkey)?;
-
         let data = ctx.data::<GvaSchemaData>()?;
         let db_reader = data.dbs_reader();
 
         let (sending, pending) = data
             .dbs_pool
-            .execute(move |dbs| db_reader.get_txs_history_mempool(&dbs.txs_mp_db, pubkey))
+            .execute(move |dbs| db_reader.get_txs_history_mempool(&dbs.txs_mp_db, pubkey.0))
             .await??;
 
         Ok(TxsHistoryMempool {
@@ -280,7 +271,7 @@ mod tests {
             exec_graphql_request(
                 &schema,
                 r#"{
-                txsHistoryBc(pubkeyOrScript: "D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx") {
+                txsHistoryBc(script: "D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx") {
                     sent {
                         edges {
                             node {

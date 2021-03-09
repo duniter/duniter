@@ -28,6 +28,7 @@ mod inputs_validators;
 mod mutations;
 mod pagination;
 mod queries;
+mod scalars;
 mod schema;
 mod subscriptions;
 
@@ -44,10 +45,11 @@ use crate::entities::{
 use crate::inputs::{TxIssuer, TxRecipient, UdsFilter};
 use crate::inputs_validators::TxCommentValidator;
 use crate::pagination::Pagination;
+use crate::scalars::{PkOrScriptGva, PubKeyGva};
 #[cfg(test)]
 use crate::tests::DbsReader;
 use async_graphql::connection::{Connection, Edge, EmptyFields};
-use async_graphql::validators::{IntGreaterThan, ListMinLength, StringMaxLength, StringMinLength};
+use async_graphql::validators::{IntGreaterThan, ListMinLength};
 use dubp::common::crypto::keys::{ed25519::PublicKey, PublicKey as _};
 use dubp::common::prelude::*;
 use dubp::crypto::hashs::Hash;

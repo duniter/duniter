@@ -44,14 +44,12 @@ impl UdsQuery {
     async fn uds_of_pubkey(
         &self,
         ctx: &async_graphql::Context<'_>,
-        #[graphql(desc = "Ed25519 public key on base 58 representation")] pubkey: String,
+        #[graphql(desc = "Ed25519 public key on base 58 representation")] pubkey: PubKeyGva,
         #[graphql(default)] filter: UdsFilter,
         #[graphql(desc = "pagination", default)] pagination: Pagination,
         #[graphql(desc = "Amount needed")] amount: Option<i64>,
     ) -> async_graphql::Result<Connection<String, UdGva, AggregateSum, EmptyFields>> {
         let pagination = Pagination::convert_to_page_info(pagination)?;
-
-        let pubkey = PublicKey::from_base58(&pubkey)?;
 
         let data = ctx.data::<GvaSchemaData>()?;
         let dbs_reader = data.dbs_reader();
@@ -70,11 +68,11 @@ impl UdsQuery {
                 {
                     let paged_data = match filter {
                         UdsFilter::All => {
-                            dbs_reader.all_uds_of_pubkey(&dbs.bc_db_ro, pubkey, pagination)
+                            dbs_reader.all_uds_of_pubkey(&dbs.bc_db_ro, pubkey.0, pagination)
                         }
                         UdsFilter::Unspent => dbs_reader.unspent_uds_of_pubkey(
                             &dbs.bc_db_ro,
-                            pubkey,
+                            pubkey.0,
                             pagination,
                             None,
                             amount.map(|amount| {
@@ -115,7 +113,7 @@ impl UdsQuery {
                         UdGva {
                             amount: sa.amount(),
                             base: sa.base(),
-                            issuer: pubkey.to_string(),
+                            issuer: pubkey,
                             block_number: bn.0,
                             blockchain_time,
                         },

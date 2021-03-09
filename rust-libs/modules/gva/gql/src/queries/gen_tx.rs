@@ -94,33 +94,20 @@ impl GenTxsQuery {
         ctx: &async_graphql::Context<'_>,
         #[graphql(desc = "Transaction amount", validator(IntGreaterThan(value = "0")))] amount: i32,
         #[graphql(
-            desc = "Cash back address, equal to issuer address by default (Ed25519 public key on base 58 representation)",
-            validator(and(StringMinLength(length = "40"), StringMaxLength(length = "44")))
+            desc = "Cash back address, equal to issuer address by default (Ed25519 public key on base 58 representation)"
         )]
-        cash_back_address: Option<String>,
+        cash_back_address: Option<PubKeyGva>,
         #[graphql(desc = "Transaction comment", validator(TxCommentValidator))] comment: Option<
             String,
         >,
-        #[graphql(
-            desc = "Issuer address (Ed25519 public key on base 58 representation)",
-            validator(and(StringMinLength(length = "40"), StringMaxLength(length = "44")))
-        )]
-        issuer: String,
-        #[graphql(
-            desc = "Recipient address (Ed25519 public key on base 58 representation)",
-            validator(and(StringMinLength(length = "40"), StringMaxLength(length = "44")))
-        )]
-        recipient: String,
+        issuer: PubKeyGva,
+        #[graphql(desc = "Recipient address (Ed25519 public key on base 58 representation)")]
+        recipient: PubKeyGva,
         #[graphql(desc = "Use mempool sources", default = false)] use_mempool_sources: bool,
     ) -> async_graphql::Result<Vec<String>> {
-        let cash_back_pubkey = if let Some(cash_back_address) = cash_back_address {
-            Some(PublicKey::from_base58(&cash_back_address)?)
-        } else {
-            None
-        };
         let comment = comment.unwrap_or_default();
-        let issuer = PublicKey::from_base58(&issuer)?;
-        let recipient = PublicKey::from_base58(&recipient)?;
+        let issuer = issuer.0;
+        let recipient = recipient.0;
 
         let data = ctx.data::<GvaSchemaData>()?;
         let db_reader = data.dbs_reader();
@@ -165,7 +152,7 @@ impl GenTxsQuery {
             issuer,
             recipient,
             (amount, comment),
-            cash_back_pubkey,
+            cash_back_address.map(|pubkey_gva| pubkey_gva.0),
         ))
     }
     /// Generate complex transaction document

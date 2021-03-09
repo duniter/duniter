@@ -154,6 +154,7 @@ impl GenTxsQuery {
             issuer,
             recipient,
             (amount, comment),
+            None,
         ))
     }
     /// Generate complex transaction document

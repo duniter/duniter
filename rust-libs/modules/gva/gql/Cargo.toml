@@ -10,7 +10,7 @@ anyhow = "1.0.33"
 arrayvec = "0.5.1"
 async-graphql = "2.2.0"
 async-trait = "0.1.41"
-dubp = { version = "0.43.2" }
+dubp = { version = "0.47.0" }
 duniter-conf = { path = "../../../duniter-conf" }
 duniter-dbs = { path = "../../../duniter-dbs" }
 duniter-bc-reader = { path = "../../../duniter-bc-reader" }

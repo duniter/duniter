@@ -87,26 +87,37 @@ impl TryFrom<TxRecipient> for TxRecipientTyped {
 pub(crate) struct GenTxsQuery;
 #[async_graphql::Object]
 impl GenTxsQuery {
+    #[allow(clippy::too_many_arguments)]
     /// Generate simple transaction document
     async fn gen_tx(
         &self,
         ctx: &async_graphql::Context<'_>,
         #[graphql(desc = "Transaction amount", validator(IntGreaterThan(value = "0")))] amount: i32,
+        #[graphql(
+            desc = "Cash back address, equal to issuer address by default (Ed25519 public key on base 58 representation)",
+            validator(and(StringMinLength(length = "40"), StringMaxLength(length = "44")))
+        )]
+        cash_back_address: Option<String>,
         #[graphql(desc = "Transaction comment", validator(TxCommentValidator))] comment: Option<
             String,
         >,
         #[graphql(
-            desc = "Ed25519 public key on base 58 representation",
+            desc = "Issuer address (Ed25519 public key on base 58 representation)",
             validator(and(StringMinLength(length = "40"), StringMaxLength(length = "44")))
         )]
         issuer: String,
         #[graphql(
-            desc = "Ed25519 public key on base 58 representation",
+            desc = "Recipient address (Ed25519 public key on base 58 representation)",
             validator(and(StringMinLength(length = "40"), StringMaxLength(length = "44")))
         )]
         recipient: String,
         #[graphql(desc = "Use mempool sources", default = false)] use_mempool_sources: bool,
     ) -> async_graphql::Result<Vec<String>> {
+        let cash_back_pubkey = if let Some(cash_back_address) = cash_back_address {
+            Some(PublicKey::from_base58(&cash_back_address)?)
+        } else {
+            None
+        };
         let comment = comment.unwrap_or_default();
         let issuer = PublicKey::from_base58(&issuer)?;
         let recipient = PublicKey::from_base58(&recipient)?;
@@ -154,7 +165,7 @@ impl GenTxsQuery {
             issuer,
             recipient,
             (amount, comment),
-            None,
+            cash_back_pubkey,
         ))
     }
     /// Generate complex transaction document

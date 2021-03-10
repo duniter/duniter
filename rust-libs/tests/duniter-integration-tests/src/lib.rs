@@ -34,7 +34,6 @@ mod tests {
 
     #[test]
     fn test_txs_history() -> anyhow::Result<()> {
-        std::env::set_var("DUNITER_MODE", "start");
         let server = DuniterServer::start(
             DuniterConf {
                 gva: None,

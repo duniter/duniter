@@ -72,7 +72,9 @@ declare_types! {
             } else {
                 None
             };
-            let duniter_mode = if let Ok(duniter_mode) = std::env::var("DUNITER_MODE") {
+            let duniter_mode = if std::env::var_os("DUNITER_JS_TESTS") == Some("yes".into()) {
+                DuniterMode::Start
+            } else if let Ok(duniter_mode) = std::env::var("DUNITER_MODE") {
                 match duniter_mode.as_str() {
                     "sync" => DuniterMode::Sync,
                     _ => DuniterMode::Start,

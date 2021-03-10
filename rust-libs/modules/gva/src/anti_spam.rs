@@ -36,6 +36,33 @@ pub(crate) struct AntiSpam {
     whitelist: HashSet<IpAddr>,
 }
 
+#[derive(Clone)]
+pub(crate) struct AntiSpamResponse {
+    pub is_whitelisted: bool,
+    pub is_ok: bool,
+}
+
+impl AntiSpamResponse {
+    fn ban() -> Self {
+        AntiSpamResponse {
+            is_whitelisted: false,
+            is_ok: false,
+        }
+    }
+    fn ok() -> Self {
+        AntiSpamResponse {
+            is_whitelisted: false,
+            is_ok: true,
+        }
+    }
+    fn whitelisted() -> Self {
+        AntiSpamResponse {
+            is_whitelisted: true,
+            is_ok: true,
+        }
+    }
+}
+
 struct AntiSpamInner {
     ban: HashMap<IpAddr, (bool, usize, Instant)>,
     ips_time: HashMap<IpAddr, (usize, Instant)>,
@@ -54,38 +81,14 @@ impl From<&GvaConf> for AntiSpam {
 }
 
 impl AntiSpam {
-    fn verify_interval(ip: IpAddr, state: &mut AntiSpamInner, ban_count: usize) -> bool {
-        if let Some((count, instant)) = state.ips_time.get(&ip).copied() {
-            if count == COUNT_INTERVAL {
-                let duration = Instant::now().duration_since(instant);
-                if duration > MIN_DURATION_INTERVAL {
-                    if duration > LARGE_DURATION_INTERVAL {
-                        state.ips_time.insert(ip, (1, Instant::now()));
-                        true
-                    } else {
-                        state
-                            .ips_time
-                            .insert(ip, (REDUCED_COUNT_INTERVAL, Instant::now()));
-                        true
-                    }
-                } else {
-                    state.ban.insert(ip, (true, ban_count, Instant::now()));
-                    false
-                }
-            } else {
-                state.ips_time.insert(ip, (count + 1, instant));
-                true
-            }
-        } else {
-            state.ips_time.insert(ip, (1, Instant::now()));
-            true
-        }
-    }
-    pub(crate) async fn verify(&self, remote_addr_opt: Option<std::net::IpAddr>) -> bool {
+    pub(crate) async fn verify(
+        &self,
+        remote_addr_opt: Option<std::net::IpAddr>,
+    ) -> AntiSpamResponse {
         if let Some(ip) = remote_addr_opt {
             log::trace!("GVA: receive request from {}", ip);
             if self.whitelist.contains(&ip) {
-                true
+                AntiSpamResponse::whitelisted()
             } else {
                 let mut guard = self.state.lock().await;
                 if let Some((is_banned, ban_count, instant)) = guard.ban.get(&ip).copied() {
@@ -95,17 +98,17 @@ impl AntiSpam {
                         if Instant::now().duration_since(instant) > ban_duration {
                             guard.ban.insert(ip, (false, ban_count + 1, Instant::now()));
                             guard.ips_time.insert(ip, (1, Instant::now()));
-                            true
+                            AntiSpamResponse::ok()
                         } else {
                             guard.ban.insert(ip, (true, ban_count + 1, Instant::now()));
-                            false
+                            AntiSpamResponse::ban()
                         }
                     } else if Instant::now().duration_since(instant)
                         > std::cmp::max(ban_duration, BAN_FORGET_MIN_DURATION)
                     {
                         guard.ban.remove(&ip);
                         guard.ips_time.insert(ip, (1, Instant::now()));
-                        true
+                        AntiSpamResponse::ok()
                     } else {
                         Self::verify_interval(ip, &mut guard, ban_count)
                     }
@@ -114,7 +117,38 @@ impl AntiSpam {
                 }
             }
         } else {
-            false
+            AntiSpamResponse::ban()
+        }
+    }
+    fn verify_interval(
+        ip: IpAddr,
+        state: &mut AntiSpamInner,
+        ban_count: usize,
+    ) -> AntiSpamResponse {
+        if let Some((count, instant)) = state.ips_time.get(&ip).copied() {
+            if count == COUNT_INTERVAL {
+                let duration = Instant::now().duration_since(instant);
+                if duration > MIN_DURATION_INTERVAL {
+                    if duration > LARGE_DURATION_INTERVAL {
+                        state.ips_time.insert(ip, (1, Instant::now()));
+                        AntiSpamResponse::ok()
+                    } else {
+                        state
+                            .ips_time
+                            .insert(ip, (REDUCED_COUNT_INTERVAL, Instant::now()));
+                        AntiSpamResponse::ok()
+                    }
+                } else {
+                    state.ban.insert(ip, (true, ban_count, Instant::now()));
+                    AntiSpamResponse::ban()
+                }
+            } else {
+                state.ips_time.insert(ip, (count + 1, instant));
+                AntiSpamResponse::ok()
+            }
+        } else {
+            state.ips_time.insert(ip, (1, Instant::now()));
+            AntiSpamResponse::ok()
         }
     }
 }
@@ -130,36 +164,36 @@ mod tests {
     #[tokio::test]
     async fn test_anti_spam() {
         let anti_spam = AntiSpam::from(&GvaConf::default());
-        assert!(!anti_spam.verify(None).await);
+        assert!(!anti_spam.verify(None).await.is_ok);
 
         for _ in 0..(COUNT_INTERVAL * 2) {
-            assert!(anti_spam.verify(Some(LOCAL_IP4)).await);
-            assert!(anti_spam.verify(Some(LOCAL_IP6)).await);
+            assert!(anti_spam.verify(Some(LOCAL_IP4)).await.is_ok);
+            assert!(anti_spam.verify(Some(LOCAL_IP6)).await.is_ok);
         }
 
         let extern_ip = IpAddr::V4(Ipv4Addr::UNSPECIFIED);
 
         // Consume max queries
         for _ in 0..COUNT_INTERVAL {
-            assert!(anti_spam.verify(Some(extern_ip)).await);
+            assert!(anti_spam.verify(Some(extern_ip)).await.is_ok);
         }
         // Should be banned
-        assert!(!anti_spam.verify(Some(extern_ip)).await);
+        assert!(!anti_spam.verify(Some(extern_ip)).await.is_ok);
 
         // Should be un-banned after one second
         tokio::time::sleep(Duration::from_millis(1_100)).await;
         // Re-consume max queries
         for _ in 0..COUNT_INTERVAL {
-            assert!(anti_spam.verify(Some(extern_ip)).await);
+            assert!(anti_spam.verify(Some(extern_ip)).await.is_ok);
         }
         // Should be banned for 2 seconds this time
         tokio::time::sleep(Duration::from_millis(1_100)).await;
         // Attempting a request when I'm banned must be twice my banning time
-        assert!(!anti_spam.verify(Some(extern_ip)).await);
+        assert!(!anti_spam.verify(Some(extern_ip)).await.is_ok);
         tokio::time::sleep(Duration::from_millis(4_100)).await;
         // Re-consume max queries
         for _ in 0..COUNT_INTERVAL {
-            assert!(anti_spam.verify(Some(extern_ip)).await);
+            assert!(anti_spam.verify(Some(extern_ip)).await.is_ok);
         }
     }
 }

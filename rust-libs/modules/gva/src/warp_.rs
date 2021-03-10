@@ -15,7 +15,7 @@
 
 use std::net::{IpAddr, SocketAddr};
 
-use crate::anti_spam::AntiSpam;
+use crate::anti_spam::{AntiSpam, AntiSpamResponse};
 use crate::*;
 
 pub struct BadRequest(pub anyhow::Error);
@@ -79,14 +79,17 @@ pub(crate) fn graphql(
              opts: Arc<async_graphql::http::MultipartOptions>,
              schema,
              anti_spam: AntiSpam| async move {
-                if anti_spam
+                let AntiSpamResponse {
+                    is_whitelisted,
+                    is_ok,
+                } = anti_spam
                     .verify(x_real_ip.or_else(|| remote_addr.map(|ra| ra.ip())))
-                    .await
-                {
+                    .await;
+                if is_ok {
                     if method == http::Method::GET {
                         let request: async_graphql::Request = serde_urlencoded::from_str(&query)
                             .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                        Ok::<_, Rejection>((schema, request))
+                        Ok::<_, Rejection>((schema, request.data(QueryContext { is_whitelisted })))
                     } else {
                         let request = async_graphql::http::receive_body(
                             content_type,
@@ -102,7 +105,7 @@ pub(crate) fn graphql(
                         )
                         .await
                         .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                        Ok::<_, Rejection>((schema, request))
+                        Ok::<_, Rejection>((schema, request.data(QueryContext { is_whitelisted })))
                     }
                 } else {
                     Err(warp::reject::custom(BadRequest(anyhow::Error::msg(
@@ -135,10 +138,13 @@ pub(crate) fn graphql_ws(
              ws: warp::ws::Ws,
              schema: GvaSchema,
              anti_spam: AntiSpam| async move {
-                if anti_spam
+                let AntiSpamResponse {
+                    is_whitelisted: _,
+                    is_ok,
+                } = anti_spam
                     .verify(x_real_ip.or_else(|| remote_addr.map(|ra| ra.ip())))
-                    .await
-                {
+                    .await;
+                if is_ok {
                     Ok((ws, schema))
                 } else {
                     Err(warp::reject::custom(BadRequest(anyhow::Error::msg(

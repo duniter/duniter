@@ -36,17 +36,17 @@ pub struct PageInfo<T> {
     pub(crate) pos: Option<T>,
     /// Order: true for ASC, false for DESC
     pub(crate) order: bool,
-    pub(crate) limit_opt: Option<usize>,
+    pub(crate) limit_opt: Option<NonZeroUsize>,
 }
 impl<T> PageInfo<T> {
-    pub fn new(pos: Option<T>, order: bool, limit_opt: Option<usize>) -> Self {
+    pub fn new(pos: Option<T>, order: bool, limit_opt: Option<NonZeroUsize>) -> Self {
         PageInfo {
             pos,
             order,
             limit_opt,
         }
     }
-    pub fn limit_opt(&self) -> Option<usize> {
+    pub fn limit_opt(&self) -> Option<NonZeroUsize> {
         self.limit_opt
     }
     pub fn not_all(&self) -> bool {

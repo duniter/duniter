@@ -22,16 +22,17 @@
     unused_import_braces
 )]
 
-pub use duniter_conf::gva_conf::GvaConf;
-
 mod anti_spam;
 mod warp_;
+
+pub use duniter_conf::gva_conf::GvaConf;
 
 use async_graphql::http::GraphQLPlaygroundConfig;
 use dubp::common::crypto::keys::{ed25519::PublicKey, KeyPair as _};
 use dubp::common::prelude::*;
 use dubp::documents::transaction::TransactionDocumentV10;
 use dubp::{block::DubpBlockV10, crypto::hashs::Hash};
+use duniter_conf::DuniterMode;
 use duniter_dbs::databases::txs_mp_v2::TxsMpV2DbReadable;
 use duniter_dbs::prelude::*;
 use duniter_dbs::{kv_typed::prelude::*, FileBackend};
@@ -50,6 +51,7 @@ pub struct GvaModule {
     dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
     gva_db_ro: &'static GvaV1DbRo<FileBackend>,
     mempools: Mempools,
+    mode: DuniterMode,
     self_pubkey: PublicKey,
     software_version: &'static str,
 }
@@ -79,6 +81,7 @@ impl duniter_module::DuniterModule for GvaModule {
         currency: &str,
         dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
         mempools: Mempools,
+        mode: duniter_conf::DuniterMode,
         profile_path_opt: Option<&Path>,
         software_version: &'static str,
     ) -> anyhow::Result<(Self, Vec<duniter_module::Endpoint>)> {
@@ -115,6 +118,7 @@ impl duniter_module::DuniterModule for GvaModule {
                 dbs_pool: dbs_pool.to_owned(),
                 gva_db_ro: get_gva_db_ro(profile_path_opt),
                 mempools,
+                mode,
                 self_pubkey: conf.self_key_pair.public_key(),
                 software_version,
             },
@@ -131,21 +135,24 @@ impl duniter_module::DuniterModule for GvaModule {
                 dbs_pool,
                 gva_db_ro,
                 mempools,
+                mode,
                 self_pubkey,
                 software_version,
             } = self;
 
-            if let Some(conf) = conf {
-                GvaModule::start_inner(
-                    conf,
-                    currency,
-                    dbs_pool,
-                    gva_db_ro,
-                    mempools,
-                    self_pubkey,
-                    software_version,
-                )
-                .await
+            if let DuniterMode::Start = mode {
+                if let Some(conf) = conf {
+                    GvaModule::start_inner(
+                        conf,
+                        currency,
+                        dbs_pool,
+                        gva_db_ro,
+                        mempools,
+                        self_pubkey,
+                        software_version,
+                    )
+                    .await
+                }
             }
         }
         Ok(())
@@ -328,6 +335,7 @@ mod tests {
             "",
             &threadpool.into_async_handler(),
             Mempools::default(),
+            duniter_conf::DuniterMode::Start,
             None,
             "test",
         )?

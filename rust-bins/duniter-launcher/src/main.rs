@@ -245,7 +245,17 @@ fn main() -> Result<()> {
                         duniter_js_command.current_dir(DUNITER_JS_CURRENT_DIR);
                     }
                     //println!("TMP duniter_ts_args={:?}", duniter_ts_args);
-                    let exit_code_opt = duniter_js_command.args(duniter_ts_args).status()?.code();
+                    let mode = match args.command {
+                        DuniterCommand::DirectStart { .. }
+                        | DuniterCommand::DirectWebstart { .. } => "start",
+                        DuniterCommand::Sync(_) => "sync",
+                        _ => "other",
+                    };
+                    let exit_code_opt = duniter_js_command
+                        .args(duniter_ts_args)
+                        .env("DUNITER_MODE", mode)
+                        .status()?
+                        .code();
                     if let Some(exit_code) = exit_code_opt {
                         std::process::exit(exit_code);
                     } else {

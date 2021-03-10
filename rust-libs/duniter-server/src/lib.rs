@@ -24,7 +24,7 @@
 
 mod legacy;
 
-pub use duniter_conf::{gva_conf::GvaConf, DuniterConf};
+pub use duniter_conf::{gva_conf::GvaConf, DuniterConf, DuniterMode};
 use duniter_dbs::databases::dunp_v1::DunpV1DbWritable;
 pub use duniter_dbs::{
     kv_typed::prelude::KvResult, smallvec, DunpHeadDbV1, DunpNodeIdV1Db, PeerCardDbV1,
@@ -67,12 +67,6 @@ cfg_if::cfg_if! {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum DuniterCommand {
-    Sync,
-    Start,
-}
-
 pub struct DuniterServer {
     bc_db: BcV2Db<FileBackend>,
     conf: DuniterConf,
@@ -90,16 +84,13 @@ impl DuniterServer {
         self.shared_dbs.clone()
     }
     pub fn start(
-        command_name: Option<String>,
         conf: DuniterConf,
         currency: String,
+        duniter_mode: DuniterMode,
         profile_path_opt: Option<&Path>,
         software_version: &'static str,
     ) -> anyhow::Result<DuniterServer> {
-        let command = match command_name.unwrap_or_default().as_str() {
-            "sync" => DuniterCommand::Sync,
-            _ => DuniterCommand::Start,
-        };
+        log::info!("mode={:?}", duniter_mode);
 
         let txs_mempool = TxsMempool::new(conf.txs_mempool_size);
 
@@ -128,7 +119,8 @@ impl DuniterServer {
         let threadpool =
             fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), shared_dbs.clone());
 
-        if command != DuniterCommand::Sync && conf.gva.is_some() {
+        if conf.gva.is_some() {
+            log::info!("start duniter modules...");
             let runtime = tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build()?;
@@ -142,6 +134,7 @@ impl DuniterServer {
                         currency,
                         threadpool_async_handler,
                         Mempools { txs: txs_mempool },
+                        duniter_mode,
                         profile_path_opt_clone,
                         software_version,
                     ))
@@ -161,11 +154,14 @@ impl DuniterServer {
         })
     }
     #[cfg(test)]
-    pub(crate) fn test(conf: DuniterConf) -> anyhow::Result<DuniterServer> {
+    pub(crate) fn test(
+        conf: DuniterConf,
+        duniter_mode: DuniterMode,
+    ) -> anyhow::Result<DuniterServer> {
         DuniterServer::start(
-            None,
             conf,
             "test".to_owned(),
+            duniter_mode,
             None,
             duniter_module::SOFTWARE_NAME,
         )

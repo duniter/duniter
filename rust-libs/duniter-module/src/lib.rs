@@ -28,7 +28,7 @@ use dubp::{
     crypto::{hashs::Hash, keys::ed25519::PublicKey},
     documents::transaction::TransactionDocumentV10,
 };
-use duniter_conf::DuniterConf;
+use duniter_conf::{DuniterConf, DuniterMode};
 use duniter_dbs::{kv_typed::prelude::*, FileBackend, SharedDbs};
 use duniter_mempools::Mempools;
 use std::path::Path;
@@ -45,7 +45,7 @@ pub trait DuniterModule: 'static + Sized {
     /// in this case it must be reimplemented because the default implementation panics.
     fn apply_block(
         _block: &DubpBlockV10,
-        _conf: &duniter_conf::DuniterConf,
+        _conf: &DuniterConf,
         _profile_path_opt: Option<&Path>,
     ) -> KvResult<()> {
         unreachable!()
@@ -55,7 +55,7 @@ pub trait DuniterModule: 'static + Sized {
     /// in this case it must be reimplemented because the default implementation panics.
     fn revert_block(
         _block: &DubpBlockV10,
-        _conf: &duniter_conf::DuniterConf,
+        _conf: &DuniterConf,
         _profile_path_opt: Option<&Path>,
     ) -> KvResult<()> {
         unreachable!()
@@ -66,6 +66,7 @@ pub trait DuniterModule: 'static + Sized {
         currency: &str,
         dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
         mempools: Mempools,
+        mode: DuniterMode,
         profile_path_opt: Option<&Path>,
         software_version: &'static str,
     ) -> anyhow::Result<(Self, Vec<Endpoint>)>;
@@ -204,12 +205,13 @@ macro_rules! plug_duniter_modules {
                 currency: String,
                 dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
                 mempools: duniter_mempools::Mempools,
+                mode: DuniterMode,
                 profile_path_opt: Option<std::path::PathBuf>,
                 software_version: &'static str,
             ) -> anyhow::Result<()> {
                 let mut all_endpoints = Vec::<String>::new();
                 $(
-                    let ([<$M:snake>], mut endpoints) =<$M>::init(conf, &currency, &dbs_pool, mempools, profile_path_opt.as_deref(), software_version)
+                    let ([<$M:snake>], mut endpoints) =<$M>::init(conf, &currency, &dbs_pool, mempools, mode, profile_path_opt.as_deref(), software_version)
                         .with_context(|| format!("Fail to init module '{}'", stringify!($M)))?;
                     all_endpoints.append(&mut endpoints);
                 )*
@@ -289,6 +291,7 @@ mod tests {
             _currency: &str,
             _dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
             _mempools: Mempools,
+            _mode: DuniterMode,
             profile_path_opt: Option<&Path>,
             _software_version: &'static str,
         ) -> anyhow::Result<(Self, Vec<Endpoint>)> {
@@ -312,6 +315,7 @@ mod tests {
             _currency: &str,
             _dbs_pool: &fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
             _mempools: Mempools,
+            _mode: DuniterMode,
             _profile_path_opt: Option<&Path>,
             _software_version: &'static str,
         ) -> anyhow::Result<(Self, Vec<Endpoint>)> {
@@ -338,6 +342,7 @@ mod tests {
             Mempools {
                 txs: TxsMempool::new(0),
             },
+            DuniterMode::Sync,
             None,
             "",
         )

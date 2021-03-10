@@ -34,8 +34,8 @@ mod tests {
 
     #[test]
     fn test_txs_history() -> anyhow::Result<()> {
+        std::env::set_var("DUNITER_MODE", "start");
         let server = DuniterServer::start(
-            None,
             DuniterConf {
                 gva: None,
                 self_key_pair: Ed25519KeyPair::generate_random()
@@ -43,6 +43,7 @@ mod tests {
                 txs_mempool_size: 200,
             },
             "currency_test".to_owned(),
+            DuniterMode::Start,
             None,
             "test",
         )?;

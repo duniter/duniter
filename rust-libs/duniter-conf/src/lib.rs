@@ -44,3 +44,11 @@ impl Default for DuniterConf {
         }
     }
 }
+
+/// Duniter mode
+#[derive(Clone, Copy, Debug)]
+#[non_exhaustive]
+pub enum DuniterMode {
+    Start,
+    Sync,
+}

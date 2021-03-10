@@ -24,6 +24,7 @@ pub fn start(prod: bool, profile_path: &Path, duniter_js_args: &[String]) -> Res
         .args(duniter_js_args)
         .stdout(Stdio::null())
         .stderr(Stdio::null())
+        .env("DUNITER_MODE", "start")
         .spawn()?;
 
     let pid = child.id();

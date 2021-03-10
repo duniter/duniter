@@ -21,7 +21,7 @@ use dubp::documents::{
 };
 use dubp::documents_parser::prelude::*;
 use dubp::{common::crypto::hashs::Hash, crypto::keys::ed25519::Ed25519KeyPair};
-use duniter_server::{DuniterConf, DuniterServer, GvaConf};
+use duniter_server::{DuniterConf, DuniterMode, DuniterServer, GvaConf};
 use neon::declare_types;
 use neon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -40,7 +40,6 @@ declare_types! {
             let rust_server_conf_stringified: RustServerConfStringified = neon_serde::from_value(&mut cx, rust_server_conf_js)?;
 
             let gva_conf = rust_server_conf_stringified.gva;
-            let command_name = rust_server_conf_stringified.command_name;
             let currency = rust_server_conf_stringified.currency;
             let server_pubkey = if let Some(self_keypair_str) = rust_server_conf_stringified.self_keypair {
                 into_neon_res(&mut cx, crate::crypto::keypair_from_expanded_base58_secret_key(&self_keypair_str))?
@@ -73,12 +72,20 @@ declare_types! {
             } else {
                 None
             };
+            let duniter_mode = if let Ok(duniter_mode) = std::env::var("DUNITER_MODE") {
+                match duniter_mode.as_str() {
+                    "sync" => DuniterMode::Sync,
+                    _ => DuniterMode::Start,
+                }
+            } else {
+                return cx.throw_error("Env var DUNITER_MODE not exist or contain invalid utf8");
+            };
             into_neon_res(
                 &mut cx,
                 if let Some(home_path) = home_path_opt {
-                    DuniterServer::start(command_name, conf, currency, Some(home_path.as_path()), std::env!("CARGO_PKG_VERSION"))
+                    DuniterServer::start(conf, currency, duniter_mode, Some(home_path.as_path()), std::env!("CARGO_PKG_VERSION"))
                 } else {
-                    DuniterServer::start(command_name, conf, currency, None, std::env!("CARGO_PKG_VERSION"))
+                    DuniterServer::start(conf, currency, duniter_mode, None, std::env!("CARGO_PKG_VERSION"))
                 }.map(|server| RustServer { server })
             )
         }
@@ -463,7 +470,6 @@ pub struct PeerCardStringified {
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct RustServerConfStringified {
-    command_name: Option<String>,
     currency: String,
     gva: Option<GvaConf>,
     self_keypair: Option<String>,

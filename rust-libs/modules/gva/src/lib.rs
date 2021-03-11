@@ -37,7 +37,7 @@ use duniter_dbs::databases::txs_mp_v2::TxsMpV2DbReadable;
 use duniter_dbs::prelude::*;
 use duniter_dbs::{kv_typed::prelude::*, FileBackend};
 use duniter_gva_db::*;
-use duniter_gva_gql::GvaSchema;
+use duniter_gva_gql::{GvaSchema, QueryContext};
 use duniter_gva_indexer::{get_gva_db_ro, get_gva_db_rw};
 use duniter_mempools::Mempools;
 use futures::{StreamExt, TryStreamExt};

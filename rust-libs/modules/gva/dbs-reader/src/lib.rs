@@ -55,6 +55,7 @@ use resiter::flatten::Flatten;
 use resiter::map::Map;
 use std::{
     collections::{BTreeSet, VecDeque},
+    num::NonZeroUsize,
     str::FromStr,
 };
 

@@ -26,10 +26,12 @@ impl TxsHistoryBlockchainQuery {
     /// Transactions history (written in blockchain)
     async fn txs_history_bc(
         &self,
+        ctx: &async_graphql::Context<'_>,
         #[graphql(desc = "pagination", default)] pagination: Pagination,
         script: PkOrScriptGva,
     ) -> async_graphql::Result<TxsHistoryBlockchainQueryInner> {
-        let pagination = Pagination::convert_to_page_info(pagination)?;
+        let QueryContext { is_whitelisted } = ctx.data::<QueryContext>()?;
+        let pagination = Pagination::convert_to_page_info(pagination, *is_whitelisted)?;
         let script_hash = Hash::compute(script.0.to_string().as_bytes());
         Ok(TxsHistoryBlockchainQueryInner {
             pagination,
@@ -98,7 +100,7 @@ impl TxsHistoryBlockchainQueryInner {
             });
         }
         if let Some(limit) = self.pagination.limit_opt() {
-            both_txs.truncate(limit);
+            both_txs.truncate(limit.get());
         }
         let mut conn = Connection::new(
             sent.has_previous_page || received.has_previous_page,

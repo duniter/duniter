@@ -66,7 +66,12 @@ use duniter_gva_dbs_reader::DbsReader;
 use duniter_mempools::TxsMempool;
 use futures::{Stream, StreamExt};
 use resiter::map::Map;
-use std::{convert::TryFrom, ops::Deref};
+use std::{convert::TryFrom, num::NonZeroUsize, ops::Deref};
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct QueryContext {
+    pub is_whitelisted: bool,
+}
 
 #[derive(Debug, Default)]
 pub struct ServerMetaData {
@@ -186,7 +191,11 @@ mod tests {
         schema: &GvaSchema,
         request: &str,
     ) -> anyhow::Result<serde_json::Value> {
-        Ok(serde_json::to_value(schema.execute(request).await)?)
+        Ok(serde_json::to_value(
+            schema
+                .execute(async_graphql::Request::new(request).data(QueryContext::default()))
+                .await,
+        )?)
     }
 
     /*pub(crate) fn create_schema_sub(dbs: SharedDbs<FileBackend>) -> KvResult<GvaSchema> {

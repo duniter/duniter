@@ -32,7 +32,9 @@ impl UtxosQuery {
         #[graphql(desc = "pagination", default)] pagination: Pagination,
         #[graphql(desc = "Amount needed")] amount: Option<i64>,
     ) -> async_graphql::Result<Connection<String, UtxoGva, AggregateSum, EmptyFields>> {
-        let pagination = Pagination::convert_to_page_info(pagination)?;
+        let QueryContext { is_whitelisted } = ctx.data::<QueryContext>()?;
+        log::info!("is_whitelisted={}", is_whitelisted);
+        let pagination = Pagination::convert_to_page_info(pagination, *is_whitelisted)?;
 
         let data = ctx.data::<GvaSchemaData>()?;
         let db_reader = data.dbs_reader();

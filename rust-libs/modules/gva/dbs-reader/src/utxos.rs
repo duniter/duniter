@@ -211,7 +211,7 @@ where
     });
     let utxos = if let Some(limit) = page_info.limit_opt {
         if let Some(total_target) = amount_target_opt {
-            it.take(limit)
+            it.take(limit.get())
                 .take_while(|res| match res {
                     Ok((_, utxo_amount)) => {
                         if sum < total_target {
@@ -225,7 +225,7 @@ where
                 })
                 .collect::<KvResult<Vec<_>>>()?
         } else {
-            it.take(limit).collect::<KvResult<Vec<_>>>()?
+            it.take(limit.get()).collect::<KvResult<Vec<_>>>()?
         }
     } else if let Some(total_target) = amount_target_opt {
         it.take_while(|res| match res {
@@ -352,7 +352,7 @@ mod tests {
             None,
             PageInfo {
                 order: false,
-                limit_opt: Some(2),
+                limit_opt: NonZeroUsize::new(2),
                 ..Default::default()
             },
             &script,

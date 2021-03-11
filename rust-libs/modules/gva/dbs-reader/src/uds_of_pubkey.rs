@@ -169,7 +169,7 @@ impl DbsReader {
                 Ok(PagedData::empty())
             } else {
                 if let Some(limit) = page_info.limit_opt {
-                    blocks_numbers.truncate(limit);
+                    blocks_numbers.truncate(limit.get());
                 }
                 let first_block_number = if page_info.order {
                     blocks_numbers[0]
@@ -238,7 +238,7 @@ where
 
     let not_reach_end = if page_info.order {
         if let Some(limit) = page_info.limit_opt {
-            if blocks_numbers.len() <= limit {
+            if blocks_numbers.len() <= limit.get() {
                 false
             } else {
                 blocks_numbers.pop();
@@ -320,7 +320,7 @@ fn filter_blocks_numbers<I: Iterator<Item = KvResult<BlockNumber>>>(
                     }
                     is_member
                 })
-                .take(limit + 1)
+                .take(limit.get() + 1)
                 .collect::<KvResult<Vec<_>>>()
         } else {
             blocks_with_ud
@@ -351,7 +351,7 @@ fn filter_blocks_numbers<I: Iterator<Item = KvResult<BlockNumber>>>(
                     }
                     is_member
                 })
-                .take(limit)
+                .take(limit.get())
                 .collect::<KvResult<Vec<_>>>()
         } else {
             blocks_with_ud
@@ -502,7 +502,7 @@ mod tests {
                 PageInfo {
                     pos: None,
                     order: true,
-                    limit_opt: Some(1),
+                    limit_opt: NonZeroUsize::new(1),
                 },
                 blocks_with_ud.iter().copied().map(Ok),
             )?,
@@ -581,7 +581,7 @@ mod tests {
             &bc_db_ro,
             pk,
             PageInfo {
-                limit_opt: Some(2),
+                limit_opt: NonZeroUsize::new(2),
                 ..Default::default()
             },
         )?;
@@ -655,7 +655,7 @@ mod tests {
             pk,
             PageInfo {
                 order: false,
-                limit_opt: Some(2),
+                limit_opt: NonZeroUsize::new(2),
                 ..Default::default()
             },
         )?;

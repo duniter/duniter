@@ -327,7 +327,9 @@ fn txs_history_bc_collect<I: Iterator<Item = KvResult<GvaTxDbV1>>>(
     txs_iter: I,
 ) -> KvResult<PagedData<VecDeque<GvaTxDbV1>>> {
     let mut txs = if let Some(limit) = page_info.limit_opt {
-        txs_iter.take(limit).collect::<KvResult<VecDeque<_>>>()?
+        txs_iter
+            .take(limit.get())
+            .collect::<KvResult<VecDeque<_>>>()?
     } else {
         txs_iter.collect::<KvResult<VecDeque<_>>>()?
     };

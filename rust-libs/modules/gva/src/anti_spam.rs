@@ -23,10 +23,12 @@ use std::{
     time::Instant,
 };
 
-const COUNT_INTERVAL: usize = 40;
+pub(super) const MAX_BATCH_SIZE: usize = 5;
+
+const COUNT_INTERVAL: usize = 10;
 const MIN_DURATION_INTERVAL: Duration = Duration::from_secs(20);
 const LARGE_DURATION_INTERVAL: Duration = Duration::from_secs(180);
-const REDUCED_COUNT_INTERVAL: usize = COUNT_INTERVAL - 5;
+const REDUCED_COUNT_INTERVAL: usize = COUNT_INTERVAL / 2;
 const MAX_BAN_COUNT: usize = 16;
 const BAN_FORGET_MIN_DURATION: Duration = Duration::from_secs(180);
 

@@ -19,7 +19,6 @@ use structopt::StructOpt;
 
 const MIN_RUST_VERTION: &str = "1.50.0";
 const NODE_VERSION: &str = "10.22.1";
-const NVM_VERSION: &str = "0.35.3";
 
 #[derive(StructOpt)]
 struct DuniterXTask {
@@ -54,19 +53,17 @@ fn main() -> Result<()> {
     Command::new("cargo").arg("--version").status()?;
 
     if !args.skip_npm {
-        println!("Check nvm …");
-        if exec_should_success(Command::new("nvm").arg("--version")).is_err() {
-            println!("Duniter requires nvm, but nvm is not found, please install it or add it to your PATH. Nvm installation link: https://raw.githubusercontent.com/nvm-sh/nvm/v{}/install.sh", NVM_VERSION);
-            std::process::abort();
-        }
         println!("Check node version …");
         if exec_and_get_stdout(Command::new("node").arg("-v"))
             .unwrap_or_default()
             .trim_end()
             != format!("v{}", NODE_VERSION)
         {
-            println!("Install node v{} …", NODE_VERSION);
-            install_and_use_node_version()?;
+            eprintln!(
+                "Duniter requires node v{} exactly. Please install node v{} (you can use nvm).",
+                NODE_VERSION, NODE_VERSION
+            );
+            std::process::exit(1);
         } else {
             println!("Node v{} already installed ✔", NODE_VERSION);
         }
@@ -75,11 +72,6 @@ fn main() -> Result<()> {
         DuniterXTaskCommand::Build { production } => build(args.skip_npm, production),
         DuniterXTaskCommand::Test => test(args.skip_npm),
     }
-}
-
-fn install_and_use_node_version() -> Result<()> {
-    exec_should_success(Command::new("nvm").args(&["install", NODE_VERSION]))?;
-    exec_should_success(Command::new("nvm").args(&["use", NODE_VERSION]))
 }
 
 fn exec_and_get_stdout(command: &mut Command) -> Result<String> {

@@ -24,7 +24,7 @@ use duniter_gva_dbs_reader::{
 pub(crate) struct UtxosQuery;
 #[async_graphql::Object]
 impl UtxosQuery {
-    /// Transactions history
+    /// Utxos of script
     async fn utxos_of_script(
         &self,
         ctx: &async_graphql::Context<'_>,

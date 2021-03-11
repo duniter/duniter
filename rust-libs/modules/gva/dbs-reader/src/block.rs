@@ -79,7 +79,7 @@ impl DbsReader {
                 |limit| {
                     page_info
                         .pos
-                        .map_or_else(last_block_number + 1, |pos| pos.number.0)
+                        .map_or_else(|| last_block_number + 1, |pos| pos.number.0)
                         .saturating_sub(limit.get() as u32 - 1)
                 },
             )

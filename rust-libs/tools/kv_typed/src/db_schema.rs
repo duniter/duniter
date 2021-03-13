@@ -103,6 +103,44 @@ macro_rules! db_schema {
                 impl<B: Backend> [<$db_name DbBatch>]<B> {
                     $(pub fn [<$col_name:snake>](&mut self) -> &mut Batch<B::Col, ColRw<B::Col, [<$col_name Event>]>> { &mut self.[<$col_name:snake>] })*
                 }
+                // impl TransactionalWrite for Db
+                #[derive(Debug)]
+                pub struct [<$db_name DbTxRw>]<'tx, BC: BackendCol> {
+                    $(pub [<$col_name:snake>]: TxColRw<'tx, BC, [<$col_name Event>]>,)*
+                }
+                impl<'tx, B: Backend> TransactionalWrite<'tx, B::Col> for &'tx [<$db_name Db>]<B> {
+                    type TxCols = [<$db_name DbTxRw>]<'tx, B::Col>;
+
+                    fn write<D, F: FnOnce(Self::TxCols) -> KvResult<D>>(&'tx self, f: F) -> KvResult<D> {
+                        $(let [<$col_name:snake _upgradable_guard>] = self.collections.[<$col_name:snake>].upgradable_read();)*
+
+                        $(let mut [<$col_name:snake _batch>] =  Batch::<B::Col, ColRw<B::Col, [<$col_name Event>]>>::default();)*
+
+                        let db_tx = [<$db_name DbTxRw>] {
+                            $([<$col_name:snake>]: TxColRw::new(
+                                unsafe { std::mem::transmute(&mut [<$col_name:snake _batch>]) },
+                                unsafe { std::mem::transmute(&[<$col_name:snake _upgradable_guard>]) },
+                            ),)*
+                        };
+
+                        let data = f(db_tx)?;
+
+                        // Prepare commit
+                        $(let ([<$col_name:snake _backend_batch>], [<$col_name:snake _events>]) = [<$col_name:snake _batch>].into_backend_batch_and_events();)*
+
+                        // Acquire exclusive lock
+                        $(let mut [<$col_name:snake _write_guard>] = parking_lot::RwLockUpgradableReadGuard::upgrade([<$col_name:snake _upgradable_guard>]);)*;
+
+                        // Commit
+                        $(self.collections.[<$col_name:snake>].write_backend_batch(
+                            [<$col_name:snake _backend_batch>],
+                            [<$col_name:snake _events>],
+                            &mut [<$col_name:snake _write_guard>],
+                        )?;)*
+
+                        Ok(data)
+                    }
+                }
                 // DbRo
                 #[derive(Debug)]
                 pub struct [<$db_name DbRo>]<B: Backend> {

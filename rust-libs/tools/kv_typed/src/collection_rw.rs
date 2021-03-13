@@ -1,5 +1,7 @@
 use crate::*;
-use parking_lot::RwLockWriteGuard as WriteGuard;
+use parking_lot::{
+    RwLockUpgradableReadGuard as UpgradableReadGuard, RwLockWriteGuard as WriteGuard,
+};
 
 pub trait DbCollectionRw {
     type K: Key;
@@ -71,6 +73,11 @@ impl<BC: BackendCol, E: EventTrait> ColRw<BC, E> {
     pub fn to_ro(&self) -> &ColRo<BC, E> {
         &self.inner
     }
+    #[doc(hidden)]
+    /// For internal usage only MUST NOT USE
+    pub fn upgradable_read(&self) -> UpgradableReadGuard<'_, ColInner<BC, E>> {
+        self.inner.inner.upgradable_read()
+    }
     pub fn write_batch(&self, batch: Batch<BC, Self>) -> KvResult<()> {
         let (backend_batch, events) = batch.into_backend_batch_and_events();
         let mut w = self.inner.inner.write();
@@ -78,7 +85,9 @@ impl<BC: BackendCol, E: EventTrait> ColRw<BC, E> {
         w.notify_subscribers(events);
         Ok(())
     }
-    pub(crate) fn write_backend_batch(
+    #[doc(hidden)]
+    /// For internal usage only MUST NOT USE
+    pub fn write_backend_batch(
         &self,
         backend_batch: BC::Batch,
         events: Events<E>,

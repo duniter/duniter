@@ -20,6 +20,7 @@ dubp = { version = "0.47.0" }
 kv_typed = { path = "../tools/kv_typed", default-features = false }
 log = "0.4.8"
 mockall = { version = "0.8.0", optional = true }
+parking_lot = "0.11.0"
 paste = "1.0.2"
 rand = "0.7.3"
 serde = { version = "1.0.105", features = ["derive"] }

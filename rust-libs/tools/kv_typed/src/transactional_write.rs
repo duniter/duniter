@@ -24,6 +24,21 @@ pub struct TxColRw<'tx, BC: BackendCol, E: EventTrait> {
     batch: &'static mut Batch<BC, ColRw<BC, E>>,
     col_reader: &'tx UpgradableReadGuard<'tx, ColInner<BC, E>>,
 }
+
+impl<'tx, BC: BackendCol, E: EventTrait> TxColRw<'tx, BC, E> {
+    #[doc(hidden)]
+    /// For internal usage only MUST NOT USE
+    pub fn new(
+        batch: &mut Batch<BC, ColRw<BC, E>>,
+        upgradable_guard: &UpgradableReadGuard<ColInner<BC, E>>,
+    ) -> Self {
+        TxColRw {
+            batch: unsafe { std::mem::transmute(batch) },
+            col_reader: unsafe { std::mem::transmute(upgradable_guard) },
+        }
+    }
+}
+
 impl<'tx, BC: BackendCol, E: EventTrait> Debug for TxColRw<'tx, BC, E> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LevelDbCol")

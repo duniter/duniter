@@ -35,7 +35,7 @@ macro_rules! db_schema {
                 }
             )*
             // Inner module used to hide internals types that must not be exposed on public api
-            pub use __inner::{[<$db_name Db>], [<$db_name DbRo>], [<$db_name DbWritable>], [<$db_name DbReadable>]};
+            pub use __inner::{[<$db_name Db>], [<$db_name DbRo>], [<$db_name DbWritable>], [<$db_name DbReadable>], [<$db_name DbTxRw>]};
             mod __inner {
                 use super::*;
                 use kv_typed::prelude::*;

@@ -9,7 +9,7 @@ db_schema!(
         ["c1", Col1, i32, String],
         ["c2", Col2, usize, ()],
         ["c3", Col3, U32BE, Vec<u128>],
-        ["c4", Col4, u64, BTreeSet<u128>],
+        ["c4", Col4, U64BE, BTreeSet<u128>],
     ]
 );
 
@@ -27,7 +27,7 @@ fn test_macro_db() {
                 ("col1", "i32", "String"),
                 ("col2", "usize", "()"),
                 ("col3", "U32BE", "Vec<u128>"),
-                ("col4", "u64", "BTreeSet<u128>")
+                ("col4", "U64BE", "BTreeSet<u128>")
             ]
         );
     }
@@ -120,8 +120,8 @@ fn test_db<B: Backend>(db: &TestV1Db<B>) -> KvResult<()> {
 
     // Test get_ref_slice
     db.col4_write()
-        .upsert(4, (&[3, 2, 4, 1]).iter().copied().collect())?;
-    db.col4().get_ref_slice(&4, |numbers| {
+        .upsert(U64BE(4), (&[3, 2, 4, 1]).iter().copied().collect())?;
+    db.col4().get_ref_slice(&U64BE(4), |numbers| {
         assert_eq!(numbers, &[1, 2, 3, 4]);
         Ok(())
     })?;
@@ -151,7 +151,7 @@ fn test_db<B: Backend>(db: &TestV1Db<B>) -> KvResult<()> {
                 assert_eq!(iter.collect::<KvResult<Vec<_>>>()?, vec![U32BE(4)]);
                 Ok::<(), KvError>(())
             })?;
-            c4.get_ref_slice(&4, |numbers| {
+            c4.get_ref_slice(&U64BE(4), |numbers| {
                 assert_eq!(numbers, &[1, 2, 3, 4]);
                 Ok(())
             })?;
@@ -195,7 +195,7 @@ fn test_db<B: Backend>(db: &TestV1Db<B>) -> KvResult<()> {
 
                 Ok::<(), KvError>(())
             })?;
-            c4.upsert(4, (&[7, 8, 6, 5]).iter().copied().collect());
+            c4.upsert(U64BE(4), (&[7, 8, 6, 5]).iter().copied().collect());
             Ok(())
         });
     tres?;

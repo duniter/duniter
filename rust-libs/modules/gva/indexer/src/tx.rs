@@ -31,240 +31,200 @@ fn get_script_hash(script: &WalletScriptV10, scripts_hash: &mut ScriptsHash) -> 
 pub(crate) fn apply_tx<B: Backend>(
     current_blockstamp: Blockstamp,
     current_time: i64,
-    gva_db: &GvaV1Db<B>,
+    gva_db: &mut GvaV1DbTxRw<B::Col>,
     scripts_hash: &mut ScriptsHash,
     tx_hash: Hash,
     tx: &TransactionDocumentV10,
     txs_by_issuer_mem: &mut HashMap<WalletHashWithBnV1Db, BTreeSet<Hash>>,
     txs_by_recipient_mem: &mut HashMap<WalletHashWithBnV1Db, BTreeSet<Hash>>,
 ) -> KvResult<()> {
-    (
-        gva_db.scripts_by_pubkey_write(),
-        gva_db.txs_write(),
-        gva_db.gva_utxos_write(),
-        gva_db.balances_write(),
-    )
-        .write(
-            |(mut scripts_by_pubkey, mut txs, mut gva_utxos, mut balances)| {
-                let mut issuers_scripts_hashs = BTreeSet::new();
-                for input in tx.get_inputs() {
-                    let (account_script_hash, account_script) = match input.id {
-                        SourceIdV10::Utxo(utxo_id) => {
-                            // Get issuer script & written block
-                            let db_tx_origin = gva_db
-                                .txs()
-                                .get(&HashKeyV2::from_ref(&utxo_id.tx_hash))?
-                                .ok_or_else(|| {
-                                    KvError::DbCorrupted(format!(
-                                        "Not found origin tx of uxto {}",
-                                        utxo_id
-                                    ))
-                                })?;
-                            let utxo_script = db_tx_origin.tx.get_outputs()[utxo_id.output_index]
-                                .conditions
-                                .script
-                                .clone();
-                            let utxo_script_hash = get_script_hash(&utxo_script, scripts_hash);
+    let mut issuers_scripts_hashs = BTreeSet::new();
+    for input in tx.get_inputs() {
+        let (account_script_hash, account_script) = match input.id {
+            SourceIdV10::Utxo(utxo_id) => {
+                // Get issuer script & written block
+                let db_tx_origin = gva_db
+                    .txs
+                    .get(&HashKeyV2::from_ref(&utxo_id.tx_hash))?
+                    .ok_or_else(|| {
+                        KvError::DbCorrupted(format!("Not found origin tx of uxto {}", utxo_id))
+                    })?;
+                let utxo_script = db_tx_origin.tx.get_outputs()[utxo_id.output_index]
+                    .conditions
+                    .script
+                    .clone();
+                let utxo_script_hash = get_script_hash(&utxo_script, scripts_hash);
 
-                            // Remove consumed UTXOs
-                            super::utxos::remove_utxo_v10::<B>(
-                                &mut scripts_by_pubkey,
-                                &mut gva_utxos,
-                                utxo_id,
-                                &utxo_script,
-                                utxo_script_hash,
-                                db_tx_origin.written_block.number.0,
-                            )?;
+                // Remove consumed UTXOs
+                super::utxos::remove_utxo_v10::<B>(
+                    &mut gva_db.scripts_by_pubkey,
+                    &mut gva_db.gva_utxos,
+                    utxo_id,
+                    &utxo_script,
+                    utxo_script_hash,
+                    db_tx_origin.written_block.number.0,
+                )?;
 
-                            // Return utxo_script with hash
-                            (utxo_script_hash, utxo_script)
-                        }
-                        SourceIdV10::Ud(UdSourceIdV10 { issuer, .. }) => {
-                            let script = WalletScriptV10::single_sig(issuer);
-                            (Hash::compute(script.to_string().as_bytes()), script)
-                        }
-                    };
-                    issuers_scripts_hashs.insert(account_script_hash);
-                    // Insert on col `txs_by_issuer`
-                    txs_by_issuer_mem
-                        .entry(WalletHashWithBnV1Db::new(
-                            account_script_hash,
-                            current_blockstamp.number,
-                        ))
-                        .or_default()
-                        .insert(tx_hash);
-                    // Decrease account balance
-                    decrease_account_balance::<B>(account_script, &mut balances, input.amount)?;
-                }
+                // Return utxo_script with hash
+                (utxo_script_hash, utxo_script)
+            }
+            SourceIdV10::Ud(UdSourceIdV10 { issuer, .. }) => {
+                let script = WalletScriptV10::single_sig(issuer);
+                (Hash::compute(script.to_string().as_bytes()), script)
+            }
+        };
+        issuers_scripts_hashs.insert(account_script_hash);
+        // Insert on col `txs_by_issuer`
+        txs_by_issuer_mem
+            .entry(WalletHashWithBnV1Db::new(
+                account_script_hash,
+                current_blockstamp.number,
+            ))
+            .or_default()
+            .insert(tx_hash);
+        // Decrease account balance
+        decrease_account_balance::<B>(account_script, &mut gva_db.balances, input.amount)?;
+    }
 
-                for (output_index, output) in tx.get_outputs().iter().enumerate() {
-                    let utxo_script_hash = get_script_hash(&output.conditions.script, scripts_hash);
-                    // Insert created UTXOs
-                    super::utxos::write_utxo_v10::<B>(
-                        &mut scripts_by_pubkey,
-                        &mut gva_utxos,
-                        UtxoV10 {
-                            id: UtxoIdV10 {
-                                tx_hash,
-                                output_index,
-                            },
-                            amount: output.amount,
-                            script: &output.conditions.script,
-                            written_block: current_blockstamp.number,
-                        },
-                        utxo_script_hash,
-                    )?;
-
-                    // Insert on col `txs_by_recipient`
-                    if !issuers_scripts_hashs.contains(&utxo_script_hash) {
-                        txs_by_recipient_mem
-                            .entry(WalletHashWithBnV1Db::new(
-                                utxo_script_hash,
-                                current_blockstamp.number,
-                            ))
-                            .or_default()
-                            .insert(tx_hash);
-                    }
-
-                    // Increase account balance
-                    let balance = balances
-                        .get(WalletConditionsV2::from_ref(&output.conditions.script))?
-                        .unwrap_or_default();
-                    balances.upsert(
-                        WalletConditionsV2(output.conditions.script.clone()),
-                        SourceAmountValV2(balance.0 + output.amount),
-                    );
-                }
-
-                // Insert tx itself
-                txs.upsert(
-                    HashKeyV2(tx_hash),
-                    GvaTxDbV1 {
-                        tx: tx.clone(),
-                        written_block: current_blockstamp,
-                        written_time: current_time,
-                    },
-                );
-
-                Ok(())
+    for (output_index, output) in tx.get_outputs().iter().enumerate() {
+        let utxo_script_hash = get_script_hash(&output.conditions.script, scripts_hash);
+        // Insert created UTXOs
+        super::utxos::write_utxo_v10::<B>(
+            &mut gva_db.scripts_by_pubkey,
+            &mut gva_db.gva_utxos,
+            UtxoV10 {
+                id: UtxoIdV10 {
+                    tx_hash,
+                    output_index,
+                },
+                amount: output.amount,
+                script: &output.conditions.script,
+                written_block: current_blockstamp.number,
             },
+            utxo_script_hash,
         )?;
+
+        // Insert on col `txs_by_recipient`
+        if !issuers_scripts_hashs.contains(&utxo_script_hash) {
+            txs_by_recipient_mem
+                .entry(WalletHashWithBnV1Db::new(
+                    utxo_script_hash,
+                    current_blockstamp.number,
+                ))
+                .or_default()
+                .insert(tx_hash);
+        }
+
+        // Increase account balance
+        let balance = gva_db
+            .balances
+            .get(WalletConditionsV2::from_ref(&output.conditions.script))?
+            .unwrap_or_default();
+        gva_db.balances.upsert(
+            WalletConditionsV2(output.conditions.script.clone()),
+            SourceAmountValV2(balance.0 + output.amount),
+        );
+    }
+
+    // Insert tx itself
+    gva_db.txs.upsert(
+        HashKeyV2(tx_hash),
+        GvaTxDbV1 {
+            tx: tx.clone(),
+            written_block: current_blockstamp,
+            written_time: current_time,
+        },
+    );
 
     Ok(())
 }
 
 pub(crate) fn revert_tx<B: Backend>(
     block_number: BlockNumber,
-    gva_db: &GvaV1Db<B>,
+    gva_db: &mut GvaV1DbTxRw<B::Col>,
     scripts_hash: &mut ScriptsHash,
     tx_hash: &Hash,
 ) -> KvResult<Option<TransactionDocumentV10>> {
-    if let Some(tx_db) = gva_db.txs().get(&HashKeyV2::from_ref(tx_hash))? {
-        (
-            gva_db.scripts_by_pubkey_write(),
-            gva_db.txs_by_issuer_write(),
-            gva_db.txs_by_recipient_write(),
-            gva_db.txs_write(),
-            gva_db.gva_utxos_write(),
-            gva_db.balances_write(),
-        )
-            .write(
-                |(
-                    mut scripts_by_pubkey,
-                    mut txs_by_issuer,
-                    mut txs_by_recipient,
-                    mut txs,
-                    mut gva_utxos,
-                    mut balances,
-                )| {
-                    use dubp::documents::transaction::TransactionDocumentTrait as _;
-                    for (output_index, output) in tx_db.tx.get_outputs().iter().enumerate() {
-                        let script = &output.conditions.script;
-                        let utxo_script_hash = get_script_hash(&script, scripts_hash);
+    if let Some(tx_db) = gva_db.txs.get(&HashKeyV2::from_ref(tx_hash))? {
+        use dubp::documents::transaction::TransactionDocumentTrait as _;
+        for (output_index, output) in tx_db.tx.get_outputs().iter().enumerate() {
+            let script = &output.conditions.script;
+            let utxo_script_hash = get_script_hash(&script, scripts_hash);
 
-                        // Remove UTXOs created by this tx
-                        super::utxos::remove_utxo_v10::<B>(
-                            &mut scripts_by_pubkey,
-                            &mut gva_utxos,
-                            UtxoIdV10 {
-                                tx_hash: *tx_hash,
-                                output_index,
-                            },
-                            script,
-                            utxo_script_hash,
-                            block_number.0,
-                        )?;
-
-                        // Remove on col `txs_by_recipient`
-                        txs_by_recipient
-                            .remove(WalletHashWithBnV1Db::new(utxo_script_hash, block_number));
-
-                        // Decrease account balance
-                        decrease_account_balance::<B>(
-                            script.clone(),
-                            &mut balances,
-                            output.amount,
-                        )?;
-                    }
-                    // Recreate UTXOs consumed by this tx (and update balance)
-                    for input in tx_db.tx.get_inputs() {
-                        let (account_script_hash, account_script) = match input.id {
-                            SourceIdV10::Utxo(utxo_id) => {
-                                let db_tx_origin = gva_db
-                                    .txs()
-                                    .get(&HashKeyV2::from_ref(&utxo_id.tx_hash))?
-                                    .ok_or_else(|| {
-                                        KvError::DbCorrupted(format!(
-                                            "Not found origin tx of uxto {}",
-                                            utxo_id
-                                        ))
-                                    })?;
-                                let utxo_script = db_tx_origin.tx.get_outputs()
-                                    [utxo_id.output_index]
-                                    .conditions
-                                    .script
-                                    .clone();
-                                let utxo_script_hash = get_script_hash(&utxo_script, scripts_hash);
-                                super::utxos::write_utxo_v10::<B>(
-                                    &mut scripts_by_pubkey,
-                                    &mut gva_utxos,
-                                    UtxoV10 {
-                                        id: utxo_id,
-                                        amount: input.amount,
-                                        script: &utxo_script,
-                                        written_block: db_tx_origin.written_block.number,
-                                    },
-                                    utxo_script_hash,
-                                )?;
-
-                                // Return utxo_script
-                                (utxo_script_hash, utxo_script)
-                            }
-                            SourceIdV10::Ud(UdSourceIdV10 { issuer, .. }) => {
-                                let script = WalletScriptV10::single_sig(issuer);
-                                (Hash::compute(script.to_string().as_bytes()), script)
-                            }
-                        };
-                        // Remove on col `txs_by_issuer`
-                        txs_by_issuer
-                            .remove(WalletHashWithBnV1Db::new(account_script_hash, block_number));
-                        // Increase account balance
-                        let balance = balances
-                            .get(WalletConditionsV2::from_ref(&account_script))?
-                            .unwrap_or_default();
-
-                        balances.upsert(
-                            WalletConditionsV2(account_script),
-                            SourceAmountValV2(balance.0 + input.amount),
-                        );
-                    }
-
-                    // Remove tx itself
-                    txs.remove(HashKeyV2(*tx_hash));
-
-                    Ok(())
+            // Remove UTXOs created by this tx
+            super::utxos::remove_utxo_v10::<B>(
+                &mut gva_db.scripts_by_pubkey,
+                &mut gva_db.gva_utxos,
+                UtxoIdV10 {
+                    tx_hash: *tx_hash,
+                    output_index,
                 },
+                script,
+                utxo_script_hash,
+                block_number.0,
             )?;
+
+            // Remove on col `txs_by_recipient`
+            gva_db
+                .txs_by_recipient
+                .remove(WalletHashWithBnV1Db::new(utxo_script_hash, block_number));
+
+            // Decrease account balance
+            decrease_account_balance::<B>(script.clone(), &mut gva_db.balances, output.amount)?;
+        }
+        // Recreate UTXOs consumed by this tx (and update balance)
+        for input in tx_db.tx.get_inputs() {
+            let (account_script_hash, account_script) = match input.id {
+                SourceIdV10::Utxo(utxo_id) => {
+                    let db_tx_origin = gva_db
+                        .txs
+                        .get(&HashKeyV2::from_ref(&utxo_id.tx_hash))?
+                        .ok_or_else(|| {
+                            KvError::DbCorrupted(format!("Not found origin tx of uxto {}", utxo_id))
+                        })?;
+                    let utxo_script = db_tx_origin.tx.get_outputs()[utxo_id.output_index]
+                        .conditions
+                        .script
+                        .clone();
+                    let utxo_script_hash = get_script_hash(&utxo_script, scripts_hash);
+                    super::utxos::write_utxo_v10::<B>(
+                        &mut gva_db.scripts_by_pubkey,
+                        &mut gva_db.gva_utxos,
+                        UtxoV10 {
+                            id: utxo_id,
+                            amount: input.amount,
+                            script: &utxo_script,
+                            written_block: db_tx_origin.written_block.number,
+                        },
+                        utxo_script_hash,
+                    )?;
+
+                    // Return utxo_script
+                    (utxo_script_hash, utxo_script)
+                }
+                SourceIdV10::Ud(UdSourceIdV10 { issuer, .. }) => {
+                    let script = WalletScriptV10::single_sig(issuer);
+                    (Hash::compute(script.to_string().as_bytes()), script)
+                }
+            };
+            // Remove on col `txs_by_issuer`
+            gva_db
+                .txs_by_issuer
+                .remove(WalletHashWithBnV1Db::new(account_script_hash, block_number));
+            // Increase account balance
+            let balance = gva_db
+                .balances
+                .get(WalletConditionsV2::from_ref(&account_script))?
+                .unwrap_or_default();
+
+            gva_db.balances.upsert(
+                WalletConditionsV2(account_script),
+                SourceAmountValV2(balance.0 + input.amount),
+            );
+        }
+
+        // Remove tx itself
+        gva_db.txs.remove(HashKeyV2(*tx_hash));
 
         Ok(Some(tx_db.tx))
     } else {
@@ -364,16 +324,18 @@ mod tests {
 
         let mut txs_by_issuer_mem = HashMap::new();
         let mut txs_by_recipient_mem = HashMap::new();
-        apply_tx(
-            current_blockstamp,
-            b0.median_time as i64,
-            &gva_db,
-            &mut scripts_hash,
-            tx1_hash,
-            &tx1,
-            &mut txs_by_issuer_mem,
-            &mut txs_by_recipient_mem,
-        )?;
+        (&gva_db).write(|mut db| {
+            apply_tx::<Mem>(
+                current_blockstamp,
+                b0.median_time as i64,
+                &mut db,
+                &mut scripts_hash,
+                tx1_hash,
+                &tx1,
+                &mut txs_by_issuer_mem,
+                &mut txs_by_recipient_mem,
+            )
+        })?;
 
         assert_eq!(txs_by_issuer_mem.len(), 1);
         assert_eq!(
@@ -424,16 +386,18 @@ mod tests {
 
         let mut txs_by_issuer_mem = HashMap::new();
         let mut txs_by_recipient_mem = HashMap::new();
-        apply_tx(
-            current_blockstamp,
-            b0.median_time as i64,
-            &gva_db,
-            &mut scripts_hash,
-            tx2_hash,
-            &tx2,
-            &mut txs_by_issuer_mem,
-            &mut txs_by_recipient_mem,
-        )?;
+        (&gva_db).write(|mut db| {
+            apply_tx::<Mem>(
+                current_blockstamp,
+                b0.median_time as i64,
+                &mut db,
+                &mut scripts_hash,
+                tx2_hash,
+                &tx2,
+                &mut txs_by_issuer_mem,
+                &mut txs_by_recipient_mem,
+            )
+        })?;
 
         assert_eq!(txs_by_issuer_mem.len(), 1);
         assert_eq!(
@@ -459,12 +423,14 @@ mod tests {
             Some(SourceAmountValV2(ud0_amount))
         );
 
-        revert_tx(
-            current_blockstamp.number,
-            &gva_db,
-            &mut scripts_hash,
-            &tx2_hash,
-        )?;
+        (&gva_db).write(|mut db| {
+            revert_tx::<Mem>(
+                current_blockstamp.number,
+                &mut db,
+                &mut scripts_hash,
+                &tx2_hash,
+            )
+        })?;
 
         assert_eq!(
             gva_db
@@ -479,12 +445,14 @@ mod tests {
             Some(SourceAmountValV2(o2_amount))
         );
 
-        revert_tx(
-            current_blockstamp.number,
-            &gva_db,
-            &mut scripts_hash,
-            &tx1_hash,
-        )?;
+        (&gva_db).write(|mut db| {
+            revert_tx::<Mem>(
+                current_blockstamp.number,
+                &mut db,
+                &mut scripts_hash,
+                &tx1_hash,
+            )
+        })?;
 
         assert_eq!(
             gva_db

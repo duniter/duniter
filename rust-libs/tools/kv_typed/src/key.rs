@@ -52,6 +52,14 @@ impl<T> Key for T where
 {
 }
 
+pub trait KeyZc: Key {
+    type Ref: Sized + zerocopy::AsBytes + zerocopy::FromBytes;
+}
+
+impl KeyZc for () {
+    type Ref = ();
+}
+
 #[derive(
     Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, zerocopy::AsBytes, zerocopy::FromBytes,
 )]
@@ -64,14 +72,22 @@ impl From<&zerocopy::U32<byteorder::BigEndian>> for U32BE {
     }
 }
 
-pub trait KeyZc: Key {
-    type Ref: Sized + zerocopy::AsBytes + zerocopy::FromBytes;
-}
-
-impl KeyZc for () {
-    type Ref = ();
-}
-
 impl KeyZc for U32BE {
     type Ref = zerocopy::U32<byteorder::BigEndian>;
+}
+
+#[derive(
+    Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, zerocopy::AsBytes, zerocopy::FromBytes,
+)]
+#[repr(transparent)]
+pub struct U64BE(pub u64);
+
+impl From<&zerocopy::U64<byteorder::BigEndian>> for U64BE {
+    fn from(u32_zc: &zerocopy::U64<byteorder::BigEndian>) -> Self {
+        U64BE(u32_zc.get())
+    }
+}
+
+impl KeyZc for U64BE {
+    type Ref = zerocopy::U64<byteorder::BigEndian>;
 }

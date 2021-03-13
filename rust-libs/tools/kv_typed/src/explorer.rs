@@ -73,7 +73,7 @@ macro_rules! impl_explorable_key_for_be_numbers {
         }
     )*};
 }
-impl_explorable_key_for_be_numbers!(U32BE);
+impl_explorable_key_for_be_numbers!(U32BE, U64BE);
 
 pub trait ExplorableValue: Sized {
     fn from_explorer_str(source: &str) -> Result<Self, FromExplorerValueErr>;

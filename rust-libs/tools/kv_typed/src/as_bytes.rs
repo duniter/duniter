@@ -83,4 +83,4 @@ macro_rules! impl_as_bytes_for_be_numbers {
         }
     )*};
 }
-impl_as_bytes_for_be_numbers!(U32BE);
+impl_as_bytes_for_be_numbers!(U32BE, U64BE);

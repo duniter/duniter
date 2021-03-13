@@ -45,7 +45,7 @@ macro_rules! impl_from_bytes_for_be_numbers {
         }
     )*};
 }
-impl_from_bytes_for_be_numbers!((U32BE, u32));
+impl_from_bytes_for_be_numbers!((U32BE, u32), (U64BE, u64));
 
 impl FromBytes for String {
     type Err = std::str::Utf8Error;

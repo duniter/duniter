@@ -74,68 +74,58 @@ pub fn apply_block<B: Backend>(block: &DubpBlockV10, gva_db: &GvaV1Db<B>) -> KvR
         number: block.number(),
         hash: block.hash(),
     };
-    (
-        gva_db.balances_write(),
-        gva_db.blockchain_time_write(),
-        gva_db.blocks_with_ud_write(),
-        gva_db.gva_identities_write(),
-    )
-        .write(
-            |(mut balances, mut blockchain_time, mut blocks_with_ud, mut gva_identities)| {
-                blockchain_time.upsert(U32BE(block.number().0), block.common_time());
-                identities::update_identities::<B>(&block, &mut gva_identities)?;
-                if let Some(divident_amount) = block.dividend() {
-                    blocks_with_ud.upsert(U32BE(blockstamp.number.0), ());
-                    apply_ud::<B>(
-                        blockstamp.number,
-                        divident_amount,
-                        &mut balances,
-                        &mut gva_identities,
-                    )?;
-                }
-                Ok(())
-            },
-        )?;
-    apply_block_txs(
-        &gva_db,
-        blockstamp,
-        block.common_time() as i64,
-        block.transactions(),
-    )?;
+    gva_db.write(|mut db| {
+        db.blockchain_time
+            .upsert(U32BE(block.number().0), block.common_time());
+        identities::update_identities::<B>(&block, &mut db.gva_identities)?;
+        if let Some(divident_amount) = block.dividend() {
+            db.blocks_with_ud.upsert(U32BE(blockstamp.number.0), ());
+            apply_ud::<B>(
+                blockstamp.number,
+                divident_amount,
+                &mut db.balances,
+                &mut db.gva_identities,
+            )?;
+        }
+        apply_block_txs::<B>(
+            &mut db,
+            blockstamp,
+            block.common_time() as i64,
+            block.transactions(),
+        )
+    })?;
 
     Ok(())
 }
 
 pub fn revert_block<B: Backend>(block: &DubpBlockV10, gva_db: &GvaV1Db<B>) -> KvResult<()> {
-    (
-        gva_db.balances_write(),
-        gva_db.blockchain_time_write(),
-        gva_db.blocks_with_ud_write(),
-        gva_db.gva_identities_write(),
-    )
-        .write(
-            |(mut balances, mut blockchain_time, mut blocks_with_ud, mut gva_identities)| {
-                blockchain_time.remove(U32BE(block.number().0));
-                identities::revert_identities::<B>(&block, &mut gva_identities)?;
-                if let Some(divident_amount) = block.dividend() {
-                    blocks_with_ud.remove(U32BE(block.number().0));
-                    revert_ud::<B>(
-                        block.number(),
-                        divident_amount,
-                        &mut balances,
-                        &mut gva_identities,
-                    )?;
-                }
-                Ok(())
-            },
-        )?;
-    let mut scripts_hash = HashMap::with_capacity(block.transactions().len() * 3);
-    for tx in block.transactions() {
-        let tx_hash = tx.get_hash();
-        tx::revert_tx(block.number(), gva_db, &mut scripts_hash, &tx_hash)?.ok_or_else(|| {
-            KvError::DbCorrupted(format!("GVA: tx '{}' dont exist on txs history.", tx_hash,))
-        })?;
-    }
+    gva_db.write(|mut db| {
+        db.blockchain_time.remove(U32BE(block.number().0));
+        identities::revert_identities::<B>(&block, &mut db.gva_identities)?;
+        if let Some(divident_amount) = block.dividend() {
+            db.blocks_with_ud.remove(U32BE(block.number().0));
+            revert_ud::<B>(
+                block.number(),
+                divident_amount,
+                &mut db.balances,
+                &mut db.gva_identities,
+            )?;
+        }
+
+        let mut scripts_hash = HashMap::with_capacity(block.transactions().len() * 3);
+        for tx in block.transactions() {
+            let tx_hash = tx.get_hash();
+            tx::revert_tx::<B>(block.number(), &mut db, &mut scripts_hash, &tx_hash)?.ok_or_else(
+                || {
+                    KvError::DbCorrupted(format!(
+                        "GVA: tx '{}' dont exist on txs history.",
+                        tx_hash,
+                    ))
+                },
+            )?;
+        }
+        Ok(())
+    })?;
 
     Ok(())
 }
@@ -202,7 +192,7 @@ fn revert_ud<B: Backend>(
 }
 
 fn apply_block_txs<B: Backend>(
-    gva_db: &GvaV1Db<B>,
+    gva_db: &mut GvaV1DbTxRw<B::Col>,
     current_blockstamp: Blockstamp,
     current_time: i64,
     txs: &[TransactionDocumentV10],
@@ -213,10 +203,10 @@ fn apply_block_txs<B: Backend>(
     for tx in txs {
         let tx_hash = tx.get_hash();
         // Write tx and update sources
-        tx::apply_tx(
+        tx::apply_tx::<B>(
             current_blockstamp,
             current_time,
-            &gva_db,
+            gva_db,
             &mut scripts_index,
             tx_hash,
             tx,
@@ -224,19 +214,13 @@ fn apply_block_txs<B: Backend>(
             &mut txs_by_recipient_mem,
         )?;
     }
-    (
-        gva_db.txs_by_issuer_write(),
-        gva_db.txs_by_recipient_write(),
-    )
-        .write(|(mut txs_by_issuer, mut txs_by_recipient)| {
-            for (k, v) in txs_by_issuer_mem {
-                txs_by_issuer.upsert(k, v);
-            }
-            for (k, v) in txs_by_recipient_mem {
-                txs_by_recipient.upsert(k, v);
-            }
-            Ok(())
-        })?;
+
+    for (k, v) in txs_by_issuer_mem {
+        gva_db.txs_by_issuer.upsert(k, v);
+    }
+    for (k, v) in txs_by_recipient_mem {
+        gva_db.txs_by_recipient.upsert(k, v);
+    }
     Ok(())
 }
 

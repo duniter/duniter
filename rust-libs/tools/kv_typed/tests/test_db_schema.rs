@@ -205,5 +205,17 @@ fn test_db<B: Backend>(db: &TestV1Db<B>) -> KvResult<()> {
     db.col4_write().clear()?;
     assert_eq!(db.col4().count()?, 0);
 
+    // Test transactional 2
+    db.write(|mut db_tx| {
+        db_tx
+            .col4
+            .upsert(U64BE(47), (&[5, 9, 3, 2]).iter().copied().collect());
+        Ok(())
+    })?;
+    db.col4().get_ref_slice(&U64BE(47), |numbers| {
+        assert_eq!(numbers, &[2, 3, 5, 9]);
+        Ok(())
+    })?;
+
     Ok(())
 }

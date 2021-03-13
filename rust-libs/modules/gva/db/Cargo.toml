@@ -16,6 +16,7 @@ chrono = { version = "0.4.15", optional = true }
 duniter-dbs = { path = "../../../duniter-dbs" }
 dubp = { version = "0.47.0" }
 kv_typed = { path = "../../../tools/kv_typed", default-features = false, features = ["sled_backend"] }
+parking_lot = "0.11.0"
 paste = "1.0.2"
 serde = { version = "1.0.105", features = ["derive"] }
 serde_json = "1.0.53"

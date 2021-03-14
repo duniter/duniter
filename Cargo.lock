@@ -1205,6 +1205,7 @@ name = "duniter-gva-dbs-reader"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "arrayvec",
  "dubp",
  "duniter-dbs",
  "duniter-gva-db",

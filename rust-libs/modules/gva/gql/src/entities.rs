@@ -17,6 +17,7 @@ pub mod block_gva;
 pub mod idty_gva;
 pub mod tx_gva;
 pub mod ud_gva;
+pub mod utxos_gva;
 
 use crate::*;
 
@@ -108,6 +109,18 @@ pub(crate) struct TxsHistoryMempool {
 
 #[derive(Clone, async_graphql::SimpleObject)]
 pub(crate) struct UtxoGva {
+    /// Source amount
+    pub(crate) amount: i64,
+    /// Source base
+    pub(crate) base: i64,
+    /// Hash of origin transaction
+    pub(crate) tx_hash: String,
+    /// Index of output in origin transaction
+    pub(crate) output_index: u32,
+}
+
+#[derive(Clone, async_graphql::SimpleObject)]
+pub(crate) struct UtxoTimedGva {
     /// Source amount
     pub(crate) amount: i64,
     /// Source base

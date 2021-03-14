@@ -31,7 +31,7 @@ impl UtxosQuery {
         #[graphql(desc = "DUBP wallet script")] script: PkOrScriptGva,
         #[graphql(desc = "pagination", default)] pagination: Pagination,
         #[graphql(desc = "Amount needed")] amount: Option<i64>,
-    ) -> async_graphql::Result<Connection<String, UtxoGva, AggregateSum, EmptyFields>> {
+    ) -> async_graphql::Result<Connection<String, UtxoTimedGva, AggregateSum, EmptyFields>> {
         let QueryContext { is_whitelisted } = ctx.data::<QueryContext>()?;
         log::info!("is_whitelisted={}", is_whitelisted);
         let pagination = Pagination::convert_to_page_info(pagination, *is_whitelisted)?;
@@ -86,7 +86,7 @@ impl UtxosQuery {
             |((utxo_cursor, source_amount), blockchain_time)| {
                 Edge::new(
                     utxo_cursor.to_string(),
-                    UtxoGva {
+                    UtxoTimedGva {
                         amount: source_amount.amount(),
                         base: source_amount.base(),
                         tx_hash: utxo_cursor.tx_hash.to_hex(),

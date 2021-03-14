@@ -34,6 +34,7 @@ pub mod utxos;
 pub use crate::pagination::{PageInfo, PagedData};
 
 use crate::pagination::{has_next_page, has_previous_page};
+use arrayvec::ArrayVec;
 use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::documents::transaction::TransactionDocumentV10;
 use dubp::{block::DubpBlockV10, common::crypto::hashs::Hash};

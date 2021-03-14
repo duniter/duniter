@@ -18,6 +18,8 @@ use duniter_dbs::SourceAmountValV2;
 
 use crate::*;
 
+pub const MAX_FIRST_UTXOS: usize = 40;
+
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct UtxoCursor {
     pub block_number: BlockNumber,
@@ -56,6 +58,13 @@ impl FromStr for UtxoCursor {
             output_index,
         })
     }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Utxo {
+    pub amount: SourceAmount,
+    pub tx_hash: Hash,
+    pub output_index: u8,
 }
 
 #[derive(Debug, Default)]
@@ -169,6 +178,28 @@ impl DbsReader {
             data: UtxosWithSum { utxos, sum },
         })
     }
+    pub fn first_scripts_utxos(
+        &self,
+        first: usize,
+        scripts: &[WalletScriptV10],
+    ) -> anyhow::Result<Vec<ArrayVec<[Utxo; MAX_FIRST_UTXOS]>>> {
+        Ok(scripts
+            .iter()
+            .map(|script| {
+                let (k_min, k_max) =
+                    GvaUtxoIdDbV1::script_interval(Hash::compute(script.to_string().as_bytes()));
+                self.0.gva_utxos().iter(k_min..k_max, |it| {
+                    it.take(first)
+                        .map_ok(|(k, v)| Utxo {
+                            amount: v.0,
+                            tx_hash: k.get_tx_hash(),
+                            output_index: k.get_output_index(),
+                        })
+                        .collect::<KvResult<_>>()
+                })
+            })
+            .collect::<KvResult<Vec<_>>>()?)
+    }
 }
 
 fn find_script_utxos_inner<TxsMpDb, I>(
@@ -251,8 +282,85 @@ where
 mod tests {
 
     use super::*;
+    use dubp::crypto::keys::PublicKey as _;
     use duniter_dbs::databases::txs_mp_v2::TxsMpV2DbWritable;
     use duniter_gva_db::GvaV1DbWritable;
+    use unwrap::unwrap;
+
+    #[test]
+    fn test_first_scripts_utxos() -> anyhow::Result<()> {
+        let script = WalletScriptV10::single_sig(PublicKey::default());
+        let script2 = WalletScriptV10::single_sig(unwrap!(PublicKey::from_base58(
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        )));
+
+        let gva_db = duniter_gva_db::GvaV1Db::<Mem>::open(MemConf::default())?;
+        let db_reader = create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) });
+
+        gva_db.gva_utxos_write().upsert(
+            GvaUtxoIdDbV1::new(script.clone(), 0, Hash::default(), 0),
+            SourceAmountValV2(SourceAmount::with_base0(500)),
+        )?;
+        gva_db.gva_utxos_write().upsert(
+            GvaUtxoIdDbV1::new(script.clone(), 1, Hash::default(), 1),
+            SourceAmountValV2(SourceAmount::with_base0(800)),
+        )?;
+        gva_db.gva_utxos_write().upsert(
+            GvaUtxoIdDbV1::new(script.clone(), 2, Hash::default(), 2),
+            SourceAmountValV2(SourceAmount::with_base0(1_200)),
+        )?;
+
+        gva_db.gva_utxos_write().upsert(
+            GvaUtxoIdDbV1::new(script2.clone(), 0, Hash::default(), 0),
+            SourceAmountValV2(SourceAmount::with_base0(400)),
+        )?;
+        gva_db.gva_utxos_write().upsert(
+            GvaUtxoIdDbV1::new(script2.clone(), 1, Hash::default(), 1),
+            SourceAmountValV2(SourceAmount::with_base0(700)),
+        )?;
+        gva_db.gva_utxos_write().upsert(
+            GvaUtxoIdDbV1::new(script2.clone(), 2, Hash::default(), 2),
+            SourceAmountValV2(SourceAmount::with_base0(1_100)),
+        )?;
+
+        assert_eq!(
+            db_reader.first_scripts_utxos(2, &[script, script2])?,
+            vec![
+                [
+                    Utxo {
+                        amount: SourceAmount::with_base0(500),
+                        tx_hash: Hash::default(),
+                        output_index: 0,
+                    },
+                    Utxo {
+                        amount: SourceAmount::with_base0(800),
+                        tx_hash: Hash::default(),
+                        output_index: 1,
+                    },
+                ]
+                .iter()
+                .copied()
+                .collect::<ArrayVec<_>>(),
+                [
+                    Utxo {
+                        amount: SourceAmount::with_base0(400),
+                        tx_hash: Hash::default(),
+                        output_index: 0,
+                    },
+                    Utxo {
+                        amount: SourceAmount::with_base0(700),
+                        tx_hash: Hash::default(),
+                        output_index: 1,
+                    },
+                ]
+                .iter()
+                .copied()
+                .collect::<ArrayVec<_>>()
+            ]
+        );
+
+        Ok(())
+    }
 
     #[test]
     fn test_find_script_utxos() -> anyhow::Result<()> {

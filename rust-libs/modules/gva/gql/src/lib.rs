@@ -39,8 +39,9 @@ use crate::entities::{
     idty_gva::Identity,
     tx_gva::TxGva,
     ud_gva::{CurrentUdGva, RevalUdGva, UdGva},
+    utxos_gva::UtxosGva,
     AggregateSum, AmountWithBase, EdgeTx, PeerCardGva, RawTxOrChanges, Sum, TxDirection,
-    TxsHistoryMempool, UtxoGva,
+    TxsHistoryMempool, UtxoGva, UtxoTimedGva,
 };
 use crate::inputs::{TxIssuer, TxRecipient, UdsFilter};
 use crate::inputs_validators::TxCommentValidator;
@@ -49,7 +50,7 @@ use crate::scalars::{PkOrScriptGva, PubKeyGva};
 #[cfg(test)]
 use crate::tests::DbsReader;
 use async_graphql::connection::{Connection, Edge, EmptyFields};
-use async_graphql::validators::{IntGreaterThan, ListMinLength};
+use async_graphql::validators::{IntGreaterThan, IntRange, ListMaxLength, ListMinLength};
 use dubp::common::crypto::keys::{ed25519::PublicKey, PublicKey as _};
 use dubp::common::prelude::*;
 use dubp::crypto::hashs::Hash;
@@ -66,7 +67,7 @@ use duniter_gva_dbs_reader::DbsReader;
 use duniter_mempools::TxsMempool;
 use futures::{Stream, StreamExt};
 use resiter::map::Map;
-use std::{convert::TryFrom, num::NonZeroUsize, ops::Deref};
+use std::{borrow::Cow, convert::TryFrom, num::NonZeroUsize, ops::Deref};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct QueryContext {
@@ -117,6 +118,11 @@ mod tests {
                 page_info: PageInfo<duniter_gva_dbs_reader::utxos::UtxoCursor>,
                 script: &WalletScriptV10,
             ) -> anyhow::Result<PagedData<duniter_gva_dbs_reader::utxos::UtxosWithSum>>;
+            fn first_scripts_utxos(
+                &self,
+                first: usize,
+                scripts: &[WalletScriptV10],
+            ) -> anyhow::Result<Vec<arrayvec::ArrayVec<[duniter_gva_dbs_reader::utxos::Utxo; duniter_gva_dbs_reader::utxos::MAX_FIRST_UTXOS]>>>;
             fn get_account_balance(
                 &self,
                 account_script: &WalletScriptV10,

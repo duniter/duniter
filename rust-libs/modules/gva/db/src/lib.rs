@@ -46,9 +46,11 @@ pub(crate) use std::collections::BTreeSet;
 db_schema!(
     GvaV1,
     [
+        ["blocks_by_common_time", BlocksByCommonTime, U64BE, u32],
         ["blocks_with_ud", BlocksWithUd, U32BE, ()],
         ["blockchain_time", BlockchainTime, U32BE, u64],
         ["txs", Txs, HashKeyV2, GvaTxDbV1],
+        ["txs_by_block", TxsByBlock, U32BE, Vec<Hash>],
         ["txs_by_issuer", TxsByIssuer, WalletHashWithBnV1Db, BTreeSet<Hash>],
         ["txs_by_recipient", TxsByRecipient, WalletHashWithBnV1Db, BTreeSet<Hash>],
         [

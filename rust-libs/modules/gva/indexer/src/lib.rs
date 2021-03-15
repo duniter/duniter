@@ -75,6 +75,8 @@ pub fn apply_block<B: Backend>(block: &DubpBlockV10, gva_db: &GvaV1Db<B>) -> KvR
         hash: block.hash(),
     };
     gva_db.write(|mut db| {
+        db.blocks_by_common_time
+            .upsert(U64BE(block.common_time()), block.number().0);
         db.blockchain_time
             .upsert(U32BE(block.number().0), block.common_time());
         identities::update_identities::<B>(&block, &mut db.gva_identities)?;
@@ -100,6 +102,7 @@ pub fn apply_block<B: Backend>(block: &DubpBlockV10, gva_db: &GvaV1Db<B>) -> KvR
 
 pub fn revert_block<B: Backend>(block: &DubpBlockV10, gva_db: &GvaV1Db<B>) -> KvResult<()> {
     gva_db.write(|mut db| {
+        db.blocks_by_common_time.remove(U64BE(block.common_time()));
         db.blockchain_time.remove(U32BE(block.number().0));
         identities::revert_identities::<B>(&block, &mut db.gva_identities)?;
         if let Some(divident_amount) = block.dividend() {
@@ -124,6 +127,7 @@ pub fn revert_block<B: Backend>(block: &DubpBlockV10, gva_db: &GvaV1Db<B>) -> Kv
                 },
             )?;
         }
+        db.txs_by_block.remove(U32BE(block.number().0));
         Ok(())
     })?;
 
@@ -200,8 +204,10 @@ fn apply_block_txs<B: Backend>(
     let mut scripts_index = HashMap::new();
     let mut txs_by_issuer_mem = HashMap::new();
     let mut txs_by_recipient_mem = HashMap::new();
+    let mut txs_hashes = Vec::with_capacity(txs.len());
     for tx in txs {
         let tx_hash = tx.get_hash();
+        txs_hashes.push(tx_hash);
         // Write tx and update sources
         tx::apply_tx::<B>(
             current_blockstamp,
@@ -215,6 +221,11 @@ fn apply_block_txs<B: Backend>(
         )?;
     }
 
+    if !txs_hashes.is_empty() {
+        gva_db
+            .txs_by_block
+            .upsert(U32BE(current_blockstamp.number.0), txs_hashes);
+    }
     for (k, v) in txs_by_issuer_mem {
         gva_db.txs_by_issuer.upsert(k, v);
     }
@@ -256,6 +267,8 @@ mod tests {
 
         apply_block(&b0, &gva_db)?;
 
+        assert_eq!(gva_db.blocks_by_common_time().count()?, 1);
+        assert_eq!(gva_db.blocks_by_common_time().get(&U64BE(5_243))?, Some(0));
         assert_eq!(gva_db.blockchain_time().count()?, 1);
         assert_eq!(gva_db.blockchain_time().get(&U32BE(0))?, Some(5_243));
         assert_eq!(gva_db.balances().count()?, 1);
@@ -263,6 +276,7 @@ mod tests {
             gva_db.balances().get(&WalletConditionsV2(s1.clone()))?,
             Some(SourceAmountValV2(SourceAmount::with_base0(1000)))
         );
+        assert_eq!(gva_db.txs_by_block().count()?, 0);
 
         let b1 = DubpBlockV10::from_string_object(&DubpBlockV10Stringified {
             number: 1,
@@ -291,6 +305,8 @@ mod tests {
 
         apply_block(&b1, &gva_db)?;
 
+        assert_eq!(gva_db.blocks_by_common_time().count()?, 2);
+        assert_eq!(gva_db.blocks_by_common_time().get(&U64BE(5_245))?, Some(1));
         assert_eq!(gva_db.blockchain_time().count()?, 2);
         assert_eq!(gva_db.blockchain_time().get(&U32BE(1))?, Some(5_245));
         assert_eq!(gva_db.balances().count()?, 2);
@@ -317,6 +333,13 @@ mod tests {
                     SourceAmountValV2(SourceAmount::with_base0(600))
                 ),
             ]
+        );
+        assert_eq!(gva_db.txs_by_block().count()?, 1);
+        assert_eq!(
+            gva_db.txs_by_block().get(&U32BE(1))?,
+            Some(vec![Hash::from_hex(
+                "0000000000000000000000000000000000000000000000000000000000000000"
+            )?])
         );
 
         let b2 = DubpBlockV10::from_string_object(&DubpBlockV10Stringified {
@@ -346,6 +369,8 @@ mod tests {
 
         apply_block(&b2, &gva_db)?;
 
+        assert_eq!(gva_db.blocks_by_common_time().count()?, 3);
+        assert_eq!(gva_db.blocks_by_common_time().get(&U64BE(5_247))?, Some(2));
         assert_eq!(gva_db.blockchain_time().count()?, 3);
         assert_eq!(gva_db.blockchain_time().get(&U32BE(2))?, Some(5_247));
         assert_eq!(gva_db.balances().count()?, 2);
@@ -376,6 +401,13 @@ mod tests {
                     SourceAmountValV2(SourceAmount::with_base0(100))
                 ),
             ]
+        );
+        assert_eq!(gva_db.txs_by_block().count()?, 2);
+        assert_eq!(
+            gva_db.txs_by_block().get(&U32BE(2))?,
+            Some(vec![Hash::from_hex(
+                "0101010101010101010101010101010101010101010101010101010101010101"
+            )?])
         );
 
         Ok(())

@@ -6,12 +6,14 @@ if [[ -z ${1} ]]; then
 fi
 
 # Options
-export DUNITER_WEB_UI_HOST = "0.0.0.0"
+DUNITER_WEB_UI_HOST = "0.0.0.0"
+export DUNITER_WEB_UI_HOST
 
 
 # Key file found
 if [[ -f /etc/duniter/key.yml ]]; then
-	export DUNITER_KEYFILE="/etc/duniter/keys.yml"
+	DUNITER_KEYFILE="/etc/duniter/keys.yml"
+	export DUNITER_KEYFILE
 fi
 
 # Start duniter

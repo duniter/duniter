@@ -153,14 +153,17 @@ impl GenTxsQuery {
             recipient,
             (amount, comment),
             cash_back_address.map(|pubkey_gva| pubkey_gva.0),
-        ))
+        )
+        .into_iter()
+        .map(|tx| tx.as_text().to_owned())
+        .collect())
     }
     /// Generate complex transaction document
     async fn gen_complex_tx(
         &self,
         ctx: &async_graphql::Context<'_>,
         #[graphql(desc = "Transaction issuers")] issuers: Vec<TxIssuer>,
-        #[graphql(desc = "Transaction issuers")] recipients: Vec<TxRecipient>,
+        #[graphql(desc = "Transaction recipients")] recipients: Vec<TxRecipient>,
         #[graphql(desc = "Transaction comment", validator(TxCommentValidator))] comment: Option<
             String,
         >,
@@ -257,9 +260,14 @@ impl GenTxsQuery {
         .gen()?;
 
         if let Some(final_tx) = final_tx_opt {
-            Ok(RawTxOrChanges::FinalTx(final_tx))
+            Ok(RawTxOrChanges::FinalTx(final_tx.as_text().to_owned()))
         } else {
-            Ok(RawTxOrChanges::Changes(changes_txs))
+            Ok(RawTxOrChanges::Changes(
+                changes_txs
+                    .into_iter()
+                    .map(|tx| tx.as_text().to_owned())
+                    .collect(),
+            ))
         }
     }
 }

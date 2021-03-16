@@ -150,13 +150,17 @@ mod tests {
             ) -> KvResult<Option<SourceAmount>>;
             fn get_txs_history_bc_received(
                 &self,
+                from: Option<u64>,
                 page_info: PageInfo<duniter_gva_dbs_reader::txs_history::TxBcCursor>,
                 script_hash: Hash,
+                to: Option<u64>,
             ) -> KvResult<PagedData<VecDeque<duniter_gva_db::GvaTxDbV1>>>;
             fn get_txs_history_bc_sent(
                 &self,
+                from: Option<u64>,
                 page_info: PageInfo<duniter_gva_dbs_reader::txs_history::TxBcCursor>,
                 script_hash: Hash,
+                to: Option<u64>,
             ) -> KvResult<PagedData<VecDeque<duniter_gva_db::GvaTxDbV1>>>;
             fn get_txs_history_mempool<TxsMpDb: 'static + TxsMpV2DbReadable>(
                 &self,

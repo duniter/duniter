@@ -15,6 +15,12 @@
 
 use crate::*;
 
+#[derive(async_graphql::InputObject, Clone, Copy, Default)]
+pub(crate) struct TimeInterval {
+    pub(crate) from: Option<u64>,
+    pub(crate) to: Option<u64>,
+}
+
 #[derive(async_graphql::InputObject)]
 pub(crate) struct TxIssuer {
     /// Account script (default is a script needed all provided signers)

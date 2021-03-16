@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+use crate::inputs::TimeInterval;
 use crate::*;
 use duniter_gva_db::GvaTxDbV1;
 use duniter_gva_dbs_reader::txs_history::TxBcCursor;
@@ -29,6 +30,7 @@ impl TxsHistoryBlockchainQuery {
         ctx: &async_graphql::Context<'_>,
         #[graphql(desc = "pagination", default)] pagination: Pagination,
         script: PkOrScriptGva,
+        #[graphql(default)] time_interval: TimeInterval,
     ) -> async_graphql::Result<TxsHistoryBlockchainQueryInner> {
         let QueryContext { is_whitelisted } = ctx.data::<QueryContext>()?;
         let pagination = Pagination::convert_to_page_info(pagination, *is_whitelisted)?;
@@ -36,6 +38,7 @@ impl TxsHistoryBlockchainQuery {
         Ok(TxsHistoryBlockchainQueryInner {
             pagination,
             script_hash,
+            time_interval,
         })
     }
 }
@@ -43,6 +46,7 @@ impl TxsHistoryBlockchainQuery {
 pub(crate) struct TxsHistoryBlockchainQueryInner {
     pub(crate) pagination: PageInfo<TxBcCursor>,
     pub(crate) script_hash: Hash,
+    pub(crate) time_interval: TimeInterval,
 }
 
 #[async_graphql::Object]
@@ -59,14 +63,25 @@ impl TxsHistoryBlockchainQueryInner {
         let db_reader = data.dbs_reader();
         let pagination = self.pagination;
         let script_hash = self.script_hash;
-        let sent_fut = data
-            .dbs_pool
-            .execute(move |_| db_reader.get_txs_history_bc_sent(pagination, script_hash));
+        let time_interval = self.time_interval;
+        let sent_fut = data.dbs_pool.execute(move |_| {
+            db_reader.get_txs_history_bc_sent(
+                time_interval.from,
+                pagination,
+                script_hash,
+                time_interval.to,
+            )
+        });
         let db_reader = data.dbs_reader();
         let script_hash = self.script_hash;
-        let received_fut = data
-            .dbs_pool
-            .execute(move |_| db_reader.get_txs_history_bc_received(pagination, script_hash));
+        let received_fut = data.dbs_pool.execute(move |_| {
+            db_reader.get_txs_history_bc_received(
+                time_interval.from,
+                pagination,
+                script_hash,
+                time_interval.to,
+            )
+        });
         let (sent_res, received_res) = join(sent_fut, received_fut).await;
         let (sent, received) = (sent_res??, received_res??);
 
@@ -136,9 +151,17 @@ impl TxsHistoryBlockchainQueryInner {
         let db_reader = data.dbs_reader();
         let pagination = self.pagination;
         let script_hash = self.script_hash;
+        let time_interval = self.time_interval;
         let received = data
             .dbs_pool
-            .execute(move |_| db_reader.get_txs_history_bc_received(pagination, script_hash))
+            .execute(move |_| {
+                db_reader.get_txs_history_bc_received(
+                    time_interval.from,
+                    pagination,
+                    script_hash,
+                    time_interval.to,
+                )
+            })
             .await??;
         let mut conn = Connection::new(received.has_previous_page, received.has_next_page);
         conn.append(received.data.into_iter().map(|db_tx| {
@@ -163,9 +186,17 @@ impl TxsHistoryBlockchainQueryInner {
         let db_reader = data.dbs_reader();
         let pagination = self.pagination;
         let script_hash = self.script_hash;
+        let time_interval = self.time_interval;
         let sent = data
             .dbs_pool
-            .execute(move |_| db_reader.get_txs_history_bc_sent(pagination, script_hash))
+            .execute(move |_| {
+                db_reader.get_txs_history_bc_sent(
+                    time_interval.from,
+                    pagination,
+                    script_hash,
+                    time_interval.to,
+                )
+            })
             .await??;
         let mut conn = Connection::new(sent.has_previous_page, sent.has_next_page);
         conn.append(sent.data.into_iter().map(|db_tx| {
@@ -232,11 +263,11 @@ mod tests {
         dbs_reader
             .expect_get_txs_history_bc_received()
             .times(1)
-            .returning(|_, _| Ok(PagedData::empty()));
+            .returning(|_, _, _, _| Ok(PagedData::empty()));
         dbs_reader
             .expect_get_txs_history_bc_sent()
             .times(1)
-            .returning(|_, _| {
+            .returning(|_, _, _, _| {
                 let tx = TransactionDocumentV10::from_string_object(
                     &TransactionDocumentV10Stringified {
                         currency: "test".to_owned(),

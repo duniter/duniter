@@ -32,7 +32,7 @@ use crate::exec_req_type::ExecReqTypeError;
 use crate::utils::AsyncReader;
 use async_bincode::AsyncBincodeReader;
 use bincode::Options as _;
-use dubp::crypto::keys::ed25519::Ed25519KeyPair;
+use dubp::crypto::keys::{ed25519::Ed25519KeyPair, Signator};
 use duniter_bca_types::{BcaReq, BcaReqTypeV0, BcaResp, BcaRespTypeV0, BcaRespV0, ReqExecError};
 use duniter_dbs::{FileBackend, SharedDbs};
 use futures::{prelude::stream::FuturesUnordered, StreamExt, TryStream, TryStreamExt};

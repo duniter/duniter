@@ -26,7 +26,7 @@ pub mod prepare_payment;
 
 use crate::prepare_payment::{PrepareSimplePayment, PrepareSimplePaymentResp};
 use dubp::crypto::hashs::Hash;
-use dubp::crypto::keys::ed25519::PublicKey;
+use dubp::crypto::keys::ed25519::{PublicKey, Signature};
 use dubp::wallet::prelude::*;
 use serde::{Deserialize, Serialize};
 //use smallvec::SmallVec;
@@ -47,6 +47,7 @@ pub struct BcaReqV0 {
 pub enum BcaReqTypeV0 {
     MembersCount,
     PrepareSimplePayment(PrepareSimplePayment),
+    ProofServerPubkey { challenge: [u8; 16] },
     Ping,
 }
 
@@ -65,6 +66,11 @@ pub struct BcaRespV0 {
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 pub enum BcaRespTypeV0 {
     Error(String),
+    ProofServerPubkey {
+        challenge: [u8; 16],
+        server_pubkey: PublicKey,
+        sig: Signature,
+    },
     MembersCount(u64),
     PrepareSimplePayment(PrepareSimplePaymentResp),
     Pong,

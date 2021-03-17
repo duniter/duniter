@@ -16,6 +16,8 @@
 mod members_count;
 mod prepare_simple_payment;
 
+use dubp::crypto::keys::KeyPair;
+
 use crate::*;
 
 #[derive(Debug, PartialEq)]
@@ -40,6 +42,14 @@ pub(super) async fn execute_req_type(
         BcaReqTypeV0::PrepareSimplePayment(params) => {
             prepare_simple_payment::exec_req_prepare_simple_payment(bca_executor, params).await
         }
+        BcaReqTypeV0::ProofServerPubkey { challenge } => Ok(BcaRespTypeV0::ProofServerPubkey {
+            challenge,
+            server_pubkey: bca_executor.self_keypair.public_key(),
+            sig: bca_executor
+                .self_keypair
+                .generate_signator()
+                .sign(&challenge),
+        }),
         BcaReqTypeV0::Ping => Ok(BcaRespTypeV0::Pong),
     }
 }

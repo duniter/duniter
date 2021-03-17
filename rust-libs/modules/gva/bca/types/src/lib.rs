@@ -31,6 +31,7 @@ use dubp::crypto::hashs::Hash;
 use dubp::crypto::keys::ed25519::{PublicKey, Signature};
 use dubp::wallet::prelude::*;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 pub fn bincode_opts() -> impl bincode::Options {
     bincode::options()
@@ -83,12 +84,16 @@ pub enum BcaRespTypeV0 {
     Pong,
 }
 
-pub type BcaResult = Vec<Result<BcaResp, ReqExecError>>;
+pub type BcaResult = Vec<Result<BcaResp, BcaReqExecError>>;
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
-pub enum ReqExecError {
+#[derive(Clone, Debug, Deserialize, Error, PartialEq, Eq, Serialize)]
+pub enum BcaReqExecError {
+    #[error("task cancelled")]
     Cancelled,
+    #[error("Invalid request: {0}")]
     InvalidReq(String),
+    #[error("task panicked")]
     Panic,
+    #[error("Unknown error")]
     Unknown,
 }

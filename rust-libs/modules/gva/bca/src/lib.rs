@@ -34,7 +34,7 @@ use async_bincode::AsyncBincodeReader;
 use bincode::Options as _;
 use dubp::crypto::keys::{ed25519::Ed25519KeyPair, Signator};
 use duniter_bca_types::{
-    bincode_opts, BcaReq, BcaReqTypeV0, BcaResp, BcaRespTypeV0, BcaRespV0, ReqExecError,
+    bincode_opts, BcaReq, BcaReqExecError, BcaReqTypeV0, BcaResp, BcaRespTypeV0, BcaRespV0,
 };
 use duniter_dbs::{FileBackend, SharedDbs};
 use futures::{prelude::stream::FuturesUnordered, StreamExt, TryStream, TryStreamExt};
@@ -146,11 +146,11 @@ impl BcaExecutor {
                         let resp = match req_res {
                             Ok(resp) => Ok(resp),
                             Err(e) => Err(if e.is_cancelled() {
-                                ReqExecError::Cancelled
+                                BcaReqExecError::Cancelled
                             } else if e.is_panic() {
-                                ReqExecError::Panic
+                                BcaReqExecError::Panic
                             } else {
-                                ReqExecError::Unknown
+                                BcaReqExecError::Unknown
                             }),
                         };
                         let mut resp_buffer = RespBytes::new();
@@ -163,8 +163,8 @@ impl BcaExecutor {
                     .await
             }
             Err(e) => {
-                let req_res: Result<BcaResp, ReqExecError> =
-                    Err(ReqExecError::InvalidReq(e.to_string()));
+                let req_res: Result<BcaResp, BcaReqExecError> =
+                    Err(BcaReqExecError::InvalidReq(e.to_string()));
                 let mut resp_buffer = RespBytes::new();
                 bincode_opts()
                     .serialize_into(&mut resp_buffer, &req_res)
@@ -294,8 +294,8 @@ mod tests {
         //println!("bytes={:?}", bytes);
         let bytes_res = bca_executor.execute::<&[u8]>(&bytes[..], false).await;
         //println!("bytes_res={:?}", bytes_res);
-        let bca_res: Vec<Result<BcaResp, ReqExecError>> =
-            AsyncBincodeReader::<_, Result<BcaResp, ReqExecError>>::from(&bytes_res[..])
+        let bca_res: Vec<Result<BcaResp, BcaReqExecError>> =
+            AsyncBincodeReader::<_, Result<BcaResp, BcaReqExecError>>::from(&bytes_res[..])
                 .try_collect::<Vec<_>>()
                 .await?;
 
@@ -332,14 +332,14 @@ mod tests {
         //println!("bytes={:?}", bytes);
         let bytes_res = bca_executor.execute::<&[u8]>(&bytes[..], false).await;
         //println!("bytes_res={:?}", bytes_res);
-        let bca_res: Vec<Result<BcaResp, ReqExecError>> =
-            AsyncBincodeReader::<_, Result<BcaResp, ReqExecError>>::from(&bytes_res[..])
+        let bca_res: Vec<Result<BcaResp, BcaReqExecError>> =
+            AsyncBincodeReader::<_, Result<BcaResp, BcaReqExecError>>::from(&bytes_res[..])
                 .try_collect::<Vec<_>>()
                 .await?;
 
         assert_eq!(
             bca_res,
-            vec![Err(ReqExecError::InvalidReq(
+            vec![Err(BcaReqExecError::InvalidReq(
                 "io error: unexpected end of file".to_owned()
             ))]
         );
@@ -376,8 +376,8 @@ mod tests {
         //println!("bytes={:?}", bytes);
         let bytes_res = bca_executor.execute::<&[u8]>(&bytes[..], false).await;
         //println!("bytes_res={:?}", bytes_res);
-        let bca_res: Vec<Result<BcaResp, ReqExecError>> =
-            AsyncBincodeReader::<_, Result<BcaResp, ReqExecError>>::from(&bytes_res[..])
+        let bca_res: Vec<Result<BcaResp, BcaReqExecError>> =
+            AsyncBincodeReader::<_, Result<BcaResp, BcaReqExecError>>::from(&bytes_res[..])
                 .try_collect::<Vec<_>>()
                 .await?;
 

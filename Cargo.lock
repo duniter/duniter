@@ -1166,6 +1166,7 @@ dependencies = [
  "bincode",
  "dubp",
  "serde",
+ "thiserror",
 ]
 
 [[package]]

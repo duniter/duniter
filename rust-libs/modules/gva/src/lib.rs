@@ -28,10 +28,13 @@ mod warp_;
 pub use duniter_conf::gva_conf::GvaConf;
 
 use async_graphql::http::GraphQLPlaygroundConfig;
-use dubp::common::crypto::keys::{ed25519::PublicKey, KeyPair as _};
 use dubp::common::prelude::*;
 use dubp::documents::transaction::TransactionDocumentV10;
 use dubp::{block::DubpBlockV10, crypto::hashs::Hash};
+use dubp::{
+    common::crypto::keys::{ed25519::PublicKey, KeyPair as _},
+    crypto::keys::ed25519::Ed25519KeyPair,
+};
 use duniter_conf::DuniterMode;
 use duniter_dbs::databases::txs_mp_v2::TxsMpV2DbReadable;
 use duniter_dbs::prelude::*;
@@ -52,7 +55,7 @@ pub struct GvaModule {
     gva_db_ro: &'static GvaV1DbRo<FileBackend>,
     mempools: Mempools,
     mode: DuniterMode,
-    self_pubkey: PublicKey,
+    self_keypair: Ed25519KeyPair,
     software_version: &'static str,
 }
 
@@ -119,7 +122,7 @@ impl duniter_module::DuniterModule for GvaModule {
                 gva_db_ro: get_gva_db_ro(profile_path_opt),
                 mempools,
                 mode,
-                self_pubkey: conf.self_key_pair.public_key(),
+                self_keypair: conf.self_key_pair.clone(),
                 software_version,
             },
             endpoints,
@@ -136,7 +139,7 @@ impl duniter_module::DuniterModule for GvaModule {
                 gva_db_ro,
                 mempools,
                 mode,
-                self_pubkey,
+                self_keypair,
                 software_version,
             } = self;
 
@@ -148,7 +151,7 @@ impl duniter_module::DuniterModule for GvaModule {
                         dbs_pool,
                         gva_db_ro,
                         mempools,
-                        self_pubkey,
+                        self_keypair,
                         software_version,
                     )
                     .await
@@ -231,13 +234,17 @@ impl GvaModule {
         dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
         gva_db_ro: &'static GvaV1DbRo<FileBackend>,
         mempools: Mempools,
-        self_pubkey: PublicKey,
+        self_keypair: Ed25519KeyPair,
         software_version: &'static str,
     ) {
         log::info!("GvaServer::start: conf={:?}", conf);
+        let self_pubkey = self_keypair.public_key();
         duniter_bca::set_bca_executor(
+            currency.clone(),
             dbs_pool.clone(),
             duniter_gva_dbs_reader::create_dbs_reader(gva_db_ro),
+            self_keypair,
+            software_version,
         );
         let gva_schema = duniter_gva_gql::build_schema_with_data(
             duniter_gva_gql::GvaSchemaData {

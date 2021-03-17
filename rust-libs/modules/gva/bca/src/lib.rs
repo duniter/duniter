@@ -32,6 +32,7 @@ use crate::exec_req_type::ExecReqTypeError;
 use crate::utils::AsyncReader;
 use async_bincode::AsyncBincodeReader;
 use bincode::Options as _;
+use dubp::crypto::keys::ed25519::Ed25519KeyPair;
 use duniter_bca_types::{BcaReq, BcaReqTypeV0, BcaResp, BcaRespTypeV0, BcaRespV0, ReqExecError};
 use duniter_dbs::{FileBackend, SharedDbs};
 use futures::{prelude::stream::FuturesUnordered, StreamExt, TryStream, TryStreamExt};
@@ -47,13 +48,19 @@ use duniter_gva_dbs_reader::DbsReader;
 static BCA_EXECUTOR: OnceCell<BcaExecutor> = OnceCell::new();
 
 pub fn set_bca_executor(
+    currency: String,
     dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
     dbs_reader: DbsReader,
+    self_keypair: Ed25519KeyPair,
+    software_version: &'static str,
 ) {
     BCA_EXECUTOR
         .set(BcaExecutor {
+            currency,
             dbs_pool,
             dbs_reader,
+            self_keypair,
+            software_version,
         })
         .unwrap_or_else(|_| panic!("BCA_EXECUTOR already set !"))
 }
@@ -73,8 +80,11 @@ pub async fn execute<R: 'static + futures::AsyncRead + Send + Unpin>(
 
 #[derive(Clone)]
 struct BcaExecutor {
+    currency: String,
     dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
     dbs_reader: DbsReader,
+    self_keypair: Ed25519KeyPair,
+    software_version: &'static str,
 }
 use uninit::extension_traits::VecCapacity;
 impl BcaExecutor {
@@ -200,11 +210,15 @@ pub(crate) fn bincode_opts() -> impl bincode::Options {
 #[cfg(test)]
 mod tests {
     use super::*;
-    pub use dubp::block::prelude::*;
-    pub use dubp::crypto::hashs::Hash;
-    pub use dubp::crypto::keys::ed25519::PublicKey;
-    pub use dubp::documents::transaction::TransactionInputV10;
-    pub use dubp::wallet::prelude::*;
+    pub use dubp::{
+        block::prelude::*,
+        crypto::{
+            hashs::Hash,
+            keys::{ed25519::PublicKey, KeyPair, Seed32},
+        },
+        documents::transaction::TransactionInputV10,
+        wallet::prelude::*,
+    };
     pub use duniter_bca_types::BcaReqV0;
     pub use duniter_dbs::databases::bc_v2::{BcV2DbReadable, BcV2DbRo};
     pub use duniter_dbs::databases::cm_v1::{CmV1Db, CmV1DbReadable};
@@ -248,8 +262,13 @@ mod tests {
         let threadpool =
             fast_threadpool::ThreadPool::start(fast_threadpool::ThreadPoolConfig::low(), dbs);
         Ok(BcaExecutor {
+            currency: "g1".to_owned(),
             dbs_pool: threadpool.into_async_handler(),
             dbs_reader: duniter_dbs::kv_typed::prelude::Arc::new(mock_dbs_reader),
+            self_keypair: Ed25519KeyPair::from_seed(
+                Seed32::random().expect("fail to gen random seed"),
+            ),
+            software_version: "test",
         })
     }
 

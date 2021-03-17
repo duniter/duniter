@@ -1,0 +1,27 @@
+[package]
+name = "duniter-bca"
+version = "0.1.0"
+authors = ["librelois <elois@duniter.org>"]
+license = "AGPL-3.0"
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0.33"
+async-bincode = "0.6.1"
+bincode = "1.3"
+dubp = { version = "0.49.0", features = ["duniter"] }
+duniter-bca-types = { path = "types", features = ["duniter"] }
+duniter-dbs = { path = "../../../duniter-dbs" }
+duniter-gva-db = { path = "../db" }
+duniter-gva-dbs-reader = { path = "../dbs-reader" }
+fast-threadpool = "0.2.3"
+futures = "0.3.6"
+once_cell = "1.5"
+smallvec = { version = "1.4.0", features = ["serde", "write"] }
+tokio = { version = "1.2", features = ["macros", "rt-multi-thread"] }
+uninit = "0.4.0"
+
+[dev-dependencies]
+duniter-dbs = { path = "../../../duniter-dbs", features = ["mem"] }
+tokio = { version = "1.2", features = ["macros", "rt-multi-thread", "time"] }
+mockall = "0.8.0"

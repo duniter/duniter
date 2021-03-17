@@ -42,6 +42,8 @@ members = [
     "rust-libs/duniter-module",
     "rust-libs/duniter-server",
     "rust-libs/modules/gva",
+    "rust-libs/modules/gva/bca",
+    "rust-libs/modules/gva/bca/types",
     "rust-libs/modules/gva/dbs-reader",
     "rust-libs/modules/gva/gql",
     "rust-libs/modules/gva/indexer",

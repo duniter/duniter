@@ -13,10 +13,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-use std::net::{IpAddr, SocketAddr};
+use std::{
+    net::{IpAddr, SocketAddr},
+    time::Duration,
+};
 
 use crate::anti_spam::{AntiSpam, AntiSpamResponse};
 use crate::*;
+
+const MAX_BATCH_REQ_PROCESS_DURATION_IN_MILLIS: u64 = 5_000;
 
 pub struct BadRequest(pub anyhow::Error);
 
@@ -27,6 +32,16 @@ impl std::fmt::Debug for BadRequest {
 }
 
 impl warp::reject::Reject for BadRequest {}
+
+pub struct ReqExecTooLong;
+
+impl std::fmt::Debug for ReqExecTooLong {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "server error: request execution too long")
+    }
+}
+
+impl warp::reject::Reject for ReqExecTooLong {}
 
 struct GraphQlRequest {
     inner: async_graphql::BatchRequest,
@@ -78,17 +93,26 @@ impl GraphQlRequest {
     }
 }
 
-struct GraphQlResponse(async_graphql::BatchResponse);
-impl warp::reply::Reply for GraphQlResponse {
+enum ServerResponse {
+    Bincode(Vec<u8>),
+    GraphQl(async_graphql::BatchResponse),
+}
+
+impl warp::reply::Reply for ServerResponse {
     fn into_response(self) -> warp::reply::Response {
-        let mut resp = warp::reply::with_header(
-            warp::reply::json(&self.0),
-            "content-type",
-            "application/json",
-        )
-        .into_response();
-        add_cache_control_batch(&mut resp, &self.0);
-        resp
+        match self {
+            ServerResponse::Bincode(bytes) => bytes.into_response(),
+            ServerResponse::GraphQl(gql_batch_resp) => {
+                let mut resp = warp::reply::with_header(
+                    warp::reply::json(&gql_batch_resp),
+                    "content-type",
+                    "application/json",
+                )
+                .into_response();
+                add_cache_control_batch(&mut resp, &gql_batch_resp);
+                resp
+            }
+        }
     }
 }
 
@@ -118,7 +142,7 @@ fn add_cache_control(http_resp: &mut warp::reply::Response, resp: &async_graphql
 
 pub(crate) fn graphql(
     conf: &GvaConf,
-    schema: GvaSchema,
+    gva_schema: GvaSchema,
     opts: async_graphql::http::MultipartOptions,
 ) -> impl warp::Filter<Extract = (impl warp::Reply,), Error = Rejection> + Clone {
     let anti_spam = AntiSpam::from(conf);
@@ -130,19 +154,19 @@ pub(crate) fn graphql(
         .and(warp::header::optional::<IpAddr>("X-Real-IP"))
         .and(warp::header::optional::<String>("content-type"))
         .and(warp::body::stream())
-        .and(warp::any().map(move || opts.clone()))
-        .and(warp::any().map(move || schema.clone()))
         .and(warp::any().map(move || anti_spam.clone()))
+        .and(warp::any().map(move || gva_schema.clone()))
+        .and(warp::any().map(move || opts.clone()))
         .and_then(
             |method,
              query: String,
              remote_addr: Option<SocketAddr>,
              x_real_ip: Option<IpAddr>,
-             content_type,
+             content_type: Option<String>,
              body,
-             opts: Arc<async_graphql::http::MultipartOptions>,
-             schema,
-             anti_spam: AntiSpam| async move {
+             anti_spam: AntiSpam,
+             gva_schema: GvaSchema,
+             opts: Arc<async_graphql::http::MultipartOptions>| async move {
                 let AntiSpamResponse {
                     is_whitelisted,
                     is_ok,
@@ -153,36 +177,40 @@ pub(crate) fn graphql(
                     if method == http::Method::GET {
                         let request: async_graphql::Request = serde_urlencoded::from_str(&query)
                             .map_err(|err| warp::reject::custom(BadRequest(err.into())))?;
-                        Ok::<_, Rejection>((
-                            schema,
-                            GraphQlRequest::single(request.data(QueryContext { is_whitelisted })),
+                        Ok(ServerResponse::GraphQl(
+                            GraphQlRequest::single(request.data(QueryContext { is_whitelisted }))
+                                .execute(gva_schema)
+                                .await,
                         ))
                     } else {
-                        let batch_request = GraphQlRequest::new(
-                            async_graphql::http::receive_batch_body(
-                                content_type,
-                                futures::TryStreamExt::map_err(body, |err| {
-                                    std::io::Error::new(std::io::ErrorKind::Other, err)
-                                })
-                                .map_ok(|mut buf| {
-                                    let remaining = warp::Buf::remaining(&buf);
-                                    warp::Buf::copy_to_bytes(&mut buf, remaining)
-                                })
-                                .into_async_read(),
-                                async_graphql::http::MultipartOptions::clone(&opts),
+                        let body_reader = futures::TryStreamExt::map_err(body, |err| {
+                            std::io::Error::new(std::io::ErrorKind::Other, err)
+                        })
+                        .map_ok(|mut buf| {
+                            let remaining = warp::Buf::remaining(&buf);
+                            warp::Buf::copy_to_bytes(&mut buf, remaining)
+                        })
+                        .into_async_read();
+                        if content_type.as_deref() == Some("application/bincode") {
+                            tokio::time::timeout(
+                                Duration::from_millis(MAX_BATCH_REQ_PROCESS_DURATION_IN_MILLIS),
+                                process_bincode_batch_queries(body_reader, is_whitelisted),
                             )
                             .await
-                            .map_err(|err| warp::reject::custom(BadRequest(err.into())))?,
-                        );
-                        if is_whitelisted || batch_request.len() <= anti_spam::MAX_BATCH_SIZE {
-                            Ok::<_, Rejection>((
-                                schema,
-                                batch_request.data(QueryContext { is_whitelisted }),
-                            ))
+                            .map_err(|_| warp::reject::custom(ReqExecTooLong))?
                         } else {
-                            Err(warp::reject::custom(BadRequest(anyhow::Error::msg(
-                                r#"{ "error": "The batch contains too many requests" }"#,
-                            ))))
+                            tokio::time::timeout(
+                                Duration::from_millis(MAX_BATCH_REQ_PROCESS_DURATION_IN_MILLIS),
+                                process_json_batch_queries(
+                                    body_reader,
+                                    content_type,
+                                    gva_schema,
+                                    is_whitelisted,
+                                    *opts,
+                                ),
+                            )
+                            .await
+                            .map_err(|_| warp::reject::custom(ReqExecTooLong))?
                         }
                     }
                 } else {
@@ -192,11 +220,45 @@ pub(crate) fn graphql(
                 }
             },
         )
-        .and_then(
-            |(schema, batch_requests): (GvaSchema, GraphQlRequest)| async move {
-                Ok::<_, Infallible>(GraphQlResponse(batch_requests.execute(schema).await))
-            },
+}
+
+async fn process_bincode_batch_queries(
+    body_reader: impl 'static + futures::AsyncRead + Send + Unpin,
+    is_whitelisted: bool,
+) -> Result<ServerResponse, warp::Rejection> {
+    Ok(ServerResponse::Bincode(
+        duniter_bca::execute(body_reader, is_whitelisted).await,
+    ))
+}
+
+async fn process_json_batch_queries(
+    body_reader: impl 'static + futures::AsyncRead + Send + Unpin,
+    content_type: Option<String>,
+    gva_schema: GvaSchema,
+    is_whitelisted: bool,
+    opts: async_graphql::http::MultipartOptions,
+) -> Result<ServerResponse, warp::Rejection> {
+    let batch_request = GraphQlRequest::new(
+        async_graphql::http::receive_batch_body(
+            content_type,
+            body_reader,
+            async_graphql::http::MultipartOptions::clone(&opts),
         )
+        .await
+        .map_err(|err| warp::reject::custom(BadRequest(err.into())))?,
+    );
+    if is_whitelisted || batch_request.len() <= anti_spam::MAX_BATCH_SIZE {
+        Ok(ServerResponse::GraphQl(
+            batch_request
+                .data(QueryContext { is_whitelisted })
+                .execute(gva_schema)
+                .await,
+        ))
+    } else {
+        Err(warp::reject::custom(BadRequest(anyhow::Error::msg(
+            r#"{ "error": "The batch contains too many requests" }"#,
+        ))))
+    }
 }
 
 pub(crate) fn graphql_ws(

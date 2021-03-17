@@ -235,7 +235,11 @@ impl GvaModule {
         software_version: &'static str,
     ) {
         log::info!("GvaServer::start: conf={:?}", conf);
-        let schema = duniter_gva_gql::build_schema_with_data(
+        duniter_bca::set_bca_executor(
+            dbs_pool.clone(),
+            duniter_gva_dbs_reader::create_dbs_reader(gva_db_ro),
+        );
+        let gva_schema = duniter_gva_gql::build_schema_with_data(
             duniter_gva_gql::GvaSchemaData {
                 dbs_reader: duniter_gva_dbs_reader::create_dbs_reader(gva_db_ro),
                 dbs_pool,
@@ -251,7 +255,7 @@ impl GvaModule {
 
         let graphql_post = warp_::graphql(
             &conf,
-            schema.clone(),
+            gva_schema.clone(),
             async_graphql::http::MultipartOptions::default(),
         );
 
@@ -273,7 +277,7 @@ impl GvaModule {
 
         let routes = graphql_playground
             .or(graphql_post)
-            .or(warp_::graphql_ws(&conf, schema.clone()))
+            .or(warp_::graphql_ws(&conf, gva_schema.clone()))
             .recover(|err: Rejection| async move {
                 if let Some(warp_::BadRequest(err)) = err.find() {
                     return Ok::<_, Infallible>(warp::reply::with_status(

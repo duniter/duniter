@@ -1,0 +1,17 @@
+[package]
+name = "duniter-bca-types"
+version = "0.1.0"
+authors = ["librelois <elois@duniter.org>"]
+license = "AGPL-3.0"
+edition = "2018"
+
+[dependencies]
+dubp = { version = "0.49.0" }
+serde = { version = "1.0.105", features = ["derive"] }
+smallvec = { version = "1.4.0", features = ["serde"] }
+
+[features]
+default = ["duniter"]
+
+client = ["dubp/client"]
+duniter = ["dubp/duniter"]

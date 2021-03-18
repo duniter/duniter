@@ -245,6 +245,7 @@ impl GvaModule {
             duniter_gva_dbs_reader::create_dbs_reader(gva_db_ro),
             self_keypair,
             software_version,
+            mempools.txs,
         );
         let gva_schema = duniter_gva_gql::build_schema_with_data(
             duniter_gva_gql::GvaSchemaData {

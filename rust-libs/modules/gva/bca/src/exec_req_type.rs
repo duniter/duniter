@@ -15,6 +15,7 @@
 
 mod members_count;
 mod prepare_simple_payment;
+mod send_txs;
 
 use dubp::crypto::keys::KeyPair;
 
@@ -51,5 +52,6 @@ pub(super) async fn execute_req_type(
                 .sign(&challenge),
         }),
         BcaReqTypeV0::Ping => Ok(BcaRespTypeV0::Pong),
+        BcaReqTypeV0::SendTxs(txs) => send_txs::send_txs(bca_executor, txs).await,
     }
 }

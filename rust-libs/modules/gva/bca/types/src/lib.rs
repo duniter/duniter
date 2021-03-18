@@ -23,6 +23,7 @@
 )]
 
 pub mod prepare_payment;
+pub mod rejected_tx;
 
 use crate::prepare_payment::{PrepareSimplePayment, PrepareSimplePaymentResp};
 
@@ -31,6 +32,7 @@ use dubp::crypto::hashs::Hash;
 use dubp::crypto::keys::ed25519::{PublicKey, Signature};
 use dubp::wallet::prelude::*;
 use serde::{Deserialize, Serialize};
+use smallvec::SmallVec;
 use thiserror::Error;
 
 pub fn bincode_opts() -> impl bincode::Options {
@@ -39,25 +41,35 @@ pub fn bincode_opts() -> impl bincode::Options {
         .allow_trailing_bytes()
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, Serialize)]
+// Request
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 pub enum BcaReq {
     V0(BcaReqV0),
     _V1,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 pub struct BcaReqV0 {
     pub req_id: usize,
     pub req_type: BcaReqTypeV0,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, Serialize)]
+#[allow(clippy::large_enum_variant)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 pub enum BcaReqTypeV0 {
     MembersCount,
     PrepareSimplePayment(PrepareSimplePayment),
     ProofServerPubkey { challenge: [u8; 16] },
     Ping,
+    SendTxs(Txs),
 }
+
+// Request types helpers
+
+pub type Txs = SmallVec<[dubp::documents::transaction::TransactionDocumentV10; 1]>;
+
+// Response
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 pub enum BcaResp {
@@ -82,7 +94,10 @@ pub enum BcaRespTypeV0 {
     MembersCount(u64),
     PrepareSimplePayment(PrepareSimplePaymentResp),
     Pong,
+    RejectedTxs(Vec<rejected_tx::RejectedTx>),
 }
+
+// Result and error
 
 pub type BcaResult = Result<BcaResp, BcaReqExecError>;
 

@@ -1162,6 +1162,7 @@ dependencies = [
  "duniter-dbs",
  "duniter-gva-db",
  "duniter-gva-dbs-reader",
+ "duniter-mempools",
  "fast-threadpool",
  "futures",
  "mockall",
@@ -1178,6 +1179,7 @@ dependencies = [
  "bincode",
  "dubp",
  "serde",
+ "smallvec",
  "thiserror",
 ]
 

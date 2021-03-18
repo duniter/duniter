@@ -54,6 +54,7 @@ pub fn set_bca_executor(
     dbs_reader: DbsReader,
     self_keypair: Ed25519KeyPair,
     software_version: &'static str,
+    txs_mempool: duniter_mempools::TxsMempool,
 ) {
     BCA_EXECUTOR
         .set(BcaExecutor {
@@ -62,6 +63,7 @@ pub fn set_bca_executor(
             dbs_reader,
             self_keypair,
             software_version,
+            txs_mempool,
         })
         .unwrap_or_else(|_| panic!("BCA_EXECUTOR already set !"))
 }
@@ -87,6 +89,7 @@ struct BcaExecutor {
     dbs_reader: DbsReader,
     self_keypair: Ed25519KeyPair,
     software_version: &'static str,
+    txs_mempool: duniter_mempools::TxsMempool,
 }
 use uninit::extension_traits::VecCapacity;
 impl BcaExecutor {
@@ -265,6 +268,7 @@ mod tests {
                 Seed32::random().expect("fail to gen random seed"),
             ),
             software_version: "test",
+            txs_mempool: duniter_mempools::TxsMempool::new(10),
         })
     }
 

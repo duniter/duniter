@@ -25,11 +25,21 @@ pub(super) async fn exec_req_prepare_simple_payment(
     let issuer = params.issuer;
 
     let dbs_reader = bca_executor.dbs_reader();
-    let (amount, current_block, (inputs, inputs_sum)) = bca_executor
+    let (amount, block_ref_number, block_ref_hash, (inputs, inputs_sum)) = bca_executor
         .dbs_pool
         .execute(move |dbs| {
             if let Some(current_block) = dbs_reader.get_current_block_meta(&dbs.cm_db)? {
+                let block_ref_number = if current_block.number < 101 {
+                    0
+                } else {
+                    current_block.number - 101
+                };
+                let block_ref_hash = dbs_reader
+                    .block(&dbs.bc_db_ro, U32BE(block_ref_number))?
+                    .expect("unreachable")
+                    .hash;
                 let current_base = current_block.unit_base as i64;
+
                 if amount.base() > current_base {
                     Err("too long base".into())
                 } else {
@@ -38,7 +48,8 @@ pub(super) async fn exec_req_prepare_simple_payment(
                     }
                     Ok::<_, ExecReqTypeError>((
                         amount,
-                        current_block,
+                        block_ref_number,
+                        block_ref_hash,
                         dbs_reader.find_inputs(
                             &dbs.bc_db_ro,
                             &dbs.txs_mp_db,
@@ -60,8 +71,8 @@ pub(super) async fn exec_req_prepare_simple_payment(
 
     Ok(BcaRespTypeV0::PrepareSimplePayment(
         PrepareSimplePaymentResp {
-            current_block_number: current_block.number,
-            current_block_hash: current_block.hash,
+            current_block_number: block_ref_number,
+            current_block_hash: block_ref_hash,
             inputs,
             inputs_sum,
         },
@@ -101,6 +112,10 @@ mod tests {
             .expect_get_current_block_meta::<CmV1Db<MemSingleton>>()
             .times(1)
             .returning(|_| Ok(Some(BlockMetaV2::default())));
+        dbs_reader
+            .expect_block()
+            .times(1)
+            .returning(|_, _| Ok(Some(BlockMetaV2::default())));
         let bca_executor = create_bca_executor(dbs_reader).expect("fail to create bca executor");
 
         let resp_res = exec_req_prepare_simple_payment(
@@ -122,6 +137,10 @@ mod tests {
             .expect_get_current_block_meta::<CmV1Db<MemSingleton>>()
             .times(1)
             .returning(|_| Ok(Some(BlockMetaV2::default())));
+        dbs_reader
+            .expect_block()
+            .times(1)
+            .returning(|_, _| Ok(Some(BlockMetaV2::default())));
         dbs_reader
             .expect_find_inputs::<BcV2DbRo<FileBackend>, TxsMpV2Db<FileBackend>>()
             .times(1)
@@ -158,6 +177,10 @@ mod tests {
             .expect_get_current_block_meta::<CmV1Db<MemSingleton>>()
             .times(1)
             .returning(|_| Ok(Some(BlockMetaV2::default())));
+        dbs_reader
+            .expect_block()
+            .times(1)
+            .returning(|_, _| Ok(Some(BlockMetaV2::default())));
         dbs_reader
             .expect_find_inputs::<BcV2DbRo<FileBackend>, TxsMpV2Db<FileBackend>>()
             .times(1)

@@ -35,6 +35,7 @@ use dubp::crypto::keys::{ed25519::Ed25519KeyPair, Signator};
 use duniter_bca_types::{
     bincode_opts, BcaReq, BcaReqExecError, BcaReqTypeV0, BcaResp, BcaRespTypeV0, BcaRespV0,
 };
+pub use duniter_dbs::kv_typed::prelude::*;
 use duniter_dbs::{FileBackend, SharedDbs};
 use futures::{prelude::stream::FuturesUnordered, StreamExt, TryStream, TryStreamExt};
 use once_cell::sync::OnceCell;
@@ -222,12 +223,12 @@ mod tests {
     pub use duniter_dbs::databases::bc_v2::{BcV2DbReadable, BcV2DbRo};
     pub use duniter_dbs::databases::cm_v1::{CmV1Db, CmV1DbReadable};
     pub use duniter_dbs::databases::txs_mp_v2::{TxsMpV2Db, TxsMpV2DbReadable};
-    pub use duniter_dbs::kv_typed::prelude::*;
     pub use duniter_dbs::BlockMetaV2;
     pub use futures::TryStreamExt;
 
     mockall::mock! {
         pub DbsReader {
+            fn block(&self, bc_db: &BcV2DbRo<FileBackend>, number: U32BE) -> KvResult<Option<BlockMetaV2>>;
             fn find_inputs<BcDb: 'static + BcV2DbReadable, TxsMpDb: 'static + TxsMpV2DbReadable>(
                 &self,
                 bc_db: &BcDb,

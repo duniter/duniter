@@ -23,14 +23,13 @@
 )]
 
 mod exec_req_type;
-mod utils;
 
 const RESP_MIN_SIZE: usize = 64;
 type RespBytes = SmallVec<[u8; RESP_MIN_SIZE]>;
 
 use crate::exec_req_type::ExecReqTypeError;
-use crate::utils::AsyncReader;
 use async_bincode::AsyncBincodeReader;
+use async_io_stream::IoStream;
 use bincode::Options as _;
 use dubp::crypto::keys::{ed25519::Ed25519KeyPair, Signator};
 use duniter_bca_types::{
@@ -68,14 +67,15 @@ pub fn set_bca_executor(
 }
 
 #[cfg(not(test))]
-pub async fn execute<R: 'static + futures::AsyncRead + Send + Unpin>(
-    query_body_reader: R,
-    is_whitelisted: bool,
-) -> Vec<u8> {
+pub async fn execute<B, S>(query_body_stream: S, is_whitelisted: bool) -> Vec<u8>
+where
+    B: AsRef<[u8]>,
+    S: 'static + TryStream<Ok = B, Error = std::io::Error> + Send + Unpin,
+{
     unsafe {
         BCA_EXECUTOR
             .get_unchecked()
-            .execute(query_body_reader, is_whitelisted)
+            .execute(query_body_stream, is_whitelisted)
             .await
     }
 }
@@ -90,13 +90,13 @@ struct BcaExecutor {
 }
 use uninit::extension_traits::VecCapacity;
 impl BcaExecutor {
-    pub async fn execute<R: futures::AsyncRead + Send + Unpin>(
-        &self,
-        query_body_reader: R,
-        is_whitelisted: bool,
-    ) -> Vec<u8> {
+    pub async fn execute<B, S>(&self, query_body_stream: S, is_whitelisted: bool) -> Vec<u8>
+    where
+        B: AsRef<[u8]>,
+        S: 'static + TryStream<Ok = B, Error = std::io::Error> + Send + Unpin,
+    {
         let async_bincode_reader =
-            AsyncBincodeReader::<AsyncReader<R>, BcaReq>::from(AsyncReader(query_body_reader));
+            AsyncBincodeReader::<IoStream<S, B>, BcaReq>::from(IoStream::new(query_body_stream));
         self.execute_inner(async_bincode_reader, is_whitelisted)
             .await
             .into_iter()
@@ -268,6 +268,12 @@ mod tests {
         })
     }
 
+    pub(crate) fn io_stream<B: AsRef<[u8]>>(
+        bytes: B,
+    ) -> impl TryStream<Ok = B, Error = std::io::Error> {
+        futures::stream::iter(std::iter::once(Ok(bytes)))
+    }
+
     #[tokio::test]
     async fn test_one_req_ok() -> Result<(), bincode::Error> {
         let req = BcaReq::V0(BcaReqV0 {
@@ -292,7 +298,7 @@ mod tests {
         let bca_executor = create_bca_executor(dbs_reader).expect("fail to create bca executor");
 
         //println!("bytes={:?}", bytes);
-        let bytes_res = bca_executor.execute::<&[u8]>(&bytes[..], false).await;
+        let bytes_res = bca_executor.execute(io_stream(bytes), false).await;
         //println!("bytes_res={:?}", bytes_res);
         let bca_res: Vec<Result<BcaResp, BcaReqExecError>> =
             AsyncBincodeReader::<_, Result<BcaResp, BcaReqExecError>>::from(&bytes_res[..])
@@ -330,7 +336,7 @@ mod tests {
             create_bca_executor(MockDbsReader::new()).expect("fail to create bca executor");
 
         //println!("bytes={:?}", bytes);
-        let bytes_res = bca_executor.execute::<&[u8]>(&bytes[..], false).await;
+        let bytes_res = bca_executor.execute(io_stream(bytes), false).await;
         //println!("bytes_res={:?}", bytes_res);
         let bca_res: Vec<Result<BcaResp, BcaReqExecError>> =
             AsyncBincodeReader::<_, Result<BcaResp, BcaReqExecError>>::from(&bytes_res[..])
@@ -374,7 +380,7 @@ mod tests {
         let bca_executor = create_bca_executor(dbs_reader).expect("fail to create bca executor");
 
         //println!("bytes={:?}", bytes);
-        let bytes_res = bca_executor.execute::<&[u8]>(&bytes[..], false).await;
+        let bytes_res = bca_executor.execute(io_stream(bytes), false).await;
         //println!("bytes_res={:?}", bytes_res);
         let bca_res: Vec<Result<BcaResp, BcaReqExecError>> =
             AsyncBincodeReader::<_, Result<BcaResp, BcaReqExecError>>::from(&bytes_res[..])

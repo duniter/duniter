@@ -84,7 +84,7 @@ pub enum BcaRespTypeV0 {
     Pong,
 }
 
-pub type BcaResult = Vec<Result<BcaResp, BcaReqExecError>>;
+pub type BcaResult = Result<BcaResp, BcaReqExecError>;
 
 #[derive(Clone, Debug, Deserialize, Error, PartialEq, Eq, Serialize)]
 pub enum BcaReqExecError {

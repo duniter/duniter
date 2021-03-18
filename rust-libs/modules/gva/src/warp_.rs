@@ -18,6 +18,8 @@ use std::{
     time::Duration,
 };
 
+use bytes::Bytes;
+
 use crate::anti_spam::{AntiSpam, AntiSpamResponse};
 use crate::*;
 
@@ -183,18 +185,17 @@ pub(crate) fn graphql(
                                 .await,
                         ))
                     } else {
-                        let body_reader = futures::TryStreamExt::map_err(body, |err| {
+                        let body_stream = futures::TryStreamExt::map_err(body, |err| {
                             std::io::Error::new(std::io::ErrorKind::Other, err)
                         })
                         .map_ok(|mut buf| {
                             let remaining = warp::Buf::remaining(&buf);
                             warp::Buf::copy_to_bytes(&mut buf, remaining)
-                        })
-                        .into_async_read();
+                        });
                         if content_type.as_deref() == Some("application/bincode") {
                             tokio::time::timeout(
                                 Duration::from_millis(MAX_BATCH_REQ_PROCESS_DURATION_IN_MILLIS),
-                                process_bincode_batch_queries(body_reader, is_whitelisted),
+                                process_bincode_batch_queries(body_stream, is_whitelisted),
                             )
                             .await
                             .map_err(|_| warp::reject::custom(ReqExecTooLong))?
@@ -202,7 +203,7 @@ pub(crate) fn graphql(
                             tokio::time::timeout(
                                 Duration::from_millis(MAX_BATCH_REQ_PROCESS_DURATION_IN_MILLIS),
                                 process_json_batch_queries(
-                                    body_reader,
+                                    body_stream.into_async_read(),
                                     content_type,
                                     gva_schema,
                                     is_whitelisted,
@@ -223,7 +224,7 @@ pub(crate) fn graphql(
 }
 
 async fn process_bincode_batch_queries(
-    body_reader: impl 'static + futures::AsyncRead + Send + Unpin,
+    body_reader: impl 'static + futures::TryStream<Ok = Bytes, Error = std::io::Error> + Send + Unpin,
     is_whitelisted: bool,
 ) -> Result<ServerResponse, warp::Rejection> {
     Ok(ServerResponse::Bincode(

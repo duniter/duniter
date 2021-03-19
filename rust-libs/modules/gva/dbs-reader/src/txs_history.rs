@@ -49,11 +49,37 @@ impl FromStr for TxBcCursor {
 impl DbsReader {
     pub fn get_txs_history_bc_received(
         &self,
+        from: Option<u64>,
         page_info: PageInfo<TxBcCursor>,
         script_hash: Hash,
+        to: Option<u64>,
     ) -> KvResult<PagedData<VecDeque<GvaTxDbV1>>> {
-        let mut start_k = WalletHashWithBnV1Db::new(script_hash, BlockNumber(0));
-        let mut end_k = WalletHashWithBnV1Db::new(script_hash, BlockNumber(u32::MAX));
+        let mut start_k = WalletHashWithBnV1Db::new(
+            script_hash,
+            BlockNumber(if let Some(from) = from {
+                self.0
+                    .blocks_by_common_time()
+                    .iter(U64BE(from).., |it| it)
+                    .values()
+                    .next_res()?
+                    .unwrap_or(u32::MAX)
+            } else {
+                0
+            }),
+        );
+        let mut end_k = WalletHashWithBnV1Db::new(
+            script_hash,
+            BlockNumber(if let Some(to) = to {
+                self.0
+                    .blocks_by_common_time()
+                    .iter_rev(..U64BE(to), |it| it)
+                    .values()
+                    .next_res()?
+                    .unwrap_or(0)
+            } else {
+                u32::MAX
+            }),
+        );
         let first_cursor_opt = if page_info.not_all() {
             self.0
                 .txs_by_recipient()
@@ -168,11 +194,37 @@ impl DbsReader {
     }
     pub fn get_txs_history_bc_sent(
         &self,
+        from: Option<u64>,
         page_info: PageInfo<TxBcCursor>,
         script_hash: Hash,
+        to: Option<u64>,
     ) -> KvResult<PagedData<VecDeque<GvaTxDbV1>>> {
-        let mut start_k = WalletHashWithBnV1Db::new(script_hash, BlockNumber(0));
-        let mut end_k = WalletHashWithBnV1Db::new(script_hash, BlockNumber(u32::MAX));
+        let mut start_k = WalletHashWithBnV1Db::new(
+            script_hash,
+            BlockNumber(if let Some(from) = from {
+                self.0
+                    .blocks_by_common_time()
+                    .iter(U64BE(from).., |it| it)
+                    .values()
+                    .next_res()?
+                    .unwrap_or(u32::MAX)
+            } else {
+                0
+            }),
+        );
+        let mut end_k = WalletHashWithBnV1Db::new(
+            script_hash,
+            BlockNumber(if let Some(to) = to {
+                self.0
+                    .blocks_by_common_time()
+                    .iter_rev(..U64BE(to), |it| it)
+                    .values()
+                    .next_res()?
+                    .unwrap_or(0)
+            } else {
+                u32::MAX
+            }),
+        );
         let first_cursor_opt = if page_info.not_all() {
             self.0
                 .txs_by_issuer()
@@ -525,6 +577,7 @@ mod tests {
             WalletHashWithBnV1Db::new(s1_hash, BlockNumber(1)),
             btreeset![Hash::default(), Hash([1; 32]), Hash([2; 32]), Hash([3; 32])],
         )?;
+        gva_db.blocks_by_common_time_write().upsert(U64BE(1), 1)?;
         gva_db.txs_write().upsert(
             HashKeyV2(Hash([4; 32])),
             gen_tx(Hash([4; 32]), BlockNumber(2)),
@@ -537,6 +590,34 @@ mod tests {
             WalletHashWithBnV1Db::new(s1_hash, BlockNumber(2)),
             btreeset![Hash([4; 32]), Hash([5; 32])],
         )?;
+        gva_db.blocks_by_common_time_write().upsert(U64BE(2), 2)?;
+        gva_db.txs_write().upsert(
+            HashKeyV2(Hash([6; 32])),
+            gen_tx(Hash([6; 32]), BlockNumber(3)),
+        )?;
+        gva_db.txs_by_recipient_write().upsert(
+            WalletHashWithBnV1Db::new(s1_hash, BlockNumber(3)),
+            btreeset![Hash([6; 32])],
+        )?;
+        gva_db.blocks_by_common_time_write().upsert(U64BE(3), 3)?;
+        gva_db.txs_write().upsert(
+            HashKeyV2(Hash([7; 32])),
+            gen_tx(Hash([7; 32]), BlockNumber(4)),
+        )?;
+        gva_db.txs_by_recipient_write().upsert(
+            WalletHashWithBnV1Db::new(s1_hash, BlockNumber(4)),
+            btreeset![Hash([7; 32])],
+        )?;
+        gva_db.blocks_by_common_time_write().upsert(U64BE(4), 4)?;
+        gva_db.txs_write().upsert(
+            HashKeyV2(Hash([8; 32])),
+            gen_tx(Hash([8; 32]), BlockNumber(5)),
+        )?;
+        gva_db.txs_by_recipient_write().upsert(
+            WalletHashWithBnV1Db::new(s1_hash, BlockNumber(5)),
+            btreeset![Hash([8; 32])],
+        )?;
+        gva_db.blocks_by_common_time_write().upsert(U64BE(5), 5)?;
 
         /*let received = db_reader.get_txs_history_bc_received(
             PageInfo {
@@ -581,6 +662,7 @@ mod tests {
         assert!(!received.has_previous_page);*/
 
         let received = db_reader.get_txs_history_bc_received(
+            None,
             PageInfo {
                 order: false,
                 limit_opt: None,
@@ -590,6 +672,7 @@ mod tests {
                 }),
             },
             s1_hash,
+            None,
         )?;
         assert_eq!(
             received
@@ -604,6 +687,27 @@ mod tests {
                 Hash([1; 32]),
                 Hash([0; 32]),
             ],
+        );
+        assert!(!received.has_next_page);
+        assert!(!received.has_previous_page);
+
+        let received = db_reader.get_txs_history_bc_received(
+            Some(2),
+            PageInfo {
+                order: true,
+                limit_opt: None,
+                pos: None,
+            },
+            s1_hash,
+            Some(5),
+        )?;
+        assert_eq!(
+            received
+                .data
+                .into_iter()
+                .map(|tx_db| tx_db.tx.get_hash())
+                .collect::<Vec<_>>(),
+            vec![Hash([4; 32]), Hash([5; 32]), Hash([6; 32]), Hash([7; 32])],
         );
         assert!(!received.has_next_page);
         assert!(!received.has_previous_page);
@@ -653,6 +757,7 @@ mod tests {
         )?;
 
         let sent = db_reader.get_txs_history_bc_sent(
+            None,
             PageInfo {
                 order: true,
                 limit_opt: None,
@@ -662,6 +767,7 @@ mod tests {
                 }),
             },
             s1_hash,
+            None,
         )?;
         assert_eq!(
             sent.data
@@ -674,6 +780,7 @@ mod tests {
         assert!(!sent.has_previous_page);
 
         let sent = db_reader.get_txs_history_bc_sent(
+            None,
             PageInfo {
                 order: false,
                 limit_opt: None,
@@ -683,6 +790,7 @@ mod tests {
                 }),
             },
             s1_hash,
+            None,
         )?;
         assert_eq!(
             sent.data
@@ -695,6 +803,7 @@ mod tests {
         assert!(!sent.has_previous_page);
 
         let sent = db_reader.get_txs_history_bc_sent(
+            None,
             PageInfo {
                 order: false,
                 limit_opt: None,
@@ -704,6 +813,7 @@ mod tests {
                 }),
             },
             s1_hash,
+            None,
         )?;
         assert_eq!(
             sent.data

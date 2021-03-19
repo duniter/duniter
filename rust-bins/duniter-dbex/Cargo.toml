@@ -22,7 +22,7 @@ anyhow = "1.0.33"
 arrayvec = "0.5.1"
 comfy-table = "2.1.0"
 dirs = "3.0.1"
-dubp = { version = "0.48.0", features = ["duniter"] }
+dubp = { version = "0.49.0", features = ["duniter"] }
 duniter-dbs = { path = "../../rust-libs/duniter-dbs", default-features = false, features = ["explorer", "leveldb_backend", "sled_backend"] }
 duniter-dbs-write-ops = { path = "../../rust-libs/duniter-dbs-write-ops", default-features = false, features = ["explorer", "leveldb_backend", "sled_backend"] }
 duniter-gva-db = { path = "../../rust-libs/modules/gva/db", default-features = false, features = ["explorer", "leveldb_backend"] }

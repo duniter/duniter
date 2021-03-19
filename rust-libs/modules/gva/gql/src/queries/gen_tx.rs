@@ -17,6 +17,7 @@ use crate::*;
 use dubp::{
     crypto::bases::BaseConversionError,
     documents::transaction::v10_gen::{TransactionDocV10ComplexGen, TxV10ComplexIssuer},
+    documents::transaction::UnsignedTransactionDocumentTrait,
 };
 use duniter_dbs::smallvec::SmallVec;
 

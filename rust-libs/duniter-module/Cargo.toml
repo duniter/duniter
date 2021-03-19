@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0.34"
 async-trait = "0.1.41"
-dubp = { version = "0.48.0", features = ["duniter"] }
+dubp = { version = "0.49.0", features = ["duniter"] }
 duniter-conf = { path = "../duniter-conf" }
 duniter-dbs = { path = "../duniter-dbs" }
 duniter-mempools = { path = "../duniter-mempools" }

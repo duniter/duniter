@@ -980,9 +980,9 @@ checksum = "4bb454f0228b18c7f4c3b0ebbee346ed9c52e7443b0999cd543ff3571205701d"
 
 [[package]]
 name = "dubp"
-version = "0.48.0"
+version = "0.49.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3e3fe6a250aaa17de9d86c77028ae2b22f4f7d3b9716659d89d82fb72b2db68"
+checksum = "1b9617091ba0d0a0cc95392655b0b7136fee3b63101d64c0fd0a5c2741983f18"
 dependencies = [
  "dubp-block",
  "dubp-common",
@@ -994,9 +994,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-block"
-version = "0.48.0"
+version = "0.49.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1157cd956b2f7734067e12fe6df23f8710e4543fa29c5e95162964862cc063ba"
+checksum = "53a15b5320e575d8549a549e1950c08a166531d1edf687da4d98fecb00d5bdf7"
 dependencies = [
  "dubp-documents",
  "dubp-documents-parser",
@@ -1009,9 +1009,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-common"
-version = "0.48.0"
+version = "0.49.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c83386c1914b8f3d4a1fb2895b6e31899019b05de3fb6c7ec45d0f13238e6c64"
+checksum = "da764b34a61ecb52fa90dc11f5a44d6bc9599b043d37592b5102b95d993fd677"
 dependencies = [
  "dup-crypto",
  "serde",
@@ -1022,9 +1022,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-documents"
-version = "0.48.0"
+version = "0.49.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eeabf1395e31c3e2a1dfabc1f97a933c361312e65f65ca843092b94a32e4ce19"
+checksum = "8810039b6dd6a101109aebc9836ddec58366052803f824c56016889d9444f5cf"
 dependencies = [
  "beef",
  "dubp-wallet",
@@ -1036,9 +1036,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-documents-parser"
-version = "0.48.0"
+version = "0.49.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f441e42514531d4b04001ff95e20d9b681198bc8f13872af24281c350d2e96f2"
+checksum = "c791c77a3f9c670666dc41f861481cc80eb1ad193584727adfee792350fd3129"
 dependencies = [
  "dubp-documents",
  "json-pest-parser",
@@ -1050,9 +1050,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-wallet"
-version = "0.48.0"
+version = "0.49.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b89b1d3262a26156de5edcd97e20c2cd747a24ee1244e929b5ac3aada5519b94"
+checksum = "2ef8e7c5334ddbc7899f83911026ebc324ba7fc7232c7ca5265e611490dbd282"
 dependencies = [
  "byteorder",
  "dubp-common",
@@ -1372,9 +1372,9 @@ dependencies = [
 
 [[package]]
 name = "dup-crypto"
-version = "0.48.0"
+version = "0.49.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "093aa174cc3792e029e5deabf83986842595279840e5eab58e845efe33d75b48"
+checksum = "0be04829b31b18bacf5317001366d807e5fbd02085ee6348508c1299b5bcaf6c"
 dependencies = [
  "base64 0.13.0",
  "blake3",

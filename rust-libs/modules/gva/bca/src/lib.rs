@@ -33,7 +33,9 @@ use crate::utils::AsyncReader;
 use async_bincode::AsyncBincodeReader;
 use bincode::Options as _;
 use dubp::crypto::keys::{ed25519::Ed25519KeyPair, Signator};
-use duniter_bca_types::{BcaReq, BcaReqTypeV0, BcaResp, BcaRespTypeV0, BcaRespV0, ReqExecError};
+use duniter_bca_types::{
+    bincode_opts, BcaReq, BcaReqTypeV0, BcaResp, BcaRespTypeV0, BcaRespV0, ReqExecError,
+};
 use duniter_dbs::{FileBackend, SharedDbs};
 use futures::{prelude::stream::FuturesUnordered, StreamExt, TryStream, TryStreamExt};
 use once_cell::sync::OnceCell;
@@ -199,12 +201,6 @@ impl BcaExecutor {
     pub fn dbs_reader(&self) -> DbsReader {
         self.dbs_reader
     }
-}
-
-pub(crate) fn bincode_opts() -> impl bincode::Options {
-    bincode::options()
-        .with_limit(u32::max_value() as u64)
-        .allow_trailing_bytes()
 }
 
 #[cfg(test)]

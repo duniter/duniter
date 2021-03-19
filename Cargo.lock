@@ -1163,9 +1163,9 @@ dependencies = [
 name = "duniter-bca-types"
 version = "0.1.0"
 dependencies = [
+ "bincode",
  "dubp",
  "serde",
- "smallvec",
 ]
 
 [[package]]

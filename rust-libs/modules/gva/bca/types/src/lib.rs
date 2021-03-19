@@ -25,11 +25,18 @@
 pub mod prepare_payment;
 
 use crate::prepare_payment::{PrepareSimplePayment, PrepareSimplePaymentResp};
+
+use bincode::Options as _;
 use dubp::crypto::hashs::Hash;
 use dubp::crypto::keys::ed25519::{PublicKey, Signature};
 use dubp::wallet::prelude::*;
 use serde::{Deserialize, Serialize};
-//use smallvec::SmallVec;
+
+pub fn bincode_opts() -> impl bincode::Options {
+    bincode::options()
+        .with_limit(u32::max_value() as u64)
+        .allow_trailing_bytes()
+}
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, Serialize)]
 pub enum BcaReq {

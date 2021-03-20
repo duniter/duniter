@@ -13,6 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+mod last_blockstamp_out_of_fork_window;
 mod members_count;
 mod prepare_simple_payment;
 mod send_txs;
@@ -39,6 +40,12 @@ pub(super) async fn execute_req_type(
     _is_whitelisted: bool,
 ) -> Result<BcaRespTypeV0, ExecReqTypeError> {
     match req_type {
+        BcaReqTypeV0::LastBlockstampOutOfForkWindow => {
+            last_blockstamp_out_of_fork_window::exec_req_last_blockstamp_out_of_fork_window(
+                bca_executor,
+            )
+            .await
+        }
         BcaReqTypeV0::MembersCount => members_count::exec_req_members_count(bca_executor).await,
         BcaReqTypeV0::PrepareSimplePayment(params) => {
             prepare_simple_payment::exec_req_prepare_simple_payment(bca_executor, params).await

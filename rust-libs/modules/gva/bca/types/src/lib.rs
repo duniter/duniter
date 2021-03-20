@@ -28,9 +28,9 @@ pub mod rejected_tx;
 use crate::prepare_payment::{PrepareSimplePayment, PrepareSimplePaymentResp};
 
 use bincode::Options as _;
-use dubp::crypto::hashs::Hash;
 use dubp::crypto::keys::ed25519::{PublicKey, Signature};
 use dubp::wallet::prelude::*;
+use dubp::{common::prelude::Blockstamp, crypto::hashs::Hash};
 use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 use thiserror::Error;
@@ -58,6 +58,7 @@ pub struct BcaReqV0 {
 #[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
 pub enum BcaReqTypeV0 {
+    LastBlockstampOutOfForkWindow,
     MembersCount,
     PrepareSimplePayment(PrepareSimplePayment),
     ProofServerPubkey { challenge: [u8; 16] },
@@ -91,6 +92,7 @@ pub enum BcaRespTypeV0 {
         server_pubkey: PublicKey,
         sig: Signature,
     },
+    LastBlockstampOutOfForkWindow(Blockstamp),
     MembersCount(u64),
     PrepareSimplePayment(PrepareSimplePaymentResp),
     Pong,

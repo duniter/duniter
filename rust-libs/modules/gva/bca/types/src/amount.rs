@@ -14,18 +14,33 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use dubp::documents::transaction::TransactionInputV10;
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
-pub struct PrepareSimplePayment {
-    pub issuer: PublicKey,
-    pub amount: Amount,
+pub enum Amount {
+    Cents(SourceAmount),
+    Uds(f64),
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
-pub struct PrepareSimplePaymentResp {
-    pub current_block_number: u32,
-    pub current_block_hash: Hash,
-    pub inputs: Vec<TransactionInputV10>,
-    pub inputs_sum: SourceAmount,
+impl Default for Amount {
+    fn default() -> Self {
+        Self::Cents(SourceAmount::ZERO)
+    }
+}
+
+impl Amount {
+    pub fn to_cents(self, ud_amount: SourceAmount) -> SourceAmount {
+        match self {
+            Amount::Cents(sa) => sa,
+            Amount::Uds(f64_) => {
+                if !f64_.is_finite() || f64_ <= 0f64 {
+                    SourceAmount::ZERO
+                } else {
+                    SourceAmount::new(
+                        f64::round(ud_amount.amount() as f64 * f64_) as i64,
+                        ud_amount.base(),
+                    )
+                }
+            }
+        }
+    }
 }

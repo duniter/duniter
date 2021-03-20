@@ -14,20 +14,39 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use dubp::block::prelude::*;
 
 pub(super) async fn exec_req_members_count(
     bca_executor: &BcaExecutor,
 ) -> Result<BcaRespTypeV0, ExecReqTypeError> {
-    let dbs_reader = bca_executor.dbs_reader();
-    Ok(bca_executor
-        .dbs_pool
-        .execute(move |dbs| match dbs_reader.get_current_block(&dbs.cm_db) {
-            Ok(Some(current_block)) => {
-                BcaRespTypeV0::MembersCount(current_block.members_count() as u64)
-            }
-            Ok(None) => BcaRespTypeV0::Error("no blockchain".to_owned()),
-            Err(e) => BcaRespTypeV0::Error(e.to_string()),
-        })
-        .await?)
+    if let Some(members_count) = bca_executor
+        .cm_accessor
+        .get_current_meta(|cm| cm.current_block_meta.members_count)
+        .await
+    {
+        Ok(BcaRespTypeV0::MembersCount(members_count))
+    } else {
+        Err("no blockchain".into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tests::*;
+
+    #[tokio::test]
+    async fn test_exec_req_members_count() {
+        let mut cm_mock = MockAsyncAccessor::new();
+        cm_mock
+            .expect_get_current_meta::<u64>()
+            .times(1)
+            .returning(|f| Some(f(&CurrentMeta::default())));
+        let dbs_reader = MockDbsReader::new();
+        let bca_executor =
+            create_bca_executor(cm_mock, dbs_reader).expect("fail to create bca executor");
+
+        let resp_res = exec_req_members_count(&bca_executor).await;
+
+        assert_eq!(resp_res, Ok(BcaRespTypeV0::MembersCount(0)));
+    }
 }

@@ -18,8 +18,6 @@ use duniter_dbs::SourceAmountValV2;
 
 use crate::*;
 
-pub const MAX_FIRST_UTXOS: usize = 40;
-
 #[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd)]
 pub struct UtxoCursor {
     pub block_number: BlockNumber,
@@ -58,13 +56,6 @@ impl FromStr for UtxoCursor {
             output_index,
         })
     }
-}
-
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct Utxo {
-    pub amount: SourceAmount,
-    pub tx_hash: Hash,
-    pub output_index: u8,
 }
 
 #[derive(Debug, Default)]
@@ -180,25 +171,38 @@ impl DbsReaderImpl {
     }
     pub(super) fn first_scripts_utxos_(
         &self,
+        amount_target_opt: Option<SourceAmount>,
         first: usize,
         scripts: &[WalletScriptV10],
     ) -> anyhow::Result<Vec<ArrayVec<[Utxo; MAX_FIRST_UTXOS]>>> {
-        Ok(scripts
-            .iter()
-            .map(|script| {
-                let (k_min, k_max) =
-                    GvaUtxoIdDbV1::script_interval(Hash::compute(script.to_string().as_bytes()));
-                self.0.gva_utxos().iter(k_min..k_max, |it| {
-                    it.take(first)
-                        .map_ok(|(k, v)| Utxo {
-                            amount: v.0,
-                            tx_hash: k.get_tx_hash(),
-                            output_index: k.get_output_index(),
-                        })
-                        .collect::<KvResult<_>>()
-                })
+        let iter = scripts.iter().map(|script| {
+            let (k_min, k_max) =
+                GvaUtxoIdDbV1::script_interval(Hash::compute(script.to_string().as_bytes()));
+            self.0.gva_utxos().iter(k_min..k_max, |it| {
+                it.take(first)
+                    .map_ok(|(k, v)| Utxo {
+                        amount: v.0,
+                        tx_hash: k.get_tx_hash(),
+                        output_index: k.get_output_index(),
+                    })
+                    .collect::<KvResult<_>>()
             })
-            .collect::<KvResult<Vec<_>>>()?)
+        });
+        if let Some(amount_target) = amount_target_opt {
+            let mut sum = SourceAmount::ZERO;
+            Ok(iter
+                .take_while(|utxos_res: &KvResult<ArrayVec<[Utxo; MAX_FIRST_UTXOS]>>| {
+                    if let Ok(utxos) = utxos_res {
+                        sum = sum + utxos.iter().map(|utxo| utxo.amount).sum();
+                        sum <= amount_target
+                    } else {
+                        true
+                    }
+                })
+                .collect::<KvResult<Vec<_>>>()?)
+        } else {
+            Ok(iter.collect::<KvResult<Vec<_>>>()?)
+        }
     }
 }
 
@@ -324,7 +328,7 @@ mod tests {
         )?;
 
         assert_eq!(
-            db_reader.first_scripts_utxos(2, &[script, script2])?,
+            db_reader.first_scripts_utxos(None, 2, &[script, script2])?,
             vec![
                 [
                     Utxo {

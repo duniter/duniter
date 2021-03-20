@@ -23,37 +23,33 @@ impl CurrentBlockQuery {
     async fn current_block(
         &self,
         ctx: &async_graphql::Context<'_>,
-    ) -> async_graphql::Result<Block> {
+    ) -> async_graphql::Result<BlockMeta> {
         let data = ctx.data::<GvaSchemaData>()?;
-        let dbs_reader = data.dbs_reader();
 
-        data.dbs_pool
-            .execute(move |dbs| {
-                if let Some(current_block) = dbs_reader.get_current_block(&dbs.cm_db)? {
-                    Ok(Block::from(&current_block))
-                } else {
-                    Err(async_graphql::Error::new("no blockchain"))
-                }
-            })
-            .await?
+        if let Some(current_block_meta) = data
+            .cm_accessor()
+            .get_current_meta(|cm| cm.current_block_meta)
+            .await
+        {
+            Ok(current_block_meta.into())
+        } else {
+            Err(async_graphql::Error::new("no blockchain"))
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::tests::*;
-    use dubp::block::DubpBlockV10;
-    use duniter_dbs::databases::cm_v1::CmV1Db;
 
     #[tokio::test]
     async fn query_current_block() -> anyhow::Result<()> {
-        let mut dbs_reader = MockDbsReader::new();
-        dbs_reader
-            .expect_get_current_block::<CmV1Db<MemSingleton>>()
+        let mut mock_cm = MockAsyncAccessor::new();
+        mock_cm
+            .expect_get_current_meta::<duniter_dbs::BlockMetaV2>()
             .times(1)
-            .returning(|_| Ok(Some(DubpBlockV10::default())));
-        let schema = create_schema(dbs_reader)?;
+            .returning(|f| Some(f(&CurrentMeta::default())));
+        let schema = create_schema(mock_cm, MockDbsReader::new())?;
         assert_eq!(
             exec_graphql_request(&schema, r#"{ currentBlock {nonce} }"#).await?,
             serde_json::json!({

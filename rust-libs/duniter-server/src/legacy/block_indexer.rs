@@ -25,6 +25,7 @@ impl DuniterServer {
             block.clone(),
             self.current,
             &self.dbs_pool,
+            &self.global_sender,
             false,
         )?);
         apply_block_modules(block, Arc::new(self.conf.clone()), &self.dbs_pool, None)
@@ -43,6 +44,7 @@ impl DuniterServer {
             self.current,
             &self.dbs_pool,
             blocks.clone(),
+            Some(&self.global_sender),
         )?);
         apply_chunk_of_blocks_modules(blocks, Arc::new(self.conf.clone()), &self.dbs_pool, None)
     }

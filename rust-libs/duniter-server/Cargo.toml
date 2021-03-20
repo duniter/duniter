@@ -10,9 +10,10 @@ anyhow = "1.0.34"
 cfg-if = "1.0.0"
 dubp = { version = "0.50.0", features = ["duniter"] }
 duniter-conf = { path = "../duniter-conf" }
-duniter-dbs = { path = "../duniter-dbs" }
 duniter-bc-reader = { path = "../duniter-bc-reader" }
+duniter-dbs = { path = "../duniter-dbs" }
 duniter-dbs-write-ops = { path = "../duniter-dbs-write-ops" }
+duniter-global = { path = "../duniter-global" }
 duniter-gva = { path = "../modules/gva", optional = true }
 duniter-mempools = { path = "../duniter-mempools" }
 duniter-module = { path = "../duniter-module" }
@@ -21,7 +22,6 @@ flume = "0.10.0"
 log = "0.4.11"
 paste = "1.0.2"
 resiter = "0.4.0"
-tokio = { version = "1.2", features = ["io-util", "rt-multi-thread"] }
 
 [features]
 default = ["gva"]

@@ -28,16 +28,17 @@ impl UdsQuery {
         ctx: &async_graphql::Context<'_>,
     ) -> async_graphql::Result<Option<CurrentUdGva>> {
         let data = ctx.data::<GvaSchemaData>()?;
-        let dbs_reader = data.dbs_reader();
 
-        Ok(data
-            .dbs_pool
-            .execute(move |dbs| dbs_reader.get_current_ud(&dbs.bc_db_ro))
-            .await??
-            .map(|sa| CurrentUdGva {
-                amount: sa.amount(),
-                base: sa.base(),
-            }))
+        Ok(
+            if let Some(current_ud) = data.cm_accessor.get_current_meta(|cm| cm.current_ud).await {
+                Some(CurrentUdGva {
+                    amount: current_ud.amount(),
+                    base: current_ud.base(),
+                })
+            } else {
+                None
+            },
+        )
     }
     /// Universal dividends issued by a public key
     #[allow(clippy::clippy::too_many_arguments)]
@@ -55,18 +56,21 @@ impl UdsQuery {
         let data = ctx.data::<GvaSchemaData>()?;
         let dbs_reader = data.dbs_reader();
 
-        let (
-            PagedData {
-                data: UdsWithSum { uds, sum },
-                has_previous_page,
-                has_next_page,
-            },
-            times,
-        ) = data
-            .dbs_pool
-            .execute(move |dbs| {
-                if let Some(current_block) = duniter_bc_reader::get_current_block_meta(&dbs.cm_db)?
-                {
+        if let Some(current_base) = data
+            .cm_accessor
+            .get_current_meta(|cm| cm.current_block_meta.unit_base)
+            .await
+        {
+            let (
+                PagedData {
+                    data: UdsWithSum { uds, sum },
+                    has_previous_page,
+                    has_next_page,
+                },
+                times,
+            ) = data
+                .dbs_pool
+                .execute(move |dbs| {
                     let paged_data = match filter {
                         UdsFilter::All => {
                             dbs_reader.all_uds_of_pubkey(&dbs.bc_db_ro, pubkey.0, pagination)
@@ -76,9 +80,7 @@ impl UdsQuery {
                             pubkey.0,
                             pagination,
                             None,
-                            amount.map(|amount| {
-                                SourceAmount::new(amount, current_block.unit_base as i64)
-                            }),
+                            amount.map(|amount| SourceAmount::new(amount, current_base as i64)),
                         ),
                     }?;
 
@@ -87,45 +89,45 @@ impl UdsQuery {
                         times.push(dbs_reader.get_blockchain_time(*bn)?);
                     }
                     Ok::<_, anyhow::Error>((paged_data, times))
-                } else {
-                    Err(anyhow::Error::msg("no blockchain"))
-                }
-            })
-            .await??;
+                })
+                .await??;
 
-        let mut conn = Connection::with_additional_fields(
-            has_previous_page,
-            has_next_page,
-            AggregateSum {
-                aggregate: Sum {
-                    sum: AmountWithBase {
-                        amount: sum.amount() as i32,
-                        base: sum.base() as i32,
+            let mut conn = Connection::with_additional_fields(
+                has_previous_page,
+                has_next_page,
+                AggregateSum {
+                    aggregate: Sum {
+                        sum: AmountWithBase {
+                            amount: sum.amount() as i32,
+                            base: sum.base() as i32,
+                        },
                     },
                 },
-            },
-        );
-        let uds_timed =
-            uds.into_iter()
-                .zip(times.into_iter())
-                .map(|((bn, sa), blockchain_time)| {
-                    Edge::new(
-                        bn.0.to_string(),
-                        UdGva {
-                            amount: sa.amount(),
-                            base: sa.base(),
-                            issuer: pubkey,
-                            block_number: bn.0,
-                            blockchain_time,
-                        },
-                    )
-                });
-        if pagination.order() {
-            conn.append(uds_timed);
+            );
+            let uds_timed =
+                uds.into_iter()
+                    .zip(times.into_iter())
+                    .map(|((bn, sa), blockchain_time)| {
+                        Edge::new(
+                            bn.0.to_string(),
+                            UdGva {
+                                amount: sa.amount(),
+                                base: sa.base(),
+                                issuer: pubkey,
+                                block_number: bn.0,
+                                blockchain_time,
+                            },
+                        )
+                    });
+            if pagination.order() {
+                conn.append(uds_timed);
+            } else {
+                conn.append(uds_timed.rev());
+            }
+            Ok(conn)
         } else {
-            conn.append(uds_timed.rev());
+            Err(async_graphql::Error::new("no blockchain"))
         }
-        Ok(conn)
     }
     /// Universal dividends revaluations
     async fn uds_reval(
@@ -157,13 +159,17 @@ mod tests {
 
     #[tokio::test]
     async fn query_current_ud() -> anyhow::Result<()> {
-        let mut dbs_reader = MockDbsReader::new();
-        use duniter_dbs::databases::bc_v2::BcV2DbRo;
-        dbs_reader
-            .expect_get_current_ud::<BcV2DbRo<FileBackend>>()
+        let mut mock_cm = MockAsyncAccessor::new();
+        mock_cm
+            .expect_get_current_meta::<SourceAmount>()
             .times(1)
-            .returning(|_| Ok(Some(SourceAmount::with_base0(100))));
-        let schema = create_schema(dbs_reader)?;
+            .returning(|f| {
+                Some(f(&CurrentMeta {
+                    current_ud: SourceAmount::with_base0(100),
+                    ..Default::default()
+                }))
+            });
+        let schema = create_schema(mock_cm, MockDbsReader::new())?;
         assert_eq!(
             exec_graphql_request(&schema, r#"{ currentUd {amount} }"#).await?,
             serde_json::json!({

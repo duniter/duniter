@@ -32,6 +32,7 @@ pub mod uds_of_pubkey;
 pub mod utxos;
 
 pub use crate::pagination::{PageInfo, PagedData};
+pub use duniter_bca_types::MAX_FIRST_UTXOS;
 
 use crate::pagination::{has_next_page, has_previous_page};
 use arrayvec::ArrayVec;
@@ -39,6 +40,7 @@ use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::documents::transaction::TransactionDocumentV10;
 use dubp::{block::DubpBlockV10, common::crypto::hashs::Hash};
 use dubp::{common::prelude::BlockNumber, wallet::prelude::*};
+use duniter_bca_types::utxo::Utxo;
 use duniter_dbs::FileBackend;
 use duniter_dbs::{
     databases::{
@@ -103,9 +105,10 @@ pub trait DbsReader {
     ) -> anyhow::Result<PagedData<utxos::UtxosWithSum>>;
     fn first_scripts_utxos(
         &self,
+        amount_target_opt: Option<SourceAmount>,
         first: usize,
         scripts: &[WalletScriptV10],
-    ) -> anyhow::Result<Vec<arrayvec::ArrayVec<[utxos::Utxo; utxos::MAX_FIRST_UTXOS]>>>;
+    ) -> anyhow::Result<Vec<arrayvec::ArrayVec<[Utxo; MAX_FIRST_UTXOS]>>>;
     fn get_account_balance(
         &self,
         account_script: &WalletScriptV10,
@@ -115,19 +118,11 @@ pub trait DbsReader {
         &self,
         cm_db: &CmDb,
     ) -> KvResult<Option<DubpBlockV10>>;
-    fn get_current_block_meta<CmDb: 'static + CmV1DbReadable>(
-        &self,
-        cm_db: &CmDb,
-    ) -> KvResult<Option<BlockMetaV2>>;
-    fn get_current_frame<BcDb: 'static + BcV2DbReadable, CmDb: 'static + CmV1DbReadable>(
+    fn get_current_frame<BcDb: 'static + BcV2DbReadable>(
         &self,
         bc_db: &BcDb,
-        cm_db: &CmDb,
-    ) -> anyhow::Result<Vec<duniter_dbs::BlockMetaV2>>;
-    fn get_current_ud<BcDb: 'static + BcV2DbReadable>(
-        &self,
-        bc_db: &BcDb,
-    ) -> KvResult<Option<SourceAmount>>;
+        current_block_meta: &BlockMetaV2,
+    ) -> anyhow::Result<Vec<BlockMetaV2>>;
     fn get_txs_history_bc_received(
         &self,
         from: Option<u64>,
@@ -217,10 +212,11 @@ impl DbsReader for DbsReaderImpl {
 
     fn first_scripts_utxos(
         &self,
+        amount_target_opt: Option<SourceAmount>,
         first: usize,
         scripts: &[WalletScriptV10],
-    ) -> anyhow::Result<Vec<ArrayVec<[utxos::Utxo; utxos::MAX_FIRST_UTXOS]>>> {
-        self.first_scripts_utxos_(first, scripts)
+    ) -> anyhow::Result<Vec<ArrayVec<[Utxo; MAX_FIRST_UTXOS]>>> {
+        self.first_scripts_utxos_(amount_target_opt, first, scripts)
     }
 
     fn get_account_balance(
@@ -247,25 +243,12 @@ impl DbsReader for DbsReaderImpl {
         Ok(cm_db.current_block().get(&())?.map(|db_block| db_block.0))
     }
 
-    fn get_current_block_meta<CmDb: CmV1DbReadable>(
-        &self,
-        cm_db: &CmDb,
-    ) -> KvResult<Option<BlockMetaV2>> {
-        cm_db.current_block_meta().get(&())
-    }
-
-    fn get_current_frame<BcDb: 'static + BcV2DbReadable, CmDb: 'static + CmV1DbReadable>(
+    fn get_current_frame<BcDb: 'static + BcV2DbReadable>(
         &self,
         bc_db: &BcDb,
-        cm_db: &CmDb,
+        current_block_meta: &BlockMetaV2,
     ) -> anyhow::Result<Vec<BlockMetaV2>> {
-        self.get_current_frame_(bc_db, cm_db)
-    }
-
-    fn get_current_ud<BcDb: BcV2DbReadable>(&self, bc_db: &BcDb) -> KvResult<Option<SourceAmount>> {
-        bc_db
-            .uds_reval()
-            .iter_rev(.., |it| it.values().map_ok(|v| v.0).next_res())
+        self.get_current_frame_(bc_db, current_block_meta)
     }
 
     fn get_txs_history_bc_received(

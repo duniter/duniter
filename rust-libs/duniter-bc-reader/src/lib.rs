@@ -23,15 +23,7 @@
 )]
 
 use dubp::crypto::hashs::Hash;
-use duniter_dbs::{
-    databases::{bc_v2::BcV2DbReadable, cm_v1::CmV1DbReadable},
-    kv_typed::prelude::*,
-    BlockMetaV2, HashKeyV2,
-};
-
-pub fn get_current_block_meta<CmDb: CmV1DbReadable>(cm_db: &CmDb) -> KvResult<Option<BlockMetaV2>> {
-    cm_db.current_block_meta().get(&())
-}
+use duniter_dbs::{databases::bc_v2::BcV2DbReadable, kv_typed::prelude::*, HashKeyV2};
 
 pub fn tx_exist<BcDb: BcV2DbReadable>(bc_db_ro: &BcDb, hash: Hash) -> KvResult<bool> {
     Ok(bc_db_ro.txs_hashs().contains_key(&HashKeyV2(hash))?)

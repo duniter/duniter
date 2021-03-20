@@ -21,24 +21,26 @@ pub(super) async fn exec_req_prepare_simple_payment(
     bca_executor: &BcaExecutor,
     params: PrepareSimplePayment,
 ) -> Result<BcaRespTypeV0, ExecReqTypeError> {
-    let mut amount = params.amount;
     let issuer = params.issuer;
 
-    let dbs_reader = bca_executor.dbs_reader();
-    let (amount, block_ref_number, block_ref_hash, (inputs, inputs_sum)) = bca_executor
-        .dbs_pool
-        .execute(move |dbs| {
-            if let Some(current_block) = dbs_reader.get_current_block_meta(&dbs.cm_db)? {
-                let block_ref_number = if current_block.number < 101 {
+    if let Some(current_meta) = bca_executor.cm_accessor.get_current_meta(|cm| *cm).await {
+        let current_block_meta = current_meta.current_block_meta;
+        let current_ud = current_meta.current_ud;
+        let dbs_reader = bca_executor.dbs_reader();
+        let (amount, block_ref_number, block_ref_hash, (inputs, inputs_sum)) = bca_executor
+            .dbs_pool
+            .execute(move |dbs| {
+                let mut amount = params.amount.to_cents(current_ud);
+                let block_ref_number = if current_block_meta.number < 101 {
                     0
                 } else {
-                    current_block.number - 101
+                    current_block_meta.number - 101
                 };
                 let block_ref_hash = dbs_reader
                     .block(&dbs.bc_db_ro, U32BE(block_ref_number))?
                     .expect("unreachable")
                     .hash;
-                let current_base = current_block.unit_base as i64;
+                let current_base = current_block_meta.unit_base as i64;
 
                 if amount.base() > current_base {
                     Err("too long base".into())
@@ -59,24 +61,24 @@ pub(super) async fn exec_req_prepare_simple_payment(
                         )?,
                     ))
                 }
-            } else {
-                Err("no blockchain".into())
-            }
-        })
-        .await??;
+            })
+            .await??;
 
-    if inputs_sum < amount {
-        return Err("insufficient balance".into());
+        if inputs_sum < amount {
+            return Err("insufficient balance".into());
+        }
+
+        Ok(BcaRespTypeV0::PrepareSimplePayment(
+            PrepareSimplePaymentResp {
+                current_block_number: block_ref_number,
+                current_block_hash: block_ref_hash,
+                inputs,
+                inputs_sum,
+            },
+        ))
+    } else {
+        Err("no blockchain".into())
     }
-
-    Ok(BcaRespTypeV0::PrepareSimplePayment(
-        PrepareSimplePaymentResp {
-            current_block_number: block_ref_number,
-            current_block_hash: block_ref_hash,
-            inputs,
-            inputs_sum,
-        },
-    ))
 }
 
 #[cfg(test)]
@@ -86,18 +88,20 @@ mod tests {
 
     #[tokio::test]
     async fn test_exec_req_prepare_simple_payment_no_blockchain() {
-        let mut dbs_reader = MockDbsReader::new();
-        dbs_reader
-            .expect_get_current_block_meta::<CmV1Db<MemSingleton>>()
+        let mut mock_cm = MockAsyncAccessor::new();
+        mock_cm
+            .expect_get_current_meta::<CurrentMeta>()
             .times(1)
-            .returning(|_| Ok(None));
-        let bca_executor = create_bca_executor(dbs_reader).expect("fail to create bca executor");
+            .returning(|_| None);
+        let dbs_reader = MockDbsReader::new();
+        let bca_executor =
+            create_bca_executor(mock_cm, dbs_reader).expect("fail to create bca executor");
 
         let resp_res = exec_req_prepare_simple_payment(
             &bca_executor,
             PrepareSimplePayment {
                 issuer: PublicKey::default(),
-                amount: SourceAmount::new(42, 0),
+                amount: Amount::Cents(SourceAmount::new(42, 0)),
             },
         )
         .await;
@@ -107,22 +111,24 @@ mod tests {
 
     #[tokio::test]
     async fn test_exec_req_prepare_simple_payment_too_long_base() {
-        let mut dbs_reader = MockDbsReader::new();
-        dbs_reader
-            .expect_get_current_block_meta::<CmV1Db<MemSingleton>>()
+        let mut mock_cm = MockAsyncAccessor::new();
+        mock_cm
+            .expect_get_current_meta::<CurrentMeta>()
             .times(1)
-            .returning(|_| Ok(Some(BlockMetaV2::default())));
+            .returning(|f| Some(f(&CurrentMeta::default())));
+        let mut dbs_reader = MockDbsReader::new();
         dbs_reader
             .expect_block()
             .times(1)
             .returning(|_, _| Ok(Some(BlockMetaV2::default())));
-        let bca_executor = create_bca_executor(dbs_reader).expect("fail to create bca executor");
+        let bca_executor =
+            create_bca_executor(mock_cm, dbs_reader).expect("fail to create bca executor");
 
         let resp_res = exec_req_prepare_simple_payment(
             &bca_executor,
             PrepareSimplePayment {
                 issuer: PublicKey::default(),
-                amount: SourceAmount::new(42, 1),
+                amount: Amount::Cents(SourceAmount::new(42, 1)),
             },
         )
         .await;
@@ -132,11 +138,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_exec_req_prepare_simple_payment_insufficient_balance() {
-        let mut dbs_reader = MockDbsReader::new();
-        dbs_reader
-            .expect_get_current_block_meta::<CmV1Db<MemSingleton>>()
+        let mut mock_cm = MockAsyncAccessor::new();
+        mock_cm
+            .expect_get_current_meta::<CurrentMeta>()
             .times(1)
-            .returning(|_| Ok(Some(BlockMetaV2::default())));
+            .returning(|f| Some(f(&CurrentMeta::default())));
+        let mut dbs_reader = MockDbsReader::new();
         dbs_reader
             .expect_block()
             .times(1)
@@ -145,13 +152,14 @@ mod tests {
             .expect_find_inputs::<TxsMpV2Db<FileBackend>>()
             .times(1)
             .returning(|_, _, _, _, _| Ok((vec![], SourceAmount::default())));
-        let bca_executor = create_bca_executor(dbs_reader).expect("fail to create bca executor");
+        let bca_executor =
+            create_bca_executor(mock_cm, dbs_reader).expect("fail to create bca executor");
 
         let resp_res = exec_req_prepare_simple_payment(
             &bca_executor,
             PrepareSimplePayment {
                 issuer: PublicKey::default(),
-                amount: SourceAmount::new(42, 0),
+                amount: Amount::Cents(SourceAmount::new(42, 0)),
             },
         )
         .await;
@@ -172,11 +180,12 @@ mod tests {
             }),
         };
 
-        let mut dbs_reader = MockDbsReader::new();
-        dbs_reader
-            .expect_get_current_block_meta::<CmV1Db<MemSingleton>>()
+        let mut mock_cm = MockAsyncAccessor::new();
+        mock_cm
+            .expect_get_current_meta::<CurrentMeta>()
             .times(1)
-            .returning(|_| Ok(Some(BlockMetaV2::default())));
+            .returning(|f| Some(f(&CurrentMeta::default())));
+        let mut dbs_reader = MockDbsReader::new();
         dbs_reader
             .expect_block()
             .times(1)
@@ -185,13 +194,14 @@ mod tests {
             .expect_find_inputs::<TxsMpV2Db<FileBackend>>()
             .times(1)
             .returning(move |_, _, _, _, _| Ok((vec![input], SourceAmount::with_base0(57))));
-        let bca_executor = create_bca_executor(dbs_reader).expect("fail to create bca executor");
+        let bca_executor =
+            create_bca_executor(mock_cm, dbs_reader).expect("fail to create bca executor");
 
         let resp = exec_req_prepare_simple_payment(
             &bca_executor,
             PrepareSimplePayment {
                 issuer: PublicKey::default(),
-                amount: SourceAmount::new(42, 0),
+                amount: Amount::Cents(SourceAmount::new(42, 0)),
             },
         )
         .await?;

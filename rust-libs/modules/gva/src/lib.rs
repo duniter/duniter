@@ -39,6 +39,7 @@ use duniter_conf::DuniterMode;
 use duniter_dbs::databases::txs_mp_v2::TxsMpV2DbReadable;
 use duniter_dbs::prelude::*;
 use duniter_dbs::{kv_typed::prelude::*, FileBackend};
+use duniter_global::AsyncAccessor;
 use duniter_gva_db::*;
 use duniter_gva_gql::{GvaSchema, QueryContext};
 use duniter_gva_indexer::{get_gva_db_ro, get_gva_db_rw};
@@ -243,6 +244,7 @@ impl GvaModule {
         let self_pubkey = self_keypair.public_key();
         duniter_bca::set_bca_executor(
             currency.clone(),
+            AsyncAccessor::new(),
             dbs_pool.clone(),
             duniter_gva_dbs_reader::create_dbs_reader(gva_db_ro),
             self_keypair,
@@ -251,6 +253,7 @@ impl GvaModule {
         );
         let gva_schema = duniter_gva_gql::build_schema_with_data(
             duniter_gva_gql::GvaSchemaData {
+                cm_accessor: AsyncAccessor::new(),
                 dbs_reader: duniter_gva_dbs_reader::create_dbs_reader(gva_db_ro),
                 dbs_pool,
                 server_meta_data: duniter_gva_gql::ServerMetaData {

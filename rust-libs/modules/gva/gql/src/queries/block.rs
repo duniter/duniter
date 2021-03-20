@@ -83,7 +83,7 @@ mod tests {
             .withf(|_, s| s.0 == 0)
             .times(1)
             .returning(|_, _| Ok(Some(BlockMetaV2::default())));
-        let schema = create_schema(dbs_reader)?;
+        let schema = create_schema(MockAsyncAccessor::new(), dbs_reader)?;
         assert_eq!(
             exec_graphql_request(&schema, r#"{ blockByNumber(number: 0) {number} }"#).await?,
             serde_json::json!({
@@ -112,7 +112,7 @@ mod tests {
                 has_previous_page: false,
             })
         });
-        let schema = create_schema(dbs_reader)?;
+        let schema = create_schema(MockAsyncAccessor::new(), dbs_reader)?;
         assert_eq!(
             exec_graphql_request(
                 &schema,

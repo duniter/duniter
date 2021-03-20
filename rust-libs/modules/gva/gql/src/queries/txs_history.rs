@@ -299,7 +299,7 @@ mod tests {
                     has_next_page: false,
                 })
             });
-        let schema = create_schema(dbs_reader)?;
+        let schema = create_schema(MockAsyncAccessor::new(), dbs_reader)?;
         assert_eq!(
             exec_graphql_request(
                 &schema,

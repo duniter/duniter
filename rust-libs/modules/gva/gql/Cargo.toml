@@ -16,6 +16,7 @@ duniter-dbs = { path = "../../../duniter-dbs" }
 duniter-bc-reader = { path = "../../../duniter-bc-reader" }
 duniter-gva-db = { path = "../db" }
 duniter-gva-dbs-reader = { path = "../dbs-reader" }
+duniter-global = { path = "../../../duniter-global" }
 duniter-mempools = { path = "../../../duniter-mempools" }
 duniter-module = { path = "../../../duniter-module" }
 fast-threadpool = "0.2.3"
@@ -28,6 +29,7 @@ serde = { version = "1.0.105", features = ["derive"] }
 [dev-dependencies]
 duniter-dbs = { path = "../../../duniter-dbs", features = ["mem"] }
 duniter-gva-dbs-reader = { path = "../dbs-reader", features = ["mock"] }
+duniter-global = { path = "../../../duniter-global", features = ["mock"] }
 mockall = "0.9.1"
 serde_json = "1.0.53"
 tokio = { version = "1.2", features = ["macros", "rt-multi-thread", "time"] }

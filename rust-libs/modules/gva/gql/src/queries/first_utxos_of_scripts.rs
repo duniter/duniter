@@ -42,7 +42,7 @@ impl FirstUtxosQuery {
 
         let utxos_matrice: Vec<arrayvec::ArrayVec<_>> = data
             .dbs_pool
-            .execute(move |_| db_reader.first_scripts_utxos(first as usize, &scripts))
+            .execute(move |_| db_reader.first_scripts_utxos(None, first as usize, &scripts))
             .await??;
 
         Ok(utxos_matrice

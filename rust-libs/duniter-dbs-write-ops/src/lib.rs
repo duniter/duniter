@@ -40,13 +40,13 @@ use dubp::wallet::prelude::*;
 use duniter_dbs::{
     databases::{
         bc_v2::BcV2Db,
-        cm_v1::{CmV1Db, CmV1DbWritable},
         txs_mp_v2::{TxsMpV2Db, TxsMpV2DbReadable, TxsMpV2DbWritable},
     },
     kv_typed::prelude::*,
     BlockMetaV2, FileBackend, HashKeyV2, PendingTxDbV2, PubKeyKeyV2, PubKeyValV2, SharedDbs,
     SourceAmountValV2, UtxoValV2, WalletConditionsV2,
 };
+use duniter_global::GlobalBackGroundTaskMsg;
 use resiter::filter_map::FilterMap;
 use resiter::flatten::Flatten;
 use resiter::map::Map;

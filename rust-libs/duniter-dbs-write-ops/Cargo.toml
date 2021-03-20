@@ -15,7 +15,9 @@ path = "src/lib.rs"
 chrono = "0.4.19"
 dubp = { version = "0.50.0", features = ["duniter"] }
 duniter-dbs = { path = "../duniter-dbs" }
+duniter-global = { path = "../duniter-global" }
 fast-threadpool = "0.2.3"
+flume = "0.10"
 log = "0.4.11"
 resiter = "0.4.0"
 

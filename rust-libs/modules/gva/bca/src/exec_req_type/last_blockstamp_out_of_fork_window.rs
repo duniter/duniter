@@ -19,15 +19,19 @@ use dubp::common::prelude::*;
 pub(super) async fn exec_req_last_blockstamp_out_of_fork_window(
     bca_executor: &BcaExecutor,
 ) -> Result<BcaRespTypeV0, ExecReqTypeError> {
-    let dbs_reader = bca_executor.dbs_reader();
-    bca_executor
-        .dbs_pool
-        .execute(move |dbs| {
-            if let Some(current_block) = dbs_reader.get_current_block_meta(&dbs.cm_db)? {
-                let block_ref_number = if current_block.number < 101 {
+    if let Some(current_block_number) = bca_executor
+        .cm_accessor
+        .get_current_meta(|cm| cm.current_block_meta.number)
+        .await
+    {
+        let dbs_reader = bca_executor.dbs_reader();
+        bca_executor
+            .dbs_pool
+            .execute(move |dbs| {
+                let block_ref_number = if current_block_number < 101 {
                     0
                 } else {
-                    current_block.number - 101
+                    current_block_number - 101
                 };
                 let block_ref_hash = dbs_reader
                     .block(&dbs.bc_db_ro, U32BE(block_ref_number))?
@@ -39,11 +43,11 @@ pub(super) async fn exec_req_last_blockstamp_out_of_fork_window(
                         hash: BlockHash(block_ref_hash),
                     },
                 ))
-            } else {
-                Err("no blockchain".into())
-            }
-        })
-        .await?
+            })
+            .await?
+    } else {
+        Err("no blockchain".into())
+    }
 }
 
 #[cfg(test)]
@@ -53,12 +57,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_exec_req_last_blockstamp_out_of_fork_window_no_blockchain() {
-        let mut dbs_reader = MockDbsReader::new();
-        dbs_reader
-            .expect_get_current_block_meta::<CmV1Db<MemSingleton>>()
+        let mut cm_mock = MockAsyncAccessor::new();
+        cm_mock
+            .expect_get_current_meta::<u32>()
             .times(1)
-            .returning(|_| Ok(None));
-        let bca_executor = create_bca_executor(dbs_reader).expect("fail to create bca executor");
+            .returning(|_| None);
+        let dbs_reader = MockDbsReader::new();
+        let bca_executor =
+            create_bca_executor(cm_mock, dbs_reader).expect("fail to create bca executor");
 
         let resp_res = exec_req_last_blockstamp_out_of_fork_window(&bca_executor).await;
 
@@ -67,17 +73,19 @@ mod tests {
 
     #[tokio::test]
     async fn test_exec_req_last_blockstamp_out_of_fork_window_ok() -> Result<(), ExecReqTypeError> {
-        let mut dbs_reader = MockDbsReader::new();
-        dbs_reader
-            .expect_get_current_block_meta::<CmV1Db<MemSingleton>>()
+        let mut cm_mock = MockAsyncAccessor::new();
+        cm_mock
+            .expect_get_current_meta::<u32>()
             .times(1)
-            .returning(|_| Ok(Some(BlockMetaV2::default())));
+            .returning(|f| Some(f(&CurrentMeta::default())));
+        let mut dbs_reader = MockDbsReader::new();
         dbs_reader
             .expect_block()
             .times(1)
             .returning(|_, _| Ok(Some(BlockMetaV2::default())));
 
-        let bca_executor = create_bca_executor(dbs_reader).expect("fail to create bca executor");
+        let bca_executor =
+            create_bca_executor(cm_mock, dbs_reader).expect("fail to create bca executor");
 
         let resp = exec_req_last_blockstamp_out_of_fork_window(&bca_executor).await?;
 

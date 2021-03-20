@@ -92,7 +92,7 @@ mod tests {
             })
             .times(1)
             .returning(|_| Ok(Some(SourceAmountValV2(SourceAmount::with_base0(38)))));
-        let schema = create_schema(dbs_reader)?;
+        let schema = create_schema(MockAsyncAccessor::new(), dbs_reader)?;
         assert_eq!(
             exec_graphql_request(
                 &schema,
@@ -123,7 +123,7 @@ mod tests {
             })
             .times(1)
             .returning(|_| Ok(Some(SourceAmountValV2(SourceAmount::with_base0(38)))));
-        let schema = create_schema(dbs_reader)?;
+        let schema = create_schema(MockAsyncAccessor::new(), dbs_reader)?;
         assert_eq!(
             exec_graphql_request(
                 &schema,

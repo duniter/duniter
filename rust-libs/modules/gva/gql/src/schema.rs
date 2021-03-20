@@ -45,6 +45,7 @@ pub fn build_schema_with_data(data: GvaSchemaData, logger: bool) -> GvaSchema {
 }
 
 pub struct GvaSchemaData {
+    pub cm_accessor: AsyncAccessor,
     pub dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
     pub dbs_reader: DbsReaderImpl,
     pub server_meta_data: ServerMetaData,
@@ -54,12 +55,19 @@ pub struct GvaSchemaData {
 #[cfg(not(test))]
 impl GvaSchemaData {
     #[inline(always)]
+    pub fn cm_accessor(&self) -> AsyncAccessor {
+        self.cm_accessor
+    }
+    #[inline(always)]
     pub fn dbs_reader(&self) -> DbsReaderImpl {
         self.dbs_reader
     }
 }
 #[cfg(test)]
 impl GvaSchemaData {
+    pub fn cm_accessor(&self) -> AsyncAccessor {
+        self.cm_accessor.clone()
+    }
     pub fn dbs_reader(&self) -> DbsReaderImpl {
         self.dbs_reader.clone()
     }

@@ -27,13 +27,23 @@ impl CurrentFrameQuery {
         let data = ctx.data::<GvaSchemaData>()?;
         let dbs_reader = data.dbs_reader();
 
-        Ok(data
-            .dbs_pool
-            .execute(move |dbs| dbs_reader.get_current_frame(&dbs.bc_db_ro, &dbs.cm_db))
-            .await??
-            .into_iter()
-            .map(Into::into)
-            .collect())
+        if let Some(current_block_meta) = data
+            .cm_accessor()
+            .get_current_meta(|cm| cm.current_block_meta)
+            .await
+        {
+            Ok(data
+                .dbs_pool
+                .execute(move |dbs| {
+                    dbs_reader.get_current_frame(&dbs.bc_db_ro, &current_block_meta)
+                })
+                .await??
+                .into_iter()
+                .map(Into::into)
+                .collect())
+        } else {
+            Ok(vec![])
+        }
     }
 }
 
@@ -42,21 +52,33 @@ mod tests {
     use super::*;
     use crate::tests::*;
     use duniter_dbs::databases::bc_v2::BcV2DbRo;
-    use duniter_dbs::databases::cm_v1::CmV1Db;
     use duniter_dbs::BlockMetaV2;
 
     #[tokio::test]
     async fn query_current_frame() -> anyhow::Result<()> {
+        let mut mock_cm = MockAsyncAccessor::new();
+        mock_cm
+            .expect_get_current_meta::<BlockMetaV2>()
+            .times(1)
+            .returning(|f| {
+                Some(f(&CurrentMeta {
+                    current_block_meta: BlockMetaV2 {
+                        issuers_frame: 1,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                }))
+            });
         let mut dbs_reader = MockDbsReader::new();
         dbs_reader
-            .expect_get_current_frame::<BcV2DbRo<FileBackend>, CmV1Db<MemSingleton>>()
+            .expect_get_current_frame::<BcV2DbRo<FileBackend>>()
             .times(1)
             .returning(|_, _| {
                 Ok(vec![BlockMetaV2 {
                     ..Default::default()
                 }])
             });
-        let schema = create_schema(dbs_reader)?;
+        let schema = create_schema(mock_cm, dbs_reader)?;
         assert_eq!(
             exec_graphql_request(&schema, r#"{ currentFrame {nonce} }"#).await?,
             serde_json::json!({

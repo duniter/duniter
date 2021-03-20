@@ -22,6 +22,7 @@
     unused_import_braces
 )]
 
+mod fill_cm_db;
 mod legacy;
 
 pub use duniter_conf::{gva_conf::GvaConf, DuniterConf, DuniterMode};
@@ -118,6 +119,9 @@ impl DuniterServer {
 
         let threadpool =
             fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), shared_dbs.clone());
+
+        // Fill CmV1Db
+        fill_cm_db::fill_current_meta_db(&shared_dbs)?;
 
         if conf.gva.is_some() {
             log::info!("start duniter modules...");

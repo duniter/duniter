@@ -238,6 +238,8 @@ impl GvaModule {
         software_version: &'static str,
     ) {
         log::info!("GvaServer::start: conf={:?}", conf);
+
+        // Create BcaExecutor and GvaSchema
         let self_pubkey = self_keypair.public_key();
         duniter_bca::set_bca_executor(
             currency.clone(),
@@ -261,6 +263,7 @@ impl GvaModule {
             true,
         );
 
+        // Create warp server routes
         let graphql_post = warp_::graphql(
             &conf,
             gva_schema.clone(),
@@ -300,6 +303,7 @@ impl GvaModule {
                 ))
             });
 
+        // Start warp server
         log::info!(
             "GVA server listen on http://{}:{}/{}",
             conf.get_ip4(),

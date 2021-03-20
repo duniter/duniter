@@ -41,7 +41,7 @@ declare_types! {
 
             let gva_conf = rust_server_conf_stringified.gva;
             let currency = rust_server_conf_stringified.currency;
-            let server_pubkey = if let Some(self_keypair_str) = rust_server_conf_stringified.self_keypair {
+            let self_key_pair = if let Some(self_keypair_str) = rust_server_conf_stringified.self_keypair {
                 into_neon_res(&mut cx, crate::crypto::keypair_from_expanded_base58_secret_key(&self_keypair_str))?
             } else {
                 Ed25519KeyPair::generate_random().expect("fail to gen random keyypair")
@@ -49,7 +49,7 @@ declare_types! {
             let txs_mempool_size = rust_server_conf_stringified.txs_mempool_size as usize;
             let conf = DuniterConf {
                 gva: gva_conf,
-                self_key_pair: server_pubkey,
+                self_key_pair,
                 txs_mempool_size
             };
 

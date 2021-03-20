@@ -54,6 +54,11 @@ license-files = [
     { path = "LICENSE", hash = 0xbd0eed23 },
 ]
 
+[[licenses.exceptions]]
+allow = ["Unlicense"]
+name = "async_io_stream"
+version = "0.3.1"
+
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"

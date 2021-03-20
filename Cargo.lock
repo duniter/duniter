@@ -26,6 +26,37 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee2a4ec343196209d6594e19543ae87a39f96d5534d7174822a3ad825dd6ed7e"
 
 [[package]]
+name = "aes"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "884391ef1066acaa41e766ba8f596341b96e93ce34f9a43e7d24bf0a0eaf0561"
+dependencies = [
+ "aes-soft",
+ "aesni",
+ "cipher",
+]
+
+[[package]]
+name = "aes-soft"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be14c7498ea50828a38d0e24a765ed2effe92a705885b57d029cd67d45744072"
+dependencies = [
+ "cipher",
+ "opaque-debug 0.3.0",
+]
+
+[[package]]
+name = "aesni"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea2e11f5e94c2f7d386164cc2aa1f97823fed6f259e486940a71c174dd01b0ce"
+dependencies = [
+ "cipher",
+ "opaque-debug 0.3.0",
+]
+
+[[package]]
 name = "ahash"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -81,6 +112,21 @@ checksum = "efd3d156917d94862e779f356c5acae312b08fd3121e792c857d7928c8088423"
 dependencies = [
  "quote",
  "syn",
+]
+
+[[package]]
+name = "async-bincode"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a31c08aa335b3ab414d29bdefe1f4353408abf93f3db1e3e2cc78d3ec4f0d43"
+dependencies = [
+ "bincode",
+ "byteorder",
+ "bytes 1.0.1",
+ "futures-core",
+ "futures-sink",
+ "serde",
+ "tokio",
 ]
 
 [[package]]
@@ -300,6 +346,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "async_io_stream"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d5ad740b7193a31e80950ab7fece57c38d426fcd23a729d9d7f4cf15bb63f94"
+dependencies = [
+ "futures",
+ "rustc_version 0.3.3",
+ "tokio",
 ]
 
 [[package]]
@@ -547,7 +604,7 @@ version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4b9434b9a5aa1450faa3f9cb14ea0e8c53bb5d2b3c1bfd1ab4fc03e9f33fbfb0"
 dependencies = [
- "rustc_version",
+ "rustc_version 0.2.3",
 ]
 
 [[package]]
@@ -601,6 +658,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24f638c70e8c5753795cc9a8c07c44da91554a09e4cf11a7326e8161b0a3c45e"
 dependencies = [
  "envmnt",
+]
+
+[[package]]
+name = "cipher"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "12f8e7987cbd042a63249497f41aed09f8e65add917ea6566effbc56578d6801"
+dependencies = [
+ "generic-array 0.14.4",
 ]
 
 [[package]]
@@ -1084,6 +1150,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "duniter-bca"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-bincode",
+ "async_io_stream",
+ "bincode",
+ "dubp",
+ "duniter-bca-types",
+ "duniter-dbs",
+ "duniter-gva-db",
+ "duniter-gva-dbs-reader",
+ "duniter-mempools",
+ "fast-threadpool",
+ "futures",
+ "mockall",
+ "once_cell",
+ "smallvec",
+ "tokio",
+ "uninit",
+]
+
+[[package]]
+name = "duniter-bca-types"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "dubp",
+ "serde",
+ "smallvec",
+ "thiserror",
+]
+
+[[package]]
 name = "duniter-conf"
 version = "0.1.0"
 dependencies = [
@@ -1165,7 +1265,9 @@ dependencies = [
  "async-graphql",
  "async-mutex",
  "async-trait",
+ "bytes 1.0.1",
  "dubp",
+ "duniter-bca",
  "duniter-conf",
  "duniter-dbs",
  "duniter-gva-db",
@@ -1376,17 +1478,30 @@ version = "0.49.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0be04829b31b18bacf5317001366d807e5fbd02085ee6348508c1299b5bcaf6c"
 dependencies = [
+ "aes",
+ "arrayvec",
  "base64 0.13.0",
  "blake3",
  "bs58 0.4.0",
  "byteorder",
  "cryptoxide",
+ "ed25519-bip32",
  "getrandom 0.2.2",
+ "once_cell",
  "ring",
  "serde",
  "thiserror",
  "zerocopy",
  "zeroize",
+]
+
+[[package]]
+name = "ed25519-bip32"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8827180a2b511141fbe49141e50b31a8d542465e0fb572f81f36feea2addfe92"
+dependencies = [
+ "cryptoxide",
 ]
 
 [[package]]
@@ -2305,7 +2420,7 @@ dependencies = [
  "cslice",
  "neon-build",
  "neon-runtime",
- "semver",
+ "semver 0.9.0",
 ]
 
 [[package]]
@@ -3127,7 +3242,16 @@ version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"
 dependencies = [
- "semver",
+ "semver 0.9.0",
+]
+
+[[package]]
+name = "rustc_version"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0dfe2087c51c460008730de8b57e6a320782fbfb312e1f4d520e6c6fae155ee"
+dependencies = [
+ "semver 0.11.0",
 ]
 
 [[package]]
@@ -3181,7 +3305,16 @@ version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d7eb9ef2c18661902cc47e535f9bc51b78acd254da71d375c2f6720d9a40403"
 dependencies = [
- "semver-parser",
+ "semver-parser 0.7.0",
+]
+
+[[package]]
+name = "semver"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f301af10236f6df4160f7c3f04eec6dbc70ace82d23326abad5edee88801c6b6"
+dependencies = [
+ "semver-parser 0.10.2",
 ]
 
 [[package]]
@@ -3189,6 +3322,15 @@ name = "semver-parser"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
+
+[[package]]
+name = "semver-parser"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "00b0bef5b7f9e0df16536d3961cfb6e84331c065b4066afb39768d0e319411f7"
+dependencies = [
+ "pest",
+]
 
 [[package]]
 name = "serde"
@@ -3513,7 +3655,7 @@ version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6611ecf7fedefdb0f74d6194da1918f15c00ef97ae4bbd1f60a9c7ca2ae0eb14"
 dependencies = [
- "rustc_version",
+ "rustc_version 0.2.3",
  "terminal_size",
 ]
 

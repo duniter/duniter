@@ -142,7 +142,7 @@ mod tests {
             .times(1)
             .returning(|_, _| Ok(Some(BlockMetaV2::default())));
         dbs_reader
-            .expect_find_inputs::<BcV2DbRo<FileBackend>, TxsMpV2Db<FileBackend>>()
+            .expect_find_inputs::<TxsMpV2Db<FileBackend>>()
             .times(1)
             .returning(|_, _, _, _, _| Ok((vec![], SourceAmount::default())));
         let bca_executor = create_bca_executor(dbs_reader).expect("fail to create bca executor");
@@ -182,7 +182,7 @@ mod tests {
             .times(1)
             .returning(|_, _| Ok(Some(BlockMetaV2::default())));
         dbs_reader
-            .expect_find_inputs::<BcV2DbRo<FileBackend>, TxsMpV2Db<FileBackend>>()
+            .expect_find_inputs::<TxsMpV2Db<FileBackend>>()
             .times(1)
             .returning(move |_, _, _, _, _| Ok((vec![input], SourceAmount::with_base0(57))));
         let bca_executor = create_bca_executor(dbs_reader).expect("fail to create bca executor");

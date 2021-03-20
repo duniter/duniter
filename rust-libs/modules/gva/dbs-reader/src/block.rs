@@ -35,8 +35,8 @@ impl FromStr for BlockCursor {
     }
 }
 
-impl DbsReader {
-    pub fn block(
+impl DbsReaderImpl {
+    pub(super) fn block_(
         &self,
         bc_db: &BcV2DbRo<FileBackend>,
         number: U32BE,
@@ -44,7 +44,7 @@ impl DbsReader {
         bc_db.blocks_meta().get(&number)
     }
 
-    pub fn blocks(
+    pub(super) fn blocks_(
         &self,
         bc_db: &BcV2DbRo<FileBackend>,
         page_info: PageInfo<BlockCursor>,
@@ -151,15 +151,13 @@ where
 mod tests {
     use super::*;
     use duniter_dbs::databases::bc_v2::BcV2DbWritable;
-    use duniter_gva_db::GvaV1DbWritable;
     use std::num::NonZeroUsize;
 
     #[test]
     fn test_block() -> KvResult<()> {
         let bc_db = duniter_dbs::databases::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?;
-        let gva_db = duniter_gva_db::GvaV1Db::<Mem>::open(MemConf::default())?;
         let bc_db_ro = bc_db.get_ro_handler();
-        let db_reader = create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) });
+        let db_reader = DbsReaderImpl::mem();
 
         bc_db
             .blocks_meta_write()
@@ -176,9 +174,8 @@ mod tests {
     #[test]
     fn test_blocks() -> KvResult<()> {
         let bc_db = duniter_dbs::databases::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?;
-        let gva_db = duniter_gva_db::GvaV1Db::<Mem>::open(MemConf::default())?;
         let bc_db_ro = bc_db.get_ro_handler();
-        let db_reader = create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) });
+        let db_reader = DbsReaderImpl::mem();
 
         for i in 0..20 {
             bc_db.blocks_meta_write().upsert(

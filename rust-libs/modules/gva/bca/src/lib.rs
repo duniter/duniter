@@ -37,22 +37,23 @@ use duniter_bca_types::{
 };
 pub use duniter_dbs::kv_typed::prelude::*;
 use duniter_dbs::{FileBackend, SharedDbs};
+use duniter_gva_dbs_reader::DbsReader;
 use futures::{prelude::stream::FuturesUnordered, StreamExt, TryStream, TryStreamExt};
 use once_cell::sync::OnceCell;
 use smallvec::SmallVec;
 use tokio::task::JoinError;
 
 #[cfg(test)]
-use crate::tests::DbsReader;
+use crate::tests::DbsReaderImpl;
 #[cfg(not(test))]
-use duniter_gva_dbs_reader::DbsReader;
+use duniter_gva_dbs_reader::DbsReaderImpl;
 
 static BCA_EXECUTOR: OnceCell<BcaExecutor> = OnceCell::new();
 
 pub fn set_bca_executor(
     currency: String,
     dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
-    dbs_reader: DbsReader,
+    dbs_reader: DbsReaderImpl,
     self_keypair: Ed25519KeyPair,
     software_version: &'static str,
     txs_mempool: duniter_mempools::TxsMempool,
@@ -87,7 +88,7 @@ where
 struct BcaExecutor {
     currency: String,
     dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
-    dbs_reader: DbsReader,
+    dbs_reader: DbsReaderImpl,
     self_keypair: Ed25519KeyPair,
     software_version: &'static str,
     txs_mempool: duniter_mempools::TxsMempool,
@@ -202,7 +203,7 @@ impl BcaExecutor {
 #[cfg(not(test))]
 impl BcaExecutor {
     #[inline(always)]
-    pub fn dbs_reader(&self) -> DbsReader {
+    pub fn dbs_reader(&self) -> DbsReaderImpl {
         self.dbs_reader
     }
 }
@@ -224,35 +225,14 @@ mod tests {
     pub use duniter_dbs::databases::cm_v1::{CmV1Db, CmV1DbReadable};
     pub use duniter_dbs::databases::txs_mp_v2::{TxsMpV2Db, TxsMpV2DbReadable};
     pub use duniter_dbs::BlockMetaV2;
+    pub use duniter_gva_dbs_reader::MockDbsReader;
     pub use futures::TryStreamExt;
 
-    mockall::mock! {
-        pub DbsReader {
-            fn block(&self, bc_db: &BcV2DbRo<FileBackend>, number: U32BE) -> KvResult<Option<BlockMetaV2>>;
-            fn find_inputs<BcDb: 'static + BcV2DbReadable, TxsMpDb: 'static + TxsMpV2DbReadable>(
-                &self,
-                bc_db: &BcDb,
-                txs_mp_db: &TxsMpDb,
-                amount: SourceAmount,
-                script: &WalletScriptV10,
-                use_mempool_sources: bool,
-            ) -> anyhow::Result<(Vec<TransactionInputV10>, SourceAmount)>;
-            fn get_current_block<CmDb: 'static + CmV1DbReadable>(
-                &self,
-                cm_db: &CmDb,
-            ) -> KvResult<Option<DubpBlockV10>>;
-            fn get_current_block_meta<CmDb: 'static + CmV1DbReadable>(
-                &self,
-                cm_db: &CmDb,
-            ) -> KvResult<Option<BlockMetaV2>>;
-        }
-    }
-
-    pub type DbsReader = duniter_dbs::kv_typed::prelude::Arc<MockDbsReader>;
+    pub type DbsReaderImpl = duniter_dbs::kv_typed::prelude::Arc<MockDbsReader>;
 
     impl BcaExecutor {
         #[inline(always)]
-        pub fn dbs_reader(&self) -> DbsReader {
+        pub fn dbs_reader(&self) -> DbsReaderImpl {
             self.dbs_reader.clone()
         }
     }

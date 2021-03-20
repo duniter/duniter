@@ -48,7 +48,7 @@ use crate::inputs_validators::TxCommentValidator;
 use crate::pagination::Pagination;
 use crate::scalars::{PkOrScriptGva, PubKeyGva};
 #[cfg(test)]
-use crate::tests::DbsReader;
+use crate::tests::DbsReaderImpl;
 use async_graphql::connection::{Connection, Edge, EmptyFields};
 use async_graphql::validators::{IntGreaterThan, IntRange, ListMaxLength, ListMinLength};
 use dubp::common::crypto::keys::{ed25519::PublicKey, PublicKey as _};
@@ -62,8 +62,9 @@ use duniter_dbs::databases::txs_mp_v2::TxsMpV2DbReadable;
 use duniter_dbs::prelude::*;
 use duniter_dbs::{kv_typed::prelude::*, FileBackend};
 use duniter_gva_dbs_reader::pagination::PageInfo;
-#[cfg(not(test))]
 use duniter_gva_dbs_reader::DbsReader;
+#[cfg(not(test))]
+use duniter_gva_dbs_reader::DbsReaderImpl;
 use duniter_mempools::TxsMempool;
 use futures::{Stream, StreamExt};
 use resiter::map::Map;
@@ -83,102 +84,12 @@ pub struct ServerMetaData {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use dubp::{block::DubpBlockV10, documents::transaction::TransactionInputV10};
-    use duniter_dbs::{
-        databases::{bc_v2::*, cm_v1::CmV1DbReadable},
-        BlockMetaV2, IdtyDbV2, SourceAmountValV2,
-    };
-    use duniter_gva_dbs_reader::pagination::*;
-    use fast_threadpool::ThreadPoolConfig;
-    use std::collections::VecDeque;
+    pub use duniter_gva_dbs_reader::MockDbsReader;
 
-    mockall::mock! {
-        pub DbsReader {
-            fn all_uds_of_pubkey(
-                &self,
-                bc_db: &BcV2DbRo<FileBackend>,
-                pubkey: PublicKey,
-                page_info: PageInfo<BlockNumber>,
-            ) -> KvResult<PagedData<duniter_gva_dbs_reader::uds_of_pubkey::UdsWithSum>>;
-            fn block(&self, bc_db: &BcV2DbRo<FileBackend>, number: U32BE) -> KvResult<Option<BlockMetaV2>>;
-            fn blocks(&self, bc_db: &BcV2DbRo<FileBackend>, page_info: PageInfo<duniter_gva_dbs_reader::block::BlockCursor>) -> KvResult<PagedData<Vec<(duniter_gva_dbs_reader::block::BlockCursor, BlockMetaV2)>>>;
-            fn find_inputs<BcDb: 'static + BcV2DbReadable, TxsMpDb: 'static + TxsMpV2DbReadable>(
-                &self,
-                bc_db: &BcDb,
-                txs_mp_db: &TxsMpDb,
-                amount: SourceAmount,
-                script: &WalletScriptV10,
-                use_mempool_sources: bool,
-            ) -> anyhow::Result<(Vec<TransactionInputV10>, SourceAmount)>;
-            fn find_script_utxos<TxsMpDb: 'static + TxsMpV2DbReadable>(
-                &self,
-                txs_mp_db_ro: &TxsMpDb,
-                amount_target_opt: Option<SourceAmount>,
-                page_info: PageInfo<duniter_gva_dbs_reader::utxos::UtxoCursor>,
-                script: &WalletScriptV10,
-            ) -> anyhow::Result<PagedData<duniter_gva_dbs_reader::utxos::UtxosWithSum>>;
-            fn first_scripts_utxos(
-                &self,
-                first: usize,
-                scripts: &[WalletScriptV10],
-            ) -> anyhow::Result<Vec<arrayvec::ArrayVec<[duniter_gva_dbs_reader::utxos::Utxo; duniter_gva_dbs_reader::utxos::MAX_FIRST_UTXOS]>>>;
-            fn get_account_balance(
-                &self,
-                account_script: &WalletScriptV10,
-            ) -> KvResult<Option<SourceAmountValV2>>;
-            fn get_blockchain_time(
-                &self,
-                block_number: BlockNumber,
-            ) -> anyhow::Result<u64>;
-            fn get_current_block<CmDb: 'static + CmV1DbReadable>(
-                &self,
-                cm_db: &CmDb,
-            ) -> KvResult<Option<DubpBlockV10>>;
-            fn get_current_block_meta<CmDb: 'static + CmV1DbReadable>(
-                &self,
-                cm_db: &CmDb,
-            ) -> KvResult<Option<BlockMetaV2>>;
-            fn get_current_frame<BcDb: 'static + BcV2DbReadable, CmDb: 'static + CmV1DbReadable>(
-                &self,
-                bc_db: &BcDb,
-                cm_db: &CmDb,
-            ) -> anyhow::Result<Vec<duniter_dbs::BlockMetaV2>>;
-            fn get_current_ud<BcDb: 'static + BcV2DbReadable>(
-                &self,
-                bc_db: &BcDb,
-            ) -> KvResult<Option<SourceAmount>>;
-            fn get_txs_history_bc_received(
-                &self,
-                from: Option<u64>,
-                page_info: PageInfo<duniter_gva_dbs_reader::txs_history::TxBcCursor>,
-                script_hash: Hash,
-                to: Option<u64>,
-            ) -> KvResult<PagedData<VecDeque<duniter_gva_db::GvaTxDbV1>>>;
-            fn get_txs_history_bc_sent(
-                &self,
-                from: Option<u64>,
-                page_info: PageInfo<duniter_gva_dbs_reader::txs_history::TxBcCursor>,
-                script_hash: Hash,
-                to: Option<u64>,
-            ) -> KvResult<PagedData<VecDeque<duniter_gva_db::GvaTxDbV1>>>;
-            fn get_txs_history_mempool<TxsMpDb: 'static + TxsMpV2DbReadable>(
-                &self,
-                txs_mp_db_ro: &TxsMpDb,
-                pubkey: PublicKey,
-            ) -> KvResult<(Vec<TransactionDocumentV10>, Vec<TransactionDocumentV10>)>;
-            fn idty(&self, bc_db: &BcV2DbRo<FileBackend>, pubkey: PublicKey) -> KvResult<Option<IdtyDbV2>>;
-            fn unspent_uds_of_pubkey<BcDb: 'static + BcV2DbReadable>(
-                &self,
-                bc_db: &BcDb,
-                pubkey: PublicKey,
-                page_info: PageInfo<BlockNumber>,
-                bn_to_exclude_opt: Option<&'static std::collections::BTreeSet<BlockNumber>>,
-                amount_target_opt: Option<SourceAmount>,
-            ) -> KvResult<PagedData<duniter_gva_dbs_reader::uds_of_pubkey::UdsWithSum>>;
-        }
-    }
-    pub type DbsReader = duniter_dbs::kv_typed::prelude::Arc<MockDbsReader>;
+    use super::*;
+    use fast_threadpool::ThreadPoolConfig;
+
+    pub type DbsReaderImpl = duniter_dbs::kv_typed::prelude::Arc<MockDbsReader>;
 
     pub(crate) fn create_schema(dbs_ops: MockDbsReader) -> KvResult<GvaSchema> {
         let dbs = SharedDbs::mem()?;

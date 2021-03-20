@@ -46,8 +46,8 @@ impl FromStr for TxBcCursor {
     }
 }
 
-impl DbsReader {
-    pub fn get_txs_history_bc_received(
+impl DbsReaderImpl {
+    pub(super) fn get_txs_history_bc_received_(
         &self,
         from: Option<u64>,
         page_info: PageInfo<TxBcCursor>,
@@ -192,7 +192,7 @@ impl DbsReader {
             )
         }
     }
-    pub fn get_txs_history_bc_sent(
+    pub(super) fn get_txs_history_bc_sent_(
         &self,
         from: Option<u64>,
         page_info: PageInfo<TxBcCursor>,
@@ -337,7 +337,7 @@ impl DbsReader {
             )
         }
     }
-    pub fn get_txs_history_mempool<TxsMpDb: TxsMpV2DbReadable>(
+    pub(super) fn get_txs_history_mempool_<TxsMpDb: 'static + TxsMpV2DbReadable>(
         &self,
         txs_mp_db_ro: &TxsMpDb,
         pubkey: PublicKey,
@@ -371,7 +371,7 @@ impl DbsReader {
 }
 
 fn txs_history_bc_collect<I: Iterator<Item = KvResult<GvaTxDbV1>>>(
-    dbs_reader: DbsReader,
+    dbs_reader: DbsReaderImpl,
     first_cursor_opt: Option<TxBcCursor>,
     first_hashs_opt: Option<SmallVec<[Hash; 8]>>,
     last_cursor_opt: Option<TxBcCursor>,

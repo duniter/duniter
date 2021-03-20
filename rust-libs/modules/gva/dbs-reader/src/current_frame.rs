@@ -17,8 +17,11 @@ use duniter_dbs::BlockMetaV2;
 
 use crate::*;
 
-impl DbsReader {
-    pub fn get_current_frame<BcDb: BcV2DbReadable, CmDb: CmV1DbReadable>(
+impl DbsReaderImpl {
+    pub(super) fn get_current_frame_<
+        BcDb: 'static + BcV2DbReadable,
+        CmDb: 'static + CmV1DbReadable,
+    >(
         &self,
         bc_db: &BcDb,
         cm_db: &CmDb,

@@ -73,8 +73,8 @@ pub struct UtxosWithSum {
     pub sum: SourceAmount,
 }
 
-impl DbsReader {
-    pub fn find_script_utxos<TxsMpDb: TxsMpV2DbReadable>(
+impl DbsReaderImpl {
+    pub(super) fn find_script_utxos_<TxsMpDb: 'static + TxsMpV2DbReadable>(
         &self,
         txs_mp_db_ro: &TxsMpDb,
         amount_target_opt: Option<SourceAmount>,
@@ -178,7 +178,7 @@ impl DbsReader {
             data: UtxosWithSum { utxos, sum },
         })
     }
-    pub fn first_scripts_utxos(
+    pub(super) fn first_scripts_utxos_(
         &self,
         first: usize,
         scripts: &[WalletScriptV10],

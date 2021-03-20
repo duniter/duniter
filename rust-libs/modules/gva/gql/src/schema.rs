@@ -46,7 +46,7 @@ pub fn build_schema_with_data(data: GvaSchemaData, logger: bool) -> GvaSchema {
 
 pub struct GvaSchemaData {
     pub dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
-    pub dbs_reader: DbsReader,
+    pub dbs_reader: DbsReaderImpl,
     pub server_meta_data: ServerMetaData,
     pub txs_mempool: TxsMempool,
 }
@@ -54,13 +54,13 @@ pub struct GvaSchemaData {
 #[cfg(not(test))]
 impl GvaSchemaData {
     #[inline(always)]
-    pub fn dbs_reader(&self) -> DbsReader {
+    pub fn dbs_reader(&self) -> DbsReaderImpl {
         self.dbs_reader
     }
 }
 #[cfg(test)]
 impl GvaSchemaData {
-    pub fn dbs_reader(&self) -> DbsReader {
+    pub fn dbs_reader(&self) -> DbsReaderImpl {
         self.dbs_reader.clone()
     }
 }

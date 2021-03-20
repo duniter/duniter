@@ -22,10 +22,10 @@ use dubp::{documents::transaction::TransactionInputV10, wallet::prelude::*};
 
 pub(super) const MIN_AMOUNT: i64 = 100;
 
-impl DbsReader {
-    pub fn find_inputs<BcDb: BcV2DbReadable, TxsMpDb: TxsMpV2DbReadable>(
+impl DbsReaderImpl {
+    pub(super) fn find_inputs_<TxsMpDb: 'static + TxsMpV2DbReadable>(
         &self,
-        bc_db: &BcDb,
+        bc_db: &BcV2DbRo<FileBackend>,
         txs_mp_db: &TxsMpDb,
         amount: SourceAmount,
         script: &WalletScriptV10,
@@ -81,7 +81,7 @@ impl DbsReader {
                     bc_db,
                     issuer,
                     PageInfo::default(),
-                    Some(&pending_uds_bn),
+                    Some(pending_uds_bn),
                     Some(amount - inputs_sum),
                 )?;
                 inputs.extend(uds.into_iter().map(|(block_number, source_amount)| {
@@ -149,6 +149,7 @@ mod tests {
     #[test]
     fn test_find_inputs() -> anyhow::Result<()> {
         let bc_db = duniter_dbs::databases::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?;
+        let bc_db_ro = bc_db.get_ro_handler();
         let gva_db = duniter_gva_db::GvaV1Db::<Mem>::open(MemConf::default())?;
         let db_reader = create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) });
         let txs_mp_db =
@@ -191,7 +192,7 @@ mod tests {
 
         // Gen tx1
         let (inputs, inputs_sum) = db_reader.find_inputs(
-            &bc_db,
+            &bc_db_ro,
             &txs_mp_db,
             SourceAmount::with_base0(550),
             &script,
@@ -210,7 +211,7 @@ mod tests {
 
         // Gen tx2
         let (inputs, inputs_sum) = db_reader.find_inputs(
-            &bc_db,
+            &bc_db_ro,
             &txs_mp_db,
             SourceAmount::with_base0(550),
             &script,
@@ -226,7 +227,7 @@ mod tests {
 
         // Gen tx3 (use pending utxo)
         let (inputs, inputs_sum) = db_reader.find_inputs(
-            &bc_db,
+            &bc_db_ro,
             &txs_mp_db,
             SourceAmount::with_base0(750),
             &script,

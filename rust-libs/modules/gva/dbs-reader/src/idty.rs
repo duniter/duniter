@@ -15,8 +15,8 @@
 
 use crate::*;
 
-impl DbsReader {
-    pub fn idty(
+impl DbsReaderImpl {
+    pub(super) fn idty_(
         &self,
         bc_db: &BcV2DbRo<FileBackend>,
         pubkey: PublicKey,
@@ -32,15 +32,12 @@ impl DbsReader {
 mod tests {
     use super::*;
     use duniter_dbs::databases::bc_v2::BcV2DbWritable;
-    use duniter_gva_db::GvaV1DbWritable;
 
     #[test]
     fn test_idty() -> KvResult<()> {
         let bc_db = duniter_dbs::databases::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?;
-        let gva_db = duniter_gva_db::GvaV1Db::<Mem>::open(MemConf::default())?;
         let bc_db_ro = bc_db.get_ro_handler();
-        let db_reader = create_dbs_reader(unsafe { std::mem::transmute(&gva_db.get_ro_handler()) });
-
+        let db_reader = DbsReaderImpl::mem();
         let pk = PublicKey::default();
 
         bc_db

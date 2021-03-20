@@ -26,8 +26,8 @@ pub struct UdsWithSum {
     pub sum: SourceAmount,
 }
 
-impl DbsReader {
-    pub fn all_uds_of_pubkey(
+impl DbsReaderImpl {
+    pub(super) fn all_uds_of_pubkey_(
         &self,
         bc_db: &BcV2DbRo<FileBackend>,
         pubkey: PublicKey,
@@ -98,9 +98,9 @@ impl DbsReader {
             })
     }
 
-    pub fn unspent_uds_of_pubkey<BcDb: BcV2DbReadable>(
+    pub(super) fn unspent_uds_of_pubkey_(
         &self,
-        bc_db: &BcDb,
+        bc_db: &BcV2DbRo<FileBackend>,
         pubkey: PublicKey,
         page_info: PageInfo<BlockNumber>,
         bn_to_exclude_opt: Option<&BTreeSet<BlockNumber>>,
@@ -702,7 +702,8 @@ mod tests {
     fn test_unspent_uds_of_pubkey() -> KvResult<()> {
         let pk = PublicKey::default();
         let bc_db = duniter_dbs::databases::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?;
-        let dbs_reader = DbsReader::mem();
+        let bc_db_ro = bc_db.get_ro_handler();
+        let dbs_reader = DbsReaderImpl::mem();
 
         bc_db
             .uds_reval_write()
@@ -724,7 +725,7 @@ mod tests {
             data: UdsWithSum { uds, sum },
             has_previous_page,
             has_next_page,
-        } = dbs_reader.unspent_uds_of_pubkey(&bc_db, pk, PageInfo::default(), None, None)?;
+        } = dbs_reader.unspent_uds_of_pubkey(&bc_db_ro, pk, PageInfo::default(), None, None)?;
         assert_eq!(uds.len(), 7);
         assert_eq!(
             uds.first(),
@@ -744,7 +745,7 @@ mod tests {
             has_previous_page,
             has_next_page,
         } = dbs_reader.unspent_uds_of_pubkey(
-            &bc_db,
+            &bc_db_ro,
             pk,
             PageInfo {
                 pos: Some(BlockNumber(30)),
@@ -772,7 +773,7 @@ mod tests {
             has_previous_page,
             has_next_page,
         } = dbs_reader.unspent_uds_of_pubkey(
-            &bc_db,
+            &bc_db_ro,
             pk,
             PageInfo {
                 order: false,
@@ -800,7 +801,7 @@ mod tests {
             has_previous_page,
             has_next_page,
         } = dbs_reader.unspent_uds_of_pubkey(
-            &bc_db,
+            &bc_db_ro,
             pk,
             PageInfo {
                 pos: Some(BlockNumber(40)),

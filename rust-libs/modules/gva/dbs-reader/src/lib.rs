@@ -69,15 +69,161 @@ impl std::fmt::Display for WrongCursor {
 }
 impl std::error::Error for WrongCursor {}
 
-#[derive(Clone, Copy, Debug)]
-pub struct DbsReader(&'static GvaV1DbRo<FileBackend>);
-
-pub fn create_dbs_reader(gva_db_ro: &'static GvaV1DbRo<FileBackend>) -> DbsReader {
-    DbsReader(gva_db_ro)
+#[cfg_attr(feature = "mock", mockall::automock)]
+pub trait DbsReader {
+    fn all_uds_of_pubkey(
+        &self,
+        bc_db: &BcV2DbRo<FileBackend>,
+        pubkey: PublicKey,
+        page_info: PageInfo<BlockNumber>,
+    ) -> KvResult<PagedData<uds_of_pubkey::UdsWithSum>>;
+    fn block(&self, bc_db: &BcV2DbRo<FileBackend>, number: U32BE) -> KvResult<Option<BlockMetaV2>>;
+    fn blocks(
+        &self,
+        bc_db: &BcV2DbRo<FileBackend>,
+        page_info: PageInfo<block::BlockCursor>,
+    ) -> KvResult<PagedData<Vec<(block::BlockCursor, BlockMetaV2)>>>;
+    fn find_inputs<TxsMpDb: 'static + TxsMpV2DbReadable>(
+        &self,
+        bc_db: &BcV2DbRo<FileBackend>,
+        txs_mp_db: &TxsMpDb,
+        amount: SourceAmount,
+        script: &WalletScriptV10,
+        use_mempool_sources: bool,
+    ) -> anyhow::Result<(
+        Vec<dubp::documents::transaction::TransactionInputV10>,
+        SourceAmount,
+    )>;
+    fn find_script_utxos<TxsMpDb: 'static + TxsMpV2DbReadable>(
+        &self,
+        txs_mp_db_ro: &TxsMpDb,
+        amount_target_opt: Option<SourceAmount>,
+        page_info: PageInfo<utxos::UtxoCursor>,
+        script: &WalletScriptV10,
+    ) -> anyhow::Result<PagedData<utxos::UtxosWithSum>>;
+    fn first_scripts_utxos(
+        &self,
+        first: usize,
+        scripts: &[WalletScriptV10],
+    ) -> anyhow::Result<Vec<arrayvec::ArrayVec<[utxos::Utxo; utxos::MAX_FIRST_UTXOS]>>>;
+    fn get_account_balance(
+        &self,
+        account_script: &WalletScriptV10,
+    ) -> KvResult<Option<SourceAmountValV2>>;
+    fn get_blockchain_time(&self, block_number: BlockNumber) -> anyhow::Result<u64>;
+    fn get_current_block<CmDb: 'static + CmV1DbReadable>(
+        &self,
+        cm_db: &CmDb,
+    ) -> KvResult<Option<DubpBlockV10>>;
+    fn get_current_block_meta<CmDb: 'static + CmV1DbReadable>(
+        &self,
+        cm_db: &CmDb,
+    ) -> KvResult<Option<BlockMetaV2>>;
+    fn get_current_frame<BcDb: 'static + BcV2DbReadable, CmDb: 'static + CmV1DbReadable>(
+        &self,
+        bc_db: &BcDb,
+        cm_db: &CmDb,
+    ) -> anyhow::Result<Vec<duniter_dbs::BlockMetaV2>>;
+    fn get_current_ud<BcDb: 'static + BcV2DbReadable>(
+        &self,
+        bc_db: &BcDb,
+    ) -> KvResult<Option<SourceAmount>>;
+    fn get_txs_history_bc_received(
+        &self,
+        from: Option<u64>,
+        page_info: PageInfo<txs_history::TxBcCursor>,
+        script_hash: Hash,
+        to: Option<u64>,
+    ) -> KvResult<PagedData<VecDeque<duniter_gva_db::GvaTxDbV1>>>;
+    fn get_txs_history_bc_sent(
+        &self,
+        from: Option<u64>,
+        page_info: PageInfo<txs_history::TxBcCursor>,
+        script_hash: Hash,
+        to: Option<u64>,
+    ) -> KvResult<PagedData<VecDeque<duniter_gva_db::GvaTxDbV1>>>;
+    fn get_txs_history_mempool<TxsMpDb: 'static + TxsMpV2DbReadable>(
+        &self,
+        txs_mp_db_ro: &TxsMpDb,
+        pubkey: PublicKey,
+    ) -> KvResult<(Vec<TransactionDocumentV10>, Vec<TransactionDocumentV10>)>;
+    fn idty(
+        &self,
+        bc_db: &BcV2DbRo<FileBackend>,
+        pubkey: PublicKey,
+    ) -> KvResult<Option<duniter_dbs::IdtyDbV2>>;
+    fn unspent_uds_of_pubkey(
+        &self,
+        bc_db: &BcV2DbRo<FileBackend>,
+        pubkey: PublicKey,
+        page_info: PageInfo<BlockNumber>,
+        bn_to_exclude_opt: Option<std::collections::BTreeSet<BlockNumber>>,
+        amount_target_opt: Option<SourceAmount>,
+    ) -> KvResult<PagedData<uds_of_pubkey::UdsWithSum>>;
 }
 
-impl DbsReader {
-    pub fn get_account_balance(
+#[derive(Clone, Copy, Debug)]
+pub struct DbsReaderImpl(&'static GvaV1DbRo<FileBackend>);
+
+pub fn create_dbs_reader(gva_db_ro: &'static GvaV1DbRo<FileBackend>) -> DbsReaderImpl {
+    DbsReaderImpl(gva_db_ro)
+}
+
+impl DbsReader for DbsReaderImpl {
+    fn all_uds_of_pubkey(
+        &self,
+        bc_db: &BcV2DbRo<FileBackend>,
+        pubkey: PublicKey,
+        page_info: PageInfo<BlockNumber>,
+    ) -> KvResult<PagedData<uds_of_pubkey::UdsWithSum>> {
+        self.all_uds_of_pubkey_(bc_db, pubkey, page_info)
+    }
+
+    fn block(&self, bc_db: &BcV2DbRo<FileBackend>, number: U32BE) -> KvResult<Option<BlockMetaV2>> {
+        self.block_(bc_db, number)
+    }
+
+    fn blocks(
+        &self,
+        bc_db: &BcV2DbRo<FileBackend>,
+        page_info: PageInfo<block::BlockCursor>,
+    ) -> KvResult<PagedData<Vec<(block::BlockCursor, BlockMetaV2)>>> {
+        self.blocks_(bc_db, page_info)
+    }
+
+    fn find_inputs<TxsMpDb: 'static + TxsMpV2DbReadable>(
+        &self,
+        bc_db: &BcV2DbRo<FileBackend>,
+        txs_mp_db: &TxsMpDb,
+        amount: SourceAmount,
+        script: &WalletScriptV10,
+        use_mempool_sources: bool,
+    ) -> anyhow::Result<(
+        Vec<dubp::documents::transaction::TransactionInputV10>,
+        SourceAmount,
+    )> {
+        self.find_inputs_(bc_db, txs_mp_db, amount, script, use_mempool_sources)
+    }
+
+    fn find_script_utxos<TxsMpDb: 'static + TxsMpV2DbReadable>(
+        &self,
+        txs_mp_db_ro: &TxsMpDb,
+        amount_target_opt: Option<SourceAmount>,
+        page_info: PageInfo<utxos::UtxoCursor>,
+        script: &WalletScriptV10,
+    ) -> anyhow::Result<PagedData<utxos::UtxosWithSum>> {
+        self.find_script_utxos_(txs_mp_db_ro, amount_target_opt, page_info, script)
+    }
+
+    fn first_scripts_utxos(
+        &self,
+        first: usize,
+        scripts: &[WalletScriptV10],
+    ) -> anyhow::Result<Vec<ArrayVec<[utxos::Utxo; utxos::MAX_FIRST_UTXOS]>>> {
+        self.first_scripts_utxos_(first, scripts)
+    }
+
+    fn get_account_balance(
         &self,
         account_script: &WalletScriptV10,
     ) -> KvResult<Option<SourceAmountValV2>> {
@@ -86,40 +232,98 @@ impl DbsReader {
             .get(duniter_dbs::WalletConditionsV2::from_ref(account_script))
     }
 
-    pub fn get_current_block<CmDb: CmV1DbReadable>(
-        &self,
-        cm_db: &CmDb,
-    ) -> KvResult<Option<DubpBlockV10>> {
-        Ok(cm_db.current_block().get(&())?.map(|db_block| db_block.0))
-    }
-
-    pub fn get_current_block_meta<CmDb: CmV1DbReadable>(
-        &self,
-        cm_db: &CmDb,
-    ) -> KvResult<Option<BlockMetaV2>> {
-        cm_db.current_block_meta().get(&())
-    }
-
-    pub fn get_current_ud<BcDb: BcV2DbReadable>(
-        &self,
-        bc_db: &BcDb,
-    ) -> KvResult<Option<SourceAmount>> {
-        bc_db
-            .uds_reval()
-            .iter_rev(.., |it| it.values().map_ok(|v| v.0).next_res())
-    }
-
-    pub fn get_blockchain_time(&self, block_number: BlockNumber) -> anyhow::Result<u64> {
+    fn get_blockchain_time(&self, block_number: BlockNumber) -> anyhow::Result<u64> {
         Ok(self
             .0
             .blockchain_time()
             .get(&U32BE(block_number.0))?
             .unwrap_or_else(|| unreachable!()))
     }
+
+    fn get_current_block<CmDb: CmV1DbReadable>(
+        &self,
+        cm_db: &CmDb,
+    ) -> KvResult<Option<DubpBlockV10>> {
+        Ok(cm_db.current_block().get(&())?.map(|db_block| db_block.0))
+    }
+
+    fn get_current_block_meta<CmDb: CmV1DbReadable>(
+        &self,
+        cm_db: &CmDb,
+    ) -> KvResult<Option<BlockMetaV2>> {
+        cm_db.current_block_meta().get(&())
+    }
+
+    fn get_current_frame<BcDb: 'static + BcV2DbReadable, CmDb: 'static + CmV1DbReadable>(
+        &self,
+        bc_db: &BcDb,
+        cm_db: &CmDb,
+    ) -> anyhow::Result<Vec<BlockMetaV2>> {
+        self.get_current_frame_(bc_db, cm_db)
+    }
+
+    fn get_current_ud<BcDb: BcV2DbReadable>(&self, bc_db: &BcDb) -> KvResult<Option<SourceAmount>> {
+        bc_db
+            .uds_reval()
+            .iter_rev(.., |it| it.values().map_ok(|v| v.0).next_res())
+    }
+
+    fn get_txs_history_bc_received(
+        &self,
+        from: Option<u64>,
+        page_info: PageInfo<txs_history::TxBcCursor>,
+        script_hash: Hash,
+        to: Option<u64>,
+    ) -> KvResult<PagedData<VecDeque<GvaTxDbV1>>> {
+        self.get_txs_history_bc_received_(from, page_info, script_hash, to)
+    }
+
+    fn get_txs_history_bc_sent(
+        &self,
+        from: Option<u64>,
+        page_info: PageInfo<txs_history::TxBcCursor>,
+        script_hash: Hash,
+        to: Option<u64>,
+    ) -> KvResult<PagedData<VecDeque<GvaTxDbV1>>> {
+        self.get_txs_history_bc_sent_(from, page_info, script_hash, to)
+    }
+
+    fn get_txs_history_mempool<TxsMpDb: 'static + TxsMpV2DbReadable>(
+        &self,
+        txs_mp_db_ro: &TxsMpDb,
+        pubkey: PublicKey,
+    ) -> KvResult<(Vec<TransactionDocumentV10>, Vec<TransactionDocumentV10>)> {
+        self.get_txs_history_mempool_(txs_mp_db_ro, pubkey)
+    }
+
+    fn idty(
+        &self,
+        bc_db: &BcV2DbRo<FileBackend>,
+        pubkey: PublicKey,
+    ) -> KvResult<Option<duniter_dbs::IdtyDbV2>> {
+        self.idty_(bc_db, pubkey)
+    }
+
+    fn unspent_uds_of_pubkey(
+        &self,
+        bc_db: &BcV2DbRo<FileBackend>,
+        pubkey: PublicKey,
+        page_info: PageInfo<BlockNumber>,
+        bn_to_exclude_opt: Option<BTreeSet<BlockNumber>>,
+        amount_target_opt: Option<SourceAmount>,
+    ) -> KvResult<PagedData<uds_of_pubkey::UdsWithSum>> {
+        self.unspent_uds_of_pubkey_(
+            bc_db,
+            pubkey,
+            page_info,
+            bn_to_exclude_opt.as_ref(),
+            amount_target_opt,
+        )
+    }
 }
 
 #[cfg(test)]
-impl DbsReader {
+impl DbsReaderImpl {
     pub(crate) fn mem() -> Self {
         use duniter_gva_db::GvaV1DbWritable;
         let gva_db = duniter_gva_db::GvaV1Db::<Mem>::open(MemConf::default())

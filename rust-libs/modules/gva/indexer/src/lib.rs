@@ -243,6 +243,7 @@ mod tests {
         documents::transaction::TransactionDocumentV10Stringified,
         documents_parser::prelude::FromStringObject,
     };
+
     #[test]
     fn test_gva_apply_block() -> anyhow::Result<()> {
         let gva_db = GvaV1Db::<Mem>::open(MemConf::default())?;
@@ -412,6 +413,7 @@ mod tests {
 
         Ok(())
     }
+
     #[test]
     fn test_gva_revert_block() -> anyhow::Result<()> {
         let gva_db = GvaV1Db::<Mem>::open(MemConf::default())?;
@@ -467,7 +469,6 @@ mod tests {
             number: 2,
             version: 10,
             median_time: 5_247,
-            dividend: Some(1000),
             transactions: vec![TransactionDocumentV10Stringified {
                 currency: "test".to_owned(),
                 blockstamp: "0-0000000000000000000000000000000000000000000000000000000000000000".to_owned(),
@@ -476,8 +477,7 @@ mod tests {
                 inputs: vec!["400:0:T:0000000000000000000000000000000000000000000000000000000000000000:1".to_owned()],
                 unlocks: vec![],
                 outputs: vec![
-                    "300:0:SIG(D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx)".to_owned(),
-                    "100:0:SIG(4fHMTFBMo5sTQEc5p1CNWz28S4mnnqdUBmECq1zt4n2m)".to_owned(),
+                    "400:0:SIG(4fHMTFBMo5sTQEc5p1CNWz28S4mnnqdUBmECq1zt4n2m)".to_owned(),
                 ],
                 comment: "".to_owned(),
                 signatures: vec![],
@@ -490,6 +490,62 @@ mod tests {
         })?;
 
         apply_block(&b2, &gva_db)?;
+
+        let b3 = DubpBlockV10::from_string_object(&DubpBlockV10Stringified {
+            number: 3,
+            version: 10,
+            median_time: 5_249,
+            transactions: vec![TransactionDocumentV10Stringified {
+                currency: "test".to_owned(),
+                blockstamp: "0-0000000000000000000000000000000000000000000000000000000000000000".to_owned(),
+                locktime: 0,
+                issuers: vec!["4fHMTFBMo5sTQEc5p1CNWz28S4mnnqdUBmECq1zt4n2m".to_owned()],
+                inputs: vec!["400:0:T:0101010101010101010101010101010101010101010101010101010101010101:0".to_owned()],
+                unlocks: vec![],
+                outputs: vec![
+                    "400:0:SIG(D9D2zaJoWYWveii1JRYLVK3J4Z7ZH3QczoKrnQeiM6mx)".to_owned(),
+                ],
+                comment: "".to_owned(),
+                signatures: vec![],
+                hash: Some("0202020202020202020202020202020202020202020202020202020202020202".to_owned()),
+            }],
+            inner_hash: Some("0000000A65A12DB95B3153BCD05DB4D5C30CC7F0B1292D9FFBC3DE67F72F6040".to_owned()),
+            signature: "7B0hvcfajE2G8nBLp0vLVaQcQdQIyli21Gu8F2l+nimKHRe+fUNi+MWd1e/u29BYZa+RZ1yxhbHIbFzytg7fAA==".to_owned(),
+            hash: Some("0000000000000000000000000000000000000000000000000000000000000000".to_owned()),
+            ..Default::default()
+        })?;
+
+        apply_block(&b3, &gva_db)?;
+
+        revert_block(&b3, &gva_db)?;
+
+        assert_eq!(gva_db.blockchain_time().count()?, 3);
+        assert_eq!(gva_db.blockchain_time().get(&U32BE(2))?, Some(5_247));
+        assert_eq!(gva_db.balances().count()?, 2);
+        assert_eq!(
+            gva_db.balances().get(&WalletConditionsV2(s1.clone()))?,
+            Some(SourceAmountValV2(SourceAmount::ZERO))
+        );
+        assert_eq!(
+            gva_db.balances().get(&WalletConditionsV2(s2.clone()))?,
+            Some(SourceAmountValV2(SourceAmount::with_base0(1_000)))
+        );
+        assert_eq!(gva_db.gva_utxos().count()?, 2);
+        assert_eq!(
+            gva_db
+                .gva_utxos()
+                .iter(.., |it| it.collect::<KvResult<Vec<_>>>())?,
+            vec![
+                (
+                    GvaUtxoIdDbV1::new(s2.clone(), 1, Hash::default(), 0),
+                    SourceAmountValV2(SourceAmount::with_base0(600))
+                ),
+                (
+                    GvaUtxoIdDbV1::new(s2.clone(), 2, Hash([1u8; 32]), 0),
+                    SourceAmountValV2(SourceAmount::with_base0(400))
+                ),
+            ]
+        );
 
         revert_block(&b2, &gva_db)?;
 
@@ -525,15 +581,12 @@ mod tests {
 
         assert_eq!(gva_db.blockchain_time().count()?, 1);
         assert_eq!(gva_db.blockchain_time().get(&U32BE(0))?, Some(5_243));
-        assert_eq!(gva_db.balances().count()?, 2);
+        assert_eq!(gva_db.balances().count()?, 1);
         assert_eq!(
             gva_db.balances().get(&WalletConditionsV2(s1))?,
             Some(SourceAmountValV2(SourceAmount::with_base0(1000)))
         );
-        assert_eq!(
-            gva_db.balances().get(&WalletConditionsV2(s2))?,
-            Some(SourceAmountValV2(SourceAmount::with_base0(0)))
-        );
+        assert_eq!(gva_db.balances().get(&WalletConditionsV2(s2))?, None);
 
         Ok(())
     }

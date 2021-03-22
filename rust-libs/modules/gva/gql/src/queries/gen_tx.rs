@@ -102,8 +102,7 @@ impl GenTxsQuery {
             String,
         >,
         issuer: PubKeyGva,
-        #[graphql(desc = "Recipient address (Ed25519 public key on base 58 representation)")]
-        recipient: PubKeyGva,
+        #[graphql(desc = "Recipient address")] recipient: PkOrScriptGva,
         #[graphql(desc = "Use mempool sources", default = false)] use_mempool_sources: bool,
     ) -> async_graphql::Result<Vec<String>> {
         let comment = comment.unwrap_or_default();

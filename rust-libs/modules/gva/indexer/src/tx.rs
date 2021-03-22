@@ -83,7 +83,15 @@ pub(crate) fn apply_tx<B: Backend>(
             .or_default()
             .insert(tx_hash);
         // Decrease account balance
-        decrease_account_balance::<B>(account_script, &mut gva_db.balances, input.amount)?;
+        decrease_account_balance::<B>(
+            account_script,
+            account_script_hash,
+            &mut gva_db.balances,
+            input.amount,
+            &mut gva_db.gva_identities,
+            false,
+            &mut gva_db.txs_by_recipient,
+        )?;
     }
 
     for (output_index, output) in tx.get_outputs().iter().enumerate() {
@@ -165,12 +173,19 @@ pub(crate) fn revert_tx<B: Backend>(
             )?;
 
             // Remove on col `txs_by_recipient`
-            gva_db
-                .txs_by_recipient
-                .remove(WalletHashWithBnV1Db::new(utxo_script_hash, block_number));
+            let k = WalletHashWithBnV1Db::new(utxo_script_hash, block_number);
+            gva_db.txs_by_recipient.remove(k);
 
             // Decrease account balance
-            decrease_account_balance::<B>(script.clone(), &mut gva_db.balances, output.amount)?;
+            decrease_account_balance::<B>(
+                script.clone(),
+                utxo_script_hash,
+                &mut gva_db.balances,
+                output.amount,
+                &mut gva_db.gva_identities,
+                true,
+                &mut gva_db.txs_by_recipient,
+            )?;
         }
         // Recreate UTXOs consumed by this tx (and update balance)
         for input in tx_db.tx.get_inputs() {
@@ -234,17 +249,44 @@ pub(crate) fn revert_tx<B: Backend>(
 
 fn decrease_account_balance<B: Backend>(
     account_script: WalletScriptV10,
+    account_script_hash: Hash,
     balances: &mut TxColRw<B::Col, BalancesEvent>,
     decrease_amount: SourceAmount,
+    identities: &mut TxColRw<B::Col, GvaIdentitiesEvent>,
+    revert: bool,
+    txs_by_recipients: &mut TxColRw<B::Col, TxsByRecipientEvent>,
 ) -> KvResult<()> {
     if let Some(SourceAmountValV2(balance)) =
         balances.get(WalletConditionsV2::from_ref(&account_script))?
     {
         let new_balance = balance - decrease_amount;
-        balances.upsert(
-            WalletConditionsV2(account_script),
-            SourceAmountValV2(new_balance),
-        );
+        let remove_balance = if revert && new_balance == SourceAmount::ZERO {
+            let (k_min, k_max) = WalletHashWithBnV1Db::wallet_hash_interval(account_script_hash);
+            if txs_by_recipients
+                .iter(k_min..k_max, |it| it.keys().next_res())?
+                .is_some()
+            {
+                false
+            } else if let Some(pubkey) = account_script.as_single_sig() {
+                if let Some(idty) = identities.get(&PubKeyKeyV2(pubkey))? {
+                    idty.first_ud.is_none()
+                } else {
+                    true
+                }
+            } else {
+                true
+            }
+        } else {
+            false
+        };
+        if remove_balance {
+            balances.remove(WalletConditionsV2(account_script));
+        } else {
+            balances.upsert(
+                WalletConditionsV2(account_script),
+                SourceAmountValV2(new_balance),
+            );
+        }
     }
     Ok(())
 }
@@ -458,7 +500,7 @@ mod tests {
             gva_db
                 .balances()
                 .get(WalletConditionsV2::from_ref(&script2))?,
-            Some(SourceAmountValV2(SourceAmount::ZERO))
+            None
         );
         assert_eq!(
             gva_db

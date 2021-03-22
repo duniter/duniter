@@ -49,6 +49,12 @@ impl WalletHashWithBnV1Db {
 
         u32::from_be_bytes(unsafe { std::mem::transmute(buffer) })
     }
+    pub fn wallet_hash_interval(wallet_hash: Hash) -> (Self, Self) {
+        (
+            Self::new(wallet_hash, BlockNumber(0)),
+            Self::new(wallet_hash, BlockNumber(u32::MAX)),
+        )
+    }
 }
 
 impl Default for WalletHashWithBnV1Db {

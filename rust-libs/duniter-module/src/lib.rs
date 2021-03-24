@@ -216,16 +216,8 @@ macro_rules! plug_duniter_modules {
                     all_endpoints.append(&mut endpoints);
                 )*
 
-                let self_peer = duniter_dbs::PeerCardDbV1 {
-                    version: 10,
-                    currency,
-                    endpoints: all_endpoints,
-                    ..Default::default()
-                };
-
-                use duniter_dbs::databases::cm_v1::CmV1DbWritable as _;
-                use duniter_dbs::kv_typed::prelude::DbCollectionRw as _;
-                dbs_pool.execute(|dbs| dbs.cm_db.self_peer_old_write().upsert((), self_peer)).await?.context("fail to save self peer card")?;
+                log::info!("TMP DEBUG SELF_ENDPOINTS={:?}", all_endpoints);
+                duniter_global::SELF_ENDPOINTS.write().await.replace(all_endpoints);
 
                 $(
                     let [<$M:snake _handle>] = tokio::spawn([<$M:snake>].start());

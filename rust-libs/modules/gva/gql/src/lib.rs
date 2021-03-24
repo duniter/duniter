@@ -48,6 +48,8 @@ use crate::inputs_validators::TxCommentValidator;
 use crate::pagination::Pagination;
 use crate::scalars::{PkOrScriptGva, PubKeyGva};
 #[cfg(test)]
+use crate::tests::AsyncAccessor;
+#[cfg(test)]
 use crate::tests::DbsReaderImpl;
 use async_graphql::connection::{Connection, Edge, EmptyFields};
 use async_graphql::validators::{IntGreaterThan, IntRange, ListMaxLength, ListMinLength};
@@ -61,6 +63,8 @@ use dubp::wallet::prelude::*;
 use duniter_dbs::databases::txs_mp_v2::TxsMpV2DbReadable;
 use duniter_dbs::prelude::*;
 use duniter_dbs::{kv_typed::prelude::*, FileBackend};
+#[cfg(not(test))]
+use duniter_global::AsyncAccessor;
 use duniter_gva_dbs_reader::pagination::PageInfo;
 use duniter_gva_dbs_reader::DbsReader;
 #[cfg(not(test))]
@@ -84,18 +88,24 @@ pub struct ServerMetaData {
 
 #[cfg(test)]
 mod tests {
+    pub use duniter_global::{CurrentMeta, MockAsyncAccessor};
     pub use duniter_gva_dbs_reader::MockDbsReader;
 
     use super::*;
     use fast_threadpool::ThreadPoolConfig;
 
+    pub type AsyncAccessor = duniter_dbs::kv_typed::prelude::Arc<MockAsyncAccessor>;
     pub type DbsReaderImpl = duniter_dbs::kv_typed::prelude::Arc<MockDbsReader>;
 
-    pub(crate) fn create_schema(dbs_ops: MockDbsReader) -> KvResult<GvaSchema> {
+    pub(crate) fn create_schema(
+        mock_cm: MockAsyncAccessor,
+        dbs_ops: MockDbsReader,
+    ) -> KvResult<GvaSchema> {
         let dbs = SharedDbs::mem()?;
         let threadpool = fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), dbs);
         Ok(schema::build_schema_with_data(
             schema::GvaSchemaData {
+                cm_accessor: Arc::new(mock_cm),
                 dbs_pool: threadpool.into_async_handler(),
                 dbs_reader: Arc::new(dbs_ops),
                 server_meta_data: ServerMetaData {

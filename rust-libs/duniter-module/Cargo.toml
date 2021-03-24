@@ -11,8 +11,10 @@ async-trait = "0.1.41"
 dubp = { version = "0.50.0", features = ["duniter"] }
 duniter-conf = { path = "../duniter-conf" }
 duniter-dbs = { path = "../duniter-dbs" }
+duniter-global = { path = "../duniter-global" }
 duniter-mempools = { path = "../duniter-mempools" }
 fast-threadpool = "0.2.3"
+log = "0.4"
 
 [dev-dependencies]
 duniter-dbs = { path = "../duniter-dbs", features = ["mem"] }

@@ -17,6 +17,7 @@ mock = ["mockall"]
 [dependencies]
 anyhow = "1.0.34"
 arrayvec = "0.5.1"
+duniter-bca-types = { path = "../bca/types" }
 duniter-dbs = { path = "../../../duniter-dbs" }
 duniter-gva-db = { path = "../db" }
 dubp = { version = "0.50.0", features = ["duniter"] }

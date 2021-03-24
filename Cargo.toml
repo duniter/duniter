@@ -41,6 +41,7 @@ members = [
     "rust-libs/duniter-mempools",
     "rust-libs/duniter-module",
     "rust-libs/duniter-server",
+    "rust-libs/duniter-global",
     "rust-libs/modules/gva",
     "rust-libs/modules/gva/bca",
     "rust-libs/modules/gva/bca/types",

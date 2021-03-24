@@ -13,10 +13,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+mod balances;
 mod last_blockstamp_out_of_fork_window;
 mod members_count;
 mod prepare_simple_payment;
 mod send_txs;
+mod utxos;
 
 use dubp::crypto::keys::KeyPair;
 
@@ -40,6 +42,13 @@ pub(super) async fn execute_req_type(
     _is_whitelisted: bool,
 ) -> Result<BcaRespTypeV0, ExecReqTypeError> {
     match req_type {
+        BcaReqTypeV0::BalancesOfPubkeys(pubkeys) => {
+            balances::exec_req_balances_of_pubkeys(bca_executor, pubkeys).await
+        }
+        BcaReqTypeV0::FirstUtxosOfPubkeys {
+            amount_target_opt,
+            pubkeys,
+        } => utxos::exec_req_first_utxos_of_pubkeys(bca_executor, amount_target_opt, pubkeys).await,
         BcaReqTypeV0::LastBlockstampOutOfForkWindow => {
             last_blockstamp_out_of_fork_window::exec_req_last_blockstamp_out_of_fork_window(
                 bca_executor,

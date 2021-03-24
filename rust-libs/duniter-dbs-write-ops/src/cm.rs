@@ -14,27 +14,38 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use duniter_dbs::databases::bc_v2::BcV2DbReadable;
-use duniter_dbs::BlockDbV2;
 
-pub fn init(bc_db: &BcV2Db<FileBackend>, cm_db: &CmV1Db<MemSingleton>) -> KvResult<()> {
-    if let Some(current_block_meta) = bc_db
-        .blocks_meta()
-        .iter_rev(.., |it| it.values().next_res())?
-    {
-        cm_db
-            .current_block_meta_write()
-            .upsert((), current_block_meta)
-    } else {
-        Ok(())
-    }
+#[inline(always)]
+pub(crate) fn update_current_meta(
+    block: &DubpBlockV10,
+    global_sender: &flume::Sender<GlobalBackGroundTaskMsg>,
+) {
+    let current_block_meta = block_to_block_meta(block);
+    global_sender
+        .send(GlobalBackGroundTaskMsg::NewCurrentBlock(current_block_meta))
+        .expect("global task disconnected");
 }
 
-pub fn apply_block(block: &DubpBlockV10, cm_db: &CmV1Db<MemSingleton>) -> KvResult<()> {
-    let block_meta = BlockMetaV2::from(block);
-    cm_db.current_block_meta_write().upsert((), block_meta)?;
-    cm_db
-        .current_block_write()
-        .upsert((), BlockDbV2(block.clone()))?;
-    Ok(())
+fn block_to_block_meta(block: &DubpBlockV10) -> BlockMetaV2 {
+    BlockMetaV2 {
+        version: 10,
+        number: block.number().0,
+        hash: block.hash().0,
+        signature: block.signature(),
+        inner_hash: block.inner_hash(),
+        previous_hash: block.previous_hash(),
+        issuer: block.issuer(),
+        previous_issuer: dubp::crypto::keys::ed25519::PublicKey::default(),
+        time: block.local_time(),
+        pow_min: block.pow_min() as u32,
+        members_count: block.members_count() as u64,
+        issuers_count: block.issuers_count() as u32,
+        issuers_frame: block.issuers_frame() as u64,
+        issuers_frame_var: 0,
+        median_time: block.common_time(),
+        nonce: block.nonce(),
+        monetary_mass: block.monetary_mass(),
+        unit_base: block.unit_base() as u32,
+        dividend: block.dividend(),
+    }
 }

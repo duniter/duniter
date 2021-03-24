@@ -119,7 +119,7 @@ fn migrate_inner(
                     })
                     .expect("gva:apply_chunk: dbs pool disconnected");
                 current = Some(duniter_dbs_write_ops::apply_block::apply_chunk(
-                    bc_db, current, &dbs_pool, chunk,
+                    bc_db, current, &dbs_pool, chunk, None,
                 )?);
                 gva_handle
                     .join()

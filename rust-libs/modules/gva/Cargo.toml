@@ -20,6 +20,7 @@ duniter-gva-db = { path = "./db" }
 duniter-gva-dbs-reader = { path = "./dbs-reader" }
 duniter-gva-indexer = { path = "./indexer" }
 duniter-gva-gql = { path = "./gql" }
+duniter-global = { path = "../../duniter-global" }
 duniter-mempools = { path = "../../duniter-mempools" }
 duniter-module = { path = "../../duniter-module" }
 fast-threadpool = "0.2.3"

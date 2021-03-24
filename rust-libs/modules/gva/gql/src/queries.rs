@@ -25,7 +25,6 @@ pub mod uds;
 pub mod utxos_of_script;
 
 use crate::*;
-use duniter_dbs::databases::cm_v1::CmV1DbReadable as _;
 
 #[derive(async_graphql::MergedObject, Default)]
 pub struct QueryRoot(
@@ -60,11 +59,15 @@ impl Node {
     ) -> async_graphql::Result<Option<PeerCardGva>> {
         let data = ctx.data::<GvaSchemaData>()?;
 
-        Ok(data
-            .dbs_pool
-            .execute(move |dbs| dbs.cm_db.self_peer_old().get(&()))
-            .await??
-            .map(Into::into))
+        if let Some(self_peer_old) = data
+            .cm_accessor()
+            .get_self_peer_old(|self_peer_old| self_peer_old.clone())
+            .await
+        {
+            Ok(Some(PeerCardGva::from(self_peer_old)))
+        } else {
+            Ok(None)
+        }
     }
     /// Software
     async fn software(&self) -> &'static str {

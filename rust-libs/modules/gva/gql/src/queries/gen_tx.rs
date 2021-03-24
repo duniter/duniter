@@ -113,50 +113,50 @@ impl GenTxsQuery {
         let db_reader = data.dbs_reader();
         let currency = data.server_meta_data.currency.clone();
 
-        let (current_block, (inputs, inputs_sum)) = data
-            .dbs_pool
-            .execute(move |dbs| {
-                if let Some(current_block) = duniter_bc_reader::get_current_block_meta(&dbs.cm_db)?
-                {
-                    Ok((
-                        current_block,
-                        db_reader.find_inputs(
-                            &dbs.bc_db_ro,
-                            &dbs.txs_mp_db,
-                            SourceAmount::new(amount as i64, current_block.unit_base as i64),
-                            &WalletScriptV10::single(WalletConditionV10::Sig(issuer)),
-                            use_mempool_sources,
-                        )?,
-                    ))
-                } else {
-                    Err(anyhow::Error::msg("no blockchain"))
-                }
-            })
-            .await??;
+        if let Some(current_block_meta) = data
+            .cm_accessor
+            .get_current_meta(|cm| cm.current_block_meta)
+            .await
+        {
+            let (inputs, inputs_sum) = data
+                .dbs_pool
+                .execute(move |dbs| {
+                    db_reader.find_inputs(
+                        &dbs.bc_db_ro,
+                        &dbs.txs_mp_db,
+                        SourceAmount::new(amount as i64, current_block_meta.unit_base as i64),
+                        &WalletScriptV10::single(WalletConditionV10::Sig(issuer)),
+                        use_mempool_sources,
+                    )
+                })
+                .await??;
 
-        let amount = SourceAmount::new(amount as i64, current_block.unit_base as i64);
+            let amount = SourceAmount::new(amount as i64, current_block_meta.unit_base as i64);
 
-        if inputs_sum < amount {
-            return Err(async_graphql::Error::new("insufficient balance"));
+            if inputs_sum < amount {
+                return Err(async_graphql::Error::new("insufficient balance"));
+            }
+
+            let current_blockstamp = Blockstamp {
+                number: BlockNumber(current_block_meta.number),
+                hash: BlockHash(current_block_meta.hash),
+            };
+
+            Ok(TransactionDocumentV10::generate_simple_txs(
+                current_blockstamp,
+                currency,
+                (inputs, inputs_sum),
+                issuer,
+                recipient,
+                (amount, comment),
+                cash_back_address.map(|pubkey_gva| pubkey_gva.0),
+            )
+            .into_iter()
+            .map(|tx| tx.as_text().to_owned())
+            .collect())
+        } else {
+            Err(async_graphql::Error::new("no blockchain"))
         }
-
-        let current_blockstamp = Blockstamp {
-            number: BlockNumber(current_block.number),
-            hash: BlockHash(current_block.hash),
-        };
-
-        Ok(TransactionDocumentV10::generate_simple_txs(
-            current_blockstamp,
-            currency,
-            (inputs, inputs_sum),
-            issuer,
-            recipient,
-            (amount, comment),
-            cash_back_address.map(|pubkey_gva| pubkey_gva.0),
-        )
-        .into_iter()
-        .map(|tx| tx.as_text().to_owned())
-        .collect())
     }
     /// Generate complex transaction document
     async fn gen_complex_tx(
@@ -191,11 +191,14 @@ impl GenTxsQuery {
         let db_reader = data.dbs_reader();
         let currency = data.server_meta_data.currency.clone();
 
-        let (current_block, issuers_inputs_with_sum) = data
-            .dbs_pool
-            .execute(move |dbs| {
-                if let Some(current_block) = duniter_bc_reader::get_current_block_meta(&dbs.cm_db)?
-                {
+        if let Some(current_block_meta) = data
+            .cm_accessor
+            .get_current_meta(|cm| cm.current_block_meta)
+            .await
+        {
+            let issuers_inputs_with_sum = data
+                .dbs_pool
+                .execute(move |dbs| {
                     let mut issuers_inputs_with_sum = Vec::new();
                     for issuer in issuers {
                         issuers_inputs_with_sum.push((
@@ -204,7 +207,7 @@ impl GenTxsQuery {
                                 &dbs.txs_mp_db,
                                 SourceAmount::new(
                                     issuer.amount as i64,
-                                    current_block.unit_base as i64,
+                                    current_block_meta.unit_base as i64,
                                 ),
                                 &issuer.script,
                                 use_mempool_sources,
@@ -212,62 +215,63 @@ impl GenTxsQuery {
                             issuer,
                         ));
                     }
-                    Ok((current_block, issuers_inputs_with_sum))
-                } else {
-                    Err(anyhow::Error::msg("no blockchain"))
+                    Ok::<_, anyhow::Error>(issuers_inputs_with_sum)
+                })
+                .await??;
+
+            for ((_inputs, inputs_sum), issuer) in &issuers_inputs_with_sum {
+                let amount =
+                    SourceAmount::new(issuer.amount as i64, current_block_meta.unit_base as i64);
+                if *inputs_sum < amount {
+                    return Err(async_graphql::Error::new(format!(
+                        "Insufficient balance for issuer {}",
+                        issuer.script.to_string()
+                    )));
                 }
-            })
-            .await??;
-
-        for ((_inputs, inputs_sum), issuer) in &issuers_inputs_with_sum {
-            let amount = SourceAmount::new(issuer.amount as i64, current_block.unit_base as i64);
-            if *inputs_sum < amount {
-                return Err(async_graphql::Error::new(format!(
-                    "Insufficient balance for issuer {}",
-                    issuer.script.to_string()
-                )));
             }
-        }
 
-        let current_blockstamp = Blockstamp {
-            number: BlockNumber(current_block.number),
-            hash: BlockHash(current_block.hash),
-        };
-        let base = current_block.unit_base as i64;
+            let current_blockstamp = Blockstamp {
+                number: BlockNumber(current_block_meta.number),
+                hash: BlockHash(current_block_meta.hash),
+            };
+            let base = current_block_meta.unit_base as i64;
 
-        let (final_tx_opt, changes_txs) = TransactionDocV10ComplexGen {
-            blockstamp: current_blockstamp,
-            currency,
-            issuers: issuers_inputs_with_sum
-                .into_iter()
-                .map(|((inputs, inputs_sum), issuer)| TxV10ComplexIssuer {
-                    amount: SourceAmount::new(issuer.amount as i64, base),
-                    codes: issuer.codes,
-                    inputs,
-                    inputs_sum,
-                    script: issuer.script,
-                    signers: issuer.signers,
-                })
-                .collect(),
-            recipients: recipients
-                .into_iter()
-                .map(|TxRecipientTyped { amount, script }| {
-                    (SourceAmount::new(amount as i64, base), script)
-                })
-                .collect(),
-            user_comment: comment,
-        }
-        .gen()?;
-
-        if let Some(final_tx) = final_tx_opt {
-            Ok(RawTxOrChanges::FinalTx(final_tx.as_text().to_owned()))
-        } else {
-            Ok(RawTxOrChanges::Changes(
-                changes_txs
+            let (final_tx_opt, changes_txs) = TransactionDocV10ComplexGen {
+                blockstamp: current_blockstamp,
+                currency,
+                issuers: issuers_inputs_with_sum
                     .into_iter()
-                    .map(|tx| tx.as_text().to_owned())
+                    .map(|((inputs, inputs_sum), issuer)| TxV10ComplexIssuer {
+                        amount: SourceAmount::new(issuer.amount as i64, base),
+                        codes: issuer.codes,
+                        inputs,
+                        inputs_sum,
+                        script: issuer.script,
+                        signers: issuer.signers,
+                    })
                     .collect(),
-            ))
+                recipients: recipients
+                    .into_iter()
+                    .map(|TxRecipientTyped { amount, script }| {
+                        (SourceAmount::new(amount as i64, base), script)
+                    })
+                    .collect(),
+                user_comment: comment,
+            }
+            .gen()?;
+
+            if let Some(final_tx) = final_tx_opt {
+                Ok(RawTxOrChanges::FinalTx(final_tx.as_text().to_owned()))
+            } else {
+                Ok(RawTxOrChanges::Changes(
+                    changes_txs
+                        .into_iter()
+                        .map(|tx| tx.as_text().to_owned())
+                        .collect(),
+                ))
+            }
+        } else {
+            Err(async_graphql::Error::new("no blockchain"))
         }
     }
 }

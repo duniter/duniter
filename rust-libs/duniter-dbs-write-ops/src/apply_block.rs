@@ -20,11 +20,12 @@ pub fn apply_block(
     block: Arc<DubpBlockV10>,
     current_opt: Option<BlockMetaV2>,
     dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
+    global_sender: &flume::Sender<GlobalBackGroundTaskMsg>,
     throw_chainability: bool,
 ) -> KvResult<BlockMetaV2> {
     if let Some(current) = current_opt {
         if block.number().0 == current.number + 1 {
-            apply_block_inner(bc_db, dbs_pool, block)
+            apply_block_inner(bc_db, dbs_pool, block, global_sender)
         } else if throw_chainability {
             Err(KvError::Custom(
                 format!(
@@ -38,7 +39,7 @@ pub fn apply_block(
             Ok(current)
         }
     } else if block.number() == BlockNumber(0) {
-        apply_block_inner(bc_db, dbs_pool, block)
+        apply_block_inner(bc_db, dbs_pool, block, global_sender)
     } else {
         Err(KvError::Custom(
             "Try to apply non genesis block on empty blockchain".into(),
@@ -52,9 +53,10 @@ pub fn apply_chunk(
     current_opt: Option<BlockMetaV2>,
     dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
     blocks: Arc<[DubpBlockV10]>,
+    global_sender: Option<&flume::Sender<GlobalBackGroundTaskMsg>>,
 ) -> KvResult<BlockMetaV2> {
     verify_chunk_chainability(current_opt, &blocks)?;
-    apply_chunk_inner(bc_db, dbs_pool, blocks)
+    apply_chunk_inner(bc_db, dbs_pool, blocks, global_sender)
 }
 
 fn verify_chunk_chainability(
@@ -105,17 +107,13 @@ fn apply_block_inner(
     bc_db: &BcV2Db<FileBackend>,
     dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
     block: Arc<DubpBlockV10>,
+    global_sender: &flume::Sender<GlobalBackGroundTaskMsg>,
 ) -> KvResult<BlockMetaV2> {
     let block_for_cm = Arc::clone(&block);
     let block_for_txs_mp = Arc::clone(&block);
 
     // Cm
-    let cm_handle = dbs_pool
-        .launch(move |dbs| {
-            crate::cm::apply_block(&block_for_cm, &dbs.cm_db)?;
-            Ok::<_, KvError>(())
-        })
-        .expect("dbs pool disconnected");
+    crate::cm::update_current_meta(&block_for_cm, &global_sender);
 
     //TxsMp
     let txs_mp_handle = dbs_pool
@@ -128,7 +126,6 @@ fn apply_block_inner(
     // Bc
     let new_current = crate::bc::apply_block(bc_db, &block)?;
 
-    cm_handle.join().expect("dbs pool disconnected")?;
     txs_mp_handle.join().expect("dbs pool disconnected")?;
 
     Ok(new_current)
@@ -138,18 +135,16 @@ fn apply_chunk_inner(
     bc_db: &BcV2Db<FileBackend>,
     dbs_pool: &fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
     blocks: Arc<[DubpBlockV10]>,
+    global_sender: Option<&flume::Sender<GlobalBackGroundTaskMsg>>,
 ) -> KvResult<BlockMetaV2> {
     let blocks_len = blocks.len();
-    let blocks_for_cm = Arc::clone(&blocks);
     let blocks_for_txs_mp = Arc::clone(&blocks);
 
     // Cm
-    let cm_handle = dbs_pool
-        .launch(move |dbs| {
-            let chunk_len = blocks_for_cm.len();
-            crate::cm::apply_block(&blocks_for_cm.deref()[chunk_len - 1], &dbs.cm_db)
-        })
-        .expect("dbs pool disconnected");
+    if let Some(global_sender) = global_sender {
+        let chunk_len = blocks.len();
+        crate::cm::update_current_meta(&&blocks.deref()[chunk_len - 1], &global_sender);
+    }
 
     //TxsMp
     //log::info!("apply_chunk: launch txs_mp job...");
@@ -169,7 +164,6 @@ fn apply_chunk_inner(
     }
     let current_block = crate::bc::apply_block(bc_db, &blocks[blocks_len - 1])?;
 
-    cm_handle.join().expect("dbs pool disconnected")?;
     txs_mp_handle
         .join()
         .expect("txs_mp_recv: dbs pool disconnected")?;

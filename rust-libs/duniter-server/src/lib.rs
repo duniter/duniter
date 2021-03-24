@@ -22,7 +22,7 @@
     unused_import_braces
 )]
 
-mod fill_cm_db;
+mod fill_cm;
 mod legacy;
 
 pub use duniter_conf::{gva_conf::GvaConf, DuniterConf, DuniterMode};
@@ -41,19 +41,16 @@ use dubp::{
     block::prelude::*, common::crypto::hashs::Hash, documents_parser::prelude::FromStringObject,
 };
 use duniter_dbs::{
-    databases::{
-        bc_v2::BcV2Db,
-        cm_v1::{CmV1DbReadable, CmV1DbWritable},
-        txs_mp_v2::TxsMpV2DbReadable,
-    },
+    databases::{bc_v2::BcV2Db, txs_mp_v2::TxsMpV2DbReadable},
     kv_typed::prelude::*,
     PendingTxDbV2, PubKeyKeyV2,
 };
 use duniter_dbs::{prelude::*, BlockMetaV2, FileBackend};
+use duniter_global::{tokio, GlobalBackGroundTaskMsg};
 use duniter_mempools::{Mempools, TxMpError, TxsMempool};
 use duniter_module::{plug_duniter_modules, Endpoint, TxsHistoryForBma};
 use fast_threadpool::ThreadPoolConfig;
-use resiter::filter::Filter;
+use resiter::{filter::Filter, map::Map};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
@@ -73,6 +70,7 @@ pub struct DuniterServer {
     conf: DuniterConf,
     current: Option<BlockMetaV2>,
     dbs_pool: fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
+    global_sender: flume::Sender<GlobalBackGroundTaskMsg>,
     pending_txs_subscriber:
         flume::Receiver<Arc<Events<duniter_dbs::databases::txs_mp_v2::TxsEvent>>>,
     profile_path_opt: Option<PathBuf>,
@@ -98,10 +96,14 @@ impl DuniterServer {
         log::info!("open duniter databases...");
         let (bc_db, shared_dbs) = duniter_dbs::open_dbs(profile_path_opt)?;
         shared_dbs.dunp_db.heads_old_write().clear()?; // Clear WS2Pv1 HEADs
-        duniter_dbs_write_ops::cm::init(&bc_db, &shared_dbs.cm_db)?;
+
+        // Create channel with global async task
+        let (global_sender, global_recv) = flume::unbounded();
+
+        // Fill and get current meta
+        let current = fill_cm::fill_and_get_current_meta(&bc_db, &global_sender)?;
         log::info!("Databases successfully opened.");
-        let current = duniter_bc_reader::get_current_block_meta(&shared_dbs.cm_db)
-            .context("Fail to get current")?;
+
         if let Some(current) = current {
             log::info!("Current block: #{}-{}", current.number, current.hash);
         } else {
@@ -120,20 +122,19 @@ impl DuniterServer {
         let threadpool =
             fast_threadpool::ThreadPool::start(ThreadPoolConfig::default(), shared_dbs.clone());
 
-        // Fill CmV1Db
-        fill_cm_db::fill_current_meta_db(&shared_dbs)?;
+        // Start async runtime
+        let conf_clone = conf.clone();
+        let profile_path_opt_clone = profile_path_opt.map(ToOwned::to_owned);
+        let threadpool_async_handler = threadpool.async_handler();
+        std::thread::spawn(move || {
+            duniter_global::get_async_runtime().block_on(async {
+                // Start global background task
+                duniter_global::start_global_background_task(global_recv).await;
 
-        if conf.gva.is_some() {
-            log::info!("start duniter modules...");
-            let runtime = tokio::runtime::Builder::new_multi_thread()
-                .enable_all()
-                .build()?;
-            let conf_clone = conf.clone();
-            let profile_path_opt_clone = profile_path_opt.map(ToOwned::to_owned);
-            let threadpool_async_handler = threadpool.async_handler();
-            std::thread::spawn(move || {
-                runtime
-                    .block_on(start_duniter_modules(
+                // Start duniter modules
+                if conf_clone.gva.is_some() {
+                    log::info!("start duniter modules...");
+                    start_duniter_modules(
                         &conf_clone,
                         currency,
                         threadpool_async_handler,
@@ -141,16 +142,19 @@ impl DuniterServer {
                         duniter_mode,
                         profile_path_opt_clone,
                         software_version,
-                    ))
-                    .context("Fail to start duniter modules")
+                    )
+                    .await
+                    .expect("Fail to start duniter modules");
+                }
             });
-        }
+        });
 
         Ok(DuniterServer {
             bc_db,
             conf,
             current,
             dbs_pool: threadpool.into_sync_handler(),
+            global_sender,
             pending_txs_subscriber,
             profile_path_opt: profile_path_opt.map(ToOwned::to_owned),
             shared_dbs,

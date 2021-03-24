@@ -41,12 +41,18 @@ impl DuniterServer {
             .expect("dbs pool disconnected")
     }
     pub fn get_self_endpoints(&self) -> anyhow::Result<Vec<Endpoint>> {
-        if let Some(self_peer) = self
-            .dbs_pool
-            .execute(|dbs| dbs.cm_db.self_peer_old().get(&()))?
-            .context("fail to get self endpoints")?
-        {
-            Ok(self_peer.endpoints)
+        // Do not get rust endpoints on js tests
+        if std::env::var_os("DUNITER_JS_TESTS") != Some("yes".into()) {
+            let (sender, recv) = flume::bounded(1);
+            loop {
+                self.global_sender
+                    .send(GlobalBackGroundTaskMsg::GetSelfEndpoints(sender.clone()))?;
+                if let Some(self_endpoints) = recv.recv()? {
+                    break Ok(self_endpoints);
+                } else {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                }
+            }
         } else {
             Ok(vec![])
         }

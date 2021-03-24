@@ -66,14 +66,9 @@ impl DuniterServer {
             .map_err(|e| e.into())
     }
     pub fn update_self_peer(&self, new_peer_card: PeerCardDbV1) {
-        self.dbs_pool
-            .execute(move |dbs| {
-                dbs.cm_db
-                    .self_peer_old_write()
-                    .upsert((), new_peer_card)
-                    .expect("fail to write on memory db")
-            })
-            .expect("dbs pool disconnected")
+        self.global_sender
+            .send(GlobalBackGroundTaskMsg::SetSelfPeerOld(new_peer_card))
+            .expect("global task disconnected");
     }
 }
 

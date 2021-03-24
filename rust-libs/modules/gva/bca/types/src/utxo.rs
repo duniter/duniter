@@ -14,18 +14,10 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use duniter_dbs::databases::bc_v2::BcV2DbReadable;
 
-pub(super) fn fill_current_meta_db(shared_dbs: &SharedDbs<FileBackend>) -> anyhow::Result<()> {
-    if let Some(current_block_meta) = shared_dbs
-        .bc_db_ro
-        .blocks_meta()
-        .iter_rev(.., |it| it.values().next_res())?
-    {
-        shared_dbs
-            .cm_db
-            .current_block_meta_write()
-            .upsert((), current_block_meta)?;
-    }
-    Ok(())
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq, Serialize)]
+pub struct Utxo {
+    pub amount: SourceAmount,
+    pub tx_hash: Hash,
+    pub output_index: u8,
 }

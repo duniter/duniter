@@ -37,25 +37,26 @@ impl UtxosQuery {
         let pagination = Pagination::convert_to_page_info(pagination, *is_whitelisted)?;
 
         let data = ctx.data::<GvaSchemaData>()?;
+        let cm_accessor = data.cm_accessor();
         let db_reader = data.dbs_reader();
 
-        let (
-            PagedData {
-                data: UtxosWithSum { utxos, sum },
-                has_previous_page,
-                has_next_page,
-            },
-            times,
-        ) = data
-            .dbs_pool
-            .execute(move |dbs| {
-                if let Some(current_block) = duniter_bc_reader::get_current_block_meta(&dbs.cm_db)?
-                {
+        if let Some(current_base) = cm_accessor
+            .get_current_meta(|cm| cm.current_block_meta.unit_base)
+            .await
+        {
+            let (
+                PagedData {
+                    data: UtxosWithSum { utxos, sum },
+                    has_previous_page,
+                    has_next_page,
+                },
+                times,
+            ) = data
+                .dbs_pool
+                .execute(move |dbs| {
                     let paged_data = db_reader.find_script_utxos(
                         &dbs.txs_mp_db,
-                        amount.map(|amount| {
-                            SourceAmount::new(amount, current_block.unit_base as i64)
-                        }),
+                        amount.map(|amount| SourceAmount::new(amount, current_base as i64)),
                         pagination,
                         &script.0,
                     )?;
@@ -64,39 +65,39 @@ impl UtxosQuery {
                         times.push(db_reader.get_blockchain_time(*block_number)?);
                     }
                     Ok::<_, anyhow::Error>((paged_data, times))
-                } else {
-                    Err(anyhow::Error::msg("no blockchain"))
-                }
-            })
-            .await??;
+                })
+                .await??;
 
-        let mut conn = Connection::with_additional_fields(
-            has_previous_page,
-            has_next_page,
-            AggregateSum {
-                aggregate: Sum {
-                    sum: AmountWithBase {
-                        amount: sum.amount() as i32,
-                        base: sum.base() as i32,
+            let mut conn = Connection::with_additional_fields(
+                has_previous_page,
+                has_next_page,
+                AggregateSum {
+                    aggregate: Sum {
+                        sum: AmountWithBase {
+                            amount: sum.amount() as i32,
+                            base: sum.base() as i32,
+                        },
                     },
                 },
-            },
-        );
-        conn.append(utxos.into_iter().zip(times.into_iter()).map(
-            |((utxo_cursor, source_amount), blockchain_time)| {
-                Edge::new(
-                    utxo_cursor.to_string(),
-                    UtxoTimedGva {
-                        amount: source_amount.amount(),
-                        base: source_amount.base(),
-                        tx_hash: utxo_cursor.tx_hash.to_hex(),
-                        output_index: utxo_cursor.output_index as u32,
-                        written_block: utxo_cursor.block_number.0,
-                        written_time: blockchain_time,
-                    },
-                )
-            },
-        ));
-        Ok(conn)
+            );
+            conn.append(utxos.into_iter().zip(times.into_iter()).map(
+                |((utxo_cursor, source_amount), blockchain_time)| {
+                    Edge::new(
+                        utxo_cursor.to_string(),
+                        UtxoTimedGva {
+                            amount: source_amount.amount(),
+                            base: source_amount.base(),
+                            tx_hash: utxo_cursor.tx_hash.to_hex(),
+                            output_index: utxo_cursor.output_index as u32,
+                            written_block: utxo_cursor.block_number.0,
+                            written_time: blockchain_time,
+                        },
+                    )
+                },
+            ));
+            Ok(conn)
+        } else {
+            Err(async_graphql::Error::new("no blockchain"))
+        }
     }
 }

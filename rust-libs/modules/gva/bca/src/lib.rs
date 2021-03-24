@@ -24,20 +24,28 @@
 
 mod exec_req_type;
 
+const MAX_BATCH_SIZE: usize = 10;
 const RESP_MIN_SIZE: usize = 64;
 type RespBytes = SmallVec<[u8; RESP_MIN_SIZE]>;
 
 use crate::exec_req_type::ExecReqTypeError;
+#[cfg(test)]
+use crate::tests::AsyncAccessor;
+use arrayvec::ArrayVec;
 use async_bincode::AsyncBincodeReader;
 use async_io_stream::IoStream;
 use bincode::Options as _;
 use dubp::crypto::keys::{ed25519::Ed25519KeyPair, Signator};
 use duniter_bca_types::{
-    bincode_opts, BcaReq, BcaReqExecError, BcaReqTypeV0, BcaResp, BcaRespTypeV0, BcaRespV0,
+    amount::Amount, bincode_opts, BcaReq, BcaReqExecError, BcaReqTypeV0, BcaResp, BcaRespTypeV0,
+    BcaRespV0,
 };
 pub use duniter_dbs::kv_typed::prelude::*;
 use duniter_dbs::{FileBackend, SharedDbs};
+#[cfg(not(test))]
+use duniter_global::AsyncAccessor;
 use duniter_gva_dbs_reader::DbsReader;
+
 use futures::{prelude::stream::FuturesUnordered, StreamExt, TryStream, TryStreamExt};
 use once_cell::sync::OnceCell;
 use smallvec::SmallVec;
@@ -52,6 +60,7 @@ static BCA_EXECUTOR: OnceCell<BcaExecutor> = OnceCell::new();
 
 pub fn set_bca_executor(
     currency: String,
+    cm_accessor: AsyncAccessor,
     dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
     dbs_reader: DbsReaderImpl,
     self_keypair: Ed25519KeyPair,
@@ -61,6 +70,7 @@ pub fn set_bca_executor(
     BCA_EXECUTOR
         .set(BcaExecutor {
             currency,
+            cm_accessor,
             dbs_pool,
             dbs_reader,
             self_keypair,
@@ -86,6 +96,7 @@ where
 
 #[derive(Clone)]
 struct BcaExecutor {
+    cm_accessor: AsyncAccessor,
     currency: String,
     dbs_pool: fast_threadpool::ThreadPoolAsyncHandler<SharedDbs<FileBackend>>,
     dbs_reader: DbsReaderImpl,
@@ -132,6 +143,7 @@ impl BcaExecutor {
                 vec
             })
     }
+
     async fn execute_inner(
         &self,
         stream: impl TryStream<Ok = BcaReq, Error = bincode::Error>,
@@ -142,6 +154,7 @@ impl BcaExecutor {
                 let self_clone = self.clone();
                 tokio::spawn(async move { self_clone.execute_req(req, is_whitelisted).await })
             })
+            .take(MAX_BATCH_SIZE)
             .try_collect::<FuturesUnordered<_>>()
             .await
         {
@@ -225,9 +238,11 @@ mod tests {
     pub use duniter_dbs::databases::cm_v1::{CmV1Db, CmV1DbReadable};
     pub use duniter_dbs::databases::txs_mp_v2::{TxsMpV2Db, TxsMpV2DbReadable};
     pub use duniter_dbs::BlockMetaV2;
+    pub use duniter_global::{CurrentMeta, MockAsyncAccessor};
     pub use duniter_gva_dbs_reader::MockDbsReader;
     pub use futures::TryStreamExt;
 
+    pub type AsyncAccessor = duniter_dbs::kv_typed::prelude::Arc<MockAsyncAccessor>;
     pub type DbsReaderImpl = duniter_dbs::kv_typed::prelude::Arc<MockDbsReader>;
 
     impl BcaExecutor {
@@ -237,11 +252,15 @@ mod tests {
         }
     }
 
-    pub(crate) fn create_bca_executor(mock_dbs_reader: MockDbsReader) -> KvResult<BcaExecutor> {
+    pub(crate) fn create_bca_executor(
+        mock_cm: MockAsyncAccessor,
+        mock_dbs_reader: MockDbsReader,
+    ) -> KvResult<BcaExecutor> {
         let dbs = SharedDbs::mem()?;
         let threadpool =
             fast_threadpool::ThreadPool::start(fast_threadpool::ThreadPoolConfig::low(), dbs);
         Ok(BcaExecutor {
+            cm_accessor: duniter_dbs::kv_typed::prelude::Arc::new(mock_cm),
             currency: "g1".to_owned(),
             dbs_pool: threadpool.into_async_handler(),
             dbs_reader: duniter_dbs::kv_typed::prelude::Arc::new(mock_dbs_reader),
@@ -275,12 +294,13 @@ mod tests {
         //println!("bytes_for_bincode={:?}", &bytes[4..]);
         assert_eq!(req, bincode_opts().deserialize(&bytes[4..])?);
 
-        let mut dbs_reader = MockDbsReader::new();
-        dbs_reader
-            .expect_get_current_block::<CmV1Db<MemSingleton>>()
+        let mut mock_cm = MockAsyncAccessor::new();
+        mock_cm
+            .expect_get_current_meta::<u64>()
             .times(1)
-            .returning(|_| Ok(Some(DubpBlockV10::default())));
-        let bca_executor = create_bca_executor(dbs_reader).expect("fail to create bca executor");
+            .returning(|f| Some(f(&CurrentMeta::default())));
+        let bca_executor = create_bca_executor(mock_cm, MockDbsReader::new())
+            .expect("fail to create bca executor");
 
         //println!("bytes={:?}", bytes);
         let bytes_res = bca_executor.execute(io_stream(bytes), false).await;
@@ -317,8 +337,8 @@ mod tests {
         //println!("bytes_for_bincode={:?}", &bytes[4..]);
         assert_eq!(req, bincode_opts().deserialize(&bytes[4..])?);
 
-        let bca_executor =
-            create_bca_executor(MockDbsReader::new()).expect("fail to create bca executor");
+        let bca_executor = create_bca_executor(MockAsyncAccessor::new(), MockDbsReader::new())
+            .expect("fail to create bca executor");
 
         //println!("bytes={:?}", bytes);
         let bytes_res = bca_executor.execute(io_stream(bytes), false).await;
@@ -357,12 +377,13 @@ mod tests {
         bincode_opts().serialize_into(&mut bytes[11..], &req2)?;
         bytes[10] = 3;
 
-        let mut dbs_reader = MockDbsReader::new();
-        dbs_reader
-            .expect_get_current_block::<CmV1Db<MemSingleton>>()
+        let mut mock_cm = MockAsyncAccessor::new();
+        mock_cm
+            .expect_get_current_meta::<u64>()
             .times(1)
-            .returning(|_| Ok(Some(DubpBlockV10::default())));
-        let bca_executor = create_bca_executor(dbs_reader).expect("fail to create bca executor");
+            .returning(|f| Some(f(&CurrentMeta::default())));
+        let bca_executor = create_bca_executor(mock_cm, MockDbsReader::new())
+            .expect("fail to create bca executor");
 
         //println!("bytes={:?}", bytes);
         let bytes_res = bca_executor.execute(io_stream(bytes), false).await;

@@ -72,6 +72,7 @@ pub(super) async fn exec_req_prepare_simple_payment(
             PrepareSimplePaymentResp {
                 current_block_number: block_ref_number,
                 current_block_hash: block_ref_hash,
+                current_ud,
                 inputs,
                 inputs_sum,
             },
@@ -211,6 +212,7 @@ mod tests {
             BcaRespTypeV0::PrepareSimplePayment(PrepareSimplePaymentResp {
                 current_block_number: 0,
                 current_block_hash: Hash::default(),
+                current_ud: SourceAmount::ZERO,
                 inputs: vec![input],
                 inputs_sum: SourceAmount::with_base0(57),
             })

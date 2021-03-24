@@ -26,6 +26,7 @@ pub struct PrepareSimplePayment {
 pub struct PrepareSimplePaymentResp {
     pub current_block_number: u32,
     pub current_block_hash: Hash,
+    pub current_ud: SourceAmount,
     pub inputs: Vec<TransactionInputV10>,
     pub inputs_sum: SourceAmount,
 }

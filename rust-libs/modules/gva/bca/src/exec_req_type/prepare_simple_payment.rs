@@ -72,6 +72,7 @@ pub(super) async fn exec_req_prepare_simple_payment(
             PrepareSimplePaymentResp {
                 current_block_number: block_ref_number,
                 current_block_hash: block_ref_hash,
+                current_ud,
                 inputs,
                 inputs_sum,
             },

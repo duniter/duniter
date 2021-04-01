@@ -33,7 +33,7 @@ impl kv_typed::prelude::FromBytes for GvaIdtyDbV1 {
     type Err = bincode::Error;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(bincode::deserialize(bytes)?)
+        bincode::deserialize(bytes)
     }
 }
 

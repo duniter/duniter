@@ -47,6 +47,6 @@ impl ExplorableValue for WalletScriptWithSourceAmountV1Db {
         unimplemented!()
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
-        Ok(serde_json::to_value(self).map_err(|e| KvError::DeserError(e.into()))?)
+        serde_json::to_value(self).map_err(|e| KvError::DeserError(e.into()))
     }
 }

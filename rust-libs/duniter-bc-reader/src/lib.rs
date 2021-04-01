@@ -26,5 +26,5 @@ use dubp::crypto::hashs::Hash;
 use duniter_dbs::{databases::bc_v2::BcV2DbReadable, kv_typed::prelude::*, HashKeyV2};
 
 pub fn tx_exist<BcDb: BcV2DbReadable>(bc_db_ro: &BcDb, hash: Hash) -> KvResult<bool> {
-    Ok(bc_db_ro.txs_hashs().contains_key(&HashKeyV2(hash))?)
+    bc_db_ro.txs_hashs().contains_key(&HashKeyV2(hash))
 }

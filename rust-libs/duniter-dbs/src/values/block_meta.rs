@@ -62,7 +62,7 @@ impl kv_typed::prelude::FromBytes for BlockMetaV2 {
     type Err = bincode::Error;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(bincode::deserialize(bytes)?)
+        bincode::deserialize(bytes)
     }
 }
 
@@ -75,8 +75,8 @@ impl ToDumpString for BlockMetaV2 {
 #[cfg(feature = "explorer")]
 impl ExplorableValue for BlockMetaV2 {
     fn from_explorer_str(json_str: &str) -> std::result::Result<Self, FromExplorerValueErr> {
-        Ok(serde_json::from_str(&json_str)
-            .map_err(|e| FromExplorerValueErr(format!("{}: '{}'", e, json_str).into()))?)
+        serde_json::from_str(&json_str)
+            .map_err(|e| FromExplorerValueErr(format!("{}: '{}'", e, json_str).into()))
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
         serde_json::to_value(self).map_err(|e| KvError::DeserError(e.into()))

@@ -39,7 +39,7 @@ pub(crate) fn write_and_compress_bytes_in_file(
 ) -> Result<(), std::io::Error> {
     let file = File::create(file_path)?;
     let mut e = ZlibEncoder::new(file, compression);
-    e.write_all(&datas[..])?;
+    e.write_all(datas)?;
     e.finish()?;
 
     Ok(())

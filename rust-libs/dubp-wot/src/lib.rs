@@ -67,7 +67,7 @@ mod tests {
 
     fn write_bin_file(file_path: &Path, datas: &[u8]) -> Result<(), std::io::Error> {
         let mut file = std::fs::File::create(file_path)?;
-        file.write_all(&datas[..])?;
+        file.write_all(datas)?;
 
         Ok(())
     }

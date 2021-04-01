@@ -31,7 +31,7 @@ impl kv_typed::prelude::FromBytes for IdtyDbV2 {
     type Err = bincode::Error;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(bincode::deserialize(bytes)?)
+        bincode::deserialize(bytes)
     }
 }
 

@@ -30,8 +30,7 @@ impl kv_typed::prelude::FromBytes for BlockTxsDbV2 {
     type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(bincode::deserialize(&bytes)
-            .map_err(|e| CorruptedBytes(format!("{}: '{:?}'", e, bytes)))?)
+        bincode::deserialize(&bytes).map_err(|e| CorruptedBytes(format!("{}: '{:?}'", e, bytes)))
     }
 }
 
@@ -44,7 +43,7 @@ impl ToDumpString for BlockTxsDbV2 {
 #[cfg(feature = "explorer")]
 impl ExplorableValue for BlockTxsDbV2 {
     fn from_explorer_str(source: &str) -> Result<Self, FromExplorerValueErr> {
-        Ok(serde_json::from_str(source).map_err(|e| FromExplorerValueErr(e.into()))?)
+        serde_json::from_str(source).map_err(|e| FromExplorerValueErr(e.into()))
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
         serde_json::to_value(self).map_err(|e| KvError::DeserError(e.into()))

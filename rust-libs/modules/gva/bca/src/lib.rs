@@ -37,8 +37,8 @@ use async_io_stream::IoStream;
 use bincode::Options as _;
 use dubp::crypto::keys::{ed25519::Ed25519KeyPair, Signator};
 use duniter_bca_types::{
-    amount::Amount, bincode_opts, BcaReq, BcaReqExecError, BcaReqTypeV0, BcaResp, BcaRespTypeV0,
-    BcaRespV0,
+    amount::Amount, bincode_opts, identity::Identity, BcaReq, BcaReqExecError, BcaReqTypeV0,
+    BcaResp, BcaRespTypeV0, BcaRespV0,
 };
 pub use duniter_dbs::kv_typed::prelude::*;
 use duniter_dbs::{FileBackend, SharedDbs};

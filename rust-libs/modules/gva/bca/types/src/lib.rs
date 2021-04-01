@@ -23,11 +23,13 @@
 )]
 
 pub mod amount;
+pub mod identity;
 pub mod prepare_payment;
 pub mod rejected_tx;
 pub mod utxo;
 
 use crate::amount::Amount;
+use crate::identity::Identity;
 use crate::prepare_payment::{PrepareSimplePayment, PrepareSimplePaymentResp};
 use crate::utxo::Utxo;
 
@@ -74,6 +76,7 @@ pub enum BcaReqTypeV0 {
     },
     Ping,
     SendTxs(Txs),
+    Identities(ArrayVec<[PublicKey; 16]>),
 }
 
 // Request types helpers
@@ -110,6 +113,7 @@ pub enum BcaRespTypeV0 {
     PrepareSimplePayment(PrepareSimplePaymentResp),
     Pong,
     RejectedTxs(Vec<rejected_tx::RejectedTx>),
+    Identities(ArrayVec<[Option<Identity>; 16]>),
 }
 
 // Result and error

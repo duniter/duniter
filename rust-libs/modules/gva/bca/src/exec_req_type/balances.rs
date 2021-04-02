@@ -37,3 +37,25 @@ pub(super) async fn exec_req_balances_of_pubkeys(
             .await??,
     ))
 }
+
+pub(super) async fn exec_req_balances_of_scripts(
+    bca_executor: &BcaExecutor,
+    scripts: ArrayVec<[WalletScriptV10; 16]>,
+) -> Result<BcaRespTypeV0, ExecReqTypeError> {
+    let dbs_reader = bca_executor.dbs_reader();
+    Ok(BcaRespTypeV0::Balances(
+        bca_executor
+            .dbs_pool
+            .execute(move |_| {
+                scripts
+                    .into_iter()
+                    .map(|script| {
+                        dbs_reader
+                            .get_account_balance(&script)
+                            .map(|balance_opt| balance_opt.map(|balance| balance.0))
+                    })
+                    .collect::<Result<ArrayVec<_>, _>>()
+            })
+            .await??,
+    ))
+}

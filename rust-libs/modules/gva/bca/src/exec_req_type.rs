@@ -92,5 +92,8 @@ pub(super) async fn execute_req_type(
             ))
         }
         BcaReqTypeV0::CurrentUd => current_ud::exec_req_current_ud(bca_executor).await,
+        BcaReqTypeV0::BalancesOfScripts(scripts) => {
+            balances::exec_req_balances_of_scripts(bca_executor, scripts).await
+        }
     }
 }

@@ -78,6 +78,7 @@ pub enum BcaReqTypeV0 {
     SendTxs(Txs),
     Identities(ArrayVec<[PublicKey; 16]>),
     CurrentUd,
+    BalancesOfScripts(ArrayVec<[WalletScriptV10; 16]>),
 }
 
 // Request types helpers

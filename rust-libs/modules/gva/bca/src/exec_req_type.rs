@@ -14,6 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 mod balances;
+mod current_ud;
 mod last_blockstamp_out_of_fork_window;
 mod members_count;
 mod prepare_simple_payment;
@@ -90,5 +91,6 @@ pub(super) async fn execute_req_type(
                     .await??,
             ))
         }
+        BcaReqTypeV0::CurrentUd => current_ud::exec_req_current_ud(bca_executor).await,
     }
 }

@@ -15,6 +15,7 @@
 
 //! Strongly typed key-value storage
 
+#![allow(clippy::upper_case_acronyms, clippy::from_over_into)]
 #![deny(
     clippy::unwrap_used,
     missing_copy_implementations,

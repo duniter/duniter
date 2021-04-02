@@ -450,6 +450,7 @@ impl DbTx {
     }
 }
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct HeadWS2Pv1ConfStringified {

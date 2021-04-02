@@ -69,5 +69,26 @@ pub(super) async fn execute_req_type(
         }),
         BcaReqTypeV0::Ping => Ok(BcaRespTypeV0::Pong),
         BcaReqTypeV0::SendTxs(txs) => send_txs::send_txs(bca_executor, txs).await,
+        BcaReqTypeV0::Identities(pubkeys) => {
+            let dbs_reader = bca_executor.dbs_reader();
+            Ok(BcaRespTypeV0::Identities(
+                bca_executor
+                    .dbs_pool
+                    .execute(move |dbs| {
+                        pubkeys
+                            .into_iter()
+                            .map(|pubkey| {
+                                dbs_reader.idty(&dbs.bc_db_ro, pubkey).map(|idty_opt| {
+                                    idty_opt.map(|idty| Identity {
+                                        is_member: idty.is_member,
+                                        username: idty.username,
+                                    })
+                                })
+                            })
+                            .collect::<KvResult<ArrayVec<_>>>()
+                    })
+                    .await??,
+            ))
+        }
     }
 }

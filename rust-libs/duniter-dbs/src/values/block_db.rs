@@ -76,8 +76,8 @@ impl kv_typed::prelude::FromBytes for BlockDbV1 {
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
         let json_str = std::str::from_utf8(bytes).expect("corrupted db : invalid utf8 bytes");
-        Ok(serde_json::from_str(&json_str)
-            .map_err(|e| CorruptedBytes(format!("{}: '{}'", e, json_str)))?)
+        serde_json::from_str(&json_str)
+            .map_err(|e| CorruptedBytes(format!("{}: '{}'", e, json_str)))
     }
 }
 
@@ -131,8 +131,7 @@ impl kv_typed::prelude::FromBytes for BlockDbV2 {
     type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(bincode::deserialize(&bytes)
-            .map_err(|e| CorruptedBytes(format!("{}: '{:?}'", e, bytes)))?)
+        bincode::deserialize(&bytes).map_err(|e| CorruptedBytes(format!("{}: '{:?}'", e, bytes)))
     }
 }
 
@@ -145,7 +144,7 @@ impl ToDumpString for BlockDbV2 {
 #[cfg(feature = "explorer")]
 impl ExplorableValue for BlockDbV2 {
     fn from_explorer_str(source: &str) -> Result<Self, FromExplorerValueErr> {
-        Ok(serde_json::from_str(source).map_err(|e| FromExplorerValueErr(e.into()))?)
+        serde_json::from_str(source).map_err(|e| FromExplorerValueErr(e.into()))
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
         serde_json::to_value(self).map_err(|e| KvError::DeserError(e.into()))

@@ -121,7 +121,7 @@ impl kv_typed::prelude::FromBytes for BlockUtxosV2Db {
     type Err = bincode::Error;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(bincode::deserialize(bytes)?)
+        bincode::deserialize(bytes)
     }
 }
 
@@ -137,7 +137,7 @@ impl ExplorableValue for BlockUtxosV2Db {
         unimplemented!()
     }
     fn to_explorer_json(&self) -> KvResult<serde_json::Value> {
-        Ok(serde_json::to_value(self).map_err(|e| KvError::DeserError(e.into()))?)
+        serde_json::to_value(self).map_err(|e| KvError::DeserError(e.into()))
     }
 }
 

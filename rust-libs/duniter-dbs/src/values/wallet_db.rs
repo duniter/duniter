@@ -33,8 +33,8 @@ impl kv_typed::prelude::FromBytes for WalletDbV1 {
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
         let json_str = std::str::from_utf8(bytes).expect("corrupted db : invalid utf8 bytes");
-        Ok(serde_json::from_str(&json_str)
-            .map_err(|e| CorruptedBytes(format!("{}: '{}'", e, json_str)))?)
+        serde_json::from_str(&json_str)
+            .map_err(|e| CorruptedBytes(format!("{}: '{}'", e, json_str)))
     }
 }
 

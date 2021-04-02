@@ -37,8 +37,7 @@ impl kv_typed::prelude::FromBytes for PeerCardDbV1 {
     type Err = CorruptedBytes;
 
     fn from_bytes(bytes: &[u8]) -> std::result::Result<Self, Self::Err> {
-        Ok(bincode::deserialize(&bytes)
-            .map_err(|e| CorruptedBytes(format!("{}: '{:?}'", e, bytes)))?)
+        bincode::deserialize(&bytes).map_err(|e| CorruptedBytes(format!("{}: '{:?}'", e, bytes)))
     }
 }
 

@@ -13,18 +13,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#![deny(
-    clippy::unwrap_used,
-    missing_copy_implementations,
-    trivial_casts,
-    trivial_numeric_casts,
-    unstable_features,
-    unused_import_braces
-)]
+use crate::*;
 
-use dubp::crypto::hashs::Hash;
-use duniter_dbs::{databases::bc_v2::BcV2DbReadable, kv_typed::prelude::*, HashKeyV2};
-
-pub fn tx_exist<BcDb: BcV2DbReadable>(bc_db_ro: &BcDb, hash: Hash) -> KvResult<bool> {
-    bc_db_ro.txs_hashs().contains_key(&HashKeyV2(hash))
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct Identity {
+    pub is_member: bool,
+    pub username: String,
 }

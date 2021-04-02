@@ -77,6 +77,7 @@ pub enum BcaReqTypeV0 {
     Ping,
     SendTxs(Txs),
     Identities(ArrayVec<[PublicKey; 16]>),
+    CurrentUd,
 }
 
 // Request types helpers
@@ -114,6 +115,7 @@ pub enum BcaRespTypeV0 {
     Pong,
     RejectedTxs(Vec<rejected_tx::RejectedTx>),
     Identities(ArrayVec<[Option<Identity>; 16]>),
+    CurrentUd(SourceAmount),
 }
 
 // Result and error

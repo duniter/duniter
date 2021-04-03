@@ -37,11 +37,12 @@ pub use schema::{build_schema_with_data, get_schema_definition, GvaSchema, GvaSc
 use crate::entities::{
     block_gva::{Block, BlockMeta},
     idty_gva::Identity,
+    network::{HeadGva, PeerCardGva, PeerWithHeads},
     tx_gva::TxGva,
     ud_gva::{CurrentUdGva, RevalUdGva, UdGva},
     utxos_gva::UtxosGva,
-    AggregateSum, AmountWithBase, EdgeTx, PeerCardGva, RawTxOrChanges, Sum, TxDirection,
-    TxsHistoryMempool, UtxoGva, UtxoTimedGva,
+    AggregateSum, AmountWithBase, EdgeTx, RawTxOrChanges, Sum, TxDirection, TxsHistoryMempool,
+    UtxoGva, UtxoTimedGva,
 };
 use crate::inputs::{TxIssuer, TxRecipient, UdsFilter};
 use crate::inputs_validators::TxCommentValidator;

@@ -27,6 +27,7 @@ pub mod current_frame;
 pub mod endpoints;
 pub mod find_inputs;
 pub mod idty;
+pub mod network;
 pub mod pagination;
 pub mod txs_history;
 pub mod uds_of_pubkey;
@@ -153,6 +154,10 @@ pub trait DbsReader {
         bc_db: &BcV2DbRo<FileBackend>,
         pubkey: PublicKey,
     ) -> KvResult<Option<duniter_dbs::IdtyDbV2>>;
+    fn peers_and_heads<DB: 'static + DunpV1DbReadable>(
+        &self,
+        dunp_db: &DB,
+    ) -> KvResult<Vec<(duniter_dbs::PeerCardDbV1, Vec<duniter_dbs::DunpHeadDbV1>)>>;
     fn unspent_uds_of_pubkey(
         &self,
         bc_db: &BcV2DbRo<FileBackend>,
@@ -299,6 +304,13 @@ impl DbsReader for DbsReaderImpl {
         pubkey: PublicKey,
     ) -> KvResult<Option<duniter_dbs::IdtyDbV2>> {
         self.idty_(bc_db, pubkey)
+    }
+
+    fn peers_and_heads<DB: 'static + DunpV1DbReadable>(
+        &self,
+        dunp_db: &DB,
+    ) -> KvResult<Vec<(duniter_dbs::PeerCardDbV1, Vec<duniter_dbs::DunpHeadDbV1>)>> {
+        self.peers_and_heads_(dunp_db)
     }
 
     fn unspent_uds_of_pubkey(

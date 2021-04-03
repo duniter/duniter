@@ -18,22 +18,9 @@ However, we are running simultaneously a testing currency.
 
 See [Install a node documentation](https://duniter.org/en/wiki/duniter/install/).
 
-### Clients, wallets
+### Clients, wallets, GUI, Web-UI, Mobile-App
 
-#### Cesium
-
-- [Website](https://cesium.app/)
-- [Repository](https://git.duniter.org/clients/cesium-grp/cesium)
-
-#### Sakia
-
-- [Website](http://sakia-wallet.org)
-- [Repository](https://git.duniter.org/clients/python/sakia)
-
-#### Silkaj
-
-- [Website](https://silkaj.duniter.org)
-- [Repository](https://git.duniter.org/clients/python/silkaj)
+See [duniter.org](https://duniter.org/) or for end user [monnaie-libre.fr](https://monnaie-libre.fr/)
 
 ## Going further
 
@@ -41,6 +28,15 @@ See [Install a node documentation](https://duniter.org/en/wiki/duniter/install/)
 
 - See [CONTRIBUTING](./CONTRIBUTING.md).
 - [Guide (fr)](./doc/dev/contribute-french.md)
+
+#### In a post-it
+
+```bash
+git clone https://git.duniter.org/nodes/typescript/duniter.git
+cd duniter
+cargo xtask build
+./target/release/duniter start
+```
 
 ### Documentation
 

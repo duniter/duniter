@@ -24,6 +24,7 @@
 
 pub mod block;
 pub mod current_frame;
+pub mod endpoints;
 pub mod find_inputs;
 pub mod idty;
 pub mod pagination;
@@ -41,7 +42,7 @@ use dubp::documents::transaction::TransactionDocumentV10;
 use dubp::{block::DubpBlockV10, common::crypto::hashs::Hash};
 use dubp::{common::prelude::BlockNumber, wallet::prelude::*};
 use duniter_bca_types::utxo::Utxo;
-use duniter_dbs::FileBackend;
+use duniter_dbs::{databases::dunp_v1::DunpV1DbReadable, FileBackend};
 use duniter_dbs::{
     databases::{
         bc_v2::{BcV2DbReadable, BcV2DbRo},
@@ -85,6 +86,11 @@ pub trait DbsReader {
         bc_db: &BcV2DbRo<FileBackend>,
         page_info: PageInfo<block::BlockCursor>,
     ) -> KvResult<PagedData<Vec<(block::BlockCursor, BlockMetaV2)>>>;
+    fn endpoints<Db: 'static + DunpV1DbReadable>(
+        &self,
+        network_db: &Db,
+        api_list: Vec<String>,
+    ) -> KvResult<Vec<String>>;
     fn find_inputs<TxsMpDb: 'static + TxsMpV2DbReadable>(
         &self,
         bc_db: &BcV2DbRo<FileBackend>,
@@ -184,6 +190,14 @@ impl DbsReader for DbsReaderImpl {
         page_info: PageInfo<block::BlockCursor>,
     ) -> KvResult<PagedData<Vec<(block::BlockCursor, BlockMetaV2)>>> {
         self.blocks_(bc_db, page_info)
+    }
+
+    fn endpoints<Db: 'static + DunpV1DbReadable>(
+        &self,
+        network_db: &Db,
+        api_list: Vec<String>,
+    ) -> KvResult<Vec<String>> {
+        self.endpoints_(network_db, api_list)
     }
 
     fn find_inputs<TxsMpDb: 'static + TxsMpV2DbReadable>(

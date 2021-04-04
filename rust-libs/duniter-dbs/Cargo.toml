@@ -16,7 +16,7 @@ arrayvec = "0.5.1"
 bincode = "1.2.1"
 byteorder = "1.3.4"
 chrono = { version = "0.4.15", optional = true }
-dubp = { version = "0.50.0", features = ["duniter"] }
+dubp = { version = "0.51.0", features = ["duniter"] }
 kv_typed = { path = "../tools/kv_typed", default-features = false }
 log = "0.4.8"
 mockall = { version = "0.9.1", optional = true }

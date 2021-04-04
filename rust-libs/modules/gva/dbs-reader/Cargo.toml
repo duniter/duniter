@@ -20,7 +20,7 @@ arrayvec = "0.5.1"
 duniter-bca-types = { path = "../bca/types" }
 duniter-dbs = { path = "../../../duniter-dbs" }
 duniter-gva-db = { path = "../db" }
-dubp = { version = "0.50.0", features = ["duniter"] }
+dubp = { version = "0.51.0", features = ["duniter"] }
 mockall = { version = "0.9.1", optional = true }
 resiter = "0.4.0"
 

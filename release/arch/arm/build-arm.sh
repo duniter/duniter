@@ -7,9 +7,14 @@ export NVM_DIR="$HOME/.nvm"
 
 # Prepare
 NODE_VERSION=10.22.1
-ARCH="`uname -m | sed -e \"s/86_//\"`"
 NVER="v$NODE_VERSION"
 DUNITER_TAG=$1
+
+ARCH="`uname -m | sed -e \"s/86_//\"`"
+if [[ "$ARCH" = "aarch64" ]]
+then
+  ARCH="arm64"
+fi
 
 # Folders
 INITIAL_DIRECTORY=`pwd`

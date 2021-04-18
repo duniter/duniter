@@ -36,6 +36,9 @@ RUN PATH=${HOME}/.cargo/bin:${PATH} \
 
 FROM node:10-alpine
 
+# install jq
+RUN apk add jq
+
 # create group and user duniter
 RUN addgroup -S -g 1111 duniter && \
 	adduser -SD -h /duniter -G duniter -u 1111 duniter
@@ -49,6 +52,9 @@ RUN cp /duniter/duniter/docker.sh /usr/bin/duniter && \
    chmod +x /usr/bin/duniter && \
    chown duniter:duniter /usr/bin/duniter
 
+# copy entrypoint
+COPY release/docker/docker-entrypoint.sh /
+
 # create volumes
 VOLUME /var/lib/duniter
 VOLUME /etc/duniter
@@ -60,5 +66,5 @@ EXPOSE 9220 10901 20901
 USER duniter
 WORKDIR /duniter
 
-ENTRYPOINT ["/usr/bin/duniter"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD []

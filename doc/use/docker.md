@@ -4,7 +4,7 @@
 
 Build this image:
 
-    docker build . -t duniter/duniter
+    docker build . -t duniter/duniter -f release/docker/Dockerfile
 
 ## Usage
 
@@ -58,6 +58,41 @@ If you give parameters to the image when creating container, they will be given 
 When no parameters are given, `duniter` is called with the command `direct_webstart`.
 
 Note that you should not call duniter with daemon command (`webstart` or `start`) if you run docker with `-d` parameter, because the docker image will then immediately stop.
+
+## Environment variables
+
+To ease the deployment automation, three environment variables are available:
+
+* DUNITER_MANUAL_CONFIG (boolean, default = false)
+
+  When set to 'true' (or 'yes', or '1'), the entrypoint script waits until the file
+  '/etc/duniter/conf.json.orig' is present before starting the duniter
+  service. Here is the workflow when enabled:
+  1. wait for '/etc/duniter/conf.json.orig'
+  2. if this file was changed since the previous startup:
+     1. Save 'conf.json' to 'conf.json.old'
+     2. Replace 'conf.json' with 'conf.json.orig'
+     3. Save the new file's checksum to compare with at next startup
+  3. continue the startup sequence
+
+  When set to false, the startup sequence continues.
+
+* DUNITER_AUTO_SYNC (boolean, default = false)
+  Requires 'DUNITER_SYNC_HOST'.
+
+  When set to 'true' (or 'yes', or '1') and the folder
+  '/var/lib/duniter/duniter_default/data' doesn't exist, a 'duniter sync'
+  command will be issued before starting the service.
+
+  When set to false, the service is started directly.
+
+* DUNITER_SYNC_HOST (hostname, default = "")
+
+  This is the 'host:port' parameter to use with 'duniter sync' when
+  'DUNITER_AUTO_SYNC' is enabled.
+
+  The synchronization won't be launched when the variable is not defined
+  or empty.
 
 ## Test develop version
 

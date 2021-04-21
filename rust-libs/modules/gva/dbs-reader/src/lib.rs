@@ -24,7 +24,6 @@
 
 pub mod block;
 pub mod current_frame;
-pub mod endpoints;
 pub mod find_inputs;
 pub mod idty;
 pub mod network;

@@ -16,5 +16,5 @@
 pub mod bc_v1;
 pub mod bc_v2;
 pub mod cm_v1;
-pub mod dunp_v1;
+pub mod network_v1;
 pub mod txs_mp_v2;

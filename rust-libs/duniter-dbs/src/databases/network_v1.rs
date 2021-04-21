@@ -16,7 +16,7 @@
 use crate::*;
 
 db_schema!(
-    DunpV1,
+    NetworkV1,
     [
         ["heads_old", HeadsOld, DunpNodeIdV1Db, DunpHeadDbV1],
         ["peers_old", PeersOld, PubKeyKeyV2, PeerCardDbV1],

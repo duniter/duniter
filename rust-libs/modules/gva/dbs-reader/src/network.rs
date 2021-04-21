@@ -15,11 +15,11 @@
 
 use crate::*;
 use dubp::crypto::keys::PublicKey as _;
-use duniter_dbs::{databases::dunp_v1::DunpV1DbReadable, DunpHeadDbV1, PeerCardDbV1};
+use duniter_dbs::{databases::network_v1::NetworkV1DbReadable, DunpHeadDbV1, PeerCardDbV1};
 
 #[allow(clippy::unnecessary_wraps)]
 impl DbsReaderImpl {
-    pub(super) fn endpoints_<DB: DunpV1DbReadable>(
+    pub(super) fn endpoints_<DB: NetworkV1DbReadable>(
         &self,
         network_db: &DB,
         mut api_list: Vec<String>,
@@ -43,7 +43,7 @@ impl DbsReaderImpl {
                 .collect::<Result<Vec<String>, _>>()
         })
     }
-    pub(super) fn peers_and_heads_<DB: DunpV1DbReadable>(
+    pub(super) fn peers_and_heads_<DB: NetworkV1DbReadable>(
         &self,
         dunp_db: &DB,
     ) -> KvResult<Vec<(PeerCardDbV1, Vec<DunpHeadDbV1>)>> {
@@ -75,13 +75,14 @@ impl DbsReaderImpl {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use duniter_dbs::databases::dunp_v1::DunpV1DbWritable;
+    use duniter_dbs::databases::network_v1::NetworkV1DbWritable;
     use duniter_dbs::PeerCardDbV1;
 
     #[test]
     fn test_empty_endpoints() -> KvResult<()> {
         // Populate DB
-        let dunp_db = duniter_dbs::databases::dunp_v1::DunpV1Db::<Mem>::open(MemConf::default())?;
+        let dunp_db =
+            duniter_dbs::databases::network_v1::NetworkV1Db::<Mem>::open(MemConf::default())?;
         let db_reader = DbsReaderImpl::mem();
         let pk = PublicKey::default();
 
@@ -103,7 +104,8 @@ mod tests {
         let dummy_endpoint = "GVA S domain.tld 443 gva";
 
         // Populate DB
-        let dunp_db = duniter_dbs::databases::dunp_v1::DunpV1Db::<Mem>::open(MemConf::default())?;
+        let dunp_db =
+            duniter_dbs::databases::network_v1::NetworkV1Db::<Mem>::open(MemConf::default())?;
         let db_reader = DbsReaderImpl::mem();
         let pk = PublicKey::default();
         let peer = PeerCardDbV1 {
@@ -127,7 +129,8 @@ mod tests {
         let dummy_endpoint = "GVA S domain.tld 443 gva";
 
         // Populate DB
-        let dunp_db = duniter_dbs::databases::dunp_v1::DunpV1Db::<Mem>::open(MemConf::default())?;
+        let dunp_db =
+            duniter_dbs::databases::network_v1::NetworkV1Db::<Mem>::open(MemConf::default())?;
         let db_reader = DbsReaderImpl::mem();
         let pk = PublicKey::default();
         let peer = PeerCardDbV1 {
@@ -149,7 +152,8 @@ mod tests {
 
     #[test]
     fn test_peers_and_heads() -> KvResult<()> {
-        let dunp_db = duniter_dbs::databases::dunp_v1::DunpV1Db::<Mem>::open(MemConf::default())?;
+        let dunp_db =
+            duniter_dbs::databases::network_v1::NetworkV1Db::<Mem>::open(MemConf::default())?;
         let db_reader = DbsReaderImpl::mem();
         let pk = PublicKey::default();
 

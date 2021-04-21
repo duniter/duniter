@@ -35,7 +35,7 @@ use comfy_table::Table;
 use duniter_dbs::databases::{
     bc_v1::{BcV1Db, BcV1DbWritable},
     bc_v2::{BcV2Db, BcV2DbWritable},
-    dunp_v1::{DunpV1Db, DunpV1DbWritable},
+    network_v1::{NetworkV1Db, NetworkV1DbWritable},
     txs_mp_v2::{TxsMpV2Db, TxsMpV2DbWritable},
 };
 use duniter_dbs::kv_typed::prelude::*;
@@ -120,9 +120,9 @@ fn main() -> anyhow::Result<()> {
                     opt.cmd,
                     open_db_start_time,
                 ),
-                Database::DunpV1 => apply_subcommand(
-                    DunpV1Db::<Sled>::open(Sled::gen_backend_conf(
-                        DunpV1Db::<Sled>::NAME,
+                Database::NetworkV1 => apply_subcommand(
+                    NetworkV1Db::<Sled>::open(Sled::gen_backend_conf(
+                        NetworkV1Db::<Sled>::NAME,
                         Some(profile_path.as_path()),
                     ))?,
                     opt.cmd,

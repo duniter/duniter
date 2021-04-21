@@ -68,7 +68,7 @@ impl NetworkQueryInner {
 mod tests {
     use super::*;
     use crate::tests::*;
-    use duniter_dbs::databases::dunp_v1::DunpV1Db;
+    use duniter_dbs::databases::network_v1::NetworkV1Db;
     use pretty_assertions::assert_eq;
 
     #[tokio::test]
@@ -76,7 +76,7 @@ mod tests {
         let mock_cm = MockAsyncAccessor::new();
         let mut mock_dbs_reader = MockDbsReader::new();
         mock_dbs_reader
-            .expect_endpoints::<DunpV1Db<FileBackend>>()
+            .expect_endpoints::<NetworkV1Db<FileBackend>>()
             .times(1)
             .returning(|_, _| {
                 Ok(vec![
@@ -105,7 +105,7 @@ mod tests {
     async fn test_peers_and_heads() -> anyhow::Result<()> {
         let mut dbs_reader = MockDbsReader::new();
         dbs_reader
-            .expect_peers_and_heads::<DunpV1Db<FileBackend>>()
+            .expect_peers_and_heads::<NetworkV1Db<FileBackend>>()
             .times(1)
             .returning(|_| {
                 Ok(vec![(

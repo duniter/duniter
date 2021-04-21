@@ -39,7 +39,7 @@ pub struct Opt {
 pub enum Database {
     BcV1,
     BcV2,
-    DunpV1,
+    NetworkV1,
     GvaV1,
     TxsMpV2,
 }
@@ -51,7 +51,7 @@ impl FromStr for Database {
         match s {
             "bc_v1" => Ok(Self::BcV1),
             "bc_v2" => Ok(Self::BcV2),
-            "dunp_v1" => Ok(Self::DunpV1),
+            "dunp_v1" => Ok(Self::NetworkV1),
             "gva_v1" => Ok(Self::GvaV1),
             "txs_mp_v2" => Ok(Self::TxsMpV2),
             _ => unreachable!(),

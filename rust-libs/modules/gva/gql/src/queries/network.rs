@@ -25,6 +25,23 @@ pub(crate) struct NetworkQueryInner;
 
 #[async_graphql::Object]
 impl NetworkQueryInner {
+    /// Get endpoints known by the node
+    async fn endpoints(
+        &self,
+        ctx: &async_graphql::Context<'_>,
+        #[graphql(
+            desc = "filter endpoints by api (exact match endpoint first word, case sensitive)"
+        )]
+        api_list: Vec<String>,
+    ) -> async_graphql::Result<Vec<String>> {
+        let data = ctx.data::<GvaSchemaData>()?;
+        let dbs_reader = data.dbs_reader();
+
+        Ok(data
+            .dbs_pool
+            .execute(move |dbs| dbs_reader.endpoints(&dbs.dunp_db, api_list))
+            .await??)
+    }
     /// Get peers and heads
     async fn nodes(
         &self,
@@ -51,14 +68,44 @@ impl NetworkQueryInner {
 mod tests {
     use super::*;
     use crate::tests::*;
-    use duniter_dbs::databases::dunp_v1::DunpV1Db;
+    use duniter_dbs::databases::network_v1::NetworkV1Db;
     use pretty_assertions::assert_eq;
+
+    #[tokio::test]
+    async fn test_endpoints() -> anyhow::Result<()> {
+        let mock_cm = MockAsyncAccessor::new();
+        let mut mock_dbs_reader = MockDbsReader::new();
+        mock_dbs_reader
+            .expect_endpoints::<NetworkV1Db<FileBackend>>()
+            .times(1)
+            .returning(|_, _| {
+                Ok(vec![
+                    "GVA S g1.librelois.fr 443 gva".to_owned(),
+                    "GVA S domain.tld 443 gva".to_owned(),
+                ])
+            });
+        let schema = create_schema(mock_cm, mock_dbs_reader)?;
+        assert_eq!(
+            exec_graphql_request(&schema, r#"{ network { endpoints(apiList:["GVA"]) } }"#).await?,
+            serde_json::json!({
+                "data": {
+                    "network": {
+                        "endpoints": [
+                            "GVA S g1.librelois.fr 443 gva",
+                            "GVA S domain.tld 443 gva"
+                        ]
+                    }
+                }
+            })
+        );
+        Ok(())
+    }
 
     #[tokio::test]
     async fn test_peers_and_heads() -> anyhow::Result<()> {
         let mut dbs_reader = MockDbsReader::new();
         dbs_reader
-            .expect_peers_and_heads::<DunpV1Db<FileBackend>>()
+            .expect_peers_and_heads::<NetworkV1Db<FileBackend>>()
             .times(1)
             .returning(|_| {
                 Ok(vec![(

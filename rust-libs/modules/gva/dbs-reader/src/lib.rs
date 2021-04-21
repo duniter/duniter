@@ -24,7 +24,6 @@
 
 pub mod block;
 pub mod current_frame;
-pub mod endpoints;
 pub mod find_inputs;
 pub mod idty;
 pub mod network;
@@ -43,7 +42,7 @@ use dubp::documents::transaction::TransactionDocumentV10;
 use dubp::{block::DubpBlockV10, common::crypto::hashs::Hash};
 use dubp::{common::prelude::BlockNumber, wallet::prelude::*};
 use duniter_bca_types::utxo::Utxo;
-use duniter_dbs::{databases::dunp_v1::DunpV1DbReadable, FileBackend};
+use duniter_dbs::{databases::network_v1::NetworkV1DbReadable, FileBackend};
 use duniter_dbs::{
     databases::{
         bc_v2::{BcV2DbReadable, BcV2DbRo},
@@ -87,7 +86,7 @@ pub trait DbsReader {
         bc_db: &BcV2DbRo<FileBackend>,
         page_info: PageInfo<block::BlockCursor>,
     ) -> KvResult<PagedData<Vec<(block::BlockCursor, BlockMetaV2)>>>;
-    fn endpoints<Db: 'static + DunpV1DbReadable>(
+    fn endpoints<Db: 'static + NetworkV1DbReadable>(
         &self,
         network_db: &Db,
         api_list: Vec<String>,
@@ -154,7 +153,7 @@ pub trait DbsReader {
         bc_db: &BcV2DbRo<FileBackend>,
         pubkey: PublicKey,
     ) -> KvResult<Option<duniter_dbs::IdtyDbV2>>;
-    fn peers_and_heads<DB: 'static + DunpV1DbReadable>(
+    fn peers_and_heads<DB: 'static + NetworkV1DbReadable>(
         &self,
         dunp_db: &DB,
     ) -> KvResult<Vec<(duniter_dbs::PeerCardDbV1, Vec<duniter_dbs::DunpHeadDbV1>)>>;
@@ -197,7 +196,7 @@ impl DbsReader for DbsReaderImpl {
         self.blocks_(bc_db, page_info)
     }
 
-    fn endpoints<Db: 'static + DunpV1DbReadable>(
+    fn endpoints<Db: 'static + NetworkV1DbReadable>(
         &self,
         network_db: &Db,
         api_list: Vec<String>,
@@ -306,7 +305,7 @@ impl DbsReader for DbsReaderImpl {
         self.idty_(bc_db, pubkey)
     }
 
-    fn peers_and_heads<DB: 'static + DunpV1DbReadable>(
+    fn peers_and_heads<DB: 'static + NetworkV1DbReadable>(
         &self,
         dunp_db: &DB,
     ) -> KvResult<Vec<(duniter_dbs::PeerCardDbV1, Vec<duniter_dbs::DunpHeadDbV1>)>> {

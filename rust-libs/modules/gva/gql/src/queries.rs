@@ -17,7 +17,6 @@ pub mod account_balance;
 pub mod block;
 pub mod current_block;
 pub mod current_frame;
-pub mod endpoints;
 pub mod first_utxos_of_scripts;
 pub mod gen_tx;
 pub mod idty;
@@ -35,7 +34,6 @@ pub struct QueryRoot(
     queries::block::BlockQuery,
     queries::current_block::CurrentBlockQuery,
     queries::current_frame::CurrentFrameQuery,
-    queries::endpoints::EndpointsQuery,
     queries::first_utxos_of_scripts::FirstUtxosQuery,
     queries::gen_tx::GenTxsQuery,
     queries::idty::IdtyQuery,

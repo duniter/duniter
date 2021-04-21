@@ -32,13 +32,13 @@ impl DuniterServer {
             .expect("dbs pool disconnected")
     }
     pub fn remove_all_peers(&self) -> KvResult<()> {
-        use duniter_dbs::databases::dunp_v1::DunpV1DbWritable as _;
+        use duniter_dbs::databases::network_v1::NetworkV1DbWritable as _;
         self.dbs_pool
             .execute(move |dbs| dbs.dunp_db.peers_old_write().clear())
             .expect("dbs pool disconnected")
     }
     pub fn remove_peer_by_pubkey(&self, pubkey: PublicKey) -> KvResult<()> {
-        use duniter_dbs::databases::dunp_v1::DunpV1DbWritable as _;
+        use duniter_dbs::databases::network_v1::NetworkV1DbWritable as _;
         self.dbs_pool
             .execute(move |dbs| dbs.dunp_db.peers_old_write().remove(PubKeyKeyV2(pubkey)))
             .expect("dbs pool disconnected")
@@ -46,7 +46,7 @@ impl DuniterServer {
     pub fn save_peer(&self, new_peer_card: PeerCardDbV1) -> anyhow::Result<()> {
         use dubp::crypto::keys::PublicKey as _;
         let pubkey = PublicKey::from_base58(&new_peer_card.pubkey)?;
-        use duniter_dbs::databases::dunp_v1::DunpV1DbWritable as _;
+        use duniter_dbs::databases::network_v1::NetworkV1DbWritable as _;
         self.dbs_pool
             .execute(move |dbs| {
                 dbs.dunp_db.peers_old_write().upsert(
@@ -78,7 +78,7 @@ mod tests {
         ed25519::{PublicKey, Signature},
         PublicKey as _,
     };
-    use duniter_dbs::databases::dunp_v1::DunpV1DbReadable;
+    use duniter_dbs::databases::network_v1::NetworkV1DbReadable;
     use duniter_dbs::PeerCardDbV1;
 
     use super::*;
@@ -113,7 +113,7 @@ mod tests {
 
     #[test]
     fn test_save_peer() -> anyhow::Result<()> {
-        use duniter_dbs::databases::dunp_v1::DunpV1DbReadable as _;
+        use duniter_dbs::databases::network_v1::NetworkV1DbReadable as _;
         let server = DuniterServer::test(DuniterConf::default(), DuniterMode::Start)?;
         let dbs = server.get_shared_dbs();
 

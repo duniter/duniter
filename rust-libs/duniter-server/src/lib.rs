@@ -26,7 +26,7 @@ mod fill_cm;
 mod legacy;
 
 pub use duniter_conf::{gva_conf::GvaConf, DuniterConf, DuniterMode};
-use duniter_dbs::databases::dunp_v1::DunpV1DbWritable;
+use duniter_dbs::databases::network_v1::NetworkV1DbWritable;
 pub use duniter_dbs::{
     kv_typed::prelude::KvResult, smallvec, DunpHeadDbV1, DunpNodeIdV1Db, PeerCardDbV1,
 };

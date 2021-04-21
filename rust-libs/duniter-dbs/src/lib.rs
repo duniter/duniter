@@ -124,7 +124,7 @@ pub type FileBackend = kv_typed::backend::memory::Mem;
 pub struct SharedDbs<B: Backend> {
     pub bc_db_ro: databases::bc_v2::BcV2DbRo<B>,
     pub cm_db: databases::cm_v1::CmV1Db<MemSingleton>,
-    pub dunp_db: databases::dunp_v1::DunpV1Db<B>,
+    pub dunp_db: databases::network_v1::NetworkV1Db<B>,
     pub txs_mp_db: databases::txs_mp_v2::TxsMpV2Db<B>,
 }
 
@@ -132,12 +132,12 @@ impl SharedDbs<Mem> {
     pub fn mem() -> KvResult<Self> {
         use databases::bc_v2::BcV2DbWritable as _;
         use databases::cm_v1::CmV1DbWritable as _;
-        use databases::dunp_v1::DunpV1DbWritable as _;
+        use databases::network_v1::NetworkV1DbWritable as _;
         use databases::txs_mp_v2::TxsMpV2DbWritable as _;
         Ok(SharedDbs {
             bc_db_ro: databases::bc_v2::BcV2Db::<Mem>::open(MemConf::default())?.get_ro_handler(),
             cm_db: databases::cm_v1::CmV1Db::<MemSingleton>::open(MemSingletonConf::default())?,
-            dunp_db: databases::dunp_v1::DunpV1Db::<Mem>::open(MemConf::default())?,
+            dunp_db: databases::network_v1::NetworkV1Db::<Mem>::open(MemConf::default())?,
             txs_mp_db: databases::txs_mp_v2::TxsMpV2Db::<Mem>::open(MemConf::default())?,
         })
     }

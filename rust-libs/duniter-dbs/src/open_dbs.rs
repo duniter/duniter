@@ -15,7 +15,7 @@
 
 use crate::databases::bc_v2::BcV2DbWritable as _;
 use crate::databases::cm_v1::CmV1DbWritable as _;
-use crate::databases::dunp_v1::DunpV1DbWritable as _;
+use crate::databases::network_v1::NetworkV1DbWritable as _;
 use crate::databases::txs_mp_v2::TxsMpV2DbWritable as _;
 use crate::*;
 
@@ -30,7 +30,7 @@ pub fn open_dbs<B: BackendConf>(
         bc_db_ro: bc_db.get_ro_handler(),
         cm_db: crate::databases::cm_v1::CmV1Db::<MemSingleton>::open(MemSingletonConf::default())
             .expect("fail to open CmV1 DB"),
-        dunp_db: crate::databases::dunp_v1::DunpV1Db::<B>::open(B::gen_backend_conf(
+        dunp_db: crate::databases::network_v1::NetworkV1Db::<B>::open(B::gen_backend_conf(
             "dunp_v1",
             profile_path_opt,
         ))?,

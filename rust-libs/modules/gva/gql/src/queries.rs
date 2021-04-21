@@ -21,6 +21,7 @@ pub mod endpoints;
 pub mod first_utxos_of_scripts;
 pub mod gen_tx;
 pub mod idty;
+pub mod network;
 pub mod txs_history;
 pub mod uds;
 pub mod utxos_of_script;
@@ -38,6 +39,7 @@ pub struct QueryRoot(
     queries::first_utxos_of_scripts::FirstUtxosQuery,
     queries::gen_tx::GenTxsQuery,
     queries::idty::IdtyQuery,
+    queries::network::NetworkQuery,
     queries::txs_history::TxsHistoryBlockchainQuery,
     queries::txs_history::TxsHistoryMempoolQuery,
     queries::uds::UdsQuery,

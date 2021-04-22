@@ -4,13 +4,13 @@ description = "Duniter launcher."
 edition = "2018"
 keywords = ["duniter", "launcher"]
 license = "AGPL-3.0"
-name = "duniter-launcher"
+name = "duniter-cli"
 repository = "https://git.duniter.org/nodes/typescript/duniter"
 version = "1.8.1"
 
 [[bin]]
 bench = false
-path = "rust-bins/duniter-launcher/src/main.rs"
+path = "rust-bins/duniter-cli/src/main.rs"
 name = "duniter"
 
 [dependencies]

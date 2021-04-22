@@ -833,6 +833,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "duniter-cli"
+version = "1.8.1"
+dependencies = [
+ "anyhow",
+ "ctrlc",
+ "daemonize-me",
+ "dirs",
+ "log",
+ "logwatcher",
+ "nix 0.17.0",
+ "read_input",
+ "rusty-hook",
+ "serde_json",
+ "structopt",
+]
+
+[[package]]
 name = "duniter-conf"
 version = "0.1.0"
 source = "git+https://git.duniter.org/nodes/rust/duniter-core#f9abadd0145d848ba4df2ab545639355c7f20386"
@@ -1038,23 +1055,6 @@ dependencies = [
  "paste",
  "resiter",
  "tokio",
-]
-
-[[package]]
-name = "duniter-launcher"
-version = "1.8.1"
-dependencies = [
- "anyhow",
- "ctrlc",
- "daemonize-me",
- "dirs",
- "log",
- "logwatcher",
- "nix 0.17.0",
- "read_input",
- "rusty-hook",
- "serde_json",
- "structopt",
 ]
 
 [[package]]

@@ -15,8 +15,8 @@
 
 use crate::*;
 use dubp::wallet::prelude::SourceAmount;
-use duniter_dbs::databases::bc_v2::BcV2DbReadable;
-use duniter_global::{CurrentMeta, GlobalBackGroundTaskMsg};
+use duniter_core::dbs::databases::bc_v2::BcV2DbReadable;
+use duniter_core::global::{CurrentMeta, GlobalBackGroundTaskMsg};
 
 pub(super) fn fill_and_get_current_meta<BcDb: BcV2DbReadable>(
     bc_db_ro: &BcDb,

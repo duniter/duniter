@@ -20,7 +20,7 @@ impl DuniterServer {
         let block = Arc::new(
             DubpBlockV10::from_string_object(&block).map_err(|e| KvError::DeserError(e.into()))?,
         );
-        self.current = Some(duniter_dbs_write_ops::apply_block::apply_block(
+        self.current = Some(duniter_core::dbs_write_ops::apply_block::apply_block(
             &self.bc_db,
             block.clone(),
             self.current,
@@ -39,7 +39,7 @@ impl DuniterServer {
                 .collect::<Result<Vec<_>, _>>()
                 .map_err(|e| KvError::DeserError(e.into()))?,
         );
-        self.current = Some(duniter_dbs_write_ops::apply_block::apply_chunk(
+        self.current = Some(duniter_core::dbs_write_ops::apply_block::apply_chunk(
             &self.bc_db,
             self.current,
             &self.dbs_pool,
@@ -56,13 +56,13 @@ impl DuniterServer {
         let txs_mp_job_handle = self
             .dbs_pool
             .launch(move |dbs| {
-                duniter_dbs_write_ops::txs_mp::revert_block(
+                duniter_core::dbs_write_ops::txs_mp::revert_block(
                     block_arc_clone.transactions(),
                     &dbs.txs_mp_db,
                 )
             })
             .expect("dbs pool disconnected");
-        self.current = duniter_dbs_write_ops::bc::revert_block(&self.bc_db, &block)?;
+        self.current = duniter_core::dbs_write_ops::bc::revert_block(&self.bc_db, &block)?;
         txs_mp_job_handle.join().expect("dbs pool disconnected")?;
         revert_block_modules(block, Arc::new(self.conf.clone()), &self.dbs_pool, None)
     }

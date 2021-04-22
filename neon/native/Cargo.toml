@@ -18,7 +18,7 @@ neon-build = "0.4.0"
 bincode = "1.2.1"
 bs58 = "0.3.0"
 dubp = { version = "0.51.0", features = ["duniter"] }
-dubp-wot = { path = "../../rust-libs/dubp-wot" }
+dubp-wot = { git = "https://git.duniter.org/nodes/rust/duniter-core" }
 duniter-server = { path = "../../rust-libs/duniter-server" }
 flate2 = "1.0.16"
 flexi_logger = { version = "=0.16.0", default-features = false, features = ["compress"] }

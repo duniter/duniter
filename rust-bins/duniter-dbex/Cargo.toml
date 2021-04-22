@@ -23,10 +23,9 @@ arrayvec = "0.5.1"
 comfy-table = "2.1.0"
 dirs = "3.0.1"
 dubp = { version = "0.51.0", features = ["duniter"] }
-duniter-dbs = { path = "../../rust-libs/duniter-dbs", default-features = false, features = ["explorer", "leveldb_backend", "sled_backend"] }
-duniter-dbs-write-ops = { path = "../../rust-libs/duniter-dbs-write-ops", default-features = false, features = ["explorer", "leveldb_backend", "sled_backend"] }
-duniter-gva-db = { path = "../../rust-libs/modules/gva/db", default-features = false, features = ["explorer", "leveldb_backend"] }
-duniter-gva-indexer = { path = "../../rust-libs/modules/gva/indexer" }
+duniter-core = { git = "https://git.duniter.org/nodes/rust/duniter-core", features = ["bc-writer", "explorer", "leveldb_backend"] }
+duniter-gva-db = { git = "https://git.duniter.org/nodes/rust/modules/duniter-gva", default-features = false, features = ["explorer", "leveldb_backend"] }
+duniter-gva-indexer = { git = "https://git.duniter.org/nodes/rust/modules/duniter-gva" }
 fast-threadpool = "0.2.3"
 flume = "0.10.0"
 once_cell = "1.5.2"

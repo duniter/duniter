@@ -9,14 +9,8 @@ edition = "2018"
 anyhow = "1.0.34"
 cfg-if = "1.0.0"
 dubp = { version = "0.51.0", features = ["duniter"] }
-duniter-conf = { path = "../duniter-conf" }
-duniter-bc-reader = { path = "../duniter-bc-reader" }
-duniter-dbs = { path = "../duniter-dbs" }
-duniter-dbs-write-ops = { path = "../duniter-dbs-write-ops" }
-duniter-global = { path = "../duniter-global" }
-duniter-gva = { path = "../modules/gva", optional = true }
-duniter-mempools = { path = "../duniter-mempools" }
-duniter-module = { path = "../duniter-module" }
+duniter-core = { git = "https://git.duniter.org/nodes/rust/duniter-core", features = ["bc-writer"] }
+duniter-gva = { git = "https://git.duniter.org/nodes/rust/modules/duniter-gva", optional = true }
 fast-threadpool = "0.2.3"
 flume = "0.10.0"
 log = "0.4.11"
@@ -29,4 +23,4 @@ default = ["gva"]
 gva = ["duniter-gva"]
 
 [dev-dependencies]
-duniter-dbs = { path = "../duniter-dbs", features = ["mem"] }
+duniter-core = { git = "https://git.duniter.org/nodes/rust/duniter-core", features = ["bc-writer", "mem"] }

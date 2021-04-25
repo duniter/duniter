@@ -32,17 +32,17 @@ use self::cli::{Database, Opt, OutputFormat, SubCommand};
 use self::stringify_json_value::stringify_json_value;
 use anyhow::anyhow;
 use comfy_table::Table;
-use duniter_dbs::databases::{
+use duniter_core::dbs::databases::{
     bc_v1::{BcV1Db, BcV1DbWritable},
     bc_v2::{BcV2Db, BcV2DbWritable},
     network_v1::{NetworkV1Db, NetworkV1DbWritable},
     txs_mp_v2::{TxsMpV2Db, TxsMpV2DbWritable},
 };
-use duniter_dbs::kv_typed::prelude::*;
-use duniter_dbs::prelude::*;
-use duniter_dbs::regex::Regex;
-use duniter_dbs::serde_json::{Map, Value};
-use duniter_dbs::smallvec::{smallvec, SmallVec};
+use duniter_core::dbs::kv_typed::prelude::*;
+use duniter_core::dbs::prelude::*;
+use duniter_core::dbs::regex::Regex;
+use duniter_core::dbs::serde_json::{Map, Value};
+use duniter_core::dbs::smallvec::{smallvec, SmallVec};
 use duniter_gva_db::{GvaV1Db, GvaV1DbWritable};
 use rayon::prelude::*;
 use std::{

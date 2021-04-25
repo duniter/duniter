@@ -14,7 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use duniter_dbs::{
+use duniter_core::dbs::{
     databases::bc_v1::{BcV1Db, BcV1DbReadable},
     kv_typed::prelude::Backend,
 };

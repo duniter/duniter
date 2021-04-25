@@ -114,7 +114,7 @@ fn build(skip_npm: bool, production: bool) -> Result<()> {
             exec_should_success(Command::new("npm").args(&["prune", "--production"]))?;
         }
     }
-    println!("Build duniter-launcher …");
+    println!("Build duniter-cli …");
     exec_should_success(Command::new("cargo").args(&["build", "--release"]))?;
     std::fs::copy("target/release/duniter", "bin/duniter")?;
     Ok(())

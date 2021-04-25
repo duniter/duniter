@@ -85,7 +85,7 @@ base-gui: $(call nodedep,duniter-ui) base
 # Build the base
 .PHONY: base
 base: | node_modules
-	@cargo build --release -p duniter-launcher
+	@cargo build --release -p duniter-cli
 	@mv target/release/duniter bin/duniter
 
 index.html: $(call nodedep,duniter-ui) $(addprefix node_modules/,$(leveldown.COMPILED) $(sqlite3.COMPILED))

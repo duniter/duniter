@@ -25,9 +25,9 @@
 mod fill_cm;
 mod legacy;
 
-pub use duniter_conf::{gva_conf::GvaConf, DuniterConf, DuniterMode};
-use duniter_dbs::databases::network_v1::NetworkV1DbWritable;
-pub use duniter_dbs::{
+pub use duniter_core::conf::{gva_conf::GvaConf, DuniterConf, DuniterMode};
+use duniter_core::dbs::databases::network_v1::NetworkV1DbWritable;
+pub use duniter_core::dbs::{
     kv_typed::prelude::KvResult, smallvec, DunpHeadDbV1, DunpNodeIdV1Db, PeerCardDbV1,
 };
 #[cfg(feature = "gva")]
@@ -40,15 +40,15 @@ use dubp::documents::{prelude::*, transaction::TransactionDocumentV10};
 use dubp::{
     block::prelude::*, common::crypto::hashs::Hash, documents_parser::prelude::FromStringObject,
 };
-use duniter_dbs::{
+use duniter_core::dbs::{
     databases::{bc_v2::BcV2Db, txs_mp_v2::TxsMpV2DbReadable},
     kv_typed::prelude::*,
     PendingTxDbV2, PubKeyKeyV2,
 };
-use duniter_dbs::{prelude::*, BlockMetaV2, FileBackend};
-use duniter_global::{tokio, GlobalBackGroundTaskMsg};
-use duniter_mempools::{Mempools, TxMpError, TxsMempool};
-use duniter_module::{plug_duniter_modules, Endpoint, TxsHistoryForBma};
+use duniter_core::dbs::{prelude::*, BlockMetaV2, FileBackend};
+use duniter_core::global::{tokio, GlobalBackGroundTaskMsg};
+use duniter_core::mempools::{Mempools, TxMpError, TxsMempool};
+use duniter_core::module::{plug_duniter_modules, Endpoint, TxsHistoryForBma};
 use fast_threadpool::ThreadPoolConfig;
 use resiter::{filter::Filter, map::Map};
 use std::{
@@ -56,9 +56,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
+// Plug duniter modules
+use duniter_core::conf as duniter_conf;
+use duniter_core::global as duniter_global;
+use duniter_core::mempools as duniter_mempools;
 cfg_if::cfg_if! {
     if #[cfg(feature = "gva")] {
-        use duniter_module::DuniterModule as _;
+        use duniter_core::module::DuniterModule as _;
         plug_duniter_modules!([GvaModule], TxsHistoryForBma);
     } else {
         plug_duniter_modules!([], TxsHistoryForBma);
@@ -72,7 +76,7 @@ pub struct DuniterServer {
     dbs_pool: fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
     global_sender: flume::Sender<GlobalBackGroundTaskMsg>,
     pending_txs_subscriber:
-        flume::Receiver<Arc<Events<duniter_dbs::databases::txs_mp_v2::TxsEvent>>>,
+        flume::Receiver<Arc<Events<duniter_core::dbs::databases::txs_mp_v2::TxsEvent>>>,
     profile_path_opt: Option<PathBuf>,
     shared_dbs: SharedDbs<FileBackend>,
     txs_mempool: TxsMempool,
@@ -94,7 +98,7 @@ impl DuniterServer {
         let txs_mempool = TxsMempool::new(conf.txs_mempool_size);
 
         log::info!("open duniter databases...");
-        let (bc_db, shared_dbs) = duniter_dbs::open_dbs(profile_path_opt)?;
+        let (bc_db, shared_dbs) = duniter_core::dbs::open_dbs(profile_path_opt)?;
         shared_dbs.dunp_db.heads_old_write().clear()?; // Clear WS2Pv1 HEADs
 
         // Create channel with global async task
@@ -127,9 +131,9 @@ impl DuniterServer {
         let profile_path_opt_clone = profile_path_opt.map(ToOwned::to_owned);
         let threadpool_async_handler = threadpool.async_handler();
         std::thread::spawn(move || {
-            duniter_global::get_async_runtime().block_on(async {
+            duniter_core::global::get_async_runtime().block_on(async {
                 // Start global background task
-                duniter_global::start_global_background_task(global_recv).await;
+                duniter_core::global::start_global_background_task(global_recv).await;
 
                 // Start duniter modules
                 if conf_clone.gva.is_some() {
@@ -171,7 +175,7 @@ impl DuniterServer {
             "test".to_owned(),
             duniter_mode,
             None,
-            duniter_module::SOFTWARE_NAME,
+            duniter_core::module::SOFTWARE_NAME,
         )
     }
 }

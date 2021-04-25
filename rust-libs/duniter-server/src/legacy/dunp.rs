@@ -18,7 +18,10 @@ use crate::*;
 impl DuniterServer {
     pub fn receive_new_heads(
         &self,
-        heads: Vec<(duniter_dbs::DunpNodeIdV1Db, duniter_dbs::DunpHeadDbV1)>,
+        heads: Vec<(
+            duniter_core::dbs::DunpNodeIdV1Db,
+            duniter_core::dbs::DunpHeadDbV1,
+        )>,
     ) -> KvResult<()> {
         self.dbs_pool
             .execute(move |dbs| {
@@ -32,13 +35,13 @@ impl DuniterServer {
             .expect("dbs pool disconnected")
     }
     pub fn remove_all_peers(&self) -> KvResult<()> {
-        use duniter_dbs::databases::network_v1::NetworkV1DbWritable as _;
+        use duniter_core::dbs::databases::network_v1::NetworkV1DbWritable as _;
         self.dbs_pool
             .execute(move |dbs| dbs.dunp_db.peers_old_write().clear())
             .expect("dbs pool disconnected")
     }
     pub fn remove_peer_by_pubkey(&self, pubkey: PublicKey) -> KvResult<()> {
-        use duniter_dbs::databases::network_v1::NetworkV1DbWritable as _;
+        use duniter_core::dbs::databases::network_v1::NetworkV1DbWritable as _;
         self.dbs_pool
             .execute(move |dbs| dbs.dunp_db.peers_old_write().remove(PubKeyKeyV2(pubkey)))
             .expect("dbs pool disconnected")
@@ -46,12 +49,12 @@ impl DuniterServer {
     pub fn save_peer(&self, new_peer_card: PeerCardDbV1) -> anyhow::Result<()> {
         use dubp::crypto::keys::PublicKey as _;
         let pubkey = PublicKey::from_base58(&new_peer_card.pubkey)?;
-        use duniter_dbs::databases::network_v1::NetworkV1DbWritable as _;
+        use duniter_core::dbs::databases::network_v1::NetworkV1DbWritable as _;
         self.dbs_pool
             .execute(move |dbs| {
                 dbs.dunp_db.peers_old_write().upsert(
                     PubKeyKeyV2(pubkey),
-                    duniter_dbs::PeerCardDbV1 {
+                    duniter_core::dbs::PeerCardDbV1 {
                         version: new_peer_card.version,
                         currency: new_peer_card.currency,
                         pubkey: new_peer_card.pubkey,
@@ -78,8 +81,8 @@ mod tests {
         ed25519::{PublicKey, Signature},
         PublicKey as _,
     };
-    use duniter_dbs::databases::network_v1::NetworkV1DbReadable;
-    use duniter_dbs::PeerCardDbV1;
+    use duniter_core::dbs::databases::network_v1::NetworkV1DbReadable;
+    use duniter_core::dbs::PeerCardDbV1;
 
     use super::*;
 
@@ -89,12 +92,12 @@ mod tests {
         let dbs = server.get_shared_dbs();
 
         let head = (
-            duniter_dbs::DunpNodeIdV1Db::new(53, PublicKey::default()),
-            duniter_dbs::DunpHeadDbV1 {
+            duniter_core::dbs::DunpNodeIdV1Db::new(53, PublicKey::default()),
+            duniter_core::dbs::DunpHeadDbV1 {
                 api: "WS2P".to_owned(),
                 pubkey: PublicKey::default(),
                 blockstamp: Blockstamp::default(),
-                software: duniter_module::SOFTWARE_NAME.to_owned(),
+                software: duniter_core::module::SOFTWARE_NAME.to_owned(),
                 software_version: "test".to_owned(),
                 pow_prefix: 1,
                 free_member_room: 0,
@@ -113,7 +116,7 @@ mod tests {
 
     #[test]
     fn test_save_peer() -> anyhow::Result<()> {
-        use duniter_dbs::databases::network_v1::NetworkV1DbReadable as _;
+        use duniter_core::dbs::databases::network_v1::NetworkV1DbReadable as _;
         let server = DuniterServer::test(DuniterConf::default(), DuniterMode::Start)?;
         let dbs = server.get_shared_dbs();
 

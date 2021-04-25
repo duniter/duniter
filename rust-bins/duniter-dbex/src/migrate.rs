@@ -18,7 +18,7 @@ use dubp::{
     block::parser::parse_json_block_from_serde_value, block::parser::ParseJsonBlockError,
     block::prelude::DubpBlockTrait, block::DubpBlock, common::prelude::BlockNumber,
 };
-use duniter_dbs::{databases::bc_v1::BcV1DbReadable, FileBackend};
+use duniter_core::dbs::{databases::bc_v1::BcV1DbReadable, FileBackend};
 use fast_threadpool::{ThreadPool, ThreadPoolConfig};
 use std::{ops::Deref, path::PathBuf};
 
@@ -26,7 +26,7 @@ const CHUNK_SIZE: usize = 250;
 
 pub(crate) fn migrate(profile_path: PathBuf) -> anyhow::Result<()> {
     let start_time = Instant::now();
-    let (bc_db, shared_dbs) = duniter_dbs::open_dbs(Some(profile_path.as_path()))?;
+    let (bc_db, shared_dbs) = duniter_core::dbs::open_dbs(Some(profile_path.as_path()))?;
     let gva_db = duniter_gva_indexer::get_gva_db_rw(Some(profile_path.as_path()));
 
     // Clear bc_db and gva_db
@@ -118,7 +118,7 @@ fn migrate_inner(
                         Ok::<_, KvError>(())
                     })
                     .expect("gva:apply_chunk: dbs pool disconnected");
-                current = Some(duniter_dbs_write_ops::apply_block::apply_chunk(
+                current = Some(duniter_core::dbs_write_ops::apply_block::apply_chunk(
                     bc_db, current, &dbs_pool, chunk, None,
                 )?);
                 gva_handle

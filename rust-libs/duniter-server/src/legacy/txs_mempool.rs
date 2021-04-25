@@ -69,10 +69,10 @@ impl DuniterServer {
             use std::ops::Deref as _;
             for event in events.deref() {
                 match event {
-                    duniter_dbs::databases::txs_mp_v2::TxsEvent::Upsert { key, value } => {
+                    duniter_core::dbs::databases::txs_mp_v2::TxsEvent::Upsert { key, value } => {
                         new_pending_txs.insert(key.0, value.0.clone());
                     }
-                    duniter_dbs::databases::txs_mp_v2::TxsEvent::Remove { key } => {
+                    duniter_core::dbs::databases::txs_mp_v2::TxsEvent::Remove { key } => {
                         new_pending_txs.remove(&key.0);
                     }
                     _ => (),
@@ -99,21 +99,21 @@ impl DuniterServer {
     pub fn remove_all_pending_txs(&self) -> KvResult<()> {
         self.dbs_pool
             .execute(move |dbs| {
-                duniter_dbs_write_ops::txs_mp::remove_all_pending_txs(&dbs.txs_mp_db)
+                duniter_core::dbs_write_ops::txs_mp::remove_all_pending_txs(&dbs.txs_mp_db)
             })
             .expect("dbs pool disconnected")
     }
     pub fn remove_pending_tx_by_hash(&self, hash: Hash) -> KvResult<()> {
         self.dbs_pool
             .execute(move |dbs| {
-                duniter_dbs_write_ops::txs_mp::remove_pending_tx_by_hash(&dbs.txs_mp_db, hash)
+                duniter_core::dbs_write_ops::txs_mp::remove_pending_tx_by_hash(&dbs.txs_mp_db, hash)
             })
             .expect("dbs pool disconnected")
     }
     pub fn trim_expired_non_written_txs(&self, limit_time: i64) -> KvResult<()> {
         self.dbs_pool
             .execute(move |dbs| {
-                duniter_dbs_write_ops::txs_mp::trim_expired_non_written_txs(
+                duniter_core::dbs_write_ops::txs_mp::trim_expired_non_written_txs(
                     &dbs.txs_mp_db,
                     limit_time,
                 )

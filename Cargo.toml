@@ -4,13 +4,13 @@ description = "Duniter launcher."
 edition = "2018"
 keywords = ["duniter", "launcher"]
 license = "AGPL-3.0"
-name = "duniter-launcher"
+name = "duniter-cli"
 repository = "https://git.duniter.org/nodes/typescript/duniter"
 version = "1.8.1"
 
 [[bin]]
 bench = false
-path = "rust-bins/duniter-launcher/src/main.rs"
+path = "rust-bins/duniter-cli/src/main.rs"
 name = "duniter"
 
 [dependencies]
@@ -33,23 +33,8 @@ members = [
     "neon/native",
     "rust-bins/duniter-dbex",
     "rust-bins/xtask",
-    "rust-libs/dubp-wot",
-    "rust-libs/duniter-conf",
-    "rust-libs/duniter-dbs",
-    "rust-libs/duniter-bc-reader",
-    "rust-libs/duniter-dbs-write-ops",
-    "rust-libs/duniter-mempools",
-    "rust-libs/duniter-module",
     "rust-libs/duniter-server",
-    "rust-libs/duniter-global",
-    "rust-libs/modules/gva",
-    "rust-libs/modules/gva/bca",
-    "rust-libs/modules/gva/bca/types",
-    "rust-libs/modules/gva/dbs-reader",
-    "rust-libs/modules/gva/gql",
-    "rust-libs/modules/gva/indexer",
     "rust-libs/tests/duniter-integration-tests",
-    "rust-libs/tools/kv_typed"
 ]
 
 [patch.crates-io]

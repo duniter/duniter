@@ -61,15 +61,16 @@ The fact of migrating from code to [Rust] is commonly called "oxidation", so we 
 
 The long-term goal is to oxidize Duniter entirely, but it is a long process that will take several years.
 
-Duniter is divided into several  git repositories:
+Duniter's code is divided into several git repositories:
 
-- [Duniter](https://git.duniter.org/nodes/typescript/duniter): this repository.
-- [Dubp-rs-libs](https://git.duniter.org/libs/dubp-rs-libs): Set of Rust libraries common to Duniter and a possible future Rust client/wallet.
-- [Web admin](https://git.duniter.org/nodes/typescript/modules/duniter-ui): web administration interface (optional).
-- [GVA](https://git.duniter.org/nodes/typescript/modules/gva-api): Future client API aimed to replace BMA. GVA stands for GraphQL Validation API.
+- **[dubp-rs-libs]** contains the logic common to Duniter and its clients.
+- **[duniter-core]** contains the core code of Duniter.
+- The gitlab subgroup **[nodes/rust/modules]** contains the main Duniter modules code (gva, admin, etc).
+- **[duniter]** repository contains the "official" implementations of the "duniter-cli" and "duniter-desktop" programs with their default modules (also contains the historical implementation being migrated).
 
-Optional repositories:
+Old optional repositories (will be archived when the migration is complete):
 
+- [**Web admin**](https://git.duniter.org/nodes/typescript/modules/duniter-ui): web administration interface (optional).
 - [Currency monit](https://git.duniter.org/nodes/typescript/modules/duniter-currency-monit): charts to monitor currency and web of trust state.
 - [Remuniter](https://github.com/duniter/remuniter): service to remunerate blocks issuers.
 

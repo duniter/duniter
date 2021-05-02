@@ -65,9 +65,25 @@ pub(crate) fn export_bc<B: Backend>(
         let jsonifier_handle = std::thread::spawn(move || {
             r.iter().try_for_each(|block_res| {
                 let json_block_res = match block_res {
-                    Ok(block) => {
-                        serde_json::to_value(&block).map_err(|e| KvError::DeserError(e.into()))
-                    }
+                    Ok(block) => match serde_json::to_value(&block) {
+                        Ok(serde_json::Value::Object(mut block_json)) => {
+                            block_json.remove("UDTime");
+                            block_json.remove("fork");
+                            // Remove field `transactions.hash`
+                            if let Some(serde_json::Value::Array(txs_json)) =
+                                block_json.get_mut("transactions")
+                            {
+                                for tx_json in txs_json {
+                                    if let serde_json::Value::Object(tx_json) = tx_json {
+                                        tx_json.remove("hash");
+                                    }
+                                }
+                            }
+                            Ok(serde_json::Value::Object(block_json))
+                        }
+                        Err(e) => Err(KvError::DeserError(e.into())),
+                        Ok(_) => unreachable!(),
+                    },
                     Err(e) => Err(e),
                 };
                 s2.send(json_block_res).map_err(|_| anyhow!("fail to send"))
@@ -87,10 +103,9 @@ pub(crate) fn export_bc<B: Backend>(
                     let chunk = std::mem::take(&mut json_blocks);
                     json_blocks.reserve_exact(chunk_size);
                     // Write chunk "asynchronously"
-                    writers_handle
-                        .push(threadpool.launch(move |_| {
-                            write_chunk(chunk_index, chunk, output_dir, pretty)
-                        })?);
+                    writers_handle.push(threadpool.launch(move |_| {
+                        write_chunk(chunk, chunk_index, chunk_size, output_dir, pretty)
+                    })?);
                     chunk_index += 1;
                     if chunk_index % 8 == 0 {
                         progress_bar.set_progress(chunk_index as f64 / chunks_count);
@@ -100,7 +115,7 @@ pub(crate) fn export_bc<B: Backend>(
             })?;
         // Write last chunk
         if !json_blocks.is_empty() {
-            write_chunk(chunk_index, json_blocks, output_dir, pretty)?;
+            write_chunk(json_blocks, chunk_index, chunk_size, output_dir, pretty)?;
         }
         progress_bar.set_progress(1.0);
 
@@ -129,19 +144,23 @@ pub(crate) fn export_bc<B: Backend>(
 }
 
 fn write_chunk(
-    chunk_index: usize,
     chunk: Vec<serde_json::Value>,
+    chunk_index: usize,
+    chunk_size: usize,
     output_dir: &'static Path,
     pretty: bool,
 ) -> anyhow::Result<()> {
-    let file =
-        File::create(output_dir.join(format!("chunk_{}-{}.json", chunk_index, chunk.len())))?;
+    let mut object_json = serde_json::Map::new();
+    object_json.insert("blocks".to_owned(), serde_json::Value::Array(chunk));
+    let chunk_json = serde_json::Value::Object(object_json);
+
+    let file = File::create(output_dir.join(format!("chunk_{}-{}.json", chunk_index, chunk_size)))?;
 
     let mut buffer = BufWriter::new(file);
     if pretty {
-        serde_json::to_writer_pretty(&mut buffer, &serde_json::Value::Array(chunk))?;
+        serde_json::to_writer_pretty(&mut buffer, &chunk_json)?;
     } else {
-        serde_json::to_writer(&mut buffer, &serde_json::Value::Array(chunk))?;
+        serde_json::to_writer(&mut buffer, &chunk_json)?;
     }
     buffer.flush()?;
 

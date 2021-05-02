@@ -153,6 +153,8 @@ impl DuniterServer {
             });
         });
 
+        log::info!("Duniter sever started.");
+
         Ok(DuniterServer {
             bc_db,
             conf,

@@ -11,6 +11,10 @@ via [the technical forum] before making a change.
 
 Please note we have a specific workflow, please follow it in all your interactions with the project.
 
+## Developer documentation
+
+Please read [Developer documentation] before contribute.
+
 ## Workflow
 
 - You must create an issue for each feature you wish to develop, with a precise title and a
@@ -46,7 +50,8 @@ Please note we have a specific workflow, please follow it in all your interactio
 - @Moul
 - @c-geek
 
+[commit naming conventions]: ./doc/dev/git-conventions.md#naming-commits
+[Developer documentation]: ./doc/dev/index.md
+[project's git conventions]: ./doc/dev/git-conventions.md
 [Setting up your development environment]: ./doc/dev/setup_env_dev.md
 [the technical forum]: https://forum.duniter.org
-[project's git conventions]: ./doc/dev/git-conventions.md
-[commit naming conventions]: ./doc/dev/git-conventions.md#naming-commits

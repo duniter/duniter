@@ -16,6 +16,23 @@
 use crate::*;
 
 impl DuniterServer {
+    pub fn get_self_endpoints(&self) -> anyhow::Result<Vec<Endpoint>> {
+        // Do not get rust endpoints on js tests or when gva is disabled
+        if std::env::var_os("DUNITER_JS_TESTS") != Some("yes".into()) && self.conf.gva.is_some() {
+            let (sender, recv) = flume::bounded(1);
+            loop {
+                self.global_sender
+                    .send(GlobalBackGroundTaskMsg::GetSelfEndpoints(sender.clone()))?;
+                if let Some(self_endpoints) = recv.recv()? {
+                    break Ok(self_endpoints);
+                } else {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                }
+            }
+        } else {
+            Ok(vec![])
+        }
+    }
     pub fn receive_new_heads(
         &self,
         heads: Vec<(

@@ -40,23 +40,6 @@ impl DuniterServer {
             .execute(move |dbs| txs_mempool.add_pending_tx_force(&dbs.txs_mp_db, &tx))
             .expect("dbs pool disconnected")
     }
-    pub fn get_self_endpoints(&self) -> anyhow::Result<Vec<Endpoint>> {
-        // Do not get rust endpoints on js tests
-        if std::env::var_os("DUNITER_JS_TESTS") != Some("yes".into()) {
-            let (sender, recv) = flume::bounded(1);
-            loop {
-                self.global_sender
-                    .send(GlobalBackGroundTaskMsg::GetSelfEndpoints(sender.clone()))?;
-                if let Some(self_endpoints) = recv.recv()? {
-                    break Ok(self_endpoints);
-                } else {
-                    std::thread::sleep(std::time::Duration::from_millis(100));
-                }
-            }
-        } else {
-            Ok(vec![])
-        }
-    }
     pub fn get_mempool_txs_free_rooms(&self) -> KvResult<usize> {
         let txs_mempool = self.txs_mempool;
         self.dbs_pool

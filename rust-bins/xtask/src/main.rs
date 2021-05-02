@@ -17,7 +17,7 @@ use anyhow::Result;
 use std::process::{Command, Output};
 use structopt::StructOpt;
 
-const MIN_RUST_VERTION: &str = "1.50.0";
+const MIN_RUST_VERSION: &str = "1.51.0";
 const NODE_VERSION: &str = "10.22.1";
 
 #[derive(StructOpt)]
@@ -40,12 +40,12 @@ enum DuniterXTaskCommand {
 fn main() -> Result<()> {
     let args = DuniterXTask::from_args();
 
-    if !version_check::is_min_version(MIN_RUST_VERTION).unwrap_or(false)
+    if !version_check::is_min_version(MIN_RUST_VERSION).unwrap_or(false)
         && exec_should_success(Command::new("rustup").args(&["update", "stable"])).is_err()
     {
         eprintln!(
                 "Duniter requires Rust {} or higher. If you installed the Rust toolchain via rustup, please execute the command `rustup update stable`.",
-                MIN_RUST_VERTION
+                MIN_RUST_VERSION
             );
         std::process::exit(1);
     }

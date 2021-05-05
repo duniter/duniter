@@ -108,7 +108,7 @@ fn build(skip_npm: bool, production: bool) -> Result<()> {
         exec_should_success(
             Command::new("npm")
                 .env("NEON_BUILD_RELEASE", "true")
-                .arg("install"),
+                .arg("ci"),
         )?;
         if production {
             exec_should_success(Command::new("npm").args(&["prune", "--production"]))?;

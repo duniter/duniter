@@ -59,7 +59,7 @@ When no parameters are given, `duniter` is called with the command `direct_webst
 
 Note that you should not call duniter with daemon command (`webstart` or `start`) if you run docker with `-d` parameter, because the docker image will then immediately stop.
 
-## Environment variables
+## Environment variables
 
 To ease the deployment automation, three environment variables are available:
 
@@ -94,8 +94,8 @@ To ease the deployment automation, three environment variables are available:
   The synchronization won't be launched when the variable is not defined
   or empty.
 
-## Test develop version
+## Test development version
 
-To test develop version on G1-test network:
+To test development version on G1-test network:
 
     docker run -d -p127.0.0.1:9330:9220 -p10900:10900 -p20900:20900 -v $HOME/duniter-docker-home:/var/lib/duniter --name registry.duniter.org nodes/typescript/duniter:dev sync g1-test.duniter.org

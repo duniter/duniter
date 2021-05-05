@@ -13,7 +13,7 @@ workflow:
       - app/**/*
       - bin/duniter_js
       - neon/**/*
-      - releases/**/*
+      - release/**/*
       - rust-bins/**/*
       - rust-libs/**/*
       - test/**/*

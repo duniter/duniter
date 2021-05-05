@@ -6,7 +6,7 @@ if [[ -z ${1} ]]; then
 fi
 
 # Options
-DUNITER_WEB_UI_HOST = "0.0.0.0"
+DUNITER_WEB_UI_HOST="0.0.0.0"
 export DUNITER_WEB_UI_HOST
 
 

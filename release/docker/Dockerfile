@@ -60,7 +60,7 @@ VOLUME /var/lib/duniter
 VOLUME /etc/duniter
 
 # expose ports
-EXPOSE 9220 10901 20901
+EXPOSE 9220 10901 20901 30901
 
 # use duniter user
 USER duniter

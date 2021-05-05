@@ -69,6 +69,10 @@ pub(crate) fn export_bc<B: Backend>(
                         Ok(serde_json::Value::Object(mut block_json)) => {
                             block_json.remove("UDTime");
                             block_json.remove("fork");
+                            block_json.remove("wrong");
+                            block_json.remove("written_on");
+                            block_json.remove("writtenOn");
+
                             // Remove field `transactions.hash`
                             if let Some(serde_json::Value::Array(txs_json)) =
                                 block_json.get_mut("transactions")

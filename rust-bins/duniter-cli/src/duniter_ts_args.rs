@@ -76,6 +76,8 @@ pub(crate) fn gen_duniter_ts_args(args: &DuniterArgs, duniter_js_exe: String) ->
             gen_start_args(start_args, &mut duniter_ts_args);
             gen_webstart_args(webstart_args, &mut duniter_ts_args);
         }
+        #[cfg(feature = "gva")]
+        DuniterCommand::Gva(_) => unreachable!(),
         DuniterCommand::Start(ref start_args) => {
             duniter_ts_args.push("direct_start".to_owned());
             gen_start_args(start_args, &mut duniter_ts_args);
@@ -126,7 +128,6 @@ pub(crate) fn gen_duniter_ts_args(args: &DuniterArgs, duniter_js_exe: String) ->
                         duniter_ts_args.push(p.to_string());
                     }
                 }
-                WizardCommand::Gva { .. } => unreachable!(),
             }
         }
         DuniterCommand::WS2P(ref ws2p_command) => {

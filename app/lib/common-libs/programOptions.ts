@@ -28,8 +28,6 @@ export interface ProgramOptions {
   loglevel?: string;
   sqlTraces?: boolean;
   memory?: boolean;
-  gva?: boolean;
-  noGva?: boolean;
 }
 
 export const cliprogram: ProgramOptions = {

@@ -114,7 +114,7 @@ checksum = "6fd4c2eb837e894909fe13509f2351fa3990c114426e41255936800892ccbe26"
 dependencies = [
  "Inflector",
  "async-graphql-parser",
- "darling",
+ "darling 0.12.4",
  "proc-macro-crate",
  "proc-macro2",
  "quote",
@@ -602,12 +602,36 @@ dependencies = [
 
 [[package]]
 name = "darling"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d706e75d87e35569db781a9b5e2416cff1236a47ed380831f959382ccd5f858"
+dependencies = [
+ "darling_core 0.10.2",
+ "darling_macro 0.10.2",
+]
+
+[[package]]
+name = "darling"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f2c43f534ea4b0b049015d00269734195e6d3f0f6635cb692251aca6f9f8b3c"
 dependencies = [
- "darling_core",
- "darling_macro",
+ "darling_core 0.12.4",
+ "darling_macro 0.12.4",
+]
+
+[[package]]
+name = "darling_core"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0c960ae2da4de88a91b2d920c2a7233b400bc33cb28453a2987822d8392519b"
+dependencies = [
+ "fnv",
+ "ident_case",
+ "proc-macro2",
+ "quote",
+ "strsim 0.9.3",
+ "syn",
 ]
 
 [[package]]
@@ -626,11 +650,64 @@ dependencies = [
 
 [[package]]
 name = "darling_macro"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d9b5a2f4ac4969822c62224815d069952656cadc7084fdca9751e6d959189b72"
+dependencies = [
+ "darling_core 0.10.2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "darling_macro"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29b5acf0dea37a7f66f7b25d2c5e93fd46f8f6968b1a5d7a3e02e97768afc95a"
 dependencies = [
- "darling_core",
+ "darling_core 0.12.4",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "data-encoding"
+version = "2.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ee2393c4a91429dffb4bedf19f4d6abf27d8a732c8ce4980305d782e5426d57"
+
+[[package]]
+name = "derivative"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcc3dd5e9e9c0b295d6e1e4d811fb6f157d5ffd784b8d202fc62eac8035a770b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "derive_builder"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2658621297f2cf68762a6f7dc0bb7e1ff2cfd6583daef8ee0fed6f7ec468ec0"
+dependencies = [
+ "darling 0.10.2",
+ "derive_builder_core",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "derive_builder_core"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2791ea3e372c8495c0bc2033991d76b512cd799d07491fbd6890124db9458bef"
+dependencies = [
+ "darling 0.10.2",
+ "proc-macro2",
  "quote",
  "syn",
 ]
@@ -686,6 +763,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "dns-lookup"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eb4c5ce3a7034c5eb66720bb16e9ac820e01b29032ddc06dd0fe47072acf7454"
+dependencies = [
+ "cfg-if 1.0.0",
+ "libc",
+ "socket2",
+ "winapi",
+]
+
+[[package]]
 name = "doc-comment"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -693,9 +782,9 @@ checksum = "fea41bba32d969b513997752735605054bc0dfa92b4c56bf1189f2e174be7a10"
 
 [[package]]
 name = "dubp"
-version = "0.51.1"
+version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "914faa8052c72c8b2f513a44398123379d70a59dfedf0aa8dc7b581ee223fbfc"
+checksum = "a5cee825e59cde21a3622de781d15f74cbea92f01eb1554a8c73818eb61a5998"
 dependencies = [
  "dubp-block",
  "dubp-common",
@@ -707,9 +796,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-block"
-version = "0.51.1"
+version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b15cc90473a86c4987ea34211829d491dfb56f7c09ba79ac3d57d9430782d038"
+checksum = "f4b26027dafcf4631bd7d7a2b1b25e54453c475a613b5ef7db4356f51f71c0eb"
 dependencies = [
  "dubp-documents",
  "dubp-documents-parser",
@@ -722,9 +811,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-common"
-version = "0.51.1"
+version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3a5a6cc11940e0a85f492325fec45c557c5f103c92ea445427b4272c1a12395"
+checksum = "2dc000f2a3366c1bd985015f95adb3520e8e0b007ca5f77882eea1ea119d84f4"
 dependencies = [
  "dup-crypto",
  "serde",
@@ -735,9 +824,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-documents"
-version = "0.51.1"
+version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85d43233426a5a24a5d22e98da2d8f0efab9739a58af15fa27e74a213b2d5bb9"
+checksum = "6e96808a8ced0617ba93ed6fee00d88902f33e2f61a36ec9a841e8972ef5cd3a"
 dependencies = [
  "beef",
  "dubp-wallet",
@@ -749,9 +838,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-documents-parser"
-version = "0.51.1"
+version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac382364d99af3c235530f9de41a1833d18a16dff8833a7b351e8946d378de18"
+checksum = "a9c60f5c2804a9906777f96a62514c1f9f58abaab4c57f01db4fa7c45624e6fb"
 dependencies = [
  "dubp-documents",
  "json-pest-parser",
@@ -763,9 +852,9 @@ dependencies = [
 
 [[package]]
 name = "dubp-wallet"
-version = "0.51.1"
+version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47cc059e6b139def809f9d0bf776a21f5c2d59fefc20ed30c7aceedfef8de703"
+checksum = "f277bed6bc228981f76f207f4112051656302b5c50c0a858ab138ae2215d49fe"
 dependencies = [
  "byteorder",
  "dubp-common",
@@ -778,7 +867,7 @@ dependencies = [
 [[package]]
 name = "dubp-wot"
 version = "0.11.0"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f9abadd0145d848ba4df2ab545639355c7f20386"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#06f484b17a8336ec908ef423f32cbd0a5a0f16f5"
 dependencies = [
  "log",
  "rayon",
@@ -788,7 +877,7 @@ dependencies = [
 [[package]]
 name = "duniter-bc-reader"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f9abadd0145d848ba4df2ab545639355c7f20386"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#06f484b17a8336ec908ef423f32cbd0a5a0f16f5"
 dependencies = [
  "anyhow",
  "dubp",
@@ -799,7 +888,7 @@ dependencies = [
 [[package]]
 name = "duniter-bca"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#7c1f8e58872fe2931f780c9b5e6b80caa3f3683a"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#838d817ab042e2331194b91a36ccad18a829a88a"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -822,7 +911,7 @@ dependencies = [
 [[package]]
 name = "duniter-bca-types"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#7c1f8e58872fe2931f780c9b5e6b80caa3f3683a"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#838d817ab042e2331194b91a36ccad18a829a88a"
 dependencies = [
  "arrayvec",
  "bincode",
@@ -840,6 +929,8 @@ dependencies = [
  "ctrlc",
  "daemonize-me",
  "dirs",
+ "duniter-core",
+ "duniter-gva-conf",
  "log",
  "logwatcher",
  "nix 0.17.0",
@@ -852,16 +943,20 @@ dependencies = [
 [[package]]
 name = "duniter-conf"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f9abadd0145d848ba4df2ab545639355c7f20386"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#06f484b17a8336ec908ef423f32cbd0a5a0f16f5"
 dependencies = [
+ "anyhow",
  "dubp",
+ "envy",
+ "futures-util",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
 name = "duniter-core"
 version = "1.8.1"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f9abadd0145d848ba4df2ab545639355c7f20386"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#06f484b17a8336ec908ef423f32cbd0a5a0f16f5"
 dependencies = [
  "duniter-bc-reader",
  "duniter-conf",
@@ -898,7 +993,7 @@ dependencies = [
 [[package]]
 name = "duniter-dbs"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f9abadd0145d848ba4df2ab545639355c7f20386"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#06f484b17a8336ec908ef423f32cbd0a5a0f16f5"
 dependencies = [
  "arrayvec",
  "bincode",
@@ -909,7 +1004,7 @@ dependencies = [
  "log",
  "parking_lot",
  "paste",
- "rand 0.7.3",
+ "rand 0.8.3",
  "serde",
  "serde_json",
  "smallvec",
@@ -921,7 +1016,7 @@ dependencies = [
 [[package]]
 name = "duniter-dbs-write-ops"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f9abadd0145d848ba4df2ab545639355c7f20386"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#06f484b17a8336ec908ef423f32cbd0a5a0f16f5"
 dependencies = [
  "chrono",
  "dubp",
@@ -936,7 +1031,7 @@ dependencies = [
 [[package]]
 name = "duniter-global"
 version = "1.8.1"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f9abadd0145d848ba4df2ab545639355c7f20386"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#06f484b17a8336ec908ef423f32cbd0a5a0f16f5"
 dependencies = [
  "async-rwlock",
  "dubp",
@@ -949,7 +1044,7 @@ dependencies = [
 [[package]]
 name = "duniter-gva"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#7c1f8e58872fe2931f780c9b5e6b80caa3f3683a"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#838d817ab042e2331194b91a36ccad18a829a88a"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -960,6 +1055,7 @@ dependencies = [
  "dubp",
  "duniter-bca",
  "duniter-core",
+ "duniter-gva-conf",
  "duniter-gva-db",
  "duniter-gva-dbs-reader",
  "duniter-gva-gql",
@@ -977,9 +1073,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "duniter-gva-conf"
+version = "0.1.0"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#838d817ab042e2331194b91a36ccad18a829a88a"
+dependencies = [
+ "anyhow",
+ "duniter-core",
+ "read_input",
+ "serde",
+ "structopt",
+]
+
+[[package]]
 name = "duniter-gva-db"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#7c1f8e58872fe2931f780c9b5e6b80caa3f3683a"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#838d817ab042e2331194b91a36ccad18a829a88a"
 dependencies = [
  "bincode",
  "chrono",
@@ -996,7 +1104,7 @@ dependencies = [
 [[package]]
 name = "duniter-gva-dbs-reader"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#7c1f8e58872fe2931f780c9b5e6b80caa3f3683a"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#838d817ab042e2331194b91a36ccad18a829a88a"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -1010,7 +1118,7 @@ dependencies = [
 [[package]]
 name = "duniter-gva-gql"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#7c1f8e58872fe2931f780c9b5e6b80caa3f3683a"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#838d817ab042e2331194b91a36ccad18a829a88a"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -1031,7 +1139,7 @@ dependencies = [
 [[package]]
 name = "duniter-gva-indexer"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#7c1f8e58872fe2931f780c9b5e6b80caa3f3683a"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#838d817ab042e2331194b91a36ccad18a829a88a"
 dependencies = [
  "anyhow",
  "dubp",
@@ -1060,7 +1168,7 @@ dependencies = [
 [[package]]
 name = "duniter-mempools"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f9abadd0145d848ba4df2ab545639355c7f20386"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#06f484b17a8336ec908ef423f32cbd0a5a0f16f5"
 dependencies = [
  "dubp",
  "duniter-bc-reader",
@@ -1073,9 +1181,10 @@ dependencies = [
 [[package]]
 name = "duniter-module"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f9abadd0145d848ba4df2ab545639355c7f20386"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#06f484b17a8336ec908ef423f32cbd0a5a0f16f5"
 dependencies = [
  "anyhow",
+ "async-mutex",
  "async-trait",
  "dubp",
  "duniter-conf",
@@ -1083,7 +1192,10 @@ dependencies = [
  "duniter-global",
  "duniter-mempools",
  "fast-threadpool",
+ "futures-util",
  "log",
+ "public-ip",
+ "serde",
 ]
 
 [[package]]
@@ -1124,9 +1236,9 @@ dependencies = [
 
 [[package]]
 name = "dup-crypto"
-version = "0.51.1"
+version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3b8d3e1c65e3ed89db6973e807e9c355c8f9078866402e695a16683f1e226d2"
+checksum = "1c530e25cc0a03ae36229401ca322002931b55fc180e6001bdab20a9087f297c"
 dependencies = [
  "base64",
  "blake3",
@@ -1134,6 +1246,7 @@ dependencies = [
  "byteorder",
  "cryptoxide",
  "getrandom 0.2.2",
+ "hex",
  "ring",
  "serde",
  "thiserror",
@@ -1157,6 +1270,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "endian-type"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c34f04666d835ff5d62e058c3995147c06f42fe86ff053337632bca83e42702d"
+
+[[package]]
+name = "enum-as-inner"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7c5f0096a91d210159eceb2ff5e1c4da18388a170e1e3ce948aac9c8fdbbf595"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "envmnt"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1164,6 +1295,15 @@ checksum = "a2d328fc287c61314c4a61af7cfdcbd7e678e39778488c7cb13ec133ce0f4059"
 dependencies = [
  "fsio",
  "indexmap",
+]
+
+[[package]]
+name = "envy"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f47e0157f2cb54f5ae1bd371b30a2ae4311e1c028f575cd4e81de7353215965"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -1513,6 +1653,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "hex"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
 name = "http"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1571,6 +1717,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "hyper-system-resolver"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "12f3e7696766b62825bf735a1df9d8b727525b83ae5427ee955258800858bd73"
+dependencies = [
+ "derivative",
+ "derive_builder",
+ "dns-lookup",
+ "hyper",
+ "tokio",
+ "tower-service",
+ "tracing",
+]
+
+[[package]]
 name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1614,6 +1775,12 @@ checksum = "61124eeebbd69b8190558df225adf7e4caafce0d743919e5d6b19652314ec5ec"
 dependencies = [
  "cfg-if 1.0.0",
 ]
+
+[[package]]
+name = "ipnet"
+version = "2.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "47be2f14c678be2fdcab04ab1171db51b2762ce6f0a8ee87c8dd4a04ed216135"
 
 [[package]]
 name = "itertools"
@@ -1663,7 +1830,7 @@ dependencies = [
 [[package]]
 name = "kv_typed"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f9abadd0145d848ba4df2ab545639355c7f20386"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#06f484b17a8336ec908ef423f32cbd0a5a0f16f5"
 dependencies = [
  "byteorder",
  "cfg-if 0.1.10",
@@ -1919,6 +2086,15 @@ name = "nias"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab250442c86f1850815b5d268639dff018c0627022bc1940eb2d642ca1ce12f0"
+
+[[package]]
+name = "nibble_vec"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77a5d83df9f36fe23f0c3648c6bbb8b0298bb5f1939c8f2704431371f4b84d43"
+dependencies = [
+ "smallvec",
+]
 
 [[package]]
 name = "nix"
@@ -2226,6 +2402,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "public-ip"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba5e48e5087711724b4536dfe11a201a20ae91a7f1b08e3e17a1053459e20580"
+dependencies = [
+ "dns-lookup",
+ "futures-core",
+ "futures-util",
+ "http",
+ "hyper",
+ "hyper-system-resolver",
+ "pin-project-lite",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "trust-dns-client",
+ "trust-dns-proto",
+]
+
+[[package]]
 name = "quick-error"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2238,6 +2434,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3d0b9745dc2debf507c8422de05d7226cc1f0644216dfdfead988f9b1ab32a7"
 dependencies = [
  "proc-macro2",
+]
+
+[[package]]
+name = "radix_trie"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c069c179fcdc6a2fe24d8d18305cf085fdbd4f922c041943e203685d6a1c58fd"
+dependencies = [
+ "endian-type",
+ "nibble_vec",
 ]
 
 [[package]]
@@ -2719,6 +2925,12 @@ checksum = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
 
 [[package]]
 name = "strsim"
+version = "0.9.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6446ced80d6c486436db5c078dde11a9f73d42b57fb273121e160b84f63d894c"
+
+[[package]]
+name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
@@ -2972,7 +3184,19 @@ dependencies = [
  "cfg-if 1.0.0",
  "log",
  "pin-project-lite",
+ "tracing-attributes",
  "tracing-core",
+]
+
+[[package]]
+name = "tracing-attributes"
+version = "0.1.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c42e6fa53307c8a17e4ccd4dc81cf5ec38db9209f59b222210375b54ee40d1e2"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -2982,6 +3206,51 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f50de3927f93d202783f4513cda820ab47ef17f624b03c096e86ef00c67e6b5f"
 dependencies = [
  "lazy_static",
+]
+
+[[package]]
+name = "trust-dns-client"
+version = "0.20.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0f557e7009d16747a0363f9127588c3c236f279b4caa1177d703221a258dd3f3"
+dependencies = [
+ "cfg-if 1.0.0",
+ "chrono",
+ "data-encoding",
+ "futures-channel",
+ "futures-util",
+ "lazy_static",
+ "log",
+ "radix_trie",
+ "rand 0.8.3",
+ "thiserror",
+ "tokio",
+ "trust-dns-proto",
+]
+
+[[package]]
+name = "trust-dns-proto"
+version = "0.20.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "952a078337565ba39007de99b151770f41039253a31846f0a3d5cd5a4ac8eedf"
+dependencies = [
+ "async-trait",
+ "cfg-if 1.0.0",
+ "data-encoding",
+ "enum-as-inner",
+ "futures-channel",
+ "futures-io",
+ "futures-util",
+ "idna",
+ "ipnet",
+ "lazy_static",
+ "log",
+ "rand 0.8.3",
+ "smallvec",
+ "thiserror",
+ "tinyvec",
+ "tokio",
+ "url",
 ]
 
 [[package]]

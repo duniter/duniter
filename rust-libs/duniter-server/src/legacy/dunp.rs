@@ -18,7 +18,7 @@ use crate::*;
 impl DuniterServer {
     pub fn get_self_endpoints(&self) -> anyhow::Result<Vec<Endpoint>> {
         // Do not get rust endpoints on js tests or when gva is disabled
-        if std::env::var_os("DUNITER_JS_TESTS") != Some("yes".into()) && self.conf.gva.is_some() {
+        if std::env::var_os("DUNITER_JS_TESTS") != Some("yes".into()) {
             let (sender, recv) = flume::bounded(1);
             loop {
                 self.global_sender
@@ -105,7 +105,7 @@ mod tests {
 
     #[test]
     fn test_receive_new_heads() -> anyhow::Result<()> {
-        let server = DuniterServer::test(DuniterConf::default(), DuniterMode::Start)?;
+        let server = DuniterServer::test(DuniterCoreConf::default(), DuniterMode::Start)?;
         let dbs = server.get_shared_dbs();
 
         let head = (
@@ -134,7 +134,7 @@ mod tests {
     #[test]
     fn test_save_peer() -> anyhow::Result<()> {
         use duniter_core::dbs::databases::network_v1::NetworkV1DbReadable as _;
-        let server = DuniterServer::test(DuniterConf::default(), DuniterMode::Start)?;
+        let server = DuniterServer::test(DuniterCoreConf::default(), DuniterMode::Start)?;
         let dbs = server.get_shared_dbs();
 
         let peer = PeerCardDbV1 {

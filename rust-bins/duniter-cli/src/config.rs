@@ -34,7 +34,7 @@ impl FromStr for Percent {
 }
 
 #[derive(StructOpt)]
-pub(crate) struct DuniterConfigArgs {
+pub(crate) struct DuniterCoreConfigArgs {
     /// Percent of CPU usage for proof-of-work computation
     #[structopt(long)]
     cpu: Option<Percent>,
@@ -153,7 +153,7 @@ pub(crate) struct DuniterConfigArgs {
     force_tor: bool,
 }
 
-pub(crate) fn gen_args(args: &DuniterConfigArgs, duniter_js_args: &mut Vec<String>) {
+pub(crate) fn gen_args(args: &DuniterCoreConfigArgs, duniter_js_args: &mut Vec<String>) {
     if let Some(Percent(cpu_percent)) = args.cpu {
         duniter_js_args.push("--cpu".into());
         duniter_js_args.push(cpu_percent.to_string());

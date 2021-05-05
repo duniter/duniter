@@ -35,8 +35,7 @@ mod tests {
     #[test]
     fn test_txs_history() -> anyhow::Result<()> {
         let server = DuniterServer::start(
-            DuniterConf {
-                gva: None,
+            DuniterCoreConf {
                 self_key_pair: Ed25519KeyPair::generate_random()
                     .expect("fail to gen random keypair"),
                 txs_mempool_size: 200,

@@ -35,6 +35,7 @@ export class BlockDTOV10 {
 }
 
 export class GvaConf {
+    enabled: boolean;
     ip4?: string
     ip6?: string
     port?: number
@@ -84,7 +85,6 @@ export class RustDbTx {
 export class RustServerConf {
     command: string | null
     currency: string
-    gva: GvaConf | undefined
     selfKeypair: string | null
     txsMempoolSize: number
 }

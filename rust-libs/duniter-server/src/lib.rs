@@ -25,7 +25,7 @@
 mod fill_cm;
 mod legacy;
 
-pub use duniter_core::conf::{gva_conf::GvaConf, DuniterConf, DuniterMode};
+pub use duniter_core::conf::{DuniterCoreConf, DuniterMode};
 use duniter_core::dbs::databases::network_v1::NetworkV1DbWritable;
 pub use duniter_core::dbs::{
     kv_typed::prelude::KvResult, smallvec, DunpHeadDbV1, DunpNodeIdV1Db, PeerCardDbV1,
@@ -62,7 +62,7 @@ use duniter_core::global as duniter_global;
 use duniter_core::mempools as duniter_mempools;
 cfg_if::cfg_if! {
     if #[cfg(feature = "gva")] {
-        use duniter_core::module::DuniterModule as _;
+        use duniter_core::module::DuniterModule;
         plug_duniter_modules!([GvaModule], TxsHistoryForBma);
     } else {
         plug_duniter_modules!([], TxsHistoryForBma);
@@ -71,7 +71,7 @@ cfg_if::cfg_if! {
 
 pub struct DuniterServer {
     bc_db: BcV2Db<FileBackend>,
-    conf: DuniterConf,
+    conf: DuniterCoreConf,
     current: Option<BlockMetaV2>,
     dbs_pool: fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
     global_sender: flume::Sender<GlobalBackGroundTaskMsg>,
@@ -87,7 +87,7 @@ impl DuniterServer {
         self.shared_dbs.clone()
     }
     pub fn start(
-        conf: DuniterConf,
+        conf: DuniterCoreConf,
         currency: String,
         duniter_mode: DuniterMode,
         profile_path_opt: Option<&Path>,
@@ -136,20 +136,18 @@ impl DuniterServer {
                 duniter_core::global::start_global_background_task(global_recv).await;
 
                 // Start duniter modules
-                if conf_clone.gva.is_some() {
-                    log::info!("start duniter modules...");
-                    start_duniter_modules(
-                        &conf_clone,
-                        currency,
-                        threadpool_async_handler,
-                        Mempools { txs: txs_mempool },
-                        duniter_mode,
-                        profile_path_opt_clone,
-                        software_version,
-                    )
-                    .await
-                    .expect("Fail to start duniter modules");
-                }
+                log::info!("start duniter modules...");
+                start_duniter_modules(
+                    &conf_clone,
+                    currency,
+                    threadpool_async_handler,
+                    Mempools { txs: txs_mempool },
+                    duniter_mode,
+                    profile_path_opt_clone,
+                    software_version,
+                )
+                .await
+                .expect("Fail to start duniter modules");
             });
         });
 
@@ -169,7 +167,7 @@ impl DuniterServer {
     }
     #[cfg(test)]
     pub(crate) fn test(
-        conf: DuniterConf,
+        conf: DuniterCoreConf,
         duniter_mode: DuniterMode,
     ) -> anyhow::Result<DuniterServer> {
         DuniterServer::start(

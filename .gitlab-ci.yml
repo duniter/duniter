@@ -36,14 +36,6 @@ workflow:
     - nvm install 10
     - nvm use 10
 
-
-.cached_nvm: &cached_nvm
-  <<: *env
-  cache:
-    untracked: true
-    paths:
-      - node_modules/
-
 .rust_env:
   image: registry.duniter.org/docker/rust/rust-x64-stable-ci:latest
   tags:
@@ -51,31 +43,6 @@ workflow:
   before_script:
     - export PATH="$HOME/.cargo/bin:$PATH"
     - rustup show && rustc --version && cargo --version
-
-
-#pages:
-#  <<: *env
-#  stage: pages
-#  cache: {}
-#  script:
-#    - npm i
-#    - npm doc
-#    - mkdir -p public
-#    - cp .gitlab/pages/pages-index.html public/index.html
-#    - sed -i "s/{BRANCH}/$CI_COMMIT_REF_NAME/g" public/index.html
-#    - mv typedoc public/
-#    - echo "$CI_JOB_ID"
-#    - curl "https://git.duniter.org/nodes/typescript/duniter/-/jobs/$CI_JOB_ID/artifacts/raw/coverage.tar.gz"
-#    - tar xzf coverage.tar.gz
-#    - mv coverage "public/coverage"
-#    - ls public
-#  artifacts:
-#    untracked: true
-#    paths:
-#      - public
-#  only:
-#    - loki
-#    - dev
 
 tests:
   <<: *env

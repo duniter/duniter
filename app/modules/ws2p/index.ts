@@ -271,7 +271,7 @@ export class WS2PAPI extends stream.Transform {
       } else {
         this.conf.ws2p.publicAccess = true;
         this.conf.ws2p.upnp = false;
-        this.conf.ws2p.host = "127.0.0.1";
+        this.conf.ws2p.host = "0.0.0.0";
         this.conf.ws2p.port = 20901;
         this.conf.ws2p.maxPublic = 30;
         this.conf.ws2p.maxPrivate = 4;

@@ -18,7 +18,7 @@ The summary gives an overview of the rules described below. Reading it will help
 
 Every commit must follow this convention:
 
-    [type] scope: action subject
+    type(scope): action subject
 
 The **type** must be a keyword of the "Commit types" list below.
 
@@ -37,10 +37,10 @@ Commits must be lowercase.
 - `build`: Changes in the scripts of build, packaging or publication of releases.
 - `ci` :  Changes in the Continuous Integration pipeline.
 - `deps` : Changes in dependencies without changes into the code. This can be for update or deletion of third-party libraries.
-- `docs` : Changes in documentation (both for translation and new content).
+- `doc` : Changes in documentation (both for translation and new content).
 - `feat` : Development of a new feature.
 - `fix` : Bug fixing.
-- `opti` :  Optimisation: better performances, decrease in memory or disk usage.
+- `perf` :  Optimisation: better performances, decrease in memory or disk usage.
 - `ref` : Refactoring. This commit doesn't change the functionnality.
 - `style` : Style modification (usually `fmt` and `clippy`).
 - `tests` : Changes in tests or new tests.

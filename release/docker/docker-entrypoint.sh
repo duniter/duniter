@@ -4,6 +4,7 @@ set -u
 function boolean () {
   echo "$1" | sed -E 's/^(true|yes|1)$/true/i'
 }
+big_fat_warning='\033[01;31m**WARNING**:\033[0m'
 
 DEBUG_ENTRYPOINT="$(boolean "${DEBUG_ENTRYPOINT:-false}")"
 if [ "$DEBUG_ENTRYPOINT" = true ]; then
@@ -17,9 +18,24 @@ home_default=$home/duniter_default
 manual_config="$(boolean "${DUNITER_MANUAL_CONFIG:-false}")"
 auto_sync="$(boolean "${DUNITER_AUTO_SYNC:-false}")"
 
-# Use path /etc/duniter/conf.json
-if ! [ -f "$config/conf.json" ] && [ -f "$home_default/conf.json" ]; then
-  mv "$home_default/conf.json" "$config/conf.json"
+# Use new path /etc/duniter/conf.json
+if ! [ -f "$config/conf.json" ]; then
+  if [ "$(readlink "$home_default/conf.json")" = "$config/conf.json" ]; then
+    # The configuration file was moved already but the link is dangling
+    # It is likely that '/etc/duniter' is an anonymous volume
+    echo -e "$big_fat_warning Your configuration file didn't survive the restart!"
+    echo -e "$big_fat_warning Make sure that '/etc/duniter' is explicitely mounted as a persistent volume or you'll lose it again."
+    if [ -f "$home_default/conf.json.backup" ]; then
+      echo -e "$big_fat_warning Found backup file '$home_default/conf.json.backup'; using it..."
+      mv "$home_default/conf.json.backup" "$home_default/conf.json"
+    fi
+  fi
+  if [ -f "$home_default/conf.json" ]; then
+    echo "Moving existing configuration file '$home_default/conf.json' to its new location: '$config/conf.json'"
+    echo "A backup is kept at '$home_default/conf.json.backup'"
+    cp "$home_default/conf.json" "$home_default/conf.json.backup"
+    mv "$home_default/conf.json" "$config/conf.json"
+  fi
 fi
 mkdir -p "$home/duniter_default"
 ln -fs "$config/conf.json" "$home_default/conf.json"

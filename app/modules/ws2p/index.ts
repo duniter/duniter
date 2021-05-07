@@ -253,6 +253,54 @@ export class WS2PAPI extends stream.Transform {
   }
 
   startService = async () => {
+
+    // Override ws2p public configuration from environment variables
+    if (process.env.DUNITER_WS2_PUBLIC === "true") {
+      if (!this.conf.ws2p) {
+        this.conf.ws2p = {
+          privateAccess: true,
+          publicAccess: true,
+          uuid: nuuid.v4().slice(0, 8),
+          upnp: false,
+          preferedOnly: false,
+          privilegedOnly: false,
+          host: "127.0.0.1",
+          port: 20901,
+          maxPublic: 30,
+          maxPrivate: 4,
+        };
+      } else {
+        this.conf.ws2p.publicAccess = true;
+        this.conf.ws2p.upnp = false;
+        this.conf.ws2p.host = "127.0.0.1";
+        this.conf.ws2p.port = 20901;
+        this.conf.ws2p.maxPublic = 30;
+        this.conf.ws2p.maxPrivate = 4;
+      }
+
+      if (process.env.DUNITER_WS2_HOST) {
+        this.conf.ws2p.host = process.env.DUNITER_WS2_HOST;
+      }
+      if (process.env.DUNITER_WS2_PORT) {
+        this.conf.ws2p.port = parseInt(process.env.DUNITER_WS2_PORT);
+      }
+      if (process.env.DUNITER_WS2_REMOTE_HOST) {
+        this.conf.ws2p.remotehost = process.env.DUNITER_WS2_REMOTE_HOST;
+      }
+      if (process.env.DUNITER_WS2_REMOTE_PORT) {
+        this.conf.ws2p.remoteport = parseInt(process.env.DUNITER_WS2_REMOTE_PORT);
+      }
+      if (process.env.DUNITER_WS2_REMOTE_PATH) {
+        this.conf.ws2p.remotepath = process.env.DUNITER_WS2_REMOTE_PATH;
+      }
+      if (process.env.DUNITER_WS2_PREFERED_KEYS) {
+        this.conf.ws2p.preferedNodes = process.env.DUNITER_WS2_PREFERED_KEYS.split(',');
+      }
+      if (process.env.DUNITER_WS2_PRIVILEGED_KEYS) {
+        this.conf.ws2p.privilegedNodes = process.env.DUNITER_WS2_PRIVILEGED_KEYS.split(',');
+      }
+    }
+
     /***************
      * PUBLIC ACCESS
      **************/

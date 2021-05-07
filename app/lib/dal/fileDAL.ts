@@ -247,7 +247,6 @@ export class FileDAL implements ServerDAO {
     let rustServerConf = {
       command: commandName,
       currency: currency || "",
-      gva: conf.gva,
       selfKeypair,
       txsMempoolSize:
         conf.txsMempoolSize || constants.SANDBOX_SIZE_TRANSACTIONS,

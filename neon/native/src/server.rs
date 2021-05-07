@@ -21,7 +21,7 @@ use dubp::documents::{
 };
 use dubp::documents_parser::prelude::*;
 use dubp::{common::crypto::hashs::Hash, crypto::keys::ed25519::Ed25519KeyPair};
-use duniter_server::{DuniterConf, DuniterMode, DuniterServer, GvaConf};
+use duniter_server::{DuniterCoreConf, DuniterMode, DuniterServer};
 use neon::declare_types;
 use neon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -39,7 +39,6 @@ declare_types! {
 
             let rust_server_conf_stringified: RustServerConfStringified = neon_serde::from_value(&mut cx, rust_server_conf_js)?;
 
-            let gva_conf = rust_server_conf_stringified.gva;
             let currency = rust_server_conf_stringified.currency;
             let self_key_pair = if let Some(self_keypair_str) = rust_server_conf_stringified.self_keypair {
                 into_neon_res(&mut cx, crate::crypto::keypair_from_expanded_base58_secret_key(&self_keypair_str))?
@@ -47,8 +46,7 @@ declare_types! {
                 Ed25519KeyPair::generate_random().expect("fail to gen random keyypair")
             };
             let txs_mempool_size = rust_server_conf_stringified.txs_mempool_size as usize;
-            let conf = DuniterConf {
-                gva: gva_conf,
+            let conf = DuniterCoreConf {
                 self_key_pair,
                 txs_mempool_size
             };
@@ -475,7 +473,6 @@ pub struct PeerCardStringified {
 #[serde(rename_all = "camelCase")]
 struct RustServerConfStringified {
     currency: String,
-    gva: Option<GvaConf>,
     self_keypair: Option<String>,
     txs_mempool_size: u32,
 }

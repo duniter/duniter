@@ -180,20 +180,6 @@ export class ConfDTO
     public bmaWithCrawler: boolean,
     public nonWoTPeersLimit: number,
     public proxiesConf: ProxiesConf | undefined,
-    public gva?: {
-      enabled: boolean;
-      ip4?: string;
-      ip6?: string;
-      port?: number;
-      path?: string;
-      subscriptionsPath?: string;
-      remoteHost?: string;
-      remotePort?: number;
-      remotePath?: string;
-      remoteSubscriptionsPath?: string;
-      remoteTls?: boolean;
-      whitelist?: string[];
-    },
     public ws2p?: {
       privateAccess?: boolean;
       publicAccess?: boolean;

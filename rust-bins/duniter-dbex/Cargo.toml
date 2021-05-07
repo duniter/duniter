@@ -22,7 +22,7 @@ anyhow = "1.0.33"
 arrayvec = "0.5.1"
 comfy-table = "2.1.0"
 dirs = "3.0.1"
-dubp = { version = "0.51.0", features = ["duniter"] }
+dubp = { version = "0.53.1", features = ["duniter"] }
 duniter-core = { git = "https://git.duniter.org/nodes/rust/duniter-core", features = ["bc-writer", "explorer", "leveldb_backend"] }
 duniter-gva-db = { git = "https://git.duniter.org/nodes/rust/modules/duniter-gva", default-features = false, features = ["explorer", "leveldb_backend"] }
 duniter-gva-indexer = { git = "https://git.duniter.org/nodes/rust/modules/duniter-gva" }

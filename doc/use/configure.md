@@ -183,27 +183,36 @@ This mode is optional if only because technically it is sometimes difficult or e
 
 ### Configuring GVA
 
-GVA is still disabled by default, to enable it you need to use wizard command:
+GVA is still disabled by default, to enable it you have 2 choices:
 
-`duniter wizard gva`
+- Use command `duniter gva configure`, you will be invited to configure GVA interactively.
+- Set environment variable `DUNITER_GVA_ENABLED="true"`
 
 It is also possible to manually edit `conf.json` file :
 
-| parameter | type | default value |
-|:-:|:-:|:-:|
-| ip4 | IPv4 | `"127.0.0.1"` |
-| ip6 | IPv6 | `"::1"` |
-| port | number |  `30901` |
-| path | string |  `"gva"` |
-| remotePath | string | `"gva"` |
-| subscriptionsPath | string |  `"gva-sub"` |
-| remoteSubscriptionsPath | string | `"gva-sub"` |
-| remoteTls | boolean |  `false` |
-| whitelist | IP[] |  `["127.0.0.1", "::1"]` |
+| parameter | type | mandatory | default value |
+|:-:|:-:|:-:|:-:|
+| enabled | boolean | yes | `true` |
+| ip4 | IPv4 | yes | `"0.0.0.0"` |
+| ip6 | IPv6 | no | `"::"` |
+| port | number | yes | `30901` |
+| path | string | yes | `"gva"` |
+| remoteHost | string | no | - |
+| remotePath | string | no | `"gva"` |
+| subscriptionsPath | string | no |  `"gva-sub"` |
+| remoteSubscriptionsPath | string | no | `"gva-sub"` |
+| remoteTls | boolean | no |  `false` |
+| whitelist | IP[] | no |  `["127.0.0.1", "::1"]` |
 
 GVA server listen to `http://<ip4|ip6>:<port>/<remotePath>`
 
 GVA subscriptions websocket server listen to `ws://<ip4|ip6>:<port>/<remoteSubscriptionsPath>`
+
+Each parameter can be redefined by the environment variable of the parameter name in uppercase prefixed by `DUNITER_GVA_`.
+
+For example, the `remotePath` parameter can be redefined by the `DUNITER_GVA_REMOTE_PATH` environment variable.
+
+Environment variables are only taken into account if all mandatory parameters are defined by environment variables.
 
 ## Synchronize your node
 

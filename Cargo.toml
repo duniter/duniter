@@ -1,8 +1,8 @@
 [package]
 authors = ["elois <elois@duniter.org>"]
-description = "Duniter launcher."
+description = "Duniter cli."
 edition = "2018"
-keywords = ["duniter", "launcher"]
+keywords = ["duniter"]
 license = "AGPL-3.0"
 name = "duniter-cli"
 repository = "https://git.duniter.org/nodes/typescript/duniter"
@@ -18,6 +18,8 @@ anyhow = "1.0.32"
 ctrlc = "3.1.6"
 daemonize-me = "0.3.1"
 dirs = "3.0.1"
+duniter-core = { git = "https://git.duniter.org/nodes/rust/duniter-core", features = ["bc-writer"] }
+duniter-gva-conf = { git = "https://git.duniter.org/nodes/rust/modules/duniter-gva", optional = true }
 log = "0.4.11"
 logwatcher = "0.1.1"
 nix = "0.17.0"
@@ -28,6 +30,11 @@ structopt = "0.3.18"
 [dev-dependencies]
 rusty-hook = "0.11.2"
 
+[features]
+default = ["gva"]
+
+gva = ["duniter-gva-conf"]
+
 [workspace]
 members = [
     "neon/native",
@@ -37,9 +44,14 @@ members = [
     "rust-libs/tests/duniter-integration-tests",
 ]
 
+[patch.'https://git.duniter.org/nodes/rust/duniter-core']
+#duniter-core = { path = "../duniter-core" }
+
+[patch.'https://git.duniter.org/nodes/rust/modules/duniter-gva']
+#duniter-gva = { path = "../duniter-gva" }
+
 [patch.crates-io]
 #dubp = { git = "https://git.duniter.org/libs/dubp-rs-libs" }
-
 #dubp = { path = "../dubp-rs-libs" }
 
 #leveldb_minimal = { path = "../../../../rust/leveldb_minimal" }

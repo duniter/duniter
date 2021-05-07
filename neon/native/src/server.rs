@@ -140,7 +140,7 @@ declare_types! {
                 let server = this.borrow(&guard);
                 server.server.get_self_endpoints()
             }.map(|endpoints| {
-                log::info!("TMP DEBUG get_self_endpoints={:?}", endpoints);
+                log::debug!("rust-server: get_self_endpoints: {:?}", endpoints);
                 let js_array = JsArray::new(&mut cx, endpoints.len() as u32);
                 for (i, ep) in endpoints.iter().enumerate() {
                     let js_string = cx.string(ep);

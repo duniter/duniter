@@ -14,38 +14,6 @@ The summary gives an overview of the rules described below. Reading it will help
   - clean commit history, understandable and concise
   - contribution approved by a reviewer
 
-## Branch naming
-
-### Branch created by Gitlab
-
-Most of the time, you'll use the "create a merge request" button and
-Gitlab will name your branch. In that case, please prefix the name of
-your branch with the branch type, for example:
-
-    fix/issue-test
-
-### Branch created manually
-
-On all cases anyway, your branch must start by your gitlab account's
-username, so than everybody knows who's working on it. Also add it its
-type, following this model:
-
-    type/description
-
-type := see "Branch types" below.
-description := short summary in present form, 3 to 4 words maximum, no articles.
-
-Example:
-
-    ref/rename_trait_module
-
-## Branch type
-
-- feature : add a feature
-- ref : refactoring existing code
-- fix : fix a bug in `dev` branch
-- hotfix : fix à bug in a stable release
-
 ## Naming commits
 
 Every commit must follow this convention:

@@ -1,13 +1,18 @@
 #!/bin/sh
 set -u
 
-home=/var/lib/duniter
-config=/etc/duniter
-home_default=$home/duniter_default
-
 function boolean () {
   echo "$1" | sed -E 's/^(true|yes|1)$/true/i'
 }
+
+DEBUG_ENTRYPOINT="$(boolean "${DEBUG_ENTRYPOINT:-false}")"
+if [ "$DEBUG_ENTRYPOINT" = true ]; then
+  set -x
+fi
+
+home=/var/lib/duniter
+config=/etc/duniter
+home_default=$home/duniter_default
 
 manual_config="$(boolean "${DUNITER_MANUAL_CONFIG:-false}")"
 auto_sync="$(boolean "${DUNITER_AUTO_SYNC:-false}")"

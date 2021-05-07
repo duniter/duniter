@@ -81,7 +81,7 @@ if [ "$auto_sync" = true ]; then
       echo "DUNITER_SYNC_HOST undefined. Can't start synchronization!"
     else
       echo "Starting synchronization..."
-      /usr/bin/duniter sync --no-interactive "$DUNITER_SYNC_HOST"
+      /usr/bin/duniter sync "$DUNITER_SYNC_HOST" --no-interactive
     fi
   fi
 fi

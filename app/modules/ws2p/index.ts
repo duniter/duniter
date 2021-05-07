@@ -311,6 +311,11 @@ export class WS2PAPI extends stream.Transform {
      **************/
 
     if (this.conf.ws2p && this.conf.ws2p.publicAccess) {
+
+      if (!this.conf.ws2p.uuid) {
+        this.conf.ws2p.uuid = nuuid.v4().slice(0, 8);
+      }
+
       /***************
        *   MANUAL
        **************/

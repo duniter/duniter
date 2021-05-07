@@ -1,4 +1,5 @@
 #!/bin/sh
+set -u
 
 home=/var/lib/duniter
 config=/etc/duniter
@@ -13,7 +14,7 @@ auto_sync="$(boolean "${DUNITER_AUTO_SYNC:-false}")"
 
 # Use path /etc/duniter/conf.json
 if ! [ -f "$config/conf.json" ] && [ -f "$home_default/conf.json" ]; then
-  mv "$home_default/conf.json" "$conf/conf.json"
+  mv "$home_default/conf.json" "$config/conf.json"
 fi
 mkdir -p "$home/duniter_default"
 ln -fs "$config/conf.json" "$home_default/conf.json"
@@ -55,7 +56,7 @@ fi
 if [ "$auto_sync" = true ]; then
   if ! [ -d "$home_default/data" ]; then
     echo "No 'data' folder. "
-    if [ -z "$DUNITER_SYNC_HOST" ]; then
+    if [ -z "$DUNITER_SYNC_HOST:-" ]; then
       echo "DUNITER_SYNC_HOST undefined. Can't start synchronization!"
     else
       echo "Starting synchronization..."

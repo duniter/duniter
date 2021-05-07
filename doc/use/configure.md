@@ -7,13 +7,16 @@ Authors: elois
 # Configure Duniter server variant
 
 Here is a short tutorial to configure your newly installed Duniter server node.  
-Warning: this tutorial is for server variant users only and in **version 1.9.x or higher**.
+Warning: this tutorial is for server variant users only and in **version 2.0.x or higher**.
+
+This tutorial shows how to configure duniter on **command line**.
+It is also possible to [configure duniter via environment variables](./conf_env_var.md).
 
 ## Configuring the cryptographic keypair
 
 All duniter nodes have a cryptographic keypair, which they use to sign the information they transmit over the network. There are two types of duniter nodes:
 
-**1. member nodes:** If the node's keypair corresponds to a member identity, then the node is a "member" node, and 
+**1. member nodes:** If the node's keypair corresponds to a member identity, then the node is a "member" node, and
 will automatically take part in the calculation of the blocks.
 
 **2. Mirror nodes:** If the node's keypair does not match a member identity, then the node is "mirror" type, it will not be able to write a block, but will still be useful for network resilience and for responding to client requests.
@@ -53,11 +56,10 @@ The prefix must be an integer between `1` and `899`.
 
 ### The APIs
 
-  In version `1.9.x` there are three APIs (Application Programming Interface) allowing your node to communicate with other programs.
+  In version `2.0.x` there are two APIs (Application Programming Interface) allowing your node to communicate with other programs.
 
 1. WS2P (WebSocketToPeer): this API is dedicated to inter-node communication, i.e. between your duniter node and other nodes of the same currency. **WS2P is enabled by default** on your duniter node.
-2. BMA (Basic Merkled Api) : this old API is dedicated to the communication with client software (Cesium, Sakia, Silkaj), it can also be used by any external program wishing to request the network (a website that would like to check the presence of a blockchain transaction for example). BMA is looking forward to developing a new client API to replace it. **BMA is disabled by default** on your duniter node.
-3. GVA (Graphql Verification Api): New client API intended to replace BMA. This API is still incomplete (this is why BMA still exists).
+2. GVA (Graphql Verification Api): this API is dedicated to the communication with client software (Ğecko, Tikka, ğcli, etc), it can also be used by any external program wishing to request the network (a website that would like to check the presence of a blockchain transaction for example). **GVA is disabled by default** on your duniter node.
 
 ### Configuring WS2P
 
@@ -137,37 +139,6 @@ Note that `ws://` will be replaced by `wss://` if you set the remote port to 443
 
 See [WS2P: preferred and privileged nodes](ws2p_preferred_privileged.md)
 
-### Configuring BMA
-
-The only thing you need to configure is an access point. Answer the questions in the following interactive command:
-
-```bash
-duniter wizard bma
-```
-
-Here is an example with my own configuration at home:
-
-```text
-2017-10-01T19:02:09+02:00 - debug: Plugging file system...
-2017-10-01T19:02:09+02:00 - debug: Loading conf...
-2017-10-01T19:02:10+02:00 - debug: Configuration saved.
-? IPv4 interface eth0 192.168.0.11
-? IPv6 interface None
-? Port 10901
-? Remote IPv4 81.64.137.147
-? Remote port 10901
-? Does this server has a DNS name? No
-2017-10-01T19:02:33+02:00 - debug: Configuration saved.
-```
-
-I'm wired, otherwise in wifi you have to choose the wlan0 option.
-Unfortunately my box does not support IPv6, so no IPv6 interface: None
-I don't use UPnP so I manually set a port (here 10901).
-Remote IPv4 corresponds to the public ip of my box, you can know it by visiting the site [https://www.myip.com/](https://www.myip.com/)
-Here I have not configured a DNS domain pointing to my duniter node.
-
-If like me you don't use UPnP, you have to manually configure a port forwarding on your box.
-
 ### What is UPnP
 
 Universal Plug and Play (UPnP) is a protocol that, if enabled on your Internet box, allows the programs you use to configure the network themselves by " controlling " your box.  
@@ -211,8 +182,6 @@ GVA subscriptions websocket server listen to `ws://<ip4|ip6>:<port>/<remoteSubsc
 Each parameter can be redefined by the environment variable of the parameter name in uppercase prefixed by `DUNITER_GVA_`.
 
 For example, the `remotePath` parameter can be redefined by the `DUNITER_GVA_REMOTE_PATH` environment variable.
-
-Environment variables are only taken into account if all mandatory parameters are defined by environment variables.
 
 ## Synchronize your node
 

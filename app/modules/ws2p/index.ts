@@ -253,7 +253,6 @@ export class WS2PAPI extends stream.Transform {
   }
 
   startService = async () => {
-
     // Override ws2p public configuration from environment variables
     if (process.env.DUNITER_WS2_PUBLIC === "true") {
       if (!this.conf.ws2p) {
@@ -288,16 +287,22 @@ export class WS2PAPI extends stream.Transform {
         this.conf.ws2p.remotehost = process.env.DUNITER_WS2_REMOTE_HOST;
       }
       if (process.env.DUNITER_WS2_REMOTE_PORT) {
-        this.conf.ws2p.remoteport = parseInt(process.env.DUNITER_WS2_REMOTE_PORT);
+        this.conf.ws2p.remoteport = parseInt(
+          process.env.DUNITER_WS2_REMOTE_PORT
+        );
       }
       if (process.env.DUNITER_WS2_REMOTE_PATH) {
         this.conf.ws2p.remotepath = process.env.DUNITER_WS2_REMOTE_PATH;
       }
       if (process.env.DUNITER_WS2_PREFERED_KEYS) {
-        this.conf.ws2p.preferedNodes = process.env.DUNITER_WS2_PREFERED_KEYS.split(',');
+        this.conf.ws2p.preferedNodes = process.env.DUNITER_WS2_PREFERED_KEYS.split(
+          ","
+        );
       }
       if (process.env.DUNITER_WS2_PRIVILEGED_KEYS) {
-        this.conf.ws2p.privilegedNodes = process.env.DUNITER_WS2_PRIVILEGED_KEYS.split(',');
+        this.conf.ws2p.privilegedNodes = process.env.DUNITER_WS2_PRIVILEGED_KEYS.split(
+          ","
+        );
       }
     }
 

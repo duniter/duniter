@@ -18,6 +18,8 @@ workflow:
       - rust-libs/**/*
       - test/**/*
       - .gitlab-ci.yml
+      - Cargo.toml
+      - Cargo.lock
       - index.ts
       - package.json
       - package-lock.json

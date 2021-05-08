@@ -86,7 +86,8 @@ Each parameter value can be defined by the environment variable of the parameter
 | ip6 | `DUNITER_GVA_IP6` | IPv6 | `::` |
 | port | `DUNITER_GVA_PORT` | number | `30901` |
 | path | `DUNITER_GVA_PATH` | string | `"gva"` |
-| remoteHost | `DUNITER_GVA_REMOTE_HOST` | string | - |
+| remoteHost | `DUNITER_GVA_REMOTE_HOST` | string | `ip4 [ip6]` |
+| remotePort | `DUNITER_GVA_REMOTE_PORT` | string | `port` |
 | remotePath | `DUNITER_GVA_REMOTE_PATH` | string | `"gva"` |
 | subscriptionsPath | `DUNITER_GVA_SUBSCRIPTIONS_PATH` | string |  `"gva-sub"` |
 | remoteSubscriptionsPath | `DUNITER_GVA_REMOTE_SUBSCRIPTIONS_PATH` | string | `"gva-sub"` |

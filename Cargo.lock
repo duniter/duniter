@@ -387,9 +387,6 @@ name = "cc"
 version = "1.0.67"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3c69b077ad434294d3ce9f1f6143a2a4b89a8a2d54ef813d85003a4fd1137fd"
-dependencies = [
- "jobserver",
-]
 
 [[package]]
 name = "cfg-if"
@@ -867,7 +864,7 @@ dependencies = [
 [[package]]
 name = "dubp-wot"
 version = "0.11.0"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#06f484b17a8336ec908ef423f32cbd0a5a0f16f5"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#3e703a2341062983dd02421467056ca3ccd05715"
 dependencies = [
  "log",
  "rayon",
@@ -877,7 +874,7 @@ dependencies = [
 [[package]]
 name = "duniter-bc-reader"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f2a10fe941cc666213f925b7197c17d2cab69bed"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#3e703a2341062983dd02421467056ca3ccd05715"
 dependencies = [
  "anyhow",
  "dubp",
@@ -888,7 +885,7 @@ dependencies = [
 [[package]]
 name = "duniter-bca"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#4ee272b85d6420ed6640b9503019cfa04864c851"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#701aac0c0b6295e7d8796498b6bbc180ce2dbfeb"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -911,7 +908,7 @@ dependencies = [
 [[package]]
 name = "duniter-bca-types"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#4ee272b85d6420ed6640b9503019cfa04864c851"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#701aac0c0b6295e7d8796498b6bbc180ce2dbfeb"
 dependencies = [
  "arrayvec",
  "bincode",
@@ -943,7 +940,7 @@ dependencies = [
 [[package]]
 name = "duniter-conf"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f2a10fe941cc666213f925b7197c17d2cab69bed"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#3e703a2341062983dd02421467056ca3ccd05715"
 dependencies = [
  "anyhow",
  "dubp",
@@ -956,7 +953,7 @@ dependencies = [
 [[package]]
 name = "duniter-core"
 version = "1.8.1"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f2a10fe941cc666213f925b7197c17d2cab69bed"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#3e703a2341062983dd02421467056ca3ccd05715"
 dependencies = [
  "duniter-bc-reader",
  "duniter-conf",
@@ -993,7 +990,7 @@ dependencies = [
 [[package]]
 name = "duniter-dbs"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f2a10fe941cc666213f925b7197c17d2cab69bed"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#3e703a2341062983dd02421467056ca3ccd05715"
 dependencies = [
  "arrayvec",
  "bincode",
@@ -1016,7 +1013,7 @@ dependencies = [
 [[package]]
 name = "duniter-dbs-write-ops"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f2a10fe941cc666213f925b7197c17d2cab69bed"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#3e703a2341062983dd02421467056ca3ccd05715"
 dependencies = [
  "chrono",
  "dubp",
@@ -1031,7 +1028,7 @@ dependencies = [
 [[package]]
 name = "duniter-global"
 version = "1.8.1"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f2a10fe941cc666213f925b7197c17d2cab69bed"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#3e703a2341062983dd02421467056ca3ccd05715"
 dependencies = [
  "async-rwlock",
  "dubp",
@@ -1044,7 +1041,7 @@ dependencies = [
 [[package]]
 name = "duniter-gva"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#4ee272b85d6420ed6640b9503019cfa04864c851"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#701aac0c0b6295e7d8796498b6bbc180ce2dbfeb"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -1075,7 +1072,7 @@ dependencies = [
 [[package]]
 name = "duniter-gva-conf"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#4ee272b85d6420ed6640b9503019cfa04864c851"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#701aac0c0b6295e7d8796498b6bbc180ce2dbfeb"
 dependencies = [
  "anyhow",
  "duniter-core",
@@ -1087,7 +1084,7 @@ dependencies = [
 [[package]]
 name = "duniter-gva-db"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#4ee272b85d6420ed6640b9503019cfa04864c851"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#701aac0c0b6295e7d8796498b6bbc180ce2dbfeb"
 dependencies = [
  "bincode",
  "chrono",
@@ -1104,7 +1101,7 @@ dependencies = [
 [[package]]
 name = "duniter-gva-dbs-reader"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#4ee272b85d6420ed6640b9503019cfa04864c851"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#701aac0c0b6295e7d8796498b6bbc180ce2dbfeb"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -1118,7 +1115,7 @@ dependencies = [
 [[package]]
 name = "duniter-gva-gql"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#4ee272b85d6420ed6640b9503019cfa04864c851"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#701aac0c0b6295e7d8796498b6bbc180ce2dbfeb"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -1139,7 +1136,7 @@ dependencies = [
 [[package]]
 name = "duniter-gva-indexer"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#4ee272b85d6420ed6640b9503019cfa04864c851"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#701aac0c0b6295e7d8796498b6bbc180ce2dbfeb"
 dependencies = [
  "anyhow",
  "dubp",
@@ -1168,7 +1165,7 @@ dependencies = [
 [[package]]
 name = "duniter-mempools"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f2a10fe941cc666213f925b7197c17d2cab69bed"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#3e703a2341062983dd02421467056ca3ccd05715"
 dependencies = [
  "dubp",
  "duniter-bc-reader",
@@ -1181,7 +1178,7 @@ dependencies = [
 [[package]]
 name = "duniter-module"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f2a10fe941cc666213f925b7197c17d2cab69bed"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#3e703a2341062983dd02421467056ca3ccd05715"
 dependencies = [
  "anyhow",
  "async-mutex",
@@ -1783,28 +1780,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "47be2f14c678be2fdcab04ab1171db51b2762ce6f0a8ee87c8dd4a04ed216135"
 
 [[package]]
-name = "itertools"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "284f18f85651fe11e8a991b2adb42cb078325c996ed026d994719efcfca1d54b"
-dependencies = [
- "either",
-]
-
-[[package]]
 name = "itoa"
 version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd25036021b0de88a0aff6b850051563c6516d0bf53f8638938edbb9de732736"
-
-[[package]]
-name = "jobserver"
-version = "0.1.22"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "972f5ae5d1cb9c6ae417789196c803205313edde988685da5e3aae0827b9e7fd"
-dependencies = [
- "libc",
-]
 
 [[package]]
 name = "js-sys"
@@ -1830,7 +1809,7 @@ dependencies = [
 [[package]]
 name = "kv_typed"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/duniter-core#f2a10fe941cc666213f925b7197c17d2cab69bed"
+source = "git+https://git.duniter.org/nodes/rust/duniter-core#3e703a2341062983dd02421467056ca3ccd05715"
 dependencies = [
  "byteorder",
  "cfg-if 0.1.10",
@@ -2853,7 +2832,6 @@ dependencies = [
  "libc",
  "log",
  "parking_lot",
- "zstd",
 ]
 
 [[package]]
@@ -3611,35 +3589,4 @@ dependencies = [
  "quote",
  "syn",
  "synstructure",
-]
-
-[[package]]
-name = "zstd"
-version = "0.5.4+zstd.1.4.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69996ebdb1ba8b1517f61387a883857818a66c8a295f487b1ffd8fd9d2c82910"
-dependencies = [
- "zstd-safe",
-]
-
-[[package]]
-name = "zstd-safe"
-version = "2.0.6+zstd.1.4.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98aa931fb69ecee256d44589d19754e61851ae4769bf963b385119b1cc37a49e"
-dependencies = [
- "libc",
- "zstd-sys",
-]
-
-[[package]]
-name = "zstd-sys"
-version = "1.4.18+zstd.1.4.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1e6e8778706838f43f771d80d37787cb2fe06dafe89dd3aebaf6721b9eaec81"
-dependencies = [
- "cc",
- "glob",
- "itertools",
- "libc",
 ]

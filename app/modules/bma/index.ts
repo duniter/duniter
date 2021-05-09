@@ -275,6 +275,34 @@ export class BMAPI extends stream.Transform {
   }
 
   startService = async () => {
+    // Override BMA configuration from environment variables
+    if (process.env.DUNITER_BMA_ENABLED === "true") {
+      if (this.conf.nobma) {
+        this.conf.nobma = false;
+      }
+      if (this.server.conf.upnp) {
+        this.server.conf.upnp = false;
+      }
+    }
+
+    if (process.env.DUNITER_BMA_IP4) {
+      this.server.conf.ipv4 = process.env.DUNITER_BMA_IP4;
+    }
+    if (process.env.DUNITER_BMA_IP6) {
+      this.server.conf.ipv6 = process.env.DUNITER_BMA_IP6;
+    }
+    if (process.env.DUNITER_BMA_REMOTE_HOST) {
+      this.server.conf.remotehost = process.env.DUNITER_BMA_REMOTE_HOST;
+    }
+    if (process.env.DUNITER_BMA_PORT) {
+      this.server.conf.port = parseInt(process.env.DUNITER_BMA_PORT);
+    }
+    if (process.env.DUNITER_BMA_REMOTE_PORT) {
+      this.server.conf.remoteport = parseInt(
+        process.env.DUNITER_BMA_REMOTE_PORT
+      );
+    }
+
     if (this.conf.nobma) {
       // Disable BMA
       return Promise.resolve();

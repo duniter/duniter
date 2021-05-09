@@ -9,7 +9,7 @@ export class DBTx {
   comment: string;
   blockstamp: string;
   blockstampTime: number | null;
-  time: number | null;
+  time: number;
   inputs: string[];
   unlocks: string[];
   outputs: string[];
@@ -21,8 +21,6 @@ export class DBTx {
   received: number;
   output_base: number;
   output_amount: number;
-  written_on: string;
-  writtenOn: number;
 
   static fromTransactionDTO(tx: TransactionDTO) {
     const dbTx = new DBTx();

@@ -59,12 +59,13 @@ mod tests {
         }
         .build_with_signature(smallvec![]);
 
+        let received_time = chrono::offset::Utc::now().timestamp();
         server.add_pending_tx_force(tx.clone())?;
 
         let txs_history = server.get_transactions_history(PublicKey::default())?;
 
         tx.get_hash();
-        assert_eq!(txs_history.sending, vec![tx]);
+        assert_eq!(txs_history.sending, vec![(tx, received_time)]);
 
         server.remove_all_pending_txs()?;
 

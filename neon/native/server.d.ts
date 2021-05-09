@@ -78,8 +78,25 @@ export class RustDbTx {
     unlocks: string[];
     signatures: string[];
     comment: string;
+    receivedTime: number;
     writtenBlockNumber: number;
     writtenTime: number;
+}
+
+export class RustPendingTx {
+    version: number;
+    currency: string;
+    locktime: number;
+    hash: string;
+    blockstamp: string;
+    blockstampTime: number;
+    issuers: string[];
+    inputs: string[];
+    outputs: string[];
+    unlocks: string[];
+    signatures: string[];
+    comment: string;
+    receivedTime: number;
 }
 
 export class RustServerConf {
@@ -92,8 +109,8 @@ export class RustServerConf {
 export class TxsHistory {
     sent: RustDbTx[];
     received: RustDbTx[];
-    sending: TransactionDTOV10[];
-    pending: TransactionDTOV10[];
+    sending: RustPendingTx[];
+    pending: RustPendingTx[];
 }
 
 export class RustServer {

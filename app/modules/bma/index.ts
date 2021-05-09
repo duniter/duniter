@@ -280,6 +280,8 @@ export class BMAPI extends stream.Transform {
       if (this.conf.nobma) {
         this.conf.nobma = false;
       }
+      this.server.conf.ipv4 = "127.0.0.1";
+      this.server.conf.port = 10901;
       if (this.server.conf.upnp) {
         this.server.conf.upnp = false;
       }

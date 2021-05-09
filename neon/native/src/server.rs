@@ -219,7 +219,7 @@ declare_types! {
             };
             match res {
                 Ok(txs) => {
-                    let txs: Vec<_> = txs.into_iter().map(|tx| tx.0.to_string_object()).collect();
+                    let txs: Vec<_> = txs.into_iter().map(|tx| tx.doc.to_string_object()).collect();
                     Ok(neon_serde::to_value(&mut cx, &txs)?)
                 },
                 Err(e) => cx.throw_error(format!("{}", e)),
@@ -279,8 +279,16 @@ declare_types! {
                         .into_iter()
                         .map(|(tx, wb, wt)| DbTx::v10(tx.to_string_object(), tx.get_hash(), wb.number.0, wt))
                         .collect();
-                    let sending: Vec<_> = txs_history.sending.into_iter().map(|tx| tx.to_string_object()).collect();
-                    let pending: Vec<_> = txs_history.pending.into_iter().map(|tx| tx.to_string_object()).collect();
+                    let sending: Vec<_> = txs_history
+                        .sending
+                        .into_iter()
+                        .map(|(tx, received_time)| PendingTx::v10( tx.to_string_object(), tx.get_hash(), received_time))
+                        .collect();
+                    let pending: Vec<_> = txs_history
+                        .pending
+                        .into_iter()
+                        .map(|(tx, received_time)| PendingTx::v10( tx.to_string_object(), tx.get_hash(), received_time))
+                        .collect();
 
                     Ok(neon_serde::to_value(&mut cx, &TxsHistoryStringified {
                         sent,
@@ -430,7 +438,7 @@ impl DbTx {
         written_block_number: u32,
         written_time: i64,
     ) -> Self {
-        DbTx {
+        Self {
             version: 10,
             currency: tx_doc.currency,
             blockstamp: tx_doc.blockstamp,
@@ -444,6 +452,46 @@ impl DbTx {
             hash: tx_hash.to_hex(),
             written_block_number,
             written_time,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Hash, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct PendingTx {
+    pub version: u32,
+    pub currency: String,
+    pub blockstamp: String,
+    pub locktime: u64,
+    pub issuers: Vec<String>,
+    pub inputs: Vec<String>,
+    pub unlocks: Vec<String>,
+    pub outputs: Vec<String>,
+    pub comment: String,
+    pub signatures: Vec<String>,
+    pub hash: String,
+    pub received_time: i64,
+}
+
+impl PendingTx {
+    pub fn v10(
+        tx_doc: TransactionDocumentV10Stringified,
+        tx_hash: Hash,
+        received_time: i64,
+    ) -> Self {
+        Self {
+            version: 10,
+            currency: tx_doc.currency,
+            blockstamp: tx_doc.blockstamp,
+            locktime: tx_doc.locktime,
+            issuers: tx_doc.issuers,
+            inputs: tx_doc.inputs,
+            unlocks: tx_doc.unlocks,
+            outputs: tx_doc.outputs,
+            comment: tx_doc.comment,
+            signatures: tx_doc.signatures,
+            hash: tx_hash.to_hex(),
+            received_time,
         }
     }
 }
@@ -481,6 +529,6 @@ struct RustServerConfStringified {
 struct TxsHistoryStringified {
     sent: Vec<DbTx>,
     received: Vec<DbTx>,
-    sending: Vec<TransactionDocumentV10Stringified>,
-    pending: Vec<TransactionDocumentV10Stringified>,
+    sending: Vec<PendingTx>,
+    pending: Vec<PendingTx>,
 }

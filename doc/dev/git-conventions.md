@@ -28,7 +28,7 @@ The **action** must be a verb in imperative form, the **subject** a noun.
 
 For example, we rename the trait `Foo` to `Fii` in the `toto` module:
 
-    [ref] toto: rename Foo -> Fii
+    ref(toto): rename Foo -> Fii
 
 Commits must be lowercase.
 

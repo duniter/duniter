@@ -110,4 +110,4 @@ export DUNITER_CONF_HOME
 cd /duniter/duniter
 echo Starting duniter with:
 echo /usr/bin/duniter "$@"
-/usr/bin/duniter "$@"
+exec /usr/bin/duniter "$@"

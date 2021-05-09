@@ -35,7 +35,7 @@ Restart the stopped node:
 
 ### Volumes
 
-The container creates 2 docker volumes. The first one is mounted under `/etc/duniter` and contains the Duniter configuration. The other one is mounted under the Duniter home directory, i.e. `/var/lib/duniter`. This is the place the Duniter database will be stored.
+The container creates 2 docker volumes. The first one is mounted under the Duniter home directory, i.e. `/var/lib/duniter`. This is the place the Duniter configuration files and database will be stored. The other one is mounted under `/etc/duniter` which is where it is recommended to store the keyfile when the instance is a member node, so that the keyfile is kept separated from the - potentially - volatile data.
 
 See more about managing volumes with docker in the [docker documentation](https://docs.docker.com/storage/volumes/).
 

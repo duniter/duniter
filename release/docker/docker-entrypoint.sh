@@ -107,7 +107,6 @@ DUNITER_CONF_HOME="/etc/duniter"
 export DUNITER_CONF_HOME
 
 # Start duniter
-cd /duniter/duniter
 echo Starting duniter with:
 echo /usr/bin/duniter "$@"
 exec /usr/bin/duniter "$@"

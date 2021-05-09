@@ -44,10 +44,10 @@ RUN addgroup -S -g 1111 duniter && \
 RUN mkdir -p /var/lib/duniter /etc/duniter && chown duniter:duniter /var/lib/duniter /etc/duniter
 
 # copy the build artifact from the build stage
-COPY --from=build --chown=duniter:duniter /duniter/work /duniter/duniter
+COPY --from=build --chown=duniter:duniter /duniter/work /duniter
 
 # install duniter executable symlink
-RUN ln -s /duniter/duniter/bin/duniter /usr/bin/duniter
+RUN ln -s /duniter/bin/duniter /usr/bin/duniter
 
 # copy entrypoint
 COPY release/docker/docker-entrypoint.sh /

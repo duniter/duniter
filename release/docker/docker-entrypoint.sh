@@ -86,7 +86,28 @@ if [ "$auto_sync" = true ]; then
   fi
 fi
 
+# Network interface to listen to
+export DUNITER_WEB_UI_HOST="0.0.0.0"
+
+# Key file found
+if [ -f /etc/duniter/key.yml ]; then
+  export DUNITER_KEYFILE="/etc/duniter/keys.yml"
+fi
+
+# Without parameters, start with web interface
+if [ $# = 0 ]; then
+  set -- direct_webstart
+fi
+
+# Set --home option
+set -- --home "$home" "$@"
+
+# Define DUNITER_CONF_HOME
+DUNITER_CONF_HOME="/etc/duniter"
+export DUNITER_CONF_HOME
+
 # Start duniter
+cd /duniter/duniter
 echo Starting duniter with:
 echo /usr/bin/duniter "$@"
 /usr/bin/duniter "$@"

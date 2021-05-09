@@ -1,0 +1,5 @@
+.cargo
+.git*
+doc
+gui
+test

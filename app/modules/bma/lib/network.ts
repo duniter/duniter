@@ -80,7 +80,16 @@ export const Network = {
     if (whitelist.indexOf("127.0.0.1") === -1) {
       whitelist.push("127.0.0.1");
     }
+    if (whitelist.indexOf("::1") === -1) {
+      whitelist.push("::1");
+    }
     const ddosConf = server.conf.dos || {};
+
+    // Override BMA DDOS configuration from environment variables
+    if (process.env.DUNITER_BMA_WHITELIST) {
+      ddosConf.whitelist = process.env.DUNITER_BMA_WHITELIST.split(",");
+    }
+
     ddosConf.silentStart = true;
     ddosConf.whitelist = Underscore.uniq(
       (ddosConf.whitelist || []).concat(whitelist)

@@ -78,9 +78,6 @@ if [ $# = 0 ]; then
   set -- direct_webstart
 fi
 
-# Set --home option
-set -- --home "$home" "$@"
-
 # Start duniter
 echo Starting duniter with:
 echo /usr/bin/duniter "$@"

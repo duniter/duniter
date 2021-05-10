@@ -39,7 +39,11 @@ fn gen_webstart_args(args: &DuniterWebstartArgs, duniter_ts_args: &mut Vec<Strin
 }
 
 pub(crate) fn gen_duniter_ts_args(args: &DuniterArgs, duniter_js_exe: String) -> Vec<String> {
-    let mut duniter_ts_args = vec![duniter_js_exe];
+    let mut duniter_ts_args = vec![
+        "--max-old-space-size".to_owned(),
+        "4096".to_owned(),
+        duniter_js_exe,
+    ];
     if let Some(ref home) = args.home {
         duniter_ts_args.push("--home".to_owned());
         duniter_ts_args.push(home.to_str().expect("invalid home path").to_owned());

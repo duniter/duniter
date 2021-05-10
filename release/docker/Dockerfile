@@ -27,7 +27,6 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 RUN PATH=${HOME}/.cargo/bin:${PATH} \
 	RUSTFLAGS="-C target-feature=-crt-static" \
 	make -C release ADD_DEBUG=N server-gui clean \
-	&& cp release/docker/duniter.sh work/docker.sh \
 	&& rm -rf work/extra
 
 # ------------------------------------------------------------------------------
@@ -45,12 +44,10 @@ RUN addgroup -S -g 1111 duniter && \
 RUN mkdir -p /var/lib/duniter /etc/duniter && chown duniter:duniter /var/lib/duniter /etc/duniter
 
 # copy the build artifact from the build stage
-COPY --from=build --chown=duniter:duniter /duniter/work /duniter/duniter
+COPY --from=build --chown=duniter:duniter /duniter/work /duniter
 
-# copy bootstrap script
-RUN cp /duniter/duniter/docker.sh /usr/bin/duniter && \
-   chmod +x /usr/bin/duniter && \
-   chown duniter:duniter /usr/bin/duniter
+# install duniter executable symlink
+RUN ln -s /duniter/bin/duniter /usr/bin/duniter
 
 # copy entrypoint
 COPY release/docker/docker-entrypoint.sh /

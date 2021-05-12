@@ -11,12 +11,14 @@ if [ "$DEBUG_ENTRYPOINT" = true ]; then
   set -x
 fi
 
+# Initialize vars
 home=/var/lib/duniter
 home_default=$home/duniter_default
-
 manual_config="$(boolean "${DUNITER_MANUAL_CONFIG:-false}")"
 auto_sync="$(boolean "${DUNITER_AUTO_SYNC:-false}")"
+DUNITER_PEER_HOST="${DUNITER_PEER_HOST:-${DUNITER_SYNC_HOST:-}}"
 
+# Create default profile path
 mkdir -p "$home/duniter_default"
 
 # Manual config when enabled
@@ -50,6 +52,44 @@ if [ "$manual_config" = true ]; then
   if ! diff -q "$home_default/conf.json.orig.sorted" "$home_default/conf.json.sorted"; then
     diff -u "$home_default/conf.json.orig.sorted" "$home_default/conf.json.sorted"
   fi
+fi
+
+# If conf.json doesn't exist and we have DUNITER_PEER_HOST, then initialise it with
+# the currency parameters
+host_regex='[a-zA-Z0-9](([a-zA-Z0-9]|-)*[a-zA-Z0-9]+)?(\.[a-zA-Z0-9](([a-zA-Z0-9]|-)*[a-zA-Z0-9]+)?)*'
+ipv6_regex='((([0–9A-Fa-f]{1,4}:){7}[0–9A-Fa-f]{1,4})|(([0–9A-Fa-f]{1,4}:){6}:[0–9A-Fa-f]{1,4})|(([0–9A-Fa-f]{1,4}:){5}:([0–9A-Fa-f]{1,4}:)?[0–9A-Fa-f]{1,4})|(([0–9A-Fa-f]{1,4}:){4}:([0–9A-Fa-f]{1,4}:){0,2}[0–9A-Fa-f]{1,4})|(([0–9A-Fa-f]{1,4}:){3}:([0–9A-Fa-f]{1,4}:){0,3}[0–9A-Fa-f]{1,4})|(([0–9A-Fa-f]{1,4}:){2}:([0–9A-Fa-f]{1,4}:){0,4}[0–9A-Fa-f]{1,4})|(([0–9A-Fa-f]{1,4}:){6}((b((25[0–5])|(1d{2})|(2[0–4]d)|(d{1,2}))b).){3}(b((25[0–5])|(1d{2})|(2[0–4]d)|(d{1,2}))b))|(([0–9A-Fa-f]{1,4}:){0,5}:((b((25[0–5])|(1d{2})|(2[0–4]d)|(d{1,2}))b).){3}(b((25[0–5])|(1d{2})|(2[0–4]d)|(d{1,2}))b))|(::([0–9A-Fa-f]{1,4}:){0,5}((b((25[0–5])|(1d{2})|(2[0–4]d)|(d{1,2}))b).){3}(b((25[0–5])|(1d{2})|(2[0–4]d)|(d{1,2}))b))|([0–9A-Fa-f]{1,4}::([0–9A-Fa-f]{1,4}:){0,5}[0–9A-Fa-f]{1,4})|(::([0–9A-Fa-f]{1,4}:){0,6}[0–9A-Fa-f]{1,4})|(([0–9A-Fa-f]{1,4}:){1,7}:))'
+
+if ! [ -f "$home_default/conf.json" ] && echo "${DUNITER_PEER_HOST}" | grep -E "^($host_regex|$ipv6_regex)(:[0-9]+)?$"; then
+  echo "No config file - Initializing currency from '$DUNITER_PEER_HOST'..."
+  port="${DUNITER_PEER_HOST#*:}"
+  if [ "${port:-443}" = 443 ]; then
+    scheme=https://
+  else
+    scheme=http://
+  fi
+  if wget -q -O- "$scheme$DUNITER_PEER_HOST/blockchain/parameters" >"$home_default/conf.json.new"; then
+    mv "$home_default/conf.json.new" "$home_default/conf.json"
+  else
+    echo -e "$big_fat_warning Failed."
+  fi
+fi
+
+# If peers.db is missing and DUNITER_PEER_HOST is set, bootstrap it using
+# 'sync --only-peers'
+# Working into a temporary Duniter home to avoid side effects on the current
+# database
+if ! [ -f "$home_default/peers.db" ] && [ -n "${DUNITER_PEER_HOST:-}" ]; then
+  echo "No peers database - Initializing from '$DUNITER_PEER_HOST'..."
+  rm -fr /tmp/duniter-bootstrap
+  (
+    cd /duniter
+    if bin/duniter --home /tmp/duniter-bootstrap sync "$DUNITER_PEER_HOST" --no-interactive --only-peers; then
+      mv /tmp/duniter-bootstrap/duniter_default/peers.db "$home_default/"
+    else
+      echo -e "$big_fat_warning Failed."
+    fi
+  )
+  rm -fr /tmp/duniter-bootstrap
 fi
 
 # Auto start synchronization when enabled and starting from scratch

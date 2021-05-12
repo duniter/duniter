@@ -1,5 +1,5 @@
 #!/bin/sh
-set -u
+set -uo pipefail
 
 function boolean () {
   echo "$1" | sed -E 's/^(true|yes|1)$/true/i'

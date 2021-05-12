@@ -80,6 +80,7 @@ import { LevelDBMindex } from "./indexDAL/leveldb/LevelDBMindex";
 import { ConfDAO } from "./indexDAL/abstract/ConfDAO";
 import { ServerDAO } from "./server-dao";
 import { PeerDTO } from "../dto/PeerDTO";
+import { RustPendingTx } from "../../../neon/native/server";
 
 const readline = require("readline");
 const indexer = require("../indexer").Indexer;
@@ -853,10 +854,12 @@ export class FileDAL implements ServerDAO {
       return null;
     } else {
       let writtenBlock = tx.writtenBlock ? tx.writtenBlock : null;
+      let writtenTime = tx.writtenTime ? tx.writtenTime : tx.receivedTime;
       let dbTx = DBTx.fromTransactionDTO(
         await this.computeTxBlockstampTime(TransactionDTO.fromJSONObject(tx))
       );
       dbTx.block_number = writtenBlock;
+      dbTx.time = writtenTime || 0;
       return dbTx;
     }
   }
@@ -1394,7 +1397,10 @@ export class FileDAL implements ServerDAO {
   }
 
   saveTransaction(tx: TransactionDTO) {
-    return this.rustServer.addPendingTx(tx);
+    let currentTimestamp = Math.floor(Date.now() / 1000);
+    return this.rustServer.addPendingTx(
+      tx.toTransactionDTOV10(currentTimestamp)
+    );
   }
 
   async computeTxBlockstampTime(tx: TransactionDTO): Promise<TransactionDTO> {
@@ -1413,6 +1419,16 @@ export class FileDAL implements ServerDAO {
     let db_tx = DBTx.fromTransactionDTO(tx_dto);
     db_tx.block_number = writtenBlockNumber;
     db_tx.time = writtenTime;
+    return db_tx;
+  }
+
+  async RustPendingTxToDbTx(tx: RustPendingTx): Promise<DBTx> {
+    let receivedTime = tx.receivedTime;
+    let tx_dto = await this.computeTxBlockstampTime(
+      TransactionDTO.fromJSONObject(tx)
+    );
+    let db_tx = DBTx.fromTransactionDTO(tx_dto);
+    db_tx.received = receivedTime;
     return db_tx;
   }
 
@@ -1436,20 +1452,10 @@ export class FileDAL implements ServerDAO {
       res.received.map(async (tx) => this.RustDbTxToDbTx(tx))
     );
     history.sending = await Promise.all(
-      res.sending.map(async (tx) => {
-        let tx_dto = await this.computeTxBlockstampTime(
-          TransactionDTO.fromJSONObject(tx)
-        );
-        return DBTx.fromTransactionDTO(tx_dto);
-      })
+      res.sending.map(async (tx) => this.RustPendingTxToDbTx(tx))
     );
     history.pending = await Promise.all(
-      res.pending.map(async (tx) => {
-        let tx_dto = await this.computeTxBlockstampTime(
-          TransactionDTO.fromJSONObject(tx)
-        );
-        return DBTx.fromTransactionDTO(tx_dto);
-      })
+      res.pending.map(async (tx) => this.RustPendingTxToDbTx(tx))
     );
     return history;
   }

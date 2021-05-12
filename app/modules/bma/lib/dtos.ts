@@ -776,6 +776,7 @@ export interface HttpTransaction {
   signatures: string[];
   raw: string;
   written_block: number | null;
+  writtenTime: number;
   hash: string;
 }
 
@@ -789,6 +790,7 @@ export interface HttpTransactionPending {
   locktime: number;
   signatures: string[];
   hash: string;
+  receivedTime: number;
 }
 
 export const Source = {
@@ -846,11 +848,10 @@ export interface HttpTxOfHistory {
   outputs: string[];
   comment: string;
   locktime: number;
-  received: number;
   signatures: string[];
   hash: string;
   block_number: number | null;
-  time: number | null;
+  time: number;
   blockstamp: string;
   blockstampTime: number | null;
 }

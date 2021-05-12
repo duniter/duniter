@@ -7,6 +7,7 @@ edition = "2018"
 
 [dependencies]
 anyhow = "1.0.34"
+chrono = "0.4"
 dubp = { version = "0.53.1", features = ["duniter"] }
 duniter-core = { git = "https://git.duniter.org/nodes/rust/duniter-core", features = ["bc-writer"] }
 duniter-server = { path = "../../duniter-server", features = ["gva"] }

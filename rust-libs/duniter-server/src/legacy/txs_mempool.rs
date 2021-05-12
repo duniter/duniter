@@ -53,7 +53,7 @@ impl DuniterServer {
             for event in events.deref() {
                 match event {
                     duniter_core::dbs::databases::txs_mp_v2::TxsEvent::Upsert { key, value } => {
-                        new_pending_txs.insert(key.0, value.0.clone());
+                        new_pending_txs.insert(key.0, value.doc.clone());
                     }
                     duniter_core::dbs::databases::txs_mp_v2::TxsEvent::Remove { key } => {
                         new_pending_txs.remove(&key.0);
@@ -73,7 +73,7 @@ impl DuniterServer {
             .execute(move |dbs| {
                 dbs.txs_mp_db.txs().iter(.., |it| {
                     it.values()
-                        .filter_ok(|tx| tx.0.version() >= min_version)
+                        .filter_ok(|tx| tx.doc.version() >= min_version)
                         .collect()
                 })
             })

@@ -306,6 +306,25 @@ export class TransactionDTO implements Cloneable {
     );
   }
 
+  toTransactionDTOV10(receivedTime: number): TransactionDTOV10 {
+    return {
+      currency: this.currency,
+      locktime: this.locktime,
+      hash: this.hash,
+      blockstamp: this.blockstamp,
+      blockstampTime: this.blockstampTime,
+      issuers: this.issuers,
+      inputs: this.inputs,
+      unlocks: this.unlocks,
+      outputs: this.outputs,
+      signatures: this.signatures,
+      comment: this.comment,
+      receivedTime: receivedTime,
+      writtenBlock: undefined,
+      writtenTime: undefined,
+    };
+  }
+
   static toRAW(json: TransactionDTO, noSig = false) {
     let raw = "";
     raw += "Version: " + json.version + "\n";

@@ -18,6 +18,7 @@ import { TransactionDTO } from "../../../../lib/dto/TransactionDTO";
 import {
   HttpSources,
   HttpTransaction,
+  HttpTransactionPending,
   HttpTxHistory,
   HttpTxOfHistory,
   HttpTxPending,
@@ -28,7 +29,7 @@ import { Underscore } from "../../../../lib/common-libs/underscore";
 const http2raw = require("../http2raw");
 
 export class TransactionBinding extends AbstractController {
-  async parseTransaction(req: any): Promise<HttpTransaction> {
+  async parseTransaction(req: any): Promise<HttpTransactionPending> {
     const res = await this.pushEntity(
       req,
       http2raw.transaction,
@@ -36,7 +37,6 @@ export class TransactionBinding extends AbstractController {
     );
     return {
       version: res.version,
-      currency: res.currency,
       issuers: res.issuers,
       inputs: res.inputs,
       outputs: res.outputs,
@@ -45,8 +45,7 @@ export class TransactionBinding extends AbstractController {
       comment: res.comment,
       locktime: res.locktime,
       hash: res.hash,
-      written_block: res.blockNumber,
-      raw: res.getRaw(),
+      receivedTime: Math.floor(Date.now() / 1000),
     };
   }
 
@@ -72,8 +71,6 @@ export class TransactionBinding extends AbstractController {
       version: tx.version,
       currency: tx.currency,
       locktime: tx.locktime,
-      // blockstamp: tx.blockstamp,
-      // blockstampTime: tx.blockstampTime,
       issuers: tx.issuers,
       inputs: tx.inputs,
       outputs: tx.outputs,
@@ -81,10 +78,8 @@ export class TransactionBinding extends AbstractController {
       signatures: tx.signatures,
       comment: tx.comment,
       hash: tx.hash,
-      // time: tx.time,
-      // block_number: tx.block_number,
       written_block: tx.block_number,
-      // received: tx.received,
+      writtenTime: tx.time,
       raw: "",
     };
   }
@@ -155,6 +150,7 @@ export class TransactionBinding extends AbstractController {
           blockstampTime: tx.blockstampTime,
           signatures: tx.signatures,
           hash: tx.hash,
+          receivedTime: t.receivedTime || 0,
         };
       }),
     };
@@ -192,8 +188,7 @@ function dbtx2HttpTxOfHistory(tx: DBTx): HttpTxOfHistory {
     signatures: tx.signatures,
     comment: tx.comment,
     hash: tx.hash,
-    time: tx.time,
+    time: tx.time || tx.received,
     block_number: tx.block_number,
-    received: tx.received,
   };
 }

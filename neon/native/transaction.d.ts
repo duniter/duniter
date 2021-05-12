@@ -12,7 +12,9 @@ export class TransactionDTOV10 {
     unlocks: string[];
     signatures: string[];
     comment: string;
+    receivedTime?: number;
     writtenBlock?: number;
+    writtenTime?: number;
 }
 
 export function rawTxParseAndVerify(raw: string, currency?: string): TransactionDTOV10;

@@ -46,8 +46,8 @@ RUN mkdir -p /var/lib/duniter /etc/duniter && chown duniter:duniter /var/lib/dun
 # copy the build artifact from the build stage
 COPY --from=build --chown=duniter:duniter /duniter/work /duniter
 
-# install duniter executable symlink
-RUN ln -s /duniter/bin/duniter /usr/bin/duniter
+# copy duniter wrapper
+COPY release/docker/duniter.sh /usr/bin/duniter
 
 # copy entrypoint
 COPY release/docker/docker-entrypoint.sh /
@@ -61,7 +61,7 @@ EXPOSE 9220 10901 20901 30901
 
 # use duniter user
 USER duniter
-WORKDIR /duniter
+WORKDIR /var/lib/duniter
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD []

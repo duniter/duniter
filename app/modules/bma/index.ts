@@ -197,6 +197,19 @@ export const BmaDependency = {
 
     service: {
       input: (server: Server, conf: NetworkConfDTO, logger: any) => {
+        // Override conf with environment variables
+        if (process.env.DUNITER_BMA_ENABLED) {
+          conf.nobma = false;
+          if (!conf.ipv4) {
+            conf.ipv4 = "127.0.0.1";
+          }
+        }
+        if (process.env.DUNITER_BMA_REMOTE_HOST) {
+          conf.remotehost = process.env.DUNITER_BMA_REMOTE_HOST;
+        }
+        if (process.env.DUNITER_BMA_REMOTE_PORT) {
+          conf.remoteport = parseInt(process.env.DUNITER_BMA_REMOTE_PORT);
+        }
         // Configuration errors
         if (!conf.nobma) {
           if (!conf.ipv4 && !conf.ipv6) {
@@ -211,7 +224,7 @@ export const BmaDependency = {
             throw new Error("BMA: no port for remote contact.");
           }
         }
-        if (!conf.nobma) {
+        if (!conf.nobma || process.env.DUNITER_BMA_ENABLED) {
           server.addEndpointsDefinitions(() =>
             Promise.resolve(getEndpoint(conf))
           );

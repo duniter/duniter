@@ -14,18 +14,28 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::into_neon_res;
-use dubp::common::crypto::keys::{ed25519::PublicKey, PublicKey as _};
-use dubp::documents::{
-    prelude::*,
-    transaction::{TransactionDocumentV10, TransactionDocumentV10Stringified},
+use dubp::{
+    common::{
+        crypto::{
+            hashs::Hash,
+            keys::{
+                ed25519::{Ed25519KeyPair, PublicKey, Signature},
+                PublicKey as _, Signature as _,
+            },
+        },
+        prelude::*,
+    },
+    documents::{
+        prelude::*,
+        transaction::{TransactionDocumentV10, TransactionDocumentV10Stringified},
+    },
+    documents_parser::prelude::*,
 };
-use dubp::documents_parser::prelude::*;
-use dubp::{common::crypto::hashs::Hash, crypto::keys::ed25519::Ed25519KeyPair};
 use duniter_server::{DuniterCoreConf, DuniterMode, DuniterServer};
 use neon::declare_types;
 use neon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::{path::PathBuf, str::FromStr};
 
 pub struct RustServer {
     server: DuniterServer,
@@ -373,11 +383,11 @@ declare_types! {
             let peer = duniter_server::PeerCardDbV1 {
                 version: peer_stringified.version,
                 currency: peer_stringified.currency,
-                pubkey: peer_stringified.pubkey,
-                blockstamp: peer_stringified.blockstamp,
+                pubkey: into_neon_res(&mut cx, PublicKey::from_base58(&peer_stringified.pubkey))?,
+                blockstamp: into_neon_res(&mut cx, Blockstamp::from_str(&peer_stringified.blockstamp))?,
                 endpoints: peer_stringified.endpoints,
-                status: peer_stringified.status,
-                signature: peer_stringified.signature,
+                status: &peer_stringified.status == "UP",
+                signature: into_neon_res(&mut cx, Signature::from_base64(&peer_stringified.signature))?,
             };
 
             let this = cx.this();
@@ -395,11 +405,11 @@ declare_types! {
             let peer = duniter_server::PeerCardDbV1 {
                 version: peer_stringified.version,
                 currency: peer_stringified.currency,
-                pubkey: peer_stringified.pubkey,
-                blockstamp: peer_stringified.blockstamp,
+                pubkey: into_neon_res(&mut cx, PublicKey::from_base58(&peer_stringified.pubkey))?,
+                blockstamp: into_neon_res(&mut cx, Blockstamp::from_str(&peer_stringified.blockstamp))?,
                 endpoints: peer_stringified.endpoints,
-                status: peer_stringified.status,
-                signature: peer_stringified.signature,
+                status: &peer_stringified.status == "UP",
+                signature: into_neon_res(&mut cx, Signature::from_base64(&peer_stringified.signature))?,
             };
 
             let this = cx.this();

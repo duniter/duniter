@@ -135,6 +135,7 @@ mod tests {
             endpoints: vec![],
             status: true,
             signature: Signature::from_base64("KBaoJuKIfkWJO015BTegUN8l81VYPfleVUfQUwPRPAAF1oB398hDb1bX/QUFe+3CKFz57aGT8bB745mz90x5Ag==")?,
+            member: false,
         };
         let pubkey = peer.pubkey;
 

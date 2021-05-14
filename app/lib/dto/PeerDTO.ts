@@ -346,7 +346,7 @@ export class PeerDTO implements Cloneable {
       p.signature,
       p.status,
       p.statusTS,
-      false
+      !p.nonWoT
     );
   }
 

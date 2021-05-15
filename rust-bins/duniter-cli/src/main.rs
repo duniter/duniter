@@ -38,7 +38,7 @@ use logwatcher::{LogWatcher, LogWatcherAction};
 use nix::{errno::Errno, sys::signal::Signal, unistd::Pid, Error};
 use std::{
     fs::File, io::prelude::*, path::Path, path::PathBuf, process::Command, process::Output,
-    process::Stdio,
+    process::Stdio, str::FromStr,
 };
 use structopt::{clap::Shell, StructOpt};
 
@@ -214,6 +214,7 @@ fn main() -> Result<()> {
         DuniterArgs::clap().gen_completions_to(APP_NAME, shell, &mut std::io::stdout());
         Ok(())
     } else {
+        let log_level_filter = get_log_level(args.log)?;
         let profile_path = get_profile_path(args.profile.as_deref())?;
 
         #[cfg(feature = "gva")]
@@ -225,7 +226,8 @@ fn main() -> Result<()> {
         let prod = current_exe == PathBuf::from(DUNITER_EXE_LINK_PATH)
             || current_exe == PathBuf::from(DUNITER_EXE_PATH);
 
-        let duniter_ts_args = duniter_ts_args::gen_duniter_ts_args(&args, duniter_js_exe()?);
+        let duniter_ts_args =
+            duniter_ts_args::gen_duniter_ts_args(&args, duniter_js_exe()?, log_level_filter);
 
         match args.command {
             DuniterCommand::Restart => {
@@ -322,6 +324,15 @@ pub(crate) fn get_node_version(node_path: &str) -> Result<String> {
                 .unwrap_or_else(|_| "Error message is not a valid utf8 string".to_owned())
         );
         std::process::exit(1);
+    }
+}
+
+fn get_log_level(opt: Option<log::LevelFilter>) -> Result<log::LevelFilter> {
+    if let Ok(log_level_str) = std::env::var("DUNITER_LOG_LEVEL") {
+        Ok(log::LevelFilter::from_str(&log_level_str)
+            .map_err(|e| anyhow::Error::msg(e.to_string()))?)
+    } else {
+        Ok(opt.unwrap_or(log::LevelFilter::Info))
     }
 }
 

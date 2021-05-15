@@ -38,16 +38,18 @@ fn gen_webstart_args(args: &DuniterWebstartArgs, duniter_ts_args: &mut Vec<Strin
     }
 }
 
-pub(crate) fn gen_duniter_ts_args(args: &DuniterArgs, duniter_js_exe: String) -> Vec<String> {
+pub(crate) fn gen_duniter_ts_args(
+    args: &DuniterArgs,
+    duniter_js_exe: String,
+    log_level_filter: log::LevelFilter,
+) -> Vec<String> {
     let mut duniter_ts_args = vec!["--max-old-space-size=4096".to_owned(), duniter_js_exe];
     if let Some(ref home) = args.home {
         duniter_ts_args.push("--home".to_owned());
         duniter_ts_args.push(home.to_str().expect("invalid home path").to_owned());
     }
-    if let Some(ref log_level) = args.log {
-        duniter_ts_args.push("--loglevel".to_owned());
-        duniter_ts_args.push(log_level.to_string().to_lowercase());
-    }
+    duniter_ts_args.push("--loglevel".to_owned());
+    duniter_ts_args.push(log_level_filter.to_string().to_lowercase());
     if let Some(ref profile) = args.profile {
         duniter_ts_args.push("--mdb".to_owned());
         duniter_ts_args.push(profile.clone());

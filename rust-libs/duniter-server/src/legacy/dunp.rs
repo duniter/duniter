@@ -64,23 +64,13 @@ impl DuniterServer {
             .expect("dbs pool disconnected")
     }
     pub fn save_peer(&self, new_peer_card: PeerCardDbV1) -> anyhow::Result<()> {
-        use dubp::crypto::keys::PublicKey as _;
-        let pubkey = PublicKey::from_base58(&new_peer_card.pubkey)?;
+        let pubkey = new_peer_card.pubkey;
         use duniter_core::dbs::databases::network_v1::NetworkV1DbWritable as _;
         self.dbs_pool
             .execute(move |dbs| {
-                dbs.dunp_db.peers_old_write().upsert(
-                    PubKeyKeyV2(pubkey),
-                    duniter_core::dbs::PeerCardDbV1 {
-                        version: new_peer_card.version,
-                        currency: new_peer_card.currency,
-                        pubkey: new_peer_card.pubkey,
-                        blockstamp: new_peer_card.blockstamp,
-                        endpoints: new_peer_card.endpoints,
-                        status: new_peer_card.status,
-                        signature: new_peer_card.signature,
-                    },
-                )
+                dbs.dunp_db
+                    .peers_old_write()
+                    .upsert(PubKeyKeyV2(pubkey), new_peer_card)
             })
             .expect("dbs pool disconnected")
             .map_err(|e| e.into())
@@ -94,14 +84,14 @@ impl DuniterServer {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use dubp::crypto::keys::{
         ed25519::{PublicKey, Signature},
-        PublicKey as _,
+        PublicKey as _, Signature as _,
     };
     use duniter_core::dbs::databases::network_v1::NetworkV1DbReadable;
     use duniter_core::dbs::PeerCardDbV1;
-
-    use super::*;
+    use std::str::FromStr;
 
     #[test]
     fn test_receive_new_heads() -> anyhow::Result<()> {
@@ -140,13 +130,14 @@ mod tests {
         let peer = PeerCardDbV1 {
             version: 0,
             currency: "test".to_owned(),
-            pubkey: "82NdD9eEbXSjRJXeJdqf56xkpu6taTfTeEqtAtmtbyXY".to_owned(),
-            blockstamp: "379922-0000001D97770A8203062F9E618F29FFAA2EF4218649FCE6DD13E01C3932E943".to_owned(),
+            pubkey: PublicKey::from_base58("82NdD9eEbXSjRJXeJdqf56xkpu6taTfTeEqtAtmtbyXY")?,
+            blockstamp: Blockstamp::from_str("379922-0000001D97770A8203062F9E618F29FFAA2EF4218649FCE6DD13E01C3932E943")?,
             endpoints: vec![],
-            status: "UP".to_owned(),
-            signature: "KBaoJuKIfkWJO015BTegUN8l81VYPfleVUfQUwPRPAAF1oB398hDb1bX/QUFe+3CKFz57aGT8bB745mz90x5Ag==".to_owned(),
+            status: true,
+            signature: Signature::from_base64("KBaoJuKIfkWJO015BTegUN8l81VYPfleVUfQUwPRPAAF1oB398hDb1bX/QUFe+3CKFz57aGT8bB745mz90x5Ag==")?,
+            member: false,
         };
-        let pubkey = PublicKey::from_base58(&peer.pubkey)?;
+        let pubkey = peer.pubkey;
 
         assert_eq!(dbs.dunp_db.peers_old().count()?, 0);
         server.save_peer(peer.clone())?;

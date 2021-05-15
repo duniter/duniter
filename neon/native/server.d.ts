@@ -63,6 +63,7 @@ export class PeerCard {
     endpoints: string[]
     signature: string
     status: string
+    member: boolean
 }
 
 export class RustDbTx {

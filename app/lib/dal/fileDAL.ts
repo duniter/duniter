@@ -1232,6 +1232,7 @@ export class FileDAL implements ServerDAO {
       p.status = "UP";
       p.first_down = null;
       p.last_try = null;
+      this.rustServer.savePeer(PeerDTO.fromDBPeer(p));
       return this.peerDAL.savePeer(p);
     } catch (err) {
       return null;
@@ -1250,6 +1251,7 @@ export class FileDAL implements ServerDAO {
             p.first_down = now;
           }
           p.last_try = now;
+          this.rustServer.savePeer(PeerDTO.fromDBPeer(p));
           await this.peerDAL.savePeer(p);
         }
       }

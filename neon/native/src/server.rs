@@ -14,18 +14,28 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::into_neon_res;
-use dubp::common::crypto::keys::{ed25519::PublicKey, PublicKey as _};
-use dubp::documents::{
-    prelude::*,
-    transaction::{TransactionDocumentV10, TransactionDocumentV10Stringified},
+use dubp::{
+    common::{
+        crypto::{
+            hashs::Hash,
+            keys::{
+                ed25519::{Ed25519KeyPair, PublicKey, Signature},
+                PublicKey as _, Signature as _,
+            },
+        },
+        prelude::*,
+    },
+    documents::{
+        prelude::*,
+        transaction::{TransactionDocumentV10, TransactionDocumentV10Stringified},
+    },
+    documents_parser::prelude::*,
 };
-use dubp::documents_parser::prelude::*;
-use dubp::{common::crypto::hashs::Hash, crypto::keys::ed25519::Ed25519KeyPair};
 use duniter_server::{DuniterCoreConf, DuniterMode, DuniterServer};
 use neon::declare_types;
 use neon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::{path::PathBuf, str::FromStr};
 
 pub struct RustServer {
     server: DuniterServer,
@@ -370,15 +380,7 @@ declare_types! {
             let peer_js = cx.argument::<JsValue>(0)?;
 
             let peer_stringified: PeerCardStringified = neon_serde::from_value(&mut cx, peer_js)?;
-            let peer = duniter_server::PeerCardDbV1 {
-                version: peer_stringified.version,
-                currency: peer_stringified.currency,
-                pubkey: peer_stringified.pubkey,
-                blockstamp: peer_stringified.blockstamp,
-                endpoints: peer_stringified.endpoints,
-                status: peer_stringified.status,
-                signature: peer_stringified.signature,
-            };
+            let peer = peer_stringified.into_peer_card_db_v1(&mut cx)?;
 
             let this = cx.this();
             let res = {
@@ -392,15 +394,7 @@ declare_types! {
             let peer_js = cx.argument::<JsValue>(0)?;
 
             let peer_stringified: PeerCardStringified = neon_serde::from_value(&mut cx, peer_js)?;
-            let peer = duniter_server::PeerCardDbV1 {
-                version: peer_stringified.version,
-                currency: peer_stringified.currency,
-                pubkey: peer_stringified.pubkey,
-                blockstamp: peer_stringified.blockstamp,
-                endpoints: peer_stringified.endpoints,
-                status: peer_stringified.status,
-                signature: peer_stringified.signature,
-            };
+            let peer = peer_stringified.into_peer_card_db_v1(&mut cx)?;
 
             let this = cx.this();
             {
@@ -515,6 +509,25 @@ pub struct PeerCardStringified {
     pub endpoints: Vec<String>,
     pub status: String,
     pub signature: String,
+    pub member: bool,
+}
+
+impl PeerCardStringified {
+    fn into_peer_card_db_v1<'c, C: Context<'c>>(
+        self,
+        cx: &mut C,
+    ) -> NeonResult<duniter_server::PeerCardDbV1> {
+        Ok(duniter_server::PeerCardDbV1 {
+            version: self.version,
+            currency: self.currency,
+            pubkey: into_neon_res(cx, PublicKey::from_base58(&self.pubkey))?,
+            blockstamp: into_neon_res(cx, Blockstamp::from_str(&self.blockstamp))?,
+            endpoints: self.endpoints,
+            status: &self.status == "UP",
+            signature: into_neon_res(cx, Signature::from_base64(&self.signature))?,
+            member: self.member,
+        })
+    }
 }
 
 #[derive(Deserialize, Serialize)]

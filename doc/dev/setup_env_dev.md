@@ -23,7 +23,7 @@ cargo xtask build
 To develop on Duniter, there is currently the following requirement:
 
 - A computer with GNU/Linux or Mac as operating system
-- Build essential tools
+- Build essential tools: Amongs other: GCC C++
 - wget
 - git (apt-get install git)
 - Rust
@@ -48,7 +48,7 @@ echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> .bashrc
 
 ### Build the project
 
-#### Clone the repository
+#### Clone the repository
 
 ```bash
 git clone https://git.duniter.org/nodes/typescript/duniter

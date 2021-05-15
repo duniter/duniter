@@ -16,9 +16,12 @@
 use anyhow::Result;
 use std::process::{Command, Output};
 use structopt::StructOpt;
+use version_compare::Version;
 
 const MIN_RUST_VERSION: &str = "1.51.0";
-const NODE_VERSION: &str = "10.22.1";
+const MIN_NODE_VERSION: &str = "10.18.0";
+const REC_NODE_VERSION: &str = "10.22.1";
+const MAX_NODE_VERSION: &str = "11.0.0";
 
 #[derive(StructOpt)]
 struct DuniterXTask {
@@ -54,18 +57,21 @@ fn main() -> Result<()> {
 
     if !args.skip_npm {
         println!("Check node version …");
-        if exec_and_get_stdout(Command::new("node").arg("-v"))
-            .unwrap_or_default()
-            .trim_end()
-            != format!("v{}", NODE_VERSION)
-        {
+        let node_vers = exec_and_get_stdout(Command::new("node").arg("-v")).unwrap_or_default();
+        let node_vers = node_vers.trim_end();
+        let node_vers_cut = Version::from(&node_vers[1..]).unwrap();
+        let min_node_vers = Version::from(MIN_NODE_VERSION).unwrap();
+        let max_node_vers = Version::from(MAX_NODE_VERSION).unwrap();
+        if node_vers_cut < min_node_vers || max_node_vers <= node_vers_cut {
             eprintln!(
-                "Duniter requires node v{} exactly. Please install node v{} (you can use nvm).",
-                NODE_VERSION, NODE_VERSION
+                "Duniter requires node between v{} and v{} excluded.\n\
+                Please install a correct node version (you can use nvm).\n\
+                Current version {}. Recommended version v{}",
+                MIN_NODE_VERSION, MAX_NODE_VERSION, node_vers, REC_NODE_VERSION
             );
             std::process::exit(1);
         } else {
-            println!("Node v{} already installed ✔", NODE_VERSION);
+            println!("Node {} installed: Is a compatible version ✔", node_vers);
         }
     }
     match args.command {

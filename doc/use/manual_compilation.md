@@ -61,8 +61,11 @@ Depend on your distribution:
     apt-get install build-essential cmake
 
 ##### Fedora
+```bash
+sudo dnf install gcc-c++
+```
 
-    yum groupinstall "Development Tools" "Development Libraries"
+    dnf groupinstall "Development Tools" "Development Libraries"
 
 TODO: If you know how to install build essential tools for other gnu/linux distributions or for mac, you can complete this documentation and submit a merge request.
 

@@ -27,13 +27,43 @@ use dubp_wot::{
         distance::DistanceError,
         path::{PathFinder, RustyPathFinder},
     },
+    MAIN_WOT,
 };
 use neon::declare_types;
 use neon::prelude::*;
-use std::ops::Deref;
+use parking_lot::RwLock;
+
+pub struct RustWot(Option<RustyWebOfTrust>);
+
+impl RustWot {
+    fn get<R, F>(&self, f: F) -> R
+    where
+        F: FnOnce(&RustyWebOfTrust) -> R,
+    {
+        if let Some(ref wot) = self.0 {
+            f(wot)
+        } else if let Some(main_wot) = MAIN_WOT.get() {
+            f(&main_wot.read())
+        } else {
+            panic!("unreachable: get RustWot that is neither main nor non-main!");
+        }
+    }
+    fn get_mut<R, F>(&mut self, f: F) -> R
+    where
+        F: FnOnce(&mut RustyWebOfTrust) -> R,
+    {
+        if let Some(ref mut wot) = self.0 {
+            f(wot)
+        } else if let Some(main_wot) = MAIN_WOT.get() {
+            f(&mut main_wot.write())
+        } else {
+            panic!("unreachable: get RustWot that is neither main nor non-main!");
+        }
+    }
+}
 
 declare_types! {
-    pub class JsWoT for RustyWebOfTrust {
+    pub class JsWoT for RustWot {
         init(mut cx) {
             let arg0 = cx.argument::<JsValue>(0)?;
 
@@ -42,14 +72,21 @@ declare_types! {
                 .downcast::<JsNumber>()
                 .or_throw(&mut cx)?
                 .value();
-                Ok(RustyWebOfTrust::new(max_links as usize))
+                Ok(RustWot(Some(RustyWebOfTrust::new(max_links as usize))))
             } else if arg0.is_a::<JsString>() {
                 let file_path = arg0
                 .downcast::<JsString>()
                 .or_throw(&mut cx)?
                 .value();
                 match read_from_file::wot_from_file(file_path) {
-                    Ok(wot) => Ok(wot),
+                    Ok(wot) => {
+                        if std::env::var("DUNITER_JS_TESTS") == Ok("yes".to_owned()) {
+                            Ok(RustWot(Some(wot)))
+                        } else {
+                            MAIN_WOT.set(RwLock::new(wot)).unwrap_or_else(|_| unreachable!());
+                            Ok(RustWot(None))
+                        }
+                    },
                     Err(e) => cx.throw_error(e),
                 }
             } else if arg0.is_a::<JsArrayBuffer>() {
@@ -63,7 +100,7 @@ declare_types! {
                 });
 
                 match bincode::deserialize(&bytes) {
-                    Ok(wot) => Ok(wot),
+                    Ok(wot) => Ok(RustWot(Some(wot))),
                     Err(e) => cx.throw_error(e.to_string()),
                 }
             } else {
@@ -76,7 +113,7 @@ declare_types! {
             {
                 let guard = cx.lock();
                 let mut wot = this.borrow_mut(&guard);
-                wot.clear();
+                wot.get_mut(|wot| wot.clear());
             }
 
             Ok(cx.undefined().upcast())
@@ -87,7 +124,7 @@ declare_types! {
             let max_link = {
                 let guard = cx.lock();
                 let wot = this.borrow(&guard);
-                wot.get_max_link()
+                wot.get(|wot| wot.get_max_link())
             };
             Ok(cx.number(max_link as f64).upcast())
         }
@@ -98,7 +135,7 @@ declare_types! {
             {
                 let guard = cx.lock();
                 let mut wot = this.borrow_mut(&guard);
-                wot.set_max_link(max_links);
+                wot.get_mut(|wot| wot.set_max_link(max_links));
             }
             Ok(cx.undefined().upcast())
         }
@@ -108,7 +145,7 @@ declare_types! {
             let wot_id = {
                 let guard = cx.lock();
                 let mut wot = this.borrow_mut(&guard);
-                wot.add_node()
+                wot.get_mut(|wot| wot.add_node())
             };
             Ok(cx.number(wot_id.0 as f64).upcast())
         }
@@ -118,7 +155,7 @@ declare_types! {
             let wot_id_opt = {
                 let guard = cx.lock();
                 let mut wot = this.borrow_mut(&guard);
-                wot.rem_node()
+                wot.get_mut(|wot| wot.rem_node())
             };
 
             if let Some(wot_id) = wot_id_opt {
@@ -133,7 +170,7 @@ declare_types! {
             let wot_size = {
                 let guard = cx.lock();
                 let wot = this.borrow(&guard);
-                wot.size()
+                wot.get(|wot| wot.size())
             };
             Ok(cx.number(wot_size as f64).upcast())
         }
@@ -144,7 +181,7 @@ declare_types! {
             let is_enabled_opt = {
                 let guard = cx.lock();
                 let wot = this.borrow(&guard);
-                wot.is_enabled(wot_id)
+                wot.get(|wot| wot.is_enabled(wot_id))
             };
 
             if let Some(is_enabled) = is_enabled_opt {
@@ -159,7 +196,7 @@ declare_types! {
             let enabled = {
                 let guard = cx.lock();
                 let wot = this.borrow(&guard);
-                wot.get_enabled()
+                wot.get(|wot| wot.get_enabled())
             };
 
             vec_wot_id_to_js_array(cx, enabled)
@@ -173,7 +210,7 @@ declare_types! {
             let enabled_opt = {
                 let guard = cx.lock();
                 let mut wot = this.borrow_mut(&guard);
-                wot.set_enabled(wot_id, enabled)
+                wot.get_mut(|wot| wot.set_enabled(wot_id, enabled))
             };
 
             if let Some(enabled) = enabled_opt {
@@ -188,7 +225,7 @@ declare_types! {
             let disabled = {
                 let guard = cx.lock();
                 let wot = this.borrow(&guard);
-                wot.get_disabled()
+                wot.get(|wot| wot.get_disabled())
             };
 
             vec_wot_id_to_js_array(cx, disabled)
@@ -200,7 +237,7 @@ declare_types! {
             let sentries = {
                 let guard = cx.lock();
                 let wot = this.borrow(&guard);
-                wot.get_sentries(sentry_requirement as usize)
+                wot.get(|wot| wot.get_sentries(sentry_requirement as usize))
             };
 
             vec_wot_id_to_js_array(cx, sentries)
@@ -212,7 +249,7 @@ declare_types! {
             let non_sentries = {
                 let guard = cx.lock();
                 let wot = this.borrow(&guard);
-                wot.get_non_sentries(sentry_requirement as usize)
+                wot.get(|wot| wot.get_non_sentries(sentry_requirement as usize))
             };
 
             vec_wot_id_to_js_array(cx, non_sentries)
@@ -226,7 +263,7 @@ declare_types! {
             let new_link_result = {
                 let guard = cx.lock();
                 let mut wot = this.borrow_mut(&guard);
-                wot.add_link(source, target)
+                wot.get_mut(|wot| wot.add_link(source, target))
             };
 
             match new_link_result {
@@ -247,7 +284,7 @@ declare_types! {
             let has_link_result = {
                 let guard = cx.lock();
                 let wot = this.borrow(&guard);
-                wot.has_link(source, target)
+                wot.get(|wot| wot.has_link(source, target))
             };
 
             match has_link_result {
@@ -265,7 +302,7 @@ declare_types! {
             let rem_link_result = {
                 let guard = cx.lock();
                 let mut wot = this.borrow_mut(&guard);
-                wot.rem_link(source, target)
+                wot.get_mut(|wot| wot.rem_link(source, target))
             };
 
             match rem_link_result {
@@ -283,9 +320,8 @@ declare_types! {
             let this = cx.this();
             let distance_res = {
                 let guard = cx.lock();
-                let wot_box = this.borrow(&guard);
-                let wot: &RustyWebOfTrust = wot_box.deref();
-                RustyDistanceCalculator {}.compute_distance(wot, distance_params)
+                let wot = this.borrow(&guard);
+                wot.get(|wot| RustyDistanceCalculator {}.compute_distance(wot, distance_params))
             };
 
             match distance_res {
@@ -302,9 +338,8 @@ declare_types! {
             let this = cx.this();
             let distance_res = {
                 let guard = cx.lock();
-                let wot_box = this.borrow(&guard);
-                let wot: &RustyWebOfTrust = wot_box.deref();
-                RustyDistanceCalculator {}.compute_distance(wot, distance_params)
+                let wot = this.borrow(&guard);
+                wot.get(|wot| RustyDistanceCalculator {}.compute_distance(wot, distance_params))
             };
 
             match distance_res {
@@ -325,9 +360,8 @@ declare_types! {
             let this = cx.this();
             let paths = {
                 let guard = cx.lock();
-                let wot_box = this.borrow(&guard);
-                let wot: &RustyWebOfTrust = wot_box.deref();
-                RustyPathFinder {}.find_paths(wot, from, to, k_max)
+                let wot = this.borrow(&guard);
+                wot.get(|wot| RustyPathFinder {}.find_paths(wot, from, to, k_max))
             };
 
             // Convert Vec<Vec<WotId>> to JsArray<JsArray<JsNumber>>
@@ -348,9 +382,8 @@ declare_types! {
             let this = cx.this();
             let ser_res = {
                 let guard = cx.lock();
-                let wot_box = this.borrow(&guard);
-                let wot: &RustyWebOfTrust = wot_box.deref();
-                bincode::serialize(wot)
+                let wot = this.borrow(&guard);
+                wot.get(|wot| bincode::serialize(wot))
             };
 
             match ser_res {
@@ -372,7 +405,7 @@ declare_types! {
             let res = {
                 let guard = cx.lock();
                 let wot = this.borrow(&guard);
-                write_in_file::wot_in_file(file_path_str, wot.deref())
+                wot.get(|wot|  write_in_file::wot_in_file(file_path_str, wot))
             };
 
             match res {
@@ -388,7 +421,7 @@ declare_types! {
             let res = {
                 let guard = cx.lock();
                 let wot = this.borrow(&guard);
-                wot.dump(&mut dump_wot_chars)
+                wot.get(|wot| wot.dump(&mut dump_wot_chars))
             };
             match res {
                 Ok(()) => match String::from_utf8(dump_wot_chars) {

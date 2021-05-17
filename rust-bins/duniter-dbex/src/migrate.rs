@@ -101,6 +101,7 @@ fn migrate_inner(
         });
 
         let mut current = None;
+        let mut currency_params = Default::default();
         while let Ok(chunk) = r2.recv() {
             if !chunk.is_empty() {
                 println!(
@@ -108,12 +109,15 @@ fn migrate_inner(
                     chunk[0].number(),
                     chunk[chunk.len() - 1].number()
                 );
+                if let Some(currency_parameters) = chunk[0].currency_parameters() {
+                    currency_params = currency_parameters;
+                }
                 let chunk = Arc::from(chunk);
                 let chunk_arc_clone = Arc::clone(&chunk);
                 let gva_handle = dbs_pool
                     .launch(move |_| {
                         for block in chunk_arc_clone.deref() {
-                            duniter_gva_indexer::apply_block(block, gva_db)?;
+                            duniter_gva_indexer::apply_block(block, currency_params, gva_db)?;
                         }
                         Ok::<_, KvError>(())
                     })

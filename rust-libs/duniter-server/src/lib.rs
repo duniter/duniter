@@ -26,7 +26,7 @@ mod fill_cm;
 mod legacy;
 
 pub use duniter_core::conf::{DuniterCoreConf, DuniterMode};
-use duniter_core::dbs::databases::network_v1::NetworkV1DbWritable;
+use duniter_core::dbs::databases::{bc_v2::BcV2DbReadable, network_v1::NetworkV1DbWritable};
 pub use duniter_core::dbs::{
     kv_typed::prelude::KvResult, smallvec, DunpHeadDbV1, DunpNodeIdV1Db, PeerCardDbV1,
 };
@@ -34,8 +34,8 @@ pub use duniter_core::dbs::{
 pub use duniter_gva::GvaModule;
 
 use anyhow::Context;
-use dubp::common::crypto::keys::ed25519::PublicKey;
 use dubp::common::prelude::*;
+use dubp::common::{crypto::keys::ed25519::PublicKey, currency_params::CurrencyParameters};
 use dubp::documents::{prelude::*, transaction::TransactionDocumentV10};
 use dubp::{
     block::prelude::*, common::crypto::hashs::Hash, documents_parser::prelude::FromStringObject,
@@ -72,6 +72,7 @@ cfg_if::cfg_if! {
 pub struct DuniterServer {
     bc_db: BcV2Db<FileBackend>,
     conf: DuniterCoreConf,
+    currency_params: CurrencyParameters,
     current: Option<BlockMetaV2>,
     dbs_pool: fast_threadpool::ThreadPoolSyncHandler<SharedDbs<FileBackend>>,
     global_sender: flume::Sender<GlobalBackGroundTaskMsg>,
@@ -107,6 +108,9 @@ impl DuniterServer {
         // Fill and get current meta
         let current = fill_cm::fill_and_get_current_meta(&bc_db, &global_sender)?;
         log::info!("Databases successfully opened.");
+
+        // Get currency parameters
+        let currency_params = bc_db.currency_params().get(&())?.unwrap_or_default().0;
 
         if let Some(current) = current {
             log::info!("Current block: #{}-{}", current.number, current.hash);
@@ -157,6 +161,7 @@ impl DuniterServer {
             bc_db,
             conf,
             current,
+            currency_params,
             dbs_pool: threadpool.into_sync_handler(),
             global_sender,
             pending_txs_subscriber,

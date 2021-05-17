@@ -20,6 +20,12 @@ impl DuniterServer {
         let block = Arc::new(
             DubpBlockV10::from_string_object(&block).map_err(|e| KvError::DeserError(e.into()))?,
         );
+
+        // Get currency parameters from genesis block
+        if let Some(currency_params) = block.currency_parameters() {
+            self.currency_params = currency_params;
+        }
+
         self.current = Some(duniter_core::dbs_write_ops::apply_block::apply_block(
             &self.bc_db,
             block.clone(),
@@ -28,10 +34,17 @@ impl DuniterServer {
             &self.global_sender,
             false,
         )?);
-        apply_block_modules(block, Arc::new(self.conf.clone()), &self.dbs_pool, None)
+        apply_block_modules(
+            block,
+            Arc::new(self.conf.clone()),
+            self.currency_params,
+            &self.dbs_pool,
+            None,
+        )
     }
     pub fn apply_chunk_of_blocks(&mut self, blocks: Vec<DubpBlockV10Stringified>) -> KvResult<()> {
         log::debug!("apply_chunk(#{})", blocks[0].number);
+
         let blocks = Arc::from(
             blocks
                 .into_iter()
@@ -39,6 +52,12 @@ impl DuniterServer {
                 .collect::<Result<Vec<_>, _>>()
                 .map_err(|e| KvError::DeserError(e.into()))?,
         );
+
+        // Get currency parameters from genesis block
+        if let Some(currency_params) = blocks[0].currency_parameters() {
+            self.currency_params = currency_params;
+        }
+
         self.current = Some(duniter_core::dbs_write_ops::apply_block::apply_chunk(
             &self.bc_db,
             self.current,
@@ -46,7 +65,13 @@ impl DuniterServer {
             blocks.clone(),
             Some(&self.global_sender),
         )?);
-        apply_chunk_of_blocks_modules(blocks, Arc::new(self.conf.clone()), &self.dbs_pool, None)
+        apply_chunk_of_blocks_modules(
+            blocks,
+            Arc::new(self.conf.clone()),
+            self.currency_params,
+            &self.dbs_pool,
+            None,
+        )
     }
     pub fn revert_block(&mut self, block: DubpBlockV10Stringified) -> KvResult<()> {
         let block = Arc::new(
@@ -64,6 +89,12 @@ impl DuniterServer {
             .expect("dbs pool disconnected");
         self.current = duniter_core::dbs_write_ops::bc::revert_block(&self.bc_db, &block)?;
         txs_mp_job_handle.join().expect("dbs pool disconnected")?;
-        revert_block_modules(block, Arc::new(self.conf.clone()), &self.dbs_pool, None)
+        revert_block_modules(
+            block,
+            Arc::new(self.conf.clone()),
+            self.currency_params,
+            &self.dbs_pool,
+            None,
+        )
     }
 }

@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0.34"
 cfg-if = "1.0.0"
-dubp = { version = "0.53.1", features = ["duniter"] }
+dubp = { version = "0.54.1", features = ["duniter"] }
 duniter-core = { git = "https://git.duniter.org/nodes/rust/duniter-core", features = ["bc-writer"] }
 duniter-gva = { git = "https://git.duniter.org/nodes/rust/modules/duniter-gva", optional = true } 
 fast-threadpool = "0.2.3"

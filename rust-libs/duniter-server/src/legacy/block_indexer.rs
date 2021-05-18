@@ -39,7 +39,7 @@ impl DuniterServer {
             Arc::new(self.conf.clone()),
             self.currency_params,
             &self.dbs_pool,
-            None,
+            self.profile_path_opt.clone(),
         )
     }
     pub fn apply_chunk_of_blocks(&mut self, blocks: Vec<DubpBlockV10Stringified>) -> KvResult<()> {
@@ -70,7 +70,7 @@ impl DuniterServer {
             Arc::new(self.conf.clone()),
             self.currency_params,
             &self.dbs_pool,
-            None,
+            self.profile_path_opt.clone(),
         )
     }
     pub fn revert_block(&mut self, block: DubpBlockV10Stringified) -> KvResult<()> {

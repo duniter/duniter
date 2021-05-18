@@ -13,7 +13,7 @@ ARG DUNITER_UI_VER="1.7.x"
 RUN apk update && \
 	apk add ca-certificates curl && \
 	update-ca-certificates && \
-	apk add --update python make g++
+	apk add --update cmake g++ python make
 
 WORKDIR /duniter
 

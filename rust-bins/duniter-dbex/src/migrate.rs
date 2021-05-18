@@ -26,12 +26,14 @@ const CHUNK_SIZE: usize = 250;
 
 pub(crate) fn migrate(profile_path: PathBuf) -> anyhow::Result<()> {
     let start_time = Instant::now();
+
+    // Remove bc_db and gva_db
+    std::fs::remove_dir_all(profile_path.join("data/bc_v2_sled"))?;
+    std::fs::remove_dir_all(profile_path.join("data/gva_v1_sled"))?;
+
+    // Open bc_db and gva_db
     let (bc_db, shared_dbs) = duniter_core::dbs::open_dbs(Some(profile_path.as_path()))?;
     let gva_db = duniter_gva_indexer::get_gva_db_rw(Some(profile_path.as_path()));
-
-    // Clear bc_db and gva_db
-    bc_db.clear()?;
-    gva_db.clear()?;
 
     if let Err(e) = migrate_inner(&bc_db, gva_db, profile_path, shared_dbs, start_time) {
         // Clear bc_db and gva_db

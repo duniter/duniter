@@ -116,6 +116,20 @@ fn migrate_inner(
                 }
                 let chunk = Arc::from(chunk);
                 let chunk_arc_clone = Arc::clone(&chunk);
+                let profile_path_clone = profile_path.clone();
+                let gva_chunks_handle = dbs_pool
+                    .launch(move |_| {
+                        for block in chunk_arc_clone.deref() {
+                            duniter_gva_indexer::apply_block_blocks_chunk(
+                                block,
+                                gva_db,
+                                &profile_path_clone,
+                            )?;
+                        }
+                        Ok::<_, KvError>(())
+                    })
+                    .expect("gva:apply_chunk: dbs pool disconnected");
+                let chunk_arc_clone = Arc::clone(&chunk);
                 let gva_handle = dbs_pool
                     .launch(move |_| {
                         for block in chunk_arc_clone.deref() {
@@ -127,6 +141,9 @@ fn migrate_inner(
                 current = Some(duniter_core::dbs_write_ops::apply_block::apply_chunk(
                     bc_db, current, &dbs_pool, chunk, None,
                 )?);
+                gva_chunks_handle
+                    .join()
+                    .expect("gva:apply_block_blocks_chunk: dbs pool disconnected")?;
                 gva_handle
                     .join()
                     .expect("gva:apply_chunk: dbs pool disconnected")?;

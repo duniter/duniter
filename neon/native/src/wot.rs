@@ -16,7 +16,7 @@
 mod read_from_file;
 mod write_in_file;
 
-use dubp_wot::{
+use duniter_core::wot::{
     data::{
         rusty::RustyWebOfTrust, HasLinkResult, NewLinkResult, RemLinkResult, WebOfTrust, WotId,
     },

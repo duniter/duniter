@@ -14,9 +14,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use dubp::wallet::prelude::SourceAmount;
 use duniter_core::dbs::databases::bc_v2::BcV2DbReadable;
 use duniter_core::global::{CurrentMeta, GlobalBackGroundTaskMsg};
+use duniter_core::wallet::prelude::SourceAmount;
 
 pub(super) fn fill_and_get_current_meta<BcDb: BcV2DbReadable>(
     bc_db_ro: &BcDb,

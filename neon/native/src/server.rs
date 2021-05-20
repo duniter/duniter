@@ -14,7 +14,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::into_neon_res;
-use dubp::{
+use duniter_core::{
     common::{
         crypto::{
             hashs::Hash,
@@ -30,6 +30,7 @@ use dubp::{
         transaction::{TransactionDocumentV10, TransactionDocumentV10Stringified},
     },
     documents_parser::prelude::*,
+    peer::PeerV10,
 };
 use duniter_server::{DuniterCoreConf, DuniterMode, DuniterServer};
 use neon::declare_types;
@@ -104,7 +105,7 @@ declare_types! {
         method revertBlock(mut cx) {
             let block_js = cx.argument::<JsValue>(0)?;
 
-            let block_stringified: dubp::block::DubpBlockV10Stringified = neon_serde::from_value(&mut cx, block_js)?;
+            let block_stringified: duniter_core::block::DubpBlockV10Stringified = neon_serde::from_value(&mut cx, block_js)?;
 
             let mut this = cx.this();
             let res = {
@@ -117,7 +118,7 @@ declare_types! {
         method applyBlock(mut cx) {
             let block_js = cx.argument::<JsValue>(0)?;
 
-            let block_stringified: dubp::block::DubpBlockV10Stringified = neon_serde::from_value(&mut cx, block_js)?;
+            let block_stringified: duniter_core::block::DubpBlockV10Stringified = neon_serde::from_value(&mut cx, block_js)?;
 
             let mut this = cx.this();
             let res = {
@@ -130,7 +131,7 @@ declare_types! {
         method applyChunkOfBlocks(mut cx) {
             let blocks_js = cx.argument::<JsValue>(0)?;
 
-            let blocks_stringified: Vec<dubp::block::DubpBlockV10Stringified> = neon_serde::from_value(&mut cx, blocks_js)?;
+            let blocks_stringified: Vec<duniter_core::block::DubpBlockV10Stringified> = neon_serde::from_value(&mut cx, blocks_js)?;
 
             let mut this = cx.this();
             let res = {
@@ -518,13 +519,14 @@ impl PeerCardStringified {
         cx: &mut C,
     ) -> NeonResult<duniter_server::PeerCardDbV1> {
         Ok(duniter_server::PeerCardDbV1 {
-            version: self.version,
-            currency: self.currency,
-            pubkey: into_neon_res(cx, PublicKey::from_base58(&self.pubkey))?,
-            blockstamp: into_neon_res(cx, Blockstamp::from_str(&self.blockstamp))?,
-            endpoints: self.endpoints,
+            peer: PeerV10 {
+                currency: self.currency,
+                pubkey: into_neon_res(cx, PublicKey::from_base58(&self.pubkey))?,
+                blockstamp: into_neon_res(cx, Blockstamp::from_str(&self.blockstamp))?,
+                endpoints: self.endpoints.into_iter().collect(),
+                signature: into_neon_res(cx, Signature::from_base64(&self.signature))?,
+            },
             status: &self.status == "UP",
-            signature: into_neon_res(cx, Signature::from_base64(&self.signature))?,
             member: self.member,
         })
     }

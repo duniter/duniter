@@ -23,8 +23,8 @@
 
 #[cfg(test)]
 mod tests {
-    use dubp::documents::transaction::TransactionDocumentV10Builder;
-    use dubp::{
+    use duniter_core::documents::transaction::TransactionDocumentV10Builder;
+    use duniter_core::{
         common::prelude::*,
         crypto::keys::ed25519::{Ed25519KeyPair, PublicKey},
         documents::prelude::*,

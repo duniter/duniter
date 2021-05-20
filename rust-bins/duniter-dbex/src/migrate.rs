@@ -14,11 +14,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 use crate::*;
-use dubp::{
+use duniter_core::dbs::{databases::bc_v1::BcV1DbReadable, FileBackend};
+use duniter_core::{
     block::parser::parse_json_block_from_serde_value, block::parser::ParseJsonBlockError,
     block::prelude::DubpBlockTrait, block::DubpBlock, common::prelude::BlockNumber,
 };
-use duniter_core::dbs::{databases::bc_v1::BcV1DbReadable, FileBackend};
 use fast_threadpool::{ThreadPool, ThreadPoolConfig};
 use std::{ops::Deref, path::PathBuf};
 

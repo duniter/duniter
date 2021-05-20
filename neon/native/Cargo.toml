@@ -17,8 +17,7 @@ neon-build = "0.4.0"
 [dependencies]
 bincode = "1.2.1"
 bs58 = "0.3.0"
-dubp = { version = "0.54.1", features = ["duniter"] }
-dubp-wot = { git = "https://git.duniter.org/nodes/rust/duniter-core" }
+duniter-core = { git = "https://git.duniter.org/nodes/rust/duniter-core", features = ["bc-writer"] }
 duniter-server = { path = "../../rust-libs/duniter-server" }
 flate2 = { version = "1.0", features = ["zlib-ng-compat"], default-features = false }
 flexi_logger = { version = "=0.16.0", default-features = false, features = ["compress"] }

@@ -64,7 +64,7 @@ impl DuniterServer {
             .expect("dbs pool disconnected")
     }
     pub fn save_peer(&self, new_peer_card: PeerCardDbV1) -> anyhow::Result<()> {
-        let pubkey = new_peer_card.pubkey;
+        let pubkey = new_peer_card.peer.pubkey;
         use duniter_core::dbs::databases::network_v1::NetworkV1DbWritable as _;
         self.dbs_pool
             .execute(move |dbs| {
@@ -85,12 +85,15 @@ impl DuniterServer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dubp::crypto::keys::{
-        ed25519::{PublicKey, Signature},
-        PublicKey as _, Signature as _,
-    };
     use duniter_core::dbs::databases::network_v1::NetworkV1DbReadable;
     use duniter_core::dbs::PeerCardDbV1;
+    use duniter_core::{
+        crypto::keys::{
+            ed25519::{PublicKey, Signature},
+            PublicKey as _, Signature as _,
+        },
+        peer::PeerV10,
+    };
     use std::str::FromStr;
 
     #[test]
@@ -127,25 +130,26 @@ mod tests {
         let server = DuniterServer::test(DuniterCoreConf::default(), DuniterMode::Start)?;
         let dbs = server.get_shared_dbs();
 
-        let peer = PeerCardDbV1 {
-            version: 0,
-            currency: "test".to_owned(),
-            pubkey: PublicKey::from_base58("82NdD9eEbXSjRJXeJdqf56xkpu6taTfTeEqtAtmtbyXY")?,
-            blockstamp: Blockstamp::from_str("379922-0000001D97770A8203062F9E618F29FFAA2EF4218649FCE6DD13E01C3932E943")?,
-            endpoints: vec![],
+        let peer_db = PeerCardDbV1 {
+            peer: PeerV10 {
+                currency: "test".to_owned(),
+                pubkey: PublicKey::from_base58("82NdD9eEbXSjRJXeJdqf56xkpu6taTfTeEqtAtmtbyXY")?,
+                blockstamp: Blockstamp::from_str("379922-0000001D97770A8203062F9E618F29FFAA2EF4218649FCE6DD13E01C3932E943")?,
+                endpoints: duniter_core::dbs::smallvec::SmallVec::new(),
+                signature: Signature::from_base64("KBaoJuKIfkWJO015BTegUN8l81VYPfleVUfQUwPRPAAF1oB398hDb1bX/QUFe+3CKFz57aGT8bB745mz90x5Ag==")?,
+            },
             status: true,
-            signature: Signature::from_base64("KBaoJuKIfkWJO015BTegUN8l81VYPfleVUfQUwPRPAAF1oB398hDb1bX/QUFe+3CKFz57aGT8bB745mz90x5Ag==")?,
             member: false,
         };
-        let pubkey = peer.pubkey;
+        let pubkey = peer_db.peer.pubkey;
 
         assert_eq!(dbs.dunp_db.peers_old().count()?, 0);
-        server.save_peer(peer.clone())?;
+        server.save_peer(peer_db.clone())?;
 
         assert_eq!(dbs.dunp_db.peers_old().count()?, 1);
-        let peer_db = dbs.dunp_db.peers_old().get(&PubKeyKeyV2(pubkey))?;
+        let peer_db_opt = dbs.dunp_db.peers_old().get(&PubKeyKeyV2(pubkey))?;
 
-        assert_eq!(peer_db, Some(peer));
+        assert_eq!(peer_db_opt, Some(peer_db));
 
         Ok(())
     }

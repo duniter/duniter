@@ -34,21 +34,21 @@ pub use duniter_core::dbs::{
 pub use duniter_gva::GvaModule;
 
 use anyhow::Context;
-use dubp::common::prelude::*;
-use dubp::common::{crypto::keys::ed25519::PublicKey, currency_params::CurrencyParameters};
-use dubp::documents::{prelude::*, transaction::TransactionDocumentV10};
-use dubp::{
-    block::prelude::*, common::crypto::hashs::Hash, documents_parser::prelude::FromStringObject,
-};
+use duniter_core::common::prelude::*;
+use duniter_core::common::{crypto::keys::ed25519::PublicKey, currency_params::CurrencyParameters};
 use duniter_core::dbs::{
     databases::{bc_v2::BcV2Db, txs_mp_v2::TxsMpV2DbReadable},
     kv_typed::prelude::*,
     PendingTxDbV2, PubKeyKeyV2,
 };
 use duniter_core::dbs::{prelude::*, BlockMetaV2, FileBackend};
+use duniter_core::documents::{prelude::*, transaction::TransactionDocumentV10};
 use duniter_core::global::{tokio, GlobalBackGroundTaskMsg};
 use duniter_core::mempools::{Mempools, TxMpError, TxsMempool};
 use duniter_core::module::{plug_duniter_modules, Endpoint, TxsHistoryForBma};
+use duniter_core::{
+    block::prelude::*, common::crypto::hashs::Hash, documents_parser::prelude::FromStringObject,
+};
 use fast_threadpool::ThreadPoolConfig;
 use resiter::{filter::Filter, map::Map};
 use std::{

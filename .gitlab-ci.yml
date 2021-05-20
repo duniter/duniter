@@ -164,7 +164,7 @@ releases:x64:
     - docker info
   script:
     - docker pull $CI_REGISTRY_IMAGE:$IMAGE_TAG || true
-    - docker build --cache-from $CI_REGISTRY_IMAGE:$IMAGE_TAG --pull -t "$CI_REGISTRY_IMAGE:$IMAGE_TAG" -f release/docker/Dockerfile .
+    - docker build --cache-from $CI_REGISTRY_IMAGE:$IMAGE_TAG --pull -t "$CI_REGISTRY_IMAGE:$IMAGE_TAG" --build-arg="INSTALL_DEX=$INSTALL_DEX" -f release/docker/Dockerfile .
     #- docker login -u "gitlab-ci-token" -p "$CI_BUILD_TOKEN" $CI_REGISTRY
     #- docker push "$CI_REGISTRY_IMAGE:$IMAGE_TAG"
     # Temporary push on dockerhub 
@@ -183,6 +183,7 @@ package:test:docker-test-image:
     - when: manual
   variables:
     IMAGE_TAG: "test-image"
+    INSTALL_DEX: "yes"
 
 package:dev:docker:
   extends: .docker-build-app-image
@@ -192,6 +193,7 @@ package:dev:docker:
     - if: $CI_COMMIT_BRANCH == "dev"
   variables:
     IMAGE_TAG: "dev"
+    INSTALL_DEX: "yes"
 
 package:prod:docker:
   stage: package

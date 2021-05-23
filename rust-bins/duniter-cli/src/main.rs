@@ -64,6 +64,8 @@ struct DuniterArgs {
     /// Logs level (If not specified, use the logs level defined in the configuration or INFO by default).
     #[structopt(short, long, alias("loglevel"), case_insensitive(true), possible_values = &["OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"])]
     log: Option<log::LevelFilter>,
+    #[structopt(long, hidden = true)]
+    max_old_space_size: Option<usize>,
     /// Profile name (default "duniter_default")
     #[structopt(short, long, alias("mdb"))]
     profile: Option<String>,

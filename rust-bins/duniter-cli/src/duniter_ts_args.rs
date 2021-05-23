@@ -43,7 +43,11 @@ pub(crate) fn gen_duniter_ts_args(
     duniter_js_exe: String,
     log_level_filter: log::LevelFilter,
 ) -> Vec<String> {
-    let mut duniter_ts_args = vec!["--max-old-space-size=4096".to_owned(), duniter_js_exe];
+    let max_old_space_size = args.max_old_space_size.unwrap_or(4096);
+    let mut duniter_ts_args = vec![
+        format!("--max-old-space-size={}", max_old_space_size),
+        duniter_js_exe,
+    ];
     if let Some(ref home) = args.home {
         duniter_ts_args.push("--home".to_owned());
         duniter_ts_args.push(home.to_str().expect("invalid home path").to_owned());

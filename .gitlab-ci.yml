@@ -1,6 +1,6 @@
 stages:
-  - tests
   - package
+  - tests
   - quality
   - integration
   - prerelease

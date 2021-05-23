@@ -9,7 +9,7 @@ edition = "2018"
 anyhow = "1.0.34"
 chrono = "0.4"
 duniter-core = { git = "https://git.duniter.org/nodes/rust/duniter-core", features = ["bc-writer"] }
-duniter-server = { path = "../../duniter-server", features = ["gva"] }
+duniter-server = { path = "../../duniter-server" }
 fast-threadpool = "0.2.3"
 flume = "0.10.0"
 log = "0.4.11"

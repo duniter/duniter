@@ -28,10 +28,10 @@ To consult the list of your preferred keys:
 duniter ws2p list-prefered
 ```
 
-Or use environment variable `DUNITER_WS2_PREFERED_KEYS`:
+Or use environment variable `DUNITER_WS2P_PREFERED_KEYS`:
 
 ```bash
-DUNITER_WS2_PREFERED_KEYS=PUBKEY1,PUBKEY2,PUBKEY3
+DUNITER_WS2P_PREFERED_KEYS=PUBKEY1,PUBKEY2,PUBKEY3
 ```
 
 ## Privileged nodes
@@ -56,8 +56,8 @@ To consult the list of your privileged keys:
 duniter ws2p list-privileged
 ```
 
-Or use environment variable `DUNITER_WS2_PRIVILEGED_KEYS`:
+Or use environment variable `DUNITER_WS2P_PRIVILEGED_KEYS`:
 
 ```bash
-DUNITER_WS2_PRIVILEGED_KEYS=PUBKEY1,PUBKEY2,PUBKEY3
+DUNITER_WS2P_PRIVILEGED_KEYS=PUBKEY1,PUBKEY2,PUBKEY3
 ```

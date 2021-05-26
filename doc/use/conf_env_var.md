@@ -38,7 +38,7 @@ This mode is disabled by default, in order for it to work you must configure a W
 First enable the public WS2P mode:
 
 ```bash
-DUNITER_WS2_PUBLIC="true"
+DUNITER_WS2P_PUBLIC="true"
 ```
 
 #### Configure a WS2P endpoint
@@ -48,21 +48,21 @@ For WS2P Public to work you must configure a WS2P endpoint that other duniter no
 If you use a reverse proxy, you must define "remote" host and port:
 
 ```bash
-DUNITER_WS2_REMOTE_HOST="mydomaine.tld"
-DUNITER_WS2_REMOTE_PORT="443"
+DUNITER_WS2P_REMOTE_HOST="mydomaine.tld"
+DUNITER_WS2P_REMOTE_PORT="443"
 ```
 
 You can define a remote path:
 
 ```bash
-DUNITER_WS2_REMOTE_PATH="/ws2p"
+DUNITER_WS2P_REMOTE_PATH="/ws2p"
 ```
 
 If you not use a reverse proxy, you can expose duniter directly
 
 ```bash
-DUNITER_WS2_HOST="<your public IP>"
-DUNITER_WS2_PORT="your opened port"
+DUNITER_WS2P_HOST="<your public IP>"
+DUNITER_WS2P_PORT="your opened port"
 ```
 
 #### WS2P preferred and privileged nodes

@@ -2,12 +2,26 @@
 
 GVA is a [graphql] API.
 
+## Endpoints
+
+Each Duniter node with GVA enabled have three endpoints :
+
+| Prefix in peer card | Default path | Usage |
+|:-:|:-:|:-:|
+| `GVA` | `/gva` | for graphql queries and mutations |
+| `GVASUB` | `/gva` | for graphql subscriptions |
+| n/a | `/gva-playground` | for [graphql playground] |
+
+To learn how to use the GVA API, we recommend you to use the playground, which provides you with a documentation of all requests in the DOCS tab on the right of the screen.
+
+## List of known GVA playgrounds
+
+* https://g1.librelois.fr/gva-playground
+* https://duniter-g1.p2p.legal/gva-playground
+
 ## Schema
 
-See the playground of a GVA node:
-
-* https://g1.librelois.fr/gva
-* https://duniter-g1.p2p.legal/gva
+See the tab SCHEMA of a GVA playground.
 
 ## Batch support
 
@@ -24,8 +38,6 @@ These limitations apply only to non-whitelisted IPs:
 * The maximum number of requests per 20 seconds is 10.
 * The size of a batch is limited to 5 requests.
 * For paged requests, the pageSize parameter must be between 1 and 1000.
-
-[graphql]: https://graphql.org/
 
 ## Examples
 
@@ -91,3 +103,6 @@ query {
   }"}
 ]
 ```
+
+[graphql]: https://graphql.org/
+[graphql playground]: https://github.com/graphql/graphql-playground

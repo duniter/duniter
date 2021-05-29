@@ -37,6 +37,7 @@ ARCH = $(shell uname -m | sed -e "s/86_//")
 PLATFORM = $(shell uname -s | tr A-Z a-z)
 ADD_DEBUG = Y
 DEST =
+INSTALL_DEX = no
 
 # Keep all intermediate targets
 .SECONDARY:
@@ -84,9 +85,11 @@ base-gui: $(call nodedep,duniter-ui) base
 
 # Build the base
 .PHONY: base
+base: install_dex=$(filter yes,$(INSTALL_DEX))
 base: | node_modules
-	@cargo build --release -p duniter-cli
+	@cargo build --release -p duniter-cli $(if $(install_dex),-p duniter-dbex,)
 	@mv target/release/duniter bin/duniter
+	@$(if $(install_dex),mv target/release/dex bin/dex,:)
 
 index.html: $(call nodedep,duniter-ui) $(addprefix node_modules/,$(leveldown.COMPILED) $(sqlite3.COMPILED))
 	@sed -i "s/\"main\": \"index.js\",/\"main\": \"index.html\",/" package.json

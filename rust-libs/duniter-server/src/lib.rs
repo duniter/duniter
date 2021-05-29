@@ -110,7 +110,7 @@ impl DuniterServer {
         log::info!("Databases successfully opened.");
 
         // Get currency parameters
-        let currency_params = bc_db.currency_params().get(&())?.unwrap_or_default().0;
+        let currency_params = bc_db.currency_params().get(&())?.unwrap_or_default().params;
 
         if let Some(current) = current {
             log::info!("Current block: #{}-{}", current.number, current.hash);

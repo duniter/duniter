@@ -6,18 +6,18 @@ GVA is a [graphql] API.
 
 Each Duniter node with GVA enabled have three endpoints :
 
-| Prefix in peer card | Default path | Usage |
-|:-:|:-:|:-:|
-| `GVA` | `/gva` | for graphql queries and mutations |
-| `GVASUB` | `/gva` | for graphql subscriptions |
-| n/a | `/gva-playground` | for [graphql playground] |
+| Path | Usage |
+|:-|:-:|
+| `/gva` | for graphql queries and mutations |
+| `/gva/subscription` | for graphql subscriptions |
+| `/gva/playground` | for [graphql playground] |
 
 To learn how to use the GVA API, we recommend you to use the playground, which provides you with a documentation of all requests in the DOCS tab on the right of the screen.
 
 ## List of known GVA playgrounds
 
-* https://g1.librelois.fr/gva-playground
-* https://duniter-g1.p2p.legal/gva-playground
+* https://g1.librelois.fr/gva/playground
+* https://duniter-g1.p2p.legal/gva/playground
 
 ## Schema
 
@@ -43,7 +43,7 @@ These limitations apply only to non-whitelisted IPs:
 
 ### Send a transaction
 
-```
+```graphql
 mutation {
   tx(
     rawTx: "Raw transaction..."
@@ -55,7 +55,7 @@ mutation {
 
 ### Get transactions
 
-```
+```graphql
 query {
   txsHistoryBc(script: "78ZwwgpgdH5uLZLbThUQH7LKwPgjMunYfLiCfUCySkM8") {
     both {
@@ -87,7 +87,7 @@ query {
 
 ### Batch request
 
-```
+```json
 [
   {"query": "{
     idty(pubkey: \"D2meevcAHFTS2gQMvmRW5Hzi25jDdikk4nC4u1FkwRaU\") {

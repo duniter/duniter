@@ -156,7 +156,11 @@ export class DownloadStream extends Duplex {
       // Asks for next chunk: do we have it?
       if (this.chunks[this.currentChunkNumber]) {
         this.push(this.chunks[this.currentChunkNumber]);
-        delete this.chunks[this.currentChunkNumber];
+        const previousNumber = this.currentChunkNumber - 1;
+        if (previousNumber >= 0) {
+          // Delete the **previous**, not the current (because current would be downloaded again for chaining check)
+          delete this.chunks[previousNumber];
+        }
         // Let's start the download of next chunk
         this.currentChunkNumber++;
         let p = this.downloadChunk(this.currentChunkNumber);

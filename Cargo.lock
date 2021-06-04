@@ -896,7 +896,7 @@ dependencies = [
 [[package]]
 name = "duniter-bda"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#2f73e4bce0c0273cced981e21b97c93ad25d0ac2"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#3fbf29f71ad7885f13c5e95ec4f856fd2c0f1d92"
 dependencies = [
  "anyhow",
  "arrayvec 0.7.0",
@@ -1054,7 +1054,7 @@ dependencies = [
 [[package]]
 name = "duniter-gva"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#2f73e4bce0c0273cced981e21b97c93ad25d0ac2"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#3fbf29f71ad7885f13c5e95ec4f856fd2c0f1d92"
 dependencies = [
  "anyhow",
  "arrayvec 0.7.0",
@@ -1084,7 +1084,7 @@ dependencies = [
 [[package]]
 name = "duniter-gva-conf"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#2f73e4bce0c0273cced981e21b97c93ad25d0ac2"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#3fbf29f71ad7885f13c5e95ec4f856fd2c0f1d92"
 dependencies = [
  "anyhow",
  "duniter-core",
@@ -1096,7 +1096,7 @@ dependencies = [
 [[package]]
 name = "duniter-gva-db"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#2f73e4bce0c0273cced981e21b97c93ad25d0ac2"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#3fbf29f71ad7885f13c5e95ec4f856fd2c0f1d92"
 dependencies = [
  "bincode",
  "chrono",
@@ -1112,7 +1112,7 @@ dependencies = [
 [[package]]
 name = "duniter-gva-dbs-reader"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#2f73e4bce0c0273cced981e21b97c93ad25d0ac2"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#3fbf29f71ad7885f13c5e95ec4f856fd2c0f1d92"
 dependencies = [
  "anyhow",
  "arrayvec 0.7.0",
@@ -1127,7 +1127,7 @@ dependencies = [
 [[package]]
 name = "duniter-gva-gql"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#2f73e4bce0c0273cced981e21b97c93ad25d0ac2"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#3fbf29f71ad7885f13c5e95ec4f856fd2c0f1d92"
 dependencies = [
  "anyhow",
  "arrayvec 0.7.0",
@@ -1147,7 +1147,7 @@ dependencies = [
 [[package]]
 name = "duniter-gva-indexer"
 version = "0.1.0"
-source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#2f73e4bce0c0273cced981e21b97c93ad25d0ac2"
+source = "git+https://git.duniter.org/nodes/rust/modules/duniter-gva#3fbf29f71ad7885f13c5e95ec4f856fd2c0f1d92"
 dependencies = [
  "anyhow",
  "bincode",

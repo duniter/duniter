@@ -118,6 +118,10 @@ export class BlockProver {
   constructor(private server: Server) {
     this.logger = server.logger;
 
+    if (process.env.DUNITER_POW_PREFIX) {
+      this.server.conf.prefix = parseInt(process.env.DUNITER_POW_PREFIX);
+    }
+
     const debug = process.execArgv.toString().indexOf("--debug") !== -1;
     if (debug) {
       //Set an unused port number.

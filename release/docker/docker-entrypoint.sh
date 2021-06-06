@@ -109,8 +109,8 @@ fi
 export DUNITER_WEB_UI_HOST="0.0.0.0"
 
 # Key file found
-if [ -f /etc/duniter/key.yml ]; then
-  export DUNITER_KEYFILE="/etc/duniter/keys.yml"
+if [ -f /etc/duniter/keyring.yml ]; then
+  export DUNITER_KEYFILE="/etc/duniter/keyring.yml"
 fi
 
 # Without parameters, start with web interface

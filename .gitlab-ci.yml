@@ -25,7 +25,7 @@ workflow:
       - package-lock.json
       - server.ts
 
-.env: &env
+.env:
   image: registry.duniter.org/docker/duniter-ci:v0.2.0
   tags:
     - redshift
@@ -47,7 +47,7 @@ workflow:
     - rustup show && rustc --version && cargo --version
 
 tests:
-  <<: *env
+  extends: .env
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^wip*$/
       when: manual
@@ -95,7 +95,7 @@ audit_dependencies:
   script:
     - cargo deny --workspace check
 
-.integration_rules: &integration_rules
+.integration_rules:
   allow_failure: true
   rules:
     - if: $CI_COMMIT_TAG
@@ -103,22 +103,24 @@ audit_dependencies:
     - when: manual
 
 sync_g1:
-  <<: *env
-  <<: *integration_rules
+  extends:
+    - .env
+    - .integration_rules
   stage: integration
   script:
     - npm i
     - bash .gitlab/test/check_g1_sync.sh
 
 sync_gtest:
-  <<: *env
-  <<: *integration_rules
+  extends:
+    - .env
+    - .integration_rules
   stage: integration
   script:
     - npm i
     - bash .gitlab/test/check_gt_sync.sh
 
-.build_releases: &build_releases
+.build_releases:
   stage: package
   image: duniter/release-builder:v2.1.0
   cache: {}
@@ -129,7 +131,7 @@ sync_gtest:
       - work/bin/
 
 releases:test:
-  <<: *build_releases
+  extends: .build_releases
   allow_failure: true
   rules:
     - if: $CI_COMMIT_TAG
@@ -143,7 +145,7 @@ releases:test:
     expire_in: 72h
 
 releases:x64:
-  <<: *build_releases
+  extends: .build_releases
   rules:
     - if: $CI_COMMIT_TAG
   script:
@@ -215,7 +217,7 @@ package:prod:docker:
     - docker push duniter/duniter
 
 
-.release_jobs: &release_jobs
+.release_jobs:
   image: rdadev/jinja2:py3.6
   tags:
     - redshift
@@ -223,7 +225,7 @@ package:prod:docker:
     - python3 .gitlab/releaser
 
 prerelease:
-  <<: *release_jobs
+  extends: .release_jobs
   rules:
     - if: $CI_COMMIT_TAG
   stage: prerelease
@@ -232,7 +234,7 @@ prerelease:
     SOURCE_EXT: '["tar.gz", "zip"]'
 
 publish:
-  <<: *release_jobs
+  extends: .release_jobs
   rules:
     - if: $CI_COMMIT_TAG
       when: manual

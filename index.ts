@@ -485,8 +485,8 @@ function commandLineConf(program:any, conf:any = {}) {
   conf = conf || {};
   const cli = {
     currency: program.currency,
-    cpu: program.cpu,
-    nbCores: program.nbCores,
+    cpu: process.env.DUNITER_POW_CPU ? parseFloat(process.env.DUNITER_POW_CPU) : program.cpu,
+    nbCores: process.env.DUNITER_POW_NBCORES ? parseInt(process.env.DUNITER_POW_NBCORES) : program.nbCores,
     prefix: program.prefix,
     server: {
       port: program.port,

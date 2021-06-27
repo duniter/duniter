@@ -22,6 +22,14 @@ By default this keypair is random, so the duniter node is a mirror node.
 
 To modify the keypair of the node, you must create a keypair in a file and indicate the path to this file with the environment variable `DUNITER_KEYFILE`.
 
+## Configuring the proof of work parameters
+
+The PoW prefix, cpu usage, and number of workers can be configured with these environment variables:
+
+* `DUNITER_POW_PREFIX` (integer)
+* `DUNITER_POW_CPU` (decimal number between 0 and 1)
+* `DUNITER_POW_NBCORES` (integer)
+
 ## Configuring the network
 
 ### The APIs

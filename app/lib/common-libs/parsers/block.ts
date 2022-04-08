@@ -74,7 +74,7 @@ export class BlockParser extends GenericParser {
         },
         {
           prop: "excluded",
-          regexp: /Excluded:\n([\s\S]*)Certifications/,
+          regexp: /Excluded:\n([\s\S]*?)Certifications/,
           parser: splitAndMatch("\n", CommonConstants.PUBLIC_KEY),
         },
         {

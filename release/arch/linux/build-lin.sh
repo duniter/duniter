@@ -109,7 +109,7 @@ rm -rf "${BIN}/"*.{deb,tar.gz}{,.desc} # Clean up
 # -----------
 
 cd "${DOWNLOADS}"
-curl -O http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz || exit 1
+curl -O https://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz || exit 1
 tar xzf node-${NVER}-linux-x64.tar.gz || exit 1
 rm node-${NVER}-linux-x64.tar.gz
 

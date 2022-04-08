@@ -53,7 +53,7 @@ echo "DebianVer: $DUNITER_DEB_VER"
 
 if [ ! -f "$DOWNLOADS/node-${NVER}-linux-${ARCH}.tar.gz" ]; then
   # Download Node.js and package it with the sources
-  wget http://nodejs.org/dist/${NVER}/node-${NVER}-linux-${ARCH}.tar.gz
+  wget https://nodejs.org/dist/${NVER}/node-${NVER}-linux-${ARCH}.tar.gz
   tar xzf node-${NVER}-linux-${ARCH}.tar.gz
 fi
 

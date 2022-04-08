@@ -49,42 +49,42 @@ export class BlockParser extends GenericParser {
         { prop: "membersCount", regexp: CommonConstants.BLOCK.MEMBERS_COUNT },
         {
           prop: "identities",
-          regexp: /Identities:\n([\s\S]*)Joiners/,
+          regexp: /Identities:\n([\s\S]*?)Joiners/,
           parser: splitAndMatch("\n", CommonConstants.IDENTITY.INLINE),
         },
         {
           prop: "joiners",
-          regexp: /Joiners:\n([\s\S]*)Actives/,
+          regexp: /Joiners:\n([\s\S]*?)Actives/,
           parser: splitAndMatch("\n", CommonConstants.BLOCK.JOINER),
         },
         {
           prop: "actives",
-          regexp: /Actives:\n([\s\S]*)Leavers/,
+          regexp: /Actives:\n([\s\S]*?)Leavers/,
           parser: splitAndMatch("\n", CommonConstants.BLOCK.ACTIVE),
         },
         {
           prop: "leavers",
-          regexp: /Leavers:\n([\s\S]*)Excluded/,
+          regexp: /Leavers:\n([\s\S]*?)Excluded/,
           parser: splitAndMatch("\n", CommonConstants.BLOCK.LEAVER),
         },
         {
           prop: "revoked",
-          regexp: /Revoked:\n([\s\S]*)Excluded/,
+          regexp: /Revoked:\n([\s\S]*?)Excluded/,
           parser: splitAndMatch("\n", CommonConstants.BLOCK.REVOCATION),
         },
         {
           prop: "excluded",
-          regexp: /Excluded:\n([\s\S]*)Certifications/,
+          regexp: /Excluded:\n([\s\S]*?)Certifications/,
           parser: splitAndMatch("\n", CommonConstants.PUBLIC_KEY),
         },
         {
           prop: "certifications",
-          regexp: /Certifications:\n([\s\S]*)Transactions/,
+          regexp: /Certifications:\n([\s\S]*?)Transactions/,
           parser: splitAndMatch("\n", CommonConstants.CERT.OTHER.INLINE),
         },
         {
           prop: "transactions",
-          regexp: /Transactions:\n([\s\S]*)/,
+          regexp: /Transactions:\n([\s\S]*)/, // No need for greedy "?" regexp capture, "Transaction" parsing is different from previous multiline fields
           parser: extractTransactions,
         },
         { prop: "inner_hash", regexp: CommonConstants.BLOCK.INNER_HASH },

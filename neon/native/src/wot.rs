@@ -228,6 +228,7 @@ declare_types! {
 
             match new_link_result {
                 NewLinkResult::Ok(count_target_received_certs) |
+                    NewLinkResult::AlreadyExistingCertification(count_target_received_certs) |
                     NewLinkResult::AllCertificationsUsed(count_target_received_certs) =>
                         Ok(cx.number(count_target_received_certs as f64).upcast()),
                 NewLinkResult::SelfLinkingForbidden() => cx.throw_error( "self linking forbidden"),
@@ -285,7 +286,7 @@ declare_types! {
                 RustyDistanceCalculator {}.compute_distance(wot, distance_params)
             };
 
-            if let Some(distance_response) = distance_response_opt {
+            if let Ok(distance_response) = distance_response_opt {
                 Ok(cx.boolean(distance_response.outdistanced).upcast())
             } else {
                 cx.throw_error(format!("node '{}' not exist.", distance_params.node.0))
@@ -303,7 +304,7 @@ declare_types! {
                 RustyDistanceCalculator {}.compute_distance(wot, distance_params)
             };
 
-            if let Some(distance_response) = distance_response_opt {
+            if let Ok(distance_response) = distance_response_opt {
                 distance_response_to_js_object(cx, distance_response)
             } else {
                 cx.throw_error(format!("node '{}' not exist.", distance_params.node.0))

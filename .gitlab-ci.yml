@@ -191,6 +191,25 @@ package:dev:docker:
   variables:
     IMAGE_TAG: "dev"
 
+package:prod:docker:
+  stage: package
+  rules:
+    - if: $CI_COMMIT_TAG
+  image: docker:18.06
+  tags:
+    - redshift
+  services:
+    - docker:18.06-dind
+  script:
+    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG" -f release/docker/Dockerfile .
+    - docker login -u "gitlab-ci-token" -p "$CI_BUILD_TOKEN" $CI_REGISTRY
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
+    - docker login -u "duniterteam" -p "$DUNITERTEAM_PASSWD"
+    - docker tag "$CI_REGISTRY_IMAGE:$CI_BUILD_TAG" "duniter/duniter:$CI_BUILD_TAG"
+    - docker push "duniter/duniter:$CI_COMMIT_TAG"
+    - docker tag "$CI_REGISTRY_IMAGE:$CI_BUILD_TAG" duniter/duniter
+    - docker push duniter/duniter
+
 .release_jobs: &release_jobs
   image: rdadev/jinja2:py3.6
   tags:

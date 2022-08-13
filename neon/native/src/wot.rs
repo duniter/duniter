@@ -268,6 +268,7 @@ declare_types! {
 
             match new_link_result {
                 NewLinkResult::Ok(count_target_received_certs) |
+                    NewLinkResult::AlreadyExistingCertification(count_target_received_certs) |
                     NewLinkResult::AllCertificationsUsed(count_target_received_certs) =>
                         Ok(cx.number(count_target_received_certs as f64).upcast()),
                 NewLinkResult::SelfLinkingForbidden() => cx.throw_error( "self linking forbidden"),

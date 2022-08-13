@@ -12,12 +12,12 @@ name = "duniteroxyde"
 crate-type = ["cdylib"]
 
 [build-dependencies]
-neon-build = "0.4.0"
+neon-build = "0.10.0"
 
 [dependencies]
 bincode = "1.2.1"
 bs58 = "0.3.0"
 dup-crypto = { version = "0.15.0", default-features = false, features = ["rand"] }
-dubp-wot = "0.11.0"
+dubp-wot = "=0.11.0"
 flate2 = "1.0.14"
-neon = "0.4.0"
+neon = "0.10.0"

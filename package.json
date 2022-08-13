@@ -2,7 +2,7 @@
   "name": "duniter",
   "version": "1.8.2",
   "engines": {
-    "node": ">= 10.19",
+    "node": ">= 16 && < 17",
     "npm": ">= 6.13",
     "yarn": "YARN NO LONGER USED - use npm instead."
   },
@@ -93,7 +93,7 @@
     "morgan": "1.10.0",
     "multimeter": "0.1.1",
     "nat-upnp": "^1.1.1",
-    "neon-cli": "^0.4.0",
+    "neon-cli": "0.10.1",
     "node-pre-gyp": "0.14.0",
     "node-uuid": "1.4.8",
     "optimist": "0.6.1",

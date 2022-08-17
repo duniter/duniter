@@ -1,6 +1,6 @@
 [package]
 name = "duniter-server"
-version = "1.8.1"
+version = "1.9.0-dev"
 authors = ["librelois <elois@duniter.org>"]
 license = "AGPL-3.0"
 edition = "2018"

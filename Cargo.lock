@@ -933,7 +933,7 @@ dependencies = [
 
 [[package]]
 name = "duniter-cli"
-version = "1.8.1"
+version = "1.9.0-dev"
 dependencies = [
  "anyhow",
  "ctrlc",
@@ -1228,7 +1228,7 @@ dependencies = [
 
 [[package]]
 name = "duniter-server"
-version = "1.8.1"
+version = "1.9.0-dev"
 dependencies = [
  "anyhow",
  "cfg-if 1.0.0",
@@ -1243,7 +1243,7 @@ dependencies = [
 
 [[package]]
 name = "duniteroxyde"
-version = "1.8.1"
+version = "1.9.0-dev"
 dependencies = [
  "bincode",
  "bs58 0.3.1",

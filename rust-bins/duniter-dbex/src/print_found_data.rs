@@ -288,14 +288,14 @@ fn entry_to_rows(
     } = entry;
     match value {
         Value::Object(value_json_map) => {
-            let row_map = map_entry_by_properties(&only_properties_set, key, value_json_map);
+            let row_map = map_entry_by_properties(only_properties_set, key, value_json_map);
             caps_to_rows_maps(row_map, captures_names, captures_opt)
         }
         Value::Array(json_array) => json_array
             .into_iter()
             .map(|sub_value| {
                 if let Value::Object(sub_value_json_map) = sub_value {
-                    map_entry_by_properties(&only_properties_set, key.clone(), sub_value_json_map)
+                    map_entry_by_properties(only_properties_set, key.clone(), sub_value_json_map)
                 } else {
                     unreachable!()
                 }

@@ -139,13 +139,10 @@ fn source_is_unlockable_inner(
     tx_issuers: &[ed25519::PublicKey],
     utxo_script: &str,
 ) -> bool {
-    if let Ok(utxo_script) = duniter_core::documents_parser::wallet_script_from_str(&utxo_script) {
-        if let Ok(unlockable_on) = SourceV10::unlockable_on(
-            &tx_issuers,
-            &proofs.unlocks,
-            source_written_on,
-            &utxo_script,
-        ) {
+    if let Ok(utxo_script) = duniter_core::documents_parser::wallet_script_from_str(utxo_script) {
+        if let Ok(unlockable_on) =
+            SourceV10::unlockable_on(tx_issuers, &proofs.unlocks, source_written_on, &utxo_script)
+        {
             // All proofs are valid and **seem** useful
             // (it is too costly to determine the minimum set of proof that is strictly necessary and sufficient).
             unlockable_on <= current_bc_time

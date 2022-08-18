@@ -560,7 +560,8 @@ export const CrawlerDependency = {
         },
       },
       {
-        name: "import-lookup [search] [fromhost] [fromport] [tohost] [toport]",
+        name:
+          "import-lookup [search] [fromhost] [fromport] [frompath] [tohost] [toport] [topath]",
         desc: "Exchange peerings with another node",
         onDatabaseExecute: async (
           server: Server,
@@ -571,18 +572,31 @@ export const CrawlerDependency = {
           const search = params[0];
           const fromhost = params[1];
           const fromport = params[2];
-          const tohost = params[3];
-          const toport = params[4];
+          const frompath = params[3];
+          const tohost = params[4];
+          const toport = params[5];
+          const topath = params[6];
           const logger = server.logger;
           try {
             logger.info(
-              'Looking for "%s" at %s:%s...',
+              'Looking for "%s" at %s:%s%s...',
               search,
               fromhost,
-              fromport
+              fromport,
+              frompath
             );
-            const sourcePeer = new Contacter(fromhost, fromport);
-            const targetPeer = new Contacter(tohost, toport);
+            const sourcePeer = Contacter.fromHostPortPath(
+              fromhost,
+              fromport,
+              frompath,
+              { timeout: 60 * 1000 }
+            );
+            const targetPeer = Contacter.fromHostPortPath(
+              tohost,
+              toport,
+              topath,
+              { timeout: 60 * 1000 }
+            );
             const lookup = await sourcePeer.getLookup(search);
             for (const res of lookup.results) {
               for (const uid of res.uids) {
@@ -626,7 +640,12 @@ export const CrawlerDependency = {
                 }
               }
             }
-            const certBy = await sourcePeer.getCertifiedBy(search);
+            let certBy: any = { certifications: [] };
+            try {
+              certBy = await sourcePeer.getCertifiedBy(search);
+            } catch (e) {
+              logger.error("No certified-by on remote");
+            }
             const mapBlocks: any = {};
             for (const signed of certBy.certifications) {
               if (signed.written) {
@@ -666,11 +685,32 @@ export const CrawlerDependency = {
                 });
                 try {
                   logger.info(
-                    "Success cert %s -> %s",
+                    "Posting cert %s -> %s",
                     certBy.pubkey.slice(0, 8),
                     signed.uid
                   );
                   await targetPeer.postCert(rawCert);
+                } catch (e) {
+                  logger.error(e);
+                }
+              }
+            }
+            // Memberships
+            const requirements = await sourcePeer.getRequirements(search);
+            for (let idty of requirements.identities) {
+              for (let pendingMs of idty.pendingMemberships) {
+                const rawMs = rawer.getMembership({
+                  currency: "g1",
+                  issuer: pendingMs.issuer,
+                  type: pendingMs.membership,
+                  blockstamp: pendingMs.blockstamp,
+                  userid: pendingMs.userid,
+                  certts: pendingMs.certts,
+                  signature: pendingMs.signature,
+                });
+                try {
+                  logger.info("Posting membership");
+                  await targetPeer.postRenew(rawMs);
                 } catch (e) {
                   logger.error(e);
                 }

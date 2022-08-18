@@ -545,6 +545,7 @@ export class DuniterBlockchain {
     if (block) {
       await this.undoDeleteTransactions(block, dal);
     }
+    NewLogger().info("Reverted block #%s", blockstamp);
   }
 
   static async undoMembersUpdate(blockstamp: string, dal: FileDAL) {

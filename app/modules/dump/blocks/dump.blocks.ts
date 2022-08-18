@@ -28,5 +28,9 @@ export async function dumpBlocks(
 }
 
 export function dumpBlockIfDefined(b: DBBlock | undefined | null) {
+  console.log("-------- BLOCK --------");
+  console.log("Number: " + b?.number);
+  console.log("Hash: " + b?.hash);
+  console.log("");
   console.log(BlockDTO.fromJSONObject(b).getRawSigned());
 }

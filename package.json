@@ -2,7 +2,7 @@
   "name": "duniter",
   "version": "1.8.3",
   "engines": {
-    "node": ">= 16 && < 17",
+    "node": ">= 10.19",
     "npm": ">= 6.13",
     "yarn": "YARN NO LONGER USED - use npm instead."
   },

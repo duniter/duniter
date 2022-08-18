@@ -629,6 +629,11 @@ export const RequirementsPendingMembership = {
   type: String,
   blockstamp: String,
   sig: String,
+  signature: String,
+  issuer: String,
+  membership: String,
+  userid: String,
+  certts: String,
 };
 
 export interface HttpRequirementsPendingMembership {

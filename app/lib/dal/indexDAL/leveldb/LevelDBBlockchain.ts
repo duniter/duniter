@@ -167,7 +167,7 @@ export class LevelDBBlockchain extends LevelDBTable<DBBlock> implements Blockcha
     block.fork = false
     // We remove the eventual fork
     const forkKey = LevelDBBlockchain.trimForkKey(block.number, block.hash)
-    if (this.forks.getOrNull(forkKey)) {
+    if (await this.forks.getOrNull(forkKey)) {
       await this.forks.del(forkKey)
     }
     // We return the saved block

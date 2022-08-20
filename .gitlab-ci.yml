@@ -207,8 +207,8 @@ tmp:docker-v1.8.4:latest:
     - docker login -u "gitlab-ci-token" -p "$CI_BUILD_TOKEN" $CI_REGISTRY
     - docker push "$CI_REGISTRY_IMAGE"
     - docker login -u "duniterteam" -p "$DUNITERTEAM_PASSWD"
-    - docker tag "$CI_REGISTRY_IMAGE:v1.8.4" "duniter/duniter:v1.8.4"
-    - docker push "duniter/duniter"
+    - docker tag "$CI_REGISTRY_IMAGE:v1.8.4" "duniter/duniter:latest"
+    - docker push "duniter/duniter:latest"
 
 .release_jobs: &release_jobs
   image: rdadev/jinja2:py3.6

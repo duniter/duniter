@@ -87,16 +87,16 @@ export class LevelMIndexExpiresOnIndexer extends LevelDBDataIndex<
         }
       })
     );
-    // Case 2: expiration REVERT
+    // Case 2: REVERT expired = put back the value of `expires_on`
     const values: MindexEntry[] = Underscore.values(
       newStateByPub
     ).map((entries) => reduce(entries));
-    const byExpiredOn = reduceGroupBy(values, "expired_on");
+    const byExpiresOnForExpired = reduceGroupBy(values, "expires_on");
     await Promise.all(
-      Underscore.keys(byExpiredOn).map(async (expiresOn) =>
+      Underscore.keys(byExpiresOnForExpired).map(async (expiresOn) =>
         this.addAllKeysToExpiresOn(
           pint(expiresOn),
-          byExpiredOn[expiresOn].map((e) => e.pub)
+          byExpiresOnForExpired[expiresOn].map((e) => e.pub)
         )
       )
     );
@@ -112,7 +112,9 @@ export class LevelMIndexExpiresOnIndexer extends LevelDBDataIndex<
       entry = [];
     }
     for (const pub of pubkeys) {
-      entry.push(pub);
+      if (!entry.includes(pub)) {
+        entry.push(pub);
+      }
     }
     await this.put(key, entry);
   }

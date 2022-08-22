@@ -484,7 +484,7 @@ export const CrawlerDependency = {
         },
       },
       {
-        name: "pull <from> [<number>]",
+        name: "pull <from> [<start>] [<end>]",
         desc: "Pull blocks from <from> source up to block <number>",
         onDatabaseExecute: async (
           server: Server,
@@ -493,7 +493,11 @@ export const CrawlerDependency = {
           params: any
         ) => {
           const source: string = params[0];
-          const to = parseInt(params[1]);
+          const to = parseInt(params[2] || params[1]);
+          let from: null | number = null;
+          if (params[2]) {
+            from = parseInt(params[1]);
+          }
           if (
             !source ||
             !(source.match(HOST_PATTERN) || source.match(FILE_PATTERN))
@@ -510,6 +514,9 @@ export const CrawlerDependency = {
             try {
               const fromHost = await connect(peer);
               let current: DBBlock | null = await server.dal.getCurrentBlockOrNull();
+              if (from) {
+                current = { number: from - 1 } as any;
+              }
               // Loop until an error occurs
               while (current && (isNaN(to) || current.number < to)) {
                 current = await fromHost.getBlock(current.number + 1);

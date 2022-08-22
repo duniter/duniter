@@ -61,7 +61,7 @@ class Releaser:
         })
         title_line = self.template.render('prerelease', {
             'tag': os.environ['CI_COMMIT_TAG'],
-            'pipeline': os.environ['CI_PIPELINE_ID']
+            'pipeline': 'test-pipeline'
         })
         releaseNote.send_note(title_line + note)
 
@@ -76,7 +76,7 @@ class Releaser:
         note = releaseNote.get_note_body()
         title_line = self.template.render('release', {
             'tag': os.environ['CI_COMMIT_TAG'],
-            'pipeline': os.environ['CI_PIPELINE_ID']
+            'pipeline': 'test-pipeline'
         })
         releaseNote.send_note(title_line + note)
 

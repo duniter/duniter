@@ -157,10 +157,10 @@ rm -rf "${BIN}/"*.{deb,tar.gz}{,.desc} # Clean up
 # -----------
 
 cd "${DOWNLOADS}"
-curl -O https://dl.nwjs.io/${NW_RELEASE}/${NW_GZ} || exit 1
+curl -k -O https://dl.nwjs.io/${NW_RELEASE}/${NW_GZ} || exit 1
 tar xzf ${NW_GZ} || exit 1
 rm ${NW_GZ}
-curl -O http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz || exit 1
+curl -k -O https://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz || exit 1
 tar xzf node-${NVER}-linux-x64.tar.gz || exit 1
 rm node-${NVER}-linux-x64.tar.gz
 

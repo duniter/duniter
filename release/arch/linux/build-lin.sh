@@ -135,6 +135,7 @@ DUNITER_UI_VER="1.7.x"
 
 nvm install ${NVER} || exit 1
 nvm use ${NVER} || exit 1
+npm config set strict-ssl false || exit 1
 npm install -g node-pre-gyp || exit 1
 npm install -g nw-gyp || exit 1
 

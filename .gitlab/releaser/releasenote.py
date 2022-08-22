@@ -13,7 +13,8 @@ class ReleaseNote(ProjectApi):
     __PH_NOTE = PlaceHolder('note')
 
     def __init__(self):
-        ProjectApi.__init__(self, '/repository/tags/{}'.format(os.environ['CI_COMMIT_TAG']))
+        ProjectApi.__init__(self)
+        self.token = ('PRIVATE-TOKEN', os.environ['RELEASER_TOKEN'])
         self.message_read = False
 
     def get_note(self):
@@ -22,7 +23,7 @@ class ReleaseNote(ProjectApi):
         :return: The note if it exists, None otherwise.
         :rtype: str or None
         '''
-        request = self.build_request()
+        request = self.build_request('/repository/tags/{}'.format(os.environ['CI_COMMIT_TAG']))
         response = urllib.request.urlopen(request)
         response_data = response.read().decode()
         data = json.loads(response_data)
@@ -69,6 +70,10 @@ class ReleaseNote(ProjectApi):
             'description': note
         }
         send_data_serialized = json.dumps(send_data).encode('utf-8')
-        request = self.build_request('/release', data=send_data_serialized, method=method)
+        if not self.message_read:
+            request = self.build_request('/releases', data=send_data_serialized, method=method)
+        else:
+            request = self.build_request('/releases/{}'.format(os.environ['CI_COMMIT_TAG']), data=send_data_serialized, method=method)
         request.add_header('Content-Type', 'application/json')
+        request.add_header(*self.token)
         urllib.request.urlopen(request)

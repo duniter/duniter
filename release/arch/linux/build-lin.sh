@@ -135,7 +135,6 @@ DUNITER_UI_VER="1.7.x"
 
 nvm install ${NVER} || exit 1
 nvm use ${NVER} || exit 1
-npm config set strict-ssl false || exit 1
 npm install -g node-pre-gyp || exit 1
 npm install -g nw-gyp || exit 1
 
@@ -158,10 +157,10 @@ rm -rf "${BIN}/"*.{deb,tar.gz}{,.desc} # Clean up
 # -----------
 
 cd "${DOWNLOADS}"
-curl -O https://dl.nwjs.io/${NW_RELEASE}/${NW_GZ} || exit 1
+curl -k -O https://dl.nwjs.io/${NW_RELEASE}/${NW_GZ} || exit 1
 tar xzf ${NW_GZ} || exit 1
 rm ${NW_GZ}
-curl -O http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz || exit 1
+curl -k -O http://nodejs.org/dist/${NVER}/node-${NVER}-linux-x64.tar.gz || exit 1
 tar xzf node-${NVER}-linux-x64.tar.gz || exit 1
 rm node-${NVER}-linux-x64.tar.gz
 

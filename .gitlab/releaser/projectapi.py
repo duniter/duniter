@@ -14,7 +14,7 @@ class ProjectApi:
         '''
         self.base_url = ProjectApi.__PROJECT_URL.format(os.environ['CI_PROJECT_ID'])
         self.base_url += url
-        self.token = ('Private-Token', os.environ['RELEASER_TOKEN'])
+        # self.token = ('Private-Token', os.environ['RELEASER_TOKEN'])
 
     def build_request(self, url='', **params):
         '''
@@ -27,5 +27,5 @@ class ProjectApi:
         :rtype: urllib.request.Request
         '''
         request = urllib.request.Request(self.base_url + url, **params)
-        request.add_header(*self.token)
+        # request.add_header(*self.token)
         return request

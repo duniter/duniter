@@ -277,6 +277,11 @@ export class Switcher<T extends SwitchBlock> {
               s[0].number + i,
               e && e.message
             );
+          if (e.type === "NotFoundError" && this.logger) {
+            this.logger.error(
+              "CRITICAL: LevelDB has inconsistent state: " + e.stack
+            );
+          }
           added = false;
         }
         i++;

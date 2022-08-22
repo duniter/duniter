@@ -61,6 +61,7 @@ import {CommonConstants} from "../../../app/lib/common-libs/constants"
 import {WS2PRequester} from "../../../app/modules/ws2p/lib/WS2PRequester"
 import {WS2PDependency} from "../../../app/modules/ws2p/index"
 import {ForcedBlockValues} from "../../../app/modules/prover/lib/blockGenerator"
+import {LevelMIndexExpiresOnIndexer} from "../../../app/lib/dal/indexDAL/leveldb/indexers/LevelMIndexExpiresOnIndexer";
 
 const assert      = require('assert');
 const rp          = require('request-promise');
@@ -384,6 +385,27 @@ export class TestingServer {
     }
     console.log(BlockDTO.fromJSONObject(blocksResolved).getRawSigned())
     return blocksResolved
+  }
+
+  async resolveForError(): Promise<string|null> {
+    const server = this.server
+    const bcService = await server.BlockchainService
+    let errorCatch: Promise<string> = new Promise(res => {
+      server.pipe(es.mapSync((e:any) => {
+        if (e.blockResolutionError) {
+          res(e.blockResolutionError)
+        }
+      }))
+    })
+    await bcService.blockResolution()
+    return Promise.race([
+      errorCatch,
+      new Promise<null>(res => setTimeout(() => res(null), 200))
+    ])
+  }
+
+  getMindexExpiresOnIndexer(): LevelMIndexExpiresOnIndexer {
+    return (this.server.dal.mindexDAL as any).indexForExpiresOn
   }
 
   async resolveFork(): Promise<BlockDTO|null> {

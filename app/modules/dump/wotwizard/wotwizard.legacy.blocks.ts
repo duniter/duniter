@@ -26,8 +26,12 @@ export async function addLegacyBlocks(server: Server, wwDAL: WotWizardDAL) {
       return f;
     });
     legacies.forEach((l) => blocksSaved.push(l));
-    if (i % 25000 === 0) {
-      logger.debug("Saving 25 blocks... (%s yet stored)", i);
+    if (i % CommonConstants.BLOCKS_IN_MEMORY_MAX === 0) {
+      logger.debug(
+        "Saving %s blocks... (%s yet stored)",
+        CommonConstants.BLOCKS_IN_MEMORY_MAX,
+        i
+      );
       await wwDAL.blockDao.insertBatch(blocksSaved);
       blocksSaved = [];
     }

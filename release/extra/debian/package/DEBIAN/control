@@ -1,5 +1,5 @@
 Package: duniter
-Version: 1.8.5
+Version: 1.8.6
 Depends: unzip
 Section: misc
 Priority: optional

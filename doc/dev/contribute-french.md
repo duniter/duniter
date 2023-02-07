@@ -1,6 +1,6 @@
 ﻿# Contribuer au code de Duniter
 
-Le tutoriel le plus récent est ici : [https://duniter.org/fr/contribuer/blockchain-nodejs/tutoriel-dev/](https://duniter.org/fr/contribuer/blockchain-nodejs/tutoriel-dev/)
+Le tutoriel le plus récent est ici : [https://duniter.fr/wiki/contribuer/blockchain-nodejs/](https://duniter.fr/wiki/contribuer/blockchain-nodejs/)
 
 Son contenu est en grande partie encore valable, même si certaines parties ne sont plus tout à fait exactes, notamment avec la migration en cours vers du Rust.
 

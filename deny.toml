@@ -1,10 +1,20 @@
 [advisories]
 ignore = [
-    # Wait to comfy-table upgrade crossterm
-    "RUSTSEC-2020-0091",
-    # generic-array v0.12.3 allowed unsoundly extending lifetimes
-    # but used only on build-dependencies by pest_meta
-    "RUSTSEC-2020-0146",
+    # Won't fix
+    "RUSTSEC-2020-0071",
+    "RUSTSEC-2020-0159",
+    "RUSTSEC-2021-0072",
+    "RUSTSEC-2021-0078",
+    "RUSTSEC-2021-0079",
+    "RUSTSEC-2021-0093",
+    "RUSTSEC-2021-0114",
+    "RUSTSEC-2021-0115",
+    "RUSTSEC-2021-0119",
+    "RUSTSEC-2021-0124",
+    "RUSTSEC-2022-0013",
+    "RUSTSEC-2022-0037",
+    "RUSTSEC-2022-0082",
+    "RUSTSEC-2023-0018",
 ]
 
 [bans]

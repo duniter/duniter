@@ -76,7 +76,7 @@ fn main() -> anyhow::Result<()> {
         "duniter_default".to_owned()
     };
 
-    let profile_path = home.as_path().join(&profile_name);
+    let profile_path = home.as_path().join(profile_name);
     let data_path = profile_path.as_path().join(DATA_DIR);
 
     if !data_path.exists() {
@@ -323,11 +323,11 @@ fn too_many_entries(entries_len: usize, output_in_term: bool) -> std::io::Result
 fn show_db_schema(collections_names: Vec<(&'static str, &'static str, &'static str)>) {
     let mut table = Table::new();
     table.set_content_arrangement(comfy_table::ContentArrangement::Dynamic);
-    table.set_header(&["Collection name", "Key type", "Value type"]);
+    table.set_header(["Collection name", "Key type", "Value type"]);
     for (collection_name, key_full_type_name, value_full_type_name) in collections_names {
         let key_type_name_opt = key_full_type_name.split(':').last();
         let value_type_name_opt = value_full_type_name.split(':').last();
-        table.add_row(&[
+        table.add_row([
             collection_name,
             key_type_name_opt.unwrap_or("?"),
             value_type_name_opt.unwrap_or("?"),

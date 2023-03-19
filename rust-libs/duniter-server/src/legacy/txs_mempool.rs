@@ -62,7 +62,7 @@ impl DuniterServer {
                 }
             }
         }
-        Ok(new_pending_txs.into_iter().map(|(_k, v)| v).collect())
+        Ok(new_pending_txs.into_values().collect())
     }
     pub fn get_pending_txs(
         &self,

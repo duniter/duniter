@@ -1,7 +1,7 @@
 #!/bin/sh
 set -uo pipefail
 
-function boolean () {
+boolean () {
   echo "$1" | sed -E 's/^(true|yes|1)$/true/i'
 }
 big_fat_warning='\033[01;31m**WARNING**:\033[0m'

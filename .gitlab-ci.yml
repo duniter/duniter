@@ -160,8 +160,6 @@ releases:x64:
   image: docker:git
   tags:
     - docker
-  before_script:
-    - git config --global --add safe.directory /builds/nodes/typescript/duniter
   script:
     - docker pull $CI_REGISTRY_IMAGE:$IMAGE_TAG || true
     - docker build --cache-from $CI_REGISTRY_IMAGE:$IMAGE_TAG --pull -t "$CI_REGISTRY_IMAGE:$IMAGE_TAG" --build-arg="INSTALL_DEX=$INSTALL_DEX" -f release/docker/Dockerfile .

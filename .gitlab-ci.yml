@@ -157,13 +157,11 @@ releases:x64:
 
 .docker-build-app-image:
   stage: package
-  image: docker:18.06
+  image: docker:git
   tags:
-    - redshift
-  services:
-    - docker:18.06-dind
+    - docker
   before_script:
-    - docker info
+    - git config --global --add safe.directory /builds/nodes/typescript/duniter
   script:
     - docker pull $CI_REGISTRY_IMAGE:$IMAGE_TAG || true
     - docker build --cache-from $CI_REGISTRY_IMAGE:$IMAGE_TAG --pull -t "$CI_REGISTRY_IMAGE:$IMAGE_TAG" --build-arg="INSTALL_DEX=$INSTALL_DEX" -f release/docker/Dockerfile .
@@ -201,11 +199,9 @@ package:prod:docker:
   stage: package
   rules:
     - if: $CI_COMMIT_TAG
-  image: docker:18.06
+  image: docker:git
   tags:
-    - redshift
-  services:
-    - docker:18.06-dind
+    - docker
   script:
     - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG" -f release/docker/Dockerfile .
     - docker login -u "gitlab-ci-token" -p "$CI_BUILD_TOKEN" $CI_REGISTRY

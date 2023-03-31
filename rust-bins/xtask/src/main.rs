@@ -44,7 +44,7 @@ fn main() -> Result<()> {
     let args = DuniterXTask::from_args();
 
     if !version_check::is_min_version(MIN_RUST_VERSION).unwrap_or(false)
-        && exec_should_success(Command::new("rustup").args(&["update", "stable"])).is_err()
+        && exec_should_success(Command::new("rustup").args(["update", "stable"])).is_err()
     {
         eprintln!(
                 "Duniter requires Rust {} or higher. If you installed the Rust toolchain via rustup, please execute the command `rustup update stable`.",
@@ -110,24 +110,24 @@ fn exec_should_success(command: &mut Command) -> Result<()> {
 
 fn build(skip_npm: bool, production: bool) -> Result<()> {
     if !skip_npm {
-        exec_should_success(Command::new("npm").args(&["add", "duniter-ui"]))?;
+        exec_should_success(Command::new("npm").args(["add", "duniter-ui"]))?;
         exec_should_success(
             Command::new("npm")
                 .env("NEON_BUILD_RELEASE", "true")
                 .arg("ci"),
         )?;
         if production {
-            exec_should_success(Command::new("npm").args(&["prune", "--production"]))?;
+            exec_should_success(Command::new("npm").args(["prune", "--production"]))?;
         }
     }
     println!("Build duniter-cli …");
-    exec_should_success(Command::new("cargo").args(&["build", "--release"]))?;
+    exec_should_success(Command::new("cargo").args(["build", "--release"]))?;
     std::fs::copy("target/release/duniter", "bin/duniter")?;
     Ok(())
 }
 
 fn test(skip_npm: bool) -> Result<()> {
-    exec_should_success(Command::new("cargo").args(&["test", "--all"]))?;
+    exec_should_success(Command::new("cargo").args(["test", "--all"]))?;
     if !skip_npm {
         exec_should_success(Command::new("npm").arg("test"))?;
     }

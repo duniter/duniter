@@ -32,6 +32,8 @@ const events = require("events");
 const logger = require("../lib/logger").NewLogger("peering");
 const constants = require("../lib/constants");
 
+events.defaultMaxListeners = 20;
+
 export interface Keyring {
   publicKey: string;
   secretKey: string;

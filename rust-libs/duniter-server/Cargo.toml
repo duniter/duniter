@@ -9,14 +9,12 @@ edition = "2018"
 anyhow = "1.0.34"
 cfg-if = "1.0.0"
 duniter-core = { git = "https://git.duniter.org/nodes/rust/duniter-core", features = ["bc-writer"] }
+duniter-gva = { git = "https://git.duniter.org/nodes/rust/modules/duniter-gva" }
 fast-threadpool = "0.2.3"
 flume = "0.10.0"
 log = "0.4.11"
 paste = "1.0.2"
 resiter = "0.4.0"
-
-[target.'cfg(target_arch = "x86_64")'.dependencies]
-duniter-gva = { git = "https://git.duniter.org/nodes/rust/modules/duniter-gva" }
 
 [dev-dependencies]
 duniter-core = { git = "https://git.duniter.org/nodes/rust/duniter-core", features = ["bc-writer", "mem"] }

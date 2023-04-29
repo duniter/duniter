@@ -30,7 +30,6 @@ use duniter_core::dbs::databases::{bc_v2::BcV2DbReadable, network_v1::NetworkV1D
 pub use duniter_core::dbs::{
     kv_typed::prelude::KvResult, smallvec, DunpHeadDbV1, DunpNodeIdV1Db, PeerCardDbV1,
 };
-#[cfg(target_arch = "x86_64")]
 pub use duniter_gva::GvaModule;
 
 use anyhow::Context;
@@ -60,14 +59,8 @@ use std::{
 use duniter_core::conf as duniter_conf;
 use duniter_core::global as duniter_global;
 use duniter_core::mempools as duniter_mempools;
-cfg_if::cfg_if! {
-    if #[cfg(target_arch = "x86_64")] {
-        use duniter_core::module::DuniterModule;
-        plug_duniter_modules!([GvaModule], TxsHistoryForBma);
-    } else {
-        plug_duniter_modules!([], TxsHistoryForBma);
-    }
-}
+use duniter_core::module::DuniterModule;
+plug_duniter_modules!([GvaModule], TxsHistoryForBma);
 
 pub struct DuniterServer {
     bc_db: BcV2Db<FileBackend>,

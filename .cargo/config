@@ -9,8 +9,3 @@ uc = "update -p duniter-core"
 ug = "update -p duniter-gva"
 ugc = "update -p duniter-gva-conf"
 xtask = "run --package xtask --"
-
-# ARM x64 specific, otherwise crash (because of rustc bug)
-# see: https://github.com/rust-lang/cargo/issues/6489
-[target.'cfg(all(target_arch = "aarch64"))']
-rustflags = ["-Ccodegen-units=1"]

@@ -18,11 +18,11 @@ RUN apk update && \
 
 WORKDIR /duniter
 
-# copy source tree
-COPY ./ ./
-
 # install latest stable rust
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+
+# copy source tree
+COPY ./ ./
 
 # build duniter
 RUN PATH=${HOME}/.cargo/bin:${PATH} \

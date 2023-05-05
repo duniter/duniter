@@ -17,6 +17,7 @@ profile_default=$home/duniter_default
 manual_config="$(boolean "${DUNITER_MANUAL_CONFIG:-false}")"
 auto_sync="$(boolean "${DUNITER_AUTO_SYNC:-false}")"
 DUNITER_PEER_HOST="${DUNITER_PEER_HOST:-${DUNITER_SYNC_HOST:-}}"
+MAX_OLD_SPACE_SIZE=${DUNITER_MAX_OLD_SPACE_SIZE:+--max-old-space-size $DUNITER_MAX_OLD_SPACE_SIZE}
 
 # Create default profile path
 mkdir -p "$home/duniter_default"
@@ -100,7 +101,7 @@ if [ "$auto_sync" = true ]; then
       echo "DUNITER_SYNC_HOST undefined. Can't start synchronization!"
     else
       echo "Starting synchronization..."
-      /usr/bin/duniter sync "$DUNITER_SYNC_HOST" --no-interactive
+      /usr/bin/duniter $MAX_OLD_SPACE_SIZE sync "$DUNITER_SYNC_HOST" --no-interactive
     fi
   fi
 fi
@@ -115,7 +116,9 @@ fi
 
 # Without parameters, start with web interface
 if [ $# = 0 ]; then
-  set -- direct_webstart
+  set -- $MAX_OLD_SPACE_SIZE direct_webstart
+else
+  set -- $MAX_OLD_SPACE_SIZE "$@"
 fi
 
 # Start duniter

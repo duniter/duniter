@@ -129,9 +129,9 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
       pos: number;
     }[]
   > {
-    const forConditions = await this.getForConditions(`SIG(${pubkey})`);
-    const forPubkeys = await this.getForComplexeConditionPubkey(pubkey);
-    const reduced = Indexer.DUP_HELPERS.reduceBy(forConditions.concat(forPubkeys), [
+    const forSimpleConditions = await this.getForConditions(`SIG(${pubkey})`);
+    const forComplexConditions = await this.getForComplexeConditionPubkey(pubkey);
+    const reduced = Indexer.DUP_HELPERS.reduceBy(forSimpleConditions.concat(forComplexConditions), [
       "identifier",
       "pos",
     ]);

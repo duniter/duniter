@@ -129,9 +129,9 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
       pos: number;
     }[]
   > {
-    const forConditions = await this.getForConditions(`SIG(${pubkey})`);
-    const forPubkeys = await this.getForComplexeConditionPubkey(pubkey);
-    const reduced = Indexer.DUP_HELPERS.reduceBy(forConditions.concat(forPubkeys), [
+    const forSimpleConditions = await this.getForConditions(`SIG(${pubkey})`);
+    const forComplexConditions = await this.getForComplexeConditionPubkey(pubkey);
+    const reduced = Indexer.DUP_HELPERS.reduceBy(forSimpleConditions.concat(forComplexConditions), [
       "identifier",
       "pos",
     ]);
@@ -329,24 +329,25 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
   }
 
   private async trimConditions(condition: string, id: string) {
-    // Get all the account's TX sources
+    // Get all the condition's sources
     const existing = (await this.indexForConditions.getOrNull(condition)) || [];
-    // Prune the source from the account
+    // Prune the source from the condition
     const trimmed = arrayPruneAllCopy(existing, id);
     if (trimmed.length) {
-      // If some sources are left for this "account", persist what remains
+      // If some sources are left for this "condition", persist what remains
       await this.indexForConditions.put(condition, trimmed);
     } else {
       // Otherwise just delete the "account"
       await this.indexForConditions.del(condition);
     }
+
+    // If complex conditions
+    if (this.isComplexCondition(condition)) {
+      const pubkeys = this.getDistinctPubkeysFromCondition(condition);
+      await this.trimComplexeConditionPubkeys(pubkeys, id);
+    }
   }
 
-  /**
-   * Duplicate with trimConditions?!
-   * @param writtenOn
-   * @param id
-   */
   private async trimWrittenOn(writtenOn: number, id: string) {
     const k = LevelDBSindex.trimWrittenOnKey(writtenOn);
     const existing = await this.getWrittenOnSourceIds(writtenOn);
@@ -366,6 +367,27 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
       await this.indexForConsumed.put(k, trimmed);
     } else {
       await this.indexForConsumed.del(k);
+    }
+  }
+
+  private async trimComplexeConditionPubkeys(pubkeys: string[], id: string) {
+    if (!pubkeys || !pubkeys.length) return;
+    for (const p of pubkeys) {
+      await this.trimComplexeConditionPubkey(p, id);
+    }
+  }
+
+  private async trimComplexeConditionPubkey(pubkey: string, id: string) {
+    // Get all the condition's sources
+    const existing = (await this.indexOfComplexeConditionForPubkeys.getOrNull(pubkey)) || [];
+    // Prune the source from the condition
+    const trimmed = arrayPruneAllCopy(existing, id);
+    if (trimmed.length) {
+      // If some sources are left for this "condition", persist what remains
+      await this.indexOfComplexeConditionForPubkeys.put(pubkey, trimmed);
+    } else {
+      // Otherwise just delete the "account"
+      await this.indexOfComplexeConditionForPubkeys.del(pubkey);
     }
   }
 
@@ -432,8 +454,7 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
       arrCN.push(r);
 
       // If complex condition
-      if (!CommonConstants.TRANSACTION.OUTPUT_CONDITION_SIG_PUBKEY_UNIQUE.test(r.conditions)) {
-        // Fill complex condition by pubkey
+      if (this.isComplexCondition(r.conditions)) {
         const pubkeys = this.getDistinctPubkeysFromCondition(r.conditions);
         pubkeys.forEach((pub) => {
           let arrPub = byPubkeys[pub];
@@ -486,6 +507,9 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
     }
   }
 
+  private isComplexCondition(condition: string): boolean {
+    return condition && !CommonConstants.TRANSACTION.OUTPUT_CONDITION_SIG_PUBKEY_UNIQUE.test(condition) || false;
+  }
   /**
    * Get all pubkeys used by an output condition (e.g. 'SIG(A) && SIG(B)' will return ['A', 'B']
    * @param condition

@@ -53,7 +53,7 @@ const CONDITIONS =
   "\\)|CSV\\(" +
   CSV_INTEGER +
   "\\))))*";
-
+const CONDITION_SIG_PUBKEY = "SIG\\((" + PUBKEY +")\\)";
 const BMA_REGEXP = /^BASIC_MERKLED_API( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
 const BMAS_REGEXP = /^BMAS( ([a-z_][a-z0-9-_.]*))?( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))( (\/.+))?$/;
 const BMATOR_REGEXP = /^BMATOR( ([a-z0-9]{16})\.onion)( ([0-9.]+))?( ([0-9a-f:]+))?( ([0-9]+))$/;
@@ -535,6 +535,8 @@ export const CommonConstants = {
     LOCKTIME: find("Locktime: (" + INTEGER + ")"),
     INLINE_COMMENT: exact(COMMENT),
     OUTPUT_CONDITION: exact(CONDITIONS),
+    OUTPUT_CONDITION_SIG_PUBKEY: find(CONDITION_SIG_PUBKEY),
+    OUTPUT_CONDITION_SIG_PUBKEY_UNIQUE: exact(CONDITION_SIG_PUBKEY)
   },
   PEER: {
     BLOCK: find("Block: (" + INTEGER + "-" + FINGERPRINT + ")"),

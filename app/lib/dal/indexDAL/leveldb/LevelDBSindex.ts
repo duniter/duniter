@@ -1,12 +1,18 @@
-import {MonitorExecutionTime} from "../../../debug/MonitorExecutionTime";
-import {FullSindexEntry, Indexer, SimpleTxEntryForWallet, SimpleTxInput, SindexEntry,} from "../../../indexer";
-import {LevelUp} from "levelup";
-import {LevelDBTable} from "./LevelDBTable";
-import {SIndexDAO} from "../abstract/SIndexDAO";
-import {Underscore} from "../../../common-libs/underscore";
-import {pint} from "../../../common-libs/pint";
-import {arrayPruneAllCopy} from "../../../common-libs/array-prune";
-import {CommonConstants} from "../../../common-libs/constants";
+import { MonitorExecutionTime } from "../../../debug/MonitorExecutionTime";
+import {
+  FullSindexEntry,
+  Indexer,
+  SimpleTxEntryForWallet,
+  SimpleTxInput,
+  SindexEntry,
+} from "../../../indexer";
+import { LevelUp } from "levelup";
+import { LevelDBTable } from "./LevelDBTable";
+import { SIndexDAO } from "../abstract/SIndexDAO";
+import { Underscore } from "../../../common-libs/underscore";
+import { pint } from "../../../common-libs/pint";
+import { arrayPruneAllCopy } from "../../../common-libs/array-prune";
+import { CommonConstants } from "../../../common-libs/constants";
 
 export class LevelDBSindex extends LevelDBTable<SindexEntry>
   implements SIndexDAO {
@@ -38,8 +44,8 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
       this.getLevelDB
     );
     this.indexOfComplexeConditionForPubkeys = new LevelDBTable<string[]>(
-        "level_sindex/complex_condition_pubkeys",
-        this.getLevelDB
+      "level_sindex/complex_condition_pubkeys",
+      this.getLevelDB
     );
     await this.indexForTrimming.init();
     await this.indexForConsumed.init();
@@ -130,11 +136,13 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
     }[]
   > {
     const forSimpleConditions = await this.getForConditions(`SIG(${pubkey})`);
-    const forComplexConditions = await this.getForComplexeConditionPubkey(pubkey);
-    const reduced = Indexer.DUP_HELPERS.reduceBy(forSimpleConditions.concat(forComplexConditions), [
-      "identifier",
-      "pos",
-    ]);
+    const forComplexConditions = await this.getForComplexeConditionPubkey(
+      pubkey
+    );
+    const reduced = Indexer.DUP_HELPERS.reduceBy(
+      forSimpleConditions.concat(forComplexConditions),
+      ["identifier", "pos"]
+    );
     return reduced.filter((r) => !r.consumed);
   }
 
@@ -270,12 +278,13 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
   }
 
   async getForComplexeConditionPubkey(pubkey: string): Promise<SindexEntry[]> {
-    const ids = (await this.indexOfComplexeConditionForPubkeys.getOrNull(pubkey)) || [];
+    const ids =
+      (await this.indexOfComplexeConditionForPubkeys.getOrNull(pubkey)) || [];
     const found: SindexEntry[] = [];
     for (const id of ids) {
       const entries = await this.findByIdentifierAndPos(
-          id.split("-")[0],
-          pint(id.split("-")[1])
+        id.split("-")[0],
+        pint(id.split("-")[1])
       );
       entries.forEach((e) => found.push(e));
     }
@@ -379,7 +388,8 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
 
   private async trimComplexeConditionPubkey(pubkey: string, id: string) {
     // Get all the condition's sources
-    const existing = (await this.indexOfComplexeConditionForPubkeys.getOrNull(pubkey)) || [];
+    const existing =
+      (await this.indexOfComplexeConditionForPubkeys.getOrNull(pubkey)) || [];
     // Prune the source from the condition
     const trimmed = arrayPruneAllCopy(existing, id);
     if (trimmed.length) {
@@ -496,19 +506,26 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
     }
     // Index pubkeys => (identifier + pos)[]
     for (const k of Underscore.keys(byPubkeys).map(String)) {
-      const existing = (await this.indexOfComplexeConditionForPubkeys.getOrNull(k)) || [];
+      const existing =
+        (await this.indexOfComplexeConditionForPubkeys.getOrNull(k)) || [];
       const newSources = byPubkeys[k].map((r) =>
-          LevelDBSindex.trimPartialKey(r.identifier, r.pos)
+        LevelDBSindex.trimPartialKey(r.identifier, r.pos)
       );
       await this.indexOfComplexeConditionForPubkeys.put(
-          k,
-          Underscore.uniq(existing.concat(newSources))
+        k,
+        Underscore.uniq(existing.concat(newSources))
       );
     }
   }
 
   private isComplexCondition(condition: string): boolean {
-    return condition && !CommonConstants.TRANSACTION.OUTPUT_CONDITION_SIG_PUBKEY_UNIQUE.test(condition) || false;
+    return (
+      (condition &&
+        !CommonConstants.TRANSACTION.OUTPUT_CONDITION_SIG_PUBKEY_UNIQUE.test(
+          condition
+        )) ||
+      false
+    );
   }
   /**
    * Get all pubkeys used by an output condition (e.g. 'SIG(A) && SIG(B)' will return ['A', 'B']
@@ -519,7 +536,11 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
     const pubKeys: string[] = [];
     if (!condition) return pubKeys;
     let match: RegExpExecArray | null;
-    while ((match = CommonConstants.TRANSACTION.OUTPUT_CONDITION_SIG_PUBKEY.exec(condition)) !== null) {
+    while (
+      (match = CommonConstants.TRANSACTION.OUTPUT_CONDITION_SIG_PUBKEY.exec(
+        condition
+      )) !== null
+    ) {
       pubKeys.push(match[1]);
       condition = condition.substring(match.index + match[0].length);
     }

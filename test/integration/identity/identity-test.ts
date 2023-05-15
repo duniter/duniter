@@ -291,6 +291,42 @@ describe("Identities collision", function() {
     });
   });
 
+  it('requirements by pubkey of cat', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/requirements/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd?pubkey=true', { json: true }), function(res:HttpRequirements) {
+      res.should.have.property('identities').be.an.Array;
+      res.should.have.property('identities').have.length(1);
+      res.identities[0].should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
+      res.identities[0].should.have.property('uid').equal('cat');
+      res.identities[0].should.have.property('meta').property('timestamp');
+      res.identities[0].should.have.property('wasMember').equal(true);
+      res.identities[0].should.have.property('expired').equal(false); // Because it has been a member once! So its identity will exist forever.
+      res.identities[0].should.have.property('outdistanced').equal(false);
+      res.identities[0].should.have.property('isSentry').equal(true); // dSen = 2, cat has issued and received 2 certs with tic and toc
+      res.identities[0].should.have.property('certifications').have.length(2);
+      res.identities[0].should.have.property('membershipPendingExpiresIn').equal(0);
+      res.identities[0].should.have.property('membershipExpiresIn').greaterThan(9000);
+    });
+  });
+
+  it('requirements by pubkey of man1', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/requirements/12AbjvYY5hxV4v2KrN9pnGzgFxogwrzgYyncYHHsyFDK?pubkey=true', { json: true }), function(res:HttpRequirements) {
+      res.should.have.property('identities').be.an.Array;
+      res.should.have.property('identities').have.length(1);
+      res.identities[0].should.have.property('pubkey').equal('12AbjvYY5hxV4v2KrN9pnGzgFxogwrzgYyncYHHsyFDK');
+      res.identities[0].should.have.property('uid').equal('man1');
+      res.identities[0].should.have.property('meta').property('timestamp');
+      res.identities[0].should.have.property('expired').equal(false);
+      res.identities[0].should.have.property('outdistanced').equal(false);
+      res.identities[0].should.have.property('isSentry').equal(false); // Not a member, also dSen = 2, but man1 has only 1 certification
+      res.identities[0].should.have.property('certifications').length(1);
+      res.identities[0].certifications[0].should.have.property('from').equal('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc');
+      res.identities[0].certifications[0].should.have.property('to').equal('12AbjvYY5hxV4v2KrN9pnGzgFxogwrzgYyncYHHsyFDK');
+      res.identities[0].certifications[0].should.have.property('expiresIn').greaterThan(0);
+      res.identities[0].should.have.property('membershipPendingExpiresIn').greaterThan(9000);
+      res.identities[0].should.have.property('membershipExpiresIn').equal(0);
+    });
+  });
+
   it('should have certified-by/tic giving results', function() {
     return expectAnswer(rp('http://127.0.0.1:7799/wot/certified-by/tic', { json: true }), function(res:HttpCertifications) {
       res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');

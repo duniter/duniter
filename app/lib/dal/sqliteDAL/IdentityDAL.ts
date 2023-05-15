@@ -328,6 +328,10 @@ export class IdentityDAL extends AbstractSQLite<DBIdentity> {
     });
   }
 
+  getFromPubkey(pubkey: string) {
+    return this.sqlFind({pubkey});
+  }
+
   async trimExpiredIdentities(medianTime: number) {
     await this.exec(
       "DELETE FROM " +

@@ -187,9 +187,15 @@ export class WOTBinding extends AbstractController {
 
   async requirements(req: any): Promise<HttpRequirements> {
     const search = await ParametersService.getSearchP(req);
-    const identities: any = await this.IdentityService.searchIdentities(search);
+    let identities: any = [];
+    if (req.query?.pubkey === true || req.query?.pubkey === "true") {
+      identities = await this.IdentityService.searchIdentitiesByPubkey(search);
+    }
+    else {
+      identities = await this.IdentityService.searchIdentities(search);
+    }
     const all: HttpIdentityRequirement[] = await this.BlockchainService.requirementsOfIdentities(
-      identities
+        identities
     );
     if (!all || !all.length) {
       throw BMAConstants.ERRORS.NO_IDTY_MATCHING_PUB_OR_UID;

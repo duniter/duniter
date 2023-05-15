@@ -263,4 +263,14 @@ export class SqliteIIndex extends SqliteTable<IindexEntry>
       ])
     ).map(OldTransformers.toOldIindexEntry);
   }
+
+  @MonitorExecutionTime()
+  async searchByPubkey(pub: string): Promise<OldIindexEntry[]> {
+    // TODO Why not need reduce() here ? As done in the LevelDB implementation
+    return (
+        await this.find("SELECT * FROM iindex WHERE pub = ?", [
+          pub
+        ])
+    ).map(OldTransformers.toOldIindexEntry);
+  }
 }

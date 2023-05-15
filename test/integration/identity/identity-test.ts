@@ -292,7 +292,7 @@ describe("Identities collision", function() {
   });
 
   it('requirements by pubkey of cat', function() {
-    return expectAnswer(rp('http://127.0.0.1:7799/wot/requirements/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd?pubkey=true', { json: true }), function(res:HttpRequirements) {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/requirements/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd?pubkey', { json: true }), function(res:HttpRequirements) {
       res.should.have.property('identities').be.an.Array;
       res.should.have.property('identities').have.length(1);
       res.identities[0].should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
@@ -309,7 +309,7 @@ describe("Identities collision", function() {
   });
 
   it('requirements by pubkey of man1', function() {
-    return expectAnswer(rp('http://127.0.0.1:7799/wot/requirements/12AbjvYY5hxV4v2KrN9pnGzgFxogwrzgYyncYHHsyFDK?pubkey=true', { json: true }), function(res:HttpRequirements) {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/requirements/12AbjvYY5hxV4v2KrN9pnGzgFxogwrzgYyncYHHsyFDK?pubkey', { json: true }), function(res:HttpRequirements) {
       res.should.have.property('identities').be.an.Array;
       res.should.have.property('identities').have.length(1);
       res.identities[0].should.have.property('pubkey').equal('12AbjvYY5hxV4v2KrN9pnGzgFxogwrzgYyncYHHsyFDK');
@@ -328,7 +328,7 @@ describe("Identities collision", function() {
   });
 
   it('requirements by invalid pubkey', function() {
-    return expectError(404, "No identity matching this pubkey or uid", rp('http://127.0.0.1:7799/wot/requirements/cat?pubkey=true', { json: true }));
+    return expectError(404, "No identity matching this pubkey or uid", rp('http://127.0.0.1:7799/wot/requirements/cat?pubkey', { json: true }));
   });
 
   it('should have certified-by/tic giving results', function() {

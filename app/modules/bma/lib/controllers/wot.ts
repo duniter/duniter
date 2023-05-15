@@ -188,7 +188,7 @@ export class WOTBinding extends AbstractController {
   async requirements(req: any): Promise<HttpRequirements> {
     const search = await ParametersService.getSearchP(req);
     let identities: any = [];
-    if (req.query?.pubkey === true || req.query?.pubkey === "true") {
+    if (req.query.pubkey) {
       identities = await this.IdentityService.searchIdentitiesByPubkey(search);
     }
     else {

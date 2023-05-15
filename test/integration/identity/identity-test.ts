@@ -192,6 +192,13 @@ describe("Identities collision", function() {
     });
   });
 
+  it('should have certifiers-of/:pubkey of cat giving results', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/certifiers-of/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd?pubkey', { json: true }), function(res:HttpCertifications) {
+      res.should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
+      res.should.have.property('uid').equal('cat');
+    });
+  });
+
   it('should have certifiers-of/tic giving results', function() {
     return expectAnswer(rp('http://127.0.0.1:7799/wot/certifiers-of/tic', { json: true }), function(res:HttpCertifications) {
       res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
@@ -213,6 +220,13 @@ describe("Identities collision", function() {
     });
   });
 
+  it('should have certifiers-of/:pubkey of tic giving results', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/certifiers-of/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV?pubkey', { json: true }), function(res:HttpCertifications) {
+      res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
+      res.should.have.property('uid').equal('tic');
+    });
+  });
+
   it('should have certifiers-of/toc giving results', function() {
     return expectAnswer(rp('http://127.0.0.1:7799/wot/certifiers-of/toc', { json: true }), function(res:HttpCertifications) {
       res.should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
@@ -231,6 +245,13 @@ describe("Identities collision", function() {
       certs[0].should.have.property('written').property('number').equal(0);
       certs[0].should.have.property('written').property('hash').not.equal('');
       certs[0].should.have.property('signature').not.equal('');
+    });
+  });
+
+  it('should have certifiers-of/:pubkey of toc giving results', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/certifiers-of/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo?pubkey', { json: true }), function(res:HttpCertifications) {
+      res.should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
+      res.should.have.property('uid').equal('toc');
     });
   });
 
@@ -298,6 +319,13 @@ describe("Identities collision", function() {
     });
   });
 
+  it('should have certified-by/:pubkey of tic giving results', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/certified-by/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV?pubkey', { json: true }), function(res:HttpCertifications) {
+      res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
+      res.should.have.property('uid').equal('tic');
+    });
+  });
+
   it('should have certified-by/tac giving results', function() {
     return expectAnswer(rp('http://127.0.0.1:7799/wot/certified-by/tac', { json: true }), function(res:HttpCertifications) {
       res.should.have.property('pubkey').equal('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc');
@@ -305,6 +333,13 @@ describe("Identities collision", function() {
       res.should.have.property('isMember').equal(true);
       res.should.have.property('sigDate').be.a.Number;
       res.should.have.property('certifications').length(0);
+    });
+  });
+
+  it('should have certified-by/:pubkey of tac giving results', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/certified-by/2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc?pubkey', { json: true }), function(res:HttpCertifications) {
+      res.should.have.property('pubkey').equal('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc');
+      res.should.have.property('uid').equal('tac');
     });
   });
 
@@ -340,6 +375,13 @@ describe("Identities collision", function() {
           cert.should.have.property('signature').not.equal('');
         }
       }
+    });
+  });
+
+  it('should have certified-by/:pubkey of cat giving results', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/certified-by/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd?pubkey', { json: true }), function(res:HttpCertifications) {
+      res.should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
+      res.should.have.property('uid').equal('cat');
     });
   });
 

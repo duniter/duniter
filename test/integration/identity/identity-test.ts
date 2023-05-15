@@ -327,6 +327,10 @@ describe("Identities collision", function() {
     });
   });
 
+  it('requirements by invalid pubkey', function() {
+    return expectError(404, "No identity matching this pubkey or uid", rp('http://127.0.0.1:7799/wot/requirements/cat?pubkey=true', { json: true }));
+  });
+
   it('should have certified-by/tic giving results', function() {
     return expectAnswer(rp('http://127.0.0.1:7799/wot/certified-by/tic', { json: true }), function(res:HttpCertifications) {
       res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');

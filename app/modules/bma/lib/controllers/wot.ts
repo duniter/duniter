@@ -189,6 +189,10 @@ export class WOTBinding extends AbstractController {
     const search = await ParametersService.getSearchP(req);
     let identities: any = [];
     if (req.query.pubkey) {
+      const matches = search.match(BMAConstants.PUBLIC_KEY);
+      if (!matches) {
+        throw BMAConstants.ERRORS.NO_IDTY_MATCHING_PUB_OR_UID;
+      }
       identities = await this.IdentityService.searchIdentitiesByPubkey(search);
     }
     else {

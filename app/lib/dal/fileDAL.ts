@@ -470,8 +470,10 @@ export class FileDAL implements ServerDAO {
   }
 
   async getAvailableSourcesByPubkey(pubkey: string): Promise<HttpSource[]> {
-    const txAvailable = await this.sindexDAL.getAvailableForPubkey(pubkey);
-    const sources: UDSource[] = await this.dividendDAL.getUDSources(pubkey);
+    const [txAvailable, sources] = await Promise.all([
+      this.sindexDAL.getAvailableForPubkey(pubkey),
+      this.dividendDAL.getUDSources(pubkey),
+    ]);
     return sources
       .map((d) => {
         return {

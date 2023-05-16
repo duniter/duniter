@@ -744,7 +744,7 @@ export class FileDAL implements ServerDAO {
   }
 
   async getWrittenIdtyByPubkeyForHashingAndIsMember(
-      pub: string
+    pub: string
   ): Promise<{
     uid: string;
     created_on: string;

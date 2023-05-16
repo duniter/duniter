@@ -135,12 +135,11 @@ export class WOTBinding extends AbstractController {
     let idty: FullIindexEntry;
     if (req.query.pubkey) {
       idty = (await this.server.dal.getWrittenIdtyByPubkeyForHashingAndIsMember(
-          search
+        search
       )) as FullIindexEntry;
-    }
-    else {
+    } else {
       idty = (await this.server.dal.getWrittenIdtyByPubkeyOrUIdForHashingAndIsMember(
-          search
+        search
       )) as FullIindexEntry;
     }
     const certs = await this.server.dal.certsToTarget(
@@ -240,10 +239,9 @@ export class WOTBinding extends AbstractController {
     let idty: FullIindexEntry;
     if (req.query.pubkey) {
       idty = (await this.server.dal.getWrittenIdtyByPubkeyForHashingAndIsMember(
-          search
+        search
       )) as FullIindexEntry;
-    }
-    else {
+    } else {
       idty = (await this.server.dal.getWrittenIdtyByPubkeyOrUIdForHashingAndIsMember(
         search
       )) as FullIindexEntry;

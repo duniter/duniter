@@ -219,14 +219,14 @@ export class SqliteIIndex extends SqliteTable<IindexEntry>
 
   @MonitorExecutionTime()
   async getOldFromPubkey(pub: string): Promise<OldIindexEntry | null> {
-    const identities = await this.find(
+    const entries = await this.find(
       "SELECT * FROM iindex WHERE pub = ? order by writtenOn ASC",
       [pub]
     );
-    if (!identities.length) {
+    if (!entries.length) {
       return null;
     }
-    return OldTransformers.toOldIindexEntry(reduce(identities));
+    return OldTransformers.toOldIindexEntry(reduce(entries));
   }
 
   @MonitorExecutionTime()

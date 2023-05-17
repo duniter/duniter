@@ -193,12 +193,11 @@ export class WOTBinding extends AbstractController {
         throw BMAConstants.ERRORS.NO_IDTY_MATCHING_PUB_OR_UID;
       }
       identities = await this.IdentityService.searchIdentitiesByPubkey(search);
-    }
-    else {
+    } else {
       identities = await this.IdentityService.searchIdentities(search);
     }
     const all: HttpIdentityRequirement[] = await this.BlockchainService.requirementsOfIdentities(
-        identities
+      identities
     );
     if (!all || !all.length) {
       throw BMAConstants.ERRORS.NO_IDTY_MATCHING_PUB_OR_UID;

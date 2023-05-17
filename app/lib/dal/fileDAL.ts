@@ -935,7 +935,11 @@ export class FileDAL implements ServerDAO {
   async searchJustIdentitiesByPubkey(pubkey: string): Promise<DBIdentity[]> {
     const pendings = await this.idtyDAL.findByPub(pubkey);
     const writtenIdty = await this.iindexDAL.getOldFromPubkey(pubkey);
-    const nonPendings = writtenIdty && Underscore.where(pendings, { pubkey: writtenIdty.pub }).length === 0 ? [writtenIdty] : [];
+    const nonPendings =
+      writtenIdty &&
+      Underscore.where(pendings, { pubkey: writtenIdty.pub }).length === 0
+        ? [writtenIdty]
+        : [];
     const found = pendings.concat(
       nonPendings.map((i: any) => {
         // Use the correct field
@@ -1725,7 +1729,7 @@ export class FileDAL implements ServerDAO {
     local_iindex: IindexEntry[]
   ): Promise<SimpleUdEntryForWallet[]> {
     if (dividend) {
-      let udSources = this.dividendDAL.produceDividend(
+      const udSources = this.dividendDAL.produceDividend(
         blockNumber,
         dividend,
         unitbase,

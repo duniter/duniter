@@ -329,7 +329,7 @@ export class IdentityDAL extends AbstractSQLite<DBIdentity> {
   }
 
   findByPub(pub: string) {
-    return this.sqlFind({pubkey: pub});
+    return this.sqlFind({ pubkey: pub });
   }
 
   async trimExpiredIdentities(medianTime: number) {

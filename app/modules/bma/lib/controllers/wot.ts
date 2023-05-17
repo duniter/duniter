@@ -132,9 +132,16 @@ export class WOTBinding extends AbstractController {
 
   async certifiersOf(req: any): Promise<HttpCertifications> {
     const search = await ParametersService.getSearchP(req);
-    const idty = (await this.server.dal.getWrittenIdtyByPubkeyOrUIdForHashingAndIsMember(
-      search
-    )) as FullIindexEntry;
+    let idty: FullIindexEntry;
+    if (req.query.pubkey) {
+      idty = (await this.server.dal.getWrittenIdtyByPubkeyForHashingAndIsMember(
+        search
+      )) as FullIindexEntry;
+    } else {
+      idty = (await this.server.dal.getWrittenIdtyByPubkeyOrUIdForHashingAndIsMember(
+        search
+      )) as FullIindexEntry;
+    }
     const certs = await this.server.dal.certsToTarget(
       idty.pub,
       IdentityDTO.getTargetHash(idty)
@@ -229,9 +236,16 @@ export class WOTBinding extends AbstractController {
 
   async certifiedBy(req: any): Promise<HttpCertifications> {
     const search = await ParametersService.getSearchP(req);
-    const idty = (await this.server.dal.getWrittenIdtyByPubkeyOrUIdForHashingAndIsMember(
-      search
-    )) as FullIindexEntry;
+    let idty: FullIindexEntry;
+    if (req.query.pubkey) {
+      idty = (await this.server.dal.getWrittenIdtyByPubkeyForHashingAndIsMember(
+        search
+      )) as FullIindexEntry;
+    } else {
+      idty = (await this.server.dal.getWrittenIdtyByPubkeyOrUIdForHashingAndIsMember(
+        search
+      )) as FullIindexEntry;
+    }
     const certs = await this.server.dal.certsFrom(idty.pub);
     const theCerts: HttpCertification[] = [];
     for (const cert of certs) {

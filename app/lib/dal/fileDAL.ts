@@ -743,6 +743,17 @@ export class FileDAL implements ServerDAO {
     return await this.iindexDAL.getFromPubkeyOrUid(search);
   }
 
+  async getWrittenIdtyByPubkeyForHashingAndIsMember(
+    pub: string
+  ): Promise<{
+    uid: string;
+    created_on: string;
+    pub: string;
+    member: boolean;
+  } | null> {
+    return await this.iindexDAL.getFromPubkey(pub);
+  }
+
   async getWrittenIdtyByPubkeyForRevocationCheck(
     pubkey: string
   ): Promise<{

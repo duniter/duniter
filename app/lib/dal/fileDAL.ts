@@ -933,11 +933,9 @@ export class FileDAL implements ServerDAO {
   }
 
   async searchJustIdentitiesByPubkey(pubkey: string): Promise<DBIdentity[]> {
-    const pendings = await this.idtyDAL.getFromPubkey(pubkey);
-    const writtens = await this.iindexDAL.searchByPubkey(pubkey);
-    const nonPendings = Underscore.filter(writtens, (w: IindexEntry) => {
-      return Underscore.where(pendings, { pubkey: w.pub }).length == 0;
-    });
+    const pendings = await this.idtyDAL.findByPub(pubkey);
+    const writtenIdty = await this.iindexDAL.getOldFromPubkey(pubkey);
+    const nonPendings = writtenIdty && Underscore.where(pendings, { pubkey: writtenIdty.pub }).length === 0 ? [writtenIdty] : [];
     const found = pendings.concat(
       nonPendings.map((i: any) => {
         // Use the correct field

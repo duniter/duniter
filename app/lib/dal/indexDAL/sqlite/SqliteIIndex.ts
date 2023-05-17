@@ -1,4 +1,4 @@
-import { FullIindexEntry, IindexEntry, Indexer } from "../../../indexer";
+import {FullIindexEntry, IindexEntry, Indexer, reduce} from "../../../indexer";
 import { SQLiteDriver } from "../../drivers/SQLiteDriver";
 import { MonitorExecutionTime } from "../../../debug/MonitorExecutionTime";
 import { IIndexDAO } from "../abstract/IIndexDAO";
@@ -213,6 +213,15 @@ export class SqliteIIndex extends SqliteTable<IindexEntry>
   }
 
   @MonitorExecutionTime()
+  async getOldFromPubkey(pub: string): Promise<OldIindexEntry | null> {
+    const identities = await this.find("SELECT * FROM iindex WHERE pub = ? order by writtenOn ASC", [pub]);
+    if (!identities.length) {
+      return null;
+    }
+    return OldTransformers.toOldIindexEntry(reduce(identities));
+  }
+
+  @MonitorExecutionTime()
   async getMembers(): Promise<{ pubkey: string; uid: string | null }[]> {
     const members = await this.find(
       "SELECT * FROM iindex i1 " +
@@ -261,16 +270,6 @@ export class SqliteIIndex extends SqliteTable<IindexEntry>
         search,
         search,
       ])
-    ).map(OldTransformers.toOldIindexEntry);
-  }
-
-  @MonitorExecutionTime()
-  async searchByPubkey(pub: string): Promise<OldIindexEntry[]> {
-    // TODO Why not need reduce() here ? As done in the LevelDB implementation
-    return (
-        await this.find("SELECT * FROM iindex WHERE pub = ?", [
-          pub
-        ])
     ).map(OldTransformers.toOldIindexEntry);
   }
 }

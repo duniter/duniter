@@ -281,13 +281,11 @@ export class LevelDBIindex extends LevelDBTable<IindexEntry[]>
       .concat(pubIdentities.filter((p) => p.pub));
   }
 
-  async searchByPubkey(pub: string): Promise<OldIindexEntry[]> {
+  async getOldFromPubkey(pub: string): Promise<OldIindexEntry | null> {
     const identities = await this.findByPub(pub);
     if (!identities.length) {
-      return [];
+      return null;
     }
-    // TODO Why do we need to use reduce() on array ? This will merge items into one object
-    const mergedIdentities = OldTransformers.toOldIindexEntry(reduce(identities))
-    return [mergedIdentities];
+    return OldTransformers.toOldIindexEntry(reduce(identities));
   }
 }

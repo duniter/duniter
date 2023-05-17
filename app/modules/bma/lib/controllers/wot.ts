@@ -133,7 +133,7 @@ export class WOTBinding extends AbstractController {
   async certifiersOf(req: any): Promise<HttpCertifications> {
     const search = await ParametersService.getSearchP(req);
     let idty: FullIindexEntry;
-    if (req.query.pubkey) {
+    if (ParametersService.getIsPubkey(req)) {
       idty = (await this.server.dal.getWrittenIdtyByPubkeyForHashingAndIsMember(
         search
       )) as FullIindexEntry;
@@ -187,7 +187,15 @@ export class WOTBinding extends AbstractController {
 
   async requirements(req: any): Promise<HttpRequirements> {
     const search = await ParametersService.getSearchP(req);
-    const identities: any = await this.IdentityService.searchIdentities(search);
+    let identities: any = [];
+    if (ParametersService.getIsPubkey(req)) {
+      if (!BMAConstants.PUBLIC_KEY.test(search)) {
+        throw BMAConstants.ERRORS.NO_IDTY_MATCHING_PUB_OR_UID;
+      }
+      identities = await this.IdentityService.searchIdentitiesByPubkey(search);
+    } else {
+      identities = await this.IdentityService.searchIdentities(search);
+    }
     const all: HttpIdentityRequirement[] = await this.BlockchainService.requirementsOfIdentities(
       identities
     );
@@ -237,7 +245,7 @@ export class WOTBinding extends AbstractController {
   async certifiedBy(req: any): Promise<HttpCertifications> {
     const search = await ParametersService.getSearchP(req);
     let idty: FullIindexEntry;
-    if (req.query.pubkey) {
+    if (ParametersService.getIsPubkey(req)) {
       idty = (await this.server.dal.getWrittenIdtyByPubkeyForHashingAndIsMember(
         search
       )) as FullIindexEntry;

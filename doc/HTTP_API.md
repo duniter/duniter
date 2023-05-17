@@ -162,10 +162,10 @@ For that purpose, Merkle URL defines different parameters and results:
 
 **Parameters**
 
-Parameter | Description
---------- | -----------
-`leaves`  | Defines wether or not leaves hashes should be returned too. Defaults to `false`.
-`leaf`    | Hash of a leaf whose content should be returned. Ignore `leaves` parameter.
+| Parameter | Description                                                                      | Method      |
+|-----------|----------------------------------------------------------------------------------|-------------|
+| `leaves`  | Defines wether or not leaves hashes should be returned too. Defaults to `false`. | Query param |
+| `leaf`    | Hash of a leaf whose content should be returned. Ignore `leaves` parameter.      | Query param |
 
 **Returns**
 
@@ -216,9 +216,9 @@ Each tree manages different data, and has a different goal. Hence, each tree has
 Here is a summup of such rules:
 
 
-Merkle URL             | Leaf                      | Sort
----------------------- | --------------------------| -------------
-`network/peers (GET)`    | Hash of the peers' pubkey | By hash string sort, ascending.
+| Merkle URL             | Leaf                      | Sort                            |
+|------------------------| --------------------------|---------------------------------|
+| `network/peers (GET)`  | Hash of the peers' pubkey | By hash string sort, ascending. |
 
 #### Unicity
 
@@ -290,9 +290,9 @@ POST [Identity](./Protocol.md#identity) data.
 
 **Parameters**
 
-Name  | Value | Method
-----  | ----- | ------
-`identity` | The raw identity. | POST
+| Name       | Value             | Method  |
+|------------|-------------------|---------|
+| `identity` | The raw identity. | POST    |
 
 **Returns**
 
@@ -330,9 +330,9 @@ POST [Certification](./Protocol.md#certification) data.
 
 **Parameters**
 
-Name  | Value | Method
-----  | ----- | ------
-`cert` | The raw certification. | POST
+| Name   | Value                  | Method  |
+|--------|------------------------|---------|
+| `cert` | The raw certification. | POST    |
 
 **Returns**
 
@@ -362,9 +362,9 @@ Remove an identity from Identity pool.
 
 **Parameters**
 
-Name  | Value | Method
-----  | ----- | ------
-`revocation` | The raw revocation. | POST
+| Name         | Value               | Method |
+|--------------|---------------------|--------|
+| `revocation` | The raw revocation. | POST   |
 
 **Returns**
 
@@ -384,9 +384,9 @@ GET [Public key](./Protocol.md#publickey) data.
 
 **Parameters**
 
-Name  | Value | Method
-----  | ----- | ------
-`search` | A string of data to look for (public key, uid). | URL
+| Name     | Value                                           | Method  |
+|----------|-------------------------------------------------|---------|
+| `search` | A string of data to look for (public key, uid). | URL     |
 
 **Returns**
 
@@ -488,7 +488,7 @@ A list of public key + uid.
 }
 ```
 
-#### `wot/requirements/[pubkey]`
+#### `wot/requirements/[search]`
 
 
 **Goal**
@@ -497,9 +497,10 @@ GET requirements to be filled by pubkey to become a member.
 
 **Parameters**
 
-Name  | Value | Method
-----  | ----- | ------
-`pbkey` | Public key to check. | URL
+| Name     | Value                                                                                                           | Method       |
+|----------|-----------------------------------------------------------------------------------------------------------------|--------------|
+| `search` | Public key or uidto check.                                                                                      | URL          |
+| `pubkey` | Defines wether or not `search` is a pubkey. It not, will search on both `uid` or `pubkey`. Defaults to `false`. | Query params | 
 
 **Returns**
 
@@ -543,9 +544,9 @@ GET requirements pending on the server for identities with a minimum of minsig c
 
 **Parameters**
 
-Name  | Value | Method
-----  | ----- | ------
-`minsig` | Return only pending identities with a minimum of minsig certifications | URL
+| Name     | Value                                                                  | Method |
+|----------|------------------------------------------------------------------------|--------|
+| `minsig` | Return only pending identities with a minimum of minsig certifications | URL    |
 
 **Returns**
 
@@ -637,9 +638,9 @@ GET [Certification](./Protocol.md#certification) data over a member.
 
 **Parameters**
 
-Name  | Value | Method
-----  | ----- | ------
-`search` | Public key or uid of a *member* (or someone who *was a member*) we want see the certifications. | URL
+| Name     | Value                                                                                           | Method |
+|----------|-------------------------------------------------------------------------------------------------|--------|
+| `search` | Public key or uid of a *member* (or someone who *was a member*) we want see the certifications. | URL    |
 
 **Returns**
 
@@ -685,9 +686,9 @@ GET identity data written for a member.
 
 **Parameters**
 
-Name  | Value | Method
-----  | ----- | ------
-`search` | Public key or uid of a *member* we want see the attached identity. | URL
+| Name     | Value                                                              | Method |
+|----------|--------------------------------------------------------------------|--------|
+| `search` | Public key or uid of a *member* we want see the attached identity. | URL    |
 
 **Returns**
 
@@ -752,9 +753,9 @@ POST a [Membership](./Protocol.md#membership) document.
 
 **Parameters**
 
-Name | Value | Method
----- | ----- | ------
-`membership` | The membership document (with signature). | POST
+| Name         | Value                                     | Method |
+|--------------|-------------------------------------------|--------|
+| `membership` | The membership document (with signature). | POST   |
 
 **Returns**
 
@@ -816,10 +817,10 @@ POST a new block to add to the blockchain.
 
 **Parameters**
 
-Name               | Value                          | Method
------------------- | ------------------------------ | ------
-`block`             | The raw block to be added     | POST
-`signature`         | Signature of the raw block    | POST
+| Name               | Value                           | Method |
+|--------------------|---------------------------------|--------|
+| `block`            | The raw block to be added       | POST   |
+| `signature`        | Signature of the raw block      | POST   |
 
 **Returns**
 
@@ -833,9 +834,9 @@ GET the promoted block whose number `NUMBER`.
 
 **Parameters**
 
-Name               | Value                                                         | Method
------------------- | ------------------------------------------------------------- | ------
-`NUMBER`           | The promoted block number (integer value) we want to see.  | URL
+| Name               | Value                                                          | Method  |
+|--------------------|----------------------------------------------------------------|---------|
+| `NUMBER`           | The promoted block number (integer value) we want to see.      | URL     |
 
 **Returns**
 
@@ -923,10 +924,10 @@ GET the `[COUNT]` promoted blocks from `[FROM]` number, inclusive.
 
 **Parameters**
 
-Name               | Value                                                         | Method
------------------- | ------------------------------------------------------------- | ------
-`COUNT`           | The number of blocks we want to see.  | URL
-`FROM`           | The starting block.  | URL
+| Name    | Value                                | Method  |
+|---------|--------------------------------------|---------|
+| `COUNT` | The number of blocks we want to see. | URL     |
+| `FROM`  | The starting block.                  | URL     |
 
 **Returns**
 
@@ -952,9 +953,9 @@ GET hardship level for given member's pubkey for writing next block.
 
 **Parameters**
 
-Name              | Value                     | Method
-----              | -----                     | ------
-`PUBKEY` | Member's pubkey.   | URL
+| Name     | Value                        | Method |
+|----------|------------------------------|--------|
+| `PUBKEY` | Member's pubkey.             | URL    |
 
 **Returns**
 
@@ -1281,7 +1282,12 @@ Merkle URL refering to peering entries of every node inside the currency network
 
 **Parameters**
 
-*None*.
+**Parameters**
+
+| Parameter | Description                                                                      | Method      |
+|-----------|----------------------------------------------------------------------------------|-------------|
+| `leaves`  | Defines wether or not leaves hashes should be returned too. Defaults to `false`. | Query param |
+| `leaf`    | Hash of a leaf whose content should be returned. Ignore `leaves` parameter.      | Query param |
 
 **Returns**
 
@@ -1320,9 +1326,9 @@ POST a peering entry document.
 
 **Parameters**
 
-Name        | Value                               | Method
------------ | ----------------------------------- | ------
-`peer`      | The peering entry document.         | POST
+| Name        | Value                       | Method |
+|-------------|-----------------------------|--------|
+| `peer`      | The peering entry document. | POST   |
 
 **Returns**
 
@@ -1382,9 +1388,9 @@ POST a transaction.
 
 **Parameters**
 
-Name              | Value                                                         | Method
------------------ | ------------------------------------------------------------- | ------
-`transaction`     | The raw transaction.                                          | POST
+| Name          | Value                | Method |
+|---------------|----------------------|--------|
+| `transaction` | The raw transaction. | POST   |
 
 **Returns**
 
@@ -1440,9 +1446,9 @@ GET a list of available sources.
 
 **Parameters**
 
-Name              | Value                       | Method
-----              | -----                       | ------
-`pubkey`           | Owner of the coins' pubkey. | URL
+| Name     | Value                        | Method |
+|----------|------------------------------|--------|
+| `pubkey` | Owner of the coins' pubkey.  | URL    |
 
 **Returns**
 
@@ -1483,9 +1489,9 @@ Get the wallet transaction history
 
 **parameters**
 
-Name              | Value							| Method
-----              | -----							| ------
-`pubkey`          | Wallet public key.				| URL
+| Name     | Value              | Method   |
+|----------|--------------------|----------|
+| `pubkey` | Wallet public key. | URL      |
 
 **Returns**
 
@@ -1616,9 +1622,9 @@ Get the wallet transaction pending history
 
 **parameters**
 
-Name              | Value							| Method
-----              | -----							| ------
-`pubkey`          | Wallet public key.				| URL
+| Name     | Value              | Method |
+|----------|--------------------|--------|
+| `pubkey` | Wallet public key. |  URL   |
 
 **Returns**
 
@@ -1709,11 +1715,11 @@ Get the wallet transaction history
 
 **parameters**
 
-Name				| Value							| Method
-----				| -----							| ------
-`pubkey`			| Wallet public key.			| URL
-`from`				| The starting block.			| URL
-`to`				| the ending block.				| URL
+| Name     | Value               | Method  |
+|----------|---------------------|---------|
+| `pubkey` | Wallet public key.  | URL     |
+| `from`   | The starting block. | URL     |
+| `to`     | the ending block.   | URL     |
 
 **Returns**
 
@@ -1839,11 +1845,11 @@ Get the wallet transaction history
 
 **parameters**
 
-Name              | Value							| Method
-----              | -----							| ------
-`pubkey`          | Wallet public key.				| URL
-`from` | The starting timestamp limit. (optionnal) | URL
-`to`        | The ending timestamp. (optionnal)	| URL
+| Name     | Value                                     | Method  |
+|----------|-------------------------------------------|---------|
+| `pubkey` | Wallet public key.                        | URL     |
+| `from`   | The starting timestamp limit. (optionnal) | URL     |
+| `to`     | The ending timestamp. (optionnal)	        | URL     |
 
 **Returns**
 
@@ -1970,9 +1976,9 @@ Get the wallet universal dividend history (only not consumed ones)
 
 **parameters**
 
-Name              | Value							| Method
-----              | -----							| ------
-`pubkey`          | Wallet public key.				| URL
+| Name     | Value               | Method |
+|----------|---------------------|--------|
+| `pubkey` | Wallet public key.  | URL    |
 
 **Returns**
 

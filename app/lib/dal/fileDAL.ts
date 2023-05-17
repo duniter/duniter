@@ -43,7 +43,7 @@ import { MetaDAL } from "./sqliteDAL/MetaDAL";
 import { DataErrors } from "../common-libs/errors";
 import { BasicRevocableIdentity, IdentityDTO } from "../dto/IdentityDTO";
 import { FileSystem } from "../system/directory";
-import { RustDbTx, RustServer, RustServerConf, Wot } from "../../../neon/lib";
+import { RustDbTx, RustServer, Wot } from "../../../neon/lib";
 import { IIndexDAO } from "./indexDAL/abstract/IIndexDAO";
 import { BIndexDAO } from "./indexDAL/abstract/BIndexDAO";
 import { MIndexDAO } from "./indexDAL/abstract/MIndexDAO";
@@ -929,8 +929,32 @@ export class FileDAL implements ServerDAO {
         return i;
       })
     );
+    return this.fillIdentitiesRevocation(found);
+  }
+
+  async searchJustIdentitiesByPubkey(pubkey: string): Promise<DBIdentity[]> {
+    const pendings = await this.idtyDAL.findByPub(pubkey);
+    const writtenIdty = await this.iindexDAL.getOldFromPubkey(pubkey);
+    const nonPendings =
+      writtenIdty &&
+      Underscore.where(pendings, { pubkey: writtenIdty.pub }).length === 0
+        ? [writtenIdty]
+        : [];
+    const found = pendings.concat(
+      nonPendings.map((i: any) => {
+        // Use the correct field
+        i.pubkey = i.pub;
+        return i;
+      })
+    );
+    return this.fillIdentitiesRevocation(found);
+  }
+
+  private async fillIdentitiesRevocation(
+    identities: DBIdentity[]
+  ): Promise<DBIdentity[]> {
     return await Promise.all<DBIdentity>(
-      found.map(async (f) => {
+      identities.map(async (f) => {
         const ms = await this.mindexDAL.getReducedMSForImplicitRevocation(
           f.pubkey
         );
@@ -1705,7 +1729,7 @@ export class FileDAL implements ServerDAO {
     local_iindex: IindexEntry[]
   ): Promise<SimpleUdEntryForWallet[]> {
     if (dividend) {
-      let udSources = this.dividendDAL.produceDividend(
+      const udSources = this.dividendDAL.produceDividend(
         blockNumber,
         dividend,
         unitbase,

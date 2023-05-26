@@ -15,7 +15,7 @@
       * [revoke](#wotrevoke)
       * [lookup/[search]](#wotlookupsearch)
       * [members](#wotmembers)
-      * [requirements/[PUBKEY]](#wotrequirementspubkey)
+      * [requirements/[search]](#wotrequirementssearch)
       * [requirements-of-pending/[minsig]](#wotrequirements-of-pendingminsig)
       * [certifiers-of/[search]](#wotcertifiers-ofsearch)
       * [certified-by/[search]](#wotcertified-bysearch)

@@ -1,4 +1,4 @@
-import { FullIindexEntry, IindexEntry, Indexer } from "../../../indexer";
+import {FullIindexEntry, IindexEntry, Indexer, reduce} from "../../../indexer";
 import { SQLiteDriver } from "../../drivers/SQLiteDriver";
 import { MonitorExecutionTime } from "../../../debug/MonitorExecutionTime";
 import { IIndexDAO } from "../abstract/IIndexDAO";
@@ -210,6 +210,18 @@ export class SqliteIIndex extends SqliteTable<IindexEntry>
   @MonitorExecutionTime()
   async getFullFromUID(uid: string): Promise<FullIindexEntry> {
     return (await this.getFromUID(uid)) as FullIindexEntry;
+  }
+
+  @MonitorExecutionTime()
+  async getOldFromPubkey(pub: string): Promise<OldIindexEntry | null> {
+    const entries = await this.find(
+      "SELECT * FROM iindex WHERE pub = ? order by writtenOn ASC",
+      [pub]
+    );
+    if (!entries.length) {
+      return null;
+    }
+    return OldTransformers.toOldIindexEntry(reduce(entries));
   }
 
   @MonitorExecutionTime()

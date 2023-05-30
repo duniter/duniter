@@ -434,8 +434,10 @@ export class FileDAL implements ServerDAO {
   }
 
   async getAvailableSourcesByPubkey(pubkey: string): Promise<HttpSource[]> {
-    const txAvailable = await this.sindexDAL.getAvailableForPubkey(pubkey);
-    const sources: UDSource[] = await this.dividendDAL.getUDSources(pubkey);
+    const [txAvailable, sources] = await Promise.all([
+      this.sindexDAL.getAvailableForPubkey(pubkey),
+      this.dividendDAL.getUDSources(pubkey),
+    ]);
     return sources
       .map((d) => {
         return {
@@ -705,6 +707,17 @@ export class FileDAL implements ServerDAO {
     return await this.iindexDAL.getFromPubkeyOrUid(search);
   }
 
+  async getWrittenIdtyByPubkeyForHashingAndIsMember(
+    pub: string
+  ): Promise<{
+    uid: string;
+    created_on: string;
+    pub: string;
+    member: boolean;
+  } | null> {
+    return await this.iindexDAL.getFromPubkey(pub);
+  }
+
   async getWrittenIdtyByPubkeyForRevocationCheck(
     pubkey: string
   ): Promise<{
@@ -864,8 +877,32 @@ export class FileDAL implements ServerDAO {
         return i;
       })
     );
+    return this.fillIdentitiesRevocation(found);
+  }
+
+  async searchJustIdentitiesByPubkey(pubkey: string): Promise<DBIdentity[]> {
+    const pendings = await this.idtyDAL.findByPub(pubkey);
+    const writtenIdty = await this.iindexDAL.getOldFromPubkey(pubkey);
+    const nonPendings =
+      writtenIdty &&
+      Underscore.where(pendings, { pubkey: writtenIdty.pub }).length === 0
+        ? [writtenIdty]
+        : [];
+    const found = pendings.concat(
+      nonPendings.map((i: any) => {
+        // Use the correct field
+        i.pubkey = i.pub;
+        return i;
+      })
+    );
+    return this.fillIdentitiesRevocation(found);
+  }
+
+  private async fillIdentitiesRevocation(
+    identities: DBIdentity[]
+  ): Promise<DBIdentity[]> {
     return await Promise.all<DBIdentity>(
-      found.map(async (f) => {
+      identities.map(async (f) => {
         const ms = await this.mindexDAL.getReducedMSForImplicitRevocation(
           f.pubkey
         );

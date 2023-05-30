@@ -132,9 +132,16 @@ export class WOTBinding extends AbstractController {
 
   async certifiersOf(req: any): Promise<HttpCertifications> {
     const search = await ParametersService.getSearchP(req);
-    const idty = (await this.server.dal.getWrittenIdtyByPubkeyOrUIdForHashingAndIsMember(
-      search
-    )) as FullIindexEntry;
+    let idty: FullIindexEntry;
+    if (ParametersService.getIsPubkey(req)) {
+      idty = (await this.server.dal.getWrittenIdtyByPubkeyForHashingAndIsMember(
+        search
+      )) as FullIindexEntry;
+    } else {
+      idty = (await this.server.dal.getWrittenIdtyByPubkeyOrUIdForHashingAndIsMember(
+        search
+      )) as FullIindexEntry;
+    }
     const certs = await this.server.dal.certsToTarget(
       idty.pub,
       IdentityDTO.getTargetHash(idty)
@@ -180,7 +187,15 @@ export class WOTBinding extends AbstractController {
 
   async requirements(req: any): Promise<HttpRequirements> {
     const search = await ParametersService.getSearchP(req);
-    const identities: any = await this.IdentityService.searchIdentities(search);
+    let identities: any = [];
+    if (ParametersService.getIsPubkey(req)) {
+      if (!BMAConstants.PUBLIC_KEY.test(search)) {
+        throw BMAConstants.ERRORS.NO_IDTY_MATCHING_PUB_OR_UID;
+      }
+      identities = await this.IdentityService.searchIdentitiesByPubkey(search);
+    } else {
+      identities = await this.IdentityService.searchIdentities(search);
+    }
     const all: HttpIdentityRequirement[] = await this.BlockchainService.requirementsOfIdentities(
       identities
     );
@@ -229,9 +244,16 @@ export class WOTBinding extends AbstractController {
 
   async certifiedBy(req: any): Promise<HttpCertifications> {
     const search = await ParametersService.getSearchP(req);
-    const idty = (await this.server.dal.getWrittenIdtyByPubkeyOrUIdForHashingAndIsMember(
-      search
-    )) as FullIindexEntry;
+    let idty: FullIindexEntry;
+    if (ParametersService.getIsPubkey(req)) {
+      idty = (await this.server.dal.getWrittenIdtyByPubkeyForHashingAndIsMember(
+        search
+      )) as FullIindexEntry;
+    } else {
+      idty = (await this.server.dal.getWrittenIdtyByPubkeyOrUIdForHashingAndIsMember(
+        search
+      )) as FullIindexEntry;
+    }
     const certs = await this.server.dal.certsFrom(idty.pub);
     const theCerts: HttpCertification[] = [];
     for (const cert of certs) {

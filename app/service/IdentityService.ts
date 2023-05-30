@@ -54,6 +54,10 @@ export class IdentityService extends FIFOService {
     return this.dal.searchJustIdentities(search);
   }
 
+  searchIdentitiesByPubkey(pubkey: string) {
+    return this.dal.searchJustIdentitiesByPubkey(pubkey);
+  }
+
   async findMember(search: string) {
     let idty = null;
     if (search.match(constants.PUBLIC_KEY)) {

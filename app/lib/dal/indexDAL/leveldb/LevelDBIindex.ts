@@ -280,4 +280,12 @@ export class LevelDBIindex extends LevelDBTable<IindexEntry[]>
       .filter((u) => u.pub)
       .concat(pubIdentities.filter((p) => p.pub));
   }
+
+  async getOldFromPubkey(pub: string): Promise<OldIindexEntry | null> {
+    const identities = await this.findByPub(pub);
+    if (!identities.length) {
+      return null;
+    }
+    return OldTransformers.toOldIindexEntry(reduce(identities));
+  }
 }

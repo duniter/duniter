@@ -1,4 +1,9 @@
-import {FullIindexEntry, IindexEntry, Indexer, reduce} from "../../../indexer";
+import {
+  FullIindexEntry,
+  IindexEntry,
+  Indexer,
+  reduce,
+} from "../../../indexer";
 import { SQLiteDriver } from "../../drivers/SQLiteDriver";
 import { MonitorExecutionTime } from "../../../debug/MonitorExecutionTime";
 import { IIndexDAO } from "../abstract/IIndexDAO";

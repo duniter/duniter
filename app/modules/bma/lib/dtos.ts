@@ -781,10 +781,12 @@ export interface HttpTransaction {
   signatures: string[];
   raw: string;
   written_block: number | null;
+  writtenTime: number | null;
   hash: string;
 }
 
 export interface HttpTransactionPending {
+  currency: string;
   version: number;
   issuers: string[];
   inputs: string[];
@@ -851,7 +853,6 @@ export interface HttpTxOfHistory {
   outputs: string[];
   comment: string;
   locktime: number;
-  received: number;
   signatures: string[];
   hash: string;
   block_number: number | null;
@@ -867,7 +868,6 @@ export const TxHistory = {
     sent: [TxOfHistory],
     received: [TxOfHistory],
     sending: [TxOfHistory],
-    receiving: [TxOfHistory],
     pending: [TxOfHistory],
   },
 };
@@ -879,7 +879,6 @@ export interface HttpTxHistory {
     sent: HttpTxOfHistory[];
     received: HttpTxOfHistory[];
     sending: HttpTxOfHistory[];
-    receiving: HttpTxOfHistory[];
     pending: HttpTxOfHistory[];
   };
 }

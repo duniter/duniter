@@ -18,17 +18,17 @@ import { TransactionDTO } from "../../../../lib/dto/TransactionDTO";
 import {
   HttpSources,
   HttpTransaction,
+  HttpTransactionPending,
   HttpTxHistory,
   HttpTxOfHistory,
   HttpTxPending,
 } from "../dtos";
 import { DBTx } from "../../../../lib/db/DBTx";
-import { Underscore } from "../../../../lib/common-libs/underscore";
 
 const http2raw = require("../http2raw");
 
 export class TransactionBinding extends AbstractController {
-  async parseTransaction(req: any): Promise<HttpTransaction> {
+  async parseTransaction(req: any): Promise<HttpTransactionPending> {
     const res = await this.pushEntity(
       req,
       http2raw.transaction,
@@ -45,8 +45,6 @@ export class TransactionBinding extends AbstractController {
       comment: res.comment,
       locktime: res.locktime,
       hash: res.hash,
-      written_block: res.blockNumber,
-      raw: res.getRaw(),
     };
   }
 
@@ -72,8 +70,6 @@ export class TransactionBinding extends AbstractController {
       version: tx.version,
       currency: tx.currency,
       locktime: tx.locktime,
-      // blockstamp: tx.blockstamp,
-      // blockstampTime: tx.blockstampTime,
       issuers: tx.issuers,
       inputs: tx.inputs,
       outputs: tx.outputs,
@@ -81,60 +77,47 @@ export class TransactionBinding extends AbstractController {
       signatures: tx.signatures,
       comment: tx.comment,
       hash: tx.hash,
-      // time: tx.time,
-      // block_number: tx.block_number,
       written_block: tx.block_number,
-      // received: tx.received,
+      writtenTime: tx.time,
       raw: "",
     };
   }
 
   async getHistory(req: any): Promise<HttpTxHistory> {
     const pubkey = await ParametersService.getPubkeyP(req);
-    return this.getFilteredHistory(pubkey, (results: any) => results);
+    const history = await this.server.dal.getTxHistoryByPubkey(pubkey);
+    return this.toHttpTxHistory(pubkey, history);
   }
 
   async getHistoryBetweenBlocks(req: any): Promise<HttpTxHistory> {
     const pubkey = await ParametersService.getPubkeyP(req);
     const from = await ParametersService.getFromP(req);
     const to = await ParametersService.getToP(req);
-    return this.getFilteredHistory(pubkey, (res: any) => {
-      const histo = res.history;
-      histo.sent = Underscore.filter(histo.sent, function (tx: any) {
-        return tx && tx.block_number >= from && tx.block_number <= to;
-      });
-      histo.received = Underscore.filter(histo.received, function (tx: any) {
-        return tx && tx.block_number >= from && tx.block_number <= to;
-      });
-      Underscore.extend(histo, { sending: [], receiving: [] });
-      return res;
-    });
+
+    const history = await this.server.dal.getTxHistoryByPubkeyBetweenBlocks(
+      pubkey,
+      +from,
+      +to
+    );
+    return this.toHttpTxHistory(pubkey, history);
   }
 
   async getHistoryBetweenTimes(req: any): Promise<HttpTxHistory> {
     const pubkey = await ParametersService.getPubkeyP(req);
     const from = await ParametersService.getFromP(req);
     const to = await ParametersService.getToP(req);
-    return this.getFilteredHistory(pubkey, (res: any) => {
-      const histo = res.history;
-      histo.sent = Underscore.filter(histo.sent, function (tx: any) {
-        return tx && tx.time >= from && tx.time <= to;
-      });
-      histo.received = Underscore.filter(histo.received, function (tx: any) {
-        return tx && tx.time >= from && tx.time <= to;
-      });
-      Underscore.extend(histo, { sending: [], receiving: [] });
-      return res;
-    });
+    const history = await this.server.dal.getTxHistoryByPubkeyBetweenTimes(
+      pubkey,
+      +from,
+      +to
+    );
+    return this.toHttpTxHistory(pubkey, history);
   }
 
-  async getPendingForPubkey(req: any): Promise<HttpTxHistory> {
+  async getPendingByPubkey(req: any): Promise<HttpTxHistory> {
     const pubkey = await ParametersService.getPubkeyP(req);
-    return this.getFilteredHistory(pubkey, function (res: any) {
-      const histo = res.history;
-      Underscore.extend(histo, { sent: [], received: [] });
-      return res;
-    });
+    const history = await this.server.dal.getTxHistoryMempool(pubkey);
+    return this.toHttpTxHistory(pubkey, history);
   }
 
   async getPending(): Promise<HttpTxPending> {
@@ -145,6 +128,7 @@ export class TransactionBinding extends AbstractController {
         const tx = TransactionDTO.fromJSONObject(t);
         return {
           version: tx.version,
+          currency: tx.currency,
           issuers: tx.issuers,
           inputs: tx.inputs,
           unlocks: tx.unlocks,
@@ -160,23 +144,25 @@ export class TransactionBinding extends AbstractController {
     };
   }
 
-  private async getFilteredHistory(
+  private async toHttpTxHistory(
     pubkey: string,
-    filter: any
+    dbTxHistory: {
+      sent?: DBTx[];
+      received?: DBTx[];
+      sending?: DBTx[];
+      pending?: DBTx[];
+    }
   ): Promise<HttpTxHistory> {
-    let history = await this.server.dal.getTransactionsHistory(pubkey);
-    let result = {
+    return {
       currency: this.conf.currency,
       pubkey: pubkey,
       history: {
-        sending: history.sending.map(dbtx2HttpTxOfHistory),
-        received: history.received.map(dbtx2HttpTxOfHistory),
-        receiving: history.receiving.map(dbtx2HttpTxOfHistory),
-        sent: history.sent.map(dbtx2HttpTxOfHistory),
-        pending: history.pending.map(dbtx2HttpTxOfHistory),
+        sending: dbTxHistory.sending?.map(dbtx2HttpTxOfHistory) || [],
+        received: dbTxHistory.received?.map(dbtx2HttpTxOfHistory) || [],
+        sent: dbTxHistory.sent?.map(dbtx2HttpTxOfHistory) || [],
+        pending: dbTxHistory.pending?.map(dbtx2HttpTxOfHistory) || [],
       },
     };
-    return filter(result);
   }
 }
 
@@ -193,8 +179,7 @@ function dbtx2HttpTxOfHistory(tx: DBTx): HttpTxOfHistory {
     signatures: tx.signatures,
     comment: tx.comment,
     hash: tx.hash,
-    time: tx.time,
+    time: tx.time || tx.received,
     block_number: tx.block_number,
-    received: tx.received,
   };
 }

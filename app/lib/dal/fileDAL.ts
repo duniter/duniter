@@ -1406,31 +1406,20 @@ export class FileDAL implements ServerDAO {
     return this.txsDAL.addPending(tx);
   }
 
-  async getTransactionsHistory(pubkey: string) {
-    const history: {
-      sent: DBTx[];
-      received: DBTx[];
-      sending: DBTx[];
-      receiving: DBTx[];
-      pending: DBTx[];
-    } = {
-      sent: [],
-      received: [],
-      sending: [],
-      receiving: [],
-      pending: [],
-    };
-    const res = await Promise.all([
-      this.txsDAL.getLinkedWithIssuer(pubkey),
-      this.txsDAL.getLinkedWithRecipient(pubkey),
-      this.txsDAL.getPendingWithIssuer(pubkey),
-      this.txsDAL.getPendingWithRecipient(pubkey),
-    ]);
-    history.sent = res[0] || [];
-    history.received = res[1] || [];
-    history.sending = res[2] || [];
-    history.pending = res[3] || [];
-    return history;
+  async getTxHistoryByPubkey(pubkey: string) {
+    return this.txsDAL.getTxHistoryByPubkey(pubkey);
+  }
+
+  getTxHistoryByPubkeyBetweenBlocks(pubkey: string, from: number, to: number) {
+    return this.txsDAL.getTxHistoryByPubkeyBetweenBlocks(pubkey, +from, +to);
+  }
+
+  getTxHistoryByPubkeyBetweenTimes(pubkey: string, from: number, to: number) {
+    return this.txsDAL.getTxHistoryByPubkeyBetweenTimes(pubkey, +from, +to);
+  }
+
+  getTxHistoryMempool(pubkey: string) {
+    return this.txsDAL.getTxHistoryMempool(pubkey);
   }
 
   async getUDHistory(pubkey: string): Promise<{ history: HttpUD[] }> {

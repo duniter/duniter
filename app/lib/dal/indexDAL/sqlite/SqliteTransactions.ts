@@ -147,6 +147,104 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
     return this.findEntities("SELECT * FROM txs WHERE NOT written", []);
   }
 
+  async getTxHistoryByPubkey(pubkey: string) {
+    const history: {
+      sent: DBTx[];
+      received: DBTx[];
+      sending: DBTx[];
+      pending: DBTx[];
+    } = {
+      sent: [],
+      received: [],
+      sending: [],
+      pending: [],
+    };
+    const res = await Promise.all([
+      this.getLinkedWithIssuer(pubkey),
+      this.getLinkedWithRecipient(pubkey),
+      this.getPendingWithIssuer(pubkey),
+      this.getPendingWithRecipient(pubkey),
+    ]);
+    history.sent = res[0] || [];
+    history.received = res[1] || [];
+    history.sending = res[2] || [];
+    history.pending = res[3] || [];
+    return history;
+  }
+
+  async getTxHistoryByPubkeyBetweenBlocks(
+    pubkey: string,
+    from: number,
+    to: number
+  ): Promise<{ sent: DBTx[]; received: DBTx[] }> {
+    const history: {
+      sent: DBTx[];
+      received: DBTx[];
+    } = {
+      sent: [],
+      received: [],
+    };
+    const res = await Promise.all([
+      this.findEntities(
+        "SELECT * FROM txs WHERE written AND issuers LIKE ? AND block_number >= ? AND block_number <= ?",
+        [`%${pubkey}%`, from, to]
+      ),
+      this.findEntities(
+        "SELECT * FROM txs WHERE written AND recipients LIKE ? AND block_number >= ? AND block_number <= ?",
+        [`%${pubkey}%`, from, to]
+      ),
+    ]);
+    history.sent = res[0] || [];
+    history.received = res[1] || [];
+    return history;
+  }
+
+  async getTxHistoryByPubkeyBetweenTimes(
+    pubkey: string,
+    from: number,
+    to: number
+  ): Promise<{ sent: DBTx[]; received: DBTx[] }> {
+    const history: {
+      sent: DBTx[];
+      received: DBTx[];
+    } = {
+      sent: [],
+      received: [],
+    };
+    const res = await Promise.all([
+      this.findEntities(
+        "SELECT * FROM txs WHERE written AND issuers LIKE ? AND time >= ? AND time <= ?",
+        [`%${pubkey}%`, from, to]
+      ),
+      this.findEntities(
+        "SELECT * FROM txs WHERE written AND recipients LIKE ? AND time >= ? AND time <= ?",
+        [`%${pubkey}%`, from, to]
+      ),
+    ]);
+    history.sent = res[0] || [];
+    history.received = res[1] || [];
+    return history;
+  }
+
+  async getTxHistoryMempool(
+    pubkey: string
+  ): Promise<{ sending: DBTx[]; pending: DBTx[] }> {
+    const history: {
+      sending: DBTx[];
+      pending: DBTx[];
+    } = {
+      sending: [],
+      pending: [],
+    };
+    const res = await Promise.all([
+      this.getPendingWithIssuer(pubkey),
+      this.getPendingWithRecipient(pubkey),
+    ]);
+    history.sending = res[0] || [];
+    history.pending = res[1] || [];
+    return history;
+  }
+
   getLinkedWithIssuer(pubkey: string): Promise<DBTx[]> {
     return this.findEntities(
       "SELECT * FROM txs WHERE written AND issuers LIKE ?",

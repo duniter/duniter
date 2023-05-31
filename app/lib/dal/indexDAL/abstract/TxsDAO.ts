@@ -18,6 +18,31 @@ export interface TxsDAO extends GenericDAO<DBTx> {
 
   addPending(dbTx: DBTx): Promise<DBTx>;
 
+  getTxHistoryByPubkey(
+    pubkey: string
+  ): Promise<{
+    sent: DBTx[];
+    received: DBTx[];
+    sending: DBTx[];
+    pending: DBTx[];
+  }>;
+
+  getTxHistoryByPubkeyBetweenBlocks(
+    pubkey: string,
+    from: number,
+    to: number
+  ): Promise<{ sent: DBTx[]; received: DBTx[] }>;
+
+  getTxHistoryByPubkeyBetweenTimes(
+    pubkey: string,
+    from: number,
+    to: number
+  ): Promise<{ sent: DBTx[]; received: DBTx[] }>;
+
+  getTxHistoryMempool(
+    pubkey: string
+  ): Promise<{ sending: DBTx[]; pending: DBTx[] }>;
+
   getLinkedWithIssuer(pubkey: string): Promise<DBTx[]>;
 
   getLinkedWithRecipient(pubkey: string): Promise<DBTx[]>;

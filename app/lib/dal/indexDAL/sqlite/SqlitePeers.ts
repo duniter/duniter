@@ -17,13 +17,13 @@ export class SqlitePeers extends SqliteTable<DBPeer> implements PeerDAO {
         hash: new SqlNullableFieldDefinition("VARCHAR", false, 70),
         first_down: new SqlNullableFieldDefinition("INT", false),
         last_try: new SqlNullableFieldDefinition("INT", true),
-        lastContact: new SqlNullableFieldDefinition("INT", false),
+        lastContact: new SqlNullableFieldDefinition("INT", true),
         pubkey: new SqlNullableFieldDefinition("VARCHAR", true, 50),
         block: new SqlNullableFieldDefinition("VARCHAR", false, 100),
         signature: new SqlNullableFieldDefinition("VARCHAR", false, 100),
         endpoints: new SqlNullableFieldDefinition("JSON", true),
         raw: new SqlNullableFieldDefinition("TEXT", false),
-        nonWoT: new SqlNullableFieldDefinition("BOOLEAN", false),
+        nonWoT: new SqlNullableFieldDefinition("BOOLEAN", true),
       },
       getSqliteDB
     );

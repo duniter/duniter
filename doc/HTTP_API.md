@@ -244,8 +244,12 @@ Technical informations about the node.
 {
   "duniter": {
     "software": "duniter",
-    "version": "0.10.3",
-    "forkWindowSize": 10
+    "version": "1.8.7",
+    "forkWindowSize": 100,
+    "storage": {
+      "transaction": true,
+      "wotwizard": false
+    }
   }
 }
 ```

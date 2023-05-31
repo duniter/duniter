@@ -18,9 +18,7 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
       "txs",
       {
         hash: new SqlNotNullableFieldDefinition("VARCHAR", true, 70),
-        block_number: new SqlNullableFieldDefinition(
-          "INT",
-          true /*need by getTxHistoryByPubkeyBetweenBlocks() */
+        block_number: new SqlNullableFieldDefinition("INT", true /*need by getTxHistoryByPubkeyBetweenBlocks() */
         ),
         locktime: new SqlNullableFieldDefinition("INT", false),
         version: new SqlNullableFieldDefinition("INT", false),
@@ -37,8 +35,7 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
         ),
         time: new SqlNullableFieldDefinition(
           "INT",
-          true /*need by getTxHistoryByPubkeyBetweenTimes() */
-        ),
+          true /*need by getTxHistoryByPubkeyBetweenTimes() */ ),
         inputs: new SqlNullableFieldDefinition("JSON", false),
         unlocks: new SqlNullableFieldDefinition("JSON", false),
         outputs: new SqlNullableFieldDefinition("JSON", false),
@@ -55,13 +52,8 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
           50
         ) /* computed column - need by getTxHistoryXxx() */,
         recipients: new SqlNullableFieldDefinition("JSON", false),
-        written: new SqlNotNullableFieldDefinition(
-          "BOOLEAN",
-          true /* need by getTxHistoryMempool() */
-        ),
-        removed: new SqlNotNullableFieldDefinition(
-          "BOOLEAN",
-          true /* need by getSandboxTs() */
+        written: new SqlNotNullableFieldDefinition("BOOLEAN", true /* need by getTxHistoryMempool() */),
+        removed: new SqlNotNullableFieldDefinition("BOOLEAN", true /* need by getSandboxTs() */
         ),
         received: new SqlNullableFieldDefinition("BOOLEAN", false),
         output_base: new SqlNullableFieldDefinition("INT", false),

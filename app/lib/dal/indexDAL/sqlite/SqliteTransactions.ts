@@ -29,10 +29,18 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
         inputs: new SqlNullableFieldDefinition("JSON", false),
         unlocks: new SqlNullableFieldDefinition("JSON", false),
         outputs: new SqlNullableFieldDefinition("JSON", false),
-        issuer: new SqlNullableFieldDefinition("VARCHAR", true, 50), /* computed column - need by getTxHistoryXxx() */
+        issuer: new SqlNullableFieldDefinition(
+          "VARCHAR",
+          true,
+          50
+        ) /* computed column - need by getTxHistoryXxx() */,
         issuers: new SqlNullableFieldDefinition("JSON", false),
         signatures: new SqlNullableFieldDefinition("JSON", false),
-        recipient: new SqlNullableFieldDefinition("VARCHAR", true, 50), /* computed column - need by getTxHistoryXxx() */
+        recipient: new SqlNullableFieldDefinition(
+          "VARCHAR",
+          true,
+          50
+        ) /* computed column - need by getTxHistoryXxx() */,
         recipients: new SqlNullableFieldDefinition("JSON", false),
         written: new SqlNotNullableFieldDefinition("BOOLEAN", true),
         removed: new SqlNotNullableFieldDefinition("BOOLEAN", true),
@@ -93,7 +101,7 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
   @MonitorExecutionTime()
   async saveBatch(records: DBTx[]): Promise<void> {
     if (records.length) {
-      await this.removeByHashBatch(records.map(t => t.hash));
+      await this.removeByHashBatch(records.map((t) => t.hash));
       await this.insertBatch(records);
     }
   }
@@ -172,8 +180,18 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
     to: number
   ): Promise<{ sent: DBTx[]; received: DBTx[] }> {
     return {
-      sent: await this.getLinkedWithIssuerByRange('block_number', pubkey, from, to),
-      received: await this.getLinkedWithRecipientByRange('block_number', pubkey, from, to),
+      sent: await this.getLinkedWithIssuerByRange(
+        "block_number",
+        pubkey,
+        from,
+        to
+      ),
+      received: await this.getLinkedWithRecipientByRange(
+        "block_number",
+        pubkey,
+        from,
+        to
+      ),
     };
   }
 
@@ -183,8 +201,13 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
     to: number
   ): Promise<{ sent: DBTx[]; received: DBTx[] }> {
     return {
-      sent: await this.getLinkedWithIssuerByRange('time', pubkey, from, to),
-      received: await this.getLinkedWithRecipientByRange('time', pubkey, from, to)
+      sent: await this.getLinkedWithIssuerByRange("time", pubkey, from, to),
+      received: await this.getLinkedWithRecipientByRange(
+        "time",
+        pubkey,
+        from,
+        to
+      ),
     };
   }
 
@@ -198,7 +221,8 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
   }
 
   getLinkedWithIssuer(pubkey: string): Promise<DBTx[]> {
-    return this.findEntities(`SELECT * FROM txs 
+    return this.findEntities(
+      `SELECT * FROM txs 
         WHERE written 
         AND (
             issuer = ?
@@ -208,8 +232,14 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
     );
   }
 
-  getLinkedWithIssuerByRange(rangeFieldName: keyof DBTx, pubkey: string, from: number, to: number): Promise<DBTx[]> {
-    return this.findEntities(`SELECT * FROM txs 
+  getLinkedWithIssuerByRange(
+    rangeFieldName: keyof DBTx,
+    pubkey: string,
+    from: number,
+    to: number
+  ): Promise<DBTx[]> {
+    return this.findEntities(
+      `SELECT * FROM txs 
         WHERE written 
         AND (
           issuer = ?
@@ -217,12 +247,13 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
         )
         AND ${rangeFieldName} >= ? 
         AND ${rangeFieldName} <= ?`,
-        [pubkey, `%${pubkey}%`, from, to]
+      [pubkey, `%${pubkey}%`, from, to]
     );
   }
 
   getLinkedWithRecipient(pubkey: string): Promise<DBTx[]> {
-    return this.findEntities(`SELECT * FROM txs 
+    return this.findEntities(
+      `SELECT * FROM txs 
         WHERE written 
         AND (
             recipient = ?
@@ -232,8 +263,14 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
     );
   }
 
-  getLinkedWithRecipientByRange(rangeColumnName: string, pubkey: string, from: number, to: number): Promise<DBTx[]> {
-    return this.findEntities(`SELECT * FROM txs 
+  getLinkedWithRecipientByRange(
+    rangeColumnName: string,
+    pubkey: string,
+    from: number,
+    to: number
+  ): Promise<DBTx[]> {
+    return this.findEntities(
+      `SELECT * FROM txs 
         WHERE written 
         AND (
             recipient = ?
@@ -241,12 +278,13 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
         )
         AND ${rangeColumnName} >= ? 
         AND ${rangeColumnName} <= ?`,
-        [pubkey, pubkey, `%${pubkey}%`, from, to]
+      [pubkey, pubkey, `%${pubkey}%`, from, to]
     );
   }
 
   getPendingWithIssuer(pubkey: string): Promise<DBTx[]> {
-    return this.findEntities(`SELECT * FROM txs 
+    return this.findEntities(
+      `SELECT * FROM txs 
         WHERE NOT written
         AND (
             issuer = ? 
@@ -257,7 +295,8 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
   }
 
   getPendingWithRecipient(pubkey: string): Promise<DBTx[]> {
-    return this.findEntities(`SELECT * FROM txs 
+    return this.findEntities(
+      `SELECT * FROM txs 
         WHERE NOT written 
         AND (
             recipient = ?
@@ -268,7 +307,7 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
   }
 
   async existsByHash(hash: string): Promise<boolean> {
-    return (await this.countBy('hash', hash)) > 0;
+    return (await this.countBy("hash", hash)) > 0;
   }
 
   async getTX(hash: string): Promise<DBTx> {
@@ -298,7 +337,10 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
     // Delete by slice of 500 items (because SQLite IN operator is limited)
     while (i < hashArray.length - 1) {
       const slice = hashArray.slice(i, i + 500);
-      await this.driver.sqlWrite(`DELETE FROM txs WHERE hash IN (${slice.map(_ => '?').join(', ')})`, slice);
+      await this.driver.sqlWrite(
+        `DELETE FROM txs WHERE hash IN (${slice.map((_) => "?").join(", ")})`,
+        slice
+      );
       i += 500;
     }
   }

@@ -22,6 +22,12 @@ export class NodeBinding extends AbstractController {
         software: "duniter",
         version: this.server.version,
         forkWindowSize: this.server.conf.forksize,
+        storage: {
+          transactions: this.server.conf.storage
+            ? this.server.conf.storage.transactions
+            : true, // true by default (see app/module/config.ts)
+          wotwizard: this.server.conf.storage?.wotwizard || false, // false by default (see app/module/config.ts)
+        },
       },
     };
   };

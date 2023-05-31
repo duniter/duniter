@@ -21,6 +21,10 @@ export const Summary = {
     software: String,
     version: String,
     forkWindowSize: Number,
+    storage: {
+      transactions: Boolean,
+      wotwizard: Boolean,
+    },
   },
 };
 
@@ -29,6 +33,10 @@ export interface HttpSummary {
     software: string;
     version: string;
     forkWindowSize: number;
+    storage: {
+      transactions: boolean;
+      wotwizard: boolean;
+    };
   };
 }
 

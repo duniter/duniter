@@ -51,6 +51,8 @@ describe('Module usage', () => {
     });
     should.exist(json);
     json.should.have.property('duniter').property('software').equal('duniter');
+    json.should.have.property('duniter').property('storage').property('transactions').equal(true);
+    json.should.have.property('duniter').property('storage').property('wotwizard').equal(false);
   })
 
   it('remoteipv4 should NOT be filled if remote Host is declared', async () => {

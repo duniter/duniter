@@ -62,7 +62,7 @@ export class SqliteTable<T> {
 
   generateCreateIndexes() {
     return this.keys()
-      .filter(key => this.fields[key]?.indexed)
+      .filter((key) => this.fields[key]?.indexed)
       .map((fieldName) => {
         return `CREATE INDEX IF NOT EXISTS idx_${this.name}_${fieldName} ON ${this.name} (${fieldName});\n`;
       })

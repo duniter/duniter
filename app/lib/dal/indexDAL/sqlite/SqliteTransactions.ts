@@ -298,7 +298,7 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
     // Delete by slice of 500 items (because SQLite IN operator is limited)
     while (i < hashArray.length - 1) {
       const slice = hashArray.slice(i, i + 500);
-      await this.driver.sqlWrite(`DELETE FROM txs WHERE hash IN (${slice.map(_ => '?')})`, slice);
+      await this.driver.sqlWrite(`DELETE FROM txs WHERE hash IN (${slice.map(_ => '?').join(', ')})`, slice);
       i += 500;
     }
   }

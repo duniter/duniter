@@ -65,7 +65,7 @@ export class SqliteTable<T> {
    * Allow to migrate the table
    */
   generateUpgradeSql(): string {
-    return '';
+    return "";
   }
 
   generateCreateIndexes() {
@@ -204,7 +204,10 @@ export class SqliteTable<T> {
 
   async countBy(fieldName: keyof T, fieldValue: any): Promise<number> {
     return ((
-        await this.driver.sqlRead(`SELECT COUNT(*) as max FROM ${this.name} WHERE ${fieldName} = ?`, [fieldValue])
+      await this.driver.sqlRead(
+        `SELECT COUNT(*) as max FROM ${this.name} WHERE ${fieldName} = ?`,
+        [fieldValue]
+      )
     )[0] as any).max;
   }
 

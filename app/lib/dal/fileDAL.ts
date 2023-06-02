@@ -13,12 +13,12 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import {SQLiteDriver} from "./drivers/SQLiteDriver";
-import {ConfDAL} from "./fileDALs/ConfDAL";
-import {ConfDTO} from "../dto/ConfDTO";
-import {BlockDTO} from "../dto/BlockDTO";
-import {DBHead} from "../db/DBHead";
-import {DBIdentity, IdentityDAL} from "./sqliteDAL/IdentityDAL";
+import { SQLiteDriver } from "./drivers/SQLiteDriver";
+import { ConfDAL } from "./fileDALs/ConfDAL";
+import { ConfDTO } from "../dto/ConfDTO";
+import { BlockDTO } from "../dto/BlockDTO";
+import { DBHead } from "../db/DBHead";
+import { DBIdentity, IdentityDAL } from "./sqliteDAL/IdentityDAL";
 import {
   CindexEntry,
   FullCindexEntry,
@@ -31,55 +31,55 @@ import {
   SimpleUdEntryForWallet,
   SindexEntry,
 } from "../indexer";
-import {TransactionDTO} from "../dto/TransactionDTO";
-import {CertDAL, DBCert} from "./sqliteDAL/CertDAL";
-import {DBBlock} from "../db/DBBlock";
-import {DBMembership, MembershipDAL} from "./sqliteDAL/MembershipDAL";
-import {MerkleDTO} from "../dto/MerkleDTO";
-import {CommonConstants} from "../common-libs/constants";
-import {PowDAL} from "./fileDALs/PowDAL";
-import {Initiable} from "./sqliteDAL/Initiable";
-import {MetaDAL} from "./sqliteDAL/MetaDAL";
-import {DataErrors} from "../common-libs/errors";
-import {BasicRevocableIdentity, IdentityDTO} from "../dto/IdentityDTO";
-import {FileSystem} from "../system/directory";
-import {Wot} from "../../../neon/lib";
-import {IIndexDAO} from "./indexDAL/abstract/IIndexDAO";
-import {BIndexDAO} from "./indexDAL/abstract/BIndexDAO";
-import {MIndexDAO} from "./indexDAL/abstract/MIndexDAO";
-import {SIndexDAO} from "./indexDAL/abstract/SIndexDAO";
-import {CIndexDAO} from "./indexDAL/abstract/CIndexDAO";
-import {IdentityForRequirements} from "../../service/BlockchainService";
-import {BlockchainDAO} from "./indexDAL/abstract/BlockchainDAO";
-import {TxsDAO} from "./indexDAL/abstract/TxsDAO";
-import {WalletDAO} from "./indexDAL/abstract/WalletDAO";
-import {PeerDAO} from "./indexDAL/abstract/PeerDAO";
-import {DBTx} from "../db/DBTx";
-import {DBWallet} from "../db/DBWallet";
-import {Tristamp} from "../common/Tristamp";
-import {CFSCore} from "./fileDALs/CFSCore";
-import {Underscore} from "../common-libs/underscore";
-import {DBPeer} from "../db/DBPeer";
-import {MonitorFlushedIndex} from "../debug/MonitorFlushedIndex";
-import {cliprogram} from "../common-libs/programOptions";
-import {DividendDAO, UDSource} from "./indexDAL/abstract/DividendDAO";
-import {HttpSource, HttpUD} from "../../modules/bma/lib/dtos";
-import {GenericDAO} from "./indexDAL/abstract/GenericDAO";
-import {MonitorExecutionTime} from "../debug/MonitorExecutionTime";
-import {LevelDBDividend} from "./indexDAL/leveldb/LevelDBDividend";
-import {LevelDBBindex} from "./indexDAL/leveldb/LevelDBBindex";
+import { TransactionDTO } from "../dto/TransactionDTO";
+import { CertDAL, DBCert } from "./sqliteDAL/CertDAL";
+import { DBBlock } from "../db/DBBlock";
+import { DBMembership, MembershipDAL } from "./sqliteDAL/MembershipDAL";
+import { MerkleDTO } from "../dto/MerkleDTO";
+import { CommonConstants } from "../common-libs/constants";
+import { PowDAL } from "./fileDALs/PowDAL";
+import { Initiable } from "./sqliteDAL/Initiable";
+import { MetaDAL } from "./sqliteDAL/MetaDAL";
+import { DataErrors } from "../common-libs/errors";
+import { BasicRevocableIdentity, IdentityDTO } from "../dto/IdentityDTO";
+import { FileSystem } from "../system/directory";
+import { Wot } from "../../../neon/lib";
+import { IIndexDAO } from "./indexDAL/abstract/IIndexDAO";
+import { BIndexDAO } from "./indexDAL/abstract/BIndexDAO";
+import { MIndexDAO } from "./indexDAL/abstract/MIndexDAO";
+import { SIndexDAO } from "./indexDAL/abstract/SIndexDAO";
+import { CIndexDAO } from "./indexDAL/abstract/CIndexDAO";
+import { IdentityForRequirements } from "../../service/BlockchainService";
+import { BlockchainDAO } from "./indexDAL/abstract/BlockchainDAO";
+import { TxsDAO } from "./indexDAL/abstract/TxsDAO";
+import { WalletDAO } from "./indexDAL/abstract/WalletDAO";
+import { PeerDAO } from "./indexDAL/abstract/PeerDAO";
+import { DBTx } from "../db/DBTx";
+import { DBWallet } from "../db/DBWallet";
+import { Tristamp } from "../common/Tristamp";
+import { CFSCore } from "./fileDALs/CFSCore";
+import { Underscore } from "../common-libs/underscore";
+import { DBPeer } from "../db/DBPeer";
+import { MonitorFlushedIndex } from "../debug/MonitorFlushedIndex";
+import { cliprogram } from "../common-libs/programOptions";
+import { DividendDAO, UDSource } from "./indexDAL/abstract/DividendDAO";
+import { HttpSource, HttpUD } from "../../modules/bma/lib/dtos";
+import { GenericDAO } from "./indexDAL/abstract/GenericDAO";
+import { MonitorExecutionTime } from "../debug/MonitorExecutionTime";
+import { LevelDBDividend } from "./indexDAL/leveldb/LevelDBDividend";
+import { LevelDBBindex } from "./indexDAL/leveldb/LevelDBBindex";
 
-import {LevelUp} from "levelup";
-import {LevelDBBlockchain} from "./indexDAL/leveldb/LevelDBBlockchain";
-import {LevelDBSindex} from "./indexDAL/leveldb/LevelDBSindex";
-import {SqliteTransactions} from "./indexDAL/sqlite/SqliteTransactions";
-import {SqlitePeers} from "./indexDAL/sqlite/SqlitePeers";
-import {LevelDBWallet} from "./indexDAL/leveldb/LevelDBWallet";
-import {LevelDBCindex} from "./indexDAL/leveldb/LevelDBCindex";
-import {LevelDBIindex} from "./indexDAL/leveldb/LevelDBIindex";
-import {LevelDBMindex} from "./indexDAL/leveldb/LevelDBMindex";
-import {ConfDAO} from "./indexDAL/abstract/ConfDAO";
-import {ServerDAO} from "./server-dao";
+import { LevelUp } from "levelup";
+import { LevelDBBlockchain } from "./indexDAL/leveldb/LevelDBBlockchain";
+import { LevelDBSindex } from "./indexDAL/leveldb/LevelDBSindex";
+import { SqliteTransactions } from "./indexDAL/sqlite/SqliteTransactions";
+import { SqlitePeers } from "./indexDAL/sqlite/SqlitePeers";
+import { LevelDBWallet } from "./indexDAL/leveldb/LevelDBWallet";
+import { LevelDBCindex } from "./indexDAL/leveldb/LevelDBCindex";
+import { LevelDBIindex } from "./indexDAL/leveldb/LevelDBIindex";
+import { LevelDBMindex } from "./indexDAL/leveldb/LevelDBMindex";
+import { ConfDAO } from "./indexDAL/abstract/ConfDAO";
+import { ServerDAO } from "./server-dao";
 
 const readline = require("readline");
 const indexer = require("../indexer").Indexer;
@@ -150,7 +150,8 @@ export class FileDAL implements ServerDAO {
     this.powDAL = new PowDAL(this.rootPath, params.fs);
     this.confDAL = new ConfDAL(this.rootPath, params.fs);
     this.metaDAL = new (require("./sqliteDAL/MetaDAL").MetaDAL)(
-      this.sqliteDriver, getSqliteDB
+      this.sqliteDriver,
+      getSqliteDB
     );
     this.idtyDAL = new (require("./sqliteDAL/IdentityDAL").IdentityDAL)(
       this.sqliteDriver
@@ -1357,26 +1358,26 @@ export class FileDAL implements ServerDAO {
    * @private
    */
   private async mapToDBTxs(
-      txs: TransactionDTO[],
-      block_number: number,
-      medianTime: number
+    txs: TransactionDTO[],
+    block_number: number,
+    medianTime: number
   ): Promise<DBTx[]> {
     return Promise.all(
-        txs.map(async (tx) => {
-          const sp = tx.blockstamp.split("-", 2);
-          const basedBlock = (await this.getAbsoluteBlockByNumberAndHash(
-              parseInt(sp[0]),
-              sp[1]
-          )) as DBBlock;
-          tx.blockstampTime = basedBlock.medianTime;
-          const txEntity = TransactionDTO.fromJSONObject(tx);
-          if (!txEntity.hash) txEntity.computeAllHashes();
-          const dbTx = DBTx.fromTransactionDTO(txEntity);
-          dbTx.written = true;
-          dbTx.block_number = block_number;
-          dbTx.time = medianTime;
-          return dbTx;
-        })
+      txs.map(async (tx) => {
+        const sp = tx.blockstamp.split("-", 2);
+        const basedBlock = (await this.getAbsoluteBlockByNumberAndHash(
+          parseInt(sp[0]),
+          sp[1]
+        )) as DBBlock;
+        tx.blockstampTime = basedBlock.medianTime;
+        const txEntity = TransactionDTO.fromJSONObject(tx);
+        if (!txEntity.hash) txEntity.computeAllHashes();
+        const dbTx = DBTx.fromTransactionDTO(txEntity);
+        dbTx.written = true;
+        dbTx.block_number = block_number;
+        dbTx.time = medianTime;
+        return dbTx;
+      })
     );
   }
 
@@ -1392,9 +1393,9 @@ export class FileDAL implements ServerDAO {
   }
 
   async insertTxsInFiles(
-      txs: TransactionDTO[],
-      block_number: number,
-      medianTime: number
+    txs: TransactionDTO[],
+    block_number: number,
+    medianTime: number
   ): Promise<DBTx[]> {
     if (!txs.length) return [];
     const dbTxs = await this.mapToDBTxs(txs, block_number, medianTime);

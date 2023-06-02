@@ -16,10 +16,10 @@ import { SQLiteDriver } from "../drivers/SQLiteDriver";
 import { ConfDTO } from "../../dto/ConfDTO";
 import { TransactionDTO } from "../../dto/TransactionDTO";
 import { IdentityDAL } from "./IdentityDAL";
-import {SqliteTransactions} from "../indexDAL/sqlite/SqliteTransactions";
-import {Directory} from "../../system/directory";
+import { SqliteTransactions } from "../indexDAL/sqlite/SqliteTransactions";
+import { Directory } from "../../system/directory";
 
-const constants = require('../../constants');
+const constants = require("../../constants");
 const logger = require("../../logger").NewLogger("metaDAL");
 
 export interface DBMeta {
@@ -30,8 +30,10 @@ export interface DBMeta {
 export class MetaDAL extends AbstractSQLite<DBMeta> {
   driverCopy: SQLiteDriver;
 
-  constructor(driver: SQLiteDriver,
-              private getSqliteDB: (dbName: string) => Promise<SQLiteDriver>) {
+  constructor(
+    driver: SQLiteDriver,
+    private getSqliteDB: (dbName: string) => Promise<SQLiteDriver>
+  ) {
     super(
       driver,
       "meta",
@@ -193,20 +195,18 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
     25: async () => {},
 
     // Drop old table 'txs' (replaced by a file 'txs.db')
-    26: async() => {
-      await this.exec("BEGIN;" +
-          "DROP TABLE IF EXISTS txs;" +
-          "COMMIT;")
+    26: async () => {
+      await this.exec("BEGIN;" + "DROP TABLE IF EXISTS txs;" + "COMMIT;");
     },
 
     // Add columns 'issuer' and 'recipient' in transaction table - see issue #1442
-    27: async() => {
+    27: async () => {
       const txsDriver = await this.getSqliteDB("txs.db");
       const txsDAL = new MetaDAL(txsDriver, this.getSqliteDB);
 
       // Drop unused indices
       await txsDAL.exec(
-          "BEGIN;" +
+        "BEGIN;" +
           "DROP INDEX IF EXISTS idx_txs_locktime;" +
           "DROP INDEX IF EXISTS idx_txs_version;" +
           "DROP INDEX IF EXISTS idx_txs_currency;" +
@@ -224,17 +224,16 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
       try {
         await txsDAL.exec(
           "BEGIN;" +
-          "ALTER TABLE txs ADD COLUMN issuer VARCHAR(50) NULL;" +
-          "ALTER TABLE txs ADD COLUMN recipient VARCHAR(50) NULL;" +
-          "UOPDATE txs SET issuer = SUBSTR(issuers, 2, LENGTH(issuers) - 4) WHERE issuer IS NULL AND issuers NOT LIKE '%,%';" +
-          "UOPDATE txs SET recipient = SUBSTR(recipients, 2, LENGTH(recipients) - 4) WHERE recipient IS NULL AND recipients NOT LIKE '%,%';" +
-          "COMMIT;"
+            "ALTER TABLE txs ADD COLUMN issuer VARCHAR(50) NULL;" +
+            "ALTER TABLE txs ADD COLUMN recipient VARCHAR(50) NULL;" +
+            "UOPDATE txs SET issuer = SUBSTR(issuers, 2, LENGTH(issuers) - 4) WHERE issuer IS NULL AND issuers NOT LIKE '%,%';" +
+            "UOPDATE txs SET recipient = SUBSTR(recipients, 2, LENGTH(recipients) - 4) WHERE recipient IS NULL AND recipients NOT LIKE '%,%';" +
+            "COMMIT;"
         );
-      }
-      catch(err) {
+      } catch (err) {
         // Silent: if column already exists
       }
-    }
+    },
   };
 
   async init() {
@@ -271,7 +270,11 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
   async upgradeDatabase(conf: ConfDTO) {
     let version = await this.getVersion();
     while (this.migrations[version]) {
-      logger.trace(`Upgrade database... (patch ${version}/${constants.CURRENT_DB_VERSION - 1})`);
+      logger.trace(
+        `Upgrade database... (patch ${version}/${
+          constants.CURRENT_DB_VERSION - 1
+        })`
+      );
 
       await this.executeMigration(this.migrations[version], conf);
       // Version increment
@@ -286,7 +289,7 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
 
   async getVersion() {
     try {
-      const {version} = await this.getRow();
+      const { version } = await this.getRow();
       return version;
     } catch (e) {
       // Insert zero, as first version

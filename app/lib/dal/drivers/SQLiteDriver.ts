@@ -95,16 +95,16 @@ export class SQLiteDriver {
   }
 
   async destroyDatabase(): Promise<void> {
-    this.logger.debug("Removing SQLite database \"%s\"...", this.path);
+    this.logger.debug('Removing SQLite database "%s"...', this.path);
     await this.closeConnection();
     if (this.path !== MEMORY_PATH) {
       await RealFS().fsUnlink(this.path);
     }
-    this.logger.debug("Database \"%s\" removed", this.path);
+    this.logger.debug('Database "%s" removed', this.path);
   }
 
   get closed() {
-   return this.dbPromise
+    return this.dbPromise;
   }
 
   async closeConnection(): Promise<void> {
@@ -116,9 +116,9 @@ export class SQLiteDriver {
       db.open; // For an unknown reason, we need this line.
     }
     await new Promise((resolve, reject) => {
-      this.logger.debug("Closing SQLite database \"%s\"...", this.path);
+      this.logger.debug('Closing SQLite database "%s"...', this.path);
       db.on("close", () => {
-        this.logger.info("Database \"%s\" closed.", this.path);
+        this.logger.info('Database "%s" closed.', this.path);
         this.dbPromise = null;
         resolve();
       });

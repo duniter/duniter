@@ -14,7 +14,7 @@
 import { hashf } from "../common";
 import { Cloneable } from "./Cloneable";
 import { verify } from "../../../neon/lib";
-import {CommonConstants} from "../common-libs/constants";
+import { CommonConstants } from "../common-libs/constants";
 
 export interface BaseDTO {
   base: number;
@@ -168,10 +168,15 @@ export class TransactionDTO implements Cloneable {
     return this.outputs.reduce((res, output) => {
       let match: any;
       const recipients: string[] = [];
-      while (output && (match = CommonConstants.TRANSACTION.OUTPUT_CONDITION_SIG_PUBKEY.exec(output)) !== null) {
+      while (
+        output &&
+        (match = CommonConstants.TRANSACTION.OUTPUT_CONDITION_SIG_PUBKEY.exec(
+          output
+        )) !== null
+      ) {
         const pub = match[1] as string;
         if (!res.includes(pub) && !recipients.includes(pub)) {
-          recipients.push(pub)
+          recipients.push(pub);
         }
         output = output.substring(match.index + match[0].length);
       }

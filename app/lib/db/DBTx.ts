@@ -48,11 +48,12 @@ export class DBTx {
     dbTx.output_amount = tx.output_amount;
 
     // Computed columns (unique issuer and/or recipient)
-    dbTx.issuer = (dbTx.issuers.length === 1) ? dbTx.issuers[0] : null;
-    const recipients = !dbTx.issuer ? dbTx.recipients : dbTx.recipients.filter(r => r !== dbTx.issuer);
-    dbTx.recipient = (recipients.length === 1) ? recipients[0] : null;
+    dbTx.issuer = dbTx.issuers.length === 1 ? dbTx.issuers[0] : null;
+    const recipients = !dbTx.issuer
+      ? dbTx.recipients
+      : dbTx.recipients.filter((r) => r !== dbTx.issuer);
+    dbTx.recipient = recipients.length === 1 ? recipients[0] : null;
 
     return dbTx;
   }
-
 }

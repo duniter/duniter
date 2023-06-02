@@ -103,6 +103,10 @@ export class SQLiteDriver {
     this.logger.debug("Database removed");
   }
 
+  get closed() {
+   return this.dbPromise
+  }
+
   async closeConnection(): Promise<void> {
     if (!this.dbPromise) {
       return;

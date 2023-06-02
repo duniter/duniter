@@ -24,6 +24,9 @@ export class DBTx {
   written_on: string;
   writtenOn: number;
 
+  issuer: string | null; // Computed
+  recipient: string | null; // Computed
+
   static fromTransactionDTO(tx: TransactionDTO) {
     const dbTx = new DBTx();
     dbTx.hash = tx.hash;

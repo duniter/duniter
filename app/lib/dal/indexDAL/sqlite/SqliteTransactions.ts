@@ -29,8 +29,10 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
         inputs: new SqlNullableFieldDefinition("JSON", false),
         unlocks: new SqlNullableFieldDefinition("JSON", false),
         outputs: new SqlNullableFieldDefinition("JSON", false),
+        issuer: new SqlNullableFieldDefinition("VARCHAR", true, 50), /* computed column - need by getTxHistoryXxx() */
         issuers: new SqlNullableFieldDefinition("JSON", false),
         signatures: new SqlNullableFieldDefinition("JSON", false),
+        recipient: new SqlNullableFieldDefinition("VARCHAR", true, 50), /* computed column - need by getTxHistoryXxx() */
         recipients: new SqlNullableFieldDefinition("JSON", false),
         written: new SqlNotNullableFieldDefinition("BOOLEAN", true),
         removed: new SqlNotNullableFieldDefinition("BOOLEAN", true),
@@ -78,14 +80,23 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
 
   @MonitorExecutionTime()
   async insert(record: DBTx): Promise<void> {
+    this.onBeforeInsert(record);
     await this.insertInTable(this.driver, record);
   }
 
   @MonitorExecutionTime()
   async insertBatch(records: DBTx[]): Promise<void> {
     if (records.length) {
+      records.forEach(r => this.onBeforeInsert(r));
       return this.insertBatchInTable(this.driver, records);
     }
+  }
+
+  onBeforeInsert(dbTx: DBTx) {
+    // Compute unique issuer/recipient (need to improve tx history)
+    dbTx.issuer = (dbTx.issuers.length === 1) ? dbTx.issuers[0] : null;
+    const recipients = !dbTx.issuer ? dbTx.recipients : dbTx.recipients.filter(r => r !== dbTx.issuer);
+    dbTx.recipient = (recipients.length === 1) ? recipients[0] : null;
   }
 
   sandbox: SandBox<{
@@ -99,12 +110,12 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
     block_number: number,
     time: number
   ): Promise<DBTx> {
-    const dbTx = await this.getTX(tx.hash);
+    const exists = await this.existsByHash(tx.hash);
     const theDBTx = DBTx.fromTransactionDTO(tx);
     theDBTx.written = true;
     theDBTx.block_number = block_number;
     theDBTx.time = time;
-    if (!dbTx) {
+    if (!exists) {
       await this.insert(theDBTx);
     } else {
       await this.update(
@@ -114,7 +125,7 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
         ["hash"]
       );
     }
-    return dbTx;
+    return theDBTx;
   }
 
   async addPending(dbTx: DBTx): Promise<DBTx> {
@@ -148,28 +159,12 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
   }
 
   async getTxHistoryByPubkey(pubkey: string) {
-    const history: {
-      sent: DBTx[];
-      received: DBTx[];
-      sending: DBTx[];
-      pending: DBTx[];
-    } = {
-      sent: [],
-      received: [],
-      sending: [],
-      pending: [],
+    return {
+      sent: await this.getLinkedWithIssuer(pubkey),
+      received: await this.getLinkedWithRecipient(pubkey),
+      sending: await this.getPendingWithIssuer(pubkey),
+      pending: await this.getPendingWithRecipient(pubkey),
     };
-    const res = await Promise.all([
-      this.getLinkedWithIssuer(pubkey),
-      this.getLinkedWithRecipient(pubkey),
-      this.getPendingWithIssuer(pubkey),
-      this.getPendingWithRecipient(pubkey),
-    ]);
-    history.sent = res[0] || [];
-    history.received = res[1] || [];
-    history.sending = res[2] || [];
-    history.pending = res[3] || [];
-    return history;
   }
 
   async getTxHistoryByPubkeyBetweenBlocks(
@@ -177,26 +172,10 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
     from: number,
     to: number
   ): Promise<{ sent: DBTx[]; received: DBTx[] }> {
-    const history: {
-      sent: DBTx[];
-      received: DBTx[];
-    } = {
-      sent: [],
-      received: [],
+    return {
+      sent: await this.getLinkedWithIssuerByRange('block_number', pubkey, from, to),
+      received: await this.getLinkedWithRecipientByRange('block_number', pubkey, from, to),
     };
-    const res = await Promise.all([
-      this.findEntities(
-        "SELECT * FROM txs WHERE written AND issuers LIKE ? AND block_number >= ? AND block_number <= ?",
-        [`%${pubkey}%`, from, to]
-      ),
-      this.findEntities(
-        "SELECT * FROM txs WHERE written AND recipients LIKE ? AND block_number >= ? AND block_number <= ?",
-        [`%${pubkey}%`, from, to]
-      ),
-    ]);
-    history.sent = res[0] || [];
-    history.received = res[1] || [];
-    return history;
   }
 
   async getTxHistoryByPubkeyBetweenTimes(
@@ -204,73 +183,93 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
     from: number,
     to: number
   ): Promise<{ sent: DBTx[]; received: DBTx[] }> {
-    const history: {
-      sent: DBTx[];
-      received: DBTx[];
-    } = {
-      sent: [],
-      received: [],
+    return {
+      sent: await this.getLinkedWithIssuerByRange('blockstampTime', pubkey, from, to),
+      received: await this.getLinkedWithRecipientByRange('blockstampTime', pubkey, from, to)
     };
-    const res = await Promise.all([
-      this.findEntities(
-        "SELECT * FROM txs WHERE written AND issuers LIKE ? AND time >= ? AND time <= ?",
-        [`%${pubkey}%`, from, to]
-      ),
-      this.findEntities(
-        "SELECT * FROM txs WHERE written AND recipients LIKE ? AND time >= ? AND time <= ?",
-        [`%${pubkey}%`, from, to]
-      ),
-    ]);
-    history.sent = res[0] || [];
-    history.received = res[1] || [];
-    return history;
   }
 
   async getTxHistoryMempool(
     pubkey: string
   ): Promise<{ sending: DBTx[]; pending: DBTx[] }> {
-    const history: {
-      sending: DBTx[];
-      pending: DBTx[];
-    } = {
-      sending: [],
-      pending: [],
+    return {
+      sending: await this.getPendingWithIssuer(pubkey),
+      pending: await this.getPendingWithRecipient(pubkey),
     };
-    const res = await Promise.all([
-      this.getPendingWithIssuer(pubkey),
-      this.getPendingWithRecipient(pubkey),
-    ]);
-    history.sending = res[0] || [];
-    history.pending = res[1] || [];
-    return history;
   }
 
   getLinkedWithIssuer(pubkey: string): Promise<DBTx[]> {
-    return this.findEntities(
-      "SELECT * FROM txs WHERE written AND issuers LIKE ?",
-      [`%${pubkey}%`]
+    return this.findEntities(`SELECT * FROM txs 
+        WHERE written 
+        AND (
+            issuer = ?
+            OR (issuer IS NULL AND issuers LIKE ?)
+          )`,
+      [pubkey, `%${pubkey}%`]
+    );
+  }
+
+  getLinkedWithIssuerByRange(rangeFieldName: keyof DBTx, pubkey: string, from: number, to: number): Promise<DBTx[]> {
+    return this.findEntities(`SELECT * FROM txs 
+        WHERE written 
+        AND (
+          issuer = ?
+          OR (issuer IS NULL AND issuers LIKE ?)            
+        )
+        AND ${rangeFieldName} >= ? 
+        AND ${rangeFieldName} <= ?`,
+        [pubkey, `%${pubkey}%`, from, to]
     );
   }
 
   getLinkedWithRecipient(pubkey: string): Promise<DBTx[]> {
-    return this.findEntities(
-      "SELECT * FROM txs WHERE written AND recipients LIKE ?",
-      [`%${pubkey}%`]
+    return this.findEntities(`SELECT * FROM txs 
+        WHERE written 
+        AND (
+            recipient = ?
+            OR (recipient IS NULL AND issuer <> ? AND recipients LIKE ? )
+        )`,
+      [pubkey, pubkey, `%${pubkey}%`]
+    );
+  }
+
+  getLinkedWithRecipientByRange(rangeColumnName: string, pubkey: string, from: number, to: number): Promise<DBTx[]> {
+    return this.findEntities(`SELECT * FROM txs 
+        WHERE written 
+        AND (
+            recipient = ?
+            OR (recipient IS NULL AND issuer <> ? AND recipients LIKE ? )            
+        )
+        AND ${rangeColumnName} >= ? 
+        AND ${rangeColumnName} <= ?`,
+        [pubkey, pubkey, `%${pubkey}%`, from, to]
     );
   }
 
   getPendingWithIssuer(pubkey: string): Promise<DBTx[]> {
-    return this.findEntities(
-      "SELECT * FROM txs WHERE NOT written AND issuers LIKE ?",
-      [`%${pubkey}%`]
+    return this.findEntities(`SELECT * FROM txs 
+        WHERE NOT written
+        AND (
+            issuer = ? 
+            OR (issuer IS NULL AND issuers LIKE ?)
+        )`,
+      [pubkey, `%${pubkey}%`]
     );
   }
 
   getPendingWithRecipient(pubkey: string): Promise<DBTx[]> {
-    return this.findEntities(
-      "SELECT * FROM txs WHERE NOT written AND recipients LIKE ?",
-      [`%${pubkey}%`]
+    return this.findEntities(`SELECT * FROM txs 
+        WHERE NOT written 
+        AND (
+            recipient = ?
+            OR (recipient IS NULL AND issuer <> ? AND recipients LIKE ?)
+        ) `,
+      [pubkey, pubkey, `%${pubkey}%`]
     );
+  }
+
+  async existsByHash(hash: string): Promise<boolean> {
+    return (await this.countBy('hash', hash)) > 0;
   }
 
   async getTX(hash: string): Promise<DBTx> {

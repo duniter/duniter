@@ -113,7 +113,7 @@ describe("DAL", function(){
     return fileDAL.saveConf({ currency: "meta_brouzouf" } as any);
   })
 
-  it('should have DB version 21', async () => {
+  it('should have last DB version', async () => {
     let version = await fileDAL.getDBVersion();
     should.exist(version);
     version.should.equal(constants.CURRENT_DB_VERSION);

@@ -150,7 +150,7 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
       const host = access.host;
       const port = access.port;
       const path = access.path;
-      logger.info(`Connecting to address ${host} :${port}...`);
+      logger.info(`Connecting to address ${host}:${port}${path||''}...`);
 
       // If we know this is a WS2P connection, don't try BMA
       if (access.isWS2P !== true) {
@@ -158,21 +158,16 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
           const contacter = await connect(
             PeerDTO.fromJSONObject({
               endpoints: [
-                `BASIC_MERKLED_API ${host} ${port}${
-                  (path && " " + path) || ""
-                }`,
+                `BASIC_MERKLED_API ${host} ${port}` +
+                ((path && ' ' + path) || ''),
               ],
             }),
             3000
           );
           peering = await contacter.getPeer();
           api = new BMARemoteContacter(contacter);
-          endpoint =
-            "BASIC_MERKLED_API " +
-            host +
-            " " +
-            port +
-            ((path && " " + path) || "");
+          endpoint =  `BASIC_MERKLED_API ${host} ${port}` +
+            ((path && ' ' + path) || '');
         } catch (e) {}
       }
 
@@ -181,7 +176,7 @@ export class RemoteSynchronizer extends AbstractSynchronizer {
         const pair = new Key(keypair.pub, keypair.sec);
         const connection = WS2PConnection.newConnectionToAddress(
           1,
-          `ws://${host}:${port}${(path && " " + path) || ""}`,
+          `ws://${host}:${port}${path || ''}`,
           new (class SyncMessageHandler implements WS2PMessageHandler {
             async answerToRequest(
               json: any,

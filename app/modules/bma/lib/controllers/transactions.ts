@@ -28,6 +28,10 @@ import { DBTx } from "../../../../lib/db/DBTx";
 const http2raw = require("../http2raw");
 
 export class TransactionBinding extends AbstractController {
+  get medianTimeOffset(): number {
+    return (this.conf.avgGenTime * this.conf.medianTimeBlocks) / 2;
+  }
+
   async parseTransaction(req: any): Promise<HttpTransactionPending> {
     const res = await this.pushEntity(
       req,
@@ -106,10 +110,11 @@ export class TransactionBinding extends AbstractController {
     const pubkey = await ParametersService.getPubkeyP(req);
     const from = await ParametersService.getFromP(req);
     const to = await ParametersService.getToP(req);
+    const medianTimeOffset = this.medianTimeOffset || 0; // Need to convert time into medianTime, because GVA module use median_time
     const history = await this.server.dal.getTxHistoryByPubkeyBetweenTimes(
       pubkey,
-      +from,
-      +to
+      +from - medianTimeOffset,
+      +to - medianTimeOffset
     );
     return this.toHttpTxHistory(pubkey, history);
   }

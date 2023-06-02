@@ -218,7 +218,7 @@ module.exports = {
 
   PEER: CommonConstants.PEER,
 
-  CURRENT_DB_VERSION: 26,
+  CURRENT_DB_VERSION: 27, // Should be set with 'max(keys(MetaDAL.migration)) + 1'
 
   NETWORK: {
     MAX_MEMBERS_TO_FORWARD_TO_FOR_SELF_DOCUMENTS: 10,

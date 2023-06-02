@@ -16,7 +16,10 @@ import { SQLiteDriver } from "../drivers/SQLiteDriver";
 import { ConfDTO } from "../../dto/ConfDTO";
 import { TransactionDTO } from "../../dto/TransactionDTO";
 import { IdentityDAL } from "./IdentityDAL";
+import {SqliteTransactions} from "../indexDAL/sqlite/SqliteTransactions";
+import {Directory} from "../../system/directory";
 
+const constants = require('../../constants');
 const logger = require("../../logger").NewLogger("metaDAL");
 
 export interface DBMeta {
@@ -27,7 +30,8 @@ export interface DBMeta {
 export class MetaDAL extends AbstractSQLite<DBMeta> {
   driverCopy: SQLiteDriver;
 
-  constructor(driver: SQLiteDriver) {
+  constructor(driver: SQLiteDriver,
+              private getSqliteDB: (dbName: string) => Promise<SQLiteDriver>) {
     super(
       driver,
       "meta",
@@ -88,29 +92,6 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
       ");" +
       "CREATE INDEX IF NOT EXISTS idx_block_hash ON block (hash);" +
       "CREATE INDEX IF NOT EXISTS idx_block_fork ON block (fork);" +
-      // Same, but for Transactions
-      "CREATE TABLE IF NOT EXISTS txs (" +
-      "hash CHAR(64) NOT NULL," +
-      "block_number INTEGER," +
-      "locktime INTEGER NOT NULL," +
-      "version INTEGER NOT NULL," +
-      "currency VARCHAR(50) NOT NULL," +
-      "comment VARCHAR(255) NOT NULL," +
-      "time DATETIME," +
-      "inputs TEXT NOT NULL," +
-      "unlocks TEXT NOT NULL," +
-      "outputs TEXT NOT NULL," +
-      "issuers TEXT NOT NULL," +
-      "signatures TEXT NOT NULL," +
-      "recipients TEXT NOT NULL," +
-      "written BOOLEAN NOT NULL," +
-      "removed BOOLEAN NOT NULL," +
-      "PRIMARY KEY (hash)" +
-      ");" +
-      "CREATE INDEX IF NOT EXISTS idx_txs_issuers ON txs (issuers);" +
-      "CREATE INDEX IF NOT EXISTS idx_txs_written ON txs (written);" +
-      "CREATE INDEX IF NOT EXISTS idx_txs_removed ON txs (removed);" +
-      "CREATE INDEX IF NOT EXISTS idx_txs_hash ON txs (hash);" +
       "COMMIT;",
 
     // Test
@@ -118,15 +99,13 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
       "BEGIN;" +
       "CREATE VIEW IF NOT EXISTS identities_pending AS SELECT * FROM idty WHERE NOT written;" +
       "CREATE VIEW IF NOT EXISTS certifications_pending AS SELECT * FROM cert WHERE NOT written;" +
-      "CREATE VIEW IF NOT EXISTS transactions_pending AS SELECT * FROM txs WHERE NOT written;" +
-      "CREATE VIEW IF NOT EXISTS transactions_desc AS SELECT * FROM txs ORDER BY time DESC;" +
       "CREATE VIEW IF NOT EXISTS forks AS SELECT number, hash, issuer, monetaryMass, dividend, UDTime, membersCount, medianTime, time, * FROM block WHERE fork ORDER BY number DESC;" +
       "CREATE VIEW IF NOT EXISTS blockchain AS SELECT number, hash, issuer, monetaryMass, dividend, UDTime, membersCount, medianTime, time, * FROM block WHERE NOT fork ORDER BY number DESC;" +
       "CREATE VIEW IF NOT EXISTS network AS select i.uid, (last_try - first_down) / 1000 as down_delay_in_sec, p.* from peer p LEFT JOIN idty i on i.pubkey = p.pubkey ORDER by down_delay_in_sec;" +
       "COMMIT;",
 
     // New `receveid` column
-    2: "BEGIN; ALTER TABLE txs ADD COLUMN received INTEGER NULL; COMMIT;",
+    2: async () => {},
 
     // Update wrong recipients field (was not filled in)
     3: async () => {},
@@ -140,12 +119,8 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
     6: "BEGIN; ALTER TABLE idty ADD COLUMN expired INTEGER NULL; COMMIT;",
     7: "BEGIN; ALTER TABLE cert ADD COLUMN expired INTEGER NULL; COMMIT;",
     8: "BEGIN; ALTER TABLE membership ADD COLUMN expired INTEGER NULL; COMMIT;",
-    9:
-      "BEGIN;" +
-      "ALTER TABLE txs ADD COLUMN output_base INTEGER NULL;" +
-      "ALTER TABLE txs ADD COLUMN output_amount INTEGER NULL;" +
-      "COMMIT;",
-    10: "BEGIN; ALTER TABLE txs ADD COLUMN blockstamp VARCHAR(200) NULL; COMMIT;",
+    9: async () => {},
+    10: async () => {},
     11:
       "BEGIN;" +
       "ALTER TABLE block ADD COLUMN issuersFrame INTEGER NULL;" +
@@ -153,14 +128,12 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
       "ALTER TABLE block ADD COLUMN issuersCount INTEGER NULL;" +
       "COMMIT;",
     12: async () => {
-      let blockDAL = new MetaDAL(this.driverCopy);
+      let blockDAL = new MetaDAL(this.driverCopy, this.getSqliteDB);
       await blockDAL.exec("ALTER TABLE block ADD COLUMN len INTEGER NULL;");
-      await blockDAL.exec("ALTER TABLE txs ADD COLUMN len INTEGER NULL;");
     },
-    13: "BEGIN; ALTER TABLE txs ADD COLUMN blockstampTime INTEGER NULL; COMMIT;",
+    13: async () => {},
     14:
       "BEGIN; " +
-      "CREATE VIEW IF NOT EXISTS sandbox_txs AS SELECT * FROM txs WHERE NOT written AND NOT removed ORDER BY output_base DESC, output_amount DESC;" +
       "CREATE VIEW IF NOT EXISTS sandbox_idty AS SELECT " +
       "I.*, " +
       "I.hash, " +
@@ -190,16 +163,8 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
     },
 
     16: async () => {},
-
-    17: async () => {
-      // This migration is now obsolete
-    },
-
-    18:
-      "BEGIN;" +
-      // Add a `massReeval` column
-      // 'ALTER TABLE b_index ADD COLUMN massReeval VARCHAR(100) NOT NULL DEFAULT \'0\';' +
-      "COMMIT;",
+    17: async () => {},
+    18: async () => {},
 
     19:
       "BEGIN;" +
@@ -207,69 +172,67 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
       "ALTER TABLE idty ADD COLUMN removed BOOLEAN NULL DEFAULT 0;" +
       "COMMIT;",
 
-    /**
-     * Feeds the table of wallets with balances
-     */
+    // Feeds the table of wallets with balances
     20: async () => {},
 
-    21: async (conf: ConfDTO) => {},
+    21: async () => {},
 
     // Replay the wallet table feeding, because of a potential bug
     22: () => {
       return this.migrations[20]();
     },
 
-    23: "BEGIN;" + "COMMIT;",
+    23: async () => {},
 
     /**
      * Feeds the m_index.chainable_on correctly
      */
-    24: async (conf: ConfDTO) => {},
+    24: async () => {},
 
-    /**
-     * Wrong transaction storage
-     */
-    25: async () => {
-      const txsDAL: any = new MetaDAL(this.driverCopy);
-      const wrongTXS = await txsDAL.query(
-        "SELECT * FROM txs WHERE outputs LIKE ? OR inputs LIKE ?",
-        ["%amount%", "%amount%"]
+    // Wrong transaction storage
+    25: async () => {},
+
+    // Add columns 'issuer' and 'recipient' in transaction table - see issue #1442
+    26: async() => {
+      // Drop old table 'txs' (replaced by a file 'txs.db')
+      await this.exec("BEGIN;" +
+          "DROP TABLE IF EXISTS txs;" +
+          "COMMIT;")
+
+      // Migrate txs.db
+      const txsDriver = await this.getSqliteDB("txs.db");
+      const txsDAL = new MetaDAL(txsDriver, this.getSqliteDB);
+
+      // Drop unused indices
+      await txsDAL.exec(
+          "BEGIN;" +
+          "DROP INDEX IF EXISTS idx_txs_locktime;" +
+          "DROP INDEX IF EXISTS idx_txs_version;" +
+          "DROP INDEX IF EXISTS idx_txs_currency;" +
+          "DROP INDEX IF EXISTS idx_txs_comment;" +
+          "DROP INDEX IF EXISTS idx_txs_signatures;" +
+          "DROP INDEX IF EXISTS idx_txs_received;" +
+          "DROP INDEX IF EXISTS idx_txs_output_base;" +
+          "DROP INDEX IF EXISTS idx_txs_output_amount;" +
+          "CREATE INDEX IF NOT EXISTS idx_txs_recipients ON txs (recipients);" +
+          "COMMIT;"
       );
-      let i = 1;
-      for (const tx of wrongTXS) {
-        logger.info(
-          "Updating incorrect transaction %s/%s.",
-          i,
-          wrongTXS.length
-        );
-        i++;
-        const dto = TransactionDTO.fromJSONObject(tx);
-        dto.outputs = dto.outputs.map((o) => {
-          if (typeof o === "object") {
-            return TransactionDTO.outputObj2Str(o);
-          }
-          return o;
-        });
-        dto.inputs = dto.inputs.map((o) => {
-          if (typeof o === "object") {
-            return TransactionDTO.inputObj2Str(o);
-          }
-          return o;
-        });
+
+      // Add new columns 'issuer' and 'recipient'
+      try {
         await txsDAL.exec(
-          "UPDATE txs SET " +
-            "outputs = '" +
-            JSON.stringify(dto.outputs) +
-            "', " +
-            "inputs = '" +
-            JSON.stringify(dto.inputs) +
-            "' " +
-            "WHERE hash = '" +
-            tx.hash +
-            "'"
+          "BEGIN;" +
+          "ALTER TABLE txs ADD COLUMN issuer VARCHAR(50) NULL;" +
+          "ALTER TABLE txs ADD COLUMN recipient VARCHAR(50) NULL;" +
+          "UOPDATE txs SET issuer = SUBSTR(issuers, 2, LENGTH(issuers) - 4) WHERE issuer IS NULL AND issuers NOT LIKE '%,%';" +
+          "UOPDATE txs SET recipient = SUBSTR(recipients, 2, LENGTH(recipients) - 4) WHERE recipient IS NULL AND recipients NOT LIKE '%,%';" +
+          "COMMIT;"
         );
       }
-    },
+      catch(err) {
+        // Silent: if column already exists
+      }
+    }
   };
 
   async init() {
@@ -299,17 +262,19 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
         await migration(conf);
       }
     } catch (e) {
-      logger.warn("An error occured during DB migration, continue.", e);
+      logger.warn("An error occurred during DB migration, continue.", e);
     }
   }
 
   async upgradeDatabase(conf: ConfDTO) {
     let version = await this.getVersion();
     while (this.migrations[version]) {
+      logger.trace(`Upgrade database... (patch ${version}/${constants.CURRENT_DB_VERSION - 1})`);
+
       await this.executeMigration(this.migrations[version], conf);
-      // Automated increment
-      await this.exec("UPDATE meta SET version = version + 1");
+      // Version increment
       version++;
+      await this.exec("UPDATE meta SET version = " + version);
     }
   }
 
@@ -319,9 +284,10 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
 
   async getVersion() {
     try {
-      const row = await this.getRow();
-      return row.version;
+      const {version} = await this.getRow();
+      return version;
     } catch (e) {
+      // Insert zero, as first version
       await this.exec("INSERT INTO " + this.table + " VALUES (1,0);");
       return 0;
     }

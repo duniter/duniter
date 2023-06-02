@@ -151,7 +151,7 @@ export class FileDAL implements ServerDAO {
     this.powDAL = new PowDAL(this.rootPath, params.fs);
     this.confDAL = new ConfDAL(this.rootPath, params.fs);
     this.metaDAL = new (require("./sqliteDAL/MetaDAL").MetaDAL)(
-      this.sqliteDriver
+      this.sqliteDriver, getSqliteDB
     );
     this.idtyDAL = new (require("./sqliteDAL/IdentityDAL").IdentityDAL)(
       this.sqliteDriver

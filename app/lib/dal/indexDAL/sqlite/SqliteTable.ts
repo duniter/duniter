@@ -22,6 +22,7 @@ export class SqliteTable<T> {
     await this.driver.sqlExec(`
     BEGIN;
     ${this.generateCreateTable()};
+    ${this.generateUpgradeSql()};
     ${this.generateCreateIndexes()};
     COMMIT;
     `);
@@ -58,6 +59,13 @@ export class SqliteTable<T> {
       .join(", ");
     sql += `${fields});`;
     return sql;
+  }
+
+  /**
+   * Allow to migrate the table
+   */
+  generateUpgradeSql(): string {
+    return '';
   }
 
   generateCreateIndexes() {
@@ -191,6 +199,12 @@ export class SqliteTable<T> {
   async count() {
     return ((
       await this.driver.sqlRead(`SELECT COUNT(*) as max FROM ${this.name}`, [])
+    )[0] as any).max;
+  }
+
+  async countBy(fieldName: keyof T, fieldValue: any): Promise<number> {
+    return ((
+        await this.driver.sqlRead(`SELECT COUNT(*) as max FROM ${this.name} WHERE ${fieldName} = ?`, [fieldValue])
     )[0] as any).max;
   }
 

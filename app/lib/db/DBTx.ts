@@ -46,18 +46,13 @@ export class DBTx {
     dbTx.removed = false;
     dbTx.output_base = tx.output_base;
     dbTx.output_amount = tx.output_amount;
+
+    // Computed columns (unique issuer and/or recipient)
+    dbTx.issuer = (dbTx.issuers.length === 1) ? dbTx.issuers[0] : null;
+    const recipients = !dbTx.issuer ? dbTx.recipients : dbTx.recipients.filter(r => r !== dbTx.issuer);
+    dbTx.recipient = (recipients.length === 1) ? recipients[0] : null;
+
     return dbTx;
   }
 
-  static setRecipients(txs: DBTx[]) {
-    // Each transaction must have a good "recipients" field for future searchs
-    txs.forEach((tx) => (tx.recipients = DBTx.outputs2recipients(tx)));
-  }
-
-  static outputs2recipients(tx: DBTx) {
-    return tx.outputs.map(function (out) {
-      const recipent = out.match("SIG\\((.*)\\)");
-      return (recipent && recipent[1]) || "UNKNOWN";
-    });
-  }
 }

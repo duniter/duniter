@@ -14,6 +14,7 @@
 import { hashf } from "../common";
 import { Cloneable } from "./Cloneable";
 import { verify } from "../../../neon/lib";
+import {CommonConstants} from "../common-libs/constants";
 
 export interface BaseDTO {
   base: number;
@@ -74,8 +75,8 @@ export class TransactionDTO implements Cloneable {
     public currency: string,
     public locktime: number,
     public hash: string,
-    public blockstamp: string,
-    public blockstampTime: number,
+    public blockstamp: string, // Reference block of the TX
+    public blockstampTime: number, // Median time of the reference block
     public issuers: string[],
     public inputs: string[],
     public outputs: string[],
@@ -95,14 +96,14 @@ export class TransactionDTO implements Cloneable {
 
   get output_amount() {
     return this.outputs.reduce(
-      (maxBase, output) => Math.max(maxBase, parseInt(output.split(":")[0])),
+      (sum, output) => sum + parseInt(output.split(":")[0]),
       0
     );
   }
 
   get output_base() {
     return this.outputs.reduce(
-      (sum, output) => sum + parseInt(output.split(":")[1]),
+      (maxBase, output) => Math.max(maxBase, parseInt(output.split(":")[1])),
       0
     );
   }
@@ -126,8 +127,11 @@ export class TransactionDTO implements Cloneable {
   }
 
   getHash() {
-    const raw = TransactionDTO.toRAW(this);
-    return hashf(raw);
+    if (!this.hash) {
+      const raw = TransactionDTO.toRAW(this);
+      this.hash = hashf(raw).toUpperCase();
+    }
+    return this.hash;
   }
 
   getRawTxNoSig() {
@@ -161,40 +165,26 @@ export class TransactionDTO implements Cloneable {
   }
 
   outputsAsRecipients(): string[] {
-    return this.outputs.map((out) => {
-      const recipent = out.match("SIG\\((.*)\\)");
-      return (recipent && recipent[1]) || "UNKNOWN";
-    });
+    return this.outputs.reduce((res, output) => {
+      let match: any;
+      const recipients: string[] = [];
+      while (output && (match = CommonConstants.TRANSACTION.OUTPUT_CONDITION_SIG_PUBKEY.exec(output)) !== null) {
+        const pub = match[1] as string;
+        if (!res.includes(pub) && !recipients.includes(pub)) {
+          recipients.push(pub)
+        }
+        output = output.substring(match.index + match[0].length);
+      }
+      if (recipients.length) {
+        return res.concat(recipients);
+      }
+      if (res.includes("UNKNOWN")) return res;
+      return res.concat("UNKNOWN");
+    }, <string[]>[]);
   }
 
   getRaw() {
-    let raw = "";
-    raw += "Version: " + this.version + "\n";
-    raw += "Type: Transaction\n";
-    raw += "Currency: " + this.currency + "\n";
-    raw += "Blockstamp: " + this.blockstamp + "\n";
-    raw += "Locktime: " + this.locktime + "\n";
-    raw += "Issuers:\n";
-    (this.issuers || []).forEach((issuer) => {
-      raw += issuer + "\n";
-    });
-    raw += "Inputs:\n";
-    this.inputs.forEach((input) => {
-      raw += input + "\n";
-    });
-    raw += "Unlocks:\n";
-    this.unlocks.forEach((unlock) => {
-      raw += unlock + "\n";
-    });
-    raw += "Outputs:\n";
-    this.outputs.forEach((output) => {
-      raw += output + "\n";
-    });
-    raw += "Comment: " + (this.comment || "") + "\n";
-    this.signatures.forEach((signature) => {
-      raw += signature + "\n";
-    });
-    return raw;
+    return TransactionDTO.toRAW(this);
   }
 
   getCompactVersion() {
@@ -231,7 +221,7 @@ export class TransactionDTO implements Cloneable {
   }
 
   computeAllHashes() {
-    this.hash = hashf(this.getRaw()).toUpperCase();
+    this.hash = this.getHash();
   }
 
   json() {
@@ -293,32 +283,32 @@ export class TransactionDTO implements Cloneable {
     );
   }
 
-  static toRAW(json: TransactionDTO, noSig = false) {
+  static toRAW(tx: TransactionDTO, noSig = false) {
     let raw = "";
-    raw += "Version: " + json.version + "\n";
+    raw += "Version: " + tx.version + "\n";
     raw += "Type: Transaction\n";
-    raw += "Currency: " + json.currency + "\n";
-    raw += "Blockstamp: " + json.blockstamp + "\n";
-    raw += "Locktime: " + json.locktime + "\n";
+    raw += "Currency: " + tx.currency + "\n";
+    raw += "Blockstamp: " + tx.blockstamp + "\n";
+    raw += "Locktime: " + tx.locktime + "\n";
     raw += "Issuers:\n";
-    (json.issuers || []).forEach((issuer) => {
+    (tx.issuers || []).forEach((issuer) => {
       raw += issuer + "\n";
     });
     raw += "Inputs:\n";
-    (json.inputs || []).forEach((input) => {
+    (tx.inputs || []).forEach((input) => {
       raw += input + "\n";
     });
     raw += "Unlocks:\n";
-    (json.unlocks || []).forEach((unlock) => {
+    (tx.unlocks || []).forEach((unlock) => {
       raw += unlock + "\n";
     });
     raw += "Outputs:\n";
-    (json.outputs || []).forEach((output) => {
+    (tx.outputs || []).forEach((output) => {
       raw += output + "\n";
     });
-    raw += "Comment: " + (json.comment || "") + "\n";
+    raw += "Comment: " + (tx.comment || "") + "\n";
     if (!noSig) {
-      (json.signatures || []).forEach((signature) => {
+      (tx.signatures || []).forEach((signature) => {
         raw += signature + "\n";
       });
     }

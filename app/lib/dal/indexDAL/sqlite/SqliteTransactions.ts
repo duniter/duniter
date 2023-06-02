@@ -79,24 +79,23 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
    */
 
   @MonitorExecutionTime()
-  async insert(record: DBTx): Promise<void> {
-    this.onBeforeInsert(record);
-    await this.insertInTable(this.driver, record);
+  insert(record: DBTx): Promise<void> {
+    return this.insertInTable(this.driver, record);
   }
 
   @MonitorExecutionTime()
   async insertBatch(records: DBTx[]): Promise<void> {
     if (records.length) {
-      records.forEach(r => this.onBeforeInsert(r));
       return this.insertBatchInTable(this.driver, records);
     }
   }
 
-  onBeforeInsert(dbTx: DBTx) {
-    // Compute unique issuer/recipient (need to improve tx history)
-    dbTx.issuer = (dbTx.issuers.length === 1) ? dbTx.issuers[0] : null;
-    const recipients = !dbTx.issuer ? dbTx.recipients : dbTx.recipients.filter(r => r !== dbTx.issuer);
-    dbTx.recipient = (recipients.length === 1) ? recipients[0] : null;
+  @MonitorExecutionTime()
+  async saveBatch(records: DBTx[]): Promise<void> {
+    if (records.length) {
+      await this.removeByHashBatch(records.map(t => t.hash));
+      await this.insertBatch(records);
+    }
   }
 
   sandbox: SandBox<{
@@ -184,8 +183,8 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
     to: number
   ): Promise<{ sent: DBTx[]; received: DBTx[] }> {
     return {
-      sent: await this.getLinkedWithIssuerByRange('blockstampTime', pubkey, from, to),
-      received: await this.getLinkedWithRecipientByRange('blockstampTime', pubkey, from, to)
+      sent: await this.getLinkedWithIssuerByRange('time', pubkey, from, to),
+      received: await this.getLinkedWithRecipientByRange('time', pubkey, from, to)
     };
   }
 
@@ -294,7 +293,17 @@ export class SqliteTransactions extends SqliteTable<DBTx> implements TxsDAO {
     );
   }
 
-  removeTX(hash: string): Promise<void> {
+  async removeByHashBatch(hashArray: string[]): Promise<void> {
+    let i = 0;
+    // Delete by slice of 500 items (because SQLite IN operator is limited)
+    while (i < hashArray.length - 1) {
+      const slice = hashArray.slice(i, i + 500);
+      await this.driver.sqlWrite(`DELETE FROM txs WHERE hash IN (${slice.map(_ => '?')})`, slice);
+      i += 500;
+    }
+  }
+
+  removeByHash(hash: string): Promise<void> {
     return this.driver.sqlWrite("DELETE FROM txs WHERE hash = ?", [hash]);
   }
 

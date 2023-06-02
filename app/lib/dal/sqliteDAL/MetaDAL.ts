@@ -192,14 +192,15 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
     // Wrong transaction storage
     25: async () => {},
 
-    // Add columns 'issuer' and 'recipient' in transaction table - see issue #1442
+    // Drop old table 'txs' (replaced by a file 'txs.db')
     26: async() => {
-      // Drop old table 'txs' (replaced by a file 'txs.db')
       await this.exec("BEGIN;" +
           "DROP TABLE IF EXISTS txs;" +
           "COMMIT;")
+    },
 
-      // Migrate txs.db
+    // Add columns 'issuer' and 'recipient' in transaction table - see issue #1442
+    27: async() => {
       const txsDriver = await this.getSqliteDB("txs.db");
       const txsDAL = new MetaDAL(txsDriver, this.getSqliteDB);
 
@@ -214,6 +215,7 @@ export class MetaDAL extends AbstractSQLite<DBMeta> {
           "DROP INDEX IF EXISTS idx_txs_received;" +
           "DROP INDEX IF EXISTS idx_txs_output_base;" +
           "DROP INDEX IF EXISTS idx_txs_output_amount;" +
+          "CREATE INDEX IF NOT EXISTS idx_txs_issuers ON txs (issuers);" +
           "CREATE INDEX IF NOT EXISTS idx_txs_recipients ON txs (recipients);" +
           "COMMIT;"
       );

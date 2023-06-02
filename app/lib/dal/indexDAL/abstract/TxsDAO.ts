@@ -10,6 +10,12 @@ export interface TxsDAO extends GenericDAO<DBTx> {
 
   getTX(hash: string): Promise<DBTx>;
 
+  /**
+   * Make a batch insert or update.
+   * @param records The records to insert or update as a batch.
+   */
+  saveBatch(records: DBTx[]): Promise<void>;
+
   addLinked(
     tx: TransactionDTO,
     block_number: number,
@@ -51,7 +57,9 @@ export interface TxsDAO extends GenericDAO<DBTx> {
 
   getPendingWithRecipient(pubkey: string): Promise<DBTx[]>;
 
-  removeTX(hash: string): Promise<void>;
+  removeByHash(hash: string): Promise<void>;
+
+  removeByHashBatch(hashArray: string[]): Promise<void>;
 
   removeAll(): Promise<void>;
 

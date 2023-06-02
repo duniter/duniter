@@ -121,6 +121,7 @@ export class P2pCandidate {
         isBMA: true,
         port: bmaAPI.port,
         host: bmaHost,
+        path: bmaAPI.path,
       });
     }
     if (ws2pAPI) {

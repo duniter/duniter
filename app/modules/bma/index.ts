@@ -212,8 +212,8 @@ export const BmaDependency = {
           }
         }
         if (!conf.nobma) {
-          server.addEndpointsDefinitions(() =>
-            Promise.resolve(getEndpoint(conf))
+          server.addEndpointsDefinitions(async () =>
+            getEndpoint(conf)
           );
           server.addWrongEndpointFilter((endpoints: string[]) =>
             getWrongEndpoints(endpoints, server.conf.pair.pub)
@@ -241,23 +241,23 @@ export const BmaDependency = {
 async function getWrongEndpoints(endpoints: string[], selfPubkey: string) {
   const wrongs: string[] = [];
   await Promise.all(
-    endpoints.map(async (theEndpoint: string) => {
-      let remote = PeerDTO.endpoint2host(theEndpoint);
-      try {
-        // We test only BMA APIs, because other may exist and we cannot judge against them
-        if (theEndpoint.startsWith("BASIC_MERKLED_API")) {
-          let answer = await rp("http://" + remote + "/network/peering", {
+    endpoints
+      .filter(PeerDTO.isBMA) // We test only BMA APIs, because other may exist and we cannot judge against them
+      .map(async (ep: string) => {
+        const peer = PeerDTO.fromJSONObject({ endpoints: [ep] });
+        try {
+          const protocol = ep.startsWith("BMAS") || peer.getPort() == 443 ? "https" : "http";
+          const answer = await rp(protocol + "://" + peer.getURL() + "/network/peering", {
             json: true,
           });
           if (!answer || answer.pubkey != selfPubkey) {
             throw Error("Not same pubkey as local instance");
           }
+        } catch (e) {
+          wrongs.push(ep);
         }
-      } catch (e) {
-        wrongs.push(theEndpoint);
-      }
-    })
-  );
+      })
+    );
   return wrongs;
 }
 

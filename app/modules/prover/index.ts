@@ -351,7 +351,7 @@ function proveAndSend(
               next();
             } else {
               const peer = PeerDTO.fromJSONObject({
-                endpoints: [["BASIC_MERKLED_API", host, port].join(" ")],
+                endpoints: [[port == "443" ? "BMAS" : "BASIC_MERKLED_API", host, port].join(" ")],
               });
               program.show && console.log(proven.getRawSigned());
               logger.info("Posted block " + proven.getRawSigned());

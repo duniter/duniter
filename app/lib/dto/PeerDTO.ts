@@ -113,6 +113,7 @@ export class PeerDTO implements Cloneable {
           ipv4: matchesBMA[4] || "",
           ipv6: matchesBMA[6] || "",
           port: parseInt(matchesBMA[8]) || 9101,
+          path: matchesBMA[10] || "",
         };
       } else if (matchesBMAS) {
         notFound = false;
@@ -271,7 +272,8 @@ export class PeerDTO implements Cloneable {
   getURL() {
     const bma = this.getBMA();
     let base = this.getHostPreferDNS();
-    if (bma.port) base += ":" + bma.port;
+    if (base && bma.port) base += ":" + bma.port;
+    if (base && bma.path) base += bma.path;
     return base;
   }
 
@@ -376,5 +378,9 @@ export class PeerDTO implements Cloneable {
       }
     }
     return 0;
+  }
+
+  static isBMA(endpoint: string) {
+    return endpoint && !!endpoint.match(/^(BASIC_MERKLED_API|BMAS)/) || false;
   }
 }

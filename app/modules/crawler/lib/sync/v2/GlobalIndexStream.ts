@@ -39,6 +39,7 @@ let sync_mindex: any[] = [];
 let sync_cindex: any[] = [];
 let sync_nextExpiring = 0;
 let sync_bindexSize = 0;
+let sync_txs: any[] = [];
 let txCount = 0;
 let logger = NewLogger();
 
@@ -89,7 +90,6 @@ export class GlobalIndexStream extends Duplex {
   private numberOfChunksToDownload: number;
   private memToCopyDone = false;
 
-  private mapInjection: { [k: string]: any } = {};
 
   constructor(
     private conf: ConfDTO,
@@ -438,16 +438,31 @@ export class GlobalIndexStream extends Duplex {
       })
     );
 
-    if (this.conf.storage && this.conf.storage.transactions) {
-      await Promise.all(
-        blocks.map((block) =>
-          this.dal.saveTxsInFiles(
-            block.transactions,
-            block.number,
-            block.medianTime
-          )
-        )
-      );
+    if (this.conf.storage?.transactions) {
+      // if cautious, use a save (insert or update)
+      if (this.cautious) {
+        await Promise.all(
+            blocks.map((block) =>
+                this.dal.saveTxsInFiles(
+                    block.transactions,
+                    block.number,
+                    block.medianTime
+                )
+            )
+        );
+      }
+      // If not cautious: use insert only
+      else {
+        await Promise.all(
+            blocks.map((block) =>
+                this.dal.insertTxsInFiles(
+                    block.transactions,
+                    block.number,
+                    block.medianTime
+                )
+            )
+        );
+      }
     }
 
     logger.debug("Total tx count: %s", txCount);

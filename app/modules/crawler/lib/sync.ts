@@ -183,8 +183,8 @@ export class Synchroniser extends stream.Duplex {
       // We use cautious mode if it is asked, or not particulary asked but blockchain has been started
       const cautious = askedCautious === true || localNumber >= 0;
 
-      // TODO Disable constraints
-      //if (!cautious) await this.server.dal.disableCheckConstraints();
+      // Disable check constraints
+      if (!cautious) await this.server.dal.disableCheckConstraints();
 
       const milestonesStream = new ValidatorStream(
         localNumber,
@@ -244,8 +244,8 @@ export class Synchroniser extends stream.Duplex {
         await this.syncStrategy.syncPeers(fullSync, to);
       }
 
-      // TODO Enable constraints
-      //if (!cautious) await this.server.dal.enableCheckConstraints();
+      // Enable check constraints
+      if (!cautious) await this.server.dal.enableCheckConstraints();
 
       const syncDuration = Date.now() - syncStartTime;
       this.watcher.end(syncDuration);

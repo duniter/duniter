@@ -67,7 +67,6 @@ describe("Testing transactions", function() {
     await s1.expect('/tx/history/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo', (res:any) => {
       res.should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
       res.should.have.property('history').property('pending').length(1);
-      res.history.pending[0].should.have.property('received').be.a.Number;
     });
     await s1.commit({
       time: now + 7220
@@ -142,6 +141,7 @@ describe("Testing transactions", function() {
           "0:SIG(0)"
         ],
         "version": 10,
+        "writtenTime": 1490007210,
         "written_block": 3
       })
     })

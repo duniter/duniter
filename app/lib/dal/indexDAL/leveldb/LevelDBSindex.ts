@@ -362,9 +362,9 @@ export class LevelDBSindex extends LevelDBTable<SindexEntry>
     const existing = await this.getWrittenOnSourceIds(writtenOn);
     const trimmed = arrayPruneAllCopy(existing, id);
     if (trimmed.length) {
-      await this.indexForConditions.put(k, trimmed);
+      await this.indexForTrimming.put(k, trimmed);
     } else {
-      await this.indexForConditions.del(k);
+      await this.indexForTrimming.del(k);
     }
   }
 

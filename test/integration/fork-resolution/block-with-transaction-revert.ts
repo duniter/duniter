@@ -17,6 +17,7 @@ import {DBBlock} from "../../../app/lib/db/DBBlock"
 import {CommonConstants} from "../../../app/lib/common-libs/constants"
 import {TestUser} from "../tools/TestUser"
 import {TestingServer} from "../tools/toolbox"
+import {LevelDBSindex} from "../../../app/lib/dal/indexDAL/leveldb/LevelDBSindex";
 
 describe('Block revert with transaction sources', () => writeBasicTestWithConfAnd2Users({
   dt: 10,
@@ -46,7 +47,7 @@ describe('Block revert with transaction sources', () => writeBasicTestWithConfAn
     const tx2 = await cat.prepareUTX(tx1, ['SIG(0)'],
       [
         { qty: 100, base: 0, lock: 'SIG(' + tac.pub + ')' },
-        { qty: 200, base: 0, lock: 'SIG(' + toc.pub + ')' }, // Send money also to toc, to test that his money is ketp safe during a revert
+        { qty: 200, base: 0, lock: 'SIG(' + toc.pub + ')' }, // Send money also to toc, to test that his money is kept safe during a revert
         { qty: 700, base: 0, lock: 'SIG(' + cat.pub + ')' }, // REST
       ],
       {
@@ -74,10 +75,14 @@ describe('Block revert with transaction sources', () => writeBasicTestWithConfAn
   })
 
   test('revert b#3-4 and re-commit block#3 should be ok', async (s1, cat, tac, toc) => {
-    await s1.revert()
-    await s1.revert()
-    await s1.resolve(b => b.number === 3)
-    await assertBlock3(s1, cat, tac, toc)
+    await s1.revert() // Revert b#4
+    await assertBlock3(s1, cat, tac, toc) // Current is b#3
+
+    await s1.revert() // Revert b#3
+    await assertBlock2(s1, cat, tac, toc) // Current is b#2
+
+    await s1.resolve(b => b.number === 3) // Waiting b#3 to commit
+    await assertBlock3(s1, cat, tac, toc) // Current is b#3
   })
 
   test('re-commit block#4 should be ok', async (s1, cat, tac, toc) => {

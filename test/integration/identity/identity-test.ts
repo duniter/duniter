@@ -192,6 +192,13 @@ describe("Identities collision", function() {
     });
   });
 
+  it('should have certifiers-of/:pubkey of cat giving results', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/certifiers-of/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd?pubkey', { json: true }), function(res:HttpCertifications) {
+      res.should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
+      res.should.have.property('uid').equal('cat');
+    });
+  });
+
   it('should have certifiers-of/tic giving results', function() {
     return expectAnswer(rp('http://127.0.0.1:7799/wot/certifiers-of/tic', { json: true }), function(res:HttpCertifications) {
       res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
@@ -213,6 +220,13 @@ describe("Identities collision", function() {
     });
   });
 
+  it('should have certifiers-of/:pubkey of tic giving results', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/certifiers-of/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV?pubkey', { json: true }), function(res:HttpCertifications) {
+      res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
+      res.should.have.property('uid').equal('tic');
+    });
+  });
+
   it('should have certifiers-of/toc giving results', function() {
     return expectAnswer(rp('http://127.0.0.1:7799/wot/certifiers-of/toc', { json: true }), function(res:HttpCertifications) {
       res.should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
@@ -231,6 +245,13 @@ describe("Identities collision", function() {
       certs[0].should.have.property('written').property('number').equal(0);
       certs[0].should.have.property('written').property('hash').not.equal('');
       certs[0].should.have.property('signature').not.equal('');
+    });
+  });
+
+  it('should have certifiers-of/:pubkey of toc giving results', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/certifiers-of/DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo?pubkey', { json: true }), function(res:HttpCertifications) {
+      res.should.have.property('pubkey').equal('DKpQPUL4ckzXYdnDRvCRKAm1gNvSdmAXnTrJZ7LvM5Qo');
+      res.should.have.property('uid').equal('toc');
     });
   });
 
@@ -270,6 +291,46 @@ describe("Identities collision", function() {
     });
   });
 
+  it('requirements by pubkey of cat', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/requirements/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd?pubkey', { json: true }), function(res:HttpRequirements) {
+      res.should.have.property('identities').be.an.Array;
+      res.should.have.property('identities').have.length(1);
+      res.identities[0].should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
+      res.identities[0].should.have.property('uid').equal('cat');
+      res.identities[0].should.have.property('meta').property('timestamp');
+      res.identities[0].should.have.property('wasMember').equal(true);
+      res.identities[0].should.have.property('expired').equal(false); // Because it has been a member once! So its identity will exist forever.
+      res.identities[0].should.have.property('outdistanced').equal(false);
+      res.identities[0].should.have.property('isSentry').equal(true); // dSen = 2, cat has issued and received 2 certs with tic and toc
+      res.identities[0].should.have.property('certifications').have.length(2);
+      res.identities[0].should.have.property('membershipPendingExpiresIn').equal(0);
+      res.identities[0].should.have.property('membershipExpiresIn').greaterThan(9000);
+    });
+  });
+
+  it('requirements by pubkey of man1', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/requirements/12AbjvYY5hxV4v2KrN9pnGzgFxogwrzgYyncYHHsyFDK?pubkey', { json: true }), function(res:HttpRequirements) {
+      res.should.have.property('identities').be.an.Array;
+      res.should.have.property('identities').have.length(1);
+      res.identities[0].should.have.property('pubkey').equal('12AbjvYY5hxV4v2KrN9pnGzgFxogwrzgYyncYHHsyFDK');
+      res.identities[0].should.have.property('uid').equal('man1');
+      res.identities[0].should.have.property('meta').property('timestamp');
+      res.identities[0].should.have.property('expired').equal(false);
+      res.identities[0].should.have.property('outdistanced').equal(false);
+      res.identities[0].should.have.property('isSentry').equal(false); // Not a member, also dSen = 2, but man1 has only 1 certification
+      res.identities[0].should.have.property('certifications').length(1);
+      res.identities[0].certifications[0].should.have.property('from').equal('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc');
+      res.identities[0].certifications[0].should.have.property('to').equal('12AbjvYY5hxV4v2KrN9pnGzgFxogwrzgYyncYHHsyFDK');
+      res.identities[0].certifications[0].should.have.property('expiresIn').greaterThan(0);
+      res.identities[0].should.have.property('membershipPendingExpiresIn').greaterThan(9000);
+      res.identities[0].should.have.property('membershipExpiresIn').equal(0);
+    });
+  });
+
+  it('requirements by invalid pubkey', function() {
+    return expectError(404, "No identity matching this pubkey or uid", rp('http://127.0.0.1:7799/wot/requirements/cat?pubkey', { json: true }));
+  });
+
   it('should have certified-by/tic giving results', function() {
     return expectAnswer(rp('http://127.0.0.1:7799/wot/certified-by/tic', { json: true }), function(res:HttpCertifications) {
       res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
@@ -298,6 +359,13 @@ describe("Identities collision", function() {
     });
   });
 
+  it('should have certified-by/:pubkey of tic giving results', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/certified-by/DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV?pubkey', { json: true }), function(res:HttpCertifications) {
+      res.should.have.property('pubkey').equal('DNann1Lh55eZMEDXeYt59bzHbA3NJR46DeQYCS2qQdLV');
+      res.should.have.property('uid').equal('tic');
+    });
+  });
+
   it('should have certified-by/tac giving results', function() {
     return expectAnswer(rp('http://127.0.0.1:7799/wot/certified-by/tac', { json: true }), function(res:HttpCertifications) {
       res.should.have.property('pubkey').equal('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc');
@@ -305,6 +373,13 @@ describe("Identities collision", function() {
       res.should.have.property('isMember').equal(true);
       res.should.have.property('sigDate').be.a.Number;
       res.should.have.property('certifications').length(0);
+    });
+  });
+
+  it('should have certified-by/:pubkey of tac giving results', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/certified-by/2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc?pubkey', { json: true }), function(res:HttpCertifications) {
+      res.should.have.property('pubkey').equal('2LvDg21dVXvetTD9GdkPLURavLYEqP3whauvPWX4c2qc');
+      res.should.have.property('uid').equal('tac');
     });
   });
 
@@ -340,6 +415,13 @@ describe("Identities collision", function() {
           cert.should.have.property('signature').not.equal('');
         }
       }
+    });
+  });
+
+  it('should have certified-by/:pubkey of cat giving results', function() {
+    return expectAnswer(rp('http://127.0.0.1:7799/wot/certified-by/HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd?pubkey', { json: true }), function(res:HttpCertifications) {
+      res.should.have.property('pubkey').equal('HgTTJLAQ5sqfknMq7yLPZbehtuLSsKj9CxWN7k8QvYJd');
+      res.should.have.property('uid').equal('cat');
     });
   });
 
